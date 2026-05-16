@@ -361,6 +361,582 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
+
+// PHASE_146_FORCE_EXACT_OLD_INVOICE_READY_MODAL
+// This targets the OLD visible invoice modal from the screenshot:
+// "Invoice ready" + "Approve & email PDF" + "Amount owing".
+// It force-inserts a proper invoice document into that exact modal.
+(function churvoxForceOldInvoiceReadyModal() {
+  try {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+
+    function moneyText(value) {
+      const raw = String(value || "").replace(/[^0-9.]/g, "");
+      const n = Number(raw);
+      if (!Number.isFinite(n) || n <= 0) return "$0.00";
+      return new Intl.NumberFormat("en-NZ", {
+        style: "currency",
+        currency: "NZD",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(n);
+    }
+
+    function clean(value, fallback) {
+      const text = String(value || "").replace(/\s+/g, " ").trim();
+      return text || fallback || "";
+    }
+
+    function readInputByLabel(root, labelWords, fallback) {
+      const words = labelWords.map((word) => String(word).toLowerCase());
+
+      const labels = Array.from(root.querySelectorAll("label"));
+      for (const label of labels) {
+        const labelText = clean(label.textContent, "").toLowerCase();
+        const hit = words.every((word) => labelText.includes(word));
+        if (!hit) continue;
+
+        const field = label.querySelector("input, textarea, select");
+        if (field && clean(field.value, "")) return clean(field.value, fallback);
+      }
+
+      const fields = Array.from(root.querySelectorAll("input, textarea, select"));
+      for (const field of fields) {
+        const wrapper = field.closest("label, div, section, article") || field.parentElement;
+        const labelText = clean(wrapper ? wrapper.textContent : "", "").toLowerCase();
+        const hit = words.every((word) => labelText.includes(word));
+        if (hit && clean(field.value, "")) return clean(field.value, fallback);
+      }
+
+      return fallback || "";
+    }
+
+    function findAmount(root) {
+      const fieldAmount =
+        readInputByLabel(root, ["total", "invoice"], "") ||
+        readInputByLabel(root, ["amount", "owing"], "") ||
+        readInputByLabel(root, ["invoice", "amount"], "");
+
+      if (fieldAmount) return fieldAmount;
+
+      const text = clean(root.textContent, "");
+      const matches = [
+        text.match(/Amount owing\s*\$?\s*([0-9]+(?:\.[0-9]{1,2})?)/i),
+        text.match(/Total invoice\s*\$?\s*([0-9]+(?:\.[0-9]{1,2})?)/i),
+        text.match(/\$\s*([0-9]+(?:\.[0-9]{1,2})?)/i),
+      ].filter(Boolean);
+
+      return matches[0] ? matches[0][1] : "";
+    }
+
+    function findInvoiceModal() {
+      const candidates = Array.from(document.querySelectorAll("div, section, dialog, article"))
+        .filter((el) => {
+          const text = clean(el.textContent, "").toLowerCase();
+          if (!text.includes("invoice")) return false;
+          if (!text.includes("approve") || !text.includes("pdf")) return false;
+          return text.includes("invoice ready") || text.includes("amount owing") || text.includes("fill the invoice");
+        })
+        .map((el) => {
+          const rect = el.getBoundingClientRect();
+          return { el, area: Math.max(rect.width, 1) * Math.max(rect.height, 1), rect };
+        })
+        .filter((item) => item.rect.width > 360 && item.rect.height > 360)
+        .sort((a, b) => a.area - b.area);
+
+      return candidates[0]?.el || null;
+    }
+
+    function ensureStyle() {
+      if (document.getElementById("churvox-phase-146-invoice-style")) return;
+
+      const style = document.createElement("style");
+      style.id = "churvox-phase-146-invoice-style";
+      style.textContent = `
+        .cx-phase-146-invoice-modal {
+          max-width: min(96vw, 1040px) !important;
+          width: min(96vw, 1040px) !important;
+        }
+
+        .cx-phase-146-invoice-paper {
+          width: min(100%, 920px) !important;
+          min-height: 1060px !important;
+          margin: 18px auto 24px !important;
+          background: #fffdf7 !important;
+          color: #151510 !important;
+          border: 1px solid rgba(21, 21, 16, 0.18) !important;
+          border-radius: 18px !important;
+          overflow: hidden !important;
+          box-shadow: 0 34px 110px rgba(21, 21, 16, 0.22) !important;
+          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+        }
+
+        .cx-phase-146-invoice-header {
+          display: grid !important;
+          grid-template-columns: 1fr 210px !important;
+          gap: 28px !important;
+          padding: 48px 54px 42px !important;
+          background: linear-gradient(90deg, #151510 0%, #151510 64%, #c8ff42 64%, #c8ff42 100%) !important;
+        }
+
+        .cx-phase-146-invoice-header span {
+          display: block !important;
+          color: rgba(255,255,255,0.75) !important;
+          font-size: 11px !important;
+          font-weight: 950 !important;
+          letter-spacing: 0.13em !important;
+          text-transform: uppercase !important;
+        }
+
+        .cx-phase-146-invoice-header h1 {
+          margin: 12px 0 10px !important;
+          color: #fffdf7 !important;
+          font-size: clamp(64px, 8vw, 104px) !important;
+          line-height: 0.86 !important;
+          letter-spacing: -0.1em !important;
+          font-weight: 950 !important;
+        }
+
+        .cx-phase-146-invoice-header p {
+          max-width: 520px !important;
+          margin: 0 !important;
+          color: rgba(255,255,255,0.76) !important;
+          font-size: 15px !important;
+          line-height: 1.55 !important;
+          font-weight: 750 !important;
+        }
+
+        .cx-phase-146-invoice-no {
+          padding: 18px !important;
+          border-radius: 18px !important;
+          background: #fffdf7 !important;
+          color: #151510 !important;
+          text-align: right !important;
+        }
+
+        .cx-phase-146-invoice-no small {
+          display: block !important;
+          color: #6f6a5b !important;
+          font-size: 11px !important;
+          font-weight: 900 !important;
+          letter-spacing: 0.08em !important;
+          text-transform: uppercase !important;
+        }
+
+        .cx-phase-146-invoice-no b {
+          display: inline-flex !important;
+          margin: 7px 0 18px !important;
+          padding: 7px 12px !important;
+          border-radius: 999px !important;
+          background: #c8ff42 !important;
+          color: #151510 !important;
+          font-size: 11px !important;
+          font-weight: 950 !important;
+          text-transform: uppercase !important;
+        }
+
+        .cx-phase-146-invoice-no strong {
+          display: block !important;
+          color: #151510 !important;
+          font-size: 24px !important;
+          font-weight: 950 !important;
+        }
+
+        .cx-phase-146-invoice-info {
+          display: grid !important;
+          grid-template-columns: 1fr 1fr 0.9fr !important;
+          gap: 18px !important;
+          padding: 38px 54px 24px !important;
+        }
+
+        .cx-phase-146-invoice-info article {
+          min-height: 168px !important;
+          padding: 22px !important;
+          border: 1px solid rgba(21,21,16,0.12) !important;
+          border-radius: 18px !important;
+          background: #f7efd9 !important;
+        }
+
+        .cx-phase-146-invoice-info span,
+        .cx-phase-146-invoice-payment span {
+          display: block !important;
+          color: #6f6a5b !important;
+          font-size: 11px !important;
+          font-weight: 950 !important;
+          letter-spacing: 0.13em !important;
+          text-transform: uppercase !important;
+        }
+
+        .cx-phase-146-invoice-info strong {
+          display: block !important;
+          margin: 12px 0 10px !important;
+          color: #151510 !important;
+          font-size: 22px !important;
+          line-height: 1.05 !important;
+          font-weight: 950 !important;
+          letter-spacing: -0.04em !important;
+        }
+
+        .cx-phase-146-invoice-info p {
+          margin: 5px 0 !important;
+          color: #625d50 !important;
+          font-size: 14px !important;
+          line-height: 1.4 !important;
+          font-weight: 750 !important;
+        }
+
+        .cx-phase-146-invoice-lines {
+          margin: 28px 54px 30px !important;
+          border: 1px solid rgba(21,21,16,0.16) !important;
+          border-radius: 14px !important;
+          overflow: hidden !important;
+        }
+
+        .cx-phase-146-line-head,
+        .cx-phase-146-line-row {
+          display: grid !important;
+          grid-template-columns: minmax(280px, 1fr) 74px 132px 132px !important;
+        }
+
+        .cx-phase-146-line-head {
+          background: #151510 !important;
+          color: #fffdf7 !important;
+        }
+
+        .cx-phase-146-line-head span {
+          padding: 15px 18px !important;
+          color: #fffdf7 !important;
+          font-size: 11px !important;
+          font-weight: 950 !important;
+          letter-spacing: 0.12em !important;
+          text-transform: uppercase !important;
+        }
+
+        .cx-phase-146-line-row {
+          min-height: 170px !important;
+          background: #fffdf7 !important;
+        }
+
+        .cx-phase-146-line-row > div,
+        .cx-phase-146-line-row > span {
+          padding: 24px 18px !important;
+          border-top: 1px solid rgba(21,21,16,0.08) !important;
+          color: #151510 !important;
+          font-size: 14px !important;
+          font-weight: 850 !important;
+        }
+
+        .cx-phase-146-line-row > span {
+          text-align: right !important;
+        }
+
+        .cx-phase-146-line-row strong {
+          display: block !important;
+          margin-bottom: 10px !important;
+          color: #151510 !important;
+          font-size: 18px !important;
+          font-weight: 950 !important;
+        }
+
+        .cx-phase-146-line-row p {
+          margin: 0 !important;
+          color: #625d50 !important;
+          font-size: 14px !important;
+          line-height: 1.5 !important;
+          font-weight: 700 !important;
+        }
+
+        .cx-phase-146-summary {
+          display: grid !important;
+          grid-template-columns: 1fr minmax(300px, 380px) !important;
+          gap: 26px !important;
+          padding: 0 54px 54px !important;
+        }
+
+        .cx-phase-146-invoice-payment,
+        .cx-phase-146-totals {
+          padding: 22px !important;
+          border: 1px solid rgba(21,21,16,0.13) !important;
+          border-radius: 18px !important;
+          background: #f7efd9 !important;
+        }
+
+        .cx-phase-146-invoice-payment p {
+          margin: 9px 0 20px !important;
+          color: #625d50 !important;
+          font-size: 14px !important;
+          line-height: 1.5 !important;
+          font-weight: 750 !important;
+        }
+
+        .cx-phase-146-totals div {
+          display: flex !important;
+          justify-content: space-between !important;
+          gap: 20px !important;
+          padding: 12px 0 !important;
+          border-bottom: 1px solid rgba(21,21,16,0.1) !important;
+          color: #6f6a5b !important;
+          font-size: 14px !important;
+          font-weight: 900 !important;
+        }
+
+        .cx-phase-146-totals strong {
+          color: #151510 !important;
+          font-weight: 950 !important;
+        }
+
+        .cx-phase-146-totals .total {
+          align-items: center !important;
+          margin-top: 10px !important;
+          padding-top: 18px !important;
+          border-top: 2px solid #151510 !important;
+          border-bottom: 0 !important;
+          color: #151510 !important;
+          font-size: 19px !important;
+        }
+
+        .cx-phase-146-totals .total strong {
+          min-width: 160px !important;
+          padding: 12px 15px !important;
+          border-radius: 14px !important;
+          background: #151510 !important;
+          color: #fffdf7 !important;
+          text-align: right !important;
+          font-size: 24px !important;
+          letter-spacing: -0.04em !important;
+        }
+
+        .cx-phase-146-hidden-old-invoice {
+          display: none !important;
+        }
+
+        @media (max-width: 860px) {
+          .cx-phase-146-invoice-header,
+          .cx-phase-146-invoice-info,
+          .cx-phase-146-summary {
+            grid-template-columns: 1fr !important;
+            padding-left: 24px !important;
+            padding-right: 24px !important;
+          }
+
+          .cx-phase-146-invoice-no {
+            text-align: left !important;
+          }
+
+          .cx-phase-146-invoice-lines {
+            margin-left: 24px !important;
+            margin-right: 24px !important;
+            overflow-x: auto !important;
+          }
+
+          .cx-phase-146-line-head,
+          .cx-phase-146-line-row {
+            min-width: 700px !important;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    function renderProperInvoice(root) {
+      ensureStyle();
+
+      const title =
+        clean(root.querySelector("h1,h2,h3")?.textContent, "") ||
+        "Invoice draft";
+
+      const businessName =
+        readInputByLabel(root, ["business"], "") ||
+        "Your business";
+
+      const businessEmail =
+        readInputByLabel(root, ["business", "email"], "") ||
+        "hello@yourbusiness.co.nz";
+
+      const businessPhone =
+        readInputByLabel(root, ["business", "phone"], "") ||
+        "Business phone";
+
+      const gst =
+        readInputByLabel(root, ["gst"], "") ||
+        readInputByLabel(root, ["tax"], "") ||
+        "GST / tax number";
+
+      const clientName =
+        readInputByLabel(root, ["client", "name"], "") ||
+        clean(title.replace(/^invoice\s+for\s+/i, ""), "Client name needed");
+
+      const customerEmail =
+        readInputByLabel(root, ["customer", "email"], "") ||
+        readInputByLabel(root, ["client", "email"], "") ||
+        "client@email.co.nz";
+
+      const clientAddress =
+        readInputByLabel(root, ["client", "address"], "") ||
+        readInputByLabel(root, ["customer", "address"], "") ||
+        "Client address";
+
+      const description =
+        readInputByLabel(root, ["description"], "") ||
+        readInputByLabel(root, ["line"], "") ||
+        "Completed service prepared for owner approval.";
+
+      const rawAmount = findAmount(root);
+      const amountText = rawAmount ? moneyText(rawAmount) : "Amount required";
+      const amountNumber = Number(String(rawAmount || "").replace(/[^0-9.]/g, ""));
+      const subtotal = Number.isFinite(amountNumber) && amountNumber > 0 ? amountNumber / 1.15 : 0;
+      const gstAmount = Number.isFinite(amountNumber) && amountNumber > 0 ? amountNumber - subtotal : 0;
+
+      const invoiceRef =
+        clean(root.textContent.match(/reference\s+([a-z0-9]+)/i)?.[1], "") ||
+        "DRAFT";
+
+      let paper = root.querySelector(".cx-phase-146-invoice-paper");
+      if (!paper) {
+        paper = document.createElement("section");
+        paper.className = "cx-phase-146-invoice-paper";
+        paper.setAttribute("aria-label", "Proper invoice template forced live");
+
+        const header = root.querySelector("header") || root.firstElementChild;
+        if (header && header.parentElement === root) {
+          header.insertAdjacentElement("afterend", paper);
+        } else {
+          root.prepend(paper);
+        }
+      }
+
+      paper.innerHTML = `
+        <header class="cx-phase-146-invoice-header">
+          <div>
+            <span>PROPER INVOICE TEMPLATE · PHASE 146</span>
+            <h1>INVOICE</h1>
+            <p>Prepared by Churvox. Owner checks, edits and approves before sending the PDF.</p>
+          </div>
+          <aside class="cx-phase-146-invoice-no">
+            <small>Status</small>
+            <b>Draft</b>
+            <small>Reference</small>
+            <strong>${invoiceRef}</strong>
+          </aside>
+        </header>
+
+        <section class="cx-phase-146-invoice-info">
+          <article>
+            <span>From</span>
+            <strong>${businessName}</strong>
+            <p>${businessEmail}</p>
+            <p>${businessPhone}</p>
+            <p>${gst}</p>
+          </article>
+
+          <article>
+            <span>Bill to</span>
+            <strong>${clientName}</strong>
+            <p>${customerEmail}</p>
+            <p>${clientAddress}</p>
+          </article>
+
+          <article>
+            <span>Invoice dates</span>
+            <p><strong>Issue date</strong></p>
+            <p>${new Date().toISOString().slice(0, 10)}</p>
+            <p><strong>Due date</strong></p>
+            <p>Due on receipt / owner terms</p>
+          </article>
+        </section>
+
+        <section class="cx-phase-146-invoice-lines">
+          <div class="cx-phase-146-line-head">
+            <span>Description</span>
+            <span>Qty</span>
+            <span>Rate</span>
+            <span>Amount</span>
+          </div>
+          <div class="cx-phase-146-line-row">
+            <div>
+              <strong>Completed service</strong>
+              <p>${description}</p>
+            </div>
+            <span>1</span>
+            <span>${amountText}</span>
+            <span>${amountText}</span>
+          </div>
+        </section>
+
+        <section class="cx-phase-146-summary">
+          <article class="cx-phase-146-invoice-payment">
+            <span>Payment details</span>
+            <p>Add bank account, payment link, or payment instructions before sending.</p>
+            <span>Notes</span>
+            <p>Thank you for your business.</p>
+          </article>
+
+          <article class="cx-phase-146-totals">
+            <div><span>Subtotal</span><strong>${subtotal > 0 ? moneyText(subtotal) : "$0.00"}</strong></div>
+            <div><span>GST 15%</span><strong>${gstAmount > 0 ? moneyText(gstAmount) : "$0.00"}</strong></div>
+            <div class="total"><span>Total due</span><strong>${amountText}</strong></div>
+          </article>
+        </section>
+      `;
+
+      root.classList.add("cx-phase-146-invoice-modal");
+
+      const footer = Array.from(root.querySelectorAll("footer, div, section"))
+        .find((el) => clean(el.textContent, "").toLowerCase().includes("approve") && clean(el.textContent, "").toLowerCase().includes("pdf"));
+
+      const keep = new Set([paper]);
+
+      const topHeader = root.querySelector(":scope > header");
+      if (topHeader) keep.add(topHeader);
+
+      if (footer) {
+        let node = footer;
+        while (node && node !== root) {
+          keep.add(node);
+          node = node.parentElement;
+        }
+      }
+
+      Array.from(root.children).forEach((child) => {
+        if (!keep.has(child) && child !== paper) {
+          child.classList.add("cx-phase-146-hidden-old-invoice");
+        }
+      });
+    }
+
+    function scan() {
+      const root = findInvoiceModal();
+      if (!root) return;
+
+      renderProperInvoice(root);
+    }
+
+    let timer = null;
+    function scheduleScan() {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(scan, 80);
+    }
+
+    window.addEventListener("load", scheduleScan);
+    document.addEventListener("click", scheduleScan, true);
+    document.addEventListener("input", scheduleScan, true);
+    document.addEventListener("change", scheduleScan, true);
+
+    const observer = new MutationObserver(scheduleScan);
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+
+    scheduleScan();
+  } catch {
+    // keep app boot safe
+  }
+})();
+
+
+
 // PHASE_132_FAST_LOADING_PRECONNECT
 function preconnectChurvoxBackend() {
   if (typeof document === "undefined") return;
