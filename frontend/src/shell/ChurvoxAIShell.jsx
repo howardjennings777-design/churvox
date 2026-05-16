@@ -100,6 +100,7 @@ function cxSanitiseRows(rows) {
 }
 
 import "./ChurvoxOperatorOS.css";
+// PHASE_66_FIX_RETURN_OUTSIDE_FUNCTION
 // PHASE_65_SANITISE_SMART_HUB_LIVE_DATA
 // PHASE_64_FIX_OBJECT_TEXT_CRASH
 // PHASE_64_SAFE_REACT_TEXT
@@ -2906,53 +2907,7 @@ function saveSmartHubItemStatus(items) {
 
 
 
- {
-  if (value === null || value === undefined) return fallback;
-  if (typeof value === "string") return value;
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  if (value instanceof Date) return value.toLocaleString();
 
-  if (Array.isArray(value)) {
-    const clean = value
-      .map((item) => safeReactText(item, ""))
-      .filter(Boolean)
-      .join(", ");
-    return clean || fallback;
-  }
-
-  if (typeof value === "object") {
-    const preferred =
-      value.title ||
-      value.name ||
-      value.label ||
-      value.status ||
-      value.message ||
-      value.body ||
-      value.description ||
-      value.detail ||
-      value.text ||
-      value.value ||
-      value.id ||
-      value._id ||
-      "";
-
-    if (preferred && preferred !== value) {
-      return safeReactText(preferred, fallback);
-    }
-
-    try {
-      const values = Object.values(value)
-        .map((item) => safeReactText(item, ""))
-        .filter(Boolean);
-
-      return values.slice(0, 3).join(" · ") || fallback;
-    } catch {
-      return fallback;
-    }
-  }
-
-  return String(value || fallback);
-}
 
 function rowText(item, index, fallback = "Record") {
   if (Array.isArray(item)) {
