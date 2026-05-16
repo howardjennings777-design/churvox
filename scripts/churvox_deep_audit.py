@@ -89,7 +89,15 @@ def walk_files(base: Path):
     if not base.exists():
         return
     for path in base.rglob("*"):
+        relative_for_ignore = str(path.relative_to(ROOT)).replace("\\\\", "/")
         if any(part in IGNORE_DIRS for part in path.parts):
+            continue
+        if (
+            relative_for_ignore.startswith("backend/frontend_dist/")
+            or relative_for_ignore.startswith("shell-backup-")
+            or relative_for_ignore.startswith("churvox-backend-save-audit-phase35/")
+            or relative_for_ignore.startswith("churvox-visual-audit-route-check/")
+        ):
             continue
         if path.is_file() and path.suffix.lower() in TEXT_EXTS:
             relative = rel(path)
@@ -156,24 +164,48 @@ def extract_frontend_endpoints():
                 })
     return endpoints
 
+# PHASE_155_FIX_AI_ROUTE_PREFIX_AND_ROUTE_AUDIT
 def extract_backend_routes():
     routes = []
     text = read(SERVER)
-    decorator_re = re.compile(r'@(?:app|api_router)\.(get|post|put|patch|delete|options)\(\s*["\']([^"\']+)["\']', re.I)
+
+    # Capture whether a route is registered on app or api_router.
+    # api_router is mounted under /api, so @api_router.get("/jobs") is really /api/jobs.
+    decorator_re = re.compile(r'@(app|api_router)\\.(get|post|put|patch|delete|options)\\(\\s*["\\']([^"\\']+)["\\']', re.I)
+
     for m in decorator_re.finditer(text):
-        route = m.group(2).strip()
-        if route.startswith("/api/"):
-            route = route[4:]
-        if not route.startswith("/"):
-            route = "/" + route
-        route = route.rstrip("/") or "/"
+        owner = m.group(1)
+        method = m.group(2).upper()
+        raw_route = m.group(3).strip()
+
+        if not raw_route.startswith("/"):
+            raw_route = "/" + raw_route
+
+        if owner == "api_router":
+            effective_route = ("/api" + raw_route).replace("//", "/")
+        else:
+            effective_route = raw_route
+
+        effective_route = effective_route.rstrip("/") or "/"
+
+        # Frontend helper calls usually omit /api because the base URL already includes it.
+        # Use match_route for frontend endpoint matching, but use effective_route for
+        # duplicate backend route detection so /billing/webhook and /api/billing/webhook
+        # are not incorrectly treated as duplicates.
+        match_route = effective_route
+        if match_route.startswith("/api/"):
+            match_route = match_route[4:]
+        match_route = match_route.rstrip("/") or "/"
+
         routes.append({
-            "method": m.group(1).upper(),
-            "route": route,
+            "method": method,
+            "route": effective_route,
+            "match_route": match_route,
             "file": "backend/server.py",
             "line": line_no(text, m.start()),
-            "regex": route_to_regex(route),
+            "regex": route_to_regex(match_route),
         })
+
     return routes
 
 def route_matches(endpoint, routes):

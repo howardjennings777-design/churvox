@@ -19038,16 +19038,18 @@ async def _platform_stats_impl(current_user: dict):
 
 # CORS_HARD_FIX_20260412
 
+# PHASE_155_FIX_AI_ROUTE_PREFIX_AND_ROUTE_AUDIT
+# Fixed late api_router routes that accidentally included /api even though api_router
+# is already mounted under /api. Also removed orphan ai-operator decorator.
+
+
 
 @api_router.post("/ai/operator/approval-items/{item_id}/dismiss")
 async def ai_operator_dismiss(item_id: str, current_user: dict = Depends(get_current_user)):
     return await ai_operator_reject(item_id, current_user)
 
 
-@api_router.post("/ai-operator/run-daily-plan")
-
-
-@api_router.get("/api/ai/receptionist/enquiries")
+@api_router.get("/ai/receptionist/enquiries")
 async def ai_receptionist_enquiries(current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str((current_user or {}).get("role") or ""))
     business_id = await get_user_business_id(current_user)
@@ -19055,7 +19057,7 @@ async def ai_receptionist_enquiries(current_user: dict = Depends(get_current_use
     items = [serialize_doc(d) async for d in db.ai_enquiries.find({"business_id": business_id}).sort("created_at", -1).limit(200)]
     return {"success": True, "enquiries": items}
 
-@api_router.post("/api/ai/receptionist/enquiries")
+@api_router.post("/ai/receptionist/enquiries")
 async def ai_receptionist_create_enquiry(payload: dict, current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str((current_user or {}).get("role") or ""))
     business_id = await get_user_business_id(current_user)
@@ -19065,7 +19067,7 @@ async def ai_receptionist_create_enquiry(payload: dict, current_user: dict = Dep
     ins = await db.ai_enquiries.insert_one(doc)
     return {"success": True, "enquiry": serialize_doc({**doc, "_id": ins.inserted_id})}
 
-@api_router.post("/api/ai/receptionist/enquiries/{enquiry_id}/prepare")
+@api_router.post("/ai/receptionist/enquiries/{enquiry_id}/prepare")
 async def ai_receptionist_prepare(enquiry_id: str, current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str((current_user or {}).get("role") or ""))
     business_id = await get_user_business_id(current_user)
@@ -19079,7 +19081,7 @@ async def ai_receptionist_prepare(enquiry_id: str, current_user: dict = Depends(
     enquiry.update(prep); enquiry["status"] = "needs_review"
     return {"success": True, "enquiry": serialize_doc(enquiry)}
 
-@api_router.post("/api/ai/receptionist/enquiries/{enquiry_id}/convert-to-job")
+@api_router.post("/ai/receptionist/enquiries/{enquiry_id}/convert-to-job")
 async def ai_receptionist_convert_to_job(enquiry_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str((current_user or {}).get("role") or ""))
     business_id = await get_user_business_id(current_user)
@@ -19095,7 +19097,7 @@ async def ai_receptionist_convert_to_job(enquiry_id: str, payload: dict = Body(d
     await db.ai_enquiries.update_one({"_id": enquiry["_id"]}, {"$set": {"status": "converted_to_job", "suggested_client_id": client_id, "updated_at": now}})
     return {"success": True, "job_id": str(jins.inserted_id), "client_id": client_id}
 
-@api_router.post("/api/ai/receptionist/enquiries/{enquiry_id}/convert-to-quote")
+@api_router.post("/ai/receptionist/enquiries/{enquiry_id}/convert-to-quote")
 async def ai_receptionist_convert_to_quote(enquiry_id: str, current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str((current_user or {}).get("role") or ""))
     business_id = await get_user_business_id(current_user)
@@ -19107,7 +19109,7 @@ async def ai_receptionist_convert_to_quote(enquiry_id: str, current_user: dict =
     await db.ai_enquiries.update_one({"_id": enquiry["_id"]}, {"$set": {"status": "converted_to_quote", "updated_at": now}})
     return {"success": True, "quote_id": str(qins.inserted_id)}
 
-@api_router.post("/api/ai/receptionist/enquiries/{enquiry_id}/dismiss")
+@api_router.post("/ai/receptionist/enquiries/{enquiry_id}/dismiss")
 async def ai_receptionist_dismiss(enquiry_id: str, current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str((current_user or {}).get("role") or ""))
     business_id = await get_user_business_id(current_user)
@@ -19124,14 +19126,14 @@ def _parse_due_date(value):
         except Exception: return None
     return None
 
-@api_router.get("/api/ai/recurring")
+@api_router.get("/ai/recurring")
 async def ai_recurring_get(current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str((current_user or {}).get("role") or ""))
     business_id = await get_user_business_id(current_user)
     rules = [serialize_doc(r) async for r in db.recurring_work_rules.find({"business_id": business_id}).sort("next_due_date", 1)]
     return {"success": True, "rules": rules}
 
-@api_router.post("/api/ai/recurring/rules")
+@api_router.post("/ai/recurring/rules")
 async def ai_recurring_create_rule(payload: dict, current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str((current_user or {}).get("role") or ""))
     business_id = await get_user_business_id(current_user)
@@ -19140,7 +19142,7 @@ async def ai_recurring_create_rule(payload: dict, current_user: dict = Depends(g
     ins = await db.recurring_work_rules.insert_one(doc)
     return {"success": True, "rule": serialize_doc({**doc, "_id": ins.inserted_id})}
 
-@api_router.patch("/api/ai/recurring/rules/{rule_id}")
+@api_router.patch("/ai/recurring/rules/{rule_id}")
 async def ai_recurring_patch_rule(rule_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str((current_user or {}).get("role") or ""))
     business_id = await get_user_business_id(current_user)
@@ -19150,7 +19152,7 @@ async def ai_recurring_patch_rule(rule_id: str, payload: dict, current_user: dic
     if res.matched_count == 0: raise HTTPException(status_code=404, detail="Rule not found")
     return {"success": True}
 
-@api_router.post("/api/ai/recurring/prepare-next-run")
+@api_router.post("/ai/recurring/prepare-next-run")
 async def ai_recurring_prepare_next_run(current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str((current_user or {}).get("role") or ""))
     business_id = await get_user_business_id(current_user)
@@ -19164,7 +19166,7 @@ async def ai_recurring_prepare_next_run(current_user: dict = Depends(get_current
         grouped.setdefault(key, []).append(r)
     return {"success": True, "due_rules": due, "grouped_by_area": grouped}
 
-@api_router.post("/api/ai/recurring/approve-run")
+@api_router.post("/ai/recurring/approve-run")
 async def ai_recurring_approve_run(payload: dict, current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str((current_user or {}).get("role") or ""))
     business_id = await get_user_business_id(current_user)
@@ -19183,7 +19185,7 @@ async def ai_recurring_approve_run(payload: dict, current_user: dict = Depends(g
         created.append(str(ins.inserted_id))
     return {"success": True, "created_job_ids": created}
 
-@api_router.post("/api/ai-operator/run-daily-plan")
+@api_router.post("/ai-operator/run-daily-plan")
 async def ai_operator_run_daily_plan(current_user: dict = Depends(get_current_user)):
     await smart_hub_process_due_communications(current_user)
     scan = await smart_hub_scan(current_user)
