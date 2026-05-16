@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_118_CLEAN_OWNER_FOCUS_CARD
 // PHASE_117_OWNER_FRIENDLY_DASHBOARD_WORDING
 // PHASE_116_REMOVE_DUPLICATE_DASHBOARD
 import { churvoxRenderDeployMarker } from "./renderDeployMarker";
@@ -5587,23 +5588,12 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
 
         <section className="om-dashboard-focus" data-phase="PHASE_116_SINGLE_APPROVAL_DESK">
           <aside className="om-dashboard-focus-card">
-            <span>Today’s command</span>
-            <h2>Here’s what needs your approval.</h2>
+            <span>Owner approvals</span>
+            <h2>Your approvals are ready.</h2>
             <p>
-              Churvox has already sorted the background work. Open the slips below to approve invoices,
-              assign workers, or fix anything holding the day up.
+              Churvox has prepared today’s invoices, worker decisions and follow-ups.
+              Open each slip, check it, then approve or edit.
             </p>
-
-            <div>
-              <article>
-                <b>{machine.approval.length}</b>
-                <small>Ready for you</small>
-              </article>
-              <article>
-                <b>{outputLog.length}</b>
-                <small>Completed approvals</small>
-              </article>
-            </div>
           </aside>
 
           <section className="om-approval-desk om-approval-desk-main">
