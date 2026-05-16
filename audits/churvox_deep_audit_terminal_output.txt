@@ -1,0 +1,29 @@
+# Churvox Deep Bug + Wiring Audit
+
+Generated: 2026-05-16 21:35:20 UTC
+
+## Summary
+
+- HIGH: 1
+- MED: 0
+- LOW: 0
+- Frontend API calls found: 49
+- Backend effective routes found: 374
+
+## Findings
+
+### 1. [HIGH] Backend routes — api_router route declares /api prefix
+
+**Where:** `backend/server.py:4656`
+
+**Detail:** api_router is already mounted under /api, so declared route /api/ai/follow-ups becomes /api/api/ai/follow-ups.
+
+## Notes
+
+- This audit ignores generated builds, backups, pasted logs, and audit reports.
+- The live owner, worker, quote/invoice, and browser-route smoke tests remain the source of truth for launch behavior.
+- Lower-risk dependency audit warnings are not changed here to avoid risky package upgrades before launch.
+
+
+REPORT_FILE=audits/churvox_deep_audit_20260516_213520.md
+LATEST_FILE=audits/churvox_deep_audit_latest.md

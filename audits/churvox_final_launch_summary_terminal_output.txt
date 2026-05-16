@@ -1,12 +1,12 @@
 # Churvox Final Launch Test Summary
 
-Generated: 2026-05-16 21:32:14 UTC
+Generated: 2026-05-16 21:35:20 UTC
 
 ## Current result
 
 Launch is **not fully clear yet** because these blockers remain:
 
-- Deep wiring audit: 2 HIGH
+- Deep wiring audit: 1 HIGH
 
 ## Report matrix
 
@@ -17,7 +17,7 @@ Launch is **not fully clear yet** because these blockers remain:
 | Quote + invoice workflow | PASS | 0 | 0 | 0 | `audits/churvox_live_quote_invoice_workflow_test_latest.md` |
 | Browser routes | PASS | 0 | 0 | 0 | `audits/churvox_live_browser_route_check_latest.md` |
 | Launch workflow audit | PASS | 0 | 0 | 1 | `audits/churvox_launch_workflow_audit_latest.md` |
-| Deep wiring audit | CHECK | 2 | 16 | 16 | `audits/churvox_deep_audit_latest.md` |
+| Deep wiring audit | CHECK | 1 | 0 | 0 | `audits/churvox_deep_audit_latest.md` |
 
 ## Honest remaining notes
 
@@ -38,4 +38,4 @@ Launch is **not fully clear yet** because these blockers remain:
 
 
 LATEST_FILE=audits/churvox_final_launch_summary_latest.md
-REPORT_FILE=audits/churvox_final_launch_summary_20260516_213214.md
+REPORT_FILE=audits/churvox_final_launch_summary_20260516_213520.md
