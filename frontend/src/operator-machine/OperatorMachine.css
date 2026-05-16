@@ -2119,3 +2119,38 @@
 .om-slip-fields select {
   font-size: .98rem;
 }
+
+
+/* PHASE_79_NEW_JOB_INTAKE_SLIP */
+.om-job-hero-action {
+  grid-column: 1 / -1;
+  min-height: 54px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--om-lime);
+  color: var(--om-charcoal);
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow: 0 14px 30px rgba(184, 227, 95, .24);
+}
+
+.om-job-hero-action:hover {
+  transform: translateY(-2px);
+}
+
+.om-slip-fields label:has(input[placeholder="Client or customer name"]),
+.om-slip-fields label:has(input[placeholder="Where the job is"]),
+.om-slip-fields label:has(input[placeholder="Mowing, cleaning, repair..."]) {
+  background: #fffaf0;
+}
+
+.om-slip.new-job,
+.om-slip:has(input[placeholder="Client or customer name"]) {
+  width: min(1040px, calc(100vw - 44px));
+}
+
+@media (max-width: 760px) {
+  .om-job-hero-action {
+    min-height: 48px;
+  }
+}

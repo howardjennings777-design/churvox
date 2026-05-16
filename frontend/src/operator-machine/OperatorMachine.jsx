@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_79_NEW_JOB_INTAKE_SLIP
 // PHASE_78_SMART_JOB_WORK_SLIPS
 // PHASE_77_COMBINE_FEATURE_HEADERS
 // PHASE_74_JOBS_QUEUE_BOARD
@@ -603,6 +604,27 @@ function WorkSlip({ slip, team, outputStatus, onClose, onSave, onApprove }) {
             </>
           ) : null}
 
+          {slip.kind === "new-job" ? (
+            <>
+              <label>
+                Client name
+                <input value={draft.clientName || ""} onChange={(event) => update("clientName", event.target.value)} placeholder="Client or customer name" />
+              </label>
+              <label>
+                Job address
+                <input value={draft.address || ""} onChange={(event) => update("address", event.target.value)} placeholder="Where the job is" />
+              </label>
+              <label>
+                Service type
+                <input value={draft.serviceType || ""} onChange={(event) => update("serviceType", event.target.value)} placeholder="Mowing, cleaning, repair..." />
+              </label>
+              <label>
+                Starting status
+                <input value={draft.jobStatus || ""} onChange={(event) => update("jobStatus", event.target.value)} placeholder="new" />
+              </label>
+            </>
+          ) : null}
+
           {slip.kind === "job" ? (
             <label>
               Job status / next step
@@ -627,7 +649,7 @@ function WorkSlip({ slip, team, outputStatus, onClose, onSave, onApprove }) {
           <button type="button" className="ghost" onClick={onClose}>Back</button>
           <button type="button" onClick={() => onSave(slip, draft)}>Save edit</button>
           <button type="button" className="approve" disabled={busy} onClick={approve}>
-            {busy ? "Approving..." : "Approve"}
+            {busy ? "Saving..." : slip.kind === "new-job" ? "Create job" : "Approve"}
           </button>
         </footer>
       </section>
@@ -1086,6 +1108,29 @@ function JobsQueueBoard({ data, machine, onOpen }) {
     ["Invoice", "Completed work becomes approval-ready"],
   ];
 
+  function makeNewJobSlip() {
+    return {
+      id: `new-job-${Date.now()}`,
+      sourceId: "",
+      kind: "new-job",
+      eyebrow: "New job intake",
+      title: "Create new job",
+      need: "Enter the job once. Churvox will use it for dispatch, proof and invoice prep.",
+      prepared: "Churvox will turn this job record into machine input for worker assignment, proof-to-paid and owner-approved invoice actions.",
+      draft: {
+        title: "",
+        clientName: "",
+        address: "",
+        serviceType: "",
+        ownerNote: "",
+        customerMessage: "",
+        invoiceDescription: "",
+        amount: "",
+        jobStatus: "new",
+      },
+    };
+  }
+
   function makeJobSlip(row) {
     const item = row.item || {};
     const title = clean(item.title || item.job_title || item.service_type || item.name || row.title, "Job");
@@ -1184,6 +1229,10 @@ function JobsQueueBoard({ data, machine, onOpen }) {
               <strong>{value}</strong>
             </article>
           ))}
+
+          <button type="button" className="om-job-hero-action" onClick={() => onOpen(makeNewJobSlip())}>
+            New job intake
+          </button>
         </aside>
       </header>
 
