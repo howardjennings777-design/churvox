@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_130_REAL_INVOICE_LAYOUT
 // PHASE_128_INVOICE_OWING_SUMMARY
 // PHASE_127_REDO_INVOICE_EMAIL_CONTACT_TEMPLATE
 // PHASE_125_FORCE_RENDER_VISIBLE_DEPLOY_20260516112111
@@ -1104,7 +1105,7 @@ function WorkSlip({ slip, team, outputStatus, smsCredits = 0, businessLogoUrl = 
           <header className="om-one-invoice-slip-head">
             <div>
               <span>Invoice ready</span>
-              <h2>{draft.title || slip.title || "Invoice draft"}</h2>
+              <h2>{draft.invoiceClientName || draft.clientName ? `Invoice for ${draft.invoiceClientName || draft.clientName}` : "Invoice draft"}</h2>
               <p>Fill the invoice, then save or approve.</p>
             </div>
             <button type="button" onClick={onClose} aria-label="Close invoice slip">×</button>
@@ -1124,7 +1125,7 @@ function WorkSlip({ slip, team, outputStatus, smsCredits = 0, businessLogoUrl = 
             <button type="button" className="ghost" onClick={onClose}>Back</button>
             <button type="button" onClick={() => onSave(slip, draft)}>Save edit</button>
             <button type="button" className="approve" disabled={busy || smsBlocked} onClick={approve}>
-              {busy ? "Saving..." : primaryLabel}
+              {busy ? "Saving..." : "Approve & email PDF"}
             </button>
           </footer>
         </section>
@@ -4905,165 +4906,202 @@ function phase128AmountOwing(total, paid) {
 }
 
 
+
 function InvoiceTemplateCard({ slip, draft, update, businessLogoUrl = "", businessName = "" }) {
   if (!phase113ShouldShowInvoiceTemplate(slip)) return null;
 
   const invoice = phase113InvoiceValues({ ...draft, businessName: businessName || draft.businessName }, slip);
-  const invoiceNumber = draft.invoiceNumber || phase121InvoiceNumber(slip, draft);
+
   const business = phase111bValue(draft.businessName, businessName, invoice.businessName, "Your business");
   const businessAddress = phase111bValue(draft.businessAddress, draft.business_address, "");
   const businessEmail = phase111bValue(draft.businessEmail, draft.business_email, "");
   const businessPhone = phase111bValue(draft.businessPhone, draft.business_phone, "");
   const gstNumber = phase111bValue(draft.gstNumber, draft.gst_number, "");
-  const reference = phase111bValue(draft.reference, draft.jobReference, draft.jobNumber, "");
+
+  const invoiceNumber = draft.invoiceNumber || phase121InvoiceNumber(slip, draft);
   const issueDate = draft.issueDate || invoice.issueDate || new Date().toISOString().slice(0, 10);
+  const dueDate = draft.dueDate || invoice.dueDate || "";
+  const reference = phase111bValue(draft.reference, draft.jobReference, draft.jobNumber, "");
+
   const client = draft.invoiceClientName || draft.clientName || invoice.client || "";
   const clientEmail = draft.invoiceClientEmail || draft.clientEmail || draft.customerEmail || "";
   const clientAddress = phase111bValue(draft.invoiceClientAddress, draft.clientAddress, draft.address, "");
+
   const lineItem = draft.invoiceLineItem || draft.serviceType || invoice.lineItem || "Work completed";
   const description = draft.invoiceDescription || invoice.description || "";
   const quantity = phase111bValue(draft.quantity, draft.invoiceQuantity, "1");
-  const amount = phase121AmountRaw(draft.amount || invoice.amount || "");
-  const unitPrice = phase121AmountRaw(draft.unitPrice || draft.rate || amount);
-  const lineAmount = phase121AmountRaw(draft.lineAmount || amount || phase122Number(quantity) * phase122Number(unitPrice));
+  const unitPrice = phase121AmountRaw(draft.unitPrice || draft.rate || draft.amount || invoice.amount || "");
+  const lineAmount = phase121AmountRaw(draft.amount || draft.lineAmount || invoice.amount || "");
+
+  const subtotal = phase121AmountRaw(draft.subtotal || lineAmount || "");
   const gstRate = phase111bValue(draft.gstRate, draft.taxRate, "15");
-  const gstAmount = phase121AmountRaw(draft.gstAmount || draft.taxAmount || phase122GstFromTotal(lineAmount || amount, gstRate));
-  const subtotal = phase121AmountRaw(draft.subtotal || phase122SubtotalFromTotal(lineAmount || amount, gstAmount));
-  const totalDue = phase121AmountRaw(draft.total || lineAmount || amount);
+  const gstAmount = phase121AmountRaw(draft.gstAmount || draft.taxAmount || "");
+  const totalDue = phase121AmountRaw(draft.total || draft.totalDue || lineAmount || "");
   const amountPaid = phase121AmountRaw(draft.amountPaid || draft.paidAmount || "0");
-  const amountOwing = phase121AmountRaw(draft.amountOwing || phase128AmountOwing(totalDue, amountPaid));
+  const amountOwing = phase121AmountRaw(draft.amountOwing || phase128AmountOwing(totalDue || lineAmount, amountPaid));
+  const invoiceStatus = draft.invoiceStatus || (phase122Number(amountOwing) > 0 ? "Amount owing" : "Paid");
   const paymentTerms = draft.paymentTerms || "Due on receipt unless agreed otherwise.";
-  const invoiceStatus = draft.invoiceStatus || (phase122Number(amountOwing) <= 0 ? "Paid" : "Amount owing");
-  const dueDate = draft.dueDate || invoice.dueDate || "";
   const paymentNote = draft.paymentNote || "Bank account / payment link goes here. Please pay by the due date.";
 
   return (
-    <section className="om-single-invoice-template om-complete-invoice-template" data-phase="PHASE_122_COMPLETE_REAL_INVOICE_TEMPLATE">
-      <header className="om-single-invoice-header">
-        <div className="om-single-invoice-brand">
-          {businessLogoUrl ? <img src={businessLogoUrl} alt="" /> : <i />}
-          <div>
+    <section className="om-real-invoice" data-phase="PHASE_130_REAL_INVOICE_LAYOUT">
+      <header className="om-real-invoice-top">
+        <div className="om-real-invoice-brand">
+          <div className="om-real-invoice-brand-top">
+            {businessLogoUrl ? <img src={businessLogoUrl} alt="" /> : <i />}
             <input
               value={business}
               onChange={(event) => update("businessName", event.target.value)}
-              aria-label="Business name"
               placeholder="Business name"
+              aria-label="Business name"
             />
-            <small>Editable customer invoice</small>
+          </div>
+
+          <textarea
+            value={businessAddress}
+            onChange={(event) => update("businessAddress", event.target.value)}
+            placeholder="Business address"
+            aria-label="Business address"
+          />
+
+          <div className="om-real-invoice-business-grid">
+            <label>
+              <span>Business email</span>
+              <input
+                value={businessEmail}
+                onChange={(event) => update("businessEmail", event.target.value)}
+                placeholder="hello@yourbusiness.co.nz"
+              />
+            </label>
+
+            <label>
+              <span>Business phone</span>
+              <input
+                value={businessPhone}
+                onChange={(event) => update("businessPhone", event.target.value)}
+                placeholder="Phone number"
+              />
+            </label>
+
+            <label>
+              <span>GST / tax number</span>
+              <input
+                value={gstNumber}
+                onChange={(event) => update("gstNumber", event.target.value)}
+                placeholder="GST / tax number"
+              />
+            </label>
           </div>
         </div>
 
-        <aside>
+        <aside className="om-real-invoice-meta">
           <strong>INVOICE</strong>
+
           <label>
-            Number
-            <input value={invoiceNumber} onChange={(event) => update("invoiceNumber", event.target.value)} />
+            <span>Number</span>
+            <input
+              value={invoiceNumber}
+              onChange={(event) => update("invoiceNumber", event.target.value)}
+              placeholder="INV-2026-0001"
+            />
           </label>
+
           <label>
-            Date
-            <input value={issueDate} onChange={(event) => update("issueDate", event.target.value)} placeholder="YYYY-MM-DD" />
+            <span>Issue date</span>
+            <input
+              value={issueDate}
+              onChange={(event) => update("issueDate", event.target.value)}
+              placeholder="YYYY-MM-DD"
+            />
           </label>
+
           <label>
-            Reference
-            <input value={reference} onChange={(event) => update("reference", event.target.value)} placeholder="Job / PO / reference" />
+            <span>Due date</span>
+            <input
+              value={dueDate}
+              onChange={(event) => update("dueDate", event.target.value)}
+              placeholder="YYYY-MM-DD"
+            />
+          </label>
+
+          <label>
+            <span>Reference</span>
+            <input
+              value={reference}
+              onChange={(event) => update("reference", event.target.value)}
+              placeholder="Job / PO / reference"
+            />
           </label>
         </aside>
       </header>
 
-      <section className="om-invoice-business-details" data-phase="PHASE_127_REDO_INVOICE_EMAIL_CONTACT_TEMPLATE">
-        <label className="wide">
-          Business address
-          <textarea
-            value={businessAddress}
-            onChange={(event) => update("businessAddress", event.target.value)}
-            aria-label="Business address"
-            placeholder="Business address shown on invoice"
-          />
-        </label>
+      <section className="om-real-invoice-billrow">
+        <article className="om-real-invoice-billto">
+          <h4>Bill to</h4>
 
-        <label>
-          Business email
-          <input
-            value={businessEmail}
-            onChange={(event) => update("businessEmail", event.target.value)}
-            placeholder="hello@yourbusiness.co.nz"
-          />
-        </label>
+          <label>
+            <span>Client name</span>
+            <input
+              value={client}
+              onChange={(event) => update("invoiceClientName", event.target.value)}
+              placeholder="Client name"
+            />
+          </label>
 
-        <label>
-          Business phone
-          <input
-            value={businessPhone}
-            onChange={(event) => update("businessPhone", event.target.value)}
-            placeholder="Phone number"
-          />
-        </label>
+          <label>
+            <span>Customer email</span>
+            <input
+              value={clientEmail}
+              onChange={(event) => update("invoiceClientEmail", event.target.value)}
+              placeholder="customer@email.com"
+            />
+          </label>
 
-        <label>
-          GST / tax number
-          <input
-            value={gstNumber}
-            onChange={(event) => update("gstNumber", event.target.value)}
-            placeholder="GST / tax number"
-          />
-        </label>
-      </section>
+          <label>
+            <span>Client address</span>
+            <textarea
+              value={clientAddress}
+              onChange={(event) => update("invoiceClientAddress", event.target.value)}
+              placeholder="Client billing address"
+            />
+          </label>
+        </article>
 
-      <section className="om-single-invoice-details om-complete-invoice-details">
-        <label>
-          Bill to
-          <input value={client} onChange={(event) => update("invoiceClientName", event.target.value)} placeholder="Client name" />
-        </label>
-
-        <label>
-          Customer email
-          <input value={clientEmail} onChange={(event) => update("invoiceClientEmail", event.target.value)} placeholder="customer@email.com" />
-        </label>
-
-        <label>
-          Client address
-          <textarea value={clientAddress} onChange={(event) => update("invoiceClientAddress", event.target.value)} placeholder="Client billing address" />
-        </label>
-
-        <label>
-          Due date
-          <input value={dueDate} onChange={(event) => update("dueDate", event.target.value)} placeholder="YYYY-MM-DD" />
-        </label>
-      </section>
-
-      <section className="om-invoice-owing-strip" data-phase="PHASE_128_INVOICE_OWING_SUMMARY">
-        <article>
+        <article className="om-real-invoice-owing">
           <span>Status</span>
           <strong>{invoiceStatus}</strong>
-        </article>
-        <article>
-          <span>Total invoice</span>
-          <strong>{phase113Money(totalDue)}</strong>
-        </article>
-        <article>
-          <span>Paid</span>
-          <strong>{phase113Money(amountPaid)}</strong>
-        </article>
-        <article className="owing">
-          <span>Amount owing</span>
-          <strong>{phase113Money(amountOwing)}</strong>
+
+          <div className="om-real-invoice-owing-grid">
+            <div>
+              <small>Total invoice</small>
+              <b>{phase113Money(totalDue || lineAmount)}</b>
+            </div>
+            <div>
+              <small>Paid</small>
+              <b>{phase113Money(amountPaid)}</b>
+            </div>
+            <div className="amount-owing">
+              <small>Amount owing</small>
+              <b>{phase113Money(amountOwing)}</b>
+            </div>
+          </div>
         </article>
       </section>
 
-      <section className="om-single-invoice-table om-complete-invoice-table">
-        <div className="om-complete-invoice-table-head">
-          <b>Description</b>
-          <b>Qty</b>
-          <b>Rate</b>
-          <b>Amount</b>
+      <section className="om-real-invoice-table">
+        <div className="om-real-invoice-table-head">
+          <span>Description</span>
+          <span>Qty</span>
+          <span>Rate</span>
+          <span>Amount</span>
         </div>
 
-        <div className="om-complete-invoice-line">
-          <div>
+        <div className="om-real-invoice-table-row">
+          <div className="desc">
             <input
               value={lineItem}
               onChange={(event) => update("invoiceLineItem", event.target.value)}
-              placeholder="Work completed"
+              placeholder="Line item"
             />
             <textarea
               value={description}
@@ -5072,58 +5110,103 @@ function InvoiceTemplateCard({ slip, draft, update, businessLogoUrl = "", busine
             />
           </div>
 
-          <input value={quantity} onChange={(event) => update("quantity", event.target.value)} placeholder="1" />
-          <input value={unitPrice} onChange={(event) => update("unitPrice", event.target.value)} placeholder="0.00" />
-          <input value={lineAmount} onChange={(event) => update("amount", event.target.value)} placeholder="0.00" />
-        </div>
+          <input
+            value={quantity}
+            onChange={(event) => update("quantity", event.target.value)}
+            placeholder="1"
+          />
 
-        <section className="om-complete-invoice-totals om-invoice-payment-summary-edit">
-          <label>
-            Subtotal
-            <input value={subtotal} onChange={(event) => update("subtotal", event.target.value)} placeholder="0.00" />
-          </label>
-          <label>
-            GST %
-            <input value={gstRate} onChange={(event) => update("gstRate", event.target.value)} placeholder="15" />
-          </label>
-          <label>
-            GST amount
-            <input value={gstAmount} onChange={(event) => update("gstAmount", event.target.value)} placeholder="0.00" />
-          </label>
-          <label>
-            Amount paid
-            <input value={amountPaid} onChange={(event) => update("amountPaid", event.target.value)} placeholder="0.00" />
-          </label>
-          <label>
-            Payment terms
-            <input value={paymentTerms} onChange={(event) => update("paymentTerms", event.target.value)} placeholder="Due on receipt" />
-          </label>
-          <label>
-            Invoice status
-            <input value={invoiceStatus} onChange={(event) => update("invoiceStatus", event.target.value)} placeholder="Amount owing" />
-          </label>
-          <article>
-            <span>Total invoice</span>
-            <strong>{phase113Money(totalDue)}</strong>
-          </article>
-          <article className="owing">
-            <span>Amount owing</span>
-            <strong>{phase113Money(amountOwing)}</strong>
-          </article>
-        </section>
+          <input
+            value={unitPrice}
+            onChange={(event) => update("unitPrice", event.target.value)}
+            placeholder="0.00"
+          />
+
+          <input
+            value={lineAmount}
+            onChange={(event) => update("amount", event.target.value)}
+            placeholder="0.00"
+          />
+        </div>
       </section>
 
-      <label className="om-single-invoice-payment">
-        Payment details / invoice note
-        <textarea
-          value={paymentNote}
-          onChange={(event) => update("paymentNote", event.target.value)}
-          placeholder="Bank account, payment link, payment terms or invoice notes"
-        />
-      </label>
+      <section className="om-real-invoice-bottom">
+        <article className="om-real-invoice-notes">
+          <label>
+            <span>Payment terms</span>
+            <input
+              value={paymentTerms}
+              onChange={(event) => update("paymentTerms", event.target.value)}
+              placeholder="Due on receipt"
+            />
+          </label>
+
+          <label>
+            <span>Payment details / note</span>
+            <textarea
+              value={paymentNote}
+              onChange={(event) => update("paymentNote", event.target.value)}
+              placeholder="Bank account, payment link, or invoice note"
+            />
+          </label>
+        </article>
+
+        <article className="om-real-invoice-totals">
+          <label>
+            <span>Subtotal</span>
+            <input
+              value={subtotal}
+              onChange={(event) => update("subtotal", event.target.value)}
+              placeholder="0.00"
+            />
+          </label>
+
+          <label>
+            <span>GST %</span>
+            <input
+              value={gstRate}
+              onChange={(event) => update("gstRate", event.target.value)}
+              placeholder="15"
+            />
+          </label>
+
+          <label>
+            <span>GST amount</span>
+            <input
+              value={gstAmount}
+              onChange={(event) => update("gstAmount", event.target.value)}
+              placeholder="0.00"
+            />
+          </label>
+
+          <label>
+            <span>Amount paid</span>
+            <input
+              value={amountPaid}
+              onChange={(event) => update("amountPaid", event.target.value)}
+              placeholder="0.00"
+            />
+          </label>
+
+          <label>
+            <span>Total invoice</span>
+            <input
+              value={totalDue}
+              onChange={(event) => update("total", event.target.value)}
+              placeholder="0.00"
+            />
+          </label>
+
+          <div className="om-real-invoice-totalbox">
+            <small>Amount owing</small>
+            <strong>{phase113Money(amountOwing)}</strong>
+          </div>
+        </article>
+      </section>
     </section>
   );
 }
+
 
 function phase111bJobBriefText(draft = {}, slip = {}) {
   const title = phase111bValue(draft.title, slip.title, "Job input");
