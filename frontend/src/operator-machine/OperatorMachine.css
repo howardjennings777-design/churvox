@@ -5459,3 +5459,267 @@ select {
     padding-right: 9px;
   }
 }
+
+
+/* PHASE_98_TIGHTEN_PUBLIC_LANDING_DISPLAY */
+.om-public-shell {
+  background:
+    radial-gradient(circle at 14% 0%, rgba(184, 227, 95, .15), transparent 28%),
+    linear-gradient(135deg, #f4efe6 0%, #ebe2d3 100%);
+}
+
+.om-public-nav {
+  max-width: 1180px;
+  margin: 0 auto;
+  min-height: 68px;
+  padding: 12px 18px;
+}
+
+.om-public-hero,
+.om-public-machine,
+.om-public-pricing,
+.om-public-access,
+.om-public-proof {
+  max-width: 1180px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.om-public-hero {
+  min-height: auto;
+  padding: 34px 22px 22px;
+  gap: 20px;
+}
+
+.om-public-hero h1 {
+  max-width: 680px;
+  font-size: clamp(3rem, 6.6vw, 5.8rem);
+  line-height: .88;
+  letter-spacing: -0.085em;
+}
+
+.om-public-hero p {
+  max-width: 660px;
+  font-size: 1rem;
+  line-height: 1.48;
+}
+
+.om-public-hero .om-public-actions {
+  margin-top: 18px;
+  gap: 10px;
+}
+
+.om-public-hero .om-public-actions a,
+.om-public-hero .om-public-actions button {
+  min-height: 46px;
+  padding: 0 18px;
+}
+
+.om-public-demo-card {
+  align-self: stretch;
+  min-height: 290px;
+  border-radius: 28px;
+}
+
+.om-public-machine,
+.om-public-pricing,
+.om-public-access,
+.om-public-proof {
+  padding: 18px 22px;
+}
+
+.om-public-machine > header,
+.om-public-pricing > header,
+.om-public-proof > header {
+  margin-bottom: 14px;
+}
+
+.om-public-machine h2,
+.om-public-pricing h2,
+.om-public-proof h2,
+.om-public-access h2 {
+  font-size: clamp(2rem, 4.6vw, 4rem);
+  line-height: .9;
+  letter-spacing: -0.075em;
+}
+
+.om-public-machine-grid,
+.om-public-pricing-grid,
+.om-public-proof-grid {
+  gap: 12px;
+}
+
+.om-public-machine-card,
+.om-public-price-card,
+.om-public-proof-card {
+  padding: 18px;
+  border-radius: 24px;
+  min-height: auto;
+}
+
+.om-public-price-card strong {
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  line-height: .9;
+}
+
+.om-public-access {
+  grid-template-columns: minmax(0, .9fr) minmax(320px, .46fr);
+  align-items: start;
+  gap: 18px;
+  padding-bottom: 34px;
+}
+
+.om-auth {
+  border-radius: 26px;
+  padding: 22px;
+}
+
+.om-auth h2 {
+  font-size: clamp(1.45rem, 3vw, 2.2rem);
+  line-height: .95;
+}
+
+.om-auth input {
+  min-height: 42px;
+}
+
+.om-auth button {
+  min-height: 44px;
+}
+
+@media (max-width: 900px) {
+  .om-public-nav {
+    margin: 0 10px;
+    min-height: 58px;
+    padding: 10px 12px;
+    border-radius: 0 0 22px 22px;
+  }
+
+  .om-public-nav nav {
+    gap: 10px;
+  }
+
+  .om-public-nav nav a,
+  .om-public-nav nav button {
+    font-size: .82rem;
+  }
+
+  .om-public-hero {
+    padding: 18px 12px 12px;
+    grid-template-columns: 1fr;
+  }
+
+  .om-public-hero h1 {
+    font-size: clamp(2.3rem, 12vw, 3.6rem);
+    line-height: .9;
+  }
+
+  .om-public-hero p {
+    font-size: .92rem;
+  }
+
+  .om-public-demo-card {
+    min-height: auto;
+    padding: 14px;
+  }
+
+  .om-public-machine,
+  .om-public-pricing,
+  .om-public-access,
+  .om-public-proof {
+    padding: 12px;
+  }
+
+  .om-public-machine h2,
+  .om-public-pricing h2,
+  .om-public-proof h2,
+  .om-public-access h2 {
+    font-size: clamp(1.8rem, 10vw, 2.8rem);
+  }
+
+  .om-public-machine-grid,
+  .om-public-pricing-grid,
+  .om-public-proof-grid,
+  .om-public-access {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+
+  .om-public-machine-card,
+  .om-public-price-card,
+  .om-public-proof-card {
+    padding: 14px;
+    border-radius: 20px;
+  }
+
+  .om-public-price-card strong {
+    font-size: 1.75rem;
+  }
+
+  .om-auth {
+    padding: 18px;
+    border-radius: 22px;
+  }
+}
+
+@media (max-width: 520px) {
+  .om-public-shell {
+    padding: 0;
+  }
+
+  .om-public-nav {
+    margin: 0;
+    border-radius: 0 0 18px 18px;
+  }
+
+  .om-public-nav .om-brand span small {
+    display: none;
+  }
+
+  .om-public-nav nav {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .om-public-nav nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .om-public-nav nav a,
+  .om-public-nav nav button {
+    white-space: nowrap;
+  }
+
+  .om-public-hero {
+    gap: 10px;
+  }
+
+  .om-public-hero h1 {
+    font-size: clamp(2rem, 13vw, 3rem);
+  }
+
+  .om-public-hero .om-public-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .om-public-hero .om-public-actions a,
+  .om-public-hero .om-public-actions button {
+    width: 100%;
+  }
+
+  .om-public-demo-card {
+    border-radius: 20px;
+  }
+
+  .om-public-machine-card,
+  .om-public-price-card,
+  .om-public-proof-card {
+    padding: 13px;
+  }
+
+  .om-public-access {
+    padding-bottom: 20px;
+  }
+}
