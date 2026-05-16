@@ -11980,6 +11980,11 @@ def _automation_clean_doc(doc):
 def _automation_clean_docs(docs):
     return [_automation_clean_doc(d) for d in docs or []]
 
+
+# PHASE_150_FIX_DUPLICATE_AUTOMATION_ROUTES
+# The full automation engine routes are registered earlier.
+# These later/simple duplicate handlers are preserved under /legacy/automation/...
+# so launch routes are no longer shadowed.
 _AUTOMATION_TEMPLATES = [
     {"id": "job_completed_notify", "name": "Job completed → notify owner/admin", "trigger": "job.completed", "action": "notification.create", "description": "Creates a notification when a worker completes a job."},
     {"id": "job_completed_draft_invoice", "name": "Job completed → create draft invoice", "trigger": "job.completed", "action": "invoice.create_draft", "description": "Creates a draft invoice when a completed job has pricing."},
@@ -11988,12 +11993,12 @@ _AUTOMATION_TEMPLATES = [
     {"id": "client_created_timeline", "name": "New client → timeline entry", "trigger": "client.created", "action": "timeline.create", "description": "Records new client activity in the business timeline."},
 ]
 
-@api_router.get("/automation/templates")
+@api_router.get("/legacy/automation/templates")
 async def automation_templates(current_user: dict = Depends(get_current_user)):
     _automation_require_manager(current_user)
     return {"success": True, "templates": _AUTOMATION_TEMPLATES}
 
-@api_router.get("/automation/rules")
+@api_router.get("/legacy/automation/rules")
 async def automation_list_rules(current_user: dict = Depends(get_current_user)):
     _automation_require_manager(current_user)
     business_id = _automation_business_id(current_user)
@@ -12001,7 +12006,7 @@ async def automation_list_rules(current_user: dict = Depends(get_current_user)):
     rules = await cursor.to_list(length=300)
     return {"success": True, "rules": _automation_clean_docs(rules)}
 
-@api_router.post("/automation/rules")
+@api_router.post("/legacy/automation/rules")
 async def automation_create_rule(payload: dict, current_user: dict = Depends(get_current_user)):
     _automation_require_manager(current_user)
     payload = payload or {}
@@ -12038,7 +12043,7 @@ async def automation_create_rule(payload: dict, current_user: dict = Depends(get
     await db.automation_rules.insert_one(rule)
     return {"success": True, "rule": _automation_clean_doc(rule)}
 
-@api_router.put("/automation/rules/{rule_id}")
+@api_router.put("/legacy/automation/rules/{rule_id}")
 async def automation_update_rule(rule_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
     _automation_require_manager(current_user)
     payload = payload or {}
@@ -12086,11 +12091,11 @@ async def automation_update_rule(rule_id: str, payload: dict, current_user: dict
     doc = await db.automation_rules.find_one({"id": rule_id, "business_id": business_id})
     return {"success": True, "rule": _automation_clean_doc(doc)}
 
-@api_router.patch("/automation/rules/{rule_id}")
+@api_router.patch("/legacy/automation/rules/{rule_id}")
 async def automation_patch_rule(rule_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
     return await automation_update_rule(rule_id, payload, current_user)
 
-@api_router.delete("/automation/rules/{rule_id}")
+@api_router.delete("/legacy/automation/rules/{rule_id}")
 async def automation_delete_rule(rule_id: str, current_user: dict = Depends(get_current_user)):
     _automation_require_manager(current_user)
     business_id = _automation_business_id(current_user)
@@ -12113,7 +12118,7 @@ async def automation_delete_rule(rule_id: str, current_user: dict = Depends(get_
 
     return {"success": True}
 
-@api_router.get("/automation/runs")
+@api_router.get("/legacy/automation/runs")
 async def automation_list_runs(current_user: dict = Depends(get_current_user)):
     _automation_require_manager(current_user)
     business_id = _automation_business_id(current_user)
