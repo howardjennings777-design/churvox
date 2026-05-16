@@ -1,3 +1,4 @@
+// PHASE_144_FORCE_CSS_MIME_AND_CACHE_CLEAR
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
@@ -60,20 +61,39 @@ function sendFile(res, filePath) {
 
 function sendMissingAsset(res, requestedPath) {
   const ext = path.extname(requestedPath).toLowerCase();
-  const contentType = mimeTypes[ext] || "text/plain; charset=utf-8";
-  const body =
-    ext === ".css"
-      ? "/* Churvox asset expired. Refresh the page. */"
-      : ext === ".js" || ext === ".mjs"
-        ? "console.warn('Churvox asset expired. Refresh the page.');"
-        : "Asset not found";
 
+  // PHASE_144_FORCE_CSS_MIME_AND_CACHE_CLEAR
+  // If a stale service worker / cached HTML asks for an old hashed CSS file,
+  // never return text/plain. Browser strict MIME checking blocks the app if CSS
+  // comes back as text/plain. Return safe CSS with text/css so the page can keep
+  // running until the fresh HTML bundle is loaded.
+  if (ext === ".css") {
+    res.writeHead(200, {
+      "Content-Type": "text/css; charset=utf-8",
+      "X-Content-Type-Options": "nosniff",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+    });
+    res.end("/* stale Churvox CSS asset replaced safely; refresh loads latest bundle */");
+    return;
+  }
+
+  if (ext === ".js" || ext === ".mjs") {
+    res.writeHead(404, {
+      "Content-Type": "application/javascript; charset=utf-8",
+      "X-Content-Type-Options": "nosniff",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+    });
+    res.end("console.warn('Churvox asset expired. Refresh the page.');");
+    return;
+  }
+
+  const contentType = mimeTypes[ext] || "text/plain; charset=utf-8";
   res.writeHead(404, {
     "Content-Type": contentType,
     "X-Content-Type-Options": "nosniff",
     "Cache-Control": "no-cache, no-store, must-revalidate",
   });
-  res.end(body);
+  res.end("Asset not found");
 }
 
 const server = http.createServer((req, res) => {
