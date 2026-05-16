@@ -1498,3 +1498,272 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* PHASE_73_PLANS_PRICING_BOARD */
+.om-plans-board {
+  display: grid;
+  gap: 18px;
+}
+
+.om-plans-board-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, .42fr);
+  gap: 18px;
+  align-items: stretch;
+  padding: 28px;
+  border-radius: 34px;
+  border: 1px solid var(--om-border);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.82), rgba(255,253,247,.95)),
+    var(--om-paper);
+  box-shadow: var(--om-shadow);
+}
+
+.om-plans-board-hero span,
+.om-plan-board-section header span,
+.om-plan-board-card span,
+.om-addon-card span,
+.om-sms-pack-card span {
+  color: var(--om-copper);
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  font-size: .72rem;
+}
+
+.om-plans-board-hero h1 {
+  margin: 8px 0 10px;
+  color: var(--om-charcoal);
+  font-size: clamp(2.2rem, 4vw, 4.6rem);
+  line-height: .9;
+  letter-spacing: -0.078em;
+}
+
+.om-plans-board-hero p {
+  margin: 0;
+  max-width: 760px;
+  color: var(--om-muted);
+  line-height: 1.55;
+  font-size: 1.02rem;
+}
+
+.om-plans-board-hero aside {
+  display: grid;
+  gap: 10px;
+}
+
+.om-plans-board-hero aside b {
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  border-radius: 18px;
+  padding: 12px 14px;
+  background: var(--om-charcoal);
+  color: var(--om-lime);
+}
+
+.om-plan-board-section {
+  border: 1px solid var(--om-border);
+  border-radius: 30px;
+  background: rgba(255, 253, 247, .78);
+  box-shadow: 0 20px 55px rgba(70, 54, 35, .08);
+  padding: 18px;
+}
+
+.om-plan-board-section > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+
+.om-plan-board-section h2 {
+  margin: 6px 0 0;
+  color: var(--om-charcoal);
+  font-size: clamp(1.5rem, 2.5vw, 2.5rem);
+  line-height: .95;
+  letter-spacing: -0.065em;
+}
+
+.om-plan-board-section header small {
+  color: var(--om-muted);
+  font-weight: 900;
+}
+
+.om-plan-card-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.om-plan-board-card,
+.om-addon-card,
+.om-sms-pack-card {
+  border: 1px solid var(--om-border);
+  border-radius: 24px;
+  background: var(--om-paper);
+  color: var(--om-charcoal);
+  padding: 18px;
+  text-align: left;
+}
+
+.om-plan-board-card,
+.om-addon-card,
+.om-sms-pack-card button {
+  cursor: pointer;
+}
+
+.om-plan-board-card {
+  min-height: 260px;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.om-plan-board-card.featured {
+  background: var(--om-charcoal);
+  color: #fff8e9;
+  border-color: var(--om-charcoal);
+  box-shadow: 0 24px 70px rgba(36, 34, 29, .24);
+}
+
+.om-plan-board-card.featured span,
+.om-plan-board-card.featured b,
+.om-plan-board-card.featured em {
+  color: var(--om-lime);
+}
+
+.om-plan-board-card strong,
+.om-addon-card strong,
+.om-sms-pack-card strong {
+  font-size: 1.35rem;
+  letter-spacing: -0.045em;
+}
+
+.om-plan-board-card b,
+.om-addon-card b {
+  display: block;
+  font-size: clamp(2rem, 3vw, 3.1rem);
+  line-height: .9;
+  letter-spacing: -0.075em;
+}
+
+.om-plan-board-card b small,
+.om-addon-card b small {
+  display: block;
+  margin-top: 7px;
+  font-size: .82rem;
+  letter-spacing: 0;
+  color: inherit;
+  opacity: .68;
+}
+
+.om-plan-board-card p,
+.om-addon-card p,
+.om-sms-pack-card p {
+  margin: 0;
+  color: var(--om-muted);
+  line-height: 1.45;
+}
+
+.om-plan-board-card.featured p {
+  color: rgba(255, 248, 233, .72);
+}
+
+.om-plan-board-card em,
+.om-addon-card em {
+  width: fit-content;
+  margin-top: auto;
+  border-radius: 999px;
+  padding: 8px 11px;
+  background: var(--om-lime);
+  color: var(--om-charcoal);
+  font-style: normal;
+  font-size: .74rem;
+  font-weight: 950;
+}
+
+.om-addon-board {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(230px, .8fr)) minmax(300px, 1.1fr);
+  gap: 14px;
+}
+
+.om-addon-card {
+  display: grid;
+  gap: 10px;
+  min-height: 220px;
+}
+
+.om-addon-card b {
+  color: var(--om-lime-deep);
+}
+
+.om-sms-pack-card {
+  display: grid;
+  gap: 12px;
+  background:
+    linear-gradient(135deg, rgba(184, 227, 95, .16), rgba(255, 250, 240, 1)),
+    var(--om-paper);
+}
+
+.om-sms-pack-card > div {
+  display: grid;
+  gap: 8px;
+}
+
+.om-sms-pack-card button {
+  border: 1px solid var(--om-border);
+  border-radius: 18px;
+  background: #fffaf0;
+  padding: 12px 14px;
+  color: var(--om-charcoal);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+}
+
+.om-sms-pack-card button b {
+  font-size: .95rem;
+  letter-spacing: -0.02em;
+}
+
+.om-sms-pack-card button small {
+  border-radius: 999px;
+  padding: 6px 9px;
+  background: var(--om-charcoal);
+  color: var(--om-lime);
+  font-weight: 950;
+}
+
+@media (max-width: 1180px) {
+  .om-plan-card-grid,
+  .om-addon-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .om-sms-pack-card {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .om-plans-board-hero,
+  .om-plan-card-grid,
+  .om-addon-board {
+    grid-template-columns: 1fr;
+  }
+
+  .om-plan-board-section > header {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .om-plan-board-card {
+    min-height: auto;
+  }
+}

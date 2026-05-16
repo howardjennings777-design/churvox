@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_73_PLANS_PRICING_BOARD
 // PHASE_72_ACTIVE_PLAN_ADDONS_SMS
 // PHASE_71_PLAN_FEATURE_LOCKS
 // PHASE_70_PROPER_PLAN_SLIP
@@ -1044,7 +1045,107 @@ function featureConfig(page) {
   return configs[page] || configs.jobs;
 }
 
+
+function PlanPricingBoard({ data, currentPlan, onOpen }) {
+  const rows = rowsForPage("plans", buildMachine(data || {}), data || {});
+  const mainPlans = rows.filter((row) => row.kind === "plan");
+  const addOns = rows.filter((row) => row.kind === "addon");
+  const current = planLabel(currentPlan);
+
+  const smsAddons = addOns.filter((row) => String(row.id || "").includes("sms"));
+  const otherAddons = addOns.filter((row) => !String(row.id || "").includes("sms"));
+
+  return (
+    <section className="om-plans-board" data-phase="PHASE_73_PLANS_PRICING_BOARD">
+      <header className="om-plans-board-hero">
+        <div>
+          <span>Plans</span>
+          <h1>Pricing stays easy to understand.</h1>
+          <p>
+            Choose the machine level. Add Growth Pack, MYOB or SMS credits when the business needs more power.
+          </p>
+        </div>
+
+        <aside>
+          <b>Current plan: {current}</b>
+          <b>Operator is the main AI admin plan</b>
+          <b>Command includes MYOB + payroll</b>
+        </aside>
+      </header>
+
+      <section className="om-plan-board-section">
+        <header>
+          <div>
+            <span>Main plans</span>
+            <h2>Pick the Churvox level.</h2>
+          </div>
+          <small>Monthly + GST</small>
+        </header>
+
+        <div className="om-plan-card-grid">
+          {mainPlans.map((plan) => (
+            <button
+              type="button"
+              key={plan.id}
+              className={`om-plan-board-card ${plan.planName === "Operator" ? "featured" : ""}`}
+              onClick={() => onOpen(plan)}
+            >
+              <span>{plan.badge || plan.eyebrow}</span>
+              <strong>{plan.planName || plan.eyebrow}</strong>
+              <b>{plan.price}<small>/month + GST</small></b>
+              <p>{plan.need}</p>
+              <em>{plan.cta || "Review plan"}</em>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="om-plan-board-section addons">
+        <header>
+          <div>
+            <span>Growth + Add-ons</span>
+            <h2>Add power without confusing the plans.</h2>
+          </div>
+          <small>Active add-ons</small>
+        </header>
+
+        <div className="om-addon-board">
+          {otherAddons.map((addon) => (
+            <button type="button" key={addon.id} className="om-addon-card" onClick={() => onOpen(addon)}>
+              <span>{addon.badge || addon.eyebrow}</span>
+              <strong>{addon.planName || addon.eyebrow}</strong>
+              <b>{addon.price}<small>{addon.id === "addon-growth-pack" || addon.id === "addon-myob-operator" ? "/month + GST" : ""}</small></b>
+              <p>{addon.need}</p>
+              <em>{addon.cta || "Review add-on"}</em>
+            </button>
+          ))}
+
+          <article className="om-sms-pack-card">
+            <span>SMS credits</span>
+            <strong>Prepaid SMS credit packs</strong>
+            <p>SMS credits are separate from the monthly plan and used for reminders, job updates and payment follow-ups.</p>
+
+            <div>
+              {smsAddons.map((addon) => (
+                <button type="button" key={addon.id} onClick={() => onOpen(addon)}>
+                  <b>{addon.planName}</b>
+                  <small>{addon.price}</small>
+                </button>
+              ))}
+            </div>
+          </article>
+        </div>
+      </section>
+    </section>
+  );
+}
+
+
 function FeatureWorkspace({ page, machine, data, currentPlan, onOpen, onPlans }) {
+  if (page === "plans") {
+    return <PlanPricingBoard data={data} currentPlan={currentPlan} onOpen={onOpen} />;
+  }
+
   const config = featureConfig(page);
   const rows = rowsForPage(page, machine, data);
   const topRows = rows.slice(0, 12);
