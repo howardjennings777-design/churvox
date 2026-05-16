@@ -1,3 +1,4 @@
+// PHASE_138_FIX_EXACT_BAD_INVOICE_JSX_LINE
 // PHASE_136_REAL_EDITABLE_INVOICE_TEMPLATE
 // PHASE_135_CLASSIC_INVOICE_SHEET_POLISH
 import React, { useEffect, useMemo, useState } from "react";
@@ -5051,7 +5052,7 @@ function SmartHubBoxModal({
                     </>
                   );
                 })()}
-              </div>              </div>
+              </div>
             ) : (
               <div className={`cx-action-review cx-action-review-${editingApprovalMode()}`}>
                 <section className="cx-action-review-prepared">
