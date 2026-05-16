@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_91_WIRE_PLANS_TO_CHECKOUT
 // PHASE_90_FINISH_INVOICES_OPERATOR_MACHINE_ALL_IN_ONE
 // PHASE_89_FINISH_LAST_OPERATOR_MACHINE_PAGES
 // PHASE_88_FINISH_QUOTES_OPERATOR_MACHINE_ALL_IN_ONE
@@ -958,6 +959,102 @@ function planPrice(plan) {
   return OM_PLAN_DEFS[normalisePlanName(plan)]?.price || "$39";
 }
 
+
+function checkoutUrlFrom(payload = {}) {
+  const candidates = [
+    payload.url,
+    payload.checkout_url,
+    payload.checkoutUrl,
+    payload.redirect_url,
+    payload.redirectUrl,
+    payload.session_url,
+    payload?.session?.url,
+    payload?.data?.url,
+    payload?.data?.checkout_url,
+    payload?.data?.checkoutUrl,
+    payload?.data?.session?.url,
+  ];
+
+  return candidates.find((value) => typeof value === "string" && value.startsWith("http")) || "";
+}
+
+function checkoutMetaForSlip(slip = {}) {
+  const id = clean(slip.id || "").toLowerCase();
+  const rawName = clean(slip.planName || slip.eyebrow || slip.title || "").toLowerCase();
+
+  const planMap = {
+    "plan-start": { plan: "start", legacy_plan: "solo", plan_name: "Start", price: 39 },
+    "plan-crew": { plan: "crew", legacy_plan: "team", plan_name: "Crew", price: 89 },
+    "plan-operator": { plan: "operator", legacy_plan: "pro", plan_name: "Operator", price: 149 },
+    "plan-command": { plan: "command", legacy_plan: "enterprise", plan_name: "Command", price: 299 },
+  };
+
+  if (planMap[id]) {
+    return {
+      kind: "plan",
+      ...planMap[id],
+      billing_interval: "month",
+      success_url: `${window.location.origin}/dashboard?checkout=success&plan=${planMap[id].plan}`,
+      cancel_url: `${window.location.origin}/plans?checkout=cancelled&plan=${planMap[id].plan}`,
+    };
+  }
+
+  if (id === "addon-growth-pack" || rawName.includes("growth")) {
+    return {
+      kind: "addon",
+      addon: "command_growth_pack",
+      addon_name: "Command Growth Pack",
+      plan: "command",
+      legacy_plan: "enterprise",
+      price: 99,
+      billing_interval: "month",
+      success_url: `${window.location.origin}/plans?checkout=success&addon=command_growth_pack`,
+      cancel_url: `${window.location.origin}/plans?checkout=cancelled&addon=command_growth_pack`,
+    };
+  }
+
+  if (id === "addon-myob-operator" || rawName.includes("myob")) {
+    return {
+      kind: "addon",
+      addon: "myob_operator",
+      addon_name: "MYOB add-on",
+      plan: "operator",
+      legacy_plan: "pro",
+      price: 39,
+      billing_interval: "month",
+      success_url: `${window.location.origin}/plans?checkout=success&addon=myob_operator`,
+      cancel_url: `${window.location.origin}/plans?checkout=cancelled&addon=myob_operator`,
+    };
+  }
+
+  const smsMatch = id.match(/addon-sms-(100|500|1000)/);
+  if (smsMatch) {
+    const credits = smsMatch[1];
+    const price = credits === "100" ? 10 : credits === "500" ? 45 : 80;
+
+    return {
+      kind: "sms",
+      addon: "sms_credits",
+      pack_id: credits,
+      pack: credits,
+      credits: Number(credits),
+      sms_credits: Number(credits),
+      price,
+      success_url: `${window.location.origin}/plans?checkout=success&sms=${credits}`,
+      cancel_url: `${window.location.origin}/plans?checkout=cancelled&sms=${credits}`,
+    };
+  }
+
+  return {
+    kind: slip.kind || "plan",
+    plan: normalisePlanName(slip.planName || slip.eyebrow || "start"),
+    legacy_plan: normalisePlanName(slip.planName || slip.eyebrow || "start"),
+    plan_name: slip.planName || slip.eyebrow || "Start",
+    success_url: `${window.location.origin}/dashboard?checkout=success`,
+    cancel_url: `${window.location.origin}/plans?checkout=cancelled`,
+  };
+}
+
 function featureLockedMessage(page) {
   const required = requiredPlanForPage(page);
   const labels = {
@@ -999,7 +1096,7 @@ function rowsForPage(page, machine, data = {}) {
         badge: "Solo operators",
         prepared: "Jobs, clients, quotes, invoices and basic Operator Machine. Best for one-person businesses that want the work organised without advanced AI Operator capacity.",
         features: ["Jobs", "Clients", "Quotes", "Invoices", "Basic Operator Machine"],
-        cta: "Choose Start",
+        cta: "Start checkout",
       },
       {
         id: "plan-crew",
@@ -1012,7 +1109,7 @@ function rowsForPage(page, machine, data = {}) {
         badge: "Small teams",
         prepared: "Worker app, job assignment, notes, proof photos and time tracking. Best when the business has crew in the field and the owner needs cleaner updates.",
         features: ["Worker app", "Job assignment", "Notes", "Photos", "Time tracking"],
-        cta: "Choose Crew",
+        cta: "Start checkout",
       },
       {
         id: "plan-operator",
@@ -1025,7 +1122,7 @@ function rowsForPage(page, machine, data = {}) {
         badge: "Most Popular",
         prepared: "AI Operator Actions, draft invoices, quote follow-ups, payment reminders and approval-first admin. Best for owners who want Churvox doing the admin prep.",
         features: ["AI Operator Actions", "Draft invoices", "Quote follow-ups", "Payment reminders", "Approval Desk"],
-        cta: "Choose Operator",
+        cta: "Start checkout",
       },
       {
         id: "plan-command",
@@ -1038,7 +1135,7 @@ function rowsForPage(page, machine, data = {}) {
         badge: "Growing teams",
         prepared: "MYOB included, payroll workspace, advanced roles, higher limits, stronger automation and Command Growth Packs for extra active team members.",
         features: ["MYOB included", "Payroll workspace", "Advanced roles", "Higher limits", "Automation"],
-        cta: "Choose Command",
+        cta: "Start checkout",
       },
       {
         id: "addon-growth-pack",
@@ -1051,7 +1148,7 @@ function rowsForPage(page, machine, data = {}) {
         badge: "Active add-on",
         prepared: "Adds 50 extra active team members, extra job capacity, extra AI Operator Actions, extra automation runs, and extra admin/payroll capacity. Only active team members count, so old or inactive staff records do not increase the bill.",
         features: ["+50 active team members", "Extra job capacity", "Extra AI Operator Actions", "Extra automation runs", "Extra admin/payroll capacity"],
-        cta: "Add Growth Pack",
+        cta: "Add to checkout",
       },
       {
         id: "addon-myob-operator",
@@ -1064,7 +1161,7 @@ function rowsForPage(page, machine, data = {}) {
         badge: "Operator add-on",
         prepared: "Adds MYOB sync capacity to Operator. Command includes MYOB by default. Churvox keeps accounting actions approval-first so invoice/payment sync does not happen blindly.",
         features: ["Operator add-on", "Included on Command", "Invoice sync", "Payment status sync", "Approval-first"],
-        cta: "Add MYOB",
+        cta: "Add to checkout",
       },
       {
         id: "addon-sms-100",
@@ -1077,7 +1174,7 @@ function rowsForPage(page, machine, data = {}) {
         badge: "Active add-on",
         prepared: "Buy 100 prepaid SMS credits. SMS credits are separate from the monthly plan and are used for reminders, customer updates and message actions inside Churvox.",
         features: ["100 SMS credits", "Prepaid pack", "Separate from plan", "Use for reminders", "Use for customer updates"],
-        cta: "Buy 100 credits",
+        cta: "Buy credits",
       },
       {
         id: "addon-sms-500",
@@ -1090,7 +1187,7 @@ function rowsForPage(page, machine, data = {}) {
         badge: "Best value",
         prepared: "Buy 500 prepaid SMS credits. Good for businesses sending regular job reminders, quote nudges, payment reminders and customer updates.",
         features: ["500 SMS credits", "Better value", "Prepaid pack", "Separate from plan", "Regular reminders"],
-        cta: "Buy 500 credits",
+        cta: "Buy credits",
       },
       {
         id: "addon-sms-1000",
@@ -1103,7 +1200,7 @@ function rowsForPage(page, machine, data = {}) {
         badge: "Busy teams",
         prepared: "Buy 1000 prepaid SMS credits. Best for larger teams using SMS heavily for reminders, job updates and payment follow-ups.",
         features: ["1000 SMS credits", "Largest pack", "Prepaid pack", "Separate from plan", "High message volume"],
-        cta: "Buy 1000 credits",
+        cta: "Buy credits",
       },
     ];
   }
@@ -3667,29 +3764,118 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
     setActiveSlip(slip);
   }
 
-  function choosePlan(slip) {
+  async function choosePlan(slip) {
+    const meta = checkoutMetaForSlip(slip);
+    const label = meta.addon_name || meta.plan_name || slip.planName || slip.eyebrow || "Plan";
+
     try {
       if (slip.kind === "addon") {
         localStorage.setItem("churvox_selected_addon", slip.id || slip.planName || slip.eyebrow);
+      } else if (meta.kind === "sms") {
+        localStorage.setItem("churvox_selected_sms_pack", String(meta.pack_id || meta.credits || ""));
       } else {
-        localStorage.setItem("churvox_plan", normalisePlanName(slip.planName || slip.eyebrow));
+        localStorage.setItem("churvox_plan", meta.plan || normalisePlanName(slip.planName || slip.eyebrow));
+        localStorage.setItem("churvox_legacy_plan", meta.legacy_plan || "");
       }
     } catch {
       // ignore local preview storage
     }
 
-    setOutputStatus(`${slip.planName || "Plan"} selected. Checkout wiring can be connected next.`);
+    setOutputStatus(`Opening checkout for ${label}...`);
+
+    const basePayload = {
+      ...meta,
+      id: slip.id,
+      item_id: slip.id,
+      plan_id: meta.plan,
+      selected_plan: meta.plan,
+      selectedPlan: meta.plan,
+      tier: meta.plan,
+      legacyPlan: meta.legacy_plan,
+      planName: meta.plan_name,
+      addon_id: meta.addon,
+      addonName: meta.addon_name,
+      amount: meta.price,
+      price: meta.price,
+      return_url: meta.success_url,
+      successUrl: meta.success_url,
+      cancelUrl: meta.cancel_url,
+    };
+
+    const checkoutPaths =
+      meta.kind === "sms"
+        ? [
+            ["/sms/buy-credits", { pack_id: meta.pack_id, pack: meta.pack_id, credits: meta.credits, return_url: meta.success_url }],
+            ["/billing/sms/buy-credits", basePayload],
+            ["/billing/create-checkout-session", basePayload],
+            ["/stripe/create-checkout-session", basePayload],
+            ["/billing/stripe/create-checkout-session", basePayload],
+          ]
+        : meta.kind === "addon"
+          ? [
+              ["/billing/create-addon-checkout-session", basePayload],
+              ["/billing/create-checkout-session", basePayload],
+              ["/stripe/create-checkout-session", basePayload],
+              ["/billing/stripe/create-checkout-session", basePayload],
+            ]
+          : [
+              ["/billing/create-checkout-session", basePayload],
+              ["/stripe/create-checkout-session", basePayload],
+              ["/billing/stripe/create-checkout-session", basePayload],
+              ["/billing/start-checkout", basePayload],
+            ];
+
+    let lastError = null;
+
+    for (const [path, payload] of checkoutPaths) {
+      try {
+        const result = await apiPost(path, payload);
+        const url = checkoutUrlFrom(result);
+
+        if (url) {
+          setOutputStatus(`Redirecting to checkout for ${label}...`);
+          window.location.href = url;
+          return;
+        }
+
+        if (meta.kind === "sms" && (result?.new_balance !== undefined || result?.balance !== undefined || result?.message)) {
+          const message = result?.message || "SMS credits purchased.";
+          setOutputStatus(message);
+          setOutputLog((current) => [
+            {
+              id: `${Date.now()}-${slip.id}`,
+              type: "SMS credits",
+              title: label,
+              detail: message,
+            },
+            ...current,
+          ].slice(0, 8));
+          setActiveSlip(null);
+          return;
+        }
+
+        lastError = new Error(result?.message || `${path} did not return a checkout URL.`);
+      } catch (err) {
+        lastError = err;
+      }
+    }
+
+    const message =
+      lastError?.message ||
+      "Checkout is not ready yet. Check the backend billing route and Stripe price IDs.";
+
+    setOutputStatus(message);
     setOutputLog((current) => [
       {
         id: `${Date.now()}-${slip.id}`,
-        type: slip.kind === "addon" ? "Add-on reviewed" : "Plan reviewed",
-        title: slip.title,
-        detail: `${slip.planName || slip.eyebrow} selected for owner review.`,
+        type: meta.kind === "sms" ? "SMS checkout blocked" : meta.kind === "addon" ? "Add-on checkout blocked" : "Plan checkout blocked",
+        title: label,
+        detail: message,
       },
       ...current,
     ].slice(0, 8));
-    setActiveSlip(null);
   }
+
 
   function saveEdit(slip, draft) {
     setOutputStatus("Edit saved in this Operator Machine session.");
