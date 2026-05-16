@@ -9982,3 +9982,40 @@ button.primary,
 .cx-command-modal {
   padding-top: 22px !important;
 }
+
+
+/* PHASE_63_REMOVE_GLOBAL_SMART_HUB_CONTEXT_CARDS */
+/* These cards were too noisy as a global default. Keep Smart Hub popups focused on the actual record/form. */
+.cx-smart-hub-modal-context,
+.cx-smart-hub-context-grid,
+.cx-hub-modal-context,
+.cx-hub-modal-context-grid,
+.cx-hub-approval-context,
+.cx-hub-approval-grid,
+.cx-approval-context-grid,
+.cx-approval-readiness-grid,
+.cx-approval-summary-grid,
+.cx-record-machine-panel,
+.cx-record-facts-panel,
+.cx-record-next-panel {
+  display: none !important;
+}
+
+/* Text-label fallback in case a card strip class changes later */
+.cx-command-modal [class*="context-grid"],
+.cx-command-modal [class*="readiness-grid"],
+.cx-command-modal [class*="summary-grid"],
+.cx-smart-hub-modal [class*="context-grid"],
+.cx-smart-hub-modal [class*="readiness-grid"],
+.cx-smart-hub-modal [class*="summary-grid"],
+.cx-hub-box-modal [class*="context-grid"],
+.cx-hub-box-modal [class*="readiness-grid"],
+.cx-hub-box-modal [class*="summary-grid"] {
+  display: none !important;
+}
+
+.cx-command-modal-grid,
+.cx-smart-hub-modal .cx-command-modal-grid,
+.cx-hub-box-modal .cx-command-modal-grid {
+  margin-top: 14px !important;
+}

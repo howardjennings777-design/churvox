@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./ChurvoxAIShell.css";
 import "./ChurvoxOperatorOS.css";
+// PHASE_63_REMOVE_GLOBAL_SMART_HUB_CONTEXT_CARDS
 // PHASE_61_RESTORE_READY_INVOICE_DRAFTS
 // PHASE_59_REMOVE_APPROVAL_CONTEXT_ROW
 // PHASE_58_REMOVE_MODAL_META_BOXES
@@ -3160,15 +3161,7 @@ function OwnerCommandModal({ selection, onClose, onSaveDraft, onApprove, setPage
         </header>
 
         {/* Phase 59: removed noisy readiness/found/checked/prepared row */}
-
-        <section className="cx-record-facts-panel">
-          {recordFacts.map((fact) => (
-            <article key={`${fact.label}-${fact.value}`}>
-              <span>{fact.label}</span>
-              <strong>{fact.value}</strong>
-            </article>
-          ))}
-        </section>
+        {/* Phase 63: removed global Smart Hub context cards */}
 
         {/* Phase 59: removed noisy next-action strip */}
 
@@ -4624,32 +4617,9 @@ function SmartHubBoxModal({
             </header>
 
             {editingContext ? (
-              <section className="cx-ai-approval-preview-machine">
-                <article className="cx-ai-approval-readiness-cell">
-                  <span>Readiness</span>
-                  <AiReadinessBadge context={editingContext} />
-                </article>
-                <article>
-                  <span>What Churvox found</span>
-                  <p>{editingContext.found}</p>
-                </article>
-                <article>
-                  <span>What Churvox checked</span>
-                  <ul>
-                    {editingContext.checked.map((point) => (
-                      <li key={point}>{point}</li>
-                    ))}
-                  </ul>
-                </article>
-                <article>
-                  <span>What Churvox prepared</span>
-                  <p>{editingContext.prepared}</p>
-                </article>
-                <article>
-                  <span>When approved</span>
-                  <p>{editingContext.approvalPreview}</p>
-                </article>
-              </section>
+              
+        {/* Phase 63: removed global readiness/found/checked/prepared cards */}
+
             ) : null}
 
             {editingNeedsInvoiceDraft() ? (
