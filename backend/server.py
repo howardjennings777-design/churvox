@@ -959,6 +959,7 @@ async def dismiss_ai_action(action_id: str, request: Request):
 # ===================== PHASE_105_OWNER_APPROVAL_PERFORMS_REAL_ACTIONS =====================
 # PHASE_120_SEND_INVOICE_AS_PDF_ATTACHMENT
 # PHASE_122_COMPLETE_REAL_INVOICE_TEMPLATE
+# PHASE_128_INVOICE_OWING_SUMMARY
 def _phase105_clean(value, fallback=""):
     value = str(value or "").strip()
     return value if value else fallback
@@ -1371,6 +1372,10 @@ async def _phase105_find_or_create_invoice(payload: dict, business_id: str):
         "gst_rate": _phase105_clean(draft.get("gstRate") or payload.get("gst_rate")),
         "gst_amount": _phase105_clean(draft.get("gstAmount") or payload.get("gst_amount")),
         "total_due": _phase105_clean(draft.get("total") or draft.get("amount") or payload.get("total_due")),
+        "amount_paid": _phase105_clean(draft.get("amountPaid") or draft.get("paidAmount") or payload.get("amount_paid")),
+        "amount_owing": _phase105_clean(draft.get("amountOwing") or payload.get("amount_owing")),
+        "payment_terms": _phase105_clean(draft.get("paymentTerms") or payload.get("payment_terms")),
+        "invoice_status": _phase105_clean(draft.get("invoiceStatus") or payload.get("invoice_status")),
         "status": "draft",
         "created_at": now,
         "updated_at": now,
@@ -1454,6 +1459,10 @@ def _phase120_build_invoice_pdf(invoice: dict, client_doc: dict | None = None):
     gst_rate = _phase105_clean(invoice.get("gst_rate") or invoice.get("tax_rate") or "15")
     gst_amount = _phase105_money(invoice.get("gst_amount") or invoice.get("tax_amount") or "0")
     total_due = _phase105_money(invoice.get("total_due") or amount_raw)
+    amount_paid = _phase105_money(invoice.get("amount_paid") or "0")
+    amount_owing = _phase105_money(invoice.get("amount_owing") or invoice.get("total_due") or amount_raw)
+    payment_terms = _phase105_clean(invoice.get("payment_terms"), "Due on receipt unless agreed otherwise.")
+    invoice_status = _phase105_clean(invoice.get("invoice_status"), "Amount owing")
     due_date = _phase105_clean(invoice.get("due_date") or invoice.get("payment_due_date"), "Shown on invoice")
     issue_date = _phase105_clean(invoice.get("issue_date") or invoice.get("created_at"), datetime.now(timezone.utc).date().isoformat())
     reference = _phase105_clean(invoice.get("reference"))
@@ -1511,10 +1520,16 @@ def _phase120_build_invoice_pdf(invoice: dict, client_doc: dict | None = None):
     content += _phase120_pdf_line(360, 355, 11, f"GST {gst_rate}%")
     content += _phase120_pdf_line(465, 355, 11, gst_amount)
     content += "0.8 w 350 335 m 545 335 l S\n"
-    content += _phase120_pdf_line(360, 310, 14, "Total due")
-    content += _phase120_pdf_line(465, 310, 16, total_due)
+    content += _phase120_pdf_line(360, 310, 11, "Total invoice")
+    content += _phase120_pdf_line(465, 310, 12, total_due)
+    content += _phase120_pdf_line(360, 290, 11, "Paid")
+    content += _phase120_pdf_line(465, 290, 12, amount_paid)
+    content += _phase120_pdf_line(360, 265, 14, "Amount owing")
+    content += _phase120_pdf_line(465, 265, 16, amount_owing)
+    content += _phase120_pdf_line(50, 285, 10, f"Status: {invoice_status}")
+    content += _phase120_pdf_line(50, 268, 10, f"Terms: {payment_terms}")
 
-    y = 245
+    y = 225
     content += _phase120_pdf_line(50, y, 12, "PAYMENT DETAILS / NOTES")
     y -= 20
     for line in _phase120_wrap_text(payment_note, 86)[:6]:
@@ -1652,6 +1667,11 @@ async def _phase105_perform_invoice_approval(payload: dict, business_id: str, cu
         ("paymentNote", "payment_note"),
         ("businessName", "business_name"),
         ("total", "total_due"),
+        ("invoiceStatus", "invoice_status"),
+        ("paymentTerms", "payment_terms"),
+        ("amountOwing", "amount_owing"),
+        ("paidAmount", "amount_paid"),
+        ("amountPaid", "amount_paid"),
         ("taxAmount", "tax_amount"),
         ("taxRate", "tax_rate"),
         ("gstAmount", "gst_amount"),

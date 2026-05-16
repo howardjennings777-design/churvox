@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_128_INVOICE_OWING_SUMMARY
 // PHASE_127_REDO_INVOICE_EMAIL_CONTACT_TEMPLATE
 // PHASE_125_FORCE_RENDER_VISIBLE_DEPLOY_20260516112111
 // PHASE_122_COMPLETE_REAL_INVOICE_TEMPLATE
@@ -4897,6 +4898,13 @@ function phase122SubtotalFromTotal(total, gstAmount) {
 }
 
 
+
+function phase128AmountOwing(total, paid) {
+  const owing = Math.max(0, phase122Number(total) - phase122Number(paid));
+  return owing.toFixed(2).replace(/\.00$/, "");
+}
+
+
 function InvoiceTemplateCard({ slip, draft, update, businessLogoUrl = "", businessName = "" }) {
   if (!phase113ShouldShowInvoiceTemplate(slip)) return null;
 
@@ -4922,6 +4930,10 @@ function InvoiceTemplateCard({ slip, draft, update, businessLogoUrl = "", busine
   const gstAmount = phase121AmountRaw(draft.gstAmount || draft.taxAmount || phase122GstFromTotal(lineAmount || amount, gstRate));
   const subtotal = phase121AmountRaw(draft.subtotal || phase122SubtotalFromTotal(lineAmount || amount, gstAmount));
   const totalDue = phase121AmountRaw(draft.total || lineAmount || amount);
+  const amountPaid = phase121AmountRaw(draft.amountPaid || draft.paidAmount || "0");
+  const amountOwing = phase121AmountRaw(draft.amountOwing || phase128AmountOwing(totalDue, amountPaid));
+  const paymentTerms = draft.paymentTerms || "Due on receipt unless agreed otherwise.";
+  const invoiceStatus = draft.invoiceStatus || (phase122Number(amountOwing) <= 0 ? "Paid" : "Amount owing");
   const dueDate = draft.dueDate || invoice.dueDate || "";
   const paymentNote = draft.paymentNote || "Bank account / payment link goes here. Please pay by the due date.";
 
@@ -5019,6 +5031,25 @@ function InvoiceTemplateCard({ slip, draft, update, businessLogoUrl = "", busine
         </label>
       </section>
 
+      <section className="om-invoice-owing-strip" data-phase="PHASE_128_INVOICE_OWING_SUMMARY">
+        <article>
+          <span>Status</span>
+          <strong>{invoiceStatus}</strong>
+        </article>
+        <article>
+          <span>Total invoice</span>
+          <strong>{phase113Money(totalDue)}</strong>
+        </article>
+        <article>
+          <span>Paid</span>
+          <strong>{phase113Money(amountPaid)}</strong>
+        </article>
+        <article className="owing">
+          <span>Amount owing</span>
+          <strong>{phase113Money(amountOwing)}</strong>
+        </article>
+      </section>
+
       <section className="om-single-invoice-table om-complete-invoice-table">
         <div className="om-complete-invoice-table-head">
           <b>Description</b>
@@ -5046,7 +5077,7 @@ function InvoiceTemplateCard({ slip, draft, update, businessLogoUrl = "", busine
           <input value={lineAmount} onChange={(event) => update("amount", event.target.value)} placeholder="0.00" />
         </div>
 
-        <section className="om-complete-invoice-totals">
+        <section className="om-complete-invoice-totals om-invoice-payment-summary-edit">
           <label>
             Subtotal
             <input value={subtotal} onChange={(event) => update("subtotal", event.target.value)} placeholder="0.00" />
@@ -5059,9 +5090,25 @@ function InvoiceTemplateCard({ slip, draft, update, businessLogoUrl = "", busine
             GST amount
             <input value={gstAmount} onChange={(event) => update("gstAmount", event.target.value)} placeholder="0.00" />
           </label>
+          <label>
+            Amount paid
+            <input value={amountPaid} onChange={(event) => update("amountPaid", event.target.value)} placeholder="0.00" />
+          </label>
+          <label>
+            Payment terms
+            <input value={paymentTerms} onChange={(event) => update("paymentTerms", event.target.value)} placeholder="Due on receipt" />
+          </label>
+          <label>
+            Invoice status
+            <input value={invoiceStatus} onChange={(event) => update("invoiceStatus", event.target.value)} placeholder="Amount owing" />
+          </label>
           <article>
-            <span>Total due</span>
+            <span>Total invoice</span>
             <strong>{phase113Money(totalDue)}</strong>
+          </article>
+          <article className="owing">
+            <span>Amount owing</span>
+            <strong>{phase113Money(amountOwing)}</strong>
           </article>
         </section>
       </section>
@@ -5523,6 +5570,10 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
         tax_rate: draft.gstRate || "",
         tax_amount: draft.gstAmount || "",
         total_due: draft.total || draft.amount || "",
+        amount_paid: draft.amountPaid || draft.paidAmount || "",
+        amount_owing: draft.amountOwing || "",
+        payment_terms: draft.paymentTerms || "",
+        invoice_status: draft.invoiceStatus || "",
         client_email: draft.invoiceClientEmail || draft.clientEmail || draft.customerEmail || "",
         customer_email: draft.invoiceClientEmail || draft.clientEmail || draft.customerEmail || "",
         invoice_number: draft.invoiceNumber || "",
