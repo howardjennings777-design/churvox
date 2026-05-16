@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_72_ACTIVE_PLAN_ADDONS_SMS
 // PHASE_71_PLAN_FEATURE_LOCKS
 // PHASE_70_PROPER_PLAN_SLIP
 // PHASE_68_OPERATOR_MACHINE_POLISH
@@ -456,7 +457,7 @@ function WorkSlip({ slip, team, outputStatus, onClose, onSave, onApprove }) {
 
   if (!slip) return null;
 
-  if (slip.kind === "plan") {
+  if (slip.kind === "plan" || slip.kind === "addon") {
     const features = Array.isArray(slip.features) ? slip.features : [];
     return (
       <div className="om-slip-backdrop" onClick={onClose}>
@@ -472,7 +473,7 @@ function WorkSlip({ slip, team, outputStatus, onClose, onSave, onApprove }) {
 
           <section className="om-plan-slip-body">
             <article className="om-plan-price-card">
-              <span>Plan price</span>
+              <span>{slip.kind === "addon" ? "Add-on price" : "Plan price"}</span>
               <strong>{slip.price}<small>/month + GST</small></strong>
               <p>{slip.prepared}</p>
             </article>
@@ -489,8 +490,9 @@ function WorkSlip({ slip, team, outputStatus, onClose, onSave, onApprove }) {
             <article className="om-plan-machine-note">
               <span>How this fits Churvox</span>
               <p>
-                The plan controls how much of the Operator Machine Churvox can run for the business.
-                Owner approval still stays in front of sensitive actions.
+                {slip.kind === "addon"
+                  ? "Add-ons extend Churvox without changing the main plan. Growth Packs add scale, MYOB adds accounting sync, and SMS credits add prepaid messaging capacity."
+                  : "The plan controls how much of the Operator Machine Churvox can run for the business. Owner approval still stays in front of sensitive actions."}
               </p>
             </article>
           </section>
@@ -511,7 +513,11 @@ function WorkSlip({ slip, team, outputStatus, onClose, onSave, onApprove }) {
                   ...current,
                 ].slice(0, 8));
                 try {
-                  localStorage.setItem("churvox_plan", normalisePlanName(slip.planName || slip.eyebrow));
+                  if (slip.kind === "addon") {
+                    localStorage.setItem("churvox_selected_addon", slip.id || slip.planName || slip.eyebrow);
+                  } else {
+                    localStorage.setItem("churvox_plan", normalisePlanName(slip.planName || slip.eyebrow));
+                  }
                 } catch {
                   // ignore local plan preview storage
                 }
@@ -781,8 +787,8 @@ function rowsForPage(page, machine, data = {}) {
         price: "$39",
         planName: "Start",
         badge: "Solo operators",
-        prepared: "Jobs, clients, quotes, invoices and basic Smart Hub. Best for one-person businesses that want the work organised without advanced AI Operator capacity.",
-        features: ["Jobs", "Clients", "Quotes", "Invoices", "Basic Smart Hub"],
+        prepared: "Jobs, clients, quotes, invoices and basic Operator Machine. Best for one-person businesses that want the work organised without advanced AI Operator capacity.",
+        features: ["Jobs", "Clients", "Quotes", "Invoices", "Basic Operator Machine"],
         cta: "Choose Start",
       },
       {
@@ -823,6 +829,71 @@ function rowsForPage(page, machine, data = {}) {
         prepared: "MYOB included, payroll workspace, advanced roles, higher limits, stronger automation and Command Growth Packs for extra active team members.",
         features: ["MYOB included", "Payroll workspace", "Advanced roles", "Higher limits", "Automation"],
         cta: "Choose Command",
+      },
+      {
+        id: "addon-growth-pack",
+        eyebrow: "Growth add-on",
+        title: "Command Growth Pack · $99/month + GST",
+        need: "Add more active team capacity and more Operator Machine power as the business grows.",
+        kind: "addon",
+        price: "$99",
+        planName: "Command Growth Pack",
+        badge: "Active add-on",
+        prepared: "Adds 50 extra active team members, extra job capacity, extra AI Operator Actions, extra automation runs, and extra admin/payroll capacity. Only active team members count, so old or inactive staff records do not increase the bill.",
+        features: ["+50 active team members", "Extra job capacity", "Extra AI Operator Actions", "Extra automation runs", "Extra admin/payroll capacity"],
+        cta: "Add Growth Pack",
+      },
+      {
+        id: "addon-myob-operator",
+        eyebrow: "MYOB add-on",
+        title: "MYOB add-on · $39/month + GST",
+        need: "Optional MYOB sync add-on for Operator. Included by default on Command.",
+        kind: "addon",
+        price: "$39",
+        planName: "MYOB add-on",
+        badge: "Operator add-on",
+        prepared: "Adds MYOB sync capacity to Operator. Command includes MYOB by default. Churvox keeps accounting actions approval-first so invoice/payment sync does not happen blindly.",
+        features: ["Operator add-on", "Included on Command", "Invoice sync", "Payment status sync", "Approval-first"],
+        cta: "Add MYOB",
+      },
+      {
+        id: "addon-sms-100",
+        eyebrow: "SMS credits",
+        title: "100 SMS credits · $10",
+        need: "Prepaid SMS credits for reminders and customer messages.",
+        kind: "addon",
+        price: "$10",
+        planName: "100 SMS credits",
+        badge: "Active add-on",
+        prepared: "Buy 100 prepaid SMS credits. SMS credits are separate from the monthly plan and are used for reminders, customer updates and message actions inside Churvox.",
+        features: ["100 SMS credits", "Prepaid pack", "Separate from plan", "Use for reminders", "Use for customer updates"],
+        cta: "Buy 100 credits",
+      },
+      {
+        id: "addon-sms-500",
+        eyebrow: "SMS credits",
+        title: "500 SMS credits · $45",
+        need: "Better value prepaid SMS credits for regular customer reminders.",
+        kind: "addon",
+        price: "$45",
+        planName: "500 SMS credits",
+        badge: "Best value",
+        prepared: "Buy 500 prepaid SMS credits. Good for businesses sending regular job reminders, quote nudges, payment reminders and customer updates.",
+        features: ["500 SMS credits", "Better value", "Prepaid pack", "Separate from plan", "Regular reminders"],
+        cta: "Buy 500 credits",
+      },
+      {
+        id: "addon-sms-1000",
+        eyebrow: "SMS credits",
+        title: "1000 SMS credits · $80",
+        need: "Largest prepaid SMS pack for busy teams.",
+        kind: "addon",
+        price: "$80",
+        planName: "1000 SMS credits",
+        badge: "Busy teams",
+        prepared: "Buy 1000 prepaid SMS credits. Best for larger teams using SMS heavily for reminders, job updates and payment follow-ups.",
+        features: ["1000 SMS credits", "Largest pack", "Prepaid pack", "Separate from plan", "High message volume"],
+        cta: "Buy 1000 credits",
       },
     ];
   }
@@ -955,10 +1026,10 @@ function featureConfig(page) {
     plans: {
       label: "Plans",
       title: "Pricing stays easy to understand.",
-      body: "Start simple. Move into Operator when you want Churvox preparing the admin.",
-      primary: "Review plan",
+      body: "Start simple. Move into Operator when you want Churvox preparing the admin. Growth Packs, MYOB add-on and SMS credits are active add-ons.",
+      primary: "Review",
       empty: "Plan options are loading.",
-      machine: ["Start", "Crew", "Operator", "Command"],
+      machine: ["Start", "Crew", "Operator", "Command", "Growth Pack", "MYOB", "SMS Credits"],
     },
     settings: {
       label: "Settings",
