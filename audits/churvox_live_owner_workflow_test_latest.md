@@ -1,0 +1,67 @@
+# Churvox Live Owner Workflow Test
+
+Generated: 2026-05-16 21:20:56 UTC
+
+## Summary
+
+- HIGH: 7
+- MED: 1
+- LOW: 0
+- Frontend: https://www.churvox.com
+- Backend: https://grassley-backend.onrender.com
+
+## Checks
+
+- ❌ **Frontend reachable** — status `0` expected `[200]` — OpenerDirector.open() got an unexpected keyword argument 'context'
+- ❌ **Owner login /api/auth/login** — status `0` expected `[200]` — OpenerDirector.open() got an unexpected keyword argument 'context'
+- ❌ **Auth token/cookie captured** — status `0` expected `[200]` — No token or cookie found
+- ❌ **Clients list** — status `0` expected `[200]` — OpenerDirector.open() got an unexpected keyword argument 'context'
+- ❌ **Jobs list** — status `0` expected `[200]` — OpenerDirector.open() got an unexpected keyword argument 'context'
+- ❌ **Quotes list** — status `0` expected `[200]` — OpenerDirector.open() got an unexpected keyword argument 'context'
+- ❌ **Invoices list** — status `0` expected `[200]` — OpenerDirector.open() got an unexpected keyword argument 'context'
+- ❌ **Team workers list** — status `0` expected `[200]` — OpenerDirector.open() got an unexpected keyword argument 'context'
+- ❌ **Billing status** — status `0` expected `[200]` — OpenerDirector.open() got an unexpected keyword argument 'context'
+- ❌ **AI actions** — status `0` expected `[200, 404]` — OpenerDirector.open() got an unexpected keyword argument 'context'
+- ❌ **Dispatch board** — status `0` expected `[200, 404]` — OpenerDirector.open() got an unexpected keyword argument 'context'
+- ❌ **Owner summary** — status `0` expected `[200, 404]` — OpenerDirector.open() got an unexpected keyword argument 'context'
+- ❌ **Create test client** — status `0` expected `[200, 201]` — OpenerDirector.open() got an unexpected keyword argument 'context'
+
+## Findings
+
+### 1. [HIGH] Owner login failed
+
+/api/auth/login returned 0: OpenerDirector.open() got an unexpected keyword argument 'context'
+
+### 2. [HIGH] Clients list failed
+
+/api/clients returned 0: OpenerDirector.open() got an unexpected keyword argument 'context'
+
+### 3. [HIGH] Jobs list failed
+
+/api/jobs returned 0: OpenerDirector.open() got an unexpected keyword argument 'context'
+
+### 4. [HIGH] Quotes list failed
+
+/api/quotes returned 0: OpenerDirector.open() got an unexpected keyword argument 'context'
+
+### 5. [HIGH] Invoices list failed
+
+/api/invoices returned 0: OpenerDirector.open() got an unexpected keyword argument 'context'
+
+### 6. [HIGH] Team workers list failed
+
+/api/team/workers returned 0: OpenerDirector.open() got an unexpected keyword argument 'context'
+
+### 7. [HIGH] Billing status failed
+
+/api/billing/status returned 0: OpenerDirector.open() got an unexpected keyword argument 'context'
+
+### 8. [MED] Client create/open/delete smoke incomplete
+
+Create returned 0 with id=. Data: 
+
+## Notes
+
+- This test logs into the live backend and checks core API wiring.
+- It creates then deletes one test client to prove basic write/open/delete.
+- It does not send real customer email/SMS or create Stripe charges.
