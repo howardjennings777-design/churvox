@@ -4665,7 +4665,11 @@ async def ai_follow_ups(current_user: dict = Depends(get_current_user)):
     return {"success": True, "actions": actions}
 
 
-@api_router.get("/api/ai/customer-updates")
+
+# PHASE_173_FIX_CUSTOMER_UPDATES_ROUTE_PREFIX
+# Fixed api_router route prefix: api_router is already mounted under /api.
+# /api/ai/customer-updates would become /api/api/ai/customer-updates.
+@api_router.get("/ai/customer-updates")
 async def get_customer_updates(job_id: str = Query(default=""), current_user: dict = Depends(get_current_user)):
     role = str((current_user or {}).get("role") or "").lower()
     _owner_roles_only(role)

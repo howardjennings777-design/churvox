@@ -1,0 +1,27 @@
+# Churvox Final Logged-In Visual Browser Check
+
+Generated: 2026-05-16T21:43:27.902Z
+
+## Summary
+
+- HIGH: 0
+- MED: 0
+- LOW: 1
+- Frontend: https://www.churvox.com
+
+## Checks
+
+- ⚠️ **Visual browser check skipped** — Playwright is not installed in this Codespace.
+
+## Findings
+
+### 1. [LOW] Visual check tooling unavailable
+
+Install Playwright in the Codespace or run the manual browser checks. This is not an app blocker.
+
+## Notes
+
+- Live owner API workflow passed.
+- Live worker owner-side workflow passed.
+- Live quote/invoice workflow passed.
+- Live browser route shell check passed.
