@@ -1,3 +1,4 @@
+# PHASE_166_FIX_LIVE_WORKFLOW_TEST_HTTPS_CLIENT
 from pathlib import Path
 from datetime import datetime, timezone
 import json
@@ -13,8 +14,11 @@ TEST_EMAIL = os.getenv("CHURVOX_TEST_EMAIL", "hello@churvox.com")
 TEST_PASSWORD = os.getenv("CHURVOX_TEST_PASSWORD", "TempPass123!")
 
 cookie_jar = http.cookiejar.CookieJar()
-opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookie_jar))
 context = ssl.create_default_context()
+opener = urllib.request.build_opener(
+    urllib.request.HTTPCookieProcessor(cookie_jar),
+    urllib.request.HTTPSHandler(context=context),
+)
 
 token = ""
 
@@ -41,7 +45,7 @@ def request(method, path, body=None, auth=True, extra_headers=None, timeout=30):
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
 
     try:
-        res = opener.open(req, timeout=timeout, context=context)
+        res = opener.open(req, timeout=timeout)
         raw = res.read()
         text = raw.decode("utf-8", errors="ignore")
         parsed = None

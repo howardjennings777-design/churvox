@@ -3,65 +3,37 @@ Testing backend: https://grassley-backend.onrender.com
 Testing login email: hello@churvox.com
 # Churvox Live Owner Workflow Test
 
-Generated: 2026-05-16 21:20:56 UTC
+Generated: 2026-05-16 21:25:59 UTC
 
 ## Summary
 
-- HIGH: 7
-- MED: 1
+- HIGH: 0
+- MED: 0
 - LOW: 0
 - Frontend: https://www.churvox.com
 - Backend: https://grassley-backend.onrender.com
 
 ## Checks
 
-- ❌ **Frontend reachable** — status `0` expected `[200]` — OpenerDirector.open() got an unexpected keyword argument 'context'
-- ❌ **Owner login /api/auth/login** — status `0` expected `[200]` — OpenerDirector.open() got an unexpected keyword argument 'context'
-- ❌ **Auth token/cookie captured** — status `0` expected `[200]` — No token or cookie found
-- ❌ **Clients list** — status `0` expected `[200]` — OpenerDirector.open() got an unexpected keyword argument 'context'
-- ❌ **Jobs list** — status `0` expected `[200]` — OpenerDirector.open() got an unexpected keyword argument 'context'
-- ❌ **Quotes list** — status `0` expected `[200]` — OpenerDirector.open() got an unexpected keyword argument 'context'
-- ❌ **Invoices list** — status `0` expected `[200]` — OpenerDirector.open() got an unexpected keyword argument 'context'
-- ❌ **Team workers list** — status `0` expected `[200]` — OpenerDirector.open() got an unexpected keyword argument 'context'
-- ❌ **Billing status** — status `0` expected `[200]` — OpenerDirector.open() got an unexpected keyword argument 'context'
-- ❌ **AI actions** — status `0` expected `[200, 404]` — OpenerDirector.open() got an unexpected keyword argument 'context'
-- ❌ **Dispatch board** — status `0` expected `[200, 404]` — OpenerDirector.open() got an unexpected keyword argument 'context'
-- ❌ **Owner summary** — status `0` expected `[200, 404]` — OpenerDirector.open() got an unexpected keyword argument 'context'
-- ❌ **Create test client** — status `0` expected `[200, 201]` — OpenerDirector.open() got an unexpected keyword argument 'context'
+- ✅ **Frontend reachable** — status `200` expected `[200]` — HTML loaded
+- ✅ **Owner login /api/auth/login** — status `200` expected `[200]` — {"id": "69d5c63456d9106e0dcfd2c8", "email": "hello@churvox.com", "name": "Howard", "business_name": "Churvox Platform", "role": "owner", "plan": "enterprise", "plan_status": "active", "subscription_status": "active", "trial_ends_at": null, "stripe_subscription_id": null, "gst_rate": 15.0, "trade_type": "other", "business_id": "69d5c63456d9106e0dcfd2c8", "onboarding_completed": false, "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWQ1YzYzNDU2ZDkxMDZlMGRjZmQyYzgiLCJlbWFpbCI6ImhlbGxvQG
+- ✅ **Auth token captured** — status `200` expected `[200]` — Bearer token captured from login response
+- ✅ **Clients list** — status `200` expected `[200]` — [{"id": "6a00dab98ea90bb453146ab8", "name": "PW Client 1778440880908", "client_name": "PW Client 1778440880908", "contact_name": "PW Client 1778440880908", "email": "pw-client-1778440880908@example.com", "phone": "0210000000", "address": "1 Playwright Street, Wellington", "notes": "Created by Playwright test", "business_id": "69d5c63456d9106e0dcfd2c8", "created_at": "2026-05-10T19:21:29.158000", "updated_at": "2026-05-10T19:21:29.158000"}, {"id": "6a00d5658ea90bb453146aa8", "name": "PW Client 17
+- ✅ **Jobs list** — status `200` expected `[200]` — [{"id": "6a00dac08ea90bb453146ab9", "title": "PW Job 1778440880908", "job_type": "other", "client_id": null, "customer_name": "PW Client 1778440880908", "address": "1 Playwright Street, Wellington", "scheduled_date": "2026-05-10T19:21", "scheduled_time": "", "estimated_duration": 60, "price": 125.0, "pricing_type": "fixed", "hourly_rate": 0, "extras": [], "notes": "Created by Playwright test", "assigned_worker_id": null, "status": "assigned", "invoice_id": "", "draft_invoice_id": "", "invoice_cr
+- ✅ **Quotes list** — status `200` expected `[200]` — [{"id": "6a00dacc8ea90bb453146aba", "client_id": null, "customer_name": "PW Quote Client 1778440899903", "customer_email": "pw-quote-1778440899903@example.com", "address": "2 Playwright Quote Street, Wellington", "job_type": "other", "job_description": "Playwright quote test work", "price": 250.0, "pricing_type": "fixed", "hourly_rate": 0, "extras": [], "valid_until": null, "status": "draft", "business_id": "69d5c63456d9106e0dcfd2c8", "created_at": "2026-05-10T19:21:48.085000", "updated_at": "20
+- ✅ **Invoices list** — status `200` expected `[200]` — [{"id": "6a00dad38ea90bb453146abc", "invoice_number": "INV-1778440915", "job_id": "", "source_job_id": "", "linked_job_id": "", "client_id": null, "customer_name": "PW Invoice Client 1778440899903", "customer_email": "pw-invoice-1778440899903@example.com", "address": "3 Playwright Invoice Street, Wellington", "description": "Playwright invoice test work", "subtotal": 300.0, "gst_rate": 15.0, "gst_amount": 45.0, "total": 345.0, "status": "draft", "public_token": "", "public_invoice_url": "", "pay
+- ✅ **Team workers list** — status `200` expected `[200]` — [{"id": "6a00db4f8ea90bb453146abe", "name": "PW Worker 1778441029645", "email": "pw-worker-1778441029645@example.com", "phone": "0210000001", "country": "", "region": "", "city": "", "notes": "", "role": "worker", "status": "invited", "assigned_jobs": [], "business_id": "69d5c63456d9106e0dcfd2c8", "created_at": "2026-05-10T19:23:59.389000", "updated_at": "2026-05-10T19:23:59.389000"}, {"id": "6a00d64e8ea90bb453146aae", "name": "PW Worker 1778439745800", "email": "pw-worker-1778439745800@example.
+- ✅ **Billing status** — status `200` expected `[200]` — {"plan": "enterprise", "plan_status": "active", "subscription_status": "active", "trial_started_at": null, "trial_ends_at": null, "trial_active": false, "trial_expired": false, "days_left": 0, "requires_payment": false, "has_paid_subscription": false, "stripe_customer_id": null, "stripe_subscription_id": null}
+- ✅ **AI actions** — status `200` expected `[200, 404]` — {"actions": [{"id": "dispatch-6a00dac08ea90bb453146ab9", "business_id": "69d5c63456d9106e0dcfd2c8", "type": "dispatch", "title": "Assign worker for PW Job 1778440880908", "body": "PW Client 1778440880908 needs a worker assigned. AI should review crew availability, area, workload, and job fit.", "reason": "Unassigned job blocks the run sheet.", "recommended_action": "Review assignment", "action": "Review assignment", "source_type": "job", "source_id": "6a00dac08ea90bb453146ab9", "priority": "urge
+- ✅ **Dispatch board** — status `200` expected `[200, 404]` — {"ok": true, "date": "2026-05-16", "workers": [], "jobs": [{"title": "PW Job 1778440880908", "job_type": "other", "client_id": null, "client_name": "", "customer_name": "PW Client 1778440880908", "address": "1 Playwright Street, Wellington", "country": "New Zealand", "region": "", "scheduled_date": "2026-05-10T19:21", "scheduled_time": "", "estimated_duration": 60, "price": 125.0, "pricing_type": "fixed", "hourly_rate": 0, "extras": [], "notes": "Created by Playwright test", "assigned_worker_id"
+- ✅ **Owner summary** — status `200` expected `[200, 404]` — {"ok": true, "period": "this_week", "range": {"start": "2026-05-09T21:25:55.458086+00:00", "end": "2026-05-16T21:25:55.458086+00:00"}, "summary": {"completed_jobs": 0, "open_quotes": 1, "accepted_quotes": 0, "unpaid_invoices": 2, "overdue_invoices": 0, "money_to_collect": 0.0, "worker_count": 0}, "worker_load": [{"worker": "Unassigned", "job_count": 6}, {"worker": "John Smith", "job_count": 1}], "top_actions": ["", "Follow up open quotes", ""], "ai_summary": "0 jobs completed, 1 quotes open, 2 i
+- ✅ **Create test client** — status `200` expected `[200, 201]` — {"success": true, "id": "6a08e0e56ceadd6806c28b18", "message": "Client created"}
+- ✅ **Open/read test client** — status `200` expected `[200]` — {"id": "6a08e0e56ceadd6806c28b18", "name": "Churvox Live Test Client 20260516212556", "client_name": "Churvox Live Test Client 20260516212556", "contact_name": "Churvox Live Test Client 20260516212556", "email": "live-test-20260516212556@example.com", "phone": "0200000000", "address": "1 Test Street, Wellington", "notes": "Created by Churvox live workflow smoke test. Safe to delete.", "business_id": "69d5c63456d9106e0dcfd2c8", "created_at": "2026-05-16T21:25:57.280000", "updated_at": "2026-05-16
+- ✅ **Delete test client cleanup** — status `200` expected `[200, 204]` — {"success": true, "message": "Client deleted"}
 
 ## Findings
 
-### 1. [HIGH] Owner login failed
-
-/api/auth/login returned 0: OpenerDirector.open() got an unexpected keyword argument 'context'
-
-### 2. [HIGH] Clients list failed
-
-/api/clients returned 0: OpenerDirector.open() got an unexpected keyword argument 'context'
-
-### 3. [HIGH] Jobs list failed
-
-/api/jobs returned 0: OpenerDirector.open() got an unexpected keyword argument 'context'
-
-### 4. [HIGH] Quotes list failed
-
-/api/quotes returned 0: OpenerDirector.open() got an unexpected keyword argument 'context'
-
-### 5. [HIGH] Invoices list failed
-
-/api/invoices returned 0: OpenerDirector.open() got an unexpected keyword argument 'context'
-
-### 6. [HIGH] Team workers list failed
-
-/api/team/workers returned 0: OpenerDirector.open() got an unexpected keyword argument 'context'
-
-### 7. [HIGH] Billing status failed
-
-/api/billing/status returned 0: OpenerDirector.open() got an unexpected keyword argument 'context'
-
-### 8. [MED] Client create/open/delete smoke incomplete
-
-Create returned 0 with id=. Data: 
+No live owner workflow blockers found in this API smoke test.
 
 ## Notes
 
@@ -70,5 +42,5 @@ Create returned 0 with id=. Data:
 - It does not send real customer email/SMS or create Stripe charges.
 
 
-REPORT_FILE=audits/churvox_live_owner_workflow_test_20260516_212056.md
+REPORT_FILE=audits/churvox_live_owner_workflow_test_20260516_212559.md
 LATEST_FILE=audits/churvox_live_owner_workflow_test_latest.md

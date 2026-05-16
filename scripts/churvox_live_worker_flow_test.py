@@ -1,3 +1,4 @@
+# PHASE_166_FIX_LIVE_WORKFLOW_TEST_HTTPS_CLIENT
 from pathlib import Path
 from datetime import datetime, timezone
 import json
@@ -22,7 +23,10 @@ context = ssl.create_default_context()
 class Client:
     def __init__(self):
         self.cookies = http.cookiejar.CookieJar()
-        self.opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(self.cookies))
+        self.opener = urllib.request.build_opener(
+            urllib.request.HTTPCookieProcessor(self.cookies),
+            urllib.request.HTTPSHandler(context=context),
+        )
         self.token = ""
 
     def request(self, method, path, body=None, auth=True, timeout=30):
@@ -43,7 +47,7 @@ class Client:
         req = urllib.request.Request(url, data=data, headers=headers, method=method)
 
         try:
-            res = self.opener.open(req, timeout=timeout, context=context)
+            res = self.opener.open(req, timeout=timeout)
             raw = res.read()
             text = raw.decode("utf-8", errors="ignore")
             try:
