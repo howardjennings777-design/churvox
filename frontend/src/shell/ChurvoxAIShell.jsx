@@ -9063,9 +9063,5 @@ export default function ChurvoxAIShell() {
     return <OperatorLanding authMode={authMode} setAuthMode={setAuthMode} onLogin={onLogin} />;
   }
 
-  if (page === "dashboard") {
-    return <OperatorMachine setPage={setPage} onLogout={onLogout} data={liveData} />;
-  }
-
-  return <Shell page={page} setPage={setPage} onLogout={onLogout} data={liveData} />;
+  return <OperatorMachine page={page} setPage={setPage} onLogout={onLogout} data={liveData} />;
 }

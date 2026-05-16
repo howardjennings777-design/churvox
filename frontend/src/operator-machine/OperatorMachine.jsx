@@ -570,7 +570,247 @@ function MachineLane({ title, subtitle, items, empty, onOpen, quiet, limit = 5 }
   );
 }
 
-export default function OperatorMachine({ setPage, onLogout, data }) {
+
+function rowsForPage(page, machine, data = {}) {
+  const raw = data.raw || {};
+  const source = {
+    jobs: arrayFrom(raw.jobs, data.jobs),
+    clients: arrayFrom(raw.clients, data.clients),
+    team: arrayFrom(raw.team, raw.workers, data.team),
+    quotes: arrayFrom(raw.quotes, data.quotes),
+    invoices: arrayFrom(raw.invoices, data.invoices),
+    proof: machine.processing.filter((item) => item.kind === "proof"),
+    payroll: arrayFrom(raw.team, raw.workers, data.team),
+    plans: [],
+    settings: [],
+  }[page] || [];
+
+  if (page === "proof") return source;
+
+  if (page === "plans") {
+    return [
+      { id: "plan-start", eyebrow: "Start", title: "Start · $39/month + GST", need: "Solo operators. Jobs, clients, quotes, invoices and basic Smart Hub.", kind: "plan" },
+      { id: "plan-crew", eyebrow: "Crew", title: "Crew · $89/month + GST", need: "Small teams. Worker app, job assignment, notes, photos and time tracking.", kind: "plan" },
+      { id: "plan-operator", eyebrow: "Operator", title: "Operator · $149/month + GST", need: "Most Popular. AI Operator Actions, draft invoices, follow-ups and reminders.", kind: "plan" },
+      { id: "plan-command", eyebrow: "Command", title: "Command · $299/month + GST", need: "MYOB included, payroll workspace, advanced roles and automation.", kind: "plan" },
+    ];
+  }
+
+  if (page === "settings") {
+    return [
+      { id: "settings-business", eyebrow: "Business setup", title: "Business details", need: "Business name, trade type, region and invoice wording feed the Operator Machine.", kind: "settings" },
+      { id: "settings-guardrails", eyebrow: "Owner controls", title: "Approval guardrails", need: "Churvox prepares admin, but sensitive actions stay owner-approved.", kind: "settings" },
+      { id: "settings-integrations", eyebrow: "Connected systems", title: "MYOB, email, SMS and imports", need: "Integrations should feed prepared actions, not send blindly.", kind: "settings" },
+    ];
+  }
+
+  return source.map((item, index) => {
+    const title = clean(
+      item.title ||
+      item.job_title ||
+      item.client_name ||
+      item.customer_name ||
+      item.name ||
+      item.invoice_number ||
+      item.quote_number ||
+      item.email,
+      `${page} record ${index + 1}`
+    );
+
+    const detail = clean(
+      item.description ||
+      item.message ||
+      item.notes ||
+      item.address ||
+      item.email ||
+      item.phone ||
+      item.status ||
+      item.invoice_status ||
+      item.quote_status ||
+      item.job_status,
+      "Open the work slip to review details."
+    );
+
+    return {
+      id: `${page}-${itemId(item, index)}`,
+      sourceId: itemId(item, index),
+      eyebrow:
+        page === "jobs" ? "Job" :
+        page === "clients" ? "Client" :
+        page === "team" ? "Worker" :
+        page === "quotes" ? "Quote" :
+        page === "invoices" ? "Invoice" :
+        page === "payroll" ? "Payroll source" :
+        "Record",
+      title,
+      need: detail,
+      kind: page,
+      item,
+      draft: {
+        title,
+        ownerNote: detail,
+        customerMessage:
+          page === "quotes" ? quoteFollowup(item) :
+          page === "invoices" ? reminderMessage(item) :
+          page === "jobs" ? invoiceDescription(item) :
+          "",
+        invoiceDescription:
+          page === "jobs" || page === "invoices" ? invoiceDescription(item) : "",
+        amount: invoiceAmount(item),
+        dueDate: "",
+      },
+    };
+  });
+}
+
+function featureConfig(page) {
+  const configs = {
+    jobs: {
+      label: "Jobs",
+      title: "Jobs feed the Operator Machine.",
+      body: "Create, assign and complete work here. Churvox uses the job data to prepare dispatch, proof-to-paid and invoice actions.",
+      primary: "Open job slip",
+      empty: "No jobs found yet.",
+      machine: ["Dispatch", "Proof", "Invoice prep"],
+    },
+    clients: {
+      label: "Clients",
+      title: "Clients power clean jobs, quotes and invoices.",
+      body: "Keep client details tidy once. Churvox uses them in prepared messages, invoices and follow-ups.",
+      primary: "Open client slip",
+      empty: "No clients found yet.",
+      machine: ["Contact check", "Duplicate check", "Invoice context"],
+    },
+    team: {
+      label: "Team",
+      title: "Team records power worker matching.",
+      body: "Roles, regions and availability help Churvox recommend the right worker without dumping decisions on the owner.",
+      primary: "Open worker slip",
+      empty: "No team records found yet.",
+      machine: ["Worker fit", "Region", "Workload"],
+    },
+    quotes: {
+      label: "Quotes",
+      title: "Quotes become prepared follow-ups.",
+      body: "Churvox watches quote age, client details and status, then prepares owner-approved follow-up wording.",
+      primary: "Open quote slip",
+      empty: "No quotes found yet.",
+      machine: ["Age check", "Follow-up draft", "Convert to job"],
+    },
+    invoices: {
+      label: "Invoices",
+      title: "Invoices become cashflow actions.",
+      body: "Churvox checks drafts, missing amounts and unpaid invoices, then prepares reminders or owner fixes.",
+      primary: "Open invoice slip",
+      empty: "No invoices found yet.",
+      machine: ["Amount check", "Payment status", "Reminder draft"],
+    },
+    proof: {
+      label: "Proof-to-Paid",
+      title: "Worker proof becomes invoice-ready admin.",
+      body: "Notes, photos and completion details feed better invoice descriptions and owner approval.",
+      primary: "Open proof slip",
+      empty: "No proof packages found yet.",
+      machine: ["Notes", "Photos", "Invoice wording"],
+    },
+    payroll: {
+      label: "Payroll",
+      title: "Payroll stays controlled and review-first.",
+      body: "Timesheets, worker hours and pay summaries should be prepared for review, not blindly changed.",
+      primary: "Open payroll source",
+      empty: "No payroll source records found yet.",
+      machine: ["Timesheets", "Hours", "Review"],
+    },
+    plans: {
+      label: "Plans",
+      title: "Pricing stays easy to understand.",
+      body: "Start simple. Move into Operator when you want Churvox preparing the admin.",
+      primary: "Review plan",
+      empty: "Plan options are loading.",
+      machine: ["Start", "Crew", "Operator", "Command"],
+    },
+    settings: {
+      label: "Settings",
+      title: "Teach Churvox how the business should run.",
+      body: "Business details, owner controls and integrations feed the machine in the background.",
+      primary: "Review setting",
+      empty: "Settings are ready.",
+      machine: ["Business setup", "Guardrails", "Integrations"],
+    },
+  };
+
+  return configs[page] || configs.jobs;
+}
+
+function FeatureWorkspace({ page, machine, data, onOpen }) {
+  const config = featureConfig(page);
+  const rows = rowsForPage(page, machine, data);
+  const topRows = rows.slice(0, 12);
+
+  return (
+    <section className="om-feature-workspace" data-phase="PHASE_69_OPERATOR_MACHINE_ALL_PAGES">
+      <header className="om-feature-hero">
+        <div>
+          <span>{config.label}</span>
+          <h1>{config.title}</h1>
+          <p>{config.body}</p>
+        </div>
+        <aside>
+          {config.machine.map((item) => (
+            <b key={item}>{item}</b>
+          ))}
+        </aside>
+      </header>
+
+      <section className="om-feature-layout">
+        <section className="om-feature-records">
+          <header>
+            <div>
+              <span>Records</span>
+              <h2>{config.label}</h2>
+              <p>Simple list first. Details open in one Work Slip.</p>
+            </div>
+            <b>{rows.length}</b>
+          </header>
+
+          <div>
+            {topRows.length ? topRows.map((item) => (
+              <button type="button" className={`om-feature-row ${item.kind}`} key={item.id} onClick={() => onOpen(item)}>
+                <span>{item.eyebrow}</span>
+                <strong>{item.title}</strong>
+                <small>{item.need}</small>
+                <em>{config.primary}</em>
+              </button>
+            )) : (
+              <article className="om-feature-empty">
+                <strong>{config.empty}</strong>
+                <p>When records are added, Churvox will use them to prepare owner-approved actions.</p>
+              </article>
+            )}
+          </div>
+        </section>
+
+        <aside className="om-feature-machine">
+          <span>How this feeds the machine</span>
+          <h2>Power stays in the background.</h2>
+          <p>
+            This page keeps the full feature available, but the Operator Machine only surfaces what needs owner action.
+          </p>
+
+          <div>
+            <article><b>Input</b><small>Records enter once.</small></article>
+            <article><b>Check</b><small>Churvox looks for gaps.</small></article>
+            <article><b>Prepare</b><small>Admin is drafted with context.</small></article>
+            <article><b>Approve</b><small>Owner stays in control.</small></article>
+          </div>
+        </aside>
+      </section>
+    </section>
+  );
+}
+
+
+export default function OperatorMachine({ page = "dashboard", setPage, onLogout, data }) {
   const machine = useMemo(() => buildMachine(data || {}), [data]);
   const team = arrayFrom(data?.raw?.team, data?.raw?.workers, data?.team);
   const [activeSlip, setActiveSlip] = useState(null);
@@ -708,8 +948,8 @@ export default function OperatorMachine({ setPage, onLogout, data }) {
         </button>
 
         <nav>
-          {nav.map(([label, page]) => (
-            <button type="button" className={page === "dashboard" ? "active" : ""} key={label} onClick={() => go(page)}>
+          {nav.map(([label, navPage]) => (
+            <button type="button" className={navPage === page ? "active" : ""} key={label} onClick={() => go(navPage)}>
               {label}
             </button>
           ))}
@@ -738,6 +978,8 @@ export default function OperatorMachine({ setPage, onLogout, data }) {
 
         {data?.error ? <section className="om-warning"><b>Machine warning</b><span>{data.error}</span></section> : null}
 
+        {page === "dashboard" ? (
+          <>
         <section className="om-flow">
           <article><span>01</span><strong>Input Tray</strong><small>Work arrives</small></article>
           <article><span>02</span><strong>Processing Line</strong><small>Churvox checks</small></article>
@@ -816,6 +1058,10 @@ export default function OperatorMachine({ setPage, onLogout, data }) {
             quiet
           />
         </section>
+          </>
+        ) : (
+          <FeatureWorkspace page={page} machine={machine} data={data} onOpen={openSlip} />
+        )}
       </section>
 
       <WorkSlip
