@@ -1,3 +1,4 @@
+// PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 // PHASE_143_FORCE_REAL_PROPER_INVOICE_COMPONENT
 // PHASE_142_FORCE_PROPER_INVOICE_TEMPLATE_LIVE
 // PHASE_141_PROPER_A4_INVOICE_TEMPLATE
@@ -146,7 +147,7 @@ const APP_PATHS = {
 
 const NAV = [
   ["dashboard", "Operator Machine", "AI admin machine"],
-  ["jobs", "Jobs", "Dispatch board"],
+  ["jobs", "Jobs", "Crew assignment board"],
   ["clients", "Clients", "Customer history"],
   ["team", "Team", "Crew availability"],
   ["quotes", "Quotes", "Sales pipeline"],
@@ -164,7 +165,7 @@ const WORKER_NAV = [
 
 const PUBLIC_AI_PREVIEW = [
   {
-    type: "Dispatch",
+    type: "Assign crew",
     title: "Unassigned job found",
     body: "AI found the gap, checked workload, area and trade fit, then prepared the best worker match. You approve it.",
     action: "Approve match",
@@ -896,7 +897,7 @@ function buildLiveActions(raw) {
 
     addAction({
       key: sourceKey("dispatch", job, title),
-      type: "Dispatch",
+      type: "Assign crew",
       title: `Assign worker to ${title}`,
       body: `I checked ${client}${address ? ` at ${address}` : ""}${when ? ` for ${when}` : ""}. ${why} Approving will assign the chosen worker and move this job into the run.`,
       action: "Review assignment",
@@ -1162,7 +1163,7 @@ function useLiveChurvoxData(authed) {
       const rawQuotes = results[3].status === "fulfilled" ? toArray(results[3].value, ["quotes"]) : [];
       const rawInvoices = results[4].status === "fulfilled" ? toArray(results[4].value, ["invoices"]) : [];
       const rawAiActions = results[5].status === "fulfilled" ? toArray(results[5].value, ["actions"]) : [];
-      const rawDispatch = results[6].status === "fulfilled" ? (results[6].value || {}) : {};
+      const rawAssign crew = results[6].status === "fulfilled" ? (results[6].value || {}) : {};
       const rawRecurring = results[7].status === "fulfilled" ? toArray(results[7].value, ["recurring_jobs", "items"]) : [];
       const rawTemplates = results[8].status === "fulfilled" ? toArray(results[8].value, ["templates", "items"]) : [];
       const rawSetupAudit = results[9].status === "fulfilled" ? (results[9].value || null) : null;
@@ -1230,7 +1231,7 @@ function useLiveChurvoxData(authed) {
         invoices: mappedInvoices,
         actions: liveActions,
         operator: {
-          dispatch: rawDispatch,
+          dispatch: rawAssign crew,
           recurring: rawRecurring,
           templates: rawTemplates,
           setupAudit: rawSetupAudit,
@@ -2785,7 +2786,7 @@ function Dashboard({ setPage, data }) {
         title="AI has prepared today’s business actions."
         body={data?.loading ? "Syncing your live Churvox workspace..." : data?.error || "Start with decisions, not clutter. Churvox turns admin into a simple approval queue."}
         metric={`${actions.length} ready`}
-        action="Dispatch, invoice, quote and cashflow actions prepared."
+        action="Assign crew, invoice, quote and cashflow actions prepared."
         setPage={setPage}
       />
 
@@ -4542,7 +4543,7 @@ function SmartHubBoxModal({
 
     if (mode === "dispatch") {
       return {
-        label: "Dispatch approval",
+        label: "Assign crew approval",
         title: "AI prepared a worker assignment",
         body: "Choose or confirm the worker, check instructions, then approve. Churvox assigns the job without sending you to another page.",
       };
@@ -4632,7 +4633,7 @@ function SmartHubBoxModal({
     quotes: "Quotes and follow-ups that may need a nudge.",
     crew: "Worker capacity and team records available for assignment.",
     requests: "Customer request intakes that can become draft jobs or quotes.",
-    dispatch: "Dispatch decisions, unassigned jobs and possible schedule conflicts.",
+    dispatch: "Assign crew decisions, unassigned jobs and possible schedule conflicts.",
     recurring: "Recurring jobs that may need the next job generated.",
     templates: "Service templates that can speed up job creation and proof/invoice wording.",
     reports: "Owner summaries for cashflow, quotes, workers and weekly performance.",
@@ -4682,11 +4683,11 @@ function SmartHubBoxModal({
   function actionGroupForBox(boxKey, row) {
     const text = `${boxKey || ""} ${row?.lead || ""} ${row?.title || ""} ${row?.detail || ""} ${row?.status || ""}`.toLowerCase();
     if (boxKey === "requests") return "Request inbox";
-    if (boxKey === "dispatch") return "Dispatch";
+    if (boxKey === "dispatch") return "Assign crew";
     if (boxKey === "recurring") return "Recurring job";
     if (boxKey === "templates") return "Service template";
     if (boxKey === "reports") return "Owner report";
-    if (text.includes("unassigned") || text.includes("assign")) return "Dispatch";
+    if (text.includes("unassigned") || text.includes("assign")) return "Assign crew";
     if (boxKey === "invoice" || text.includes("invoice") || text.includes("completed job")) return "Invoice";
     if (boxKey === "collect" || text.includes("payment") || text.includes("overdue")) return "Cashflow";
     if (boxKey === "quotes" || text.includes("quote")) return "Quote";
@@ -4833,7 +4834,7 @@ function SmartHubBoxModal({
     if (box.key === "collect") return "No collection actions right now.";
     if (box.key === "setup") return "Setup is looking good.";
     if (box.key === "requests") return "No customer requests waiting.";
-    if (box.key === "dispatch") return "Dispatch is clear right now.";
+    if (box.key === "dispatch") return "Assign crew is clear right now.";
     if (box.key === "recurring") return "No recurring jobs due.";
     if (box.key === "templates") return "No service templates found.";
     if (box.key === "reports") return "Reports are ready when live data arrives.";
@@ -7684,7 +7685,7 @@ function Workspace({ page, setPage, data }) {
   const dispatchRows = [
     ...((Array.isArray(dispatchBoard.unassigned) ? dispatchBoard.unassigned : []).slice(0, 4).map((item) => ({
       ...item,
-      type: "Dispatch",
+      type: "Assign crew",
       title: item?.title || item?.name || item?.client_name || "Unassigned job",
       message: item?.address || item?.description || "Needs worker assignment",
       status: "Assign worker",
@@ -7915,7 +7916,7 @@ function Workspace({ page, setPage, data }) {
       key: "dispatch",
       count: dispatchRows.length,
       label: "dispatch",
-      title: "Dispatch board",
+      title: "Crew assignment board",
       body: "Unassigned jobs, schedule conflicts and dispatch decisions.",
       action: "Assign",
     },
@@ -8039,7 +8040,7 @@ function Workspace({ page, setPage, data }) {
                   : hubFocus === "requests"
                     ? [["Request inbox", "jobs", requestRows]]
                     : hubFocus === "dispatch"
-                      ? [["Dispatch board", "jobs", dispatchRows]]
+                      ? [["Crew assignment board", "jobs", dispatchRows]]
                       : hubFocus === "recurring"
                         ? [["Recurring jobs", "jobs", recurringRows]]
                         : hubFocus === "templates"
@@ -8282,7 +8283,7 @@ function Workspace({ page, setPage, data }) {
       };
 
       const approvalType = String(selection.group || payload.type || "").toLowerCase();
-      const isDispatchApproval = approvalType.includes("dispatch");
+      const isAssign crewApproval = approvalType.includes("dispatch");
       const isInvoiceApproval = approvalType.includes("invoice");
       const isQuoteApproval = approvalType.includes("quote");
       const isCashflowApproval = approvalType.includes("cashflow") || approvalType.includes("payment") || approvalType.includes("overdue") || approvalType.includes("collect");
@@ -8339,7 +8340,7 @@ function Workspace({ page, setPage, data }) {
           throw new Error(result.message || "Worker has a schedule conflict.");
         }
 
-        logCommand("Dispatch", title, result?.message || "Job assigned");
+        logCommand("Assign crew", title, result?.message || "Job assigned");
         notifyChurvoxLiveRefresh("worker assigned");
         return true;
       }
@@ -8390,7 +8391,7 @@ function Workspace({ page, setPage, data }) {
 
       const approvalPath = directActionId
         ? `/ai/actions/${encodeURIComponent(directActionId)}/approve`
-        : isDispatchApproval
+        : isAssign crewApproval
           ? "/ai/owner-command/dispatch/approve"
           : isInvoiceApproval
             ? "/ai/owner-command/invoice/approve"
@@ -8406,7 +8407,7 @@ function Workspace({ page, setPage, data }) {
       logCommand(
         selection.group || "Approved",
         title,
-        isDispatchApproval
+        isAssign crewApproval
           ? (performedMessage || "Worker assigned")
           : isInvoiceApproval
             ? (performedMessage || "Invoice draft created")
@@ -8427,7 +8428,7 @@ function Workspace({ page, setPage, data }) {
             "Backend saved",
           ],
           recommendation: String(selection.group || "").toLowerCase().includes("dispatch")
-            ? "Dispatch approval completed. Churvox assigned a worker to an unassigned job and saved the owner approval."
+            ? "Assign crew approval completed. Churvox assigned a worker to an unassigned job and saved the owner approval."
             : String(selection.group || "").toLowerCase().includes("invoice")
               ? "Invoice approval completed. Churvox created or updated a draft invoice from a completed job."
               : String(selection.group || "").toLowerCase().includes("quote")
@@ -8845,7 +8846,7 @@ function Workspace({ page, setPage, data }) {
           <div>
             {[
               ["requests", "Request inbox", requestRows.length, "Customer request intakes waiting"],
-              ["dispatch", "Dispatch board", dispatchRows.length, "Unassigned jobs / conflicts"],
+              ["dispatch", "Crew assignment board", dispatchRows.length, "Unassigned jobs / conflicts"],
               ["recurring", "Recurring jobs", recurringRows.length, "Repeat work due"],
               ["templates", "Service templates", templateRows.length, "Reusable job presets"],
               ["reports", "Owner reports", reportRows.length, "Cashflow and workload"],

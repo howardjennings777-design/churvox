@@ -1,3 +1,4 @@
+// PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 import React, { useEffect, useMemo, useState } from "react";
 import "./TopPlayerFeatureStack.css";
 
@@ -106,7 +107,7 @@ const TABS = [
   ["overview", "Overview"],
   ["command", "Customer Links"],
   ["growth", "Growth Loop"],
-  ["dispatch", "Dispatch"],
+  ["dispatch", "Assign crew"],
   ["margin", "Margin Guard"],
   ["packs", "Work Packs"],
 ];
@@ -152,7 +153,7 @@ export default function TopPlayerFeatureStack({ data = {} }) {
 
   const [links, setLinks] = useState([]);
   const [growthActions, setGrowthActions] = useState([]);
-  const [dispatchPlan, setDispatchPlan] = useState([]);
+  const [dispatchPlan, setAssign crewPlan] = useState([]);
   const [marginSuggestions, setMarginSuggestions] = useState([]);
   const [templates, setTemplates] = useState({});
 
@@ -177,9 +178,9 @@ export default function TopPlayerFeatureStack({ data = {} }) {
     return payload;
   }
 
-  async function loadDispatch() {
+  async function loadAssign crew() {
     const payload = await api("/top-player/dispatch-commander/plan", "POST", {});
-    setDispatchPlan(payload.recommendations || []);
+    setAssign crewPlan(payload.recommendations || []);
     return payload;
   }
 
@@ -217,7 +218,7 @@ export default function TopPlayerFeatureStack({ data = {} }) {
   useEffect(() => {
     if (tab === "command") run("Customer Command Links", loadLinks);
     if (tab === "growth") run("Growth Loop", loadGrowth);
-    if (tab === "dispatch") run("AI Dispatch Commander", loadDispatch);
+    if (tab === "dispatch") run("AI Assign crew Commander", loadAssign crew);
     if (tab === "margin") run("AI Margin Guard", loadMargins);
     if (tab === "packs") run("AI Work Packs", loadTemplates);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -257,15 +258,15 @@ export default function TopPlayerFeatureStack({ data = {} }) {
     });
   }
 
-  async function approveDispatch(row) {
+  async function approveAssign crew(row) {
     const worker = row.recommended_worker || {};
-    await run("Approve Dispatch", async () => {
+    await run("Approve Assign crew", async () => {
       const out = await api("/top-player/dispatch-commander/approve", "POST", {
         job_id: row.job_id,
         worker_id: worker.worker_id,
         reason: (worker.reasons || []).join(", "),
       });
-      await loadDispatch();
+      await loadAssign crew();
       return out;
     });
   }
@@ -294,7 +295,7 @@ export default function TopPlayerFeatureStack({ data = {} }) {
   const overviewCards = [
     ["Customer Links", summary.customer_command_links || 0, "portal links"],
     ["Growth Ready", summary.growth_loop_ready || 0, "reviews/referrals"],
-    ["Dispatch Needed", summary.dispatch_needed || 0, "unassigned jobs"],
+    ["Ready to assign", summary.dispatch_needed || 0, "unassigned jobs"],
     ["Margin Warnings", summary.margin_warnings || 0, "profit checks"],
     ["Work Packs", summary.work_packs_prepared || 0, "prepared packs"],
   ];
@@ -306,7 +307,7 @@ export default function TopPlayerFeatureStack({ data = {} }) {
           <span>Top-player feature stack</span>
           <h2>Churvox now has the front end for the whole advantage.</h2>
           <p>
-            Customer Command Links, Growth Loop, AI Dispatch Commander, Margin Guard and Work Packs —
+            Customer Command Links, Growth Loop, AI Assign crew Commander, Margin Guard and Work Packs —
             all built around the same Churvox rule: AI prepares, the owner approves.
           </p>
         </div>
@@ -341,7 +342,7 @@ export default function TopPlayerFeatureStack({ data = {} }) {
           <div className="omtp-overview-actions">
             <button type="button" onClick={() => setTab("command")}>Open Customer Links</button>
             <button type="button" onClick={() => setTab("growth")}>Open Growth Loop</button>
-            <button type="button" onClick={() => setTab("dispatch")}>Open Dispatch</button>
+            <button type="button" onClick={() => setTab("dispatch")}>Open Assign crew</button>
             <button type="button" onClick={() => setTab("margin")}>Open Margin Guard</button>
             <button type="button" onClick={() => setTab("packs")}>Open Work Packs</button>
           </div>
@@ -419,12 +420,12 @@ export default function TopPlayerFeatureStack({ data = {} }) {
       {tab === "dispatch" ? (
         <section className="omtp-feature">
           <FeatureHeader
-            title="AI Dispatch Commander"
+            title="AI Assign crew Commander"
             body="See unassigned jobs, recommended worker, score and reason. Owner approves before the worker is assigned."
             stat={dispatchPlan.length}
             action="Rebuild dispatch plan"
-            busy={busy === "AI Dispatch Commander"}
-            onAction={() => run("AI Dispatch Commander", loadDispatch)}
+            busy={busy === "AI Assign crew Commander"}
+            onAction={() => run("AI Assign crew Commander", loadAssign crew)}
           />
 
           <div className="omtp-cards">
@@ -441,7 +442,7 @@ export default function TopPlayerFeatureStack({ data = {} }) {
                   </div>
                   <footer>
                     <small>Owner approval required</small>
-                    <button type="button" disabled={!worker.worker_id} onClick={() => approveDispatch(row)}>Approve dispatch</button>
+                    <button type="button" disabled={!worker.worker_id} onClick={() => approveAssign crew(row)}>Approve dispatch</button>
                   </footer>
                 </article>
               );

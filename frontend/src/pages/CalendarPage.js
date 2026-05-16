@@ -1,3 +1,4 @@
+// PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
@@ -217,7 +218,7 @@ export default function CalendarPage() {
       <div className="cx-page" data-testid="calendar-page">
         <div className="cx-page-hero">
           <div>
-            <h1 className="cx-page-title">Dispatch Board</h1>
+            <h1 className="cx-page-title">Crew Assignment Board</h1>
             <p className="cx-page-subtitle">Plan the week, assign workers, spot conflicts, and keep jobs moving.</p>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">

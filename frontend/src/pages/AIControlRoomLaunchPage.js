@@ -1,3 +1,4 @@
+// PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
@@ -51,7 +52,7 @@ const panelConfig = {
     empty: "No follow-ups are due right now.",
   },
   needCrew: {
-    title: "Dispatch / Need Crew",
+    title: "Assign crew / Need Crew",
     route: "/dispatch?embedded=1",
     kind: "unassignedJobs",
     empty: "No unassigned jobs right now.",
@@ -88,7 +89,7 @@ const workspaceTiles = [
   ["Quotes", "/quotes?embedded=1", "▤", "Quotes and follow-ups"],
   ["Invoices", "/invoices?embedded=1", "$", "Drafts, reminders and payment"],
   ["Team", "/team?embedded=1", "♙", "Workers and roles"],
-  ["Dispatch", "/dispatch?embedded=1", "▦", "Assign jobs"],
+  ["Assign crew", "/dispatch?embedded=1", "▦", "Assign jobs"],
   ["Proof-to-Paid", "/proof-to-paid?embedded=1", "◇", "Proof review to invoice"],
   ["Automation", "/automation?embedded=1", "↻", "Rules and safe runs"],
   ["SMS", "/sms?embedded=1", "☵", "Customer updates"],
@@ -205,7 +206,7 @@ export default function AIControlRoomLaunchPage() {
         <section style={styles.grid2}>
           <article style={styles.card}>
             <Header title="Next Best Moves" />
-            <Move title="Dispatch the day" text={`${derived.unassignedJobs.length} unassigned job${derived.unassignedJobs.length === 1 ? "" : "s"} ready to match with a worker.`} action="Open dispatch plan" onClick={() => openPanel("needCrew")} />
+            <Move title="Assign crew the day" text={`${derived.unassignedJobs.length} unassigned job${derived.unassignedJobs.length === 1 ? "" : "s"} ready to match with a worker.`} action="Open dispatch plan" onClick={() => openPanel("needCrew")} />
             <Move title="Move money" text={`${money(derived.moneyWaiting)} waiting across invoice follow-ups.`} action="Prepare reminders" onClick={() => openPanel("revenue")} />
             <Move title="Proof & updates" text={`${derived.proofJobs.length} completed job${derived.proofJobs.length === 1 ? "" : "s"} can be reviewed for proof-to-paid.`} action="Review proof" onClick={() => openPanel("proof")} />
           </article>
@@ -422,7 +423,7 @@ function buildSuggestedMessage(key, data, derived) {
     const job = derived.unassignedJobs[0];
     const worker = derived.activeWorkers[0];
     if (job && worker) return `Recommended assignment: ${worker.name || worker.email} for ${labelOf(job, "the job")} because they are active and available in Team. Review schedule conflicts before approving.`;
-    if (job) return `This job needs a worker: ${labelOf(job)}. Open Dispatch to assign someone.`;
+    if (job) return `This job needs a worker: ${labelOf(job)}. Open Assign crew to assign someone.`;
     return "No unassigned jobs right now.";
   }
   if (key === "proof") return "Review completed job proof, worker notes and photos, then approve the proof pack before preparing the invoice.";

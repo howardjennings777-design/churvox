@@ -1,3 +1,4 @@
+// PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
 // PHASE_134_REAL_AI_PREPARED_WORK
@@ -825,7 +826,7 @@ function buildMachine(data = {}) {
         sourceId: id,
         kind: "dispatch",
         title: `Assign ${bestName} to ${title}`,
-        eyebrow: "Dispatch prepared",
+        eyebrow: "Assign crew prepared",
         client,
         need: `Worker match prepared for ${client}${address ? ` at ${address}` : ""}.`,
         prepared: preparationText([
@@ -1410,7 +1411,7 @@ function WorkSlip({ slip, team, outputStatus, smsCredits = 0, businessLogoUrl = 
 
   const isJobIntake = slip.kind === "new-job";
   const isJobReview = slip.kind === "job";
-  const isDispatch = slip.kind === "dispatch";
+  const isAssign crew = slip.kind === "dispatch";
   const isInvoiceLike = slip.kind === "invoice" || slip.kind === "cashflow" || slip.kind === "proof";
   const isNewInvoice = slip.kind === "invoice" && String(slip.id || "").startsWith("new-invoice");
   const showsInvoiceTemplate = phase113ShouldShowInvoiceTemplate(slip);
@@ -1427,7 +1428,7 @@ function WorkSlip({ slip, team, outputStatus, smsCredits = 0, businessLogoUrl = 
     isQuoteLike ? "Approve quote action" :
     isPayrollLike ? "Save payroll review" :
     isSettingsLike ? "Save setting review" :
-    isDispatch ? "Approve dispatch" :
+    isAssign crew ? "Approve dispatch" :
     slip.kind === "invoice" ? "Approve & email PDF" :
     slip.kind === "cashflow" ? "Approve follow-up" :
     "Approve";
@@ -1593,7 +1594,7 @@ function WorkSlip({ slip, team, outputStatus, smsCredits = 0, businessLogoUrl = 
             </>
           ) : null}
 
-          {isDispatch ? (
+          {isAssign crew ? (
             <label>
               Worker / crew choice
               <select value={draft.workerChoice || ""} onChange={(event) => update("workerChoice", event.target.value)}>
@@ -2414,7 +2415,7 @@ function featureConfig(page) {
       body: "Create, assign and complete work here. Churvox uses the job data to prepare dispatch, proof-to-paid and invoice actions.",
       primary: "Open job slip",
       empty: "No jobs found yet.",
-      machine: ["Dispatch", "Proof", "Invoice prep"],
+      machine: ["Assign crew", "Proof", "Invoice prep"],
     },
     clients: {
       label: "Clients",
@@ -4395,7 +4396,7 @@ function JobsQueueBoard({ data, machine, onOpen }) {
 
   const machineSteps = [
     ["New", "Job enters the tray"],
-    ["Dispatch", "Worker fit is checked"],
+    ["Assign crew", "AI matched the best worker"],
     ["Proof", "Notes and photos feed admin"],
     ["Invoice", "Completed work becomes approval-ready"],
   ];
@@ -4439,9 +4440,9 @@ function JobsQueueBoard({ data, machine, onOpen }) {
     const address = clean(item.address || item.job_address || item.service_address || item.location);
     const notes = clean(item.completion_notes || item.worker_notes || item.job_notes || item.notes);
     const completed = isCompletedJob(item);
-    const needsDispatch = !hasWorker(item) && !completed;
+    const needsAssign crew = !hasWorker(item) && !completed;
 
-    if (needsDispatch) {
+    if (needsAssign crew) {
       const suggestedWorker = team[0] || {};
       const workerLabel = clean(
         suggestedWorker.name ||
@@ -4516,7 +4517,7 @@ function JobsQueueBoard({ data, machine, onOpen }) {
       <header className="om-jobs-hero om-jobs-hero-final">
         <div>
           <span>Churvox Operator Machine · Jobs</span>
-          <h1>Jobs go in. Dispatch, proof and invoices come out ready.</h1>
+          <h1>Jobs go in. Crew, proof and invoices come out ready.</h1>
           <p>
             Keep the job record simple. Churvox checks worker fit, proof, client context and invoice readiness
             in the background, then shows only the decisions the owner needs to make.
@@ -4580,15 +4581,15 @@ function JobsQueueBoard({ data, machine, onOpen }) {
               const status = statusOf(item);
               const worker = clean(item.assigned_worker_name || item.worker_name || item.assigned_worker || item.worker_id);
               const completed = isCompletedJob(item);
-              const needsDispatch = !hasWorker(item) && !completed;
+              const needsAssign crew = !hasWorker(item) && !completed;
               const address = clean(item.address || item.job_address || item.service_address || item.location);
 
               return (
-                <button type="button" key={row.id} className={`om-job-ticket ${needsDispatch ? "needs-worker" : completed ? "completed" : "active"}`} onClick={() => onOpen(makeJobSlip(row))}>
-                  <span>{needsDispatch ? "Needs dispatch" : completed ? "Completed" : status || "Active job"}</span>
+                <button type="button" key={row.id} className={`om-job-ticket ${needsAssign crew ? "needs-worker" : completed ? "completed" : "active"}`} onClick={() => onOpen(makeJobSlip(row))}>
+                  <span>{needsAssign crew ? "Needs dispatch" : completed ? "Completed" : status || "Active job"}</span>
                   <strong>{row.title}</strong>
                   <small>{address || row.need}</small>
-                  <em>{worker ? `Worker: ${worker}` : needsDispatch ? "Choose worker" : completed ? "Prepare invoice" : "Open Work Slip"}</em>
+                  <em>{worker ? `Worker: ${worker}` : needsAssign crew ? "Choose worker" : completed ? "Prepare invoice" : "Open Work Slip"}</em>
                 </button>
               );
             }) : (
@@ -4602,7 +4603,7 @@ function JobsQueueBoard({ data, machine, onOpen }) {
 
         <aside className="om-job-side">
           <section>
-            <span>Dispatch needed</span>
+            <span>Ready to assign</span>
             <strong>{needsWorker.length}</strong>
             <p>Jobs without a worker should be handled first so the day can run cleanly.</p>
           </section>
@@ -6228,7 +6229,7 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
       id: "advanced-dispatch",
       kind: "dispatch",
       eyebrow: "Advanced tool",
-      title: "Dispatch",
+      title: "Assign crew",
       need: "Unassigned jobs and worker-fit checks can become owner-approved dispatch slips.",
       customerMessage: "Churvox can recommend worker assignment using job context, workload and missing worker checks.",
       ownerNote: "Use this when jobs need workers or schedule attention.",

@@ -1,3 +1,4 @@
+// PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 import { findByIds, money, safeArray, statusOf, textOr } from './smartHubSafety';
 import { invoiceBalance } from './smartHubCounts';
 
@@ -48,7 +49,7 @@ export const getBestNextMove = ({ readyToBillCount = 0, unassignedJobsCount = 0,
   const pending = safeArray(pendingApprovalActions).filter((item) => isActiveApproval(item));
   const highRiskDecisionCount = pending.filter((item) => item.group === "needs_decision" && String(item?.risk || "").toLowerCase() === "high").length;
   if (highRiskDecisionCount > 0) return { key: "needs_decision", label: `Review ${highRiskDecisionCount} high-risk approval${highRiskDecisionCount === 1 ? "" : "s"} now.`, approvalTab: "needs_decision" };
-  if (unassignedJobsCount > 0) return { key: "assign_workers", label: `Assign crew to ${unassignedJobsCount} unassigned job${unassignedJobsCount === 1 ? "" : "s"}.`, drawer: "AI Dispatch", mode: "assign", approvalTab: "ready" };
+  if (unassignedJobsCount > 0) return { key: "assign_workers", label: `Assign crew to ${unassignedJobsCount} unassigned job${unassignedJobsCount === 1 ? "" : "s"}.`, drawer: "AI Assign crew", mode: "assign", approvalTab: "ready" };
   if (readyToBillCount > 0) return { key: "invoice_drafts", label: `Create draft invoices for ${readyToBillCount} ready-to-bill job${readyToBillCount === 1 ? "" : "s"}.`, drawer: "Invoices", mode: "readyToBill", approvalTab: "ready" };
   if (openInvoicesCount > 0) return { key: "invoice_reminders", label: `Prepare reminders for ${openInvoicesCount} open invoice${openInvoicesCount === 1 ? "" : "s"}.`, drawer: "Payment Reminders", mode: "reminders", approvalTab: "drafts" };
   if (quotesWaitingCount > 0) return { key: "quote_followups", label: `Review follow-ups for ${quotesWaitingCount} waiting quote${quotesWaitingCount === 1 ? "" : "s"}.`, drawer: "Quote Follow-ups", mode: "followUps", approvalTab: "drafts" };

@@ -1,3 +1,4 @@
+// PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -141,7 +142,7 @@ export default function LoginPage() {
           <div className="grid grid-cols-2 gap-3 mt-8 max-w-md mx-auto">
             <div className="rounded-2xl bg-white/70 border border-[#d8e3f3] p-4 backdrop-blur shadow-sm text-left">
               <div className="h-9 w-9 rounded-xl bg-[#dbe7ff] text-[#1d4ed8] inline-flex items-center justify-center"><Briefcase className="h-4 w-4" /></div>
-              <p className="text-[13px] font-bold text-[#0d1b34] mt-2">Jobs & Dispatch</p>
+              <p className="text-[13px] font-bold text-[#0d1b34] mt-2">Jobs & Assign crew</p>
               <p className="text-[12px] text-[#5b6c87] mt-1">Assign, track and complete</p>
             </div>
             <div className="rounded-2xl bg-white/70 border border-[#d8e3f3] p-4 backdrop-blur shadow-sm text-left">

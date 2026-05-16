@@ -1,3 +1,4 @@
+// PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 const API_ROOT = (() => {
@@ -165,7 +166,7 @@ function SmartHubBrainPage() {
       .slice(0, 4)
       .forEach((job) => {
         items.push({
-          type: "Dispatch",
+          type: "Assign crew",
           title: job.title || job.service || "Unassigned job",
           detail: job.address || job.client_name || "Needs a worker recommendation",
           status: niceStatus(job.status),

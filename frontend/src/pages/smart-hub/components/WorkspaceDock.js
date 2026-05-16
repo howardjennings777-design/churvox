@@ -1,3 +1,4 @@
+// PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 import React from 'react';
 
 export function WorkspaceDock({ workspaceButtons = [], workspaceMeta = {}, onOpenWorkspace }) {
@@ -21,7 +22,7 @@ export function WorkspaceDock({ workspaceButtons = [], workspaceMeta = {}, onOpe
       <div className="mt-3 grid gap-2 sm:grid-cols-3">
         <button type="button" onClick={() => onOpenWorkspace('Payment Reminders', 'reminders')} className="rounded-xl border border-[#ff8a3d]/40 bg-[#f97316] px-4 py-2.5 text-sm font-black text-white transition hover:bg-[#ea580c] operator-primary" data-operator-primary="true">Prepare reminders</button>
         <button type="button" onClick={() => onOpenWorkspace('Quote Follow-ups', 'followUps')} className="rounded-xl border border-[#ff8a3d]/40 bg-[#f97316] px-4 py-2.5 text-sm font-black text-white transition hover:bg-[#ea580c] operator-primary" data-operator-primary="true">Review follow-ups</button>
-        <button type="button" onClick={() => onOpenWorkspace('AI Dispatch', 'assign')} className="rounded-xl border border-[#ff8a3d]/40 bg-[#f97316] px-4 py-2.5 text-sm font-black text-white transition hover:bg-[#ea580c] operator-primary" data-operator-primary="true">Assign workers</button>
+        <button type="button" onClick={() => onOpenWorkspace('AI Assign crew', 'assign')} className="rounded-xl border border-[#ff8a3d]/40 bg-[#f97316] px-4 py-2.5 text-sm font-black text-white transition hover:bg-[#ea580c] operator-primary" data-operator-primary="true">Assign workers</button>
       </div>
     </section>
   );

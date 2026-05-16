@@ -1,3 +1,4 @@
+// PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../../components/Layout";
@@ -144,7 +145,7 @@ export default function JobsPage() {
               </span>
               <div>
                 {isEmployer && <button onClick={() => navigate("/jobs/new")}><Plus size={15} /> New job</button>}
-                <button className="secondary" onClick={() => navigate("/dispatch")}><Route size={15} /> Dispatch board</button>
+                <button className="secondary" onClick={() => navigate("/dispatch")}><Route size={15} /> Crew assignment board</button>
                 {showMoney && <button className="secondary" onClick={() => navigate("/invoices")}><ReceiptText size={15} /> Open invoices</button>}
               </div>
             </article>
@@ -268,7 +269,7 @@ export default function JobsPage() {
 
                     <div className="jobs-v5-actions" onClick={(e) => e.stopPropagation()}>
                       <PremiumButton size="sm" variant="secondary" onClick={() => setActiveJob(job)}>Open</PremiumButton>
-                      {needsCrew && <PremiumButton size="sm" onClick={() => navigate("/dispatch")}>Dispatch</PremiumButton>}
+                      {needsCrew && <PremiumButton size="sm" onClick={() => navigate("/dispatch")}>Assign crew</PremiumButton>}
                       {readyInvoice && <PremiumButton size="sm" onClick={() => navigate("/invoices")}>Invoice</PremiumButton>}
                       {isEmployer && (
                         <button

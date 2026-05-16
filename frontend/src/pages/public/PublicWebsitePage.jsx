@@ -1,3 +1,4 @@
+// PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 import React from "react";
 import {
   ArrowRight,
@@ -23,7 +24,7 @@ const features = [
   ["Proof-to-paid", "Worker photos and notes become an AI summary, draft invoice, and approval flow.", ReceiptText],
   ["AI crew matching", "Match workers by area, availability, workload, job history, and schedule conflicts.", UsersRound],
   ["CSV imports", "Bulk import clients and workers with AI column mapping, duplicate checks, and invite preparation.", FileSpreadsheet],
-  ["Dispatch map", "See job pins, unassigned work, worker check-ins, nearby matches, and suburb clusters.", Map],
+  ["Assign crew map", "See job pins, unassigned work, worker check-ins, nearby matches, and suburb clusters.", Map],
   ["Timesheets & Pay Export", "Review worker time, approve hours, create pay summaries, and export for payroll handoff.", ClipboardCheck],
 ];
 
@@ -146,7 +147,7 @@ export default function PublicWebsitePage() {
 
       <section className="pw-split">
         <div className="pw-copy">
-          <p className="pw-kicker"><Map size={16} /> Dispatch map</p>
+          <p className="pw-kicker"><Map size={16} /> Assign crew map</p>
           <h2>See work, crew, and risk by location.</h2>
           <p>Job pins, unassigned work, worker start/check-in locations, nearby match suggestions, and suburb clusters. Powerful dispatch without creepy all-day tracking.</p>
           <ul>

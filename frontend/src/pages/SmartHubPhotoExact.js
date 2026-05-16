@@ -1,5 +1,6 @@
+// PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 import React from "react";
-const nav = ["AI Control Room", "Jobs", "Clients", "Quotes", "Invoices", "Dispatch", "Team", "Automation", "Settings"];
+const nav = ["AI Control Room", "Jobs", "Clients", "Quotes", "Invoices", "Assign crew", "Team", "Automation", "Settings"];
 const jobs = [
   ["J-1056", "Smith Residence", "Sarah Smith", "In Progress", "Install air con unit", "Today 2:30pm", "Northridge"],
   ["J-1047", "Wilson Plumbing", "Matt Wilson", "Needs Crew", "Assign technician", "Today 11:00am", "Fremantle"],
@@ -7,7 +8,7 @@ const jobs = [
   ["J-1038", "Brown Renovation", "Daniel Brown", "In Progress", "Plastering stage", "Today 4:00pm", "South Perth"],
   ["J-1031", "Davis Property", "Chris Davis", "Completed", "Invoice sent", "Today 8:45am", "Cottesloe"],
 ];
-const work = ["Jobs", "Clients", "Quotes", "Invoices", "Dispatch", "Team", "Automation", "Reports"];
+const work = ["Jobs", "Clients", "Quotes", "Invoices", "Assign crew", "Team", "Automation", "Reports"];
 const icons = ["◎", "◇", "♙", "▤", "▥", "⌘", "♙", "⚡", "⚙"];
 
 export default function SmartHubPhotoExact() {

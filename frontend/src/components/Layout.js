@@ -1,3 +1,4 @@
+// PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 import React, { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -73,7 +74,7 @@ export default function Layout({ children, smartHubMode = false }) {
       items: [
         canAccess(role, "dashboard") && { path: "/dashboard", label: "Smart Hub", icon: LayoutDashboard },
         canAccess(role, "jobs") && { path: "/v3/jobs", label: "Jobs", icon: Briefcase },
-        canAccess(role, "calendar") && { path: "/v3/dispatch", label: "Dispatch", icon: Calendar },
+        canAccess(role, "calendar") && { path: "/v3/dispatch", label: "Assign crew", icon: Calendar },
         canAccess(role, "clients") && { path: "/v3/clients", label: "Clients", icon: Users },
         canAccess(role, "proof_to_paid") && { path: "/v3/proof", label: "Job Proofs", icon: Sparkles },
       ].filter(Boolean),
