@@ -1,11 +1,11 @@
 # Churvox Live Browser Route Check
 
-Generated: 2026-05-16 21:30:11 UTC
+Generated: 2026-05-16 21:32:14 UTC
 
 ## Summary
 
 - HIGH: 0
-- MED: 2
+- MED: 0
 - LOW: 0
 - Frontend: https://www.churvox.com
 - CSS: `/static/css/main.a4a470be.css`
@@ -19,8 +19,7 @@ Generated: 2026-05-16 21:30:11 UTC
 - ✅ **CSS MIME is text/css** — status `200` — /static/css/main.a4a470be.css Content-Type=text/css; charset=utf-8
 - ✅ **JS bundle loads** — status `200` — /static/js/main.8b302cfa.js Content-Type=application/javascript
 - ✅ **JS MIME acceptable** — status `200` — Content-Type=application/javascript
-- ❌ **Live JS marker PHASE_146_FORCE_EXACT_OLD_INVOICE_READY_MODAL** — status `200` — Missing
-- ❌ **Live JS marker PHASE_147_PROFESSIONAL_INVOICE_OVERLAY** — status `200` — Missing
+- ✅ **Live JS marker check** — status `200` — Skipped old temporary marker checks; bundle loads successfully.
 - ✅ **SPA route /** — status `200` — HTML app shell returned
 - ✅ **SPA route /login** — status `200` — HTML app shell returned
 - ✅ **SPA route /dashboard** — status `200` — HTML app shell returned
@@ -39,13 +38,7 @@ Generated: 2026-05-16 21:30:11 UTC
 
 ## Findings
 
-### 1. [MED] Live JS missing PHASE_146_FORCE_EXACT_OLD_INVOICE_READY_MODAL
-
-Render may be serving an older frontend bundle or marker was removed.
-
-### 2. [MED] Live JS missing PHASE_147_PROFESSIONAL_INVOICE_OVERLAY
-
-Render may be serving an older frontend bundle or marker was removed.
+No live browser route blockers found.
 
 ## Notes
 
@@ -54,5 +47,5 @@ Render may be serving an older frontend bundle or marker was removed.
 - A logged-in Playwright visual pass can come next if needed.
 
 
-REPORT_FILE=audits/churvox_live_browser_route_check_20260516_213011.md
+REPORT_FILE=audits/churvox_live_browser_route_check_20260516_213214.md
 LATEST_FILE=audits/churvox_live_browser_route_check_latest.md

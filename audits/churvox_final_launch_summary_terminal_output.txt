@@ -1,0 +1,41 @@
+# Churvox Final Launch Test Summary
+
+Generated: 2026-05-16 21:32:14 UTC
+
+## Current result
+
+Launch is **not fully clear yet** because these blockers remain:
+
+- Deep wiring audit: 2 HIGH
+
+## Report matrix
+
+| Area | Status | HIGH | MED | LOW | Report |
+|---|---:|---:|---:|---:|---|
+| Owner workflow | PASS | 0 | 0 | 0 | `audits/churvox_live_owner_workflow_test_latest.md` |
+| Worker workflow | PASS | 0 | 0 | 0 | `audits/churvox_live_worker_flow_test_latest.md` |
+| Quote + invoice workflow | PASS | 0 | 0 | 0 | `audits/churvox_live_quote_invoice_workflow_test_latest.md` |
+| Browser routes | PASS | 0 | 0 | 0 | `audits/churvox_live_browser_route_check_latest.md` |
+| Launch workflow audit | PASS | 0 | 0 | 1 | `audits/churvox_launch_workflow_audit_latest.md` |
+| Deep wiring audit | CHECK | 2 | 16 | 16 | `audits/churvox_deep_audit_latest.md` |
+
+## Honest remaining notes
+
+- Worker login was skipped because no worker email/password env vars were supplied.
+- Draft invoice creation works, but the normal draft invoice response did not expose a public/payment URL in the API smoke test.
+- Invoice visual/template work should still be checked manually in the browser because the automated tests only prove API and route health.
+- SMS is intentionally Coming Soon / disabled for launch.
+- The npm audit vulnerability count remains dependency-level noise and was not changed here to avoid risky package upgrades before launch.
+
+## Next manual browser checks
+
+1. Log in as owner on www.churvox.com.
+2. Open Dashboard / Smart Hub.
+3. Open Clients, Jobs, Quotes, Invoices, Team, Plans.
+4. Create a real-looking job and open its Work Slip/modal.
+5. Open an invoice Work Slip and visually confirm the invoice template is acceptable.
+6. Test on mobile/PWA install path.
+
+
+LATEST_FILE=audits/churvox_final_launch_summary_latest.md
+REPORT_FILE=audits/churvox_final_launch_summary_20260516_213214.md
