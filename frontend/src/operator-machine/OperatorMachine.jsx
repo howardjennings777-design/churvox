@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_107_BUSINESS_LOGO_UPLOAD
 // PHASE_105_OWNER_APPROVAL_PERFORMS_REAL_ACTIONS
 // PHASE_104_AI_PREFILL_WORK_SLIPS
 // PHASE_103_TAPPABLE_DASHBOARD_ADVANCED_TOOLS
@@ -129,6 +130,211 @@ async function apiPost(path, body = {}) {
 
   return payload;
 }
+
+
+function businessLogoFromData(data = {}) {
+  const raw = data.raw || {};
+  const user = raw.user || data.user || {};
+  const business = raw.business || raw.company || data.business || data.company || {};
+  const billing = raw.billing || data.billing || {};
+
+  const candidates = [
+    raw.business_logo_url,
+    raw.logo_url,
+    user.business_logo_url,
+    user.logo_url,
+    business.business_logo_url,
+    business.logo_url,
+    billing.business_logo_url,
+    data.business_logo_url,
+    data.logo_url,
+  ];
+
+  for (const value of candidates) {
+    const cleaned = clean(value);
+    if (cleaned) return cleaned;
+  }
+
+  try {
+    return localStorage.getItem("churvox_business_logo_url") || "";
+  } catch {
+    return "";
+  }
+}
+
+async function apiGet(path) {
+  const token = readToken();
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  const text = await res.text();
+  let payload = {};
+  try {
+    payload = text ? JSON.parse(text) : {};
+  } catch {
+    payload = { message: text };
+  }
+
+  if (!res.ok) {
+    throw new Error(payload.detail || payload.message || payload.error || `${path} failed`);
+  }
+
+  return payload;
+}
+
+async function apiDelete(path) {
+  const token = readToken();
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "DELETE",
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  const text = await res.text();
+  let payload = {};
+  try {
+    payload = text ? JSON.parse(text) : {};
+  } catch {
+    payload = { message: text };
+  }
+
+  if (!res.ok) {
+    throw new Error(payload.detail || payload.message || payload.error || `${path} failed`);
+  }
+
+  return payload;
+}
+
+async function apiUploadLogo(file) {
+  const token = readToken();
+  const body = new FormData();
+  body.append("logo", file);
+
+  const res = await fetch(`${API_BASE}/business/logo`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body,
+  });
+
+  const text = await res.text();
+  let payload = {};
+  try {
+    payload = text ? JSON.parse(text) : {};
+  } catch {
+    payload = { message: text };
+  }
+
+  if (!res.ok) {
+    throw new Error(payload.detail || payload.message || payload.error || "Logo upload failed");
+  }
+
+  return payload;
+}
+
+function BusinessLogoUploader({ data }) {
+  const [logoUrl, setLogoUrl] = useState(() => businessLogoFromData(data || {}));
+  const [status, setStatus] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    apiGet("/business/logo")
+      .then((payload) => {
+        if (!mounted) return;
+        const nextLogo = payload.business_logo_url || payload.logo_url || "";
+        if (nextLogo) {
+          setLogoUrl(nextLogo);
+          try { localStorage.setItem("churvox_business_logo_url", nextLogo); } catch {}
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  async function upload(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setBusy(true);
+    setStatus("Uploading business logo...");
+
+    try {
+      const payload = await apiUploadLogo(file);
+      const nextLogo = payload.business_logo_url || payload.logo_url || "";
+      setLogoUrl(nextLogo);
+      try { localStorage.setItem("churvox_business_logo_url", nextLogo); } catch {}
+      setStatus(payload.message || "Business logo saved.");
+    } catch (err) {
+      setStatus(err.message || "Logo upload failed.");
+    } finally {
+      setBusy(false);
+      event.target.value = "";
+    }
+  }
+
+  async function removeLogo() {
+    setBusy(true);
+    setStatus("Removing logo...");
+
+    try {
+      const payload = await apiDelete("/business/logo");
+      setLogoUrl("");
+      try { localStorage.removeItem("churvox_business_logo_url"); } catch {}
+      setStatus(payload.message || "Business logo removed.");
+    } catch (err) {
+      setStatus(err.message || "Could not remove logo.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="om-business-logo-uploader" data-phase="PHASE_107_BUSINESS_LOGO_UPLOAD">
+      <div>
+        <span>Business branding</span>
+        <h2>Upload your business logo.</h2>
+        <p>Churvox will place this logo on invoice emails, quotes, customer proof links and future public documents. If no logo is uploaded, Churvox branding stays as the fallback.</p>
+      </div>
+
+      <aside>
+        <div className="om-logo-preview">
+          {logoUrl ? <img src={logoUrl} alt="Business logo preview" /> : <strong>No logo yet</strong>}
+        </div>
+
+        <label className="om-logo-upload-button">
+          {busy ? "Working..." : logoUrl ? "Replace logo" : "Upload logo"}
+          <input type="file" accept="image/png,image/jpeg,image/webp" onChange={upload} disabled={busy} />
+        </label>
+
+        {logoUrl ? (
+          <button type="button" className="om-logo-remove-button" onClick={removeLogo} disabled={busy}>
+            Remove logo
+          </button>
+        ) : null}
+
+        {status ? <small>{status}</small> : <small>PNG, JPG or WEBP. Max 2MB.</small>}
+      </aside>
+    </section>
+  );
+}
+
 
 function clean(value, fallback = "") {
   if (value === null || value === undefined) return fallback;
@@ -736,7 +942,7 @@ function smartWorkSlipDraft(slip = {}, team = []) {
 }
 
 
-function WorkSlip({ slip, team, outputStatus, smsCredits = 0, onClose, onSave, onApprove, onChoosePlan }) {
+function WorkSlip({ slip, team, outputStatus, smsCredits = 0, businessLogoUrl = "", onClose, onSave, onApprove, onChoosePlan }) {
   const [draft, setDraft] = useState(() => smartWorkSlipDraft(slip || {}, team || []));
   const [busy, setBusy] = useState(false);
 
@@ -2509,6 +2715,7 @@ function PayrollWorkspaceBoard({ data, machine, onOpen }) {
 
 function SettingsMachineBoard({ data, machine, onOpen }) {
   const currentPlan = currentPlanKey(data || {});
+  const businessLogoUrl = businessLogoFromData(data || {});
   const raw = (data && data.raw) || {};
   const business = raw.business || raw.company || data?.business || {};
   const user = raw.user || raw.profile || data?.user || {};
@@ -4977,6 +5184,8 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
 
         <OperatorActionReceipt entry={outputLog[0]} />
 
+        {page === "settings" ? <BusinessLogoUploader data={data || {}} /> : null}
+
         {page === "dashboard" ? (
           <>
         <section className="om-flow om-flow-real-counts" data-phase="PHASE_95_REAL_MACHINE_FLOW_COUNTS">
@@ -5084,6 +5293,7 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
         team={team}
         outputStatus={outputStatus}
         smsCredits={smsCreditBalance(data || {})}
+        businessLogoUrl={businessLogoUrl}
         onClose={() => setActiveSlip(null)}
         onSave={saveEdit}
         onApprove={approveSlip}

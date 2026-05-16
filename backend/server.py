@@ -1161,6 +1161,8 @@ async def _phase105_create_notification(business_id: str, user_id: str, title: s
         "read": False,
         "created_at": now,
         "updated_at": now,
+        "business_logo_url": logo_payload.get("business_logo_url") or "",
+        "logo_url": logo_payload.get("business_logo_url") or "",
     }
 
     saved_any = False
@@ -1378,9 +1380,11 @@ async def _phase105_send_invoice_email(invoice: dict, client_doc: dict | None):
     invoice_id = _phase105_doc_id(invoice)
     invoice_link = f"{FRONTEND_URL}/public/document-studio/invoice/{invoice_id}" if invoice_id else FRONTEND_URL
 
+    logo_html = _phase107_logo_html_from_invoice(invoice)
     subject = f"Invoice from Churvox: {invoice_title}"
     html = f"""
     <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111;padding:24px;">
+      {logo_html}
       <h2 style="margin:0 0 12px;">Invoice ready</h2>
       <p>Hi {customer_name},</p>
       <p>Your invoice has been prepared and approved.</p>
@@ -1408,6 +1412,9 @@ async def _phase105_perform_invoice_approval(payload: dict, business_id: str, cu
     email_result = None
     now = datetime.now(timezone.utc)
     invoice_id = _phase105_doc_id(invoice)
+    logo_record = await _phase107_business_logo_record(str(business_id))
+    logo_payload = _phase107_logo_payload(logo_record)
+
 
     # Save owner-approved wording/amount before send attempt.
     patch = {
@@ -1562,6 +1569,160 @@ async def phase105_owner_command_general_approve(request: Request):
         "message": result.get("message"),
     }
 # =================== END PHASE_105_OWNER_APPROVAL_PERFORMS_REAL_ACTIONS ===================
+
+
+
+# ===================== PHASE_107_BUSINESS_LOGO_UPLOAD =====================
+async def _phase107_business_logo_record(business_id: str):
+    try:
+        profile = await db.business_profiles.find_one({"business_id": str(business_id)})
+        if profile:
+            return profile
+    except Exception:
+        pass
+
+    try:
+        owner = await db.users.find_one({"business_id": str(business_id), "role": {"$in": ["owner", "employer", "admin"]}})
+        if owner:
+            return owner
+    except Exception:
+        pass
+
+    try:
+        owner = await db.users.find_one({"_id": ObjectId(str(business_id))})
+        if owner:
+            return owner
+    except Exception:
+        pass
+
+    return {}
+
+
+def _phase107_logo_payload(record: dict | None):
+    record = record or {}
+    return {
+        "logo_url": record.get("business_logo_url") or record.get("logo_url") or "",
+        "business_logo_url": record.get("business_logo_url") or record.get("logo_url") or "",
+        "logo_filename": record.get("business_logo_filename") or "",
+        "logo_mime_type": record.get("business_logo_mime_type") or "",
+        "updated_at": record.get("business_logo_updated_at") or "",
+    }
+
+
+def _phase107_logo_html_from_invoice(invoice: dict | None):
+    invoice = invoice or {}
+    logo_url = str(invoice.get("business_logo_url") or invoice.get("logo_url") or "").strip()
+    if not logo_url:
+        return ""
+    safe_url = logo_url.replace('"', "&quot;")
+    return f'<div style="margin:0 0 18px;"><img src="{safe_url}" alt="Business logo" style="max-height:72px;max-width:220px;border-radius:12px;display:block;" /></div>'
+
+
+@api_router.get("/business/logo")
+async def phase107_get_business_logo(request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    record = await _phase107_business_logo_record(str(business_id))
+    return {"ok": True, **_phase107_logo_payload(record)}
+
+
+@api_router.post("/business/logo")
+async def phase107_upload_business_logo(request: Request, logo: UploadFile = File(...)):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    allowed = {
+        "image/png": "png",
+        "image/jpeg": "jpg",
+        "image/jpg": "jpg",
+        "image/webp": "webp",
+    }
+
+    mime = str(logo.content_type or "").lower().strip()
+    if mime not in allowed:
+        raise HTTPException(status_code=400, detail="Logo must be PNG, JPG or WEBP.")
+
+    raw = await logo.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="Logo file is empty.")
+
+    max_bytes = 2 * 1024 * 1024
+    if len(raw) > max_bytes:
+        raise HTTPException(status_code=400, detail="Logo must be under 2MB.")
+
+    encoded = base64.b64encode(raw).decode("ascii")
+    data_url = f"data:{mime};base64,{encoded}"
+    now = datetime.now(timezone.utc)
+
+    patch = {
+        "business_id": str(business_id),
+        "business_logo_url": data_url,
+        "logo_url": data_url,
+        "business_logo_filename": logo.filename or f"business-logo.{allowed[mime]}",
+        "business_logo_mime_type": mime,
+        "business_logo_updated_at": now,
+        "updated_at": now,
+    }
+
+    await db.business_profiles.update_one(
+        {"business_id": str(business_id)},
+        {"$set": patch, "$setOnInsert": {"created_at": now}},
+        upsert=True,
+    )
+
+    try:
+        await db.users.update_many({"business_id": str(business_id)}, {"$set": patch})
+    except Exception:
+        pass
+
+    try:
+        await db.users.update_one({"_id": ObjectId(str(business_id))}, {"$set": patch})
+    except Exception:
+        pass
+
+    return {
+        "ok": True,
+        "message": "Business logo saved. Churvox will use it on invoice emails and customer documents.",
+        **_phase107_logo_payload(patch),
+    }
+
+
+@api_router.delete("/business/logo")
+async def phase107_delete_business_logo(request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    now = datetime.now(timezone.utc)
+    patch = {
+        "business_logo_url": "",
+        "logo_url": "",
+        "business_logo_filename": "",
+        "business_logo_mime_type": "",
+        "business_logo_updated_at": now,
+        "updated_at": now,
+    }
+
+    await db.business_profiles.update_one({"business_id": str(business_id)}, {"$set": patch}, upsert=True)
+
+    try:
+        await db.users.update_many({"business_id": str(business_id)}, {"$set": patch})
+    except Exception:
+        pass
+
+    try:
+        await db.users.update_one({"_id": ObjectId(str(business_id))}, {"$set": patch})
+    except Exception:
+        pass
+
+    return {"ok": True, "message": "Business logo removed.", **_phase107_logo_payload(patch)}
+# =================== END PHASE_107_BUSINESS_LOGO_UPLOAD ===================
 
 # =================== END CHURVOX AI ACTION QUEUE ROUTES ===================
 
