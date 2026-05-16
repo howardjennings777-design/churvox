@@ -1,0 +1,63 @@
+# Churvox Launch Workflow Audit
+
+Generated: 2026-05-16 21:05:31 UTC
+
+## Summary
+
+- HIGH: 4
+- MED: 1
+- LOW: 0
+- Backend effective routes found: 374
+
+## Launch flow matrix
+
+| Flow | Critical | Frontend | Backend routes | Status |
+|---|---:|---:|---:|---|
+| Owner/user login | Yes | ✅ | ❌ | ❌ Check |
+| User signup | Yes | ✅ | ❌ | ❌ Check |
+| Clients load/add/open | Yes | ✅ | ✅ | ✅ OK |
+| Client CSV import | No | ✅ | ✅ | ✅ OK |
+| Jobs load/create/open | Yes | ✅ | ✅ | ✅ OK |
+| Assign worker to job | Yes | ✅ | ✅ | ✅ OK |
+| Quotes load/create/open | Yes | ✅ | ✅ | ✅ OK |
+| Invoices load/create/open | Yes | ✅ | ✅ | ✅ OK |
+| Invoice approve/email/PDF | Yes | ✅ | ✅ | ✅ OK |
+| Team invite/add worker | Yes | ✅ | ❌ | ❌ Check |
+| Worker app job flow | Yes | ✅ | ✅ | ✅ OK |
+| Worker photo upload | No | ✅ | ❌ | ❌ Check |
+| Plans and billing gate | Yes | ✅ | ❌ | ❌ Check |
+| Stripe webhook plan update | Yes | ✅ | ✅ | ✅ OK |
+| Smart Hub owner approval actions | Yes | ✅ | ✅ | ✅ OK |
+| Deploy CORS/MIME safety | Yes | ✅ | ✅ | ✅ OK |
+
+## Findings
+
+### 1. [HIGH] Launch flow — Owner/user login may be incomplete
+
+missing routes: /owner/login, /admin/login
+
+### 2. [HIGH] Launch flow — Plans and billing gate may be incomplete
+
+missing routes: /billing/plans
+
+### 3. [HIGH] Launch flow — Team invite/add worker may be incomplete
+
+missing routes: /team/invite
+
+### 4. [HIGH] Launch flow — User signup may be incomplete
+
+missing routes: /register
+
+### 5. [MED] Technical debt — Invoice/runtime force patches still live in index.js
+
+Works for launch, but should be moved into real React invoice components after critical flows are stable.
+
+## Notes
+
+- This audit is static. It proves route/component wiring exists, not that a logged-in browser flow succeeds.
+- Next best step after this is live browser workflow testing with an owner account and worker account.
+- SMS Coming Soon is not treated as a launch blocker because SMS is intentionally greyed out for launch.
+
+
+REPORT_FILE=audits/churvox_launch_workflow_audit_20260516_210531.md
+LATEST_FILE=audits/churvox_launch_workflow_audit_latest.md
