@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_93_TRIAL_PLAN_ENTITLEMENT_BRAIN
 // PHASE_92_OPERATOR_APPROVAL_CONFIRMATION_BOX
 // PHASE_91_WIRE_PLANS_TO_CHECKOUT
 // PHASE_90_FINISH_INVOICES_OPERATOR_MACHINE_ALL_IN_ONE
@@ -912,29 +913,8 @@ function normalisePlanName(value) {
 }
 
 function currentPlanKey(data = {}) {
-  const raw = data.raw || {};
-  const user = raw.user || raw.profile || data.user || data.profile || {};
-  const billing = raw.billing || raw.subscription || data.billing || data.subscription || {};
-
   try {
-    const stored =
-      localStorage.getItem("churvox_plan") ||
-      localStorage.getItem("plan") ||
-      localStorage.getItem("selectedPlan") ||
-      "";
-    const candidate =
-      billing.plan ||
-      billing.plan_name ||
-      billing.tier ||
-      billing.current_plan ||
-      user.plan ||
-      user.plan_name ||
-      user.tier ||
-      data.plan ||
-      stored ||
-      "start";
-
-    return normalisePlanName(candidate);
+    return planEntitlementSnapshot(data).plan || "start";
   } catch {
     return "start";
   }
@@ -960,6 +940,175 @@ function planPrice(plan) {
   return OM_PLAN_DEFS[normalisePlanName(plan)]?.price || "$39";
 }
 
+
+
+const OM_PLAN_LIMITS = {
+  start: { clients: 20, activeTeam: 1 },
+  crew: { clients: 30, activeTeam: 10 },
+  operator: { clients: 40, activeTeam: 25 },
+  command: { clients: 50, activeTeam: 50 },
+};
+
+function firstNumber(...values) {
+  for (const value of values) {
+    const parsed = Number(String(value ?? "").replace(/[^0-9.-]/g, ""));
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return 0;
+}
+
+function billingContext(data = {}) {
+  const raw = data.raw || {};
+  const user = raw.user || raw.profile || data.user || data.profile || {};
+  const business = raw.business || raw.company || data.business || data.company || {};
+  const billing = raw.billing || raw.subscription || data.billing || data.subscription || {};
+
+  let local = {};
+  try {
+    local = {
+      plan: localStorage.getItem("churvox_plan") || "",
+      plan_status: localStorage.getItem("churvox_plan_status") || "",
+      subscription_status: localStorage.getItem("churvox_subscription_status") || "",
+      trial_ends_at: localStorage.getItem("churvox_trial_ends_at") || "",
+      growth_packs: localStorage.getItem("churvox_command_growth_packs") || "",
+      sms_credits: localStorage.getItem("churvox_sms_credits") || "",
+    };
+  } catch {
+    local = {};
+  }
+
+  return {
+    plan: normalisePlanName(
+      billing.plan ||
+      billing.current_plan ||
+      billing.plan_name ||
+      business.plan ||
+      user.plan ||
+      data.plan ||
+      local.plan ||
+      "start"
+    ),
+    plan_status: clean(
+      billing.plan_status ||
+      billing.status ||
+      business.plan_status ||
+      user.plan_status ||
+      local.plan_status ||
+      ""
+    ).toLowerCase(),
+    subscription_status: clean(
+      billing.subscription_status ||
+      business.subscription_status ||
+      user.subscription_status ||
+      local.subscription_status ||
+      ""
+    ).toLowerCase(),
+    trial_ends_at:
+      billing.trial_ends_at ||
+      billing.trial_end_date ||
+      business.trial_ends_at ||
+      business.trial_end_date ||
+      user.trial_ends_at ||
+      user.trial_end_date ||
+      local.trial_ends_at ||
+      "",
+    growth_packs: firstNumber(
+      billing.command_growth_packs,
+      billing.growth_packs,
+      billing.growth_pack_count,
+      business.command_growth_packs,
+      business.growth_packs,
+      data.command_growth_packs,
+      local.growth_packs
+    ),
+    sms_credits: firstNumber(
+      billing.sms_credits,
+      billing.sms_balance,
+      billing.sms_credit_balance,
+      raw.sms_credits?.balance,
+      raw.sms_balance,
+      business.sms_credits,
+      data.sms_credits,
+      local.sms_credits
+    ),
+  };
+}
+
+function daysUntil(value) {
+  if (!value) return 0;
+  const end = new Date(value).getTime();
+  if (!Number.isFinite(end)) return 0;
+  return Math.max(0, Math.ceil((end - Date.now()) / (24 * 60 * 60 * 1000)));
+}
+
+function planEntitlementSnapshot(data = {}, planOverride = "") {
+  const billing = billingContext(data);
+  const plan = normalisePlanName(planOverride || billing.plan);
+  const status = clean(billing.plan_status || billing.subscription_status).toLowerCase();
+  const paid = ["active", "paid", "current", "trialing"].some((item) => status.includes(item));
+  const trialDaysLeft = daysUntil(billing.trial_ends_at);
+  const trialActive = status.includes("trial") && trialDaysLeft > 0;
+  const trialExpired = status.includes("trial") && billing.trial_ends_at && trialDaysLeft <= 0;
+  const canStartTrial = !paid && !billing.trial_ends_at;
+
+  const base = OM_PLAN_LIMITS[plan] || OM_PLAN_LIMITS.start;
+  const growthPacks = plan === "command" ? Math.max(0, billing.growth_packs || 0) : 0;
+  const activeTeamLimit = base.activeTeam + (growthPacks * 50);
+
+  return {
+    plan,
+    status: status || (trialActive ? "trialing" : "none"),
+    trial: {
+      active: trialActive,
+      expired: trialExpired,
+      daysLeft: trialDaysLeft,
+      canStart: canStartTrial,
+      endsAt: billing.trial_ends_at,
+    },
+    limits: {
+      clients: base.clients,
+      activeTeam: activeTeamLimit,
+      baseActiveTeam: base.activeTeam,
+      growthPacks,
+    },
+    sms: {
+      credits: billing.sms_credits || 0,
+    },
+  };
+}
+
+function syncCheckoutReturnToLocalStorage() {
+  try {
+    const params = new URLSearchParams(window.location.search || "");
+    if (params.get("checkout") !== "success") return;
+
+    const plan = params.get("plan");
+    const addon = params.get("addon");
+    const sms = params.get("sms");
+
+    if (plan) {
+      localStorage.setItem("churvox_plan", normalisePlanName(plan));
+      localStorage.setItem("churvox_plan_status", "active");
+      localStorage.setItem("churvox_subscription_status", "active");
+    }
+
+    if (addon === "command_growth_pack") {
+      const current = firstNumber(localStorage.getItem("churvox_command_growth_packs"));
+      localStorage.setItem("churvox_command_growth_packs", String(current + 1));
+    }
+
+    if (addon === "myob_operator") {
+      localStorage.setItem("churvox_myob_addon", "active");
+    }
+
+    if (sms) {
+      const current = firstNumber(localStorage.getItem("churvox_sms_credits"));
+      localStorage.setItem("churvox_sms_credits", String(current + Number(sms)));
+    }
+  } catch {
+    // ignore local return sync
+  }
+}
 
 function checkoutUrlFrom(payload = {}) {
   const candidates = [
@@ -1147,7 +1296,7 @@ function rowsForPage(page, machine, data = {}) {
         price: "$99",
         planName: "Command Growth Pack",
         badge: "Active add-on",
-        prepared: "Adds 50 extra active team members, extra job capacity, extra AI Operator Actions, extra automation runs, and extra admin/payroll capacity. Only active team members count, so old or inactive staff records do not increase the bill.",
+        prepared: "Adds 50 extra active team members per Growth Pack, extra job capacity, extra AI Operator Actions, extra automation runs, and extra admin/payroll capacity. The count sticks to the business after checkout; only active team members count, so old or inactive staff records do not increase the bill.",
         features: ["+50 active team members", "Extra job capacity", "Extra AI Operator Actions", "Extra automation runs", "Extra admin/payroll capacity"],
         cta: "Add to checkout",
       },
@@ -3496,6 +3645,18 @@ function PlanPricingBoard({ data, currentPlan, onOpen }) {
   const mainPlans = rows.filter((row) => row.kind === "plan");
   const addOns = rows.filter((row) => row.kind === "addon");
   const current = planLabel(currentPlan);
+  const entitlement = planEntitlementSnapshot(data || {}, currentPlan);
+  const trialLine = entitlement.trial.active
+    ? `Trial active · ${entitlement.trial.daysLeft} day${entitlement.trial.daysLeft === 1 ? "" : "s"} left`
+    : entitlement.trial.expired
+      ? "Trial expired · choose a paid plan"
+      : entitlement.trial.canStart
+        ? "14-day free trial available"
+        : entitlement.status || "Plan ready";
+  const teamLine = currentPlan === "command"
+    ? `${entitlement.limits.activeTeam} active team members · ${entitlement.limits.growthPacks} Growth Pack${entitlement.limits.growthPacks === 1 ? "" : "s"}`
+    : `${entitlement.limits.activeTeam} active team member limit`;
+  const smsLine = `${entitlement.sms.credits} SMS credit${entitlement.sms.credits === 1 ? "" : "s"} available`;
 
   const smsAddons = addOns.filter((row) => String(row.id || "").includes("sms"));
   const otherAddons = addOns.filter((row) => !String(row.id || "").includes("sms"));
@@ -3511,10 +3672,11 @@ function PlanPricingBoard({ data, currentPlan, onOpen }) {
           </p>
         </div>
 
-        <aside>
+        <aside className="om-plan-entitlement-strip">
           <b>Current plan: {current}</b>
-          <b>Operator is the main AI admin plan</b>
-          <b>Command includes MYOB + payroll</b>
+          <b>{trialLine}</b>
+          <b>{teamLine}</b>
+          <b>{smsLine}</b>
         </aside>
       </header>
 
@@ -3533,13 +3695,13 @@ function PlanPricingBoard({ data, currentPlan, onOpen }) {
               type="button"
               key={plan.id}
               className={`om-plan-board-card ${plan.planName === "Operator" ? "featured" : ""}`}
-              onClick={() => onOpen(plan)}
+              onClick={() => onOpen({ ...plan, trialAvailable: entitlement.trial.canStart })}
             >
               <span>{plan.badge || plan.eyebrow}</span>
               <strong>{plan.planName || plan.eyebrow}</strong>
               <b>{plan.price}<small>/month + GST</small></b>
               <p>{plan.need}</p>
-              <em>{plan.cta || "Review plan"}</em>
+              <em>{entitlement.trial.canStart ? "Start 14-day trial" : plan.cta || "Review plan"}</em>
             </button>
           ))}
         </div>
@@ -3783,6 +3945,10 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
   const [outputStatus, setOutputStatus] = useState("");
   const [showAllApprovals, setShowAllApprovals] = useState(false);
 
+  useEffect(() => {
+    syncCheckoutReturnToLocalStorage();
+  }, []);
+
   function go(page) {
     const paths = {
       dashboard: "/dashboard",
@@ -3844,6 +4010,65 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
       cancelUrl: meta.cancel_url,
     };
 
+    if (meta.kind === "plan" && (slip.trialAvailable || planEntitlementSnapshot(data || {}).trial.canStart)) {
+      const trialPayload = {
+        plan: meta.plan,
+        selected_plan: meta.plan,
+        tier: meta.plan,
+        legacy_plan: meta.legacy_plan,
+        trial_days: 14,
+        no_card_required: true,
+      };
+
+      let trialError = null;
+      for (const path of ["/billing/start-trial", "/billing/start_trial"]) {
+        try {
+          const result = await apiPost(path, trialPayload);
+          const trialEnd =
+            result?.trial_ends_at ||
+            result?.trial_end_date ||
+            result?.data?.trial_ends_at ||
+            result?.data?.trial_end_date ||
+            new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+
+          localStorage.setItem("churvox_plan", meta.plan);
+          localStorage.setItem("churvox_legacy_plan", meta.legacy_plan || "");
+          localStorage.setItem("churvox_plan_status", "trialing");
+          localStorage.setItem("churvox_subscription_status", "trialing");
+          localStorage.setItem("churvox_trial_ends_at", trialEnd);
+
+          const message = `14-day free trial started on ${meta.plan_name}. No card required.`;
+          setOutputStatus(message);
+          setOutputLog((current) => [
+            {
+              id: `${Date.now()}-${slip.id}`,
+              type: "Trial started",
+              title: meta.plan_name,
+              detail: message,
+            },
+            ...current,
+          ].slice(0, 8));
+          setActiveSlip(null);
+          return;
+        } catch (err) {
+          trialError = err;
+        }
+      }
+
+      const message = trialError?.message || "Trial could not be started yet.";
+      setOutputStatus(message);
+      setOutputLog((current) => [
+        {
+          id: `${Date.now()}-${slip.id}`,
+          type: "Trial start blocked",
+          title: meta.plan_name,
+          detail: message,
+        },
+        ...current,
+      ].slice(0, 8));
+      return;
+    }
+
     const checkoutPaths =
       meta.kind === "sms"
         ? [
@@ -3881,6 +4106,10 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
         }
 
         if (meta.kind === "sms" && (result?.new_balance !== undefined || result?.balance !== undefined || result?.message)) {
+          const balance = result?.new_balance ?? result?.balance ?? result?.data?.new_balance ?? result?.data?.balance;
+          if (balance !== undefined) {
+            try { localStorage.setItem("churvox_sms_credits", String(balance)); } catch {}
+          }
           const message = result?.message || "SMS credits purchased.";
           setOutputStatus(message);
           setOutputLog((current) => [
@@ -4352,6 +4581,35 @@ function OperatorAuth({ authMode, setAuthMode, onLogin }) {
           });
 
       saveSession(payload);
+
+      if (signup) {
+        try {
+          const result = await apiPost("/billing/start-trial", {
+            plan: "operator",
+            selected_plan: "operator",
+            tier: "operator",
+            legacy_plan: "pro",
+            trial_days: 14,
+            no_card_required: true,
+          });
+
+          const trialEnd =
+            result?.trial_ends_at ||
+            result?.trial_end_date ||
+            result?.data?.trial_ends_at ||
+            result?.data?.trial_end_date ||
+            new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+
+          localStorage.setItem("churvox_plan", "operator");
+          localStorage.setItem("churvox_legacy_plan", "pro");
+          localStorage.setItem("churvox_plan_status", "trialing");
+          localStorage.setItem("churvox_subscription_status", "trialing");
+          localStorage.setItem("churvox_trial_ends_at", trialEnd);
+        } catch {
+          // Registration still succeeds; billing guard can ask the owner to start the trial from Plans.
+        }
+      }
+
       onLogin();
     } catch (err) {
       setError(err.message || "Could not open Churvox");

@@ -4275,3 +4275,30 @@
     width: fit-content;
   }
 }
+
+
+/* PHASE_93_TRIAL_PLAN_ENTITLEMENT_BRAIN */
+.om-plan-entitlement-strip {
+  display: grid;
+  gap: 10px;
+}
+
+.om-plan-entitlement-strip b {
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  border-radius: 18px;
+  padding: 12px 14px;
+  background: var(--om-charcoal);
+  color: var(--om-lime);
+}
+
+.om-plan-board-card em,
+.om-addon-card em {
+  text-align: center;
+}
+
+.om-plan-board-card.featured em {
+  background: var(--om-lime);
+  color: var(--om-charcoal);
+}
