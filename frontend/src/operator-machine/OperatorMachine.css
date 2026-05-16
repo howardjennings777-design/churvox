@@ -7583,3 +7583,119 @@ select {
     text-align: left;
   }
 }
+
+
+/* PHASE_122_COMPLETE_REAL_INVOICE_TEMPLATE */
+.om-complete-invoice-template {
+  gap: 22px;
+}
+
+.om-complete-invoice-template .om-single-invoice-brand {
+  align-items: flex-start;
+}
+
+.om-complete-invoice-template .om-single-invoice-brand > div {
+  display: grid;
+  gap: 8px;
+  min-width: min(520px, 100%);
+}
+
+.om-complete-invoice-template .om-single-invoice-brand textarea {
+  min-height: 58px;
+}
+
+.om-invoice-business-contact {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.om-complete-invoice-template .om-single-invoice-header aside {
+  gap: 8px;
+}
+
+.om-complete-invoice-details {
+  grid-template-columns: 1fr 1.05fr 1.15fr .8fr;
+}
+
+.om-complete-invoice-details textarea {
+  min-height: 48px;
+}
+
+.om-complete-invoice-table {
+  border-radius: 22px;
+}
+
+.om-complete-invoice-table-head,
+.om-complete-invoice-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 88px 130px 140px;
+  gap: 12px;
+  align-items: start;
+  padding: 16px 18px;
+}
+
+.om-complete-invoice-table-head {
+  background: #ede0cf;
+  color: var(--om-charcoal);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-size: .74rem;
+}
+
+.om-complete-invoice-line > div {
+  display: grid;
+  gap: 10px;
+}
+
+.om-complete-invoice-line > input {
+  text-align: right;
+}
+
+.om-complete-invoice-totals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, 1fr)) minmax(180px, .8fr);
+  gap: 12px;
+  padding: 16px 18px;
+  border-top: 1px solid rgba(36, 34, 29, 0.1);
+  background: #fbf6eb;
+}
+
+.om-complete-invoice-totals article {
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  padding: 14px;
+  border-radius: 18px;
+  background: #24221d;
+  color: #fff8e9;
+  text-align: right;
+}
+
+.om-complete-invoice-totals article span {
+  color: #d8cdbd;
+  font-size: .72rem;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.om-complete-invoice-totals article strong {
+  color: var(--om-lime);
+  font-size: 1.65rem;
+}
+
+@media (max-width: 980px) {
+  .om-invoice-business-contact,
+  .om-complete-invoice-details,
+  .om-complete-invoice-table-head,
+  .om-complete-invoice-line,
+  .om-complete-invoice-totals {
+    grid-template-columns: 1fr;
+  }
+
+  .om-complete-invoice-line > input,
+  .om-complete-invoice-totals article {
+    text-align: left;
+  }
+}

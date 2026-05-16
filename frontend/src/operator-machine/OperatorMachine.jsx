@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_122_COMPLETE_REAL_INVOICE_TEMPLATE
 // PHASE_121_ONE_INVOICE_ONLY
 // PHASE_120_SEND_INVOICE_AS_PDF_ATTACHMENT
 // PHASE_118_CLEAN_OWNER_FOCUS_CARD
@@ -1034,7 +1035,7 @@ function WorkSlip({ slip, team, outputStatus, smsCredits = 0, businessLogoUrl = 
     isPayrollLike ? "Save payroll review" :
     isSettingsLike ? "Save setting review" :
     isDispatch ? "Approve dispatch" :
-    slip.kind === "invoice" ? "Approve invoice draft" :
+    slip.kind === "invoice" ? "Approve & email PDF" :
     slip.kind === "cashflow" ? "Approve follow-up" :
     "Approve";
 
@@ -1098,7 +1099,7 @@ function WorkSlip({ slip, team, outputStatus, smsCredits = 0, businessLogoUrl = 
             <div>
               <span>Invoice ready</span>
               <h2>{draft.title || slip.title || "Invoice draft"}</h2>
-              <p>Edit the invoice below, then save or approve. Approval emails the customer with the PDF invoice attached when an email is supplied.</p>
+              <p>Fill the invoice, then save or approve.</p>
             </div>
             <button type="button" onClick={onClose} aria-label="Close invoice slip">×</button>
           </header>
@@ -4864,23 +4865,63 @@ function phase121AmountRaw(value) {
 }
 
 
+
+function phase122Number(value) {
+  const parsed = Number(String(value ?? "").replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function phase122MoneyRaw(value) {
+  const parsed = phase122Number(value);
+  if (!parsed) return "";
+  return parsed.toFixed(2).replace(/\.00$/, "");
+}
+
+function phase122GstFromTotal(total, rate) {
+  const totalNum = phase122Number(total);
+  const rateNum = phase122Number(rate);
+  if (!totalNum || !rateNum) return "";
+  return (totalNum * rateNum / (100 + rateNum)).toFixed(2);
+}
+
+function phase122SubtotalFromTotal(total, gstAmount) {
+  const totalNum = phase122Number(total);
+  const gstNum = phase122Number(gstAmount);
+  if (!totalNum) return "";
+  return (totalNum - gstNum).toFixed(2).replace(/\.00$/, "");
+}
+
+
 function InvoiceTemplateCard({ slip, draft, update, businessLogoUrl = "", businessName = "" }) {
   if (!phase113ShouldShowInvoiceTemplate(slip)) return null;
 
   const invoice = phase113InvoiceValues({ ...draft, businessName: businessName || draft.businessName }, slip);
   const invoiceNumber = draft.invoiceNumber || phase121InvoiceNumber(slip, draft);
-  const business = phase121BusinessName(businessName, draft, slip);
+  const business = phase111bValue(draft.businessName, businessName, invoice.businessName, "Your business");
+  const businessAddress = phase111bValue(draft.businessAddress, draft.business_address, "");
+  const businessEmail = phase111bValue(draft.businessEmail, draft.business_email, "");
+  const businessPhone = phase111bValue(draft.businessPhone, draft.business_phone, "");
+  const gstNumber = phase111bValue(draft.gstNumber, draft.gst_number, "");
+  const reference = phase111bValue(draft.reference, draft.jobReference, draft.jobNumber, "");
   const issueDate = draft.issueDate || invoice.issueDate || new Date().toISOString().slice(0, 10);
   const client = draft.invoiceClientName || draft.clientName || invoice.client || "";
   const clientEmail = draft.invoiceClientEmail || draft.clientEmail || draft.customerEmail || "";
+  const clientAddress = phase111bValue(draft.invoiceClientAddress, draft.clientAddress, draft.address, "");
   const lineItem = draft.invoiceLineItem || draft.serviceType || invoice.lineItem || "Work completed";
   const description = draft.invoiceDescription || invoice.description || "";
+  const quantity = phase111bValue(draft.quantity, draft.invoiceQuantity, "1");
   const amount = phase121AmountRaw(draft.amount || invoice.amount || "");
+  const unitPrice = phase121AmountRaw(draft.unitPrice || draft.rate || amount);
+  const lineAmount = phase121AmountRaw(draft.lineAmount || amount || phase122Number(quantity) * phase122Number(unitPrice));
+  const gstRate = phase111bValue(draft.gstRate, draft.taxRate, "15");
+  const gstAmount = phase121AmountRaw(draft.gstAmount || draft.taxAmount || phase122GstFromTotal(lineAmount || amount, gstRate));
+  const subtotal = phase121AmountRaw(draft.subtotal || phase122SubtotalFromTotal(lineAmount || amount, gstAmount));
+  const totalDue = phase121AmountRaw(draft.total || lineAmount || amount);
   const dueDate = draft.dueDate || invoice.dueDate || "";
-  const paymentNote = draft.paymentNote || "Payment details are shown on this invoice. Please pay by the due date.";
+  const paymentNote = draft.paymentNote || "Bank account / payment link goes here. Please pay by the due date.";
 
   return (
-    <section className="om-single-invoice-template" data-phase="PHASE_121_ONE_INVOICE_ONLY">
+    <section className="om-single-invoice-template om-complete-invoice-template" data-phase="PHASE_122_COMPLETE_REAL_INVOICE_TEMPLATE">
       <header className="om-single-invoice-header">
         <div className="om-single-invoice-brand">
           {businessLogoUrl ? <img src={businessLogoUrl} alt="" /> : <i />}
@@ -4889,8 +4930,19 @@ function InvoiceTemplateCard({ slip, draft, update, businessLogoUrl = "", busine
               value={business}
               onChange={(event) => update("businessName", event.target.value)}
               aria-label="Business name"
+              placeholder="Business name"
             />
-            <small>Editable invoice</small>
+            <textarea
+              value={businessAddress}
+              onChange={(event) => update("businessAddress", event.target.value)}
+              aria-label="Business address"
+              placeholder="Business address"
+            />
+            <div className="om-invoice-business-contact">
+              <input value={businessEmail} onChange={(event) => update("businessEmail", event.target.value)} placeholder="Business email" />
+              <input value={businessPhone} onChange={(event) => update("businessPhone", event.target.value)} placeholder="Business phone" />
+              <input value={gstNumber} onChange={(event) => update("gstNumber", event.target.value)} placeholder="GST / tax number" />
+            </div>
           </div>
         </div>
 
@@ -4904,10 +4956,14 @@ function InvoiceTemplateCard({ slip, draft, update, businessLogoUrl = "", busine
             Date
             <input value={issueDate} onChange={(event) => update("issueDate", event.target.value)} placeholder="YYYY-MM-DD" />
           </label>
+          <label>
+            Reference
+            <input value={reference} onChange={(event) => update("reference", event.target.value)} placeholder="Job / PO / reference" />
+          </label>
         </aside>
       </header>
 
-      <section className="om-single-invoice-details">
+      <section className="om-single-invoice-details om-complete-invoice-details">
         <label>
           Bill to
           <input value={client} onChange={(event) => update("invoiceClientName", event.target.value)} placeholder="Client name" />
@@ -4919,18 +4975,25 @@ function InvoiceTemplateCard({ slip, draft, update, businessLogoUrl = "", busine
         </label>
 
         <label>
+          Client address
+          <textarea value={clientAddress} onChange={(event) => update("invoiceClientAddress", event.target.value)} placeholder="Client billing address" />
+        </label>
+
+        <label>
           Due date
           <input value={dueDate} onChange={(event) => update("dueDate", event.target.value)} placeholder="YYYY-MM-DD" />
         </label>
       </section>
 
-      <section className="om-single-invoice-table">
-        <div className="om-single-invoice-table-head">
+      <section className="om-single-invoice-table om-complete-invoice-table">
+        <div className="om-complete-invoice-table-head">
           <b>Description</b>
+          <b>Qty</b>
+          <b>Rate</b>
           <b>Amount</b>
         </div>
 
-        <div className="om-single-invoice-line">
+        <div className="om-complete-invoice-line">
           <div>
             <input
               value={lineItem}
@@ -4944,25 +5007,37 @@ function InvoiceTemplateCard({ slip, draft, update, businessLogoUrl = "", busine
             />
           </div>
 
-          <input
-            value={amount}
-            onChange={(event) => update("amount", event.target.value)}
-            placeholder="0.00"
-          />
+          <input value={quantity} onChange={(event) => update("quantity", event.target.value)} placeholder="1" />
+          <input value={unitPrice} onChange={(event) => update("unitPrice", event.target.value)} placeholder="0.00" />
+          <input value={lineAmount} onChange={(event) => update("amount", event.target.value)} placeholder="0.00" />
         </div>
 
-        <footer>
-          <span>Total due</span>
-          <strong>{phase113Money(amount)}</strong>
-        </footer>
+        <section className="om-complete-invoice-totals">
+          <label>
+            Subtotal
+            <input value={subtotal} onChange={(event) => update("subtotal", event.target.value)} placeholder="0.00" />
+          </label>
+          <label>
+            GST %
+            <input value={gstRate} onChange={(event) => update("gstRate", event.target.value)} placeholder="15" />
+          </label>
+          <label>
+            GST amount
+            <input value={gstAmount} onChange={(event) => update("gstAmount", event.target.value)} placeholder="0.00" />
+          </label>
+          <article>
+            <span>Total due</span>
+            <strong>{phase113Money(totalDue)}</strong>
+          </article>
+        </section>
       </section>
 
       <label className="om-single-invoice-payment">
-        Payment / invoice note
+        Payment details / invoice note
         <textarea
           value={paymentNote}
           onChange={(event) => update("paymentNote", event.target.value)}
-          placeholder="Payment instructions or notes"
+          placeholder="Bank account, payment link, payment terms or invoice notes"
         />
       </label>
     </section>
@@ -5400,6 +5475,20 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
         issue_date: draft.issueDate || "",
         payment_note: draft.paymentNote || "",
         business_name: draft.businessName || "",
+        business_address: draft.businessAddress || "",
+        business_email: draft.businessEmail || "",
+        business_phone: draft.businessPhone || "",
+        gst_number: draft.gstNumber || "",
+        reference: draft.reference || "",
+        client_address: draft.invoiceClientAddress || draft.clientAddress || draft.address || "",
+        quantity: draft.quantity || "",
+        unit_price: draft.unitPrice || "",
+        subtotal: draft.subtotal || "",
+        gst_rate: draft.gstRate || "",
+        gst_amount: draft.gstAmount || "",
+        tax_rate: draft.gstRate || "",
+        tax_amount: draft.gstAmount || "",
+        total_due: draft.total || draft.amount || "",
         client_email: draft.invoiceClientEmail || draft.clientEmail || draft.customerEmail || "",
         customer_email: draft.invoiceClientEmail || draft.clientEmail || draft.customerEmail || "",
         invoice_number: draft.invoiceNumber || "",

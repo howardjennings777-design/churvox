@@ -958,6 +958,7 @@ async def dismiss_ai_action(action_id: str, request: Request):
 
 # ===================== PHASE_105_OWNER_APPROVAL_PERFORMS_REAL_ACTIONS =====================
 # PHASE_120_SEND_INVOICE_AS_PDF_ATTACHMENT
+# PHASE_122_COMPLETE_REAL_INVOICE_TEMPLATE
 def _phase105_clean(value, fallback=""):
     value = str(value or "").strip()
     return value if value else fallback
@@ -1357,6 +1358,19 @@ async def _phase105_find_or_create_invoice(payload: dict, business_id: str):
         "due_date": _phase105_clean(draft.get("dueDate")),
         "payment_due_date": _phase105_clean(draft.get("dueDate")),
         "payment_note": _phase105_clean(draft.get("paymentNote") or payload.get("payment_note")),
+        "business_name": _phase105_clean(draft.get("businessName") or payload.get("business_name")),
+        "business_address": _phase105_clean(draft.get("businessAddress") or payload.get("business_address")),
+        "business_email": _phase105_clean(draft.get("businessEmail") or payload.get("business_email")),
+        "business_phone": _phase105_clean(draft.get("businessPhone") or payload.get("business_phone")),
+        "gst_number": _phase105_clean(draft.get("gstNumber") or payload.get("gst_number")),
+        "reference": _phase105_clean(draft.get("reference") or payload.get("reference")),
+        "client_address": _phase105_clean(draft.get("invoiceClientAddress") or draft.get("clientAddress") or payload.get("client_address")),
+        "quantity": _phase105_clean(draft.get("quantity") or payload.get("quantity")),
+        "unit_price": _phase105_clean(draft.get("unitPrice") or payload.get("unit_price")),
+        "subtotal": _phase105_clean(draft.get("subtotal") or payload.get("subtotal")),
+        "gst_rate": _phase105_clean(draft.get("gstRate") or payload.get("gst_rate")),
+        "gst_amount": _phase105_clean(draft.get("gstAmount") or payload.get("gst_amount")),
+        "total_due": _phase105_clean(draft.get("total") or draft.get("amount") or payload.get("total_due")),
         "status": "draft",
         "created_at": now,
         "updated_at": now,
@@ -1415,75 +1429,99 @@ def _phase120_pdf_line(x, y, size, text):
     return f"BT /F1 {size} Tf {x} {y} Td ({_phase120_pdf_escape(text)}) Tj ET\n"
 
 
+
 def _phase120_build_invoice_pdf(invoice: dict, client_doc: dict | None = None):
     invoice = invoice or {}
     client_doc = client_doc or {}
 
     invoice_number = _phase120_invoice_number(invoice)
-    business_name = _phase105_clean(
-        invoice.get("business_name")
-        or invoice.get("company_name")
-        or invoice.get("from_business_name")
-        or "Your business"
-    )
+    business_name = _phase105_clean(invoice.get("business_name") or invoice.get("company_name") or "Your business")
+    business_address = _phase105_clean(invoice.get("business_address"))
+    business_email = _phase105_clean(invoice.get("business_email"))
+    business_phone = _phase105_clean(invoice.get("business_phone"))
+    gst_number = _phase105_clean(invoice.get("gst_number"))
     customer_name = _phase105_name_from(invoice, client_doc)
+    client_address = _phase105_clean(invoice.get("client_address") or (client_doc or {}).get("address"))
+    customer_email = _phase105_email_from(invoice, client_doc or {})
     invoice_title = _phase105_clean(invoice.get("title") or invoice.get("invoice_title") or invoice.get("line_item"), "Invoice")
     line_item = _phase105_clean(invoice.get("line_item") or invoice.get("service_type") or invoice_title, invoice_title)
     description = _phase105_clean(invoice.get("invoice_description") or invoice.get("description") or invoice.get("customer_message"), line_item)
-    amount = _phase105_money(_phase105_invoice_amount(invoice, {}))
+    amount_raw = _phase105_invoice_amount(invoice, {}) or invoice.get("total_due") or invoice.get("amount")
+    amount = _phase105_money(amount_raw)
+    quantity = _phase105_clean(invoice.get("quantity"), "1")
+    unit_price = _phase105_money(invoice.get("unit_price") or amount_raw)
+    subtotal = _phase105_money(invoice.get("subtotal") or amount_raw)
+    gst_rate = _phase105_clean(invoice.get("gst_rate") or invoice.get("tax_rate") or "15")
+    gst_amount = _phase105_money(invoice.get("gst_amount") or invoice.get("tax_amount") or "0")
+    total_due = _phase105_money(invoice.get("total_due") or amount_raw)
     due_date = _phase105_clean(invoice.get("due_date") or invoice.get("payment_due_date"), "Shown on invoice")
     issue_date = _phase105_clean(invoice.get("issue_date") or invoice.get("created_at"), datetime.now(timezone.utc).date().isoformat())
-    payment_note = _phase105_clean(
-        invoice.get("payment_note")
-        or invoice.get("payment_terms")
-        or "Payment details are shown on this invoice. Please pay by the due date."
-    )
+    reference = _phase105_clean(invoice.get("reference"))
+    payment_note = _phase105_clean(invoice.get("payment_note") or invoice.get("payment_terms") or "Payment details are shown on this invoice. Please pay by the due date.")
 
-    y = 780
+    y = 790
     content = ""
-    content += _phase120_pdf_line(50, y, 22, business_name)
-    y -= 34
-    content += _phase120_pdf_line(50, y, 30, "INVOICE")
-    content += _phase120_pdf_line(390, y + 7, 13, invoice_number)
-    y -= 30
-    content += _phase120_pdf_line(50, y, 10, f"Issued: {issue_date}")
-    content += _phase120_pdf_line(390, y, 10, f"Due: {due_date}")
-
-    y -= 48
-    content += _phase120_pdf_line(50, y, 12, "Bill to")
+    content += _phase120_pdf_line(50, y, 21, business_name)
+    content += _phase120_pdf_line(410, y, 30, "INVOICE")
     y -= 20
-    content += _phase120_pdf_line(50, y, 16, customer_name)
+    for line in _phase120_wrap_text(business_address, 50)[:2]:
+        content += _phase120_pdf_line(50, y, 9, line)
+        y -= 12
+    contact = "  ".join([part for part in [business_email, business_phone, f"GST: {gst_number}" if gst_number else ""] if part])
+    if contact:
+        content += _phase120_pdf_line(50, y, 9, contact)
+    content += _phase120_pdf_line(410, 760, 10, f"No: {invoice_number}")
+    content += _phase120_pdf_line(410, 744, 10, f"Date: {issue_date}")
+    content += _phase120_pdf_line(410, 728, 10, f"Due: {due_date}")
+    if reference:
+        content += _phase120_pdf_line(410, 712, 10, f"Ref: {reference}")
 
-    y -= 46
-    content += _phase120_pdf_line(50, y, 12, "Description")
-    content += _phase120_pdf_line(455, y, 12, "Amount")
+    y = 675
+    content += _phase120_pdf_line(50, y, 11, "BILL TO")
     y -= 18
-    content += "0.6 w 50 575 m 545 575 l S\n"
+    content += _phase120_pdf_line(50, y, 15, customer_name)
+    y -= 15
+    if customer_email:
+        content += _phase120_pdf_line(50, y, 9, customer_email)
+        y -= 13
+    for line in _phase120_wrap_text(client_address, 48)[:3]:
+        content += _phase120_pdf_line(50, y, 9, line)
+        y -= 12
 
-    y -= 28
-    content += _phase120_pdf_line(50, y, 13, line_item)
-    content += _phase120_pdf_line(455, y, 13, amount)
+    content += "0.7 w 50 585 m 545 585 l S\n"
+    content += _phase120_pdf_line(50, 565, 10, "DESCRIPTION")
+    content += _phase120_pdf_line(330, 565, 10, "QTY")
+    content += _phase120_pdf_line(385, 565, 10, "RATE")
+    content += _phase120_pdf_line(465, 565, 10, "AMOUNT")
+    content += "0.4 w 50 548 m 545 548 l S\n"
 
-    y -= 24
-    for line in _phase120_wrap_text(description, 76)[:7]:
-        content += _phase120_pdf_line(50, y, 10, line)
-        y -= 15
-
+    y = 523
+    content += _phase120_pdf_line(50, y, 12, line_item)
+    content += _phase120_pdf_line(330, y, 11, quantity)
+    content += _phase120_pdf_line(385, y, 11, unit_price)
+    content += _phase120_pdf_line(465, y, 11, amount)
     y -= 18
-    content += "0.8 w 50 385 m 545 385 l S\n"
-    y -= 30
-    content += _phase120_pdf_line(355, y, 15, "Total due")
-    content += _phase120_pdf_line(455, y, 18, amount)
+    for line in _phase120_wrap_text(description, 76)[:6]:
+        content += _phase120_pdf_line(50, y, 9, line)
+        y -= 13
 
-    y -= 70
-    content += _phase120_pdf_line(50, y, 12, "Payment / notes")
+    content += "0.4 w 50 405 m 545 405 l S\n"
+    content += _phase120_pdf_line(360, 375, 11, "Subtotal")
+    content += _phase120_pdf_line(465, 375, 11, subtotal)
+    content += _phase120_pdf_line(360, 355, 11, f"GST {gst_rate}%")
+    content += _phase120_pdf_line(465, 355, 11, gst_amount)
+    content += "0.8 w 350 335 m 545 335 l S\n"
+    content += _phase120_pdf_line(360, 310, 14, "Total due")
+    content += _phase120_pdf_line(465, 310, 16, total_due)
+
+    y = 245
+    content += _phase120_pdf_line(50, y, 12, "PAYMENT DETAILS / NOTES")
     y -= 20
-    for line in _phase120_wrap_text(payment_note, 86)[:5]:
-        content += _phase120_pdf_line(50, y, 10, line)
-        y -= 15
+    for line in _phase120_wrap_text(payment_note, 86)[:6]:
+        content += _phase120_pdf_line(50, y, 9, line)
+        y -= 13
 
-    y -= 35
-    content += _phase120_pdf_line(50, y, 9, "Generated by Churvox after owner approval.")
+    content += _phase120_pdf_line(50, 55, 8, "Generated by Churvox after owner approval.")
 
     stream = content.encode("latin-1", errors="replace")
     objects = [
@@ -1613,6 +1651,21 @@ async def _phase105_perform_invoice_approval(payload: dict, business_id: str, cu
         ("invoiceLineItem", "line_item"),
         ("paymentNote", "payment_note"),
         ("businessName", "business_name"),
+        ("total", "total_due"),
+        ("taxAmount", "tax_amount"),
+        ("taxRate", "tax_rate"),
+        ("gstAmount", "gst_amount"),
+        ("gstRate", "gst_rate"),
+        ("subtotal", "subtotal"),
+        ("unitPrice", "unit_price"),
+        ("quantity", "quantity"),
+        ("clientAddress", "client_address"),
+        ("invoiceClientAddress", "client_address"),
+        ("reference", "reference"),
+        ("gstNumber", "gst_number"),
+        ("businessPhone", "business_phone"),
+        ("businessEmail", "business_email"),
+        ("businessAddress", "business_address"),
     ]:
         value = _phase105_clean(draft.get(key))
         if value:
