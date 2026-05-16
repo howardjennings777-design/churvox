@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_88_FINISH_QUOTES_OPERATOR_MACHINE_ALL_IN_ONE
 // PHASE_87_FINISH_TEAM_OPERATOR_MACHINE_ALL_IN_ONE
 // PHASE_85_FINISH_CLIENTS_OPERATOR_MACHINE
 // PHASE_84_FIX_DUPLICATE_DASHBOARD_HERO_JSX
@@ -486,8 +487,12 @@ function WorkSlip({ slip, team, outputStatus, onClose, onSave, onApprove, onChoo
   const isJobReview = slip.kind === "job";
   const isDispatch = slip.kind === "dispatch";
   const isInvoiceLike = slip.kind === "invoice" || slip.kind === "cashflow" || slip.kind === "proof";
+  const isQuoteLike = slip.kind === "quote";
+  const isNewQuote = isQuoteLike && String(slip.id || "").startsWith("new-quote");
   const primaryLabel =
     isJobIntake ? "Create job" :
+    isNewQuote ? "Create quote draft" :
+    isQuoteLike ? "Approve quote action" :
     isDispatch ? "Approve dispatch" :
     slip.kind === "invoice" ? "Approve invoice draft" :
     slip.kind === "cashflow" ? "Approve follow-up" :
@@ -696,6 +701,35 @@ function WorkSlip({ slip, team, outputStatus, onClose, onSave, onApprove, onChoo
               <label>
                 Amount / pricing context
                 <input value={draft.amount || ""} onChange={(event) => update("amount", event.target.value)} placeholder="Optional" />
+              </label>
+            </>
+          ) : null}
+
+          {isQuoteLike ? (
+            <>
+              <label>
+                Client name
+                <input value={draft.clientName || ""} onChange={(event) => update("clientName", event.target.value)} placeholder="Client or customer name" />
+              </label>
+
+              <label>
+                Quote line item
+                <input value={draft.quoteLineItem || draft.title || ""} onChange={(event) => update("quoteLineItem", event.target.value)} placeholder="Service, job or quote item" />
+              </label>
+
+              <label>
+                Amount / estimate
+                <input value={draft.amount || ""} onChange={(event) => update("amount", event.target.value)} placeholder="Quote amount" />
+              </label>
+
+              <label>
+                Expiry date
+                <input value={draft.expiryDate || ""} onChange={(event) => update("expiryDate", event.target.value)} placeholder="YYYY-MM-DD" />
+              </label>
+
+              <label className="wide">
+                Quote description
+                <textarea value={draft.quoteDescription || ""} onChange={(event) => update("quoteDescription", event.target.value)} placeholder="Describe the scope clearly..." />
               </label>
             </>
           ) : null}
@@ -1455,6 +1489,330 @@ function ClientsRecordBoard({ data, machine, onOpen }) {
   );
 }
 
+
+
+
+function QuotesPipelineBoard({ data, machine, onOpen }) {
+  const quoteRows = rowsForPage("quotes", machine, data || {});
+  const [quoteFilter, setQuoteFilter] = useState("priority");
+  const [quoteQuery, setQuoteQuery] = useState("");
+
+  function quoteStatus(row = {}) {
+    return statusOf(row.item || {});
+  }
+
+  function isAccepted(row) {
+    const status = quoteStatus(row);
+    return status.includes("accepted") || status.includes("approved") || status.includes("won");
+  }
+
+  function isLost(row) {
+    const status = quoteStatus(row);
+    return status.includes("declined") || status.includes("lost") || status.includes("rejected") || status.includes("expired");
+  }
+
+  function isOpen(row) {
+    return !isAccepted(row) && !isLost(row);
+  }
+
+  function quoteAmount(item = {}) {
+    return invoiceAmount(item);
+  }
+
+  function quoteClient(item = {}, fallback = "Client") {
+    return clean(item.client_name || item.customer_name || item.client?.name || item.customer?.name || item.name, fallback);
+  }
+
+  function quoteTitle(item = {}, fallback = "Quote") {
+    return clean(item.title || item.quote_title || item.quote_number || item.number || item.service_type || fallback);
+  }
+
+  const openRows = quoteRows.filter(isOpen);
+  const acceptedRows = quoteRows.filter(isAccepted);
+  const lostRows = quoteRows.filter(isLost);
+  const needsFollowupRows = openRows.filter((row) => {
+    const item = row.item || {};
+    const status = quoteStatus(row);
+    return status.includes("sent") || status.includes("open") || status.includes("draft") || status.includes("pending") || status === "new";
+  });
+
+  const priorityRows = [
+    ...needsFollowupRows,
+    ...openRows,
+    ...acceptedRows,
+    ...quoteRows,
+  ].filter((row, index, arr) => arr.findIndex((item) => item.id === row.id) === index);
+
+  const sourceRows =
+    quoteFilter === "open" ? openRows :
+    quoteFilter === "followup" ? needsFollowupRows :
+    quoteFilter === "accepted" ? acceptedRows :
+    quoteFilter === "lost" ? lostRows :
+    quoteFilter === "all" ? quoteRows :
+    priorityRows;
+
+  const filteredRows = sourceRows
+    .filter((row) => {
+      const item = row.item || {};
+      const haystack = [
+        row.title,
+        row.need,
+        item.title,
+        item.quote_title,
+        item.quote_number,
+        item.number,
+        item.client_name,
+        item.customer_name,
+        item.status,
+        item.quote_status,
+        item.description,
+        item.notes,
+        item.service_type,
+      ].map((value) => clean(value).toLowerCase()).join(" ");
+
+      return !quoteQuery.trim() || haystack.includes(quoteQuery.trim().toLowerCase());
+    })
+    .slice(0, 18);
+
+  const quoteStats = [
+    ["Quotes", quoteRows.length],
+    ["Open", openRows.length],
+    ["Follow-up", needsFollowupRows.length],
+    ["Accepted", acceptedRows.length],
+  ];
+
+  const machineSteps = [
+    ["Draft", "Quote is prepared"],
+    ["Check", "Price and scope are checked"],
+    ["Follow up", "Owner-approved nudge is prepared"],
+    ["Convert", "Accepted work can become a job"],
+  ];
+
+  const filters = [
+    ["priority", "Priority"],
+    ["open", "Open"],
+    ["followup", "Follow-up"],
+    ["accepted", "Accepted"],
+    ["lost", "Lost"],
+    ["all", "All quotes"],
+  ];
+
+  function makeNewQuoteSlip() {
+    return {
+      id: `new-quote-${Date.now()}`,
+      sourceId: "",
+      kind: "quote",
+      eyebrow: "New quote draft",
+      title: "Create quote draft",
+      need: "Create the quote once. Churvox keeps wording, price and follow-up approval-first.",
+      prepared: "Churvox will use the client, service scope, amount and notes to prepare a clean quote draft.",
+      draft: {
+        title: "New quote",
+        clientName: "",
+        quoteLineItem: "",
+        quoteDescription: "",
+        amount: "",
+        expiryDate: "",
+        ownerNote: "",
+        customerMessage: "",
+        invoiceDescription: "",
+      },
+    };
+  }
+
+  function makeQuoteSlip(row) {
+    const item = row.item || {};
+    const client = quoteClient(item, "Client");
+    const title = quoteTitle(item, row.title);
+    const amount = quoteAmount(item);
+    const status = quoteStatus(row);
+    const description = clean(item.description || item.quote_description || item.scope || item.notes || row.need);
+    const followup = quoteFollowup(item);
+    const accepted = isAccepted(row);
+    const lost = isLost(row);
+
+    if (accepted) {
+      return {
+        ...row,
+        kind: "quote",
+        eyebrow: "Accepted quote",
+        title: `Accepted quote for ${client}`,
+        need: "This quote has been accepted and may be ready to become a job or invoice.",
+        prepared: `Churvox found an accepted quote. ${description || followup}`,
+        draft: {
+          title,
+          clientName: client,
+          quoteLineItem: title,
+          quoteDescription: description || followup,
+          amount,
+          expiryDate: clean(item.expiry_date || item.valid_until || item.expires_at),
+          ownerNote: "Review whether this accepted quote should become a job or invoice.",
+          customerMessage: "",
+          invoiceDescription: description || followup,
+        },
+      };
+    }
+
+    if (lost) {
+      return {
+        ...row,
+        kind: "quote",
+        eyebrow: "Closed quote",
+        title: `Review closed quote for ${client}`,
+        need: "This quote appears closed, lost, declined or expired.",
+        prepared: `Churvox found a closed quote. Status: ${status}. ${description || ""}`,
+        draft: {
+          title,
+          clientName: client,
+          quoteLineItem: title,
+          quoteDescription: description,
+          amount,
+          expiryDate: clean(item.expiry_date || item.valid_until || item.expires_at),
+          ownerNote: "Review why this quote closed and whether follow-up is needed later.",
+          customerMessage: "",
+          invoiceDescription: "",
+        },
+      };
+    }
+
+    return {
+      ...row,
+      kind: "quote",
+      eyebrow: "Quote follow-up",
+      title: `Review quote follow-up for ${client}`,
+      need: "This quote is still open. Churvox prepared follow-up wording for owner review.",
+      prepared: followup,
+      draft: {
+        title,
+        clientName: client,
+        quoteLineItem: title,
+        quoteDescription: description || followup,
+        amount,
+        expiryDate: clean(item.expiry_date || item.valid_until || item.expires_at),
+        ownerNote: clean(item.notes || item.internal_note || row.need),
+        customerMessage: followup,
+        invoiceDescription: "",
+      },
+    };
+  }
+
+  return (
+    <section className="om-quotes-board" data-phase="PHASE_88_FINISH_QUOTES_OPERATOR_MACHINE_ALL_IN_ONE">
+      <header className="om-quotes-hero om-quotes-hero-final">
+        <div>
+          <span>Churvox Operator Machine · Quotes</span>
+          <h1>Quotes stay simple. Follow-ups come prepared.</h1>
+          <p>
+            Churvox keeps quote scope, price, status and client context tidy in the background,
+            then prepares the next owner-approved quote action.
+          </p>
+
+          <button type="button" className="om-quote-hero-action inline" onClick={() => onOpen(makeNewQuoteSlip())}>
+            New quote draft
+          </button>
+        </div>
+
+        <aside>
+          {quoteStats.map(([label, value]) => (
+            <article key={label}>
+              <span>{label}</span>
+              <strong>{value}</strong>
+            </article>
+          ))}
+        </aside>
+      </header>
+
+      <section className="om-quote-flow-strip compact">
+        {machineSteps.map(([label, body], index) => (
+          <article key={label} className={index === 2 ? "active" : ""}>
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <strong>{label}</strong>
+            <small>{body}</small>
+          </article>
+        ))}
+      </section>
+
+      <section className="om-quotes-layout">
+        <section className="om-quote-list">
+          <header className="om-quote-list-head">
+            <div>
+              <span>Quote Queue</span>
+              <h2>What needs quote attention.</h2>
+              <p>Filter quotes, then open one Work Slip to review, edit, follow up or convert.</p>
+            </div>
+            <b>{filteredRows.length}</b>
+          </header>
+
+          <section className="om-quote-tools">
+            <div className="om-quote-filter-tabs">
+              {filters.map(([key, label]) => (
+                <button type="button" key={key} className={quoteFilter === key ? "active" : ""} onClick={() => setQuoteFilter(key)}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <input
+              value={quoteQuery}
+              onChange={(event) => setQuoteQuery(event.target.value)}
+              placeholder="Search quote, client, status, scope..."
+            />
+          </section>
+
+          <div>
+            {filteredRows.length ? filteredRows.map((row) => {
+              const item = row.item || {};
+              const client = quoteClient(item, row.title);
+              const status = quoteStatus(row);
+              const amount = quoteAmount(item);
+              const accepted = isAccepted(row);
+              const lost = isLost(row);
+
+              return (
+                <button
+                  type="button"
+                  key={row.id}
+                  className={`om-quote-ticket ${accepted ? "accepted" : lost ? "lost" : "open"}`}
+                  onClick={() => onOpen(makeQuoteSlip(row))}
+                >
+                  <span>{accepted ? "Accepted" : lost ? "Closed" : status || "Open quote"}</span>
+                  <strong>{client}</strong>
+                  <small>{row.need}</small>
+                  <em>{amount ? money(amount) : accepted ? "Convert" : "Follow up"}</em>
+                </button>
+              );
+            }) : (
+              <article className="om-quote-empty">
+                <strong>No quotes match this view.</strong>
+                <p>Try another filter or create a new quote draft.</p>
+              </article>
+            )}
+          </div>
+        </section>
+
+        <aside className="om-quote-side">
+          <section>
+            <span>Open quotes</span>
+            <strong>{openRows.length}</strong>
+            <p>Quotes waiting on customer approval or owner follow-up.</p>
+          </section>
+
+          <section>
+            <span>Follow-ups</span>
+            <strong>{needsFollowupRows.length}</strong>
+            <p>Churvox can prepare quote nudges, but owner approves before sending.</p>
+          </section>
+
+          <section>
+            <span>Machine rule</span>
+            <h3>No generic quote messages.</h3>
+            <p>Quote wording should use the client, scope, price and status so the follow-up feels specific.</p>
+          </section>
+        </aside>
+      </section>
+    </section>
+  );
+}
 
 
 function TeamCrewBoard({ data, machine, onOpen }) {
@@ -2219,6 +2577,10 @@ function FeatureWorkspace({ page, machine, data, currentPlan, onOpen, onPlans })
     return <TeamCrewBoard data={data} machine={machine} onOpen={onOpen} />;
   }
 
+  if (page === "quotes") {
+    return <QuotesPipelineBoard data={data} machine={machine} onOpen={onOpen} />;
+  }
+
   return (
     <section className="om-feature-workspace" data-phase="PHASE_69_OPERATOR_MACHINE_ALL_PAGES">
       <header className="om-feature-hero">
@@ -2398,6 +2760,61 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
           id: `${Date.now()}-${slip.id}`,
           type: "Team create needs backend check",
           title: teamPayload.name,
+          detail: message,
+        },
+        ...current,
+      ].slice(0, 8));
+      return;
+    }
+
+    if (slip.kind === "quote" && String(slip.id || "").startsWith("new-quote")) {
+      const quotePayload = {
+        title: draft.title || draft.quoteLineItem || "New quote",
+        quote_title: draft.title || draft.quoteLineItem || "New quote",
+        client_name: draft.clientName || "",
+        customer_name: draft.clientName || "",
+        line_item: draft.quoteLineItem || draft.title || "",
+        service_type: draft.quoteLineItem || draft.title || "",
+        description: draft.quoteDescription || draft.ownerNote || "",
+        quote_description: draft.quoteDescription || draft.ownerNote || "",
+        amount: draft.amount || "",
+        total: draft.amount || "",
+        quote_total: draft.amount || "",
+        expiry_date: draft.expiryDate || "",
+        valid_until: draft.expiryDate || "",
+        notes: draft.ownerNote || "",
+        status: "draft",
+      };
+
+      let lastError = null;
+      for (const path of ["/quotes", "/quotes/", "/owner/quotes"]) {
+        try {
+          const result = await apiPost(path, quotePayload);
+          const message = result?.message || "Quote draft saved to Churvox.";
+          setOutputStatus(message);
+          setOutputLog((current) => [
+            {
+              id: `${Date.now()}-${slip.id}`,
+              type: "Quote draft created",
+              title: quotePayload.title,
+              detail: message,
+            },
+            ...current,
+          ].slice(0, 8));
+          setActiveSlip(null);
+          return;
+        } catch (err) {
+          lastError = err;
+        }
+      }
+
+      const message = lastError?.message || "Quote draft could not be saved yet.";
+      setOutputStatus(message);
+      setOutputLog((current) => [
+        {
+          id: `${Date.now()}-${slip.id}`,
+          type: "Quote create needs backend check",
+          title: quotePayload.title,
           detail: message,
         },
         ...current,
