@@ -1333,3 +1333,120 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* PHASE_71_PLAN_FEATURE_LOCKS */
+.om-nav nav button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.om-nav nav button > span {
+  display: block;
+}
+
+.om-nav nav button > small {
+  border-radius: 999px;
+  padding: 4px 7px;
+  background: rgba(184, 227, 95, .16);
+  color: var(--om-lime);
+  font-size: .65rem;
+  font-weight: 950;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.om-nav nav button.active > small,
+.om-nav nav button:hover > small {
+  background: var(--om-charcoal);
+  color: var(--om-lime);
+}
+
+.om-feature-locked .om-feature-hero {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.8), rgba(255,253,247,.96)),
+    var(--om-paper);
+}
+
+.om-plan-lock-card {
+  border: 1px solid var(--om-border);
+  border-radius: 30px;
+  background: rgba(255, 253, 247, .82);
+  box-shadow: 0 20px 55px rgba(70, 54, 35, .08);
+  padding: 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, .48fr) auto;
+  gap: 20px;
+  align-items: center;
+}
+
+.om-plan-lock-card span {
+  color: var(--om-copper);
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  font-size: .72rem;
+}
+
+.om-plan-lock-card h2 {
+  margin: 8px 0 10px;
+  color: var(--om-charcoal);
+  font-size: clamp(1.6rem, 3vw, 2.8rem);
+  line-height: .96;
+  letter-spacing: -0.06em;
+}
+
+.om-plan-lock-card p {
+  margin: 0;
+  color: var(--om-muted);
+  line-height: 1.55;
+}
+
+.om-plan-lock-card article {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 22px;
+  background: #fffaf0;
+  border: 1px solid var(--om-border);
+}
+
+.om-plan-lock-card article strong {
+  margin-bottom: 4px;
+  color: var(--om-charcoal);
+}
+
+.om-plan-lock-card article b {
+  border-radius: 14px;
+  padding: 9px 10px;
+  background: #f3eadc;
+  color: var(--om-charcoal);
+  font-size: .86rem;
+}
+
+.om-plan-lock-card button {
+  min-width: 128px;
+  min-height: 50px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--om-lime);
+  color: var(--om-charcoal);
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.om-gauges article:first-child strong {
+  font-size: clamp(1.5rem, 2.4vw, 2.1rem);
+}
+
+@media (max-width: 920px) {
+  .om-plan-lock-card {
+    grid-template-columns: 1fr;
+  }
+
+  .om-plan-lock-card button {
+    width: 100%;
+  }
+}

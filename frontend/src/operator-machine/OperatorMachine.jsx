@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_71_PLAN_FEATURE_LOCKS
 // PHASE_70_PROPER_PLAN_SLIP
 // PHASE_68_OPERATOR_MACHINE_POLISH
 
@@ -509,6 +510,11 @@ function WorkSlip({ slip, team, outputStatus, onClose, onSave, onApprove }) {
                   },
                   ...current,
                 ].slice(0, 8));
+                try {
+                  localStorage.setItem("churvox_plan", normalisePlanName(slip.planName || slip.eyebrow));
+                } catch {
+                  // ignore local plan preview storage
+                }
                 setOutputStatus(`${slip.planName || "Plan"} selected. Checkout wiring can be connected next.`);
               }}
             >
@@ -634,6 +640,117 @@ function MachineLane({ title, subtitle, items, empty, onOpen, quiet, limit = 5 }
       </div>
     </section>
   );
+}
+
+
+
+const OM_PLAN_DEFS = {
+  start: {
+    label: "Start",
+    price: "$39",
+    rank: 1,
+    includes: ["Jobs", "Clients", "Quotes", "Invoices", "Basic Operator Machine"],
+  },
+  crew: {
+    label: "Crew",
+    price: "$89",
+    rank: 2,
+    includes: ["Everything in Start", "Team", "Worker workflow", "Proof-to-Paid", "Time tracking"],
+  },
+  operator: {
+    label: "Operator",
+    price: "$149",
+    rank: 3,
+    includes: ["Everything in Crew", "AI Operator Actions", "Draft invoices", "Quote follow-ups", "Payment reminders", "MYOB add-on available"],
+  },
+  command: {
+    label: "Command",
+    price: "$299",
+    rank: 4,
+    includes: ["Everything in Operator", "Payroll", "MYOB included", "Advanced roles", "Higher limits", "Advanced automation"],
+  },
+};
+
+const OM_PAGE_PLAN = {
+  dashboard: "start",
+  jobs: "start",
+  clients: "start",
+  quotes: "start",
+  invoices: "start",
+  settings: "start",
+  plans: "start",
+  team: "crew",
+  proof: "crew",
+  payroll: "command",
+};
+
+function normalisePlanName(value) {
+  const raw = clean(value, "start").toLowerCase();
+  if (raw.includes("command") || raw.includes("enterprise")) return "command";
+  if (raw.includes("operator") || raw.includes("pro")) return "operator";
+  if (raw.includes("crew") || raw.includes("team")) return "crew";
+  if (raw.includes("start") || raw.includes("solo")) return "start";
+  return "start";
+}
+
+function currentPlanKey(data = {}) {
+  const raw = data.raw || {};
+  const user = raw.user || raw.profile || data.user || data.profile || {};
+  const billing = raw.billing || raw.subscription || data.billing || data.subscription || {};
+
+  try {
+    const stored =
+      localStorage.getItem("churvox_plan") ||
+      localStorage.getItem("plan") ||
+      localStorage.getItem("selectedPlan") ||
+      "";
+    const candidate =
+      billing.plan ||
+      billing.plan_name ||
+      billing.tier ||
+      billing.current_plan ||
+      user.plan ||
+      user.plan_name ||
+      user.tier ||
+      data.plan ||
+      stored ||
+      "start";
+
+    return normalisePlanName(candidate);
+  } catch {
+    return "start";
+  }
+}
+
+function planRank(plan) {
+  return OM_PLAN_DEFS[normalisePlanName(plan)]?.rank || 1;
+}
+
+function planAllows(currentPlan, requiredPlan) {
+  return planRank(currentPlan) >= planRank(requiredPlan);
+}
+
+function requiredPlanForPage(page) {
+  return OM_PAGE_PLAN[page] || "start";
+}
+
+function planLabel(plan) {
+  return OM_PLAN_DEFS[normalisePlanName(plan)]?.label || "Start";
+}
+
+function planPrice(plan) {
+  return OM_PLAN_DEFS[normalisePlanName(plan)]?.price || "$39";
+}
+
+function featureLockedMessage(page) {
+  const required = requiredPlanForPage(page);
+  const labels = {
+    team: "Team and worker workflow starts on Crew.",
+    proof: "Proof-to-Paid starts on Crew because it depends on worker notes, photos and completion flow.",
+    payroll: "Payroll is a Command feature because it needs locked-down payroll access, timesheets and pay review.",
+  };
+
+  return labels[page] || `${featureConfig(page).label} requires ${planLabel(required)}.`;
 }
 
 
@@ -856,10 +973,53 @@ function featureConfig(page) {
   return configs[page] || configs.jobs;
 }
 
-function FeatureWorkspace({ page, machine, data, onOpen }) {
+function FeatureWorkspace({ page, machine, data, currentPlan, onOpen, onPlans }) {
   const config = featureConfig(page);
   const rows = rowsForPage(page, machine, data);
   const topRows = rows.slice(0, 12);
+  const requiredPlan = requiredPlanForPage(page);
+  const locked = !planAllows(currentPlan, requiredPlan);
+
+  if (locked) {
+    return (
+      <section className="om-feature-workspace om-feature-locked" data-phase="PHASE_71_PLAN_FEATURE_LOCKS">
+        <header className="om-feature-hero">
+          <div>
+            <span>{config.label}</span>
+            <h1>{config.title}</h1>
+            <p>{featureLockedMessage(page)}</p>
+          </div>
+          <aside>
+            <b>Current: {planLabel(currentPlan)}</b>
+            <b>Required: {planLabel(requiredPlan)}</b>
+            <b>{planPrice(requiredPlan)}/month + GST</b>
+          </aside>
+        </header>
+
+        <section className="om-plan-lock-card">
+          <div>
+            <span>Feature locked</span>
+            <h2>{config.label} is included in {planLabel(requiredPlan)}.</h2>
+            <p>
+              Churvox keeps this feature visible so the owner knows where it lives,
+              but the actual workspace stays locked until the plan includes it.
+            </p>
+          </div>
+
+          <article>
+            <strong>{planLabel(requiredPlan)} includes</strong>
+            {(OM_PLAN_DEFS[requiredPlan]?.includes || []).map((item) => (
+              <b key={item}>{item}</b>
+            ))}
+          </article>
+
+          <button type="button" onClick={onPlans}>
+            View plans
+          </button>
+        </section>
+      </section>
+    );
+  }
 
   return (
     <section className="om-feature-workspace" data-phase="PHASE_69_OPERATOR_MACHINE_ALL_PAGES">
@@ -925,6 +1085,7 @@ function FeatureWorkspace({ page, machine, data, onOpen }) {
 
 
 export default function OperatorMachine({ page = "dashboard", setPage, onLogout, data }) {
+  const currentPlan = currentPlanKey(data || {});
   const machine = useMemo(() => buildMachine(data || {}), [data]);
   const team = arrayFrom(data?.raw?.team, data?.raw?.workers, data?.team);
   const [activeSlip, setActiveSlip] = useState(null);
@@ -1064,7 +1225,8 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
         <nav>
           {nav.map(([label, navPage]) => (
             <button type="button" className={navPage === page ? "active" : ""} key={label} onClick={() => go(navPage)}>
-              {label}
+              <span>{label}</span>
+              {!planAllows(currentPlan, requiredPlanForPage(navPage)) ? <small>Locked</small> : null}
             </button>
           ))}
         </nav>
@@ -1084,7 +1246,7 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
           </div>
 
           <section className="om-gauges" aria-label="Machine counts">
-            <article><span>Input</span><strong>{machine.counts.input}</strong></article>
+            <article><span>Plan</span><strong>{planLabel(currentPlan)}</strong></article>
             <article><span>Processing</span><strong>{machine.counts.processing}</strong></article>
             <article><span>Approval</span><strong>{machine.counts.approval}</strong></article>
           </section>
@@ -1174,7 +1336,7 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
         </section>
           </>
         ) : (
-          <FeatureWorkspace page={page} machine={machine} data={data} onOpen={openSlip} />
+          <FeatureWorkspace page={page} machine={machine} data={data} currentPlan={currentPlan} onOpen={openSlip} onPlans={() => go("plans")} />
         )}
       </section>
 
