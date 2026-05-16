@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_68_OPERATOR_MACHINE_POLISH
 
 const API_BASE = (() => {
   const raw =
@@ -545,7 +546,7 @@ function WorkSlip({ slip, team, outputStatus, onClose, onSave, onApprove }) {
   );
 }
 
-function MachineLane({ title, subtitle, items, empty, onOpen, quiet }) {
+function MachineLane({ title, subtitle, items, empty, onOpen, quiet, limit = 5 }) {
   return (
     <section className={`om-lane ${quiet ? "quiet" : ""}`}>
       <header>
@@ -557,7 +558,7 @@ function MachineLane({ title, subtitle, items, empty, onOpen, quiet }) {
       </header>
 
       <div className="om-lane-list">
-        {items.length ? items.slice(0, 8).map((item) => (
+        {items.length ? items.slice(0, limit).map((item) => (
           <button type="button" key={item.id} onClick={() => onOpen(item)} className={`om-slip-row ${item.kind}`}>
             <span>{item.eyebrow}</span>
             <strong>{item.title}</strong>
@@ -575,6 +576,7 @@ export default function OperatorMachine({ setPage, onLogout, data }) {
   const [activeSlip, setActiveSlip] = useState(null);
   const [outputLog, setOutputLog] = useState([]);
   const [outputStatus, setOutputStatus] = useState("");
+  const [showAllApprovals, setShowAllApprovals] = useState(false);
 
   function go(page) {
     const paths = {
@@ -678,6 +680,9 @@ export default function OperatorMachine({ setPage, onLogout, data }) {
     ].slice(0, 8));
   }
 
+  const visibleApprovals = showAllApprovals ? machine.approval.slice(0, 24) : machine.approval.slice(0, 5);
+  const hiddenApprovalCount = Math.max(machine.approval.length - visibleApprovals.length, 0);
+
   const nav = [
     ["Operator Machine", "dashboard"],
     ["Jobs", "jobs"],
@@ -768,7 +773,7 @@ export default function OperatorMachine({ setPage, onLogout, data }) {
             </header>
 
             <div className="om-approval-list">
-              {machine.approval.length ? machine.approval.slice(0, 10).map((item) => (
+              {visibleApprovals.length ? visibleApprovals.map((item) => (
                 <button type="button" className={`om-approval-ticket ${item.kind}`} key={item.id} onClick={() => openSlip(item)}>
                   <span>{item.eyebrow}</span>
                   <strong>{item.title}</strong>
@@ -782,6 +787,18 @@ export default function OperatorMachine({ setPage, onLogout, data }) {
                   <p>When workers complete jobs, quotes age, invoices go unpaid, or a request comes in, the machine will prepare a work slip here.</p>
                 </section>
               )}
+
+              {hiddenApprovalCount > 0 ? (
+                <button type="button" className="om-view-all-approvals" onClick={() => setShowAllApprovals(true)}>
+                  View all {machine.approval.length} approvals
+                </button>
+              ) : null}
+
+              {showAllApprovals && machine.approval.length > 5 ? (
+                <button type="button" className="om-view-all-approvals secondary" onClick={() => setShowAllApprovals(false)}>
+                  Show top 5 only
+                </button>
+              ) : null}
             </div>
           </section>
 

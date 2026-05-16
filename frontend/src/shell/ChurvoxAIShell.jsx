@@ -101,42 +101,6 @@ function cxSanitiseRows(rows) {
 }
 
 
-// PHASE_67_STOP_OBJECT_RENDER_CRASH
-// Last safety net: never let raw objects render as React children.
-const cxOriginalCreateElement = React.createElement;
-
-function cxSafeReactChild(child) {
-  if (child === null || child === undefined || typeof child === "boolean") return child;
-  if (React.isValidElement(child)) return child;
-
-  if (Array.isArray(child)) {
-    return child.map((item) => cxSafeReactChild(item));
-  }
-
-  if (typeof child === "object") {
-    return cxSafeText(child, "");
-  }
-
-  return child;
-}
-
-React.createElement = function churvoxSafeCreateElement(type, props, ...children) {
-  let safeProps = props;
-
-  if (props && Object.prototype.hasOwnProperty.call(props, "children")) {
-    safeProps = {
-      ...props,
-      children: cxSafeReactChild(props.children),
-    };
-  }
-
-  return cxOriginalCreateElement.call(
-    React,
-    type,
-    safeProps,
-    ...children.map((child) => cxSafeReactChild(child))
-  );
-};
 
 import "./ChurvoxOperatorOS.css";
 // PHASE_66_FIX_RETURN_OUTSIDE_FUNCTION
