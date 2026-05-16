@@ -10019,3 +10019,50 @@ button.primary,
 .cx-hub-box-modal .cx-command-modal-grid {
   margin-top: 14px !important;
 }
+
+/* ===== TOP PLAYER WORK PACK FRONTEND ===== */
+.cx-worker-work-pack-panel {
+  margin: 14px 0;
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: 22px;
+  padding: 14px;
+  background: linear-gradient(135deg, rgba(239, 246, 255, 0.92), rgba(255, 255, 255, 0.96));
+}
+
+.cx-worker-work-pack-panel > span {
+  display: block;
+  margin-bottom: 10px;
+  color: #2563eb;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+}
+
+.cx-worker-work-pack-panel div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cx-worker-work-pack-panel b,
+.cx-worker-work-pack-panel em,
+.cx-worker-work-pack-panel strong {
+  border-radius: 999px;
+  padding: 8px 10px;
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  font-size: 0.82rem;
+  font-style: normal;
+}
+
+.cx-worker-work-pack-panel em {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.cx-worker-work-pack-panel strong {
+  background: #fef3c7;
+  color: #92400e;
+}

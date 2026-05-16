@@ -4699,7 +4699,7 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
           ))}
         </section>
 
-        <TopPlayerFeatureStack />
+        <TopPlayerFeatureStack data={data || {}} />
 
         <section className="om-machine-grid">
           <MachineLane

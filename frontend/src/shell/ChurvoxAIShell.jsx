@@ -1940,6 +1940,21 @@ function cxWorkerRawJobs(data = {}) {
     : rawJobs;
 }
 
+
+function cxWorkerWorkPack(job = {}) {
+  const pack = job.work_pack || job.workPack || job.ai_work_pack || {};
+  if (!pack || typeof pack !== "object") return null;
+  const checklist = Array.isArray(pack.checklist) ? pack.checklist : [];
+  const requiredPhotos = Array.isArray(pack.required_photos) ? pack.required_photos : [];
+  if (!pack.label && checklist.length === 0 && requiredPhotos.length === 0) return null;
+  return {
+    label: pack.label || "AI Work Pack",
+    checklist,
+    requiredPhotos,
+    signatureRequired: Boolean(pack.signature_required),
+  };
+}
+
 function cxWorkerJobNeeds(job = {}) {
   const status = cxWorkerJobStatus(job);
   const needs = [];
@@ -2226,6 +2241,17 @@ function WorkerJobDrawer({ job, onClose, onLocalUpdate }) {
             {needs.map((item) => <b key={item}>{item}</b>)}
           </div>
         </section>
+
+        {cxWorkerWorkPack(job) ? (
+          <section className="cx-worker-work-pack-panel">
+            <span>{cxWorkerWorkPack(job).label}</span>
+            <div>
+              {cxWorkerWorkPack(job).checklist.map((item) => <b key={item}>{item}</b>)}
+              {cxWorkerWorkPack(job).requiredPhotos.map((item) => <em key={item}>Photo: {item}</em>)}
+              {cxWorkerWorkPack(job).signatureRequired ? <strong>Customer sign-off required</strong> : null}
+            </div>
+          </section>
+        ) : null}
 
         <section className="cx-worker-job-detail-grid">
           <article>

@@ -1,0 +1,318 @@
+.ccp-page {
+  min-height: 100vh;
+  padding: 22px;
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.20), transparent 32%),
+    radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.16), transparent 34%),
+    #f8fbff;
+  color: #0f172a;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.ccp-top,
+.ccp-hero,
+.ccp-grid,
+.ccp-proof,
+.ccp-actions {
+  width: min(1180px, 100%);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.ccp-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.ccp-brand {
+  display: inline-flex;
+  gap: 12px;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+}
+
+.ccp-brand i,
+.ccp-loading i {
+  width: 46px;
+  height: 46px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #0f172a, #2563eb);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 20px 40px rgba(37, 99, 235, 0.22);
+}
+
+.ccp-brand i b,
+.ccp-loading i b {
+  width: 18px;
+  height: 18px;
+  border-radius: 7px;
+  border: 3px solid #fff;
+  border-left-color: transparent;
+  transform: rotate(-25deg);
+}
+
+.ccp-brand span {
+  display: grid;
+}
+
+.ccp-brand strong {
+  font-size: 1.15rem;
+}
+
+.ccp-brand small,
+.ccp-top div span,
+.ccp-hero span,
+.ccp-card span,
+.ccp-proof span,
+.ccp-actions span {
+  color: #2563eb;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+}
+
+.ccp-top div {
+  display: grid;
+  text-align: right;
+}
+
+.ccp-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 18px;
+  align-items: stretch;
+  margin-bottom: 20px;
+}
+
+.ccp-hero > div,
+.ccp-hero aside,
+.ccp-card,
+.ccp-proof,
+.ccp-actions article,
+.ccp-loading {
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.08);
+}
+
+.ccp-hero > div {
+  padding: 34px;
+}
+
+.ccp-hero h1 {
+  margin: 8px 0 12px;
+  font-size: clamp(2.2rem, 5vw, 4.7rem);
+  line-height: 0.94;
+  letter-spacing: -0.07em;
+}
+
+.ccp-hero p,
+.ccp-card p,
+.ccp-actions p,
+.ccp-proof p {
+  color: #475569;
+  line-height: 1.6;
+}
+
+.ccp-hero aside {
+  padding: 24px;
+  display: grid;
+  align-content: center;
+  gap: 8px;
+}
+
+.ccp-hero aside strong {
+  font-size: 2rem;
+  text-transform: capitalize;
+}
+
+.ccp-grid {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.ccp-card {
+  padding: 22px;
+  display: grid;
+  gap: 10px;
+}
+
+.ccp-main-card {
+  grid-row: span 2;
+}
+
+.ccp-card h2,
+.ccp-proof h2,
+.ccp-actions strong {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.ccp-card button,
+.ccp-actions button {
+  border: 0;
+  border-radius: 999px;
+  padding: 11px 14px;
+  background: #2563eb;
+  color: white;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.ccp-timeline {
+  display: grid;
+  gap: 9px;
+  margin-top: 8px;
+}
+
+.ccp-timeline b {
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 16px;
+  padding: 10px 12px;
+  color: #64748b;
+  background: #f8fafc;
+}
+
+.ccp-timeline b.active {
+  color: #0f172a;
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.ccp-proof {
+  padding: 22px;
+  margin-bottom: 18px;
+}
+
+.ccp-proof header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ccp-proof header b {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 18px;
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+
+.ccp-photos {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.ccp-photos button {
+  border: 0;
+  padding: 0;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #e2e8f0;
+  aspect-ratio: 1.25 / 1;
+  cursor: pointer;
+}
+
+.ccp-photos img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ccp-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.ccp-actions article {
+  padding: 20px;
+  display: grid;
+  gap: 9px;
+}
+
+.ccp-message {
+  width: min(1180px, 100%);
+  margin: 18px auto 0;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: #ecfdf5;
+  color: #047857;
+  font-weight: 900;
+}
+
+.ccp-empty {
+  padding: 14px;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.ccp-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.86);
+}
+
+.ccp-lightbox button {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  border: 0;
+  border-radius: 999px;
+  width: 44px;
+  height: 44px;
+  background: white;
+  color: #0f172a;
+  font-size: 2rem;
+  cursor: pointer;
+}
+
+.ccp-lightbox img {
+  max-width: min(1100px, 96vw);
+  max-height: 86vh;
+  border-radius: 24px;
+  object-fit: contain;
+}
+
+.ccp-loading {
+  min-height: 420px;
+  width: min(720px, 100%);
+  margin: 10vh auto;
+  padding: 32px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .ccp-hero,
+  .ccp-grid,
+  .ccp-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .ccp-photos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ccp-top {
+    align-items: flex-start;
+  }
+}

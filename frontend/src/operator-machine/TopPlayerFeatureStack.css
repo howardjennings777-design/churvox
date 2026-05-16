@@ -1,25 +1,28 @@
-.om-top-player-stack {
-  border: 1px solid rgba(30, 64, 175, 0.12);
+.omtp-stack {
+  border: 1px solid rgba(30, 64, 175, 0.13);
   background:
-    radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), transparent 34%),
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.18), transparent 30%),
     linear-gradient(135deg, #ffffff, #f8fbff);
-  border-radius: 28px;
+  border-radius: 30px;
   padding: 22px;
   box-shadow: 0 24px 70px rgba(15, 23, 42, 0.08);
   margin: 18px 0 24px;
 }
 
-.om-top-player-stack > header {
+.omtp-hero,
+.omtp-feature-head {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 18px;
   align-items: start;
-  margin-bottom: 18px;
 }
 
-.om-top-player-stack header span,
-.om-top-player-grid article span,
-.om-top-player-result span {
+.omtp-hero span,
+.omtp-feature-head span,
+.omtp-feature > span,
+.omtp-two-col article > span,
+.omtp-result span,
+.omtp-cards article span {
   color: #2563eb;
   font-size: 0.74rem;
   font-weight: 900;
@@ -27,127 +30,296 @@
   text-transform: uppercase;
 }
 
-.om-top-player-stack h2 {
+.omtp-hero h2,
+.omtp-feature-head h3 {
   margin: 6px 0 8px;
   color: #0f172a;
-  font-size: clamp(1.35rem, 2vw, 2rem);
-  line-height: 1.04;
+  letter-spacing: -0.04em;
+  line-height: 1.02;
 }
 
-.om-top-player-stack p {
+.omtp-hero h2 {
+  font-size: clamp(1.45rem, 2.4vw, 2.25rem);
+}
+
+.omtp-feature-head h3 {
+  font-size: clamp(1.25rem, 2vw, 1.85rem);
+}
+
+.omtp-hero p,
+.omtp-feature-head p,
+.omtp-cards p,
+.omtp-empty,
+.omtp-row small,
+.omtp-list button small,
+.omtp-template small {
   margin: 0;
   color: #475569;
   line-height: 1.55;
 }
 
-.om-top-player-stack header aside {
+.omtp-hero aside {
   display: grid;
   grid-template-columns: repeat(3, minmax(78px, 1fr));
   gap: 10px;
 }
 
-.om-top-player-stack header aside b {
+.omtp-hero aside b,
+.omtp-feature-head aside b {
   display: grid;
-  gap: 3px;
+  gap: 4px;
+  place-items: center;
+  min-width: 82px;
+  border-radius: 22px;
   padding: 14px;
-  border-radius: 20px;
   background: #0f172a;
   color: white;
-  text-align: center;
-  font-size: 1.3rem;
+  font-size: 1.35rem;
 }
 
-.om-top-player-stack header aside small {
+.omtp-hero aside small {
   color: #bfdbfe;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
-.om-top-player-grid {
+.omtp-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px 0;
+}
+
+.omtp-tabs button,
+.omtp-feature-head button,
+.omtp-overview-actions button,
+.omtp-cards button,
+.omtp-list button em,
+.omtp-row a {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 13px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 900;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.omtp-tabs button.active,
+.omtp-feature-head button,
+.omtp-overview-actions button,
+.omtp-cards button,
+.omtp-list button:hover em,
+.omtp-row a {
+  background: #2563eb;
+  color: white;
+  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.2);
+}
+
+.omtp-tabs button:hover {
+  background: #dbeafe;
+}
+
+.omtp-message {
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: #ecfdf5;
+  color: #047857;
+  font-weight: 900;
+}
+
+.omtp-overview {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
 }
 
-.om-top-player-grid article {
-  display: grid;
-  gap: 10px;
-  align-content: start;
-  min-height: 220px;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  border-radius: 22px;
-  padding: 16px;
+.omtp-overview article,
+.omtp-two-col article,
+.omtp-cards article,
+.omtp-result,
+.omtp-template {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 24px;
   background: rgba(255, 255, 255, 0.78);
 }
 
-.om-top-player-grid article strong {
+.omtp-overview article {
+  padding: 16px;
+  display: grid;
+  gap: 5px;
+}
+
+.omtp-overview article strong {
   color: #0f172a;
-  font-size: 1rem;
+  font-size: 2rem;
 }
 
-.om-top-player-grid article p {
-  font-size: 0.88rem;
-}
-
-.om-top-player-grid footer {
+.omtp-overview-actions {
+  grid-column: 1 / -1;
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 4px;
+}
+
+.omtp-feature {
+  display: grid;
+  gap: 16px;
+}
+
+.omtp-feature-head {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 24px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.omtp-feature-head aside {
+  display: grid;
+  gap: 10px;
+  justify-items: end;
+}
+
+.omtp-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.omtp-two-col article {
+  padding: 16px;
+}
+
+.omtp-list {
+  display: grid;
+  gap: 9px;
+  margin-top: 12px;
+}
+
+.omtp-list button,
+.omtp-row {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 18px;
+  padding: 13px;
+  background: #fff;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 5px 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.omtp-list button strong,
+.omtp-row strong {
+  color: #0f172a;
+}
+
+.omtp-list button small,
+.omtp-row small {
+  grid-column: 1 / -1;
+  overflow-wrap: anywhere;
+}
+
+.omtp-list button em {
+  grid-row: 1 / 3;
+  grid-column: 2;
+  align-self: center;
+  font-style: normal;
+  white-space: nowrap;
+}
+
+.omtp-row a {
+  grid-row: 1 / 3;
+  grid-column: 2;
+  align-self: center;
+}
+
+.omtp-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.omtp-cards article {
+  display: grid;
+  gap: 9px;
+  padding: 16px;
+}
+
+.omtp-cards strong {
+  color: #0f172a;
+  font-size: 1.05rem;
+}
+
+.omtp-cards footer {
+  display: flex;
   justify-content: space-between;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
   margin-top: auto;
 }
 
-.om-top-player-grid footer b {
-  display: inline-grid;
-  place-items: center;
-  min-width: 36px;
-  height: 36px;
-  border-radius: 14px;
-  color: #1d4ed8;
-  background: #dbeafe;
-}
-
-.om-top-player-grid button {
-  border: 0;
-  border-radius: 999px;
-  padding: 10px 12px;
-  background: #2563eb;
-  color: white;
-  font-weight: 900;
-  cursor: pointer;
-  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.2);
-}
-
-.om-top-player-grid button:disabled {
-  opacity: 0.55;
-  cursor: wait;
-}
-
-.om-top-player-message {
-  margin-top: 14px !important;
-  padding: 12px 14px;
-  border-radius: 18px;
-  background: #ecfdf5;
-  color: #047857 !important;
+.omtp-cards footer small {
+  color: #64748b;
   font-weight: 800;
+  text-transform: capitalize;
 }
 
-.om-top-player-result {
-  margin-top: 14px;
-  border-radius: 20px;
-  padding: 14px;
+.omtp-score {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 18px;
+  background: #eff6ff;
+}
+
+.omtp-score b {
+  color: #1d4ed8;
+}
+
+.omtp-score small {
+  color: #475569;
+}
+
+.omtp-template-grid {
+  display: grid;
+  gap: 9px;
+  margin-top: 12px;
+}
+
+.omtp-template {
+  padding: 13px;
+  display: grid;
+  gap: 5px;
+}
+
+.omtp-template strong {
+  color: #0f172a;
+}
+
+.omtp-template em {
+  color: #1d4ed8;
+  font-weight: 900;
+  font-style: normal;
+}
+
+.omtp-result {
+  margin-top: 16px;
+  padding: 15px;
   background: #0f172a;
   color: white;
 }
 
-.om-top-player-result strong {
+.omtp-result strong {
   display: block;
   margin: 6px 0 10px;
 }
 
-.om-top-player-result pre {
-  max-height: 260px;
+.omtp-result pre {
+  max-height: 280px;
   overflow: auto;
   white-space: pre-wrap;
   margin: 0;
@@ -155,27 +327,53 @@
   font-size: 0.8rem;
 }
 
-@media (max-width: 1100px) {
-  .om-top-player-grid {
+.omtp-empty {
+  padding: 14px;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+@media (max-width: 1050px) {
+  .omtp-hero,
+  .omtp-feature-head,
+  .omtp-two-col {
+    grid-template-columns: 1fr;
+  }
+
+  .omtp-overview,
+  .omtp-cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .om-top-player-stack > header {
-    grid-template-columns: 1fr;
+  .omtp-feature-head aside {
+    justify-items: stretch;
   }
 }
 
 @media (max-width: 640px) {
-  .om-top-player-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .om-top-player-stack {
+  .omtp-stack {
     padding: 16px;
     border-radius: 22px;
   }
 
-  .om-top-player-stack header aside {
+  .omtp-overview,
+  .omtp-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .omtp-hero aside {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .omtp-list button,
+  .omtp-row {
+    grid-template-columns: 1fr;
+  }
+
+  .omtp-list button em,
+  .omtp-row a {
+    grid-row: auto;
+    grid-column: auto;
+    justify-self: start;
   }
 }
