@@ -1549,52 +1549,32 @@ function PublicClientPortalPage({ token }) {
 function Landing({ authMode, setAuthMode, onLogin }) {
   const movieSteps = useMemo(() => [
     {
-      label: "1. Job request",
-      title: "A customer asks for work.",
-      body: "A request lands with the client, address, service type, notes and preferred time.",
-      result: "Draft job prepared",
-      action: "Prepare job",
-      checks: ["Client matched", "Address captured", "Work details cleaned"],
+      tab: "Request",
+      title: "A job request comes in",
+      body: "Customer, address, service type, notes and preferred time are captured.",
+      output: "Draft job prepared",
+      chips: ["Client matched", "Address saved", "Job notes cleaned"],
     },
     {
-      label: "2. AI checks the day",
-      title: "Churvox reads the live business.",
-      body: "It checks jobs, workers, workload, quotes, invoices, proof and overdue follow-ups.",
-      result: "Next action found",
-      action: "Check business",
-      checks: ["Worker availability", "Quote age", "Invoice status"],
+      tab: "Match",
+      title: "Churvox recommends the worker",
+      body: "It checks area, workload, role, availability and possible schedule conflicts.",
+      output: "Best worker match ready",
+      chips: ["Same area", "No conflict", "Owner approval"],
     },
     {
-      label: "3. Worker match",
-      title: "AI recommends the best worker.",
-      body: "Churvox looks at area, workload, timing and job fit, then prepares the assignment.",
-      result: "Owner approval ready",
-      action: "Approve match",
-      checks: ["Same area", "Light workload", "No conflict"],
+      tab: "Proof",
+      title: "Worker completes the job",
+      body: "The worker adds notes, time and photos from the worker app.",
+      output: "Proof package ready",
+      chips: ["Notes", "Photos", "Completion"],
     },
     {
-      label: "4. Worker proof",
-      title: "The worker completes the job.",
-      body: "The worker starts the job, adds notes, uploads photos and marks the work complete.",
-      result: "Proof package ready",
-      action: "Review proof",
-      checks: ["Time captured", "Notes saved", "Photos attached"],
-    },
-    {
-      label: "5. Draft invoice",
-      title: "Churvox prepares the invoice admin.",
-      body: "The invoice wording is prepared from job notes, client details, proof and pricing context.",
-      result: "Draft invoice ready",
-      action: "Review invoice",
-      checks: ["Description drafted", "Client attached", "Amount checked"],
-    },
-    {
-      label: "6. Follow-up",
-      title: "Owner approves the next move.",
-      body: "Churvox prepares invoice reminders, quote follow-ups and client messages. You approve before anything sends.",
-      result: "Owner stays in control",
-      action: "Approve send",
-      checks: ["Message drafted", "Risk checked", "No blind send"],
+      tab: "Invoice",
+      title: "Admin is prepared",
+      body: "Churvox drafts invoice wording, follow-ups and reminders from the real job data.",
+      output: "Owner reviews and approves",
+      chips: ["Draft invoice", "Follow-up", "Reminder"],
     },
   ], []);
 
@@ -1603,228 +1583,170 @@ function Landing({ authMode, setAuthMode, onLogin }) {
   useEffect(() => {
     const timer = window.setInterval(() => {
       setActiveStep((current) => (current + 1) % movieSteps.length);
-    }, 3600);
+    }, 3400);
 
     return () => window.clearInterval(timer);
   }, [movieSteps.length]);
 
   const activeMovie = movieSteps[activeStep] || movieSteps[0];
 
-  const planPreview = [
+  const pricing = [
     ["Start", "$39", "Solo operators", "Jobs, clients, quotes, invoices and basic Smart Hub."],
     ["Crew", "$89", "Small teams", "Worker app, job assignment, notes, photos and time tracking."],
-    ["Operator", "$149", "Most Popular", "AI Operator Actions, draft invoices, follow-ups and reminders."],
+    ["Operator", "$149", "Most Popular", "AI Operator Actions, draft invoices, quote follow-ups and reminders."],
     ["Command", "$299", "Growing teams", "MYOB included, payroll workspace, advanced roles and automation."],
-  ];
-
-  const powerTiles = [
-    ["Jobs", "Create jobs, assign workers and keep the day moving."],
-    ["AI Operator Actions", "Churvox prepares the admin work owners normally chase."],
-    ["Worker proof", "Photos, notes and completion updates feed owner approval."],
-    ["Proof-to-Paid", "Completed work becomes invoice-ready admin."],
-    ["Quotes", "Quiet quotes become prepared follow-ups."],
-    ["Invoices", "Drafts and payment reminders are prepared for approval."],
-    ["MYOB", "Operator add-on, included in Command."],
-    ["Payroll workspace", "Command-level admin for timesheets and pay review."],
   ];
 
   function goSignup(event) {
     event?.preventDefault?.();
     setAuthMode("signup");
-
-    try {
-      window.history.pushState({}, "", "/signup");
-      window.setTimeout(() => {
-        document.getElementById("login")?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 80);
-    } catch {
-      window.location.href = "/signup";
-    }
+    window.setTimeout(() => {
+      document.getElementById("landing-access")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
   }
 
-  function scrollToMovie(event) {
+  function goLogin(event) {
     event?.preventDefault?.();
-    document.getElementById("mini-movie")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setAuthMode("login");
+    window.setTimeout(() => {
+      document.getElementById("landing-access")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
   }
 
   return (
-    <main className="cx-public cx-public-landing cx-public-landing-v2" id="top" data-phase="PHASE_54_PUBLIC_LANDING_MINI_MOVIE">
+    <main className="cx-public cx-public-landing cx-clean-landing" id="top" data-phase="PHASE_55_CLEAN_LANDING_FLOW">
       <div className="cx-grid-bg" />
       <div className="cx-glow cx-glow-a" />
       <div className="cx-glow cx-glow-b" />
 
-      <PublicNav />
+      <header className="cx-clean-nav">
+        <a href="#top" className="cx-logo-link"><Logo /></a>
+        <nav>
+          <a href="#movie">Demo</a>
+          <a href="#how">How it works</a>
+          <a href="#pricing">Pricing</a>
+          <button type="button" onClick={goLogin}>Login</button>
+        </nav>
+      </header>
 
-      <section className="cx-hero cx-landing-v2-hero">
-        <div className="cx-hero-copy cx-landing-v2-copy">
-          <p className="cx-pill">
-            <span />
-            AI Operator OS for trade and service businesses
+      <section className="cx-clean-hero">
+        <article className="cx-clean-hero-copy">
+          <span className="cx-clean-pill">AI Operator OS for trade and service businesses</span>
+          <h1>Churvox does the admin. <em>You approve.</em></h1>
+          <p>
+            Churvox watches jobs, workers, clients, quotes, invoices and proof.
+            It prepares the next action, then the owner reviews, edits and approves.
           </p>
 
-          <h1>
-            Churvox does the admin.
-            <em>You approve.</em>
-          </h1>
-
-          <p className="cx-hero-text">
-            Churvox watches jobs, workers, clients, quotes, invoices and proof. It prepares the next action,
-            then the owner reviews, edits and approves before anything important changes.
-          </p>
-
-          <div className="cx-hero-actions">
-            <a href="/signup" className="cx-primary" onClick={goSignup}>
-              Start free trial
-            </a>
-            <a href="/plans" className="cx-secondary">
-              See pricing
-            </a>
-            <a href="#mini-movie" className="cx-secondary" onClick={scrollToMovie}>
-              Watch Churvox run admin
-            </a>
+          <div className="cx-clean-actions">
+            <a href="#landing-access" onClick={goSignup}>Start free trial</a>
+            <a href="#movie">Watch the demo</a>
+            <a href="/plans">See pricing</a>
           </div>
 
-          <div className="cx-proof-strip cx-landing-proof-strip">
-            <article>
-              <strong>AI prepares</strong>
-              <span>Draft jobs, matches, invoices, reminders and follow-ups.</span>
-            </article>
-            <article>
-              <strong>Owner approves</strong>
-              <span>No blind sends, pricing changes, accounting syncs or worker changes.</span>
-            </article>
-            <article>
-              <strong>Proof-to-paid</strong>
-              <span>Worker notes and photos become invoice-ready admin.</span>
-            </article>
+          <div className="cx-clean-trust-row">
+            <b>AI prepares</b>
+            <b>Owner approves</b>
+            <b>No blind sends</b>
+            <b>Proof-to-paid</b>
           </div>
-        </div>
+        </article>
 
-        <div className="cx-hero-side cx-landing-v2-side">
-          <section className="cx-mini-movie-card cx-mini-movie-card-hero" id="mini-movie">
-            <div className="cx-movie-screen">
-              <div className="cx-movie-screen-top">
-                <span>{activeMovie.label}</span>
-                <b>{activeMovie.result}</b>
-              </div>
-
-              <h2>{activeMovie.title}</h2>
-              <p>{activeMovie.body}</p>
-
-              <div className="cx-movie-checks">
-                {activeMovie.checks.map((check) => (
-                  <small key={check}>{check}</small>
-                ))}
-              </div>
-
-              <button type="button">{activeMovie.action}</button>
-            </div>
-
-            <div className="cx-movie-timeline">
-              {movieSteps.map((step, index) => (
-                <button
-                  type="button"
-                  key={step.label}
-                  className={index === activeStep ? "active" : ""}
-                  onClick={() => setActiveStep(index)}
-                >
-                  <b>{index + 1}</b>
-                  <span>{step.label.replace(/^\d+\.\s*/, "")}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <div id="login" className="cx-landing-login-card">
-            <AuthCard authMode={authMode} setAuthMode={setAuthMode} onLogin={onLogin} />
+        <article className="cx-clean-movie" id="movie">
+          <div className="cx-clean-movie-top">
+            <span>Mini movie</span>
+            <strong>{activeMovie.output}</strong>
           </div>
-        </div>
-      </section>
 
-      <section className="cx-operator-preview cx-landing-story-panel">
-        <div className="cx-section-title">
-          <span>From request to paid</span>
-          <h2>A mini movie of the admin Churvox prepares before you touch it.</h2>
-        </div>
+          <h2>{activeMovie.title}</h2>
+          <p>{activeMovie.body}</p>
 
-        <div className="cx-landing-movie-wide">
-          <aside>
-            <span>Live example</span>
-            <h3>{activeMovie.title}</h3>
-            <p>{activeMovie.body}</p>
-            <strong>{activeMovie.result}</strong>
-          </aside>
+          <div className="cx-clean-movie-chips">
+            {activeMovie.chips.map((chip) => <small key={chip}>{chip}</small>)}
+          </div>
 
-          <div>
+          <div className="cx-clean-movie-action">
+            <span>Owner action</span>
+            <button type="button">Review and approve</button>
+          </div>
+
+          <div className="cx-clean-tabs">
             {movieSteps.map((step, index) => (
               <button
                 type="button"
-                key={step.title}
+                key={step.tab}
                 className={index === activeStep ? "active" : ""}
                 onClick={() => setActiveStep(index)}
               >
-                <span>{step.label}</span>
-                <strong>{step.title}</strong>
-                <small>{step.result}</small>
+                <b>{index + 1}</b>
+                <span>{step.tab}</span>
               </button>
             ))}
           </div>
-        </div>
+        </article>
       </section>
 
-      <section className="cx-flow cx-landing-flow">
-        {[
-          ["1", "Find", "Churvox finds unassigned jobs, completed work, stale quotes, overdue invoices and admin gaps."],
-          ["2", "Prepare", "It prepares worker matches, invoice drafts, customer follow-ups and payment reminders."],
-          ["3", "Approve", "The owner reviews, edits and approves before anything sends, syncs or changes."],
-          ["4", "Learn", "Your jobs, workers, proof and decisions teach Churvox how the business should run."],
-        ].map(([num, title, body]) => (
-          <article key={num}>
-            <b>{num}</b>
-            <h3>{title}</h3>
-            <p>{body}</p>
-          </article>
-        ))}
-      </section>
+      <section className="cx-clean-section cx-clean-how" id="how">
+        <header>
+          <span>How Churvox runs the admin</span>
+          <h2>One clean loop from request to paid.</h2>
+        </header>
 
-      <section className="cx-features cx-landing-power-panel" id="features">
         <div>
-          <span>Inside Churvox</span>
-          <h2>One command centre for jobs, workers and admin.</h2>
-          <p className="cx-features-story">
-            Churvox is built around the real daily loop: work comes in, the team completes it, proof comes back,
-            and the admin gets prepared for owner approval.
-          </p>
-
-          <div className="cx-landing-proof-machine">
-            <article><b>Request</b><small>Customer work enters</small></article>
-            <article><b>Dispatch</b><small>Worker match prepared</small></article>
-            <article><b>Proof</b><small>Notes + photos return</small></article>
-            <article><b>Invoice</b><small>Draft prepared</small></article>
-            <article><b>Approve</b><small>Owner controls send</small></article>
-          </div>
-        </div>
-
-        <div className="cx-feature-list cx-landing-power-grid">
-          {powerTiles.map(([title, body]) => (
-            <article key={title}>
-              <strong>{title}</strong>
-              <span>{body}</span>
+          {[
+            ["1", "Find", "Churvox finds jobs, stale quotes, overdue invoices, missing proof and admin gaps."],
+            ["2", "Prepare", "It prepares worker matches, draft invoices, quote follow-ups and payment reminders."],
+            ["3", "Approve", "The owner reviews, edits and approves before anything sends or changes."],
+            ["4", "Learn", "Your jobs, workers, proof and decisions teach Churvox how the business should run."],
+          ].map(([num, title, body]) => (
+            <article key={num}>
+              <b>{num}</b>
+              <h3>{title}</h3>
+              <p>{body}</p>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="cx-operator-preview cx-landing-pricing-preview" id="pricing">
-        <div className="cx-section-title">
+      <section className="cx-clean-section cx-clean-runs" id="features">
+        <header>
+          <span>Inside Churvox</span>
+          <h2>Built around the real trade business day.</h2>
+          <p>
+            Work comes in. Workers complete it. Proof comes back. Churvox prepares the admin.
+            You stay in control.
+          </p>
+        </header>
+
+        <div>
+          {[
+            ["Jobs", "Create, assign and track work."],
+            ["Worker app", "Start jobs, add notes, upload photos and complete work."],
+            ["AI Operator Actions", "Prepared admin actions waiting for approval."],
+            ["Proof-to-Paid", "Worker proof becomes invoice-ready admin."],
+            ["Quotes", "Follow-ups prepared before opportunities go cold."],
+            ["Invoices", "Drafts and reminders prepared from job data."],
+            ["MYOB", "Optional on Operator. Included in Command."],
+            ["Payroll workspace", "Command-level workspace for pay review and timesheets."],
+          ].map(([title, body]) => (
+            <article key={title}>
+              <h3>{title}</h3>
+              <p>{body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="cx-clean-section cx-clean-pricing" id="pricing">
+        <header>
           <span>Pricing</span>
           <h2>Start simple. Move into Operator when you want Churvox preparing the admin.</h2>
-        </div>
+        </header>
 
-        <div className="cx-landing-pricing-grid">
-          {planPreview.map(([name, price, badge, body]) => (
-            <article className={name === "Operator" ? "featured" : ""} key={name}>
-              {name === "Operator" ? <b>Most Popular</b> : <b>{badge}</b>}
+        <div>
+          {pricing.map(([name, price, badge, body]) => (
+            <article key={name} className={name === "Operator" ? "featured" : ""}>
+              <span>{badge}</span>
               <h3>{name}</h3>
               <strong>{price}<small>/month + GST</small></strong>
               <p>{body}</p>
@@ -1832,25 +1754,31 @@ function Landing({ authMode, setAuthMode, onLogin }) {
           ))}
         </div>
 
-        <footer className="cx-landing-pricing-footer">
-          <p>
-            Command Growth Pack: $99/month + GST per extra 50 active team members.
-            Only active team members count — old staff records do not increase your bill.
-          </p>
-          <a href="/plans" className="cx-primary">See full pricing</a>
+        <footer>
+          <p>Command Growth Pack: $99/month + GST per extra 50 active team members. Only active team members count.</p>
+          <a href="/plans">See full pricing</a>
         </footer>
       </section>
 
-      <section className="cx-landing-final-cta">
-        <span>Built for the owner who wants less admin</span>
-        <h2>Let Churvox prepare the work. You stay in control.</h2>
-        <p>
-          Jobs, quotes, invoices, proof, workers and reminders all feed one AI approval loop.
-          That is what makes Churvox different.
-        </p>
+      <section className="cx-clean-access" id="landing-access">
         <div>
-          <a href="/signup" className="cx-primary" onClick={goSignup}>Start free trial</a>
-          <a href="/request-work" className="cx-secondary">Try request intake</a>
+          <span>Secure workspace</span>
+          <h2>Open Churvox when you are ready.</h2>
+          <p>
+            Start a free trial, or log in to your existing workspace. The public page stays clean,
+            and the business workspace stays secure.
+          </p>
+        </div>
+
+        <AuthCard authMode={authMode} setAuthMode={setAuthMode} onLogin={onLogin} />
+      </section>
+
+      <section className="cx-clean-final">
+        <span>For owners who want less admin</span>
+        <h2>Let Churvox prepare the work. You approve what matters.</h2>
+        <div>
+          <a href="#landing-access" onClick={goSignup}>Start free trial</a>
+          <a href="/request-work">Try request intake</a>
         </div>
       </section>
     </main>
