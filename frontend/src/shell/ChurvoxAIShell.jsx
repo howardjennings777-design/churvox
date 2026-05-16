@@ -7,31 +7,100 @@ function cxSafeText(value, fallback = "") {
   if (typeof value === "number" || typeof value === "boolean") return String(value);
 
   if (Array.isArray(value)) {
-    return value
+    const joined = value
       .map((item) => cxSafeText(item, ""))
       .filter(Boolean)
-      .join(", ") || fallback;
+      .join(", ");
+    return joined || fallback;
   }
 
   if (typeof value === "object") {
-    return (
-      value.title ||
-      value.name ||
-      value.label ||
-      value.message ||
-      value.body ||
-      value.description ||
-      value.status ||
-      value.text ||
-      fallback ||
-      ""
-    );
+    const preferredKeys = [
+      "title",
+      "name",
+      "label",
+      "message",
+      "body",
+      "description",
+      "status",
+      "text",
+      "value",
+      "summary",
+      "detail",
+    ];
+
+    for (const key of preferredKeys) {
+      if (Object.prototype.hasOwnProperty.call(value, key)) {
+        const safe = cxSafeText(value[key], "");
+        if (safe) return safe;
+      }
+    }
+
+    const values = Object.values(value)
+      .map((item) => cxSafeText(item, ""))
+      .filter(Boolean)
+      .slice(0, 4)
+      .join(" · ");
+
+    return values || fallback;
   }
 
   return fallback;
 }
 
+function safeReactText(value, fallback = "") {
+  return cxSafeText(value, fallback);
+}
+
+function cxSanitiseRecord(record) {
+  if (!record || typeof record !== "object" || Array.isArray(record)) return record;
+
+  const textKeys = [
+    "type",
+    "title",
+    "body",
+    "message",
+    "description",
+    "detail",
+    "status",
+    "action",
+    "label",
+    "name",
+    "client_name",
+    "customer_name",
+    "worker_name",
+    "assigned_worker",
+    "assigned_worker_name",
+    "job_title",
+    "service_type",
+    "address",
+    "notes",
+    "completion_notes",
+    "invoice_description",
+    "quote_description",
+    "payment_status",
+    "invoice_status",
+    "quote_status",
+    "workflow_status",
+  ];
+
+  const next = { ...record };
+
+  for (const key of textKeys) {
+    if (Object.prototype.hasOwnProperty.call(next, key)) {
+      next[key] = cxSafeText(next[key], "");
+    }
+  }
+
+  return next;
+}
+
+function cxSanitiseRows(rows) {
+  return Array.isArray(rows) ? rows.map((row) => cxSanitiseRecord(row)) : [];
+}
+
 import "./ChurvoxOperatorOS.css";
+// PHASE_65_SANITISE_SMART_HUB_LIVE_DATA
 // PHASE_64_FIX_OBJECT_TEXT_CRASH
 // PHASE_64_SAFE_REACT_TEXT
 // PHASE_63_REMOVE_GLOBAL_SMART_HUB_CONTEXT_CARDS
@@ -2574,9 +2643,9 @@ function Board({ title, body, columns, setPage }) {
 }
 
 function Dashboard({ setPage, data }) {
-  const actions = data?.actions || [];
-  const jobs = data?.jobs || [];
-  const team = data?.team || [];
+  const actions = cxSanitiseRows(data?.actions);
+  const jobs = cxSanitiseRows(data?.jobs);
+  const team = cxSanitiseRows(data?.team);
   const stats = data?.stats || {};
 
   return (
@@ -2837,7 +2906,7 @@ function saveSmartHubItemStatus(items) {
 
 
 
-function safeReactText(value, fallback = "") {
+ {
   if (value === null || value === undefined) return fallback;
   if (typeof value === "string") return value;
   if (typeof value === "number" || typeof value === "boolean") return String(value);
@@ -7011,12 +7080,12 @@ function OwnerQuickActionModal({ area, onClose, onSaved }) {
 
 
 function Workspace({ page, setPage, data }) {
-  const actions = data?.actions || [];
-  const jobs = data?.jobs || [];
-  const clients = data?.clients || [];
-  const team = data?.team || [];
-  const quotes = data?.quotes || [];
-  const invoices = data?.invoices || [];
+  const actions = cxSanitiseRows(data?.actions);
+  const jobs = cxSanitiseRows(data?.jobs);
+  const clients = cxSanitiseRows(data?.clients);
+  const team = cxSanitiseRows(data?.team);
+  const quotes = cxSanitiseRows(data?.quotes);
+  const invoices = cxSanitiseRows(data?.invoices);
   const stats = data?.stats || {};
   const operator = data?.operator || {};
   const [selectedRecord, setSelectedRecord] = useState(null);
@@ -7367,7 +7436,12 @@ function Workspace({ page, setPage, data }) {
       const type = String(item.type || "").toLowerCase();
       return type.includes("dispatch") || type.includes("cashflow") || type.includes("payment") || type.includes("overdue");
     })
-    .map((item) => [item.type, item.title, item.body, item.action]);
+    .map((item) => [
+      cxSafeText(item.type, "Action"),
+      cxSafeText(item.title, "Action needed"),
+      cxSafeText(item.body || item.message, ""),
+      cxSafeText(item.action || item.status, "Review"),
+    ]);
 
   // PHASE_61_RESTORE_READY_INVOICE_DRAFTS
   const invoiceApprovalRows = actions
@@ -7377,11 +7451,13 @@ function Workspace({ page, setPage, data }) {
     })
     .map((item) => ({
       ...item,
-      type: item.type || "Invoice draft approval",
+      type: cxSafeText(item.type, "Invoice draft approval"),
       title: cxSafeText(item.title, "Invoice draft"),
+      body: cxSafeText(item.body || item.message, "Invoice draft ready for owner review"),
       message: cxSafeText(item.body || item.message, "Invoice draft ready for owner review"),
+      action: cxSafeText(item.action || item.status, "Review"),
       status: cxSafeText(item.action || item.status, "To approve"),
-      source_type: item.source_type || "approval_action",
+      source_type: cxSafeText(item.source_type, "approval_action"),
       source_id: item.id || item._id || item.action_id || "",
     }));
 
@@ -7961,9 +8037,21 @@ function Workspace({ page, setPage, data }) {
   function logCommand(type, title, status) {
     const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     const targetPage = pageForCommandType(type);
-    setHubNotice({ type, title, status, time, targetPage });
+    setHubNotice({
+      type: cxSafeText(type, "Smart Hub"),
+      title: cxSafeText(title, "Owner action"),
+      status: cxSafeText(status, "Saved"),
+      time,
+      targetPage,
+    });
     setApprovalLog((currentLog) => {
-      const nextLog = [{ type, title, status, time, targetPage }, ...currentLog].slice(0, 8);
+      const nextLog = [{
+        type: cxSafeText(type, "Smart Hub"),
+        title: cxSafeText(title, "Owner action"),
+        status: cxSafeText(status, "Saved"),
+        time,
+        targetPage,
+      }, ...currentLog].slice(0, 8);
       saveOwnerCommandLog(nextLog);
       return nextLog;
     });
