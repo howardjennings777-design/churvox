@@ -1,3 +1,4 @@
+// PHASE_178_FIX_DISPATCH_WORDING_PATCH_SYNTAX_BREAK
 // PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
@@ -1411,7 +1412,7 @@ function WorkSlip({ slip, team, outputStatus, smsCredits = 0, businessLogoUrl = 
 
   const isJobIntake = slip.kind === "new-job";
   const isJobReview = slip.kind === "job";
-  const isAssign crew = slip.kind === "dispatch";
+  const isDispatch = slip.kind === "dispatch";
   const isInvoiceLike = slip.kind === "invoice" || slip.kind === "cashflow" || slip.kind === "proof";
   const isNewInvoice = slip.kind === "invoice" && String(slip.id || "").startsWith("new-invoice");
   const showsInvoiceTemplate = phase113ShouldShowInvoiceTemplate(slip);
@@ -1428,7 +1429,7 @@ function WorkSlip({ slip, team, outputStatus, smsCredits = 0, businessLogoUrl = 
     isQuoteLike ? "Approve quote action" :
     isPayrollLike ? "Save payroll review" :
     isSettingsLike ? "Save setting review" :
-    isAssign crew ? "Approve dispatch" :
+    isDispatch ? "Approve dispatch" :
     slip.kind === "invoice" ? "Approve & email PDF" :
     slip.kind === "cashflow" ? "Approve follow-up" :
     "Approve";
@@ -1594,7 +1595,7 @@ function WorkSlip({ slip, team, outputStatus, smsCredits = 0, businessLogoUrl = 
             </>
           ) : null}
 
-          {isAssign crew ? (
+          {isDispatch ? (
             <label>
               Worker / crew choice
               <select value={draft.workerChoice || ""} onChange={(event) => update("workerChoice", event.target.value)}>
@@ -4440,9 +4441,9 @@ function JobsQueueBoard({ data, machine, onOpen }) {
     const address = clean(item.address || item.job_address || item.service_address || item.location);
     const notes = clean(item.completion_notes || item.worker_notes || item.job_notes || item.notes);
     const completed = isCompletedJob(item);
-    const needsAssign crew = !hasWorker(item) && !completed;
+    const needsDispatch = !hasWorker(item) && !completed;
 
-    if (needsAssign crew) {
+    if (needsDispatch) {
       const suggestedWorker = team[0] || {};
       const workerLabel = clean(
         suggestedWorker.name ||
@@ -4581,15 +4582,15 @@ function JobsQueueBoard({ data, machine, onOpen }) {
               const status = statusOf(item);
               const worker = clean(item.assigned_worker_name || item.worker_name || item.assigned_worker || item.worker_id);
               const completed = isCompletedJob(item);
-              const needsAssign crew = !hasWorker(item) && !completed;
+              const needsDispatch = !hasWorker(item) && !completed;
               const address = clean(item.address || item.job_address || item.service_address || item.location);
 
               return (
-                <button type="button" key={row.id} className={`om-job-ticket ${needsAssign crew ? "needs-worker" : completed ? "completed" : "active"}`} onClick={() => onOpen(makeJobSlip(row))}>
-                  <span>{needsAssign crew ? "Needs dispatch" : completed ? "Completed" : status || "Active job"}</span>
+                <button type="button" key={row.id} className={`om-job-ticket ${needsDispatch ? "needs-worker" : completed ? "completed" : "active"}`} onClick={() => onOpen(makeJobSlip(row))}>
+                  <span>{needsDispatch ? "Needs dispatch" : completed ? "Completed" : status || "Active job"}</span>
                   <strong>{row.title}</strong>
                   <small>{address || row.need}</small>
-                  <em>{worker ? `Worker: ${worker}` : needsAssign crew ? "Choose worker" : completed ? "Prepare invoice" : "Open Work Slip"}</em>
+                  <em>{worker ? `Worker: ${worker}` : needsDispatch ? "Choose worker" : completed ? "Prepare invoice" : "Open Work Slip"}</em>
                 </button>
               );
             }) : (

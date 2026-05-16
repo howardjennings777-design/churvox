@@ -1,3 +1,4 @@
+// PHASE_178_FIX_DISPATCH_WORDING_PATCH_SYNTAX_BREAK
 // PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -297,7 +298,7 @@ export default function AIControlRoomCompletePage() {
               </div>
 
               <div style={s.moveGrid}>
-                <Move title="Assign crew the day" body="Assign crews and get jobs moving." badge={`${stats.needCrew} jobs`} color="#ff5a12" icon="▣" onClick={() => openPanel({ key: "dispatchDay" })} />
+                <Move title="Assign crew the day" body="Dispatchs and get jobs moving." badge={`${stats.needCrew} jobs`} color="#ff5a12" icon="▣" onClick={() => openPanel({ key: "dispatchDay" })} />
                 <Move title="Move money" body="Follow up payments and collect faster." badge={cash(stats.moneyWaiting)} color="#1165ff" icon="$" onClick={() => openPanel({ key: "moveMoney" })} />
                 <Move title="Proof & updates" body="Review proof and send updates to clients." badge={stats.proof ? `${stats.proof} ready` : "No proof packs ready"} color="#0f2747" icon="◇" onClick={() => openPanel({ key: "proofUpdates" })} />
               </div>

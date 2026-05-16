@@ -1,3 +1,4 @@
+// PHASE_178_FIX_DISPATCH_WORDING_PATCH_SYNTAX_BREAK
 // PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CalendarClock, MapPin, PlusCircle, Users } from "lucide-react";
@@ -12,7 +13,7 @@ const statusTone = {
   none: "bg-slate-100 text-slate-600 border-slate-200",
 };
 
-export default function SmartHubAssign crewPanel({ canManageAssign crew = false, onAssigned }) {
+export default function SmartHubDispatchPanel({ canManageDispatch = false, onAssigned }) {
   const { get, post } = useApi();
   const [loading, setLoading] = useState(true);
   const [jobs, setJobs] = useState([]);
@@ -20,7 +21,7 @@ export default function SmartHubAssign crewPanel({ canManageAssign crew = false,
   const [pendingAssign, setPendingAssign] = useState({});
   const [savingJobId, setSavingJobId] = useState("");
 
-  const loadAssign crewData = useCallback(async () => {
+  const loadDispatchData = useCallback(async () => {
     setLoading(true);
     try {
       const [jobsRes, workersRes] = await Promise.all([get("/jobs"), get("/team/workers")]);
@@ -31,7 +32,7 @@ export default function SmartHubAssign crewPanel({ canManageAssign crew = false,
     }
   }, [get]);
 
-  useEffect(() => { loadAssign crewData(); }, [loadAssign crewData]);
+  useEffect(() => { loadDispatchData(); }, [loadDispatchData]);
 
   const todayKey = new Date().toISOString().slice(0, 10);
   const unassignedJobs = useMemo(() => jobs.filter((j) => !j.assigned_worker_id), [jobs]);
@@ -74,7 +75,7 @@ export default function SmartHubAssign crewPanel({ canManageAssign crew = false,
     setSavingJobId("");
     if (res?.success) {
       toast.success("Worker assigned");
-      await loadAssign crewData();
+      await loadDispatchData();
       if (onAssigned) onAssigned();
       return;
     }
@@ -98,7 +99,7 @@ export default function SmartHubAssign crewPanel({ canManageAssign crew = false,
                   <p className="text-xs text-[#5b6c87] inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{safeText(job.address || job.region, "No address")}</p>
                   <p className="text-xs text-[#5b6c87] inline-flex items-center gap-1"><CalendarClock className="h-3.5 w-3.5" />{String(job.scheduled_date || "").slice(0, 10) || "No date"} {safeText(job.scheduled_time, "")}</p>
                   {conflict ? <p className="text-xs text-amber-700 inline-flex items-center gap-1"><AlertTriangle className="h-3.5 w-3.5" />This worker may already have work scheduled around this time.</p> : null}
-                  {canManageAssign crew ? <div className="flex flex-col gap-2 sm:flex-row sm:items-center"><select className="px-input w-full min-w-0 text-sm" value={pendingAssign[job.id] || ""} onChange={(e) => setPendingAssign((prev) => ({ ...prev, [job.id]: e.target.value }))}><option value="">Select worker</option>{workers.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select><button type="button" disabled={savingJobId === String(job.id)} onClick={() => onAssign(job)} className="rounded-lg bg-[#155EEF] text-white px-3 h-10 text-sm font-semibold disabled:opacity-60 w-full sm:w-auto">{savingJobId === String(job.id) ? "Assigning…" : "Assign"}</button></div> : <p className="text-xs text-[#5b6c87]">Assign crew assignment requires owner/admin access.</p>}
+                  {canManageDispatch ? <div className="flex flex-col gap-2 sm:flex-row sm:items-center"><select className="px-input w-full min-w-0 text-sm" value={pendingAssign[job.id] || ""} onChange={(e) => setPendingAssign((prev) => ({ ...prev, [job.id]: e.target.value }))}><option value="">Select worker</option>{workers.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select><button type="button" disabled={savingJobId === String(job.id)} onClick={() => onAssign(job)} className="rounded-lg bg-[#155EEF] text-white px-3 h-10 text-sm font-semibold disabled:opacity-60 w-full sm:w-auto">{savingJobId === String(job.id) ? "Assigning…" : "Assign"}</button></div> : <p className="text-xs text-[#5b6c87]">Assign crew assignment requires owner/admin access.</p>}
                 </article>
               );
             })}

@@ -1,3 +1,4 @@
+// PHASE_178_FIX_DISPATCH_WORDING_PATCH_SYNTAX_BREAK
 // PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 // PHASE_143_FORCE_REAL_PROPER_INVOICE_COMPONENT
 // PHASE_142_FORCE_PROPER_INVOICE_TEMPLATE_LIVE
@@ -1163,7 +1164,7 @@ function useLiveChurvoxData(authed) {
       const rawQuotes = results[3].status === "fulfilled" ? toArray(results[3].value, ["quotes"]) : [];
       const rawInvoices = results[4].status === "fulfilled" ? toArray(results[4].value, ["invoices"]) : [];
       const rawAiActions = results[5].status === "fulfilled" ? toArray(results[5].value, ["actions"]) : [];
-      const rawAssign crew = results[6].status === "fulfilled" ? (results[6].value || {}) : {};
+      const rawDispatch = results[6].status === "fulfilled" ? (results[6].value || {}) : {};
       const rawRecurring = results[7].status === "fulfilled" ? toArray(results[7].value, ["recurring_jobs", "items"]) : [];
       const rawTemplates = results[8].status === "fulfilled" ? toArray(results[8].value, ["templates", "items"]) : [];
       const rawSetupAudit = results[9].status === "fulfilled" ? (results[9].value || null) : null;
@@ -1231,7 +1232,7 @@ function useLiveChurvoxData(authed) {
         invoices: mappedInvoices,
         actions: liveActions,
         operator: {
-          dispatch: rawAssign crew,
+          dispatch: rawDispatch,
           recurring: rawRecurring,
           templates: rawTemplates,
           setupAudit: rawSetupAudit,
@@ -8283,7 +8284,7 @@ function Workspace({ page, setPage, data }) {
       };
 
       const approvalType = String(selection.group || payload.type || "").toLowerCase();
-      const isAssign crewApproval = approvalType.includes("dispatch");
+      const isDispatchApproval = approvalType.includes("dispatch");
       const isInvoiceApproval = approvalType.includes("invoice");
       const isQuoteApproval = approvalType.includes("quote");
       const isCashflowApproval = approvalType.includes("cashflow") || approvalType.includes("payment") || approvalType.includes("overdue") || approvalType.includes("collect");
@@ -8391,7 +8392,7 @@ function Workspace({ page, setPage, data }) {
 
       const approvalPath = directActionId
         ? `/ai/actions/${encodeURIComponent(directActionId)}/approve`
-        : isAssign crewApproval
+        : isDispatchApproval
           ? "/ai/owner-command/dispatch/approve"
           : isInvoiceApproval
             ? "/ai/owner-command/invoice/approve"
@@ -8407,7 +8408,7 @@ function Workspace({ page, setPage, data }) {
       logCommand(
         selection.group || "Approved",
         title,
-        isAssign crewApproval
+        isDispatchApproval
           ? (performedMessage || "Worker assigned")
           : isInvoiceApproval
             ? (performedMessage || "Invoice draft created")

@@ -1,3 +1,4 @@
+// PHASE_178_FIX_DISPATCH_WORDING_PATCH_SYNTAX_BREAK
 // PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 import React, { useEffect, useMemo, useState } from "react";
 import "./TopPlayerFeatureStack.css";
@@ -153,7 +154,7 @@ export default function TopPlayerFeatureStack({ data = {} }) {
 
   const [links, setLinks] = useState([]);
   const [growthActions, setGrowthActions] = useState([]);
-  const [dispatchPlan, setAssign crewPlan] = useState([]);
+  const [dispatchPlan, setDispatchPlan] = useState([]);
   const [marginSuggestions, setMarginSuggestions] = useState([]);
   const [templates, setTemplates] = useState({});
 
@@ -178,9 +179,9 @@ export default function TopPlayerFeatureStack({ data = {} }) {
     return payload;
   }
 
-  async function loadAssign crew() {
+  async function loadDispatch() {
     const payload = await api("/top-player/dispatch-commander/plan", "POST", {});
-    setAssign crewPlan(payload.recommendations || []);
+    setDispatchPlan(payload.recommendations || []);
     return payload;
   }
 
@@ -218,7 +219,7 @@ export default function TopPlayerFeatureStack({ data = {} }) {
   useEffect(() => {
     if (tab === "command") run("Customer Command Links", loadLinks);
     if (tab === "growth") run("Growth Loop", loadGrowth);
-    if (tab === "dispatch") run("AI Assign crew Commander", loadAssign crew);
+    if (tab === "dispatch") run("AI Assign crew Commander", loadDispatch);
     if (tab === "margin") run("AI Margin Guard", loadMargins);
     if (tab === "packs") run("AI Work Packs", loadTemplates);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -258,7 +259,7 @@ export default function TopPlayerFeatureStack({ data = {} }) {
     });
   }
 
-  async function approveAssign crew(row) {
+  async function approveDispatch(row) {
     const worker = row.recommended_worker || {};
     await run("Approve Assign crew", async () => {
       const out = await api("/top-player/dispatch-commander/approve", "POST", {
@@ -266,7 +267,7 @@ export default function TopPlayerFeatureStack({ data = {} }) {
         worker_id: worker.worker_id,
         reason: (worker.reasons || []).join(", "),
       });
-      await loadAssign crew();
+      await loadDispatch();
       return out;
     });
   }
@@ -425,7 +426,7 @@ export default function TopPlayerFeatureStack({ data = {} }) {
             stat={dispatchPlan.length}
             action="Rebuild dispatch plan"
             busy={busy === "AI Assign crew Commander"}
-            onAction={() => run("AI Assign crew Commander", loadAssign crew)}
+            onAction={() => run("AI Assign crew Commander", loadDispatch)}
           />
 
           <div className="omtp-cards">
@@ -442,7 +443,7 @@ export default function TopPlayerFeatureStack({ data = {} }) {
                   </div>
                   <footer>
                     <small>Owner approval required</small>
-                    <button type="button" disabled={!worker.worker_id} onClick={() => approveAssign crew(row)}>Approve dispatch</button>
+                    <button type="button" disabled={!worker.worker_id} onClick={() => approveDispatch(row)}>Approve dispatch</button>
                   </footer>
                 </article>
               );

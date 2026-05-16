@@ -1,8 +1,9 @@
+// PHASE_178_FIX_DISPATCH_WORDING_PATCH_SYNTAX_BREAK
 // PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 import React from 'react';
 
-export function BusinessPulsePanel({ openInvoicesCount, readyToBillCount, unassignedJobsCount, quotesWaitingCount, crewCount, onMoneyWaiting, onBillingReady, onAssign crewPressure, onPipeline, onCrew }) {
-  const items = [["Money waiting", openInvoicesCount, onMoneyWaiting],["Billing ready", readyToBillCount, onBillingReady],["Assign crew pressure", unassignedJobsCount, onAssign crewPressure],["Pipeline", quotesWaitingCount, onPipeline],["Crew", crewCount, onCrew]];
+export function BusinessPulsePanel({ openInvoicesCount, readyToBillCount, unassignedJobsCount, quotesWaitingCount, crewCount, onMoneyWaiting, onBillingReady, onDispatchPressure, onPipeline, onCrew }) {
+  const items = [["Money waiting", openInvoicesCount, onMoneyWaiting],["Billing ready", readyToBillCount, onBillingReady],["Assign crew pressure", unassignedJobsCount, onDispatchPressure],["Pipeline", quotesWaitingCount, onPipeline],["Crew", crewCount, onCrew]];
   return (
     <article className="rounded-2xl border border-[#c7bba9] border-l-4 border-l-[#f97316] bg-[#f4eee4] p-4 text-[#101318] shadow-[0_14px_32px_rgba(15,17,21,0.14)] operator-panel operator-card operator-accent-left" data-smart-hub-card="true">
       <div className="flex items-start justify-between gap-3">
