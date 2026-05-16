@@ -1,3 +1,4 @@
+window.__CHURVOX_RENDER_DEPLOY_MARKER__ = "PHASE_162_FORCE_REAL_RENDER_FRONTEND_DEPLOY_20260516211342";
 
 // PHASE_145_FORCE_INVOICE_TEMPLATE_FROM_JS
 // Force the proper invoice template styling from JS too, so a bad CSS MIME response
