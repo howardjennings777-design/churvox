@@ -6005,6 +6005,8 @@ function AskChurvoxCommand({ onRunCommand }) {
     ["Add client", "add_client"],
     ["Import clients", "import_clients"],
     ["Add worker", "add_worker"],
+    ["Add quote", "add_quote"],
+    ["Add invoice", "add_invoice"],
     ["Show dispatch", "dispatch"],
     ["Quote follow-ups", "quotes"],
     ["Proof-to-paid", "proof"],
@@ -6145,9 +6147,28 @@ function AskChurvoxCommand({ onRunCommand }) {
             setQuery(event.target.value);
             setHint("");
           }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              run(event.currentTarget.value);
+            }
+          }}
           placeholder="Try: what needs approval, add client, add quote, add invoice..."
         />
-        <button type="submit">Run</button>
+        <button
+          type="button"
+          onClick={(event) => {
+            const form = event.currentTarget.closest("form");
+            const value =
+              form?.elements?.askCommand?.value ||
+              form?.querySelector?.("input")?.value ||
+              query;
+
+            run(value);
+          }}
+        >
+          Run
+        </button>
       </form>
 
       <div className="cx-ask-suggestions">
