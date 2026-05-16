@@ -5723,3 +5723,180 @@ select {
     padding-bottom: 20px;
   }
 }
+
+/* SAFE_PHASE_99_FINAL_PUBLIC_LANDING_TIGHTEN */
+.om-public-shell {
+  min-height: 100svh !important;
+  background: #ede6d8 !important;
+  color: #171713 !important;
+}
+
+.om-public-nav {
+  width: min(100% - 28px, 1040px) !important;
+  min-height: 56px !important;
+  margin: 14px auto 10px !important;
+  padding: 9px 13px !important;
+  border-radius: 22px !important;
+  background: rgba(244, 239, 230, .9) !important;
+  border: 1px solid rgba(28, 27, 23, .08) !important;
+  box-shadow: 0 16px 45px rgba(31, 28, 21, .08) !important;
+}
+
+.om-public-hero,
+.om-public-machine,
+.om-public-pricing,
+.om-public-access,
+.om-public-proof {
+  width: min(100% - 28px, 1040px) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.om-public-hero {
+  grid-template-columns: minmax(0, 1fr) 280px !important;
+  align-items: center !important;
+  min-height: auto !important;
+  gap: 22px !important;
+  padding: 30px 28px !important;
+  border-radius: 30px !important;
+  background: rgba(247, 243, 235, .86) !important;
+  border: 1px solid rgba(28, 27, 23, .08) !important;
+  box-shadow: 0 20px 70px rgba(31, 28, 21, .08) !important;
+}
+
+.om-public-hero h1 {
+  max-width: 650px !important;
+  margin: 8px 0 12px !important;
+  font-size: clamp(3.15rem, 6.2vw, 5.45rem) !important;
+  line-height: .88 !important;
+  letter-spacing: -0.09em !important;
+}
+
+.om-public-hero p {
+  max-width: 600px !important;
+  font-size: .95rem !important;
+  line-height: 1.42 !important;
+  color: rgba(23, 23, 19, .68) !important;
+}
+
+.om-public-demo-card {
+  min-height: 255px !important;
+  max-width: 280px !important;
+  border-radius: 26px !important;
+  padding: 14px !important;
+  justify-self: end !important;
+}
+
+.om-public-machine,
+.om-public-pricing,
+.om-public-access,
+.om-public-proof {
+  padding: 14px 0 !important;
+}
+
+.om-public-machine h2,
+.om-public-pricing h2,
+.om-public-proof h2,
+.om-public-access h2 {
+  font-size: clamp(2rem, 4.3vw, 3.65rem) !important;
+  line-height: .9 !important;
+  letter-spacing: -0.08em !important;
+}
+
+.om-public-pricing-grid,
+.om-public-machine-grid,
+.om-public-proof-grid {
+  gap: 10px !important;
+}
+
+.om-public-price-card,
+.om-public-machine-card,
+.om-public-proof-card {
+  min-height: auto !important;
+  padding: 16px !important;
+  border-radius: 22px !important;
+  background: rgba(247, 243, 235, .8) !important;
+  border: 1px solid rgba(28, 27, 23, .08) !important;
+}
+
+.om-public-access {
+  grid-template-columns: minmax(0, 1fr) 285px !important;
+  gap: 16px !important;
+  align-items: start !important;
+  padding-bottom: 34px !important;
+}
+
+.om-auth {
+  max-width: 285px !important;
+  justify-self: end !important;
+  padding: 18px !important;
+  border-radius: 24px !important;
+}
+
+@media (max-width: 720px) {
+  .om-public-nav {
+    width: 100% !important;
+    margin: 0 !important;
+    border-radius: 0 0 18px 18px !important;
+    padding: 9px 10px !important;
+  }
+
+  .om-public-hero,
+  .om-public-machine,
+  .om-public-pricing,
+  .om-public-access,
+  .om-public-proof {
+    width: calc(100% - 18px) !important;
+  }
+
+  .om-public-hero {
+    grid-template-columns: 1fr !important;
+    padding: 18px !important;
+    border-radius: 24px !important;
+    gap: 13px !important;
+  }
+
+  .om-public-hero h1 {
+    font-size: clamp(2.15rem, 12.5vw, 3.15rem) !important;
+    line-height: .9 !important;
+  }
+
+  .om-public-demo-card {
+    max-width: 100% !important;
+    width: 100% !important;
+    min-height: auto !important;
+    justify-self: stretch !important;
+  }
+
+  .om-public-pricing-grid,
+  .om-public-machine-grid,
+  .om-public-proof-grid,
+  .om-public-access {
+    grid-template-columns: 1fr !important;
+    gap: 9px !important;
+  }
+
+  .om-auth {
+    max-width: none !important;
+    width: 100% !important;
+    justify-self: stretch !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .om-public-hero,
+  .om-public-machine,
+  .om-public-pricing,
+  .om-public-access,
+  .om-public-proof {
+    width: calc(100% - 14px) !important;
+  }
+
+  .om-public-hero {
+    padding: 15px !important;
+  }
+
+  .om-public-hero h1 {
+    font-size: clamp(2rem, 12vw, 2.75rem) !important;
+  }
+}
