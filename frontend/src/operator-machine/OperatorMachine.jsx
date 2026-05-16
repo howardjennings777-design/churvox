@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_80_FINISH_JOBS_OPERATOR_MACHINE
 // PHASE_79_NEW_JOB_INTAKE_SLIP
 // PHASE_78_SMART_JOB_WORK_SLIPS
 // PHASE_77_COMBINE_FEATURE_HEADERS
@@ -452,7 +453,234 @@ function buildMachine(data = {}) {
   };
 }
 
-function WorkSlip({ slip, team, outputStatus, onClose, onSave, onApprove }) {
+
+function WorkSlip({ slip, team, outputStatus, onClose, onSave, onApprove, onChoosePlan }) {
+  const [draft, setDraft] = useState(slip?.draft || {});
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    setDraft(slip?.draft || {});
+  }, [slip]);
+
+  if (!slip) return null;
+
+  function update(key, value) {
+    setDraft((current) => ({ ...current, [key]: value }));
+  }
+
+  async function approve() {
+    setBusy(true);
+    try {
+      await onApprove(slip, draft);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const isJobIntake = slip.kind === "new-job";
+  const isJobReview = slip.kind === "job";
+  const isDispatch = slip.kind === "dispatch";
+  const isInvoiceLike = slip.kind === "invoice" || slip.kind === "cashflow" || slip.kind === "proof";
+  const primaryLabel =
+    isJobIntake ? "Create job" :
+    isDispatch ? "Approve dispatch" :
+    slip.kind === "invoice" ? "Approve invoice draft" :
+    slip.kind === "cashflow" ? "Approve follow-up" :
+    "Approve";
+
+  if (slip.kind === "plan" || slip.kind === "addon") {
+    const features = Array.isArray(slip.features) ? slip.features : [];
+
+    return (
+      <div className="om-slip-backdrop" onClick={onClose}>
+        <section className="om-slip om-plan-slip" onClick={(event) => event.stopPropagation()}>
+          <header className="om-slip-head">
+            <div>
+              <span>{slip.badge || slip.eyebrow}</span>
+              <h2>{slip.title}</h2>
+              <p>{slip.need}</p>
+            </div>
+            <button type="button" onClick={onClose} aria-label="Close plan slip">×</button>
+          </header>
+
+          <section className="om-plan-slip-body">
+            <article className="om-plan-price-card">
+              <span>{slip.kind === "addon" ? "Add-on price" : "Plan price"}</span>
+              <strong>{slip.price}<small>{slip.id === "addon-sms-100" || slip.id === "addon-sms-500" || slip.id === "addon-sms-1000" ? "" : "/month + GST"}</small></strong>
+              <p>{slip.prepared}</p>
+            </article>
+
+            <article className="om-plan-feature-card">
+              <span>Included</span>
+              <div>
+                {features.map((feature) => (
+                  <b key={feature}>{feature}</b>
+                ))}
+              </div>
+            </article>
+
+            <article className="om-plan-machine-note">
+              <span>How this fits Churvox</span>
+              <p>
+                {slip.kind === "addon"
+                  ? "Add-ons extend Churvox without changing the main plan. Growth Packs add scale, MYOB adds accounting sync, and SMS credits add prepaid messaging capacity."
+                  : "The plan controls how much of the Operator Machine Churvox can run for the business. Owner approval still stays in front of sensitive actions."}
+              </p>
+            </article>
+          </section>
+
+          <footer className="om-slip-actions">
+            <button type="button" className="ghost" onClick={onClose}>Back</button>
+            <button type="button" className="approve" onClick={() => onChoosePlan?.(slip)}>
+              {slip.cta || "Choose plan"}
+            </button>
+          </footer>
+        </section>
+      </div>
+    );
+  }
+
+  return (
+    <div className="om-slip-backdrop" onClick={onClose}>
+      <section className={`om-slip ${isJobIntake ? "om-new-job-slip" : ""}`} onClick={(event) => event.stopPropagation()}>
+        <header className="om-slip-head">
+          <div>
+            <span>{slip.eyebrow}</span>
+            <h2>{slip.title}</h2>
+            <p>{slip.need}</p>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close work slip">×</button>
+        </header>
+
+        <section className="om-slip-context">
+          <span>Prepared context</span>
+          <p>{slip.prepared}</p>
+        </section>
+
+        <section className="om-slip-fields">
+          <label className={isJobIntake ? "wide" : ""}>
+            Clear title
+            <input value={draft.title || ""} onChange={(event) => update("title", event.target.value)} placeholder={isJobIntake ? "Example: Lawn mowing at 14 King Street" : ""} />
+          </label>
+
+          {isJobIntake ? (
+            <>
+              <label>
+                Client name
+                <input value={draft.clientName || ""} onChange={(event) => update("clientName", event.target.value)} placeholder="Client or customer name" />
+              </label>
+
+              <label>
+                Job address
+                <input value={draft.address || ""} onChange={(event) => update("address", event.target.value)} placeholder="Where the job is" />
+              </label>
+
+              <label>
+                Service type
+                <input value={draft.serviceType || ""} onChange={(event) => update("serviceType", event.target.value)} placeholder="Mowing, cleaning, repair..." />
+              </label>
+
+              <label>
+                Starting status
+                <select value={draft.jobStatus || "new"} onChange={(event) => update("jobStatus", event.target.value)}>
+                  <option value="new">New</option>
+                  <option value="assigned">Assigned</option>
+                  <option value="in_progress">In progress</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </label>
+
+              <label>
+                Optional worker
+                <select value={draft.workerChoice || ""} onChange={(event) => update("workerChoice", event.target.value)}>
+                  <option value="">Choose later</option>
+                  {team.map((worker, index) => {
+                    const value = clean(worker.id || worker._id || worker.name || worker.full_name || worker.worker_name || `worker-${index}`);
+                    const label = clean(worker.name || worker.full_name || worker.worker_name || worker.email || `Worker ${index + 1}`);
+                    return <option value={value} key={value}>{label}</option>;
+                  })}
+                </select>
+              </label>
+
+              <label>
+                Optional amount
+                <input value={draft.amount || ""} onChange={(event) => update("amount", event.target.value)} placeholder="Leave blank if unknown" />
+              </label>
+            </>
+          ) : null}
+
+          {isDispatch ? (
+            <label>
+              Worker / crew choice
+              <select value={draft.workerChoice || ""} onChange={(event) => update("workerChoice", event.target.value)}>
+                <option value="">Choose worker</option>
+                {team.map((worker, index) => {
+                  const value = clean(worker.id || worker._id || worker.name || worker.full_name || worker.worker_name || `worker-${index}`);
+                  const label = clean(worker.name || worker.full_name || worker.worker_name || worker.email || `Worker ${index + 1}`);
+                  return <option value={value} key={value}>{label}</option>;
+                })}
+              </select>
+            </label>
+          ) : null}
+
+          {isJobReview ? (
+            <>
+              <label>
+                Job status / next step
+                <input value={draft.jobStatus || ""} onChange={(event) => update("jobStatus", event.target.value)} placeholder="new, assigned, in progress, completed..." />
+              </label>
+
+              <label>
+                Amount / pricing context
+                <input value={draft.amount || ""} onChange={(event) => update("amount", event.target.value)} placeholder="Optional" />
+              </label>
+            </>
+          ) : null}
+
+          {isInvoiceLike ? (
+            <>
+              <label>
+                Amount / owner input
+                <input value={draft.amount || ""} onChange={(event) => update("amount", event.target.value)} placeholder="Add amount if missing" />
+              </label>
+
+              <label>
+                Due date
+                <input value={draft.dueDate || ""} onChange={(event) => update("dueDate", event.target.value)} placeholder="YYYY-MM-DD" />
+              </label>
+
+              <label className="wide">
+                Invoice description
+                <textarea value={draft.invoiceDescription || ""} onChange={(event) => update("invoiceDescription", event.target.value)} />
+              </label>
+            </>
+          ) : null}
+
+          <label className="wide">
+            Owner note / fix
+            <textarea value={draft.ownerNote || ""} onChange={(event) => update("ownerNote", event.target.value)} placeholder="Add what matters before approval..." />
+          </label>
+
+          <label className="wide">
+            Message / prepared wording
+            <textarea value={draft.customerMessage || ""} onChange={(event) => update("customerMessage", event.target.value)} placeholder="Edit before anything is copied, saved, or sent..." />
+          </label>
+        </section>
+
+        {outputStatus ? <p className="om-slip-status">{outputStatus}</p> : null}
+
+        <footer className="om-slip-actions">
+          <button type="button" className="ghost" onClick={onClose}>Back</button>
+          <button type="button" onClick={() => onSave(slip, draft)}>Save edit</button>
+          <button type="button" className="approve" disabled={busy} onClick={approve}>
+            {busy ? "Saving..." : primaryLabel}
+          </button>
+        </footer>
+      </section>
+    </div>
+  );
+}
+) {
   const [draft, setDraft] = useState(slip?.draft || {});
   const [busy, setBusy] = useState(false);
 
@@ -1079,7 +1307,293 @@ function featureConfig(page) {
 
 
 
+
 function JobsQueueBoard({ data, machine, onOpen }) {
+  const jobRows = rowsForPage("jobs", machine, data || {});
+  const team = arrayFrom(data?.raw?.team, data?.raw?.workers, data?.team);
+  const [jobFilter, setJobFilter] = useState("priority");
+  const [jobQuery, setJobQuery] = useState("");
+
+  const needsWorker = jobRows.filter((row) => !hasWorker(row.item || {}) && !isCompletedJob(row.item || {}));
+  const activeJobs = jobRows.filter((row) => hasWorker(row.item || {}) && !isCompletedJob(row.item || {}));
+  const completedJobs = jobRows.filter((row) => isCompletedJob(row.item || {}));
+  const invoiceReady = machine.approval.filter((item) => item.kind === "invoice");
+
+  const priorityRows = [
+    ...needsWorker,
+    ...activeJobs,
+    ...completedJobs,
+    ...jobRows,
+  ].filter((row, index, arr) => arr.findIndex((item) => item.id === row.id) === index);
+
+  const sourceRows =
+    jobFilter === "dispatch" ? needsWorker :
+    jobFilter === "active" ? activeJobs :
+    jobFilter === "completed" ? completedJobs :
+    jobFilter === "all" ? jobRows :
+    priorityRows;
+
+  const filteredRows = sourceRows
+    .filter((row) => {
+      const item = row.item || {};
+      const haystack = [
+        row.title,
+        row.need,
+        item.client_name,
+        item.customer_name,
+        item.address,
+        item.job_address,
+        item.service_address,
+        item.location,
+        item.assigned_worker_name,
+        item.worker_name,
+        item.status,
+        item.job_status,
+        item.notes,
+      ].map((value) => clean(value).toLowerCase()).join(" ");
+
+      return !jobQuery.trim() || haystack.includes(jobQuery.trim().toLowerCase());
+    })
+    .slice(0, 18);
+
+  const jobStats = [
+    ["Total jobs", jobRows.length],
+    ["Need worker", needsWorker.length],
+    ["Active", activeJobs.length],
+    ["Completed", completedJobs.length],
+  ];
+
+  const machineSteps = [
+    ["New", "Job enters the tray"],
+    ["Dispatch", "Worker fit is checked"],
+    ["Proof", "Notes and photos feed admin"],
+    ["Invoice", "Completed work becomes approval-ready"],
+  ];
+
+  const filters = [
+    ["priority", "Priority"],
+    ["dispatch", "Needs dispatch"],
+    ["active", "Active"],
+    ["completed", "Completed"],
+    ["all", "All jobs"],
+  ];
+
+  function makeNewJobSlip() {
+    return {
+      id: `new-job-${Date.now()}`,
+      sourceId: "",
+      kind: "new-job",
+      eyebrow: "New job intake",
+      title: "Create new job",
+      need: "Enter the job once. Churvox will use it for dispatch, proof and invoice prep.",
+      prepared: "Churvox will turn this job record into machine input for worker assignment, proof-to-paid and owner-approved invoice actions.",
+      draft: {
+        title: "",
+        clientName: "",
+        address: "",
+        serviceType: "",
+        ownerNote: "",
+        customerMessage: "",
+        invoiceDescription: "",
+        amount: "",
+        jobStatus: "new",
+        workerChoice: "",
+      },
+    };
+  }
+
+  function makeJobSlip(row) {
+    const item = row.item || {};
+    const title = clean(item.title || item.job_title || item.service_type || item.name || row.title, "Job");
+    const client = clean(item.client_name || item.customer_name || item.client?.name, "Client");
+    const address = clean(item.address || item.job_address || item.service_address || item.location);
+    const notes = clean(item.completion_notes || item.worker_notes || item.job_notes || item.notes);
+    const completed = isCompletedJob(item);
+    const needsDispatch = !hasWorker(item) && !completed;
+
+    if (needsDispatch) {
+      const suggestedWorker = team[0] || {};
+      const workerLabel = clean(
+        suggestedWorker.name ||
+        suggestedWorker.full_name ||
+        suggestedWorker.worker_name ||
+        suggestedWorker.email,
+        "choose worker"
+      );
+
+      return {
+        ...row,
+        kind: "dispatch",
+        eyebrow: "Needs dispatch",
+        title: `Assign worker for ${title}`,
+        need: "This job needs a worker before the day can run cleanly.",
+        prepared: `Churvox checked the job record${address ? `, address at ${address}` : ""}, client context and available crew. Suggested worker: ${workerLabel}.`,
+        draft: {
+          title: `Assign worker for ${title}`,
+          workerChoice: clean(suggestedWorker.id || suggestedWorker._id || suggestedWorker.name || suggestedWorker.full_name || ""),
+          ownerNote: address ? `Assign based on job address: ${address}` : "Assign the best available worker.",
+          customerMessage: "",
+          invoiceDescription: "",
+          amount: "",
+        },
+      };
+    }
+
+    if (completed) {
+      const amount = invoiceAmount(item);
+      const prepared = invoiceDescription(item);
+
+      return {
+        ...row,
+        kind: "invoice",
+        eyebrow: amount ? "Invoice ready" : "Owner input needed",
+        title: `Approve invoice draft for ${client}`,
+        need: amount ? "Completed work is ready for invoice approval." : "Completed work is ready, but the amount needs owner input.",
+        prepared,
+        draft: {
+          title: `Invoice for ${title}`,
+          invoiceClientName: client,
+          invoiceLineItem: title,
+          invoiceDescription: prepared,
+          amount,
+          dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+          ownerNote: notes,
+          customerMessage: prepared,
+        },
+      };
+    }
+
+    return {
+      ...row,
+      kind: "job",
+      eyebrow: "Job review",
+      title,
+      need: "Review job details, next step, worker notes or owner instructions.",
+      prepared: `Churvox is using this job as machine input.${client ? ` Client: ${client}.` : ""}${address ? ` Address: ${address}.` : ""}`,
+      draft: {
+        title,
+        jobStatus: statusOf(item),
+        ownerNote: notes || row.need || "",
+        customerMessage: "",
+        invoiceDescription: address ? `Job address: ${address}` : "",
+        amount: invoiceAmount(item),
+      },
+    };
+  }
+
+  return (
+    <section className="om-jobs-board" data-phase="PHASE_80_FINISH_JOBS_OPERATOR_MACHINE">
+      <header className="om-jobs-hero om-jobs-hero-final">
+        <div>
+          <span>Churvox Operator Machine · Jobs</span>
+          <h1>Jobs go in. Dispatch, proof and invoices come out ready.</h1>
+          <p>
+            Keep the job record simple. Churvox checks worker fit, proof, client context and invoice readiness
+            in the background, then shows only the decisions the owner needs to make.
+          </p>
+
+          <button type="button" className="om-job-hero-action inline" onClick={() => onOpen(makeNewJobSlip())}>
+            New job intake
+          </button>
+        </div>
+
+        <aside>
+          {jobStats.map(([label, value]) => (
+            <article key={label}>
+              <span>{label}</span>
+              <strong>{value}</strong>
+            </article>
+          ))}
+        </aside>
+      </header>
+
+      <section className="om-job-flow-strip compact">
+        {machineSteps.map(([label, body], index) => (
+          <article key={label} className={index === 1 ? "active" : ""}>
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <strong>{label}</strong>
+            <small>{body}</small>
+          </article>
+        ))}
+      </section>
+
+      <section className="om-jobs-layout">
+        <section className="om-job-queue">
+          <header className="om-job-queue-head">
+            <div>
+              <span>Job Queue</span>
+              <h2>What needs job attention.</h2>
+              <p>Filter the work, then open one Work Slip to review, edit, dispatch or invoice.</p>
+            </div>
+            <b>{filteredRows.length}</b>
+          </header>
+
+          <section className="om-job-tools">
+            <div className="om-job-filter-tabs">
+              {filters.map(([key, label]) => (
+                <button type="button" key={key} className={jobFilter === key ? "active" : ""} onClick={() => setJobFilter(key)}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <input
+              value={jobQuery}
+              onChange={(event) => setJobQuery(event.target.value)}
+              placeholder="Search jobs, clients, address, worker..."
+            />
+          </section>
+
+          <div>
+            {filteredRows.length ? filteredRows.map((row) => {
+              const item = row.item || {};
+              const status = statusOf(item);
+              const worker = clean(item.assigned_worker_name || item.worker_name || item.assigned_worker || item.worker_id);
+              const completed = isCompletedJob(item);
+              const needsDispatch = !hasWorker(item) && !completed;
+              const address = clean(item.address || item.job_address || item.service_address || item.location);
+
+              return (
+                <button type="button" key={row.id} className={`om-job-ticket ${needsDispatch ? "needs-worker" : completed ? "completed" : "active"}`} onClick={() => onOpen(makeJobSlip(row))}>
+                  <span>{needsDispatch ? "Needs dispatch" : completed ? "Completed" : status || "Active job"}</span>
+                  <strong>{row.title}</strong>
+                  <small>{address || row.need}</small>
+                  <em>{worker ? `Worker: ${worker}` : needsDispatch ? "Choose worker" : completed ? "Prepare invoice" : "Open Work Slip"}</em>
+                </button>
+              );
+            }) : (
+              <article className="om-job-empty">
+                <strong>No jobs match this view.</strong>
+                <p>Try another filter or add a new job intake.</p>
+              </article>
+            )}
+          </div>
+        </section>
+
+        <aside className="om-job-side">
+          <section>
+            <span>Dispatch needed</span>
+            <strong>{needsWorker.length}</strong>
+            <p>Jobs without a worker should be handled first so the day can run cleanly.</p>
+          </section>
+
+          <section>
+            <span>Ready to invoice</span>
+            <strong>{invoiceReady.length}</strong>
+            <p>Completed work can become invoice drafts with job notes, proof and client context.</p>
+          </section>
+
+          <section>
+            <span>Machine rule</span>
+            <h3>One job record feeds many actions.</h3>
+            <p>Job details should stay simple. Churvox prepares dispatch, proof and invoice admin behind it.</p>
+          </section>
+        </aside>
+      </section>
+    </section>
+  );
+}
+) {
   const jobRows = rowsForPage("jobs", machine, data || {});
   const team = arrayFrom(data?.raw?.team, data?.raw?.workers, data?.team);
   const needsWorker = jobRows.filter((row) => !hasWorker(row.item || {}) && !isCompletedJob(row.item || {}));
@@ -1553,6 +2067,30 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
     setActiveSlip(slip);
   }
 
+  function choosePlan(slip) {
+    try {
+      if (slip.kind === "addon") {
+        localStorage.setItem("churvox_selected_addon", slip.id || slip.planName || slip.eyebrow);
+      } else {
+        localStorage.setItem("churvox_plan", normalisePlanName(slip.planName || slip.eyebrow));
+      }
+    } catch {
+      // ignore local preview storage
+    }
+
+    setOutputStatus(`${slip.planName || "Plan"} selected. Checkout wiring can be connected next.`);
+    setOutputLog((current) => [
+      {
+        id: `${Date.now()}-${slip.id}`,
+        type: slip.kind === "addon" ? "Add-on reviewed" : "Plan reviewed",
+        title: slip.title,
+        detail: `${slip.planName || slip.eyebrow} selected for owner review.`,
+      },
+      ...current,
+    ].slice(0, 8));
+    setActiveSlip(null);
+  }
+
   function saveEdit(slip, draft) {
     setOutputStatus("Edit saved in this Operator Machine session.");
     setOutputLog((current) => [
@@ -1673,6 +2211,7 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
 
       <section className="om-main">
         {page === "dashboard" ? (
+        {page === "dashboard" ? (
         <header className="om-hero">
           <div>
             <span>Churvox Operator Machine</span>
@@ -1689,6 +2228,8 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
             <article><span>Approval</span><strong>{machine.counts.approval}</strong></article>
           </section>
         </header>
+
+        ) : null}
 
         ) : null}
 
@@ -1787,6 +2328,7 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
         onClose={() => setActiveSlip(null)}
         onSave={saveEdit}
         onApprove={approveSlip}
+        onChoosePlan={choosePlan}
       />
     </main>
   );

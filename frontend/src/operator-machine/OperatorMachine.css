@@ -2154,3 +2154,129 @@
     min-height: 48px;
   }
 }
+
+
+/* PHASE_80_FINISH_JOBS_OPERATOR_MACHINE */
+.om-jobs-hero-final {
+  min-height: unset;
+}
+
+.om-jobs-hero-final .om-job-hero-action.inline {
+  width: fit-content;
+  margin-top: 18px;
+  padding: 0 24px;
+}
+
+.om-job-flow-strip.compact article {
+  min-height: 92px;
+}
+
+.om-job-queue-head {
+  align-items: flex-start;
+}
+
+.om-job-tools {
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, .36fr);
+  gap: 12px;
+  border-bottom: 1px solid var(--om-border);
+  background: rgba(255, 250, 240, .54);
+}
+
+.om-job-filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.om-job-filter-tabs button {
+  border: 1px solid var(--om-border);
+  border-radius: 999px;
+  background: #fffaf0;
+  color: var(--om-charcoal);
+  padding: 9px 12px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.om-job-filter-tabs button.active {
+  background: var(--om-charcoal);
+  color: var(--om-lime);
+  border-color: var(--om-charcoal);
+}
+
+.om-job-tools input {
+  min-height: 42px;
+  border: 1px solid var(--om-border);
+  border-radius: 999px;
+  padding: 0 14px;
+  background: var(--om-paper);
+  color: var(--om-charcoal);
+  font-weight: 800;
+}
+
+.om-job-ticket strong {
+  word-break: break-word;
+}
+
+.om-job-ticket.completed em {
+  background: var(--om-lime);
+  color: var(--om-charcoal);
+}
+
+.om-job-ticket.needs-worker em {
+  background: var(--om-charcoal);
+  color: var(--om-lime);
+}
+
+.om-new-job-slip {
+  width: min(1080px, calc(100vw - 44px));
+}
+
+.om-new-job-slip .om-slip-context {
+  background:
+    linear-gradient(135deg, rgba(184, 227, 95, .16), rgba(255, 250, 240, 1)),
+    #fffaf0;
+}
+
+.om-slip-fields label select {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid var(--om-border);
+  border-radius: 16px;
+  background: #fffdf7;
+  padding: 0 12px;
+  color: var(--om-charcoal);
+  font-weight: 850;
+}
+
+.om-slip-actions .approve:disabled {
+  opacity: .68;
+  cursor: wait;
+}
+
+@media (max-width: 900px) {
+  .om-job-tools {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .om-jobs-hero-final .om-job-hero-action.inline {
+    width: 100%;
+  }
+
+  .om-job-filter-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .om-job-filter-tabs button {
+    width: 100%;
+  }
+
+  .om-new-job-slip {
+    width: calc(100vw - 22px);
+  }
+}
