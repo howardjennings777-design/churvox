@@ -1,0 +1,27 @@
+# Churvox Live Worker Flow Test
+
+Generated: 2026-05-16 21:23:38 UTC
+
+## Summary
+
+- HIGH: 1
+- MED: 0
+- LOW: 0
+- Backend: https://grassley-backend.onrender.com
+- Worker login supplied: no
+
+## Checks
+
+- ❌ **Owner login** — status `0` — 
+
+## Findings
+
+### 1. [HIGH] Owner login failed
+
+Cannot run worker flow test because owner login returned 0: OpenerDirector.open() got an unexpected keyword argument 'context'
+
+## Notes
+
+- This test creates then deletes one client and one job.
+- Real worker login is optional and only runs if worker env vars are supplied.
+- It does not send SMS, customer email, Stripe charges, or MYOB updates.
