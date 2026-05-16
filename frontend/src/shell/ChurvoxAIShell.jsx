@@ -6016,6 +6016,39 @@ function AskChurvoxCommand({ onRunCommand }) {
 
     if (!value) return { type: "help", label: "Show command help" };
 
+    const wantsCreate = value.includes("add") || value.includes("new") || value.includes("create") || value.includes("make");
+    const wantsImport = value.includes("import") || value.includes("upload");
+
+    // Quick-add commands must win before general hub commands.
+    // Otherwise "add quote" opens quote follow-ups and "add invoice" opens ready invoices.
+    if (wantsImport && value.includes("client")) {
+      return { type: "quick", area: "clients", label: "Import clients" };
+    }
+
+    if (wantsImport && (value.includes("worker") || value.includes("team") || value.includes("staff"))) {
+      return { type: "quick", area: "team", label: "Import team" };
+    }
+
+    if (wantsCreate && value.includes("client")) {
+      return { type: "quick", area: "clients", label: "Add client" };
+    }
+
+    if (wantsCreate && (value.includes("worker") || value.includes("team") || value.includes("staff"))) {
+      return { type: "quick", area: "team", label: "Add worker" };
+    }
+
+    if (wantsCreate && value.includes("job")) {
+      return { type: "quick", area: "jobs", label: "Add job" };
+    }
+
+    if (wantsCreate && value.includes("quote")) {
+      return { type: "quick", area: "quotes", label: "Add quote" };
+    }
+
+    if (wantsCreate && value.includes("invoice")) {
+      return { type: "quick", area: "invoices", label: "Add invoice" };
+    }
+
     if (value.includes("approval") || value.includes("approve") || value.includes("what needs")) {
       return { type: "hub", key: "approvals", label: "Open approvals" };
     }
