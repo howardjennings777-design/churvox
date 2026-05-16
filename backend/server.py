@@ -957,6 +957,7 @@ async def dismiss_ai_action(action_id: str, request: Request):
 
 
 # ===================== PHASE_105_OWNER_APPROVAL_PERFORMS_REAL_ACTIONS =====================
+# PHASE_120_SEND_INVOICE_AS_PDF_ATTACHMENT
 def _phase105_clean(value, fallback=""):
     value = str(value or "").strip()
     return value if value else fallback
@@ -1343,9 +1344,10 @@ async def _phase105_find_or_create_invoice(payload: dict, business_id: str):
         "business_id": str(business_id),
         "title": title,
         "invoice_title": title,
+        "invoice_number": _phase105_clean(draft.get("invoiceNumber") or payload.get("invoice_number")),
         "client_name": _phase105_clean(draft.get("invoiceClientName") or draft.get("clientName") or payload.get("client_name")),
         "customer_name": _phase105_clean(draft.get("invoiceClientName") or draft.get("clientName") or payload.get("customer_name")),
-        "client_email": _phase105_clean(draft.get("invoiceClientEmail") or draft.get("clientEmail") or payload.get("client_email")),
+        "client_email": _phase105_clean(draft.get("invoiceClientEmail") or draft.get("clientEmail") or draft.get("customerEmail") or payload.get("client_email") or payload.get("customer_email")),
         "line_item": _phase105_clean(draft.get("invoiceLineItem") or title),
         "description": _phase105_clean(draft.get("invoiceDescription") or draft.get("customerMessage") or draft.get("ownerNote")),
         "invoice_description": _phase105_clean(draft.get("invoiceDescription") or draft.get("customerMessage") or draft.get("ownerNote")),
@@ -1354,6 +1356,7 @@ async def _phase105_find_or_create_invoice(payload: dict, business_id: str):
         "invoice_amount": _phase105_invoice_amount({}, draft),
         "due_date": _phase105_clean(draft.get("dueDate")),
         "payment_due_date": _phase105_clean(draft.get("dueDate")),
+        "payment_note": _phase105_clean(draft.get("paymentNote") or payload.get("payment_note")),
         "status": "draft",
         "created_at": now,
         "updated_at": now,
@@ -1362,6 +1365,152 @@ async def _phase105_find_or_create_invoice(payload: dict, business_id: str):
     result = await db.invoices.insert_one(invoice_doc)
     invoice_doc["_id"] = result.inserted_id
     return invoice_doc, True
+
+
+
+def _phase120_pdf_escape(value):
+    return (
+        str(value or "")
+        .replace("\\", "\\\\")
+        .replace("(", "\\(")
+        .replace(")", "\\)")
+        .replace("\r", " ")
+        .replace("\n", " ")
+    )
+
+
+def _phase120_wrap_text(value, limit=86):
+    words = str(value or "").split()
+    lines = []
+    current = ""
+    for word in words:
+        if len(current) + len(word) + 1 > limit:
+            if current:
+                lines.append(current)
+            current = word
+        else:
+            current = f"{current} {word}".strip()
+    if current:
+        lines.append(current)
+    return lines or [""]
+
+
+def _phase120_invoice_number(invoice: dict):
+    raw = _phase105_clean(
+        invoice.get("invoice_number")
+        or invoice.get("number")
+        or invoice.get("invoice_id")
+        or invoice.get("id")
+        or invoice.get("_id")
+    )
+    if raw and raw.upper().startswith("INV-"):
+        return raw.upper()
+
+    digits = "".join(ch for ch in raw if ch.isdigit())
+    suffix = (digits[-4:] or str(int(datetime.now(timezone.utc).timestamp()))[-4:]).rjust(4, "0")
+    return f"INV-{datetime.now(timezone.utc).year}-{suffix}"
+
+
+def _phase120_pdf_line(x, y, size, text):
+    return f"BT /F1 {size} Tf {x} {y} Td ({_phase120_pdf_escape(text)}) Tj ET\n"
+
+
+def _phase120_build_invoice_pdf(invoice: dict, client_doc: dict | None = None):
+    invoice = invoice or {}
+    client_doc = client_doc or {}
+
+    invoice_number = _phase120_invoice_number(invoice)
+    business_name = _phase105_clean(
+        invoice.get("business_name")
+        or invoice.get("company_name")
+        or invoice.get("from_business_name")
+        or "Your business"
+    )
+    customer_name = _phase105_name_from(invoice, client_doc)
+    invoice_title = _phase105_clean(invoice.get("title") or invoice.get("invoice_title") or invoice.get("line_item"), "Invoice")
+    line_item = _phase105_clean(invoice.get("line_item") or invoice.get("service_type") or invoice_title, invoice_title)
+    description = _phase105_clean(invoice.get("invoice_description") or invoice.get("description") or invoice.get("customer_message"), line_item)
+    amount = _phase105_money(_phase105_invoice_amount(invoice, {}))
+    due_date = _phase105_clean(invoice.get("due_date") or invoice.get("payment_due_date"), "Shown on invoice")
+    issue_date = _phase105_clean(invoice.get("issue_date") or invoice.get("created_at"), datetime.now(timezone.utc).date().isoformat())
+    payment_note = _phase105_clean(
+        invoice.get("payment_note")
+        or invoice.get("payment_terms")
+        or "Payment details are shown on this invoice. Please pay by the due date."
+    )
+
+    y = 780
+    content = ""
+    content += _phase120_pdf_line(50, y, 22, business_name)
+    y -= 34
+    content += _phase120_pdf_line(50, y, 30, "INVOICE")
+    content += _phase120_pdf_line(390, y + 7, 13, invoice_number)
+    y -= 30
+    content += _phase120_pdf_line(50, y, 10, f"Issued: {issue_date}")
+    content += _phase120_pdf_line(390, y, 10, f"Due: {due_date}")
+
+    y -= 48
+    content += _phase120_pdf_line(50, y, 12, "Bill to")
+    y -= 20
+    content += _phase120_pdf_line(50, y, 16, customer_name)
+
+    y -= 46
+    content += _phase120_pdf_line(50, y, 12, "Description")
+    content += _phase120_pdf_line(455, y, 12, "Amount")
+    y -= 18
+    content += "0.6 w 50 575 m 545 575 l S\n"
+
+    y -= 28
+    content += _phase120_pdf_line(50, y, 13, line_item)
+    content += _phase120_pdf_line(455, y, 13, amount)
+
+    y -= 24
+    for line in _phase120_wrap_text(description, 76)[:7]:
+        content += _phase120_pdf_line(50, y, 10, line)
+        y -= 15
+
+    y -= 18
+    content += "0.8 w 50 385 m 545 385 l S\n"
+    y -= 30
+    content += _phase120_pdf_line(355, y, 15, "Total due")
+    content += _phase120_pdf_line(455, y, 18, amount)
+
+    y -= 70
+    content += _phase120_pdf_line(50, y, 12, "Payment / notes")
+    y -= 20
+    for line in _phase120_wrap_text(payment_note, 86)[:5]:
+        content += _phase120_pdf_line(50, y, 10, line)
+        y -= 15
+
+    y -= 35
+    content += _phase120_pdf_line(50, y, 9, "Generated by Churvox after owner approval.")
+
+    stream = content.encode("latin-1", errors="replace")
+    objects = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
+        b"<< /Length " + str(len(stream)).encode("ascii") + b" >>\nstream\n" + stream + b"endstream",
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    ]
+
+    pdf = b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n"
+    offsets = [0]
+    for index, obj in enumerate(objects, start=1):
+        offsets.append(len(pdf))
+        pdf += f"{index} 0 obj\n".encode("ascii") + obj + b"\nendobj\n"
+
+    xref_pos = len(pdf)
+    pdf += f"xref\n0 {len(objects) + 1}\n".encode("ascii")
+    pdf += b"0000000000 65535 f \n"
+    for offset in offsets[1:]:
+        pdf += f"{offset:010d} 00000 n \n".encode("ascii")
+    pdf += (
+        f"trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\n"
+        f"startxref\n{xref_pos}\n%%EOF\n"
+    ).encode("ascii")
+
+    return pdf, invoice_number
 
 
 async def _phase105_send_invoice_email(invoice: dict, client_doc: dict | None):
@@ -1380,28 +1529,53 @@ async def _phase105_send_invoice_email(invoice: dict, client_doc: dict | None):
     invoice_id = _phase105_doc_id(invoice)
     invoice_link = f"{FRONTEND_URL}/public/document-studio/invoice/{invoice_id}" if invoice_id else FRONTEND_URL
 
+    pdf_bytes, invoice_number = _phase120_build_invoice_pdf(invoice, client_doc)
+    pdf_filename = f"{invoice_number}.pdf".replace("/", "-").replace("\\\\", "-")
+
     logo_html = _phase107_logo_html_from_invoice(invoice)
-    subject = f"Invoice from Churvox: {invoice_title}"
+    subject = f"{invoice_number} from {_phase105_clean(invoice.get('business_name'), 'Your business')}"
     html = f"""
     <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111;padding:24px;">
       {logo_html}
-      <h2 style="margin:0 0 12px;">Invoice ready</h2>
+      <h2 style="margin:0 0 12px;">Invoice attached</h2>
       <p>Hi {customer_name},</p>
-      <p>Your invoice has been prepared and approved.</p>
+      <p>Your invoice is attached as a PDF.</p>
       <div style="border:1px solid #ddd;border-radius:12px;padding:16px;margin:18px 0;">
-        <p><strong>Invoice:</strong> {invoice_title}</p>
+        <p><strong>Invoice:</strong> {invoice_number}</p>
+        <p><strong>Work:</strong> {invoice_title}</p>
         <p><strong>Amount:</strong> {_phase105_money(amount)}</p>
         <p><strong>Due date:</strong> {due_date or "Shown on invoice"}</p>
         <p><strong>Description:</strong> {description}</p>
       </div>
-      <p><a href="{invoice_link}" style="display:inline-block;background:#111;color:#fff;padding:12px 18px;border-radius:999px;text-decoration:none;font-weight:700;">View invoice</a></p>
-      <p style="font-size:12px;color:#666;">This message was sent after owner approval in Churvox.</p>
+      <p><a href="{invoice_link}" style="display:inline-block;background:#111;color:#fff;padding:12px 18px;border-radius:999px;text-decoration:none;font-weight:700;">View / Pay invoice</a></p>
+      <p style="font-size:12px;color:#666;">This invoice was sent after owner approval in Churvox.</p>
     </div>
     """
-    text = f"Invoice ready: {invoice_title}. Amount: {_phase105_money(amount)}. Due: {due_date or 'shown on invoice'}. View: {invoice_link}"
+    text = (
+        f"Invoice attached: {invoice_number}. "
+        f"Amount: {_phase105_money(amount)}. "
+        f"Due: {due_date or 'shown on invoice'}. "
+        f"View / pay: {invoice_link}"
+    )
 
-    await send_email(recipient, subject, html, text)
-    return {"sent": True, "to": recipient, "invoice_link": invoice_link}
+    attachments = [
+        {
+            "Name": pdf_filename,
+            "Content": base64.b64encode(pdf_bytes).decode("ascii"),
+            "ContentType": "application/pdf",
+        }
+    ]
+
+    await send_email(recipient, subject, html, text, attachments=attachments)
+
+    return {
+        "sent": True,
+        "to": recipient,
+        "invoice_link": invoice_link,
+        "pdf_attached": True,
+        "pdf_filename": pdf_filename,
+        "invoice_number": invoice_number,
+    }
 
 
 async def _phase105_perform_invoice_approval(payload: dict, business_id: str, current_user: dict):
@@ -1431,6 +1605,14 @@ async def _phase105_perform_invoice_approval(payload: dict, business_id: str, cu
         ("customerMessage", "customer_message"),
         ("ownerNote", "owner_note"),
         ("dueDate", "due_date"),
+        ("invoiceNumber", "invoice_number"),
+        ("issueDate", "issue_date"),
+        ("invoiceClientEmail", "client_email"),
+        ("clientEmail", "client_email"),
+        ("customerEmail", "customer_email"),
+        ("invoiceLineItem", "line_item"),
+        ("paymentNote", "payment_note"),
+        ("businessName", "business_name"),
     ]:
         value = _phase105_clean(draft.get(key))
         if value:
@@ -1454,8 +1636,12 @@ async def _phase105_perform_invoice_approval(payload: dict, business_id: str, cu
             "email_sent": True,
             "email_sent_to": email_result.get("to"),
             "public_invoice_link": email_result.get("invoice_link"),
+            "pdf_sent": True,
+            "pdf_attached": bool(email_result.get("pdf_attached")),
+            "pdf_filename": email_result.get("pdf_filename"),
+            "invoice_number": email_result.get("invoice_number") or patch.get("invoice_number"),
         })
-        message = f"Invoice approved and emailed to {email_result.get('to')}."
+        message = f"Invoice approved and emailed to {email_result.get('to')} with PDF attached."
     else:
         patch.update({
             "status": "approved_not_sent",

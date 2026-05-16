@@ -137,10 +137,11 @@ def build_verification_email(name: str, verify_link: str):
     return subject, _wrap(inner)
 
 
+# PHASE_120_INVOICE_PDF_ATTACHMENTS
 # ------------------------------------------------------------------
 # Postmark send path (only provider)
 # ------------------------------------------------------------------
-def _send_via_postmark(to_email: str, subject: str, html_content: str, text_content: str = ""):
+def _send_via_postmark(to_email: str, subject: str, html_content: str, text_content: str = "", attachments=None):
     """Raise RuntimeError on failure, return parsed dict on success."""
     if not POSTMARK_SERVER_TOKEN:
         raise RuntimeError("POSTMARK_SERVER_TOKEN is missing")
@@ -156,6 +157,9 @@ def _send_via_postmark(to_email: str, subject: str, html_content: str, text_cont
     }
     if text_content:
         payload["TextBody"] = text_content
+
+    if attachments:
+        payload["Attachments"] = attachments
 
     print(f"POSTMARK_SEND from={POSTMARK_FROM_EMAIL} to={to_email} subject={subject!r}")
 
@@ -196,7 +200,7 @@ def _send_via_postmark(to_email: str, subject: str, html_content: str, text_cont
 # ------------------------------------------------------------------
 # Public send API (single source of truth for all outbound email)
 # ------------------------------------------------------------------
-async def send_email(to_email: str, subject: str, html_content: str, text_content: str = ""):
+async def send_email(to_email: str, subject: str, html_content: str, text_content: str = "", attachments=None):
     """
     Send an email via Postmark. Postmark is the only supported provider.
 
@@ -220,4 +224,4 @@ async def send_email(to_email: str, subject: str, html_content: str, text_conten
             "Postmark is not configured. Set POSTMARK_SERVER_TOKEN and POSTMARK_FROM_EMAIL."
         )
 
-    return _send_via_postmark(to_email, subject, html_content, text_content)
+    return _send_via_postmark(to_email, subject, html_content, text_content, attachments=attachments)

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_120_SEND_INVOICE_AS_PDF_ATTACHMENT
 // PHASE_118_CLEAN_OWNER_FOCUS_CARD
 // PHASE_117_OWNER_FRIENDLY_DASHBOARD_WORDING
 // PHASE_116_REMOVE_DUPLICATE_DASHBOARD
@@ -950,6 +951,28 @@ function smartWorkSlipDraft(slip = {}, team = []) {
     ...existing,
     title,
     clientName: smartField(existing.clientName, client),
+    clientEmail: smartField(
+      existing.clientEmail,
+      existing.invoiceClientEmail,
+      item.client_email,
+      item.customer_email,
+      item.billing_email,
+      item.invoice_email,
+      item.email,
+      item.client?.email,
+      item.customer?.email
+    ),
+    invoiceClientEmail: smartField(
+      existing.invoiceClientEmail,
+      existing.clientEmail,
+      item.client_email,
+      item.customer_email,
+      item.billing_email,
+      item.invoice_email,
+      item.email,
+      item.client?.email,
+      item.customer?.email
+    ),
     invoiceClientName: smartField(existing.invoiceClientName, client),
     quoteClientName: smartField(existing.quoteClientName, client),
     address: smartField(existing.address, address),
@@ -5308,6 +5331,10 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
         invoice_title: draft.title || draft.invoiceLineItem || "New invoice",
         client_name: draft.invoiceClientName || draft.clientName || "",
         customer_name: draft.invoiceClientName || draft.clientName || "",
+        client_email: draft.invoiceClientEmail || draft.clientEmail || draft.customerEmail || "",
+        customer_email: draft.invoiceClientEmail || draft.clientEmail || draft.customerEmail || "",
+        invoice_number: draft.invoiceNumber || "",
+        payment_note: draft.paymentNote || "",
         line_item: draft.invoiceLineItem || draft.title || "",
         service_type: draft.invoiceLineItem || draft.title || "",
         description: draft.invoiceDescription || draft.ownerNote || "",
@@ -5342,6 +5369,8 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
               type: "invoice",
               kind: "invoice",
               source_type: "invoice",
+              send_pdf_email: true,
+              email_pdf: true,
               source_id: createdInvoiceId,
               title: invoicePayload.title,
               draft: {
@@ -5397,6 +5426,8 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
 
     const payload = {
       type: slip.kind,
+      send_pdf_email: slip.kind === "invoice" || slip.kind === "proof" || slip.kind === "cashflow",
+      email_pdf: slip.kind === "invoice" || slip.kind === "proof" || slip.kind === "cashflow",
       group: slip.eyebrow,
       title: draft.title || slip.title,
       status: "approved",
