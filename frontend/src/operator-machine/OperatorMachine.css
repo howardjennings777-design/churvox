@@ -8773,3 +8773,386 @@ select {
   letter-spacing: 0;
   text-transform: none;
 }
+
+
+/* PHASE_135_CLASSIC_INVOICE_SHEET_POLISH
+   Final visual polish for the invoice Work Slip only.
+   Keep this CSS additive and scoped so existing flows stay safe.
+*/
+
+.operator-machine-shell [data-work-slip-type="invoice"],
+.operator-machine-shell .invoice-work-slip,
+.operator-machine-shell .invoice-template-shell,
+.operator-machine-shell .classic-invoice-sheet,
+.operator-machine-shell .invoice-sheet {
+  --invoice-ink: #161611;
+  --invoice-muted: #6f6b5d;
+  --invoice-border: rgba(22, 22, 17, 0.12);
+  --invoice-soft: #f7f0df;
+  --invoice-card: #fffaf0;
+  --invoice-lime: #c8ff42;
+}
+
+.operator-machine-shell .classic-invoice-sheet,
+.operator-machine-shell .invoice-sheet,
+.operator-machine-shell .invoice-template-shell {
+  width: min(100%, 920px);
+  margin: 0 auto;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 250, 240, 0.98)),
+    #fffaf0;
+  color: var(--invoice-ink);
+  border: 1px solid var(--invoice-border);
+  border-radius: 28px;
+  box-shadow: 0 26px 80px rgba(22, 22, 17, 0.16);
+  overflow: hidden;
+}
+
+.operator-machine-shell .classic-invoice-sheet *,
+.operator-machine-shell .invoice-sheet *,
+.operator-machine-shell .invoice-template-shell * {
+  box-sizing: border-box;
+}
+
+.operator-machine-shell .invoice-template-header,
+.operator-machine-shell .classic-invoice-header,
+.operator-machine-shell .invoice-sheet-header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 24px;
+  align-items: start;
+  padding: clamp(24px, 4vw, 44px);
+  border-bottom: 1px solid var(--invoice-border);
+  background:
+    radial-gradient(circle at top right, rgba(200, 255, 66, 0.26), transparent 34%),
+    linear-gradient(135deg, #fff7e6 0%, #f4ead4 100%);
+}
+
+.operator-machine-shell .invoice-template-title,
+.operator-machine-shell .classic-invoice-title,
+.operator-machine-shell .invoice-sheet-title,
+.operator-machine-shell .invoice-template-header h1,
+.operator-machine-shell .classic-invoice-header h1,
+.operator-machine-shell .invoice-sheet-header h1 {
+  margin: 0;
+  color: var(--invoice-ink);
+  font-size: clamp(36px, 6vw, 68px);
+  line-height: 0.92;
+  letter-spacing: -0.075em;
+  font-weight: 950;
+}
+
+.operator-machine-shell .invoice-template-meta,
+.operator-machine-shell .classic-invoice-meta,
+.operator-machine-shell .invoice-sheet-meta {
+  min-width: 220px;
+  padding: 18px;
+  border: 1px solid rgba(22, 22, 17, 0.14);
+  border-radius: 22px;
+  background: rgba(255, 250, 240, 0.76);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.62);
+}
+
+.operator-machine-shell .invoice-template-meta p,
+.operator-machine-shell .classic-invoice-meta p,
+.operator-machine-shell .invoice-sheet-meta p {
+  margin: 0 0 8px;
+  color: var(--invoice-muted);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.operator-machine-shell .invoice-template-meta strong,
+.operator-machine-shell .classic-invoice-meta strong,
+.operator-machine-shell .invoice-sheet-meta strong {
+  color: var(--invoice-ink);
+  font-weight: 950;
+}
+
+.operator-machine-shell .invoice-template-body,
+.operator-machine-shell .classic-invoice-body,
+.operator-machine-shell .invoice-sheet-body {
+  padding: clamp(22px, 4vw, 44px);
+}
+
+.operator-machine-shell .invoice-address-grid,
+.operator-machine-shell .classic-invoice-parties,
+.operator-machine-shell .invoice-sheet-parties {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 26px;
+}
+
+.operator-machine-shell .invoice-address-card,
+.operator-machine-shell .classic-invoice-party,
+.operator-machine-shell .invoice-sheet-party {
+  min-height: 150px;
+  padding: 20px;
+  border: 1px solid var(--invoice-border);
+  border-radius: 22px;
+  background: rgba(247, 240, 223, 0.58);
+}
+
+.operator-machine-shell .invoice-address-card small,
+.operator-machine-shell .classic-invoice-party small,
+.operator-machine-shell .invoice-sheet-party small,
+.operator-machine-shell .invoice-address-card label,
+.operator-machine-shell .classic-invoice-party label,
+.operator-machine-shell .invoice-sheet-party label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--invoice-muted);
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.operator-machine-shell .invoice-address-card h3,
+.operator-machine-shell .classic-invoice-party h3,
+.operator-machine-shell .invoice-sheet-party h3 {
+  margin: 0 0 8px;
+  color: var(--invoice-ink);
+  font-size: 22px;
+  line-height: 1.05;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+}
+
+.operator-machine-shell .invoice-address-card p,
+.operator-machine-shell .classic-invoice-party p,
+.operator-machine-shell .invoice-sheet-party p {
+  margin: 4px 0;
+  color: var(--invoice-muted);
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 650;
+}
+
+.operator-machine-shell .invoice-line-table,
+.operator-machine-shell .classic-invoice-table,
+.operator-machine-shell .invoice-sheet-table {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--invoice-border);
+  border-radius: 22px;
+  background: #fffaf0;
+  margin: 24px 0;
+}
+
+.operator-machine-shell .invoice-line-table table,
+.operator-machine-shell .classic-invoice-table table,
+.operator-machine-shell .invoice-sheet-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.operator-machine-shell .invoice-line-table thead,
+.operator-machine-shell .classic-invoice-table thead,
+.operator-machine-shell .invoice-sheet-table thead {
+  background: #161611;
+  color: #fffaf0;
+}
+
+.operator-machine-shell .invoice-line-table th,
+.operator-machine-shell .classic-invoice-table th,
+.operator-machine-shell .invoice-sheet-table th {
+  padding: 15px 18px;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.operator-machine-shell .invoice-line-table th:last-child,
+.operator-machine-shell .classic-invoice-table th:last-child,
+.operator-machine-shell .invoice-sheet-table th:last-child,
+.operator-machine-shell .invoice-line-table td:last-child,
+.operator-machine-shell .classic-invoice-table td:last-child,
+.operator-machine-shell .invoice-sheet-table td:last-child {
+  text-align: right;
+}
+
+.operator-machine-shell .invoice-line-table td,
+.operator-machine-shell .classic-invoice-table td,
+.operator-machine-shell .invoice-sheet-table td {
+  padding: 18px;
+  border-top: 1px solid var(--invoice-border);
+  color: var(--invoice-ink);
+  font-size: 14px;
+  line-height: 1.45;
+  vertical-align: top;
+}
+
+.operator-machine-shell .invoice-line-table tbody tr:nth-child(even),
+.operator-machine-shell .classic-invoice-table tbody tr:nth-child(even),
+.operator-machine-shell .invoice-sheet-table tbody tr:nth-child(even) {
+  background: rgba(247, 240, 223, 0.48);
+}
+
+.operator-machine-shell .invoice-description,
+.operator-machine-shell .classic-invoice-description,
+.operator-machine-shell .invoice-sheet-description {
+  color: var(--invoice-ink);
+  font-weight: 800;
+}
+
+.operator-machine-shell .invoice-note-box,
+.operator-machine-shell .classic-invoice-notes,
+.operator-machine-shell .invoice-sheet-notes {
+  padding: 18px 20px;
+  border: 1px solid rgba(22, 22, 17, 0.12);
+  border-radius: 22px;
+  background: rgba(200, 255, 66, 0.13);
+  color: var(--invoice-muted);
+  font-size: 14px;
+  line-height: 1.55;
+  font-weight: 650;
+}
+
+.operator-machine-shell .invoice-total-panel,
+.operator-machine-shell .classic-invoice-totals,
+.operator-machine-shell .invoice-sheet-totals {
+  width: min(100%, 360px);
+  margin-left: auto;
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid rgba(22, 22, 17, 0.14);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255,250,240,0.98), rgba(247,240,223,0.94));
+  box-shadow: 0 14px 36px rgba(22, 22, 17, 0.08);
+}
+
+.operator-machine-shell .invoice-total-row,
+.operator-machine-shell .classic-invoice-total-row,
+.operator-machine-shell .invoice-sheet-total-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 9px 0;
+  color: var(--invoice-muted);
+  font-size: 14px;
+  font-weight: 800;
+  border-bottom: 1px solid rgba(22, 22, 17, 0.08);
+}
+
+.operator-machine-shell .invoice-total-row:last-child,
+.operator-machine-shell .classic-invoice-total-row:last-child,
+.operator-machine-shell .invoice-sheet-total-row:last-child,
+.operator-machine-shell .invoice-grand-total,
+.operator-machine-shell .classic-invoice-grand-total,
+.operator-machine-shell .invoice-sheet-grand-total {
+  border-bottom: 0;
+  color: var(--invoice-ink);
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: -0.05em;
+}
+
+.operator-machine-shell .invoice-grand-total strong,
+.operator-machine-shell .classic-invoice-grand-total strong,
+.operator-machine-shell .invoice-sheet-grand-total strong {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 7px 12px;
+  border-radius: 16px;
+  background: var(--invoice-lime);
+  color: #161611;
+}
+
+.operator-machine-shell .invoice-template-actions,
+.operator-machine-shell .classic-invoice-actions,
+.operator-machine-shell .invoice-sheet-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 20px clamp(22px, 4vw, 44px) clamp(22px, 4vw, 34px);
+  border-top: 1px solid var(--invoice-border);
+  background: rgba(247, 240, 223, 0.5);
+}
+
+.operator-machine-shell .invoice-template-actions button,
+.operator-machine-shell .classic-invoice-actions button,
+.operator-machine-shell .invoice-sheet-actions button {
+  min-height: 46px;
+  border-radius: 999px;
+  font-weight: 950;
+}
+
+.operator-machine-shell .invoice-template-actions button:last-child,
+.operator-machine-shell .classic-invoice-actions button:last-child,
+.operator-machine-shell .invoice-sheet-actions button:last-child {
+  background: #161611;
+  color: #fffaf0;
+  border-color: #161611;
+}
+
+@media (max-width: 720px) {
+  .operator-machine-shell .invoice-template-header,
+  .operator-machine-shell .classic-invoice-header,
+  .operator-machine-shell .invoice-sheet-header {
+    grid-template-columns: 1fr;
+  }
+
+  .operator-machine-shell .invoice-address-grid,
+  .operator-machine-shell .classic-invoice-parties,
+  .operator-machine-shell .invoice-sheet-parties {
+    grid-template-columns: 1fr;
+  }
+
+  .operator-machine-shell .invoice-line-table,
+  .operator-machine-shell .classic-invoice-table,
+  .operator-machine-shell .invoice-sheet-table {
+    overflow-x: auto;
+  }
+
+  .operator-machine-shell .invoice-line-table table,
+  .operator-machine-shell .classic-invoice-table table,
+  .operator-machine-shell .invoice-sheet-table table {
+    min-width: 620px;
+  }
+
+  .operator-machine-shell .invoice-total-panel,
+  .operator-machine-shell .classic-invoice-totals,
+  .operator-machine-shell .invoice-sheet-totals {
+    width: 100%;
+  }
+
+  .operator-machine-shell .invoice-template-actions,
+  .operator-machine-shell .classic-invoice-actions,
+  .operator-machine-shell .invoice-sheet-actions {
+    justify-content: stretch;
+  }
+
+  .operator-machine-shell .invoice-template-actions button,
+  .operator-machine-shell .classic-invoice-actions button,
+  .operator-machine-shell .invoice-sheet-actions button {
+    flex: 1 1 180px;
+  }
+}
+
+@media print {
+  .operator-machine-shell .classic-invoice-sheet,
+  .operator-machine-shell .invoice-sheet,
+  .operator-machine-shell .invoice-template-shell {
+    box-shadow: none;
+    border-radius: 0;
+    border: 0;
+    width: 100%;
+  }
+
+  .operator-machine-shell .invoice-template-actions,
+  .operator-machine-shell .classic-invoice-actions,
+  .operator-machine-shell .invoice-sheet-actions {
+    display: none !important;
+  }
+}
+
