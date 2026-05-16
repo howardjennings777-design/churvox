@@ -76,6 +76,15 @@ def read(path: Path) -> str:
     except Exception:
         return ""
 
+
+# PHASE_154_CLEAN_CONFIRM_ALERT_AUDIT_FALSE_POSITIVES
+def strip_js_comments_for_popup_scan(text: str) -> str:
+    # Good enough for audit: remove common line/block comments so helper comments
+    # do not show as browser popup bugs.
+    text = re.sub(r"/\\*.*?\\*/", "", text, flags=re.S)
+    text = re.sub(r"(^|\\s)//.*?$", "", text, flags=re.M)
+    return text
+
 def walk_files(base: Path):
     if not base.exists():
         return
@@ -257,8 +266,7 @@ def audit():
             ("TODO", "LOW", "Code cleanup", "TODO marker remains"),
             ("FIXME", "LOW", "Code cleanup", "FIXME marker remains"),
             ("lorem", "LOW", "Launch polish", "Lorem/sample text remains"),
-            ("window.confirm", "MED", "UX", "Browser confirm still used instead of in-page modal"),
-            ("alert(", "MED", "UX", "Browser alert still used instead of in-page modal"),
+
         ]:
             idx = text.lower().find(term.lower())
             if idx != -1:
@@ -280,6 +288,32 @@ def audit():
                         "Found visible `placeholder` wording outside normal form placeholder attributes.",
                         rel(path),
                         line_no(text, m.start()),
+                    )
+                    break
+
+        # Real browser popup calls only, after comments are stripped.
+        if path.suffix.lower() in {".js", ".jsx", ".ts", ".tsx"}:
+            popup_text = strip_js_comments_for_popup_scan(text)
+
+            for pattern, title in [
+                (r"\bwindow\.confirm\s*\(", "Browser confirm still used instead of in-page modal"),
+                (r"(?<![\w.])confirm\s*\(", "Native confirm still used instead of in-page modal"),
+                (r"\bwindow\.alert\s*\(", "Browser alert still used instead of in-page modal"),
+                (r"(?<![\w.])alert\s*\(", "Native alert still used instead of in-page modal"),
+            ]:
+                for m in re.finditer(pattern, popup_text):
+                    sample = popup_text[max(0, m.start() - 60):m.start() + 80]
+                    # Do not flag the dedicated helper name.
+                    if "confirmDialog" in sample:
+                        continue
+                    add(
+                        findings,
+                        "MED",
+                        "UX",
+                        title,
+                        "Replace browser popup with an in-page modal/sheet.",
+                        rel(path),
+                        line_no(popup_text, m.start()),
                     )
                     break
 

@@ -1,5 +1,6 @@
+// PHASE_154_CLEAN_CONFIRM_ALERT_AUDIT_FALSE_POSITIVES
 // Promise-based confirmation dialog. Imperatively renders a styled modal.
-// Use instead of window.confirm so the experience is consistent and on-brand.
+// Use this helper for destructive confirmations so the experience is consistent and on-brand.
 //
 //   import { confirmDialog } from "../lib/confirmDialog";
 //   const ok = await confirmDialog({ title: "Delete this client?", danger: true });
