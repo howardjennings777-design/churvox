@@ -8395,6 +8395,26 @@ function Workspace({ page, setPage, data }) {
         />
       ) : null}
 
+      {page === "plans" ? (
+        <div data-phase="PHASE_53_LOGGED_IN_PLANS_CARDS">
+          <ChurvoxPlansWorkspace
+            planCatalog={planCatalog}
+            onChoosePlan={(plan) => {
+              const planName = plan?.name || "Plan";
+              logCommand("Plans", `Selected ${planName}`, "Plan choice opened");
+              setHubNotice({
+                type: "Plans",
+                title: `${planName} selected`,
+                status: "Plan selection saved for owner review. Billing checkout wiring can be connected next.",
+                time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+                targetPage: "plans",
+              });
+            }}
+            onOpenSettings={() => switchPage("settings")}
+          />
+        </div>
+      ) : null}
+
       {page === "dashboard" ? (
         <section className="cx-hub-box-grid">
           {hubBoxes.map((box) => (
