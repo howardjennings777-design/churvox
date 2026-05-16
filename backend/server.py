@@ -4653,7 +4653,11 @@ async def _build_client_memory(business_id: str, client_id: str) -> dict:
     }
 
 
-@api_router.get("/api/ai/follow-ups")
+
+# PHASE_171_FIX_FINAL_API_ROUTE_PREFIX_BLOCKER
+# Fixed api_router route prefix: api_router is already mounted under /api.
+# /api/ai/follow-ups would become /api/api/ai/follow-ups, so it must be /ai/follow-ups.
+@api_router.get("/ai/follow-ups")
 async def ai_follow_ups(current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str(current_user.get("role") or "").lower())
     business_id = await get_user_business_id(current_user)

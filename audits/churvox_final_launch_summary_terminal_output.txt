@@ -1,6 +1,6 @@
 # Churvox Final Launch Test Summary
 
-Generated: 2026-05-16 21:35:20 UTC
+Generated: 2026-05-16 21:37:32 UTC
 
 ## Current result
 
@@ -38,4 +38,4 @@ Launch is **not fully clear yet** because these blockers remain:
 
 
 LATEST_FILE=audits/churvox_final_launch_summary_latest.md
-REPORT_FILE=audits/churvox_final_launch_summary_20260516_213520.md
+REPORT_FILE=audits/churvox_final_launch_summary_20260516_213732.md

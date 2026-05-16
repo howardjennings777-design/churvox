@@ -1,6 +1,6 @@
 # Churvox Deep Bug + Wiring Audit
 
-Generated: 2026-05-16 21:35:20 UTC
+Generated: 2026-05-16 21:37:31 UTC
 
 ## Summary
 
@@ -14,9 +14,9 @@ Generated: 2026-05-16 21:35:20 UTC
 
 ### 1. [HIGH] Backend routes — api_router route declares /api prefix
 
-**Where:** `backend/server.py:4656`
+**Where:** `backend/server.py:4668`
 
-**Detail:** api_router is already mounted under /api, so declared route /api/ai/follow-ups becomes /api/api/ai/follow-ups.
+**Detail:** api_router is already mounted under /api, so declared route /api/ai/customer-updates becomes /api/api/ai/customer-updates.
 
 ## Notes
 
@@ -25,5 +25,5 @@ Generated: 2026-05-16 21:35:20 UTC
 - Lower-risk dependency audit warnings are not changed here to avoid risky package upgrades before launch.
 
 
-REPORT_FILE=audits/churvox_deep_audit_20260516_213520.md
+REPORT_FILE=audits/churvox_deep_audit_20260516_213731.md
 LATEST_FILE=audits/churvox_deep_audit_latest.md
