@@ -1,3 +1,7 @@
+
+# PHASE_158_FINALISE_ROUTE_AND_AUDIT_CLEANUP
+# Final route cleanup: api_router routes are already mounted under /api.
+# Also removed visible old brand text while preserving live backend URL config.
 # PHASE_153_CLEAN_ACTIVE_OLD_BRAND_TEXT
 import os
 import json
