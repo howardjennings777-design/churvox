@@ -1622,7 +1622,6 @@ function Landing({ authMode, setAuthMode, onLogin }) {
       <header className="cx-clean-nav">
         <a href="#top" className="cx-logo-link"><Logo /></a>
         <nav>
-          <a href="#movie">Demo</a>
           <a href="#how">How it works</a>
           <a href="#pricing">Pricing</a>
           <button type="button" onClick={goLogin}>Login</button>
@@ -1640,7 +1639,6 @@ function Landing({ authMode, setAuthMode, onLogin }) {
 
           <div className="cx-clean-actions">
             <a href="#landing-access" onClick={goSignup}>Start free trial</a>
-            <a href="#movie">Watch the demo</a>
             <a href="/plans">See pricing</a>
           </div>
 
