@@ -1,3 +1,4 @@
+window.__CHURVOX_PHASE_191__ = "PHASE_191_PRIORITY_UNDER_HEADER_WIDE_DESK_20260517003318";
 window.__CHURVOX_APPROVAL_POLISH__ = "PHASE_190_APPROVAL_DESK_WARNING_AND_PRIORITY_POLISH_20260517002650";
 window.__CHURVOX_PRIORITY_PANEL__ = "PHASE_189_FORCE_OWNER_PRIORITY_BESIDE_APPROVAL_DESK_20260517002155";
 window.__CHURVOX_TOP_NAV_HEIGHT_FIX__ = "PHASE_188_FIX_GIANT_TOP_NAV_BLACK_SPACE_20260517001841";
@@ -371,6 +372,83 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
+
+
+// PHASE_191_PRIORITY_UNDER_HEADER_WIDE_DESK
+// Move Owner Priority under the hero/header and make Approval Desk use the full working width.
+(function churvoxPriorityUnderHeader() {
+  try {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+
+    function clean(value) {
+      return String(value || "").replace(/\s+/g, " ").trim();
+    }
+
+    function findHero() {
+      return Array.from(document.querySelectorAll("section, article, div"))
+        .find((el) => {
+          const text = clean(el.textContent).toLowerCase();
+          return text.includes("churvox prepared the admin") && text.includes("approve the next move");
+        });
+    }
+
+    function findApprovalDesk() {
+      return Array.from(document.querySelectorAll("section, article, div"))
+        .find((el) => {
+          const text = clean(el.textContent).toLowerCase();
+          return text.includes("approval desk") && (
+            text.includes("open approval slip") ||
+            text.includes("no approvals waiting")
+          );
+        });
+    }
+
+    function movePriorityPanel() {
+      const hero = findHero();
+      const approvalDesk = findApprovalDesk();
+      const panel = document.getElementById("churvox-phase-189-owner-priority");
+
+      if (!hero || !approvalDesk || !panel) return;
+
+      const layoutParent = approvalDesk.parentElement;
+      if (layoutParent) {
+        layoutParent.classList.add("cx-phase-191-wide-approval-layout");
+      }
+
+      const heroParent = hero.parentElement;
+      if (heroParent) {
+        heroParent.classList.add("cx-phase-191-wide-hero-layout");
+      }
+
+      if (panel.previousElementSibling !== hero) {
+        hero.insertAdjacentElement("afterend", panel);
+      }
+
+      panel.classList.add("cx-phase-191-priority-under-header");
+    }
+
+    let timer = null;
+    function schedule() {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(movePriorityPanel, 120);
+    }
+
+    window.addEventListener("load", schedule);
+    document.addEventListener("click", schedule, true);
+
+    const observer = new MutationObserver(schedule);
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+
+    schedule();
+  } catch {
+    // keep app safe
+  }
+})();
+
 
 
 // PHASE_190_APPROVAL_DESK_WARNING_AND_PRIORITY_POLISH
