@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./CommandSuite.css";
 
 const PAGE_MAP = {
@@ -164,6 +164,30 @@ function filterRows(rows, filter) {
   const key = filter.toLowerCase().replace(/[^a-z0-9]/g, "");
   const matches = rows.filter((row) => textOf(row).replace(/[^a-z0-9]/g, "").includes(key));
   return matches.length ? matches : rows;
+}
+
+
+function authHeadersForBilling() {
+  const headers = { "Content-Type": "application/json" };
+  try {
+    const token =
+      localStorage.getItem("token") ||
+      localStorage.getItem("authToken") ||
+      localStorage.getItem("access_token") ||
+      localStorage.getItem("churvox_token");
+    if (token) headers.Authorization = `Bearer ${token}`;
+  } catch {
+    // ignore storage errors
+  }
+  return headers;
+}
+
+function billingApiBase() {
+  const raw =
+    process.env.REACT_APP_BACKEND_URL ||
+    process.env.VITE_BACKEND_URL ||
+    "";
+  return String(raw || "").replace(/\/$/, "");
 }
 
 function openTop() {
@@ -468,7 +492,16 @@ function SmartPage({ config, rows, columns, aiCards, onOpen, activeFilter, setAc
 }
 
 
-function PlansCommandPage({ planName, openInfo, goToPage }) {
+
+function PlansCommandPage({
+  planName,
+  openInfo,
+  goToPage,
+  startTrial,
+  startCheckout,
+  billingBusy,
+  billingNotice,
+}) {
   const plans = [
     {
       id: "start",
@@ -480,6 +513,7 @@ function PlansCommandPage({ planName, openInfo, goToPage }) {
       bestFor: "Solo operators",
       included: ["Work and client control", "Basic invoices and quotes", "Simple owner approval flow", "Mobile-ready workspace"],
       ai: "Churvox keeps the basics organised and surfaces what needs action.",
+      icon: "target",
     },
     {
       id: "crew",
@@ -491,6 +525,7 @@ function PlansCommandPage({ planName, openInfo, goToPage }) {
       bestFor: "Small teams",
       included: ["Crew assignment", "Worker updates", "Proof and photos", "Client/job history"],
       ai: "Churvox checks crew fit, proof and unfinished admin.",
+      icon: "crew",
     },
     {
       id: "operator",
@@ -503,6 +538,7 @@ function PlansCommandPage({ planName, openInfo, goToPage }) {
       bestFor: "Growing trade teams",
       included: ["AI Operator Actions", "Approval Desk", "Quote and invoice prep", "Follow-up suggestions", "MYOB add-on available"],
       ai: "Churvox prepares invoices, follow-ups, crew suggestions and missing-detail checks.",
+      icon: "spark",
     },
     {
       id: "command",
@@ -514,25 +550,33 @@ function PlansCommandPage({ planName, openInfo, goToPage }) {
       bestFor: "Serious operators",
       included: ["MYOB included", "Payroll workspace", "Advanced roles", "Higher limits", "Priority support"],
       ai: "Churvox watches the whole admin path from work intake to payment follow-up.",
+      icon: "shield",
     },
   ];
 
   const addons = [
     {
+      id: "command_growth_pack",
       title: "Command Growth Pack",
       price: "$99/mo + GST",
       body: "Adds 50 more active team members plus extra jobs, AI Operator Actions, automation runs and admin/payroll capacity.",
+      type: "growth_pack",
+      icon: "crew",
     },
     {
+      id: "myob_addon",
       title: "MYOB Sync",
       price: "$39/mo + GST",
       body: "Optional on Operator. Included by default on Command.",
+      type: "myob_addon",
+      icon: "document",
     },
-    {
-      title: "SMS Credits",
-      price: "Credit packs",
-      body: "SMS reminders stay separate so businesses only pay for what they send.",
-    },
+  ];
+
+  const smsPacks = [
+    { id: "sms_100", credits: 100, label: "100 SMS credits", body: "Small reminder pack.", icon: "card" },
+    { id: "sms_500", credits: 500, label: "500 SMS credits", body: "Best for steady teams.", icon: "card" },
+    { id: "sms_1000", credits: 1000, label: "1000 SMS credits", body: "For high volume reminders.", icon: "card" },
   ];
 
   const compare = [
@@ -557,21 +601,8 @@ function PlansCommandPage({ planName, openInfo, goToPage }) {
     });
   }
 
-  function openAddon(addon) {
-    openInfo({
-      title: addon.title,
-      status: addon.price,
-      prepared: addon.body,
-      __modalType: "Add-on review",
-      __modalTitle: addon.title,
-      __body: addon.body,
-      __actionLabel: "Review add-on",
-      __route: "plans",
-    });
-  }
-
   return (
-    <section className="cs-page cs-plans-page" data-phase="PHASE_215_REAL_PLANS_PAGE">
+    <section className="cs-page cs-plans-page" data-phase="PHASE_216_STRIPE_WIRED_PLANS">
       <header className="cs-hero cs-plans-hero">
         <section>
           <span>Plans command</span>
@@ -580,9 +611,23 @@ function PlansCommandPage({ planName, openInfo, goToPage }) {
             <mark>Churvox handles.</mark>
           </h1>
           <p>
-            Start simple, then grow into AI Operator Actions, MYOB sync, payroll workspace,
-            advanced roles and more capacity.
+            Start with a 14-day trial, then choose Start, Crew, Operator or Command.
+            Add SMS credits, MYOB or Command Growth Pack when the business needs it.
           </p>
+
+          <div className="cs-trial-box">
+            <strong>14-day free trial</strong>
+            <span>No card. Starts on Operator by default.</span>
+            <button
+              type="button"
+              disabled={billingBusy === "trial"}
+              onClick={() => startTrial("operator")}
+            >
+              {billingBusy === "trial" ? "Starting trial..." : "Start 14-day trial"}
+            </button>
+          </div>
+
+          {billingNotice ? <p className="cs-billing-notice">{billingNotice}</p> : null}
         </section>
 
         <section className="cs-plan-price-stack">
@@ -593,7 +638,7 @@ function PlansCommandPage({ planName, openInfo, goToPage }) {
               className={plan.featured ? "featured" : ""}
               onClick={() => openPlan(plan)}
             >
-              <Icon type={plan.id === "start" ? "target" : plan.id === "crew" ? "crew" : plan.id === "operator" ? "spark" : "shield"} />
+              <Icon type={plan.icon} />
               <span>{plan.name}</span>
               <strong>${plan.price}</strong>
             </button>
@@ -628,9 +673,18 @@ function PlansCommandPage({ planName, openInfo, goToPage }) {
               <p>{plan.ai}</p>
             </section>
 
-            <button type="button" onClick={() => openPlan(plan)}>
-              {plan.featured ? "Choose Operator" : `Choose ${plan.name}`}
-            </button>
+            <div className="cs-plan-actions">
+              <button type="button" className="ghost" onClick={() => openPlan(plan)}>
+                Review
+              </button>
+              <button
+                type="button"
+                disabled={billingBusy === plan.id}
+                onClick={() => startCheckout({ type: "plan", plan: plan.id, key: plan.id })}
+              >
+                {billingBusy === plan.id ? "Opening Stripe..." : plan.featured ? "Choose Operator" : `Choose ${plan.name}`}
+              </button>
+            </div>
           </article>
         ))}
       </section>
@@ -639,17 +693,50 @@ function PlansCommandPage({ planName, openInfo, goToPage }) {
         <header>
           <div>
             <span>Scale when ready</span>
-            <h2>Add-ons that make sense</h2>
-            <p>No messy bundles. Add capacity, MYOB or SMS only when the business needs it.</p>
+            <h2>Add-ons wired to Stripe</h2>
+            <p>Growth Pack, MYOB and SMS credits are separate so the owner only pays for what they need.</p>
           </div>
         </header>
 
         <div>
           {addons.map((addon) => (
-            <button type="button" key={addon.title} onClick={() => openAddon(addon)}>
+            <button
+              type="button"
+              key={addon.id}
+              disabled={billingBusy === addon.id}
+              onClick={() => startCheckout({ type: addon.type, addon: addon.id, key: addon.id })}
+            >
+              <Icon type={addon.icon} />
               <strong>{addon.title}</strong>
               <span>{addon.price}</span>
               <p>{addon.body}</p>
+              <em>{billingBusy === addon.id ? "Opening Stripe..." : "Buy add-on"}</em>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="cs-sms-packs">
+        <header>
+          <div>
+            <span>SMS credits</span>
+            <h2>Buy reminder credits</h2>
+            <p>Use credits for customer reminders and future SMS flows. SMS packs checkout through Stripe.</p>
+          </div>
+        </header>
+
+        <div>
+          {smsPacks.map((pack) => (
+            <button
+              type="button"
+              key={pack.id}
+              disabled={billingBusy === pack.id}
+              onClick={() => startCheckout({ type: "sms", sms_pack: pack.id, key: pack.id })}
+            >
+              <Icon type={pack.icon} />
+              <strong>{pack.label}</strong>
+              <p>{pack.body}</p>
+              <em>{billingBusy === pack.id ? "Opening Stripe..." : "Buy SMS pack"}</em>
             </button>
           ))}
         </div>
@@ -705,7 +792,104 @@ export default function CommandSuite({
   const [selected, setSelected] = useState(null);
   const [toast, setToast] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
+  const [billingBusy, setBillingBusy] = useState("");
+  const [billingNotice, setBillingNotice] = useState("");
   const current = PAGE_MAP[page] || "dashboard";
+
+
+  async function billingPost(path, payload) {
+    const base = billingApiBase();
+    const res = await fetch(`${base}${path}`, {
+      method: "POST",
+      credentials: "include",
+      headers: authHeadersForBilling(),
+      body: JSON.stringify(payload || {}),
+    });
+
+    let body = {};
+    try {
+      body = await res.json();
+    } catch {
+      body = {};
+    }
+
+    if (!res.ok || body.success === false) {
+      const message = body.detail || body.message || `Billing request failed (${res.status})`;
+      throw new Error(message);
+    }
+
+    return body;
+  }
+
+  async function startTrial(plan = "operator") {
+    setBillingBusy("trial");
+    setBillingNotice("");
+    try {
+      const body = await billingPost("/api/billing/start-trial", { plan, plan_type: plan });
+      setBillingNotice(body.message || "14-day trial started.");
+      setToast(body.message || "14-day trial started.");
+    } catch (err) {
+      setBillingNotice(err.message || "Could not start trial.");
+      setToast(err.message || "Could not start trial.");
+    } finally {
+      setBillingBusy("");
+      window.setTimeout(() => setToast(""), 3200);
+    }
+  }
+
+  async function startCheckout(item) {
+    const key = item?.key || item?.plan || item?.addon || item?.sms_pack || "checkout";
+    setBillingBusy(key);
+    setBillingNotice("");
+    try {
+      const body = await billingPost("/api/billing/checkout", item);
+      const url = body.checkout_url || body.url;
+      if (!url) throw new Error("Stripe checkout URL was not returned.");
+      window.location.href = url;
+    } catch (err) {
+      setBillingNotice(err.message || "Could not open Stripe checkout.");
+      setToast(err.message || "Could not open Stripe checkout.");
+      setBillingBusy("");
+      window.setTimeout(() => setToast(""), 4200);
+    }
+  }
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get("session_id");
+    const stripeStatus = params.get("stripe");
+
+    if (!sessionId || stripeStatus !== "success") return;
+
+    const storageKey = `churvox_checkout_confirmed_${sessionId}`;
+    try {
+      if (sessionStorage.getItem(storageKey)) return;
+      sessionStorage.setItem(storageKey, "1");
+    } catch {
+      // ignore session storage errors
+    }
+
+    billingPost("/api/billing/confirm-checkout", { session_id: sessionId })
+      .then((body) => {
+        const msg = body.message || "Stripe checkout confirmed.";
+        setBillingNotice(msg);
+        setToast(msg);
+        const url = new URL(window.location.href);
+        url.searchParams.delete("session_id");
+        url.searchParams.delete("stripe");
+        url.searchParams.delete("item");
+        window.history.replaceState({}, "", url.toString());
+        window.setTimeout(() => setToast(""), 3400);
+      })
+      .catch((err) => {
+        const msg = err.message || "Could not confirm Stripe checkout.";
+        setBillingNotice(msg);
+        setToast(msg);
+        window.setTimeout(() => setToast(""), 4200);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const model = useMemo(() => {
     const raw = data?.raw || data || {};
@@ -1262,6 +1446,10 @@ export default function CommandSuite({
           planName={planName}
           openInfo={openInfo}
           goToPage={goToPage}
+          startTrial={startTrial}
+          startCheckout={startCheckout}
+          billingBusy={billingBusy}
+          billingNotice={billingNotice}
         />
       ) : (
         <SmartPage

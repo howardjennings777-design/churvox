@@ -9355,56 +9355,372 @@ async def get_owner_doc_for_user(user: dict):
         owner = await db.users.find_one({"_id": ObjectId(str(user["id"]))})
     return owner
 
+
+# PHASE_216_STRIPE_PLANS_TRIALS_SMS_GROWTH
+# Fresh billing wiring for Churvox Start/Crew/Operator/Command, 14-day trial,
+# Command Growth Pack, MYOB add-on, and SMS credit packs.
+
+def _churvox_billing_plan_key(value: str) -> str:
+    key = str(value or "").strip().lower().replace("-", "_").replace(" ", "_")
+    aliases = {
+        "solo": "start",
+        "start": "start",
+        "team": "crew",
+        "crew": "crew",
+        "pro": "operator",
+        "operator": "operator",
+        "enterprise": "command",
+        "command": "command",
+    }
+    return aliases.get(key, key)
+
+
+def _churvox_billing_price_ids():
+    return {
+        "start": os.environ.get("STRIPE_PRICE_START") or os.environ.get("STRIPE_PRICE_SOLO", ""),
+        "crew": os.environ.get("STRIPE_PRICE_CREW") or os.environ.get("STRIPE_PRICE_TEAM", ""),
+        "operator": os.environ.get("STRIPE_PRICE_OPERATOR") or os.environ.get("STRIPE_PRICE_PRO", ""),
+        "command": os.environ.get("STRIPE_PRICE_COMMAND") or os.environ.get("STRIPE_PRICE_ENTERPRISE", ""),
+        "command_growth_pack": os.environ.get("STRIPE_PRICE_COMMAND_GROWTH_PACK") or os.environ.get("STRIPE_PRICE_GROWTH_PACK", ""),
+        "myob_addon": os.environ.get("STRIPE_PRICE_MYOB_ADDON") or os.environ.get("STRIPE_PRICE_MYOB_OPERATOR_ADDON", ""),
+        "sms_100": os.environ.get("STRIPE_PRICE_SMS_100", ""),
+        "sms_500": os.environ.get("STRIPE_PRICE_SMS_500", ""),
+        "sms_1000": os.environ.get("STRIPE_PRICE_SMS_1000", ""),
+    }
+
+
+def _churvox_billing_label(key: str) -> str:
+    labels = {
+        "start": "Start",
+        "crew": "Crew",
+        "operator": "Operator",
+        "command": "Command",
+        "command_growth_pack": "Command Growth Pack",
+        "myob_addon": "MYOB Sync Add-on",
+        "sms_100": "100 SMS Credits",
+        "sms_500": "500 SMS Credits",
+        "sms_1000": "1000 SMS Credits",
+    }
+    return labels.get(str(key), str(key).replace("_", " ").title())
+
+
+def _churvox_sms_pack_credits(key: str) -> int:
+    return {
+        "sms_100": 100,
+        "sms_500": 500,
+        "sms_1000": 1000,
+    }.get(str(key), 0)
+
+
+async def _churvox_current_user_from_request(request: Request):
+    return await get_current_user(request)
+
+
+async def _churvox_billing_business_id(user: dict) -> str:
+    try:
+        return await get_user_business_id(user)
+    except Exception:
+        return str(
+            user.get("business_id")
+            or user.get("businessId")
+            or user.get("id")
+            or user.get("_id")
+            or user.get("user_id")
+            or ""
+        )
+
+
+async def _churvox_get_or_create_stripe_customer(user: dict):
+    existing = str(user.get("stripe_customer_id") or "").strip()
+    if existing:
+        return existing
+
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=500, detail="Stripe secret key is not configured")
+
+    email = str(user.get("email") or "").strip()
+    name = str(user.get("name") or user.get("business_name") or email or "Churvox customer").strip()
+    customer = stripe.Customer.create(
+        email=email or None,
+        name=name or None,
+        metadata={
+            "user_id": str(user.get("id") or user.get("_id") or user.get("user_id") or ""),
+            "business_id": str(user.get("business_id") or user.get("businessId") or ""),
+            "source": "churvox",
+        },
+    )
+
+    user_id = user.get("_id") or user.get("id")
+    try:
+        await db.users.update_one({"_id": ObjectId(str(user_id))}, {"$set": {"stripe_customer_id": customer.id, "updated_at": datetime.now(timezone.utc)}})
+    except Exception:
+        await db.users.update_one({"id": str(user_id)}, {"$set": {"stripe_customer_id": customer.id, "updated_at": datetime.now(timezone.utc)}})
+
+    return customer.id
+
+
 @api_router.post("/billing/start-trial")
 async def start_trial(request: Request):
-    current_user = await get_current_user(request)
-    user_id = current_user.get("_id") or current_user.get("id")
-    existing_plan = current_user.get("plan")
-
-    if existing_plan and str(existing_plan).strip().lower() not in ("", "null", "none"):
-        raise HTTPException(status_code=400, detail="You already have an active plan")
-
+    current_user = await _churvox_current_user_from_request(request)
     payload = await request.json()
-    plan_type = str((payload or {}).get("plan_type") or "").strip().lower()
+    plan_key = _churvox_billing_plan_key((payload or {}).get("plan") or (payload or {}).get("plan_type") or "operator")
 
-    if plan_type not in ("solo", "team", "pro", "enterprise"):
-        raise HTTPException(status_code=400, detail="Invalid plan type")
+    if plan_key not in {"start", "crew", "operator", "command"}:
+        raise HTTPException(status_code=400, detail="Invalid trial plan")
+
+    existing_status = str(current_user.get("plan_status") or current_user.get("subscription_status") or "").lower()
+    existing_sub = str(current_user.get("stripe_subscription_id") or "").strip()
+    if existing_sub and existing_status in {"active", "trialing", "past_due"}:
+        raise HTTPException(status_code=400, detail="You already have an active Stripe subscription")
 
     now = datetime.now(timezone.utc)
     trial_end = now + timedelta(days=14)
 
     update_fields = {
-        "plan": plan_type,
+        "plan": plan_key,
         "plan_status": "trialing",
         "subscription_status": "trialing",
         "trial_started_at": now,
         "trial_ends_at": trial_end,
+        "trial_days": 14,
+        "trial_source": "no_card_churvox_trial",
         "updated_at": now,
     }
 
+    user_id = current_user.get("_id") or current_user.get("id")
     try:
         await db.users.update_one({"_id": ObjectId(str(user_id))}, {"$set": update_fields})
     except Exception:
-        await db.users.update_one({"_id": user_id}, {"$set": update_fields})
+        await db.users.update_one({"id": str(user_id)}, {"$set": update_fields})
 
-    business_id = current_user.get("business_id")
+    business_id = await _churvox_billing_business_id(current_user)
     if business_id:
+        for query in [{"id": str(business_id)}]:
+            try:
+                await db.businesses.update_one(query, {"$set": {"plan": plan_key, "plan_status": "trialing", "trial_ends_at": trial_end, "updated_at": now}}, upsert=False)
+            except Exception:
+                pass
         try:
-            await db.businesses.update_one(
-                {"_id": ObjectId(str(business_id))},
-                {"$set": {"plan": plan_type, "updated_at": now}}
-            )
+            await db.businesses.update_one({"_id": ObjectId(str(business_id))}, {"$set": {"plan": plan_key, "plan_status": "trialing", "trial_ends_at": trial_end, "updated_at": now}}, upsert=False)
         except Exception:
             pass
 
     return {
         "success": True,
-        "plan": plan_type,
+        "plan": plan_key,
+        "plan_name": _churvox_billing_label(plan_key),
         "plan_status": "trialing",
+        "subscription_status": "trialing",
         "trial_started_at": now.isoformat(),
         "trial_ends_at": trial_end.isoformat(),
-        "message": f"14-day free trial started on {plan_type.title()} plan",
+        "days_left": 14,
+        "message": f"14-day free trial started on {_churvox_billing_label(plan_key)}",
     }
+
+
+@api_router.post("/billing/checkout")
+async def create_churvox_checkout(payload: dict, request: Request):
+    current_user = await _churvox_current_user_from_request(request)
+
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=500, detail="Stripe secret key is not configured")
+
+    payload = payload or {}
+    item_type = str(payload.get("type") or payload.get("item_type") or "plan").strip().lower()
+    plan_key = _churvox_billing_plan_key(payload.get("plan") or payload.get("plan_id") or payload.get("key") or "")
+    addon_key = _churvox_billing_plan_key(payload.get("addon") or payload.get("addon_id") or payload.get("key") or "")
+    pack_key = str(payload.get("sms_pack") or payload.get("pack") or payload.get("key") or "").strip().lower().replace("-", "_")
+
+    if item_type == "plan":
+        key = plan_key
+        mode = "subscription"
+    elif item_type in {"growth_pack", "growth", "command_growth_pack"}:
+        key = "command_growth_pack"
+        mode = "subscription"
+    elif item_type in {"myob", "myob_addon"}:
+        key = "myob_addon"
+        mode = "subscription"
+    elif item_type in {"sms", "sms_pack", "sms_credits"}:
+        key = pack_key if pack_key.startswith("sms_") else f"sms_{pack_key}"
+        mode = "payment"
+    else:
+        key = addon_key or plan_key or pack_key
+        mode = "subscription"
+
+    prices = _churvox_billing_price_ids()
+    price_id = prices.get(key)
+
+    if key not in prices:
+        raise HTTPException(status_code=400, detail=f"Unknown billing item: {key}")
+
+    if not price_id:
+        env_hint = {
+            "start": "STRIPE_PRICE_START",
+            "crew": "STRIPE_PRICE_CREW",
+            "operator": "STRIPE_PRICE_OPERATOR",
+            "command": "STRIPE_PRICE_COMMAND",
+            "command_growth_pack": "STRIPE_PRICE_COMMAND_GROWTH_PACK",
+            "myob_addon": "STRIPE_PRICE_MYOB_ADDON",
+            "sms_100": "STRIPE_PRICE_SMS_100",
+            "sms_500": "STRIPE_PRICE_SMS_500",
+            "sms_1000": "STRIPE_PRICE_SMS_1000",
+        }.get(key, "STRIPE_PRICE_*")
+        raise HTTPException(status_code=400, detail=f"Stripe price missing for {key}. Set {env_hint} in Render.")
+
+    customer_id = await _churvox_get_or_create_stripe_customer(current_user)
+    business_id = await _churvox_billing_business_id(current_user)
+    user_id = str(current_user.get("id") or current_user.get("_id") or current_user.get("user_id") or "")
+
+    success_url = f"{FRONTEND_URL}/plans?stripe=success&item={key}&session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{FRONTEND_URL}/plans?stripe=cancelled&item={key}"
+
+    metadata = {
+        "source": "churvox_plans_page",
+        "type": item_type,
+        "key": key,
+        "plan": key if key in {"start", "crew", "operator", "command"} else "",
+        "business_id": str(business_id),
+        "user_id": user_id,
+        "sms_credits": str(_churvox_sms_pack_credits(key)),
+    }
+
+    session_kwargs = {
+        "customer": customer_id,
+        "mode": mode,
+        "line_items": [{"price": price_id, "quantity": 1}],
+        "success_url": success_url,
+        "cancel_url": cancel_url,
+        "metadata": metadata,
+        "allow_promotion_codes": True,
+    }
+
+    if mode == "subscription":
+        session_kwargs["subscription_data"] = {"metadata": metadata}
+
+    session = stripe.checkout.Session.create(**session_kwargs)
+
+    await db.billing_events.insert_one({
+        "business_id": str(business_id),
+        "user_id": user_id,
+        "stripe_session_id": session.id,
+        "type": item_type,
+        "key": key,
+        "mode": mode,
+        "status": "checkout_created",
+        "created_at": datetime.now(timezone.utc),
+    })
+
+    return {
+        "success": True,
+        "checkout_url": session.url,
+        "url": session.url,
+        "session_id": session.id,
+        "key": key,
+        "mode": mode,
+        "message": f"Stripe checkout created for {_churvox_billing_label(key)}",
+    }
+
+
+@api_router.post("/billing/create-checkout-session")
+async def create_churvox_checkout_alias(payload: dict, request: Request):
+    return await create_churvox_checkout(payload, request)
+
+
+@api_router.post("/stripe/create-checkout-session")
+async def create_churvox_stripe_checkout_alias(payload: dict, request: Request):
+    return await create_churvox_checkout(payload, request)
+
+
+@api_router.post("/billing/confirm-checkout")
+async def confirm_churvox_checkout(payload: dict, request: Request):
+    current_user = await _churvox_current_user_from_request(request)
+
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=500, detail="Stripe secret key is not configured")
+
+    session_id = str((payload or {}).get("session_id") or "").strip()
+    if not session_id:
+        raise HTTPException(status_code=400, detail="Missing session_id")
+
+    session = stripe.checkout.Session.retrieve(session_id, expand=["subscription"])
+    if str(session.get("payment_status") or "").lower() not in {"paid", "no_payment_required"} and str(session.get("status") or "").lower() != "complete":
+        raise HTTPException(status_code=400, detail="Checkout has not completed yet")
+
+    metadata = dict(session.get("metadata") or {})
+    key = str(metadata.get("key") or "").strip()
+    plan_key = _churvox_billing_plan_key(metadata.get("plan") or key)
+    credits = _churvox_sms_pack_credits(key)
+    now = datetime.now(timezone.utc)
+
+    business_id = str(metadata.get("business_id") or await _churvox_billing_business_id(current_user))
+    user_id = current_user.get("_id") or current_user.get("id")
+
+    update = {
+        "stripe_customer_id": session.get("customer"),
+        "updated_at": now,
+    }
+
+    if plan_key in {"start", "crew", "operator", "command"}:
+        update.update({
+            "plan": plan_key,
+            "plan_status": "active",
+            "subscription_status": "active",
+            "stripe_subscription_id": str(session.get("subscription") or ""),
+            "trial_ends_at": None,
+        })
+
+    if key == "command_growth_pack":
+        update.update({
+            "command_growth_pack_active": True,
+            "command_growth_packs": int(current_user.get("command_growth_packs") or 0) + 1,
+            "active_team_member_capacity_extra": int(current_user.get("active_team_member_capacity_extra") or 0) + 50,
+        })
+
+    if key == "myob_addon":
+        update.update({
+            "myob_addon_active": True,
+            "myob_sync_enabled": True,
+        })
+
+    try:
+        await db.users.update_one({"_id": ObjectId(str(user_id))}, {"$set": update})
+    except Exception:
+        await db.users.update_one({"id": str(user_id)}, {"$set": update})
+
+    if credits > 0:
+        await db.sms_credits.update_one(
+            {"business_id": str(business_id)},
+            {
+                "$inc": {"balance": credits, "credits": credits},
+                "$set": {"updated_at": now},
+                "$setOnInsert": {"business_id": str(business_id), "created_at": now},
+            },
+            upsert=True,
+        )
+
+    await db.billing_events.update_one(
+        {"stripe_session_id": session_id},
+        {"$set": {
+            "status": "confirmed",
+            "confirmed_at": now,
+            "key": key,
+            "business_id": str(business_id),
+            "stripe_customer_id": session.get("customer"),
+            "stripe_subscription_id": str(session.get("subscription") or ""),
+            "sms_credits_added": credits,
+        }},
+        upsert=True,
+    )
+
+    return {
+        "success": True,
+        "key": key,
+        "plan": plan_key if plan_key in {"start", "crew", "operator", "command"} else None,
+        "sms_credits_added": credits,
+        "message": f"{_churvox_billing_label(key)} confirmed",
+    }
+
+# END_PHASE_216_STRIPE_PLANS_TRIALS_SMS_GROWTH
 
 
 def build_billing_status(owner: dict):

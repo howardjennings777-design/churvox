@@ -1567,3 +1567,162 @@
   }
 }
 
+
+/* PHASE_216_STRIPE_WIRED_PLANS */
+
+.cs-trial-box {
+  display: grid;
+  grid-template-columns: auto minmax(220px, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  max-width: 760px;
+  margin-top: 26px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 248, 239, 0.1);
+  border: 1px solid rgba(255, 248, 239, 0.16);
+}
+
+.cs-trial-box strong {
+  color: var(--cs-paper);
+  font-weight: 950;
+}
+
+.cs-trial-box span {
+  color: rgba(255, 248, 239, 0.76);
+  font-size: 14px;
+}
+
+.cs-trial-box button,
+.cs-plan-actions button,
+.cs-plan-addons button em,
+.cs-sms-packs button em {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--cs-orange);
+  color: var(--cs-paper);
+  font-weight: 900;
+  font-style: normal;
+}
+
+.cs-trial-box button:disabled,
+.cs-plan-actions button:disabled,
+.cs-plan-addons button:disabled,
+.cs-sms-packs button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.cs-billing-notice {
+  margin-top: 14px !important;
+  color: var(--cs-orange-3) !important;
+  font-weight: 850 !important;
+}
+
+.cs-plan-actions {
+  display: grid;
+  grid-template-columns: 0.7fr 1.3fr;
+  gap: 10px;
+}
+
+.cs-plan-actions button.ghost {
+  background: rgba(13, 11, 10, 0.08);
+  color: var(--cs-black);
+}
+
+.cs-plan-addons button,
+.cs-sms-packs button {
+  cursor: pointer;
+}
+
+.cs-plan-addons button .cs-icon,
+.cs-sms-packs button .cs-icon {
+  width: 36px;
+  height: 36px;
+  color: var(--cs-orange);
+}
+
+.cs-sms-packs {
+  padding: 30px 40px;
+  border-radius: 16px;
+  background: rgba(255, 250, 242, 0.9);
+  border: 1px solid rgba(13, 11, 10, 0.1);
+  box-shadow: var(--cs-shadow);
+}
+
+.cs-sms-packs > header {
+  margin-bottom: 22px;
+}
+
+.cs-sms-packs header span {
+  color: var(--cs-orange);
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cs-sms-packs h2 {
+  margin: 8px 0 6px;
+  color: var(--cs-black);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 38px;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.cs-sms-packs header p {
+  margin: 0;
+  color: var(--cs-muted);
+}
+
+.cs-sms-packs > div {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.cs-sms-packs button {
+  min-height: 160px;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  padding: 22px;
+  border: 1px solid rgba(13, 11, 10, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 248, 239, 0.8);
+  text-align: left;
+}
+
+.cs-sms-packs button strong {
+  color: var(--cs-black);
+  font-size: 20px;
+}
+
+.cs-sms-packs button p {
+  color: var(--cs-muted);
+  line-height: 1.45;
+}
+
+.cs-sms-packs button em,
+.cs-plan-addons button em {
+  width: fit-content;
+  margin-top: 8px;
+  background: var(--cs-black);
+}
+
+@media (max-width: 1300px) {
+  .cs-sms-packs > div {
+    grid-template-columns: 1fr;
+  }
+
+  .cs-trial-box {
+    grid-template-columns: 1fr;
+  }
+}
+
