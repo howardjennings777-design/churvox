@@ -11477,3 +11477,354 @@ button.primary,
   }
 }
 
+
+/* PHASE_223_FORCE_FIRST_PAGE_COMMAND_THEME
+   Hard-scoped to actual first page: cx-command-first-page.
+   This overrides the older blue/white public landing styles.
+*/
+
+html body .cx-command-first-page {
+  --cmd-black: #0d0b0a;
+  --cmd-black-2: #17120f;
+  --cmd-copper: #b85720;
+  --cmd-copper-2: #d56b2a;
+  --cmd-copper-3: #e48643;
+  --cmd-paper: #fff8ef;
+  --cmd-cream: #fbf4ea;
+  --cmd-stone: #f4ede3;
+  --cmd-muted: #6d6258;
+  --cmd-green: #507b36;
+  --cmd-red: #a8422b;
+  min-height: 100vh !important;
+  color: var(--cmd-black) !important;
+  background:
+    radial-gradient(circle at 80% 10%, rgba(184, 87, 32, 0.22), transparent 30rem),
+    radial-gradient(circle at 8% 24%, rgba(13, 11, 10, 0.13), transparent 24rem),
+    linear-gradient(135deg, #f4ede3 0%, #fff8ef 52%, #eadbc9 100%) !important;
+}
+
+html body .cx-command-first-page .cx-grid-bg {
+  opacity: 0.20 !important;
+  background-image:
+    linear-gradient(rgba(13, 11, 10, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(13, 11, 10, 0.08) 1px, transparent 1px) !important;
+}
+
+html body .cx-command-first-page .cx-glow-a {
+  background: rgba(184, 87, 32, 0.20) !important;
+}
+
+html body .cx-command-first-page .cx-glow-b {
+  background: rgba(13, 11, 10, 0.12) !important;
+}
+
+html body .cx-command-first-page .cx-logo-mark {
+  background: #0d0b0a !important;
+  border: 1px solid rgba(228, 134, 67, 0.32) !important;
+  box-shadow: 0 18px 44px rgba(13, 11, 10, 0.26) !important;
+}
+
+html body .cx-command-first-page .cx-logo-mark i {
+  background: linear-gradient(180deg, #e48643, #b85720) !important;
+  box-shadow: 0 0 20px rgba(228, 134, 67, 0.75) !important;
+}
+
+html body .cx-command-first-page .cx-logo strong {
+  color: var(--cmd-black) !important;
+}
+
+html body .cx-command-first-page .cx-logo span {
+  color: var(--cmd-copper) !important;
+}
+
+html body .cx-command-first-page .cx-clean-nav {
+  width: min(1220px, calc(100% - 32px)) !important;
+  margin-inline: auto !important;
+}
+
+html body .cx-command-first-page .cx-clean-nav nav {
+  border: 1px solid rgba(13, 11, 10, 0.13) !important;
+  background: rgba(255, 248, 239, 0.78) !important;
+  box-shadow: 0 18px 48px rgba(13, 11, 10, 0.10) !important;
+  backdrop-filter: blur(18px) !important;
+}
+
+html body .cx-command-first-page .cx-clean-nav nav a,
+html body .cx-command-first-page .cx-clean-nav nav button {
+  color: var(--cmd-black) !important;
+  font-weight: 950 !important;
+}
+
+html body .cx-command-first-page .cx-clean-nav nav button {
+  background: var(--cmd-black) !important;
+  color: var(--cmd-paper) !important;
+  box-shadow: 0 16px 34px rgba(13, 11, 10, 0.18) !important;
+}
+
+html body .cx-command-first-page .cx-clean-hero,
+html body .cx-command-first-page .cx-clean-section,
+html body .cx-command-first-page .cx-clean-access,
+html body .cx-command-first-page .cx-clean-final {
+  width: min(1220px, calc(100% - 32px)) !important;
+}
+
+html body .cx-command-first-page .cx-clean-hero-copy,
+html body .cx-command-first-page .cx-clean-section,
+html body .cx-command-first-page .cx-clean-access,
+html body .cx-command-first-page .cx-clean-final,
+html body .cx-command-first-page .cx-auth-card {
+  border: 1px solid rgba(13, 11, 10, 0.12) !important;
+  background: rgba(255, 248, 239, 0.86) !important;
+  box-shadow: 0 26px 84px rgba(13, 11, 10, 0.16) !important;
+  backdrop-filter: blur(24px) !important;
+}
+
+html body .cx-command-first-page .cx-clean-hero-copy {
+  background:
+    radial-gradient(circle at 92% 8%, rgba(228, 134, 67, 0.22), transparent 23rem),
+    rgba(255, 248, 239, 0.88) !important;
+}
+
+html body .cx-command-first-page .cx-clean-pill,
+html body .cx-command-first-page .cx-clean-section header span,
+html body .cx-command-first-page .cx-clean-access span,
+html body .cx-command-first-page .cx-clean-final span,
+html body .cx-command-first-page .cx-auth-head span {
+  color: var(--cmd-copper) !important;
+  background: rgba(184, 87, 32, 0.08) !important;
+  border-color: rgba(184, 87, 32, 0.16) !important;
+}
+
+html body .cx-command-first-page h1,
+html body .cx-command-first-page h2,
+html body .cx-command-first-page h3,
+html body .cx-command-first-page .cx-auth-head h2 {
+  color: var(--cmd-black) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  letter-spacing: -0.055em !important;
+}
+
+html body .cx-command-first-page .cx-clean-hero-copy h1 em,
+html body .cx-command-first-page .cx-clean-movie strong {
+  color: var(--cmd-copper) !important;
+}
+
+html body .cx-command-first-page p,
+html body .cx-command-first-page small {
+  color: var(--cmd-muted) !important;
+}
+
+html body .cx-command-first-page .cx-clean-actions a,
+html body .cx-command-first-page .cx-clean-actions button,
+html body .cx-command-first-page .cx-clean-final a,
+html body .cx-command-first-page .cx-auth-card form button[type="submit"] {
+  min-height: 48px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: var(--cmd-black) !important;
+  color: var(--cmd-paper) !important;
+  font-weight: 950 !important;
+  box-shadow: 0 18px 38px rgba(13, 11, 10, 0.18) !important;
+}
+
+html body .cx-command-first-page .cx-clean-actions .cx-tour-cta {
+  background: var(--cmd-copper) !important;
+  color: var(--cmd-paper) !important;
+}
+
+html body .cx-command-first-page .cx-clean-actions a:last-child,
+html body .cx-command-first-page .cx-clean-final a:last-child {
+  background: rgba(13, 11, 10, 0.08) !important;
+  color: var(--cmd-black) !important;
+  border: 1px solid rgba(13, 11, 10, 0.12) !important;
+  box-shadow: none !important;
+}
+
+html body .cx-command-first-page .cx-clean-trust-row b,
+html body .cx-command-first-page .cx-clean-pricing article span,
+html body .cx-command-first-page .cx-clean-pricing article strong {
+  color: var(--cmd-copper) !important;
+}
+
+html body .cx-command-first-page .cx-clean-trust-row b {
+  background: rgba(184, 87, 32, 0.08) !important;
+  border: 1px solid rgba(184, 87, 32, 0.14) !important;
+}
+
+html body .cx-command-first-page .cx-clean-movie {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(228, 134, 67, 0.22), transparent 18rem),
+    #15100d !important;
+  color: var(--cmd-paper) !important;
+  border: 1px solid rgba(13, 11, 10, 0.12) !important;
+  box-shadow: 0 26px 84px rgba(13, 11, 10, 0.18) !important;
+}
+
+html body .cx-command-first-page .cx-clean-movie h2,
+html body .cx-command-first-page .cx-clean-movie p,
+html body .cx-command-first-page .cx-clean-movie strong {
+  color: var(--cmd-paper) !important;
+}
+
+html body .cx-command-first-page .cx-clean-movie p {
+  color: rgba(255, 248, 239, 0.76) !important;
+}
+
+html body .cx-command-first-page .cx-clean-movie-chips small,
+html body .cx-command-first-page .cx-clean-tabs button,
+html body .cx-command-first-page .cx-clean-movie-action {
+  background: rgba(255, 248, 239, 0.10) !important;
+  color: var(--cmd-paper) !important;
+  border-color: rgba(255, 248, 239, 0.14) !important;
+}
+
+html body .cx-command-first-page .cx-clean-tabs button.active {
+  background: var(--cmd-copper) !important;
+}
+
+html body .cx-command-first-page .cx-clean-movie-action button {
+  background: var(--cmd-paper) !important;
+  color: var(--cmd-black) !important;
+}
+
+html body .cx-command-first-page .cx-clean-access {
+  background:
+    linear-gradient(115deg, #0d0b0a 0%, #17120f 45%, rgba(255, 248, 239, 0.94) 45.2%, rgba(255, 248, 239, 0.98) 100%) !important;
+  overflow: hidden !important;
+}
+
+html body .cx-command-first-page .cx-clean-access > div:first-child {
+  color: var(--cmd-paper) !important;
+  padding: clamp(24px, 4vw, 44px) !important;
+}
+
+html body .cx-command-first-page .cx-clean-access > div:first-child h2,
+html body .cx-command-first-page .cx-clean-access > div:first-child p {
+  color: var(--cmd-paper) !important;
+}
+
+html body .cx-command-first-page .cx-clean-access > div:first-child p {
+  color: rgba(255, 248, 239, 0.74) !important;
+}
+
+html body .cx-command-first-page .cx-auth-card {
+  background: rgba(255, 248, 239, 0.98) !important;
+  color: var(--cmd-black) !important;
+  border-radius: 28px !important;
+}
+
+html body .cx-command-first-page .cx-auth-head h2 {
+  margin-top: 10px !important;
+  font-size: clamp(32px, 4vw, 48px) !important;
+  line-height: 0.96 !important;
+}
+
+html body .cx-command-first-page .cx-auth-orb {
+  background:
+    radial-gradient(circle at 35% 25%, #fff8ef 0 8%, transparent 9%),
+    linear-gradient(145deg, var(--cmd-copper-3), var(--cmd-copper)) !important;
+  box-shadow: 0 16px 40px rgba(184, 87, 32, 0.28) !important;
+}
+
+html body .cx-command-first-page .cx-auth-command-strip {
+  display: grid !important;
+  gap: 10px !important;
+  margin: 18px 0 20px !important;
+  padding: 16px !important;
+  border-radius: 18px !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(228, 134, 67, 0.18), transparent 14rem),
+    rgba(13, 11, 10, 0.04) !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+}
+
+html body .cx-command-first-page .cx-auth-command-strip strong {
+  color: var(--cmd-black) !important;
+  font-size: 16px !important;
+  font-weight: 950 !important;
+}
+
+html body .cx-command-first-page .cx-auth-command-strip p {
+  margin: 0 !important;
+  color: var(--cmd-muted) !important;
+  line-height: 1.45 !important;
+}
+
+html body .cx-command-first-page .cx-auth-command-strip div {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+html body .cx-command-first-page .cx-auth-command-strip span {
+  display: inline-flex !important;
+  min-height: 30px !important;
+  align-items: center !important;
+  padding: 0 10px !important;
+  border-radius: 999px !important;
+  background: rgba(184, 87, 32, 0.10) !important;
+  color: var(--cmd-copper) !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+}
+
+html body .cx-command-first-page .cx-auth-command-strip b {
+  color: var(--cmd-copper) !important;
+}
+
+html body .cx-command-first-page .cx-form label {
+  color: var(--cmd-black) !important;
+  font-weight: 900 !important;
+}
+
+html body .cx-command-first-page .cx-form input,
+html body .cx-command-first-page .cx-form select,
+html body .cx-command-first-page .cx-form textarea {
+  background: rgba(255, 248, 239, 0.96) !important;
+  color: var(--cmd-black) !important;
+  border: 1px solid rgba(13, 11, 10, 0.14) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72) !important;
+}
+
+html body .cx-command-first-page .cx-form input:focus,
+html body .cx-command-first-page .cx-form select:focus,
+html body .cx-command-first-page .cx-form textarea:focus {
+  outline: 3px solid rgba(228, 134, 67, 0.28) !important;
+  border-color: rgba(184, 87, 32, 0.46) !important;
+}
+
+html body .cx-command-first-page .cx-switch {
+  color: var(--cmd-copper) !important;
+  background: rgba(184, 87, 32, 0.08) !important;
+  border: 1px solid rgba(184, 87, 32, 0.16) !important;
+  border-radius: 999px !important;
+}
+
+html body .cx-command-first-page .cx-error {
+  background: rgba(168, 66, 43, 0.10) !important;
+  color: var(--cmd-red) !important;
+  border-color: rgba(168, 66, 43, 0.20) !important;
+}
+
+html body .cx-command-first-page .cx-clean-pricing article {
+  background: rgba(255, 248, 239, 0.90) !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  box-shadow: 0 16px 42px rgba(13, 11, 10, 0.08) !important;
+}
+
+html body .cx-command-first-page .cx-clean-pricing article.featured {
+  border-color: rgba(184, 87, 32, 0.42) !important;
+  box-shadow: 0 22px 70px rgba(184, 87, 32, 0.18) !important;
+}
+
+@media (max-width: 900px) {
+  html body .cx-command-first-page .cx-clean-access {
+    background: var(--cmd-black) !important;
+  }
+
+  html body .cx-command-first-page .cx-auth-card {
+    margin-top: 10px !important;
+  }
+}
+

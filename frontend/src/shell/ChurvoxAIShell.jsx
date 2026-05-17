@@ -1542,6 +1542,22 @@ function AuthCard({ authMode, setAuthMode, onLogin }) {
         <div className="cx-auth-orb" />
       </div>
 
+      <section className="cx-auth-command-strip" data-phase="PHASE_223_SIGNUP_COMMAND_STRIP">
+        <strong>{signup ? "No card needed. Trial starts after signup." : "Welcome back to Churvox."}</strong>
+        <p>
+          {signup
+            ? "See the tour first, then create your real workspace. Churvox prepares the admin and you approve."
+            : "Open your AI Operator workspace and keep work, crew, proof, invoices and payments moving."}
+        </p>
+        <div>
+          <span>Work in</span>
+          <b>›</b>
+          <span>Admin prepared</span>
+          <b>›</b>
+          <span>Owner approves</span>
+        </div>
+      </section>
+
       <section className="cx-auth-command-strip" data-phase="PHASE_222_SIGNUP_THEME">
         <strong>{signup ? "No card needed. Trial starts after signup." : "Welcome back to Churvox."}</strong>
         <p>
@@ -2114,7 +2130,7 @@ function Landing({ authMode, setAuthMode, onLogin }) {
   }
 
   return (
-    <main className="cx-public cx-public-landing cx-clean-landing" id="top" data-phase="PHASE_55_CLEAN_LANDING_FLOW">
+    <main className="cx-public cx-public-landing cx-clean-landing cx-command-first-page" id="top" data-phase="PHASE_55_CLEAN_LANDING_FLOW">
       <div className="cx-grid-bg" />
       <div className="cx-glow cx-glow-a" />
       <div className="cx-glow cx-glow-b" />
