@@ -2046,10 +2046,10 @@ export default function CommandSuite({
     try {
       const endpoint =
         action.kind === "settings"
-          ? "/api/operator/settings"
+          ? "/api/operator/settings-safe"
           : action.kind === "payroll_export"
-            ? "/api/operator/payroll/export"
-            : "/api/operator/quick-create";
+            ? "/api/operator/payroll/export-safe"
+            : "/api/operator/quick-create-safe";
 
       const body = await billingPost(endpoint, values);
       const targetRoute = normalRoute(action.route || routeForRecord(body.record || body.export || body.setting || {}, current), current);
