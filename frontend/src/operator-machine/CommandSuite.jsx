@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./CommandSuite.css";
+import ChurvoxExactDashboard from "./ChurvoxExactDashboard";
 
 const PAGE_MAP = {
   dashboard: "dashboard",
@@ -2614,185 +2615,18 @@ export default function CommandSuite({
       {appLocked && current !== "plans" ? (
         <LockedTrialPage billingStatus={billingStatus} goToPage={goToPage} />
       ) : current === "dashboard" ? (
-        <section className="cs-page">
-          <header className="cs-hero">
-            <section>
-              <span>Today’s Run Sheet</span>
-              <h1>
-                Churvox runs the admin.
-                <mark>You approve the next move.</mark>
-              </h1>
-              <p>
-                Jobs, invoices, proof, crew issues and payment follow-ups land in one command queue.
-              </p>
-            </section>
-
-            <section className="cs-stats" data-phase="PHASE_294_NO_DASHBOARD_METRIC_POPUPS">
-              {dashboardStats.map((stat) => {
-                const targetRoute = normalRoute(stat.route || "", "");
-
-                return (
-                  <Stat
-                    key={stat.label}
-                    {...stat}
-                    onClick={targetRoute && targetRoute !== "dashboard" ? () => goToPage(targetRoute) : undefined}
-                  />
-                );
-              })}
-            </section>
-          </header>
-
-          <section className="cs-command-cards">
-            <button type="button" onClick={() => scrollToSelector("[data-approval-desk]")}>
-              <Icon type="briefcase" />
-              <div><strong>{approvals.length}</strong><span>Ready for approval</span><p>Owner-ready admin waiting for your decision.</p></div>
-              <b>›</b>
-            </button>
-            <button type="button" onClick={() => goToPage("invoices")}>
-              <Icon type="money" />
-              <div><strong>{readyToInvoice}</strong><span>Ready to invoice</span><p>Completed work ready for invoice prep.</p></div>
-              <b>›</b>
-            </button>
-            <button type="button" onClick={() => goToPage("team")}>
-              <Icon type="crew" />
-              <div><strong>{crewActive}</strong><span>Crew active today</span><p>Worker notes, proof and updates flowing in.</p></div>
-              <b>›</b>
-            </button>
-          </section>
-
-          <CommandBriefing
-            model={model}
-            approvals={approvals}
-            readyToInvoice={readyToInvoice}
-            crewActive={crewActive}
-            goToPage={goToPage}
-          />
-
-          <CommandSearch
-            model={model}
-            approvals={approvals}
-            goToPage={goToPage}
-            onQuickAction={(action) => setQuickAction(action)}
-            openRecord={openRecord}
-          />
-
-          <SetupChecklist
-            model={model}
-            goToPage={goToPage}
-            onQuickAction={(action) => setQuickAction(action)}
-          />
-
-          <NotificationCentre
-            approvals={approvals}
-            model={model}
-            openRecord={openRecord}
-            goToPage={goToPage}
-          />
-
-          <ReadinessPanel
-            model={model}
-            approvals={approvals}
-            goToPage={goToPage}
-          />
-
-          <section className="cs-quick-launch" data-phase="PHASE_280_DASHBOARD_BUSINESS_STACK">
-            <div className="cs-quick-copy">
-              <span>Quick actions</span>
-              <strong>Feed the command centre.</strong>
-              <p>Add work once. Churvox checks client, crew, proof, invoice and payment readiness.</p>
-            </div>
-
-            <div className="cs-quick-buttons">
-              {(QUICK_ACTIONS_BY_PAGE.dashboard || []).map((action) => (
-                <button type="button" key={action.id} onClick={() => setQuickAction(action)}>
-                  {action.label}
-                </button>
-              ))}
-              <button type="button" onClick={installChurvoxApp}>
-                Install Churvox
-              </button>
-            </div>
-          </section>
-
-          <section className="cs-desk" data-approval-desk="true">
-            <header>
-              <Icon type="clipboard" />
-              <h2>Approval Desk</h2>
-              <i />
-              <p>Review what Churvox prepared, approve it, or edit before it goes out.</p>
-            </header>
-
-            <section className="cs-approval-list">
-              {approvals.length ? approvals.slice(0, showAllApprovals ? approvals.length : 5).map((item, index) => {
-                const risk = riskFor(item);
-                return (
-                  <article
-                    className="cs-approval-row"
-                    key={idOf(item, index)}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => openRecord(item)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") openRecord(item);
-                    }}
-                  >
-                    <span>{clean(item.eyebrow || item.kind, "Approval")}</span>
-                    <strong>{titleOf(item, "Approval slip")}</strong>
-                    <p>{aiReason(item)}</p>
-                    <b className={`cs-risk ${risk.tone}`}>{risk.label}</b>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        openRecord(item);
-                      }}
-                    >
-                      Open Approval Slip <em>›</em>
-                    </button>
-                  </article>
-                );
-              }) : (
-                <section className="cs-empty">
-                  <strong>No approvals waiting.</strong>
-                  <p>When work comes in, Churvox prepares the admin and places clean approval slips here.</p>
-                </section>
-              )}
-
-              {hiddenApprovalCount > 0 && !showAllApprovals ? (
-                <button type="button" className="cs-view" onClick={() => setShowAllApprovals?.(true)}>
-                  View all {approvals.length} approvals
-                </button>
-              ) : null}
-
-              {showAllApprovals && approvals.length > 5 ? (
-                <button type="button" className="cs-view ghost" onClick={() => setShowAllApprovals?.(false)}>
-                  Show top 5 only
-                </button>
-              ) : null}
-            </section>
-          </section>
-
-          <section className="cs-flow" data-phase="PHASE_287_FLOW_BUTTONS_WIRED">
-            <button type="button" onClick={() => scrollToSelector("[data-command-briefing]")}>
-              <Icon type="eye" />
-              <div><strong>AI is watching</strong><p>Every job. Every detail. Every time.</p></div>
-            </button>
-            <div>
-              {[
-                ["Work", "jobs"],
-                ["Crew", "team"],
-                ["Proof", "proof"],
-                ["Invoice", "invoices"],
-                ["Payment", "proof"],
-              ].map(([label, route], index, arr) => (
-                <React.Fragment key={`${label}-${route}`}>
-                  <button type="button" onClick={() => goToPage(route)}>{label}</button>
-                  {index < arr.length - 1 ? <b>›</b> : null}
-                </React.Fragment>
-              ))}
-            </div>
-          </section>
-        </section>
+        <ChurvoxExactDashboard
+          model={model}
+          approvals={approvals}
+          readyToInvoice={readyToInvoice}
+          crewActive={crewActive}
+          goToPage={goToPage}
+          quickActions={QUICK_ACTIONS_BY_PAGE.dashboard || []}
+          onQuickAction={(action) => setQuickAction(action)}
+          openRecord={openRecord}
+          onApprove={approveRecord}
+          installChurvoxApp={installChurvoxApp}
+        />
       ) : current === "plans" ? (
         <PlansCommandPage
           planName={planName}
