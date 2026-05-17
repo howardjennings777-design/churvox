@@ -10738,3 +10738,327 @@ button.primary,
   }
 }
 
+
+/* PHASE_221_PUBLIC_AND_IN_APP_TOURS */
+
+.cx-tour-cta {
+  border: 1px solid rgba(255, 248, 239, 0.22);
+  background: rgba(255, 248, 239, 0.09);
+  color: #fff8ef;
+  border-radius: 999px;
+  padding: 13px 18px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.cx-clean-nav nav button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.cx-public-tour-backdrop,
+.cx-inapp-tour-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 6000;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(10, 8, 7, 0.58);
+  backdrop-filter: blur(12px);
+}
+
+.cx-public-tour,
+.cx-inapp-tour {
+  width: min(940px, 96vw);
+  max-height: 90vh;
+  overflow: auto;
+  border-radius: 28px;
+  background: #fff8ef;
+  color: #15100d;
+  border: 1px solid rgba(13, 11, 10, 0.14);
+  box-shadow: 0 34px 110px rgba(13, 11, 10, 0.38);
+}
+
+.cx-public-tour > header,
+.cx-inapp-tour > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 26px;
+  border-bottom: 1px solid rgba(13, 11, 10, 0.1);
+}
+
+.cx-public-tour > header span,
+.cx-inapp-tour > header span {
+  color: #b85720;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.cx-public-tour > header button,
+.cx-inapp-tour > header button {
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(13, 11, 10, 0.08);
+  color: #15100d;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.cx-public-tour-body {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(320px, 0.75fr);
+  gap: 18px;
+  padding: 28px;
+}
+
+.cx-public-tour-body aside,
+.cx-public-tour-body main {
+  border-radius: 22px;
+  padding: 28px;
+}
+
+.cx-public-tour-body aside {
+  background:
+    radial-gradient(circle at 90% 0%, rgba(228, 134, 67, 0.22), transparent 18rem),
+    #15100d;
+  color: #fff8ef;
+}
+
+.cx-public-tour-body aside b {
+  display: inline-grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: rgba(228, 134, 67, 0.14);
+  color: #e48643;
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.cx-public-tour-body h2,
+.cx-inapp-tour h2 {
+  margin: 22px 0 12px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(34px, 5vw, 56px);
+  line-height: 0.96;
+  letter-spacing: -0.055em;
+}
+
+.cx-public-tour-body aside p {
+  color: rgba(255, 248, 239, 0.78);
+  line-height: 1.5;
+}
+
+.cx-public-tour-body aside div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.cx-public-tour-body aside small {
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(255, 248, 239, 0.1);
+  color: #fff8ef;
+  font-weight: 850;
+}
+
+.cx-public-tour-body main {
+  display: grid;
+  align-content: center;
+  gap: 14px;
+  background: rgba(184, 87, 32, 0.08);
+}
+
+.cx-public-tour-body main span {
+  color: #b85720;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.cx-public-tour-body main strong {
+  font-size: 28px;
+  line-height: 1.05;
+  font-weight: 950;
+}
+
+.cx-public-tour-body main p {
+  color: #6d6258;
+  line-height: 1.5;
+}
+
+.cx-public-tour > nav {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 0 28px 24px;
+}
+
+.cx-public-tour > nav button {
+  display: grid;
+  gap: 5px;
+  min-height: 72px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(13, 11, 10, 0.1);
+  background: rgba(255, 248, 239, 0.9);
+  text-align: left;
+  cursor: pointer;
+}
+
+.cx-public-tour > nav button.active {
+  background: #15100d;
+  color: #fff8ef;
+}
+
+.cx-public-tour > nav button b {
+  color: #b85720;
+}
+
+.cx-public-tour > footer,
+.cx-inapp-tour > footer {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 22px 28px 28px;
+  border-top: 1px solid rgba(13, 11, 10, 0.1);
+}
+
+.cx-public-tour > footer button,
+.cx-inapp-tour > footer button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 18px;
+  background: #15100d;
+  color: #fff8ef;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.cx-public-tour > footer button.ghost,
+.cx-inapp-tour > footer button.ghost {
+  background: rgba(13, 11, 10, 0.08);
+  color: #15100d;
+}
+
+.cx-tour-top-button {
+  min-height: 42px;
+  border: 1px solid rgba(184, 87, 32, 0.22);
+  border-radius: 999px;
+  padding: 0 14px;
+  background: rgba(184, 87, 32, 0.1);
+  color: #b85720;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.cx-inapp-tour {
+  width: min(720px, 94vw);
+  padding-bottom: 0;
+}
+
+.cx-inapp-tour-progress {
+  display: flex;
+  gap: 8px;
+  padding: 24px 28px 0;
+}
+
+.cx-inapp-tour-progress button {
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(13, 11, 10, 0.12);
+  border-radius: 999px;
+  background: rgba(13, 11, 10, 0.06);
+  color: #15100d;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.cx-inapp-tour-progress button.active {
+  background: #b85720;
+  color: #fff8ef;
+}
+
+.cx-inapp-tour-progress button.done {
+  background: #507b36;
+  color: #fff8ef;
+}
+
+.cx-inapp-tour h2,
+.cx-inapp-tour p {
+  padding-left: 28px;
+  padding-right: 28px;
+}
+
+.cx-inapp-tour p {
+  color: #6d6258;
+  line-height: 1.55;
+}
+
+.cx-inapp-tour-card {
+  display: grid;
+  gap: 8px;
+  margin: 22px 28px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(184, 87, 32, 0.08);
+  border: 1px solid rgba(184, 87, 32, 0.14);
+}
+
+.cx-inapp-tour-card b {
+  color: #b85720;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cx-inapp-tour-card span {
+  color: #6d6258;
+}
+
+.cx-inapp-tour-card strong {
+  font-size: 20px;
+}
+
+@media (max-width: 760px) {
+  .cx-public-tour-body,
+  .cx-public-tour > nav {
+    grid-template-columns: 1fr;
+  }
+
+  .cx-public-tour,
+  .cx-inapp-tour {
+    border-radius: 20px;
+  }
+
+  .cx-public-tour-body {
+    padding: 18px;
+  }
+
+  .cx-public-tour > footer,
+  .cx-inapp-tour > footer {
+    justify-content: stretch;
+  }
+
+  .cx-public-tour > footer button,
+  .cx-inapp-tour > footer button {
+    flex: 1 1 140px;
+  }
+}
+

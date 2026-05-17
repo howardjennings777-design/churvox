@@ -1514,6 +1514,16 @@ function AuthCard({ authMode, setAuthMode, onLogin }) {
           });
 
       saveSession(payload);
+
+      if (signup) {
+        try {
+          localStorage.removeItem("churvox:first-run-tour-done");
+          localStorage.setItem("churvox:first-run-tour-pending", "1");
+        } catch {
+          // keep signup safe if storage is unavailable
+        }
+      }
+
       onLogin();
     } catch (err) {
       setError(err.message || "Could not open Churvox");
@@ -1924,6 +1934,101 @@ function PublicClientPortalPage({ token }) {
 }
 
 
+
+function PublicMiniTour({ open, onClose, onStartTrial }) {
+  const steps = [
+    {
+      number: "01",
+      title: "Work comes in",
+      body: "A customer request, job, quote, invoice or worker update lands in Churvox.",
+      output: "Churvox captures the details and checks what is missing.",
+      chips: ["Client", "Address", "Job notes", "Due time"],
+    },
+    {
+      number: "02",
+      title: "Churvox prepares the admin",
+      body: "AI checks the client, area, crew, proof, price source and follow-up risk.",
+      output: "The admin work is prepared before the owner has to touch it.",
+      chips: ["Crew match", "Invoice draft", "Quote follow-up", "Payment reminder"],
+    },
+    {
+      number: "03",
+      title: "Owner approves",
+      body: "Nothing risky sends or changes blindly. The owner opens a clean Approval Slip.",
+      output: "Owner reviews, edits if needed, then approves the next move.",
+      chips: ["Approval-first", "No blind sends", "Owner control"],
+    },
+    {
+      number: "04",
+      title: "Everything updates",
+      body: "Work, crew, proof, invoice, payment and customer history stay tied together.",
+      output: "The business keeps moving without page hunting.",
+      chips: ["Work", "Crew", "Proof", "Invoice", "Payment"],
+    },
+  ];
+
+  const [step, setStep] = useState(0);
+  const active = steps[step] || steps[0];
+
+  if (!open) return null;
+
+  return (
+    <section className="cx-public-tour-backdrop" onClick={onClose}>
+      <article className="cx-public-tour" onClick={(event) => event.stopPropagation()}>
+        <header>
+          <span>See how Churvox works</span>
+          <button type="button" onClick={onClose}>×</button>
+        </header>
+
+        <section className="cx-public-tour-body">
+          <aside>
+            <b>{active.number}</b>
+            <h2>{active.title}</h2>
+            <p>{active.body}</p>
+
+            <div>
+              {active.chips.map((chip) => <small key={chip}>{chip}</small>)}
+            </div>
+          </aside>
+
+          <main>
+            <span>Churvox output</span>
+            <strong>{active.output}</strong>
+            <p>
+              This is a public demo tour. Signup is only needed when someone wants to start the real
+              14-day trial and save business data.
+            </p>
+          </main>
+        </section>
+
+        <nav>
+          {steps.map((item, index) => (
+            <button
+              type="button"
+              key={item.number}
+              className={index === step ? "active" : ""}
+              onClick={() => setStep(index)}
+            >
+              <b>{item.number}</b>
+              <span>{item.title}</span>
+            </button>
+          ))}
+        </nav>
+
+        <footer>
+          <button type="button" className="ghost" onClick={onClose}>Close tour</button>
+          {step > 0 ? <button type="button" className="ghost" onClick={() => setStep(step - 1)}>Back</button> : null}
+          {step < steps.length - 1 ? (
+            <button type="button" onClick={() => setStep(step + 1)}>Next</button>
+          ) : (
+            <button type="button" onClick={onStartTrial}>Start 14-day trial</button>
+          )}
+        </footer>
+      </article>
+    </section>
+  );
+}
+
 function Landing({ authMode, setAuthMode, onLogin }) {
   const movieSteps = useMemo(() => [
     {
@@ -1957,6 +2062,7 @@ function Landing({ authMode, setAuthMode, onLogin }) {
   ], []);
 
   const [activeStep, setActiveStep] = useState(0);
+  const [tourOpen, setTourOpen] = useState(false);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -1996,12 +2102,18 @@ function Landing({ authMode, setAuthMode, onLogin }) {
       <div className="cx-grid-bg" />
       <div className="cx-glow cx-glow-a" />
       <div className="cx-glow cx-glow-b" />
+      <PublicMiniTour
+        open={tourOpen}
+        onClose={() => setTourOpen(false)}
+        onStartTrial={goSignup}
+      />
 
       <header className="cx-clean-nav">
         <a href="#top" className="cx-logo-link"><Logo /></a>
         <nav>
           <a href="#how">How it works</a>
           <a href="#pricing">Pricing</a>
+          <button type="button" onClick={() => setTourOpen(true)}>Tour</button>
           <button type="button" onClick={goLogin}>Login</button>
         </nav>
       </header>
@@ -2016,6 +2128,7 @@ function Landing({ authMode, setAuthMode, onLogin }) {
           </p>
 
           <div className="cx-clean-actions">
+            <button type="button" className="cx-tour-cta" onClick={() => setTourOpen(true)}>See how Churvox works</button>
             <a href="#landing-access" onClick={goSignup}>Start free trial</a>
             <a href="/plans">See pricing</a>
           </div>
@@ -2747,6 +2860,139 @@ function WorkerMyRun({ page, setPage, data }) {
 
 
 
+
+function InAppGuidedTour({ page, setPage }) {
+  const steps = [
+    {
+      page: "dashboard",
+      title: "Welcome to your Command Desk",
+      body: "This is where Churvox shows what it has prepared. Start here each day and approve the next move.",
+      action: "Open Smart Hub",
+    },
+    {
+      page: "clients",
+      title: "Add your first client",
+      body: "Clients power the whole admin flow. Jobs, quotes, invoices and follow-ups all connect back to client records.",
+      action: "Open Clients",
+    },
+    {
+      page: "jobs",
+      title: "Add your first job",
+      body: "When work is added, Churvox checks the client, area, crew fit, proof and invoice readiness.",
+      action: "Open Work",
+    },
+    {
+      page: "team",
+      title: "Invite or assign crew",
+      body: "Crew details let Churvox suggest the best worker by area, workload and schedule risk.",
+      action: "Open Crew",
+    },
+    {
+      page: "quotes",
+      title: "Prepare quotes and follow-ups",
+      body: "Quotes can be tracked, followed up and converted into work or invoices with owner approval.",
+      action: "Open Quotes",
+    },
+    {
+      page: "invoices",
+      title: "Review invoices before sending",
+      body: "Completed jobs, notes and proof can become draft invoices. You approve before anything goes out.",
+      action: "Open Invoices",
+    },
+    {
+      page: "dashboard",
+      title: "Any time you are stuck, press Help",
+      body: "Use the setup tour button any time. Churvox should feel like work goes in, admin gets prepared, owner approves.",
+      action: "Finish tour",
+    },
+  ];
+
+  const [open, setOpen] = useState(false);
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    try {
+      const pending = localStorage.getItem("churvox:first-run-tour-pending") === "1";
+      const done = localStorage.getItem("churvox:first-run-tour-done") === "1";
+      if (pending && !done) setOpen(true);
+    } catch {
+      // keep app safe
+    }
+
+    function startTour() {
+      setStep(0);
+      setOpen(true);
+    }
+
+    window.addEventListener("churvox:start-onboarding-tour", startTour);
+    return () => window.removeEventListener("churvox:start-onboarding-tour", startTour);
+  }, []);
+
+  if (!open) return null;
+
+  const active = steps[step] || steps[0];
+  const last = step >= steps.length - 1;
+
+  function finish(showAgain = false) {
+    try {
+      localStorage.removeItem("churvox:first-run-tour-pending");
+      if (!showAgain) localStorage.setItem("churvox:first-run-tour-done", "1");
+    } catch {
+      // keep app safe
+    }
+    setOpen(false);
+  }
+
+  function openStepPage() {
+    if (active.page) setPage(active.page);
+  }
+
+  return (
+    <section className="cx-inapp-tour-backdrop">
+      <article className="cx-inapp-tour">
+        <header>
+          <span>First setup tour</span>
+          <button type="button" onClick={() => finish(false)}>×</button>
+        </header>
+
+        <div className="cx-inapp-tour-progress">
+          {steps.map((item, index) => (
+            <button
+              type="button"
+              key={item.title}
+              className={index === step ? "active" : index < step ? "done" : ""}
+              onClick={() => setStep(index)}
+            >
+              {index + 1}
+            </button>
+          ))}
+        </div>
+
+        <h2>{active.title}</h2>
+        <p>{active.body}</p>
+
+        <section className="cx-inapp-tour-card">
+          <b>Step {step + 1} of {steps.length}</b>
+          <span>Current page: {page}</span>
+          <strong>{active.action}</strong>
+        </section>
+
+        <footer>
+          <button type="button" className="ghost" onClick={() => finish(false)}>Do not show again</button>
+          <button type="button" className="ghost" onClick={() => setOpen(false)}>Stop tour</button>
+          {step > 0 ? <button type="button" className="ghost" onClick={() => setStep(step - 1)}>Back</button> : null}
+          {!last ? <button type="button" onClick={openStepPage}>Open page</button> : null}
+          {!last ? (
+            <button type="button" onClick={() => setStep(step + 1)}>Next</button>
+          ) : (
+            <button type="button" onClick={() => finish(false)}>Finish</button>
+          )}
+        </footer>
+      </article>
+    </section>
+  );
+}
+
 function Shell({ page, setPage, onLogout, data }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const workerMode = isWorkerSession();
@@ -2819,6 +3065,16 @@ function Shell({ page, setPage, onLogout, data }) {
 
           <input placeholder={workerMode ? "Search my assigned jobs..." : "Search jobs, clients, invoices..."} />
 
+          {!workerMode ? (
+            <button
+              type="button"
+              className="cx-tour-top-button"
+              onClick={() => window.dispatchEvent(new Event("churvox:start-onboarding-tour"))}
+            >
+              Setup tour
+            </button>
+          ) : null}
+
           <button type="button" className="cx-top-primary" onClick={() => workerMode ? choosePage("dashboard") : choosePage("dashboard")}>
             {workerMode ? "Open my run" : "Smart Hub"}
           </button>
@@ -2832,6 +3088,8 @@ function Shell({ page, setPage, onLogout, data }) {
         ) : (
           <Workspace page={safePage} setPage={setPage} data={data} />
         )}
+
+        {!workerMode ? <InAppGuidedTour page={safePage} setPage={choosePage} /> : null}
       </section>
     </main>
   );
