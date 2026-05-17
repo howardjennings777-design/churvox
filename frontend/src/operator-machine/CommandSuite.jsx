@@ -487,6 +487,568 @@ function QuickActionModal({ action, busy, onClose, onSubmit }) {
 }
 
 
+
+
+// PHASE_280_BUSINESS_USEFULNESS_LAYER
+function countRows(rows, test) {
+  try {
+    return (rows || []).filter(test).length;
+  } catch {
+    return 0;
+  }
+}
+
+function recordMoney(item = {}) {
+  return money(item.amount || item.total || item.price || item.balance || item.amount_due || item.job_price);
+}
+
+function isMissingWorker(item = {}) {
+  return workerName(item) === "Unassigned";
+}
+
+function isReadyInvoice(item = {}) {
+  return /complete|ready|invoice|finished/i.test(statusOf(item));
+}
+
+function isOwing(item = {}) {
+  return /owing|unpaid|overdue|sent/i.test(statusOf(item));
+}
+
+function SetupChecklist({ model, onQuickAction, goToPage }) {
+  const steps = [
+    {
+      id: "business",
+      title: "Business details",
+      body: "Confirm business name, invoice details and approval mode.",
+      done: true,
+      action: () => goToPage("settings"),
+      cta: "Open settings",
+    },
+    {
+      id: "client",
+      title: "Add first client",
+      body: "Clients let Churvox prepare quotes, invoices and follow-ups cleanly.",
+      done: model.clients.length > 0,
+      action: () => onQuickAction?.({ id: "client", kind: "client", label: "Add client", route: "clients", title: "Add client" }),
+      cta: "Add client",
+    },
+    {
+      id: "crew",
+      title: "Add crew",
+      body: "Crew details power worker matching, workload and dispatch.",
+      done: model.crew.length > 0,
+      action: () => onQuickAction?.({ id: "crew", kind: "crew", label: "Add crew", route: "team", title: "Add crew member" }),
+      cta: "Add crew",
+    },
+    {
+      id: "work",
+      title: "Add work",
+      body: "Work goes in once, then Churvox checks crew, proof and invoice readiness.",
+      done: model.jobs.length > 0,
+      action: () => onQuickAction?.({ id: "work", kind: "work", label: "Add work", route: "jobs", title: "Add work" }),
+      cta: "Add work",
+    },
+    {
+      id: "invoice",
+      title: "Invoice path",
+      body: "Create or prepare the first invoice so Proof & Pay can flow.",
+      done: model.invoices.length > 0,
+      action: () => onQuickAction?.({ id: "invoice", kind: "invoice", label: "Create invoice", route: "invoices", title: "Create invoice" }),
+      cta: "Create invoice",
+    },
+  ];
+
+  const doneCount = steps.filter((step) => step.done).length;
+  const percent = Math.round((doneCount / steps.length) * 100);
+
+  return (
+    <section className="cs-setup-checklist" data-phase="PHASE_280_SETUP_CHECKLIST">
+      <header>
+        <div>
+          <span>Setup path</span>
+          <h2>Finish setting up Churvox</h2>
+          <p>Get the business ready so the AI Operator has real data to work with.</p>
+        </div>
+        <strong>{percent}%</strong>
+      </header>
+
+      <div className="cs-setup-progress">
+        <i style={{ width: `${percent}%` }} />
+      </div>
+
+      <div className="cs-setup-grid">
+        {steps.map((step) => (
+          <article key={step.id} className={step.done ? "done" : ""}>
+            <b>{step.done ? "✓" : "•"}</b>
+            <div>
+              <strong>{step.title}</strong>
+              <p>{step.body}</p>
+            </div>
+            <button type="button" onClick={step.action}>
+              {step.done ? "Review" : step.cta}
+            </button>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CommandBriefing({ model, approvals, readyToInvoice, crewActive, goToPage }) {
+  const missingCrew = countRows(model.jobs, isMissingWorker);
+  const missingClientDetails = countRows(model.clients, (client) => !clean(client.email || client.phone || client.mobile));
+  const quoteFollowups = countRows(model.quotes, (quote) => /sent|pending|await|open|follow/i.test(statusOf(quote)));
+  const owingInvoices = countRows(model.invoices, isOwing);
+  const proofNeeded = countRows(model.jobs, (job) => /active|progress|started|complete/i.test(statusOf(job)) && !(Array.isArray(job.photos) && job.photos.length));
+
+  const cards = [
+    { label: "Needs approval", value: approvals.length, body: "Owner decisions waiting.", route: "dashboard" },
+    { label: "Jobs need crew", value: missingCrew, body: "Unassigned work to dispatch.", route: "jobs" },
+    { label: "Ready to invoice", value: readyToInvoice, body: "Completed work to bill.", route: "invoices" },
+    { label: "Client gaps", value: missingClientDetails, body: "Missing contact details.", route: "clients" },
+    { label: "Quote follow-ups", value: quoteFollowups, body: "Open quotes to chase.", route: "quotes" },
+    { label: "Payment watch", value: owingInvoices, body: "Invoices needing attention.", route: "invoices" },
+    { label: "Proof checks", value: proofNeeded, body: "Proof/photos to verify.", route: "proof" },
+    { label: "Crew active", value: crewActive, body: "Crew/work activity today.", route: "team" },
+  ];
+
+  return (
+    <section className="cs-command-briefing" data-phase="PHASE_280_TODAYS_COMMAND_BRIEFING">
+      <header>
+        <div>
+          <span>Today’s command briefing</span>
+          <h2>Churvox found {cards.reduce((sum, card) => sum + Number(card.value || 0), 0)} business signals.</h2>
+          <p>Open the app and see what needs action without hunting through every page.</p>
+        </div>
+      </header>
+
+      <div>
+        {cards.map((card) => (
+          <button type="button" key={card.label} onClick={() => goToPage(card.route)}>
+            <strong>{card.value}</strong>
+            <span>{card.label}</span>
+            <p>{card.body}</p>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CommandSearch({ model, approvals, goToPage, onQuickAction, openRecord }) {
+  const [query, setQuery] = useState("");
+
+  const commands = [
+    { id: "add-work", label: "Add work", body: "Capture a new job and let AI prepare the admin.", run: () => onQuickAction?.({ id: "work", kind: "work", label: "Add work", route: "jobs", title: "Add work" }) },
+    { id: "add-client", label: "Add client", body: "Create a new client record.", run: () => onQuickAction?.({ id: "client", kind: "client", label: "Add client", route: "clients", title: "Add client" }) },
+    { id: "create-quote", label: "Create quote", body: "Draft a quote for owner review.", run: () => onQuickAction?.({ id: "quote", kind: "quote", label: "Create quote", route: "quotes", title: "Create quote" }) },
+    { id: "create-invoice", label: "Create invoice", body: "Draft an invoice for owner review.", run: () => onQuickAction?.({ id: "invoice", kind: "invoice", label: "Create invoice", route: "invoices", title: "Create invoice" }) },
+    { id: "unpaid-invoices", label: "Show unpaid invoices", body: "Open invoice control centre.", run: () => goToPage("invoices") },
+    { id: "what-approval", label: "What needs approval?", body: "Open the Approval Desk.", run: () => goToPage("dashboard") },
+    { id: "payroll", label: "Prepare payroll", body: "Open payroll workspace.", run: () => goToPage("payroll") },
+  ];
+
+  const records = [
+    ...model.jobs.map((item) => ({ id: `job-${idOf(item)}`, label: titleOf(item, "Work"), body: `Work • ${clientName(item)} • ${statusOf(item)}`, item, route: "jobs" })),
+    ...model.clients.map((item) => ({ id: `client-${idOf(item)}`, label: clientName(item), body: `Client • ${clean(item.email || item.phone || "missing contact")}`, item, route: "clients" })),
+    ...model.quotes.map((item) => ({ id: `quote-${idOf(item)}`, label: clean(item.quote_number || item.number || titleOf(item, "Quote")), body: `Quote • ${clientName(item)} • ${recordMoney(item)}`, item, route: "quotes" })),
+    ...model.invoices.map((item) => ({ id: `invoice-${idOf(item)}`, label: clean(item.invoice_number || item.number || titleOf(item, "Invoice")), body: `Invoice • ${clientName(item)} • ${recordMoney(item)}`, item, route: "invoices" })),
+    ...approvals.map((item) => ({ id: `approval-${idOf(item)}`, label: titleOf(item, "Approval"), body: `Approval • ${clean(item.kind || item.eyebrow || "AI action")}`, item, route: "dashboard" })),
+  ];
+
+  const term = query.trim().toLowerCase();
+  const results = term
+    ? [...commands, ...records]
+        .filter((item) => `${item.label} ${item.body}`.toLowerCase().includes(term))
+        .slice(0, 8)
+    : commands.slice(0, 4);
+
+  function run(item) {
+    if (item.run) {
+      item.run();
+      setQuery("");
+      return;
+    }
+
+    if (item.item) {
+      openRecord({
+        ...item.item,
+        __modalType: item.route === "dashboard" ? "Approval slip" : "Found record",
+        __modalTitle: item.label,
+        __body: item.body,
+        __route: item.route,
+      });
+      setQuery("");
+    }
+  }
+
+  return (
+    <section className="cs-command-search" data-phase="PHASE_280_COMMAND_SEARCH">
+      <header>
+        <span>Command search</span>
+        <strong>Ask Churvox or find anything</strong>
+      </header>
+
+      <input
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        placeholder="Try: unpaid invoices, add client, create job, what needs approval..."
+      />
+
+      <div>
+        {results.map((item) => (
+          <button type="button" key={item.id} onClick={() => run(item)}>
+            <strong>{item.label}</strong>
+            <span>{item.body}</span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function JobPipeline({ jobs, openRecord }) {
+  const lanes = [
+    ["New", (job) => /new|pending|draft/i.test(statusOf(job))],
+    ["Assigned", (job) => !isMissingWorker(job) && !/complete|invoice|done/i.test(statusOf(job))],
+    ["In progress", (job) => /progress|started|active/i.test(statusOf(job))],
+    ["Proof needed", (job) => /complete|active|progress/i.test(statusOf(job)) && !(Array.isArray(job.photos) && job.photos.length)],
+    ["Ready invoice", isReadyInvoice],
+    ["Completed", (job) => /complete|done|finished/i.test(statusOf(job))],
+  ];
+
+  return (
+    <section className="cs-pipeline-board" data-phase="PHASE_280_JOB_PIPELINE_BOARD">
+      <header>
+        <span>Pipeline board</span>
+        <h2>New → assigned → proof → invoice</h2>
+        <p>See where jobs are stuck before admin falls behind.</p>
+      </header>
+
+      <div>
+        {lanes.map(([label, test]) => {
+          const laneJobs = jobs.filter(test).slice(0, 4);
+          return (
+            <article key={label}>
+              <header>
+                <strong>{label}</strong>
+                <b>{laneJobs.length}</b>
+              </header>
+
+              {laneJobs.length ? laneJobs.map((job, index) => (
+                <button
+                  type="button"
+                  key={idOf(job, index)}
+                  onClick={() => openRecord({
+                    ...job,
+                    __modalType: "Work slip",
+                    __modalTitle: titleOf(job, "Work"),
+                    __body: aiReason(job, "Churvox is checking this job path."),
+                    __route: "jobs",
+                  })}
+                >
+                  <strong>{titleOf(job, "Work")}</strong>
+                  <span>{clientName(job)} • {workerName(job)}</span>
+                </button>
+              )) : <p>No items.</p>}
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function ClientTimeline({ clients, jobs, quotes, invoices, openRecord }) {
+  const topClients = clients.slice(0, 4);
+
+  return (
+    <section className="cs-client-timeline" data-phase="PHASE_280_CLIENT_TIMELINE">
+      <header>
+        <span>Client timeline</span>
+        <h2>Client history at a glance</h2>
+        <p>Jobs, quotes, invoices, payments and AI next actions in one place.</p>
+      </header>
+
+      <div>
+        {topClients.length ? topClients.map((client, index) => {
+          const name = clientName(client);
+          const clientJobs = jobs.filter((job) => clientName(job).toLowerCase() === name.toLowerCase()).length;
+          const clientQuotes = quotes.filter((quote) => clientName(quote).toLowerCase() === name.toLowerCase()).length;
+          const clientInvoices = invoices.filter((invoice) => clientName(invoice).toLowerCase() === name.toLowerCase()).length;
+
+          return (
+            <button
+              type="button"
+              key={idOf(client, index)}
+              onClick={() => openRecord({
+                ...client,
+                __modalType: "Client timeline",
+                __modalTitle: name,
+                __body: `${clientJobs} jobs, ${clientQuotes} quotes and ${clientInvoices} invoices found for this client.`,
+                __route: "clients",
+              })}
+            >
+              <strong>{name}</strong>
+              <span>{clientJobs} jobs</span>
+              <span>{clientQuotes} quotes</span>
+              <span>{clientInvoices} invoices</span>
+              <p>{clean(client.email || client.phone || "Missing contact details")}</p>
+            </button>
+          );
+        }) : <p>No clients yet. Add a client to start building history.</p>}
+      </div>
+    </section>
+  );
+}
+
+function CrewWorkload({ crew, jobs, openRecord }) {
+  return (
+    <section className="cs-crew-workload" data-phase="PHASE_280_CREW_WORKLOAD_VIEW">
+      <header>
+        <span>Crew workload</span>
+        <h2>Who is free, busy or missing details</h2>
+        <p>Helps Churvox recommend the right worker before approval.</p>
+      </header>
+
+      <div>
+        {(crew.length ? crew : [{ name: "No crew yet", status: "needs setup" }]).slice(0, 6).map((worker, index) => {
+          const name = workerName(worker);
+          const assigned = jobs.filter((job) => workerName(job).toLowerCase() === name.toLowerCase()).length;
+          const missing = !clean(worker.email || worker.phone || worker.mobile || worker.area || worker.region);
+          const state = assigned > 2 ? "Busy" : assigned > 0 ? "Active" : missing ? "Needs profile" : "Available";
+
+          return (
+            <button
+              type="button"
+              key={idOf(worker, index)}
+              onClick={() => openRecord({
+                ...worker,
+                __modalType: "Crew workload",
+                __modalTitle: name,
+                __body: `${state}. ${assigned} assigned job(s). Area: ${areaOf(worker)}.`,
+                __route: "team",
+              })}
+            >
+              <strong>{name}</strong>
+              <span>{state}</span>
+              <p>{assigned} assigned job(s) • {areaOf(worker)}</p>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function InvoiceControlCentre({ invoices, jobs, openRecord, goToPage }) {
+  const groups = [
+    ["Drafts", invoices.filter((item) => /draft/i.test(statusOf(item)))],
+    ["Ready to send", invoices.filter((item) => /ready/i.test(statusOf(item)))],
+    ["Sent / owing", invoices.filter((item) => /sent|owing|unpaid/i.test(statusOf(item)))],
+    ["Overdue", invoices.filter((item) => /overdue/i.test(statusOf(item)))],
+    ["Paid", invoices.filter((item) => /paid/i.test(statusOf(item)))],
+    ["Work ready", jobs.filter(isReadyInvoice)],
+  ];
+
+  return (
+    <section className="cs-invoice-control" data-phase="PHASE_280_INVOICE_PAYMENT_CONTROL">
+      <header>
+        <span>Invoice control</span>
+        <h2>Drafts, owing, overdue and ready work</h2>
+        <p>One control panel for moving work into money.</p>
+        <button type="button" onClick={() => goToPage("proof")}>Open Proof & Pay</button>
+      </header>
+
+      <div>
+        {groups.map(([label, items]) => (
+          <article key={label}>
+            <strong>{items.length}</strong>
+            <span>{label}</span>
+            {items.slice(0, 2).map((item, index) => (
+              <button
+                type="button"
+                key={idOf(item, index)}
+                onClick={() => openRecord({
+                  ...item,
+                  __modalType: label === "Work ready" ? "Work ready to invoice" : "Invoice control",
+                  __modalTitle: titleOf(item, label),
+                  __body: `${label}: ${clientName(item)} ${recordMoney(item)}`,
+                  __route: label === "Work ready" ? "jobs" : "invoices",
+                })}
+              >
+                {titleOf(item, label)}
+              </button>
+            ))}
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function NotificationCentre({ approvals, model, openRecord, goToPage }) {
+  const notifications = [
+    ...approvals.slice(0, 5).map((item) => ({
+      id: `approval-${idOf(item)}`,
+      title: titleOf(item, "Approval waiting"),
+      body: clean(item.need || item.prepared || item.body, "Owner approval needed."),
+      type: "Approval",
+      item,
+    })),
+    ...model.jobs.filter(isReadyInvoice).slice(0, 3).map((item) => ({
+      id: `ready-${idOf(item)}`,
+      title: `${titleOf(item, "Work")} is ready to invoice`,
+      body: `${clientName(item)} can move to invoice prep.`,
+      type: "Invoice",
+      item: { ...item, __route: "jobs" },
+    })),
+    ...model.invoices.filter(isOwing).slice(0, 3).map((item) => ({
+      id: `owing-${idOf(item)}`,
+      title: `${clean(item.invoice_number || item.number || "Invoice")} needs payment follow-up`,
+      body: `${clientName(item)} • ${recordMoney(item)}`,
+      type: "Payment",
+      item: { ...item, __route: "invoices" },
+    })),
+  ].slice(0, 8);
+
+  return (
+    <section className="cs-notification-centre" data-phase="PHASE_280_NOTIFICATION_CENTRE">
+      <header>
+        <span>Command inbox</span>
+        <h2>Live business notifications</h2>
+        <p>Important updates should land here instead of hiding in pages.</p>
+        <button type="button" onClick={() => goToPage("dashboard")}>Approval Desk</button>
+      </header>
+
+      <div>
+        {notifications.length ? notifications.map((notice) => (
+          <button
+            type="button"
+            key={notice.id}
+            onClick={() => openRecord({
+              ...notice.item,
+              __modalType: notice.type,
+              __modalTitle: notice.title,
+              __body: notice.body,
+              __route: notice.item?.__route || "dashboard",
+            })}
+          >
+            <span>{notice.type}</span>
+            <strong>{notice.title}</strong>
+            <p>{notice.body}</p>
+          </button>
+        )) : <p>No command inbox items yet.</p>}
+      </div>
+    </section>
+  );
+}
+
+function ReadinessPanel({ model, approvals, goToPage }) {
+  const checks = [
+    { label: "Clients", ok: model.clients.length > 0, route: "clients" },
+    { label: "Crew", ok: model.crew.length > 0, route: "team" },
+    { label: "Work", ok: model.jobs.length > 0, route: "jobs" },
+    { label: "Invoices", ok: model.invoices.length > 0 || model.jobs.some(isReadyInvoice), route: "invoices" },
+    { label: "AI actions", ok: approvals.length > 0 || model.jobs.length > 0, route: "dashboard" },
+    { label: "Payments", ok: model.invoices.some(isOwing) || model.payments.length > 0, route: "proof" },
+  ];
+
+  return (
+    <section className="cs-readiness-panel" data-phase="PHASE_280_READINESS_DASHBOARD">
+      <header>
+        <span>Readiness check</span>
+        <h2>Launch strength</h2>
+        <p>A quick built-in view of what makes Churvox useful for a real business.</p>
+      </header>
+
+      <div>
+        {checks.map((check) => (
+          <button type="button" key={check.label} className={check.ok ? "ok" : "todo"} onClick={() => goToPage(check.route)}>
+            <b>{check.ok ? "✓" : "!"}</b>
+            <strong>{check.label}</strong>
+            <span>{check.ok ? "Ready" : "Needs setup"}</span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function WorkSlipContext({ selected, modalType }) {
+  if (!selected) return null;
+
+  const typeText = `${modalType} ${selected.kind || ""} ${selected.type || ""} ${selected.eyebrow || ""}`.toLowerCase();
+
+  let title = "Owner decision";
+  let points = [
+    "Churvox prepared this from the business data it can see.",
+    "Review the details before approving.",
+    "Nothing customer-facing is sent unless the owner approves.",
+  ];
+
+  if (typeText.includes("dispatch") || typeText.includes("worker") || typeText.includes("crew")) {
+    title = "Worker match check";
+    points = [
+      `Suggested crew: ${workerName(selected)}`,
+      `Area / route: ${areaOf(selected)}`,
+      "Check workload, clash risk and fit before assigning.",
+    ];
+  } else if (typeText.includes("invoice")) {
+    title = "Invoice readiness check";
+    points = [
+      `Client: ${clientName(selected)}`,
+      `Amount: ${recordMoney(selected)}`,
+      "Confirm proof, notes, price and customer email before sending.",
+    ];
+  } else if (typeText.includes("quote")) {
+    title = "Quote follow-up check";
+    points = [
+      `Client: ${clientName(selected)}`,
+      `Quote: ${clean(selected.quote_number || selected.number || selected.title, "Quote")}`,
+      "Approve the follow-up wording before contacting the customer.",
+    ];
+  } else if (typeText.includes("payment") || typeText.includes("cashflow")) {
+    title = "Payment follow-up check";
+    points = [
+      `Invoice: ${clean(selected.invoice_number || selected.number || selected.title, "Invoice")}`,
+      `Amount: ${recordMoney(selected)}`,
+      "Draft the reminder, then owner approves before sending.",
+    ];
+  } else if (typeText.includes("client")) {
+    title = "Client detail check";
+    points = [
+      `Client: ${clientName(selected)}`,
+      `Contact: ${clean(selected.email || selected.phone || selected.mobile, "Missing")}`,
+      "Fill gaps so quotes, reminders and invoices do not get blocked.",
+    ];
+  } else if (typeText.includes("payroll")) {
+    title = "Payroll review check";
+    points = [
+      `Worker: ${workerName(selected)}`,
+      `Hours: ${clean(selected.hours || selected.total_hours || selected.approved_hours, "0")}`,
+      "Prepare payroll handoff only. No payout or compliance submission is made.",
+    ];
+  } else if (typeText.includes("proof")) {
+    title = "Proof check";
+    points = [
+      `Work: ${titleOf(selected, "Work")}`,
+      `Proof: ${Array.isArray(selected.photos) && selected.photos.length ? `${selected.photos.length} photo(s)` : "Needs notes/photos check"}`,
+      "Proof should support invoice readiness before billing.",
+    ];
+  }
+
+  return (
+    <section className="cs-slip-context" data-phase="PHASE_280_SPECIFIC_WORK_SLIP_TYPES">
+      <strong>{title}</strong>
+      <ul>
+        {points.map((point) => <li key={point}>{point}</li>)}
+      </ul>
+    </section>
+  );
+}
+
+
 function Table({ rows, columns, onOpen, emptyText = "Nothing here yet.", actionLabel = "Open Slip" }) {
   const gridTemplateColumns = `repeat(${columns.length}, minmax(150px, 1fr)) 170px`;
 
@@ -617,6 +1179,8 @@ function DetailModal({ selected, onClose, onApprove, setPage, operatorBusyAction
           </section>
         ) : null}
 
+        <WorkSlipContext selected={selected} modalType={modalType} />
+
         <dl>
           {rows.map(([label, value]) => (
             <div key={label}>
@@ -652,7 +1216,7 @@ function DetailModal({ selected, onClose, onApprove, setPage, operatorBusyAction
   );
 }
 
-function SmartPage({ config, rows, columns, aiCards, onOpen, activeFilter, setActiveFilter, openInfo, goToPage, quickActions = [], onQuickAction }) {
+function SmartPage({ config, rows, columns, aiCards, onOpen, activeFilter, setActiveFilter, openInfo, goToPage, quickActions = [], onQuickAction, extraPanel = null }) {
   const loweredTitle = clean(config.workspaceTitle).toLowerCase();
 
   const actionLabel = config.actionLabel ||
@@ -731,6 +1295,8 @@ function SmartPage({ config, rows, columns, aiCards, onOpen, activeFilter, setAc
           />
         ))}
       </section>
+
+      {extraPanel}
 
       <section className="cs-workspace">
         <header>
@@ -1871,7 +2437,42 @@ export default function CommandSuite({
             </button>
           </section>
 
-          <section className="cs-quick-launch" data-phase="PHASE_279_TIDY_DASHBOARD_QUICK_ACTIONS">
+          <CommandBriefing
+            model={model}
+            approvals={approvals}
+            readyToInvoice={readyToInvoice}
+            crewActive={crewActive}
+            goToPage={goToPage}
+          />
+
+          <CommandSearch
+            model={model}
+            approvals={approvals}
+            goToPage={goToPage}
+            onQuickAction={(action) => setQuickAction(action)}
+            openRecord={openRecord}
+          />
+
+          <SetupChecklist
+            model={model}
+            goToPage={goToPage}
+            onQuickAction={(action) => setQuickAction(action)}
+          />
+
+          <NotificationCentre
+            approvals={approvals}
+            model={model}
+            openRecord={openRecord}
+            goToPage={goToPage}
+          />
+
+          <ReadinessPanel
+            model={model}
+            approvals={approvals}
+            goToPage={goToPage}
+          />
+
+          <section className="cs-quick-launch" data-phase="PHASE_280_DASHBOARD_BUSINESS_STACK">
             <div className="cs-quick-copy">
               <span>Quick actions</span>
               <strong>Capture work fast.</strong>
@@ -1993,6 +2594,41 @@ export default function CommandSuite({
           goToPage={goToPage}
           quickActions={QUICK_ACTIONS_BY_PAGE[current] || []}
           onQuickAction={(action) => setQuickAction(action)}
+          extraPanel={
+            <React.Fragment>
+              {current === "work" ? (
+                <JobPipeline jobs={model.jobs} openRecord={openRecord} />
+              ) : null}
+
+              {current === "clients" ? (
+                <ClientTimeline
+                  clients={model.clients}
+                  jobs={model.jobs}
+                  quotes={model.quotes}
+                  invoices={model.invoices}
+                  openRecord={openRecord}
+                />
+              ) : null}
+
+              {current === "crew" ? (
+                <CrewWorkload crew={model.crew} jobs={model.jobs} openRecord={openRecord} />
+              ) : null}
+
+              {current === "invoices" || current === "proof" ? (
+                <InvoiceControlCentre
+                  invoices={model.invoices}
+                  jobs={model.jobs}
+                  openRecord={openRecord}
+                  goToPage={goToPage}
+                />
+              ) : null}
+
+              {current === "settings" || current === "payroll" ? (
+                <ReadinessPanel model={model} approvals={approvals} goToPage={goToPage} />
+              ) : null}
+            </React.Fragment>
+          }
+          data-phase="PHASE_280_PAGE_EXTRA_PANELS"
         />
       )}
 

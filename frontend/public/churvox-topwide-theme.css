@@ -1373,3 +1373,438 @@ html body .cs-empty {
   }
 }
 
+
+/* PHASE_280_BUSINESS_USEFULNESS_UI
+   Adds the business usefulness layer:
+   setup checklist, command briefing, command search, pipeline board,
+   client timeline, crew workload, invoice control, command inbox,
+   readiness dashboard and typed Work Slip sections.
+*/
+
+html body .cs-command-briefing,
+html body .cs-command-search,
+html body .cs-setup-checklist,
+html body .cs-notification-centre,
+html body .cs-readiness-panel,
+html body .cs-pipeline-board,
+html body .cs-client-timeline,
+html body .cs-crew-workload,
+html body .cs-invoice-control {
+  width: 100% !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  border-radius: 22px !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(223, 113, 56, 0.08), transparent 20rem),
+    rgba(255, 248, 239, 0.96) !important;
+  color: var(--chx-black, #0d0b0a) !important;
+  box-shadow: 0 12px 28px rgba(13, 11, 10, 0.08) !important;
+  padding: 16px !important;
+  overflow: visible !important;
+}
+
+html body .cs-command-briefing *,
+html body .cs-command-search *,
+html body .cs-setup-checklist *,
+html body .cs-notification-centre *,
+html body .cs-readiness-panel *,
+html body .cs-pipeline-board *,
+html body .cs-client-timeline *,
+html body .cs-crew-workload *,
+html body .cs-invoice-control *,
+html body .cs-slip-context * {
+  color: var(--chx-black, #0d0b0a) !important;
+}
+
+html body .cs-command-briefing > header,
+html body .cs-command-search > header,
+html body .cs-setup-checklist > header,
+html body .cs-notification-centre > header,
+html body .cs-readiness-panel > header,
+html body .cs-pipeline-board > header,
+html body .cs-client-timeline > header,
+html body .cs-crew-workload > header,
+html body .cs-invoice-control > header {
+  display: flex !important;
+  gap: 12px !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  margin-bottom: 12px !important;
+}
+
+html body .cs-command-briefing header span,
+html body .cs-command-search header span,
+html body .cs-setup-checklist header span,
+html body .cs-notification-centre header span,
+html body .cs-readiness-panel header span,
+html body .cs-pipeline-board header span,
+html body .cs-client-timeline header span,
+html body .cs-crew-workload header span,
+html body .cs-invoice-control header span {
+  width: fit-content !important;
+  min-height: 22px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 0 9px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(184, 87, 32, 0.18) !important;
+  background: rgba(184, 87, 32, 0.10) !important;
+  color: var(--chx-copper, #b85720) !important;
+  font-size: 10px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+html body .cs-command-briefing h2,
+html body .cs-setup-checklist h2,
+html body .cs-notification-centre h2,
+html body .cs-readiness-panel h2,
+html body .cs-pipeline-board h2,
+html body .cs-client-timeline h2,
+html body .cs-crew-workload h2,
+html body .cs-invoice-control h2 {
+  margin: 5px 0 3px !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: clamp(22px, 2vw, 34px) !important;
+  line-height: 1 !important;
+  letter-spacing: -0.045em !important;
+}
+
+html body .cs-command-briefing p,
+html body .cs-setup-checklist p,
+html body .cs-notification-centre p,
+html body .cs-readiness-panel p,
+html body .cs-pipeline-board p,
+html body .cs-client-timeline p,
+html body .cs-crew-workload p,
+html body .cs-invoice-control p,
+html body .cs-command-search span,
+html body .cs-command-search p {
+  color: var(--chx-muted, #6f6257) !important;
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+  margin: 0 !important;
+}
+
+html body .cs-command-briefing > div,
+html body .cs-readiness-panel > div,
+html body .cs-invoice-control > div {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+html body .cs-command-briefing button,
+html body .cs-readiness-panel button,
+html body .cs-notification-centre button,
+html body .cs-command-search button,
+html body .cs-pipeline-board button,
+html body .cs-client-timeline button,
+html body .cs-crew-workload button,
+html body .cs-invoice-control button,
+html body .cs-setup-checklist button {
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  border-radius: 16px !important;
+  background: rgba(13, 11, 10, 0.045) !important;
+  color: var(--chx-black, #0d0b0a) !important;
+  box-shadow: none !important;
+  text-align: left !important;
+  font-weight: 900 !important;
+}
+
+html body .cs-command-briefing > div > button {
+  min-height: 96px !important;
+  display: grid !important;
+  gap: 4px !important;
+  padding: 14px !important;
+}
+
+html body .cs-command-briefing button strong {
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: clamp(26px, 2.4vw, 42px) !important;
+  line-height: 1 !important;
+}
+
+html body .cs-command-briefing button span,
+html body .cs-readiness-panel button strong {
+  font-size: 13px !important;
+  font-weight: 950 !important;
+}
+
+html body .cs-command-search {
+  display: grid !important;
+  gap: 10px !important;
+}
+
+html body .cs-command-search input {
+  width: 100% !important;
+  min-height: 46px !important;
+  border: 1px solid rgba(13, 11, 10, 0.12) !important;
+  border-radius: 999px !important;
+  background: rgba(255, 248, 239, 0.98) !important;
+  padding: 0 16px !important;
+  color: var(--chx-black, #0d0b0a) !important;
+  font-weight: 850 !important;
+}
+
+html body .cs-command-search > div {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+html body .cs-command-search button {
+  min-height: 72px !important;
+  padding: 12px !important;
+  display: grid !important;
+  gap: 4px !important;
+}
+
+html body .cs-command-search button strong {
+  font-size: 13px !important;
+  font-weight: 950 !important;
+}
+
+html body .cs-setup-checklist header > strong {
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: clamp(30px, 3vw, 48px) !important;
+  line-height: 1 !important;
+}
+
+html body .cs-setup-progress {
+  height: 10px !important;
+  overflow: hidden !important;
+  border-radius: 999px !important;
+  background: rgba(13, 11, 10, 0.08) !important;
+  margin-bottom: 12px !important;
+}
+
+html body .cs-setup-progress i {
+  display: block !important;
+  height: 100% !important;
+  border-radius: 999px !important;
+  background: linear-gradient(90deg, #0d0b0a, #b85720, #df7138) !important;
+}
+
+html body .cs-setup-grid,
+html body .cs-notification-centre > div,
+html body .cs-client-timeline > div,
+html body .cs-crew-workload > div {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+html body .cs-setup-grid article {
+  display: grid !important;
+  grid-template-columns: 26px minmax(0, 1fr) auto !important;
+  gap: 10px !important;
+  align-items: center !important;
+  padding: 12px !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  border-radius: 16px !important;
+  background: rgba(13, 11, 10, 0.045) !important;
+}
+
+html body .cs-setup-grid article.done {
+  background: rgba(184, 87, 32, 0.08) !important;
+}
+
+html body .cs-setup-grid article > b {
+  width: 24px !important;
+  height: 24px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 999px !important;
+  background: rgba(184, 87, 32, 0.14) !important;
+  color: var(--chx-copper, #b85720) !important;
+}
+
+html body .cs-setup-grid article strong {
+  font-size: 13px !important;
+  font-weight: 950 !important;
+}
+
+html body .cs-setup-grid article button {
+  min-height: 32px !important;
+  padding: 0 11px !important;
+  border-radius: 999px !important;
+}
+
+html body .cs-pipeline-board > div {
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(150px, 1fr)) !important;
+  gap: 8px !important;
+  overflow-x: auto !important;
+  padding-bottom: 4px !important;
+}
+
+html body .cs-pipeline-board article,
+html body .cs-invoice-control article {
+  min-width: 0 !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  border-radius: 16px !important;
+  background: rgba(13, 11, 10, 0.045) !important;
+  padding: 10px !important;
+  display: grid !important;
+  gap: 8px !important;
+}
+
+html body .cs-pipeline-board article header {
+  display: flex !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  align-items: center !important;
+}
+
+html body .cs-pipeline-board article header b {
+  width: 26px !important;
+  height: 26px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 999px !important;
+  background: rgba(184, 87, 32, 0.12) !important;
+  color: var(--chx-copper, #b85720) !important;
+}
+
+html body .cs-pipeline-board article button,
+html body .cs-client-timeline button,
+html body .cs-crew-workload button,
+html body .cs-notification-centre button,
+html body .cs-invoice-control article button {
+  display: grid !important;
+  gap: 4px !important;
+  min-height: 64px !important;
+  padding: 10px !important;
+}
+
+html body .cs-client-timeline button {
+  grid-template-columns: minmax(0, 1fr) auto auto auto !important;
+  align-items: center !important;
+}
+
+html body .cs-client-timeline button p {
+  grid-column: 1 / -1 !important;
+}
+
+html body .cs-crew-workload button {
+  min-height: 82px !important;
+}
+
+html body .cs-invoice-control header button,
+html body .cs-notification-centre header button {
+  min-height: 34px !important;
+  padding: 0 12px !important;
+  border-radius: 999px !important;
+}
+
+html body .cs-invoice-control article > strong {
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: 32px !important;
+  line-height: 1 !important;
+}
+
+html body .cs-readiness-panel button {
+  min-height: 68px !important;
+  padding: 10px !important;
+  display: grid !important;
+  grid-template-columns: 28px minmax(0, 1fr) !important;
+  grid-template-areas:
+    "icon title"
+    "icon status" !important;
+  gap: 3px 8px !important;
+  align-items: center !important;
+}
+
+html body .cs-readiness-panel button b {
+  grid-area: icon !important;
+  width: 26px !important;
+  height: 26px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 999px !important;
+}
+
+html body .cs-readiness-panel button.ok b {
+  background: rgba(184, 87, 32, 0.14) !important;
+  color: var(--chx-copper, #b85720) !important;
+}
+
+html body .cs-readiness-panel button.todo b {
+  background: rgba(168, 66, 43, 0.14) !important;
+  color: #a8422b !important;
+}
+
+html body .cs-readiness-panel button strong {
+  grid-area: title !important;
+}
+
+html body .cs-readiness-panel button span {
+  grid-area: status !important;
+  color: var(--chx-muted, #6f6257) !important;
+  font-size: 12px !important;
+}
+
+html body .cs-slip-context {
+  display: grid !important;
+  gap: 8px !important;
+  margin: 14px 0 !important;
+  padding: 14px !important;
+  border-radius: 18px !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  background: rgba(13, 11, 10, 0.045) !important;
+}
+
+html body .cs-slip-context > strong {
+  font-size: 17px !important;
+  font-weight: 950 !important;
+}
+
+html body .cs-slip-context ul {
+  margin: 0 !important;
+  padding-left: 18px !important;
+  display: grid !important;
+  gap: 4px !important;
+}
+
+html body .cs-slip-context li {
+  color: var(--chx-muted, #6f6257) !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+}
+
+@media (max-width: 1200px) {
+  html body .cs-command-briefing > div,
+  html body .cs-command-search > div,
+  html body .cs-readiness-panel > div,
+  html body .cs-invoice-control > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html body .cs-pipeline-board > div {
+    grid-template-columns: repeat(3, minmax(180px, 1fr)) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html body .cs-command-briefing > div,
+  html body .cs-command-search > div,
+  html body .cs-setup-grid,
+  html body .cs-notification-centre > div,
+  html body .cs-readiness-panel > div,
+  html body .cs-client-timeline > div,
+  html body .cs-crew-workload > div,
+  html body .cs-invoice-control > div {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body .cs-setup-grid article,
+  html body .cs-client-timeline button {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body .cs-pipeline-board > div {
+    grid-template-columns: repeat(2, minmax(170px, 1fr)) !important;
+  }
+}
+
