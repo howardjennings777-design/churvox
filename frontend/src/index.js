@@ -1,16 +1,16 @@
-window.__CHURVOX_MOCKUP_FINAL__ = "PHASE_197_FORCE_MOCKUP_STYLE_FINAL_DESIGN_20260517011740";
-window.__CHURVOX_FINAL_DESIGN__ = "PHASE_196_FINAL_PREMIUM_APPROVAL_DESK_DESIGN_20260517011205";
-window.__CHURVOX_AI_ADMIN_RADAR__ = "PHASE_193_AI_ADMIN_RADAR_BELOW_APPROVAL_DESK_20260517004120";
-window.__CHURVOX_HERO_OWNER_PRIORITY__ = "PHASE_192_OWNER_PRIORITY_INSIDE_HEADER_20260517003652";
-window.__CHURVOX_PHASE_191__ = "PHASE_191_PRIORITY_UNDER_HEADER_WIDE_DESK_20260517003318";
-window.__CHURVOX_APPROVAL_POLISH__ = "PHASE_190_APPROVAL_DESK_WARNING_AND_PRIORITY_POLISH_20260517002650";
-window.__CHURVOX_PRIORITY_PANEL__ = "PHASE_189_FORCE_OWNER_PRIORITY_BESIDE_APPROVAL_DESK_20260517002155";
-window.__CHURVOX_TOP_NAV_HEIGHT_FIX__ = "PHASE_188_FIX_GIANT_TOP_NAV_BLACK_SPACE_20260517001841";
-window.__CHURVOX_TOP_NAV_PRIORITY_PANEL__ = "PHASE_187_TOP_NAV_OWNER_PRIORITY_PANEL_20260517001430";
-window.__CHURVOX_APPROVAL_DESK_ABOVE_FOLD__ = "PHASE_186_BRING_APPROVAL_DESK_ABOVE_THE_FOLD_20260517001144";
-window.__CHURVOX_APPROVAL_DESK_LAYOUT_FIX__ = "PHASE_185_FIX_APPROVAL_DESK_WIDTH_AND_LIVE_FEED_20260517000510";
-window.__CHURVOX_APPROVAL_DESK_LAYOUT__ = "PHASE_184_APPROVAL_DESK_LIVE_FEED_FLOW_20260517000100";
-window.__CHURVOX_COLOR_THEME__ = "PHASE_183_OBSIDIAN_SAND_COPPER_SIGNAL_THEME_20260516235318";
+
+
+
+
+
+
+
+
+
+
+
+
+
 window.__CHURVOX_THEME__ = "PHASE_180_CARBON_CLAY_THEME_FOUNDATION";
 window.__CHURVOX_PHASE_163_DEPLOY_MARKER__ = "PHASE_163_FORCE_FRONTEND_BACKEND_RENDER_DEPLOY_20260516211617";
 window.__CHURVOX_RENDER_DEPLOY_MARKER__ = "PHASE_162_FORCE_REAL_RENDER_FRONTEND_DEPLOY_20260516211342";
@@ -378,1166 +378,56 @@ import App from "./App";
 import "./index.css";
 
 
-// PHASE_197_FORCE_MOCKUP_STYLE_FINAL_DESIGN
-// Force the generated mockup direction over older dashboard experiments.
-(function churvoxForceMockupStyleFinalDesign() {
-  try {
-    if (typeof window === "undefined" || typeof document === "undefined") return;
-
-    function clean(value) {
-      return String(value || "").replace(/\s+/g, " ").trim();
-    }
-
-    function toNumber(value) {
-      const match = clean(value).match(/\b\d+\b/);
-      return match ? Number(match[0]) : 0;
-    }
-
-    function applyClass() {
-      document.documentElement.classList.add("cx-mockup-final");
-      if (document.body) document.body.classList.add("cx-mockup-final");
-    }
-
-    function removeOldExtras() {
-      [
-        "churvox-phase-189-owner-priority",
-        "churvox-phase-192-hero-priority",
-        "churvox-phase-193-ai-admin-radar",
-        "churvox-phase-195-status-strip",
-        "churvox-phase-196-front-strip",
-        "churvox-phase-196-inline-note",
-        "churvox-final-front-cards",
-        "churvox-final-hero-note"
-      ].forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) el.remove();
-      });
-    }
-
-    function approvalCount() {
-      const headerCount = document.querySelector(".om-approval-desk-main > header b, .cx-final-approval-desk > header b");
-      const fromHeader = toNumber(headerCount && headerCount.textContent);
-      if (fromHeader > 0) return fromHeader;
-
-      const gaugeApproval = Array.from(document.querySelectorAll(".om-gauges article")).find((el) =>
-        clean(el.textContent).toLowerCase().includes("approval")
-      );
-      const fromGauge = toNumber(gaugeApproval && gaugeApproval.textContent);
-      if (fromGauge > 0) return fromGauge;
-
-      return Array.from(document.querySelectorAll("button, article, section, div"))
-        .filter((el) => clean(el.textContent).toLowerCase().includes("open approval slip")).length;
-    }
-
-    function invoiceCount() {
-      const tickets = Array.from(document.querySelectorAll(".om-approval-ticket, button, article"))
-        .filter((el) => {
-          const text = clean(el.textContent).toLowerCase();
-          return text.includes("invoice") && text.includes("open approval slip");
-        }).length;
-
-      if (tickets > 0) return tickets;
-
-      const text = clean(document.body ? document.body.textContent : "").toLowerCase();
-      const match = text.match(/ready to invoice\s+(\d+)/);
-      return match ? Number(match[1]) : 0;
-    }
-
-    function crewCount() {
-      try {
-        const ctx = window.__CHURVOX_LIVE_AI_CONTEXT__ || {};
-        const jobs = Array.isArray(ctx.jobs) ? ctx.jobs : [];
-        const activeJobs = jobs.filter((job) => {
-          const status = clean(job.status || job.job_status || job.workflow_status).toLowerCase();
-          return status.includes("progress") || status.includes("started") || status.includes("assigned");
-        }).length;
-        if (activeJobs > 0) return activeJobs;
-      } catch {
-        // safe fallback
-      }
-
-      const tickets = Array.from(document.querySelectorAll(".om-approval-ticket, button, article"))
-        .filter((el) => {
-          const text = clean(el.textContent).toLowerCase();
-          return (text.includes("worker") || text.includes("crew")) && text.includes("open approval slip");
-        }).length;
-
-      return tickets;
-    }
-
-    function planName() {
-      const gaugePlan = Array.from(document.querySelectorAll(".om-gauges article")).find((el) =>
-        clean(el.textContent).toLowerCase().includes("plan")
-      );
-      const text = clean(gaugePlan && gaugePlan.textContent).replace(/^plan/i, "").trim();
-      return text || "Command";
-    }
-
-    function installHeroMetrics() {
-      const hero = document.querySelector(".om-hero");
-      if (!hero) return;
-
-      let metrics = document.getElementById("churvox-phase-197-hero-metrics");
-      if (!metrics) {
-        metrics = document.createElement("section");
-        metrics.id = "churvox-phase-197-hero-metrics";
-        hero.appendChild(metrics);
-      }
-
-      metrics.innerHTML = `
-        <article>
-          <i>✓</i>
-          <span>Plan</span>
-          <strong>${planName()}</strong>
-        </article>
-        <article>
-          <i>▤</i>
-          <span>Input</span>
-          <strong>0</strong>
-        </article>
-        <article>
-          <i>⚙</i>
-          <span>Processing</span>
-          <strong>0</strong>
-        </article>
-        <article>
-          <i>◇</i>
-          <span>Approval</span>
-          <strong>${approvalCount()}</strong>
-        </article>
-      `;
-    }
-
-    function installFrontCards() {
-      const hero = document.querySelector(".om-hero");
-      if (!hero) return;
-
-      let cards = document.getElementById("churvox-phase-197-front-cards");
-      if (!cards) {
-        cards = document.createElement("section");
-        cards.id = "churvox-phase-197-front-cards";
-        hero.insertAdjacentElement("afterend", cards);
-      }
-
-      cards.innerHTML = `
-        <article>
-          <i>✓</i>
-          <div>
-            <span>Ready for approval</span>
-            <strong>${approvalCount()}</strong>
-            <p>Owner-ready slips waiting for review.</p>
-          </div>
-        </article>
-        <article>
-          <i>▧</i>
-          <div>
-            <span>Ready to invoice</span>
-            <strong>${invoiceCount()}</strong>
-            <p>Completed work ready for draft invoice prep.</p>
-          </div>
-        </article>
-        <article>
-          <i>◌</i>
-          <div>
-            <span>Crew active today</span>
-            <strong>${crewCount()}</strong>
-            <p>Worker updates, notes and proof flowing in.</p>
-          </div>
-        </article>
-      `;
-    }
-
-    function markDesk() {
-      const desk = Array.from(document.querySelectorAll("section, article, div")).find((el) => {
-        const text = clean(el.textContent).toLowerCase();
-        return text.includes("approval desk") && text.includes("open approval slip");
-      });
-
-      if (desk) {
-        desk.classList.add("cx-phase-197-approval-desk");
-        if (desk.parentElement) desk.parentElement.classList.add("cx-phase-197-desk-wrap");
-      }
-    }
-
-    function runNow() {
-      applyClass();
-      removeOldExtras();
-      installHeroMetrics();
-      installFrontCards();
-      markDesk();
-    }
-
-    let timer = null;
-    function schedule() {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(runNow, 160);
-    }
-
-    window.addEventListener("load", schedule);
-    document.addEventListener("click", schedule, true);
-
-    const observer = new MutationObserver(schedule);
-    observer.observe(document.documentElement, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-    });
-
-    schedule();
-  } catch {
-    // keep app boot safe
-  }
-})();
-
-
-
-
-// PHASE_196_FINAL_PREMIUM_APPROVAL_DESK_DESIGN
-// Final locked design: premium dark/clay hero, 3 front cards, clean Approval Desk.
-// Keeps the app simple: Header -> Hero -> Important cards -> Approval Desk.
-(function churvoxFinalPremiumApprovalDeskDesign() {
-  try {
-    if (typeof window === "undefined" || typeof document === "undefined") return;
-
-    function clean(value) {
-      return String(value || "").replace(/\s+/g, " ").trim();
-    }
-
-    function applyClass() {
-      document.documentElement.classList.add("cx-premium-approval-final");
-      if (document.body) document.body.classList.add("cx-premium-approval-final");
-    }
-
-    function countApprovalSlips() {
-      return Array.from(document.querySelectorAll("button, article, section, div"))
-        .filter((el) => clean(el.textContent).toLowerCase().includes("open approval slip")).length;
-    }
-
-    function textCountNear(labelWords) {
-      const words = labelWords.map((w) => String(w).toLowerCase());
-      const nodes = Array.from(document.querySelectorAll("article, section, div, span, strong, b"));
-      for (const el of nodes) {
-        const text = clean(el.textContent);
-        const lower = text.toLowerCase();
-        if (words.some((word) => lower.includes(word))) {
-          const match = text.match(/\b\d+\b/);
-          if (match) return Number(match[0]);
-        }
-      }
-      return 0;
-    }
-
-    function removeOldAddons() {
-      [
-        "churvox-phase-189-owner-priority",
-        "churvox-phase-192-hero-priority",
-        "churvox-phase-193-ai-admin-radar",
-        "churvox-phase-195-status-strip",
-        "churvox-phase-196-front-strip",
-        "churvox-phase-196-inline-note",
-      ].forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) el.remove();
-      });
-
-      Array.from(document.querySelectorAll("section, article, div")).forEach((el) => {
-        const text = clean(el.textContent).toLowerCase();
-        if (
-          text.includes("ai admin radar") ||
-          text.includes("what churvox is watching next") ||
-          text.includes("owner priority") ||
-          text.includes("nothing urgent right now") ||
-          text.includes("automatic admin") ||
-          text.includes("owner control")
-        ) {
-          el.style.display = "none";
-          el.setAttribute("aria-hidden", "true");
-        }
-      });
-    }
-
-    function findHero() {
-      return document.querySelector(".om-hero");
-    }
-
-    function findApprovalDesk() {
-      return Array.from(document.querySelectorAll("section, article, div")).find((el) => {
-        const text = clean(el.textContent).toLowerCase();
-        return text.includes("approval desk") && text.includes("open approval slip");
-      });
-    }
-
-    function installFrontCards() {
-      const hero = findHero();
-      if (!hero) return;
-
-      if (document.getElementById("churvox-final-front-cards")) return;
-
-      const approvals = countApprovalSlips();
-      const readyToInvoice = textCountNear(["ready to invoice", "invoice"]);
-      const crewActive = textCountNear(["crew active", "active", "worker"]);
-
-      const cards = document.createElement("section");
-      cards.id = "churvox-final-front-cards";
-      cards.innerHTML = `
-        <article>
-          <i>✓</i>
-          <div>
-            <span>Ready for approval</span>
-            <strong>${approvals}</strong>
-            <p>Owner-ready slips waiting for review.</p>
-          </div>
-        </article>
-        <article>
-          <i>▧</i>
-          <div>
-            <span>Ready to invoice</span>
-            <strong>${readyToInvoice}</strong>
-            <p>Completed work ready for draft invoice prep.</p>
-          </div>
-        </article>
-        <article>
-          <i>◌</i>
-          <div>
-            <span>Crew active today</span>
-            <strong>${crewActive}</strong>
-            <p>Worker updates, notes and proof flowing in.</p>
-          </div>
-        </article>
-      `;
-
-      hero.insertAdjacentElement("afterend", cards);
-    }
-
-    function installHeroNote() {
-      const hero = findHero();
-      if (!hero) return;
-      if (document.getElementById("churvox-final-hero-note")) return;
-
-      const note = document.createElement("section");
-      note.id = "churvox-final-hero-note";
-      note.innerHTML = `
-        <strong>Simple approval flow</strong>
-        <span>Jobs, proof, quotes, invoices, reminders and worker updates are handled in the background. You approve what matters.</span>
-      `;
-      hero.appendChild(note);
-    }
-
-    function markDesk() {
-      const desk = findApprovalDesk();
-      if (!desk) return;
-      desk.classList.add("cx-final-approval-desk");
-      if (desk.parentElement) desk.parentElement.classList.add("cx-final-desk-wrap");
-    }
-
-    let timer = null;
-    function run() {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(() => {
-        applyClass();
-        removeOldAddons();
-        installHeroNote();
-        installFrontCards();
-        markDesk();
-      }, 120);
-    }
-
-    window.addEventListener("load", run);
-    document.addEventListener("click", run, true);
-
-    const observer = new MutationObserver(run);
-    observer.observe(document.documentElement, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-    });
-
-    run();
-  } catch {
-    // keep app boot safe
-  }
-})();
-
-
-
-
-// PHASE_193_AI_ADMIN_RADAR_BELOW_APPROVAL_DESK
-// Do not change the top/header. Add a useful AI Admin Radar section below Approval Desk.
-(function churvoxAiAdminRadarBelowDesk() {
-  try {
-    if (typeof window === "undefined" || typeof document === "undefined") return;
-
-    function clean(value) {
-      return String(value || "").replace(/\s+/g, " ").trim();
-    }
-
-    function findApprovalDesk() {
-      return Array.from(document.querySelectorAll("section, article, div"))
-        .find((el) => {
-          const text = clean(el.textContent).toLowerCase();
-          return text.includes("approval desk") && text.includes("open approval slip");
-        });
-    }
-
-    function countSlips() {
-      return Array.from(document.querySelectorAll("button, article, section"))
-        .filter((el) => clean(el.textContent).toLowerCase().includes("open approval slip")).length;
-    }
-
-    function installRadar() {
-      const desk = findApprovalDesk();
-      if (!desk) return;
-
-      let radar = document.getElementById("churvox-phase-193-ai-admin-radar");
-      const slipCount = countSlips();
-
-      if (!radar) {
-        radar = document.createElement("section");
-        radar.id = "churvox-phase-193-ai-admin-radar";
-        radar.innerHTML = `
-          <header>
-            <span>AI ADMIN RADAR</span>
-            <strong>What Churvox is watching next.</strong>
-            <p>Approval slips are the actions. This radar shows the background admin Churvox keeps checking while workers, clients, quotes and invoices move.</p>
-          </header>
-
-          <div class="cx-radar-grid">
-            <article>
-              <small>Live work</small>
-              <strong>Worker updates</strong>
-              <p>Starts, pauses, notes, proof photos and completions feed the owner side automatically.</p>
-            </article>
-
-            <article>
-              <small>Admin prepared</small>
-              <strong data-radar-slip-count>${slipCount}</strong>
-              <p>Approval slips ready for owner review. Churvox keeps the risky actions approval-first.</p>
-            </article>
-
-            <article>
-              <small>Money watch</small>
-              <strong>Invoices & follow-ups</strong>
-              <p>Completed work, unpaid invoices and open quotes become prepared reminders or invoice slips.</p>
-            </article>
-
-            <article>
-              <small>Crew brain</small>
-              <strong>Area + workload</strong>
-              <p>When a job has an area, Churvox checks crew fit, availability and assignment risk.</p>
-            </article>
-          </div>
-
-          <footer>
-            <b>Automatic flow</b>
-            <span>Client → Job → Crew → Proof → Invoice → Payment reminder</span>
-          </footer>
-        `;
-        desk.insertAdjacentElement("afterend", radar);
-      } else {
-        const count = radar.querySelector("[data-radar-slip-count]");
-        if (count) count.textContent = String(slipCount);
-      }
-    }
-
-    let timer = null;
-    function schedule() {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(installRadar, 120);
-    }
-
-    window.addEventListener("load", schedule);
-    document.addEventListener("click", schedule, true);
-
-    const observer = new MutationObserver(schedule);
-    observer.observe(document.documentElement, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-    });
-
-    schedule();
-  } catch {
-    // keep app boot safe
-  }
-})();
-
-
-
-
-// PHASE_192_OWNER_PRIORITY_INSIDE_HEADER
-// Owner Priority belongs inside the main header card, not as a separate card.
-(function churvoxOwnerPriorityInsideHeader() {
-  try {
-    if (typeof window === "undefined" || typeof document === "undefined") return;
-
-    function clean(value) {
-      return String(value || "").replace(/\s+/g, " ").trim();
-    }
-
-    function countApprovals() {
-      const slips = Array.from(document.querySelectorAll("button, article, section"))
-        .filter((el) => clean(el.textContent).toLowerCase().includes("open approval slip")).length;
-
-      const heroApproval = Array.from(document.querySelectorAll(".om-gauges article, b, strong"))
-        .map((el) => clean(el.textContent))
-        .find((text) => /^\d+$/.test(text));
-
-      return slips || Number(heroApproval || 0) || 0;
-    }
-
-    function installHeroPriority() {
-      const hero = document.querySelector(".om-hero");
-      if (!hero) return;
-
-      // Hide old separate priority panels so only the header card owns it.
-      const oldPanel = document.getElementById("churvox-phase-189-owner-priority");
-      if (oldPanel) {
-        oldPanel.style.display = "none";
-        oldPanel.setAttribute("aria-hidden", "true");
-      }
-
-      let panel = document.getElementById("churvox-phase-192-hero-priority");
-      const count = countApprovals();
-
-      if (!panel) {
-        panel = document.createElement("aside");
-        panel.id = "churvox-phase-192-hero-priority";
-        panel.innerHTML = `
-          <span>OWNER PRIORITY</span>
-          <strong>Approve the first slip first.</strong>
-          <p>Churvox checked the admin path. Crew, proof, invoices, follow-ups and payment risks are parked for owner approval.</p>
-          <section>
-            <small>Ready now</small>
-            <b data-owner-priority-count>${count}</b>
-          </section>
-        `;
-        hero.appendChild(panel);
-      } else {
-        const countEl = panel.querySelector("[data-owner-priority-count]");
-        if (countEl) countEl.textContent = String(count);
-      }
-
-      if (count <= 0) {
-        const title = panel.querySelector("strong");
-        const body = panel.querySelector("p");
-        if (title) title.textContent = "Nothing urgent right now.";
-        if (body) body.textContent = "Churvox is watching jobs, workers, invoices, quotes and client details. Approval slips appear when admin is ready.";
-      }
-
-      const main = document.querySelector(".om-dashboard-focus");
-      if (main) main.classList.add("cx-phase-192-wide-desk");
-    }
-
-    let timer = null;
-    function schedule() {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(installHeroPriority, 120);
-    }
-
-    window.addEventListener("load", schedule);
-    document.addEventListener("click", schedule, true);
-
-    const observer = new MutationObserver(schedule);
-    observer.observe(document.documentElement, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-    });
-
-    schedule();
-  } catch {
-    // keep app boot safe
-  }
-})();
-
-
-
-
-// PHASE_191_PRIORITY_UNDER_HEADER_WIDE_DESK
-// Move Owner Priority under the hero/header and make Approval Desk use the full working width.
-(function churvoxPriorityUnderHeader() {
-  try {
-    if (typeof window === "undefined" || typeof document === "undefined") return;
-
-    function clean(value) {
-      return String(value || "").replace(/\s+/g, " ").trim();
-    }
-
-    function findHero() {
-      return Array.from(document.querySelectorAll("section, article, div"))
-        .find((el) => {
-          const text = clean(el.textContent).toLowerCase();
-          return text.includes("churvox prepared the admin") && text.includes("approve the next move");
-        });
-    }
-
-    function findApprovalDesk() {
-      return Array.from(document.querySelectorAll("section, article, div"))
-        .find((el) => {
-          const text = clean(el.textContent).toLowerCase();
-          return text.includes("approval desk") && (
-            text.includes("open approval slip") ||
-            text.includes("no approvals waiting")
-          );
-        });
-    }
-
-    function movePriorityPanel() {
-      const hero = findHero();
-      const approvalDesk = findApprovalDesk();
-      const panel = document.getElementById("churvox-phase-189-owner-priority");
-
-      if (!hero || !approvalDesk || !panel) return;
-
-      const layoutParent = approvalDesk.parentElement;
-      if (layoutParent) {
-        layoutParent.classList.add("cx-phase-191-wide-approval-layout");
-      }
-
-      const heroParent = hero.parentElement;
-      if (heroParent) {
-        heroParent.classList.add("cx-phase-191-wide-hero-layout");
-      }
-
-      if (panel.previousElementSibling !== hero) {
-        hero.insertAdjacentElement("afterend", panel);
-      }
-
-      panel.classList.add("cx-phase-191-priority-under-header");
-    }
-
-    let timer = null;
-    function schedule() {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(movePriorityPanel, 120);
-    }
-
-    window.addEventListener("load", schedule);
-    document.addEventListener("click", schedule, true);
-
-    const observer = new MutationObserver(schedule);
-    observer.observe(document.documentElement, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-    });
-
-    schedule();
-  } catch {
-    // keep app safe
-  }
-})();
-
-
-
-// PHASE_190_APPROVAL_DESK_WARNING_AND_PRIORITY_POLISH
-// Clean the owner view: hide scary optional sync warnings and make Owner Priority
-// match the real approval count.
-(function churvoxApprovalDeskPolish() {
-  try {
-    if (typeof window === "undefined" || typeof document === "undefined") return;
-
-    function clean(value) {
-      return String(value || "").replace(/\s+/g, " ").trim();
-    }
-
-    function hideOptionalWarnings() {
-      Array.from(document.querySelectorAll("section, article, div, p")).forEach((el) => {
-        const text = clean(el.textContent).toLowerCase();
-        if (
-          text.includes("machine warning") ||
-          text.includes("live data is taking longer") ||
-          text.includes("some live data is still syncing")
-        ) {
-          el.style.display = "none";
-          el.setAttribute("aria-hidden", "true");
-        }
-      });
-    }
-
-    function approvalCount() {
-      const headerCount = Array.from(document.querySelectorAll("b, strong"))
-        .map((el) => clean(el.textContent))
-        .find((text) => /^\d+$/.test(text));
-
-      const slips = Array.from(document.querySelectorAll("button, article, section"))
-        .filter((el) => clean(el.textContent).toLowerCase().includes("open approval slip")).length;
-
-      return slips || Number(headerCount || 0) || 0;
-    }
-
-    function updatePriorityPanel() {
-      const panel = document.getElementById("churvox-phase-189-owner-priority");
-
-      const count = approvalCount();
-      const countEl = panel.querySelector("[data-priority-count]");
-      if (countEl) countEl.textContent = String(count);
-
-      const title = panel.querySelector("header strong");
-      const body = panel.querySelector("header p");
-      const footerTitle = panel.querySelector("footer strong");
-      const footerBody = panel.querySelector("footer p");
-
-      if (count <= 0) {
-        if (title) title.textContent = "Nothing needs approval right now.";
-        if (body) body.textContent = "Churvox is still watching jobs, workers, quotes, invoices and missing client details. When admin is ready, it will appear here.";
-        if (footerTitle) footerTitle.textContent = "Live watchlist";
-        if (footerBody) footerBody.textContent = "New work, proof, invoice risk and follow-ups will refresh the desk automatically.";
-      } else {
-        if (title) title.textContent = "Approve the first slip first.";
-        if (body) body.textContent = "Churvox has already checked the admin path. Crew, proof, invoices, follow-ups and payment risks are parked here for owner approval.";
-        if (footerTitle) footerTitle.textContent = "Next move";
-        if (footerBody) footerBody.textContent = "Open the top approval slip, check what Churvox prepared, then approve or edit.";
-      }
-    }
-
-    let timer = null;
-    function schedule() {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(() => {
-        hideOptionalWarnings();
-        updatePriorityPanel();
-      }, 100);
-    }
-
-    window.addEventListener("load", schedule);
-    document.addEventListener("click", schedule, true);
-
-    const observer = new MutationObserver(schedule);
-    observer.observe(document.documentElement, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-    });
-
-    schedule();
-  } catch {
-    // keep app boot safe
-  }
-})();
-
-
-
-
-// PHASE_189_FORCE_OWNER_PRIORITY_BESIDE_APPROVAL_DESK
-// Keeps Approval Desk as the main working screen:
-// compact hero, force a right-side Owner Priority panel if React live feed is missing.
-(function churvoxForceOwnerPriorityPanel() {
-  try {
-    if (typeof window === "undefined" || typeof document === "undefined") return;
-
-    function clean(value) {
-      return String(value || "").replace(/\s+/g, " ").trim();
-    }
-
-    function findApprovalDesk() {
-      const candidates = Array.from(document.querySelectorAll("section, article, div, main"));
-      return candidates.find((el) => {
-        const text = clean(el.textContent).toLowerCase();
-        return text.includes("approval desk") && text.includes("open approval slip");
-      });
-    }
-
-    function countApprovalSlips() {
-      return Array.from(document.querySelectorAll("button, article, section"))
-        .filter((el) => clean(el.textContent).toLowerCase().includes("open approval slip")).length;
-    }
-
-    function installPanel() {
-      const approvalDesk = findApprovalDesk();
-      if (!approvalDesk) return;
-
-      const existing = document.getElementById("churvox-phase-189-owner-priority");
-      if (existing) {
-        const count = countApprovalSlips();
-        const countEl = existing.querySelector("[data-priority-count]");
-        if (countEl) countEl.textContent = String(count || "");
-        return;
-      }
-
-      const shell = document.createElement("aside");
-      shell.id = "churvox-phase-189-owner-priority";
-      shell.innerHTML = `
-        <header>
-          <span>OWNER PRIORITY</span>
-          <strong>Approve the first slip first.</strong>
-          <p>Churvox has already checked the admin path. Crew, proof, invoices, follow-ups and payment risks are parked here for owner approval.</p>
-        </header>
-
-        <section class="cx-priority-count">
-          <small>Ready now</small>
-          <b data-priority-count>${countApprovalSlips() || ""}</b>
-        </section>
-
-        <div class="cx-priority-flow">
-          <article><i></i><span>Work comes in</span></article>
-          <article><i></i><span>Churvox checks it</span></article>
-          <article><i></i><span>Admin is prepared</span></article>
-          <article><i></i><span>Owner approves</span></article>
-        </div>
-
-        <footer>
-          <strong>Live watchlist</strong>
-          <p>Worker updates, new jobs, invoices, quotes and missing client details refresh the desk automatically.</p>
-        </footer>
-      `;
-
-      approvalDesk.insertAdjacentElement("afterend", shell);
-
-      const parent = approvalDesk.parentElement;
-      if (parent) {
-        parent.classList.add("cx-phase-189-approval-layout");
-      }
-    }
-
-    let timer = null;
-    function schedule() {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(installPanel, 120);
-    }
-
-    window.addEventListener("load", schedule);
-    document.addEventListener("click", schedule, true);
-
-    const observer = new MutationObserver(schedule);
-    observer.observe(document.documentElement, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-    });
-
-    schedule();
-  } catch {
-    // keep app boot safe
-  }
-})();
-
-
-
-
-// PHASE_182_GLOBAL_AI_AUTO_REFRESH_AND_CREW_MATCH
-// When records change, Approval Desk refreshes. When area/region/address is selected,
-// Churvox immediately suggests a crew match from live worker context.
-(function churvoxAutoAiAdminWiring() {
-  try {
-    if (typeof window === "undefined" || typeof document === "undefined") return;
-
-    const API_CHANGE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
-    const IMPORTANT_PATHS = [
-      "/jobs",
-      "/clients",
-      "/quotes",
-      "/invoices",
-      "/team",
-      "/worker",
-      "/ai",
-    ];
-
-    function normalise(value) {
-      return String(value || "").toLowerCase().trim();
-    }
-
-    function dispatchRefresh(reason) {
-      try {
-        window.dispatchEvent(new CustomEvent("churvox:refresh-live-data", {
-          detail: { reason, at: new Date().toISOString() },
-        }));
-      } catch {
-        // safe
-      }
-    }
-
-    if (!window.__CHURVOX_PHASE_182_FETCH_PATCHED__) {
-      window.__CHURVOX_PHASE_182_FETCH_PATCHED__ = true;
-      const originalFetch = window.fetch;
-
-      window.fetch = async function churvoxAiAwareFetch(input, init) {
-        const method = String((init && init.method) || "GET").toUpperCase();
-        const url = typeof input === "string" ? input : String((input && input.url) || "");
-        const touchesImportantRecord = IMPORTANT_PATHS.some((path) => url.includes(path));
-
-        const response = await originalFetch.apply(this, arguments);
-
-        if (API_CHANGE_METHODS.has(method) && touchesImportantRecord && response && response.ok) {
-          window.setTimeout(() => dispatchRefresh(`record-${method.toLowerCase()}`), 450);
-          window.setTimeout(() => dispatchRefresh(`record-${method.toLowerCase()}-settled`), 1800);
-        }
-
-        return response;
-      };
-    }
-
-    function workerName(worker, fallback = "Worker") {
-      return (
-        worker?.name ||
-        worker?.full_name ||
-        worker?.worker_name ||
-        worker?.email ||
-        fallback
-      );
-    }
-
-    function workerRegion(worker) {
-      return normalise(worker?.region || worker?.service_area || worker?.area || worker?.suburb || worker?.location);
-    }
-
-    function workerStatus(worker) {
-      return normalise(worker?.status || worker?.availability || "available");
-    }
-
-    function fieldLooksLikeAreaField(el) {
-      if (!el) return false;
-      const text = [
-        el.name,
-        el.id,
-        el.placeholder,
-        el.getAttribute("aria-label"),
-        el.closest("label")?.innerText,
-      ].map(normalise).join(" ");
-
-      return /area|region|suburb|city|address|location|site/.test(text);
-    }
-
-    function scoreWorker(worker, areaValue) {
-      const area = normalise(areaValue);
-      const region = workerRegion(worker);
-      const status = workerStatus(worker);
-      let score = 0;
-      const reasons = [];
-
-      if (region && area && (area.includes(region) || region.includes(area))) {
-        score += 6;
-        reasons.push(`works in ${region}`);
-      }
-
-      if (!status.includes("busy") && !status.includes("off") && !status.includes("leave")) {
-        score += 3;
-        reasons.push("appears available");
-      }
-
-      if (worker?.email || worker?.phone || worker?.mobile) {
-        score += 1;
-        reasons.push("has contact details saved");
-      }
-
-      if (!reasons.length) reasons.push("best available worker from the crew list");
-
-      return { worker, score, reasons };
-    }
-
-    function removeCrewPopup() {
-      document.getElementById("churvox-phase-182-crew-match")?.remove();
-    }
-
-    function showCrewSuggestion(inputValue) {
-      const ctx = window.__CHURVOX_LIVE_AI_CONTEXT__ || {};
-      const team = Array.isArray(ctx.team) ? ctx.team : [];
-
-      if (!team.length || !String(inputValue || "").trim()) return;
-
-      const best = team
-        .map((worker) => scoreWorker(worker, inputValue))
-        .sort((a, b) => b.score - a.score)[0];
-
-      if (!best || !best.worker) return;
-
-      const name = workerName(best.worker);
-      const reasons = best.reasons.slice(0, 3);
-      const area = String(inputValue || "").trim();
-
-      removeCrewPopup();
-
-      const popup = document.createElement("section");
-      popup.id = "churvox-phase-182-crew-match";
-      popup.innerHTML = `
-        <button type="button" class="cx-crew-match-close" aria-label="Close">×</button>
-        <span>CREW MATCH READY</span>
-        <strong>${name}</strong>
-        <p>Churvox checked the selected area <b>${area}</b> and matched the best available worker.</p>
-        <ul>
-          ${reasons.map((reason) => `<li>${reason}</li>`).join("")}
-        </ul>
-        <small>Saved as an Approval Desk suggestion. Owner approves before anything changes.</small>
-      `;
-
-      document.body.appendChild(popup);
-      popup.querySelector(".cx-crew-match-close")?.addEventListener("click", removeCrewPopup);
-
-      try {
-        localStorage.setItem("churvox_last_crew_match_suggestion", JSON.stringify({
-          worker: name,
-          area,
-          reasons,
-          at: new Date().toISOString(),
-        }));
-      } catch {
-        // safe
-      }
-
-      window.setTimeout(() => {
-        const current = document.getElementById("churvox-phase-182-crew-match");
-        if (current) current.classList.add("settled");
-      }, 6500);
-    }
-
-    function handleAreaInput(event) {
-      const el = event.target;
-      if (!el || !["INPUT", "SELECT", "TEXTAREA"].includes(el.tagName)) return;
-      if (!fieldLooksLikeAreaField(el)) return;
-
-      const value = el.value || el.textContent || "";
-      if (String(value).trim().length < 3) return;
-
-      window.clearTimeout(window.__CHURVOX_PHASE_182_CREW_TIMER__);
-      window.__CHURVOX_PHASE_182_CREW_TIMER__ = window.setTimeout(() => showCrewSuggestion(value), 360);
-    }
-
-    document.addEventListener("input", handleAreaInput, true);
-    document.addEventListener("change", handleAreaInput, true);
-
-    if (!document.getElementById("churvox-phase-182-ai-css")) {
-      const style = document.createElement("style");
-      style.id = "churvox-phase-182-ai-css";
-      style.textContent = `
-        #churvox-phase-182-crew-match {
-          position: fixed;
-          right: 22px;
-          bottom: 22px;
-          z-index: 999999;
-          width: min(390px, calc(100vw - 28px));
-          padding: 22px;
-          border-radius: 28px;
-          background:
-            radial-gradient(circle at 90% 0%, rgba(184, 242, 74, 0.22), transparent 10rem),
-            linear-gradient(145deg, #14130f, #242116);
-          color: #fffaf0;
-          border: 1px solid rgba(184, 242, 74, 0.28);
-          box-shadow: 0 30px 90px rgba(20, 19, 15, 0.35);
-          transform: translateY(0);
-          animation: churvoxCrewMatchIn 280ms ease both;
-          font-family: inherit;
-        }
-
-        #churvox-phase-182-crew-match.settled {
-          opacity: 0.92;
-        }
-
-        #churvox-phase-182-crew-match span {
-          display: inline-flex;
-          margin-bottom: 10px;
-          padding: 7px 10px;
-          border-radius: 999px;
-          background: rgba(184, 242, 74, 0.14);
-          color: #b8f24a;
-          font-size: 10px;
-          font-weight: 950;
-          letter-spacing: 0.13em;
-        }
-
-        #churvox-phase-182-crew-match strong {
-          display: block;
-          color: #fffaf0;
-          font-size: 28px;
-          line-height: 0.95;
-          letter-spacing: -0.05em;
-          font-weight: 950;
-        }
-
-        #churvox-phase-182-crew-match p,
-        #churvox-phase-182-crew-match small {
-          color: rgba(255, 250, 240, 0.74);
-          font-weight: 760;
-          line-height: 1.45;
-        }
-
-        #churvox-phase-182-crew-match ul {
-          display: grid;
-          gap: 6px;
-          padding-left: 18px;
-          margin: 14px 0;
-          color: #fffaf0;
-          font-weight: 850;
-        }
-
-        #churvox-phase-182-crew-match .cx-crew-match-close {
-          position: absolute;
-          right: 12px;
-          top: 12px;
-          width: 32px;
-          height: 32px;
-          border: 0;
-          border-radius: 999px;
-          background: rgba(255, 250, 240, 0.12);
-          color: #fffaf0;
-          cursor: pointer;
-        }
-
-        @keyframes churvoxCrewMatchIn {
-          from { opacity: 0; transform: translateY(20px) scale(0.98); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-      `;
-      document.head.appendChild(style);
-    }
-  } catch {
-    // keep app boot safe
-  }
-})();
-
-
-
-
-// PHASE_181_APPROVAL_DESK_NON_BORING_LAYOUT
-// Last-mile visible wording cleanup only. Does not touch API paths or logic.
-(function churvoxApprovalDeskWording() {
-  try {
-    if (typeof window === "undefined" || typeof document === "undefined") return;
-
-    const replacements = new Map([
-      ["Operator Machine", "Approval Desk"],
-      ["Smart Hub", "Approval Desk"],
-      ["AI admin machine", "AI-prepared admin"],
-      ["Work Slip", "Approval Slip"],
-      ["Open Work Slip", "Open Approval Slip"],
-      ["Job Queue", "Work"],
-      ["JOB QUEUE", "WORK"],
-      ["Proof-to-Paid", "Proof & Pay"],
-      ["Start the machine", "Start the approval desk"],
-      ["Open Operator Machine", "Open Approval Desk"],
-    ]);
-
-    function patchText() {
-      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-      const nodes = [];
-      while (walker.nextNode()) nodes.push(walker.currentNode);
-
-      nodes.forEach((node) => {
-        let text = node.nodeValue || "";
-        let next = text;
-        replacements.forEach((value, key) => {
-          next = next.split(key).join(value);
-        });
-        if (next !== text) node.nodeValue = next;
-      });
-    }
-
-    let timer = null;
-    function schedule() {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(patchText, 80);
-    }
-
-    window.addEventListener("load", schedule);
-    document.addEventListener("click", schedule, true);
-
-    const observer = new MutationObserver(schedule);
-    observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
-
-    schedule();
-  } catch {
-    // keep app boot safe
-  }
-})();
+
+// PHASE_199 removed old fighting dashboard runtime design patches
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2790,13 +1680,15 @@ root.render(
 
 
 
-window.__CHURVOX_FINAL_EXACT_MOCKUP__ = "PHASE_198_FINAL_EXACT_MOCKUP_DASHBOARD_DESIGN_20260517012743";
 
-// PHASE_198_FINAL_EXACT_MOCKUP_DASHBOARD_DESIGN
-// Final locked visual layer.
-// Matches the generated design: black nav, large dark/copper hero,
-// right-side metric icons, 3 important cards, clean Approval Desk rows.
-(function churvoxFinalExactMockupDashboard() {
+
+
+
+
+// PHASE_199_SINGLE_LOCKED_MOCKUP_DESIGN_RUNTIME
+window.__CHURVOX_SINGLE_LOCKED_DESIGN__ = "PHASE_199_SINGLE_LOCKED_MOCKUP_DESIGN_RUNTIME";
+
+(function churvoxSingleLockedMockupDesign() {
   try {
     if (typeof window === "undefined" || typeof document === "undefined") return;
 
@@ -2809,40 +1701,22 @@ window.__CHURVOX_FINAL_EXACT_MOCKUP__ = "PHASE_198_FINAL_EXACT_MOCKUP_DASHBOARD_
       return match ? Number(match[0]) : 0;
     }
 
-    function applyClass() {
-      document.documentElement.classList.add("cx-exact-mockup-final");
-      if (document.body) document.body.classList.add("cx-exact-mockup-final");
-    }
-
-    function findApprovalDesk() {
-      return Array.from(document.querySelectorAll("section, article, div")).find((el) => {
-        const text = clean(el.textContent).toLowerCase();
-        return text.includes("approval desk") && text.includes("open approval slip");
-      });
-    }
-
     function approvalCount() {
-      const deskCount = document.querySelector(".om-approval-desk-main > header b, .cx-exact-approval-desk > header b");
-      const deskNumber = numberFrom(deskCount && deskCount.textContent);
-      if (deskNumber > 0) return deskNumber;
+      const deskCount = document.querySelector(".om-approval-desk-main > header b");
+      const fromDesk = numberFrom(deskCount && deskCount.textContent);
+      if (fromDesk > 0) return fromDesk;
 
-      const approvalGauge = Array.from(document.querySelectorAll(".om-gauges article, article, section")).find((el) =>
-        clean(el.textContent).toLowerCase().includes("approval")
-      );
-      const gaugeNumber = numberFrom(approvalGauge && approvalGauge.textContent);
-      if (gaugeNumber > 0) return gaugeNumber;
-
-      return Array.from(document.querySelectorAll("button, article, section, div"))
+      const slips = Array.from(document.querySelectorAll(".om-approval-ticket, button, article, section"))
         .filter((el) => clean(el.textContent).toLowerCase().includes("open approval slip")).length;
+      return slips || 0;
     }
 
     function invoiceCount() {
-      const invoiceSlips = Array.from(document.querySelectorAll(".om-approval-ticket, button, article, section"))
+      return Array.from(document.querySelectorAll(".om-approval-ticket, button, article, section"))
         .filter((el) => {
           const text = clean(el.textContent).toLowerCase();
           return text.includes("invoice") && text.includes("open approval slip");
         }).length;
-      return invoiceSlips || 0;
     }
 
     function crewCount() {
@@ -2858,24 +1732,599 @@ window.__CHURVOX_FINAL_EXACT_MOCKUP__ = "PHASE_198_FINAL_EXACT_MOCKUP_DASHBOARD_
         // safe fallback
       }
 
-      const workerSlips = Array.from(document.querySelectorAll(".om-approval-ticket, button, article, section"))
+      return Array.from(document.querySelectorAll(".om-approval-ticket, button, article, section"))
         .filter((el) => {
           const text = clean(el.textContent).toLowerCase();
           return (text.includes("worker") || text.includes("crew")) && text.includes("open approval slip");
         }).length;
-
-      return workerSlips || 0;
     }
 
-    function planName() {
-      const planGauge = Array.from(document.querySelectorAll(".om-gauges article, article")).find((el) =>
-        clean(el.textContent).toLowerCase().includes("plan")
-      );
-      const text = clean(planGauge && planGauge.textContent).replace(/^plan/i, "").trim();
-      return text || "Command";
+    function applyClass() {
+      [
+        "cx-foundry-reset",
+        "cx-midnight-clay",
+        "cx-premium-approval-final",
+        "cx-mockup-final",
+        "cx-exact-mockup-final"
+      ].forEach((cls) => {
+        document.documentElement.classList.remove(cls);
+        document.body && document.body.classList.remove(cls);
+      });
+
+      document.documentElement.classList.add("cx-churvox-locked");
+      document.body && document.body.classList.add("cx-churvox-locked");
     }
 
-    function removeOldExperimentElements() {
+    function injectFinalCss() {
+      let style = document.getElementById("churvox-phase-199-style-lock");
+      if (style) return;
+
+      style = document.createElement("style");
+      style.id = "churvox-phase-199-style-lock";
+      style.textContent = `
+        :root {
+          --lock-ink: #0f0e0c;
+          --lock-ink-2: #1b1713;
+          --lock-copper: #c65f25;
+          --lock-copper-2: #dc7a32;
+          --lock-paper: #fff8ef;
+          --lock-sand: #f2e7d8;
+          --lock-muted: #6c6256;
+          --lock-moss: #66794e;
+          --lock-shadow: 0 20px 64px rgba(15, 14, 12, 0.13);
+          --lock-shadow-strong: 0 34px 110px rgba(15, 14, 12, 0.22);
+        }
+
+        html.cx-churvox-locked,
+        html.cx-churvox-locked body,
+        html.cx-churvox-locked #root {
+          background: linear-gradient(135deg, #f2e7d8 0%, #e8d7c0 52%, #dac3a6 100%) !important;
+          color: var(--lock-ink) !important;
+        }
+
+        html.cx-churvox-locked .om-shell {
+          display: block !important;
+          width: 100vw !important;
+          min-height: 100vh !important;
+          overflow-x: hidden !important;
+          background: linear-gradient(135deg, #f2e7d8 0%, #e8d7c0 52%, #dac3a6 100%) !important;
+        }
+
+        html.cx-churvox-locked .om-nav {
+          position: sticky !important;
+          top: 0 !important;
+          z-index: 1000 !important;
+          width: 100vw !important;
+          min-height: 74px !important;
+          display: grid !important;
+          grid-template-columns: 250px minmax(0, 1fr) auto !important;
+          align-items: center !important;
+          gap: 18px !important;
+          padding: 10px 32px !important;
+          background: rgba(15,14,12,0.99) !important;
+          border: 0 !important;
+          border-bottom: 1px solid rgba(220,122,50,0.24) !important;
+          box-shadow: 0 14px 44px rgba(15,14,12,0.18) !important;
+        }
+
+        html.cx-churvox-locked .om-brand {
+          height: 54px !important;
+          min-width: 220px !important;
+          display: flex !important;
+          align-items: center !important;
+          gap: 14px !important;
+          padding: 0 !important;
+          border: 0 !important;
+          background: transparent !important;
+        }
+
+        html.cx-churvox-locked .om-brand i {
+          width: 46px !important;
+          height: 46px !important;
+          min-width: 46px !important;
+          border-radius: 12px !important;
+          background: linear-gradient(135deg, #c65f25, #733419) !important;
+          box-shadow: 0 0 24px rgba(215,165,90,0.25) !important;
+        }
+
+        html.cx-churvox-locked .om-brand strong {
+          color: var(--lock-paper) !important;
+          font-family: Georgia, "Times New Roman", serif !important;
+          font-size: 27px !important;
+          line-height: 0.95 !important;
+          letter-spacing: -0.045em !important;
+          font-weight: 900 !important;
+        }
+
+        html.cx-churvox-locked .om-brand small {
+          color: var(--lock-copper-2) !important;
+          font-size: 12px !important;
+          font-weight: 850 !important;
+        }
+
+        html.cx-churvox-locked .om-nav nav {
+          display: flex !important;
+          align-items: center !important;
+          gap: 18px !important;
+          min-height: 54px !important;
+          overflow-x: auto !important;
+        }
+
+        html.cx-churvox-locked .om-nav nav button {
+          height: 54px !important;
+          padding: 0 6px !important;
+          border-radius: 0 !important;
+          border: 0 !important;
+          border-bottom: 3px solid transparent !important;
+          background: transparent !important;
+          color: rgba(255,248,239,0.92) !important;
+        }
+
+        html.cx-churvox-locked .om-nav nav button.active {
+          border-bottom-color: var(--lock-copper-2) !important;
+        }
+
+        html.cx-churvox-locked .om-nav nav button span {
+          color: rgba(255,248,239,0.96) !important;
+          font-size: 14px !important;
+          font-weight: 850 !important;
+        }
+
+        html.cx-churvox-locked .om-nav nav button small {
+          display: none !important;
+        }
+
+        html.cx-churvox-locked .om-logout {
+          position: static !important;
+          height: 42px !important;
+          min-height: 42px !important;
+          padding: 10px 16px !important;
+          border-radius: 999px !important;
+          background: rgba(255,248,239,0.07) !important;
+          color: var(--lock-paper) !important;
+          border: 1px solid rgba(255,248,239,0.08) !important;
+        }
+
+        html.cx-churvox-locked .om-main {
+          width: 100vw !important;
+          max-width: none !important;
+          margin: 0 !important;
+          padding: 22px 36px 52px !important;
+        }
+
+        html.cx-churvox-locked .om-hero {
+          position: relative !important;
+          width: 100% !important;
+          min-height: 385px !important;
+          display: grid !important;
+          grid-template-columns: minmax(0, 0.92fr) minmax(540px, 1.08fr) !important;
+          gap: 30px !important;
+          align-items: stretch !important;
+          margin: 0 0 22px !important;
+          padding: 54px 58px !important;
+          border-radius: 30px !important;
+          overflow: hidden !important;
+          background: linear-gradient(116deg, rgba(15,14,12,0.99) 0%, rgba(27,23,19,0.99) 50%, rgba(198,95,37,0.94) 50%, rgba(220,122,50,0.95) 100%) !important;
+          border: 1px solid rgba(15,14,12,0.14) !important;
+          box-shadow: var(--lock-shadow-strong) !important;
+        }
+
+        html.cx-churvox-locked .om-hero::before,
+        html.cx-churvox-locked .om-hero::after {
+          display: none !important;
+        }
+
+        html.cx-churvox-locked .om-hero > div:first-child {
+          align-self: center !important;
+          max-width: 620px !important;
+        }
+
+        html.cx-churvox-locked .om-hero > div:first-child span {
+          color: var(--lock-copper-2) !important;
+          font-size: 12px !important;
+          font-weight: 950 !important;
+          letter-spacing: 0.16em !important;
+        }
+
+        html.cx-churvox-locked .om-hero h1 {
+          max-width: 620px !important;
+          margin: 20px 0 18px !important;
+          color: var(--lock-paper) !important;
+          font-family: Georgia, "Times New Roman", serif !important;
+          font-size: clamp(54px, 5.8vw, 96px) !important;
+          line-height: 0.92 !important;
+          letter-spacing: -0.065em !important;
+          font-weight: 900 !important;
+        }
+
+        html.cx-churvox-locked .om-hero p {
+          max-width: 560px !important;
+          color: rgba(255,248,239,0.82) !important;
+          font-size: 16px !important;
+          line-height: 1.55 !important;
+          font-weight: 650 !important;
+        }
+
+        html.cx-churvox-locked .om-gauges {
+          display: none !important;
+        }
+
+        html.cx-churvox-locked #churvox-design-lock-hero-metrics {
+          grid-column: 2 !important;
+          align-self: center !important;
+          display: grid !important;
+          grid-template-columns: repeat(4, minmax(0,1fr)) !important;
+          min-height: 214px !important;
+        }
+
+        html.cx-churvox-locked #churvox-design-lock-hero-metrics article {
+          display: grid !important;
+          place-items: center !important;
+          text-align: center !important;
+          align-content: center !important;
+          gap: 14px !important;
+          padding: 20px !important;
+          border-left: 1px solid rgba(255,248,239,0.17) !important;
+          color: var(--lock-paper) !important;
+        }
+
+        html.cx-churvox-locked #churvox-design-lock-hero-metrics article:first-child {
+          border-left: 0 !important;
+        }
+
+        html.cx-churvox-locked #churvox-design-lock-hero-metrics i {
+          width: 64px !important;
+          height: 64px !important;
+          display: grid !important;
+          place-items: center !important;
+          border-radius: 18px !important;
+          background: rgba(255,248,239,0.12) !important;
+          border: 1px solid rgba(255,248,239,0.18) !important;
+          color: var(--lock-paper) !important;
+          font-style: normal !important;
+          font-size: 28px !important;
+        }
+
+        html.cx-churvox-locked #churvox-design-lock-hero-metrics span {
+          color: rgba(255,248,239,0.70) !important;
+          font-size: 12px !important;
+          font-weight: 950 !important;
+          letter-spacing: 0.16em !important;
+          text-transform: uppercase !important;
+        }
+
+        html.cx-churvox-locked #churvox-design-lock-hero-metrics strong {
+          color: var(--lock-paper) !important;
+          font-family: Georgia, "Times New Roman", serif !important;
+          font-size: clamp(30px, 2.8vw, 46px) !important;
+          line-height: 0.9 !important;
+          letter-spacing: -0.045em !important;
+          font-weight: 850 !important;
+        }
+
+        html.cx-churvox-locked #churvox-design-lock-note {
+          position: absolute !important;
+          left: 58px !important;
+          bottom: 34px !important;
+          width: min(430px, 40vw) !important;
+          display: grid !important;
+          grid-template-columns: auto auto 1fr !important;
+          align-items: center !important;
+          gap: 10px !important;
+          padding: 12px 14px !important;
+          border-radius: 12px !important;
+          background: rgba(255,248,239,0.08) !important;
+          border: 1px solid rgba(255,248,239,0.08) !important;
+          color: var(--lock-paper) !important;
+        }
+
+        html.cx-churvox-locked #churvox-design-lock-note b {
+          color: #d7a55a !important;
+          font-size: 14px !important;
+        }
+
+        html.cx-churvox-locked #churvox-design-lock-note strong {
+          color: var(--lock-paper) !important;
+          font-size: 12px !important;
+          font-weight: 950 !important;
+          white-space: nowrap !important;
+        }
+
+        html.cx-churvox-locked #churvox-design-lock-note span {
+          color: rgba(255,248,239,0.72) !important;
+          font-size: 11px !important;
+          line-height: 1.35 !important;
+        }
+
+        html.cx-churvox-locked #churvox-design-lock-front-cards {
+          display: grid !important;
+          grid-template-columns: repeat(3, minmax(0,1fr)) !important;
+          gap: 18px !important;
+          margin: 0 0 22px !important;
+        }
+
+        html.cx-churvox-locked #churvox-design-lock-front-cards article {
+          min-height: 160px !important;
+          display: grid !important;
+          grid-template-columns: 84px 1fr !important;
+          gap: 20px !important;
+          align-items: center !important;
+          padding: 26px !important;
+          border-radius: 24px !important;
+          background: rgba(255,248,239,0.92) !important;
+          border: 1px solid rgba(15,14,12,0.10) !important;
+          box-shadow: var(--lock-shadow) !important;
+        }
+
+        html.cx-churvox-locked #churvox-design-lock-front-cards i {
+          width: 70px !important;
+          height: 70px !important;
+          display: grid !important;
+          place-items: center !important;
+          border-radius: 999px !important;
+          background: var(--lock-ink) !important;
+          color: var(--lock-paper) !important;
+          font-style: normal !important;
+          font-size: 28px !important;
+        }
+
+        html.cx-churvox-locked #churvox-design-lock-front-cards article:nth-child(2) i {
+          background: var(--lock-moss) !important;
+        }
+
+        html.cx-churvox-locked #churvox-design-lock-front-cards article:nth-child(3) i {
+          background: #362f28 !important;
+        }
+
+        html.cx-churvox-locked #churvox-design-lock-front-cards span {
+          color: var(--lock-copper) !important;
+          font-size: 12px !important;
+          font-weight: 950 !important;
+          letter-spacing: 0.13em !important;
+          text-transform: uppercase !important;
+        }
+
+        html.cx-churvox-locked #churvox-design-lock-front-cards strong {
+          display: block !important;
+          margin: 8px 0 !important;
+          color: var(--lock-ink) !important;
+          font-family: Georgia, "Times New Roman", serif !important;
+          font-size: 42px !important;
+          line-height: 0.9 !important;
+          font-weight: 900 !important;
+          letter-spacing: -0.04em !important;
+        }
+
+        html.cx-churvox-locked #churvox-design-lock-front-cards p {
+          margin: 0 !important;
+          color: var(--lock-muted) !important;
+          font-size: 15px !important;
+          line-height: 1.42 !important;
+        }
+
+        html.cx-churvox-locked .om-dashboard-focus,
+        html.cx-churvox-locked .cx-design-lock-desk-wrap {
+          display: block !important;
+          width: 100% !important;
+        }
+
+        html.cx-churvox-locked .om-dashboard-focus-card,
+        html.cx-churvox-locked .om-dashboard-quiet-tools,
+        html.cx-churvox-locked .om-dashboard-tools-single,
+        html.cx-churvox-locked .om-warning,
+        html.cx-churvox-locked .om-approval-live-feed,
+        html.cx-churvox-locked #churvox-phase-189-owner-priority,
+        html.cx-churvox-locked #churvox-phase-192-hero-priority,
+        html.cx-churvox-locked #churvox-phase-193-ai-admin-radar,
+        html.cx-churvox-locked #churvox-phase-195-status-strip,
+        html.cx-churvox-locked #churvox-phase-196-front-strip,
+        html.cx-churvox-locked #churvox-phase-196-inline-note,
+        html.cx-churvox-locked #churvox-final-front-cards,
+        html.cx-churvox-locked #churvox-final-hero-note,
+        html.cx-churvox-locked #churvox-phase-197-front-cards,
+        html.cx-churvox-locked #churvox-phase-197-hero-metrics,
+        html.cx-churvox-locked #churvox-phase-198-front-cards,
+        html.cx-churvox-locked #churvox-phase-198-hero-metrics,
+        html.cx-churvox-locked #churvox-phase-198-hero-note {
+          display: none !important;
+        }
+
+        html.cx-churvox-locked .om-approval-desk-main,
+        html.cx-churvox-locked .cx-design-lock-approval-desk {
+          width: 100% !important;
+          margin: 0 !important;
+          padding: 42px !important;
+          border-radius: 26px !important;
+          background: rgba(255,248,239,0.88) !important;
+          border: 1px solid rgba(15,14,12,0.10) !important;
+          box-shadow: var(--lock-shadow) !important;
+        }
+
+        html.cx-churvox-locked .om-approval-desk-main > header {
+          display: grid !important;
+          grid-template-columns: minmax(0,1fr) auto auto !important;
+          align-items: start !important;
+          gap: 20px !important;
+          margin-bottom: 24px !important;
+        }
+
+        html.cx-churvox-locked .om-approval-desk-main > header span {
+          color: var(--lock-copper) !important;
+          font-size: 12px !important;
+          letter-spacing: 0.14em !important;
+          font-weight: 950 !important;
+        }
+
+        html.cx-churvox-locked .om-approval-desk-main > header h2 {
+          margin: 10px 0 8px !important;
+          color: var(--lock-ink) !important;
+          font-family: Georgia, "Times New Roman", serif !important;
+          font-size: clamp(42px, 4vw, 72px) !important;
+          line-height: 0.94 !important;
+          letter-spacing: -0.065em !important;
+          font-weight: 900 !important;
+        }
+
+        html.cx-churvox-locked .om-approval-desk-main > header p {
+          max-width: 720px !important;
+          color: var(--lock-muted) !important;
+          font-size: 15px !important;
+          line-height: 1.45 !important;
+        }
+
+        html.cx-churvox-locked .om-approval-desk-main > header b {
+          min-width: 66px !important;
+          min-height: 46px !important;
+          display: grid !important;
+          place-items: center !important;
+          border-radius: 999px !important;
+          background: rgba(198,95,37,0.14) !important;
+          color: var(--lock-copper) !important;
+          font-size: 26px !important;
+        }
+
+        html.cx-churvox-locked .om-approval-list {
+          display: grid !important;
+          gap: 0 !important;
+          border: 1px solid rgba(15,14,12,0.10) !important;
+          border-radius: 20px !important;
+          overflow: hidden !important;
+          background: rgba(255,248,239,0.75) !important;
+        }
+
+        html.cx-churvox-locked .om-approval-ticket {
+          min-height: 108px !important;
+          display: grid !important;
+          grid-template-columns: minmax(0,1fr) minmax(185px,0.30fr) auto auto !important;
+          align-items: center !important;
+          gap: 18px !important;
+          padding: 20px 26px !important;
+          border-radius: 0 !important;
+          border: 0 !important;
+          border-bottom: 1px solid rgba(15,14,12,0.09) !important;
+          background: rgba(255,248,239,0.72) !important;
+          box-shadow: none !important;
+        }
+
+        html.cx-churvox-locked .om-approval-ticket:last-child {
+          border-bottom: 0 !important;
+        }
+
+        html.cx-churvox-locked .om-approval-ticket::before {
+          background: var(--lock-copper) !important;
+          box-shadow: none !important;
+        }
+
+        html.cx-churvox-locked .om-approval-ticket:nth-child(2n)::before {
+          background: var(--lock-moss) !important;
+        }
+
+        html.cx-churvox-locked .om-approval-ticket span {
+          color: var(--lock-copper) !important;
+          font-size: 10px !important;
+          font-weight: 950 !important;
+          letter-spacing: 0.13em !important;
+        }
+
+        html.cx-churvox-locked .om-approval-ticket strong {
+          color: var(--lock-ink) !important;
+          font-size: clamp(20px, 1.8vw, 30px) !important;
+          line-height: 1 !important;
+          letter-spacing: -0.04em !important;
+        }
+
+        html.cx-churvox-locked .om-approval-ticket small {
+          color: var(--lock-muted) !important;
+          font-size: 13px !important;
+          line-height: 1.35 !important;
+        }
+
+        html.cx-churvox-locked .om-approval-ticket em {
+          padding: 10px 16px !important;
+          border-radius: 999px !important;
+          background: var(--lock-ink) !important;
+          color: var(--lock-paper) !important;
+          font-size: 11px !important;
+          white-space: nowrap !important;
+        }
+
+        @media (max-width: 1200px) {
+          html.cx-churvox-locked .om-hero {
+            grid-template-columns: 1fr !important;
+          }
+
+          html.cx-churvox-locked #churvox-design-lock-hero-metrics {
+            grid-column: 1 !important;
+          }
+
+          html.cx-churvox-locked #churvox-design-lock-front-cards {
+            grid-template-columns: 1fr !important;
+          }
+        }
+
+        @media (max-width: 820px) {
+          html.cx-churvox-locked .om-main {
+            padding: 12px !important;
+          }
+
+          html.cx-churvox-locked .om-nav {
+            grid-template-columns: auto auto !important;
+            padding: 9px 10px !important;
+          }
+
+          html.cx-churvox-locked .om-nav nav {
+            grid-column: 1 / -1 !important;
+            order: 3 !important;
+          }
+
+          html.cx-churvox-locked .om-hero {
+            min-height: auto !important;
+            padding: 28px !important;
+          }
+
+          html.cx-churvox-locked .om-hero h1 {
+            font-size: 44px !important;
+          }
+
+          html.cx-churvox-locked #churvox-design-lock-hero-metrics {
+            grid-template-columns: 1fr 1fr !important;
+          }
+
+          html.cx-churvox-locked #churvox-design-lock-note {
+            position: relative !important;
+            left: auto !important;
+            bottom: auto !important;
+            width: 100% !important;
+            margin-top: 12px !important;
+          }
+
+          html.cx-churvox-locked #churvox-design-lock-front-cards article {
+            grid-template-columns: 58px 1fr !important;
+          }
+
+          html.cx-churvox-locked #churvox-design-lock-front-cards i {
+            width: 52px !important;
+            height: 52px !important;
+          }
+
+          html.cx-churvox-locked .om-approval-desk-main {
+            padding: 24px !important;
+          }
+
+          html.cx-churvox-locked .om-approval-ticket {
+            grid-template-columns: 1fr !important;
+          }
+
+          html.cx-churvox-locked .om-approval-ticket em {
+            justify-self: start !important;
+          }
+        }
+      `;
+
+      document.head.appendChild(style);
+    }
+
+    function removeOldDomExtras() {
       [
         "churvox-phase-189-owner-priority",
         "churvox-phase-192-hero-priority",
@@ -2886,60 +2335,41 @@ window.__CHURVOX_FINAL_EXACT_MOCKUP__ = "PHASE_198_FINAL_EXACT_MOCKUP_DASHBOARD_
         "churvox-final-front-cards",
         "churvox-final-hero-note",
         "churvox-phase-197-front-cards",
-        "churvox-phase-197-hero-metrics"
+        "churvox-phase-197-hero-metrics",
+        "churvox-phase-198-front-cards",
+        "churvox-phase-198-hero-metrics",
+        "churvox-phase-198-hero-note"
       ].forEach((id) => {
         const el = document.getElementById(id);
         if (el) el.remove();
       });
+    }
 
-      Array.from(document.querySelectorAll("section, article, div")).forEach((el) => {
-        const text = clean(el.textContent).toLowerCase();
-        if (
-          text.includes("ai admin radar") ||
-          text.includes("what churvox is watching next") ||
-          text.includes("owner priority") ||
-          text.includes("nothing urgent right now") ||
-          text.includes("automatic admin") ||
-          text.includes("owner control")
-        ) {
-          el.style.display = "none";
-          el.setAttribute("aria-hidden", "true");
-        }
-      });
+    function tidyHeroCopy() {
+      const hero = document.querySelector(".om-hero");
+      if (!hero) return;
+      const h1 = hero.querySelector("h1");
+      if (h1) {
+        h1.innerHTML = "Churvox prepares<br />the admin.<br />You approve the<br />next move.";
+      }
     }
 
     function installHeroMetrics() {
       const hero = document.querySelector(".om-hero");
       if (!hero) return;
 
-      let metrics = document.getElementById("churvox-phase-198-hero-metrics");
+      let metrics = document.getElementById("churvox-design-lock-hero-metrics");
       if (!metrics) {
         metrics = document.createElement("section");
-        metrics.id = "churvox-phase-198-hero-metrics";
+        metrics.id = "churvox-design-lock-hero-metrics";
         hero.appendChild(metrics);
       }
 
       metrics.innerHTML = `
-        <article>
-          <i>✓</i>
-          <span>Plan</span>
-          <strong>${planName()}</strong>
-        </article>
-        <article>
-          <i>▤</i>
-          <span>Input</span>
-          <strong>0</strong>
-        </article>
-        <article>
-          <i>⚙</i>
-          <span>Processing</span>
-          <strong>0</strong>
-        </article>
-        <article>
-          <i>◇</i>
-          <span>Approval</span>
-          <strong>${approvalCount()}</strong>
-        </article>
+        <article><i>✓</i><span>Plan</span><strong>Command</strong></article>
+        <article><i>▤</i><span>Input</span><strong>0</strong></article>
+        <article><i>⚙</i><span>Processing</span><strong>0</strong></article>
+        <article><i>◇</i><span>Approval</span><strong>${approvalCount()}</strong></article>
       `;
     }
 
@@ -2947,10 +2377,10 @@ window.__CHURVOX_FINAL_EXACT_MOCKUP__ = "PHASE_198_FINAL_EXACT_MOCKUP_DASHBOARD_
       const hero = document.querySelector(".om-hero");
       if (!hero) return;
 
-      let note = document.getElementById("churvox-phase-198-hero-note");
+      let note = document.getElementById("churvox-design-lock-note");
       if (!note) {
         note = document.createElement("section");
-        note.id = "churvox-phase-198-hero-note";
+        note.id = "churvox-design-lock-note";
         hero.appendChild(note);
       }
 
@@ -2965,10 +2395,10 @@ window.__CHURVOX_FINAL_EXACT_MOCKUP__ = "PHASE_198_FINAL_EXACT_MOCKUP_DASHBOARD_
       const hero = document.querySelector(".om-hero");
       if (!hero) return;
 
-      let cards = document.getElementById("churvox-phase-198-front-cards");
+      let cards = document.getElementById("churvox-design-lock-front-cards");
       if (!cards) {
         cards = document.createElement("section");
-        cards.id = "churvox-phase-198-front-cards";
+        cards.id = "churvox-design-lock-front-cards";
         hero.insertAdjacentElement("afterend", cards);
       }
 
@@ -3000,37 +2430,32 @@ window.__CHURVOX_FINAL_EXACT_MOCKUP__ = "PHASE_198_FINAL_EXACT_MOCKUP_DASHBOARD_
       `;
     }
 
-    function markApprovalDesk() {
-      const desk = findApprovalDesk();
+    function markDesk() {
+      const desk = Array.from(document.querySelectorAll("section, article, div")).find((el) => {
+        const text = clean(el.textContent).toLowerCase();
+        return text.includes("approval desk") && text.includes("open approval slip");
+      });
+
       if (!desk) return;
-      desk.classList.add("cx-exact-approval-desk");
-      if (desk.parentElement) desk.parentElement.classList.add("cx-exact-desk-wrap");
-    }
-
-    function tidyTopCopy() {
-      const hero = document.querySelector(".om-hero");
-      if (!hero) return;
-
-      const h1 = hero.querySelector("h1");
-      if (h1 && clean(h1.textContent).toLowerCase().includes("churvox")) {
-        h1.innerHTML = "Churvox prepares<br />the admin.<br />You approve the<br />next move.";
-      }
+      desk.classList.add("cx-design-lock-approval-desk");
+      if (desk.parentElement) desk.parentElement.classList.add("cx-design-lock-desk-wrap");
     }
 
     function run() {
       applyClass();
-      removeOldExperimentElements();
-      tidyTopCopy();
+      injectFinalCss();
+      removeOldDomExtras();
+      tidyHeroCopy();
       installHeroMetrics();
       installHeroNote();
       installFrontCards();
-      markApprovalDesk();
+      markDesk();
     }
 
     let timer = null;
     function schedule() {
       window.clearTimeout(timer);
-      timer = window.setTimeout(run, 120);
+      timer = window.setTimeout(run, 80);
     }
 
     window.addEventListener("load", schedule);
@@ -3048,5 +2473,3 @@ window.__CHURVOX_FINAL_EXACT_MOCKUP__ = "PHASE_198_FINAL_EXACT_MOCKUP_DASHBOARD_
     // keep app boot safe
   }
 })();
-
-
