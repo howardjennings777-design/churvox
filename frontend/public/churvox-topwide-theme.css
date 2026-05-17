@@ -1172,3 +1172,101 @@ html body .cs-risk.medium {
   border-color: rgba(211, 144, 40, 0.16) !important;
 }
 
+
+/* PHASE_252_FIX_PLANS_CARDS_TOO_MUCH_GRADIENT
+   The gradient was too much on plan add-on/SMS cards.
+   Keep those cards cream and readable. No duplicate "Buy now" pseudo button.
+*/
+html body .cs-plan-addons button,
+html body .cs-sms-packs button,
+html body .cs-plan-cards article {
+  width: 100% !important;
+  min-height: 138px !important;
+  height: auto !important;
+  display: grid !important;
+  align-content: start !important;
+  justify-items: start !important;
+  gap: 10px !important;
+  padding: 24px !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  border-radius: 24px !important;
+  background:
+    radial-gradient(circle at 94% 8%, rgba(228, 134, 67, 0.12), transparent 18rem),
+    rgba(255, 248, 239, 0.96) !important;
+  color: var(--tw-black) !important;
+  box-shadow: 0 16px 42px rgba(13, 11, 10, 0.10) !important;
+  text-align: left !important;
+  white-space: normal !important;
+}
+
+/* Kill the duplicate pseudo "Buy now" that made the card messy */
+html body .cs-plan-addons button::after,
+html body .cs-sms-packs button::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Force readable text inside these cards */
+html body .cs-plan-addons button *,
+html body .cs-sms-packs button *,
+html body .cs-plan-cards article * {
+  color: var(--tw-black) !important;
+  text-align: left !important;
+  white-space: normal !important;
+}
+
+html body .cs-plan-addons button strong,
+html body .cs-sms-packs button strong,
+html body .cs-plan-cards article strong,
+html body .cs-plan-cards article h3 {
+  color: var(--tw-black) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: clamp(24px, 2.3vw, 34px) !important;
+  line-height: 0.95 !important;
+  letter-spacing: -0.055em !important;
+}
+
+html body .cs-plan-addons button small,
+html body .cs-sms-packs button small,
+html body .cs-plan-cards article small,
+html body .cs-plan-addons button p,
+html body .cs-sms-packs button p,
+html body .cs-plan-cards article p {
+  color: var(--tw-muted) !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+}
+
+/* The words like "Buy add-on" / "Buy SMS pack" stay as simple copper action text */
+html body .cs-plan-addons button b,
+html body .cs-sms-packs button b,
+html body .cs-plan-addons button em,
+html body .cs-sms-packs button em {
+  color: var(--tw-orange) !important;
+  font-style: normal !important;
+  font-weight: 950 !important;
+}
+
+/* Keep only normal standalone app action buttons as gradient */
+html body .cs-approval-row button,
+html body .cs-row button,
+html body .cs-view:not(.ghost),
+html body .cs-modal button:not(.ghost),
+html body .cs-page a.button,
+html body .cs-page .button {
+  background:
+    radial-gradient(circle at 24% 0%, rgba(255, 248, 239, 0.18), transparent 26%),
+    linear-gradient(135deg, #0d0b0a 0%, #17120f 42%, #5d2818 72%, #b85720 100%) !important;
+  color: #fff8ef !important;
+  border: 1px solid rgba(228, 134, 67, 0.28) !important;
+}
+
+/* But never let plan/SMS card buttons be caught by the generic button gradient */
+html body .cs-plan-addons button,
+html body .cs-sms-packs button {
+  background:
+    radial-gradient(circle at 94% 8%, rgba(228, 134, 67, 0.12), transparent 18rem),
+    rgba(255, 248, 239, 0.96) !important;
+  color: var(--tw-black) !important;
+}
+
