@@ -6740,3 +6740,4 @@ export function OperatorLanding({ authMode, setAuthMode, onLogin }) {
       </section>
     </main>
   );
+}
