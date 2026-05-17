@@ -937,6 +937,272 @@ async def churvox_phase219_stable_operator_feeds(request: Request, call_next):
 
 # END_PHASE_219_STABLE_OPERATOR_FEEDS
 
+# PHASE_220_TRIAL_STATUS_AND_EXPIRED_LOCK
+# Shows/guards 14-day trial and locks the app once trial is expired until paid Stripe subscription exists.
+
+def _phase220_parse_dt(value):
+    if value is None:
+        return None
+    try:
+        if isinstance(value, datetime):
+            dt = value
+        else:
+            raw = str(value).strip()
+            if not raw:
+                return None
+            raw = raw.replace("Z", "+00:00")
+            dt = datetime.fromisoformat(raw)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    except Exception:
+        return None
+
+
+def _phase220_bool_paid(user: dict) -> bool:
+    plan_status = str((user or {}).get("plan_status") or "").lower()
+    subscription_status = str((user or {}).get("subscription_status") or "").lower()
+    stripe_subscription_id = str((user or {}).get("stripe_subscription_id") or "").strip()
+
+    # Real paid access requires an active Stripe subscription, not just a selected plan.
+    if stripe_subscription_id and subscription_status in {"active", "paid", "past_due"}:
+        return True
+
+    if stripe_subscription_id and plan_status in {"active", "paid"}:
+        return True
+
+    return False
+
+
+def _phase220_trial_state(user: dict) -> dict:
+    now = datetime.now(timezone.utc)
+
+    plan = str((user or {}).get("plan") or "").strip().lower()
+    plan_status = str((user or {}).get("plan_status") or "").strip().lower()
+    subscription_status = str((user or {}).get("subscription_status") or "").strip().lower()
+
+    trial_started_at = _phase220_parse_dt((user or {}).get("trial_started_at"))
+    trial_ends_at = _phase220_parse_dt((user or {}).get("trial_ends_at") or (user or {}).get("trial_end_date"))
+
+    has_paid_subscription = _phase220_bool_paid(user)
+    has_trial_fields = bool(trial_started_at or trial_ends_at)
+
+    seconds_left = 0
+    days_left = 0
+    if trial_ends_at:
+        seconds_left = max(0, int((trial_ends_at - now).total_seconds()))
+        # Round up so "less than 1 day" still shows 1 day left.
+        days_left = int((seconds_left + 86399) // 86400) if seconds_left > 0 else 0
+
+    trial_active = (
+        not has_paid_subscription
+        and trial_ends_at is not None
+        and trial_ends_at > now
+        and plan_status in {"trialing", "trial", "active_trial", ""}
+    )
+
+    trial_expired = (
+        not has_paid_subscription
+        and (
+            plan_status in {"expired", "trial_expired", "trial-ended", "trial_ended"}
+            or subscription_status in {"expired", "trial_expired", "trial-ended", "trial_ended"}
+            or (trial_ends_at is not None and trial_ends_at <= now)
+        )
+    )
+
+    no_plan_or_access = (
+        not has_paid_subscription
+        and not trial_active
+        and not trial_expired
+        and not plan
+        and not has_trial_fields
+    )
+
+    requires_payment = bool(trial_expired or no_plan_or_access)
+
+    return {
+        "success": True,
+        "plan": plan or None,
+        "plan_status": "active" if has_paid_subscription else ("trial_expired" if trial_expired else ("trialing" if trial_active else plan_status or None)),
+        "subscription_status": "active" if has_paid_subscription else ("trial_expired" if trial_expired else ("trialing" if trial_active else subscription_status or None)),
+        "trial_started_at": trial_started_at.isoformat() if trial_started_at else None,
+        "trial_ends_at": trial_ends_at.isoformat() if trial_ends_at else None,
+        "trial_days": 14,
+        "trial_active": bool(trial_active),
+        "trial_expired": bool(trial_expired),
+        "requires_payment": bool(requires_payment),
+        "has_paid_subscription": bool(has_paid_subscription),
+        "stripe_subscription_id": str((user or {}).get("stripe_subscription_id") or ""),
+        "days_left": days_left,
+        "seconds_left": seconds_left,
+        "locked": bool(requires_payment),
+        "lock_reason": "trial_expired_payment_required" if trial_expired else ("plan_required" if no_plan_or_access else None),
+    }
+
+
+async def _phase220_current_user(request: Request):
+    try:
+        return await _churvox_current_user_from_request(request)
+    except NameError:
+        return await get_current_user(request)
+
+
+async def _phase220_business_id(user: dict) -> str:
+    try:
+        return await _churvox_billing_business_id(user)
+    except Exception:
+        return str(
+            (user or {}).get("business_id")
+            or (user or {}).get("businessId")
+            or (user or {}).get("id")
+            or (user or {}).get("_id")
+            or ""
+        )
+
+
+async def _phase220_mark_trial_expired(user: dict):
+    now = datetime.now(timezone.utc)
+    user_id = (user or {}).get("_id") or (user or {}).get("id")
+
+    update = {
+        "plan_status": "trial_expired",
+        "subscription_status": "trial_expired",
+        "updated_at": now,
+    }
+
+    try:
+        result = await db.users.update_one({"_id": ObjectId(str(user_id))}, {"$set": update})
+        if result.matched_count:
+            return
+    except Exception:
+        pass
+
+    try:
+        await db.users.update_one({"id": str(user_id)}, {"$set": update})
+    except Exception:
+        pass
+
+
+def _phase220_json(request: Request, payload: dict, status_code: int = 200):
+    response = JSONResponse(status_code=status_code, content=make_json_safe(payload))
+    try:
+        return _churvox_apply_cors_headers(request, response)
+    except Exception:
+        origin = request.headers.get("origin") or request.headers.get("Origin") or ""
+        if origin:
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = request.headers.get(
+                "access-control-request-headers",
+                "Authorization,Content-Type,Accept,Origin,X-Requested-With"
+            )
+            response.headers["Vary"] = "Origin"
+        return response
+
+
+@app.middleware("http")
+async def churvox_phase220_trial_status_and_expired_lock(request: Request, call_next):
+    path = request.url.path.rstrip("/")
+    method = request.method.upper()
+
+    if method == "OPTIONS":
+        return await call_next(request)
+
+    if not path.startswith("/api"):
+        return await call_next(request)
+
+    # Always allow these.
+    always_allowed_prefixes = (
+        "/api/auth",
+        "/api/admin",
+        "/api/owner",
+        "/api/public",
+        "/api/health",
+        "/api/debug",
+        "/api/stripe",
+    )
+
+    # Billing must remain open so expired users can pay.
+    billing_allowed_paths = {
+        "/api/billing/status",
+        "/api/billing/guard",
+        "/api/billing/checkout",
+        "/api/billing/create-checkout-session",
+        "/api/billing/confirm-checkout",
+        "/api/billing/webhook",
+        "/api/billing/start-trial",
+    }
+
+    if any(path.startswith(prefix) for prefix in always_allowed_prefixes):
+        return await call_next(request)
+
+    try:
+        user = await _phase220_current_user(request)
+    except Exception:
+        # Unauthenticated routes should fail normally in their own handler.
+        return await call_next(request)
+
+    state = _phase220_trial_state(user)
+
+    if path == "/api/billing/status":
+        return _phase220_json(request, state)
+
+    if path == "/api/billing/guard":
+        return _phase220_json(request, {
+            **state,
+            "allowed": not bool(state.get("requires_payment")),
+            "reason": state.get("lock_reason"),
+        })
+
+    if path == "/api/billing/start-trial":
+        # Trial is one-time only. Do not let refresh/re-click reset trial_ends_at.
+        if state.get("trial_active"):
+            return _phase220_json(request, {
+                **state,
+                "success": True,
+                "already_active": True,
+                "message": f"Your 14-day trial is already active. {state.get('days_left', 0)} days left.",
+            })
+
+        if state.get("trial_expired"):
+            await _phase220_mark_trial_expired(user)
+            return _phase220_json(request, {
+                **state,
+                "success": False,
+                "detail": "Your 14-day trial has ended. Choose a paid plan to unlock Churvox.",
+                "message": "Your 14-day trial has ended. Choose a paid plan to unlock Churvox.",
+            }, status_code=402)
+
+        if state.get("trial_started_at") or state.get("trial_ends_at"):
+            return _phase220_json(request, {
+                **state,
+                "success": False,
+                "detail": "A free trial has already been used on this account.",
+                "message": "A free trial has already been used on this account.",
+            }, status_code=400)
+
+        return await call_next(request)
+
+    if path in billing_allowed_paths or path.startswith("/api/billing/"):
+        return await call_next(request)
+
+    if state.get("requires_payment"):
+        await _phase220_mark_trial_expired(user)
+        return _phase220_json(request, {
+            **state,
+            "success": False,
+            "allowed": False,
+            "detail": "Your 14-day free trial has ended. Choose a paid plan to unlock Churvox.",
+            "message": "Your 14-day free trial has ended. Choose a paid plan to unlock Churvox.",
+        }, status_code=402)
+
+    return await call_next(request)
+
+# END_PHASE_220_TRIAL_STATUS_AND_EXPIRED_LOCK
+
+
+
 
 
 

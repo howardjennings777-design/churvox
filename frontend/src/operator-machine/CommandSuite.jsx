@@ -203,6 +203,85 @@ function billingApiBase() {
   return "";
 }
 
+
+function formatTrialStatus(status = {}) {
+  if (status.has_paid_subscription) {
+    return {
+      tone: "paid",
+      title: "Paid plan active",
+      body: "Your Churvox access is unlocked.",
+      cta: "Manage plan",
+    };
+  }
+
+  if (status.trial_expired || status.requires_payment) {
+    return {
+      tone: "expired",
+      title: "Your 14-day trial has ended",
+      body: "Choose a paid plan to unlock Churvox again.",
+      cta: "Choose a plan",
+    };
+  }
+
+  if (status.trial_active) {
+    const days = Number(status.days_left || 0);
+    return {
+      tone: "active",
+      title: `${days || 1} day${days === 1 ? "" : "s"} left in your trial`,
+      body: "Your 14-day trial is active. Churvox will lock until payment when it ends.",
+      cta: "Choose plan early",
+    };
+  }
+
+  return {
+    tone: "ready",
+    title: "Start your 14-day free trial",
+    body: "No card needed. Try Operator first, then choose a plan when ready.",
+    cta: "Start 14-day trial",
+  };
+}
+
+
+function LockedTrialPage({ billingStatus, goToPage }) {
+  const info = formatTrialStatus(billingStatus);
+
+  return (
+    <section className="cs-page cs-locked-page" data-phase="PHASE_220_EXPIRED_TRIAL_LOCK_VIEW">
+      <header className="cs-hero cs-locked-hero">
+        <section>
+          <span>Trial ended</span>
+          <h1>
+            Your 14-day trial has ended.
+            <mark>Choose a plan to unlock Churvox.</mark>
+          </h1>
+          <p>
+            Work, clients, crew, quotes, invoices, proof, payroll and settings are locked until payment is active.
+          </p>
+
+          <div className={`cs-trial-status-pill ${info.tone}`}>
+            <strong>{info.title}</strong>
+            <span>{info.body}</span>
+          </div>
+
+          <button type="button" className="cs-locked-pay-button" onClick={() => goToPage("plans")}>
+            View plans and unlock
+          </button>
+        </section>
+
+        <section className="cs-lock-list">
+          {["Work locked", "Clients locked", "Crew locked", "Invoices locked"].map((item) => (
+            <article key={item}>
+              <Icon type="shield" />
+              <strong>{item}</strong>
+              <p>Payment required after the trial period.</p>
+            </article>
+          ))}
+        </section>
+      </header>
+    </section>
+  );
+}
+
 function openTop() {
   try {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -514,6 +593,7 @@ function PlansCommandPage({
   startCheckout,
   billingBusy,
   billingNotice,
+  billingStatus,
 }) {
   const plans = [
     {
@@ -600,6 +680,8 @@ function PlansCommandPage({
     ["Owner Approval Desk", "Yes", "Yes", "Advanced", "Advanced"],
   ];
 
+  const trialInfo = formatTrialStatus(billingStatus || {});
+
   function openPlan(plan) {
     openInfo({
       ...plan,
@@ -628,15 +710,21 @@ function PlansCommandPage({
             Add SMS credits, MYOB or Command Growth Pack when the business needs it.
           </p>
 
-          <div className="cs-trial-box">
-            <strong>14-day free trial</strong>
-            <span>No card. Starts on Operator by default.</span>
+          <div className={`cs-trial-box ${trialInfo.tone}`}>
+            <strong>{trialInfo.title}</strong>
+            <span>{trialInfo.body}</span>
             <button
               type="button"
-              disabled={billingBusy === "trial"}
+              disabled={billingBusy === "trial" || billingStatus?.trial_active || billingStatus?.requires_payment}
               onClick={() => startTrial("operator")}
             >
-              {billingBusy === "trial" ? "Starting trial..." : "Start 14-day trial"}
+              {billingBusy === "trial"
+                ? "Starting trial..."
+                : billingStatus?.requires_payment
+                  ? "Trial ended — choose plan"
+                  : billingStatus?.trial_active
+                    ? "Trial active"
+                    : "Start 14-day trial"}
             </button>
           </div>
 
@@ -674,6 +762,11 @@ function PlansCommandPage({
             </div>
 
             <p>{plan.body}</p>
+
+            <div className="cs-plan-trial-strip">
+              <strong>14-day free trial</strong>
+              <span>No card needed. Locks after trial until payment.</span>
+            </div>
 
             <ul>
               {plan.included.map((item) => (
@@ -807,7 +900,9 @@ export default function CommandSuite({
   const [activeFilter, setActiveFilter] = useState("All");
   const [billingBusy, setBillingBusy] = useState("");
   const [billingNotice, setBillingNotice] = useState("");
+  const [billingStatus, setBillingStatus] = useState(null);
   const current = PAGE_MAP[page] || "dashboard";
+  const appLocked = Boolean(billingStatus?.requires_payment || billingStatus?.trial_expired);
 
 
   async function billingPost(path, payload) {
@@ -835,11 +930,47 @@ export default function CommandSuite({
     return body;
   }
 
+
+  async function billingGet(path) {
+    const base = billingApiBase();
+    const res = await fetch(`${base}${path}`, {
+      method: "GET",
+      credentials: "include",
+      headers: authHeadersForBilling(),
+    });
+
+    let body = {};
+    try {
+      body = await res.json();
+    } catch {
+      body = {};
+    }
+
+    if (!res.ok || body.success === false) {
+      const message = body.detail || body.message || body.error || `Billing status failed (${res.status})`;
+      throw new Error(message);
+    }
+
+    return body;
+  }
+
+  async function refreshBillingStatus() {
+    try {
+      const body = await billingGet("/api/billing/status");
+      setBillingStatus(body);
+      return body;
+    } catch (err) {
+      console.warn("Could not load billing status", err);
+      return null;
+    }
+  }
+
   async function startTrial(plan = "operator") {
     setBillingBusy("trial");
     setBillingNotice("");
     try {
       const body = await billingPost("/api/billing/start-trial", { plan, plan_type: plan });
+      setBillingStatus(body);
       setBillingNotice(body.message || "14-day trial started.");
       setToast(body.message || "14-day trial started.");
     } catch (err) {
@@ -868,6 +999,13 @@ export default function CommandSuite({
     }
   }
 
+
+  useEffect(() => {
+    // PHASE_220_LOAD_BILLING_STATUS
+    refreshBillingStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get("session_id");
@@ -888,6 +1026,7 @@ export default function CommandSuite({
         const msg = body.message || "Stripe checkout confirmed.";
         setBillingNotice(msg);
         setToast(msg);
+        refreshBillingStatus();
         const url = new URL(window.location.href);
         url.searchParams.delete("session_id");
         url.searchParams.delete("stripe");
@@ -921,6 +1060,16 @@ export default function CommandSuite({
   }, [data, machine, visibleApprovals]);
 
   function goToPage(nextPage) {
+    const mappedPage = PAGE_MAP[nextPage] || nextPage;
+
+    if (billingStatus?.requires_payment && mappedPage !== "plans") {
+      setActiveFilter("All");
+      setPage?.("plans");
+      setBillingNotice("Your 14-day trial has ended. Choose a paid plan to unlock Churvox.");
+      openTop();
+      return;
+    }
+
     setActiveFilter("All");
     setPage?.(nextPage);
     openTop();
@@ -1328,7 +1477,9 @@ export default function CommandSuite({
         })}
       </nav>
 
-      {current === "dashboard" ? (
+      {appLocked && current !== "plans" ? (
+        <LockedTrialPage billingStatus={billingStatus} goToPage={goToPage} />
+      ) : current === "dashboard" ? (
         <section className="cs-page">
           <header className="cs-hero">
             <section>
@@ -1464,6 +1615,7 @@ export default function CommandSuite({
           startCheckout={startCheckout}
           billingBusy={billingBusy}
           billingNotice={billingNotice}
+          billingStatus={billingStatus}
         />
       ) : (
         <SmartPage
