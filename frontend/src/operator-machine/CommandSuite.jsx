@@ -160,10 +160,66 @@ function Icon({ type }) {
 }
 
 function filterRows(rows, filter) {
+  // PHASE_283_DETERMINISTIC_FILTERS
   if (!filter || filter === "All") return rows;
-  const key = filter.toLowerCase().replace(/[^a-z0-9]/g, "");
-  const matches = rows.filter((row) => textOf(row).replace(/[^a-z0-9]/g, "").includes(key));
-  return matches.length ? matches : rows;
+
+  const label = clean(filter).toLowerCase();
+  const compact = label.replace(/[^a-z0-9]/g, "");
+
+  const tests = {
+    needsaction: (row) => /need|missing|risk|blocked|overdue|draft|ready|unassigned|follow|review/i.test(textOf(row)),
+    unassigned: (row) => workerName(row) === "Unassigned",
+    today: (row) => /today/i.test(textOf(row)) || new Date().toISOString().slice(0, 10) && textOf(row).includes(new Date().toISOString().slice(0, 10)),
+    active: (row) => /active|progress|started|working/i.test(statusOf(row)),
+    completed: (row) => /complete|completed|done|finished/i.test(statusOf(row)),
+    readytoinvoice: (row) => /ready|invoice|complete|completed|finished/i.test(textOf(row)),
+    needsdetails: (row) => !clean(row.email || row.phone || row.mobile || row.address || row.area || row.region),
+    activework: (row) => /active|progress|started|job|work/i.test(textOf(row)),
+    owing: (row) => /owing|unpaid|overdue|due/i.test(textOf(row)),
+    followup: (row) => /follow|sent|pending|await|open/i.test(textOf(row)),
+    allclients: () => true,
+    available: (row) => /available|ready/i.test(textOf(row)),
+    overloaded: (row) => /overload|busy|full|risk/i.test(textOf(row)),
+    needsupdate: (row) => /missing|update|review|needs/i.test(textOf(row)),
+    allcrew: () => true,
+    drafts: (row) => /draft|new/i.test(textOf(row)),
+    awaiting: (row) => /await|pending|sent|open/i.test(textOf(row)),
+    accepted: (row) => /accept|approved|won/i.test(textOf(row)),
+    allquotes: () => true,
+    readytosend: (row) => /ready/i.test(textOf(row)),
+    overdue: (row) => /overdue/i.test(textOf(row)),
+    paid: (row) => /paid|settled/i.test(textOf(row)),
+    photos: (row) => (Array.isArray(row.photos) && row.photos.length > 0) || /photo|proof/i.test(textOf(row)),
+    paymentfollowup: (row) => /payment|owing|unpaid|overdue|reminder/i.test(textOf(row)),
+    allproof: () => true,
+    needsreview: (row) => /review|missing|risk|flag/i.test(textOf(row)),
+    approved: (row) => /approved|ready|ok/i.test(textOf(row)),
+    missingclockoff: (row) => /clock|missing|started|no end|no clock/i.test(textOf(row)),
+    exportready: (row) => /export|ready|approved/i.test(textOf(row)),
+    business: (row) => /business|profile|company/i.test(textOf(row)),
+    roles: (row) => /role|team|permission/i.test(textOf(row)),
+    aioperator: (row) => /ai|operator|approval/i.test(textOf(row)),
+    billing: (row) => /billing|plan|stripe|subscription/i.test(textOf(row)),
+    myob: (row) => /myob/i.test(textOf(row)),
+    sms: (row) => /sms|credit|message/i.test(textOf(row)),
+    security: (row) => /security|login|access/i.test(textOf(row)),
+    monthly: (row) => /month|monthly|\$/i.test(textOf(row)),
+    command: (row) => /command/i.test(textOf(row)),
+  };
+
+  const test = tests[compact];
+  if (test) {
+    const matches = rows.filter((row) => {
+      try {
+        return test(row);
+      } catch {
+        return false;
+      }
+    });
+    return matches;
+  }
+
+  return rows.filter((row) => textOf(row).replace(/[^a-z0-9]/g, "").includes(compact));
 }
 
 
@@ -1525,6 +1581,7 @@ function PlansCommandPage({
       __actionLabel: `Choose ${plan.name}`,
       __route: "plans",
       plan: plan.id,
+      plan: plan.id,
     });
   }
 
@@ -1978,13 +2035,25 @@ export default function CommandSuite({
             : "/api/operator/quick-create";
 
       const body = await billingPost(endpoint, values);
+      const targetRoute = normalRoute(action.route || routeForRecord(body.record || body.export || body.setting || {}, current), current);
+      const createdRecord = body.record || body.export || body.setting || body.data || null;
+
       setToast(body.message || "Business action saved. AI will prepare the next step.");
       setQuickAction(null);
 
       await refreshWholeBusiness(action.kind);
 
-      if (action.route) {
-        goToPage(normalRoute(action.route, current));
+      if (createdRecord && typeof createdRecord === "object") {
+        setSelected({
+          ...createdRecord,
+          __modalType: "Saved business action",
+          __modalTitle: titleOf(createdRecord, action.title || action.label || "Saved"),
+          __body: body.message || "Saved. Churvox will prepare the next admin step.",
+          __actionLabel: `Open ${routeLabel(targetRoute)}`,
+          __route: targetRoute,
+        });
+      } else {
+        goToPage(targetRoute);
       }
     } catch (err) {
       setToast(err.message || "Could not save business action.");
@@ -2011,6 +2080,7 @@ export default function CommandSuite({
   }, [data, machine, visibleApprovals, operatorActions]);
 
   function goToPage(nextPage) {
+    // PHASE_283_NORMALIZED_PAGE_ROUTING
     const normalized = normalRoute(nextPage, "dashboard");
     const mappedPage = PAGE_MAP[normalized] || normalized;
 
@@ -2028,6 +2098,7 @@ export default function CommandSuite({
   }
 
   function openRecord(record) {
+    // PHASE_283_RECORDS_GET_DESTINATIONS
     if (!record) return;
     const routed = { ...record };
     routed.__route = routeForRecord(routed, current);
