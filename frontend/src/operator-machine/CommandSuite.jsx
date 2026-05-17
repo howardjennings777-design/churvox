@@ -1871,15 +1871,23 @@ export default function CommandSuite({
             </button>
           </section>
 
-          <section className="cs-quick-launch" data-phase="PHASE_278_DASHBOARD_QUICK_LAUNCH">
-            {(QUICK_ACTIONS_BY_PAGE.dashboard || []).map((action) => (
-              <button type="button" key={action.id} onClick={() => setQuickAction(action)}>
-                {action.label}
+          <section className="cs-quick-launch" data-phase="PHASE_279_TIDY_DASHBOARD_QUICK_ACTIONS">
+            <div className="cs-quick-copy">
+              <span>Quick actions</span>
+              <strong>Capture work fast.</strong>
+              <p>Add the job, client, quote, invoice or proof note. Churvox prepares the admin path.</p>
+            </div>
+
+            <div className="cs-quick-buttons">
+              {(QUICK_ACTIONS_BY_PAGE.dashboard || []).map((action) => (
+                <button type="button" key={action.id} onClick={() => setQuickAction(action)}>
+                  {action.label}
+                </button>
+              ))}
+              <button type="button" onClick={installChurvoxApp}>
+                Install Churvox
               </button>
-            ))}
-            <button type="button" onClick={installChurvoxApp}>
-              Install Churvox
-            </button>
+            </div>
           </section>
 
           <section className="cs-desk">

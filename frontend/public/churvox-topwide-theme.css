@@ -1132,3 +1132,244 @@ html body .cs-decision-box small {
   }
 }
 
+
+/* PHASE_279_TIDY_DASHBOARD_LAYOUT
+   Clean the dashboard after adding functional actions:
+   - quick actions become a proper cream card, not a dark strip
+   - buttons are grouped and readable
+   - approval desk header is calmer
+   - dashboard vertical spacing is tighter
+*/
+
+html body .cs-page {
+  gap: 12px !important;
+}
+
+/* Keep hero compact and premium */
+html body .cs-hero {
+  padding: 14px 22px 15px !important;
+  gap: 9px !important;
+  border-radius: 24px !important;
+}
+
+html body .cs-hero h1 {
+  margin: 5px 0 5px !important;
+  font-size: clamp(29px, 3.35vw, 48px) !important;
+  line-height: 0.98 !important;
+}
+
+html body .cs-hero p {
+  font-size: 11.5px !important;
+  line-height: 1.25 !important;
+}
+
+html body .cs-stats,
+html body .cs-plan-price-stack {
+  gap: 8px !important;
+}
+
+html body .cs-stat,
+html body .cs-plan-price-stack button {
+  min-height: 50px !important;
+  padding: 8px 12px !important;
+  border-radius: 15px !important;
+}
+
+/* Dashboard top cards */
+html body .cs-command-cards {
+  gap: 10px !important;
+}
+
+html body .cs-command-cards button {
+  min-height: 76px !important;
+  padding: 14px 18px !important;
+  border-radius: 18px !important;
+  grid-template-columns: 44px minmax(0, 1fr) 18px !important;
+  gap: 12px !important;
+}
+
+html body .cs-command-cards button > .cs-icon {
+  width: 31px !important;
+  height: 31px !important;
+  min-width: 31px !important;
+  min-height: 31px !important;
+}
+
+html body .cs-command-cards button strong {
+  font-size: clamp(24px, 2.1vw, 34px) !important;
+  margin-right: 8px !important;
+}
+
+html body .cs-command-cards button span {
+  font-size: clamp(15px, 1.25vw, 20px) !important;
+}
+
+html body .cs-command-cards button p {
+  font-size: 12px !important;
+  line-height: 1.25 !important;
+}
+
+/* Quick actions should feel like a useful business control panel */
+html body .cs-quick-launch {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: minmax(240px, 0.36fr) minmax(0, 1fr) !important;
+  gap: 14px !important;
+  align-items: center !important;
+  padding: 14px 16px !important;
+  border-radius: 20px !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(223, 113, 56, 0.10), transparent 18rem),
+    rgba(255, 248, 239, 0.96) !important;
+  box-shadow: 0 12px 28px rgba(13, 11, 10, 0.08) !important;
+}
+
+html body .cs-quick-copy {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 3px !important;
+}
+
+html body .cs-quick-copy span {
+  width: fit-content !important;
+  min-height: 22px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 0 9px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(184, 87, 32, 0.18) !important;
+  background: rgba(184, 87, 32, 0.10) !important;
+  color: var(--chx-copper, #b85720) !important;
+  font-size: 10px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+html body .cs-quick-copy strong {
+  color: var(--chx-black, #0d0b0a) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: clamp(20px, 1.7vw, 28px) !important;
+  line-height: 1 !important;
+  letter-spacing: -0.04em !important;
+}
+
+html body .cs-quick-copy p {
+  margin: 0 !important;
+  color: var(--chx-muted, #6f6257) !important;
+  font-size: 12px !important;
+  line-height: 1.28 !important;
+}
+
+html body .cs-quick-buttons {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+}
+
+html body .cs-quick-buttons button,
+html body .cs-filters button.strong {
+  min-height: 34px !important;
+  padding: 0 13px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(13, 11, 10, 0.12) !important;
+  background: rgba(13, 11, 10, 0.08) !important;
+  background-image: none !important;
+  color: var(--chx-black, #0d0b0a) !important;
+  box-shadow: none !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+}
+
+html body .cs-quick-buttons button:first-child,
+html body .cs-filters button.strong:first-child {
+  border-color: rgba(223, 113, 56, 0.28) !important;
+  background:
+    radial-gradient(circle at 24% 0%, rgba(255, 248, 239, 0.16), transparent 26%),
+    linear-gradient(135deg, #0d0b0a 0%, #17120f 44%, #6b2f1c 76%, #b85720 100%) !important;
+  color: #fff8ef !important;
+}
+
+/* Approval desk tidy */
+html body .cs-desk {
+  padding: 18px !important;
+  border-radius: 22px !important;
+}
+
+html body .cs-desk > header {
+  display: grid !important;
+  grid-template-columns: 38px minmax(0, 1fr) !important;
+  grid-template-areas:
+    "icon title"
+    "icon body" !important;
+  gap: 2px 12px !important;
+  align-items: center !important;
+  justify-content: start !important;
+  margin-bottom: 12px !important;
+}
+
+html body .cs-desk > header > .cs-icon {
+  grid-area: icon !important;
+  width: 30px !important;
+  height: 30px !important;
+  min-width: 30px !important;
+  min-height: 30px !important;
+  color: var(--chx-copper, #b85720) !important;
+}
+
+html body .cs-desk > header h2 {
+  grid-area: title !important;
+  margin: 0 !important;
+  font-size: clamp(26px, 2.2vw, 36px) !important;
+  line-height: 1 !important;
+}
+
+html body .cs-desk > header i {
+  display: none !important;
+}
+
+html body .cs-desk > header p {
+  grid-area: body !important;
+  margin: 0 !important;
+  color: var(--chx-muted, #6f6257) !important;
+  font-size: 12.5px !important;
+  line-height: 1.3 !important;
+  text-align: left !important;
+}
+
+html body .cs-empty {
+  padding: 18px !important;
+  border-radius: 18px !important;
+}
+
+@media (max-width: 900px) {
+  html body .cs-quick-launch {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body .cs-quick-buttons {
+    justify-content: flex-start !important;
+  }
+
+  html body .cs-quick-buttons button {
+    min-height: 36px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html body .cs-command-cards button {
+    min-height: 70px !important;
+  }
+
+  html body .cs-quick-buttons button {
+    width: auto !important;
+  }
+
+  html body .cs-desk {
+    padding: 14px !important;
+  }
+}
+
