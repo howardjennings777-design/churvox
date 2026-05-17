@@ -6,55 +6,39 @@ function clean(value, fallback = "") {
   return String(value).replace(/\s+/g, " ").trim() || fallback;
 }
 
-function includesAny(value, words) {
-  const text = clean(value).toLowerCase();
-  return words.some((word) => text.includes(word));
-}
-
-function slipText(item = {}) {
-  return [
-    item.kind,
-    item.eyebrow,
-    item.title,
-    item.need,
-    item.prepared,
-    item.detail,
-  ].map(clean).join(" ");
+function textFor(item = {}) {
+  return [item.kind, item.eyebrow, item.title, item.need, item.prepared, item.detail].map(clean).join(" ");
 }
 
 function riskFor(item = {}) {
-  const text = slipText(item).toLowerCase();
+  const text = textFor(item).toLowerCase();
 
   if (
-    includesAny(text, [
-      "missing",
-      "overdue",
-      "failed",
-      "blocked",
-      "risk",
-      "no email",
-      "no phone",
-      "amount",
-    ])
+    text.includes("missing") ||
+    text.includes("blocked") ||
+    text.includes("failed") ||
+    text.includes("overdue") ||
+    text.includes("risk") ||
+    text.includes("amount") ||
+    text.includes("no email") ||
+    text.includes("no phone")
   ) {
-    return { label: "High", tone: "high" };
+    return { label: "High Risk", tone: "high" };
   }
 
   if (
-    includesAny(text, [
-      "quote",
-      "follow",
-      "payment",
-      "reminder",
-      "worker",
-      "dispatch",
-      "proof",
-    ])
+    text.includes("quote") ||
+    text.includes("follow") ||
+    text.includes("payment") ||
+    text.includes("reminder") ||
+    text.includes("dispatch") ||
+    text.includes("worker") ||
+    text.includes("crew")
   ) {
     return { label: "Medium", tone: "medium" };
   }
 
-  return { label: "Low", tone: "low" };
+  return { label: "Low Risk", tone: "low" };
 }
 
 function reasonFor(item = {}) {
@@ -64,7 +48,19 @@ function reasonFor(item = {}) {
   const need = clean(item.need);
   if (need) return need;
 
-  return "Churvox prepared this for owner review.";
+  return "AI prepared this for owner review.";
+}
+
+function rowTitle(item = {}) {
+  const title = clean(item.title, "Approval slip");
+  const kind = clean(item.kind).toLowerCase();
+
+  if (kind.includes("invoice") && !title.toLowerCase().includes("invoice")) return `Invoice — ${title}`;
+  if (kind.includes("quote") && !title.toLowerCase().includes("quote")) return `Quote follow-up — ${title}`;
+  if (kind.includes("dispatch") && !title.toLowerCase().includes("crew")) return `Crew suggestion — ${title}`;
+  if (kind.includes("proof") && !title.toLowerCase().includes("proof")) return `Worker update — ${title}`;
+
+  return title;
 }
 
 export default function CommandDeckDashboard({
@@ -76,82 +72,73 @@ export default function CommandDeckDashboard({
   setShowAllApprovals,
   onOpenSlip,
 }) {
-  const inputCount = machine?.input?.length || 0;
-  const processingCount = machine?.processing?.length || 0;
   const approvals = machine?.approval || [];
   const rows = visibleApprovals?.length ? visibleApprovals : approvals.slice(0, 5);
-
-  const preparedCount = processingCount + approvals.length;
+  const inputCount = machine?.input?.length || 0;
+  const processingCount = machine?.processing?.length || 0;
 
   const readyToInvoice = approvals.filter((item) => {
-    const text = slipText(item).toLowerCase();
-    return (
-      text.includes("invoice") ||
-      text.includes("cashflow") ||
-      text.includes("payment") ||
-      text.includes("proof")
-    );
+    const text = textFor(item).toLowerCase();
+    return text.includes("invoice") || text.includes("payment") || text.includes("proof") || text.includes("cashflow");
   }).length;
 
   const crewActive = approvals.filter((item) => {
-    const text = slipText(item).toLowerCase();
-    return (
-      text.includes("worker") ||
-      text.includes("crew") ||
-      text.includes("dispatch") ||
-      text.includes("assign")
-    );
+    const text = textFor(item).toLowerCase();
+    return text.includes("worker") || text.includes("crew") || text.includes("dispatch") || text.includes("assign");
   }).length;
 
   const metrics = [
-    { label: "Plan", value: planName || "Command", icon: "⌁" },
-    { label: "Inputs", value: inputCount, icon: "＋" },
-    { label: "Prepared", value: preparedCount, icon: "▧" },
+    { label: "Plan", value: planName || "Command", icon: "⌖" },
+    { label: "New Inputs", value: inputCount, icon: "▱" },
+    { label: "Prepared", value: processingCount + approvals.length, icon: "▤" },
     { label: "Approvals", value: approvals.length, icon: "◇" },
   ];
 
-  const cards = [
+  const summary = [
     {
       label: "Ready for approval",
       value: approvals.length,
-      body: "Owner-ready admin prepared by Churvox.",
-      icon: "✓",
-      tone: "approval",
+      body: "AI-prepared items waiting for your decision.",
+      icon: "▣",
     },
     {
       label: "Ready to invoice",
       value: readyToInvoice,
-      body: "Completed work and payment actions ready to review.",
-      icon: "▧",
-      tone: "invoice",
+      body: "Work completed and ready to be invoiced.",
+      icon: "▤",
     },
     {
       label: "Crew active today",
       value: crewActive,
-      body: "Worker updates, job proof and dispatch checks.",
-      icon: "◌",
-      tone: "crew",
+      body: "On-site, en route, or finishing up strong.",
+      icon: "♟",
     },
   ];
 
-  const flow = ["Jobs", "Crew", "Proof", "Invoice", "Payment"];
+  const flow = [
+    { label: "Jobs", icon: "▣" },
+    { label: "Crew", icon: "♟" },
+    { label: "Proof", icon: "▧" },
+    { label: "Invoice", icon: "$" },
+    { label: "Payment", icon: "▰" },
+  ];
 
   return (
-    <section className="cdx-page" data-phase="PHASE_203_ISOLATED_COMMAND_DECK">
-      <header className="cdx-hero">
-        <section className="cdx-hero-copy">
-          <span>Churvox Command Deck</span>
+    <section className="cdx-shot" data-phase="PHASE_204_EXACT_COMPACT_COMMAND_DECK">
+      <header className="cdx-shot-hero">
+        <section className="cdx-shot-copy">
+          <span>Command Deck</span>
           <h1>
             Churvox prepares the admin.
             <mark>You approve the next move.</mark>
           </h1>
           <p>
-            Jobs, proof, quotes, invoices, reminders and worker updates are checked in the background.
-            The owner only sees what needs approval.
+            Jobs, proof, quotes, invoices, reminders and worker updates are handled in the background.
+            You only see what needs approval.
           </p>
         </section>
 
-        <section className="cdx-hero-metrics" aria-label="Command Deck metrics">
+        <section className="cdx-shot-metrics" aria-label="Dashboard metrics">
           {metrics.map((metric) => (
             <article key={metric.label}>
               <i>{metric.icon}</i>
@@ -162,92 +149,78 @@ export default function CommandDeckDashboard({
         </section>
       </header>
 
-      <section className="cdx-cards" aria-label="Important dashboard cards">
-        {cards.map((card) => (
-          <article className={`cdx-card ${card.tone}`} key={card.label}>
+      <section className="cdx-shot-summary" aria-label="Important items">
+        {summary.map((card) => (
+          <article key={card.label}>
             <i>{card.icon}</i>
             <div>
-              <span>{card.label}</span>
               <strong>{card.value}</strong>
+              <span>{card.label}</span>
               <p>{card.body}</p>
             </div>
+            <b>›</b>
           </article>
         ))}
       </section>
 
-      <section className="cdx-desk">
+      <section className="cdx-shot-desk">
         <header>
+          <i>☑</i>
           <div>
-            <span>Open by default</span>
             <h2>Approval Desk</h2>
-            <p>Review what Churvox prepared, approve it, or edit before it goes out.</p>
+            <p>Review the admin Churvox prepared, approve it, or edit before it goes out.</p>
           </div>
-
-          <strong>{approvals.length}</strong>
-
-          {approvals.length > 5 ? (
-            <button type="button" onClick={() => setShowAllApprovals(!showAllApprovals)}>
-              {showAllApprovals ? "Show Top 5" : "View All"}
-            </button>
-          ) : null}
         </header>
 
-        <div className="cdx-table">
+        <section className="cdx-shot-table">
           {rows.length ? rows.map((item) => {
             const risk = riskFor(item);
 
             return (
-              <article className="cdx-row" key={item.id || item.title}>
+              <article className="cdx-shot-row" key={item.id || item.title}>
                 <span>{clean(item.eyebrow || item.kind, "Approval")}</span>
-
-                <div>
-                  <strong>{clean(item.title, "Approval slip")}</strong>
-                  <p>{reasonFor(item)}</p>
-                </div>
-
-                <b className={`cdx-risk ${risk.tone}`}>{risk.label}</b>
-
+                <strong>{rowTitle(item)}</strong>
+                <p>{reasonFor(item)}</p>
+                <b className={`cdx-shot-risk ${risk.tone}`}>{risk.label}</b>
                 <button type="button" onClick={() => onOpenSlip(item)}>
-                  Open Approval Slip
+                  Open Approval Slip <em>›</em>
                 </button>
-
-                <i>⋮</i>
               </article>
             );
           }) : (
-            <section className="cdx-empty">
+            <section className="cdx-shot-empty">
               <strong>No approvals waiting.</strong>
-              <p>When work comes in, Churvox will prepare the admin and place clean approval slips here.</p>
+              <p>When work comes in, Churvox prepares the admin and places clean approval slips here.</p>
             </section>
           )}
 
           {hiddenApprovalCount > 0 ? (
-            <button type="button" className="cdx-view-all" onClick={() => setShowAllApprovals(true)}>
+            <button type="button" className="cdx-shot-view" onClick={() => setShowAllApprovals(true)}>
               View all {approvals.length} approvals
             </button>
           ) : null}
 
           {showAllApprovals && approvals.length > 5 ? (
-            <button type="button" className="cdx-view-all ghost" onClick={() => setShowAllApprovals(false)}>
+            <button type="button" className="cdx-shot-view ghost" onClick={() => setShowAllApprovals(false)}>
               Show top 5 only
             </button>
           ) : null}
-        </div>
+        </section>
       </section>
 
-      <section className="cdx-flow">
+      <section className="cdx-shot-flow">
         <article>
           <i>◉</i>
           <div>
             <strong>AI is watching</strong>
-            <p>Every job. Every proof item. Every admin step.</p>
+            <p>Every job. Every detail. Every time.</p>
           </div>
         </article>
 
         <div>
           {flow.map((step, index) => (
-            <React.Fragment key={step}>
-              <span>{step}</span>
+            <React.Fragment key={step.label}>
+              <span><i>{step.icon}</i>{step.label}</span>
               {index < flow.length - 1 ? <b>›</b> : null}
             </React.Fragment>
           ))}
