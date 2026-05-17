@@ -849,3 +849,205 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* PHASE_212_WIRED_COMMAND_SUITE_INTERACTIONS */
+
+.cs-suite button,
+.cs-suite [role="button"] {
+  cursor: pointer;
+}
+
+.cs-suite button:focus-visible,
+.cs-suite [role="button"]:focus-visible {
+  outline: 3px solid rgba(228, 134, 67, 0.55);
+  outline-offset: 3px;
+}
+
+.cs-subnav {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 0 0 14px;
+}
+
+.cs-subnav button {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(13, 11, 10, 0.1);
+  background: rgba(255, 250, 242, 0.84);
+  color: var(--cs-black);
+  font-weight: 850;
+  white-space: nowrap;
+  box-shadow: 0 8px 20px rgba(13, 11, 10, 0.06);
+}
+
+.cs-subnav button.active {
+  background: var(--cs-black);
+  color: var(--cs-paper);
+}
+
+.cs-subnav .cs-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--cs-orange);
+}
+
+.cs-subnav button.active .cs-icon {
+  color: var(--cs-orange-3);
+}
+
+.cs-stat,
+.cs-command-cards button,
+.cs-ai-card,
+.cs-flow > button,
+.cs-flow > div button {
+  border: 0;
+  text-align: left;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.cs-stat:hover,
+.cs-command-cards button:hover,
+.cs-ai-card:hover,
+.cs-row:hover,
+.cs-approval-row:hover,
+.cs-flow > button:hover,
+.cs-flow > div button:hover,
+.cs-subnav button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 48px rgba(13, 11, 10, 0.14);
+}
+
+.cs-command-cards button {
+  min-height: 142px;
+  display: grid;
+  grid-template-columns: 96px 1fr auto;
+  align-items: center;
+  gap: 24px;
+  padding: 22px 30px;
+  border-radius: 12px;
+  background: rgba(255, 250, 242, 0.94);
+  border: 1px solid rgba(13, 11, 10, 0.1);
+  box-shadow: var(--cs-shadow);
+}
+
+.cs-command-cards button .cs-icon {
+  width: 68px;
+  height: 68px;
+  padding: 18px;
+  border-radius: 999px;
+  color: var(--cs-orange);
+  background: rgba(184, 87, 32, 0.08);
+}
+
+.cs-command-cards button strong {
+  display: inline-block;
+  margin-right: 12px;
+  color: var(--cs-black);
+  font-size: 38px;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.cs-command-cards button span {
+  color: var(--cs-black);
+  font-size: 18px;
+  font-weight: 850;
+}
+
+.cs-command-cards button p {
+  margin: 6px 0 0;
+  color: var(--cs-muted);
+  font-size: 15px;
+  line-height: 1.36;
+}
+
+.cs-command-cards button b {
+  color: var(--cs-black);
+  font-size: 38px;
+  font-weight: 300;
+}
+
+.cs-flow > button {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  align-items: center;
+  gap: 22px;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+.cs-flow > div button {
+  min-width: 130px;
+  min-height: 40px;
+  border-radius: 999px;
+  background: rgba(184, 87, 32, 0.08);
+  color: var(--cs-black);
+  font-size: 16px;
+  font-weight: 850;
+}
+
+.cs-filters button.active {
+  background: var(--cs-orange);
+  color: var(--cs-paper);
+}
+
+.cs-filters button.strong {
+  background: var(--cs-black);
+  color: var(--cs-paper);
+}
+
+.cs-row,
+.cs-approval-row {
+  transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+.cs-row:hover,
+.cs-approval-row:hover {
+  background: rgba(255, 248, 239, 0.92);
+}
+
+.cs-row button,
+.cs-approval-row button {
+  cursor: pointer;
+}
+
+.cs-modal button.secondary {
+  background: var(--cs-orange);
+  color: var(--cs-paper);
+}
+
+.cs-toast {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 5000;
+  max-width: 360px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: var(--cs-black);
+  color: var(--cs-paper);
+  box-shadow: 0 20px 60px rgba(13, 11, 10, 0.24);
+  font-weight: 850;
+}
+
+@media (max-width: 820px) {
+  .cs-subnav {
+    padding-bottom: 10px;
+  }
+
+  .cs-command-cards button {
+    grid-template-columns: 70px 1fr auto;
+    padding: 20px;
+  }
+
+  .cs-flow > button {
+    grid-template-columns: 1fr;
+  }
+}
+

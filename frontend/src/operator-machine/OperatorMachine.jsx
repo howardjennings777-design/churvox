@@ -2,7 +2,6 @@
 // PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
-import "./CommandSuite.css";
 import CommandSuite from "./CommandSuite";
 // PHASE_134_REAL_AI_PREPARED_WORK
 // PHASE_130_REAL_INVOICE_LAYOUT
@@ -1154,9 +1153,6 @@ function buildMachine(data = {}) {
   };
 }
 
-
-
-
 function smartField(...values) {
   for (const value of values) {
     const cleaned = clean(value);
@@ -1849,8 +1845,6 @@ function MachineLane({ title, subtitle, items, empty, onOpen, quiet, limit = 5 }
   );
 }
 
-
-
 const OM_PLAN_DEFS = {
   start: {
     label: "Start",
@@ -1927,8 +1921,6 @@ function planLabel(plan) {
 function planPrice(plan) {
   return OM_PLAN_DEFS[normalisePlanName(plan)]?.price || "$39";
 }
-
-
 
 const OM_PLAN_LIMITS = {
   start: { clients: 20, activeTeam: 1 },
@@ -2489,10 +2481,6 @@ function featureConfig(page) {
   return configs[page] || configs.jobs;
 }
 
-
-
-
-
 function ClientsRecordBoard({ data, machine, onOpen }) {
   const clientRows = rowsForPage("clients", machine, data || {});
   const [clientFilter, setClientFilter] = useState("priority");
@@ -2778,10 +2766,6 @@ function ClientsRecordBoard({ data, machine, onOpen }) {
     </section>
   );
 }
-
-
-
-
 
 function ProofToPaidBoard({ data, machine, onOpen }) {
   const proofRows = rowsForPage("proof", machine, data || {});
@@ -3376,8 +3360,6 @@ function SettingsMachineBoard({ data, machine, onOpen }) {
     </section>
   );
 }
-
-
 
 function InvoicesCashflowBoard({ data, machine, onOpen }) {
   const invoiceRows = rowsForPage("invoices", machine, data || {});
@@ -4883,8 +4865,6 @@ function FeatureWorkspace({ page, machine, data, currentPlan, onOpen, onPlans })
   );
 }
 
-
-
 function receiptTimeFromEntry(entry = {}) {
   const raw = String(entry.id || "").split("-")[0];
   const stamp = Number(raw);
@@ -5023,8 +5003,6 @@ function ChurvoxInstallPrompt() {
     </section>
   );
 }
-
-
 
 function phase111bValue(...values) {
   for (const value of values) {
@@ -5223,8 +5201,6 @@ function phase113InvoiceEmailText(draft = {}, slip = {}) {
   return phase113InvoiceValues(draft, slip).emailText;
 }
 
-
-
 function phase115BusinessNameFromData(data = {}) {
   const raw = data.raw || {};
   const business = raw.business || raw.company || data.business || data.company || {};
@@ -5261,8 +5237,6 @@ function phase121AmountRaw(value) {
   return raw.replace(/^\$/, "");
 }
 
-
-
 function phase122Number(value) {
   const parsed = Number(String(value ?? "").replace(/[^0-9.-]/g, ""));
   return Number.isFinite(parsed) ? parsed : 0;
@@ -5288,14 +5262,10 @@ function phase122SubtotalFromTotal(total, gstAmount) {
   return (totalNum - gstNum).toFixed(2).replace(/\.00$/, "");
 }
 
-
-
 function phase128AmountOwing(total, paid) {
   const owing = Math.max(0, phase122Number(total) - phase122Number(paid));
   return owing.toFixed(2).replace(/\.00$/, "");
 }
-
-
 
 function InvoiceTemplateCard({ slip, draft, update, businessLogoUrl = "", businessName = "" }) {
   if (!phase113ShouldShowInvoiceTemplate(slip)) return null;
@@ -6346,12 +6316,10 @@ function OperatorAuth({ authMode, setAuthMode, onLogin }) {
         ? await authRequest("/auth/register", {
             name: form.name,
             business_name: form.business_name,
-            email: form.email,
-            password: form.password,
+            email: form.email,word: form.password,
           })
         : await authRequest("/auth/login", {
-            email: form.email,
-            password: form.password,
+            email: form.email,word: form.password,
           });
 
       saveSession(payload);

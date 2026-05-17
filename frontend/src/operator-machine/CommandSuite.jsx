@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import "./CommandSuite.css";
 
 const PAGE_MAP = {
   dashboard: "dashboard",
@@ -16,16 +17,30 @@ const PAGE_MAP = {
   settings: "settings",
 };
 
+const NAV_ITEMS = [
+  ["Dashboard", "dashboard", "target"],
+  ["Work", "jobs", "briefcase"],
+  ["Clients", "clients", "client"],
+  ["Crew", "team", "crew"],
+  ["Quotes", "quotes", "document"],
+  ["Invoices", "invoices", "money"],
+  ["Proof & Pay", "proof", "photo"],
+  ["Payroll", "payroll", "pulse"],
+  ["Plans", "plans", "shield"],
+  ["Settings", "settings", "gear"],
+];
+
 function clean(value, fallback = "") {
   if (value === null || value === undefined) return fallback;
   return String(value).replace(/\s+/g, " ").trim() || fallback;
 }
 
-function list(...values) {
+function rowsFrom(...values) {
   for (const value of values) {
     if (Array.isArray(value)) return value;
     if (value && typeof value === "object" && Array.isArray(value.items)) return value.items;
     if (value && typeof value === "object" && Array.isArray(value.results)) return value.results;
+    if (value && typeof value === "object" && Array.isArray(value.data)) return value.data;
   }
   return [];
 }
@@ -62,6 +77,7 @@ function workerName(item = {}) {
       item.assigned_worker_name ||
       item.assignedWorkerName ||
       item.employee_name ||
+      item.full_name ||
       item.name ||
       "Unassigned"
   );
@@ -85,6 +101,14 @@ function idOf(item = {}, index = 0) {
   return clean(item.id || item._id || item.uuid || item.number || item.invoice_number || item.quote_number || `row-${index}`);
 }
 
+function textOf(item = {}) {
+  return Object.values(item || {}).map((value) => {
+    if (value === null || value === undefined) return "";
+    if (typeof value === "object") return "";
+    return clean(value);
+  }).join(" ").toLowerCase();
+}
+
 function slipText(item = {}) {
   return [
     item.kind,
@@ -94,11 +118,13 @@ function slipText(item = {}) {
     item.prepared,
     item.detail,
     item.status,
+    item.reason,
+    item.ai_reason,
   ].map(clean).join(" ").toLowerCase();
 }
 
 function riskFor(item = {}) {
-  const text = slipText(item);
+  const text = slipText(item) || textOf(item);
   if (
     text.includes("missing") ||
     text.includes("blocked") ||
@@ -130,35 +156,52 @@ function aiReason(item = {}, fallback = "Churvox prepared this for review.") {
 }
 
 function Icon({ type }) {
-  return <i className={`cs-icon ${type}`} aria-hidden="true" />;
+  return <i className={`cs-icon ${type || "spark"}`} aria-hidden="true" />;
 }
 
-function Stat({ label, value, icon }) {
+function filterRows(rows, filter) {
+  if (!filter || filter === "All") return rows;
+  const key = filter.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const matches = rows.filter((row) => textOf(row).replace(/[^a-z0-9]/g, "").includes(key));
+  return matches.length ? matches : rows;
+}
+
+function openTop() {
+  try {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } catch {
+    window.scrollTo(0, 0);
+  }
+}
+
+function Stat({ label, value, icon, onClick }) {
   return (
-    <article className="cs-stat">
+    <button type="button" className="cs-stat" onClick={onClick}>
       <Icon type={icon || "target"} />
       <span>{label}</span>
       <strong>{value}</strong>
-    </article>
+    </button>
   );
 }
 
-function AiCard({ title, body, tone = "normal", icon = "spark" }) {
+function AiCard({ title, body, tone = "normal", icon = "spark", onClick }) {
   return (
-    <article className={`cs-ai-card ${tone}`}>
+    <button type="button" className={`cs-ai-card ${tone}`} onClick={onClick}>
       <Icon type={icon} />
       <div>
         <strong>{title}</strong>
         <p>{body}</p>
       </div>
-    </article>
+    </button>
   );
 }
 
 function Table({ rows, columns, onOpen, emptyText = "Nothing here yet." }) {
+  const gridTemplateColumns = `repeat(${columns.length}, minmax(150px, 1fr)) 170px`;
+
   return (
     <section className="cs-table">
-      <header>
+      <header style={{ gridTemplateColumns }}>
         {columns.map((column) => (
           <span key={column.key}>{column.label}</span>
         ))}
@@ -166,11 +209,27 @@ function Table({ rows, columns, onOpen, emptyText = "Nothing here yet." }) {
       </header>
 
       {rows.length ? rows.map((row, index) => (
-        <article className="cs-row" key={idOf(row, index)}>
+        <article
+          className="cs-row"
+          key={idOf(row, index)}
+          style={{ gridTemplateColumns }}
+          role="button"
+          tabIndex={0}
+          onClick={() => onOpen(row)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") onOpen(row);
+          }}
+        >
           {columns.map((column) => (
             <div key={column.key}>{column.render ? column.render(row, index) : clean(row[column.key], "—")}</div>
           ))}
-          <button type="button" onClick={() => onOpen(row)}>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpen(row);
+            }}
+          >
             Open Slip <em>›</em>
           </button>
         </article>
@@ -184,37 +243,59 @@ function Table({ rows, columns, onOpen, emptyText = "Nothing here yet." }) {
   );
 }
 
-function DetailModal({ selected, onClose }) {
+function DetailModal({ selected, onClose, onApprove, setPage }) {
   if (!selected) return null;
+
+  const route = selected.__route;
+  const detail = selected.__body || aiReason(selected, "Churvox prepared this item so you can review it without digging through the app.");
 
   return (
     <section className="cs-modal-backdrop" onClick={onClose}>
       <article className="cs-modal" onClick={(event) => event.stopPropagation()}>
         <header>
-          <span>Approval Slip</span>
+          <span>{selected.__modalType || "Approval Slip"}</span>
           <button type="button" onClick={onClose}>×</button>
         </header>
 
-        <h2>{titleOf(selected, "Record detail")}</h2>
-        <p>{aiReason(selected, "Churvox has prepared this item so you can review it without digging through the app.")}</p>
+        <h2>{clean(selected.__modalTitle || selected.title || selected.name, titleOf(selected, "Record detail"))}</h2>
+        <p>{detail}</p>
 
         <dl>
           <div><dt>Status</dt><dd>{statusOf(selected)}</dd></div>
           <div><dt>Client</dt><dd>{clientName(selected)}</dd></div>
           <div><dt>Area</dt><dd>{areaOf(selected)}</dd></div>
-          <div><dt>Owner action</dt><dd>Review, edit if needed, then approve.</dd></div>
+          <div><dt>AI action</dt><dd>Review, edit if needed, then approve the next move.</dd></div>
         </dl>
 
         <footer>
           <button type="button" className="ghost" onClick={onClose}>Close</button>
-          <button type="button" onClick={onClose}>Approve next move</button>
+
+          {route ? (
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => {
+                setPage?.(route);
+                onClose();
+                openTop();
+              }}
+            >
+              Open page
+            </button>
+          ) : null}
+
+          <button type="button" onClick={() => onApprove(selected)}>
+            Approve next move
+          </button>
         </footer>
       </article>
     </section>
   );
 }
 
-function SmartPage({ config, rows, columns, aiCards, onOpen }) {
+function SmartPage({ config, rows, columns, aiCards, onOpen, activeFilter, setActiveFilter, openInfo, goToPage }) {
+  const filteredRows = filterRows(rows, activeFilter);
+
   return (
     <section className="cs-page">
       <header className="cs-hero compact">
@@ -225,12 +306,36 @@ function SmartPage({ config, rows, columns, aiCards, onOpen }) {
         </section>
 
         <section className="cs-stats">
-          {config.stats.map((stat) => <Stat key={stat.label} {...stat} />)}
+          {config.stats.map((stat) => (
+            <Stat
+              key={stat.label}
+              {...stat}
+              onClick={() => openInfo({
+                __modalType: "Smart Metric",
+                __modalTitle: stat.label,
+                __body: `${stat.label}: ${stat.value}. Churvox tracks this live for the ${config.workspaceTitle} workspace.`,
+                __route: stat.route,
+                status: "Live",
+              })}
+            />
+          ))}
         </section>
       </header>
 
       <section className="cs-ai-strip">
-        {aiCards.map((card) => <AiCard key={card.title} {...card} />)}
+        {aiCards.map((card) => (
+          <AiCard
+            key={card.title}
+            {...card}
+            onClick={() => openInfo({
+              __modalType: "AI Prepared Action",
+              __modalTitle: card.title,
+              __body: card.body,
+              __route: card.route,
+              status: "Prepared",
+            })}
+          />
+        ))}
       </section>
 
       <section className="cs-workspace">
@@ -242,11 +347,26 @@ function SmartPage({ config, rows, columns, aiCards, onOpen }) {
           </div>
 
           <div className="cs-filters">
-            {config.filters.map((filter) => <button type="button" key={filter}>{filter}</button>)}
+            {config.filters.map((filter) => (
+              <button
+                type="button"
+                key={filter}
+                className={activeFilter === filter ? "active" : ""}
+                onClick={() => setActiveFilter(activeFilter === filter ? "All" : filter)}
+              >
+                {filter}
+              </button>
+            ))}
+
+            {config.jumpTo ? (
+              <button type="button" className="strong" onClick={() => goToPage(config.jumpTo)}>
+                Open related page
+              </button>
+            ) : null}
           </div>
         </header>
 
-        <Table rows={rows} columns={columns} onOpen={onOpen} emptyText={config.emptyText} />
+        <Table rows={filteredRows} columns={columns} onOpen={onOpen} emptyText={config.emptyText} />
       </section>
     </section>
   );
@@ -265,30 +385,58 @@ export default function CommandSuite({
   onOpenSlip,
 }) {
   const [selected, setSelected] = useState(null);
+  const [toast, setToast] = useState("");
+  const [activeFilter, setActiveFilter] = useState("All");
   const current = PAGE_MAP[page] || "dashboard";
 
   const model = useMemo(() => {
     const raw = data?.raw || data || {};
-    const jobs = list(raw.jobs, data?.jobs, raw.work, data?.work);
-    const clients = list(raw.clients, data?.clients, raw.customers, data?.customers);
-    const crew = list(raw.workers, data?.workers, raw.team, data?.team, raw.crew, data?.crew);
-    const quotes = list(raw.quotes, data?.quotes);
-    const invoices = list(raw.invoices, data?.invoices);
-    const payments = list(raw.payments, data?.payments, raw.transactions, data?.transactions);
-    const approvals = list(machine?.approval, visibleApprovals);
-    const input = list(machine?.input);
-    const processing = list(machine?.processing);
+    const jobs = rowsFrom(raw.jobs, data?.jobs, raw.work, data?.work);
+    const clients = rowsFrom(raw.clients, data?.clients, raw.customers, data?.customers);
+    const crew = rowsFrom(raw.workers, data?.workers, raw.team, data?.team, raw.crew, data?.crew);
+    const quotes = rowsFrom(raw.quotes, data?.quotes);
+    const invoices = rowsFrom(raw.invoices, data?.invoices);
+    const payments = rowsFrom(raw.payments, data?.payments, raw.transactions, data?.transactions);
+    const approvalRows = rowsFrom(machine?.approval, visibleApprovals);
+    const input = rowsFrom(machine?.input);
+    const processing = rowsFrom(machine?.processing);
 
-    return { raw, jobs, clients, crew, quotes, invoices, payments, approvals, input, processing };
+    return { raw, jobs, clients, crew, quotes, invoices, payments, approvals: approvalRows, input, processing };
   }, [data, machine, visibleApprovals]);
 
-  const approvals = model.approvals.length ? model.approvals : [
-    { id: "sample-invoice", kind: "invoice", eyebrow: "Invoice draft", title: "Invoice #INV-2581 — Oakridge Electrical", prepared: "AI prepared from completed job and approved proof.", status: "Ready" },
-    { id: "sample-quote", kind: "quote", eyebrow: "Quote follow-up", title: "Follow up — Quote Q-1423", prepared: "AI suggests a polite nudge. No response in 5 days.", status: "Ready" },
-    { id: "sample-worker", kind: "proof", eyebrow: "Worker update", title: "Update — Jake Morrison", prepared: "AI compiled availability and recommends approval.", status: "Ready" },
-    { id: "sample-missing", kind: "missing", eyebrow: "Missing detail", title: "Missing detail — Job #J-3487", prepared: "AI flagged missing gate code for tomorrow.", status: "High risk" },
-    { id: "sample-crew", kind: "dispatch", eyebrow: "Crew suggestion", title: "Crew suggestion — Roof Repair", prepared: "AI recommends one extra tech to stay on schedule.", status: "Medium" },
-  ];
+  function goToPage(nextPage) {
+    setActiveFilter("All");
+    setPage?.(nextPage);
+    openTop();
+  }
+
+  function openRecord(record) {
+    setSelected(record);
+  }
+
+  function openInfo(record) {
+    setSelected(record);
+  }
+
+  function approveRecord(record) {
+    if (record?.__approval && onOpenSlip) {
+      onOpenSlip(record.__raw || record);
+      setSelected(null);
+      return;
+    }
+
+    setToast("Approved. Churvox marked this next move as reviewed.");
+    setSelected(null);
+    window.setTimeout(() => setToast(""), 2400);
+  }
+
+  const approvals = model.approvals.map((item) => ({ ...item, __approval: true, __raw: item }));
+
+  const readyToInvoice = model.invoices.filter((item) => /draft|ready|unpaid|owing/i.test(statusOf(item))).length ||
+    model.jobs.filter((item) => /complete|ready/i.test(statusOf(item))).length;
+
+  const crewActive = model.crew.filter((item) => /active|working|on|ready/i.test(statusOf(item))).length ||
+    model.jobs.filter((item) => /active|progress|started/i.test(statusOf(item))).length;
 
   const dashboardStats = [
     { label: "Plan", value: planName || "Command", icon: "target" },
@@ -297,9 +445,7 @@ export default function CommandSuite({
     { label: "Approvals", value: approvals.length, icon: "shield" },
   ];
 
-  const openRecord = (record) => setSelected(record);
-
-  const pageData = {
+  const pages = {
     work: {
       config: {
         kicker: "Work command",
@@ -307,21 +453,21 @@ export default function CommandSuite({
         accent: "already sorted.",
         body: "Jobs enter once. Churvox checks client, area, crew fit, proof and invoice readiness in the background.",
         stats: [
-          { label: "New", value: model.jobs.filter((j) => statusOf(j).toLowerCase().includes("new")).length, icon: "tray" },
+          { label: "New", value: model.jobs.filter((j) => /new|pending/i.test(statusOf(j))).length, icon: "tray" },
           { label: "Assigned", value: model.jobs.filter((j) => workerName(j) !== "Unassigned").length, icon: "crew" },
           { label: "Active", value: model.jobs.filter((j) => /active|progress|started/i.test(statusOf(j))).length, icon: "pulse" },
-          { label: "Ready invoice", value: model.jobs.filter((j) => /complete|ready/i.test(statusOf(j))).length, icon: "money" },
+          { label: "Ready invoice", value: model.jobs.filter((j) => /complete|ready/i.test(statusOf(j))).length, icon: "money", route: "invoices" },
         ],
         workspaceKicker: "Work board",
         workspaceTitle: "Work slips",
-        workspaceBody: "Open a work slip to review client, crew, proof and invoice readiness.",
+        workspaceBody: "Tap a row to review client, crew, proof and invoice readiness.",
         filters: ["Needs action", "Unassigned", "Today", "Active", "Completed", "Ready to invoice"],
         emptyText: "No work found.",
       },
       rows: model.jobs,
       aiCards: [
-        { title: "Best crew match", body: "When area is selected, Churvox suggests the best worker using area, workload and clashes.", icon: "crew" },
-        { title: "Invoice readiness", body: "Completed work is checked for proof, notes and pricing before invoice prep.", icon: "money" },
+        { title: "Best crew match", body: "When area is selected, Churvox suggests the best worker using area, workload and clashes.", icon: "crew", route: "team" },
+        { title: "Invoice readiness", body: "Completed work is checked for proof, notes and pricing before invoice prep.", icon: "money", route: "invoices" },
         { title: "Schedule guard", body: "Crew clashes and risky timing are flagged before approval.", icon: "shield" },
       ],
       columns: [
@@ -342,13 +488,13 @@ export default function CommandSuite({
         body: "Churvox watches missing details, unpaid invoices, open quotes and follow-up opportunities.",
         stats: [
           { label: "Clients", value: model.clients.length, icon: "client" },
-          { label: "Missing details", value: model.clients.filter((c) => !clean(c.email || c.phone)).length, icon: "alert" },
-          { label: "Open quotes", value: model.quotes.length, icon: "document" },
-          { label: "Unpaid", value: model.invoices.filter((i) => /unpaid|overdue|owing/i.test(statusOf(i))).length, icon: "money" },
+          { label: "Missing details", value: model.clients.filter((c) => !clean(c.email || c.phone || c.mobile)).length, icon: "alert" },
+          { label: "Open quotes", value: model.quotes.length, icon: "document", route: "quotes" },
+          { label: "Unpaid", value: model.invoices.filter((i) => /unpaid|overdue|owing/i.test(statusOf(i))).length, icon: "money", route: "invoices" },
         ],
         workspaceKicker: "Client list",
         workspaceTitle: "Client records",
-        workspaceBody: "Open a client to see work history, quotes, invoices and AI next action.",
+        workspaceBody: "Tap a client to see work history, quotes, invoices and AI next action.",
         filters: ["Needs details", "Active work", "Owing", "Follow-up", "All clients"],
         emptyText: "No clients found.",
       },
@@ -376,20 +522,20 @@ export default function CommandSuite({
         body: "Churvox checks area, availability, workload, job history and schedule risk before suggesting crew.",
         stats: [
           { label: "Crew", value: model.crew.length, icon: "crew" },
-          { label: "Active", value: model.crew.filter((w) => /active|working|on/i.test(statusOf(w))).length, icon: "pulse" },
+          { label: "Active", value: crewActive, icon: "pulse" },
           { label: "Available", value: model.crew.filter((w) => /available|ready/i.test(statusOf(w))).length, icon: "shield" },
           { label: "Review", value: model.crew.filter((w) => /missing|late|risk/i.test(statusOf(w))).length, icon: "alert" },
         ],
         workspaceKicker: "Crew list",
         workspaceTitle: "Crew profiles",
-        workspaceBody: "Open a worker to see today’s work, notes, proof history and suggested assignments.",
+        workspaceBody: "Tap a worker to see today’s work, notes, proof history and suggested assignments.",
         filters: ["Available", "Active", "Overloaded", "Needs update", "All crew"],
         emptyText: "No crew found.",
       },
       rows: model.crew,
       aiCards: [
-        { title: "Best worker found", body: "Unassigned work gets a recommended crew match with the reason attached.", icon: "crew" },
-        { title: "Live updates", body: "Worker notes, pauses, proof photos and completions feed owner/admin automatically.", icon: "pulse" },
+        { title: "Best worker found", body: "Unassigned work gets a recommended crew match with the reason attached.", icon: "crew", route: "jobs" },
+        { title: "Live updates", body: "Worker notes, pauses, proof photos and completions feed owner/admin automatically.", icon: "pulse", route: "proof" },
         { title: "Clash warning", body: "Churvox warns before assigning someone into a schedule clash.", icon: "alert" },
       ],
       columns: [
@@ -416,7 +562,7 @@ export default function CommandSuite({
         ],
         workspaceKicker: "Quote list",
         workspaceTitle: "Quote slips",
-        workspaceBody: "Open a quote to approve follow-up, convert to work, or convert to invoice.",
+        workspaceBody: "Tap a quote to approve follow-up, convert to work, or convert to invoice.",
         filters: ["Follow-up due", "Drafts", "Awaiting", "Accepted", "All quotes"],
         emptyText: "No quotes found.",
       },
@@ -424,7 +570,7 @@ export default function CommandSuite({
       aiCards: [
         { title: "Follow-up prepared", body: "Old quotes get a polite follow-up drafted for owner approval.", icon: "spark" },
         { title: "Missing price check", body: "Quotes missing amount or detail are flagged before sending.", icon: "alert" },
-        { title: "Convert when accepted", body: "Accepted quotes can become work or invoice prep without retyping.", icon: "shield" },
+        { title: "Convert when accepted", body: "Accepted quotes can become work or invoice prep without retyping.", icon: "shield", route: "jobs" },
       ],
       columns: [
         { key: "number", label: "Quote", render: (row) => clean(row.quote_number || row.number || row.id, "Quote") },
@@ -450,15 +596,15 @@ export default function CommandSuite({
         ],
         workspaceKicker: "Invoice list",
         workspaceTitle: "Invoice slips",
-        workspaceBody: "Open an invoice to review proof, AI description, missing details and send readiness.",
+        workspaceBody: "Tap an invoice to review proof, AI description, missing details and send readiness.",
         filters: ["Drafts", "Ready to send", "Owing", "Overdue", "Paid"],
         emptyText: "No invoices found.",
       },
       rows: model.invoices,
       aiCards: [
-        { title: "Draft invoice ready", body: "Completed work becomes invoice prep with proof and notes attached.", icon: "money" },
+        { title: "Draft invoice ready", body: "Completed work becomes invoice prep with proof and notes attached.", icon: "money", route: "proof" },
         { title: "Reminder prepared", body: "Unpaid invoices get customer reminders drafted for approval.", icon: "spark" },
-        { title: "Missing email check", body: "Churvox flags invoices that cannot be sent yet.", icon: "alert" },
+        { title: "Missing email check", body: "Churvox flags invoices that cannot be sent yet.", icon: "alert", route: "clients" },
       ],
       columns: [
         { key: "number", label: "Invoice", render: (row) => clean(row.invoice_number || row.number || row.id, "Invoice") },
@@ -479,19 +625,19 @@ export default function CommandSuite({
         stats: [
           { label: "Completed", value: model.jobs.filter((j) => /complete/i.test(statusOf(j))).length, icon: "shield" },
           { label: "Photos", value: model.jobs.filter((j) => Array.isArray(j.photos) && j.photos.length).length, icon: "photo" },
-          { label: "Ready invoice", value: model.invoices.length, icon: "money" },
+          { label: "Ready invoice", value: readyToInvoice, icon: "money", route: "invoices" },
           { label: "Follow-up", value: model.payments.length, icon: "card" },
         ],
         workspaceKicker: "Proof feed",
         workspaceTitle: "Proof and payment slips",
-        workspaceBody: "Open proof to check photos, completion notes, invoice readiness and payment action.",
+        workspaceBody: "Tap proof to check photos, completion notes, invoice readiness and payment action.",
         filters: ["Completed", "Photos", "Ready invoice", "Payment follow-up", "All proof"],
         emptyText: "No proof items found.",
       },
       rows: model.jobs.filter((j) => /complete|proof|photo|ready/i.test(statusOf(j))).length ? model.jobs.filter((j) => /complete|proof|photo|ready/i.test(statusOf(j))) : model.jobs,
       aiCards: [
         { title: "Proof checked", body: "Photos and worker notes are attached before invoice prep.", icon: "photo" },
-        { title: "Invoice path ready", body: "Completed work becomes draft invoice context automatically.", icon: "money" },
+        { title: "Invoice path ready", body: "Completed work becomes draft invoice context automatically.", icon: "money", route: "invoices" },
         { title: "Payment follow-up", body: "Unpaid or overdue payment actions are surfaced for approval.", icon: "card" },
       ],
       columns: [
@@ -518,7 +664,7 @@ export default function CommandSuite({
         ],
         workspaceKicker: "Payroll review",
         workspaceTitle: "Timesheet slips",
-        workspaceBody: "Open a payroll slip to review worker hours, jobs, pauses and notes.",
+        workspaceBody: "Tap a payroll slip to review worker hours, jobs, pauses and notes.",
         filters: ["Needs review", "Approved", "Missing clock-off", "Export ready"],
         emptyText: "No payroll records found.",
       },
@@ -552,7 +698,7 @@ export default function CommandSuite({
         ],
         workspaceKicker: "Plans",
         workspaceTitle: "Churvox pricing",
-        workspaceBody: "Pick the plan that matches how much admin you want Churvox to prepare.",
+        workspaceBody: "Tap a plan to review what Churvox prepares for you.",
         filters: ["Monthly", "AI Operator", "MYOB", "Command"],
         emptyText: "No plans loaded.",
       },
@@ -590,7 +736,7 @@ export default function CommandSuite({
         ],
         workspaceKicker: "Settings",
         workspaceTitle: "Control centre",
-        workspaceBody: "Open a setting to manage business controls and AI behaviour.",
+        workspaceBody: "Tap a setting to manage business controls and AI behaviour.",
         filters: ["Business", "Roles", "AI Operator", "Billing", "MYOB", "SMS", "Security"],
         emptyText: "No settings found.",
       },
@@ -618,111 +764,176 @@ export default function CommandSuite({
     },
   };
 
-  if (current === "dashboard") {
-    return (
-      <section className="cs-page" data-phase="PHASE_211_FRESH_COMMAND_DESK">
-        <header className="cs-hero">
-          <section>
-            <span>Command Desk</span>
-            <h1>
-              Churvox prepares the admin.
-              <mark>You approve the next move.</mark>
-            </h1>
-            <p>
-              Work comes in, Churvox checks the admin path, then shows the owner one clean approval slip.
-            </p>
-          </section>
-
-          <section className="cs-stats">
-            {dashboardStats.map((stat) => <Stat key={stat.label} {...stat} />)}
-          </section>
-        </header>
-
-        <section className="cs-command-cards">
-          <article>
-            <Icon type="briefcase" />
-            <div><strong>{approvals.length}</strong><span>Ready for approval</span><p>Owner-ready admin waiting for your decision.</p></div>
-            <b>›</b>
-          </article>
-          <article>
-            <Icon type="money" />
-            <div><strong>{pageData.invoices.rows.length}</strong><span>Ready to invoice</span><p>Completed work ready for invoice prep.</p></div>
-            <b>›</b>
-          </article>
-          <article>
-            <Icon type="crew" />
-            <div><strong>{model.crew.length}</strong><span>Crew active today</span><p>Worker notes, proof and updates flowing in.</p></div>
-            <b>›</b>
-          </article>
-        </section>
-
-        <section className="cs-desk">
-          <header>
-            <Icon type="clipboard" />
-            <h2>Approval Desk</h2>
-            <i />
-            <p>Review what Churvox prepared, approve it, or edit before it goes out.</p>
-          </header>
-
-          <section className="cs-approval-list">
-            {approvals.slice(0, showAllApprovals ? approvals.length : 5).map((item, index) => {
-              const risk = riskFor(item);
-              return (
-                <article className="cs-approval-row" key={idOf(item, index)}>
-                  <span>{clean(item.eyebrow || item.kind, "Approval")}</span>
-                  <strong>{titleOf(item, "Approval slip")}</strong>
-                  <p>{aiReason(item)}</p>
-                  <b className={`cs-risk ${risk.tone}`}>{risk.label}</b>
-                  <button type="button" onClick={() => onOpenSlip ? onOpenSlip(item) : openRecord(item)}>
-                    Open Approval Slip <em>›</em>
-                  </button>
-                </article>
-              );
-            })}
-
-            {hiddenApprovalCount > 0 && !showAllApprovals ? (
-              <button type="button" className="cs-view" onClick={() => setShowAllApprovals?.(true)}>
-                View all {approvals.length} approvals
-              </button>
-            ) : null}
-
-            {showAllApprovals && approvals.length > 5 ? (
-              <button type="button" className="cs-view ghost" onClick={() => setShowAllApprovals?.(false)}>
-                Show top 5 only
-              </button>
-            ) : null}
-          </section>
-        </section>
-
-        <section className="cs-flow">
-          <article><Icon type="eye" /><div><strong>AI is watching</strong><p>Every job. Every detail. Every time.</p></div></article>
-          <div>
-            {["Work", "Crew", "Proof", "Invoice", "Payment"].map((step, index, arr) => (
-              <React.Fragment key={step}>
-                <span>{step}</span>
-                {index < arr.length - 1 ? <b>›</b> : null}
-              </React.Fragment>
-            ))}
-          </div>
-        </section>
-
-        <DetailModal selected={selected} onClose={() => setSelected(null)} />
-      </section>
-    );
-  }
-
-  const pageConfig = pageData[current] || pageData.work;
+  const pageConfig = pages[current] || pages.work;
 
   return (
-    <>
-      <SmartPage
-        config={pageConfig.config}
-        rows={pageConfig.rows}
-        columns={pageConfig.columns}
-        aiCards={pageConfig.aiCards}
-        onOpen={openRecord}
+    <section className="cs-suite" data-phase="PHASE_212_WIRED_COMMAND_SUITE">
+      <nav className="cs-subnav" aria-label="Command Suite pages">
+        {NAV_ITEMS.map(([label, target, icon]) => {
+          const active = PAGE_MAP[target] === current;
+          return (
+            <button
+              type="button"
+              key={target}
+              className={active ? "active" : ""}
+              onClick={() => goToPage(target)}
+            >
+              <Icon type={icon} />
+              <span>{label}</span>
+            </button>
+          );
+        })}
+      </nav>
+
+      {current === "dashboard" ? (
+        <section className="cs-page">
+          <header className="cs-hero">
+            <section>
+              <span>Command Desk</span>
+              <h1>
+                Churvox prepares the admin.
+                <mark>You approve the next move.</mark>
+              </h1>
+              <p>
+                Work comes in, Churvox checks the admin path, then shows the owner one clean approval slip.
+              </p>
+            </section>
+
+            <section className="cs-stats">
+              {dashboardStats.map((stat) => (
+                <Stat
+                  key={stat.label}
+                  {...stat}
+                  onClick={() => openInfo({
+                    __modalType: "Live metric",
+                    __modalTitle: stat.label,
+                    __body: `${stat.label}: ${stat.value}. Churvox keeps this updated from your business data.`,
+                    status: "Live",
+                  })}
+                />
+              ))}
+            </section>
+          </header>
+
+          <section className="cs-command-cards">
+            <button type="button" onClick={() => openInfo({ __modalType: "Approval queue", __modalTitle: "Ready for approval", __body: "These are owner-ready approval slips prepared by Churvox.", status: "Ready" })}>
+              <Icon type="briefcase" />
+              <div><strong>{approvals.length}</strong><span>Ready for approval</span><p>Owner-ready admin waiting for your decision.</p></div>
+              <b>›</b>
+            </button>
+            <button type="button" onClick={() => goToPage("invoices")}>
+              <Icon type="money" />
+              <div><strong>{readyToInvoice}</strong><span>Ready to invoice</span><p>Completed work ready for invoice prep.</p></div>
+              <b>›</b>
+            </button>
+            <button type="button" onClick={() => goToPage("team")}>
+              <Icon type="crew" />
+              <div><strong>{crewActive}</strong><span>Crew active today</span><p>Worker notes, proof and updates flowing in.</p></div>
+              <b>›</b>
+            </button>
+          </section>
+
+          <section className="cs-desk">
+            <header>
+              <Icon type="clipboard" />
+              <h2>Approval Desk</h2>
+              <i />
+              <p>Review what Churvox prepared, approve it, or edit before it goes out.</p>
+            </header>
+
+            <section className="cs-approval-list">
+              {approvals.length ? approvals.slice(0, showAllApprovals ? approvals.length : 5).map((item, index) => {
+                const risk = riskFor(item);
+                return (
+                  <article
+                    className="cs-approval-row"
+                    key={idOf(item, index)}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openRecord(item)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") openRecord(item);
+                    }}
+                  >
+                    <span>{clean(item.eyebrow || item.kind, "Approval")}</span>
+                    <strong>{titleOf(item, "Approval slip")}</strong>
+                    <p>{aiReason(item)}</p>
+                    <b className={`cs-risk ${risk.tone}`}>{risk.label}</b>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        openRecord(item);
+                      }}
+                    >
+                      Open Approval Slip <em>›</em>
+                    </button>
+                  </article>
+                );
+              }) : (
+                <section className="cs-empty">
+                  <strong>No approvals waiting.</strong>
+                  <p>When work comes in, Churvox prepares the admin and places clean approval slips here.</p>
+                </section>
+              )}
+
+              {hiddenApprovalCount > 0 && !showAllApprovals ? (
+                <button type="button" className="cs-view" onClick={() => setShowAllApprovals?.(true)}>
+                  View all {approvals.length} approvals
+                </button>
+              ) : null}
+
+              {showAllApprovals && approvals.length > 5 ? (
+                <button type="button" className="cs-view ghost" onClick={() => setShowAllApprovals?.(false)}>
+                  Show top 5 only
+                </button>
+              ) : null}
+            </section>
+          </section>
+
+          <section className="cs-flow">
+            <button type="button" onClick={() => openInfo({ __modalType: "AI Watch", __modalTitle: "AI is watching", __body: "Churvox watches each step from work intake to payment follow-up.", status: "Active" })}>
+              <Icon type="eye" />
+              <div><strong>AI is watching</strong><p>Every job. Every detail. Every time.</p></div>
+            </button>
+            <div>
+              {[
+                ["Work", "jobs"],
+                ["Crew", "team"],
+                ["Proof", "proof"],
+                ["Invoice", "invoices"],
+                ["Payment", "proof"],
+              ].map(([label, route], index, arr) => (
+                <React.Fragment key={`${label}-${route}`}>
+                  <button type="button" onClick={() => goToPage(route)}>{label}</button>
+                  {index < arr.length - 1 ? <b>›</b> : null}
+                </React.Fragment>
+              ))}
+            </div>
+          </section>
+        </section>
+      ) : (
+        <SmartPage
+          config={pageConfig.config}
+          rows={pageConfig.rows}
+          columns={pageConfig.columns}
+          aiCards={pageConfig.aiCards}
+          onOpen={openRecord}
+          activeFilter={activeFilter}
+          setActiveFilter={setActiveFilter}
+          openInfo={openInfo}
+          goToPage={goToPage}
+        />
+      )}
+
+      {toast ? <aside className="cs-toast">{toast}</aside> : null}
+
+      <DetailModal
+        selected={selected}
+        onClose={() => setSelected(null)}
+        onApprove={approveRecord}
+        setPage={goToPage}
       />
-      <DetailModal selected={selected} onClose={() => setSelected(null)} />
-    </>
+    </section>
   );
 }
