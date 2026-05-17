@@ -1,1 +1,1 @@
-export const churvoxRenderDeployMarker = "PHASE_266_TINY_VIEW_BORDER_GUTTER_20260517094351";
+export const churvoxRenderDeployMarker = "PHASE_268_MOVE_CARD_WORDS_FROM_ICONS_20260517094802";
