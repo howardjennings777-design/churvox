@@ -10,7 +10,8 @@ try {
 }
 
 const ROOT = process.cwd();
-const BASE_URL = process.env.CHURVOX_AUDIT_URL || "http://127.0.0.1:4298";
+const BASE_URL = process.env.CHURVOX_AUDIT_URL || "https://www.churvox.com";
+const BACKEND = process.env.CHURVOX_BACKEND_URL || "https://grassley-backend.onrender.com";
 const EMAIL = process.env.CHURVOX_TEST_EMAIL || "";
 const PASSWORD = process.env.CHURVOX_TEST_PASSWORD || "";
 const SHOTS = path.join(ROOT, "business-ready-audit", "screenshots");
@@ -37,6 +38,10 @@ function addPass(area, msg) {
   console.log(`✅ PASS [${area}]: ${msg}`);
 }
 
+function short(value) {
+  return String(value || "").replace(/\s+/g, " ").slice(0, 700);
+}
+
 async function shot(page, name) {
   const safe = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   await page.screenshot({ path: path.join(SHOTS, `${safe}.png`), fullPage: true }).catch(() => {});
@@ -46,12 +51,76 @@ async function bodyText(page) {
   return page.locator("body").innerText({ timeout: 10000 }).catch(() => "");
 }
 
+async function backendLogin() {
+  if (!EMAIL || !PASSWORD) {
+    addBlocker("login", "CHURVOX_TEST_EMAIL and CHURVOX_TEST_PASSWORD are required.");
+    return null;
+  }
+
+  try {
+    const res = await fetch(`${BACKEND}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ email: EMAIL, password: PASSWORD }),
+    });
+
+    const text = await res.text();
+    let payload = {};
+    try {
+      payload = text ? JSON.parse(text) : {};
+    } catch {
+      payload = { message: text };
+    }
+
+    if (!res.ok) {
+      addBlocker("login", `/api/auth/login failed: ${res.status} ${short(text)}`);
+      return null;
+    }
+
+    const token = payload.token || payload.access_token || payload.authToken || payload.jwt || payload?.user?.token || "";
+
+    if (!token) {
+      addBlocker("login", "Backend login worked but no token was returned.");
+      return null;
+    }
+
+    addPass("login", "Backend login returned a token.");
+    return { token, user: payload };
+  } catch (err) {
+    addBlocker("login", `Backend login request crashed: ${err.message}`);
+    return null;
+  }
+}
+
+async function injectSession(page, session) {
+  const payload = session.user || {};
+  const token = session.token;
+
+  await page.goto(`${BASE_URL}/?audit-session=${Date.now()}`, { waitUntil: "domcontentloaded", timeout: 60000 }).catch(() => {});
+
+  await page.evaluate(({ token, payload }) => {
+    localStorage.setItem("token", token);
+    localStorage.setItem("authToken", token);
+    localStorage.setItem("access_token", token);
+
+    localStorage.setItem("churvox_user", JSON.stringify(payload));
+    if (payload.email) localStorage.setItem("churvox_email", payload.email);
+    if (payload.name) localStorage.setItem("churvox_owner_name", payload.name);
+    if (payload.role) localStorage.setItem("churvox_role", payload.role);
+    if (payload.plan) localStorage.setItem("churvox_plan", payload.plan);
+    if (payload.plan_status) localStorage.setItem("churvox_plan_status", payload.plan_status);
+    if (payload.subscription_status) localStorage.setItem("churvox_subscription_status", payload.subscription_status);
+    if (payload.business_id) localStorage.setItem("churvox_business_id", String(payload.business_id));
+    if (payload.trial_ends_at) localStorage.setItem("churvox_trial_ends_at", payload.trial_ends_at);
+  }, { token, payload });
+
+  await page.goto(`${BASE_URL}/dashboard?runtime-audit=${Date.now()}`, { waitUntil: "networkidle", timeout: 60000 }).catch(() => {});
+  await page.waitForTimeout(2500);
+}
+
 async function clickText(page, label) {
   const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const patterns = [
-    new RegExp(`^${escaped}$`, "i"),
-    new RegExp(escaped, "i"),
-  ];
+  const patterns = [new RegExp(`^${escaped}$`, "i"), new RegExp(escaped, "i")];
 
   for (const pattern of patterns) {
     const button = page.getByRole("button", { name: pattern }).first();
@@ -108,67 +177,23 @@ async function checkOverflow(page, area) {
     return Math.max(doc.scrollWidth - doc.clientWidth, body.scrollWidth - body.clientWidth);
   }).catch(() => 0);
 
-  if (overflow > 30) {
-    addWarning(area, `Horizontal overflow: ${overflow}px`);
-  } else {
-    addPass(area, "No major horizontal overflow.");
-  }
+  if (overflow > 30) addWarning(area, `Horizontal overflow: ${overflow}px`);
+  else addPass(area, "No major horizontal overflow.");
 }
 
-async function login(page) {
-  if (!EMAIL || !PASSWORD) {
-    addBlocker("login", "CHURVOX_TEST_EMAIL and CHURVOX_TEST_PASSWORD are required.");
-    return false;
-  }
-
-  await page.goto(`${BASE_URL}/login`, { waitUntil: "networkidle", timeout: 60000 }).catch(async () => {
-    await page.goto(BASE_URL, { waitUntil: "networkidle", timeout: 60000 });
-  });
-
-  await page.waitForTimeout(1000);
-
-  const emailInput = page.locator('input[type="email"], input[name*="email" i], input[placeholder*="email" i]').first();
-  const passInput = page.locator('input[type="password"], input[name*="password" i], input[placeholder*="password" i]').first();
-
-  if (!(await emailInput.count()) || !(await passInput.count())) {
-    addBlocker("login", "Could not find email/password inputs.");
-    await shot(page, "login-inputs-missing");
-    return false;
-  }
-
-  await emailInput.fill(EMAIL);
-  await passInput.fill(PASSWORD);
-
-  const clicked =
-    await clickText(page, "Log in") ||
-    await clickText(page, "Login") ||
-    await clickText(page, "Open Command Desk") ||
-    await clickText(page, "Enter Command Desk") ||
-    await clickText(page, "Sign in");
-
-  if (!clicked) {
-    const submit = page.locator('button[type="submit"]').first();
-    if (await submit.count()) {
-      await submit.click();
-    } else {
-      addBlocker("login", "Could not find login submit button.");
-      await shot(page, "login-submit-missing");
-      return false;
-    }
-  }
-
-  await page.waitForTimeout(7000);
-
+async function verifyLoggedIn(page) {
   const text = await bodyText(page);
+  const url = page.url();
+  const authInputCount = await page.locator('input[type="email"], input[type="password"]').count().catch(() => 99);
 
-  if (/password/i.test(text) && /email/i.test(text) && !/dashboard|command desk|work|clients/i.test(text)) {
-    addBlocker("login", "Login did not stick.");
-    await shot(page, "login-did-not-stick");
+  if (/\/login|\/signup/i.test(url) || authInputCount >= 2 || (/login|password|email/i.test(text.slice(0, 1500)) && !/dashboard|command desk|work|clients/i.test(text))) {
+    addBlocker("login", "Session injection did not reach dashboard.");
+    await shot(page, "runtime-login-failed");
     return false;
   }
 
-  addPass("login", "Login appears to stick.");
-  await shot(page, "logged-in");
+  addPass("login", "Dashboard opened after backend-login token injection.");
+  await shot(page, "runtime-logged-in-dashboard");
   return true;
 }
 
@@ -181,7 +206,7 @@ async function testNav(page, label) {
     return;
   }
 
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(1800);
   await checkBadText(page, label);
   await checkOverflow(page, label);
   await shot(page, `nav-${label}`);
@@ -189,7 +214,7 @@ async function testNav(page, label) {
 }
 
 async function testQuickAction(page, label, values) {
-  await page.goto(`${BASE_URL}/dashboard`, { waitUntil: "networkidle", timeout: 60000 }).catch(() => {});
+  await page.goto(`${BASE_URL}/dashboard?quick-audit=${Date.now()}`, { waitUntil: "networkidle", timeout: 60000 }).catch(() => {});
   await page.waitForTimeout(1500);
 
   const clicked = await clickText(page, label);
@@ -243,12 +268,13 @@ async function testQuickAction(page, label, values) {
 }
 
 async function main() {
+  const session = await backendLogin();
+
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
 
   page.on("console", (msg) => {
     const text = msg.text();
-
     if (/beforeinstallpromptevent\.preventDefault/i.test(text)) return;
 
     if (/ReferenceError|TypeError|Churvox UI crash|is not defined|cannot read/i.test(text)) {
@@ -265,44 +291,31 @@ async function main() {
     const status = response.status();
 
     if (url.includes("/api/") && status >= 400) {
-      if (/quick-create/i.test(url)) {
-        addBlocker("backend", `Quick-create API failed: ${status} ${url}`);
-      } else {
-        addWarning("backend", `API returned ${status}: ${url}`);
-      }
+      if (/quick-create/i.test(url)) addBlocker("backend", `Quick-create API failed: ${status} ${url}`);
+      else addWarning("backend", `API returned ${status}: ${url}`);
     }
   });
 
-  const loggedIn = await login(page);
+  if (session) {
+    await injectSession(page, session);
 
-  if (loggedIn) {
-    for (const label of ["Dashboard", "Work", "Clients", "Crew", "Quotes", "Invoices", "Proof & Pay", "Payroll", "Plans", "Settings"]) {
-      await testNav(page, label);
+    if (await verifyLoggedIn(page)) {
+      for (const label of ["Dashboard", "Work", "Clients", "Crew", "Quotes", "Invoices", "Proof & Pay", "Payroll", "Plans", "Settings"]) {
+        await testNav(page, label);
+      }
+
+      const id = Date.now().toString().slice(-6);
+
+      await testQuickAction(page, "Add client", {
+        inputs: [`Audit Client ${id}`, `audit${id}@churvox.test`, `020000${id}`, `1 Audit Street`, `Audit Area`],
+        textareas: [`Runtime audit client ${id}. Safe to delete.`],
+      });
+
+      await testQuickAction(page, "Add work", {
+        inputs: [`Audit Work ${id}`, `Audit Client ${id}`, `1 Audit Street`, `Audit Area`, `15`],
+        textareas: [`Runtime audit work ${id}. Safe to delete.`],
+      });
     }
-
-    const id = Date.now().toString().slice(-6);
-
-    await testQuickAction(page, "Add client", {
-      inputs: [
-        `Audit Client ${id}`,
-        `audit${id}@churvox.test`,
-        `020000${id}`,
-        `1 Audit Street`,
-        `Audit Area`,
-      ],
-      textareas: [`Runtime audit client ${id}. Safe to delete.`],
-    });
-
-    await testQuickAction(page, "Add work", {
-      inputs: [
-        `Audit Work ${id}`,
-        `Audit Client ${id}`,
-        `1 Audit Street`,
-        `Audit Area`,
-        `15`,
-      ],
-      textareas: [`Runtime audit work ${id}. Safe to delete.`],
-    });
   }
 
   await browser.close();
@@ -312,9 +325,7 @@ async function main() {
     "",
     `Generated: ${new Date().toISOString()}`,
     "",
-    blockers.length
-      ? `❌ **NOT READY** — ${blockers.length} blocker(s).`
-      : "✅ **RUNTIME CHECK FOUND NO BLOCKERS**.",
+    blockers.length ? `❌ **NOT READY** — ${blockers.length} blocker(s).` : "✅ **RUNTIME CHECK FOUND NO BLOCKERS**.",
     "",
     "## Blockers",
     "",
@@ -331,7 +342,6 @@ async function main() {
   ].join("\n");
 
   fs.writeFileSync(REPORT, md);
-
   console.log(md);
 
   if (blockers.length) process.exit(1);

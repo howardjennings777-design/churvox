@@ -97,12 +97,25 @@ function saveSession(payload) {
     localStorage.setItem("access_token", token);
   }
 
-  const user = data.user || data.account || data.profile || {};
+  // PHASE_298_TOP_LEVEL_LOGIN_SESSION
+  // /api/auth/login returns user fields at the top level, not always under data.user.
+  const user =
+    data.user ||
+    data.account ||
+    data.profile ||
+    (data.email || data.id || data._id ? data : {});
+
   if (user && typeof user === "object") {
     localStorage.setItem("churvox_user", JSON.stringify(user));
+
     if (user.name) localStorage.setItem("churvox_owner_name", user.name);
     if (user.email) localStorage.setItem("churvox_email", user.email);
     if (user.role) localStorage.setItem("churvox_role", user.role);
+    if (user.plan) localStorage.setItem("churvox_plan", user.plan);
+    if (user.plan_status) localStorage.setItem("churvox_plan_status", user.plan_status);
+    if (user.subscription_status) localStorage.setItem("churvox_subscription_status", user.subscription_status);
+    if (user.business_id) localStorage.setItem("churvox_business_id", String(user.business_id));
+    if (user.trial_ends_at) localStorage.setItem("churvox_trial_ends_at", user.trial_ends_at);
   }
 }
 
