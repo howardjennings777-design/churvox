@@ -1,4 +1,4 @@
-/* PHASE_246_DISABLE_PWA_CACHE_TOPWIDE_THEME_20260517074049 */
+/* PHASE_264_NO_STORE_SERVICE_WORKER_20260517092652 */
 self.addEventListener("install", (event) => {
   self.skipWaiting();
 });

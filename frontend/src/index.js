@@ -1,10 +1,10 @@
 
-// PHASE_246_LOAD_TOPWIDE_THEME_LAST
-(function churvoxLoadTopWideThemeLast() {
+// PHASE_264_LOAD_FRESH_STABLE_CHURVOX_LAYOUT
+(function churvoxLoadFreshStableLayout() {
   try {
     if (typeof document === "undefined") return;
 
-    const version = "phase263-20260517074049";
+    const version = "phase264-20260517092652";
     const old = document.getElementById("churvox-topwide-theme");
     if (old) old.remove();
 
@@ -25,39 +25,8 @@
         .then((keys) => Promise.all(keys.map((cacheName) => window.caches.delete(cacheName))))
         .catch(() => undefined);
     }
-
-    try {
-      localStorage.setItem("churvox_topwide_theme_version", version);
-    } catch {}
   } catch (err) {
-    console.warn("Churvox top-wide theme loader skipped", err);
-  }
-})();
-
-
-
-// PHASE_238_KILL_OLD_PWA_CACHE
-(function churvoxPhase238KillOldPwaCache() {
-  try {
-    if (typeof window === "undefined") return;
-    const key = "churvox_phase238_cache_kill";
-    const version = "churvox-theme-reset-20260517070111";
-    if (localStorage.getItem(key) === version) return;
-    localStorage.setItem(key, version);
-
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.getRegistrations()
-        .then((registrations) => registrations.forEach((registration) => registration.unregister()))
-        .catch(() => undefined);
-    }
-
-    if (window.caches && typeof window.caches.keys === "function") {
-      window.caches.keys()
-        .then((keys) => Promise.all(keys.map((cacheKey) => window.caches.delete(cacheKey))))
-        .catch(() => undefined);
-    }
-  } catch (err) {
-    console.warn("Churvox phase 238 cache clear skipped", err);
+    console.warn("Churvox fresh layout loader skipped", err);
   }
 })();
 

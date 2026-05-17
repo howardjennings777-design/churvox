@@ -1,2279 +1,837 @@
 
-/* PHASE_246_CHURVOX_TOPWIDE_THEME
-   One clean new layout/theme for public, login, and app pages.
+/* PHASE_264_FRESH_STABLE_CHURVOX_LAYOUT
+   Fresh layout reset.
 
-   Direction:
-   - black/orange gradient outside
-   - wide top layout on every app page
-   - cream cards and panels
-   - orange/copper highlights
-   - no old dark tiny-card mess
-   - no split app hero weirdness
+   Rules:
+   - No stacked legacy patches.
+   - Public, login, dashboard and all app pages use one visual system.
+   - Black / copper-orange / warm cream.
+   - Wide app layout.
+   - Hero cannot overlap stats.
+   - Stat pills keep icon + label + value inside the pill.
+   - Cream content cards have readable black text.
 */
 
 :root {
-  --tw-black: #0d0b0a;
-  --tw-ink: #17120f;
-  --tw-dark: #241713;
-  --tw-orange: #b85720;
-  --tw-orange-2: #d56b2a;
-  --tw-orange-3: #e48643;
-  --tw-cream: #fff8ef;
-  --tw-cream-2: #fbf4ea;
-  --tw-stone: #f4ede3;
-  --tw-stone-2: #eadbc9;
-  --tw-muted: #6d6258;
-  --tw-green: #507b36;
-  --tw-red: #a8422b;
-  --tw-gold: #d39028;
+  --cvx-black: #0d0b0a;
+  --cvx-ink: #17120f;
+  --cvx-dark: #221612;
+  --cvx-copper: #b85720;
+  --cvx-orange: #de6f2f;
+  --cvx-peach: #f3a26c;
+  --cvx-cream: #fff8ef;
+  --cvx-paper: #fbf4ea;
+  --cvx-soft: #f1e7da;
+  --cvx-line: rgba(13, 11, 10, 0.12);
+  --cvx-muted: #716459;
+  --cvx-red: #a8422b;
+  --cvx-gold: #bd7b24;
+  --cvx-green: #4f7b3a;
 
-  --tw-page:
-    radial-gradient(circle at 80% -4%, rgba(184, 87, 32, 0.34), transparent 34rem),
-    radial-gradient(circle at 6% 18%, rgba(255, 248, 239, 0.08), transparent 30rem),
-    radial-gradient(circle at 50% 100%, rgba(184, 87, 32, 0.14), transparent 36rem),
+  --cvx-page-bg:
+    radial-gradient(circle at 82% -6%, rgba(184, 87, 32, 0.34), transparent 34rem),
+    radial-gradient(circle at 8% 18%, rgba(255, 248, 239, 0.08), transparent 30rem),
     linear-gradient(135deg, #0d0b0a 0%, #17120f 48%, #241713 100%);
 
-  --tw-cream-card:
-    radial-gradient(circle at 94% 8%, rgba(228, 134, 67, 0.18), transparent 22rem),
-    rgba(255, 248, 239, 0.95);
+  --cvx-dark-panel:
+    radial-gradient(circle at 100% 0%, rgba(222, 111, 47, 0.34), transparent 28rem),
+    linear-gradient(115deg, #0d0b0a 0%, #17120f 58%, #6b2e1b 100%);
 
-  --tw-cream-soft:
-    linear-gradient(180deg, rgba(255, 248, 239, 0.96), rgba(251, 244, 234, 0.94));
+  --cvx-cream-panel:
+    radial-gradient(circle at 100% 0%, rgba(222, 111, 47, 0.12), transparent 24rem),
+    rgba(255, 248, 239, 0.96);
 
-  --tw-dark-card:
-    radial-gradient(circle at 100% 0%, rgba(228, 134, 67, 0.24), transparent 18rem),
-    linear-gradient(180deg, #0d0b0a, #17120f);
-
-  --tw-shadow: 0 26px 84px rgba(13, 11, 10, 0.22);
-  --tw-soft-shadow: 0 16px 42px rgba(13, 11, 10, 0.12);
+  --cvx-shadow: 0 24px 70px rgba(13, 11, 10, 0.20);
+  --cvx-soft-shadow: 0 14px 34px rgba(13, 11, 10, 0.10);
 }
 
-/* =====================================================
-   RESET CANVAS
-   ===================================================== */
-
+/* BASE */
 html,
 body,
 #root,
 .App,
-html body .om-sales-page,
-html body .om-shell,
-html body .om-main {
-  background: var(--tw-page) !important;
-}
-
-html,
-body,
-#root,
-.App {
+.om-shell,
+.om-main,
+.om-sales-page {
   min-height: 100% !important;
+  background: var(--cvx-page-bg) !important;
 }
 
 body {
   margin: 0 !important;
+  color: var(--cvx-cream) !important;
 }
 
-html body .om-sales-page,
-html body .om-shell,
-html body .om-main {
-  color: var(--tw-cream) !important;
+* {
+  box-sizing: border-box;
 }
 
-html body .om-main {
-  min-height: calc(100vh - 76px) !important;
-  padding: 26px 34px 70px !important;
-}
-
-/* Every app page stays wide */
-html body .cs-page {
-  width: min(1440px, calc(100% - 8px)) !important;
-  margin-inline: auto !important;
-  display: grid !important;
-  gap: 22px !important;
-  background: transparent !important;
-}
-
-/* Public page stays wide too */
-html body .om-sales-page {
-  min-height: 100vh !important;
-  padding-bottom: 70px !important;
-  overflow-x: hidden !important;
-}
-
-html body .om-sales-nav,
-html body .om-sales-hero,
-html body .om-sales-proof-strip,
-html body .om-sales-how,
-html body .om-sales-prepared,
-html body .om-sales-control,
-html body .om-sales-pricing,
-html body .om-sales-access,
-html body .om-sales-final {
-  width: min(1440px, calc(100% - 32px)) !important;
-  margin-inline: auto !important;
-}
-
-/* =====================================================
-   TOP BAR / NAV
-   ===================================================== */
-
-html body .om-nav {
-  height: 76px !important;
-  min-height: 76px !important;
+/* TOP NAV */
+.om-nav {
+  height: 74px !important;
+  min-height: 74px !important;
   background: rgba(13, 11, 10, 0.98) !important;
-  border-bottom: 1px solid rgba(213, 107, 42, 0.28) !important;
-  box-shadow: 0 18px 48px rgba(13, 11, 10, 0.32) !important;
+  border-bottom: 1px solid rgba(222, 111, 47, 0.24) !important;
+  box-shadow: 0 18px 44px rgba(13, 11, 10, 0.28) !important;
 }
 
-html body .om-sales-nav {
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 300 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 18px !important;
-  padding: 18px 0 !important;
-  background: transparent !important;
+.om-brand,
+.om-brand *,
+.om-nav nav button,
+.om-nav nav button *,
+.om-logout,
+.om-logout * {
+  color: var(--cvx-cream) !important;
 }
 
-html body .om-brand,
-html body .om-sales-brand {
-  color: var(--tw-cream) !important;
+.om-brand small {
+  color: var(--cvx-peach) !important;
 }
 
-html body .om-brand strong,
-html body .om-sales-brand strong,
-html body .om-nav nav button span,
-html body .om-logout {
-  color: var(--tw-cream) !important;
+.om-brand i,
+.om-sales-brand i {
+  background: var(--cvx-black) !important;
+  border: 1px solid rgba(222, 111, 47, 0.30) !important;
 }
 
-html body .om-brand small,
-html body .om-sales-brand small {
-  color: var(--tw-orange-3) !important;
-}
-
-html body .om-brand i,
-html body .om-sales-brand i {
-  background: var(--tw-black) !important;
-  border: 1px solid rgba(228, 134, 67, 0.28) !important;
-  box-shadow: 0 16px 36px rgba(13, 11, 10, 0.30) !important;
-}
-
-html body .om-brand i b,
-html body .om-sales-brand i b {
-  border-color: var(--tw-orange-3) !important;
+.om-brand i b,
+.om-sales-brand i b {
+  border-color: var(--cvx-peach) !important;
   border-left-color: transparent !important;
 }
 
-html body .om-nav nav button.active {
-  border-bottom-color: var(--tw-orange-2) !important;
+.om-nav nav button.active {
+  border-bottom-color: var(--cvx-orange) !important;
 }
 
-/* app tabs and public nav */
-html body .om-sales-nav nav,
-html body .om-main > nav,
-html body .cs-page > nav,
-html body .cs-mobile-nav,
-html body .cs-tabs,
-html body .cs-subnav,
-html body .cs-filter-bar,
-html body .cs-filters {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  padding: 8px !important;
-  border: 1px solid rgba(255, 248, 239, 0.14) !important;
-  border-radius: 999px !important;
-  background: rgba(255, 248, 239, 0.11) !important;
-  box-shadow: 0 16px 44px rgba(13, 11, 10, 0.18) !important;
-  backdrop-filter: blur(18px) !important;
+/* APP CANVAS */
+.om-main {
+  min-height: calc(100vh - 74px) !important;
+  padding: 22px 28px 70px !important;
 }
 
-html body .om-sales-nav nav a,
-html body .om-sales-nav nav button,
-html body .om-main > nav button,
-html body .cs-page > nav button,
-html body .cs-mobile-nav button,
-html body .cs-tabs button,
-html body .cs-subnav button,
-html body .cs-filter-bar button,
-html body .cs-filters button {
-  min-height: 38px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  padding: 0 14px !important;
-  border: 0 !important;
-  border-radius: 999px !important;
-  background: transparent !important;
-  color: rgba(255, 248, 239, 0.86) !important;
-  text-decoration: none !important;
-  font: inherit !important;
-  font-size: 14px !important;
-  font-weight: 900 !important;
-  cursor: pointer !important;
-  box-shadow: none !important;
-}
-
-html body .om-sales-nav nav button:last-child,
-html body .om-main > nav button.active,
-html body .cs-page > nav button.active,
-html body .cs-mobile-nav button.active,
-html body .cs-tabs button.active,
-html body .cs-subnav button.active,
-html body .cs-filter-bar button.active,
-html body .cs-filters button.active {
-  background: var(--tw-cream) !important;
-  color: var(--tw-black) !important;
-}
-
-/* =====================================================
-   NEW TOP-WIDE APP LAYOUT
-   ===================================================== */
-
-/* App hero is one wide top banner again */
-html body .cs-hero {
-  width: 100% !important;
-  min-height: 330px !important;
+.cs-suite,
+.cs-page {
+  width: min(1360px, 100%) !important;
+  margin: 0 auto !important;
   display: grid !important;
-  grid-template-columns: minmax(0, 1fr) auto !important;
-  gap: 24px !important;
-  align-items: center !important;
-  padding: clamp(30px, 4.5vw, 58px) !important;
-  border: 1px solid rgba(255, 248, 239, 0.14) !important;
-  border-radius: 30px !important;
-  background:
-    radial-gradient(circle at 76% 14%, rgba(228, 134, 67, 0.30), transparent 24rem),
-    linear-gradient(118deg, rgba(13, 11, 10, 0.98) 0%, rgba(23, 18, 15, 0.98) 52%, rgba(184, 87, 32, 0.95) 100%) !important;
-  color: var(--tw-cream) !important;
-  box-shadow: var(--tw-shadow) !important;
-  overflow: hidden !important;
-}
-
-html body .cs-hero > section:first-child {
-  min-height: unset !important;
-  padding: 0 !important;
+  gap: 16px !important;
   background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  color: var(--tw-cream) !important;
 }
 
-html body .cs-hero span:first-child,
-html body .cs-desk > header span,
-html body .cs-workspace > header span,
-html body .cs-plan-addons header span,
-html body .cs-sms-packs header span,
-html body .cs-plan-compare header span,
-html body .om-sales-hero-copy > span,
-html body .om-sales-how header span,
-html body .om-sales-prepared header span,
-html body .om-sales-control span,
-html body .om-sales-pricing header span,
-html body .om-sales-access-copy > span,
-html body .om-sales-final > span,
-html body .om-sales-auth > span {
+/* HERO: title area only, stats fit in their own row below inside the same card */
+.cs-hero {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 14px !important;
+  align-items: start !important;
+  padding: 24px !important;
+  border-radius: 26px !important;
+  border: 1px solid rgba(255, 248, 239, 0.12) !important;
+  background: var(--cvx-dark-panel) !important;
+  color: var(--cvx-cream) !important;
+  box-shadow: var(--cvx-shadow) !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+.cs-hero > section:first-child {
+  width: 100% !important;
+  max-width: 980px !important;
+  min-width: 0 !important;
+  display: block !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.cs-hero span:first-child,
+.om-sales-hero-copy > span,
+.om-sales-how header span,
+.om-sales-prepared header span,
+.om-sales-pricing header span,
+.om-sales-auth > span,
+.cs-workspace > header span,
+.cs-desk > header span,
+.cs-plan-addons header span,
+.cs-sms-packs header span,
+.cs-plan-compare header span {
   width: fit-content !important;
-  min-height: 34px !important;
+  min-height: 28px !important;
   display: inline-flex !important;
   align-items: center !important;
-  padding: 0 12px !important;
-  border: 1px solid rgba(228, 134, 67, 0.30) !important;
+  padding: 0 10px !important;
+  border: 1px solid rgba(222, 111, 47, 0.28) !important;
   border-radius: 999px !important;
-  background: rgba(184, 87, 32, 0.14) !important;
-  color: var(--tw-orange-3) !important;
-  font-size: 12px !important;
+  background: rgba(184, 87, 32, 0.12) !important;
+  color: var(--cvx-peach) !important;
+  font-size: 11px !important;
   font-weight: 950 !important;
   letter-spacing: 0.12em !important;
   text-transform: uppercase !important;
 }
 
-html body .cs-hero h1 {
-  max-width: 860px !important;
-  margin: 18px 0 18px !important;
-  color: var(--tw-cream) !important;
+.cs-hero h1 {
+  max-width: 980px !important;
+  margin: 12px 0 10px !important;
+  color: var(--cvx-cream) !important;
   font-family: Georgia, "Times New Roman", serif !important;
-  font-size: clamp(48px, 6.2vw, 92px) !important;
-  line-height: 0.9 !important;
-  letter-spacing: -0.075em !important;
+  font-size: clamp(34px, 4.8vw, 68px) !important;
+  line-height: 0.98 !important;
+  letter-spacing: -0.065em !important;
+  overflow: visible !important;
 }
 
-html body .cs-hero h1 mark {
+.cs-hero h1 mark {
   display: inline !important;
-  color: var(--tw-orange-3) !important;
+  color: var(--cvx-peach) !important;
   background: transparent !important;
 }
 
-html body .cs-hero p {
+.cs-hero p {
   max-width: 780px !important;
   margin: 0 !important;
-  color: rgba(255, 248, 239, 0.78) !important;
-  font-size: 16px !important;
-  line-height: 1.55 !important;
+  color: rgba(255, 248, 239, 0.82) !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
 }
 
-/* Stats stay wide on the right/top, not split weird cards */
-html body .cs-stats,
-html body .cs-plan-price-stack {
-  min-width: min(520px, 44vw) !important;
+/* STAT PILLS: icon + label + value all inside the pill */
+.cs-stats,
+.cs-plan-price-stack {
+  width: 100% !important;
+  max-width: 920px !important;
+  min-width: 0 !important;
   display: grid !important;
-  grid-template-columns: repeat(4, minmax(92px, 1fr)) !important;
+  grid-template-columns: repeat(4, minmax(150px, 220px)) !important;
+  justify-content: start !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.cs-stat,
+.cs-plan-price-stack button {
+  width: 100% !important;
+  max-width: 220px !important;
+  min-width: 0 !important;
+  height: 74px !important;
+  min-height: 74px !important;
+  max-height: 74px !important;
+  display: grid !important;
+  grid-template-columns: 28px minmax(0, 1fr) minmax(34px, auto) !important;
+  grid-template-rows: 1fr !important;
+  align-items: center !important;
+  justify-items: stretch !important;
+  column-gap: 8px !important;
+  padding: 10px 14px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(222, 111, 47, 0.28) !important;
+  background-color: #0d0b0a !important;
+  background-image:
+    radial-gradient(circle at 20% 0%, rgba(255, 248, 239, 0.16), transparent 26%),
+    linear-gradient(135deg, #0d0b0a 0%, #17120f 46%, #6b2e1b 78%, #b85720 100%) !important;
+  color: var(--cvx-cream) !important;
+  box-shadow: 0 12px 30px rgba(13, 11, 10, 0.18) !important;
+  overflow: hidden !important;
+  text-align: left !important;
+}
+
+.cs-stat *,
+.cs-plan-price-stack button * {
+  color: var(--cvx-cream) !important;
+}
+
+.cs-stat .cs-icon,
+.cs-plan-price-stack button .cs-icon {
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  min-height: 22px !important;
+  max-width: 22px !important;
+  max-height: 22px !important;
+  margin: 0 !important;
+  transform: scale(0.72) !important;
+  color: var(--cvx-cream) !important;
+  opacity: 0.95 !important;
+}
+
+.cs-stat span,
+.cs-plan-price-stack button span {
+  min-width: 0 !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  color: rgba(255, 248, 239, 0.86) !important;
+  font-size: 11px !important;
+  line-height: 1.1 !important;
+  font-weight: 900 !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+}
+
+.cs-stat strong,
+.cs-plan-price-stack button strong {
+  max-width: 82px !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  color: var(--cvx-cream) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: clamp(18px, 1.8vw, 24px) !important;
+  line-height: 1 !important;
+  font-weight: 950 !important;
+  text-align: right !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+}
+
+/* CREAM SECTIONS */
+.cs-command-cards,
+.cs-ai-strip {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+}
+
+.cs-command-cards button,
+.cs-ai-card,
+.cs-workspace,
+.cs-desk,
+.cs-flow,
+.cs-plan-cards,
+.cs-plan-addons,
+.cs-sms-packs,
+.cs-plan-compare,
+.cs-modal,
+.cs-card,
+.cs-panel,
+.cs-list,
+.cs-table-wrap,
+.cs-empty,
+.cs-row,
+.cs-approval-row {
+  border: 1px solid var(--cvx-line) !important;
+  border-radius: 24px !important;
+  background: var(--cvx-cream-panel) !important;
+  color: var(--cvx-black) !important;
+  box-shadow: var(--cvx-soft-shadow) !important;
+}
+
+.cs-command-cards button,
+.cs-ai-card {
+  min-height: 108px !important;
+  padding: 18px !important;
+  display: grid !important;
+  grid-template-columns: 38px minmax(0, 1fr) auto !important;
   gap: 12px !important;
+  align-items: center !important;
+  text-align: left !important;
+}
+
+.cs-command-cards *,
+.cs-ai-card *,
+.cs-workspace *,
+.cs-desk *,
+.cs-flow *,
+.cs-plan-cards *,
+.cs-plan-addons *,
+.cs-sms-packs *,
+.cs-plan-compare *,
+.cs-modal *,
+.cs-card *,
+.cs-panel *,
+.cs-list *,
+.cs-table-wrap *,
+.cs-empty *,
+.cs-row *,
+.cs-approval-row * {
+  color: var(--cvx-black) !important;
+}
+
+.cs-command-cards p,
+.cs-ai-card p,
+.cs-workspace p,
+.cs-desk p,
+.cs-flow p,
+.cs-plan-cards p,
+.cs-plan-addons p,
+.cs-sms-packs p,
+.cs-plan-compare p,
+.cs-row p,
+.cs-row div,
+.cs-approval-row p,
+.cs-empty p,
+.cs-page small {
+  color: var(--cvx-muted) !important;
+}
+
+/* WORKSPACE HEADERS AND FILTERS */
+.cs-workspace,
+.cs-desk,
+.cs-flow,
+.cs-plan-addons,
+.cs-sms-packs,
+.cs-plan-compare {
+  padding: 22px !important;
+}
+
+.cs-workspace > header,
+.cs-desk > header,
+.cs-plan-addons > header,
+.cs-sms-packs > header,
+.cs-plan-compare > header {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  margin-bottom: 14px !important;
+}
+
+.cs-workspace h2,
+.cs-desk h2,
+.cs-plan-addons h2,
+.cs-sms-packs h2,
+.cs-plan-compare h2,
+.cs-modal h2 {
+  color: var(--cvx-black) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  letter-spacing: -0.055em !important;
+}
+
+.cs-filters,
+.cs-filter-bar,
+.cs-tabs {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
   padding: 0 !important;
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
 }
 
-html body .cs-stat,
-html body .cs-plan-price-stack button {
-  min-height: 126px !important;
-  display: grid !important;
-  place-items: center !important;
-  align-content: center !important;
-  gap: 8px !important;
-  padding: 18px !important;
-  border: 1px solid rgba(255, 248, 239, 0.12) !important;
-  border-radius: 22px !important;
-  background: rgba(13, 11, 10, 0.46) !important;
-  color: var(--tw-cream) !important;
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.18) !important;
-}
-
-html body .cs-stat strong,
-html body .cs-stat span,
-html body .cs-plan-price-stack button strong,
-html body .cs-plan-price-stack button span {
-  color: var(--tw-cream) !important;
-}
-
-html body .cs-stat .cs-icon,
-html body .cs-plan-price-stack .cs-icon {
-  color: var(--tw-orange-3) !important;
-}
-
-/* Summary/AI cards stay wide below hero */
-html body .cs-command-cards,
-html body .cs-ai-grid {
-  display: grid !important;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  gap: 18px !important;
-}
-
-html body .cs-command-cards article,
-html body .cs-ai-card {
-  min-height: 120px !important;
-  border: 1px solid rgba(13, 11, 10, 0.10) !important;
-  border-radius: 24px !important;
-  background: var(--tw-cream-card) !important;
-  color: var(--tw-black) !important;
-  box-shadow: var(--tw-soft-shadow) !important;
-}
-
-html body .cs-command-cards strong,
-html body .cs-command-cards span,
-html body .cs-ai-card strong {
-  color: var(--tw-black) !important;
-}
-
-html body .cs-command-cards p,
-html body .cs-ai-card p {
-  color: var(--tw-muted) !important;
-}
-
-html body .cs-command-cards .cs-icon,
-html body .cs-ai-card .cs-icon {
-  background: rgba(184, 87, 32, 0.10) !important;
-  color: var(--tw-orange) !important;
-}
-
-/* Big wide content sections */
-html body .cs-desk,
-html body .cs-workspace,
-html body .cs-flow,
-html body .cs-plan-cards,
-html body .cs-plan-addons,
-html body .cs-sms-packs,
-html body .cs-plan-compare {
-  width: 100% !important;
+.cs-filters button,
+.cs-filter-bar button,
+.cs-tabs button,
+.cs-row button,
+.cs-approval-row button,
+.cs-view,
+.cs-command-cards button b,
+.cs-flow button {
+  min-height: 36px !important;
+  padding: 0 14px !important;
+  border-radius: 999px !important;
   border: 1px solid rgba(13, 11, 10, 0.12) !important;
-  border-radius: 30px !important;
-  background: rgba(255, 248, 239, 0.92) !important;
-  color: var(--tw-black) !important;
-  box-shadow: var(--tw-shadow) !important;
-  backdrop-filter: blur(20px) !important;
+  background: rgba(13, 11, 10, 0.07) !important;
+  background-image: none !important;
+  color: var(--cvx-black) !important;
+  box-shadow: none !important;
+  font-weight: 950 !important;
 }
 
-html body .cs-desk h2,
-html body .cs-workspace h2,
-html body .cs-flow article strong,
-html body .cs-plan-addons h2,
-html body .cs-sms-packs h2,
-html body .cs-plan-compare h2 {
-  color: var(--tw-black) !important;
-  font-family: Georgia, "Times New Roman", serif !important;
-  letter-spacing: -0.06em !important;
+.cs-filters button *,
+.cs-filter-bar button *,
+.cs-tabs button *,
+.cs-row button *,
+.cs-approval-row button *,
+.cs-view *,
+.cs-command-cards button b *,
+.cs-flow button * {
+  color: var(--cvx-black) !important;
 }
 
-html body .cs-desk header p,
-html body .cs-workspace header p,
-html body .cs-flow article p,
-html body .cs-page p,
-html body .cs-page small {
-  color: var(--tw-muted) !important;
+.cs-filters button.active,
+.cs-filter-bar button.active,
+.cs-tabs button.active {
+  background: rgba(184, 87, 32, 0.14) !important;
+  border-color: rgba(184, 87, 32, 0.22) !important;
 }
 
-/* Tables/rows/empty cards */
-html body .cs-approval-list,
-html body .cs-table {
+/* ROWS / TABLE */
+.cs-table,
+.cs-approval-list {
+  display: grid !important;
+  gap: 10px !important;
+}
+
+.cs-table > header,
+.cs-row,
+.cs-approval-row {
+  width: 100% !important;
   display: grid !important;
   gap: 12px !important;
-  background: transparent !important;
-}
-
-html body .cs-table > header,
-html body .cs-approval-row,
-html body .cs-row,
-html body .cs-empty {
-  background: rgba(255, 248, 239, 0.96) !important;
-  border: 1px solid rgba(13, 11, 10, 0.10) !important;
-  border-radius: 18px !important;
-  color: var(--tw-black) !important;
-  box-shadow: 0 12px 30px rgba(13, 11, 10, 0.07) !important;
-}
-
-html body .cs-table > header,
-html body .cs-approval-row,
-html body .cs-row {
+  align-items: center !important;
   padding: 14px 16px !important;
+  border-radius: 18px !important;
 }
 
-html body .cs-empty {
-  padding: 24px !important;
+.cs-table > header {
+  background: rgba(13, 11, 10, 0.06) !important;
+  box-shadow: none !important;
 }
 
-html body .cs-table > header span,
-html body .cs-approval-row > span {
-  color: var(--tw-orange) !important;
-  font-size: 12px !important;
+.cs-table > header span,
+.cs-approval-row > span {
+  color: var(--cvx-copper) !important;
+  font-size: 11px !important;
   font-weight: 950 !important;
-  letter-spacing: 0.08em !important;
+  letter-spacing: 0.12em !important;
   text-transform: uppercase !important;
 }
 
-html body .cs-approval-row strong,
-html body .cs-row strong,
-html body .cs-empty strong,
-html body .cs-modal h2,
-html body .cs-page h1,
-html body .cs-page h2,
-html body .cs-page h3,
-html body .cs-page h4 {
-  color: var(--tw-black) !important;
-}
-
-html body .cs-approval-row p,
-html body .cs-row p,
-html body .cs-row div,
-html body .cs-empty,
-html body .cs-empty p,
-html body .cs-modal p {
-  color: var(--tw-muted) !important;
-}
-
-/* Other app cards */
-html body .cs-modal,
-html body .cs-card,
-html body .cs-panel,
-html body .cs-list,
-html body .cs-table-wrap,
-html body .cs-plan-cards article,
-html body .cs-plan-addons button,
-html body .cs-sms-packs button,
-html body .cs-pricing-card,
-html body .cs-billing-card,
-html body .cs-setting-card,
-html body .cs-proof-card,
-html body .cs-payroll-card,
-html body .cs-client-card,
-html body .cs-job-card,
-html body .cs-quote-card,
-html body .cs-invoice-card,
-html body .cs-crew-card,
-html body .cs-trial-box {
-  border: 1px solid rgba(13, 11, 10, 0.10) !important;
-  border-radius: 22px !important;
-  background: rgba(255, 248, 239, 0.90) !important;
-  color: var(--tw-black) !important;
-  box-shadow: var(--tw-soft-shadow) !important;
-}
-
-/* =====================================================
-   PUBLIC + LOGIN SAME THEME
-   ===================================================== */
-
-html body .om-sales-hero {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1.05fr) minmax(380px, 0.72fr) !important;
-  gap: 22px !important;
-  align-items: stretch !important;
-  padding: 28px 0 20px !important;
-}
-
-html body .om-sales-hero-copy,
-html body .om-sales-how,
-html body .om-sales-prepared,
-html body .om-sales-pricing,
-html body .om-sales-final {
-  border: 1px solid rgba(13, 11, 10, 0.12) !important;
-  border-radius: 30px !important;
-  background: var(--tw-cream-card) !important;
-  color: var(--tw-black) !important;
-  box-shadow: var(--tw-shadow) !important;
-  backdrop-filter: blur(20px) !important;
-}
-
-html body .om-sales-command-card,
-html body .om-sales-control {
-  border: 1px solid rgba(255, 248, 239, 0.12) !important;
-  border-radius: 30px !important;
-  background: var(--tw-dark-card) !important;
-  color: var(--tw-cream) !important;
-  box-shadow: var(--tw-shadow) !important;
-}
-
-html body .om-sales-access {
-  border: 1px solid rgba(255, 248, 239, 0.12) !important;
-  border-radius: 30px !important;
-  background:
-    linear-gradient(115deg, #0d0b0a 0%, #17120f 48%, rgba(255, 248, 239, 0.96) 48.2%, rgba(255, 248, 239, 0.98) 100%) !important;
-  box-shadow: var(--tw-shadow) !important;
-}
-
-html body .om-sales-auth {
-  border: 1px solid rgba(13, 11, 10, 0.12) !important;
-  border-radius: 28px !important;
-  background: rgba(255, 248, 239, 0.98) !important;
-  color: var(--tw-black) !important;
-  box-shadow: 0 24px 70px rgba(13, 11, 10, 0.16) !important;
-}
-
-html body .om-sales-hero h1,
-html body .om-sales-how h2,
-html body .om-sales-prepared h2,
-html body .om-sales-control h2,
-html body .om-sales-pricing h2,
-html body .om-sales-access h2,
-html body .om-sales-final h2,
-html body .om-sales-auth h2 {
-  font-family: Georgia, "Times New Roman", serif !important;
-  letter-spacing: -0.075em !important;
-}
-
-html body .om-sales-hero-copy h1,
-html body .om-sales-how h2,
-html body .om-sales-prepared h2,
-html body .om-sales-pricing h2,
-html body .om-sales-auth h2,
-html body .om-sales-final h2 {
-  color: var(--tw-black) !important;
-}
-
-html body .om-sales-control h2,
-html body .om-sales-control p,
-html body .om-sales-access-copy h2,
-html body .om-sales-access-copy p {
-  color: var(--tw-cream) !important;
-}
-
-/* Buttons + inputs */
-html body .om-sales-actions button,
-html body .om-sales-final button,
-html body .om-sales-pricing article button,
-html body .om-sales-auth form button,
-html body .cs-approval-row button,
-html body .cs-row button,
-html body .cs-view,
-html body .cs-modal button:not(.ghost),
-html body .cs-page button:not(.ghost):not(.active),
-html body .cs-page a.button,
-html body .cs-page .button {
-  min-height: 42px !important;
-  padding: 0 18px !important;
-  border: 0 !important;
-  border-radius: 999px !important;
-  background: var(--tw-black) !important;
-  color: var(--tw-cream) !important;
-  font-weight: 950 !important;
-  box-shadow: 0 18px 38px rgba(13, 11, 10, 0.18) !important;
-}
-
-html body .om-sales-actions button:first-child,
-html body .om-sales-final button,
-html body .om-sales-pricing article.featured button {
-  background: var(--tw-orange) !important;
-}
-
-html body .om-sales-actions button.ghost,
-html body .cs-view.ghost,
-html body .cs-modal button.ghost,
-html body .cs-page button.ghost {
-  background: rgba(13, 11, 10, 0.08) !important;
-  color: var(--tw-black) !important;
-  border: 1px solid rgba(13, 11, 10, 0.12) !important;
-  box-shadow: none !important;
-}
-
-html body .cs-page input,
-html body .cs-page textarea,
-html body .cs-page select,
-html body .cs-modal input,
-html body .cs-modal textarea,
-html body .cs-modal select,
-html body .om-sales-auth input {
-  min-height: 46px !important;
-  border: 1px solid rgba(13, 11, 10, 0.14) !important;
-  border-radius: 14px !important;
-  background: rgba(255, 248, 239, 0.96) !important;
-  color: var(--tw-black) !important;
-}
-
-/* Mobile */
-@media (max-width: 1100px) {
-  html body .cs-hero {
-    grid-template-columns: 1fr !important;
-  }
-
-  html body .cs-stats,
-  html body .cs-plan-price-stack {
-    min-width: 0 !important;
-    grid-template-columns: repeat(4, minmax(90px, 1fr)) !important;
-  }
-}
-
-@media (max-width: 900px) {
-  html body .om-main {
-    padding: 18px 16px 48px !important;
-  }
-
-  html body .cs-page {
-    width: 100% !important;
-  }
-
-  html body .om-sales-hero {
-    grid-template-columns: 1fr !important;
-  }
-
-  html body .cs-stats,
-  html body .cs-plan-price-stack,
-  html body .cs-command-cards,
-  html body .cs-ai-grid {
-    grid-template-columns: 1fr !important;
-  }
-
-  html body .cs-hero,
-  html body .cs-desk,
-  html body .cs-workspace,
-  html body .cs-flow,
-  html body .om-sales-hero-copy,
-  html body .om-sales-command-card,
-  html body .om-sales-how,
-  html body .om-sales-prepared,
-  html body .om-sales-control,
-  html body .om-sales-pricing,
-  html body .om-sales-access,
-  html body .om-sales-final {
-    border-radius: 24px !important;
-  }
-
-  html body .om-sales-nav nav,
-  html body .om-main > nav,
-  html body .cs-page > nav,
-  html body .cs-mobile-nav,
-  html body .cs-tabs,
-  html body .cs-subnav,
-  html body .cs-filter-bar,
-  html body .cs-filters {
-    border-radius: 20px !important;
-    overflow-x: auto !important;
-  }
-}
-
-
-/* PHASE_247_FIX_TOP_HEIGHT_AND_TEXT_CONTRAST
-   Keep the new wide direction, but fix:
-   - top hero was too tall
-   - black text was unreadable on dark/gradient sections
-   - pages need a cleaner, wider command layout
-*/
-
-/* Less vertical height on every app page top banner */
-html body .cs-hero {
-  min-height: 210px !important;
-  grid-template-columns: minmax(0, 1fr) minmax(420px, 0.58fr) !important;
-  gap: 22px !important;
-  padding: clamp(22px, 3vw, 34px) !important;
-  align-items: center !important;
-}
-
-/* Make hero title readable and not gigantic */
-html body .cs-hero h1 {
-  max-width: 780px !important;
-  margin: 10px 0 10px !important;
-  color: var(--tw-cream) !important;
-  font-size: clamp(42px, 5vw, 72px) !important;
-  line-height: 0.92 !important;
-  letter-spacing: -0.07em !important;
-}
-
-html body .cs-hero h1 mark {
-  color: var(--tw-orange-3) !important;
-  background: transparent !important;
-}
-
-html body .cs-hero p {
-  max-width: 720px !important;
-  color: rgba(255, 248, 239, 0.80) !important;
-  font-size: 14px !important;
-  line-height: 1.45 !important;
-}
-
-/* Keep label readable on dark top */
-html body .cs-hero span:first-child {
+.cs-risk,
+.cs-pill,
+.cs-tag,
+.cs-badge {
+  width: fit-content !important;
   min-height: 28px !important;
-  color: var(--tw-orange-3) !important;
-  background: rgba(184, 87, 32, 0.16) !important;
-  border-color: rgba(228, 134, 67, 0.34) !important;
-}
-
-/* Stats are shorter and don't stretch the hero */
-html body .cs-stats,
-html body .cs-plan-price-stack {
-  min-width: 0 !important;
-  width: 100% !important;
-  grid-template-columns: repeat(4, minmax(88px, 1fr)) !important;
-  gap: 10px !important;
-  align-self: center !important;
-}
-
-html body .cs-stat,
-html body .cs-plan-price-stack button {
-  min-height: 92px !important;
-  border-radius: 20px !important;
-  padding: 12px !important;
-}
-
-html body .cs-stat strong,
-html body .cs-plan-price-stack button strong {
-  color: var(--tw-cream) !important;
-  font-size: clamp(20px, 2.5vw, 30px) !important;
-  line-height: 1 !important;
-}
-
-html body .cs-stat span,
-html body .cs-plan-price-stack button span {
-  color: rgba(255, 248, 239, 0.84) !important;
-  font-size: 12px !important;
-}
-
-/* Icons in hero stats stay orange */
-html body .cs-stat .cs-icon,
-html body .cs-plan-price-stack .cs-icon {
-  color: var(--tw-orange-3) !important;
-}
-
-/* Fix black text on dark/nav areas */
-html body .om-nav,
-html body .om-nav *,
-html body .om-main > nav,
-html body .om-main > nav *,
-html body .cs-page > nav,
-html body .cs-page > nav *,
-html body .cs-mobile-nav,
-html body .cs-mobile-nav *,
-html body .cs-tabs,
-html body .cs-tabs *,
-html body .cs-subnav,
-html body .cs-subnav *,
-html body .cs-filter-bar,
-html body .cs-filter-bar *,
-html body .cs-filters,
-html body .cs-filters * {
-  color: rgba(255, 248, 239, 0.88) !important;
-}
-
-html body .om-main > nav button.active,
-html body .om-main > nav button.active *,
-html body .cs-page > nav button.active,
-html body .cs-page > nav button.active *,
-html body .cs-mobile-nav button.active,
-html body .cs-mobile-nav button.active *,
-html body .cs-tabs button.active,
-html body .cs-tabs button.active *,
-html body .cs-subnav button.active,
-html body .cs-subnav button.active *,
-html body .cs-filter-bar button.active,
-html body .cs-filter-bar button.active *,
-html body .cs-filters button.active,
-html body .cs-filters button.active * {
-  color: var(--tw-black) !important;
-}
-
-/* Dark panels: make text cream */
-html body .cs-hero,
-html body .cs-hero *,
-html body .om-sales-command-card,
-html body .om-sales-command-card *,
-html body .om-sales-control,
-html body .om-sales-control *,
-html body .om-sales-access-copy,
-html body .om-sales-access-copy * {
-  color: var(--tw-cream) !important;
-}
-
-/* But labels/highlights stay orange */
-html body .cs-hero h1 mark,
-html body .cs-hero span:first-child,
-html body .om-sales-command-card header span,
-html body .om-sales-flow-card small,
-html body .om-sales-control span {
-  color: var(--tw-orange-3) !important;
-}
-
-/* Cream sections: force black readable text */
-html body .cs-command-cards article,
-html body .cs-command-cards article *,
-html body .cs-ai-card,
-html body .cs-ai-card *,
-html body .cs-desk,
-html body .cs-desk *,
-html body .cs-workspace,
-html body .cs-workspace *,
-html body .cs-flow,
-html body .cs-flow *,
-html body .cs-plan-cards,
-html body .cs-plan-cards *,
-html body .cs-plan-addons,
-html body .cs-plan-addons *,
-html body .cs-sms-packs,
-html body .cs-sms-packs *,
-html body .cs-plan-compare,
-html body .cs-plan-compare *,
-html body .cs-table > header,
-html body .cs-table > header *,
-html body .cs-approval-row,
-html body .cs-approval-row *,
-html body .cs-row,
-html body .cs-row *,
-html body .cs-empty,
-html body .cs-empty *,
-html body .cs-modal,
-html body .cs-modal * {
-  color: var(--tw-black) !important;
-}
-
-/* Muted body text on cream cards */
-html body .cs-command-cards p,
-html body .cs-ai-card p,
-html body .cs-desk header p,
-html body .cs-workspace header p,
-html body .cs-flow article p,
-html body .cs-approval-row p,
-html body .cs-row p,
-html body .cs-row div,
-html body .cs-empty p,
-html body .cs-page small {
-  color: var(--tw-muted) !important;
-}
-
-/* Copper labels inside cream sections */
-html body .cs-desk > header span,
-html body .cs-workspace > header span,
-html body .cs-table > header span,
-html body .cs-approval-row > span,
-html body .cs-risk,
-html body .cs-pill,
-html body .cs-tag,
-html body .cs-badge {
-  color: var(--tw-orange) !important;
-}
-
-/* Buttons must keep cream text */
-html body .cs-approval-row button,
-html body .cs-approval-row button *,
-html body .cs-row button,
-html body .cs-row button *,
-html body .cs-view,
-html body .cs-view *,
-html body .cs-modal button:not(.ghost),
-html body .cs-modal button:not(.ghost) *,
-html body .cs-page button:not(.ghost):not(.active),
-html body .cs-page button:not(.ghost):not(.active) * {
-  color: var(--tw-cream) !important;
-}
-
-/* Ghost buttons black text */
-html body .cs-view.ghost,
-html body .cs-view.ghost *,
-html body .cs-modal button.ghost,
-html body .cs-modal button.ghost *,
-html body .cs-page button.ghost,
-html body .cs-page button.ghost * {
-  color: var(--tw-black) !important;
-}
-
-/* Make content start higher and feel less huge */
-html body .om-main {
-  padding-top: 18px !important;
-}
-
-html body .cs-page {
-  gap: 16px !important;
-}
-
-/* Summary cards less tall */
-html body .cs-command-cards article,
-html body .cs-ai-card {
-  min-height: 92px !important;
-  border-radius: 22px !important;
-  padding: 18px !important;
-}
-
-/* Main boards slightly less huge */
-html body .cs-desk,
-html body .cs-workspace,
-html body .cs-flow,
-html body .cs-plan-cards,
-html body .cs-plan-addons,
-html body .cs-sms-packs,
-html body .cs-plan-compare {
-  border-radius: 26px !important;
-}
-
-/* Mobile/tablet: stats wrap nicely, hero stays sane */
-@media (max-width: 1100px) {
-  html body .cs-hero {
-    grid-template-columns: 1fr !important;
-    min-height: unset !important;
-  }
-
-  html body .cs-stats,
-  html body .cs-plan-price-stack {
-    grid-template-columns: repeat(4, minmax(80px, 1fr)) !important;
-  }
-}
-
-@media (max-width: 760px) {
-  html body .cs-stats,
-  html body .cs-plan-price-stack {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-
-  html body .cs-hero h1 {
-    font-size: clamp(36px, 12vw, 56px) !important;
-  }
-}
-
-
-/* PHASE_249_ONE_TOP_NAV_ONLY
-   The duplicate CommandSuite subnav has been removed from JSX.
-   Tighten spacing so pages sit cleanly under the one real top nav.
-*/
-html body .om-main {
-}
-
-html body .cs-page {
-}
-
-/* Keep any remaining filter tabs inside content only, not as a second global nav. */
-html body .cs-filter-bar,
-html body .cs-filters,
-html body .cs-tabs {
-}
-
-
-/* PHASE_250_FIX_PLAN_ADDON_AND_SMS_CARDS
-   Plans page add-ons/SMS packs are cards, not giant black pill buttons.
-*/
-html body .cs-plan-addons button,
-html body .cs-sms-packs button {
-  width: 100% !important;
-  min-height: 150px !important;
-  height: auto !important;
-  display: grid !important;
-  align-content: start !important;
-  justify-items: start !important;
-  gap: 10px !important;
-  padding: 24px !important;
-  border: 1px solid rgba(13, 11, 10, 0.10) !important;
-  border-radius: 24px !important;
-  background:
-    radial-gradient(circle at 94% 8%, rgba(228, 134, 67, 0.14), transparent 18rem),
-    rgba(255, 248, 239, 0.94) !important;
-  color: var(--tw-black) !important;
-  box-shadow: 0 16px 42px rgba(13, 11, 10, 0.10) !important;
-  text-align: left !important;
-  white-space: normal !important;
-}
-
-html body .cs-plan-addons button *,
-html body .cs-sms-packs button * {
-  color: var(--tw-black) !important;
-  text-align: left !important;
-  white-space: normal !important;
-}
-
-html body .cs-plan-addons button strong,
-html body .cs-sms-packs button strong {
-  color: var(--tw-black) !important;
-  font-family: Georgia, "Times New Roman", serif !important;
-  font-size: clamp(24px, 2.4vw, 36px) !important;
-  line-height: 0.95 !important;
-  letter-spacing: -0.055em !important;
-}
-
-html body .cs-plan-addons button small,
-html body .cs-sms-packs button small,
-html body .cs-plan-addons button p,
-html body .cs-sms-packs button p {
-  color: var(--tw-muted) !important;
-  font-size: 14px !important;
-  line-height: 1.45 !important;
-}
-
-html body .cs-plan-addons button::after,
-html body .cs-sms-packs button::after {
-  content: "Buy now";
-  min-height: 38px;
-  display: inline-flex;
-  align-items: center;
-  margin-top: 6px;
-  padding: 0 16px;
-  border-radius: 999px;
-  background: var(--tw-black);
-  color: var(--tw-cream);
-  font-size: 13px;
-  font-weight: 950;
-  box-shadow: 0 14px 30px rgba(13, 11, 10, 0.16);
-}
-
-/* Keep the surrounding Plans sections clean and wide */
-html body .cs-plan-addons,
-html body .cs-sms-packs,
-html body .cs-plan-compare {
-  background:
-    radial-gradient(circle at 94% 8%, rgba(228, 134, 67, 0.10), transparent 22rem),
-    rgba(255, 248, 239, 0.92) !important;
-  color: var(--tw-black) !important;
-}
-
-html body .cs-plan-addons *,
-html body .cs-sms-packs *,
-html body .cs-plan-compare * {
-  color: var(--tw-black) !important;
-}
-
-html body .cs-plan-addons p,
-html body .cs-sms-packs p,
-html body .cs-plan-compare p,
-html body .cs-plan-addons small,
-html body .cs-sms-packs small,
-html body .cs-plan-compare small {
-  color: var(--tw-muted) !important;
-}
-
-
-/* PHASE_251_SUBTLE_ORANGE_BLACK_GRADIENT_PILLS
-   Action pills get the Churvox black/orange gradient.
-   Status badges stay softer so risk/status meaning remains clear.
-*/
-
-/* Main action pills */
-html body .cs-approval-row button,
-html body .cs-row button,
-html body .cs-view:not(.ghost),
-html body .cs-modal button:not(.ghost),
-html body .cs-page button:not(.ghost):not(.active),
-html body .cs-page a.button,
-html body .cs-page .button,
-html body .om-sales-auth form button,
-html body .om-sales-pricing article button,
-html body .om-sales-final button {
-  background:
-    radial-gradient(circle at 24% 0%, rgba(255, 248, 239, 0.18), transparent 26%),
-    linear-gradient(135deg, #0d0b0a 0%, #17120f 42%, #5d2818 72%, #b85720 100%) !important;
-  color: #fff8ef !important;
-  border: 1px solid rgba(228, 134, 67, 0.28) !important;
-  box-shadow:
-    0 14px 34px rgba(13, 11, 10, 0.20),
-    inset 0 1px 0 rgba(255, 248, 239, 0.14) !important;
-}
-
-html body .cs-approval-row button *,
-html body .cs-row button *,
-html body .cs-view:not(.ghost) *,
-html body .cs-modal button:not(.ghost) *,
-html body .cs-page button:not(.ghost):not(.active) *,
-html body .cs-page a.button *,
-html body .cs-page .button * {
-  color: #fff8ef !important;
-}
-
-/* Hover/active feel */
-html body .cs-approval-row button:hover,
-html body .cs-row button:hover,
-html body .cs-view:not(.ghost):hover,
-html body .cs-modal button:not(.ghost):hover,
-html body .cs-page button:not(.ghost):not(.active):hover,
-html body .cs-page a.button:hover,
-html body .cs-page .button:hover {
-  transform: translateY(-1px);
-  box-shadow:
-    0 18px 42px rgba(13, 11, 10, 0.26),
-    0 0 0 3px rgba(184, 87, 32, 0.10),
-    inset 0 1px 0 rgba(255, 248, 239, 0.18) !important;
-}
-
-/* Active nav pill gets a softer matching gradient */
-html body .om-main > nav button.active,
-html body .cs-page > nav button.active,
-html body .cs-mobile-nav button.active,
-html body .cs-tabs button.active,
-html body .cs-subnav button.active,
-html body .cs-filter-bar button.active,
-html body .cs-filters button.active {
-  background:
-    linear-gradient(135deg, #fff8ef 0%, #fbf4ea 58%, rgba(228, 134, 67, 0.32) 100%) !important;
-  color: #0d0b0a !important;
-  border: 1px solid rgba(184, 87, 32, 0.18) !important;
-}
-
-/* Keep warning/status pills readable, not too loud */
-html body .cs-risk,
-html body .cs-pill,
-html body .cs-tag,
-html body .cs-badge {
-  background: rgba(184, 87, 32, 0.09) !important;
-  color: #b85720 !important;
-  border: 1px solid rgba(184, 87, 32, 0.12) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 0 10px !important;
+  border-radius: 999px !important;
+  background: rgba(184, 87, 32, 0.10) !important;
+  color: var(--cvx-copper) !important;
+  border: 1px solid rgba(184, 87, 32, 0.13) !important;
   box-shadow: none !important;
+  font-weight: 950 !important;
 }
 
-html body .cs-risk.high {
+.cs-risk.high {
   background: rgba(168, 66, 43, 0.12) !important;
-  color: #a8422b !important;
-  border-color: rgba(168, 66, 43, 0.14) !important;
+  color: var(--cvx-red) !important;
+  border-color: rgba(168, 66, 43, 0.18) !important;
 }
 
-html body .cs-risk.medium {
-  background: rgba(211, 144, 40, 0.12) !important;
-  color: #d39028 !important;
-  border-color: rgba(211, 144, 40, 0.16) !important;
+.cs-risk.medium {
+  background: rgba(189, 123, 36, 0.12) !important;
+  color: var(--cvx-gold) !important;
+  border-color: rgba(189, 123, 36, 0.18) !important;
 }
 
-
-/* PHASE_252_FIX_PLANS_CARDS_TOO_MUCH_GRADIENT
-   The gradient was too much on plan add-on/SMS cards.
-   Keep those cards cream and readable. No duplicate "Buy now" pseudo button.
-*/
-html body .cs-plan-addons button,
-html body .cs-sms-packs button,
-html body .cs-plan-cards article {
+/* PLANS / SMS / MYOB: NO BIG PICTURES */
+.cs-plan-addons button,
+.cs-sms-packs button,
+.cs-plan-cards article {
   width: 100% !important;
-  min-height: 138px !important;
-  height: auto !important;
-  display: grid !important;
-  align-content: start !important;
-  justify-items: start !important;
-  gap: 10px !important;
-  padding: 24px !important;
-  border: 1px solid rgba(13, 11, 10, 0.10) !important;
-  border-radius: 24px !important;
-  background:
-    radial-gradient(circle at 94% 8%, rgba(228, 134, 67, 0.12), transparent 18rem),
-    rgba(255, 248, 239, 0.96) !important;
-  color: var(--tw-black) !important;
-  box-shadow: 0 16px 42px rgba(13, 11, 10, 0.10) !important;
-  text-align: left !important;
-  white-space: normal !important;
-}
-
-/* Kill the duplicate pseudo "Buy now" that made the card messy */
-html body .cs-plan-addons button::after,
-html body .cs-sms-packs button::after {
-  content: none !important;
-  display: none !important;
-}
-
-/* Force readable text inside these cards */
-html body .cs-plan-addons button *,
-html body .cs-sms-packs button *,
-html body .cs-plan-cards article * {
-  color: var(--tw-black) !important;
-  text-align: left !important;
-  white-space: normal !important;
-}
-
-html body .cs-plan-addons button strong,
-html body .cs-sms-packs button strong,
-html body .cs-plan-cards article strong,
-html body .cs-plan-cards article h3 {
-  color: var(--tw-black) !important;
-  font-family: Georgia, "Times New Roman", serif !important;
-  font-size: clamp(24px, 2.3vw, 34px) !important;
-  line-height: 0.95 !important;
-  letter-spacing: -0.055em !important;
-}
-
-html body .cs-plan-addons button small,
-html body .cs-sms-packs button small,
-html body .cs-plan-cards article small,
-html body .cs-plan-addons button p,
-html body .cs-sms-packs button p,
-html body .cs-plan-cards article p {
-  color: var(--tw-muted) !important;
-  font-size: 14px !important;
-  line-height: 1.45 !important;
-}
-
-/* The words like "Buy add-on" / "Buy SMS pack" stay as simple copper action text */
-html body .cs-plan-addons button b,
-html body .cs-sms-packs button b,
-html body .cs-plan-addons button em,
-html body .cs-sms-packs button em {
-  color: var(--tw-orange) !important;
-  font-style: normal !important;
-  font-weight: 950 !important;
-}
-
-/* Keep only normal standalone app action buttons as gradient */
-html body .cs-approval-row button,
-html body .cs-row button,
-html body .cs-view:not(.ghost),
-html body .cs-modal button:not(.ghost),
-html body .cs-page a.button,
-html body .cs-page .button {
-  background:
-    radial-gradient(circle at 24% 0%, rgba(255, 248, 239, 0.18), transparent 26%),
-    linear-gradient(135deg, #0d0b0a 0%, #17120f 42%, #5d2818 72%, #b85720 100%) !important;
-  color: #fff8ef !important;
-  border: 1px solid rgba(228, 134, 67, 0.28) !important;
-}
-
-/* But never let plan/SMS card buttons be caught by the generic button gradient */
-html body .cs-plan-addons button,
-html body .cs-sms-packs button {
-  background:
-    radial-gradient(circle at 94% 8%, rgba(228, 134, 67, 0.12), transparent 18rem),
-    rgba(255, 248, 239, 0.96) !important;
-  color: var(--tw-black) !important;
-}
-
-
-/* PHASE_252_REMOVE_BIG_GRADIENT_PLAN_SMS_PILLS
-   Plan add-ons and SMS packs are content cards, not action pills.
-   Remove the huge black/orange pill look from those cards.
-*/
-html body .cs-plan-addons button,
-html body .cs-sms-packs button,
-html body .cs-plan-cards article {
-  width: 100% !important;
-  min-height: 138px !important;
-  height: auto !important;
-  display: grid !important;
-  align-content: start !important;
-  justify-items: start !important;
-  gap: 10px !important;
-  padding: 24px !important;
-  border: 1px solid rgba(13, 11, 10, 0.10) !important;
-  border-radius: 24px !important;
-  background:
-    radial-gradient(circle at 94% 8%, rgba(228, 134, 67, 0.10), transparent 18rem),
-    rgba(255, 248, 239, 0.96) !important;
-  color: var(--tw-black) !important;
-  box-shadow: 0 16px 42px rgba(13, 11, 10, 0.10) !important;
-  text-align: left !important;
-  white-space: normal !important;
-  transform: none !important;
-}
-
-/* Remove duplicate fake Buy now text */
-html body .cs-plan-addons button::after,
-html body .cs-sms-packs button::after {
-  content: none !important;
-  display: none !important;
-}
-
-/* Force all text inside plan/SMS cards readable */
-html body .cs-plan-addons button *,
-html body .cs-sms-packs button *,
-html body .cs-plan-cards article * {
-  color: var(--tw-black) !important;
-  text-align: left !important;
-  white-space: normal !important;
-}
-
-html body .cs-plan-addons button strong,
-html body .cs-sms-packs button strong,
-html body .cs-plan-cards article strong,
-html body .cs-plan-cards article h3 {
-  color: var(--tw-black) !important;
-  font-family: Georgia, "Times New Roman", serif !important;
-  font-size: clamp(24px, 2.3vw, 34px) !important;
-  line-height: 0.95 !important;
-  letter-spacing: -0.055em !important;
-}
-
-html body .cs-plan-addons button small,
-html body .cs-sms-packs button small,
-html body .cs-plan-cards article small,
-html body .cs-plan-addons button p,
-html body .cs-sms-packs button p,
-html body .cs-plan-cards article p {
-  color: var(--tw-muted) !important;
-  font-size: 14px !important;
-  line-height: 1.45 !important;
-}
-
-/* The actual buy wording becomes simple copper text, not a giant pill */
-html body .cs-plan-addons button b,
-html body .cs-sms-packs button b,
-html body .cs-plan-addons button em,
-html body .cs-sms-packs button em {
-  color: var(--tw-orange) !important;
-  font-style: normal !important;
-  font-weight: 950 !important;
-}
-
-/* Stop the generic gradient button rule catching these card-buttons */
-html body .cs-page .cs-plan-addons button,
-html body .cs-page .cs-sms-packs button,
-html body .cs-page .cs-plan-addons button:not(.ghost):not(.active),
-html body .cs-page .cs-sms-packs button:not(.ghost):not(.active),
-html body .cs-plan-addons button:not(.ghost):not(.active),
-html body .cs-sms-packs button:not(.ghost):not(.active) {
-  background:
-    radial-gradient(circle at 94% 8%, rgba(228, 134, 67, 0.10), transparent 18rem),
-    rgba(255, 248, 239, 0.96) !important;
-  color: var(--tw-black) !important;
-  border: 1px solid rgba(13, 11, 10, 0.10) !important;
-  box-shadow: 0 16px 42px rgba(13, 11, 10, 0.10) !important;
-}
-
-/* Keep normal action buttons elsewhere as gradient */
-html body .cs-approval-row button,
-html body .cs-row button,
-html body .cs-view:not(.ghost),
-html body .cs-modal button:not(.ghost),
-html body .cs-page a.button,
-html body .cs-page .button {
-  background:
-    radial-gradient(circle at 24% 0%, rgba(255, 248, 239, 0.18), transparent 26%),
-    linear-gradient(135deg, #0d0b0a 0%, #17120f 42%, #5d2818 72%, #b85720 100%) !important;
-  color: #fff8ef !important;
-  border: 1px solid rgba(228, 134, 67, 0.28) !important;
-}
-
-
-/* PHASE_259_PASS_LOGGED_IN_VISUAL_AUDIT
-   Fix the exact logged-in audit failures:
-   - hero too tall
-   - filter/action buttons cream text on cream sections
-   - mobile stat cards too large
-   - plan/SMS cards too tall
-*/
-
-/* SHORTER HERO EVERYWHERE */
-html body .cs-hero {
   min-height: 0 !important;
+  height: auto !important;
   max-height: none !important;
   display: grid !important;
-  grid-template-columns: 1fr !important;
-  gap: 14px !important;
-  padding: 18px 22px !important;
-  border-radius: 24px !important;
+  align-content: start !important;
+  justify-items: start !important;
+  gap: 6px !important;
+  padding: 16px !important;
+  border-radius: 18px !important;
+  border: 1px solid var(--cvx-line) !important;
+  background: rgba(255, 248, 239, 0.96) !important;
+  background-image: none !important;
+  color: var(--cvx-black) !important;
+  box-shadow: 0 10px 24px rgba(13, 11, 10, 0.06) !important;
+  overflow: visible !important;
+  text-align: left !important;
+  white-space: normal !important;
 }
 
-html body .cs-hero > section:first-child {
-  max-width: 100% !important;
+.cs-plan-addons button::before,
+.cs-plan-addons button::after,
+.cs-sms-packs button::before,
+.cs-sms-packs button::after {
+  content: none !important;
+  display: none !important;
 }
 
-html body .cs-hero span:first-child {
-  min-height: 26px !important;
-  padding: 0 10px !important;
-  font-size: 11px !important;
+.cs-plan-addons button *,
+.cs-sms-packs button *,
+.cs-plan-cards article * {
+  color: var(--cvx-black) !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
-html body .cs-hero h1 {
-  max-width: 980px !important;
-  margin: 8px 0 8px !important;
-  font-size: clamp(34px, 4.7vw, 64px) !important;
-  line-height: 0.92 !important;
+.cs-plan-addons button strong,
+.cs-sms-packs button strong,
+.cs-plan-cards article h2,
+.cs-plan-cards article strong {
+  color: var(--cvx-black) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: clamp(20px, 2vw, 30px) !important;
+  line-height: 1.02 !important;
+  letter-spacing: -0.045em !important;
+}
+
+.cs-plan-addons button p,
+.cs-sms-packs button p,
+.cs-plan-cards article p,
+.cs-plan-addons button small,
+.cs-sms-packs button small {
+  color: var(--cvx-muted) !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+  margin: 0 !important;
+}
+
+.cs-plan-addons button em,
+.cs-sms-packs button em,
+.cs-plan-addons button b,
+.cs-sms-packs button b {
+  color: var(--cvx-copper) !important;
+  font-style: normal !important;
+  font-weight: 950 !important;
+}
+
+/* PUBLIC + LOGIN */
+.om-sales-page {
+  padding-bottom: 70px !important;
+  overflow-x: hidden !important;
+}
+
+.om-sales-nav,
+.om-sales-hero,
+.om-sales-proof-strip,
+.om-sales-how,
+.om-sales-prepared,
+.om-sales-control,
+.om-sales-pricing,
+.om-sales-access,
+.om-sales-final {
+  width: min(1360px, calc(100% - 32px)) !important;
+  margin-inline: auto !important;
+}
+
+.om-sales-nav {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 300 !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 18px 0 !important;
+}
+
+.om-sales-nav,
+.om-sales-nav * {
+  color: var(--cvx-cream) !important;
+}
+
+.om-sales-nav nav {
+  display: flex !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-end !important;
+}
+
+.om-sales-nav nav a,
+.om-sales-nav nav button {
+  min-height: 36px !important;
+  padding: 0 14px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(255, 248, 239, 0.12) !important;
+  background: rgba(255, 248, 239, 0.08) !important;
+  color: var(--cvx-cream) !important;
+  font-weight: 900 !important;
+}
+
+.om-sales-hero {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.72fr) !important;
+  gap: 20px !important;
+  align-items: stretch !important;
+}
+
+.om-sales-hero-copy,
+.om-sales-how,
+.om-sales-prepared,
+.om-sales-pricing,
+.om-sales-final {
+  border: 1px solid var(--cvx-line) !important;
+  border-radius: 28px !important;
+  background: var(--cvx-cream-panel) !important;
+  color: var(--cvx-black) !important;
+  box-shadow: var(--cvx-shadow) !important;
+}
+
+.om-sales-command-card,
+.om-sales-control {
+  border: 1px solid rgba(255, 248, 239, 0.12) !important;
+  border-radius: 28px !important;
+  background: var(--cvx-dark-panel) !important;
+  color: var(--cvx-cream) !important;
+  box-shadow: var(--cvx-shadow) !important;
+}
+
+.om-sales-hero-copy *,
+.om-sales-how *,
+.om-sales-prepared *,
+.om-sales-pricing *,
+.om-sales-final *,
+.om-sales-auth * {
+  color: var(--cvx-black) !important;
+}
+
+.om-sales-command-card *,
+.om-sales-control * {
+  color: var(--cvx-cream) !important;
+}
+
+.om-sales-hero h1,
+.om-sales-how h2,
+.om-sales-prepared h2,
+.om-sales-pricing h2,
+.om-sales-final h2,
+.om-sales-auth h2 {
+  font-family: Georgia, "Times New Roman", serif !important;
   letter-spacing: -0.065em !important;
 }
 
-html body .cs-hero p {
-  max-width: 760px !important;
-  font-size: 13px !important;
-  line-height: 1.38 !important;
+.om-sales-auth {
+  border: 1px solid var(--cvx-line) !important;
+  border-radius: 24px !important;
+  background: rgba(255, 248, 239, 0.98) !important;
+  color: var(--cvx-black) !important;
+  box-shadow: var(--cvx-shadow) !important;
 }
 
-/* COMPACT STATS ROW */
-html body .cs-stats,
-html body .cs-plan-price-stack {
-  width: 100% !important;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  gap: 8px !important;
-  margin: 2px 0 0 !important;
+.om-sales-auth input,
+.cs-page input,
+.cs-page textarea,
+.cs-page select,
+.cs-modal input,
+.cs-modal textarea,
+.cs-modal select {
+  min-height: 44px !important;
+  border: 1px solid rgba(13, 11, 10, 0.14) !important;
+  border-radius: 14px !important;
+  background: rgba(255, 248, 239, 0.98) !important;
+  color: var(--cvx-black) !important;
 }
 
-html body .cs-stat,
-html body .cs-plan-price-stack button {
-  min-height: 72px !important;
-  height: 72px !important;
-  max-height: 72px !important;
-  padding: 8px 10px !important;
-  border-radius: 16px !important;
-  gap: 4px !important;
+/* Real public/login CTAs */
+.om-sales-actions button,
+.om-sales-final button,
+.om-sales-pricing article button,
+.om-sales-auth form button,
+.cs-modal footer button:not(.ghost),
+.cs-page a.button,
+.cs-page .button {
+  min-height: 42px !important;
+  padding: 0 18px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(222, 111, 47, 0.26) !important;
+  background-color: var(--cvx-black) !important;
+  background-image:
+    radial-gradient(circle at 24% 0%, rgba(255, 248, 239, 0.18), transparent 26%),
+    linear-gradient(135deg, #0d0b0a 0%, #17120f 42%, #5d2818 72%, #b85720 100%) !important;
+  color: var(--cvx-cream) !important;
+  font-weight: 950 !important;
+  box-shadow: 0 14px 32px rgba(13, 11, 10, 0.18) !important;
 }
 
-html body .cs-stat strong,
-html body .cs-plan-price-stack button strong {
-  font-size: clamp(18px, 2vw, 26px) !important;
-  line-height: 1 !important;
+.om-sales-actions button *,
+.om-sales-final button *,
+.om-sales-pricing article button *,
+.om-sales-auth form button *,
+.cs-modal footer button:not(.ghost) *,
+.cs-page a.button *,
+.cs-page .button * {
+  color: var(--cvx-cream) !important;
 }
 
-html body .cs-stat span,
-html body .cs-plan-price-stack button span {
-  font-size: 11px !important;
-  line-height: 1.1 !important;
-}
-
-/* CREAM SECTIONS: FILTER/TAB BUTTONS MUST BE DARK TEXT */
-html body .cs-desk .cs-filters,
-html body .cs-workspace .cs-filters,
-html body .cs-flow .cs-filters,
-html body .cs-desk .cs-filter-bar,
-html body .cs-workspace .cs-filter-bar,
-html body .cs-flow .cs-filter-bar,
-html body .cs-desk .cs-tabs,
-html body .cs-workspace .cs-tabs,
-html body .cs-flow .cs-tabs,
-html body .cs-desk .cs-subnav,
-html body .cs-workspace .cs-subnav,
-html body .cs-flow .cs-subnav,
-html body .cs-plan-addons .cs-filters,
-html body .cs-sms-packs .cs-filters,
-html body .cs-plan-compare .cs-filters {
-  background: rgba(13, 11, 10, 0.06) !important;
-  border: 1px solid rgba(13, 11, 10, 0.10) !important;
-  box-shadow: none !important;
-}
-
-html body .cs-desk .cs-filters button,
-html body .cs-workspace .cs-filters button,
-html body .cs-flow .cs-filters button,
-html body .cs-desk .cs-filter-bar button,
-html body .cs-workspace .cs-filter-bar button,
-html body .cs-flow .cs-filter-bar button,
-html body .cs-desk .cs-tabs button,
-html body .cs-workspace .cs-tabs button,
-html body .cs-flow .cs-tabs button,
-html body .cs-desk .cs-subnav button,
-html body .cs-workspace .cs-subnav button,
-html body .cs-flow .cs-subnav button,
-html body .cs-plan-addons .cs-filters button,
-html body .cs-sms-packs .cs-filters button,
-html body .cs-plan-compare .cs-filters button {
-  background: rgba(255, 248, 239, 0.82) !important;
-  color: var(--tw-black) !important;
-  border: 1px solid rgba(13, 11, 10, 0.10) !important;
-}
-
-html body .cs-desk .cs-filters button *,
-html body .cs-workspace .cs-filters button *,
-html body .cs-flow .cs-filters button *,
-html body .cs-desk .cs-filter-bar button *,
-html body .cs-workspace .cs-filter-bar button *,
-html body .cs-flow .cs-filter-bar button *,
-html body .cs-desk .cs-tabs button *,
-html body .cs-workspace .cs-tabs button *,
-html body .cs-flow .cs-tabs button *,
-html body .cs-desk .cs-subnav button *,
-html body .cs-workspace .cs-subnav button *,
-html body .cs-flow .cs-subnav button * {
-  color: var(--tw-black) !important;
-}
-
-/* Selected filter can have subtle copper, still dark readable text */
-html body .cs-desk .cs-filters button.active,
-html body .cs-workspace .cs-filters button.active,
-html body .cs-flow .cs-filters button.active,
-html body .cs-desk .cs-filter-bar button.active,
-html body .cs-workspace .cs-filter-bar button.active,
-html body .cs-flow .cs-filter-bar button.active,
-html body .cs-desk .cs-tabs button.active,
-html body .cs-workspace .cs-tabs button.active,
-html body .cs-flow .cs-tabs button.active {
-  background: rgba(184, 87, 32, 0.12) !important;
-  color: var(--tw-black) !important;
-  border-color: rgba(184, 87, 32, 0.18) !important;
-}
-
-/* ROW ACTION BUTTONS INSIDE CREAM CARDS: readable black/cream subtle pills */
-html body .cs-approval-row button,
-html body .cs-row button,
-html body .cs-page .cs-approval-row button:not(.ghost):not(.active),
-html body .cs-page .cs-row button:not(.ghost):not(.active),
-html body .cs-desk .cs-view:not(.ghost),
-html body .cs-workspace .cs-view:not(.ghost),
-html body .cs-flow .cs-view:not(.ghost),
-html body .cs-page .cs-view:not(.ghost) {
-  min-height: 38px !important;
-  background: rgba(13, 11, 10, 0.08) !important;
-  background-image: none !important;
-  color: var(--tw-black) !important;
+button.ghost,
+.cs-modal footer button.ghost {
+  background: rgba(13, 11, 10, 0.07) !important;
+  color: var(--cvx-black) !important;
   border: 1px solid rgba(13, 11, 10, 0.12) !important;
   box-shadow: none !important;
 }
 
-html body .cs-approval-row button *,
-html body .cs-row button *,
-html body .cs-desk .cs-view:not(.ghost) *,
-html body .cs-workspace .cs-view:not(.ghost) *,
-html body .cs-flow .cs-view:not(.ghost) *,
-html body .cs-page .cs-view:not(.ghost) * {
-  color: var(--tw-black) !important;
-}
+/* MOBILE */
+@media (max-width: 900px) {
+  .om-main {
+    padding: 16px 14px 48px !important;
+  }
 
-/* Keep modal/real submit CTAs gradient, but not row/filter/card buttons */
-html body .cs-modal button:not(.ghost),
-html body .cs-page a.button,
-html body .cs-page .button {
-  background:
-    radial-gradient(circle at 24% 0%, rgba(255, 248, 239, 0.18), transparent 26%),
-    linear-gradient(135deg, #0d0b0a 0%, #17120f 42%, #5d2818 72%, #b85720 100%) !important;
-  color: #fff8ef !important;
-  border: 1px solid rgba(228, 134, 67, 0.28) !important;
-}
+  .cs-page {
+    gap: 12px !important;
+  }
 
-html body .cs-modal button:not(.ghost) *,
-html body .cs-page a.button *,
-html body .cs-page .button * {
-  color: #fff8ef !important;
-}
-
-/* PLAN / SMS / MYOB CARDS: shorter, cream, readable */
-html body .cs-plan-addons button,
-html body .cs-sms-packs button,
-html body .cs-page .cs-plan-addons button,
-html body .cs-page .cs-sms-packs button,
-html body .cs-page .cs-plan-addons button:not(.ghost):not(.active),
-html body .cs-page .cs-sms-packs button:not(.ghost):not(.active),
-html body .cs-plan-addons button:not(.ghost):not(.active),
-html body .cs-sms-packs button:not(.ghost):not(.active) {
-  min-height: 112px !important;
-  max-height: 185px !important;
-  padding: 18px !important;
-  gap: 6px !important;
-  background: rgba(255, 248, 239, 0.96) !important;
-  background-image: none !important;
-  color: var(--tw-black) !important;
-  border: 1px solid rgba(13, 11, 10, 0.10) !important;
-  border-radius: 20px !important;
-  box-shadow: 0 12px 30px rgba(13, 11, 10, 0.07) !important;
-  overflow: hidden !important;
-}
-
-html body .cs-plan-addons button *,
-html body .cs-sms-packs button * {
-  color: var(--tw-black) !important;
-  background: transparent !important;
-  background-image: none !important;
-  box-shadow: none !important;
-}
-
-html body .cs-plan-addons button strong,
-html body .cs-sms-packs button strong,
-html body .cs-plan-addons button h3,
-html body .cs-sms-packs button h3 {
-  font-size: clamp(20px, 1.9vw, 28px) !important;
-  line-height: 1 !important;
-}
-
-html body .cs-plan-addons button p,
-html body .cs-sms-packs button p,
-html body .cs-plan-addons button small,
-html body .cs-sms-packs button small {
-  color: var(--tw-muted) !important;
-  font-size: 13px !important;
-  line-height: 1.35 !important;
-}
-
-html body .cs-plan-addons button em,
-html body .cs-sms-packs button em,
-html body .cs-plan-addons button b,
-html body .cs-sms-packs button b {
-  color: var(--tw-orange) !important;
-  font-style: normal !important;
-  font-weight: 950 !important;
-}
-
-html body .cs-plan-addons button::before,
-html body .cs-plan-addons button::after,
-html body .cs-sms-packs button::before,
-html body .cs-sms-packs button::after {
-  content: none !important;
-  display: none !important;
-}
-
-/* MOBILE: stats should be two neat columns, never full-width huge cards */
-@media (max-width: 760px) {
-  html body .cs-hero {
+  .cs-hero {
     padding: 18px !important;
-    gap: 12px !important;
+    border-radius: 22px !important;
   }
 
-  html body .cs-hero h1 {
+  .cs-hero h1 {
     font-size: clamp(32px, 10vw, 48px) !important;
-    line-height: 0.94 !important;
+    line-height: 1.03 !important;
   }
 
-  html body .cs-hero p {
-    font-size: 13px !important;
-  }
-
-  html body .cs-stats,
-  html body .cs-plan-price-stack {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 8px !important;
-  }
-
-  html body .cs-stat,
-  html body .cs-plan-price-stack button {
-    width: auto !important;
-    min-width: 0 !important;
-    min-height: 70px !important;
-    height: 70px !important;
-    max-height: 70px !important;
-    padding: 8px !important;
-  }
-
-  html body .cs-stat strong,
-  html body .cs-plan-price-stack button strong {
-    font-size: 22px !important;
-  }
-
-  html body .cs-stat span,
-  html body .cs-plan-price-stack button span {
-    font-size: 11px !important;
-  }
-
-  html body .cs-plan-addons button,
-  html body .cs-sms-packs button {
-    min-height: 105px !important;
-    max-height: none !important;
-  }
-}
-
-
-/* PHASE_261_REAL_LIVE_AUDIT_CLEANUP
-   Fix actual live logged-in audit failures:
-   - stat cards too wide
-   - hero barely too tall
-   - cream cards/buttons using cream text
-   - plan/SMS/MYOB cards clipping or too tall
-*/
-
-/* Hero: wide but shorter */
-html body .cs-hero {
-  min-height: 0 !important;
-  height: auto !important;
-  gap: 8px !important;
-  padding: 14px 18px !important;
-  border-radius: 22px !important;
-}
-
-html body .cs-hero span:first-child {
-  min-height: 24px !important;
-  padding: 0 9px !important;
-  font-size: 10.5px !important;
-}
-
-html body .cs-hero h1 {
-  margin: 4px 0 5px !important;
-  font-size: clamp(30px, 4.1vw, 56px) !important;
-  line-height: 0.94 !important;
-  letter-spacing: -0.058em !important;
-}
-
-html body .cs-hero p {
-  max-width: 760px !important;
-  margin: 0 !important;
-  font-size: 12.5px !important;
-  line-height: 1.32 !important;
-}
-
-/* Stats: never become huge wide cards */
-html body .cs-stats,
-html body .cs-plan-price-stack {
-  display: grid !important;
-  grid-template-columns: repeat(4, minmax(0, 205px)) !important;
-  justify-content: end !important;
-  align-items: stretch !important;
-  gap: 8px !important;
-  width: 100% !important;
-  min-width: 0 !important;
-  margin: 2px 0 0 !important;
-}
-
-html body .cs-stat,
-html body .cs-plan-price-stack button {
-  width: 100% !important;
-  max-width: 205px !important;
-  min-width: 0 !important;
-  height: 58px !important;
-  min-height: 58px !important;
-  max-height: 58px !important;
-  padding: 6px 9px !important;
-  border-radius: 14px !important;
-  gap: 3px !important;
-}
-
-html body .cs-stat strong,
-html body .cs-plan-price-stack button strong {
-  font-size: clamp(16px, 1.65vw, 22px) !important;
-  line-height: 1 !important;
-}
-
-html body .cs-stat span,
-html body .cs-plan-price-stack button span {
-  font-size: 10.5px !important;
-  line-height: 1.05 !important;
-}
-
-/* Anything inside cream workspaces/cards must not use cream text */
-html body .cs-command-cards article button,
-html body .cs-command-cards article button *,
-html body .cs-ai-card button,
-html body .cs-ai-card button *,
-html body .cs-desk button:not(.cs-stat),
-html body .cs-desk button:not(.cs-stat) *,
-html body .cs-workspace button:not(.cs-stat),
-html body .cs-workspace button:not(.cs-stat) *,
-html body .cs-flow button:not(.cs-stat),
-html body .cs-flow button:not(.cs-stat) *,
-html body .cs-approval-row button,
-html body .cs-approval-row button *,
-html body .cs-row button,
-html body .cs-row button *,
-html body .cs-empty button,
-html body .cs-empty button *,
-html body .cs-card button,
-html body .cs-card button *,
-html body .cs-panel button,
-html body .cs-panel button *,
-html body .cs-list button,
-html body .cs-list button *,
-html body .cs-table-wrap button,
-html body .cs-table-wrap button * {
-  color: var(--tw-black) !important;
-}
-
-html body .cs-command-cards article button,
-html body .cs-ai-card button,
-html body .cs-desk button:not(.cs-stat),
-html body .cs-workspace button:not(.cs-stat),
-html body .cs-flow button:not(.cs-stat),
-html body .cs-approval-row button,
-html body .cs-row button,
-html body .cs-empty button,
-html body .cs-card button,
-html body .cs-panel button,
-html body .cs-list button,
-html body .cs-table-wrap button {
-  background: rgba(13, 11, 10, 0.075) !important;
-  background-image: none !important;
-  border: 1px solid rgba(13, 11, 10, 0.11) !important;
-  box-shadow: none !important;
-}
-
-/* Arrows/ems inside cream cards were showing cream on cream */
-html body .cs-command-cards article em,
-html body .cs-ai-card em,
-html body .cs-desk em,
-html body .cs-workspace em,
-html body .cs-flow em,
-html body .cs-approval-row em,
-html body .cs-row em,
-html body .cs-empty em,
-html body .cs-card em,
-html body .cs-panel em,
-html body .cs-list em,
-html body .cs-table-wrap em {
-  color: var(--tw-black) !important;
-  background: transparent !important;
-}
-
-/* Filter tabs inside cream boards */
-html body .cs-desk .cs-filters button,
-html body .cs-desk .cs-filter-bar button,
-html body .cs-desk .cs-tabs button,
-html body .cs-workspace .cs-filters button,
-html body .cs-workspace .cs-filter-bar button,
-html body .cs-workspace .cs-tabs button,
-html body .cs-flow .cs-filters button,
-html body .cs-flow .cs-filter-bar button,
-html body .cs-flow .cs-tabs button {
-  color: var(--tw-black) !important;
-  background: rgba(255, 248, 239, 0.78) !important;
-  border: 1px solid rgba(13, 11, 10, 0.11) !important;
-}
-
-html body .cs-desk .cs-filters button *,
-html body .cs-desk .cs-filter-bar button *,
-html body .cs-desk .cs-tabs button *,
-html body .cs-workspace .cs-filters button *,
-html body .cs-workspace .cs-filter-bar button *,
-html body .cs-workspace .cs-tabs button *,
-html body .cs-flow .cs-filters button *,
-html body .cs-flow .cs-filter-bar button *,
-html body .cs-flow .cs-tabs button * {
-  color: var(--tw-black) !important;
-}
-
-html body .cs-desk .cs-filters button.active,
-html body .cs-desk .cs-filter-bar button.active,
-html body .cs-desk .cs-tabs button.active,
-html body .cs-workspace .cs-filters button.active,
-html body .cs-workspace .cs-filter-bar button.active,
-html body .cs-workspace .cs-tabs button.active,
-html body .cs-flow .cs-filters button.active,
-html body .cs-flow .cs-filter-bar button.active,
-html body .cs-flow .cs-tabs button.active {
-  background: rgba(184, 87, 32, 0.13) !important;
-}
-
-/* Plan / SMS / MYOB cards: compact cream cards, no clipping */
-html body .cs-plan-addons button,
-html body .cs-sms-packs button,
-html body .cs-page .cs-plan-addons button,
-html body .cs-page .cs-sms-packs button,
-html body .cs-page .cs-plan-addons button:not(.ghost):not(.active),
-html body .cs-page .cs-sms-packs button:not(.ghost):not(.active),
-html body .cs-plan-addons button:not(.ghost):not(.active),
-html body .cs-sms-packs button:not(.ghost):not(.active) {
-  min-height: 0 !important;
-  max-height: none !important;
-  height: auto !important;
-  padding: 12px 14px !important;
-  gap: 4px !important;
-  overflow: visible !important;
-  background: rgba(255, 248, 239, 0.97) !important;
-  background-image: none !important;
-  color: var(--tw-black) !important;
-  border: 1px solid rgba(13, 11, 10, 0.10) !important;
-  border-radius: 18px !important;
-  box-shadow: 0 10px 24px rgba(13, 11, 10, 0.06) !important;
-}
-
-html body .cs-plan-addons button *,
-html body .cs-sms-packs button * {
-  color: var(--tw-black) !important;
-  background: transparent !important;
-  background-image: none !important;
-  box-shadow: none !important;
-}
-
-html body .cs-plan-addons button strong,
-html body .cs-sms-packs button strong,
-html body .cs-plan-addons button h3,
-html body .cs-sms-packs button h3 {
-  font-size: clamp(18px, 1.55vw, 23px) !important;
-  line-height: 1.02 !important;
-  letter-spacing: -0.038em !important;
-}
-
-html body .cs-plan-addons button span,
-html body .cs-sms-packs button span {
-  font-size: 13px !important;
-  line-height: 1.15 !important;
-  color: var(--tw-black) !important;
-}
-
-html body .cs-plan-addons button p,
-html body .cs-sms-packs button p,
-html body .cs-plan-addons button small,
-html body .cs-sms-packs button small {
-  color: var(--tw-muted) !important;
-  font-size: 12px !important;
-  line-height: 1.22 !important;
-  margin: 0 !important;
-}
-
-html body .cs-plan-addons button em,
-html body .cs-sms-packs button em,
-html body .cs-plan-addons button b,
-html body .cs-sms-packs button b {
-  color: var(--tw-orange) !important;
-  background: transparent !important;
-  font-style: normal !important;
-  font-weight: 950 !important;
-  font-size: 12.5px !important;
-  line-height: 1.1 !important;
-  padding: 0 !important;
-  min-height: 0 !important;
-  box-shadow: none !important;
-}
-
-html body .cs-plan-addons button::before,
-html body .cs-plan-addons button::after,
-html body .cs-sms-packs button::before,
-html body .cs-sms-packs button::after {
-  content: none !important;
-  display: none !important;
-}
-
-/* Real CTAs can remain gradient, but only where they are not inside cream cards */
-html body .cs-modal > button:not(.ghost),
-html body .cs-modal form button:not(.ghost),
-html body .cs-page > button:not(.ghost):not(.active),
-html body .cs-page a.button,
-html body .cs-page .button {
-  background:
-    radial-gradient(circle at 24% 0%, rgba(255, 248, 239, 0.18), transparent 26%),
-    linear-gradient(135deg, #0d0b0a 0%, #17120f 42%, #5d2818 72%, #b85720 100%) !important;
-  color: #fff8ef !important;
-  border: 1px solid rgba(228, 134, 67, 0.28) !important;
-}
-
-html body .cs-modal > button:not(.ghost) *,
-html body .cs-modal form button:not(.ghost) *,
-html body .cs-page > button:not(.ghost):not(.active) *,
-html body .cs-page a.button *,
-html body .cs-page .button * {
-  color: #fff8ef !important;
-}
-
-/* Desktop/small laptop stat width must stay below audit max */
-@media (min-width: 761px) {
-  html body .cs-stats,
-  html body .cs-plan-price-stack {
-    grid-template-columns: repeat(4, 205px) !important;
-  }
-}
-
-/* Mobile: two compact columns, never full-width huge cards */
-@media (max-width: 760px) {
-  html body .cs-hero {
-    padding: 14px !important;
-    gap: 8px !important;
-  }
-
-  html body .cs-hero h1 {
-    font-size: clamp(30px, 9.4vw, 44px) !important;
-  }
-
-  html body .cs-stats,
-  html body .cs-plan-price-stack {
-    grid-template-columns: repeat(2, minmax(0, 205px)) !important;
-    justify-content: center !important;
-    gap: 8px !important;
-  }
-
-  html body .cs-stat,
-  html body .cs-plan-price-stack button {
-    max-width: 205px !important;
-    height: 58px !important;
-    min-height: 58px !important;
-    max-height: 58px !important;
-  }
-
-  html body .cs-stat strong,
-  html body .cs-plan-price-stack button strong {
-    font-size: 20px !important;
-  }
-}
-
-
-/* PHASE_262_FIX_HERO_TEXT_STAT_OVERLAP
-   The hero title was visually bleeding into the stat pills.
-   Force a clean order:
-   1) label/title/description
-   2) compact stat row underneath
-   No overlap, no giant stat pills.
-*/
-
-html body .cs-hero {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: stretch !important;
-  justify-content: flex-start !important;
-  min-height: 0 !important;
-  height: auto !important;
-  max-height: none !important;
-  gap: 14px !important;
-  padding: 20px 24px 22px !important;
-  overflow: hidden !important;
-  position: relative !important;
-}
-
-html body .cs-hero > section:first-child {
-  display: block !important;
-  width: 100% !important;
-  max-width: 980px !important;
-  min-width: 0 !important;
-  position: relative !important;
-  z-index: 1 !important;
-}
-
-html body .cs-hero span:first-child {
-  margin-bottom: 8px !important;
-}
-
-html body .cs-hero h1 {
-  display: block !important;
-  max-width: 980px !important;
-  margin: 0 0 12px !important;
-  padding: 0 !important;
-  font-size: clamp(34px, 4.15vw, 58px) !important;
-  line-height: 1.04 !important;
-  letter-spacing: -0.055em !important;
-  overflow: visible !important;
-  position: relative !important;
-  z-index: 1 !important;
-}
-
-html body .cs-hero h1 mark {
-  display: inline !important;
-  color: var(--tw-orange-3) !important;
-  background: transparent !important;
-}
-
-html body .cs-hero p {
-  display: block !important;
-  max-width: 760px !important;
-  margin: 0 !important;
-  font-size: 13px !important;
-  line-height: 1.45 !important;
-  color: rgba(255, 248, 239, 0.82) !important;
-  position: relative !important;
-  z-index: 1 !important;
-}
-
-/* Stats sit below the title, never on top of it */
-html body .cs-stats,
-html body .cs-plan-price-stack {
-  display: grid !important;
-  grid-template-columns: repeat(4, minmax(130px, 190px)) !important;
-  justify-content: start !important;
-  align-items: stretch !important;
-  gap: 10px !important;
-  width: 100% !important;
-  max-width: 820px !important;
-  min-width: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  position: relative !important;
-  z-index: 2 !important;
-  clear: both !important;
-}
-
-html body .cs-stat,
-html body .cs-plan-price-stack button {
-  width: 100% !important;
-  max-width: 190px !important;
-  min-width: 0 !important;
-  min-height: 62px !important;
-  height: 62px !important;
-  max-height: 62px !important;
-  padding: 7px 10px !important;
-  border-radius: 999px !important;
-  gap: 3px !important;
-  overflow: hidden !important;
-}
-
-html body .cs-stat strong,
-html body .cs-plan-price-stack button strong {
-  font-size: clamp(17px, 1.65vw, 23px) !important;
-  line-height: 1 !important;
-}
-
-html body .cs-stat span,
-html body .cs-plan-price-stack button span {
-  font-size: 10.5px !important;
-  line-height: 1.05 !important;
-  text-align: center !important;
-}
-
-/* Summary cards below hero must not creep upward */
-html body .cs-command-cards,
-html body .cs-ai-grid {
-  margin-top: 0 !important;
-  position: relative !important;
-  z-index: 0 !important;
-}
-
-/* Mobile: clean two-column stats, still no overlap */
-@media (max-width: 760px) {
-  html body .cs-hero {
-    padding: 16px !important;
-    gap: 12px !important;
-  }
-
-  html body .cs-hero h1 {
-    font-size: clamp(31px, 9vw, 44px) !important;
-    line-height: 1.04 !important;
-    margin-bottom: 10px !important;
-  }
-
-  html body .cs-stats,
-  html body .cs-plan-price-stack {
+  .cs-stats,
+  .cs-plan-price-stack {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     max-width: 100% !important;
-    justify-content: stretch !important;
-  }
-
-  html body .cs-stat,
-  html body .cs-plan-price-stack button {
-    max-width: none !important;
-    height: 60px !important;
-    min-height: 60px !important;
-    max-height: 60px !important;
-  }
-}
-
-
-/* PHASE_263_STATS_OUTSIDE_HERO_NO_OVERLAP
-   Stats are now outside the hero in JSX.
-   This makes overlap impossible instead of trying to fight it with CSS.
-*/
-
-/* Hero only contains wording now */
-html body .cs-hero {
-  display: block !important;
-  min-height: 0 !important;
-  height: auto !important;
-  max-height: none !important;
-  padding: 20px 24px !important;
-  border-radius: 24px !important;
-  overflow: hidden !important;
-}
-
-html body .cs-hero > section:first-child {
-  width: 100% !important;
-  max-width: 980px !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-html body .cs-hero h1 {
-  max-width: 980px !important;
-  margin: 8px 0 10px !important;
-  font-size: clamp(32px, 4vw, 56px) !important;
-  line-height: 1.02 !important;
-  letter-spacing: -0.055em !important;
-}
-
-html body .cs-hero p {
-  max-width: 780px !important;
-  margin: 0 !important;
-  font-size: 13px !important;
-  line-height: 1.42 !important;
-}
-
-/* New separate stats row under the hero */
-html body .cs-page > .cs-stats-below-hero,
-html body .cs-page > .cs-plan-price-stack.cs-stats-below-hero {
-  width: 100% !important;
-  max-width: none !important;
-  min-width: 0 !important;
-  display: grid !important;
-  grid-template-columns: repeat(4, minmax(150px, 210px)) !important;
-  justify-content: start !important;
-  align-items: stretch !important;
-  gap: 10px !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  position: relative !important;
-  z-index: 1 !important;
-}
-
-/* Separate stat pills are compact and cannot cover title */
-html body .cs-page > .cs-stats-below-hero .cs-stat,
-html body .cs-page > .cs-plan-price-stack.cs-stats-below-hero button {
-  width: 100% !important;
-  max-width: 210px !important;
-  min-width: 0 !important;
-  height: 64px !important;
-  min-height: 64px !important;
-  max-height: 64px !important;
-  padding: 8px 10px !important;
-  border-radius: 999px !important;
-  overflow: hidden !important;
-  background-color: #0d0b0a !important;
-  background-image:
-    radial-gradient(circle at 24% 0%, rgba(255, 248, 239, 0.15), transparent 26%),
-    linear-gradient(135deg, #0d0b0a 0%, #17120f 42%, #5d2818 72%, #b85720 100%) !important;
-  color: #fff8ef !important;
-  border: 1px solid rgba(228, 134, 67, 0.24) !important;
-  box-shadow: 0 10px 28px rgba(13, 11, 10, 0.16) !important;
-}
-
-html body .cs-page > .cs-stats-below-hero .cs-stat *,
-html body .cs-page > .cs-plan-price-stack.cs-stats-below-hero button * {
-  color: #fff8ef !important;
-}
-
-html body .cs-page > .cs-stats-below-hero .cs-stat strong,
-html body .cs-page > .cs-plan-price-stack.cs-stats-below-hero button strong {
-  font-size: clamp(17px, 1.7vw, 23px) !important;
-  line-height: 1 !important;
-}
-
-html body .cs-page > .cs-stats-below-hero .cs-stat span,
-html body .cs-page > .cs-plan-price-stack.cs-stats-below-hero button span {
-  font-size: 11px !important;
-  line-height: 1.05 !important;
-  text-align: center !important;
-}
-
-/* Keep the content below separate from the stats */
-html body .cs-ai-strip,
-html body .cs-command-cards,
-html body .cs-workspace,
-html body .cs-desk {
-  position: relative !important;
-  z-index: 0 !important;
-}
-
-/* Mobile: two neat stat columns */
-@media (max-width: 760px) {
-  html body .cs-hero {
-    padding: 16px !important;
-  }
-
-  html body .cs-hero h1 {
-    font-size: clamp(30px, 9vw, 44px) !important;
-    line-height: 1.04 !important;
-  }
-
-  html body .cs-page > .cs-stats-below-hero,
-  html body .cs-page > .cs-plan-price-stack.cs-stats-below-hero {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 8px !important;
   }
 
-  html body .cs-page > .cs-stats-below-hero .cs-stat,
-  html body .cs-page > .cs-plan-price-stack.cs-stats-below-hero button {
+  .cs-stat,
+  .cs-plan-price-stack button {
     max-width: none !important;
-    height: 62px !important;
-    min-height: 62px !important;
-    max-height: 62px !important;
+    height: 70px !important;
+    min-height: 70px !important;
+    max-height: 70px !important;
+    grid-template-columns: 24px minmax(0, 1fr) minmax(28px, auto) !important;
+    padding: 8px 10px !important;
+  }
+
+  .cs-stat .cs-icon,
+  .cs-plan-price-stack button .cs-icon {
+    width: 19px !important;
+    height: 19px !important;
+    min-width: 19px !important;
+    min-height: 19px !important;
+  }
+
+  .cs-stat span,
+  .cs-plan-price-stack button span {
+    font-size: 10.5px !important;
+  }
+
+  .cs-stat strong,
+  .cs-plan-price-stack button strong {
+    max-width: 62px !important;
+    font-size: 18px !important;
+  }
+
+  .cs-command-cards,
+  .cs-ai-strip {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cs-workspace > header,
+  .cs-desk > header,
+  .cs-plan-addons > header,
+  .cs-sms-packs > header,
+  .cs-plan-compare > header {
+    display: grid !important;
+  }
+
+  .cs-filters,
+  .cs-filter-bar,
+  .cs-tabs {
+    justify-content: flex-start !important;
+  }
+
+  .om-sales-hero {
+    grid-template-columns: 1fr !important;
+  }
+
+  .om-sales-nav {
+    align-items: flex-start !important;
   }
 }
-
