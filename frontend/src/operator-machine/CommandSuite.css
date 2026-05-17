@@ -1884,11 +1884,11 @@ background: transparent !important;
 }
 
 
-/* PHASE_238_VISIBLE_FRONT_PAGE_THEME
-   Real target:
-   Dashboard / Work / Clients / Crew / Quotes / Invoices / Proof / Payroll / Plans / Settings
-   must use the same front-page style:
-   dark black/copper outer background, cream cards, black/copper command panels.
+/* PHASE_241_COPY_PUBLIC_FRONT_PAGE_SYSTEM_TO_APP
+   Copied from the real public/front page system in OperatorMachine.css:
+   stone / black / copper / cream / green.
+   This is the app version for Dashboard, Work, Clients, Crew, Quotes,
+   Invoices, Proof & Pay, Payroll, Plans and Settings.
 */
 :root {
   --cs-black: #0d0b0a !important;
@@ -1899,15 +1899,30 @@ background: transparent !important;
   --cs-paper: #fff8ef !important;
   --cs-cream: #fbf4ea !important;
   --cs-soft: #f4ede3 !important;
+  --cs-stone-2: #eadbc9 !important;
   --cs-muted: #6d6258 !important;
-  --cs-front-dark:
-    radial-gradient(circle at 78% 6%, rgba(184, 87, 32, 0.28), transparent 31rem),
-    radial-gradient(circle at 6% 20%, rgba(255, 248, 239, 0.08), transparent 25rem),
-    radial-gradient(circle at 58% 100%, rgba(184, 87, 32, 0.13), transparent 38rem),
-    linear-gradient(135deg, #0d0b0a 0%, #17120f 48%, #221713 100%) !important;
+  --cs-green: #507b36 !important;
+  --cs-red: #a8422b !important;
+  --cs-gold: #d39028 !important;
+  --cs-line: rgba(13, 11, 10, 0.12) !important;
+  --cs-shadow: 0 18px 48px rgba(13, 11, 10, 0.10) !important;
+  --cs-shadow-strong: 0 26px 84px rgba(13, 11, 10, 0.16) !important;
+
+  --cs-public-canvas:
+    radial-gradient(circle at 78% 6%, rgba(184, 87, 32, 0.24), transparent 30rem),
+    radial-gradient(circle at 6% 20%, rgba(13, 11, 10, 0.13), transparent 25rem),
+    linear-gradient(135deg, #f4ede3 0%, #fff8ef 50%, #eadbc9 100%) !important;
+
+  --cs-public-panel:
+    radial-gradient(circle at 94% 8%, rgba(228, 134, 67, 0.22), transparent 22rem),
+    rgba(255, 248, 239, 0.90) !important;
+
+  --cs-public-dark:
+    radial-gradient(circle at 100% 0%, rgba(228, 134, 67, 0.24), transparent 18rem),
+    #0d0b0a !important;
 }
 
-/* THE REAL PAGE BACKGROUND */
+/* Same page canvas as the public landing page */
 html,
 body,
 #root,
@@ -1915,7 +1930,8 @@ body,
 .om-shell,
 .om-main,
 .cs-page {
-  background: var(--cs-front-dark) !important;
+  background: var(--cs-public-canvas) !important;
+  color: var(--cs-black) !important;
 }
 
 body {
@@ -1924,91 +1940,297 @@ body {
 
 .om-shell {
   min-height: 100vh !important;
-  color: #fff8ef !important;
 }
 
 .om-main {
   min-height: calc(100vh - 78px) !important;
-  color: #fff8ef !important;
-  background: var(--cs-front-dark) !important;
+  padding: 24px 34px 56px !important;
+  background: var(--cs-public-canvas) !important;
 }
 
 .cs-page {
   background: transparent !important;
+  gap: 22px !important;
 }
 
-/* TOP NAV SAME FRONT-PAGE FEEL */
+/* Top nav uses the same public brand black/copper feel */
 .om-nav {
-  background: #0d0b0a !important;
-  border-bottom: 1px solid rgba(213, 107, 42, 0.28) !important;
-  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.38) !important;
+  background: rgba(13, 11, 10, 0.96) !important;
+  border-bottom: 1px solid rgba(213, 107, 42, 0.22) !important;
+  box-shadow: 0 18px 48px rgba(13, 11, 10, 0.18) !important;
 }
 
 .om-brand strong,
 .om-nav nav button span,
 .om-logout {
-  color: #fff8ef !important;
+  color: var(--cs-paper) !important;
 }
 
 .om-brand i {
-  background: rgba(184, 87, 32, 0.14) !important;
-  border-color: #b85720 !important;
+  background: var(--cs-black) !important;
+  border-color: var(--cs-orange) !important;
+  box-shadow: 0 16px 36px rgba(13, 11, 10, 0.22) !important;
 }
 
 .om-brand i b {
-  border-color: #b85720 !important;
+  border-color: var(--cs-orange-3) !important;
 }
 
-/* HERO: same black/copper command card */
+.om-nav nav button.active {
+  border-bottom-color: var(--cs-orange-2) !important;
+}
+
+/* Secondary app nav mirrors the public pill nav */
+.om-main > nav,
+.cs-page > nav,
+.cs-mobile-nav,
+.cs-tabs,
+.cs-subnav,
+.cs-filter-bar,
+.cs-filters {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 8px !important;
+  border: 1px solid rgba(13, 11, 10, 0.12) !important;
+  border-radius: 999px !important;
+  background: rgba(255, 248, 239, 0.76) !important;
+  box-shadow: 0 18px 48px rgba(13, 11, 10, 0.10) !important;
+  backdrop-filter: blur(18px) !important;
+}
+
+.om-main > nav button,
+.cs-page > nav button,
+.cs-mobile-nav button,
+.cs-tabs button,
+.cs-subnav button,
+.cs-filter-bar button,
+.cs-filters button {
+  min-height: 38px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 0 14px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: var(--cs-black) !important;
+  font-weight: 900 !important;
+  box-shadow: none !important;
+}
+
+.om-main > nav button.active,
+.cs-page > nav button.active,
+.cs-mobile-nav button.active,
+.cs-tabs button.active,
+.cs-subnav button.active,
+.cs-filter-bar button.active,
+.cs-filters button.active {
+  background: var(--cs-black) !important;
+  color: var(--cs-paper) !important;
+}
+
+/* Hero copied from front-page dark command card style */
 .cs-hero {
+  border: 1px solid rgba(13, 11, 10, 0.12) !important;
+  border-radius: 28px !important;
   background:
-    radial-gradient(circle at 82% 20%, rgba(255, 248, 239, 0.08), transparent 26rem),
+    radial-gradient(circle at 100% 0%, rgba(228, 134, 67, 0.24), transparent 18rem),
     linear-gradient(116deg, #0d0b0a 0%, #17120f 50.5%, #b85720 50.6%, #d56b2a 100%) !important;
-  box-shadow: 0 34px 100px rgba(0, 0, 0, 0.40) !important;
-  border: 1px solid rgba(255, 248, 239, 0.10) !important;
+  box-shadow: 0 26px 84px rgba(13, 11, 10, 0.16) !important;
+  backdrop-filter: blur(22px) !important;
 }
 
-.cs-hero h1,
+.cs-hero h1 {
+  color: var(--cs-paper) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  line-height: 0.92 !important;
+  letter-spacing: -0.075em !important;
+}
+
+.cs-hero h1 mark {
+  color: var(--cs-orange-3) !important;
+  background: transparent !important;
+}
+
 .cs-hero p {
-  color: #fff8ef !important;
+  color: rgba(255, 248, 239, 0.76) !important;
 }
 
-.cs-hero h1 mark,
 .cs-hero span:first-child {
-  color: #e48643 !important;
+  width: fit-content !important;
+  display: inline-flex !important;
+  min-height: 34px !important;
+  align-items: center !important;
+  padding: 0 12px !important;
+  border: 1px solid rgba(228, 134, 67, 0.22) !important;
+  border-radius: 999px !important;
+  background: rgba(184, 87, 32, 0.14) !important;
+  color: var(--cs-orange-3) !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
 }
 
-/* BIG WORKSPACE SECTIONS NOW DARK, SO THE CHANGE IS OBVIOUS */
+/* Stat boxes copied from the public command card cards */
+.cs-stat {
+  background: rgba(255, 248, 239, 0.08) !important;
+  border: 1px solid rgba(255, 248, 239, 0.12) !important;
+  border-radius: 18px !important;
+  box-shadow: none !important;
+}
+
+.cs-stat strong,
+.cs-stat span {
+  color: var(--cs-paper) !important;
+}
+
+.cs-stat .cs-icon {
+  color: var(--cs-orange-3) !important;
+}
+
+/* AI cards / top summary cards use front-page dark flow cards */
+.cs-command-cards article,
+.cs-ai-card {
+  border: 1px solid rgba(255, 248, 239, 0.12) !important;
+  border-radius: 18px !important;
+  background: rgba(13, 11, 10, 0.88) !important;
+  box-shadow: 0 18px 48px rgba(13, 11, 10, 0.16) !important;
+}
+
+.cs-command-cards article:first-child,
+.cs-ai-card:first-child {
+  background: rgba(184, 87, 32, 0.24) !important;
+  border-color: rgba(228, 134, 67, 0.42) !important;
+}
+
+.cs-command-cards strong,
+.cs-command-cards span,
+.cs-ai-card strong {
+  color: var(--cs-paper) !important;
+}
+
+.cs-command-cards p,
+.cs-ai-card p {
+  color: rgba(255, 248, 239, 0.72) !important;
+}
+
+.cs-command-cards .cs-icon,
+.cs-ai-card .cs-icon {
+  background: rgba(184, 87, 32, 0.14) !important;
+  color: var(--cs-orange-3) !important;
+}
+
+/* Main workspace boards copy public dark sections */
 .cs-desk,
 .cs-workspace,
 .cs-flow {
+  border: 1px solid rgba(13, 11, 10, 0.12) !important;
+  border-radius: 28px !important;
   background:
-    radial-gradient(circle at top right, rgba(184, 87, 32, 0.18), transparent 22rem),
-    linear-gradient(180deg, rgba(13, 11, 10, 0.94), rgba(23, 18, 15, 0.92)) !important;
-  border: 1px solid rgba(255, 248, 239, 0.12) !important;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28) !important;
-  color: #fff8ef !important;
+    radial-gradient(circle at 100% 0%, rgba(228, 134, 67, 0.22), transparent 22rem),
+    var(--cs-black) !important;
+  color: var(--cs-paper) !important;
+  box-shadow: 0 26px 84px rgba(13, 11, 10, 0.16) !important;
+  backdrop-filter: blur(22px) !important;
 }
 
 .cs-desk h2,
 .cs-workspace h2,
-.cs-flow article strong,
+.cs-flow article strong {
+  color: var(--cs-paper) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+}
+
 .cs-desk header p,
 .cs-workspace header p,
 .cs-flow article p {
-  color: #fff8ef !important;
+  color: rgba(255, 248, 239, 0.76) !important;
 }
 
 .cs-desk > header span,
-.cs-workspace > header span,
-.cs-flow span {
-  color: #e48643 !important;
+.cs-workspace > header span {
+  width: fit-content !important;
+  display: inline-flex !important;
+  min-height: 34px !important;
+  align-items: center !important;
+  padding: 0 12px !important;
+  border: 1px solid rgba(228, 134, 67, 0.22) !important;
+  border-radius: 999px !important;
+  background: rgba(184, 87, 32, 0.14) !important;
+  color: var(--cs-orange-3) !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
 }
 
-/* CREAM CARDS ON TOP OF THE DARK PAGE */
-.cs-command-cards article,
-.cs-ai-card,
+/* Actual lists/tables become public-page cream cards */
+.cs-approval-list,
+.cs-table {
+  display: grid !important;
+  gap: 12px !important;
+  background: transparent !important;
+}
+
+.cs-table > header,
+.cs-approval-row,
+.cs-row,
+.cs-empty {
+  background: rgba(255, 248, 239, 0.92) !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  border-radius: 18px !important;
+  color: var(--cs-black) !important;
+  box-shadow: 0 16px 42px rgba(13, 11, 10, 0.08) !important;
+}
+
+.cs-table > header,
+.cs-approval-row,
+.cs-row {
+  padding: 14px 16px !important;
+}
+
+.cs-empty {
+  padding: 24px !important;
+}
+
+.cs-table > header span,
+.cs-approval-row > span {
+  color: var(--cs-orange) !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+.cs-approval-row strong,
+.cs-row strong,
+.cs-empty strong,
+.cs-modal h2,
+.cs-page h1,
+.cs-page h2,
+.cs-page h3,
+.cs-page h4 {
+  color: var(--cs-black) !important;
+}
+
+.cs-approval-row p,
+.cs-row p,
+.cs-row div,
+.cs-empty,
+.cs-empty p,
+.cs-modal p,
+.cs-page p,
+.cs-page small {
+  color: var(--cs-muted) !important;
+}
+
+/* Cards in Plans / Settings / Payroll etc follow public cream cards */
 .cs-modal,
+.cs-card,
+.cs-panel,
+.cs-list,
+.cs-table-wrap,
 .cs-plan-cards article,
 .cs-plan-addons,
 .cs-plan-addons button,
@@ -2016,11 +2238,6 @@ body {
 .cs-sms-packs button,
 .cs-plan-compare,
 .cs-trial-box,
-.cs-empty,
-.cs-card,
-.cs-panel,
-.cs-list,
-.cs-table-wrap,
 .cs-pricing-card,
 .cs-billing-card,
 .cs-setting-card,
@@ -2031,116 +2248,14 @@ body {
 .cs-quote-card,
 .cs-invoice-card,
 .cs-crew-card {
-  background:
-    radial-gradient(circle at top right, rgba(184, 87, 32, 0.07), transparent 18rem),
-    linear-gradient(180deg, rgba(255, 248, 239, 0.98), rgba(251, 244, 234, 0.95)) !important;
-  color: #0d0b0a !important;
-  border: 1px solid rgba(255, 248, 239, 0.18) !important;
-  box-shadow: 0 18px 56px rgba(0, 0, 0, 0.20) !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  border-radius: 20px !important;
+  background: rgba(255, 248, 239, 0.86) !important;
+  color: var(--cs-black) !important;
+  box-shadow: 0 16px 42px rgba(13, 11, 10, 0.08) !important;
 }
 
-/* TABLE/APP ROWS BECOME CREAM SLIPS, NOT A FLAT CREAM WHOLE SECTION */
-.cs-approval-list,
-.cs-table {
-  display: grid !important;
-  gap: 10px !important;
-}
-
-.cs-approval-row,
-.cs-row,
-.cs-table > header {
-  background:
-    linear-gradient(180deg, rgba(255, 248, 239, 0.98), rgba(251, 244, 234, 0.95)) !important;
-  color: #0d0b0a !important;
-  border: 1px solid rgba(255, 248, 239, 0.16) !important;
-  border-bottom: 1px solid rgba(255, 248, 239, 0.16) !important;
-  border-radius: 14px !important;
-  padding: 14px !important;
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.15) !important;
-}
-
-.cs-flow > div {
-  padding: 18px !important;
-  border-radius: 16px !important;
-  background:
-    linear-gradient(180deg, rgba(255, 248, 239, 0.98), rgba(251, 244, 234, 0.95)) !important;
-}
-
-.cs-flow > div span {
-  color: #0d0b0a !important;
-}
-
-.cs-flow > div b {
-  color: #b85720 !important;
-}
-
-/* STATS STAY BLACK */
-.cs-stat {
-  background: rgba(13, 11, 10, 0.92) !important;
-  border: 1px solid rgba(255, 248, 239, 0.10) !important;
-  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.30) !important;
-}
-
-.cs-stat strong,
-.cs-stat span {
-  color: #fff8ef !important;
-}
-
-.cs-stat .cs-icon {
-  color: #e48643 !important;
-}
-
-/* TEXT ON CREAM SLIPS */
-.cs-command-cards strong,
-.cs-command-cards span,
-.cs-ai-card strong,
-.cs-empty strong,
-.cs-row strong,
-.cs-approval-row strong,
-.cs-modal h2,
-.cs-table > header span,
-.cs-page h1,
-.cs-page h2,
-.cs-page h3,
-.cs-page h4 {
-  color: #0d0b0a !important;
-}
-
-.cs-command-cards p,
-.cs-ai-card p,
-.cs-row p,
-.cs-row div,
-.cs-approval-row p,
-.cs-empty,
-.cs-modal p,
-.cs-page p,
-.cs-page small {
-  color: #6d6258 !important;
-}
-
-/* COPPER LABELS */
-.cs-approval-row > span,
-.cs-table > header span,
-.cs-modal header span,
-.cs-risk,
-.cs-page label,
-.cs-page legend {
-  color: #b85720 !important;
-}
-
-/* INPUTS */
-.cs-page input,
-.cs-page textarea,
-.cs-page select,
-.cs-modal input,
-.cs-modal textarea,
-.cs-modal select {
-  background: #fff8ef !important;
-  color: #0d0b0a !important;
-  border: 1px solid rgba(13, 11, 10, 0.14) !important;
-}
-
-/* BUTTONS */
+/* Buttons copied from public page */
 .cs-approval-row button,
 .cs-row button,
 .cs-view,
@@ -2148,310 +2263,89 @@ body {
 .cs-page button:not(.ghost):not(.active),
 .cs-page a.button,
 .cs-page .button {
-  color: #fff8ef !important;
-  background:
-    radial-gradient(circle at 28% 0%, rgba(255,255,255,0.18), transparent 28%),
-    linear-gradient(135deg, #17120f, #2a211b 54%, #b85720) !important;
-  border: 1px solid rgba(13, 11, 10, 0.22) !important;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22) !important;
+  min-height: 42px !important;
+  padding: 0 18px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: var(--cs-black) !important;
+  color: var(--cs-paper) !important;
+  font-weight: 950 !important;
+  box-shadow: 0 18px 38px rgba(13, 11, 10, 0.18) !important;
 }
 
 .cs-view.ghost,
 .cs-modal button.ghost,
 .cs-page button.ghost {
-  color: #0d0b0a !important;
-  background: rgba(255, 248, 239, 0.84) !important;
-  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  background: rgba(13, 11, 10, 0.08) !important;
+  color: var(--cs-black) !important;
+  border: 1px solid rgba(13, 11, 10, 0.12) !important;
+  box-shadow: none !important;
 }
 
-/* FILTER STRIPS */
-.cs-filters,
-.cs-tabs,
-.cs-subnav,
-.cs-mobile-nav,
-.cs-filter-bar {
-  background: rgba(13, 11, 10, 0.72) !important;
-  border: 1px solid rgba(255, 248, 239, 0.12) !important;
-  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.18) !important;
-}
-
-.cs-filters button,
-.cs-tabs button,
-.cs-subnav button,
-.cs-mobile-nav button,
-.cs-filter-bar button {
-  color: #fff8ef !important;
-  background: rgba(255, 248, 239, 0.08) !important;
-  border-color: rgba(255, 248, 239, 0.10) !important;
-}
-
-.cs-filters button.active,
-.cs-tabs button.active,
-.cs-subnav button.active,
-.cs-mobile-nav button.active,
-.cs-filter-bar button.active {
-  color: #0d0b0a !important;
-  background: #fff8ef !important;
-}
-
-
-/* PHASE_239_FINISH_FRONT_PAGE_CANVAS
-   Now that the real file is changing, finish the theme:
-   dark front-page canvas everywhere, cream cards/slips only where content sits.
-*/
-html,
-body,
-#root,
-.App,
-.om-shell,
-.om-main,
-.cs-page {
-  background:
-    radial-gradient(circle at 78% 6%, rgba(184, 87, 32, 0.28), transparent 31rem),
-    radial-gradient(circle at 6% 20%, rgba(255, 248, 239, 0.08), transparent 25rem),
-    radial-gradient(circle at 58% 100%, rgba(184, 87, 32, 0.13), transparent 38rem),
-    linear-gradient(135deg, #0d0b0a 0%, #17120f 48%, #221713 100%) !important;
-}
-
-.om-main {
-  padding: 24px 34px 50px !important;
-}
-
-.cs-page {
-  background: transparent !important;
-}
-
-/* The little tab strip under the top nav should be dark, not pale */
-.om-main > nav,
-.cs-page > nav,
-.cs-mobile-nav,
-.cs-tabs,
-.cs-subnav,
-.cs-filter-bar,
-.cs-filters {
-  background:
-    radial-gradient(circle at 80% 0%, rgba(184, 87, 32, 0.16), transparent 20rem),
-    linear-gradient(180deg, rgba(13, 11, 10, 0.92), rgba(23, 18, 15, 0.88)) !important;
-  border: 1px solid rgba(255, 248, 239, 0.12) !important;
-  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.22) !important;
-}
-
-.om-main > nav button,
-.cs-page > nav button,
-.cs-mobile-nav button,
-.cs-tabs button,
-.cs-subnav button,
-.cs-filter-bar button,
-.cs-filters button {
-  color: rgba(255, 248, 239, 0.86) !important;
-  background: rgba(255, 248, 239, 0.07) !important;
-  border: 1px solid rgba(255, 248, 239, 0.10) !important;
-}
-
-.om-main > nav button.active,
-.cs-page > nav button.active,
-.cs-mobile-nav button.active,
-.cs-tabs button.active,
-.cs-subnav button.active,
-.cs-filter-bar button.active,
-.cs-filters button.active {
-  color: #0d0b0a !important;
-  background: #fff8ef !important;
-}
-
-/* Keep hero/cards floating on the dark page */
-.cs-hero,
-.cs-command-cards article,
-.cs-ai-card,
-.cs-desk,
-.cs-workspace,
-.cs-flow,
-.cs-modal,
-.cs-plan-cards article,
-.cs-plan-addons,
-.cs-sms-packs,
-.cs-plan-compare,
-.cs-trial-box {
-  border-color: rgba(255, 248, 239, 0.14) !important;
-}
-
-/* Make empty/table areas look like slips on dark background */
-.cs-approval-row,
-.cs-row,
-.cs-table > header,
-.cs-empty {
-  background:
-    linear-gradient(180deg, rgba(255, 248, 239, 0.98), rgba(251, 244, 234, 0.95)) !important;
-  color: #0d0b0a !important;
+/* Inputs copied from public auth form */
+.cs-page input,
+.cs-page textarea,
+.cs-page select,
+.cs-modal input,
+.cs-modal textarea,
+.cs-modal select {
+  min-height: 46px !important;
+  border: 1px solid rgba(13, 11, 10, 0.14) !important;
   border-radius: 14px !important;
-  border: 1px solid rgba(255, 248, 239, 0.16) !important;
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.15) !important;
+  background: rgba(255, 248, 239, 0.96) !important;
+  color: var(--cs-black) !important;
 }
 
-/* The section headers in Work board etc should be dark like the front page cards */
-.cs-desk > header,
-.cs-workspace > header {
-  color: #fff8ef !important;
+.cs-page input:focus,
+.cs-page textarea:focus,
+.cs-page select:focus {
+  outline: 3px solid rgba(228, 134, 67, 0.28) !important;
+  border-color: rgba(184, 87, 32, 0.46) !important;
 }
 
-.cs-desk > header h2,
-.cs-workspace > header h2 {
-  color: #fff8ef !important;
+/* Badges copied from public trust row */
+.cs-risk,
+.cs-pill,
+.cs-tag,
+.cs-badge {
+  border-radius: 999px !important;
+  background: rgba(80, 123, 54, 0.10) !important;
+  color: var(--cs-green) !important;
+  font-weight: 950 !important;
 }
 
-.cs-desk > header p,
-.cs-workspace > header p {
-  color: rgba(255, 248, 239, 0.78) !important;
+.cs-risk.medium {
+  background: rgba(211, 144, 40, 0.12) !important;
+  color: var(--cs-gold) !important;
 }
 
-.cs-desk > header span,
-.cs-workspace > header span {
-  color: #e48643 !important;
+.cs-risk.high {
+  background: rgba(168, 66, 43, 0.12) !important;
+  color: var(--cs-red) !important;
 }
 
-/* Top brand/nav stays crisp */
-.om-nav {
-  background: #0d0b0a !important;
-}
+/* Mobile keeps the same public-page spacing */
+@media (max-width: 900px) {
+  .om-main {
+    padding: 18px 16px 42px !important;
+  }
 
+  .cs-hero,
+  .cs-desk,
+  .cs-workspace,
+  .cs-flow {
+    border-radius: 24px !important;
+  }
 
-/* PHASE_240_FINAL_FRONT_PAGE_STYLE_POLISH
-   Final polish now the correct file is changing:
-   dark public-page canvas, cream work slips/tables, copper highlights.
-*/
-
-/* Keep the full app canvas like the public front page */
-html,
-body,
-#root,
-.App,
-.om-shell,
-.om-main,
-.cs-page {
-  background:
-    radial-gradient(circle at 80% 0%, rgba(184, 87, 32, 0.24), transparent 32rem),
-    radial-gradient(circle at 4% 18%, rgba(255, 248, 239, 0.07), transparent 26rem),
-    linear-gradient(135deg, #0d0b0a 0%, #17120f 48%, #221713 100%) !important;
-}
-
-/* Make the top small page nav feel intentional */
-.om-main > nav,
-.cs-page > nav,
-.cs-mobile-nav,
-.cs-tabs,
-.cs-subnav,
-.cs-filter-bar,
-.cs-filters {
-  background:
-    linear-gradient(180deg, rgba(255, 248, 239, 0.10), rgba(255, 248, 239, 0.06)) !important;
-  border: 1px solid rgba(255, 248, 239, 0.12) !important;
-  border-radius: 18px !important;
-  padding: 8px !important;
-}
-
-/* Hero/cards match the public page tone */
-.cs-hero {
-  border-radius: 24px !important;
-}
-
-.cs-command-cards article,
-.cs-ai-card {
-  background:
-    radial-gradient(circle at 95% 0%, rgba(184, 87, 32, 0.22), transparent 16rem),
-    linear-gradient(135deg, rgba(13, 11, 10, 0.96), rgba(36, 25, 20, 0.92)) !important;
-  border: 1px solid rgba(255, 248, 239, 0.12) !important;
-}
-
-.cs-command-cards strong,
-.cs-command-cards span,
-.cs-ai-card strong {
-  color: #fff8ef !important;
-}
-
-.cs-command-cards p,
-.cs-ai-card p {
-  color: rgba(255, 248, 239, 0.70) !important;
-}
-
-/* Main board container stays dark like front-page command sections */
-.cs-desk,
-.cs-workspace {
-  background:
-    radial-gradient(circle at 100% 0%, rgba(184, 87, 32, 0.14), transparent 20rem),
-    linear-gradient(180deg, rgba(13, 11, 10, 0.94), rgba(23, 18, 15, 0.92)) !important;
-  border: 1px solid rgba(255, 248, 239, 0.12) !important;
-}
-
-/* The actual records/table area should be cream slips on the dark board */
-.cs-approval-list,
-.cs-table {
-  background: transparent !important;
-  gap: 10px !important;
-}
-
-.cs-table > header,
-.cs-approval-row,
-.cs-row,
-.cs-empty {
-  background:
-    linear-gradient(180deg, rgba(255, 248, 239, 0.99), rgba(251, 244, 234, 0.96)) !important;
-  color: #0d0b0a !important;
-  border: 1px solid rgba(255, 248, 239, 0.18) !important;
-  border-radius: 14px !important;
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.16) !important;
-}
-
-.cs-table > header span,
-.cs-approval-row > span {
-  color: #b85720 !important;
-}
-
-/* Empty states should look like a proper cream card, not unfinished */
-.cs-empty {
-  padding: 24px !important;
-}
-
-.cs-empty strong {
-  color: #0d0b0a !important;
-}
-
-.cs-empty,
-.cs-empty p {
-  color: #6d6258 !important;
-}
-
-/* Buttons: copper/black like public CTA */
-.cs-approval-row button,
-.cs-row button,
-.cs-view,
-.cs-modal button:not(.ghost),
-.cs-page button:not(.ghost):not(.active) {
-  background:
-    radial-gradient(circle at 28% 0%, rgba(255,255,255,0.18), transparent 28%),
-    linear-gradient(135deg, #17120f, #2a211b 54%, #b85720) !important;
-  color: #fff8ef !important;
-  border: 1px solid rgba(255, 248, 239, 0.12) !important;
-}
-
-/* Keep page text readable */
-.cs-desk > header h2,
-.cs-workspace > header h2,
-.cs-desk > header p,
-.cs-workspace > header p {
-  color: #fff8ef !important;
-}
-
-.cs-desk > header span,
-.cs-workspace > header span {
-  color: #e48643 !important;
-}
-
-/* Smooth page spacing */
-.cs-page {
-  gap: 20px !important;
-}
-
-.om-main {
-  padding: 24px 34px 56px !important;
+  .om-main > nav,
+  .cs-page > nav,
+  .cs-mobile-nav,
+  .cs-tabs,
+  .cs-subnav,
+  .cs-filter-bar,
+  .cs-filters {
+    border-radius: 20px !important;
+    overflow-x: auto !important;
+  }
 }
 
