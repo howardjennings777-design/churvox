@@ -2194,3 +2194,123 @@ body {
   background: #fff8ef !important;
 }
 
+
+/* PHASE_239_FINISH_FRONT_PAGE_CANVAS
+   Now that the real file is changing, finish the theme:
+   dark front-page canvas everywhere, cream cards/slips only where content sits.
+*/
+html,
+body,
+#root,
+.App,
+.om-shell,
+.om-main,
+.cs-page {
+  background:
+    radial-gradient(circle at 78% 6%, rgba(184, 87, 32, 0.28), transparent 31rem),
+    radial-gradient(circle at 6% 20%, rgba(255, 248, 239, 0.08), transparent 25rem),
+    radial-gradient(circle at 58% 100%, rgba(184, 87, 32, 0.13), transparent 38rem),
+    linear-gradient(135deg, #0d0b0a 0%, #17120f 48%, #221713 100%) !important;
+}
+
+.om-main {
+  padding: 24px 34px 50px !important;
+}
+
+.cs-page {
+  background: transparent !important;
+}
+
+/* The little tab strip under the top nav should be dark, not pale */
+.om-main > nav,
+.cs-page > nav,
+.cs-mobile-nav,
+.cs-tabs,
+.cs-subnav,
+.cs-filter-bar,
+.cs-filters {
+  background:
+    radial-gradient(circle at 80% 0%, rgba(184, 87, 32, 0.16), transparent 20rem),
+    linear-gradient(180deg, rgba(13, 11, 10, 0.92), rgba(23, 18, 15, 0.88)) !important;
+  border: 1px solid rgba(255, 248, 239, 0.12) !important;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.22) !important;
+}
+
+.om-main > nav button,
+.cs-page > nav button,
+.cs-mobile-nav button,
+.cs-tabs button,
+.cs-subnav button,
+.cs-filter-bar button,
+.cs-filters button {
+  color: rgba(255, 248, 239, 0.86) !important;
+  background: rgba(255, 248, 239, 0.07) !important;
+  border: 1px solid rgba(255, 248, 239, 0.10) !important;
+}
+
+.om-main > nav button.active,
+.cs-page > nav button.active,
+.cs-mobile-nav button.active,
+.cs-tabs button.active,
+.cs-subnav button.active,
+.cs-filter-bar button.active,
+.cs-filters button.active {
+  color: #0d0b0a !important;
+  background: #fff8ef !important;
+}
+
+/* Keep hero/cards floating on the dark page */
+.cs-hero,
+.cs-command-cards article,
+.cs-ai-card,
+.cs-desk,
+.cs-workspace,
+.cs-flow,
+.cs-modal,
+.cs-plan-cards article,
+.cs-plan-addons,
+.cs-sms-packs,
+.cs-plan-compare,
+.cs-trial-box {
+  border-color: rgba(255, 248, 239, 0.14) !important;
+}
+
+/* Make empty/table areas look like slips on dark background */
+.cs-approval-row,
+.cs-row,
+.cs-table > header,
+.cs-empty {
+  background:
+    linear-gradient(180deg, rgba(255, 248, 239, 0.98), rgba(251, 244, 234, 0.95)) !important;
+  color: #0d0b0a !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(255, 248, 239, 0.16) !important;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* The section headers in Work board etc should be dark like the front page cards */
+.cs-desk > header,
+.cs-workspace > header {
+  color: #fff8ef !important;
+}
+
+.cs-desk > header h2,
+.cs-workspace > header h2 {
+  color: #fff8ef !important;
+}
+
+.cs-desk > header p,
+.cs-workspace > header p {
+  color: rgba(255, 248, 239, 0.78) !important;
+}
+
+.cs-desk > header span,
+.cs-workspace > header span {
+  color: #e48643 !important;
+}
+
+/* Top brand/nav stays crisp */
+.om-nav {
+  background: #0d0b0a !important;
+}
+
