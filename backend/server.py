@@ -534,6 +534,76 @@ async def churvox_force_cors_headers(request: Request, call_next):
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
+# PHASE_218_HARD_CORS_ERROR_SAFE
+# Last safety net: even if an API route throws before normal middleware finishes,
+# return a JSON error with CORS headers so the browser shows the real error.
+def _churvox_cors_origin_for_request(request: Request) -> str:
+    origin = request.headers.get("origin") or request.headers.get("Origin") or ""
+    allowed = {
+        "https://www.churvox.com",
+        "https://churvox.com",
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+    }
+    if origin in allowed:
+        return origin
+    if origin.startswith("https://") and origin.endswith(".churvox.com"):
+        return origin
+    return ""
+
+
+def _churvox_apply_cors_headers(request: Request, response: Response) -> Response:
+    allow_origin = _churvox_cors_origin_for_request(request)
+    if allow_origin:
+        response.headers["Access-Control-Allow-Origin"] = allow_origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = request.headers.get(
+            "access-control-request-headers",
+            "Authorization,Content-Type,Accept,Origin,X-Requested-With"
+        )
+        response.headers["Access-Control-Expose-Headers"] = "*"
+        response.headers["Vary"] = "Origin"
+    return response
+
+
+@app.middleware("http")
+async def churvox_hard_cors_error_safe(request: Request, call_next):
+    if request.method.upper() == "OPTIONS":
+        return _churvox_apply_cors_headers(request, Response(status_code=204))
+
+    try:
+        response = await call_next(request)
+    except HTTPException as exc:
+        response = JSONResponse(
+            status_code=int(exc.status_code or 500),
+            content={"success": False, "detail": exc.detail or "API error"},
+        )
+    except Exception as exc:
+        try:
+            logger.exception("Unhandled API error on %s %s", request.method, request.url.path)
+        except Exception:
+            pass
+
+        response = JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "detail": "Backend error",
+                "path": request.url.path,
+                "error": str(exc)[:300],
+            },
+        )
+
+    return _churvox_apply_cors_headers(request, response)
+
+# END_PHASE_218_HARD_CORS_ERROR_SAFE
+
+
+
 # PHASE_151_FIX_REMAINING_DUPLICATE_PUBLIC_BACKEND_ROUTES
 # Duplicate public backend routes found by the deep audit were normalized here:
 # first public registration remains live; later duplicate registrations are moved
@@ -3096,7 +3166,7 @@ async def create_checkout_session(payload: dict, current_user: dict = Depends(ge
             "mode": "subscription",
             "payment_method_collection": "if_required",
             "customer_email": email,
-            "line_items": [{"price": price_id, "quantity": 1}],
+            "line_items": [{"price": price_id, "quantity": 1}] if price_id else [{"price_data": fallback_price_data, "quantity": 1}],
             "success_url": success_url,
             "cancel_url": cancel_url,
             "metadata": {
@@ -9409,6 +9479,55 @@ def _churvox_billing_price_ids():
     }
 
 
+
+def _churvox_billing_fallback_price_data(key: str):
+    """
+    Fallback Stripe price_data so checkout still works when Render env price IDs
+    are not set yet. Amounts are in cents. Default currency is NZD.
+    """
+    currency = os.environ.get("STRIPE_CURRENCY", "nzd").lower().strip() or "nzd"
+
+    recurring_amounts = {
+        "start": 3900,
+        "crew": 8900,
+        "operator": 14900,
+        "command": 29900,
+        "command_growth_pack": 9900,
+        "myob_addon": 3900,
+    }
+
+    one_time_amounts = {
+        "sms_100": 1000,
+        "sms_500": 4500,
+        "sms_1000": 8000,
+    }
+
+    label = _churvox_billing_label(key)
+
+    if key in recurring_amounts:
+        return {
+            "currency": currency,
+            "unit_amount": recurring_amounts[key],
+            "recurring": {"interval": "month"},
+            "product_data": {
+                "name": f"Churvox {label}",
+                "metadata": {"source": "churvox", "key": key},
+            },
+        }
+
+    if key in one_time_amounts:
+        return {
+            "currency": currency,
+            "unit_amount": one_time_amounts[key],
+            "product_data": {
+                "name": f"Churvox {label}",
+                "metadata": {"source": "churvox", "key": key},
+            },
+        }
+
+    return None
+
+
 def _churvox_billing_label(key: str) -> str:
     labels = {
         "start": "Start",
@@ -9573,19 +9692,22 @@ async def create_churvox_checkout(payload: dict, request: Request):
     if key not in prices:
         raise HTTPException(status_code=400, detail=f"Unknown billing item: {key}")
 
+    fallback_price_data = None
     if not price_id:
-        env_hint = {
-            "start": "STRIPE_PRICE_START",
-            "crew": "STRIPE_PRICE_CREW",
-            "operator": "STRIPE_PRICE_OPERATOR",
-            "command": "STRIPE_PRICE_COMMAND",
-            "command_growth_pack": "STRIPE_PRICE_COMMAND_GROWTH_PACK",
-            "myob_addon": "STRIPE_PRICE_MYOB_ADDON",
-            "sms_100": "STRIPE_PRICE_SMS_100",
-            "sms_500": "STRIPE_PRICE_SMS_500",
-            "sms_1000": "STRIPE_PRICE_SMS_1000",
-        }.get(key, "STRIPE_PRICE_*")
-        raise HTTPException(status_code=400, detail=f"Stripe price missing for {key}. Set {env_hint} in Render.")
+        fallback_price_data = _churvox_billing_fallback_price_data(key)
+        if not fallback_price_data:
+            env_hint = {
+                "start": "STRIPE_PRICE_START",
+                "crew": "STRIPE_PRICE_CREW",
+                "operator": "STRIPE_PRICE_OPERATOR",
+                "command": "STRIPE_PRICE_COMMAND",
+                "command_growth_pack": "STRIPE_PRICE_COMMAND_GROWTH_PACK",
+                "myob_addon": "STRIPE_PRICE_MYOB_ADDON",
+                "sms_100": "STRIPE_PRICE_SMS_100",
+                "sms_500": "STRIPE_PRICE_SMS_500",
+                "sms_1000": "STRIPE_PRICE_SMS_1000",
+            }.get(key, "STRIPE_PRICE_*")
+            raise HTTPException(status_code=400, detail=f"Stripe price missing for {key}. Set {env_hint} in Render.")
 
     customer_id = await _churvox_get_or_create_stripe_customer(current_user)
     business_id = await _churvox_billing_business_id(current_user)
@@ -9607,7 +9729,7 @@ async def create_churvox_checkout(payload: dict, request: Request):
     session_kwargs = {
         "customer": customer_id,
         "mode": mode,
-        "line_items": [{"price": price_id, "quantity": 1}],
+        "line_items": [{"price": price_id, "quantity": 1}] if price_id else [{"price_data": fallback_price_data, "quantity": 1}],
         "success_url": success_url,
         "cancel_url": cancel_url,
         "metadata": metadata,
@@ -9637,6 +9759,8 @@ async def create_churvox_checkout(payload: dict, request: Request):
         "session_id": session.id,
         "key": key,
         "mode": mode,
+        "used_price_id": bool(price_id),
+        "used_fallback_price_data": bool(fallback_price_data),
         "message": f"Stripe checkout created for {_churvox_billing_label(key)}",
     }
 

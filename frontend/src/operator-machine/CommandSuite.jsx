@@ -827,7 +827,8 @@ export default function CommandSuite({
     }
 
     if (!res.ok || body.success === false) {
-      const message = body.detail || body.message || `Billing request failed (${res.status})`;
+      const message = body.detail || body.message || body.error || `Billing request failed (${res.status})`;
+      console.error("Churvox billing request failed", { path, status: res.status, body, payload });
       throw new Error(message);
     }
 
