@@ -10854,3 +10854,123 @@ select {
   }
 }
 
+
+/* PHASE_186_BRING_APPROVAL_DESK_ABOVE_THE_FOLD
+   Screenshot fix:
+   - remove duplicate black story card below hero
+   - make top hero shorter
+   - bring Approval Desk + Live Feed into first view
+   - keep bold design, no boring layout
+*/
+
+.om-main {
+  padding-top: 18px !important;
+}
+
+.om-hero {
+  min-height: 0 !important;
+  margin-bottom: 22px !important;
+  padding: clamp(24px, 3.2vw, 42px) !important;
+  border-radius: 34px !important;
+  grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.7fr) !important;
+}
+
+.om-hero h1 {
+  max-width: 760px !important;
+  font-size: clamp(42px, 5.6vw, 78px) !important;
+  line-height: 0.88 !important;
+  margin-bottom: 14px !important;
+}
+
+.om-hero p {
+  max-width: 650px !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+}
+
+.om-gauges {
+  align-self: center !important;
+}
+
+.om-gauges article {
+  min-height: 106px !important;
+  padding: 16px !important;
+  border-radius: 22px !important;
+}
+
+/* This card repeated the hero and pushed the real desk too low */
+.om-dashboard-focus-card {
+  display: none !important;
+}
+
+.om-dashboard-focus {
+  grid-template-columns: minmax(0, 1.38fr) minmax(320px, 0.72fr) !important;
+  gap: clamp(18px, 2.2vw, 28px) !important;
+  max-width: 1500px !important;
+  margin-top: 0 !important;
+}
+
+.om-approval-desk-main {
+  grid-column: 1 !important;
+}
+
+.om-approval-live-feed {
+  grid-column: 2 !important;
+  top: 18px !important;
+}
+
+.om-approval-desk-main > header {
+  margin-bottom: 16px !important;
+}
+
+.om-approval-desk-main > header h2 {
+  font-size: clamp(34px, 4.4vw, 64px) !important;
+  line-height: 0.9 !important;
+}
+
+.om-approval-pulse {
+  margin-bottom: 16px !important;
+}
+
+.om-approval-ticket {
+  min-height: 132px !important;
+}
+
+.om-approval-ticket strong {
+  font-size: clamp(22px, 2.1vw, 30px) !important;
+}
+
+.om-approval-live-feed header h3 {
+  font-size: 26px !important;
+}
+
+.om-live-feed-list {
+  max-height: 585px !important;
+}
+
+@media (max-width: 1180px) {
+  .om-hero {
+    grid-template-columns: 1fr !important;
+  }
+
+  .om-dashboard-focus {
+    grid-template-columns: 1fr !important;
+  }
+
+  .om-approval-live-feed {
+    grid-column: 1 !important;
+    position: relative !important;
+    top: auto !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .om-hero h1 {
+    font-size: 40px !important;
+  }
+
+  .om-hero {
+    padding: 24px !important;
+  }
+}
+
