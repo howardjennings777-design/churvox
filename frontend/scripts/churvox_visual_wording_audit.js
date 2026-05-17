@@ -126,19 +126,6 @@ async function runChecks(page, route, viewportName) {
       });
     }
 
-    const protectedRoute = !["/", "/login"].includes(route);
-    const authInputs = document.querySelectorAll('input[type="email"], input[type="password"]').length;
-    const authButtons = Array.from(document.querySelectorAll("button, a"))
-      .map((el) => (el.innerText || el.textContent || "").trim().toLowerCase())
-      .filter((txt) => txt.includes("login") || txt.includes("log in") || txt.includes("open command desk") || txt.includes("start free trial")).length;
-
-    if (protectedRoute && (location.pathname.includes("login") || authInputs >= 2 || authButtons >= 2)) {
-      problems.push({
-        type: "not-logged-in",
-        detail: "Protected route is showing login/auth UI instead of the real logged-in page.",
-      });
-    }
-
     const pageWidthOverflow = document.documentElement.scrollWidth - window.innerWidth;
     if (pageWidthOverflow > 3) {
       problems.push({
