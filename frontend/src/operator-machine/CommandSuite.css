@@ -1884,22 +1884,313 @@ background: transparent !important;
 }
 
 
-/* PHASE_237_REAL_ORIGINAL_THEME_LOCK
-   Final lock: the real app pages use the same front-page warm cream/copper canvas.
+/* PHASE_238_VISIBLE_FRONT_PAGE_THEME
+   Real target:
+   Dashboard / Work / Clients / Crew / Quotes / Invoices / Proof / Payroll / Plans / Settings
+   must use the same front-page style:
+   dark black/copper outer background, cream cards, black/copper command panels.
 */
+:root {
+  --cs-black: #0d0b0a !important;
+  --cs-black-2: #17120f !important;
+  --cs-orange: #b85720 !important;
+  --cs-orange-2: #d56b2a !important;
+  --cs-orange-3: #e48643 !important;
+  --cs-paper: #fff8ef !important;
+  --cs-cream: #fbf4ea !important;
+  --cs-soft: #f4ede3 !important;
+  --cs-muted: #6d6258 !important;
+  --cs-front-dark:
+    radial-gradient(circle at 78% 6%, rgba(184, 87, 32, 0.28), transparent 31rem),
+    radial-gradient(circle at 6% 20%, rgba(255, 248, 239, 0.08), transparent 25rem),
+    radial-gradient(circle at 58% 100%, rgba(184, 87, 32, 0.13), transparent 38rem),
+    linear-gradient(135deg, #0d0b0a 0%, #17120f 48%, #221713 100%) !important;
+}
+
+/* THE REAL PAGE BACKGROUND */
 html,
 body,
 #root,
 .App,
 .om-shell,
+.om-main,
+.cs-page {
+  background: var(--cs-front-dark) !important;
+}
+
+body {
+  margin: 0 !important;
+}
+
+.om-shell {
+  min-height: 100vh !important;
+  color: #fff8ef !important;
+}
+
 .om-main {
-  background:
-    radial-gradient(circle at 78% 6%, rgba(184, 87, 32, 0.24), transparent 30rem),
-    radial-gradient(circle at 6% 20%, rgba(13, 11, 10, 0.13), transparent 25rem),
-    linear-gradient(135deg, #f4ede3 0%, #fff8ef 50%, #eadbc9 100%) !important;
+  min-height: calc(100vh - 78px) !important;
+  color: #fff8ef !important;
+  background: var(--cs-front-dark) !important;
 }
 
 .cs-page {
   background: transparent !important;
+}
+
+/* TOP NAV SAME FRONT-PAGE FEEL */
+.om-nav {
+  background: #0d0b0a !important;
+  border-bottom: 1px solid rgba(213, 107, 42, 0.28) !important;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.38) !important;
+}
+
+.om-brand strong,
+.om-nav nav button span,
+.om-logout {
+  color: #fff8ef !important;
+}
+
+.om-brand i {
+  background: rgba(184, 87, 32, 0.14) !important;
+  border-color: #b85720 !important;
+}
+
+.om-brand i b {
+  border-color: #b85720 !important;
+}
+
+/* HERO: same black/copper command card */
+.cs-hero {
+  background:
+    radial-gradient(circle at 82% 20%, rgba(255, 248, 239, 0.08), transparent 26rem),
+    linear-gradient(116deg, #0d0b0a 0%, #17120f 50.5%, #b85720 50.6%, #d56b2a 100%) !important;
+  box-shadow: 0 34px 100px rgba(0, 0, 0, 0.40) !important;
+  border: 1px solid rgba(255, 248, 239, 0.10) !important;
+}
+
+.cs-hero h1,
+.cs-hero p {
+  color: #fff8ef !important;
+}
+
+.cs-hero h1 mark,
+.cs-hero span:first-child {
+  color: #e48643 !important;
+}
+
+/* BIG WORKSPACE SECTIONS NOW DARK, SO THE CHANGE IS OBVIOUS */
+.cs-desk,
+.cs-workspace,
+.cs-flow {
+  background:
+    radial-gradient(circle at top right, rgba(184, 87, 32, 0.18), transparent 22rem),
+    linear-gradient(180deg, rgba(13, 11, 10, 0.94), rgba(23, 18, 15, 0.92)) !important;
+  border: 1px solid rgba(255, 248, 239, 0.12) !important;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28) !important;
+  color: #fff8ef !important;
+}
+
+.cs-desk h2,
+.cs-workspace h2,
+.cs-flow article strong,
+.cs-desk header p,
+.cs-workspace header p,
+.cs-flow article p {
+  color: #fff8ef !important;
+}
+
+.cs-desk > header span,
+.cs-workspace > header span,
+.cs-flow span {
+  color: #e48643 !important;
+}
+
+/* CREAM CARDS ON TOP OF THE DARK PAGE */
+.cs-command-cards article,
+.cs-ai-card,
+.cs-modal,
+.cs-plan-cards article,
+.cs-plan-addons,
+.cs-plan-addons button,
+.cs-sms-packs,
+.cs-sms-packs button,
+.cs-plan-compare,
+.cs-trial-box,
+.cs-empty,
+.cs-card,
+.cs-panel,
+.cs-list,
+.cs-table-wrap,
+.cs-pricing-card,
+.cs-billing-card,
+.cs-setting-card,
+.cs-proof-card,
+.cs-payroll-card,
+.cs-client-card,
+.cs-job-card,
+.cs-quote-card,
+.cs-invoice-card,
+.cs-crew-card {
+  background:
+    radial-gradient(circle at top right, rgba(184, 87, 32, 0.07), transparent 18rem),
+    linear-gradient(180deg, rgba(255, 248, 239, 0.98), rgba(251, 244, 234, 0.95)) !important;
+  color: #0d0b0a !important;
+  border: 1px solid rgba(255, 248, 239, 0.18) !important;
+  box-shadow: 0 18px 56px rgba(0, 0, 0, 0.20) !important;
+}
+
+/* TABLE/APP ROWS BECOME CREAM SLIPS, NOT A FLAT CREAM WHOLE SECTION */
+.cs-approval-list,
+.cs-table {
+  display: grid !important;
+  gap: 10px !important;
+}
+
+.cs-approval-row,
+.cs-row,
+.cs-table > header {
+  background:
+    linear-gradient(180deg, rgba(255, 248, 239, 0.98), rgba(251, 244, 234, 0.95)) !important;
+  color: #0d0b0a !important;
+  border: 1px solid rgba(255, 248, 239, 0.16) !important;
+  border-bottom: 1px solid rgba(255, 248, 239, 0.16) !important;
+  border-radius: 14px !important;
+  padding: 14px !important;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.15) !important;
+}
+
+.cs-flow > div {
+  padding: 18px !important;
+  border-radius: 16px !important;
+  background:
+    linear-gradient(180deg, rgba(255, 248, 239, 0.98), rgba(251, 244, 234, 0.95)) !important;
+}
+
+.cs-flow > div span {
+  color: #0d0b0a !important;
+}
+
+.cs-flow > div b {
+  color: #b85720 !important;
+}
+
+/* STATS STAY BLACK */
+.cs-stat {
+  background: rgba(13, 11, 10, 0.92) !important;
+  border: 1px solid rgba(255, 248, 239, 0.10) !important;
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.30) !important;
+}
+
+.cs-stat strong,
+.cs-stat span {
+  color: #fff8ef !important;
+}
+
+.cs-stat .cs-icon {
+  color: #e48643 !important;
+}
+
+/* TEXT ON CREAM SLIPS */
+.cs-command-cards strong,
+.cs-command-cards span,
+.cs-ai-card strong,
+.cs-empty strong,
+.cs-row strong,
+.cs-approval-row strong,
+.cs-modal h2,
+.cs-table > header span,
+.cs-page h1,
+.cs-page h2,
+.cs-page h3,
+.cs-page h4 {
+  color: #0d0b0a !important;
+}
+
+.cs-command-cards p,
+.cs-ai-card p,
+.cs-row p,
+.cs-row div,
+.cs-approval-row p,
+.cs-empty,
+.cs-modal p,
+.cs-page p,
+.cs-page small {
+  color: #6d6258 !important;
+}
+
+/* COPPER LABELS */
+.cs-approval-row > span,
+.cs-table > header span,
+.cs-modal header span,
+.cs-risk,
+.cs-page label,
+.cs-page legend {
+  color: #b85720 !important;
+}
+
+/* INPUTS */
+.cs-page input,
+.cs-page textarea,
+.cs-page select,
+.cs-modal input,
+.cs-modal textarea,
+.cs-modal select {
+  background: #fff8ef !important;
+  color: #0d0b0a !important;
+  border: 1px solid rgba(13, 11, 10, 0.14) !important;
+}
+
+/* BUTTONS */
+.cs-approval-row button,
+.cs-row button,
+.cs-view,
+.cs-modal button:not(.ghost),
+.cs-page button:not(.ghost):not(.active),
+.cs-page a.button,
+.cs-page .button {
+  color: #fff8ef !important;
+  background:
+    radial-gradient(circle at 28% 0%, rgba(255,255,255,0.18), transparent 28%),
+    linear-gradient(135deg, #17120f, #2a211b 54%, #b85720) !important;
+  border: 1px solid rgba(13, 11, 10, 0.22) !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22) !important;
+}
+
+.cs-view.ghost,
+.cs-modal button.ghost,
+.cs-page button.ghost {
+  color: #0d0b0a !important;
+  background: rgba(255, 248, 239, 0.84) !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+}
+
+/* FILTER STRIPS */
+.cs-filters,
+.cs-tabs,
+.cs-subnav,
+.cs-mobile-nav,
+.cs-filter-bar {
+  background: rgba(13, 11, 10, 0.72) !important;
+  border: 1px solid rgba(255, 248, 239, 0.12) !important;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.18) !important;
+}
+
+.cs-filters button,
+.cs-tabs button,
+.cs-subnav button,
+.cs-mobile-nav button,
+.cs-filter-bar button {
+  color: #fff8ef !important;
+  background: rgba(255, 248, 239, 0.08) !important;
+  border-color: rgba(255, 248, 239, 0.10) !important;
+}
+
+.cs-filters button.active,
+.cs-tabs button.active,
+.cs-subnav button.active,
+.cs-mobile-nav button.active,
+.cs-filter-bar button.active {
+  color: #0d0b0a !important;
+  background: #fff8ef !important;
 }
 
