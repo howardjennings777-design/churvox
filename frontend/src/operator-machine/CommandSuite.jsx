@@ -2617,13 +2617,13 @@ export default function CommandSuite({
         <section className="cs-page">
           <header className="cs-hero">
             <section>
-              <span>Command Desk</span>
+              <span>Today’s Run Sheet</span>
               <h1>
-                Churvox prepares the admin.
+                Churvox runs the admin.
                 <mark>You approve the next move.</mark>
               </h1>
               <p>
-                Work comes in, Churvox checks the admin path, then shows the owner one clean approval slip.
+                Jobs, invoices, proof, crew issues and payment follow-ups land in one command queue.
               </p>
             </section>
 
@@ -2698,8 +2698,8 @@ export default function CommandSuite({
           <section className="cs-quick-launch" data-phase="PHASE_280_DASHBOARD_BUSINESS_STACK">
             <div className="cs-quick-copy">
               <span>Quick actions</span>
-              <strong>Capture work fast.</strong>
-              <p>Add the job, client, quote, invoice or proof note. Churvox prepares the admin path.</p>
+              <strong>Feed the command centre.</strong>
+              <p>Add work once. Churvox checks client, crew, proof, invoice and payment readiness.</p>
             </div>
 
             <div className="cs-quick-buttons">
