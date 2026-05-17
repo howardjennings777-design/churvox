@@ -1517,7 +1517,7 @@ function preconnectChurvoxBackend() {
 async function resetStalePwaCacheOnce() {
   if (typeof window === "undefined") return;
 
-  const version = "css-mime-cache-fix-2026-05-16";
+  const version = "churvox-theme-reset-20260517065540";
   const key = "churvox_cache_fix_version";
 
   try {
