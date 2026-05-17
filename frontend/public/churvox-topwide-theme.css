@@ -1002,3 +1002,133 @@ html body .cs-ai-card {
   }
 }
 
+
+/* PHASE_278_FUNCTIONAL_ACTION_UI
+   Business functionality layer:
+   - quick action buttons
+   - action modal forms
+   - stronger Work Slip decision box
+   - PWA install entry point
+*/
+
+html body .cs-quick-launch {
+  width: 100% !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  padding: 12px !important;
+  border-radius: 22px !important;
+  border: 1px solid rgba(255, 248, 239, 0.13) !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(223, 113, 56, 0.16), transparent 18rem),
+    rgba(13, 11, 10, 0.68) !important;
+  box-shadow: 0 12px 32px rgba(13, 11, 10, 0.14) !important;
+}
+
+html body .cs-quick-launch button,
+html body .cs-filters button.strong {
+  min-height: 38px !important;
+  padding: 0 15px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(223, 113, 56, 0.28) !important;
+  background:
+    radial-gradient(circle at 24% 0%, rgba(255, 248, 239, 0.16), transparent 26%),
+    linear-gradient(135deg, #0d0b0a 0%, #17120f 44%, #6b2f1c 76%, #b85720 100%) !important;
+  color: #fff8ef !important;
+  font-weight: 950 !important;
+  box-shadow: 0 10px 24px rgba(13, 11, 10, 0.16) !important;
+}
+
+html body .cs-quick-action-modal {
+  max-width: 760px !important;
+}
+
+html body .cs-action-path {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  align-items: center !important;
+  margin: 14px 0 !important;
+  padding: 12px !important;
+  border-radius: 16px !important;
+  background: rgba(184, 87, 32, 0.10) !important;
+  border: 1px solid rgba(184, 87, 32, 0.15) !important;
+}
+
+html body .cs-action-path strong,
+html body .cs-action-path em {
+  color: var(--chx-copper, #b85720) !important;
+  font-weight: 950 !important;
+  font-style: normal !important;
+}
+
+html body .cs-quick-form-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  margin-top: 14px !important;
+}
+
+html body .cs-quick-form-grid label {
+  display: grid !important;
+  gap: 6px !important;
+}
+
+html body .cs-quick-form-grid label.wide {
+  grid-column: 1 / -1 !important;
+}
+
+html body .cs-quick-form-grid label span {
+  color: var(--chx-black, #0d0b0a) !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+}
+
+html body .cs-quick-form-grid textarea {
+  min-height: 96px !important;
+  resize: vertical !important;
+}
+
+html body .cs-decision-box {
+  display: grid !important;
+  gap: 6px !important;
+  margin: 14px 0 !important;
+  padding: 14px !important;
+  border-radius: 18px !important;
+  background: rgba(184, 87, 32, 0.10) !important;
+  border: 1px solid rgba(184, 87, 32, 0.16) !important;
+}
+
+html body .cs-decision-box strong {
+  color: var(--chx-black, #0d0b0a) !important;
+  font-size: 18px !important;
+  font-weight: 950 !important;
+}
+
+html body .cs-decision-box span {
+  color: var(--chx-muted, #6f6257) !important;
+  line-height: 1.4 !important;
+}
+
+html body .cs-decision-box small {
+  color: var(--chx-copper, #b85720) !important;
+  font-weight: 900 !important;
+}
+
+@media (max-width: 760px) {
+  html body .cs-quick-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body .cs-quick-launch {
+    padding: 10px !important;
+  }
+
+  html body .cs-quick-launch button,
+  html body .cs-filters button.strong {
+    width: 100% !important;
+  }
+}
+

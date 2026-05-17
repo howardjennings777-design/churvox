@@ -312,6 +312,181 @@ function AiCard({ title, body, tone = "normal", icon = "spark", onClick }) {
   );
 }
 
+
+
+// PHASE_278_QUICK_ACTIONS_AND_INSTALL_HELPERS
+const QUICK_ACTIONS_BY_PAGE = {
+  dashboard: [
+    { id: "work", kind: "work", label: "Add work", route: "jobs", title: "Add work" },
+    { id: "client", kind: "client", label: "Add client", route: "clients", title: "Add client" },
+    { id: "quote", kind: "quote", label: "Create quote", route: "quotes", title: "Create quote" },
+    { id: "invoice", kind: "invoice", label: "Create invoice", route: "invoices", title: "Create invoice" },
+    { id: "proof", kind: "proof", label: "Add proof note", route: "proof", title: "Add proof note" },
+    { id: "payroll_export", kind: "payroll_export", label: "Prepare payroll export", route: "payroll", title: "Prepare payroll export" },
+  ],
+  work: [
+    { id: "work", kind: "work", label: "Add work", route: "jobs", title: "Add work" },
+    { id: "proof", kind: "proof", label: "Add proof note", route: "proof", title: "Add proof note" },
+    { id: "invoice", kind: "invoice", label: "Create invoice", route: "invoices", title: "Create invoice" },
+  ],
+  clients: [
+    { id: "client", kind: "client", label: "Add client", route: "clients", title: "Add client" },
+    { id: "quote", kind: "quote", label: "Create quote", route: "quotes", title: "Create quote" },
+    { id: "payment_note", kind: "payment_note", label: "Add payment note", route: "proof", title: "Add payment note" },
+  ],
+  crew: [
+    { id: "crew", kind: "crew", label: "Add crew", route: "team", title: "Add crew member" },
+    { id: "work", kind: "work", label: "Assign work", route: "jobs", title: "Add work for crew" },
+  ],
+  quotes: [
+    { id: "quote", kind: "quote", label: "Create quote", route: "quotes", title: "Create quote" },
+    { id: "work", kind: "work", label: "Convert to work", route: "jobs", title: "Create work from quote" },
+  ],
+  invoices: [
+    { id: "invoice", kind: "invoice", label: "Create invoice", route: "invoices", title: "Create invoice" },
+    { id: "payment_note", kind: "payment_note", label: "Add payment note", route: "proof", title: "Add payment note" },
+  ],
+  proof: [
+    { id: "proof", kind: "proof", label: "Add proof note", route: "proof", title: "Add proof note" },
+    { id: "invoice", kind: "invoice", label: "Create invoice", route: "invoices", title: "Create invoice from proof" },
+    { id: "payment_note", kind: "payment_note", label: "Add payment note", route: "proof", title: "Add payment note" },
+  ],
+  payroll: [
+    { id: "payroll_export", kind: "payroll_export", label: "Prepare export", route: "payroll", title: "Prepare payroll export" },
+    { id: "settings", kind: "settings", label: "Payroll setting", route: "settings", title: "Payroll setting" },
+  ],
+  settings: [
+    { id: "settings", kind: "settings", label: "Save AI mode", route: "settings", title: "Save AI approval mode" },
+    { id: "crew", kind: "crew", label: "Add crew", route: "team", title: "Add crew member" },
+  ],
+};
+
+const QUICK_ACTION_FIELDS = {
+  work: [
+    ["title", "Work title", "text"],
+    ["client_name", "Client name", "text"],
+    ["address", "Address / site", "text"],
+    ["area", "Area / region", "text"],
+    ["amount", "Price or estimate", "number"],
+    ["notes", "Notes for AI", "textarea"],
+  ],
+  client: [
+    ["name", "Client name", "text"],
+    ["email", "Email", "email"],
+    ["phone", "Phone", "text"],
+    ["address", "Address", "text"],
+    ["area", "Area / region", "text"],
+    ["notes", "Notes", "textarea"],
+  ],
+  crew: [
+    ["name", "Crew member name", "text"],
+    ["email", "Email", "email"],
+    ["phone", "Phone", "text"],
+    ["role", "Role", "text"],
+    ["area", "Area / region", "text"],
+    ["notes", "Notes", "textarea"],
+  ],
+  quote: [
+    ["title", "Quote title", "text"],
+    ["client_name", "Client name", "text"],
+    ["amount", "Amount", "number"],
+    ["notes", "Quote notes", "textarea"],
+  ],
+  invoice: [
+    ["title", "Invoice title", "text"],
+    ["client_name", "Client name", "text"],
+    ["amount", "Amount", "number"],
+    ["notes", "Invoice description", "textarea"],
+  ],
+  proof: [
+    ["title", "Proof title", "text"],
+    ["client_name", "Client name", "text"],
+    ["job_id", "Job ID / reference", "text"],
+    ["notes", "Proof notes", "textarea"],
+  ],
+  payment_note: [
+    ["title", "Payment note title", "text"],
+    ["client_name", "Client name", "text"],
+    ["invoice_number", "Invoice number", "text"],
+    ["amount", "Amount", "number"],
+    ["notes", "Payment note", "textarea"],
+  ],
+  payroll_export: [
+    ["period", "Pay period", "text"],
+    ["notes", "Payroll notes", "textarea"],
+  ],
+  settings: [
+    ["setting_key", "Setting key", "text"],
+    ["setting_value", "Setting value", "text"],
+    ["notes", "Notes", "textarea"],
+  ],
+};
+
+function QuickActionModal({ action, busy, onClose, onSubmit }) {
+  const [form, setForm] = useState(() => ({
+    setting_key: "ai_approval_mode",
+    setting_value: "approval_first",
+  }));
+
+  if (!action) return null;
+
+  const fields = QUICK_ACTION_FIELDS[action.kind] || QUICK_ACTION_FIELDS.work;
+
+  function update(key, value) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function submit(event) {
+    event.preventDefault();
+    onSubmit({ ...form, kind: action.kind });
+  }
+
+  return (
+    <section className="cs-modal-backdrop" onClick={onClose}>
+      <form className="cs-modal cs-quick-action-modal" onSubmit={submit} onClick={(event) => event.stopPropagation()}>
+        <header>
+          <span>Business action</span>
+          <button type="button" onClick={onClose}>×</button>
+        </header>
+
+        <h2>{action.title || action.label}</h2>
+        <p>
+          Churvox will save this, prepare the admin around it, and keep owner approval in control.
+        </p>
+
+        <section className="cs-action-path">
+          <strong>Work goes in</strong>
+          <em>›</em>
+          <strong>AI prepares</strong>
+          <em>›</em>
+          <strong>Owner approves</strong>
+        </section>
+
+        <div className="cs-quick-form-grid">
+          {fields.map(([key, label, type]) => (
+            <label key={key} className={type === "textarea" ? "wide" : ""}>
+              <span>{label}</span>
+              {type === "textarea" ? (
+                <textarea value={form[key] || ""} onChange={(event) => update(key, event.target.value)} />
+              ) : (
+                <input type={type} value={form[key] || ""} onChange={(event) => update(key, event.target.value)} />
+              )}
+            </label>
+          ))}
+        </div>
+
+        <footer>
+          <button type="button" className="ghost" onClick={onClose}>Close</button>
+          <button type="submit" disabled={Boolean(busy)}>
+            {busy ? "Saving..." : "Save and let AI prepare"}
+          </button>
+        </footer>
+      </form>
+    </section>
+  );
+}
+
+
 function Table({ rows, columns, onOpen, emptyText = "Nothing here yet.", actionLabel = "Open Slip" }) {
   const gridTemplateColumns = `repeat(${columns.length}, minmax(150px, 1fr)) 170px`;
 
@@ -434,6 +609,14 @@ function DetailModal({ selected, onClose, onApprove, setPage, operatorBusyAction
         <h2>{title}</h2>
         <p>{detail}</p>
 
+        {selected?.__operatorAction ? (
+          <section className="cs-decision-box" data-phase="PHASE_278_WORK_SLIP_DECISION_BOX">
+            <strong>{clean(selected.__actionLabel, "Approve AI action")}</strong>
+            <span>{clean(selected.reason || selected.ai_reason || selected.need, "AI prepared this from live business data.")}</span>
+            <small>Safe mode: Churvox prepares the action. Owner approval is required before anything important changes.</small>
+          </section>
+        ) : null}
+
         <dl>
           {rows.map(([label, value]) => (
             <div key={label}>
@@ -469,7 +652,7 @@ function DetailModal({ selected, onClose, onApprove, setPage, operatorBusyAction
   );
 }
 
-function SmartPage({ config, rows, columns, aiCards, onOpen, activeFilter, setActiveFilter, openInfo, goToPage }) {
+function SmartPage({ config, rows, columns, aiCards, onOpen, activeFilter, setActiveFilter, openInfo, goToPage, quickActions = [], onQuickAction }) {
   const loweredTitle = clean(config.workspaceTitle).toLowerCase();
 
   const actionLabel = config.actionLabel ||
@@ -557,7 +740,18 @@ function SmartPage({ config, rows, columns, aiCards, onOpen, activeFilter, setAc
             <p>{config.workspaceBody}</p>
           </div>
 
-          <div className="cs-filters">
+          <div className="cs-filters" data-phase="PHASE_278_PAGE_QUICK_ACTIONS">
+            {quickActions.map((action) => (
+              <button
+                type="button"
+                key={action.id}
+                className="strong"
+                onClick={() => onQuickAction?.(action)}
+              >
+                {action.label}
+              </button>
+            ))}
+
             {config.filters.map((filter) => (
               <button
                 type="button"
@@ -894,8 +1088,12 @@ export default function CommandSuite({
   showAllApprovals,
   setShowAllApprovals,
   onOpenSlip,
+  onDataRefresh,
 }) {
   const [selected, setSelected] = useState(null);
+  const [quickAction, setQuickAction] = useState(null);
+  const [quickBusy, setQuickBusy] = useState("");
+  const [installPrompt, setInstallPrompt] = useState(null);
   const [toast, setToast] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [billingBusy, setBillingBusy] = useState("");
@@ -1077,6 +1275,88 @@ export default function CommandSuite({
   }, []);
 
 
+
+  // PHASE_278_REFRESH_AND_PWA_INSTALL
+  useEffect(() => {
+    function handleBeforeInstallPrompt(event) {
+      event.preventDefault();
+      setInstallPrompt(event);
+    }
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    return () => window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+  }, []);
+
+  async function refreshWholeBusiness(reason = "operator-action") {
+    await refreshOperatorActions();
+    await refreshBillingStatus();
+
+    try {
+      onDataRefresh?.(reason);
+    } catch {
+      // parent refresh is optional
+    }
+
+    try {
+      window.dispatchEvent(new CustomEvent("churvox:refresh-data", { detail: { reason } }));
+      window.dispatchEvent(new CustomEvent("churvox:business-data-changed", { detail: { reason } }));
+    } catch {
+      // ignore browser event issues
+    }
+  }
+
+  async function installChurvoxApp() {
+    if (!installPrompt) {
+      setToast("Install is not ready in this browser yet. Use browser menu > Install app, or try after a refresh.");
+      window.setTimeout(() => setToast(""), 4200);
+      return;
+    }
+
+    try {
+      await installPrompt.prompt();
+      await installPrompt.userChoice;
+      setInstallPrompt(null);
+      setToast("Churvox install prompt opened.");
+    } catch {
+      setToast("Install prompt could not open.");
+    }
+
+    window.setTimeout(() => setToast(""), 3200);
+  }
+
+  async function submitQuickAction(values) {
+    const action = quickAction;
+    if (!action) return;
+
+    setQuickBusy(action.id);
+    setToast("Saving business action...");
+
+    try {
+      const endpoint =
+        action.kind === "settings"
+          ? "/api/operator/settings"
+          : action.kind === "payroll_export"
+            ? "/api/operator/payroll/export"
+            : "/api/operator/quick-create";
+
+      const body = await billingPost(endpoint, values);
+      setToast(body.message || "Business action saved. AI will prepare the next step.");
+      setQuickAction(null);
+
+      await refreshWholeBusiness(action.kind);
+
+      if (action.route) {
+        goToPage(action.route);
+      }
+    } catch (err) {
+      setToast(err.message || "Could not save business action.");
+    } finally {
+      setQuickBusy("");
+      window.setTimeout(() => setToast(""), 4200);
+    }
+  }
+
+
   const model = useMemo(() => {
     const raw = data?.raw || data || {}; // PHASE_219_FRONTEND_PARTIAL_DATA_SAFE
     const jobs = rowsFrom(raw.jobs, data?.jobs, raw.work, data?.work);
@@ -1137,7 +1417,7 @@ export default function CommandSuite({
 
         setToast(msg);
         setSelected(null);
-        await refreshOperatorActions();
+        await refreshWholeBusiness("ai-operator-approved");
 
         try {
           window.dispatchEvent(new CustomEvent("churvox:operator-action-approved", { detail: { actionId, body } }));
@@ -1591,6 +1871,17 @@ export default function CommandSuite({
             </button>
           </section>
 
+          <section className="cs-quick-launch" data-phase="PHASE_278_DASHBOARD_QUICK_LAUNCH">
+            {(QUICK_ACTIONS_BY_PAGE.dashboard || []).map((action) => (
+              <button type="button" key={action.id} onClick={() => setQuickAction(action)}>
+                {action.label}
+              </button>
+            ))}
+            <button type="button" onClick={installChurvoxApp}>
+              Install Churvox
+            </button>
+          </section>
+
           <section className="cs-desk">
             <header>
               <Icon type="clipboard" />
@@ -1692,10 +1983,19 @@ export default function CommandSuite({
           setActiveFilter={setActiveFilter}
           openInfo={openInfo}
           goToPage={goToPage}
+          quickActions={QUICK_ACTIONS_BY_PAGE[current] || []}
+          onQuickAction={(action) => setQuickAction(action)}
         />
       )}
 
       {toast ? <aside className="cs-toast">{toast}</aside> : null}
+
+      <QuickActionModal
+        action={quickAction}
+        busy={quickBusy}
+        onClose={() => setQuickAction(null)}
+        onSubmit={submitQuickAction}
+      />
 
       <DetailModal
         selected={selected}
