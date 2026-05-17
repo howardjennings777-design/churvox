@@ -2144,3 +2144,136 @@ html body .cs-ai-grid {
   }
 }
 
+
+/* PHASE_263_STATS_OUTSIDE_HERO_NO_OVERLAP
+   Stats are now outside the hero in JSX.
+   This makes overlap impossible instead of trying to fight it with CSS.
+*/
+
+/* Hero only contains wording now */
+html body .cs-hero {
+  display: block !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  padding: 20px 24px !important;
+  border-radius: 24px !important;
+  overflow: hidden !important;
+}
+
+html body .cs-hero > section:first-child {
+  width: 100% !important;
+  max-width: 980px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+html body .cs-hero h1 {
+  max-width: 980px !important;
+  margin: 8px 0 10px !important;
+  font-size: clamp(32px, 4vw, 56px) !important;
+  line-height: 1.02 !important;
+  letter-spacing: -0.055em !important;
+}
+
+html body .cs-hero p {
+  max-width: 780px !important;
+  margin: 0 !important;
+  font-size: 13px !important;
+  line-height: 1.42 !important;
+}
+
+/* New separate stats row under the hero */
+html body .cs-page > .cs-stats-below-hero,
+html body .cs-page > .cs-plan-price-stack.cs-stats-below-hero {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(150px, 210px)) !important;
+  justify-content: start !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Separate stat pills are compact and cannot cover title */
+html body .cs-page > .cs-stats-below-hero .cs-stat,
+html body .cs-page > .cs-plan-price-stack.cs-stats-below-hero button {
+  width: 100% !important;
+  max-width: 210px !important;
+  min-width: 0 !important;
+  height: 64px !important;
+  min-height: 64px !important;
+  max-height: 64px !important;
+  padding: 8px 10px !important;
+  border-radius: 999px !important;
+  overflow: hidden !important;
+  background-color: #0d0b0a !important;
+  background-image:
+    radial-gradient(circle at 24% 0%, rgba(255, 248, 239, 0.15), transparent 26%),
+    linear-gradient(135deg, #0d0b0a 0%, #17120f 42%, #5d2818 72%, #b85720 100%) !important;
+  color: #fff8ef !important;
+  border: 1px solid rgba(228, 134, 67, 0.24) !important;
+  box-shadow: 0 10px 28px rgba(13, 11, 10, 0.16) !important;
+}
+
+html body .cs-page > .cs-stats-below-hero .cs-stat *,
+html body .cs-page > .cs-plan-price-stack.cs-stats-below-hero button * {
+  color: #fff8ef !important;
+}
+
+html body .cs-page > .cs-stats-below-hero .cs-stat strong,
+html body .cs-page > .cs-plan-price-stack.cs-stats-below-hero button strong {
+  font-size: clamp(17px, 1.7vw, 23px) !important;
+  line-height: 1 !important;
+}
+
+html body .cs-page > .cs-stats-below-hero .cs-stat span,
+html body .cs-page > .cs-plan-price-stack.cs-stats-below-hero button span {
+  font-size: 11px !important;
+  line-height: 1.05 !important;
+  text-align: center !important;
+}
+
+/* Keep the content below separate from the stats */
+html body .cs-ai-strip,
+html body .cs-command-cards,
+html body .cs-workspace,
+html body .cs-desk {
+  position: relative !important;
+  z-index: 0 !important;
+}
+
+/* Mobile: two neat stat columns */
+@media (max-width: 760px) {
+  html body .cs-hero {
+    padding: 16px !important;
+  }
+
+  html body .cs-hero h1 {
+    font-size: clamp(30px, 9vw, 44px) !important;
+    line-height: 1.04 !important;
+  }
+
+  html body .cs-page > .cs-stats-below-hero,
+  html body .cs-page > .cs-plan-price-stack.cs-stats-below-hero {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  html body .cs-page > .cs-stats-below-hero .cs-stat,
+  html body .cs-page > .cs-plan-price-stack.cs-stats-below-hero button {
+    max-width: none !important;
+    height: 62px !important;
+    min-height: 62px !important;
+    max-height: 62px !important;
+  }
+}
+
