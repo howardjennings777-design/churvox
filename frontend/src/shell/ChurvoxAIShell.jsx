@@ -1491,6 +1491,25 @@ function AuthCard({ authMode, setAuthMode, onLogin }) {
   const [error, setError] = useState("");
   const signup = authMode === "signup";
 
+  // PHASE_231_REAL_AUTH_TRIAL_HELPERS
+  function selectedTrialPlan() {
+    try {
+      return String(localStorage.getItem("churvox_selected_public_plan") || "operator").toLowerCase();
+    } catch {
+      return "operator";
+    }
+  }
+
+  function legacyTrialPlan(plan) {
+    const key = String(plan || "operator").toLowerCase();
+    return {
+      start: "solo",
+      crew: "team",
+      operator: "pro",
+      command: "enterprise",
+    }[key] || "pro";
+  }
+
   function update(key, value) {
     setForm((current) => ({ ...current, [key]: value }));
   }
@@ -1516,6 +1535,35 @@ function AuthCard({ authMode, setAuthMode, onLogin }) {
       saveSession(payload);
 
       if (signup) {
+        // PHASE_231_START_TRIAL_AFTER_REAL_SIGNUP
+        try {
+          const trialPlan = selectedTrialPlan();
+          const legacyPlan = legacyTrialPlan(trialPlan);
+          const result = await apiPost("/billing/start-trial", {
+            plan: trialPlan,
+            selected_plan: trialPlan,
+            tier: trialPlan,
+            legacy_plan: legacyPlan,
+            trial_days: 14,
+            no_card_required: true,
+          });
+
+          const trialEnd =
+            result?.trial_ends_at ||
+            result?.trial_end_date ||
+            result?.data?.trial_ends_at ||
+            result?.data?.trial_end_date ||
+            new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+
+          localStorage.setItem("churvox_plan", trialPlan);
+          localStorage.setItem("churvox_legacy_plan", legacyPlan);
+          localStorage.setItem("churvox_plan_status", "trialing");
+          localStorage.setItem("churvox_subscription_status", "trialing");
+          localStorage.setItem("churvox_trial_ends_at", trialEnd);
+        } catch {
+          // Signup still succeeds. Paid plan/trial lock can be handled from Plans if the route is unavailable.
+        }
+
         try {
           localStorage.removeItem("churvox:first-run-tour-done");
           localStorage.setItem("churvox:first-run-tour-pending", "1");
@@ -2113,20 +2161,39 @@ function Landing({ authMode, setAuthMode, onLogin }) {
     ["Command", "$299", "Growing teams", "MYOB included, payroll workspace, advanced roles and automation."],
   ];
 
-  function goSignup(event) {
-    event?.preventDefault?.();
-    setAuthMode("signup");
+  // PHASE_231_REAL_PUBLIC_BUTTON_WIRING
+  function savePublicPlan(planName = "Operator") {
+    const plan = String(planName || "Operator").toLowerCase();
+    try {
+      localStorage.setItem("churvox_selected_public_plan", plan);
+      localStorage.setItem("churvox_plan_intent", plan);
+    } catch {
+      // Plan selection is a helper only. Signup still works.
+    }
+  }
+
+  function scrollToLanding(id, block = "start") {
     window.setTimeout(() => {
-      document.getElementById("landing-access")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 80);
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block });
+    }, 70);
+  }
+
+  function jumpTo(event, id) {
+    event?.preventDefault?.();
+    scrollToLanding(id, "start");
+  }
+
+  function goSignup(event, planName = "Operator") {
+    event?.preventDefault?.();
+    savePublicPlan(planName);
+    setAuthMode("signup");
+    scrollToLanding("landing-access", "center");
   }
 
   function goLogin(event) {
     event?.preventDefault?.();
     setAuthMode("login");
-    window.setTimeout(() => {
-      document.getElementById("landing-access")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 80);
+    scrollToLanding("landing-access", "center");
   }
 
   return (
@@ -2141,11 +2208,13 @@ function Landing({ authMode, setAuthMode, onLogin }) {
       />
 
       <header className="cx-clean-nav">
-        <a href="#top" className="cx-logo-link"><Logo /></a>
+        <a href="#top" className="cx-logo-link" onClick={(event) => jumpTo(event, "top")}><Logo /></a>
         <nav>
-          <a href="#how">How it works</a>
-          <a href="#pricing">Pricing</a>
-          <button type="button" onClick={() => setTourOpen(true)}>Tour</button>
+          <a href="#how" onClick={(event) => jumpTo(event, "how")}>How it works</a>
+          <a href="#features" onClick={(event) => jumpTo(event, "features")}>What it prepares</a>
+          <a href="#pricing" onClick={(event) => jumpTo(event, "pricing")}>Pricing</a>
+          <button type="button" onClick={() => setTourOpen(true)}>Watch demo</button>
+          <button type="button" onClick={(event) => goSignup(event, "Operator")}>Start free trial</button>
           <button type="button" onClick={goLogin}>Login</button>
         </nav>
       </header>
@@ -2161,7 +2230,7 @@ function Landing({ authMode, setAuthMode, onLogin }) {
 
           <div className="cx-clean-actions">
             <button type="button" className="cx-tour-cta" onClick={() => setTourOpen(true)}>See how Churvox works</button>
-            <a href="#landing-access" onClick={goSignup}>Start free trial</a>
+            <a href="#landing-access" onClick={(event) => goSignup(event, "Operator")}>Start free trial</a>
             <a href="/plans">See pricing</a>
           </div>
 
@@ -2271,6 +2340,9 @@ function Landing({ authMode, setAuthMode, onLogin }) {
               <h3>{name}</h3>
               <strong>{price}<small>/month + GST</small></strong>
               <p>{body}</p>
+              <button type="button" onClick={(event) => goSignup(event, name)}>
+                {name === "Operator" ? "Start with Operator" : `Choose ${name}`}
+              </button>
             </article>
           ))}
         </div>
@@ -2298,7 +2370,7 @@ function Landing({ authMode, setAuthMode, onLogin }) {
         <span>For owners who want less admin</span>
         <h2>Let Churvox prepare the work. You approve what matters.</h2>
         <div>
-          <a href="#landing-access" onClick={goSignup}>Start free trial</a>
+          <a href="#landing-access" onClick={(event) => goSignup(event, "Operator")}>Start free trial</a>
           <a href="/request-work">Try request intake</a>
         </div>
       </section>

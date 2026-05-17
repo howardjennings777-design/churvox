@@ -5847,3 +5847,229 @@ body {
   background: #fff8ef !important;
 }
 
+
+/* PHASE_231_REAL_LANDING_AND_APP_WARM_THEME
+   This is the real shell CSS used by the live Churvox landing/app.
+*/
+:root {
+  --cx-warm-page-bg:
+    radial-gradient(circle at 78% 6%, rgba(184, 87, 32, 0.24), transparent 30rem),
+    radial-gradient(circle at 6% 20%, rgba(13, 11, 10, 0.11), transparent 25rem),
+    linear-gradient(135deg, #f4ede3 0%, #fff8ef 50%, #eadbc9 100%) !important;
+  --cx-text: #17120f !important;
+  --cx-text-soft: #6d6258 !important;
+  --cx-line: rgba(13, 11, 10, 0.12) !important;
+  --cx-panel: rgba(255, 248, 239, 0.94) !important;
+  --cx-panel-2: rgba(251, 246, 235, 0.96) !important;
+}
+
+html,
+body,
+#root,
+.App,
+html body .cx-public,
+html body .cx-app,
+html body .cx-clean-landing,
+html body .cx-command-first-page,
+html body .om-shell,
+html body .om-main {
+  background: var(--cx-warm-page-bg) !important;
+  color: #17120f !important;
+}
+
+html body .cx-grid-bg {
+  opacity: 0.12 !important;
+  background-image:
+    linear-gradient(rgba(13, 11, 10, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(13, 11, 10, 0.045) 1px, transparent 1px) !important;
+}
+
+html body .cx-clean-nav,
+html body .cx-clean-hero-copy,
+html body .cx-clean-movie,
+html body .cx-clean-section,
+html body .cx-clean-access,
+html body .cx-clean-final,
+html body .cx-auth-card,
+html body .cx-panel,
+html body .cx-column,
+html body .cx-work-action,
+html body .cx-ai-card,
+html body .cx-work-hero,
+html body .cx-stat,
+html body .cx-topbar,
+html body .cx-command-modal,
+html body .cx-smart-control-panel,
+html body .cx-setup-guide {
+  background:
+    radial-gradient(circle at top right, rgba(184, 87, 32, 0.10), transparent 18rem),
+    linear-gradient(180deg, rgba(255, 248, 239, 0.96), rgba(251, 246, 235, 0.93)) !important;
+  color: #17120f !important;
+  border-color: rgba(13, 11, 10, 0.12) !important;
+  box-shadow: 0 24px 70px rgba(57, 45, 29, 0.14) !important;
+}
+
+html body .cx-clean-nav {
+  backdrop-filter: blur(18px) !important;
+}
+
+html body .cx-clean-nav nav {
+  flex-wrap: wrap !important;
+}
+
+html body .cx-clean-nav nav a,
+html body .cx-clean-nav nav button,
+html body .cx-clean-actions a,
+html body .cx-clean-actions button,
+html body .cx-clean-final a,
+html body .cx-clean-pricing article button {
+  min-height: 42px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 999px !important;
+  font-weight: 950 !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+}
+
+html body .cx-clean-nav nav a,
+html body .cx-clean-nav nav button {
+  white-space: nowrap !important;
+}
+
+html body .cx-clean-nav nav button,
+html body .cx-clean-actions a:first-of-type,
+html body .cx-clean-actions button,
+html body .cx-clean-final a:first-child,
+html body .cx-clean-pricing article button {
+  color: #fff8ef !important;
+  background:
+    radial-gradient(circle at 28% 0%, rgba(255,255,255,.22), transparent 28%),
+    linear-gradient(135deg, #17120f, #2a211b 48%, #b85720) !important;
+  border: 1px solid rgba(13, 11, 10, 0.35) !important;
+  box-shadow: 0 16px 42px rgba(57, 45, 29, 0.20) !important;
+}
+
+html body .cx-clean-pricing article button {
+  width: 100% !important;
+  margin-top: 16px !important;
+  padding: 0 18px !important;
+}
+
+html body .cx-clean-pricing article.featured {
+  background:
+    radial-gradient(circle at top right, rgba(184, 87, 32, 0.20), transparent 18rem),
+    linear-gradient(180deg, #17120f, #2a211b) !important;
+  color: #fff8ef !important;
+  border-color: rgba(184, 87, 32, 0.35) !important;
+}
+
+html body .cx-clean-pricing article.featured h3,
+html body .cx-clean-pricing article.featured strong,
+html body .cx-clean-pricing article.featured p {
+  color: #fff8ef !important;
+}
+
+html body .cx-clean-pricing article.featured span,
+html body .cx-clean-pill,
+html body .cx-auth-head span,
+html body .cx-section-title span,
+html body .cx-panel header span,
+html body .cx-column > span,
+html body .cx-work-action > span,
+html body .cx-ai-status {
+  color: #b85720 !important;
+  background: rgba(184, 87, 32, 0.08) !important;
+  border-color: rgba(184, 87, 32, 0.16) !important;
+}
+
+html body .cx-clean-hero h1,
+html body .cx-clean-section h2,
+html body .cx-clean-access h2,
+html body .cx-clean-final h2,
+html body .cx-auth-head h2,
+html body .cx-panel h2,
+html body .cx-column h3,
+html body .cx-ai-card h3,
+html body .cx-work-action h3,
+html body .cx-stat strong,
+html body .cx-row strong {
+  color: #17120f !important;
+}
+
+html body .cx-clean-hero h1 em,
+html body .cx-hero h1 em {
+  background: linear-gradient(90deg, #b85720, #d56b2a, #e48643) !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+}
+
+html body .cx-clean-hero p,
+html body .cx-clean-section p,
+html body .cx-clean-access p,
+html body .cx-clean-final p,
+html body .cx-ai-card p,
+html body .cx-work-action p,
+html body .cx-stat span,
+html body .cx-stat small,
+html body .cx-row small {
+  color: #6d6258 !important;
+}
+
+html body .cx-sidebar {
+  background:
+    radial-gradient(circle at 50% -4%, rgba(228, 134, 67, 0.12), transparent 18rem),
+    linear-gradient(180deg, rgba(13, 11, 10, 0.98), rgba(23, 18, 15, 0.98)) !important;
+  color: #fff8ef !important;
+  border-right: 1px solid rgba(255, 248, 239, 0.10) !important;
+}
+
+html body .cx-sidebar .cx-logo strong,
+html body .cx-sidebar .cx-logo span,
+html body .cx-sidebar button,
+html body .cx-sidebar a {
+  color: #fff8ef !important;
+}
+
+html body .cx-form input,
+html body .cx-form textarea,
+html body .cx-form select,
+html body .cx-topbar input,
+html body .cx-topbar button,
+html body .cx-secondary,
+html body .cx-switch,
+html body .cx-command-modal input,
+html body .cx-command-modal textarea,
+html body .cx-command-modal select,
+html body .cx-smart-control-panel input,
+html body .cx-smart-control-panel textarea,
+html body .cx-smart-control-panel select {
+  color: #17120f !important;
+  background: rgba(255, 248, 239, 0.84) !important;
+  border: 1px solid rgba(13, 11, 10, 0.13) !important;
+}
+
+html body .cx-primary,
+html body .cx-form button,
+html body .cx-topbar .cx-top-primary,
+html body .cx-app-nav button.active,
+html body .cx-work-action button.approve,
+html body .cx-command-modal button.approve,
+html body .cx-command-footer-approval button.approve,
+html body .cx-work-hero aside button {
+  color: #fff8ef !important;
+  background:
+    radial-gradient(circle at 28% 0%, rgba(255,255,255,.22), transparent 28%),
+    linear-gradient(135deg, #17120f, #2a211b 48%, #b85720) !important;
+  border: 1px solid rgba(13, 11, 10, 0.35) !important;
+}
+
+html body .cx-logo-mark {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(228, 134, 67, 0.35), transparent 42%),
+    linear-gradient(145deg, #17120f, #2a211b 68%, #0d0b0a) !important;
+  border: 1px solid rgba(228, 134, 67, 0.24) !important;
+  box-shadow: 0 24px 54px rgba(57,45,29,.28), 0 0 34px rgba(184,87,32,.12) !important;
+}
+
