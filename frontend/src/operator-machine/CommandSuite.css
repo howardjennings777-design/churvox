@@ -1878,3 +1878,308 @@
   }
 }
 
+
+/* PHASE_233_LOCK_SAME_CHURVOX_THEME_ALL_PAGES
+   Keep the exact Churvox theme from the dashboard:
+   black / warm cream / copper-orange / muted warm brown.
+   This is a colour-theme lock only. Do not redesign page layouts.
+*/
+
+:root {
+  --cs-black: #0d0b0a !important;
+  --cs-black-2: #17120f !important;
+  --cs-orange: #b85720 !important;
+  --cs-orange-2: #d56b2a !important;
+  --cs-orange-3: #e48643 !important;
+  --cs-paper: #fff8ef !important;
+  --cs-cream: #fbf4ea !important;
+  --cs-soft: #f4ede3 !important;
+  --cs-warm: #eadbc9 !important;
+  --cs-muted: #6d6258 !important;
+  --cs-line: rgba(13, 11, 10, 0.12) !important;
+  --cs-green: #507b36 !important;
+  --cs-red: #a8422b !important;
+  --cs-gold: #d39028 !important;
+  --cs-shadow: 0 14px 42px rgba(13, 11, 10, 0.10) !important;
+  --cs-shadow-strong: 0 26px 84px rgba(13, 11, 10, 0.18) !important;
+
+  --cs-page-bg:
+    radial-gradient(circle at 80% 8%, rgba(184, 87, 32, 0.18), transparent 30rem),
+    radial-gradient(circle at 8% 18%, rgba(13, 11, 10, 0.08), transparent 26rem),
+    linear-gradient(135deg, #f4ede3 0%, #fff8ef 48%, #eadbc9 100%) !important;
+}
+
+/* Same warm Churvox canvas everywhere */
+html,
+body,
+#root,
+.App,
+.om-shell,
+.om-main,
+.cs-page,
+.cs-dashboard,
+.cs-work,
+.cs-clients,
+.cs-crew,
+.cs-quotes,
+.cs-invoices,
+.cs-proof,
+.cs-payroll,
+.cs-plans,
+.cs-settings {
+  background: var(--cs-page-bg) !important;
+  color: var(--cs-black) !important;
+}
+
+/* Top navigation stays black/copper like dashboard */
+.om-nav {
+  background: #0d0b0a !important;
+  border-bottom: 1px solid rgba(213, 107, 42, 0.24) !important;
+  box-shadow: 0 12px 32px rgba(13, 11, 10, 0.20) !important;
+}
+
+.om-nav nav button span,
+.om-logout,
+.om-brand strong {
+  color: #fff8ef !important;
+}
+
+.om-brand i {
+  background: rgba(184, 87, 32, 0.10) !important;
+  border-color: #b85720 !important;
+}
+
+.om-brand i b {
+  border-color: #b85720 !important;
+}
+
+.om-nav nav button.active {
+  border-bottom-color: #d56b2a !important;
+}
+
+/* Main page hero keeps exact dashboard black/copper style */
+.cs-hero {
+  background:
+    radial-gradient(circle at 82% 20%, rgba(255, 248, 239, 0.08), transparent 26rem),
+    linear-gradient(116deg, #0d0b0a 0%, #17120f 50.5%, #b85720 50.6%, #d56b2a 100%) !important;
+  color: #fff8ef !important;
+  box-shadow: var(--cs-shadow-strong) !important;
+}
+
+.cs-hero h1,
+.cs-hero h1 mark {
+  color: #fff8ef !important;
+}
+
+.cs-hero h1 mark {
+  color: #e48643 !important;
+}
+
+.cs-hero p {
+  color: rgba(255, 248, 239, 0.86) !important;
+}
+
+.cs-hero span:first-child {
+  color: #e48643 !important;
+}
+
+/* Dashboard stat cards stay black/copper */
+.cs-stat {
+  background: rgba(13, 11, 10, 0.90) !important;
+  border: 1px solid rgba(255, 248, 239, 0.10) !important;
+  box-shadow: 0 20px 44px rgba(13, 11, 10, 0.22) !important;
+}
+
+.cs-stat strong {
+  color: #fff8ef !important;
+}
+
+.cs-stat span {
+  color: rgba(255, 248, 239, 0.82) !important;
+}
+
+.cs-stat .cs-icon {
+  color: #e48643 !important;
+}
+
+/* All normal cards/tables/panels use warm cream, not blue/grey */
+.cs-command-cards article,
+.cs-ai-card,
+.cs-desk,
+.cs-workspace,
+.cs-flow,
+.cs-table,
+.cs-row,
+.cs-empty,
+.cs-modal,
+.cs-card,
+.cs-panel,
+.cs-list,
+.cs-table-wrap,
+.cs-plan-card,
+.cs-pricing-card,
+.cs-billing-card,
+.cs-setting-card,
+.cs-proof-card,
+.cs-payroll-card,
+.cs-client-card,
+.cs-job-card,
+.cs-quote-card,
+.cs-invoice-card,
+.cs-crew-card {
+  background:
+    radial-gradient(circle at top right, rgba(184, 87, 32, 0.06), transparent 18rem),
+    linear-gradient(180deg, rgba(255, 248, 239, 0.96), rgba(251, 244, 234, 0.94)) !important;
+  color: #0d0b0a !important;
+  border-color: rgba(13, 11, 10, 0.12) !important;
+  box-shadow: 0 14px 42px rgba(13, 11, 10, 0.10) !important;
+}
+
+/* Section headers and page titles */
+.cs-desk h2,
+.cs-workspace h2,
+.cs-command-cards strong,
+.cs-command-cards span,
+.cs-ai-card strong,
+.cs-flow article strong,
+.cs-flow > div span,
+.cs-empty strong,
+.cs-row strong,
+.cs-approval-row strong,
+.cs-modal h2,
+.cs-table > header span,
+.cs-page h1,
+.cs-page h2,
+.cs-page h3,
+.cs-page h4 {
+  color: #0d0b0a !important;
+}
+
+/* Body text */
+.cs-command-cards p,
+.cs-ai-card p,
+.cs-desk header p,
+.cs-workspace header p,
+.cs-flow article p,
+.cs-row p,
+.cs-row div,
+.cs-approval-row p,
+.cs-empty,
+.cs-modal p,
+.cs-page p,
+.cs-page small {
+  color: #6d6258 !important;
+}
+
+/* Labels / eyebrows / little headings use copper */
+.cs-desk > header span,
+.cs-workspace > header span,
+.cs-hero span:first-child,
+.cs-approval-row > span,
+.cs-table > header span,
+.cs-modal header span,
+.cs-risk,
+.cs-page label,
+.cs-page legend {
+  color: #b85720 !important;
+}
+
+/* Inputs/forms match the cream theme */
+.cs-page input,
+.cs-page textarea,
+.cs-page select,
+.cs-modal input,
+.cs-modal textarea,
+.cs-modal select {
+  background: #fff8ef !important;
+  color: #0d0b0a !important;
+  border: 1px solid rgba(13, 11, 10, 0.14) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.50) !important;
+}
+
+.cs-page input::placeholder,
+.cs-page textarea::placeholder {
+  color: rgba(109, 98, 88, 0.62) !important;
+}
+
+/* Buttons use the same black/copper command look */
+.cs-approval-row button,
+.cs-row button,
+.cs-view,
+.cs-modal button:not(.ghost),
+.cs-page button:not(.ghost):not(.active),
+.cs-page a.button,
+.cs-page .button {
+  color: #fff8ef !important;
+  background:
+    radial-gradient(circle at 28% 0%, rgba(255,255,255,0.18), transparent 28%),
+    linear-gradient(135deg, #17120f, #2a211b 54%, #b85720) !important;
+  border: 1px solid rgba(13, 11, 10, 0.22) !important;
+  box-shadow: 0 12px 28px rgba(57, 45, 29, 0.15) !important;
+}
+
+.cs-view.ghost,
+.cs-modal button.ghost,
+.cs-page button.ghost {
+  color: #0d0b0a !important;
+  background: rgba(13, 11, 10, 0.08) !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  box-shadow: none !important;
+}
+
+/* Filter tabs / small nav pills */
+.cs-filters,
+.cs-tabs,
+.cs-subnav,
+.cs-mobile-nav,
+.cs-filter-bar {
+  background: rgba(255, 248, 239, 0.72) !important;
+  border-color: rgba(13, 11, 10, 0.10) !important;
+  box-shadow: 0 12px 34px rgba(57, 45, 29, 0.08) !important;
+}
+
+.cs-filters button,
+.cs-tabs button,
+.cs-subnav button,
+.cs-mobile-nav button,
+.cs-filter-bar button {
+  color: #0d0b0a !important;
+  background: rgba(255, 248, 239, 0.74) !important;
+  border-color: rgba(13, 11, 10, 0.10) !important;
+}
+
+.cs-filters button.active,
+.cs-tabs button.active,
+.cs-subnav button.active,
+.cs-mobile-nav button.active,
+.cs-filter-bar button.active {
+  color: #fff8ef !important;
+  background: linear-gradient(135deg, #17120f, #2a211b 54%, #b85720) !important;
+}
+
+/* Risk/status badges stay warm but readable */
+.cs-risk.low,
+.cs-risk {
+  background: rgba(80, 123, 54, 0.10) !important;
+  color: #507b36 !important;
+}
+
+.cs-risk.medium {
+  background: rgba(211, 144, 40, 0.12) !important;
+  color: #d39028 !important;
+}
+
+.cs-risk.high {
+  background: rgba(168, 66, 43, 0.12) !important;
+  color: #a8422b !important;
+}
+
+/* Prevent any old blue/cold rules from bleeding through */
+[class*="blue"],
+[class*="cyan"],
+[class*="teal"] {
+  --cx-blue: #b85720 !important;
+  --cx-cyan: #e48643 !important;
+  --cx-teal: #507b36 !important;
+}
+
