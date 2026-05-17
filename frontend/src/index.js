@@ -1,10 +1,32 @@
 
+// PHASE_308_FORCE_FINAL_THEME_PUBLIC_LOADER
+(function churvoxLoadFinalThemeEverywhere() {
+  try {
+    if (typeof document === "undefined") return;
+    const old = document.getElementById("churvox-final-theme");
+    if (old) old.remove();
+
+    const link = document.createElement("link");
+    link.id = "churvox-final-theme";
+    link.rel = "stylesheet";
+    link.href = "/churvox-final-theme.css?v=phase308-20260517225404";
+    document.head.appendChild(link);
+
+    document.documentElement.setAttribute("data-churvox-theme", "phase308");
+  } catch (err) {
+    console.warn("Churvox final theme loader skipped", err);
+  }
+})();
+
+window.__CHURVOX_FINAL_THEME_PHASE__ = "PHASE_308_FORCE_FINAL_THEME_LIVE_20260517225404";
+
+
 // PHASE_271_LOAD_PUBLIC_LOGIN_THEME_EVERYWHERE
 (function churvoxLoadPublicLoginThemeEverywhere() {
   try {
     if (typeof document === "undefined") return;
 
-    const version = "phase298-20260517100101";
+    const version = "phase308-20260517225404";
     const old = document.getElementById("churvox-topwide-theme");
     if (old) old.remove();
 
