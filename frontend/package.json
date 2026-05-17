@@ -84,7 +84,9 @@
     "audit:visual-wording": "node scripts/churvox_visual_wording_audit.js",
     "audit:business-layer": "node scripts/churvox_phase280_business_layer_audit.js",
     "audit:deep-wiring": "node scripts/churvox_phase287_deep_wiring_audit.js",
-    "audit:runtime-buttons": "node scripts/churvox_phase287_runtime_probe.js"
+    "audit:runtime-buttons": "node scripts/churvox_phase287_runtime_probe.js",
+    "audit:go-live-static": "node scripts/churvox_phase295_go_live_static_audit.js",
+    "audit:go-live-runtime": "node scripts/churvox_phase295_go_live_runtime_audit.js"
   },
   "browserslist": {
     "production": [
@@ -119,5 +121,6 @@
   "audit:button-wiring": "node scripts/churvox_phase282_button_wiring_audit.js",
   "audit:deep-wiring": "node scripts/churvox_phase283_deep_wiring_audit.js",
   "audit:runtime-buttons": "node scripts/churvox_phase283_runtime_button_probe.js",
-  "audit:no-dead-end-modals": "node scripts/churvox_phase294_no_dead_end_modals_audit.js"
+  "audit:no-dead-end-modals": "node scripts/churvox_phase294_no_dead_end_modals_audit.js",
+  "audit:go-live-static": "node scripts/churvox_phase295_go_live_static_audit.js"
 }

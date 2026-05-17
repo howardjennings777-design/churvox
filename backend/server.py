@@ -22270,24 +22270,19 @@ async def churvox_phase291_safe_operator_endpoint_middleware(request: Request, c
 
 # END_PHASE_291_SAFE_OPERATOR_QUICK_CREATE_ENDPOINTS
 
-# PHASE_293_ULTRA_SAFE_OPERATOR_QUICK_CREATE
-# This middleware runs before older quick-create handlers and must never return 500.
-# It returns a usable record immediately, then saves to Mongo best-effort.
-# Purpose: stop Add work/Add client/Create quote/Create invoice from dead-ending.
-
-def _phase293_now():
+# PHASE_296_REAL_OPERATOR_QUICK_CREATE
+# Real quick-create endpoint. No fake success. It either saves to Mongo and returns 200,
+# or returns the real error so the go-live audit catches it.
+def _phase296_now():
     return datetime.now(timezone.utc)
 
 
-def _phase293_clean(value, fallback=""):
-    try:
-        value = str(value or "").replace("\n", " ").strip()
-        return re.sub(r"\s+", " ", value) if value else fallback
-    except Exception:
-        return fallback
+def _phase296_clean(value, fallback=""):
+    value = str(value or "").replace("\n", " ").strip()
+    return re.sub(r"\s+", " ", value) if value else fallback
 
 
-def _phase293_money(value):
+def _phase296_money(value):
     try:
         if value is None or str(value).strip() == "":
             return 0.0
@@ -22296,131 +22291,76 @@ def _phase293_money(value):
         return 0.0
 
 
-def _phase293_id(prefix):
-    return f"{prefix}-{int(_phase293_now().timestamp() * 1000)}"
+def _phase296_id(prefix):
+    return f"{prefix}-{int(_phase296_now().timestamp() * 1000)}"
 
 
-def _phase293_safe_json(value):
-    try:
-        if isinstance(value, dict):
-            return {str(k): _phase293_safe_json(v) for k, v in value.items()}
-        if isinstance(value, list):
-            return [_phase293_safe_json(v) for v in value]
-        if isinstance(value, ObjectId):
-            return str(value)
-        if isinstance(value, datetime):
-            return value.isoformat()
-        return value
-    except Exception:
-        return str(value)
+async def _phase296_current_user_and_business(request: Request):
+    token = ""
 
+    auth = request.headers.get("authorization") or request.headers.get("Authorization") or ""
+    if auth.lower().startswith("bearer "):
+        token = auth.split(" ", 1)[1].strip()
 
-def _phase293_response(request: Request, body: dict, status_code: int = 200):
-    try:
-        response = JSONResponse(status_code=status_code, content=_phase293_safe_json(body))
-    except Exception:
-        response = JSONResponse(
-            status_code=200,
-            content={
-                "success": True,
-                "message": "Quick action saved.",
-                "record": {
-                    "id": _phase293_id("safe"),
-                    "title": "Quick action",
-                    "status": "saved",
-                },
-            },
-        )
+    if not token:
+        for cookie_name in ["access_token", "token", "auth_token", "churvox_token", "session"]:
+            token = request.cookies.get(cookie_name) or ""
+            if token:
+                break
+
+    if not token:
+        raise HTTPException(status_code=401, detail="Login required. No auth token found.")
 
     try:
-        return _churvox_apply_cors_headers(request, response)
-    except Exception:
-        origin = request.headers.get("origin") or request.headers.get("Origin") or "https://www.churvox.com"
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-        response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,PATCH,DELETE,OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "*"
-        return response
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except Exception as exc:
+        raise HTTPException(status_code=401, detail=f"Login token invalid: {str(exc)[:120]}")
 
+    email = _phase296_clean(payload.get("email")).lower()
+    user_id = payload.get("id") or payload.get("user_id") or payload.get("sub") or payload.get("_id")
 
-async def _phase293_optional_user_business(request: Request):
-    user = {}
-    business_id = "unknown-business"
+    user = None
 
-    try:
-        auth = request.headers.get("authorization") or request.headers.get("Authorization") or ""
-        token = ""
-        if auth.lower().startswith("bearer "):
-            token = auth.split(" ", 1)[1].strip()
+    if user_id:
+        sid = str(user_id)
 
-        if not token:
-            for cookie_name in ["access_token", "token", "auth_token", "churvox_token", "session"]:
-                token = request.cookies.get(cookie_name) or ""
-                if token:
-                    break
-
-        if token:
-            payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-            email = _phase293_clean(payload.get("email")).lower()
-            user_id = (
-                payload.get("id")
-                or payload.get("user_id")
-                or payload.get("sub")
-                or payload.get("_id")
-            )
-
-            if user_id:
-                sid = str(user_id)
-                for query in [{"id": sid}, {"user_id": sid}]:
-                    try:
-                        user = await db.users.find_one(query)
-                        if user:
-                            break
-                    except Exception:
-                        pass
-
-                if not user:
-                    try:
-                        user = await db.users.find_one({"_id": ObjectId(sid)})
-                    except Exception:
-                        pass
-
-            if not user and email:
-                try:
-                    user = await db.users.find_one({
-                        "email": {"$regex": f"^{re.escape(email)}$", "$options": "i"}
-                    })
-                except Exception:
-                    pass
-
+        for query in [{"id": sid}, {"user_id": sid}]:
+            user = await db.users.find_one(query)
             if user:
-                business_id = str(
-                    user.get("business_id")
-                    or user.get("owner_business_id")
-                    or user.get("id")
-                    or user.get("_id")
-                    or "unknown-business"
-                )
-            elif email:
-                business_id = f"email:{email}"
-    except Exception:
-        user = {}
-        business_id = "unknown-business"
+                break
 
-    return user or {}, business_id
+        if not user:
+            try:
+                user = await db.users.find_one({"_id": ObjectId(sid)})
+            except Exception:
+                pass
+
+    if not user and email:
+        user = await db.users.find_one({
+            "email": {"$regex": f"^{re.escape(email)}$", "$options": "i"}
+        })
+
+    if not user:
+        raise HTTPException(status_code=401, detail=f"User not found from token. email={email or 'missing'}")
+
+    business_id = user.get("business_id") or user.get("owner_business_id") or user.get("id") or user.get("_id")
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business id missing on user.")
+
+    return user, str(business_id)
 
 
-def _phase293_build_record(kind, payload, business_id, user):
-    now = _phase293_now()
+def _phase296_record_for_kind(kind, payload, business_id, user):
+    now = _phase296_now()
     user_id = str(user.get("id") or user.get("_id") or "")
-    title = _phase293_clean(payload.get("title") or payload.get("name") or payload.get("job_title"))
-    client_name = _phase293_clean(payload.get("client_name") or payload.get("client") or payload.get("customer_name"), "Client")
-    notes = _phase293_clean(payload.get("notes") or payload.get("description") or payload.get("details"))
-    amount = _phase293_money(payload.get("amount") or payload.get("price") or payload.get("total"))
+    title = _phase296_clean(payload.get("title") or payload.get("name") or payload.get("job_title"))
+    client_name = _phase296_clean(payload.get("client_name") or payload.get("client") or payload.get("customer_name"), "Client")
+    notes = _phase296_clean(payload.get("notes") or payload.get("description") or payload.get("details"))
+    amount = _phase296_money(payload.get("amount") or payload.get("price") or payload.get("total"))
 
     common = {
         "business_id": business_id,
-        "source": "operator_quick_action_ultra_safe",
+        "source": "operator_quick_action",
         "created_by": user_id,
         "created_at": now,
         "updated_at": now,
@@ -22431,30 +22371,30 @@ def _phase293_build_record(kind, payload, business_id, user):
     if kind in {"client", "add_client"}:
         return "clients", {
             **common,
-            "id": _phase293_id("client"),
+            "id": _phase296_id("client"),
             "name": title or client_name or "New client",
             "client_name": title or client_name or "New client",
-            "email": _phase293_clean(payload.get("email")).lower(),
-            "phone": _phase293_clean(payload.get("phone") or payload.get("mobile")),
-            "address": _phase293_clean(payload.get("address")),
-            "area": _phase293_clean(payload.get("area") or payload.get("region")),
+            "email": _phase296_clean(payload.get("email")).lower(),
+            "phone": _phase296_clean(payload.get("phone") or payload.get("mobile")),
+            "address": _phase296_clean(payload.get("address")),
+            "area": _phase296_clean(payload.get("area") or payload.get("region")),
             "notes": notes,
             "status": "active",
         }, "Client added."
 
     if kind in {"crew", "worker", "add_crew"}:
-        email = _phase293_clean(payload.get("email")).lower()
+        email = _phase296_clean(payload.get("email")).lower()
         return "users", {
             **common,
-            "id": _phase293_id("worker"),
-            "name": title or _phase293_clean(payload.get("worker_name"), "New crew member"),
-            "full_name": title or _phase293_clean(payload.get("worker_name"), "New crew member"),
+            "id": _phase296_id("worker"),
+            "name": title or _phase296_clean(payload.get("worker_name"), "New crew member"),
+            "full_name": title or _phase296_clean(payload.get("worker_name"), "New crew member"),
             "email": email,
-            "phone": _phase293_clean(payload.get("phone") or payload.get("mobile")),
-            "role": _phase293_clean(payload.get("role"), "worker").lower(),
+            "phone": _phase296_clean(payload.get("phone") or payload.get("mobile")),
+            "role": _phase296_clean(payload.get("role"), "worker").lower(),
             "user_type": "worker",
-            "area": _phase293_clean(payload.get("area") or payload.get("region")),
-            "region": _phase293_clean(payload.get("region") or payload.get("area")),
+            "area": _phase296_clean(payload.get("area") or payload.get("region")),
+            "region": _phase296_clean(payload.get("region") or payload.get("area")),
             "status": "invited" if email else "needs_details",
         }, "Crew member added."
 
@@ -22462,7 +22402,7 @@ def _phase293_build_record(kind, payload, business_id, user):
         number = f"Q-{now.strftime('%Y%m%d')}-{int(now.timestamp()) % 10000}"
         return "quotes", {
             **common,
-            "id": _phase293_id("quote"),
+            "id": _phase296_id("quote"),
             "quote_number": number,
             "number": number,
             "title": title or "New quote",
@@ -22478,7 +22418,7 @@ def _phase293_build_record(kind, payload, business_id, user):
         number = f"INV-{now.strftime('%Y%m%d')}-{int(now.timestamp()) % 10000}"
         return "invoices", {
             **common,
-            "id": _phase293_id("invoice"),
+            "id": _phase296_id("invoice"),
             "invoice_number": number,
             "number": number,
             "title": title or "New invoice",
@@ -22494,10 +22434,10 @@ def _phase293_build_record(kind, payload, business_id, user):
     if kind in {"proof", "proof_note", "upload_proof"}:
         return "proof_items", {
             **common,
-            "id": _phase293_id("proof"),
+            "id": _phase296_id("proof"),
             "title": title or "Proof note",
             "client_name": client_name,
-            "job_id": _phase293_clean(payload.get("job_id")),
+            "job_id": _phase296_clean(payload.get("job_id")),
             "notes": notes or "Proof needs review.",
             "status": "proof_ready",
         }, "Proof note added."
@@ -22505,10 +22445,10 @@ def _phase293_build_record(kind, payload, business_id, user):
     if kind in {"payment", "payment_note", "add_payment_note"}:
         return "payments", {
             **common,
-            "id": _phase293_id("payment"),
+            "id": _phase296_id("payment"),
             "title": title or "Payment note",
             "client_name": client_name,
-            "invoice_number": _phase293_clean(payload.get("invoice_number") or payload.get("number")),
+            "invoice_number": _phase296_clean(payload.get("invoice_number") or payload.get("number")),
             "amount": amount,
             "notes": notes,
             "status": "review",
@@ -22516,12 +22456,12 @@ def _phase293_build_record(kind, payload, business_id, user):
 
     return "jobs", {
         **common,
-        "id": _phase293_id("job"),
+        "id": _phase296_id("job"),
         "title": title or "New work",
         "job_title": title or "New work",
         "client_name": client_name,
-        "address": _phase293_clean(payload.get("address") or payload.get("site")),
-        "area": _phase293_clean(payload.get("area") or payload.get("region") or payload.get("suburb")),
+        "address": _phase296_clean(payload.get("address") or payload.get("site")),
+        "area": _phase296_clean(payload.get("area") or payload.get("region") or payload.get("suburb")),
         "description": notes,
         "notes": notes,
         "status": "new",
@@ -22534,93 +22474,32 @@ def _phase293_build_record(kind, payload, business_id, user):
     }, "Work added. Churvox will prepare the admin path."
 
 
-async def _phase293_best_effort_insert(collection_name, record):
+@app.post("/api/operator/quick-create-real")
+async def phase296_operator_quick_create_real(request: Request):
+    user, business_id = await _phase296_current_user_and_business(request)
+
     try:
-        result = await getattr(db, collection_name).insert_one(dict(record))
-        record["_id"] = result.inserted_id
-        return True, collection_name, ""
-    except Exception as exc:
-        try:
-            fallback = dict(record)
-            fallback["intended_collection"] = collection_name
-            fallback["fallback_reason"] = str(exc)[:300]
-            fallback["saved_as_fallback"] = True
-            result = await db.operator_quick_actions.insert_one(fallback)
-            record["_id"] = result.inserted_id
-            return True, "operator_quick_actions", str(exc)[:300]
-        except Exception as exc2:
-            record["not_persisted_reason"] = str(exc2)[:300]
-            return False, "not_persisted", str(exc2)[:300]
+        payload = await request.json()
+    except Exception:
+        payload = {}
 
+    if not isinstance(payload, dict):
+        payload = {}
 
-@app.middleware("http")
-async def churvox_phase293_ultra_safe_operator_quick_create(request: Request, call_next):
-    path = request.url.path.rstrip("/")
-    method = request.method.upper()
+    kind = _phase296_clean(payload.get("kind") or payload.get("type"), "work").lower().replace(" ", "_")
+    collection_name, record, message = _phase296_record_for_kind(kind, payload, business_id, user)
 
-    if method == "OPTIONS":
-        return await call_next(request)
+    result = await getattr(db, collection_name).insert_one(record)
+    record["_id"] = result.inserted_id
 
-    ultra_safe_paths = {
-        "/api/operator/quick-create-safe",
-        "/api/operator/quick-create",
+    return {
+        "success": True,
+        "kind": kind,
+        "record": make_json_safe(record),
+        "message": message,
+        "saved_collection": collection_name,
+        "target_collection": collection_name,
+        "persisted": True,
     }
 
-    if method != "POST" or path not in ultra_safe_paths:
-        return await call_next(request)
-
-    try:
-        try:
-            payload = await request.json()
-        except Exception:
-            payload = {}
-
-        if not isinstance(payload, dict):
-            payload = {}
-
-        user, business_id = await _phase293_optional_user_business(request)
-        kind = _phase293_clean(payload.get("kind") or payload.get("type"), "work").lower().replace(" ", "_")
-
-        collection_name, record, message = _phase293_build_record(kind, payload, business_id, user)
-        persisted, saved_collection, save_error = await _phase293_best_effort_insert(collection_name, record)
-
-        return _phase293_response(request, {
-            "success": True,
-            "kind": kind,
-            "record": record,
-            "message": message,
-            "saved_collection": saved_collection,
-            "target_collection": collection_name,
-            "persisted": persisted,
-            "fallback_used": saved_collection != collection_name,
-            "save_error": save_error,
-        }, 200)
-
-    except Exception as exc:
-        # Last-resort: still do not 500.
-        try:
-            payload = await request.json()
-        except Exception:
-            payload = {}
-
-        record = {
-            "id": _phase293_id("quick"),
-            "title": _phase293_clean((payload or {}).get("title"), "Quick action"),
-            "client_name": _phase293_clean((payload or {}).get("client_name"), "Client"),
-            "status": "saved",
-            "source": "phase293_last_resort",
-            "backend_error": str(exc)[:500],
-            "created_at": _phase293_now().isoformat(),
-        }
-
-        return _phase293_response(request, {
-            "success": True,
-            "kind": _phase293_clean((payload or {}).get("kind"), "work"),
-            "record": record,
-            "message": "Quick action saved safely.",
-            "persisted": False,
-            "last_resort": True,
-            "backend_error": str(exc)[:500],
-        }, 200)
-
-# END_PHASE_293_ULTRA_SAFE_OPERATOR_QUICK_CREATE
+# END_PHASE_296_REAL_OPERATOR_QUICK_CREATE

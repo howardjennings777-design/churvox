@@ -1,0 +1,305 @@
+{
+  "generated_at": "2026-05-17T20:27:22.534Z",
+  "blockers": [],
+  "warnings": [
+    {
+      "area": "wording",
+      "message": "Potential bad user-facing/debug wording in CommandSuite: undefined"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/components/automation/ActionForm.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/components/ui/command.jsx contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/components/ui/input.jsx contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/components/ui/select.jsx contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/components/ui/textarea.jsx contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/components/worker/WorkerContactOfficePanel.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/index.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/operator-machine/CommandSuite.jsx contains /TODO/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/operator-machine/CommandSuite.jsx contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/operator-machine/CommandSuite.jsx contains /coming soon/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/operator-machine/OperatorMachine.css contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/operator-machine/OperatorMachine.jsx contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/AIControlRoomActionPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/AIControlRoomCompletePage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/AutomationPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/AutomationRunsPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/CommandHubRealPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/CommandHubTopPlayerPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/OnboardingPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/PayrollPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/PayrollPageClean.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/SMSPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/SMSPage.js contains /coming soon/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/SettingsPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/TeamPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/admin/PlatformUnlock.jsx contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/auth/AdminLoginPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/auth/ForgotPasswordPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/auth/InviteSetupPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/auth/LoginPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/auth/ResetPasswordPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/auth/SignupPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/clients/ClientFormPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/clients/ClientsPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/invoices/InvoiceFormPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/invoices/InvoicesPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/jobs/JobDetailPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/jobs/JobsPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/public/PublicClientPortalPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/quotes/QuotesPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/worker/WorkerCockpitPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/pages/worker/WorkerJobDetailPage.js contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/shell/ChurvoxAIShell.css contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/shell/ChurvoxAIShell.jsx contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/shell/ChurvoxAIShell.jsx contains /coming soon/i"
+    },
+    {
+      "area": "source scan",
+      "message": "frontend/src/shell/ChurvoxOperatorOS.css contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "backend/owner_bootstrap.py contains /TempPass123/i"
+    },
+    {
+      "area": "source scan",
+      "message": "backend/server.py contains /placeholder/i"
+    },
+    {
+      "area": "source scan",
+      "message": "backend/server.py contains /coming soon/i"
+    },
+    {
+      "area": "source scan",
+      "message": "backend/sms_report.txt contains /placeholder/i"
+    }
+  ],
+  "passes": [
+    {
+      "area": "files",
+      "message": "Found frontend/src/operator-machine/CommandSuite.jsx"
+    },
+    {
+      "area": "files",
+      "message": "Found frontend/src/operator-machine/OperatorMachine.jsx"
+    },
+    {
+      "area": "files",
+      "message": "Found frontend/src/operator-machine/renderDeployMarker.js"
+    },
+    {
+      "area": "files",
+      "message": "Found frontend/public/churvox-topwide-theme.css"
+    },
+    {
+      "area": "files",
+      "message": "Found frontend/package.json"
+    },
+    {
+      "area": "files",
+      "message": "Found backend/server.py"
+    },
+    {
+      "area": "quick actions",
+      "message": "QuickActionModal exists."
+    },
+    {
+      "area": "modals",
+      "message": "DetailModal exists."
+    },
+    {
+      "area": "pages",
+      "message": "SmartPage exists."
+    },
+    {
+      "area": "quick actions",
+      "message": "QUICK_ACTIONS_BY_PAGE exists."
+    },
+    {
+      "area": "quick actions",
+      "message": "QUICK_ACTION_FIELDS exists."
+    },
+    {
+      "area": "routing",
+      "message": "normalRoute exists."
+    },
+    {
+      "area": "routing",
+      "message": "routeForRecord exists."
+    },
+    {
+      "area": "dead ends",
+      "message": "Dashboard metric popup cleanup marker found."
+    },
+    {
+      "area": "quick actions",
+      "message": "Quick action routes and field configs scanned."
+    },
+    {
+      "area": "backend",
+      "message": "Backend marker present: /api/operator/quick-create-safe"
+    },
+    {
+      "area": "backend",
+      "message": "Backend marker present: /api/operator/quick-create"
+    },
+    {
+      "area": "backend",
+      "message": "Backend marker present: /api/auth/login or login route"
+    },
+    {
+      "area": "backend",
+      "message": "Backend marker present: Mongo database handle"
+    },
+    {
+      "area": "backend",
+      "message": "Backend marker present: CORS handling"
+    },
+    {
+      "area": "backend",
+      "message": "Backend marker present: JSONResponse or response safety"
+    },
+    {
+      "area": "package",
+      "message": "Build script exists."
+    }
+  ],
+  "summary": {
+    "blocker_count": 0,
+    "warning_count": 51,
+    "pass_count": 22
+  }
+}
