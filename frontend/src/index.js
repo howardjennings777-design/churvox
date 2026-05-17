@@ -1,3 +1,4 @@
+window.__CHURVOX_AI_ADMIN_RADAR__ = "PHASE_193_AI_ADMIN_RADAR_BELOW_APPROVAL_DESK_20260517004120";
 window.__CHURVOX_HERO_OWNER_PRIORITY__ = "PHASE_192_OWNER_PRIORITY_INSIDE_HEADER_20260517003652";
 window.__CHURVOX_PHASE_191__ = "PHASE_191_PRIORITY_UNDER_HEADER_WIDE_DESK_20260517003318";
 window.__CHURVOX_APPROVAL_POLISH__ = "PHASE_190_APPROVAL_DESK_WARNING_AND_PRIORITY_POLISH_20260517002650";
@@ -373,6 +374,109 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
+
+
+// PHASE_193_AI_ADMIN_RADAR_BELOW_APPROVAL_DESK
+// Do not change the top/header. Add a useful AI Admin Radar section below Approval Desk.
+(function churvoxAiAdminRadarBelowDesk() {
+  try {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+
+    function clean(value) {
+      return String(value || "").replace(/\s+/g, " ").trim();
+    }
+
+    function findApprovalDesk() {
+      return Array.from(document.querySelectorAll("section, article, div"))
+        .find((el) => {
+          const text = clean(el.textContent).toLowerCase();
+          return text.includes("approval desk") && text.includes("open approval slip");
+        });
+    }
+
+    function countSlips() {
+      return Array.from(document.querySelectorAll("button, article, section"))
+        .filter((el) => clean(el.textContent).toLowerCase().includes("open approval slip")).length;
+    }
+
+    function installRadar() {
+      const desk = findApprovalDesk();
+      if (!desk) return;
+
+      let radar = document.getElementById("churvox-phase-193-ai-admin-radar");
+      const slipCount = countSlips();
+
+      if (!radar) {
+        radar = document.createElement("section");
+        radar.id = "churvox-phase-193-ai-admin-radar";
+        radar.innerHTML = `
+          <header>
+            <span>AI ADMIN RADAR</span>
+            <strong>What Churvox is watching next.</strong>
+            <p>Approval slips are the actions. This radar shows the background admin Churvox keeps checking while workers, clients, quotes and invoices move.</p>
+          </header>
+
+          <div class="cx-radar-grid">
+            <article>
+              <small>Live work</small>
+              <strong>Worker updates</strong>
+              <p>Starts, pauses, notes, proof photos and completions feed the owner side automatically.</p>
+            </article>
+
+            <article>
+              <small>Admin prepared</small>
+              <strong data-radar-slip-count>${slipCount}</strong>
+              <p>Approval slips ready for owner review. Churvox keeps the risky actions approval-first.</p>
+            </article>
+
+            <article>
+              <small>Money watch</small>
+              <strong>Invoices & follow-ups</strong>
+              <p>Completed work, unpaid invoices and open quotes become prepared reminders or invoice slips.</p>
+            </article>
+
+            <article>
+              <small>Crew brain</small>
+              <strong>Area + workload</strong>
+              <p>When a job has an area, Churvox checks crew fit, availability and assignment risk.</p>
+            </article>
+          </div>
+
+          <footer>
+            <b>Automatic flow</b>
+            <span>Client → Job → Crew → Proof → Invoice → Payment reminder</span>
+          </footer>
+        `;
+        desk.insertAdjacentElement("afterend", radar);
+      } else {
+        const count = radar.querySelector("[data-radar-slip-count]");
+        if (count) count.textContent = String(slipCount);
+      }
+    }
+
+    let timer = null;
+    function schedule() {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(installRadar, 120);
+    }
+
+    window.addEventListener("load", schedule);
+    document.addEventListener("click", schedule, true);
+
+    const observer = new MutationObserver(schedule);
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+
+    schedule();
+  } catch {
+    // keep app boot safe
+  }
+})();
+
+
 
 
 // PHASE_192_OWNER_PRIORITY_INSIDE_HEADER
