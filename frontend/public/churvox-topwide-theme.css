@@ -1083,3 +1083,92 @@ html body .cs-plan-compare small {
   color: var(--tw-muted) !important;
 }
 
+
+/* PHASE_251_SUBTLE_ORANGE_BLACK_GRADIENT_PILLS
+   Action pills get the Churvox black/orange gradient.
+   Status badges stay softer so risk/status meaning remains clear.
+*/
+
+/* Main action pills */
+html body .cs-approval-row button,
+html body .cs-row button,
+html body .cs-view:not(.ghost),
+html body .cs-modal button:not(.ghost),
+html body .cs-page button:not(.ghost):not(.active),
+html body .cs-page a.button,
+html body .cs-page .button,
+html body .om-sales-auth form button,
+html body .om-sales-pricing article button,
+html body .om-sales-final button {
+  background:
+    radial-gradient(circle at 24% 0%, rgba(255, 248, 239, 0.18), transparent 26%),
+    linear-gradient(135deg, #0d0b0a 0%, #17120f 42%, #5d2818 72%, #b85720 100%) !important;
+  color: #fff8ef !important;
+  border: 1px solid rgba(228, 134, 67, 0.28) !important;
+  box-shadow:
+    0 14px 34px rgba(13, 11, 10, 0.20),
+    inset 0 1px 0 rgba(255, 248, 239, 0.14) !important;
+}
+
+html body .cs-approval-row button *,
+html body .cs-row button *,
+html body .cs-view:not(.ghost) *,
+html body .cs-modal button:not(.ghost) *,
+html body .cs-page button:not(.ghost):not(.active) *,
+html body .cs-page a.button *,
+html body .cs-page .button * {
+  color: #fff8ef !important;
+}
+
+/* Hover/active feel */
+html body .cs-approval-row button:hover,
+html body .cs-row button:hover,
+html body .cs-view:not(.ghost):hover,
+html body .cs-modal button:not(.ghost):hover,
+html body .cs-page button:not(.ghost):not(.active):hover,
+html body .cs-page a.button:hover,
+html body .cs-page .button:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 18px 42px rgba(13, 11, 10, 0.26),
+    0 0 0 3px rgba(184, 87, 32, 0.10),
+    inset 0 1px 0 rgba(255, 248, 239, 0.18) !important;
+}
+
+/* Active nav pill gets a softer matching gradient */
+html body .om-main > nav button.active,
+html body .cs-page > nav button.active,
+html body .cs-mobile-nav button.active,
+html body .cs-tabs button.active,
+html body .cs-subnav button.active,
+html body .cs-filter-bar button.active,
+html body .cs-filters button.active {
+  background:
+    linear-gradient(135deg, #fff8ef 0%, #fbf4ea 58%, rgba(228, 134, 67, 0.32) 100%) !important;
+  color: #0d0b0a !important;
+  border: 1px solid rgba(184, 87, 32, 0.18) !important;
+}
+
+/* Keep warning/status pills readable, not too loud */
+html body .cs-risk,
+html body .cs-pill,
+html body .cs-tag,
+html body .cs-badge {
+  background: rgba(184, 87, 32, 0.09) !important;
+  color: #b85720 !important;
+  border: 1px solid rgba(184, 87, 32, 0.12) !important;
+  box-shadow: none !important;
+}
+
+html body .cs-risk.high {
+  background: rgba(168, 66, 43, 0.12) !important;
+  color: #a8422b !important;
+  border-color: rgba(168, 66, 43, 0.14) !important;
+}
+
+html body .cs-risk.medium {
+  background: rgba(211, 144, 40, 0.12) !important;
+  color: #d39028 !important;
+  border-color: rgba(211, 144, 40, 0.16) !important;
+}
+
