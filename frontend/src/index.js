@@ -2787,3 +2787,266 @@ root.render(
     <App />
   </React.StrictMode>
 );
+
+
+
+window.__CHURVOX_FINAL_EXACT_MOCKUP__ = "PHASE_198_FINAL_EXACT_MOCKUP_DASHBOARD_DESIGN_20260517012743";
+
+// PHASE_198_FINAL_EXACT_MOCKUP_DASHBOARD_DESIGN
+// Final locked visual layer.
+// Matches the generated design: black nav, large dark/copper hero,
+// right-side metric icons, 3 important cards, clean Approval Desk rows.
+(function churvoxFinalExactMockupDashboard() {
+  try {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+
+    function clean(value) {
+      return String(value || "").replace(/\s+/g, " ").trim();
+    }
+
+    function numberFrom(value) {
+      const match = clean(value).match(/\b\d+\b/);
+      return match ? Number(match[0]) : 0;
+    }
+
+    function applyClass() {
+      document.documentElement.classList.add("cx-exact-mockup-final");
+      if (document.body) document.body.classList.add("cx-exact-mockup-final");
+    }
+
+    function findApprovalDesk() {
+      return Array.from(document.querySelectorAll("section, article, div")).find((el) => {
+        const text = clean(el.textContent).toLowerCase();
+        return text.includes("approval desk") && text.includes("open approval slip");
+      });
+    }
+
+    function approvalCount() {
+      const deskCount = document.querySelector(".om-approval-desk-main > header b, .cx-exact-approval-desk > header b");
+      const deskNumber = numberFrom(deskCount && deskCount.textContent);
+      if (deskNumber > 0) return deskNumber;
+
+      const approvalGauge = Array.from(document.querySelectorAll(".om-gauges article, article, section")).find((el) =>
+        clean(el.textContent).toLowerCase().includes("approval")
+      );
+      const gaugeNumber = numberFrom(approvalGauge && approvalGauge.textContent);
+      if (gaugeNumber > 0) return gaugeNumber;
+
+      return Array.from(document.querySelectorAll("button, article, section, div"))
+        .filter((el) => clean(el.textContent).toLowerCase().includes("open approval slip")).length;
+    }
+
+    function invoiceCount() {
+      const invoiceSlips = Array.from(document.querySelectorAll(".om-approval-ticket, button, article, section"))
+        .filter((el) => {
+          const text = clean(el.textContent).toLowerCase();
+          return text.includes("invoice") && text.includes("open approval slip");
+        }).length;
+      return invoiceSlips || 0;
+    }
+
+    function crewCount() {
+      try {
+        const ctx = window.__CHURVOX_LIVE_AI_CONTEXT__ || {};
+        const jobs = Array.isArray(ctx.jobs) ? ctx.jobs : [];
+        const active = jobs.filter((job) => {
+          const status = clean(job.status || job.job_status || job.workflow_status).toLowerCase();
+          return status.includes("active") || status.includes("progress") || status.includes("started") || status.includes("assigned");
+        }).length;
+        if (active > 0) return active;
+      } catch {
+        // safe fallback
+      }
+
+      const workerSlips = Array.from(document.querySelectorAll(".om-approval-ticket, button, article, section"))
+        .filter((el) => {
+          const text = clean(el.textContent).toLowerCase();
+          return (text.includes("worker") || text.includes("crew")) && text.includes("open approval slip");
+        }).length;
+
+      return workerSlips || 0;
+    }
+
+    function planName() {
+      const planGauge = Array.from(document.querySelectorAll(".om-gauges article, article")).find((el) =>
+        clean(el.textContent).toLowerCase().includes("plan")
+      );
+      const text = clean(planGauge && planGauge.textContent).replace(/^plan/i, "").trim();
+      return text || "Command";
+    }
+
+    function removeOldExperimentElements() {
+      [
+        "churvox-phase-189-owner-priority",
+        "churvox-phase-192-hero-priority",
+        "churvox-phase-193-ai-admin-radar",
+        "churvox-phase-195-status-strip",
+        "churvox-phase-196-front-strip",
+        "churvox-phase-196-inline-note",
+        "churvox-final-front-cards",
+        "churvox-final-hero-note",
+        "churvox-phase-197-front-cards",
+        "churvox-phase-197-hero-metrics"
+      ].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+      });
+
+      Array.from(document.querySelectorAll("section, article, div")).forEach((el) => {
+        const text = clean(el.textContent).toLowerCase();
+        if (
+          text.includes("ai admin radar") ||
+          text.includes("what churvox is watching next") ||
+          text.includes("owner priority") ||
+          text.includes("nothing urgent right now") ||
+          text.includes("automatic admin") ||
+          text.includes("owner control")
+        ) {
+          el.style.display = "none";
+          el.setAttribute("aria-hidden", "true");
+        }
+      });
+    }
+
+    function installHeroMetrics() {
+      const hero = document.querySelector(".om-hero");
+      if (!hero) return;
+
+      let metrics = document.getElementById("churvox-phase-198-hero-metrics");
+      if (!metrics) {
+        metrics = document.createElement("section");
+        metrics.id = "churvox-phase-198-hero-metrics";
+        hero.appendChild(metrics);
+      }
+
+      metrics.innerHTML = `
+        <article>
+          <i>✓</i>
+          <span>Plan</span>
+          <strong>${planName()}</strong>
+        </article>
+        <article>
+          <i>▤</i>
+          <span>Input</span>
+          <strong>0</strong>
+        </article>
+        <article>
+          <i>⚙</i>
+          <span>Processing</span>
+          <strong>0</strong>
+        </article>
+        <article>
+          <i>◇</i>
+          <span>Approval</span>
+          <strong>${approvalCount()}</strong>
+        </article>
+      `;
+    }
+
+    function installHeroNote() {
+      const hero = document.querySelector(".om-hero");
+      if (!hero) return;
+
+      let note = document.getElementById("churvox-phase-198-hero-note");
+      if (!note) {
+        note = document.createElement("section");
+        note.id = "churvox-phase-198-hero-note";
+        hero.appendChild(note);
+      }
+
+      note.innerHTML = `
+        <b>✦</b>
+        <strong>Simple approval flow</strong>
+        <span>Jobs, proof, quotes, invoices, reminders and worker updates are handled automatically in the background.</span>
+      `;
+    }
+
+    function installFrontCards() {
+      const hero = document.querySelector(".om-hero");
+      if (!hero) return;
+
+      let cards = document.getElementById("churvox-phase-198-front-cards");
+      if (!cards) {
+        cards = document.createElement("section");
+        cards.id = "churvox-phase-198-front-cards";
+        hero.insertAdjacentElement("afterend", cards);
+      }
+
+      cards.innerHTML = `
+        <article>
+          <i>✓</i>
+          <div>
+            <span>Ready for approval</span>
+            <strong>${approvalCount()}</strong>
+            <p>Owner-ready slips waiting for review.</p>
+          </div>
+        </article>
+        <article>
+          <i>▧</i>
+          <div>
+            <span>Ready to invoice</span>
+            <strong>${invoiceCount()}</strong>
+            <p>Completed work ready for draft invoice prep.</p>
+          </div>
+        </article>
+        <article>
+          <i>◌</i>
+          <div>
+            <span>Crew active today</span>
+            <strong>${crewCount()}</strong>
+            <p>Worker updates, notes and proof flowing in.</p>
+          </div>
+        </article>
+      `;
+    }
+
+    function markApprovalDesk() {
+      const desk = findApprovalDesk();
+      if (!desk) return;
+      desk.classList.add("cx-exact-approval-desk");
+      if (desk.parentElement) desk.parentElement.classList.add("cx-exact-desk-wrap");
+    }
+
+    function tidyTopCopy() {
+      const hero = document.querySelector(".om-hero");
+      if (!hero) return;
+
+      const h1 = hero.querySelector("h1");
+      if (h1 && clean(h1.textContent).toLowerCase().includes("churvox")) {
+        h1.innerHTML = "Churvox prepares<br />the admin.<br />You approve the<br />next move.";
+      }
+    }
+
+    function run() {
+      applyClass();
+      removeOldExperimentElements();
+      tidyTopCopy();
+      installHeroMetrics();
+      installHeroNote();
+      installFrontCards();
+      markApprovalDesk();
+    }
+
+    let timer = null;
+    function schedule() {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(run, 120);
+    }
+
+    window.addEventListener("load", schedule);
+    document.addEventListener("click", schedule, true);
+
+    const observer = new MutationObserver(schedule);
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+
+    schedule();
+  } catch {
+    // keep app boot safe
+  }
+})();
+
+

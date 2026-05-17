@@ -13506,3 +13506,580 @@ html.cx-mockup-final .om-done-state {
   }
 }
 
+
+/* PHASE_198_FINAL_EXACT_MOCKUP_DASHBOARD_DESIGN
+   This is the final locked mockup design.
+   It intentionally overrides all earlier visual experiments.
+*/
+
+/* Kill old clutter */
+html.cx-exact-mockup-final #churvox-phase-189-owner-priority,
+html.cx-exact-mockup-final #churvox-phase-192-hero-priority,
+html.cx-exact-mockup-final #churvox-phase-193-ai-admin-radar,
+html.cx-exact-mockup-final #churvox-phase-195-status-strip,
+html.cx-exact-mockup-final #churvox-phase-196-front-strip,
+html.cx-exact-mockup-final #churvox-phase-196-inline-note,
+html.cx-exact-mockup-final #churvox-final-front-cards,
+html.cx-exact-mockup-final #churvox-final-hero-note,
+html.cx-exact-mockup-final #churvox-phase-197-front-cards,
+html.cx-exact-mockup-final #churvox-phase-197-hero-metrics,
+html.cx-exact-mockup-final .om-dashboard-focus-card,
+html.cx-exact-mockup-final .om-dashboard-quiet-tools,
+html.cx-exact-mockup-final .om-dashboard-tools-single,
+html.cx-exact-mockup-final .om-warning,
+html.cx-exact-mockup-final .om-approval-live-feed {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+html.cx-exact-mockup-final .om-shell {
+  display: block !important;
+  width: 100vw !important;
+  min-height: 100vh !important;
+  overflow-x: hidden !important;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(198, 95, 37, 0.10), transparent 28rem),
+    linear-gradient(135deg, #f2e7d8 0%, #e8d7c0 52%, #dac3a6 100%) !important;
+}
+
+/* Top nav */
+html.cx-exact-mockup-final .om-nav {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1000 !important;
+  width: 100vw !important;
+  min-height: 74px !important;
+  display: grid !important;
+  grid-template-columns: 260px minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 18px !important;
+  padding: 10px 32px !important;
+  background: rgba(15, 14, 12, 0.99) !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(220, 122, 50, 0.24) !important;
+  box-shadow: 0 14px 44px rgba(15, 14, 12, 0.18) !important;
+}
+
+html.cx-exact-mockup-final .om-brand {
+  height: 54px !important;
+  min-width: 230px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+html.cx-exact-mockup-final .om-brand i {
+  width: 46px !important;
+  height: 46px !important;
+  min-width: 46px !important;
+  border-radius: 12px !important;
+  background:
+    radial-gradient(circle at 38% 35%, #d7a55a, transparent 38%),
+    linear-gradient(135deg, #c65f25, #733419) !important;
+  box-shadow: 0 0 24px rgba(215, 165, 90, 0.25) !important;
+}
+
+html.cx-exact-mockup-final .om-brand strong {
+  color: var(--exact-paper) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: 27px !important;
+  line-height: 0.95 !important;
+  letter-spacing: -0.045em !important;
+  font-weight: 900 !important;
+}
+
+html.cx-exact-mockup-final .om-brand small {
+  color: var(--exact-copper-2) !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+}
+
+html.cx-exact-mockup-final .om-nav nav {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 18px !important;
+  min-height: 54px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+}
+
+html.cx-exact-mockup-final .om-nav nav button {
+  height: 54px !important;
+  padding: 0 6px !important;
+  border-radius: 0 !important;
+  border: 0 !important;
+  border-bottom: 3px solid transparent !important;
+  background: transparent !important;
+  color: rgba(255, 248, 239, 0.88) !important;
+}
+
+html.cx-exact-mockup-final .om-nav nav button.active {
+  background: transparent !important;
+  border-bottom-color: var(--exact-copper-2) !important;
+}
+
+html.cx-exact-mockup-final .om-nav nav button span {
+  color: rgba(255, 248, 239, 0.96) !important;
+  font-size: 14px !important;
+  font-weight: 850 !important;
+}
+
+html.cx-exact-mockup-final .om-nav nav button small {
+  display: none !important;
+}
+
+html.cx-exact-mockup-final .om-logout {
+  position: static !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  padding: 10px 16px !important;
+  border-radius: 999px !important;
+  background: rgba(255, 248, 239, 0.07) !important;
+  color: var(--exact-paper) !important;
+  border: 1px solid rgba(255, 248, 239, 0.08) !important;
+  font-weight: 850 !important;
+}
+
+/* Main page */
+html.cx-exact-mockup-final .om-main {
+  width: 100vw !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 22px 36px 52px !important;
+}
+
+/* Hero */
+html.cx-exact-mockup-final .om-hero {
+  position: relative !important;
+  width: 100% !important;
+  min-height: 385px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 0.92fr) minmax(540px, 1.08fr) !important;
+  gap: 30px !important;
+  align-items: stretch !important;
+  margin: 0 0 22px !important;
+  padding: 54px 58px !important;
+  border-radius: 30px !important;
+  overflow: hidden !important;
+  background:
+    linear-gradient(116deg, rgba(15,14,12,0.99) 0%, rgba(27,23,19,0.99) 50%, rgba(198,95,37,0.94) 50%, rgba(220,122,50,0.95) 100%) !important;
+  border: 1px solid rgba(15, 14, 12, 0.14) !important;
+  box-shadow: var(--exact-shadow-strong) !important;
+}
+
+html.cx-exact-mockup-final .om-hero::before,
+html.cx-exact-mockup-final .om-hero::after {
+  display: none !important;
+}
+
+html.cx-exact-mockup-final .om-hero > div:first-child {
+  align-self: center !important;
+  max-width: 620px !important;
+}
+
+html.cx-exact-mockup-final .om-hero > div:first-child span {
+  color: var(--exact-copper-2) !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.16em !important;
+}
+
+html.cx-exact-mockup-final .om-hero h1 {
+  max-width: 620px !important;
+  margin: 20px 0 18px !important;
+  color: var(--exact-paper) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: clamp(54px, 5.8vw, 96px) !important;
+  line-height: 0.92 !important;
+  letter-spacing: -0.065em !important;
+  font-weight: 900 !important;
+}
+
+html.cx-exact-mockup-final .om-hero p {
+  max-width: 560px !important;
+  color: rgba(255, 248, 239, 0.82) !important;
+  font-size: 16px !important;
+  line-height: 1.55 !important;
+  font-weight: 650 !important;
+}
+
+html.cx-exact-mockup-final .om-gauges {
+  display: none !important;
+}
+
+/* Hero metrics like image */
+html.cx-exact-mockup-final #churvox-phase-198-hero-metrics {
+  grid-column: 2 !important;
+  align-self: center !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 0 !important;
+  min-height: 214px !important;
+}
+
+html.cx-exact-mockup-final #churvox-phase-198-hero-metrics article {
+  display: grid !important;
+  place-items: center !important;
+  text-align: center !important;
+  align-content: center !important;
+  gap: 14px !important;
+  padding: 20px !important;
+  border-left: 1px solid rgba(255, 248, 239, 0.17) !important;
+  color: var(--exact-paper) !important;
+}
+
+html.cx-exact-mockup-final #churvox-phase-198-hero-metrics article:first-child {
+  border-left: 0 !important;
+}
+
+html.cx-exact-mockup-final #churvox-phase-198-hero-metrics i {
+  width: 64px !important;
+  height: 64px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 18px !important;
+  background: rgba(255, 248, 239, 0.12) !important;
+  border: 1px solid rgba(255, 248, 239, 0.18) !important;
+  color: var(--exact-paper) !important;
+  font-style: normal !important;
+  font-size: 28px !important;
+}
+
+html.cx-exact-mockup-final #churvox-phase-198-hero-metrics span {
+  color: rgba(255, 248, 239, 0.70) !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase !important;
+}
+
+html.cx-exact-mockup-final #churvox-phase-198-hero-metrics strong {
+  color: var(--exact-paper) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: clamp(30px, 2.8vw, 46px) !important;
+  line-height: 0.9 !important;
+  letter-spacing: -0.045em !important;
+  font-weight: 850 !important;
+}
+
+/* Hero small pill */
+html.cx-exact-mockup-final #churvox-phase-198-hero-note {
+  position: absolute !important;
+  left: 58px !important;
+  bottom: 34px !important;
+  width: min(430px, 40vw) !important;
+  display: grid !important;
+  grid-template-columns: auto auto 1fr !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 12px 14px !important;
+  border-radius: 12px !important;
+  background: rgba(255, 248, 239, 0.08) !important;
+  border: 1px solid rgba(255, 248, 239, 0.08) !important;
+  color: var(--exact-paper) !important;
+}
+
+html.cx-exact-mockup-final #churvox-phase-198-hero-note b {
+  color: var(--exact-gold) !important;
+  font-size: 14px !important;
+}
+
+html.cx-exact-mockup-final #churvox-phase-198-hero-note strong {
+  color: var(--exact-paper) !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+  white-space: nowrap !important;
+}
+
+html.cx-exact-mockup-final #churvox-phase-198-hero-note span {
+  color: rgba(255, 248, 239, 0.72) !important;
+  font-size: 11px !important;
+  line-height: 1.35 !important;
+  letter-spacing: normal !important;
+}
+
+/* 3 front cards */
+html.cx-exact-mockup-final #churvox-phase-198-front-cards {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 18px !important;
+  margin: 0 0 22px !important;
+}
+
+html.cx-exact-mockup-final #churvox-phase-198-front-cards article {
+  min-height: 160px !important;
+  display: grid !important;
+  grid-template-columns: 84px 1fr !important;
+  gap: 20px !important;
+  align-items: center !important;
+  padding: 26px !important;
+  border-radius: 24px !important;
+  background: rgba(255, 248, 239, 0.92) !important;
+  border: 1px solid rgba(15, 14, 12, 0.10) !important;
+  box-shadow: var(--exact-shadow) !important;
+  overflow: hidden !important;
+}
+
+html.cx-exact-mockup-final #churvox-phase-198-front-cards i {
+  width: 70px !important;
+  height: 70px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 999px !important;
+  background: var(--exact-ink) !important;
+  color: var(--exact-paper) !important;
+  font-style: normal !important;
+  font-size: 28px !important;
+}
+
+html.cx-exact-mockup-final #churvox-phase-198-front-cards article:nth-child(2) i {
+  background: var(--exact-moss) !important;
+}
+
+html.cx-exact-mockup-final #churvox-phase-198-front-cards article:nth-child(3) i {
+  background: #362f28 !important;
+}
+
+html.cx-exact-mockup-final #churvox-phase-198-front-cards span {
+  color: var(--exact-copper) !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.13em !important;
+  text-transform: uppercase !important;
+}
+
+html.cx-exact-mockup-final #churvox-phase-198-front-cards strong {
+  display: block !important;
+  margin: 8px 0 !important;
+  color: var(--exact-ink) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: 42px !important;
+  line-height: 0.9 !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.04em !important;
+}
+
+html.cx-exact-mockup-final #churvox-phase-198-front-cards p {
+  margin: 0 !important;
+  color: var(--exact-muted) !important;
+  font-size: 15px !important;
+  line-height: 1.42 !important;
+}
+
+/* Approval Desk */
+html.cx-exact-mockup-final .om-dashboard-focus,
+html.cx-exact-mockup-final .cx-exact-desk-wrap {
+  display: block !important;
+  width: 100% !important;
+}
+
+html.cx-exact-mockup-final .om-approval-desk-main,
+html.cx-exact-mockup-final .cx-exact-approval-desk {
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 42px !important;
+  border-radius: 26px !important;
+  background: rgba(255, 248, 239, 0.88) !important;
+  border: 1px solid rgba(15, 14, 12, 0.10) !important;
+  box-shadow: var(--exact-shadow) !important;
+}
+
+html.cx-exact-mockup-final .om-approval-desk-main > header {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto auto !important;
+  align-items: start !important;
+  gap: 20px !important;
+  margin-bottom: 24px !important;
+}
+
+html.cx-exact-mockup-final .om-approval-desk-main > header span {
+  color: var(--exact-copper) !important;
+  font-size: 12px !important;
+  letter-spacing: 0.14em !important;
+  font-weight: 950 !important;
+}
+
+html.cx-exact-mockup-final .om-approval-desk-main > header h2 {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  margin: 10px 0 8px !important;
+  color: var(--exact-ink) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: clamp(42px, 4vw, 72px) !important;
+  line-height: 0.94 !important;
+  letter-spacing: -0.065em !important;
+  font-weight: 900 !important;
+}
+
+html.cx-exact-mockup-final .om-approval-desk-main > header p {
+  max-width: 720px !important;
+  color: var(--exact-muted) !important;
+  font-size: 15px !important;
+  line-height: 1.45 !important;
+}
+
+html.cx-exact-mockup-final .om-approval-desk-main > header b {
+  min-width: 66px !important;
+  min-height: 46px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 999px !important;
+  background: rgba(198, 95, 37, 0.14) !important;
+  color: var(--exact-copper) !important;
+  font-size: 26px !important;
+}
+
+html.cx-exact-mockup-final .om-approval-list {
+  display: grid !important;
+  gap: 0 !important;
+  border: 1px solid rgba(15, 14, 12, 0.10) !important;
+  border-radius: 20px !important;
+  overflow: hidden !important;
+  background: rgba(255, 248, 239, 0.75) !important;
+}
+
+html.cx-exact-mockup-final .om-approval-ticket {
+  min-height: 108px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(185px, 0.30fr) auto auto !important;
+  align-items: center !important;
+  gap: 18px !important;
+  padding: 20px 26px !important;
+  border-radius: 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(15, 14, 12, 0.09) !important;
+  background: rgba(255, 248, 239, 0.72) !important;
+  box-shadow: none !important;
+}
+
+html.cx-exact-mockup-final .om-approval-ticket:last-child {
+  border-bottom: 0 !important;
+}
+
+html.cx-exact-mockup-final .om-approval-ticket::before {
+  background: var(--exact-copper) !important;
+  box-shadow: none !important;
+}
+
+html.cx-exact-mockup-final .om-approval-ticket:nth-child(2n)::before {
+  background: var(--exact-moss) !important;
+}
+
+html.cx-exact-mockup-final .om-approval-ticket span {
+  color: var(--exact-copper) !important;
+  font-size: 10px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.13em !important;
+}
+
+html.cx-exact-mockup-final .om-approval-ticket strong {
+  color: var(--exact-ink) !important;
+  font-size: clamp(20px, 1.8vw, 30px) !important;
+  line-height: 1 !important;
+  letter-spacing: -0.04em !important;
+}
+
+html.cx-exact-mockup-final .om-approval-ticket small {
+  color: var(--exact-muted) !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+}
+
+html.cx-exact-mockup-final .om-approval-ticket em {
+  padding: 10px 16px !important;
+  border-radius: 999px !important;
+  background: var(--exact-ink) !important;
+  color: var(--exact-paper) !important;
+  font-size: 11px !important;
+  white-space: nowrap !important;
+}
+
+html.cx-exact-mockup-final .om-done-state {
+  background: rgba(255, 248, 239, 0.80) !important;
+  border: 0 !important;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  html.cx-exact-mockup-final .om-hero {
+    grid-template-columns: 1fr !important;
+  }
+
+  html.cx-exact-mockup-final #churvox-phase-198-hero-metrics {
+    grid-column: 1 !important;
+  }
+
+  html.cx-exact-mockup-final #churvox-phase-198-front-cards {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 820px) {
+  html.cx-exact-mockup-final .om-main {
+    padding: 12px !important;
+  }
+
+  html.cx-exact-mockup-final .om-nav {
+    grid-template-columns: auto auto !important;
+    padding: 9px 10px !important;
+  }
+
+  html.cx-exact-mockup-final .om-nav nav {
+    grid-column: 1 / -1 !important;
+    order: 3 !important;
+  }
+
+  html.cx-exact-mockup-final .om-hero {
+    min-height: auto !important;
+    padding: 28px !important;
+  }
+
+  html.cx-exact-mockup-final .om-hero h1 {
+    font-size: 44px !important;
+  }
+
+  html.cx-exact-mockup-final #churvox-phase-198-hero-metrics {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  html.cx-exact-mockup-final #churvox-phase-198-hero-note {
+    position: relative !important;
+    left: auto !important;
+    bottom: auto !important;
+    width: 100% !important;
+    margin-top: 12px !important;
+  }
+
+  html.cx-exact-mockup-final #churvox-phase-198-front-cards article {
+    grid-template-columns: 58px 1fr !important;
+  }
+
+  html.cx-exact-mockup-final #churvox-phase-198-front-cards i {
+    width: 52px !important;
+    height: 52px !important;
+  }
+
+  html.cx-exact-mockup-final .om-approval-desk-main {
+    padding: 24px !important;
+  }
+
+  html.cx-exact-mockup-final .om-approval-ticket {
+    grid-template-columns: 1fr !important;
+  }
+
+  html.cx-exact-mockup-final .om-approval-ticket em {
+    justify-self: start !important;
+  }
+}
+

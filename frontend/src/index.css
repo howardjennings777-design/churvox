@@ -828,3 +828,31 @@ html.cx-mockup-final #root {
   color: var(--mk-ink) !important;
 }
 
+
+/* PHASE_198_FINAL_EXACT_MOCKUP_DASHBOARD_DESIGN */
+
+:root {
+  --exact-ink: #0f0e0c;
+  --exact-ink-2: #1b1713;
+  --exact-copper: #c65f25;
+  --exact-copper-2: #dc7a32;
+  --exact-gold: #d7a55a;
+  --exact-paper: #fff8ef;
+  --exact-bone: #f5ecdf;
+  --exact-sand: #e6d3ba;
+  --exact-muted: #6c6256;
+  --exact-moss: #66794e;
+  --exact-line: rgba(15, 14, 12, 0.12);
+  --exact-shadow: 0 20px 64px rgba(15, 14, 12, 0.13);
+  --exact-shadow-strong: 0 34px 110px rgba(15, 14, 12, 0.22);
+}
+
+html.cx-exact-mockup-final,
+html.cx-exact-mockup-final body,
+html.cx-exact-mockup-final #root {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(198, 95, 37, 0.10), transparent 28rem),
+    linear-gradient(135deg, #f2e7d8 0%, #e8d7c0 52%, #dac3a6 100%) !important;
+  color: var(--exact-ink) !important;
+}
+
