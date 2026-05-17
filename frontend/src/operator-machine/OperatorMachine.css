@@ -12370,3 +12370,141 @@ select {
   }
 }
 
+
+/* PHASE_193_AI_ADMIN_RADAR_BELOW_APPROVAL_DESK
+   Adds useful content below Approval Desk without changing the top/header.
+*/
+
+#churvox-phase-193-ai-admin-radar {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 18px 0 0 !important;
+  padding: clamp(22px, 3vw, 38px) !important;
+  border-radius: 30px !important;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(216, 164, 65, 0.14), transparent 22rem),
+    radial-gradient(circle at 100% 0%, rgba(159, 232, 112, 0.1), transparent 18rem),
+    linear-gradient(135deg, rgba(18, 17, 13, 0.98), rgba(29, 26, 20, 0.98)) !important;
+  border: 1px solid rgba(216, 164, 65, 0.24) !important;
+  box-shadow: 0 28px 84px rgba(18, 17, 13, 0.22) !important;
+  color: #f7f0e3 !important;
+}
+
+#churvox-phase-193-ai-admin-radar header {
+  display: grid !important;
+  gap: 10px !important;
+  max-width: 960px !important;
+  margin-bottom: 22px !important;
+}
+
+#churvox-phase-193-ai-admin-radar header span {
+  width: fit-content !important;
+  padding: 8px 11px !important;
+  border-radius: 999px !important;
+  background: rgba(216, 164, 65, 0.15) !important;
+  color: #d8a441 !important;
+  font-size: 10px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.14em !important;
+}
+
+#churvox-phase-193-ai-admin-radar header strong {
+  color: #f7f0e3 !important;
+  font-size: clamp(32px, 4vw, 66px) !important;
+  line-height: 0.9 !important;
+  letter-spacing: -0.07em !important;
+  font-weight: 950 !important;
+}
+
+#churvox-phase-193-ai-admin-radar header p {
+  margin: 0 !important;
+  max-width: 760px !important;
+  color: rgba(247, 240, 227, 0.72) !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  font-weight: 760 !important;
+}
+
+#churvox-phase-193-ai-admin-radar .cx-radar-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+}
+
+#churvox-phase-193-ai-admin-radar .cx-radar-grid article {
+  min-height: 168px !important;
+  display: grid !important;
+  align-content: start !important;
+  gap: 10px !important;
+  padding: 20px !important;
+  border-radius: 24px !important;
+  background: rgba(247, 240, 227, 0.08) !important;
+  border: 1px solid rgba(247, 240, 227, 0.1) !important;
+}
+
+#churvox-phase-193-ai-admin-radar .cx-radar-grid small {
+  color: #d8a441 !important;
+  font-size: 10px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.13em !important;
+  text-transform: uppercase !important;
+}
+
+#churvox-phase-193-ai-admin-radar .cx-radar-grid strong {
+  color: #f7f0e3 !important;
+  font-size: clamp(20px, 2vw, 30px) !important;
+  line-height: 0.96 !important;
+  letter-spacing: -0.05em !important;
+  font-weight: 950 !important;
+}
+
+#churvox-phase-193-ai-admin-radar .cx-radar-grid p {
+  margin: 0 !important;
+  color: rgba(247, 240, 227, 0.66) !important;
+  font-size: 13px !important;
+  line-height: 1.44 !important;
+  font-weight: 740 !important;
+}
+
+#churvox-phase-193-ai-admin-radar footer {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+  margin-top: 16px !important;
+  padding: 16px 18px !important;
+  border-radius: 22px !important;
+  background: rgba(216, 164, 65, 0.1) !important;
+  border: 1px solid rgba(216, 164, 65, 0.16) !important;
+}
+
+#churvox-phase-193-ai-admin-radar footer b {
+  color: #d8a441 !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+#churvox-phase-193-ai-admin-radar footer span {
+  color: rgba(247, 240, 227, 0.76) !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+}
+
+@media (max-width: 1100px) {
+  #churvox-phase-193-ai-admin-radar .cx-radar-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 680px) {
+  #churvox-phase-193-ai-admin-radar .cx-radar-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  #churvox-phase-193-ai-admin-radar footer {
+    display: grid !important;
+  }
+}
+
