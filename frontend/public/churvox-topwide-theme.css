@@ -868,3 +868,137 @@ button {
     display: grid !important;
   }
 }
+
+
+/* PHASE_277_SHORTEN_HERO_HEADER_MORE
+   Make the big dashboard/work/client/etc header much shorter.
+   Keeps the public/login colour theme, but reduces the app hero height.
+*/
+
+html body .cs-hero {
+  padding: 14px 22px 16px !important;
+  gap: 10px !important;
+  border-radius: 24px !important;
+  min-height: 0 !important;
+  height: auto !important;
+}
+
+html body .cs-hero > section:first-child {
+  max-width: 900px !important;
+}
+
+html body .cs-hero span:first-child {
+  min-height: 22px !important;
+  padding: 0 9px !important;
+  font-size: 9.5px !important;
+  letter-spacing: 0.115em !important;
+}
+
+html body .cs-hero h1 {
+  max-width: 920px !important;
+  margin: 6px 0 5px !important;
+  font-size: clamp(30px, 3.45vw, 50px) !important;
+  line-height: 0.98 !important;
+  letter-spacing: -0.058em !important;
+}
+
+html body .cs-hero p {
+  max-width: 760px !important;
+  font-size: 12px !important;
+  line-height: 1.25 !important;
+}
+
+/* Short compact metric cards inside the header */
+html body .cs-stats,
+html body .cs-plan-price-stack {
+  gap: 9px !important;
+}
+
+html body .cs-stat,
+html body .cs-plan-price-stack button {
+  min-height: 54px !important;
+  padding: 9px 12px !important;
+  border-radius: 16px !important;
+  grid-template-columns: 28px minmax(0, 1fr) !important;
+  column-gap: 9px !important;
+  row-gap: 1px !important;
+}
+
+html body .cs-stat .cs-icon,
+html body .cs-plan-price-stack button .cs-icon {
+  width: 21px !important;
+  height: 21px !important;
+  min-width: 21px !important;
+  min-height: 21px !important;
+}
+
+html body .cs-stat span,
+html body .cs-plan-price-stack button span {
+  font-size: 9.5px !important;
+  line-height: 1.05 !important;
+}
+
+html body .cs-stat strong,
+html body .cs-plan-price-stack button strong {
+  font-size: clamp(18px, 1.55vw, 25px) !important;
+  line-height: 1 !important;
+}
+
+/* Pull the first row under the header closer */
+html body .cs-command-cards,
+html body .cs-ai-strip {
+  gap: 10px !important;
+}
+
+html body .cs-command-cards button,
+html body .cs-ai-card {
+  min-height: 92px !important;
+  padding: 16px 18px !important;
+  border-radius: 20px !important;
+}
+
+/* Laptop view */
+@media (max-width: 1200px) {
+  html body .cs-hero {
+    padding: 13px 18px 15px !important;
+  }
+
+  html body .cs-hero h1 {
+    font-size: clamp(29px, 4.2vw, 44px) !important;
+  }
+
+  html body .cs-stat,
+  html body .cs-plan-price-stack button {
+    min-height: 52px !important;
+  }
+}
+
+/* Mobile */
+@media (max-width: 760px) {
+  html body .cs-hero {
+    padding: 12px !important;
+    gap: 8px !important;
+    border-radius: 18px !important;
+  }
+
+  html body .cs-hero h1 {
+    font-size: clamp(27px, 8.2vw, 38px) !important;
+    line-height: 1.01 !important;
+  }
+
+  html body .cs-hero p {
+    font-size: 11.5px !important;
+  }
+
+  html body .cs-stat,
+  html body .cs-plan-price-stack button {
+    min-height: 56px !important;
+    padding: 9px 10px !important;
+  }
+
+  html body .cs-stat strong,
+  html body .cs-plan-price-stack button strong {
+    font-size: 22px !important;
+  }
+}
+
