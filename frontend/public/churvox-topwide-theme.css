@@ -699,3 +699,279 @@ html body .om-sales-auth input {
     overflow-x: auto !important;
   }
 }
+
+
+/* PHASE_247_FIX_TOP_HEIGHT_AND_TEXT_CONTRAST
+   Keep the new wide direction, but fix:
+   - top hero was too tall
+   - black text was unreadable on dark/gradient sections
+   - pages need a cleaner, wider command layout
+*/
+
+/* Less vertical height on every app page top banner */
+html body .cs-hero {
+  min-height: 210px !important;
+  grid-template-columns: minmax(0, 1fr) minmax(420px, 0.58fr) !important;
+  gap: 22px !important;
+  padding: clamp(22px, 3vw, 34px) !important;
+  align-items: center !important;
+}
+
+/* Make hero title readable and not gigantic */
+html body .cs-hero h1 {
+  max-width: 780px !important;
+  margin: 10px 0 10px !important;
+  color: var(--tw-cream) !important;
+  font-size: clamp(42px, 5vw, 72px) !important;
+  line-height: 0.92 !important;
+  letter-spacing: -0.07em !important;
+}
+
+html body .cs-hero h1 mark {
+  color: var(--tw-orange-3) !important;
+  background: transparent !important;
+}
+
+html body .cs-hero p {
+  max-width: 720px !important;
+  color: rgba(255, 248, 239, 0.80) !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+}
+
+/* Keep label readable on dark top */
+html body .cs-hero span:first-child {
+  min-height: 28px !important;
+  color: var(--tw-orange-3) !important;
+  background: rgba(184, 87, 32, 0.16) !important;
+  border-color: rgba(228, 134, 67, 0.34) !important;
+}
+
+/* Stats are shorter and don't stretch the hero */
+html body .cs-stats,
+html body .cs-plan-price-stack {
+  min-width: 0 !important;
+  width: 100% !important;
+  grid-template-columns: repeat(4, minmax(88px, 1fr)) !important;
+  gap: 10px !important;
+  align-self: center !important;
+}
+
+html body .cs-stat,
+html body .cs-plan-price-stack button {
+  min-height: 92px !important;
+  border-radius: 20px !important;
+  padding: 12px !important;
+}
+
+html body .cs-stat strong,
+html body .cs-plan-price-stack button strong {
+  color: var(--tw-cream) !important;
+  font-size: clamp(20px, 2.5vw, 30px) !important;
+  line-height: 1 !important;
+}
+
+html body .cs-stat span,
+html body .cs-plan-price-stack button span {
+  color: rgba(255, 248, 239, 0.84) !important;
+  font-size: 12px !important;
+}
+
+/* Icons in hero stats stay orange */
+html body .cs-stat .cs-icon,
+html body .cs-plan-price-stack .cs-icon {
+  color: var(--tw-orange-3) !important;
+}
+
+/* Fix black text on dark/nav areas */
+html body .om-nav,
+html body .om-nav *,
+html body .om-main > nav,
+html body .om-main > nav *,
+html body .cs-page > nav,
+html body .cs-page > nav *,
+html body .cs-mobile-nav,
+html body .cs-mobile-nav *,
+html body .cs-tabs,
+html body .cs-tabs *,
+html body .cs-subnav,
+html body .cs-subnav *,
+html body .cs-filter-bar,
+html body .cs-filter-bar *,
+html body .cs-filters,
+html body .cs-filters * {
+  color: rgba(255, 248, 239, 0.88) !important;
+}
+
+html body .om-main > nav button.active,
+html body .om-main > nav button.active *,
+html body .cs-page > nav button.active,
+html body .cs-page > nav button.active *,
+html body .cs-mobile-nav button.active,
+html body .cs-mobile-nav button.active *,
+html body .cs-tabs button.active,
+html body .cs-tabs button.active *,
+html body .cs-subnav button.active,
+html body .cs-subnav button.active *,
+html body .cs-filter-bar button.active,
+html body .cs-filter-bar button.active *,
+html body .cs-filters button.active,
+html body .cs-filters button.active * {
+  color: var(--tw-black) !important;
+}
+
+/* Dark panels: make text cream */
+html body .cs-hero,
+html body .cs-hero *,
+html body .om-sales-command-card,
+html body .om-sales-command-card *,
+html body .om-sales-control,
+html body .om-sales-control *,
+html body .om-sales-access-copy,
+html body .om-sales-access-copy * {
+  color: var(--tw-cream) !important;
+}
+
+/* But labels/highlights stay orange */
+html body .cs-hero h1 mark,
+html body .cs-hero span:first-child,
+html body .om-sales-command-card header span,
+html body .om-sales-flow-card small,
+html body .om-sales-control span {
+  color: var(--tw-orange-3) !important;
+}
+
+/* Cream sections: force black readable text */
+html body .cs-command-cards article,
+html body .cs-command-cards article *,
+html body .cs-ai-card,
+html body .cs-ai-card *,
+html body .cs-desk,
+html body .cs-desk *,
+html body .cs-workspace,
+html body .cs-workspace *,
+html body .cs-flow,
+html body .cs-flow *,
+html body .cs-plan-cards,
+html body .cs-plan-cards *,
+html body .cs-plan-addons,
+html body .cs-plan-addons *,
+html body .cs-sms-packs,
+html body .cs-sms-packs *,
+html body .cs-plan-compare,
+html body .cs-plan-compare *,
+html body .cs-table > header,
+html body .cs-table > header *,
+html body .cs-approval-row,
+html body .cs-approval-row *,
+html body .cs-row,
+html body .cs-row *,
+html body .cs-empty,
+html body .cs-empty *,
+html body .cs-modal,
+html body .cs-modal * {
+  color: var(--tw-black) !important;
+}
+
+/* Muted body text on cream cards */
+html body .cs-command-cards p,
+html body .cs-ai-card p,
+html body .cs-desk header p,
+html body .cs-workspace header p,
+html body .cs-flow article p,
+html body .cs-approval-row p,
+html body .cs-row p,
+html body .cs-row div,
+html body .cs-empty p,
+html body .cs-page small {
+  color: var(--tw-muted) !important;
+}
+
+/* Copper labels inside cream sections */
+html body .cs-desk > header span,
+html body .cs-workspace > header span,
+html body .cs-table > header span,
+html body .cs-approval-row > span,
+html body .cs-risk,
+html body .cs-pill,
+html body .cs-tag,
+html body .cs-badge {
+  color: var(--tw-orange) !important;
+}
+
+/* Buttons must keep cream text */
+html body .cs-approval-row button,
+html body .cs-approval-row button *,
+html body .cs-row button,
+html body .cs-row button *,
+html body .cs-view,
+html body .cs-view *,
+html body .cs-modal button:not(.ghost),
+html body .cs-modal button:not(.ghost) *,
+html body .cs-page button:not(.ghost):not(.active),
+html body .cs-page button:not(.ghost):not(.active) * {
+  color: var(--tw-cream) !important;
+}
+
+/* Ghost buttons black text */
+html body .cs-view.ghost,
+html body .cs-view.ghost *,
+html body .cs-modal button.ghost,
+html body .cs-modal button.ghost *,
+html body .cs-page button.ghost,
+html body .cs-page button.ghost * {
+  color: var(--tw-black) !important;
+}
+
+/* Make content start higher and feel less huge */
+html body .om-main {
+  padding-top: 18px !important;
+}
+
+html body .cs-page {
+  gap: 16px !important;
+}
+
+/* Summary cards less tall */
+html body .cs-command-cards article,
+html body .cs-ai-card {
+  min-height: 92px !important;
+  border-radius: 22px !important;
+  padding: 18px !important;
+}
+
+/* Main boards slightly less huge */
+html body .cs-desk,
+html body .cs-workspace,
+html body .cs-flow,
+html body .cs-plan-cards,
+html body .cs-plan-addons,
+html body .cs-sms-packs,
+html body .cs-plan-compare {
+  border-radius: 26px !important;
+}
+
+/* Mobile/tablet: stats wrap nicely, hero stays sane */
+@media (max-width: 1100px) {
+  html body .cs-hero {
+    grid-template-columns: 1fr !important;
+    min-height: unset !important;
+  }
+
+  html body .cs-stats,
+  html body .cs-plan-price-stack {
+    grid-template-columns: repeat(4, minmax(80px, 1fr)) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html body .cs-stats,
+  html body .cs-plan-price-stack {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html body .cs-hero h1 {
+    font-size: clamp(36px, 12vw, 56px) !important;
+  }
+}
+
