@@ -1996,3 +1996,151 @@ html body .cs-page .button * {
   }
 }
 
+
+/* PHASE_262_FIX_HERO_TEXT_STAT_OVERLAP
+   The hero title was visually bleeding into the stat pills.
+   Force a clean order:
+   1) label/title/description
+   2) compact stat row underneath
+   No overlap, no giant stat pills.
+*/
+
+html body .cs-hero {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  gap: 14px !important;
+  padding: 20px 24px 22px !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+html body .cs-hero > section:first-child {
+  display: block !important;
+  width: 100% !important;
+  max-width: 980px !important;
+  min-width: 0 !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+html body .cs-hero span:first-child {
+  margin-bottom: 8px !important;
+}
+
+html body .cs-hero h1 {
+  display: block !important;
+  max-width: 980px !important;
+  margin: 0 0 12px !important;
+  padding: 0 !important;
+  font-size: clamp(34px, 4.15vw, 58px) !important;
+  line-height: 1.04 !important;
+  letter-spacing: -0.055em !important;
+  overflow: visible !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+html body .cs-hero h1 mark {
+  display: inline !important;
+  color: var(--tw-orange-3) !important;
+  background: transparent !important;
+}
+
+html body .cs-hero p {
+  display: block !important;
+  max-width: 760px !important;
+  margin: 0 !important;
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+  color: rgba(255, 248, 239, 0.82) !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Stats sit below the title, never on top of it */
+html body .cs-stats,
+html body .cs-plan-price-stack {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(130px, 190px)) !important;
+  justify-content: start !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+  width: 100% !important;
+  max-width: 820px !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  position: relative !important;
+  z-index: 2 !important;
+  clear: both !important;
+}
+
+html body .cs-stat,
+html body .cs-plan-price-stack button {
+  width: 100% !important;
+  max-width: 190px !important;
+  min-width: 0 !important;
+  min-height: 62px !important;
+  height: 62px !important;
+  max-height: 62px !important;
+  padding: 7px 10px !important;
+  border-radius: 999px !important;
+  gap: 3px !important;
+  overflow: hidden !important;
+}
+
+html body .cs-stat strong,
+html body .cs-plan-price-stack button strong {
+  font-size: clamp(17px, 1.65vw, 23px) !important;
+  line-height: 1 !important;
+}
+
+html body .cs-stat span,
+html body .cs-plan-price-stack button span {
+  font-size: 10.5px !important;
+  line-height: 1.05 !important;
+  text-align: center !important;
+}
+
+/* Summary cards below hero must not creep upward */
+html body .cs-command-cards,
+html body .cs-ai-grid {
+  margin-top: 0 !important;
+  position: relative !important;
+  z-index: 0 !important;
+}
+
+/* Mobile: clean two-column stats, still no overlap */
+@media (max-width: 760px) {
+  html body .cs-hero {
+    padding: 16px !important;
+    gap: 12px !important;
+  }
+
+  html body .cs-hero h1 {
+    font-size: clamp(31px, 9vw, 44px) !important;
+    line-height: 1.04 !important;
+    margin-bottom: 10px !important;
+  }
+
+  html body .cs-stats,
+  html body .cs-plan-price-stack {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    max-width: 100% !important;
+    justify-content: stretch !important;
+  }
+
+  html body .cs-stat,
+  html body .cs-plan-price-stack button {
+    max-width: none !important;
+    height: 60px !important;
+    min-height: 60px !important;
+    max-height: 60px !important;
+  }
+}
+
