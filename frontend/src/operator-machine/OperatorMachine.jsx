@@ -2,6 +2,7 @@
 // PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+import CommandDeckDashboard from "./CommandDeckDashboard";
 // PHASE_134_REAL_AI_PREPARED_WORK
 // PHASE_130_REAL_INVOICE_LAYOUT
 // PHASE_128_INVOICE_OWING_SUMMARY
@@ -6256,7 +6257,7 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
   ];
 
   const nav = [
-    ["Approval Desk", "dashboard"],
+    ["Dashboard", "dashboard"],
     ["Work", "jobs"],
     ["Clients", "clients"],
     ["Crew", "team"],
@@ -6293,24 +6294,15 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
 
       <section className="om-main">
         {page === "dashboard" ? (
-        <header className="om-hero">
-          <div>
-            <span>Churvox Approval Desk</span>
-            <h1>Churvox prepared the admin. Approve the next move.</h1>
-            <p>
-              Jobs, proof, quotes, invoices, reminders and worker updates feed the machine in the background.
-              The owner sees only the slips that need approval, edits, or a fix.
-            </p>
-          </div>
-
-          <section className="om-gauges" aria-label="Machine counts">
-            <article><span>Plan</span><strong>{planLabel(currentPlan)}</strong></article>
-            <article><span>Input</span><strong>{machine.input.length}</strong></article>
-            <article><span>Processing</span><strong>{machine.processing.length}</strong></article>
-            <article><span>Approval</span><strong>{machine.approval.length}</strong></article>
-          </section>
-        </header>
-
+          <CommandDeckDashboard
+            machine={machine}
+            planName={planLabel(currentPlan)}
+            visibleApprovals={visibleApprovals}
+            hiddenApprovalCount={hiddenApprovalCount}
+            showAllApprovals={showAllApprovals}
+            setShowAllApprovals={setShowAllApprovals}
+            onOpenSlip={openSlip}
+          />
         ) : null}
 
         {data?.error ? <section className="om-warning"><b>Machine warning</b><span>{data.error}</span></section> : null}
