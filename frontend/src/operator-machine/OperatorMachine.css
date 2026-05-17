@@ -12020,3 +12020,215 @@ select {
   }
 }
 
+
+/* PHASE_192_OWNER_PRIORITY_INSIDE_HEADER
+   User requested:
+   - Owner Priority in the same card as the header
+   - no separate right-side priority card
+   - Approval Desk widened underneath
+*/
+
+.om-main {
+  padding: 14px clamp(16px, 3vw, 42px) 42px !important;
+}
+
+.om-hero {
+  width: 100% !important;
+  max-width: none !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.05fr) minmax(300px, 0.46fr) minmax(280px, 0.38fr) !important;
+  align-items: stretch !important;
+  gap: 18px !important;
+  margin: 0 0 18px !important;
+  padding: clamp(22px, 2.8vw, 36px) !important;
+  border-radius: 30px !important;
+}
+
+.om-hero > div:first-child {
+  align-self: center !important;
+}
+
+.om-hero h1 {
+  max-width: 760px !important;
+  font-size: clamp(36px, 4.2vw, 68px) !important;
+  line-height: 0.9 !important;
+}
+
+.om-hero p {
+  max-width: 700px !important;
+  font-size: 12px !important;
+  line-height: 1.42 !important;
+}
+
+.om-gauges {
+  grid-template-columns: 1fr 1fr !important;
+  align-self: stretch !important;
+}
+
+.om-gauges article {
+  min-height: 92px !important;
+  border-radius: 18px !important;
+}
+
+#churvox-phase-192-hero-priority {
+  display: grid !important;
+  align-content: center !important;
+  gap: 10px !important;
+  padding: 18px !important;
+  border-radius: 24px !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(159, 232, 112, 0.13), transparent 10rem),
+    linear-gradient(145deg, rgba(18, 17, 13, 0.92), rgba(29, 26, 20, 0.92)) !important;
+  border: 1px solid rgba(216, 164, 65, 0.28) !important;
+  color: #f7f0e3 !important;
+  box-shadow: inset 0 0 0 1px rgba(247, 240, 227, 0.04) !important;
+}
+
+#churvox-phase-192-hero-priority span {
+  width: fit-content !important;
+  padding: 7px 10px !important;
+  border-radius: 999px !important;
+  background: rgba(216, 164, 65, 0.15) !important;
+  color: #d8a441 !important;
+  font-size: 9px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.13em !important;
+}
+
+#churvox-phase-192-hero-priority strong {
+  color: #f7f0e3 !important;
+  font-size: clamp(20px, 2.2vw, 34px) !important;
+  line-height: 0.95 !important;
+  letter-spacing: -0.055em !important;
+  font-weight: 950 !important;
+}
+
+#churvox-phase-192-hero-priority p {
+  margin: 0 !important;
+  color: rgba(247, 240, 227, 0.72) !important;
+  font-size: 12px !important;
+  line-height: 1.42 !important;
+  font-weight: 760 !important;
+}
+
+#churvox-phase-192-hero-priority section {
+  display: flex !important;
+  align-items: end !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  margin-top: 4px !important;
+  padding: 12px 14px !important;
+  border-radius: 18px !important;
+  background: rgba(247, 240, 227, 0.08) !important;
+  border: 1px solid rgba(247, 240, 227, 0.1) !important;
+}
+
+#churvox-phase-192-hero-priority small {
+  color: rgba(247, 240, 227, 0.62) !important;
+  font-size: 10px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.11em !important;
+  text-transform: uppercase !important;
+}
+
+#churvox-phase-192-hero-priority b {
+  color: #d8a441 !important;
+  font-size: 42px !important;
+  line-height: 0.8 !important;
+  letter-spacing: -0.07em !important;
+}
+
+/* Hide old separate priority card/panel */
+#churvox-phase-189-owner-priority {
+  display: none !important;
+}
+
+/* Wide Approval Desk underneath header */
+.om-dashboard-focus,
+.om-dashboard-focus.cx-phase-192-wide-desk,
+.cx-phase-189-approval-layout,
+.cx-phase-191-full-width-approval-layout {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  display: block !important;
+}
+
+.om-dashboard-focus-card {
+  display: none !important;
+}
+
+.om-approval-desk-main {
+  width: 100% !important;
+  max-width: none !important;
+  padding: clamp(22px, 3vw, 40px) !important;
+  border-radius: 30px !important;
+}
+
+.om-approval-desk-main > header h2 {
+  max-width: 980px !important;
+  font-size: clamp(36px, 4.2vw, 70px) !important;
+}
+
+.om-approval-list {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+}
+
+.om-approval-ticket {
+  min-height: 150px !important;
+  padding: 24px 26px !important;
+}
+
+.om-approval-ticket:first-child {
+  grid-column: 1 / -1 !important;
+  min-height: 190px !important;
+}
+
+.om-approval-ticket:first-child strong {
+  font-size: clamp(30px, 3.4vw, 56px) !important;
+  line-height: 0.92 !important;
+}
+
+.om-done-state {
+  grid-column: 1 / -1 !important;
+}
+
+/* If old live feed exists, keep it underneath not beside */
+.om-approval-live-feed {
+  position: relative !important;
+  top: auto !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin-top: 18px !important;
+}
+
+@media (max-width: 1180px) {
+  .om-hero {
+    grid-template-columns: 1fr !important;
+  }
+
+  .om-gauges {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 780px) {
+  .om-main {
+    padding: 12px !important;
+  }
+
+  .om-gauges {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .om-approval-list {
+    grid-template-columns: 1fr !important;
+  }
+
+  .om-approval-ticket:first-child {
+    grid-column: auto !important;
+  }
+}
+

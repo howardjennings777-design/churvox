@@ -1,3 +1,4 @@
+window.__CHURVOX_HERO_OWNER_PRIORITY__ = "PHASE_192_OWNER_PRIORITY_INSIDE_HEADER_20260517003652";
 window.__CHURVOX_PHASE_191__ = "PHASE_191_PRIORITY_UNDER_HEADER_WIDE_DESK_20260517003318";
 window.__CHURVOX_APPROVAL_POLISH__ = "PHASE_190_APPROVAL_DESK_WARNING_AND_PRIORITY_POLISH_20260517002650";
 window.__CHURVOX_PRIORITY_PANEL__ = "PHASE_189_FORCE_OWNER_PRIORITY_BESIDE_APPROVAL_DESK_20260517002155";
@@ -372,6 +373,95 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
+
+
+// PHASE_192_OWNER_PRIORITY_INSIDE_HEADER
+// Owner Priority belongs inside the main header card, not as a separate card.
+(function churvoxOwnerPriorityInsideHeader() {
+  try {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+
+    function clean(value) {
+      return String(value || "").replace(/\s+/g, " ").trim();
+    }
+
+    function countApprovals() {
+      const slips = Array.from(document.querySelectorAll("button, article, section"))
+        .filter((el) => clean(el.textContent).toLowerCase().includes("open approval slip")).length;
+
+      const heroApproval = Array.from(document.querySelectorAll(".om-gauges article, b, strong"))
+        .map((el) => clean(el.textContent))
+        .find((text) => /^\d+$/.test(text));
+
+      return slips || Number(heroApproval || 0) || 0;
+    }
+
+    function installHeroPriority() {
+      const hero = document.querySelector(".om-hero");
+      if (!hero) return;
+
+      // Hide old separate priority panels so only the header card owns it.
+      const oldPanel = document.getElementById("churvox-phase-189-owner-priority");
+      if (oldPanel) {
+        oldPanel.style.display = "none";
+        oldPanel.setAttribute("aria-hidden", "true");
+      }
+
+      let panel = document.getElementById("churvox-phase-192-hero-priority");
+      const count = countApprovals();
+
+      if (!panel) {
+        panel = document.createElement("aside");
+        panel.id = "churvox-phase-192-hero-priority";
+        panel.innerHTML = `
+          <span>OWNER PRIORITY</span>
+          <strong>Approve the first slip first.</strong>
+          <p>Churvox checked the admin path. Crew, proof, invoices, follow-ups and payment risks are parked for owner approval.</p>
+          <section>
+            <small>Ready now</small>
+            <b data-owner-priority-count>${count}</b>
+          </section>
+        `;
+        hero.appendChild(panel);
+      } else {
+        const countEl = panel.querySelector("[data-owner-priority-count]");
+        if (countEl) countEl.textContent = String(count);
+      }
+
+      if (count <= 0) {
+        const title = panel.querySelector("strong");
+        const body = panel.querySelector("p");
+        if (title) title.textContent = "Nothing urgent right now.";
+        if (body) body.textContent = "Churvox is watching jobs, workers, invoices, quotes and client details. Approval slips appear when admin is ready.";
+      }
+
+      const main = document.querySelector(".om-dashboard-focus");
+      if (main) main.classList.add("cx-phase-192-wide-desk");
+    }
+
+    let timer = null;
+    function schedule() {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(installHeroPriority, 120);
+    }
+
+    window.addEventListener("load", schedule);
+    document.addEventListener("click", schedule, true);
+
+    const observer = new MutationObserver(schedule);
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+
+    schedule();
+  } catch {
+    // keep app boot safe
+  }
+})();
+
+
 
 
 // PHASE_191_PRIORITY_UNDER_HEADER_WIDE_DESK
