@@ -864,3 +864,204 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* PHASE_208_FIX_GIANT_BLACK_NAV_HEIGHT
+   Old sidebar styles were still forcing the nav to act like a tall panel.
+   This hard-resets it into the thin top header from the screenshot.
+*/
+
+.om-shell {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 100vh !important;
+  width: 100vw !important;
+  background: var(--cd207-soft) !important;
+  overflow-x: hidden !important;
+}
+
+.om-nav {
+  position: sticky !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 1000 !important;
+
+  width: 100% !important;
+  height: 78px !important;
+  min-height: 78px !important;
+  max-height: 78px !important;
+
+  display: grid !important;
+  grid-template-columns: 280px minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  align-content: center !important;
+
+  gap: 24px !important;
+  padding: 0 34px !important;
+  margin: 0 !important;
+
+  background: #0a0908 !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(213, 107, 42, 0.22) !important;
+  box-shadow: 0 12px 32px rgba(13, 11, 10, 0.2) !important;
+  overflow: hidden !important;
+}
+
+.om-brand {
+  height: 78px !important;
+  min-height: 78px !important;
+  max-height: 78px !important;
+  min-width: 260px !important;
+  display: flex !important;
+  align-items: center !important;
+  align-content: center !important;
+  gap: 14px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+
+.om-brand i {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+}
+
+.om-brand strong {
+  font-size: 19px !important;
+  letter-spacing: 0.17em !important;
+}
+
+.om-nav nav {
+  height: 78px !important;
+  min-height: 78px !important;
+  max-height: 78px !important;
+  display: flex !important;
+  align-items: center !important;
+  align-content: center !important;
+  justify-content: center !important;
+  gap: 34px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+}
+
+.om-nav nav button {
+  height: 78px !important;
+  min-height: 78px !important;
+  max-height: 78px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  border: 0 !important;
+  border-bottom: 3px solid transparent !important;
+  background: transparent !important;
+}
+
+.om-nav nav button.active {
+  border-bottom-color: var(--cd207-orange-2) !important;
+}
+
+.om-nav nav button span {
+  font-size: 14px !important;
+  line-height: 1 !important;
+}
+
+.om-nav nav button small {
+  display: none !important;
+}
+
+.om-logout {
+  position: static !important;
+  width: auto !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  max-height: 46px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 18px !important;
+  margin: 0 !important;
+}
+
+.om-main {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 22px 34px 46px !important;
+  background: var(--cd207-soft) !important;
+}
+
+/* pull the dashboard right under the top bar */
+.cd207-page {
+  margin-top: 0 !important;
+}
+
+/* make the screenshot layout fit better on normal laptop width */
+.cd207-hero {
+  min-height: 305px !important;
+  grid-template-columns: minmax(0, 1fr) minmax(560px, 0.9fr) !important;
+}
+
+.cd207-copy {
+  padding: 42px 58px !important;
+}
+
+.cd207-copy h1 {
+  font-size: clamp(46px, 4.2vw, 76px) !important;
+}
+
+.cd207-copy p {
+  font-size: 16px !important;
+}
+
+.cd207-metrics {
+  gap: 20px !important;
+  padding: 0 54px 0 22px !important;
+}
+
+.cd207-metrics article {
+  min-height: 185px !important;
+}
+
+.cd207-metrics strong {
+  font-size: 46px !important;
+}
+
+@media (max-width: 1150px) {
+  .om-nav {
+    height: auto !important;
+    max-height: none !important;
+    grid-template-columns: 1fr !important;
+    padding: 12px 18px !important;
+    overflow: visible !important;
+  }
+
+  .om-brand,
+  .om-nav nav,
+  .om-nav nav button {
+    height: 46px !important;
+    min-height: 46px !important;
+    max-height: 46px !important;
+  }
+
+  .om-nav nav {
+    justify-content: flex-start !important;
+  }
+
+  .cd207-hero {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cd207-metrics {
+    grid-template-columns: repeat(2, 1fr) !important;
+    padding: 0 28px 28px !important;
+  }
+}
+
