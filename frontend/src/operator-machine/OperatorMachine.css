@@ -10682,3 +10682,175 @@ select {
   }
 }
 
+
+/* PHASE_185_FIX_APPROVAL_DESK_WIDTH_AND_LIVE_FEED
+   Fixes screenshot issue:
+   - removes ugly advanced-tools strip
+   - stops Approval Desk being skinny
+   - makes story panel full-width
+   - keeps Approval Slips wide
+   - brings Live Work Feed into view on the right
+*/
+
+.om-main {
+  width: 100% !important;
+  max-width: none !important;
+  padding: clamp(18px, 2.8vw, 34px) !important;
+  overflow-x: hidden !important;
+}
+
+.om-dashboard-quiet-tools,
+.om-dashboard-tools-single {
+  display: none !important;
+}
+
+.om-dashboard-focus {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.72fr) !important;
+  gap: clamp(18px, 2.2vw, 28px) !important;
+  width: 100% !important;
+  max-width: 1480px !important;
+  margin: 0 auto !important;
+  align-items: start !important;
+}
+
+.om-dashboard-focus-card {
+  grid-column: 1 / -1 !important;
+  position: relative !important;
+  top: auto !important;
+  min-height: 230px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.34fr) !important;
+  align-items: end !important;
+  gap: 24px !important;
+  padding: clamp(28px, 3.8vw, 52px) !important;
+  border-radius: 36px !important;
+}
+
+.om-dashboard-focus-card::before {
+  width: fit-content !important;
+  margin-bottom: 18px !important;
+}
+
+.om-dashboard-focus-card h2 {
+  max-width: 760px !important;
+  margin: 0 0 14px !important;
+  font-size: clamp(44px, 5.8vw, 88px) !important;
+  line-height: 0.86 !important;
+}
+
+.om-dashboard-focus-card p {
+  max-width: 600px !important;
+}
+
+.om-dashboard-focus-card::after {
+  right: 24px !important;
+  bottom: 22px !important;
+  width: 180px !important;
+  height: 180px !important;
+}
+
+.om-approval-desk-main {
+  grid-column: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: clamp(22px, 3vw, 36px) !important;
+}
+
+.om-approval-live-feed {
+  grid-column: 2 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  position: sticky !important;
+  top: 22px !important;
+}
+
+.om-approval-desk-main > header h2 {
+  max-width: 780px !important;
+  font-size: clamp(36px, 4.8vw, 72px) !important;
+  line-height: 0.9 !important;
+}
+
+.om-approval-desk-main > header p {
+  max-width: 720px !important;
+}
+
+.om-approval-list {
+  gap: 16px !important;
+}
+
+.om-approval-ticket {
+  min-height: 152px !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  padding: 24px 26px 24px 30px !important;
+}
+
+.om-approval-ticket strong {
+  max-width: 720px !important;
+  font-size: clamp(23px, 2.4vw, 34px) !important;
+  line-height: 0.98 !important;
+}
+
+.om-approval-ticket small {
+  max-width: 760px !important;
+  font-size: 13px !important;
+}
+
+.om-approval-ticket em {
+  white-space: nowrap !important;
+}
+
+.om-approval-pulse {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.om-live-feed-list {
+  max-height: 720px !important;
+}
+
+.om-live-feed-item,
+.om-live-feed-empty {
+  padding: 16px 16px 16px 20px !important;
+}
+
+@media (max-width: 1180px) {
+  .om-dashboard-focus {
+    grid-template-columns: 1fr !important;
+  }
+
+  .om-dashboard-focus-card,
+  .om-approval-desk-main,
+  .om-approval-live-feed {
+    grid-column: 1 !important;
+  }
+
+  .om-approval-live-feed {
+    position: relative !important;
+    top: auto !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .om-dashboard-focus-card {
+    grid-template-columns: 1fr !important;
+    min-height: auto !important;
+    padding: 28px !important;
+  }
+
+  .om-dashboard-focus-card h2 {
+    font-size: 46px !important;
+  }
+
+  .om-approval-pulse {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .om-approval-ticket {
+    grid-template-columns: 1fr !important;
+  }
+
+  .om-approval-ticket em {
+    justify-self: start !important;
+  }
+}
+
