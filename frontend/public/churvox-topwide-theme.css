@@ -835,3 +835,172 @@ button.ghost,
     align-items: flex-start !important;
   }
 }
+
+
+/* PHASE_265_WIDEN_ALL_PAGES
+   Make every Churvox page wider:
+   - public landing
+   - login/auth section
+   - dashboard
+   - work/jobs
+   - clients
+   - crew
+   - quotes
+   - invoices
+   - proof & pay
+   - payroll
+   - plans
+   - settings
+*/
+
+/* App shell: less side padding, more usable width */
+html body .om-main {
+  width: 100% !important;
+  max-width: none !important;
+  padding-left: clamp(12px, 1.4vw, 24px) !important;
+  padding-right: clamp(12px, 1.4vw, 24px) !important;
+}
+
+/* Main app pages wider */
+html body .cs-suite,
+html body .cs-page {
+  width: min(1720px, calc(100vw - 24px)) !important;
+  max-width: min(1720px, calc(100vw - 24px)) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Public and login pages wider too */
+html body .om-sales-nav,
+html body .om-sales-hero,
+html body .om-sales-proof-strip,
+html body .om-sales-how,
+html body .om-sales-prepared,
+html body .om-sales-control,
+html body .om-sales-pricing,
+html body .om-sales-access,
+html body .om-sales-final {
+  width: min(1720px, calc(100vw - 24px)) !important;
+  max-width: min(1720px, calc(100vw - 24px)) !important;
+}
+
+/* Hero and content panels use the wider canvas */
+html body .cs-hero,
+html body .cs-workspace,
+html body .cs-desk,
+html body .cs-flow,
+html body .cs-plan-cards,
+html body .cs-plan-addons,
+html body .cs-sms-packs,
+html body .cs-plan-compare,
+html body .cs-command-cards,
+html body .cs-ai-strip {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+/* Allow hero wording to breathe on wide screens */
+html body .cs-hero > section:first-child {
+  max-width: 1180px !important;
+}
+
+html body .cs-hero h1 {
+  max-width: 1180px !important;
+}
+
+html body .cs-hero p {
+  max-width: 920px !important;
+}
+
+/* Stat pills can spread wider without breaking */
+html body .cs-stats,
+html body .cs-plan-price-stack {
+  max-width: 1040px !important;
+  grid-template-columns: repeat(4, minmax(170px, 240px)) !important;
+}
+
+html body .cs-stat,
+html body .cs-plan-price-stack button {
+  max-width: 240px !important;
+}
+
+/* Three-card strips can breathe */
+html body .cs-command-cards,
+html body .cs-ai-strip {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+/* Tables/rows get more room */
+html body .cs-table,
+html body .cs-approval-list {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+html body .cs-table > header,
+html body .cs-row,
+html body .cs-approval-row {
+  width: 100% !important;
+}
+
+/* Plans page cards use wider layout */
+html body .cs-plan-cards {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+html body .cs-plan-addons > div,
+html body .cs-sms-packs > div {
+  width: 100% !important;
+}
+
+/* Keep laptop/tablet safe */
+@media (max-width: 1200px) {
+  html body .cs-suite,
+  html body .cs-page,
+  html body .om-sales-nav,
+  html body .om-sales-hero,
+  html body .om-sales-proof-strip,
+  html body .om-sales-how,
+  html body .om-sales-prepared,
+  html body .om-sales-control,
+  html body .om-sales-pricing,
+  html body .om-sales-access,
+  html body .om-sales-final {
+    width: min(100%, calc(100vw - 20px)) !important;
+    max-width: min(100%, calc(100vw - 20px)) !important;
+  }
+
+  html body .cs-plan-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Mobile stays clean, no horizontal overflow */
+@media (max-width: 900px) {
+  html body .om-main {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  html body .cs-suite,
+  html body .cs-page,
+  html body .om-sales-nav,
+  html body .om-sales-hero,
+  html body .om-sales-proof-strip,
+  html body .om-sales-how,
+  html body .om-sales-prepared,
+  html body .om-sales-control,
+  html body .om-sales-pricing,
+  html body .om-sales-access,
+  html body .om-sales-final {
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+  }
+
+  html body .cs-plan-cards,
+  html body .cs-command-cards,
+  html body .cs-ai-strip {
+    grid-template-columns: 1fr !important;
+  }
+}
+

@@ -4,7 +4,7 @@
   try {
     if (typeof document === "undefined") return;
 
-    const version = "phase264-20260517092652";
+    const version = "phase265-20260517092652";
     const old = document.getElementById("churvox-topwide-theme");
     if (old) old.remove();
 
