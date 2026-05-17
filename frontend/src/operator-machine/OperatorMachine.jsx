@@ -2,6 +2,7 @@
 // PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+import "./ChurvoxAdaptiveTheme.css";
 import CommandSuite from "./CommandSuite";
 // PHASE_134_REAL_AI_PREPARED_WORK
 // PHASE_130_REAL_INVOICE_LAYOUT
