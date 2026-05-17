@@ -10580,3 +10580,105 @@ select {
   }
 }
 
+
+/* PHASE_185_FIX_APPROVAL_DESK_WIDTH_AND_LIVE_FEED
+   Fixes screenshot issue:
+   - removes ugly advanced-tools strip
+   - stops Approval Desk being skinny
+   - makes story panel full-width
+   - keeps Approval Slips wide
+   - brings Live Work Feed into view on the right
+*/
+
+.om-main {
+}
+
+.om-dashboard-quiet-tools,
+.om-dashboard-tools-single {
+}
+
+.om-dashboard-focus {
+}
+
+.om-dashboard-focus-card {
+}
+
+.om-dashboard-focus-card::before {
+}
+
+.om-dashboard-focus-card h2 {
+}
+
+.om-dashboard-focus-card p {
+}
+
+.om-dashboard-focus-card::after {
+}
+
+.om-approval-desk-main {
+}
+
+.om-approval-live-feed {
+}
+
+.om-approval-desk-main > header h2 {
+}
+
+.om-approval-desk-main > header p {
+}
+
+.om-approval-list {
+}
+
+.om-approval-ticket {
+}
+
+.om-approval-ticket strong {
+}
+
+.om-approval-ticket small {
+}
+
+.om-approval-ticket em {
+}
+
+.om-approval-pulse {
+}
+
+.om-live-feed-list {
+}
+
+.om-live-feed-item,
+.om-live-feed-empty {
+}
+
+@media (max-width: 1180px) {
+  .om-dashboard-focus {
+  }
+
+  .om-dashboard-focus-card,
+  .om-approval-desk-main,
+  .om-approval-live-feed {
+  }
+
+  .om-approval-live-feed {
+  }
+}
+
+@media (max-width: 720px) {
+  .om-dashboard-focus-card {
+  }
+
+  .om-dashboard-focus-card h2 {
+  }
+
+  .om-approval-pulse {
+  }
+
+  .om-approval-ticket {
+  }
+
+  .om-approval-ticket em {
+  }
+}
+
