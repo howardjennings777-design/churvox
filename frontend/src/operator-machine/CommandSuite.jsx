@@ -346,7 +346,7 @@ function Table({ rows, columns, onOpen, emptyText = "Nothing here yet.", actionL
               onOpen(row);
             }}
           >
-            {operatorBusyAction && selected?.__operatorAction ? "Working..." : actionLabel} <em>›</em>
+            {actionLabel} <em>›</em>
           </button>
         </article>
       )) : (
