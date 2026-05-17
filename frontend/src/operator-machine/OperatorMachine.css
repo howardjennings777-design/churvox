@@ -9673,3 +9673,484 @@ select {
     margin-right: 24px !important;
   }
 }
+
+
+/* PHASE_224_REAL_LIVE_SIGNUP_PAGE_THEME
+   This targets the actual live unauthenticated page: OperatorLanding / OperatorAuth.
+*/
+
+html body .om-command-public {
+  --live-black: #0d0b0a;
+  --live-black-2: #17120f;
+  --live-copper: #b85720;
+  --live-copper-2: #d56b2a;
+  --live-copper-3: #e48643;
+  --live-paper: #fff8ef;
+  --live-stone: #f4ede3;
+  --live-muted: #6d6258;
+  min-height: 100vh !important;
+  color: var(--live-black) !important;
+  background:
+    radial-gradient(circle at 78% 8%, rgba(184, 87, 32, 0.24), transparent 30rem),
+    radial-gradient(circle at 10% 22%, rgba(13, 11, 10, 0.12), transparent 26rem),
+    linear-gradient(135deg, #f4ede3 0%, #fff8ef 50%, #eadbc9 100%) !important;
+}
+
+html body .om-command-public .om-public-nav {
+  width: min(1220px, calc(100% - 32px)) !important;
+  margin: 0 auto !important;
+  padding: 20px 0 !important;
+}
+
+html body .om-command-public .om-public-brand {
+  color: var(--live-black) !important;
+}
+
+html body .om-command-public .om-public-brand i {
+  background: var(--live-black) !important;
+  border: 1px solid rgba(228, 134, 67, 0.32) !important;
+}
+
+html body .om-command-public .om-public-brand i b {
+  border-color: var(--live-copper-3) !important;
+}
+
+html body .om-command-public .om-public-brand strong {
+  color: var(--live-black) !important;
+}
+
+html body .om-command-public .om-public-brand small {
+  color: var(--live-copper) !important;
+}
+
+html body .om-command-public .om-public-nav nav {
+  border: 1px solid rgba(13, 11, 10, 0.12) !important;
+  background: rgba(255, 248, 239, 0.78) !important;
+  box-shadow: 0 18px 48px rgba(13, 11, 10, 0.10) !important;
+  backdrop-filter: blur(18px) !important;
+}
+
+html body .om-command-public .om-public-nav nav a,
+html body .om-command-public .om-public-nav nav button {
+  color: var(--live-black) !important;
+  font-weight: 950 !important;
+}
+
+html body .om-command-public .om-public-nav nav button {
+  min-height: 38px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  padding: 0 14px !important;
+  background: var(--live-black) !important;
+  color: var(--live-paper) !important;
+  cursor: pointer !important;
+}
+
+html body .om-command-public .om-public-hero,
+html body .om-command-public .om-public-proof,
+html body .om-command-public .om-public-pricing,
+html body .om-command-public .om-public-access {
+  width: min(1220px, calc(100% - 32px)) !important;
+  margin-inline: auto !important;
+}
+
+html body .om-command-public .om-public-hero > div,
+html body .om-command-public .om-public-proof article,
+html body .om-command-public .om-public-pricing,
+html body .om-command-public .om-public-access {
+  border: 1px solid rgba(13, 11, 10, 0.12) !important;
+  background: rgba(255, 248, 239, 0.88) !important;
+  color: var(--live-black) !important;
+  box-shadow: 0 26px 84px rgba(13, 11, 10, 0.16) !important;
+  backdrop-filter: blur(22px) !important;
+}
+
+html body .om-command-public .om-public-hero > div {
+  background:
+    radial-gradient(circle at 92% 8%, rgba(228, 134, 67, 0.22), transparent 22rem),
+    rgba(255, 248, 239, 0.90) !important;
+}
+
+html body .om-command-public h1,
+html body .om-command-public h2,
+html body .om-command-public h3,
+html body .om-command-public .om-command-auth h2 {
+  color: var(--live-black) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  letter-spacing: -0.055em !important;
+}
+
+html body .om-command-public p,
+html body .om-command-public small {
+  color: var(--live-muted) !important;
+}
+
+html body .om-command-public .om-public-hero span,
+html body .om-command-public .om-public-proof span,
+html body .om-command-public .om-public-pricing header span,
+html body .om-command-public .om-public-access-copy span,
+html body .om-command-public .om-command-auth > span {
+  color: var(--live-copper) !important;
+  background: rgba(184, 87, 32, 0.08) !important;
+  border-color: rgba(184, 87, 32, 0.16) !important;
+}
+
+html body .om-command-public .om-public-actions button,
+html body .om-command-public .om-public-actions a,
+html body .om-command-public .om-public-pricing article button,
+html body .om-command-public .om-command-auth form button[type="submit"] {
+  min-height: 48px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  padding: 0 20px !important;
+  background: var(--live-black) !important;
+  color: var(--live-paper) !important;
+  font-weight: 950 !important;
+  box-shadow: 0 18px 38px rgba(13, 11, 10, 0.18) !important;
+}
+
+html body .om-command-public .om-public-actions .om-public-tour-cta {
+  background: var(--live-copper) !important;
+  color: var(--live-paper) !important;
+}
+
+html body .om-command-public .om-public-actions a {
+  background: rgba(13, 11, 10, 0.08) !important;
+  color: var(--live-black) !important;
+  border: 1px solid rgba(13, 11, 10, 0.12) !important;
+  box-shadow: none !important;
+}
+
+html body .om-command-public .om-public-machine {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(228, 134, 67, 0.22), transparent 18rem),
+    #15100d !important;
+  color: var(--live-paper) !important;
+  border: 1px solid rgba(13, 11, 10, 0.12) !important;
+  box-shadow: 0 26px 84px rgba(13, 11, 10, 0.18) !important;
+}
+
+html body .om-command-public .om-public-machine article {
+  background: rgba(255, 248, 239, 0.08) !important;
+  border: 1px solid rgba(255, 248, 239, 0.12) !important;
+}
+
+html body .om-command-public .om-public-machine article.active {
+  background: rgba(184, 87, 32, 0.24) !important;
+  border-color: rgba(228, 134, 67, 0.46) !important;
+}
+
+html body .om-command-public .om-public-machine span,
+html body .om-command-public .om-public-machine strong,
+html body .om-command-public .om-public-machine small {
+  color: var(--live-paper) !important;
+}
+
+html body .om-command-public .om-public-pricing article {
+  background: rgba(255, 248, 239, 0.90) !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  box-shadow: 0 16px 42px rgba(13, 11, 10, 0.08) !important;
+}
+
+html body .om-command-public .om-public-pricing article.featured {
+  border-color: rgba(184, 87, 32, 0.42) !important;
+  box-shadow: 0 22px 70px rgba(184, 87, 32, 0.18) !important;
+}
+
+html body .om-command-public .om-public-pricing article span,
+html body .om-command-public .om-public-pricing article strong {
+  color: var(--live-copper) !important;
+}
+
+html body .om-command-public .om-public-access {
+  background:
+    linear-gradient(115deg, #0d0b0a 0%, #17120f 45%, rgba(255, 248, 239, 0.94) 45.2%, rgba(255, 248, 239, 0.98) 100%) !important;
+  overflow: hidden !important;
+}
+
+html body .om-command-public .om-public-access-copy h2,
+html body .om-command-public .om-public-access-copy p {
+  color: var(--live-paper) !important;
+}
+
+html body .om-command-public .om-public-access-copy p {
+  color: rgba(255, 248, 239, 0.74) !important;
+}
+
+html body .om-command-public .om-public-access-board article {
+  background: rgba(255, 248, 239, 0.08) !important;
+  border: 1px solid rgba(255, 248, 239, 0.12) !important;
+}
+
+html body .om-command-public .om-public-access-board b,
+html body .om-command-public .om-public-access-board strong,
+html body .om-command-public .om-public-access-board small {
+  color: var(--live-paper) !important;
+}
+
+html body .om-command-public .om-command-auth {
+  background: rgba(255, 248, 239, 0.98) !important;
+  color: var(--live-black) !important;
+  border: 1px solid rgba(13, 11, 10, 0.12) !important;
+  border-radius: 28px !important;
+  box-shadow: 0 26px 84px rgba(13, 11, 10, 0.16) !important;
+}
+
+html body .om-command-public .om-command-auth h2 {
+  font-size: clamp(34px, 4vw, 52px) !important;
+  line-height: 0.96 !important;
+}
+
+html body .om-command-public .om-auth-command-strip {
+  display: grid !important;
+  gap: 10px !important;
+  margin: 18px 0 20px !important;
+  padding: 16px !important;
+  border-radius: 18px !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(228, 134, 67, 0.18), transparent 14rem),
+    rgba(13, 11, 10, 0.04) !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+}
+
+html body .om-command-public .om-auth-command-strip strong {
+  color: var(--live-black) !important;
+  font-size: 16px !important;
+  font-weight: 950 !important;
+}
+
+html body .om-command-public .om-auth-command-strip p {
+  margin: 0 !important;
+  color: var(--live-muted) !important;
+}
+
+html body .om-command-public .om-auth-command-strip div {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+html body .om-command-public .om-auth-command-strip span {
+  display: inline-flex !important;
+  min-height: 30px !important;
+  align-items: center !important;
+  padding: 0 10px !important;
+  border-radius: 999px !important;
+  background: rgba(184, 87, 32, 0.10) !important;
+  color: var(--live-copper) !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+}
+
+html body .om-command-public .om-auth-command-strip b {
+  color: var(--live-copper) !important;
+}
+
+html body .om-command-public .om-command-auth label {
+  color: var(--live-black) !important;
+  font-weight: 900 !important;
+}
+
+html body .om-command-public .om-command-auth input {
+  background: rgba(255, 248, 239, 0.96) !important;
+  color: var(--live-black) !important;
+  border: 1px solid rgba(13, 11, 10, 0.14) !important;
+}
+
+html body .om-command-public .om-command-auth input:focus {
+  outline: 3px solid rgba(228, 134, 67, 0.28) !important;
+  border-color: rgba(184, 87, 32, 0.46) !important;
+}
+
+html body .om-command-public .om-auth-switch {
+  color: var(--live-copper) !important;
+  background: rgba(184, 87, 32, 0.08) !important;
+  border: 1px solid rgba(184, 87, 32, 0.16) !important;
+  border-radius: 999px !important;
+}
+
+/* Live public tour modal */
+.om-public-tour-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(13, 11, 10, 0.58);
+  backdrop-filter: blur(14px);
+}
+
+.om-public-tour-modal {
+  width: min(940px, 96vw);
+  max-height: 90vh;
+  overflow: auto;
+  border-radius: 28px;
+  background: var(--live-paper);
+  color: var(--live-black);
+  border: 1px solid rgba(13, 11, 10, 0.14);
+  box-shadow: 0 34px 110px rgba(13, 11, 10, 0.38);
+}
+
+.om-public-tour-modal > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 26px;
+  border-bottom: 1px solid rgba(13, 11, 10, 0.1);
+}
+
+.om-public-tour-modal > header span {
+  color: var(--live-copper);
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.om-public-tour-modal > header button {
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(13, 11, 10, 0.08);
+  color: var(--live-black);
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.om-public-tour-modal main {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(320px, 0.75fr);
+  gap: 18px;
+  padding: 28px;
+}
+
+.om-public-tour-modal aside,
+.om-public-tour-modal main section {
+  border-radius: 22px;
+  padding: 28px;
+}
+
+.om-public-tour-modal aside {
+  background:
+    radial-gradient(circle at 90% 0%, rgba(228, 134, 67, 0.22), transparent 18rem),
+    var(--live-black);
+  color: var(--live-paper);
+}
+
+.om-public-tour-modal aside b {
+  display: inline-grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: rgba(228, 134, 67, 0.14);
+  color: var(--live-copper-3);
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.om-public-tour-modal h2 {
+  margin: 22px 0 12px;
+  color: var(--live-paper);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(34px, 5vw, 56px);
+  line-height: 0.96;
+  letter-spacing: -0.055em;
+}
+
+.om-public-tour-modal aside p {
+  color: rgba(255, 248, 239, 0.78);
+}
+
+.om-public-tour-modal main section {
+  display: grid;
+  align-content: center;
+  gap: 14px;
+  background: rgba(184, 87, 32, 0.08);
+}
+
+.om-public-tour-modal main section span {
+  color: var(--live-copper);
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.om-public-tour-modal main section strong {
+  font-size: 28px;
+  line-height: 1.05;
+  font-weight: 950;
+}
+
+.om-public-tour-modal main section p {
+  color: var(--live-muted);
+}
+
+.om-public-tour-modal > nav {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 0 28px 24px;
+}
+
+.om-public-tour-modal > nav button {
+  display: grid;
+  gap: 5px;
+  min-height: 72px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(13, 11, 10, 0.1);
+  background: rgba(255, 248, 239, 0.9);
+  text-align: left;
+  cursor: pointer;
+}
+
+.om-public-tour-modal > nav button.active {
+  background: var(--live-black);
+  color: var(--live-paper);
+}
+
+.om-public-tour-modal > nav button b {
+  color: var(--live-copper);
+}
+
+.om-public-tour-modal > footer {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 22px 28px 28px;
+  border-top: 1px solid rgba(13, 11, 10, 0.1);
+}
+
+.om-public-tour-modal > footer button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 18px;
+  background: var(--live-black);
+  color: var(--live-paper);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.om-public-tour-modal > footer button.ghost {
+  background: rgba(13, 11, 10, 0.08);
+  color: var(--live-black);
+}
+
+@media (max-width: 860px) {
+  html body .om-command-public .om-public-access {
+    background: var(--live-black) !important;
+  }
+
+  .om-public-tour-modal main,
+  .om-public-tour-modal > nav {
+    grid-template-columns: 1fr;
+  }
+}
+

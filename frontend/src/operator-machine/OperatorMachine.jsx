@@ -6361,9 +6361,21 @@ function OperatorAuth({ authMode, setAuthMode, onLogin }) {
   }
 
   return (
-    <section className="om-auth" id="login">
-      <span>{signup ? "Start the approval desk" : "Secure owner login"}</span>
-      <h2>{signup ? "Create Churvox workspace" : "Open Churvox"}</h2>
+    <section className="om-auth om-command-auth" id="login">
+      <span>{signup ? "14-day free trial" : "Secure owner login"}</span>
+      <h2>{signup ? "Create your Command Desk" : "Enter Command Desk"}</h2>
+      <section className="om-auth-command-strip" data-phase="PHASE_224_REAL_AUTH_STRIP">
+        <strong>{signup ? "No card needed. Trial starts after signup." : "Welcome back to Churvox."}</strong>
+        <p>{signup ? "Churvox prepares the admin. You approve the next move." : "Open your AI Operator workspace."}</p>
+        <div>
+          <span>Work in</span>
+          <b>›</b>
+          <span>Admin prepared</span>
+          <b>›</b>
+          <span>Owner approves</span>
+        </div>
+      </section>
+
       {error ? <p className="om-auth-error">{error}</p> : null}
 
       <form onSubmit={submit}>
@@ -6375,7 +6387,7 @@ function OperatorAuth({ authMode, setAuthMode, onLogin }) {
         ) : null}
         <label>Email<input required type="email" value={form.email} onChange={(event) => update("email", event.target.value)} /></label>
         <label>Password<input required type="password" value={form.password} onChange={(event) => update("password", event.target.value)} /></label>
-        <button type="submit" disabled={busy}>{busy ? "Opening..." : signup ? "Start free trial" : "Open Churvox"}</button>
+        <button type="submit" disabled={busy}>{busy ? "Opening..." : signup ? "Start 14-day trial" : "Open Command Desk"}</button>
       </form>
 
       <button
@@ -6386,8 +6398,73 @@ function OperatorAuth({ authMode, setAuthMode, onLogin }) {
           setAuthMode(signup ? "login" : "signup");
         }}
       >
-        {signup ? "Already have an account? Log in" : "Need an account? Start free trial"}
+        {signup ? "Already have an account? Log in" : "New here? Start 14-day trial"}
       </button>
+    </section>
+  );
+}
+
+
+function OperatorPublicTour({ open, onClose, onSignup }) {
+  const [step, setStep] = useState(0);
+
+  const steps = [
+    ["01", "Work comes in", "A job, quote, client request, worker update or invoice lands in Churvox.", "Churvox captures the details."],
+    ["02", "Churvox prepares", "AI checks client, area, crew, proof, price source and follow-up risk.", "The admin is prepared."],
+    ["03", "Owner approves", "The owner opens one clean approval slip, reviews it, edits if needed, then approves.", "Nothing risky happens blindly."],
+    ["04", "Everything updates", "Work, crew, proof, invoice, payment and history stay tied together.", "The business keeps moving."],
+  ];
+
+  if (!open) return null;
+
+  const active = steps[step] || steps[0];
+
+  return (
+    <section className="om-public-tour-backdrop" onClick={onClose}>
+      <article className="om-public-tour-modal" onClick={(event) => event.stopPropagation()}>
+        <header>
+          <span>See how Churvox works</span>
+          <button type="button" onClick={onClose}>×</button>
+        </header>
+
+        <main>
+          <aside>
+            <b>{active[0]}</b>
+            <h2>{active[1]}</h2>
+            <p>{active[2]}</p>
+          </aside>
+
+          <section>
+            <span>Churvox output</span>
+            <strong>{active[3]}</strong>
+            <p>Public tour first. Real trial and saved business data start after signup.</p>
+          </section>
+        </main>
+
+        <nav>
+          {steps.map((item, index) => (
+            <button
+              type="button"
+              key={item[0]}
+              className={index === step ? "active" : ""}
+              onClick={() => setStep(index)}
+            >
+              <b>{item[0]}</b>
+              <span>{item[1]}</span>
+            </button>
+          ))}
+        </nav>
+
+        <footer>
+          <button type="button" className="ghost" onClick={onClose}>Close</button>
+          {step > 0 ? <button type="button" className="ghost" onClick={() => setStep(step - 1)}>Back</button> : null}
+          {step < steps.length - 1 ? (
+            <button type="button" onClick={() => setStep(step + 1)}>Next</button>
+          ) : (
+            <button type="button" onClick={onSignup}>Start 14-day trial</button>
+          )}
+        </footer>
+      </article>
     </section>
   );
 }
@@ -6400,13 +6477,23 @@ export function OperatorLanding({ authMode, setAuthMode, onLogin }) {
     ["Command", "$299", "For growing crews"],
   ];
 
+  const [tourOpen, setTourOpen] = useState(false);
+
   function signup() {
     setAuthMode("signup");
     setTimeout(() => document.getElementById("login")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
   }
 
   return (
-    <main className="om-public" id="top">
+    <main className="om-public om-command-public" id="top">
+      <OperatorPublicTour
+        open={tourOpen}
+        onClose={() => setTourOpen(false)}
+        onSignup={() => {
+          setTourOpen(false);
+          signup();
+        }}
+      />
       <header className="om-public-nav">
         <a href="#top" className="om-public-brand">
           <i><b /></i>
@@ -6415,6 +6502,7 @@ export function OperatorLanding({ authMode, setAuthMode, onLogin }) {
         <nav>
           <a href="#machine">How it works</a>
           <a href="#pricing">Pricing</a>
+          <button type="button" className="om-public-tour-nav-button" onClick={() => setTourOpen(true)}>Tour</button>
           <a href="#login">Login</a>
         </nav>
       </header>
@@ -6428,7 +6516,8 @@ export function OperatorLanding({ authMode, setAuthMode, onLogin }) {
             worker assignments and proof and pay admin. You approve, edit, or fix only what matters.
           </p>
           <div className="om-public-actions">
-            <button type="button" onClick={signup}>Start free trial</button>
+            <button type="button" className="om-public-tour-cta" onClick={() => setTourOpen(true)}>See how it works</button>
+            <button type="button" onClick={signup}>Start 14-day trial</button>
             <a href="#pricing">View pricing</a>
           </div>
         </div>
