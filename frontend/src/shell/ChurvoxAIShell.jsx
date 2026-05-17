@@ -9,9 +9,18 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./ChurvoxAIShell.css";
 import "./ChurvoxPublicLandingFinish.css";
+import { CHURVOX_PUBLIC_RUNTIME_STYLE } from "./churvoxPublicRuntimeStyle";
 // PHASE_133_HIDE_NON_CRITICAL_SYNC_WARNING
 // PHASE_132_FAST_LOADING_LIVE_CACHE
-import OperatorMachine, { OperatorLanding } from "../operator-machine/OperatorMachine";
+import OperatorMachine, { OperatorLanding } from "../operator-machine/OperatorMachine";\n
+// PHASE_311_RUNTIME_PUBLIC_LOGIN_THEME_FORCE
+if (typeof document !== "undefined" && !document.getElementById("churvox-public-runtime-style")) {
+  const style = document.createElement("style");
+  style.id = "churvox-public-runtime-style";
+  style.textContent = CHURVOX_PUBLIC_RUNTIME_STYLE;
+  document.head.appendChild(style);
+}
+
 
 function cxSafeText(value, fallback = "") {
   if (value === null || value === undefined) return fallback;
