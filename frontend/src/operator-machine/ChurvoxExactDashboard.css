@@ -1128,3 +1128,450 @@ body.cx-exact-active .cs-suite {
     font-weight: 900;
   }
 }
+
+/* PHASE_302_LAPTOP_FIT_AND_COPPER_BUTTON_FIX */
+
+body.cx-exact-active .cx-exact-stage {
+  min-width: 0 !important;
+}
+
+.cx-queue-row button.primary,
+.cx-queue-row button.primary:hover,
+.cx-queue-row button.primary:focus,
+.cx-ai-primary,
+.cx-ai-primary:hover,
+.cx-ai-primary:focus {
+  color: #fff7ef !important;
+  border-color: rgba(240, 138, 42, 0.38) !important;
+  background: linear-gradient(180deg, #f08a2a 0%, #d65e20 100%) !important;
+  box-shadow: 0 10px 22px rgba(214, 94, 32, 0.22) !important;
+}
+
+.cx-queue-row button:not(.primary),
+.cx-ai-secondary,
+.cx-run-header button,
+.cx-work-table header .filter {
+  color: #16120f !important;
+  background: #fbf8f1 !important;
+  border-color: rgba(11, 11, 13, 0.13) !important;
+}
+
+.cx-ai-secondary {
+  color: #faf7f0 !important;
+  background: rgba(250, 247, 240, 0.045) !important;
+  border-color: rgba(250, 247, 240, 0.14) !important;
+}
+
+.cx-run-sheet {
+  background: #faf7f0 !important;
+}
+
+.cx-metric,
+.cx-command-panel,
+.cx-work-table,
+.cx-queue-row {
+  color: #14110f !important;
+}
+
+.cx-queue-row strong,
+.cx-table-row strong,
+.cx-command-panel h3,
+.cx-work-table h3 {
+  color: #111 !important;
+}
+
+.cx-queue-row small,
+.cx-run-header p,
+.cx-metric small,
+.cx-table-head {
+  color: #63584e !important;
+}
+
+@media (max-width: 1550px) {
+  .cx-exact-stage {
+    grid-template-columns: 250px minmax(0, 1fr) !important;
+  }
+
+  .cx-brand-rail {
+    padding: 18px 10px 14px !important;
+    gap: 14px !important;
+  }
+
+  .cx-big-brand {
+    min-height: 250px !important;
+  }
+
+  .cx-big-brand img {
+    width: 104px !important;
+    height: 104px !important;
+  }
+
+  .cx-big-brand h1 {
+    font-size: 1.45rem !important;
+    letter-spacing: 0.42em !important;
+  }
+
+  .cx-big-brand p {
+    font-size: 0.62rem !important;
+  }
+
+  .cx-big-brand small {
+    margin-top: 18px !important;
+    font-size: 0.82rem !important;
+  }
+
+  .cx-system-card {
+    padding: 14px 12px !important;
+  }
+
+  .cx-system-card h2 {
+    font-size: 0.76rem !important;
+    margin-bottom: 10px !important;
+  }
+
+  .cx-system-card > span {
+    margin: 13px 0 7px !important;
+    font-size: 0.58rem !important;
+  }
+
+  .cx-swatches {
+    gap: 6px !important;
+  }
+
+  .cx-swatches i {
+    height: 34px !important;
+  }
+
+  .cx-swatches small {
+    display: none !important;
+  }
+
+  .cx-type-row {
+    grid-template-columns: 42px 1fr !important;
+  }
+
+  .cx-type-row b {
+    font-size: 1.55rem !important;
+  }
+
+  .cx-type-row strong {
+    font-size: 0.95rem !important;
+  }
+
+  .cx-icon-row {
+    gap: 9px !important;
+  }
+
+  .cx-brand-chip {
+    min-height: 74px !important;
+    padding: 12px 16px !important;
+  }
+
+  .cx-brand-chip img {
+    width: 42px !important;
+    height: 42px !important;
+  }
+
+  .cx-brand-chip strong {
+    font-size: 0.95rem !important;
+  }
+
+  .cx-topbar {
+    grid-template-columns: 155px minmax(240px, 1fr) auto !important;
+    min-height: 60px !important;
+    padding: 0 12px !important;
+    gap: 10px !important;
+  }
+
+  .cx-logo-button img {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  .cx-logo-button strong {
+    font-size: 0.72rem !important;
+    letter-spacing: 0.28em !important;
+  }
+
+  .cx-search {
+    height: 36px !important;
+  }
+
+  .cx-userbar {
+    gap: 6px !important;
+  }
+
+  .cx-userbar > button {
+    min-height: 34px !important;
+  }
+
+  .cx-user span {
+    display: none !important;
+  }
+
+  .cx-user em {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.75rem !important;
+  }
+
+  .cx-app-grid {
+    grid-template-columns: 150px minmax(0, 1fr) !important;
+  }
+
+  .cx-side-nav {
+    padding: 12px 9px !important;
+  }
+
+  .cx-side-nav nav {
+    gap: 5px !important;
+  }
+
+  .cx-side-nav button {
+    min-height: 34px !important;
+    border-radius: 6px !important;
+    padding: 0 8px !important;
+    gap: 7px !important;
+    font-size: 0.72rem !important;
+  }
+
+  .cx-side-nav .cx-icon {
+    width: 20px !important;
+    height: 20px !important;
+    flex-basis: 20px !important;
+  }
+
+  .cx-new-slip {
+    margin-top: 24px !important;
+  }
+
+  .cx-run-sheet {
+    margin: 8px 8px 0 0 !important;
+    padding: 14px !important;
+  }
+
+  .cx-run-header h2 {
+    font-size: 1.35rem !important;
+  }
+
+  .cx-run-header p {
+    font-size: 0.78rem !important;
+  }
+
+  .cx-run-header button {
+    min-height: 30px !important;
+    padding: 0 9px !important;
+    font-size: 0.68rem !important;
+  }
+
+  .cx-metrics {
+    gap: 7px !important;
+    margin: 12px 0 10px !important;
+  }
+
+  .cx-metric {
+    min-height: 72px !important;
+    grid-template-columns: 30px minmax(0, 1fr) !important;
+    gap: 8px !important;
+    padding: 9px !important;
+  }
+
+  .cx-metric .cx-icon {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  .cx-metric span {
+    font-size: 0.65rem !important;
+  }
+
+  .cx-metric strong {
+    font-size: 1.05rem !important;
+  }
+
+  .cx-metric small {
+    font-size: 0.62rem !important;
+  }
+
+  .cx-main-row {
+    grid-template-columns: minmax(0, 1fr) 330px !important;
+    gap: 10px !important;
+  }
+
+  .cx-command-panel h3,
+  .cx-work-table h3,
+  .cx-ai-panel > header span {
+    font-size: 0.64rem !important;
+  }
+
+  .cx-queue-row {
+    min-height: 44px !important;
+    grid-template-columns: 28px minmax(0, 1fr) 58px 48px 58px !important;
+    gap: 6px !important;
+    padding: 5px 0 !important;
+  }
+
+  .cx-queue-row .cx-icon {
+    width: 22px !important;
+    height: 22px !important;
+  }
+
+  .cx-queue-row strong {
+    font-size: 0.72rem !important;
+  }
+
+  .cx-queue-row small {
+    font-size: 0.62rem !important;
+  }
+
+  .cx-queue-row button {
+    min-height: 26px !important;
+    border-radius: 5px !important;
+    font-size: 0.64rem !important;
+    padding: 0 5px !important;
+  }
+
+  .cx-work-table {
+    margin-top: 7px !important;
+  }
+
+  .cx-work-table header nav {
+    gap: 10px !important;
+  }
+
+  .cx-work-table header nav button,
+  .cx-work-table header .filter {
+    font-size: 0.62rem !important;
+  }
+
+  .cx-table-head,
+  .cx-table-row {
+    grid-template-columns: 62px 1fr 1.08fr 74px 92px 66px 18px !important;
+    gap: 5px !important;
+  }
+
+  .cx-table-head {
+    min-height: 26px !important;
+    font-size: 0.58rem !important;
+  }
+
+  .cx-table-row {
+    min-height: 29px !important;
+    font-size: 0.62rem !important;
+  }
+
+  .cx-table-row strong {
+    font-size: 0.62rem !important;
+  }
+
+  .cx-status {
+    padding: 2px 5px !important;
+    font-size: 0.54rem !important;
+  }
+
+  .cx-ai-panel {
+    padding: 12px !important;
+  }
+
+  .cx-ai-hero {
+    grid-template-columns: 60px minmax(0, 1fr) !important;
+    gap: 12px !important;
+    margin-top: 12px !important;
+  }
+
+  .cx-doc-preview {
+    width: 60px !important;
+    height: 60px !important;
+  }
+
+  .cx-ai-hero h3 {
+    font-size: 1rem !important;
+  }
+
+  .cx-ai-hero p,
+  .cx-ai-copy,
+  .cx-glance dt,
+  .cx-glance dd {
+    font-size: 0.72rem !important;
+  }
+
+  .cx-ai-copy {
+    margin: 10px 0 !important;
+    line-height: 1.45 !important;
+  }
+
+  .cx-ai-primary,
+  .cx-ai-secondary,
+  .cx-glance button {
+    min-height: 31px !important;
+    font-size: 0.72rem !important;
+  }
+
+  .cx-glance {
+    margin-top: 11px !important;
+    padding-top: 9px !important;
+  }
+
+  .cx-glance h4 {
+    font-size: 0.68rem !important;
+  }
+
+  .cx-glance dl div {
+    padding: 6px 0 !important;
+  }
+
+  .cx-bottom-widgets {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+    padding: 8px !important;
+  }
+
+  .cx-bottom-widgets article {
+    min-height: 86px !important;
+    padding: 10px !important;
+  }
+
+  .cx-bottom-widgets .cx-icon {
+    width: 22px !important;
+    height: 22px !important;
+  }
+
+  .cx-bottom-widgets h3 {
+    margin: -22px 0 7px 32px !important;
+    font-size: 0.6rem !important;
+  }
+
+  .cx-bottom-widgets p,
+  .cx-bottom-widgets small,
+  .cx-bottom-widgets span,
+  .cx-bottom-widgets button,
+  .cx-bottom-widgets dl {
+    font-size: 0.62rem !important;
+  }
+
+  .cx-bottom-widgets strong {
+    font-size: 0.95rem !important;
+  }
+
+  .cx-proof-strip i {
+    height: 30px !important;
+  }
+}
+
+@media (max-width: 1150px) {
+  .cx-brand-rail {
+    display: none !important;
+  }
+
+  .cx-exact-stage {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cx-main-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cx-ai-panel {
+    order: -1;
+  }
+}
