@@ -1,5 +1,3 @@
-
-
 window.__CHURVOX_PHASE_163_DEPLOY_MARKER__ = "PHASE_163_FORCE_FRONTEND_BACKEND_RENDER_DEPLOY_20260516211617";
 window.__CHURVOX_RENDER_DEPLOY_MARKER__ = "PHASE_162_FORCE_REAL_RENDER_FRONTEND_DEPLOY_20260516211342";
 
@@ -364,8 +362,6 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
-import "./exactMockupLock";
-
 // PHASE_179_SIMPLIFY_JOBS_PANEL_NO_QUEUE
 // Owner-facing cleanup: no "Job Queue" language and no manual dispatch-style filters.
 // Jobs show as normal jobs with search. The Operator Machine handles crew/proof/invoice
@@ -1601,4 +1597,3 @@ root.render(
     <App />
   </React.StrictMode>
 );
-
