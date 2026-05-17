@@ -5613,3 +5613,237 @@ a,
   }
 }
 
+
+/* PHASE_230_WARM_PUBLIC_THEME_OVERRIDES_REAL_SHELL
+   This file loads after OperatorMachine.css, so the warm Churvox theme must win here too.
+*/
+:root {
+  --cx-ink: #17120f !important;
+  --cx-muted: #6d6258 !important;
+  --cx-blue: #b85720 !important;
+  --cx-sky: #d56b2a !important;
+  --cx-cyan: #e48643 !important;
+  --cx-teal: #507b36 !important;
+  --cx-mist: #f4ede3 !important;
+  --cx-soft: rgba(255, 248, 239, 0.82) !important;
+  --cx-line: rgba(13, 11, 10, 0.12) !important;
+  --cx-shadow: 0 24px 70px rgba(57, 45, 29, 0.16) !important;
+  --cx-bg-0: #f4ede3 !important;
+  --cx-bg-1: #fff8ef !important;
+  --cx-bg-2: #eadbc9 !important;
+  --cx-panel: rgba(255, 248, 239, 0.92) !important;
+  --cx-panel-2: rgba(251, 246, 235, 0.96) !important;
+  --cx-steel: #eadbc9 !important;
+  --cx-text: #17120f !important;
+  --cx-text-soft: #6d6258 !important;
+  --cx-warning: #b85720 !important;
+  --cx-danger: #b44a35 !important;
+  --cx-success: #507b36 !important;
+  --cx-warm-page-bg:
+    radial-gradient(circle at 78% 6%, rgba(184, 87, 32, 0.22), transparent 30rem),
+    radial-gradient(circle at 6% 20%, rgba(13, 11, 10, 0.10), transparent 25rem),
+    linear-gradient(135deg, #f4ede3 0%, #fff8ef 50%, #eadbc9 100%) !important;
+}
+
+html,
+body,
+#root,
+.App,
+.cx-public,
+.cx-app,
+.om-shell,
+.om-main,
+.om-sales-page {
+  background: var(--cx-warm-page-bg) !important;
+  color: #17120f !important;
+}
+
+body {
+  background: var(--cx-warm-page-bg) !important;
+}
+
+.cx-grid-bg {
+  opacity: 0.14 !important;
+  background-image:
+    linear-gradient(rgba(13, 11, 10, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(13, 11, 10, 0.045) 1px, transparent 1px) !important;
+}
+
+.cx-hero-copy,
+.cx-auth-card,
+.cx-operator-preview,
+.cx-flow article,
+.cx-features,
+.cx-topbar,
+.cx-work-hero,
+.cx-stat,
+.cx-panel,
+.cx-column,
+.cx-work-action,
+.cx-ai-card,
+.cx-feature-list article,
+.cx-empty-state,
+.cx-setup-guide,
+.cx-client-portal-card,
+.cx-public-request-form,
+.cx-command-modal,
+.cx-smart-control-panel {
+  background:
+    radial-gradient(circle at top right, rgba(184, 87, 32, 0.10), transparent 18rem),
+    linear-gradient(180deg, rgba(255, 248, 239, 0.96), rgba(251, 246, 235, 0.92)) !important;
+  color: #17120f !important;
+  border: 1px solid rgba(13, 11, 10, 0.12) !important;
+  box-shadow: 0 24px 70px rgba(57, 45, 29, 0.14) !important;
+}
+
+.cx-sidebar {
+  background:
+    radial-gradient(circle at 50% -4%, rgba(228, 134, 67, 0.12), transparent 18rem),
+    linear-gradient(180deg, rgba(13, 11, 10, 0.98), rgba(23, 18, 15, 0.98)) !important;
+  color: #fff8ef !important;
+  border-right: 1px solid rgba(255, 248, 239, 0.10) !important;
+}
+
+.cx-logo strong,
+.cx-hero h1,
+.cx-auth-head h2,
+.cx-section-title h2,
+.cx-features h2,
+.cx-work-hero h1,
+.cx-panel h2,
+.cx-column h3,
+.cx-ai-card h3,
+.cx-work-action h3,
+.cx-stat strong,
+.cx-row strong,
+.cx-command-modal h2,
+.cx-smart-control-panel h4 {
+  color: #17120f !important;
+}
+
+.cx-sidebar .cx-logo strong,
+.cx-sidebar .cx-logo span,
+.cx-sidebar button,
+.cx-sidebar a {
+  color: #fff8ef !important;
+}
+
+.cx-logo span,
+.cx-public-nav nav a,
+.cx-hero-text,
+.cx-proof-strip span,
+.cx-ai-card p,
+.cx-work-action p,
+.cx-flow p,
+.cx-work-hero p,
+.cx-stat span,
+.cx-stat small,
+.cx-panel-list small,
+.cx-row small,
+.cx-topbar > div span,
+.cx-empty-state p,
+.cx-command-modal p,
+.cx-smart-control-panel p {
+  color: #6d6258 !important;
+}
+
+.cx-public-nav nav,
+.cx-proof-strip article,
+.cx-row,
+.cx-switch,
+.cx-topbar input,
+.cx-topbar button,
+.cx-secondary,
+.cx-form input,
+.cx-form textarea,
+.cx-form select,
+.cx-smart-control-panel input,
+.cx-smart-control-panel textarea,
+.cx-smart-control-panel select,
+.cx-command-modal input,
+.cx-command-modal textarea,
+.cx-command-modal select,
+.cx-public-request-form input,
+.cx-public-request-form textarea,
+.cx-public-request-form select,
+.cx-setup-guide input,
+.cx-setup-guide textarea,
+.cx-setup-guide select {
+  color: #17120f !important;
+  background: rgba(255, 248, 239, 0.82) !important;
+  border: 1px solid rgba(13, 11, 10, 0.13) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.42) !important;
+}
+
+.cx-primary,
+.cx-form button,
+.cx-public-nav button,
+.cx-topbar .cx-top-primary,
+.cx-app-nav button.active,
+.cx-work-action button.approve,
+.cx-command-modal button.approve,
+.cx-command-footer-approval button.approve,
+.cx-work-hero aside button {
+  color: #fff8ef !important;
+  background:
+    radial-gradient(circle at 28% 0%, rgba(255,255,255,.22), transparent 28%),
+    linear-gradient(135deg, #17120f, #2a211b 48%, #b85720) !important;
+  border: 1px solid rgba(13, 11, 10, 0.35) !important;
+  box-shadow: 0 16px 42px rgba(57, 45, 29, 0.20) !important;
+}
+
+.cx-secondary,
+.cx-switch,
+.cx-topbar button,
+.cx-ai-card button,
+.cx-work-action button,
+.cx-command-modal button,
+.cx-smart-control-panel button,
+.cx-setup-guide button {
+  color: #17120f !important;
+  background: rgba(255, 248, 239, 0.72) !important;
+  border: 1px solid rgba(13, 11, 10, 0.14) !important;
+}
+
+.cx-pill,
+.cx-auth-head span,
+.cx-section-title span,
+.cx-features > div > span,
+.cx-work-hero > div > span,
+.cx-work-hero aside span,
+.cx-panel header span,
+.cx-column > span,
+.cx-work-action > span,
+.cx-side-operator span,
+.cx-ai-status,
+.cx-smart-control-panel > header span,
+.cx-command-modal header span {
+  color: #b85720 !important;
+  background: rgba(184, 87, 32, 0.08) !important;
+  border-color: rgba(184, 87, 32, 0.14) !important;
+}
+
+.cx-logo-mark {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(228, 134, 67, 0.35), transparent 42%),
+    linear-gradient(145deg, #17120f, #2a211b 68%, #0d0b0a) !important;
+  border: 1px solid rgba(228, 134, 67, 0.24) !important;
+  box-shadow: 0 24px 54px rgba(57,45,29,.28), 0 0 34px rgba(184,87,32,.12) !important;
+}
+
+.cx-hero h1 em {
+  background: linear-gradient(90deg, #b85720, #d56b2a, #e48643) !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+}
+
+.cx-app-nav button {
+  color: rgba(255, 248, 239, 0.78) !important;
+  border-color: rgba(255, 248, 239, 0.10) !important;
+}
+
+.cx-app-nav button.active {
+  color: #17120f !important;
+  background: #fff8ef !important;
+}
+
