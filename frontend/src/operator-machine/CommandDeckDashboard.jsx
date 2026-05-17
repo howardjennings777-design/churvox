@@ -6,12 +6,12 @@ function clean(value, fallback = "") {
   return String(value).replace(/\s+/g, " ").trim() || fallback;
 }
 
-function textFor(item = {}) {
+function slipText(item = {}) {
   return [item.kind, item.eyebrow, item.title, item.need, item.prepared, item.detail].map(clean).join(" ");
 }
 
 function riskFor(item = {}) {
-  const text = textFor(item).toLowerCase();
+  const text = slipText(item).toLowerCase();
 
   if (
     text.includes("missing") ||
@@ -23,7 +23,7 @@ function riskFor(item = {}) {
     text.includes("no email") ||
     text.includes("no phone")
   ) {
-    return { label: "High Risk", tone: "high" };
+    return { label: "HIGH RISK", tone: "high" };
   }
 
   if (
@@ -35,32 +35,30 @@ function riskFor(item = {}) {
     text.includes("worker") ||
     text.includes("crew")
   ) {
-    return { label: "Medium", tone: "medium" };
+    return { label: "MEDIUM", tone: "medium" };
   }
 
-  return { label: "Low Risk", tone: "low" };
+  return { label: "LOW RISK", tone: "low" };
 }
 
 function reasonFor(item = {}) {
-  const prepared = clean(item.prepared);
-  if (prepared) return prepared;
-
-  const need = clean(item.need);
-  if (need) return need;
-
-  return "AI prepared this for owner review.";
+  return clean(item.prepared) || clean(item.need) || "AI prepared this for owner review.";
 }
 
-function rowTitle(item = {}) {
+function titleFor(item = {}) {
   const title = clean(item.title, "Approval slip");
   const kind = clean(item.kind).toLowerCase();
 
-  if (kind.includes("invoice") && !title.toLowerCase().includes("invoice")) return `Invoice — ${title}`;
-  if (kind.includes("quote") && !title.toLowerCase().includes("quote")) return `Quote follow-up — ${title}`;
+  if (kind.includes("invoice") && !title.toLowerCase().includes("invoice")) return `Invoice ${title}`;
+  if (kind.includes("quote") && !title.toLowerCase().includes("follow")) return `Follow up — ${title}`;
+  if (kind.includes("proof") && !title.toLowerCase().includes("update")) return `Update — ${title}`;
   if (kind.includes("dispatch") && !title.toLowerCase().includes("crew")) return `Crew suggestion — ${title}`;
-  if (kind.includes("proof") && !title.toLowerCase().includes("proof")) return `Worker update — ${title}`;
 
   return title;
+}
+
+function Icon({ type }) {
+  return <i className={`cd207-icon ${type}`} aria-hidden="true" />;
 }
 
 export default function CommandDeckDashboard({
@@ -78,20 +76,20 @@ export default function CommandDeckDashboard({
   const processingCount = machine?.processing?.length || 0;
 
   const readyToInvoice = approvals.filter((item) => {
-    const text = textFor(item).toLowerCase();
+    const text = slipText(item).toLowerCase();
     return text.includes("invoice") || text.includes("payment") || text.includes("proof") || text.includes("cashflow");
   }).length;
 
   const crewActive = approvals.filter((item) => {
-    const text = textFor(item).toLowerCase();
+    const text = slipText(item).toLowerCase();
     return text.includes("worker") || text.includes("crew") || text.includes("dispatch") || text.includes("assign");
   }).length;
 
   const metrics = [
-    { label: "Plan", value: planName || "Command", icon: "⌖" },
-    { label: "New Inputs", value: inputCount, icon: "▱" },
-    { label: "Prepared", value: processingCount + approvals.length, icon: "▤" },
-    { label: "Approvals", value: approvals.length, icon: "◇" },
+    { label: "Plan", value: planName || "Command", icon: "target" },
+    { label: "New Inputs", value: inputCount, icon: "tray" },
+    { label: "Prepared", value: processingCount + approvals.length, icon: "document" },
+    { label: "Approvals", value: approvals.length, icon: "shield" },
   ];
 
   const summary = [
@@ -99,34 +97,34 @@ export default function CommandDeckDashboard({
       label: "Ready for approval",
       value: approvals.length,
       body: "AI-prepared items waiting for your decision.",
-      icon: "▣",
+      icon: "briefcase",
     },
     {
       label: "Ready to invoice",
       value: readyToInvoice,
       body: "Work completed and ready to be invoiced.",
-      icon: "▤",
+      icon: "money",
     },
     {
       label: "Crew active today",
       value: crewActive,
       body: "On-site, en route, or finishing up strong.",
-      icon: "♟",
+      icon: "crew",
     },
   ];
 
   const flow = [
-    { label: "Jobs", icon: "▣" },
-    { label: "Crew", icon: "♟" },
-    { label: "Proof", icon: "▧" },
-    { label: "Invoice", icon: "$" },
-    { label: "Payment", icon: "▰" },
+    { label: "Jobs", icon: "briefcase" },
+    { label: "Crew", icon: "crew" },
+    { label: "Proof", icon: "photo" },
+    { label: "Invoice", icon: "money" },
+    { label: "Payment", icon: "card" },
   ];
 
   return (
-    <section className="cdx-shot" data-phase="PHASE_204_EXACT_COMPACT_COMMAND_DECK">
-      <header className="cdx-shot-hero">
-        <section className="cdx-shot-copy">
+    <section className="cd207-page" data-phase="PHASE_207_EXACT_COMMAND_DECK_REBUILD">
+      <header className="cd207-hero">
+        <section className="cd207-copy">
           <span>Command Deck</span>
           <h1>
             Churvox prepares the admin.
@@ -138,10 +136,10 @@ export default function CommandDeckDashboard({
           </p>
         </section>
 
-        <section className="cdx-shot-metrics" aria-label="Dashboard metrics">
+        <section className="cd207-metrics" aria-label="Dashboard metrics">
           {metrics.map((metric) => (
             <article key={metric.label}>
-              <i>{metric.icon}</i>
+              <Icon type={metric.icon} />
               <span>{metric.label}</span>
               <strong>{metric.value}</strong>
             </article>
@@ -149,10 +147,10 @@ export default function CommandDeckDashboard({
         </section>
       </header>
 
-      <section className="cdx-shot-summary" aria-label="Important items">
+      <section className="cd207-summary" aria-label="Important dashboard cards">
         {summary.map((card) => (
           <article key={card.label}>
-            <i>{card.icon}</i>
+            <Icon type={card.icon} />
             <div>
               <strong>{card.value}</strong>
               <span>{card.label}</span>
@@ -163,54 +161,53 @@ export default function CommandDeckDashboard({
         ))}
       </section>
 
-      <section className="cdx-shot-desk">
+      <section className="cd207-desk">
         <header>
-          <i>☑</i>
-          <div>
-            <h2>Approval Desk</h2>
-            <p>Review the admin Churvox prepared, approve it, or edit before it goes out.</p>
-          </div>
+          <Icon type="clipboard" />
+          <h2>Approval Desk</h2>
+          <i />
+          <p>Review the admin Churvox prepared, approve it, or edit before it goes out.</p>
         </header>
 
-        <section className="cdx-shot-table">
+        <section className="cd207-table">
           {rows.length ? rows.map((item) => {
             const risk = riskFor(item);
 
             return (
-              <article className="cdx-shot-row" key={item.id || item.title}>
+              <article className="cd207-row" key={item.id || item.title}>
                 <span>{clean(item.eyebrow || item.kind, "Approval")}</span>
-                <strong>{rowTitle(item)}</strong>
+                <strong>{titleFor(item)}</strong>
                 <p>{reasonFor(item)}</p>
-                <b className={`cdx-shot-risk ${risk.tone}`}>{risk.label}</b>
+                <b className={`cd207-risk ${risk.tone}`}>{risk.label}</b>
                 <button type="button" onClick={() => onOpenSlip(item)}>
                   Open Approval Slip <em>›</em>
                 </button>
               </article>
             );
           }) : (
-            <section className="cdx-shot-empty">
+            <section className="cd207-empty">
               <strong>No approvals waiting.</strong>
               <p>When work comes in, Churvox prepares the admin and places clean approval slips here.</p>
             </section>
           )}
 
           {hiddenApprovalCount > 0 ? (
-            <button type="button" className="cdx-shot-view" onClick={() => setShowAllApprovals(true)}>
+            <button type="button" className="cd207-view" onClick={() => setShowAllApprovals(true)}>
               View all {approvals.length} approvals
             </button>
           ) : null}
 
           {showAllApprovals && approvals.length > 5 ? (
-            <button type="button" className="cdx-shot-view ghost" onClick={() => setShowAllApprovals(false)}>
+            <button type="button" className="cd207-view ghost" onClick={() => setShowAllApprovals(false)}>
               Show top 5 only
             </button>
           ) : null}
         </section>
       </section>
 
-      <section className="cdx-shot-flow">
+      <section className="cd207-flow">
         <article>
-          <i>◉</i>
+          <Icon type="eye" />
           <div>
             <strong>AI is watching</strong>
             <p>Every job. Every detail. Every time.</p>
@@ -220,7 +217,7 @@ export default function CommandDeckDashboard({
         <div>
           {flow.map((step, index) => (
             <React.Fragment key={step.label}>
-              <span><i>{step.icon}</i>{step.label}</span>
+              <span><Icon type={step.icon} />{step.label}</span>
               {index < flow.length - 1 ? <b>›</b> : null}
             </React.Fragment>
           ))}

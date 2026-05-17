@@ -6305,76 +6305,15 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
           />
         ) : null}
 
+        {page === "dashboard" ? null : null}
+
         {data?.error ? <section className="om-warning"><b>Machine warning</b><span>{data.error}</span></section> : null}
 
         <OperatorActionReceipt entry={outputLog[0]} />
 
         {page === "settings" ? <BusinessLogoUploader data={data || {}} /> : null}
 
-        {page === "dashboard" ? (
-          <>
-        <section className="om-dashboard-quiet-tools om-dashboard-tools-single" data-phase="PHASE_116_REMOVE_DUPLICATE_DASHBOARD">
-          <span>Advanced tools ready</span>
-          {dashboardAdvancedTools.map((tool) => (
-            <button type="button" key={tool.id} onClick={() => openSlip(tool)}>
-              {tool.title}
-            </button>
-          ))}
-          <small>Extra tools stay nearby, but your approval slips stay front and centre.</small>
-        </section>
-
-        <section className="om-dashboard-focus" data-phase="PHASE_116_SINGLE_APPROVAL_DESK">
-          <aside className="om-dashboard-focus-card">
-            <span>Owner approvals</span>
-            <h2>Churvox prepared the next moves.</h2>
-            <p>
-              Invoices, crew matches, customer updates and follow-ups are prepared for approval.
-              Open each slip, check it, then approve or edit.
-            </p>
-          </aside>
-
-          <section className="om-approval-desk om-approval-desk-main">
-            <header>
-              <div>
-                <span>Open by default</span>
-                <h2>Approval Desk</h2>
-                <p>Approve invoices, assign workers, edit reminders, add missing amounts, or fix only what matters.</p>
-              </div>
-              <b>{machine.approval.length}</b>
-            </header>
-
-            <div className="om-approval-list">
-              {visibleApprovals.length ? visibleApprovals.map((item) => (
-                <button type="button" className={`om-approval-ticket ${item.kind}`} key={item.id} onClick={() => openSlip(item)}>
-                  <span>{item.eyebrow}</span>
-                  <strong>{item.title}</strong>
-                  <small>{item.need}</small>
-                  <em>Open Approval Slip</em>
-                </button>
-              )) : (
-                <section className="om-done-state">
-                  <span />
-                  <strong>No approvals waiting.</strong>
-                  <p>When workers complete jobs, quotes age, invoices go unpaid, or a request comes in, Churvox will prepare one clean approval slip here.</p>
-                </section>
-              )}
-
-              {hiddenApprovalCount > 0 ? (
-                <button type="button" className="om-view-all-approvals" onClick={() => setShowAllApprovals(true)}>
-                  View all {machine.approval.length} approvals
-                </button>
-              ) : null}
-
-              {showAllApprovals && machine.approval.length > 5 ? (
-                <button type="button" className="om-view-all-approvals secondary" onClick={() => setShowAllApprovals(false)}>
-                  Show top 5 only
-                </button>
-              ) : null}
-            </div>
-          </section>
-        </section>
-          </>
-        ) : (
+        {page === "dashboard" ? null : (
           <FeatureWorkspace page={page} machine={machine} data={data} currentPlan={currentPlan} onOpen={openSlip} onPlans={() => go("plans")} />
         )}
       </section>
