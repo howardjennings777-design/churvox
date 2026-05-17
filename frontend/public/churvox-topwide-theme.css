@@ -2181,3 +2181,52 @@ html body .cs-plan-cards article.featured {
   }
 }
 
+
+/* PHASE_282_BUTTON_WIRING_VISUALS
+   Make wired actions look intentional:
+   - modal secondary route button is clear
+   - disabled working buttons show state
+   - every clickable control has a visual response
+*/
+
+html body button[disabled] {
+  opacity: 0.62 !important;
+  cursor: not-allowed !important;
+}
+
+html body .cs-modal footer button.secondary {
+  border-color: rgba(184, 87, 32, 0.22) !important;
+  background: rgba(184, 87, 32, 0.12) !important;
+  color: var(--chx-black, #0d0b0a) !important;
+}
+
+html body .cs-modal footer button.secondary:hover,
+html body .cs-row button:hover,
+html body .cs-approval-row button:hover,
+html body .cs-command-briefing button:hover,
+html body .cs-command-search button:hover,
+html body .cs-readiness-panel button:hover,
+html body .cs-setup-grid article button:hover,
+html body .cs-flow button:hover,
+html body .cs-plan-cards button:hover,
+html body .cs-plan-addons button:hover,
+html body .cs-sms-packs button:hover {
+  transform: translateY(-1px) !important;
+  filter: brightness(1.02) !important;
+}
+
+html body .cs-row,
+html body .cs-approval-row,
+html body .cs-command-briefing button,
+html body .cs-command-search button,
+html body .cs-readiness-panel button,
+html body .cs-setup-grid article button,
+html body .cs-flow button,
+html body .cs-plan-cards button,
+html body .cs-plan-addons button,
+html body .cs-sms-packs button,
+html body .cs-stat,
+html body .cs-ai-card {
+  transition: transform 140ms ease, filter 140ms ease, box-shadow 140ms ease, border-color 140ms ease !important;
+}
+
