@@ -1884,54 +1884,53 @@ background: transparent !important;
 }
 
 
-/* PHASE_241_COPY_PUBLIC_FRONT_PAGE_SYSTEM_TO_APP
-   Copied from the real public/front page system in OperatorMachine.css:
-   stone / black / copper / cream / green.
-   This is the app version for Dashboard, Work, Clients, Crew, Quotes,
-   Invoices, Proof & Pay, Payroll, Plans and Settings.
+/* PHASE_243_PROPER_FRONT_PAGE_APP_MATCH
+   Proper match to the current public/front page:
+   - dark outside canvas/gutters
+   - big cream hero card
+   - dark command/stat card
+   - cream content sections/cards
+   - copper highlights
+   - large serif headings
 */
+
 :root {
   --cs-black: #0d0b0a !important;
-  --cs-black-2: #17120f !important;
-  --cs-orange: #b85720 !important;
-  --cs-orange-2: #d56b2a !important;
-  --cs-orange-3: #e48643 !important;
+  --cs-ink: #17120f !important;
+  --cs-copper: #b85720 !important;
+  --cs-copper-2: #d56b2a !important;
+  --cs-copper-3: #e48643 !important;
   --cs-paper: #fff8ef !important;
-  --cs-cream: #fbf4ea !important;
-  --cs-soft: #f4ede3 !important;
+  --cs-stone: #f4ede3 !important;
   --cs-stone-2: #eadbc9 !important;
   --cs-muted: #6d6258 !important;
   --cs-green: #507b36 !important;
   --cs-red: #a8422b !important;
   --cs-gold: #d39028 !important;
-  --cs-line: rgba(13, 11, 10, 0.12) !important;
-  --cs-shadow: 0 18px 48px rgba(13, 11, 10, 0.10) !important;
-  --cs-shadow-strong: 0 26px 84px rgba(13, 11, 10, 0.16) !important;
 
-  --cs-public-canvas:
-    radial-gradient(circle at 78% 6%, rgba(184, 87, 32, 0.24), transparent 30rem),
-    radial-gradient(circle at 6% 20%, rgba(13, 11, 10, 0.13), transparent 25rem),
-    linear-gradient(135deg, #f4ede3 0%, #fff8ef 50%, #eadbc9 100%) !important;
+  --cs-dark-canvas:
+    radial-gradient(circle at 82% 0%, rgba(184, 87, 32, 0.22), transparent 34rem),
+    radial-gradient(circle at 10% 18%, rgba(255, 248, 239, 0.07), transparent 28rem),
+    linear-gradient(135deg, #0d0b0a 0%, #17120f 52%, #231713 100%) !important;
 
-  --cs-public-panel:
-    radial-gradient(circle at 94% 8%, rgba(228, 134, 67, 0.22), transparent 22rem),
-    rgba(255, 248, 239, 0.90) !important;
+  --cs-cream-card:
+    radial-gradient(circle at 94% 8%, rgba(228, 134, 67, 0.18), transparent 22rem),
+    rgba(255, 248, 239, 0.94) !important;
 
-  --cs-public-dark:
+  --cs-dark-card:
     radial-gradient(circle at 100% 0%, rgba(228, 134, 67, 0.24), transparent 18rem),
     #0d0b0a !important;
 }
 
-/* Same page canvas as the public landing page */
+/* Real app canvas: same dark outside feel as the front page */
 html,
 body,
 #root,
 .App,
 .om-shell,
-.om-main,
-.cs-page {
-  background: var(--cs-public-canvas) !important;
-  color: var(--cs-black) !important;
+.om-main {
+  background: var(--cs-dark-canvas) !important;
+  color: var(--cs-paper) !important;
 }
 
 body {
@@ -1944,20 +1943,22 @@ body {
 
 .om-main {
   min-height: calc(100vh - 78px) !important;
-  padding: 24px 34px 56px !important;
-  background: var(--cs-public-canvas) !important;
+  padding: 26px 34px 70px !important;
 }
 
 .cs-page {
-  background: transparent !important;
+  width: min(1220px, calc(100% - 8px)) !important;
+  margin-inline: auto !important;
+  display: grid !important;
   gap: 22px !important;
+  background: transparent !important;
 }
 
-/* Top nav uses the same public brand black/copper feel */
+/* Top app bar stays dark, but cleaner */
 .om-nav {
-  background: rgba(13, 11, 10, 0.96) !important;
-  border-bottom: 1px solid rgba(213, 107, 42, 0.22) !important;
-  box-shadow: 0 18px 48px rgba(13, 11, 10, 0.18) !important;
+  background: rgba(13, 11, 10, 0.98) !important;
+  border-bottom: 1px solid rgba(213, 107, 42, 0.24) !important;
+  box-shadow: 0 18px 48px rgba(13, 11, 10, 0.28) !important;
 }
 
 .om-brand strong,
@@ -1966,21 +1967,25 @@ body {
   color: var(--cs-paper) !important;
 }
 
+.om-brand small {
+  color: var(--cs-copper-3) !important;
+}
+
 .om-brand i {
   background: var(--cs-black) !important;
-  border-color: var(--cs-orange) !important;
+  border-color: var(--cs-copper) !important;
   box-shadow: 0 16px 36px rgba(13, 11, 10, 0.22) !important;
 }
 
 .om-brand i b {
-  border-color: var(--cs-orange-3) !important;
+  border-color: var(--cs-copper-3) !important;
 }
 
 .om-nav nav button.active {
-  border-bottom-color: var(--cs-orange-2) !important;
+  border-bottom-color: var(--cs-copper-2) !important;
 }
 
-/* Secondary app nav mirrors the public pill nav */
+/* Secondary nav should look like the public page pill nav */
 .om-main > nav,
 .cs-page > nav,
 .cs-mobile-nav,
@@ -1992,10 +1997,10 @@ body {
   align-items: center !important;
   gap: 8px !important;
   padding: 8px !important;
-  border: 1px solid rgba(13, 11, 10, 0.12) !important;
+  border: 1px solid rgba(255, 248, 239, 0.12) !important;
   border-radius: 999px !important;
-  background: rgba(255, 248, 239, 0.76) !important;
-  box-shadow: 0 18px 48px rgba(13, 11, 10, 0.10) !important;
+  background: rgba(255, 248, 239, 0.10) !important;
+  box-shadow: 0 18px 48px rgba(13, 11, 10, 0.16) !important;
   backdrop-filter: blur(18px) !important;
 }
 
@@ -2007,13 +2012,11 @@ body {
 .cs-filter-bar button,
 .cs-filters button {
   min-height: 38px !important;
-  display: inline-flex !important;
-  align-items: center !important;
   padding: 0 14px !important;
   border: 0 !important;
   border-radius: 999px !important;
   background: transparent !important;
-  color: var(--cs-black) !important;
+  color: rgba(255, 248, 239, 0.82) !important;
   font-weight: 900 !important;
   box-shadow: none !important;
 }
@@ -2025,35 +2028,35 @@ body {
 .cs-subnav button.active,
 .cs-filter-bar button.active,
 .cs-filters button.active {
-  background: var(--cs-black) !important;
-  color: var(--cs-paper) !important;
+  background: var(--cs-paper) !important;
+  color: var(--cs-black) !important;
 }
 
-/* Hero copied from front-page dark command card style */
+/* HERO becomes like the front page: cream card + dark command card */
 .cs-hero {
+  min-height: unset !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.02fr) minmax(380px, 0.72fr) !important;
+  gap: 22px !important;
+  align-items: stretch !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+.cs-hero > section:first-child {
+  min-height: 430px !important;
+  display: grid !important;
+  align-content: center !important;
+  padding: clamp(34px, 5.6vw, 70px) !important;
   border: 1px solid rgba(13, 11, 10, 0.12) !important;
   border-radius: 28px !important;
-  background:
-    radial-gradient(circle at 100% 0%, rgba(228, 134, 67, 0.24), transparent 18rem),
-    linear-gradient(116deg, #0d0b0a 0%, #17120f 50.5%, #b85720 50.6%, #d56b2a 100%) !important;
+  background: var(--cs-cream-card) !important;
   box-shadow: 0 26px 84px rgba(13, 11, 10, 0.16) !important;
   backdrop-filter: blur(22px) !important;
-}
-
-.cs-hero h1 {
-  color: var(--cs-paper) !important;
-  font-family: Georgia, "Times New Roman", serif !important;
-  line-height: 0.92 !important;
-  letter-spacing: -0.075em !important;
-}
-
-.cs-hero h1 mark {
-  color: var(--cs-orange-3) !important;
-  background: transparent !important;
-}
-
-.cs-hero p {
-  color: rgba(255, 248, 239, 0.76) !important;
 }
 
 .cs-hero span:first-child {
@@ -2062,110 +2065,169 @@ body {
   min-height: 34px !important;
   align-items: center !important;
   padding: 0 12px !important;
-  border: 1px solid rgba(228, 134, 67, 0.22) !important;
+  border: 1px solid rgba(184, 87, 32, 0.16) !important;
   border-radius: 999px !important;
-  background: rgba(184, 87, 32, 0.14) !important;
-  color: var(--cs-orange-3) !important;
+  background: rgba(184, 87, 32, 0.08) !important;
+  color: var(--cs-copper) !important;
   font-size: 12px !important;
   font-weight: 950 !important;
   letter-spacing: 0.12em !important;
   text-transform: uppercase !important;
 }
 
-/* Stat boxes copied from the public command card cards */
-.cs-stat {
-  background: rgba(255, 248, 239, 0.08) !important;
-  border: 1px solid rgba(255, 248, 239, 0.12) !important;
-  border-radius: 18px !important;
-  box-shadow: none !important;
+.cs-hero h1 {
+  margin: 18px 0 18px !important;
+  color: var(--cs-black) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: clamp(46px, 6.2vw, 86px) !important;
+  line-height: 0.90 !important;
+  letter-spacing: -0.075em !important;
 }
 
-.cs-stat strong,
-.cs-stat span {
+.cs-hero h1 mark {
+  display: inline !important;
+  color: var(--cs-copper-3) !important;
+  background: transparent !important;
+}
+
+.cs-hero p {
+  max-width: 760px !important;
+  margin: 0 !important;
+  color: var(--cs-muted) !important;
+  font-size: 16px !important;
+  line-height: 1.55 !important;
+}
+
+/* Right hero command card */
+.cs-stats,
+.cs-plan-price-stack {
+  display: grid !important;
+  align-content: center !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 14px !important;
+  padding: 28px !important;
+  border: 1px solid rgba(255, 248, 239, 0.12) !important;
+  border-radius: 28px !important;
+  background: var(--cs-dark-card) !important;
+  color: var(--cs-paper) !important;
+  box-shadow: 0 26px 84px rgba(13, 11, 10, 0.28) !important;
+  backdrop-filter: blur(22px) !important;
+}
+
+.cs-stat,
+.cs-plan-price-stack button {
+  min-height: 132px !important;
+  display: grid !important;
+  place-items: center !important;
+  align-content: center !important;
+  gap: 8px !important;
+  padding: 18px !important;
+  border: 1px solid rgba(255, 248, 239, 0.12) !important;
+  border-radius: 18px !important;
+  background: rgba(255, 248, 239, 0.08) !important;
+  box-shadow: none !important;
   color: var(--cs-paper) !important;
 }
 
-.cs-stat .cs-icon {
-  color: var(--cs-orange-3) !important;
-}
-
-/* AI cards / top summary cards use front-page dark flow cards */
-.cs-command-cards article,
-.cs-ai-card {
-  border: 1px solid rgba(255, 248, 239, 0.12) !important;
-  border-radius: 18px !important;
-  background: rgba(13, 11, 10, 0.88) !important;
-  box-shadow: 0 18px 48px rgba(13, 11, 10, 0.16) !important;
-}
-
-.cs-command-cards article:first-child,
-.cs-ai-card:first-child {
+.cs-stat:first-child,
+.cs-plan-price-stack button.featured {
   background: rgba(184, 87, 32, 0.24) !important;
   border-color: rgba(228, 134, 67, 0.42) !important;
+}
+
+.cs-stat strong,
+.cs-stat span,
+.cs-plan-price-stack button strong,
+.cs-plan-price-stack button span {
+  color: var(--cs-paper) !important;
+}
+
+.cs-stat .cs-icon,
+.cs-plan-price-stack .cs-icon {
+  color: var(--cs-copper-3) !important;
+}
+
+/* Summary row under hero: cream cards, not black */
+.cs-command-cards article,
+.cs-ai-card {
+  min-height: 118px !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  border-radius: 20px !important;
+  background: rgba(255, 248, 239, 0.86) !important;
+  box-shadow: 0 16px 42px rgba(13, 11, 10, 0.08) !important;
+  color: var(--cs-black) !important;
 }
 
 .cs-command-cards strong,
 .cs-command-cards span,
 .cs-ai-card strong {
-  color: var(--cs-paper) !important;
+  color: var(--cs-black) !important;
 }
 
 .cs-command-cards p,
 .cs-ai-card p {
-  color: rgba(255, 248, 239, 0.72) !important;
+  color: var(--cs-muted) !important;
 }
 
 .cs-command-cards .cs-icon,
 .cs-ai-card .cs-icon {
-  background: rgba(184, 87, 32, 0.14) !important;
-  color: var(--cs-orange-3) !important;
+  background: rgba(184, 87, 32, 0.10) !important;
+  color: var(--cs-copper) !important;
 }
 
-/* Main workspace boards copy public dark sections */
+/* Main content boards: cream sections like public how/pricing sections */
 .cs-desk,
 .cs-workspace,
-.cs-flow {
+.cs-flow,
+.cs-plan-cards,
+.cs-plan-addons,
+.cs-sms-packs,
+.cs-plan-compare {
   border: 1px solid rgba(13, 11, 10, 0.12) !important;
   border-radius: 28px !important;
-  background:
-    radial-gradient(circle at 100% 0%, rgba(228, 134, 67, 0.22), transparent 22rem),
-    var(--cs-black) !important;
-  color: var(--cs-paper) !important;
+  background: rgba(255, 248, 239, 0.88) !important;
+  color: var(--cs-black) !important;
   box-shadow: 0 26px 84px rgba(13, 11, 10, 0.16) !important;
   backdrop-filter: blur(22px) !important;
 }
 
 .cs-desk h2,
 .cs-workspace h2,
-.cs-flow article strong {
-  color: var(--cs-paper) !important;
+.cs-flow article strong,
+.cs-plan-addons h2,
+.cs-sms-packs h2,
+.cs-plan-compare h2 {
+  color: var(--cs-black) !important;
   font-family: Georgia, "Times New Roman", serif !important;
 }
 
 .cs-desk header p,
 .cs-workspace header p,
 .cs-flow article p {
-  color: rgba(255, 248, 239, 0.76) !important;
+  color: var(--cs-muted) !important;
 }
 
 .cs-desk > header span,
-.cs-workspace > header span {
+.cs-workspace > header span,
+.cs-plan-addons header span,
+.cs-sms-packs header span,
+.cs-plan-compare header span {
   width: fit-content !important;
   display: inline-flex !important;
   min-height: 34px !important;
   align-items: center !important;
   padding: 0 12px !important;
-  border: 1px solid rgba(228, 134, 67, 0.22) !important;
+  border: 1px solid rgba(184, 87, 32, 0.16) !important;
   border-radius: 999px !important;
-  background: rgba(184, 87, 32, 0.14) !important;
-  color: var(--cs-orange-3) !important;
+  background: rgba(184, 87, 32, 0.08) !important;
+  color: var(--cs-copper) !important;
   font-size: 12px !important;
   font-weight: 950 !important;
   letter-spacing: 0.12em !important;
   text-transform: uppercase !important;
 }
 
-/* Actual lists/tables become public-page cream cards */
+/* Rows/tables are smaller cream cards inside cream section */
 .cs-approval-list,
 .cs-table {
   display: grid !important;
@@ -2177,11 +2239,11 @@ body {
 .cs-approval-row,
 .cs-row,
 .cs-empty {
-  background: rgba(255, 248, 239, 0.92) !important;
+  background: rgba(255, 248, 239, 0.96) !important;
   border: 1px solid rgba(13, 11, 10, 0.10) !important;
   border-radius: 18px !important;
   color: var(--cs-black) !important;
-  box-shadow: 0 16px 42px rgba(13, 11, 10, 0.08) !important;
+  box-shadow: 0 12px 30px rgba(13, 11, 10, 0.07) !important;
 }
 
 .cs-table > header,
@@ -2196,7 +2258,7 @@ body {
 
 .cs-table > header span,
 .cs-approval-row > span {
-  color: var(--cs-orange) !important;
+  color: var(--cs-copper) !important;
   font-size: 12px !important;
   font-weight: 950 !important;
   letter-spacing: 0.08em !important;
@@ -2225,19 +2287,15 @@ body {
   color: var(--cs-muted) !important;
 }
 
-/* Cards in Plans / Settings / Payroll etc follow public cream cards */
+/* Plan/settings/payroll inner cards = public pricing cards */
 .cs-modal,
 .cs-card,
 .cs-panel,
 .cs-list,
 .cs-table-wrap,
 .cs-plan-cards article,
-.cs-plan-addons,
 .cs-plan-addons button,
-.cs-sms-packs,
 .cs-sms-packs button,
-.cs-plan-compare,
-.cs-trial-box,
 .cs-pricing-card,
 .cs-billing-card,
 .cs-setting-card,
@@ -2247,7 +2305,8 @@ body {
 .cs-job-card,
 .cs-quote-card,
 .cs-invoice-card,
-.cs-crew-card {
+.cs-crew-card,
+.cs-trial-box {
   border: 1px solid rgba(13, 11, 10, 0.10) !important;
   border-radius: 20px !important;
   background: rgba(255, 248, 239, 0.86) !important;
@@ -2255,7 +2314,7 @@ body {
   box-shadow: 0 16px 42px rgba(13, 11, 10, 0.08) !important;
 }
 
-/* Buttons copied from public page */
+/* Buttons match public CTAs */
 .cs-approval-row button,
 .cs-row button,
 .cs-view,
@@ -2282,7 +2341,7 @@ body {
   box-shadow: none !important;
 }
 
-/* Inputs copied from public auth form */
+/* Inputs match public auth form */
 .cs-page input,
 .cs-page textarea,
 .cs-page select,
@@ -2303,7 +2362,7 @@ body {
   border-color: rgba(184, 87, 32, 0.46) !important;
 }
 
-/* Badges copied from public trust row */
+/* Badges */
 .cs-risk,
 .cs-pill,
 .cs-tag,
@@ -2324,17 +2383,32 @@ body {
   color: var(--cs-red) !important;
 }
 
-/* Mobile keeps the same public-page spacing */
+/* Mobile */
 @media (max-width: 900px) {
   .om-main {
-    padding: 18px 16px 42px !important;
+    padding: 18px 16px 48px !important;
   }
 
-  .cs-hero,
+  .cs-page {
+    width: 100% !important;
+  }
+
+  .cs-hero {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cs-hero > section:first-child,
+  .cs-stats,
+  .cs-plan-price-stack,
   .cs-desk,
   .cs-workspace,
   .cs-flow {
     border-radius: 24px !important;
+  }
+
+  .cs-stats,
+  .cs-plan-price-stack {
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 
   .om-main > nav,

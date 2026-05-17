@@ -1,1 +1,1 @@
-export const churvoxRenderDeployMarker = "PHASE_241_COPY_PUBLIC_FRONT_PAGE_SYSTEM_20260517071341";
+export const churvoxRenderDeployMarker = "PHASE_243_PROPER_FRONT_PAGE_APP_MATCH_20260517072203";
