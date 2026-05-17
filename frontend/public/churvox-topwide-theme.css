@@ -2230,3 +2230,24 @@ html body .cs-ai-card {
   transition: transform 140ms ease, filter 140ms ease, box-shadow 140ms ease, border-color 140ms ease !important;
 }
 
+
+/* PHASE_294_NO_DEAD_END_BOXES
+   Metric cards and AI explanation cards should not open useless popups.
+   If they do not navigate to a real page, they render as calm read-only cards.
+*/
+html body .cs-stat-readonly,
+html body .cs-ai-card-readonly {
+  cursor: default !important;
+}
+
+html body .cs-stat-readonly:hover,
+html body .cs-ai-card-readonly:hover {
+  transform: none !important;
+  filter: none !important;
+}
+
+html body .cs-stat-readonly:focus,
+html body .cs-ai-card-readonly:focus {
+  outline: none !important;
+}
+

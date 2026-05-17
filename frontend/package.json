@@ -118,5 +118,6 @@
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
   "audit:button-wiring": "node scripts/churvox_phase282_button_wiring_audit.js",
   "audit:deep-wiring": "node scripts/churvox_phase283_deep_wiring_audit.js",
-  "audit:runtime-buttons": "node scripts/churvox_phase283_runtime_button_probe.js"
+  "audit:runtime-buttons": "node scripts/churvox_phase283_runtime_button_probe.js",
+  "audit:no-dead-end-modals": "node scripts/churvox_phase294_no_dead_end_modals_audit.js"
 }

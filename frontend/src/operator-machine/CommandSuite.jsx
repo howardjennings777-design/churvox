@@ -346,27 +346,63 @@ function openTop() {
   }
 }
 
+// PHASE_294_SCROLL_TO_REAL_SECTION
+function scrollToSelector(selector) {
+  try {
+    const target = document.querySelector(selector);
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+  } catch {
+    // fall back below
+  }
+
+  openTop();
+}
+
 function Stat({ label, value, icon, onClick }) {
-  return (
-    <button type="button" className="cs-stat" onClick={onClick}>
+  const content = (
+    <React.Fragment>
       <Icon type={icon || "target"} />
       <span>{label}</span>
       <strong>{value}</strong>
+    </React.Fragment>
+  );
+
+  if (!onClick) {
+    return <article className="cs-stat cs-stat-readonly">{content}</article>;
+  }
+
+  return (
+    <button type="button" className="cs-stat" onClick={onClick}>
+      {content}
     </button>
   );
 }
 
 function AiCard({ title, body, tone = "normal", icon = "spark", onClick }) {
-  return (
-    <button type="button" className={`cs-ai-card ${tone}`} onClick={onClick}>
+  const content = (
+    <React.Fragment>
       <Icon type={icon} />
       <div>
         <strong>{title}</strong>
         <p>{body}</p>
       </div>
+    </React.Fragment>
+  );
+
+  if (!onClick) {
+    return <article className={`cs-ai-card ${tone} cs-ai-card-readonly`}>{content}</article>;
+  }
+
+  return (
+    <button type="button" className={`cs-ai-card ${tone}`} onClick={onClick}>
+      {content}
     </button>
   );
 }
+
 
 // PHASE_287_DEEP_WIRING_ROUTE_HELPERS
 const CHURVOX_KNOWN_ROUTES = new Set([
@@ -753,7 +789,7 @@ function CommandBriefing({ model, approvals, readyToInvoice, crewActive, goToPag
   ];
 
   return (
-    <section className="cs-command-briefing" data-phase="PHASE_280_TODAYS_COMMAND_BRIEFING">
+    <section className="cs-command-briefing" data-command-briefing="true" data-phase="PHASE_280_TODAYS_COMMAND_BRIEFING">
       <header>
         <div>
           <span>Today’s command briefing</span>
@@ -1251,6 +1287,8 @@ function DetailModal({ selected, onClose, onApprove, setPage, operatorBusyAction
   const isInvoice = /invoice/i.test(modalType) || selected.invoice_number;
   const isQuote = /quote/i.test(modalType) || selected.quote_number;
   const isWork = /work|job/i.test(modalType) || selected.job_title || selected.jobTitle;
+  // PHASE_294_INFO_MODAL_SAFETY
+  const isInfoOnly = /smart metric|live metric|ai prepared action|ai watch|approval queue/i.test(modalType);
 
   const rows = [];
 
@@ -1347,13 +1385,15 @@ function DetailModal({ selected, onClose, onApprove, setPage, operatorBusyAction
             </button>
           ) : null}
 
-          <button
-            type="button"
-            disabled={Boolean(operatorBusyAction && selected?.__operatorAction)}
-            onClick={() => onApprove(selected)}
-          >
-            {operatorBusyAction && selected?.__operatorAction ? "Working..." : actionLabel}
-          </button>
+          {!isInfoOnly ? (
+            <button
+              type="button"
+              disabled={Boolean(operatorBusyAction && selected?.__operatorAction)}
+              onClick={() => onApprove(selected)}
+            >
+              {operatorBusyAction && selected?.__operatorAction ? "Working..." : actionLabel}
+            </button>
+          ) : null}
         </footer>
       </article>
     </section>
@@ -1407,35 +1447,28 @@ function SmartPage({ config, rows, columns, aiCards, onOpen, activeFilter, setAc
           <p>{config.body}</p>
         </section>
 
-        <section className="cs-stats">
-          {config.stats.map((stat) => (
-            <Stat
-              key={stat.label}
-              {...stat}
-              onClick={() => openInfo({
-                __modalType: "Smart Metric",
-                __modalTitle: stat.label,
-                __body: `${stat.label}: ${stat.value}. Churvox tracks this live for the ${config.workspaceTitle} workspace.`,
-                __route: stat.route || config.route,
-                status: "Live",
-              })}
-            />
-          ))}
+        <section className="cs-stats" data-phase="PHASE_294_NO_SMART_METRIC_POPUPS">
+          {config.stats.map((stat) => {
+            const targetRoute = normalRoute(stat.route || "", "");
+            const currentRoute = normalRoute(config.route || "", "");
+
+            return (
+              <Stat
+                key={stat.label}
+                {...stat}
+                onClick={targetRoute && targetRoute !== currentRoute ? () => goToPage(targetRoute) : undefined}
+              />
+            );
+          })}
         </section>
       </header>
 
-      <section className="cs-ai-strip">
+      <section className="cs-ai-strip" data-phase="PHASE_294_NO_AI_CARD_POPUPS">
         {aiCards.map((card) => (
           <AiCard
             key={card.title}
             {...card}
-            onClick={() => openInfo({
-              __modalType: "AI Prepared Action",
-              __modalTitle: card.title,
-              __body: card.body,
-              __route: card.route || config.route,
-              status: "Prepared",
-            })}
+            onClick={card.route ? () => goToPage(card.route) : undefined}
           />
         ))}
       </section>
@@ -2708,25 +2741,23 @@ export default function CommandSuite({
               </p>
             </section>
 
-            <section className="cs-stats">
-              {dashboardStats.map((stat) => (
-                <Stat
-                  key={stat.label}
-                  {...stat}
-                  onClick={() => openInfo({
-                    __modalType: "Live metric",
-                    __modalTitle: stat.label,
-                    __body: `${stat.label}: ${stat.value}. Churvox keeps this updated from your business data.`,
-                    status: "Live",
-                    __route: stat.route || "dashboard",
-                  })}
-                />
-              ))}
+            <section className="cs-stats" data-phase="PHASE_294_NO_DASHBOARD_METRIC_POPUPS">
+              {dashboardStats.map((stat) => {
+                const targetRoute = normalRoute(stat.route || "", "");
+
+                return (
+                  <Stat
+                    key={stat.label}
+                    {...stat}
+                    onClick={targetRoute && targetRoute !== "dashboard" ? () => goToPage(targetRoute) : undefined}
+                  />
+                );
+              })}
             </section>
           </header>
 
           <section className="cs-command-cards">
-            <button type="button" onClick={() => openInfo({ __modalType: "Approval queue", __modalTitle: "Ready for approval", __body: "These are owner-ready approval slips prepared by Churvox.", status: "Ready" })}>
+            <button type="button" onClick={() => scrollToSelector("[data-approval-desk]")}>
               <Icon type="briefcase" />
               <div><strong>{approvals.length}</strong><span>Ready for approval</span><p>Owner-ready admin waiting for your decision.</p></div>
               <b>›</b>
@@ -2797,7 +2828,7 @@ export default function CommandSuite({
             </div>
           </section>
 
-          <section className="cs-desk">
+          <section className="cs-desk" data-approval-desk="true">
             <header>
               <Icon type="clipboard" />
               <h2>Approval Desk</h2>
@@ -2856,7 +2887,7 @@ export default function CommandSuite({
           </section>
 
           <section className="cs-flow" data-phase="PHASE_287_FLOW_BUTTONS_WIRED">
-            <button type="button" onClick={() => openInfo({ __modalType: "AI Watch", __modalTitle: "AI is watching", __body: "Churvox watches each step from work intake to payment follow-up.", status: "Active", __route: "dashboard" })}>
+            <button type="button" onClick={() => scrollToSelector("[data-command-briefing]")}>
               <Icon type="eye" />
               <div><strong>AI is watching</strong><p>Every job. Every detail. Every time.</p></div>
             </button>
