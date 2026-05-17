@@ -25,7 +25,7 @@ const VIEWPORTS = [
   { name: "mobile", width: 390, height: 844 },
 ];
 
-const outDir = path.resolve("frontend/visual-audit");
+const outDir = path.resolve("visual-audit");
 const shotDir = path.join(outDir, "screenshots");
 fs.mkdirSync(shotDir, { recursive: true });
 
