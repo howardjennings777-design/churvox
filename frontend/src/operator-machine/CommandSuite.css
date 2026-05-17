@@ -2454,3 +2454,19 @@ body,
   color: rgba(109, 98, 88, 0.62) !important;
 }
 
+
+/* PHASE_236_EXACT_FRONT_PAGE_THEME_CSS_BACKUP */
+html,
+body,
+#root,
+.App,
+.om-shell,
+.om-main,
+.cs-page {
+  background:
+    radial-gradient(circle at 78% 6%, rgba(184, 87, 32, 0.24), transparent 30rem),
+    radial-gradient(circle at 6% 20%, rgba(255, 248, 239, 0.08), transparent 26rem),
+    radial-gradient(circle at 58% 100%, rgba(184, 87, 32, 0.10), transparent 36rem),
+    linear-gradient(135deg, #0d0b0a 0%, #17120f 48%, #221713 100%) !important;
+}
+
