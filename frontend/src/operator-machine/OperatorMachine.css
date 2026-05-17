@@ -9673,3 +9673,502 @@ select {
     margin-right: 24px !important;
   }
 }
+
+/* PHASE_209_COMMAND_DECK_STYLE_ALL_OTHER_PAGES
+   Brings Jobs, Clients, Crew, Quotes, Invoices, Payments, Payroll, Plans and Settings
+   into the same Churvox Command Deck visual language.
+*/
+
+:root {
+  --omx-black: #0d0b0a;
+  --omx-black-2: #17120f;
+  --omx-orange: #b85720;
+  --omx-orange-2: #d56b2a;
+  --omx-orange-3: #e48643;
+  --omx-paper: #fff8ef;
+  --omx-cream: #fbf4ea;
+  --omx-soft: #f4ede3;
+  --omx-muted: #6d6258;
+  --omx-line: rgba(13, 11, 10, 0.12);
+  --omx-green: #507b36;
+  --omx-red: #a8422b;
+  --omx-gold: #d39028;
+  --omx-shadow: 0 14px 42px rgba(13, 11, 10, 0.10);
+  --omx-shadow-strong: 0 26px 84px rgba(13, 11, 10, 0.18);
+}
+
+/* stop old full-page dark panels from taking over */
+.om-shell {
+  background: var(--omx-soft) !important;
+  color: var(--omx-black) !important;
+}
+
+.om-main {
+  background: var(--omx-soft) !important;
+  color: var(--omx-black) !important;
+}
+
+/* page hero/header areas */
+.om-page,
+.om-list-page,
+.om-area,
+.om-panel,
+.om-workspace,
+.om-content,
+.om-section,
+.om-page-shell {
+  color: var(--omx-black) !important;
+}
+
+.om-page > header,
+.om-list-page > header,
+.om-area > header,
+.om-panel > header,
+.om-workspace > header,
+.om-section > header,
+.om-content > header {
+  position: relative !important;
+  min-height: 190px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 28px !important;
+  margin: 0 0 18px !important;
+  padding: 34px 42px !important;
+  border-radius: 22px !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 84% 20%, rgba(255, 248, 239, 0.08), transparent 24rem),
+    linear-gradient(116deg, var(--omx-black) 0%, var(--omx-black-2) 55%, var(--omx-orange) 55.1%, var(--omx-orange-2) 100%) !important;
+  border: 1px solid rgba(13, 11, 10, 0.12) !important;
+  box-shadow: var(--omx-shadow-strong) !important;
+  color: var(--omx-paper) !important;
+}
+
+.om-page > header h1,
+.om-list-page > header h1,
+.om-area > header h1,
+.om-panel > header h1,
+.om-workspace > header h1,
+.om-section > header h1,
+.om-content > header h1,
+.om-page > header h2,
+.om-list-page > header h2,
+.om-area > header h2,
+.om-panel > header h2,
+.om-workspace > header h2,
+.om-section > header h2,
+.om-content > header h2 {
+  margin: 0 !important;
+  max-width: 820px !important;
+  color: var(--omx-paper) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: clamp(42px, 4vw, 72px) !important;
+  line-height: 0.95 !important;
+  letter-spacing: -0.055em !important;
+  font-weight: 900 !important;
+}
+
+.om-page > header p,
+.om-list-page > header p,
+.om-area > header p,
+.om-panel > header p,
+.om-workspace > header p,
+.om-section > header p,
+.om-content > header p {
+  max-width: 760px !important;
+  margin: 14px 0 0 !important;
+  color: rgba(255, 248, 239, 0.82) !important;
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+  font-weight: 650 !important;
+}
+
+.om-page > header span,
+.om-list-page > header span,
+.om-area > header span,
+.om-panel > header span,
+.om-workspace > header span,
+.om-section > header span,
+.om-content > header span {
+  color: var(--omx-orange-3) !important;
+  font-weight: 900 !important;
+}
+
+/* general cards */
+.om-card,
+.om-stat,
+.om-kpi,
+.om-tile,
+.om-table-card,
+.om-list-card,
+.om-client-card,
+.om-job-card,
+.om-worker-card,
+.om-quote-card,
+.om-invoice-card,
+.om-payment-card,
+.om-plan-card,
+.om-settings-card,
+.om-form-card,
+.om-detail-card,
+.om-empty,
+.om-done-state,
+.om-modal-card {
+  background: rgba(255, 250, 242, 0.92) !important;
+  color: var(--omx-black) !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--omx-shadow) !important;
+}
+
+.om-card h2,
+.om-card h3,
+.om-stat h2,
+.om-stat h3,
+.om-kpi h2,
+.om-kpi h3,
+.om-tile h2,
+.om-tile h3,
+.om-table-card h2,
+.om-table-card h3,
+.om-list-card h2,
+.om-list-card h3,
+.om-client-card h2,
+.om-client-card h3,
+.om-job-card h2,
+.om-job-card h3,
+.om-worker-card h2,
+.om-worker-card h3,
+.om-quote-card h2,
+.om-quote-card h3,
+.om-invoice-card h2,
+.om-invoice-card h3,
+.om-payment-card h2,
+.om-payment-card h3,
+.om-plan-card h2,
+.om-plan-card h3,
+.om-settings-card h2,
+.om-settings-card h3,
+.om-form-card h2,
+.om-form-card h3,
+.om-detail-card h2,
+.om-detail-card h3 {
+  color: var(--omx-black) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  letter-spacing: -0.035em !important;
+  font-weight: 900 !important;
+}
+
+.om-card p,
+.om-stat p,
+.om-kpi p,
+.om-tile p,
+.om-table-card p,
+.om-list-card p,
+.om-client-card p,
+.om-job-card p,
+.om-worker-card p,
+.om-quote-card p,
+.om-invoice-card p,
+.om-payment-card p,
+.om-plan-card p,
+.om-settings-card p,
+.om-form-card p,
+.om-detail-card p,
+.om-empty p,
+.om-done-state p {
+  color: var(--omx-muted) !important;
+}
+
+/* grid sections/cards */
+.om-grid,
+.om-card-grid,
+.om-stats,
+.om-kpis,
+.om-summary,
+.om-list,
+.om-table-wrap,
+.om-work-list,
+.om-board,
+.om-settings-grid,
+.om-plans-grid {
+  gap: 18px !important;
+}
+
+/* tables and rows */
+table,
+.om-table,
+.om-data-table {
+  width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  background: rgba(255, 250, 242, 0.90) !important;
+  color: var(--omx-black) !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  box-shadow: var(--omx-shadow) !important;
+}
+
+thead,
+.om-table-head {
+  background: rgba(13, 11, 10, 0.04) !important;
+}
+
+th,
+.om-table th,
+.om-data-table th {
+  color: var(--omx-orange) !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.10em !important;
+  text-transform: uppercase !important;
+  border-bottom: 1px solid rgba(13, 11, 10, 0.10) !important;
+}
+
+td,
+.om-table td,
+.om-data-table td {
+  color: var(--omx-black) !important;
+  border-bottom: 1px solid rgba(13, 11, 10, 0.07) !important;
+}
+
+tr:last-child td {
+  border-bottom: 0 !important;
+}
+
+.om-row,
+.om-list-row,
+.om-item,
+.om-record,
+.om-job-row,
+.om-client-row,
+.om-worker-row,
+.om-quote-row,
+.om-invoice-row,
+.om-payment-row,
+.om-settings-row {
+  background: rgba(255, 250, 242, 0.86) !important;
+  color: var(--omx-black) !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 24px rgba(13, 11, 10, 0.06) !important;
+}
+
+/* inputs/search/forms */
+input,
+select,
+textarea,
+.om-input,
+.om-select,
+.om-search,
+.om-filter,
+.om-field input,
+.om-field select,
+.om-field textarea {
+  background: rgba(255, 250, 242, 0.96) !important;
+  color: var(--omx-black) !important;
+  border: 1px solid rgba(13, 11, 10, 0.16) !important;
+  border-radius: 9px !important;
+  box-shadow: none !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(109, 98, 88, 0.75) !important;
+}
+
+label,
+.om-label,
+.om-field label {
+  color: var(--omx-black) !important;
+  font-weight: 800 !important;
+}
+
+.om-field small,
+.om-help,
+.om-muted,
+small {
+  color: var(--omx-muted) !important;
+}
+
+/* primary actions */
+button,
+.om-button,
+.om-primary,
+.om-action,
+.om-create,
+.om-save,
+.om-submit {
+  font-weight: 850 !important;
+}
+
+button:not(.om-nav button):not(.om-logout),
+.om-button,
+.om-primary,
+.om-action,
+.om-create,
+.om-save,
+.om-submit {
+  border-radius: 8px !important;
+}
+
+.om-primary,
+.om-create,
+.om-save,
+.om-submit,
+button.primary,
+button[data-primary="true"] {
+  background: var(--omx-black) !important;
+  color: var(--omx-paper) !important;
+  border: 0 !important;
+  box-shadow: 0 12px 28px rgba(13, 11, 10, 0.14) !important;
+}
+
+/* small badges/status */
+.om-badge,
+.om-status,
+.om-pill,
+.badge,
+.status,
+.pill {
+  border-radius: 999px !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+}
+
+.om-badge,
+.om-pill,
+.badge,
+.pill {
+  background: rgba(184, 87, 32, 0.10) !important;
+  color: var(--omx-orange) !important;
+  border: 1px solid rgba(184, 87, 32, 0.15) !important;
+}
+
+/* page-specific nav tabs/filters */
+.om-tabs,
+.om-filters,
+.om-toolbar,
+.om-actions,
+.om-page-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.om-tabs button,
+.om-filters button,
+.om-toolbar button,
+.om-actions button,
+.om-page-actions button {
+  border-radius: 999px !important;
+}
+
+.om-tabs button.active,
+.om-filters button.active {
+  background: var(--omx-black) !important;
+  color: var(--omx-paper) !important;
+  border-color: var(--omx-black) !important;
+}
+
+/* modals/popups should match too */
+.om-modal,
+.om-sheet,
+.om-dialog,
+.om-slip,
+.om-popover,
+[role="dialog"] {
+  background: rgba(255, 250, 242, 0.98) !important;
+  color: var(--omx-black) !important;
+  border: 1px solid rgba(13, 11, 10, 0.12) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 30px 90px rgba(13, 11, 10, 0.22) !important;
+}
+
+.om-modal h2,
+.om-sheet h2,
+.om-dialog h2,
+.om-slip h2,
+[role="dialog"] h2 {
+  color: var(--omx-black) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  letter-spacing: -0.04em !important;
+}
+
+/* make old black cards less ugly on non-dashboard pages */
+.om-page .dark,
+.om-area .dark,
+.om-card.dark,
+.om-panel.dark {
+  background: var(--omx-black) !important;
+  color: var(--omx-paper) !important;
+}
+
+.om-page .dark p,
+.om-area .dark p,
+.om-card.dark p,
+.om-panel.dark p {
+  color: rgba(255, 248, 239, 0.78) !important;
+}
+
+/* mobile */
+@media (max-width: 1150px) {
+  .om-page > header,
+  .om-list-page > header,
+  .om-area > header,
+  .om-panel > header,
+  .om-workspace > header,
+  .om-section > header,
+  .om-content > header {
+    grid-template-columns: 1fr !important;
+    min-height: auto !important;
+    padding: 30px !important;
+  }
+
+  .om-page > header h1,
+  .om-list-page > header h1,
+  .om-area > header h1,
+  .om-panel > header h1,
+  .om-workspace > header h1,
+  .om-section > header h1,
+  .om-content > header h1,
+  .om-page > header h2,
+  .om-list-page > header h2,
+  .om-area > header h2,
+  .om-panel > header h2,
+  .om-workspace > header h2,
+  .om-section > header h2,
+  .om-content > header h2 {
+    font-size: 42px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .om-main {
+    padding: 12px !important;
+  }
+
+  .om-card,
+  .om-stat,
+  .om-kpi,
+  .om-tile,
+  .om-table-card,
+  .om-list-card,
+  .om-client-card,
+  .om-job-card,
+  .om-worker-card,
+  .om-quote-card,
+  .om-invoice-card,
+  .om-payment-card,
+  .om-plan-card,
+  .om-settings-card,
+  .om-form-card,
+  .om-detail-card {
+    border-radius: 10px !important;
+  }
+}
+
