@@ -1,1 +1,1 @@
-export const churvoxRenderDeployMarker = "PHASE_268_MOVE_CARD_WORDS_FROM_ICONS_20260517094802";
+export const churvoxRenderDeployMarker = "PHASE_271_PUBLIC_LOGIN_THEME_EVERYWHERE_20260517100101";

@@ -1,7 +1,5 @@
-/* PHASE_264_NO_STORE_SERVICE_WORKER_20260517092652 */
-self.addEventListener("install", (event) => {
-  self.skipWaiting();
-});
+/* PHASE_271_NO_STORE_SERVICE_WORKER_20260517100101 */
+self.addEventListener("install", () => self.skipWaiting());
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(

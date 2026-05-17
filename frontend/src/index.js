@@ -1,10 +1,10 @@
 
-// PHASE_264_LOAD_FRESH_STABLE_CHURVOX_LAYOUT
-(function churvoxLoadFreshStableLayout() {
+// PHASE_271_LOAD_PUBLIC_LOGIN_THEME_EVERYWHERE
+(function churvoxLoadPublicLoginThemeEverywhere() {
   try {
     if (typeof document === "undefined") return;
 
-    const version = "phase268-20260517092652";
+    const version = "phase271-20260517100101";
     const old = document.getElementById("churvox-topwide-theme");
     if (old) old.remove();
 
@@ -22,11 +22,11 @@
 
     if (window.caches && typeof window.caches.keys === "function") {
       window.caches.keys()
-        .then((keys) => Promise.all(keys.map((cacheName) => window.caches.delete(cacheName))))
+        .then((keys) => Promise.all(keys.map((key) => window.caches.delete(key))))
         .catch(() => undefined);
     }
   } catch (err) {
-    console.warn("Churvox fresh layout loader skipped", err);
+    console.warn("Churvox public/login theme loader skipped", err);
   }
 })();
 

@@ -1,51 +1,47 @@
 
-/* PHASE_264_FRESH_STABLE_CHURVOX_LAYOUT
-   Fresh layout reset.
-
-   Rules:
-   - No stacked legacy patches.
-   - Public, login, dashboard and all app pages use one visual system.
-   - Black / copper-orange / warm cream.
-   - Wide app layout.
-   - Hero cannot overlap stats.
-   - Stat pills keep icon + label + value inside the pill.
-   - Cream content cards have readable black text.
+/* PHASE_271_PUBLIC_LOGIN_THEME_EVERYWHERE
+   Public/login theme is now the master theme for the whole product.
+   One design system:
+   - black/copper command background
+   - warm cream content cards
+   - large clean hero panels
+   - safe metric cards instead of fragile squeeze pills
+   - no old blue/grey/legacy theme
+   - no fixed-height text clipping
 */
 
 :root {
-  --cvx-black: #0d0b0a;
-  --cvx-ink: #17120f;
-  --cvx-dark: #221612;
-  --cvx-copper: #b85720;
-  --cvx-orange: #de6f2f;
-  --cvx-peach: #f3a26c;
-  --cvx-cream: #fff8ef;
-  --cvx-paper: #fbf4ea;
-  --cvx-soft: #f1e7da;
-  --cvx-line: rgba(13, 11, 10, 0.12);
-  --cvx-muted: #716459;
-  --cvx-red: #a8422b;
-  --cvx-gold: #bd7b24;
-  --cvx-green: #4f7b3a;
+  --chx-black: #0d0b0a;
+  --chx-ink: #17120f;
+  --chx-dark: #231713;
+  --chx-copper: #b85720;
+  --chx-orange: #df7138;
+  --chx-peach: #f4a26d;
+  --chx-cream: #fff8ef;
+  --chx-paper: #fbf4ea;
+  --chx-soft: #f1e6d8;
+  --chx-muted: #6f6257;
+  --chx-line: rgba(13, 11, 10, 0.12);
+  --chx-dark-line: rgba(255, 248, 239, 0.13);
+  --chx-red: #a8422b;
+  --chx-shadow: 0 24px 70px rgba(13, 11, 10, 0.22);
+  --chx-card-shadow: 0 14px 34px rgba(13, 11, 10, 0.10);
 
-  --cvx-page-bg:
-    radial-gradient(circle at 82% -6%, rgba(184, 87, 32, 0.34), transparent 34rem),
-    radial-gradient(circle at 8% 18%, rgba(255, 248, 239, 0.08), transparent 30rem),
-    linear-gradient(135deg, #0d0b0a 0%, #17120f 48%, #241713 100%);
+  --chx-page-bg:
+    radial-gradient(circle at 84% -8%, rgba(184, 87, 32, 0.40), transparent 34rem),
+    radial-gradient(circle at 8% 18%, rgba(255, 248, 239, 0.08), transparent 32rem),
+    linear-gradient(135deg, #0d0b0a 0%, #17120f 52%, #241713 100%);
 
-  --cvx-dark-panel:
-    radial-gradient(circle at 100% 0%, rgba(222, 111, 47, 0.34), transparent 28rem),
-    linear-gradient(115deg, #0d0b0a 0%, #17120f 58%, #6b2e1b 100%);
+  --chx-dark-panel:
+    radial-gradient(circle at 100% 0%, rgba(223, 113, 56, 0.34), transparent 28rem),
+    linear-gradient(118deg, #0d0b0a 0%, #17120f 60%, #6b2f1c 100%);
 
-  --cvx-cream-panel:
-    radial-gradient(circle at 100% 0%, rgba(222, 111, 47, 0.12), transparent 24rem),
-    rgba(255, 248, 239, 0.96);
-
-  --cvx-shadow: 0 24px 70px rgba(13, 11, 10, 0.20);
-  --cvx-soft-shadow: 0 14px 34px rgba(13, 11, 10, 0.10);
+  --chx-cream-panel:
+    radial-gradient(circle at 100% 0%, rgba(223, 113, 56, 0.10), transparent 23rem),
+    rgba(255, 248, 239, 0.97);
 }
 
-/* BASE */
+/* HARD RESET */
 html,
 body,
 #root,
@@ -54,97 +50,195 @@ body,
 .om-main,
 .om-sales-page {
   min-height: 100% !important;
-  background: var(--cvx-page-bg) !important;
-}
-
-body {
   margin: 0 !important;
-  color: var(--cvx-cream) !important;
+  background: var(--chx-page-bg) !important;
+  color: var(--chx-cream) !important;
+  overflow-x: hidden !important;
 }
 
 * {
-  box-sizing: border-box;
+  box-sizing: border-box !important;
 }
 
-/* TOP NAV */
+button,
+a,
+input,
+textarea,
+select {
+  font: inherit !important;
+}
+
+button {
+  cursor: pointer !important;
+}
+
+/* TOP NAV — same public/login black theme */
+.om-nav,
+.om-sales-nav {
+  background: rgba(13, 11, 10, 0.96) !important;
+  color: var(--chx-cream) !important;
+  border-bottom: 1px solid rgba(223, 113, 56, 0.24) !important;
+  box-shadow: 0 18px 44px rgba(13, 11, 10, 0.30) !important;
+  backdrop-filter: blur(18px) !important;
+}
+
 .om-nav {
-  height: 74px !important;
-  min-height: 74px !important;
-  background: rgba(13, 11, 10, 0.98) !important;
-  border-bottom: 1px solid rgba(222, 111, 47, 0.24) !important;
-  box-shadow: 0 18px 44px rgba(13, 11, 10, 0.28) !important;
+  min-height: 72px !important;
+  height: 72px !important;
+  padding: 0 clamp(18px, 2vw, 36px) !important;
 }
 
-.om-brand,
-.om-brand *,
-.om-nav nav button,
-.om-nav nav button *,
-.om-logout,
-.om-logout * {
-  color: var(--cvx-cream) !important;
+.om-sales-nav {
+  width: min(1500px, calc(100vw - 48px)) !important;
+  min-height: 72px !important;
+  margin: 0 auto !important;
+  padding: 16px 0 !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 60 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
 }
 
-.om-brand small {
-  color: var(--cvx-peach) !important;
+.om-nav *,
+.om-sales-nav * {
+  color: var(--chx-cream) !important;
+}
+
+.om-brand small,
+.om-sales-brand small {
+  color: var(--chx-peach) !important;
 }
 
 .om-brand i,
 .om-sales-brand i {
-  background: var(--cvx-black) !important;
-  border: 1px solid rgba(222, 111, 47, 0.30) !important;
+  background: var(--chx-black) !important;
+  border: 1px solid rgba(223, 113, 56, 0.34) !important;
 }
 
 .om-brand i b,
 .om-sales-brand i b {
-  border-color: var(--cvx-peach) !important;
+  border-color: var(--chx-peach) !important;
   border-left-color: transparent !important;
 }
 
-.om-nav nav button.active {
-  border-bottom-color: var(--cvx-orange) !important;
+.om-nav nav,
+.om-sales-nav nav {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: clamp(8px, 1.2vw, 22px) !important;
 }
 
-/* APP CANVAS */
+.om-nav nav button,
+.om-sales-nav nav a,
+.om-sales-nav nav button,
+.om-logout {
+  min-height: 36px !important;
+  padding: 0 12px !important;
+  border: 1px solid transparent !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: rgba(255, 248, 239, 0.86) !important;
+  font-weight: 900 !important;
+  text-decoration: none !important;
+}
+
+.om-nav nav button.active,
+.om-sales-nav nav a:hover,
+.om-sales-nav nav button:hover {
+  color: var(--chx-cream) !important;
+  background: rgba(255, 248, 239, 0.08) !important;
+  border-color: rgba(255, 248, 239, 0.12) !important;
+}
+
+/* PAGE WIDTH — public/login and app match */
 .om-main {
-  min-height: calc(100vh - 74px) !important;
-  padding: 22px 28px 70px !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+  min-height: calc(100vh - 72px) !important;
+  padding: clamp(16px, 1.8vw, 30px) !important;
+  background: transparent !important;
+}
+
+.cs-suite,
+.cs-page,
+.om-sales-hero,
+.om-sales-proof-strip,
+.om-sales-how,
+.om-sales-prepared,
+.om-sales-control,
+.om-sales-pricing,
+.om-sales-access,
+.om-sales-final {
+  width: min(1500px, calc(100vw - 48px)) !important;
+  max-width: min(1500px, calc(100vw - 48px)) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
 
 .cs-suite,
 .cs-page {
-  width: min(1360px, 100%) !important;
-  margin: 0 auto !important;
   display: grid !important;
-  gap: 16px !important;
+  gap: 18px !important;
   background: transparent !important;
 }
 
-/* HERO: title area only, stats fit in their own row below inside the same card */
-.cs-hero {
-  width: 100% !important;
+/* PUBLIC HERO + APP HERO: SAME LANGUAGE */
+.om-sales-hero {
   display: grid !important;
-  grid-template-columns: minmax(0, 1fr) !important;
-  gap: 14px !important;
-  align-items: start !important;
-  padding: 24px !important;
-  border-radius: 26px !important;
-  border: 1px solid rgba(255, 248, 239, 0.12) !important;
-  background: var(--cvx-dark-panel) !important;
-  color: var(--cvx-cream) !important;
-  box-shadow: var(--cvx-shadow) !important;
-  overflow: hidden !important;
-  position: relative !important;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.72fr) !important;
+  gap: 20px !important;
+  align-items: stretch !important;
+}
+
+.cs-hero,
+.om-sales-command-card,
+.om-sales-control {
+  width: 100% !important;
+  border: 1px solid var(--chx-dark-line) !important;
+  border-radius: 30px !important;
+  background: var(--chx-dark-panel) !important;
+  color: var(--chx-cream) !important;
+  box-shadow: var(--chx-shadow) !important;
+  overflow: visible !important;
+}
+
+.cs-hero {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  grid-template-areas:
+    "copy"
+    "metrics" !important;
+  gap: 20px !important;
+  padding: clamp(24px, 3vw, 40px) !important;
 }
 
 .cs-hero > section:first-child {
+  grid-area: copy !important;
   width: 100% !important;
-  max-width: 980px !important;
+  max-width: 1120px !important;
   min-width: 0 !important;
-  display: block !important;
-  position: relative !important;
-  z-index: 1 !important;
 }
 
+.om-sales-hero-copy,
+.om-sales-how,
+.om-sales-prepared,
+.om-sales-pricing,
+.om-sales-final,
+.om-sales-auth {
+  border: 1px solid var(--chx-line) !important;
+  border-radius: 30px !important;
+  background: var(--chx-cream-panel) !important;
+  color: var(--chx-black) !important;
+  box-shadow: var(--chx-shadow) !important;
+  overflow: visible !important;
+}
+
+/* EYEBROWS */
 .cs-hero span:first-child,
 .om-sales-hero-copy > span,
 .om-sales-how header span,
@@ -161,139 +255,153 @@ body {
   display: inline-flex !important;
   align-items: center !important;
   padding: 0 10px !important;
-  border: 1px solid rgba(222, 111, 47, 0.28) !important;
   border-radius: 999px !important;
+  border: 1px solid rgba(223, 113, 56, 0.26) !important;
   background: rgba(184, 87, 32, 0.12) !important;
-  color: var(--cvx-peach) !important;
+  color: var(--chx-peach) !important;
   font-size: 11px !important;
   font-weight: 950 !important;
-  letter-spacing: 0.12em !important;
+  letter-spacing: 0.13em !important;
   text-transform: uppercase !important;
 }
 
-.cs-hero h1 {
-  max-width: 980px !important;
-  margin: 12px 0 10px !important;
-  color: var(--cvx-cream) !important;
+/* BIG TYPE */
+.cs-hero h1,
+.om-sales-hero h1,
+.om-sales-how h2,
+.om-sales-prepared h2,
+.om-sales-pricing h2,
+.om-sales-final h2,
+.om-sales-auth h2,
+.cs-workspace h2,
+.cs-desk h2,
+.cs-plan-addons h2,
+.cs-sms-packs h2,
+.cs-plan-compare h2,
+.cs-modal h2 {
   font-family: Georgia, "Times New Roman", serif !important;
-  font-size: clamp(34px, 4.8vw, 68px) !important;
-  line-height: 0.98 !important;
-  letter-spacing: -0.065em !important;
-  overflow: visible !important;
+  letter-spacing: -0.06em !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+}
+
+.cs-hero h1 {
+  max-width: 1140px !important;
+  margin: 12px 0 10px !important;
+  color: var(--chx-cream) !important;
+  font-size: clamp(38px, 4.7vw, 72px) !important;
+  line-height: 1.02 !important;
+  white-space: normal !important;
 }
 
 .cs-hero h1 mark {
   display: inline !important;
-  color: var(--cvx-peach) !important;
+  color: var(--chx-peach) !important;
   background: transparent !important;
 }
 
 .cs-hero p {
-  max-width: 780px !important;
+  max-width: 900px !important;
   margin: 0 !important;
   color: rgba(255, 248, 239, 0.82) !important;
   font-size: 14px !important;
-  line-height: 1.45 !important;
+  line-height: 1.48 !important;
 }
 
-/* STAT PILLS: icon + label + value all inside the pill */
+/* METRICS — stable cards, not squeeze pills */
 .cs-stats,
 .cs-plan-price-stack {
+  grid-area: metrics !important;
   width: 100% !important;
-  max-width: 920px !important;
-  min-width: 0 !important;
   display: grid !important;
-  grid-template-columns: repeat(4, minmax(150px, 220px)) !important;
-  justify-content: start !important;
-  align-items: stretch !important;
-  gap: 10px !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 12px !important;
   margin: 0 !important;
   padding: 0 !important;
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
-  position: relative !important;
-  z-index: 2 !important;
 }
 
 .cs-stat,
 .cs-plan-price-stack button {
   width: 100% !important;
-  max-width: 220px !important;
   min-width: 0 !important;
-  height: 74px !important;
-  min-height: 74px !important;
-  max-height: 74px !important;
+  min-height: 92px !important;
+  height: auto !important;
   display: grid !important;
-  grid-template-columns: 28px minmax(0, 1fr) minmax(34px, auto) !important;
-  grid-template-rows: 1fr !important;
+  grid-template-columns: 44px minmax(0, 1fr) !important;
+  grid-template-rows: auto auto !important;
+  grid-template-areas:
+    "icon label"
+    "icon value" !important;
+  column-gap: 14px !important;
+  row-gap: 6px !important;
   align-items: center !important;
-  justify-items: stretch !important;
-  column-gap: 8px !important;
-  padding: 10px 14px !important;
-  border-radius: 999px !important;
-  border: 1px solid rgba(222, 111, 47, 0.28) !important;
-  background-color: #0d0b0a !important;
-  background-image:
-    radial-gradient(circle at 20% 0%, rgba(255, 248, 239, 0.16), transparent 26%),
-    linear-gradient(135deg, #0d0b0a 0%, #17120f 46%, #6b2e1b 78%, #b85720 100%) !important;
-  color: var(--cvx-cream) !important;
-  box-shadow: 0 12px 30px rgba(13, 11, 10, 0.18) !important;
-  overflow: hidden !important;
+  padding: 18px !important;
+  border-radius: 24px !important;
+  border: 1px solid rgba(255, 248, 239, 0.13) !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(223, 113, 56, 0.28), transparent 14rem),
+    rgba(13, 11, 10, 0.70) !important;
+  color: var(--chx-cream) !important;
+  box-shadow: 0 14px 36px rgba(13, 11, 10, 0.18) !important;
+  overflow: visible !important;
   text-align: left !important;
 }
 
 .cs-stat *,
 .cs-plan-price-stack button * {
-  color: var(--cvx-cream) !important;
+  color: var(--chx-cream) !important;
 }
 
 .cs-stat .cs-icon,
 .cs-plan-price-stack button .cs-icon {
-  width: 22px !important;
-  height: 22px !important;
-  min-width: 22px !important;
-  min-height: 22px !important;
-  max-width: 22px !important;
-  max-height: 22px !important;
+  grid-area: icon !important;
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  min-height: 34px !important;
+  justify-self: center !important;
+  align-self: center !important;
   margin: 0 !important;
-  transform: scale(0.72) !important;
-  color: var(--cvx-cream) !important;
-  opacity: 0.95 !important;
+  color: var(--chx-peach) !important;
+  transform: none !important;
 }
 
 .cs-stat span,
 .cs-plan-price-stack button span {
+  grid-area: label !important;
   min-width: 0 !important;
-  width: 100% !important;
-  overflow: hidden !important;
-  color: rgba(255, 248, 239, 0.86) !important;
-  font-size: 11px !important;
-  line-height: 1.1 !important;
+  color: rgba(255, 248, 239, 0.82) !important;
+  font-size: 12px !important;
+  line-height: 1.16 !important;
   font-weight: 900 !important;
   text-align: left !important;
-  white-space: nowrap !important;
-  text-overflow: ellipsis !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
 }
 
 .cs-stat strong,
 .cs-plan-price-stack button strong {
-  max-width: 82px !important;
+  grid-area: value !important;
   min-width: 0 !important;
-  overflow: hidden !important;
-  color: var(--cvx-cream) !important;
+  color: var(--chx-cream) !important;
   font-family: Georgia, "Times New Roman", serif !important;
-  font-size: clamp(18px, 1.8vw, 24px) !important;
+  font-size: clamp(24px, 2.4vw, 38px) !important;
   line-height: 1 !important;
   font-weight: 950 !important;
-  text-align: right !important;
-  white-space: nowrap !important;
-  text-overflow: ellipsis !important;
+  text-align: left !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
 }
 
-/* CREAM SECTIONS */
+/* ALL CREAM APP SECTIONS */
 .cs-command-cards,
 .cs-ai-strip {
+  width: 100% !important;
   display: grid !important;
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   gap: 14px !important;
@@ -304,37 +412,24 @@ body {
 .cs-workspace,
 .cs-desk,
 .cs-flow,
-.cs-plan-cards,
+.cs-plan-cards article,
 .cs-plan-addons,
 .cs-sms-packs,
 .cs-plan-compare,
 .cs-modal,
-.cs-card,
-.cs-panel,
-.cs-list,
-.cs-table-wrap,
 .cs-empty,
 .cs-row,
-.cs-approval-row {
-  border: 1px solid var(--cvx-line) !important;
+.cs-approval-row,
+.cs-table > header {
+  border: 1px solid var(--chx-line) !important;
   border-radius: 24px !important;
-  background: var(--cvx-cream-panel) !important;
-  color: var(--cvx-black) !important;
-  box-shadow: var(--cvx-soft-shadow) !important;
+  background: var(--chx-cream-panel) !important;
+  color: var(--chx-black) !important;
+  box-shadow: var(--chx-card-shadow) !important;
+  overflow: visible !important;
 }
 
-.cs-command-cards button,
-.cs-ai-card {
-  min-height: 108px !important;
-  padding: 18px !important;
-  display: grid !important;
-  grid-template-columns: 38px minmax(0, 1fr) auto !important;
-  gap: 12px !important;
-  align-items: center !important;
-  text-align: left !important;
-}
-
-.cs-command-cards *,
+.cs-command-cards button *,
 .cs-ai-card *,
 .cs-workspace *,
 .cs-desk *,
@@ -344,18 +439,51 @@ body {
 .cs-sms-packs *,
 .cs-plan-compare *,
 .cs-modal *,
-.cs-card *,
-.cs-panel *,
-.cs-list *,
-.cs-table-wrap *,
 .cs-empty *,
 .cs-row *,
-.cs-approval-row * {
-  color: var(--cvx-black) !important;
+.cs-approval-row *,
+.cs-table > header * {
+  color: var(--chx-black) !important;
 }
 
-.cs-command-cards p,
+/* AI CARDS — safe text layout */
+.cs-ai-card {
+  min-height: 132px !important;
+  display: grid !important;
+  grid-template-columns: 54px minmax(0, 1fr) !important;
+  gap: 18px !important;
+  align-items: center !important;
+  padding: 22px !important;
+  text-align: left !important;
+}
+
+.cs-ai-card > .cs-icon {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  min-height: 42px !important;
+  justify-self: center !important;
+  color: var(--chx-copper) !important;
+}
+
+.cs-ai-card > div {
+  min-width: 0 !important;
+  display: block !important;
+}
+
+.cs-ai-card strong {
+  display: block !important;
+  margin: 0 0 8px !important;
+  color: var(--chx-black) !important;
+  font-size: clamp(22px, 2vw, 30px) !important;
+  line-height: 1.08 !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.035em !important;
+  white-space: normal !important;
+}
+
 .cs-ai-card p,
+.cs-command-cards p,
 .cs-workspace p,
 .cs-desk p,
 .cs-flow p,
@@ -366,12 +494,54 @@ body {
 .cs-row p,
 .cs-row div,
 .cs-approval-row p,
-.cs-empty p,
-.cs-page small {
-  color: var(--cvx-muted) !important;
+.cs-empty p {
+  color: var(--chx-muted) !important;
+  white-space: normal !important;
+  word-break: normal !important;
 }
 
-/* WORKSPACE HEADERS AND FILTERS */
+/* DASHBOARD SUMMARY CARDS */
+.cs-command-cards button {
+  min-height: 126px !important;
+  display: grid !important;
+  grid-template-columns: 56px minmax(0, 1fr) 26px !important;
+  gap: 18px !important;
+  align-items: center !important;
+  padding: 22px !important;
+  text-align: left !important;
+}
+
+.cs-command-cards button > .cs-icon {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  min-height: 42px !important;
+  justify-self: center !important;
+  color: var(--chx-copper) !important;
+}
+
+.cs-command-cards button > div {
+  min-width: 0 !important;
+  display: block !important;
+}
+
+.cs-command-cards button strong {
+  display: inline-block !important;
+  margin-right: 12px !important;
+  color: var(--chx-black) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: clamp(34px, 3vw, 52px) !important;
+  line-height: 1 !important;
+}
+
+.cs-command-cards button span {
+  color: var(--chx-black) !important;
+  font-size: clamp(18px, 1.7vw, 26px) !important;
+  line-height: 1.08 !important;
+  font-weight: 950 !important;
+}
+
+/* WORKSPACE */
 .cs-workspace,
 .cs-desk,
 .cs-flow,
@@ -387,10 +557,10 @@ body {
 .cs-sms-packs > header,
 .cs-plan-compare > header {
   display: flex !important;
+  gap: 18px !important;
   align-items: flex-start !important;
   justify-content: space-between !important;
-  gap: 16px !important;
-  margin-bottom: 14px !important;
+  margin-bottom: 16px !important;
 }
 
 .cs-workspace h2,
@@ -399,20 +569,20 @@ body {
 .cs-sms-packs h2,
 .cs-plan-compare h2,
 .cs-modal h2 {
-  color: var(--cvx-black) !important;
-  font-family: Georgia, "Times New Roman", serif !important;
-  letter-spacing: -0.055em !important;
+  margin: 8px 0 4px !important;
+  color: var(--chx-black) !important;
+  font-size: clamp(28px, 2.5vw, 42px) !important;
+  line-height: 1 !important;
 }
 
+/* FILTERS */
 .cs-filters,
 .cs-filter-bar,
 .cs-tabs {
   display: flex !important;
   flex-wrap: wrap !important;
   gap: 8px !important;
-  align-items: center !important;
   justify-content: flex-end !important;
-  padding: 0 !important;
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
@@ -424,28 +594,17 @@ body {
 .cs-row button,
 .cs-approval-row button,
 .cs-view,
-.cs-command-cards button b,
-.cs-flow button {
-  min-height: 36px !important;
+.cs-flow button,
+.cs-modal footer button.ghost {
+  min-height: 38px !important;
   padding: 0 14px !important;
   border-radius: 999px !important;
   border: 1px solid rgba(13, 11, 10, 0.12) !important;
-  background: rgba(13, 11, 10, 0.07) !important;
+  background: rgba(13, 11, 10, 0.075) !important;
   background-image: none !important;
-  color: var(--cvx-black) !important;
+  color: var(--chx-black) !important;
   box-shadow: none !important;
   font-weight: 950 !important;
-}
-
-.cs-filters button *,
-.cs-filter-bar button *,
-.cs-tabs button *,
-.cs-row button *,
-.cs-approval-row button *,
-.cs-view *,
-.cs-command-cards button b *,
-.cs-flow button * {
-  color: var(--cvx-black) !important;
 }
 
 .cs-filters button.active,
@@ -455,7 +614,7 @@ body {
   border-color: rgba(184, 87, 32, 0.22) !important;
 }
 
-/* ROWS / TABLE */
+/* TABLES */
 .cs-table,
 .cs-approval-list {
   display: grid !important;
@@ -474,19 +633,20 @@ body {
 }
 
 .cs-table > header {
-  background: rgba(13, 11, 10, 0.06) !important;
+  background: rgba(13, 11, 10, 0.055) !important;
   box-shadow: none !important;
 }
 
 .cs-table > header span,
 .cs-approval-row > span {
-  color: var(--cvx-copper) !important;
+  color: var(--chx-copper) !important;
   font-size: 11px !important;
   font-weight: 950 !important;
   letter-spacing: 0.12em !important;
   text-transform: uppercase !important;
 }
 
+/* RISK TAGS */
 .cs-risk,
 .cs-pill,
 .cs-tag,
@@ -498,46 +658,44 @@ body {
   padding: 0 10px !important;
   border-radius: 999px !important;
   background: rgba(184, 87, 32, 0.10) !important;
-  color: var(--cvx-copper) !important;
-  border: 1px solid rgba(184, 87, 32, 0.13) !important;
+  color: var(--chx-copper) !important;
+  border: 1px solid rgba(184, 87, 32, 0.14) !important;
   box-shadow: none !important;
   font-weight: 950 !important;
 }
 
 .cs-risk.high {
   background: rgba(168, 66, 43, 0.12) !important;
-  color: var(--cvx-red) !important;
+  color: var(--chx-red) !important;
   border-color: rgba(168, 66, 43, 0.18) !important;
 }
 
-.cs-risk.medium {
-  background: rgba(189, 123, 36, 0.12) !important;
-  color: var(--cvx-gold) !important;
-  border-color: rgba(189, 123, 36, 0.18) !important;
+/* PLANS / ADD-ONS / SMS */
+.cs-plan-cards {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
 }
 
-/* PLANS / SMS / MYOB: NO BIG PICTURES */
+.cs-plan-cards article,
 .cs-plan-addons button,
-.cs-sms-packs button,
-.cs-plan-cards article {
+.cs-sms-packs button {
   width: 100% !important;
   min-height: 0 !important;
   height: auto !important;
   max-height: none !important;
-  display: grid !important;
-  align-content: start !important;
-  justify-items: start !important;
-  gap: 6px !important;
-  padding: 16px !important;
-  border-radius: 18px !important;
-  border: 1px solid var(--cvx-line) !important;
-  background: rgba(255, 248, 239, 0.96) !important;
+  padding: 18px !important;
+  border-radius: 20px !important;
+  border: 1px solid var(--chx-line) !important;
+  background: rgba(255, 248, 239, 0.98) !important;
   background-image: none !important;
-  color: var(--cvx-black) !important;
-  box-shadow: 0 10px 24px rgba(13, 11, 10, 0.06) !important;
+  color: var(--chx-black) !important;
+  box-shadow: var(--chx-card-shadow) !important;
   overflow: visible !important;
   text-align: left !important;
-  white-space: normal !important;
 }
 
 .cs-plan-addons button::before,
@@ -548,157 +706,22 @@ body {
   display: none !important;
 }
 
-.cs-plan-addons button *,
-.cs-sms-packs button *,
-.cs-plan-cards article * {
-  color: var(--cvx-black) !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-.cs-plan-addons button strong,
-.cs-sms-packs button strong,
-.cs-plan-cards article h2,
-.cs-plan-cards article strong {
-  color: var(--cvx-black) !important;
-  font-family: Georgia, "Times New Roman", serif !important;
-  font-size: clamp(20px, 2vw, 30px) !important;
-  line-height: 1.02 !important;
-  letter-spacing: -0.045em !important;
-}
-
-.cs-plan-addons button p,
-.cs-sms-packs button p,
-.cs-plan-cards article p,
-.cs-plan-addons button small,
-.cs-sms-packs button small {
-  color: var(--cvx-muted) !important;
-  font-size: 13px !important;
-  line-height: 1.35 !important;
-  margin: 0 !important;
-}
-
-.cs-plan-addons button em,
-.cs-sms-packs button em,
-.cs-plan-addons button b,
-.cs-sms-packs button b {
-  color: var(--cvx-copper) !important;
-  font-style: normal !important;
-  font-weight: 950 !important;
-}
-
-/* PUBLIC + LOGIN */
-.om-sales-page {
-  padding-bottom: 70px !important;
-  overflow-x: hidden !important;
-}
-
-.om-sales-nav,
-.om-sales-hero,
-.om-sales-proof-strip,
-.om-sales-how,
-.om-sales-prepared,
-.om-sales-control,
-.om-sales-pricing,
-.om-sales-access,
-.om-sales-final {
-  width: min(1360px, calc(100% - 32px)) !important;
-  margin-inline: auto !important;
-}
-
-.om-sales-nav {
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 300 !important;
-  display: flex !important;
-  justify-content: space-between !important;
-  align-items: center !important;
-  padding: 18px 0 !important;
-}
-
-.om-sales-nav,
-.om-sales-nav * {
-  color: var(--cvx-cream) !important;
-}
-
-.om-sales-nav nav {
-  display: flex !important;
-  gap: 8px !important;
-  flex-wrap: wrap !important;
-  justify-content: flex-end !important;
-}
-
-.om-sales-nav nav a,
-.om-sales-nav nav button {
-  min-height: 36px !important;
-  padding: 0 14px !important;
-  border-radius: 999px !important;
-  border: 1px solid rgba(255, 248, 239, 0.12) !important;
-  background: rgba(255, 248, 239, 0.08) !important;
-  color: var(--cvx-cream) !important;
-  font-weight: 900 !important;
-}
-
-.om-sales-hero {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.72fr) !important;
-  gap: 20px !important;
-  align-items: stretch !important;
-}
-
-.om-sales-hero-copy,
-.om-sales-how,
-.om-sales-prepared,
-.om-sales-pricing,
-.om-sales-final {
-  border: 1px solid var(--cvx-line) !important;
-  border-radius: 28px !important;
-  background: var(--cvx-cream-panel) !important;
-  color: var(--cvx-black) !important;
-  box-shadow: var(--cvx-shadow) !important;
-}
-
-.om-sales-command-card,
-.om-sales-control {
-  border: 1px solid rgba(255, 248, 239, 0.12) !important;
-  border-radius: 28px !important;
-  background: var(--cvx-dark-panel) !important;
-  color: var(--cvx-cream) !important;
-  box-shadow: var(--cvx-shadow) !important;
-}
-
+/* PUBLIC + LOGIN INNER TEXT */
 .om-sales-hero-copy *,
 .om-sales-how *,
 .om-sales-prepared *,
 .om-sales-pricing *,
 .om-sales-final *,
 .om-sales-auth * {
-  color: var(--cvx-black) !important;
+  color: var(--chx-black) !important;
 }
 
 .om-sales-command-card *,
 .om-sales-control * {
-  color: var(--cvx-cream) !important;
+  color: var(--chx-cream) !important;
 }
 
-.om-sales-hero h1,
-.om-sales-how h2,
-.om-sales-prepared h2,
-.om-sales-pricing h2,
-.om-sales-final h2,
-.om-sales-auth h2 {
-  font-family: Georgia, "Times New Roman", serif !important;
-  letter-spacing: -0.065em !important;
-}
-
-.om-sales-auth {
-  border: 1px solid var(--cvx-line) !important;
-  border-radius: 24px !important;
-  background: rgba(255, 248, 239, 0.98) !important;
-  color: var(--cvx-black) !important;
-  box-shadow: var(--cvx-shadow) !important;
-}
-
+/* FORMS */
 .om-sales-auth input,
 .cs-page input,
 .cs-page textarea,
@@ -707,59 +730,83 @@ body {
 .cs-modal textarea,
 .cs-modal select {
   min-height: 44px !important;
+  width: 100% !important;
   border: 1px solid rgba(13, 11, 10, 0.14) !important;
   border-radius: 14px !important;
   background: rgba(255, 248, 239, 0.98) !important;
-  color: var(--cvx-black) !important;
+  color: var(--chx-black) !important;
 }
 
-/* Real public/login CTAs */
+/* REAL CTAs */
 .om-sales-actions button,
 .om-sales-final button,
 .om-sales-pricing article button,
 .om-sales-auth form button,
 .cs-modal footer button:not(.ghost),
 .cs-page a.button,
-.cs-page .button {
+.cs-page .button,
+.cs-locked-pay-button,
+.cs-trial-box button {
   min-height: 42px !important;
   padding: 0 18px !important;
   border-radius: 999px !important;
-  border: 1px solid rgba(222, 111, 47, 0.26) !important;
-  background-color: var(--cvx-black) !important;
-  background-image:
+  border: 1px solid rgba(223, 113, 56, 0.28) !important;
+  background:
     radial-gradient(circle at 24% 0%, rgba(255, 248, 239, 0.18), transparent 26%),
-    linear-gradient(135deg, #0d0b0a 0%, #17120f 42%, #5d2818 72%, #b85720 100%) !important;
-  color: var(--cvx-cream) !important;
+    linear-gradient(135deg, #0d0b0a 0%, #17120f 42%, #6b2f1c 76%, #b85720 100%) !important;
+  color: var(--chx-cream) !important;
   font-weight: 950 !important;
   box-shadow: 0 14px 32px rgba(13, 11, 10, 0.18) !important;
 }
 
-.om-sales-actions button *,
-.om-sales-final button *,
-.om-sales-pricing article button *,
-.om-sales-auth form button *,
-.cs-modal footer button:not(.ghost) *,
-.cs-page a.button *,
-.cs-page .button * {
-  color: var(--cvx-cream) !important;
-}
-
-button.ghost,
-.cs-modal footer button.ghost {
-  background: rgba(13, 11, 10, 0.07) !important;
-  color: var(--cvx-black) !important;
-  border: 1px solid rgba(13, 11, 10, 0.12) !important;
-  box-shadow: none !important;
-}
-
-/* MOBILE */
-@media (max-width: 900px) {
-  .om-main {
-    padding: 16px 14px 48px !important;
+/* RESPONSIVE */
+@media (max-width: 1200px) {
+  .cs-suite,
+  .cs-page,
+  .om-sales-nav,
+  .om-sales-hero,
+  .om-sales-proof-strip,
+  .om-sales-how,
+  .om-sales-prepared,
+  .om-sales-control,
+  .om-sales-pricing,
+  .om-sales-access,
+  .om-sales-final {
+    width: min(100%, calc(100vw - 32px)) !important;
+    max-width: min(100%, calc(100vw - 32px)) !important;
   }
 
-  .cs-page {
-    gap: 12px !important;
+  .cs-stats,
+  .cs-plan-price-stack,
+  .cs-plan-cards,
+  .cs-ai-strip,
+  .cs-command-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .om-sales-hero {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .om-main {
+    padding: 10px !important;
+  }
+
+  .cs-suite,
+  .cs-page,
+  .om-sales-nav,
+  .om-sales-hero,
+  .om-sales-proof-strip,
+  .om-sales-how,
+  .om-sales-prepared,
+  .om-sales-control,
+  .om-sales-pricing,
+  .om-sales-access,
+  .om-sales-final {
+    width: calc(100vw - 20px) !important;
+    max-width: calc(100vw - 20px) !important;
   }
 
   .cs-hero {
@@ -768,49 +815,39 @@ button.ghost,
   }
 
   .cs-hero h1 {
-    font-size: clamp(32px, 10vw, 48px) !important;
-    line-height: 1.03 !important;
+    font-size: clamp(32px, 10vw, 46px) !important;
+    line-height: 1.04 !important;
   }
 
   .cs-stats,
-  .cs-plan-price-stack {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    max-width: 100% !important;
-    gap: 8px !important;
+  .cs-plan-price-stack,
+  .cs-plan-cards,
+  .cs-ai-strip,
+  .cs-command-cards {
+    grid-template-columns: 1fr !important;
   }
 
   .cs-stat,
   .cs-plan-price-stack button {
-    max-width: none !important;
-    height: 70px !important;
-    min-height: 70px !important;
-    max-height: 70px !important;
-    grid-template-columns: 24px minmax(0, 1fr) minmax(28px, auto) !important;
-    padding: 8px 10px !important;
-  }
-
-  .cs-stat .cs-icon,
-  .cs-plan-price-stack button .cs-icon {
-    width: 19px !important;
-    height: 19px !important;
-    min-width: 19px !important;
-    min-height: 19px !important;
-  }
-
-  .cs-stat span,
-  .cs-plan-price-stack button span {
-    font-size: 10.5px !important;
+    min-height: 82px !important;
+    grid-template-columns: 38px minmax(0, 1fr) !important;
+    padding: 14px !important;
   }
 
   .cs-stat strong,
   .cs-plan-price-stack button strong {
-    max-width: 62px !important;
-    font-size: 18px !important;
+    font-size: 28px !important;
   }
 
-  .cs-command-cards,
-  .cs-ai-strip {
-    grid-template-columns: 1fr !important;
+  .cs-ai-card,
+  .cs-command-cards button {
+    grid-template-columns: 46px minmax(0, 1fr) !important;
+    gap: 14px !important;
+    padding: 18px !important;
+  }
+
+  .cs-command-cards button > b {
+    display: none !important;
   }
 
   .cs-workspace > header,
@@ -827,433 +864,7 @@ button.ghost,
     justify-content: flex-start !important;
   }
 
-  .om-sales-hero {
-    grid-template-columns: 1fr !important;
-  }
-
   .om-sales-nav {
-    align-items: flex-start !important;
+    display: grid !important;
   }
 }
-
-
-/* PHASE_265_WIDEN_ALL_PAGES
-   Make every Churvox page wider:
-   - public landing
-   - login/auth section
-   - dashboard
-   - work/jobs
-   - clients
-   - crew
-   - quotes
-   - invoices
-   - proof & pay
-   - payroll
-   - plans
-   - settings
-*/
-
-/* App shell: less side padding, more usable width */
-html body .om-main {
-  width: 100% !important;
-  max-width: none !important;
-  padding-left: clamp(12px, 1.4vw, 24px) !important;
-  padding-right: clamp(12px, 1.4vw, 24px) !important;
-}
-
-/* Main app pages wider */
-html body .cs-suite,
-html body .cs-page {
-  width: min(1720px, calc(100vw - 24px)) !important;
-  max-width: min(1720px, calc(100vw - 24px)) !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
-}
-
-/* Public and login pages wider too */
-html body .om-sales-nav,
-html body .om-sales-hero,
-html body .om-sales-proof-strip,
-html body .om-sales-how,
-html body .om-sales-prepared,
-html body .om-sales-control,
-html body .om-sales-pricing,
-html body .om-sales-access,
-html body .om-sales-final {
-  width: min(1720px, calc(100vw - 24px)) !important;
-  max-width: min(1720px, calc(100vw - 24px)) !important;
-}
-
-/* Hero and content panels use the wider canvas */
-html body .cs-hero,
-html body .cs-workspace,
-html body .cs-desk,
-html body .cs-flow,
-html body .cs-plan-cards,
-html body .cs-plan-addons,
-html body .cs-sms-packs,
-html body .cs-plan-compare,
-html body .cs-command-cards,
-html body .cs-ai-strip {
-  width: 100% !important;
-  max-width: none !important;
-}
-
-/* Allow hero wording to breathe on wide screens */
-html body .cs-hero > section:first-child {
-  max-width: 1180px !important;
-}
-
-html body .cs-hero h1 {
-  max-width: 1180px !important;
-}
-
-html body .cs-hero p {
-  max-width: 920px !important;
-}
-
-/* Stat pills can spread wider without breaking */
-html body .cs-stats,
-html body .cs-plan-price-stack {
-  max-width: 1040px !important;
-  grid-template-columns: repeat(4, minmax(170px, 240px)) !important;
-}
-
-html body .cs-stat,
-html body .cs-plan-price-stack button {
-  max-width: 240px !important;
-}
-
-/* Three-card strips can breathe */
-html body .cs-command-cards,
-html body .cs-ai-strip {
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-}
-
-/* Tables/rows get more room */
-html body .cs-table,
-html body .cs-approval-list {
-  width: 100% !important;
-  max-width: none !important;
-}
-
-html body .cs-table > header,
-html body .cs-row,
-html body .cs-approval-row {
-  width: 100% !important;
-}
-
-/* Plans page cards use wider layout */
-html body .cs-plan-cards {
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-}
-
-html body .cs-plan-addons > div,
-html body .cs-sms-packs > div {
-  width: 100% !important;
-}
-
-/* Keep laptop/tablet safe */
-@media (max-width: 1200px) {
-  html body .cs-suite,
-  html body .cs-page,
-  html body .om-sales-nav,
-  html body .om-sales-hero,
-  html body .om-sales-proof-strip,
-  html body .om-sales-how,
-  html body .om-sales-prepared,
-  html body .om-sales-control,
-  html body .om-sales-pricing,
-  html body .om-sales-access,
-  html body .om-sales-final {
-    width: min(100%, calc(100vw - 20px)) !important;
-    max-width: min(100%, calc(100vw - 20px)) !important;
-  }
-
-  html body .cs-plan-cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-}
-
-/* Mobile stays clean, no horizontal overflow */
-@media (max-width: 900px) {
-  html body .om-main {
-    padding-left: 12px !important;
-    padding-right: 12px !important;
-  }
-
-  html body .cs-suite,
-  html body .cs-page,
-  html body .om-sales-nav,
-  html body .om-sales-hero,
-  html body .om-sales-proof-strip,
-  html body .om-sales-how,
-  html body .om-sales-prepared,
-  html body .om-sales-control,
-  html body .om-sales-pricing,
-  html body .om-sales-access,
-  html body .om-sales-final {
-    width: calc(100vw - 16px) !important;
-    max-width: calc(100vw - 16px) !important;
-  }
-
-  html body .cs-plan-cards,
-  html body .cs-command-cards,
-  html body .cs-ai-strip {
-    grid-template-columns: 1fr !important;
-  }
-}
-
-
-/* PHASE_266_TINY_VIEW_BORDER_GUTTER
-   Pull the layout in slightly so every page fits in view cleanly.
-   Adds a small safe border/gutter without making the app feel narrow.
-*/
-
-html,
-body,
-#root,
-.App {
-  overflow-x: hidden !important;
-}
-
-html body .om-main {
-  width: 100% !important;
-  max-width: 100vw !important;
-  padding-left: clamp(18px, 2vw, 34px) !important;
-  padding-right: clamp(18px, 2vw, 34px) !important;
-}
-
-/* Main app canvas: wide but with a visible safe edge */
-html body .cs-suite,
-html body .cs-page {
-  width: min(1540px, calc(100vw - 56px)) !important;
-  max-width: min(1540px, calc(100vw - 56px)) !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
-}
-
-/* Public/login canvas gets the same safe edge */
-html body .om-sales-nav,
-html body .om-sales-hero,
-html body .om-sales-proof-strip,
-html body .om-sales-how,
-html body .om-sales-prepared,
-html body .om-sales-control,
-html body .om-sales-pricing,
-html body .om-sales-access,
-html body .om-sales-final {
-  width: min(1540px, calc(100vw - 56px)) !important;
-  max-width: min(1540px, calc(100vw - 56px)) !important;
-}
-
-/* Give big sections a tiny border so they feel contained */
-html body .cs-hero,
-html body .cs-workspace,
-html body .cs-desk,
-html body .cs-flow,
-html body .cs-plan-cards,
-html body .cs-plan-addons,
-html body .cs-sms-packs,
-html body .cs-plan-compare,
-html body .om-sales-hero-copy,
-html body .om-sales-command-card,
-html body .om-sales-how,
-html body .om-sales-prepared,
-html body .om-sales-control,
-html body .om-sales-pricing,
-html body .om-sales-access,
-html body .om-sales-final,
-html body .om-sales-auth {
-  border-width: 1px !important;
-}
-
-/* Keep stat pills fitting inside the view */
-html body .cs-stats,
-html body .cs-plan-price-stack {
-  max-width: 940px !important;
-  grid-template-columns: repeat(4, minmax(150px, 220px)) !important;
-}
-
-html body .cs-stat,
-html body .cs-plan-price-stack button {
-  max-width: 220px !important;
-}
-
-/* Medium screens need a bit more edge room */
-@media (max-width: 1200px) {
-  html body .om-main {
-    padding-left: 16px !important;
-    padding-right: 16px !important;
-  }
-
-  html body .cs-suite,
-  html body .cs-page,
-  html body .om-sales-nav,
-  html body .om-sales-hero,
-  html body .om-sales-proof-strip,
-  html body .om-sales-how,
-  html body .om-sales-prepared,
-  html body .om-sales-control,
-  html body .om-sales-pricing,
-  html body .om-sales-access,
-  html body .om-sales-final {
-    width: calc(100vw - 32px) !important;
-    max-width: calc(100vw - 32px) !important;
-  }
-}
-
-/* Mobile: small edge, no horizontal overflow */
-@media (max-width: 900px) {
-  html body .om-main {
-    padding-left: 10px !important;
-    padding-right: 10px !important;
-  }
-
-  html body .cs-suite,
-  html body .cs-page,
-  html body .om-sales-nav,
-  html body .om-sales-hero,
-  html body .om-sales-proof-strip,
-  html body .om-sales-how,
-  html body .om-sales-prepared,
-  html body .om-sales-control,
-  html body .om-sales-pricing,
-  html body .om-sales-access,
-  html body .om-sales-final {
-    width: calc(100vw - 20px) !important;
-    max-width: calc(100vw - 20px) !important;
-  }
-
-  html body .cs-stats,
-  html body .cs-plan-price-stack {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    max-width: 100% !important;
-  }
-
-  html body .cs-stat,
-  html body .cs-plan-price-stack button {
-    max-width: none !important;
-  }
-}
-
-
-/* PHASE_268_MOVE_CARD_WORDS_AWAY_FROM_ICONS
-   Fix dashboard/action cards where text sat too close to the left icon/value.
-   Give icons their own lane and move wording right.
-*/
-
-/* Dashboard summary cards and AI cards */
-html body .cs-command-cards button,
-html body .cs-ai-card {
-  grid-template-columns: 72px minmax(0, 1fr) 28px !important;
-  column-gap: 20px !important;
-  align-items: center !important;
-  padding-left: 26px !important;
-  padding-right: 22px !important;
-}
-
-/* Icon gets its own clear lane */
-html body .cs-command-cards button > .cs-icon,
-html body .cs-ai-card > .cs-icon {
-  width: 46px !important;
-  height: 46px !important;
-  min-width: 46px !important;
-  min-height: 46px !important;
-  margin: 0 auto !important;
-  justify-self: center !important;
-}
-
-/* Text block starts clearly after the icon lane */
-html body .cs-command-cards button > div,
-html body .cs-ai-card > div {
-  min-width: 0 !important;
-  display: grid !important;
-  grid-template-columns: auto minmax(0, 1fr) !important;
-  column-gap: 14px !important;
-  row-gap: 4px !important;
-  align-items: baseline !important;
-  padding-left: 4px !important;
-}
-
-/* Big number stays separate from wording */
-html body .cs-command-cards button > div > strong,
-html body .cs-ai-card > div > strong {
-  grid-column: 1 !important;
-  grid-row: 1 / span 2 !important;
-  min-width: 42px !important;
-  text-align: right !important;
-  font-size: clamp(28px, 3vw, 44px) !important;
-  line-height: 1 !important;
-}
-
-/* Main wording moves right of the number/icon */
-html body .cs-command-cards button > div > span,
-html body .cs-ai-card > div > span {
-  grid-column: 2 !important;
-  grid-row: 1 !important;
-  display: block !important;
-  font-size: clamp(18px, 1.8vw, 26px) !important;
-  line-height: 1.08 !important;
-  font-weight: 950 !important;
-  color: var(--cvx-black) !important;
-}
-
-/* Description aligns under wording, not under icon */
-html body .cs-command-cards button > div > p,
-html body .cs-ai-card > div > p {
-  grid-column: 2 !important;
-  grid-row: 2 !important;
-  margin: 0 !important;
-  font-size: clamp(13px, 1.1vw, 16px) !important;
-  line-height: 1.35 !important;
-  color: var(--cvx-muted) !important;
-}
-
-/* Arrow stays right and does not crowd text */
-html body .cs-command-cards button > b,
-html body .cs-ai-card > b {
-  justify-self: end !important;
-  margin-left: 10px !important;
-}
-
-/* Mobile: still separate icon and words without getting cramped */
-@media (max-width: 900px) {
-  html body .cs-command-cards button,
-  html body .cs-ai-card {
-    grid-template-columns: 54px minmax(0, 1fr) 22px !important;
-    column-gap: 14px !important;
-    padding-left: 18px !important;
-    padding-right: 16px !important;
-  }
-
-  html body .cs-command-cards button > .cs-icon,
-  html body .cs-ai-card > .cs-icon {
-    width: 38px !important;
-    height: 38px !important;
-    min-width: 38px !important;
-    min-height: 38px !important;
-  }
-
-  html body .cs-command-cards button > div,
-  html body .cs-ai-card > div {
-    column-gap: 10px !important;
-  }
-
-  html body .cs-command-cards button > div > strong,
-  html body .cs-ai-card > div > strong {
-    min-width: 34px !important;
-    font-size: 30px !important;
-  }
-
-  html body .cs-command-cards button > div > span,
-  html body .cs-ai-card > div > span {
-    font-size: 19px !important;
-  }
-
-  html body .cs-command-cards button > div > p,
-  html body .cs-ai-card > div > p {
-    font-size: 13px !important;
-  }
-}
-
