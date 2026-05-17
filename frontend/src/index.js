@@ -1,12 +1,18 @@
 
-// PHASE_244_UNIFIED_THEME_CACHE_RESET
-(function churvoxPhase244UnifiedThemeCacheReset() {
+// PHASE_245_LOAD_FINAL_GLOBAL_THEME_LAST
+(function churvoxLoadFinalGlobalThemeLast() {
   try {
-    if (typeof window === "undefined") return;
-    const key = "churvox_phase244_unified_theme_cache_reset";
-    const version = "churvox-unified-theme-20260517072810";
-    if (localStorage.getItem(key) === version) return;
-    localStorage.setItem(key, version);
+    if (typeof document === "undefined") return;
+
+    const version = "phase245-20260517073508";
+    const old = document.getElementById("churvox-final-global-theme");
+    if (old) old.remove();
+
+    const link = document.createElement("link");
+    link.id = "churvox-final-global-theme";
+    link.rel = "stylesheet";
+    link.href = "/churvox-final-theme.css?v=" + encodeURIComponent(version);
+    document.head.appendChild(link);
 
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.getRegistrations()
@@ -19,12 +25,16 @@
         .then((keys) => Promise.all(keys.map((cacheName) => window.caches.delete(cacheName))))
         .catch(() => undefined);
     }
+
+    try {
+      localStorage.setItem("churvox_final_theme_version", version);
+    } catch {}
   } catch (err) {
-    console.warn("Churvox unified theme cache reset skipped", err);
+    console.warn("Churvox final theme loader skipped", err);
   }
 })();
 
-import "./operator-machine/ChurvoxUnifiedTheme.css";
+
 
 // PHASE_238_KILL_OLD_PWA_CACHE
 (function churvoxPhase238KillOldPwaCache() {

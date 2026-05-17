@@ -1,4 +1,4 @@
-/* PHASE_244_DISABLE_PWA_CACHE_FOR_UNIFIED_THEME_20260517072810 */
+/* PHASE_245_DISABLE_PWA_CACHE_FOR_FINAL_THEME_20260517073508 */
 self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
