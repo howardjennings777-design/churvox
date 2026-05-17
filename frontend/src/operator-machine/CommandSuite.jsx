@@ -388,6 +388,40 @@ function SmartPage({ config, rows, columns, aiCards, onOpen, activeFilter, setAc
       __route: config.route,
     });
   }
+  const loweredTitle = clean(config.workspaceTitle).toLowerCase();
+
+  const actionLabel = config.actionLabel ||
+    (loweredTitle.includes("pricing") ? "Review plan" :
+    loweredTitle.includes("control") || loweredTitle.includes("settings") ? "Open setting" :
+    loweredTitle.includes("client") ? "Open client" :
+    loweredTitle.includes("crew") ? "Open crew" :
+    loweredTitle.includes("quote") ? "Open quote" :
+    loweredTitle.includes("invoice") ? "Open invoice" :
+    loweredTitle.includes("proof") ? "Open proof" :
+    loweredTitle.includes("payroll") || loweredTitle.includes("timesheet") ? "Review hours" :
+    "Open slip");
+
+  const modalType = config.modalType ||
+    (loweredTitle.includes("pricing") ? "Plan review" :
+    loweredTitle.includes("control") || loweredTitle.includes("settings") ? "Setting" :
+    loweredTitle.includes("client") ? "Client profile" :
+    loweredTitle.includes("crew") ? "Crew profile" :
+    loweredTitle.includes("quote") ? "Quote slip" :
+    loweredTitle.includes("invoice") ? "Invoice slip" :
+    loweredTitle.includes("proof") ? "Proof & Pay slip" :
+    loweredTitle.includes("payroll") || loweredTitle.includes("timesheet") ? "Payroll review" :
+    "Work slip");
+
+  function openSmartRow(row) {
+    onOpen({
+      ...row,
+      __modalType: modalType,
+      __modalTitle: titleOf(row, config.workspaceTitle),
+      __body: aiReason(row, config.workspaceBody),
+      __actionLabel: actionLabel,
+      __route: config.route,
+    });
+  }
   const filteredRows = filterRows(rows, activeFilter);
 
   return (
