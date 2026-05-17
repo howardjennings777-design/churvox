@@ -36,15 +36,29 @@ function safeName(value) {
 async function tryLogin(page) {
   const email = process.env.CHURVOX_TEST_EMAIL || "";
   const password = process.env.CHURVOX_TEST_PASSWORD || "";
+  const requireLogin = process.env.CHURVOX_AUDIT_REQUIRE_LOGIN === "1";
 
-  if (!email || !password) return { attempted: false, ok: false, reason: "No CHURVOX_TEST_EMAIL/CHURVOX_TEST_PASSWORD supplied." };
+  if (!email || !password) {
+    return {
+      attempted: false,
+      ok: false,
+      required: requireLogin,
+      reason: "No CHURVOX_TEST_EMAIL/CHURVOX_TEST_PASSWORD supplied."
+    };
+  }
 
   const emailInput = page.locator('input[type="email"], input[name*="email" i], input[placeholder*="email" i]').first();
   const passInput = page.locator('input[type="password"], input[name*="password" i], input[placeholder*="password" i]').first();
 
   try {
-    await emailInput.waitFor({ timeout: 3500 });
-    await passInput.waitFor({ timeout: 3500 });
+    const loginSwitch = page.locator('button:has-text("Login"), button:has-text("Log in"), button:has-text("Already have"), a:has-text("Login"), a:has-text("Log in")').first();
+    if (await loginSwitch.count().catch(() => 0)) {
+      await loginSwitch.click({ timeout: 2500 }).catch(() => {});
+      await page.waitForTimeout(500);
+    }
+
+    await emailInput.waitFor({ timeout: 7000 });
+    await passInput.waitFor({ timeout: 7000 });
     await emailInput.fill(email);
     await passInput.fill(password);
 
@@ -53,9 +67,27 @@ async function tryLogin(page) {
     await page.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {});
     await page.waitForTimeout(1200);
 
-    return { attempted: true, ok: !/login|sign/i.test(page.url()), reason: "Login attempted." };
+    await page.goto(`${BASE_URL}/dashboard?logged-audit=${Date.now()}`, { waitUntil: "domcontentloaded", timeout: 45000 }).catch(() => {});
+    await page.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {});
+    await page.waitForTimeout(1200);
+
+    const stillLogin =
+      /login|sign/i.test(page.url()) ||
+      await page.locator('input[type="email"], input[type="password"], button:has-text("Open Command Desk"), button:has-text("Login"), button:has-text("Log in")').count().catch(() => 0) > 1;
+
+    return {
+      attempted: true,
+      ok: !stillLogin,
+      required: requireLogin,
+      reason: stillLogin ? "Login did not stick; dashboard still shows login/auth UI." : "Logged in and dashboard opened."
+    };
   } catch (err) {
-    return { attempted: true, ok: false, reason: String(err.message || err).slice(0, 240) };
+    return {
+      attempted: true,
+      ok: false,
+      required: requireLogin,
+      reason: String(err.message || err).slice(0, 240)
+    };
   }
 }
 
@@ -80,6 +112,19 @@ async function runChecks(page, route, viewportName) {
 
     const problems = [];
     const warnings = [];
+
+    const protectedRoute = !["/", "/login"].includes(route);
+    const authInputs = document.querySelectorAll('input[type="email"], input[type="password"]').length;
+    const authButtons = Array.from(document.querySelectorAll("button, a"))
+      .map((el) => (el.innerText || el.textContent || "").trim().toLowerCase())
+      .filter((txt) => txt.includes("login") || txt.includes("log in") || txt.includes("open command desk") || txt.includes("start free trial")).length;
+
+    if (protectedRoute && (location.pathname.includes("login") || authInputs >= 2 || authButtons >= 2)) {
+      problems.push({
+        type: "not-logged-in",
+        detail: "Protected route is showing login/auth UI instead of the real logged-in page.",
+      });
+    }
 
     const pageWidthOverflow = document.documentElement.scrollWidth - window.innerWidth;
     if (pageWidthOverflow > 3) {
@@ -263,6 +308,43 @@ async function runChecks(page, route, viewportName) {
   const loginPage = await context.newPage();
   await loginPage.goto(`${BASE_URL}/login?audit-login=${Date.now()}`, { waitUntil: "domcontentloaded", timeout: 45000 }).catch(() => {});
   const loginResult = await tryLogin(loginPage);
+
+  if (process.env.CHURVOX_AUDIT_REQUIRE_LOGIN === "1" && !loginResult.ok) {
+    await loginPage.screenshot({
+      path: path.join(shotDir, "login-failed.png"),
+      fullPage: true,
+    }).catch(() => {});
+    await browser.close();
+
+    const failReport = {
+      generatedAt: new Date().toISOString(),
+      baseUrl: BASE_URL,
+      login: loginResult,
+      totalProblems: 1,
+      routes: [],
+    };
+
+    fs.writeFileSync(path.join(outDir, "visual-wording-audit.json"), JSON.stringify(failReport, null, 2));
+    fs.writeFileSync(
+      path.join(outDir, "visual-wording-audit.md"),
+      [
+        "# Churvox visual wording / fit audit",
+        "",
+        "❌ Login required but failed.",
+        "",
+        `Reason: ${loginResult.reason}`,
+        "",
+        "Screenshot: screenshots/login-failed.png",
+        "",
+      ].join("\n")
+    );
+
+    console.log("LOGIN REQUIRED BUT FAILED ❌");
+    console.log(loginResult.reason);
+    console.log(`Report: ${path.join(outDir, "visual-wording-audit.md")}`);
+    process.exit(3);
+  }
+
   await loginPage.close();
 
   const results = [];
