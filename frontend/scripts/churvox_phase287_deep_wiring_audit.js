@@ -1,7 +1,33 @@
 const fs = require("fs");
+const path = require("path");
 
-const file = "frontend/src/operator-machine/CommandSuite.jsx";
-const text = fs.readFileSync(file, "utf8");
+function findProjectRoot() {
+  const candidates = [
+    process.cwd(),
+    path.resolve(process.cwd(), ".."),
+    path.resolve(__dirname, ".."),
+    path.resolve(__dirname, "..", ".."),
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(path.join(candidate, "frontend", "src", "operator-machine", "CommandSuite.jsx"))) {
+      return candidate;
+    }
+
+    if (fs.existsSync(path.join(candidate, "src", "operator-machine", "CommandSuite.jsx"))) {
+      return candidate;
+    }
+  }
+
+  throw new Error("Could not find Churvox project root from audit script.");
+}
+
+const root = findProjectRoot();
+const commandFile = fs.existsSync(path.join(root, "frontend", "src", "operator-machine", "CommandSuite.jsx"))
+  ? path.join(root, "frontend", "src", "operator-machine", "CommandSuite.jsx")
+  : path.join(root, "src", "operator-machine", "CommandSuite.jsx");
+
+const text = fs.readFileSync(commandFile, "utf8");
 
 const knownRoutes = new Set([
   "dashboard",
@@ -92,10 +118,10 @@ if (!quickBlock) {
 }
 
 if (failures.length) {
-  console.error("PHASE 287 DEEP WIRING AUDIT FAILED:");
+  console.error("PHASE 288 DEEP WIRING AUDIT FAILED:");
   for (const failure of failures) console.error(`- ${failure}`);
   process.exit(1);
 }
 
-console.log("PHASE 287 DEEP WIRING AUDIT PASSED ✅");
-console.log("Checked helpers, route strings, quick actions, modal routing, plan checkout, metric/AI routes, and table state safety.");
+console.log("PHASE 288 DEEP WIRING AUDIT PASSED ✅");
+console.log(`Checked: ${commandFile}`);
