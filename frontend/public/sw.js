@@ -1,8 +1,4 @@
-/* PHASE_238_DISABLE_PWA_CACHE_20260517070111
-   Temporary no-cache service worker while Churvox theme is being finalised.
-*/
-const CHURVOX_CACHE_VERSION = "phase-238-disable-cache-20260517070111";
-
+/* PHASE_244_DISABLE_PWA_CACHE_FOR_UNIFIED_THEME_20260517072810 */
 self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
@@ -16,7 +12,6 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  const request = event.request;
-  if (request.method !== "GET") return;
-  event.respondWith(fetch(request, { cache: "no-store" }));
+  if (event.request.method !== "GET") return;
+  event.respondWith(fetch(event.request, { cache: "no-store" }));
 });

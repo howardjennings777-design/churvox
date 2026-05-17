@@ -1,4 +1,31 @@
 
+// PHASE_244_UNIFIED_THEME_CACHE_RESET
+(function churvoxPhase244UnifiedThemeCacheReset() {
+  try {
+    if (typeof window === "undefined") return;
+    const key = "churvox_phase244_unified_theme_cache_reset";
+    const version = "churvox-unified-theme-20260517072810";
+    if (localStorage.getItem(key) === version) return;
+    localStorage.setItem(key, version);
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistrations()
+        .then((registrations) => registrations.forEach((registration) => registration.unregister()))
+        .catch(() => undefined);
+    }
+
+    if (window.caches && typeof window.caches.keys === "function") {
+      window.caches.keys()
+        .then((keys) => Promise.all(keys.map((cacheName) => window.caches.delete(cacheName))))
+        .catch(() => undefined);
+    }
+  } catch (err) {
+    console.warn("Churvox unified theme cache reset skipped", err);
+  }
+})();
+
+import "./operator-machine/ChurvoxUnifiedTheme.css";
+
 // PHASE_238_KILL_OLD_PWA_CACHE
 (function churvoxPhase238KillOldPwaCache() {
   try {
