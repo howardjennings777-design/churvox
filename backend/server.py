@@ -21735,7 +21735,7 @@ async def phase290_operator_quick_create(request: Request):
         raise
     except Exception as exc:
         logger.exception("PHASE_290 quick-create failed")
-        raise HTTPException(status_code=500, detail=f"Quick create failed: {str(exc)[:300]}")
+        raise HTTPException(status_code=500, detail=f"Could not save business action: {str(exc)[:300]}")
 
 
 @app.post("/api/operator/settings")
