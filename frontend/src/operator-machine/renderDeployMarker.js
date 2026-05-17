@@ -1,1 +1,1 @@
-export const churvoxRenderDeployMarker = "PHASE_299_OBSIDIAN_COPPER_EXACT_REDESIGN_20260517220440";
+export const churvoxRenderDeployMarker = "PHASE_301_FIX_SVG_CSS_BUILD_20260517220503";

@@ -110,8 +110,7 @@ button {
   position: relative;
   border-radius: 15px;
   background:
-    url("/churvox-mark.svg") center / cover no-repeat,
-    linear-gradient(145deg, #1c1511, #080809);
+    linear-gradient(145deg, #f08a3c 0%, #d86a2a 48%, #8d3518 100%);
   box-shadow: 0 0 0 1px rgba(216, 106, 42, 0.32), 0 18px 36px rgba(216, 106, 42, 0.16);
 }
 
