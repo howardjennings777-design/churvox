@@ -1536,11 +1536,27 @@ function AuthCard({ authMode, setAuthMode, onLogin }) {
     <aside className="cx-auth-card" id="login">
       <div className="cx-auth-head">
         <div>
-          <span>Secure workspace</span>
-          <h2>{signup ? "Create account" : "Enter Operator OS"}</h2>
+          <span>{signup ? "14-day free trial" : "Secure workspace"}</span>
+          <h2>{signup ? "Create your Command Desk" : "Enter Command Desk"}</h2>
         </div>
         <div className="cx-auth-orb" />
       </div>
+
+      <section className="cx-auth-command-strip" data-phase="PHASE_222_SIGNUP_THEME">
+        <strong>{signup ? "No card needed. Trial starts after signup." : "Welcome back to Churvox."}</strong>
+        <p>
+          {signup
+            ? "See the tour first, then create your real workspace. Churvox prepares the admin and you approve."
+            : "Open your AI Operator workspace and keep work, crew, proof, invoices and payments moving."}
+        </p>
+        <div>
+          <span>Work in</span>
+          <b>›</b>
+          <span>Admin prepared</span>
+          <b>›</b>
+          <span>Owner approves</span>
+        </div>
+      </section>
 
       {error ? <div className="cx-error">{error}</div> : null}
 
@@ -1575,7 +1591,7 @@ function AuthCard({ authMode, setAuthMode, onLogin }) {
         </label>
 
         <button type="submit" disabled={busy}>
-          {busy ? "Opening..." : signup ? "Create AI workspace" : "Open AI workspace"}
+          {busy ? "Opening..." : signup ? "Start 14-day trial" : "Open Command Desk"}
         </button>
       </form>
 
@@ -1587,7 +1603,7 @@ function AuthCard({ authMode, setAuthMode, onLogin }) {
           setAuthMode(signup ? "login" : "signup");
         }}
       >
-        {signup ? "Already have an account? Login" : "Need an account? Start free trial"}
+        {signup ? "Already have an account? Login" : "New here? Start 14-day trial"}
       </button>
     </aside>
   );
