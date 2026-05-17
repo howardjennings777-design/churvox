@@ -467,6 +467,229 @@ function SmartPage({ config, rows, columns, aiCards, onOpen, activeFilter, setAc
   );
 }
 
+
+function PlansCommandPage({ planName, openInfo, goToPage }) {
+  const plans = [
+    {
+      id: "start",
+      name: "Start",
+      price: 39,
+      strap: "Start clean",
+      badge: "Solo ready",
+      body: "For one operator who wants work, clients and invoices tidy without the mess.",
+      bestFor: "Solo operators",
+      included: ["Work and client control", "Basic invoices and quotes", "Simple owner approval flow", "Mobile-ready workspace"],
+      ai: "Churvox keeps the basics organised and surfaces what needs action.",
+    },
+    {
+      id: "crew",
+      name: "Crew",
+      price: 89,
+      strap: "Run the team",
+      badge: "Crew workflow",
+      body: "For businesses assigning jobs, tracking worker updates and keeping proof connected.",
+      bestFor: "Small teams",
+      included: ["Crew assignment", "Worker updates", "Proof and photos", "Client/job history"],
+      ai: "Churvox checks crew fit, proof and unfinished admin.",
+    },
+    {
+      id: "operator",
+      name: "Operator",
+      price: 149,
+      strap: "AI runs the admin",
+      badge: "Most popular",
+      featured: true,
+      body: "The main Churvox plan. AI prepares admin actions and the owner approves.",
+      bestFor: "Growing trade teams",
+      included: ["AI Operator Actions", "Approval Desk", "Quote and invoice prep", "Follow-up suggestions", "MYOB add-on available"],
+      ai: "Churvox prepares invoices, follow-ups, crew suggestions and missing-detail checks.",
+    },
+    {
+      id: "command",
+      name: "Command",
+      price: 299,
+      strap: "Full command centre",
+      badge: "MYOB included",
+      body: "For larger teams needing payroll workspace, advanced roles, MYOB and more capacity.",
+      bestFor: "Serious operators",
+      included: ["MYOB included", "Payroll workspace", "Advanced roles", "Higher limits", "Priority support"],
+      ai: "Churvox watches the whole admin path from work intake to payment follow-up.",
+    },
+  ];
+
+  const addons = [
+    {
+      title: "Command Growth Pack",
+      price: "$99/mo + GST",
+      body: "Adds 50 more active team members plus extra jobs, AI Operator Actions, automation runs and admin/payroll capacity.",
+    },
+    {
+      title: "MYOB Sync",
+      price: "$39/mo + GST",
+      body: "Optional on Operator. Included by default on Command.",
+    },
+    {
+      title: "SMS Credits",
+      price: "Credit packs",
+      body: "SMS reminders stay separate so businesses only pay for what they send.",
+    },
+  ];
+
+  const compare = [
+    ["AI Operator Actions", "Basic", "Crew checks", "Strong", "Full"],
+    ["Active team members", "1", "Small crew", "Growing team", "50 included"],
+    ["MYOB", "—", "—", "$39 add-on", "Included"],
+    ["Payroll workspace", "—", "—", "—", "Included"],
+    ["Owner Approval Desk", "Yes", "Yes", "Advanced", "Advanced"],
+  ];
+
+  function openPlan(plan) {
+    openInfo({
+      ...plan,
+      amount: plan.price,
+      status: plan.badge,
+      prepared: plan.ai,
+      __modalType: "Plan review",
+      __modalTitle: `${plan.name} plan`,
+      __body: `${plan.body} ${plan.ai}`,
+      __actionLabel: `Choose ${plan.name}`,
+      __route: "plans",
+    });
+  }
+
+  function openAddon(addon) {
+    openInfo({
+      title: addon.title,
+      status: addon.price,
+      prepared: addon.body,
+      __modalType: "Add-on review",
+      __modalTitle: addon.title,
+      __body: addon.body,
+      __actionLabel: "Review add-on",
+      __route: "plans",
+    });
+  }
+
+  return (
+    <section className="cs-page cs-plans-page" data-phase="PHASE_215_REAL_PLANS_PAGE">
+      <header className="cs-hero cs-plans-hero">
+        <section>
+          <span>Plans command</span>
+          <h1>
+            Choose how much admin
+            <mark>Churvox handles.</mark>
+          </h1>
+          <p>
+            Start simple, then grow into AI Operator Actions, MYOB sync, payroll workspace,
+            advanced roles and more capacity.
+          </p>
+        </section>
+
+        <section className="cs-plan-price-stack">
+          {plans.map((plan) => (
+            <button
+              type="button"
+              key={plan.id}
+              className={plan.featured ? "featured" : ""}
+              onClick={() => openPlan(plan)}
+            >
+              <Icon type={plan.id === "start" ? "target" : plan.id === "crew" ? "crew" : plan.id === "operator" ? "spark" : "shield"} />
+              <span>{plan.name}</span>
+              <strong>${plan.price}</strong>
+            </button>
+          ))}
+        </section>
+      </header>
+
+      <section className="cs-plan-cards">
+        {plans.map((plan) => (
+          <article className={plan.featured ? "featured" : ""} key={plan.id}>
+            <header>
+              <span>{plan.badge}</span>
+              <h2>{plan.name}</h2>
+              <p>{plan.strap}</p>
+            </header>
+
+            <div className="cs-plan-price">
+              <strong>${plan.price}</strong>
+              <span>/mo + GST</span>
+            </div>
+
+            <p>{plan.body}</p>
+
+            <ul>
+              {plan.included.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+
+            <section>
+              <b>AI role</b>
+              <p>{plan.ai}</p>
+            </section>
+
+            <button type="button" onClick={() => openPlan(plan)}>
+              {plan.featured ? "Choose Operator" : `Choose ${plan.name}`}
+            </button>
+          </article>
+        ))}
+      </section>
+
+      <section className="cs-plan-addons">
+        <header>
+          <div>
+            <span>Scale when ready</span>
+            <h2>Add-ons that make sense</h2>
+            <p>No messy bundles. Add capacity, MYOB or SMS only when the business needs it.</p>
+          </div>
+        </header>
+
+        <div>
+          {addons.map((addon) => (
+            <button type="button" key={addon.title} onClick={() => openAddon(addon)}>
+              <strong>{addon.title}</strong>
+              <span>{addon.price}</span>
+              <p>{addon.body}</p>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="cs-plan-compare">
+        <header>
+          <div>
+            <span>What changes</span>
+            <h2>Plan comparison</h2>
+            <p>Operator is the main AI admin plan. Command is the full control centre.</p>
+          </div>
+
+          <button type="button" onClick={() => goToPage("dashboard")}>
+            Back to Command Desk
+          </button>
+        </header>
+
+        <div className="cs-plan-compare-table">
+          <article className="head">
+            <span>Feature</span>
+            <span>Start</span>
+            <span>Crew</span>
+            <span>Operator</span>
+            <span>Command</span>
+          </article>
+
+          {compare.map((row) => (
+            <article key={row[0]}>
+              {row.map((cell) => (
+                <span key={cell}>{cell}</span>
+              ))}
+            </article>
+          ))}
+        </div>
+      </section>
+    </section>
+  );
+}
+
 export default function CommandSuite({
   page,
   setPage,
@@ -1034,6 +1257,12 @@ export default function CommandSuite({
             </div>
           </section>
         </section>
+      ) : current === "plans" ? (
+        <PlansCommandPage
+          planName={planName}
+          openInfo={openInfo}
+          goToPage={goToPage}
+        />
       ) : (
         <SmartPage
           config={pageConfig.config}
