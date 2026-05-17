@@ -196,7 +196,7 @@ function AiCard({ title, body, tone = "normal", icon = "spark", onClick }) {
   );
 }
 
-function Table({ rows, columns, onOpen, emptyText = "Nothing here yet." }) {
+function Table({ rows, columns, onOpen, emptyText = "Nothing here yet.", actionLabel = "Open Slip" }) {
   const gridTemplateColumns = `repeat(${columns.length}, minmax(150px, 1fr)) 170px`;
 
   return (
@@ -230,7 +230,7 @@ function Table({ rows, columns, onOpen, emptyText = "Nothing here yet." }) {
               onOpen(row);
             }}
           >
-            Open Slip <em>›</em>
+            {actionLabel} <em>›</em>
           </button>
         </article>
       )) : (
@@ -247,24 +247,84 @@ function DetailModal({ selected, onClose, onApprove, setPage }) {
   if (!selected) return null;
 
   const route = selected.__route;
+  const modalType = clean(selected.__modalType, "Detail");
+  const title = clean(selected.__modalTitle || selected.title || selected.name, titleOf(selected, "Record detail"));
   const detail = selected.__body || aiReason(selected, "Churvox prepared this item so you can review it without digging through the app.");
+
+  const isPlan = selected.amount || /plan|pricing/i.test(modalType);
+  const isSetting = /setting|control/i.test(modalType) || selected.id === "settings";
+  const isCrew = /crew|worker/i.test(modalType) || selected.role || selected.position;
+  const isClient = /client/i.test(modalType) || selected.email || selected.phone || selected.mobile;
+  const isInvoice = /invoice/i.test(modalType) || selected.invoice_number;
+  const isQuote = /quote/i.test(modalType) || selected.quote_number;
+  const isWork = /work|job/i.test(modalType) || selected.job_title || selected.jobTitle;
+
+  const rows = [];
+
+  if (isPlan) {
+    rows.push(["Plan", clean(selected.name || selected.title, "Plan")]);
+    rows.push(["Price", selected.amount ? `$${selected.amount}/mo + GST` : "See plan"]);
+    rows.push(["Best for", statusOf(selected)]);
+    rows.push(["Churvox prepares", clean(selected.prepared, detail)]);
+  } else if (isSetting) {
+    rows.push(["Setting", title]);
+    rows.push(["Status", statusOf(selected)]);
+    rows.push(["Controls", clean(selected.prepared, detail)]);
+    rows.push(["Owner action", "Review and save the setting."]);
+  } else if (isCrew) {
+    rows.push(["Worker", workerName(selected)]);
+    rows.push(["Role", clean(selected.role || selected.position, "Worker")]);
+    rows.push(["Area", areaOf(selected)]);
+    rows.push(["AI action", detail]);
+  } else if (isClient) {
+    rows.push(["Client", clientName(selected)]);
+    rows.push(["Contact", clean(selected.email || selected.phone || selected.mobile, "Missing")]);
+    rows.push(["Area", areaOf(selected)]);
+    rows.push(["AI action", detail]);
+  } else if (isInvoice) {
+    rows.push(["Invoice", clean(selected.invoice_number || selected.number || title, "Invoice")]);
+    rows.push(["Client", clientName(selected)]);
+    rows.push(["Amount", money(selected.amount || selected.total)]);
+    rows.push(["AI action", detail]);
+  } else if (isQuote) {
+    rows.push(["Quote", clean(selected.quote_number || selected.number || title, "Quote")]);
+    rows.push(["Client", clientName(selected)]);
+    rows.push(["Amount", money(selected.amount || selected.total)]);
+    rows.push(["AI action", detail]);
+  } else if (isWork) {
+    rows.push(["Work", titleOf(selected, "Work")]);
+    rows.push(["Client", clientName(selected)]);
+    rows.push(["Crew", workerName(selected)]);
+    rows.push(["AI action", detail]);
+  } else {
+    rows.push(["Status", statusOf(selected)]);
+    rows.push(["Client", clientName(selected)]);
+    rows.push(["Area", areaOf(selected)]);
+    rows.push(["AI action", detail]);
+  }
+
+  const actionLabel = isPlan
+    ? `Choose ${clean(selected.name || selected.title, "plan")}`
+    : clean(selected.__actionLabel, selected.__approval ? "Approve next move" : "Save / approve");
 
   return (
     <section className="cs-modal-backdrop" onClick={onClose}>
       <article className="cs-modal" onClick={(event) => event.stopPropagation()}>
         <header>
-          <span>{selected.__modalType || "Approval Slip"}</span>
+          <span>{modalType}</span>
           <button type="button" onClick={onClose}>×</button>
         </header>
 
-        <h2>{clean(selected.__modalTitle || selected.title || selected.name, titleOf(selected, "Record detail"))}</h2>
+        <h2>{title}</h2>
         <p>{detail}</p>
 
         <dl>
-          <div><dt>Status</dt><dd>{statusOf(selected)}</dd></div>
-          <div><dt>Client</dt><dd>{clientName(selected)}</dd></div>
-          <div><dt>Area</dt><dd>{areaOf(selected)}</dd></div>
-          <div><dt>AI action</dt><dd>Review, edit if needed, then approve the next move.</dd></div>
+          {rows.map(([label, value]) => (
+            <div key={label}>
+              <dt>{label}</dt>
+              <dd>{value}</dd>
+            </div>
+          ))}
         </dl>
 
         <footer>
@@ -285,7 +345,7 @@ function DetailModal({ selected, onClose, onApprove, setPage }) {
           ) : null}
 
           <button type="button" onClick={() => onApprove(selected)}>
-            Approve next move
+            {actionLabel}
           </button>
         </footer>
       </article>
@@ -294,6 +354,40 @@ function DetailModal({ selected, onClose, onApprove, setPage }) {
 }
 
 function SmartPage({ config, rows, columns, aiCards, onOpen, activeFilter, setActiveFilter, openInfo, goToPage }) {
+  const loweredTitle = clean(config.workspaceTitle).toLowerCase();
+
+  const actionLabel = config.actionLabel ||
+    (loweredTitle.includes("pricing") ? "Review plan" :
+    loweredTitle.includes("control") || loweredTitle.includes("settings") ? "Open setting" :
+    loweredTitle.includes("client") ? "Open client" :
+    loweredTitle.includes("crew") ? "Open crew" :
+    loweredTitle.includes("quote") ? "Open quote" :
+    loweredTitle.includes("invoice") ? "Open invoice" :
+    loweredTitle.includes("proof") ? "Open proof" :
+    loweredTitle.includes("payroll") || loweredTitle.includes("timesheet") ? "Review hours" :
+    "Open slip");
+
+  const modalType = config.modalType ||
+    (loweredTitle.includes("pricing") ? "Plan review" :
+    loweredTitle.includes("control") || loweredTitle.includes("settings") ? "Setting" :
+    loweredTitle.includes("client") ? "Client profile" :
+    loweredTitle.includes("crew") ? "Crew profile" :
+    loweredTitle.includes("quote") ? "Quote slip" :
+    loweredTitle.includes("invoice") ? "Invoice slip" :
+    loweredTitle.includes("proof") ? "Proof & Pay slip" :
+    loweredTitle.includes("payroll") || loweredTitle.includes("timesheet") ? "Payroll review" :
+    "Work slip");
+
+  function openSmartRow(row) {
+    onOpen({
+      ...row,
+      __modalType: modalType,
+      __modalTitle: titleOf(row, config.workspaceTitle),
+      __body: aiReason(row, config.workspaceBody),
+      __actionLabel: actionLabel,
+      __route: config.route,
+    });
+  }
   const filteredRows = filterRows(rows, activeFilter);
 
   return (
@@ -366,7 +460,7 @@ function SmartPage({ config, rows, columns, aiCards, onOpen, activeFilter, setAc
           </div>
         </header>
 
-        <Table rows={filteredRows} columns={columns} onOpen={onOpen} emptyText={config.emptyText} />
+        <Table rows={filteredRows} columns={columns} onOpen={openSmartRow} emptyText={config.emptyText} actionLabel={actionLabel} />
       </section>
     </section>
   );
@@ -460,6 +554,9 @@ export default function CommandSuite({
         ],
         workspaceKicker: "Work board",
         workspaceTitle: "Work slips",
+        modalType: "Work slip",
+        actionLabel: "Open work",
+        route: "jobs",
         workspaceBody: "Tap a row to review client, crew, proof and invoice readiness.",
         filters: ["Needs action", "Unassigned", "Today", "Active", "Completed", "Ready to invoice"],
         emptyText: "No work found.",
@@ -494,6 +591,9 @@ export default function CommandSuite({
         ],
         workspaceKicker: "Client list",
         workspaceTitle: "Client records",
+        modalType: "Client profile",
+        actionLabel: "Open client",
+        route: "clients",
         workspaceBody: "Tap a client to see work history, quotes, invoices and AI next action.",
         filters: ["Needs details", "Active work", "Owing", "Follow-up", "All clients"],
         emptyText: "No clients found.",
@@ -528,6 +628,9 @@ export default function CommandSuite({
         ],
         workspaceKicker: "Crew list",
         workspaceTitle: "Crew profiles",
+        modalType: "Crew profile",
+        actionLabel: "Open crew",
+        route: "team",
         workspaceBody: "Tap a worker to see today’s work, notes, proof history and suggested assignments.",
         filters: ["Available", "Active", "Overloaded", "Needs update", "All crew"],
         emptyText: "No crew found.",
@@ -562,6 +665,9 @@ export default function CommandSuite({
         ],
         workspaceKicker: "Quote list",
         workspaceTitle: "Quote slips",
+        modalType: "Quote slip",
+        actionLabel: "Open quote",
+        route: "quotes",
         workspaceBody: "Tap a quote to approve follow-up, convert to work, or convert to invoice.",
         filters: ["Follow-up due", "Drafts", "Awaiting", "Accepted", "All quotes"],
         emptyText: "No quotes found.",
@@ -596,6 +702,9 @@ export default function CommandSuite({
         ],
         workspaceKicker: "Invoice list",
         workspaceTitle: "Invoice slips",
+        modalType: "Invoice slip",
+        actionLabel: "Open invoice",
+        route: "invoices",
         workspaceBody: "Tap an invoice to review proof, AI description, missing details and send readiness.",
         filters: ["Drafts", "Ready to send", "Owing", "Overdue", "Paid"],
         emptyText: "No invoices found.",
@@ -630,6 +739,9 @@ export default function CommandSuite({
         ],
         workspaceKicker: "Proof feed",
         workspaceTitle: "Proof and payment slips",
+        modalType: "Proof & Pay slip",
+        actionLabel: "Open proof",
+        route: "proof",
         workspaceBody: "Tap proof to check photos, completion notes, invoice readiness and payment action.",
         filters: ["Completed", "Photos", "Ready invoice", "Payment follow-up", "All proof"],
         emptyText: "No proof items found.",
@@ -664,6 +776,9 @@ export default function CommandSuite({
         ],
         workspaceKicker: "Payroll review",
         workspaceTitle: "Timesheet slips",
+        modalType: "Payroll review",
+        actionLabel: "Review hours",
+        route: "payroll",
         workspaceBody: "Tap a payroll slip to review worker hours, jobs, pauses and notes.",
         filters: ["Needs review", "Approved", "Missing clock-off", "Export ready"],
         emptyText: "No payroll records found.",
@@ -698,6 +813,9 @@ export default function CommandSuite({
         ],
         workspaceKicker: "Plans",
         workspaceTitle: "Churvox pricing",
+        modalType: "Plan review",
+        actionLabel: "Review plan",
+        route: "plans",
         workspaceBody: "Tap a plan to review what Churvox prepares for you.",
         filters: ["Monthly", "AI Operator", "MYOB", "Command"],
         emptyText: "No plans loaded.",
@@ -736,6 +854,9 @@ export default function CommandSuite({
         ],
         workspaceKicker: "Settings",
         workspaceTitle: "Control centre",
+        modalType: "Setting",
+        actionLabel: "Open setting",
+        route: "settings",
         workspaceBody: "Tap a setting to manage business controls and AI behaviour.",
         filters: ["Business", "Roles", "AI Operator", "Billing", "MYOB", "SMS", "Security"],
         emptyText: "No settings found.",
