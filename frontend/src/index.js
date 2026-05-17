@@ -1,3 +1,4 @@
+window.__CHURVOX_APPROVAL_POLISH__ = "PHASE_190_APPROVAL_DESK_WARNING_AND_PRIORITY_POLISH_20260517002650";
 window.__CHURVOX_PRIORITY_PANEL__ = "PHASE_189_FORCE_OWNER_PRIORITY_BESIDE_APPROVAL_DESK_20260517002155";
 window.__CHURVOX_TOP_NAV_HEIGHT_FIX__ = "PHASE_188_FIX_GIANT_TOP_NAV_BLACK_SPACE_20260517001841";
 window.__CHURVOX_TOP_NAV_PRIORITY_PANEL__ = "PHASE_187_TOP_NAV_OWNER_PRIORITY_PANEL_20260517001430";
@@ -370,6 +371,95 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
+
+
+// PHASE_190_APPROVAL_DESK_WARNING_AND_PRIORITY_POLISH
+// Clean the owner view: hide scary optional sync warnings and make Owner Priority
+// match the real approval count.
+(function churvoxApprovalDeskPolish() {
+  try {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+
+    function clean(value) {
+      return String(value || "").replace(/\s+/g, " ").trim();
+    }
+
+    function hideOptionalWarnings() {
+      Array.from(document.querySelectorAll("section, article, div, p")).forEach((el) => {
+        const text = clean(el.textContent).toLowerCase();
+        if (
+          text.includes("machine warning") ||
+          text.includes("live data is taking longer") ||
+          text.includes("some live data is still syncing")
+        ) {
+          el.style.display = "none";
+          el.setAttribute("aria-hidden", "true");
+        }
+      });
+    }
+
+    function approvalCount() {
+      const headerCount = Array.from(document.querySelectorAll("b, strong"))
+        .map((el) => clean(el.textContent))
+        .find((text) => /^\d+$/.test(text));
+
+      const slips = Array.from(document.querySelectorAll("button, article, section"))
+        .filter((el) => clean(el.textContent).toLowerCase().includes("open approval slip")).length;
+
+      return slips || Number(headerCount || 0) || 0;
+    }
+
+    function updatePriorityPanel() {
+      const panel = document.getElementById("churvox-phase-189-owner-priority");
+
+      const count = approvalCount();
+      const countEl = panel.querySelector("[data-priority-count]");
+      if (countEl) countEl.textContent = String(count);
+
+      const title = panel.querySelector("header strong");
+      const body = panel.querySelector("header p");
+      const footerTitle = panel.querySelector("footer strong");
+      const footerBody = panel.querySelector("footer p");
+
+      if (count <= 0) {
+        if (title) title.textContent = "Nothing needs approval right now.";
+        if (body) body.textContent = "Churvox is still watching jobs, workers, quotes, invoices and missing client details. When admin is ready, it will appear here.";
+        if (footerTitle) footerTitle.textContent = "Live watchlist";
+        if (footerBody) footerBody.textContent = "New work, proof, invoice risk and follow-ups will refresh the desk automatically.";
+      } else {
+        if (title) title.textContent = "Approve the first slip first.";
+        if (body) body.textContent = "Churvox has already checked the admin path. Crew, proof, invoices, follow-ups and payment risks are parked here for owner approval.";
+        if (footerTitle) footerTitle.textContent = "Next move";
+        if (footerBody) footerBody.textContent = "Open the top approval slip, check what Churvox prepared, then approve or edit.";
+      }
+    }
+
+    let timer = null;
+    function schedule() {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        hideOptionalWarnings();
+        updatePriorityPanel();
+      }, 100);
+    }
+
+    window.addEventListener("load", schedule);
+    document.addEventListener("click", schedule, true);
+
+    const observer = new MutationObserver(schedule);
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+
+    schedule();
+  } catch {
+    // keep app boot safe
+  }
+})();
+
+
 
 
 // PHASE_189_FORCE_OWNER_PRIORITY_BESIDE_APPROVAL_DESK

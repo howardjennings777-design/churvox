@@ -1,6 +1,6 @@
 # Churvox Deep Bug + Wiring Audit
 
-Generated: 2026-05-17 00:24:16 UTC
+Generated: 2026-05-17 00:27:14 UTC
 
 ## Summary
 
@@ -25,5 +25,5 @@ Generated: 2026-05-17 00:24:16 UTC
 - Lower-risk dependency audit warnings are not changed here to avoid risky package upgrades before launch.
 
 
-REPORT_FILE=audits/churvox_deep_audit_20260517_002416.md
+REPORT_FILE=audits/churvox_deep_audit_20260517_002714.md
 LATEST_FILE=audits/churvox_deep_audit_latest.md

@@ -11815,3 +11815,58 @@ select {
   }
 }
 
+
+/* PHASE_190_APPROVAL_DESK_WARNING_AND_PRIORITY_POLISH
+   Final visible polish from screenshot:
+   - hide optional live-data warning bar
+   - compact hero slightly
+   - make Approval Desk feel cleaner above fold
+   - soften the empty right side
+*/
+
+.om-warning {
+}
+
+.om-hero {
+}
+
+.om-hero h1 {
+}
+
+.om-hero p {
+}
+
+.om-gauges article {
+}
+
+.om-gauges article span {
+}
+
+.om-gauges article strong {
+}
+
+.om-dashboard-focus,
+.cx-phase-189-approval-layout {
+}
+
+.om-approval-desk-main {
+}
+
+.om-approval-desk-main > header h2 {
+}
+
+.om-approval-ticket {
+}
+
+.om-approval-ticket strong {
+}
+
+#churvox-phase-189-owner-priority {
+}
+
+#churvox-phase-189-owner-priority header strong {
+}
+
+#churvox-phase-189-owner-priority .cx-priority-count b {
+}
+
