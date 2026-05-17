@@ -10938,3 +10938,111 @@ body {
   white-space: nowrap;
 }
 
+
+/* PHASE_227_FORCE_PUBLIC_WARM_BACKGROUND_ALL_APP_PAGES */
+:root {
+  --om-page-warm-bg:
+    radial-gradient(circle at top left, rgba(184, 227, 95, 0.16), transparent 32rem),
+    radial-gradient(circle at top right, rgba(189, 116, 65, 0.14), transparent 34rem),
+    linear-gradient(135deg, #f7f1e7 0%, #eee2d1 46%, #e4d7c6 100%);
+}
+
+html,
+body,
+#root,
+.App {
+  min-height: 100%;
+  background: var(--om-page-warm-bg) !important;
+}
+
+body {
+  margin: 0;
+  color: var(--om-ink);
+}
+
+.om-shell,
+.om-main,
+.om-sales-page,
+.om-public {
+  background: var(--om-page-warm-bg) !important;
+}
+
+.om-main {
+  min-height: 100vh;
+}
+
+/* Make every main workspace sit on the same warm public-page canvas */
+.om-dashboard,
+.om-dashboard-board,
+.om-command-suite,
+.om-jobs-board,
+.om-clients-board,
+.om-team-board,
+.om-quotes-board,
+.om-invoices-board,
+.om-proof-board,
+.om-payroll-board,
+.om-settings-board,
+.om-plans-board,
+.om-owner-command,
+.om-approval-desk-main {
+  background: transparent !important;
+}
+
+/* Replace any old cold/blue/grey full page panels with warm cream */
+.om-hero,
+.om-jobs-hero,
+.om-clients-hero,
+.om-team-hero,
+.om-quotes-hero,
+.om-invoices-hero,
+.om-proof-hero,
+.om-payroll-hero,
+.om-settings-hero,
+.om-plans-hero,
+.om-dashboard-focus-card,
+.om-approval-desk,
+.om-lane,
+.om-work-panel,
+.om-client-list,
+.om-client-side section,
+.om-proof-list,
+.om-proof-side section,
+.om-payroll-list,
+.om-payroll-side section,
+.om-settings-list,
+.om-settings-side section,
+.om-team-list,
+.om-team-side section,
+.om-quote-list,
+.om-quote-side section,
+.om-invoice-list,
+.om-invoice-side section,
+.om-job-list,
+.om-job-side section {
+  background:
+    linear-gradient(135deg, rgba(255, 253, 247, 0.9), rgba(251, 246, 235, 0.96)) !important;
+  border-color: rgba(36, 34, 29, 0.12) !important;
+  box-shadow: 0 22px 60px rgba(57, 45, 29, 0.12) !important;
+}
+
+/* Keep the dark/copper public-page personality on important command cards */
+.om-nav,
+.om-gauges article,
+.om-dashboard-focus-card article,
+.om-complete-invoice-totals article,
+.om-single-invoice-table footer {
+  background:
+    linear-gradient(180deg, rgba(36, 34, 29, 0.98), rgba(47, 43, 35, 0.98)) !important;
+}
+
+/* Public nav button spacing after adding Start free trial */
+.om-sales-nav nav {
+  flex-wrap: wrap;
+}
+
+.om-sales-nav nav button,
+.om-sales-nav nav a {
+  white-space: nowrap;
+}
+
