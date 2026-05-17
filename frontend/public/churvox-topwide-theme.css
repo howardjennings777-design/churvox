@@ -1808,3 +1808,376 @@ html body .cs-slip-context li {
   }
 }
 
+
+/* PHASE_281_LOGIN_PUBLIC_STYLE_ON_ALL_APP_PAGES
+   Take the public/login feel and apply it tastefully across Work, Clients, Crew,
+   Quotes, Invoices, Proof & Pay, Payroll, Plans and Settings.
+
+   Style target:
+   - wide premium page canvas
+   - black command panels
+   - cream working cards
+   - copper labels and soft orange glow
+   - less messy button noise
+   - same visual language as public/login page
+*/
+
+/* One clean app canvas */
+html body .cs-suite,
+html body .cs-page {
+  width: min(1540px, calc(100vw - 48px)) !important;
+  max-width: min(1540px, calc(100vw - 48px)) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+html body .cs-page {
+  gap: 14px !important;
+}
+
+/* App pages should feel like public/login sections: framed, wide, calm */
+html body .cs-page:not(.cs-plans-page) {
+  position: relative !important;
+}
+
+html body .cs-page:not(.cs-plans-page)::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 76px -10px auto -10px !important;
+  height: 210px !important;
+  border-radius: 34px !important;
+  background:
+    radial-gradient(circle at 16% 20%, rgba(255, 248, 239, 0.16), transparent 20rem),
+    radial-gradient(circle at 90% 0%, rgba(223, 113, 56, 0.22), transparent 26rem),
+    linear-gradient(120deg, rgba(13, 11, 10, 0.88), rgba(30, 20, 16, 0.82)) !important;
+  opacity: 0.42 !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+
+html body .cs-page > * {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Hero: closer to login/public page hero, less blocky */
+html body .cs-hero {
+  border-radius: 30px !important;
+  padding: 18px 24px 18px !important;
+  border: 1px solid rgba(255, 248, 239, 0.14) !important;
+  background:
+    radial-gradient(circle at 78% 20%, rgba(223, 113, 56, 0.30), transparent 26rem),
+    radial-gradient(circle at 0% 0%, rgba(255, 248, 239, 0.08), transparent 22rem),
+    linear-gradient(120deg, #0d0b0a 0%, #17120f 52%, #5b2719 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 248, 239, 0.08),
+    0 26px 70px rgba(13, 11, 10, 0.22) !important;
+}
+
+html body .cs-hero.compact {
+  min-height: 0 !important;
+}
+
+html body .cs-hero span:first-child {
+  border-color: rgba(244, 162, 109, 0.28) !important;
+  background: rgba(184, 87, 32, 0.14) !important;
+  color: #f4a26d !important;
+}
+
+html body .cs-hero h1 {
+  max-width: 980px !important;
+  color: #fff8ef !important;
+  text-wrap: balance !important;
+}
+
+html body .cs-hero h1 mark {
+  color: #f4a26d !important;
+}
+
+html body .cs-hero p {
+  color: rgba(255, 248, 239, 0.82) !important;
+  font-weight: 760 !important;
+}
+
+/* Metrics: slim black glass tiles like public command card */
+html body .cs-stat,
+html body .cs-plan-price-stack button {
+  min-height: 56px !important;
+  border-radius: 18px !important;
+  border: 1px solid rgba(255, 248, 239, 0.12) !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(223, 113, 56, 0.22), transparent 12rem),
+    rgba(13, 11, 10, 0.62) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 248, 239, 0.06),
+    0 12px 30px rgba(13, 11, 10, 0.18) !important;
+}
+
+html body .cs-stat span,
+html body .cs-plan-price-stack button span {
+  color: rgba(255, 248, 239, 0.78) !important;
+}
+
+html body .cs-stat strong,
+html body .cs-plan-price-stack button strong {
+  color: #fff8ef !important;
+}
+
+/* AI cards: alternate dark command-card style, matching login right panel */
+html body .cs-ai-strip {
+  gap: 12px !important;
+}
+
+html body .cs-ai-card {
+  min-height: 118px !important;
+  border-radius: 22px !important;
+  border: 1px solid rgba(255, 248, 239, 0.12) !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(223, 113, 56, 0.24), transparent 18rem),
+    linear-gradient(135deg, rgba(13, 11, 10, 0.96), rgba(32, 22, 18, 0.96)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 248, 239, 0.06),
+    0 16px 42px rgba(13, 11, 10, 0.18) !important;
+}
+
+html body .cs-ai-card *,
+html body .cs-ai-card strong,
+html body .cs-ai-card p {
+  color: #fff8ef !important;
+}
+
+html body .cs-ai-card p {
+  color: rgba(255, 248, 239, 0.70) !important;
+}
+
+html body .cs-ai-card > .cs-icon {
+  color: #f4a26d !important;
+}
+
+/* Main content panels: same cream login card feel */
+html body .cs-workspace,
+html body .cs-desk,
+html body .cs-command-briefing,
+html body .cs-command-search,
+html body .cs-setup-checklist,
+html body .cs-notification-centre,
+html body .cs-readiness-panel,
+html body .cs-pipeline-board,
+html body .cs-client-timeline,
+html body .cs-crew-workload,
+html body .cs-invoice-control,
+html body .cs-flow,
+html body .cs-plan-addons,
+html body .cs-sms-packs,
+html body .cs-plan-compare {
+  border-radius: 28px !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(223, 113, 56, 0.08), transparent 24rem),
+    linear-gradient(135deg, rgba(255, 248, 239, 0.98), rgba(251, 244, 234, 0.96)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    0 18px 46px rgba(13, 11, 10, 0.10) !important;
+}
+
+/* Section headers should look like login/public page labels */
+html body .cs-workspace > header,
+html body .cs-desk > header,
+html body .cs-command-briefing > header,
+html body .cs-command-search > header,
+html body .cs-setup-checklist > header,
+html body .cs-notification-centre > header,
+html body .cs-readiness-panel > header,
+html body .cs-pipeline-board > header,
+html body .cs-client-timeline > header,
+html body .cs-crew-workload > header,
+html body .cs-invoice-control > header {
+  padding-bottom: 10px !important;
+  border-bottom: 1px solid rgba(13, 11, 10, 0.07) !important;
+}
+
+html body .cs-workspace h2,
+html body .cs-desk h2,
+html body .cs-command-briefing h2,
+html body .cs-setup-checklist h2,
+html body .cs-notification-centre h2,
+html body .cs-readiness-panel h2,
+html body .cs-pipeline-board h2,
+html body .cs-client-timeline h2,
+html body .cs-crew-workload h2,
+html body .cs-invoice-control h2 {
+  color: #17120f !important;
+  text-wrap: balance !important;
+}
+
+/* Filters/buttons: less noisy, more like public nav pills */
+html body .cs-filters {
+  gap: 7px !important;
+}
+
+html body .cs-filters button,
+html body .cs-filter-bar button,
+html body .cs-tabs button,
+html body .cs-quick-buttons button,
+html body .cs-command-search button,
+html body .cs-readiness-panel button,
+html body .cs-setup-grid article button {
+  border-radius: 999px !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  background: rgba(13, 11, 10, 0.055) !important;
+  color: #17120f !important;
+  box-shadow: none !important;
+}
+
+html body .cs-filters button.active,
+html body .cs-filter-bar button.active,
+html body .cs-tabs button.active {
+  border-color: rgba(184, 87, 32, 0.24) !important;
+  background: rgba(184, 87, 32, 0.12) !important;
+  color: #17120f !important;
+}
+
+html body .cs-filters button.strong,
+html body .cs-quick-buttons button:first-child {
+  border-color: rgba(223, 113, 56, 0.28) !important;
+  background:
+    radial-gradient(circle at 24% 0%, rgba(255, 248, 239, 0.16), transparent 26%),
+    linear-gradient(135deg, #0d0b0a 0%, #17120f 44%, #6b2f1c 78%, #b85720 100%) !important;
+  color: #fff8ef !important;
+}
+
+/* Tables/list rows: card-style like the public pricing/login cards */
+html body .cs-table > header {
+  border-radius: 18px !important;
+  background: rgba(13, 11, 10, 0.055) !important;
+}
+
+html body .cs-row,
+html body .cs-approval-row {
+  border-radius: 20px !important;
+  border: 1px solid rgba(13, 11, 10, 0.085) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 253, 247, 0.94), rgba(245, 236, 224, 0.78)) !important;
+  box-shadow: 0 8px 22px rgba(13, 11, 10, 0.055) !important;
+}
+
+html body .cs-row:hover,
+html body .cs-approval-row:hover {
+  border-color: rgba(184, 87, 32, 0.20) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 14px 32px rgba(13, 11, 10, 0.10) !important;
+}
+
+/* Dashboard quick actions: more polished, like a public CTA card */
+html body .cs-quick-launch {
+  border-radius: 26px !important;
+  padding: 16px 18px !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(223, 113, 56, 0.10), transparent 18rem),
+    rgba(255, 248, 239, 0.96) !important;
+}
+
+html body .cs-quick-copy strong {
+  color: #17120f !important;
+}
+
+html body .cs-quick-copy p {
+  color: #6f6257 !important;
+}
+
+/* Command search should look like login input section */
+html body .cs-command-search input {
+  min-height: 48px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(13, 11, 10, 0.12) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 253, 247, 0.98), rgba(251, 244, 234, 0.96)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.72) !important;
+}
+
+/* Cards inside business layer: clean cream cards */
+html body .cs-command-briefing button,
+html body .cs-command-search button,
+html body .cs-setup-grid article,
+html body .cs-notification-centre button,
+html body .cs-readiness-panel button,
+html body .cs-pipeline-board article,
+html body .cs-client-timeline button,
+html body .cs-crew-workload button,
+html body .cs-invoice-control article {
+  border-radius: 18px !important;
+  border: 1px solid rgba(13, 11, 10, 0.085) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 253, 247, 0.94), rgba(245, 236, 224, 0.78)) !important;
+  box-shadow: 0 8px 22px rgba(13, 11, 10, 0.055) !important;
+}
+
+/* Modals: make them feel like the login card over command background */
+html body .cs-modal-backdrop {
+  background:
+    radial-gradient(circle at 82% 10%, rgba(223, 113, 56, 0.24), transparent 28rem),
+    rgba(13, 11, 10, 0.72) !important;
+  backdrop-filter: blur(14px) !important;
+}
+
+html body .cs-modal {
+  border-radius: 30px !important;
+  border: 1px solid rgba(255, 248, 239, 0.28) !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(223, 113, 56, 0.10), transparent 24rem),
+    linear-gradient(135deg, rgba(255, 248, 239, 0.98), rgba(251, 244, 234, 0.96)) !important;
+  box-shadow: 0 34px 90px rgba(13, 11, 10, 0.32) !important;
+}
+
+/* Plan cards: same taste, not image-pill heavy */
+html body .cs-plan-cards article {
+  border-radius: 26px !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(223, 113, 56, 0.08), transparent 18rem),
+    linear-gradient(135deg, rgba(255, 253, 247, 0.98), rgba(251, 244, 234, 0.96)) !important;
+}
+
+html body .cs-plan-cards article.featured {
+  border-color: rgba(184, 87, 32, 0.34) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    0 20px 54px rgba(184, 87, 32, 0.16) !important;
+}
+
+/* Mobile keeps it tidy */
+@media (max-width: 900px) {
+  html body .cs-suite,
+  html body .cs-page {
+    width: calc(100vw - 22px) !important;
+    max-width: calc(100vw - 22px) !important;
+  }
+
+  html body .cs-page:not(.cs-plans-page)::before {
+    display: none !important;
+  }
+
+  html body .cs-ai-strip {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body .cs-hero {
+    border-radius: 22px !important;
+  }
+
+  html body .cs-workspace,
+  html body .cs-desk,
+  html body .cs-command-briefing,
+  html body .cs-command-search,
+  html body .cs-setup-checklist,
+  html body .cs-notification-centre,
+  html body .cs-readiness-panel,
+  html body .cs-pipeline-board,
+  html body .cs-client-timeline,
+  html body .cs-crew-workload,
+  html body .cs-invoice-control,
+  html body .cs-flow {
+    border-radius: 22px !important;
+    padding: 14px !important;
+  }
+}
+
