@@ -2314,3 +2314,144 @@ body,
   background: #0d0b0a !important;
 }
 
+
+/* PHASE_240_FINAL_FRONT_PAGE_STYLE_POLISH
+   Final polish now the correct file is changing:
+   dark public-page canvas, cream work slips/tables, copper highlights.
+*/
+
+/* Keep the full app canvas like the public front page */
+html,
+body,
+#root,
+.App,
+.om-shell,
+.om-main,
+.cs-page {
+  background:
+    radial-gradient(circle at 80% 0%, rgba(184, 87, 32, 0.24), transparent 32rem),
+    radial-gradient(circle at 4% 18%, rgba(255, 248, 239, 0.07), transparent 26rem),
+    linear-gradient(135deg, #0d0b0a 0%, #17120f 48%, #221713 100%) !important;
+}
+
+/* Make the top small page nav feel intentional */
+.om-main > nav,
+.cs-page > nav,
+.cs-mobile-nav,
+.cs-tabs,
+.cs-subnav,
+.cs-filter-bar,
+.cs-filters {
+  background:
+    linear-gradient(180deg, rgba(255, 248, 239, 0.10), rgba(255, 248, 239, 0.06)) !important;
+  border: 1px solid rgba(255, 248, 239, 0.12) !important;
+  border-radius: 18px !important;
+  padding: 8px !important;
+}
+
+/* Hero/cards match the public page tone */
+.cs-hero {
+  border-radius: 24px !important;
+}
+
+.cs-command-cards article,
+.cs-ai-card {
+  background:
+    radial-gradient(circle at 95% 0%, rgba(184, 87, 32, 0.22), transparent 16rem),
+    linear-gradient(135deg, rgba(13, 11, 10, 0.96), rgba(36, 25, 20, 0.92)) !important;
+  border: 1px solid rgba(255, 248, 239, 0.12) !important;
+}
+
+.cs-command-cards strong,
+.cs-command-cards span,
+.cs-ai-card strong {
+  color: #fff8ef !important;
+}
+
+.cs-command-cards p,
+.cs-ai-card p {
+  color: rgba(255, 248, 239, 0.70) !important;
+}
+
+/* Main board container stays dark like front-page command sections */
+.cs-desk,
+.cs-workspace {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(184, 87, 32, 0.14), transparent 20rem),
+    linear-gradient(180deg, rgba(13, 11, 10, 0.94), rgba(23, 18, 15, 0.92)) !important;
+  border: 1px solid rgba(255, 248, 239, 0.12) !important;
+}
+
+/* The actual records/table area should be cream slips on the dark board */
+.cs-approval-list,
+.cs-table {
+  background: transparent !important;
+  gap: 10px !important;
+}
+
+.cs-table > header,
+.cs-approval-row,
+.cs-row,
+.cs-empty {
+  background:
+    linear-gradient(180deg, rgba(255, 248, 239, 0.99), rgba(251, 244, 234, 0.96)) !important;
+  color: #0d0b0a !important;
+  border: 1px solid rgba(255, 248, 239, 0.18) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.16) !important;
+}
+
+.cs-table > header span,
+.cs-approval-row > span {
+  color: #b85720 !important;
+}
+
+/* Empty states should look like a proper cream card, not unfinished */
+.cs-empty {
+  padding: 24px !important;
+}
+
+.cs-empty strong {
+  color: #0d0b0a !important;
+}
+
+.cs-empty,
+.cs-empty p {
+  color: #6d6258 !important;
+}
+
+/* Buttons: copper/black like public CTA */
+.cs-approval-row button,
+.cs-row button,
+.cs-view,
+.cs-modal button:not(.ghost),
+.cs-page button:not(.ghost):not(.active) {
+  background:
+    radial-gradient(circle at 28% 0%, rgba(255,255,255,0.18), transparent 28%),
+    linear-gradient(135deg, #17120f, #2a211b 54%, #b85720) !important;
+  color: #fff8ef !important;
+  border: 1px solid rgba(255, 248, 239, 0.12) !important;
+}
+
+/* Keep page text readable */
+.cs-desk > header h2,
+.cs-workspace > header h2,
+.cs-desk > header p,
+.cs-workspace > header p {
+  color: #fff8ef !important;
+}
+
+.cs-desk > header span,
+.cs-workspace > header span {
+  color: #e48643 !important;
+}
+
+/* Smooth page spacing */
+.cs-page {
+  gap: 20px !important;
+}
+
+.om-main {
+  padding: 24px 34px 56px !important;
+}
+
