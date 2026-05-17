@@ -1,0 +1,19 @@
+{
+  "generated_at": "2026-05-17T20:34:36.148Z",
+  "baseUrl": "http://127.0.0.1:4297",
+  "blockers": [
+    {
+      "area": "login",
+      "msg": "Could not find login email/password inputs."
+    }
+  ],
+  "warnings": [],
+  "passes": [],
+  "apiErrors": [],
+  "consoleErrors": [],
+  "summary": {
+    "blockers": 1,
+    "warnings": 0,
+    "passes": 0
+  }
+}

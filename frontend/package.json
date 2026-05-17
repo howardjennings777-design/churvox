@@ -86,7 +86,9 @@
     "audit:deep-wiring": "node scripts/churvox_phase287_deep_wiring_audit.js",
     "audit:runtime-buttons": "node scripts/churvox_phase287_runtime_probe.js",
     "audit:go-live-static": "node scripts/churvox_phase295_go_live_static_audit.js",
-    "audit:go-live-runtime": "node scripts/churvox_phase295_go_live_runtime_audit.js"
+    "audit:go-live-runtime": "node scripts/churvox_phase295_go_live_runtime_audit.js",
+    "audit:business-ready-static": "node scripts/churvox_business_ready_static_audit.js",
+    "audit:business-ready-runtime": "node scripts/churvox_business_ready_runtime_audit.js"
   },
   "browserslist": {
     "production": [
