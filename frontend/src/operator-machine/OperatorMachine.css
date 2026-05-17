@@ -10610,3 +10610,159 @@ html body .om-sales-page * {
   }
 }
 
+
+/* PHASE_227_FULL_SCREEN_PUBLIC_PAGE_COLOR_FIX */
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background: #0d0b0a !important;
+}
+
+html body .om-sales-page {
+  width: 100% !important;
+  min-height: 100vh !important;
+  padding: 0 0 80px !important;
+  background:
+    radial-gradient(circle at 84% 4%, rgba(214, 91, 34, 0.42), transparent 32rem),
+    radial-gradient(circle at 8% 18%, rgba(255, 248, 239, 0.18), transparent 26rem),
+    linear-gradient(135deg, #0d0b0a 0%, #19110d 34%, #8f351b 68%, #f2dfc8 100%) !important;
+}
+
+html body .om-sales-nav,
+html body .om-sales-hero,
+html body .om-sales-proof-strip,
+html body .om-sales-how,
+html body .om-sales-prepared,
+html body .om-sales-control,
+html body .om-sales-pricing,
+html body .om-sales-access,
+html body .om-sales-final {
+  width: min(1760px, calc(100% - 48px)) !important;
+}
+
+html body .om-sales-nav {
+  padding: 16px 24px !important;
+  margin-top: 0 !important;
+  background: rgba(13, 11, 10, 0.88) !important;
+  border: 1px solid rgba(255, 248, 239, 0.10) !important;
+  border-radius: 0 0 24px 24px !important;
+  box-shadow: 0 18px 60px rgba(13, 11, 10, 0.28) !important;
+}
+
+html body .om-sales-brand strong {
+  color: #fff8ef !important;
+}
+
+html body .om-sales-brand small {
+  color: #e48643 !important;
+}
+
+html body .om-sales-nav nav {
+  background: rgba(255, 248, 239, 0.10) !important;
+  border-color: rgba(255, 248, 239, 0.12) !important;
+}
+
+html body .om-sales-nav nav a,
+html body .om-sales-nav nav button {
+  color: #fff8ef !important;
+}
+
+html body .om-sales-nav nav button:last-child {
+  background: #fff8ef !important;
+  color: #0d0b0a !important;
+}
+
+html body .om-sales-hero {
+  grid-template-columns: minmax(0, 1.05fr) minmax(420px, 0.78fr) !important;
+  min-height: calc(100vh - 120px) !important;
+  align-items: stretch !important;
+  padding-top: 32px !important;
+}
+
+html body .om-sales-hero-copy {
+  min-height: calc(100vh - 170px) !important;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(228, 134, 67, 0.30), transparent 24rem),
+    linear-gradient(135deg, rgba(255, 248, 239, 0.96), rgba(244, 237, 227, 0.92)) !important;
+}
+
+html body .om-sales-command-card {
+  min-height: calc(100vh - 170px) !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(228, 134, 67, 0.34), transparent 22rem),
+    linear-gradient(160deg, #0d0b0a 0%, #17120f 58%, #552112 100%) !important;
+}
+
+html body .om-sales-hero h1 {
+  max-width: 1000px !important;
+  font-size: clamp(58px, 7.8vw, 128px) !important;
+}
+
+html body .om-sales-hero-copy > p {
+  max-width: 880px !important;
+  font-size: 19px !important;
+}
+
+html body .om-sales-proof-strip {
+  grid-template-columns: repeat(4, 1fr) !important;
+}
+
+html body .om-sales-proof-strip article,
+html body .om-sales-how,
+html body .om-sales-prepared,
+html body .om-sales-pricing,
+html body .om-sales-final {
+  background: rgba(255, 248, 239, 0.94) !important;
+}
+
+html body .om-sales-control {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(228, 134, 67, 0.34), transparent 24rem),
+    linear-gradient(135deg, #0d0b0a 0%, #17120f 58%, #5a2414 100%) !important;
+}
+
+html body .om-sales-access {
+  background:
+    linear-gradient(112deg, #0d0b0a 0%, #17120f 47%, rgba(255, 248, 239, 0.98) 47.2%, rgba(255, 248, 239, 1) 100%) !important;
+}
+
+html body .om-sales-auth {
+  background: #fff8ef !important;
+}
+
+html body .om-sales-pricing article.featured button,
+html body .om-sales-actions button:first-child,
+html body .om-sales-final button {
+  background: #b85720 !important;
+}
+
+@media (max-width: 1100px) {
+  html body .om-sales-nav,
+  html body .om-sales-hero,
+  html body .om-sales-proof-strip,
+  html body .om-sales-how,
+  html body .om-sales-prepared,
+  html body .om-sales-control,
+  html body .om-sales-pricing,
+  html body .om-sales-access,
+  html body .om-sales-final {
+    width: min(100%, calc(100% - 24px)) !important;
+  }
+
+  html body .om-sales-hero {
+    min-height: auto !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  html body .om-sales-hero-copy,
+  html body .om-sales-command-card {
+    min-height: auto !important;
+  }
+
+  html body .om-sales-access {
+    background: #0d0b0a !important;
+  }
+}
+
