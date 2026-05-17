@@ -43,50 +43,248 @@ async function tryLogin(page) {
       attempted: false,
       ok: false,
       required: requireLogin,
-      reason: "No CHURVOX_TEST_EMAIL/CHURVOX_TEST_PASSWORD supplied."
+      reason: "No CHURVOX_TEST_EMAIL/CHURVOX_TEST_PASSWORD supplied.",
     };
   }
 
-  const emailInput = page.locator('input[type="email"], input[name*="email" i], input[placeholder*="email" i]').first();
-  const passInput = page.locator('input[type="password"], input[name*="password" i], input[placeholder*="password" i]').first();
+  async function isLoggedIn() {
+    await page.goto(`${BASE_URL}/dashboard?logged-audit-check=${Date.now()}`, {
+      waitUntil: "domcontentloaded",
+      timeout: 45000,
+    }).catch(() => {});
+    await page.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {});
+    await page.waitForTimeout(1400);
 
-  try {
-    const loginSwitch = page.locator('button:has-text("Login"), button:has-text("Log in"), button:has-text("Already have"), a:has-text("Login"), a:has-text("Log in")').first();
-    if (await loginSwitch.count().catch(() => 0)) {
-      await loginSwitch.click({ timeout: 2500 }).catch(() => {});
-      await page.waitForTimeout(500);
+    const url = page.url();
+    const authInputs = await page.locator('input[type="email"], input[type="password"]').count().catch(() => 99);
+    const authText = await page.locator("body").innerText({ timeout: 3000 }).catch(() => "");
+
+    const looksLikeLogin =
+      /\/login|\/signup/i.test(url) ||
+      authInputs >= 2 ||
+      /start free trial|open command desk|login|log in|sign up/i.test(authText.slice(0, 2500));
+
+    const looksLikeApp =
+      /dashboard|jobs|clients|team|quotes|invoices|proof|payroll|plans|settings/i.test(url) &&
+      /dashboard|work|clients|crew|quotes|invoices|proof|payroll|settings|approval|command/i.test(authText.toLowerCase());
+
+    return {
+      ok: looksLikeApp && !looksLikeLogin,
+      url,
+      authInputs,
+      text: authText.slice(0, 500).replace(/\s+/g, " "),
+    };
+  }
+
+  async function storeToken(token, extra = {}) {
+    await page.goto(`${BASE_URL}/?token-store=${Date.now()}`, {
+      waitUntil: "domcontentloaded",
+      timeout: 45000,
+    }).catch(() => {});
+
+    await page.evaluate(({ token, extra }) => {
+      try {
+        const keys = [
+          "token",
+          "authToken",
+          "access_token",
+          "churvox_token",
+          "churvox_auth_token",
+        ];
+
+        keys.forEach((key) => localStorage.setItem(key, token));
+
+        localStorage.setItem("churvox_user", JSON.stringify(extra.user || extra));
+        localStorage.setItem("churvox_role", extra.role || extra.user?.role || "owner");
+        localStorage.setItem("churvox_plan", extra.plan || extra.user?.plan || "operator");
+        localStorage.setItem("churvox_plan_status", extra.plan_status || "trialing");
+      } catch (err) {
+        console.warn("Token store failed", err);
+      }
+    }, { token, extra });
+  }
+
+  async function tryDirectBackendLogin() {
+    const endpoints = [
+      "/api/auth/login",
+      "/api/owner/login",
+      "/api/admin/login",
+      "/auth/login",
+      "/owner/login",
+      "/admin/login",
+    ];
+
+    const backendBases = [
+      process.env.CHURVOX_BACKEND_URL || "",
+      "https://grassley-backend.onrender.com",
+      BASE_URL,
+    ].filter(Boolean);
+
+    const payloads = [
+      { email, password },
+      { username: email, password },
+      { email_address: email, password },
+    ];
+
+    const attempts = [];
+
+    for (const base of backendBases) {
+      for (const endpoint of endpoints) {
+        for (const payload of payloads) {
+          const url = `${base.replace(/\/$/, "")}${endpoint}`;
+
+          try {
+            const response = await page.request.post(url, {
+              data: payload,
+              headers: { "Content-Type": "application/json" },
+              timeout: 15000,
+            });
+
+            const status = response.status();
+            const raw = await response.text().catch(() => "");
+            let json = {};
+            try {
+              json = raw ? JSON.parse(raw) : {};
+            } catch {
+              json = {};
+            }
+
+            const token =
+              json.access_token ||
+              json.token ||
+              json.jwt ||
+              json.id_token ||
+              json.data?.access_token ||
+              json.data?.token ||
+              json.user?.token;
+
+            attempts.push({ url, status, hasToken: Boolean(token), body: raw.slice(0, 180) });
+
+            if (response.ok() && token) {
+              await storeToken(token, json);
+              return {
+                ok: true,
+                method: "backend",
+                url,
+                status,
+                token: true,
+              };
+            }
+          } catch (err) {
+            attempts.push({ url, error: String(err.message || err).slice(0, 160) });
+          }
+        }
+      }
     }
 
-    await emailInput.waitFor({ timeout: 7000 });
-    await passInput.waitFor({ timeout: 7000 });
-    await emailInput.fill(email);
-    await passInput.fill(password);
+    return {
+      ok: false,
+      method: "backend",
+      attempts: attempts.slice(-12),
+    };
+  }
 
-    const submit = page.locator('button:has-text("Open Command Desk"), button:has-text("Login"), button:has-text("Log in"), button[type="submit"]').first();
-    await submit.click();
-    await page.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {});
-    await page.waitForTimeout(1200);
+  async function tryUiLogin() {
+    try {
+      await page.goto(`${BASE_URL}/login?audit-login=${Date.now()}`, {
+        waitUntil: "domcontentloaded",
+        timeout: 45000,
+      }).catch(() => {});
+      await page.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {});
+      await page.waitForTimeout(1000);
 
-    await page.goto(`${BASE_URL}/dashboard?logged-audit=${Date.now()}`, { waitUntil: "domcontentloaded", timeout: 45000 }).catch(() => {});
-    await page.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {});
-    await page.waitForTimeout(1200);
+      const loginSwitch = page.locator(
+        'button:has-text("Login"), button:has-text("Log in"), button:has-text("Already have"), a:has-text("Login"), a:has-text("Log in")'
+      ).first();
 
-    const stillLogin =
-      /login|sign/i.test(page.url()) ||
-      await page.locator('input[type="email"], input[type="password"], button:has-text("Open Command Desk"), button:has-text("Login"), button:has-text("Log in")').count().catch(() => 0) > 1;
+      if (await loginSwitch.count().catch(() => 0)) {
+        await loginSwitch.click({ timeout: 2500 }).catch(() => {});
+        await page.waitForTimeout(500);
+      }
+
+      const emailInput = page.locator('input[type="email"], input[name*="email" i], input[placeholder*="email" i]').first();
+      const passInput = page.locator('input[type="password"], input[name*="password" i], input[placeholder*="password" i]').first();
+
+      await emailInput.waitFor({ timeout: 8000 });
+      await passInput.waitFor({ timeout: 8000 });
+
+      await emailInput.fill(email);
+      await passInput.fill(password);
+
+      const submit = page.locator(
+        'button:has-text("Open Command Desk"), button:has-text("Login"), button:has-text("Log in"), button[type="submit"]'
+      ).first();
+
+      await submit.click();
+      await page.waitForLoadState("networkidle", { timeout: 12000 }).catch(() => {});
+      await page.waitForTimeout(1800);
+
+      const check = await isLoggedIn();
+      return {
+        ok: check.ok,
+        method: "ui",
+        check,
+      };
+    } catch (err) {
+      return {
+        ok: false,
+        method: "ui",
+        error: String(err.message || err).slice(0, 240),
+      };
+    }
+  }
+
+  try {
+    const ui = await tryUiLogin();
+    if (ui.ok) {
+      return {
+        attempted: true,
+        ok: true,
+        required: requireLogin,
+        reason: "Logged in through UI.",
+        method: ui.method,
+      };
+    }
+
+    const backend = await tryDirectBackendLogin();
+    if (backend.ok) {
+      const check = await isLoggedIn();
+      if (check.ok) {
+        return {
+          attempted: true,
+          ok: true,
+          required: requireLogin,
+          reason: `Logged in through backend endpoint ${backend.url}.`,
+          method: backend.method,
+        };
+      }
+
+      return {
+        attempted: true,
+        ok: false,
+        required: requireLogin,
+        reason: `Backend returned token, but dashboard still did not open. URL: ${check.url}. Text: ${check.text}`,
+        ui,
+        backend,
+      };
+    }
+
+    const finalCheck = await isLoggedIn();
 
     return {
       attempted: true,
-      ok: !stillLogin,
+      ok: false,
       required: requireLogin,
-      reason: stillLogin ? "Login did not stick; dashboard still shows login/auth UI." : "Logged in and dashboard opened."
+      reason: `Login did not stick. URL: ${finalCheck.url}. Text: ${finalCheck.text}`,
+      ui,
+      backend,
     };
   } catch (err) {
     return {
       attempted: true,
       ok: false,
       required: requireLogin,
-      reason: String(err.message || err).slice(0, 240)
+      reason: String(err.message || err).slice(0, 300),
     };
   }
 }
