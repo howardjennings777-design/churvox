@@ -601,7 +601,6 @@ async def churvox_hard_cors_error_safe(request: Request, call_next):
     return _churvox_apply_cors_headers(request, response)
 
 # END_PHASE_218_HARD_CORS_ERROR_SAFE
-
 # PHASE_272_OWNER_UNLIMITED_ACCESS
 # Keep the real owner/dev account unlocked regardless of trial expiry.
 UNLIMITED_ACCESS_EMAILS = sorted({
@@ -725,7 +724,6 @@ async def churvox_phase272_unlimited_access_startup():
     await ensure_unlimited_access_accounts()
 
 # END_PHASE_272_OWNER_UNLIMITED_ACCESS
-
 # PHASE_219_STABLE_OPERATOR_FEEDS
 # Safety net for Command Suite feeds.
 # These endpoints must never crash the frontend while billing/plans are being tested.
