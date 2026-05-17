@@ -906,7 +906,7 @@ export default function CommandSuite({
 
 
   const model = useMemo(() => {
-    const raw = data?.raw || data || {};
+    const raw = data?.raw || data || {}; // PHASE_219_FRONTEND_PARTIAL_DATA_SAFE
     const jobs = rowsFrom(raw.jobs, data?.jobs, raw.work, data?.work);
     const clients = rowsFrom(raw.clients, data?.clients, raw.customers, data?.customers);
     const crew = rowsFrom(raw.workers, data?.workers, raw.team, data?.team, raw.crew, data?.crew);
