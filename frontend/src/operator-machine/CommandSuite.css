@@ -2183,3 +2183,274 @@ body,
   --cx-teal: #507b36 !important;
 }
 
+
+/* PHASE_234_USE_FRONT_PAGE_BACKGROUND_ACROSS_APP
+   User wants the app pages to carry the same background feel as the public/front page:
+   black base, copper glow, warm cream cards.
+   Do not redesign layouts. Only theme/background unification.
+*/
+
+:root {
+  --cs-frontpage-bg:
+    radial-gradient(circle at 78% 6%, rgba(184, 87, 32, 0.24), transparent 30rem),
+    radial-gradient(circle at 6% 20%, rgba(13, 11, 10, 0.18), transparent 25rem),
+    linear-gradient(180deg, #11100d 0%, #17120f 52%, #0d0b0a 100%) !important;
+
+  --cs-black: #0d0b0a !important;
+  --cs-black-2: #17120f !important;
+  --cs-orange: #b85720 !important;
+  --cs-orange-2: #d56b2a !important;
+  --cs-orange-3: #e48643 !important;
+  --cs-paper: #fff8ef !important;
+  --cs-cream: #fbf4ea !important;
+  --cs-soft: #f4ede3 !important;
+  --cs-warm: #eadbc9 !important;
+  --cs-muted: #6d6258 !important;
+  --cs-line: rgba(13, 11, 10, 0.12) !important;
+  --cs-shadow: 0 14px 42px rgba(13, 11, 10, 0.12) !important;
+  --cs-shadow-strong: 0 26px 84px rgba(13, 11, 10, 0.20) !important;
+}
+
+/* exact page/background feel */
+html,
+body,
+#root,
+.App,
+.om-shell,
+.om-main {
+  background: var(--cs-frontpage-bg) !important;
+  color: var(--cs-paper) !important;
+}
+
+.om-shell {
+  min-height: 100vh !important;
+}
+
+.om-main {
+  min-height: calc(100vh - 78px) !important;
+  background: var(--cs-frontpage-bg) !important;
+}
+
+/* keep page wrappers transparent so the front-page background shows through */
+.cs-page,
+.cs-dashboard,
+.cs-work,
+.cs-clients,
+.cs-crew,
+.cs-quotes,
+.cs-invoices,
+.cs-proof,
+.cs-payroll,
+.cs-plans,
+.cs-settings {
+  background: transparent !important;
+  color: var(--cs-paper) !important;
+}
+
+/* top nav already fits, keep it strong */
+.om-nav {
+  background: #0d0b0a !important;
+  border-bottom: 1px solid rgba(213, 107, 42, 0.24) !important;
+  box-shadow: 0 12px 32px rgba(13, 11, 10, 0.22) !important;
+}
+
+/* hero stays in same dark/copper family */
+.cs-hero {
+  background:
+    radial-gradient(circle at 82% 20%, rgba(255, 248, 239, 0.08), transparent 26rem),
+    linear-gradient(116deg, #0d0b0a 0%, #17120f 50.5%, #b85720 50.6%, #d56b2a 100%) !important;
+  box-shadow: var(--cs-shadow-strong) !important;
+}
+
+.cs-hero h1 {
+  color: var(--cs-paper) !important;
+}
+
+.cs-hero h1 mark {
+  color: var(--cs-orange-3) !important;
+  background: transparent !important;
+}
+
+.cs-hero p {
+  color: rgba(255, 248, 239, 0.84) !important;
+}
+
+.cs-hero span:first-child {
+  color: var(--cs-orange-3) !important;
+}
+
+/* dashboard stat cards stay dark like the current hero strip */
+.cs-stat {
+  background: rgba(13, 11, 10, 0.90) !important;
+  border: 1px solid rgba(255, 248, 239, 0.10) !important;
+  box-shadow: 0 20px 44px rgba(13, 11, 10, 0.24) !important;
+}
+
+.cs-stat strong {
+  color: var(--cs-paper) !important;
+}
+
+.cs-stat span {
+  color: rgba(255, 248, 239, 0.82) !important;
+}
+
+.cs-stat .cs-icon {
+  color: var(--cs-orange-3) !important;
+}
+
+/* cream cards on top of the dark front-page background */
+.cs-command-cards article,
+.cs-ai-card,
+.cs-desk,
+.cs-workspace,
+.cs-flow,
+.cs-modal,
+.cs-empty,
+.cs-card,
+.cs-panel,
+.cs-list,
+.cs-plan-card,
+.cs-pricing-card,
+.cs-billing-card,
+.cs-setting-card,
+.cs-proof-card,
+.cs-payroll-card,
+.cs-client-card,
+.cs-job-card,
+.cs-quote-card,
+.cs-invoice-card,
+.cs-crew-card {
+  background:
+    radial-gradient(circle at top right, rgba(184, 87, 32, 0.07), transparent 18rem),
+    linear-gradient(180deg, rgba(255, 248, 239, 0.97), rgba(251, 244, 234, 0.95)) !important;
+  color: var(--cs-black) !important;
+  border: 1px solid rgba(13, 11, 10, 0.12) !important;
+  box-shadow: 0 14px 42px rgba(13, 11, 10, 0.12) !important;
+}
+
+/* table/list areas should also sit on cream sheets */
+.cs-table,
+.cs-approval-list {
+  background:
+    radial-gradient(circle at top right, rgba(184, 87, 32, 0.05), transparent 18rem),
+    linear-gradient(180deg, rgba(255, 248, 239, 0.98), rgba(251, 244, 234, 0.96)) !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  border-radius: 12px !important;
+}
+
+.cs-row,
+.cs-approval-row,
+.cs-table > header {
+  background: transparent !important;
+}
+
+/* text inside cream areas */
+.cs-desk h2,
+.cs-workspace h2,
+.cs-command-cards strong,
+.cs-command-cards span,
+.cs-ai-card strong,
+.cs-flow article strong,
+.cs-flow > div span,
+.cs-empty strong,
+.cs-row strong,
+.cs-approval-row strong,
+.cs-modal h2,
+.cs-table > header span {
+  color: var(--cs-black) !important;
+}
+
+.cs-command-cards p,
+.cs-ai-card p,
+.cs-desk header p,
+.cs-workspace header p,
+.cs-flow article p,
+.cs-row p,
+.cs-row div,
+.cs-approval-row p,
+.cs-empty,
+.cs-modal p {
+  color: var(--cs-muted) !important;
+}
+
+.cs-desk > header span,
+.cs-workspace > header span,
+.cs-approval-row > span,
+.cs-table > header span,
+.cs-modal header span {
+  color: var(--cs-orange) !important;
+}
+
+/* sub-filters/tabs should feel like front page pills, not grey bars */
+.cs-filters,
+.cs-tabs,
+.cs-subnav,
+.cs-mobile-nav,
+.cs-filter-bar {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+
+.cs-filters button,
+.cs-tabs button,
+.cs-subnav button,
+.cs-mobile-nav button,
+.cs-filter-bar button {
+  color: var(--cs-paper) !important;
+  background: rgba(255, 248, 239, 0.10) !important;
+  border: 1px solid rgba(255, 248, 239, 0.14) !important;
+  box-shadow: none !important;
+}
+
+.cs-filters button.active,
+.cs-tabs button.active,
+.cs-subnav button.active,
+.cs-mobile-nav button.active,
+.cs-filter-bar button.active {
+  color: var(--cs-paper) !important;
+  background: linear-gradient(135deg, #17120f, #2a211b 54%, #b85720) !important;
+  border-color: rgba(184, 87, 32, 0.32) !important;
+}
+
+/* buttons */
+.cs-approval-row button,
+.cs-row button,
+.cs-view,
+.cs-modal button:not(.ghost),
+.cs-page button:not(.ghost):not(.active) {
+  color: var(--cs-paper) !important;
+  background:
+    radial-gradient(circle at 28% 0%, rgba(255,255,255,0.18), transparent 28%),
+    linear-gradient(135deg, #17120f, #2a211b 54%, #b85720) !important;
+  border: 1px solid rgba(13, 11, 10, 0.22) !important;
+  box-shadow: 0 12px 28px rgba(57, 45, 29, 0.16) !important;
+}
+
+.cs-view.ghost,
+.cs-modal button.ghost,
+.cs-page button.ghost {
+  color: var(--cs-black) !important;
+  background: rgba(13, 11, 10, 0.08) !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  box-shadow: none !important;
+}
+
+/* forms */
+.cs-page input,
+.cs-page textarea,
+.cs-page select,
+.cs-modal input,
+.cs-modal textarea,
+.cs-modal select {
+  background: #fff8ef !important;
+  color: var(--cs-black) !important;
+  border: 1px solid rgba(13, 11, 10, 0.14) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.50) !important;
+}
+
+.cs-page input::placeholder,
+.cs-page textarea::placeholder {
+  color: rgba(109, 98, 88, 0.62) !important;
+}
+
