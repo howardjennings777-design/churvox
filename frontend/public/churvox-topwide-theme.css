@@ -975,3 +975,20 @@ html body .cs-plan-compare {
   }
 }
 
+
+/* PHASE_249_ONE_TOP_NAV_ONLY
+   The duplicate CommandSuite subnav has been removed from JSX.
+   Tighten spacing so pages sit cleanly under the one real top nav.
+*/
+html body .om-main {
+}
+
+html body .cs-page {
+}
+
+/* Keep any remaining filter tabs inside content only, not as a second global nav. */
+html body .cs-filter-bar,
+html body .cs-filters,
+html body .cs-tabs {
+}
+

@@ -1460,22 +1460,7 @@ export default function CommandSuite({
 
   return (
     <section className="cs-suite" data-phase="PHASE_212_WIRED_COMMAND_SUITE">
-      <nav className="cs-subnav" aria-label="Command Suite pages">
-        {NAV_ITEMS.map(([label, target, icon]) => {
-          const active = PAGE_MAP[target] === current;
-          return (
-            <button
-              type="button"
-              key={target}
-              className={active ? "active" : ""}
-              onClick={() => goToPage(target)}
-            >
-              <Icon type={icon} />
-              <span>{label}</span>
-            </button>
-          );
-        })}
-      </nav>
+      {/* PHASE_249_DUPLICATE_TOP_NAV_REMOVED: main top nav is the only page nav now. */}
 
       {appLocked && current !== "plans" ? (
         <LockedTrialPage billingStatus={billingStatus} goToPage={goToPage} />
