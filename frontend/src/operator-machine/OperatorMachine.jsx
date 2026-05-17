@@ -2,7 +2,8 @@
 // PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
-import CommandDeckDashboard from "./CommandDeckDashboard";
+import "./CommandSuite.css";
+import CommandSuite from "./CommandSuite";
 // PHASE_134_REAL_AI_PREPARED_WORK
 // PHASE_130_REAL_INVOICE_LAYOUT
 // PHASE_128_INVOICE_OWING_SUMMARY
@@ -6293,29 +6294,18 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
       </aside>
 
       <section className="om-main">
-        {page === "dashboard" ? (
-          <CommandDeckDashboard
-            machine={machine}
-            planName={planLabel(currentPlan)}
-            visibleApprovals={visibleApprovals}
-            hiddenApprovalCount={hiddenApprovalCount}
-            showAllApprovals={showAllApprovals}
-            setShowAllApprovals={setShowAllApprovals}
-            onOpenSlip={openSlip}
-          />
-        ) : null}
-
-        {page === "dashboard" ? null : null}
-
-        {data?.error ? <section className="om-warning"><b>Machine warning</b><span>{data.error}</span></section> : null}
-
-        <OperatorActionReceipt entry={outputLog[0]} />
-
-        {page === "settings" ? <BusinessLogoUploader data={data || {}} /> : null}
-
-        {page === "dashboard" ? null : (
-          <FeatureWorkspace page={page} machine={machine} data={data} currentPlan={currentPlan} onOpen={openSlip} onPlans={() => go("plans")} />
-        )}
+        <CommandSuite
+          page={page}
+          setPage={setPage}
+          data={data}
+          machine={machine}
+          planName={planLabel(currentPlan)}
+          visibleApprovals={visibleApprovals}
+          hiddenApprovalCount={hiddenApprovalCount}
+          showAllApprovals={showAllApprovals}
+          setShowAllApprovals={setShowAllApprovals}
+          onOpenSlip={openSlip}
+        />
       </section>
 
       <ChurvoxInstallPrompt />
