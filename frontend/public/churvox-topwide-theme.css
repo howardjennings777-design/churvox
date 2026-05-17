@@ -1004,3 +1004,136 @@ html body .cs-sms-packs > div {
   }
 }
 
+
+/* PHASE_266_TINY_VIEW_BORDER_GUTTER
+   Pull the layout in slightly so every page fits in view cleanly.
+   Adds a small safe border/gutter without making the app feel narrow.
+*/
+
+html,
+body,
+#root,
+.App {
+  overflow-x: hidden !important;
+}
+
+html body .om-main {
+  width: 100% !important;
+  max-width: 100vw !important;
+  padding-left: clamp(18px, 2vw, 34px) !important;
+  padding-right: clamp(18px, 2vw, 34px) !important;
+}
+
+/* Main app canvas: wide but with a visible safe edge */
+html body .cs-suite,
+html body .cs-page {
+  width: min(1540px, calc(100vw - 56px)) !important;
+  max-width: min(1540px, calc(100vw - 56px)) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Public/login canvas gets the same safe edge */
+html body .om-sales-nav,
+html body .om-sales-hero,
+html body .om-sales-proof-strip,
+html body .om-sales-how,
+html body .om-sales-prepared,
+html body .om-sales-control,
+html body .om-sales-pricing,
+html body .om-sales-access,
+html body .om-sales-final {
+  width: min(1540px, calc(100vw - 56px)) !important;
+  max-width: min(1540px, calc(100vw - 56px)) !important;
+}
+
+/* Give big sections a tiny border so they feel contained */
+html body .cs-hero,
+html body .cs-workspace,
+html body .cs-desk,
+html body .cs-flow,
+html body .cs-plan-cards,
+html body .cs-plan-addons,
+html body .cs-sms-packs,
+html body .cs-plan-compare,
+html body .om-sales-hero-copy,
+html body .om-sales-command-card,
+html body .om-sales-how,
+html body .om-sales-prepared,
+html body .om-sales-control,
+html body .om-sales-pricing,
+html body .om-sales-access,
+html body .om-sales-final,
+html body .om-sales-auth {
+  border-width: 1px !important;
+}
+
+/* Keep stat pills fitting inside the view */
+html body .cs-stats,
+html body .cs-plan-price-stack {
+  max-width: 940px !important;
+  grid-template-columns: repeat(4, minmax(150px, 220px)) !important;
+}
+
+html body .cs-stat,
+html body .cs-plan-price-stack button {
+  max-width: 220px !important;
+}
+
+/* Medium screens need a bit more edge room */
+@media (max-width: 1200px) {
+  html body .om-main {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  html body .cs-suite,
+  html body .cs-page,
+  html body .om-sales-nav,
+  html body .om-sales-hero,
+  html body .om-sales-proof-strip,
+  html body .om-sales-how,
+  html body .om-sales-prepared,
+  html body .om-sales-control,
+  html body .om-sales-pricing,
+  html body .om-sales-access,
+  html body .om-sales-final {
+    width: calc(100vw - 32px) !important;
+    max-width: calc(100vw - 32px) !important;
+  }
+}
+
+/* Mobile: small edge, no horizontal overflow */
+@media (max-width: 900px) {
+  html body .om-main {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  html body .cs-suite,
+  html body .cs-page,
+  html body .om-sales-nav,
+  html body .om-sales-hero,
+  html body .om-sales-proof-strip,
+  html body .om-sales-how,
+  html body .om-sales-prepared,
+  html body .om-sales-control,
+  html body .om-sales-pricing,
+  html body .om-sales-access,
+  html body .om-sales-final {
+    width: calc(100vw - 20px) !important;
+    max-width: calc(100vw - 20px) !important;
+  }
+
+  html body .cs-stats,
+  html body .cs-plan-price-stack {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    max-width: 100% !important;
+  }
+
+  html body .cs-stat,
+  html body .cs-plan-price-stack button {
+    max-width: none !important;
+  }
+}
+
