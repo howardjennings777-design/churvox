@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-17T08:38:00.089Z",
+  "generatedAt": "2026-05-17T08:49:06.083Z",
   "baseUrl": "https://www.churvox.com",
   "login": {
     "attempted": true,
@@ -8,160 +8,10 @@
     "reason": "Logged in through backend endpoint https://grassley-backend.onrender.com/api/auth/login.",
     "method": "backend"
   },
-  "totalProblems": 230,
+  "totalProblems": 227,
   "routes": [
     {
       "route": "/",
-      "viewportName": "desktop",
-      "url": "https://www.churvox.com/dashboard",
-      "pageTitle": "Churvox",
-      "viewport": {
-        "width": 1440,
-        "height": 950
-      },
-      "scroll": {
-        "width": 1440,
-        "height": 1537
-      },
-      "counts": {
-        "checkedElements": 89,
-        "problems": 12,
-        "warnings": 8
-      },
-      "problems": [
-        {
-          "type": "hero-too-tall",
-          "selector": ".cs-hero",
-          "detail": "357px tall, target under 300px"
-        },
-        {
-          "type": "cream-text-on-cream-area",
-          "selector": "button",
-          "text": "Open Approval Slip ›",
-          "detail": "color rgb(255, 248, 239), background rgba(0, 0, 0, 0)"
-        },
-        {
-          "type": "cream-text-on-cream-area",
-          "selector": "em",
-          "text": "›",
-          "detail": "color rgb(255, 248, 239), background rgba(0, 0, 0, 0)"
-        },
-        {
-          "type": "cream-text-on-cream-area",
-          "selector": "button",
-          "text": "Open Approval Slip ›",
-          "detail": "color rgb(255, 248, 239), background rgba(0, 0, 0, 0)"
-        },
-        {
-          "type": "cream-text-on-cream-area",
-          "selector": "em",
-          "text": "›",
-          "detail": "color rgb(255, 248, 239), background rgba(0, 0, 0, 0)"
-        },
-        {
-          "type": "cream-text-on-cream-area",
-          "selector": "button",
-          "text": "Open Approval Slip ›",
-          "detail": "color rgb(255, 248, 239), background rgba(0, 0, 0, 0)"
-        },
-        {
-          "type": "cream-text-on-cream-area",
-          "selector": "em",
-          "text": "›",
-          "detail": "color rgb(255, 248, 239), background rgba(0, 0, 0, 0)"
-        },
-        {
-          "type": "cream-text-on-cream-area",
-          "selector": "button",
-          "text": "Open Approval Slip ›",
-          "detail": "color rgb(255, 248, 239), background rgba(0, 0, 0, 0)"
-        },
-        {
-          "type": "cream-text-on-cream-area",
-          "selector": "em",
-          "text": "›",
-          "detail": "color rgb(255, 248, 239), background rgba(0, 0, 0, 0)"
-        },
-        {
-          "type": "cream-text-on-cream-area",
-          "selector": "button",
-          "text": "Open Approval Slip ›",
-          "detail": "color rgb(255, 248, 239), background rgba(0, 0, 0, 0)"
-        },
-        {
-          "type": "cream-text-on-cream-area",
-          "selector": "em",
-          "text": "›",
-          "detail": "color rgb(255, 248, 239), background rgba(0, 0, 0, 0)"
-        },
-        {
-          "type": "cream-text-on-cream-area",
-          "selector": "button.cs-view",
-          "text": "View all 17 approvals",
-          "detail": "color rgb(255, 248, 239), background rgba(0, 0, 0, 0)"
-        }
-      ],
-      "warnings": [
-        {
-          "type": "small-tap-target",
-          "selector": "button",
-          "text": "Work",
-          "detail": "41x78px"
-        },
-        {
-          "type": "small-tap-target",
-          "selector": "button",
-          "text": "Clients",
-          "detail": "54x78px"
-        },
-        {
-          "type": "small-tap-target",
-          "selector": "button",
-          "text": "Crew",
-          "detail": "40x78px"
-        },
-        {
-          "type": "small-tap-target",
-          "selector": "button",
-          "text": "Quotes",
-          "detail": "56x78px"
-        },
-        {
-          "type": "small-tap-target",
-          "selector": "button",
-          "text": "Invoices",
-          "detail": "65x78px"
-        },
-        {
-          "type": "small-tap-target",
-          "selector": "button",
-          "text": "Payroll",
-          "detail": "54x78px"
-        },
-        {
-          "type": "small-tap-target",
-          "selector": "button",
-          "text": "Plans",
-          "detail": "43x78px"
-        },
-        {
-          "type": "small-tap-target",
-          "selector": "button",
-          "text": "Settings",
-          "detail": "66x78px"
-        }
-      ],
-      "screenshot": "screenshots/desktop-public-home.png",
-      "login": {
-        "attempted": true,
-        "ok": true,
-        "required": true,
-        "reason": "Logged in through backend endpoint https://grassley-backend.onrender.com/api/auth/login.",
-        "method": "backend"
-      }
-    },
-    {
-      "route": "/login",
       "viewportName": "desktop",
       "url": "https://www.churvox.com/dashboard",
       "pageTitle": "Churvox",
@@ -235,6 +85,138 @@
           "detail": "66x78px"
         }
       ],
+      "screenshot": "screenshots/desktop-public-home.png",
+      "login": {
+        "attempted": true,
+        "ok": true,
+        "required": true,
+        "reason": "Logged in through backend endpoint https://grassley-backend.onrender.com/api/auth/login.",
+        "method": "backend"
+      }
+    },
+    {
+      "route": "/login",
+      "viewportName": "desktop",
+      "url": "https://www.churvox.com/dashboard",
+      "pageTitle": "Churvox",
+      "viewport": {
+        "width": 1440,
+        "height": 950
+      },
+      "scroll": {
+        "width": 1440,
+        "height": 1486
+      },
+      "counts": {
+        "checkedElements": 83,
+        "problems": 9,
+        "warnings": 8
+      },
+      "problems": [
+        {
+          "type": "hero-too-tall",
+          "selector": ".cs-hero",
+          "detail": "357px tall, target under 300px"
+        },
+        {
+          "type": "cream-text-on-cream-area",
+          "selector": "button",
+          "text": "Open Approval Slip ›",
+          "detail": "color rgb(255, 248, 239), background rgba(0, 0, 0, 0)"
+        },
+        {
+          "type": "cream-text-on-cream-area",
+          "selector": "em",
+          "text": "›",
+          "detail": "color rgb(255, 248, 239), background rgba(0, 0, 0, 0)"
+        },
+        {
+          "type": "cream-text-on-cream-area",
+          "selector": "button",
+          "text": "Open Approval Slip ›",
+          "detail": "color rgb(255, 248, 239), background rgba(0, 0, 0, 0)"
+        },
+        {
+          "type": "cream-text-on-cream-area",
+          "selector": "em",
+          "text": "›",
+          "detail": "color rgb(255, 248, 239), background rgba(0, 0, 0, 0)"
+        },
+        {
+          "type": "cream-text-on-cream-area",
+          "selector": "button",
+          "text": "Open Approval Slip ›",
+          "detail": "color rgb(255, 248, 239), background rgba(0, 0, 0, 0)"
+        },
+        {
+          "type": "cream-text-on-cream-area",
+          "selector": "em",
+          "text": "›",
+          "detail": "color rgb(255, 248, 239), background rgba(0, 0, 0, 0)"
+        },
+        {
+          "type": "cream-text-on-cream-area",
+          "selector": "button",
+          "text": "Open Approval Slip ›",
+          "detail": "color rgb(255, 248, 239), background rgba(0, 0, 0, 0)"
+        },
+        {
+          "type": "cream-text-on-cream-area",
+          "selector": "em",
+          "text": "›",
+          "detail": "color rgb(255, 248, 239), background rgba(0, 0, 0, 0)"
+        }
+      ],
+      "warnings": [
+        {
+          "type": "small-tap-target",
+          "selector": "button",
+          "text": "Work",
+          "detail": "41x78px"
+        },
+        {
+          "type": "small-tap-target",
+          "selector": "button",
+          "text": "Clients",
+          "detail": "54x78px"
+        },
+        {
+          "type": "small-tap-target",
+          "selector": "button",
+          "text": "Crew",
+          "detail": "40x78px"
+        },
+        {
+          "type": "small-tap-target",
+          "selector": "button",
+          "text": "Quotes",
+          "detail": "56x78px"
+        },
+        {
+          "type": "small-tap-target",
+          "selector": "button",
+          "text": "Invoices",
+          "detail": "65x78px"
+        },
+        {
+          "type": "small-tap-target",
+          "selector": "button",
+          "text": "Payroll",
+          "detail": "54x78px"
+        },
+        {
+          "type": "small-tap-target",
+          "selector": "button",
+          "text": "Plans",
+          "detail": "43x78px"
+        },
+        {
+          "type": "small-tap-target",
+          "selector": "button",
+          "text": "Settings",
+          "detail": "66x78px"
+        }
+      ],
       "screenshot": "screenshots/desktop-login.png",
       "login": {
         "attempted": true,
@@ -247,7 +229,7 @@
     {
       "route": "/dashboard",
       "viewportName": "desktop",
-      "url": "https://www.churvox.com/dashboard?visual-audit=1779006662894",
+      "url": "https://www.churvox.com/dashboard?visual-audit=1779007329342",
       "pageTitle": "Churvox",
       "viewport": {
         "width": 1440,
@@ -1676,7 +1658,7 @@
     {
       "route": "/dashboard",
       "viewportName": "small-laptop",
-      "url": "https://www.churvox.com/dashboard?visual-audit=1779006809874",
+      "url": "https://www.churvox.com/dashboard?visual-audit=1779007477327",
       "pageTitle": "Churvox",
       "viewport": {
         "width": 1180,
@@ -3063,7 +3045,7 @@
     {
       "route": "/dashboard",
       "viewportName": "mobile",
-      "url": "https://www.churvox.com/dashboard?visual-audit=1779006959154",
+      "url": "https://www.churvox.com/dashboard?visual-audit=1779007626490",
       "pageTitle": "Churvox",
       "viewport": {
         "width": 390,

@@ -1,33 +1,30 @@
 # Churvox visual wording / fit audit
 
-Generated: 2026-05-17T08:38:00.089Z
+Generated: 2026-05-17T08:49:06.083Z
 Base URL: https://www.churvox.com
 Login attempted: true
 Login ok: true
-Total problems: 230
+Total problems: 227
 
 ## ❌ desktop /
 Screenshot: screenshots/desktop-public-home.png
-Problems: 12
-Warnings: 8
-- **hero-too-tall** .cs-hero — 357px tall, target under 300px
-- **cream-text-on-cream-area** button — color rgb(255, 248, 239), background rgba(0, 0, 0, 0) — "Open Approval Slip ›"
-- **cream-text-on-cream-area** em — color rgb(255, 248, 239), background rgba(0, 0, 0, 0) — "›"
-- **cream-text-on-cream-area** button — color rgb(255, 248, 239), background rgba(0, 0, 0, 0) — "Open Approval Slip ›"
-- **cream-text-on-cream-area** em — color rgb(255, 248, 239), background rgba(0, 0, 0, 0) — "›"
-- **cream-text-on-cream-area** button — color rgb(255, 248, 239), background rgba(0, 0, 0, 0) — "Open Approval Slip ›"
-- **cream-text-on-cream-area** em — color rgb(255, 248, 239), background rgba(0, 0, 0, 0) — "›"
-- **cream-text-on-cream-area** button — color rgb(255, 248, 239), background rgba(0, 0, 0, 0) — "Open Approval Slip ›"
-- **cream-text-on-cream-area** em — color rgb(255, 248, 239), background rgba(0, 0, 0, 0) — "›"
-- **cream-text-on-cream-area** button — color rgb(255, 248, 239), background rgba(0, 0, 0, 0) — "Open Approval Slip ›"
-- **cream-text-on-cream-area** em — color rgb(255, 248, 239), background rgba(0, 0, 0, 0) — "›"
-- **cream-text-on-cream-area** button.cs-view — color rgb(255, 248, 239), background rgba(0, 0, 0, 0) — "View all 17 approvals"
-
-## ❌ desktop /login
-Screenshot: screenshots/desktop-login.png
 Problems: 1
 Warnings: 8
 - **hero-too-tall** .cs-hero — 357px tall, target under 300px
+
+## ❌ desktop /login
+Screenshot: screenshots/desktop-login.png
+Problems: 9
+Warnings: 8
+- **hero-too-tall** .cs-hero — 357px tall, target under 300px
+- **cream-text-on-cream-area** button — color rgb(255, 248, 239), background rgba(0, 0, 0, 0) — "Open Approval Slip ›"
+- **cream-text-on-cream-area** em — color rgb(255, 248, 239), background rgba(0, 0, 0, 0) — "›"
+- **cream-text-on-cream-area** button — color rgb(255, 248, 239), background rgba(0, 0, 0, 0) — "Open Approval Slip ›"
+- **cream-text-on-cream-area** em — color rgb(255, 248, 239), background rgba(0, 0, 0, 0) — "›"
+- **cream-text-on-cream-area** button — color rgb(255, 248, 239), background rgba(0, 0, 0, 0) — "Open Approval Slip ›"
+- **cream-text-on-cream-area** em — color rgb(255, 248, 239), background rgba(0, 0, 0, 0) — "›"
+- **cream-text-on-cream-area** button — color rgb(255, 248, 239), background rgba(0, 0, 0, 0) — "Open Approval Slip ›"
+- **cream-text-on-cream-area** em — color rgb(255, 248, 239), background rgba(0, 0, 0, 0) — "›"
 
 ## ❌ desktop /dashboard
 Screenshot: screenshots/desktop-dashboard.png
