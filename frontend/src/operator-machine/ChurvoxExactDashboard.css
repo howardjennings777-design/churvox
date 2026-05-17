@@ -1797,3 +1797,225 @@ body.cx-exact-active .cx-exact-stage {
     order: -1 !important;
   }
 }
+
+/* PHASE_303_REAL_LAPTOP_PRODUCT_VIEW
+   Keep the full design-board rail only on very wide screens.
+   Normal laptops should show the actual product cleanly. */
+
+@media (max-width: 1700px) {
+  .cx-exact-stage {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cx-brand-rail {
+    display: none !important;
+  }
+
+  .cx-app-shell {
+    width: 100vw !important;
+    min-height: 100vh !important;
+  }
+
+  .cx-topbar {
+    grid-template-columns: 170px minmax(260px, 1fr) auto !important;
+    min-height: 58px !important;
+    padding: 0 14px !important;
+  }
+
+  .cx-app-grid {
+    grid-template-columns: 145px minmax(0, 1fr) !important;
+  }
+
+  .cx-side-nav {
+    padding: 11px 8px !important;
+  }
+
+  .cx-side-nav button {
+    min-height: 34px !important;
+    font-size: 0.72rem !important;
+    padding: 0 8px !important;
+  }
+
+  .cx-new-slip {
+    margin-top: 18px !important;
+  }
+
+  .cx-run-sheet {
+    margin: 8px 8px 0 0 !important;
+    padding: 15px !important;
+    border-radius: 8px !important;
+  }
+
+  .cx-main-row {
+    grid-template-columns: minmax(0, 1fr) 340px !important;
+    gap: 10px !important;
+  }
+
+  .cx-metrics {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  }
+
+  .cx-metric {
+    min-width: 0 !important;
+  }
+
+  .cx-metric strong,
+  .cx-metric span,
+  .cx-metric small {
+    white-space: normal !important;
+  }
+
+  .cx-queue-row {
+    grid-template-columns: 28px minmax(0, 1fr) 64px 52px 62px !important;
+  }
+
+  .cx-queue-row strong {
+    white-space: normal !important;
+  }
+
+  .cx-table-head,
+  .cx-table-row {
+    grid-template-columns: 65px minmax(95px, 1fr) minmax(110px, 1.1fr) 78px 96px 68px 18px !important;
+  }
+
+  .cx-bottom-widgets {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 1280px) {
+  .cx-topbar {
+    grid-template-columns: 145px minmax(180px, 1fr) 70px !important;
+  }
+
+  .cx-userbar > button:not(.cx-user) {
+    display: none !important;
+  }
+
+  .cx-app-grid {
+    grid-template-columns: 124px minmax(0, 1fr) !important;
+  }
+
+  .cx-side-nav button {
+    gap: 5px !important;
+    font-size: 0.66rem !important;
+  }
+
+  .cx-side-nav .cx-icon {
+    width: 18px !important;
+    height: 18px !important;
+    flex-basis: 18px !important;
+  }
+
+  .cx-run-sheet {
+    padding: 12px !important;
+  }
+
+  .cx-run-header h2 {
+    font-size: 1.22rem !important;
+  }
+
+  .cx-run-header aside {
+    gap: 5px !important;
+  }
+
+  .cx-main-row {
+    grid-template-columns: minmax(0, 1fr) 300px !important;
+  }
+
+  .cx-metric {
+    grid-template-columns: 22px minmax(0, 1fr) !important;
+    padding: 7px !important;
+    min-height: 62px !important;
+  }
+
+  .cx-metric .cx-icon {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .cx-metric span {
+    font-size: 0.58rem !important;
+  }
+
+  .cx-metric strong {
+    font-size: 0.92rem !important;
+  }
+
+  .cx-metric small {
+    font-size: 0.55rem !important;
+  }
+
+  .cx-queue-row {
+    grid-template-columns: 22px minmax(0, 1fr) 52px 42px 52px !important;
+  }
+
+  .cx-queue-row strong,
+  .cx-queue-row small,
+  .cx-queue-row button {
+    font-size: 0.58rem !important;
+  }
+
+  .cx-table-head,
+  .cx-table-row {
+    grid-template-columns: 54px minmax(80px, 1fr) minmax(92px, 1fr) 62px 78px 58px 12px !important;
+    font-size: 0.56rem !important;
+  }
+
+  .cx-ai-panel {
+    padding: 10px !important;
+  }
+
+  .cx-ai-hero {
+    grid-template-columns: 46px minmax(0, 1fr) !important;
+  }
+
+  .cx-doc-preview {
+    width: 46px !important;
+    height: 46px !important;
+  }
+
+  .cx-ai-hero h3 {
+    font-size: 0.9rem !important;
+  }
+
+  .cx-ai-copy {
+    font-size: 0.66rem !important;
+  }
+
+  .cx-bottom-widgets {
+    display: none !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .cx-app-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cx-side-nav {
+    overflow-x: auto !important;
+  }
+
+  .cx-side-nav nav {
+    display: flex !important;
+    gap: 6px !important;
+  }
+
+  .cx-side-nav button {
+    width: auto !important;
+    white-space: nowrap !important;
+  }
+
+  .cx-new-slip {
+    display: none !important;
+  }
+
+  .cx-main-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cx-ai-panel {
+    order: -1 !important;
+  }
+}
