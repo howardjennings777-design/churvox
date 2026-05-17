@@ -346,7 +346,7 @@ function Table({ rows, columns, onOpen, emptyText = "Nothing here yet.", actionL
               onOpen(row);
             }}
           >
-            {actionLabel} <em>›</em>
+            {operatorBusyAction && selected?.__operatorAction ? "Working..." : actionLabel} <em>›</em>
           </button>
         </article>
       )) : (
@@ -901,6 +901,8 @@ export default function CommandSuite({
   const [billingBusy, setBillingBusy] = useState("");
   const [billingNotice, setBillingNotice] = useState("");
   const [billingStatus, setBillingStatus] = useState(null);
+  const [operatorActions, setOperatorActions] = useState([]);
+  const [operatorBusyAction, setOperatorBusyAction] = useState("");
   const current = PAGE_MAP[page] || "dashboard";
   const appLocked = Boolean(billingStatus?.requires_payment || billingStatus?.trial_expired);
 
@@ -965,6 +967,36 @@ export default function CommandSuite({
     }
   }
 
+  async function refreshOperatorActions() {
+    try {
+      const body = await billingGet("/api/ai/actions?status=pending");
+      const actions = rowsFrom(body.actions, body.items, body.data);
+      setOperatorActions(actions);
+      return actions;
+    } catch (err) {
+      console.warn("Could not load AI Operator actions", err);
+      setOperatorActions([]);
+      return [];
+    }
+  }
+
+  function operatorActionToApproval(item = {}) {
+    return {
+      ...item,
+      __operatorAction: true,
+      __modalType: "AI Operator Action",
+      __modalTitle: clean(item.title, "AI prepared action"),
+      __body: clean(item.body || item.detail || item.reason, "Churvox prepared this for owner approval."),
+      __actionLabel: clean(item.recommended_action || item.action, "Approve AI action"),
+      eyebrow: clean(item.eyebrow || item.type || item.kind, "AI Operator"),
+      kind: clean(item.kind || item.type, "AI Operator"),
+      title: clean(item.title, "AI prepared action"),
+      prepared: clean(item.prepared || item.body || item.reason, "AI prepared this from live business data."),
+      need: clean(item.need || item.reason || item.body, "Owner approval required."),
+      status: clean(item.priority, "pending"),
+    };
+  }
+
   async function startTrial(plan = "operator") {
     setBillingBusy("trial");
     setBillingNotice("");
@@ -1001,8 +1033,9 @@ export default function CommandSuite({
 
 
   useEffect(() => {
-    // PHASE_220_LOAD_BILLING_STATUS
+    // PHASE_274_LOAD_AI_OPERATOR_ACTIONS
     refreshBillingStatus();
+    refreshOperatorActions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -1056,8 +1089,8 @@ export default function CommandSuite({
     const input = rowsFrom(machine?.input);
     const processing = rowsFrom(machine?.processing);
 
-    return { raw, jobs, clients, crew, quotes, invoices, payments, approvals: approvalRows, input, processing };
-  }, [data, machine, visibleApprovals]);
+    return { raw, jobs, clients, crew, quotes, invoices, payments, approvals: approvalRows, input, processing, operatorActions };
+  }, [data, machine, visibleApprovals, operatorActions]);
 
   function goToPage(nextPage) {
     const mappedPage = PAGE_MAP[nextPage] || nextPage;
@@ -1083,19 +1116,65 @@ export default function CommandSuite({
     setSelected(record);
   }
 
-  function approveRecord(record) {
+  async function approveRecord(record) {
+    if (record?.__operatorAction) {
+      const actionId = clean(record.id || record._id || record.action_id);
+      if (!actionId) {
+        setToast("AI action is missing an id.");
+        window.setTimeout(() => setToast(""), 2800);
+        return;
+      }
+
+      setOperatorBusyAction(actionId);
+      setToast("AI Operator is applying the approved action...");
+
+      try {
+        const body = await billingPost(`/api/ai/actions/${encodeURIComponent(actionId)}/approve`, {});
+        const msg =
+          body.message ||
+          body.performed_result?.message ||
+          "AI Operator action approved.";
+
+        setToast(msg);
+        setSelected(null);
+        await refreshOperatorActions();
+
+        try {
+          window.dispatchEvent(new CustomEvent("churvox:operator-action-approved", { detail: { actionId, body } }));
+        } catch {
+          // ignore browser event issues
+        }
+      } catch (err) {
+        setToast(err.message || "AI Operator action failed.");
+      } finally {
+        setOperatorBusyAction("");
+        window.setTimeout(() => setToast(""), 4200);
+      }
+
+      return;
+    }
+
     if (record?.__approval && onOpenSlip) {
       onOpenSlip(record.__raw || record);
       setSelected(null);
       return;
     }
 
-    setToast("Approved. Churvox marked this next move as reviewed.");
+    setToast("Reviewed. Churvox marked this next move as owner checked.");
     setSelected(null);
     window.setTimeout(() => setToast(""), 2400);
   }
 
-  const approvals = model.approvals.map((item) => ({ ...item, __approval: true, __raw: item }));
+  const operatorApprovalRows = model.operatorActions.map(operatorActionToApproval);
+  const legacyApprovalRows = model.approvals.map((item) => ({ ...item, __approval: true, __raw: item }));
+
+  const approvalSeen = new Set();
+  const approvals = [...operatorApprovalRows, ...legacyApprovalRows].filter((item) => {
+    const key = clean(item.id || item._id || item.title || item.__modalTitle);
+    if (!key || approvalSeen.has(key)) return false;
+    approvalSeen.add(key);
+    return true;
+  });
 
   const readyToInvoice = model.invoices.filter((item) => /draft|ready|unpaid|owing/i.test(statusOf(item))).length ||
     model.jobs.filter((item) => /complete|ready/i.test(statusOf(item))).length;

@@ -1801,6 +1801,748 @@ async def dismiss_ai_action(action_id: str, request: Request):
     return {"ok": True, "id": action_id, "status": "dismissed"}
 
 
+# PHASE_274_STRONG_AI_OPERATOR_ENGINE
+# Makes AI Operator actions practical and approval-first:
+# - finds real admin work from jobs, clients, quotes, invoices, crew and payroll
+# - prepares owner-ready actions
+# - approve performs safe real actions where possible
+# - never auto-sends customer messages, never changes payroll/payments, never touches MYOB without owner approval
+
+def _phase274_clean(value, fallback=""):
+    value = str(value or "").replace("\n", " ").strip()
+    return re.sub(r"\s+", " ", value) if value else fallback
+
+
+def _phase274_now():
+    return datetime.now(timezone.utc)
+
+
+def _phase274_doc_id(doc):
+    if not isinstance(doc, dict):
+        return ""
+    return str(doc.get("_id") or doc.get("id") or doc.get("job_id") or doc.get("invoice_id") or doc.get("quote_id") or "")
+
+
+def _phase274_status(doc):
+    if not isinstance(doc, dict):
+        return ""
+    return _phase274_clean(
+        doc.get("status")
+        or doc.get("job_status")
+        or doc.get("workflow_status")
+        or doc.get("payment_status")
+        or doc.get("quote_status")
+        or doc.get("state")
+    ).lower().replace("_", " ")
+
+
+def _phase274_amount(doc):
+    if not isinstance(doc, dict):
+        return 0.0
+    for key in [
+        "amount",
+        "total",
+        "price",
+        "job_price",
+        "fixed_price",
+        "total_price",
+        "balance",
+        "amount_due",
+        "subtotal",
+    ]:
+        try:
+            raw = doc.get(key)
+            if raw is not None and str(raw).strip() != "":
+                return round(float(str(raw).replace("$", "").replace(",", "").strip()), 2)
+        except Exception:
+            pass
+    return 0.0
+
+
+def _phase274_client_name(doc):
+    if not isinstance(doc, dict):
+        return "Client"
+    return _phase274_clean(
+        doc.get("client_name")
+        or doc.get("customer_name")
+        or doc.get("client")
+        or doc.get("customer")
+        or doc.get("name"),
+        "Client",
+    )
+
+
+def _phase274_title(doc, fallback="Work"):
+    if not isinstance(doc, dict):
+        return fallback
+    return _phase274_clean(
+        doc.get("title")
+        or doc.get("name")
+        or doc.get("job_title")
+        or doc.get("service_type")
+        or doc.get("description")
+        or doc.get("invoice_number")
+        or doc.get("quote_number")
+        or doc.get("number"),
+        fallback,
+    )
+
+
+def _phase274_has_worker(job):
+    if not isinstance(job, dict):
+        return False
+    return bool(
+        job.get("assigned_worker_id")
+        or job.get("assigned_worker")
+        or job.get("assigned_worker_name")
+        or job.get("worker_id")
+        or job.get("worker_name")
+    )
+
+
+def _phase274_has_proof(job):
+    if not isinstance(job, dict):
+        return False
+    photos = job.get("photos") or job.get("job_photos") or job.get("proof_photos")
+    notes = _phase274_clean(
+        job.get("completion_notes")
+        or job.get("worker_completion_notes")
+        or job.get("worker_notes")
+        or job.get("notes")
+    )
+    return bool((isinstance(photos, list) and photos) or notes)
+
+
+def _phase274_action(action_id, business_id, action_type, title, body, recommended_action, source_type="", source_id="", priority="normal", reason=None, payload=None):
+    return {
+        "id": str(action_id),
+        "business_id": str(business_id),
+        "type": action_type,
+        "kind": action_type,
+        "eyebrow": action_type.replace("_", " ").title(),
+        "title": title,
+        "body": body,
+        "detail": body,
+        "need": reason or body,
+        "prepared": body,
+        "reason": reason or body,
+        "ai_reason": reason or body,
+        "recommended_action": recommended_action,
+        "action": recommended_action,
+        "source_type": source_type,
+        "source_id": str(source_id or ""),
+        "priority": priority,
+        "status": "pending",
+        "payload": payload or {},
+        "created_at": _phase274_now().isoformat(),
+    }
+
+
+async def _phase274_list(collection_name, business_id, limit=300):
+    try:
+        return await getattr(db, collection_name).find({"business_id": str(business_id)}).sort("created_at", -1).limit(limit).to_list(length=limit)
+    except Exception:
+        return []
+
+
+async def _phase274_invoice_exists_for_job(business_id, job):
+    job_id = _phase274_doc_id(job)
+    possible = [
+        {"business_id": str(business_id), "job_id": job_id},
+        {"business_id": str(business_id), "source_job_id": job_id},
+        {"business_id": str(business_id), "linked_job_id": job_id},
+    ]
+    title = _phase274_title(job, "")
+    client = _phase274_client_name(job)
+    if title:
+        possible.append({"business_id": str(business_id), "job_title": title})
+    if client and title:
+        possible.append({"business_id": str(business_id), "client_name": client, "job_title": title})
+    for query in possible:
+        try:
+            found = await db.invoices.find_one(query)
+            if found:
+                return found
+        except Exception:
+            pass
+    return None
+
+
+async def _phase274_find_doc(collection, business_id, raw_id):
+    raw_id = str(raw_id or "").strip()
+    queries = []
+    if raw_id:
+        queries.extend([
+            {"business_id": str(business_id), "id": raw_id},
+            {"business_id": str(business_id), "job_id": raw_id},
+            {"business_id": str(business_id), "invoice_id": raw_id},
+            {"business_id": str(business_id), "quote_id": raw_id},
+            {"business_id": str(business_id), "source_id": raw_id},
+        ])
+        try:
+            queries.insert(0, {"business_id": str(business_id), "_id": ObjectId(raw_id)})
+        except Exception:
+            pass
+
+    for query in queries:
+        try:
+            doc = await collection.find_one(query)
+            if doc:
+                return doc
+        except Exception:
+            pass
+    return None
+
+
+async def _phase274_create_invoice_draft_from_job(business_id, job, user):
+    existing = await _phase274_invoice_exists_for_job(business_id, job)
+    if existing:
+        return {
+            "performed": False,
+            "already_done": True,
+            "message": "A draft invoice already exists for this job.",
+            "invoice_id": str(existing.get("_id") or existing.get("id") or ""),
+        }
+
+    now = _phase274_now()
+    job_id = _phase274_doc_id(job)
+    client = await _phase105_find_client_from_record(str(business_id), job)
+    client_name = _phase274_client_name(client or job)
+    amount = _phase274_amount(job)
+
+    invoice_count = 0
+    try:
+        invoice_count = await db.invoices.count_documents({"business_id": str(business_id)})
+    except Exception:
+        pass
+
+    invoice_number = f"INV-{now.strftime('%Y%m%d')}-{invoice_count + 1:03d}"
+    description = _format_invoice_description_from_job(job, client_name)
+
+    invoice = {
+        "business_id": str(business_id),
+        "job_id": job_id,
+        "source_job_id": job_id,
+        "invoice_number": invoice_number,
+        "number": invoice_number,
+        "client_id": str((client or {}).get("_id") or (client or {}).get("id") or job.get("client_id") or ""),
+        "client_name": client_name,
+        "customer_name": client_name,
+        "job_title": _phase274_title(job, "Completed work"),
+        "description": description,
+        "ai_invoice_description": description,
+        "amount": amount,
+        "subtotal": amount,
+        "total": amount,
+        "status": "draft",
+        "payment_status": "draft",
+        "source": "ai_operator",
+        "ai_prepared": True,
+        "owner_approval_required": True,
+        "created_at": now,
+        "updated_at": now,
+        "created_by": str((user or {}).get("id") or (user or {}).get("_id") or ""),
+    }
+
+    result = await db.invoices.insert_one(invoice)
+
+    try:
+        query = {"business_id": str(business_id)}
+        if job.get("_id"):
+            query["_id"] = job["_id"]
+        else:
+            query["id"] = job_id
+        await db.jobs.update_one(query, {"$set": {
+            "invoice_status": "draft_prepared",
+            "ai_invoice_draft_id": str(result.inserted_id),
+            "ai_invoice_prepared_at": now,
+            "updated_at": now,
+        }})
+    except Exception:
+        pass
+
+    return {
+        "performed": True,
+        "message": f"Prepared draft invoice {invoice_number}.",
+        "invoice_id": str(result.inserted_id),
+        "invoice_number": invoice_number,
+        "amount": amount,
+        "description": description,
+    }
+
+
+async def _phase274_prepare_invoice_review(business_id, invoice_id, user):
+    invoice = await _phase274_find_doc(db.invoices, business_id, invoice_id)
+    if not invoice:
+        return {"performed": False, "message": "Invoice was not found."}
+
+    now = _phase274_now()
+    status = _phase274_status(invoice)
+    update = {
+        "ai_owner_reviewed": True,
+        "ai_reviewed_at": now,
+        "updated_at": now,
+    }
+    if "draft" in status:
+        update["status"] = "ready_to_send"
+        update["payment_status"] = "ready_to_send"
+
+    await db.invoices.update_one({"_id": invoice["_id"]}, {"$set": update})
+    return {
+        "performed": True,
+        "message": "Invoice marked ready for owner send/review. Nothing was sent automatically.",
+        "invoice_id": str(invoice.get("_id")),
+    }
+
+
+async def _phase274_prepare_payment_reminder(business_id, invoice_id, user):
+    invoice = await _phase274_find_doc(db.invoices, business_id, invoice_id)
+    if not invoice:
+        return {"performed": False, "message": "Invoice was not found."}
+
+    client = _phase274_client_name(invoice)
+    number = _phase274_clean(invoice.get("invoice_number") or invoice.get("number"), "invoice")
+    amount = _phase274_amount(invoice)
+
+    reminder = (
+        f"Hi {client}, just a friendly reminder that {number}"
+        f"{f' for ${amount:,.2f}' if amount else ''} is still outstanding. "
+        "Please let us know if you need anything from us. Thanks."
+    )
+
+    now = _phase274_now()
+    await db.invoices.update_one({"_id": invoice["_id"]}, {"$set": {
+        "ai_reminder_draft": reminder,
+        "ai_reminder_prepared_at": now,
+        "ai_owner_approval_required": True,
+        "updated_at": now,
+    }})
+
+    return {
+        "performed": True,
+        "message": "Payment reminder draft prepared for owner approval. It was not sent.",
+        "invoice_id": str(invoice.get("_id")),
+        "draft": reminder,
+    }
+
+
+async def _phase274_prepare_quote_followup(business_id, quote_id, user):
+    quote = await _phase274_find_doc(db.quotes, business_id, quote_id)
+    if not quote:
+        return {"performed": False, "message": "Quote was not found."}
+
+    client = _phase274_client_name(quote)
+    number = _phase274_clean(quote.get("quote_number") or quote.get("number"), "your quote")
+    followup = (
+        f"Hi {client}, just checking in on {number}. "
+        "Would you like us to go ahead, adjust anything, or answer any questions?"
+    )
+
+    now = _phase274_now()
+    await db.quotes.update_one({"_id": quote["_id"]}, {"$set": {
+        "ai_followup_draft": followup,
+        "ai_followup_prepared_at": now,
+        "ai_owner_approval_required": True,
+        "updated_at": now,
+    }})
+
+    return {
+        "performed": True,
+        "message": "Quote follow-up draft prepared for owner approval. It was not sent.",
+        "quote_id": str(quote.get("_id")),
+        "draft": followup,
+    }
+
+
+async def _phase274_mark_review(collection, business_id, source_id, fields, not_found_message):
+    doc = await _phase274_find_doc(collection, business_id, source_id)
+    if not doc:
+        return {"performed": False, "message": not_found_message}
+    now = _phase274_now()
+    update = dict(fields)
+    update["updated_at"] = now
+    await collection.update_one({"_id": doc["_id"]}, {"$set": update})
+    return {"performed": True, "message": "Review action prepared and saved.", "source_id": str(doc.get("_id"))}
+
+
+# Override earlier builder at runtime. Existing stable feed calls this name, so it now uses this stronger model.
+async def _build_ai_actions_for_business(business_id: str):
+    actions = []
+
+    jobs = await _phase274_list("jobs", business_id, 250)
+    invoices = await _phase274_list("invoices", business_id, 250)
+    quotes = await _phase274_list("quotes", business_id, 250)
+    clients = await _phase274_list("clients", business_id, 250)
+    workers = await _phase274_worker_candidates_safe(business_id)
+
+    for job in jobs:
+        status = _phase274_status(job)
+        job_id = _phase274_doc_id(job)
+        title = _phase274_title(job, "Job")
+        client = _phase274_client_name(job)
+        amount = _phase274_amount(job)
+
+        if not _phase274_has_worker(job) and "complete" not in status and "cancel" not in status:
+            actions.append(_phase274_action(
+                f"dispatch-{job_id}", business_id, "dispatch",
+                f"Assign best worker for {title}",
+                f"AI will compare crew area, availability, workload and job fit, then assign the safest match after your approval.",
+                "Approve worker match", "job", job_id, "urgent",
+                "Unassigned work blocks the run sheet.",
+            ))
+
+        if "complete" in status:
+            existing_invoice = await _phase274_invoice_exists_for_job(business_id, job)
+            if not existing_invoice:
+                actions.append(_phase274_action(
+                    f"proof-to-paid-{job_id}", business_id, "invoice_prep",
+                    f"Create draft invoice from {title}",
+                    f"{client} has completed work. AI can turn job details, notes, proof and pricing into a draft invoice for owner review.",
+                    "Prepare draft invoice", "job", job_id, "urgent" if amount else "normal",
+                    "Completed work should move to invoice prep.",
+                ))
+
+        if any(x in status for x in ["active", "progress", "started"]) and not _phase274_has_proof(job):
+            actions.append(_phase274_action(
+                f"proof-check-{job_id}", business_id, "proof_check",
+                f"Ask for proof on {title}",
+                f"{title} is active but has no proof notes/photos yet. AI can flag this before invoice prep.",
+                "Mark proof needed", "job", job_id, "normal",
+                "Proof missing before billing path.",
+            ))
+
+        if amount <= 0 and "cancel" not in status:
+            actions.append(_phase274_action(
+                f"pricing-check-{job_id}", business_id, "pricing_check",
+                f"Add pricing for {title}",
+                f"{title} has no clear price. AI can flag it so invoice prep has a real amount source.",
+                "Mark pricing needed", "job", job_id, "urgent",
+                "Pricing is missing.",
+            ))
+
+        if "complete" in status and (job.get("hours") or job.get("total_hours") or job.get("started_at") or job.get("completed_at")):
+            actions.append(_phase274_action(
+                f"payroll-check-{job_id}", business_id, "payroll_review",
+                f"Review payroll time for {title}",
+                f"AI can prepare the time, pauses, worker and job link for payroll review without changing payroll automatically.",
+                "Prepare payroll review", "job", job_id, "normal",
+                "Completed job has payroll/time context.",
+            ))
+
+    for invoice in invoices:
+        invoice_id = _phase274_doc_id(invoice)
+        status = _phase274_status(invoice)
+        number = _phase274_clean(invoice.get("invoice_number") or invoice.get("number"), f"Invoice {invoice_id[-6:]}")
+        client = _phase274_client_name(invoice)
+        amount = _phase274_amount(invoice)
+
+        if "draft" in status:
+            actions.append(_phase274_action(
+                f"invoice-draft-{invoice_id}", business_id, "invoice_review",
+                f"Review draft {number}",
+                f"{client} has a draft invoice ready. AI can mark it ready for owner send/review after checking amount, client and description.",
+                "Approve invoice review", "invoice", invoice_id, "normal",
+                "Draft invoice needs owner review.",
+            ))
+
+        if any(x in status for x in ["overdue", "unpaid", "owing"]) and not invoice.get("ai_reminder_draft"):
+            actions.append(_phase274_action(
+                f"cashflow-{invoice_id}", business_id, "cashflow",
+                f"Prepare reminder for {number}",
+                f"{client} has an outstanding invoice{f' for ${amount:,.2f}' if amount else ''}. AI can draft a payment reminder for approval.",
+                "Draft reminder", "invoice", invoice_id, "urgent",
+                "Outstanding invoices affect cashflow.",
+            ))
+
+    for quote in quotes:
+        quote_id = _phase274_doc_id(quote)
+        status = _phase274_status(quote)
+        number = _phase274_clean(quote.get("quote_number") or quote.get("number"), f"Quote {quote_id[-6:]}")
+        client = _phase274_client_name(quote)
+        amount = _phase274_amount(quote)
+
+        if amount <= 0:
+            actions.append(_phase274_action(
+                f"quote-price-{quote_id}", business_id, "quote_pricing",
+                f"Price check for {number}",
+                f"{number} has no clear amount. AI can flag the missing pricing before it goes to {client}.",
+                "Mark price needed", "quote", quote_id, "urgent",
+                "Quote pricing is missing.",
+            ))
+
+        if any(x in status for x in ["sent", "pending", "awaiting", "open", "follow"]) and not quote.get("ai_followup_draft"):
+            actions.append(_phase274_action(
+                f"quote-followup-{quote_id}", business_id, "quote_followup",
+                f"Draft follow-up for {number}",
+                f"{client} has an open quote. AI can prepare a polite follow-up for owner approval.",
+                "Draft follow-up", "quote", quote_id, "normal",
+                "Open quotes can go cold without follow-up.",
+            ))
+
+    for client in clients:
+        client_id = _phase274_doc_id(client)
+        name = _phase274_client_name(client)
+        missing = []
+        if not _phase274_clean(client.get("email") or client.get("client_email") or client.get("customer_email")):
+            missing.append("email")
+        if not _phase274_clean(client.get("phone") or client.get("mobile") or client.get("phone_number")):
+            missing.append("phone")
+        if not _phase274_clean(client.get("address") or client.get("service_address") or client.get("billing_address")):
+            missing.append("address")
+
+        if missing and not client.get("ai_missing_details_reviewed"):
+            actions.append(_phase274_action(
+                f"client-details-{client_id}", business_id, "client_details",
+                f"Clean client details for {name}",
+                f"{name} is missing {', '.join(missing)}. AI can flag this before quotes, invoices or reminders are blocked.",
+                "Mark details needed", "client", client_id, "normal",
+                "Client details are incomplete.",
+                {"missing": missing},
+            ))
+
+    for worker in workers:
+        worker_id = _phase274_doc_id(worker)
+        name = _phase274_clean(worker.get("name") or worker.get("full_name") or worker.get("email"), "Worker")
+        if not _phase274_clean(worker.get("region") or worker.get("area") or worker.get("role")) and not worker.get("ai_profile_reviewed"):
+            actions.append(_phase274_action(
+                f"crew-profile-{worker_id}", business_id, "crew_profile",
+                f"Complete crew profile for {name}",
+                f"{name} needs role/area details so AI can make better assignment suggestions.",
+                "Mark crew details needed", "worker", worker_id, "normal",
+                "Crew profile is missing routing data.",
+            ))
+
+    try:
+        persisted = await db.ai_actions.find({"business_id": str(business_id)}).to_list(length=1000)
+    except Exception:
+        persisted = []
+
+    persisted_by_id = {str(item.get("id") or item.get("_id")): item for item in persisted}
+    merged = []
+    seen = set()
+
+    for action in actions:
+        if action["id"] in seen:
+            continue
+        seen.add(action["id"])
+
+        saved = persisted_by_id.get(action["id"])
+        if saved:
+            saved_status = saved.get("status", action["status"])
+            action["status"] = saved_status
+            action["approved_at"] = _safe_iso(saved.get("approved_at"))
+            action["dismissed_at"] = _safe_iso(saved.get("dismissed_at"))
+            action["completed_at"] = _safe_iso(saved.get("completed_at"))
+            action["performed_result"] = make_json_safe(saved.get("performed_result"))
+
+        if action.get("status") in {"dismissed", "completed"}:
+            continue
+
+        merged.append(action)
+
+    priority_rank = {"urgent": 0, "high": 1, "normal": 2, "low": 3}
+    merged.sort(key=lambda item: (priority_rank.get(item.get("priority"), 2), str(item.get("created_at") or "")))
+    return make_json_safe(merged[:80])
+
+
+async def _phase274_worker_candidates_safe(business_id):
+    try:
+        return await _ai_worker_candidates(str(business_id))
+    except Exception:
+        return await _phase219_worker_items(str(business_id))
+
+
+async def _phase274_perform_ai_action(action_id, business_id, user):
+    action_id = str(action_id or "")
+
+    if action_id.startswith("dispatch-"):
+        return await _ai_perform_dispatch_approval(action_id, business_id)
+
+    if action_id.startswith("proof-to-paid-"):
+        job = await _ai_find_job_for_action(action_id, business_id)
+        if not job:
+            return {"performed": False, "message": "Job was not found."}
+        return await _phase274_create_invoice_draft_from_job(business_id, job, user)
+
+    if action_id.startswith("invoice-draft-"):
+        invoice_id = action_id.replace("invoice-draft-", "", 1)
+        return await _phase274_prepare_invoice_review(business_id, invoice_id, user)
+
+    if action_id.startswith("cashflow-"):
+        invoice_id = action_id.replace("cashflow-", "", 1)
+        return await _phase274_prepare_payment_reminder(business_id, invoice_id, user)
+
+    if action_id.startswith("quote-followup-"):
+        quote_id = action_id.replace("quote-followup-", "", 1)
+        return await _phase274_prepare_quote_followup(business_id, quote_id, user)
+
+    if action_id.startswith("quote-price-"):
+        quote_id = action_id.replace("quote-price-", "", 1)
+        return await _phase274_mark_review(
+            db.quotes,
+            business_id,
+            quote_id,
+            {
+                "ai_pricing_review_needed": True,
+                "ai_owner_approval_required": True,
+                "ai_operator_note": "Quote needs pricing before sending.",
+            },
+            "Quote was not found.",
+        )
+
+    if action_id.startswith("pricing-check-"):
+        job_id = action_id.replace("pricing-check-", "", 1)
+        return await _phase274_mark_review(
+            db.jobs,
+            business_id,
+            job_id,
+            {
+                "ai_pricing_review_needed": True,
+                "ai_owner_approval_required": True,
+                "ai_operator_note": "Job needs pricing before invoice prep.",
+            },
+            "Job was not found.",
+        )
+
+    if action_id.startswith("proof-check-"):
+        job_id = action_id.replace("proof-check-", "", 1)
+        return await _phase274_mark_review(
+            db.jobs,
+            business_id,
+            job_id,
+            {
+                "ai_proof_review_needed": True,
+                "ai_owner_approval_required": True,
+                "ai_operator_note": "Proof notes/photos should be checked before invoice prep.",
+            },
+            "Job was not found.",
+        )
+
+    if action_id.startswith("payroll-check-"):
+        job_id = action_id.replace("payroll-check-", "", 1)
+        return await _phase274_mark_review(
+            db.jobs,
+            business_id,
+            job_id,
+            {
+                "ai_payroll_review_prepared": True,
+                "ai_owner_approval_required": True,
+                "ai_operator_note": "Payroll/time review prepared. No payroll values were changed.",
+            },
+            "Job was not found.",
+        )
+
+    if action_id.startswith("client-details-"):
+        client_id = action_id.replace("client-details-", "", 1)
+        return await _phase274_mark_review(
+            db.clients,
+            business_id,
+            client_id,
+            {
+                "ai_missing_details_reviewed": True,
+                "ai_owner_approval_required": True,
+                "ai_operator_note": "Client details need completing before admin can flow cleanly.",
+            },
+            "Client was not found.",
+        )
+
+    if action_id.startswith("crew-profile-"):
+        worker_id = action_id.replace("crew-profile-", "", 1)
+        worker = await _phase274_find_doc(db.users, business_id, worker_id)
+        collection = db.users
+        if not worker:
+            worker = await _phase274_find_doc(db.workers, business_id, worker_id)
+            collection = db.workers
+        if not worker:
+            return {"performed": False, "message": "Worker was not found."}
+        now = _phase274_now()
+        await collection.update_one({"_id": worker["_id"]}, {"$set": {
+            "ai_profile_reviewed": True,
+            "ai_profile_review_note": "Crew profile needs role/area details for stronger AI assignment matching.",
+            "updated_at": now,
+        }})
+        return {"performed": True, "message": "Crew profile review flag saved.", "worker_id": str(worker.get("_id"))}
+
+    return {
+        "performed": False,
+        "message": "AI action was approved and saved for review. No automatic record change was available for this action type.",
+    }
+
+
+@app.middleware("http")
+async def churvox_phase274_ai_operator_approval_engine(request: Request, call_next):
+    path = request.url.path.rstrip("/")
+    method = request.method.upper()
+
+    if method == "OPTIONS":
+        return await call_next(request)
+
+    is_approve = method == "POST" and path.startswith("/api/ai/actions/") and path.endswith("/approve")
+    is_dismiss = method == "POST" and path.startswith("/api/ai/actions/") and path.endswith("/dismiss")
+
+    if not (is_approve or is_dismiss):
+        return await call_next(request)
+
+    try:
+        action_id = path.split("/api/ai/actions/", 1)[1].rsplit("/approve" if is_approve else "/dismiss", 1)[0]
+        current_user = await _ai_queue_current_user(request)
+        business_id = _ai_action_business_id(current_user)
+        if not business_id:
+            raise HTTPException(status_code=401, detail="Business not found")
+
+        now = _phase274_now()
+        performed_result = None
+        status = "dismissed"
+
+        if is_approve:
+            performed_result = await _phase274_perform_ai_action(action_id, str(business_id), current_user)
+            status = "completed" if performed_result and performed_result.get("performed") else "approved"
+
+        update = {
+            "business_id": str(business_id),
+            "id": str(action_id),
+            "status": status,
+            "updated_at": now,
+        }
+
+        if is_approve:
+            update["approved_at"] = now
+            update["approved_by"] = str(current_user.get("id") or current_user.get("_id") or "")
+            update["performed_result"] = performed_result
+        else:
+            update["dismissed_at"] = now
+            update["dismissed_by"] = str(current_user.get("id") or current_user.get("_id") or "")
+
+        await db.ai_actions.update_one(
+            {"business_id": str(business_id), "id": str(action_id)},
+            {"$set": update, "$setOnInsert": {"created_at": now}},
+            upsert=True,
+        )
+
+        return _phase219_response(request, {
+            "success": True,
+            "ok": True,
+            "id": str(action_id),
+            "status": status,
+            "performed_result": performed_result,
+            "message": (performed_result or {}).get("message") if performed_result else ("Action dismissed." if is_dismiss else "Action approved."),
+        })
+
+    except HTTPException as exc:
+        return _phase219_response(request, {"success": False, "detail": exc.detail}, int(exc.status_code or 400))
+    except Exception as exc:
+        try:
+            logger.exception("PHASE_274 AI operator approval failed")
+        except Exception:
+            pass
+        return _phase219_response(request, {
+            "success": False,
+            "detail": "AI Operator action failed",
+            "error": str(exc)[:260],
+        }, 500)
+
+# END_PHASE_274_STRONG_AI_OPERATOR_ENGINE
+
 # ===================== PHASE_105_OWNER_APPROVAL_PERFORMS_REAL_ACTIONS =====================
 # PHASE_120_SEND_INVOICE_AS_PDF_ATTACHMENT
 # PHASE_122_COMPLETE_REAL_INVOICE_TEMPLATE
