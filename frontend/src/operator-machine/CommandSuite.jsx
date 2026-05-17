@@ -359,7 +359,7 @@ function Table({ rows, columns, onOpen, emptyText = "Nothing here yet.", actionL
   );
 }
 
-function DetailModal({ selected, onClose, onApprove, setPage }) {
+function DetailModal({ selected, onClose, onApprove, setPage, operatorBusyAction = "" }) {
   if (!selected) return null;
 
   const route = selected.__route;
@@ -1702,6 +1702,7 @@ export default function CommandSuite({
         onClose={() => setSelected(null)}
         onApprove={approveRecord}
         setPage={goToPage}
+        operatorBusyAction={operatorBusyAction}
       />
     </section>
   );
