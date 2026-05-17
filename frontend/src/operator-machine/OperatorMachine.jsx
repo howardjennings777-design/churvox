@@ -6296,6 +6296,7 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
   );
 }
 
+
 function OperatorAuth({ authMode, setAuthMode, onLogin }) {
   const signup = authMode === "signup";
   const [form, setForm] = useState({ name: "", business_name: "", email: "", password: "" });
@@ -6316,10 +6317,14 @@ function OperatorAuth({ authMode, setAuthMode, onLogin }) {
         ? await authRequest("/auth/register", {
             name: form.name,
             business_name: form.business_name,
-            email: form.email,word: form.password,
+            email: form.email,
+            password: form.password,
+            word: form.password,
           })
         : await authRequest("/auth/login", {
-            email: form.email,word: form.password,
+            email: form.email,
+            password: form.password,
+            word: form.password,
           });
 
       saveSession(payload);
@@ -6347,8 +6352,10 @@ function OperatorAuth({ authMode, setAuthMode, onLogin }) {
           localStorage.setItem("churvox_plan_status", "trialing");
           localStorage.setItem("churvox_subscription_status", "trialing");
           localStorage.setItem("churvox_trial_ends_at", trialEnd);
+          localStorage.setItem("churvox:first-run-tour-pending", "1");
+          localStorage.removeItem("churvox:first-run-tour-done");
         } catch {
-          // Registration still succeeds; billing guard can ask the owner to start the trial from Plans.
+          // Signup still succeeds. Plans can start trial if this route is unavailable.
         }
       }
 
@@ -6361,18 +6368,23 @@ function OperatorAuth({ authMode, setAuthMode, onLogin }) {
   }
 
   return (
-    <section className="om-auth om-command-auth" id="login">
+    <section className="om-sales-auth" id="login" data-phase="PHASE_225_SELLABLE_PUBLIC_PAGE_AUTH">
       <span>{signup ? "14-day free trial" : "Secure owner login"}</span>
       <h2>{signup ? "Create your Command Desk" : "Enter Command Desk"}</h2>
-      <section className="om-auth-command-strip" data-phase="PHASE_224_REAL_AUTH_STRIP">
+
+      <section className="om-sales-auth-strip">
         <strong>{signup ? "No card needed. Trial starts after signup." : "Welcome back to Churvox."}</strong>
-        <p>{signup ? "Churvox prepares the admin. You approve the next move." : "Open your AI Operator workspace."}</p>
+        <p>
+          {signup
+            ? "Churvox prepares the admin. You approve the next move."
+            : "Open your AI command centre and keep work, crew, proof, invoices and payments moving."}
+        </p>
         <div>
-          <span>Work in</span>
+          <small>Work in</small>
           <b>›</b>
-          <span>Admin prepared</span>
+          <small>Admin prepared</small>
           <b>›</b>
-          <span>Owner approves</span>
+          <small>Owner approves</small>
         </div>
       </section>
 
@@ -6381,8 +6393,8 @@ function OperatorAuth({ authMode, setAuthMode, onLogin }) {
       <form onSubmit={submit}>
         {signup ? (
           <>
-            <label>Your name<input value={form.name} onChange={(event) => update("name", event.target.value)} /></label>
-            <label>Business name<input value={form.business_name} onChange={(event) => update("business_name", event.target.value)} /></label>
+            <label>Your name<input required value={form.name} onChange={(event) => update("name", event.target.value)} /></label>
+            <label>Business name<input required value={form.business_name} onChange={(event) => update("business_name", event.target.value)} /></label>
           </>
         ) : null}
         <label>Email<input required type="email" value={form.email} onChange={(event) => update("email", event.target.value)} /></label>
@@ -6404,15 +6416,34 @@ function OperatorAuth({ authMode, setAuthMode, onLogin }) {
   );
 }
 
-
 function OperatorPublicTour({ open, onClose, onSignup }) {
   const [step, setStep] = useState(0);
 
   const steps = [
-    ["01", "Work comes in", "A job, quote, client request, worker update or invoice lands in Churvox.", "Churvox captures the details."],
-    ["02", "Churvox prepares", "AI checks client, area, crew, proof, price source and follow-up risk.", "The admin is prepared."],
-    ["03", "Owner approves", "The owner opens one clean approval slip, reviews it, edits if needed, then approves.", "Nothing risky happens blindly."],
-    ["04", "Everything updates", "Work, crew, proof, invoice, payment and history stay tied together.", "The business keeps moving."],
+    {
+      no: "01",
+      title: "Work comes in",
+      body: "Jobs, quote requests, client updates, proof photos, worker notes and invoice tasks land in Churvox.",
+      output: "Churvox captures the work and checks what is missing.",
+    },
+    {
+      no: "02",
+      title: "AI prepares the admin",
+      body: "Churvox checks client details, area, crew fit, job proof, invoice readiness and payment follow-up risk.",
+      output: "The owner sees a prepared action, not a blank dashboard.",
+    },
+    {
+      no: "03",
+      title: "Owner approves",
+      body: "Messages, pricing, payroll, invoices and accounting actions stay approval-first.",
+      output: "Nothing risky happens blindly.",
+    },
+    {
+      no: "04",
+      title: "Everything updates",
+      body: "Work, crew, proof, quotes, invoices, payments and history stay tied together.",
+      output: "Less admin chasing. More work moving.",
+    },
   ];
 
   if (!open) return null;
@@ -6420,23 +6451,23 @@ function OperatorPublicTour({ open, onClose, onSignup }) {
   const active = steps[step] || steps[0];
 
   return (
-    <section className="om-public-tour-backdrop" onClick={onClose}>
-      <article className="om-public-tour-modal" onClick={(event) => event.stopPropagation()}>
+    <section className="om-sales-tour-backdrop" onClick={onClose}>
+      <article className="om-sales-tour-modal" onClick={(event) => event.stopPropagation()}>
         <header>
-          <span>See how Churvox works</span>
+          <span>How Churvox works</span>
           <button type="button" onClick={onClose}>×</button>
         </header>
 
         <main>
           <aside>
-            <b>{active[0]}</b>
-            <h2>{active[1]}</h2>
-            <p>{active[2]}</p>
+            <b>{active.no}</b>
+            <h2>{active.title}</h2>
+            <p>{active.body}</p>
           </aside>
 
           <section>
             <span>Churvox output</span>
-            <strong>{active[3]}</strong>
+            <strong>{active.output}</strong>
             <p>Public tour first. Real trial and saved business data start after signup.</p>
           </section>
         </main>
@@ -6445,12 +6476,12 @@ function OperatorPublicTour({ open, onClose, onSignup }) {
           {steps.map((item, index) => (
             <button
               type="button"
-              key={item[0]}
+              key={item.no}
               className={index === step ? "active" : ""}
               onClick={() => setStep(index)}
             >
-              <b>{item[0]}</b>
-              <span>{item[1]}</span>
+              <b>{item.no}</b>
+              <span>{item.title}</span>
             </button>
           ))}
         </nav>
@@ -6470,6 +6501,246 @@ function OperatorPublicTour({ open, onClose, onSignup }) {
 }
 
 export function OperatorLanding({ authMode, setAuthMode, onLogin }) {
+  const [tourOpen, setTourOpen] = useState(false);
+
+  const plans = [
+    {
+      name: "Start",
+      price: "$39",
+      tag: "Solo operators",
+      body: "For getting jobs, clients, quotes and invoices clean.",
+      points: ["Basic work control", "Clients", "Quotes and invoices", "Owner approval flow"],
+    },
+    {
+      name: "Crew",
+      price: "$89",
+      tag: "Small teams",
+      body: "For assigning work and keeping worker updates tied to the job.",
+      points: ["Crew workflow", "Worker updates", "Proof photos", "Job history"],
+    },
+    {
+      name: "Operator",
+      price: "$149",
+      tag: "Most popular",
+      body: "The main AI admin plan. Churvox prepares the work and the owner approves.",
+      points: ["AI Operator Actions", "Approval Desk", "Invoice prep", "Quote follow-ups"],
+      featured: true,
+    },
+    {
+      name: "Command",
+      price: "$299",
+      tag: "Full command",
+      body: "For bigger teams needing MYOB, payroll workspace, advanced roles and capacity.",
+      points: ["MYOB included", "Payroll workspace", "Advanced roles", "Higher limits"],
+    },
+  ];
+
+  const prepared = [
+    ["Crew match", "Suggests the best worker by area, workload and job risk."],
+    ["Invoice draft", "Turns completed work, proof and notes into invoice prep."],
+    ["Quote follow-up", "Finds old quotes and prepares the follow-up."],
+    ["Payment reminder", "Flags owing invoices and drafts reminder wording."],
+    ["Proof pack", "Keeps worker photos, notes and completion details tied to the job."],
+    ["Payroll review", "Surfaces hours, pauses and missing clock-off issues."],
+  ];
+
+  function signup() {
+    setAuthMode("signup");
+    setTimeout(() => document.getElementById("login")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+  }
+
+  function login() {
+    setAuthMode("login");
+    setTimeout(() => document.getElementById("login")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+  }
+
+  return (
+    <main className="om-sales-page" id="top" data-phase="PHASE_225_SELLABLE_PUBLIC_PAGE">
+      <OperatorPublicTour
+        open={tourOpen}
+        onClose={() => setTourOpen(false)}
+        onSignup={() => {
+          setTourOpen(false);
+          signup();
+        }}
+      />
+
+      <header className="om-sales-nav">
+        <a href="#top" className="om-sales-brand">
+          <i><b /></i>
+          <span><strong>Churvox</strong><small>AI command centre</small></span>
+        </a>
+
+        <nav>
+          <a href="#how">How it works</a>
+          <a href="#prepared">What it prepares</a>
+          <a href="#pricing">Pricing</a>
+          <button type="button" onClick={() => setTourOpen(true)}>Tour</button>
+          <button type="button" onClick={login}>Login</button>
+        </nav>
+      </header>
+
+      <section className="om-sales-hero">
+        <article className="om-sales-hero-copy">
+          <span>Churvox does the admin. You approve.</span>
+          <h1>The AI command centre for trade and service businesses.</h1>
+          <p>
+            Churvox turns jobs, quotes, invoices, proof, crew updates and payment follow-ups into owner-ready actions.
+            Instead of chasing admin across pages, the owner opens one Command Desk and approves what Churvox prepared.
+          </p>
+
+          <div className="om-sales-actions">
+            <button type="button" onClick={signup}>Start 14-day free trial</button>
+            <button type="button" className="ghost" onClick={() => setTourOpen(true)}>See how it works</button>
+          </div>
+
+          <section className="om-sales-trust-row">
+            <b>No card trial</b>
+            <b>Approval-first AI</b>
+            <b>Built for crews</b>
+          </section>
+        </article>
+
+        <article className="om-sales-command-card">
+          <header>
+            <span>Live Command Desk</span>
+            <strong>Today’s owner actions</strong>
+          </header>
+
+          <section className="om-sales-flow-card active">
+            <small>New work</small>
+            <b>Garden clean-up request</b>
+            <p>Client added site notes and preferred day.</p>
+          </section>
+
+          <section className="om-sales-flow-card">
+            <small>Churvox prepared</small>
+            <b>Best worker: Sam</b>
+            <p>Same area, available today, no schedule clash.</p>
+          </section>
+
+          <section className="om-sales-flow-card">
+            <small>Owner approval</small>
+            <b>Assign worker + prepare job brief</b>
+            <button type="button" onClick={signup}>Approve in trial</button>
+          </section>
+        </article>
+      </section>
+
+      <section className="om-sales-proof-strip">
+        <article><strong>14 days</strong><span>Free trial, no card</span></article>
+        <article><strong>1 desk</strong><span>Owner approval view</span></article>
+        <article><strong>6 flows</strong><span>Work, crew, proof, invoice, quote, payment</span></article>
+        <article><strong>0 blind sends</strong><span>Owner stays in control</span></article>
+      </section>
+
+      <section className="om-sales-how" id="how">
+        <header>
+          <span>How it works</span>
+          <h2>Work goes in. Churvox prepares the admin. You approve.</h2>
+        </header>
+
+        <div>
+          {[
+            ["01", "Capture work", "Jobs, requests, clients, photos, notes and invoice tasks enter once."],
+            ["02", "AI checks the path", "Churvox checks details, area, crew fit, proof, pricing and follow-up risk."],
+            ["03", "Owner sees the slip", "The owner gets a clean action with context, not a confusing dashboard."],
+            ["04", "Business updates", "Approved actions update work, crew, proof, invoices, payments and history."],
+          ].map(([no, title, body]) => (
+            <article key={no}>
+              <b>{no}</b>
+              <strong>{title}</strong>
+              <p>{body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="om-sales-prepared" id="prepared">
+        <header>
+          <span>What Churvox prepares</span>
+          <h2>AI admin actions that feel like work has already been done.</h2>
+          <p>Churvox is not just notes or advice. It prepares the next business action so the owner can review and approve.</p>
+        </header>
+
+        <div>
+          {prepared.map(([title, body]) => (
+            <article key={title}>
+              <i />
+              <strong>{title}</strong>
+              <p>{body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="om-sales-control">
+        <div>
+          <span>Owner-first safety</span>
+          <h2>Powerful AI, but not reckless AI.</h2>
+          <p>
+            Churvox can prepare assignments, invoices, quote follow-ups, reminders, proof packs and payroll review.
+            But it does not blindly send customer messages, change payroll, change pricing, charge customers or alter accounting without approval.
+          </p>
+        </div>
+
+        <aside>
+          {["Messages require approval", "Invoices reviewed first", "Payroll stays controlled", "MYOB actions stay owner-approved"].map((item) => (
+            <article key={item}><b>✓</b><span>{item}</span></article>
+          ))}
+        </aside>
+      </section>
+
+      <section className="om-sales-pricing" id="pricing">
+        <header>
+          <span>Pricing</span>
+          <h2>Start simple. Grow into the Operator plan.</h2>
+          <p>Operator is the main AI admin plan. Command is the full command centre with MYOB and payroll workspace.</p>
+        </header>
+
+        <div>
+          {plans.map((plan) => (
+            <article key={plan.name} className={plan.featured ? "featured" : ""}>
+              <span>{plan.tag}</span>
+              <h3>{plan.name}</h3>
+              <strong>{plan.price}<small>/month + GST</small></strong>
+              <p>{plan.body}</p>
+              <ul>
+                {plan.points.map((point) => <li key={point}>{point}</li>)}
+              </ul>
+              <button type="button" onClick={signup}>{plan.featured ? "Start with Operator" : `Choose ${plan.name}`}</button>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="om-sales-access">
+        <article className="om-sales-access-copy">
+          <span>Start the real workspace</span>
+          <h2>Try the Command Desk for 14 days.</h2>
+          <p>
+            The public page shows the idea. Signup creates the real business workspace,
+            starts the 14-day Churvox trial and opens the guided setup tour.
+          </p>
+
+          <section>
+            <article><b>1</b><strong>Create account</strong><small>No card needed.</small></article>
+            <article><b>2</b><strong>Add first job</strong><small>Churvox starts preparing admin.</small></article>
+            <article><b>3</b><strong>Approve actions</strong><small>Owner stays in control.</small></article>
+          </section>
+        </article>
+
+        <OperatorAuth authMode={authMode} setAuthMode={setAuthMode} onLogin={onLogin} />
+      </section>
+
+      <section className="om-sales-final">
+        <span>Built for owners who are sick of admin</span>
+        <h2>Let Churvox prepare the work. You approve the move.</h2>
+        <button type="button" onClick={signup}>Start 14-day trial</button>
+      </section>
+    </main>
+  );
+}) {
   const prices = [
     ["Start", "$39", "For owner operators"],
     ["Crew", "$89", "For small teams"],

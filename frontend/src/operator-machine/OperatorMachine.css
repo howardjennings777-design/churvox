@@ -9675,303 +9675,718 @@ select {
 }
 
 
-/* PHASE_224_REAL_LIVE_SIGNUP_PAGE_THEME
-   This targets the actual live unauthenticated page: OperatorLanding / OperatorAuth.
+/* PHASE_225_SELLABLE_PUBLIC_PAGE_CSS
+   Fresh public landing + signup page. No old blue page styling. Real theme: stone / black / copper.
 */
 
-html body .om-command-public {
-  --live-black: #0d0b0a;
-  --live-black-2: #17120f;
-  --live-copper: #b85720;
-  --live-copper-2: #d56b2a;
-  --live-copper-3: #e48643;
-  --live-paper: #fff8ef;
-  --live-stone: #f4ede3;
-  --live-muted: #6d6258;
-  min-height: 100vh !important;
-  color: var(--live-black) !important;
+html body .om-sales-page {
+  --sales-black: #0d0b0a;
+  --sales-ink: #17120f;
+  --sales-copper: #b85720;
+  --sales-copper-2: #d56b2a;
+  --sales-copper-3: #e48643;
+  --sales-paper: #fff8ef;
+  --sales-stone: #f4ede3;
+  --sales-stone-2: #eadbc9;
+  --sales-muted: #6d6258;
+  --sales-green: #507b36;
+  min-height: 100vh;
+  padding: 0 0 70px;
+  color: var(--sales-black);
   background:
-    radial-gradient(circle at 78% 8%, rgba(184, 87, 32, 0.24), transparent 30rem),
-    radial-gradient(circle at 10% 22%, rgba(13, 11, 10, 0.12), transparent 26rem),
-    linear-gradient(135deg, #f4ede3 0%, #fff8ef 50%, #eadbc9 100%) !important;
+    radial-gradient(circle at 78% 6%, rgba(184, 87, 32, 0.24), transparent 30rem),
+    radial-gradient(circle at 6% 20%, rgba(13, 11, 10, 0.13), transparent 25rem),
+    linear-gradient(135deg, #f4ede3 0%, #fff8ef 50%, #eadbc9 100%);
+  overflow-x: hidden;
 }
 
-html body .om-command-public .om-public-nav {
-  width: min(1220px, calc(100% - 32px)) !important;
-  margin: 0 auto !important;
-  padding: 20px 0 !important;
+html body .om-sales-page * {
+  box-sizing: border-box;
 }
 
-html body .om-command-public .om-public-brand {
-  color: var(--live-black) !important;
+.om-sales-nav,
+.om-sales-hero,
+.om-sales-proof-strip,
+.om-sales-how,
+.om-sales-prepared,
+.om-sales-control,
+.om-sales-pricing,
+.om-sales-access,
+.om-sales-final {
+  width: min(1220px, calc(100% - 32px));
+  margin-inline: auto;
 }
 
-html body .om-command-public .om-public-brand i {
-  background: var(--live-black) !important;
-  border: 1px solid rgba(228, 134, 67, 0.32) !important;
+.om-sales-nav {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 0;
 }
 
-html body .om-command-public .om-public-brand i b {
-  border-color: var(--live-copper-3) !important;
+.om-sales-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--sales-black);
+  text-decoration: none;
 }
 
-html body .om-command-public .om-public-brand strong {
-  color: var(--live-black) !important;
+.om-sales-brand i {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  background: var(--sales-black);
+  box-shadow: 0 16px 36px rgba(13, 11, 10, 0.22);
 }
 
-html body .om-command-public .om-public-brand small {
-  color: var(--live-copper) !important;
+.om-sales-brand i b {
+  width: 22px;
+  height: 22px;
+  display: block;
+  border: 4px solid var(--sales-copper-3);
+  border-left-color: transparent;
+  border-radius: 999px;
 }
 
-html body .om-command-public .om-public-nav nav {
-  border: 1px solid rgba(13, 11, 10, 0.12) !important;
-  background: rgba(255, 248, 239, 0.78) !important;
-  box-shadow: 0 18px 48px rgba(13, 11, 10, 0.10) !important;
-  backdrop-filter: blur(18px) !important;
+.om-sales-brand strong,
+.om-sales-brand small {
+  display: block;
 }
 
-html body .om-command-public .om-public-nav nav a,
-html body .om-command-public .om-public-nav nav button {
-  color: var(--live-black) !important;
-  font-weight: 950 !important;
+.om-sales-brand strong {
+  font-size: 19px;
+  font-weight: 950;
+  letter-spacing: -0.04em;
 }
 
-html body .om-command-public .om-public-nav nav button {
-  min-height: 38px !important;
-  border: 0 !important;
-  border-radius: 999px !important;
-  padding: 0 14px !important;
-  background: var(--live-black) !important;
-  color: var(--live-paper) !important;
-  cursor: pointer !important;
+.om-sales-brand small {
+  color: var(--sales-copper);
+  font-weight: 850;
 }
 
-html body .om-command-public .om-public-hero,
-html body .om-command-public .om-public-proof,
-html body .om-command-public .om-public-pricing,
-html body .om-command-public .om-public-access {
-  width: min(1220px, calc(100% - 32px)) !important;
-  margin-inline: auto !important;
+.om-sales-nav nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid rgba(13, 11, 10, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 248, 239, 0.76);
+  box-shadow: 0 18px 48px rgba(13, 11, 10, 0.10);
+  backdrop-filter: blur(18px);
 }
 
-html body .om-command-public .om-public-hero > div,
-html body .om-command-public .om-public-proof article,
-html body .om-command-public .om-public-pricing,
-html body .om-command-public .om-public-access {
-  border: 1px solid rgba(13, 11, 10, 0.12) !important;
-  background: rgba(255, 248, 239, 0.88) !important;
-  color: var(--live-black) !important;
-  box-shadow: 0 26px 84px rgba(13, 11, 10, 0.16) !important;
-  backdrop-filter: blur(22px) !important;
+.om-sales-nav nav a,
+.om-sales-nav nav button {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sales-black);
+  text-decoration: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
 }
 
-html body .om-command-public .om-public-hero > div {
+.om-sales-nav nav button:last-child {
+  background: var(--sales-black);
+  color: var(--sales-paper);
+}
+
+.om-sales-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.02fr) minmax(380px, 0.72fr);
+  gap: 22px;
+  align-items: stretch;
+  padding: 28px 0 20px;
+}
+
+.om-sales-hero-copy,
+.om-sales-command-card,
+.om-sales-how,
+.om-sales-prepared,
+.om-sales-control,
+.om-sales-pricing,
+.om-sales-access,
+.om-sales-final {
+  border: 1px solid rgba(13, 11, 10, 0.12);
+  border-radius: 28px;
+  box-shadow: 0 26px 84px rgba(13, 11, 10, 0.16);
+  backdrop-filter: blur(22px);
+}
+
+.om-sales-hero-copy {
+  min-height: 610px;
+  display: grid;
+  align-content: center;
+  padding: clamp(32px, 6vw, 70px);
   background:
-    radial-gradient(circle at 92% 8%, rgba(228, 134, 67, 0.22), transparent 22rem),
-    rgba(255, 248, 239, 0.90) !important;
+    radial-gradient(circle at 94% 8%, rgba(228, 134, 67, 0.22), transparent 22rem),
+    rgba(255, 248, 239, 0.9);
 }
 
-html body .om-command-public h1,
-html body .om-command-public h2,
-html body .om-command-public h3,
-html body .om-command-public .om-command-auth h2 {
-  color: var(--live-black) !important;
-  font-family: Georgia, "Times New Roman", serif !important;
-  letter-spacing: -0.055em !important;
+.om-sales-hero-copy > span,
+.om-sales-how header span,
+.om-sales-prepared header span,
+.om-sales-control span,
+.om-sales-pricing header span,
+.om-sales-access-copy > span,
+.om-sales-final > span,
+.om-sales-auth > span {
+  width: fit-content;
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px solid rgba(184, 87, 32, 0.16);
+  border-radius: 999px;
+  background: rgba(184, 87, 32, 0.08);
+  color: var(--sales-copper);
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
-html body .om-command-public p,
-html body .om-command-public small {
-  color: var(--live-muted) !important;
+.om-sales-hero h1,
+.om-sales-how h2,
+.om-sales-prepared h2,
+.om-sales-control h2,
+.om-sales-pricing h2,
+.om-sales-access h2,
+.om-sales-final h2,
+.om-sales-auth h2 {
+  margin: 18px 0 18px;
+  color: var(--sales-black);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(46px, 7vw, 92px);
+  line-height: 0.9;
+  letter-spacing: -0.075em;
 }
 
-html body .om-command-public .om-public-hero span,
-html body .om-command-public .om-public-proof span,
-html body .om-command-public .om-public-pricing header span,
-html body .om-command-public .om-public-access-copy span,
-html body .om-command-public .om-command-auth > span {
-  color: var(--live-copper) !important;
-  background: rgba(184, 87, 32, 0.08) !important;
-  border-color: rgba(184, 87, 32, 0.16) !important;
+.om-sales-hero p,
+.om-sales-how p,
+.om-sales-prepared p,
+.om-sales-control p,
+.om-sales-pricing p,
+.om-sales-access p,
+.om-sales-final p,
+.om-sales-auth p {
+  color: var(--sales-muted);
+  line-height: 1.55;
 }
 
-html body .om-command-public .om-public-actions button,
-html body .om-command-public .om-public-actions a,
-html body .om-command-public .om-public-pricing article button,
-html body .om-command-public .om-command-auth form button[type="submit"] {
-  min-height: 48px !important;
-  border: 0 !important;
-  border-radius: 999px !important;
-  padding: 0 20px !important;
-  background: var(--live-black) !important;
-  color: var(--live-paper) !important;
-  font-weight: 950 !important;
-  box-shadow: 0 18px 38px rgba(13, 11, 10, 0.18) !important;
+.om-sales-hero-copy > p {
+  max-width: 760px;
+  font-size: 18px;
 }
 
-html body .om-command-public .om-public-actions .om-public-tour-cta {
-  background: var(--live-copper) !important;
-  color: var(--live-paper) !important;
+.om-sales-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
 }
 
-html body .om-command-public .om-public-actions a {
-  background: rgba(13, 11, 10, 0.08) !important;
-  color: var(--live-black) !important;
-  border: 1px solid rgba(13, 11, 10, 0.12) !important;
-  box-shadow: none !important;
+.om-sales-actions button,
+.om-sales-final button,
+.om-sales-pricing article button,
+.om-sales-auth form button {
+  min-height: 50px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--sales-black);
+  color: var(--sales-paper);
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow: 0 18px 38px rgba(13, 11, 10, 0.18);
 }
 
-html body .om-command-public .om-public-machine {
+.om-sales-actions button:first-child,
+.om-sales-final button {
+  background: var(--sales-copper);
+}
+
+.om-sales-actions button.ghost {
+  background: rgba(13, 11, 10, 0.08);
+  color: var(--sales-black);
+  border: 1px solid rgba(13, 11, 10, 0.12);
+  box-shadow: none;
+}
+
+.om-sales-trust-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.om-sales-trust-row b {
+  padding: 10px 12px;
+  border-radius: 999px;
+  background: rgba(80, 123, 54, 0.10);
+  color: var(--sales-green);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.om-sales-command-card {
+  display: grid;
+  align-content: center;
+  gap: 14px;
+  padding: 28px;
   background:
-    radial-gradient(circle at 100% 0%, rgba(228, 134, 67, 0.22), transparent 18rem),
-    #15100d !important;
-  color: var(--live-paper) !important;
-  border: 1px solid rgba(13, 11, 10, 0.12) !important;
-  box-shadow: 0 26px 84px rgba(13, 11, 10, 0.18) !important;
+    radial-gradient(circle at 100% 0%, rgba(228, 134, 67, 0.24), transparent 18rem),
+    var(--sales-black);
+  color: var(--sales-paper);
 }
 
-html body .om-command-public .om-public-machine article {
-  background: rgba(255, 248, 239, 0.08) !important;
-  border: 1px solid rgba(255, 248, 239, 0.12) !important;
+.om-sales-command-card header span,
+.om-sales-flow-card small,
+.om-sales-tour-modal header span,
+.om-sales-tour-modal main section span {
+  color: var(--sales-copper-3);
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
-html body .om-command-public .om-public-machine article.active {
-  background: rgba(184, 87, 32, 0.24) !important;
-  border-color: rgba(228, 134, 67, 0.46) !important;
+.om-sales-command-card header strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--sales-paper);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 36px;
+  line-height: 0.95;
+  letter-spacing: -0.055em;
 }
 
-html body .om-command-public .om-public-machine span,
-html body .om-command-public .om-public-machine strong,
-html body .om-command-public .om-public-machine small {
-  color: var(--live-paper) !important;
+.om-sales-flow-card {
+  display: grid;
+  gap: 7px;
+  padding: 18px;
+  border: 1px solid rgba(255, 248, 239, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 248, 239, 0.08);
 }
 
-html body .om-command-public .om-public-pricing article {
-  background: rgba(255, 248, 239, 0.90) !important;
-  border: 1px solid rgba(13, 11, 10, 0.10) !important;
-  box-shadow: 0 16px 42px rgba(13, 11, 10, 0.08) !important;
+.om-sales-flow-card.active {
+  background: rgba(184, 87, 32, 0.24);
+  border-color: rgba(228, 134, 67, 0.42);
 }
 
-html body .om-command-public .om-public-pricing article.featured {
-  border-color: rgba(184, 87, 32, 0.42) !important;
-  box-shadow: 0 22px 70px rgba(184, 87, 32, 0.18) !important;
+.om-sales-flow-card b {
+  color: var(--sales-paper);
+  font-size: 18px;
+  font-weight: 950;
 }
 
-html body .om-command-public .om-public-pricing article span,
-html body .om-command-public .om-public-pricing article strong {
-  color: var(--live-copper) !important;
+.om-sales-flow-card p {
+  margin: 0;
+  color: rgba(255, 248, 239, 0.72);
+  font-size: 14px;
 }
 
-html body .om-command-public .om-public-access {
+.om-sales-flow-card button {
+  width: fit-content;
+  min-height: 40px;
+  margin-top: 8px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--sales-paper);
+  color: var(--sales-black);
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.om-sales-proof-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-top: 10px;
+  margin-bottom: 22px;
+}
+
+.om-sales-proof-strip article {
+  min-height: 110px;
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  padding: 20px;
+  border: 1px solid rgba(13, 11, 10, 0.10);
+  border-radius: 20px;
+  background: rgba(255, 248, 239, 0.82);
+  box-shadow: 0 16px 42px rgba(13, 11, 10, 0.08);
+}
+
+.om-sales-proof-strip strong {
+  color: var(--sales-black);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 36px;
+  line-height: 0.9;
+}
+
+.om-sales-proof-strip span {
+  color: var(--sales-muted);
+  font-weight: 850;
+}
+
+.om-sales-how,
+.om-sales-prepared,
+.om-sales-pricing,
+.om-sales-access,
+.om-sales-final {
+  margin-top: 22px;
+  padding: clamp(28px, 5vw, 52px);
+  background: rgba(255, 248, 239, 0.88);
+}
+
+.om-sales-how header,
+.om-sales-prepared header,
+.om-sales-pricing header {
+  max-width: 820px;
+}
+
+.om-sales-how h2,
+.om-sales-prepared h2,
+.om-sales-pricing h2,
+.om-sales-access h2,
+.om-sales-final h2 {
+  font-size: clamp(38px, 5vw, 68px);
+}
+
+.om-sales-how > div,
+.om-sales-prepared > div,
+.om-sales-pricing > div {
+  display: grid;
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.om-sales-how > div {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.om-sales-prepared > div {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.om-sales-how article,
+.om-sales-prepared article,
+.om-sales-pricing article,
+.om-sales-access-copy section article {
+  display: grid;
+  gap: 10px;
+  padding: 22px;
+  border: 1px solid rgba(13, 11, 10, 0.10);
+  border-radius: 20px;
+  background: rgba(255, 248, 239, 0.86);
+}
+
+.om-sales-how article b,
+.om-sales-access-copy section b {
+  display: inline-grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--sales-black);
+  color: var(--sales-copper-3);
+  font-weight: 950;
+}
+
+.om-sales-how article strong,
+.om-sales-prepared article strong,
+.om-sales-access-copy section strong {
+  color: var(--sales-black);
+  font-size: 20px;
+  font-weight: 950;
+}
+
+.om-sales-prepared article i {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
   background:
-    linear-gradient(115deg, #0d0b0a 0%, #17120f 45%, rgba(255, 248, 239, 0.94) 45.2%, rgba(255, 248, 239, 0.98) 100%) !important;
-  overflow: hidden !important;
+    radial-gradient(circle at 50% 50%, var(--sales-copper-3) 0 22%, transparent 24%),
+    rgba(184, 87, 32, 0.10);
 }
 
-html body .om-command-public .om-public-access-copy h2,
-html body .om-command-public .om-public-access-copy p {
-  color: var(--live-paper) !important;
+.om-sales-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.62fr);
+  gap: 26px;
+  align-items: center;
+  margin-top: 22px;
+  padding: clamp(28px, 5vw, 56px);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(228, 134, 67, 0.22), transparent 22rem),
+    var(--sales-black);
+  color: var(--sales-paper);
 }
 
-html body .om-command-public .om-public-access-copy p {
-  color: rgba(255, 248, 239, 0.74) !important;
+.om-sales-control h2,
+.om-sales-control p {
+  color: var(--sales-paper);
 }
 
-html body .om-command-public .om-public-access-board article {
-  background: rgba(255, 248, 239, 0.08) !important;
-  border: 1px solid rgba(255, 248, 239, 0.12) !important;
+.om-sales-control p {
+  color: rgba(255, 248, 239, 0.76);
 }
 
-html body .om-command-public .om-public-access-board b,
-html body .om-command-public .om-public-access-board strong,
-html body .om-command-public .om-public-access-board small {
-  color: var(--live-paper) !important;
+.om-sales-control aside {
+  display: grid;
+  gap: 12px;
 }
 
-html body .om-command-public .om-command-auth {
-  background: rgba(255, 248, 239, 0.98) !important;
-  color: var(--live-black) !important;
-  border: 1px solid rgba(13, 11, 10, 0.12) !important;
-  border-radius: 28px !important;
-  box-shadow: 0 26px 84px rgba(13, 11, 10, 0.16) !important;
+.om-sales-control aside article {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(255, 248, 239, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 248, 239, 0.08);
 }
 
-html body .om-command-public .om-command-auth h2 {
-  font-size: clamp(34px, 4vw, 52px) !important;
-  line-height: 0.96 !important;
+.om-sales-control aside b {
+  color: var(--sales-copper-3);
 }
 
-html body .om-command-public .om-auth-command-strip {
-  display: grid !important;
-  gap: 10px !important;
-  margin: 18px 0 20px !important;
-  padding: 16px !important;
-  border-radius: 18px !important;
+.om-sales-control aside span {
+  color: var(--sales-paper);
+  font-weight: 900;
+}
+
+.om-sales-pricing > div {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.om-sales-pricing article.featured {
+  border: 2px solid rgba(184, 87, 32, 0.42);
+  box-shadow: 0 24px 70px rgba(184, 87, 32, 0.18);
+  transform: translateY(-8px);
+}
+
+.om-sales-pricing article > span {
+  color: var(--sales-copper);
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.om-sales-pricing h3 {
+  margin: 0;
+  color: var(--sales-black);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 42px;
+  line-height: 0.95;
+  letter-spacing: -0.055em;
+}
+
+.om-sales-pricing article > strong {
+  color: var(--sales-copper);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 48px;
+  line-height: 1;
+}
+
+.om-sales-pricing article > strong small {
+  display: block;
+  margin-top: 4px;
+  color: var(--sales-muted);
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
+.om-sales-pricing ul {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.om-sales-pricing li {
+  color: var(--sales-black);
+  font-weight: 800;
+}
+
+.om-sales-pricing li::before {
+  content: "✓";
+  margin-right: 8px;
+  color: var(--sales-green);
+  font-weight: 950;
+}
+
+.om-sales-pricing article button {
+  margin-top: 8px;
+}
+
+.om-sales-pricing article.featured button {
+  background: var(--sales-copper);
+}
+
+.om-sales-access {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.72fr);
+  gap: 24px;
+  align-items: stretch;
+  background:
+    linear-gradient(115deg, #0d0b0a 0%, #17120f 46%, rgba(255, 248, 239, 0.96) 46.2%, rgba(255, 248, 239, 0.98) 100%);
+}
+
+.om-sales-access-copy {
+  display: grid;
+  align-content: center;
+}
+
+.om-sales-access-copy h2,
+.om-sales-access-copy p {
+  color: var(--sales-paper);
+}
+
+.om-sales-access-copy p {
+  color: rgba(255, 248, 239, 0.76);
+}
+
+.om-sales-access-copy section {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.om-sales-access-copy section article {
+  background: rgba(255, 248, 239, 0.08);
+  border-color: rgba(255, 248, 239, 0.12);
+}
+
+.om-sales-access-copy section strong,
+.om-sales-access-copy section small {
+  color: var(--sales-paper);
+}
+
+.om-sales-access-copy section small {
+  color: rgba(255, 248, 239, 0.72);
+}
+
+.om-sales-auth {
+  display: grid;
+  gap: 16px;
+  align-content: center;
+  padding: clamp(24px, 4vw, 36px);
+  border: 1px solid rgba(13, 11, 10, 0.12);
+  border-radius: 26px;
+  background: rgba(255, 248, 239, 0.98);
+  box-shadow: 0 24px 70px rgba(13, 11, 10, 0.16);
+}
+
+.om-sales-auth h2 {
+  margin: 0;
+  font-size: clamp(34px, 4vw, 54px);
+}
+
+.om-sales-auth-strip {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 18px;
   background:
     radial-gradient(circle at 100% 0%, rgba(228, 134, 67, 0.18), transparent 14rem),
-    rgba(13, 11, 10, 0.04) !important;
-  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+    rgba(13, 11, 10, 0.04);
+  border: 1px solid rgba(13, 11, 10, 0.10);
 }
 
-html body .om-command-public .om-auth-command-strip strong {
-  color: var(--live-black) !important;
-  font-size: 16px !important;
-  font-weight: 950 !important;
+.om-sales-auth-strip strong {
+  color: var(--sales-black);
+  font-weight: 950;
 }
 
-html body .om-command-public .om-auth-command-strip p {
-  margin: 0 !important;
-  color: var(--live-muted) !important;
+.om-sales-auth-strip div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 
-html body .om-command-public .om-auth-command-strip div {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  align-items: center !important;
-  gap: 8px !important;
+.om-sales-auth-strip small {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(184, 87, 32, 0.10);
+  color: var(--sales-copper);
+  font-weight: 900;
 }
 
-html body .om-command-public .om-auth-command-strip span {
-  display: inline-flex !important;
-  min-height: 30px !important;
-  align-items: center !important;
-  padding: 0 10px !important;
-  border-radius: 999px !important;
-  background: rgba(184, 87, 32, 0.10) !important;
-  color: var(--live-copper) !important;
-  font-size: 12px !important;
-  font-weight: 900 !important;
+.om-sales-auth form {
+  display: grid;
+  gap: 12px;
 }
 
-html body .om-command-public .om-auth-command-strip b {
-  color: var(--live-copper) !important;
+.om-sales-auth label {
+  display: grid;
+  gap: 7px;
+  color: var(--sales-black);
+  font-weight: 900;
 }
 
-html body .om-command-public .om-command-auth label {
-  color: var(--live-black) !important;
-  font-weight: 900 !important;
+.om-sales-auth input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid rgba(13, 11, 10, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 248, 239, 0.96);
+  color: var(--sales-black);
 }
 
-html body .om-command-public .om-command-auth input {
-  background: rgba(255, 248, 239, 0.96) !important;
-  color: var(--live-black) !important;
-  border: 1px solid rgba(13, 11, 10, 0.14) !important;
+.om-sales-auth input:focus {
+  outline: 3px solid rgba(228, 134, 67, 0.28);
+  border-color: rgba(184, 87, 32, 0.46);
 }
 
-html body .om-command-public .om-command-auth input:focus {
-  outline: 3px solid rgba(228, 134, 67, 0.28) !important;
-  border-color: rgba(184, 87, 32, 0.46) !important;
+.om-sales-auth .om-auth-switch {
+  width: fit-content;
+  min-height: 42px;
+  border: 1px solid rgba(184, 87, 32, 0.16);
+  border-radius: 999px;
+  padding: 0 16px;
+  background: rgba(184, 87, 32, 0.08);
+  color: var(--sales-copper);
+  font-weight: 950;
+  cursor: pointer;
 }
 
-html body .om-command-public .om-auth-switch {
-  color: var(--live-copper) !important;
-  background: rgba(184, 87, 32, 0.08) !important;
-  border: 1px solid rgba(184, 87, 32, 0.16) !important;
-  border-radius: 999px !important;
+.om-sales-final {
+  text-align: center;
 }
 
-/* Live public tour modal */
-.om-public-tour-backdrop {
+.om-sales-final h2 {
+  max-width: 850px;
+  margin-inline: auto;
+}
+
+.om-sales-tour-backdrop {
   position: fixed;
   inset: 0;
   z-index: 9000;
@@ -9982,18 +10397,18 @@ html body .om-command-public .om-auth-switch {
   backdrop-filter: blur(14px);
 }
 
-.om-public-tour-modal {
+.om-sales-tour-modal {
   width: min(940px, 96vw);
   max-height: 90vh;
   overflow: auto;
   border-radius: 28px;
-  background: var(--live-paper);
-  color: var(--live-black);
+  background: var(--sales-paper);
+  color: var(--sales-black);
   border: 1px solid rgba(13, 11, 10, 0.14);
   box-shadow: 0 34px 110px rgba(13, 11, 10, 0.38);
 }
 
-.om-public-tour-modal > header {
+.om-sales-tour-modal > header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -10001,103 +10416,100 @@ html body .om-command-public .om-auth-switch {
   border-bottom: 1px solid rgba(13, 11, 10, 0.1);
 }
 
-.om-public-tour-modal > header span {
-  color: var(--live-copper);
+.om-sales-tour-modal > header span {
+  color: var(--sales-copper);
   font-size: 12px;
   font-weight: 950;
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
-.om-public-tour-modal > header button {
+.om-sales-tour-modal > header button {
   width: 42px;
   height: 42px;
   border: 0;
   border-radius: 999px;
   background: rgba(13, 11, 10, 0.08);
-  color: var(--live-black);
+  color: var(--sales-black);
   font-size: 22px;
   cursor: pointer;
 }
 
-.om-public-tour-modal main {
+.om-sales-tour-modal main {
   display: grid;
   grid-template-columns: minmax(0, 0.95fr) minmax(320px, 0.75fr);
   gap: 18px;
   padding: 28px;
 }
 
-.om-public-tour-modal aside,
-.om-public-tour-modal main section {
+.om-sales-tour-modal aside,
+.om-sales-tour-modal main section {
   border-radius: 22px;
   padding: 28px;
 }
 
-.om-public-tour-modal aside {
+.om-sales-tour-modal aside {
   background:
     radial-gradient(circle at 90% 0%, rgba(228, 134, 67, 0.22), transparent 18rem),
-    var(--live-black);
-  color: var(--live-paper);
+    var(--sales-black);
+  color: var(--sales-paper);
 }
 
-.om-public-tour-modal aside b {
+.om-sales-tour-modal aside b {
   display: inline-grid;
   place-items: center;
   width: 56px;
   height: 56px;
   border-radius: 18px;
   background: rgba(228, 134, 67, 0.14);
-  color: var(--live-copper-3);
+  color: var(--sales-copper-3);
   font-size: 18px;
   font-weight: 950;
 }
 
-.om-public-tour-modal h2 {
+.om-sales-tour-modal h2 {
   margin: 22px 0 12px;
-  color: var(--live-paper);
+  color: var(--sales-paper);
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(34px, 5vw, 56px);
   line-height: 0.96;
   letter-spacing: -0.055em;
 }
 
-.om-public-tour-modal aside p {
+.om-sales-tour-modal aside p {
   color: rgba(255, 248, 239, 0.78);
 }
 
-.om-public-tour-modal main section {
+.om-sales-tour-modal main section {
   display: grid;
   align-content: center;
   gap: 14px;
   background: rgba(184, 87, 32, 0.08);
 }
 
-.om-public-tour-modal main section span {
-  color: var(--live-copper);
+.om-sales-tour-modal main section span {
+  color: var(--sales-copper);
   font-size: 12px;
   font-weight: 950;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
-.om-public-tour-modal main section strong {
+.om-sales-tour-modal main section strong {
+  color: var(--sales-black);
   font-size: 28px;
   line-height: 1.05;
   font-weight: 950;
 }
 
-.om-public-tour-modal main section p {
-  color: var(--live-muted);
-}
-
-.om-public-tour-modal > nav {
+.om-sales-tour-modal > nav {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
   padding: 0 28px 24px;
 }
 
-.om-public-tour-modal > nav button {
+.om-sales-tour-modal > nav button {
   display: grid;
   gap: 5px;
   min-height: 72px;
@@ -10109,16 +10521,16 @@ html body .om-command-public .om-auth-switch {
   cursor: pointer;
 }
 
-.om-public-tour-modal > nav button.active {
-  background: var(--live-black);
-  color: var(--live-paper);
+.om-sales-tour-modal > nav button.active {
+  background: var(--sales-black);
+  color: var(--sales-paper);
 }
 
-.om-public-tour-modal > nav button b {
-  color: var(--live-copper);
+.om-sales-tour-modal > nav button b {
+  color: var(--sales-copper);
 }
 
-.om-public-tour-modal > footer {
+.om-sales-tour-modal > footer {
   display: flex;
   justify-content: flex-end;
   flex-wrap: wrap;
@@ -10127,30 +10539,74 @@ html body .om-command-public .om-auth-switch {
   border-top: 1px solid rgba(13, 11, 10, 0.1);
 }
 
-.om-public-tour-modal > footer button {
+.om-sales-tour-modal > footer button {
   min-height: 42px;
   border: 0;
   border-radius: 999px;
   padding: 0 18px;
-  background: var(--live-black);
-  color: var(--live-paper);
+  background: var(--sales-black);
+  color: var(--sales-paper);
   font-weight: 900;
   cursor: pointer;
 }
 
-.om-public-tour-modal > footer button.ghost {
+.om-sales-tour-modal > footer button.ghost {
   background: rgba(13, 11, 10, 0.08);
-  color: var(--live-black);
+  color: var(--sales-black);
 }
 
-@media (max-width: 860px) {
-  html body .om-command-public .om-public-access {
-    background: var(--live-black) !important;
+@media (max-width: 1100px) {
+  .om-sales-hero,
+  .om-sales-control,
+  .om-sales-access {
+    grid-template-columns: 1fr;
   }
 
-  .om-public-tour-modal main,
-  .om-public-tour-modal > nav {
+  .om-sales-proof-strip,
+  .om-sales-how > div,
+  .om-sales-prepared > div,
+  .om-sales-pricing > div {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .om-sales-pricing article.featured {
+    transform: none;
+  }
+
+  .om-sales-access {
+    background: var(--sales-black);
+  }
+}
+
+@media (max-width: 760px) {
+  .om-sales-nav {
+    position: relative;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .om-sales-nav nav {
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+
+  .om-sales-proof-strip,
+  .om-sales-how > div,
+  .om-sales-prepared > div,
+  .om-sales-pricing > div,
+  .om-sales-access-copy section,
+  .om-sales-tour-modal main,
+  .om-sales-tour-modal > nav {
     grid-template-columns: 1fr;
+  }
+
+  .om-sales-hero-copy {
+    min-height: auto;
+  }
+
+  .om-sales-tour-modal {
+    border-radius: 20px;
   }
 }
 
