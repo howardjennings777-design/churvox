@@ -11361,3 +11361,230 @@ select {
   }
 }
 
+
+/* PHASE_189_FORCE_OWNER_PRIORITY_BESIDE_APPROVAL_DESK
+   Screenshot fix:
+   - top hero no longer dominates the page
+   - Approval Desk moves closer to top
+   - real Owner Priority panel appears on the right
+   - avoids empty right-side space
+*/
+
+.om-main {
+  padding-top: 14px !important;
+}
+
+.om-hero {
+  min-height: 0 !important;
+  margin-bottom: 18px !important;
+  padding: 24px 30px !important;
+  border-radius: 30px !important;
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.62fr) !important;
+}
+
+.om-hero h1 {
+  max-width: 760px !important;
+  font-size: clamp(38px, 4.6vw, 66px) !important;
+  line-height: 0.9 !important;
+  margin: 10px 0 12px !important;
+}
+
+.om-hero p {
+  max-width: 690px !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+}
+
+.om-gauges {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  align-self: center !important;
+}
+
+.om-gauges article {
+  min-height: 82px !important;
+  padding: 14px !important;
+  border-radius: 18px !important;
+}
+
+.om-gauges article strong {
+  font-size: clamp(20px, 2.4vw, 31px) !important;
+}
+
+/* If React has live-feed layout, use it. If not, runtime adds the panel. */
+.cx-phase-189-approval-layout,
+.om-dashboard-focus {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.28fr) minmax(300px, 0.62fr) !important;
+  gap: clamp(18px, 2.3vw, 30px) !important;
+  max-width: 1560px !important;
+  margin: 0 auto !important;
+  align-items: start !important;
+}
+
+.om-dashboard-focus-card {
+  display: none !important;
+}
+
+.om-approval-desk-main {
+  grid-column: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.om-approval-live-feed,
+#churvox-phase-189-owner-priority {
+  grid-column: 2 !important;
+  position: sticky !important;
+  top: 88px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+#churvox-phase-189-owner-priority {
+  display: grid !important;
+  gap: 16px !important;
+  padding: 22px !important;
+  border-radius: 30px !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(216, 164, 65, 0.22), transparent 14rem),
+    radial-gradient(circle at 0% 100%, rgba(159, 232, 112, 0.1), transparent 14rem),
+    linear-gradient(180deg, rgba(18, 17, 13, 0.98), rgba(29, 26, 20, 0.98)) !important;
+  color: #f7f0e3 !important;
+  border: 1px solid rgba(216, 164, 65, 0.24) !important;
+  box-shadow: 0 28px 84px rgba(18, 17, 13, 0.24) !important;
+}
+
+#churvox-phase-189-owner-priority header {
+  display: grid !important;
+  gap: 10px !important;
+}
+
+#churvox-phase-189-owner-priority header span {
+  width: fit-content !important;
+  padding: 8px 11px !important;
+  border-radius: 999px !important;
+  background: rgba(216, 164, 65, 0.15) !important;
+  color: #d8a441 !important;
+  font-size: 10px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.13em !important;
+}
+
+#churvox-phase-189-owner-priority header strong {
+  color: #f7f0e3 !important;
+  font-size: clamp(26px, 3vw, 40px) !important;
+  line-height: 0.95 !important;
+  letter-spacing: -0.06em !important;
+  font-weight: 950 !important;
+}
+
+#churvox-phase-189-owner-priority header p,
+#churvox-phase-189-owner-priority footer p {
+  margin: 0 !important;
+  color: rgba(247, 240, 227, 0.7) !important;
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+  font-weight: 760 !important;
+}
+
+#churvox-phase-189-owner-priority .cx-priority-count {
+  display: flex !important;
+  align-items: end !important;
+  justify-content: space-between !important;
+  padding: 18px !important;
+  border-radius: 24px !important;
+  background: rgba(247, 240, 227, 0.08) !important;
+  border: 1px solid rgba(247, 240, 227, 0.1) !important;
+}
+
+#churvox-phase-189-owner-priority .cx-priority-count small {
+  color: rgba(247, 240, 227, 0.64) !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+#churvox-phase-189-owner-priority .cx-priority-count b {
+  color: #d8a441 !important;
+  font-size: 54px !important;
+  line-height: 0.8 !important;
+  letter-spacing: -0.07em !important;
+}
+
+#churvox-phase-189-owner-priority .cx-priority-flow {
+  display: grid !important;
+  gap: 9px !important;
+}
+
+#churvox-phase-189-owner-priority .cx-priority-flow article {
+  display: grid !important;
+  grid-template-columns: 12px 1fr !important;
+  gap: 10px !important;
+  align-items: center !important;
+  padding: 12px !important;
+  border-radius: 18px !important;
+  background: rgba(247, 240, 227, 0.07) !important;
+}
+
+#churvox-phase-189-owner-priority .cx-priority-flow i {
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 999px !important;
+  background: #9fe870 !important;
+  box-shadow: 0 0 16px rgba(159, 232, 112, 0.4) !important;
+}
+
+#churvox-phase-189-owner-priority .cx-priority-flow span {
+  color: #f7f0e3 !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+}
+
+#churvox-phase-189-owner-priority footer {
+  padding: 15px !important;
+  border-radius: 22px !important;
+  background: rgba(216, 164, 65, 0.1) !important;
+  border: 1px solid rgba(216, 164, 65, 0.16) !important;
+}
+
+#churvox-phase-189-owner-priority footer strong {
+  display: block !important;
+  margin-bottom: 5px !important;
+  color: #d8a441 !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+}
+
+.om-approval-desk-main > header h2 {
+  font-size: clamp(32px, 4vw, 58px) !important;
+}
+
+.om-approval-ticket {
+  min-height: 126px !important;
+}
+
+@media (max-width: 1100px) {
+  .cx-phase-189-approval-layout,
+  .om-dashboard-focus {
+    grid-template-columns: 1fr !important;
+  }
+
+  .om-approval-live-feed,
+  #churvox-phase-189-owner-priority {
+    grid-column: 1 !important;
+    position: relative !important;
+    top: auto !important;
+  }
+}
+
+@media (max-width: 780px) {
+  .om-hero {
+    grid-template-columns: 1fr !important;
+  }
+
+  .om-gauges {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+

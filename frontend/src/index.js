@@ -1,3 +1,4 @@
+window.__CHURVOX_PRIORITY_PANEL__ = "PHASE_189_FORCE_OWNER_PRIORITY_BESIDE_APPROVAL_DESK_20260517002155";
 window.__CHURVOX_TOP_NAV_HEIGHT_FIX__ = "PHASE_188_FIX_GIANT_TOP_NAV_BLACK_SPACE_20260517001841";
 window.__CHURVOX_TOP_NAV_PRIORITY_PANEL__ = "PHASE_187_TOP_NAV_OWNER_PRIORITY_PANEL_20260517001430";
 window.__CHURVOX_APPROVAL_DESK_ABOVE_FOLD__ = "PHASE_186_BRING_APPROVAL_DESK_ABOVE_THE_FOLD_20260517001144";
@@ -369,6 +370,102 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
+
+
+// PHASE_189_FORCE_OWNER_PRIORITY_BESIDE_APPROVAL_DESK
+// Keeps Approval Desk as the main working screen:
+// compact hero, force a right-side Owner Priority panel if React live feed is missing.
+(function churvoxForceOwnerPriorityPanel() {
+  try {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+
+    function clean(value) {
+      return String(value || "").replace(/\s+/g, " ").trim();
+    }
+
+    function findApprovalDesk() {
+      const candidates = Array.from(document.querySelectorAll("section, article, div, main"));
+      return candidates.find((el) => {
+        const text = clean(el.textContent).toLowerCase();
+        return text.includes("approval desk") && text.includes("open approval slip");
+      });
+    }
+
+    function countApprovalSlips() {
+      return Array.from(document.querySelectorAll("button, article, section"))
+        .filter((el) => clean(el.textContent).toLowerCase().includes("open approval slip")).length;
+    }
+
+    function installPanel() {
+      const approvalDesk = findApprovalDesk();
+      if (!approvalDesk) return;
+
+      const existing = document.getElementById("churvox-phase-189-owner-priority");
+      if (existing) {
+        const count = countApprovalSlips();
+        const countEl = existing.querySelector("[data-priority-count]");
+        if (countEl) countEl.textContent = String(count || "");
+        return;
+      }
+
+      const shell = document.createElement("aside");
+      shell.id = "churvox-phase-189-owner-priority";
+      shell.innerHTML = `
+        <header>
+          <span>OWNER PRIORITY</span>
+          <strong>Approve the first slip first.</strong>
+          <p>Churvox has already checked the admin path. Crew, proof, invoices, follow-ups and payment risks are parked here for owner approval.</p>
+        </header>
+
+        <section class="cx-priority-count">
+          <small>Ready now</small>
+          <b data-priority-count>${countApprovalSlips() || ""}</b>
+        </section>
+
+        <div class="cx-priority-flow">
+          <article><i></i><span>Work comes in</span></article>
+          <article><i></i><span>Churvox checks it</span></article>
+          <article><i></i><span>Admin is prepared</span></article>
+          <article><i></i><span>Owner approves</span></article>
+        </div>
+
+        <footer>
+          <strong>Live watchlist</strong>
+          <p>Worker updates, new jobs, invoices, quotes and missing client details refresh the desk automatically.</p>
+        </footer>
+      `;
+
+      approvalDesk.insertAdjacentElement("afterend", shell);
+
+      const parent = approvalDesk.parentElement;
+      if (parent) {
+        parent.classList.add("cx-phase-189-approval-layout");
+      }
+    }
+
+    let timer = null;
+    function schedule() {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(installPanel, 120);
+    }
+
+    window.addEventListener("load", schedule);
+    document.addEventListener("click", schedule, true);
+
+    const observer = new MutationObserver(schedule);
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+
+    schedule();
+  } catch {
+    // keep app boot safe
+  }
+})();
+
+
 
 
 // PHASE_182_GLOBAL_AI_AUTO_REFRESH_AND_CREW_MATCH
