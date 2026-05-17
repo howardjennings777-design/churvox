@@ -1806,6 +1806,7 @@ export default function CommandSuite({
   const [quickAction, setQuickAction] = useState(null);
   const [quickBusy, setQuickBusy] = useState("");
   const [installPrompt, setInstallPrompt] = useState(null);
+  const [localQuickRecords, setLocalQuickRecords] = useState([]);
   const [toast, setToast] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [billingBusy, setBillingBusy] = useState("");
@@ -2036,6 +2037,98 @@ export default function CommandSuite({
     window.setTimeout(() => setToast(""), 3200);
   }
 
+
+  // PHASE_292_QUICK_ACTION_FRONTEND_FALLBACK
+  function routeForQuickKind(kind = "", actionRoute = "") {
+    const compact = clean(kind).toLowerCase();
+
+    if (compact.includes("client")) return "clients";
+    if (compact.includes("crew") || compact.includes("worker")) return "team";
+    if (compact.includes("quote")) return "quotes";
+    if (compact.includes("invoice")) return "invoices";
+    if (compact.includes("proof") || compact.includes("payment")) return "proof";
+    if (compact.includes("payroll")) return "payroll";
+    if (compact.includes("setting")) return "settings";
+    if (compact.includes("work") || compact.includes("job")) return "jobs";
+
+    return normalRoute(actionRoute, "dashboard");
+  }
+
+  function buildFallbackQuickRecord(action = {}, values = {}, err = null) {
+    const kind = clean(values.kind || action.kind || action.id || "work").toLowerCase();
+    const route = routeForQuickKind(kind, action.route);
+    const now = new Date().toISOString();
+    const baseTitle = clean(values.title || values.name || values.job_title || action.title || action.label, "Saved quick action");
+    const client = clean(values.client_name || values.client || values.customer_name, "Client");
+    const amount = clean(values.amount || values.price || values.total, "");
+
+    const record = {
+      id: `local-${kind}-${Date.now()}`,
+      kind,
+      __route: route,
+      __modalType: "Saved business action",
+      __modalTitle: baseTitle,
+      __body: "Saved on this screen because the backend quick-create endpoint returned an error. The action is still visible so you can keep working while the backend is fixed.",
+      __actionLabel: `Open ${routeLabel(route)}`,
+      title: baseTitle,
+      name: baseTitle,
+      job_title: baseTitle,
+      client_name: client,
+      customer_name: client,
+      description: clean(values.notes || values.description || values.details, ""),
+      notes: clean(values.notes || values.description || values.details, ""),
+      amount: amount,
+      total: amount,
+      status: "saved locally",
+      source: "frontend_quick_action_fallback",
+      created_at: now,
+      updated_at: now,
+      backend_error: clean(err?.message || err, "Backend quick-create failed."),
+      ai_operator_note: "Frontend fallback saved this item because backend quick-create failed.",
+    };
+
+    if (route === "quotes") {
+      record.quote_number = `LOCAL-Q-${Date.now().toString().slice(-5)}`;
+      record.quote_status = "draft";
+    }
+
+    if (route === "invoices") {
+      record.invoice_number = `LOCAL-INV-${Date.now().toString().slice(-5)}`;
+      record.payment_status = "draft";
+    }
+
+    if (route === "team") {
+      record.role = clean(values.role, "worker");
+      record.full_name = baseTitle;
+      record.email = clean(values.email, "");
+      record.phone = clean(values.phone || values.mobile, "");
+      record.area = clean(values.area || values.region, "");
+      record.region = clean(values.region || values.area, "");
+    }
+
+    if (route === "clients") {
+      record.email = clean(values.email, "");
+      record.phone = clean(values.phone || values.mobile, "");
+      record.address = clean(values.address, "");
+      record.area = clean(values.area || values.region, "");
+    }
+
+    return record;
+  }
+
+  function addLocalQuickRecord(record) {
+    setLocalQuickRecords((current) => [record, ...current].slice(0, 80));
+
+    try {
+      const key = "churvox_local_quick_records";
+      const existing = JSON.parse(localStorage.getItem(key) || "[]");
+      localStorage.setItem(key, JSON.stringify([record, ...existing].slice(0, 80)));
+    } catch {
+      // local storage is optional
+    }
+  }
+
+
   async function submitQuickAction(values) {
     const action = quickAction;
     if (!action) return;
@@ -2073,7 +2166,27 @@ export default function CommandSuite({
         goToPage(targetRoute);
       }
     } catch (err) {
-      setToast(err.message || "Could not save business action.");
+      const localRecord = buildFallbackQuickRecord(action, values, err);
+      addLocalQuickRecord(localRecord);
+
+      const targetRoute = localRecord.__route || normalRoute(action.route, current);
+
+      setToast("Saved on screen. Backend quick-create still needs fixing.");
+      setQuickAction(null);
+      setSelected({
+        ...localRecord,
+        __modalType: "Saved business action",
+        __modalTitle: localRecord.title,
+        __body: `${localRecord.__body} Backend said: ${localRecord.backend_error}`,
+        __actionLabel: `Open ${routeLabel(targetRoute)}`,
+        __route: targetRoute,
+      });
+
+      try {
+        window.dispatchEvent(new CustomEvent("churvox:quick-action-fallback", { detail: { record: localRecord } }));
+      } catch {
+        // ignore event issues
+      }
     } finally {
       setQuickBusy("");
       window.setTimeout(() => setToast(""), 4200);
@@ -2083,18 +2196,27 @@ export default function CommandSuite({
 
   const model = useMemo(() => {
     const raw = data?.raw || data || {}; // PHASE_219_FRONTEND_PARTIAL_DATA_SAFE
-    const jobs = rowsFrom(raw.jobs, data?.jobs, raw.work, data?.work);
-    const clients = rowsFrom(raw.clients, data?.clients, raw.customers, data?.customers);
-    const crew = rowsFrom(raw.workers, data?.workers, raw.team, data?.team, raw.crew, data?.crew);
-    const quotes = rowsFrom(raw.quotes, data?.quotes);
-    const invoices = rowsFrom(raw.invoices, data?.invoices);
-    const payments = rowsFrom(raw.payments, data?.payments, raw.transactions, data?.transactions);
+    const localRows = rowsFrom(localQuickRecords);
+
+    const localJobs = localRows.filter((item) => item.__route === "jobs");
+    const localClients = localRows.filter((item) => item.__route === "clients");
+    const localCrew = localRows.filter((item) => item.__route === "team");
+    const localQuotes = localRows.filter((item) => item.__route === "quotes");
+    const localInvoices = localRows.filter((item) => item.__route === "invoices");
+    const localPayments = localRows.filter((item) => item.__route === "proof" || item.kind?.includes?.("payment"));
+
+    const jobs = [...localJobs, ...rowsFrom(raw.jobs, data?.jobs, raw.work, data?.work)];
+    const clients = [...localClients, ...rowsFrom(raw.clients, data?.clients, raw.customers, data?.customers)];
+    const crew = [...localCrew, ...rowsFrom(raw.workers, data?.workers, raw.team, data?.team, raw.crew, data?.crew)];
+    const quotes = [...localQuotes, ...rowsFrom(raw.quotes, data?.quotes)];
+    const invoices = [...localInvoices, ...rowsFrom(raw.invoices, data?.invoices)];
+    const payments = [...localPayments, ...rowsFrom(raw.payments, data?.payments, raw.transactions, data?.transactions)];
     const approvalRows = rowsFrom(machine?.approval, visibleApprovals);
     const input = rowsFrom(machine?.input);
     const processing = rowsFrom(machine?.processing);
 
     return { raw, jobs, clients, crew, quotes, invoices, payments, approvals: approvalRows, input, processing, operatorActions };
-  }, [data, machine, visibleApprovals, operatorActions]);
+  }, [data, machine, visibleApprovals, operatorActions, localQuickRecords]);
 
   function goToPage(nextPage) {
     // PHASE_283_NORMALIZED_PAGE_ROUTING
