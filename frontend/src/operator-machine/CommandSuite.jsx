@@ -368,12 +368,24 @@ function AiCard({ title, body, tone = "normal", icon = "spark", onClick }) {
   );
 }
 
+// PHASE_287_DEEP_WIRING_ROUTE_HELPERS
+const CHURVOX_KNOWN_ROUTES = new Set([
+  "dashboard",
+  "work",
+  "jobs",
+  "clients",
+  "crew",
+  "team",
+  "quotes",
+  "invoices",
+  "proof",
+  "payments",
+  "payroll",
+  "plans",
+  "settings",
+]);
 
-
-
-
-// PHASE_282_BUTTON_WIRING_HELPERS
-const ROUTE_LABELS = {
+const CHURVOX_ROUTE_LABELS = {
   dashboard: "Command Desk",
   work: "Work",
   jobs: "Work",
@@ -383,59 +395,64 @@ const ROUTE_LABELS = {
   quotes: "Quotes",
   invoices: "Invoices",
   proof: "Proof & Pay",
+  payments: "Proof & Pay",
   payroll: "Payroll",
   plans: "Plans",
   settings: "Settings",
 };
 
 function normalRoute(route, fallback = "dashboard") {
-  const raw = clean(route, fallback).toLowerCase();
+  const raw = clean(route, fallback).toLowerCase().replace(/\s+/g, "-");
+
   if (raw === "job") return "jobs";
   if (raw === "work") return "jobs";
   if (raw === "crew") return "team";
-  if (raw === "worker") return "team";
-  if (raw === "workers") return "team";
-  if (raw === "proof-pay") return "proof";
-  if (raw === "proof_and_pay") return "proof";
-  if (raw === "payment") return "proof";
-  if (raw === "payments") return "proof";
+  if (raw === "worker" || raw === "workers") return "team";
+  if (raw === "proof-pay" || raw === "proof_and_pay" || raw === "proofpay") return "proof";
+  if (raw === "payment" || raw === "payments" || raw === "cashflow") return "proof";
   if (raw === "client") return "clients";
   if (raw === "quote") return "quotes";
   if (raw === "invoice") return "invoices";
-  if (raw === "plan") return "plans";
-  return raw || fallback;
+  if (raw === "plan" || raw === "pricing") return "plans";
+  if (raw === "setting") return "settings";
+  if (CHURVOX_KNOWN_ROUTES.has(raw)) return raw;
+
+  return fallback;
 }
 
 function routeLabel(route) {
   const normal = normalRoute(route);
-  return ROUTE_LABELS[normal] || normal.replace(/[-_]/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+  return CHURVOX_ROUTE_LABELS[normal] || normal.replace(/[-_]/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function routeForRecord(record = {}, fallback = "dashboard") {
   if (record.__route) return normalRoute(record.__route, fallback);
+
   const typeText = `${record.__modalType || ""} ${record.kind || ""} ${record.type || ""} ${record.eyebrow || ""} ${record.source_type || ""}`.toLowerCase();
 
-  if (typeText.includes("client") || record.email || record.phone || record.mobile) return "clients";
-  if (typeText.includes("crew") || typeText.includes("worker") || record.role || record.position) return "team";
+  if (typeText.includes("client") || record.client_id || record.customer_id || record.email || record.phone || record.mobile) return "clients";
+  if (typeText.includes("crew") || typeText.includes("worker") || record.worker_id || record.assigned_worker_id || record.role || record.position) return "team";
   if (typeText.includes("quote") || record.quote_number) return "quotes";
   if (typeText.includes("invoice") || record.invoice_number) return "invoices";
   if (typeText.includes("proof") || typeText.includes("payment") || typeText.includes("cashflow")) return "proof";
-  if (typeText.includes("payroll") || record.total_hours || record.approved_hours) return "payroll";
-  if (typeText.includes("plan") || record.amount || ["start", "crew", "operator", "command"].includes(clean(record.id).toLowerCase())) return "plans";
+  if (typeText.includes("payroll") || record.total_hours || record.approved_hours || record.payrollHours) return "payroll";
+  if (typeText.includes("plan") || record.plan || ["start", "crew", "operator", "command"].includes(clean(record.id).toLowerCase())) return "plans";
   if (typeText.includes("setting") || record.setting_key) return "settings";
-  if (typeText.includes("job") || typeText.includes("work") || record.job_title || record.title) return "jobs";
+  if (typeText.includes("job") || typeText.includes("work") || record.job_title || record.job_id || record.title) return "jobs";
+
   return normalRoute(fallback, "dashboard");
 }
 
 function planIdFromRecord(record = {}) {
   const raw = clean(record.id || record.plan || record.name || record.title).toLowerCase();
+
   if (raw.includes("start")) return "start";
   if (raw.includes("crew")) return "crew";
   if (raw.includes("operator")) return "operator";
   if (raw.includes("command")) return "command";
+
   return "";
 }
-
 
 // PHASE_278_QUICK_ACTIONS_AND_INSTALL_HELPERS
 const QUICK_ACTIONS_BY_PAGE = {
@@ -2716,7 +2733,7 @@ export default function CommandSuite({
             </section>
           </section>
 
-          <section className="cs-flow" data-phase="PHASE_282_FLOW_BUTTONS_WIRED">
+          <section className="cs-flow" data-phase="PHASE_287_FLOW_BUTTONS_WIRED">
             <button type="button" onClick={() => openInfo({ __modalType: "AI Watch", __modalTitle: "AI is watching", __body: "Churvox watches each step from work intake to payment follow-up.", status: "Active", __route: "dashboard" })}>
               <Icon type="eye" />
               <div><strong>AI is watching</strong><p>Every job. Every detail. Every time.</p></div>

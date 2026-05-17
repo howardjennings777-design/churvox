@@ -82,7 +82,9 @@
     "audit:live:headed": "playwright test e2e/churvox-deep-audit.spec.js --headed",
     "audit:report": "playwright show-report",
     "audit:visual-wording": "node scripts/churvox_visual_wording_audit.js",
-    "audit:business-layer": "node scripts/churvox_phase280_business_layer_audit.js"
+    "audit:business-layer": "node scripts/churvox_phase280_business_layer_audit.js",
+    "audit:deep-wiring": "node scripts/churvox_phase287_deep_wiring_audit.js",
+    "audit:runtime-buttons": "node scripts/churvox_phase287_runtime_probe.js"
   },
   "browserslist": {
     "production": [
