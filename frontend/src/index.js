@@ -1,3 +1,4 @@
+window.__CHURVOX_FINAL_DESIGN__ = "PHASE_196_FINAL_PREMIUM_APPROVAL_DESK_DESIGN_20260517011205";
 window.__CHURVOX_AI_ADMIN_RADAR__ = "PHASE_193_AI_ADMIN_RADAR_BELOW_APPROVAL_DESK_20260517004120";
 window.__CHURVOX_HERO_OWNER_PRIORITY__ = "PHASE_192_OWNER_PRIORITY_INSIDE_HEADER_20260517003652";
 window.__CHURVOX_PHASE_191__ = "PHASE_191_PRIORITY_UNDER_HEADER_WIDE_DESK_20260517003318";
@@ -374,6 +375,175 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
+
+
+// PHASE_196_FINAL_PREMIUM_APPROVAL_DESK_DESIGN
+// Final locked design: premium dark/clay hero, 3 front cards, clean Approval Desk.
+// Keeps the app simple: Header -> Hero -> Important cards -> Approval Desk.
+(function churvoxFinalPremiumApprovalDeskDesign() {
+  try {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+
+    function clean(value) {
+      return String(value || "").replace(/\s+/g, " ").trim();
+    }
+
+    function applyClass() {
+      document.documentElement.classList.add("cx-premium-approval-final");
+      if (document.body) document.body.classList.add("cx-premium-approval-final");
+    }
+
+    function countApprovalSlips() {
+      return Array.from(document.querySelectorAll("button, article, section, div"))
+        .filter((el) => clean(el.textContent).toLowerCase().includes("open approval slip")).length;
+    }
+
+    function textCountNear(labelWords) {
+      const words = labelWords.map((w) => String(w).toLowerCase());
+      const nodes = Array.from(document.querySelectorAll("article, section, div, span, strong, b"));
+      for (const el of nodes) {
+        const text = clean(el.textContent);
+        const lower = text.toLowerCase();
+        if (words.some((word) => lower.includes(word))) {
+          const match = text.match(/\b\d+\b/);
+          if (match) return Number(match[0]);
+        }
+      }
+      return 0;
+    }
+
+    function removeOldAddons() {
+      [
+        "churvox-phase-189-owner-priority",
+        "churvox-phase-192-hero-priority",
+        "churvox-phase-193-ai-admin-radar",
+        "churvox-phase-195-status-strip",
+        "churvox-phase-196-front-strip",
+        "churvox-phase-196-inline-note",
+      ].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+      });
+
+      Array.from(document.querySelectorAll("section, article, div")).forEach((el) => {
+        const text = clean(el.textContent).toLowerCase();
+        if (
+          text.includes("ai admin radar") ||
+          text.includes("what churvox is watching next") ||
+          text.includes("owner priority") ||
+          text.includes("nothing urgent right now") ||
+          text.includes("automatic admin") ||
+          text.includes("owner control")
+        ) {
+          el.style.display = "none";
+          el.setAttribute("aria-hidden", "true");
+        }
+      });
+    }
+
+    function findHero() {
+      return document.querySelector(".om-hero");
+    }
+
+    function findApprovalDesk() {
+      return Array.from(document.querySelectorAll("section, article, div")).find((el) => {
+        const text = clean(el.textContent).toLowerCase();
+        return text.includes("approval desk") && text.includes("open approval slip");
+      });
+    }
+
+    function installFrontCards() {
+      const hero = findHero();
+      if (!hero) return;
+
+      if (document.getElementById("churvox-final-front-cards")) return;
+
+      const approvals = countApprovalSlips();
+      const readyToInvoice = textCountNear(["ready to invoice", "invoice"]);
+      const crewActive = textCountNear(["crew active", "active", "worker"]);
+
+      const cards = document.createElement("section");
+      cards.id = "churvox-final-front-cards";
+      cards.innerHTML = `
+        <article>
+          <i>✓</i>
+          <div>
+            <span>Ready for approval</span>
+            <strong>${approvals}</strong>
+            <p>Owner-ready slips waiting for review.</p>
+          </div>
+        </article>
+        <article>
+          <i>▧</i>
+          <div>
+            <span>Ready to invoice</span>
+            <strong>${readyToInvoice}</strong>
+            <p>Completed work ready for draft invoice prep.</p>
+          </div>
+        </article>
+        <article>
+          <i>◌</i>
+          <div>
+            <span>Crew active today</span>
+            <strong>${crewActive}</strong>
+            <p>Worker updates, notes and proof flowing in.</p>
+          </div>
+        </article>
+      `;
+
+      hero.insertAdjacentElement("afterend", cards);
+    }
+
+    function installHeroNote() {
+      const hero = findHero();
+      if (!hero) return;
+      if (document.getElementById("churvox-final-hero-note")) return;
+
+      const note = document.createElement("section");
+      note.id = "churvox-final-hero-note";
+      note.innerHTML = `
+        <strong>Simple approval flow</strong>
+        <span>Jobs, proof, quotes, invoices, reminders and worker updates are handled in the background. You approve what matters.</span>
+      `;
+      hero.appendChild(note);
+    }
+
+    function markDesk() {
+      const desk = findApprovalDesk();
+      if (!desk) return;
+      desk.classList.add("cx-final-approval-desk");
+      if (desk.parentElement) desk.parentElement.classList.add("cx-final-desk-wrap");
+    }
+
+    let timer = null;
+    function run() {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        applyClass();
+        removeOldAddons();
+        installHeroNote();
+        installFrontCards();
+        markDesk();
+      }, 120);
+    }
+
+    window.addEventListener("load", run);
+    document.addEventListener("click", run, true);
+
+    const observer = new MutationObserver(run);
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+
+    run();
+  } catch {
+    // keep app boot safe
+  }
+})();
+
+
 
 
 // PHASE_193_AI_ADMIN_RADAR_BELOW_APPROVAL_DESK

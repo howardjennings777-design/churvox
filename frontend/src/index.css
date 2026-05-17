@@ -763,3 +763,40 @@ button:hover,
   color: var(--cx-brick) !important;
 }
 
+
+/* PHASE_196_FINAL_PREMIUM_APPROVAL_DESK_DESIGN */
+
+:root {
+  --cx-final-ink: #12110f;
+  --cx-final-ink-2: #1d1915;
+  --cx-final-copper: #b96335;
+  --cx-final-copper-2: #cc7a43;
+  --cx-final-gold: #d7a85a;
+  --cx-final-paper: #fff8ef;
+  --cx-final-bone: #f3eadc;
+  --cx-final-sand: #e5d4bb;
+  --cx-final-muted: #6d6255;
+  --cx-final-moss: #6f8156;
+  --cx-final-line: rgba(18, 17, 15, 0.12);
+  --cx-final-shadow: 0 20px 62px rgba(18, 17, 15, 0.12);
+  --cx-final-shadow-strong: 0 32px 98px rgba(18, 17, 15, 0.22);
+}
+
+html.cx-premium-approval-final,
+html.cx-premium-approval-final body,
+html.cx-premium-approval-final #root {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(185, 99, 53, 0.12), transparent 28rem),
+    radial-gradient(circle at 90% 0%, rgba(111, 129, 86, 0.08), transparent 24rem),
+    linear-gradient(135deg, #f1e6d7 0%, #e7d7c1 50%, #dbc5aa 100%) !important;
+  color: var(--cx-final-ink) !important;
+}
+
+html.cx-premium-approval-final input,
+html.cx-premium-approval-final textarea,
+html.cx-premium-approval-final select {
+  background: var(--cx-final-paper) !important;
+  color: var(--cx-final-ink) !important;
+  border: 1px solid rgba(18, 17, 15, 0.14) !important;
+}
+
