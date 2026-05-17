@@ -21788,4 +21788,412 @@ async def post_money_radar_reviews(payload: dict, current_user: dict = Depends(g
     await db.money_radar_reviews.insert_one(row)
     return row
 
+# PHASE_289_SAFE_OPERATOR_QUICK_ACTIONS
+# Fix /api/operator/quick-create 500s by intercepting quick actions with a safe,
+# self-contained handler. This avoids older helper failures and always returns JSON.
+def _phase289_now():
+    return datetime.now(timezone.utc)
 
+
+def _phase289_clean(value, fallback=""):
+    value = str(value or "").replace("\n", " ").strip()
+    return re.sub(r"\s+", " ", value) if value else fallback
+
+
+def _phase289_money(value):
+    try:
+        if value is None or str(value).strip() == "":
+            return 0.0
+        return round(float(str(value).replace("$", "").replace(",", "").strip()), 2)
+    except Exception:
+        return 0.0
+
+
+def _phase289_id(prefix):
+    return f"{prefix}-{int(_phase289_now().timestamp() * 1000)}"
+
+
+def _phase289_json(request: Request, body: dict, status_code: int = 200):
+    response = JSONResponse(status_code=status_code, content=make_json_safe(body))
+    try:
+        return _churvox_apply_cors_headers(request, response)
+    except Exception:
+        return response
+
+
+async def _phase289_current_user_and_business(request: Request):
+    # First try the existing Churvox helper if it exists and works.
+    try:
+        helper = globals().get("_ai_queue_current_user")
+        business_helper = globals().get("_ai_action_business_id")
+        if helper and business_helper:
+            user = await helper(request)
+            business_id = business_helper(user)
+            if user and business_id:
+                return user, str(business_id)
+    except Exception:
+        pass
+
+    token = ""
+
+    auth = request.headers.get("authorization") or request.headers.get("Authorization") or ""
+    if auth.lower().startswith("bearer "):
+        token = auth.split(" ", 1)[1].strip()
+
+    if not token:
+        for cookie_name in [
+            "access_token",
+            "token",
+            "auth_token",
+            "churvox_token",
+            "session",
+        ]:
+            token = request.cookies.get(cookie_name) or ""
+            if token:
+                break
+
+    if not token:
+        raise HTTPException(status_code=401, detail="Login required")
+
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except Exception:
+        raise HTTPException(status_code=401, detail="Login expired. Please log in again.")
+
+    user_id = (
+        payload.get("id")
+        or payload.get("user_id")
+        or payload.get("sub")
+        or payload.get("_id")
+    )
+    email = _phase289_clean(payload.get("email")).lower()
+
+    user = None
+
+    if user_id:
+        for query in [
+            {"id": str(user_id)},
+            {"user_id": str(user_id)},
+        ]:
+            try:
+                user = await db.users.find_one(query)
+                if user:
+                    break
+            except Exception:
+                pass
+
+        if not user:
+            try:
+                user = await db.users.find_one({"_id": ObjectId(str(user_id))})
+            except Exception:
+                pass
+
+    if not user and email:
+        try:
+            user = await db.users.find_one({"email": {"$regex": f"^{re.escape(email)}$", "$options": "i"}})
+        except Exception:
+            pass
+
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found. Please log in again.")
+
+    business_id = (
+        user.get("business_id")
+        or user.get("owner_business_id")
+        or user.get("id")
+        or user.get("_id")
+    )
+
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    return user, str(business_id)
+
+
+async def _phase289_insert(collection_name: str, record: dict):
+    result = await db[collection_name].insert_one(record)
+    record["_id"] = result.inserted_id
+    return make_json_safe(record)
+
+
+async def _phase289_quick_create(request: Request):
+    user, business_id = await _phase289_current_user_and_business(request)
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    if not isinstance(payload, dict):
+        payload = {}
+
+    now = _phase289_now()
+    user_id = str(user.get("id") or user.get("_id") or "")
+    kind = _phase289_clean(payload.get("kind") or payload.get("type"), "work").lower().replace(" ", "_")
+    title = _phase289_clean(payload.get("title") or payload.get("name") or payload.get("job_title"))
+    client_name = _phase289_clean(payload.get("client_name") or payload.get("client") or payload.get("customer_name"))
+    notes = _phase289_clean(payload.get("notes") or payload.get("description") or payload.get("details"))
+    amount = _phase289_money(payload.get("amount") or payload.get("price") or payload.get("total"))
+
+    common = {
+        "business_id": business_id,
+        "source": "operator_quick_action",
+        "created_by": user_id,
+        "created_at": now,
+        "updated_at": now,
+        "ai_prepared": True,
+        "owner_approval_required": True,
+    }
+
+    if kind in {"work", "job", "add_work"}:
+        record = {
+            **common,
+            "id": _phase289_id("job"),
+            "title": title or "New work",
+            "job_title": title or "New work",
+            "client_name": client_name or "Client",
+            "address": _phase289_clean(payload.get("address") or payload.get("site")),
+            "area": _phase289_clean(payload.get("area") or payload.get("region") or payload.get("suburb")),
+            "description": notes,
+            "notes": notes,
+            "status": "new",
+            "job_status": "new",
+            "workflow_status": "new",
+            "amount": amount,
+            "job_price": amount,
+            "invoice_status": "not_ready",
+            "ai_operator_note": "Work captured. Churvox will check crew, proof and invoice readiness.",
+        }
+        created = await _phase289_insert("jobs", record)
+        return {"success": True, "kind": kind, "record": created, "message": "Work added. Churvox will prepare the admin path."}
+
+    if kind in {"client", "add_client"}:
+        record = {
+            **common,
+            "id": _phase289_id("client"),
+            "name": title or client_name or "New client",
+            "client_name": title or client_name or "New client",
+            "email": _phase289_clean(payload.get("email")).lower(),
+            "phone": _phase289_clean(payload.get("phone") or payload.get("mobile")),
+            "address": _phase289_clean(payload.get("address")),
+            "area": _phase289_clean(payload.get("area") or payload.get("region")),
+            "notes": notes,
+            "status": "active",
+        }
+        created = await _phase289_insert("clients", record)
+        return {"success": True, "kind": kind, "record": created, "message": "Client added."}
+
+    if kind in {"crew", "worker", "add_crew"}:
+        email = _phase289_clean(payload.get("email")).lower()
+        record = {
+            **common,
+            "id": _phase289_id("worker"),
+            "name": title or _phase289_clean(payload.get("worker_name"), "New crew member"),
+            "full_name": title or _phase289_clean(payload.get("worker_name"), "New crew member"),
+            "email": email,
+            "phone": _phase289_clean(payload.get("phone") or payload.get("mobile")),
+            "role": _phase289_clean(payload.get("role"), "worker").lower(),
+            "user_type": "worker",
+            "area": _phase289_clean(payload.get("area") or payload.get("region")),
+            "region": _phase289_clean(payload.get("region") or payload.get("area")),
+            "status": "invited" if email else "needs_details",
+            "ai_operator_note": "Crew profile created. Complete role and area for stronger AI matching.",
+        }
+        created = await _phase289_insert("users", record)
+        return {"success": True, "kind": kind, "record": created, "message": "Crew member added."}
+
+    if kind in {"quote", "add_quote"}:
+        number = f"Q-{now.strftime('%Y%m%d')}-{int(now.timestamp()) % 10000}"
+        record = {
+            **common,
+            "id": _phase289_id("quote"),
+            "quote_number": number,
+            "number": number,
+            "title": title or "New quote",
+            "client_name": client_name or "Client",
+            "description": notes or title or "Quote prepared by Churvox.",
+            "amount": amount,
+            "total": amount,
+            "status": "draft",
+            "quote_status": "draft",
+        }
+        created = await _phase289_insert("quotes", record)
+        return {"success": True, "kind": kind, "record": created, "message": "Draft quote prepared."}
+
+    if kind in {"invoice", "add_invoice"}:
+        number = f"INV-{now.strftime('%Y%m%d')}-{int(now.timestamp()) % 10000}"
+        record = {
+            **common,
+            "id": _phase289_id("invoice"),
+            "invoice_number": number,
+            "number": number,
+            "title": title or "New invoice",
+            "client_name": client_name or "Client",
+            "description": notes or title or "Invoice prepared by Churvox.",
+            "amount": amount,
+            "subtotal": amount,
+            "total": amount,
+            "status": "draft",
+            "payment_status": "draft",
+        }
+        created = await _phase289_insert("invoices", record)
+        return {"success": True, "kind": kind, "record": created, "message": "Draft invoice prepared."}
+
+    if kind in {"proof", "proof_note", "upload_proof"}:
+        record = {
+            **common,
+            "id": _phase289_id("proof"),
+            "title": title or "Proof note",
+            "client_name": client_name or "Client",
+            "job_id": _phase289_clean(payload.get("job_id")),
+            "notes": notes or "Proof needs review.",
+            "status": "proof_ready",
+        }
+        created = await _phase289_insert("proof_items", record)
+        return {"success": True, "kind": kind, "record": created, "message": "Proof note added."}
+
+    if kind in {"payment", "payment_note", "add_payment_note"}:
+        record = {
+            **common,
+            "id": _phase289_id("payment"),
+            "title": title or "Payment note",
+            "client_name": client_name or "Client",
+            "invoice_number": _phase289_clean(payload.get("invoice_number") or payload.get("number")),
+            "amount": amount,
+            "notes": notes,
+            "status": "review",
+        }
+        created = await _phase289_insert("payments", record)
+        return {"success": True, "kind": kind, "record": created, "message": "Payment note added for owner review."}
+
+    return {"success": False, "detail": f"Unknown quick action kind: {kind}"}
+
+
+async def _phase289_save_settings(request: Request):
+    user, business_id = await _phase289_current_user_and_business(request)
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    if not isinstance(payload, dict):
+        payload = {}
+
+    now = _phase289_now()
+    setting_key = _phase289_clean(payload.get("setting_key") or payload.get("key"), "ai_approval_mode")
+    setting_value = _phase289_clean(payload.get("setting_value") or payload.get("value"), "approval_first")
+    note = _phase289_clean(payload.get("notes") or payload.get("note"))
+
+    record = {
+        "business_id": business_id,
+        "setting_key": setting_key,
+        "setting_value": setting_value,
+        "notes": note,
+        "updated_by": str(user.get("id") or user.get("_id") or ""),
+        "updated_at": now,
+    }
+
+    await db.business_settings.update_one(
+        {"business_id": business_id, "setting_key": setting_key},
+        {"$set": record, "$setOnInsert": {"created_at": now}},
+        upsert=True,
+    )
+
+    return {"success": True, "setting": make_json_safe(record), "message": "Setting saved."}
+
+
+async def _phase289_payroll_export(request: Request):
+    user, business_id = await _phase289_current_user_and_business(request)
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    now = _phase289_now()
+    period = _phase289_clean(payload.get("period") or payload.get("title"), now.strftime("%Y-%m"))
+
+    jobs = await db.jobs.find({"business_id": business_id}).sort("updated_at", -1).limit(500).to_list(length=500)
+    rows = []
+
+    for job in jobs:
+        hours = _phase289_money(job.get("hours") or job.get("total_hours") or job.get("approved_hours"))
+        if hours <= 0:
+            continue
+
+        rows.append({
+            "worker": _phase289_clean(job.get("worker_name") or job.get("assigned_worker_name"), "Unassigned"),
+            "job": _phase289_clean(job.get("title") or job.get("job_title"), "Work"),
+            "client": _phase289_clean(job.get("client_name") or job.get("customer_name"), "Client"),
+            "hours": hours,
+            "status": _phase289_clean(job.get("status") or job.get("job_status"), "review"),
+        })
+
+    export_record = {
+        "business_id": business_id,
+        "id": _phase289_id("payroll-export"),
+        "period": period,
+        "status": "prepared",
+        "rows": rows,
+        "row_count": len(rows),
+        "created_by": str(user.get("id") or user.get("_id") or ""),
+        "created_at": now,
+        "updated_at": now,
+        "ai_operator_note": "Payroll export prepared for review. No payout was made.",
+    }
+
+    created = await _phase289_insert("payroll_exports", export_record)
+    return {"success": True, "export": created, "message": f"Payroll export prepared with {len(rows)} row(s)."}
+
+
+@app.middleware("http")
+async def churvox_phase289_safe_operator_actions(request: Request, call_next):
+    path = request.url.path.rstrip("/")
+    method = request.method.upper()
+
+    if method == "OPTIONS":
+        return await call_next(request)
+
+    if method != "POST" or path not in {
+        "/api/operator/quick-create",
+        "/api/operator/settings",
+        "/api/operator/payroll/export",
+    }:
+        return await call_next(request)
+
+    try:
+        if path == "/api/operator/quick-create":
+            body = await _phase289_quick_create(request)
+            return _phase289_json(request, body, 200 if body.get("success") else 400)
+
+        if path == "/api/operator/settings":
+            body = await _phase289_save_settings(request)
+            return _phase289_json(request, body, 200)
+
+        if path == "/api/operator/payroll/export":
+            body = await _phase289_payroll_export(request)
+            return _phase289_json(request, body, 200)
+
+    except HTTPException as exc:
+        return _phase289_json(request, {"success": False, "detail": exc.detail}, int(exc.status_code or 400))
+    except Exception as exc:
+        try:
+            logger.exception("PHASE_289 safe operator action failed on %s", path)
+        except Exception:
+            pass
+
+        return _phase289_json(
+            request,
+            {
+                "success": False,
+                "detail": "Operator action failed",
+                "path": path,
+                "error": str(exc)[:400],
+            },
+            500,
+        )
+
+    return await call_next(request)
+
+# END_PHASE_289_SAFE_OPERATOR_QUICK_ACTIONS
