@@ -992,3 +992,94 @@ html body .cs-filters,
 html body .cs-tabs {
 }
 
+
+/* PHASE_250_FIX_PLAN_ADDON_AND_SMS_CARDS
+   Plans page add-ons/SMS packs are cards, not giant black pill buttons.
+*/
+html body .cs-plan-addons button,
+html body .cs-sms-packs button {
+  width: 100% !important;
+  min-height: 150px !important;
+  height: auto !important;
+  display: grid !important;
+  align-content: start !important;
+  justify-items: start !important;
+  gap: 10px !important;
+  padding: 24px !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  border-radius: 24px !important;
+  background:
+    radial-gradient(circle at 94% 8%, rgba(228, 134, 67, 0.14), transparent 18rem),
+    rgba(255, 248, 239, 0.94) !important;
+  color: var(--tw-black) !important;
+  box-shadow: 0 16px 42px rgba(13, 11, 10, 0.10) !important;
+  text-align: left !important;
+  white-space: normal !important;
+}
+
+html body .cs-plan-addons button *,
+html body .cs-sms-packs button * {
+  color: var(--tw-black) !important;
+  text-align: left !important;
+  white-space: normal !important;
+}
+
+html body .cs-plan-addons button strong,
+html body .cs-sms-packs button strong {
+  color: var(--tw-black) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: clamp(24px, 2.4vw, 36px) !important;
+  line-height: 0.95 !important;
+  letter-spacing: -0.055em !important;
+}
+
+html body .cs-plan-addons button small,
+html body .cs-sms-packs button small,
+html body .cs-plan-addons button p,
+html body .cs-sms-packs button p {
+  color: var(--tw-muted) !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+}
+
+html body .cs-plan-addons button::after,
+html body .cs-sms-packs button::after {
+  content: "Buy now";
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  margin-top: 6px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: var(--tw-black);
+  color: var(--tw-cream);
+  font-size: 13px;
+  font-weight: 950;
+  box-shadow: 0 14px 30px rgba(13, 11, 10, 0.16);
+}
+
+/* Keep the surrounding Plans sections clean and wide */
+html body .cs-plan-addons,
+html body .cs-sms-packs,
+html body .cs-plan-compare {
+  background:
+    radial-gradient(circle at 94% 8%, rgba(228, 134, 67, 0.10), transparent 22rem),
+    rgba(255, 248, 239, 0.92) !important;
+  color: var(--tw-black) !important;
+}
+
+html body .cs-plan-addons *,
+html body .cs-sms-packs *,
+html body .cs-plan-compare * {
+  color: var(--tw-black) !important;
+}
+
+html body .cs-plan-addons p,
+html body .cs-sms-packs p,
+html body .cs-plan-compare p,
+html body .cs-plan-addons small,
+html body .cs-sms-packs small,
+html body .cs-plan-compare small {
+  color: var(--tw-muted) !important;
+}
+
