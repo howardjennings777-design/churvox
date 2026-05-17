@@ -800,3 +800,31 @@ html.cx-premium-approval-final select {
   border: 1px solid rgba(18, 17, 15, 0.14) !important;
 }
 
+
+/* PHASE_197_FORCE_MOCKUP_STYLE_FINAL_DESIGN */
+
+:root {
+  --mk-ink: #11100e;
+  --mk-ink-2: #1b1713;
+  --mk-copper: #b76536;
+  --mk-copper-2: #cf7a43;
+  --mk-gold: #d5a45a;
+  --mk-paper: #fff8ef;
+  --mk-bone: #f3eadc;
+  --mk-sand: #e3d1b8;
+  --mk-muted: #6b6054;
+  --mk-moss: #66794f;
+  --mk-line: rgba(17, 16, 14, 0.12);
+  --mk-shadow: 0 20px 64px rgba(17, 16, 14, 0.13);
+  --mk-shadow-strong: 0 34px 100px rgba(17, 16, 14, 0.22);
+}
+
+html.cx-mockup-final,
+html.cx-mockup-final body,
+html.cx-mockup-final #root {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(183, 101, 54, 0.12), transparent 28rem),
+    linear-gradient(135deg, #f1e6d7 0%, #e6d4bd 52%, #d8c1a4 100%) !important;
+  color: var(--mk-ink) !important;
+}
+

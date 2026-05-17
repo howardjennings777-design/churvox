@@ -1,3 +1,4 @@
+window.__CHURVOX_MOCKUP_FINAL__ = "PHASE_197_FORCE_MOCKUP_STYLE_FINAL_DESIGN_20260517011740";
 window.__CHURVOX_FINAL_DESIGN__ = "PHASE_196_FINAL_PREMIUM_APPROVAL_DESK_DESIGN_20260517011205";
 window.__CHURVOX_AI_ADMIN_RADAR__ = "PHASE_193_AI_ADMIN_RADAR_BELOW_APPROVAL_DESK_20260517004120";
 window.__CHURVOX_HERO_OWNER_PRIORITY__ = "PHASE_192_OWNER_PRIORITY_INSIDE_HEADER_20260517003652";
@@ -375,6 +376,220 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
+
+
+// PHASE_197_FORCE_MOCKUP_STYLE_FINAL_DESIGN
+// Force the generated mockup direction over older dashboard experiments.
+(function churvoxForceMockupStyleFinalDesign() {
+  try {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+
+    function clean(value) {
+      return String(value || "").replace(/\s+/g, " ").trim();
+    }
+
+    function toNumber(value) {
+      const match = clean(value).match(/\b\d+\b/);
+      return match ? Number(match[0]) : 0;
+    }
+
+    function applyClass() {
+      document.documentElement.classList.add("cx-mockup-final");
+      if (document.body) document.body.classList.add("cx-mockup-final");
+    }
+
+    function removeOldExtras() {
+      [
+        "churvox-phase-189-owner-priority",
+        "churvox-phase-192-hero-priority",
+        "churvox-phase-193-ai-admin-radar",
+        "churvox-phase-195-status-strip",
+        "churvox-phase-196-front-strip",
+        "churvox-phase-196-inline-note",
+        "churvox-final-front-cards",
+        "churvox-final-hero-note"
+      ].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+      });
+    }
+
+    function approvalCount() {
+      const headerCount = document.querySelector(".om-approval-desk-main > header b, .cx-final-approval-desk > header b");
+      const fromHeader = toNumber(headerCount && headerCount.textContent);
+      if (fromHeader > 0) return fromHeader;
+
+      const gaugeApproval = Array.from(document.querySelectorAll(".om-gauges article")).find((el) =>
+        clean(el.textContent).toLowerCase().includes("approval")
+      );
+      const fromGauge = toNumber(gaugeApproval && gaugeApproval.textContent);
+      if (fromGauge > 0) return fromGauge;
+
+      return Array.from(document.querySelectorAll("button, article, section, div"))
+        .filter((el) => clean(el.textContent).toLowerCase().includes("open approval slip")).length;
+    }
+
+    function invoiceCount() {
+      const tickets = Array.from(document.querySelectorAll(".om-approval-ticket, button, article"))
+        .filter((el) => {
+          const text = clean(el.textContent).toLowerCase();
+          return text.includes("invoice") && text.includes("open approval slip");
+        }).length;
+
+      if (tickets > 0) return tickets;
+
+      const text = clean(document.body ? document.body.textContent : "").toLowerCase();
+      const match = text.match(/ready to invoice\s+(\d+)/);
+      return match ? Number(match[1]) : 0;
+    }
+
+    function crewCount() {
+      try {
+        const ctx = window.__CHURVOX_LIVE_AI_CONTEXT__ || {};
+        const jobs = Array.isArray(ctx.jobs) ? ctx.jobs : [];
+        const activeJobs = jobs.filter((job) => {
+          const status = clean(job.status || job.job_status || job.workflow_status).toLowerCase();
+          return status.includes("progress") || status.includes("started") || status.includes("assigned");
+        }).length;
+        if (activeJobs > 0) return activeJobs;
+      } catch {
+        // safe fallback
+      }
+
+      const tickets = Array.from(document.querySelectorAll(".om-approval-ticket, button, article"))
+        .filter((el) => {
+          const text = clean(el.textContent).toLowerCase();
+          return (text.includes("worker") || text.includes("crew")) && text.includes("open approval slip");
+        }).length;
+
+      return tickets;
+    }
+
+    function planName() {
+      const gaugePlan = Array.from(document.querySelectorAll(".om-gauges article")).find((el) =>
+        clean(el.textContent).toLowerCase().includes("plan")
+      );
+      const text = clean(gaugePlan && gaugePlan.textContent).replace(/^plan/i, "").trim();
+      return text || "Command";
+    }
+
+    function installHeroMetrics() {
+      const hero = document.querySelector(".om-hero");
+      if (!hero) return;
+
+      let metrics = document.getElementById("churvox-phase-197-hero-metrics");
+      if (!metrics) {
+        metrics = document.createElement("section");
+        metrics.id = "churvox-phase-197-hero-metrics";
+        hero.appendChild(metrics);
+      }
+
+      metrics.innerHTML = `
+        <article>
+          <i>✓</i>
+          <span>Plan</span>
+          <strong>${planName()}</strong>
+        </article>
+        <article>
+          <i>▤</i>
+          <span>Input</span>
+          <strong>0</strong>
+        </article>
+        <article>
+          <i>⚙</i>
+          <span>Processing</span>
+          <strong>0</strong>
+        </article>
+        <article>
+          <i>◇</i>
+          <span>Approval</span>
+          <strong>${approvalCount()}</strong>
+        </article>
+      `;
+    }
+
+    function installFrontCards() {
+      const hero = document.querySelector(".om-hero");
+      if (!hero) return;
+
+      let cards = document.getElementById("churvox-phase-197-front-cards");
+      if (!cards) {
+        cards = document.createElement("section");
+        cards.id = "churvox-phase-197-front-cards";
+        hero.insertAdjacentElement("afterend", cards);
+      }
+
+      cards.innerHTML = `
+        <article>
+          <i>✓</i>
+          <div>
+            <span>Ready for approval</span>
+            <strong>${approvalCount()}</strong>
+            <p>Owner-ready slips waiting for review.</p>
+          </div>
+        </article>
+        <article>
+          <i>▧</i>
+          <div>
+            <span>Ready to invoice</span>
+            <strong>${invoiceCount()}</strong>
+            <p>Completed work ready for draft invoice prep.</p>
+          </div>
+        </article>
+        <article>
+          <i>◌</i>
+          <div>
+            <span>Crew active today</span>
+            <strong>${crewCount()}</strong>
+            <p>Worker updates, notes and proof flowing in.</p>
+          </div>
+        </article>
+      `;
+    }
+
+    function markDesk() {
+      const desk = Array.from(document.querySelectorAll("section, article, div")).find((el) => {
+        const text = clean(el.textContent).toLowerCase();
+        return text.includes("approval desk") && text.includes("open approval slip");
+      });
+
+      if (desk) {
+        desk.classList.add("cx-phase-197-approval-desk");
+        if (desk.parentElement) desk.parentElement.classList.add("cx-phase-197-desk-wrap");
+      }
+    }
+
+    function runNow() {
+      applyClass();
+      removeOldExtras();
+      installHeroMetrics();
+      installFrontCards();
+      markDesk();
+    }
+
+    let timer = null;
+    function schedule() {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(runNow, 160);
+    }
+
+    window.addEventListener("load", schedule);
+    document.addEventListener("click", schedule, true);
+
+    const observer = new MutationObserver(schedule);
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+
+    schedule();
+  } catch {
+    // keep app boot safe
+  }
+})();
+
+
 
 
 // PHASE_196_FINAL_PREMIUM_APPROVAL_DESK_DESIGN
