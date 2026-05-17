@@ -622,3 +622,27 @@
     padding: 20px;
   }
 }
+
+/* PHASE_205_HIDE_OLD_DASHBOARD_LEAK
+   Safety guard: if any old dashboard section still renders after the new isolated Command Deck,
+   hide it so the page cannot show duplicate old Approval Desk cards underneath.
+*/
+
+.cdx-shot ~ .om-dashboard-focus,
+.cdx-shot ~ .om-dashboard-focus-card,
+.cdx-shot ~ .om-dashboard-quiet-tools,
+.cdx-shot ~ .om-dashboard-tools-single,
+.cdx-shot ~ .om-approval-desk,
+.cdx-shot ~ .om-approval-desk-main,
+.cdx-shot ~ .om-approval-live-feed,
+.cdx-shot ~ .om-warning {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
