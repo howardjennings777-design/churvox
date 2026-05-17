@@ -602,6 +602,130 @@ async def churvox_hard_cors_error_safe(request: Request, call_next):
 
 # END_PHASE_218_HARD_CORS_ERROR_SAFE
 
+# PHASE_272_OWNER_UNLIMITED_ACCESS
+# Keep the real owner/dev account unlocked regardless of trial expiry.
+UNLIMITED_ACCESS_EMAILS = sorted({
+    "howardjennings77@gmail.com",
+    *[
+        e.strip().lower()
+        for e in os.environ.get("CHURVOX_UNLIMITED_ACCESS_EMAILS", "").split(",")
+        if e.strip()
+    ],
+})
+
+def is_unlimited_access_email(email: str) -> bool:
+    return str(email or "").strip().lower() in UNLIMITED_ACCESS_EMAILS
+
+async def ensure_unlimited_access_accounts():
+    now = datetime.now(timezone.utc)
+    far_future = now + timedelta(days=3650)
+
+    unlimited_fields = {
+        "role": "owner",
+        "user_type": "owner",
+        "account_type": "owner",
+        "is_owner": True,
+        "is_platform_owner": True,
+        "is_unlimited_access": True,
+        "unlimited_access": True,
+        "access_status": "unlimited",
+
+        "plan": "command",
+        "plan_name": "Command",
+        "selected_plan": "command",
+        "current_plan": "command",
+        "tier": "command",
+
+        "plan_status": "active",
+        "subscription_status": "active",
+        "billing_status": "active",
+        "account_status": "active",
+
+        "has_paid_subscription": True,
+        "requires_payment": False,
+        "trial_expired": False,
+        "trial_active": False,
+        "trial_ends_at": far_future,
+        "subscription_current_period_end": far_future,
+        "subscription_ends_at": far_future,
+        "paid_until": far_future,
+
+        "client_limit": 999999,
+        "team_limit": 999999,
+        "job_limit": 999999,
+        "ai_operator_actions_limit": 999999,
+        "automation_runs_limit": 999999,
+
+        "unlimited_access_granted_at": now,
+        "unlimited_access_note": "Owner/dev account unlocked by Churvox startup bootstrap.",
+        "updated_at": now,
+    }
+
+    for email in UNLIMITED_ACCESS_EMAILS:
+        try:
+            user = await db.users.find_one({
+                "email": {"$regex": f"^{re.escape(email)}$", "$options": "i"}
+            })
+
+            if not user:
+                logger.warning("PHASE_272 unlimited access email not found yet: %s", email)
+                continue
+
+            user_id = str(user.get("_id") or user.get("id") or "")
+            business_id = str(user.get("business_id") or user_id or "")
+
+            fields = dict(unlimited_fields)
+            fields["email"] = email
+            if business_id:
+                fields["business_id"] = business_id
+
+            await db.users.update_one(
+                {"_id": user["_id"]},
+                {"$set": fields}
+            )
+
+            # If a matching business/profile record exists, unlock that too.
+            for collection_name in ["businesses", "business_profiles", "accounts"]:
+                try:
+                    collection = getattr(db, collection_name)
+                    await collection.update_many(
+                        {
+                            "$or": [
+                                {"owner_email": {"$regex": f"^{re.escape(email)}$", "$options": "i"}},
+                                {"email": {"$regex": f"^{re.escape(email)}$", "$options": "i"}},
+                                {"owner_id": user_id},
+                                {"business_id": business_id},
+                            ]
+                        },
+                        {"$set": {
+                            "plan": "command",
+                            "plan_name": "Command",
+                            "plan_status": "active",
+                            "subscription_status": "active",
+                            "billing_status": "active",
+                            "has_paid_subscription": True,
+                            "requires_payment": False,
+                            "trial_expired": False,
+                            "is_unlimited_access": True,
+                            "unlimited_access": True,
+                            "updated_at": now,
+                        }}
+                    )
+                except Exception:
+                    pass
+
+            logger.info("PHASE_272 unlimited Command access granted to %s", email)
+
+        except Exception as exc:
+            logger.exception("PHASE_272 failed to grant unlimited access to %s: %s", email, exc)
+
+
+@app.on_event("startup")
+async def churvox_phase272_unlimited_access_startup():
+    await ensure_unlimited_access_accounts()
+
+# END_PHASE_272_OWNER_UNLIMITED_ACCESS
+
 # PHASE_219_STABLE_OPERATOR_FEEDS
 # Safety net for Command Suite feeds.
 # These endpoints must never crash the frontend while billing/plans are being tested.
