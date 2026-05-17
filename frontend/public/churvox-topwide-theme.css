@@ -1677,3 +1677,322 @@ html body .cs-sms-packs button::after {
   }
 }
 
+
+/* PHASE_261_REAL_LIVE_AUDIT_CLEANUP
+   Fix actual live logged-in audit failures:
+   - stat cards too wide
+   - hero barely too tall
+   - cream cards/buttons using cream text
+   - plan/SMS/MYOB cards clipping or too tall
+*/
+
+/* Hero: wide but shorter */
+html body .cs-hero {
+  min-height: 0 !important;
+  height: auto !important;
+  gap: 8px !important;
+  padding: 14px 18px !important;
+  border-radius: 22px !important;
+}
+
+html body .cs-hero span:first-child {
+  min-height: 24px !important;
+  padding: 0 9px !important;
+  font-size: 10.5px !important;
+}
+
+html body .cs-hero h1 {
+  margin: 4px 0 5px !important;
+  font-size: clamp(30px, 4.1vw, 56px) !important;
+  line-height: 0.94 !important;
+  letter-spacing: -0.058em !important;
+}
+
+html body .cs-hero p {
+  max-width: 760px !important;
+  margin: 0 !important;
+  font-size: 12.5px !important;
+  line-height: 1.32 !important;
+}
+
+/* Stats: never become huge wide cards */
+html body .cs-stats,
+html body .cs-plan-price-stack {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 205px)) !important;
+  justify-content: end !important;
+  align-items: stretch !important;
+  gap: 8px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 2px 0 0 !important;
+}
+
+html body .cs-stat,
+html body .cs-plan-price-stack button {
+  width: 100% !important;
+  max-width: 205px !important;
+  min-width: 0 !important;
+  height: 58px !important;
+  min-height: 58px !important;
+  max-height: 58px !important;
+  padding: 6px 9px !important;
+  border-radius: 14px !important;
+  gap: 3px !important;
+}
+
+html body .cs-stat strong,
+html body .cs-plan-price-stack button strong {
+  font-size: clamp(16px, 1.65vw, 22px) !important;
+  line-height: 1 !important;
+}
+
+html body .cs-stat span,
+html body .cs-plan-price-stack button span {
+  font-size: 10.5px !important;
+  line-height: 1.05 !important;
+}
+
+/* Anything inside cream workspaces/cards must not use cream text */
+html body .cs-command-cards article button,
+html body .cs-command-cards article button *,
+html body .cs-ai-card button,
+html body .cs-ai-card button *,
+html body .cs-desk button:not(.cs-stat),
+html body .cs-desk button:not(.cs-stat) *,
+html body .cs-workspace button:not(.cs-stat),
+html body .cs-workspace button:not(.cs-stat) *,
+html body .cs-flow button:not(.cs-stat),
+html body .cs-flow button:not(.cs-stat) *,
+html body .cs-approval-row button,
+html body .cs-approval-row button *,
+html body .cs-row button,
+html body .cs-row button *,
+html body .cs-empty button,
+html body .cs-empty button *,
+html body .cs-card button,
+html body .cs-card button *,
+html body .cs-panel button,
+html body .cs-panel button *,
+html body .cs-list button,
+html body .cs-list button *,
+html body .cs-table-wrap button,
+html body .cs-table-wrap button * {
+  color: var(--tw-black) !important;
+}
+
+html body .cs-command-cards article button,
+html body .cs-ai-card button,
+html body .cs-desk button:not(.cs-stat),
+html body .cs-workspace button:not(.cs-stat),
+html body .cs-flow button:not(.cs-stat),
+html body .cs-approval-row button,
+html body .cs-row button,
+html body .cs-empty button,
+html body .cs-card button,
+html body .cs-panel button,
+html body .cs-list button,
+html body .cs-table-wrap button {
+  background: rgba(13, 11, 10, 0.075) !important;
+  background-image: none !important;
+  border: 1px solid rgba(13, 11, 10, 0.11) !important;
+  box-shadow: none !important;
+}
+
+/* Arrows/ems inside cream cards were showing cream on cream */
+html body .cs-command-cards article em,
+html body .cs-ai-card em,
+html body .cs-desk em,
+html body .cs-workspace em,
+html body .cs-flow em,
+html body .cs-approval-row em,
+html body .cs-row em,
+html body .cs-empty em,
+html body .cs-card em,
+html body .cs-panel em,
+html body .cs-list em,
+html body .cs-table-wrap em {
+  color: var(--tw-black) !important;
+  background: transparent !important;
+}
+
+/* Filter tabs inside cream boards */
+html body .cs-desk .cs-filters button,
+html body .cs-desk .cs-filter-bar button,
+html body .cs-desk .cs-tabs button,
+html body .cs-workspace .cs-filters button,
+html body .cs-workspace .cs-filter-bar button,
+html body .cs-workspace .cs-tabs button,
+html body .cs-flow .cs-filters button,
+html body .cs-flow .cs-filter-bar button,
+html body .cs-flow .cs-tabs button {
+  color: var(--tw-black) !important;
+  background: rgba(255, 248, 239, 0.78) !important;
+  border: 1px solid rgba(13, 11, 10, 0.11) !important;
+}
+
+html body .cs-desk .cs-filters button *,
+html body .cs-desk .cs-filter-bar button *,
+html body .cs-desk .cs-tabs button *,
+html body .cs-workspace .cs-filters button *,
+html body .cs-workspace .cs-filter-bar button *,
+html body .cs-workspace .cs-tabs button *,
+html body .cs-flow .cs-filters button *,
+html body .cs-flow .cs-filter-bar button *,
+html body .cs-flow .cs-tabs button * {
+  color: var(--tw-black) !important;
+}
+
+html body .cs-desk .cs-filters button.active,
+html body .cs-desk .cs-filter-bar button.active,
+html body .cs-desk .cs-tabs button.active,
+html body .cs-workspace .cs-filters button.active,
+html body .cs-workspace .cs-filter-bar button.active,
+html body .cs-workspace .cs-tabs button.active,
+html body .cs-flow .cs-filters button.active,
+html body .cs-flow .cs-filter-bar button.active,
+html body .cs-flow .cs-tabs button.active {
+  background: rgba(184, 87, 32, 0.13) !important;
+}
+
+/* Plan / SMS / MYOB cards: compact cream cards, no clipping */
+html body .cs-plan-addons button,
+html body .cs-sms-packs button,
+html body .cs-page .cs-plan-addons button,
+html body .cs-page .cs-sms-packs button,
+html body .cs-page .cs-plan-addons button:not(.ghost):not(.active),
+html body .cs-page .cs-sms-packs button:not(.ghost):not(.active),
+html body .cs-plan-addons button:not(.ghost):not(.active),
+html body .cs-sms-packs button:not(.ghost):not(.active) {
+  min-height: 0 !important;
+  max-height: none !important;
+  height: auto !important;
+  padding: 12px 14px !important;
+  gap: 4px !important;
+  overflow: visible !important;
+  background: rgba(255, 248, 239, 0.97) !important;
+  background-image: none !important;
+  color: var(--tw-black) !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 10px 24px rgba(13, 11, 10, 0.06) !important;
+}
+
+html body .cs-plan-addons button *,
+html body .cs-sms-packs button * {
+  color: var(--tw-black) !important;
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+html body .cs-plan-addons button strong,
+html body .cs-sms-packs button strong,
+html body .cs-plan-addons button h3,
+html body .cs-sms-packs button h3 {
+  font-size: clamp(18px, 1.55vw, 23px) !important;
+  line-height: 1.02 !important;
+  letter-spacing: -0.038em !important;
+}
+
+html body .cs-plan-addons button span,
+html body .cs-sms-packs button span {
+  font-size: 13px !important;
+  line-height: 1.15 !important;
+  color: var(--tw-black) !important;
+}
+
+html body .cs-plan-addons button p,
+html body .cs-sms-packs button p,
+html body .cs-plan-addons button small,
+html body .cs-sms-packs button small {
+  color: var(--tw-muted) !important;
+  font-size: 12px !important;
+  line-height: 1.22 !important;
+  margin: 0 !important;
+}
+
+html body .cs-plan-addons button em,
+html body .cs-sms-packs button em,
+html body .cs-plan-addons button b,
+html body .cs-sms-packs button b {
+  color: var(--tw-orange) !important;
+  background: transparent !important;
+  font-style: normal !important;
+  font-weight: 950 !important;
+  font-size: 12.5px !important;
+  line-height: 1.1 !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+  box-shadow: none !important;
+}
+
+html body .cs-plan-addons button::before,
+html body .cs-plan-addons button::after,
+html body .cs-sms-packs button::before,
+html body .cs-sms-packs button::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Real CTAs can remain gradient, but only where they are not inside cream cards */
+html body .cs-modal > button:not(.ghost),
+html body .cs-modal form button:not(.ghost),
+html body .cs-page > button:not(.ghost):not(.active),
+html body .cs-page a.button,
+html body .cs-page .button {
+  background:
+    radial-gradient(circle at 24% 0%, rgba(255, 248, 239, 0.18), transparent 26%),
+    linear-gradient(135deg, #0d0b0a 0%, #17120f 42%, #5d2818 72%, #b85720 100%) !important;
+  color: #fff8ef !important;
+  border: 1px solid rgba(228, 134, 67, 0.28) !important;
+}
+
+html body .cs-modal > button:not(.ghost) *,
+html body .cs-modal form button:not(.ghost) *,
+html body .cs-page > button:not(.ghost):not(.active) *,
+html body .cs-page a.button *,
+html body .cs-page .button * {
+  color: #fff8ef !important;
+}
+
+/* Desktop/small laptop stat width must stay below audit max */
+@media (min-width: 761px) {
+  html body .cs-stats,
+  html body .cs-plan-price-stack {
+    grid-template-columns: repeat(4, 205px) !important;
+  }
+}
+
+/* Mobile: two compact columns, never full-width huge cards */
+@media (max-width: 760px) {
+  html body .cs-hero {
+    padding: 14px !important;
+    gap: 8px !important;
+  }
+
+  html body .cs-hero h1 {
+    font-size: clamp(30px, 9.4vw, 44px) !important;
+  }
+
+  html body .cs-stats,
+  html body .cs-plan-price-stack {
+    grid-template-columns: repeat(2, minmax(0, 205px)) !important;
+    justify-content: center !important;
+    gap: 8px !important;
+  }
+
+  html body .cs-stat,
+  html body .cs-plan-price-stack button {
+    max-width: 205px !important;
+    height: 58px !important;
+    min-height: 58px !important;
+    max-height: 58px !important;
+  }
+
+  html body .cs-stat strong,
+  html body .cs-plan-price-stack button strong {
+    font-size: 20px !important;
+  }
+}
+
