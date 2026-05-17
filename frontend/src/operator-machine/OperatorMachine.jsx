@@ -6303,6 +6303,24 @@ function OperatorAuth({ authMode, setAuthMode, onLogin }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
+  function selectedTrialPlan() {
+    try {
+      return String(localStorage.getItem("churvox_selected_public_plan") || "operator").toLowerCase();
+    } catch {
+      return "operator";
+    }
+  }
+
+  function legacyTrialPlan(plan) {
+    const key = String(plan || "operator").toLowerCase();
+    return {
+      start: "solo",
+      crew: "team",
+      operator: "pro",
+      command: "enterprise",
+    }[key] || "pro";
+  }
+
   function update(key, value) {
     setForm((current) => ({ ...current, [key]: value }));
   }
@@ -6331,11 +6349,14 @@ function OperatorAuth({ authMode, setAuthMode, onLogin }) {
 
       if (signup) {
         try {
+          const trialPlan = selectedTrialPlan();
+          const legacyPlan = legacyTrialPlan(trialPlan);
+
           const result = await apiPost("/billing/start-trial", {
-            plan: "operator",
-            selected_plan: "operator",
-            tier: "operator",
-            legacy_plan: "pro",
+            plan: trialPlan,
+            selected_plan: trialPlan,
+            tier: trialPlan,
+            legacy_plan: legacyPlan,
             trial_days: 14,
             no_card_required: true,
           });
@@ -6347,8 +6368,8 @@ function OperatorAuth({ authMode, setAuthMode, onLogin }) {
             result?.data?.trial_end_date ||
             new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
 
-          localStorage.setItem("churvox_plan", "operator");
-          localStorage.setItem("churvox_legacy_plan", "pro");
+          localStorage.setItem("churvox_plan", trialPlan);
+          localStorage.setItem("churvox_legacy_plan", legacyPlan);
           localStorage.setItem("churvox_plan_status", "trialing");
           localStorage.setItem("churvox_subscription_status", "trialing");
           localStorage.setItem("churvox_trial_ends_at", trialEnd);
@@ -6418,6 +6439,10 @@ function OperatorAuth({ authMode, setAuthMode, onLogin }) {
 
 function OperatorPublicTour({ open, onClose, onSignup }) {
   const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    if (open) setStep(0);
+  }, [open]);
 
   const steps = [
     {
@@ -6544,14 +6569,40 @@ export function OperatorLanding({ authMode, setAuthMode, onLogin }) {
     ["Payroll review", "Surfaces hours, pauses and missing clock-off issues."],
   ];
 
-  function signup() {
+  function scrollToSection(id, block = "start") {
+    setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block });
+    }, 40);
+  }
+
+  function savePublicPlan(planName = "Operator") {
+    const plan = String(planName || "Operator").toLowerCase();
+    try {
+      localStorage.setItem("churvox_selected_public_plan", plan);
+      localStorage.setItem("churvox_plan_intent", plan);
+    } catch {
+      // Local selection is a convenience only. Signup still works.
+    }
+  }
+
+  function signup(planName = "Operator") {
+    savePublicPlan(planName);
     setAuthMode("signup");
-    setTimeout(() => document.getElementById("login")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+    scrollToSection("login", "center");
   }
 
   function login() {
     setAuthMode("login");
-    setTimeout(() => document.getElementById("login")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+    scrollToSection("login", "center");
+  }
+
+  function watchDemo() {
+    setTourOpen(true);
+  }
+
+  function jump(event, id) {
+    event.preventDefault();
+    scrollToSection(id, "start");
   }
 
   return (
@@ -6572,10 +6623,11 @@ export function OperatorLanding({ authMode, setAuthMode, onLogin }) {
         </a>
 
         <nav>
-          <a href="#how">How it works</a>
-          <a href="#prepared">What it prepares</a>
-          <a href="#pricing">Pricing</a>
-          <button type="button" onClick={() => setTourOpen(true)}>Tour</button>
+          <a href="#how" onClick={(event) => jump(event, "how")}>How it works</a>
+          <a href="#prepared" onClick={(event) => jump(event, "prepared")}>What it prepares</a>
+          <a href="#pricing" onClick={(event) => jump(event, "pricing")}>Pricing</a>
+          <button type="button" onClick={watchDemo}>Watch demo</button>
+          <button type="button" onClick={() => signup("Operator")}>Start free trial</button>
           <button type="button" onClick={login}>Login</button>
         </nav>
       </header>
@@ -6591,7 +6643,7 @@ export function OperatorLanding({ authMode, setAuthMode, onLogin }) {
 
           <div className="om-sales-actions">
             <button type="button" onClick={signup}>Start 14-day free trial</button>
-            <button type="button" className="ghost" onClick={() => setTourOpen(true)}>See how it works</button>
+            <button type="button" className="ghost" onClick={watchDemo}>Watch quick demo</button>
           </div>
 
           <section className="om-sales-trust-row">
@@ -6622,7 +6674,7 @@ export function OperatorLanding({ authMode, setAuthMode, onLogin }) {
           <section className="om-sales-flow-card">
             <small>Owner approval</small>
             <b>Assign worker + prepare job brief</b>
-            <button type="button" onClick={signup}>Approve in trial</button>
+            <button type="button" onClick={() => signup("Operator")}>Approve in trial</button>
           </section>
         </article>
       </section>
@@ -6708,7 +6760,7 @@ export function OperatorLanding({ authMode, setAuthMode, onLogin }) {
               <ul>
                 {plan.points.map((point) => <li key={point}>{point}</li>)}
               </ul>
-              <button type="button" onClick={signup}>{plan.featured ? "Start with Operator" : `Choose ${plan.name}`}</button>
+              <button type="button" onClick={() => signup(plan.name)}>{plan.featured ? "Start with Operator" : `Choose ${plan.name}`}</button>
             </article>
           ))}
         </div>
@@ -6736,7 +6788,7 @@ export function OperatorLanding({ authMode, setAuthMode, onLogin }) {
       <section className="om-sales-final">
         <span>Built for owners who are sick of admin</span>
         <h2>Let Churvox prepare the work. You approve the move.</h2>
-        <button type="button" onClick={signup}>Start 14-day trial</button>
+        <button type="button" onClick={() => signup("Operator")}>Start 14-day trial</button>
       </section>
     </main>
   );

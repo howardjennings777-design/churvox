@@ -10904,3 +10904,37 @@ html body .om-sales-access::after {
   }
 }
 
+
+/* PHASE_226_PUBLIC_BUTTONS_SHARED_WARM_BACKGROUND */
+html,
+body,
+#root {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top left, rgba(184, 227, 95, 0.16), transparent 32rem),
+    radial-gradient(circle at top right, rgba(189, 116, 65, 0.12), transparent 30rem),
+    linear-gradient(135deg, #f7f1e7 0%, #eee2d1 46%, #e4d7c6 100%) !important;
+}
+
+body {
+  margin: 0;
+  color: var(--om-ink);
+}
+
+.om-shell,
+.om-sales-page,
+.om-public {
+  background:
+    radial-gradient(circle at top left, rgba(184, 227, 95, 0.16), transparent 32rem),
+    radial-gradient(circle at top right, rgba(189, 116, 65, 0.12), transparent 30rem),
+    linear-gradient(135deg, #f7f1e7 0%, #eee2d1 46%, #e4d7c6 100%) !important;
+}
+
+.om-main {
+  background: transparent !important;
+}
+
+.om-sales-nav nav button {
+  white-space: nowrap;
+}
+
