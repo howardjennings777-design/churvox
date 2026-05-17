@@ -1,0 +1,593 @@
+/* PHASE_309_ONE_MASTER_CHURVOX_THEME
+   One theme only. Old theme stack removed.
+   Applies to login, public pages, app shell, work, clients, crew, quotes, invoices,
+   proof/pay, payroll, plans, settings, forms and modals.
+   Dashboard exact layout stays intact but inherits the same brand colours.
+*/
+
+:root {
+  --chx-bg: #050506;
+  --chx-black: #0b0b0d;
+  --chx-panel: #111114;
+  --chx-panel-2: #19191e;
+  --chx-cream: #faf7f0;
+  --chx-paper: #fffaf1;
+  --chx-sand: #ede7d9;
+  --chx-muted: #756b61;
+  --chx-copper: #f08a2a;
+  --chx-copper-2: #d65e20;
+  --chx-copper-3: #873214;
+  --chx-green: #2e7447;
+  --chx-blue: #356f85;
+  --chx-red: #9b2e1e;
+  --chx-dark-line: rgba(250, 247, 240, 0.13);
+  --chx-light-line: rgba(11, 11, 13, 0.12);
+  --chx-dark-shadow: 0 28px 90px rgba(0, 0, 0, 0.36);
+  --chx-soft-shadow: 0 18px 52px rgba(28, 14, 6, 0.14);
+  --chx-radius: clamp(14px, 1.3vw, 24px);
+  --chx-radius-lg: clamp(22px, 2vw, 36px);
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100vw;
+  min-height: 100%;
+  overflow-x: hidden !important;
+  background: var(--chx-bg) !important;
+}
+
+body {
+  margin: 0;
+  color: var(--chx-cream) !important;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(240, 138, 42, 0.22), transparent 28rem),
+    radial-gradient(circle at 96% 6%, rgba(240, 138, 42, 0.14), transparent 34rem),
+    linear-gradient(135deg, #050506 0%, #0b0b0d 56%, #160c08 100%) !important;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+button {
+  cursor: pointer;
+}
+
+::selection {
+  background: rgba(240, 138, 42, 0.32);
+}
+
+/* =======================
+   BRAND / LOGO
+======================= */
+
+.om-brand i,
+.om-public-brand i,
+.churvox-logo-mark {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 15px !important;
+  background:
+    radial-gradient(circle at 34% 34%, #ffb46a, transparent 32%),
+    linear-gradient(145deg, #f08a2a 0%, #d65e20 52%, #873214 100%) !important;
+  box-shadow: 0 0 0 1px rgba(240, 138, 42, 0.36), 0 16px 38px rgba(240, 138, 42, 0.22) !important;
+}
+
+.om-brand i::before,
+.om-brand i::after,
+.om-brand i b,
+.om-public-brand i::before,
+.om-public-brand i::after,
+.om-public-brand i b {
+  display: none !important;
+}
+
+.om-brand strong,
+.om-public-brand strong {
+  color: var(--chx-cream) !important;
+  letter-spacing: 0.32em !important;
+  font-weight: 950 !important;
+  text-transform: uppercase !important;
+}
+
+.om-brand small,
+.om-public-brand small {
+  color: var(--chx-copper) !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+}
+
+/* =======================
+   PUBLIC / LOGIN
+======================= */
+
+.om-public {
+  min-height: 100vh !important;
+  color: var(--chx-cream) !important;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(240, 138, 42, 0.26), transparent 28rem),
+    radial-gradient(circle at 88% 8%, rgba(240, 138, 42, 0.16), transparent 32rem),
+    linear-gradient(135deg, #050506 0%, #0b0b0d 56%, #180d08 100%) !important;
+  overflow-x: hidden !important;
+}
+
+.om-public-header,
+.om-public-nav,
+.om-public-top {
+  min-height: 72px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+  padding: 0 clamp(16px, 4vw, 58px) !important;
+  border-bottom: 1px solid var(--chx-dark-line) !important;
+  background: rgba(5, 5, 6, 0.78) !important;
+  backdrop-filter: blur(18px) !important;
+}
+
+.om-public-header nav,
+.om-public-nav nav,
+.om-public-top nav {
+  display: flex !important;
+  align-items: center !important;
+  gap: clamp(12px, 2vw, 30px) !important;
+}
+
+.om-public-header a,
+.om-public-nav a,
+.om-public-top a,
+.om-public-header button,
+.om-public-nav button,
+.om-public-top button {
+  color: rgba(250, 247, 240, 0.78) !important;
+  background: transparent !important;
+  border: 0 !important;
+  font-weight: 850 !important;
+  text-decoration: none !important;
+}
+
+.om-public-hero {
+  min-height: calc(100vh - 72px) !important;
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 520px) !important;
+  align-items: center !important;
+  gap: clamp(28px, 5vw, 76px) !important;
+  padding: clamp(36px, 6vw, 86px) clamp(16px, 5vw, 76px) !important;
+  overflow: hidden !important;
+}
+
+.om-public-hero::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  background:
+    radial-gradient(circle at 78% 18%, rgba(240, 138, 42, 0.24), transparent 26rem),
+    repeating-linear-gradient(120deg, transparent 0 48px, rgba(240, 138, 42, 0.045) 49px 50px) !important;
+  mask-image: linear-gradient(90deg, transparent 0%, black 24%, black 100%) !important;
+}
+
+.om-public-hero > *,
+.om-auth {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.om-public-hero span,
+.om-auth span {
+  color: var(--chx-copper) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.16em !important;
+  font-size: 0.72rem !important;
+  font-weight: 950 !important;
+}
+
+.om-public-hero h1,
+.om-auth h1,
+.om-auth h2 {
+  color: var(--chx-cream) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: clamp(3rem, 7vw, 7rem) !important;
+  line-height: 0.9 !important;
+  letter-spacing: -0.065em !important;
+  margin: 12px 0 20px !important;
+}
+
+.om-public-hero h1 mark,
+.om-auth h1 mark,
+.om-auth h2 mark {
+  color: var(--chx-copper) !important;
+  background: transparent !important;
+}
+
+.om-public-hero p,
+.om-auth p {
+  color: rgba(250, 247, 240, 0.76) !important;
+  font-size: clamp(0.96rem, 1.2vw, 1.12rem) !important;
+  line-height: 1.62 !important;
+  font-weight: 620 !important;
+}
+
+.om-auth {
+  border: 1px solid var(--chx-dark-line) !important;
+  border-radius: var(--chx-radius-lg) !important;
+  padding: clamp(22px, 3vw, 36px) !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(240, 138, 42, 0.18), transparent 17rem),
+    linear-gradient(180deg, rgba(250, 247, 240, 0.08), rgba(250, 247, 240, 0.035)),
+    rgba(8, 8, 9, 0.88) !important;
+  color: var(--chx-cream) !important;
+  box-shadow: var(--chx-dark-shadow) !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+.om-auth h1,
+.om-auth h2 {
+  font-size: clamp(2.15rem, 4vw, 3.6rem) !important;
+}
+
+.om-auth label {
+  display: grid !important;
+  gap: 7px !important;
+  margin-top: 14px !important;
+  color: rgba(250, 247, 240, 0.84) !important;
+  font-size: 0.82rem !important;
+  font-weight: 850 !important;
+}
+
+.om-auth input,
+.om-auth textarea,
+.om-auth select {
+  width: 100% !important;
+  min-height: 48px !important;
+  border: 1px solid var(--chx-dark-line) !important;
+  border-radius: 13px !important;
+  background: rgba(5, 5, 6, 0.86) !important;
+  color: var(--chx-cream) !important;
+  padding: 0 14px !important;
+  outline: 0 !important;
+}
+
+.om-auth input:focus,
+.om-auth textarea:focus {
+  border-color: rgba(240, 138, 42, 0.86) !important;
+  box-shadow: 0 0 0 4px rgba(240, 138, 42, 0.15) !important;
+}
+
+/* =======================
+   APP SHELL
+======================= */
+
+.om-shell {
+  min-height: 100vh !important;
+  color: var(--chx-cream) !important;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(240, 138, 42, 0.18), transparent 30rem),
+    linear-gradient(135deg, #050506 0%, #0b0b0d 58%, #160c08 100%) !important;
+}
+
+body:not(.cx-exact-active) .om-shell {
+  display: grid !important;
+  grid-template-columns: clamp(74px, 15vw, 248px) minmax(0, 1fr) !important;
+}
+
+.om-nav {
+  min-width: 0 !important;
+  padding: clamp(10px, 1.4vw, 22px) !important;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(240, 138, 42, 0.18), transparent 18rem),
+    linear-gradient(180deg, rgba(8, 8, 9, 0.98), rgba(5, 5, 6, 0.98)) !important;
+  border-right: 1px solid var(--chx-dark-line) !important;
+  box-shadow: 24px 0 80px rgba(0, 0, 0, 0.3) !important;
+}
+
+.om-nav nav {
+  display: grid !important;
+  gap: 6px !important;
+}
+
+.om-nav nav button,
+.om-logout {
+  min-height: 42px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  border: 1px solid transparent !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+  color: rgba(250, 247, 240, 0.76) !important;
+  padding: 0 12px !important;
+  font-weight: 850 !important;
+  text-align: left !important;
+}
+
+.om-nav nav button.active,
+.om-nav nav button:hover,
+.om-logout:hover {
+  color: var(--chx-cream) !important;
+  border-color: rgba(240, 138, 42, 0.34) !important;
+  background: linear-gradient(135deg, rgba(240, 138, 42, 0.28), rgba(240, 138, 42, 0.08)) !important;
+  box-shadow: inset 4px 0 0 rgba(240, 138, 42, 0.95) !important;
+}
+
+.om-main {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  padding: clamp(14px, 1.6vw, 28px) !important;
+  overflow-x: hidden !important;
+}
+
+/* =======================
+   NON-DASHBOARD PAGES
+======================= */
+
+body:not(.cx-exact-active) .cs-suite {
+  width: 100% !important;
+  max-width: min(1500px, 100%) !important;
+  margin: 0 auto !important;
+  color: var(--chx-cream) !important;
+  overflow-x: hidden !important;
+}
+
+body:not(.cx-exact-active) .cs-page {
+  display: grid !important;
+  gap: clamp(10px, 1.1vw, 18px) !important;
+}
+
+body:not(.cx-exact-active) .cs-hero {
+  min-height: auto !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.85fr) !important;
+  gap: clamp(10px, 1.1vw, 18px) !important;
+  border: 1px solid var(--chx-dark-line) !important;
+  border-radius: var(--chx-radius-lg) !important;
+  background:
+    radial-gradient(circle at 82% 18%, rgba(240, 138, 42, 0.3), transparent 28rem),
+    linear-gradient(118deg, #0b0b0d 0%, #111113 58%, #5e2110 100%) !important;
+  box-shadow: var(--chx-dark-shadow) !important;
+  overflow: hidden !important;
+}
+
+body:not(.cx-exact-active) .cs-hero > section:first-child {
+  padding: clamp(22px, 3vw, 46px) !important;
+}
+
+body:not(.cx-exact-active) .cs-hero h1 {
+  color: var(--chx-cream) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: clamp(2.7rem, 5.8vw, 6.1rem) !important;
+  line-height: 0.92 !important;
+  letter-spacing: -0.07em !important;
+}
+
+body:not(.cx-exact-active) .cs-hero h1 mark {
+  color: var(--chx-copper) !important;
+  background: transparent !important;
+}
+
+body:not(.cx-exact-active) .cs-hero p {
+  color: rgba(250, 247, 240, 0.78) !important;
+}
+
+body:not(.cx-exact-active) .cs-stats,
+body:not(.cx-exact-active) .cs-command-cards,
+body:not(.cx-exact-active) .cs-command-briefing > div,
+body:not(.cx-exact-active) .cs-setup-grid,
+body:not(.cx-exact-active) .cs-ai-strip,
+body:not(.cx-exact-active) .cs-plan-cards,
+body:not(.cx-exact-active) .cs-plan-addons,
+body:not(.cx-exact-active) .cs-sms-packs {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr)) !important;
+  gap: clamp(10px, 1.1vw, 18px) !important;
+}
+
+body:not(.cx-exact-active) .cs-command-briefing,
+body:not(.cx-exact-active) .cs-command-search,
+body:not(.cx-exact-active) .cs-setup-checklist,
+body:not(.cx-exact-active) .cs-workspace,
+body:not(.cx-exact-active) .cs-desk,
+body:not(.cx-exact-active) .cs-plan-cards article,
+body:not(.cx-exact-active) .cs-plan-addons article,
+body:not(.cx-exact-active) .cs-sms-packs article,
+body:not(.cx-exact-active) .cs-command-cards button {
+  min-width: 0 !important;
+  border: 1px solid var(--chx-light-line) !important;
+  border-radius: var(--chx-radius) !important;
+  background: linear-gradient(180deg, rgba(250, 247, 240, 0.98), rgba(237, 231, 217, 0.94)) !important;
+  color: #15110e !important;
+  box-shadow: var(--chx-soft-shadow) !important;
+  overflow: hidden !important;
+}
+
+body:not(.cx-exact-active) .cs-workspace h2,
+body:not(.cx-exact-active) .cs-desk h2,
+body:not(.cx-exact-active) .cs-command-briefing h2,
+body:not(.cx-exact-active) .cs-command-search h2,
+body:not(.cx-exact-active) .cs-setup-checklist h2 {
+  color: #15110e !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  letter-spacing: -0.05em !important;
+}
+
+body:not(.cx-exact-active) .cs-workspace p,
+body:not(.cx-exact-active) .cs-desk p,
+body:not(.cx-exact-active) .cs-command-briefing p,
+body:not(.cx-exact-active) .cs-command-search p,
+body:not(.cx-exact-active) .cs-setup-checklist p {
+  color: #6a6057 !important;
+}
+
+body:not(.cx-exact-active) .cs-ai-card,
+body:not(.cx-exact-active) .cs-flow {
+  min-width: 0 !important;
+  border: 1px solid var(--chx-dark-line) !important;
+  border-radius: var(--chx-radius) !important;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(240, 138, 42, 0.24), transparent 12rem),
+    linear-gradient(180deg, rgba(23, 24, 28, 0.96), rgba(11, 11, 13, 0.98)) !important;
+  color: var(--chx-cream) !important;
+  overflow: hidden !important;
+}
+
+body:not(.cx-exact-active) .cs-ai-card strong,
+body:not(.cx-exact-active) .cs-flow strong {
+  color: var(--chx-cream) !important;
+}
+
+body:not(.cx-exact-active) .cs-ai-card p,
+body:not(.cx-exact-active) .cs-flow p {
+  color: rgba(250, 247, 240, 0.74) !important;
+}
+
+body:not(.cx-exact-active) .cs-approval-row,
+body:not(.cx-exact-active) .cs-table-row {
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.15fr) minmax(0, 1.4fr) auto auto !important;
+  gap: clamp(8px, 1vw, 14px) !important;
+  border-radius: 15px !important;
+  background: rgba(255, 250, 241, 0.86) !important;
+  color: #15110e !important;
+}
+
+body:not(.cx-exact-active) .cs-approval-row strong,
+body:not(.cx-exact-active) .cs-table-row strong,
+body:not(.cx-exact-active) .cs-approval-row p,
+body:not(.cx-exact-active) .cs-table-row p {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+body:not(.cx-exact-active) .cs-approval-row button,
+body:not(.cx-exact-active) .cs-view:not(.ghost),
+body:not(.cx-exact-active) .cs-modal footer button:last-child,
+body:not(.cx-exact-active) .cs-plan-actions button:last-child,
+body:not(.cx-exact-active) .cs-quick-buttons button,
+body:not(.cx-exact-active) .cs-flow button:first-child,
+.om-public-header .primary,
+.om-public-nav .primary,
+.om-public-top .primary,
+.om-auth button[type="submit"],
+button[type="submit"] {
+  color: #fff8f0 !important;
+  border: 1px solid rgba(240, 138, 42, 0.38) !important;
+  background: linear-gradient(180deg, #f08a2a 0%, #d65e20 100%) !important;
+  box-shadow: 0 12px 30px rgba(214, 94, 32, 0.22) !important;
+}
+
+body:not(.cx-exact-active) .cs-modal,
+.cs-modal {
+  width: min(860px, calc(100vw - 24px)) !important;
+  max-height: calc(100vh - 24px) !important;
+  border-radius: var(--chx-radius-lg) !important;
+  background: linear-gradient(180deg, var(--chx-cream), var(--chx-sand)) !important;
+  color: #15110e !important;
+  box-shadow: var(--chx-dark-shadow) !important;
+  overflow: auto !important;
+}
+
+body:not(.cx-exact-active) .cs-modal h2,
+.cs-modal h2 {
+  color: #15110e !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  letter-spacing: -0.05em !important;
+}
+
+body:not(.cx-exact-active) .cs-quick-form-grid input,
+body:not(.cx-exact-active) .cs-quick-form-grid textarea,
+body:not(.cx-exact-active) .cs-modal input,
+body:not(.cx-exact-active) .cs-modal textarea,
+body:not(.cx-exact-active) .cs-modal select,
+body:not(.cx-exact-active) .cs-command-search input {
+  border: 1px solid var(--chx-light-line) !important;
+  border-radius: 12px !important;
+  background: var(--chx-paper) !important;
+  color: #15110e !important;
+}
+
+body:not(.cx-exact-active) .cs-toast,
+.cs-toast {
+  max-width: min(430px, calc(100vw - 24px)) !important;
+  border: 1px solid var(--chx-dark-line) !important;
+  border-radius: 16px !important;
+  background: var(--chx-black) !important;
+  color: var(--chx-cream) !important;
+  box-shadow: var(--chx-dark-shadow) !important;
+}
+
+/* =======================
+   RESPONSIVE
+======================= */
+
+@media (max-width: 1080px) {
+  .om-public-hero,
+  body:not(.cx-exact-active) .cs-hero {
+    grid-template-columns: 1fr !important;
+  }
+
+  body:not(.cx-exact-active) .om-shell {
+    display: block !important;
+  }
+
+  body:not(.cx-exact-active) .om-nav {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 50 !important;
+    height: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    overflow-x: auto !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid var(--chx-dark-line) !important;
+  }
+
+  body:not(.cx-exact-active) .om-nav nav {
+    display: flex !important;
+    overflow-x: auto !important;
+  }
+
+  body:not(.cx-exact-active) .om-nav nav button,
+  body:not(.cx-exact-active) .om-logout {
+    white-space: nowrap !important;
+  }
+
+  body:not(.cx-exact-active) .cs-approval-row,
+  body:not(.cx-exact-active) .cs-table-row {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 740px) {
+  .om-public-header nav,
+  .om-public-nav nav,
+  .om-public-top nav {
+    display: none !important;
+  }
+
+  .om-public-hero {
+    padding: 28px 14px !important;
+  }
+
+  .om-public-hero h1,
+  .om-auth h1,
+  .om-auth h2 {
+    font-size: clamp(2.7rem, 13vw, 4.4rem) !important;
+  }
+
+  body:not(.cx-exact-active) .cs-quick-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+}

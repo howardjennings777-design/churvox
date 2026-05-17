@@ -1,56 +1,30 @@
-
-// PHASE_308_FORCE_FINAL_THEME_PUBLIC_LOADER
-(function churvoxLoadFinalThemeEverywhere() {
-  try {
-    if (typeof document === "undefined") return;
-    const old = document.getElementById("churvox-final-theme");
-    if (old) old.remove();
-
-    const link = document.createElement("link");
-    link.id = "churvox-final-theme";
-    link.rel = "stylesheet";
-    link.href = "/churvox-final-theme.css?v=phase308-20260517225404";
-    document.head.appendChild(link);
-
-    document.documentElement.setAttribute("data-churvox-theme", "phase308");
-  } catch (err) {
-    console.warn("Churvox final theme loader skipped", err);
-  }
-})();
-
-window.__CHURVOX_FINAL_THEME_PHASE__ = "PHASE_308_FORCE_FINAL_THEME_LIVE_20260517225404";
-
-
-// PHASE_271_LOAD_PUBLIC_LOGIN_THEME_EVERYWHERE
-(function churvoxLoadPublicLoginThemeEverywhere() {
+// PHASE_309_ONE_MASTER_THEME_LOADER
+(function churvoxLoadOneMasterTheme() {
   try {
     if (typeof document === "undefined") return;
 
-    const version = "phase308-20260517225404";
-    const old = document.getElementById("churvox-topwide-theme");
-    if (old) old.remove();
+    for (const id of [
+      "churvox-topwide-theme",
+      "churvox-final-theme",
+      "churvox-master-theme"
+    ]) {
+      const old = document.getElementById(id);
+      if (old) old.remove();
+    }
 
     const link = document.createElement("link");
-    link.id = "churvox-topwide-theme";
+    link.id = "churvox-master-theme";
     link.rel = "stylesheet";
-    link.href = "/churvox-topwide-theme.css?v=" + encodeURIComponent(version);
+    link.href = "/churvox-master-theme.css?v=phase309-20260517230239";
     document.head.appendChild(link);
 
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.getRegistrations()
-        .then((registrations) => registrations.forEach((registration) => registration.unregister()))
-        .catch(() => undefined);
-    }
-
-    if (window.caches && typeof window.caches.keys === "function") {
-      window.caches.keys()
-        .then((keys) => Promise.all(keys.map((key) => window.caches.delete(key))))
-        .catch(() => undefined);
-    }
+    document.documentElement.setAttribute("data-churvox-theme", "phase309");
   } catch (err) {
-    console.warn("Churvox public/login theme loader skipped", err);
+    console.warn("Churvox master theme loader skipped", err);
   }
 })();
+
+window.__CHURVOX_MASTER_THEME_PHASE__ = "PHASE_309_ONE_MASTER_THEME_20260517230239";
 
 window.__CHURVOX_PHASE_163_DEPLOY_MARKER__ = "PHASE_163_FORCE_FRONTEND_BACKEND_RENDER_DEPLOY_20260516211617";
 window.__CHURVOX_RENDER_DEPLOY_MARKER__ = "PHASE_162_FORCE_REAL_RENDER_FRONTEND_DEPLOY_20260516211342";
