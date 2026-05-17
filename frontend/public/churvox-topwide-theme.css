@@ -1,0 +1,701 @@
+
+/* PHASE_246_CHURVOX_TOPWIDE_THEME
+   One clean new layout/theme for public, login, and app pages.
+
+   Direction:
+   - black/orange gradient outside
+   - wide top layout on every app page
+   - cream cards and panels
+   - orange/copper highlights
+   - no old dark tiny-card mess
+   - no split app hero weirdness
+*/
+
+:root {
+  --tw-black: #0d0b0a;
+  --tw-ink: #17120f;
+  --tw-dark: #241713;
+  --tw-orange: #b85720;
+  --tw-orange-2: #d56b2a;
+  --tw-orange-3: #e48643;
+  --tw-cream: #fff8ef;
+  --tw-cream-2: #fbf4ea;
+  --tw-stone: #f4ede3;
+  --tw-stone-2: #eadbc9;
+  --tw-muted: #6d6258;
+  --tw-green: #507b36;
+  --tw-red: #a8422b;
+  --tw-gold: #d39028;
+
+  --tw-page:
+    radial-gradient(circle at 80% -4%, rgba(184, 87, 32, 0.34), transparent 34rem),
+    radial-gradient(circle at 6% 18%, rgba(255, 248, 239, 0.08), transparent 30rem),
+    radial-gradient(circle at 50% 100%, rgba(184, 87, 32, 0.14), transparent 36rem),
+    linear-gradient(135deg, #0d0b0a 0%, #17120f 48%, #241713 100%);
+
+  --tw-cream-card:
+    radial-gradient(circle at 94% 8%, rgba(228, 134, 67, 0.18), transparent 22rem),
+    rgba(255, 248, 239, 0.95);
+
+  --tw-cream-soft:
+    linear-gradient(180deg, rgba(255, 248, 239, 0.96), rgba(251, 244, 234, 0.94));
+
+  --tw-dark-card:
+    radial-gradient(circle at 100% 0%, rgba(228, 134, 67, 0.24), transparent 18rem),
+    linear-gradient(180deg, #0d0b0a, #17120f);
+
+  --tw-shadow: 0 26px 84px rgba(13, 11, 10, 0.22);
+  --tw-soft-shadow: 0 16px 42px rgba(13, 11, 10, 0.12);
+}
+
+/* =====================================================
+   RESET CANVAS
+   ===================================================== */
+
+html,
+body,
+#root,
+.App,
+html body .om-sales-page,
+html body .om-shell,
+html body .om-main {
+  background: var(--tw-page) !important;
+}
+
+html,
+body,
+#root,
+.App {
+  min-height: 100% !important;
+}
+
+body {
+  margin: 0 !important;
+}
+
+html body .om-sales-page,
+html body .om-shell,
+html body .om-main {
+  color: var(--tw-cream) !important;
+}
+
+html body .om-main {
+  min-height: calc(100vh - 76px) !important;
+  padding: 26px 34px 70px !important;
+}
+
+/* Every app page stays wide */
+html body .cs-page {
+  width: min(1440px, calc(100% - 8px)) !important;
+  margin-inline: auto !important;
+  display: grid !important;
+  gap: 22px !important;
+  background: transparent !important;
+}
+
+/* Public page stays wide too */
+html body .om-sales-page {
+  min-height: 100vh !important;
+  padding-bottom: 70px !important;
+  overflow-x: hidden !important;
+}
+
+html body .om-sales-nav,
+html body .om-sales-hero,
+html body .om-sales-proof-strip,
+html body .om-sales-how,
+html body .om-sales-prepared,
+html body .om-sales-control,
+html body .om-sales-pricing,
+html body .om-sales-access,
+html body .om-sales-final {
+  width: min(1440px, calc(100% - 32px)) !important;
+  margin-inline: auto !important;
+}
+
+/* =====================================================
+   TOP BAR / NAV
+   ===================================================== */
+
+html body .om-nav {
+  height: 76px !important;
+  min-height: 76px !important;
+  background: rgba(13, 11, 10, 0.98) !important;
+  border-bottom: 1px solid rgba(213, 107, 42, 0.28) !important;
+  box-shadow: 0 18px 48px rgba(13, 11, 10, 0.32) !important;
+}
+
+html body .om-sales-nav {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 300 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+  padding: 18px 0 !important;
+  background: transparent !important;
+}
+
+html body .om-brand,
+html body .om-sales-brand {
+  color: var(--tw-cream) !important;
+}
+
+html body .om-brand strong,
+html body .om-sales-brand strong,
+html body .om-nav nav button span,
+html body .om-logout {
+  color: var(--tw-cream) !important;
+}
+
+html body .om-brand small,
+html body .om-sales-brand small {
+  color: var(--tw-orange-3) !important;
+}
+
+html body .om-brand i,
+html body .om-sales-brand i {
+  background: var(--tw-black) !important;
+  border: 1px solid rgba(228, 134, 67, 0.28) !important;
+  box-shadow: 0 16px 36px rgba(13, 11, 10, 0.30) !important;
+}
+
+html body .om-brand i b,
+html body .om-sales-brand i b {
+  border-color: var(--tw-orange-3) !important;
+  border-left-color: transparent !important;
+}
+
+html body .om-nav nav button.active {
+  border-bottom-color: var(--tw-orange-2) !important;
+}
+
+/* app tabs and public nav */
+html body .om-sales-nav nav,
+html body .om-main > nav,
+html body .cs-page > nav,
+html body .cs-mobile-nav,
+html body .cs-tabs,
+html body .cs-subnav,
+html body .cs-filter-bar,
+html body .cs-filters {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 8px !important;
+  border: 1px solid rgba(255, 248, 239, 0.14) !important;
+  border-radius: 999px !important;
+  background: rgba(255, 248, 239, 0.11) !important;
+  box-shadow: 0 16px 44px rgba(13, 11, 10, 0.18) !important;
+  backdrop-filter: blur(18px) !important;
+}
+
+html body .om-sales-nav nav a,
+html body .om-sales-nav nav button,
+html body .om-main > nav button,
+html body .cs-page > nav button,
+html body .cs-mobile-nav button,
+html body .cs-tabs button,
+html body .cs-subnav button,
+html body .cs-filter-bar button,
+html body .cs-filters button {
+  min-height: 38px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 0 14px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: rgba(255, 248, 239, 0.86) !important;
+  text-decoration: none !important;
+  font: inherit !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+}
+
+html body .om-sales-nav nav button:last-child,
+html body .om-main > nav button.active,
+html body .cs-page > nav button.active,
+html body .cs-mobile-nav button.active,
+html body .cs-tabs button.active,
+html body .cs-subnav button.active,
+html body .cs-filter-bar button.active,
+html body .cs-filters button.active {
+  background: var(--tw-cream) !important;
+  color: var(--tw-black) !important;
+}
+
+/* =====================================================
+   NEW TOP-WIDE APP LAYOUT
+   ===================================================== */
+
+/* App hero is one wide top banner again */
+html body .cs-hero {
+  width: 100% !important;
+  min-height: 330px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 24px !important;
+  align-items: center !important;
+  padding: clamp(30px, 4.5vw, 58px) !important;
+  border: 1px solid rgba(255, 248, 239, 0.14) !important;
+  border-radius: 30px !important;
+  background:
+    radial-gradient(circle at 76% 14%, rgba(228, 134, 67, 0.30), transparent 24rem),
+    linear-gradient(118deg, rgba(13, 11, 10, 0.98) 0%, rgba(23, 18, 15, 0.98) 52%, rgba(184, 87, 32, 0.95) 100%) !important;
+  color: var(--tw-cream) !important;
+  box-shadow: var(--tw-shadow) !important;
+  overflow: hidden !important;
+}
+
+html body .cs-hero > section:first-child {
+  min-height: unset !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: var(--tw-cream) !important;
+}
+
+html body .cs-hero span:first-child,
+html body .cs-desk > header span,
+html body .cs-workspace > header span,
+html body .cs-plan-addons header span,
+html body .cs-sms-packs header span,
+html body .cs-plan-compare header span,
+html body .om-sales-hero-copy > span,
+html body .om-sales-how header span,
+html body .om-sales-prepared header span,
+html body .om-sales-control span,
+html body .om-sales-pricing header span,
+html body .om-sales-access-copy > span,
+html body .om-sales-final > span,
+html body .om-sales-auth > span {
+  width: fit-content !important;
+  min-height: 34px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 0 12px !important;
+  border: 1px solid rgba(228, 134, 67, 0.30) !important;
+  border-radius: 999px !important;
+  background: rgba(184, 87, 32, 0.14) !important;
+  color: var(--tw-orange-3) !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+html body .cs-hero h1 {
+  max-width: 860px !important;
+  margin: 18px 0 18px !important;
+  color: var(--tw-cream) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: clamp(48px, 6.2vw, 92px) !important;
+  line-height: 0.9 !important;
+  letter-spacing: -0.075em !important;
+}
+
+html body .cs-hero h1 mark {
+  display: inline !important;
+  color: var(--tw-orange-3) !important;
+  background: transparent !important;
+}
+
+html body .cs-hero p {
+  max-width: 780px !important;
+  margin: 0 !important;
+  color: rgba(255, 248, 239, 0.78) !important;
+  font-size: 16px !important;
+  line-height: 1.55 !important;
+}
+
+/* Stats stay wide on the right/top, not split weird cards */
+html body .cs-stats,
+html body .cs-plan-price-stack {
+  min-width: min(520px, 44vw) !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(92px, 1fr)) !important;
+  gap: 12px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+html body .cs-stat,
+html body .cs-plan-price-stack button {
+  min-height: 126px !important;
+  display: grid !important;
+  place-items: center !important;
+  align-content: center !important;
+  gap: 8px !important;
+  padding: 18px !important;
+  border: 1px solid rgba(255, 248, 239, 0.12) !important;
+  border-radius: 22px !important;
+  background: rgba(13, 11, 10, 0.46) !important;
+  color: var(--tw-cream) !important;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.18) !important;
+}
+
+html body .cs-stat strong,
+html body .cs-stat span,
+html body .cs-plan-price-stack button strong,
+html body .cs-plan-price-stack button span {
+  color: var(--tw-cream) !important;
+}
+
+html body .cs-stat .cs-icon,
+html body .cs-plan-price-stack .cs-icon {
+  color: var(--tw-orange-3) !important;
+}
+
+/* Summary/AI cards stay wide below hero */
+html body .cs-command-cards,
+html body .cs-ai-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 18px !important;
+}
+
+html body .cs-command-cards article,
+html body .cs-ai-card {
+  min-height: 120px !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  border-radius: 24px !important;
+  background: var(--tw-cream-card) !important;
+  color: var(--tw-black) !important;
+  box-shadow: var(--tw-soft-shadow) !important;
+}
+
+html body .cs-command-cards strong,
+html body .cs-command-cards span,
+html body .cs-ai-card strong {
+  color: var(--tw-black) !important;
+}
+
+html body .cs-command-cards p,
+html body .cs-ai-card p {
+  color: var(--tw-muted) !important;
+}
+
+html body .cs-command-cards .cs-icon,
+html body .cs-ai-card .cs-icon {
+  background: rgba(184, 87, 32, 0.10) !important;
+  color: var(--tw-orange) !important;
+}
+
+/* Big wide content sections */
+html body .cs-desk,
+html body .cs-workspace,
+html body .cs-flow,
+html body .cs-plan-cards,
+html body .cs-plan-addons,
+html body .cs-sms-packs,
+html body .cs-plan-compare {
+  width: 100% !important;
+  border: 1px solid rgba(13, 11, 10, 0.12) !important;
+  border-radius: 30px !important;
+  background: rgba(255, 248, 239, 0.92) !important;
+  color: var(--tw-black) !important;
+  box-shadow: var(--tw-shadow) !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+html body .cs-desk h2,
+html body .cs-workspace h2,
+html body .cs-flow article strong,
+html body .cs-plan-addons h2,
+html body .cs-sms-packs h2,
+html body .cs-plan-compare h2 {
+  color: var(--tw-black) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  letter-spacing: -0.06em !important;
+}
+
+html body .cs-desk header p,
+html body .cs-workspace header p,
+html body .cs-flow article p,
+html body .cs-page p,
+html body .cs-page small {
+  color: var(--tw-muted) !important;
+}
+
+/* Tables/rows/empty cards */
+html body .cs-approval-list,
+html body .cs-table {
+  display: grid !important;
+  gap: 12px !important;
+  background: transparent !important;
+}
+
+html body .cs-table > header,
+html body .cs-approval-row,
+html body .cs-row,
+html body .cs-empty {
+  background: rgba(255, 248, 239, 0.96) !important;
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  border-radius: 18px !important;
+  color: var(--tw-black) !important;
+  box-shadow: 0 12px 30px rgba(13, 11, 10, 0.07) !important;
+}
+
+html body .cs-table > header,
+html body .cs-approval-row,
+html body .cs-row {
+  padding: 14px 16px !important;
+}
+
+html body .cs-empty {
+  padding: 24px !important;
+}
+
+html body .cs-table > header span,
+html body .cs-approval-row > span {
+  color: var(--tw-orange) !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+html body .cs-approval-row strong,
+html body .cs-row strong,
+html body .cs-empty strong,
+html body .cs-modal h2,
+html body .cs-page h1,
+html body .cs-page h2,
+html body .cs-page h3,
+html body .cs-page h4 {
+  color: var(--tw-black) !important;
+}
+
+html body .cs-approval-row p,
+html body .cs-row p,
+html body .cs-row div,
+html body .cs-empty,
+html body .cs-empty p,
+html body .cs-modal p {
+  color: var(--tw-muted) !important;
+}
+
+/* Other app cards */
+html body .cs-modal,
+html body .cs-card,
+html body .cs-panel,
+html body .cs-list,
+html body .cs-table-wrap,
+html body .cs-plan-cards article,
+html body .cs-plan-addons button,
+html body .cs-sms-packs button,
+html body .cs-pricing-card,
+html body .cs-billing-card,
+html body .cs-setting-card,
+html body .cs-proof-card,
+html body .cs-payroll-card,
+html body .cs-client-card,
+html body .cs-job-card,
+html body .cs-quote-card,
+html body .cs-invoice-card,
+html body .cs-crew-card,
+html body .cs-trial-box {
+  border: 1px solid rgba(13, 11, 10, 0.10) !important;
+  border-radius: 22px !important;
+  background: rgba(255, 248, 239, 0.90) !important;
+  color: var(--tw-black) !important;
+  box-shadow: var(--tw-soft-shadow) !important;
+}
+
+/* =====================================================
+   PUBLIC + LOGIN SAME THEME
+   ===================================================== */
+
+html body .om-sales-hero {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.05fr) minmax(380px, 0.72fr) !important;
+  gap: 22px !important;
+  align-items: stretch !important;
+  padding: 28px 0 20px !important;
+}
+
+html body .om-sales-hero-copy,
+html body .om-sales-how,
+html body .om-sales-prepared,
+html body .om-sales-pricing,
+html body .om-sales-final {
+  border: 1px solid rgba(13, 11, 10, 0.12) !important;
+  border-radius: 30px !important;
+  background: var(--tw-cream-card) !important;
+  color: var(--tw-black) !important;
+  box-shadow: var(--tw-shadow) !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+html body .om-sales-command-card,
+html body .om-sales-control {
+  border: 1px solid rgba(255, 248, 239, 0.12) !important;
+  border-radius: 30px !important;
+  background: var(--tw-dark-card) !important;
+  color: var(--tw-cream) !important;
+  box-shadow: var(--tw-shadow) !important;
+}
+
+html body .om-sales-access {
+  border: 1px solid rgba(255, 248, 239, 0.12) !important;
+  border-radius: 30px !important;
+  background:
+    linear-gradient(115deg, #0d0b0a 0%, #17120f 48%, rgba(255, 248, 239, 0.96) 48.2%, rgba(255, 248, 239, 0.98) 100%) !important;
+  box-shadow: var(--tw-shadow) !important;
+}
+
+html body .om-sales-auth {
+  border: 1px solid rgba(13, 11, 10, 0.12) !important;
+  border-radius: 28px !important;
+  background: rgba(255, 248, 239, 0.98) !important;
+  color: var(--tw-black) !important;
+  box-shadow: 0 24px 70px rgba(13, 11, 10, 0.16) !important;
+}
+
+html body .om-sales-hero h1,
+html body .om-sales-how h2,
+html body .om-sales-prepared h2,
+html body .om-sales-control h2,
+html body .om-sales-pricing h2,
+html body .om-sales-access h2,
+html body .om-sales-final h2,
+html body .om-sales-auth h2 {
+  font-family: Georgia, "Times New Roman", serif !important;
+  letter-spacing: -0.075em !important;
+}
+
+html body .om-sales-hero-copy h1,
+html body .om-sales-how h2,
+html body .om-sales-prepared h2,
+html body .om-sales-pricing h2,
+html body .om-sales-auth h2,
+html body .om-sales-final h2 {
+  color: var(--tw-black) !important;
+}
+
+html body .om-sales-control h2,
+html body .om-sales-control p,
+html body .om-sales-access-copy h2,
+html body .om-sales-access-copy p {
+  color: var(--tw-cream) !important;
+}
+
+/* Buttons + inputs */
+html body .om-sales-actions button,
+html body .om-sales-final button,
+html body .om-sales-pricing article button,
+html body .om-sales-auth form button,
+html body .cs-approval-row button,
+html body .cs-row button,
+html body .cs-view,
+html body .cs-modal button:not(.ghost),
+html body .cs-page button:not(.ghost):not(.active),
+html body .cs-page a.button,
+html body .cs-page .button {
+  min-height: 42px !important;
+  padding: 0 18px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: var(--tw-black) !important;
+  color: var(--tw-cream) !important;
+  font-weight: 950 !important;
+  box-shadow: 0 18px 38px rgba(13, 11, 10, 0.18) !important;
+}
+
+html body .om-sales-actions button:first-child,
+html body .om-sales-final button,
+html body .om-sales-pricing article.featured button {
+  background: var(--tw-orange) !important;
+}
+
+html body .om-sales-actions button.ghost,
+html body .cs-view.ghost,
+html body .cs-modal button.ghost,
+html body .cs-page button.ghost {
+  background: rgba(13, 11, 10, 0.08) !important;
+  color: var(--tw-black) !important;
+  border: 1px solid rgba(13, 11, 10, 0.12) !important;
+  box-shadow: none !important;
+}
+
+html body .cs-page input,
+html body .cs-page textarea,
+html body .cs-page select,
+html body .cs-modal input,
+html body .cs-modal textarea,
+html body .cs-modal select,
+html body .om-sales-auth input {
+  min-height: 46px !important;
+  border: 1px solid rgba(13, 11, 10, 0.14) !important;
+  border-radius: 14px !important;
+  background: rgba(255, 248, 239, 0.96) !important;
+  color: var(--tw-black) !important;
+}
+
+/* Mobile */
+@media (max-width: 1100px) {
+  html body .cs-hero {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body .cs-stats,
+  html body .cs-plan-price-stack {
+    min-width: 0 !important;
+    grid-template-columns: repeat(4, minmax(90px, 1fr)) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  html body .om-main {
+    padding: 18px 16px 48px !important;
+  }
+
+  html body .cs-page {
+    width: 100% !important;
+  }
+
+  html body .om-sales-hero {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body .cs-stats,
+  html body .cs-plan-price-stack,
+  html body .cs-command-cards,
+  html body .cs-ai-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body .cs-hero,
+  html body .cs-desk,
+  html body .cs-workspace,
+  html body .cs-flow,
+  html body .om-sales-hero-copy,
+  html body .om-sales-command-card,
+  html body .om-sales-how,
+  html body .om-sales-prepared,
+  html body .om-sales-control,
+  html body .om-sales-pricing,
+  html body .om-sales-access,
+  html body .om-sales-final {
+    border-radius: 24px !important;
+  }
+
+  html body .om-sales-nav nav,
+  html body .om-main > nav,
+  html body .cs-page > nav,
+  html body .cs-mobile-nav,
+  html body .cs-tabs,
+  html body .cs-subnav,
+  html body .cs-filter-bar,
+  html body .cs-filters {
+    border-radius: 20px !important;
+    overflow-x: auto !important;
+  }
+}

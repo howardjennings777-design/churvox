@@ -1,17 +1,17 @@
 
-// PHASE_245_LOAD_FINAL_GLOBAL_THEME_LAST
-(function churvoxLoadFinalGlobalThemeLast() {
+// PHASE_246_LOAD_TOPWIDE_THEME_LAST
+(function churvoxLoadTopWideThemeLast() {
   try {
     if (typeof document === "undefined") return;
 
-    const version = "phase245-20260517073508";
-    const old = document.getElementById("churvox-final-global-theme");
+    const version = "phase246-20260517074049";
+    const old = document.getElementById("churvox-topwide-theme");
     if (old) old.remove();
 
     const link = document.createElement("link");
-    link.id = "churvox-final-global-theme";
+    link.id = "churvox-topwide-theme";
     link.rel = "stylesheet";
-    link.href = "/churvox-final-theme.css?v=" + encodeURIComponent(version);
+    link.href = "/churvox-topwide-theme.css?v=" + encodeURIComponent(version);
     document.head.appendChild(link);
 
     if ("serviceWorker" in navigator) {
@@ -27,10 +27,10 @@
     }
 
     try {
-      localStorage.setItem("churvox_final_theme_version", version);
+      localStorage.setItem("churvox_topwide_theme_version", version);
     } catch {}
   } catch (err) {
-    console.warn("Churvox final theme loader skipped", err);
+    console.warn("Churvox top-wide theme loader skipped", err);
   }
 })();
 
