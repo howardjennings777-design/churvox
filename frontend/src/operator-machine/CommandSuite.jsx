@@ -187,7 +187,20 @@ function billingApiBase() {
     process.env.REACT_APP_BACKEND_URL ||
     process.env.VITE_BACKEND_URL ||
     "";
-  return String(raw || "").replace(/\/$/, "");
+
+  const configured = String(raw || "").replace(/\/$/, "");
+  if (configured) return configured;
+
+  try {
+    const host = window.location.hostname || "";
+    if (host.includes("churvox.com")) {
+      return "https://grassley-backend.onrender.com";
+    }
+  } catch {
+    // ignore browser access errors
+  }
+
+  return "";
 }
 
 function openTop() {
@@ -704,7 +717,7 @@ function PlansCommandPage({
               type="button"
               key={addon.id}
               disabled={billingBusy === addon.id}
-              onClick={() => startCheckout({ type: addon.type, addon: addon.id, key: addon.id })}
+              onClick={() => startCheckout({ type: addon.id === "command_growth_pack" ? "command_growth_pack" : addon.type, addon: addon.id, key: addon.id })}
             >
               <Icon type={addon.icon} />
               <strong>{addon.title}</strong>

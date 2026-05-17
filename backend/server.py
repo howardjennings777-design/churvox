@@ -9375,17 +9375,37 @@ def _churvox_billing_plan_key(value: str) -> str:
     return aliases.get(key, key)
 
 
+def _churvox_env_first(*names):
+    for name in names:
+        value = os.environ.get(name)
+        if value:
+            return value
+    return ""
+
+
 def _churvox_billing_price_ids():
     return {
-        "start": os.environ.get("STRIPE_PRICE_START") or os.environ.get("STRIPE_PRICE_SOLO", ""),
-        "crew": os.environ.get("STRIPE_PRICE_CREW") or os.environ.get("STRIPE_PRICE_TEAM", ""),
-        "operator": os.environ.get("STRIPE_PRICE_OPERATOR") or os.environ.get("STRIPE_PRICE_PRO", ""),
-        "command": os.environ.get("STRIPE_PRICE_COMMAND") or os.environ.get("STRIPE_PRICE_ENTERPRISE", ""),
-        "command_growth_pack": os.environ.get("STRIPE_PRICE_COMMAND_GROWTH_PACK") or os.environ.get("STRIPE_PRICE_GROWTH_PACK", ""),
-        "myob_addon": os.environ.get("STRIPE_PRICE_MYOB_ADDON") or os.environ.get("STRIPE_PRICE_MYOB_OPERATOR_ADDON", ""),
-        "sms_100": os.environ.get("STRIPE_PRICE_SMS_100", ""),
-        "sms_500": os.environ.get("STRIPE_PRICE_SMS_500", ""),
-        "sms_1000": os.environ.get("STRIPE_PRICE_SMS_1000", ""),
+        "start": _churvox_env_first("STRIPE_PRICE_START", "STRIPE_PRICE_SOLO", "STRIPE_START_PRICE_ID", "STRIPE_SOLO_PRICE_ID"),
+        "crew": _churvox_env_first("STRIPE_PRICE_CREW", "STRIPE_PRICE_TEAM", "STRIPE_CREW_PRICE_ID", "STRIPE_TEAM_PRICE_ID"),
+        "operator": _churvox_env_first("STRIPE_PRICE_OPERATOR", "STRIPE_PRICE_PRO", "STRIPE_OPERATOR_PRICE_ID", "STRIPE_PRO_PRICE_ID"),
+        "command": _churvox_env_first("STRIPE_PRICE_COMMAND", "STRIPE_PRICE_ENTERPRISE", "STRIPE_COMMAND_PRICE_ID", "STRIPE_ENTERPRISE_PRICE_ID"),
+        "command_growth_pack": _churvox_env_first(
+            "STRIPE_PRICE_COMMAND_GROWTH_PACK",
+            "STRIPE_PRICE_GROWTH_PACK",
+            "STRIPE_COMMAND_GROWTH_PACK_PRICE_ID",
+            "STRIPE_GROWTH_PACK_PRICE_ID",
+            "STRIPE_COMMAND_GROWTH_PACK_PRICE",
+            "STRIPE_GROWTH_PACK_PRICE",
+        ),
+        "myob_addon": _churvox_env_first(
+            "STRIPE_PRICE_MYOB_ADDON",
+            "STRIPE_PRICE_MYOB_OPERATOR_ADDON",
+            "STRIPE_MYOB_ADDON_PRICE_ID",
+            "STRIPE_MYOB_PRICE_ID",
+        ),
+        "sms_100": _churvox_env_first("STRIPE_PRICE_SMS_100", "STRIPE_SMS_100_PRICE_ID"),
+        "sms_500": _churvox_env_first("STRIPE_PRICE_SMS_500", "STRIPE_SMS_500_PRICE_ID"),
+        "sms_1000": _churvox_env_first("STRIPE_PRICE_SMS_1000", "STRIPE_SMS_1000_PRICE_ID"),
     }
 
 
@@ -9643,49 +9663,156 @@ async def confirm_churvox_checkout(payload: dict, request: Request):
         raise HTTPException(status_code=400, detail="Missing session_id")
 
     session = stripe.checkout.Session.retrieve(session_id, expand=["subscription"])
-    if str(session.get("payment_status") or "").lower() not in {"paid", "no_payment_required"} and str(session.get("status") or "").lower() != "complete":
+    session_status = str(session.get("status") or "").lower()
+    payment_status = str(session.get("payment_status") or "").lower()
+
+    if payment_status not in {"paid", "no_payment_required"} and session_status != "complete":
         raise HTTPException(status_code=400, detail="Checkout has not completed yet")
 
     metadata = dict(session.get("metadata") or {})
-    key = str(metadata.get("key") or "").strip()
+    subscription_obj = session.get("subscription") if isinstance(session.get("subscription"), dict) else None
+    if not metadata and subscription_obj:
+        metadata = dict(subscription_obj.get("metadata") or {})
+
+    key = str(metadata.get("key") or (payload or {}).get("key") or "").strip()
     plan_key = _churvox_billing_plan_key(metadata.get("plan") or key)
     credits = _churvox_sms_pack_credits(key)
     now = datetime.now(timezone.utc)
 
     business_id = str(metadata.get("business_id") or await _churvox_billing_business_id(current_user))
     user_id = current_user.get("_id") or current_user.get("id")
+    stripe_subscription_id = str(session.get("subscription") or "")
+    if isinstance(session.get("subscription"), dict):
+        stripe_subscription_id = str(session["subscription"].get("id") or "")
 
-    update = {
+    existing_event = await db.billing_events.find_one({"stripe_session_id": session_id})
+
+    def clean_ops(set_fields=None, inc_fields=None, max_fields=None):
+        ops = {}
+        if set_fields:
+            ops["$set"] = set_fields
+        if inc_fields:
+            ops["$inc"] = inc_fields
+        if max_fields:
+            ops["$max"] = max_fields
+        return ops
+
+    async def update_user_record(set_fields=None, inc_fields=None, max_fields=None):
+        ops = clean_ops(set_fields, inc_fields, max_fields)
+        if not ops:
+            return
+        try:
+            result = await db.users.update_one({"_id": ObjectId(str(user_id))}, ops)
+            if result.matched_count:
+                return
+        except Exception:
+            pass
+        try:
+            await db.users.update_one({"id": str(user_id)}, ops)
+        except Exception:
+            pass
+
+    async def update_business_record(set_fields=None, inc_fields=None, max_fields=None):
+        if not business_id:
+            return
+        ops = clean_ops(set_fields, inc_fields, max_fields)
+        if not ops:
+            return
+
+        queries = [
+            {"id": str(business_id)},
+            {"business_id": str(business_id)},
+        ]
+
+        try:
+            queries.append({"_id": ObjectId(str(business_id))})
+        except Exception:
+            pass
+
+        for query in queries:
+            try:
+                await db.businesses.update_one(query, ops, upsert=False)
+            except Exception:
+                pass
+
+    base_set = {
         "stripe_customer_id": session.get("customer"),
         "updated_at": now,
     }
 
+    if existing_event and existing_event.get("status") == "confirmed":
+        # Idempotent safety: do not double-count Growth Pack/SMS on refresh.
+        if key == "command_growth_pack":
+            safe_set = {
+                "command_growth_pack_active": True,
+                "growth_pack_active": True,
+                "updated_at": now,
+            }
+            safe_max = {
+                "command_growth_packs": 1,
+                "active_team_member_capacity_extra": 50,
+            }
+            await update_user_record(set_fields=safe_set, max_fields=safe_max)
+            await update_business_record(set_fields=safe_set, max_fields=safe_max)
+
+        return {
+            "success": True,
+            "already_confirmed": True,
+            "key": key,
+            "message": f"{_churvox_billing_label(key)} was already confirmed",
+        }
+
+    user_set = dict(base_set)
+    business_set = {"updated_at": now}
+    user_inc = {}
+    business_inc = {}
+
     if plan_key in {"start", "crew", "operator", "command"}:
-        update.update({
+        user_set.update({
             "plan": plan_key,
             "plan_status": "active",
             "subscription_status": "active",
-            "stripe_subscription_id": str(session.get("subscription") or ""),
+            "stripe_subscription_id": stripe_subscription_id,
+            "trial_ends_at": None,
+        })
+        business_set.update({
+            "plan": plan_key,
+            "plan_status": "active",
+            "subscription_status": "active",
+            "stripe_subscription_id": stripe_subscription_id,
             "trial_ends_at": None,
         })
 
     if key == "command_growth_pack":
-        update.update({
+        user_set.update({
             "command_growth_pack_active": True,
-            "command_growth_packs": int(current_user.get("command_growth_packs") or 0) + 1,
-            "active_team_member_capacity_extra": int(current_user.get("active_team_member_capacity_extra") or 0) + 50,
+            "growth_pack_active": True,
+        })
+        business_set.update({
+            "command_growth_pack_active": True,
+            "growth_pack_active": True,
+        })
+        user_inc.update({
+            "command_growth_packs": 1,
+            "active_team_member_capacity_extra": 50,
+        })
+        business_inc.update({
+            "command_growth_packs": 1,
+            "active_team_member_capacity_extra": 50,
         })
 
     if key == "myob_addon":
-        update.update({
+        user_set.update({
+            "myob_addon_active": True,
+            "myob_sync_enabled": True,
+        })
+        business_set.update({
             "myob_addon_active": True,
             "myob_sync_enabled": True,
         })
 
-    try:
-        await db.users.update_one({"_id": ObjectId(str(user_id))}, {"$set": update})
-    except Exception:
-        await db.users.update_one({"id": str(user_id)}, {"$set": update})
+    await update_user_record(set_fields=user_set, inc_fields=user_inc or None)
+    await update_business_record(set_fields=business_set, inc_fields=business_inc or None)
 
     if credits > 0:
         await db.sms_credits.update_one(
@@ -9705,9 +9832,13 @@ async def confirm_churvox_checkout(payload: dict, request: Request):
             "confirmed_at": now,
             "key": key,
             "business_id": str(business_id),
+            "user_id": str(user_id),
             "stripe_customer_id": session.get("customer"),
-            "stripe_subscription_id": str(session.get("subscription") or ""),
+            "stripe_subscription_id": stripe_subscription_id,
             "sms_credits_added": credits,
+            "plan": plan_key if plan_key in {"start", "crew", "operator", "command"} else None,
+            "growth_pack_applied": key == "command_growth_pack",
+            "business_record_updated": bool(business_id),
         }},
         upsert=True,
     )
@@ -9717,6 +9848,8 @@ async def confirm_churvox_checkout(payload: dict, request: Request):
         "key": key,
         "plan": plan_key if plan_key in {"start", "crew", "operator", "command"} else None,
         "sms_credits_added": credits,
+        "growth_pack_applied": key == "command_growth_pack",
+        "business_id": str(business_id),
         "message": f"{_churvox_billing_label(key)} confirmed",
     }
 

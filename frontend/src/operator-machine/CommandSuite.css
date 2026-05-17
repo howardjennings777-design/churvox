@@ -1726,3 +1726,13 @@
   }
 }
 
+
+/* PHASE_217_GROWTH_PACK_STRIPE_FIX */
+.cs-plan-addons button[disabled],
+.cs-sms-packs button[disabled],
+.cs-plan-actions button[disabled],
+.cs-trial-box button[disabled] {
+  opacity: 0.58;
+  cursor: wait;
+}
+
