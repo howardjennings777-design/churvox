@@ -1,25 +1,42 @@
+/*
+  PHASE_318_FINAL_CHURVOX_OPERATOR_THEME
+
+  Churvox design goal:
+  - Operator Machine, not generic SaaS.
+  - Work comes in → Churvox prepares admin → Owner approves.
+  - Every page should answer: what needs doing, what has Churvox prepared, what can owner approve?
+  - Desktop: command centre.
+  - Laptop: readable workspace.
+  - Phone: stacked, tap-friendly, no horizontal mess except tables when needed.
+*/
+
 :root {
-  --op-bg: #050506;
-  --op-black: #0b0b0d;
-  --op-panel: #101013;
-  --op-panel-2: #17171c;
-  --op-cream: #faf7f0;
-  --op-sand: #eee3d1;
-  --op-muted: #8f867b;
-  --op-copper: #f08a2a;
-  --op-copper-2: #d65e20;
-  --op-copper-dark: #873214;
-  --op-green: #33a166;
-  --op-blue: #4b9bb7;
-  --op-red: #d65031;
-  --op-line: rgba(250, 247, 240, 0.13);
-  --op-line-soft: rgba(11, 11, 13, 0.12);
-  --op-shadow: 0 28px 90px rgba(0, 0, 0, 0.38);
-  --op-soft-shadow: 0 18px 52px rgba(34, 18, 8, 0.15);
-  --op-radius: 22px;
-  --op-radius-lg: 34px;
-  --op-font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --op-serif: Georgia, "Times New Roman", serif;
+  --cvx-bg: #060504;
+  --cvx-obsidian: #0b0a09;
+  --cvx-charcoal: #14120f;
+  --cvx-panel: rgba(19, 17, 14, 0.88);
+  --cvx-panel-2: rgba(28, 24, 19, 0.9);
+  --cvx-paper: #fbf4e7;
+  --cvx-cream: #fff8ec;
+  --cvx-sand: #e7d5b8;
+  --cvx-muted: #a59786;
+  --cvx-copper: #f08a2a;
+  --cvx-copper-2: #d76521;
+  --cvx-copper-3: #883415;
+  --cvx-lime: #b7f15b;
+  --cvx-green: #36b36f;
+  --cvx-blue: #62b7dc;
+  --cvx-red: #ff6b4a;
+  --cvx-line: rgba(255, 248, 236, 0.13);
+  --cvx-line-strong: rgba(240, 138, 42, 0.38);
+  --cvx-shadow: 0 30px 100px rgba(0, 0, 0, 0.45);
+  --cvx-shadow-soft: 0 18px 55px rgba(35, 19, 8, 0.18);
+  --cvx-radius: clamp(18px, 1.6vw, 28px);
+  --cvx-radius-lg: clamp(28px, 2.4vw, 44px);
+  --cvx-gap: clamp(12px, 1.2vw, 20px);
+  --cvx-pad: clamp(16px, 1.6vw, 28px);
+  --cvx-font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --cvx-serif: Georgia, "Times New Roman", serif;
 }
 
 * {
@@ -33,13 +50,13 @@ body,
   max-width: 100vw;
   min-height: 100%;
   overflow-x: hidden;
-  background: var(--op-bg);
+  background: var(--cvx-bg);
 }
 
 body {
   margin: 0;
-  font-family: var(--op-font);
-  color: var(--op-cream);
+  font-family: var(--cvx-font);
+  color: var(--cvx-cream);
 }
 
 button,
@@ -57,14 +74,19 @@ a {
   color: inherit;
 }
 
+/* =========================
+   GLOBAL CHURVOX CANVAS
+========================= */
+
 .op-public,
 .op-app {
   min-height: 100vh;
-  color: var(--op-cream);
+  color: var(--cvx-cream);
   background:
-    radial-gradient(circle at 8% 0%, rgba(240, 138, 42, 0.3), transparent 31rem),
-    radial-gradient(circle at 93% 9%, rgba(240, 138, 42, 0.17), transparent 40rem),
-    linear-gradient(135deg, #050506 0%, #0b0b0d 55%, #190d08 100%);
+    radial-gradient(circle at 6% 0%, rgba(240, 138, 42, 0.34), transparent 30rem),
+    radial-gradient(circle at 92% 8%, rgba(183, 241, 91, 0.12), transparent 28rem),
+    radial-gradient(circle at 82% 22%, rgba(240, 138, 42, 0.15), transparent 36rem),
+    linear-gradient(135deg, #060504 0%, #0b0a09 48%, #1b0d07 100%);
 }
 
 .op-grid-bg {
@@ -73,8 +95,8 @@ a {
   pointer-events: none;
   opacity: 0.18;
   background:
-    linear-gradient(rgba(250, 247, 240, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(250, 247, 240, 0.05) 1px, transparent 1px);
+    linear-gradient(rgba(255, 248, 236, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 248, 236, 0.045) 1px, transparent 1px);
   background-size: 46px 46px;
   mask-image: linear-gradient(180deg, black, transparent 85%);
 }
@@ -83,54 +105,61 @@ a {
   position: fixed;
   pointer-events: none;
   border-radius: 999px;
-  filter: blur(42px);
-  opacity: 0.42;
+  filter: blur(45px);
+  opacity: 0.45;
 }
 
 .op-glow.one {
-  width: 410px;
-  height: 410px;
-  top: -120px;
-  left: -120px;
+  width: 420px;
+  height: 420px;
+  top: -130px;
+  left: -130px;
   background: rgba(240, 138, 42, 0.42);
 }
 
 .op-glow.two {
   width: 520px;
   height: 520px;
-  top: 70px;
+  top: 55px;
   right: -150px;
-  background: rgba(214, 94, 32, 0.32);
+  background: rgba(183, 241, 91, 0.16);
 }
+
+/* =========================
+   BRAND / BUTTONS
+========================= */
 
 .op-logo-button {
   border: 0;
   background: transparent;
   padding: 0;
-  color: var(--op-cream);
+  color: var(--cvx-cream);
 }
 
 .op-logo {
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  color: var(--op-cream);
+  color: var(--cvx-cream);
+  text-decoration: none;
 }
 
 .op-logo i {
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
   display: grid;
   place-items: center;
-  border-radius: 16px;
-  color: #fff7ed;
+  border-radius: 17px;
+  color: #fff8ec;
   font-style: normal;
   font-weight: 950;
   font-size: 1.45rem;
   background:
-    radial-gradient(circle at 35% 32%, #ffb46a, transparent 35%),
-    linear-gradient(145deg, var(--op-copper) 0%, var(--op-copper-2) 54%, var(--op-copper-dark) 100%);
-  box-shadow: 0 16px 38px rgba(240, 138, 42, 0.28);
+    radial-gradient(circle at 32% 28%, #ffd19a, transparent 34%),
+    conic-gradient(from 220deg, #873415, #f08a2a, #b7f15b, #f08a2a, #873415);
+  box-shadow:
+    0 0 0 1px rgba(240, 138, 42, 0.42),
+    0 16px 40px rgba(240, 138, 42, 0.28);
 }
 
 .op-logo b {
@@ -141,22 +170,18 @@ a {
 
 .op-logo small {
   display: block;
-  color: var(--op-copper);
+  color: var(--cvx-copper);
   font-size: 0.66rem;
   font-weight: 900;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
-.op-logo.compact small {
-  display: none;
-}
-
 .op-kicker {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: var(--op-copper);
+  color: var(--cvx-copper);
   text-transform: uppercase;
   letter-spacing: 0.16em;
   font-size: 0.72rem;
@@ -167,8 +192,43 @@ a {
   content: "";
   width: 66px;
   height: 1px;
-  background: rgba(240, 138, 42, 0.55);
+  background: linear-gradient(90deg, rgba(240, 138, 42, 0.85), transparent);
 }
+
+.op-public-nav button:not(.op-logo-button),
+.op-actions button,
+.op-final button,
+.op-auth-card button[type="submit"],
+.op-panel > button,
+.op-page-head > button,
+.op-modal footer button[type="submit"],
+.op-pricing button,
+.op-machine-preview footer button,
+.op-panel.dark button {
+  min-height: 42px;
+  border-radius: 999px;
+  padding: 0 18px;
+  color: #0b0a09;
+  border: 1px solid rgba(183, 241, 91, 0.45);
+  background: linear-gradient(135deg, var(--cvx-lime) 0%, #f2d35f 46%, var(--cvx-copper) 100%);
+  box-shadow: 0 18px 44px rgba(240, 138, 42, 0.22);
+  font-weight: 950;
+}
+
+button.ghost,
+.op-public-nav button.ghost,
+.op-actions .ghost,
+.op-panel .ghost,
+.op-modal footer .ghost {
+  color: var(--cvx-cream);
+  border: 1px solid var(--cvx-line);
+  background: rgba(255, 248, 236, 0.045);
+  box-shadow: none;
+}
+
+/* =========================
+   PUBLIC / LANDING
+========================= */
 
 .op-public-nav {
   position: sticky;
@@ -180,8 +240,8 @@ a {
   justify-content: space-between;
   gap: 18px;
   padding: 0 clamp(16px, 4vw, 64px);
-  border-bottom: 1px solid var(--op-line);
-  background: rgba(5, 5, 6, 0.84);
+  border-bottom: 1px solid var(--cvx-line);
+  background: rgba(6, 5, 4, 0.82);
   backdrop-filter: blur(18px);
 }
 
@@ -197,47 +257,16 @@ a {
 .op-public-nav button {
   border: 0;
   background: transparent;
-  color: rgba(250, 247, 240, 0.82);
+  color: rgba(255, 248, 236, 0.82);
   text-decoration: none;
   font-weight: 850;
   white-space: nowrap;
 }
 
-.op-public-nav button:not(.op-logo-button),
-.op-actions button,
-.op-final button,
-.op-auth-card button[type="submit"],
-.op-panel > button,
-.op-page-head > button,
-.op-modal footer button[type="submit"],
-.op-pricing button,
-.op-machine-preview footer button,
-.op-panel.dark button {
-  min-height: 42px;
-  border-radius: 13px;
-  padding: 0 18px;
-  color: #fff8f0;
-  border: 1px solid rgba(240, 138, 42, 0.46);
-  background: linear-gradient(135deg, var(--op-copper) 0%, var(--op-copper-2) 48%, var(--op-copper-dark) 100%);
-  box-shadow: 0 18px 44px rgba(240, 138, 42, 0.22);
-  font-weight: 900;
-}
-
-button.ghost,
-.op-public-nav button.ghost,
-.op-actions .ghost,
-.op-panel .ghost,
-.op-modal footer .ghost {
-  color: var(--op-cream);
-  border: 1px solid var(--op-line);
-  background: rgba(250, 247, 240, 0.045);
-  box-shadow: none;
-}
-
 .op-hero {
   min-height: calc(100vh - 76px);
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(340px, 520px);
+  grid-template-columns: minmax(0, 1.08fr) minmax(340px, 530px);
   gap: clamp(28px, 5vw, 76px);
   align-items: center;
   padding: clamp(42px, 7vw, 96px) clamp(16px, 5vw, 72px);
@@ -252,8 +281,8 @@ button.ghost,
 .op-topbar h1,
 .op-panel h2,
 .op-auth-card h2 {
-  color: var(--op-cream);
-  font-family: var(--op-serif);
+  color: var(--cvx-cream);
+  font-family: var(--cvx-serif);
   letter-spacing: -0.065em;
   line-height: 0.92;
 }
@@ -261,7 +290,7 @@ button.ghost,
 .op-hero h1 {
   max-width: 980px;
   margin: 16px 0 20px;
-  font-size: clamp(3.4rem, 7.8vw, 7.6rem);
+  font-size: clamp(3.45rem, 7.8vw, 7.8rem);
 }
 
 .op-hero h1 em,
@@ -269,8 +298,9 @@ button.ghost,
 .op-section h2 em,
 .op-final h2 em {
   display: block;
-  color: var(--op-copper);
+  color: var(--cvx-lime);
   font-style: normal;
+  text-shadow: 0 0 35px rgba(183, 241, 91, 0.18);
 }
 
 .op-hero p,
@@ -278,7 +308,7 @@ button.ghost,
 .op-section p,
 .op-final p {
   max-width: 760px;
-  color: rgba(250, 247, 240, 0.76);
+  color: rgba(255, 248, 236, 0.76);
   font-size: clamp(1rem, 1.2vw, 1.15rem);
   line-height: 1.62;
   font-weight: 620;
@@ -297,11 +327,11 @@ button.ghost,
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--op-line);
-  border-radius: 13px;
+  border: 1px solid var(--cvx-line);
+  border-radius: 999px;
   padding: 0 18px;
-  color: var(--op-cream);
-  background: rgba(250, 247, 240, 0.045);
+  color: var(--cvx-cream);
+  background: rgba(255, 248, 236, 0.045);
   text-decoration: none;
   font-weight: 900;
 }
@@ -314,13 +344,17 @@ button.ghost,
 }
 
 .op-trust b {
-  border: 1px solid var(--op-line);
+  border: 1px solid var(--cvx-line);
   border-radius: 999px;
   padding: 8px 12px;
-  color: rgba(250, 247, 240, 0.84);
-  background: rgba(250, 247, 240, 0.04);
+  color: rgba(255, 248, 236, 0.84);
+  background: rgba(255, 248, 236, 0.04);
   font-size: 0.78rem;
 }
+
+/* =========================
+   CORE SURFACES
+========================= */
 
 .op-machine-preview,
 .op-panel,
@@ -328,18 +362,18 @@ button.ghost,
 .op-final,
 .op-section article,
 .op-pricing article {
-  border: 1px solid var(--op-line);
+  border: 1px solid var(--cvx-line);
   background:
-    radial-gradient(circle at 100% 0%, rgba(240, 138, 42, 0.14), transparent 16rem),
-    linear-gradient(180deg, rgba(250, 247, 240, 0.08), rgba(250, 247, 240, 0.035)),
-    rgba(9, 9, 10, 0.86);
-  color: var(--op-cream);
-  box-shadow: var(--op-shadow);
+    radial-gradient(circle at 100% 0%, rgba(240, 138, 42, 0.16), transparent 16rem),
+    linear-gradient(180deg, rgba(255, 248, 236, 0.08), rgba(255, 248, 236, 0.035)),
+    var(--cvx-panel);
+  color: var(--cvx-cream);
+  box-shadow: var(--cvx-shadow);
   backdrop-filter: blur(18px);
 }
 
 .op-machine-preview {
-  border-radius: var(--op-radius-lg);
+  border-radius: var(--cvx-radius-lg);
   padding: clamp(22px, 3vw, 34px);
 }
 
@@ -352,7 +386,7 @@ button.ghost,
 }
 
 .op-machine-preview header span {
-  color: var(--op-copper);
+  color: var(--cvx-lime);
   text-transform: uppercase;
   letter-spacing: 0.14em;
   font-size: 0.72rem;
@@ -367,11 +401,11 @@ button.ghost,
   grid-template-columns: 34px minmax(0, 1fr) auto;
   gap: 12px;
   align-items: center;
-  border: 1px solid var(--op-line);
-  border-radius: 15px;
+  border: 1px solid var(--cvx-line);
+  border-radius: 16px;
   padding: 12px;
-  background: rgba(250, 247, 240, 0.045);
-  color: var(--op-cream);
+  background: rgba(255, 248, 236, 0.045);
+  color: var(--cvx-cream);
   text-align: left;
 }
 
@@ -384,14 +418,15 @@ button.ghost,
   width: 28px;
   height: 28px;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--op-copper), var(--op-copper-2));
+  background: linear-gradient(135deg, var(--cvx-lime), var(--cvx-copper));
+  box-shadow: 0 12px 25px rgba(183, 241, 91, 0.15);
 }
 
 .op-machine-preview small,
 .op-queue small,
 .op-list small {
   display: block;
-  color: rgba(250, 247, 240, 0.62);
+  color: rgba(255, 248, 236, 0.62);
 }
 
 .op-machine-preview footer {
@@ -406,12 +441,16 @@ button.ghost,
 .op-machine-preview footer small {
   display: block;
   margin-top: 8px;
-  color: rgba(250, 247, 240, 0.58);
+  color: rgba(255, 248, 236, 0.58);
 }
+
+/* =========================
+   PUBLIC SECTIONS / PRICING
+========================= */
 
 .op-section {
   padding: clamp(44px, 6vw, 86px) clamp(16px, 5vw, 72px);
-  border-top: 1px solid var(--op-line);
+  border-top: 1px solid var(--cvx-line);
   position: relative;
   z-index: 2;
 }
@@ -449,30 +488,30 @@ button.ghost,
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  color: #fff8f0;
-  background: linear-gradient(135deg, var(--op-copper), var(--op-copper-2));
+  color: #0b0a09;
+  background: linear-gradient(135deg, var(--cvx-lime), var(--cvx-copper));
 }
 
 .op-section article h3,
 .op-pricing article h3 {
-  color: var(--op-cream);
+  color: var(--cvx-cream);
   font-size: 1.3rem;
 }
 
 .op-section article p,
 .op-pricing article p {
-  color: rgba(250, 247, 240, 0.7);
+  color: rgba(255, 248, 236, 0.7);
   line-height: 1.55;
 }
 
 .op-pricing article.featured {
-  border-color: rgba(240, 138, 42, 0.54);
+  border-color: rgba(183, 241, 91, 0.55);
   transform: translateY(-6px);
-  box-shadow: 0 28px 80px rgba(240, 138, 42, 0.14);
+  box-shadow: 0 28px 80px rgba(183, 241, 91, 0.08), var(--cvx-shadow);
 }
 
 .op-pricing article > span {
-  color: var(--op-copper);
+  color: var(--cvx-lime);
   text-transform: uppercase;
   letter-spacing: 0.14em;
   font-size: 0.68rem;
@@ -481,16 +520,16 @@ button.ghost,
 
 .op-pricing article strong {
   display: block;
-  color: var(--op-copper);
-  font-family: var(--op-serif);
+  color: var(--cvx-copper);
+  font-family: var(--cvx-serif);
   font-size: 3rem;
   line-height: 1;
   margin: 10px 0;
 }
 
 .op-pricing article small {
-  color: rgba(250, 247, 240, 0.62);
-  font-family: var(--op-font);
+  color: rgba(255, 248, 236, 0.62);
+  font-family: var(--cvx-font);
   font-size: 0.85rem;
 }
 
@@ -501,6 +540,10 @@ button.ghost,
   position: relative;
   z-index: 2;
 }
+
+/* =========================
+   AUTH
+========================= */
 
 .op-auth-wrap {
   min-height: calc(100vh - 76px);
@@ -520,7 +563,7 @@ button.ghost,
 }
 
 .op-auth-card {
-  border-radius: var(--op-radius-lg);
+  border-radius: var(--cvx-radius-lg);
   padding: clamp(22px, 3vw, 36px);
 }
 
@@ -534,7 +577,7 @@ button.ghost,
   display: grid;
   gap: 7px;
   margin-top: 14px;
-  color: rgba(250, 247, 240, 0.84);
+  color: rgba(255, 248, 236, 0.84);
   font-weight: 850;
 }
 
@@ -543,12 +586,19 @@ button.ghost,
 .op-form-grid textarea {
   width: 100%;
   min-height: 48px;
-  border: 1px solid var(--op-line);
-  border-radius: 13px;
-  background: rgba(5, 5, 6, 0.84);
-  color: var(--op-cream);
+  border: 1px solid var(--cvx-line);
+  border-radius: 14px;
+  background: rgba(6, 5, 4, 0.84);
+  color: var(--cvx-cream);
   padding: 0 14px;
   outline: 0;
+}
+
+.op-auth-card input:focus,
+.op-form-grid input:focus,
+.op-form-grid textarea:focus {
+  border-color: rgba(183, 241, 91, 0.45);
+  box-shadow: 0 0 0 4px rgba(183, 241, 91, 0.12);
 }
 
 .op-form-grid textarea {
@@ -564,23 +614,27 @@ button.ghost,
 .op-auth-card small {
   display: block;
   margin-top: 14px;
-  color: rgba(250, 247, 240, 0.66);
+  color: rgba(255, 248, 236, 0.66);
 }
 
 .op-auth-card small button {
   border: 0;
   background: transparent;
-  color: var(--op-copper);
+  color: var(--cvx-lime);
   font-weight: 950;
 }
 
 .op-error {
-  border: 1px solid rgba(214, 80, 49, 0.35);
+  border: 1px solid rgba(255, 107, 74, 0.35);
   border-radius: 12px;
   padding: 10px 12px;
   color: #ffd5cb;
-  background: rgba(214, 80, 49, 0.14);
+  background: rgba(255, 107, 74, 0.14);
 }
+
+/* =========================
+   APP SHELL
+========================= */
 
 .op-app {
   display: grid;
@@ -595,8 +649,8 @@ button.ghost,
   flex-direction: column;
   gap: 18px;
   padding: clamp(12px, 1.6vw, 24px);
-  border-right: 1px solid var(--op-line);
-  background: rgba(5, 5, 6, 0.88);
+  border-right: 1px solid var(--cvx-line);
+  background: rgba(6, 5, 4, 0.9);
   backdrop-filter: blur(18px);
 }
 
@@ -612,30 +666,30 @@ button.ghost,
   align-content: center;
   gap: 2px;
   border: 1px solid transparent;
-  border-radius: 13px;
+  border-radius: 14px;
   padding: 8px 12px;
   background: transparent;
-  color: rgba(250, 247, 240, 0.76);
+  color: rgba(255, 248, 236, 0.76);
   text-align: left;
   font-weight: 850;
 }
 
 .op-sidebar nav button small {
-  color: rgba(250, 247, 240, 0.48);
+  color: rgba(255, 248, 236, 0.48);
 }
 
 .op-sidebar nav button.active,
 .op-sidebar nav button:hover,
 .op-logout:hover {
-  color: var(--op-cream);
-  border-color: rgba(240, 138, 42, 0.34);
-  background: linear-gradient(135deg, rgba(240, 138, 42, 0.28), rgba(240, 138, 42, 0.08));
-  box-shadow: inset 4px 0 0 rgba(240, 138, 42, 0.95);
+  color: var(--cvx-cream);
+  border-color: rgba(183, 241, 91, 0.25);
+  background: linear-gradient(135deg, rgba(183, 241, 91, 0.14), rgba(240, 138, 42, 0.09));
+  box-shadow: inset 4px 0 0 var(--cvx-lime);
 }
 
 .op-logout {
   margin-top: auto;
-  border-color: var(--op-line);
+  border-color: var(--cvx-line);
   justify-content: center;
 }
 
@@ -667,13 +721,17 @@ button.ghost,
 .op-topbar aside button,
 .op-panel .ghost {
   min-height: 38px;
-  border: 1px solid var(--op-line);
-  border-radius: 12px;
-  color: var(--op-cream);
-  background: rgba(250, 247, 240, 0.045);
+  border: 1px solid var(--cvx-line);
+  border-radius: 999px;
+  color: var(--cvx-cream);
+  background: rgba(255, 248, 236, 0.045);
   padding: 0 14px;
   font-weight: 900;
 }
+
+/* =========================
+   APP PAGES
+========================= */
 
 .op-page {
   display: grid;
@@ -682,7 +740,7 @@ button.ghost,
 
 .op-panel {
   min-width: 0;
-  border-radius: var(--op-radius);
+  border-radius: var(--cvx-radius);
   padding: clamp(16px, 1.6vw, 24px);
 }
 
@@ -692,8 +750,8 @@ button.ghost,
 
 .op-panel.dark {
   background:
-    radial-gradient(circle at 90% 0%, rgba(240, 138, 42, 0.2), transparent 14rem),
-    linear-gradient(180deg, rgba(20, 20, 23, 0.98), rgba(8, 8, 9, 0.98));
+    radial-gradient(circle at 90% 0%, rgba(183, 241, 91, 0.13), transparent 14rem),
+    linear-gradient(180deg, rgba(24, 24, 28, 0.98), rgba(8, 7, 6, 0.98));
 }
 
 .op-panel h2 {
@@ -702,7 +760,7 @@ button.ghost,
 }
 
 .op-panel p {
-  color: rgba(250, 247, 240, 0.72);
+  color: rgba(255, 248, 236, 0.72);
   line-height: 1.55;
 }
 
@@ -711,14 +769,14 @@ button.ghost,
 }
 
 .op-health article {
-  border: 1px solid var(--op-line);
+  border: 1px solid var(--cvx-line);
   border-radius: 18px;
   padding: 16px;
-  background: rgba(250, 247, 240, 0.06);
+  background: rgba(255, 248, 236, 0.06);
 }
 
 .op-health span {
-  color: rgba(250, 247, 240, 0.62);
+  color: rgba(255, 248, 236, 0.62);
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -728,12 +786,12 @@ button.ghost,
 .op-health strong {
   display: block;
   margin-top: 7px;
-  color: var(--op-cream);
+  color: var(--cvx-cream);
   font-size: clamp(1.4rem, 2vw, 2.4rem);
 }
 
 .op-health small {
-  color: rgba(250, 247, 240, 0.58);
+  color: rgba(255, 248, 236, 0.58);
 }
 
 .op-dashboard-grid,
@@ -753,8 +811,8 @@ button.ghost,
 .op-list button.active,
 .op-list button:hover,
 .op-queue button:hover {
-  border-color: rgba(240, 138, 42, 0.4);
-  background: rgba(240, 138, 42, 0.11);
+  border-color: rgba(183, 241, 91, 0.35);
+  background: rgba(183, 241, 91, 0.08);
 }
 
 .op-page-head {
@@ -779,12 +837,12 @@ button.ghost,
   grid-template-columns: 1.1fr 1.5fr 110px 100px;
   gap: 10px;
   align-items: center;
-  border-bottom: 1px solid var(--op-line);
+  border-bottom: 1px solid var(--cvx-line);
   padding: 10px 0;
 }
 
 .op-table > div:first-child {
-  color: rgba(250, 247, 240, 0.55);
+  color: rgba(255, 248, 236, 0.55);
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -798,12 +856,12 @@ button.ghost,
   padding: 5px 9px;
   font-size: 0.7rem;
   font-weight: 950;
-  background: rgba(250, 247, 240, 0.08);
+  background: rgba(255, 248, 236, 0.08);
 }
 
 .op-status.green {
-  background: rgba(51, 161, 102, 0.18);
-  color: #a4efbd;
+  background: rgba(54, 179, 111, 0.18);
+  color: #a9f4c6;
 }
 
 .op-status.amber {
@@ -812,13 +870,13 @@ button.ghost,
 }
 
 .op-status.red {
-  background: rgba(214, 80, 49, 0.18);
+  background: rgba(255, 107, 74, 0.18);
   color: #ffb7a8;
 }
 
 .op-status.blue {
-  background: rgba(75, 155, 183, 0.2);
-  color: #a6e8ff;
+  background: rgba(98, 183, 220, 0.2);
+  color: #a8ecff;
 }
 
 .op-detail {
@@ -832,7 +890,7 @@ button.ghost,
   grid-template-columns: 130px minmax(0, 1fr);
   gap: 10px;
   margin: 0;
-  border-bottom: 1px solid var(--op-line);
+  border-bottom: 1px solid var(--cvx-line);
   padding-bottom: 7px;
 }
 
@@ -846,6 +904,10 @@ button.ghost,
   grid-column: 1 / -1;
 }
 
+/* =========================
+   MODAL / LOADING
+========================= */
+
 .op-modal {
   position: fixed;
   inset: 0;
@@ -853,7 +915,7 @@ button.ghost,
   display: grid;
   place-items: center;
   padding: 20px;
-  background: rgba(5, 5, 6, 0.72);
+  background: rgba(6, 5, 4, 0.72);
   backdrop-filter: blur(14px);
 }
 
@@ -861,13 +923,13 @@ button.ghost,
   width: min(760px, 96vw);
   max-height: 90vh;
   overflow: auto;
-  border: 1px solid var(--op-line);
+  border: 1px solid var(--cvx-line);
   border-radius: 28px;
   padding: 22px;
   background:
-    radial-gradient(circle at 100% 0%, rgba(240, 138, 42, 0.16), transparent 16rem),
-    linear-gradient(180deg, #141416, #0b0b0d);
-  box-shadow: var(--op-shadow);
+    radial-gradient(circle at 100% 0%, rgba(183, 241, 91, 0.11), transparent 16rem),
+    linear-gradient(180deg, #141210, #0b0a09);
+  box-shadow: var(--cvx-shadow);
 }
 
 .op-modal header,
@@ -882,9 +944,9 @@ button.ghost,
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  border: 1px solid var(--op-line);
-  background: rgba(250, 247, 240, 0.04);
-  color: var(--op-cream);
+  border: 1px solid var(--cvx-line);
+  background: rgba(255, 248, 236, 0.04);
+  color: var(--cvx-cream);
   font-size: 1.4rem;
 }
 
@@ -898,15 +960,19 @@ button.ghost,
   right: 18px;
   bottom: 18px;
   z-index: 300;
-  border: 1px solid var(--op-line);
+  border: 1px solid var(--cvx-line);
   border-radius: 999px;
   padding: 10px 14px;
-  background: var(--op-black);
-  color: var(--op-cream);
-  box-shadow: var(--op-shadow);
+  background: var(--cvx-obsidian);
+  color: var(--cvx-cream);
+  box-shadow: var(--cvx-shadow);
 }
 
-@media (max-width: 1100px) {
+/* =========================
+   ADAPTIVE RULES
+========================= */
+
+@media (max-width: 1180px) {
   .op-app {
     grid-template-columns: 1fr;
   }
@@ -920,7 +986,11 @@ button.ghost,
     align-items: center;
     overflow-x: auto;
     border-right: 0;
-    border-bottom: 1px solid var(--op-line);
+    border-bottom: 1px solid var(--cvx-line);
+  }
+
+  .op-sidebar .op-logo small {
+    display: none;
   }
 
   .op-sidebar nav {
@@ -934,6 +1004,7 @@ button.ghost,
 
   .op-logout {
     margin-top: 0;
+    min-width: 90px;
   }
 
   .op-dashboard-grid,
@@ -966,6 +1037,18 @@ button.ghost,
     display: none;
   }
 
+  .op-logo b {
+    letter-spacing: 0.18em;
+  }
+
+  .op-hero,
+  .op-auth-wrap,
+  .op-section,
+  .op-workspace {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
   .op-hero h1,
   .op-auth-wrap h1 {
     font-size: clamp(2.8rem, 13vw, 4.4rem);
@@ -978,8 +1061,37 @@ button.ghost,
     flex-direction: column;
   }
 
+  .op-topbar aside {
+    justify-content: space-between;
+  }
+
+  .op-sidebar {
+    padding: 10px;
+  }
+
+  .op-sidebar nav button {
+    min-width: 92px;
+    padding: 8px 10px;
+  }
+
+  .op-sidebar nav button small {
+    display: none;
+  }
+
   .op-form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .op-machine-preview article,
+  .op-queue button,
+  .op-list button {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+
+  .op-machine-preview article > strong,
+  .op-queue button > strong,
+  .op-list button > .op-status {
+    grid-column: 2;
   }
 
   .op-table {
