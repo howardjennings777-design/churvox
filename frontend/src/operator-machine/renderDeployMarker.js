@@ -1,1 +1,1 @@
-export const churvoxRenderDeployMarker = "PHASE_327_CHURVOX_COMMAND_DESK_ADAPTIVE_20260518193240";
+export const churvoxRenderDeployMarker = "PHASE_328_DAILY_RUN_BOARD_20260518194600";
