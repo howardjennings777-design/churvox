@@ -1,1 +1,1 @@
-export const churvoxRenderDeployMarker = "PHASE_326_COMMAND_BOARD_PROPER_RESET_20260518061236";
+export const churvoxRenderDeployMarker = "PHASE_327_CHURVOX_COMMAND_DESK_ADAPTIVE_20260518193240";
