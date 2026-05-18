@@ -1,68 +1,82 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./ChurvoxAIShell.css";
 
-const API_BASE = (() => {
-  const raw =
-    process.env.REACT_APP_BACKEND_URL ||
-    process.env.REACT_APP_API_URL ||
-    process.env.VITE_BACKEND_URL ||
-    "https://grassley-backend.onrender.com";
-  const clean = String(raw).replace(/\/+$/, "");
-  return clean.endsWith("/api") ? clean : `${clean}/api`;
-})();
+const RAW_API =
+  process.env.REACT_APP_BACKEND_URL ||
+  process.env.REACT_APP_API_URL ||
+  process.env.VITE_BACKEND_URL ||
+  "https://grassley-backend.onrender.com";
+
+const API_BASE = String(RAW_API).replace(/\/+$/, "").endsWith("/api")
+  ? String(RAW_API).replace(/\/+$/, "")
+  : `${String(RAW_API).replace(/\/+$/, "")}/api`;
+
+const ENTITY_ROUTES = ["work", "clients", "crew", "quotes", "invoices"];
 
 const AREAS = {
   dashboard: { label: "Command", sub: "Prepared today" },
-  work: { label: "Work", sub: "Jobs & slips", endpoint: "/jobs" },
-  clients: { label: "Clients", sub: "Customer base", endpoint: "/clients" },
-  crew: { label: "Crew", sub: "Team flow", endpoint: "/team/invite", read: "/team/workers" },
-  quotes: { label: "Quotes", sub: "Follow-ups", endpoint: "/quotes" },
-  invoices: { label: "Invoices", sub: "Cashflow", endpoint: "/invoices" },
+  work: {
+    label: "Work",
+    sub: "Jobs & slips",
+    read: "/jobs",
+    create: "/jobs",
+    title: "Work Feed",
+    line: "Jobs, workers, proof and invoice readiness.",
+    action: "Add work",
+    fields: [["title", "Job title"], ["client_name", "Client"], ["address", "Address"], ["amount", "Price"]],
+    prepared: ["Assign worker", "Fix missing info", "Prepare invoice"],
+  },
+  clients: {
+    label: "Clients",
+    sub: "Customer base",
+    read: "/clients",
+    create: "/clients",
+    title: "Client Feed",
+    line: "Customers connected to work, quotes and invoices.",
+    action: "Add client",
+    fields: [["name", "Client name"], ["email", "Email"], ["phone", "Phone"], ["address", "Address"]],
+    prepared: ["Fix contact gaps", "Create job", "Prepare follow-up"],
+  },
+  crew: {
+    label: "Crew",
+    sub: "Team flow",
+    read: "/team/workers",
+    create: "/team/invite",
+    title: "Crew Feed",
+    line: "Workers, workload, roles and conflicts.",
+    action: "Invite crew",
+    fields: [["name", "Name"], ["email", "Email"], ["role", "Role"], ["region", "Region"]],
+    prepared: ["Suggest worker", "Check conflict", "Review workload"],
+  },
+  quotes: {
+    label: "Quotes",
+    sub: "Follow-ups",
+    read: "/quotes",
+    create: "/quotes",
+    title: "Quote Feed",
+    line: "Quotes that need follow-up or conversion.",
+    action: "Create quote",
+    fields: [["quote_number", "Quote number"], ["client_name", "Client"], ["amount", "Amount"], ["description", "Description"]],
+    prepared: ["Follow up quote", "Convert to job", "Improve wording"],
+  },
+  invoices: {
+    label: "Invoices",
+    sub: "Cashflow",
+    read: "/invoices",
+    create: "/invoices",
+    title: "Money Feed",
+    line: "Draft invoices, reminders, proof packs and MYOB readiness.",
+    action: "Create invoice",
+    fields: [["invoice_number", "Invoice number"], ["client_name", "Client"], ["amount", "Amount"], ["description", "Description"]],
+    prepared: ["Approve draft", "Send reminder", "Check proof pack"],
+  },
   proof: { label: "Proof & Pay", sub: "Photos to paid" },
   payroll: { label: "Payroll", sub: "Hours review" },
   plans: { label: "Plans", sub: "Billing" },
   settings: { label: "Settings", sub: "Setup" },
 };
 
-const AREA_ORDER = Object.keys(AREAS);
-
-const PAGE_META = {
-  work: {
-    title: "Work Slips",
-    line: "Jobs, workers, proof, notes and invoice readiness in one owner view.",
-    action: "Add work",
-    prepared: ["Assign worker", "Fix missing info", "Prepare invoice"],
-    fields: [["title", "Job title"], ["client_name", "Client"], ["address", "Address"], ["amount", "Price"]],
-  },
-  clients: {
-    title: "Clients",
-    line: "Customer records that connect to jobs, quotes, invoices and follow-ups.",
-    action: "Add client",
-    prepared: ["Fix contact gaps", "Create job", "Prepare follow-up"],
-    fields: [["name", "Client name"], ["email", "Email"], ["phone", "Phone"], ["address", "Address"]],
-  },
-  crew: {
-    title: "Crew",
-    line: "Workers, roles, workload, region and assignment readiness.",
-    action: "Invite crew",
-    prepared: ["Suggest worker", "Check conflict", "Review workload"],
-    fields: [["name", "Name"], ["email", "Email"], ["role", "Role"], ["region", "Region"]],
-  },
-  quotes: {
-    title: "Quotes",
-    line: "Quote pipeline, follow-ups and accepted work ready to become jobs.",
-    action: "Create quote",
-    prepared: ["Follow up quote", "Convert to job", "Improve wording"],
-    fields: [["quote_number", "Quote number"], ["client_name", "Client"], ["amount", "Amount"], ["description", "Description"]],
-  },
-  invoices: {
-    title: "Invoices",
-    line: "Draft invoices, payment reminders, proof packs and MYOB readiness.",
-    action: "Create invoice",
-    prepared: ["Approve draft", "Send reminder", "Check proof pack"],
-    fields: [["invoice_number", "Invoice number"], ["client_name", "Client"], ["amount", "Amount"], ["description", "Description"]],
-  },
-};
+const NAV = ["dashboard", "work", "clients", "crew", "quotes", "invoices", "proof", "payroll", "plans", "settings"];
 
 const DEMO = {
   work: [
@@ -92,7 +106,7 @@ const DEMO = {
 
 function clean(value, fallback = "") {
   if (value === null || value === undefined) return fallback;
-  if (typeof value === "object") return clean(value.name || value.title || value.email || value.id, fallback);
+  if (typeof value === "object") return clean(value.actionTitle || value.name || value.title || value.email || value.id, fallback);
   return String(value).replace(/\s+/g, " ").trim() || fallback;
 }
 
@@ -100,16 +114,6 @@ function money(value, fallback = "—") {
   const n = Number(String(value || "").replace(/[^0-9.-]/g, ""));
   if (!Number.isFinite(n) || n <= 0) return fallback;
   return new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD", maximumFractionDigits: 0 }).format(n);
-}
-
-function currentRoute() {
-  const path = window.location.pathname.replace(/^\/+/, "").replace(/\/+$/, "");
-  if (!path || path === "home") return "public";
-  if (path === "login" || path === "signup") return path;
-  if (path === "jobs") return "work";
-  if (path === "team") return "crew";
-  if (path === "proof-and-pay") return "proof";
-  return path.split("/")[0] || "public";
 }
 
 function pathFor(route) {
@@ -130,15 +134,29 @@ function pathFor(route) {
   }[route] || "/dashboard";
 }
 
-function routePath(route) {
-  return pathFor(route);
+function currentRoute() {
+  const path = window.location.pathname.replace(/^\/+/, "").replace(/\/+$/, "");
+  if (!path || path === "home") return "public";
+  if (path === "login" || path === "signup") return path;
+  if (path === "jobs") return "work";
+  if (path === "team") return "crew";
+  if (path === "proof-and-pay") return "proof";
+  return AREAS[path] ? path : "dashboard";
 }
 
-function token() {
+function getToken() {
   try {
     return localStorage.getItem("token") || localStorage.getItem("authToken") || localStorage.getItem("access_token") || "";
   } catch {
     return "";
+  }
+}
+
+function isLoggedIn() {
+  try {
+    return Boolean(getToken() || localStorage.getItem("churvox_session_active") === "true");
+  } catch {
+    return false;
   }
 }
 
@@ -150,66 +168,30 @@ function getUser() {
   }
 }
 
-function saveAuth(payload = {}) {
-  const data = payload.data || payload;
+function saveAuth(payload = {}, fallbackEmail = "") {
+  const data = payload.data || payload || {};
   const authToken = data.token || data.access_token || data.authToken || data.jwt || "";
   if (authToken) {
     localStorage.setItem("token", authToken);
     localStorage.setItem("authToken", authToken);
     localStorage.setItem("access_token", authToken);
   }
-  const user = data.user || data.account || data.profile || data;
-  if (user && typeof user === "object") localStorage.setItem("churvox_user", JSON.stringify(user));
+
+  const user = data.user || data.account || data.profile || (data.email ? data : null) || { email: fallbackEmail };
+  localStorage.setItem("churvox_user", JSON.stringify(user));
+  localStorage.setItem("churvox_session_active", "true");
+  if (user?.email || fallbackEmail) localStorage.setItem("churvox_email", user?.email || fallbackEmail);
 }
-
-function churvoxAuthToken() {
-  try {
-    if (typeof token === "function") return token() || "";
-    if (typeof getToken === "function") return getToken() || "";
-    if (typeof readToken === "function") return readToken() || "";
-    return (
-      localStorage.getItem("token") ||
-      localStorage.getItem("authToken") ||
-      localStorage.getItem("access_token") ||
-      ""
-    );
-  } catch {
-    return "";
-  }
-}
-
-function markLoggedIn(payload = {}) {
-  try {
-    localStorage.setItem("churvox_session_active", "true");
-
-    const data = payload?.data || payload || {};
-    const user = data.user || data.account || data.profile || null;
-
-    if (user && typeof user === "object") {
-      localStorage.setItem("churvox_user", JSON.stringify(user));
-    }
-  } catch {}
-}
-
-function isLoggedIn() {
-  try {
-    return Boolean(
-      churvoxAuthToken() ||
-      localStorage.getItem("churvox_session_active") === "true"
-    );
-  } catch {
-    return false;
-  }
-}
-
 
 async function api(path, options = {}) {
+  const authToken = getToken();
   const res = await fetch(`${API_BASE}${path}`, {
     credentials: "include",
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
-      ...(token() ? { Authorization: `Bearer ${token()}` } : {}),
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      ...(options.headers || {}),
     },
     ...options,
   });
@@ -226,13 +208,16 @@ async function api(path, options = {}) {
   return body;
 }
 
-function pickList(result, keys) {
-  if (Array.isArray(result)) return result;
-  for (const key of keys) if (Array.isArray(result?.[key])) return result[key];
+function pickList(value, keys) {
+  if (Array.isArray(value)) return value;
+  for (const key of keys) {
+    if (Array.isArray(value?.[key])) return value[key];
+  }
   return [];
 }
 
 function titleOf(type, item = {}, index = 0) {
+  if (item.actionTitle) return item.actionTitle;
   if (type === "clients") return clean(item.name || item.client_name || item.customer_name, `Client ${index + 1}`);
   if (type === "crew") return clean(item.name || item.worker_name || item.email, `Crew ${index + 1}`);
   if (type === "quotes") return clean(item.quote_number || item.number || item.title, `Quote ${index + 1}`);
@@ -241,6 +226,7 @@ function titleOf(type, item = {}, index = 0) {
 }
 
 function subOf(type, item = {}) {
+  if (item.detail) return item.detail;
   if (type === "clients") return clean(item.email || item.phone || item.address, "Client details");
   if (type === "crew") return clean(item.role || item.region || item.phone, "Crew member");
   if (type === "quotes") return clean(item.client_name || item.customer_name || item.status, "Quote");
@@ -249,30 +235,48 @@ function subOf(type, item = {}) {
 }
 
 function statusOf(type, item = {}) {
-  if (type === "invoices") return clean(item.status || item.invoice_status || item.payment_status, "Draft");
-  if (type === "quotes") return clean(item.status || item.quote_status, "Prepared");
-  if (type === "crew") return clean(item.status || item.role, "Active");
-  if (type === "clients") return clean(item.status, "Ready");
-  return clean(item.status || item.job_status, "Ready");
+  if (item.status) return clean(item.status, "Prepared");
+  if (type === "invoices") return clean(item.invoice_status || item.payment_status, "Draft");
+  if (type === "quotes") return clean(item.quote_status, "Prepared");
+  if (type === "crew") return clean(item.role, "Active");
+  return "Ready";
 }
 
 function searchText(type, item = {}) {
-  return [titleOf(type, item), subOf(type, item), statusOf(type, item), ...Object.values(item).map((v) => clean(v))].join(" ").toLowerCase();
+  return [titleOf(type, item), subOf(type, item), statusOf(type, item), ...Object.values(item).map((v) => clean(v))]
+    .join(" ")
+    .toLowerCase();
 }
 
 function Logo() {
   return (
-    <span className="cw-logo">
+    <span className="cb-logo">
       <i>C</i>
-      <span><b>CHURVOX</b><small>Workbench OS</small></span>
+      <span>
+        <b>CHURVOX</b>
+        <small>Command Board</small>
+      </span>
     </span>
   );
 }
 
+function Status({ value }) {
+  const label = clean(value, "Ready");
+  const low = label.toLowerCase();
+  const tone = low.includes("overdue") || low.includes("block")
+    ? "red"
+    : low.includes("need") || low.includes("draft") || low.includes("pending")
+    ? "amber"
+    : low.includes("complete") || low.includes("paid") || low.includes("active")
+    ? "green"
+    : "blue";
+  return <span className={`cb-status ${tone}`}>{label}</span>;
+}
+
 function PublicNav({ go }) {
   return (
-    <header className="cw-public-nav">
-      <button type="button" className="cw-logo-btn" onClick={() => go("public")}><Logo /></button>
+    <header className="cb-public-nav">
+      <button type="button" className="cb-logo-btn" onClick={() => go("public")}><Logo /></button>
       <nav>
         <a href="#how">How it works</a>
         <a href="#features">What it prepares</a>
@@ -286,57 +290,68 @@ function PublicNav({ go }) {
 
 function PublicPage({ go }) {
   return (
-    <main className="cw-public">
+    <main className="cb-public">
       <PublicNav go={go} />
-      <section className="cw-hero">
+
+      <section className="cb-hero">
         <article>
-          <span className="cw-kicker">AI workbench for trade and service owners</span>
-          <h1>Churvox prepares the admin. <em>You approve.</em></h1>
-          <p>Jobs, clients, crew, quotes, invoices, proof, payments and payroll become owner-ready actions. No hunting around. No blind sending.</p>
-          <div className="cw-actions">
+          <span className="cb-kicker">AI command board for trade and service owners</span>
+          <h1>What came in. What Churvox prepared. What you approve.</h1>
+          <p>Churvox turns work, clients, crew updates, quotes, invoices, proof and payroll into a clear owner approval board.</p>
+          <div className="cb-actions">
             <button type="button" onClick={() => go("signup")}>Start free trial</button>
             <button type="button" className="ghost" onClick={() => go("login")}>Open login</button>
           </div>
-          <div className="cw-chips"><b>Prepared actions</b><b>Owner approval</b><b>Proof to paid</b><b>Worker flow</b></div>
         </article>
 
-        <aside className="cw-preview">
-          <header><span>Prepared by Churvox</span><strong>7 ready</strong></header>
+        <aside className="cb-preview">
+          <header>
+            <span>Prepared by Churvox</span>
+            <strong>7 ready</strong>
+          </header>
           {[
-            ["Invoice ready", "Completed job with proof", "$4,870"],
-            ["Worker suggested", "No conflict found", "Approve"],
+            ["Invoice ready", "Completed job has proof and amount", "$4,870"],
+            ["Worker suggested", "Best match found, no conflict", "Approve"],
             ["Quote follow-up", "Customer has not replied", "Send"],
             ["Payment reminder", "18 days overdue", "Review"],
-          ].map(([title, sub, meta]) => (
-            <button type="button" key={title}><i /><span><b>{title}</b><small>{sub}</small></span><strong>{meta}</strong></button>
+          ].map(([title, detail, meta]) => (
+            <button type="button" key={title}>
+              <i />
+              <span><b>{title}</b><small>{detail}</small></span>
+              <strong>{meta}</strong>
+            </button>
           ))}
         </aside>
       </section>
 
-      <section className="cw-section" id="how">
-        <span className="cw-kicker">How it works</span>
-        <h2>Every page answers the same three things.</h2>
-        <div className="cw-grid">
-          {["What is happening here?", "What has Churvox prepared?", "What needs owner approval next?"].map((text, i) => (
-            <article key={text}><b>{i + 1}</b><h3>{text}</h3><p>Review, edit and approve. That is the whole Churvox flow.</p></article>
+      <section className="cb-section" id="how">
+        <span className="cb-kicker">How it works</span>
+        <h2>One board. Three zones.</h2>
+        <div className="cb-grid">
+          {[
+            ["Work Feed", "Jobs, invoices, quotes, workers and clients appear as a simple feed."],
+            ["Prepared by Churvox", "AI prepares invoice drafts, reminders, worker suggestions and proof packs."],
+            ["Detail Preview", "Tap anything to review, edit and approve without page jumping."],
+          ].map(([title, body]) => (
+            <article key={title}><h3>{title}</h3><p>{body}</p></article>
           ))}
         </div>
       </section>
 
-      <section className="cw-section" id="features">
-        <span className="cw-kicker">What it prepares</span>
+      <section className="cb-section" id="features">
+        <span className="cb-kicker">What it prepares</span>
         <h2>The daily admin your business keeps repeating.</h2>
-        <div className="cw-grid">
+        <div className="cb-grid">
           {["Work slips", "Client follow-ups", "Worker assignment", "Quote reminders", "Draft invoices", "Proof packs", "Payroll checks", "MYOB readiness"].map((x) => (
             <article key={x}><h3>{x}</h3><p>Prepared as a clear owner action with review and approval.</p></article>
           ))}
         </div>
       </section>
 
-      <section className="cw-section" id="pricing">
-        <span className="cw-kicker">Pricing</span>
+      <section className="cb-section" id="pricing">
+        <span className="cb-kicker">Pricing</span>
         <h2>Operator is where Churvox starts preparing admin for approval.</h2>
-        <div className="cw-pricing">
+        <div className="cb-pricing">
           {[
             ["Start", "$39", "Solo operators"],
             ["Crew", "$89", "Small teams"],
@@ -344,7 +359,9 @@ function PublicPage({ go }) {
             ["Command", "$299", "MYOB + payroll"],
           ].map(([name, price, sub]) => (
             <article key={name} className={name === "Operator" ? "featured" : ""}>
-              <span>{sub}</span><h3>{name}</h3><strong>{price}<small>/month + GST</small></strong>
+              <span>{sub}</span>
+              <h3>{name}</h3>
+              <strong>{price}<small>/month + GST</small></strong>
               <button type="button" onClick={() => go("signup")}>Choose {name}</button>
             </article>
           ))}
@@ -361,19 +378,20 @@ function AuthPage({ mode, go, onLogin }) {
   const [error, setError] = useState("");
 
   function update(key, value) {
-    setForm((old) => ({ ...old, [key]: value }));
+    setForm((current) => ({ ...current, [key]: value }));
   }
 
-  async function submit(e) {
-    e.preventDefault();
+  async function submit(event) {
+    event.preventDefault();
     setBusy(true);
     setError("");
+
     try {
       const payload = signup
         ? await api("/auth/register", { method: "POST", body: JSON.stringify({ ...form, plan: "operator" }) })
         : await api("/auth/login", { method: "POST", body: JSON.stringify({ email: form.email, password: form.password }) });
-      saveAuth(payload);
-      markLoggedIn(payload);
+
+      saveAuth(payload, form.email);
       onLogin();
       go("dashboard");
     } catch (err) {
@@ -384,24 +402,36 @@ function AuthPage({ mode, go, onLogin }) {
   }
 
   return (
-    <main className="cw-public">
+    <main className="cb-public">
       <PublicNav go={go} />
-      <section className="cw-auth">
-        <article><span className="cw-kicker">Secure workbench</span><h1>{signup ? "Start your Churvox workbench." : "Open your prepared actions."}</h1><p>Same system everywhere: prepared admin, review, edit, approve.</p></article>
-        <form className="cw-auth-card" onSubmit={submit}>
+      <section className="cb-auth">
+        <article>
+          <span className="cb-kicker">Secure command board</span>
+          <h1>{signup ? "Start your Churvox board." : "Open your prepared actions."}</h1>
+          <p>Same system everywhere: work feed, prepared actions, detail preview, approve.</p>
+        </article>
+
+        <form className="cb-card cb-auth-card" onSubmit={submit}>
           <Logo />
           <h2>{signup ? "Create account" : "Login"}</h2>
-          {signup && (
+
+          {signup ? (
             <>
               <label>Your name<input value={form.name} onChange={(e) => update("name", e.target.value)} /></label>
               <label>Business name<input value={form.business_name} onChange={(e) => update("business_name", e.target.value)} /></label>
             </>
-          )}
+          ) : null}
+
           <label>Email<input type="email" required value={form.email} onChange={(e) => update("email", e.target.value)} /></label>
           <label>Password<input type="password" required value={form.password} onChange={(e) => update("password", e.target.value)} /></label>
-          {error ? <p className="cw-error">{error}</p> : null}
+
+          {error ? <p className="cb-error">{error}</p> : null}
+
           <button type="submit" disabled={busy}>{busy ? "Opening..." : signup ? "Start free trial" : "Open Churvox"}</button>
-          <small>{signup ? "Already have an account?" : "Need an account?"} <button type="button" onClick={() => go(signup ? "login" : "signup")}>{signup ? "Login" : "Start free trial"}</button></small>
+          <small>
+            {signup ? "Already have an account?" : "Need an account?"}{" "}
+            <button type="button" onClick={() => go(signup ? "login" : "signup")}>{signup ? "Login" : "Start free trial"}</button>
+          </small>
         </form>
       </section>
     </main>
@@ -409,218 +439,443 @@ function AuthPage({ mode, go, onLogin }) {
 }
 
 function AppShell({ route, go, data, user, reload, logout }) {
+  const [quickCreate, setQuickCreate] = useState(false);
+  const createType = ENTITY_ROUTES.includes(route) ? route : "work";
+
   return (
-    <main className="cw-app">
-      <aside className="cw-sidebar">
-        <button type="button" className="cw-logo-btn" onClick={() => go("dashboard")}><Logo /></button>
+    <main className="cb-app">
+      <aside className="cb-rail">
+        <button type="button" className="cb-logo-btn" onClick={() => go("dashboard")}><Logo /></button>
         <nav>
-          {AREA_ORDER.map((key) => (
-            <button type="button" key={key} className={route === key ? "active" : ""} onClick={() => go(key)}>
-              <b>{AREAS[key].label}</b><small>{AREAS[key].sub}</small>
+          {NAV.map((key) => (
+            <button key={key} type="button" className={route === key ? "active" : ""} onClick={() => go(key)}>
+              <b>{AREAS[key].label}</b>
+              <small>{AREAS[key].sub}</small>
             </button>
           ))}
         </nav>
-        <button type="button" className="cw-logout" onClick={logout}>Logout</button>
+        <button type="button" className="cb-logout" onClick={logout}>Logout</button>
       </aside>
 
-      <section className="cw-workspace">
-        <header className="cw-topbar">
-          <div><span className="cw-kicker">Prepared Workbench</span><h1>{AREAS[route]?.label || "Command"}</h1></div>
-          <aside><button type="button" onClick={reload}>Refresh</button><strong>{clean(user?.name || user?.email, "Owner")}</strong></aside>
+      <section className="cb-shell">
+        <header className="cb-topbar">
+          <div>
+            <span className="cb-kicker">Churvox Command Board</span>
+            <h1>{AREAS[route]?.label || "Command"}</h1>
+          </div>
+          <aside>
+            <button type="button" className="ghost" onClick={() => go("dashboard")}>Notifications</button>
+            <button type="button" className="ghost" onClick={reload}>Refresh</button>
+            <button type="button" onClick={() => setQuickCreate(true)}>Quick add</button>
+            <strong>{clean(user?.name || user?.email, "Owner")}</strong>
+          </aside>
         </header>
 
-        {route === "dashboard" ? <CommandPage data={data} go={go} /> : null}
-        {PAGE_META[route] ? <WorkbenchPage type={route} rows={data[route] || []} reload={reload} /> : null}
-        {["proof", "payroll", "plans", "settings"].includes(route) ? <SimplePage route={route} /> : null}
+        <Workspace route={route} go={go} data={data} reload={reload} />
+
+        {quickCreate ? (
+          <CreateModal type={createType} onClose={() => setQuickCreate(false)} onSaved={reload} />
+        ) : null}
       </section>
     </main>
   );
 }
 
-function CommandPage({ data, go }) {
+function Workspace({ route, go, data, reload }) {
+  if (route === "dashboard") return <DashboardBoard data={data} go={go} />;
+  if (ENTITY_ROUTES.includes(route)) return <EntityBoard type={route} rows={data[route] || []} reload={reload} />;
+  if (route === "plans") return <PlansBoard go={go} />;
+  if (route === "settings") return <SettingsBoard reload={reload} />;
+  return <UtilityBoard route={route} go={go} />;
+}
+
+function DashboardBoard({ data, go }) {
   const invoices = data.invoices || [];
-  const total = invoices.reduce((sum, x) => sum + Number(x.amount || x.total || x.balance || 0), 0);
+  const total = invoices.reduce((sum, item) => sum + Number(item.amount || item.total || item.balance || 0), 0);
+  const prepared = [
+    { actionTitle: "Invoice draft ready", detail: "Completed job has proof and amount", status: "Approve", route: "invoices" },
+    { actionTitle: "Worker suggestion ready", detail: "Best match found with no conflict", status: "Review", route: "work" },
+    { actionTitle: "Quote follow-up written", detail: "Customer has not replied", status: "Send", route: "quotes" },
+  ];
 
   return (
-    <section className="cw-page">
-      <div className="cw-metrics">
-        <Metric label="Prepared actions" value="7" sub="Ready to review" />
+    <section className="cb-board-page">
+      <section className="cb-metrics">
+        <Metric label="Prepared" value="7" sub="Owner actions" />
         <Metric label="Work" value={(data.work || []).length || 8} sub="Jobs in motion" />
-        <Metric label="Clients" value={(data.clients || []).length || 12} sub="Customer base" />
         <Metric label="Invoices" value={invoices.length || 3} sub={money(total, "$18,420")} />
-      </div>
-      <section className="cw-main-grid">
-        <article className="cw-panel">
-          <span className="cw-kicker">Prepared by Churvox</span>
-          <h2>Review today’s owner actions.</h2>
-          <PreparedRow title="Invoice draft ready" sub="Completed job has proof and amount" meta="Approve" onClick={() => go("invoices")} />
-          <PreparedRow title="Worker suggested" sub="Best match found with no conflict" meta="Review" onClick={() => go("work")} />
-          <PreparedRow title="Quote follow-up prepared" sub="Customer has not replied" meta="Send" onClick={() => go("quotes")} />
-        </article>
-        <article className="cw-panel dark">
-          <span className="cw-kicker">AI next move</span>
-          <h2>Start with money waiting.</h2>
-          <p>Invoices and follow-ups are the fastest admin win. Review prepared drafts before opening anything else.</p>
-          <button type="button" onClick={() => go("invoices")}>Open invoices</button>
-        </article>
+        <Metric label="Quotes" value={(data.quotes || []).length || 4} sub="Follow-up queue" />
+      </section>
+
+      <section className="cb-board">
+        <FeedColumn title="Work Feed" type="work" rows={(data.work || []).length ? data.work : DEMO.work} />
+        <PreparedColumn title="Prepared by Churvox" actions={prepared} onAction={(action) => go(action.route)} />
+        <PreviewColumn type="dashboard" item={prepared[0]} onOpen={() => go("invoices")} />
       </section>
     </section>
   );
 }
 
-function WorkbenchPage({ type, rows, reload }) {
-  const meta = PAGE_META[type];
-  const base = rows.length ? rows : DEMO[type] || [];
+function EntityBoard({ type, rows, reload }) {
+  const area = AREAS[type];
   const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState(base[0] || {});
+  const [selected, setSelected] = useState(null);
   const [sheet, setSheet] = useState(false);
   const [create, setCreate] = useState(false);
+  const [notice, setNotice] = useState("");
 
-  const list = useMemo(() => base.filter((x) => searchText(type, x).includes(query.toLowerCase().trim())), [base, query, type]);
-  const active = selected && Object.keys(selected).length ? selected : list[0] || base[0] || {};
+  const baseRows = rows.length ? rows : DEMO[type] || [];
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return baseRows.filter((item) => !q || searchText(type, item).includes(q));
+  }, [baseRows, query, type]);
+
+  const current = selected || filtered[0] || baseRows[0] || {};
+  const prepared = area.prepared.map((title) => ({
+    actionTitle: title,
+    detail: preparedDetail(type, title),
+    status: title.includes("Fix") || title.includes("Check") ? "Review" : "Ready",
+    route: type,
+  }));
+
+  function openItem(item) {
+    setSelected(item);
+    if (window.innerWidth < 900) setSheet(true);
+  }
+
+  function approve(label) {
+    setNotice(`${label} marked ready for owner approval.`);
+  }
 
   return (
-    <section className="cw-page">
-      <section className="cw-panel cw-head">
-        <div><span className="cw-kicker">{meta.title}</span><h2>{meta.line}</h2><p>Prepared actions first. Records second. Owner decision last.</p></div>
-        <button type="button" onClick={() => setCreate(true)}>{meta.action}</button>
+    <section className="cb-board-page">
+      <section className="cb-card cb-page-head">
+        <div>
+          <span className="cb-kicker">{area.label}</span>
+          <h2>{area.line}</h2>
+          <p>Feed on the left. Prepared actions in the middle. Detail preview on the right.</p>
+        </div>
+        <button type="button" onClick={() => setCreate(true)}>{area.action}</button>
       </section>
 
-      <section className="cw-prepared">
-        {meta.prepared.map((x) => <button type="button" key={x} onClick={() => setSheet(true)}><b>{x}</b><small>Prepared action</small></button>)}
-      </section>
+      {notice ? <section className="cb-notice">{notice}</section> : null}
 
-      <section className="cw-panel cw-controls">
-        <label>Search<input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`Search ${meta.title.toLowerCase()}...`} /></label>
+      <section className="cb-card cb-controls">
+        <label>
+          Search {area.label}
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`Search ${area.label.toLowerCase()}...`} />
+        </label>
         <button type="button" className="ghost" onClick={() => setQuery("")}>Clear</button>
+        <button type="button" className="ghost" onClick={reload}>Refresh</button>
       </section>
 
-      <section className="cw-main-grid">
-        <article className="cw-panel">
-          <header><h2>{meta.title}</h2><button type="button" className="ghost" onClick={reload}>Refresh</button></header>
-          <div className="cw-list">
-            {list.map((item, index) => (
-              <button type="button" key={index} className={active === item ? "active" : ""} onClick={() => { setSelected(item); if (window.innerWidth < 850) setSheet(true); }}>
-                <span><b>{titleOf(type, item, index)}</b><small>{subOf(type, item)}</small></span>
-                <Status value={statusOf(type, item)} />
-              </button>
-            ))}
-            {!list.length ? <p className="cw-empty">No matching records.</p> : null}
-          </div>
-        </article>
-        <DetailPanel type={type} item={active} onOpen={() => setSheet(true)} />
+      <section className="cb-board">
+        <FeedColumn title={area.title} type={type} rows={filtered} selected={current} onSelect={openItem} />
+        <PreparedColumn
+          title="Prepared by Churvox"
+          actions={prepared}
+          onAction={(action) => {
+            setSelected(action);
+            setSheet(true);
+          }}
+        />
+        <PreviewColumn
+          type={type}
+          item={current}
+          onOpen={() => setSheet(true)}
+          onApprove={() => approve(titleOf(type, current))}
+        />
       </section>
 
-      {sheet ? <Sheet type={type} item={active} onClose={() => setSheet(false)} /> : null}
+      {sheet ? <DetailSheet type={type} item={current} onClose={() => setSheet(false)} onApprove={() => approve(titleOf(type, current))} /> : null}
       {create ? <CreateModal type={type} onClose={() => setCreate(false)} onSaved={reload} /> : null}
     </section>
   );
 }
 
-function DetailPanel({ type, item, onOpen }) {
+function FeedColumn({ title, type, rows = [], selected, onSelect }) {
   return (
-    <article className="cw-panel dark">
-      <span className="cw-kicker">AI next move</span>
-      <h2>{titleOf(type, item)}</h2>
-      <p>{nextMove(type)}</p>
-      <div className="cw-detail">
-        {Object.entries(item || {}).slice(0, 7).map(([k, v]) => <p key={k}><b>{k.replace(/_/g, " ")}</b><span>{clean(v, "—")}</span></p>)}
+    <article className="cb-card cb-feed">
+      <header>
+        <span className="cb-kicker">{title}</span>
+        <strong>{rows.length}</strong>
+      </header>
+      <div className="cb-feed-list">
+        {rows.length ? rows.map((item, index) => (
+          <button key={index} type="button" className={selected === item ? "active" : ""} onClick={() => onSelect?.(item)}>
+            <span>
+              <b>{titleOf(type, item, index)}</b>
+              <small>{subOf(type, item)}</small>
+            </span>
+            <Status value={statusOf(type, item)} />
+          </button>
+        )) : (
+          <div className="cb-empty">Nothing here yet.</div>
+        )}
       </div>
-      <button type="button" onClick={onOpen}>Review prepared action</button>
     </article>
   );
 }
 
-function Sheet({ type, item, onClose }) {
+function PreparedColumn({ title, actions, onAction }) {
   return (
-    <section className="cw-sheet">
+    <article className="cb-card cb-prepared">
+      <header>
+        <span className="cb-kicker">{title}</span>
+        <strong>{actions.length}</strong>
+      </header>
+      {actions.map((action) => (
+        <button key={action.actionTitle} type="button" onClick={() => onAction(action)}>
+          <i />
+          <span>
+            <b>{action.actionTitle}</b>
+            <small>{action.detail}</small>
+          </span>
+          <strong>{action.status}</strong>
+        </button>
+      ))}
+    </article>
+  );
+}
+
+function PreviewColumn({ type, item, onOpen, onApprove }) {
+  return (
+    <article className="cb-card cb-preview-panel">
+      <span className="cb-kicker">Detail Preview</span>
+      <h2>{titleOf(type, item || {})}</h2>
+      <p>{nextMove(type, item)}</p>
+
+      <div className="cb-detail">
+        {Object.entries(item || {}).slice(0, 8).map(([key, value]) => (
+          <p key={key}>
+            <b>{key.replace(/_/g, " ")}</b>
+            <span>{clean(value, "—")}</span>
+          </p>
+        ))}
+      </div>
+
+      <footer>
+        <button type="button" className="ghost" onClick={onOpen}>Review</button>
+        <button type="button" onClick={onApprove || onOpen}>Approve</button>
+      </footer>
+    </article>
+  );
+}
+
+function DetailSheet({ type, item, onClose, onApprove }) {
+  return (
+    <section className="cb-sheet">
       <article>
-        <header><div><span className="cw-kicker">Review / edit / approve</span><h2>{titleOf(type, item)}</h2></div><button type="button" onClick={onClose}>×</button></header>
-        <p>{nextMove(type)}</p>
-        <div className="cw-sheet-grid">
+        <header>
+          <div>
+            <span className="cb-kicker">Review / edit / approve</span>
+            <h2>{titleOf(type, item)}</h2>
+          </div>
+          <button type="button" onClick={onClose}>×</button>
+        </header>
+
+        <p>{nextMove(type, item)}</p>
+
+        <div className="cb-sheet-grid">
           <div><b>Status</b><span>{statusOf(type, item)}</span></div>
           <div><b>Detail</b><span>{subOf(type, item)}</span></div>
           <div><b>Owner action</b><span>Review prepared action</span></div>
         </div>
-        <div className="cw-detail light">
-          {Object.entries(item || {}).slice(0, 10).map(([k, v]) => <p key={k}><b>{k.replace(/_/g, " ")}</b><span>{clean(v, "—")}</span></p>)}
+
+        <div className="cb-detail light">
+          {Object.entries(item || {}).slice(0, 10).map(([key, value]) => (
+            <p key={key}>
+              <b>{key.replace(/_/g, " ")}</b>
+              <span>{clean(value, "—")}</span>
+            </p>
+          ))}
         </div>
-        <footer><button type="button" className="ghost" onClick={onClose}>Close</button><button type="button" onClick={onClose}>Approve when ready</button></footer>
+
+        <footer>
+          <button type="button" className="ghost" onClick={onClose}>Close</button>
+          <button type="button" onClick={() => { onApprove?.(); onClose(); }}>Approve when ready</button>
+        </footer>
       </article>
     </section>
   );
 }
 
-function SimplePage({ route }) {
-  const copy = {
-    proof: ["Proof & Pay", "Completed work, photos and invoice-ready proof packs."],
-    payroll: ["Payroll Review", "Approved hours, missing times and export-ready pay summaries."],
-    plans: ["Plans", "Start, Crew, Operator and Command with AI Operator Actions as the main upgrade."],
-    settings: ["Settings", "Business profile, roles, invoice settings, MYOB, SMS and notifications."],
-  }[route];
+function UtilityBoard({ route, go }) {
+  const map = {
+    proof: ["Proof & Pay", "Completed work, photos and invoice-ready proof packs.", "invoices"],
+    payroll: ["Payroll", "Approved hours, missing times and export-ready pay summaries.", "crew"],
+  };
+  const [title, line, target] = map[route] || ["Workspace", "Prepared actions and approval flow.", "dashboard"];
 
   return (
-    <section className="cw-page">
-      <section className="cw-panel cw-head">
-        <div><span className="cw-kicker">{copy[0]}</span><h2>{copy[1]}</h2><p>Prepared actions first. Records second. Approval last.</p></div>
+    <section className="cb-board-page">
+      <section className="cb-card cb-page-head">
+        <div>
+          <span className="cb-kicker">{title}</span>
+          <h2>{line}</h2>
+          <p>This area follows the same Command Board pattern.</p>
+        </div>
+        <button type="button" onClick={() => go(target)}>Open related work</button>
       </section>
-      <section className="cw-prepared">
-        <button type="button"><b>Review prepared items</b><small>Owner action</small></button>
-        <button type="button"><b>Check missing info</b><small>Churvox scan</small></button>
-        <button type="button"><b>Approve next step</b><small>Ready when checked</small></button>
+
+      <section className="cb-grid">
+        {["Review prepared items", "Check missing info", "Approve next step"].map((x) => (
+          <article className="cb-card" key={x}>
+            <h3>{x}</h3>
+            <p>Prepared by Churvox for owner approval.</p>
+            <button type="button" onClick={() => go(target)}>Open</button>
+          </article>
+        ))}
       </section>
     </section>
   );
 }
 
+function PlansBoard({ go }) {
+  const [message, setMessage] = useState("");
+
+  function choose(name) {
+    localStorage.setItem("churvox_selected_plan", name.toLowerCase());
+    setMessage(`${name} selected. Opening Command.`);
+    setTimeout(() => go("dashboard"), 600);
+  }
+
+  return (
+    <section className="cb-board-page">
+      <section className="cb-card cb-page-head">
+        <div>
+          <span className="cb-kicker">Plans</span>
+          <h2>Pricing built around AI Operator Actions.</h2>
+          <p>Operator is the main plan where Churvox starts preparing admin for approval.</p>
+        </div>
+      </section>
+
+      {message ? <section className="cb-notice">{message}</section> : null}
+
+      <section className="cb-pricing app">
+        {[
+          ["Start", "$39", "Solo operators"],
+          ["Crew", "$89", "Small teams"],
+          ["Operator", "$149", "AI Operator Actions"],
+          ["Command", "$299", "MYOB + payroll"],
+        ].map(([name, price, sub]) => (
+          <article key={name} className={name === "Operator" ? "featured" : ""}>
+            <span>{sub}</span>
+            <h3>{name}</h3>
+            <strong>{price}<small>/month + GST</small></strong>
+            <button type="button" onClick={() => choose(name)}>Choose {name}</button>
+          </article>
+        ))}
+      </section>
+    </section>
+  );
+}
+
+function SettingsBoard({ reload }) {
+  const user = getUser() || {};
+  const [form, setForm] = useState({
+    email: user.email || "",
+    business_name: user.business_name || user.company_name || "",
+    industry: user.industry || "",
+    region: user.region || "",
+  });
+  const [message, setMessage] = useState("");
+
+  function update(key, value) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function save(event) {
+    event.preventDefault();
+    const next = { ...user, ...form };
+    localStorage.setItem("churvox_user", JSON.stringify(next));
+    setMessage("Settings saved.");
+  }
+
+  return (
+    <section className="cb-board-page">
+      <form className="cb-card cb-settings" onSubmit={save}>
+        <span className="cb-kicker">Settings</span>
+        <h2>Business setup and workspace controls.</h2>
+
+        <div className="cb-form-grid">
+          <label>Owner email<input value={form.email} onChange={(e) => update("email", e.target.value)} /></label>
+          <label>Business name<input value={form.business_name} onChange={(e) => update("business_name", e.target.value)} /></label>
+          <label>Industry<input value={form.industry} onChange={(e) => update("industry", e.target.value)} placeholder="Lawn care, plumbing, electrical..." /></label>
+          <label>Region<input value={form.region} onChange={(e) => update("region", e.target.value)} /></label>
+        </div>
+
+        {message ? <p className="cb-notice inline">{message}</p> : null}
+
+        <footer>
+          <button type="submit">Save settings</button>
+          <button type="button" className="ghost" onClick={reload}>Refresh account</button>
+        </footer>
+      </form>
+    </section>
+  );
+}
+
 function CreateModal({ type, onClose, onSaved }) {
+  const area = AREAS[type] || AREAS.work;
   const [form, setForm] = useState({});
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState("");
-  const meta = PAGE_META[type];
+  const [message, setMessage] = useState("");
 
-  async function submit(e) {
-    e.preventDefault();
+  function update(key, value) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  async function submit(event) {
+    event.preventDefault();
     setBusy(true);
-    setMsg("");
+    setMessage("");
+
     try {
-      const payload = { ...form, title: form.title || form.name || form.invoice_number || form.quote_number, status: form.status || "new" };
-      const endpoint = AREAS[type]?.endpoint || "/jobs";
-      const paths = type === "crew" ? [endpoint, AREAS[type].read] : [endpoint];
-      await postFirst(paths, payload);
-      setMsg("Saved.");
+      const payload = {
+        ...form,
+        title: form.title || form.name || form.invoice_number || form.quote_number || area.action,
+        status: form.status || "new",
+      };
+
+      await api(area.create || "/jobs", { method: "POST", body: JSON.stringify(payload) });
+      setMessage("Saved.");
       await onSaved?.();
-      setTimeout(onClose, 450);
+      setTimeout(onClose, 500);
     } catch (err) {
-      setMsg(err.message || "Could not save.");
+      setMessage(err.message || "Could not save.");
     } finally {
       setBusy(false);
     }
   }
 
-  async function postFirst(paths, payload) {
-    let last;
-    for (const path of paths) {
-      try {
-        return await api(path, { method: "POST", body: JSON.stringify(payload) });
-      } catch (err) {
-        last = err;
-      }
-    }
-    throw last;
-  }
-
   return (
-    <section className="cw-modal">
+    <section className="cb-modal">
       <form onSubmit={submit}>
-        <header><h2>{meta.action}</h2><button type="button" onClick={onClose}>×</button></header>
-        <div className="cw-form-grid">
-          {meta.fields.map(([key, label]) => (
-            <label key={key}>{label}{key === "description" ? <textarea value={form[key] || ""} onChange={(e) => setForm({ ...form, [key]: e.target.value })} /> : <input value={form[key] || ""} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />}</label>
+        <header>
+          <h2>{area.action}</h2>
+          <button type="button" onClick={onClose}>×</button>
+        </header>
+
+        <div className="cb-form-grid">
+          {(area.fields || AREAS.work.fields).map(([key, label]) => (
+            <label key={key}>
+              {label}
+              {key === "description" ? (
+                <textarea value={form[key] || ""} onChange={(e) => update(key, e.target.value)} />
+              ) : (
+                <input value={form[key] || ""} onChange={(e) => update(key, e.target.value)} />
+              )}
+            </label>
           ))}
         </div>
-        {msg ? <p>{msg}</p> : null}
-        <footer><button type="button" className="ghost" onClick={onClose}>Cancel</button><button type="submit" disabled={busy}>{busy ? "Saving..." : "Save"}</button></footer>
+
+        {message ? <p>{message}</p> : null}
+
+        <footer>
+          <button type="button" className="ghost" onClick={onClose}>Cancel</button>
+          <button type="submit" disabled={busy}>{busy ? "Saving..." : "Save"}</button>
+        </footer>
       </form>
     </section>
   );
@@ -630,67 +885,77 @@ function Metric({ label, value, sub }) {
   return <article><span>{label}</span><strong>{value}</strong><small>{sub}</small></article>;
 }
 
-function PreparedRow({ title, sub, meta, onClick }) {
-  return <button type="button" className="cw-action-row" onClick={onClick}><i /><span><b>{title}</b><small>{sub}</small></span><strong>{meta}</strong></button>;
+function preparedDetail(type, title) {
+  if (type === "work") return title.includes("invoice") ? "Completed work can become invoice-ready." : "Churvox checks worker, proof and missing details.";
+  if (type === "clients") return "Churvox checks contact gaps, recent work and follow-up options.";
+  if (type === "crew") return "Churvox checks role, workload, region and schedule conflict.";
+  if (type === "quotes") return "Churvox prepares follow-up wording or job conversion.";
+  if (type === "invoices") return "Churvox checks amount, proof, due date and customer email.";
+  return "Prepared for owner approval.";
 }
 
-function Status({ value }) {
-  const label = clean(value, "Ready");
-  const low = label.toLowerCase();
-  const tone = low.includes("overdue") || low.includes("block") ? "red" : low.includes("need") || low.includes("draft") || low.includes("pending") ? "amber" : low.includes("complete") || low.includes("paid") || low.includes("active") ? "green" : "blue";
-  return <span className={`cw-status ${tone}`}>{label}</span>;
-}
-
-function nextMove(type) {
+function nextMove(type, item) {
+  if (item?.actionTitle) return item.detail || "Review what Churvox prepared, edit if needed, then approve.";
   return {
     work: "Check worker, missing details, proof and invoice readiness before approving the next step.",
     clients: "Check contact details, recent work and unpaid invoices before creating more admin.",
     crew: "Check role, region, workload and conflicts before assigning work.",
     quotes: "Check follow-up timing, wording and whether this should become a job.",
-    invoices: "Check amount, client email, proof, due date and reminder/MYOB path.",
+    invoices: "Check amount, customer email, proof, due date and reminder/MYOB path.",
+    dashboard: "Review the prepared admin action, edit if needed, then approve.",
   }[type] || "Review what Churvox prepared, edit if needed, then approve.";
 }
 
 export default function ChurvoxAIShell() {
   const [route, setRoute] = useState(currentRoute());
+  const [authed, setAuthed] = useState(isLoggedIn());
   const [user, setUser] = useState(() => getUser());
   const [data, setData] = useState({ work: [], clients: [], crew: [], quotes: [], invoices: [] });
-  const authed = isLoggedIn();
 
   function go(next) {
-    window.history.pushState({}, "", routePath(next));
+    window.history.pushState({}, "", pathFor(next));
     setRoute(currentRoute());
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function load() {
-    if (!token()) return;
-    const entries = await Promise.allSettled([
+    if (!isLoggedIn()) return;
+    const results = await Promise.allSettled([
       api("/jobs"),
       api("/clients"),
       api("/team/workers"),
       api("/quotes"),
       api("/invoices"),
     ]);
+
     setData({
-      work: entries[0].status === "fulfilled" ? pickList(entries[0].value, ["jobs", "items", "data"]) : [],
-      clients: entries[1].status === "fulfilled" ? pickList(entries[1].value, ["clients", "items", "data"]) : [],
-      crew: entries[2].status === "fulfilled" ? pickList(entries[2].value, ["workers", "team", "items", "data"]) : [],
-      quotes: entries[3].status === "fulfilled" ? pickList(entries[3].value, ["quotes", "items", "data"]) : [],
-      invoices: entries[4].status === "fulfilled" ? pickList(entries[4].value, ["invoices", "items", "data"]) : [],
+      work: results[0].status === "fulfilled" ? pickList(results[0].value, ["jobs", "items", "data"]) : [],
+      clients: results[1].status === "fulfilled" ? pickList(results[1].value, ["clients", "items", "data"]) : [],
+      crew: results[2].status === "fulfilled" ? pickList(results[2].value, ["workers", "team", "items", "data"]) : [],
+      quotes: results[3].status === "fulfilled" ? pickList(results[3].value, ["quotes", "items", "data"]) : [],
+      invoices: results[4].status === "fulfilled" ? pickList(results[4].value, ["invoices", "items", "data"]) : [],
     });
   }
 
+  function onLogin() {
+    setAuthed(true);
+    setUser(getUser());
+    load();
+  }
+
   function logout() {
-    ["token", "authToken", "access_token", "churvox_user", "churvox_session_active"].forEach((x) => localStorage.removeItem(x));
+    ["token", "authToken", "access_token", "churvox_user", "churvox_email", "churvox_session_active"].forEach((key) => {
+      try { localStorage.removeItem(key); } catch {}
+    });
+    setAuthed(false);
     setUser(null);
     go("public");
   }
 
   useEffect(() => {
-    const pop = () => setRoute(currentRoute());
-    window.addEventListener("popstate", pop);
-    return () => window.removeEventListener("popstate", pop);
+    const onPop = () => setRoute(currentRoute());
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
   }, []);
 
   useEffect(() => {
@@ -699,8 +964,17 @@ export default function ChurvoxAIShell() {
   }, [route, authed]);
 
   if (route === "public") return <PublicPage go={go} />;
-  if (route === "login" || route === "signup") return <AuthPage mode={route} go={go} onLogin={() => { setUser(getUser() || { email: localStorage.getItem("churvox_email") || "Owner" }); load(); }} />;
-  if (!authed) return <AuthPage mode="login" go={go} onLogin={() => { setUser(getUser() || { email: localStorage.getItem("churvox_email") || "Owner" }); load(); }} />;
+  if (route === "login" || route === "signup") return <AuthPage mode={route} go={go} onLogin={onLogin} />;
+  if (!authed) return <AuthPage mode="login" go={go} onLogin={onLogin} />;
 
-  return <AppShell route={AREAS[route] ? route : "dashboard"} go={go} data={data} user={user || getUser() || {}} reload={load} logout={logout} />;
+  return (
+    <AppShell
+      route={AREAS[route] ? route : "dashboard"}
+      go={go}
+      data={data}
+      user={user || getUser() || {}}
+      reload={load}
+      logout={logout}
+    />
+  );
 }
