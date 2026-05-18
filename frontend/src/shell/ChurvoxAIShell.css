@@ -181,3 +181,32 @@ button.ghost { color: var(--ink); border: 1px solid var(--line); background: rgb
   .cw-sheet, .cw-modal { align-items: end; padding: 10px; }
   .cw-sheet article, .cw-modal form { width: 100%; border-radius: 26px 26px 18px 18px; }
 }
+
+/* PHASE_323_WIRE_BUTTONS_AND_FLOWS */
+
+.fresh-settings-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.fresh-settings-actions button,
+.fresh-panel button,
+.fresh-page-head button {
+  min-height: 42px;
+}
+
+.fresh-grid .fresh-panel button {
+  margin-top: 12px;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.fresh-page .fresh-panel p {
+  overflow-wrap: anywhere;
+}
+
