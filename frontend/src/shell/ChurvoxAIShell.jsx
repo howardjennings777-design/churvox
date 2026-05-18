@@ -158,6 +158,47 @@ function saveAuth(payload = {}) {
   if (user && typeof user === "object") localStorage.setItem("churvox_user", JSON.stringify(user));
 }
 
+function churvoxAuthToken() {
+  try {
+    if (typeof token === "function") return token() || "";
+    if (typeof getToken === "function") return getToken() || "";
+    if (typeof readToken === "function") return readToken() || "";
+    return (
+      localStorage.getItem("token") ||
+      localStorage.getItem("authToken") ||
+      localStorage.getItem("access_token") ||
+      ""
+    );
+  } catch {
+    return "";
+  }
+}
+
+function markLoggedIn(payload = {}) {
+  try {
+    localStorage.setItem("churvox_session_active", "true");
+
+    const data = payload?.data || payload || {};
+    const user = data.user || data.account || data.profile || null;
+
+    if (user && typeof user === "object") {
+      localStorage.setItem("churvox_user", JSON.stringify(user));
+    }
+  } catch {}
+}
+
+function isLoggedIn() {
+  try {
+    return Boolean(
+      churvoxAuthToken() ||
+      localStorage.getItem("churvox_session_active") === "true"
+    );
+  } catch {
+    return false;
+  }
+}
+
+
 async function api(path, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
     credentials: "include",
@@ -328,6 +369,7 @@ function AuthPage({ mode, go, onLogin }) {
         ? await api("/auth/register", { method: "POST", body: JSON.stringify({ ...form, plan: "operator" }) })
         : await api("/auth/login", { method: "POST", body: JSON.stringify({ email: form.email, password: form.password }) });
       saveAuth(payload);
+      markLoggedIn(payload);
       onLogin();
       go("dashboard");
     } catch (err) {
@@ -609,7 +651,7 @@ export default function ChurvoxAIShell() {
   const [route, setRoute] = useState(currentRoute());
   const [user, setUser] = useState(() => getUser());
   const [data, setData] = useState({ work: [], clients: [], crew: [], quotes: [], invoices: [] });
-  const authed = Boolean(token());
+  const authed = isLoggedIn();
 
   function go(next) {
     window.history.pushState({}, "", routePath(next));
@@ -636,7 +678,7 @@ export default function ChurvoxAIShell() {
   }
 
   function logout() {
-    ["token", "authToken", "access_token", "churvox_user"].forEach((x) => localStorage.removeItem(x));
+    ["token", "authToken", "access_token", "churvox_user", "churvox_session_active"].forEach((x) => localStorage.removeItem(x));
     setUser(null);
     go("public");
   }
@@ -653,8 +695,8 @@ export default function ChurvoxAIShell() {
   }, [route, authed]);
 
   if (route === "public") return <PublicPage go={go} />;
-  if (route === "login" || route === "signup") return <AuthPage mode={route} go={go} onLogin={() => { setUser(getUser()); load(); }} />;
-  if (!authed) return <AuthPage mode="login" go={go} onLogin={() => { setUser(getUser()); load(); }} />;
+  if (route === "login" || route === "signup") return <AuthPage mode={route} go={go} onLogin={() => { setUser(getUser() || { email: localStorage.getItem("churvox_email") || "Owner" }); load(); }} />;
+  if (!authed) return <AuthPage mode="login" go={go} onLogin={() => { setUser(getUser() || { email: localStorage.getItem("churvox_email") || "Owner" }); load(); }} />;
 
   return <AppShell route={AREAS[route] ? route : "dashboard"} go={go} data={data} user={user || getUser() || {}} reload={load} logout={logout} />;
 }
