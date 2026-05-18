@@ -20,44 +20,70 @@ const NAV = [
   ["quotes", "Quotes"],
   ["proof", "Proof"],
   ["payroll", "Payroll"],
+  ["plans", "Plans"],
   ["settings", "Settings"],
 ];
 
 const PAGES = {
   work: {
-    title: "Work",
+    title: "Work Flow",
     read: "/jobs",
     create: "/jobs",
-    empty: "No jobs yet.",
+    action: "Add work",
     fields: [["title", "Job title"], ["client_name", "Client"], ["address", "Address"], ["amount", "Price"]],
+    prepared: [
+      ["Assign worker", "Churvox checks crew, workload and conflicts before assignment."],
+      ["Fix missing info", "Jobs missing client, address, price or proof come forward first."],
+      ["Prepare invoice", "Completed work can become an owner-approved invoice draft."],
+    ],
   },
   money: {
-    title: "Money",
+    title: "Money Flow",
     read: "/invoices",
     create: "/invoices",
-    empty: "No invoices yet.",
+    action: "Create invoice",
     fields: [["invoice_number", "Invoice number"], ["client_name", "Client"], ["amount", "Amount"], ["description", "Description"]],
+    prepared: [
+      ["Approve invoice", "Completed work has been prepared as a draft invoice."],
+      ["Send reminder", "Overdue payment follow-up is ready for owner review."],
+      ["Check proof", "Photos and notes can be attached before sending."],
+    ],
   },
   clients: {
-    title: "Clients",
+    title: "Client Flow",
     read: "/clients",
     create: "/clients",
-    empty: "No clients yet.",
+    action: "Add client",
     fields: [["name", "Client name"], ["email", "Email"], ["phone", "Phone"], ["address", "Address"]],
+    prepared: [
+      ["Fix contact gap", "Missing emails and phone numbers are shown before they block admin."],
+      ["Create job", "Start a new work flow from this client."],
+      ["Prepare follow-up", "Recent work and unpaid invoices shape the next message."],
+    ],
   },
   crew: {
-    title: "Crew",
+    title: "Crew Flow",
     read: "/team/workers",
     create: "/team/invite",
-    empty: "No crew yet.",
+    action: "Invite crew",
     fields: [["name", "Name"], ["email", "Email"], ["role", "Role"], ["region", "Region"]],
+    prepared: [
+      ["Suggest worker", "Churvox checks role, region and workload."],
+      ["Warn on conflict", "Schedule overlaps are flagged before assignment."],
+      ["Review capacity", "Busy workers and open capacity stay visible."],
+    ],
   },
   quotes: {
-    title: "Quotes",
+    title: "Quote Flow",
     read: "/quotes",
     create: "/quotes",
-    empty: "No quotes yet.",
+    action: "Create quote",
     fields: [["quote_number", "Quote number"], ["client_name", "Client"], ["amount", "Amount"], ["description", "Description"]],
+    prepared: [
+      ["Follow up quote", "Churvox prepares the message before the lead goes cold."],
+      ["Convert to job", "Accepted quotes are ready to become work."],
+      ["Improve wording", "Quote wording is cleaned before sending."],
+    ],
   },
 };
 
@@ -112,6 +138,7 @@ function pathFor(route) {
     quotes: "/quotes",
     proof: "/proof-and-pay",
     payroll: "/payroll",
+    plans: "/plans",
     settings: "/settings",
   }[route] || "/dashboard";
 }
@@ -155,11 +182,13 @@ function getUser() {
 function saveAuth(payload = {}, email = "") {
   const data = payload.data || payload || {};
   const authToken = data.token || data.access_token || data.authToken || data.jwt || "";
+
   if (authToken) {
     localStorage.setItem("token", authToken);
     localStorage.setItem("authToken", authToken);
     localStorage.setItem("access_token", authToken);
   }
+
   const user = data.user || data.account || data.profile || (data.email ? data : null) || { email };
   localStorage.setItem("churvox_user", JSON.stringify(user));
   localStorage.setItem("churvox_session_active", "true");
@@ -199,7 +228,7 @@ function pickList(value, keys) {
 }
 
 function titleOf(item = {}, index = 0) {
-  if (item.kind === "action") return item.title;
+  if (item.kind === "approval") return item.title;
   if (item.type === "money") return clean(item.invoice_number || item.number || item.title, `Invoice ${index + 1}`);
   if (item.type === "clients") return clean(item.name || item.client_name || item.customer_name, `Client ${index + 1}`);
   if (item.type === "crew") return clean(item.name || item.worker_name || item.email, `Crew ${index + 1}`);
@@ -208,7 +237,7 @@ function titleOf(item = {}, index = 0) {
 }
 
 function subOf(item = {}) {
-  if (item.kind === "action") return item.detail;
+  if (item.kind === "approval") return item.detail;
   if (item.type === "money") return clean(item.client_name || item.customer_name || item.status, "Invoice");
   if (item.type === "clients") return clean(item.email || item.phone || item.address, "Client details");
   if (item.type === "crew") return clean(item.role || item.region || item.phone, "Crew member");
@@ -217,7 +246,7 @@ function subOf(item = {}) {
 }
 
 function statusOf(item = {}) {
-  return clean(item.status || item.invoice_status || item.payment_status || item.quote_status || item.role, item.kind === "action" ? "Prepared" : "Ready");
+  return clean(item.status || item.invoice_status || item.payment_status || item.quote_status || item.role, item.kind === "approval" ? "Prepared" : "Ready");
 }
 
 function searchText(item = {}) {
@@ -226,7 +255,7 @@ function searchText(item = {}) {
     .toLowerCase();
 }
 
-function makeActions(data) {
+function makeApprovals(data) {
   const work = data.work.length ? data.work : DEMO.work;
   const moneyRows = data.money.length ? data.money : DEMO.money;
   const quotes = data.quotes.length ? data.quotes : DEMO.quotes;
@@ -234,7 +263,7 @@ function makeActions(data) {
 
   return [
     {
-      kind: "action",
+      kind: "approval",
       type: "money",
       title: "Invoice ready to approve",
       detail: "Completed work has amount, proof and customer details ready.",
@@ -243,15 +272,15 @@ function makeActions(data) {
       source: moneyRows[0],
     },
     {
-      kind: "action",
+      kind: "approval",
       type: "work",
-      title: "Worker suggestion ready",
+      title: "Worker assignment prepared",
       detail: "A job can be assigned after owner review.",
       status: "Approve",
       source: work[0],
     },
     {
-      kind: "action",
+      kind: "approval",
       type: "quotes",
       title: "Quote follow-up prepared",
       detail: "A customer has not replied and a follow-up is ready.",
@@ -259,7 +288,7 @@ function makeActions(data) {
       source: quotes[0],
     },
     {
-      kind: "action",
+      kind: "approval",
       type: "crew",
       title: "Crew workload check",
       detail: "Worker capacity and conflict check is ready.",
@@ -271,11 +300,11 @@ function makeActions(data) {
 
 function Logo() {
   return (
-    <span className="run-logo">
-      <i>C</i>
+    <span className="flow-logo">
+      <span className="flow-logo-mark">C</span>
       <span>
         <b>CHURVOX</b>
-        <small>Daily Run Board</small>
+        <small>FlowDesk</small>
       </span>
     </span>
   );
@@ -291,13 +320,14 @@ function Status({ value }) {
     : low.includes("complete") || low.includes("paid") || low.includes("active")
     ? "green"
     : "blue";
-  return <span className={`run-status ${tone}`}>{label}</span>;
+
+  return <span className={`flow-status ${tone}`}>{label}</span>;
 }
 
 function PublicNav({ go }) {
   return (
-    <header className="run-public-nav">
-      <button type="button" className="run-logo-button" onClick={() => go("public")}><Logo /></button>
+    <header className="flow-public-nav">
+      <button type="button" className="flow-logo-button" onClick={() => go("public")}><Logo /></button>
       <nav>
         <a href="#how">How it works</a>
         <a href="#pricing">Pricing</a>
@@ -310,49 +340,48 @@ function PublicNav({ go }) {
 
 function PublicPage({ go }) {
   return (
-    <main className="run-public">
+    <main className="flow-public">
       <PublicNav go={go} />
 
-      <section className="run-hero">
+      <section className="flow-hero">
         <article>
-          <span className="run-kicker">AI daily run board for trade and service owners</span>
-          <h1>Churvox runs the admin. <em>You approve the next move.</em></h1>
+          <span className="flow-kicker">AI admin flow for trade and service owners</span>
+          <h1>Work flows in. <em>Churvox prepares it.</em> You approve.</h1>
           <p>
-            Open Churvox and see the business feed, the one thing to do next,
-            and the money/work/crew pulse without hunting around.
+            Churvox turns jobs, quotes, invoices, crew updates, proof, payments and payroll into owner-ready approvals.
           </p>
-          <div className="run-actions">
+          <div className="flow-actions">
             <button type="button" onClick={() => go("signup")}>Start free trial</button>
             <button type="button" className="ghost" onClick={() => go("login")}>Open login</button>
           </div>
         </article>
 
-        <aside className="run-preview">
-          <span className="run-kicker">Do this next</span>
+        <aside className="flow-hero-card">
+          <span className="flow-kicker">Next approval</span>
           <h2>Invoice ready to approve</h2>
           <p>Completed job. Proof attached. Customer email ready. Amount prepared.</p>
           <button type="button" onClick={() => go("signup")}>Review & approve</button>
         </aside>
       </section>
 
-      <section className="run-section" id="how">
-        <span className="run-kicker">How it works</span>
-        <h2>One feed. One next action. One approval flow.</h2>
-        <div className="run-feature-grid">
+      <section className="flow-section" id="how">
+        <span className="flow-kicker">How it works</span>
+        <h2>The app is built around the flow of your day.</h2>
+        <div className="flow-feature-grid">
           {[
-            ["Business Feed", "Everything that happened in the business lands in one simple stream."],
-            ["Do This Next", "Churvox chooses the most useful prepared action for the owner."],
-            ["Business Pulse", "Money, work, crew and quotes stay visible without clutter."],
+            ["Flow Queue", "Everything Churvox prepared sits in one clean queue."],
+            ["Next Approval", "The most important thing is large, obvious and ready."],
+            ["Business Pulse", "Money, work, crew and quotes stay visible without noise."],
           ].map(([title, body]) => (
             <article key={title}><h3>{title}</h3><p>{body}</p></article>
           ))}
         </div>
       </section>
 
-      <section className="run-section" id="pricing">
-        <span className="run-kicker">Pricing</span>
+      <section className="flow-section" id="pricing">
+        <span className="flow-kicker">Pricing</span>
         <h2>Operator is where AI admin prep starts.</h2>
-        <div className="run-pricing">
+        <div className="flow-pricing">
           {[
             ["Start", "$39", "Solo operators"],
             ["Crew", "$89", "Small teams"],
@@ -403,16 +432,16 @@ function AuthPage({ mode, go, onLogin }) {
   }
 
   return (
-    <main className="run-public">
+    <main className="flow-public">
       <PublicNav go={go} />
-      <section className="run-auth">
+      <section className="flow-auth">
         <article>
-          <span className="run-kicker">Secure Daily Run Board</span>
-          <h1>{signup ? "Start your daily run board." : "Open today’s prepared actions."}</h1>
-          <p>Business feed, next action, pulse, approve.</p>
+          <span className="flow-kicker">Secure FlowDesk</span>
+          <h1>{signup ? "Start your FlowDesk." : "Open today’s approvals."}</h1>
+          <p>Flow queue, next approval, business pulse, review sheet.</p>
         </article>
 
-        <form className="run-card run-auth-card" onSubmit={submit}>
+        <form className="flow-card flow-auth-card" onSubmit={submit}>
           <Logo />
           <h2>{signup ? "Create account" : "Login"}</h2>
 
@@ -426,7 +455,7 @@ function AuthPage({ mode, go, onLogin }) {
           <label>Email<input type="email" required value={form.email} onChange={(e) => update("email", e.target.value)} /></label>
           <label>Password<input type="password" required value={form.password} onChange={(e) => update("password", e.target.value)} /></label>
 
-          {error ? <p className="run-error">{error}</p> : null}
+          {error ? <p className="flow-error">{error}</p> : null}
 
           <button type="submit" disabled={busy}>{busy ? "Opening..." : signup ? "Start free trial" : "Open Churvox"}</button>
           <small>
@@ -442,33 +471,34 @@ function AuthPage({ mode, go, onLogin }) {
 function AppShell({ route, go, data, user, reload, logout }) {
   const [createType, setCreateType] = useState(null);
   const [noticeOpen, setNoticeOpen] = useState(false);
+  const [query, setQuery] = useState("");
 
   return (
-    <main className="run-app">
-      <header className="run-topbar">
-        <button type="button" className="run-logo-button" onClick={() => go("today")}><Logo /></button>
-        <label className="run-search"><span>Search</span><input placeholder="Find jobs, clients, invoices..." /></label>
-        <button type="button" className="ghost" onClick={() => setNoticeOpen(true)}>Notifications</button>
+    <main className="flow-app">
+      <header className="flow-topbar">
+        <button type="button" className="flow-logo-button" onClick={() => go("today")}><Logo /></button>
+        <label className="flow-search"><span>Search</span><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Find jobs, clients, invoices..." /></label>
+        <button type="button" className="ghost" onClick={() => setNoticeOpen(true)}>Alerts</button>
         <button type="button" onClick={() => setCreateType(PAGES[route] ? route : "work")}>Quick add</button>
         <strong>{clean(user?.name || user?.email, "Owner")}</strong>
       </header>
 
-      <aside className="run-side-nav">
+      <aside className="flow-rail">
         {NAV.map(([key, label]) => (
           <button key={key} type="button" className={route === key ? "active" : ""} onClick={() => go(key)}>
             {label}
           </button>
         ))}
-        <button type="button" className="run-logout" onClick={logout}>Logout</button>
+        <button type="button" className="flow-logout" onClick={logout}>Logout</button>
       </aside>
 
-      <section className="run-main">
-        {route === "today" ? <TodayBoard data={data} /> : null}
-        {PAGES[route] ? <FilteredBoard type={route} rows={data[route] || []} reload={reload} /> : null}
-        {["proof", "payroll", "settings"].includes(route) ? <UtilityBoard route={route} go={go} /> : null}
+      <section className="flow-main">
+        {route === "today" ? <TodayFlow data={data} query={query} /> : null}
+        {PAGES[route] ? <FilteredFlow type={route} rows={data[route] || []} query={query} reload={reload} /> : null}
+        {["proof", "payroll", "plans", "settings"].includes(route) ? <UtilityFlow route={route} go={go} /> : null}
       </section>
 
-      <nav className="run-mobile-nav">
+      <nav className="flow-mobile-nav">
         {["today", "work", "money", "crew", "settings"].map((key) => (
           <button key={key} type="button" className={route === key ? "active" : ""} onClick={() => go(key)}>
             {NAV.find(([navKey]) => navKey === key)?.[1] || key}
@@ -482,106 +512,94 @@ function AppShell({ route, go, data, user, reload, logout }) {
   );
 }
 
-function TodayBoard({ data }) {
+function TodayFlow({ data, query }) {
   const [selected, setSelected] = useState(null);
   const [approved, setApproved] = useState("");
-  const actions = makeActions(data);
-  const feed = makeFeed(data);
-  const current = selected || actions[0];
-
-  function approve(item) {
-    setApproved(`${titleOf(item)} approved locally.`);
-  }
+  const approvals = makeApprovals(data);
+  const feed = makeFeed(data, query);
+  const current = selected || approvals[0];
 
   return (
-    <section className="run-page">
-      <section className="run-heading">
-        <span className="run-kicker">Today</span>
-        <h1>Here’s what Churvox prepared for you.</h1>
-        <p>Start with the next action, then check the feed and pulse only if needed.</p>
+    <section className="flow-page">
+      <section className="flow-heading">
+        <span className="flow-kicker">Today’s Flow</span>
+        <h1>Churvox prepared the admin. You approve the next move.</h1>
+        <p>Start with the approval card, then check the queue and pulse only if needed.</p>
       </section>
 
-      {approved ? <section className="run-notice">{approved}</section> : null}
+      {approved ? <section className="flow-notice">{approved}</section> : null}
 
-      <section className="run-board">
-        <FeedPanel feed={feed} selected={current} onSelect={setSelected} />
-        <NextPanel item={current} onApprove={approve} />
+      <section className="flow-layout">
+        <QueuePanel items={[...approvals, ...feed]} selected={current} onSelect={setSelected} />
+        <NextApproval item={current} onApprove={(item) => setApproved(`${titleOf(item)} approved locally.`)} />
         <PulsePanel data={data} />
       </section>
     </section>
   );
 }
 
-function FilteredBoard({ type, rows, reload }) {
+function FilteredFlow({ type, rows, query, reload }) {
   const page = PAGES[type];
   const base = rows.length ? rows : DEMO[type] || [];
-  const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(null);
-  const [sheet, setSheet] = useState(false);
   const [approved, setApproved] = useState("");
 
-  const list = useMemo(() => {
+  const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return base.filter((item) => !q || searchText(item).includes(q));
   }, [base, query]);
 
-  const actions = (page.title === "Money"
-    ? [
-        { kind: "action", type, title: "Approve invoice draft", detail: "Completed work has been prepared as a draft invoice.", status: "Review" },
-        { kind: "action", type, title: "Send payment reminder", detail: "Overdue invoice reminder is ready for approval.", status: "Review" },
-      ]
-    : [
-        { kind: "action", type, title: `${page.title} action ready`, detail: "Churvox prepared the next owner action.", status: "Prepared" },
-        { kind: "action", type, title: "Missing info check", detail: "Important gaps are ready to review.", status: "Check" },
-      ]);
+  const prepared = page.prepared.map(([title, detail]) => ({
+    kind: "approval",
+    type,
+    title,
+    detail,
+    status: "Prepared",
+  }));
 
-  const current = selected || actions[0] || list[0];
+  const current = selected || prepared[0] || filtered[0];
 
   return (
-    <section className="run-page">
-      <section className="run-heading row">
+    <section className="flow-page">
+      <section className="flow-heading row">
         <div>
-          <span className="run-kicker">{page.title}</span>
-          <h1>{page.title} run board.</h1>
-          <p>Filtered view of the same Daily Run Board.</p>
+          <span className="flow-kicker">{page.title}</span>
+          <h1>{page.title} prepared for approval.</h1>
+          <p>Same FlowDesk pattern, filtered to this part of the business.</p>
         </div>
         <button type="button" onClick={reload}>Refresh</button>
       </section>
 
-      {approved ? <section className="run-notice">{approved}</section> : null}
+      {approved ? <section className="flow-notice">{approved}</section> : null}
 
-      <section className="run-card run-filter">
-        <label>Search {page.title}<input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`Search ${page.title.toLowerCase()}...`} /></label>
-        <button type="button" className="ghost" onClick={() => setQuery("")}>Clear</button>
-      </section>
-
-      <section className="run-board">
-        <FeedPanel feed={[...actions, ...list]} selected={current} onSelect={(item) => { setSelected(item); if (window.innerWidth < 980) setSheet(true); }} />
-        <NextPanel item={current} onApprove={(item) => setApproved(`${titleOf(item)} approved locally.`)} onOpen={() => setSheet(true)} />
+      <section className="flow-layout">
+        <QueuePanel items={[...prepared, ...filtered]} selected={current} onSelect={setSelected} />
+        <NextApproval item={current} onApprove={(item) => setApproved(`${titleOf(item)} approved locally.`)} />
         <PulsePanel data={{ [type]: base }} />
       </section>
-
-      {sheet ? <ReviewSheet item={current} onClose={() => setSheet(false)} onApprove={(item) => setApproved(`${titleOf(item)} approved locally.`)} /> : null}
     </section>
   );
 }
 
-function makeFeed(data) {
-  const feed = [
-    ...makeActions(data),
+function makeFeed(data, query = "") {
+  const all = [
     ...(data.work.length ? data.work : DEMO.work),
     ...(data.money.length ? data.money : DEMO.money),
+    ...(data.clients.length ? data.clients : DEMO.clients),
+    ...(data.crew.length ? data.crew : DEMO.crew),
     ...(data.quotes.length ? data.quotes : DEMO.quotes),
   ];
-  return feed.slice(0, 12);
+
+  const q = query.trim().toLowerCase();
+  return all.filter((item) => !q || searchText(item).includes(q)).slice(0, 12);
 }
 
-function FeedPanel({ feed, selected, onSelect }) {
+function QueuePanel({ items, selected, onSelect }) {
   return (
-    <article className="run-card run-feed">
-      <header><span className="run-kicker">Business Feed</span><strong>{feed.length}</strong></header>
-      <div className="run-feed-list">
-        {feed.map((item, index) => (
+    <article className="flow-card flow-queue">
+      <header><span className="flow-kicker">Flow Queue</span><strong>{items.length}</strong></header>
+      <div>
+        {items.map((item, index) => (
           <button key={index} type="button" className={selected === item ? "active" : ""} onClick={() => onSelect(item)}>
             <span><b>{titleOf(item, index)}</b><small>{subOf(item)}</small></span>
             <Status value={statusOf(item)} />
@@ -592,24 +610,23 @@ function FeedPanel({ feed, selected, onSelect }) {
   );
 }
 
-function NextPanel({ item, onApprove, onOpen }) {
+function NextApproval({ item, onApprove }) {
   const [sheet, setSheet] = useState(false);
-  const open = onOpen || (() => setSheet(true));
 
   return (
-    <article className="run-next">
-      <span className="run-kicker">Do this next</span>
+    <article className="flow-next">
+      <span className="flow-kicker">Next Approval</span>
       <h2>{titleOf(item)}</h2>
-      <p>{subOf(item) || "Review the prepared admin and approve when ready."}</p>
+      <p>{subOf(item) || "Review what Churvox prepared, edit if needed, then approve."}</p>
 
-      <div className="run-next-meta">
+      <div className="flow-next-grid">
         <div><b>Status</b><span>{statusOf(item)}</span></div>
         <div><b>Amount</b><span>{money(item?.amount)}</span></div>
-        <div><b>Source</b><span>{clean(item?.type, "Prepared")}</span></div>
+        <div><b>Flow</b><span>{clean(item?.type, "Admin")}</span></div>
       </div>
 
       <footer>
-        <button type="button" className="ghost" onClick={open}>Review</button>
+        <button type="button" className="ghost" onClick={() => setSheet(true)}>Review</button>
         <button type="button" onClick={() => onApprove?.(item)}>Approve</button>
       </footer>
 
@@ -622,31 +639,32 @@ function PulsePanel({ data }) {
   const invoiceTotal = (data.money || []).reduce((sum, item) => sum + Number(item.amount || item.total || item.balance || 0), 0);
 
   return (
-    <article className="run-card run-pulse">
-      <span className="run-kicker">Business Pulse</span>
+    <article className="flow-card flow-pulse">
+      <span className="flow-kicker">Business Pulse</span>
       <Metric label="Money waiting" value={money(invoiceTotal, "$18,420")} sub="Invoice path" />
-      <Metric label="Work needing attention" value={(data.work || DEMO.work).length} sub="Jobs" />
-      <Metric label="Quote follow-ups" value={(data.quotes || DEMO.quotes).length} sub="Sales" />
-      <Metric label="Crew checks" value={(data.crew || DEMO.crew).length} sub="Team" />
+      <Metric label="Work" value={(data.work || DEMO.work).length} sub="Needs attention" />
+      <Metric label="Quotes" value={(data.quotes || DEMO.quotes).length} sub="Follow-ups" />
+      <Metric label="Crew" value={(data.crew || DEMO.crew).length} sub="Checks" />
     </article>
   );
 }
 
-function UtilityBoard({ route, go }) {
+function UtilityFlow({ route, go }) {
   const copy = {
     proof: ["Proof", "Proof packs turn completed work into customer-ready updates.", "money"],
     payroll: ["Payroll", "Review approved hours, missing times and export summaries.", "crew"],
+    plans: ["Plans", "Start, Crew, Operator and Command. Operator is the AI admin plan.", "today"],
     settings: ["Settings", "Business profile, roles, invoices, MYOB, SMS and notifications.", "today"],
-  }[route] || ["Workspace", "Daily run tools.", "today"];
+  }[route] || ["Workspace", "FlowDesk tools.", "today"];
 
   return (
-    <section className="run-page">
-      <section className="run-heading row">
-        <div><span className="run-kicker">{copy[0]}</span><h1>{copy[1]}</h1><p>This keeps the same review and approval pattern.</p></div>
-        <button type="button" onClick={() => go(copy[2])}>Open related area</button>
+    <section className="flow-page">
+      <section className="flow-heading row">
+        <div><span className="flow-kicker">{copy[0]}</span><h1>{copy[1]}</h1><p>This area keeps the same approval-first pattern.</p></div>
+        <button type="button" onClick={() => go(copy[2])}>Open related flow</button>
       </section>
-      <section className="run-board single">
-        <NextPanel item={{ kind: "action", title: `${copy[0]} review ready`, detail: copy[1], status: "Prepared" }} />
+      <section className="flow-layout utility">
+        <NextApproval item={{ kind: "approval", title: `${copy[0]} review ready`, detail: copy[1], status: "Prepared" }} />
         <PulsePanel data={{}} />
       </section>
     </section>
@@ -674,6 +692,7 @@ function CreateModal({ type, onClose, onSaved }) {
         title: form.title || form.name || form.invoice_number || form.quote_number || page.action,
         status: form.status || "new",
       };
+
       await api(page.create, { method: "POST", body: JSON.stringify(payload) });
       setMessage("Saved.");
       await onSaved?.();
@@ -686,11 +705,11 @@ function CreateModal({ type, onClose, onSaved }) {
   }
 
   return (
-    <section className="run-modal">
+    <section className="flow-modal">
       <form onSubmit={submit}>
-        <header><h2>{page.title}</h2><button type="button" onClick={onClose}>×</button></header>
+        <header><h2>{page.action}</h2><button type="button" onClick={onClose}>×</button></header>
 
-        <div className="run-form-grid">
+        <div className="flow-form-grid">
           {page.fields.map(([key, label]) => (
             <label key={key}>
               {label}
@@ -714,18 +733,18 @@ function CreateModal({ type, onClose, onSaved }) {
 
 function ReviewSheet({ item, onClose, onApprove }) {
   return (
-    <section className="run-modal">
+    <section className="flow-modal">
       <article>
-        <header><div><span className="run-kicker">Review & approve</span><h2>{titleOf(item)}</h2></div><button type="button" onClick={onClose}>×</button></header>
+        <header><div><span className="flow-kicker">Review & approve</span><h2>{titleOf(item)}</h2></div><button type="button" onClick={onClose}>×</button></header>
         <p>{subOf(item)}</p>
 
-        <div className="run-sheet-grid">
+        <div className="flow-sheet-grid">
           <div><b>Status</b><span>{statusOf(item)}</span></div>
           <div><b>Amount</b><span>{money(item?.amount)}</span></div>
           <div><b>Owner action</b><span>Approve when ready</span></div>
         </div>
 
-        <div className="run-detail">
+        <div className="flow-detail">
           {Object.entries(item || {}).slice(0, 10).map(([key, value]) => (
             <p key={key}><b>{key.replace(/_/g, " ")}</b><span>{clean(value, "—")}</span></p>
           ))}
@@ -742,10 +761,10 @@ function ReviewSheet({ item, onClose, onApprove }) {
 
 function NoticeSheet({ onClose }) {
   return (
-    <section className="run-modal">
+    <section className="flow-modal">
       <article>
-        <header><div><span className="run-kicker">Notifications</span><h2>Nothing urgent missed.</h2></div><button type="button" onClick={onClose}>×</button></header>
-        <p>Notifications will show owner approvals, worker completions, overdue money and quote follow-ups.</p>
+        <header><div><span className="flow-kicker">Alerts</span><h2>Nothing urgent missed.</h2></div><button type="button" onClick={onClose}>×</button></header>
+        <p>Alerts will show owner approvals, worker completions, overdue money and quote follow-ups.</p>
         <footer><button type="button" onClick={onClose}>Close</button></footer>
       </article>
     </section>
@@ -753,7 +772,7 @@ function NoticeSheet({ onClose }) {
 }
 
 function Metric({ label, value, sub }) {
-  return <div className="run-metric"><span>{label}</span><strong>{value}</strong><small>{sub}</small></div>;
+  return <div className="flow-metric"><span>{label}</span><strong>{value}</strong><small>{sub}</small></div>;
 }
 
 export default function ChurvoxAIShell() {
