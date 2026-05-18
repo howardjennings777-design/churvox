@@ -1,1 +1,1 @@
-export const CHURVOX_RENDER_DEPLOY_MARKER = "phase-334-workable-operator-console-20260518T213511Z";
+export const CHURVOX_RENDER_DEPLOY_MARKER = "phase-343-new-operator-console-layout-20260518T232526Z";
