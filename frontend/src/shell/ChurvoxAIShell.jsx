@@ -11,91 +11,90 @@ const API_BASE = String(RAW_API).replace(/\/+$/, "").endsWith("/api")
   ? String(RAW_API).replace(/\/+$/, "")
   : `${String(RAW_API).replace(/\/+$/, "")}/api`;
 
-const STAGES = [
-  ["work_in", "Work In"],
-  ["assign", "Assign"],
-  ["doing", "Doing"],
-  ["proof", "Proof"],
-  ["invoice", "Invoice"],
-  ["paid", "Paid"],
-];
-
 const NAV = [
   ["today", "Today"],
-  ["flow", "Flowline"],
   ["work", "Work"],
   ["money", "Money"],
   ["clients", "Clients"],
   ["crew", "Crew"],
   ["quotes", "Quotes"],
+  ["proof", "Proof"],
   ["payroll", "Payroll"],
   ["settings", "Settings"],
 ];
 
+const TRACK = [
+  ["work", "Work"],
+  ["crew", "Crew"],
+  ["proof", "Proof"],
+  ["invoice", "Invoice"],
+  ["paid", "Paid"],
+];
+
 const PAGE = {
   work: {
-    title: "Work Flow",
-    stage: "work_in",
+    title: "Work Slips",
     read: "/jobs",
     create: "/jobs",
-    action: "Add work",
+    action: "New work slip",
+    track: "work",
     fields: [["title", "Job title"], ["client_name", "Client"], ["address", "Address"], ["amount", "Price"]],
   },
   money: {
-    title: "Money Flow",
-    stage: "invoice",
+    title: "Invoice Slips",
     read: "/invoices",
     create: "/invoices",
-    action: "Create invoice",
+    action: "New invoice slip",
+    track: "invoice",
     fields: [["invoice_number", "Invoice number"], ["client_name", "Client"], ["amount", "Amount"], ["description", "Description"]],
   },
   clients: {
-    title: "Client Flow",
-    stage: "work_in",
+    title: "Client Slips",
     read: "/clients",
     create: "/clients",
-    action: "Add client",
+    action: "New client",
+    track: "work",
     fields: [["name", "Client name"], ["email", "Email"], ["phone", "Phone"], ["address", "Address"]],
   },
   crew: {
-    title: "Crew Flow",
-    stage: "assign",
+    title: "Crew Slips",
     read: "/team/workers",
     create: "/team/invite",
     action: "Invite crew",
+    track: "crew",
     fields: [["name", "Name"], ["email", "Email"], ["role", "Role"], ["region", "Region"]],
   },
   quotes: {
-    title: "Quote Flow",
-    stage: "work_in",
+    title: "Quote Slips",
     read: "/quotes",
     create: "/quotes",
-    action: "Create quote",
+    action: "New quote",
+    track: "work",
     fields: [["quote_number", "Quote number"], ["client_name", "Client"], ["amount", "Amount"], ["description", "Description"]],
   },
 };
 
 const DEMO = {
   work: [
-    { type: "work", stage: "assign", title: "Switchboard upgrade", client_name: "Carter Electrical", status: "Ready", amount: 4870 },
-    { type: "work", stage: "work_in", title: "Garden clean-up", client_name: "Bayview Rentals", status: "Needs info", amount: 780 },
-    { type: "work", stage: "proof", title: "Hot water repair", client_name: "Harbour Plumbing", status: "Prepared", amount: 1240 },
+    { type: "work", title: "Switchboard upgrade", client_name: "Carter Electrical", status: "Ready", amount: 4870, track: "crew" },
+    { type: "work", title: "Garden clean-up", client_name: "Bayview Rentals", status: "Needs info", amount: 780, track: "work" },
+    { type: "work", title: "Hot water repair", client_name: "Harbour Plumbing", status: "Proof ready", amount: 1240, track: "proof" },
   ],
   money: [
-    { type: "money", stage: "invoice", invoice_number: "INV-1047", client_name: "Carter Electrical", status: "Ready", amount: 4870 },
-    { type: "money", stage: "invoice", invoice_number: "INV-1031", client_name: "Bayview Rentals", status: "Overdue", amount: 2430 },
+    { type: "money", invoice_number: "INV-1047", client_name: "Carter Electrical", status: "Ready", amount: 4870, track: "invoice" },
+    { type: "money", invoice_number: "INV-1031", client_name: "Bayview Rentals", status: "Overdue", amount: 2430, track: "invoice" },
   ],
   clients: [
-    { type: "clients", stage: "work_in", name: "Carter Electrical", email: "accounts@carter.co.nz", status: "Ready" },
-    { type: "clients", stage: "work_in", name: "Bayview Rentals", phone: "020 000 000", status: "Needs email" },
+    { type: "clients", name: "Carter Electrical", email: "accounts@carter.co.nz", status: "Ready", track: "work" },
+    { type: "clients", name: "Bayview Rentals", phone: "020 000 000", status: "Needs email", track: "work" },
   ],
   crew: [
-    { type: "crew", stage: "assign", name: "Sam", role: "Worker", region: "North", status: "Active" },
-    { type: "crew", stage: "assign", name: "Jess", role: "Manager", region: "Central", status: "Active" },
+    { type: "crew", name: "Sam", role: "Worker", region: "North", status: "Active", track: "crew" },
+    { type: "crew", name: "Jess", role: "Manager", region: "Central", status: "Active", track: "crew" },
   ],
   quotes: [
-    { type: "quotes", stage: "work_in", quote_number: "Q-1075", client_name: "Northside Plumbing", status: "Follow up", amount: 6420 },
-    { type: "quotes", stage: "work_in", quote_number: "Q-1074", client_name: "Oceanview Homes", status: "Prepared", amount: 12100 },
+    { type: "quotes", quote_number: "Q-1075", client_name: "Northside Plumbing", status: "Follow up", amount: 6420, track: "work" },
+    { type: "quotes", quote_number: "Q-1074", client_name: "Oceanview Homes", status: "Prepared", amount: 12100, track: "work" },
   ],
 };
 
@@ -118,13 +117,13 @@ function pathFor(route) {
     signup: "/signup",
     today: "/dashboard",
     dashboard: "/dashboard",
-    flow: "/flow",
     work: "/work",
     money: "/invoices",
     clients: "/clients",
     crew: "/crew",
     team: "/crew",
     quotes: "/quotes",
+    proof: "/proof-and-pay",
     payroll: "/payroll",
     settings: "/settings",
   }[route] || "/dashboard";
@@ -135,9 +134,10 @@ function routeNow() {
   if (!path || path === "home") return "public";
   if (path === "login" || path === "signup") return path;
   if (path === "dashboard") return "today";
-  if (path === "invoices") return "money";
   if (path === "jobs") return "work";
+  if (path === "invoices") return "money";
   if (path === "team") return "crew";
+  if (path === "proof-and-pay") return "proof";
   return NAV.some(([key]) => key === path) ? path : "today";
 }
 
@@ -213,14 +213,14 @@ function pickList(value, keys) {
   return [];
 }
 
-function typeFromRoute(route) {
+function typeForRoute(route) {
   if (route === "money") return "money";
   if (PAGE[route]) return route;
   return "work";
 }
 
-function titleOf(item = {}, index = 0) {
-  if (item.kind === "approval") return item.title;
+function slipTitle(item = {}, index = 0) {
+  if (item.kind === "slip") return item.title;
   if (item.type === "money") return clean(item.invoice_number || item.number || item.title, `Invoice ${index + 1}`);
   if (item.type === "clients") return clean(item.name || item.client_name || item.customer_name, `Client ${index + 1}`);
   if (item.type === "crew") return clean(item.name || item.worker_name || item.email, `Crew ${index + 1}`);
@@ -228,34 +228,34 @@ function titleOf(item = {}, index = 0) {
   return clean(item.title || item.job_title || item.name || item.service_type, `Work ${index + 1}`);
 }
 
-function subOf(item = {}) {
-  if (item.kind === "approval") return item.detail;
-  if (item.type === "money") return clean(item.client_name || item.customer_name || item.status, "Invoice");
-  if (item.type === "clients") return clean(item.email || item.phone || item.address, "Client details");
-  if (item.type === "crew") return clean(item.role || item.region || item.phone, "Crew member");
-  if (item.type === "quotes") return clean(item.client_name || item.customer_name || item.status, "Quote");
-  return clean(item.client_name || item.customer_name || item.address || item.status, "Work details");
+function slipDetail(item = {}) {
+  if (item.kind === "slip") return item.detail;
+  if (item.type === "money") return clean(item.client_name || item.customer_name || item.status, "Invoice prepared");
+  if (item.type === "clients") return clean(item.email || item.phone || item.address, "Client record");
+  if (item.type === "crew") return clean(item.role || item.region || item.phone, "Crew record");
+  if (item.type === "quotes") return clean(item.client_name || item.customer_name || item.status, "Quote prepared");
+  return clean(item.client_name || item.customer_name || item.address || item.status, "Work prepared");
 }
 
-function statusOf(item = {}) {
-  return clean(item.status || item.invoice_status || item.payment_status || item.quote_status || item.role, item.kind === "approval" ? "Prepared" : "Ready");
+function slipStatus(item = {}) {
+  return clean(item.status || item.invoice_status || item.payment_status || item.quote_status || item.role, item.kind === "slip" ? "Prepared" : "Ready");
 }
 
-function stageOf(item = {}) {
-  if (item.stage) return item.stage;
+function slipTrack(item = {}) {
+  if (item.track) return item.track;
   if (item.type === "money") return "invoice";
-  if (item.type === "crew") return "assign";
-  if (item.type === "clients" || item.type === "quotes") return "work_in";
-  return "doing";
+  if (item.type === "crew") return "crew";
+  if (item.type === "work") return "work";
+  return "work";
 }
 
 function searchText(item = {}) {
-  return [titleOf(item), subOf(item), statusOf(item), stageOf(item), ...Object.values(item).map((v) => clean(v))]
+  return [slipTitle(item), slipDetail(item), slipStatus(item), slipTrack(item), ...Object.values(item).map((v) => clean(v))]
     .join(" ")
     .toLowerCase();
 }
 
-function makeItems(data) {
+function allRecords(data) {
   return [
     ...(data.work.length ? data.work : DEMO.work),
     ...(data.money.length ? data.money : DEMO.money),
@@ -265,51 +265,67 @@ function makeItems(data) {
   ];
 }
 
-function makeApprovals(data) {
-  const items = makeItems(data);
-  const invoice = items.find((item) => item.type === "money") || DEMO.money[0];
-  const job = items.find((item) => item.type === "work") || DEMO.work[0];
-  const quote = items.find((item) => item.type === "quotes") || DEMO.quotes[0];
+function makeSlips(data) {
+  const records = allRecords(data);
+  const invoice = records.find((item) => item.type === "money") || DEMO.money[0];
+  const job = records.find((item) => item.type === "work") || DEMO.work[0];
+  const quote = records.find((item) => item.type === "quotes") || DEMO.quotes[0];
+  const client = records.find((item) => item.type === "clients") || DEMO.clients[0];
 
   return [
     {
-      kind: "approval",
+      kind: "slip",
       type: "money",
-      stage: "invoice",
+      slipType: "INVOICE SLIP",
       title: "Invoice ready to approve",
       detail: "Completed work has proof, amount and customer details ready.",
       status: "Review",
       amount: invoice.amount,
+      track: "invoice",
       source: invoice,
     },
     {
-      kind: "approval",
+      kind: "slip",
       type: "work",
-      stage: "assign",
+      slipType: "WORK SLIP",
       title: "Worker suggested",
-      detail: "Churvox found a likely worker match with no obvious conflict.",
+      detail: "Churvox prepared the worker assignment for owner review.",
       status: "Approve",
+      amount: job.amount,
+      track: "crew",
       source: job,
     },
     {
-      kind: "approval",
+      kind: "slip",
       type: "quotes",
-      stage: "work_in",
+      slipType: "QUOTE SLIP",
       title: "Quote follow-up ready",
       detail: "A customer has not replied and the follow-up is ready.",
       status: "Send",
+      amount: quote.amount,
+      track: "work",
       source: quote,
+    },
+    {
+      kind: "slip",
+      type: "clients",
+      slipType: "CLIENT SLIP",
+      title: "Client detail check",
+      detail: "Missing or weak client details are ready to fix before they block admin.",
+      status: "Check",
+      track: "work",
+      source: client,
     },
   ];
 }
 
 function Logo() {
   return (
-    <span className="flowline-logo">
-      <span className="flowline-mark">C</span>
+    <span className="slip-logo">
+      <span className="slip-mark">C</span>
       <span>
         <b>CHURVOX</b>
-        <small>Flowline</small>
+        <small>Slipstream</small>
       </span>
     </span>
   );
@@ -326,15 +342,15 @@ function Status({ value }) {
     ? "green"
     : "blue";
 
-  return <span className={`flowline-status ${tone}`}>{label}</span>;
+  return <span className={`slip-status ${tone}`}>{label}</span>;
 }
 
 function PublicNav({ go }) {
   return (
-    <header className="flowline-public-nav">
-      <button type="button" className="flowline-logo-button" onClick={() => go("public")}><Logo /></button>
+    <header className="slip-public-nav">
+      <button type="button" className="slip-logo-button" onClick={() => go("public")}><Logo /></button>
       <nav>
-        <a href="#flow">Flowline</a>
+        <a href="#slips">Slips</a>
         <a href="#pricing">Pricing</a>
         <button type="button" className="ghost" onClick={() => go("login")}>Login</button>
         <button type="button" onClick={() => go("signup")}>Start free trial</button>
@@ -345,52 +361,48 @@ function PublicNav({ go }) {
 
 function PublicPage({ go }) {
   return (
-    <main className="flowline-public">
+    <main className="slip-public">
       <PublicNav go={go} />
 
-      <section className="flowline-hero">
+      <section className="slip-public-hero">
         <article>
-          <span className="flowline-kicker">AI flow machine for trade and service owners</span>
-          <h1>Work goes in. <em>Admin comes out ready.</em></h1>
+          <span className="slip-kicker">AI-prepared work slips for trade and service owners</span>
+          <h1>Churvox prints the admin slips. <em>You approve.</em></h1>
           <p>
-            Churvox turns jobs, crew updates, proof, quotes, invoices and payments into one visual flowline:
-            Work In → Assign → Doing → Proof → Invoice → Paid.
+            Jobs, quotes, invoices, proof, crew updates and payment follow-ups are prepared as clear slips,
+            so the owner can review, edit and approve.
           </p>
-          <div className="flowline-actions">
+          <div className="slip-actions">
             <button type="button" onClick={() => go("signup")}>Start free trial</button>
             <button type="button" className="ghost" onClick={() => go("login")}>Open login</button>
           </div>
         </article>
 
-        <aside className="flowline-public-machine">
-          <span className="flowline-kicker">Live flow</span>
-          <MiniFlowline />
-          <div className="flowline-next-mini">
-            <b>Invoice ready</b>
-            <small>Carter Electrical • $4,870 • proof attached</small>
-            <button type="button" onClick={() => go("signup")}>Review</button>
-          </div>
+        <aside className="slip-public-stack">
+          <PublicSlip title="WORK SLIP" body="Worker suggested" meta="Approve" />
+          <PublicSlip title="INVOICE SLIP" body="Proof attached • $4,870" meta="Review" featured />
+          <PublicSlip title="PAYMENT SLIP" body="Reminder ready" meta="Send" />
         </aside>
       </section>
 
-      <section className="flowline-section" id="flow">
-        <span className="flowline-kicker">What makes it different</span>
-        <h2>Your business shown as a moving flow, not a pile of pages.</h2>
-        <div className="flowline-feature-grid">
+      <section className="slip-section" id="slips">
+        <span className="slip-kicker">What makes it different</span>
+        <h2>It does not feel like a dashboard. It feels like admin already prepared.</h2>
+        <div className="slip-feature-grid">
           {[
-            ["Flowline stages", "See work move from Work In through to Paid."],
-            ["Approval sparks", "Churvox highlights where the owner needs to approve."],
-            ["Review sheet", "Tap anything to review, edit and approve without losing context."],
+            ["Slip Stack", "All prepared admin sits in one clear stack."],
+            ["Active Slip", "The most important approval is big, readable and focused."],
+            ["Job-to-Cash Track", "Every slip shows where it belongs: Work → Crew → Proof → Invoice → Paid."],
           ].map(([title, body]) => (
             <article key={title}><h3>{title}</h3><p>{body}</p></article>
           ))}
         </div>
       </section>
 
-      <section className="flowline-section" id="pricing">
-        <span className="flowline-kicker">Pricing</span>
-        <h2>Operator is where AI admin prep starts.</h2>
-        <div className="flowline-pricing">
+      <section className="slip-section" id="pricing">
+        <span className="slip-kicker">Pricing</span>
+        <h2>Operator is the AI admin slips plan.</h2>
+        <div className="slip-pricing">
           {[
             ["Start", "$39", "Solo operators"],
             ["Crew", "$89", "Small teams"],
@@ -407,6 +419,16 @@ function PublicPage({ go }) {
         </div>
       </section>
     </main>
+  );
+}
+
+function PublicSlip({ title, body, meta, featured }) {
+  return (
+    <div className={`slip-public-slip ${featured ? "featured" : ""}`}>
+      <span>{title}</span>
+      <b>{body}</b>
+      <small>{meta}</small>
+    </div>
   );
 }
 
@@ -441,30 +463,30 @@ function AuthPage({ mode, go, onLogin }) {
   }
 
   return (
-    <main className="flowline-public">
+    <main className="slip-public">
       <PublicNav go={go} />
-      <section className="flowline-auth">
+      <section className="slip-auth">
         <article>
-          <span className="flowline-kicker">Secure Flowline</span>
-          <h1>{signup ? "Start your business flowline." : "Open your flowline."}</h1>
-          <p>Work In → Assign → Doing → Proof → Invoice → Paid.</p>
+          <span className="slip-kicker">Secure Slipstream</span>
+          <h1>{signup ? "Start your admin slip stack." : "Open today’s slips."}</h1>
+          <p>Slip Stack → Active Slip → Business Meters → Job-to-Cash Track.</p>
         </article>
 
-        <form className="flowline-card flowline-auth-card" onSubmit={submit}>
+        <form className="slip-auth-card" onSubmit={submit}>
           <Logo />
           <h2>{signup ? "Create account" : "Login"}</h2>
 
           {signup ? (
             <>
-              <label>Your name<input value={form.name} onChange={(e) => update("name", e.target.value)} /></label>
-              <label>Business name<input value={form.business_name} onChange={(e) => update("business_name", e.target.value)} /></label>
+              <label>Your name<input value={form.name} onChange={(event) => update("name", event.target.value)} /></label>
+              <label>Business name<input value={form.business_name} onChange={(event) => update("business_name", event.target.value)} /></label>
             </>
           ) : null}
 
-          <label>Email<input type="email" required value={form.email} onChange={(e) => update("email", e.target.value)} /></label>
-          <label>Password<input type="password" required value={form.password} onChange={(e) => update("password", e.target.value)} /></label>
+          <label>Email<input type="email" required value={form.email} onChange={(event) => update("email", event.target.value)} /></label>
+          <label>Password<input type="password" required value={form.password} onChange={(event) => update("password", event.target.value)} /></label>
 
-          {error ? <p className="flowline-error">{error}</p> : null}
+          {error ? <p className="slip-error">{error}</p> : null}
 
           <button type="submit" disabled={busy}>{busy ? "Opening..." : signup ? "Start free trial" : "Open Churvox"}</button>
           <small>
@@ -482,32 +504,32 @@ function AppShell({ route, go, data, user, reload, logout }) {
   const [query, setQuery] = useState("");
 
   return (
-    <main className="flowline-app">
-      <header className="flowline-topbar">
-        <button type="button" className="flowline-logo-button" onClick={() => go("today")}><Logo /></button>
-        <label className="flowline-search"><span>Search</span><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Find jobs, invoices, clients..." /></label>
+    <main className="slip-app">
+      <header className="slip-topbar">
+        <button type="button" className="slip-logo-button" onClick={() => go("today")}><Logo /></button>
+        <label className="slip-search"><span>Search</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find slips, jobs, invoices..." /></label>
         <button type="button" className="ghost" onClick={reload}>Refresh</button>
-        <button type="button" onClick={() => setCreateType(PAGE[typeFromRoute(route)] ? typeFromRoute(route) : "work")}>Quick add</button>
+        <button type="button" onClick={() => setCreateType(PAGE[typeForRoute(route)] ? typeForRoute(route) : "work")}>Quick add</button>
         <strong>{clean(user?.name || user?.email, "Owner")}</strong>
       </header>
 
-      <aside className="flowline-nav">
+      <aside className="slip-nav">
         {NAV.map(([key, label]) => (
           <button key={key} type="button" className={route === key ? "active" : ""} onClick={() => go(key)}>
             {label}
           </button>
         ))}
-        <button type="button" className="flowline-logout" onClick={logout}>Logout</button>
+        <button type="button" className="slip-logout" onClick={logout}>Logout</button>
       </aside>
 
-      <section className="flowline-main">
-        {["today", "flow"].includes(route) ? <FlowlineHome data={data} query={query} /> : null}
-        {PAGE[route] ? <FlowlineFiltered type={route} data={data} query={query} reload={reload} /> : null}
-        {["payroll", "settings"].includes(route) ? <UtilityPage route={route} go={go} /> : null}
+      <section className="slip-main">
+        {route === "today" ? <SlipstreamHome data={data} query={query} /> : null}
+        {PAGE[route] ? <SlipstreamFiltered type={route} data={data} query={query} reload={reload} /> : null}
+        {["proof", "payroll", "settings"].includes(route) ? <UtilityPage route={route} go={go} /> : null}
       </section>
 
-      <nav className="flowline-mobile-nav">
-        {["today", "flow", "money", "crew", "settings"].map((key) => (
+      <nav className="slip-mobile-nav">
+        {["today", "work", "money", "crew", "settings"].map((key) => (
           <button key={key} type="button" className={route === key ? "active" : ""} onClick={() => go(key)}>
             {NAV.find(([navKey]) => navKey === key)?.[1] || key}
           </button>
@@ -519,173 +541,185 @@ function AppShell({ route, go, data, user, reload, logout }) {
   );
 }
 
-function FlowlineHome({ data, query }) {
+function SlipstreamHome({ data, query }) {
   const [selected, setSelected] = useState(null);
   const [notice, setNotice] = useState("");
-  const all = useMemo(() => makeItems(data).filter((item) => !query || searchText(item).includes(query.toLowerCase())), [data, query]);
-  const approvals = makeApprovals(data);
-  const current = selected || approvals[0];
+  const slips = makeSlips(data);
+  const records = allRecords(data).filter((item) => !query || searchText(item).includes(query.toLowerCase()));
+  const stack = [...slips, ...records].slice(0, 14);
+  const active = selected || slips[0];
 
   return (
-    <section className="flowline-page">
-      <section className="flowline-hero-strip">
+    <section className="slip-page">
+      <section className="slip-page-head">
         <div>
-          <span className="flowline-kicker">Your business flow is ready</span>
-          <h1>Work in. Admin prepared. Owner approval. Money out.</h1>
-          <p>This is not a dashboard. It is your live job-to-cash flowline.</p>
+          <span className="slip-kicker">Today’s slips are ready</span>
+          <h1>Churvox prepared the admin. You approve the slip.</h1>
+          <p>No dashboard hunting. Pick a slip, review it, approve it, move on.</p>
         </div>
-        <button type="button" onClick={() => setSelected(approvals[0])}>Start approval</button>
+        <button type="button" onClick={() => setSelected(slips[0])}>Start approval</button>
       </section>
 
-      {notice ? <section className="flowline-notice">{notice}</section> : null}
+      {notice ? <section className="slip-notice">{notice}</section> : null}
 
-      <NextApproval item={current} onApprove={(item) => setNotice(`${titleOf(item)} approved locally.`)} />
-      <StageFlowline items={all} approvals={approvals} selected={current} onSelect={setSelected} />
-      <Pulse data={data} />
+      <section className="slip-workspace">
+        <SlipStack items={stack} selected={active} onSelect={setSelected} />
+        <ActiveSlip item={active} onApprove={(item) => setNotice(`${slipTitle(item)} approved locally.`)} />
+        <BusinessMeters data={data} />
+      </section>
+
+      <CashTrack active={active} />
     </section>
   );
 }
 
-function FlowlineFiltered({ type, data, query, reload }) {
+function SlipstreamFiltered({ type, data, query, reload }) {
   const [selected, setSelected] = useState(null);
   const [notice, setNotice] = useState("");
   const page = PAGE[type];
   const rows = data[type]?.length ? data[type] : DEMO[type] || [];
-  const filtered = rows.filter((item) => !query || searchText(item).includes(query.toLowerCase()));
-  const approvals = [
-    { kind: "approval", type, stage: page.stage, title: `${page.title} approval ready`, detail: "Churvox prepared the next owner action.", status: "Prepared" },
-    { kind: "approval", type, stage: page.stage, title: "Missing info check", detail: "Review details before this blocks the flow.", status: "Check" },
+  const records = rows.filter((item) => !query || searchText(item).includes(query.toLowerCase()));
+  const prepared = [
+    { kind: "slip", type, slipType: page.title.toUpperCase(), title: `${page.title} ready`, detail: "Churvox prepared the next owner action.", status: "Prepared", track: page.track },
+    { kind: "slip", type, slipType: "CHECK SLIP", title: "Missing info check", detail: "Review this before it blocks the flow.", status: "Check", track: page.track },
   ];
-  const current = selected || approvals[0];
+  const active = selected || prepared[0];
 
   return (
-    <section className="flowline-page">
-      <section className="flowline-hero-strip row">
+    <section className="slip-page">
+      <section className="slip-page-head row">
         <div>
-          <span className="flowline-kicker">{page.title}</span>
-          <h1>{page.title} moving through the business flow.</h1>
-          <p>Filtered to this area, but still part of the same flowline.</p>
+          <span className="slip-kicker">{page.title}</span>
+          <h1>{page.title} prepared for approval.</h1>
+          <p>Same Slipstream pattern, filtered to this part of the business.</p>
         </div>
         <button type="button" onClick={reload}>Refresh</button>
       </section>
 
-      {notice ? <section className="flowline-notice">{notice}</section> : null}
+      {notice ? <section className="slip-notice">{notice}</section> : null}
 
-      <NextApproval item={current} onApprove={(item) => setNotice(`${titleOf(item)} approved locally.`)} />
-      <StageFlowline items={filtered} approvals={approvals} selected={current} onSelect={setSelected} />
-      <Pulse data={{ [type]: rows }} />
+      <section className="slip-workspace">
+        <SlipStack items={[...prepared, ...records]} selected={active} onSelect={setSelected} />
+        <ActiveSlip item={active} onApprove={(item) => setNotice(`${slipTitle(item)} approved locally.`)} />
+        <BusinessMeters data={{ [type]: rows }} />
+      </section>
+
+      <CashTrack active={active} />
     </section>
   );
 }
 
-function NextApproval({ item, onApprove }) {
+function SlipStack({ items, selected, onSelect }) {
+  return (
+    <aside className="slip-stack">
+      <header>
+        <span className="slip-kicker">Slip Stack</span>
+        <strong>{items.length}</strong>
+      </header>
+
+      <div>
+        {items.map((item, index) => (
+          <button key={index} type="button" className={selected === item ? "active" : ""} onClick={() => onSelect(item)}>
+            <span>
+              <b>{slipTitle(item, index)}</b>
+              <small>{slipDetail(item)}</small>
+            </span>
+            <Status value={slipStatus(item)} />
+          </button>
+        ))}
+      </div>
+    </aside>
+  );
+}
+
+function ActiveSlip({ item, onApprove }) {
   const [sheet, setSheet] = useState(false);
 
   return (
-    <section className="flowline-next">
-      <div>
-        <span className="flowline-kicker">Next approval</span>
-        <h2>{titleOf(item)}</h2>
-        <p>{subOf(item) || "Review what Churvox prepared, edit if needed, then approve."}</p>
-      </div>
+    <article className="active-slip">
+      <div className="active-slip-paper">
+        <header>
+          <span>{item?.slipType || `${clean(item?.type, "WORK").toUpperCase()} SLIP`}</span>
+          <Status value={slipStatus(item)} />
+        </header>
 
-      <div className="flowline-next-meta">
-        <div><b>Stage</b><span>{stageLabel(stageOf(item))}</span></div>
-        <div><b>Status</b><span>{statusOf(item)}</span></div>
-        <div><b>Amount</b><span>{money(item?.amount)}</span></div>
-      </div>
+        <h2>{slipTitle(item)}</h2>
+        <p>{slipDetail(item)}</p>
 
-      <footer>
-        <button type="button" className="ghost" onClick={() => setSheet(true)}>Review</button>
-        <button type="button" onClick={() => onApprove?.(item)}>Approve</button>
-      </footer>
+        <div className="active-slip-lines">
+          <p><b>Money attached</b><span>{money(item?.amount)}</span></p>
+          <p><b>Stage</b><span>{trackLabel(slipTrack(item))}</span></p>
+          <p><b>Prepared by</b><span>Churvox Operator</span></p>
+        </div>
+
+        <footer>
+          <button type="button" className="ghost" onClick={() => setSheet(true)}>Review</button>
+          <button type="button" className="ghost" onClick={() => setSheet(true)}>Edit</button>
+          <button type="button" onClick={() => onApprove?.(item)}>Approve</button>
+        </footer>
+      </div>
 
       {sheet ? <ReviewSheet item={item} onClose={() => setSheet(false)} onApprove={onApprove} /> : null}
-    </section>
+    </article>
   );
 }
 
-function StageFlowline({ items, approvals, selected, onSelect }) {
+function BusinessMeters({ data }) {
+  const invoices = data.money || DEMO.money;
+  const total = invoices.reduce((sum, item) => sum + Number(item.amount || item.total || item.balance || 0), 0);
+
   return (
-    <section className="flowline-machine">
-      <header>
-        <span className="flowline-kicker">Flowline</span>
-        <p>Work moves left to right. Lime sparks are owner approvals Churvox prepared.</p>
-      </header>
-
-      <div className="flowline-track">
-        {STAGES.map(([stage, label], index) => {
-          const stageItems = items.filter((item) => stageOf(item) === stage).slice(0, 4);
-          const stageApprovals = approvals.filter((item) => stageOf(item) === stage);
-
-          return (
-            <article className="flowline-stage" key={stage}>
-              <div className="flowline-stage-dot">{index + 1}</div>
-              <h3>{label}</h3>
-
-              {stageApprovals.map((item, approvalIndex) => (
-                <button key={`approval-${approvalIndex}`} type="button" className={`flowline-work approval ${selected === item ? "active" : ""}`} onClick={() => onSelect(item)}>
-                  <b>{titleOf(item)}</b>
-                  <small>{subOf(item)}</small>
-                </button>
-              ))}
-
-              {stageItems.length ? stageItems.map((item, itemIndex) => (
-                <button key={itemIndex} type="button" className={`flowline-work ${selected === item ? "active" : ""}`} onClick={() => onSelect(item)}>
-                  <b>{titleOf(item, itemIndex)}</b>
-                  <small>{subOf(item)}</small>
-                  <Status value={statusOf(item)} />
-                </button>
-              )) : (
-                <p className="flowline-empty">Nothing here</p>
-              )}
-            </article>
-          );
-        })}
-      </div>
-    </section>
+    <aside className="slip-meters">
+      <span className="slip-kicker">Business meters</span>
+      <Meter label="Money waiting" value={money(total, "$18,420")} />
+      <Meter label="Work blocked" value={(data.work || DEMO.work).filter((item) => /need|block|missing/i.test(slipStatus(item))).length || 1} />
+      <Meter label="Quotes due" value={(data.quotes || DEMO.quotes).length} />
+      <Meter label="Crew checks" value={(data.crew || DEMO.crew).length} />
+    </aside>
   );
 }
 
-function MiniFlowline() {
+function Meter({ label, value }) {
   return (
-    <div className="flowline-mini">
-      {STAGES.map(([stage, label]) => (
-        <span key={stage}>{label}</span>
-      ))}
+    <div className="slip-meter">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <i />
     </div>
   );
 }
 
-function Pulse({ data }) {
-  const invoices = data.money || DEMO.money;
-  const invoiceTotal = invoices.reduce((sum, item) => sum + Number(item.amount || item.total || item.balance || 0), 0);
+function CashTrack({ active }) {
+  const activeTrack = slipTrack(active);
 
   return (
-    <section className="flowline-pulse">
-      <Metric label="Money waiting" value={money(invoiceTotal, "$18,420")} sub="Invoice stage" />
-      <Metric label="Work moving" value={(data.work || DEMO.work).length} sub="Work stages" />
-      <Metric label="Crew checks" value={(data.crew || DEMO.crew).length} sub="Assign stage" />
-      <Metric label="Quote actions" value={(data.quotes || DEMO.quotes).length} sub="Work in" />
+    <section className="cash-track">
+      {TRACK.map(([key, label]) => (
+        <article key={key} className={activeTrack === key ? "active" : ""}>
+          <i />
+          <b>{label}</b>
+        </article>
+      ))}
     </section>
   );
 }
 
 function UtilityPage({ route, go }) {
   const copy = {
-    payroll: ["Payroll Flow", "Hours → Review → Export.", "crew"],
+    proof: ["Proof Slips", "Proof packs turn completed work into customer-ready invoice slips.", "money"],
+    payroll: ["Payroll Slips", "Hours, missing times and export checks prepared for review.", "crew"],
     settings: ["Settings", "Business profile, roles, invoice setup, MYOB, SMS and notifications.", "today"],
-  }[route] || ["Flow tools", "Business flow tools.", "today"];
+  }[route] || ["Slipstream", "Prepared business slips.", "today"];
 
   return (
-    <section className="flowline-page">
-      <section className="flowline-hero-strip">
+    <section className="slip-page">
+      <section className="slip-page-head">
         <div>
-          <span className="flowline-kicker">{copy[0]}</span>
+          <span className="slip-kicker">{copy[0]}</span>
           <h1>{copy[1]}</h1>
-          <p>This area keeps the same Churvox flowline idea.</p>
+          <p>This area keeps the same prepared-slip approval pattern.</p>
         </div>
-        <button type="button" onClick={() => go(copy[2])}>Open related flow</button>
+        <button type="button" onClick={() => go(copy[2])}>Open related slips</button>
       </section>
     </section>
   );
@@ -725,11 +759,11 @@ function CreateModal({ type, onClose, onSaved }) {
   }
 
   return (
-    <section className="flowline-modal">
+    <section className="slip-modal">
       <form onSubmit={submit}>
         <header><h2>{page.action}</h2><button type="button" onClick={onClose}>×</button></header>
 
-        <div className="flowline-form-grid">
+        <div className="slip-form-grid">
           {page.fields.map(([key, label]) => (
             <label key={key}>
               {label}
@@ -753,18 +787,18 @@ function CreateModal({ type, onClose, onSaved }) {
 
 function ReviewSheet({ item, onClose, onApprove }) {
   return (
-    <section className="flowline-modal">
+    <section className="slip-modal">
       <article>
-        <header><div><span className="flowline-kicker">Review & approve</span><h2>{titleOf(item)}</h2></div><button type="button" onClick={onClose}>×</button></header>
-        <p>{subOf(item)}</p>
+        <header><div><span className="slip-kicker">Review slip</span><h2>{slipTitle(item)}</h2></div><button type="button" onClick={onClose}>×</button></header>
+        <p>{slipDetail(item)}</p>
 
-        <div className="flowline-sheet-grid">
-          <div><b>Stage</b><span>{stageLabel(stageOf(item))}</span></div>
-          <div><b>Status</b><span>{statusOf(item)}</span></div>
-          <div><b>Amount</b><span>{money(item?.amount)}</span></div>
+        <div className="slip-sheet-grid">
+          <div><b>Status</b><span>{slipStatus(item)}</span></div>
+          <div><b>Money</b><span>{money(item?.amount)}</span></div>
+          <div><b>Track</b><span>{trackLabel(slipTrack(item))}</span></div>
         </div>
 
-        <div className="flowline-detail">
+        <div className="slip-detail">
           {Object.entries(item || {}).slice(0, 10).map(([key, value]) => (
             <p key={key}><b>{key.replace(/_/g, " ")}</b><span>{clean(value, "—")}</span></p>
           ))}
@@ -772,19 +806,15 @@ function ReviewSheet({ item, onClose, onApprove }) {
 
         <footer>
           <button type="button" className="ghost" onClick={onClose}>Close</button>
-          <button type="button" onClick={() => { onApprove?.(item); onClose(); }}>Approve</button>
+          <button type="button" onClick={() => { onApprove?.(item); onClose(); }}>Approve slip</button>
         </footer>
       </article>
     </section>
   );
 }
 
-function stageLabel(stage) {
-  return STAGES.find(([key]) => key === stage)?.[1] || "Flow";
-}
-
-function Metric({ label, value, sub }) {
-  return <article><span>{label}</span><strong>{value}</strong><small>{sub}</small></article>;
+function trackLabel(track) {
+  return TRACK.find(([key]) => key === track)?.[1] || "Work";
 }
 
 export default function ChurvoxAIShell() {
@@ -811,11 +841,11 @@ export default function ChurvoxAIShell() {
     ]);
 
     setData({
-      work: results[0].status === "fulfilled" ? pickList(results[0].value, ["jobs", "items", "data"]).map((x) => ({ ...x, type: "work", stage: x.stage || x.flow_stage || "doing" })) : [],
-      money: results[1].status === "fulfilled" ? pickList(results[1].value, ["invoices", "items", "data"]).map((x) => ({ ...x, type: "money", stage: x.stage || x.flow_stage || "invoice" })) : [],
-      clients: results[2].status === "fulfilled" ? pickList(results[2].value, ["clients", "items", "data"]).map((x) => ({ ...x, type: "clients", stage: "work_in" })) : [],
-      crew: results[3].status === "fulfilled" ? pickList(results[3].value, ["workers", "team", "items", "data"]).map((x) => ({ ...x, type: "crew", stage: "assign" })) : [],
-      quotes: results[4].status === "fulfilled" ? pickList(results[4].value, ["quotes", "items", "data"]).map((x) => ({ ...x, type: "quotes", stage: "work_in" })) : [],
+      work: results[0].status === "fulfilled" ? pickList(results[0].value, ["jobs", "items", "data"]).map((x) => ({ ...x, type: "work", track: x.track || x.flow_stage || "work" })) : [],
+      money: results[1].status === "fulfilled" ? pickList(results[1].value, ["invoices", "items", "data"]).map((x) => ({ ...x, type: "money", track: x.track || x.flow_stage || "invoice" })) : [],
+      clients: results[2].status === "fulfilled" ? pickList(results[2].value, ["clients", "items", "data"]).map((x) => ({ ...x, type: "clients", track: "work" })) : [],
+      crew: results[3].status === "fulfilled" ? pickList(results[3].value, ["workers", "team", "items", "data"]).map((x) => ({ ...x, type: "crew", track: "crew" })) : [],
+      quotes: results[4].status === "fulfilled" ? pickList(results[4].value, ["quotes", "items", "data"]).map((x) => ({ ...x, type: "quotes", track: "work" })) : [],
     });
   }
 
