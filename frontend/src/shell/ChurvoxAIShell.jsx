@@ -20,83 +20,79 @@ const NAV = [
   ["quotes", "Quotes"],
   ["proof", "Proof"],
   ["payroll", "Payroll"],
+  ["plans", "Plans"],
+  ["legal", "Legal"],
   ["settings", "Settings"],
-];
-
-const TRACK = [
-  ["work", "Work"],
-  ["crew", "Crew"],
-  ["proof", "Proof"],
-  ["invoice", "Invoice"],
-  ["paid", "Paid"],
 ];
 
 const PAGE = {
   work: {
-    title: "Work Slips",
+    title: "Work Orbit",
     read: "/jobs",
     create: "/jobs",
-    action: "New work slip",
-    track: "work",
+    action: "Add work",
     fields: [["title", "Job title"], ["client_name", "Client"], ["address", "Address"], ["amount", "Price"]],
   },
   money: {
-    title: "Invoice Slips",
+    title: "Money Orbit",
     read: "/invoices",
     create: "/invoices",
-    action: "New invoice slip",
-    track: "invoice",
+    action: "Create invoice",
     fields: [["invoice_number", "Invoice number"], ["client_name", "Client"], ["amount", "Amount"], ["description", "Description"]],
   },
   clients: {
-    title: "Client Slips",
+    title: "Client Orbit",
     read: "/clients",
     create: "/clients",
-    action: "New client",
-    track: "work",
+    action: "Add client",
     fields: [["name", "Client name"], ["email", "Email"], ["phone", "Phone"], ["address", "Address"]],
   },
   crew: {
-    title: "Crew Slips",
+    title: "Crew Orbit",
     read: "/team/workers",
     create: "/team/invite",
     action: "Invite crew",
-    track: "crew",
     fields: [["name", "Name"], ["email", "Email"], ["role", "Role"], ["region", "Region"]],
   },
   quotes: {
-    title: "Quote Slips",
+    title: "Quote Orbit",
     read: "/quotes",
     create: "/quotes",
-    action: "New quote",
-    track: "work",
+    action: "Create quote",
     fields: [["quote_number", "Quote number"], ["client_name", "Client"], ["amount", "Amount"], ["description", "Description"]],
   },
 };
 
 const DEMO = {
   work: [
-    { type: "work", title: "Switchboard upgrade", client_name: "Carter Electrical", status: "Ready", amount: 4870, track: "crew" },
-    { type: "work", title: "Garden clean-up", client_name: "Bayview Rentals", status: "Needs info", amount: 780, track: "work" },
-    { type: "work", title: "Hot water repair", client_name: "Harbour Plumbing", status: "Proof ready", amount: 1240, track: "proof" },
+    { type: "work", title: "Switchboard upgrade", client_name: "Carter Electrical", status: "Ready", amount: 4870 },
+    { type: "work", title: "Garden clean-up", client_name: "Bayview Rentals", status: "Needs info", amount: 780 },
+    { type: "work", title: "Hot water repair", client_name: "Harbour Plumbing", status: "Proof ready", amount: 1240 },
   ],
   money: [
-    { type: "money", invoice_number: "INV-1047", client_name: "Carter Electrical", status: "Ready", amount: 4870, track: "invoice" },
-    { type: "money", invoice_number: "INV-1031", client_name: "Bayview Rentals", status: "Overdue", amount: 2430, track: "invoice" },
+    { type: "money", invoice_number: "INV-1047", client_name: "Carter Electrical", status: "Ready", amount: 4870 },
+    { type: "money", invoice_number: "INV-1031", client_name: "Bayview Rentals", status: "Overdue", amount: 2430 },
   ],
   clients: [
-    { type: "clients", name: "Carter Electrical", email: "accounts@carter.co.nz", status: "Ready", track: "work" },
-    { type: "clients", name: "Bayview Rentals", phone: "020 000 000", status: "Needs email", track: "work" },
+    { type: "clients", name: "Carter Electrical", email: "accounts@carter.co.nz", status: "Ready" },
+    { type: "clients", name: "Bayview Rentals", phone: "020 000 000", status: "Needs email" },
   ],
   crew: [
-    { type: "crew", name: "Sam", role: "Worker", region: "North", status: "Active", track: "crew" },
-    { type: "crew", name: "Jess", role: "Manager", region: "Central", status: "Active", track: "crew" },
+    { type: "crew", name: "Sam", role: "Worker", region: "North", status: "Active" },
+    { type: "crew", name: "Jess", role: "Manager", region: "Central", status: "Active" },
   ],
   quotes: [
-    { type: "quotes", quote_number: "Q-1075", client_name: "Northside Plumbing", status: "Follow up", amount: 6420, track: "work" },
-    { type: "quotes", quote_number: "Q-1074", client_name: "Oceanview Homes", status: "Prepared", amount: 12100, track: "work" },
+    { type: "quotes", quote_number: "Q-1075", client_name: "Northside Plumbing", status: "Follow up", amount: 6420 },
+    { type: "quotes", quote_number: "Q-1074", client_name: "Oceanview Homes", status: "Prepared", amount: 12100 },
   ],
 };
+
+const PLANS = [
+  ["Start", "$39", "Solo operators", "Basic work/admin tracking for owner-operators."],
+  ["Crew", "$89", "Small teams", "Team workflow, jobs, clients and crew coordination."],
+  ["Operator", "$149", "Most popular", "AI Operator Actions. Churvox prepares admin for approval."],
+  ["Command", "$299", "Full control", "MYOB included, payroll workspace, advanced roles and higher capacity."],
+];
 
 function clean(value, fallback = "") {
   if (value === null || value === undefined) return fallback;
@@ -125,6 +121,8 @@ function pathFor(route) {
     quotes: "/quotes",
     proof: "/proof-and-pay",
     payroll: "/payroll",
+    plans: "/plans",
+    legal: "/legal",
     settings: "/settings",
   }[route] || "/dashboard";
 }
@@ -219,8 +217,8 @@ function typeForRoute(route) {
   return "work";
 }
 
-function slipTitle(item = {}, index = 0) {
-  if (item.kind === "slip") return item.title;
+function titleOf(item = {}, index = 0) {
+  if (item.kind === "orbit") return item.title;
   if (item.type === "money") return clean(item.invoice_number || item.number || item.title, `Invoice ${index + 1}`);
   if (item.type === "clients") return clean(item.name || item.client_name || item.customer_name, `Client ${index + 1}`);
   if (item.type === "crew") return clean(item.name || item.worker_name || item.email, `Crew ${index + 1}`);
@@ -228,8 +226,8 @@ function slipTitle(item = {}, index = 0) {
   return clean(item.title || item.job_title || item.name || item.service_type, `Work ${index + 1}`);
 }
 
-function slipDetail(item = {}) {
-  if (item.kind === "slip") return item.detail;
+function detailOf(item = {}) {
+  if (item.kind === "orbit") return item.detail;
   if (item.type === "money") return clean(item.client_name || item.customer_name || item.status, "Invoice prepared");
   if (item.type === "clients") return clean(item.email || item.phone || item.address, "Client record");
   if (item.type === "crew") return clean(item.role || item.region || item.phone, "Crew record");
@@ -237,20 +235,12 @@ function slipDetail(item = {}) {
   return clean(item.client_name || item.customer_name || item.address || item.status, "Work prepared");
 }
 
-function slipStatus(item = {}) {
-  return clean(item.status || item.invoice_status || item.payment_status || item.quote_status || item.role, item.kind === "slip" ? "Prepared" : "Ready");
-}
-
-function slipTrack(item = {}) {
-  if (item.track) return item.track;
-  if (item.type === "money") return "invoice";
-  if (item.type === "crew") return "crew";
-  if (item.type === "work") return "work";
-  return "work";
+function statusOf(item = {}) {
+  return clean(item.status || item.invoice_status || item.payment_status || item.quote_status || item.role, item.kind === "orbit" ? "Prepared" : "Ready");
 }
 
 function searchText(item = {}) {
-  return [slipTitle(item), slipDetail(item), slipStatus(item), slipTrack(item), ...Object.values(item).map((v) => clean(v))]
+  return [titleOf(item), detailOf(item), statusOf(item), ...Object.values(item).map((v) => clean(v))]
     .join(" ")
     .toLowerCase();
 }
@@ -265,67 +255,32 @@ function allRecords(data) {
   ];
 }
 
-function makeSlips(data) {
+function makeOrbitActions(data) {
   const records = allRecords(data);
   const invoice = records.find((item) => item.type === "money") || DEMO.money[0];
   const job = records.find((item) => item.type === "work") || DEMO.work[0];
   const quote = records.find((item) => item.type === "quotes") || DEMO.quotes[0];
   const client = records.find((item) => item.type === "clients") || DEMO.clients[0];
+  const crew = records.find((item) => item.type === "crew") || DEMO.crew[0];
 
   return [
-    {
-      kind: "slip",
-      type: "money",
-      slipType: "INVOICE SLIP",
-      title: "Invoice ready to approve",
-      detail: "Completed work has proof, amount and customer details ready.",
-      status: "Review",
-      amount: invoice.amount,
-      track: "invoice",
-      source: invoice,
-    },
-    {
-      kind: "slip",
-      type: "work",
-      slipType: "WORK SLIP",
-      title: "Worker suggested",
-      detail: "Churvox prepared the worker assignment for owner review.",
-      status: "Approve",
-      amount: job.amount,
-      track: "crew",
-      source: job,
-    },
-    {
-      kind: "slip",
-      type: "quotes",
-      slipType: "QUOTE SLIP",
-      title: "Quote follow-up ready",
-      detail: "A customer has not replied and the follow-up is ready.",
-      status: "Send",
-      amount: quote.amount,
-      track: "work",
-      source: quote,
-    },
-    {
-      kind: "slip",
-      type: "clients",
-      slipType: "CLIENT SLIP",
-      title: "Client detail check",
-      detail: "Missing or weak client details are ready to fix before they block admin.",
-      status: "Check",
-      track: "work",
-      source: client,
-    },
+    { kind: "orbit", type: "money", title: "Invoice ready", detail: "Completed work has amount, proof and customer details ready.", status: "Approve", amount: invoice.amount, source: invoice },
+    { kind: "orbit", type: "work", title: "Worker suggested", detail: "Churvox found a likely match for assignment.", status: "Review", amount: job.amount, source: job },
+    { kind: "orbit", type: "quotes", title: "Quote follow-up", detail: "A customer has not replied and a follow-up is ready.", status: "Send", amount: quote.amount, source: quote },
+    { kind: "orbit", type: "clients", title: "Client missing email", detail: "Contact details need fixing before admin gets blocked.", status: "Fix", source: client },
+    { kind: "orbit", type: "proof", title: "Proof pack ready", detail: "Photos and notes are ready to attach to the customer update.", status: "Ready", amount: job.amount, source: job },
+    { kind: "orbit", type: "money", title: "Payment reminder", detail: "Overdue invoice reminder is ready for owner approval.", status: "Review", amount: invoice.amount, source: invoice },
+    { kind: "orbit", type: "crew", title: "Crew check", detail: "Crew workload and conflict check is ready.", status: "Check", source: crew },
   ];
 }
 
 function Logo() {
   return (
-    <span className="slip-logo">
-      <span className="slip-mark">C</span>
+    <span className="orbit-logo">
+      <span className="orbit-mark">C</span>
       <span>
         <b>CHURVOX</b>
-        <small>Slipstream</small>
+        <small>OrbitDeck</small>
       </span>
     </span>
   );
@@ -336,22 +291,23 @@ function Status({ value }) {
   const low = label.toLowerCase();
   const tone = low.includes("overdue") || low.includes("block")
     ? "red"
-    : low.includes("need") || low.includes("draft") || low.includes("pending")
+    : low.includes("fix") || low.includes("need") || low.includes("draft") || low.includes("pending")
     ? "amber"
-    : low.includes("complete") || low.includes("paid") || low.includes("active")
+    : low.includes("complete") || low.includes("paid") || low.includes("active") || low.includes("ready")
     ? "green"
     : "blue";
 
-  return <span className={`slip-status ${tone}`}>{label}</span>;
+  return <span className={`orbit-status ${tone}`}>{label}</span>;
 }
 
 function PublicNav({ go }) {
   return (
-    <header className="slip-public-nav">
-      <button type="button" className="slip-logo-button" onClick={() => go("public")}><Logo /></button>
+    <header className="orbit-public-nav">
+      <button type="button" className="orbit-logo-button" onClick={() => go("public")}><Logo /></button>
       <nav>
-        <a href="#slips">Slips</a>
-        <a href="#pricing">Pricing</a>
+        <a href="#how">How it works</a>
+        <a href="#plans">Plans</a>
+        <a href="#legal">Legal</a>
         <button type="button" className="ghost" onClick={() => go("login")}>Login</button>
         <button type="button" onClick={() => go("signup")}>Start free trial</button>
       </nav>
@@ -361,74 +317,60 @@ function PublicNav({ go }) {
 
 function PublicPage({ go }) {
   return (
-    <main className="slip-public">
+    <main className="orbit-public">
       <PublicNav go={go} />
 
-      <section className="slip-public-hero">
+      <section className="orbit-public-hero">
         <article>
-          <span className="slip-kicker">AI-prepared work slips for trade and service owners</span>
-          <h1>Churvox prints the admin slips. <em>You approve.</em></h1>
+          <span className="orbit-kicker">AI approval orbit for trade and service owners</span>
+          <h1>Churvox does the admin. <em>You approve.</em></h1>
           <p>
-            Jobs, quotes, invoices, proof, crew updates and payment follow-ups are prepared as clear slips,
-            so the owner can review, edit and approve.
+            Jobs, quotes, invoices, proof, crew updates and payment follow-ups float around one clear AI core,
+            ready for the owner to review, edit and approve.
           </p>
-          <div className="slip-actions">
+          <div className="orbit-actions">
             <button type="button" onClick={() => go("signup")}>Start free trial</button>
             <button type="button" className="ghost" onClick={() => go("login")}>Open login</button>
           </div>
         </article>
 
-        <aside className="slip-public-stack">
-          <PublicSlip title="WORK SLIP" body="Worker suggested" meta="Approve" />
-          <PublicSlip title="INVOICE SLIP" body="Proof attached • $4,870" meta="Review" featured />
-          <PublicSlip title="PAYMENT SLIP" body="Reminder ready" meta="Send" />
+        <aside className="orbit-public-orbit" aria-label="Churvox approval orbit preview">
+          <div className="orbit-public-core">
+            <Logo />
+            <strong>7 prepared</strong>
+          </div>
+          {["Invoice ready", "Worker suggested", "Quote follow-up", "Proof pack", "Payment reminder", "Client email"].map((label, index) => (
+            <button type="button" key={label} className={`orbit-public-card pos-${index}`} onClick={() => go("signup")}>
+              <b>{label}</b>
+              <small>{index === 0 ? "$4,870 ready" : "Review"}</small>
+            </button>
+          ))}
         </aside>
       </section>
 
-      <section className="slip-section" id="slips">
-        <span className="slip-kicker">What makes it different</span>
-        <h2>It does not feel like a dashboard. It feels like admin already prepared.</h2>
-        <div className="slip-feature-grid">
+      <section className="orbit-section" id="how">
+        <span className="orbit-kicker">How it works</span>
+        <h2>The admin floats in. Churvox prepares it. You pull one card in and approve.</h2>
+        <div className="orbit-feature-grid">
           {[
-            ["Slip Stack", "All prepared admin sits in one clear stack."],
-            ["Active Slip", "The most important approval is big, readable and focused."],
-            ["Job-to-Cash Track", "Every slip shows where it belongs: Work → Crew → Proof → Invoice → Paid."],
+            ["AI core", "Churvox sits in the middle and prepares what matters next."],
+            ["Floating action cards", "Invoices, reminders, proof packs and worker suggestions orbit around the core."],
+            ["Approval dock", "Review, edit and approve without hunting through pages."],
           ].map(([title, body]) => (
             <article key={title}><h3>{title}</h3><p>{body}</p></article>
           ))}
         </div>
       </section>
 
-      <section className="slip-section" id="pricing">
-        <span className="slip-kicker">Pricing</span>
-        <h2>Operator is the AI admin slips plan.</h2>
-        <div className="slip-pricing">
-          {[
-            ["Start", "$39", "Solo operators"],
-            ["Crew", "$89", "Small teams"],
-            ["Operator", "$149", "AI Operator Actions"],
-            ["Command", "$299", "MYOB + payroll"],
-          ].map(([name, price, sub]) => (
-            <article key={name} className={name === "Operator" ? "featured" : ""}>
-              <span>{sub}</span>
-              <h3>{name}</h3>
-              <strong>{price}<small>/month + GST</small></strong>
-              <button type="button" onClick={() => go("signup")}>Choose {name}</button>
-            </article>
-          ))}
-        </div>
+      <PlansSection onChoose={() => go("signup")} />
+
+      <section className="orbit-section orbit-legal-preview" id="legal">
+        <span className="orbit-kicker">Trust and legal</span>
+        <h2>Built for real businesses, not random AI autopilot.</h2>
+        <p>Churvox prepares admin for approval. The business owner reviews and approves final messages, invoices, payroll checks and business decisions.</p>
+        <button type="button" onClick={() => go("legal")}>View legal area</button>
       </section>
     </main>
-  );
-}
-
-function PublicSlip({ title, body, meta, featured }) {
-  return (
-    <div className={`slip-public-slip ${featured ? "featured" : ""}`}>
-      <span>{title}</span>
-      <b>{body}</b>
-      <small>{meta}</small>
-    </div>
   );
 }
 
@@ -463,16 +405,16 @@ function AuthPage({ mode, go, onLogin }) {
   }
 
   return (
-    <main className="slip-public">
+    <main className="orbit-public">
       <PublicNav go={go} />
-      <section className="slip-auth">
+      <section className="orbit-auth">
         <article>
-          <span className="slip-kicker">Secure Slipstream</span>
-          <h1>{signup ? "Start your admin slip stack." : "Open today’s slips."}</h1>
-          <p>Slip Stack → Active Slip → Business Meters → Job-to-Cash Track.</p>
+          <span className="orbit-kicker">Secure OrbitDeck</span>
+          <h1>{signup ? "Start your approval orbit." : "Open your prepared actions."}</h1>
+          <p>Floating action cards, one AI core, approval dock, review sheet.</p>
         </article>
 
-        <form className="slip-auth-card" onSubmit={submit}>
+        <form className="orbit-auth-card" onSubmit={submit}>
           <Logo />
           <h2>{signup ? "Create account" : "Login"}</h2>
 
@@ -486,7 +428,7 @@ function AuthPage({ mode, go, onLogin }) {
           <label>Email<input type="email" required value={form.email} onChange={(event) => update("email", event.target.value)} /></label>
           <label>Password<input type="password" required value={form.password} onChange={(event) => update("password", event.target.value)} /></label>
 
-          {error ? <p className="slip-error">{error}</p> : null}
+          {error ? <p className="orbit-error">{error}</p> : null}
 
           <button type="submit" disabled={busy}>{busy ? "Opening..." : signup ? "Start free trial" : "Open Churvox"}</button>
           <small>
@@ -504,31 +446,33 @@ function AppShell({ route, go, data, user, reload, logout }) {
   const [query, setQuery] = useState("");
 
   return (
-    <main className="slip-app">
-      <header className="slip-topbar">
-        <button type="button" className="slip-logo-button" onClick={() => go("today")}><Logo /></button>
-        <label className="slip-search"><span>Search</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find slips, jobs, invoices..." /></label>
+    <main className="orbit-app">
+      <header className="orbit-topbar">
+        <button type="button" className="orbit-logo-button" onClick={() => go("today")}><Logo /></button>
+        <label className="orbit-search"><span>Search</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find cards, jobs, invoices..." /></label>
         <button type="button" className="ghost" onClick={reload}>Refresh</button>
         <button type="button" onClick={() => setCreateType(PAGE[typeForRoute(route)] ? typeForRoute(route) : "work")}>Quick add</button>
         <strong>{clean(user?.name || user?.email, "Owner")}</strong>
       </header>
 
-      <aside className="slip-nav">
+      <aside className="orbit-nav">
         {NAV.map(([key, label]) => (
           <button key={key} type="button" className={route === key ? "active" : ""} onClick={() => go(key)}>
             {label}
           </button>
         ))}
-        <button type="button" className="slip-logout" onClick={logout}>Logout</button>
+        <button type="button" className="orbit-logout" onClick={logout}>Logout</button>
       </aside>
 
-      <section className="slip-main">
-        {route === "today" ? <SlipstreamHome data={data} query={query} /> : null}
-        {PAGE[route] ? <SlipstreamFiltered type={route} data={data} query={query} reload={reload} /> : null}
+      <section className="orbit-main">
+        {route === "today" ? <OrbitHome data={data} query={query} /> : null}
+        {PAGE[route] ? <OrbitFiltered type={route} data={data} query={query} reload={reload} /> : null}
+        {route === "plans" ? <PlansPage /> : null}
+        {route === "legal" ? <LegalPage /> : null}
         {["proof", "payroll", "settings"].includes(route) ? <UtilityPage route={route} go={go} /> : null}
       </section>
 
-      <nav className="slip-mobile-nav">
+      <nav className="orbit-mobile-nav">
         {["today", "work", "money", "crew", "settings"].map((key) => (
           <button key={key} type="button" className={route === key ? "active" : ""} onClick={() => go(key)}>
             {NAV.find(([navKey]) => navKey === key)?.[1] || key}
@@ -541,139 +485,166 @@ function AppShell({ route, go, data, user, reload, logout }) {
   );
 }
 
-function SlipstreamHome({ data, query }) {
+function OrbitHome({ data, query }) {
   const [selected, setSelected] = useState(null);
   const [notice, setNotice] = useState("");
-  const slips = makeSlips(data);
+  const actions = makeOrbitActions(data);
   const records = allRecords(data).filter((item) => !query || searchText(item).includes(query.toLowerCase()));
-  const stack = [...slips, ...records].slice(0, 14);
-  const active = selected || slips[0];
+  const cards = [...actions, ...records].slice(0, 12);
+  const active = selected || actions[0];
 
   return (
-    <section className="slip-page">
-      <section className="slip-page-head">
+    <section className="orbit-page">
+      <section className="orbit-page-head">
         <div>
-          <span className="slip-kicker">Today’s slips are ready</span>
-          <h1>Churvox prepared the admin. You approve the slip.</h1>
-          <p>No dashboard hunting. Pick a slip, review it, approve it, move on.</p>
+          <span className="orbit-kicker">Today’s orbit</span>
+          <h1>Churvox prepared {actions.length} actions today.</h1>
+          <p>Tap a floating card, review what Churvox prepared, then approve it from the dock.</p>
         </div>
-        <button type="button" onClick={() => setSelected(slips[0])}>Start approval</button>
+        <button type="button" onClick={() => setSelected(actions[0])}>Start best action</button>
       </section>
 
-      {notice ? <section className="slip-notice">{notice}</section> : null}
+      {notice ? <section className="orbit-notice">{notice}</section> : null}
 
-      <section className="slip-workspace">
-        <SlipStack items={stack} selected={active} onSelect={setSelected} />
-        <ActiveSlip item={active} onApprove={(item) => setNotice(`${slipTitle(item)} approved locally.`)} />
-        <BusinessMeters data={data} />
+      <section className="orbit-deck">
+        <div className="orbit-core">
+          <div className="orbit-core-inner">
+            <Logo />
+            <strong>{titleOf(active)}</strong>
+            <small>{detailOf(active)}</small>
+          </div>
+
+          {cards.map((item, index) => (
+            <button
+              type="button"
+              key={`${titleOf(item)}-${index}`}
+              className={`orbit-card pos-${index % 8} ${active === item ? "active" : ""}`}
+              onClick={() => setSelected(item)}
+            >
+              <b>{titleOf(item, index)}</b>
+              <small>{detailOf(item)}</small>
+              <Status value={statusOf(item)} />
+            </button>
+          ))}
+        </div>
+
+        <ActiveCard item={active} onApprove={(item) => setNotice(`${titleOf(item)} approved locally.`)} />
+        <BusinessPulse data={data} />
       </section>
 
-      <CashTrack active={active} />
+      <ApprovalDock item={active} onApprove={(item) => setNotice(`${titleOf(item)} approved locally.`)} />
     </section>
   );
 }
 
-function SlipstreamFiltered({ type, data, query, reload }) {
+function OrbitFiltered({ type, data, query, reload }) {
   const [selected, setSelected] = useState(null);
   const [notice, setNotice] = useState("");
   const page = PAGE[type];
   const rows = data[type]?.length ? data[type] : DEMO[type] || [];
   const records = rows.filter((item) => !query || searchText(item).includes(query.toLowerCase()));
   const prepared = [
-    { kind: "slip", type, slipType: page.title.toUpperCase(), title: `${page.title} ready`, detail: "Churvox prepared the next owner action.", status: "Prepared", track: page.track },
-    { kind: "slip", type, slipType: "CHECK SLIP", title: "Missing info check", detail: "Review this before it blocks the flow.", status: "Check", track: page.track },
+    { kind: "orbit", type, title: `${page.title} ready`, detail: "Churvox prepared the next owner action.", status: "Prepared" },
+    { kind: "orbit", type, title: "Missing detail check", detail: "Review this before it blocks admin.", status: "Fix" },
   ];
+  const cards = [...prepared, ...records];
   const active = selected || prepared[0];
 
   return (
-    <section className="slip-page">
-      <section className="slip-page-head row">
+    <section className="orbit-page">
+      <section className="orbit-page-head row">
         <div>
-          <span className="slip-kicker">{page.title}</span>
-          <h1>{page.title} prepared for approval.</h1>
-          <p>Same Slipstream pattern, filtered to this part of the business.</p>
+          <span className="orbit-kicker">{page.title}</span>
+          <h1>{page.title} cards are orbiting around approval.</h1>
+          <p>Filtered to this area, still using the same OrbitDeck approval flow.</p>
         </div>
         <button type="button" onClick={reload}>Refresh</button>
       </section>
 
-      {notice ? <section className="slip-notice">{notice}</section> : null}
+      {notice ? <section className="orbit-notice">{notice}</section> : null}
 
-      <section className="slip-workspace">
-        <SlipStack items={[...prepared, ...records]} selected={active} onSelect={setSelected} />
-        <ActiveSlip item={active} onApprove={(item) => setNotice(`${slipTitle(item)} approved locally.`)} />
-        <BusinessMeters data={{ [type]: rows }} />
+      <section className="orbit-deck">
+        <div className="orbit-core filtered">
+          <div className="orbit-core-inner">
+            <Logo />
+            <strong>{titleOf(active)}</strong>
+            <small>{detailOf(active)}</small>
+          </div>
+
+          {cards.map((item, index) => (
+            <button
+              type="button"
+              key={`${titleOf(item)}-${index}`}
+              className={`orbit-card pos-${index % 8} ${active === item ? "active" : ""}`}
+              onClick={() => setSelected(item)}
+            >
+              <b>{titleOf(item, index)}</b>
+              <small>{detailOf(item)}</small>
+              <Status value={statusOf(item)} />
+            </button>
+          ))}
+        </div>
+
+        <ActiveCard item={active} onApprove={(item) => setNotice(`${titleOf(item)} approved locally.`)} />
+        <BusinessPulse data={{ [type]: rows }} />
       </section>
 
-      <CashTrack active={active} />
+      <ApprovalDock item={active} onApprove={(item) => setNotice(`${titleOf(item)} approved locally.`)} />
     </section>
   );
 }
 
-function SlipStack({ items, selected, onSelect }) {
-  return (
-    <aside className="slip-stack">
-      <header>
-        <span className="slip-kicker">Slip Stack</span>
-        <strong>{items.length}</strong>
-      </header>
-
-      <div>
-        {items.map((item, index) => (
-          <button key={index} type="button" className={selected === item ? "active" : ""} onClick={() => onSelect(item)}>
-            <span>
-              <b>{slipTitle(item, index)}</b>
-              <small>{slipDetail(item)}</small>
-            </span>
-            <Status value={slipStatus(item)} />
-          </button>
-        ))}
-      </div>
-    </aside>
-  );
-}
-
-function ActiveSlip({ item, onApprove }) {
+function ActiveCard({ item, onApprove }) {
   const [sheet, setSheet] = useState(false);
 
   return (
-    <article className="active-slip">
-      <div className="active-slip-paper">
-        <header>
-          <span>{item?.slipType || `${clean(item?.type, "WORK").toUpperCase()} SLIP`}</span>
-          <Status value={slipStatus(item)} />
-        </header>
+    <article className="orbit-active-card">
+      <span className="orbit-kicker">Pulled into focus</span>
+      <h2>{titleOf(item)}</h2>
+      <p>{detailOf(item)}</p>
 
-        <h2>{slipTitle(item)}</h2>
-        <p>{slipDetail(item)}</p>
-
-        <div className="active-slip-lines">
-          <p><b>Money attached</b><span>{money(item?.amount)}</span></p>
-          <p><b>Stage</b><span>{trackLabel(slipTrack(item))}</span></p>
-          <p><b>Prepared by</b><span>Churvox Operator</span></p>
-        </div>
-
-        <footer>
-          <button type="button" className="ghost" onClick={() => setSheet(true)}>Review</button>
-          <button type="button" className="ghost" onClick={() => setSheet(true)}>Edit</button>
-          <button type="button" onClick={() => onApprove?.(item)}>Approve</button>
-        </footer>
+      <div className="orbit-active-grid">
+        <div><b>Status</b><span>{statusOf(item)}</span></div>
+        <div><b>Amount</b><span>{money(item?.amount)}</span></div>
+        <div><b>Type</b><span>{clean(item?.type, "Admin")}</span></div>
       </div>
+
+      <footer>
+        <button type="button" className="ghost" onClick={() => setSheet(true)}>Review</button>
+        <button type="button" className="ghost" onClick={() => setSheet(true)}>Edit</button>
+        <button type="button" onClick={() => onApprove?.(item)}>Approve</button>
+      </footer>
 
       {sheet ? <ReviewSheet item={item} onClose={() => setSheet(false)} onApprove={onApprove} /> : null}
     </article>
   );
 }
 
-function BusinessMeters({ data }) {
+function ApprovalDock({ item, onApprove }) {
+  const [sheet, setSheet] = useState(false);
+
+  return (
+    <section className="orbit-approval-dock">
+      <span>{titleOf(item)}</span>
+      <button type="button" className="ghost" onClick={() => setSheet(true)}>Review</button>
+      <button type="button" className="ghost" onClick={() => setSheet(true)}>Edit</button>
+      <button type="button" onClick={() => onApprove?.(item)}>Approve</button>
+
+      {sheet ? <ReviewSheet item={item} onClose={() => setSheet(false)} onApprove={onApprove} /> : null}
+    </section>
+  );
+}
+
+function BusinessPulse({ data }) {
   const invoices = data.money || DEMO.money;
   const total = invoices.reduce((sum, item) => sum + Number(item.amount || item.total || item.balance || 0), 0);
 
   return (
-    <aside className="slip-meters">
-      <span className="slip-kicker">Business meters</span>
+    <aside className="orbit-pulse">
+      <span className="orbit-kicker">Business pulse</span>
       <Meter label="Money waiting" value={money(total, "$18,420")} />
-      <Meter label="Work blocked" value={(data.work || DEMO.work).filter((item) => /need|block|missing/i.test(slipStatus(item))).length || 1} />
-      <Meter label="Quotes due" value={(data.quotes || DEMO.quotes).length} />
+      <Meter label="Work cards" value={(data.work || DEMO.work).length} />
+      <Meter label="Quote cards" value={(data.quotes || DEMO.quotes).length} />
       <Meter label="Crew checks" value={(data.crew || DEMO.crew).length} />
     </aside>
   );
@@ -681,7 +652,7 @@ function BusinessMeters({ data }) {
 
 function Meter({ label, value }) {
   return (
-    <div className="slip-meter">
+    <div className="orbit-meter">
       <span>{label}</span>
       <strong>{value}</strong>
       <i />
@@ -689,37 +660,140 @@ function Meter({ label, value }) {
   );
 }
 
-function CashTrack({ active }) {
-  const activeTrack = slipTrack(active);
+function PlansSection({ onChoose }) {
+  return (
+    <section className="orbit-section orbit-plans" id="plans">
+      <span className="orbit-kicker">Plans</span>
+      <h2>Pricing built around AI Operator Actions.</h2>
+      <div className="orbit-plan-grid">
+        {PLANS.map(([name, price, badge, body]) => (
+          <article key={name} className={name === "Operator" ? "featured" : ""}>
+            <span>{badge}</span>
+            <h3>{name}</h3>
+            <strong>{price}<small>/month + GST</small></strong>
+            <p>{body}</p>
+            <button type="button" onClick={onChoose}>Choose {name}</button>
+          </article>
+        ))}
+        <article className="growth">
+          <span>Add-on</span>
+          <h3>Command Growth Pack</h3>
+          <strong>$99<small>/month + GST</small></strong>
+          <p>Add 50 active team members, extra job capacity, AI Operator Actions, automation runs and admin/payroll capacity.</p>
+          <button type="button" onClick={onChoose}>Add growth pack</button>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function PlansPage() {
+  const [notice, setNotice] = useState("");
+
+  function choose(name) {
+    localStorage.setItem("churvox_selected_plan", name.toLowerCase());
+    setNotice(`${name} selected. Billing can be completed when checkout is connected.`);
+  }
 
   return (
-    <section className="cash-track">
-      {TRACK.map(([key, label]) => (
-        <article key={key} className={activeTrack === key ? "active" : ""}>
-          <i />
-          <b>{label}</b>
+    <section className="orbit-page">
+      <section className="orbit-page-head">
+        <div>
+          <span className="orbit-kicker">Plans</span>
+          <h1>Choose the OrbitDeck level for your business.</h1>
+          <p>Operator is the main plan where Churvox prepares admin cards for owner approval.</p>
+        </div>
+      </section>
+
+      {notice ? <section className="orbit-notice">{notice}</section> : null}
+
+      <section className="orbit-plan-grid app">
+        {PLANS.map(([name, price, badge, body]) => (
+          <article key={name} className={name === "Operator" ? "featured" : ""}>
+            <span>{badge}</span>
+            <h3>{name}</h3>
+            <strong>{price}<small>/month + GST</small></strong>
+            <p>{body}</p>
+            <button type="button" onClick={() => choose(name)}>Choose {name}</button>
+          </article>
+        ))}
+        <article className="growth">
+          <span>Add-on</span>
+          <h3>Command Growth Pack</h3>
+          <strong>$99<small>/month + GST</small></strong>
+          <p>Add 50 active team members and more AI/operator capacity.</p>
+          <button type="button" onClick={() => choose("Command Growth Pack")}>Add growth pack</button>
         </article>
-      ))}
+      </section>
+    </section>
+  );
+}
+
+function LegalPage() {
+  const [open, setOpen] = useState(null);
+
+  const legal = [
+    ["Privacy Policy", "How Churvox handles business data, customer data and account information."],
+    ["Terms of Service", "Rules for using Churvox, account responsibilities and acceptable use."],
+    ["Refund / Cancellation Policy", "How subscriptions, cancellations and billing changes should be handled."],
+    ["Data / Security Note", "Churvox prepares admin for approval. Owners remain responsible for final business decisions."],
+    ["Contact", "Business contact: hello@churvox.com"],
+  ];
+
+  return (
+    <section className="orbit-page">
+      <section className="orbit-page-head">
+        <div>
+          <span className="orbit-kicker">Legal and trust</span>
+          <h1>Clear policy cards for a real business website.</h1>
+          <p>Privacy, terms, refunds, contact, data and approval responsibility all live here.</p>
+        </div>
+      </section>
+
+      <section className="orbit-legal-grid">
+        {legal.map(([title, body]) => (
+          <article key={title}>
+            <h3>{title}</h3>
+            <p>{body}</p>
+            <button type="button" onClick={() => setOpen({ title, body })}>Open</button>
+          </article>
+        ))}
+      </section>
+
+      {open ? <LegalSheet item={open} onClose={() => setOpen(null)} /> : null}
+    </section>
+  );
+}
+
+function LegalSheet({ item, onClose }) {
+  return (
+    <section className="orbit-modal">
+      <article>
+        <header><div><span className="orbit-kicker">Legal</span><h2>{item.title}</h2></div><button type="button" onClick={onClose}>×</button></header>
+        <p>{item.body}</p>
+        <p>Churvox prepares drafts, reminders, admin actions and business information for approval. The business owner or authorised user must review and approve final outputs before relying on or sending them.</p>
+        <footer><button type="button" onClick={onClose}>Close</button></footer>
+      </article>
     </section>
   );
 }
 
 function UtilityPage({ route, go }) {
   const copy = {
-    proof: ["Proof Slips", "Proof packs turn completed work into customer-ready invoice slips.", "money"],
-    payroll: ["Payroll Slips", "Hours, missing times and export checks prepared for review.", "crew"],
+    proof: ["Proof Orbit", "Proof packs, photos and job notes prepared for customer-ready admin.", "money"],
+    payroll: ["Payroll Orbit", "Hours, missing times and export checks prepared for review.", "crew"],
     settings: ["Settings", "Business profile, roles, invoice setup, MYOB, SMS and notifications.", "today"],
-  }[route] || ["Slipstream", "Prepared business slips.", "today"];
+  }[route] || ["Orbit tools", "Prepared business actions.", "today"];
 
   return (
-    <section className="slip-page">
-      <section className="slip-page-head">
+    <section className="orbit-page">
+      <section className="orbit-page-head">
         <div>
-          <span className="slip-kicker">{copy[0]}</span>
+          <span className="orbit-kicker">{copy[0]}</span>
           <h1>{copy[1]}</h1>
-          <p>This area keeps the same prepared-slip approval pattern.</p>
+          <p>This area keeps the same floating-card approval pattern.</p>
         </div>
-        <button type="button" onClick={() => go(copy[2])}>Open related slips</button>
+        <button type="button" onClick={() => go(copy[2])}>Open related orbit</button>
       </section>
     </section>
   );
@@ -759,11 +833,11 @@ function CreateModal({ type, onClose, onSaved }) {
   }
 
   return (
-    <section className="slip-modal">
+    <section className="orbit-modal">
       <form onSubmit={submit}>
         <header><h2>{page.action}</h2><button type="button" onClick={onClose}>×</button></header>
 
-        <div className="slip-form-grid">
+        <div className="orbit-form-grid">
           {page.fields.map(([key, label]) => (
             <label key={key}>
               {label}
@@ -787,18 +861,18 @@ function CreateModal({ type, onClose, onSaved }) {
 
 function ReviewSheet({ item, onClose, onApprove }) {
   return (
-    <section className="slip-modal">
+    <section className="orbit-modal">
       <article>
-        <header><div><span className="slip-kicker">Review slip</span><h2>{slipTitle(item)}</h2></div><button type="button" onClick={onClose}>×</button></header>
-        <p>{slipDetail(item)}</p>
+        <header><div><span className="orbit-kicker">Review card</span><h2>{titleOf(item)}</h2></div><button type="button" onClick={onClose}>×</button></header>
+        <p>{detailOf(item)}</p>
 
-        <div className="slip-sheet-grid">
-          <div><b>Status</b><span>{slipStatus(item)}</span></div>
-          <div><b>Money</b><span>{money(item?.amount)}</span></div>
-          <div><b>Track</b><span>{trackLabel(slipTrack(item))}</span></div>
+        <div className="orbit-sheet-grid">
+          <div><b>Status</b><span>{statusOf(item)}</span></div>
+          <div><b>Amount</b><span>{money(item?.amount)}</span></div>
+          <div><b>Type</b><span>{clean(item?.type, "Admin")}</span></div>
         </div>
 
-        <div className="slip-detail">
+        <div className="orbit-detail">
           {Object.entries(item || {}).slice(0, 10).map(([key, value]) => (
             <p key={key}><b>{key.replace(/_/g, " ")}</b><span>{clean(value, "—")}</span></p>
           ))}
@@ -806,15 +880,11 @@ function ReviewSheet({ item, onClose, onApprove }) {
 
         <footer>
           <button type="button" className="ghost" onClick={onClose}>Close</button>
-          <button type="button" onClick={() => { onApprove?.(item); onClose(); }}>Approve slip</button>
+          <button type="button" onClick={() => { onApprove?.(item); onClose(); }}>Approve card</button>
         </footer>
       </article>
     </section>
   );
-}
-
-function trackLabel(track) {
-  return TRACK.find(([key]) => key === track)?.[1] || "Work";
 }
 
 export default function ChurvoxAIShell() {
@@ -841,11 +911,11 @@ export default function ChurvoxAIShell() {
     ]);
 
     setData({
-      work: results[0].status === "fulfilled" ? pickList(results[0].value, ["jobs", "items", "data"]).map((x) => ({ ...x, type: "work", track: x.track || x.flow_stage || "work" })) : [],
-      money: results[1].status === "fulfilled" ? pickList(results[1].value, ["invoices", "items", "data"]).map((x) => ({ ...x, type: "money", track: x.track || x.flow_stage || "invoice" })) : [],
-      clients: results[2].status === "fulfilled" ? pickList(results[2].value, ["clients", "items", "data"]).map((x) => ({ ...x, type: "clients", track: "work" })) : [],
-      crew: results[3].status === "fulfilled" ? pickList(results[3].value, ["workers", "team", "items", "data"]).map((x) => ({ ...x, type: "crew", track: "crew" })) : [],
-      quotes: results[4].status === "fulfilled" ? pickList(results[4].value, ["quotes", "items", "data"]).map((x) => ({ ...x, type: "quotes", track: "work" })) : [],
+      work: results[0].status === "fulfilled" ? pickList(results[0].value, ["jobs", "items", "data"]).map((x) => ({ ...x, type: "work" })) : [],
+      money: results[1].status === "fulfilled" ? pickList(results[1].value, ["invoices", "items", "data"]).map((x) => ({ ...x, type: "money" })) : [],
+      clients: results[2].status === "fulfilled" ? pickList(results[2].value, ["clients", "items", "data"]).map((x) => ({ ...x, type: "clients" })) : [],
+      crew: results[3].status === "fulfilled" ? pickList(results[3].value, ["workers", "team", "items", "data"]).map((x) => ({ ...x, type: "crew" })) : [],
+      quotes: results[4].status === "fulfilled" ? pickList(results[4].value, ["quotes", "items", "data"]).map((x) => ({ ...x, type: "quotes" })) : [],
     });
   }
 
