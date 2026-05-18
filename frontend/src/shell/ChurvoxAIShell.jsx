@@ -130,6 +130,10 @@ function pathFor(route) {
   }[route] || "/dashboard";
 }
 
+function routePath(route) {
+  return pathFor(route);
+}
+
 function token() {
   try {
     return localStorage.getItem("token") || localStorage.getItem("authToken") || localStorage.getItem("access_token") || "";
