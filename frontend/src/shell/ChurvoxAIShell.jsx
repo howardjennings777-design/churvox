@@ -1,52 +1,76 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./ChurvoxAIShell.css";
 
-const API_BASE = (() => {
+const API_ROOT = (() => {
   const raw =
-    process.env.REACT_APP_API_URL ||
     process.env.REACT_APP_BACKEND_URL ||
+    process.env.REACT_APP_API_URL ||
     process.env.VITE_BACKEND_URL ||
     "https://grassley-backend.onrender.com";
   const clean = String(raw).replace(/\/+$/, "");
   return clean.endsWith("/api") ? clean : `${clean}/api`;
 })();
 
-const NAV = [
-  ["dashboard", "Command", "Today’s run"],
-  ["work", "Work", "Jobs & slips"],
-  ["clients", "Clients", "Customer base"],
-  ["crew", "Crew", "Team flow"],
-  ["quotes", "Quotes", "Sales follow-up"],
-  ["invoices", "Invoices", "Cashflow"],
-  ["proof", "Proof & Pay", "Photos to paid"],
-  ["payroll", "Payroll", "Hours review"],
-  ["plans", "Plans", "Billing"],
-  ["settings", "Settings", "Business setup"],
+const NAV_ITEMS = [
+  { key: "dashboard", label: "Command", sub: "Today" },
+  { key: "work", label: "Work", sub: "Jobs" },
+  { key: "clients", label: "Clients", sub: "People" },
+  { key: "crew", label: "Crew", sub: "Team" },
+  { key: "quotes", label: "Quotes", sub: "Sales" },
+  { key: "invoices", label: "Invoices", sub: "Money" },
+  { key: "proof", label: "Proof & Pay", sub: "Photos" },
+  { key: "payroll", label: "Payroll", sub: "Hours" },
+  { key: "plans", label: "Plans", sub: "Billing" },
+  { key: "settings", label: "Settings", sub: "Setup" },
 ];
 
 const PLAN_CARDS = [
-  ["Start", "$39", "Solo operators", "Jobs, clients, quotes and invoices."],
-  ["Crew", "$89", "Small crews", "Worker app, assignment, notes and proof."],
-  ["Operator", "$149", "Most popular", "AI Operator actions and approval queue."],
-  ["Command", "$299", "Growing teams", "MYOB, payroll workspace and advanced roles."],
+  {
+    name: "Start",
+    price: "$39",
+    badge: "Solo operator",
+    body: "Jobs, clients, quotes, invoices and a clean command desk.",
+  },
+  {
+    name: "Crew",
+    price: "$89",
+    badge: "Small teams",
+    body: "Worker app, team assignment, job notes, proof photos and time flow.",
+  },
+  {
+    name: "Operator",
+    price: "$149",
+    badge: "Most popular",
+    body: "AI Operator Actions that prepare admin for owner approval.",
+  },
+  {
+    name: "Command",
+    price: "$299",
+    badge: "Growing business",
+    body: "MYOB included, payroll workspace, roles, automation and higher limits.",
+  },
 ];
 
 function clean(value, fallback = "") {
   if (value === null || value === undefined) return fallback;
+  if (typeof value === "object") {
+    if (Array.isArray(value)) return value.map((item) => clean(item)).filter(Boolean).join(", ") || fallback;
+    return clean(value.name || value.title || value.label || value.email || value.id, fallback);
+  }
   return String(value).replace(/\s+/g, " ").trim() || fallback;
 }
 
 function money(value, fallback = "$0") {
-  const number = Number(String(value || "").replace(/[^0-9.-]/g, ""));
-  if (!Number.isFinite(number) || number <= 0) return fallback;
+  const parsed = Number(String(value || "").replace(/[^0-9.-]/g, ""));
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
   return new Intl.NumberFormat("en-NZ", {
     style: "currency",
     currency: "NZD",
     maximumFractionDigits: 0,
-  }).format(number);
+  }).format(parsed);
 }
 
-function readToken() {
+function getToken() {
   try {
     return (
       localStorage.getItem("token") ||
@@ -59,7 +83,7 @@ function readToken() {
   }
 }
 
-function readUser() {
+function getUser() {
   try {
     return JSON.parse(localStorage.getItem("churvox_user") || "null");
   } catch {
@@ -67,14 +91,14 @@ function readUser() {
   }
 }
 
-function saveSession(payload = {}) {
+function saveAuth(payload = {}) {
   const data = payload.data || payload;
   const token =
     data.token ||
     data.access_token ||
     data.authToken ||
     data.jwt ||
-    data?.user?.token ||
+    data.accessToken ||
     "";
 
   if (token) {
@@ -97,13 +121,15 @@ function saveSession(payload = {}) {
   }
 }
 
-async function request(path, options = {}) {
-  const token = readToken();
-  const res = await fetch(`${API_BASE}${path}`, {
+async function api(path, options = {}) {
+  const token = getToken();
+  const isForm = options.body instanceof FormData;
+
+  const res = await fetch(`${API_ROOT}${path}`, {
     credentials: "include",
     headers: {
       Accept: "application/json",
-      ...(options.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
+      ...(isForm ? {} : { "Content-Type": "application/json" }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },
@@ -125,12 +151,12 @@ async function request(path, options = {}) {
   return payload;
 }
 
-async function apiGet(path) {
-  return request(path, { method: "GET" });
+function apiGet(path) {
+  return api(path, { method: "GET" });
 }
 
-async function apiPost(path, body = {}) {
-  return request(path, {
+function apiPost(path, body = {}) {
+  return api(path, {
     method: "POST",
     body: body instanceof FormData ? body : JSON.stringify(body),
   });
@@ -138,7 +164,6 @@ async function apiPost(path, body = {}) {
 
 async function postFirst(paths, body = {}) {
   let lastError = null;
-
   for (const path of paths) {
     try {
       return await apiPost(path, body);
@@ -146,11 +171,10 @@ async function postFirst(paths, body = {}) {
       lastError = err;
     }
   }
-
   throw lastError || new Error("Could not save.");
 }
 
-function routeFromLocation() {
+function currentRoute() {
   const path = window.location.pathname.replace(/^\/+/, "").replace(/\/+$/, "");
   if (!path || path === "home") return "public";
   if (path === "login") return "login";
@@ -162,7 +186,7 @@ function routeFromLocation() {
 }
 
 function pathFor(route) {
-  const map = {
+  const paths = {
     public: "/",
     login: "/login",
     signup: "/signup",
@@ -179,60 +203,67 @@ function pathFor(route) {
     plans: "/plans",
     settings: "/settings",
   };
-  return map[route] || "/dashboard";
+  return paths[route] || "/dashboard";
 }
 
 function Logo({ compact = false }) {
   return (
-    <span className={`fresh-logo ${compact ? "compact" : ""}`}>
-      <i>⌁</i>
-      <b>CHURVOX</b>
-      {!compact ? <small>Operator Machine</small> : null}
+    <span className={`op-logo ${compact ? "compact" : ""}`}>
+      <i>C</i>
+      <span>
+        <b>CHURVOX</b>
+        {!compact ? <small>Operator Machine</small> : null}
+      </span>
     </span>
   );
 }
 
-function Status({ value }) {
-  const text = clean(value, "Ready");
-  const key = text.toLowerCase();
-  const tone =
-    key.includes("paid") || key.includes("complete")
-      ? "green"
-      : key.includes("need") || key.includes("draft") || key.includes("pending")
-      ? "amber"
-      : key.includes("block") || key.includes("overdue")
-      ? "red"
-      : key.includes("sent") || key.includes("prepared")
-      ? "blue"
-      : "ready";
+function PublicNav({ go }) {
+  return (
+    <header className="op-public-nav">
+      <button type="button" className="op-logo-button" onClick={() => go("public")}>
+        <Logo />
+      </button>
 
-  return <span className={`fresh-status ${tone}`}>{text}</span>;
+      <nav>
+        <a href="#how">How it works</a>
+        <a href="#features">What it does</a>
+        <a href="#pricing">Pricing</a>
+        <button type="button" className="ghost" onClick={() => go("login")}>Login</button>
+        <button type="button" onClick={() => go("signup")}>Start free trial</button>
+      </nav>
+    </header>
+  );
 }
 
-function PublicPage({ setRoute }) {
+function PublicPage({ go }) {
   return (
-    <main className="fresh-public">
-      <PublicNav setRoute={setRoute} />
+    <main className="op-public">
+      <div className="op-grid-bg" />
+      <div className="op-glow one" />
+      <div className="op-glow two" />
 
-      <section className="fresh-hero">
-        <article>
-          <span className="fresh-kicker">AI command centre for trade and service businesses</span>
+      <PublicNav go={go} />
+
+      <section className="op-hero">
+        <article className="op-hero-copy">
+          <span className="op-kicker">AI command centre for trade and service businesses</span>
           <h1>
             Churvox does the admin.
             <em>You approve.</em>
           </h1>
           <p>
-            Jobs, workers, clients, quotes, invoices, proof, payments and payroll land in one clean
-            Operator Machine. Churvox prepares the next move. You approve what matters.
+            Work comes in. Churvox checks the client, crew, job, proof, quote, invoice and payment path.
+            Then it prepares the next move for the owner to approve.
           </p>
 
-          <div className="fresh-actions">
-            <button type="button" onClick={() => setRoute("signup")}>Start free trial</button>
-            <button type="button" className="ghost" onClick={() => setRoute("login")}>Login</button>
-            <a href="#how">See how it works</a>
+          <div className="op-actions">
+            <button type="button" onClick={() => go("signup")}>Start free trial</button>
+            <button type="button" className="ghost" onClick={() => go("login")}>Open login</button>
+            <a href="#how">See the flow</a>
           </div>
 
-          <div className="fresh-trust">
+          <div className="op-trust">
             <b>AI prepares</b>
             <b>Owner approves</b>
             <b>No blind sends</b>
@@ -240,47 +271,47 @@ function PublicPage({ setRoute }) {
           </div>
         </article>
 
-        <aside className="fresh-machine-card">
+        <aside className="op-machine-preview">
           <header>
-            <span>Command Queue</span>
-            <strong>7 ready</strong>
+            <span>Operator Queue</span>
+            <strong>Ready now</strong>
           </header>
 
           {[
-            ["Invoice ready", "Carter Electrical", "$4,870"],
-            ["Worker match prepared", "Bayview job", "Approve"],
+            ["Invoice prepared", "Carter Electrical", "$4,870"],
+            ["Worker match", "Bayview job", "Approve"],
             ["Quote follow-up", "Northside Plumbing", "$6,420"],
             ["Payment reminder", "INV-1031", "18 days"],
           ].map(([title, sub, meta]) => (
-            <div className="fresh-slip" key={title}>
+            <article key={title}>
               <i />
-              <span>
+              <div>
                 <b>{title}</b>
                 <small>{sub}</small>
-              </span>
+              </div>
               <strong>{meta}</strong>
-            </div>
+            </article>
           ))}
 
           <footer>
-            <button type="button">Approve next move</button>
-            <small>Owner stays in control.</small>
+            <button type="button" onClick={() => go("signup")}>Approve next move</button>
+            <small>Every action is approval-first.</small>
           </footer>
         </aside>
       </section>
 
-      <section className="fresh-section" id="how">
+      <section className="op-section" id="how">
         <header>
-          <span className="fresh-kicker">How it works</span>
-          <h2>One simple loop from request to paid.</h2>
+          <span className="op-kicker">How it works</span>
+          <h2>One loop from request to paid.</h2>
         </header>
 
-        <div className="fresh-four">
+        <div className="op-four">
           {[
-            ["1", "Work comes in", "Add a job, request, client, quote or invoice once."],
-            ["2", "Churvox prepares", "It checks missing info, crew, proof, invoice and payment path."],
-            ["3", "Owner approves", "Approve, edit or dismiss. Nothing risky happens without you."],
-            ["4", "Business moves", "Workers, clients, invoices and admin stay connected."],
+            ["1", "Work comes in", "Create a job, quote, invoice, client or request once."],
+            ["2", "Churvox checks", "It looks for missing details, crew gaps, proof, pricing and payment state."],
+            ["3", "Admin is prepared", "Worker matches, invoice wording, reminders and follow-ups are drafted."],
+            ["4", "Owner approves", "You approve, edit or dismiss. Churvox does not act blindly."],
           ].map(([num, title, body]) => (
             <article key={title}>
               <b>{num}</b>
@@ -291,22 +322,22 @@ function PublicPage({ setRoute }) {
         </div>
       </section>
 
-      <section className="fresh-section">
+      <section className="op-section" id="features">
         <header>
-          <span className="fresh-kicker">What Churvox prepares</span>
-          <h2>The daily admin your business keeps repeating.</h2>
+          <span className="op-kicker">What Churvox handles</span>
+          <h2>Built around the real business day.</h2>
         </header>
 
-        <div className="fresh-grid">
+        <div className="op-feature-grid">
           {[
-            ["Work slips", "Job details, worker assignment, notes, status and proof."],
-            ["Worker app", "Start, pause, note, photo and complete work on the phone."],
-            ["Invoices", "Draft invoice wording from completed jobs and proof."],
-            ["Quotes", "Follow-ups before opportunities go cold."],
-            ["Proof & Pay", "Completed work becomes customer-ready proof and invoice context."],
-            ["Payroll", "Approved hours and timesheets for review/export."],
-            ["MYOB", "Optional on Operator. Included on Command."],
-            ["AI Operator", "A clear approval queue of next moves."],
+            ["Work slips", "Jobs, workers, notes, photos, status and pricing context."],
+            ["Clients", "Customer details that connect to every job, quote and invoice."],
+            ["Crew", "Worker assignment, roles, workload and mobile job updates."],
+            ["Quotes", "Follow-ups before sales opportunities go cold."],
+            ["Invoices", "Draft-first invoices prepared from completed work."],
+            ["Proof & Pay", "Photos and notes become customer-ready proof."],
+            ["Payroll", "Approved time, pay summaries and export-ready review."],
+            ["MYOB", "Optional on Operator. Included in Command."],
           ].map(([title, body]) => (
             <article key={title}>
               <h3>{title}</h3>
@@ -316,61 +347,29 @@ function PublicPage({ setRoute }) {
         </div>
       </section>
 
-      <section className="fresh-section" id="pricing">
+      <section className="op-section" id="pricing">
         <header>
-          <span className="fresh-kicker">Pricing</span>
-          <h2>Start simple. Grow into the full Operator Machine.</h2>
+          <span className="op-kicker">Pricing</span>
+          <h2>Start simple. Grow into the Operator Machine.</h2>
         </header>
 
-        <div className="fresh-pricing">
-          {PLAN_CARDS.map(([name, price, badge, body]) => (
-            <article key={name} className={name === "Operator" ? "featured" : ""}>
-              <span>{badge}</span>
-              <h3>{name}</h3>
-              <strong>{price}<small>/month + GST</small></strong>
-              <p>{body}</p>
-              <button type="button" onClick={() => setRoute("signup")}>
-                {name === "Operator" ? "Start with Operator" : `Choose ${name}`}
-              </button>
-            </article>
-          ))}
-        </div>
+        <PlanGrid onChoose={() => go("signup")} />
       </section>
 
-      <section className="fresh-final">
-        <span className="fresh-kicker">Ready when you are</span>
+      <section className="op-final">
+        <span className="op-kicker">Ready when you are</span>
         <h2>Let Churvox prepare the admin. You approve the next move.</h2>
-        <button type="button" onClick={() => setRoute("signup")}>Start free trial</button>
+        <button type="button" onClick={() => go("signup")}>Start free trial</button>
       </section>
     </main>
   );
 }
 
-function PublicNav({ setRoute }) {
-  return (
-    <header className="fresh-public-nav">
-      <button type="button" className="link-logo" onClick={() => setRoute("public")}><Logo /></button>
-      <nav>
-        <a href="#how">How it works</a>
-        <a href="#pricing">Pricing</a>
-        <button type="button" onClick={() => setRoute("signup")}>Start free trial</button>
-        <button type="button" className="ghost" onClick={() => setRoute("login")}>Login</button>
-      </nav>
-    </header>
-  );
-}
-
-function AuthPage({ mode, setMode, setRoute, onAuthed }) {
-  const [form, setForm] = useState({
-    name: "",
-    business_name: "",
-    email: "",
-    password: "",
-  });
+function AuthPage({ mode, setMode, go, onAuthed }) {
+  const signup = mode === "signup";
+  const [form, setForm] = useState({ name: "", business_name: "", email: "", password: "" });
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-
-  const signup = mode === "signup";
 
   function update(key, value) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -395,18 +394,18 @@ function AuthPage({ mode, setMode, setRoute, onAuthed }) {
             password: form.password,
           });
 
-      saveSession(payload);
+      saveAuth(payload);
 
-      if (!readToken() && signup) {
+      if (!getToken() && signup) {
         const loginPayload = await apiPost("/auth/login", {
           email: form.email,
           password: form.password,
         });
-        saveSession(loginPayload);
+        saveAuth(loginPayload);
       }
 
       onAuthed();
-      setRoute("dashboard");
+      go("dashboard");
     } catch (err) {
       setMessage(err.message || "Could not open Churvox.");
     } finally {
@@ -415,27 +414,27 @@ function AuthPage({ mode, setMode, setRoute, onAuthed }) {
   }
 
   return (
-    <main className="fresh-public auth-only">
-      <PublicNav setRoute={setRoute} />
+    <main className="op-public op-auth-page">
+      <div className="op-grid-bg" />
+      <div className="op-glow one" />
+      <PublicNav go={go} />
 
-      <section className="fresh-auth-wrap">
-        <article className="fresh-auth-copy">
-          <span className="fresh-kicker">Secure workspace</span>
+      <section className="op-auth-wrap">
+        <article>
+          <span className="op-kicker">Secure workspace</span>
           <h1>{signup ? "Start your Operator Machine." : "Open your Command Desk."}</h1>
           <p>
-            Same Churvox theme, same clean system. Work comes in, Churvox prepares the admin,
-            and the owner approves.
+            Same Churvox system across every screen. Jobs, clients, crew, quotes, invoices and approvals all work from one command centre.
           </p>
-
-          <div className="fresh-trust">
-            <b>Jobs</b>
-            <b>Clients</b>
-            <b>Invoices</b>
+          <div className="op-trust">
+            <b>Work</b>
+            <b>Money</b>
+            <b>Crew</b>
             <b>AI approvals</b>
           </div>
         </article>
 
-        <form className="fresh-auth-card" onSubmit={submit}>
+        <form className="op-auth-card" onSubmit={submit}>
           <Logo />
           <h2>{signup ? "Create account" : "Login"}</h2>
 
@@ -443,31 +442,28 @@ function AuthPage({ mode, setMode, setRoute, onAuthed }) {
             <>
               <label>
                 Your name
-                <input value={form.name} onChange={(e) => update("name", e.target.value)} placeholder="Howard Jennings" />
+                <input value={form.name} onChange={(event) => update("name", event.target.value)} placeholder="Howard Jennings" />
               </label>
-
               <label>
                 Business name
-                <input value={form.business_name} onChange={(e) => update("business_name", e.target.value)} placeholder="Your trade business" />
+                <input value={form.business_name} onChange={(event) => update("business_name", event.target.value)} placeholder="Your trade business" />
               </label>
             </>
           ) : null}
 
           <label>
             Email
-            <input type="email" value={form.email} onChange={(e) => update("email", e.target.value)} placeholder="you@business.co.nz" required />
+            <input type="email" required value={form.email} onChange={(event) => update("email", event.target.value)} placeholder="you@business.co.nz" />
           </label>
 
           <label>
             Password
-            <input type="password" value={form.password} onChange={(e) => update("password", e.target.value)} placeholder="••••••••" required />
+            <input type="password" required value={form.password} onChange={(event) => update("password", event.target.value)} placeholder="••••••••" />
           </label>
 
-          {message ? <p className="fresh-error">{message}</p> : null}
+          {message ? <p className="op-error">{message}</p> : null}
 
-          <button type="submit" disabled={busy}>
-            {busy ? "Opening..." : signup ? "Start free trial" : "Open Churvox"}
-          </button>
+          <button type="submit" disabled={busy}>{busy ? "Opening..." : signup ? "Start free trial" : "Open Churvox"}</button>
 
           <small>
             {signup ? "Already have an account?" : "Need an account?"}{" "}
@@ -481,47 +477,51 @@ function AuthPage({ mode, setMode, setRoute, onAuthed }) {
   );
 }
 
-function AppShell({ route, setRoute, user, data, reload, logout }) {
+function AppShell({ route, go, data, user, reload, logout, loading }) {
   const current = route === "jobs" ? "work" : route === "team" ? "crew" : route;
 
   return (
-    <main className="fresh-app">
-      <aside className="fresh-sidebar">
-        <Logo />
+    <main className="op-app">
+      <aside className="op-sidebar">
+        <button type="button" className="op-logo-button" onClick={() => go("dashboard")}>
+          <Logo />
+        </button>
+
         <nav>
-          {NAV.map(([key, label, sub]) => (
+          {NAV_ITEMS.map((item) => (
             <button
-              key={key}
+              key={item.key}
               type="button"
-              className={current === key ? "active" : ""}
-              onClick={() => setRoute(key)}
+              className={current === item.key ? "active" : ""}
+              onClick={() => go(item.key)}
             >
-              <b>{label}</b>
-              <small>{sub}</small>
+              <b>{item.label}</b>
+              <small>{item.sub}</small>
             </button>
           ))}
         </nav>
-        <button type="button" className="fresh-logout" onClick={logout}>Logout</button>
+
+        <button type="button" className="op-logout" onClick={logout}>Logout</button>
       </aside>
 
-      <section className="fresh-workspace">
-        <header className="fresh-topbar">
+      <section className="op-workspace">
+        <header className="op-topbar">
           <div>
-            <span className="fresh-kicker">Operator Machine</span>
-            <h1>{titleFor(current)}</h1>
+            <span className="op-kicker">Operator Machine</span>
+            <h1>{pageTitle(current)}</h1>
           </div>
           <aside>
-            <button type="button" onClick={reload}>Refresh</button>
+            <button type="button" onClick={reload}>{loading ? "Refreshing..." : "Refresh"}</button>
             <strong>{clean(user?.name || user?.email, "Owner")}</strong>
           </aside>
         </header>
 
-        {current === "dashboard" ? <Dashboard data={data} setRoute={setRoute} /> : null}
-        {current === "work" ? <RecordsPage type="work" data={data.jobs} reload={reload} /> : null}
-        {current === "clients" ? <RecordsPage type="clients" data={data.clients} reload={reload} /> : null}
-        {current === "crew" ? <RecordsPage type="crew" data={data.team} reload={reload} /> : null}
-        {current === "quotes" ? <RecordsPage type="quotes" data={data.quotes} reload={reload} /> : null}
-        {current === "invoices" ? <RecordsPage type="invoices" data={data.invoices} reload={reload} /> : null}
+        {current === "dashboard" ? <Dashboard data={data} go={go} /> : null}
+        {current === "work" ? <RecordsPage type="work" rows={data.jobs} reload={reload} /> : null}
+        {current === "clients" ? <RecordsPage type="clients" rows={data.clients} reload={reload} /> : null}
+        {current === "crew" ? <RecordsPage type="crew" rows={data.team} reload={reload} /> : null}
+        {current === "quotes" ? <RecordsPage type="quotes" rows={data.quotes} reload={reload} /> : null}
+        {current === "invoices" ? <RecordsPage type="invoices" rows={data.invoices} reload={reload} /> : null}
         {current === "proof" ? <ProofPay data={data} /> : null}
         {current === "payroll" ? <Payroll data={data} /> : null}
         {current === "plans" ? <Plans /> : null}
@@ -531,7 +531,7 @@ function AppShell({ route, setRoute, user, data, reload, logout }) {
   );
 }
 
-function titleFor(route) {
+function pageTitle(route) {
   return {
     dashboard: "Today’s Command Desk",
     work: "Work Slips",
@@ -546,92 +546,70 @@ function titleFor(route) {
   }[route] || "Command Desk";
 }
 
-function Dashboard({ data, setRoute }) {
+function Dashboard({ data, go }) {
   const jobs = data.jobs || [];
-  const invoices = data.invoices || [];
-  const quotes = data.quotes || [];
   const clients = data.clients || [];
   const team = data.team || [];
-
-  const readyInvoices = invoices.filter((item) => /ready|draft|sent|overdue/i.test(clean(item.status || item.invoice_status)));
-  const unpaid = invoices.reduce((sum, item) => sum + Number(item.amount || item.total || item.balance || item.amount_owing || 0), 0);
+  const quotes = data.quotes || [];
+  const invoices = data.invoices || [];
+  const invoiceTotal = invoices.reduce((sum, item) => sum + Number(item.amount || item.total || item.balance || item.amount_owing || 0), 0);
 
   const queue = [
-    {
-      title: "Invoices ready to review",
-      sub: `${readyInvoices.length || 3} invoice drafts prepared`,
-      meta: money(unpaid, "$18,420"),
-      route: "invoices",
-    },
-    {
-      title: "Work needing action",
-      sub: `${jobs.length || 8} work slips in the machine`,
-      meta: "Open",
-      route: "work",
-    },
-    {
-      title: "Quotes to follow up",
-      sub: `${quotes.length || 4} quote opportunities`,
-      meta: "Review",
-      route: "quotes",
-    },
-    {
-      title: "Crew workload",
-      sub: `${team.length || 5} team members`,
-      meta: "Check",
-      route: "crew",
-    },
+    ["Invoices ready", `${invoices.length || 3} invoices in the money flow`, money(invoiceTotal, "$18,420"), "invoices"],
+    ["Work needs owner", `${jobs.length || 8} jobs in the machine`, "Open", "work"],
+    ["Quotes to follow", `${quotes.length || 4} quotes to review`, "Review", "quotes"],
+    ["Crew workload", `${team.length || 5} people in crew`, "Check", "crew"],
   ];
 
   return (
-    <section className="fresh-page">
-      <div className="fresh-health">
-        <Metric label="Jobs" value={jobs.length || 8} sub="Need owner view" />
+    <section className="op-page">
+      <section className="op-health">
+        <Metric label="Jobs" value={jobs.length || 8} sub="Work in motion" />
         <Metric label="Clients" value={clients.length || 12} sub="Customer base" />
-        <Metric label="Invoices" value={readyInvoices.length || 3} sub="Ready / sent" />
-        <Metric label="Money waiting" value={money(unpaid, "$18,420")} sub="Cashflow" />
+        <Metric label="Invoices" value={invoices.length || 3} sub="Cashflow" />
+        <Metric label="Money waiting" value={money(invoiceTotal, "$18,420")} sub="Invoice path" />
         <Metric label="Crew" value={team.length || 5} sub="Active users" />
-      </div>
+      </section>
 
-      <section className="fresh-dashboard-grid">
-        <article className="fresh-panel big">
+      <section className="op-dashboard-grid">
+        <article className="op-panel big">
           <header>
-            <span className="fresh-kicker">Command Queue</span>
+            <span className="op-kicker">Command Queue</span>
             <h2>Approve the next move.</h2>
           </header>
 
-          <div className="fresh-queue">
-            {queue.map((item) => (
-              <button key={item.title} type="button" onClick={() => setRoute(item.route)}>
+          <div className="op-queue">
+            {queue.map(([title, sub, meta, target]) => (
+              <button type="button" key={title} onClick={() => go(target)}>
                 <i />
                 <span>
-                  <b>{item.title}</b>
-                  <small>{item.sub}</small>
+                  <b>{title}</b>
+                  <small>{sub}</small>
                 </span>
-                <strong>{item.meta}</strong>
+                <strong>{meta}</strong>
               </button>
             ))}
           </div>
         </article>
 
-        <article className="fresh-panel dark">
-          <span className="fresh-kicker">AI Next Move</span>
-          <h2>Review invoice drafts first.</h2>
+        <article className="op-panel dark">
+          <span className="op-kicker">AI Next Move</span>
+          <h2>Review money and work first.</h2>
           <p>
-            Completed jobs and payment follow-ups are usually where owners recover the most time.
-            Churvox should prepare them, then wait for approval.
+            The fastest win for trade owners is simple: completed work becomes invoice-ready admin,
+            overdue invoices get reminders, and quotes get followed up.
           </p>
-          <button type="button" onClick={() => setRoute("invoices")}>Open invoices</button>
+          <button type="button" onClick={() => go("invoices")}>Open invoices</button>
         </article>
       </section>
 
-      <section className="fresh-panel">
+      <article className="op-panel">
         <header>
-          <span className="fresh-kicker">Recent Work Slips</span>
+          <span className="op-kicker">Recent Work</span>
           <h2>Work moving through the machine.</h2>
         </header>
-        <SimpleTable rows={jobs.slice(0, 8)} fallback="work" />
-      </section>
+        <DataTable type="work" rows={jobs} />
+      </article>
     </section>
   );
 }
@@ -646,62 +624,37 @@ function Metric({ label, value, sub }) {
   );
 }
 
-function RecordsPage({ type, data = [], reload }) {
-  const [modal, setModal] = useState(false);
+function RecordsPage({ type, rows = [], reload }) {
   const [selected, setSelected] = useState(null);
-
-  const config = {
-    work: {
-      kicker: "Work Slips",
-      title: "Jobs, proof, crew and admin in one flow.",
-      action: "Add work",
-    },
-    clients: {
-      kicker: "Clients",
-      title: "Customer records that feed jobs, quotes and invoices.",
-      action: "Add client",
-    },
-    crew: {
-      kicker: "Crew",
-      title: "Workers, roles, areas and workload.",
-      action: "Invite crew",
-    },
-    quotes: {
-      kicker: "Quotes",
-      title: "Prepared follow-ups before work goes cold.",
-      action: "Create quote",
-    },
-    invoices: {
-      kicker: "Invoices",
-      title: "Drafts, sent invoices and money waiting.",
-      action: "Create invoice",
-    },
-  }[type];
+  const [modalOpen, setModalOpen] = useState(false);
+  const config = pageConfig(type);
+  const list = rows.length ? rows : fallbackRows(type);
+  const active = selected || list[0];
 
   return (
-    <section className="fresh-page">
-      <section className="fresh-panel fresh-page-head">
+    <section className="op-page">
+      <section className="op-panel op-page-head">
         <div>
-          <span className="fresh-kicker">{config.kicker}</span>
+          <span className="op-kicker">{config.kicker}</span>
           <h2>{config.title}</h2>
-          <p>Same Churvox system: list on the left, decision context on the right, clean actions.</p>
+          <p>{config.body}</p>
         </div>
-        <button type="button" onClick={() => setModal(true)}>{config.action}</button>
+        <button type="button" onClick={() => setModalOpen(true)}>{config.action}</button>
       </section>
 
-      <section className="fresh-record-layout">
-        <article className="fresh-panel">
+      <section className="op-record-layout">
+        <article className="op-panel">
           <header>
-            <h2>{config.kicker}</h2>
+            <h2>{config.listTitle}</h2>
             <button type="button" className="ghost" onClick={reload}>Refresh</button>
           </header>
 
-          <div className="fresh-list">
-            {(data.length ? data : fallbackRows(type)).map((item, index) => (
+          <div className="op-list">
+            {list.map((item, index) => (
               <button
                 type="button"
                 key={clean(item.id || item._id || item.email || index)}
-                className={selected === item ? "active" : ""}
+                className={active === item ? "active" : ""}
                 onClick={() => setSelected(item)}
               >
                 <span>
@@ -714,57 +667,77 @@ function RecordsPage({ type, data = [], reload }) {
           </div>
         </article>
 
-        <article className="fresh-panel dark">
-          <span className="fresh-kicker">AI Next Move</span>
-          <h2>{selected ? recordTitle(type, selected) : "Select a row."}</h2>
-          <p>
-            {selected
-              ? aiHint(type, selected)
-              : "Tap any row and Churvox shows the useful next action instead of sending you to a confusing page."}
-          </p>
-          {selected ? (
-            <div className="fresh-detail">
-              {Object.entries(selected).slice(0, 8).map(([key, value]) => (
-                <p key={key}><b>{key.replace(/_/g, " ")}</b><span>{clean(value, "-")}</span></p>
-              ))}
-            </div>
-          ) : null}
+        <article className="op-panel dark">
+          <span className="op-kicker">AI Next Move</span>
+          <h2>{recordTitle(type, active, 0)}</h2>
+          <p>{config.ai}</p>
+          <div className="op-detail">
+            {Object.entries(active || {}).slice(0, 8).map(([key, value]) => (
+              <p key={key}>
+                <b>{key.replace(/_/g, " ")}</b>
+                <span>{clean(value, "—")}</span>
+              </p>
+            ))}
+          </div>
         </article>
       </section>
 
-      {modal ? <CreateModal type={type} onClose={() => setModal(false)} onSaved={reload} /> : null}
+      {modalOpen ? (
+        <CreateModal type={type} onClose={() => setModalOpen(false)} onSaved={reload} />
+      ) : null}
     </section>
   );
 }
 
-function SimpleTable({ rows = [], fallback }) {
-  const list = rows.length ? rows : fallbackRows(fallback);
-
-  return (
-    <div className="fresh-table">
-      <div>
-        <span>Name</span>
-        <span>Detail</span>
-        <span>Status</span>
-        <span>Value</span>
-      </div>
-
-      {list.map((item, index) => (
-        <div key={clean(item.id || item._id || index)}>
-          <strong>{recordTitle(fallback, item, index)}</strong>
-          <span>{recordSub(fallback, item)}</span>
-          <Status value={recordStatus(fallback, item)} />
-          <span>{money(item.amount || item.total || item.price || item.balance, "—")}</span>
-        </div>
-      ))}
-    </div>
-  );
+function pageConfig(type) {
+  return {
+    work: {
+      kicker: "Work Slips",
+      title: "Jobs, crew, notes, proof and admin in one flow.",
+      body: "Owners see the job path clearly. Workers do the work. Churvox prepares the admin.",
+      action: "Add work",
+      listTitle: "All work",
+      ai: "Check worker, status, proof, client details and pricing before preparing invoice/admin.",
+    },
+    clients: {
+      kicker: "Clients",
+      title: "Customer records that feed every workflow.",
+      body: "Clients connect directly to jobs, quotes, invoices and payment follow-ups.",
+      action: "Add client",
+      listTitle: "Client base",
+      ai: "Check missing phone, email, address and recent work history before the next job.",
+    },
+    crew: {
+      kicker: "Crew",
+      title: "Team workload, roles and job readiness.",
+      body: "Keep worker assignment simple and business-owner friendly.",
+      action: "Invite crew",
+      listTitle: "Crew members",
+      ai: "Check role, area, workload and schedule conflict before assigning work.",
+    },
+    quotes: {
+      kicker: "Quotes",
+      title: "Follow up sales before they go cold.",
+      body: "Quotes should become jobs or clean follow-ups, not forgotten documents.",
+      action: "Create quote",
+      listTitle: "Quote pipeline",
+      ai: "Prepare follow-up wording and suggest next action based on quote age and value.",
+    },
+    invoices: {
+      kicker: "Invoices",
+      title: "Draft-first cashflow without messy admin.",
+      body: "Invoices stay owner-approved before sending, reminders or accounting sync.",
+      action: "Create invoice",
+      listTitle: "Invoice flow",
+      ai: "Check amount, customer email, due date, proof and reminder path.",
+    },
+  }[type];
 }
 
 function recordTitle(type, item = {}, index = 0) {
   if (type === "clients") return clean(item.name || item.client_name || item.customer_name, `Client ${index + 1}`);
   if (type === "crew") return clean(item.name || item.worker_name || item.email, `Crew ${index + 1}`);
-  if (type === "quotes") return clean(item.title || item.quote_number || item.number, `Quote ${index + 1}`);
+  if (type === "quotes") return clean(item.quote_number || item.number || item.title, `Quote ${index + 1}`);
   if (type === "invoices") return clean(item.invoice_number || item.number || item.title, `Invoice ${index + 1}`);
   return clean(item.title || item.job_title || item.name || item.service_type, `Work Slip ${index + 1}`);
 }
@@ -785,14 +758,43 @@ function recordStatus(type, item = {}) {
   return clean(item.status || item.job_status, "Ready");
 }
 
-function aiHint(type) {
-  return {
-    work: "Check worker, proof, price and completion state. Then prepare invoice or next admin.",
-    clients: "Check if the client has phone, email, address and recent work history.",
-    crew: "Check workload, region and role before assigning the next job.",
-    quotes: "Prepare a follow-up message or convert accepted work to a job.",
-    invoices: "Check amount, client email, due date and payment reminder path.",
-  }[type] || "Review and approve the next move.";
+function Status({ value }) {
+  const label = clean(value, "Ready");
+  const lower = label.toLowerCase();
+  const tone =
+    lower.includes("paid") || lower.includes("complete")
+      ? "green"
+      : lower.includes("overdue") || lower.includes("block")
+      ? "red"
+      : lower.includes("need") || lower.includes("draft") || lower.includes("pending")
+      ? "amber"
+      : lower.includes("sent") || lower.includes("prepared")
+      ? "blue"
+      : "ready";
+  return <span className={`op-status ${tone}`}>{label}</span>;
+}
+
+function DataTable({ type, rows = [] }) {
+  const list = rows.length ? rows : fallbackRows(type);
+
+  return (
+    <div className="op-table">
+      <div>
+        <span>Name</span>
+        <span>Detail</span>
+        <span>Status</span>
+        <span>Value</span>
+      </div>
+      {list.map((item, index) => (
+        <div key={clean(item.id || item._id || item.email || index)}>
+          <strong>{recordTitle(type, item, index)}</strong>
+          <span>{recordSub(type, item)}</span>
+          <Status value={recordStatus(type, item)} />
+          <span>{money(item.amount || item.total || item.price || item.balance, "—")}</span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function fallbackRows(type) {
@@ -813,15 +815,14 @@ function fallbackRows(type) {
       { name: "Moana", role: "Payroll", region: "Office", status: "Active" },
     ],
     quotes: [
-      { title: "Q-1075", client_name: "Northside Plumbing", status: "Follow up", amount: 6420 },
-      { title: "Q-1074", client_name: "Oceanview Homes", status: "Prepared", amount: 12100 },
+      { quote_number: "Q-1075", client_name: "Northside Plumbing", status: "Follow up", amount: 6420 },
+      { quote_number: "Q-1074", client_name: "Oceanview Homes", status: "Prepared", amount: 12100 },
     ],
     invoices: [
       { invoice_number: "INV-1047", client_name: "Carter Electrical", status: "Ready", amount: 4870 },
       { invoice_number: "INV-1031", client_name: "Bayview Rentals", status: "Overdue", amount: 2430 },
     ],
   };
-
   return rows[type] || rows.work;
 }
 
@@ -829,6 +830,7 @@ function CreateModal({ type, onClose, onSaved }) {
   const [form, setForm] = useState({});
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const fields = formFields(type);
 
   function update(key, value) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -857,7 +859,7 @@ function CreateModal({ type, onClose, onSaved }) {
       await postFirst(paths, payload);
       setMessage("Saved.");
       await onSaved?.();
-      window.setTimeout(onClose, 500);
+      window.setTimeout(onClose, 450);
     } catch (err) {
       setMessage(err.message || "Could not save.");
     } finally {
@@ -865,30 +867,22 @@ function CreateModal({ type, onClose, onSaved }) {
     }
   }
 
-  const fields = {
-    work: [["title", "Job title"], ["client_name", "Client"], ["address", "Address"], ["amount", "Price"]],
-    clients: [["name", "Client name"], ["email", "Email"], ["phone", "Phone"], ["address", "Address"]],
-    crew: [["name", "Name"], ["email", "Email"], ["role", "Role"], ["region", "Region"]],
-    quotes: [["quote_number", "Quote number"], ["client_name", "Client"], ["amount", "Amount"], ["description", "Description"]],
-    invoices: [["invoice_number", "Invoice number"], ["client_name", "Client"], ["amount", "Amount"], ["description", "Description"]],
-  }[type];
-
   return (
-    <section className="fresh-modal">
+    <section className="op-modal">
       <form onSubmit={submit}>
         <header>
           <h2>{type === "work" ? "Add work" : `Create ${type}`}</h2>
           <button type="button" onClick={onClose}>×</button>
         </header>
 
-        <div className="fresh-form-grid">
+        <div className="op-form-grid">
           {fields.map(([key, label]) => (
             <label key={key}>
               {label}
               {key === "description" ? (
-                <textarea value={form[key] || ""} onChange={(e) => update(key, e.target.value)} />
+                <textarea value={form[key] || ""} onChange={(event) => update(key, event.target.value)} />
               ) : (
-                <input value={form[key] || ""} onChange={(e) => update(key, e.target.value)} />
+                <input value={form[key] || ""} onChange={(event) => update(key, event.target.value)} />
               )}
             </label>
           ))}
@@ -905,108 +899,123 @@ function CreateModal({ type, onClose, onSaved }) {
   );
 }
 
+function formFields(type) {
+  return {
+    work: [["title", "Job title"], ["client_name", "Client"], ["address", "Address"], ["amount", "Price"]],
+    clients: [["name", "Client name"], ["email", "Email"], ["phone", "Phone"], ["address", "Address"]],
+    crew: [["name", "Name"], ["email", "Email"], ["role", "Role"], ["region", "Region"]],
+    quotes: [["quote_number", "Quote number"], ["client_name", "Client"], ["amount", "Amount"], ["description", "Description"]],
+    invoices: [["invoice_number", "Invoice number"], ["client_name", "Client"], ["amount", "Amount"], ["description", "Description"]],
+  }[type] || [["title", "Title"], ["description", "Description"]];
+}
+
 function ProofPay({ data }) {
   const completed = (data.jobs || []).filter((job) => /complete|done/i.test(clean(job.status || job.job_status)));
   return (
-    <section className="fresh-page">
-      <section className="fresh-panel fresh-page-head">
+    <section className="op-page">
+      <section className="op-panel op-page-head">
         <div>
-          <span className="fresh-kicker">Proof & Pay</span>
+          <span className="op-kicker">Proof & Pay</span>
           <h2>Turn completed work into proof, invoice and payment follow-up.</h2>
-          <p>Photos, notes and completion details stay tied to the job before anything goes to the customer.</p>
+          <p>Worker photos and completion notes become owner-approved admin.</p>
         </div>
       </section>
 
-      <div className="fresh-grid">
-        <article className="fresh-panel">
+      <section className="op-feature-grid">
+        <article className="op-panel">
           <h3>Completed jobs</h3>
           <strong>{completed.length || 5}</strong>
-          <p>Ready for invoice/proof review.</p>
+          <p>Ready for proof review.</p>
         </article>
-        <article className="fresh-panel">
+        <article className="op-panel">
           <h3>Proof photos</h3>
           <strong>12</strong>
           <p>Worker uploads waiting for owner review.</p>
         </article>
-        <article className="fresh-panel dark">
+        <article className="op-panel dark">
           <h3>AI Next Move</h3>
-          <p>Package job proof with invoice wording before sending to clients.</p>
+          <p>Package proof with invoice wording before sending anything to clients.</p>
         </article>
-      </div>
+      </section>
     </section>
   );
 }
 
 function Payroll({ data }) {
   return (
-    <section className="fresh-page">
-      <section className="fresh-panel fresh-page-head">
+    <section className="op-page">
+      <section className="op-panel op-page-head">
         <div>
-          <span className="fresh-kicker">Payroll Workspace</span>
-          <h2>Review approved hours before payroll leaves Churvox.</h2>
-          <p>Payroll users get the pay-period view without owner billing or job pricing access.</p>
+          <span className="op-kicker">Payroll Workspace</span>
+          <h2>Review hours before payroll leaves Churvox.</h2>
+          <p>Payroll stays separate from owner billing, pricing and settings.</p>
         </div>
       </section>
 
-      <div className="fresh-grid">
-        <article className="fresh-panel">
+      <section className="op-feature-grid">
+        <article className="op-panel">
           <h3>Timesheets</h3>
           <strong>{(data.team || []).length || 8}</strong>
           <p>Workers with hours to review.</p>
         </article>
-        <article className="fresh-panel">
+        <article className="op-panel">
           <h3>Approved hours</h3>
           <strong>126</strong>
           <p>Ready for export.</p>
         </article>
-        <article className="fresh-panel dark">
+        <article className="op-panel dark">
           <h3>AI Payroll Check</h3>
           <p>Flag missing breaks, odd hours and incomplete job notes before export.</p>
         </article>
-      </div>
+      </section>
     </section>
+  );
+}
+
+function PlanGrid({ onChoose }) {
+  return (
+    <div className="op-pricing">
+      {PLAN_CARDS.map((plan) => (
+        <article key={plan.name} className={plan.name === "Operator" ? "featured" : ""}>
+          <span>{plan.badge}</span>
+          <h3>{plan.name}</h3>
+          <strong>{plan.price}<small>/month + GST</small></strong>
+          <p>{plan.body}</p>
+          <button type="button" onClick={onChoose}>Choose {plan.name}</button>
+        </article>
+      ))}
+    </div>
   );
 }
 
 function Plans() {
   return (
-    <section className="fresh-page">
-      <section className="fresh-panel fresh-page-head">
+    <section className="op-page">
+      <section className="op-panel op-page-head">
         <div>
-          <span className="fresh-kicker">Plans</span>
-          <h2>Pricing that matches the Operator Machine.</h2>
-          <p>Start, Crew, Operator and Command — with AI Operator Actions as the real value step.</p>
+          <span className="op-kicker">Plans</span>
+          <h2>Pricing built around the Operator Machine.</h2>
+          <p>Operator is where AI starts preparing admin for approval.</p>
         </div>
       </section>
-
-      <div className="fresh-pricing app-pricing">
-        {PLAN_CARDS.map(([name, price, badge, body]) => (
-          <article key={name} className={name === "Operator" ? "featured" : ""}>
-            <span>{badge}</span>
-            <h3>{name}</h3>
-            <strong>{price}<small>/month + GST</small></strong>
-            <p>{body}</p>
-            <button type="button">Choose {name}</button>
-          </article>
-        ))}
-      </div>
+      <PlanGrid />
     </section>
   );
 }
 
 function Settings({ user }) {
   return (
-    <section className="fresh-page">
-      <section className="fresh-panel fresh-page-head">
+    <section className="op-page">
+      <section className="op-panel op-page-head">
         <div>
-          <span className="fresh-kicker">Settings</span>
+          <span className="op-kicker">Settings</span>
           <h2>Business setup and workspace controls.</h2>
-          <p>Keep setup clear, simple and useful.</p>
+          <p>Keep setup clean, obvious and useful.</p>
         </div>
       </section>
 
-      <section className="fresh-panel">
-        <div className="fresh-form-grid">
+      <section className="op-panel">
+        <div className="op-form-grid">
           <label>
             Owner email
             <input defaultValue={user?.email || ""} />
@@ -1030,35 +1039,35 @@ function Settings({ user }) {
 }
 
 export default function ChurvoxAIShell() {
-  const [route, setRouteState] = useState(routeFromLocation());
-  const [user, setUser] = useState(() => readUser());
-  const [data, setData] = useState({
-    jobs: [],
-    clients: [],
-    team: [],
-    quotes: [],
-    invoices: [],
-  });
+  const [route, setRouteState] = useState(currentRoute());
+  const [user, setUser] = useState(() => getUser());
+  const [data, setData] = useState({ jobs: [], clients: [], team: [], quotes: [], invoices: [] });
   const [loading, setLoading] = useState(false);
 
-  const authed = Boolean(readToken());
+  const authed = Boolean(getToken());
 
-  function setRoute(next) {
-    const target = pathFor(next);
-    window.history.pushState({}, "", target);
-    setRouteState(routeFromLocation());
+  const safeRoute = useMemo(() => {
+    if (route === "jobs") return "work";
+    if (route === "team") return "crew";
+    return route;
+  }, [route]);
+
+  function go(next) {
+    const path = pathFor(next);
+    window.history.pushState({}, "", path);
+    setRouteState(currentRoute());
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function onAuthed() {
-    setUser(readUser());
+    setUser(getUser());
     loadData();
   }
 
   async function loadData() {
-    if (!readToken()) return;
-
+    if (!getToken()) return;
     setLoading(true);
+
     try {
       const [jobs, clients, team, quotes, invoices] = await Promise.allSettled([
         apiGet("/jobs"),
@@ -1068,7 +1077,7 @@ export default function ChurvoxAIShell() {
         apiGet("/invoices"),
       ]);
 
-      const pick = (result, keys) => {
+      function pick(result, keys) {
         if (result.status !== "fulfilled") return [];
         const value = result.value;
         if (Array.isArray(value)) return value;
@@ -1076,7 +1085,7 @@ export default function ChurvoxAIShell() {
           if (Array.isArray(value?.[key])) return value[key];
         }
         return [];
-      };
+      }
 
       setData({
         jobs: pick(jobs, ["jobs", "items", "data"]),
@@ -1091,61 +1100,56 @@ export default function ChurvoxAIShell() {
   }
 
   function logout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("churvox_user");
+    ["token", "authToken", "access_token", "churvox_user", "churvox_email", "churvox_role"].forEach((key) => {
+      try {
+        localStorage.removeItem(key);
+      } catch {}
+    });
     setUser(null);
-    setRoute("public");
+    go("public");
   }
 
   useEffect(() => {
-    const sync = () => setRouteState(routeFromLocation());
-    window.addEventListener("popstate", sync);
-    return () => window.removeEventListener("popstate", sync);
+    const onPop = () => setRouteState(currentRoute());
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
   }, []);
 
   useEffect(() => {
-    if (authed && !["public", "login", "signup"].includes(route)) loadData();
+    if (authed && !["public", "login", "signup"].includes(safeRoute)) {
+      loadData();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [route]);
+  }, [safeRoute]);
 
-  const authMode = route === "signup" ? "signup" : "login";
+  if (safeRoute === "public") return <PublicPage go={go} />;
 
-  if (route === "public") return <PublicPage setRoute={setRoute} />;
-
-  if (route === "login" || route === "signup") {
+  if (safeRoute === "login" || safeRoute === "signup") {
     return (
       <AuthPage
-        mode={authMode}
-        setMode={(mode) => setRoute(mode)}
-        setRoute={setRoute}
+        mode={safeRoute === "signup" ? "signup" : "login"}
+        setMode={go}
+        go={go}
         onAuthed={onAuthed}
       />
     );
   }
 
   if (!authed) {
-    return (
-      <AuthPage
-        mode="login"
-        setMode={(mode) => setRoute(mode)}
-        setRoute={setRoute}
-        onAuthed={onAuthed}
-      />
-    );
+    return <AuthPage mode="login" setMode={go} go={go} onAuthed={onAuthed} />;
   }
 
   return (
     <>
-      {loading ? <div className="fresh-loading">Refreshing Churvox…</div> : null}
+      {loading ? <div className="op-loading">Refreshing Churvox…</div> : null}
       <AppShell
-        route={route}
-        setRoute={setRoute}
-        user={user || readUser() || {}}
+        route={safeRoute}
+        go={go}
         data={data}
+        user={user || getUser() || {}}
         reload={loadData}
         logout={logout}
+        loading={loading}
       />
     </>
   );
