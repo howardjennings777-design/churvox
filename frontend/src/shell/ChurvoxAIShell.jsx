@@ -1,53 +1,56 @@
 import React, { useMemo, useState } from "react";
 import "./ChurvoxAIShell.css";
 
-const queue = [
+const commands = [
   {
     id: "invoice",
-    signal: "READY",
-    title: "Invoice prepared",
+    status: "AI ACTION READY",
+    type: "INVOICE",
+    title: "Invoice prepared from completed job",
+    short: "Invoice prepared",
     client: "ECB Property Maintenance",
-    value: "$430.00",
-    time: "now",
-    severity: "ready",
-    instruction: "Approve sending after checking worker evidence and customer email.",
+    amount: "$430.00",
+    blocker: false,
+    instruction: "Owner approves the prepared invoice. Churvox sends it with the job evidence attached.",
     evidence: ["Completed job detected", "Worker photo attached", "Time captured", "Customer email present"],
   },
   {
     id: "dispatch",
-    signal: "BLOCKED",
+    status: "BLOCKER",
+    type: "DISPATCH",
     title: "Crew assignment missing",
+    short: "Assign crew",
     client: "Northside Lawns",
-    value: "Today",
-    time: "urgent",
-    severity: "blocked",
-    instruction: "Pick an available worker before the job window starts.",
+    amount: "Today",
+    blocker: true,
+    instruction: "Choose a worker before the job window starts. Churvox will not clear this command until assigned.",
     evidence: ["Address saved", "Client active", "No worker assigned", "Conflict warning armed"],
   },
   {
     id: "quote",
-    signal: "DRAFT",
+    status: "DRAFT READY",
+    type: "QUOTE",
     title: "Quote follow-up staged",
+    short: "Follow up quote",
     client: "Rental Owner Group",
-    value: "$1,280.00",
-    time: "4d",
-    severity: "draft",
-    instruction: "Approve the prepared follow-up or edit before sending.",
+    amount: "$1,280.00",
+    blocker: false,
+    instruction: "Owner approves or edits the follow-up message before Churvox sends anything.",
     evidence: ["Quote still open", "No customer reply", "Follow-up copy drafted", "Contact channel ready"],
   },
 ];
 
 const plans = [
-  ["Start", "$39", "Solo operator", "Jobs, clients, basic admin queue, owner approval."],
-  ["Crew", "$89", "Small team", "Worker flow, team assignment, notes, photos, evidence."],
-  ["Operator", "$149", "AI admin engine", "AI Operator Actions, invoice prep, quote follow-ups, approval queue."],
-  ["Command", "$299", "Growing operation", "MYOB included, payroll workspace, advanced roles, higher capacity."],
+  ["Start", "$39", "Solo operator", "Jobs, clients, basic admin queue, and owner approval."],
+  ["Crew", "$89", "Small team", "Worker flow, team assignment, notes, photos, and evidence."],
+  ["Operator", "$149", "AI admin engine", "AI Operator Actions, invoice prep, quote follow-ups, and approval queue."],
+  ["Command", "$299", "Growing operation", "MYOB included, payroll workspace, advanced roles, and higher capacity."],
 ];
 
 const legal = [
   ["Privacy Policy", "Churvox stores business, client, job, worker, quote, invoice, and approval data so the owner can run admin from one place."],
   ["Terms of Service", "Churvox prepares actions, but the owner or authorised user remains responsible for final approval and business decisions."],
-  ["Refund / Cancellation Policy", "Subscriptions can be cancelled according to the plan terms. Refunds are reviewed based on billing status, service availability, and usage."],
+  ["Refund / Cancellation Policy", "Subscriptions can be cancelled according to plan terms. Refunds are reviewed based on billing status, availability, and usage."],
   ["Data / Security Note", "Churvox is designed around business isolation, role-based access, and approval-first AI workflows."],
 ];
 
@@ -57,36 +60,41 @@ function routeTo(path) {
 
 export default function ChurvoxAIShell({ initialView = "console", authedMode = false }) {
   const [view, setView] = useState(initialView || "console");
-  const [activeId, setActiveId] = useState(queue[0].id);
-  const [log, setLog] = useState([]);
-  const [notice, setNotice] = useState("AI operator online. Final moves require owner approval.");
+  const [activeId, setActiveId] = useState("invoice");
+  const [notice, setNotice] = useState("AI Operator online. Final business moves require owner approval.");
+  const [approvals, setApprovals] = useState([]);
 
-  const active = useMemo(() => queue.find((item) => item.id === activeId) || queue[0], [activeId]);
-  const blocked = queue.filter((item) => item.severity === "blocked").length;
-  const ready = queue.filter((item) => item.severity !== "blocked").length;
+  const active = useMemo(() => commands.find((item) => item.id === activeId) || commands[0], [activeId]);
+  const blockers = commands.filter((item) => item.blocker).length;
+  const ready = commands.length - blockers;
 
-  function openView(next) {
-    setView(next);
-    const map = {
+  function openView(nextView) {
+    setView(nextView);
+
+    const pathMap = {
       console: authedMode ? "/dashboard" : "/",
       plans: "/plans",
       legal: "/legal",
       contact: "/contact",
     };
-    const path = map[next] || "/";
-    if (window.location.pathname !== path) window.history.pushState({}, "", path);
+
+    const nextPath = pathMap[nextView] || "/";
+    if (window.location.pathname !== nextPath) {
+      window.history.pushState({}, "", nextPath);
+    }
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function approve() {
-    if (active.severity === "blocked") {
-      setNotice(`Blocked: ${active.title}. Fix the blocker before approval.`);
+  function approveActive() {
+    if (active.blocker) {
+      setNotice(`BLOCKED: ${active.short} needs fixing before approval.`);
       return;
     }
 
-    const stamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    setLog((items) => [{ stamp, text: `${active.title} cleared for ${active.client}` }, ...items].slice(0, 6));
-    setNotice(`Approved: ${active.title}. Churvox would now run that prepared admin move.`);
+    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    setApprovals((items) => [{ time, text: `${active.short} cleared for ${active.client}` }, ...items].slice(0, 5));
+    setNotice(`APPROVED: ${active.short}. Churvox would now run the prepared admin move.`);
   }
 
   function copyEmail() {
@@ -95,126 +103,124 @@ export default function ChurvoxAIShell({ initialView = "console", authedMode = f
   }
 
   return (
-    <div className="cx-terminal">
-      <header className="cx-terminal-top">
-        <button className="cx-logo-lockup" type="button" onClick={() => openView("console")}>
+    <div className="cxop">
+      <header className="cxop-topbar">
+        <button className="cxop-brand" type="button" onClick={() => openView("console")}>
           <img src="/churvox-operator-mark.svg" alt="" />
           <span>
-            <b>CHURVOX</b>
+            <strong>CHURVOX</strong>
             <small>OPERATOR CONSOLE</small>
           </span>
         </button>
 
-        <nav className="cx-terminal-nav">
+        <nav className="cxop-nav">
           <button onClick={() => openView("console")}>Console</button>
           <button onClick={() => openView("plans")}>Plans</button>
           <button onClick={() => openView("legal")}>Legal</button>
           <button onClick={() => openView("contact")}>Contact</button>
-          <button className="cx-nav-hot" onClick={() => routeTo("/login")}>Login</button>
+          <button className="cxop-login" onClick={() => routeTo("/login")}>Login</button>
         </nav>
       </header>
 
       {view === "console" && (
-        <main className="cx-console">
-          <section className="cx-command-hero">
-            <div className="cx-hero-left">
-              <p className="cx-eyebrow">AI RUNS THE ADMIN / OWNER CLEARS THE FINAL MOVE</p>
-              <h1>Not a dashboard. A command console for trade business admin.</h1>
-              <p>
-                Work enters Churvox. AI stages the admin. You see the command, the evidence,
-                the blocker, and the final approval move.
-              </p>
-              <div className="cx-hero-actions">
-                <button className="cx-lime-button" onClick={() => routeTo(authedMode ? "/dashboard" : "/signup")}>
-                  {authedMode ? "Open command queue" : "Start Churvox"}
-                </button>
-                <button className="cx-wire-button" onClick={() => openView("plans")}>View plans</button>
-              </div>
+        <main className="cxop-console">
+          <section className="cxop-intro">
+            <div>
+              <p>AI RUNS THE ADMIN / OWNER CLEARS THE FINAL MOVE</p>
+              <h1>Every job becomes a command.</h1>
             </div>
-
-            <div className="cx-ai-strip">
-              <div><span>AI</span><b>ONLINE</b></div>
-              <div><span>QUEUE</span><b>{queue.length}</b></div>
-              <div><span>READY</span><b>{ready}</b></div>
-              <div className={blocked ? "danger" : ""}><span>BLOCKERS</span><b>{blocked}</b></div>
+            <div>
+              <span>Not another dashboard. Churvox turns work into prepared admin moves: invoices, quotes, dispatch, evidence, and approvals.</span>
             </div>
           </section>
 
-          <section className="cx-operator-frame">
-            <aside className="cx-queue-rail">
-              <div className="cx-section-title">
-                <span>01</span>
-                <b>Command Queue</b>
+          <section className="cxop-machine">
+            <aside className="cxop-status-column">
+              <div className="cxop-status-cell online">
+                <span>AI</span>
+                <strong>ONLINE</strong>
               </div>
+              <div className="cxop-status-cell">
+                <span>QUEUE</span>
+                <strong>{commands.length}</strong>
+              </div>
+              <div className="cxop-status-cell">
+                <span>READY</span>
+                <strong>{ready}</strong>
+              </div>
+              <div className="cxop-status-cell danger">
+                <span>BLOCKERS</span>
+                <strong>{blockers}</strong>
+              </div>
+            </aside>
 
-              {queue.map((item) => (
+            <aside className="cxop-queue">
+              <div className="cxop-label"><b>01</b><span>Command Queue</span></div>
+              {commands.map((item) => (
                 <button
                   key={item.id}
-                  className={`cx-queue-row ${item.id === active.id ? "active" : ""} ${item.severity}`}
+                  className={item.id === active.id ? `cxop-command active ${item.blocker ? "blocked" : ""}` : `cxop-command ${item.blocker ? "blocked" : ""}`}
                   onClick={() => {
                     setActiveId(item.id);
-                    setNotice(`Loaded command: ${item.title}`);
+                    setNotice(`Loaded command: ${item.short}`);
                   }}
                 >
-                  <span>{item.signal}</span>
-                  <b>{item.title}</b>
-                  <small>{item.client}</small>
+                  <small>{item.type}</small>
+                  <strong>{item.short}</strong>
+                  <span>{item.client}</span>
                 </button>
               ))}
             </aside>
 
-            <section className="cx-active-command">
-              <div className="cx-section-title">
-                <span>02</span>
-                <b>Active Command</b>
-              </div>
+            <section className="cxop-core">
+              <div className="cxop-label"><b>02</b><span>Active Command</span></div>
 
-              <div className={`cx-command-signal ${active.severity}`}>{active.signal}</div>
+              <div className={active.blocker ? "cxop-chip danger" : "cxop-chip"}>{active.status}</div>
               <h2>{active.title}</h2>
 
-              <div className="cx-command-matrix">
-                <div><span>Client</span><b>{active.client}</b></div>
-                <div><span>Value / Timing</span><b>{active.value}</b></div>
-                <div><span>Age</span><b>{active.time}</b></div>
+              <div className="cxop-command-grid">
+                <div>
+                  <span>Client</span>
+                  <strong>{active.client}</strong>
+                </div>
+                <div>
+                  <span>Value / Time</span>
+                  <strong>{active.amount}</strong>
+                </div>
+                <div>
+                  <span>Final move</span>
+                  <strong>{active.blocker ? "Fix blocker" : "Owner approval"}</strong>
+                </div>
               </div>
 
-              <p className="cx-instruction">{active.instruction}</p>
+              <p>{active.instruction}</p>
 
-              <div className="cx-action-row">
-                <button className="cx-approve-button" onClick={approve}>Approve move</button>
-                <button className="cx-wire-button" onClick={() => setNotice(`Review mode opened for ${active.title}`)}>
+              <div className="cxop-actions">
+                <button className="cxop-approve" onClick={approveActive}>Approve move</button>
+                <button className="cxop-outline" onClick={() => setNotice(`Evidence review opened for ${active.short}`)}>
                   Review evidence
                 </button>
               </div>
             </section>
 
-            <aside className="cx-evidence-panel">
-              <div className="cx-section-title">
-                <span>03</span>
-                <b>Evidence Panel</b>
-              </div>
-
+            <aside className="cxop-evidence">
+              <div className="cxop-label"><b>03</b><span>Evidence Panel</span></div>
               <ul>
                 {active.evidence.map((item) => <li key={item}>{item}</li>)}
               </ul>
-
-              <div className="cx-system-message">{notice}</div>
+              <div className="cxop-system">{notice}</div>
             </aside>
 
-            <section className="cx-approval-dock">
-              <div className="cx-section-title">
-                <span>04</span>
-                <b>Approval Dock</b>
-              </div>
-
-              {log.length === 0 ? (
-                <p>No approvals cleared in this session.</p>
+            <section className="cxop-dock">
+              <div className="cxop-label"><b>04</b><span>Approval Dock</span></div>
+              {approvals.length === 0 ? (
+                <p>No commands cleared yet. Owner approvals will land here.</p>
               ) : (
-                <div className="cx-log-list">
-                  {log.map((item, index) => (
-                    <div key={`${item.stamp}-${index}`}>
-                      <span>{item.stamp}</span>
-                      <b>{item.text}</b>
+                <div className="cxop-approval-log">
+                  {approvals.map((item, index) => (
+                    <div key={`${item.time}-${index}`}>
+                      <span>{item.time}</span>
+                      <strong>{item.text}</strong>
                     </div>
                   ))}
                 </div>
@@ -225,13 +231,13 @@ export default function ChurvoxAIShell({ initialView = "console", authedMode = f
       )}
 
       {view === "plans" && (
-        <main className="cx-page">
-          <p className="cx-eyebrow">PRICING / OPERATOR CAPACITY</p>
+        <main className="cxop-page">
+          <p className="cxop-page-kicker">PRICING / OPERATOR CAPACITY</p>
           <h1>Choose how much admin you want Churvox to prepare.</h1>
 
-          <div className="cx-price-grid">
+          <section className="cxop-plans">
             {plans.map(([name, price, label, text]) => (
-              <article className={name === "Operator" ? "cx-price-row featured" : "cx-price-row"} key={name}>
+              <article className={name === "Operator" ? "featured" : ""} key={name}>
                 <span>{label}</span>
                 <h2>{name}</h2>
                 <strong>{price}<small>/month + GST</small></strong>
@@ -239,9 +245,9 @@ export default function ChurvoxAIShell({ initialView = "console", authedMode = f
                 <button onClick={() => routeTo("/signup")}>{name === "Operator" ? "Start Operator" : `Choose ${name}`}</button>
               </article>
             ))}
-          </div>
+          </section>
 
-          <div className="cx-wide-note">
+          <div className="cxop-wide">
             <b>Command Growth Pack — $99/month + GST</b>
             <span>Add 50 more active team members plus extra job capacity, AI Operator Actions, automation runs, and admin/payroll capacity.</span>
           </div>
@@ -249,39 +255,38 @@ export default function ChurvoxAIShell({ initialView = "console", authedMode = f
       )}
 
       {view === "legal" && (
-        <main className="cx-page">
-          <p className="cx-eyebrow">LEGAL / TRUST</p>
+        <main className="cxop-page">
+          <p className="cxop-page-kicker">LEGAL / TRUST</p>
           <h1>Approval-first AI business admin.</h1>
-
-          <div className="cx-legal-lines">
+          <section className="cxop-legal">
             {legal.map(([title, text]) => (
-              <section key={title}>
+              <article key={title}>
                 <h2>{title}</h2>
                 <p>{text}</p>
-              </section>
+              </article>
             ))}
-          </div>
+          </section>
         </main>
       )}
 
       {view === "contact" && (
-        <main className="cx-page cx-contact">
-          <p className="cx-eyebrow">CONTACT / SUPPORT</p>
+        <main className="cxop-page cxop-contact">
+          <p className="cxop-page-kicker">CONTACT / SUPPORT</p>
           <h1>Talk to Churvox.</h1>
           <p>For support, sales, billing, setup, security, or account questions.</p>
 
-          <div className="cx-contact-line">
+          <div className="cxop-contact-box">
             <span>CONTACT CHANNEL</span>
-            <b>hello@churvox.com</b>
+            <strong>hello@churvox.com</strong>
             <div>
-              <button className="cx-approve-button" onClick={() => { window.location.href = "mailto:hello@churvox.com"; }}>Email now</button>
-              <button className="cx-wire-button" onClick={copyEmail}>Copy email</button>
+              <button className="cxop-approve" onClick={() => { window.location.href = "mailto:hello@churvox.com"; }}>Email now</button>
+              <button className="cxop-outline" onClick={copyEmail}>Copy email</button>
             </div>
           </div>
         </main>
       )}
 
-      <footer className="cx-terminal-footer">
+      <footer className="cxop-footer">
         <span>© Churvox</span>
         <button onClick={() => openView("legal")}>Privacy / Terms</button>
         <button onClick={() => openView("contact")}>hello@churvox.com</button>
