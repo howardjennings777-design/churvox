@@ -624,15 +624,36 @@ function Metric({ label, value, sub }) {
   );
 }
 
+
 function RecordsPage({ type, rows = [], reload }) {
   const [selected, setSelected] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
   const config = pageConfig(type);
-  const list = rows.length ? rows : fallbackRows(type);
-  const active = selected || list[0];
+  const baseList = rows.length ? rows : fallbackRows(type);
+  const filtered = baseList.filter((item) => {
+    const haystack = recordSearchText(type, item).toLowerCase();
+    const status = recordStatus(type, item).toLowerCase();
+    const matchesQuery = !query.trim() || haystack.includes(query.trim().toLowerCase());
+    const matchesStatus = statusFilter === "all" || status.includes(statusFilter);
+    return matchesQuery && matchesStatus;
+  });
+
+  const active = selected || filtered[0] || baseList[0] || {};
+  const actions = preparedActions(type, baseList);
+
+  function choose(item) {
+    setSelected(item);
+    if (typeof window !== "undefined" && window.innerWidth < 820) {
+      setSheetOpen(true);
+    }
+  }
 
   return (
-    <section className="op-page">
+    <section className="op-page op-workbench-page">
       <section className="op-panel op-page-head">
         <div>
           <span className="op-kicker">{config.kicker}</span>
@@ -642,20 +663,69 @@ function RecordsPage({ type, rows = [], reload }) {
         <button type="button" onClick={() => setModalOpen(true)}>{config.action}</button>
       </section>
 
+      <section className="op-prepared-strip" aria-label="Prepared by Churvox">
+        {actions.map((action) => (
+          <button
+            type="button"
+            key={action.title}
+            className={action.tone || ""}
+            onClick={() => {
+              if (action.mode === "create") setModalOpen(true);
+              else setSheetOpen(true);
+            }}
+          >
+            <span>{action.label}</span>
+            <b>{action.title}</b>
+            <small>{action.detail}</small>
+          </button>
+        ))}
+      </section>
+
+      <section className="op-panel op-controls">
+        <label>
+          Search this page
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={`Search ${config.listTitle.toLowerCase()}...`}
+          />
+        </label>
+
+        <label>
+          Status
+          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+            <option value="all">All statuses</option>
+            <option value="ready">Ready</option>
+            <option value="need">Needs info</option>
+            <option value="draft">Draft</option>
+            <option value="prepared">Prepared</option>
+            <option value="overdue">Overdue</option>
+            <option value="active">Active</option>
+          </select>
+        </label>
+
+        <button type="button" className="ghost" onClick={() => { setQuery(""); setStatusFilter("all"); }}>
+          Clear
+        </button>
+      </section>
+
       <section className="op-record-layout">
         <article className="op-panel">
           <header>
-            <h2>{config.listTitle}</h2>
+            <div>
+              <h2>{config.listTitle}</h2>
+              <p>{filtered.length} shown from {baseList.length} total</p>
+            </div>
             <button type="button" className="ghost" onClick={reload}>Refresh</button>
           </header>
 
           <div className="op-list">
-            {list.map((item, index) => (
+            {filtered.length ? filtered.map((item, index) => (
               <button
                 type="button"
-                key={clean(item.id || item._id || item.email || index)}
+                key={clean(item.id || item._id || item.email || item.number || index)}
                 className={active === item ? "active" : ""}
-                onClick={() => setSelected(item)}
+                onClick={() => choose(item)}
               >
                 <span>
                   <b>{recordTitle(type, item, index)}</b>
@@ -663,14 +733,20 @@ function RecordsPage({ type, rows = [], reload }) {
                 </span>
                 <Status value={recordStatus(type, item)} />
               </button>
-            ))}
+            )) : (
+              <div className="op-empty-state">
+                <b>No matching records</b>
+                <small>Clear the search or add a new item.</small>
+              </div>
+            )}
           </div>
         </article>
 
-        <article className="op-panel dark">
+        <article className="op-panel dark op-ai-next">
           <span className="op-kicker">AI Next Move</span>
           <h2>{recordTitle(type, active, 0)}</h2>
-          <p>{config.ai}</p>
+          <p>{preparedActionText(type, active)}</p>
+
           <div className="op-detail">
             {Object.entries(active || {}).slice(0, 8).map(([key, value]) => (
               <p key={key}>
@@ -679,15 +755,143 @@ function RecordsPage({ type, rows = [], reload }) {
               </p>
             ))}
           </div>
+
+          <button type="button" onClick={() => setSheetOpen(true)}>
+            {primaryActionLabel(type)}
+          </button>
         </article>
       </section>
 
-      {modalOpen ? (
-        <CreateModal type={type} onClose={() => setModalOpen(false)} onSaved={reload} />
+      {sheetOpen ? (
+        <ActionSheet
+          type={type}
+          item={active}
+          config={config}
+          onClose={() => setSheetOpen(false)}
+          onCreate={() => {
+            setSheetOpen(false);
+            setModalOpen(true);
+          }}
+        />
       ) : null}
+
+      {modalOpen ? <CreateModal type={type} onClose={() => setModalOpen(false)} onSaved={reload} /> : null}
     </section>
   );
 }
+
+function ActionSheet({ type, item, config, onClose, onCreate }) {
+  return (
+    <section className="op-action-sheet" role="dialog" aria-modal="true">
+      <article>
+        <header>
+          <div>
+            <span className="op-kicker">Prepared by Churvox</span>
+            <h2>{recordTitle(type, item, 0)}</h2>
+          </div>
+          <button type="button" onClick={onClose}>×</button>
+        </header>
+
+        <p>{preparedActionText(type, item)}</p>
+
+        <div className="op-sheet-grid">
+          <div>
+            <b>What is happening?</b>
+            <span>{recordSub(type, item)}</span>
+          </div>
+          <div>
+            <b>Status</b>
+            <span>{recordStatus(type, item)}</span>
+          </div>
+          <div>
+            <b>Owner action</b>
+            <span>{primaryActionLabel(type)}</span>
+          </div>
+        </div>
+
+        <div className="op-detail light">
+          {Object.entries(item || {}).slice(0, 10).map(([key, value]) => (
+            <p key={key}>
+              <b>{key.replace(/_/g, " ")}</b>
+              <span>{clean(value, "—")}</span>
+            </p>
+          ))}
+        </div>
+
+        <footer>
+          <button type="button" className="ghost" onClick={onCreate}>{config.action}</button>
+          <button type="button" onClick={onClose}>{primaryActionLabel(type)}</button>
+        </footer>
+      </article>
+    </section>
+  );
+}
+
+function preparedActions(type, rows = []) {
+  const count = rows.length || fallbackRows(type).length;
+
+  const map = {
+    work: [
+      ["Review", "Assign worker", `${count} work slips checked for next step`, "ready"],
+      ["Fix", "Missing info", "Jobs missing client, price or address surface here", "warn"],
+      ["Approve", "Prepare invoice", "Completed work can become invoice-ready", "money"],
+    ],
+    clients: [
+      ["Review", "Contact gaps", `${count} clients scanned for missing details`, "ready"],
+      ["Create", "New job", "Start work from selected client", "money"],
+      ["Follow up", "Recent work", "Prepare customer follow-up from history", "ready"],
+    ],
+    crew: [
+      ["Review", "Worker match", "Suggest worker by workload and role", "ready"],
+      ["Warn", "Schedule conflict", "Flag overlap before assignment", "warn"],
+      ["Invite", "Add crew", "Invite worker to complete setup", "money"],
+    ],
+    quotes: [
+      ["Review", "Follow-up due", "Quote follow-up messages are prepared", "warn"],
+      ["Convert", "Accepted quote", "Turn accepted quote into work", "money"],
+      ["Edit", "Quote wording", "Clean quote wording before sending", "ready"],
+    ],
+    invoices: [
+      ["Approve", "Draft invoice", "Completed work is ready for invoice review", "money"],
+      ["Send", "Payment reminder", "Overdue invoice reminders are prepared", "warn"],
+      ["Check", "Proof pack", "Attach photos and job notes before sending", "ready"],
+    ],
+  };
+
+  return (map[type] || map.work).map(([label, title, detail, tone]) => ({ label, title, detail, tone }));
+}
+
+function preparedActionText(type, item = {}) {
+  const name = recordTitle(type, item, 0);
+  const map = {
+    work: `${name} should be checked for worker assignment, missing details, job proof and invoice readiness.`,
+    clients: `${name} should be checked for email, phone, address, recent work and any unpaid invoices.`,
+    crew: `${name} should be checked for role, region, workload and assignment conflicts before more work is added.`,
+    quotes: `${name} should be reviewed for follow-up timing, accepted/declined status and conversion to work.`,
+    invoices: `${name} should be checked for amount, customer email, proof photos, due date and reminder/MYOB path.`,
+  };
+  return map[type] || "Review the prepared action, edit if needed, then approve the next step.";
+}
+
+function recordSearchText(type, item = {}) {
+  return [
+    recordTitle(type, item, 0),
+    recordSub(type, item),
+    recordStatus(type, item),
+    ...Object.values(item || {}).map((value) => clean(value)),
+  ].join(" ");
+}
+
+function primaryActionLabel(type) {
+  return {
+    work: "Review work slip",
+    clients: "Review client",
+    crew: "Review worker",
+    quotes: "Review quote",
+    invoices: "Review invoice",
+  }[type] || "Review prepared action";
+}
+
 
 function pageConfig(type) {
   return {
