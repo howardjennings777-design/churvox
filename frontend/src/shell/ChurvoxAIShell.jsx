@@ -96,8 +96,8 @@ function goTo(path) {
   window.location.href = path;
 }
 
-export default function ChurvoxAIShell() {
-  const [view, setView] = useState("console");
+export default function ChurvoxAIShell({ initialView = "console", authedMode = false }) {
+  const [view, setView] = useState(initialView || "console");
   const [activeCommandId, setActiveCommandId] = useState(commands[0].id);
   const [approvalLog, setApprovalLog] = useState([]);
   const [notice, setNotice] = useState("AI Operator online. Owner approval required for final moves.");
@@ -121,6 +121,19 @@ export default function ChurvoxAIShell() {
   function openView(nextView) {
     setView(nextView);
     setMobileNavOpen(false);
+
+    const pathMap = {
+      console: authedMode ? "/dashboard" : "/",
+      plans: "/plans",
+      legal: "/legal",
+      contact: "/contact",
+    };
+
+    const nextPath = pathMap[nextView] || "/";
+    if (window.location.pathname !== nextPath) {
+      window.history.pushState({}, "", nextPath);
+    }
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -181,7 +194,7 @@ export default function ChurvoxAIShell() {
                   Work comes in. Churvox prepares the admin. You approve the move.
                 </p>
                 <div className="cx-hero-actions">
-                  <button className="cx-primary-action" onClick={() => goTo("/signup")}>Start Churvox</button>
+                  <button className="cx-primary-action" onClick={() => goTo(authedMode ? "/dashboard" : "/signup")}>{authedMode ? "Open Command Queue" : "Start Churvox"}</button>
                   <button className="cx-secondary-action" onClick={() => openView("plans")}>View pricing</button>
                 </div>
               </div>
