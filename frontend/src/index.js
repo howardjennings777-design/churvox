@@ -15,7 +15,7 @@
     const link = document.createElement("link");
     link.id = "churvox-master-theme";
     link.rel = "stylesheet";
-    link.href = "/churvox-master-theme.css?v=phase309-20260517230239";
+    link.href = "/churvox-master-theme.css?v=phase316-20260517230239";
     document.head.appendChild(link);
 
     document.documentElement.setAttribute("data-churvox-theme", "phase309");
