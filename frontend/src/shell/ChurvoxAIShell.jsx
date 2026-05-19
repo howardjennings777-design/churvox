@@ -1,56 +1,72 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./ChurvoxAIShell.css";
 
-const signals = [
+const pathToView = {
+  "/": "home",
+  "/dashboard": "home",
+  "/app": "home",
+  "/how-it-works": "how",
+  "/features": "features",
+  "/plans": "plans",
+  "/legal": "legal",
+  "/contact": "contact",
+};
+
+const viewToPath = {
+  home: "/",
+  how: "/how-it-works",
+  features: "/features",
+  plans: "/plans",
+  legal: "/legal",
+  contact: "/contact",
+};
+
+const moves = [
   {
-    id: "work",
-    tag: "WORK RADAR",
-    title: "Work enters once",
-    short: "New work detected",
-    text: "Jobs, notes, photos, time, quotes, customers, and worker updates enter one command layer instead of getting scattered.",
-    prepared: "Job file + next action ready",
-    colour: "sky",
-    proof: ["Client context built", "Job details captured", "Schedule checked", "Next action detected"],
+    id: "job",
+    label: "01 / WORK IN",
+    title: "New work arrives",
+    body: "Jobs, photos, notes, time, quotes, clients and worker updates enter one place.",
+    output: "Job file ready",
+    tone: "cyan",
+    proof: ["Client matched", "Job context built", "Schedule checked", "Next action found"],
   },
   {
     id: "ai",
-    tag: "AI ENGINE",
-    title: "Churvox builds the admin",
-    short: "Admin move prepared",
-    text: "Churvox turns field activity into invoice drafts, quote follow-ups, worker assignment moves, evidence packs, and blocker alerts.",
-    prepared: "Invoice / quote / assignment move staged",
-    colour: "amber",
-    proof: ["Evidence attached", "Message drafted", "Invoice wording prepared", "Owner approval required"],
+    label: "02 / AI SORTS",
+    title: "Churvox prepares admin",
+    body: "Invoices, quote follow-ups, customer updates, crew moves and blockers get prepared automatically.",
+    output: "Admin move prepared",
+    tone: "orange",
+    proof: ["Evidence attached", "Invoice wording drafted", "Message staged", "Owner approval required"],
   },
   {
-    id: "approve",
-    tag: "APPROVAL STACK",
-    title: "Owner clears the move",
-    short: "Ready for approval",
-    text: "The owner stays in control of final sends, invoices, quote follow-ups, worker assignment, customer messages, and key business changes.",
-    prepared: "Final move ready",
-    colour: "mint",
-    proof: ["Owner review ready", "Action protected", "Decision logged", "Business record updated"],
+    id: "owner",
+    label: "03 / OWNER APPROVES",
+    title: "You clear the move",
+    body: "The owner stays in control of final sends, invoices, follow-ups, assignments and key changes.",
+    output: "Ready for approval",
+    tone: "green",
+    proof: ["Decision ready", "Action protected", "Approval logged", "Record updated"],
   },
   {
     id: "blocker",
-    tag: "BLOCKER WATCH",
-    title: "Problems surface early",
-    short: "Needs owner check",
-    text: "Missing workers, incomplete customer records, schedule conflicts, and risky admin gaps get stopped before they waste the day.",
-    prepared: "Blocker opened",
-    colour: "red",
-    proof: ["Missing detail found", "Risk flagged", "Action paused", "Owner check required"],
+    label: "BLOCKER WATCH",
+    title: "Problems are stopped early",
+    body: "Missing staff, incomplete client details or schedule clashes are surfaced before they waste your day.",
+    output: "Needs owner check",
+    tone: "red",
+    proof: ["Missing detail found", "Conflict flagged", "Action paused", "Owner check needed"],
   },
 ];
 
 const features = [
-  ["AI Command Desk", "See jobs, quotes, invoices, crew updates, blockers, and approvals from one operating layer."],
-  ["Job Control", "Create work, assign it, track status, and keep the admin trail connected from start to finish."],
-  ["Worker Evidence", "Photos, notes, time, and completion updates feed the owner’s approval stack."],
-  ["Invoice Prep", "Completed work can become an invoice-ready move with context and evidence attached."],
-  ["Quote Follow-ups", "Open quotes are surfaced with prepared follow-ups before money gets missed."],
-  ["Owner Approval", "Churvox prepares the admin. The owner clears the final move."],
+  ["AI Command Desk", "One place for jobs, quotes, invoices, workers, photos, blockers and approvals."],
+  ["Job Control", "Create, assign, schedule, track and complete work with the admin trail connected."],
+  ["Worker Evidence", "Photos, notes, time and completion updates feed the owner approval stack."],
+  ["Invoice Prep", "Completed work becomes an invoice-ready move with context and evidence."],
+  ["Quote Follow-ups", "Open quotes are surfaced with prepared follow-up moves before they go cold."],
+  ["Owner Approval", "Churvox prepares the move. You stay in control of the final action."],
 ];
 
 const plans = [
@@ -61,37 +77,39 @@ const plans = [
 ];
 
 const legal = [
-  ["Privacy Policy", "Churvox stores business, client, job, worker, quote, invoice, and approval data so owners can run admin from one place."],
+  ["Privacy Policy", "Churvox stores business, client, job, worker, quote, invoice and approval data so owners can run admin from one place."],
   ["Terms of Service", "Churvox prepares actions, but the owner or authorised user remains responsible for final approval and business decisions."],
-  ["Refund / Cancellation Policy", "Subscriptions can be cancelled according to plan terms. Refunds are reviewed based on billing status, availability, and usage."],
-  ["Data / Security Note", "Churvox is designed around business isolation, role-based access, and approval-first AI workflows."],
+  ["Refund / Cancellation Policy", "Subscriptions can be cancelled according to plan terms. Refunds are reviewed based on billing status, availability and usage."],
+  ["Data / Security Note", "Churvox is designed around business isolation, role-based access and approval-first AI workflows."],
 ];
 
-function routeTo(path) {
+function getViewFromPath() {
+  const cleanPath = String(window.location.pathname || "/").replace(/\/+$/, "") || "/";
+  return pathToView[cleanPath] || "home";
+}
+
+function goTo(path) {
   window.location.href = path;
 }
 
-export default function ChurvoxAIShell({ initialView = "home", authedMode = false }) {
-  const [view, setView] = useState(initialView || "home");
+export default function ChurvoxAIShell({ authedMode = false }) {
+  const [view, setView] = useState(getViewFromPath);
   const [activeId, setActiveId] = useState("ai");
-  const [notice, setNotice] = useState("Mission Control online. Churvox has prepared the next business move.");
+  const [notice, setNotice] = useState("Churvox has prepared the next admin move.");
   const [cleared, setCleared] = useState([]);
 
-  const active = useMemo(() => signals.find((item) => item.id === activeId) || signals[1], [activeId]);
+  const active = useMemo(() => moves.find((item) => item.id === activeId) || moves[1], [activeId]);
+
+  useEffect(() => {
+    const onPopState = () => setView(getViewFromPath());
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
   function openView(nextView) {
+    const nextPath = authedMode && nextView === "home" ? "/dashboard" : viewToPath[nextView] || "/";
     setView(nextView);
 
-    const paths = {
-      home: authedMode ? "/dashboard" : "/",
-      how: "/how-it-works",
-      features: "/features",
-      plans: "/plans",
-      legal: "/legal",
-      contact: "/contact",
-    };
-
-    const nextPath = paths[nextView] || "/";
     if (window.location.pathname !== nextPath) {
       window.history.pushState({}, "", nextPath);
     }
@@ -100,143 +118,140 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
   }
 
   function clearMove() {
-    if (active.colour === "red") {
+    if (active.tone === "red") {
       setNotice("Blocker opened. Fix the missing detail before Churvox clears this move.");
       return;
     }
 
     const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    setCleared((items) => [{ time, text: active.prepared }, ...items].slice(0, 5));
-    setNotice(`Cleared: ${active.prepared}. Churvox would now complete that prepared business action.`);
+    setCleared((items) => [{ time, text: active.output }, ...items].slice(0, 4));
+    setNotice(`Cleared: ${active.output}. Churvox would now complete that prepared admin action.`);
   }
 
-  function copyEmail() {
-    navigator.clipboard?.writeText("hello@churvox.com");
-    setNotice("Copied hello@churvox.com");
+  async function copyEmail() {
+    try {
+      await navigator.clipboard.writeText("hello@churvox.com");
+      setNotice("Copied hello@churvox.com");
+    } catch {
+      window.location.href = "mailto:hello@churvox.com";
+    }
+  }
+
+  function startChurvox(planName = "") {
+    const suffix = planName ? `?plan=${encodeURIComponent(planName.toLowerCase())}` : "";
+    goTo(`/signup${suffix}`);
   }
 
   return (
-    <div className="mission">
-      <header className="mission-top">
-        <button className="mission-brand" type="button" onClick={() => openView("home")}>
+    <div className="nexus">
+      <header className="nx-top">
+        <button className="nx-brand" type="button" onClick={() => openView("home")} aria-label="Open Churvox home">
           <img src="/churvox-operator-mark.svg" alt="" />
           <span>
             <strong>CHURVOX</strong>
-            <small>MISSION CONTROL</small>
+            <small>AI OPERATIONS NEXUS</small>
           </span>
         </button>
 
-        <nav className="mission-nav">
-          <button onClick={() => openView("home")}>Home</button>
-          <button onClick={() => openView("how")}>How</button>
-          <button onClick={() => openView("features")}>Features</button>
-          <button onClick={() => openView("plans")}>Plans</button>
-          <button onClick={() => openView("contact")}>Contact</button>
-          <button className="login" onClick={() => routeTo("/login")}>Login</button>
+        <nav className="nx-nav" aria-label="Main navigation">
+          <button type="button" className={view === "home" ? "active" : ""} onClick={() => openView("home")}>Home</button>
+          <button type="button" className={view === "how" ? "active" : ""} onClick={() => openView("how")}>How</button>
+          <button type="button" className={view === "features" ? "active" : ""} onClick={() => openView("features")}>Features</button>
+          <button type="button" className={view === "plans" ? "active" : ""} onClick={() => openView("plans")}>Plans</button>
+          <button type="button" className={view === "contact" ? "active" : ""} onClick={() => openView("contact")}>Contact</button>
+          <button type="button" className="login" onClick={() => goTo("/login")}>Login</button>
         </nav>
       </header>
 
       {view === "home" && (
-        <main className="mission-home">
-          <section className="mission-hero">
-            <div className="mission-copy">
-              <p className="mission-kicker">WORK RADAR / AI ENGINE / OWNER APPROVAL</p>
-              <h1>Run the whole business from one control layer.</h1>
-              <p className="mission-sub">
-                Churvox pulls jobs, crew updates, photos, time, quotes, invoices, clients, blockers, and approvals into one powerful place.
-                Work goes in, Churvox sorts the admin, and the owner clears the final move.
+        <main className="nx-home">
+          <section className="nx-hero">
+            <div className="nx-hero-copy">
+              <p className="nx-kicker">WORK GOES IN / CHURVOX SORTS / OWNER APPROVES</p>
+              <h1>The operating system for trade business admin.</h1>
+              <p className="nx-sub">
+                Churvox pulls jobs, crew updates, photos, time, quotes, invoices, clients, blockers and approvals into one clear control layer.
+                The admin is prepared before it turns into chaos.
               </p>
 
-              <div className="mission-input">
-                <span>LIVE BUSINESS INPUT</span>
-                <strong>Worker finished work • photos uploaded • invoice needed</strong>
-                <em>Churvox prepares invoice move, evidence, customer message, and owner approval.</em>
-              </div>
-
-              <div className="mission-actions">
-                <button className="primary" onClick={() => routeTo(authedMode ? "/dashboard" : "/signup")}>
-                  {authedMode ? "Open Mission Control" : "Start Churvox"}
+              <div className="nx-cta-row">
+                <button type="button" className="nx-primary" onClick={() => authedMode ? openView("home") : startChurvox()}>
+                  {authedMode ? "Open Churvox" : "Start Churvox"}
                 </button>
-                <button className="secondary" onClick={() => openView("how")}>See the system</button>
+                <button type="button" className="nx-secondary" onClick={() => openView("how")}>See how it works</button>
               </div>
             </div>
 
-            <aside className="mission-orbit">
-              <div className="orbit-visual">
-                <div className="orbit-ring one" />
-                <div className="orbit-ring two" />
-                <div className="orbit-ring three" />
-                <div className="orbit-core">
-                  <span>AI</span>
-                  <strong>CONTROL</strong>
-                </div>
+            <aside className="nx-live" aria-label="Live admin engine">
+              <div className="nx-live-head">
+                <span>LIVE ADMIN ENGINE</span>
+                <strong>What Churvox is preparing</strong>
               </div>
 
-              <div className="mission-signal-stack">
-                {signals.map((item) => (
-                  <button
-                    key={item.id}
-                    className={item.id === active.id ? `mission-signal active ${item.colour}` : `mission-signal ${item.colour}`}
-                    onClick={() => {
-                      setActiveId(item.id);
-                      setNotice(`Loaded: ${item.prepared}`);
-                    }}
-                  >
-                    <small>{item.tag}</small>
-                    <b>{item.short}</b>
-                    <span>{item.prepared}</span>
-                  </button>
-                ))}
-              </div>
+              {moves.map((item) => (
+                <button
+                  type="button"
+                  key={item.id}
+                  className={item.id === active.id ? `nx-live-item active ${item.tone}` : `nx-live-item ${item.tone}`}
+                  onClick={() => {
+                    setActiveId(item.id);
+                    setNotice(`Loaded: ${item.output}`);
+                  }}
+                >
+                  <small>{item.label}</small>
+                  <b>{item.output}</b>
+                  <em>{item.title}</em>
+                </button>
+              ))}
             </aside>
           </section>
 
-          <section className="mission-flow">
+          <section className="nx-process">
             <article>
               <span>01</span>
               <h2>Work comes in</h2>
-              <p>Jobs, notes, photos, time, customers, quotes, invoices, and worker updates land once.</p>
+              <p>Jobs, notes, photos, time, worker updates, quotes and client details enter once.</p>
             </article>
-            <article className="active">
+            <article className="hot">
               <span>02</span>
-              <h2>Churvox sorts it</h2>
-              <p>AI prepares the next admin move, connects the evidence, and catches blockers.</p>
+              <h2>AI sorts it</h2>
+              <p>Churvox prepares invoices, follow-ups, evidence, worker moves and blockers.</p>
             </article>
             <article>
               <span>03</span>
-              <h2>Owner approves</h2>
-              <p>You clear sends, invoices, quote follow-ups, worker assignments, and key changes.</p>
+              <h2>You approve</h2>
+              <p>The owner clears final sends, invoices, assignments and important changes.</p>
             </article>
           </section>
 
-          <section className="mission-console">
-            <div className="mission-active">
-              <div className="mission-section-head">
-                <span>ACTIVE SYSTEM</span>
-                <b>{active.tag}</b>
+          <section className="nx-product">
+            <div className="nx-active">
+              <div className="nx-section-head">
+                <span>ACTIVE MOVE</span>
+                <b>{active.label}</b>
               </div>
 
-              <article className={`mission-move ${active.colour}`}>
-                <small>{active.tag}</small>
+              <article className={`nx-move ${active.tone}`}>
+                <small>{active.label}</small>
                 <h2>{active.title}</h2>
-                <p>{active.text}</p>
+                <p>{active.body}</p>
 
-                <div className="mission-result">
+                <div className="nx-result">
                   <span>Prepared owner move</span>
-                  <strong>{active.prepared}</strong>
+                  <strong>{active.output}</strong>
                 </div>
 
-                <div className="mission-actions">
-                  <button className="approve" onClick={clearMove}>
-                    {active.colour === "red" ? "Open blocker" : "Clear move"}
+                <div className="nx-cta-row">
+                  <button type="button" className="nx-approve" onClick={clearMove}>
+                    {active.tone === "red" ? "Open blocker" : "Approve move"}
                   </button>
-                  <button className="secondary dark" onClick={() => setNotice(`Review opened for ${active.prepared}`)}>Review first</button>
+                  <button type="button" className="nx-secondary" onClick={() => setNotice(`Review opened for ${active.output}`)}>Review first</button>
                 </div>
               </article>
             </div>
 
-            <aside className="mission-evidence">
-              <div className="mission-section-head">
+            <aside className="nx-proof">
+              <div className="nx-section-head">
                 <span>EVIDENCE</span>
                 <b>Why it is ready</b>
               </div>
@@ -245,19 +260,19 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
                 {active.proof.map((item) => <li key={item}>{item}</li>)}
               </ul>
 
-              <div className="mission-note">{notice}</div>
+              <div className="nx-note">{notice}</div>
             </aside>
 
-            <section className="mission-log">
-              <div className="mission-section-head">
+            <section className="nx-log">
+              <div className="nx-section-head">
                 <span>APPROVAL LOG</span>
                 <b>Owner-cleared moves</b>
               </div>
 
               {cleared.length === 0 ? (
-                <p>No cleared moves yet. Owner approvals appear here as the business gets sorted.</p>
+                <p>No approvals cleared yet. Owner decisions appear here.</p>
               ) : (
-                <div className="log-list">
+                <div className="nx-log-list">
                   {cleared.map((item, index) => (
                     <div key={`${item.time}-${index}`}>
                       <span>{item.time}</span>
@@ -269,120 +284,90 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
             </section>
           </section>
 
-          <section className="mission-banner">
-            <div>
-              <p className="mission-kicker">THE POINT</p>
-              <h2>No more hunting through five screens to know what needs doing next.</h2>
-            </div>
-            <div className="mission-tags">
-              {["Jobs", "Crew", "Photos", "Time", "Quotes", "Invoices", "Clients", "Approvals"].map((item) => <b key={item}>{item}</b>)}
-            </div>
-          </section>
-        </main>
-      )}
-
-      {view === "how" && (
-        <main className="mission-page">
-          <p className="mission-kicker">HOW IT WORKS</p>
-          <h1>Churvox turns daily business activity into owner-ready moves.</h1>
-
-          <section className="mission-cards three">
-            <article>
-              <span>01</span>
-              <h2>Capture work</h2>
-              <p>Jobs, notes, photos, time, quotes, customer updates, and worker actions enter the control layer.</p>
-            </article>
-            <article>
-              <span>02</span>
-              <h2>AI prepares</h2>
-              <p>Churvox connects records, builds admin, catches blockers, and stages the next move.</p>
-            </article>
-            <article>
-              <span>03</span>
-              <h2>Owner clears</h2>
-              <p>The owner approves sends, invoices, assignments, quote follow-ups, and important changes.</p>
-            </article>
-          </section>
-        </main>
-      )}
-
-      {view === "features" && (
-        <main className="mission-page">
-          <p className="mission-kicker">FEATURES</p>
-          <h1>The AI command layer for trade and service businesses.</h1>
-
-          <section className="mission-cards feature">
-            {features.map(([title, text]) => (
-              <article key={title}>
-                <h2>{title}</h2>
-                <p>{text}</p>
-              </article>
+          <section className="nx-feature-strip">
+            {["Jobs", "Crew", "Photos", "Time", "Quotes", "Invoices", "Clients", "Approvals"].map((item) => (
+              <b key={item}>{item}</b>
             ))}
           </section>
         </main>
       )}
 
-      {view === "plans" && (
-        <main className="mission-page">
-          <p className="mission-kicker">PRICING</p>
-          <h1>Choose how much admin you want Churvox to prepare.</h1>
+      {view === "how" && (
+        <main className="nx-page">
+          <p className="nx-kicker">HOW IT WORKS</p>
+          <h1>Churvox turns daily activity into owner-ready moves.</h1>
+          <section className="nx-cards three">
+            <article><span>01</span><h2>Capture work</h2><p>Jobs, notes, photos, time, quotes, customer updates and worker actions enter the control layer.</p></article>
+            <article><span>02</span><h2>AI prepares</h2><p>Churvox connects records, builds admin, catches blockers and stages the next move.</p></article>
+            <article><span>03</span><h2>Owner clears</h2><p>The owner approves sends, invoices, assignments, quote follow-ups and important changes.</p></article>
+          </section>
+        </main>
+      )}
 
-          <section className="mission-plans">
+      {view === "features" && (
+        <main className="nx-page">
+          <p className="nx-kicker">FEATURES</p>
+          <h1>Everything needed to run the admin from one command layer.</h1>
+          <section className="nx-cards feature">
+            {features.map(([title, text]) => <article key={title}><h2>{title}</h2><p>{text}</p></article>)}
+          </section>
+        </main>
+      )}
+
+      {view === "plans" && (
+        <main className="nx-page">
+          <p className="nx-kicker">PRICING</p>
+          <h1>Choose how much admin you want Churvox to prepare.</h1>
+          <section className="nx-plans">
             {plans.map(([name, price, label, text]) => (
               <article className={name === "Operator" ? "featured" : ""} key={name}>
                 <span>{label}</span>
                 <h2>{name}</h2>
                 <strong>{price}<small>/month + GST</small></strong>
                 <p>{text}</p>
-                <button onClick={() => routeTo("/signup")}>{name === "Operator" ? "Start Operator" : `Choose ${name}`}</button>
+                <button type="button" onClick={() => startChurvox(name)}>
+                  {name === "Operator" ? "Start Operator" : `Choose ${name}`}
+                </button>
               </article>
             ))}
           </section>
-
-          <div className="mission-wide">
+          <div className="nx-wide">
             <b>Command Growth Pack — $99/month + GST</b>
-            <span>Add 50 more active team members plus extra job capacity, AI Operator Actions, automation runs, and admin/payroll capacity.</span>
+            <span>Add 50 more active team members plus extra job capacity, AI Operator Actions, automation runs and admin/payroll capacity.</span>
           </div>
         </main>
       )}
 
       {view === "legal" && (
-        <main className="mission-page">
-          <p className="mission-kicker">LEGAL / TRUST</p>
+        <main className="nx-page">
+          <p className="nx-kicker">LEGAL / TRUST</p>
           <h1>Approval-first AI business admin.</h1>
-
-          <section className="mission-legal">
-            {legal.map(([title, text]) => (
-              <article key={title}>
-                <h2>{title}</h2>
-                <p>{text}</p>
-              </article>
-            ))}
+          <section className="nx-legal">
+            {legal.map(([title, text]) => <article key={title}><h2>{title}</h2><p>{text}</p></article>)}
           </section>
         </main>
       )}
 
       {view === "contact" && (
-        <main className="mission-page mission-contact">
-          <p className="mission-kicker">CONTACT</p>
+        <main className="nx-page nx-contact">
+          <p className="nx-kicker">CONTACT</p>
           <h1>Talk to Churvox.</h1>
-          <p>For support, sales, billing, setup, security, or account questions.</p>
-
-          <div className="mission-contact-box">
+          <p>For support, sales, billing, setup, security or account questions.</p>
+          <div className="nx-contact-box">
             <span>CONTACT CHANNEL</span>
             <strong>hello@churvox.com</strong>
             <div>
-              <button className="approve" onClick={() => { window.location.href = "mailto:hello@churvox.com"; }}>Email now</button>
-              <button className="secondary dark" onClick={copyEmail}>Copy email</button>
+              <button type="button" className="nx-approve" onClick={() => { window.location.href = "mailto:hello@churvox.com"; }}>Email now</button>
+              <button type="button" className="nx-secondary" onClick={copyEmail}>Copy email</button>
             </div>
           </div>
         </main>
       )}
 
-      <footer className="mission-footer">
+      <footer className="nx-footer">
         <span>© Churvox</span>
-        <button onClick={() => openView("legal")}>Privacy / Terms</button>
-        <button onClick={() => openView("contact")}>hello@churvox.com</button>
+        <button type="button" onClick={() => openView("legal")}>Privacy / Terms</button>
+        <button type="button" onClick={() => openView("contact")}>hello@churvox.com</button>
       </footer>
     </div>
   );
