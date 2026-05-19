@@ -7,21 +7,24 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<ChurvoxAIShell initialView="home" />} />
-        <Route path="/how-it-works" element={<ChurvoxAIShell initialView="how" />} />
-        <Route path="/features" element={<ChurvoxAIShell initialView="features" />} />
-        <Route path="/plans" element={<ChurvoxAIShell initialView="plans" />} />
-        <Route path="/legal" element={<ChurvoxAIShell initialView="legal" />} />
+        <Route path="/" element={<ChurvoxAIShell />} />
+        <Route path="/how-it-works" element={<ChurvoxAIShell />} />
+        <Route path="/features" element={<ChurvoxAIShell />} />
+        <Route path="/plans" element={<ChurvoxAIShell />} />
+        <Route path="/legal" element={<ChurvoxAIShell />} />
+        <Route path="/contact" element={<ChurvoxAIShell />} />
+
         <Route path="/privacy" element={<Navigate to="/legal" replace />} />
         <Route path="/terms" element={<Navigate to="/legal" replace />} />
-        <Route path="/contact" element={<ChurvoxAIShell initialView="contact" />} />
+        <Route path="/refunds" element={<Navigate to="/legal" replace />} />
+        <Route path="/security" element={<Navigate to="/legal" replace />} />
 
         <Route path="/login" element={<OperatorAuthPage mode="login" />} />
         <Route path="/signup" element={<OperatorAuthPage mode="signup" />} />
         <Route path="/register" element={<Navigate to="/signup" replace />} />
 
-        <Route path="/dashboard" element={<ChurvoxAIShell initialView="home" authedMode />} />
-        <Route path="/app" element={<ChurvoxAIShell initialView="home" authedMode />} />
+        <Route path="/dashboard" element={<ChurvoxAIShell authedMode />} />
+        <Route path="/app" element={<ChurvoxAIShell authedMode />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
