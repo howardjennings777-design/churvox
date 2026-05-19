@@ -16,7 +16,7 @@ const moves = [
     id: "finish",
     type: "WORK FINISHED",
     title: "The worker finishes. Churvox shapes the invoice before you ask.",
-    object: "ECB Property Maintenance",
+    object: "Sample Property Client",
     prepared: "Invoice wording, job evidence, photos, time, customer email, owner approval",
     ownerMove: "$430 invoice ready",
     accent: "fire",
