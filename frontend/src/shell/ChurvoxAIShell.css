@@ -463,3 +463,15 @@ html, body {
   .nx-log-list div, .nx-feature-strip { grid-template-columns: 1fr; }
   .nx-move h2 { font-size: 40px; }
 }
+
+/* Phase 359 deploy marker - hidden but bundled */
+.nx-deploy-marker {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  left: -9999px;
+  top: -9999px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}

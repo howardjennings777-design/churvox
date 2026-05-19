@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./ChurvoxAIShell.css";
+import { CHURVOX_RENDER_DEPLOY_MARKER } from "../operator-machine/renderDeployMarker";
 
 const pathToView = {
   "/": "home",
@@ -143,7 +144,8 @@ export default function ChurvoxAIShell({ authedMode = false }) {
   }
 
   return (
-    <div className="nexus">
+    <div className="nexus" data-deploy-marker={CHURVOX_RENDER_DEPLOY_MARKER}>
+      <span className="nx-deploy-marker" aria-hidden="true">{CHURVOX_RENDER_DEPLOY_MARKER}</span>
       <header className="nx-top">
         <button className="nx-brand" type="button" onClick={() => openView("home")} aria-label="Open Churvox home">
           <img src="/churvox-operator-mark.svg" alt="" />
