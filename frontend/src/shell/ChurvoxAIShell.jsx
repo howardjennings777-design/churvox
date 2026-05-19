@@ -1,55 +1,51 @@
 import React, { useMemo, useState } from "react";
 import "./ChurvoxAIShell.css";
 
-const coreSignals = [
+const moves = [
   {
-    id: "intake",
-    code: "01",
-    label: "WORK IN",
-    title: "Work enters once",
-    text: "Jobs, notes, photos, time, customer details, quotes, and worker updates land in one command layer.",
-    output: "Next action detected",
+    id: "job",
+    step: "WORK IN",
+    title: "New work enters",
+    line: "A job, quote, worker note, photo, or client request lands once.",
+    output: "Job file ready",
     accent: "cyan",
-    proof: ["Client matched", "Job context built", "Schedule checked", "Admin path opened"],
+    evidence: ["Client matched", "Address saved", "Schedule window checked", "Next action detected"],
   },
   {
-    id: "ai",
-    code: "02",
-    label: "AI SORTS",
+    id: "sort",
+    step: "AI SORTS",
     title: "Churvox builds the admin",
-    text: "The system prepares invoices, quote follow-ups, worker assignment moves, blockers, and evidence packs.",
+    line: "The system prepares the invoice, follow-up, assignment, evidence, or blocker.",
     output: "Admin move prepared",
     accent: "orange",
-    proof: ["Evidence attached", "Message drafted", "Invoice wording staged", "Owner approval required"],
+    evidence: ["Job context connected", "Evidence attached", "Message drafted", "Owner approval required"],
   },
   {
     id: "approve",
-    code: "03",
-    label: "OWNER CLEARS",
-    title: "You approve the move",
-    text: "The owner stays in control of final sends, invoice approvals, quote follow-ups, and critical business changes.",
-    output: "Ready for approval",
+    step: "OWNER APPROVES",
+    title: "You clear the move",
+    line: "The owner stays in control of final sends, invoices, assignments, and changes.",
+    output: "Ready to approve",
     accent: "green",
-    proof: ["Owner review", "Decision logged", "Action protected", "Final move ready"],
+    evidence: ["Owner review ready", "Decision logged", "Action protected", "Record updated"],
   },
   {
-    id: "blocker",
-    code: "!",
-    label: "BLOCKER",
-    title: "Missing details get stopped",
-    text: "Churvox flags gaps before they become messy admin: no worker, incomplete customer detail, or schedule conflict.",
+    id: "block",
+    step: "BLOCKER",
+    title: "Problems get stopped",
+    line: "Missing crew, incomplete client details, or schedule clashes are surfaced before they cost time.",
     output: "Needs owner check",
     accent: "red",
-    proof: ["Missing field", "Risk detected", "Action paused", "Owner check required"],
+    evidence: ["Missing detail found", "Risk flagged", "Action paused", "Owner check needed"],
   },
 ];
 
-const featureBlocks = [
+const features = [
   ["Jobs", "Create, assign, schedule, track, and complete work without losing the admin trail."],
-  ["Crew", "Worker notes, photos, time, and completion updates flow into the owner command layer."],
-  ["Invoices", "Completed work becomes invoice-ready admin with job context and evidence."],
+  ["Crew", "Worker notes, photos, time, and status updates flow into the owner command desk."],
+  ["Invoices", "Completed work becomes an invoice-ready move with evidence attached."],
   ["Quotes", "Open quotes are surfaced with prepared follow-ups before they go cold."],
-  ["Clients", "Customer details, history, jobs, and billing context stay connected."],
+  ["Clients", "Customer records, job history, billing context, and contact details stay connected."],
   ["Approvals", "Churvox prepares the business move. The owner clears the final action."],
 ];
 
@@ -73,11 +69,11 @@ function routeTo(path) {
 
 export default function ChurvoxAIShell({ initialView = "home", authedMode = false }) {
   const [view, setView] = useState(initialView || "home");
-  const [activeId, setActiveId] = useState("ai");
-  const [notice, setNotice] = useState("Command Core online. Churvox has prepared the next business move.");
+  const [activeId, setActiveId] = useState("sort");
+  const [notice, setNotice] = useState("Churvox has forged the next admin move. Owner approval stays final.");
   const [cleared, setCleared] = useState([]);
 
-  const active = useMemo(() => coreSignals.find((item) => item.id === activeId) || coreSignals[1], [activeId]);
+  const active = useMemo(() => moves.find((move) => move.id === activeId) || moves[1], [activeId]);
 
   function openView(nextView) {
     setView(nextView);
@@ -107,7 +103,7 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
 
     const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     setCleared((items) => [{ time, text: active.output }, ...items].slice(0, 4));
-    setNotice(`Cleared: ${active.output}. Churvox would now run the prepared admin move.`);
+    setNotice(`Cleared: ${active.output}. Churvox would now complete that prepared business action.`);
   }
 
   function copyEmail() {
@@ -116,17 +112,17 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
   }
 
   return (
-    <div className="core">
-      <header className="core-top">
-        <button className="core-brand" type="button" onClick={() => openView("home")}>
+    <div className="forge">
+      <header className="forge-top">
+        <button className="forge-brand" type="button" onClick={() => openView("home")}>
           <img src="/churvox-operator-mark.svg" alt="" />
           <span>
             <strong>CHURVOX</strong>
-            <small>COMMAND CORE</small>
+            <small>COMMAND FORGE</small>
           </span>
         </button>
 
-        <nav className="core-nav">
+        <nav className="forge-nav">
           <button onClick={() => openView("home")}>Home</button>
           <button onClick={() => openView("how")}>How</button>
           <button onClick={() => openView("features")}>Features</button>
@@ -137,126 +133,120 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
       </header>
 
       {view === "home" && (
-        <main className="core-home">
-          <section className="core-hero">
-            <div className="core-copy">
-              <p className="core-kicker">WORK IN / AI SORTS / OWNER CLEARS</p>
-              <h1>Your business runs from one command core.</h1>
-              <p className="core-sub">
-                Churvox pulls jobs, crew updates, photos, time, quotes, invoices, clients, blockers, and approvals into one operating layer.
-                You see what needs doing next, why it is ready, and what needs approval.
+        <main className="forge-home">
+          <section className="forge-hero">
+            <div className="forge-hero-left">
+              <p className="forge-kicker">WORK IN / AI SORTS / OWNER APPROVES</p>
+              <h1>Your business sorted from one command desk.</h1>
+              <p className="forge-sub">
+                Churvox takes jobs, crew updates, photos, time, quotes, invoices, clients, blockers, and approvals
+                and forges them into the next clear business move.
               </p>
 
-              <div className="core-intake">
-                <span>LIVE INPUT</span>
+              <div className="forge-input">
+                <span>LIVE WORK INPUT</span>
                 <strong>Worker finished job • photos uploaded • invoice needed</strong>
-                <em>Churvox prepares invoice move, evidence, customer message, and approval log.</em>
+                <em>Churvox prepares: invoice move, evidence, customer message, approval log.</em>
               </div>
 
-              <div className="core-actions">
+              <div className="forge-actions">
                 <button className="primary" onClick={() => routeTo(authedMode ? "/dashboard" : "/signup")}>
-                  {authedMode ? "Open Command Core" : "Start Churvox"}
+                  {authedMode ? "Open command desk" : "Start Churvox"}
                 </button>
-                <button className="secondary" onClick={() => openView("how")}>See the flow</button>
+                <button className="secondary" onClick={() => openView("how")}>See how it works</button>
               </div>
             </div>
 
-            <aside className="core-orbital">
-              <div className="core-orb">
-                <div className="ring ring-one" />
-                <div className="ring ring-two" />
-                <div className="orb-center">
-                  <span>AI</span>
-                  <strong>CORE</strong>
-                </div>
+            <aside className="forge-hero-right">
+              <div className="forge-core-title">
+                <span>COMMAND CORE</span>
+                <strong>Today’s prepared moves</strong>
               </div>
 
-              <div className="core-signal-list">
-                {coreSignals.map((item) => (
-                  <button
-                    key={item.id}
-                    className={item.id === active.id ? `signal active ${item.accent}` : `signal ${item.accent}`}
-                    onClick={() => {
-                      setActiveId(item.id);
-                      setNotice(`Loaded: ${item.output}`);
-                    }}
-                  >
-                    <small>{item.code}</small>
-                    <b>{item.label}</b>
-                    <span>{item.output}</span>
-                  </button>
-                ))}
-              </div>
+              {moves.map((move) => (
+                <button
+                  key={move.id}
+                  className={move.id === active.id ? `forge-signal active ${move.accent}` : `forge-signal ${move.accent}`}
+                  onClick={() => {
+                    setActiveId(move.id);
+                    setNotice(`Loaded: ${move.output}`);
+                  }}
+                >
+                  <small>{move.step}</small>
+                  <b>{move.output}</b>
+                  <em>{move.title}</em>
+                </button>
+              ))}
             </aside>
           </section>
 
-          <section className="core-flow">
-            <div className="flow-node">
+          <section className="forge-flow">
+            <div>
               <span>01</span>
               <h2>Work comes in</h2>
-              <p>Jobs, notes, photos, time, worker updates, quotes, invoices, and customers enter Churvox once.</p>
+              <p>Jobs, notes, photos, worker updates, quotes, invoices, and customer requests enter once.</p>
             </div>
-            <div className="flow-node hot">
+            <div className="hot">
               <span>02</span>
               <h2>Churvox sorts it</h2>
-              <p>AI prepares the next admin move, connects the evidence, and catches blockers before they waste your time.</p>
+              <p>AI prepares the admin, connects evidence, stages owner moves, and catches blockers.</p>
             </div>
-            <div className="flow-node">
+            <div>
               <span>03</span>
               <h2>Owner approves</h2>
-              <p>You clear the final move. Churvox does not blindly send, invoice, or change key business records.</p>
+              <p>You clear invoices, sends, assignments, follow-ups, and important business changes.</p>
             </div>
           </section>
 
-          <section className="core-console">
-            <div className="core-active">
-              <div className="section-head">
-                <span>ACTIVE SIGNAL</span>
-                <b>{active.label}</b>
+          <section className="forge-desk">
+            <div className="forge-active">
+              <div className="forge-section-head">
+                <span>ACTIVE MOVE</span>
+                <b>{active.step}</b>
               </div>
 
-              <article className={`active-move ${active.accent}`}>
-                <small>{active.label}</small>
+              <article className={`forge-move ${active.accent}`}>
+                <small>{active.step}</small>
                 <h2>{active.title}</h2>
-                <p>{active.text}</p>
+                <p>{active.line}</p>
 
-                <div className="result-box">
+                <div className="forge-output">
                   <span>Prepared owner move</span>
                   <strong>{active.output}</strong>
                 </div>
 
-                <div className="core-actions">
+                <div className="forge-actions">
                   <button className="approve" onClick={clearMove}>
-                    {active.accent === "red" ? "Open blocker" : "Clear move"}
+                    {active.accent === "red" ? "Open blocker" : "Approve move"}
                   </button>
                   <button className="secondary" onClick={() => setNotice(`Review opened for ${active.output}`)}>Review first</button>
                 </div>
               </article>
             </div>
 
-            <aside className="core-evidence">
-              <div className="section-head">
+            <aside className="forge-proof">
+              <div className="forge-section-head">
                 <span>EVIDENCE</span>
                 <b>Why it is ready</b>
               </div>
 
               <ul>
-                {active.proof.map((item) => <li key={item}>{item}</li>)}
+                {active.evidence.map((item) => <li key={item}>{item}</li>)}
               </ul>
 
-              <div className="core-note">{notice}</div>
+              <div className="forge-note">{notice}</div>
             </aside>
 
-            <section className="core-log">
-              <div className="section-head">
+            <section className="forge-log">
+              <div className="forge-section-head">
                 <span>APPROVAL LOG</span>
                 <b>Owner-cleared moves</b>
               </div>
 
               {cleared.length === 0 ? (
-                <p>No cleared moves yet. Owner approvals appear here.</p>
+                <p>No approvals cleared yet. Owner decisions appear here.</p>
               ) : (
-                <div className="log-list">
+                <div className="forge-log-list">
                   {cleared.map((item, index) => (
                     <div key={`${item.time}-${index}`}>
                       <span>{item.time}</span>
@@ -268,12 +258,12 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
             </section>
           </section>
 
-          <section className="core-statement">
+          <section className="forge-statement">
             <div>
-              <p className="core-kicker">THE POINT</p>
-              <h2>No more hunting through the business to know what needs doing next.</h2>
+              <p className="forge-kicker">THE POINT</p>
+              <h2>You should not need five screens open to know what needs doing next.</h2>
             </div>
-            <div className="core-tags">
+            <div className="forge-tags">
               {["Jobs", "Crew", "Photos", "Time", "Quotes", "Invoices", "Clients", "Approvals"].map((item) => <b key={item}>{item}</b>)}
             </div>
           </section>
@@ -281,37 +271,37 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
       )}
 
       {view === "how" && (
-        <main className="core-page">
-          <p className="core-kicker">HOW IT WORKS</p>
-          <h1>Churvox turns business activity into owner-ready moves.</h1>
+        <main className="forge-page">
+          <p className="forge-kicker">HOW IT WORKS</p>
+          <h1>Work enters messy. Churvox returns the next move.</h1>
 
-          <section className="core-steps">
+          <section className="forge-cards three">
             <article>
               <span>01</span>
-              <h2>Work enters</h2>
-              <p>Jobs, photos, notes, time, quotes, customer updates, and worker actions enter the command core.</p>
+              <h2>Capture work</h2>
+              <p>Jobs, notes, photos, time, quotes, customer updates, and worker actions enter the desk.</p>
             </article>
             <article>
               <span>02</span>
-              <h2>AI sorts</h2>
-              <p>Churvox connects records, checks what is missing, prepares admin, and stages the next action.</p>
+              <h2>AI prepares</h2>
+              <p>Churvox connects records, builds admin, catches blockers, and stages the next move.</p>
             </article>
             <article>
               <span>03</span>
               <h2>Owner clears</h2>
-              <p>The owner approves final sends, invoices, follow-ups, assignments, and important changes.</p>
+              <p>The owner approves sends, invoices, assignments, quote follow-ups, and important changes.</p>
             </article>
           </section>
         </main>
       )}
 
       {view === "features" && (
-        <main className="core-page">
-          <p className="core-kicker">FEATURES</p>
-          <h1>One AI command layer for trade and service businesses.</h1>
+        <main className="forge-page">
+          <p className="forge-kicker">FEATURES</p>
+          <h1>The command desk for trade and service admin.</h1>
 
-          <section className="core-feature-grid">
-            {featureBlocks.map(([title, text]) => (
+          <section className="forge-cards feature">
+            {features.map(([title, text]) => (
               <article key={title}>
                 <h2>{title}</h2>
                 <p>{text}</p>
@@ -322,11 +312,11 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
       )}
 
       {view === "plans" && (
-        <main className="core-page">
-          <p className="core-kicker">PRICING</p>
+        <main className="forge-page">
+          <p className="forge-kicker">PRICING</p>
           <h1>Choose how much admin you want Churvox to prepare.</h1>
 
-          <section className="core-plans">
+          <section className="forge-plans">
             {plans.map(([name, price, label, text]) => (
               <article className={name === "Operator" ? "featured" : ""} key={name}>
                 <span>{label}</span>
@@ -338,7 +328,7 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
             ))}
           </section>
 
-          <div className="wide-note">
+          <div className="forge-wide">
             <b>Command Growth Pack — $99/month + GST</b>
             <span>Add 50 more active team members plus extra job capacity, AI Operator Actions, automation runs, and admin/payroll capacity.</span>
           </div>
@@ -346,11 +336,11 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
       )}
 
       {view === "legal" && (
-        <main className="core-page">
-          <p className="core-kicker">LEGAL / TRUST</p>
+        <main className="forge-page">
+          <p className="forge-kicker">LEGAL / TRUST</p>
           <h1>Approval-first AI business admin.</h1>
 
-          <section className="core-legal">
+          <section className="forge-legal">
             {legal.map(([title, text]) => (
               <article key={title}>
                 <h2>{title}</h2>
@@ -362,12 +352,12 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
       )}
 
       {view === "contact" && (
-        <main className="core-page core-contact">
-          <p className="core-kicker">CONTACT</p>
+        <main className="forge-page forge-contact">
+          <p className="forge-kicker">CONTACT</p>
           <h1>Talk to Churvox.</h1>
           <p>For support, sales, billing, setup, security, or account questions.</p>
 
-          <div className="contact-box">
+          <div className="forge-contact-box">
             <span>CONTACT CHANNEL</span>
             <strong>hello@churvox.com</strong>
             <div>
@@ -378,7 +368,7 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
         </main>
       )}
 
-      <footer className="core-footer">
+      <footer className="forge-footer">
         <span>© Churvox</span>
         <button onClick={() => openView("legal")}>Privacy / Terms</button>
         <button onClick={() => openView("contact")}>hello@churvox.com</button>
