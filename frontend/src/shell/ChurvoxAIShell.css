@@ -1,24 +1,21 @@
 :root {
-  --forge-black: #050608;
-  --forge-steel: #0e1116;
-  --forge-panel: #171b22;
-  --forge-paper: #f7f1e5;
-  --forge-paper-2: #fffaf0;
-  --forge-ink: #111318;
-  --forge-muted-dark: #5f6670;
-  --forge-muted-light: rgba(247, 241, 229, 0.68);
-  --forge-line-light: rgba(247, 241, 229, 0.16);
-  --forge-line-dark: rgba(17, 19, 24, 0.14);
-  --forge-cyan: #00c8ff;
-  --forge-orange: #ff7a1a;
-  --forge-red: #ff3846;
-  --forge-green: #1ecf83;
+  --c-black: #030407;
+  --c-deep: #070a10;
+  --c-panel: #101620;
+  --c-panel2: #151d2a;
+  --c-text: #f6f1e7;
+  --c-muted: rgba(246, 241, 231, 0.64);
+  --c-line: rgba(246, 241, 231, 0.14);
+  --c-cyan: #18c8ff;
+  --c-orange: #ff7a1a;
+  --c-red: #ff3f4d;
+  --c-green: #30df94;
 }
 
 html,
 body {
   margin: 0;
-  background: var(--forge-black) !important;
+  background: var(--c-black) !important;
 }
 
 .forge,
@@ -28,12 +25,14 @@ body {
 
 .forge {
   min-height: 100vh;
-  color: var(--forge-paper);
+  color: var(--c-text);
   background:
-    radial-gradient(circle at 78% 12%, rgba(0, 200, 255, 0.18), transparent 34rem),
-    radial-gradient(circle at 8% 88%, rgba(255, 122, 26, 0.14), transparent 34rem),
-    linear-gradient(135deg, rgba(247, 241, 229, 0.035) 0 1px, transparent 1px 28px),
-    var(--forge-black);
+    radial-gradient(circle at 78% 8%, rgba(24, 200, 255, 0.18), transparent 36rem),
+    radial-gradient(circle at 12% 90%, rgba(255, 122, 26, 0.14), transparent 34rem),
+    linear-gradient(90deg, rgba(24, 200, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(24, 200, 255, 0.028) 1px, transparent 1px),
+    var(--c-black);
+  background-size: auto, auto, 54px 54px, 54px 54px, auto;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -44,8 +43,8 @@ body {
 .forge-top {
   min-height: 78px;
   padding: 0 24px;
-  border-bottom: 1px solid var(--forge-line-light);
-  background: rgba(5, 6, 8, 0.94);
+  border-bottom: 1px solid var(--c-line);
+  background: rgba(3, 4, 7, 0.94);
   backdrop-filter: blur(18px);
   display: flex;
   align-items: center;
@@ -61,7 +60,7 @@ body {
   gap: 14px;
   border: 0;
   background: transparent;
-  color: var(--forge-paper);
+  color: var(--c-text);
   cursor: pointer;
   text-align: left;
 }
@@ -79,7 +78,7 @@ body {
 
 .forge-brand small {
   display: block;
-  color: var(--forge-cyan);
+  color: var(--c-cyan);
   font-size: 10px;
   font-weight: 950;
   letter-spacing: 0.22em;
@@ -95,7 +94,7 @@ body {
 .forge-footer button {
   border: 1px solid transparent;
   background: transparent;
-  color: var(--forge-muted-light);
+  color: var(--c-muted);
   cursor: pointer;
   padding: 11px 13px;
   font-size: 12px;
@@ -110,32 +109,32 @@ body {
 }
 
 .forge-nav .login {
-  color: var(--forge-cyan);
-  border-color: rgba(0, 200, 255, 0.55);
+  color: var(--c-cyan);
+  border-color: rgba(24, 200, 255, 0.55);
 }
 
 .forge-home,
 .forge-page {
-  width: min(100%, 1560px);
+  width: min(100%, 1580px);
   margin: 0 auto;
   padding: 34px 22px 58px;
 }
 
 .forge-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 430px;
+  grid-template-columns: minmax(0, 1fr) 440px;
   gap: 22px;
 }
 
 .forge-hero-left {
-  min-height: 640px;
-  padding: clamp(34px, 6vw, 88px);
-  color: var(--forge-ink);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 660px;
+  padding: clamp(34px, 6vw, 92px);
+  color: var(--c-text);
+  border: 1px solid var(--c-line);
   background:
-    radial-gradient(circle at 84% 20%, rgba(0, 200, 255, 0.18), transparent 26rem),
-    linear-gradient(135deg, rgba(0, 200, 255, 0.08), transparent 34%),
-    var(--forge-paper);
+    radial-gradient(circle at 82% 18%, rgba(24, 200, 255, 0.14), transparent 30rem),
+    linear-gradient(135deg, rgba(24, 200, 255, 0.1), transparent 36%),
+    rgba(7, 10, 16, 0.96);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -143,28 +142,38 @@ body {
   overflow: hidden;
 }
 
+.forge-hero-left::before {
+  content: "";
+  position: absolute;
+  inset: 20px;
+  border: 1px solid rgba(24, 200, 255, 0.11);
+  pointer-events: none;
+}
+
 .forge-hero-left::after {
   content: "";
   position: absolute;
-  right: -120px;
-  bottom: -140px;
-  width: 360px;
-  height: 360px;
-  border: 1px solid rgba(17, 19, 24, 0.16);
-  transform: rotate(31deg);
+  right: -160px;
+  bottom: -180px;
+  width: 460px;
+  height: 460px;
+  border: 1px solid rgba(24, 200, 255, 0.18);
+  transform: rotate(32deg);
 }
 
 .forge-kicker {
   margin: 0 0 16px;
-  color: var(--forge-cyan);
+  color: var(--c-cyan);
   font-size: 12px;
   font-weight: 950;
   letter-spacing: 0.18em;
   text-transform: uppercase;
+  position: relative;
+  z-index: 1;
 }
 
 .forge-hero-left .forge-kicker {
-  color: #008ab0;
+  color: var(--c-cyan);
 }
 
 .forge-hero-left h1,
@@ -172,25 +181,30 @@ body {
 .forge-statement h2 {
   margin: 0;
   max-width: 1120px;
-  font-size: clamp(54px, 8.4vw, 132px);
+  font-size: clamp(54px, 8.5vw, 136px);
   line-height: 0.82;
   letter-spacing: -0.1em;
+  position: relative;
+  z-index: 1;
 }
 
 .forge-sub,
 .forge-page > p {
   max-width: 900px;
   margin: 24px 0 0;
-  color: var(--forge-muted-dark);
+  color: var(--c-muted);
   font-size: 20px;
   line-height: 1.52;
+  position: relative;
+  z-index: 1;
 }
 
 .forge-input {
   margin-top: 34px;
   padding: 20px;
-  color: var(--forge-paper);
-  background: var(--forge-ink);
+  color: var(--c-text);
+  border: 1px solid rgba(24, 200, 255, 0.34);
+  background: rgba(3, 4, 7, 0.58);
   position: relative;
   z-index: 1;
 }
@@ -202,7 +216,7 @@ body {
 }
 
 .forge-input span {
-  color: var(--forge-cyan);
+  color: var(--c-cyan);
   font-size: 11px;
   font-weight: 950;
   letter-spacing: 0.14em;
@@ -216,7 +230,7 @@ body {
 
 .forge-input em {
   margin-top: 8px;
-  color: var(--forge-muted-light);
+  color: var(--c-muted);
   font-style: normal;
 }
 
@@ -235,9 +249,9 @@ body {
 .approve,
 .forge-plans button {
   min-height: 54px;
-  border: 1px solid var(--forge-line-dark);
+  border: 1px solid var(--c-line);
   background: transparent;
-  color: var(--forge-ink);
+  color: var(--c-text);
   cursor: pointer;
   padding: 0 20px;
   font-weight: 950;
@@ -246,29 +260,23 @@ body {
 }
 
 .primary {
-  background: var(--forge-cyan);
-  border-color: var(--forge-cyan);
-  color: #00141a;
+  background: var(--c-cyan);
+  border-color: var(--c-cyan);
+  color: #031016;
+  box-shadow: 0 0 36px rgba(24, 200, 255, 0.16);
 }
 
 .approve,
 .forge-plans button {
-  background: var(--forge-orange);
-  border-color: var(--forge-orange);
+  background: var(--c-orange);
+  border-color: var(--c-orange);
   color: #170900;
 }
 
 .secondary {
-  background: white;
-}
-
-.forge-hero-right .secondary,
-.forge-desk .secondary,
-.forge-page .secondary,
-.forge-contact-box .secondary {
-  color: var(--forge-paper);
-  border-color: var(--forge-line-light);
-  background: rgba(247, 241, 229, 0.07);
+  color: var(--c-text);
+  border-color: var(--c-line);
+  background: rgba(246, 241, 231, 0.07);
 }
 
 .primary:hover,
@@ -281,21 +289,21 @@ body {
 
 .forge-hero-right {
   padding: 22px;
-  border: 1px solid var(--forge-line-light);
+  border: 1px solid var(--c-line);
   background:
-    radial-gradient(circle at 55% 16%, rgba(0, 200, 255, 0.16), transparent 20rem),
-    var(--forge-panel);
+    radial-gradient(circle at 50% 12%, rgba(24, 200, 255, 0.16), transparent 20rem),
+    rgba(16, 22, 32, 0.94);
 }
 
 .forge-core-title {
   padding-bottom: 18px;
   margin-bottom: 14px;
-  border-bottom: 1px solid var(--forge-line-light);
+  border-bottom: 1px solid var(--c-line);
 }
 
 .forge-core-title span {
   display: block;
-  color: var(--forge-cyan);
+  color: var(--c-cyan);
   font-size: 11px;
   font-weight: 950;
   letter-spacing: 0.14em;
@@ -313,35 +321,35 @@ body {
   min-height: 126px;
   margin-bottom: 12px;
   padding: 16px;
-  border: 1px solid var(--forge-line-light);
-  background: rgba(5, 6, 8, 0.45);
-  color: var(--forge-paper);
+  border: 1px solid var(--c-line);
+  background: rgba(3, 4, 7, 0.44);
+  color: var(--c-text);
   cursor: pointer;
   text-align: left;
 }
 
 .forge-signal.active {
-  border-color: var(--forge-cyan);
-  box-shadow: inset 6px 0 0 var(--forge-cyan);
+  border-color: var(--c-cyan);
+  box-shadow: inset 6px 0 0 var(--c-cyan);
 }
 
 .forge-signal.orange.active {
-  border-color: var(--forge-orange);
-  box-shadow: inset 6px 0 0 var(--forge-orange);
+  border-color: var(--c-orange);
+  box-shadow: inset 6px 0 0 var(--c-orange);
 }
 
 .forge-signal.green.active {
-  border-color: var(--forge-green);
-  box-shadow: inset 6px 0 0 var(--forge-green);
+  border-color: var(--c-green);
+  box-shadow: inset 6px 0 0 var(--c-green);
 }
 
 .forge-signal.red.active {
-  border-color: var(--forge-red);
-  box-shadow: inset 6px 0 0 var(--forge-red);
+  border-color: var(--c-red);
+  box-shadow: inset 6px 0 0 var(--c-red);
 }
 
 .forge-signal small {
-  color: var(--forge-cyan);
+  color: var(--c-cyan);
   font-size: 10px;
   font-weight: 950;
   letter-spacing: 0.14em;
@@ -359,34 +367,34 @@ body {
 
 .forge-signal em {
   margin-top: 7px;
-  color: var(--forge-muted-light);
+  color: var(--c-muted);
   font-style: normal;
 }
 
 .forge-flow {
   display: grid;
   grid-template-columns: 1fr 1.12fr 1fr;
-  border-left: 1px solid var(--forge-line-light);
-  border-top: 1px solid var(--forge-line-light);
+  border-left: 1px solid var(--c-line);
+  border-top: 1px solid var(--c-line);
   margin-top: 22px;
 }
 
 .forge-flow div {
   min-height: 300px;
   padding: 30px;
-  border-right: 1px solid var(--forge-line-light);
-  border-bottom: 1px solid var(--forge-line-light);
-  background: rgba(23, 27, 34, 0.9);
+  border-right: 1px solid var(--c-line);
+  border-bottom: 1px solid var(--c-line);
+  background: rgba(16, 22, 32, 0.9);
 }
 
 .forge-flow .hot {
   background:
-    radial-gradient(circle at 80% 14%, rgba(0, 200, 255, 0.12), transparent 22rem),
-    rgba(26, 32, 42, 0.96);
+    radial-gradient(circle at 80% 14%, rgba(24, 200, 255, 0.12), transparent 22rem),
+    rgba(21, 29, 42, 0.96);
 }
 
 .forge-flow span {
-  color: var(--forge-cyan);
+  color: var(--c-cyan);
   font-size: 13px;
   font-weight: 950;
 }
@@ -399,7 +407,7 @@ body {
 }
 
 .forge-flow p {
-  color: var(--forge-muted-light);
+  color: var(--c-muted);
   line-height: 1.55;
 }
 
@@ -410,17 +418,17 @@ body {
     "active proof"
     "log log";
   margin-top: 22px;
-  border-left: 1px solid var(--forge-line-light);
-  border-top: 1px solid var(--forge-line-light);
+  border-left: 1px solid var(--c-line);
+  border-top: 1px solid var(--c-line);
 }
 
 .forge-active,
 .forge-proof,
 .forge-log {
   padding: 24px;
-  border-right: 1px solid var(--forge-line-light);
-  border-bottom: 1px solid var(--forge-line-light);
-  background: rgba(23, 27, 34, 0.9);
+  border-right: 1px solid var(--c-line);
+  border-bottom: 1px solid var(--c-line);
+  background: rgba(16, 22, 32, 0.9);
 }
 
 .forge-active {
@@ -443,11 +451,11 @@ body {
   align-items: baseline;
   padding-bottom: 15px;
   margin-bottom: 20px;
-  border-bottom: 1px solid var(--forge-line-light);
+  border-bottom: 1px solid var(--c-line);
 }
 
 .forge-section-head span {
-  color: var(--forge-cyan);
+  color: var(--c-cyan);
   font-size: 11px;
   font-weight: 950;
   letter-spacing: 0.15em;
@@ -463,32 +471,33 @@ body {
 .forge-move {
   min-height: 470px;
   padding: clamp(24px, 4vw, 52px);
-  color: var(--forge-ink);
+  color: var(--c-text);
+  border: 1px solid var(--c-line);
   background:
-    radial-gradient(circle at 86% 16%, rgba(0, 200, 255, 0.12), transparent 22rem),
-    var(--forge-paper-2);
+    radial-gradient(circle at 86% 16%, rgba(24, 200, 255, 0.12), transparent 22rem),
+    rgba(3, 4, 7, 0.5);
 }
 
 .forge-move small {
   display: inline-flex;
   padding: 8px 11px;
-  background: var(--forge-cyan);
-  color: #00141a;
+  background: var(--c-cyan);
+  color: #031016;
   font-size: 11px;
   font-weight: 950;
   letter-spacing: 0.14em;
 }
 
 .forge-move.orange small {
-  background: var(--forge-orange);
+  background: var(--c-orange);
 }
 
 .forge-move.green small {
-  background: var(--forge-green);
+  background: var(--c-green);
 }
 
 .forge-move.red small {
-  background: var(--forge-red);
+  background: var(--c-red);
   color: white;
 }
 
@@ -502,7 +511,7 @@ body {
 
 .forge-move p {
   max-width: 760px;
-  color: var(--forge-muted-dark);
+  color: var(--c-muted);
   font-size: 19px;
   line-height: 1.55;
 }
@@ -510,13 +519,13 @@ body {
 .forge-output {
   margin-top: 26px;
   padding: 20px;
-  border: 1px solid var(--forge-line-dark);
-  background: rgba(0, 200, 255, 0.06);
+  border: 1px solid var(--c-line);
+  background: rgba(246, 241, 231, 0.06);
 }
 
 .forge-output span {
   display: block;
-  color: var(--forge-muted-dark);
+  color: var(--c-muted);
   font-size: 11px;
   font-weight: 950;
   letter-spacing: 0.12em;
@@ -537,13 +546,13 @@ body {
 
 .forge-proof li {
   padding: 16px 0;
-  border-bottom: 1px solid var(--forge-line-light);
-  color: var(--forge-muted-light);
+  border-bottom: 1px solid var(--c-line);
+  color: var(--c-muted);
 }
 
 .forge-proof li::before {
   content: "◆";
-  color: var(--forge-cyan);
+  color: var(--c-cyan);
   margin-right: 10px;
 }
 
@@ -552,13 +561,13 @@ body {
 .forge-contact-box {
   margin-top: 20px;
   padding: 18px;
-  border: 1px solid var(--forge-line-light);
-  background: rgba(5, 6, 8, 0.45);
-  color: var(--forge-muted-light);
+  border: 1px solid var(--c-line);
+  background: rgba(3, 4, 7, 0.44);
+  color: var(--c-muted);
 }
 
 .forge-log p {
-  color: var(--forge-muted-light);
+  color: var(--c-muted);
 }
 
 .forge-log-list {
@@ -571,11 +580,11 @@ body {
   grid-template-columns: 100px 1fr;
   gap: 14px;
   padding: 12px 0;
-  border-bottom: 1px solid var(--forge-line-light);
+  border-bottom: 1px solid var(--c-line);
 }
 
 .forge-log-list span {
-  color: var(--forge-cyan);
+  color: var(--c-cyan);
   font-weight: 950;
 }
 
@@ -585,8 +594,8 @@ body {
   gap: 22px;
   margin-top: 22px;
   padding: clamp(30px, 5vw, 58px);
-  border: 1px solid var(--forge-line-light);
-  background: rgba(14, 17, 22, 0.96);
+  border: 1px solid var(--c-line);
+  background: rgba(7, 10, 16, 0.96);
 }
 
 .forge-tags {
@@ -598,16 +607,16 @@ body {
 
 .forge-tags b {
   padding: 17px;
-  border: 1px solid var(--forge-line-light);
-  background: rgba(247, 241, 229, 0.06);
+  border: 1px solid var(--c-line);
+  background: rgba(246, 241, 231, 0.06);
 }
 
 .forge-cards,
 .forge-plans {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  border-left: 1px solid var(--forge-line-light);
-  border-top: 1px solid var(--forge-line-light);
+  border-left: 1px solid var(--c-line);
+  border-top: 1px solid var(--c-line);
   margin-top: 34px;
 }
 
@@ -623,9 +632,9 @@ body {
 .forge-plans article {
   min-height: 310px;
   padding: 25px;
-  border-right: 1px solid var(--forge-line-light);
-  border-bottom: 1px solid var(--forge-line-light);
-  background: rgba(23, 27, 34, 0.9);
+  border-right: 1px solid var(--c-line);
+  border-bottom: 1px solid var(--c-line);
+  background: rgba(16, 22, 32, 0.9);
 }
 
 .forge-plans article {
@@ -635,12 +644,12 @@ body {
 }
 
 .forge-plans article.featured {
-  box-shadow: inset 0 8px 0 var(--forge-cyan);
+  box-shadow: inset 0 8px 0 var(--c-cyan);
 }
 
 .forge-cards span,
 .forge-plans article > span {
-  color: var(--forge-cyan);
+  color: var(--c-cyan);
   font-size: 11px;
   font-weight: 950;
   letter-spacing: 0.14em;
@@ -657,7 +666,7 @@ body {
 
 .forge-cards p,
 .forge-plans p {
-  color: var(--forge-muted-light);
+  color: var(--c-muted);
   line-height: 1.55;
 }
 
@@ -669,7 +678,7 @@ body {
 
 .forge-plans small {
   display: block;
-  color: var(--forge-muted-light);
+  color: var(--c-muted);
   font-size: 13px;
   letter-spacing: 0;
 }
@@ -685,12 +694,12 @@ body {
 }
 
 .forge-wide b {
-  color: var(--forge-cyan);
+  color: var(--c-cyan);
 }
 
 .forge-legal {
   margin-top: 34px;
-  border-top: 1px solid var(--forge-line-light);
+  border-top: 1px solid var(--c-line);
 }
 
 .forge-legal article {
@@ -698,8 +707,8 @@ body {
   grid-template-columns: 320px 1fr;
   gap: 24px;
   padding: 26px 22px;
-  border-bottom: 1px solid var(--forge-line-light);
-  background: rgba(23, 27, 34, 0.9);
+  border-bottom: 1px solid var(--c-line);
+  background: rgba(16, 22, 32, 0.9);
 }
 
 .forge-legal h2 {
@@ -710,7 +719,7 @@ body {
 
 .forge-legal p {
   margin: 0;
-  color: var(--forge-muted-light);
+  color: var(--c-muted);
   line-height: 1.65;
 }
 
@@ -724,7 +733,7 @@ body {
 
 .forge-contact-box span {
   display: block;
-  color: var(--forge-cyan);
+  color: var(--c-cyan);
   font-size: 11px;
   font-weight: 950;
   letter-spacing: 0.18em;
@@ -739,8 +748,8 @@ body {
 
 .forge-footer {
   min-height: 84px;
-  border-top: 1px solid var(--forge-line-light);
-  color: var(--forge-muted-light);
+  border-top: 1px solid var(--c-line);
+  color: var(--c-muted);
   display: flex;
   flex-wrap: wrap;
   gap: 12px;

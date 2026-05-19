@@ -70,7 +70,7 @@ function routeTo(path) {
 export default function ChurvoxAIShell({ initialView = "home", authedMode = false }) {
   const [view, setView] = useState(initialView || "home");
   const [activeId, setActiveId] = useState("sort");
-  const [notice, setNotice] = useState("Churvox has forged the next admin move. Owner approval stays final.");
+  const [notice, setNotice] = useState("Churvox has prepared the next admin move. Owner approval stays final.");
   const [cleared, setCleared] = useState([]);
 
   const active = useMemo(() => moves.find((move) => move.id === activeId) || moves[1], [activeId]);
@@ -118,7 +118,7 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
           <img src="/churvox-operator-mark.svg" alt="" />
           <span>
             <strong>CHURVOX</strong>
-            <small>COMMAND FORGE</small>
+            <small>COMMAND DESK</small>
           </span>
         </button>
 
@@ -139,13 +139,12 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
               <p className="forge-kicker">WORK IN / AI SORTS / OWNER APPROVES</p>
               <h1>Your business sorted from one command desk.</h1>
               <p className="forge-sub">
-                Churvox takes jobs, crew updates, photos, time, quotes, invoices, clients, blockers, and approvals
-                and forges them into the next clear business move.
+                Churvox takes jobs, crew updates, photos, time, quotes, invoices, clients, blockers, and approvals and turns them into the next clear business move.
               </p>
 
               <div className="forge-input">
                 <span>LIVE WORK INPUT</span>
-                <strong>Worker finished job • photos uploaded • invoice needed</strong>
+                <strong>Worker finished work • photos uploaded • invoice needed</strong>
                 <em>Churvox prepares: invoice move, evidence, customer message, approval log.</em>
               </div>
 
