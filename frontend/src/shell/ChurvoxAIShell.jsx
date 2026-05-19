@@ -1,25 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import "./ChurvoxAIShell.css";
-
-const pathToView = {
-  "/": "home",
-  "/dashboard": "home",
-  "/app": "home",
-  "/how-it-works": "how",
-  "/features": "features",
-  "/plans": "plans",
-  "/legal": "legal",
-  "/contact": "contact",
-};
-
-const viewToPath = {
-  home: "/",
-  how: "/how-it-works",
-  features: "/features",
-  plans: "/plans",
-  legal: "/legal",
-  contact: "/contact",
-};
 
 const moves = [
   {
@@ -83,37 +63,30 @@ const legal = [
   ["Data / Security Note", "Churvox is designed around business isolation, role-based access and approval-first AI workflows."],
 ];
 
-function getViewFromPath() {
-  const cleanPath = String(window.location.pathname || "/").replace(/\/+$/, "") || "/";
-  return pathToView[cleanPath] || "home";
-}
-
-function goTo(path) {
+function routeTo(path) {
   window.location.href = path;
 }
 
-export default function ChurvoxAIShell({ authedMode = false }) {
-  const [view, setView] = useState(getViewFromPath);
+export default function ChurvoxAIShell({ initialView = "home", authedMode = false }) {
+  const [view, setView] = useState(initialView || "home");
   const [activeId, setActiveId] = useState("ai");
   const [notice, setNotice] = useState("Churvox has prepared the next admin move.");
   const [cleared, setCleared] = useState([]);
 
   const active = useMemo(() => moves.find((item) => item.id === activeId) || moves[1], [activeId]);
 
-  useEffect(() => {
-    const onPopState = () => setView(getViewFromPath());
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, []);
-
   function openView(nextView) {
-    const nextPath = authedMode && nextView === "home" ? "/dashboard" : viewToPath[nextView] || "/";
     setView(nextView);
-
-    if (window.location.pathname !== nextPath) {
-      window.history.pushState({}, "", nextPath);
-    }
-
+    const paths = {
+      home: authedMode ? "/dashboard" : "/",
+      how: "/how-it-works",
+      features: "/features",
+      plans: "/plans",
+      legal: "/legal",
+      contact: "/contact",
+    };
+    const nextPath = paths[nextView] || "/";
+    if (window.location.pathname !== nextPath) window.history.pushState({}, "", nextPath);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -122,30 +95,20 @@ export default function ChurvoxAIShell({ authedMode = false }) {
       setNotice("Blocker opened. Fix the missing detail before Churvox clears this move.");
       return;
     }
-
     const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     setCleared((items) => [{ time, text: active.output }, ...items].slice(0, 4));
     setNotice(`Cleared: ${active.output}. Churvox would now complete that prepared admin action.`);
   }
 
-  async function copyEmail() {
-    try {
-      await navigator.clipboard.writeText("hello@churvox.com");
-      setNotice("Copied hello@churvox.com");
-    } catch {
-      window.location.href = "mailto:hello@churvox.com";
-    }
-  }
-
-  function startChurvox(planName = "") {
-    const suffix = planName ? `?plan=${encodeURIComponent(planName.toLowerCase())}` : "";
-    goTo(`/signup${suffix}`);
+  function copyEmail() {
+    navigator.clipboard?.writeText("hello@churvox.com");
+    setNotice("Copied hello@churvox.com");
   }
 
   return (
     <div className="nexus">
       <header className="nx-top">
-        <button className="nx-brand" type="button" onClick={() => openView("home")} aria-label="Open Churvox home">
+        <button className="nx-brand" type="button" onClick={() => openView("home")}>
           <img src="/churvox-operator-mark.svg" alt="" />
           <span>
             <strong>CHURVOX</strong>
@@ -153,13 +116,13 @@ export default function ChurvoxAIShell({ authedMode = false }) {
           </span>
         </button>
 
-        <nav className="nx-nav" aria-label="Main navigation">
-          <button type="button" className={view === "home" ? "active" : ""} onClick={() => openView("home")}>Home</button>
-          <button type="button" className={view === "how" ? "active" : ""} onClick={() => openView("how")}>How</button>
-          <button type="button" className={view === "features" ? "active" : ""} onClick={() => openView("features")}>Features</button>
-          <button type="button" className={view === "plans" ? "active" : ""} onClick={() => openView("plans")}>Plans</button>
-          <button type="button" className={view === "contact" ? "active" : ""} onClick={() => openView("contact")}>Contact</button>
-          <button type="button" className="login" onClick={() => goTo("/login")}>Login</button>
+        <nav className="nx-nav">
+          <button onClick={() => openView("home")}>Home</button>
+          <button onClick={() => openView("how")}>How</button>
+          <button onClick={() => openView("features")}>Features</button>
+          <button onClick={() => openView("plans")}>Plans</button>
+          <button onClick={() => openView("contact")}>Contact</button>
+          <button className="login" onClick={() => routeTo("/login")}>Login</button>
         </nav>
       </header>
 
@@ -175,14 +138,14 @@ export default function ChurvoxAIShell({ authedMode = false }) {
               </p>
 
               <div className="nx-cta-row">
-                <button type="button" className="nx-primary" onClick={() => authedMode ? openView("home") : startChurvox()}>
+                <button className="nx-primary" onClick={() => routeTo(authedMode ? "/dashboard" : "/signup")}>
                   {authedMode ? "Open Churvox" : "Start Churvox"}
                 </button>
-                <button type="button" className="nx-secondary" onClick={() => openView("how")}>See how it works</button>
+                <button className="nx-secondary" onClick={() => openView("how")}>See how it works</button>
               </div>
             </div>
 
-            <aside className="nx-live" aria-label="Live admin engine">
+            <aside className="nx-live">
               <div className="nx-live-head">
                 <span>LIVE ADMIN ENGINE</span>
                 <strong>What Churvox is preparing</strong>
@@ -190,7 +153,6 @@ export default function ChurvoxAIShell({ authedMode = false }) {
 
               {moves.map((item) => (
                 <button
-                  type="button"
                   key={item.id}
                   className={item.id === active.id ? `nx-live-item active ${item.tone}` : `nx-live-item ${item.tone}`}
                   onClick={() => {
@@ -242,10 +204,10 @@ export default function ChurvoxAIShell({ authedMode = false }) {
                 </div>
 
                 <div className="nx-cta-row">
-                  <button type="button" className="nx-approve" onClick={clearMove}>
+                  <button className="nx-approve" onClick={clearMove}>
                     {active.tone === "red" ? "Open blocker" : "Approve move"}
                   </button>
-                  <button type="button" className="nx-secondary" onClick={() => setNotice(`Review opened for ${active.output}`)}>Review first</button>
+                  <button className="nx-secondary" onClick={() => setNotice(`Review opened for ${active.output}`)}>Review first</button>
                 </div>
               </article>
             </div>
@@ -325,9 +287,7 @@ export default function ChurvoxAIShell({ authedMode = false }) {
                 <h2>{name}</h2>
                 <strong>{price}<small>/month + GST</small></strong>
                 <p>{text}</p>
-                <button type="button" onClick={() => startChurvox(name)}>
-                  {name === "Operator" ? "Start Operator" : `Choose ${name}`}
-                </button>
+                <button onClick={() => routeTo("/signup")}>{name === "Operator" ? "Start Operator" : `Choose ${name}`}</button>
               </article>
             ))}
           </section>
@@ -357,8 +317,8 @@ export default function ChurvoxAIShell({ authedMode = false }) {
             <span>CONTACT CHANNEL</span>
             <strong>hello@churvox.com</strong>
             <div>
-              <button type="button" className="nx-approve" onClick={() => { window.location.href = "mailto:hello@churvox.com"; }}>Email now</button>
-              <button type="button" className="nx-secondary" onClick={copyEmail}>Copy email</button>
+              <button className="nx-approve" onClick={() => { window.location.href = "mailto:hello@churvox.com"; }}>Email now</button>
+              <button className="nx-secondary" onClick={copyEmail}>Copy email</button>
             </div>
           </div>
         </main>
@@ -366,8 +326,8 @@ export default function ChurvoxAIShell({ authedMode = false }) {
 
       <footer className="nx-footer">
         <span>© Churvox</span>
-        <button type="button" onClick={() => openView("legal")}>Privacy / Terms</button>
-        <button type="button" onClick={() => openView("contact")}>hello@churvox.com</button>
+        <button onClick={() => openView("legal")}>Privacy / Terms</button>
+        <button onClick={() => openView("contact")}>hello@churvox.com</button>
       </footer>
     </div>
   );
