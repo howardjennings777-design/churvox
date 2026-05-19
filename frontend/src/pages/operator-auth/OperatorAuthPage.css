@@ -1,10 +1,10 @@
 .cx-auth-page {
   min-height: 100vh;
-  color: #f6f1e7;
+  color: #f8fbff;
   background:
-    radial-gradient(circle at 78% 8%, rgba(24, 200, 255, 0.18), transparent 34rem),
-    radial-gradient(circle at 12% 90%, rgba(255, 122, 26, 0.14), transparent 34rem),
-    #030407;
+    radial-gradient(circle at 78% 8%, rgba(59, 220, 255, 0.22), transparent 34rem),
+    radial-gradient(circle at 10% 88%, rgba(255, 138, 34, 0.14), transparent 34rem),
+    #05070d;
 }
 
 .cx-auth-shell {
@@ -17,7 +17,7 @@
   display: inline-flex;
   align-items: center;
   gap: 14px;
-  color: #f6f1e7;
+  color: #f8fbff;
   text-decoration: none;
 }
 
@@ -36,7 +36,7 @@
 }
 
 .cx-auth-brand small {
-  color: #18c8ff;
+  color: #3bdcff;
   font-size: 10px;
   font-weight: 950;
   letter-spacing: 0.2em;
@@ -46,14 +46,14 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) 460px;
   margin-top: 54px;
-  border: 1px solid rgba(246, 241, 231, 0.14);
-  background: rgba(16, 22, 32, 0.94);
+  border: 1px solid rgba(105, 222, 255, 0.2);
+  background: rgba(16, 22, 34, 0.94);
 }
 
 .cx-auth-copy {
   min-height: 620px;
   padding: clamp(28px, 6vw, 72px);
-  border-right: 1px solid rgba(246, 241, 231, 0.14);
+  border-right: 1px solid rgba(105, 222, 255, 0.2);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -68,7 +68,7 @@
 
 .cx-auth-copy p {
   max-width: 680px;
-  color: rgba(246, 241, 231, 0.64);
+  color: rgba(248, 251, 255, 0.66);
   font-size: 18px;
   line-height: 1.6;
 }
@@ -76,14 +76,14 @@
 .cx-auth-signal {
   margin-top: 30px;
   padding: 18px;
-  border: 1px solid rgba(246, 241, 231, 0.14);
-  background: rgba(3, 4, 7, 0.44);
+  border: 1px solid rgba(105, 222, 255, 0.2);
+  background: rgba(5, 7, 13, 0.48);
 }
 
 .cx-auth-signal span,
 .cx-auth-form > div > span {
   display: block;
-  color: #18c8ff;
+  color: #3bdcff;
   font-size: 11px;
   font-weight: 950;
   letter-spacing: 0.18em;
@@ -92,7 +92,7 @@
 .cx-auth-signal strong {
   display: block;
   margin-top: 8px;
-  color: rgba(246, 241, 231, 0.64);
+  color: rgba(248, 251, 255, 0.66);
   word-break: break-word;
 }
 
@@ -113,7 +113,7 @@
 .cx-auth-form label {
   display: grid;
   gap: 8px;
-  color: rgba(246, 241, 231, 0.64);
+  color: rgba(248, 251, 255, 0.66);
   font-size: 11px;
   font-weight: 950;
   letter-spacing: 0.13em;
@@ -123,18 +123,18 @@
 .cx-auth-form input {
   width: 100%;
   min-height: 54px;
-  border: 1px solid rgba(246, 241, 231, 0.14);
+  border: 1px solid rgba(105, 222, 255, 0.2);
   border-radius: 0;
-  color: #f6f1e7;
-  background: rgba(3, 4, 7, 0.58);
+  color: #f8fbff;
+  background: rgba(5, 7, 13, 0.58);
   padding: 0 16px;
   font: inherit;
   outline: none;
 }
 
 .cx-auth-form input:focus {
-  border-color: #18c8ff;
-  box-shadow: 0 0 0 3px rgba(24, 200, 255, 0.12);
+  border-color: #3bdcff;
+  box-shadow: 0 0 0 3px rgba(59, 220, 255, 0.12);
 }
 
 .cx-auth-form button:disabled {
@@ -150,24 +150,24 @@
 }
 
 .cx-auth-error {
-  color: #ffd7da;
-  border-color: rgba(255, 63, 77, 0.55);
-  background: rgba(255, 63, 77, 0.12);
+  color: #ffd7dc;
+  border-color: rgba(255, 63, 84, 0.55);
+  background: rgba(255, 63, 84, 0.12);
 }
 
 .cx-auth-success {
   color: #dcffef;
-  border-color: rgba(48, 223, 148, 0.45);
-  background: rgba(48, 223, 148, 0.1);
+  border-color: rgba(53, 232, 156, 0.45);
+  background: rgba(53, 232, 156, 0.1);
 }
 
 .cx-auth-alt {
   margin: 0;
-  color: rgba(246, 241, 231, 0.64);
+  color: rgba(248, 251, 255, 0.66);
 }
 
 .cx-auth-alt a {
-  color: #18c8ff;
+  color: #3bdcff;
   font-weight: 950;
 }
 
@@ -179,6 +179,6 @@
   .cx-auth-copy {
     min-height: auto;
     border-right: 0;
-    border-bottom: 1px solid rgba(246, 241, 231, 0.14);
+    border-bottom: 1px solid rgba(105, 222, 255, 0.2);
   }
 }
