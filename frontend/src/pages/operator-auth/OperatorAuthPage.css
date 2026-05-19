@@ -1,25 +1,23 @@
 .cx-auth-page {
   min-height: 100vh;
-  color: var(--cx-cream, #f8efd6);
+  color: #17130d;
   background:
-    linear-gradient(90deg, rgba(198, 255, 61, 0.035) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(198, 255, 61, 0.03) 1px, transparent 1px),
-    radial-gradient(circle at 80% 12%, rgba(198, 255, 61, 0.12), transparent 30rem),
-    #050504;
-  background-size: 44px 44px, 44px 44px, auto, auto;
+    radial-gradient(circle at 84% 8%, rgba(38, 87, 255, 0.18), transparent 34rem),
+    radial-gradient(circle at 4% 86%, rgba(255, 101, 66, 0.16), transparent 34rem),
+    #f5efe2;
 }
 
 .cx-auth-shell {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 26px;
+  padding: 28px;
 }
 
 .cx-auth-brand {
   display: inline-flex;
   align-items: center;
   gap: 14px;
-  color: var(--cx-cream, #f8efd6);
+  color: #17130d;
   text-decoration: none;
 }
 
@@ -34,28 +32,28 @@
 }
 
 .cx-auth-brand strong {
-  letter-spacing: 0.2em;
+  letter-spacing: 0.18em;
 }
 
 .cx-auth-brand small {
-  color: var(--cx-lime, #c6ff3d);
+  color: #2657ff;
   font-size: 10px;
   font-weight: 950;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.2em;
 }
 
 .cx-auth-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 460px;
   margin-top: 54px;
-  border: 1px solid rgba(248, 239, 214, 0.18);
-  background: rgba(13, 13, 11, 0.88);
+  border: 1px solid rgba(23, 19, 13, 0.14);
+  background: #fffaf0;
 }
 
 .cx-auth-copy {
   min-height: 620px;
   padding: clamp(28px, 6vw, 72px);
-  border-right: 1px solid rgba(248, 239, 214, 0.18);
+  border-right: 1px solid rgba(23, 19, 13, 0.14);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -64,13 +62,13 @@
 .cx-auth-copy h1 {
   margin: 12px 0 20px;
   font-size: clamp(42px, 7vw, 92px);
-  line-height: 0.86;
+  line-height: 0.88;
   letter-spacing: -0.085em;
 }
 
 .cx-auth-copy p {
   max-width: 680px;
-  color: rgba(248, 239, 214, 0.66);
+  color: #6d6253;
   font-size: 18px;
   line-height: 1.6;
 }
@@ -78,14 +76,14 @@
 .cx-auth-signal {
   margin-top: 30px;
   padding: 18px;
-  border: 1px solid rgba(248, 239, 214, 0.18);
-  background: #080807;
+  border: 1px solid rgba(23, 19, 13, 0.14);
+  background: rgba(38, 87, 255, 0.055);
 }
 
 .cx-auth-signal span,
 .cx-auth-form > div > span {
   display: block;
-  color: var(--cx-lime, #c6ff3d);
+  color: #2657ff;
   font-size: 11px;
   font-weight: 950;
   letter-spacing: 0.18em;
@@ -94,7 +92,7 @@
 .cx-auth-signal strong {
   display: block;
   margin-top: 8px;
-  color: rgba(248, 239, 214, 0.66);
+  color: #6d6253;
   word-break: break-word;
 }
 
@@ -115,7 +113,7 @@
 .cx-auth-form label {
   display: grid;
   gap: 8px;
-  color: rgba(248, 239, 214, 0.66);
+  color: #6d6253;
   font-size: 11px;
   font-weight: 950;
   letter-spacing: 0.13em;
@@ -125,18 +123,18 @@
 .cx-auth-form input {
   width: 100%;
   min-height: 54px;
-  border: 1px solid rgba(248, 239, 214, 0.18);
+  border: 1px solid rgba(23, 19, 13, 0.16);
   border-radius: 0;
-  color: var(--cx-cream, #f8efd6);
-  background: #080807;
+  color: #17130d;
+  background: #fffdf7;
   padding: 0 16px;
   font: inherit;
   outline: none;
 }
 
 .cx-auth-form input:focus {
-  border-color: var(--cx-lime, #c6ff3d);
-  box-shadow: 0 0 0 3px rgba(198, 255, 61, 0.12);
+  border-color: #2657ff;
+  box-shadow: 0 0 0 3px rgba(38, 87, 255, 0.12);
 }
 
 .cx-auth-form button:disabled {
@@ -152,24 +150,24 @@
 }
 
 .cx-auth-error {
-  color: #ffd7d7;
-  border-color: rgba(255, 59, 48, 0.55);
-  background: rgba(255, 59, 48, 0.12);
+  color: #7b1d15;
+  border-color: rgba(255, 101, 66, 0.55);
+  background: rgba(255, 101, 66, 0.12);
 }
 
 .cx-auth-success {
-  color: #efffc8;
-  border-color: rgba(198, 255, 61, 0.55);
-  background: rgba(198, 255, 61, 0.12);
+  color: #0d5d54;
+  border-color: rgba(0, 169, 157, 0.45);
+  background: rgba(0, 169, 157, 0.1);
 }
 
 .cx-auth-alt {
   margin: 0;
-  color: rgba(248, 239, 214, 0.66);
+  color: #6d6253;
 }
 
 .cx-auth-alt a {
-  color: var(--cx-lime, #c6ff3d);
+  color: #2657ff;
   font-weight: 950;
 }
 
@@ -181,7 +179,7 @@
   .cx-auth-copy {
     min-height: auto;
     border-right: 0;
-    border-bottom: 1px solid rgba(248, 239, 214, 0.18);
+    border-bottom: 1px solid rgba(23, 19, 13, 0.14);
   }
 }
 

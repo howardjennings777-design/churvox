@@ -7,7 +7,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<ChurvoxAIShell initialView="console" />} />
+        <Route path="/" element={<ChurvoxAIShell initialView="home" />} />
+        <Route path="/how-it-works" element={<ChurvoxAIShell initialView="how" />} />
+        <Route path="/features" element={<ChurvoxAIShell initialView="features" />} />
         <Route path="/plans" element={<ChurvoxAIShell initialView="plans" />} />
         <Route path="/legal" element={<ChurvoxAIShell initialView="legal" />} />
         <Route path="/privacy" element={<Navigate to="/legal" replace />} />
@@ -18,8 +20,8 @@ export default function App() {
         <Route path="/signup" element={<OperatorAuthPage mode="signup" />} />
         <Route path="/register" element={<Navigate to="/signup" replace />} />
 
-        <Route path="/dashboard" element={<ChurvoxAIShell initialView="console" authedMode />} />
-        <Route path="/app" element={<ChurvoxAIShell initialView="console" authedMode />} />
+        <Route path="/dashboard" element={<ChurvoxAIShell initialView="home" authedMode />} />
+        <Route path="/app" element={<ChurvoxAIShell initialView="home" authedMode />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
