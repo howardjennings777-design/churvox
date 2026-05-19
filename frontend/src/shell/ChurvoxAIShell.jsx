@@ -3,44 +3,44 @@ import "./ChurvoxAIShell.css";
 
 const moves = [
   {
-    id: "job",
-    type: "New job",
-    title: "Book it once. Churvox starts the admin.",
-    client: "Northside Lawns",
-    prepared: "Worker suggestion, schedule warning, customer record, job file",
-    action: "Assign worker",
-    accent: "blue",
-    proof: ["Client matched", "Address saved", "Schedule checked", "Worker suggestion ready"],
+    id: "arrival",
+    type: "WORK ARRIVED",
+    title: "A job lands. Churvox starts building the admin around it.",
+    object: "New hedge job",
+    prepared: "Client file, job record, schedule warning, worker suggestion, approval move",
+    ownerMove: "Assign worker",
+    accent: "violet",
+    proof: ["Client matched", "Address checked", "Schedule window detected", "Worker suggestion prepared"],
   },
   {
-    id: "invoice",
-    type: "Finished work",
-    title: "Worker completes the job. Invoice is already shaped.",
-    client: "ECB Property Maintenance",
-    prepared: "Invoice wording, job evidence, photos, time, customer email",
-    action: "$430 invoice ready",
-    accent: "coral",
-    proof: ["Job completed", "Photo attached", "Time captured", "Invoice text prepared"],
+    id: "finish",
+    type: "WORK FINISHED",
+    title: "The worker finishes. Churvox shapes the invoice before you ask.",
+    object: "ECB Property Maintenance",
+    prepared: "Invoice wording, job evidence, photos, time, customer email, owner approval",
+    ownerMove: "$430 invoice ready",
+    accent: "fire",
+    proof: ["Job completed", "Worker photo attached", "Time captured", "Invoice draft prepared"],
   },
   {
-    id: "quote",
-    type: "Open quote",
-    title: "A quote goes quiet. Churvox prepares the chase-up.",
-    client: "Rental Owner Group",
-    prepared: "Follow-up message, quote link, customer context, owner approval",
-    action: "Send follow-up",
-    accent: "teal",
-    proof: ["Quote still open", "No reply yet", "Message drafted", "Customer contact ready"],
+    id: "money",
+    type: "MONEY WAITING",
+    title: "A quote goes quiet. Churvox puts the chase-up in front of you.",
+    object: "Rental Owner Group",
+    prepared: "Follow-up message, quote context, customer link, send approval",
+    ownerMove: "Send follow-up",
+    accent: "green",
+    proof: ["Quote still open", "No reply detected", "Message drafted", "Contact ready"],
   },
 ];
 
 const features = [
-  ["Jobs", "Create, schedule, assign, track, and complete work without losing the admin trail."],
-  ["Workers", "Field notes, job photos, time, and updates flow back into the owner’s desk."],
-  ["Invoices", "Turn completed work into draft invoices that the owner can approve."],
-  ["Quotes", "Prepare quotes and follow-ups before opportunities go cold."],
-  ["Clients", "Keep customer details, job history, and billing context together."],
-  ["Approvals", "AI prepares the move. The owner stays in control of final sends and changes."],
+  ["Jobs", "Create work once and let Churvox carry the admin trail forward."],
+  ["Crew", "Worker updates, notes, time, and photos land where the owner can act."],
+  ["Invoices", "Completed work becomes a draft invoice with evidence attached."],
+  ["Quotes", "Open quotes get follow-up moves before they go cold."],
+  ["Clients", "Customer history, job records, and billing context stay connected."],
+  ["Approvals", "AI prepares the move. The owner stays in charge of final action."],
 ];
 
 const plans = [
@@ -63,16 +63,16 @@ function routeTo(path) {
 
 export default function ChurvoxAIShell({ initialView = "home", authedMode = false }) {
   const [view, setView] = useState(initialView || "home");
-  const [activeId, setActiveId] = useState("invoice");
-  const [notice, setNotice] = useState("Churvox has prepared the next admin move. Owner approval stays final.");
-  const [approved, setApproved] = useState([]);
+  const [activeId, setActiveId] = useState("finish");
+  const [notice, setNotice] = useState("Churvox has turned the work into an owner-ready move.");
+  const [cleared, setCleared] = useState([]);
 
-  const active = useMemo(() => moves.find((item) => item.id === activeId) || moves[1], [activeId]);
+  const active = useMemo(() => moves.find((move) => move.id === activeId) || moves[1], [activeId]);
 
   function openView(nextView) {
     setView(nextView);
 
-    const pathMap = {
+    const paths = {
       home: authedMode ? "/dashboard" : "/",
       how: "/how-it-works",
       features: "/features",
@@ -81,7 +81,7 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
       contact: "/contact",
     };
 
-    const nextPath = pathMap[nextView] || "/";
+    const nextPath = paths[nextView] || "/";
     if (window.location.pathname !== nextPath) {
       window.history.pushState({}, "", nextPath);
     }
@@ -89,10 +89,10 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function approveMove() {
+  function clearMove() {
     const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    setApproved((items) => [{ time, text: `${active.action} cleared for ${active.client}` }, ...items].slice(0, 4));
-    setNotice(`Approved: ${active.action}. Churvox would now complete that prepared admin move.`);
+    setCleared((items) => [{ time, text: `${active.ownerMove} cleared` }, ...items].slice(0, 4));
+    setNotice(`Cleared: ${active.ownerMove}. Churvox would now complete that admin action.`);
   }
 
   function copyEmail() {
@@ -101,106 +101,106 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
   }
 
   return (
-    <div className="cxsite">
-      <header className="cxsite-top">
-        <button className="cxsite-brand" type="button" onClick={() => openView("home")}>
+    <div className="chx">
+      <header className="chx-top">
+        <button className="chx-brand" type="button" onClick={() => openView("home")}>
           <img src="/churvox-operator-mark.svg" alt="" />
           <span>
             <strong>CHURVOX</strong>
-            <small>ONE DESK FOR THE BUSINESS</small>
+            <small>COMMAND HOUSE</small>
           </span>
         </button>
 
-        <nav className="cxsite-nav">
+        <nav className="chx-nav">
           <button onClick={() => openView("home")}>Home</button>
-          <button onClick={() => openView("how")}>How it works</button>
+          <button onClick={() => openView("how")}>How</button>
           <button onClick={() => openView("features")}>Features</button>
           <button onClick={() => openView("plans")}>Plans</button>
           <button onClick={() => openView("contact")}>Contact</button>
-          <button className="cxsite-login" onClick={() => routeTo("/login")}>Login</button>
+          <button className="login" onClick={() => routeTo("/login")}>Login</button>
         </nav>
       </header>
 
       {view === "home" && (
-        <main className="cxsite-home">
-          <section className="cxsite-hero">
-            <div className="cxsite-hero-copy">
-              <p className="cxsite-kicker">WORK GOES IN. CHURVOX SORTS THE ADMIN. YOU APPROVE.</p>
-              <h1>One place to run the business without chasing every piece.</h1>
-              <p className="cxsite-sub">
-                Churvox brings jobs, workers, quotes, invoices, photos, time, customers, and approvals into one clear desk.
-                The next move is prepared for you before the admin gets messy.
+        <main className="chx-home">
+          <section className="chx-hero">
+            <div className="chx-hero-copy">
+              <p className="chx-kicker">ONE PLACE TO RUN THE MOVES</p>
+              <h1>Drop the work in. Churvox turns it into the next business move.</h1>
+              <p className="chx-sub">
+                Jobs, crew updates, quotes, invoices, photos, time, reminders, and approvals stop living in separate places.
+                Churvox pulls them into one command house so the owner only has to clear what matters.
               </p>
 
-              <div className="cxsite-input-strip">
-                <span>Example work input</span>
-                <strong>“Worker finished the hedge job and uploaded photos.”</strong>
-                <em>Churvox prepares invoice draft, customer update, job record, evidence, and owner approval.</em>
+              <div className="chx-dropzone">
+                <span>Business input</span>
+                <strong>“Job finished. Photos uploaded. Customer needs invoice.”</strong>
+                <em>Churvox builds: invoice draft → evidence → message → owner approval.</em>
               </div>
 
-              <div className="cxsite-actions">
-                <button className="cxsite-primary" onClick={() => routeTo(authedMode ? "/dashboard" : "/signup")}>
-                  {authedMode ? "Open my desk" : "Start Churvox"}
+              <div className="chx-actions">
+                <button className="primary" onClick={() => routeTo(authedMode ? "/dashboard" : "/signup")}>
+                  {authedMode ? "Open command house" : "Start Churvox"}
                 </button>
-                <button className="cxsite-secondary" onClick={() => openView("how")}>See how it works</button>
+                <button className="secondary" onClick={() => openView("how")}>See the flow</button>
               </div>
             </div>
 
-            <aside className="cxsite-command-desk">
-              <div className="cxsite-desk-head">
-                <span>Today’s desk</span>
-                <b>Prepared by Churvox</b>
+            <aside className="chx-power-panel">
+              <div className="chx-power-head">
+                <span>LIVE COMMAND HOUSE</span>
+                <b>Today’s business moves</b>
               </div>
 
-              {moves.map((item) => (
+              {moves.map((move) => (
                 <button
-                  key={item.id}
-                  className={item.id === active.id ? `cxsite-desk-row active ${item.accent}` : `cxsite-desk-row ${item.accent}`}
+                  key={move.id}
+                  className={move.id === active.id ? `chx-live-move active ${move.accent}` : `chx-live-move ${move.accent}`}
                   onClick={() => {
-                    setActiveId(item.id);
-                    setNotice(`Loaded: ${item.action}`);
+                    setActiveId(move.id);
+                    setNotice(`Loaded: ${move.ownerMove}`);
                   }}
                 >
-                  <small>{item.type}</small>
-                  <strong>{item.action}</strong>
-                  <span>{item.client}</span>
+                  <small>{move.type}</small>
+                  <strong>{move.ownerMove}</strong>
+                  <span>{move.object}</span>
                 </button>
               ))}
             </aside>
           </section>
 
-          <section className="cxsite-workbench">
-            <div className="cxsite-prepared">
-              <div className="cxsite-panel-heading">
-                <span>CHURVOX PREPARED</span>
-                <b>The next owner move</b>
+          <section className="chx-stage">
+            <div className="chx-stage-main">
+              <div className="chx-section-title">
+                <span>CHURVOX BUILT THIS</span>
+                <b>Owner-ready move</b>
               </div>
 
-              <article className={`cxsite-move ${active.accent}`}>
+              <article className={`chx-current ${active.accent}`}>
                 <small>{active.type}</small>
                 <h2>{active.title}</h2>
                 <p>{active.prepared}</p>
 
-                <div className="cxsite-facts">
+                <div className="chx-facts">
                   <div>
-                    <span>Client</span>
-                    <strong>{active.client}</strong>
+                    <span>Object</span>
+                    <strong>{active.object}</strong>
                   </div>
                   <div>
                     <span>Owner move</span>
-                    <strong>{active.action}</strong>
+                    <strong>{active.ownerMove}</strong>
                   </div>
                 </div>
 
-                <div className="cxsite-actions">
-                  <button className="cxsite-approve" onClick={approveMove}>Approve move</button>
-                  <button className="cxsite-secondary" onClick={() => setNotice(`Review opened for ${active.action}`)}>Review first</button>
+                <div className="chx-actions">
+                  <button className="approve" onClick={clearMove}>Clear move</button>
+                  <button className="secondary" onClick={() => setNotice(`Review opened for ${active.ownerMove}`)}>Review first</button>
                 </div>
               </article>
             </div>
 
-            <aside className="cxsite-proof">
-              <div className="cxsite-panel-heading">
+            <aside className="chx-evidence">
+              <div className="chx-section-title">
                 <span>WHY IT IS READY</span>
                 <b>Evidence</b>
               </div>
@@ -209,20 +209,20 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
                 {active.proof.map((item) => <li key={item}>{item}</li>)}
               </ul>
 
-              <div className="cxsite-note">{notice}</div>
+              <div className="chx-note">{notice}</div>
             </aside>
 
-            <section className="cxsite-approved">
-              <div className="cxsite-panel-heading">
-                <span>OWNER APPROVALS</span>
-                <b>Cleared moves</b>
+            <section className="chx-cleared">
+              <div className="chx-section-title">
+                <span>CLEARED BY OWNER</span>
+                <b>Final moves</b>
               </div>
 
-              {approved.length === 0 ? (
-                <p>No approvals cleared yet. They appear here after owner sign-off.</p>
+              {cleared.length === 0 ? (
+                <p>No moves cleared yet. This is where owner approvals land.</p>
               ) : (
-                <div className="cxsite-log">
-                  {approved.map((item, index) => (
+                <div className="chx-log">
+                  {cleared.map((item, index) => (
                     <div key={`${item.time}-${index}`}>
                       <span>{item.time}</span>
                       <strong>{item.text}</strong>
@@ -233,13 +233,13 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
             </section>
           </section>
 
-          <section className="cxsite-no-jump">
+          <section className="chx-big-line">
             <div>
-              <span>Instead of opening five places</span>
-              <h2>The work, admin, evidence, and approval sit together.</h2>
+              <span>THE POINT</span>
+              <h2>You should not need to jump around to know what to do next.</h2>
             </div>
-            <div className="cxsite-pill-grid">
-              {["Jobs", "Workers", "Quotes", "Invoices", "Photos", "Time", "Customers", "Approvals"].map((item) => (
+            <div className="chx-stack">
+              {["Jobs", "Crew", "Quotes", "Invoices", "Photos", "Time", "Clients", "Approvals"].map((item) => (
                 <b key={item}>{item}</b>
               ))}
             </div>
@@ -248,36 +248,36 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
       )}
 
       {view === "how" && (
-        <main className="cxsite-page">
-          <p className="cxsite-kicker">HOW IT WORKS</p>
-          <h1>Churvox turns daily work into prepared admin moves.</h1>
+        <main className="chx-page">
+          <p className="chx-kicker">HOW IT WORKS</p>
+          <h1>The business goes in messy. Churvox returns the next move.</h1>
 
-          <section className="cxsite-steps">
+          <section className="chx-steps">
             <article>
               <span>01</span>
-              <h2>Work comes in</h2>
-              <p>Create a job, receive a worker update, finish work, upload photos, or prepare a quote.</p>
+              <h2>Capture work</h2>
+              <p>Jobs, notes, photos, time, quotes, invoices, and worker updates all become business inputs.</p>
             </article>
             <article>
               <span>02</span>
-              <h2>Churvox sorts it</h2>
-              <p>The system connects the client, job, worker evidence, invoice wording, quote follow-up, and next action.</p>
+              <h2>Churvox prepares</h2>
+              <p>The system connects records, evidence, pricing context, customer details, and the next admin action.</p>
             </article>
             <article>
               <span>03</span>
-              <h2>Owner approves</h2>
-              <p>You stay in control. Churvox prepares the move, but the owner clears what actually happens.</p>
+              <h2>Owner clears</h2>
+              <p>Nothing important happens blindly. The owner approves final sends, invoices, and key business moves.</p>
             </article>
           </section>
         </main>
       )}
 
       {view === "features" && (
-        <main className="cxsite-page">
-          <p className="cxsite-kicker">FEATURES</p>
-          <h1>Everything a service business needs, shaped around approval.</h1>
+        <main className="chx-page">
+          <p className="chx-kicker">FEATURES</p>
+          <h1>The command house for trade and service admin.</h1>
 
-          <section className="cxsite-feature-grid">
+          <section className="chx-feature-grid">
             {features.map(([title, text]) => (
               <article key={title}>
                 <h2>{title}</h2>
@@ -289,11 +289,11 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
       )}
 
       {view === "plans" && (
-        <main className="cxsite-page">
-          <p className="cxsite-kicker">PRICING</p>
-          <h1>Choose how much admin you want Churvox to prepare.</h1>
+        <main className="chx-page">
+          <p className="chx-kicker">PRICING</p>
+          <h1>Choose the level of command your business needs.</h1>
 
-          <section className="cxsite-plans">
+          <section className="chx-plans">
             {plans.map(([name, price, label, text]) => (
               <article className={name === "Operator" ? "featured" : ""} key={name}>
                 <span>{label}</span>
@@ -305,7 +305,7 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
             ))}
           </section>
 
-          <div className="cxsite-wide">
+          <div className="chx-wide">
             <b>Command Growth Pack — $99/month + GST</b>
             <span>Add 50 more active team members plus extra job capacity, AI Operator Actions, automation runs, and admin/payroll capacity.</span>
           </div>
@@ -313,11 +313,11 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
       )}
 
       {view === "legal" && (
-        <main className="cxsite-page">
-          <p className="cxsite-kicker">LEGAL / TRUST</p>
+        <main className="chx-page">
+          <p className="chx-kicker">LEGAL / TRUST</p>
           <h1>Approval-first AI business admin.</h1>
 
-          <section className="cxsite-legal">
+          <section className="chx-legal">
             {legal.map(([title, text]) => (
               <article key={title}>
                 <h2>{title}</h2>
@@ -329,23 +329,23 @@ export default function ChurvoxAIShell({ initialView = "home", authedMode = fals
       )}
 
       {view === "contact" && (
-        <main className="cxsite-page cxsite-contact">
-          <p className="cxsite-kicker">CONTACT</p>
+        <main className="chx-page chx-contact">
+          <p className="chx-kicker">CONTACT</p>
           <h1>Talk to Churvox.</h1>
           <p>For support, sales, billing, setup, security, or account questions.</p>
 
-          <div className="cxsite-contact-box">
+          <div className="chx-contact-box">
             <span>CONTACT CHANNEL</span>
             <strong>hello@churvox.com</strong>
             <div>
-              <button className="cxsite-approve" onClick={() => { window.location.href = "mailto:hello@churvox.com"; }}>Email now</button>
-              <button className="cxsite-secondary" onClick={copyEmail}>Copy email</button>
+              <button className="approve" onClick={() => { window.location.href = "mailto:hello@churvox.com"; }}>Email now</button>
+              <button className="secondary" onClick={copyEmail}>Copy email</button>
             </div>
           </div>
         </main>
       )}
 
-      <footer className="cxsite-footer">
+      <footer className="chx-footer">
         <span>© Churvox</span>
         <button onClick={() => openView("legal")}>Privacy / Terms</button>
         <button onClick={() => openView("contact")}>hello@churvox.com</button>
