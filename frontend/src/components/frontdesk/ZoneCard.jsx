@@ -5,7 +5,7 @@ const ZONE_STYLES = {
   approve: {
     accent: "var(--cx-accent)",
     accentSoft: "var(--cx-accent-soft)",
-    accentInk: "#355C00",
+    accentInk: "var(--cx-accent)",
     tone: "accent",
     eyebrow: "Ready to approve",
     sub: "AI prepared. One tap and it goes out.",

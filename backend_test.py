@@ -10,7 +10,7 @@ import os
 from datetime import datetime
 
 # Load backend URL from frontend .env
-BACKEND_URL = "https://admin-portal-draft.preview.emergentagent.com/api"
+BACKEND_URL = "https://operator-command-1.preview.emergentagent.com/api"
 
 class Colors:
     GREEN = '\033[92m'

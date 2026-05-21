@@ -29,9 +29,13 @@ const ACTION_TYPE_LABELS = {
   job_instruction: "Job instruction",
   customer_update: "Customer update",
   client_cleanup: "Client cleanup",
+  missing_contact: "Client cleanup",
+  missing_price: "Missing pricing",
   schedule_conflict: "Schedule conflict",
   crew_workload: "Crew workload",
   job_to_quote_or_invoice: "Convert to quote/invoice",
+  today_plan: "Today's plan",
+  payroll_review: "Payroll review",
 };
 
 const fmtMoney = (n) => {
@@ -449,7 +453,7 @@ export default function FrontDeskPage() {
               border: "1px solid rgba(200,255,77,0.5)",
               fontSize: 11.5,
               fontWeight: 700,
-              color: "#355C00",
+              color: "var(--cx-accent)",
               letterSpacing: "0.06em",
               textTransform: "uppercase",
             }}
@@ -795,7 +799,7 @@ function Kpi({ label, value, tone = "accent", testId }) {
     warning: "var(--cx-warning-soft)",
   }[tone];
   const toneInk = {
-    accent: "#355C00",
+    accent: "var(--cx-accent)",
     info: "#1F4E7A",
     success: "#14532D",
     warning: "#7C2D12",

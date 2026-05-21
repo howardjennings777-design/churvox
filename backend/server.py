@@ -1783,12 +1783,15 @@ def _operator_group_for_type(action_type: str) -> str:
     return {
         "missing_price": "needs_decision",
         "missing_contact": "needs_decision",
+        "client_cleanup": "needs_decision",
         "schedule_conflict": "needs_decision",
         "crew_workload": "watching",
         "assign_worker": "ready",
         "create_invoice_draft": "ready",
         "invoice_reminder": "drafts",
         "quote_follow_up": "drafts",
+        "today_plan": "watching",
+        "payroll_review": "watching",
     }.get(str(action_type or ""), "watching")
 
 
@@ -1796,12 +1799,15 @@ def _operator_risk_for_type(action_type: str) -> str:
     return {
         "missing_price": "high",
         "missing_contact": "medium",
+        "client_cleanup": "low",
         "schedule_conflict": "high",
         "crew_workload": "medium",
         "assign_worker": "medium",
         "create_invoice_draft": "medium",
         "invoice_reminder": "low",
         "quote_follow_up": "low",
+        "today_plan": "low",
+        "payroll_review": "medium",
     }.get(str(action_type or ""), "medium")
 
 
@@ -2827,7 +2833,50 @@ async def smart_hub_scan(current_user: dict = Depends(get_current_user)):
             if subtotal <= 0:
                 await _upsert_action(f"missing_price:{jid}", "missing_price", f"Add pricing before invoicing {job.get('title') or 'job'}", "Completed job has no fixed price, subtotal, linked quote amount, or hourly tracked total.", {"job_id": jid, "amount_source": amount_source}, "job", jid, jid, str(job.get("client_id") or ""), what_happens="Owner needs to add pricing before AI can prepare a draft invoice.", editable_fields=["payload.subtotal", "payload.gst_rate"])
             else:
-                invoice_desc = str(job.get("ai_invoice_description") or job.get("invoice_description_draft") or job.get("completion_notes") or job.get("worker_completion_notes") or job.get("worker_notes") or job.get("job_notes") or job.get("notes") or job.get("description") or f"{job.get('title') or 'Service'} completed and ready for billing.")
+                # Build a rich, deterministic invoice description from real job signals.
+                # Order of precedence prefers AI-prepared text, then worker notes, then job notes.
+                primary = str(
+                    job.get("ai_invoice_description")
+                    or job.get("invoice_description_draft")
+                    or job.get("completion_notes")
+                    or job.get("worker_completion_notes")
+                    or job.get("worker_notes")
+                    or job.get("job_notes")
+                    or job.get("notes")
+                    or job.get("description")
+                    or ""
+                ).strip()
+                extras_list = job.get("extras") or []
+                extras_text = ""
+                if isinstance(extras_list, list) and extras_list:
+                    parts = []
+                    for ex in extras_list[:5]:
+                        if isinstance(ex, dict):
+                            label = str(ex.get("name") or ex.get("description") or "").strip()
+                            if label:
+                                parts.append(label)
+                        elif isinstance(ex, str) and ex.strip():
+                            parts.append(ex.strip())
+                    if parts:
+                        extras_text = "Extras: " + ", ".join(parts) + "."
+                photos = job.get("photos") or job.get("completion_photos") or []
+                photo_text = ""
+                if isinstance(photos, list) and photos:
+                    photo_text = f"Proof: {len(photos)} photo{'s' if len(photos) != 1 else ''} attached."
+                duration_min = int(job.get("time_spent_minutes") or job.get("total_minutes") or 0)
+                duration_text = ""
+                if duration_min > 0:
+                    hrs = duration_min / 60.0
+                    duration_text = f"Time on site: {hrs:.1f}h."
+                service = str(job.get("job_type") or "").replace("_", " ").strip()
+                title_text = str(job.get("title") or service or "Service").strip()
+                if primary:
+                    head = primary if primary.endswith(".") else primary + "."
+                else:
+                    head = f"{title_text} completed and ready for billing."
+                if service and service.lower() not in head.lower():
+                    head = f"{service.title()} — {head}"
+                invoice_desc = " ".join([s for s in [head, extras_text, duration_text, photo_text] if s]).strip()
                 await _upsert_action(f"create_invoice_draft:{jid}", "create_invoice_draft", f"Create draft invoice for {job.get('title') or (client or {}).get('name') or 'job'}", "Completed job is ready to bill.", {"job_id": jid, "client_id": str(job.get("client_id") or ""), "subtotal": subtotal, "description": invoice_desc, "amount_source": amount_source, "proof_summary": str(job.get("proof_summary") or job.get("completion_photos_summary") or job.get("completion_notes") or job.get("worker_completion_notes") or "")}, "job", jid, jid, str(job.get("client_id") or ""), what_happens="Churvox creates an editable draft invoice. Nothing is sent to the customer.", editable_fields=["payload.description", "payload.subtotal", "payload.gst_rate"])
         if st not in {"completed", "complete", "cancelled", "canceled", "archived", "assigned", "acknowledged", "in_progress"} and not (job.get("assigned_worker_id") or job.get("worker_id") or job.get("assigned_worker") or job.get("assigned_worker_name")):
             best = None
@@ -2865,6 +2914,96 @@ async def smart_hub_scan(current_user: dict = Depends(get_current_user)):
         st = str(quote.get("status") or "").lower()
         if st in {"sent", "pending", "waiting", "awaiting_response", "viewed"}:
             await _upsert_action(f"quote_follow_up:{qid}", "quote_follow_up", f"Prepare quote follow-up for {quote.get('number') or qid}", "Quote is waiting for client response.", {"quote_id": qid, "client_id": str(quote.get("client_id") or ""), "message": f"Hi, just checking in on quote {quote.get('number') or qid}."}, "quote", qid, quote_id=qid, client_id=str(quote.get("client_id") or ""), what_happens="Churvox prepares a quote follow-up draft. Nothing is sent until you confirm sending.", editable_fields=["payload.message"])
+
+    # Missing client / job data flags — only for clients linked to active or recent work.
+    active_client_ids = {str(j.get("client_id") or "") for j in jobs if str(j.get("status") or "").lower() not in {"archived", "cancelled", "canceled", "deleted"}}
+    active_client_ids.update({str(q.get("client_id") or "") for q in quotes if str(q.get("status") or "").lower() in {"sent", "pending", "waiting", "viewed", "draft"}})
+    for c in clients:
+        cid = str(c.get("id") or c.get("_id") or "")
+        if not cid or cid not in active_client_ids:
+            continue
+        missing = []
+        if not (c.get("email") or "").strip():
+            missing.append("email")
+        if not (c.get("phone") or c.get("mobile") or "").strip():
+            missing.append("phone")
+        if missing:
+            await _upsert_action(
+                f"client_cleanup:{cid}",
+                "client_cleanup",
+                f"Add missing contact info for {c.get('name') or 'client'}",
+                f"This client has no {' or '.join(missing)} on file — reminders and confirmations may not reach them.",
+                {"client_id": cid, "missing_fields": missing},
+                "client", cid, client_id=cid,
+                what_happens="Owner opens the client record and fills the missing details. Nothing is sent.",
+                editable_fields=[],
+            )
+
+    # Today's plan summary — one rolling action per scan with a deterministic snapshot.
+    today_iso = now.date().isoformat()
+    todays_jobs = [j for j in jobs if str(j.get("scheduled_date") or j.get("date") or "")[:10] == today_iso]
+    unassigned_today = [j for j in todays_jobs if not (j.get("assigned_worker_id") or j.get("worker_id"))]
+    completed_unbilled = [j for j in jobs if str(j.get("status") or "").lower() in {"completed", "complete"} and not (j.get("invoice_id") or j.get("draft_invoice_id") or j.get("invoiced"))]
+    ready_value = 0.0
+    for j in completed_unbilled:
+        ready_value += float(j.get("price") or j.get("subtotal") or j.get("amount") or 0)
+    overdue_count = len([i for i in invoices if str(i.get("status") or "").lower() == "overdue"])
+    quote_followups = len([q for q in quotes if str(q.get("status") or "").lower() in {"sent", "pending", "waiting", "viewed"}])
+    summary_lines = [
+        f"{len(todays_jobs)} job{'s' if len(todays_jobs) != 1 else ''} scheduled today" + (f" ({len(unassigned_today)} unassigned)" if unassigned_today else ""),
+        f"${ready_value:,.0f} in completed work ready to invoice" if completed_unbilled else None,
+        f"{overdue_count} overdue invoice{'s' if overdue_count != 1 else ''} to chase" if overdue_count else None,
+        f"{quote_followups} quote follow-up{'s' if quote_followups != 1 else ''} drafted" if quote_followups else None,
+    ]
+    summary_text = " · ".join([s for s in summary_lines if s])
+    if summary_text:
+        await _upsert_action(
+            f"today_plan:{today_iso}",
+            "today_plan",
+            "Today's plan",
+            summary_text,
+            {
+                "date": today_iso,
+                "jobs_today": len(todays_jobs),
+                "unassigned_today": len(unassigned_today),
+                "completed_unbilled": len(completed_unbilled),
+                "ready_to_invoice_value": round(ready_value, 2),
+                "overdue_invoices": overdue_count,
+                "open_quote_followups": quote_followups,
+            },
+            "summary", today_iso,
+            what_happens="Daily snapshot prepared by Churvox. Reviewing this card is the next best move; nothing is sent or changed.",
+            editable_fields=[],
+        )
+
+    # Payroll / time review summary — only when timesheet data exists for the period.
+    pay_period_minutes = 0
+    workers_with_time = 0
+    for w in workers:
+        wid = str(w.get("id") or w.get("_id") or "")
+        if not wid:
+            continue
+        w_minutes = sum(
+            int(j.get("time_spent_minutes") or j.get("total_minutes") or 0)
+            for j in jobs
+            if str(j.get("assigned_worker_id") or j.get("worker_id") or "") == wid
+        )
+        if w_minutes > 0:
+            pay_period_minutes += w_minutes
+            workers_with_time += 1
+    if pay_period_minutes > 0:
+        hours_total = round(pay_period_minutes / 60.0, 1)
+        await _upsert_action(
+            f"payroll_review:{today_iso}",
+            "payroll_review",
+            "Review crew hours before pay run",
+            f"{hours_total} hours tracked across {workers_with_time} worker{'s' if workers_with_time != 1 else ''}. Open Payroll to confirm before any pay run.",
+            {"date": today_iso, "total_hours": hours_total, "workers_with_time": workers_with_time},
+            "summary", today_iso,
+            what_happens="Owner-only review. Churvox does not change pay or run payroll automatically.",
+            editable_fields=[],
+        )
+
     await db.ai_operator_actions.update_many({"business_id": business_id, "status": "pending", "action_key": {"$nin": list(active_keys)}}, {"$set": {"status": "completed", "group": "completed", "updated_at": now, "result": "resolved_by_latest_scan"}})
     pending_count = await db.ai_operator_actions.count_documents({"business_id": business_id, "status": "pending"})
     actions = [serialize_doc(a) async for a in db.ai_operator_actions.find({"business_id": business_id}).sort("updated_at", -1).limit(200)]

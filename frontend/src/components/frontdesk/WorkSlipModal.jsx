@@ -160,7 +160,7 @@ export default function WorkSlipModal({
                 fontWeight: 700,
                 letterSpacing: "0.06em",
                 textTransform: "uppercase",
-                color: "#355C00",
+                color: "var(--cx-accent)",
                 marginBottom: 6,
               }}
             >

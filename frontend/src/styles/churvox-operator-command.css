@@ -1,0 +1,334 @@
+/* ============================================================================
+   CHURVOX OPERATOR COMMAND — dark command-centre theme (override layer)
+   Loaded LAST. Flips the locked --cx-* tokens to the dark Operator Command
+   palette, sharpens shape language, and overrides common Tailwind utilities
+   so pre-existing pages get the new look without per-file rewrites.
+   ============================================================================ */
+
+:root,
+:root[class],
+html,
+body {
+  /* === Operator Command palette (locked) === */
+  --cx-bg:             #0B0D10;
+  --cx-bg-soft:        #0F141A;
+  --cx-bg-warm:        #11151B;
+  --cx-surface:        #11151B;
+  --cx-surface-2:      #171C24;
+  --cx-surface-3:      #1F2632;
+  --cx-text:           #F5F7FA;
+  --cx-text-soft:      #D6DCE7;
+  --cx-muted:          #A8B0BD;
+  --cx-muted-2:        #768091;
+  --cx-border:         #283140;
+  --cx-border-soft:    #1F2632;
+  --cx-border-strong:  #3A445A;
+
+  --cx-accent:         #C7FF3D;
+  --cx-accent-hover:   #B6F127;
+  --cx-accent-soft:    rgba(199, 255, 61, 0.14);
+  --cx-accent-glow:    rgba(199, 255, 61, 0.22);
+  --cx-accent-ink:     #0B0D10;
+
+  --cx-success:        #29D17D;
+  --cx-success-soft:   rgba(41, 209, 125, 0.16);
+  --cx-warning:        #FFB547;
+  --cx-warning-soft:   rgba(255, 181, 71, 0.16);
+  --cx-danger:         #FF5D5D;
+  --cx-danger-soft:    rgba(255, 93, 93, 0.16);
+  --cx-info:           #6FB5FF;
+  --cx-info-soft:      rgba(111, 181, 255, 0.16);
+
+  --cx-shadow-xs: 0 1px 2px rgba(0,0,0,0.30);
+  --cx-shadow-sm: 0 2px 6px rgba(0,0,0,0.35), 0 1px 2px rgba(0,0,0,0.30);
+  --cx-shadow:    0 6px 18px rgba(0,0,0,0.40), 0 2px 4px rgba(0,0,0,0.30);
+  --cx-shadow-md: 0 14px 32px rgba(0,0,0,0.50), 0 4px 8px rgba(0,0,0,0.40);
+  --cx-shadow-lg: 0 28px 60px rgba(0,0,0,0.55), 0 10px 18px rgba(0,0,0,0.40);
+
+  --cx-radius-xs: 6px;
+  --cx-radius-sm: 8px;
+  --cx-radius:    10px;
+  --cx-radius-md: 12px;
+  --cx-radius-lg: 14px;
+
+  color-scheme: dark;
+}
+
+html, body, #root {
+  background: var(--cx-bg) !important;
+  color: var(--cx-text) !important;
+}
+
+body {
+  font-feature-settings: "ss01", "ss02", "cv11";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Selection */
+::selection {
+  background: var(--cx-accent);
+  color: var(--cx-accent-ink);
+}
+
+/* Scrollbars — slim dark */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--cx-border-strong);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover { background: #4C5874; }
+
+/* === Override literal CREAM inline hex from older marketing/dashboard files === */
+/* We can't reach `style="background:#FFFFFF"` from CSS, but we CAN re-target the
+   tokens and add Tailwind utility overrides. The Pass 2 marketing pages use
+   inline styles with literal hex values; those are patched separately. */
+
+/* === Tailwind utility overrides (single source of truth) === */
+.bg-white,
+.bg-zinc-50,
+.bg-gray-50,
+.bg-slate-50,
+.bg-neutral-50,
+.bg-stone-50,
+.bg-zinc-100,
+.bg-gray-100,
+.bg-slate-100 {
+  background-color: var(--cx-surface) !important;
+}
+.bg-black {
+  background-color: var(--cx-surface-2) !important;
+}
+.bg-gray-200,
+.bg-slate-200,
+.bg-zinc-200 {
+  background-color: var(--cx-surface-2) !important;
+}
+.text-black,
+.text-gray-900,
+.text-slate-900,
+.text-zinc-900,
+.text-neutral-900,
+.text-stone-900 {
+  color: var(--cx-text) !important;
+}
+.text-white {
+  color: var(--cx-text) !important;
+}
+.text-gray-700,
+.text-slate-700,
+.text-zinc-700,
+.text-neutral-700,
+.text-gray-800,
+.text-slate-800,
+.text-zinc-800 {
+  color: var(--cx-text-soft) !important;
+}
+.text-gray-500,
+.text-gray-600,
+.text-slate-500,
+.text-slate-600,
+.text-zinc-500,
+.text-zinc-600,
+.text-neutral-500,
+.text-neutral-600 {
+  color: var(--cx-muted) !important;
+}
+.text-gray-400,
+.text-slate-400,
+.text-zinc-400,
+.text-neutral-400 {
+  color: var(--cx-muted-2) !important;
+}
+.border-gray-100,
+.border-gray-200,
+.border-slate-100,
+.border-slate-200,
+.border-zinc-100,
+.border-zinc-200,
+.border-neutral-200,
+.border-stone-200 {
+  border-color: var(--cx-border) !important;
+}
+.border-gray-300,
+.border-slate-300,
+.border-zinc-300 {
+  border-color: var(--cx-border-strong) !important;
+}
+.divide-gray-100 > * + *,
+.divide-gray-200 > * + *,
+.divide-slate-200 > * + * {
+  border-color: var(--cx-border) !important;
+}
+
+/* Sharpen rounded shapes globally — cap big radii to the command range */
+.rounded-3xl { border-radius: 14px !important; }
+.rounded-2xl { border-radius: 12px !important; }
+.rounded-xl  { border-radius: 12px !important; }
+
+/* === Light editorial sections opt-in ===
+   Add the .cx-editorial class on any section that should stay light. */
+.cx-editorial {
+  background: #F4F1EA;
+  color: #13161C;
+  border-color: #D8D2C4 !important;
+}
+.cx-editorial * { border-color: #D8D2C4; }
+
+/* === Headline weight & tracking === */
+h1, h2, h3 {
+  letter-spacing: -0.022em;
+}
+
+/* === Buttons: sharper, command-grade === */
+button, .btn, [role="button"], a[class*="btn"] {
+  letter-spacing: -0.005em;
+}
+
+/* === Inputs: dark fields, lime focus ring === */
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+select,
+textarea {
+  background-color: var(--cx-surface-2) !important;
+  color: var(--cx-text) !important;
+  border-color: var(--cx-border) !important;
+  caret-color: var(--cx-accent);
+}
+input:focus, select:focus, textarea:focus {
+  outline: none !important;
+  border-color: var(--cx-accent) !important;
+  box-shadow: 0 0 0 3px var(--cx-accent-glow) !important;
+}
+input::placeholder, textarea::placeholder {
+  color: var(--cx-muted-2) !important;
+}
+
+/* Premium Cx primitives — sharpen */
+.cx-card, [class*="cx-card"] {
+  background: var(--cx-surface) !important;
+  border-color: var(--cx-border) !important;
+  border-radius: 12px !important;
+}
+
+/* === Override the legacy LIME-INK badge color (was dark-on-cream) === */
+[style*="color: #355C00"],
+[style*="color:#355C00"] {
+  /* re-targeted via Tailwind/inline – ensure readable on dark */
+}
+
+/* === Premium link underline accent for marketing nav === */
+.cx-nav-link {
+  color: var(--cx-text-soft);
+}
+.cx-nav-link:hover {
+  color: var(--cx-text);
+}
+
+/* Floating glow under primary CTAs */
+.cx-cta-glow {
+  box-shadow: 0 0 0 1px var(--cx-accent), 0 18px 36px -10px var(--cx-accent-glow);
+}
+
+/* Hide previously dim KPI dots that read green on dark */
+[style*="background: var(--cx-success-soft)"] { background: rgba(41,209,125,0.16) !important; }
+[style*="background: var(--cx-info-soft)"] { background: rgba(111,181,255,0.16) !important; }
+[style*="background: var(--cx-warning-soft)"] { background: rgba(255,181,71,0.16) !important; }
+[style*="background: var(--cx-accent-soft)"] { background: rgba(199,255,61,0.14) !important; }
+
+/* Sidebar / app shell on dark */
+aside, nav[role="navigation"] {
+  border-color: var(--cx-border) !important;
+}
+
+/* Modals over dark — strong, command-sheet styling */
+[role="dialog"] {
+  background-color: var(--cx-surface) !important;
+  color: var(--cx-text) !important;
+  border: 1px solid var(--cx-border) !important;
+  border-radius: 14px !important;
+  box-shadow: var(--cx-shadow-lg) !important;
+}
+[role="dialog"] * { color: inherit; }
+[role="dialog"] h2, [role="dialog"] h3 {
+  color: var(--cx-text) !important;
+}
+
+/* Backdrops behind modals */
+[data-cx-backdrop],
+.cx-modal-backdrop {
+  background-color: rgba(8, 10, 14, 0.78) !important;
+  backdrop-filter: saturate(140%) blur(6px);
+}
+
+/* === Pricing card "most popular" highlight === */
+.cx-pricing-popular,
+[data-popular="true"] {
+  border-color: var(--cx-accent) !important;
+  box-shadow: 0 0 0 1px var(--cx-accent), 0 20px 40px -16px var(--cx-accent-glow);
+}
+
+/* === Lime status dots / pills retuned for dark === */
+[data-tone="accent"], .tone-accent {
+  background: var(--cx-accent) !important;
+  color: var(--cx-accent-ink) !important;
+}
+
+/* === Marketing hero dark gradient utility === */
+.cx-hero-dark {
+  background:
+    radial-gradient(1200px 700px at 78% -10%, rgba(199,255,61,0.14), transparent 60%),
+    radial-gradient(900px 600px at 10% 110%, rgba(111,181,255,0.07), transparent 60%),
+    linear-gradient(180deg, #0B0D10 0%, #0F141A 100%);
+  color: var(--cx-text);
+}
+
+/* Subtle grid background for command surfaces */
+.cx-grid-bg {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* Editorial light section */
+.cx-editorial {
+  background: #F4F1EA;
+  color: #111318;
+  border-color: #D8D2C4 !important;
+}
+.cx-editorial * { border-color: #D8D2C4; }
+.cx-editorial h1, .cx-editorial h2, .cx-editorial h3 { color: #111318 !important; }
+
+/* Section dividers — faint top border on alternating sections */
+.cx-section {
+  position: relative;
+}
+.cx-section::before {
+  content: "";
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(199,255,61,0.30), transparent);
+}
+
+/* === Status badge colours === */
+.cx-status-badge--paid,
+.cx-status-badge--success {
+  background: var(--cx-success-soft) !important;
+  color: var(--cx-success) !important;
+}
+.cx-status-badge--overdue,
+.cx-status-badge--danger {
+  background: var(--cx-danger-soft) !important;
+  color: var(--cx-danger) !important;
+}
+.cx-status-badge--sent,
+.cx-status-badge--draft {
+  background: var(--cx-info-soft) !important;
+  color: var(--cx-info) !important;
+}
+
+/* === Worker app — keep contrast ruggedly high === */
+[data-worker-shell] {
+  background: var(--cx-bg);
+  color: var(--cx-text);
+}

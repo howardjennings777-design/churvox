@@ -195,7 +195,7 @@ export default function FeaturesPage() {
           padding: "clamp(40px, 6vw, 80px) clamp(16px, 4vw, 28px) 32px",
           background:
             "radial-gradient(800px 480px at 92% 12%, rgba(200,255,77,0.22), transparent 60%)," +
-            "linear-gradient(180deg, #F7F3EA 0%, #FBF8F1 100%)",
+            "linear-gradient(180deg, var(--cx-bg) 0%, var(--cx-bg-soft) 100%)",
         }}
       >
         <div style={{ maxWidth: 920, margin: "0 auto" }}>
@@ -207,7 +207,7 @@ export default function FeaturesPage() {
               padding: "5px 11px",
               borderRadius: 999,
               background: "var(--cx-accent-soft)",
-              color: "#355C00",
+              color: "var(--cx-accent)",
               border: "1px solid rgba(200,255,77,0.5)",
               letterSpacing: "0.06em",
               textTransform: "uppercase",
@@ -266,7 +266,7 @@ export default function FeaturesPage() {
             id={s.id}
             style={{
               background:
-                i % 2 === 0 ? "var(--cx-surface)" : "linear-gradient(135deg, #FFFFFF 0%, #FBF8F1 100%)",
+                i % 2 === 0 ? "var(--cx-surface)" : "linear-gradient(135deg, var(--cx-surface) 0%, var(--cx-surface-2) 100%)",
               border: "1px solid var(--cx-border)",
               borderRadius: 24,
               padding: "clamp(22px, 3.5vw, 38px)",
@@ -281,7 +281,7 @@ export default function FeaturesPage() {
                 padding: "4px 9px",
                 borderRadius: 999,
                 background: "var(--cx-accent-soft)",
-                color: "#355C00",
+                color: "var(--cx-accent)",
                 border: "1px solid rgba(200,255,77,0.45)",
                 letterSpacing: "0.05em",
                 textTransform: "uppercase",
@@ -344,7 +344,7 @@ export default function FeaturesPage() {
                         minWidth: 16,
                         borderRadius: 5,
                         background: "var(--cx-accent-soft)",
-                        color: "#355C00",
+                        color: "var(--cx-accent)",
                         display: "inline-flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -374,7 +374,7 @@ export default function FeaturesPage() {
       >
         <div
           style={{
-            background: "linear-gradient(135deg, #FFFFFF 0%, #FBF8F1 100%)",
+            background: "linear-gradient(135deg, var(--cx-surface) 0%, var(--cx-surface-2) 100%)",
             border: "1px solid var(--cx-border)",
             borderRadius: 28,
             padding: "clamp(30px, 4vw, 48px)",

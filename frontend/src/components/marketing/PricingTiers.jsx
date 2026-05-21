@@ -36,7 +36,7 @@ export default function PricingTiers({
           style={{
             position: "relative",
             background: plan.highlight
-              ? "linear-gradient(180deg, #FFFFFF 0%, #FBF8F1 100%)"
+              ? "linear-gradient(180deg, var(--cx-surface) 0%, var(--cx-surface-2) 100%)"
               : "var(--cx-surface)",
             border: plan.highlight
               ? "2px solid var(--cx-accent-hover)"
@@ -152,7 +152,7 @@ export default function PricingTiers({
                     minWidth: 18,
                     borderRadius: 6,
                     background: "var(--cx-accent-soft)",
-                    color: "#355C00",
+                    color: "var(--cx-accent)",
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",

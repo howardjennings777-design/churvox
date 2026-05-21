@@ -11,6 +11,9 @@ import "./styles/churvox-front-desk-theme.css";
 // Pass 4 — legacy inline hex overlay (re-skins Jobs / Clients / Quotes /
 // Invoices / Team / Calendar / Proof inline blue/navy/purple classes).
 import "./styles/churvox-legacy-overlay.css";
+// Pass 7 — Operator Command dark theme. Flips --cx-* tokens to the dark
+// command-centre palette and overrides common Tailwind utilities.
+import "./styles/churvox-operator-command.css";
 
 // Register service worker for PWA installability (iPhone Add to Home Screen + Chrome install)
 // Network-first SW — no aggressive caching, new deploys always picked up

@@ -51,7 +51,7 @@
   "rca_of_the_issue": {
     "reported_concern": "Main agent couldn't visually verify select dropdowns and couldn't reliably trigger React onChange via playwright .fill() on the login page.",
     "root_cause": "Frontend is served via `serve -s build`, not dev server. The /app/frontend/build directory had a stale bundle (main.300d41ae.js) compiled when REACT_APP_BACKEND_URL pointed to launch-ready-144.preview.emergentagent.com, so all /api/* calls from the browser were blocked by CORS.",
-    "mitigation_applied": "Ran `yarn build` in /app/frontend, then `supervisorctl restart frontend`. New bundle (main.823c8578.js) correctly hits https://admin-portal-draft.preview.emergentagent.com/api/*. Login + team flow then succeeded end-to-end.",
+    "mitigation_applied": "Ran `yarn build` in /app/frontend, then `supervisorctl restart frontend`. New bundle (main.823c8578.js) correctly hits https://operator-command-1.preview.emergentagent.com/api/*. Login + team flow then succeeded end-to-end.",
     "verification": "Screenshot /app/test_reports/invite_form.png shows white-background Role/Country/Region selects on /team; POST /api/team/workers payload includes role=manager; worker list increments from 2 to 3."
   }
 }

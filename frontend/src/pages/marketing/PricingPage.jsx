@@ -43,7 +43,7 @@ export default function PricingPage() {
           padding: "clamp(40px, 6vw, 80px) clamp(16px, 4vw, 28px) 24px",
           background:
             "radial-gradient(700px 460px at 90% 10%, rgba(200,255,77,0.20), transparent 60%)," +
-            "linear-gradient(180deg, #F7F3EA 0%, #FBF8F1 100%)",
+            "linear-gradient(180deg, var(--cx-bg) 0%, var(--cx-bg-soft) 100%)",
         }}
       >
         <div
@@ -61,7 +61,7 @@ export default function PricingPage() {
               padding: "5px 11px",
               borderRadius: 999,
               background: "var(--cx-accent-soft)",
-              color: "#355C00",
+              color: "var(--cx-accent)",
               border: "1px solid rgba(200,255,77,0.5)",
               letterSpacing: "0.06em",
               textTransform: "uppercase",
@@ -169,7 +169,7 @@ export default function PricingPage() {
                     height: 16,
                     borderRadius: 5,
                     background: "var(--cx-accent-soft)",
-                    color: "#355C00",
+                    color: "var(--cx-accent)",
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -251,8 +251,8 @@ export default function PricingPage() {
           style={{
             background:
               "radial-gradient(700px 360px at 92% 0%, rgba(200,255,77,0.28), transparent 60%)," +
-              "linear-gradient(135deg, #0E0E0E 0%, #1A1A1A 100%)",
-            color: "#FFFFFF",
+              "linear-gradient(135deg, var(--cx-surface) 0%, var(--cx-surface-2) 100%)",
+            color: "var(--cx-text)",
             borderRadius: 28,
             padding: "clamp(28px, 4vw, 44px)",
             display: "flex",
