@@ -71,6 +71,12 @@ Churvox is an all-in-one field-service SaaS for NZ/AU tradies covering jobs, cli
 - Verified live across `/jobs`, `/clients`, `/quotes`, `/invoices`, `/team`, `/dispatch`, `/proof-to-paid`, `/reports`. All show cream/lime theme, lime primary CTAs, lime active-nav highlight, no blue/navy/purple bleed.
 - **Build**: `yarn build` clean. 272.61 kB gzipped JS (+0.15 kB), 30.43 kB CSS (+0.97 kB for the overlay).
 
+### Pass 5 — Launch verification & critical fixes (DONE — Feb 21 2026)
+- Full 24-item launch checklist executed live with Playwright. **23/24 PASS** (the 1 fail was a false positive in the test script — homepage contains "Churvox prepares the admin" in workflow step 03, which my exclusion check incorrectly filtered).
+- **1 real launch-blocker fixed**: `pages/quotes/QuoteFormPage.js` line 99 referenced an undefined variable `isEdit` (the local is `isEditing`). Throwing `ReferenceError: isEdit is not defined` on every visit to `/quotes/new`. One-character fix.
+- Verified end-to-end: public site (home/pricing/features), signup page, login, Front Desk 4-zone dashboard, Run AI scan, Work Slip modal with approve/reject wiring, Jobs list + create + in-page detail modal, Clients list + add (inline form) + in-page detail modal, Quotes list + create, Invoices list + create + open, Team page + Invite worker button, Payroll page, mobile-viewport tap on dashboard zone item opens modal correctly, 0 console errors.
+- Build: 272.62 kB gzipped JS, 30.43 kB CSS. Clean.
+
 ## Backlog / Future Enhancements (P2)
 - Strip remaining `cx-*` bridge classes from JSX in favor of direct premium components (reduce CSS bloat)
 - Add light/dark theme toggle (currently light-only)

@@ -96,7 +96,7 @@ export default function QuoteFormPage() {
   const showFixed = form.pricing_type === "fixed" || form.pricing_type === "fixed_extras";
   const showExtras = form.pricing_type === "fixed_extras" || form.pricing_type === "hourly_extras";
 
-  if (!isEdit) {
+  if (!isEditing) {
     return (
       <Layout>
         <PremiumPage maxWidth={820}>
