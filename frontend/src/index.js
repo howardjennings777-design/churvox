@@ -14,6 +14,9 @@ import "./styles/churvox-legacy-overlay.css";
 // Pass 7 — Operator Command dark theme. Flips --cx-* tokens to the dark
 // command-centre palette and overrides common Tailwind utilities.
 import "./styles/churvox-operator-command.css";
+// Final command fix — loaded absolute last to stop old premium.css blue/light
+// styling leaking back into worker/app buttons, AI panels, sidebar and mobile nav.
+import "./styles/churvox-command-final-fix.css";
 
 // Register service worker for PWA installability (iPhone Add to Home Screen + Chrome install)
 // Network-first SW — no aggressive caching, new deploys always picked up
