@@ -52,12 +52,19 @@ Churvox is an all-in-one field-service SaaS for NZ/AU tradies covering jobs, cli
 - Pages: Home (hero + workflow + trades + features + approval-first + pricing + CTA), Pricing (4 tiers + add-ons), Features (deep-dive sections)
 - Build passes; verified via screenshot tool on `/`, `/pricing`, `/features`
 
-### Pass 3 — AI Operator Front Desk dashboard (P0, NEXT)
-- Overhaul Owner Dashboard into 4 zones: Ready to approve, Needs fixing, Field & crew, Money desk
-- Implement in-page Work Slip via `CxModal`
-- Optional new read-only endpoint `/api/front-desk/snapshot` to aggregate data
+### Pass 3 — AI Operator Front Desk dashboard (DONE — Feb 21 2026)
+- Owner Dashboard fully replaced. NO sidebar, full-width cream layout.
+- 4-zone 2x2 grid (1-col mobile): Ready to approve, Needs fixing, Field & crew, Money desk
+- Top bar: Churvox logo + AI OPERATOR FRONT DESK badge + last-scanned time + Run AI scan + account menu (Settings / Plan / Sign out)
+- Hero strip: "Churvox prepares the admin. You approve." headline (with lime highlight) + next-best-move subline + 4 KPIs (Pending approvals, Active jobs, Open invoices $, Needs fixing)
+- Each zone item is a clickable card → opens `WorkSlipModal` in-page (no navigation). Modal shows AI reasoning panel (lime soft block), type/risk badges, key facts, and footer actions: Close · Open full record (secondary, navigates) · Reject · Approve & complete (wired to `/api/ai-operator/actions/{id}/approve|reject`)
+- "Open full record" is the only navigation — defaults to Work Slip popup per UX rule
+- No new backend endpoint added; uses existing `/api/ai-operator/command-snapshot`, `/api/ai-operator/actions`, `/api/jobs`, `/api/invoices`, and approve/reject endpoints
+- Quick-links nav row at bottom for Workspaces: Jobs, Dispatch, Clients, Quotes, Invoices, Team, Proof, Payroll, AI settings, Settings
+- Files: `pages/FrontDeskPage.jsx`, `components/frontdesk/ZoneCard.jsx`, `components/frontdesk/WorkSlipModal.jsx`, `pages/DashboardPage.js` (rewired)
+- Verified live: zones render real data, modal opens in-page, Reject dropped pending count 3→2 in real-time
 
-### Pass 4 — App-wide audit (P1)
+### Pass 4 — App-wide audit (P1, NEXT)
 - Audit Jobs, Clients, Quotes, Invoices, Team, Dispatch, Proof pages
 - Replace dead buttons / "Coming soon" with real actions
 - Migrate legacy `bg-blue-*`, `bg-[#ede4ff]` styles to `Cx` primitives
