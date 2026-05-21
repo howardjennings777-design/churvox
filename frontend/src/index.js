@@ -5,6 +5,9 @@ import "./index.css";
 import "./styles/premium.css";
 import "./styles/churvoxUnifiedTheme.css";
 import "./styles/churvoxFullPageModals.css";
+// Loaded LAST — Churvox AI Operator Front Desk theme (cream / charcoal / lime).
+// Re-binds --px-*, --ch-*, --cx-force-* tokens and overrides hero/button/sidebar.
+import "./styles/churvox-front-desk-theme.css";
 
 // Register service worker for PWA installability (iPhone Add to Home Screen + Chrome install)
 // Network-first SW — no aggressive caching, new deploys always picked up

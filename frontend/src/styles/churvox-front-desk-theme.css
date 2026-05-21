@@ -1,0 +1,585 @@
+/* ==========================================================================
+   CHURVOX — AI OPERATOR FRONT DESK
+   Locked design system (Pass 1)
+
+   Palette (locked):
+     Background  #F7F3EA   (warm cream)
+     Surface     #FFFFFF
+     Text        #0E0E0E   (charcoal)
+     Muted       #5A5A5A
+     Accent      #C8FF4D   (soft electric lime)
+     Accent hover#B5EE2E
+     Success     #15803D
+     Warning     #D97706
+     Danger      #DC2626
+     Border      #E8E2D2
+
+   Loaded LAST so it overrides:
+     - index.css  (--ch-*, shadcn HSL tokens)
+     - premium.css (--px-*)
+     - churvoxUnifiedTheme.css (--cx-force-*)
+   ========================================================================== */
+
+:root,
+:root[class],
+html,
+body {
+  /* === LOCKED CHURVOX TOKENS === */
+  --cx-bg:             #F7F3EA;
+  --cx-bg-soft:        #FBF8F1;
+  --cx-bg-warm:        #F2EDDF;
+  --cx-surface:        #FFFFFF;
+  --cx-surface-2:      #FBF8F1;
+  --cx-text:           #0E0E0E;
+  --cx-text-soft:      #1F1F1F;
+  --cx-muted:          #5A5A5A;
+  --cx-muted-2:        #8A8475;
+  --cx-border:         #E8E2D2;
+  --cx-border-soft:    #EFE9D9;
+  --cx-border-strong:  #D6CFB9;
+
+  --cx-accent:         #C8FF4D;   /* soft electric lime */
+  --cx-accent-hover:   #B5EE2E;
+  --cx-accent-soft:    #EEFFC2;
+  --cx-accent-ink:     #0E0E0E;   /* text colour to use on lime */
+
+  --cx-success:        #15803D;
+  --cx-success-soft:   #DCFCE7;
+  --cx-warning:        #D97706;
+  --cx-warning-soft:   #FEF3C7;
+  --cx-danger:         #DC2626;
+  --cx-danger-soft:    #FEE2E2;
+  --cx-info:           #1F4E7A;
+  --cx-info-soft:      #DBE8F4;
+
+  --cx-shadow-xs:      0 1px 2px rgba(14,14,14,0.04);
+  --cx-shadow-sm:      0 2px 6px rgba(14,14,14,0.05), 0 1px 2px rgba(14,14,14,0.04);
+  --cx-shadow:         0 6px 18px rgba(14,14,14,0.06), 0 2px 4px rgba(14,14,14,0.04);
+  --cx-shadow-md:      0 14px 32px rgba(14,14,14,0.08), 0 4px 8px rgba(14,14,14,0.05);
+  --cx-shadow-lg:      0 28px 60px rgba(14,14,14,0.12), 0 10px 18px rgba(14,14,14,0.06);
+
+  --cx-radius-sm:      10px;
+  --cx-radius:         14px;
+  --cx-radius-lg:      18px;
+  --cx-radius-xl:      24px;
+
+  /* === Rebind legacy premium.css (--px-*) tokens === */
+  --px-bg:            var(--cx-bg);
+  --px-bg-2:          var(--cx-bg-soft);
+  --px-bg-3:          var(--cx-bg-warm);
+  --px-surface:       var(--cx-surface);
+  --px-surface-soft:  var(--cx-surface-2);
+  --px-glass:         rgba(255,255,255,0.92);
+
+  --px-border:        var(--cx-border);
+  --px-border-soft:   var(--cx-border-soft);
+  --px-border-strong: var(--cx-border-strong);
+
+  --px-text:          var(--cx-text);
+  --px-text-2:        var(--cx-text-soft);
+  --px-muted:         var(--cx-muted);
+  --px-muted-2:       var(--cx-muted-2);
+
+  --px-primary:       var(--cx-accent);
+  --px-primary-2:     var(--cx-accent-hover);
+  --px-primary-soft:  var(--cx-accent-soft);
+  --px-primary-50:    var(--cx-accent-soft);
+
+  --px-sky:           var(--cx-info);
+  --px-sky-soft:      var(--cx-info-soft);
+
+  --px-teal:          var(--cx-success);
+  --px-teal-soft:     var(--cx-success-soft);
+
+  --px-amber:         var(--cx-warning);
+  --px-amber-soft:    var(--cx-warning-soft);
+
+  --px-red:           var(--cx-danger);
+  --px-red-soft:      var(--cx-danger-soft);
+
+  --px-violet:        #6D5DF6;
+  --px-violet-soft:   #EDE4FF;
+
+  --px-shadow-sm:     var(--cx-shadow-sm);
+  --px-shadow:        var(--cx-shadow);
+  --px-shadow-md:     var(--cx-shadow-md);
+  --px-shadow-lg:     var(--cx-shadow-lg);
+
+  /* === Rebind legacy index.css (--ch-*) tokens === */
+  --ch-bg:            var(--cx-bg);
+  --ch-surface:       var(--cx-surface);
+  --ch-surface-soft:  var(--cx-surface-2);
+  --ch-border:        var(--cx-border);
+  --ch-border-strong: var(--cx-border-strong);
+  --ch-text:          var(--cx-text);
+  --ch-text-muted:    var(--cx-muted);
+  --ch-primary:       var(--cx-accent);
+  --ch-primary-dark:  var(--cx-accent-hover);
+  --ch-primary-soft:  var(--cx-accent-soft);
+  --ch-accent:        var(--cx-accent);
+  --ch-accent-soft:   var(--cx-accent-soft);
+  --ch-success:       var(--cx-success);
+  --ch-success-soft:  var(--cx-success-soft);
+  --ch-warning:       var(--cx-warning);
+  --ch-warning-soft:  var(--cx-warning-soft);
+  --ch-danger:        var(--cx-danger);
+  --ch-danger-soft:   var(--cx-danger-soft);
+  --ch-shadow:        var(--cx-shadow);
+  --ch-radius:        var(--cx-radius-lg);
+
+  /* === Rebind legacy churvoxUnifiedTheme.css (--cx-force-*) tokens === */
+  --cx-force-bg:          var(--cx-bg);
+  --cx-force-bg-soft:     var(--cx-bg-soft);
+  --cx-force-dark:        var(--cx-surface);
+  --cx-force-dark-2:      var(--cx-surface);
+  --cx-force-dark-3:      var(--cx-surface);
+  --cx-force-card:        var(--cx-surface);
+  --cx-force-card-2:      var(--cx-surface-2);
+  --cx-force-panel:       var(--cx-bg-warm);
+  --cx-force-border:      var(--cx-border);
+  --cx-force-border-dark: var(--cx-border-strong);
+  --cx-force-text:        var(--cx-text);
+  --cx-force-muted:       var(--cx-muted);
+  --cx-force-orange:      var(--cx-accent);
+  --cx-force-orange-dark: var(--cx-accent-hover);
+  --cx-force-blue:        var(--cx-info);
+  --cx-force-green:       var(--cx-success);
+
+  /* === Rebind shadcn HSL tokens (Tailwind hsl(var(--bg))) === */
+  --background:           42 41% 95%;     /* #F7F3EA */
+  --foreground:           0 0% 5%;        /* #0E0E0E */
+  --card:                 0 0% 100%;
+  --card-foreground:      0 0% 5%;
+  --popover:              0 0% 100%;
+  --popover-foreground:   0 0% 5%;
+  --primary:              74 100% 65%;    /* #C8FF4D lime */
+  --primary-foreground:   0 0% 5%;
+  --secondary:            42 35% 91%;
+  --secondary-foreground: 0 0% 5%;
+  --muted:                42 30% 91%;
+  --muted-foreground:     0 0% 35%;       /* #5A5A5A */
+  --accent:               74 100% 65%;
+  --accent-foreground:    0 0% 5%;
+  --destructive:          0 73% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border:               43 36% 86%;     /* #E8E2D2 */
+  --input:                43 36% 86%;
+  --ring:                 74 100% 50%;
+  --radius:               0.875rem;
+  --success:              142 71% 30%;
+  --warning:              30 90% 44%;
+  --info:                 207 58% 30%;
+}
+
+/* ==========================================================================
+   App Body / Shell — clean warm cream background, NO blue grid
+   ========================================================================== */
+body,
+#root,
+.px-app,
+.cx-app-shell,
+.app-shell,
+.px-main,
+.px-main main {
+  background: var(--cx-bg) !important;
+  background-image:
+    radial-gradient(1100px 600px at 100% -10%, rgba(200,255,77,0.10), transparent 60%),
+    radial-gradient(900px 500px at -10% 20%, rgba(14,14,14,0.025), transparent 60%) !important;
+  color: var(--cx-text) !important;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--cx-text);
+}
+
+/* ==========================================================================
+   Page Hero / Page Header — flip dark slab → light cream with lime accent
+   Overrides churvoxUnifiedTheme.css dark gradient
+   ========================================================================== */
+.cx-page-hero,
+.page-hero,
+[class*="page-hero"],
+[class*="PageHeader"],
+[class*="page-header"],
+.px-hero {
+  background: linear-gradient(135deg, #FFFFFF 0%, #FBF8F1 65%, #F2EDDF 100%) !important;
+  border: 1px solid var(--cx-border) !important;
+  color: var(--cx-text) !important;
+  box-shadow: var(--cx-shadow) !important;
+  border-radius: var(--cx-radius-xl) !important;
+}
+
+.cx-page-hero h1, .cx-page-hero h2, .cx-page-hero h3,
+.page-hero h1, .page-hero h2, .page-hero h3,
+[class*="page-hero"] h1, [class*="page-hero"] h2, [class*="page-hero"] h3,
+[class*="PageHeader"] h1, [class*="PageHeader"] h2, [class*="PageHeader"] h3,
+[class*="page-header"] h1, [class*="page-header"] h2, [class*="page-header"] h3,
+.px-hero h1, .px-hero h2, .px-hero h3,
+.px-hero__title {
+  color: var(--cx-text) !important;
+}
+
+.cx-page-hero p,
+.page-hero p,
+[class*="page-hero"] p,
+[class*="PageHeader"] p,
+[class*="page-header"] p,
+.px-hero p,
+.px-hero__sub,
+.cx-page-subtitle {
+  color: var(--cx-muted) !important;
+}
+
+/* Decorative blue glow blob inside .px-hero — recolour to lime */
+.px-hero::before,
+.px-hero::after {
+  background: radial-gradient(circle, rgba(200,255,77,0.30), transparent 70%) !important;
+}
+
+/* ==========================================================================
+   Cards / Panels — clean white with warm border, soft shadow
+   ========================================================================== */
+.cx-card,
+.cx-panel,
+.cx-command-card,
+.cx-document-card,
+.cx-invoice-card,
+.cx-list-card,
+.cx-stat-card,
+.cx-client-card,
+.surface-card,
+.tradie-panel,
+.px-card,
+.px-stat {
+  background: var(--cx-surface) !important;
+  border-color: var(--cx-border) !important;
+  color: var(--cx-text) !important;
+  box-shadow: var(--cx-shadow) !important;
+  border-radius: var(--cx-radius-lg) !important;
+}
+
+.px-card--glass {
+  background: rgba(255, 255, 255, 0.92) !important;
+}
+.px-card--gradient {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FBF8F1 100%) !important;
+}
+
+/* Tailwind utility overrides that legacy pages still use */
+.bg-white,
+.bg-slate-50,
+.bg-gray-50,
+.bg-zinc-50,
+.bg-neutral-50,
+.bg-blue-50 {
+  background-color: var(--cx-surface) !important;
+}
+
+.bg-slate-100,
+.bg-gray-100,
+.bg-neutral-100 {
+  background-color: var(--cx-bg-warm) !important;
+}
+
+.text-slate-900, .text-gray-900, .text-zinc-900, .text-neutral-900,
+.text-slate-800, .text-gray-800,
+.cx-page-title, .page-title {
+  color: var(--cx-text) !important;
+}
+
+.text-slate-600, .text-slate-500, .text-slate-400,
+.text-gray-600, .text-gray-500, .text-gray-400,
+.text-zinc-600, .text-neutral-600,
+.page-subtitle {
+  color: var(--cx-muted) !important;
+}
+
+.border, .border-slate-100, .border-slate-200, .border-slate-300,
+.border-gray-100, .border-gray-200, .border-gray-300,
+.border-zinc-100, .border-zinc-200,
+.border-blue-100, .border-blue-200 {
+  border-color: var(--cx-border) !important;
+}
+
+/* ==========================================================================
+   Buttons — lime primary, white secondary, charcoal ghost
+   ========================================================================== */
+.cx-button-primary,
+button.bg-blue-600, button.bg-blue-700,
+a.bg-blue-600, a.bg-blue-700,
+.bg-primary,
+[class*="bg-[#2563eb]"],
+[class*="bg-[#1d63ff]"],
+.px-btn--primary {
+  background: var(--cx-accent) !important;
+  border-color: var(--cx-accent-hover) !important;
+  color: var(--cx-accent-ink) !important;
+  box-shadow: 0 6px 16px rgba(200,255,77,0.35), 0 1px 2px rgba(14,14,14,0.06) !important;
+  font-weight: 600 !important;
+}
+
+.cx-button-primary:hover,
+button.bg-blue-600:hover, button.bg-blue-700:hover,
+a.bg-blue-600:hover, a.bg-blue-700:hover,
+[class*="bg-[#2563eb]"]:hover,
+[class*="bg-[#1d63ff]"]:hover,
+.px-btn--primary:hover {
+  background: var(--cx-accent-hover) !important;
+  color: var(--cx-accent-ink) !important;
+}
+
+.cx-button-secondary,
+.px-btn--secondary,
+.px-btn--ghost {
+  background: var(--cx-surface) !important;
+  border-color: var(--cx-border-strong) !important;
+  color: var(--cx-text) !important;
+}
+
+.cx-button-secondary:hover,
+.px-btn--secondary:hover,
+.px-btn--ghost:hover {
+  background: var(--cx-bg-warm) !important;
+}
+
+/* Tailwind text-blue links → keep readable as info, not lime (lime on white is hard to read) */
+.text-blue-600, .text-blue-700,
+[class*="text-[#2563eb]"], [class*="text-[#1d63ff]"] {
+  color: var(--cx-info) !important;
+}
+
+.text-blue-600:hover, .text-blue-700:hover {
+  color: #0E0E0E !important;
+}
+
+/* ==========================================================================
+   Inputs
+   ========================================================================== */
+input,
+select,
+textarea,
+.cx-input,
+[role="combobox"] {
+  background: var(--cx-surface) !important;
+  border-color: var(--cx-border-strong) !important;
+  color: var(--cx-text) !important;
+  border-radius: var(--cx-radius) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--cx-muted-2) !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+.cx-input:focus,
+[role="combobox"]:focus {
+  outline: none !important;
+  border-color: var(--cx-accent-hover) !important;
+  box-shadow: 0 0 0 3px rgba(200,255,77,0.35) !important;
+}
+
+/* ==========================================================================
+   Sidebar / Nav — cream surface, charcoal text, lime active pill
+   ========================================================================== */
+.px-sidebar,
+.px-mobile-header,
+.px-mobile-bottom {
+  background: rgba(251,248,241,0.96) !important;
+  border-color: var(--cx-border) !important;
+  backdrop-filter: saturate(140%) blur(8px);
+}
+
+.px-nav-item,
+.px-mobile-tab {
+  color: var(--cx-muted) !important;
+  font-weight: 500 !important;
+}
+
+.px-nav-item.is-active,
+.px-mobile-tab.is-active {
+  background: var(--cx-accent) !important;
+  color: var(--cx-accent-ink) !important;
+  box-shadow: 0 4px 10px rgba(200,255,77,0.35) !important;
+  font-weight: 600 !important;
+}
+
+.px-nav-item:hover:not(.is-active) {
+  background: var(--cx-bg-warm) !important;
+  color: var(--cx-text) !important;
+}
+
+/* ==========================================================================
+   Status badges — semantic, not blue/orange
+   ========================================================================== */
+.status-in-progress, .status-sent, .cx-status-badge--blue {
+  background: var(--cx-info-soft) !important;
+  color: var(--cx-info) !important;
+  border-color: rgba(31,78,122,0.25) !important;
+}
+
+.status-completed, .status-paid, .status-accepted, .cx-status-badge--green {
+  background: var(--cx-success-soft) !important;
+  color: var(--cx-success) !important;
+  border-color: rgba(21,128,61,0.25) !important;
+}
+
+.status-paused, .status-pending, .status-unpaid, .cx-status-badge--amber {
+  background: var(--cx-warning-soft) !important;
+  color: var(--cx-warning) !important;
+  border-color: rgba(217,119,6,0.25) !important;
+}
+
+.status-cancelled, .status-overdue, .cx-status-badge--red {
+  background: var(--cx-danger-soft) !important;
+  color: var(--cx-danger) !important;
+  border-color: rgba(220,38,38,0.25) !important;
+}
+
+/* ==========================================================================
+   Tables
+   ========================================================================== */
+table, thead, tbody, tr, th, td {
+  border-color: var(--cx-border) !important;
+}
+
+thead,
+[class*="bg-slate-100"],
+[class*="bg-gray-100"] {
+  background: var(--cx-bg-warm) !important;
+  color: var(--cx-text-soft) !important;
+}
+
+/* ==========================================================================
+   Tailwind dark utility kill — prevent stray dark backgrounds carrying over
+   ========================================================================== */
+.bg-slate-900, .bg-slate-800, .bg-gray-900, .bg-gray-800, .bg-zinc-900, .bg-neutral-900 {
+  /* Only kill when used as page-level backgrounds. Keep buttons/explicit dark CTAs intact
+     by only overriding the global slab utilities that match cards. */
+}
+/* The page-hero override above already catches the dark slabs used by [class*="page-hero"] */
+
+/* ==========================================================================
+   Reusable Churvox primitive utility classes
+   Use these in new code (Pass 2+) without touching old pages
+   ========================================================================== */
+.cx-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--cx-radius);
+  font-size: 14px; font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 160ms ease;
+  text-decoration: none;
+  line-height: 1;
+  white-space: nowrap;
+}
+.cx-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(200,255,77,0.5);
+}
+.cx-btn--primary {
+  background: var(--cx-accent);
+  color: var(--cx-accent-ink);
+  border-color: var(--cx-accent-hover);
+  box-shadow: 0 6px 16px rgba(200,255,77,0.35), 0 1px 2px rgba(14,14,14,0.06);
+}
+.cx-btn--primary:hover { background: var(--cx-accent-hover); }
+.cx-btn--secondary {
+  background: var(--cx-surface);
+  color: var(--cx-text);
+  border-color: var(--cx-border-strong);
+}
+.cx-btn--secondary:hover { background: var(--cx-bg-warm); }
+.cx-btn--ghost {
+  background: transparent;
+  color: var(--cx-text);
+  border-color: transparent;
+}
+.cx-btn--ghost:hover { background: var(--cx-bg-warm); }
+.cx-btn--danger {
+  background: var(--cx-danger);
+  color: #fff;
+  border-color: var(--cx-danger);
+}
+.cx-btn--danger:hover { filter: brightness(0.92); }
+.cx-btn--lg { padding: 14px 22px; font-size: 15px; border-radius: var(--cx-radius-lg); }
+.cx-btn--sm { padding: 7px 12px; font-size: 13px; }
+.cx-btn[disabled],
+.cx-btn--disabled {
+  opacity: 0.55; cursor: not-allowed;
+  box-shadow: none;
+}
+
+.cx-card-v2 {
+  background: var(--cx-surface);
+  border: 1px solid var(--cx-border);
+  border-radius: var(--cx-radius-lg);
+  box-shadow: var(--cx-shadow);
+  padding: 20px;
+}
+.cx-card-v2--soft {
+  background: var(--cx-surface-2);
+}
+.cx-card-v2--flat {
+  box-shadow: none;
+}
+
+.cx-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px; font-weight: 600;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.cx-badge--neutral { background: var(--cx-bg-warm); color: var(--cx-text-soft); border-color: var(--cx-border); }
+.cx-badge--accent  { background: var(--cx-accent-soft); color: #355c00; border-color: rgba(200,255,77,0.45); }
+.cx-badge--success { background: var(--cx-success-soft); color: var(--cx-success); border-color: rgba(21,128,61,0.25); }
+.cx-badge--warning { background: var(--cx-warning-soft); color: var(--cx-warning); border-color: rgba(217,119,6,0.25); }
+.cx-badge--danger  { background: var(--cx-danger-soft); color: var(--cx-danger); border-color: rgba(220,38,38,0.25); }
+.cx-badge--info    { background: var(--cx-info-soft); color: var(--cx-info); border-color: rgba(31,78,122,0.25); }
+
+/* ==========================================================================
+   Mobile / safe area
+   ========================================================================== */
+@media (max-width: 768px) {
+  .cx-page-hero,
+  .page-hero,
+  [class*="page-hero"],
+  [class*="PageHeader"],
+  [class*="page-header"],
+  .px-hero {
+    border-radius: var(--cx-radius-lg) !important;
+    padding: 22px 18px !important;
+  }
+}
+
+/* Respect safe-area on iOS */
+@supports (padding: max(0px)) {
+  .cx-safe-bottom { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+  .cx-safe-top    { padding-top: max(0px, env(safe-area-inset-top)); }
+}
+
+/* ==========================================================================
+   Toast styles — keep readable on cream
+   ========================================================================== */
+[data-sonner-toaster][data-theme] [data-sonner-toast] {
+  background: var(--cx-surface) !important;
+  border: 1px solid var(--cx-border) !important;
+  color: var(--cx-text) !important;
+  box-shadow: var(--cx-shadow-md) !important;
+}
