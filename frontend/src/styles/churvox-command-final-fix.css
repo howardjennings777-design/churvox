@@ -1,0 +1,291 @@
+/* ============================================================================
+   CHURVOX COMMAND FINAL FIX
+   Loaded after all other theme files.
+   Purpose: stop legacy premium.css blue/light styling leaking into worker/app UI
+   while preserving existing React logic and routes.
+   ============================================================================ */
+
+:root,
+html,
+body {
+  --cx-bg: #0B0D10;
+  --cx-bg-soft: #0F141A;
+  --cx-surface: #11151B;
+  --cx-surface-2: #171C24;
+  --cx-surface-3: #1F2632;
+  --cx-text: #F5F7FA;
+  --cx-text-soft: #D6DCE7;
+  --cx-muted: #A8B0BD;
+  --cx-muted-2: #768091;
+  --cx-border: #283140;
+  --cx-border-strong: #3A445A;
+  --cx-accent: #C7FF3D;
+  --cx-accent-hover: #B6F127;
+  --cx-accent-soft: rgba(199, 255, 61, 0.14);
+  --cx-accent-glow: rgba(199, 255, 61, 0.22);
+  --cx-accent-ink: #0B0D10;
+
+  --px-bg: var(--cx-bg);
+  --px-bg-2: #131722;
+  --px-bg-3: var(--cx-surface);
+  --px-surface: #151922;
+  --px-surface-soft: #1B2130;
+  --px-glass: rgba(17, 21, 27, 0.88);
+  --px-border: var(--cx-border);
+  --px-border-soft: #232A38;
+  --px-border-strong: var(--cx-border-strong);
+  --px-text: var(--cx-text);
+  --px-text-2: var(--cx-text-soft);
+  --px-muted: var(--cx-muted);
+  --px-muted-2: var(--cx-muted-2);
+  --px-primary: var(--cx-accent);
+  --px-primary-2: var(--cx-accent-hover);
+  --px-primary-soft: var(--cx-accent-soft);
+  --px-primary-50: rgba(199, 255, 61, 0.10);
+}
+
+html,
+body,
+#root {
+  background: var(--cx-bg) !important;
+  color: var(--cx-text) !important;
+}
+
+/* App and worker shells */
+.px-app,
+.px-shell,
+.px-main,
+.min-h-screen {
+  color: var(--cx-text) !important;
+}
+
+.px-app,
+.px-shell,
+.px-main {
+  background:
+    radial-gradient(1100px 600px at 100% -12%, rgba(199,255,61,0.07), transparent 62%),
+    radial-gradient(900px 520px at -10% 18%, rgba(111,181,255,0.035), transparent 62%),
+    linear-gradient(180deg, #0B0D10 0%, #10151D 100%) !important;
+}
+
+/* Remove old blue primary buttons from premium.css */
+.px-btn--primary,
+.px-btn:not(.px-btn--secondary):not(.px-btn--ghost):not(.px-btn--danger):not(.px-btn--success) {
+  background: linear-gradient(180deg, var(--cx-accent) 0%, var(--cx-accent-hover) 100%) !important;
+  color: var(--cx-accent-ink) !important;
+  border-color: rgba(199,255,61,0.72) !important;
+  box-shadow: 0 12px 26px rgba(199,255,61,0.18), inset 0 1px 0 rgba(255,255,255,0.24) !important;
+}
+
+.px-btn--primary:hover:not(:disabled),
+.px-btn:not(.px-btn--secondary):not(.px-btn--ghost):not(.px-btn--danger):not(.px-btn--success):hover:not(:disabled) {
+  background: linear-gradient(180deg, #D2FF5F 0%, var(--cx-accent-hover) 100%) !important;
+  border-color: var(--cx-accent) !important;
+  box-shadow: 0 16px 34px rgba(199,255,61,0.24), inset 0 1px 0 rgba(255,255,255,0.26) !important;
+}
+
+.px-btn--secondary {
+  background: rgba(23,28,36,0.92) !important;
+  color: var(--cx-text) !important;
+  border-color: var(--cx-border) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.04), 0 12px 26px rgba(0,0,0,0.28) !important;
+}
+
+.px-btn--secondary:hover:not(:disabled) {
+  background: var(--cx-surface-3) !important;
+  color: var(--cx-text) !important;
+  border-color: var(--cx-border-strong) !important;
+}
+
+.px-btn--ghost:hover:not(:disabled) {
+  background: var(--cx-accent-soft) !important;
+  color: var(--cx-accent) !important;
+}
+
+.px-btn--danger {
+  background: linear-gradient(180deg, #FF6B6B 0%, #D94242 100%) !important;
+  border-color: rgba(255,93,93,0.52) !important;
+  color: #111318 !important;
+  box-shadow: 0 12px 26px rgba(255,93,93,0.18) !important;
+}
+
+.px-btn--success {
+  background: linear-gradient(180deg, #3AE391 0%, #20BF70 100%) !important;
+  border-color: rgba(41,209,125,0.52) !important;
+  color: #08100C !important;
+  box-shadow: 0 12px 26px rgba(41,209,125,0.18) !important;
+}
+
+/* AI panels: replace white/blue/violet legacy treatment with command-desk panel */
+.px-ai {
+  border: 1px solid rgba(199,255,61,0.28) !important;
+  background:
+    radial-gradient(780px 420px at 100% 0%, rgba(199,255,61,0.13), transparent 64%),
+    linear-gradient(135deg, rgba(17,21,27,0.98) 0%, rgba(23,28,36,0.98) 100%) !important;
+  color: var(--cx-text) !important;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.46), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+}
+
+.px-ai::before {
+  background: radial-gradient(circle, rgba(199,255,61,0.16), transparent 70%) !important;
+}
+
+.px-ai__icon,
+.px-user-card__avatar {
+  background: linear-gradient(135deg, var(--cx-accent), var(--cx-accent-hover)) !important;
+  color: var(--cx-accent-ink) !important;
+  box-shadow: 0 12px 28px rgba(199,255,61,0.20) !important;
+}
+
+.px-ai__title,
+.px-ai__notice,
+.px-ai__suggestion,
+.px-user-card__name {
+  color: var(--cx-text) !important;
+}
+
+.px-ai__notice {
+  background: rgba(199,255,61,0.08) !important;
+  border-color: rgba(199,255,61,0.28) !important;
+}
+
+/* Sidebar and nav: remove old light/blue app shell */
+.px-sidebar {
+  background:
+    radial-gradient(800px 400px at 100% 0%, rgba(199,255,61,0.07), transparent 64%),
+    linear-gradient(180deg, #0B0D10 0%, #11151B 100%) !important;
+  border-right-color: var(--cx-border) !important;
+  box-shadow: 10px 0 38px rgba(0,0,0,0.38) !important;
+}
+
+.px-sidebar__brand,
+.px-sidebar__foot {
+  background: rgba(17,21,27,0.92) !important;
+  border-color: var(--cx-border) !important;
+}
+
+.px-nav-item {
+  color: var(--cx-muted) !important;
+}
+
+.px-nav-item:hover {
+  background: rgba(199,255,61,0.08) !important;
+  color: var(--cx-text) !important;
+  border-color: rgba(199,255,61,0.18) !important;
+}
+
+.px-nav-item.is-active {
+  background: linear-gradient(180deg, var(--cx-accent) 0%, var(--cx-accent-hover) 100%) !important;
+  color: var(--cx-accent-ink) !important;
+  border-color: rgba(199,255,61,0.72) !important;
+  box-shadow: 0 12px 26px rgba(199,255,61,0.18) !important;
+}
+
+.px-nav-item.is-active .px-nav-item__icon,
+.px-nav-item.is-active svg {
+  color: var(--cx-accent-ink) !important;
+}
+
+.px-user-card {
+  background: rgba(199,255,61,0.08) !important;
+  border-color: rgba(199,255,61,0.22) !important;
+}
+
+.px-logout:hover {
+  color: #FF5D5D !important;
+  background: rgba(255,93,93,0.12) !important;
+  border-color: rgba(255,93,93,0.28) !important;
+}
+
+/* Cards, rows, forms and hover states */
+.px-card,
+.px-row,
+.px-form-section,
+.px-table-wrap,
+.px-empty,
+.px-loading,
+.px-error,
+.px-action {
+  background: var(--cx-surface) !important;
+  border-color: var(--cx-border) !important;
+  color: var(--cx-text) !important;
+}
+
+.px-card--gradient,
+.px-action {
+  background: linear-gradient(180deg, var(--cx-surface) 0%, var(--cx-surface-2) 100%) !important;
+}
+
+.px-row:hover,
+.px-action:hover,
+.px-card--hover:hover {
+  background: rgba(199,255,61,0.08) !important;
+  border-color: rgba(199,255,61,0.32) !important;
+}
+
+.px-input:focus,
+.px-textarea:focus,
+.px-select:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--cx-accent) !important;
+  box-shadow: 0 0 0 4px rgba(199,255,61,0.16) !important;
+}
+
+.px-loading__spinner {
+  border-color: rgba(168,176,189,0.24) !important;
+  border-top-color: var(--cx-accent) !important;
+}
+
+/* Worker mobile polish */
+.px-mobile-header,
+.px-mobile-bottom,
+nav.fixed.inset-x-0.bottom-0 {
+  background: rgba(11,13,16,0.94) !important;
+  border-color: var(--cx-border) !important;
+  box-shadow: 0 -18px 42px rgba(0,0,0,0.52) !important;
+}
+
+nav.fixed.inset-x-0.bottom-0 a,
+.px-mobile-tab {
+  border-radius: 12px !important;
+}
+
+nav.fixed.inset-x-0.bottom-0 a.bg-\[var\(--cx-accent-soft\)\],
+.px-mobile-tab.is-active {
+  background: rgba(199,255,61,0.14) !important;
+  color: var(--cx-accent) !important;
+  box-shadow: inset 0 0 0 1px rgba(199,255,61,0.24) !important;
+}
+
+/* Kill last obvious old saturated blue/purple utility bleeds */
+.text-blue-500,
+.text-blue-600,
+.text-indigo-500,
+.text-indigo-600,
+.text-violet-500,
+.text-violet-600,
+.text-sky-500,
+.text-sky-600 {
+  color: var(--cx-accent) !important;
+}
+
+.bg-blue-50,
+.bg-blue-100,
+.bg-indigo-50,
+.bg-indigo-100,
+.bg-violet-50,
+.bg-violet-100,
+.bg-sky-50,
+.bg-sky-100 {
+  background-color: rgba(199,255,61,0.10) !important;
+}
+
+.border-blue-200,
+.border-blue-300,
+.border-indigo-200,
+.border-violet-200,
+.border-sky-200 {
+  border-color: rgba(199,255,61,0.28) !important;
+}
