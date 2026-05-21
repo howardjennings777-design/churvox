@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import ChurvoxLogo from "../ChurvoxLogo";
+import { ChurvoxLogo } from "../ChurvoxLogo";
 
 export default function MarketingFooter() {
   const year = new Date().getFullYear();

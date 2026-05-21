@@ -37,6 +37,31 @@ Churvox is an all-in-one field-service SaaS for NZ/AU tradies covering jobs, cli
 - Testing agent v3 fork iteration 27: **100% (25/25 tests passed, 0 action items, 0 regressions)**
 - Credentials verified: `/app/memory/test_credentials.md`
 
+## AI Operator Front Desk Overhaul (Feb 2026, in progress)
+
+### Pass 1 — Theme & design system (DONE)
+- New cream/charcoal/lime palette locked: bg `#F7F3EA`, surface `#FFFFFF`, text `#0E0E0E`, lime accent `#C8FF4D`
+- `/app/frontend/src/styles/churvox-front-desk-theme.css` — core `--cx-*` tokens, loaded last to override legacy `--px-*`
+- `loginControlRoomTheme.css` updated to cream/lime
+- 8 new `Cx` primitives in `/app/frontend/src/components/cx/`: CxButton, CxCard, CxBadge, CxModal, CxPageHeader, CxEmptyState, CxErrorState, CxLoading
+
+### Pass 2 — Public marketing site (DONE — Feb 21 2026)
+- Routes wired in `App.js`: `/` → HomePage, `/pricing` → PricingPage, `/features` → FeaturesPage
+- `/` no longer force-redirects unauthed users to `/login`; auth-aware MarketingNav shows "Go to dashboard" for signed-in users
+- Hero uses `MockFrontDesk.jsx` (no external stock photos, per user requirement)
+- Pages: Home (hero + workflow + trades + features + approval-first + pricing + CTA), Pricing (4 tiers + add-ons), Features (deep-dive sections)
+- Build passes; verified via screenshot tool on `/`, `/pricing`, `/features`
+
+### Pass 3 — AI Operator Front Desk dashboard (P0, NEXT)
+- Overhaul Owner Dashboard into 4 zones: Ready to approve, Needs fixing, Field & crew, Money desk
+- Implement in-page Work Slip via `CxModal`
+- Optional new read-only endpoint `/api/front-desk/snapshot` to aggregate data
+
+### Pass 4 — App-wide audit (P1)
+- Audit Jobs, Clients, Quotes, Invoices, Team, Dispatch, Proof pages
+- Replace dead buttons / "Coming soon" with real actions
+- Migrate legacy `bg-blue-*`, `bg-[#ede4ff]` styles to `Cx` primitives
+
 ## Backlog / Future Enhancements (P2)
 - Strip remaining `cx-*` bridge classes from JSX in favor of direct premium components (reduce CSS bloat)
 - Add light/dark theme toggle (currently light-only)

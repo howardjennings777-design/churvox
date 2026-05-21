@@ -56,6 +56,9 @@ import QAAuditorPage from "./pages/admin/QAAuditorPage";
 import AIControlRoomPage from "./pages/AIControlRoomPage";
 import AIOperatorApprovalsPage from "./pages/AIOperatorApprovalsPage";
 import AIOperatorSettingsPage from "./pages/AIOperatorSettingsPage";
+import HomePage from "./pages/marketing/HomePage";
+import PricingPage from "./pages/marketing/PricingPage";
+import FeaturesPage from "./pages/marketing/FeaturesPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const Spinner = () => (
@@ -314,8 +317,12 @@ function App() {
           <Route path="/account-deletion" element={<AccountDeletionPage />} />
           <Route path="/platform-unlock" element={<PlatformUnlock />} />
 
+          {/* Public marketing site */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/features" element={<FeaturesPage />} />
+
           {/* Catch-all */}
-          <Route path="/" element={<RoleRedirect />} />
           <Route path="*" element={<RoleRedirect />} />
         </Routes>
         </ErrorBoundary>
