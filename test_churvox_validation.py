@@ -10,7 +10,7 @@ from playwright.async_api import async_playwright
 # Test credentials
 EMAIL = "test_owner_20260506_091108@example.com"
 PASSWORD = "TestOwner123!"
-BASE_URL = "https://smart-operator-3.preview.emergentagent.com"
+BASE_URL = "https://operator-queue.preview.emergentagent.com"
 
 async def run_tests():
     async with async_playwright() as p:
