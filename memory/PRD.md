@@ -89,6 +89,29 @@ Churvox is an all-in-one field-service SaaS for NZ/AU tradies covering jobs, cli
 - `public/index.html` updated: SVG favicon first, `theme-color` and pre-React body background set to cream (`#F7F3EA`) to kill the white flash on PWA cold-start.
 - `public/manifest.json` updated: cream theme/background colour, new SVG icon entry, refreshed name/description ("AI Operator Front Desk").
 
+## Launch state — LOCKED 🟢 (Feb 21 2026)
+
+Churvox is **launch-ready**. No further building until the user resumes.
+
+### What's live and verified
+- Cream/charcoal/lime palette (Pass 1)
+- Public marketing site at `/`, `/pricing`, `/features` (Pass 2)
+- AI Operator Front Desk dashboard with 4 zones + in-page Work Slip modal (Pass 3)
+- App-wide legacy-overlay re-skin, dead-button cleanup (Pass 4)
+- Launch verification + `QuoteFormPage` `isEdit` → `isEditing` fix (Pass 5)
+- New inline-SVG wordmark + cream/charcoal/lime favicon + PWA icon set (Logo cleanup)
+- Final post-deploy smoke check: all 12 listed routes pass, 0 console errors, 0 blue/navy/purple bleed.
+
+### Post-launch backlog (locked — do not start without user direction)
+- PWA install nudge
+- Snooze 24h on Work Slip items
+- Inline Work Slip actions (e.g. inline "Assign worker" dropdown)
+- OG / social share image
+- Email-template logo
+- Light/dark theme toggle
+- Backend folder restructure (`/app/backend/routes/`, `/models/`)
+- Skeleton loaders on list pages
+
 ## Backlog / Future Enhancements (P2)
 - Strip remaining `cx-*` bridge classes from JSX in favor of direct premium components (reduce CSS bloat)
 - Add light/dark theme toggle (currently light-only)
