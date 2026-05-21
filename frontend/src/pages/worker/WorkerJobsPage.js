@@ -73,37 +73,37 @@ export default function WorkerJobsPage() {
         <PremiumCard>
           <div className="px-card__body flex items-center justify-between gap-3 py-3">
             <div>
-              <p className="text-xs font-semibold text-[#2563eb] uppercase tracking-wide">Ready for dispatch</p>
-              <p className="text-xs text-[#5b6c87]">Last synced: {lastSynced ? lastSynced.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--"}</p>
+              <p className="text-xs font-semibold text-[var(--cx-accent)] uppercase tracking-wide">Ready for dispatch</p>
+              <p className="text-xs text-[var(--cx-muted)]">Last synced: {lastSynced ? lastSynced.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--"}</p>
             </div>
             <PremiumButton onClick={fetchJobs} disabled={loading} variant="secondary" iconLeft={<RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />}>Refresh jobs</PremiumButton>
           </div>
         </PremiumCard>
 
         <div className="grid grid-cols-2 gap-2">
-          <PremiumCard><div className="px-card__body py-3"><p className="text-xs text-[#5b6c87]">Assigned jobs</p><p className="text-xl font-bold text-[#0d1b34]">{stats.total}</p></div></PremiumCard>
-          <PremiumCard><div className="px-card__body py-3"><p className="text-xs text-[#5b6c87]">Due today</p><p className="text-xl font-bold text-[#0d1b34]">{stats.dueToday}</p></div></PremiumCard>
-          <PremiumCard><div className="px-card__body py-3"><p className="text-xs text-[#5b6c87]">In progress</p><p className="text-xl font-bold text-[#0d1b34]">{stats.inProgress}</p></div></PremiumCard>
-          <PremiumCard><div className="px-card__body py-3"><p className="text-xs text-[#5b6c87]">Completed</p><p className="text-xl font-bold text-[#0d1b34]">{stats.completed}</p></div></PremiumCard>
+          <PremiumCard><div className="px-card__body py-3"><p className="text-xs text-[var(--cx-muted)]">Assigned jobs</p><p className="text-xl font-bold text-[var(--cx-text)]">{stats.total}</p></div></PremiumCard>
+          <PremiumCard><div className="px-card__body py-3"><p className="text-xs text-[var(--cx-muted)]">Due today</p><p className="text-xl font-bold text-[var(--cx-text)]">{stats.dueToday}</p></div></PremiumCard>
+          <PremiumCard><div className="px-card__body py-3"><p className="text-xs text-[var(--cx-muted)]">In progress</p><p className="text-xl font-bold text-[var(--cx-text)]">{stats.inProgress}</p></div></PremiumCard>
+          <PremiumCard><div className="px-card__body py-3"><p className="text-xs text-[var(--cx-muted)]">Completed</p><p className="text-xl font-bold text-[var(--cx-text)]">{stats.completed}</p></div></PremiumCard>
         </div>
 
         {nextJob && !loading ? (
           <PremiumCard>
             <div className="px-card__body space-y-2">
-              <p className="text-xs font-semibold text-[#2563eb] uppercase tracking-wide">Next job</p>
+              <p className="text-xs font-semibold text-[var(--cx-accent)] uppercase tracking-wide">Next job</p>
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="font-bold text-[#0d1b34] truncate">{nextJob.title || "Untitled Job"}</p>
+                  <p className="font-bold text-[var(--cx-text)] truncate">{nextJob.title || "Untitled Job"}</p>
                   <PremiumStatusBadge status={nextJob.status} />
                 </div>
-                <Link to={`/worker/jobs/${nextJob.id || nextJob._id}`}><ChevronRight className="h-5 w-5 text-[#94a3b8]" /></Link>
+                <Link to={`/worker/jobs/${nextJob.id || nextJob._id}`}><ChevronRight className="h-5 w-5 text-[var(--cx-muted-2)]" /></Link>
               </div>
-              {nextJob.address ? <p className="text-xs text-[#5b6c87] flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{nextJob.address}</p> : null}
+              {nextJob.address ? <p className="text-xs text-[var(--cx-muted)] flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{nextJob.address}</p> : null}
             </div>
           </PremiumCard>
         ) : null}
 
-        {loading ? <div className="px-loading"><div className="px-loading__spinner" /><p className="text-[13px] text-[#5b6c87]">Loading today&apos;s work…</p></div> : null}
+        {loading ? <div className="px-loading"><div className="px-loading__spinner" /><p className="text-[13px] text-[var(--cx-muted)]">Loading today&apos;s work…</p></div> : null}
         {error ? <PremiumCard><div className="px-card__body text-sm text-red-600">{error}</div></PremiumCard> : null}
 
         {!loading && !error && jobs.length === 0 ? (
@@ -126,13 +126,13 @@ export default function WorkerJobsPage() {
               <div className="px-card__body space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="font-semibold text-[#0d1b34]">{job.title || "Untitled Job"}</p>
+                    <p className="font-semibold text-[var(--cx-text)]">{job.title || "Untitled Job"}</p>
                     <PremiumStatusBadge status={status} />
                   </div>
-                  <Link to={`/worker/jobs/${id}`}><ChevronRight className="h-5 w-5 text-[#94a3b8]" /></Link>
+                  <Link to={`/worker/jobs/${id}`}><ChevronRight className="h-5 w-5 text-[var(--cx-muted-2)]" /></Link>
                 </div>
-                {job.address ? <p className="text-xs text-[#5b6c87] flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{job.address}</p> : null}
-                {job.scheduled_date ? <p className="text-xs text-[#5b6c87] flex items-center gap-1"><CalendarClock className="h-3.5 w-3.5" />{String(job.scheduled_date).slice(0, 10)} {job.scheduled_time ? `• ${job.scheduled_time}` : ""}</p> : null}
+                {job.address ? <p className="text-xs text-[var(--cx-muted)] flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{job.address}</p> : null}
+                {job.scheduled_date ? <p className="text-xs text-[var(--cx-muted)] flex items-center gap-1"><CalendarClock className="h-3.5 w-3.5" />{String(job.scheduled_date).slice(0, 10)} {job.scheduled_time ? `• ${job.scheduled_time}` : ""}</p> : null}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <Link to={`/worker/jobs/${id}`}><PremiumButton className="w-full" variant="secondary" iconLeft={<Briefcase className="h-4 w-4" />}>View job</PremiumButton></Link>
                   {canStart(status) ? <PremiumButton className="w-full" onClick={() => handleQuickStart(id)} disabled={startingId === id} iconLeft={<Play className="h-4 w-4" />}>{startingId === id ? "Starting..." : "Start job"}</PremiumButton> : <PremiumButton className="w-full" variant="secondary" disabled iconLeft={status === "completed" ? <CheckCircle2 className="h-4 w-4" /> : <Timer className="h-4 w-4" />}>{status === "completed" ? "Completed" : "In progress"}</PremiumButton>}

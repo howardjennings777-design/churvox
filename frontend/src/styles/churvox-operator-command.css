@@ -332,3 +332,68 @@ aside, nav[role="navigation"] {
   background: var(--cx-bg);
   color: var(--cx-text);
 }
+
+
+/* ==========================================================================
+   Override cream/light leak from churvox-front-desk-theme.css
+   That file ships hard !important cream gradients on .px-hero and white
+   gradients on .px-card variants. Re-skin them dark to match the Operator
+   Command palette.
+   ========================================================================== */
+.px-hero {
+  background:
+    radial-gradient(900px 480px at 100% 0%, rgba(199,255,61,0.10), transparent 65%),
+    linear-gradient(135deg, var(--cx-surface) 0%, var(--cx-surface-2) 100%) !important;
+  border: 1px solid var(--cx-border) !important;
+  color: var(--cx-text) !important;
+  box-shadow: var(--cx-shadow) !important;
+}
+.px-hero h1, .px-hero h2, .px-hero h3, .px-hero__title {
+  color: var(--cx-text) !important;
+}
+.px-hero p, .px-hero__sub {
+  color: var(--cx-muted) !important;
+}
+.px-hero::before, .px-hero::after {
+  background: radial-gradient(circle, rgba(199,255,61,0.22), transparent 70%) !important;
+}
+
+.px-card--glass {
+  background: rgba(17, 21, 27, 0.78) !important;
+  border-color: var(--cx-border) !important;
+  color: var(--cx-text) !important;
+  backdrop-filter: blur(10px);
+}
+.px-card--gradient {
+  background: linear-gradient(180deg, var(--cx-surface) 0%, var(--cx-surface-2) 100%) !important;
+  border-color: var(--cx-border) !important;
+  color: var(--cx-text) !important;
+}
+
+
+/* ==========================================================================
+   Override cream sidebar/mobile chrome from churvox-front-desk-theme.css
+   ========================================================================== */
+.px-sidebar,
+.px-mobile-header,
+.px-mobile-bottom {
+  background: rgba(11, 13, 16, 0.92) !important;
+  border-color: var(--cx-border) !important;
+  color: var(--cx-text) !important;
+  backdrop-filter: saturate(140%) blur(10px);
+}
+
+.px-nav-item,
+.px-mobile-tab {
+  color: var(--cx-muted) !important;
+}
+.px-nav-item.is-active,
+.px-mobile-tab.is-active {
+  background: var(--cx-accent) !important;
+  color: var(--cx-accent-ink) !important;
+  box-shadow: 0 4px 10px var(--cx-accent-glow) !important;
+}
+.px-nav-item:hover:not(.is-active) {
+  background: var(--cx-surface-2) !important;
+  color: var(--cx-text) !important;
+}
