@@ -3631,6 +3631,9 @@ def health_login():
 
 @api_router.get("/invoices")
 async def get_invoices(current_user: dict = Depends(get_current_user)):
+    # Workers must not see invoices (pricing/financial data).
+    if str(current_user.get("role") or "").lower() == "worker":
+        return []
     try:
         business_id = _resolve_business_id(current_user)
         owner_id = _resolve_owner_id(current_user)
@@ -4053,6 +4056,9 @@ async def public_invoice_view(public_token: str):
 
 @api_router.get("/quotes")
 async def get_quotes(current_user: dict = Depends(get_current_user)):
+    # Workers must not see quotes (pricing/financial data).
+    if str(current_user.get("role") or "").lower() == "worker":
+        return []
     try:
         business_id = str(
             current_user.get("business_id")
@@ -4882,6 +4888,10 @@ async def get_client_jobs(client_id: str, current_user: dict = Depends(get_curre
 
 @api_router.get("/clients")
 async def get_clients(current_user: dict = Depends(get_current_user)):
+    # Workers must not see the client list. Client name still appears on each
+    # job via the per-job customer_name/client_name fields.
+    if str(current_user.get("role") or "").lower() == "worker":
+        return []
     try:
         business_id = str(
             current_user.get("business_id")
@@ -5717,6 +5727,7 @@ async def get_job(job_id: str, current_user: dict = Depends(get_current_user)):
                     pass
             return str(value)
 
+        _strip_for_worker = (role == "worker")
         response = {
             "id": str(job.get("_id") or job.get("id") or ""),
             "title": job.get("title") or "Untitled Job",
@@ -5731,10 +5742,10 @@ async def get_job(job_id: str, current_user: dict = Depends(get_current_user)):
             "scheduled_date": safe_iso(job.get("scheduled_date")),
             "scheduled_time": job.get("scheduled_time") or "",
             "estimated_duration": job.get("estimated_duration") or 60,
-            "price": job.get("price") or 0,
-            "pricing_type": job.get("pricing_type") or "fixed",
-            "hourly_rate": job.get("hourly_rate") or 0,
-            "extras": job.get("extras") or [],
+            "price": 0 if _strip_for_worker else (job.get("price") or 0),
+            "pricing_type": "" if _strip_for_worker else (job.get("pricing_type") or "fixed"),
+            "hourly_rate": 0 if _strip_for_worker else (job.get("hourly_rate") or 0),
+            "extras": [] if _strip_for_worker else (job.get("extras") or []),
             "notes": job.get("notes") or "",
             "worker_notes": job.get("worker_notes") or "",
             "assigned_worker_id": job.get("assigned_worker_id"),
@@ -5744,8 +5755,8 @@ async def get_job(job_id: str, current_user: dict = Depends(get_current_user)):
             "started_at": safe_iso(job.get("started_at") or job.get("in_progress_at")),
             "completed_at": safe_iso(job.get("completed_at")),
             "time_spent_minutes": job.get("time_spent_minutes") or job.get("total_minutes") or 0,
-            "quote_id": str(job.get("quote_id") or ""),
-            "invoice_id": str(job.get("invoice_id") or ""),
+            "quote_id": "" if _strip_for_worker else str(job.get("quote_id") or ""),
+            "invoice_id": "" if _strip_for_worker else str(job.get("invoice_id") or ""),
             "updated_at": safe_iso(job.get("updated_at")),
             "is_recurring": bool(job.get("is_recurring") or False),
             "recurring_frequency": job.get("recurring_frequency"),
@@ -5820,6 +5831,8 @@ async def get_jobs(current_user: dict = Depends(get_current_user)):
                 return []
 
         jobs = []
+        # Workers must not see pricing/financial fields on their jobs.
+        _strip_for_worker = (current_role == "worker")
         async for job in db.jobs.find(query).sort("created_at", -1):
             jobs.append({
                 "id": str(job.get("_id") or job.get("id") or ""),
@@ -5831,20 +5844,20 @@ async def get_jobs(current_user: dict = Depends(get_current_user)):
                 "scheduled_date": safe_iso(job.get("scheduled_date")),
                 "scheduled_time": job.get("scheduled_time") or "",
                 "estimated_duration": job.get("estimated_duration") or 60,
-                "price": job.get("price") or 0,
-                "pricing_type": job.get("pricing_type") or "fixed",
-                "hourly_rate": job.get("hourly_rate") or 0,
-                "extras": job.get("extras") or [],
+                "price": 0 if _strip_for_worker else (job.get("price") or 0),
+                "pricing_type": "" if _strip_for_worker else (job.get("pricing_type") or "fixed"),
+                "hourly_rate": 0 if _strip_for_worker else (job.get("hourly_rate") or 0),
+                "extras": [] if _strip_for_worker else (job.get("extras") or []),
                 "notes": job.get("notes") or "",
                 "assigned_worker_id": job.get("assigned_worker_id"),
                 "status": job.get("status") or "assigned",
-                "invoice_id": str(job.get("invoice_id") or ""),
-                "draft_invoice_id": str(job.get("draft_invoice_id") or ""),
-                "invoice_created": bool(job.get("invoice_created") or False),
-                "invoiced": bool(job.get("invoiced") or False),
-                "invoice_status": job.get("invoice_status") or "",
-                "ai_invoice_description": job.get("ai_invoice_description") or "",
-                "invoice_description_draft": job.get("invoice_description_draft") or "",
+                "invoice_id": "" if _strip_for_worker else str(job.get("invoice_id") or ""),
+                "draft_invoice_id": "" if _strip_for_worker else str(job.get("draft_invoice_id") or ""),
+                "invoice_created": False if _strip_for_worker else bool(job.get("invoice_created") or False),
+                "invoiced": False if _strip_for_worker else bool(job.get("invoiced") or False),
+                "invoice_status": "" if _strip_for_worker else (job.get("invoice_status") or ""),
+                "ai_invoice_description": "" if _strip_for_worker else (job.get("ai_invoice_description") or ""),
+                "invoice_description_draft": "" if _strip_for_worker else (job.get("invoice_description_draft") or ""),
                 "is_recurring": bool(job.get("is_recurring") or False),
                 "recurring_frequency": job.get("recurring_frequency"),
                 "custom_repeat_days": job.get("custom_repeat_days"),

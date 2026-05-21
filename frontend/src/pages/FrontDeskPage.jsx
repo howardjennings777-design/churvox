@@ -7,6 +7,7 @@ import { CxButton, CxBadge } from "../components/cx";
 import { ChurvoxLogo } from "../components/ChurvoxLogo";
 import ZoneCard from "../components/frontdesk/ZoneCard";
 import WorkSlipModal from "../components/frontdesk/WorkSlipModal";
+import OnboardingChecklist from "../components/frontdesk/OnboardingChecklist";
 
 const safeArray = (v) =>
   Array.isArray(v)
@@ -643,13 +644,18 @@ export default function FrontDeskPage() {
           maxWidth: 1320,
           margin: "0 auto",
           padding: "0 clamp(16px, 4vw, 28px) 28px",
-          display: "grid",
-          gridTemplateColumns: "1fr",
-          gap: 16,
         }}
-        className="cx-fd-zones"
-        data-testid="front-desk-zones"
       >
+        <OnboardingChecklist />
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr",
+            gap: 16,
+          }}
+          className="cx-fd-zones"
+          data-testid="front-desk-zones"
+        >
         <ZoneCard
           zone="approve"
           title="Ready to approve"
@@ -690,6 +696,7 @@ export default function FrontDeskPage() {
           emptyText="Money desk clear"
           testId="zone-money"
         />
+        </div>
       </section>
 
       {/* === SECONDARY NAV (quick links) === */}

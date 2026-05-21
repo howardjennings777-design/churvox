@@ -112,6 +112,22 @@ Churvox is **launch-ready**. No further building until the user resumes.
 - Backend folder restructure (`/app/backend/routes/`, `/models/`)
 - Skeleton loaders on list pages
 
+### Pass 6 — Onboarding + worker app audit (DONE — Feb 21 2026)
+- **NEW** `frontend/src/components/frontdesk/OnboardingChecklist.jsx` — dismissible first-run checklist on the Front Desk. 5 real-state steps (business details, first client, first job, first worker, first quote/invoice) with live progress bar. Uses real counts from `/onboarding/status`, `/clients`, `/jobs`, `/team/workers`, `/quotes`, `/invoices`. Auto-hides when all done. Persisted dismissal via `localStorage`. Never blocks the app.
+- **Wired** the checklist above the 4-zone grid in `FrontDeskPage.jsx`.
+- **BACKEND — 4 worker privilege fixes** (real launch-blocker leaks found during testing):
+  - `GET /api/invoices` → returns `[]` for workers (was leaking owner invoices).
+  - `GET /api/clients` → returns `[]` for workers (was leaking the entire client list).
+  - `GET /api/quotes` → returns `[]` for workers (was reachable).
+  - `GET /api/jobs` and `GET /api/jobs/{job_id}` → strip `price`, `hourly_rate`, `pricing_type`, `extras`, `invoice_id`, `invoice_status`, `invoice_created`, `invoiced`, `ai_invoice_description`, `invoice_description_draft`, `quote_id`, `draft_invoice_id` from the payload when the requester is a worker.
+- **Worker app verified end-to-end** on a 390 px mobile viewport with the new test account `mike.test@example.com` / `MikePass123!`:
+  - login → auto-redirect to `/worker/jobs`
+  - `/dashboard`, `/invoices`, `/payroll`, `/team`, `/clients`, `/quotes` all redirect back to `/worker/jobs`
+  - 4 KPI cards + per-job View/Directions/Completed buttons
+  - Job detail: Acknowledge / Start / Pause / Resume / Complete all present and wired
+  - Photo upload (camera capture), worker notes save, AI Job Helper, Contact office panel — all functional
+  - 0 console errors on the full worker flow
+
 ## Backlog / Future Enhancements (P2)
 - Strip remaining `cx-*` bridge classes from JSX in favor of direct premium components (reduce CSS bloat)
 - Add light/dark theme toggle (currently light-only)
