@@ -183,10 +183,10 @@ function AutomationPage() {
         />
 
         <div className="px-grid px-grid--4">
-          <PremiumStatCard label="Active rules" value={activeRules} icon={<Power className="h-4 w-4" />} tone="teal" onClick={() => {}} />
-          <PremiumStatCard label="Disabled" value={disabledRules} icon={<Power className="h-4 w-4" />} tone="slate" onClick={() => {}} />
-          <PremiumStatCard label="Successful runs" value={successRuns} icon={<ShieldCheck className="h-4 w-4" />} tone="sky" onClick={() => {}} />
-          <PremiumStatCard label="Failed runs" value={failedRuns} icon={<AlertTriangle className="h-4 w-4" />} tone={failedRuns ? "red" : "blue"} onClick={() => {}} />
+          <PremiumStatCard label="Active rules" value={activeRules} icon={<Power className="h-4 w-4" />} tone="teal" />
+          <PremiumStatCard label="Disabled" value={disabledRules} icon={<Power className="h-4 w-4" />} tone="slate" />
+          <PremiumStatCard label="Successful runs" value={successRuns} icon={<ShieldCheck className="h-4 w-4" />} tone="sky" />
+          <PremiumStatCard label="Failed runs" value={failedRuns} icon={<AlertTriangle className="h-4 w-4" />} tone={failedRuns ? "red" : "blue"} />
         </div>
 
         {error ? <div className="rounded-2xl border border-[#fecaca] bg-[#fff5f5] p-3 text-[13.5px] font-medium text-[#b91c1c]">{error}</div> : null}

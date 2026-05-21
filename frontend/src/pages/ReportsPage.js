@@ -39,17 +39,17 @@ export default function ReportsPage() {
         />
 
         <div className="px-grid px-grid--4">
-          <PremiumStatCard label="Revenue" value={formatCurrency(summary?.revenue_this_month)} icon={<TrendingUp className="h-4 w-4" />} tone="teal" onClick={() => {}} />
-          <PremiumStatCard label="Outstanding" value={formatCurrency(summary?.outstanding_invoices)} icon={<Receipt className="h-4 w-4" />} tone="amber" onClick={() => {}} />
-          <PremiumStatCard label="Overdue invoices" value={safeNumber(summary?.overdue_invoices, 0)} icon={<AlertTriangle className="h-4 w-4" />} tone="red" onClick={() => {}} />
-          <PremiumStatCard label="Paid invoices" value={safeNumber(summary?.paid_invoices, 0)} icon={<Receipt className="h-4 w-4" />} tone="teal" onClick={() => {}} />
-          <PremiumStatCard label="Completed jobs" value={safeNumber(summary?.completed_jobs, 0)} icon={<Briefcase className="h-4 w-4" />} tone="sky" onClick={() => {}} />
-          <PremiumStatCard label="Active jobs" value={safeNumber(summary?.active_jobs, 0)} icon={<Briefcase className="h-4 w-4" />} onClick={() => {}} />
-          <PremiumStatCard label="Worker hours" value={safeNumber(summary?.worker_hours, 0)} icon={<Clock3 className="h-4 w-4" />} tone="violet" onClick={() => {}} />
-          <PremiumStatCard label="Quote win rate" value={`${Math.round(safeNumber(summary?.quote_win_rate, 0) * 100)}%`} icon={<FileText className="h-4 w-4" />} tone="violet" onClick={() => {}} />
-          <PremiumStatCard label="Recurring jobs due" value={safeNumber(summary?.recurring_jobs_due, 0)} icon={<Calendar className="h-4 w-4" />} onClick={() => {}} />
-          <PremiumStatCard label="Payroll hours" value={safeNumber(summary?.payroll_hours_summary, 0)} icon={<Users className="h-4 w-4" />} onClick={() => {}} />
-          <PremiumStatCard label="MYOB sync issues" value={safeNumber(summary?.myob_sync_issues, 0)} icon={<AlertTriangle className="h-4 w-4" />} tone={safeNumber(summary?.myob_sync_issues, 0) ? "red" : "blue"} onClick={() => {}} />
+          <PremiumStatCard label="Revenue" value={formatCurrency(summary?.revenue_this_month)} icon={<TrendingUp className="h-4 w-4" />} tone="teal" />
+          <PremiumStatCard label="Outstanding" value={formatCurrency(summary?.outstanding_invoices)} icon={<Receipt className="h-4 w-4" />} tone="amber" />
+          <PremiumStatCard label="Overdue invoices" value={safeNumber(summary?.overdue_invoices, 0)} icon={<AlertTriangle className="h-4 w-4" />} tone="red" />
+          <PremiumStatCard label="Paid invoices" value={safeNumber(summary?.paid_invoices, 0)} icon={<Receipt className="h-4 w-4" />} tone="teal" />
+          <PremiumStatCard label="Completed jobs" value={safeNumber(summary?.completed_jobs, 0)} icon={<Briefcase className="h-4 w-4" />} tone="sky" />
+          <PremiumStatCard label="Active jobs" value={safeNumber(summary?.active_jobs, 0)} icon={<Briefcase className="h-4 w-4" />} />
+          <PremiumStatCard label="Worker hours" value={safeNumber(summary?.worker_hours, 0)} icon={<Clock3 className="h-4 w-4" />} tone="violet" />
+          <PremiumStatCard label="Quote win rate" value={`${Math.round(safeNumber(summary?.quote_win_rate, 0) * 100)}%`} icon={<FileText className="h-4 w-4" />} tone="violet" />
+          <PremiumStatCard label="Recurring jobs due" value={safeNumber(summary?.recurring_jobs_due, 0)} icon={<Calendar className="h-4 w-4" />} />
+          <PremiumStatCard label="Payroll hours" value={safeNumber(summary?.payroll_hours_summary, 0)} icon={<Users className="h-4 w-4" />} />
+          <PremiumStatCard label="MYOB sync issues" value={safeNumber(summary?.myob_sync_issues, 0)} icon={<AlertTriangle className="h-4 w-4" />} tone={safeNumber(summary?.myob_sync_issues, 0) ? "red" : "blue"} />
           {(accounting?.invoice_mode === "myob_sync" || accounting?.invoice_mode === "myob_external") && (
             <div className="px-stat" style={{ alignItems: 'flex-start' }}>
               <span className="px-stat__label">Accounting source</span>

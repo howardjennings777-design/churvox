@@ -1,0 +1,116 @@
+/* ==========================================================================
+   CHURVOX — Pass 4 legacy palette overlay
+   Re-skins inline hex classes (e.g. `bg-[#0d1b34]`, `text-[#155EEF]`) used by
+   legacy pages (Jobs, Clients, Quotes, Invoices, Team, Calendar, Proof, etc.)
+   to the locked cream / charcoal / lime palette without touching each file.
+   Loaded LAST so it wins over Tailwind's compiled hex classes.
+   ========================================================================== */
+
+/* === DEEP NAVY → CHARCOAL (text & deep buttons) === */
+.text-\[\#0d1b34\],
+.text-\[\#172033\],
+.text-\[\#1a2c4d\],
+.text-\[\#1f2329\],
+.text-\[\#2f343b\] {
+  color: var(--cx-text) !important;
+}
+
+.bg-\[\#0d1b34\] {
+  background-color: var(--cx-text) !important;
+  color: #fff !important;
+}
+
+/* === SAAS BLUE → LIME ACCENT (links, primary buttons, accents) === */
+.text-\[\#155EEF\],
+.text-\[\#1d4ed8\],
+.text-\[\#2563eb\],
+.text-\[\#7c3aed\] {
+  /* keep good contrast on cream */
+  color: var(--cx-text) !important;
+}
+
+.bg-\[\#1d4ed8\],
+.bg-\[\#2563eb\],
+.bg-\[\#155EEF\] {
+  background-color: var(--cx-accent) !important;
+  color: var(--cx-accent-ink) !important;
+}
+
+.border-\[\#1e40af\],
+.border-\[\#2563eb\] {
+  border-color: var(--cx-accent-hover) !important;
+}
+
+.ring-\[\#2563eb\] {
+  --tw-ring-color: var(--cx-accent-hover) !important;
+}
+
+/* === PALE BLUE BACKGROUNDS → WARM CREAM === */
+.bg-\[\#eef4ff\],
+.bg-\[\#eff4ff\],
+.bg-\[\#f0f6ff\],
+.bg-\[\#f6faff\],
+.bg-\[\#f7faff\],
+.bg-\[\#ede4ff\] {
+  background-color: var(--cx-bg-soft) !important;
+}
+
+/* === LIGHT BLUE BORDERS → CREAM BORDERS === */
+.border-\[\#c7d7ef\],
+.border-\[\#c7dcfb\],
+.border-\[\#cbd5e1\],
+.border-\[\#d8e3f3\],
+.border-\[\#dbe7ff\],
+.border-\[\#e6eef9\] {
+  border-color: var(--cx-border) !important;
+}
+
+/* === MUTED BLUE-GREY TEXT → CHURVOX MUTED === */
+.text-\[\#5b6c87\],
+.text-\[\#667085\],
+.text-\[\#7d8ba3\],
+.text-\[\#8da0bf\],
+.text-\[\#94a3b8\],
+.text-\[\#98a2b3\] {
+  color: var(--cx-muted) !important;
+}
+
+/* === Tailwind named blue / indigo / violet utilities ===
+   Catch any stray `bg-blue-*`, `text-blue-*`, `border-blue-*` etc that may
+   have slipped through. */
+[class*="bg-blue-"],
+[class*="bg-indigo-"],
+[class*="bg-violet-"],
+[class*="bg-sky-"] {
+  /* Re-skin only the most common slop tones (50–200 = pale, 500–700 = bold) */
+}
+.bg-blue-50, .bg-indigo-50, .bg-sky-50, .bg-violet-50,
+.bg-blue-100, .bg-indigo-100, .bg-sky-100, .bg-violet-100 {
+  background-color: var(--cx-bg-soft) !important;
+}
+.bg-blue-500, .bg-blue-600, .bg-blue-700,
+.bg-indigo-500, .bg-indigo-600, .bg-indigo-700,
+.bg-sky-500, .bg-sky-600, .bg-sky-700,
+.bg-violet-500, .bg-violet-600, .bg-violet-700 {
+  background-color: var(--cx-accent) !important;
+  color: var(--cx-accent-ink) !important;
+}
+.text-blue-600, .text-blue-700, .text-indigo-600, .text-indigo-700,
+.text-violet-600, .text-violet-700, .text-sky-600, .text-sky-700 {
+  color: var(--cx-text) !important;
+}
+.border-blue-200, .border-blue-300, .border-indigo-200, .border-indigo-300,
+.border-sky-200, .border-sky-300, .border-violet-200, .border-violet-300 {
+  border-color: var(--cx-border) !important;
+}
+
+/* === Slate page backgrounds (legacy spinner etc) → cream === */
+.bg-slate-50,
+.bg-slate-100 {
+  background-color: var(--cx-bg) !important;
+}
+
+/* Spinners that used `border-t-2 border-blue-600` */
+.border-t-2.border-blue-600 {
+  border-top-color: var(--cx-accent-hover) !important;
+}

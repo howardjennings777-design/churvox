@@ -64,10 +64,12 @@ Churvox is an all-in-one field-service SaaS for NZ/AU tradies covering jobs, cli
 - Files: `pages/FrontDeskPage.jsx`, `components/frontdesk/ZoneCard.jsx`, `components/frontdesk/WorkSlipModal.jsx`, `pages/DashboardPage.js` (rewired)
 - Verified live: zones render real data, modal opens in-page, Reject dropped pending count 3→2 in real-time
 
-### Pass 4 — App-wide audit (P1, NEXT)
-- Audit Jobs, Clients, Quotes, Invoices, Team, Dispatch, Proof pages
-- Replace dead buttons / "Coming soon" with real actions
-- Migrate legacy `bg-blue-*`, `bg-[#ede4ff]` styles to `Cx` primitives
+### Pass 4 — App-wide audit (DONE — Feb 21 2026)
+- **Legacy theme overlay** `frontend/src/styles/churvox-legacy-overlay.css` — single CSS file that re-skins inline Tailwind hex classes (`bg-[#0d1b34]`, `text-[#155EEF]`, `bg-[#f6faff]`, etc.) and named utilities (`bg-blue-*`, `bg-indigo-*`, `bg-violet-*`, `bg-sky-*`, `bg-slate-50/100`) to the locked cream/charcoal/lime palette without editing 15 priority pages. Loaded last in `index.js`.
+- **Dead-button cleanup**: stripped 15× `onClick={() => {}}` stubs from `ReportsPage` and `AutomationPage` stat cards. Updated `PremiumStatCard.js` to render as `<div>` when no `onClick` is passed (so cards don't pretend to be interactive). Verified no remaining "Coming soon" / `() => {}` / noop handlers in Jobs / Clients / Quotes / Invoices / Team / Calendar / Proof pages.
+- **Existing popup pattern preserved**: Job detail and Client detail already open as in-page modals (not full page navigation); no change needed.
+- Verified live across `/jobs`, `/clients`, `/quotes`, `/invoices`, `/team`, `/dispatch`, `/proof-to-paid`, `/reports`. All show cream/lime theme, lime primary CTAs, lime active-nav highlight, no blue/navy/purple bleed.
+- **Build**: `yarn build` clean. 272.61 kB gzipped JS (+0.15 kB), 30.43 kB CSS (+0.97 kB for the overlay).
 
 ## Backlog / Future Enhancements (P2)
 - Strip remaining `cx-*` bridge classes from JSX in favor of direct premium components (reduce CSS bloat)

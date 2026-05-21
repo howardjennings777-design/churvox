@@ -10,14 +10,25 @@ export default function PremiumStatCard({ label, value, icon, tone = 'blue', del
     violet: 'px-stat__icon--violet',
   }[tone] || '';
 
+  const isInteractive = typeof onClick === 'function';
+  const Tag = isInteractive ? 'button' : 'div';
+  const interactiveProps = isInteractive
+    ? { type: 'button', onClick, role: 'button' }
+    : { 'aria-readonly': 'true' };
+
   return (
-    <button type="button" onClick={onClick} className={`px-stat ${className}`} data-testid={dataTestId}>
+    <Tag
+      {...interactiveProps}
+      className={`px-stat ${isInteractive ? 'px-stat--interactive' : 'px-stat--static'} ${className}`}
+      data-testid={dataTestId}
+      style={isInteractive ? undefined : { cursor: 'default' }}
+    >
       <div className="px-stat__top">
         <span className="px-stat__label">{label}</span>
         {icon && <span className={`px-stat__icon ${toneCls}`}>{icon}</span>}
       </div>
       <div className="px-stat__value">{value}</div>
       {delta && <div className="px-stat__delta">{delta}</div>}
-    </button>
+    </Tag>
   );
 }
