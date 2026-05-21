@@ -77,6 +77,18 @@ Churvox is an all-in-one field-service SaaS for NZ/AU tradies covering jobs, cli
 - Verified end-to-end: public site (home/pricing/features), signup page, login, Front Desk 4-zone dashboard, Run AI scan, Work Slip modal with approve/reject wiring, Jobs list + create + in-page detail modal, Clients list + add (inline form) + in-page detail modal, Quotes list + create, Invoices list + create + open, Team page + Invite worker button, Payroll page, mobile-viewport tap on dashboard zone item opens modal correctly, 0 console errors.
 - Build: 272.62 kB gzipped JS, 30.43 kB CSS. Clean.
 
+### Logo cleanup pass (DONE — Feb 21 2026)
+- Old `/public/churvox-logo.png` (137 KB) **deleted**. Net asset size dropped from ~528 KB → ~30 KB.
+- New brand assets regenerated from a single Python script using the locked palette (`#0E0E0E` charcoal / `#F7F3EA` cream / `#C8FF4D` lime):
+  - `favicon.ico` (multi-resolution 16/32/48)
+  - `apple-touch-icon.png` 180×180
+  - `icon-192x192.png` / `icon-192x192-maskable.png`
+  - `icon-512x512.png` / `icon-512x512-maskable.png`
+  - `churvox-mark.svg` — modern SVG favicon (vector, scales perfectly)
+- `ChurvoxLogo.js` rewritten as pure inline SVG wordmark ("Churvox" + lime accent dot). No more `<img src>` dependency — the wordmark is part of the React bundle and can never 404.
+- `public/index.html` updated: SVG favicon first, `theme-color` and pre-React body background set to cream (`#F7F3EA`) to kill the white flash on PWA cold-start.
+- `public/manifest.json` updated: cream theme/background colour, new SVG icon entry, refreshed name/description ("AI Operator Front Desk").
+
 ## Backlog / Future Enhancements (P2)
 - Strip remaining `cx-*` bridge classes from JSX in favor of direct premium components (reduce CSS bloat)
 - Add light/dark theme toggle (currently light-only)

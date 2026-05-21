@@ -1,8 +1,14 @@
 {
   "short_name": "Churvox",
-  "name": "Churvox - Contractor Management",
-  "description": "Jobs, quotes, invoices, team management, and scheduling for trade contractors.",
+  "name": "Churvox — AI Operator Front Desk",
+  "description": "Churvox does the admin. You approve. Jobs, quotes, invoices, crew, payroll and MYOB for trade & service businesses.",
   "icons": [
+    {
+      "src": "churvox-mark.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
     {
       "src": "icon-192x192.png",
       "sizes": "192x192",
@@ -30,8 +36,8 @@
   ],
   "start_url": "/dashboard",
   "display": "minimal-ui",
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff",
+  "theme_color": "#F7F3EA",
+  "background_color": "#F7F3EA",
   "scope": "/",
   "categories": ["business", "productivity"]
 }
