@@ -1,0 +1,33 @@
+/* Churvox Autonomous Office features pass. Visual-only. */
+.features-page{background:#e8e2d6!important;color:#101114!important;}
+.features-hero{min-height:calc(100vh - 74px)!important;grid-template-columns:minmax(0,.95fr) minmax(520px,1.05fr)!important;gap:42px!important;align-items:center!important;padding:clamp(48px,7vw,100px) clamp(18px,4vw,72px)!important;background:linear-gradient(135deg,#101114 0%,#242830 50%,#e8e2d6 50%,#f3eee5 100%)!important;}
+.features-copy{max-width:880px!important;color:#fbf8f1!important;}
+.features-copy .features-kicker::before{content:"AUTONOMOUS OFFICE · ";}
+.features-copy h1{font-size:clamp(56px,7vw,108px)!important;line-height:.88!important;letter-spacing:-.075em!important;color:#fbf8f1!important;}
+.features-copy p{max-width:780px!important;font-size:clamp(18px,1.6vw,22px)!important;color:rgba(251,248,241,.76)!important;}
+.features-btn{border-radius:8px!important;box-shadow:none!important;}
+.features-btn-primary{background:#fbf8f1!important;color:#101114!important;border-color:#fbf8f1!important;}
+.features-console{background:#101114!important;border:1px solid #343a44!important;border-radius:14px!important;box-shadow:0 50px 140px rgba(16,17,20,.42)!important;}
+.features-console-bar{border-color:#343a44!important;}
+.features-console-bar span{color:#caa46d!important;}
+.features-module{background:#181c22!important;border-color:#343a44!important;border-radius:10px!important;}
+.features-module.active{border-color:#c58a2b!important;box-shadow:inset 4px 0 0 #c58a2b!important;}
+.features-module small{color:#caa46d!important;}
+.features-rails{transform:none!important;margin:0!important;box-shadow:none!important;background:#cdc3b3!important;border-top:1px solid #cdc3b3!important;border-bottom:1px solid #cdc3b3!important;}
+.features-rails article{background:#fbf8f1!important;}
+.features-system{padding:clamp(64px,8vw,120px) clamp(18px,4vw,72px)!important;background:#e8e2d6!important;}
+.features-head h2{font-size:clamp(42px,5.8vw,88px)!important;max-width:1000px!important;}
+.features-grid{gap:14px!important;}
+.features-grid article{background:#fbf8f1!important;border:1px solid #cdc3b3!important;border-radius:12px!important;box-shadow:0 14px 38px rgba(16,17,20,.08)!important;}
+.features-grid span{color:#c58a2b!important;}
+.features-workslip{background:#101114!important;color:#fbf8f1!important;padding:clamp(64px,8vw,120px) clamp(18px,4vw,72px)!important;}
+.features-workslip h2{font-size:clamp(42px,5.8vw,88px)!important;color:#fbf8f1!important;}
+.features-slip{background:#fbf8f1!important;color:#101114!important;border-radius:12px!important;box-shadow:0 44px 110px rgba(0,0,0,.3)!important;}
+.features-slip small{color:#9b8059!important;}
+.features-slip h3{color:#101114!important;}
+.features-slip p,.features-slip dt{color:#5f6670!important;}
+.features-final{background:#fbf8f1!important;border-top:1px solid #cdc3b3!important;}
+.features-final h2{font-size:clamp(38px,5vw,78px)!important;}
+.features-final .features-btn{background:#101114!important;color:#fbf8f1!important;border-color:#101114!important;}
+@media(max-width:1100px){.features-hero,.features-workslip{grid-template-columns:1fr!important;background:linear-gradient(180deg,#101114 0%,#242830 58%,#e8e2d6 58%,#f3eee5 100%)!important;}.features-grid{grid-template-columns:1fr 1fr!important;}.features-rails{grid-template-columns:1fr!important;}}
+@media(max-width:680px){.features-hero{padding:34px 14px!important;}.features-copy h1{font-size:50px!important;}.features-grid{grid-template-columns:1fr!important;}.features-system,.features-workslip,.features-final{padding-left:14px!important;padding-right:14px!important;}}
