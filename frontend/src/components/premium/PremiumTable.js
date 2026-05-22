@@ -8,18 +8,28 @@ export default function PremiumTable({ columns = [], rows = [], onRowClick, empt
           <thead>
             <tr>
               {columns.map((col, i) => (
-                <th key={i} style={col.width ? { width: col.width } : undefined}>{col.header}</th>
+                <th key={col.key || col.header || i} style={col.width ? { width: col.width } : undefined}>
+                  {col.header || col.label || col.key}
+                </th>
               ))}
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr><td colSpan={columns.length} className="text-center py-8 px-row__sub">{emptyText}</td></tr>
+              <tr>
+                <td colSpan={Math.max(columns.length, 1)} className="text-center py-8 px-row__sub">
+                  {emptyText}
+                </td>
+              </tr>
             ) : (
               rows.map((row, ri) => (
-                <tr key={row.id || ri} onClick={onRowClick ? () => onRowClick(row) : undefined} className={onRowClick ? 'cursor-pointer' : ''}>
+                <tr
+                  key={row.id || row._id || ri}
+                  onClick={onRowClick ? () => onRowClick(row) : undefined}
+                  className={onRowClick ? 'cursor-pointer' : ''}
+                >
                   {columns.map((col, ci) => (
-                    <td key={ci}>{col.render ? col.render(row) : row[col.key]}</td>
+                    <td key={col.key || ci}>{col.render ? col.render(row) : row[col.key]}</td>
                   ))}
                 </tr>
               ))
