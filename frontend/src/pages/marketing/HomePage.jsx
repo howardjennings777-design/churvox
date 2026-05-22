@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import MarketingShell from "../../components/marketing/MarketingShell";
 import PricingTiers from "../../components/marketing/PricingTiers";
+import HomeInlineLogin from "../../components/marketing/HomeInlineLogin";
 
 const features = [
   ["Work queue", "Jobs, quotes, invoices and worker updates surfaced in one owner queue."],
@@ -63,10 +64,12 @@ export default function HomePage() {
             <p className="home-kicker">AI front desk for trade businesses</p>
             <h1>Run the admin from one serious workbench.</h1>
             <p className="home-lead">Churvox prepares the jobs, quotes, invoices, worker actions and follow-ups. You approve what matters and keep the business moving.</p>
-            <div className="home-actions"><CTA to="/signup" primary>Start free</CTA><CTA to="/login">Log in</CTA><CTA to="/pricing">See pricing</CTA></div>
+            <div className="home-actions"><CTA to="/signup" primary>Start free</CTA><a className="home-btn" href="#home-login">Log in</a><CTA to="/pricing">See pricing</CTA></div>
           </div>
           <ConsolePreview />
         </section>
+
+        <HomeInlineLogin />
 
         <section className="home-proof">
           <div><strong>Approval-first</strong><span>No customer messages, pricing changes or syncs without the owner.</span></div>
@@ -96,7 +99,7 @@ export default function HomePage() {
 
         <section className="home-final">
           <div><p className="home-kicker">Ready when you are</p><h2>Give the admin a proper front desk.</h2><p>Start with your first client, first job and first worker. Churvox keeps the next action in front of you.</p></div>
-          <div className="home-final-actions"><CTA to="/signup" primary>Start free</CTA><CTA to="/login">Log in</CTA></div>
+          <div className="home-final-actions"><CTA to="/signup" primary>Start free</CTA><a className="home-btn" href="#home-login">Log in</a></div>
         </section>
       </main>
 
