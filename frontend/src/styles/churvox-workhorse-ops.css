@@ -29,6 +29,16 @@
   box-shadow:var(--wh-shadow),var(--wh-inset)!important;
 }
 
+.px-mobile-header,
+.wh-app-main .px-mobile-header{
+  background:
+    linear-gradient(45deg,rgba(255,255,255,.08) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.08) 75%,transparent 75%,transparent),
+    linear-gradient(90deg,#20282e,#3b444a 56%,#252d33)!important;
+  background-size:24px 24px,auto!important;
+  border-bottom:1px solid #62696d!important;
+  box-shadow:0 12px 36px rgba(31,38,43,.24)!important;
+}
+
 .wh-app-main .px-hero__actions,
 .wh-app-main .px-card__head{
   gap:10px;
