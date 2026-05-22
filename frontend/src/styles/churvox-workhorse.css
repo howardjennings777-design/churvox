@@ -708,3 +708,177 @@ input,select,textarea{background:#f7f4ec!important;color:var(--wh-text)!importan
   .wh-auth-wrap,.wh-auth-wrap.is-signup{grid-template-columns:1fr}
   .wh-auth-title{font-size:44px}
 }
+
+/* Workhorse logged-in app shell */
+.wh-app{
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 10% 8%, rgba(185,133,45,.13), transparent 28%),
+    radial-gradient(circle at 90% 10%, rgba(96,125,116,.16), transparent 25%),
+    linear-gradient(135deg,#e2ded4,#c8c5bc 58%,#b8b7b0);
+  color:var(--wh-text);
+  font-family:Inter,system-ui,sans-serif;
+}
+
+.wh-app-top{
+  min-height:76px;
+  display:flex;
+  align-items:center;
+  gap:18px;
+  padding:0 clamp(14px,3vw,42px);
+  background:
+    linear-gradient(45deg,rgba(255,255,255,.08) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.08) 75%,transparent 75%,transparent),
+    linear-gradient(90deg,#20282e,#3b444a 56%,#252d33);
+  background-size:24px 24px,auto;
+  color:#f4f1e9;
+  border-bottom:1px solid #62696d;
+  box-shadow:0 18px 48px rgba(31,38,43,.28);
+  position:sticky;
+  top:0;
+  z-index:50;
+}
+
+.wh-app-logo{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  color:#f4f1e9!important;
+  text-decoration:none;
+  min-width:210px;
+}
+
+.wh-app-logo b{
+  display:block;
+  color:#f4f1e9;
+  font-weight:950;
+  line-height:1;
+}
+
+.wh-app-logo small{
+  display:block;
+  color:#d7b778;
+  font-size:10px;
+  font-weight:950;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  margin-top:3px;
+}
+
+.wh-app-nav{
+  display:flex;
+  gap:7px;
+  overflow-x:auto;
+  margin-left:auto;
+  padding-bottom:2px;
+}
+
+.wh-app-nav a{
+  color:#dedbd1!important;
+  text-decoration:none;
+  font-size:13px;
+  font-weight:850;
+  padding:10px 11px;
+  border-radius:10px;
+  white-space:nowrap;
+}
+
+.wh-app-nav a:hover{
+  background:rgba(255,255,255,.1);
+  color:white!important;
+}
+
+.wh-app-nav a.is-active{
+  background:linear-gradient(135deg,var(--wh-brass),var(--wh-brass2));
+  color:#fff7e6!important;
+  box-shadow:0 10px 24px rgba(31,38,43,.18);
+}
+
+.wh-app-main{
+  width:min(1320px,calc(100vw - 28px));
+  margin:0 auto;
+  padding:22px 0 56px;
+}
+
+/* make old app page wrappers fit the new full-screen workhorse system */
+.wh-app-main .px-page,
+.wh-app-main .page-content,
+.wh-app-main .page-shell{
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:0 0 56px!important;
+  background:transparent!important;
+}
+
+.wh-app-main section,
+.wh-app-main article{
+  border-color:var(--wh-line);
+}
+
+.wh-app-main .grid,
+.wh-app-main [class*="grid-cols"]{
+  gap:14px;
+}
+
+.wh-app-main .bg-white,
+.wh-app-main .bg-slate-50,
+.wh-app-main .bg-gray-50,
+.wh-app-main .bg-blue-50,
+.wh-app-main .bg-indigo-50,
+.wh-app-main .bg-purple-50,
+.wh-app-main .bg-green-50,
+.wh-app-main .bg-lime-50{
+  background:linear-gradient(145deg,rgba(255,255,255,.58),rgba(255,255,255,.22)),linear-gradient(180deg,var(--wh-panel),var(--wh-panel2))!important;
+  color:var(--wh-text)!important;
+}
+
+.wh-app-main .text-blue-500,
+.wh-app-main .text-blue-600,
+.wh-app-main .text-indigo-500,
+.wh-app-main .text-indigo-600,
+.wh-app-main .text-purple-500,
+.wh-app-main .text-green-500,
+.wh-app-main .text-lime-500{
+  color:var(--wh-rust)!important;
+}
+
+.wh-app-main .text-slate-900,
+.wh-app-main .text-gray-900,
+.wh-app-main .text-black{
+  color:var(--wh-text)!important;
+}
+
+.wh-app-main .text-slate-500,
+.wh-app-main .text-slate-600,
+.wh-app-main .text-gray-500,
+.wh-app-main .text-gray-600{
+  color:var(--wh-muted)!important;
+}
+
+.wh-app-main .border,
+.wh-app-main .border-slate-200,
+.wh-app-main .border-gray-200,
+.wh-app-main .border-blue-100{
+  border-color:var(--wh-line)!important;
+}
+
+.wh-app-main button:not(.px-btn):not(.wh-zone):not(.wh-task),
+.wh-app-main a[role="button"]{
+  border-radius:11px;
+}
+
+@media(max-width:980px){
+  .wh-app-top{
+    overflow-x:auto;
+    gap:10px;
+  }
+
+  .wh-app-logo{
+    min-width:160px;
+  }
+
+  .wh-app-main{
+    width:min(100%,calc(100vw - 20px));
+    padding-top:14px;
+  }
+}
