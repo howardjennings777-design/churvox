@@ -13,6 +13,7 @@ import "./styles/churvox-autonomous-office-desk.css";
 import "./styles/churvox-autonomous-workspaces.css";
 import "./styles/churvox-autonomous-chrome.css";
 import "./styles/churvox-autonomous-final-sweep.css";
+import "./pages/marketing/AutonomousHomePage.css";
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
