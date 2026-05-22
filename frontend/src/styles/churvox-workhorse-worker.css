@@ -1,0 +1,114 @@
+/* PHASE_4D_WORKHORSE_WORKER_FIELD_DESIGN */
+.px-app,
+.wh-app-main .worker-page,
+.wh-app-main .worker-shell{
+  color:var(--wh-text)!important;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(185,133,45,.12), transparent 28%),
+    radial-gradient(circle at 90% 12%, rgba(96,125,116,.14), transparent 25%),
+    linear-gradient(135deg,#e2ded4,#c8c5bc 58%,#b8b7b0)!important;
+}
+
+.px-mobile-header{
+  background:
+    linear-gradient(45deg,rgba(255,255,255,.08) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.08) 75%,transparent 75%,transparent),
+    linear-gradient(90deg,#20282e,#3b444a 56%,#252d33)!important;
+  background-size:24px 24px,auto!important;
+  border-bottom:1px solid #62696d!important;
+  box-shadow:0 12px 36px rgba(31,38,43,.24)!important;
+}
+
+.wh-app-main .worker-page h1,
+.wh-app-main .worker-shell h1,
+.px-app h1{
+  font-family:Outfit,Inter,system-ui,sans-serif!important;
+  font-size:clamp(30px,5vw,52px)!important;
+  line-height:.92!important;
+  letter-spacing:-.06em!important;
+  color:var(--wh-text)!important;
+}
+
+.wh-app-main .worker-job-card,
+.wh-app-main .worker-card,
+.wh-app-main [class*="JobCard"],
+.px-app .px-card{
+  border:1px solid var(--wh-line)!important;
+  border-radius:18px!important;
+  background:linear-gradient(145deg,rgba(255,255,255,.58),rgba(255,255,255,.22)),linear-gradient(180deg,var(--wh-panel),var(--wh-panel2))!important;
+  color:var(--wh-text)!important;
+  box-shadow:var(--wh-shadow),var(--wh-inset)!important;
+}
+
+.wh-app-main .worker-bottom-nav,
+.wh-app-main .bottom-nav,
+.wh-app-main [class*="BottomNav"]{
+  background:
+    linear-gradient(45deg,rgba(255,255,255,.08) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.08) 75%,transparent 75%,transparent),
+    linear-gradient(90deg,#20282e,#3b444a 56%,#252d33)!important;
+  background-size:24px 24px,auto!important;
+  border-top:1px solid #62696d!important;
+  box-shadow:0 -12px 38px rgba(31,38,43,.22)!important;
+}
+
+.wh-app-main .worker-bottom-nav a,
+.wh-app-main .bottom-nav a,
+.wh-app-main [class*="BottomNav"] a{
+  color:#dedbd1!important;
+  font-weight:850!important;
+}
+
+.wh-app-main .worker-bottom-nav a.active,
+.wh-app-main .bottom-nav a.active,
+.wh-app-main [class*="BottomNav"] a.active{
+  color:#fff7e6!important;
+  background:linear-gradient(135deg,var(--wh-brass),var(--wh-brass2))!important;
+}
+
+.wh-app-main .start-job,
+.wh-app-main [class*="start-job"],
+.px-app button[class*="start"],
+.px-app button[aria-label*="Start" i]{
+  background:linear-gradient(135deg,var(--wh-brass),var(--wh-brass2))!important;
+  color:#fff7e6!important;
+  border-color:#caa55b!important;
+  border-radius:14px!important;
+  font-weight:950!important;
+}
+
+.wh-app-main .complete-job,
+.wh-app-main [class*="complete-job"],
+.px-app button[class*="complete"],
+.px-app button[aria-label*="Complete" i]{
+  background:linear-gradient(135deg,#607d74,#3f5d52)!important;
+  color:#fff!important;
+  border-color:#849b91!important;
+  border-radius:14px!important;
+  font-weight:950!important;
+}
+
+.wh-app-main .photo-upload,
+.wh-app-main [class*="photo-upload"],
+.px-app [class*="photo"],
+.px-app [class*="upload"]{
+  border-color:var(--wh-line)!important;
+}
+
+@media(max-width:760px){
+  .wh-app-main .worker-page,
+  .wh-app-main .worker-shell,
+  .px-app{
+    padding-bottom:84px;
+  }
+
+  .wh-app-main .worker-job-card,
+  .wh-app-main .worker-card,
+  .px-app .px-card{
+    border-radius:16px!important;
+  }
+
+  .wh-app-main .worker-bottom-nav,
+  .wh-app-main .bottom-nav,
+  .wh-app-main [class*="BottomNav"]{
+    min-height:68px;
+  }
+}
