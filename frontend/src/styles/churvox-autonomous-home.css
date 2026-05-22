@@ -1,0 +1,79 @@
+/* Churvox Autonomous Office homepage pass. Visual-only, keeps existing React logic. */
+.home-page{
+  background:#e8e2d6!important;
+  color:#101114!important;
+}
+.home-hero{
+  min-height:calc(100vh - 74px)!important;
+  grid-template-columns:minmax(0,0.88fr) minmax(540px,1.12fr)!important;
+  gap:42px!important;
+  align-items:center!important;
+  padding:clamp(48px,7vw,100px) clamp(18px,4vw,72px)!important;
+  background:
+    linear-gradient(135deg,#101114 0%,#101114 42%,#242830 52%,#e8e2d6 52%,#f3eee5 100%)!important;
+}
+.home-hero-copy{max-width:880px!important;color:#fbf8f1!important;position:relative!important;z-index:2!important;}
+.home-hero .home-kicker::before{content:"AUTONOMOUS OFFICE · ";}
+.home-hero h1{
+  font-size:clamp(60px,8vw,118px)!important;
+  line-height:.86!important;
+  letter-spacing:-.08em!important;
+  max-width:940px!important;
+}
+.home-lead{
+  max-width:780px!important;
+  font-size:clamp(18px,1.7vw,23px)!important;
+  color:rgba(251,248,241,.78)!important;
+}
+.home-actions .home-btn{border-radius:8px!important;box-shadow:none!important;}
+.home-actions .home-btn-primary{background:#fbf8f1!important;color:#101114!important;}
+.home-hero-stack{gap:16px!important;}
+.home-console{
+  background:#101114!important;
+  border:1px solid #343a44!important;
+  border-radius:14px!important;
+  box-shadow:0 50px 140px rgba(16,17,20,.46)!important;
+}
+.home-console-top b::after{content:" · office already checked";color:#caa46d;font-weight:900;}
+.home-console-label{color:#caa46d!important;}
+.home-queue-row{
+  background:#181c22!important;
+  border-color:#343a44!important;
+  border-radius:10px!important;
+}
+.home-queue-row.active{border-color:#c58a2b!important;box-shadow:inset 4px 0 0 #c58a2b!important;}
+.home-work-slip{
+  background:#fbf8f1!important;
+  color:#101114!important;
+  border-color:#cdc3b3!important;
+}
+.home-work-slip .home-console-label{color:#9b8059!important;}
+.home-work-slip h3{color:#101114!important;font-size:32px!important;}
+.home-work-slip p,.home-work-slip dt{color:#5f6670!important;}
+.home-work-slip dl div{border-color:#ded4c4!important;}
+.home-work-slip dd{color:#101114!important;}
+.home-work-slip button{background:#101114!important;color:#fbf8f1!important;}
+.home-hero-stack .home-login-panel{
+  background:#fbf8f1!important;
+  border:1px solid #cdc3b3!important;
+  border-radius:12px!important;
+  box-shadow:0 22px 60px rgba(16,17,20,.2)!important;
+}
+.home-heart{
+  background:#101114!important;
+  color:#fbf8f1!important;
+  padding:clamp(64px,8vw,120px) clamp(18px,4vw,72px)!important;
+}
+.home-heart-copy h2{font-size:clamp(46px,6vw,94px)!important;}
+.home-heart-board article{background:#181c22!important;border-color:#343a44!important;}
+.home-proof{transform:none!important;margin:0!important;border-top:1px solid #cdc3b3!important;border-bottom:1px solid #cdc3b3!important;box-shadow:none!important;}
+.home-section h2,.home-final h2{font-size:clamp(40px,5.6vw,82px)!important;}
+.home-pricing-preview{background:#101114!important;}
+.home-final{background:#fbf8f1!important;}
+@media(max-width:1100px){
+  .home-hero{grid-template-columns:1fr!important;background:linear-gradient(180deg,#101114 0%,#242830 58%,#e8e2d6 58%,#f3eee5 100%)!important;}
+}
+@media(max-width:680px){
+  .home-hero{padding:34px 14px!important;}
+  .home-hero h1{font-size:52px!important;}
+}
