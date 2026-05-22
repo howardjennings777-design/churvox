@@ -1856,7 +1856,7 @@ async def execute_ai_operator_action(action: dict, current_user: dict):
         if str(job.get("status") or "").lower() in {"new","unassigned","pending"}: patch["status"]="assigned"
         await db.jobs.update_one({"_id": job["_id"]},{"$set": patch}); completed=True; result={"action":"assigned_worker","job_id":job_id,"assigned_worker_id":worker_id}
     elif item_type in {"create_invoice_draft", "invoice_draft"}:
-        job_id = str(payload.get("job_id") or action.get("job_id") or action.get("related_id") or "")
+        job_id = str(payload.get("job_id") or action.get("job_id") or action.get("related_id") or action.get("related_entity_id") or "")
         job = await db.jobs.find_one({"business_id": business_id, "$or": [{"id": job_id}, {"_id": ObjectId(job_id)}] if ObjectId.is_valid(job_id) else [{"id": job_id}]})
         if not job: raise HTTPException(status_code=404, detail="Job not found")
         subtotal=float(payload.get("subtotal") or job.get("subtotal") or job.get("price") or 0)
@@ -2414,7 +2414,10 @@ async def ai_operator_actions_patch(action_id: str, payload: dict, current_user:
     existing = await db.ai_operator_actions.find_one({"_id": ObjectId(action_id), "business_id": business_id})
     if not existing:
         raise HTTPException(status_code=404, detail="Action not found")
-    next_payload = dict(existing.get("payload") or {})
+    # CHURVOX_AI_OPERATOR_PATCH_PRESERVE_DRAFT_PAYLOAD
+    next_payload = dict(existing.get("payload") or existing.get("draft_payload") or {})
+    if not next_payload.get("job_id") and existing.get("related_entity_type") == "job":
+        next_payload["job_id"] = str(existing.get("related_entity_id") or "")
     for key, value in (payload or {}).items():
         if key in allowed_payload_fields:
             next_payload[key] = value
