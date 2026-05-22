@@ -13,7 +13,7 @@ export default function PremiumHero({
     <header className={`px-hero ${className}`}>
       <div className="flex items-start gap-4 relative z-[1]">
         {icon && (
-          <div className="hidden md:flex h-14 w-14 rounded-2xl items-center justify-center bg-white border border-[#cfe0fb] text-[#1d4ed8] shadow-md flex-shrink-0">
+          <div className="hidden md:flex h-14 w-14 rounded-2xl items-center justify-center px-stat__icon flex-shrink-0">
             {icon}
           </div>
         )}

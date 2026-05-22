@@ -30,13 +30,13 @@ export default function PremiumCard({
         <div className="px-card__head">
           <div className="flex items-center gap-3 min-w-0">
             {icon && (
-              <span className="h-9 w-9 rounded-xl bg-[#eff4ff] text-[#1d4ed8] inline-flex items-center justify-center flex-shrink-0">
+              <span className="h-9 w-9 rounded-xl px-row__avatar inline-flex items-center justify-center flex-shrink-0">
                 {icon}
               </span>
             )}
             <div className="min-w-0">
               {title && <h3 className="px-card__title truncate">{title}</h3>}
-              {subtitle && <p className="text-xs text-[#5b6c87] mt-0.5 truncate">{subtitle}</p>}
+              {subtitle && <p className="text-xs px-row__sub truncate">{subtitle}</p>}
             </div>
           </div>
           {actions && <div className="flex items-center gap-2 flex-shrink-0">{actions}</div>}
