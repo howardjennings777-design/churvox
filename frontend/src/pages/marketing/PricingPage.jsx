@@ -1,289 +1,78 @@
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import MarketingShell from "../../components/marketing/MarketingShell";
-import PricingTiers from "../../components/marketing/PricingTiers";
-import { CxButton } from "../../components/cx";
+import { CHURVOX_PLANS, CHURVOX_ADDONS, GST_NOTE } from "../../lib/marketingPlans";
 
-const FAQS = [
-  {
-    q: "Do I need a credit card to start?",
-    a: "No. Start your free trial with just an email. Add payment details when you\u2019re ready to keep going.",
-  },
-  {
-    q: "What counts as an active team member?",
-    a: "Anyone who logs into the worker app or owner/admin app in a given month. Inactive users don\u2019t count toward your plan limits.",
-  },
-  {
-    q: "Can I switch plans later?",
-    a: "Yes. Move up or down any time. The upgrade applies immediately and we prorate the difference.",
-  },
-  {
-    q: "Do I have to use MYOB?",
-    a: "No. MYOB is optional on Operator and included on Command. Don\u2019t want MYOB? Stay on Start or Crew.",
-  },
-  {
-    q: "How does SMS billing work?",
-    a: "SMS credits are separate. Top up any time. You\u2019ll always see your balance and remaining sends.",
-  },
-  {
-    q: "What\u2019s the Command Growth Pack?",
-    a: "An add-on for Command customers who need more active team members or larger AI Operator volume. Pay only if you need it.",
-  },
+const rows = [
+  ["AI Operator Front Desk", "Included", "Included", "Advanced", "Full command"],
+  ["Worker app", "1 worker", "5 active", "12 active", "25 active"],
+  ["Quotes + invoices", "Included", "Included", "AI assisted", "AI assisted"],
+  ["Payroll workspace", "—", "Timesheets", "Included", "Advanced roles"],
+  ["MYOB", "—", "—", "+$39/mo", "Included"],
 ];
 
+function PlanCard({ plan }) {
+  return (
+    <article className={plan.highlight ? "price-card price-card-main" : "price-card"}>
+      {plan.badge ? <span className="price-badge">{plan.badge}</span> : null}
+      <header>
+        <h2>{plan.name}</h2>
+        <p>{plan.tagline}</p>
+      </header>
+      <div className="price-money"><strong>${plan.priceMonthly}</strong><span>/mo</span></div>
+      <small>{plan.activeTeam} · ex GST</small>
+      <Link to="/signup" className="price-cta">{plan.cta}</Link>
+      <ul>
+        {plan.features.map((f) => <li key={f}>{f}</li>)}
+      </ul>
+    </article>
+  );
+}
+
 export default function PricingPage() {
-  useEffect(() => {
-    document.title = "Pricing — Churvox";
-  }, []);
+  useEffect(() => { document.title = "Pricing — Churvox"; }, []);
 
   return (
     <MarketingShell>
-      <section
-        style={{
-          padding: "clamp(40px, 6vw, 80px) clamp(16px, 4vw, 28px) 24px",
-          background:
-            "radial-gradient(700px 460px at 90% 10%, rgba(200,255,77,0.20), transparent 60%)," +
-            "linear-gradient(180deg, var(--cx-bg) 0%, var(--cx-bg-soft) 100%)",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 920,
-            margin: "0 auto",
-            textAlign: "center",
-          }}
-        >
-          <div
-            style={{
-              display: "inline-block",
-              fontSize: 12,
-              fontWeight: 700,
-              padding: "5px 11px",
-              borderRadius: 999,
-              background: "var(--cx-accent-soft)",
-              color: "var(--cx-accent)",
-              border: "1px solid rgba(200,255,77,0.5)",
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              marginBottom: 14,
-            }}
-          >
-            Pricing
+      <main className="pricing-page">
+        <section className="pricing-hero">
+          <div className="pricing-copy">
+            <p className="site-kicker">Pricing</p>
+            <h1>Pick the front desk your business needs today.</h1>
+            <p>Simple NZD pricing, ex GST. Start with the essentials, then move into the AI Operator plan when you want Churvox preparing more of the admin.</p>
+            <div className="pricing-actions"><Link to="/signup">Start free</Link><Link to="/features">See features</Link></div>
           </div>
-          <h1
-            style={{
-              fontFamily: "Outfit, Inter, sans-serif",
-              fontSize: "clamp(36px, 5.4vw, 64px)",
-              fontWeight: 800,
-              letterSpacing: "-0.03em",
-              color: "var(--cx-text)",
-              margin: 0,
-              lineHeight: 1.05,
-            }}
-          >
-            Honest pricing. One Front Desk.
-          </h1>
-          <p
-            style={{
-              marginTop: 16,
-              fontSize: 18,
-              color: "var(--cx-muted)",
-              lineHeight: 1.5,
-              maxWidth: 660,
-              marginInline: "auto",
-            }}
-          >
-            Pay for active team members — not seats. NZD, ex GST. Cancel any time.
-          </p>
-        </div>
-      </section>
+          <aside className="pricing-note">
+            <b>Most owners choose Operator</b>
+            <p>It unlocks the real Churvox value: AI invoice, quote, follow-up and dispatch preparation — with owner approval before anything important happens.</p>
+          </aside>
+        </section>
 
-      <section
-        style={{
-          maxWidth: 1240,
-          margin: "0 auto",
-          padding: "24px clamp(16px, 4vw, 28px) clamp(40px, 6vw, 64px)",
-        }}
-      >
-        <PricingTiers showAddons />
-      </section>
+        <section className="pricing-grid">
+          {CHURVOX_PLANS.map((plan) => <PlanCard plan={plan} key={plan.id} />)}
+        </section>
 
-      {/* Comparison strip */}
-      <section
-        style={{
-          maxWidth: 1240,
-          margin: "0 auto",
-          padding: "0 clamp(16px, 4vw, 28px) clamp(40px, 6vw, 64px)",
-        }}
-      >
-        <div
-          style={{
-            background: "var(--cx-surface)",
-            border: "1px solid var(--cx-border)",
-            borderRadius: 24,
-            padding: "clamp(22px, 3vw, 32px)",
-            boxShadow: "0 6px 20px rgba(14,14,14,0.04)",
-          }}
-        >
-          <h2
-            style={{
-              fontFamily: "Outfit, Inter, sans-serif",
-              fontSize: 22,
-              fontWeight: 700,
-              margin: 0,
-              color: "var(--cx-text)",
-              marginBottom: 14,
-            }}
-          >
-            What’s in every plan
-          </h2>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: 14,
-            }}
-          >
-            {[
-              "Approval-first AI — nothing auto-sends",
-              "Mobile worker app with role guards",
-              "Public quote and invoice links",
-              "Photos & proof from the field",
-              "Audit log of every AI action",
-              "Owner notification controls",
-            ].map((line) => (
-              <div
-                key={line}
-                style={{
-                  fontSize: 14,
-                  color: "var(--cx-text-soft)",
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: 8,
-                }}
-              >
-                <span
-                  style={{
-                    width: 16,
-                    minWidth: 16,
-                    height: 16,
-                    borderRadius: 5,
-                    background: "var(--cx-accent-soft)",
-                    color: "var(--cx-accent)",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginTop: 2,
-                    fontSize: 11,
-                    fontWeight: 800,
-                  }}
-                >
-                  ✓
-                </span>
-                <span>{line}</span>
-              </div>
-            ))}
+        <section className="pricing-compare">
+          <div className="pricing-section-head"><p className="site-kicker">Compare</p><h2>Clear differences. No seat-count tricks.</h2><p>{GST_NOTE}</p></div>
+          <div className="compare-table">
+            <div className="compare-row compare-head"><span>Capability</span><b>Start</b><b>Crew</b><b>Operator</b><b>Command</b></div>
+            {rows.map((r) => <div className="compare-row" key={r[0]}>{r.map((x, i) => i === 0 ? <span key={x}>{x}</span> : <b key={i}>{x}</b>)}</div>)}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* FAQ */}
-      <section
-        style={{
-          maxWidth: 900,
-          margin: "0 auto",
-          padding: "0 clamp(16px, 4vw, 28px) clamp(40px, 6vw, 64px)",
-        }}
-      >
-        <h2
-          style={{
-            fontFamily: "Outfit, Inter, sans-serif",
-            fontSize: "clamp(24px, 2.8vw, 32px)",
-            fontWeight: 700,
-            color: "var(--cx-text)",
-            margin: 0,
-            letterSpacing: "-0.02em",
-            marginBottom: 22,
-          }}
-        >
-          Pricing FAQs
-        </h2>
-        <div style={{ display: "grid", gap: 12 }}>
-          {FAQS.map((f) => (
-            <details
-              key={f.q}
-              style={{
-                background: "var(--cx-surface)",
-                border: "1px solid var(--cx-border)",
-                borderRadius: 16,
-                padding: "14px 18px",
-              }}
-            >
-              <summary
-                style={{
-                  cursor: "pointer",
-                  fontFamily: "Outfit, Inter, sans-serif",
-                  fontWeight: 700,
-                  fontSize: 16,
-                  color: "var(--cx-text)",
-                  listStyle: "none",
-                }}
-              >
-                {f.q}
-              </summary>
-              <p style={{ marginTop: 8, color: "var(--cx-muted)", fontSize: 14.5, lineHeight: 1.55 }}>
-                {f.a}
-              </p>
-            </details>
-          ))}
-        </div>
-      </section>
-
-      {/* CTA strip */}
-      <section
-        style={{
-          maxWidth: 1240,
-          margin: "0 auto",
-          padding: "0 clamp(16px, 4vw, 28px) clamp(40px, 6vw, 80px)",
-        }}
-      >
-        <div
-          style={{
-            background:
-              "radial-gradient(700px 360px at 92% 0%, rgba(200,255,77,0.28), transparent 60%)," +
-              "linear-gradient(135deg, var(--cx-surface) 0%, var(--cx-surface-2) 100%)",
-            color: "var(--cx-text)",
-            borderRadius: 28,
-            padding: "clamp(28px, 4vw, 44px)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-start",
-            gap: 16,
-          }}
-        >
-          <h3
-            style={{
-              fontFamily: "Outfit, Inter, sans-serif",
-              fontSize: "clamp(24px, 3.2vw, 34px)",
-              fontWeight: 700,
-              letterSpacing: "-0.02em",
-              margin: 0,
-              maxWidth: 700,
-              lineHeight: 1.15,
-            }}
-          >
-            Pick a plan when you’re ready. Start free today.
-          </h3>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <Link to="/signup" style={{ textDecoration: "none" }}>
-              <CxButton variant="primary" size="lg">Start free trial</CxButton>
-            </Link>
-            <Link to="/login" style={{ textDecoration: "none" }}>
-              <CxButton variant="secondary" size="lg">Log in</CxButton>
-            </Link>
+        <section className="pricing-addons">
+          <div className="pricing-section-head"><p className="site-kicker">Add-ons</p><h2>Only add what the business actually uses.</h2></div>
+          <div className="addon-grid">
+            {CHURVOX_ADDONS.map((a) => <article key={a.id}><h3>{a.title}</h3><strong>{a.priceLabel || `$${a.price}/mo`}</strong><p>{a.description}</p><small>{a.appliesTo}</small></article>)}
           </div>
-        </div>
-      </section>
+        </section>
+
+        <section className="pricing-final"><div><p className="site-kicker">Start properly</p><h2>Use Churvox on real work before you decide.</h2><p>No card to start. Add clients, create jobs, invite workers and see the operator queue fill up.</p></div><Link to="/signup">Start free</Link></section>
+      </main>
+
+      <style>{`
+        .pricing-page{background:#e8e2d6;color:#101114}.site-kicker{text-transform:uppercase;letter-spacing:.14em;font-size:12px;font-weight:900;color:#9b8059;margin:0 0 14px}.pricing-hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(360px,.65fr);gap:28px;align-items:stretch;padding:clamp(48px,7vw,96px) clamp(18px,4vw,64px);background:linear-gradient(135deg,#101114 0%,#242830 52%,#e8e2d6 52%,#f3eee5 100%)}.pricing-copy{color:#fbf8f1;max-width:880px}.pricing-copy h1,.pricing-section-head h2,.pricing-final h2{font-family:Outfit,Inter,sans-serif;font-size:clamp(42px,6vw,82px);line-height:.94;letter-spacing:-.065em;margin:0}.pricing-copy h1{color:#fbf8f1}.pricing-copy p{max-width:660px;color:rgba(251,248,241,.76);font-size:18px;line-height:1.55}.pricing-actions{display:flex;gap:12px;margin-top:28px}.pricing-actions a,.pricing-final>a{display:inline-flex;text-decoration:none;background:#fbf8f1;color:#101114;border:1px solid #fbf8f1;border-radius:8px;padding:13px 18px;font-weight:900}.pricing-actions a+ a{background:rgba(251,248,241,.06);color:#fbf8f1;border-color:rgba(251,248,241,.28)}.pricing-note{background:#fbf8f1;border:1px solid #cdc3b3;border-radius:14px;padding:28px;align-self:end;box-shadow:0 28px 80px rgba(16,17,20,.18)}.pricing-note b{font-family:Outfit,Inter,sans-serif;font-size:30px;line-height:1;display:block}.pricing-note p{color:#5f6670;line-height:1.55}.pricing-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:clamp(34px,5vw,64px) clamp(18px,4vw,64px)}.price-card{background:#fbf8f1;border:1px solid #cdc3b3;border-radius:12px;padding:24px;position:relative;box-shadow:0 14px 36px rgba(16,17,20,.08);display:flex;flex-direction:column}.price-card-main{background:#101114;color:#fbf8f1;border-color:#101114;transform:translateY(-12px);box-shadow:0 36px 90px rgba(16,17,20,.28)}.price-badge{position:absolute;top:14px;right:14px;background:#c58a2b;color:#101114;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:900;text-transform:uppercase}.price-card h2{font-family:Outfit,Inter,sans-serif;font-size:30px;margin:0 0 8px}.price-card p{color:#5f6670;line-height:1.45;min-height:48px}.price-card-main p,.price-card-main small,.price-card-main li{color:rgba(251,248,241,.72)}.price-money{display:flex;align-items:flex-end;gap:6px;margin-top:8px}.price-money strong{font-family:Outfit,Inter,sans-serif;font-size:54px;line-height:.9}.price-money span{color:#5f6670;font-weight:800}.price-card small{color:#5f6670;margin-top:8px}.price-cta{display:block;text-align:center;text-decoration:none;background:#101114;color:#fbf8f1;border-radius:8px;padding:12px 14px;font-weight:900;margin:18px 0}.price-card-main .price-cta{background:#fbf8f1;color:#101114}.price-card ul{list-style:none;padding:0;margin:0;display:grid;gap:10px}.price-card li{font-size:13.5px;color:#242830;line-height:1.4}.pricing-compare,.pricing-addons{padding:clamp(34px,5vw,70px) clamp(18px,4vw,64px)}.pricing-compare{background:#f3eee5}.pricing-section-head{max-width:900px;margin-bottom:28px}.pricing-section-head h2{font-size:clamp(34px,4.8vw,64px)}.pricing-section-head p{color:#5f6670;line-height:1.55}.compare-table{background:#fbf8f1;border:1px solid #cdc3b3;border-radius:12px;overflow:hidden;box-shadow:0 16px 44px rgba(16,17,20,.08)}.compare-row{display:grid;grid-template-columns:1.35fr repeat(4,1fr);gap:1px;border-bottom:1px solid #ded4c4}.compare-row>*{padding:16px}.compare-head{background:#101114;color:#fbf8f1;font-size:13px;text-transform:uppercase;letter-spacing:.08em}.compare-row b{font-size:13px}.addon-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.addon-grid article{background:#fbf8f1;border:1px solid #cdc3b3;border-radius:12px;padding:24px;box-shadow:0 14px 36px rgba(16,17,20,.07)}.addon-grid h3{font-family:Outfit,Inter,sans-serif;font-size:24px;margin:0 0 8px}.addon-grid strong{font-size:26px}.addon-grid p,.addon-grid small{display:block;color:#5f6670;line-height:1.5}.pricing-final{display:flex;justify-content:space-between;align-items:center;gap:24px;background:#101114;color:#fbf8f1;margin:0 clamp(18px,4vw,64px) clamp(40px,6vw,80px);border-radius:14px;padding:clamp(28px,4vw,46px)}.pricing-final h2{font-size:clamp(34px,4.8vw,64px);color:#fbf8f1}.pricing-final p{color:rgba(251,248,241,.72);max-width:680px}@media(max-width:1100px){.pricing-hero,.pricing-grid{grid-template-columns:1fr 1fr}.price-card-main{transform:none}.addon-grid{grid-template-columns:1fr}.compare-row{grid-template-columns:1fr}.compare-row>*{border-bottom:1px solid #ded4c4}.pricing-final{display:block}.pricing-final>a{margin-top:18px}}@media(max-width:700px){.pricing-hero,.pricing-grid{grid-template-columns:1fr}.pricing-hero{background:linear-gradient(180deg,#101114 0%,#242830 58%,#e8e2d6 58%,#f3eee5 100%);padding-left:14px;padding-right:14px}.pricing-grid,.pricing-compare,.pricing-addons{padding-left:14px;padding-right:14px}.pricing-copy h1{font-size:48px}.pricing-final{margin-left:14px;margin-right:14px}}
+      `}</style>
     </MarketingShell>
   );
 }
