@@ -10,6 +10,7 @@ import "./styles/churvox-autonomous-features.css";
 import "./styles/churvox-autonomous-pricing.css";
 import "./styles/churvox-autonomous-auth.css";
 import "./styles/churvox-autonomous-office-desk.css";
+import "./styles/churvox-autonomous-workspaces.css";
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
