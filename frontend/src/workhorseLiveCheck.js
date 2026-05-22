@@ -1,4 +1,4 @@
-// PHASE_4C_WORKHORSE_PAGE_NAMES_LIVE_CHECK
+// PHASE_4E_WORKHORSE_REMAINING_PAGE_NAMES
 // Runtime safety pass: keeps the new Workhorse names visible while the full component rewrite continues.
 const workhorsePageNames = [
   'Job Control Board',
@@ -6,6 +6,14 @@ const workhorsePageNames = [
   'Invoice Forge',
   'Quote Press',
   'Field Workbench',
+  'Automation Engine',
+  'Reports Gauge',
+  'Control Settings',
+  'Dispatch Board',
+  'Notification Feed',
+  'Integration Bay',
+  'SMS Desk',
+  'Plan Command',
 ];
 
 const replacements = new Map([
@@ -19,7 +27,17 @@ const replacements = new Map([
   ['Quotes', 'Quote Press'],
   ['Quote Studio', 'Quote Press'],
   ['My Jobs', 'Field Workbench'],
+  ['Today\'s Work', 'Field Workbench'],
   ['Assigned Jobs', 'Assigned Work'],
+  ['Automation', 'Automation Engine'],
+  ['Reports', 'Reports Gauge'],
+  ['Settings', 'Control Settings'],
+  ['Dispatch', 'Dispatch Board'],
+  ['Notifications', 'Notification Feed'],
+  ['Integrations', 'Integration Bay'],
+  ['SMS', 'SMS Desk'],
+  ['Plans', 'Plan Command'],
+  ['Pricing', 'Plan Command'],
 ]);
 
 const replaceNodeText = (node) => {
