@@ -1,0 +1,34 @@
+/* Churvox Autonomous Office final sweep. Visual-only across remaining product areas. */
+:root{--ao-ink:#101114;--ao-ink-2:#242830;--ao-paper:#fbf8f1;--ao-stone:#e8e2d6;--ao-stone-2:#f3eee5;--ao-border:#cdc3b3;--ao-brass:#c58a2b;--ao-muted:#5f6670;}
+/* remaining marketing/plan/public surfaces */
+.plans-page,.billing-page,.myob-page,.sms-page,.dispatch-page,.proof-page,.document-studio-page,.automation-page,.onboarding-page,.help-page,.support-page{background:var(--ao-stone)!important;color:var(--ao-ink)!important;}
+.plans-page h1,.billing-page h1,.myob-page h1,.sms-page h1,.dispatch-page h1,.proof-page h1,.document-studio-page h1,.automation-page h1,.onboarding-page h1,.help-page h1,.support-page h1{font-family:Outfit,Inter,sans-serif!important;font-size:clamp(40px,5.4vw,84px)!important;line-height:.9!important;letter-spacing:-.07em!important;color:var(--ao-ink)!important;}
+.plans-page h2,.billing-page h2,.myob-page h2,.sms-page h2,.dispatch-page h2,.proof-page h2,.document-studio-page h2,.automation-page h2,.onboarding-page h2,.help-page h2,.support-page h2{font-family:Outfit,Inter,sans-serif!important;letter-spacing:-.05em!important;color:var(--ao-ink)!important;}
+.plans-page p,.billing-page p,.myob-page p,.sms-page p,.dispatch-page p,.proof-page p,.document-studio-page p,.automation-page p,.onboarding-page p,.help-page p,.support-page p{color:var(--ao-muted)!important;line-height:1.55!important;}
+/* convert old bright plan boxes to serious operator cards */
+.plan-card,.billing-card,.myob-card,.sms-card,.dispatch-card,.proof-card,.automation-card,.onboarding-card,.help-card,.support-card,[class*="PlanCard"],[class*="Billing"],[class*="MYOB"],[class*="Sms"],[class*="SMS"],[class*="Dispatch"],[class*="Proof"],[class*="DocumentStudio"],[class*="Automation"]{background:var(--ao-paper)!important;color:var(--ao-ink)!important;border:1px solid var(--ao-border)!important;border-radius:12px!important;box-shadow:0 16px 44px rgba(16,17,20,.09)!important;}
+.plan-card.featured,.plan-card.popular,[class*="popular"],[class*="Featured"]{background:var(--ao-ink)!important;color:var(--ao-paper)!important;border-color:var(--ao-ink)!important;box-shadow:0 44px 120px rgba(16,17,20,.28)!important;}
+.plan-card.featured *,.plan-card.popular *,[class*="popular"] *{color:inherit!important;}
+/* AI/operator action queues */
+.approval-queue,.ai-queue,.operator-queue,.work-slip-list,.smart-hub,.smart-hub-panel,[class*="ApprovalQueue"],[class*="AIQueue"],[class*="OperatorQueue"],[class*="SmartHub"],[class*="WorkSlip"]{background:var(--ao-ink)!important;color:var(--ao-paper)!important;border:1px solid #343a44!important;border-radius:14px!important;box-shadow:0 34px 100px rgba(16,17,20,.24)!important;}
+.approval-queue h1,.approval-queue h2,.ai-queue h1,.ai-queue h2,.operator-queue h1,.operator-queue h2,.smart-hub h1,.smart-hub h2,[class*="ApprovalQueue"] h1,[class*="ApprovalQueue"] h2,[class*="SmartHub"] h1,[class*="SmartHub"] h2{color:var(--ao-paper)!important;font-family:Outfit,Inter,sans-serif!important;letter-spacing:-.06em!important;}
+.approval-queue p,.ai-queue p,.operator-queue p,.smart-hub p,[class*="ApprovalQueue"] p,[class*="SmartHub"] p{color:rgba(251,248,241,.72)!important;}
+/* items inside dark queues */
+.approval-item,.ai-action-card,.operator-action-card,.work-slip-card,[class*="ApprovalItem"],[class*="ActionCard"],[class*="WorkSlipCard"]{background:#181c22!important;color:var(--ao-paper)!important;border:1px solid #343a44!important;border-radius:10px!important;box-shadow:none!important;}
+.approval-item.active,.ai-action-card.active,.operator-action-card.active,.work-slip-card.active{border-color:var(--ao-brass)!important;box-shadow:inset 4px 0 0 var(--ao-brass)!important;}
+/* onboarding / guide tour */
+.onboarding-checklist,.guided-tour,.tour-card,[class*="Onboarding"],[class*="Checklist"],[class*="GuidedTour"],[class*="Tour"]{background:var(--ao-paper)!important;color:var(--ao-ink)!important;border:1px solid var(--ao-border)!important;border-radius:12px!important;box-shadow:0 16px 44px rgba(16,17,20,.09)!important;}
+.onboarding-checklist [aria-checked="true"],.guided-tour [aria-current="step"],[class*="Checklist"] [aria-checked="true"]{background:rgba(197,138,43,.14)!important;color:var(--ao-ink)!important;border-color:var(--ao-brass)!important;}
+/* calendar / dispatch */
+.calendar-grid,.dispatch-board,.schedule-board,[class*="Calendar"],[class*="DispatchBoard"],[class*="Schedule"]{background:var(--ao-paper)!important;color:var(--ao-ink)!important;border:1px solid var(--ao-border)!important;border-radius:12px!important;}
+.calendar-event,.dispatch-job,.schedule-item,[class*="CalendarEvent"],[class*="DispatchJob"]{background:#fff!important;border:1px solid var(--ao-border)!important;border-left:4px solid var(--ao-brass)!important;color:var(--ao-ink)!important;border-radius:10px!important;box-shadow:0 10px 28px rgba(16,17,20,.07)!important;}
+/* photos/proof */
+.photo-grid img,.proof-grid img,.job-photo,[class*="PhotoGrid"] img,[class*="Proof"] img{border-radius:10px!important;border:1px solid var(--ao-border)!important;box-shadow:0 12px 34px rgba(16,17,20,.12)!important;}
+.lightbox,.photo-lightbox,[class*="Lightbox"]{background:rgba(16,17,20,.82)!important;backdrop-filter:blur(8px)!important;}
+/* invoices/quotes document buttons */
+.pay-now,.send-invoice,.send-quote,.accept-quote,[class*="PayNow"],[class*="SendInvoice"],[class*="SendQuote"],[class*="AcceptQuote"]{background:var(--ao-ink)!important;color:var(--ao-paper)!important;border-color:var(--ao-ink)!important;border-radius:9px!important;font-weight:900!important;}
+/* final colour kill */
+[style*="#22c55e"],[style*="#84cc16"],[style*="#a3e635"],[style*="#bef264"],[style*="#C8FF4D"],[style*="#BFFF2F"],[style*="lime"],[style*="green"]{color:var(--ao-brass)!important;border-color:var(--ao-brass)!important;}
+.bg-green-500,.bg-green-600,.bg-lime-500,.bg-lime-600,.bg-emerald-500,.bg-emerald-600{background:var(--ao-ink)!important;color:var(--ao-paper)!important;}
+/* mobile polish */
+@media(max-width:760px){.plans-page,.billing-page,.myob-page,.sms-page,.dispatch-page,.proof-page,.document-studio-page,.automation-page,.onboarding-page,.help-page,.support-page{padding-bottom:96px!important;}.plan-card,.billing-card,.myob-card,.sms-card,.dispatch-card,.proof-card,.automation-card{border-radius:12px!important;}}
