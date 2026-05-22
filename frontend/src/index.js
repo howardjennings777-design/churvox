@@ -5,6 +5,8 @@ import './index.css';
 import './styles/churvoxFullPageModals.css';
 import './styles/churvox-workhorse.css';
 import './styles/churvox-workhorse-worker.css';
+import './styles/churvox-workhorse-worker-complete.css';
+import './styles/churvox-workhorse-ops.css';
 import './workhorseLiveCheck';
 
 if ('serviceWorker' in navigator) {
