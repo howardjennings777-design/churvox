@@ -14,7 +14,7 @@ export default function PremiumTable({ columns = [], rows = [], onRowClick, empt
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr><td colSpan={columns.length} className="text-center py-8 text-[#5b6c87]">{emptyText}</td></tr>
+              <tr><td colSpan={columns.length} className="text-center py-8 px-row__sub">{emptyText}</td></tr>
             ) : (
               rows.map((row, ri) => (
                 <tr key={row.id || ri} onClick={onRowClick ? () => onRowClick(row) : undefined} className={onRowClick ? 'cursor-pointer' : ''}>
