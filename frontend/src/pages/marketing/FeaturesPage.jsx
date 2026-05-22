@@ -1,412 +1,95 @@
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import MarketingShell from "../../components/marketing/MarketingShell";
-import { CxButton } from "../../components/cx";
 
-const SECTIONS = [
-  {
-    id: "front-desk",
-    eyebrow: "AI Operator Front Desk",
-    title: "One screen that shows what needs doing.",
-    body:
-      "Four zones — Ready to approve, Needs fixing, Field & crew, Money desk. Real data, calm cards, no noisy SaaS dashboard. Tap a Work Slip to open it in-page. No new tabs, no losing your spot.",
-    bullets: [
-      "Real jobs, clients, quotes, invoices, proof",
-      "AI explains why each item is surfaced",
-      "Approval queue with one-tap actions",
-      "Owner-first — nothing auto-sends",
-    ],
-  },
-  {
-    id: "jobs",
-    eyebrow: "Jobs",
-    title: "Schedule, dispatch, and finish jobs cleanly.",
-    body:
-      "Create a job from a client, assign a worker, track status in real-time. Job conflict warnings stop you double-booking. Status colours mean something.",
-    bullets: [
-      "Completed • In progress • Paused • Assigned • Cancelled",
-      "Photos & proof from the field",
-      "Pricing visible to owner/admin only — workers never see it",
-      "Open job detail in-page, never lose context",
-    ],
-  },
-  {
-    id: "clients",
-    eyebrow: "Clients",
-    title: "One clean client record per business.",
-    body:
-      "CSV import. Linked jobs, quotes, invoices. Missing phone or email flagged before it bites you on a follow-up.",
-    bullets: [
-      "Quick-add and edit in popups",
-      "Missing-info badges so AI can prep work",
-      "Related history in one panel",
-    ],
-  },
-  {
-    id: "quotes",
-    eyebrow: "Quotes",
-    title: "Drafted by AI, approved by you, sent with a public link.",
-    body:
-      "AI drafts the quote description from job context. You review and send. Clients accept or decline through a public preview link.",
-    bullets: [
-      "Draft • Send • Accept / Decline",
-      "Public preview link for the client",
-      "Follow-up drafting — always owner-approved",
-    ],
-  },
-  {
-    id: "invoices",
-    eyebrow: "Invoices",
-    title: "Real invoice templates with Pay Now built in.",
-    body:
-      "AI suggests the description from completed job notes and pricing. You approve. The client opens the invoice on a clean public page and pays in one tap.",
-    bullets: [
-      "Branded invoice template",
-      "Public Pay Now link",
-      "MYOB push — only on your approval",
-      "Audit log of every send and edit",
-    ],
-  },
-  {
-    id: "team",
-    eyebrow: "Team & workers",
-    title: "Roles that mean something.",
-    body:
-      "Owner, Manager, Worker, Office Admin, Payroll — each role sees only what they should. Workers don\u2019t see pricing. Payroll doesn\u2019t see job editing. Owner sees everything.",
-    bullets: [
-      "Worker app is simple and locked-down",
-      "Payroll workspace separate from owner billing",
-      "Invite by email, role on assignment",
-    ],
-  },
-  {
-    id: "workers",
-    eyebrow: "Worker app",
-    title: "The crew app workers will actually use.",
-    body:
-      "Same Churvox theme, simplified. Workers see their assigned jobs, start/pause/complete, upload photos, add notes. No pricing, no admin noise, no plans page.",
-    bullets: [
-      "Mobile-first big tap targets",
-      "Photos and notes from the field",
-      "Time tracking with start/pause/complete",
-      "Worker never sees owner-only data",
-    ],
-  },
-  {
-    id: "dispatch",
-    eyebrow: "Dispatch",
-    title: "AI suggests who to send — and explains why.",
-    body:
-      "Unassigned jobs surface in the dispatch view with worker workload and travel-time hints. Conflict warnings stop double-bookings.",
-    bullets: [
-      "Owner-approved assignment",
-      "Conflict warnings",
-      "Worker availability at a glance",
-    ],
-  },
-  {
-    id: "proof",
-    eyebrow: "Photos & proof",
-    title: "Proof that lives in-page — never a new tab.",
-    body:
-      "Workers upload from the field. Owner reviews in a lightbox right inside the dashboard with the related job and client one tap away.",
-    bullets: [
-      "In-page lightbox — no new tabs",
-      "Linked job and client context",
-      "Safe review — no auto-send to client",
-    ],
-  },
-  {
-    id: "payroll",
-    eyebrow: "Payroll workspace",
-    title: "Pay periods, approved hours, exports. No surprises.",
-    body:
-      "Built for handoff and export to your accountant. Payroll-role access is locked-down and never touches owner billing or MYOB settings.",
-    bullets: [
-      "Approved hours from time tracking",
-      "Pay period summaries",
-      "Exports for handoff — no bank automation",
-    ],
-  },
-  {
-    id: "approval-queue",
-    eyebrow: "AI Approval queue",
-    title: "Every AI action explained, batched, approval-first.",
-    body:
-      "AI never auto-sends customer messages, never charges, never auto-syncs MYOB, never edits payroll. It drafts. You approve. That\u2019s the deal.",
-    bullets: [
-      "Approval-first by default",
-      "Optional auto-send categories (you choose)",
-      "Quiet hours and message limits per client",
-      "Full audit log",
-    ],
-  },
-  {
-    id: "myob",
-    eyebrow: "MYOB sync",
-    title: "Approval-first MYOB — never auto-syncs.",
-    body:
-      "Optional add-on on Operator and included on Command. Push approved invoices and contacts to MYOB. Nothing leaves Churvox without your sign-off.",
-    bullets: [
-      "Per-record push (no silent sync)",
-      "Setup-required state until connected",
-      "Owner-only configuration",
-    ],
-  },
-  {
-    id: "sms",
-    eyebrow: "SMS reminders",
-    title: "Optional SMS, owner-approved, top up as needed.",
-    body:
-      "Top-up credits when you need them. Drafts go through the approval queue. No active sends without owner approval.",
-    bullets: [
-      "Credit packs from $10",
-      "Quiet hours and per-client message limits",
-      "Setup-required state when not configured",
-    ],
-  },
-  {
-    id: "service",
-    eyebrow: "Service businesses",
-    title: "Not just trades.",
-    body:
-      "Lawn care, cleaning, property maintenance, pest control — any business that books, dispatches, and invoices. Same Front Desk.",
-    bullets: [],
-  },
-  {
-    id: "trades",
-    eyebrow: "Trades",
-    title: "Built with tradies in mind.",
-    body:
-      "Plumbing, electrical, painting, handyman, building, HVAC, landscaping. Pricing visible only to owners and admins. Crew app stays simple.",
-    bullets: [],
-  },
+const systems = [
+  ["Front Desk", "The owner queue for approvals, blockers, crew movement and money."],
+  ["Work Slips", "A clean approval sheet for each action Churvox prepares."],
+  ["Jobs", "Create, assign, track, pause, complete and invoice work from one flow."],
+  ["Worker app", "Assigned jobs, photos, notes, status and directions on mobile."],
+  ["Quotes", "Prepare, send, follow up and convert approved quotes into jobs."],
+  ["Invoices", "Draft from completed jobs, send clean links and keep balances visible."],
+  ["Payroll", "Review time, approved hours and export summaries without owner clutter."],
+  ["MYOB + SMS", "Optional, approval-first integrations when your business is ready."],
 ];
 
+const rails = [
+  ["Owner control", "AI prepares the work. You approve before anything important happens."],
+  ["Crew clarity", "Workers see only the jobs and actions they need. No pricing or admin noise."],
+  ["Money visibility", "Completed work, open invoices and follow-ups stay in front of you."],
+];
+
+function Button({ to, children, primary }) {
+  return <Link className={primary ? "features-btn features-btn-primary" : "features-btn"} to={to}>{children}</Link>;
+}
+
+function FeatureConsole() {
+  return (
+    <div className="features-console">
+      <div className="features-console-bar"><b>Operator system map</b><span>Active</span></div>
+      <div className="features-console-body">
+        {systems.slice(0, 6).map(([title, text], i) => (
+          <div className={i === 0 ? "features-module active" : "features-module"} key={title}>
+            <small>{String(i + 1).padStart(2, "0")}</small>
+            <strong>{title}</strong>
+            <p>{text}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function FeaturesPage() {
-  useEffect(() => {
-    document.title = "Features — Churvox";
-  }, []);
+  useEffect(() => { document.title = "Features — Churvox"; }, []);
 
   return (
     <MarketingShell>
-      <section
-        style={{
-          padding: "clamp(40px, 6vw, 80px) clamp(16px, 4vw, 28px) 32px",
-          background:
-            "radial-gradient(800px 480px at 92% 12%, rgba(200,255,77,0.22), transparent 60%)," +
-            "linear-gradient(180deg, var(--cx-bg) 0%, var(--cx-bg-soft) 100%)",
-        }}
-      >
-        <div style={{ maxWidth: 920, margin: "0 auto" }}>
-          <div
-            style={{
-              display: "inline-block",
-              fontSize: 12,
-              fontWeight: 700,
-              padding: "5px 11px",
-              borderRadius: 999,
-              background: "var(--cx-accent-soft)",
-              color: "var(--cx-accent)",
-              border: "1px solid rgba(200,255,77,0.5)",
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              marginBottom: 14,
-            }}
-          >
-            Features
+      <main className="features-page">
+        <section className="features-hero">
+          <div className="features-copy">
+            <p className="features-kicker">Features</p>
+            <h1>The operating system behind the front desk.</h1>
+            <p>Churvox connects jobs, clients, quotes, invoices, workers, proof and payroll into one approval-first system for trade and service businesses.</p>
+            <div className="features-actions"><Button to="/signup" primary>Start free</Button><Button to="/pricing">See pricing</Button></div>
           </div>
-          <h1
-            style={{
-              fontFamily: "Outfit, Inter, sans-serif",
-              fontSize: "clamp(36px, 5.4vw, 64px)",
-              fontWeight: 800,
-              letterSpacing: "-0.03em",
-              color: "var(--cx-text)",
-              margin: 0,
-              lineHeight: 1.05,
-            }}
-          >
-            Everything Churvox does, one Front Desk.
-          </h1>
-          <p
-            style={{
-              marginTop: 16,
-              fontSize: 18,
-              color: "var(--cx-muted)",
-              lineHeight: 1.5,
-              maxWidth: 660,
-            }}
-          >
-            Calm, mobile-first, approval-first. Each surface designed so you — the owner — stay in control while AI does the admin.
-          </p>
-          <div style={{ marginTop: 22, display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <Link to="/signup" style={{ textDecoration: "none" }}>
-              <CxButton variant="primary" size="lg">Start free trial</CxButton>
-            </Link>
-            <Link to="/pricing" style={{ textDecoration: "none" }}>
-              <CxButton variant="secondary" size="lg">See pricing</CxButton>
-            </Link>
-          </div>
-        </div>
-      </section>
+          <FeatureConsole />
+        </section>
 
-      <section
-        style={{
-          maxWidth: 1100,
-          margin: "0 auto",
-          padding: "clamp(36px, 5vw, 60px) clamp(16px, 4vw, 28px)",
-          display: "grid",
-          gap: 20,
-        }}
-      >
-        {SECTIONS.map((s, i) => (
-          <article
-            key={s.id}
-            id={s.id}
-            style={{
-              background:
-                i % 2 === 0 ? "var(--cx-surface)" : "linear-gradient(135deg, var(--cx-surface) 0%, var(--cx-surface-2) 100%)",
-              border: "1px solid var(--cx-border)",
-              borderRadius: 24,
-              padding: "clamp(22px, 3.5vw, 38px)",
-              boxShadow: "0 6px 18px rgba(14,14,14,0.04)",
-            }}
-          >
-            <div
-              style={{
-                display: "inline-block",
-                fontSize: 11.5,
-                fontWeight: 700,
-                padding: "4px 9px",
-                borderRadius: 999,
-                background: "var(--cx-accent-soft)",
-                color: "var(--cx-accent)",
-                border: "1px solid rgba(200,255,77,0.45)",
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-                marginBottom: 10,
-              }}
-            >
-              {s.eyebrow}
-            </div>
-            <h2
-              style={{
-                fontFamily: "Outfit, Inter, sans-serif",
-                fontSize: "clamp(22px, 2.6vw, 30px)",
-                fontWeight: 700,
-                color: "var(--cx-text)",
-                margin: 0,
-                letterSpacing: "-0.015em",
-                lineHeight: 1.15,
-              }}
-            >
-              {s.title}
-            </h2>
-            <p
-              style={{
-                marginTop: 12,
-                fontSize: 15.5,
-                color: "var(--cx-muted)",
-                lineHeight: 1.55,
-                maxWidth: 780,
-              }}
-            >
-              {s.body}
-            </p>
-            {s.bullets && s.bullets.length ? (
-              <ul
-                style={{
-                  listStyle: "none",
-                  padding: 0,
-                  margin: "16px 0 0",
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-                  gap: 8,
-                }}
-              >
-                {s.bullets.map((b) => (
-                  <li
-                    key={b}
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 8,
-                      fontSize: 13.5,
-                      color: "var(--cx-text-soft)",
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: 16,
-                        height: 16,
-                        minWidth: 16,
-                        borderRadius: 5,
-                        background: "var(--cx-accent-soft)",
-                        color: "var(--cx-accent)",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginTop: 2,
-                        fontSize: 11,
-                        fontWeight: 800,
-                      }}
-                    >
-                      ✓
-                    </span>
-                    <span>{b}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </article>
-        ))}
-      </section>
+        <section className="features-rails">
+          {rails.map(([title, text]) => <article key={title}><strong>{title}</strong><span>{text}</span></article>)}
+        </section>
 
-      {/* Final CTA */}
-      <section
-        style={{
-          maxWidth: 1240,
-          margin: "0 auto",
-          padding: "0 clamp(16px, 4vw, 28px) clamp(40px, 6vw, 80px)",
-        }}
-      >
-        <div
-          style={{
-            background: "linear-gradient(135deg, var(--cx-surface) 0%, var(--cx-surface-2) 100%)",
-            border: "1px solid var(--cx-border)",
-            borderRadius: 28,
-            padding: "clamp(30px, 4vw, 48px)",
-            textAlign: "center",
-          }}
-        >
-          <h3
-            style={{
-              fontFamily: "Outfit, Inter, sans-serif",
-              fontSize: "clamp(26px, 3.4vw, 38px)",
-              fontWeight: 700,
-              letterSpacing: "-0.02em",
-              margin: 0,
-              color: "var(--cx-text)",
-              lineHeight: 1.1,
-            }}
-          >
-            Ready to put the admin on autopilot?
-          </h3>
-          <p style={{ marginTop: 12, color: "var(--cx-muted)", fontSize: 16, lineHeight: 1.55, maxWidth: 560, marginInline: "auto" }}>
-            Try Churvox on a real job. No card to start.
-          </p>
-          <div style={{ marginTop: 22, display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-            <Link to="/signup" style={{ textDecoration: "none" }}>
-              <CxButton variant="primary" size="lg">Start free trial</CxButton>
-            </Link>
-            <Link to="/pricing" style={{ textDecoration: "none" }}>
-              <CxButton variant="secondary" size="lg">See pricing</CxButton>
-            </Link>
+        <section className="features-system">
+          <div className="features-head"><p className="features-kicker">System modules</p><h2>Everything stays connected, without turning into a noisy dashboard.</h2></div>
+          <div className="features-grid">
+            {systems.map(([title, text], i) => <article key={title}><span>{String(i + 1).padStart(2, "0")}</span><h3>{title}</h3><p>{text}</p></article>)}
           </div>
-        </div>
-      </section>
+        </section>
+
+        <section className="features-workslip">
+          <div>
+            <p className="features-kicker">Approval-first</p>
+            <h2>Work Slips explain the action before you approve it.</h2>
+            <p>Instead of guessing what the software is doing, Churvox shows the client, job, amount, proof, missing data and reason each item was surfaced.</p>
+          </div>
+          <div className="features-slip">
+            <small>Work Slip</small>
+            <h3>Draft invoice prepared</h3>
+            <p>Completed hedge trimming job has worker notes, proof photos and saved pricing. Review the invoice before sending.</p>
+            <dl><div><dt>Client</dt><dd>Property Maintenance</dd></div><div><dt>Proof</dt><dd>6 photos</dd></div><div><dt>Action</dt><dd>Owner approval</dd></div></dl>
+          </div>
+        </section>
+
+        <section className="features-final">
+          <div><p className="features-kicker">Use it on real work</p><h2>Start with one job. Let the system show you the next action.</h2></div>
+          <Button to="/signup" primary>Start free</Button>
+        </section>
+      </main>
+
+      <style>{`
+        .features-page{background:#e8e2d6;color:#101114}.features-kicker{text-transform:uppercase;letter-spacing:.14em;font-size:12px;font-weight:900;color:#9b8059;margin:0 0 14px}.features-hero{display:grid;grid-template-columns:minmax(0,.94fr) minmax(520px,1.06fr);gap:34px;align-items:center;padding:clamp(48px,7vw,96px) clamp(18px,4vw,64px);background:linear-gradient(135deg,#101114 0%,#242830 48%,#e8e2d6 48%,#f3eee5 100%)}.features-copy{color:#fbf8f1}.features-copy .features-kicker{color:#caa46d}.features-copy h1,.features-head h2,.features-workslip h2,.features-final h2{font-family:Outfit,Inter,sans-serif;font-size:clamp(42px,6vw,84px);line-height:.94;letter-spacing:-.065em;margin:0}.features-copy h1{color:#fbf8f1}.features-copy p{max-width:680px;color:rgba(251,248,241,.76);font-size:18px;line-height:1.55}.features-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}.features-btn{display:inline-flex;text-decoration:none;border:1px solid rgba(251,248,241,.28);background:rgba(251,248,241,.06);color:#fbf8f1;border-radius:8px;padding:13px 18px;font-weight:900}.features-btn-primary{background:#fbf8f1;color:#101114;border-color:#fbf8f1}.features-console{background:#101114;border:1px solid #343a44;border-radius:14px;box-shadow:0 42px 120px rgba(16,17,20,.42);padding:14px;color:#fbf8f1}.features-console-bar{display:flex;justify-content:space-between;border-bottom:1px solid #343a44;padding:8px 8px 14px;font-size:13px}.features-console-bar span{color:#caa46d;font-weight:900}.features-console-body{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-top:14px}.features-module{background:#181c22;border:1px solid #343a44;border-radius:12px;padding:16px}.features-module.active{border-color:#c58a2b;box-shadow:inset 3px 0 0 #c58a2b}.features-module small{color:#9aa2ad;font-weight:900}.features-module strong{display:block;margin-top:10px}.features-module p{color:#9aa2ad;font-size:12.5px;line-height:1.45}.features-rails{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#cdc3b3;padding:1px;margin:0 clamp(18px,4vw,64px);transform:translateY(-28px);box-shadow:0 18px 46px rgba(16,17,20,.12)}.features-rails article{background:#fbf8f1;padding:22px}.features-rails strong{display:block}.features-rails span{display:block;margin-top:6px;color:#5f6670;font-size:14px;line-height:1.45}.features-system{padding:clamp(48px,7vw,96px) clamp(18px,4vw,64px)}.features-head{max-width:900px;margin-bottom:30px}.features-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.features-grid article{background:#fbf8f1;border:1px solid #cdc3b3;border-radius:12px;padding:24px;box-shadow:0 12px 34px rgba(16,17,20,.07)}.features-grid span{font-family:Outfit,Inter,sans-serif;font-size:42px;font-weight:900;color:#c58a2b}.features-grid h3{font-size:20px;margin:14px 0 8px}.features-grid p{color:#5f6670;line-height:1.5}.features-workslip{display:grid;grid-template-columns:1fr .8fr;gap:28px;align-items:center;background:#101114;color:#fbf8f1;padding:clamp(48px,7vw,96px) clamp(18px,4vw,64px)}.features-workslip .features-kicker{color:#caa46d}.features-workslip h2{color:#fbf8f1}.features-workslip p{color:rgba(251,248,241,.72);font-size:17px;line-height:1.55}.features-slip{background:#fbf8f1;color:#101114;border-radius:12px;padding:28px;box-shadow:0 34px 90px rgba(0,0,0,.28)}.features-slip small{text-transform:uppercase;letter-spacing:.12em;font-weight:900;color:#9b8059}.features-slip h3{font-family:Outfit,Inter,sans-serif;font-size:34px;letter-spacing:-.04em;line-height:1;margin:12px 0}.features-slip p{color:#5f6670}.features-slip dl{display:grid;gap:10px}.features-slip dl div{display:flex;justify-content:space-between;border-bottom:1px solid #ded4c4;padding-bottom:10px}.features-slip dt{color:#5f6670}.features-slip dd{margin:0;font-weight:900}.features-final{display:flex;justify-content:space-between;align-items:center;gap:24px;background:#fbf8f1;border-top:1px solid #cdc3b3;padding:clamp(48px,6vw,80px) clamp(18px,4vw,64px)}.features-final .features-btn{background:#101114;color:#fbf8f1;border-color:#101114}@media(max-width:1100px){.features-hero,.features-workslip{grid-template-columns:1fr;background:linear-gradient(180deg,#101114 0%,#242830 58%,#e8e2d6 58%,#f3eee5 100%)}.features-grid{grid-template-columns:1fr 1fr}.features-rails{grid-template-columns:1fr}}@media(max-width:680px){.features-hero{padding:34px 14px}.features-copy h1{font-size:48px}.features-console-body,.features-grid{grid-template-columns:1fr}.features-system,.features-workslip,.features-final{padding-left:14px;padding-right:14px}.features-final{display:block}.features-final .features-btn{margin-top:18px}.features-rails{margin-left:14px;margin-right:14px}}
+      `}</style>
     </MarketingShell>
   );
 }
