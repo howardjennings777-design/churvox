@@ -8,6 +8,7 @@ import './styles/churvox-workhorse-worker.css';
 import './styles/churvox-workhorse-worker-complete.css';
 import './styles/churvox-workhorse-ops.css';
 import './workhorseLiveCheck';
+import './renderDeployMarker';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
