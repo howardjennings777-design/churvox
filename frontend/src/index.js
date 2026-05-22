@@ -4,6 +4,7 @@ import App from './App';
 import './index.css';
 import './styles/churvoxFullPageModals.css';
 import './styles/churvox-workhorse.css';
+import './workhorseLiveCheck';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
