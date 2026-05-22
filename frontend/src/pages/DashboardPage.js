@@ -1,7 +1,7 @@
 import React from 'react';
-import FlightDeckPage from './FlightDeckPage';
+import TechFlowDeskPage from './TechFlowDeskPage';
 import SmartHubErrorBoundary from '../components/SmartHubErrorBoundary';
 
 export default function DashboardPage(){
-  return <SmartHubErrorBoundary><FlightDeckPage /></SmartHubErrorBoundary>;
+  return <SmartHubErrorBoundary><TechFlowDeskPage /></SmartHubErrorBoundary>;
 }
