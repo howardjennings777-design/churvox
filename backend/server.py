@@ -2107,7 +2107,8 @@ async def _upsert_operator_action(business_id: str, action_key: str, item: dict,
     if existing and str(existing.get("status") or "") in {"pending", "ready", "watching", "draft"}:
         await db.ai_operator_actions.update_one({"_id": existing.get("_id")}, {"$set": {**item, "updated_at": now}})
         return False, True
-    if existing and str(existing.get("status") or "") in {"completed", "dismissed", "rejected"}:
+    # CHURVOX_AI_OPERATOR_APPROVED_ACTIONS_STAY_DONE
+    if existing and str(existing.get("status") or "") in {"completed", "approved", "dismissed", "rejected"}:
         return False, False
     await db.ai_operator_actions.insert_one({**item, "business_id": business_id, "action_key": action_key, "created_at": now, "updated_at": now})
     return True, False
