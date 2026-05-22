@@ -3,24 +3,97 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 
-const S = {
-  page: { minHeight: "100vh", background: "radial-gradient(circle at 86% 12%,rgba(0,167,255,.22),transparent 32%),linear-gradient(135deg,#eef5ff,#ffffff 58%,#dbeafe)", color: "#142033", fontFamily: "Inter, system-ui, sans-serif" },
-  nav: { minHeight: 78, display: "flex", alignItems: "center", gap: 22, padding: "0 clamp(16px,4vw,72px)", background: "linear-gradient(90deg,#1d2d4a,#2764ff)", boxShadow: "0 18px 48px rgba(39,100,255,.24)" },
-  logo: { display: "flex", textDecoration: "none" },
-  links: { display: "flex", gap: 8, flex: 1 },
-  link: { color: "rgba(255,255,255,.82)", textDecoration: "none", fontWeight: 850, fontSize: 13, padding: "10px 12px", borderRadius: 12 },
-  wrap: { minHeight: "calc(100vh - 78px)", display: "grid", gridTemplateColumns: "minmax(0,1.08fr) minmax(380px,.92fr)", gap: 24, alignItems: "center", padding: "clamp(28px,6vw,82px) clamp(16px,4vw,72px)" },
-  panel: { background: "linear-gradient(135deg,#1d2d4a,#2764ff)", color: "#fff", borderRadius: 34, padding: "clamp(28px,5vw,58px)", boxShadow: "0 34px 110px rgba(39,100,255,.26)" },
-  form: { background: "rgba(255,255,255,.92)", border: "1px solid #c9d8ef", borderRadius: 30, padding: "clamp(24px,4vw,42px)", boxShadow: "0 32px 90px rgba(35,58,102,.18)", backdropFilter: "blur(14px)" },
-  kicker: { margin: 0, color: "#2764ff", textTransform: "uppercase", letterSpacing: ".17em", fontSize: 11, fontWeight: 950 },
-  h1: { margin: "12px 0", fontFamily: "Outfit, Inter, sans-serif", fontSize: "clamp(44px,6vw,86px)", lineHeight: .82, letterSpacing: "-.08em", color: "#142033" },
-  input: { width: "100%", boxSizing: "border-box", border: "1px solid #c9d8ef", borderRadius: 16, padding: "14px 15px", marginTop: 8, fontSize: 15 },
-  btn: { width: "100%", border: 0, borderRadius: 16, background: "linear-gradient(135deg,#2764ff,#00a7ff)", color: "#fff", padding: "15px 18px", fontWeight: 950, marginTop: 18, boxShadow: "0 18px 42px rgba(39,100,255,.28)" },
-};
+export default function SignupPage() {
+  const navigate = useNavigate();
+  const { register } = useAuth();
+  const [formData, setFormData] = useState({ name: "", email: "", password: "", confirmPassword: "", business_name: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-export default function SignupPage(){
-const navigate=useNavigate();const {register}=useAuth();const [formData,setFormData]=useState({ name:"", email:"", password:"", confirmPassword:"", business_name:"" });const [error,setError]=useState("");const [loading,setLoading]=useState(false);
-const handleChange=(e)=>setFormData({...formData,[e.target.name]:e.target.value});
-const handleSubmit=async(e)=>{e.preventDefault();setError("");if(formData.password!==formData.confirmPassword)return setError("Passwords do not match");if(formData.password.length<6)return setError("Password must be at least 6 characters");setLoading(true);try{const result=await register({name:formData.name,email:formData.email,password:formData.password,business_name:formData.business_name||null});if(result?.token)navigate('/plans');else setError('Registration failed. Please try again.');}catch(err){setError(err?.response?.data?.detail||'Registration failed. Please try again.')}setLoading(false)};
-return <main style={S.page}><header style={S.nav}><Link to="/" style={S.logo}><ChurvoxLogo/></Link><nav style={S.links}><Link to="/" style={S.link}>Home</Link><Link to="/features" style={S.link}>Features</Link><Link to="/pricing" style={S.link}>Pricing</Link><Link to="/login" style={S.link}>Log in</Link></nav></header><section style={S.wrap}><aside style={S.panel}><p style={{...S.kicker,color:"#bfe8ff"}}>Start the control system</p><h2 style={{fontFamily:"Outfit,Inter,sans-serif",fontSize:"clamp(46px,6vw,96px)",lineHeight:.82,letterSpacing:"-.08em",margin:"12px 0",color:"#fff"}}>Turn the business into prepared owner decisions.</h2><p style={{color:"rgba(255,255,255,.78)",fontSize:18,lineHeight:1.6}}>Create the account, choose a plan, then Churvox starts organising work into approval-first admin: jobs, workers, quotes, invoices and money.</p></aside><form style={S.form} onSubmit={handleSubmit}><p style={S.kicker}>Create account</p><h1 style={S.h1}>Build your TechFlow office.</h1>{error&&<p style={{color:"#b42318",fontWeight:800}}>{error}</p>}<label style={{display:"block",fontWeight:850,marginTop:16}}>Full name<input style={S.input} name="name" value={formData.name} onChange={handleChange} required data-testid="signup-name-input" /></label><label style={{display:"block",fontWeight:850,marginTop:14}}>Email<input style={S.input} name="email" type="email" value={formData.email} onChange={handleChange} required data-testid="signup-email-input" /></label><label style={{display:"block",fontWeight:850,marginTop:14}}>Business name<input style={S.input} name="business_name" value={formData.business_name} onChange={handleChange} data-testid="signup-business-input" /></label><label style={{display:"block",fontWeight:850,marginTop:14}}>Password<input style={S.input} name="password" type="password" value={formData.password} onChange={handleChange} required data-testid="signup-password-input" /></label><label style={{display:"block",fontWeight:850,marginTop:14}}>Confirm password<input style={S.input} name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required data-testid="signup-confirm-password-input" /></label><button style={S.btn} type="submit" disabled={loading} data-testid="signup-submit-button">{loading?'Creating account…':'Create account'}</button><p>Already have an account? <Link to="/login" data-testid="login-link">Sign in</Link></p></form></section></main>
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (formData.password !== formData.confirmPassword) return setError("Passwords do not match");
+    if (formData.password.length < 6) return setError("Password must be at least 6 characters");
+    setLoading(true);
+    try {
+      const result = await register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        business_name: formData.business_name || null,
+      });
+      if (result?.token) navigate("/plans");
+      else setError("Registration failed. Please try again.");
+    } catch (err) {
+      setError(err?.response?.data?.detail || "Registration failed. Please try again.");
+    }
+    setLoading(false);
+  };
+
+  return (
+    <main className="wh-auth">
+      <header className="wh-auth-nav">
+        <Link to="/"><ChurvoxLogo /></Link>
+        <nav className="wh-auth-links">
+          <Link to="/">Home</Link>
+          <Link to="/features">Features</Link>
+          <Link to="/pricing">Pricing</Link>
+          <Link to="/login">Log in</Link>
+        </nav>
+      </header>
+
+      <section className="wh-auth-wrap is-signup">
+        <aside className="wh-auth-panel">
+          <p className="wh-auth-kicker">Start the workhorse system</p>
+          <h2>Turn the business into prepared owner decisions.</h2>
+          <p>
+            Create the account, choose a plan, then Churvox starts organising jobs, workers, quotes, invoices and money follow-ups into approval-first admin.
+          </p>
+        </aside>
+
+        <form className="wh-auth-form" onSubmit={handleSubmit}>
+          <p className="wh-auth-kicker">Create account</p>
+          <h1 className="wh-auth-title">Build your Churvox desk.</h1>
+
+          {error && <p className="wh-auth-error">{error}</p>}
+
+          <label className="wh-auth-label">
+            Full name
+            <input className="wh-auth-input" name="name" value={formData.name} onChange={handleChange} required data-testid="signup-name-input" />
+          </label>
+
+          <label className="wh-auth-label">
+            Email
+            <input className="wh-auth-input" name="email" type="email" value={formData.email} onChange={handleChange} required data-testid="signup-email-input" />
+          </label>
+
+          <label className="wh-auth-label">
+            Business name
+            <input className="wh-auth-input" name="business_name" value={formData.business_name} onChange={handleChange} data-testid="signup-business-input" />
+          </label>
+
+          <label className="wh-auth-label">
+            Password
+            <input className="wh-auth-input" name="password" type="password" value={formData.password} onChange={handleChange} required data-testid="signup-password-input" />
+          </label>
+
+          <label className="wh-auth-label">
+            Confirm password
+            <input className="wh-auth-input" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required data-testid="signup-confirm-password-input" />
+          </label>
+
+          <button className="wh-auth-submit" type="submit" disabled={loading} data-testid="signup-submit-button">
+            {loading ? "Creating account…" : "Create account"}
+          </button>
+
+          <p className="wh-auth-sub">
+            Already have an account? <Link to="/login" data-testid="login-link">Sign in</Link>
+          </p>
+        </form>
+      </section>
+    </main>
+  );
 }
