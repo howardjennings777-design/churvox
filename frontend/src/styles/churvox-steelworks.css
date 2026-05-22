@@ -1,69 +1,13 @@
-/* Churvox SteelWorks v3 — damage-control industrial UI.
-   No orange flood. No global active class hijack. Keep pages readable while the real page rebuild happens. */
-:root{
-  --sw-bg:#111820;
-  --sw-bg2:#18212a;
-  --sw-panel:#202a33;
-  --sw-panel2:#28333d;
-  --sw-raised:#323e48;
-  --sw-line:#46535e;
-  --sw-paper:#f5f7f8;
-  --sw-muted:#b8c0c7;
-  --sw-soft:#94a0aa;
-  --sw-amber:#d89b32;
-  --sw-amber2:#9f6729;
-  --sw-cyan:#74d8dd;
-  --sw-red:#d45b55;
-  --sw-shadow:0 18px 48px rgba(0,0,0,.30);
-  --sw-inset:inset 0 1px 0 rgba(255,255,255,.12),inset 0 -1px 0 rgba(0,0,0,.34);
+/* Deprecated overlay removed.
+   Keep token aliases only so legacy imports do not break build.
+   All active styling now lives in churvox-steelworks-pages.css and component-level classes. */
+:root {
+  --sw-bg: #0f1419;
+  --sw-panel: #1d252d;
+  --sw-line: #3f4b57;
+  --sw-paper: #eef2f5;
+  --sw-muted: #9ba6af;
+  --sw-amber: #d6a048;
+  --sw-cyan: #70c6d2;
+  --sw-red: #c75c55;
 }
-
-html,body,#root{min-height:100%!important;background:var(--sw-bg)!important;color:var(--sw-paper)!important}
-body{font-family:Inter,system-ui,sans-serif!important;background:radial-gradient(circle at 14% 8%,rgba(116,216,221,.08),transparent 27%),radial-gradient(circle at 88% 10%,rgba(216,155,50,.08),transparent 24%),linear-gradient(135deg,var(--sw-bg),var(--sw-bg2) 52%,#202a33)!important}
-h1,h2,h3{font-family:Outfit,Inter,system-ui,sans-serif!important;color:var(--sw-paper)!important;letter-spacing:-.025em!important;text-shadow:none!important}
-p,span,label,small,li{color:inherit}a{color:var(--sw-cyan)!important;text-decoration:none!important}
-
-main,.min-h-screen,.page-shell,.page-content,.px-app,.px-main,.px-page,.jobs-page,.clients-page,.quotes-page,.invoices-page,.team-page,.payroll-page,.worker-page,.settings-page,.reports-page,.automation-page,.integrations-page,.plans-page,.billing-page,.sms-page,.dispatch-page,.proof-page,.document-studio-page{background:linear-gradient(135deg,#151d25,#202a33)!important;color:var(--sw-paper)!important}
-header,.mkt-nav,.mkt-footer,.site-footer,.px-topbar,.topbar,.navbar,.app-header,[class*='Header'],[class*='Topbar']{background:linear-gradient(90deg,#101820,#202a33 50%,#151d25)!important;color:var(--sw-paper)!important;border-bottom:1px solid var(--sw-line)!important;box-shadow:0 12px 34px rgba(0,0,0,.26)!important}
-
-/* steel panels only; no screaming colour blocks */
-.px-card,.cx-card,.surface-card,.tradie-panel,.job-card,.client-card,.quote-card,.invoice-card,.team-member-card,.worker-card,.payroll-card,.card,.panel,[role='dialog'],form,.px-table-wrap,.table-wrapper{background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.02)),linear-gradient(180deg,var(--sw-panel2),var(--sw-panel))!important;color:var(--sw-paper)!important;border:1px solid var(--sw-line)!important;border-radius:16px!important;box-shadow:var(--sw-shadow),var(--sw-inset)!important}
-.px-card__body,.px-hero,.page-hero,.surface,.module,.workspace-panel{background:transparent!important;color:var(--sw-paper)!important}
-
-/* readable type */
-h1[style],h2[style],h3[style]{color:var(--sw-paper)!important;text-shadow:none!important}
-p[style],small[style],label[style],li[style]{color:var(--sw-muted)!important}
-span[style]{color:inherit}
-strong,b{color:var(--sw-paper)!important}
-
-/* buttons: steel by default */
-button,button[style],a[role='button']{background:linear-gradient(180deg,#394651,#26313b)!important;color:var(--sw-paper)!important;border:1px solid var(--sw-line)!important;border-radius:10px!important;box-shadow:0 8px 20px rgba(0,0,0,.18),var(--sw-inset)!important;font-weight:850!important}
-button[type='submit'],.px-btn--primary,.btn-primary,.primary,a[style][href*='signup']{background:linear-gradient(135deg,var(--sw-amber),var(--sw-amber2))!important;color:#15120b!important;border-color:rgba(242,207,137,.45)!important;box-shadow:0 10px 24px rgba(216,155,50,.14),var(--sw-inset)!important;font-weight:950!important}
-button:disabled{opacity:.55!important;filter:saturate(.4)!important}
-
-/* active state is ONLY for navigation, not every random row/card */
-.px-nav-item.is-active,.px-mobile-tab.is-active,.px-sidebar a.is-active,.sidebar a.is-active,[data-steelworks-frame='true'] nav a[style*='211b11']{background:linear-gradient(135deg,var(--sw-amber),var(--sw-amber2))!important;color:#15120b!important}
-
-/* rows/cards that are clickable must stay steel */
-button[class*='card'],button[class*='Card'],button[class*='item'],button[class*='Item'],button[class*='row'],button[class*='Row'],div[class*='card'],div[class*='Card'],article[class*='card'],article[class*='Card'],.client-card,.job-card,.quote-card,.invoice-card,.team-member-card{background:linear-gradient(180deg,#303b45,#202a33)!important;color:var(--sw-paper)!important;border-color:var(--sw-line)!important}
-
-input,select,textarea,input[style],select[style],textarea[style]{background:#101820!important;color:var(--sw-paper)!important;border:1px solid var(--sw-line)!important;border-radius:10px!important;box-shadow:inset 0 2px 8px rgba(0,0,0,.30)!important}
-input::placeholder,textarea::placeholder{color:#82909b!important}
-.status-badge,.px-badge,.badge,[class*='Badge'],em[style]{background:#151d25!important;color:var(--sw-cyan)!important;border:1px solid var(--sw-line)!important;border-radius:999px!important;box-shadow:var(--sw-inset)!important}
-
-table{background:#202a33!important;border:1px solid var(--sw-line)!important;border-radius:14px!important;box-shadow:var(--sw-shadow)!important;overflow:hidden!important}
-thead,th{background:#121a22!important;color:var(--sw-amber)!important;border-color:var(--sw-line)!important}
-td{border-color:#33404a!important;color:var(--sw-paper)!important}
-tr:nth-child(even) td{background:rgba(255,255,255,.025)!important}
-
-.px-sidebar,.sidebar,[class*='Sidebar'],.worker-bottom-nav,.worker-nav,[class*='WorkerBottomNav']{background:linear-gradient(180deg,#141c24,#0f151b)!important;color:var(--sw-paper)!important;border-color:var(--sw-line)!important;box-shadow:var(--sw-shadow)!important}
-.px-sidebar a,.sidebar a,[class*='Sidebar'] a{color:var(--sw-muted)!important}
-
-/* Tailwind colour cleanup without painting the UI orange */
-.bg-white,.bg-slate-50,.bg-gray-50,.bg-blue-50,.bg-violet-50,.bg-purple-50,.bg-green-50,.bg-lime-50,.bg-emerald-50{background:#202a33!important;color:var(--sw-paper)!important}
-.text-slate-900,.text-gray-900,.text-black{color:var(--sw-paper)!important}
-.text-slate-500,.text-gray-500,.text-slate-600,.text-gray-600{color:var(--sw-muted)!important}
-.text-blue-500,.text-violet-500,.text-purple-500,.text-green-500,.text-lime-500,.text-emerald-500{color:var(--sw-cyan)!important}
-.border,.border-slate-200,.border-gray-200,.border-blue-100{border-color:var(--sw-line)!important}
-
-@media(max-width:980px){header,header[style]{gap:10px!important;overflow-x:auto!important}.px-page,.page-content{padding-left:12px!important;padding-right:12px!important}}
