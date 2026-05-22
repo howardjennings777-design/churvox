@@ -1,0 +1,29 @@
+/* Churvox Autonomous Office chrome/final polish pass. Visual-only. */
+.mkt-nav,.mkt-footer,.site-footer{background:#101114!important;color:#fbf8f1!important;border-color:#272b32!important;}
+.mkt-nav{box-shadow:0 18px 50px rgba(16,17,20,.22)!important;}
+.mkt-logo,.site-footer-logo,.mkt-footer-logo{filter:invert(1) grayscale(1) brightness(2)!important;}
+.mkt-links a,.mkt-login,.mkt-mobile a,.site-footer a,.mkt-footer a{color:rgba(251,248,241,.72)!important;border-radius:8px!important;}
+.mkt-links a:hover,.mkt-links a.active,.mkt-login:hover,.mkt-mobile a:hover,.site-footer a:hover,.mkt-footer a:hover{background:#242830!important;color:#fbf8f1!important;}
+.mkt-primary{background:#fbf8f1!important;color:#101114!important;border-radius:8px!important;box-shadow:none!important;}
+.mkt-menu{background:#242830!important;border-color:#343a44!important;}
+.site-footer p,.mkt-footer p{color:rgba(251,248,241,.64)!important;}
+.site-footer-col h3,.mkt-footer-title{color:#caa46d!important;}
+.site-footer-bottom,.mkt-footer-bottom{border-color:#272b32!important;color:rgba(251,248,241,.48)!important;}
+/* Legal / public document pages */
+.legal-page,.privacy-page,.terms-page,.account-deletion-page,[class*="legal"],[class*="Legal"],.public-page,[class*="Public"]{background:#e8e2d6!important;color:#101114!important;}
+.legal-page main,.privacy-page main,.terms-page main,.account-deletion-page main{background:#fbf8f1!important;border:1px solid #cdc3b3!important;border-radius:14px!important;box-shadow:0 22px 64px rgba(16,17,20,.10)!important;}
+.legal-page h1,.privacy-page h1,.terms-page h1,.account-deletion-page h1,[class*="legal"] h1,[class*="Legal"] h1{font-family:Outfit,Inter,sans-serif!important;font-size:clamp(42px,5vw,78px)!important;line-height:.92!important;letter-spacing:-.065em!important;color:#101114!important;}
+.legal-page h2,.privacy-page h2,.terms-page h2,.account-deletion-page h2,[class*="legal"] h2,[class*="Legal"] h2{font-family:Outfit,Inter,sans-serif!important;color:#101114!important;letter-spacing:-.04em!important;}
+.legal-page p,.privacy-page p,.terms-page p,.account-deletion-page p,[class*="legal"] p,[class*="Legal"] p{color:#5f6670!important;line-height:1.65!important;}
+/* Public quote/invoice/customer pages: professional paper docs */
+.public-document,.document-preview,.invoice-preview,.quote-preview,[class*="Document"],[class*="InvoicePreview"],[class*="QuotePreview"]{background:#fbf8f1!important;color:#101114!important;border-color:#cdc3b3!important;}
+.public-document h1,.document-preview h1,.invoice-preview h1,.quote-preview h1{font-family:Outfit,Inter,sans-serif!important;color:#101114!important;letter-spacing:-.06em!important;}
+.public-document .total,.invoice-preview .total,.quote-preview .total,[class*="total"]{color:#101114!important;font-family:Outfit,Inter,sans-serif!important;}
+/* Admin/support pages */
+.admin-page,.settings-page,.reports-page,.automation-page,.integrations-page,.notifications-page,[class*="Admin"],[class*="Settings"],[class*="Reports"],[class*="Automation"],[class*="Integrations"],[class*="Notifications"]{background:#e8e2d6!important;color:#101114!important;}
+.admin-page section,.settings-page section,.reports-page section,.automation-page section,.integrations-page section,.notifications-page section{background:#fbf8f1!important;border-color:#cdc3b3!important;color:#101114!important;}
+/* Remove remaining playful colors from utility leftovers */
+.shadow-lg,.shadow-xl,.shadow-2xl{box-shadow:0 18px 50px rgba(16,17,20,.12)!important;}
+.rounded-3xl{border-radius:14px!important;}.rounded-2xl{border-radius:12px!important;}.rounded-xl{border-radius:10px!important;}
+.from-blue-500,.from-indigo-500,.from-violet-500,.from-purple-500,.from-green-500,.from-lime-500,.to-blue-600,.to-indigo-600,.to-violet-600,.to-purple-600,.to-green-600,.to-lime-600{--tw-gradient-from:#101114!important;--tw-gradient-to:#242830!important;--tw-gradient-stops:#101114,#242830!important;}
+.bg-gradient-to-r,.bg-gradient-to-br,.bg-gradient-to-b{border-color:#343a44!important;}
