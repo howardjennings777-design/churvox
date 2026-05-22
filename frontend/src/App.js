@@ -59,7 +59,6 @@ import AIOperatorSettingsPage from "./pages/AIOperatorSettingsPage";
 import HomePage from "./pages/marketing/CommandMachineHomePage";
 import PricingPage from "./pages/marketing/PricingPage";
 import FeaturesPage from "./pages/marketing/FeaturesPage";
-import SteelWorksFrame from "./components/SteelWorksFrame";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const Spinner = () => (
@@ -68,12 +67,12 @@ const Spinner = () => (
   </div>
 );
 
-const SteelPage = ({ children }) => <SteelWorksFrame>{children}</SteelWorksFrame>;
+const AppPage = ({ children }) => <>{children}</>;
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <Spinner />;
-  return user ? <SteelPage>{children}</SteelPage> : <Navigate to="/login" replace />;
+  return user ? <AppPage>{children}</AppPage> : <Navigate to="/login" replace />;
 }
 
 function PublicRoute({ children }) {
@@ -93,7 +92,7 @@ function BusinessRoute({ children }) {
   if (isWorker) return <Navigate to="/worker/jobs" replace />;
   if (isPayroll) return <Navigate to="/payroll" replace />;
   if (!hasAppAccess) return <Navigate to="/plans" replace />;
-  return <SteelPage>{children}</SteelPage>;
+  return <AppPage>{children}</AppPage>;
 }
 
 function OwnerRoute({ children }) {
@@ -103,7 +102,7 @@ function OwnerRoute({ children }) {
   if (isWorker) return <Navigate to="/worker/jobs" replace />;
   if (isPayroll) return <Navigate to="/payroll" replace />;
   if (!isOwnerUser) return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
-  return <SteelPage>{children}</SteelPage>;
+  return <AppPage>{children}</AppPage>;
 }
 
 function TeamRoute({ children }) {
@@ -114,7 +113,7 @@ function TeamRoute({ children }) {
   if (isPayroll) return <Navigate to="/payroll" replace />;
   if (!hasAppAccess) return <Navigate to="/plans" replace />;
   if (normalizedRole !== "owner" && normalizedRole !== "manager") return <Navigate to="/dashboard" replace />;
-  return <SteelPage>{children}</SteelPage>;
+  return <AppPage>{children}</AppPage>;
 }
 
 function WorkerRoute({ children }) {
@@ -122,7 +121,7 @@ function WorkerRoute({ children }) {
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
   if (!isWorker) return <Navigate to="/dashboard" replace />;
-  return <SteelPage>{children}</SteelPage>;
+  return <AppPage>{children}</AppPage>;
 }
 
 function PayrollRoute({ children }) {
@@ -132,7 +131,7 @@ function PayrollRoute({ children }) {
   if (normalizedRole !== "owner" && normalizedRole !== "manager" && normalizedRole !== "payroll") {
     return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
   }
-  return <SteelPage>{children}</SteelPage>;
+  return <AppPage>{children}</AppPage>;
 }
 
 function ReportsRoute({ children }) {
@@ -142,7 +141,7 @@ function ReportsRoute({ children }) {
   if (!["owner", "manager", "office_admin"].includes(normalizedRole)) {
     return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
   }
-  return <SteelPage>{children}</SteelPage>;
+  return <AppPage>{children}</AppPage>;
 }
 
 function QaAuditorRoute({ children }) {
@@ -153,7 +152,7 @@ function QaAuditorRoute({ children }) {
   const isPlatformOwner = email === "hello@churvox.com" || user?.is_platform_owner === true || user?.is_admin === true;
   const allowed = isPlatformOwner || normalizedRole === "owner";
   if (!allowed || isWorker || isPayroll) return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
-  return <SteelPage>{children}</SteelPage>;
+  return <AppPage>{children}</AppPage>;
 }
 
 function RoleRedirect() {
@@ -175,10 +174,8 @@ function App() {
         const sessionId = params.get("session_id") || "";
         const plan = (params.get("plan") || "").toLowerCase();
         if (!checkout && !sessionId) return;
-
         const token = localStorage.getItem("token");
         const backendUrl = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || process.env.REACT_APP_BACKEND_URL || "").replace(/\/$/, "");
-
         if (sessionId && token && backendUrl) {
           try {
             await fetch(`${backendUrl}/api/billing/confirm-checkout`, {
@@ -187,17 +184,10 @@ function App() {
               credentials: "include",
               body: JSON.stringify({ session_id: sessionId }),
             });
-          } catch (err) {
-            console.warn("confirm-checkout failed (non-fatal):", err);
-          }
+          } catch (err) { console.warn("confirm-checkout failed (non-fatal):", err); }
         }
-
-        if (checkout === "success") {
-          toast.success(plan ? `Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan is now active` : "Plan updated");
-        } else if (checkout === "cancelled") {
-          toast.info("Checkout cancelled — no changes to your plan");
-        }
-
+        if (checkout === "success") toast.success(plan ? `Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan is now active` : "Plan updated");
+        else if (checkout === "cancelled") toast.info("Checkout cancelled — no changes to your plan");
         window.dispatchEvent(new Event("churvox-auth-refresh"));
         const cleaned = new URL(window.location.href);
         ["checkout", "session_id", "plan"].forEach((k) => cleaned.searchParams.delete(k));
@@ -221,7 +211,6 @@ function App() {
             <Route path="/public/quote/:token" element={<PublicQuotePage />} />
             <Route path="/public/invoice/:token" element={<PublicInvoicePage />} />
             <Route path="/client-portal/:token" element={<PublicClientPortalPage />} />
-
             <Route path="/owner-login" element={<Navigate to="/login" replace />} />
             <Route path="/admin/login" element={<Navigate to="/login" replace />} />
             <Route path="/owner" element={<Navigate to="/admin" replace />} />
@@ -230,7 +219,6 @@ function App() {
             <Route path="/ai-operator" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><AIControlRoomPage /></ErrorBoundary></BusinessRoute>} />
             <Route path="/ai-operator/approvals" element={<BusinessRoute><AIOperatorApprovalsPage /></BusinessRoute>} />
             <Route path="/ai-operator/settings" element={<BusinessRoute><AIOperatorSettingsPage /></BusinessRoute>} />
-
             <Route path="/admin" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
             <Route path="/owner/dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
             <Route path="/platform-dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
@@ -238,7 +226,6 @@ function App() {
             <Route path="/admin/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
             <Route path="/owner/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
             <Route path="/admin/qa-auditor" element={<QaAuditorRoute><QAAuditorPage /></QaAuditorRoute>} />
-
             <Route path="/dashboard" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><DashboardPage /></ErrorBoundary></BusinessRoute>} />
             <Route path="/overview" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><DashboardPage /></ErrorBoundary></BusinessRoute>} />
             <Route path="/onboarding" element={<BusinessRoute><OnboardingPage /></BusinessRoute>} />
@@ -273,7 +260,6 @@ function App() {
             <Route path="/worker/jobs" element={<WorkerRoute><WorkerJobsPage /></WorkerRoute>} />
             <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerJobDetailPage /></WorkerRoute>} />
             <Route path="/worker/settings" element={<WorkerRoute><WorkerSettingsPage /></WorkerRoute>} />
-
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
