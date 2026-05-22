@@ -56,7 +56,7 @@ import QAAuditorPage from "./pages/admin/QAAuditorPage";
 import AIControlRoomPage from "./pages/AIControlRoomPage";
 import AIOperatorApprovalsPage from "./pages/AIOperatorApprovalsPage";
 import AIOperatorSettingsPage from "./pages/AIOperatorSettingsPage";
-import HomePage from "./pages/marketing/AutonomousOfficeLanding";
+import HomePage from "./pages/marketing/CommandMachineHomePage";
 import PricingPage from "./pages/marketing/PricingPage";
 import FeaturesPage from "./pages/marketing/FeaturesPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
