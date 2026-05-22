@@ -1,7 +1,7 @@
 import React from 'react';
-import TechFlowDeskPage from './TechFlowDeskPage';
+import PulseConsolePage from './PulseConsolePage';
 import SmartHubErrorBoundary from '../components/SmartHubErrorBoundary';
 
 export default function DashboardPage(){
-  return <SmartHubErrorBoundary><TechFlowDeskPage /></SmartHubErrorBoundary>;
+  return <SmartHubErrorBoundary><PulseConsolePage /></SmartHubErrorBoundary>;
 }
