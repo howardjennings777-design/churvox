@@ -1,0 +1,27 @@
+/* Churvox Autonomous Office auth pass. Visual-only. */
+.login-exec,.login-pro,.signup-site{background:#e8e2d6!important;color:#101114!important;}
+.login-exec-nav,.login-pro-nav,.signup-nav{background:#101114!important;color:#fbf8f1!important;border-bottom:1px solid #272b32!important;box-shadow:0 18px 50px rgba(16,17,20,.22)!important;}
+.login-exec-logo,.login-pro-logo,.signup-logo{filter:invert(1) grayscale(1) brightness(2)!important;}
+.login-exec-nav a,.login-pro-nav a,.signup-nav a{color:rgba(251,248,241,.72)!important;border-radius:8px!important;}
+.login-exec-nav a:hover,.login-pro-nav a:hover,.signup-nav a:hover{background:#242830!important;color:#fbf8f1!important;}
+.login-exec-nav .nav-primary,.login-pro-nav .nav-cta,.signup-nav .nav-cta{background:#fbf8f1!important;color:#101114!important;}
+.login-exec-stage,.login-pro-grid,.signup-stage{background:linear-gradient(135deg,#101114 0%,#242830 50%,#e8e2d6 50%,#f3eee5 100%)!important;}
+.login-pro-copy,.login-copy,.signup-copy{color:#fbf8f1!important;}
+.login-pro-copy h1,.login-copy h1,.signup-copy h1{font-size:clamp(54px,7vw,104px)!important;line-height:.88!important;letter-spacing:-.075em!important;color:#fbf8f1!important;}
+.login-pro-copy h1::after,.signup-copy h1::after{content:" Churvox prepares. You approve.";display:block;color:#caa46d;font-size:clamp(18px,2vw,28px);line-height:1.15;letter-spacing:-.02em;margin-top:18px;font-family:Inter,system-ui,sans-serif;}
+.lead,.login-copy>p,.signup-copy>p{color:rgba(251,248,241,.76)!important;font-size:clamp(17px,1.55vw,21px)!important;}
+.login-pro-card,.login-card,.login-form-shell,.signup-card{background:#fbf8f1!important;border:1px solid #cdc3b3!important;border-radius:12px!important;box-shadow:0 44px 120px rgba(16,17,20,.28)!important;color:#101114!important;}
+.login-pro-card h2,.login-card h2,.login-form-head h1,.signup-card h2{color:#101114!important;font-size:clamp(36px,4vw,54px)!important;letter-spacing:-.055em!important;}
+.eyebrow,.login-kicker,.signup-kicker{color:#caa46d!important;}
+.eyebrow.dark,.signup-kicker.dark{color:#9b8059!important;}
+.field,.login-field,.signup-field{background:#fff!important;border:1px solid #cdc3b3!important;border-radius:9px!important;}
+.field:focus-within,.login-field:focus-within,.signup-field:focus-within{border-color:#101114!important;box-shadow:0 0 0 4px rgba(16,17,20,.08)!important;}
+.submit,.login-submit,.signup-submit,.login-form-shell button{background:#101114!important;color:#fbf8f1!important;border-radius:9px!important;box-shadow:0 16px 36px rgba(16,17,20,.18)!important;}
+.proof-strip,.signup-proof,.login-proof{background:rgba(251,248,241,.18)!important;border:1px solid rgba(251,248,241,.18)!important;}
+.proof-strip div,.signup-proof div,.login-proof div{background:rgba(16,17,20,.44)!important;}
+.proof-strip b,.signup-proof b,.login-proof b{color:#fbf8f1!important;}
+.proof-strip span,.signup-proof span,.login-proof span{color:rgba(251,248,241,.62)!important;}
+.preview-bar,.features-console-bar{border-color:#343a44!important;}
+.preview-row.active{border-color:#c58a2b!important;box-shadow:inset 3px 0 0 #c58a2b!important;}
+@media(max-width:980px){.login-exec-stage,.login-pro-grid,.signup-stage{grid-template-columns:1fr!important;background:linear-gradient(180deg,#101114 0%,#242830 50%,#e8e2d6 50%,#f3eee5 100%)!important;}}
+@media(max-width:640px){.login-pro-copy h1,.login-copy h1,.signup-copy h1{font-size:46px!important;}}
