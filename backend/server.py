@@ -2295,7 +2295,14 @@ async def ai_operator_actions_approve(action_id: str, current_user: dict = Depen
 
 @api_router.post("/ai-operator/actions/{action_id}/approve")
 async def ai_operator_actions_approve_v2(action_id: str, current_user: dict = Depends(get_current_user)):
-    return await ai_operator_approve(action_id, current_user)
+    # CHURVOX_AI_OPERATOR_APPROVE_DIAGNOSTIC_500_FIX
+    try:
+        return await ai_operator_approve(action_id, current_user)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("AI Operator approve crashed for action_id=%s", action_id)
+        raise HTTPException(status_code=400, detail=f"AI approve crashed: {type(exc).__name__}: {str(exc)}")
 
 
 @api_router.post("/ai/operator/actions/{action_id}/reject")
