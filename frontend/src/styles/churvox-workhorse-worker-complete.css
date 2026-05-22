@@ -1,0 +1,12 @@
+/* PHASE_4D_COMPLETE_JOB_SELECTOR_LIVE */
+.complete-job,
+.worker-complete-job,
+.px-app .complete-job,
+.wh-app-main .complete-job,
+.wh-app-main [class*="complete-job"]{
+  background:linear-gradient(135deg,#607d74,#3f5d52)!important;
+  color:#ffffff!important;
+  border-color:#849b91!important;
+  border-radius:14px!important;
+  font-weight:950!important;
+}
