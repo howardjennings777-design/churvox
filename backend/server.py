@@ -7800,7 +7800,16 @@ async def start_trial(request: Request):
         raise HTTPException(status_code=400, detail="You already have an active plan")
 
     payload = await request.json()
-    plan_type = str((payload or {}).get("plan_type") or "").strip().lower()
+    # CHURVOX_LAUNCH_TRIAL_PLAN_ALIAS_FIX
+    _raw_plan = (payload or {}).get("plan_type") or (payload or {}).get("plan") or (payload or {}).get("plan_id") or ""
+    plan_type = str(_raw_plan or "").strip().lower().replace("-", "_").replace(" ", "_")
+    plan_type = {
+        "start": "solo",
+        "starter": "solo",
+        "crew": "team",
+        "operator": "pro",
+        "command": "enterprise",
+    }.get(plan_type, plan_type)
 
     if plan_type not in ("solo", "team", "pro", "enterprise"):
         raise HTTPException(status_code=400, detail="Invalid plan type")
