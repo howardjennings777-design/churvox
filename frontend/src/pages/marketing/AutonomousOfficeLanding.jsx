@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import MarketingShell from "../../components/marketing/MarketingShell";
-import "./AutonomousHomePage.css";
 
 const items = [
   ["Invoice drafted", "Completed job, proof and price checked", "Approve"],
