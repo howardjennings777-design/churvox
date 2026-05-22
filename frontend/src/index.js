@@ -5,6 +5,7 @@ import "./index.css";
 import "./styles/premium.css";
 import "./styles/churvoxFullPageModals.css";
 import "./styles/churvox-executive-master.css";
+import "./styles/churvox-autonomous-home.css";
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
