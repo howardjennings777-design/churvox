@@ -93,6 +93,7 @@ export default function AIWiredDashboard() {
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState("");
+  const [handledActionIds, setHandledActionIds] = useState([]);
   const once = useRef(false);
 
   const load = useCallback(async () => {
@@ -139,7 +140,20 @@ export default function AIWiredDashboard() {
     }
   }, [scan]);
 
-  const approve = useMemo(() => actions.filter((a) => pending.has(low(a.status))).slice(0, 30).map(makeAction), [actions]);
+  const hiddenActionIds = useMemo(() => new Set(handledActionIds), [handledActionIds]);
+
+  const markHandled = useCallback((ids) => {
+    const clean = arr(ids).map(String).filter(Boolean);
+    if (!clean.length) return;
+    setHandledActionIds((prev) => Array.from(new Set([...prev, ...clean])));
+  }, []);
+
+  const refreshAfterAction = useCallback(async () => {
+    // CHURVOX_LAUNCH_OPERATOR_LANES_REALTIME_FIX
+    await load();
+  }, [load]);
+
+  const approve = useMemo(() => actions.filter((a) => !hiddenActionIds.has(idOf(a)) && pending.has(low(a.status))).slice(0, 30).map(makeAction), [actions, hiddenActionIds]);
   const done = useMemo(() => actions.filter((a) => ["completed", "approved", "dismissed", "rejected"].includes(low(a.status))).slice(0, 8), [actions]);
   const fix = useMemo(() => jobs.filter((j) => !j.assigned_worker_id && !j.worker_id && !["completed", "done", "cancelled"].includes(low(j.status))).slice(0, 12).map((j) => makeJob(j, "fix")), [jobs]);
   const field = useMemo(() => jobs.filter((j) => ["assigned", "scheduled", "in_progress", "in progress", "started"].includes(low(j.status))).slice(0, 12).map((j) => makeJob(j, "field")), [jobs]);
@@ -159,23 +173,6 @@ export default function AIWiredDashboard() {
     const payload = patchFor(item);
     if (!item?.rawId || !Object.keys(payload).length) return true;
     const res = await patch(`/ai-operator/actions/${item.rawId}`, payload);
-    // CHURVOX_LAUNCH_REFRESH_OPERATOR_LANES_AFTER_ACTION
-    // Refresh lane data immediately after backend action state changes.
-    await Promise.allSettled([
-      typeof payload === "function" ? payload() : null,
-      typeof loadDashboard === "function" ? loadDashboard() : null,
-      typeof loadData === "function" ? loadData() : null,
-      typeof loadOperatorData === "function" ? loadOperatorData() : null,
-      typeof loadAiOperator === "function" ? loadAiOperator() : null,
-      typeof loadActions === "function" ? loadActions() : null,
-      typeof loadCommandSnapshot === "function" ? loadCommandSnapshot() : null,
-      typeof loadSetupStatus === "function" ? loadSetupStatus() : null,
-      typeof loadAuditLog === "function" ? loadAuditLog() : null,
-      typeof fetchData === "function" ? fetchData() : null,
-      typeof fetchActions === "function" ? fetchActions() : null,
-      typeof refreshData === "function" ? refreshData() : null,
-      typeof refreshDashboard === "function" ? refreshDashboard() : null,
-    ].filter(Boolean));
     if (!res.success) toast.error(res.error || "AI could not prepare final payload");
     return !!res.success;
   };
@@ -186,28 +183,13 @@ export default function AIWiredDashboard() {
     const ok = await preflight(item);
     if (!ok) { setBusy(""); return; }
     const res = await post(`/ai-operator/actions/${item.rawId}/approve`, {});
-    // CHURVOX_LAUNCH_REFRESH_OPERATOR_LANES_AFTER_ACTION
-    // Refresh lane data immediately after backend action state changes.
-    await Promise.allSettled([
-      typeof payload === "function" ? payload() : null,
-      typeof loadDashboard === "function" ? loadDashboard() : null,
-      typeof loadData === "function" ? loadData() : null,
-      typeof loadOperatorData === "function" ? loadOperatorData() : null,
-      typeof loadAiOperator === "function" ? loadAiOperator() : null,
-      typeof loadActions === "function" ? loadActions() : null,
-      typeof loadCommandSnapshot === "function" ? loadCommandSnapshot() : null,
-      typeof loadSetupStatus === "function" ? loadSetupStatus() : null,
-      typeof loadAuditLog === "function" ? loadAuditLog() : null,
-      typeof fetchData === "function" ? fetchData() : null,
-      typeof fetchActions === "function" ? fetchActions() : null,
-      typeof refreshData === "function" ? refreshData() : null,
-      typeof refreshDashboard === "function" ? refreshDashboard() : null,
-    ].filter(Boolean));
     setBusy("");
     if (res.success) {
       toast.success(`AI completed: ${String(res.result?.action || "approved action").replace(/_/g, " ")}`);
+      markHandled([item.rawId]);
+      setActions((prev) => prev.filter((a) => idOf(a) !== item.rawId));
       setSelected(null);
-      await load();
+      await refreshAfterAction();
     } else toast.error(res.error || "AI could not complete that action");
   };
 
@@ -215,25 +197,14 @@ export default function AIWiredDashboard() {
     if (!item?.rawId) return;
     setBusy(item.rawId);
     const res = await post(`/ai-operator/actions/${item.rawId}/reject`, {});
-    // CHURVOX_LAUNCH_REFRESH_OPERATOR_LANES_AFTER_ACTION
-    // Refresh lane data immediately after backend action state changes.
-    await Promise.allSettled([
-      typeof payload === "function" ? payload() : null,
-      typeof loadDashboard === "function" ? loadDashboard() : null,
-      typeof loadData === "function" ? loadData() : null,
-      typeof loadOperatorData === "function" ? loadOperatorData() : null,
-      typeof loadAiOperator === "function" ? loadAiOperator() : null,
-      typeof loadActions === "function" ? loadActions() : null,
-      typeof loadCommandSnapshot === "function" ? loadCommandSnapshot() : null,
-      typeof loadSetupStatus === "function" ? loadSetupStatus() : null,
-      typeof loadAuditLog === "function" ? loadAuditLog() : null,
-      typeof fetchData === "function" ? fetchData() : null,
-      typeof fetchActions === "function" ? fetchActions() : null,
-      typeof refreshData === "function" ? refreshData() : null,
-      typeof refreshDashboard === "function" ? refreshDashboard() : null,
-    ].filter(Boolean));
     setBusy("");
-    if (res.success) { toast.success("AI action rejected"); setSelected(null); await load(); }
+    if (res.success) {
+      toast.success("AI action rejected");
+      markHandled([item.rawId]);
+      setActions((prev) => prev.filter((a) => idOf(a) !== item.rawId));
+      setSelected(null);
+      await refreshAfterAction();
+    }
     else toast.error(res.error || "Could not reject action");
   };
 
@@ -243,25 +214,16 @@ export default function AIWiredDashboard() {
     setBusy("bulk");
     for (const item of items) await preflight(item);
     const res = await post("/ai-operator/actions/bulk-approve", { action_ids: items.map((a) => a.rawId) });
-    // CHURVOX_LAUNCH_REFRESH_OPERATOR_LANES_AFTER_ACTION
-    // Refresh lane data immediately after backend action state changes.
-    await Promise.allSettled([
-      typeof payload === "function" ? payload() : null,
-      typeof loadDashboard === "function" ? loadDashboard() : null,
-      typeof loadData === "function" ? loadData() : null,
-      typeof loadOperatorData === "function" ? loadOperatorData() : null,
-      typeof loadAiOperator === "function" ? loadAiOperator() : null,
-      typeof loadActions === "function" ? loadActions() : null,
-      typeof loadCommandSnapshot === "function" ? loadCommandSnapshot() : null,
-      typeof loadSetupStatus === "function" ? loadSetupStatus() : null,
-      typeof loadAuditLog === "function" ? loadAuditLog() : null,
-      typeof fetchData === "function" ? fetchData() : null,
-      typeof fetchActions === "function" ? fetchActions() : null,
-      typeof refreshData === "function" ? refreshData() : null,
-      typeof refreshDashboard === "function" ? refreshDashboard() : null,
-    ].filter(Boolean));
     setBusy("");
-    if (res.success) { toast.success(`AI processed ${res.succeeded || items.length} approved actions`); setSelected(null); await load(); }
+    if (res.success) {
+      const approvedIds = items.map((a) => a.rawId);
+      const approvedSet = new Set(approvedIds);
+      markHandled(approvedIds);
+      setActions((prev) => prev.filter((a) => !approvedSet.has(idOf(a))));
+      toast.success(`AI processed ${res.succeeded || items.length} approved actions`);
+      setSelected(null);
+      await refreshAfterAction();
+    }
     else toast.error(res.error || "Bulk approve failed");
   };
 
