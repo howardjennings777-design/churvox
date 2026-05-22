@@ -59,18 +59,21 @@ import AIOperatorSettingsPage from "./pages/AIOperatorSettingsPage";
 import HomePage from "./pages/marketing/CommandMachineHomePage";
 import PricingPage from "./pages/marketing/PricingPage";
 import FeaturesPage from "./pages/marketing/FeaturesPage";
+import SteelWorksFrame from "./components/SteelWorksFrame";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const Spinner = () => (
-  <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" />
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-amber-400" />
   </div>
 );
+
+const SteelPage = ({ children }) => <SteelWorksFrame>{children}</SteelWorksFrame>;
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <Spinner />;
-  return user ? children : <Navigate to="/login" replace />;
+  return user ? <SteelPage>{children}</SteelPage> : <Navigate to="/login" replace />;
 }
 
 function PublicRoute({ children }) {
@@ -83,7 +86,6 @@ function PublicRoute({ children }) {
   return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
 }
 
-// Business routes: owner, manager, office_admin — with plan check
 function BusinessRoute({ children }) {
   const { user, loading, isWorker, isPayroll, hasAppAccess } = useAuth();
   if (loading) return <Spinner />;
@@ -91,10 +93,9 @@ function BusinessRoute({ children }) {
   if (isWorker) return <Navigate to="/worker/jobs" replace />;
   if (isPayroll) return <Navigate to="/payroll" replace />;
   if (!hasAppAccess) return <Navigate to="/plans" replace />;
-  return children;
+  return <SteelPage>{children}</SteelPage>;
 }
 
-// Owner-only routes (plans, billing)
 function OwnerRoute({ children }) {
   const { user, loading, isOwnerUser, isWorker, isPayroll, normalizedRole } = useAuth();
   if (loading) return <Spinner />;
@@ -102,10 +103,9 @@ function OwnerRoute({ children }) {
   if (isWorker) return <Navigate to="/worker/jobs" replace />;
   if (isPayroll) return <Navigate to="/payroll" replace />;
   if (!isOwnerUser) return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
-  return children;
+  return <SteelPage>{children}</SteelPage>;
 }
 
-// Team routes: owner + manager only
 function TeamRoute({ children }) {
   const { user, loading, isWorker, isPayroll, hasAppAccess, normalizedRole } = useAuth();
   if (loading) return <Spinner />;
@@ -114,19 +114,17 @@ function TeamRoute({ children }) {
   if (isPayroll) return <Navigate to="/payroll" replace />;
   if (!hasAppAccess) return <Navigate to="/plans" replace />;
   if (normalizedRole !== "owner" && normalizedRole !== "manager") return <Navigate to="/dashboard" replace />;
-  return children;
+  return <SteelPage>{children}</SteelPage>;
 }
 
-// Worker-only routes
 function WorkerRoute({ children }) {
   const { user, loading, isWorker } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
   if (!isWorker) return <Navigate to="/dashboard" replace />;
-  return children;
+  return <SteelPage>{children}</SteelPage>;
 }
 
-// Payroll-allowed routes
 function PayrollRoute({ children }) {
   const { user, loading, normalizedRole } = useAuth();
   if (loading) return <Spinner />;
@@ -134,7 +132,7 @@ function PayrollRoute({ children }) {
   if (normalizedRole !== "owner" && normalizedRole !== "manager" && normalizedRole !== "payroll") {
     return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
   }
-  return children;
+  return <SteelPage>{children}</SteelPage>;
 }
 
 function ReportsRoute({ children }) {
@@ -144,7 +142,7 @@ function ReportsRoute({ children }) {
   if (!["owner", "manager", "office_admin"].includes(normalizedRole)) {
     return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
   }
-  return children;
+  return <SteelPage>{children}</SteelPage>;
 }
 
 function QaAuditorRoute({ children }) {
@@ -155,7 +153,7 @@ function QaAuditorRoute({ children }) {
   const isPlatformOwner = email === "hello@churvox.com" || user?.is_platform_owner === true || user?.is_admin === true;
   const allowed = isPlatformOwner || normalizedRole === "owner";
   if (!allowed || isWorker || isPayroll) return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
-  return children;
+  return <SteelPage>{children}</SteelPage>;
 }
 
 function RoleRedirect() {
@@ -170,8 +168,6 @@ function RoleRedirect() {
 
 function App() {
   React.useEffect(() => {
-    // Global post-Stripe-checkout handler — runs once on mount.
-    // Works regardless of which page Stripe returned the user to.
     const handleCheckoutReturn = async () => {
       try {
         const params = new URLSearchParams(window.location.search);
@@ -197,17 +193,12 @@ function App() {
         }
 
         if (checkout === "success") {
-          toast.success(
-            plan
-              ? `Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan is now active`
-              : "Plan updated"
-          );
+          toast.success(plan ? `Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan is now active` : "Plan updated");
         } else if (checkout === "cancelled") {
           toast.info("Checkout cancelled — no changes to your plan");
         }
 
         window.dispatchEvent(new Event("churvox-auth-refresh"));
-
         const cleaned = new URL(window.location.href);
         ["checkout", "session_id", "plan"].forEach((k) => cleaned.searchParams.delete(k));
         window.history.replaceState({}, document.title, cleaned.toString());
@@ -220,101 +211,80 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <ErrorBoundary>
-        <Toaster position="top-right" richColors />
-        <Routes>
-          {/* Public */}
-          <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-          <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
-          <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
-          <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
-          <Route path="/invite/setup/:token" element={<InviteSetupPage />} />
-          <Route path="/public/quote/:token" element={<PublicQuotePage />} />
-          <Route path="/public/invoice/:token" element={<PublicInvoicePage />} />
-          <Route path="/client-portal/:token" element={<PublicClientPortalPage />} />
+          <Toaster position="top-right" richColors />
+          <Routes>
+            <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+            <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
+            <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+            <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
+            <Route path="/invite/setup/:token" element={<InviteSetupPage />} />
+            <Route path="/public/quote/:token" element={<PublicQuotePage />} />
+            <Route path="/public/invoice/:token" element={<PublicInvoicePage />} />
+            <Route path="/client-portal/:token" element={<PublicClientPortalPage />} />
 
-          {/* Legacy redirects */}
-          <Route path="/owner-login" element={<Navigate to="/login" replace />} />
-          <Route path="/admin/login" element={<Navigate to="/login" replace />} />
-          <Route path="/owner" element={<Navigate to="/admin" replace />} />
-          <Route path="/owner/login" element={<Navigate to="/login" replace />} />
-          <Route path="/proof-to-paid" element={<BusinessRoute><ProofToPaidPage /></BusinessRoute>} />
-          <Route path="/ai-operator" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><AIControlRoomPage /></ErrorBoundary></BusinessRoute>} />
-          <Route path="/ai-operator/approvals" element={<BusinessRoute><AIOperatorApprovalsPage /></BusinessRoute>} />
-          <Route path="/ai-operator/settings" element={<BusinessRoute><AIOperatorSettingsPage /></BusinessRoute>} />
+            <Route path="/owner-login" element={<Navigate to="/login" replace />} />
+            <Route path="/admin/login" element={<Navigate to="/login" replace />} />
+            <Route path="/owner" element={<Navigate to="/admin" replace />} />
+            <Route path="/owner/login" element={<Navigate to="/login" replace />} />
+            <Route path="/proof-to-paid" element={<BusinessRoute><ProofToPaidPage /></BusinessRoute>} />
+            <Route path="/ai-operator" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><AIControlRoomPage /></ErrorBoundary></BusinessRoute>} />
+            <Route path="/ai-operator/approvals" element={<BusinessRoute><AIOperatorApprovalsPage /></BusinessRoute>} />
+            <Route path="/ai-operator/settings" element={<BusinessRoute><AIOperatorSettingsPage /></BusinessRoute>} />
 
-          {/* Platform admin */}
-          <Route path="/admin" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
-          <Route path="/owner/dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
-          <Route path="/platform-dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
-          <Route path="/app-owner" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
-          <Route path="/admin/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
-          <Route path="/owner/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
-          <Route path="/admin/qa-auditor" element={<QaAuditorRoute><QAAuditorPage /></QaAuditorRoute>} />
+            <Route path="/admin" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
+            <Route path="/owner/dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
+            <Route path="/platform-dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
+            <Route path="/app-owner" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
+            <Route path="/admin/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
+            <Route path="/owner/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
+            <Route path="/admin/qa-auditor" element={<QaAuditorRoute><QAAuditorPage /></QaAuditorRoute>} />
 
-          {/* Business routes (owner, manager, office_admin) */}
-          <Route path="/dashboard" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><DashboardPage /></ErrorBoundary></BusinessRoute>} />
-          <Route path="/overview" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><DashboardPage /></ErrorBoundary></BusinessRoute>} />
-          <Route path="/onboarding" element={<BusinessRoute><OnboardingPage /></BusinessRoute>} />
-          <Route path="/jobs" element={<BusinessRoute><JobsPage /></BusinessRoute>} />
-          <Route path="/jobs/new" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
-          <Route path="/jobs/:id" element={<BusinessRoute><JobDetailPage /></BusinessRoute>} />
-          <Route path="/jobs/:id/edit" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
-          <Route path="/dispatch" element={<BusinessRoute><CalendarPage /></BusinessRoute>} />
-          <Route path="/calendar" element={<Navigate to="/dispatch" replace />} />
-          <Route path="/clients" element={<BusinessRoute><ClientsPage /></BusinessRoute>} />
-          <Route path="/clients/new" element={<BusinessRoute><ClientFormPage /></BusinessRoute>} />
-          <Route path="/clients/:id" element={<BusinessRoute><ClientDetailPage /></BusinessRoute>} />
-          <Route path="/clients/:id/edit" element={<BusinessRoute><ClientFormPage /></BusinessRoute>} />
-          <Route path="/quotes" element={<BusinessRoute><QuotesPage /></BusinessRoute>} />
-          <Route path="/quotes/new" element={<BusinessRoute><QuoteFormPage /></BusinessRoute>} />
-          <Route path="/quotes/:id" element={<BusinessRoute><QuoteDetailPage /></BusinessRoute>} />
-          <Route path="/quotes/:id/edit" element={<BusinessRoute><QuoteFormPage /></BusinessRoute>} />
-          <Route path="/invoices" element={<BusinessRoute><InvoicesPage /></BusinessRoute>} />
-          <Route path="/invoices/new" element={<BusinessRoute><InvoiceFormPage /></BusinessRoute>} />
-          <Route path="/invoices/:id" element={<BusinessRoute><InvoiceDetailPage /></BusinessRoute>} />
-          <Route path="/sms" element={<BusinessRoute><SMSPage /></BusinessRoute>} />
-          <Route path="/reports" element={<ReportsRoute><ReportsPage /></ReportsRoute>} />
-          <Route path="/integrations" element={<BusinessRoute><IntegrationsPage /></BusinessRoute>} />
-          <Route path="/settings" element={<BusinessRoute><SettingsPage /></BusinessRoute>} />
-          <Route path="/contact" element={<PrivateRoute><ContactPage /></PrivateRoute>} />
+            <Route path="/dashboard" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><DashboardPage /></ErrorBoundary></BusinessRoute>} />
+            <Route path="/overview" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><DashboardPage /></ErrorBoundary></BusinessRoute>} />
+            <Route path="/onboarding" element={<BusinessRoute><OnboardingPage /></BusinessRoute>} />
+            <Route path="/jobs" element={<BusinessRoute><JobsPage /></BusinessRoute>} />
+            <Route path="/jobs/new" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
+            <Route path="/jobs/:id" element={<BusinessRoute><JobDetailPage /></BusinessRoute>} />
+            <Route path="/jobs/:id/edit" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
+            <Route path="/dispatch" element={<BusinessRoute><CalendarPage /></BusinessRoute>} />
+            <Route path="/calendar" element={<Navigate to="/dispatch" replace />} />
+            <Route path="/clients" element={<BusinessRoute><ClientsPage /></BusinessRoute>} />
+            <Route path="/clients/new" element={<BusinessRoute><ClientFormPage /></BusinessRoute>} />
+            <Route path="/clients/:id" element={<BusinessRoute><ClientDetailPage /></BusinessRoute>} />
+            <Route path="/clients/:id/edit" element={<BusinessRoute><ClientFormPage /></BusinessRoute>} />
+            <Route path="/quotes" element={<BusinessRoute><QuotesPage /></BusinessRoute>} />
+            <Route path="/quotes/new" element={<BusinessRoute><QuoteFormPage /></BusinessRoute>} />
+            <Route path="/quotes/:id" element={<BusinessRoute><QuoteDetailPage /></BusinessRoute>} />
+            <Route path="/quotes/:id/edit" element={<BusinessRoute><QuoteFormPage /></BusinessRoute>} />
+            <Route path="/invoices" element={<BusinessRoute><InvoicesPage /></BusinessRoute>} />
+            <Route path="/invoices/new" element={<BusinessRoute><InvoiceFormPage /></BusinessRoute>} />
+            <Route path="/invoices/:id" element={<BusinessRoute><InvoiceDetailPage /></BusinessRoute>} />
+            <Route path="/sms" element={<BusinessRoute><SMSPage /></BusinessRoute>} />
+            <Route path="/reports" element={<ReportsRoute><ReportsPage /></ReportsRoute>} />
+            <Route path="/integrations" element={<BusinessRoute><IntegrationsPage /></BusinessRoute>} />
+            <Route path="/settings" element={<BusinessRoute><SettingsPage /></BusinessRoute>} />
+            <Route path="/contact" element={<PrivateRoute><ContactPage /></PrivateRoute>} />
+            <Route path="/plans" element={<OwnerRoute><PlansPage /></OwnerRoute>} />
+            <Route path="/team" element={<TeamRoute><TeamPage /></TeamRoute>} />
+            <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
+            <Route path="/automation" element={<TeamRoute><AutomationPage /></TeamRoute>} />
+            <Route path="/automation/runs" element={<TeamRoute><AutomationRunsPage /></TeamRoute>} />
+            <Route path="/payroll" element={<PayrollRoute><PayrollPage /></PayrollRoute>} />
+            <Route path="/worker/jobs" element={<WorkerRoute><WorkerJobsPage /></WorkerRoute>} />
+            <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerJobDetailPage /></WorkerRoute>} />
+            <Route path="/worker/settings" element={<WorkerRoute><WorkerSettingsPage /></WorkerRoute>} />
 
-          {/* Owner-only */}
-          <Route path="/plans" element={<OwnerRoute><PlansPage /></OwnerRoute>} />
-
-          {/* Team: owner + manager */}
-          <Route path="/team" element={<TeamRoute><TeamPage /></TeamRoute>} />
-
-          {/* Notifications: any authenticated user */}
-          <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
-
-          {/* Automation: owner + manager */}
-          <Route path="/automation" element={<TeamRoute><AutomationPage /></TeamRoute>} />
-          <Route path="/automation/runs" element={<TeamRoute><AutomationRunsPage /></TeamRoute>} />
-
-          {/* Payroll */}
-          <Route path="/payroll" element={<PayrollRoute><PayrollPage /></PayrollRoute>} />
-
-          {/* Worker routes */}
-          <Route path="/worker/jobs" element={<WorkerRoute><WorkerJobsPage /></WorkerRoute>} />
-          <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerJobDetailPage /></WorkerRoute>} />
-          <Route path="/worker/settings" element={<WorkerRoute><WorkerSettingsPage /></WorkerRoute>} />
-
-          {/* Legal (public) */}
-          <Route path="/privacy" element={<PrivacyPage />} />
-          <Route path="/terms" element={<TermsPage />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-          <Route path="/terms-of-service" element={<TermsOfServicePage />} />
-          <Route path="/account-deletion" element={<AccountDeletionPage />} />
-          <Route path="/platform-unlock" element={<PlatformUnlock />} />
-
-          {/* Public marketing site */}
-          <Route path="/" element={<HomePage />} />
-          <Route path="/pricing" element={<PricingPage />} />
-          <Route path="/features" element={<FeaturesPage />} />
-
-          {/* Catch-all */}
-          <Route path="*" element={<RoleRedirect />} />
-        </Routes>
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+            <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+            <Route path="/account-deletion" element={<AccountDeletionPage />} />
+            <Route path="/platform-unlock" element={<PlatformUnlock />} />
+            <Route path="/" element={<HomePage />} />
+            <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/features" element={<FeaturesPage />} />
+            <Route path="*" element={<RoleRedirect />} />
+          </Routes>
         </ErrorBoundary>
       </AuthProvider>
     </BrowserRouter>
