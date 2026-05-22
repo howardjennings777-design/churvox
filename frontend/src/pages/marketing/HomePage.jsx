@@ -1,126 +1,52 @@
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import MarketingShell from "../../components/marketing/MarketingShell";
-import PricingTiers from "../../components/marketing/PricingTiers";
-import HomeInlineLogin from "../../components/marketing/HomeInlineLogin";
 
-const features = [
-  ["Auto-prepares admin", "Invoices, quote follow-ups, worker actions and missing info surfaced before you chase it."],
-  ["Approval slips", "Every prepared action shows the reason, the facts and the next step."],
-  ["Worker app", "Assigned jobs, notes, photos, directions and status updates without owner-only data."],
-  ["Money desk", "Completed jobs, draft invoices, open balances and reminders kept visible."],
-];
-
-const workflow = [
-  ["1", "Work comes in", "Jobs, quote requests, notes, photos and invoices land in Churvox."],
-  ["2", "Churvox prepares it", "Admin gets drafted, gaps get flagged, and the next action is put in front of you."],
-  ["3", "You approve", "Nothing important sends, syncs or changes until the owner taps approve."],
-  ["4", "The business moves", "Workers get clear jobs, clients get clean documents, and money stays visible."],
-];
-
-function CTA({ to, children, primary }) {
+function Btn({ to, children, primary }) {
   return <Link className={primary ? "home-btn home-btn-primary" : "home-btn"} to={to}>{children}</Link>;
 }
 
-function ConsolePreview() {
-  return (
-    <div className="home-console" aria-label="Churvox operator desk preview">
-      <div className="home-console-top"><span /> <b>Churvox Operator Desk</b><em>Live</em></div>
-      <div className="home-console-grid">
-        <section className="home-console-main">
-          <div className="home-console-label">Prepared for you</div>
-          {[
-            ["Invoice ready", "Completed job · proof photos · description drafted", "$480"],
-            ["Worker assignment", "Lawn care · best worker suggested", "Approve"],
-            ["Quote follow-up", "Waiting 4 days · message drafted", "Review"],
-          ].map(([title, detail, action], i) => (
-            <div className={i === 0 ? "home-queue-row active" : "home-queue-row"} key={title}>
-              <div><strong>{title}</strong><p>{detail}</p></div><span>{action}</span>
-            </div>
-          ))}
-        </section>
-        <aside className="home-work-slip">
-          <div className="home-console-label">The heart of Churvox</div>
-          <h3>Admin prepared. Owner approves.</h3>
-          <p>Churvox turns job activity into clear next actions: invoice drafts, follow-ups, crew moves and missing-data fixes.</p>
-          <dl><div><dt>You do</dt><dd>Approve</dd></div><div><dt>Churvox does</dt><dd>Prepare</dd></div><div><dt>Result</dt><dd>Less chasing</dd></div></dl>
-          <button type="button">See prepared action</button>
-        </aside>
-      </div>
-    </div>
-  );
-}
-
-function HeartSection() {
-  return (
-    <section className="home-heart">
-      <div className="home-heart-copy">
-        <p className="home-kicker">The heart of the site</p>
-        <h2>You should not have to chase the admin.</h2>
-        <p>That is the point of Churvox. Jobs finish, workers add notes and photos, clients need follow-ups, invoices need sending — Churvox prepares the admin and puts the decision in front of you.</p>
-      </div>
-      <div className="home-heart-board">
-        <article><span>01</span><strong>It watches the work</strong><p>Jobs, quotes, invoices, crew status, proof photos and missing details are pulled into one operating view.</p></article>
-        <article><span>02</span><strong>It prepares the next move</strong><p>Draft invoice descriptions, follow-up messages, worker assignments, reminders and data fixes are prepared for review.</p></article>
-        <article><span>03</span><strong>You approve the important stuff</strong><p>No blind sending, no surprise syncs, no pricing changes without the owner. You stay in control.</p></article>
-      </div>
-    </section>
-  );
-}
-
 export default function HomePage() {
-  useEffect(() => { document.title = "Churvox — AI front desk for trade businesses"; }, []);
-
+  useEffect(() => { document.title = "Churvox — Autonomous office for trade businesses"; }, []);
   return (
     <MarketingShell>
       <main className="home-page">
         <section className="home-hero">
           <div className="home-hero-copy">
-            <p className="home-kicker">AI front desk for trade businesses</p>
-            <h1>Churvox prepares the admin. You approve what matters.</h1>
-            <p className="home-lead">The heart of Churvox is simple: you should not have to chase invoices, follow-ups, missing job info or worker admin. Churvox prepares the next move and puts it in front of you.</p>
-            <div className="home-actions"><CTA to="/signup" primary>Start free</CTA><a className="home-btn" href="#home-login">Log in</a><CTA to="/pricing">See pricing</CTA></div>
+            <p className="home-kicker">Autonomous office for trade businesses</p>
+            <h1>Stop chasing admin. Churvox runs the office.</h1>
+            <p className="home-lead">Churvox prepares invoices, quote follow-ups, worker actions, job checks, missing-info fixes and customer admin, then puts the important decisions in front of you for approval.</p>
+            <div className="home-actions"><Btn to="/signup" primary>Start free</Btn><Btn to="/login">Log in</Btn><Btn to="/features">See how it works</Btn></div>
           </div>
-          <div className="home-hero-stack"><ConsolePreview /><HomeInlineLogin /></div>
-        </section>
-
-        <HeartSection />
-
-        <section className="home-proof">
-          <div><strong>AI prepares</strong><span>Invoices, follow-ups, dispatch suggestions and missing-info fixes.</span></div>
-          <div><strong>Owner approves</strong><span>No customer messages, pricing changes or syncs without approval.</span></div>
-          <div><strong>The business moves</strong><span>Workers get clear actions, clients get clean docs, money stays visible.</span></div>
-        </section>
-
-        <section className="home-section home-workflow">
-          <div className="home-section-head"><p className="home-kicker">How it works</p><h2>Less chasing. More prepared decisions.</h2></div>
-          <div className="home-step-grid">
-            {workflow.map(([n, title, text]) => <article key={title}><span>{n}</span><h3>{title}</h3><p>{text}</p></article>)}
-          </div>
-        </section>
-
-        <section className="home-section home-features">
-          <div className="home-section-head"><p className="home-kicker">What Churvox handles</p><h2>The admin engine behind the front desk.</h2></div>
-          <div className="home-feature-grid">
-            {features.map(([title, text]) => <article key={title}><h3>{title}</h3><p>{text}</p></article>)}
+          <div className="home-console">
+            <div className="home-console-top"><span /><b>Today prepared for approval</b><em>Owner desk</em></div>
+            <div className="home-console-grid">
+              <section className="home-console-main">
+                <div className="home-console-label">Churvox already prepared</div>
+                <div className="home-queue-row active"><div><strong>Invoice drafted</strong><p>Completed job, notes, pricing and proof checked.</p></div><span>Approve</span></div>
+                <div className="home-queue-row"><div><strong>Worker suggested</strong><p>Unassigned job matched to available crew.</p></div><span>Review</span></div>
+                <div className="home-queue-row"><div><strong>Quote follow-up written</strong><p>Customer has not replied. Message ready.</p></div><span>Review</span></div>
+              </section>
+              <aside className="home-work-slip">
+                <div className="home-console-label">Work Slip</div>
+                <h3>Admin prepared. Owner approves.</h3>
+                <p>Churvox shows what it found, why it matters and what happens if you approve.</p>
+                <dl><div><dt>Churvox does</dt><dd>Prepare</dd></div><div><dt>Owner does</dt><dd>Approve</dd></div><div><dt>Result</dt><dd>Business moves</dd></div></dl>
+                <button type="button">Review action</button>
+              </aside>
+            </div>
           </div>
         </section>
 
-        <section className="home-section home-pricing-preview">
-          <div className="home-section-head"><p className="home-kicker">Plans</p><h2>Start simple. Upgrade when the workload grows.</h2></div>
-          <PricingTiers compact showAddons={false} />
-          <div className="home-pricing-link"><CTA to="/pricing">View full pricing</CTA></div>
+        <section className="home-heart">
+          <div className="home-heart-copy"><p className="home-kicker">The heart of Churvox</p><h2>You should not have to chase the admin.</h2><p>Jobs finish, workers add notes and photos, customers need follow-ups, invoices need sending, and hours need checking. Churvox turns that noise into owner decisions.</p></div>
+          <div className="home-heart-board"><article><span>01</span><strong>It watches the work</strong><p>Jobs, quotes, invoices, proof and worker updates feed the same desk.</p></article><article><span>02</span><strong>It prepares the next move</strong><p>Drafts, reminders, assignments and missing-data fixes are lined up.</p></article><article><span>03</span><strong>You approve what matters</strong><p>No blind sends, pricing changes or syncs without the owner.</p></article></div>
         </section>
 
-        <section className="home-final">
-          <div><p className="home-kicker">Ready when you are</p><h2>Stop chasing the admin. Let Churvox prepare it.</h2><p>Start with your first client, first job and first worker. Churvox keeps the next action in front of you.</p></div>
-          <div className="home-final-actions"><CTA to="/signup" primary>Start free</CTA><a className="home-btn" href="#home-login">Log in</a></div>
-        </section>
+        <section className="home-proof"><div><strong>AI prepares</strong><span>Invoices, follow-ups, reminders and checks.</span></div><div><strong>Owner approves</strong><span>You stay in control of important actions.</span></div><div><strong>The business moves</strong><span>Workers, clients and money stay connected.</span></div></section>
+
+        <section className="home-final"><div><p className="home-kicker">The whole point</p><h2>Churvox prepares it. You approve it.</h2><p>Start with your first job. Let Churvox bring the next decision to you.</p></div><div className="home-final-actions"><Btn to="/signup" primary>Start free</Btn><Btn to="/login">Log in</Btn></div></section>
       </main>
-
-      <style>{`
-        .home-page{background:#e8e2d6;color:#101114}.home-hero{min-height:calc(100vh - 74px);display:grid;grid-template-columns:minmax(0,.92fr) minmax(520px,1.08fr);gap:34px;align-items:center;padding:clamp(40px,6vw,86px) clamp(18px,4vw,64px);background:linear-gradient(135deg,#101114 0%,#242830 48%,#e8e2d6 48%,#f3eee5 100%)}.home-hero-stack{display:grid;gap:16px}.home-hero-stack .home-login-panel{margin:0!important}.home-hero-copy{color:#fbf8f1;max-width:820px}.home-kicker{text-transform:uppercase;letter-spacing:.14em;font-size:12px;font-weight:900;color:#9b8059;margin:0 0 16px}.home-hero .home-kicker{color:#caa46d}.home-hero h1{font-family:Outfit,Inter,sans-serif;font-size:clamp(52px,7vw,104px);line-height:.9;letter-spacing:-.07em;margin:0;color:#fbf8f1}.home-lead{font-size:clamp(17px,1.6vw,21px);line-height:1.55;color:rgba(251,248,241,.76);max-width:720px;margin:24px 0 0}.home-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}.home-btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;border:1px solid rgba(251,248,241,.28);background:rgba(251,248,241,.06);color:#fbf8f1;border-radius:8px;padding:13px 18px;font-weight:900}.home-btn-primary{background:#fbf8f1;color:#101114;border-color:#fbf8f1}.home-console{background:#101114;border:1px solid #343a44;border-radius:14px;box-shadow:0 42px 120px rgba(16,17,20,.42);padding:14px;color:#fbf8f1}.home-console-top{display:flex;align-items:center;gap:10px;border-bottom:1px solid #343a44;padding:6px 6px 14px}.home-console-top span{width:10px;height:10px;border-radius:50%;background:#c58a2b}.home-console-top b{font-size:13px}.home-console-top em{margin-left:auto;font-style:normal;color:#9aa2ad;font-size:12px}.home-console-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;padding-top:14px}.home-console-main,.home-work-slip{background:#181c22;border:1px solid #343a44;border-radius:12px;padding:16px}.home-console-label{text-transform:uppercase;letter-spacing:.12em;font-size:10px;color:#9aa2ad;font-weight:900;margin-bottom:12px}.home-queue-row{display:flex;justify-content:space-between;gap:12px;background:#101114;border:1px solid #343a44;border-radius:10px;padding:14px;margin-top:10px}.home-queue-row.active{border-color:#c58a2b;box-shadow:inset 3px 0 0 #c58a2b}.home-queue-row strong{font-size:14px}.home-queue-row p{margin:4px 0 0;color:#9aa2ad;font-size:12px}.home-queue-row span{font-size:12px;font-weight:900;background:#fbf8f1;color:#101114;border-radius:999px;padding:6px 9px;height:max-content}.home-work-slip h3{font-family:Outfit,Inter,sans-serif;font-size:28px;line-height:1;margin:0 0 10px}.home-work-slip p{color:#c6ccd5;line-height:1.5}.home-work-slip dl{display:grid;gap:8px}.home-work-slip dl div{display:flex;justify-content:space-between;border-bottom:1px solid #343a44;padding-bottom:8px}.home-work-slip dt{color:#9aa2ad}.home-work-slip dd{margin:0;font-weight:800}.home-work-slip button{width:100%;border:0;background:#fbf8f1;color:#101114;border-radius:8px;padding:13px 14px;font-weight:900;margin-top:14px}.home-heart{display:grid;grid-template-columns:minmax(0,.78fr) minmax(520px,1.22fr);gap:28px;align-items:stretch;background:#101114;color:#fbf8f1;padding:clamp(48px,7vw,96px) clamp(18px,4vw,64px)}.home-heart-copy h2{font-family:Outfit,Inter,sans-serif;font-size:clamp(40px,5.8vw,86px);line-height:.92;letter-spacing:-.065em;margin:0;color:#fbf8f1}.home-heart-copy p:not(.home-kicker){color:rgba(251,248,241,.72);line-height:1.6;font-size:18px;max-width:620px}.home-heart-board{display:grid;gap:12px}.home-heart-board article{background:#181c22;border:1px solid #343a44;border-radius:12px;padding:22px;box-shadow:0 22px 56px rgba(0,0,0,.18)}.home-heart-board span{font-family:Outfit,Inter,sans-serif;font-size:42px;font-weight:900;color:#c58a2b}.home-heart-board strong{display:block;font-size:20px;margin:8px 0;color:#fbf8f1}.home-heart-board p{margin:0;color:rgba(251,248,241,.68);line-height:1.5}.home-proof{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#cdc3b3;padding:1px;margin:0 clamp(18px,4vw,64px);transform:translateY(-28px);box-shadow:0 18px 46px rgba(16,17,20,.12)}.home-proof div{background:#fbf8f1;padding:22px}.home-proof strong{display:block}.home-proof span{display:block;margin-top:6px;color:#5f6670;font-size:14px;line-height:1.45}.home-section{padding:clamp(58px,7vw,104px) clamp(18px,4vw,64px)}.home-section-head{max-width:850px;margin-bottom:30px}.home-section h2,.home-final h2{font-family:Outfit,Inter,sans-serif;font-size:clamp(34px,4.8vw,68px);line-height:.96;letter-spacing:-.06em;margin:0}.home-step-grid,.home-feature-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.home-step-grid article,.home-feature-grid article{background:#fbf8f1;border:1px solid #cdc3b3;border-radius:12px;padding:24px;box-shadow:0 12px 34px rgba(16,17,20,.07)}.home-step-grid article span{font-family:Outfit,Inter,sans-serif;font-size:44px;font-weight:900;color:#c58a2b}.home-step-grid h3,.home-feature-grid h3{font-size:19px;margin:14px 0 8px}.home-step-grid p,.home-feature-grid p,.home-final p{color:#5f6670;line-height:1.55}.home-features{background:#f3eee5}.home-pricing-preview{background:#101114;color:#fbf8f1}.home-pricing-preview .home-kicker{color:#caa46d}.home-pricing-preview h2{color:#fbf8f1}.home-pricing-link{display:flex;justify-content:center;margin-top:24px}.home-final{display:flex;justify-content:space-between;gap:24px;align-items:center;background:#fbf8f1;border-top:1px solid #cdc3b3;padding:clamp(48px,6vw,80px) clamp(18px,4vw,64px)}.home-final .home-btn{background:#101114;color:#fbf8f1;border-color:#101114}.home-final-actions{display:flex;gap:12px;flex-wrap:wrap}@media(max-width:1100px){.home-hero,.home-heart{grid-template-columns:1fr;background:#101114}.home-console-grid{grid-template-columns:1fr}.home-step-grid,.home-feature-grid{grid-template-columns:1fr 1fr}.home-proof{grid-template-columns:1fr}}@media(max-width:680px){.home-hero{padding:34px 14px}.home-hero h1{font-size:48px}.home-heart,.home-section,.home-final{padding-left:14px;padding-right:14px}.home-step-grid,.home-feature-grid{grid-template-columns:1fr}.home-final{display:block}.home-final .home-btn{margin-top:18px}.home-proof{margin:0 14px}}
-      `}</style>
     </MarketingShell>
   );
 }
