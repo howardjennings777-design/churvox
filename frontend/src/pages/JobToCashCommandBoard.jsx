@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
-import "../styles/churvoxMissionBoard.css";
 
 const arr = (v) =>
   Array.isArray(v) ? v :
@@ -33,50 +32,39 @@ function labelFor(type = "") {
   if (t.includes("assign")) return "Crew assignment";
   if (t.includes("quote")) return "Quote follow-up";
   if (t.includes("customer")) return "Customer update";
-  return "Admin move";
-}
-
-function stackFor(type = "") {
-  const t = low(type);
-  if (t.includes("invoice_reminder")) return "Reminders";
-  if (t.includes("invoice")) return "Invoices";
-  if (t.includes("assign")) return "Crew";
-  if (t.includes("quote")) return "Quotes";
-  if (t.includes("customer")) return "Customers";
-  return "Admin";
+  return "AI move";
 }
 
 function makeDecision(raw) {
   const payload = raw.payload || raw.draft_payload || {};
   const type = raw.action_type || raw.type || "prepared_action";
+
   return {
     id: `decision-${idOf(raw)}`,
     rawId: idOf(raw),
     raw,
-    area: "now",
+    lane: "needs",
     source: "AI",
     type,
     label: labelFor(type),
-    stack: stackFor(type),
-    title: raw.title || raw.summary || "Churvox has the next move ready",
-    detail: raw.recommendation || raw.reason || raw.owner_facing_explanation || raw.summary || "Review this move, then approve, edit, or skip.",
+    title: raw.title || raw.summary || "AI decision ready",
+    detail: raw.recommendation || raw.reason || raw.owner_facing_explanation || raw.summary || "Review, approve, edit, or skip.",
     status: raw.status || "pending",
     risk: raw.risk || raw.risk_level || "low",
     payload,
   };
 }
 
-function makeJob(job, area = "jobs") {
+function makeJob(job, lane = "scheduled") {
   return {
     id: `job-${idOf(job)}`,
     raw: job,
-    area,
+    lane,
     source: "Job",
     type: "job",
-    label: area === "money" ? "Ready to invoice" : "Job",
-    stack: area === "money" ? "Ready to invoice" : "Jobs",
+    label: lane === "bill" ? "Ready to bill" : "Job",
     title: job.title || job.job_name || job.client_name || "Job",
-    detail: job.description || job.address || "Job work item.",
+    detail: job.description || job.address || "Job record",
     status: job.status || "open",
     client: job.client_name || job.customer_name || "Client",
     worker: job.assigned_worker_name || job.worker_name || "Unassigned",
@@ -88,13 +76,12 @@ function makeInvoice(invoice) {
   return {
     id: `invoice-${idOf(invoice)}`,
     raw: invoice,
-    area: "money",
+    lane: "pay",
     source: "Invoice",
     type: "invoice",
-    label: "Money",
-    stack: "Invoices",
+    label: "Invoice",
     title: `${invoice.customer_name || invoice.client_name || "Client"} · ${nz(invoice.balance_due || invoice.balance || invoice.total || invoice.amount)}`,
-    detail: invoice.description || "Invoice waiting for review or follow-up.",
+    detail: invoice.description || "Invoice waiting for payment or follow-up.",
     status: invoice.status || "open",
     client: invoice.customer_name || invoice.client_name || "Client",
     amount: invoice.balance_due || invoice.balance || invoice.total || invoice.amount || 0,
@@ -105,13 +92,12 @@ function makeClient(client) {
   return {
     id: `client-${idOf(client)}`,
     raw: client,
-    area: "clients",
+    lane: "customers",
     source: "Client",
     type: "client",
     label: "Client",
-    stack: "Clients",
     title: client.name || client.client_name || client.customer_name || "Client",
-    detail: client.email || client.phone || client.address || "Client record.",
+    detail: client.email || client.phone || client.address || "Client record",
     status: client.status || "active",
     client: client.name || client.client_name || client.customer_name || "Client",
   };
@@ -121,11 +107,10 @@ function makeQuote(quote) {
   return {
     id: `quote-${idOf(quote)}`,
     raw: quote,
-    area: "quotes",
+    lane: "needs",
     source: "Quote",
     type: "quote",
-    label: "Quote",
-    stack: "Quotes",
+    label: "Quote follow-up",
     title: quote.title || quote.customer_name || quote.client_name || "Quote",
     detail: quote.description || "Quote waiting for review or follow-up.",
     status: quote.status || "draft",
@@ -154,7 +139,9 @@ function patchFor(item, editedText = "") {
       patch.amount = subtotal;
       patch.total = subtotal;
     }
+
     patch.gst_rate = Number(first(p.gst_rate, 0.15));
+
     const description = first(editedText, p.description, arr(p.line_items)[0]?.description, item?.title);
     if (description) patch.description = String(description);
     if (p.job_id) patch.job_id = String(p.job_id);
@@ -170,21 +157,24 @@ function patchFor(item, editedText = "") {
 }
 
 function displayTitle(item) {
-  if (!item) return "No mission selected.";
+  if (!item) return "No decision selected";
+
   const p = item.payload || {};
   const type = low(item.type || "");
   const client = first(p.client_name, p.customer_name, p.client, item.client);
 
-  if (type.includes("invoice_reminder")) return `Send reminder${client ? ` to ${client}` : ""}`;
-  if (["create_invoice_draft", "invoice_draft"].includes(type)) return `Create invoice${client ? ` for ${client}` : ""}`;
-  if (type.includes("assign")) return "Assign crew to job";
+  if (type.includes("invoice_reminder")) return `Send payment reminder${client ? ` to ${client}` : ""}`;
+  if (["create_invoice_draft", "invoice_draft"].includes(type)) return `Create invoice draft${client ? ` for ${client}` : ""}`;
+  if (type.includes("assign")) return "Assign crew to a waiting job";
   if (type.includes("quote")) return `Follow up quote${client ? ` for ${client}` : ""}`;
-  if (type.includes("customer")) return `Update customer${client ? ` ${client}` : ""}`;
-  return item.title || "Churvox has the next move ready";
+  if (type.includes("customer")) return `Send customer update${client ? ` to ${client}` : ""}`;
+
+  return item.title || "AI decision ready";
 }
 
 function displayDetail(item) {
-  if (!item) return "Run an AI check or open a board lane.";
+  if (!item) return "Run an AI check or choose a board lane.";
+
   const p = item.payload || {};
   const type = low(item.type || "");
   const client = first(p.client_name, p.customer_name, p.client, item.client);
@@ -193,29 +183,29 @@ function displayDetail(item) {
   const invoice = first(p.invoice_number, p.invoice_ref, p.invoice_id);
 
   if (type.includes("invoice_reminder")) {
-    const bits = [];
-    if (invoice) bits.push(`Invoice ${invoice}`);
-    if (days) bits.push(`${days} days overdue`);
-    if (amount) bits.push(`${nz(amount)} due`);
-    if (client) bits.push(client);
-    return `${bits.length ? bits.join(" · ") + ". " : ""}Churvox drafted the reminder. Nothing sends until you approve.`;
+    const parts = [];
+    if (invoice) parts.push(`Invoice ${invoice}`);
+    if (days) parts.push(`${days} days overdue`);
+    if (amount) parts.push(`${nz(amount)} due`);
+    if (client) parts.push(client);
+    return `${parts.length ? `${parts.join(" · ")}. ` : ""}Churvox drafted the reminder. Nothing sends until you approve.`;
   }
 
   if (["create_invoice_draft", "invoice_draft"].includes(type)) {
-    const bits = [];
-    if (client) bits.push(client);
-    if (amount) bits.push(nz(amount));
-    if (p.job_id) bits.push("linked to completed job");
-    return `${bits.length ? bits.join(" · ") + ". " : ""}Approve to create the draft invoice.`;
+    const parts = [];
+    if (client) parts.push(client);
+    if (amount) parts.push(nz(amount));
+    if (p.job_id) parts.push("linked to completed job");
+    return `${parts.length ? `${parts.join(" · ")}. ` : ""}Approve to create the draft invoice.`;
   }
 
-  return item.detail || "Review, approve, edit, or skip this move.";
+  return item.detail || "Review this move, then approve, edit, or skip.";
 }
 
 function primaryLabel(item) {
   const type = low(item?.type || "");
-  if (type.includes("invoice_reminder")) return "Approve & send";
-  if (["create_invoice_draft", "invoice_draft"].includes(type)) return "Approve invoice";
+  if (type.includes("invoice_reminder")) return "Approve & send reminder";
+  if (["create_invoice_draft", "invoice_draft"].includes(type)) return "Approve invoice draft";
   if (type.includes("assign")) return "Approve assignment";
   if (type.includes("quote")) return "Approve follow-up";
   if (type.includes("customer")) return "Approve update";
@@ -233,22 +223,30 @@ function outcomeLine(item) {
 }
 
 function recordLine(item) {
-  if (!item) return "ready";
+  if (!item) return "Ready";
   const p = item.payload || {};
-  return first(p.client_name, p.customer_name, item.client, p.invoice_number ? `Invoice ${p.invoice_number}` : "", p.job_id ? `Job ${p.job_id}` : "", item.worker, "ready");
+  return first(
+    p.client_name,
+    p.customer_name,
+    item.client,
+    p.invoice_number ? `Invoice ${p.invoice_number}` : "",
+    p.job_id ? `Job ${p.job_id}` : "",
+    item.worker,
+    "Ready"
+  );
 }
 
-function groupStacks(items) {
+function groupByLabel(items) {
   const map = new Map();
   for (const item of items) {
-    const key = low(item.stack || item.type || item.title).replace(/[^a-z0-9]+/g, "_");
-    if (!map.has(key)) map.set(key, { key, title: item.stack || stackFor(item.type), count: 0, first: item });
+    const key = item.label || item.type || "Work";
+    if (!map.has(key)) map.set(key, { title: key, count: 0, first: item });
     map.get(key).count += 1;
   }
   return [...map.values()].sort((a, b) => b.count - a.count).slice(0, 8);
 }
 
-export default function MissionBoardDashboard() {
+export default function JobToCashCommandBoard() {
   const { get, post, patch } = useApi();
 
   const [actions, setActions] = useState([]);
@@ -257,7 +255,8 @@ export default function MissionBoardDashboard() {
   const [invoices, setInvoices] = useState([]);
   const [quotes, setQuotes] = useState([]);
   const [snapshot, setSnapshot] = useState(null);
-  const [area, setArea] = useState("now");
+
+  const [lane, setLane] = useState("needs");
   const [selected, setSelected] = useState(null);
   const [handled, setHandled] = useState([]);
   const [busy, setBusy] = useState("");
@@ -265,10 +264,11 @@ export default function MissionBoardDashboard() {
   const [editOpen, setEditOpen] = useState(false);
   const [editText, setEditText] = useState("");
   const [ask, setAsk] = useState("");
-  const once = useRef(false);
+  const scanned = useRef(false);
 
   const load = useCallback(async () => {
     setLoading(true);
+
     const [a, s, j, c, i, q] = await Promise.all([
       get("/ai-operator/actions"),
       get("/ai-operator/command-snapshot"),
@@ -284,6 +284,7 @@ export default function MissionBoardDashboard() {
     if (c.success) setClients(arr(c.data || c));
     if (i.success) setInvoices(arr(i.data || i));
     if (q.success) setQuotes(arr(q.data || q));
+
     setLoading(false);
   }, [get]);
 
@@ -291,11 +292,13 @@ export default function MissionBoardDashboard() {
     setBusy("scan");
     const res = await post("/ai/operator/run-daily-check", {});
     setBusy("");
+
     if (res.success) {
-      if (!quiet) toast.success("Mission board updated");
+      if (!quiet) toast.success("Command board updated");
       await load();
       return true;
     }
+
     if (!quiet) toast.error(res.error || "AI check failed");
     return false;
   }, [load, post]);
@@ -303,10 +306,12 @@ export default function MissionBoardDashboard() {
   useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
-    if (once.current) return;
-    once.current = true;
-    const key = "churvox_mission_board_last_scan";
+    if (scanned.current) return;
+    scanned.current = true;
+
+    const key = "churvox_job_to_cash_last_scan";
     const last = Number(localStorage.getItem(key) || 0);
+
     if (!last || Date.now() - last > 10 * 60 * 1000) {
       localStorage.setItem(key, String(Date.now()));
       scan(true);
@@ -315,59 +320,95 @@ export default function MissionBoardDashboard() {
 
   const hidden = useMemo(() => new Set(handled), [handled]);
 
-  const nowItems = useMemo(
-    () => actions.filter((a) => !hidden.has(idOf(a)) && pendingStatuses.has(low(a.status))).slice(0, 80).map(makeDecision),
+  const decisions = useMemo(
+    () => actions
+      .filter((a) => !hidden.has(idOf(a)) && pendingStatuses.has(low(a.status)))
+      .slice(0, 80)
+      .map(makeDecision),
     [actions, hidden]
   );
 
-  const jobItems = useMemo(() => jobs.slice(0, 60).map((job) => makeJob(job, "jobs")), [jobs]);
+  const quoteItems = useMemo(() => quotes.slice(0, 30).map(makeQuote), [quotes]);
 
-  const moneyItems = useMemo(() => {
-    const completedNotInvoiced = jobs
-      .filter((j) => ["completed", "done", "complete"].includes(low(j.status)) && !(j.invoice_id || j.draft_invoice_id || j.invoiced))
-      .slice(0, 20)
-      .map((job) => makeJob(job, "money"));
-
-    const openInvoices = invoices
-      .filter((i) => ["draft", "sent", "open", "overdue", "unpaid", "pending", ""].includes(low(i.status)))
+  const scheduledJobs = useMemo(
+    () => jobs
+      .filter((j) => ["scheduled", "assigned", "booked"].includes(low(j.status)))
       .slice(0, 40)
-      .map(makeInvoice);
-
-    return [...completedNotInvoiced, ...openInvoices];
-  }, [jobs, invoices]);
-
-  const crewItems = useMemo(
-    () => jobs.filter((j) => ["assigned", "scheduled", "in_progress", "in progress", "started"].includes(low(j.status))).slice(0, 60).map((job) => makeJob(job, "crew")),
+      .map((job) => makeJob(job, "scheduled")),
     [jobs]
   );
 
-  const clientItems = useMemo(() => clients.slice(0, 60).map(makeClient), [clients]);
-  const quoteItems = useMemo(() => quotes.slice(0, 60).map(makeQuote), [quotes]);
-  const doneItems = useMemo(() => actions.filter((a) => doneStatuses.has(low(a.status))).slice(0, 20).map(makeDecision), [actions]);
+  const fieldJobs = useMemo(
+    () => jobs
+      .filter((j) => ["in_progress", "in progress", "started", "paused"].includes(low(j.status)))
+      .slice(0, 40)
+      .map((job) => makeJob(job, "field")),
+    [jobs]
+  );
 
-  const urgent = snapshot?.urgent || {};
-  const boards = { now: nowItems, money: moneyItems, jobs: jobItems, crew: crewItems, clients: clientItems, quotes: quoteItems, done: doneItems };
-  const activeItems = boards[area] || [];
-  const current = selected && selected.area === area ? selected : activeItems[0];
-  const stacks = useMemo(() => groupStacks(nowItems), [nowItems]);
+  const readyBillJobs = useMemo(
+    () => jobs
+      .filter((j) => ["completed", "done", "complete"].includes(low(j.status)) && !(j.invoice_id || j.draft_invoice_id || j.invoiced))
+      .slice(0, 30)
+      .map((job) => makeJob(job, "bill")),
+    [jobs]
+  );
+
+  const waitingPay = useMemo(
+    () => invoices
+      .filter((i) => ["sent", "open", "overdue", "unpaid", "pending", ""].includes(low(i.status)))
+      .slice(0, 40)
+      .map(makeInvoice),
+    [invoices]
+  );
+
+  const clientItems = useMemo(() => clients.slice(0, 40).map(makeClient), [clients]);
+
+  const doneItems = useMemo(
+    () => actions
+      .filter((a) => doneStatuses.has(low(a.status)))
+      .slice(0, 20)
+      .map(makeDecision),
+    [actions]
+  );
+
+  const needsItems = useMemo(
+    () => [...decisions, ...quoteItems].slice(0, 80),
+    [decisions, quoteItems]
+  );
+
+  const lanes = {
+    needs: needsItems,
+    scheduled: scheduledJobs,
+    field: fieldJobs,
+    bill: readyBillJobs,
+    pay: waitingPay,
+    customers: clientItems,
+    done: doneItems,
+  };
+
+  const activeItems = lanes[lane] || [];
+  const current = selected && selected.lane === lane ? selected : (lane === "needs" ? decisions[0] || activeItems[0] : activeItems[0]);
+  const grouped = useMemo(() => groupByLabel(decisions), [decisions]);
 
   useEffect(() => {
     setEditOpen(false);
     setEditText(current?.payload?.message || current?.payload?.description || current?.detail || "");
   }, [current?.id, current?.payload?.message, current?.payload?.description, current?.detail]);
 
-  const openArea = (nextArea) => {
-    setArea(nextArea);
+  const openLane = (nextLane) => {
+    setLane(nextLane);
     setSelected(null);
   };
 
-  const showNow = () => {
-    setArea("now");
-    setSelected(nowItems[0] || null);
+  const reviewNext = () => {
+    setLane("needs");
+    setSelected(decisions[0] || null);
   };
 
   const approveCurrent = async (item) => {
     if (!item?.rawId) return;
+
     setBusy(item.rawId);
 
     const payload = patchFor(item, editOpen ? editText : "");
@@ -384,7 +425,7 @@ export default function MissionBoardDashboard() {
     setBusy("");
 
     if (res.success) {
-      toast.success("Approved. Next move ready.");
+      toast.success("Approved. Next decision is ready.");
       setHandled((prev) => Array.from(new Set([...prev, item.rawId])));
       setActions((prev) => prev.filter((a) => idOf(a) !== item.rawId));
       setSelected(null);
@@ -397,8 +438,8 @@ export default function MissionBoardDashboard() {
 
   const skipCurrent = async (item) => {
     if (!item?.rawId) return;
-    setBusy(item.rawId);
 
+    setBusy(item.rawId);
     const res = await post(`/ai-operator/actions/${item.rawId}/reject`, {});
     setBusy("");
 
@@ -416,150 +457,157 @@ export default function MissionBoardDashboard() {
 
   const askChurvox = () => {
     const q = low(ask);
+
     if (!q.trim()) return;
-    if (q.includes("money") || q.includes("invoice") || q.includes("paid") || q.includes("payment")) openArea("money");
-    else if (q.includes("job") || q.includes("work")) openArea("jobs");
-    else if (q.includes("crew") || q.includes("worker") || q.includes("staff")) openArea("crew");
-    else if (q.includes("client") || q.includes("customer")) openArea("clients");
-    else if (q.includes("quote")) openArea("quotes");
-    else if (q.includes("done") || q.includes("history")) openArea("done");
-    else showNow();
-    toast.message("Mission board changed");
+    if (q.includes("money") || q.includes("invoice") || q.includes("bill")) openLane("bill");
+    else if (q.includes("pay") || q.includes("overdue")) openLane("pay");
+    else if (q.includes("field") || q.includes("active")) openLane("field");
+    else if (q.includes("schedule") || q.includes("today")) openLane("scheduled");
+    else if (q.includes("client") || q.includes("customer")) openLane("customers");
+    else reviewNext();
+
+    toast.message("Command board changed");
   };
 
-  const lanes = [
-    { key: "money", title: "Money", value: nz(urgent.open_invoices_total || 0), hint: "Invoices, drafts, overdue balances", items: moneyItems },
-    { key: "jobs", title: "Jobs", value: urgent.unassigned_jobs ?? jobItems.length, hint: "Stuck, scheduled, active, complete", items: jobItems },
-    { key: "crew", title: "Crew", value: crewItems.length, hint: "Assigned and active field work", items: crewItems },
-    { key: "clients", title: "Clients", value: clientItems.length, hint: "Customer records and context", items: clientItems },
-    { key: "quotes", title: "Quotes", value: quoteItems.length, hint: "Quotes waiting for follow-up", items: quoteItems },
+  const openTotal = invoices.reduce((sum, invoice) => {
+    if (["sent", "open", "overdue", "unpaid", "pending", ""].includes(low(invoice.status))) {
+      return sum + Number(invoice.balance_due || invoice.balance || invoice.total || invoice.amount || 0);
+    }
+    return sum;
+  }, 0);
+
+  const pulse = [
+    ["AI decisions", decisions.length, "ready", "needs"],
+    ["Jobs attention", needsItems.length + scheduledJobs.length, "to review", "needs"],
+    ["Ready to bill", readyBillJobs.length, nz(readyBillJobs.reduce((s, j) => s + Number(j.amount || 0), 0)), "bill"],
+    ["Waiting pay", waitingPay.length, nz(openTotal), "pay"],
+    ["In field", fieldJobs.length, "active", "field"],
   ];
 
-  const topStats = [
-    ["NOW", nowItems.length, "moves ready", "now"],
-    ["MONEY", nz(urgent.open_invoices_total || 0), `${moneyItems.length} items`, "money"],
-    ["JOBS", urgent.unassigned_jobs ?? jobItems.length, "need eyes", "jobs"],
-    ["CREW", crewItems.length, "active", "crew"],
+  const boardLanes = [
+    { key: "needs", title: "Needs Action", hint: "AI decisions, unassigned work, quote follow-ups.", items: needsItems },
+    { key: "scheduled", title: "Scheduled", hint: "Booked jobs and crew commitments.", items: scheduledJobs },
+    { key: "field", title: "In Field", hint: "Active jobs, pauses, photos, notes and time.", items: fieldJobs },
+    { key: "bill", title: "Ready to Bill", hint: "Completed jobs and invoice drafts.", items: readyBillJobs },
+    { key: "pay", title: "Waiting Pay", hint: "Open invoices and payment reminders.", items: waitingPay },
   ];
 
   return (
-    <main className="mb" data-version="CHURVOX_MISSION_BOARD_20260524">
-      <aside className="mb-brand">
-        <div className="mb-brand-mark">CVX</div>
+    <main className="jtc" data-version="CHURVOX_JOB_TO_CASH_COMMAND_BOARD_20260524">
+      <section className="jtc-top">
         <div>
-          <p>Mission Board</p>
-          <strong>Today</strong>
+          <p className="jtc-kicker">Churvox Command Board</p>
+          <h1>Job-to-cash, live.</h1>
+          <p>{snapshot?.next_best_move || "See the workflow from action → schedule → field → bill → payment. Churvox prepares the admin. You approve."}</p>
         </div>
-      </aside>
 
-      <section className="mb-hero">
-        <div>
-          <p className="mb-kicker">Churvox Mission Board</p>
-          <h1>The day is laid out. Clear the next move.</h1>
-          <p>{snapshot?.next_best_move || "Money, jobs, crew and customers stay on the board while Churvox hands you the next admin decision."}</p>
-        </div>
-        <div className="mb-hero-actions">
+        <div className="jtc-top-actions">
           <button onClick={() => scan(false)} disabled={busy === "scan"}>{busy === "scan" ? "Checking…" : "Run AI check"}</button>
-          <button className="mb-primary" onClick={showNow}>Review next move</button>
+          <button className="jtc-primary" onClick={reviewNext}>Review next</button>
         </div>
       </section>
 
-      <section className="mb-stats">
-        {topStats.map(([label, value, hint, target]) => (
-          <button key={label} className={area === target ? "active" : ""} onClick={() => openArea(target)}>
+      <section className="jtc-pulse">
+        {pulse.map(([label, value, note, target]) => (
+          <button key={label} className={lane === target ? "active" : ""} onClick={() => openLane(target)}>
             <span>{label}</span>
             <strong>{value}</strong>
-            <small>{hint}</small>
+            <small>{note}</small>
           </button>
         ))}
       </section>
 
-      <section className="mb-layout">
-        <section className="mb-map">
-          <div className="mb-section-title">
-            <p className="mb-kicker">Business board</p>
-            <h2>Where work sits right now</h2>
+      <section className="jtc-layout">
+        <section className="jtc-board">
+          <div className="jtc-board-head">
+            <div>
+              <p className="jtc-kicker">Live workflow board</p>
+              <h2>Where the business sits right now</h2>
+            </div>
+            <div className="jtc-live"><i /> AI operator live</div>
           </div>
 
-          <div className="mb-lanes">
-            {lanes.map((lane) => (
-              <button key={lane.key} className={`mb-lane ${area === lane.key ? "active" : ""}`} onClick={() => openArea(lane.key)}>
-                <div>
-                  <span>{lane.title}</span>
-                  <strong>{lane.value}</strong>
+          <div className="jtc-lanes">
+            {boardLanes.map((boardLane) => (
+              <button key={boardLane.key} className={`jtc-lane ${lane === boardLane.key ? "active" : ""}`} onClick={() => openLane(boardLane.key)}>
+                <div className="jtc-lane-head">
+                  <span>{boardLane.title}</span>
+                  <strong>{boardLane.items.length}</strong>
                 </div>
-                <p>{lane.hint}</p>
-                <ul>
-                  {lane.items.slice(0, 3).map((item) => <li key={item.id}>{item.title}</li>)}
-                  {!lane.items.length ? <li>No items waiting</li> : null}
-                </ul>
+                <p>{boardLane.hint}</p>
+                <div className="jtc-mini-list">
+                  {boardLane.items.slice(0, 4).map((item) => <em key={item.id}>{item.title}</em>)}
+                  {!boardLane.items.length ? <em>No items waiting</em> : null}
+                </div>
               </button>
             ))}
           </div>
         </section>
 
-        <aside className="mb-ticket">
-          <div className="mb-ticket-pin">NEXT</div>
+        <aside className="jtc-desk">
+          <div className="jtc-desk-head">
+            <div>
+              <p className="jtc-kicker">AI Operator Desk</p>
+              <h2>{current ? displayTitle(current) : "Nothing waiting here."}</h2>
+            </div>
+            <span>{current?.source || "Board"}</span>
+          </div>
+
           {loading ? (
-            <p>Loading Churvox…</p>
+            <p className="jtc-detail">Loading Churvox…</p>
           ) : current ? (
             <>
-              <div className="mb-ticket-head">
-                <p className="mb-kicker">{area === "now" ? "Do this now" : area}</p>
-                <span>{current.source}</span>
-              </div>
-              <h2>{displayTitle(current)}</h2>
-              <p className="mb-directive">Approve, edit, or skip. Churvox moves the next task into place.</p>
-              <p className="mb-detail">{displayDetail(current)}</p>
+              <p className="jtc-directive">Do this now: approve, edit, or skip. Churvox moves the next admin step into place.</p>
+              <p className="jtc-detail">{displayDetail(current)}</p>
 
-              <div className="mb-proof">
+              <div className="jtc-facts">
                 <div><span>Result</span><strong>{outcomeLine(current)}</strong></div>
                 <div><span>Record</span><strong>{recordLine(current)}</strong></div>
                 <div><span>Risk</span><strong>{current.risk || "low"}</strong></div>
               </div>
 
               {editOpen ? (
-                <label className="mb-editor">
+                <label className="jtc-editor">
                   <span>Edit before approving</span>
                   <textarea value={editText} onChange={(event) => setEditText(event.target.value)} />
                 </label>
               ) : null}
 
-              <div className="mb-ticket-actions">
+              <div className="jtc-desk-actions">
                 {current.rawId ? (
                   <>
-                    <button className="mb-primary" onClick={() => approveCurrent(current)} disabled={busy === current.rawId}>
+                    <button className="jtc-primary" onClick={() => approveCurrent(current)} disabled={busy === current.rawId}>
                       {busy === current.rawId ? "Running…" : primaryLabel(current)}
                     </button>
-                    <button onClick={() => setEditOpen((value) => !value)}>Edit</button>
+                    <button onClick={() => setEditOpen((value) => !value)}>Edit first</button>
                     <button onClick={() => skipCurrent(current)} disabled={busy === current.rawId}>Skip</button>
                   </>
                 ) : (
                   <>
-                    <button className="mb-primary" onClick={showNow}>Back to NOW</button>
+                    <button className="jtc-primary" onClick={reviewNext}>Back to AI decisions</button>
                     <button onClick={() => scan(false)}>Ask AI to prepare</button>
                   </>
                 )}
               </div>
             </>
           ) : (
-            <div className="mb-empty">
-              <h2>Nothing waiting here.</h2>
-              <p>Run an AI check or open another lane.</p>
-              <button className="mb-primary" onClick={() => scan(false)}>Run AI check</button>
+            <div className="jtc-empty">
+              <h3>Nothing waiting here.</h3>
+              <p>Run an AI check or open another workflow lane.</p>
+              <button className="jtc-primary" onClick={() => scan(false)}>Run AI check</button>
             </div>
           )}
         </aside>
       </section>
 
-      <section className="mb-bottom">
-        <div className="mb-open">
-          <div className="mb-section-title">
-            <p className="mb-kicker">Open lane</p>
-            <h3>{area}</h3>
+      <section className="jtc-lower">
+        <div className="jtc-panel">
+          <div>
+            <p className="jtc-kicker">Open lane</p>
+            <h3>{lane}</h3>
           </div>
-          <div className="mb-card-grid">
-            {activeItems.slice(0, 8).map((item) => (
+          <div className="jtc-card-grid">
+            {activeItems.slice(0, 10).map((item) => (
               <button key={item.id} className={current?.id === item.id ? "active" : ""} onClick={() => setSelected(item)}>
                 <strong>{item.title}</strong>
                 <span>{item.label}</span>
@@ -568,14 +616,14 @@ export default function MissionBoardDashboard() {
           </div>
         </div>
 
-        <div className="mb-stack">
-          <div className="mb-section-title">
-            <p className="mb-kicker">AI stack</p>
-            <h3>Grouped work</h3>
+        <div className="jtc-panel">
+          <div>
+            <p className="jtc-kicker">Prepared by AI</p>
+            <h3>Grouped admin work</h3>
           </div>
-          <div className="mb-card-grid">
-            {stacks.length ? stacks.map((stack) => (
-              <button key={stack.key} onClick={() => { setArea("now"); setSelected(stack.first); }}>
+          <div className="jtc-stack-grid">
+            {grouped.length ? grouped.map((stack) => (
+              <button key={stack.title} onClick={() => { setLane("needs"); setSelected(stack.first); }}>
                 <strong>{stack.count} · {stack.title}</strong>
                 <span>{stack.first.detail}</span>
               </button>
@@ -584,15 +632,36 @@ export default function MissionBoardDashboard() {
         </div>
       </section>
 
-      <section className="mb-ask">
+      <section className="jtc-strip">
+        <div><strong>Crew</strong><span>{crewSummary(fieldJobs, scheduledJobs)}</span></div>
+        <div><strong>Money</strong><span>{nz(openTotal)} waiting · {readyBillJobs.length} ready to bill · {waitingPay.length} open invoices</span></div>
+      </section>
+
+      <section className="jtc-ask">
         <input
           value={ask}
           onChange={(event) => setAsk(event.target.value)}
           onKeyDown={(event) => { if (event.key === "Enter") askChurvox(); }}
-          placeholder="Ask Churvox… show money waiting, stuck jobs, unassigned crew, client follow-ups"
+          placeholder="Ask Churvox… show jobs ready to invoice, overdue invoices, active field jobs, today’s schedule"
         />
         <button onClick={askChurvox}>Ask</button>
       </section>
     </main>
   );
+}
+
+function crewSummary(fieldJobs, scheduledJobs) {
+  const names = [...fieldJobs, ...scheduledJobs]
+    .map((j) => j.worker)
+    .filter(Boolean)
+    .filter((v) => v !== "Unassigned");
+
+  if (!names.length) return "No crew activity loaded yet";
+
+  const counts = names.reduce((acc, name) => {
+    acc[name] = (acc[name] || 0) + 1;
+    return acc;
+  }, {});
+
+  return Object.entries(counts).slice(0, 4).map(([name, count]) => `${name} ${count}`).join(" · ");
 }

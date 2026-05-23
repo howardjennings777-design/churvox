@@ -1,11 +1,11 @@
 import React from "react";
 import SmartHubErrorBoundary from "../components/SmartHubErrorBoundary";
-import MissionBoardDashboard from "./MissionBoardDashboard";
+import JobToCashCommandBoard from "./JobToCashCommandBoard";
 
 export default function DashboardPage() {
   return (
     <SmartHubErrorBoundary>
-      <MissionBoardDashboard />
+      <JobToCashCommandBoard />
     </SmartHubErrorBoundary>
   );
 }
