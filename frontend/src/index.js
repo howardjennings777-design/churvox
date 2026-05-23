@@ -10,6 +10,7 @@ import './styles/churvox-workhorse-ops.css';
 import './styles/aiDashPolish.css';
 import './workhorseLiveCheck';
 import './renderDeployMarker';
+import './deploy/guidedOperatorFloorDeployMarker';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
