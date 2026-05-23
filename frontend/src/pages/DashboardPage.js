@@ -1,11 +1,11 @@
 import React from "react";
 import SmartHubErrorBoundary from "../components/SmartHubErrorBoundary";
-import CommandTableWorkspace from "./CommandTableWorkspace";
+import WorkbenchDashboard from "./WorkbenchDashboard";
 
 export default function DashboardPage() {
   return (
     <SmartHubErrorBoundary>
-      <CommandTableWorkspace />
+      <WorkbenchDashboard />
     </SmartHubErrorBoundary>
   );
 }
