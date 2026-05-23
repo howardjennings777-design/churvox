@@ -692,3 +692,368 @@ main:not(.dcc) .bg-emerald-600 {
     flex: 1 1 100%;
   }
 }
+
+/* CHURVOX_DISPATCH_COMMAND_CENTRE_PREMIUM_VISUAL_20260524
+   Keep the right structure, but make it feel like a serious premium operator screen:
+   - no giant hero
+   - dispatch board feels dominant
+   - job-flow lanes feel like real workflow columns
+   - AI Operator Desk feels important, not like another card
+   - lower trays quieter
+*/
+
+:root {
+  --dcc-bg: #eef2f1;
+  --dcc-bg-2: #dfe7e5;
+  --dcc-ink: #0b1624;
+  --dcc-ink-2: #142337;
+  --dcc-panel: #ffffff;
+  --dcc-panel-soft: #f7f9f8;
+  --dcc-line: rgba(11, 22, 36, 0.13);
+  --dcc-muted: #55616d;
+  --dcc-blue: #176f9f;
+  --dcc-blue-2: #78c0e2;
+  --dcc-copper: #c76532;
+  --dcc-copper-2: #f0a05d;
+  --dcc-amber: #d98920;
+  --dcc-red: #9f382f;
+  --dcc-teal: #217d86;
+}
+
+html,
+body,
+#root {
+  background:
+    linear-gradient(rgba(11,22,36,.032) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(11,22,36,.026) 1px, transparent 1px),
+    radial-gradient(circle at 12% -8%, rgba(23,111,159,.14), transparent 31%),
+    radial-gradient(circle at 88% 4%, rgba(199,101,50,.12), transparent 35%),
+    linear-gradient(135deg, #eef2f1 0%, #e2e9e7 48%, #d8e1df 100%) !important;
+  background-size: 52px 52px, 52px 52px, auto, auto, auto !important;
+}
+
+.dcc {
+  padding-top: 14px !important;
+}
+
+/* Compact top bar: command centre, not marketing hero */
+.dcc-commandbar {
+  grid-template-columns: minmax(260px, .9fr) minmax(360px, 1.15fr) auto !important;
+  border-radius: 16px !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.72)) !important;
+  box-shadow: 0 18px 50px rgba(11,22,36,.08) !important;
+}
+
+.dcc-commandbar h1 {
+  max-width: 760px !important;
+  font-size: clamp(1.75rem, 2.8vw, 3.35rem) !important;
+  letter-spacing: -.08em !important;
+}
+
+.dcc-command-summary {
+  justify-content: flex-start !important;
+}
+
+.dcc-command-summary span {
+  border: 1px solid rgba(11,22,36,.08) !important;
+  background: rgba(247,249,248,.92) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.7) !important;
+}
+
+.dcc-command-actions button {
+  min-height: 44px !important;
+}
+
+.dcc-command-actions .dcc-primary {
+  min-width: 138px !important;
+}
+
+/* Pulse strip becomes more premium and less plain */
+.dcc-pulse {
+  grid-template-columns: 1.1fr 1fr 1fr 1fr !important;
+}
+
+.dcc-pulse button {
+  min-height: 108px !important;
+  border-radius: 16px !important;
+  background:
+    radial-gradient(circle at 94% 10%, rgba(120,192,226,.16), transparent 36%),
+    linear-gradient(180deg, #0b1624, #16283a) !important;
+  box-shadow: 0 18px 45px rgba(11,22,36,.16) !important;
+}
+
+.dcc-pulse button.active {
+  outline: 0 !important;
+  box-shadow:
+    inset 0 0 0 2px rgba(240,160,93,.72),
+    0 20px 52px rgba(11,22,36,.18) !important;
+}
+
+/* Main layout: real operator screen */
+.dcc-main {
+  grid-template-columns: minmax(320px, .95fr) minmax(520px, 1.65fr) minmax(370px, .86fr) !important;
+  gap: 14px !important;
+  align-items: start !important;
+}
+
+.dcc-dispatch,
+.dcc-flow,
+.dcc-ai-desk {
+  border-radius: 20px !important;
+}
+
+/* Dispatch panel: make it feel like the left control board */
+.dcc-dispatch {
+  background:
+    linear-gradient(180deg, rgba(11,22,36,.98), rgba(20,35,55,.96)) !important;
+  color: #fff !important;
+  border-color: rgba(255,255,255,.12) !important;
+  box-shadow: 0 24px 70px rgba(11,22,36,.20) !important;
+}
+
+.dcc-dispatch .dcc-kicker,
+.dcc-dispatch .dcc-section-head h2,
+.dcc-dispatch button,
+.dcc-dispatch .dcc-worker strong {
+  color: #fff !important;
+}
+
+.dcc-dispatch .dcc-kicker,
+.dcc-dispatch .dcc-worker span {
+  color: var(--dcc-blue-2) !important;
+}
+
+.dcc-dispatch .dcc-section-head > button {
+  background: rgba(255,255,255,.09) !important;
+  border-color: rgba(255,255,255,.16) !important;
+}
+
+.dcc-crew-row {
+  grid-template-columns: 118px minmax(0,1fr) !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.035)) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+.dcc-worker {
+  border-right-color: rgba(255,255,255,.12) !important;
+}
+
+.dcc-worker-jobs em {
+  background: rgba(255,255,255,.09) !important;
+  color: rgba(255,255,255,.82) !important;
+}
+
+/* Workflow board: make the centre feel like actual workflow lanes */
+.dcc-flow {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.94), rgba(247,249,248,.86)) !important;
+  box-shadow: 0 24px 70px rgba(11,22,36,.10) !important;
+}
+
+.dcc-section-head h2 {
+  font-size: clamp(1.7rem, 3vw, 3.15rem) !important;
+}
+
+.dcc-flow-lanes {
+  gap: 10px !important;
+  margin-top: 14px !important;
+}
+
+.dcc-flow-lane {
+  min-height: 430px !important;
+  border: 1px solid rgba(11,22,36,.10) !important;
+  border-radius: 16px !important;
+  background:
+    linear-gradient(180deg, #ffffff, #f7f9f8) !important;
+  box-shadow: inset 0 5px 0 rgba(23,111,159,.18), 0 10px 26px rgba(11,22,36,.06) !important;
+}
+
+.dcc-flow-lane:nth-child(1) {
+  box-shadow: inset 0 5px 0 var(--dcc-amber), 0 10px 26px rgba(11,22,36,.06) !important;
+}
+
+.dcc-flow-lane:nth-child(2) {
+  box-shadow: inset 0 5px 0 var(--dcc-blue), 0 10px 26px rgba(11,22,36,.06) !important;
+}
+
+.dcc-flow-lane:nth-child(3) {
+  box-shadow: inset 0 5px 0 var(--dcc-teal), 0 10px 26px rgba(11,22,36,.06) !important;
+}
+
+.dcc-flow-lane:nth-child(4) {
+  box-shadow: inset 0 5px 0 var(--dcc-copper), 0 10px 26px rgba(11,22,36,.06) !important;
+}
+
+.dcc-flow-lane:nth-child(5) {
+  box-shadow: inset 0 5px 0 var(--dcc-red), 0 10px 26px rgba(11,22,36,.06) !important;
+}
+
+.dcc-flow-lane.active {
+  outline: 0 !important;
+  border-color: rgba(199,101,50,.46) !important;
+  box-shadow:
+    inset 0 5px 0 var(--dcc-copper),
+    inset 0 0 0 2px rgba(199,101,50,.18),
+    0 16px 36px rgba(11,22,36,.10) !important;
+}
+
+.dcc-lane-head span {
+  color: var(--dcc-blue) !important;
+}
+
+.dcc-lane-head strong {
+  display: grid !important;
+  width: 42px !important;
+  height: 42px !important;
+  place-items: center !important;
+  border-radius: 12px !important;
+  background: rgba(11,22,36,.08) !important;
+  color: var(--dcc-ink) !important;
+  font-size: 1.45rem !important;
+}
+
+.dcc-flow-lane p {
+  min-height: 48px !important;
+  font-size: .86rem !important;
+}
+
+.dcc-mini-list {
+  gap: 8px !important;
+}
+
+.dcc-mini-list em {
+  border: 1px solid rgba(11,22,36,.08) !important;
+  background: rgba(255,255,255,.78) !important;
+  box-shadow: 0 5px 14px rgba(11,22,36,.04) !important;
+}
+
+/* AI desk: make it feel like the Churvox product differentiator */
+.dcc-ai-desk {
+  background:
+    linear-gradient(180deg, #ffffff, #fbfcfb) !important;
+  box-shadow:
+    inset 7px 0 0 var(--dcc-blue),
+    0 26px 80px rgba(11,22,36,.15) !important;
+  border-color: rgba(11,22,36,.12) !important;
+}
+
+.dcc-ai-head h2 {
+  font-size: clamp(2.3rem, 4.6vw, 5.6rem) !important;
+  letter-spacing: -.095em !important;
+}
+
+.dcc-ai-head > span {
+  background: var(--dcc-ink) !important;
+}
+
+.dcc-directive {
+  border-left-color: var(--dcc-copper) !important;
+  background: linear-gradient(90deg, rgba(199,101,50,.10), rgba(23,111,159,.06)) !important;
+}
+
+.dcc-facts {
+  grid-template-columns: 1fr !important;
+}
+
+.dcc-facts div {
+  background: #f7f9f8 !important;
+  border-color: rgba(11,22,36,.10) !important;
+}
+
+.dcc-ai-actions {
+  gap: 9px !important;
+}
+
+.dcc-ai-actions .dcc-primary {
+  min-height: 60px !important;
+  font-size: 1rem !important;
+}
+
+/* Trays: useful but quieter than the main command area */
+.dcc-trays {
+  margin-top: 14px !important;
+}
+
+.dcc-tray {
+  border-radius: 18px !important;
+  background: rgba(255,255,255,.76) !important;
+}
+
+.dcc-tray h3 {
+  font-size: clamp(1.55rem, 2.4vw, 2.45rem) !important;
+}
+
+/* Lower lists: reduce clutter, keep available for drill-down */
+.dcc-open {
+  margin-top: 14px !important;
+}
+
+.dcc-panel {
+  background: rgba(255,255,255,.74) !important;
+}
+
+.dcc-card-grid button {
+  min-height: 88px !important;
+  background: #fff !important;
+}
+
+.dcc-card-grid button.active {
+  background: var(--dcc-ink) !important;
+}
+
+/* Ask bar feels like command input */
+.dcc-ask {
+  background: linear-gradient(180deg, #0b1624, #142337) !important;
+  border-color: rgba(255,255,255,.12) !important;
+}
+
+.dcc-ask input {
+  background: rgba(255,255,255,.08) !important;
+  color: #fff !important;
+  border-color: rgba(255,255,255,.14) !important;
+}
+
+.dcc-ask input::placeholder {
+  color: rgba(255,255,255,.52) !important;
+}
+
+.dcc-ask button {
+  background: linear-gradient(135deg, var(--dcc-copper), var(--dcc-copper-2)) !important;
+  color: #170a04 !important;
+  border: 0 !important;
+}
+
+/* Mobile/tablet: keep it clean */
+@media (max-width: 1280px) {
+  .dcc-commandbar {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dcc-main {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dcc-flow-lane {
+    min-height: auto !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .dcc-pulse {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dcc-commandbar,
+  .dcc-dispatch,
+  .dcc-flow,
+  .dcc-ai-desk,
+  .dcc-tray,
+  .dcc-panel,
+  .dcc-ask {
+    border-radius: 16px !important;
+  }
+}
