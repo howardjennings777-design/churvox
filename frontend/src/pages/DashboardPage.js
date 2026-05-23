@@ -1,11 +1,11 @@
 import React from "react";
 import SmartHubErrorBoundary from "../components/SmartHubErrorBoundary";
-import OperatorFloorDashboard from "./OperatorFloorDashboard";
+import GuidedOperatorFloor from "./GuidedOperatorFloor";
 
 export default function DashboardPage() {
   return (
     <SmartHubErrorBoundary>
-      <OperatorFloorDashboard />
+      <GuidedOperatorFloor />
     </SmartHubErrorBoundary>
   );
 }
