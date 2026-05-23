@@ -1,11 +1,11 @@
 import React from "react";
 import SmartHubErrorBoundary from "../components/SmartHubErrorBoundary";
-import BusinessBoardV2Dashboard from "./BusinessBoardV2Dashboard";
+import MissionBoardDashboard from "./MissionBoardDashboard";
 
 export default function DashboardPage() {
   return (
     <SmartHubErrorBoundary>
-      <BusinessBoardV2Dashboard />
+      <MissionBoardDashboard />
     </SmartHubErrorBoundary>
   );
 }

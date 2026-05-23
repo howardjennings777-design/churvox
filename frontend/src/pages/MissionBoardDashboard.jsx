@@ -1,14 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
-import "../styles/churvoxBusinessBoardV2.css";
+import "../styles/churvoxMissionBoard.css";
 
 const arr = (v) =>
   Array.isArray(v) ? v :
   Array.isArray(v?.data) ? v.data :
   Array.isArray(v?.items) ? v.items :
   Array.isArray(v?.actions) ? v.actions :
-  Array.isArray(v?.logs) ? v.logs :
   Array.isArray(v?.jobs) ? v.jobs :
   Array.isArray(v?.clients) ? v.clients :
   Array.isArray(v?.invoices) ? v.invoices :
@@ -16,8 +15,8 @@ const arr = (v) =>
 
 const idOf = (v) => String(v?.id || v?._id || "");
 const low = (v) => String(v || "").toLowerCase();
-const money = (v) => `$${Number(v || 0).toLocaleString("en-NZ", { maximumFractionDigits: 0 })}`;
-const pending = new Set(["", "pending", "ready", "edited", "draft", "watching"]);
+const nz = (v) => `$${Number(v || 0).toLocaleString("en-NZ", { maximumFractionDigits: 0 })}`;
+const pendingStatuses = new Set(["", "pending", "ready", "edited", "draft", "watching"]);
 const doneStatuses = new Set(["completed", "approved", "dismissed", "rejected"]);
 const first = (...values) => values.find((v) => v !== undefined && v !== null && String(v).trim() !== "");
 
@@ -37,29 +36,28 @@ function labelFor(type = "") {
   return "Admin move";
 }
 
-function groupFor(type = "") {
+function stackFor(type = "") {
   const t = low(type);
-  if (t.includes("invoice_reminder")) return "Payment reminders";
-  if (t.includes("invoice")) return "Invoice drafts";
-  if (t.includes("assign")) return "Crew assignments";
-  if (t.includes("quote")) return "Quote follow-ups";
-  if (t.includes("customer")) return "Customer updates";
-  return "Admin moves";
+  if (t.includes("invoice_reminder")) return "Reminders";
+  if (t.includes("invoice")) return "Invoices";
+  if (t.includes("assign")) return "Crew";
+  if (t.includes("quote")) return "Quotes";
+  if (t.includes("customer")) return "Customers";
+  return "Admin";
 }
 
 function makeDecision(raw) {
   const payload = raw.payload || raw.draft_payload || {};
   const type = raw.action_type || raw.type || "prepared_action";
-
   return {
     id: `decision-${idOf(raw)}`,
     rawId: idOf(raw),
     raw,
-    board: "now",
+    area: "now",
     source: "AI",
     type,
-    group: groupFor(type),
     label: labelFor(type),
+    stack: stackFor(type),
     title: raw.title || raw.summary || "Churvox has the next move ready",
     detail: raw.recommendation || raw.reason || raw.owner_facing_explanation || raw.summary || "Review this move, then approve, edit, or skip.",
     status: raw.status || "pending",
@@ -68,17 +66,17 @@ function makeDecision(raw) {
   };
 }
 
-function makeJob(job, board = "jobs") {
+function makeJob(job, area = "jobs") {
   return {
     id: `job-${idOf(job)}`,
     raw: job,
-    board,
+    area,
     source: "Job",
     type: "job",
-    group: board === "money" ? "Completed jobs" : "Jobs",
-    label: board === "money" ? "Ready to invoice" : "Job",
+    label: area === "money" ? "Ready to invoice" : "Job",
+    stack: area === "money" ? "Ready to invoice" : "Jobs",
     title: job.title || job.job_name || job.client_name || "Job",
-    detail: job.description || job.address || "This job can be reviewed from the board.",
+    detail: job.description || job.address || "Job work item.",
     status: job.status || "open",
     client: job.client_name || job.customer_name || "Client",
     worker: job.assigned_worker_name || job.worker_name || "Unassigned",
@@ -90,13 +88,13 @@ function makeInvoice(invoice) {
   return {
     id: `invoice-${idOf(invoice)}`,
     raw: invoice,
-    board: "money",
+    area: "money",
     source: "Invoice",
     type: "invoice",
-    group: "Invoices",
     label: "Money",
-    title: `${invoice.customer_name || invoice.client_name || "Client"} · ${money(invoice.balance_due || invoice.balance || invoice.total || invoice.amount)}`,
-    detail: invoice.description || "Invoice is open, draft, unpaid, overdue, or ready for follow-up.",
+    stack: "Invoices",
+    title: `${invoice.customer_name || invoice.client_name || "Client"} · ${nz(invoice.balance_due || invoice.balance || invoice.total || invoice.amount)}`,
+    detail: invoice.description || "Invoice waiting for review or follow-up.",
     status: invoice.status || "open",
     client: invoice.customer_name || invoice.client_name || "Client",
     amount: invoice.balance_due || invoice.balance || invoice.total || invoice.amount || 0,
@@ -107,13 +105,13 @@ function makeClient(client) {
   return {
     id: `client-${idOf(client)}`,
     raw: client,
-    board: "clients",
+    area: "clients",
     source: "Client",
     type: "client",
-    group: "Clients",
     label: "Client",
+    stack: "Clients",
     title: client.name || client.client_name || client.customer_name || "Client",
-    detail: client.email || client.phone || client.address || "Client record is ready on the board.",
+    detail: client.email || client.phone || client.address || "Client record.",
     status: client.status || "active",
     client: client.name || client.client_name || client.customer_name || "Client",
   };
@@ -123,13 +121,13 @@ function makeQuote(quote) {
   return {
     id: `quote-${idOf(quote)}`,
     raw: quote,
-    board: "quotes",
+    area: "quotes",
     source: "Quote",
     type: "quote",
-    group: "Quotes",
     label: "Quote",
+    stack: "Quotes",
     title: quote.title || quote.customer_name || quote.client_name || "Quote",
-    detail: quote.description || "Quote is ready to review.",
+    detail: quote.description || "Quote waiting for review or follow-up.",
     status: quote.status || "draft",
     client: quote.customer_name || quote.client_name || "Client",
     amount: quote.total || quote.amount || quote.price || 0,
@@ -172,21 +170,21 @@ function patchFor(item, editedText = "") {
 }
 
 function displayTitle(item) {
-  if (!item) return "Nothing waiting here.";
+  if (!item) return "No mission selected.";
   const p = item.payload || {};
   const type = low(item.type || "");
   const client = first(p.client_name, p.customer_name, p.client, item.client);
 
-  if (type.includes("invoice_reminder")) return `Send payment reminder${client ? ` to ${client}` : ""}`;
-  if (["create_invoice_draft", "invoice_draft"].includes(type)) return `Create invoice draft${client ? ` for ${client}` : ""}`;
-  if (type.includes("assign")) return "Assign crew to a waiting job";
+  if (type.includes("invoice_reminder")) return `Send reminder${client ? ` to ${client}` : ""}`;
+  if (["create_invoice_draft", "invoice_draft"].includes(type)) return `Create invoice${client ? ` for ${client}` : ""}`;
+  if (type.includes("assign")) return "Assign crew to job";
   if (type.includes("quote")) return `Follow up quote${client ? ` for ${client}` : ""}`;
-  if (type.includes("customer")) return `Send customer update${client ? ` to ${client}` : ""}`;
+  if (type.includes("customer")) return `Update customer${client ? ` ${client}` : ""}`;
   return item.title || "Churvox has the next move ready";
 }
 
 function displayDetail(item) {
-  if (!item) return "";
+  if (!item) return "Run an AI check or open a board lane.";
   const p = item.payload || {};
   const type = low(item.type || "");
   const client = first(p.client_name, p.customer_name, p.client, item.client);
@@ -197,27 +195,27 @@ function displayDetail(item) {
   if (type.includes("invoice_reminder")) {
     const bits = [];
     if (invoice) bits.push(`Invoice ${invoice}`);
-    if (days) bits.push(`is ${days} days overdue`);
-    if (amount) bits.push(`amount due ${money(amount)}`);
-    if (client) bits.push(`client ${client}`);
-    return `${bits.length ? `${bits.join(". ")}. ` : ""}Churvox has drafted the reminder. Nothing sends until you approve.`;
+    if (days) bits.push(`${days} days overdue`);
+    if (amount) bits.push(`${nz(amount)} due`);
+    if (client) bits.push(client);
+    return `${bits.length ? bits.join(" · ") + ". " : ""}Churvox drafted the reminder. Nothing sends until you approve.`;
   }
 
   if (["create_invoice_draft", "invoice_draft"].includes(type)) {
     const bits = [];
-    if (client) bits.push(`Client: ${client}`);
-    if (amount) bits.push(`Amount: ${money(amount)}`);
-    if (p.job_id) bits.push("linked to a completed job");
-    return `${bits.length ? `${bits.join(". ")}. ` : ""}Churvox can create the draft invoice. It will not be sent without approval.`;
+    if (client) bits.push(client);
+    if (amount) bits.push(nz(amount));
+    if (p.job_id) bits.push("linked to completed job");
+    return `${bits.length ? bits.join(" · ") + ". " : ""}Approve to create the draft invoice.`;
   }
 
-  return item.detail || "Churvox prepared this move so you can approve, edit, or skip it.";
+  return item.detail || "Review, approve, edit, or skip this move.";
 }
 
 function primaryLabel(item) {
   const type = low(item?.type || "");
-  if (type.includes("invoice_reminder")) return "Approve & send reminder";
-  if (["create_invoice_draft", "invoice_draft"].includes(type)) return "Approve draft invoice";
+  if (type.includes("invoice_reminder")) return "Approve & send";
+  if (["create_invoice_draft", "invoice_draft"].includes(type)) return "Approve invoice";
   if (type.includes("assign")) return "Approve assignment";
   if (type.includes("quote")) return "Approve follow-up";
   if (type.includes("customer")) return "Approve update";
@@ -226,60 +224,31 @@ function primaryLabel(item) {
 
 function outcomeLine(item) {
   const type = low(item?.type || "");
-  if (type.includes("invoice_reminder")) return "Reminder sends after approval";
-  if (["create_invoice_draft", "invoice_draft"].includes(type)) return "Draft invoice is created";
-  if (type.includes("assign")) return "Crew assignment is saved";
-  if (type.includes("quote")) return "Follow-up is prepared";
-  if (type.includes("customer")) return "Customer update is prepared";
-  return item?.rawId ? "Action runs after approval" : "Open inside this board";
+  if (type.includes("invoice_reminder")) return "Reminder sends";
+  if (["create_invoice_draft", "invoice_draft"].includes(type)) return "Draft invoice created";
+  if (type.includes("assign")) return "Crew assignment saved";
+  if (type.includes("quote")) return "Follow-up prepared";
+  if (type.includes("customer")) return "Customer update prepared";
+  return item?.rawId ? "Action runs" : "Open inside board";
 }
 
 function recordLine(item) {
   if (!item) return "ready";
   const p = item.payload || {};
-  return first(
-    p.client_name,
-    p.customer_name,
-    item.client,
-    p.invoice_number ? `Invoice ${p.invoice_number}` : "",
-    p.job_id ? `Job ${p.job_id}` : "",
-    item.worker,
-    "ready"
-  );
-}
-
-function evidenceFor(item) {
-  if (!item) {
-    return [
-      "Press Review NOW to open the next prepared move.",
-      "The board keeps business context on the same page.",
-      "Nothing sends, charges, or changes without approval.",
-    ];
-  }
-
-  const lines = [];
-  if (item.source === "AI") lines.push("AI prepared this before you opened the page.");
-  if (item.type?.includes("invoice")) lines.push("This affects invoicing, money, or payment follow-up.");
-  if (item.type?.includes("assign")) lines.push("This helps move work to the right crew member.");
-  if (item.source === "Job") lines.push(`Client: ${item.client || "Client"}`);
-  if (item.source === "Job") lines.push(`Worker: ${item.worker || "Unassigned"}`);
-  if (item.source === "Invoice" || item.source === "Quote") lines.push(`Amount: ${money(item.amount || 0)}`);
-  if (item.payload?.message || item.payload?.description) lines.push("Draft wording is ready to review.");
-  lines.push("Nothing sends, charges, or changes until you approve.");
-  return lines.slice(0, 7);
+  return first(p.client_name, p.customer_name, item.client, p.invoice_number ? `Invoice ${p.invoice_number}` : "", p.job_id ? `Job ${p.job_id}` : "", item.worker, "ready");
 }
 
 function groupStacks(items) {
   const map = new Map();
   for (const item of items) {
-    const key = low(item.group || item.type || item.title).replace(/[^a-z0-9]+/g, "_");
-    if (!map.has(key)) map.set(key, { key, title: item.group || groupFor(item.type), count: 0, first: item });
+    const key = low(item.stack || item.type || item.title).replace(/[^a-z0-9]+/g, "_");
+    if (!map.has(key)) map.set(key, { key, title: item.stack || stackFor(item.type), count: 0, first: item });
     map.get(key).count += 1;
   }
   return [...map.values()].sort((a, b) => b.count - a.count).slice(0, 8);
 }
 
-export default function BusinessBoardV2Dashboard() {
+export default function MissionBoardDashboard() {
   const { get, post, patch } = useApi();
 
   const [actions, setActions] = useState([]);
@@ -288,8 +257,7 @@ export default function BusinessBoardV2Dashboard() {
   const [invoices, setInvoices] = useState([]);
   const [quotes, setQuotes] = useState([]);
   const [snapshot, setSnapshot] = useState(null);
-
-  const [board, setBoard] = useState("now");
+  const [area, setArea] = useState("now");
   const [selected, setSelected] = useState(null);
   const [handled, setHandled] = useState([]);
   const [busy, setBusy] = useState("");
@@ -323,13 +291,11 @@ export default function BusinessBoardV2Dashboard() {
     setBusy("scan");
     const res = await post("/ai/operator/run-daily-check", {});
     setBusy("");
-
     if (res.success) {
-      if (!quiet) toast.success("Business board updated");
+      if (!quiet) toast.success("Mission board updated");
       await load();
       return true;
     }
-
     if (!quiet) toast.error(res.error || "AI check failed");
     return false;
   }, [load, post]);
@@ -339,7 +305,7 @@ export default function BusinessBoardV2Dashboard() {
   useEffect(() => {
     if (once.current) return;
     once.current = true;
-    const key = "churvox_business_board_v2_last_scan";
+    const key = "churvox_mission_board_last_scan";
     const last = Number(localStorage.getItem(key) || 0);
     if (!last || Date.now() - last > 10 * 60 * 1000) {
       localStorage.setItem(key, String(Date.now()));
@@ -350,14 +316,14 @@ export default function BusinessBoardV2Dashboard() {
   const hidden = useMemo(() => new Set(handled), [handled]);
 
   const nowItems = useMemo(
-    () => actions.filter((a) => !hidden.has(idOf(a)) && pending.has(low(a.status))).slice(0, 80).map(makeDecision),
+    () => actions.filter((a) => !hidden.has(idOf(a)) && pendingStatuses.has(low(a.status))).slice(0, 80).map(makeDecision),
     [actions, hidden]
   );
 
   const jobItems = useMemo(() => jobs.slice(0, 60).map((job) => makeJob(job, "jobs")), [jobs]);
 
   const moneyItems = useMemo(() => {
-    const readyJobs = jobs
+    const completedNotInvoiced = jobs
       .filter((j) => ["completed", "done", "complete"].includes(low(j.status)) && !(j.invoice_id || j.draft_invoice_id || j.invoiced))
       .slice(0, 20)
       .map((job) => makeJob(job, "money"));
@@ -367,7 +333,7 @@ export default function BusinessBoardV2Dashboard() {
       .slice(0, 40)
       .map(makeInvoice);
 
-    return [...readyJobs, ...openInvoices];
+    return [...completedNotInvoiced, ...openInvoices];
   }, [jobs, invoices]);
 
   const crewItems = useMemo(
@@ -377,45 +343,39 @@ export default function BusinessBoardV2Dashboard() {
 
   const clientItems = useMemo(() => clients.slice(0, 60).map(makeClient), [clients]);
   const quoteItems = useMemo(() => quotes.slice(0, 60).map(makeQuote), [quotes]);
-
-  const doneItems = useMemo(
-    () => actions.filter((a) => doneStatuses.has(low(a.status))).slice(0, 20).map(makeDecision),
-    [actions]
-  );
+  const doneItems = useMemo(() => actions.filter((a) => doneStatuses.has(low(a.status))).slice(0, 20).map(makeDecision), [actions]);
 
   const urgent = snapshot?.urgent || {};
   const boards = { now: nowItems, money: moneyItems, jobs: jobItems, crew: crewItems, clients: clientItems, quotes: quoteItems, done: doneItems };
-  const activeItems = boards[board] || [];
-  const current = selected && selected.board === board ? selected : activeItems[0];
+  const activeItems = boards[area] || [];
+  const current = selected && selected.area === area ? selected : activeItems[0];
   const stacks = useMemo(() => groupStacks(nowItems), [nowItems]);
-  const evidence = evidenceFor(current);
 
   useEffect(() => {
     setEditOpen(false);
     setEditText(current?.payload?.message || current?.payload?.description || current?.detail || "");
-  }, [current?.id]);
+  }, [current?.id, current?.payload?.message, current?.payload?.description, current?.detail]);
 
-  const openBoard = (nextBoard) => {
-    setBoard(nextBoard);
+  const openArea = (nextArea) => {
+    setArea(nextArea);
     setSelected(null);
   };
 
   const showNow = () => {
-    setBoard("now");
+    setArea("now");
     setSelected(nowItems[0] || null);
   };
 
   const approveCurrent = async (item) => {
     if (!item?.rawId) return;
-
     setBusy(item.rawId);
-    const payload = patchFor(item, editOpen ? editText : "");
 
+    const payload = patchFor(item, editOpen ? editText : "");
     if (Object.keys(payload).length) {
       const prep = await patch(`/ai-operator/actions/${item.rawId}`, payload);
       if (!prep.success) {
         setBusy("");
-        toast.error(prep.error || "Churvox could not prepare final payload");
+        toast.error(prep.error || "Could not prepare final payload");
         return;
       }
     }
@@ -424,7 +384,7 @@ export default function BusinessBoardV2Dashboard() {
     setBusy("");
 
     if (res.success) {
-      toast.success("Approved. Next one is ready.");
+      toast.success("Approved. Next move ready.");
       setHandled((prev) => Array.from(new Set([...prev, item.rawId])));
       setActions((prev) => prev.filter((a) => idOf(a) !== item.rawId));
       setSelected(null);
@@ -437,8 +397,8 @@ export default function BusinessBoardV2Dashboard() {
 
   const skipCurrent = async (item) => {
     if (!item?.rawId) return;
-
     setBusy(item.rawId);
+
     const res = await post(`/ai-operator/actions/${item.rawId}/reject`, {});
     setBusy("");
 
@@ -457,157 +417,148 @@ export default function BusinessBoardV2Dashboard() {
   const askChurvox = () => {
     const q = low(ask);
     if (!q.trim()) return;
-    if (q.includes("money") || q.includes("invoice") || q.includes("paid") || q.includes("payment")) openBoard("money");
-    else if (q.includes("job") || q.includes("work")) openBoard("jobs");
-    else if (q.includes("crew") || q.includes("worker") || q.includes("staff")) openBoard("crew");
-    else if (q.includes("client") || q.includes("customer")) openBoard("clients");
-    else if (q.includes("quote")) openBoard("quotes");
-    else if (q.includes("done") || q.includes("history")) openBoard("done");
+    if (q.includes("money") || q.includes("invoice") || q.includes("paid") || q.includes("payment")) openArea("money");
+    else if (q.includes("job") || q.includes("work")) openArea("jobs");
+    else if (q.includes("crew") || q.includes("worker") || q.includes("staff")) openArea("crew");
+    else if (q.includes("client") || q.includes("customer")) openArea("clients");
+    else if (q.includes("quote")) openArea("quotes");
+    else if (q.includes("done") || q.includes("history")) openArea("done");
     else showNow();
-
-    toast.message("Board changed");
+    toast.message("Mission board changed");
   };
 
-  const health = [
-    ["Decisions", nowItems.length, "ready for approval"],
-    ["Ready to invoice", money(urgent.open_invoices_total || 0), `${moneyItems.length} money items`],
-    ["Jobs", urgent.unassigned_jobs ?? jobItems.length, "need review"],
-    ["Crew", crewItems.length, "active / assigned"],
-    ["Follow-ups", quoteItems.length + clientItems.length, "customers & quotes"],
+  const lanes = [
+    { key: "money", title: "Money", value: nz(urgent.open_invoices_total || 0), hint: "Invoices, drafts, overdue balances", items: moneyItems },
+    { key: "jobs", title: "Jobs", value: urgent.unassigned_jobs ?? jobItems.length, hint: "Stuck, scheduled, active, complete", items: jobItems },
+    { key: "crew", title: "Crew", value: crewItems.length, hint: "Assigned and active field work", items: crewItems },
+    { key: "clients", title: "Clients", value: clientItems.length, hint: "Customer records and context", items: clientItems },
+    { key: "quotes", title: "Quotes", value: quoteItems.length, hint: "Quotes waiting for follow-up", items: quoteItems },
   ];
 
-  const lanes = [
-    { key: "money", title: "Money", lead: money(urgent.open_invoices_total || 0), text: "Overdue invoices, drafts and completed jobs ready to invoice.", items: moneyItems },
-    { key: "jobs", title: "Jobs", lead: urgent.unassigned_jobs ?? jobItems.length, text: "Unassigned, stuck, scheduled and completed work.", items: jobItems },
-    { key: "crew", title: "Crew", lead: crewItems.length, text: "Active crew work and assignment decisions.", items: crewItems },
-    { key: "clients", title: "Clients", lead: clientItems.length, text: "Customer records, contacts and follow-up context.", items: clientItems },
+  const topStats = [
+    ["NOW", nowItems.length, "moves ready", "now"],
+    ["MONEY", nz(urgent.open_invoices_total || 0), `${moneyItems.length} items`, "money"],
+    ["JOBS", urgent.unassigned_jobs ?? jobItems.length, "need eyes", "jobs"],
+    ["CREW", crewItems.length, "active", "crew"],
   ];
 
   return (
-    <main className="bb2" data-version="CHURVOX_BUSINESS_BOARD_V2_20260524">
-      <section className="bb2-top">
+    <main className="mb" data-version="CHURVOX_MISSION_BOARD_20260524">
+      <aside className="mb-brand">
+        <div className="mb-brand-mark">CVX</div>
         <div>
-          <p className="bb2-kicker">Churvox Business Board</p>
-          <h1>Today’s work, live on one board.</h1>
-          <p>{snapshot?.next_best_move || "See money, jobs, crew and customers on the left. Clear the next AI-prepared admin move on the right."}</p>
+          <p>Mission Board</p>
+          <strong>Today</strong>
         </div>
+      </aside>
 
-        <div className="bb2-top-actions">
+      <section className="mb-hero">
+        <div>
+          <p className="mb-kicker">Churvox Mission Board</p>
+          <h1>The day is laid out. Clear the next move.</h1>
+          <p>{snapshot?.next_best_move || "Money, jobs, crew and customers stay on the board while Churvox hands you the next admin decision."}</p>
+        </div>
+        <div className="mb-hero-actions">
           <button onClick={() => scan(false)} disabled={busy === "scan"}>{busy === "scan" ? "Checking…" : "Run AI check"}</button>
-          <button className="primary" onClick={showNow}>Review next decision</button>
+          <button className="mb-primary" onClick={showNow}>Review next move</button>
         </div>
       </section>
 
-      <section className="bb2-health">
-        {health.map(([label, value, text]) => (
-          <button key={label} onClick={label === "Decisions" ? showNow : undefined}>
+      <section className="mb-stats">
+        {topStats.map(([label, value, hint, target]) => (
+          <button key={label} className={area === target ? "active" : ""} onClick={() => openArea(target)}>
             <span>{label}</span>
             <strong>{value}</strong>
-            <small>{text}</small>
+            <small>{hint}</small>
           </button>
         ))}
       </section>
 
-      <section className="bb2-main">
-        <div className="bb2-board">
-          <div className="bb2-board-head">
-            <div>
-              <p className="bb2-kicker">Live business board</p>
-              <h2>What needs attention today</h2>
-            </div>
-            <div className="bb2-ai-pill">
-              <span />
-              AI board live
-            </div>
+      <section className="mb-layout">
+        <section className="mb-map">
+          <div className="mb-section-title">
+            <p className="mb-kicker">Business board</p>
+            <h2>Where work sits right now</h2>
           </div>
 
-          <div className="bb2-lanes">
+          <div className="mb-lanes">
             {lanes.map((lane) => (
-              <button key={lane.key} className={`bb2-lane ${board === lane.key ? "active" : ""}`} onClick={() => openBoard(lane.key)}>
-                <div className="bb2-lane-title">
+              <button key={lane.key} className={`mb-lane ${area === lane.key ? "active" : ""}`} onClick={() => openArea(lane.key)}>
+                <div>
                   <span>{lane.title}</span>
-                  <strong>{lane.lead}</strong>
+                  <strong>{lane.value}</strong>
                 </div>
-                <p>{lane.text}</p>
-                <div className="bb2-lane-items">
-                  {lane.items.slice(0, 3).map((item) => (
-                    <em key={item.id}>{item.title}</em>
-                  ))}
-                  {!lane.items.length ? <em>No items waiting</em> : null}
-                </div>
+                <p>{lane.hint}</p>
+                <ul>
+                  {lane.items.slice(0, 3).map((item) => <li key={item.id}>{item.title}</li>)}
+                  {!lane.items.length ? <li>No items waiting</li> : null}
+                </ul>
               </button>
             ))}
           </div>
-        </div>
+        </section>
 
-        <aside className="bb2-action-desk">
-          <div className="bb2-action-head">
-            <div>
-              <p className="bb2-kicker">AI action desk</p>
-              <h2>{current ? displayTitle(current) : "Nothing waiting here."}</h2>
-            </div>
-            <span>{current?.source || "Board"}</span>
-          </div>
-
+        <aside className="mb-ticket">
+          <div className="mb-ticket-pin">NEXT</div>
           {loading ? (
             <p>Loading Churvox…</p>
           ) : current ? (
             <>
-              <p className="bb2-directive">Do this now: review the move, then approve, edit, or skip. Churvox brings the next one.</p>
-              <p className="bb2-detail">{displayDetail(current)}</p>
+              <div className="mb-ticket-head">
+                <p className="mb-kicker">{area === "now" ? "Do this now" : area}</p>
+                <span>{current.source}</span>
+              </div>
+              <h2>{displayTitle(current)}</h2>
+              <p className="mb-directive">Approve, edit, or skip. Churvox moves the next task into place.</p>
+              <p className="mb-detail">{displayDetail(current)}</p>
 
-              <div className="bb2-facts">
-                <div><span>What happens</span><strong>{outcomeLine(current)}</strong></div>
+              <div className="mb-proof">
+                <div><span>Result</span><strong>{outcomeLine(current)}</strong></div>
                 <div><span>Record</span><strong>{recordLine(current)}</strong></div>
                 <div><span>Risk</span><strong>{current.risk || "low"}</strong></div>
               </div>
 
-              <div className="bb2-proof">
-                <p className="bb2-kicker">Why Churvox picked this</p>
-                {evidence.map((line) => <span key={line}>{line}</span>)}
-              </div>
-
               {editOpen ? (
-                <label className="bb2-editor">
+                <label className="mb-editor">
                   <span>Edit before approving</span>
                   <textarea value={editText} onChange={(event) => setEditText(event.target.value)} />
                 </label>
               ) : null}
 
-              <div className="bb2-action-buttons">
+              <div className="mb-ticket-actions">
                 {current.rawId ? (
                   <>
-                    <button className="primary" onClick={() => approveCurrent(current)} disabled={busy === current.rawId}>
+                    <button className="mb-primary" onClick={() => approveCurrent(current)} disabled={busy === current.rawId}>
                       {busy === current.rawId ? "Running…" : primaryLabel(current)}
                     </button>
-                    <button onClick={() => setEditOpen((value) => !value)}>Edit first</button>
-                    <button className="ghost" onClick={() => skipCurrent(current)} disabled={busy === current.rawId}>Skip</button>
+                    <button onClick={() => setEditOpen((value) => !value)}>Edit</button>
+                    <button onClick={() => skipCurrent(current)} disabled={busy === current.rawId}>Skip</button>
                   </>
                 ) : (
                   <>
-                    <button className="primary" onClick={showNow}>Back to NOW</button>
+                    <button className="mb-primary" onClick={showNow}>Back to NOW</button>
                     <button onClick={() => scan(false)}>Ask AI to prepare</button>
                   </>
                 )}
               </div>
             </>
           ) : (
-            <div className="bb2-empty">
-              <h3>Nothing waiting here.</h3>
-              <p>Run an AI check or open another board lane.</p>
-              <button className="primary" onClick={() => scan(false)}>Run AI check</button>
+            <div className="mb-empty">
+              <h2>Nothing waiting here.</h2>
+              <p>Run an AI check or open another lane.</p>
+              <button className="mb-primary" onClick={() => scan(false)}>Run AI check</button>
             </div>
           )}
         </aside>
       </section>
 
-      <section className="bb2-lower">
-        <div className="bb2-list">
-          <div className="bb2-list-head">
-            <p className="bb2-kicker">Open on board</p>
-            <h3>{board}</h3>
+      <section className="mb-bottom">
+        <div className="mb-open">
+          <div className="mb-section-title">
+            <p className="mb-kicker">Open lane</p>
+            <h3>{area}</h3>
           </div>
-          <div className="bb2-item-grid">
+          <div className="mb-card-grid">
             {activeItems.slice(0, 8).map((item) => (
               <button key={item.id} className={current?.id === item.id ? "active" : ""} onClick={() => setSelected(item)}>
                 <strong>{item.title}</strong>
@@ -617,29 +568,28 @@ export default function BusinessBoardV2Dashboard() {
           </div>
         </div>
 
-        <div className="bb2-list">
-          <div className="bb2-list-head">
-            <p className="bb2-kicker">Prepared work</p>
-            <h3>Grouped stack</h3>
+        <div className="mb-stack">
+          <div className="mb-section-title">
+            <p className="mb-kicker">AI stack</p>
+            <h3>Grouped work</h3>
           </div>
-          <div className="bb2-stack-grid">
+          <div className="mb-card-grid">
             {stacks.length ? stacks.map((stack) => (
-              <button key={stack.key} onClick={() => { setBoard("now"); setSelected(stack.first); }}>
-                <span>{stack.count}</span>
-                <strong>{stack.title}</strong>
-                <small>{stack.first.detail}</small>
+              <button key={stack.key} onClick={() => { setArea("now"); setSelected(stack.first); }}>
+                <strong>{stack.count} · {stack.title}</strong>
+                <span>{stack.first.detail}</span>
               </button>
             )) : <p>No prepared decisions waiting.</p>}
           </div>
         </div>
       </section>
 
-      <section className="bb2-ask">
+      <section className="mb-ask">
         <input
           value={ask}
           onChange={(event) => setAsk(event.target.value)}
           onKeyDown={(event) => { if (event.key === "Enter") askChurvox(); }}
-          placeholder="Ask Churvox… show money waiting, jobs stuck, unassigned crew, client follow-ups"
+          placeholder="Ask Churvox… show money waiting, stuck jobs, unassigned crew, client follow-ups"
         />
         <button onClick={askChurvox}>Ask</button>
       </section>
