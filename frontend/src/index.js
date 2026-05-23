@@ -11,6 +11,7 @@ import './styles/aiDashPolish.css';
 import './styles/churvoxControlSurfaceApp.css';
 import './styles/churvoxForceControlSurface.css';
 import './styles/churvoxDeepOperationsTheme.css';
+import './styles/churvoxBusinessBoardTheme.css';
 import './workhorseLiveCheck';
 import './renderDeployMarker';
 import './deploy/guidedOperatorFloorDeployMarker';
