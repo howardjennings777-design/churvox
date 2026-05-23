@@ -60,6 +60,7 @@ import HomePage from "./pages/marketing/CommandMachineHomePage";
 import PricingPage from "./pages/marketing/PricingPage";
 import FeaturesPage from "./pages/marketing/FeaturesPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import FloatingBottomNav from "./components/FloatingBottomNav";
 
 const Spinner = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -202,6 +203,7 @@ function App() {
       <AuthProvider>
         <ErrorBoundary>
           <Toaster position="top-right" richColors />
+          <FloatingBottomNav />
           <Routes>
             <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
