@@ -2223,6 +2223,19 @@ async def ai_operator_approve(item_id: str, current_user: dict = Depends(get_cur
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
+    # CHURVOX_AI_OPERATOR_APPROVE_SKIP_LEGACY_PAYLOAD_BLOCK
+    # execute_ai_operator_action is the real executor. If it completed the work,
+    # mark the action done and return before the old legacy branch can re-run
+    # and reference stale variables like payload.
+    if completed:
+        await db.ai_operator_actions.update_one({"_id": ObjectId(item_id), "business_id": business_id}, {"$set": {"status": "completed", "group": "completed", "approved_at": now, "completed_at": now, "approved_by_user_id": str(current_user.get("id") or ""), "approved_by_name": str(current_user.get("name") or ""), "approved_by": str(current_user.get("id") or ""), "result": result, "updated_at": now}})
+        await db.ai_operator_logs.insert_one({"business_id": business_id, "action_id": item_id, "event_type": "completed", "message": f"Action {item_type} approved", "user_id": str(current_user.get("id") or ""), "created_at": now})
+        return {"success": True, "result": result}
+
+    payload = dict(item.get("payload") or item.get("draft_payload") or {})
+    if not payload.get("job_id") and item.get("related_entity_type") == "job":
+        payload["job_id"] = str(item.get("related_entity_id") or "")
+
     if False and item_type == "assign_worker":
         job_id = str(payload.get("job_id") or item.get("job_id") or item.get("related_entity_id") or "")
         worker_id = str(payload.get("worker_id") or payload.get("recommended_worker_id") or item.get("worker_id") or "")
