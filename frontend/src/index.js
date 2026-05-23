@@ -12,6 +12,7 @@ import './styles/churvoxControlSurfaceApp.css';
 import './styles/churvoxForceControlSurface.css';
 import './styles/churvoxDeepOperationsTheme.css';
 import './styles/churvoxBusinessBoardTheme.css';
+import './styles/churvoxBusinessBoardV2.css';
 import './workhorseLiveCheck';
 import './renderDeployMarker';
 import './deploy/guidedOperatorFloorDeployMarker';
