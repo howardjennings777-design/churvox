@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
+import "../styles/churvoxDispatchCommandCentre.css";
 
 const arr = (v) =>
   Array.isArray(v) ? v :
@@ -32,7 +33,7 @@ function labelFor(type = "") {
   if (t.includes("assign")) return "Crew assignment";
   if (t.includes("quote")) return "Quote follow-up";
   if (t.includes("customer")) return "Customer update";
-  return "AI move";
+  return "AI action";
 }
 
 function makeDecision(raw) {
@@ -47,7 +48,7 @@ function makeDecision(raw) {
     source: "AI",
     type,
     label: labelFor(type),
-    title: raw.title || raw.summary || "AI decision ready",
+    title: raw.title || raw.summary || "AI action ready",
     detail: raw.recommendation || raw.reason || raw.owner_facing_explanation || raw.summary || "Review, approve, edit, or skip.",
     status: raw.status || "pending",
     risk: raw.risk || raw.risk_level || "low",
@@ -62,13 +63,14 @@ function makeJob(job, lane = "scheduled") {
     lane,
     source: "Job",
     type: "job",
-    label: lane === "bill" ? "Ready to bill" : "Job",
+    label: lane === "bill" ? "Ready to invoice" : "Job",
     title: job.title || job.job_name || job.client_name || "Job",
     detail: job.description || job.address || "Job record",
     status: job.status || "open",
     client: job.client_name || job.customer_name || "Client",
     worker: job.assigned_worker_name || job.worker_name || "Unassigned",
     amount: job.price || job.job_price || job.fixed_price || job.total || job.amount || 0,
+    time: job.scheduled_time || job.start_time || job.due_time || job.scheduled_at || "",
   };
 }
 
@@ -139,7 +141,6 @@ function patchFor(item, editedText = "") {
       patch.amount = subtotal;
       patch.total = subtotal;
     }
-
     patch.gst_rate = Number(first(p.gst_rate, 0.15));
 
     const description = first(editedText, p.description, arr(p.line_items)[0]?.description, item?.title);
@@ -157,7 +158,7 @@ function patchFor(item, editedText = "") {
 }
 
 function displayTitle(item) {
-  if (!item) return "No decision selected";
+  if (!item) return "No action selected";
 
   const p = item.payload || {};
   const type = low(item.type || "");
@@ -165,15 +166,15 @@ function displayTitle(item) {
 
   if (type.includes("invoice_reminder")) return `Send payment reminder${client ? ` to ${client}` : ""}`;
   if (["create_invoice_draft", "invoice_draft"].includes(type)) return `Create invoice draft${client ? ` for ${client}` : ""}`;
-  if (type.includes("assign")) return "Assign crew to a waiting job";
+  if (type.includes("assign")) return "Assign crew to waiting job";
   if (type.includes("quote")) return `Follow up quote${client ? ` for ${client}` : ""}`;
   if (type.includes("customer")) return `Send customer update${client ? ` to ${client}` : ""}`;
 
-  return item.title || "AI decision ready";
+  return item.title || "AI action ready";
 }
 
 function displayDetail(item) {
-  if (!item) return "Run an AI check or choose a board lane.";
+  if (!item) return "Run an AI check or choose a command lane.";
 
   const p = item.payload || {};
   const type = low(item.type || "");
@@ -219,7 +220,7 @@ function outcomeLine(item) {
   if (type.includes("assign")) return "Crew assignment saved";
   if (type.includes("quote")) return "Follow-up prepared";
   if (type.includes("customer")) return "Customer update prepared";
-  return item?.rawId ? "Action runs" : "Open inside board";
+  return item?.rawId ? "Action runs" : "Open inside centre";
 }
 
 function recordLine(item) {
@@ -236,6 +237,24 @@ function recordLine(item) {
   );
 }
 
+function groupByWorker(items) {
+  const map = new Map();
+  for (const item of items) {
+    const key = item.worker || "Unassigned";
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(item);
+  }
+
+  return [...map.entries()]
+    .map(([worker, jobs]) => ({ worker, jobs }))
+    .sort((a, b) => {
+      if (a.worker === "Unassigned") return -1;
+      if (b.worker === "Unassigned") return 1;
+      return b.jobs.length - a.jobs.length;
+    })
+    .slice(0, 7);
+}
+
 function groupByLabel(items) {
   const map = new Map();
   for (const item of items) {
@@ -246,7 +265,23 @@ function groupByLabel(items) {
   return [...map.values()].sort((a, b) => b.count - a.count).slice(0, 8);
 }
 
-export default function JobToCashCommandBoard() {
+function crewSummary(fieldJobs, scheduledJobs) {
+  const names = [...fieldJobs, ...scheduledJobs]
+    .map((j) => j.worker)
+    .filter(Boolean)
+    .filter((v) => v !== "Unassigned");
+
+  if (!names.length) return "No crew activity loaded";
+
+  const counts = names.reduce((acc, name) => {
+    acc[name] = (acc[name] || 0) + 1;
+    return acc;
+  }, {});
+
+  return Object.entries(counts).slice(0, 4).map(([name, count]) => `${name} ${count}`).join(" · ");
+}
+
+export default function DispatchCommandCentre() {
   const { get, post, patch } = useApi();
 
   const [actions, setActions] = useState([]);
@@ -294,7 +329,7 @@ export default function JobToCashCommandBoard() {
     setBusy("");
 
     if (res.success) {
-      if (!quiet) toast.success("Command board updated");
+      if (!quiet) toast.success("Command Centre updated");
       await load();
       return true;
     }
@@ -309,7 +344,7 @@ export default function JobToCashCommandBoard() {
     if (scanned.current) return;
     scanned.current = true;
 
-    const key = "churvox_job_to_cash_last_scan";
+    const key = "churvox_dispatch_command_last_scan";
     const last = Number(localStorage.getItem(key) || 0);
 
     if (!last || Date.now() - last > 10 * 60 * 1000) {
@@ -333,7 +368,7 @@ export default function JobToCashCommandBoard() {
   const scheduledJobs = useMemo(
     () => jobs
       .filter((j) => ["scheduled", "assigned", "booked"].includes(low(j.status)))
-      .slice(0, 40)
+      .slice(0, 50)
       .map((job) => makeJob(job, "scheduled")),
     [jobs]
   );
@@ -341,7 +376,7 @@ export default function JobToCashCommandBoard() {
   const fieldJobs = useMemo(
     () => jobs
       .filter((j) => ["in_progress", "in progress", "started", "paused"].includes(low(j.status)))
-      .slice(0, 40)
+      .slice(0, 50)
       .map((job) => makeJob(job, "field")),
     [jobs]
   );
@@ -349,7 +384,7 @@ export default function JobToCashCommandBoard() {
   const readyBillJobs = useMemo(
     () => jobs
       .filter((j) => ["completed", "done", "complete"].includes(low(j.status)) && !(j.invoice_id || j.draft_invoice_id || j.invoiced))
-      .slice(0, 30)
+      .slice(0, 40)
       .map((job) => makeJob(job, "bill")),
     [jobs]
   );
@@ -357,12 +392,12 @@ export default function JobToCashCommandBoard() {
   const waitingPay = useMemo(
     () => invoices
       .filter((i) => ["sent", "open", "overdue", "unpaid", "pending", ""].includes(low(i.status)))
-      .slice(0, 40)
+      .slice(0, 50)
       .map(makeInvoice),
     [invoices]
   );
 
-  const clientItems = useMemo(() => clients.slice(0, 40).map(makeClient), [clients]);
+  const clientItems = useMemo(() => clients.slice(0, 50).map(makeClient), [clients]);
 
   const doneItems = useMemo(
     () => actions
@@ -390,6 +425,7 @@ export default function JobToCashCommandBoard() {
   const activeItems = lanes[lane] || [];
   const current = selected && selected.lane === lane ? selected : (lane === "needs" ? decisions[0] || activeItems[0] : activeItems[0]);
   const grouped = useMemo(() => groupByLabel(decisions), [decisions]);
+  const dispatchRows = useMemo(() => groupByWorker([...scheduledJobs, ...fieldJobs]), [scheduledJobs, fieldJobs]);
 
   useEffect(() => {
     setEditOpen(false);
@@ -425,7 +461,7 @@ export default function JobToCashCommandBoard() {
     setBusy("");
 
     if (res.success) {
-      toast.success("Approved. Next decision is ready.");
+      toast.success("Approved. Next action is ready.");
       setHandled((prev) => Array.from(new Set([...prev, item.rawId])));
       setActions((prev) => prev.filter((a) => idOf(a) !== item.rawId));
       setSelected(null);
@@ -462,11 +498,11 @@ export default function JobToCashCommandBoard() {
     if (q.includes("money") || q.includes("invoice") || q.includes("bill")) openLane("bill");
     else if (q.includes("pay") || q.includes("overdue")) openLane("pay");
     else if (q.includes("field") || q.includes("active")) openLane("field");
-    else if (q.includes("schedule") || q.includes("today")) openLane("scheduled");
+    else if (q.includes("schedule") || q.includes("today") || q.includes("dispatch")) openLane("scheduled");
     else if (q.includes("client") || q.includes("customer")) openLane("customers");
     else reviewNext();
 
-    toast.message("Command board changed");
+    toast.message("Command Centre changed");
   };
 
   const openTotal = invoices.reduce((sum, invoice) => {
@@ -477,37 +513,43 @@ export default function JobToCashCommandBoard() {
   }, 0);
 
   const pulse = [
-    ["AI decisions", decisions.length, "ready", "needs"],
-    ["Jobs attention", needsItems.length + scheduledJobs.length, "to review", "needs"],
-    ["Ready to bill", readyBillJobs.length, nz(readyBillJobs.reduce((s, j) => s + Number(j.amount || 0), 0)), "bill"],
+    ["AI actions", decisions.length, "ready", "needs"],
+    ["Dispatch", scheduledJobs.length + fieldJobs.length, "jobs moving", "scheduled"],
+    ["Ready bill", readyBillJobs.length, nz(readyBillJobs.reduce((s, j) => s + Number(j.amount || 0), 0)), "bill"],
     ["Waiting pay", waitingPay.length, nz(openTotal), "pay"],
-    ["In field", fieldJobs.length, "active", "field"],
   ];
 
-  const boardLanes = [
-    { key: "needs", title: "Needs Action", hint: "AI decisions, unassigned work, quote follow-ups.", items: needsItems },
+  const flowLanes = [
+    { key: "needs", title: "Needs Action", hint: "AI decisions, unassigned work, quotes.", items: needsItems },
     { key: "scheduled", title: "Scheduled", hint: "Booked jobs and crew commitments.", items: scheduledJobs },
-    { key: "field", title: "In Field", hint: "Active jobs, pauses, photos, notes and time.", items: fieldJobs },
-    { key: "bill", title: "Ready to Bill", hint: "Completed jobs and invoice drafts.", items: readyBillJobs },
-    { key: "pay", title: "Waiting Pay", hint: "Open invoices and payment reminders.", items: waitingPay },
+    { key: "field", title: "In Field", hint: "Active jobs, time, notes and photos.", items: fieldJobs },
+    { key: "bill", title: "Ready to Bill", hint: "Completed work and invoice drafts.", items: readyBillJobs },
+    { key: "pay", title: "Waiting Pay", hint: "Open invoices and reminders.", items: waitingPay },
   ];
 
   return (
-    <main className="jtc" data-version="CHURVOX_JOB_TO_CASH_COMMAND_BOARD_20260524">
-      <section className="jtc-top">
+    <main className="dcc" data-version="CHURVOX_DISPATCH_COMMAND_CENTRE_20260524">
+      <section className="dcc-commandbar">
         <div>
-          <p className="jtc-kicker">Churvox Command Board</p>
-          <h1>Job-to-cash, live.</h1>
-          <p>{snapshot?.next_best_move || "See the workflow from action → schedule → field → bill → payment. Churvox prepares the admin. You approve."}</p>
+          <p className="dcc-kicker">Churvox Command Centre</p>
+          <h1>Dispatch, admin, money — one screen.</h1>
         </div>
 
-        <div className="jtc-top-actions">
-          <button onClick={() => scan(false)} disabled={busy === "scan"}>{busy === "scan" ? "Checking…" : "Run AI check"}</button>
-          <button className="jtc-primary" onClick={reviewNext}>Review next</button>
+        <div className="dcc-command-summary">
+          <span>{decisions.length} AI actions</span>
+          <span>{scheduledJobs.length + fieldJobs.length} jobs moving</span>
+          <span>{readyBillJobs.length} ready to bill</span>
+          <span>{waitingPay.length} waiting pay</span>
+        </div>
+
+        <div className="dcc-command-actions">
+          <button onClick={() => scan(false)} disabled={busy === "scan"}>{busy === "scan" ? "Checking…" : "Run AI"}</button>
+          <button onClick={askChurvox}>Ask Churvox</button>
+          <button className="dcc-primary" onClick={reviewNext}>Review next</button>
         </div>
       </section>
 
-      <section className="jtc-pulse">
+      <section className="dcc-pulse">
         {pulse.map(([label, value, note, target]) => (
           <button key={label} className={lane === target ? "active" : ""} onClick={() => openLane(target)}>
             <span>{label}</span>
@@ -517,66 +559,94 @@ export default function JobToCashCommandBoard() {
         ))}
       </section>
 
-      <section className="jtc-layout">
-        <section className="jtc-board">
-          <div className="jtc-board-head">
+      <section className="dcc-main">
+        <section className="dcc-dispatch">
+          <div className="dcc-section-head">
             <div>
-              <p className="jtc-kicker">Live workflow board</p>
-              <h2>Where the business sits right now</h2>
+              <p className="dcc-kicker">Today / Dispatch</p>
+              <h2>Crew and jobs moving now</h2>
             </div>
-            <div className="jtc-live"><i /> AI operator live</div>
+            <button onClick={() => openLane("scheduled")}>Open schedule</button>
           </div>
 
-          <div className="jtc-lanes">
-            {boardLanes.map((boardLane) => (
-              <button key={boardLane.key} className={`jtc-lane ${lane === boardLane.key ? "active" : ""}`} onClick={() => openLane(boardLane.key)}>
-                <div className="jtc-lane-head">
-                  <span>{boardLane.title}</span>
-                  <strong>{boardLane.items.length}</strong>
+          <div className="dcc-crew-rows">
+            {dispatchRows.length ? dispatchRows.map((row) => (
+              <button key={row.worker} className="dcc-crew-row" onClick={() => openLane(row.worker === "Unassigned" ? "needs" : "scheduled")}>
+                <div className="dcc-worker">
+                  <span>{row.worker}</span>
+                  <strong>{row.jobs.length} jobs</strong>
                 </div>
-                <p>{boardLane.hint}</p>
-                <div className="jtc-mini-list">
-                  {boardLane.items.slice(0, 4).map((item) => <em key={item.id}>{item.title}</em>)}
-                  {!boardLane.items.length ? <em>No items waiting</em> : null}
+                <div className="dcc-worker-jobs">
+                  {row.jobs.slice(0, 4).map((job) => (
+                    <em key={job.id}>{job.title}</em>
+                  ))}
+                </div>
+              </button>
+            )) : (
+              <div className="dcc-empty-small">No scheduled or active crew work loaded yet.</div>
+            )}
+          </div>
+        </section>
+
+        <section className="dcc-flow">
+          <div className="dcc-section-head">
+            <div>
+              <p className="dcc-kicker">Job-to-cash flow</p>
+              <h2>From work to payment</h2>
+            </div>
+            <div className="dcc-live"><i /> AI operator live</div>
+          </div>
+
+          <div className="dcc-flow-lanes">
+            {flowLanes.map((flowLane) => (
+              <button key={flowLane.key} className={`dcc-flow-lane ${lane === flowLane.key ? "active" : ""}`} onClick={() => openLane(flowLane.key)}>
+                <div className="dcc-lane-head">
+                  <span>{flowLane.title}</span>
+                  <strong>{flowLane.items.length}</strong>
+                </div>
+                <p>{flowLane.hint}</p>
+                <div className="dcc-mini-list">
+                  {flowLane.items.slice(0, 3).map((item) => <em key={item.id}>{item.title}</em>)}
+                  {!flowLane.items.length ? <em>No items waiting</em> : null}
                 </div>
               </button>
             ))}
           </div>
         </section>
 
-        <aside className="jtc-desk">
-          <div className="jtc-desk-head">
+        <aside className="dcc-ai-desk">
+          <div className="dcc-ai-head">
             <div>
-              <p className="jtc-kicker">AI Operator Desk</p>
+              <p className="dcc-kicker">AI Operator Desk</p>
               <h2>{current ? displayTitle(current) : "Nothing waiting here."}</h2>
             </div>
             <span>{current?.source || "Board"}</span>
           </div>
 
           {loading ? (
-            <p className="jtc-detail">Loading Churvox…</p>
+            <p className="dcc-detail">Loading Churvox…</p>
           ) : current ? (
             <>
-              <p className="jtc-directive">Do this now: approve, edit, or skip. Churvox moves the next admin step into place.</p>
-              <p className="jtc-detail">{displayDetail(current)}</p>
+              <p className="dcc-directive">Do this now: approve, edit, or skip. Churvox moves the next admin step into place.</p>
+              <p className="dcc-detail">{displayDetail(current)}</p>
 
-              <div className="jtc-facts">
+              <div className="dcc-facts">
                 <div><span>Result</span><strong>{outcomeLine(current)}</strong></div>
                 <div><span>Record</span><strong>{recordLine(current)}</strong></div>
                 <div><span>Risk</span><strong>{current.risk || "low"}</strong></div>
               </div>
 
               {editOpen ? (
-                <label className="jtc-editor">
+                <label className="dcc-editor">
                   <span>Edit before approving</span>
                   <textarea value={editText} onChange={(event) => setEditText(event.target.value)} />
                 </label>
               ) : null}
 
-              <div className="jtc-desk-actions">
+              <div className="dcc-ai-actions">
                 {current.rawId ? (
                   <>
-                    <button className="jtc-primary" onClick={() => approveCurrent(current)} disabled={busy === current.rawId}>
+                    <button className="dcc-primary" onClick={() => approveCurrent(current)} disabled={busy === current.rawId}>
                       {busy === current.rawId ? "Running…" : primaryLabel(current)}
                     </button>
                     <button onClick={() => setEditOpen((value) => !value)}>Edit first</button>
@@ -584,29 +654,58 @@ export default function JobToCashCommandBoard() {
                   </>
                 ) : (
                   <>
-                    <button className="jtc-primary" onClick={reviewNext}>Back to AI decisions</button>
+                    <button className="dcc-primary" onClick={reviewNext}>Back to AI actions</button>
                     <button onClick={() => scan(false)}>Ask AI to prepare</button>
                   </>
                 )}
               </div>
             </>
           ) : (
-            <div className="jtc-empty">
+            <div className="dcc-empty">
               <h3>Nothing waiting here.</h3>
-              <p>Run an AI check or open another workflow lane.</p>
-              <button className="jtc-primary" onClick={() => scan(false)}>Run AI check</button>
+              <p>Run an AI check or open another command lane.</p>
+              <button className="dcc-primary" onClick={() => scan(false)}>Run AI check</button>
             </div>
           )}
         </aside>
       </section>
 
-      <section className="jtc-lower">
-        <div className="jtc-panel">
+      <section className="dcc-trays">
+        <div className="dcc-tray">
           <div>
-            <p className="jtc-kicker">Open lane</p>
+            <p className="dcc-kicker">Money tray</p>
+            <h3>{nz(openTotal)} waiting</h3>
+            <span>{readyBillJobs.length} ready to bill · {waitingPay.length} open invoices</span>
+          </div>
+          <button onClick={() => openLane("pay")}>Open money</button>
+        </div>
+
+        <div className="dcc-tray">
+          <div>
+            <p className="dcc-kicker">Customer/admin tray</p>
+            <h3>{clientItems.length + quoteItems.length} records</h3>
+            <span>{quoteItems.length} quotes · {clientItems.length} clients</span>
+          </div>
+          <button onClick={() => openLane("customers")}>Open customers</button>
+        </div>
+
+        <div className="dcc-tray">
+          <div>
+            <p className="dcc-kicker">Crew strip</p>
+            <h3>{scheduledJobs.length + fieldJobs.length} jobs moving</h3>
+            <span>{crewSummary(fieldJobs, scheduledJobs)}</span>
+          </div>
+          <button onClick={() => openLane("scheduled")}>Open dispatch</button>
+        </div>
+      </section>
+
+      <section className="dcc-open">
+        <div className="dcc-panel">
+          <div>
+            <p className="dcc-kicker">Open lane</p>
             <h3>{lane}</h3>
           </div>
-          <div className="jtc-card-grid">
+          <div className="dcc-card-grid">
             {activeItems.slice(0, 10).map((item) => (
               <button key={item.id} className={current?.id === item.id ? "active" : ""} onClick={() => setSelected(item)}>
                 <strong>{item.title}</strong>
@@ -616,12 +715,12 @@ export default function JobToCashCommandBoard() {
           </div>
         </div>
 
-        <div className="jtc-panel">
+        <div className="dcc-panel">
           <div>
-            <p className="jtc-kicker">Prepared by AI</p>
+            <p className="dcc-kicker">Prepared by AI</p>
             <h3>Grouped admin work</h3>
           </div>
-          <div className="jtc-stack-grid">
+          <div className="dcc-card-grid">
             {grouped.length ? grouped.map((stack) => (
               <button key={stack.title} onClick={() => { setLane("needs"); setSelected(stack.first); }}>
                 <strong>{stack.count} · {stack.title}</strong>
@@ -632,36 +731,15 @@ export default function JobToCashCommandBoard() {
         </div>
       </section>
 
-      <section className="jtc-strip">
-        <div><strong>Crew</strong><span>{crewSummary(fieldJobs, scheduledJobs)}</span></div>
-        <div><strong>Money</strong><span>{nz(openTotal)} waiting · {readyBillJobs.length} ready to bill · {waitingPay.length} open invoices</span></div>
-      </section>
-
-      <section className="jtc-ask">
+      <section className="dcc-ask">
         <input
           value={ask}
           onChange={(event) => setAsk(event.target.value)}
           onKeyDown={(event) => { if (event.key === "Enter") askChurvox(); }}
-          placeholder="Ask Churvox… show jobs ready to invoice, overdue invoices, active field jobs, today’s schedule"
+          placeholder="Ask Churvox… show dispatch, jobs ready to invoice, overdue invoices, active field jobs"
         />
         <button onClick={askChurvox}>Ask</button>
       </section>
     </main>
   );
-}
-
-function crewSummary(fieldJobs, scheduledJobs) {
-  const names = [...fieldJobs, ...scheduledJobs]
-    .map((j) => j.worker)
-    .filter(Boolean)
-    .filter((v) => v !== "Unassigned");
-
-  if (!names.length) return "No crew activity loaded yet";
-
-  const counts = names.reduce((acc, name) => {
-    acc[name] = (acc[name] || 0) + 1;
-    return acc;
-  }, {});
-
-  return Object.entries(counts).slice(0, 4).map(([name, count]) => `${name} ${count}`).join(" · ");
 }
