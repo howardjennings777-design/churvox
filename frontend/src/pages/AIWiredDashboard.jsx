@@ -228,7 +228,7 @@ export default function AIWiredDashboard() {
   };
 
   return (
-    <main className="wh-shell wh-ai-operator">
+    <main className="wh-shell wh-ai-operator wh-ai-operator--polished" data-polish="CHURVOX_AI_DASH_VISUAL_POLISH_20260524">
       <section className="px-hero wh-ai-hero">
         <p className="px-hero__eyebrow">AI Operator is running</p>
         <h1 className="px-hero__title">Churvox prepares the admin. You approve the move.</h1>
@@ -240,7 +240,7 @@ export default function AIWiredDashboard() {
         </div>
       </section>
 
-      <section className="wh-ai-strip">
+      <section className="wh-ai-strip wh-ai-strip--cards">
         <div className="wh-ai-meter"><span>Waiting approval</span><strong>{approve.length || approvals.total_pending || 0}</strong></div>
         <div className="wh-ai-meter"><span>Unassigned jobs</span><strong>{urgent.unassigned_jobs ?? fix.length}</strong></div>
         <div className="wh-ai-meter"><span>Ready to invoice</span><strong>{urgent.completed_no_invoice ?? money.length}</strong></div>
@@ -248,14 +248,24 @@ export default function AIWiredDashboard() {
       </section>
 
       <section className="wh-board">
-        <aside className="px-card"><div className="px-card__body"><p className="wh-kicker">AI operating lanes</p><div className="wh-zone-stack">{[["approve", "Ready to approve", approve.length], ["fix", "Needs fixing", fix.length], ["field", "Field & crew", field.length], ["money", "Money desk", money.length]].map(([key, label, count]) => <button key={key} type="button" className={`wh-zone ${lane === key ? "is-active" : ""}`} onClick={() => { setLane(key); setSelected(null); }}><span>{label}</span><strong>{count}</strong></button>)}</div></div></aside>
+        <aside className="px-card"><div className="px-card__body"><p className="wh-kicker">AI operating lanes</p><div className="wh-zone-stack">{[["approve", "Owner approval", approve.length], ["fix", "Needs attention", fix.length], ["field", "Crew work", field.length], ["money", "Money desk", money.length]].map(([key, label, count]) => <button key={key} type="button" className={`wh-zone ${lane === key ? "is-active" : ""}`} onClick={() => { setLane(key); setSelected(null); }}><span>{label}</span><strong>{count}</strong></button>)}</div></div></aside>
 
-        <article className="px-card wh-ai-slip"><div className="px-card__body">{loading ? <p className="px-hero__sub">AI Operator is loading…</p> : current ? <><p className="wh-kicker">{current.label}</p><h2 className="wh-slip-title">{current.title}</h2><p className="px-hero__sub">{current.detail}</p><div className="wh-facts">{current.facts.map(([a, b]) => <div className="wh-fact" key={a}><span>{a}</span><strong>{b}</strong></div>)}</div>{current.payload && Object.keys(current.payload).length ? <pre className="wh-ai-payload">{JSON.stringify(current.payload, null, 2)}</pre> : null}{current.rawId ? <div className="wh-ai-actions"><button className="px-btn px-btn--primary" disabled={busy === current.rawId} onClick={() => approveOne(current)}>{busy === current.rawId ? "AI running…" : "Approve action"}</button><button className="px-btn" disabled={busy === current.rawId} onClick={() => rejectOne(current)}>Reject</button></div> : <div className="wh-ai-actions"><button className="px-btn px-btn--primary" onClick={() => scan(false)}>Prepare action</button></div>}</> : <><p className="wh-kicker">AI clear</p><h2 className="wh-slip-title">No prepared moves in this lane.</h2><p className="px-hero__sub">Run AI now to scan for new work.</p></>}</div></article>
+        <article className="px-card wh-ai-slip"><div className="px-card__body">{loading ? <p className="px-hero__sub">AI Operator is loading…</p> : current ? <><p className="wh-kicker">{current.label}</p><h2 className="wh-slip-title">{current.title}</h2><p className="px-hero__sub">{current.detail}</p><div className="wh-facts">{current.facts.map(([a, b]) => <div className="wh-fact" key={a}><span>{a}</span><strong>{b}</strong></div>)}</div>{current.payload && Object.keys(current.payload).length ? (
+              <div className="wh-ai-payload wh-ai-payload--clean">
+                <span>AI prepared details</span>
+                <strong>{current.payload.description || current.payload.message || current.payload.job_id || "Ready for approval"}</strong>
+              </div>
+            ) : null}{current.rawId ? <div className="wh-ai-actions"><button className="px-btn px-btn--primary" disabled={busy === current.rawId} onClick={() => approveOne(current)}>{busy === current.rawId ? "AI running…" : "Approve action"}</button><button className="px-btn" disabled={busy === current.rawId} onClick={() => rejectOne(current)}>Reject</button></div> : <div className="wh-ai-actions"><button className="px-btn px-btn--primary" onClick={() => scan(false)}>Prepare action</button></div>}</> : <><p className="wh-kicker">AI clear</p><h2 className="wh-slip-title">No prepared moves in this lane.</h2><p className="px-hero__sub">Run AI now to scan for new work.</p></>}</div></article>
 
-        <aside className="px-card"><div className="px-card__body"><p className="wh-kicker">Operator safety</p><div className="px-stat"><span className="px-stat__label">Prepared work</span><strong className="px-stat__value">{approve.length + fix.length + field.length + money.length}</strong><span className="px-stat__delta">Approval-first. High-risk work stays draft-only.</span></div><div className="wh-ai-safe"><span>Email/SMS: approval first</span><span>Payroll/pricing: locked</span><span>MYOB/payment: approval first</span><span>AI setup: {setup?.ai?.ready ? "ready" : "check env"}</span></div></div></aside>
+        <aside className="px-card"><div className="px-card__body"><p className="wh-kicker">Operator safety</p><div className="px-stat"><span className="px-stat__label">Prepared work</span><strong className="px-stat__value">{approve.length + fix.length + field.length + money.length}</strong><span className="px-stat__delta">Approval-first. High-risk work stays draft-only.</span></div><div className="wh-ai-safe wh-ai-safe--stack">
+              <span>Email/SMS stays approval-first</span>
+              <span>Payroll and pricing stay locked</span>
+              <span>MYOB/payment actions need approval</span>
+              <span>AI setup is {setup?.ai?.ready ? "ready" : "waiting for setup"}</span>
+            </div></div></aside>
       </section>
 
-      <section className="px-card" style={{ marginTop: 14 }}><div className="px-card__body"><p className="wh-kicker">AI prepared queue</p><div className="wh-queue">{visible.length ? visible.map((item) => <button key={item.id} type="button" className={`wh-task ${current?.id === item.id ? "is-active" : ""}`} onClick={() => setSelected(item)}><span className="wh-pill">{item.rawId ? "Action" : "Prep"}</span><h3>{item.title}</h3><p className="px-row__sub">{item.detail}</p></button>) : <p className="px-hero__sub">No work waiting here.</p>}</div></div></section>
+      <section className="px-card" style={{ marginTop: 14 }}><div className="px-card__body"><p className="wh-kicker">AI prepared queue · review before sending</p><div className="wh-queue">{visible.length ? visible.map((item) => <button key={item.id} type="button" className={`wh-task ${current?.id === item.id ? "is-active" : ""}`} onClick={() => setSelected(item)}><span className="wh-pill">{item.rawId ? "Action" : "Prep"}</span><h3>{item.title}</h3><p className="px-row__sub">{item.detail}</p></button>) : <p className="px-hero__sub">No work waiting here.</p>}</div></div></section>
 
       <section className="wh-ai-bottom-grid">
         <article className="px-card"><div className="px-card__body"><p className="wh-kicker">Recently completed by AI</p>{done.length ? done.map((a) => <div key={idOf(a)} className="wh-ai-log"><strong>{a.title || a.type || "AI action"}</strong><span>{a.status}</span></div>) : <p className="px-row__sub">Nothing completed yet.</p>}</div></article>
