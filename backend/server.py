@@ -1859,12 +1859,13 @@ async def execute_ai_operator_action(action: dict, current_user: dict):
         job_id = str(payload.get("job_id") or action.get("job_id") or action.get("related_id") or action.get("related_entity_id") or "")
         job = await db.jobs.find_one({"business_id": business_id, "$or": [{"id": job_id}, {"_id": ObjectId(job_id)}] if ObjectId.is_valid(job_id) else [{"id": job_id}]})
         if not job: raise HTTPException(status_code=404, detail="Job not found")
-        subtotal=float(payload.get("subtotal") or job.get("subtotal") or job.get("price") or 0)
+        # CHURVOX_AI_OPERATOR_INVOICE_APPROVE_AMOUNT_FIX
+        subtotal=float(payload.get("subtotal") or payload.get("amount") or payload.get("total") or job.get("subtotal") or job.get("price") or job.get("job_price") or job.get("fixed_price") or job.get("total_price") or job.get("total") or job.get("amount") or 0)
         if subtotal<=0: raise HTTPException(status_code=400, detail="Invoice was not created because job has no price.")
         existing = await db.invoices.find_one({"business_id": business_id, "$or": [{"job_id": job_id},{"source_job_id":job_id},{"linked_job_id":job_id}]})
         if existing: result={"action":"duplicate_prevented_existing_invoice","invoice_id":str(existing.get("_id"))}; completed=True
         else:
-            gst_rate=float(payload.get("gst_rate") or 0.1); gst_amount=round(subtotal*gst_rate,2); total=round(subtotal+gst_amount,2)
+            gst_rate=float(payload.get("gst_rate") or 0.15); gst_amount=round(subtotal*gst_rate,2); total=round(subtotal+gst_amount,2)
             inv={"business_id":business_id,"job_id":job_id,"source_job_id":job_id,"linked_job_id":job_id,"client_id":str(payload.get("client_id") or job.get("client_id") or ""),"description":str(payload.get("description") or ""),"subtotal":subtotal,"gst_rate":gst_rate,"gst_amount":gst_amount,"total":total,"status":"draft","source":"ai_operator","created_at":now,"updated_at":now}
             ins=await db.invoices.insert_one(inv); iid=str(ins.inserted_id)
             await db.jobs.update_one({"_id":job["_id"]},{"$set":{"invoice_id":iid,"draft_invoice_id":iid,"invoice_created":True,"invoice_status":"draft","updated_at":now}})
@@ -2417,7 +2418,7 @@ async def ai_operator_actions_patch(action_id: str, payload: dict, current_user:
     if not ObjectId.is_valid(action_id):
         raise HTTPException(status_code=400, detail="Invalid action id")
     now = datetime.now(timezone.utc)
-    allowed_payload_fields = {"description", "subtotal", "gst", "gst_rate", "worker_id", "recommended_worker_id", "message", "notes"}
+    allowed_payload_fields = {"description", "subtotal", "amount", "total", "gst", "gst_rate", "job_id", "client_id", "worker_id", "recommended_worker_id", "message", "notes"}
     existing = await db.ai_operator_actions.find_one({"_id": ObjectId(action_id), "business_id": business_id})
     if not existing:
         raise HTTPException(status_code=404, detail="Action not found")
