@@ -1,11 +1,11 @@
 import React from "react";
 import SmartHubErrorBoundary from "../components/SmartHubErrorBoundary";
-import OperatorDeskV2 from "./OperatorDeskV2";
+import OperatorFloorDashboard from "./OperatorFloorDashboard";
 
 export default function DashboardPage() {
   return (
     <SmartHubErrorBoundary>
-      <OperatorDeskV2 />
+      <OperatorFloorDashboard />
     </SmartHubErrorBoundary>
   );
 }
