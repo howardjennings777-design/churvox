@@ -837,3 +837,245 @@
     min-height: auto !important;
   }
 }
+
+/* CHURVOX_CONTROL_SURFACE_100_CLARITY_20260524
+   Make the page answer: what do I do now?
+   Main NOW sheet is dominant, direct, and business-readable.
+*/
+
+.cs-top h1 {
+  max-width: 920px !important;
+}
+
+.cs-top p {
+  font-size: 0.98rem !important;
+}
+
+.cs-surface {
+  grid-template-columns: minmax(165px, 0.62fr) minmax(520px, 1.95fr) minmax(165px, 0.62fr) !important;
+}
+
+.cs-zone {
+  min-height: 132px !important;
+  padding: 18px 18px 16px !important;
+}
+
+.cs-zone span {
+  margin-bottom: 8px !important;
+}
+
+.cs-zone strong {
+  margin-bottom: 8px !important;
+}
+
+.cs-zone small {
+  display: inline-flex !important;
+  align-items: center !important;
+  width: fit-content !important;
+  border-radius: 999px !important;
+  background: rgba(134, 199, 232, 0.11) !important;
+  padding: 6px 9px !important;
+  color: rgba(242, 234, 220, 0.78) !important;
+  font-size: 0.72rem !important;
+  font-weight: 900 !important;
+}
+
+.cs-now {
+  min-height: 590px !important;
+}
+
+.cs-now-inner {
+  display: flex !important;
+  min-height: 590px !important;
+  flex-direction: column !important;
+  padding: clamp(26px, 3vw, 46px) !important;
+}
+
+.cs-now-head {
+  margin-bottom: 16px !important;
+}
+
+.cs-now-head .cs-kicker {
+  color: #a96a38 !important;
+  font-size: 0.76rem !important;
+}
+
+.cs-now-head h2 {
+  max-width: 900px !important;
+  font-size: clamp(3.25rem, 5.8vw, 6.6rem) !important;
+  line-height: 0.83 !important;
+  letter-spacing: -0.09em !important;
+}
+
+.cs-now-head > span {
+  background: #11151b !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,.18) !important;
+}
+
+.cs-directive {
+  margin: 0 0 14px !important;
+  border-left: 5px solid #a96a38 !important;
+  border-radius: 12px !important;
+  background: rgba(17, 21, 27, 0.08) !important;
+  padding: 14px 16px !important;
+  color: #11151b !important;
+  font-size: 1.05rem !important;
+  font-weight: 950 !important;
+  line-height: 1.32 !important;
+}
+
+.cs-detail {
+  max-width: 880px !important;
+  margin-top: 0 !important;
+  color: #403b35 !important;
+  font-size: 1.1rem !important;
+  font-weight: 760 !important;
+}
+
+.cs-facts {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  margin: 24px 0 !important;
+}
+
+.cs-facts div {
+  min-height: 78px !important;
+  padding: 14px !important;
+}
+
+.cs-facts span {
+  color: #7a6047 !important;
+}
+
+.cs-facts strong {
+  color: #11151b !important;
+  font-size: 0.96rem !important;
+  line-height: 1.25 !important;
+  white-space: normal !important;
+}
+
+.cs-actions {
+  margin-top: auto !important;
+  gap: 12px !important;
+}
+
+.cs-actions button {
+  min-height: 54px !important;
+  border-radius: 14px !important;
+  padding: 15px 20px !important;
+  font-size: 0.98rem !important;
+}
+
+.cs-actions button.bronze {
+  flex: 1 1 280px !important;
+  min-height: 62px !important;
+  font-size: 1.06rem !important;
+  box-shadow: 0 18px 40px rgba(169,106,56,.28) !important;
+}
+
+.cs-actions button:not(.bronze) {
+  flex: 0 1 150px !important;
+  border-color: rgba(17,21,27,.16) !important;
+  background: rgba(17,21,27,.07) !important;
+  color: #11151b !important;
+}
+
+.cs-evidence {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 9px !important;
+  margin-top: 22px !important;
+}
+
+.cs-evidence .cs-kicker {
+  grid-column: 1 / -1 !important;
+  margin-bottom: 0 !important;
+  color: #86c7e8 !important;
+}
+
+.cs-evidence span {
+  min-height: 44px !important;
+  border-radius: 10px !important;
+  background: rgba(255, 250, 240, .7) !important;
+  color: #332f2a !important;
+}
+
+.cs-stream {
+  opacity: 0.88 !important;
+}
+
+.cs-stream:hover {
+  opacity: 1 !important;
+}
+
+.cs-stream-head h3 {
+  font-size: clamp(1.55rem, 2.5vw, 2.35rem) !important;
+}
+
+.cs-stack-row {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)) !important;
+}
+
+.cs-stack-row button {
+  min-height: 112px !important;
+  opacity: 0.88 !important;
+}
+
+.cs-stack-row button:hover {
+  opacity: 1 !important;
+}
+
+/* calmer bottom dock so it does not compete with NOW */
+.cv-floating-dock {
+  opacity: 0.92 !important;
+}
+
+.cv-floating-dock:hover {
+  opacity: 1 !important;
+}
+
+.cv-floating-dock__inner {
+  padding: 6px !important;
+}
+
+.cv-float-link {
+  min-height: 50px !important;
+}
+
+.cv-float-label {
+  font-size: 0.62rem !important;
+}
+
+@media (max-width: 1100px) {
+  .cs-surface {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cs-now,
+  .cs-now-inner {
+    min-height: auto !important;
+  }
+
+  .cs-evidence,
+  .cs-facts {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cs-actions button,
+  .cs-actions button.bronze {
+    flex: 1 1 100% !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .cs-now-inner {
+    padding: 22px !important;
+  }
+
+  .cs-now-head h2 {
+    font-size: 2.65rem !important;
+  }
+
+  .cs-directive {
+    font-size: 0.95rem !important;
+  }
+}

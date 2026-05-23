@@ -205,6 +205,118 @@ function surfaceEvidence(item) {
   return lines.slice(0, 7);
 }
 
+
+function typeOfItem(item) {
+  return low(item?.type || item?.raw?.type || item?.raw?.action_type || "");
+}
+
+function displayTitle(item) {
+  if (!item) return "Nothing waiting here.";
+
+  const p = item.payload || {};
+  const type = typeOfItem(item);
+  const client = first(p.client_name, p.customer_name, p.client, item.client);
+  const job = first(p.job_title, p.job_name, p.title, item.raw?.job_name);
+
+  if (type.includes("invoice_reminder")) {
+    return `Send payment reminder${client ? ` to ${client}` : ""}`;
+  }
+
+  if (["create_invoice_draft", "invoice_draft"].includes(type)) {
+    return `Create invoice draft${client ? ` for ${client}` : ""}`;
+  }
+
+  if (type.includes("assign")) {
+    return `Assign crew${job ? ` for ${job}` : ""}`;
+  }
+
+  if (type.includes("quote")) {
+    return `Follow up quote${client ? ` for ${client}` : ""}`;
+  }
+
+  if (type.includes("customer")) {
+    return `Send customer update${client ? ` to ${client}` : ""}`;
+  }
+
+  return item.title || "Churvox has the next move ready";
+}
+
+function displayDetail(item) {
+  if (!item) return "";
+
+  const p = item.payload || {};
+  const type = typeOfItem(item);
+  const client = first(p.client_name, p.customer_name, p.client, item.client);
+  const amount = first(p.amount_due, p.balance_due, p.amount, p.total, item.amount);
+  const days = first(p.days_overdue, p.overdue_days, p.invoice_age_days);
+  const invoice = first(p.invoice_number, p.invoice_ref, p.invoice_id);
+  const worker = first(p.worker_name, p.recommended_worker_name, p.assigned_worker_name, item.worker);
+
+  if (type.includes("invoice_reminder")) {
+    const bits = [];
+    if (invoice) bits.push(`Invoice ${invoice}`);
+    if (days) bits.push(`is ${days} days overdue`);
+    if (amount) bits.push(`amount due ${nzMoney(amount)}`);
+    if (client) bits.push(`client ${client}`);
+    return `${bits.length ? bits.join(". ") + ". " : ""}Churvox has drafted the reminder. Nothing sends until you approve.`;
+  }
+
+  if (["create_invoice_draft", "invoice_draft"].includes(type)) {
+    const bits = [];
+    if (client) bits.push(`Client: ${client}`);
+    if (amount) bits.push(`Amount: ${nzMoney(amount)}`);
+    if (p.job_id) bits.push("linked to a completed job");
+    return `${bits.length ? bits.join(". ") + ". " : ""}Churvox can create the draft invoice, but it will not be sent without approval.`;
+  }
+
+  if (type.includes("assign")) {
+    const bits = [];
+    if (worker) bits.push(`Suggested crew: ${worker}`);
+    if (p.job_id) bits.push("linked to a real job");
+    return `${bits.length ? bits.join(". ") + ". " : ""}Approve to assign the work, or skip if you want to handle it later.`;
+  }
+
+  return item.detail || "Churvox prepared this move so you can approve, edit, or skip it.";
+}
+
+function primaryActionLabel(item) {
+  const type = typeOfItem(item);
+
+  if (type.includes("invoice_reminder")) return "Approve & send reminder";
+  if (["create_invoice_draft", "invoice_draft"].includes(type)) return "Approve draft invoice";
+  if (type.includes("assign")) return "Approve assignment";
+  if (type.includes("quote")) return "Approve follow-up";
+  if (type.includes("customer")) return "Approve update";
+
+  return "Approve & run";
+}
+
+function outcomeLine(item) {
+  const type = typeOfItem(item);
+
+  if (type.includes("invoice_reminder")) return "Reminder sends after approval";
+  if (["create_invoice_draft", "invoice_draft"].includes(type)) return "Draft invoice is created";
+  if (type.includes("assign")) return "Crew assignment is saved";
+  if (type.includes("quote")) return "Follow-up is prepared";
+  if (type.includes("customer")) return "Customer update is prepared";
+
+  return item?.rawId ? "Action runs after approval" : "Open inside this surface";
+}
+
+function recordLine(item) {
+  if (!item) return "ready";
+  const p = item.payload || {};
+  return first(
+    p.client_name,
+    p.customer_name,
+    item.client,
+    p.invoice_number ? `Invoice ${p.invoice_number}` : "",
+    p.job_id ? `Job ${p.job_id}` : "",
+    item.worker,
+    "ready"
+  );
+}
+
 export default function ControlSurfaceDashboard() {
   const { get, post, patch } = useApi();
 
@@ -416,11 +528,11 @@ export default function ControlSurfaceDashboard() {
   };
 
   const zoneData = [
-    { key: "money", label: "Money", value: nzMoney(urgent.open_invoices_total || 0), detail: `${moneyItems.length} items waiting`, className: "cs-zone-money" },
-    { key: "jobs", label: "Jobs", value: urgent.unassigned_jobs ?? jobsItems.length, detail: "need attention", className: "cs-zone-jobs" },
-    { key: "crew", label: "Crew", value: crewItems.length, detail: "active decisions", className: "cs-zone-crew" },
-    { key: "clients", label: "Clients", value: clientItems.length, detail: "records on surface", className: "cs-zone-clients" },
-    { key: "quotes", label: "Quotes", value: quoteItems.length, detail: "ready to review", className: "cs-zone-quotes" },
+    { key: "money", label: "Money", value: nzMoney(urgent.open_invoices_total || 0), detail: "Review invoices", className: "cs-zone-money" },
+    { key: "jobs", label: "Jobs", value: urgent.unassigned_jobs ?? jobsItems.length, detail: "Fix job issues", className: "cs-zone-jobs" },
+    { key: "crew", label: "Crew", value: crewItems.length, detail: "Assign / track crew", className: "cs-zone-crew" },
+    { key: "clients", label: "Clients", value: clientItems.length, detail: "Open client work", className: "cs-zone-clients" },
+    { key: "quotes", label: "Quotes", value: quoteItems.length, detail: "Review quotes", className: "cs-zone-quotes" },
   ];
 
   return (
@@ -428,19 +540,19 @@ export default function ControlSurfaceDashboard() {
       <section className="cs-top">
         <div>
           <p className="cs-kicker">Churvox Operations Table</p>
-          <h1>Work is sorted. Start with NOW.</h1>
-          <p>Review the next decision, or open a live business area without leaving this page.</p>
+          <h1>Start here. Churvox has your next move ready.</h1>
+          <p>Review the next move, approve it, edit it, or skip it. Then Churvox brings the next one.</p>
         </div>
 
         <div className="cs-signal">
           <span />
-          <strong>AI status</strong>
+          <strong>AI ready</strong>
           <small>{nowItems.length} moves ready · {moneyItems.length} money items</small>
         </div>
 
         <div className="cs-top-actions">
           <button onClick={() => scan(false)} disabled={busy === "scan"}>
-            {busy === "scan" ? "Scanning…" : "Run check"}
+            {busy === "scan" ? "Scanning…" : "Run AI check"}
           </button>
           <button className="bronze" onClick={showNow}>NOW</button>
         </div>
@@ -470,18 +582,19 @@ export default function ControlSurfaceDashboard() {
               <>
                 <div className="cs-now-head">
                   <div>
-                    <p className="cs-kicker">{surface === "now" ? "NOW" : surface}</p>
-                    <h2>{current.title}</h2>
+                    <p className="cs-kicker">{surface === "now" ? "DO THIS NOW" : surface}</p>
+                    <h2>{displayTitle(current)}</h2>
                   </div>
                   <span>{current.source}</span>
                 </div>
 
-                <p className="cs-detail">{current.detail}</p>
+                <p className="cs-directive">Review this move. Approve it, edit it, or skip it. Churvox will bring the next one.</p>
+                <p className="cs-detail">{displayDetail(current)}</p>
 
                 <div className="cs-facts">
-                  <div><span>Status</span><strong>{current.status || "ready"}</strong></div>
-                  <div><span>Type</span><strong>{current.label || current.type}</strong></div>
-                  <div><span>Context</span><strong>{current.payload?.job_id || current.client || current.worker || "ready"}</strong></div>
+                  <div><span>What happens</span><strong>{outcomeLine(current)}</strong></div>
+                  <div><span>Record</span><strong>{recordLine(current)}</strong></div>
+                  <div><span>Risk</span><strong>{current.risk || "low"}</strong></div>
                 </div>
 
                 {editOpen ? (
@@ -495,7 +608,7 @@ export default function ControlSurfaceDashboard() {
                   {current.rawId ? (
                     <>
                       <button className="bronze" onClick={() => approveCurrent(current)} disabled={busy === current.rawId}>
-                        {busy === current.rawId ? "Running…" : "Approve & run"}
+                        {busy === current.rawId ? "Running…" : primaryActionLabel(current)}
                       </button>
                       <button onClick={() => setEditOpen((value) => !value)}>Edit first</button>
                       <button className="ghost" onClick={() => skipCurrent(current)} disabled={busy === current.rawId}>Skip</button>
@@ -517,7 +630,7 @@ export default function ControlSurfaceDashboard() {
               <div className="cs-empty">
                 <h2>Nothing waiting here.</h2>
                 <p>Run a scan or tap another zone.</p>
-                <button className="bronze" onClick={() => scan(false)}>Run check</button>
+                <button className="bronze" onClick={() => scan(false)}>Run AI check</button>
               </div>
             )}
           </div>
@@ -527,10 +640,10 @@ export default function ControlSurfaceDashboard() {
       <section className="cs-stream">
         <div className="cs-stream-head">
           <div>
-            <p className="cs-kicker">Prepared work</p>
-            <h3>Grouped, prioritised, ready for review.</h3>
+            <p className="cs-kicker">Prepared work waiting</p>
+            <h3>Grouped so you do not see the same task repeated 40 times.</h3>
           </div>
-          <button className="bronze" onClick={showNow}>Review NOW</button>
+          <button className="bronze" onClick={showNow}>Review next</button>
         </div>
 
         {stacks.length ? (
