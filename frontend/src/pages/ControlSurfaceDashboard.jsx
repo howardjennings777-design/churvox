@@ -427,20 +427,20 @@ export default function ControlSurfaceDashboard() {
     <main className="cs" data-version="CHURVOX_CONTROL_SURFACE_20260524">
       <section className="cs-top">
         <div>
-          <p className="cs-kicker">Churvox Control Surface</p>
-          <h1>AI is sorting the business.</h1>
-          <p>Tap a zone. Churvox pulls the work into NOW without making you leave the page.</p>
+          <p className="cs-kicker">Churvox Operations Table</p>
+          <h1>Work is sorted. Start with NOW.</h1>
+          <p>Review the next decision, or open a live business area without leaving this page.</p>
         </div>
 
         <div className="cs-signal">
           <span />
-          <strong>AI signal</strong>
+          <strong>AI status</strong>
           <small>{nowItems.length} moves ready · {moneyItems.length} money items</small>
         </div>
 
         <div className="cs-top-actions">
           <button onClick={() => scan(false)} disabled={busy === "scan"}>
-            {busy === "scan" ? "Scanning…" : "Run scan"}
+            {busy === "scan" ? "Scanning…" : "Run check"}
           </button>
           <button className="bronze" onClick={showNow}>NOW</button>
         </div>
@@ -517,7 +517,7 @@ export default function ControlSurfaceDashboard() {
               <div className="cs-empty">
                 <h2>Nothing waiting here.</h2>
                 <p>Run a scan or tap another zone.</p>
-                <button className="bronze" onClick={() => scan(false)}>Run scan</button>
+                <button className="bronze" onClick={() => scan(false)}>Run check</button>
               </div>
             )}
           </div>
@@ -527,10 +527,10 @@ export default function ControlSurfaceDashboard() {
       <section className="cs-stream">
         <div className="cs-stream-head">
           <div>
-            <p className="cs-kicker">Work stream</p>
-            <h3>Grouped work. No repeated cards.</h3>
+            <p className="cs-kicker">Prepared work</p>
+            <h3>Grouped, prioritised, ready for review.</h3>
           </div>
-          <button className="bronze" onClick={showNow}>Clear NOW</button>
+          <button className="bronze" onClick={showNow}>Review NOW</button>
         </div>
 
         {stacks.length ? (
@@ -553,7 +553,7 @@ export default function ControlSurfaceDashboard() {
           value={ask}
           onChange={(event) => setAsk(event.target.value)}
           onKeyDown={(event) => { if (event.key === "Enter") askChurvox(); }}
-          placeholder="Ask Churvox anything… show money waiting, jobs stuck, unassigned crew, client follow-ups"
+          placeholder="Ask Churvox… show money waiting, jobs stuck, unassigned crew, client follow-ups"
         />
         <button onClick={askChurvox}>Ask</button>
       </section>

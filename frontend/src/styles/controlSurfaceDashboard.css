@@ -547,3 +547,293 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* CHURVOX_SERIOUS_CONTROL_SURFACE_20260524
+   Tighten Control Surface into a serious operations table:
+   - no playful orbit
+   - no green dock
+   - structured zones
+   - matte black / steel / muted blue / bronze
+*/
+
+:root {
+  --cs-black: #05070a;
+  --cs-glass: #0a0d12;
+  --cs-glass2: #111722;
+  --cs-blue: #86c7e8;
+  --cs-blue2: #c6eaff;
+  --cs-bronze: #a96a38;
+  --cs-bronze2: #d19a64;
+  --cs-ember: #c66b3d;
+  --cs-ivory: #f2eadc;
+  --cs-paper: #f6efe3;
+  --cs-ink: #11151b;
+  --cs-muted: #615d58;
+  --cs-line: rgba(242, 234, 220, 0.12);
+  --cs-paper-line: rgba(41, 32, 23, 0.2);
+}
+
+.cs {
+  background:
+    linear-gradient(180deg, rgba(134, 199, 232, 0.06), transparent 320px),
+    radial-gradient(circle at 86% 14%, rgba(169, 106, 56, 0.16), transparent 34%),
+    linear-gradient(135deg, #05070a 0%, #0b0f16 46%, #16100c 100%) !important;
+}
+
+.cs-top {
+  border-radius: 18px !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.025)) !important;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.34) !important;
+}
+
+.cs-top h1 {
+  max-width: 760px !important;
+  font-size: clamp(2rem, 3.8vw, 4.2rem) !important;
+  line-height: .9 !important;
+  color: #f2eadc !important;
+}
+
+.cs-top p {
+  max-width: 720px !important;
+  color: rgba(242, 234, 220, .68) !important;
+}
+
+.cs-kicker {
+  color: #86c7e8 !important;
+  letter-spacing: .18em !important;
+}
+
+.cs-signal {
+  border-radius: 14px !important;
+  background: rgba(0, 0, 0, .28) !important;
+}
+
+.cs-signal span {
+  background: #86c7e8 !important;
+  box-shadow: 0 0 0 0 rgba(134,199,232,.48) !important;
+}
+
+.cs button {
+  border-radius: 12px !important;
+  background: rgba(242, 234, 220, .08) !important;
+  color: #f2eadc !important;
+}
+
+.cs button.bronze {
+  background: linear-gradient(135deg, #a96a38, #d19a64) !important;
+  color: #130c07 !important;
+  box-shadow: 0 12px 30px rgba(169,106,56,.24) !important;
+}
+
+.cs-surface {
+  display: grid !important;
+  grid-template-columns: minmax(170px, .75fr) minmax(420px, 1.7fr) minmax(170px, .75fr) !important;
+  grid-template-areas:
+    ". money ."
+    "jobs now crew"
+    "clients now quotes" !important;
+  gap: 14px !important;
+  align-items: stretch !important;
+  min-height: auto !important;
+  padding: 18px !important;
+  border-radius: 22px !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.018)),
+    rgba(0,0,0,.18) !important;
+}
+
+.cs-orbit {
+  display: none !important;
+}
+
+.cs-zone,
+.cs-now {
+  position: relative !important;
+  inset: auto !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+}
+
+.cs-zone {
+  min-width: 0 !important;
+  min-height: 112px !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(242, 234, 220, .13) !important;
+  background:
+    linear-gradient(180deg, rgba(242,234,220,.075), rgba(242,234,220,.028)),
+    rgba(0,0,0,.22) !important;
+  box-shadow: none !important;
+}
+
+.cs-zone:hover {
+  border-color: rgba(134,199,232,.42) !important;
+}
+
+.cs-zone.active {
+  border-color: rgba(209,154,100,.72) !important;
+  box-shadow: inset 0 0 0 1px rgba(209,154,100,.22), 0 18px 46px rgba(0,0,0,.2) !important;
+}
+
+.cs-zone span {
+  color: #86c7e8 !important;
+  font-size: .68rem !important;
+}
+
+.cs-zone strong {
+  color: #f2eadc !important;
+  font-size: clamp(1.7rem, 2.6vw, 2.5rem) !important;
+}
+
+.cs-zone small {
+  color: rgba(242,234,220,.58) !important;
+}
+
+.cs-zone-money { grid-area: money !important; }
+.cs-zone-jobs { grid-area: jobs !important; }
+.cs-zone-crew { grid-area: crew !important; }
+.cs-zone-clients { grid-area: clients !important; }
+.cs-zone-quotes { grid-area: quotes !important; }
+
+.cs-now {
+  grid-area: now !important;
+  width: auto !important;
+  min-height: 520px !important;
+  border-radius: 18px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.cs-now::before,
+.cs-now::after {
+  display: none !important;
+}
+
+.cs-now-inner {
+  min-height: 100% !important;
+  border-radius: 18px !important;
+  border-color: rgba(41, 32, 23, .24) !important;
+  background:
+    linear-gradient(180deg, rgba(250,246,238,.98), rgba(236,224,206,.96)) !important;
+  box-shadow: 0 24px 70px rgba(0,0,0,.28) !important;
+}
+
+.cs-now-head h2,
+.cs-empty h2 {
+  font-size: clamp(2.5rem, 4.4vw, 5rem) !important;
+  color: #11151b !important;
+}
+
+.cs-now-head > span {
+  border-radius: 8px !important;
+  background: #11151b !important;
+  color: #f6efe3 !important;
+}
+
+.cs-detail {
+  color: #615d58 !important;
+}
+
+.cs-facts div,
+.cs-evidence span,
+.cs-editor textarea {
+  border-color: rgba(41,32,23,.18) !important;
+  border-radius: 10px !important;
+  background: rgba(255, 250, 240, .68) !important;
+}
+
+.cs-evidence {
+  margin-top: 18px !important;
+  border-top: 1px solid rgba(41,32,23,.14) !important;
+  padding-top: 14px !important;
+}
+
+.cs-evidence span {
+  font-size: .84rem !important;
+  color: #3e3a35 !important;
+}
+
+.cs-stream {
+  border-radius: 18px !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.025)) !important;
+}
+
+.cs-stream h3 {
+  color: #f2eadc !important;
+}
+
+.cs-stack-row button {
+  min-height: 128px !important;
+  border-radius: 14px !important;
+  background:
+    linear-gradient(180deg, rgba(242,234,220,.075), rgba(242,234,220,.028)),
+    rgba(0,0,0,.18) !important;
+}
+
+.cs-stack-row button > span {
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, #86c7e8, #c6eaff) !important;
+}
+
+.cs-ask {
+  border-radius: 16px !important;
+  background: rgba(255,255,255,.045) !important;
+}
+
+.cs-ask input {
+  border-radius: 12px !important;
+}
+
+/* Make the global floating bottom nav match the serious no-green theme */
+.cv-floating-dock__inner {
+  border-radius: 18px !important;
+  border-color: rgba(242,234,220,.12) !important;
+  background:
+    linear-gradient(180deg, rgba(17,23,34,.96), rgba(7,9,13,.96)) !important;
+  box-shadow: 0 18px 60px rgba(0,0,0,.36) !important;
+}
+
+.cv-float-icon {
+  color: #86c7e8 !important;
+}
+
+.cv-float-link {
+  border-radius: 12px !important;
+  color: rgba(242,234,220,.72) !important;
+}
+
+.cv-float-link:hover,
+.cv-float-link.is-active {
+  background: rgba(169,106,56,.22) !important;
+  color: #f2eadc !important;
+}
+
+.cv-float-link.is-active::after {
+  background: #d19a64 !important;
+}
+
+.cv-float-more {
+  border-radius: 18px !important;
+  background: rgba(246,239,227,.96) !important;
+}
+
+@media (max-width: 1100px) {
+  .cs-surface {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "now"
+      "money"
+      "jobs"
+      "crew"
+      "clients"
+      "quotes" !important;
+  }
+
+  .cs-now {
+    min-height: auto !important;
+  }
+}
