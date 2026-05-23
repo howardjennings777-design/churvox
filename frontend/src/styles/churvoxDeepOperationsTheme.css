@@ -1,0 +1,417 @@
+/* CHURVOX_DEEP_OPERATIONS_THEME_20260524
+   Makes non-dashboard pages feel like the same serious Churvox world:
+   - black steel table background
+   - subtle blueprint grid / signal lines
+   - ivory work sheets
+   - bronze action rails
+   - stronger page headers
+   - serious forms/tables/modals
+*/
+
+:root {
+  --deep-black: #05070a;
+  --deep-steel: #0a1017;
+  --deep-steel-2: #111a25;
+  --deep-blue: #86c7e8;
+  --deep-blue-soft: rgba(134, 199, 232, 0.12);
+  --deep-bronze: #a96a38;
+  --deep-bronze-2: #d19a64;
+  --deep-ivory: #f2eadc;
+  --deep-paper: #f7efe2;
+  --deep-paper-2: #e8d7bc;
+  --deep-ink: #11151b;
+  --deep-muted: #625c55;
+  --deep-line: rgba(242,234,220,.13);
+  --deep-paper-line: rgba(41,32,23,.22);
+}
+
+/* App-wide black steel table */
+body {
+  background:
+    linear-gradient(rgba(134,199,232,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(134,199,232,.025) 1px, transparent 1px),
+    radial-gradient(circle at 12% -8%, rgba(134,199,232,.12), transparent 28%),
+    radial-gradient(circle at 88% 12%, rgba(169,106,56,.16), transparent 34%),
+    linear-gradient(135deg, #05070a 0%, #0a1017 48%, #17100b 100%) !important;
+  background-size: auto, 42px 42px, 42px 42px, auto, auto, auto !important;
+}
+
+/* Make logged-in pages feel like a workbench, not blank pages */
+main:not(.cs) {
+  position: relative;
+  isolation: isolate;
+  padding-bottom: 116px;
+}
+
+main:not(.cs)::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 70% 28%, rgba(134,199,232,.08), transparent 26%),
+    linear-gradient(120deg, transparent 0 44%, rgba(242,234,220,.045) 44% 45%, transparent 45% 100%);
+}
+
+main:not(.cs)::after {
+  content: "";
+  position: fixed;
+  left: 22px;
+  right: 22px;
+  top: 88px;
+  height: 1px;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(134,199,232,.35), rgba(169,106,56,.35), transparent);
+}
+
+/* First-level page wrapper becomes a control tray */
+main:not(.cs) > div:first-child {
+  border: 1px solid rgba(242,234,220,.11) !important;
+  border-radius: 28px !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.018)),
+    rgba(0,0,0,.12) !important;
+  box-shadow: 0 28px 100px rgba(0,0,0,.28) !important;
+  padding: clamp(16px, 2.2vw, 28px) !important;
+}
+
+/* Page top headings become Churvox page plates */
+main:not(.cs) h1:first-child,
+main:not(.cs) h1 {
+  position: relative;
+  max-width: 980px;
+  margin-bottom: 18px !important;
+  color: var(--deep-ivory) !important;
+  font-size: clamp(2.5rem, 5vw, 5.8rem) !important;
+  line-height: .84 !important;
+  letter-spacing: -.085em !important;
+}
+
+main:not(.cs) h1:first-child::before {
+  content: "CHURVOX / LIVE WORKSPACE";
+  display: block;
+  margin-bottom: 10px;
+  color: var(--deep-blue);
+  font-size: .72rem;
+  font-weight: 950;
+  letter-spacing: .18em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+main:not(.cs) h1:first-child::after {
+  content: "";
+  display: block;
+  width: min(520px, 70vw);
+  height: 3px;
+  margin-top: 16px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--deep-bronze), var(--deep-blue), transparent);
+}
+
+/* Subtitles under page headings */
+main:not(.cs) h1 + p,
+main:not(.cs) h2 + p {
+  color: rgba(242,234,220,.68) !important;
+}
+
+/* Ivory work sheets: make them less flat */
+main:not(.cs) .bg-white,
+main:not(.cs) .bg-gray-50,
+main:not(.cs) .bg-slate-50,
+main:not(.cs) .shadow,
+main:not(.cs) .shadow-sm,
+main:not(.cs) .shadow-md,
+main:not(.cs) .shadow-lg,
+main:not(.cs) [class*="Card"],
+main:not(.cs) [class*="card"] {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--deep-paper-line) !important;
+  border-radius: 20px !important;
+  background:
+    linear-gradient(180deg, rgba(255,253,247,.98), rgba(234,220,196,.96)),
+    repeating-linear-gradient(0deg, rgba(17,21,27,.025), rgba(17,21,27,.025) 1px, transparent 1px, transparent 30px) !important;
+  color: var(--deep-ink) !important;
+  box-shadow: 0 22px 80px rgba(0,0,0,.26) !important;
+}
+
+/* Bronze left rail on key work sheets */
+main:not(.cs) .bg-white::before,
+main:not(.cs) .shadow::before,
+main:not(.cs) .shadow-sm::before,
+main:not(.cs) .shadow-md::before,
+main:not(.cs) .shadow-lg::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--deep-bronze), rgba(134,199,232,.7));
+  opacity: .72;
+}
+
+/* Give cards a serious stamped label when possible */
+main:not(.cs) .bg-white::after,
+main:not(.cs) .shadow::after,
+main:not(.cs) .shadow-sm::after,
+main:not(.cs) .shadow-md::after {
+  content: "";
+  position: absolute;
+  right: 16px;
+  top: 14px;
+  width: 38px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(134,199,232,.16);
+  opacity: .65;
+}
+
+/* Cards text */
+main:not(.cs) .bg-white *,
+main:not(.cs) .bg-gray-50 *,
+main:not(.cs) .bg-slate-50 *,
+main:not(.cs) [class*="Card"] *,
+main:not(.cs) [class*="card"] * {
+  color: inherit;
+}
+
+main:not(.cs) .bg-white h2,
+main:not(.cs) .bg-white h3,
+main:not(.cs) .bg-gray-50 h2,
+main:not(.cs) .bg-gray-50 h3,
+main:not(.cs) [class*="Card"] h2,
+main:not(.cs) [class*="Card"] h3 {
+  color: var(--deep-ink) !important;
+  letter-spacing: -.055em;
+}
+
+/* Make list/grid cards look like command tiles */
+main:not(.cs) ul li,
+main:not(.cs) ol li {
+  border-color: rgba(41,32,23,.12);
+}
+
+/* Tables become operations ledgers */
+main:not(.cs) table {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--deep-paper-line) !important;
+  border-radius: 18px !important;
+  background: rgba(255,253,247,.92) !important;
+}
+
+main:not(.cs) thead {
+  background:
+    linear-gradient(90deg, rgba(169,106,56,.16), rgba(134,199,232,.12)) !important;
+}
+
+main:not(.cs) th {
+  color: rgba(17,21,27,.78) !important;
+  font-size: .7rem !important;
+  font-weight: 950 !important;
+  letter-spacing: .1em !important;
+  text-transform: uppercase !important;
+}
+
+main:not(.cs) td {
+  color: var(--deep-ink) !important;
+  border-color: rgba(41,32,23,.1) !important;
+}
+
+main:not(.cs) tbody tr:hover {
+  background: rgba(134,199,232,.08) !important;
+}
+
+/* Forms become proper work orders */
+main:not(.cs) form {
+  position: relative;
+}
+
+main:not(.cs) input,
+main:not(.cs) select,
+main:not(.cs) textarea {
+  border: 1px solid rgba(41,32,23,.2) !important;
+  border-radius: 12px !important;
+  background:
+    linear-gradient(180deg, rgba(255,253,247,.98), rgba(246,239,227,.94)) !important;
+  color: var(--deep-ink) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.55) !important;
+}
+
+main:not(.cs) input:focus,
+main:not(.cs) select:focus,
+main:not(.cs) textarea:focus {
+  border-color: rgba(134,199,232,.75) !important;
+  box-shadow: 0 0 0 3px rgba(134,199,232,.18) !important;
+  outline: none !important;
+}
+
+main:not(.cs) label {
+  color: inherit;
+  font-weight: 820;
+}
+
+/* Strong bronze primary actions */
+main:not(.cs) button[class*="bg-blue"],
+main:not(.cs) button[class*="bg-indigo"],
+main:not(.cs) button[class*="bg-green"],
+main:not(.cs) button[class*="bg-emerald"],
+main:not(.cs) button[class*="bg-primary"],
+main:not(.cs) a[class*="bg-blue"],
+main:not(.cs) a[class*="bg-indigo"],
+main:not(.cs) a[class*="bg-green"],
+main:not(.cs) a[class*="bg-emerald"],
+main:not(.cs) a[class*="bg-primary"],
+main:not(.cs) .bg-blue-500,
+main:not(.cs) .bg-blue-600,
+main:not(.cs) .bg-blue-700,
+main:not(.cs) .bg-indigo-500,
+main:not(.cs) .bg-indigo-600,
+main:not(.cs) .bg-green-500,
+main:not(.cs) .bg-green-600,
+main:not(.cs) .bg-emerald-500,
+main:not(.cs) .bg-emerald-600 {
+  border: 0 !important;
+  border-radius: 12px !important;
+  background:
+    linear-gradient(135deg, var(--deep-bronze), var(--deep-bronze-2)) !important;
+  color: #130c07 !important;
+  box-shadow: 0 14px 34px rgba(169,106,56,.26) !important;
+}
+
+/* Secondary buttons as steel */
+main:not(.cs) button[class*="border"],
+main:not(.cs) a[class*="border"] {
+  border-color: rgba(242,234,220,.18) !important;
+  border-radius: 12px !important;
+}
+
+/* Status pills more serious */
+main:not(.cs) .rounded-full {
+  border: 1px solid rgba(41,32,23,.15) !important;
+  font-weight: 850 !important;
+}
+
+main:not(.cs) .bg-blue-100,
+main:not(.cs) .bg-indigo-100 {
+  background: rgba(134,199,232,.18) !important;
+  color: #12384f !important;
+}
+
+main:not(.cs) .bg-green-100,
+main:not(.cs) .bg-emerald-100 {
+  background: rgba(134,199,232,.16) !important;
+  color: #12384f !important;
+}
+
+main:not(.cs) .bg-yellow-100,
+main:not(.cs) .bg-orange-100 {
+  background: rgba(169,106,56,.18) !important;
+  color: #5d3415 !important;
+}
+
+main:not(.cs) .bg-red-100 {
+  background: rgba(127,29,29,.16) !important;
+  color: #7f1d1d !important;
+}
+
+/* Dialogs: ivory command sheets */
+[role="dialog"] {
+  border: 1px solid var(--deep-paper-line) !important;
+  border-radius: 22px !important;
+  background:
+    linear-gradient(180deg, rgba(255,253,247,.99), rgba(234,220,196,.98)) !important;
+  color: var(--deep-ink) !important;
+  box-shadow: 0 34px 120px rgba(0,0,0,.45) !important;
+}
+
+/* Headers/sidebars: black steel */
+header,
+nav:not(.cv-floating-dock),
+aside {
+  border-color: var(--deep-line) !important;
+}
+
+header.bg-white,
+nav.bg-white,
+aside.bg-white,
+aside.bg-gray-50,
+aside.bg-slate-900,
+aside.bg-slate-800 {
+  background:
+    linear-gradient(180deg, rgba(17,24,35,.96), rgba(7,9,13,.96)) !important;
+  color: var(--deep-ivory) !important;
+  backdrop-filter: blur(18px);
+}
+
+header.bg-white *,
+nav.bg-white *,
+aside.bg-white *,
+aside.bg-gray-50 *,
+aside.bg-slate-900 *,
+aside.bg-slate-800 * {
+  color: inherit;
+}
+
+/* Add live signal strip to old sidebars */
+aside.bg-white::before,
+aside.bg-gray-50::before,
+aside.bg-slate-900::before,
+aside.bg-slate-800::before {
+  content: "";
+  display: block;
+  height: 3px;
+  margin: 0 0 14px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--deep-blue), var(--deep-bronze), transparent);
+}
+
+/* Floating bottom dock: make it part of the command table */
+.cv-floating-dock__inner {
+  border-radius: 18px !important;
+  border-color: rgba(242,234,220,.12) !important;
+  background:
+    linear-gradient(180deg, rgba(17,24,35,.96), rgba(7,9,13,.96)) !important;
+  box-shadow: 0 18px 60px rgba(0,0,0,.42) !important;
+}
+
+.cv-float-icon {
+  color: var(--deep-blue) !important;
+}
+
+.cv-float-link {
+  border-radius: 12px !important;
+  color: rgba(242,234,220,.72) !important;
+}
+
+.cv-float-link:hover,
+.cv-float-link.is-active {
+  background: rgba(169,106,56,.22) !important;
+  color: var(--deep-ivory) !important;
+}
+
+.cv-float-link.is-active::after {
+  background: var(--deep-bronze-2) !important;
+}
+
+/* Keep dashboard control surface safe */
+.cs .bg-white::before,
+.cs .bg-white::after,
+.cs .shadow::before,
+.cs .shadow::after {
+  display: none !important;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  main:not(.cs) > div:first-child {
+    border-radius: 20px !important;
+    padding: 14px !important;
+  }
+
+  main:not(.cs) h1 {
+    font-size: 2.65rem !important;
+  }
+}
