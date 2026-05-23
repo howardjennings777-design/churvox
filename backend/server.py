@@ -2385,6 +2385,11 @@ async def ai_operator_actions_dismiss_v2(action_id: str, current_user: dict = De
     row = await db.ai_operator_actions.find_one({"_id": ObjectId(action_id), "business_id": business_id})
     if not row:
         raise HTTPException(status_code=404, detail="Action not found")
+
+    # CHURVOX_AI_OPERATOR_APPROVE_PAYLOAD_ALIAS_FIX
+    payload = dict(item.get("payload") or item.get("draft_payload") or {})
+    if not payload.get("job_id") and item.get("related_entity_type") == "job":
+        payload["job_id"] = str(item.get("related_entity_id") or "")
     await db.ai_operator_actions.update_one({"_id": row["_id"]}, {"$set": {"status": "dismissed", "group": "completed", "dismissed_at": now, "updated_at": now}})
     await db.smart_hub_activity.insert_one({"business_id": business_id, "action_type": str(row.get("action_type") or "dismiss"), "title": "Action dismissed", "message": f"{row.get('title') or 'AI action'} dismissed", "related_type": str(row.get("related_type") or "action"), "related_id": str(row.get("related_id") or action_id), "status": "completed", "created_at": now, "updated_at": now})
     return {"success": True}
