@@ -1,11 +1,11 @@
 import React from "react";
 import SmartHubErrorBoundary from "../components/SmartHubErrorBoundary";
-import GuidedOperatorFloor from "./GuidedOperatorFloor";
+import CommandDeskWorkspace from "./CommandDeskWorkspace";
 
 export default function DashboardPage() {
   return (
     <SmartHubErrorBoundary>
-      <GuidedOperatorFloor />
+      <CommandDeskWorkspace />
     </SmartHubErrorBoundary>
   );
 }
