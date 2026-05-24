@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { ChurvoxLogo } from "../../components/ChurvoxLogo";
+import "./AuthPublicCommand.css";
 
 export default function SignupPage() {
   const navigate = useNavigate();
@@ -47,7 +48,7 @@ export default function SignupPage() {
 
       <section className="wh-auth-wrap is-signup">
         <aside className="wh-auth-panel">
-          <p className="wh-auth-kicker">Start the workhorse system</p>
+          <p className="wh-auth-kicker">Start the command system</p>
           <h2>Turn the business into prepared owner decisions.</h2>
           <p>
             Create the account, choose a plan, then Churvox starts organising jobs, workers, quotes, invoices and money follow-ups into approval-first admin.
@@ -56,7 +57,7 @@ export default function SignupPage() {
 
         <form className="wh-auth-form" onSubmit={handleSubmit}>
           <p className="wh-auth-kicker">Create account</p>
-          <h1 className="wh-auth-title">Build your Churvox desk.</h1>
+          <h1 className="wh-auth-title">Build your Churvox command floor.</h1>
 
           {error && <p className="wh-auth-error">{error}</p>}
 
