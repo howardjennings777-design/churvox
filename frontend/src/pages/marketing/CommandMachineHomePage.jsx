@@ -1,86 +1,66 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { features, lanes, OperatingMap, OperatorStage, PublicSiteShell, WorkConveyor } from "./PublicSiteShell";
+import { capabilityGroups, ExecutivePreview, PublicSiteShell, WorkflowLine } from "./PublicSiteShell";
 
 export default function CommandMachineHomePage() {
   return (
     <PublicSiteShell page="home">
-      <section className="nw-hero">
-        <div className="nw-hero__copy">
-          <p className="nw-kicker">AI office operator for trades</p>
-          <h1>The front desk your trade business never had.</h1>
-          <p className="nw-lead">
-            Churvox catches the work, prepares the admin and gives the owner clear decisions to approve. Jobs, quotes, invoices, crew updates and money follow-up finally move through one usable system.
+      <section className="sf-hero">
+        <div className="sf-hero-copy">
+          <p className="sf-kicker">AI operating desk for trade businesses</p>
+          <h1>Run the office with calm control.</h1>
+          <p className="sf-lead">
+            Churvox brings jobs, crew updates, quotes, invoices and follow-ups into one refined operating desk. The AI prepares the admin. The owner reviews and approves.
           </p>
 
-          <div className="nw-actions">
-            <Link to="/signup" className="nw-btn nw-btn--lime">Start free</Link>
-            <Link to="/features" className="nw-btn nw-btn--light">See how it works</Link>
+          <div className="sf-actions">
+            <Link to="/signup" className="sf-btn sf-btn--primary">Start free</Link>
+            <Link to="/features" className="sf-btn sf-btn--quiet">Explore Churvox</Link>
           </div>
 
-          <div className="nw-hero__proof">
-            <span>Built around owner approval</span>
-            <span>Worker app included</span>
-            <span>Operator plan is the main plan</span>
+          <div className="sf-hero-notes">
+            <span>Owner approval first</span>
+            <span>Built for trades</span>
+            <span>AI-prepared admin</span>
           </div>
         </div>
 
-        <OperatorStage />
+        <ExecutivePreview />
       </section>
 
-      <section className="nw-lanes">
-        {lanes.map((lane) => (
-          <article key={lane.title}>
-            <span>{lane.label}</span>
-            <h2>{lane.title}</h2>
-            <p>{lane.body}</p>
-          </article>
-        ))}
+      <section className="sf-statement">
+        <p>Churvox is not another busy dashboard. It is a control room for the daily work that keeps a trade business moving.</p>
       </section>
 
-      <section className="nw-section nw-section--map">
-        <div className="nw-section__copy">
-          <p className="nw-kicker">A real website layout, not a dashboard dump</p>
-          <h2>One operating map for the work, the crew and the money.</h2>
-          <p>
-            The public site now shows Churvox as a proper business operator: a front desk that knows what needs approving, what needs fixing, what is happening in the field and what needs billing.
-          </p>
+      <WorkflowLine />
+
+      <section className="sf-section">
+        <div className="sf-section-head">
+          <p className="sf-kicker">Core operating areas</p>
+          <h2>Everything connects back to less owner admin.</h2>
         </div>
 
-        <OperatingMap />
-      </section>
-
-      <WorkConveyor />
-
-      <section className="nw-section">
-        <div className="nw-section__top">
-          <p className="nw-kicker">What Churvox actually does</p>
-          <h2>It turns daily trade admin into prepared work.</h2>
-        </div>
-
-        <div className="nw-feature-wall">
-          {features.map((feature, index) => (
-            <article key={feature.title} className={index === 1 ? "is-wide" : ""}>
-              <p>{feature.kicker}</p>
-              <h3>{feature.title}</h3>
-              <span>{feature.body}</span>
+        <div className="sf-capability-grid">
+          {capabilityGroups.map(([title, label, body], index) => (
+            <article key={title} className={index === 1 ? "is-featured" : ""}>
+              <p>{label}</p>
+              <h3>{title}</h3>
+              <span>{body}</span>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="nw-close">
+      <section className="sf-final">
         <div>
-          <p className="nw-kicker">The simple promise</p>
+          <p className="sf-kicker">The Churvox promise</p>
           <h2>Work comes in. Churvox prepares. You approve.</h2>
-          <p>
-            That is the whole product story. No generic SaaS noise. No old blue boxes. Just a sharp, usable site that sells the real Churvox idea.
-          </p>
+          <p>A sophisticated operating layer for jobs, crew, admin and money — built for owners who want control without doing every task themselves.</p>
         </div>
 
-        <div className="nw-actions">
-          <Link to="/signup" className="nw-btn nw-btn--lime">Start free</Link>
-          <Link to="/pricing" className="nw-btn nw-btn--light">View pricing</Link>
+        <div className="sf-actions">
+          <Link to="/signup" className="sf-btn sf-btn--primary">Start free</Link>
+          <Link to="/pricing" className="sf-btn sf-btn--quiet">View pricing</Link>
         </div>
       </section>
     </PublicSiteShell>

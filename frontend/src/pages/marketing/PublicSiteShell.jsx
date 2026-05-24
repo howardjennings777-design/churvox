@@ -7,112 +7,74 @@ export const plans = [
   {
     name: "Start",
     price: "$39",
-    tag: "Owner-operator",
-    short: "Get the work out of your head.",
-    body: "Jobs, clients, quotes and invoices in one clean operating desk.",
-    includes: ["Jobs and clients", "Quotes and invoices", "Starter AI prep", "Core mobile access"],
+    label: "Owner-operator",
+    line: "A calm operating base for jobs, clients, quotes and invoices.",
+    includes: ["Jobs and clients", "Quotes and invoices", "Basic AI preparation", "Mobile access"],
   },
   {
     name: "Crew",
     price: "$89",
-    tag: "Small team",
-    short: "Bring the crew into the flow.",
-    body: "Assign work, collect field updates and keep proof connected to the job.",
+    label: "Small team",
+    line: "Bring field updates, proof and crew workflow into one organised system.",
     includes: ["Worker app", "Team workflow", "Proof photos", "More job capacity"],
   },
   {
     name: "Operator",
     price: "$149",
-    tag: "Main plan",
-    short: "Churvox prepares. You approve.",
-    body: "AI Operator Actions turn daily admin into prepared decisions.",
+    label: "Recommended",
+    line: "Churvox prepares the daily admin. The owner reviews and approves.",
     includes: ["AI Operator Actions", "Approval queue", "Automation workflows", "MYOB add-on +$39"],
     featured: true,
   },
   {
     name: "Command",
     price: "$299",
-    tag: "Full control",
-    short: "The full business command desk.",
-    body: "Higher capacity, MYOB included, payroll workspace and advanced roles.",
+    label: "Full control",
+    line: "The full business command desk with MYOB, payroll, roles and higher limits.",
     includes: ["MYOB included", "Payroll workspace", "Advanced roles", "Priority support"],
   },
 ];
 
-export const lanes = [
-  {
-    label: "01",
-    title: "Work lands",
-    body: "Jobs, clients, crew updates, proof, quotes and invoices stop living in separate places.",
-  },
-  {
-    label: "02",
-    title: "AI prepares",
-    body: "Churvox turns the messy admin into clear work slips with the next move ready.",
-  },
-  {
-    label: "03",
-    title: "Owner approves",
-    body: "You review, edit if needed, approve and keep the business moving.",
-  },
+export const capabilityGroups = [
+  ["Jobs", "Work control", "Create, assign and complete work with the client, crew, proof and admin step connected."],
+  ["AI preparation", "Admin control", "Churvox prepares invoices, follow-ups, reminders and owner decisions before admin piles up."],
+  ["Money desk", "Cashflow control", "Quotes, invoices, payment follow-up and MYOB-ready workflows stay connected to completed work."],
+  ["Team roles", "Access control", "Owners, managers, office admins, workers and payroll users get the right view."],
 ];
 
-export const features = [
-  {
-    title: "Jobs",
-    kicker: "Field work",
-    body: "Create jobs, assign workers, track status, collect notes and keep proof tied to the client.",
-  },
-  {
-    title: "AI Operator",
-    kicker: "Admin prep",
-    body: "Churvox prepares invoice drafts, quote follow-ups, reminders and owner approval moves.",
-  },
-  {
-    title: "Money desk",
-    kicker: "Quote to paid",
-    body: "Quotes, invoices, payment follow-up and MYOB-ready workflows stay connected to the actual work.",
-  },
-  {
-    title: "Crew control",
-    kicker: "Right access",
-    body: "Workers get simple field tools while owners, managers, admins and payroll get the right view.",
-  },
-];
-
-export function PublicSiteShell({ page = "home", children }) {
+export function PublicSiteShell({ children, page = "home" }) {
   return (
-    <main className={`nw-site nw-site--${page}`}>
-      <header className="nw-nav">
-        <Link to="/" className="nw-brand" aria-label="Churvox home">
+    <main className={`sf-site sf-site--${page}`}>
+      <header className="sf-nav">
+        <Link to="/" className="sf-brand" aria-label="Churvox home">
           <ChurvoxLogo />
           <span>Churvox</span>
         </Link>
 
-        <nav className="nw-nav__links" aria-label="Website navigation">
+        <nav className="sf-nav-links" aria-label="Website navigation">
           <NavLink to="/" end>Home</NavLink>
           <NavLink to="/features">Features</NavLink>
           <NavLink to="/pricing">Pricing</NavLink>
         </nav>
 
-        <div className="nw-nav__actions">
-          <Link to="/login" className="nw-login">Log in</Link>
-          <Link to="/signup" className="nw-btn nw-btn--dark">Start free</Link>
+        <div className="sf-nav-actions">
+          <Link to="/login" className="sf-login">Log in</Link>
+          <Link to="/signup" className="sf-btn sf-btn--dark">Start free</Link>
         </div>
       </header>
 
       {children}
 
-      <footer className="nw-footer">
+      <footer className="sf-footer">
         <div>
-          <Link to="/" className="nw-brand nw-brand--footer">
+          <Link to="/" className="sf-brand sf-brand--footer">
             <ChurvoxLogo />
             <span>Churvox</span>
           </Link>
-          <p>AI office operator software for trade and service businesses.</p>
+          <p>AI operating software for trade and service businesses.</p>
         </div>
 
-        <div className="nw-footer__links">
+        <div className="sf-footer-links">
           <Link to="/features">Features</Link>
           <Link to="/pricing">Pricing</Link>
           <Link to="/login">Log in</Link>
@@ -125,88 +87,56 @@ export function PublicSiteShell({ page = "home", children }) {
   );
 }
 
-export function OperatorStage() {
-  const slips = [
-    ["Invoice ready", "Completed job, proof photos found, customer details checked.", "Approve"],
-    ["Assign worker", "Best match prepared from workload, area and job timing.", "Review"],
-    ["Quote follow-up", "Customer has not replied. Message drafted and waiting.", "Send"],
+export function ExecutivePreview() {
+  const rows = [
+    ["Invoice approval", "Completed job reviewed, customer details matched, invoice draft ready.", "$840"],
+    ["Quote follow-up", "Message prepared for a quote waiting on a customer reply.", "2 days"],
+    ["Crew assignment", "Best worker suggestion prepared from availability and workload.", "Ready"],
   ];
 
   return (
-    <aside className="nw-stage" aria-label="Churvox product preview">
-      <div className="nw-stage__bar">
-        <span />
-        <span />
-        <span />
-        <strong>AI Operator Desk</strong>
-        <em>Live prep</em>
+    <aside className="sf-preview" aria-label="Churvox operating desk preview">
+      <div className="sf-preview-top">
+        <span>Churvox Operator Desk</span>
+        <strong>Today</strong>
       </div>
 
-      <div className="nw-stage__body">
-        <div className="nw-stage__hero-card">
-          <p>Next owner decision</p>
-          <h2>3 work slips ready</h2>
-          <span>Churvox prepared the admin. Nothing sends until you approve.</span>
-        </div>
+      <div className="sf-preview-main">
+        <p>Owner approval queue</p>
+        <h2>Prepared work, waiting for your decision.</h2>
+        <span>Nothing important is sent, billed or changed until the owner approves.</span>
+      </div>
 
-        <div className="nw-stage__slips">
-          {slips.map(([title, body, action], index) => (
-            <article key={title} style={{ "--i": index }}>
-              <div>
-                <strong>{title}</strong>
-                <p>{body}</p>
-              </div>
-              <button type="button">{action}</button>
-            </article>
-          ))}
-        </div>
+      <div className="sf-preview-list">
+        {rows.map(([title, body, meta]) => (
+          <article key={title}>
+            <div>
+              <strong>{title}</strong>
+              <p>{body}</p>
+            </div>
+            <em>{meta}</em>
+          </article>
+        ))}
       </div>
     </aside>
   );
 }
 
-export function OperatingMap() {
-  const zones = [
-    ["Ready to approve", "Invoices, quotes and messages prepared for owner review."],
-    ["Needs fixing", "Missing prices, unassigned work and customer follow-ups."],
-    ["Field and crew", "Workers, job progress, photos, notes and time."],
-    ["Money desk", "Invoices, MYOB, payroll review and payment follow-up."],
-  ];
+export function WorkflowLine() {
+  const items = ["Lead", "Quote", "Job", "Proof", "Invoice", "Paid"];
 
   return (
-    <section className="nw-map" aria-label="Churvox operating map">
-      <div className="nw-map__center">
-        <span>AI</span>
-        <strong>Operator</strong>
-        <p>Prepares the next admin move.</p>
+    <section className="sf-workflow" aria-label="Workflow">
+      <div>
+        <p className="sf-kicker">One connected line of work</p>
+        <h2>From first request to paid invoice.</h2>
       </div>
 
-      {zones.map(([title, body], index) => (
-        <article key={title} className={`nw-map__zone nw-map__zone--${index + 1}`}>
-          <span>{String(index + 1).padStart(2, "0")}</span>
-          <h3>{title}</h3>
-          <p>{body}</p>
-        </article>
-      ))}
-    </section>
-  );
-}
-
-export function WorkConveyor() {
-  const steps = ["Lead", "Quote", "Job", "Proof", "Invoice", "Paid"];
-
-  return (
-    <section className="nw-conveyor" aria-label="Workflow conveyor">
-      <div className="nw-conveyor__head">
-        <p className="nw-kicker">The daily path</p>
-        <h2>Work moves across the desk instead of falling into gaps.</h2>
-      </div>
-
-      <div className="nw-conveyor__track">
-        {steps.map((step, index) => (
-          <article key={step}>
+      <div className="sf-workflow-line">
+        {items.map((item, index) => (
+          <article key={item}>
             <span>{String(index + 1).padStart(2, "0")}</span>
-            <strong>{step}</strong>
+            <strong>{item}</strong>
           </article>
         ))}
       </div>

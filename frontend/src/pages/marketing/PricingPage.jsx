@@ -5,40 +5,38 @@ import { plans, PublicSiteShell } from "./PublicSiteShell";
 export default function PricingPage() {
   return (
     <PublicSiteShell page="pricing">
-      <section className="nw-page-hero nw-page-hero--pricing">
-        <p className="nw-kicker">Pricing</p>
-        <h1>Pick the level of office control you want.</h1>
-        <p>
-          Start simple, add crew workflow, or move into AI Operator where Churvox prepares admin actions for owner approval.
-        </p>
+      <section className="sf-page-hero sf-page-hero--pricing">
+        <p className="sf-kicker">Pricing</p>
+        <h1>Choose the operating level that fits your business.</h1>
+        <p>Start with core workflow, add crew control, or move into Operator where Churvox prepares admin actions for owner approval.</p>
       </section>
 
-      <section className="nw-pricing-stage">
-        <div className="nw-pricing-stage__intro">
-          <p className="nw-kicker">Recommended path</p>
+      <section className="sf-pricing-layout">
+        <aside className="sf-pricing-intro">
+          <p className="sf-kicker">Recommended</p>
           <h2>Operator is the main Churvox plan.</h2>
-          <p>
-            Start and Crew cover the basics. Operator is where the site becomes unique: Churvox prepares the admin and the owner approves.
-          </p>
-        </div>
+          <p>This is where Churvox becomes different: AI prepares the daily admin and the owner approves the next move.</p>
+        </aside>
 
-        <div className="nw-plan-rail">
+        <div className="sf-plan-list">
           {plans.map((plan, index) => (
-            <article key={plan.name} className={`nw-plan ${plan.featured ? "is-featured" : ""}`}>
-              <div className="nw-plan__num">{String(index + 1).padStart(2, "0")}</div>
-              <div className="nw-plan__main">
-                <span>{plan.tag}</span>
+            <article key={plan.name} className={`sf-plan ${plan.featured ? "is-featured" : ""}`}>
+              <div className="sf-plan-number">{String(index + 1).padStart(2, "0")}</div>
+
+              <div className="sf-plan-title">
+                <span>{plan.label}</span>
                 <h2>{plan.name}</h2>
                 <strong>{plan.price}<em>/month + GST</em></strong>
               </div>
-              <div className="nw-plan__body">
-                <h3>{plan.short}</h3>
-                <p>{plan.body}</p>
+
+              <div className="sf-plan-body">
+                <p>{plan.line}</p>
                 <ul>
                   {plan.includes.map((item) => <li key={item}>{item}</li>)}
                 </ul>
               </div>
-              <Link to="/signup" className={plan.featured ? "nw-btn nw-btn--lime" : "nw-btn nw-btn--dark"}>
+
+              <Link to="/signup" className={plan.featured ? "sf-btn sf-btn--primary" : "sf-btn sf-btn--dark"}>
                 Choose {plan.name}
               </Link>
             </article>
@@ -46,37 +44,24 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <section className="nw-addons">
+      <section className="sf-addons">
         <article>
-          <p className="nw-kicker">Command Growth Pack</p>
+          <p className="sf-kicker">Command Growth Pack</p>
           <h2>$99/month + GST</h2>
-          <p>Command includes up to 50 active team members. Each Growth Pack adds 50 more active team members plus extra job capacity, AI Operator Actions, automation runs and admin/payroll capacity.</p>
+          <p>Command includes up to 50 active team members. Each Growth Pack adds 50 more active team members plus extra capacity for jobs, AI Operator Actions, automation, admin and payroll.</p>
         </article>
 
         <article>
-          <p className="nw-kicker">MYOB</p>
+          <p className="sf-kicker">MYOB</p>
           <h2>$39/month + GST</h2>
-          <p>Available as an add-on for Operator and included in Command. Built around Churvox money-desk workflows.</p>
+          <p>Available as an add-on for Operator and included in Command.</p>
         </article>
 
         <article>
-          <p className="nw-kicker">SMS</p>
+          <p className="sf-kicker">SMS</p>
           <h2>Credit packs</h2>
-          <p>SMS stays separate so businesses only buy the reminder and message credits they need.</p>
+          <p>SMS remains separate so businesses only buy the reminder and customer-message credits they need.</p>
         </article>
-      </section>
-
-      <section className="nw-close">
-        <div>
-          <p className="nw-kicker">Simple choice</p>
-          <h2>Want the AI admin promise? Choose Operator.</h2>
-          <p>That is the main plan for the Churvox identity: the software prepares the work and the owner approves.</p>
-        </div>
-
-        <div className="nw-actions">
-          <Link to="/signup" className="nw-btn nw-btn--lime">Start free</Link>
-          <Link to="/features" className="nw-btn nw-btn--light">View features</Link>
-        </div>
       </section>
     </PublicSiteShell>
   );
