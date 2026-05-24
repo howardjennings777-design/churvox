@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Nav, Footer } from "./ExecutiveHomePage";
 import "./ExecutivePublicSite.css";
+import "./ExecutivePublicExtras.css";
 
 const plans=[
   {name:"Start",price:"$39",tag:"Owner-operator",summary:"For a solo trade owner who wants the basics tidy without the admin mess.",features:["Jobs, clients, quotes and invoices","Simple Command Floor view","Ready-to-bill work surfaced","Basic owner workflow","No MYOB sync"]},
