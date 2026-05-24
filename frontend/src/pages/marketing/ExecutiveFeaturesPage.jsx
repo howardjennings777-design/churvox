@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Nav, Footer } from "./ExecutiveHomePage";
 import "./ExecutivePublicSite.css";
+import "./ExecutivePublicExtras.css";
 
 const core=[
   ["AI Action Queue","Churvox surfaces the next best actions: draft invoices, payment reminders, unassigned jobs, missing client details and quote follow-ups."],
