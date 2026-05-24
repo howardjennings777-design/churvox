@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import WorkBoardPageFrame from './components/WorkBoardPageFrame';
 import './index.css';
 import './styles/churvoxFullPageModals.css';
 import './styles/churvox-workhorse.css';
@@ -28,6 +29,8 @@ if ('serviceWorker' in navigator) {
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <WorkBoardPageFrame>
+      <App />
+    </WorkBoardPageFrame>
   </React.StrictMode>
 );
