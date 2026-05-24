@@ -3,153 +3,164 @@ import { Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
 import "./conceptC.css";
 
-const list = (v) => Array.isArray(v) ? v :
-  Array.isArray(v?.data) ? v.data :
-  Array.isArray(v?.items) ? v.items :
-  Array.isArray(v?.jobs) ? v.jobs :
-  Array.isArray(v?.clients) ? v.clients :
-  Array.isArray(v?.invoices) ? v.invoices :
-  Array.isArray(v?.quotes) ? v.quotes :
-  Array.isArray(v?.workers) ? v.workers :
-  Array.isArray(v?.actions) ? v.actions :
-  Array.isArray(v?.notifications) ? v.notifications : [];
+const asList = (value) => {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray(value?.data)) return value.data;
+  if (Array.isArray(value?.items)) return value.items;
+  if (Array.isArray(value?.jobs)) return value.jobs;
+  if (Array.isArray(value?.clients)) return value.clients;
+  if (Array.isArray(value?.invoices)) return value.invoices;
+  if (Array.isArray(value?.quotes)) return value.quotes;
+  if (Array.isArray(value?.workers)) return value.workers;
+  if (Array.isArray(value?.actions)) return value.actions;
+  if (Array.isArray(value?.notifications)) return value.notifications;
+  return [];
+};
 
-const low = (v) => String(v || "").toLowerCase();
-const idOf = (v) => String(v?.id || v?._id || v?.uuid || "");
-const money = (v) => `$${Number(v || 0).toLocaleString("en-NZ", { maximumFractionDigits: 0 })}`;
+const lower = (value) => String(value || "").toLowerCase();
+const idOf = (value) => String(value?.id || value?._id || value?.uuid || "");
+const money = (value) => `$${Number(value || 0).toLocaleString("en-NZ", { maximumFractionDigits: 0 })}`;
 
-const PAGE = {
+const PAGES = {
   dashboard: {
     mode: "command",
-    eyebrow: "AI OPERATOR COMMAND",
-    title: "Decision canvas",
-    subtitle: "AI prepares the admin. You approve what moves next.",
-    primary: "New job",
-    to: "/jobs/new",
-    endpoints: { jobs: "/jobs", clients: "/clients", invoices: "/invoices", quotes: "/quotes", workers: "/team/workers", actions: "/ai-operator/actions", notifications: "/notifications" },
+    eyebrow: "AI OPERATOR THEATRE",
+    title: "Run the day.",
+    subtitle: "Approve the admin, fix the blockers, move the field, collect the money.",
+    action: "Create job",
+    actionTo: "/jobs/new",
+    endpoints: {
+      jobs: "/jobs",
+      clients: "/clients",
+      invoices: "/invoices",
+      quotes: "/quotes",
+      workers: "/team/workers",
+      actions: "/ai-operator/actions",
+      notifications: "/notifications",
+    },
   },
   jobs: {
     mode: "jobs",
-    eyebrow: "FIELD WORK",
-    title: "Jobs board",
-    subtitle: "Assign, track, complete and bill work without leaving the page.",
-    primary: "New job",
-    to: "/jobs/new",
+    eyebrow: "FIELD CONTROL",
+    title: "Move work.",
+    subtitle: "A live field floor for unassigned, active, completed and ready-to-bill work.",
+    action: "Create job",
+    actionTo: "/jobs/new",
     endpoints: { jobs: "/jobs", workers: "/team/workers", invoices: "/invoices" },
   },
   dispatch: {
     mode: "schedule",
-    eyebrow: "SCHEDULE",
-    title: "Schedule board",
-    subtitle: "Plan jobs across the week and see where crew capacity is sitting.",
-    primary: "Create job",
-    to: "/jobs/new",
+    eyebrow: "DISPATCH MAP",
+    title: "Place work.",
+    subtitle: "See crew capacity, scheduled pressure and work that needs a home.",
+    action: "Create job",
+    actionTo: "/jobs/new",
     endpoints: { jobs: "/jobs", workers: "/team/workers" },
   },
   clients: {
     mode: "people",
-    eyebrow: "CUSTOMERS",
-    title: "People desk",
-    subtitle: "Clients, recent work, missing details and follow-ups.",
-    primary: "Add client",
-    to: "/clients/new",
+    eyebrow: "CUSTOMER CONTROL",
+    title: "Know people.",
+    subtitle: "Clients, missing details, recent jobs and follow-ups in one customer console.",
+    action: "Add client",
+    actionTo: "/clients/new",
     endpoints: { clients: "/clients", jobs: "/jobs", quotes: "/quotes", workers: "/team/workers" },
   },
   team: {
     mode: "people",
-    eyebrow: "CREW",
-    title: "Crew desk",
-    subtitle: "Workers, roles, workload, invites and setup issues.",
-    primary: "Open team",
-    to: "/team",
+    eyebrow: "CREW CONTROL",
+    title: "Control crew.",
+    subtitle: "Team, roles, invites, workload and worker readiness.",
+    action: "Open team",
+    actionTo: "/team",
     endpoints: { workers: "/team/workers", jobs: "/jobs", clients: "/clients" },
   },
   invoices: {
     mode: "finance",
-    eyebrow: "FINANCE",
-    title: "Cashflow clarity",
-    subtitle: "Drafts, sent invoices, overdue money and paid work.",
-    primary: "New invoice",
-    to: "/invoices/new",
+    eyebrow: "MONEY CONTROL",
+    title: "Collect cash.",
+    subtitle: "Draft invoices, sent invoices, overdue money and paid work.",
+    action: "New invoice",
+    actionTo: "/invoices/new",
     endpoints: { invoices: "/invoices", jobs: "/jobs", clients: "/clients" },
   },
   quotes: {
     mode: "sales",
-    eyebrow: "SALES",
-    title: "Quote press",
-    subtitle: "Draft, send, chase and convert quotes into scheduled work.",
-    primary: "New quote",
-    to: "/quotes/new",
+    eyebrow: "SALES CONTROL",
+    title: "Win work.",
+    subtitle: "Draft, send, chase and convert quotes into scheduled jobs.",
+    action: "New quote",
+    actionTo: "/quotes/new",
     endpoints: { quotes: "/quotes", clients: "/clients", jobs: "/jobs" },
   },
   sms: {
     mode: "messages",
-    eyebrow: "MESSAGES",
-    title: "Message studio",
-    subtitle: "Customer reminders, replies and approval-first communication.",
-    primary: "New message",
-    to: "/sms",
+    eyebrow: "MESSAGE CONTROL",
+    title: "Talk clean.",
+    subtitle: "Customer reminders, draft replies and safe approval-first communication.",
+    action: "Messages",
+    actionTo: "/sms",
     endpoints: { history: "/sms/history", invoices: "/invoices", clients: "/clients" },
   },
   notifications: {
     mode: "messages",
-    eyebrow: "ALERTS",
-    title: "Message studio",
-    subtitle: "Unread updates, approvals and important business changes.",
-    primary: "Main board",
-    to: "/dashboard",
+    eyebrow: "ALERT CONTROL",
+    title: "Catch changes.",
+    subtitle: "Unread alerts, approvals and important business events.",
+    action: "Main board",
+    actionTo: "/dashboard",
     endpoints: { notifications: "/notifications", actions: "/ai-operator/actions", jobs: "/jobs" },
   },
   settings: {
     mode: "more",
-    eyebrow: "CONTROL",
-    title: "Control centre",
-    subtitle: "Settings, integrations, reports and admin tools.",
-    primary: "Main board",
-    to: "/dashboard",
+    eyebrow: "SYSTEM CONTROL",
+    title: "Tune the system.",
+    subtitle: "Settings, integrations, reports, payroll and automation controls.",
+    action: "Main board",
+    actionTo: "/dashboard",
     endpoints: {},
   },
   reports: {
     mode: "more",
-    eyebrow: "REPORTS",
-    title: "Reports centre",
-    subtitle: "Exports, records and business performance.",
-    primary: "Main board",
-    to: "/dashboard",
+    eyebrow: "RECORD CONTROL",
+    title: "Read the business.",
+    subtitle: "Reports, exports and business performance surfaces.",
+    action: "Main board",
+    actionTo: "/dashboard",
     endpoints: { jobs: "/jobs", invoices: "/invoices", quotes: "/quotes" },
   },
   payroll: {
     mode: "more",
-    eyebrow: "PAYROLL",
-    title: "Payroll centre",
+    eyebrow: "PAYROLL CONTROL",
+    title: "Prepare payroll.",
     subtitle: "Worker summaries, completed work and payroll handoff.",
-    primary: "Main board",
-    to: "/dashboard",
+    action: "Main board",
+    actionTo: "/dashboard",
     endpoints: { workers: "/team/workers", jobs: "/jobs" },
   },
   automation: {
     mode: "more",
-    eyebrow: "AUTOMATION",
-    title: "Automation centre",
-    subtitle: "Rules, templates and AI-prepared admin flows.",
-    primary: "Main board",
-    to: "/dashboard",
+    eyebrow: "AUTOMATION CONTROL",
+    title: "Automate admin.",
+    subtitle: "Rules, templates and AI-prepared business actions.",
+    action: "Main board",
+    actionTo: "/dashboard",
     endpoints: { actions: "/ai-operator/actions" },
   },
   integrations: {
     mode: "more",
-    eyebrow: "SYNC",
-    title: "Integration centre",
-    subtitle: "MYOB, accounting sync, messaging and connected tools.",
-    primary: "Main board",
-    to: "/dashboard",
+    eyebrow: "SYNC CONTROL",
+    title: "Sync tools.",
+    subtitle: "MYOB, accounting sync, messaging and connected apps.",
+    action: "Main board",
+    actionTo: "/dashboard",
     endpoints: { invoices: "/invoices" },
   },
 };
 
-function make(type, raw) {
+function makeRecord(type, raw) {
   const id = idOf(raw);
-  const status = low(raw.status);
+  const status = lower(raw.status);
 
   if (type === "job") {
     const worker = raw.assigned_worker_name || raw.worker_name || "";
@@ -165,49 +176,57 @@ function make(type, raw) {
     };
   }
 
-  if (type === "client") return {
-    key: `client-${id}`,
-    title: raw.name || raw.client_name || raw.customer_name || "Client",
-    detail: raw.email || raw.phone || raw.address || "Client record",
-    tag: raw.email && raw.phone ? "Active" : "Missing info",
-    status,
-    value: 0,
-    to: `/clients/${id}`,
-    raw,
-  };
+  if (type === "client") {
+    return {
+      key: `client-${id}`,
+      title: raw.name || raw.client_name || raw.customer_name || "Client",
+      detail: raw.email || raw.phone || raw.address || "Client record",
+      tag: raw.email && raw.phone ? "Ready" : "Missing info",
+      status,
+      value: 0,
+      to: `/clients/${id}`,
+      raw,
+    };
+  }
 
-  if (type === "invoice") return {
-    key: `invoice-${id}`,
-    title: raw.customer_name || raw.client_name || raw.invoice_number || "Invoice",
-    detail: raw.description || raw.email || "Invoice record",
-    tag: raw.status || "Invoice",
-    status,
-    value: raw.balance_due || raw.balance || raw.total || raw.amount || 0,
-    to: `/invoices/${id}`,
-    raw,
-  };
+  if (type === "invoice") {
+    return {
+      key: `invoice-${id}`,
+      title: raw.customer_name || raw.client_name || raw.invoice_number || "Invoice",
+      detail: raw.description || raw.email || "Invoice record",
+      tag: raw.status || "Invoice",
+      status,
+      value: raw.balance_due || raw.balance || raw.total || raw.amount || 0,
+      to: `/invoices/${id}`,
+      raw,
+    };
+  }
 
-  if (type === "quote") return {
-    key: `quote-${id}`,
-    title: raw.title || raw.customer_name || raw.client_name || "Quote",
-    detail: raw.description || "Quote record",
-    tag: raw.status || "Quote",
-    status,
-    value: raw.total || raw.amount || raw.price || 0,
-    to: `/quotes/${id}`,
-    raw,
-  };
+  if (type === "quote") {
+    return {
+      key: `quote-${id}`,
+      title: raw.title || raw.customer_name || raw.client_name || "Quote",
+      detail: raw.description || "Quote record",
+      tag: raw.status || "Quote",
+      status,
+      value: raw.total || raw.amount || raw.price || 0,
+      to: `/quotes/${id}`,
+      raw,
+    };
+  }
 
-  if (type === "worker") return {
-    key: `worker-${id}`,
-    title: raw.name || raw.full_name || raw.email || "Worker",
-    detail: raw.role || raw.email || raw.phone || "Worker record",
-    tag: raw.invite_status || raw.status || raw.role || "Worker",
-    status,
-    value: 0,
-    to: "/team",
-    raw,
-  };
+  if (type === "worker") {
+    return {
+      key: `worker-${id}`,
+      title: raw.name || raw.full_name || raw.email || "Worker",
+      detail: raw.role || raw.email || raw.phone || "Worker record",
+      tag: raw.invite_status || raw.status || raw.role || "Worker",
+      status,
+      value: 0,
+      to: "/team",
+      raw,
+    };
+  }
 
   return {
     key: `${type}-${id || Math.random()}`,
@@ -228,31 +247,34 @@ function useLiveData(page, get) {
   const load = useCallback(async () => {
     setLoading(true);
     const next = {};
+
     await Promise.all(Object.entries(page.endpoints || {}).map(async ([key, endpoint]) => {
       try {
-        const res = await get(endpoint);
-        next[key] = res?.data ?? res?.[key] ?? res ?? [];
+        const response = await get(endpoint);
+        next[key] = response?.data ?? response?.[key] ?? response ?? [];
       } catch {
         next[key] = [];
       }
     }));
+
     setData(next);
     setLoading(false);
   }, [page, get]);
 
   useEffect(() => { load(); }, [load]);
+
   return { data, loading };
 }
 
-function build(data) {
-  const jobs = list(data.jobs).map((x) => make("job", x));
-  const clients = list(data.clients).map((x) => make("client", x));
-  const invoices = list(data.invoices).map((x) => make("invoice", x));
-  const quotes = list(data.quotes).map((x) => make("quote", x));
-  const workers = list(data.workers).map((x) => make("worker", x));
-  const actions = list(data.actions).map((x) => make("action", x));
-  const notes = list(data.notifications).map((x) => make("notification", x));
-  const history = list(data.history).map((x) => make("message", x));
+function buildModel(data) {
+  const jobs = asList(data.jobs).map((x) => makeRecord("job", x));
+  const clients = asList(data.clients).map((x) => makeRecord("client", x));
+  const invoices = asList(data.invoices).map((x) => makeRecord("invoice", x));
+  const quotes = asList(data.quotes).map((x) => makeRecord("quote", x));
+  const workers = asList(data.workers).map((x) => makeRecord("worker", x));
+  const actions = asList(data.actions).map((x) => makeRecord("action", x));
+  const notifications = asList(data.notifications).map((x) => makeRecord("notification", x));
+  const history = asList(data.history).map((x) => makeRecord("message", x));
 
   const activeJobs = jobs.filter((x) => !["completed", "complete", "done", "cancelled"].includes(x.status));
   const unassigned = jobs.filter((x) => x.tag === "Unassigned");
@@ -267,12 +289,33 @@ function build(data) {
   const quoteFollow = quotes.filter((x) => !["accepted", "approved", "lost", "declined"].includes(x.status));
   const acceptedQuotes = quotes.filter((x) => ["accepted", "approved"].includes(x.status));
 
-  return { jobs, clients, invoices, quotes, workers, actions, notes, history, activeJobs, unassigned, field, completed, readyToBill, owing, overdue, paid, draftInvoices, draftQuotes, quoteFollow, acceptedQuotes };
+  return {
+    jobs,
+    clients,
+    invoices,
+    quotes,
+    workers,
+    actions,
+    notifications,
+    history,
+    activeJobs,
+    unassigned,
+    field,
+    completed,
+    readyToBill,
+    owing,
+    overdue,
+    paid,
+    draftInvoices,
+    draftQuotes,
+    quoteFollow,
+    acceptedQuotes,
+  };
 }
 
 const totalValue = (items) => items.reduce((sum, item) => sum + Number(item.value || 0), 0);
 
-function Shell({ area, children }) {
+function Shell({ area, page, children }) {
   const active = area === "team" || area === "clients" ? "people" :
     area === "sms" || area === "notifications" ? "messages" :
     area === "invoices" ? "finance" :
@@ -292,36 +335,70 @@ function Shell({ area, children }) {
   ];
 
   return (
-    <main className="concept-c" data-version="CHURVOX_EXACT_CONCEPT_C_20260524">
-      <header className="cc-top">
-        <Link to="/dashboard" className="cc-logo"><span>C</span><b>CHURVOX</b></Link>
-        <div className="cc-profile-strip"><span>AI Operator live</span><i>3</i><em /></div>
+    <main className="concept-c2" data-version="CHURVOX_CONCEPT_C2_OPERATOR_THEATRE_20260524">
+      <div className="c2-noise" />
+
+      <header className="c2-topbar">
+        <Link className="c2-brand" to="/dashboard">
+          <span>C</span>
+          <b>CHURVOX</b>
+        </Link>
+
+        <div className="c2-status">
+          <span>AI Operator</span>
+          <strong>Live</strong>
+          <i>3</i>
+        </div>
       </header>
 
-      {children}
+      <section className="c2-frame">
+        <aside className="c2-spine">
+          <p>{page.eyebrow}</p>
+          <h1>{page.title}</h1>
+          <span>{page.subtitle}</span>
+          <Link to={page.actionTo}>{page.action}</Link>
+        </aside>
 
-      <nav className="cc-dock">
-        {links.map(([key, label, to]) => <Link key={key} to={to} className={active === key ? "active" : ""}>{label}</Link>)}
+        <section className="c2-stage">
+          {children}
+        </section>
+
+        <aside className="c2-ai">
+          <p>AI OPERATOR</p>
+          <h2>Admin prepared. You approve.</h2>
+          <span>Churvox keeps the owner focused on the next best move instead of digging through pages.</span>
+
+          <div>
+            <small>Mode</small>
+            <strong>{page.mode}</strong>
+          </div>
+
+          <div>
+            <small>Rule</small>
+            <strong>No auto-send. No auto-charge.</strong>
+          </div>
+        </aside>
+      </section>
+
+      <nav className="c2-dock">
+        {links.map(([key, label, to]) => (
+          <Link key={key} to={to} className={active === key ? "active" : ""}>{label}</Link>
+        ))}
       </nav>
     </main>
   );
 }
 
-function Hero({ page }) {
+function Metric({ label, value }) {
   return (
-    <section className="cc-hero">
-      <p>{page.eyebrow}</p>
-      <h1>{page.title}</h1>
-      <span>{page.subtitle}</span>
-    </section>
+    <div className="c2-metric">
+      <strong>{value}</strong>
+      <span>{label}</span>
+    </div>
   );
 }
 
-function Stats({ items }) {
-  return <section className="cc-stats">{items.map((x) => <div key={x.label}><b>{x.value}</b><span>{x.label}</span></div>)}</section>;
-}
-
-function Card({ item, compact }) {
+function Item({ item, compact }) {
   const body = (
     <>
       <span>{item.tag}</span>
@@ -331,330 +408,349 @@ function Card({ item, compact }) {
   );
 
   return item.to && item.to !== "#"
-    ? <Link className={compact ? "cc-card compact" : "cc-card"} to={item.to}>{body}</Link>
-    : <button className={compact ? "cc-card compact" : "cc-card"} type="button">{body}</button>;
+    ? <Link className={compact ? "c2-item compact" : "c2-item"} to={item.to}>{body}</Link>
+    : <button className={compact ? "c2-item compact" : "c2-item"} type="button">{body}</button>;
 }
 
 function Empty() {
-  return <div className="cc-empty"><b>Clear</b><span>Nothing sitting here right now.</span></div>;
+  return (
+    <div className="c2-empty">
+      <strong>Clear</strong>
+      <span>Nothing sitting here right now.</span>
+    </div>
+  );
 }
 
-function Panel({ title, count, children }) {
+function Block({ title, count, children, tone }) {
   return (
-    <section className="cc-panel">
-      <header><h3>{title}</h3><b>{count}</b></header>
+    <section className={`c2-block ${tone || ""}`}>
+      <header>
+        <h3>{title}</h3>
+        <b>{count}</b>
+      </header>
       {children}
     </section>
   );
 }
 
-function Command({ page, data, loading }) {
-  const approval = data.actions[0] || data.quoteFollow[0] || data.draftQuotes[0];
-  const approvalList = data.actions.length ? data.actions : data.quoteFollow;
+function CommandView({ model, loading }) {
+  const approvalItems = model.actions.length ? model.actions : model.quoteFollow;
+  const priority = approvalItems[0] || model.unassigned[0] || model.owing[0];
 
   return (
-    <>
-      <Hero page={page} />
-      <Stats items={[
-        { label: "needs approval", value: approvalList.length },
-        { label: "needs fixing", value: data.unassigned.length },
-        { label: "jobs moving", value: data.activeJobs.length },
-        { label: "money owing", value: money(totalValue(data.owing)) },
-      ]} />
-
-      <section className="cc-command-grid">
-        <section className="cc-priority">
-          <p>Top priority</p>
-          <h2>{approval?.title || "No urgent approval"}</h2>
-          <span>{approval?.detail || "AI Operator will place prepared admin here when there is something to approve."}</span>
-          <div>
-            <Link to={approval?.to || "/dashboard"}>Approve</Link>
-            <button type="button">Edit</button>
-            <button type="button">Skip</button>
-          </div>
-          <small>{loading ? "Loading live data" : "Connected to live business data"}</small>
-        </section>
-
-        <Panel title="Ready to approve" count={approvalList.length}>
-          {approvalList.slice(0, 5).map((item) => <Card key={item.key} item={item} />)}
-          {!approvalList.length && <Empty />}
-        </Panel>
-
-        <div className="cc-stack">
-          <Panel title="Needs fixing" count={data.unassigned.length}>
-            {data.unassigned.slice(0, 3).map((item) => <Card key={item.key} item={item} compact />)}
-            {!data.unassigned.length && <Empty />}
-          </Panel>
-          <Panel title="Today" count={data.activeJobs.length}>
-            {data.activeJobs.slice(0, 3).map((item) => <Card key={item.key} item={item} compact />)}
-            {!data.activeJobs.length && <Empty />}
-          </Panel>
-          <Panel title="Owing" count={data.owing.length}>
-            {data.owing.slice(0, 3).map((item) => <Card key={item.key} item={item} compact />)}
-            {!data.owing.length && <Empty />}
-          </Panel>
-        </div>
+    <div className="c2-command">
+      <section className="c2-metrics">
+        <Metric label="needs approval" value={approvalItems.length} />
+        <Metric label="needs fixing" value={model.unassigned.length} />
+        <Metric label="jobs moving" value={model.activeJobs.length} />
+        <Metric label="money owing" value={money(totalValue(model.owing))} />
       </section>
-    </>
-  );
-}
 
-function Jobs({ page, data }) {
-  const lanes = [
-    ["Unassigned", data.unassigned],
-    ["In progress", data.activeJobs],
-    ["Ready to bill", data.readyToBill],
-    ["Completed", data.completed],
-  ];
-  const selected = data.activeJobs[0] || data.jobs[0];
-
-  return (
-    <>
-      <Hero page={page} />
-      <Stats items={[
-        { label: "unassigned", value: data.unassigned.length },
-        { label: "field work", value: data.field.length },
-        { label: "ready to bill", value: data.readyToBill.length },
-        { label: "completed", value: data.completed.length },
-      ]} />
-
-      <section className="cc-job-layout">
-        <div className="cc-kanban">
-          {lanes.map(([title, items]) => (
-            <Panel key={title} title={title} count={items.length}>
-              {items.slice(0, 5).map((item) => <Card key={item.key} item={item} />)}
-              {!items.length && <Empty />}
-            </Panel>
-          ))}
-        </div>
-
-        <aside className="cc-detail">
-          <button type="button">×</button>
-          <p>{selected?.tag || "Job"}</p>
-          <h2>{selected?.title || "Select a job"}</h2>
-          <span>{selected?.detail || "Open a job to see the full work card."}</span>
-          <div className="cc-checks">
-            <b>Job checks</b>
-            <label><input type="checkbox" defaultChecked /> Details ready</label>
-            <label><input type="checkbox" /> Photos uploaded</label>
-            <label><input type="checkbox" /> Invoice ready</label>
-          </div>
-          <div className="cc-actions">
-            <Link to={selected?.to || "/jobs"}>Open job</Link>
-            <Link to="/jobs/new">Create job</Link>
-          </div>
-        </aside>
-      </section>
-    </>
-  );
-}
-
-function Schedule({ page, data }) {
-  const days = ["Mon 26", "Tue 27", "Wed 28", "Thu 29", "Fri 30", "Sat 31", "Sun 1"];
-
-  return (
-    <>
-      <Hero page={page} />
-      <section className="cc-schedule">
-        <aside>
-          <h3>View by crew</h3>
-          {data.workers.slice(0, 6).map((item) => <Card key={item.key} item={item} compact />)}
-          {!data.workers.length && <Empty />}
-        </aside>
-
-        <section className="cc-week">
-          <header><button type="button">Today</button><strong>Weekly schedule</strong><Link to="/jobs/new">Create job</Link></header>
-          <div>
-            {days.map((day, index) => (
-              <section key={day}>
-                <b>{day}</b>
-                {data.activeJobs.slice(index, index + 3).map((job) => <Link className="cc-event" key={job.key} to={job.to}><span>{job.title}</span><em>{job.detail}</em></Link>)}
-                {!data.activeJobs.slice(index, index + 3).length && <small>No jobs</small>}
-              </section>
-            ))}
-          </div>
-        </section>
-
-        <aside>
-          <h3>Schedule health</h3>
-          <div className="cc-score">88%</div>
-          <span>Conflicts, gaps and next available slots show here.</span>
-        </aside>
-      </section>
-    </>
-  );
-}
-
-function People({ page, data, area }) {
-  const main = area === "team" ? data.workers : data.clients;
-  const selected = main[0];
-
-  return (
-    <>
-      <Hero page={page} />
-      <section className="cc-people">
-        <aside>
-          <h3>{area === "team" ? "Team" : "Clients"}</h3>
-          {main.slice(0, 9).map((item) => <Card key={item.key} item={item} compact />)}
-          {!main.length && <Empty />}
-        </aside>
-
-        <section>
-          <Panel title={area === "team" ? "Assigned work" : "Recent work"} count={data.jobs.length}>
-            {data.jobs.slice(0, 7).map((item) => <Card key={item.key} item={item} />)}
-            {!data.jobs.length && <Empty />}
-          </Panel>
-          <Panel title="Follow-ups" count={data.quoteFollow.length}>
-            {data.quoteFollow.slice(0, 4).map((item) => <Card key={item.key} item={item} compact />)}
-            {!data.quoteFollow.length && <Empty />}
-          </Panel>
-        </section>
-
-        <aside className="cc-detail">
-          <p>Profile</p>
-          <h2>{selected?.title || "No record selected"}</h2>
-          <span>{selected?.detail || "People details open here."}</span>
-          <div className="cc-actions">
-            <Link to={selected?.to || "/clients"}>Open</Link>
-            <button type="button">Message</button>
-          </div>
-        </aside>
-      </section>
-    </>
-  );
-}
-
-function Messages({ page, data }) {
-  const messages = [...data.notes, ...data.history, ...data.owing];
-  const current = messages[0];
-
-  return (
-    <>
-      <Hero page={page} />
-      <section className="cc-messages">
-        <aside>
-          <h3>Inbox</h3>
-          {messages.slice(0, 8).map((item) => <Card key={item.key} item={item} compact />)}
-          {!messages.length && <Empty />}
-        </aside>
-
-        <section className="cc-thread">
-          <h2>{current?.title || "No message selected"}</h2>
-          <div>{current?.detail || "Customer and internal messages appear here."}</div>
-          <footer><input placeholder="Type your message..." /><button type="button">Send</button></footer>
-        </section>
-
-        <aside className="cc-ai-write">
-          <p>AI draft</p>
-          <h3>Prepared reminder</h3>
-          <span>Hi, just a quick reminder about your scheduled work. Please confirm access is available.</span>
-          <button type="button">Approve & send</button>
-          <button type="button">Save draft</button>
-        </aside>
-      </section>
-    </>
-  );
-}
-
-function Finance({ page, data }) {
-  const selected = data.overdue[0] || data.owing[0] || data.invoices[0];
-
-  return (
-    <>
-      <Hero page={page} />
-      <Stats items={[
-        { label: "outstanding", value: money(totalValue(data.owing)) },
-        { label: "overdue", value: data.overdue.length },
-        { label: "ready", value: data.draftInvoices.length },
-        { label: "paid", value: data.paid.length },
-      ]} />
-      <section className="cc-finance">
-        <section>
-          <header><h3>Invoices</h3><Link to="/invoices/new">New invoice</Link></header>
-          <table><tbody>{data.invoices.slice(0, 9).map((invoice) => <tr key={invoice.key}><td>{invoice.title}</td><td>{invoice.detail}</td><td>{money(invoice.value)}</td><td><span>{invoice.tag}</span></td></tr>)}</tbody></table>
-          {!data.invoices.length && <Empty />}
-        </section>
-
-        <aside className="cc-detail">
-          <p>Invoice detail</p>
-          <h2>{selected?.title || "No invoice"}</h2>
-          <strong>{money(selected?.value || 0)}</strong>
-          <span>{selected?.detail || "Invoice details appear here."}</span>
-          <div className="cc-actions">
-            <Link to={selected?.to || "/invoices"}>Open</Link>
-            <button type="button">Reminder</button>
-          </div>
-        </aside>
-      </section>
-    </>
-  );
-}
-
-function Sales({ page, data }) {
-  const lanes = [
-    ["Draft", data.draftQuotes],
-    ["Follow up", data.quoteFollow],
-    ["Accepted", data.acceptedQuotes],
-    ["Recent jobs", data.jobs],
-  ];
-
-  return (
-    <>
-      <Hero page={page} />
-      <section className="cc-job-layout">
-        <div className="cc-kanban">
-          {lanes.map(([title, items]) => (
-            <Panel key={title} title={title} count={items.length}>
-              {items.slice(0, 5).map((item) => <Card key={item.key} item={item} />)}
-              {!items.length && <Empty />}
-            </Panel>
-          ))}
-        </div>
-        <aside className="cc-detail"><p>Sales</p><h2>Quotes that need action</h2><span>Review drafts, chase customers and convert accepted work.</span><div className="cc-actions"><Link to="/quotes/new">New quote</Link><Link to="/jobs/new">Create job</Link></div></aside>
-      </section>
-    </>
-  );
-}
-
-function More({ page }) {
-  const tools = [
-    ["Automations", "Build and manage approval-first flows", "/automation"],
-    ["MYOB", "Sync invoices and accounts", "/integrations"],
-    ["Payroll", "Review and export payroll handoff", "/payroll"],
-    ["Reports", "See performance and exports", "/reports"],
-    ["Settings", "Business preferences and permissions", "/settings"],
-    ["Notifications", "Review alerts and updates", "/notifications"],
-  ];
-
-  return (
-    <>
-      <Hero page={page} />
-      <section className="cc-more">
+      <section className="c2-priority">
         <div>
-          {tools.map(([title, detail, to]) => <Link className="cc-tool" key={title} to={to}><b>{title}</b><span>{detail}</span></Link>)}
+          <p>TOP MOVE</p>
+          <h2>{priority?.title || "Nothing urgent"}</h2>
+          <span>{priority?.detail || "When Churvox prepares an action, it will sit here first."}</span>
         </div>
-        <aside><h3>System status</h3><p>Churvox platform</p><strong>Operational</strong><p>AI Operator</p><strong>Operational</strong><p>Integrations</p><strong>Operational</strong></aside>
+
+        <div className="c2-action-stack">
+          <Link to={priority?.to || "/dashboard"}>Open</Link>
+          <button type="button">Approve</button>
+          <button type="button">Edit first</button>
+        </div>
+
+        <small>{loading ? "Loading live business data..." : "Live data connected"}</small>
       </section>
-    </>
+
+      <section className="c2-command-grid">
+        <Block title="Approve" count={approvalItems.length} tone="hot">
+          {approvalItems.slice(0, 5).map((item) => <Item key={item.key} item={item} />)}
+          {!approvalItems.length && <Empty />}
+        </Block>
+
+        <Block title="Fix" count={model.unassigned.length} tone="warn">
+          {model.unassigned.slice(0, 5).map((item) => <Item key={item.key} item={item} />)}
+          {!model.unassigned.length && <Empty />}
+        </Block>
+
+        <Block title="Move" count={model.activeJobs.length}>
+          {model.activeJobs.slice(0, 5).map((item) => <Item key={item.key} item={item} />)}
+          {!model.activeJobs.length && <Empty />}
+        </Block>
+
+        <Block title="Collect" count={model.owing.length} tone="money">
+          {model.owing.slice(0, 5).map((item) => <Item key={item.key} item={item} />)}
+          {!model.owing.length && <Empty />}
+        </Block>
+      </section>
+    </div>
+  );
+}
+
+function JobsView({ model }) {
+  const lanes = [
+    ["Unassigned", model.unassigned],
+    ["In field", model.field.length ? model.field : model.activeJobs],
+    ["Ready to bill", model.readyToBill],
+    ["Complete", model.completed],
+  ];
+
+  const selected = model.activeJobs[0] || model.jobs[0];
+
+  return (
+    <section className="c2-workroom">
+      <div className="c2-lanes">
+        {lanes.map(([title, items]) => (
+          <Block key={title} title={title} count={items.length}>
+            {items.slice(0, 6).map((item) => <Item key={item.key} item={item} compact />)}
+            {!items.length && <Empty />}
+          </Block>
+        ))}
+      </div>
+
+      <aside className="c2-record">
+        <p>{selected?.tag || "JOB CARD"}</p>
+        <h2>{selected?.title || "Select a job"}</h2>
+        <span>{selected?.detail || "The selected work card opens here."}</span>
+
+        <div className="c2-checklist">
+          <label><input type="checkbox" defaultChecked /> Job details ready</label>
+          <label><input type="checkbox" /> Worker confirmed</label>
+          <label><input type="checkbox" /> Photos attached</label>
+          <label><input type="checkbox" /> Invoice prepared</label>
+        </div>
+
+        <Link to={selected?.to || "/jobs"}>Open job</Link>
+      </aside>
+    </section>
+  );
+}
+
+function ScheduleView({ model }) {
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+  return (
+    <section className="c2-schedule">
+      <aside>
+        <h3>Crew load</h3>
+        {model.workers.slice(0, 7).map((worker) => <Item key={worker.key} item={worker} compact />)}
+        {!model.workers.length && <Empty />}
+      </aside>
+
+      <div className="c2-week">
+        {days.map((day, index) => (
+          <section key={day}>
+            <h4>{day}</h4>
+            {model.activeJobs.slice(index, index + 3).map((job) => (
+              <Link className="c2-event" key={job.key} to={job.to}>
+                <strong>{job.title}</strong>
+                <span>{job.detail}</span>
+              </Link>
+            ))}
+            {!model.activeJobs.slice(index, index + 3).length && <small>No jobs</small>}
+          </section>
+        ))}
+      </div>
+
+      <aside className="c2-health">
+        <h3>Schedule health</h3>
+        <strong>88%</strong>
+        <span>Conflicts, gaps and capacity warnings appear here.</span>
+      </aside>
+    </section>
+  );
+}
+
+function PeopleView({ area, model }) {
+  const records = area === "team" ? model.workers : model.clients;
+  const selected = records[0];
+
+  return (
+    <section className="c2-people">
+      <aside>
+        <h3>{area === "team" ? "Crew" : "Clients"}</h3>
+        {records.slice(0, 10).map((item) => <Item key={item.key} item={item} compact />)}
+        {!records.length && <Empty />}
+      </aside>
+
+      <div className="c2-people-main">
+        <Block title="Recent work" count={model.jobs.length}>
+          {model.jobs.slice(0, 6).map((item) => <Item key={item.key} item={item} />)}
+          {!model.jobs.length && <Empty />}
+        </Block>
+
+        <Block title="Follow up" count={model.quoteFollow.length} tone="warn">
+          {model.quoteFollow.slice(0, 5).map((item) => <Item key={item.key} item={item} />)}
+          {!model.quoteFollow.length && <Empty />}
+        </Block>
+      </div>
+
+      <aside className="c2-record">
+        <p>PROFILE</p>
+        <h2>{selected?.title || "No record selected"}</h2>
+        <span>{selected?.detail || "People details open here."}</span>
+        <Link to={selected?.to || "/clients"}>Open record</Link>
+      </aside>
+    </section>
+  );
+}
+
+function FinanceView({ model }) {
+  const selected = model.overdue[0] || model.owing[0] || model.invoices[0];
+
+  return (
+    <section className="c2-finance">
+      <div className="c2-money-strip">
+        <Metric label="outstanding" value={money(totalValue(model.owing))} />
+        <Metric label="overdue" value={model.overdue.length} />
+        <Metric label="ready" value={model.draftInvoices.length} />
+        <Metric label="paid" value={model.paid.length} />
+      </div>
+
+      <section className="c2-table">
+        <header>
+          <h3>Invoices</h3>
+          <Link to="/invoices/new">New invoice</Link>
+        </header>
+
+        <table>
+          <tbody>
+            {model.invoices.slice(0, 10).map((invoice) => (
+              <tr key={invoice.key}>
+                <td>{invoice.title}</td>
+                <td>{invoice.detail}</td>
+                <td>{money(invoice.value)}</td>
+                <td><span>{invoice.tag}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {!model.invoices.length && <Empty />}
+      </section>
+
+      <aside className="c2-record money">
+        <p>SELECTED INVOICE</p>
+        <h2>{selected?.title || "No invoice"}</h2>
+        <strong>{money(selected?.value || 0)}</strong>
+        <span>{selected?.detail || "Invoice details appear here."}</span>
+        <Link to={selected?.to || "/invoices"}>Open invoice</Link>
+      </aside>
+    </section>
+  );
+}
+
+function SalesView({ model }) {
+  const lanes = [
+    ["Draft", model.draftQuotes],
+    ["Follow up", model.quoteFollow],
+    ["Accepted", model.acceptedQuotes],
+    ["Jobs", model.jobs],
+  ];
+
+  return (
+    <section className="c2-workroom">
+      <div className="c2-lanes">
+        {lanes.map(([title, items]) => (
+          <Block key={title} title={title} count={items.length}>
+            {items.slice(0, 6).map((item) => <Item key={item.key} item={item} compact />)}
+            {!items.length && <Empty />}
+          </Block>
+        ))}
+      </div>
+
+      <aside className="c2-record">
+        <p>SALES ACTION</p>
+        <h2>Turn quotes into work.</h2>
+        <span>Draft, send, follow up and convert accepted quotes from this screen.</span>
+        <Link to="/quotes/new">New quote</Link>
+      </aside>
+    </section>
+  );
+}
+
+function MessagesView({ model }) {
+  const messages = [...model.notifications, ...model.history, ...model.owing];
+  const selected = messages[0];
+
+  return (
+    <section className="c2-messages">
+      <aside>
+        <h3>Inbox</h3>
+        {messages.slice(0, 9).map((item) => <Item key={item.key} item={item} compact />)}
+        {!messages.length && <Empty />}
+      </aside>
+
+      <section className="c2-thread">
+        <h2>{selected?.title || "No message selected"}</h2>
+        <div>{selected?.detail || "Customer and internal messages appear here."}</div>
+        <footer>
+          <input placeholder="Write a reply..." />
+          <button type="button">Send</button>
+        </footer>
+      </section>
+
+      <aside className="c2-draft">
+        <p>AI DRAFT</p>
+        <h3>Prepared reminder</h3>
+        <span>Hi, just a quick reminder about your scheduled work. Please confirm access is available.</span>
+        <button type="button">Approve & send</button>
+        <button type="button">Save draft</button>
+      </aside>
+    </section>
+  );
+}
+
+function MoreView() {
+  const tools = [
+    ["Automations", "Approval-first business flows", "/automation"],
+    ["MYOB", "Invoices and accounting sync", "/integrations"],
+    ["Payroll", "Worker summaries and handoff", "/payroll"],
+    ["Reports", "Exports and performance", "/reports"],
+    ["Settings", "Business setup and permissions", "/settings"],
+    ["Alerts", "Notifications and updates", "/notifications"],
+  ];
+
+  return (
+    <section className="c2-more">
+      <div>
+        {tools.map(([title, detail, to]) => (
+          <Link className="c2-tool" key={title} to={to}>
+            <b>{title}</b>
+            <span>{detail}</span>
+          </Link>
+        ))}
+      </div>
+
+      <aside>
+        <h3>System status</h3>
+        <p>Churvox platform</p>
+        <strong>Operational</strong>
+        <p>AI Operator</p>
+        <strong>Operational</strong>
+        <p>Integrations</p>
+        <strong>Operational</strong>
+      </aside>
+    </section>
   );
 }
 
 export default function ConceptCPage({ area = "dashboard" }) {
-  const page = PAGE[area] || PAGE.dashboard;
+  const page = PAGES[area] || PAGES.dashboard;
   const { get } = useApi();
   const { data, loading } = useLiveData(page, get);
-  const model = useMemo(() => build(data), [data]);
+  const model = useMemo(() => buildModel(data), [data]);
 
   return (
-    <Shell area={area}>
-      {page.mode === "jobs" ? <Jobs page={page} data={model} /> :
-       page.mode === "schedule" ? <Schedule page={page} data={model} /> :
-       page.mode === "people" ? <People page={page} data={model} area={area} /> :
-       page.mode === "messages" ? <Messages page={page} data={model} /> :
-       page.mode === "finance" ? <Finance page={page} data={model} /> :
-       page.mode === "sales" ? <Sales page={page} data={model} /> :
-       page.mode === "more" ? <More page={page} data={model} /> :
-       <Command page={page} data={model} loading={loading} />}
+    <Shell area={area} page={page}>
+      {page.mode === "jobs" ? <JobsView model={model} /> :
+       page.mode === "schedule" ? <ScheduleView model={model} /> :
+       page.mode === "people" ? <PeopleView area={area} model={model} /> :
+       page.mode === "messages" ? <MessagesView model={model} /> :
+       page.mode === "finance" ? <FinanceView model={model} /> :
+       page.mode === "sales" ? <SalesView model={model} /> :
+       page.mode === "more" ? <MoreView model={model} /> :
+       <CommandView model={model} loading={loading} />}
     </Shell>
   );
 }
