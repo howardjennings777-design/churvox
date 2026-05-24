@@ -62,6 +62,7 @@ import FeaturesPage from "./pages/marketing/FeaturesPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import FloatingBottomNav from "./components/FloatingBottomNav";
 import WorkBoardPageFrame from "./components/WorkBoardPageFrame";
+import WorkBoardAreaPage from "./workboard/WorkBoardAreaPage";
 
 const Spinner = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -232,34 +233,34 @@ function App() {
             <Route path="/dashboard" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><DashboardPage /></ErrorBoundary></BusinessRoute>} />
             <Route path="/overview" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><DashboardPage /></ErrorBoundary></BusinessRoute>} />
             <Route path="/onboarding" element={<BusinessRoute><OnboardingPage /></BusinessRoute>} />
-            <Route path="/jobs" element={<BusinessRoute><JobsPage /></BusinessRoute>} />
+            <Route path="/jobs" element={<BusinessRoute><WorkBoardAreaPage area="jobs" /></BusinessRoute>} />
             <Route path="/jobs/new" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
             <Route path="/jobs/:id" element={<BusinessRoute><JobDetailPage /></BusinessRoute>} />
             <Route path="/jobs/:id/edit" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
-            <Route path="/dispatch" element={<BusinessRoute><CalendarPage /></BusinessRoute>} />
+            <Route path="/dispatch" element={<BusinessRoute><WorkBoardAreaPage area="dispatch" /></BusinessRoute>} />
             <Route path="/calendar" element={<Navigate to="/dispatch" replace />} />
-            <Route path="/clients" element={<BusinessRoute><ClientsPage /></BusinessRoute>} />
+            <Route path="/clients" element={<BusinessRoute><WorkBoardAreaPage area="clients" /></BusinessRoute>} />
             <Route path="/clients/new" element={<BusinessRoute><ClientFormPage /></BusinessRoute>} />
             <Route path="/clients/:id" element={<BusinessRoute><ClientDetailPage /></BusinessRoute>} />
             <Route path="/clients/:id/edit" element={<BusinessRoute><ClientFormPage /></BusinessRoute>} />
-            <Route path="/quotes" element={<BusinessRoute><QuotesPage /></BusinessRoute>} />
+            <Route path="/quotes" element={<BusinessRoute><WorkBoardAreaPage area="quotes" /></BusinessRoute>} />
             <Route path="/quotes/new" element={<BusinessRoute><QuoteFormPage /></BusinessRoute>} />
             <Route path="/quotes/:id" element={<BusinessRoute><QuoteDetailPage /></BusinessRoute>} />
             <Route path="/quotes/:id/edit" element={<BusinessRoute><QuoteFormPage /></BusinessRoute>} />
-            <Route path="/invoices" element={<BusinessRoute><InvoicesPage /></BusinessRoute>} />
+            <Route path="/invoices" element={<BusinessRoute><WorkBoardAreaPage area="invoices" /></BusinessRoute>} />
             <Route path="/invoices/new" element={<BusinessRoute><InvoiceFormPage /></BusinessRoute>} />
             <Route path="/invoices/:id" element={<BusinessRoute><InvoiceDetailPage /></BusinessRoute>} />
-            <Route path="/sms" element={<BusinessRoute><SMSPage /></BusinessRoute>} />
-            <Route path="/reports" element={<ReportsRoute><ReportsPage /></ReportsRoute>} />
-            <Route path="/integrations" element={<BusinessRoute><IntegrationsPage /></BusinessRoute>} />
-            <Route path="/settings" element={<BusinessRoute><SettingsPage /></BusinessRoute>} />
+            <Route path="/sms" element={<BusinessRoute><WorkBoardAreaPage area="sms" /></BusinessRoute>} />
+            <Route path="/reports" element={<ReportsRoute><WorkBoardAreaPage area="reports" /></ReportsRoute>} />
+            <Route path="/integrations" element={<BusinessRoute><WorkBoardAreaPage area="integrations" /></BusinessRoute>} />
+            <Route path="/settings" element={<BusinessRoute><WorkBoardAreaPage area="settings" /></BusinessRoute>} />
             <Route path="/contact" element={<PrivateRoute><ContactPage /></PrivateRoute>} />
             <Route path="/plans" element={<OwnerRoute><PlansPage /></OwnerRoute>} />
-            <Route path="/team" element={<TeamRoute><TeamPage /></TeamRoute>} />
-            <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
-            <Route path="/automation" element={<TeamRoute><AutomationPage /></TeamRoute>} />
-            <Route path="/automation/runs" element={<TeamRoute><AutomationRunsPage /></TeamRoute>} />
-            <Route path="/payroll" element={<PayrollRoute><PayrollPage /></PayrollRoute>} />
+            <Route path="/team" element={<TeamRoute><WorkBoardAreaPage area="team" /></TeamRoute>} />
+            <Route path="/notifications" element={<PrivateRoute><WorkBoardAreaPage area="notifications" /></PrivateRoute>} />
+            <Route path="/automation" element={<TeamRoute><WorkBoardAreaPage area="automation" /></TeamRoute>} />
+            <Route path="/automation/runs" element={<TeamRoute><WorkBoardAreaPage area="automation" /></TeamRoute>} />
+            <Route path="/payroll" element={<PayrollRoute><WorkBoardAreaPage area="payroll" /></PayrollRoute>} />
             <Route path="/worker/jobs" element={<WorkerRoute><WorkerJobsPage /></WorkerRoute>} />
             <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerJobDetailPage /></WorkerRoute>} />
             <Route path="/worker/settings" element={<WorkerRoute><WorkerSettingsPage /></WorkerRoute>} />
