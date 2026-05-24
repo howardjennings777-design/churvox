@@ -1,0 +1,24 @@
+/* CHURVOX_HYBRID_LIGHT_APP_WORKSPACES_20260524 */
+.cc-app.cc-simple{
+  color:#071118;
+  background:radial-gradient(circle at 15% -8%,rgba(51,187,237,.14),transparent 31%),radial-gradient(circle at 96% 0%,rgba(55,208,156,.10),transparent 30%),linear-gradient(135deg,#06111a 0%,#071827 128px,#eaf1f3 129px,#f8fbfa 100%);
+}
+.cc-simple .cc-bg{opacity:.45}
+.cc-simple .cc-side{background:linear-gradient(180deg,rgba(13,33,48,.94),rgba(6,17,26,.94));box-shadow:0 26px 80px rgba(6,17,26,.26)}
+.cc-simple .cc-top{background:rgba(13,33,48,.88);box-shadow:0 22px 70px rgba(6,17,26,.22)}
+.cc-simple .cc-page-head{color:#071118;border:1px solid rgba(8,21,31,.11);background:linear-gradient(135deg,rgba(255,255,255,.96),rgba(238,247,250,.92));box-shadow:0 20px 58px rgba(8,21,31,.10)}
+.cc-simple .cc-page-head p{color:#2bacd8}
+.cc-simple .cc-page-head h1{color:#071118;font-family:Georgia,"Times New Roman",serif;font-size:clamp(38px,4.6vw,64px);line-height:.92;letter-spacing:-.07em}
+.cc-simple .cc-page-head span{display:block;margin-top:8px;color:#62737d}
+.cc-simple .cc-page-list{border:1px solid rgba(8,21,31,.11);background:rgba(255,255,255,.94);box-shadow:0 20px 58px rgba(8,21,31,.09);color:#071118}
+.cc-simple .cc-page-list .cc-mini{border-bottom:1px solid rgba(8,21,31,.10);color:#071118;background:transparent}
+.cc-simple .cc-page-list .cc-mini:hover{background:rgba(43,172,216,.08);border-radius:14px;padding-left:10px;padding-right:10px}
+.cc-simple .cc-page-list .cc-mini b{color:#071118}
+.cc-simple .cc-page-list .cc-mini span{color:#62737d}
+.cc-simple .cc-page-list .cc-mini em{color:#0f708b;background:rgba(43,172,216,.11);border-radius:999px;padding:6px 9px}
+.cc-simple .cc-page-list .cc-mini i{background:#2bacd8;box-shadow:0 0 0 5px rgba(43,172,216,.10)}
+.cc-simple .cc-page-list .cc-mini.live i{background:#2bbd91;box-shadow:0 0 0 5px rgba(43,189,145,.12)}
+.cc-simple .cc-empty{color:#62737d}
+.cc-simple .cc-drawer{color:#fff}
+@media(max-width:1200px){.cc-app.cc-simple{background:linear-gradient(180deg,#06111a 0,#071827 110px,#eaf1f3 111px,#f8fbfa 100%)}}
+@media(max-width:760px){.cc-simple .cc-page-head h1{font-size:clamp(34px,11vw,54px)}}
