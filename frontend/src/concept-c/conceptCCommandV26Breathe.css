@@ -22,6 +22,8 @@
   .cc-app:not(.cc-simple) .cc-live .cc-map{min-height:118px!important;}
   .cc-app:not(.cc-simple) .cc-status-strip{height:50px!important;}
 }
+.cc-app .cc-search:before{content:"Find jobs, clients and invoices"!important;}
+.cc-app .cc-search em:after{content:"Quick find"!important;}
 @media(min-width:1200px){
   .cc-app:not(.cc-simple) .cc-panel{min-height:250px!important;}
   .cc-app:not(.cc-simple) .cc-grid{gap:16px!important;}
@@ -29,4 +31,5 @@
 @media(max-width:900px){
   .cc-app:not(.cc-simple) .cc-main{padding:12px 12px 70px!important;}
   .cc-app:not(.cc-simple) .cc-stat b{font-size:1rem!important;}
+  .cc-app .cc-search:before{content:"Find work"!important;}
 }
