@@ -16,6 +16,7 @@ import {
   ChevronRight,
   X,
 } from "lucide-react";
+import "./AIOperatorApprovalsCommand.css";
 
 const safeArray = (v) => (Array.isArray(v) ? v : []);
 
@@ -321,7 +322,7 @@ export default function AIOperatorApprovalsPage() {
 
   return (
     <Layout>
-      <div className="cx-page">
+      <div className="cx-page ai-approvals-command" data-version="CHURVOX_AI_APPROVALS_COMMAND_20260525">
         <div className="cx-page-hero">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
@@ -370,7 +371,6 @@ export default function AIOperatorApprovalsPage() {
           </div>
         </div>
 
-        {/* Filters */}
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <div className="inline-flex rounded-lg border border-[#dde6f3] bg-white p-0.5 text-sm">
             {["pending", "completed", "all"].map((f) => (
@@ -429,7 +429,6 @@ export default function AIOperatorApprovalsPage() {
           )}
         </div>
 
-        {/* Safety banner */}
         <div className="mt-3 flex items-start gap-2 rounded-xl border border-[#bfdbfe] bg-[#eff6ff] p-3 text-xs text-[#1e3a8a]">
           <ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0" />
           <div>
@@ -438,7 +437,6 @@ export default function AIOperatorApprovalsPage() {
           </div>
         </div>
 
-        {/* List */}
         <div className="mt-4 space-y-3">
           {loading ? (
             <div className="cx-loading-state">Loading AI actions…</div>
