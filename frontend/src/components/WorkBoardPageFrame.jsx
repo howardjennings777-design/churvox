@@ -1,5 +1,4 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
 import "./workBoardPageFrame.css";
 
 const PAGE_META = [
@@ -32,31 +31,46 @@ function getMeta(pathname) {
 
 function shouldBypass(pathname) {
   const path = String(pathname || "").toLowerCase();
-  return (
-    path === "/" ||
-    path.includes("/dashboard") ||
-    path.includes("/overview") ||
-    path.includes("/login") ||
-    path.includes("/signup") ||
-    path.includes("/reset") ||
-    path.includes("/forgot") ||
-    path.includes("/invite") ||
-    path.includes("/public") ||
-    path.includes("/client-portal") ||
-    path.includes("/features") ||
-    path.includes("/pricing") ||
-    path.includes("/privacy") ||
-    path.includes("/terms") ||
-    path.includes("/account-deletion") ||
-    path.includes("/platform-unlock") ||
-    path.includes("/admin") ||
-    path.includes("/worker")
-  );
+  return path === "/" || path.includes("/dashboard") || path.includes("/overview") || path.includes("/login") || path.includes("/signup") || path.includes("/reset") || path.includes("/forgot") || path.includes("/invite") || path.includes("/public") || path.includes("/client-portal") || path.includes("/features") || path.includes("/pricing") || path.includes("/privacy") || path.includes("/terms") || path.includes("/account-deletion") || path.includes("/platform-unlock") || path.includes("/admin") || path.includes("/worker");
+}
+
+function usePathname() {
+  const getPath = () => window.location.pathname || "/";
+  const [path, setPath] = React.useState(getPath);
+
+  React.useEffect(() => {
+    const update = () => setPath(getPath());
+    const originalPush = window.history.pushState;
+    const originalReplace = window.history.replaceState;
+
+    window.history.pushState = function patchedPushState(...args) {
+      const result = originalPush.apply(this, args);
+      update();
+      return result;
+    };
+
+    window.history.replaceState = function patchedReplaceState(...args) {
+      const result = originalReplace.apply(this, args);
+      update();
+      return result;
+    };
+
+    window.addEventListener("popstate", update);
+    window.addEventListener("hashchange", update);
+
+    return () => {
+      window.history.pushState = originalPush;
+      window.history.replaceState = originalReplace;
+      window.removeEventListener("popstate", update);
+      window.removeEventListener("hashchange", update);
+    };
+  }, []);
+
+  return path;
 }
 
 export default function WorkBoardPageFrame({ children }) {
-  const location = useLocation();
-  const pathname = location.pathname || "";
+  const pathname = usePathname();
 
   if (shouldBypass(pathname)) return <>{children}</>;
 
@@ -72,15 +86,13 @@ export default function WorkBoardPageFrame({ children }) {
         </div>
 
         <div className="cvx-work-frame__signals">
-          {meta.stats.map((stat) => (
-            <button key={stat} type="button">{stat}</button>
-          ))}
+          {meta.stats.map((stat) => <button key={stat} type="button">{stat}</button>)}
         </div>
 
         <div className="cvx-work-frame__actions">
-          <Link to="/dashboard">Work Board</Link>
-          <Link to="/jobs">Jobs</Link>
-          <Link to="/invoices">Money</Link>
+          <a href="/dashboard">Work Board</a>
+          <a href="/jobs">Jobs</a>
+          <a href="/invoices">Money</a>
         </div>
       </header>
 
