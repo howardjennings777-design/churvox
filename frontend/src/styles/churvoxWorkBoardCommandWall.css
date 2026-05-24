@@ -439,3 +439,242 @@ html,body,#root{min-height:100%;background:radial-gradient(circle at 12% -12%,rg
     font-size: 1.55rem !important;
   }
 }
+
+/* CHURVOX_WORK_BOARD_GLOBAL_PAGES_20260524
+   Brings the rest of the app into the Work Board identity:
+   - same black/yellow/cyan command feel
+   - page headers look like work-board sections
+   - cards/tables/forms/buttons look consistent
+   - avoids changing dashboard .cwb structure
+*/
+
+body {
+  background:
+    radial-gradient(circle at 12% -12%, rgba(43,183,216,.18), transparent 30%),
+    radial-gradient(circle at 92% 4%, rgba(242,201,76,.18), transparent 30%),
+    linear-gradient(135deg, #f4f1e8 0%, #e9e5d8 100%) !important;
+}
+
+/* Normal app pages */
+main:not(.cwb),
+.page,
+.page-shell,
+.page-content,
+.dashboard-page,
+.clients-page,
+.jobs-page,
+.invoices-page,
+.quotes-page,
+.team-page,
+.settings-page {
+  color: var(--cwb-ink) !important;
+}
+
+/* Main page wrapper cards */
+main:not(.cwb) > div:first-child,
+main:not(.cwb) section:first-child,
+.page-shell,
+.page-content {
+  border-radius: 24px !important;
+}
+
+/* Page headings */
+main:not(.cwb) h1 {
+  color: var(--cwb-ink) !important;
+  font-size: clamp(2rem, 4vw, 4.4rem) !important;
+  line-height: .88 !important;
+  letter-spacing: -.08em !important;
+}
+
+main:not(.cwb) h1::before {
+  content: "CHURVOX WORK BOARD";
+  display: block;
+  margin-bottom: 8px;
+  color: var(--cwb-cyan);
+  font-size: .68rem;
+  font-weight: 950;
+  letter-spacing: .16em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+/* Page subtitles */
+main:not(.cwb) p,
+main:not(.cwb) span,
+main:not(.cwb) small {
+  border-color: var(--cwb-line);
+}
+
+/* Cards / panels */
+main:not(.cwb) .bg-white,
+main:not(.cwb) .bg-gray-50,
+main:not(.cwb) .bg-slate-50,
+main:not(.cwb) .shadow,
+main:not(.cwb) .shadow-sm,
+main:not(.cwb) .shadow-md,
+main:not(.cwb) .shadow-lg,
+main:not(.cwb) [class*="card"],
+main:not(.cwb) [class*="Card"],
+main:not(.cwb) [class*="panel"],
+main:not(.cwb) [class*="Panel"] {
+  border: 1px solid var(--cwb-line) !important;
+  border-radius: 18px !important;
+  background: rgba(255,253,245,.92) !important;
+  color: var(--cwb-ink) !important;
+  box-shadow: 0 16px 44px rgba(12,18,24,.09) !important;
+}
+
+/* Section blocks */
+main:not(.cwb) section,
+main:not(.cwb) article {
+  border-color: var(--cwb-line);
+}
+
+/* Tables */
+main:not(.cwb) table {
+  overflow: hidden !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border: 1px solid var(--cwb-line) !important;
+  border-radius: 18px !important;
+  background: rgba(255,253,245,.94) !important;
+  box-shadow: 0 16px 44px rgba(12,18,24,.08) !important;
+}
+
+main:not(.cwb) thead,
+main:not(.cwb) th {
+  background: linear-gradient(180deg, var(--cwb-board), var(--cwb-board2)) !important;
+  color: #fff !important;
+}
+
+main:not(.cwb) th {
+  color: var(--cwb-yellow) !important;
+  font-size: .72rem !important;
+  font-weight: 950 !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase !important;
+}
+
+main:not(.cwb) td {
+  border-color: rgba(12,18,24,.08) !important;
+}
+
+main:not(.cwb) tr:hover td {
+  background: rgba(242,201,76,.08) !important;
+}
+
+/* Forms */
+main:not(.cwb) input,
+main:not(.cwb) select,
+main:not(.cwb) textarea {
+  border: 1px solid var(--cwb-line) !important;
+  border-radius: 12px !important;
+  background: #fffdf7 !important;
+  color: var(--cwb-ink) !important;
+  box-shadow: none !important;
+}
+
+main:not(.cwb) input:focus,
+main:not(.cwb) select:focus,
+main:not(.cwb) textarea:focus {
+  outline: 2px solid rgba(43,183,216,.35) !important;
+  border-color: rgba(43,183,216,.6) !important;
+}
+
+/* Primary buttons */
+main:not(.cwb) button[class*="bg-blue"],
+main:not(.cwb) button[class*="bg-indigo"],
+main:not(.cwb) button[class*="bg-green"],
+main:not(.cwb) button[class*="bg-emerald"],
+main:not(.cwb) a[class*="bg-blue"],
+main:not(.cwb) a[class*="bg-indigo"],
+main:not(.cwb) a[class*="bg-green"],
+main:not(.cwb) a[class*="bg-emerald"],
+main:not(.cwb) .bg-blue-600,
+main:not(.cwb) .bg-indigo-600,
+main:not(.cwb) .bg-green-600,
+main:not(.cwb) .bg-emerald-600 {
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, var(--cwb-yellow), #ffde6a) !important;
+  color: #141006 !important;
+  box-shadow: 0 12px 28px rgba(242,201,76,.24) !important;
+}
+
+/* Danger buttons keep danger meaning */
+main:not(.cwb) button[class*="bg-red"],
+main:not(.cwb) a[class*="bg-red"],
+main:not(.cwb) .bg-red-600 {
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, var(--cwb-red), #ff775e) !important;
+  color: #fff !important;
+}
+
+/* Status badges */
+main:not(.cwb) [class*="badge"],
+main:not(.cwb) [class*="Badge"],
+main:not(.cwb) .rounded-full {
+  font-weight: 900 !important;
+}
+
+/* Dialogs / modals */
+[role="dialog"],
+.fixed.inset-0 [class*="bg-white"] {
+  border-radius: 24px !important;
+}
+
+[role="dialog"] h2,
+[role="dialog"] h3 {
+  letter-spacing: -.055em !important;
+}
+
+/* Sidebar / shell bits if present */
+aside,
+nav {
+  border-color: rgba(12,18,24,.12);
+}
+
+/* Floating dock stays matched and lower */
+.cv-floating-dock {
+  bottom: 8px !important;
+}
+
+.cv-floating-dock__inner {
+  background: linear-gradient(180deg, #101316, #1b2228) !important;
+  border-color: rgba(255,255,255,.12) !important;
+  transform: scale(.84) !important;
+  transform-origin: bottom center !important;
+  box-shadow: 0 18px 50px rgba(12,18,24,.28) !important;
+}
+
+.cv-float-icon {
+  color: var(--cwb-yellow) !important;
+}
+
+.cv-float-link:hover,
+.cv-float-link.is-active {
+  background: rgba(242,201,76,.18) !important;
+}
+
+/* Make page top actions feel like command actions */
+main:not(.cwb) header,
+main:not(.cwb) .page-header,
+main:not(.cwb) [class*="header"] {
+  border-color: var(--cwb-line);
+}
+
+/* Mobile cleanup */
+@media (max-width: 740px) {
+  main:not(.cwb) h1 {
+    font-size: 2.35rem !important;
+  }
+
+  main:not(.cwb) table {
+    border-radius: 14px !important;
+  }
+
+  .cv-floating-dock__inner {
+    transform: scale(.82) !important;
+  }
+}
