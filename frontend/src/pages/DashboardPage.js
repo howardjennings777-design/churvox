@@ -1,11 +1,11 @@
 import React from "react";
 import SmartHubErrorBoundary from "../components/SmartHubErrorBoundary";
-import TradeCommandConsole from "./TradeCommandConsole";
+import WorkBoardCommandWall from "./WorkBoardCommandWall";
 
 export default function DashboardPage() {
   return (
     <SmartHubErrorBoundary>
-      <TradeCommandConsole />
+      <WorkBoardCommandWall />
     </SmartHubErrorBoundary>
   );
 }
