@@ -3,24 +3,22 @@ import { Link } from "react-router-dom";
 import "./conceptC.css";
 
 const FRAME = {
-  dashboard: ["AI OPERATOR THEATRE", "Run the day.", "Approve, fix, move and collect from one full-screen business theatre.", "Dashboard", "/dashboard"],
-  jobs: ["FIELD CONTROL", "Work card.", "Create, edit or review job details inside the same Concept C command system.", "Jobs board", "/jobs"],
-  clients: ["CUSTOMER CONTROL", "Customer card.", "Create, edit or review customer details without leaving the new system.", "Clients board", "/clients"],
-  quotes: ["SALES CONTROL", "Quote card.", "Prepare, edit and review quotes in the Concept C sales flow.", "Quotes board", "/quotes"],
-  invoices: ["MONEY CONTROL", "Invoice card.", "Prepare, review and control invoices inside the money desk.", "Invoices board", "/invoices"],
-  team: ["CREW CONTROL", "Crew card.", "Manage workers, roles and crew records inside Concept C.", "Team board", "/team"],
-  plans: ["PLAN CONTROL", "Plan desk.", "Choose and manage plan access inside the Churvox control system.", "Dashboard", "/dashboard"],
-  worker: ["FIELD APP", "Worker mode.", "Worker jobs, job details and settings in the same Churvox identity.", "Worker jobs", "/worker/jobs"],
-  settings: ["SYSTEM CONTROL", "System card.", "Settings and admin screens inside Concept C.", "Settings", "/settings"],
+  jobs: ["FIELD CONTROL", "Work card.", "Create, edit and review jobs inside Concept C.", "Back to jobs", "/jobs"],
+  clients: ["CUSTOMER CONTROL", "Customer card.", "Create, edit and review customers inside Concept C.", "Back to clients", "/clients"],
+  quotes: ["SALES CONTROL", "Quote card.", "Create, edit and review quotes inside Concept C.", "Back to quotes", "/quotes"],
+  invoices: ["MONEY CONTROL", "Invoice card.", "Create, edit and review invoices inside Concept C.", "Back to invoices", "/invoices"],
+  plans: ["PLAN CONTROL", "Plan desk.", "Choose and manage plan access inside Concept C.", "Back to dashboard", "/dashboard"],
+  worker: ["FIELD APP", "Worker mode.", "Worker jobs, details and settings inside the Churvox identity.", "Worker jobs", "/worker/jobs"],
+  settings: ["SYSTEM CONTROL", "System card.", "Contact, settings and admin screens inside Concept C.", "Back to settings", "/settings"],
 };
 
-export default function ConceptCFrame({ area = "dashboard", children }) {
-  const page = FRAME[area] || FRAME.dashboard;
+export default function ConceptCFrame({ area = "jobs", children }) {
+  const page = FRAME[area] || FRAME.jobs;
 
-  const active = area === "team" || area === "clients" ? "people" :
+  const active =
+    area === "clients" ? "people" :
     area === "invoices" ? "finance" :
-    area === "quotes" ? "jobs" :
-    area === "worker" ? "jobs" :
+    area === "quotes" || area === "worker" ? "jobs" :
     area === "plans" || area === "settings" ? "more" :
     area;
 
@@ -35,7 +33,7 @@ export default function ConceptCFrame({ area = "dashboard", children }) {
   ];
 
   return (
-    <main className="concept-c2 concept-c2-embedded" data-version="CHURVOX_CONCEPT_C_FRAME_20260524">
+    <main className="concept-c2 concept-c2-frame" data-version="CHURVOX_CONCEPT_C_FRAME_REAL_20260524">
       <div className="c2-noise" />
 
       <header className="c2-topbar">
@@ -59,16 +57,16 @@ export default function ConceptCFrame({ area = "dashboard", children }) {
           <Link to={page[4]}>{page[3]}</Link>
         </aside>
 
-        <section className="c2-stage c2-legacy-stage">
-          <div className="c2-legacy-card">
+        <section className="c2-stage c2-real-page-stage">
+          <div className="c2-real-page-card">
             {children}
           </div>
         </section>
 
         <aside className="c2-ai">
           <p>AI OPERATOR</p>
-          <h2>Same system. No old page break.</h2>
-          <span>This screen is now inside the Concept C shell so create, edit and detail pages do not fall back to the old look.</span>
+          <h2>No old page break.</h2>
+          <span>This screen now sits inside Concept C, so form/detail pages do not drop back into the old app look.</span>
 
           <div>
             <small>Screen</small>

@@ -1111,3 +1111,82 @@ body,
 .c2-legacy-card [class*="shadow"] {
   box-shadow: 0 18px 54px rgba(16,16,20,.10) !important;
 }
+
+/* REAL Concept C frame for old form/detail/worker pages */
+.concept-c2-frame .c2-real-page-stage {
+  padding: 0;
+  overflow: hidden;
+}
+
+.c2-real-page-card {
+  min-height: calc(100vh - 184px);
+  overflow: auto;
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(217,132,85,.13), transparent 28%),
+    linear-gradient(180deg, rgba(255,249,239,.90), rgba(245,232,216,.82));
+  padding: clamp(16px, 2.2vw, 30px);
+}
+
+.c2-real-page-card > * {
+  max-width: none !important;
+}
+
+.c2-real-page-card .min-h-screen,
+.c2-real-page-card [class*="min-h-screen"] {
+  min-height: auto !important;
+  background: transparent !important;
+}
+
+.c2-real-page-card [class*="bg-white"],
+.c2-real-page-card [class*="bg-slate"],
+.c2-real-page-card [class*="bg-gray"],
+.c2-real-page-card [class*="bg-blue"],
+.c2-real-page-card [class*="bg-indigo"] {
+  background-color: rgba(255,255,255,.46) !important;
+}
+
+.c2-real-page-card [class*="text-blue"],
+.c2-real-page-card [class*="text-indigo"],
+.c2-real-page-card [class*="text-sky"] {
+  color: var(--c2-copper) !important;
+}
+
+.c2-real-page-card [class*="border-blue"],
+.c2-real-page-card [class*="border-indigo"],
+.c2-real-page-card [class*="border-sky"] {
+  border-color: rgba(182,101,67,.34) !important;
+}
+
+.c2-real-page-card form,
+.c2-real-page-card section,
+.c2-real-page-card article,
+.c2-real-page-card [class*="rounded"],
+.c2-real-page-card [class*="card"] {
+  border-radius: 24px !important;
+}
+
+.c2-real-page-card input,
+.c2-real-page-card textarea,
+.c2-real-page-card select {
+  border-radius: 15px !important;
+  border-color: rgba(25,23,22,.18) !important;
+  background: rgba(255,255,255,.78) !important;
+}
+
+.c2-real-page-card button,
+.c2-real-page-card a[class*="button"],
+.c2-real-page-card .btn {
+  border-radius: 15px !important;
+}
+
+.c2-real-page-card h1,
+.c2-real-page-card h2,
+.c2-real-page-card h3 {
+  color: var(--c2-ink) !important;
+  letter-spacing: -.04em;
+}
+
+.c2-real-page-card [class*="shadow"] {
+  box-shadow: 0 18px 54px rgba(16,16,20,.11) !important;
+}
