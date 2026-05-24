@@ -3,8 +3,8 @@ import { Link } from "react-router-dom";
 import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 import "./ExecutivePublicSite.css";
 
-function Nav(){return <header className="ex-nav"><Link to="/" className="ex-brand"><ChurvoxLogo/><span>Churvox</span></Link><nav className="ex-nav-links"><Link to="/">Home</Link><Link to="/features">Features</Link><Link to="/pricing">Pricing</Link></nav><div className="ex-nav-actions"><Link to="/login" className="ex-login">Log in</Link><Link to="/signup" className="ex-btn ex-btn--primary">Start free</Link></div></header>}
-function Footer(){return <footer className="ex-footer"><div><Link to="/" className="ex-brand ex-brand--footer"><ChurvoxLogo/><span>Churvox</span></Link><p>AI command software for trade and service owners.</p></div><div className="ex-footer-links"><Link to="/features">Features</Link><Link to="/pricing">Pricing</Link><Link to="/login">Log in</Link><Link to="/signup">Start free</Link></div></footer>}
+function Nav(){return <header className="ex-nav"><Link to="/" className="ex-brand"><ChurvoxLogo variant="mark" size="sm" tone="light"/><span>Churvox</span></Link><nav className="ex-nav-links"><Link to="/">Home</Link><Link to="/features">Features</Link><Link to="/pricing">Pricing</Link></nav><div className="ex-nav-actions"><Link to="/login" className="ex-login">Log in</Link><Link to="/signup" className="ex-btn ex-btn--primary">Start free</Link></div></header>}
+function Footer(){return <footer className="ex-footer"><div><Link to="/" className="ex-brand ex-brand--footer"><ChurvoxLogo variant="mark" size="sm" tone="light"/><span>Churvox</span></Link><p>AI command software for trade and service owners.</p></div><div className="ex-footer-links"><Link to="/features">Features</Link><Link to="/pricing">Pricing</Link><Link to="/login">Log in</Link><Link to="/signup">Start free</Link></div></footer>}
 
 export { Nav, Footer };
 
