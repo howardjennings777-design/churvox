@@ -1,3 +1,3 @@
 import React from "react";
-import CommandSlatePage from "../workboard/CommandSlatePage";
-export default function SMSPage() { return <CommandSlatePage area="sms" />; }
+import ConceptCPage from "../concept-c/ConceptCPage";
+export default function SMSPage() { return <ConceptCPage area="sms" />; }

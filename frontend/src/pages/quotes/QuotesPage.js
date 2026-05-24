@@ -1,3 +1,3 @@
 import React from "react";
-import CommandSlatePage from "../../workboard/CommandSlatePage";
-export default function QuotesPage() { return <CommandSlatePage area="quotes" />; }
+import ConceptCPage from "../../concept-c/ConceptCPage";
+export default function QuotesPage() { return <ConceptCPage area="quotes" />; }

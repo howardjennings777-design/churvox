@@ -1,3 +1,3 @@
 import React from "react";
-import CommandSlatePage from "../workboard/CommandSlatePage";
-export default function PayrollPageClean() { return <CommandSlatePage area="payroll" />; }
+import ConceptCPage from "../concept-c/ConceptCPage";
+export default function PayrollPageClean() { return <ConceptCPage area="payroll" />; }

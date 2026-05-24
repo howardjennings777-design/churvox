@@ -1,3 +1,3 @@
 import React from "react";
-import CommandSlatePage from "../../workboard/CommandSlatePage";
-export default function ClientsPage() { return <CommandSlatePage area="clients" />; }
+import ConceptCPage from "../../concept-c/ConceptCPage";
+export default function ClientsPage() { return <ConceptCPage area="clients" />; }

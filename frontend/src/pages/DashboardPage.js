@@ -1,6 +1,6 @@
 import React from "react";
-import CommandSlatePage from "../workboard/CommandSlatePage";
+import ConceptCPage from "../concept-c/ConceptCPage";
 
 export default function DashboardPage() {
-  return <CommandSlatePage area="dashboard" />;
+  return <ConceptCPage area="dashboard" />;
 }

@@ -1,3 +1,3 @@
 import React from "react";
-import CommandSlatePage from "../workboard/CommandSlatePage";
-export default function CalendarPage() { return <CommandSlatePage area="dispatch" />; }
+import ConceptCPage from "../concept-c/ConceptCPage";
+export default function CalendarPage() { return <ConceptCPage area="dispatch" />; }

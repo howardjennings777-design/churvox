@@ -1,3 +1,3 @@
 import React from "react";
-import CommandSlatePage from "../workboard/CommandSlatePage";
-export default function AutomationRunsPage() { return <CommandSlatePage area="automation" />; }
+import ConceptCPage from "../concept-c/ConceptCPage";
+export default function AutomationRunsPage() { return <ConceptCPage area="automation" />; }

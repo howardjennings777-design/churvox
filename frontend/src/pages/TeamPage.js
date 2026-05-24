@@ -1,3 +1,3 @@
 import React from "react";
-import CommandSlatePage from "../workboard/CommandSlatePage";
-export default function TeamPage() { return <CommandSlatePage area="team" />; }
+import ConceptCPage from "../concept-c/ConceptCPage";
+export default function TeamPage() { return <ConceptCPage area="team" />; }
