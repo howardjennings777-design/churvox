@@ -396,3 +396,46 @@ html,body,#root{min-height:100%;background:radial-gradient(circle at 12% -12%,rg
     font-size: 2rem !important;
   }
 }
+
+/* CHURVOX_WORK_BOARD_APPROVAL_TITLE_SIZE_FIX_20260524
+   Fixes the huge left approval title so it reads like a work board,
+   not a giant poster headline.
+*/
+
+.cwb-now .cwb-section-head {
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  align-items: start !important;
+  gap: 10px !important;
+}
+
+.cwb-now .cwb-section-head h2 {
+  max-width: 100% !important;
+  margin: 0 !important;
+  font-size: clamp(1.35rem, 1.85vw, 2.05rem) !important;
+  line-height: 1.02 !important;
+  letter-spacing: -0.045em !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+  hyphens: none !important;
+}
+
+.cwb-now .cwb-section-head > span {
+  padding: 6px 8px !important;
+  font-size: 0.62rem !important;
+}
+
+.cwb-now .cwb-command {
+  font-size: 0.88rem !important;
+  line-height: 1.35 !important;
+}
+
+@media (max-width: 740px) {
+  .cwb-now .cwb-section-head {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cwb-now .cwb-section-head h2 {
+    font-size: 1.55rem !important;
+  }
+}
