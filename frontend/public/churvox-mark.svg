@@ -1,8 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Churvox">
-  <rect x="2" y="2" width="60" height="60" rx="12" fill="#0E0E0E"/>
-  <text x="30" y="46" font-family="Inter, Outfit, sans-serif" font-weight="800"
-        font-size="44" fill="#F7F3EA" text-anchor="middle"
-        letter-spacing="-0.04em">C</text>
-  <circle cx="48" cy="46" r="5" fill="#C8FF4D"/>
+  <defs>
+    <linearGradient id="c-cyan" x1="8" y1="48" x2="56" y2="14" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#B8FBFF"/>
+      <stop offset="0.42" stop-color="#22D7FF"/>
+      <stop offset="1" stop-color="#1888FF"/>
+    </linearGradient>
+    <linearGradient id="c-glass" x1="7" y1="8" x2="58" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#13395A"/>
+      <stop offset="0.56" stop-color="#071827"/>
+      <stop offset="1" stop-color="#020814"/>
+    </linearGradient>
+    <filter id="c-glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="2.8" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.05 0 0 0 0 0.8 0 0 0 0 1 0 0 0 .95 0"/>
+      <feBlend in="SourceGraphic"/>
+    </filter>
+  </defs>
+  <rect x="1" y="1" width="62" height="62" rx="16" fill="url(#c-glass)"/>
+  <rect x="1.5" y="1.5" width="61" height="61" rx="15.5" fill="none" stroke="#2AD7FF" stroke-opacity="0.26"/>
+  <path d="M48.8 14.2A22.8 22.8 0 1 0 48.8 49.8" fill="none" stroke="url(#c-cyan)" stroke-width="8.2" stroke-linecap="round" filter="url(#c-glow)"/>
+  <path d="M50 15.3 57 20.8 48.2 25.5Z" fill="url(#c-cyan)" filter="url(#c-glow)"/>
+  <path d="M48.2 38.5 57 43.2 50 48.7Z" fill="url(#c-cyan)" filter="url(#c-glow)"/>
+  <path d="M8 27.2h21.4c5 0 7.2 2.8 9.4 6.2 2.8 4.4 7 6.9 13.4 6.9" fill="none" stroke="url(#c-cyan)" stroke-width="4.5" stroke-linecap="round" filter="url(#c-glow)"/>
+  <path d="M5.5 32h23.5" fill="none" stroke="url(#c-cyan)" stroke-width="4.1" stroke-linecap="round" opacity="0.96"/>
+  <path d="M10 36.8h18" fill="none" stroke="url(#c-cyan)" stroke-width="4.1" stroke-linecap="round" opacity="0.72"/>
 </svg>
