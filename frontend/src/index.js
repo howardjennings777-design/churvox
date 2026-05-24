@@ -8,7 +8,6 @@ import './styles/churvox-workhorse-worker.css';
 import './styles/churvox-workhorse-worker-complete.css';
 import './styles/churvox-workhorse-ops.css';
 import './styles/aiDashPolish.css';
-import './styles/churvoxDispatchCommandCentre.css';
 import './workhorseLiveCheck';
 import './renderDeployMarker';
 import './deploy/guidedOperatorFloorDeployMarker';
