@@ -1,0 +1,56 @@
+/* CHURVOX_LANDING_POLISH_NO_HERO_CUT_20260524 */
+.ex-site{
+  background:
+    radial-gradient(circle at 18% -8%,rgba(43,172,216,.24),transparent 34%),
+    radial-gradient(circle at 92% 0%,rgba(43,189,145,.13),transparent 32%),
+    linear-gradient(180deg,#06111a 0,#071827 760px,#eef4f6 761px,#f7faf9 100%) !important;
+}
+.ex-hero{
+  min-height:auto !important;
+  padding:76px 0 96px !important;
+  align-items:center !important;
+}
+.ex-hero h1{
+  font-size:clamp(54px,6.25vw,92px) !important;
+  line-height:.91 !important;
+  max-width:720px !important;
+}
+.ex-hero-copy{
+  padding-bottom:0 !important;
+}
+.ex-lead{
+  max-width:620px !important;
+  color:#b4c6ce !important;
+}
+.ex-product-shot{
+  transform:translateY(10px);
+}
+.ex-proof{
+  padding-top:64px !important;
+}
+.ex-command-story{
+  margin-top:4px !important;
+}
+.ex-footer .ex-brand,
+.ex-footer .ex-brand span{
+  color:#f6fbfc !important;
+}
+.ex-footer .ex-brand svg,
+.ex-footer .ex-brand svg *{
+  color:#f6fbfc !important;
+  fill:currentColor !important;
+  stroke:currentColor !important;
+}
+.ex-footer p{
+  color:#b8c8cf !important;
+}
+@media(max-width:1050px){
+  .ex-site{background:linear-gradient(180deg,#06111a 0,#071827 900px,#eef4f6 901px,#f7faf9 100%) !important}
+  .ex-hero{padding:56px 0 86px !important}
+  .ex-product-shot{transform:none}
+}
+@media(max-width:720px){
+  .ex-site{background:linear-gradient(180deg,#06111a 0,#071827 980px,#eef4f6 981px,#f7faf9 100%) !important}
+  .ex-hero h1{font-size:clamp(42px,12vw,64px) !important}
+  .ex-hero{padding:42px 0 72px !important}
+}
