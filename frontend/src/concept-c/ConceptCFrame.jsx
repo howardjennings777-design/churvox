@@ -1,15 +1,16 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import "./conceptC.css";
+import "./conceptCFrameHybrid.css";
 
 const FRAME = {
-  jobs: ["FIELD CONTROL", "Work card.", "Create, edit and review jobs inside Concept C.", "Back to jobs", "/jobs"],
-  clients: ["CUSTOMER CONTROL", "Customer card.", "Create, edit and review customers inside Concept C.", "Back to clients", "/clients"],
-  quotes: ["SALES CONTROL", "Quote card.", "Create, edit and review quotes inside Concept C.", "Back to quotes", "/quotes"],
-  invoices: ["MONEY CONTROL", "Invoice card.", "Create, edit and review invoices inside Concept C.", "Back to invoices", "/invoices"],
-  plans: ["PLAN CONTROL", "Plan desk.", "Choose and manage plan access inside Concept C.", "Back to dashboard", "/dashboard"],
+  jobs: ["FIELD CONTROL", "Work card.", "Create, edit and review jobs inside the Churvox Command Floor.", "Back to jobs", "/jobs"],
+  clients: ["CUSTOMER CONTROL", "Customer card.", "Create, edit and review customers inside the Churvox Command Floor.", "Back to clients", "/clients"],
+  quotes: ["SALES CONTROL", "Quote card.", "Create, edit and review quotes inside the Churvox Command Floor.", "Back to quotes", "/quotes"],
+  invoices: ["MONEY CONTROL", "Invoice card.", "Create, edit and review invoices inside the Churvox Command Floor.", "Back to invoices", "/invoices"],
+  plans: ["PLAN CONTROL", "Plan desk.", "Choose and manage plan access inside the Churvox Command Floor.", "Back to dashboard", "/dashboard"],
   worker: ["FIELD APP", "Worker mode.", "Worker jobs, details and settings inside the Churvox identity.", "Worker jobs", "/worker/jobs"],
-  settings: ["SYSTEM CONTROL", "System card.", "Contact, settings and admin screens inside Concept C.", "Back to settings", "/settings"],
+  settings: ["SYSTEM CONTROL", "System card.", "Contact, settings and admin screens inside the Churvox Command Floor.", "Back to settings", "/settings"],
 };
 
 export default function ConceptCFrame({ area = "jobs", children }) {
@@ -25,15 +26,15 @@ export default function ConceptCFrame({ area = "jobs", children }) {
   const links = [
     ["dashboard", "Command", "/dashboard"],
     ["jobs", "Jobs", "/jobs"],
-    ["schedule", "Schedule", "/dispatch"],
-    ["people", "People", "/clients"],
+    ["schedule", "Dispatch", "/dispatch"],
+    ["people", "Clients", "/clients"],
     ["messages", "Messages", "/sms"],
-    ["finance", "Finance", "/invoices"],
+    ["finance", "Money", "/invoices"],
     ["more", "More", "/settings"],
   ];
 
   return (
-    <main className="concept-c2 concept-c2-frame" data-version="CHURVOX_CONCEPT_C_FRAME_REAL_20260524">
+    <main className="concept-c2 concept-c2-frame" data-version="CHURVOX_HYBRID_DETAIL_FRAME_20260525">
       <div className="c2-noise" />
 
       <header className="c2-topbar">
@@ -66,7 +67,7 @@ export default function ConceptCFrame({ area = "jobs", children }) {
         <aside className="c2-ai">
           <p>AI OPERATOR</p>
           <h2>No old page break.</h2>
-          <span>This screen now sits inside Concept C, so form/detail pages do not drop back into the old app look.</span>
+          <span>This screen now stays inside the Churvox Command style, so forms and detail pages do not drop back into an old app look.</span>
 
           <div>
             <small>Screen</small>
