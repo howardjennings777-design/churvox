@@ -38,3 +38,182 @@ html,body,#root{min-height:100%;background:radial-gradient(circle at 12% -12%,rg
 .cv-floating-dock__inner{background:linear-gradient(180deg,#101316,#1b2228)!important}.cv-float-icon{color:var(--cwb-yellow)!important}.cv-float-link:hover,.cv-float-link.is-active{background:rgba(242,201,76,.18)!important}
 @media(max-width:1320px){.cwb-top,.cwb-wall,.cwb-open-board{grid-template-columns:1fr}.cwb-board,.cwb-now{min-height:auto}}
 @media(max-width:740px){.cwb{padding:10px 10px 96px}.cwb-status-strip,.cwb-money-split,.cwb-ask{grid-template-columns:1fr}.cwb-section-head h2,.cwb-top h1{font-size:2.4rem}.cwb-now-actions{grid-template-columns:1fr}.cwb-now-actions .hot{grid-column:auto}}
+
+/* CHURVOX_WORK_BOARD_READABILITY_FIX_20260524
+   This is the keeper layout. These fixes make it usable:
+   - Do Now title no longer explodes
+   - main wall gets breathing room
+   - dock stops covering content
+   - board columns read cleaner on laptop screens
+*/
+
+.cwb {
+  padding: 10px 14px 150px !important;
+  gap: 10px !important;
+}
+
+.cwb-top {
+  min-height: 104px !important;
+  padding: 16px 18px !important;
+}
+
+.cwb-top h1 {
+  font-size: clamp(1.85rem, 3vw, 3.45rem) !important;
+  line-height: .9 !important;
+  max-width: 760px !important;
+}
+
+.cwb-status-strip button {
+  min-height: 78px !important;
+  padding: 10px 13px !important;
+}
+
+.cwb-status-strip strong {
+  font-size: clamp(1.35rem, 2vw, 2.15rem) !important;
+}
+
+.cwb-wall {
+  grid-template-columns: minmax(300px, .9fr) minmax(280px, 1fr) minmax(300px, 1fr) minmax(320px, 1.05fr) !important;
+  gap: 10px !important;
+}
+
+.cwb-now,
+.cwb-board {
+  min-height: calc(100vh - 350px) !important;
+  max-height: calc(100vh - 286px) !important;
+  overflow: auto !important;
+}
+
+.cwb-now {
+  padding: 16px !important;
+}
+
+/* Main fix: stop the Do Now title from becoming enormous */
+.cwb-section-head h2 {
+  font-size: clamp(1.55rem, 2.25vw, 2.45rem) !important;
+  line-height: .96 !important;
+  letter-spacing: -.055em !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+  hyphens: auto !important;
+}
+
+.cwb-section-head {
+  gap: 10px !important;
+}
+
+.cwb-section-head > span {
+  flex: 0 0 auto !important;
+}
+
+.cwb-command {
+  margin: 14px 0 10px !important;
+  padding: 12px !important;
+  font-size: .9rem !important;
+  line-height: 1.38 !important;
+}
+
+.cwb-proof {
+  gap: 7px !important;
+  margin: 10px 0 !important;
+}
+
+.cwb-proof div {
+  padding: 10px !important;
+}
+
+.cwb-now-actions {
+  position: sticky !important;
+  bottom: 0 !important;
+  padding-top: 10px !important;
+  background: linear-gradient(180deg, rgba(16,19,22,0), var(--cwb-board) 26%) !important;
+}
+
+.cwb-now-actions .hot {
+  min-height: 50px !important;
+}
+
+.cwb-board {
+  padding: 12px !important;
+}
+
+.cwb-board-title,
+.cwb-money-top {
+  margin: -12px -12px 10px !important;
+  padding: 12px !important;
+}
+
+.cwb-ticket-list {
+  gap: 7px !important;
+}
+
+.cwb-ticket-list button {
+  min-height: 78px !important;
+  padding: 9px 10px !important;
+}
+
+.cwb-ticket-list strong {
+  font-size: .88rem !important;
+  line-height: 1.15 !important;
+}
+
+.cwb-ticket-list em {
+  font-size: .72rem !important;
+  line-height: 1.2 !important;
+}
+
+.cwb-money-top h2 {
+  font-size: clamp(2rem, 3.4vw, 3.7rem) !important;
+}
+
+.cwb-money-split button {
+  min-height: 78px !important;
+}
+
+.cwb-open-board {
+  margin-bottom: 22px !important;
+  grid-template-columns: 180px minmax(0, 1fr) !important;
+}
+
+.cwb-open-list button {
+  min-height: 62px !important;
+}
+
+.cwb-ask {
+  position: relative !important;
+  bottom: auto !important;
+  z-index: 2 !important;
+}
+
+/* Bottom nav must not cover the work board */
+.cv-floating-dock {
+  bottom: 8px !important;
+}
+
+.cv-floating-dock__inner {
+  transform: scale(.82) !important;
+  transform-origin: bottom center !important;
+  opacity: .96 !important;
+}
+
+@media (max-width: 1320px) {
+  .cwb-now,
+  .cwb-board {
+    min-height: auto !important;
+    max-height: none !important;
+  }
+
+  .cwb-wall {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 740px) {
+  .cwb {
+    padding: 10px 10px 112px !important;
+  }
+
+  .cwb-section-head h2 {
+    font-size: 2rem !important;
+  }
+}
