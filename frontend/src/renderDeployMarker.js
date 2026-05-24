@@ -1,1 +1,1 @@
-export const renderDeployMarker = 'CHURVOX_OPERATOR_FLOOR_20260524';
+export const renderDeployMarker = 'CHURVOX_COMMAND_FLOOR_V1';
