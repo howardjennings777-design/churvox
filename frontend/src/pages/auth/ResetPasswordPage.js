@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { Lock, AlertCircle, Loader2, CheckCircle, ArrowLeft } from "lucide-react";
 import { ChurvoxLogo } from "@/components/ChurvoxLogo";
-import { PremiumButton } from "@/components/premium";
+import "./AuthPublicCommand.css";
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -34,62 +33,59 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="px-auth" style={{ gridTemplateColumns: '1fr' }}>
-      <div className="px-auth__panel">
-        <div className="px-auth__card">
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center mb-4"><ChurvoxLogo size="lg" /></div>
-            <h1 className="font-heading text-[26px] font-bold text-[#0d1b34]">Reset password</h1>
-            <p className="text-[14px] text-[#5b6c87] mt-1">Choose a strong password for your account.</p>
-          </div>
+    <main className="wh-auth">
+      <header className="wh-auth-nav">
+        <Link to="/"><ChurvoxLogo /></Link>
+        <nav className="wh-auth-links">
+          <Link to="/">Home</Link>
+          <Link to="/features">Features</Link>
+          <Link to="/pricing">Pricing</Link>
+          <Link to="/login">Log in</Link>
+        </nav>
+      </header>
+
+      <section className="wh-auth-wrap">
+        <form className="wh-auth-form" onSubmit={handleSubmit}>
+          <p className="wh-auth-kicker">Reset access</p>
+          <h1 className="wh-auth-title">Set a new password.</h1>
+          <p className="wh-auth-sub">Choose a strong password, then return to the Churvox Command Floor.</p>
 
           {success ? (
-            <div className="space-y-4">
-              <div className="flex items-start gap-3 p-4 rounded-2xl bg-[#ecfdf5] border border-[#a7f3d0]" data-testid="reset-password-success">
-                <CheckCircle className="h-5 w-5 flex-shrink-0 text-[#15803d] mt-0.5" />
-                <div>
-                  <p className="font-semibold text-[#0d1b34]">Password reset successful</p>
-                  <p className="text-[13px] text-[#5b6c87] mt-1">You can now sign in with your new password.</p>
-                </div>
-              </div>
-              <Link to="/login"><PremiumButton size="lg" className="w-full" dataTestId="go-to-login-button">Go to login</PremiumButton></Link>
-            </div>
+            <>
+              <p className="wh-auth-error" style={{ background: "rgba(43,189,145,.12)", borderColor: "rgba(43,189,145,.24)", color: "#0d765f" }} data-testid="reset-password-success">Password reset successful. You can now sign in.</p>
+              <Link to="/login" className="wh-auth-submit" style={{ textDecoration: "none" }} data-testid="go-to-login-button">Go to login</Link>
+            </>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="flex items-center gap-2 p-3 bg-[#fff5f5] border border-[#fecaca] rounded-xl text-[#b91c1c] text-sm" data-testid="reset-password-error">
-                  <AlertCircle className="h-4 w-4 flex-shrink-0" /><span>{error}</span>
-                </div>
-              )}
+            <>
+              {error && <p className="wh-auth-error" data-testid="reset-password-error">{error}</p>}
               {!searchParams.get("token") && (
-                <div>
-                  <label className="block text-[12.5px] font-semibold text-[#1a2c4d] mb-1.5">Reset token</label>
-                  <input type="text" placeholder="Paste your reset token" value={token} onChange={(e) => setToken(e.target.value)} className="px-input font-mono text-[13px]" required data-testid="reset-token-input" />
-                </div>
+                <label className="wh-auth-label">
+                  Reset token
+                  <input type="text" placeholder="Paste your reset token" value={token} onChange={(e) => setToken(e.target.value)} className="wh-auth-input" required data-testid="reset-token-input" />
+                </label>
               )}
-              <div>
-                <label className="block text-[12.5px] font-semibold text-[#1a2c4d] mb-1.5">New password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7d8ba3]" />
-                  <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="px-input pl-10" required data-testid="reset-new-password-input" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-[12.5px] font-semibold text-[#1a2c4d] mb-1.5">Confirm password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7d8ba3]" />
-                  <input type="password" placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="px-input pl-10" required data-testid="reset-confirm-password-input" />
-                </div>
-              </div>
-              <PremiumButton type="submit" size="lg" className="w-full" disabled={loading} dataTestId="reset-password-submit-button"
-                iconLeft={loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}>
+              <label className="wh-auth-label">
+                New password
+                <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="wh-auth-input" required data-testid="reset-new-password-input" />
+              </label>
+              <label className="wh-auth-label">
+                Confirm password
+                <input type="password" placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="wh-auth-input" required data-testid="reset-confirm-password-input" />
+              </label>
+              <button className="wh-auth-submit" type="submit" disabled={loading} data-testid="reset-password-submit-button">
                 {loading ? "Resetting…" : "Reset password"}
-              </PremiumButton>
-              <Link to="/login" className="block"><PremiumButton variant="ghost" className="w-full" iconLeft={<ArrowLeft className="h-4 w-4" />} dataTestId="back-to-login-link">Back to login</PremiumButton></Link>
-            </form>
+              </button>
+              <p className="wh-auth-sub"><Link to="/login" data-testid="back-to-login-link">Back to login</Link></p>
+            </>
           )}
-        </div>
-      </div>
-    </div>
+        </form>
+
+        <aside className="wh-auth-panel">
+          <p className="wh-auth-kicker">Secure owner flow</p>
+          <h2>Fresh password. Same command floor.</h2>
+          <p>Return to the daily operating screen where jobs, crew, invoices, risks and owner approvals stay organised.</p>
+        </aside>
+      </section>
+    </main>
   );
 }
