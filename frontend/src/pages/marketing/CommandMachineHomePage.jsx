@@ -1,105 +1,111 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ChurvoxLogo } from "../../components/ChurvoxLogo";
+import { ApprovalDock, FeatureRibbon, FlowStrip, PublicSiteShell, featureGroups } from "./PublicSiteShell";
 
-const modules = [
-  "Jobs",
-  "Clients",
-  "Quotes",
-  "Invoices",
-  "Team",
-  "Worker app",
-  "Proof photos",
-  "Payroll",
-  "MYOB",
-  "SMS",
+const proofCards = [
+  ["Field work", "Crew finishes the job and adds notes, time and proof photos."],
+  ["Office prep", "Churvox prepares the invoice, quote follow-up or admin move."],
+  ["Owner control", "You approve before anything important goes out."],
 ];
 
-function Action({ to, children, primary }) {
-  return <Link to={to} className={primary ? "wh-public-cta" : "wh-public-ghost"}>{children}</Link>;
-}
+const outcomes = [
+  "Less admin chasing",
+  "Faster invoices",
+  "Cleaner crew handoff",
+  "Better job proof",
+  "Fewer missed follow-ups",
+  "One place to run the day",
+];
 
 export default function CommandMachineHomePage() {
   return (
-    <main className="wh-public">
-      <header className="wh-public-nav">
-        <Link to="/" className="wh-public-logo"><ChurvoxLogo /></Link>
-        <nav className="wh-public-links">
-          <Link to="/features">Features</Link>
-          <Link to="/pricing">Pricing</Link>
-          <Link to="/login">Log in</Link>
-        </nav>
-        <Link to="/signup" className="wh-public-cta">Start free</Link>
-      </header>
-
-      <section className="wh-public-hero">
-        <div>
-          <p className="wh-public-kicker">AI Operator for trade businesses</p>
-          <h1 className="wh-public-title">The admin workhorse for your business.</h1>
-          <p className="wh-public-lead">
-            Churvox turns jobs, clients, quotes, invoices, crew updates and money follow-up into prepared owner decisions. Work comes in. Churvox prepares it. You approve.
+    <PublicSiteShell page="home">
+      <section className="cvx-hero">
+        <div className="cvx-hero-copy">
+          <p className="cvx-eyebrow">AI office operator for trades</p>
+          <h1>Your trade business gets its own admin operator.</h1>
+          <p className="cvx-lead">
+            Churvox takes jobs, crew updates, quotes, invoices and follow-ups and turns them into simple prepared work slips. You approve what matters. The office keeps moving.
           </p>
-          <div className="wh-public-actions">
-            <Action to="/signup" primary>Start free</Action>
-            <Action to="/login">Log in</Action>
-            <Action to="/features">See how it works</Action>
+
+          <div className="cvx-hero-actions">
+            <Link to="/signup" className="cvx-button cvx-button--lime">Start free</Link>
+            <Link to="/features" className="cvx-button cvx-button--cream">See the system</Link>
           </div>
+
+          <FeatureRibbon items={["Jobs", "Crew", "Quotes", "Invoices", "AI approvals", "MYOB-ready"]} />
         </div>
 
-        <aside className="wh-machine">
-          <div className="wh-machine-head">
-            <strong>Churvox Workhorse Feed</strong>
-            <span>LIVE PREP</span>
-          </div>
-          <div className="wh-decision">
-            <p className="wh-public-kicker">Next owner move</p>
-            <h2>Invoice prepared from completed work</h2>
-            <p>
-              Job complete. Client found. Proof photos attached. Price checked. Customer document prepared for review.
-            </p>
-            <Link to="/signup" className="wh-public-cta">Open decision slip</Link>
-          </div>
-          <div className="wh-flow">
-            <div className="wh-flow-card">
-              <span>1</span>
-              <h3>Work comes in</h3>
-              <p>Jobs, photos, times, quotes and invoices land in one business machine.</p>
-            </div>
-            <div className="wh-flow-card">
-              <span>2</span>
-              <h3>Churvox prepares</h3>
-              <p>Admin is pulled forward before it becomes another owner job.</p>
-            </div>
-            <div className="wh-flow-card">
-              <span>3</span>
-              <h3>You approve</h3>
-              <p>Review the prepared move, edit if needed, then send it forward.</p>
-            </div>
-          </div>
-        </aside>
+        <ApprovalDock />
       </section>
 
-      <section className="wh-public-band">
-        <p className="wh-public-kicker">One practical operating system</p>
-        <h2>Built for the daily grind, not a pretty dashboard wall.</h2>
-        <p className="wh-public-lead">
-          Churvox keeps the work moving across the office and the field, with the AI Operator preparing the next admin move in the background.
-        </p>
-        <div className="wh-module-grid">
-          {modules.map((module) => <div key={module} className="wh-module">{module}</div>)}
-        </div>
-      </section>
+      <FlowStrip />
 
-      <section className="wh-public-final">
+      <section className="cvx-section cvx-section--split">
         <div>
-          <p className="wh-public-kicker">Ready for a cleaner business machine?</p>
-          <h2 className="wh-public-title" style={{ fontSize: "clamp(42px,5vw,82px)" }}>Churvox does the admin prep. You stay in control.</h2>
+          <p className="cvx-eyebrow">Not another boring dashboard</p>
+          <h2>A usable front desk for the work your business actually does.</h2>
+          <p>
+            Churvox is designed around what owners need every day: what needs approving, what needs fixing, what the crew is doing and what money needs moving.
+          </p>
         </div>
-        <div className="wh-public-actions">
-          <Action to="/signup" primary>Start free</Action>
-          <Action to="/pricing">View pricing</Action>
+
+        <div className="cvx-proof-grid">
+          {proofCards.map(([title, body]) => (
+            <article key={title} className="cvx-proof-card">
+              <span />
+              <h3>{title}</h3>
+              <p>{body}</p>
+            </article>
+          ))}
         </div>
       </section>
-    </main>
+
+      <section className="cvx-section">
+        <div className="cvx-section-head">
+          <p className="cvx-eyebrow">One connected operating flow</p>
+          <h2>From job to proof to invoice without the admin mess.</h2>
+          <p>
+            Every core part of Churvox is built to feed the next step, so the owner is not rebuilding context every time a job moves.
+          </p>
+        </div>
+
+        <div className="cvx-feature-lanes">
+          {featureGroups.map((group) => (
+            <article key={group.title} className="cvx-feature-lane">
+              <p>{group.eyebrow}</p>
+              <h3>{group.title}</h3>
+              <span>{group.body}</span>
+              <div>
+                {group.points.map((point) => <em key={point}>{point}</em>)}
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="cvx-section cvx-outcomes">
+        <div>
+          <p className="cvx-eyebrow">What customers should understand fast</p>
+          <h2>Churvox does the admin prep. You stay in control.</h2>
+        </div>
+
+        <div className="cvx-outcome-grid">
+          {outcomes.map((item) => <span key={item}>{item}</span>)}
+        </div>
+      </section>
+
+      <section className="cvx-final-cta">
+        <div>
+          <p className="cvx-eyebrow">Ready to run the office cleaner?</p>
+          <h2>Give the business a proper operator desk.</h2>
+          <p>Start with the core workflow, then grow into AI Operator, MYOB, payroll and higher-capacity command tools.</p>
+        </div>
+        <div className="cvx-final-actions">
+          <Link to="/signup" className="cvx-button cvx-button--lime">Start free</Link>
+          <Link to="/pricing" className="cvx-button cvx-button--cream">View pricing</Link>
+        </div>
+      </section>
+    </PublicSiteShell>
   );
 }
