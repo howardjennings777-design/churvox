@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { normalizeRole, getDefaultRoute } from "@/lib/roles";
 import { ChurvoxLogo } from "../../components/ChurvoxLogo";
+import "./AuthPublicCommand.css";
 
 const getPostLoginPath = (payload = {}) => {
   const user = payload?.user || payload || {};
@@ -49,9 +50,9 @@ export default function LoginPage() {
       <section className="wh-auth-wrap">
         <form className="wh-auth-form" onSubmit={handleSubmit} data-testid="login-form">
           <p className="wh-auth-kicker">Owner approval access</p>
-          <h1 className="wh-auth-title">Sign in to the workhorse desk.</h1>
+          <h1 className="wh-auth-title">Sign in to the command floor.</h1>
           <p className="wh-auth-sub">
-            Open prepared admin, review work slips, and approve the next move Churvox has lined up.
+            Open prepared admin, review the money desk, and approve the next move Churvox has lined up.
           </p>
 
           {error && <p className="wh-auth-error">{error}</p>}
