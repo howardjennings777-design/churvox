@@ -1,96 +1,86 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { FeatureRibbon, PublicSiteShell, featureGroups } from "./PublicSiteShell";
+import { features, OperatingMap, PublicSiteShell, WorkConveyor } from "./PublicSiteShell";
 
 const rows = [
-  {
-    label: "AI Operator",
-    title: "Prepared work slips instead of another job list.",
-    text: "Churvox surfaces what needs doing, prepares the next action and keeps the owner in approval mode instead of admin panic mode.",
-    bullets: ["Approval queue", "Suggested next actions", "Invoice and quote prep", "Owner-first control"],
-  },
-  {
-    label: "Jobs and field work",
-    title: "The crew knows the work. The office gets the proof.",
-    text: "Jobs, worker assignment, statuses, time, notes and proof photos stay tied to the client and the admin that follows.",
-    bullets: ["Create and assign jobs", "Worker mobile flow", "Completion proof", "Time and status trail"],
-  },
-  {
-    label: "Quotes and invoices",
-    title: "Money work has context from the job.",
-    text: "Turn job notes, photos, client data and pricing into a cleaner quote and invoice workflow that does not start from scratch every time.",
-    bullets: ["Quote workflow", "Invoice workflow", "Customer follow-up", "Payment-ready records"],
-  },
-  {
-    label: "Team, roles and payroll",
-    title: "Give each person the right part of the system.",
-    text: "Owners run the business, workers see field tasks, managers and office admins help move work, payroll can review hours without full owner access.",
-    bullets: ["Owner", "Manager", "Office Admin", "Worker", "Payroll"],
-  },
+  ["Work intake", "Jobs, clients and requests enter one clean place instead of being scattered across phone calls, messages and memory."],
+  ["Crew movement", "Assign workers, collect updates, keep proof photos and connect field work to office admin."],
+  ["AI preparation", "Churvox prepares the next invoice, quote follow-up, customer reminder or owner approval action."],
+  ["Money flow", "Completed work has a clear path to quote, invoice, MYOB sync and payment follow-up."],
+  ["Role control", "Owners, managers, office admins, workers and payroll users get access that fits their job."],
 ];
 
 export default function FeaturesPage() {
   return (
     <PublicSiteShell page="features">
-      <section className="cvx-page-hero">
-        <p className="cvx-eyebrow">Features built as one flow</p>
-        <h1>The whole office, turned into clear work to approve.</h1>
+      <section className="nw-page-hero">
+        <p className="nw-kicker">Features with a job to do</p>
+        <h1>Every part of Churvox feeds the next move.</h1>
         <p>
-          Churvox is not built as a pile of random tools. Jobs, clients, crew updates, proof, quotes, invoices and money follow-up are connected so the next move is easier.
+          The point is not more screens. The point is less admin drag. Churvox connects the work, prepares the next step and gives owners a clear approval desk.
         </p>
-        <div className="cvx-hero-actions">
-          <Link to="/signup" className="cvx-button cvx-button--lime">Start free</Link>
-          <Link to="/pricing" className="cvx-button cvx-button--cream">View pricing</Link>
+
+        <div className="nw-actions">
+          <Link to="/signup" className="nw-btn nw-btn--lime">Start free</Link>
+          <Link to="/pricing" className="nw-btn nw-btn--light">View pricing</Link>
         </div>
-        <FeatureRibbon items={["Job management", "AI prep", "Worker app", "Invoices", "Quotes", "Payroll", "MYOB"]} />
       </section>
 
-      <section className="cvx-feature-story">
-        {rows.map((row, index) => (
-          <article key={row.title} className="cvx-story-row">
-            <div className="cvx-story-number">{String(index + 1).padStart(2, "0")}</div>
-            <div>
-              <p className="cvx-eyebrow">{row.label}</p>
-              <h2>{row.title}</h2>
-              <p>{row.text}</p>
-            </div>
-            <div className="cvx-story-bullets">
-              {row.bullets.map((bullet) => <span key={bullet}>{bullet}</span>)}
-            </div>
-          </article>
-        ))}
-      </section>
-
-      <section className="cvx-section">
-        <div className="cvx-section-head">
-          <p className="cvx-eyebrow">The operating lanes</p>
-          <h2>Everything points back to less owner admin.</h2>
-          <p>Each lane has a job. Keep work moving, prepare admin and give the owner one clear place to approve.</p>
+      <section className="nw-feature-split">
+        <div className="nw-feature-split__left">
+          <p className="nw-kicker">Product architecture</p>
+          <h2>Not a pile of features. A business flow.</h2>
+          <p>
+            Churvox is built like a front desk for trade businesses: intake, field work, admin prep, owner approval and money follow-up.
+          </p>
         </div>
 
-        <div className="cvx-feature-lanes">
-          {featureGroups.map((group) => (
-            <article key={group.title} className="cvx-feature-lane">
-              <p>{group.eyebrow}</p>
-              <h3>{group.title}</h3>
-              <span>{group.body}</span>
+        <div className="nw-feature-split__right">
+          {rows.map(([title, body], index) => (
+            <article key={title}>
+              <span>{String(index + 1).padStart(2, "0")}</span>
               <div>
-                {group.points.map((point) => <em key={point}>{point}</em>)}
+                <h3>{title}</h3>
+                <p>{body}</p>
               </div>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="cvx-final-cta">
-        <div>
-          <p className="cvx-eyebrow">Simple idea. Strong system.</p>
-          <h2>Work comes in. Churvox prepares. You approve.</h2>
-          <p>The website now sells the real Churvox idea: a practical AI operator for trade businesses.</p>
+      <OperatingMap />
+
+      <section className="nw-section">
+        <div className="nw-section__top">
+          <p className="nw-kicker">Core areas</p>
+          <h2>The main workflows are clear and connected.</h2>
         </div>
-        <div className="cvx-final-actions">
-          <Link to="/signup" className="cvx-button cvx-button--lime">Start free</Link>
-          <Link to="/pricing" className="cvx-button cvx-button--cream">See plans</Link>
+
+        <div className="nw-feature-wall nw-feature-wall--features">
+          {features.map((feature) => (
+            <article key={feature.title}>
+              <p>{feature.kicker}</p>
+              <h3>{feature.title}</h3>
+              <span>{feature.body}</span>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <WorkConveyor />
+
+      <section className="nw-close">
+        <div>
+          <p className="nw-kicker">Why it feels different</p>
+          <h2>Churvox is organised around approval, not admin hunting.</h2>
+          <p>
+            The owner should open Churvox and know what needs approving, what needs fixing and where the money is.
+          </p>
+        </div>
+
+        <div className="nw-actions">
+          <Link to="/signup" className="nw-btn nw-btn--lime">Start free</Link>
+          <Link to="/pricing" className="nw-btn nw-btn--light">See plans</Link>
         </div>
       </section>
     </PublicSiteShell>

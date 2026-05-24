@@ -1,81 +1,81 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { PublicSiteShell, plans } from "./PublicSiteShell";
+import { plans, PublicSiteShell } from "./PublicSiteShell";
 
 export default function PricingPage() {
   return (
     <PublicSiteShell page="pricing">
-      <section className="cvx-page-hero cvx-pricing-hero">
-        <p className="cvx-eyebrow">Churvox pricing</p>
-        <h1>Choose how much of the office you want Churvox to run.</h1>
+      <section className="nw-page-hero nw-page-hero--pricing">
+        <p className="nw-kicker">Pricing</p>
+        <h1>Pick the level of office control you want.</h1>
         <p>
-          Start with the basics, add crew workflow, or step into the AI Operator plans where Churvox prepares the admin and the owner approves.
+          Start simple, add crew workflow, or move into AI Operator where Churvox prepares admin actions for owner approval.
         </p>
       </section>
 
-      <section className="cvx-pricing-grid">
-        {plans.map((plan) => (
-          <article key={plan.name} className={`cvx-plan ${plan.featured ? "cvx-plan--featured" : ""}`}>
-            <div className="cvx-plan-top">
-              <span>{plan.tag}</span>
-              <h2>{plan.name}</h2>
-              <p>{plan.line}</p>
-            </div>
-
-            <div className="cvx-price">
-              <strong>{plan.price}</strong>
-              <span>/month + GST</span>
-            </div>
-
-            <p className="cvx-best-for">{plan.bestFor}</p>
-
-            <ul>
-              {plan.included.map((item) => <li key={item}>{item}</li>)}
-            </ul>
-
-            <Link to="/signup" className={plan.featured ? "cvx-button cvx-button--lime" : "cvx-button cvx-button--dark"}>
-              Choose {plan.name}
-            </Link>
-          </article>
-        ))}
-      </section>
-
-      <section className="cvx-section cvx-addons">
-        <div>
-          <p className="cvx-eyebrow">Growth and add-ons</p>
-          <h2>Keep the base plans simple. Add capacity when the business grows.</h2>
-        </div>
-
-        <div className="cvx-addon-grid">
-          <article>
-            <span>Command Growth Pack</span>
-            <h3>$99/month + GST</h3>
-            <p>Command includes up to 50 active team members. Each Growth Pack adds 50 more active team members plus extra job capacity, AI Operator Actions, automation runs and admin/payroll capacity.</p>
-          </article>
-
-          <article>
-            <span>MYOB add-on</span>
-            <h3>$39/month + GST</h3>
-            <p>Available on Operator. Included in Command. Built around invoice and payment sync as part of the Churvox money desk.</p>
-          </article>
-
-          <article>
-            <span>SMS credits</span>
-            <h3>Separate credit packs</h3>
-            <p>Customer reminders and message workflows stay separate so businesses only buy the credits they need.</p>
-          </article>
-        </div>
-      </section>
-
-      <section className="cvx-final-cta">
-        <div>
-          <p className="cvx-eyebrow">Best place to start</p>
+      <section className="nw-pricing-stage">
+        <div className="nw-pricing-stage__intro">
+          <p className="nw-kicker">Recommended path</p>
           <h2>Operator is the main Churvox plan.</h2>
-          <p>That is where the product becomes different: AI prepares the admin, then the owner approves the work slip.</p>
+          <p>
+            Start and Crew cover the basics. Operator is where the site becomes unique: Churvox prepares the admin and the owner approves.
+          </p>
         </div>
-        <div className="cvx-final-actions">
-          <Link to="/signup" className="cvx-button cvx-button--lime">Start free</Link>
-          <Link to="/features" className="cvx-button cvx-button--cream">Compare features</Link>
+
+        <div className="nw-plan-rail">
+          {plans.map((plan, index) => (
+            <article key={plan.name} className={`nw-plan ${plan.featured ? "is-featured" : ""}`}>
+              <div className="nw-plan__num">{String(index + 1).padStart(2, "0")}</div>
+              <div className="nw-plan__main">
+                <span>{plan.tag}</span>
+                <h2>{plan.name}</h2>
+                <strong>{plan.price}<em>/month + GST</em></strong>
+              </div>
+              <div className="nw-plan__body">
+                <h3>{plan.short}</h3>
+                <p>{plan.body}</p>
+                <ul>
+                  {plan.includes.map((item) => <li key={item}>{item}</li>)}
+                </ul>
+              </div>
+              <Link to="/signup" className={plan.featured ? "nw-btn nw-btn--lime" : "nw-btn nw-btn--dark"}>
+                Choose {plan.name}
+              </Link>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="nw-addons">
+        <article>
+          <p className="nw-kicker">Command Growth Pack</p>
+          <h2>$99/month + GST</h2>
+          <p>Command includes up to 50 active team members. Each Growth Pack adds 50 more active team members plus extra job capacity, AI Operator Actions, automation runs and admin/payroll capacity.</p>
+        </article>
+
+        <article>
+          <p className="nw-kicker">MYOB</p>
+          <h2>$39/month + GST</h2>
+          <p>Available as an add-on for Operator and included in Command. Built around Churvox money-desk workflows.</p>
+        </article>
+
+        <article>
+          <p className="nw-kicker">SMS</p>
+          <h2>Credit packs</h2>
+          <p>SMS stays separate so businesses only buy the reminder and message credits they need.</p>
+        </article>
+      </section>
+
+      <section className="nw-close">
+        <div>
+          <p className="nw-kicker">Simple choice</p>
+          <h2>Want the AI admin promise? Choose Operator.</h2>
+          <p>That is the main plan for the Churvox identity: the software prepares the work and the owner approves.</p>
+        </div>
+
+        <div className="nw-actions">
+          <Link to="/signup" className="nw-btn nw-btn--lime">Start free</Link>
+          <Link to="/features" className="nw-btn nw-btn--light">View features</Link>
         </div>
       </section>
     </PublicSiteShell>
