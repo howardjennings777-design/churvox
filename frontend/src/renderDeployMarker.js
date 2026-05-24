@@ -1,1 +1,1 @@
-export const renderDeployMarker = 'CHURVOX_FULLSCREEN_OS_20260524';
+export const renderDeployMarker = 'CHURVOX_TRUE_FULLSCREEN_WORKBOARD_20260524';
