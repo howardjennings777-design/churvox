@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import WorkBoardPageFrame from './components/WorkBoardPageFrame';
 import './index.css';
 import './styles/churvoxFullPageModals.css';
 import './styles/churvox-workhorse.css';
@@ -10,8 +9,6 @@ import './styles/churvox-workhorse-worker-complete.css';
 import './styles/churvox-workhorse-ops.css';
 import './styles/aiDashPolish.css';
 import './styles/churvoxWorkBoardCommandWall.css';
-import './styles/churvoxFullScreenWorkBoardTheme.css';
-import './components/workBoardPageFrame.css';
 import './workhorseLiveCheck';
 import './renderDeployMarker';
 import './deploy/guidedOperatorFloorDeployMarker';
@@ -29,8 +26,6 @@ if ('serviceWorker' in navigator) {
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <WorkBoardPageFrame>
-      <App />
-    </WorkBoardPageFrame>
+    <App />
   </React.StrictMode>
 );

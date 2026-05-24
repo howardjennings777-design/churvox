@@ -15,6 +15,7 @@ const CONFIG = {
   quotes: { area: "SALES", title: "Quote board", subtitle: "Drafts, sent quotes, follow-ups and accepted work.", primary: "New quote", to: "/quotes/new", endpoints: { quotes: "/quotes", clients: "/clients" } },
   team: { area: "CREW", title: "Crew board", subtitle: "Workers, invites, role gaps and workload.", primary: "Open team", to: "/team", endpoints: { workers: "/team/workers", jobs: "/jobs" } },
   settings: { area: "CONTROL", title: "Settings board", subtitle: "Business setup, access, plan controls and integrations.", primary: "Main board", to: "/dashboard", endpoints: {} },
+  plans: { area: "PLAN", title: "Plan board", subtitle: "Plans, limits, billing and upgrade controls.", primary: "Open plans", to: "/plans", endpoints: {} },
   reports: { area: "REPORTS", title: "Reports board", subtitle: "Money, jobs, quotes and exports in one view.", primary: "Main board", to: "/dashboard", endpoints: { jobs: "/jobs", invoices: "/invoices", quotes: "/quotes" } },
   payroll: { area: "PAYROLL", title: "Payroll board", subtitle: "Workers, completed jobs, review items and payroll handoff.", primary: "Main board", to: "/dashboard", endpoints: { workers: "/team/workers", jobs: "/jobs" } },
   automation: { area: "AUTOMATION", title: "Automation board", subtitle: "Rules, runs, approvals and prepared admin actions.", primary: "Main board", to: "/dashboard", endpoints: { actions: "/ai-operator/actions" } },

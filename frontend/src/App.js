@@ -61,6 +61,7 @@ import PricingPage from "./pages/marketing/PricingPage";
 import FeaturesPage from "./pages/marketing/FeaturesPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import FloatingBottomNav from "./components/FloatingBottomNav";
+import WorkBoardPageFrame from "./components/WorkBoardPageFrame";
 
 const Spinner = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -68,7 +69,7 @@ const Spinner = () => (
   </div>
 );
 
-const AppPage = ({ children }) => <>{children}</>;
+const AppPage = ({ children }) => <WorkBoardPageFrame>{children}</WorkBoardPageFrame>;
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
