@@ -1,0 +1,393 @@
+/* CHURVOX_FULL_SCREEN_WORK_BOARD_THEME_20260524
+   Proper full-app visual system:
+   - full-screen black/yellow/cyan command-board feel
+   - not just cards
+   - applies to Jobs, Clients, Invoices, Quotes, Team, Settings, Plans, Reports
+   - keeps .cwb dashboard intact
+*/
+
+:root {
+  --cvx-bg: #f4f1e8;
+  --cvx-bg2: #e9e5d8;
+  --cvx-black: #101316;
+  --cvx-black2: #1b2228;
+  --cvx-black3: #252d34;
+  --cvx-card: #fffdf5;
+  --cvx-card2: #f7f3e8;
+  --cvx-ink: #0c1218;
+  --cvx-muted: #5b625f;
+  --cvx-line: rgba(12,18,24,.14);
+  --cvx-yellow: #f2c94c;
+  --cvx-cyan: #2bb7d8;
+  --cvx-red: #e85d3f;
+  --cvx-mint: #3ccf91;
+  --cvx-purple: #7c5cff;
+}
+
+html,
+body,
+#root {
+  min-height: 100% !important;
+  background:
+    radial-gradient(circle at 10% -10%, rgba(43,183,216,.18), transparent 30%),
+    radial-gradient(circle at 92% 4%, rgba(242,201,76,.18), transparent 30%),
+    linear-gradient(135deg, var(--cvx-bg) 0%, var(--cvx-bg2) 100%) !important;
+  color: var(--cvx-ink) !important;
+}
+
+/* Make the app feel full screen, not floating white page bits */
+#root > div,
+#root .App,
+#root [class*="app"],
+#root [class*="App"],
+#root [class*="layout"],
+#root [class*="Layout"],
+#root [class*="shell"],
+#root [class*="Shell"] {
+  min-height: 100vh !important;
+  background: transparent !important;
+}
+
+/* Any route page that is not the Work Board gets a full-screen command surface */
+#root main:not(.cwb) {
+  min-height: 100vh !important;
+  padding: clamp(12px, 1.8vw, 24px) clamp(12px, 1.8vw, 24px) 126px !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(43,183,216,.12), transparent 30%),
+    linear-gradient(135deg, rgba(16,19,22,.98), rgba(27,34,40,.96)) !important;
+  color: #fff !important;
+  border-radius: 0 !important;
+}
+
+/* Kill old light page backgrounds */
+#root main:not(.cwb) .min-h-screen,
+#root main:not(.cwb) [class*="min-h-screen"],
+#root main:not(.cwb) [class*="bg-gray"],
+#root main:not(.cwb) [class*="bg-slate"],
+#root main:not(.cwb) [class*="bg-zinc"],
+#root main:not(.cwb) [class*="bg-neutral"],
+#root main:not(.cwb) [class*="bg-stone"] {
+  background: transparent !important;
+}
+
+/* Full page top banner */
+#root main:not(.cwb) > div:first-child,
+#root main:not(.cwb) > section:first-child,
+#root main:not(.cwb) header:first-child,
+#root main:not(.cwb) [class*="Header"]:first-child,
+#root main:not(.cwb) [class*="header"]:first-child {
+  border: 1px solid rgba(255,255,255,.13) !important;
+  border-radius: 26px !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(242,201,76,.14), transparent 32%),
+    linear-gradient(135deg, var(--cvx-black), var(--cvx-black2)) !important;
+  color: #fff !important;
+  padding: clamp(18px, 2.2vw, 30px) !important;
+  margin-bottom: 14px !important;
+  box-shadow: 0 24px 70px rgba(12,18,24,.28) !important;
+}
+
+/* If page content is wrapped inside one div, make it stretch like a work surface */
+#root main:not(.cwb) > div:not(:first-child),
+#root main:not(.cwb) > section:not(:first-child),
+#root main:not(.cwb) article {
+  border-color: rgba(255,255,255,.12) !important;
+}
+
+/* Page headings */
+#root main:not(.cwb) h1 {
+  color: #fff !important;
+  font-size: clamp(2.2rem, 4.4vw, 5.2rem) !important;
+  line-height: .86 !important;
+  letter-spacing: -.09em !important;
+}
+
+#root main:not(.cwb) h1::before {
+  content: "CHURVOX WORK BOARD";
+  display: block;
+  margin-bottom: 8px;
+  color: var(--cvx-cyan);
+  font-size: .68rem;
+  font-weight: 950;
+  letter-spacing: .16em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+#root main:not(.cwb) h2,
+#root main:not(.cwb) h3 {
+  color: inherit !important;
+  letter-spacing: -.04em !important;
+}
+
+#root main:not(.cwb) p,
+#root main:not(.cwb) small,
+#root main:not(.cwb) span {
+  border-color: inherit;
+}
+
+/* Main page panels become work-board cards on a dark surface */
+#root main:not(.cwb) .bg-white,
+#root main:not(.cwb) .bg-gray-50,
+#root main:not(.cwb) .bg-slate-50,
+#root main:not(.cwb) .bg-zinc-50,
+#root main:not(.cwb) .bg-neutral-50,
+#root main:not(.cwb) .shadow,
+#root main:not(.cwb) .shadow-sm,
+#root main:not(.cwb) .shadow-md,
+#root main:not(.cwb) .shadow-lg,
+#root main:not(.cwb) .rounded,
+#root main:not(.cwb) .rounded-lg,
+#root main:not(.cwb) .rounded-xl,
+#root main:not(.cwb) .rounded-2xl,
+#root main:not(.cwb) [class*="card"],
+#root main:not(.cwb) [class*="Card"],
+#root main:not(.cwb) [class*="panel"],
+#root main:not(.cwb) [class*="Panel"] {
+  border: 1px solid rgba(255,255,255,.14) !important;
+  border-radius: 22px !important;
+  background: rgba(255,253,245,.94) !important;
+  color: var(--cvx-ink) !important;
+  box-shadow: 0 18px 50px rgba(0,0,0,.22) !important;
+}
+
+/* Make grids feel like a board */
+#root main:not(.cwb) [class*="grid"] > div,
+#root main:not(.cwb) [class*="Grid"] > div {
+  border-color: rgba(12,18,24,.12);
+}
+
+/* Tables */
+#root main:not(.cwb) table {
+  width: 100% !important;
+  overflow: hidden !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border: 1px solid rgba(255,255,255,.14) !important;
+  border-radius: 20px !important;
+  background: rgba(255,253,245,.96) !important;
+  color: var(--cvx-ink) !important;
+  box-shadow: 0 18px 50px rgba(0,0,0,.2) !important;
+}
+
+#root main:not(.cwb) thead,
+#root main:not(.cwb) th {
+  background: linear-gradient(180deg, var(--cvx-black), var(--cvx-black2)) !important;
+  color: var(--cvx-yellow) !important;
+}
+
+#root main:not(.cwb) th {
+  font-size: .72rem !important;
+  font-weight: 950 !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase !important;
+}
+
+#root main:not(.cwb) td {
+  color: var(--cvx-ink) !important;
+  border-color: rgba(12,18,24,.08) !important;
+}
+
+#root main:not(.cwb) tr:hover td {
+  background: rgba(242,201,76,.08) !important;
+}
+
+/* Lists and rows */
+#root main:not(.cwb) li,
+#root main:not(.cwb) [class*="row"],
+#root main:not(.cwb) [class*="Row"] {
+  border-color: rgba(12,18,24,.10);
+}
+
+/* Forms */
+#root main:not(.cwb) input,
+#root main:not(.cwb) select,
+#root main:not(.cwb) textarea {
+  border: 1px solid rgba(12,18,24,.16) !important;
+  border-radius: 12px !important;
+  background: #fffdf7 !important;
+  color: var(--cvx-ink) !important;
+  box-shadow: none !important;
+}
+
+#root main:not(.cwb) input::placeholder,
+#root main:not(.cwb) textarea::placeholder {
+  color: rgba(12,18,24,.45) !important;
+}
+
+#root main:not(.cwb) input:focus,
+#root main:not(.cwb) select:focus,
+#root main:not(.cwb) textarea:focus {
+  outline: 2px solid rgba(43,183,216,.35) !important;
+  border-color: rgba(43,183,216,.65) !important;
+}
+
+/* Labels */
+#root main:not(.cwb) label {
+  color: inherit !important;
+  font-weight: 850 !important;
+}
+
+/* Buttons */
+#root main:not(.cwb) button,
+#root main:not(.cwb) a[role="button"],
+#root main:not(.cwb) a[class*="button"],
+#root main:not(.cwb) .btn,
+#root main:not(.cwb) [class*="Button"] {
+  border-radius: 12px !important;
+  font-weight: 900 !important;
+}
+
+/* Primary button colours */
+#root main:not(.cwb) button[class*="bg-blue"],
+#root main:not(.cwb) button[class*="bg-indigo"],
+#root main:not(.cwb) button[class*="bg-green"],
+#root main:not(.cwb) button[class*="bg-emerald"],
+#root main:not(.cwb) a[class*="bg-blue"],
+#root main:not(.cwb) a[class*="bg-indigo"],
+#root main:not(.cwb) a[class*="bg-green"],
+#root main:not(.cwb) a[class*="bg-emerald"],
+#root main:not(.cwb) .bg-blue-600,
+#root main:not(.cwb) .bg-indigo-600,
+#root main:not(.cwb) .bg-green-600,
+#root main:not(.cwb) .bg-emerald-600,
+#root main:not(.cwb) .bg-blue-500,
+#root main:not(.cwb) .bg-indigo-500,
+#root main:not(.cwb) .bg-green-500,
+#root main:not(.cwb) .bg-emerald-500 {
+  border: 0 !important;
+  background: linear-gradient(135deg, var(--cvx-yellow), #ffde6a) !important;
+  color: #141006 !important;
+  box-shadow: 0 12px 28px rgba(242,201,76,.28) !important;
+}
+
+/* Dark buttons */
+#root main:not(.cwb) button[class*="bg-gray-900"],
+#root main:not(.cwb) button[class*="bg-slate-900"],
+#root main:not(.cwb) .bg-gray-900,
+#root main:not(.cwb) .bg-slate-900 {
+  background: linear-gradient(180deg, var(--cvx-black), var(--cvx-black2)) !important;
+  color: #fff !important;
+}
+
+/* Danger buttons */
+#root main:not(.cwb) button[class*="bg-red"],
+#root main:not(.cwb) a[class*="bg-red"],
+#root main:not(.cwb) .bg-red-600,
+#root main:not(.cwb) .bg-red-500 {
+  border: 0 !important;
+  background: linear-gradient(135deg, var(--cvx-red), #ff775e) !important;
+  color: #fff !important;
+}
+
+/* Text colours from old theme */
+#root main:not(.cwb) .text-blue-600,
+#root main:not(.cwb) .text-indigo-600,
+#root main:not(.cwb) .text-green-600,
+#root main:not(.cwb) .text-emerald-600,
+#root main:not(.cwb) .text-sky-600 {
+  color: var(--cvx-cyan) !important;
+}
+
+#root main:not(.cwb) .text-gray-900,
+#root main:not(.cwb) .text-slate-900,
+#root main:not(.cwb) .text-zinc-900 {
+  color: var(--cvx-ink) !important;
+}
+
+/* Badges */
+#root main:not(.cwb) .rounded-full,
+#root main:not(.cwb) [class*="badge"],
+#root main:not(.cwb) [class*="Badge"] {
+  font-weight: 950 !important;
+  letter-spacing: .02em !important;
+}
+
+/* Dialogs / popups */
+#root [role="dialog"],
+#root .fixed.inset-0 [class*="bg-white"],
+#root [class*="DialogContent"] {
+  border: 1px solid var(--cvx-line) !important;
+  border-radius: 24px !important;
+  background: rgba(255,253,245,.98) !important;
+  color: var(--cvx-ink) !important;
+  box-shadow: 0 24px 80px rgba(0,0,0,.28) !important;
+}
+
+#root [role="dialog"] h1,
+#root [role="dialog"] h2,
+#root [role="dialog"] h3 {
+  color: var(--cvx-ink) !important;
+  letter-spacing: -.055em !important;
+}
+
+/* Modal inputs */
+#root [role="dialog"] input,
+#root [role="dialog"] select,
+#root [role="dialog"] textarea {
+  border: 1px solid var(--cvx-line) !important;
+  border-radius: 12px !important;
+  background: #fffdf7 !important;
+  color: var(--cvx-ink) !important;
+}
+
+/* Shell nav / sidebars */
+#root aside:not(.cwb *),
+#root nav:not(.cwb *) {
+  border-color: rgba(255,255,255,.12) !important;
+}
+
+/* Bottom dock */
+.cv-floating-dock {
+  bottom: 8px !important;
+}
+
+.cv-floating-dock__inner {
+  background: linear-gradient(180deg, #101316, #1b2228) !important;
+  border-color: rgba(255,255,255,.12) !important;
+  transform: scale(.84) !important;
+  transform-origin: bottom center !important;
+  box-shadow: 0 18px 50px rgba(12,18,24,.28) !important;
+}
+
+.cv-float-icon {
+  color: var(--cvx-yellow) !important;
+}
+
+.cv-float-link:hover,
+.cv-float-link.is-active {
+  background: rgba(242,201,76,.18) !important;
+}
+
+/* Keep auth/public pages from becoming too weird */
+#root main.login-page,
+#root main.public-page,
+#root main.pricing-page,
+#root main.features-page {
+  background:
+    radial-gradient(circle at 10% -10%, rgba(43,183,216,.18), transparent 30%),
+    radial-gradient(circle at 92% 4%, rgba(242,201,76,.18), transparent 30%),
+    linear-gradient(135deg, var(--cvx-bg) 0%, var(--cvx-bg2) 100%) !important;
+  color: var(--cvx-ink) !important;
+}
+
+/* Responsive */
+@media (max-width: 920px) {
+  #root main:not(.cwb) {
+    padding: 10px 10px 116px !important;
+  }
+
+  #root main:not(.cwb) h1 {
+    font-size: 2.35rem !important;
+  }
+
+  #root main:not(.cwb) > div:first-child,
+  #root main:not(.cwb) > section:first-child,
+  #root main:not(.cwb) header:first-child {
+    border-radius: 20px !important;
+  }
+
+  .cv-floating-dock__inner {
+    transform: scale(.82) !important;
+  }
+}

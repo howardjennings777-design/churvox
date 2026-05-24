@@ -9,7 +9,7 @@ import './styles/churvox-workhorse-worker-complete.css';
 import './styles/churvox-workhorse-ops.css';
 import './styles/aiDashPolish.css';
 import './styles/churvoxWorkBoardCommandWall.css';
-import './styles/churvoxGlobalWorkBoardPages.css';
+import './styles/churvoxFullScreenWorkBoardTheme.css';
 import './workhorseLiveCheck';
 import './renderDeployMarker';
 import './deploy/guidedOperatorFloorDeployMarker';
