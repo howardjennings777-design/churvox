@@ -1,6 +1,3 @@
 import React from "react";
-import WorkBoardAreaPage from "../workboard/WorkBoardAreaPage";
-
-export default function PayrollPage() {
-  return <WorkBoardAreaPage area="payroll" />;
-}
+import CommandSlatePage from "../workboard/CommandSlatePage";
+export default function PayrollPageClean() { return <CommandSlatePage area="payroll" />; }

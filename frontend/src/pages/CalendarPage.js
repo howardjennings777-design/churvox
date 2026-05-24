@@ -1,6 +1,3 @@
 import React from "react";
-import WorkBoardAreaPage from "../workboard/WorkBoardAreaPage";
-
-export default function CalendarPage() {
-  return <WorkBoardAreaPage area="dispatch" />;
-}
+import CommandSlatePage from "../workboard/CommandSlatePage";
+export default function CalendarPage() { return <CommandSlatePage area="dispatch" />; }

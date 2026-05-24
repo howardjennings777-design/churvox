@@ -1,6 +1,3 @@
 import React from "react";
-import WorkBoardAreaPage from "../workboard/WorkBoardAreaPage";
-
-export default function ReportsPage() {
-  return <WorkBoardAreaPage area="reports" />;
-}
+import CommandSlatePage from "../workboard/CommandSlatePage";
+export default function ReportsPage() { return <CommandSlatePage area="reports" />; }

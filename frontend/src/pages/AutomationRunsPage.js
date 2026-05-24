@@ -1,6 +1,3 @@
 import React from "react";
-import WorkBoardAreaPage from "../workboard/WorkBoardAreaPage";
-
-export default function AutomationRunsPage() {
-  return <WorkBoardAreaPage area="automation" />;
-}
+import CommandSlatePage from "../workboard/CommandSlatePage";
+export default function AutomationRunsPage() { return <CommandSlatePage area="automation" />; }

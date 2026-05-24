@@ -1,11 +1,6 @@
 import React from "react";
-import SmartHubErrorBoundary from "../components/SmartHubErrorBoundary";
-import WorkBoardCommandWall from "./WorkBoardCommandWall";
+import CommandSlatePage from "../workboard/CommandSlatePage";
 
 export default function DashboardPage() {
-  return (
-    <SmartHubErrorBoundary>
-      <WorkBoardCommandWall />
-    </SmartHubErrorBoundary>
-  );
+  return <CommandSlatePage area="dashboard" />;
 }
