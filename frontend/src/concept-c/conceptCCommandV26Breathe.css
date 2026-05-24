@@ -1,0 +1,30 @@
+/* CHURVOX_COMMAND_FLOOR_V26_BREATHE_20260525 */
+@media(min-width:901px){
+  .cc-app:not(.cc-simple) .cc-main{padding:18px 26px 80px!important;gap:14px!important;}
+  .cc-app:not(.cc-simple) .cc-top{min-height:42px!important;}
+  .cc-app:not(.cc-simple) .cc-snapshot{gap:12px!important;min-height:76px!important;align-items:stretch!important;}
+  .cc-app:not(.cc-simple) .cc-stat{min-height:68px!important;padding:12px 14px!important;border-radius:14px!important;}
+  .cc-app:not(.cc-simple) .cc-stat span{font-size:.66rem!important;letter-spacing:.08em!important;}
+  .cc-app:not(.cc-simple) .cc-stat b{font-size:1.12rem!important;line-height:1.05!important;}
+  .cc-app:not(.cc-simple) .cc-stat small{font-size:.66rem!important;}
+  .cc-app:not(.cc-simple) .cc-grid{gap:14px!important;}
+  .cc-app:not(.cc-simple) .cc-panel{border-radius:16px!important;min-height:238px!important;}
+  .cc-app:not(.cc-simple) .cc-panel>header{padding:14px 16px 10px!important;}
+  .cc-app:not(.cc-simple) .cc-panel>header h2{font-size:.88rem!important;letter-spacing:-.01em!important;}
+  .cc-app:not(.cc-simple) .cc-panel>header p{font-size:.64rem!important;letter-spacing:.12em!important;}
+  .cc-app:not(.cc-simple) .cc-action-row{min-height:42px!important;padding:8px 10px!important;grid-template-columns:28px 1fr auto auto!important;}
+  .cc-app:not(.cc-simple) .cc-action-row div b,.cc-app:not(.cc-simple) .cc-mini b{font-size:.76rem!important;}
+  .cc-app:not(.cc-simple) .cc-action-row div span,.cc-app:not(.cc-simple) .cc-mini span{font-size:.64rem!important;line-height:1.25!important;}
+  .cc-app:not(.cc-simple) .cc-mini{min-height:42px!important;padding:8px 10px!important;}
+  .cc-app:not(.cc-simple) .cc-money-main{min-height:74px!important;}
+  .cc-app:not(.cc-simple) .cc-live .cc-map{min-height:118px!important;}
+  .cc-app:not(.cc-simple) .cc-status-strip{height:50px!important;}
+}
+@media(min-width:1200px){
+  .cc-app:not(.cc-simple) .cc-panel{min-height:250px!important;}
+  .cc-app:not(.cc-simple) .cc-grid{gap:16px!important;}
+}
+@media(max-width:900px){
+  .cc-app:not(.cc-simple) .cc-main{padding:12px 12px 70px!important;}
+  .cc-app:not(.cc-simple) .cc-stat b{font-size:1rem!important;}
+}
