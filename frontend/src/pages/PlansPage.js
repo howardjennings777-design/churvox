@@ -2,59 +2,65 @@ import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
 import { detectCountryHint } from "../lib/country";
-import { CheckCircle2, Sparkles, ShieldCheck, CreditCard, Zap } from "lucide-react";
 import { ChurvoxLogo } from "../components/ChurvoxLogo";
-import { PremiumButton, PremiumBadge } from "../components/premium";
+import "./PlansCommand.css";
 
-const fallbackPlans = [
-  { key: "solo", name: "Solo", price: "$30", period: "/month",
-    blurb: "For solo operators getting started.", badge: "",
-    limits: ["Up to 20 clients", "1 user included", "Jobs, quotes, invoices", "14-day free trial"] },
-  { key: "team", name: "Team", price: "$70", period: "/month",
-    blurb: "For growing teams that need staff access.", badge: "Most Popular",
-    limits: ["Up to 30 clients", "Up to 5 users", "Scheduling and team workflow", "Upgrade any time"] },
-  { key: "pro", name: "Pro", price: "$110", period: "/month",
-    blurb: "For busy businesses needing more room.", badge: "",
-    limits: ["Up to 40 clients", "Up to 10 users", "Advanced workflow tools", "Priority-ready setup"] },
-  { key: "enterprise", name: "Enterprise", price: "$240", period: "/month",
-    blurb: "For larger teams with heavier usage.", badge: "",
-    limits: ["Includes 50 users", "Extra 50 users = $100", "MYOB-ready billing flow", "Best for larger operations"] },
+const displayPlans = [
+  {
+    key: "solo",
+    name: "Start",
+    price: "$39",
+    period: "/month + GST",
+    tag: "Owner-operator",
+    blurb: "For a solo trade owner who wants the basics tidy without the admin mess.",
+    limits: ["Jobs, clients, quotes and invoices", "Simple Command Floor view", "Ready-to-bill work surfaced", "Basic owner workflow", "No MYOB sync"],
+  },
+  {
+    key: "team",
+    name: "Crew",
+    price: "$89",
+    period: "/month + GST",
+    tag: "Small team",
+    blurb: "For a growing crew that needs field work, clients and money in one place.",
+    limits: ["Everything in Start", "Team and worker workflow", "Live crew visibility", "Job proof and notes", "More jobs and client capacity"],
+  },
+  {
+    key: "pro",
+    name: "Operator",
+    price: "$149",
+    period: "/month + GST",
+    tag: "Most popular",
+    blurb: "For owners who want Churvox to prepare the admin so they only approve what matters.",
+    limits: ["Everything in Crew", "AI Operator Actions", "Draft invoice and quote follow-ups", "Urgent action queue", "MYOB add-on available"],
+  },
+  {
+    key: "enterprise",
+    name: "Command",
+    price: "$299",
+    period: "/month + GST",
+    tag: "Full command",
+    blurb: "For larger operators that want roles, payroll workspace and accounting sync included.",
+    limits: ["Everything in Operator", "MYOB sync included", "Payroll workspace", "Advanced roles and permissions", "Up to 50 active team members"],
+  },
 ];
+
+const cap = (s) => s ? String(s).charAt(0).toUpperCase() + String(s).slice(1) : "";
+const nicePlanName = (key) => displayPlans.find((p) => p.key === key)?.name || cap(key);
+const getPayload = (res) => {
+  if (!res) return null;
+  if (res.success === false) return res;
+  if (res.data !== undefined) return res.data;
+  return res;
+};
 
 export default function PlansPage() {
   const api = useApi();
-  const [plans, setPlans] = useState(fallbackPlans);
   const [billing, setBilling] = useState(null);
   const [currentPlan, setCurrentPlan] = useState("none");
   const [busyPlan, setBusyPlan] = useState("");
   const [loading, setLoading] = useState(true);
-  const [checkoutNotice, setCheckoutNotice] = useState(null);
+  const [notice, setNotice] = useState(null);
   const [currencyInfo, setCurrencyInfo] = useState(null);
-
-  const getPayload = (res) => { if (!res) return null; if (res.success === false) return res; if (res.data !== undefined) return res.data; return res; };
-
-  const mergePlans = (apiPlans, currencyData) => {
-    const base = (Array.isArray(apiPlans) && apiPlans.length > 0)
-      ? fallbackPlans.map((fb) => {
-          const m = apiPlans.find((p) => String(p?.key || p?.plan_type || p?.name || "").toLowerCase() === fb.key);
-          if (!m) return fb;
-          return {
-            ...fb,
-            name: m.name || fb.name, price: m.price || fb.price, period: m.period || fb.period,
-            blurb: m.blurb || m.description || fb.blurb,
-            limits: Array.isArray(m.limits) && m.limits.length > 0 ? m.limits : fb.limits,
-            badge: m.badge || fb.badge,
-          };
-        })
-      : fallbackPlans;
-    const priced = currencyData && currencyData.prices ? currencyData.prices : null;
-    if (!priced) return base;
-    return base.map((p) => {
-      const info = priced[p.key];
-      if (!info || info.amount === undefined) return p;
-      return { ...p, price: info.display, currency: info.currency, symbol: info.symbol };
-    });
-  };
 
   useEffect(() => {
     const handleCheckoutReturn = async () => {
@@ -62,77 +68,81 @@ export default function PlansPage() {
       const checkout = params.get("checkout");
       const plan = (params.get("plan") || "").toLowerCase();
       const sessionId = params.get("session_id") || "";
+      if (!checkout) return;
       if (checkout === "success") {
         try {
-          if (plan && sessionId) {
+          if (sessionId) {
             await api.post("/billing/confirm-checkout", { session_id: sessionId });
             window.dispatchEvent(new Event("churvox-auth-refresh"));
-            setCurrentPlan(plan);
           }
-          setCheckoutNotice({ type: "success", title: "Plan updated", text: `Your ${plan ? plan.charAt(0).toUpperCase() + plan.slice(1) : ""} plan is now active.` });
+          if (plan) setCurrentPlan(plan);
+          setNotice({ type: "success", title: "Plan updated", text: `${nicePlanName(plan)} is now active.` });
         } catch (err) {
           console.error("Failed to confirm checkout:", err);
-          setCheckoutNotice({ type: "warning", title: "Checkout completed, but plan refresh failed", text: "Refresh the page once. If it still shows the old plan, try the upgrade again once." });
+          setNotice({ type: "warning", title: "Checkout completed", text: "Refresh once if the plan does not update straight away." });
         }
-      } else if (checkout === "cancelled") {
-        setCheckoutNotice({ type: "warning", title: "Checkout cancelled", text: "No changes were made to your plan." });
       }
-      if (checkout) window.history.replaceState({}, document.title, window.location.pathname);
+      if (checkout === "cancelled") {
+        setNotice({ type: "warning", title: "Checkout cancelled", text: "No changes were made to your plan." });
+      }
+      window.history.replaceState({}, document.title, window.location.pathname);
     };
     handleCheckoutReturn();
   }, []);
 
   useEffect(() => {
-    const loadPlans = async () => {
+    const loadBilling = async () => {
       setLoading(true);
       try {
         const hintCountry = detectCountryHint();
-        const [plansRes, billingRes, currencyRes] = await Promise.all([
-          api.get("/plan/all"), api.get("/billing/status"),
+        const [billingRes, currencyRes] = await Promise.allSettled([
+          api.get("/billing/status"),
           api.get(`/billing/currency?country=${encodeURIComponent(hintCountry || "")}`),
         ]);
-        const plansData = getPayload(plansRes);
-        const billingData = getPayload(billingRes);
-        const currencyData = getPayload(currencyRes);
-        if (currencyData && currencyData.currency) setCurrencyInfo(currencyData);
-        setPlans(plansData && Array.isArray(plansData) ? mergePlans(plansData, currencyData) : mergePlans(fallbackPlans, currencyData));
-        if (billingData && billingData.success === false) { setBilling(null); setCurrentPlan("none"); }
-        else { setBilling(billingData || null); setCurrentPlan(billingData?.plan ? String(billingData.plan).toLowerCase() : "none"); }
+        const billingData = billingRes.status === "fulfilled" ? getPayload(billingRes.value) : null;
+        const currencyData = currencyRes.status === "fulfilled" ? getPayload(currencyRes.value) : null;
+        if (currencyData?.currency) setCurrencyInfo(currencyData);
+        if (billingData && billingData.success !== false) {
+          setBilling(billingData);
+          setCurrentPlan(billingData?.plan ? String(billingData.plan).toLowerCase() : "none");
+        } else {
+          setBilling(null);
+          setCurrentPlan("none");
+        }
       } catch (err) {
-        console.error("Failed to load plans:", err);
-        setPlans(fallbackPlans); setBilling(null); setCurrentPlan("none");
-      } finally { setLoading(false); }
+        console.error("Failed to load billing:", err);
+        setBilling(null);
+        setCurrentPlan("none");
+      } finally {
+        setLoading(false);
+      }
     };
-    loadPlans();
+    loadBilling();
   }, []);
 
-  const formatDate = (iso) => { if (!iso) return ""; try { return new Date(iso).toLocaleDateString("en-NZ", { day: "numeric", month: "long", year: "numeric" }); } catch { return ""; } };
+  const status = useMemo(() => {
+    if (billing?.trial_expired) return { label: "Trial ended", tone: "warn" };
+    if (billing?.trial_active) return { label: `Free trial active${billing?.days_left || billing?.days_left === 0 ? ` · ${billing.days_left} day${billing.days_left === 1 ? "" : "s"} left` : ""}`, tone: "ok" };
+    if (billing?.has_paid_subscription) return { label: `${nicePlanName(currentPlan)} active`, tone: "ok" };
+    return { label: "Choose a plan to open Churvox", tone: "neutral" };
+  }, [billing, currentPlan]);
 
-  const banner = useMemo(() => {
-    if (billing?.trial_expired) return null;
-    if (billing?.trial_active) {
-      const days = billing?.days_left;
-      return { title: `Free trial active${days || days === 0 ? ` · ${days} day${days === 1 ? "" : "s"} left` : ""}`, text: "No card required during trial. Upgrade any time before it ends." };
-    }
-    return null;
-  }, [billing]);
-
-  const isTrialExpired = billing?.trial_expired === true;
-  const isActiveTrial = billing?.trial_active === true;
-  const isPaid = billing?.has_paid_subscription === true;
   const isNewUser = currentPlan === "none" || !currentPlan;
+  const isTrialExpired = billing?.trial_expired === true;
+  const isPaid = billing?.has_paid_subscription === true;
+  const isActiveTrial = billing?.trial_active === true;
 
-  const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
+  const buttonLabel = (plan) => {
+    if (busyPlan === plan.key) return isNewUser ? "Starting trial…" : "Opening checkout…";
+    if (isNewUser) return `Start free trial — ${plan.name}`;
+    if ((isPaid || isActiveTrial) && currentPlan === plan.key && !isTrialExpired) return isPaid ? "Current plan" : "Current trial";
+    if (isTrialExpired && currentPlan === plan.key) return `Continue with ${plan.name}`;
+    return `Choose ${plan.name}`;
+  };
 
-  const getButtonState = (planKey) => {
-    const isCurrent = planKey === currentPlan;
-    const isBusy = busyPlan === planKey;
-    if (isBusy) return { disabled: true, label: isNewUser ? "Starting trial…" : "Opening checkout…" };
-    if (isNewUser) return { disabled: false, label: `Start free trial — ${cap(planKey)}` };
-    if (isTrialExpired) return { disabled: false, label: isCurrent ? `Continue with ${cap(planKey)}` : `Choose ${cap(planKey)}` };
-    if (isPaid && isCurrent) return { disabled: true, label: "Current plan" };
-    if (isActiveTrial && isCurrent) return { disabled: true, label: "Current trial" };
-    return { disabled: false, label: `Choose ${cap(planKey)}` };
+  const isDisabled = (plan) => {
+    if (busyPlan) return true;
+    return (isPaid || isActiveTrial) && currentPlan === plan.key && !isTrialExpired;
   };
 
   const handleSelectPlan = async (planKey) => {
@@ -142,20 +152,24 @@ export default function PlansPage() {
         setBusyPlan(planKey);
         const res = await api.post("/billing/start-trial", { plan_type: planKey });
         const data = getPayload(res) || {};
-        if (data.success) {
-          window.dispatchEvent(new Event("churvox-auth-refresh"));
-          setCurrentPlan(planKey);
-          setCheckoutNotice({ type: "success", title: "Trial started!", text: `Your 14-day free trial on the ${cap(planKey)} plan is now active. No card required.` });
-          setTimeout(() => { window.location.href = "/dashboard"; }, 1500);
-        } else { throw new Error(data.detail || data.error || "Failed to start trial"); }
-      } catch (err) { toast.error(err?.response?.data?.detail || err?.message || "Failed to start trial"); }
-      finally { setBusyPlan(""); }
+        if (!data.success) throw new Error(data.detail || data.error || "Failed to start trial");
+        window.dispatchEvent(new Event("churvox-auth-refresh"));
+        setCurrentPlan(planKey);
+        setNotice({ type: "success", title: "Trial started", text: `Your 14-day ${nicePlanName(planKey)} trial is active. No card required.` });
+        setTimeout(() => { window.location.href = "/dashboard"; }, 1100);
+      } catch (err) {
+        toast.error(err?.response?.data?.detail || err?.message || "Failed to start trial");
+      } finally {
+        setBusyPlan("");
+      }
       return;
     }
+
     try {
       setBusyPlan(planKey);
       const res = await api.post("/stripe/create-checkout-session", {
-        plan_type: planKey, country: currencyInfo?.country || detectCountryHint() || "",
+        plan_type: planKey,
+        country: currencyInfo?.country || detectCountryHint() || "",
       });
       if (res?.success === false) throw new Error(res.error || "Failed to start checkout");
       const data = getPayload(res) || {};
@@ -164,161 +178,64 @@ export default function PlansPage() {
       window.location.assign(url);
     } catch (err) {
       toast.error(err?.response?.data?.detail || err?.data?.detail || err?.message || "Failed to start checkout");
-    } finally { setBusyPlan(""); }
+    } finally {
+      setBusyPlan("");
+    }
   };
 
   if (loading) {
-    return (
-      <div className="px-app min-h-screen flex items-center justify-center px-6">
-        <div className="text-[14px] text-[#5b6c87]">Loading plans…</div>
-      </div>
-    );
+    return <main className="cv-plans"><div className="cv-plans-shell"><section className="cv-plans-hero"><p>Loading plans…</p></section></div></main>;
   }
 
   return (
-    <div className="px-app min-h-screen px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="flex items-center justify-center mb-6">
+    <main className="cv-plans" data-version="CHURVOX_APP_PLANS_COMMAND_20260524">
+      <div className="cv-plans-shell">
+        <header className="cv-plans-top">
           <ChurvoxLogo size="lg" />
-        </div>
+          <span>{status.label}</span>
+        </header>
 
-        {isTrialExpired ? (
-          <div className="pt-2 md:pt-4 space-y-6">
-            <div className="mx-auto max-w-2xl text-center space-y-3">
-              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#fef3c7] text-[#b45309] text-[11px] font-bold uppercase tracking-wider">
-                Trial ended
-              </span>
-              <h1 className="font-heading text-3xl md:text-4xl font-bold tracking-tight text-[#0d1b34]">Your free trial has ended</h1>
-              <p className="text-[14px] md:text-[15px] text-[#5b6c87]">
-                Your <span className="text-[#0d1b34] font-semibold">{cap(currentPlan)}</span> trial ended on{" "}
-                <span className="text-[#0d1b34] font-semibold">{formatDate(billing?.trial_ends_at)}</span>.
-                Subscribe to continue using Churvox — you don't need to sign up again.
-              </p>
-            </div>
-            <div className="mx-auto max-w-md">
-              <PremiumButton size="lg" className="w-full" onClick={() => handleSelectPlan(currentPlan)} disabled={busyPlan === currentPlan} dataTestId="continue-plan-button">
-                {busyPlan === currentPlan ? "Opening checkout…" : `Continue with ${cap(currentPlan)}`}
-              </PremiumButton>
-              <p className="mt-3 text-center text-[11.5px] text-[#7d8ba3]">Or choose a different plan below</p>
-            </div>
+        <section className="cv-plans-hero">
+          <div>
+            <p className="cv-kicker">Plans & billing</p>
+            <h1>Choose how much admin Churvox should run for you.</h1>
+            <p>Start with core workflow, move into crew control, or choose Operator where Churvox prepares the daily admin and the owner approves.</p>
           </div>
-        ) : (
-          <div className="pt-2 md:pt-4 text-center">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#dbe7ff] text-[#1d4ed8] text-[11px] font-bold uppercase tracking-wider">
-              <CreditCard className="h-3 w-3" /> Plans & billing
-            </span>
-            <h1 className="font-heading text-3xl md:text-5xl font-bold tracking-tight leading-tight text-[#0d1b34] mt-3">
-              Pick the plan that fits your business
-            </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-[14px] md:text-[15px] text-[#5b6c87] leading-relaxed">
-              Start with a 14-day free trial. No card required. Upgrade when you're ready.
-            </p>
-            {currencyInfo?.currency && (
-              <div className="mx-auto mt-4 inline-flex items-center gap-2 rounded-full border border-[#d8e3f3] bg-white px-3 py-1 text-[12px] text-[#1a2c4d] shadow-sm" data-testid="currency-badge">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#10b981]" />
-                Billed in <span className="font-semibold text-[#0d1b34]">{currencyInfo.currency}</span>
-                <span className="text-[#cbd5e1]">·</span>
-                <span className="text-[#5b6c87]">{currencyInfo.country}</span>
-              </div>
-            )}
+          <div className="cv-status-pill">{currencyInfo?.currency ? `Billed in ${currencyInfo.currency}` : status.label}</div>
+        </section>
+
+        {notice && (
+          <div className={`cv-notice ${notice.type === "warning" ? "warn" : ""}`}>
+            <b>{notice.title}</b>
+            <span>{notice.text}</span>
           </div>
         )}
 
-        {checkoutNotice && (
-          <div className={`mx-auto mt-6 mb-6 max-w-3xl rounded-2xl border px-5 py-4 shadow-sm ${
-            checkoutNotice.type === "success" ? "border-[#a7f3d0] bg-[#ecfdf5] text-[#065f46]" : "border-[#fde68a] bg-[#fffbeb] text-[#92400e]"}`}>
-            <div className="font-bold">{checkoutNotice.title}</div>
-            <div className="mt-1 text-[13px] opacity-90">{checkoutNotice.text}</div>
-          </div>
-        )}
-
-        {banner && (
-          <div className="mx-auto mt-6 mb-8 max-w-3xl rounded-2xl border border-[#bfdbfe] bg-[#eff6ff] text-[#1e40af] px-5 py-4 shadow-sm">
-            <div className="font-bold">{banner.title}</div>
-            <div className="mt-1 text-[13px] opacity-90">{banner.text}</div>
-          </div>
-        )}
-
-        <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-          {plans.map((plan) => {
-            const isCurrent = plan.key === currentPlan;
-            const btnState = getButtonState(plan.key);
-            const isPopular = (plan.badge || "").toLowerCase().includes("popular");
-
+        <section className="cv-grid">
+          {displayPlans.map((plan) => {
+            const featured = plan.key === "pro";
+            const current = currentPlan === plan.key && !isTrialExpired;
             return (
-              <div
-                key={plan.key}
-                className={`relative rounded-3xl border p-6 transition-all bg-white ${
-                  isCurrent && !isTrialExpired
-                    ? "border-[#1d4ed8] ring-2 ring-[#1d4ed8]/20 shadow-[0_24px_60px_rgba(37,99,235,0.18)]"
-                    : isPopular
-                      ? "border-[#1d4ed8]/40 shadow-[0_20px_50px_rgba(37,99,235,0.15)]"
-                      : "border-[#d8e3f3] shadow-[0_10px_30px_rgba(13,27,52,0.08)] hover:border-[#c7dcfb] hover:-translate-y-0.5"
-                }`}
-              >
-                {isPopular && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-br from-[#2563eb] to-[#7c3aed] text-white text-[10.5px] font-bold uppercase tracking-wider shadow-md">
-                    <Sparkles className="h-3 w-3" /> Most popular
-                  </span>
-                )}
-
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h2 className="font-heading text-2xl font-bold text-[#0d1b34]">{plan.name}</h2>
-                    <p className="mt-2 text-[13px] text-[#5b6c87] min-h-[40px]">{plan.blurb}</p>
-                  </div>
-                  {isCurrent && !isTrialExpired ? <PremiumBadge tone="soft">Current</PremiumBadge>
-                    : isCurrent && isTrialExpired ? <PremiumBadge tone="amber">Trial ended</PremiumBadge>
-                    : null}
-                </div>
-
-                <div className="mt-6 flex items-end gap-1">
-                  <span className="font-heading text-4xl font-bold text-[#0d1b34] tracking-tight">{plan.price}</span>
-                  <span className="pb-1 text-[13px] text-[#5b6c87]">{plan.period}</span>
-                </div>
-
-                <ul className="mt-6 space-y-3 text-[13.5px] text-[#1a2c4d]">
-                  {plan.limits.map((item) => (
-                    <li key={item} className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#0d9488]" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <div className="mt-7">
-                  <PremiumButton
-                    size="lg"
-                    className="w-full"
-                    variant={isCurrent && !isTrialExpired ? "secondary" : "primary"}
-                    onClick={() => handleSelectPlan(plan.key)}
-                    disabled={btnState.disabled}
-                    dataTestId={`plan-btn-${plan.key}`}
-                    iconLeft={isPopular ? <Zap className="h-4 w-4" /> : null}
-                  >
-                    {btnState.label}
-                  </PremiumButton>
-                </div>
-              </div>
+              <article key={plan.key} className={`cv-card ${featured ? "featured" : ""} ${current ? "current" : ""}`}>
+                <span>{plan.tag}</span>
+                <h2>{plan.name}</h2>
+                <div className="cv-price"><b>{plan.price}</b><small>{plan.period}</small></div>
+                <p>{plan.blurb}</p>
+                <ul>{plan.limits.map((item) => <li key={item}>{item}</li>)}</ul>
+                <button type="button" onClick={() => handleSelectPlan(plan.key)} disabled={isDisabled(plan)} data-testid={`plan-btn-${plan.key}`}>
+                  {buttonLabel(plan)}
+                </button>
+              </article>
             );
           })}
-        </div>
+        </section>
 
-        <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-3 max-w-4xl mx-auto">
-          <div className="rounded-2xl border border-[#d8e3f3] bg-white px-4 py-3 flex items-center gap-3">
-            <ShieldCheck className="h-5 w-5 text-[#0d9488]" />
-            <p className="text-[13px] text-[#1a2c4d]"><span className="font-semibold">Secure billing</span> via Stripe</p>
-          </div>
-          <div className="rounded-2xl border border-[#d8e3f3] bg-white px-4 py-3 flex items-center gap-3">
-            <Sparkles className="h-5 w-5 text-[#7c3aed]" />
-            <p className="text-[13px] text-[#1a2c4d]"><span className="font-semibold">AI assistant</span> on every plan</p>
-          </div>
-          <div className="rounded-2xl border border-[#d8e3f3] bg-white px-4 py-3 flex items-center gap-3">
-            <CreditCard className="h-5 w-5 text-[#1d4ed8]" />
-            <p className="text-[13px] text-[#1a2c4d]"><span className="font-semibold">Cancel anytime</span></p>
-          </div>
-        </div>
+        <section className="cv-footer-row">
+          <div><b>Churvox does the admin</b><span>AI prepares daily actions for owner approval.</span></div>
+          <div><b>Command scales</b><span>Growth Pack adds 50 active team members for $99/month + GST.</span></div>
+          <div><b>MYOB ready</b><span>Operator add-on available. Included in Command.</span></div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }
