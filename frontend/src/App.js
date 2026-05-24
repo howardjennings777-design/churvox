@@ -62,6 +62,7 @@ import FeaturesPage from "./pages/marketing/FeaturesPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import FloatingBottomNav from "./components/FloatingBottomNav";
 import ConceptCPage from "./concept-c/ConceptCPage";
+import ConceptCFrame from "./concept-c/ConceptCFrame";
 
 const Spinner = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -233,36 +234,36 @@ function App() {
             <Route path="/overview" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><ConceptCPage area="dashboard" /></ErrorBoundary></BusinessRoute>} />
             <Route path="/onboarding" element={<BusinessRoute><OnboardingPage /></BusinessRoute>} />
             <Route path="/jobs" element={<BusinessRoute><ConceptCPage area="jobs" /></BusinessRoute>} />
-            <Route path="/jobs/new" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
-            <Route path="/jobs/:id" element={<BusinessRoute><JobDetailPage /></BusinessRoute>} />
-            <Route path="/jobs/:id/edit" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
+            <Route path="/jobs/new" element={<BusinessRoute><ConceptCFrame area="jobs"><JobFormPage /></ConceptCFrame></BusinessRoute>} />
+            <Route path="/jobs/:id" element={<BusinessRoute><ConceptCFrame area="jobs"><JobDetailPage /></ConceptCFrame></BusinessRoute>} />
+            <Route path="/jobs/:id/edit" element={<BusinessRoute><ConceptCFrame area="jobs"><JobFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/dispatch" element={<BusinessRoute><ConceptCPage area="dispatch" /></BusinessRoute>} />
             <Route path="/calendar" element={<Navigate to="/dispatch" replace />} />
             <Route path="/clients" element={<BusinessRoute><ConceptCPage area="clients" /></BusinessRoute>} />
-            <Route path="/clients/new" element={<BusinessRoute><ClientFormPage /></BusinessRoute>} />
-            <Route path="/clients/:id" element={<BusinessRoute><ClientDetailPage /></BusinessRoute>} />
-            <Route path="/clients/:id/edit" element={<BusinessRoute><ClientFormPage /></BusinessRoute>} />
+            <Route path="/clients/new" element={<BusinessRoute><ConceptCFrame area="clients"><ClientFormPage /></ConceptCFrame></BusinessRoute>} />
+            <Route path="/clients/:id" element={<BusinessRoute><ConceptCFrame area="clients"><ClientDetailPage /></ConceptCFrame></BusinessRoute>} />
+            <Route path="/clients/:id/edit" element={<BusinessRoute><ConceptCFrame area="clients"><ClientFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/quotes" element={<BusinessRoute><ConceptCPage area="quotes" /></BusinessRoute>} />
-            <Route path="/quotes/new" element={<BusinessRoute><QuoteFormPage /></BusinessRoute>} />
-            <Route path="/quotes/:id" element={<BusinessRoute><QuoteDetailPage /></BusinessRoute>} />
-            <Route path="/quotes/:id/edit" element={<BusinessRoute><QuoteFormPage /></BusinessRoute>} />
+            <Route path="/quotes/new" element={<BusinessRoute><ConceptCFrame area="quotes"><QuoteFormPage /></ConceptCFrame></BusinessRoute>} />
+            <Route path="/quotes/:id" element={<BusinessRoute><ConceptCFrame area="quotes"><QuoteDetailPage /></ConceptCFrame></BusinessRoute>} />
+            <Route path="/quotes/:id/edit" element={<BusinessRoute><ConceptCFrame area="quotes"><QuoteFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/invoices" element={<BusinessRoute><ConceptCPage area="invoices" /></BusinessRoute>} />
-            <Route path="/invoices/new" element={<BusinessRoute><InvoiceFormPage /></BusinessRoute>} />
-            <Route path="/invoices/:id" element={<BusinessRoute><InvoiceDetailPage /></BusinessRoute>} />
+            <Route path="/invoices/new" element={<BusinessRoute><ConceptCFrame area="invoices"><InvoiceFormPage /></ConceptCFrame></BusinessRoute>} />
+            <Route path="/invoices/:id" element={<BusinessRoute><ConceptCFrame area="invoices"><InvoiceDetailPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/sms" element={<BusinessRoute><ConceptCPage area="sms" /></BusinessRoute>} />
             <Route path="/reports" element={<ReportsRoute><ConceptCPage area="reports" /></ReportsRoute>} />
             <Route path="/integrations" element={<BusinessRoute><ConceptCPage area="integrations" /></BusinessRoute>} />
             <Route path="/settings" element={<BusinessRoute><ConceptCPage area="settings" /></BusinessRoute>} />
-            <Route path="/contact" element={<PrivateRoute><ContactPage /></PrivateRoute>} />
-            <Route path="/plans" element={<OwnerRoute><PlansPage /></OwnerRoute>} />
+            <Route path="/contact" element={<PrivateRoute><ConceptCFrame area="settings"><ContactPage /></ConceptCFrame></PrivateRoute>} />
+            <Route path="/plans" element={<OwnerRoute><ConceptCFrame area="plans"><PlansPage /></ConceptCFrame></OwnerRoute>} />
             <Route path="/team" element={<TeamRoute><ConceptCPage area="team" /></TeamRoute>} />
             <Route path="/notifications" element={<PrivateRoute><ConceptCPage area="notifications" /></PrivateRoute>} />
             <Route path="/automation" element={<TeamRoute><ConceptCPage area="automation" /></TeamRoute>} />
             <Route path="/automation/runs" element={<TeamRoute><ConceptCPage area="automation" /></TeamRoute>} />
             <Route path="/payroll" element={<PayrollRoute><ConceptCPage area="payroll" /></PayrollRoute>} />
-            <Route path="/worker/jobs" element={<WorkerRoute><WorkerJobsPage /></WorkerRoute>} />
-            <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerJobDetailPage /></WorkerRoute>} />
-            <Route path="/worker/settings" element={<WorkerRoute><WorkerSettingsPage /></WorkerRoute>} />
+            <Route path="/worker/jobs" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobsPage /></ConceptCFrame></WorkerRoute>} />
+            <Route path="/worker/jobs/:id" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobDetailPage /></ConceptCFrame></WorkerRoute>} />
+            <Route path="/worker/settings" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerSettingsPage /></ConceptCFrame></WorkerRoute>} />
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />

@@ -1032,3 +1032,82 @@ body,
     font-size: 3.25rem;
   }
 }
+
+/* Concept C wrapper for existing create/edit/detail pages */
+.concept-c2-embedded .c2-legacy-stage {
+  padding: 0;
+  overflow: hidden;
+}
+
+.c2-legacy-card {
+  min-height: calc(100vh - 184px);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(217,132,85,.10), transparent 28%),
+    rgba(255,249,239,.82);
+  padding: clamp(14px, 2vw, 26px);
+  overflow: auto;
+}
+
+.c2-legacy-card > * {
+  max-width: none !important;
+}
+
+.c2-legacy-card .min-h-screen,
+.c2-legacy-card [class*="min-h-screen"] {
+  min-height: auto !important;
+}
+
+.c2-legacy-card [class*="bg-white"],
+.c2-legacy-card [class*="bg-slate"],
+.c2-legacy-card [class*="bg-gray"],
+.c2-legacy-card [class*="bg-blue"] {
+  background-color: rgba(255,255,255,.48) !important;
+}
+
+.c2-legacy-card [class*="rounded"],
+.c2-legacy-card form,
+.c2-legacy-card section,
+.c2-legacy-card article {
+  border-radius: 22px;
+}
+
+.c2-legacy-card input,
+.c2-legacy-card textarea,
+.c2-legacy-card select {
+  border-radius: 14px !important;
+  border-color: rgba(25,23,22,.18) !important;
+  background: rgba(255,255,255,.72) !important;
+}
+
+.c2-legacy-card button,
+.c2-legacy-card a[class*="button"],
+.c2-legacy-card .btn {
+  border-radius: 14px !important;
+}
+
+.c2-legacy-card h1,
+.c2-legacy-card h2,
+.c2-legacy-card h3 {
+  color: var(--c2-ink) !important;
+}
+
+.c2-legacy-card p,
+.c2-legacy-card span,
+.c2-legacy-card label {
+  color: inherit;
+}
+
+.c2-legacy-card [class*="text-blue"],
+.c2-legacy-card [class*="text-indigo"] {
+  color: var(--c2-copper) !important;
+}
+
+.c2-legacy-card [class*="border-blue"],
+.c2-legacy-card [class*="border-indigo"] {
+  border-color: rgba(182,101,67,.35) !important;
+}
+
+.c2-legacy-card [class*="shadow"] {
+  box-shadow: 0 18px 54px rgba(16,16,20,.10) !important;
+}
