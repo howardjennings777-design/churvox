@@ -1,0 +1,637 @@
+/* CHURVOX_FLOWLINE_COMMAND_CENTRE_20260524
+   New visual direction:
+   product-like flowline, left rail, right AI tape, crew timeline.
+   Not a card dashboard.
+*/
+
+:root {
+  --flc-bg: #edf1ef;
+  --flc-bg2: #dfe7e5;
+  --flc-ink: #0b1624;
+  --flc-ink2: #14253a;
+  --flc-panel: #ffffff;
+  --flc-soft: #f7f9f8;
+  --flc-line: rgba(11, 22, 36, 0.14);
+  --flc-muted: #596672;
+  --flc-blue: #176f9f;
+  --flc-blue2: #7ac5e8;
+  --flc-copper: #c76532;
+  --flc-copper2: #f0a05d;
+  --flc-amber: #d88920;
+  --flc-red: #a63b32;
+  --flc-teal: #1f8088;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at 14% -8%, rgba(23,111,159,.14), transparent 30%),
+    radial-gradient(circle at 92% 0%, rgba(199,101,50,.12), transparent 32%),
+    linear-gradient(135deg, var(--flc-bg) 0%, var(--flc-bg2) 100%) !important;
+  color: var(--flc-ink) !important;
+}
+
+.flc {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr) minmax(360px, 430px);
+  grid-template-rows: 76px minmax(440px, 1fr) 260px 70px;
+  grid-template-areas:
+    "rail top ai"
+    "rail flow ai"
+    "rail crew ai"
+    "rail command ai";
+  gap: 12px;
+  padding: 12px 12px 100px;
+  color: var(--flc-ink);
+}
+
+.flc button,
+.flc input,
+.flc textarea {
+  font: inherit;
+}
+
+.flc button {
+  border: 1px solid var(--flc-line);
+  border-radius: 12px;
+  background: rgba(255,255,255,.8);
+  color: var(--flc-ink);
+  padding: 10px 12px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.flc button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(11,22,36,.08);
+}
+
+.flc .primary {
+  border: 0;
+  background: linear-gradient(135deg, var(--flc-copper), var(--flc-copper2));
+  color: #170a04;
+  box-shadow: 0 14px 30px rgba(199,101,50,.22);
+}
+
+.flc-kicker {
+  margin: 0 0 7px;
+  color: var(--flc-blue);
+  font-size: .68rem;
+  font-weight: 950;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+
+.flc-rail {
+  grid-area: rail;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 22px;
+  background: linear-gradient(180deg, var(--flc-ink), var(--flc-ink2));
+  padding: 10px;
+  box-shadow: 0 20px 60px rgba(11,22,36,.18);
+}
+
+.flc-mark {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--flc-blue), var(--flc-blue2));
+  color: var(--flc-ink);
+  font-weight: 950;
+  font-size: 1.1rem;
+}
+
+.flc-rail button {
+  width: 52px;
+  height: 52px;
+  border-color: rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.78);
+}
+
+.flc-rail button.active {
+  background: rgba(199,101,50,.24);
+  color: #fff;
+  box-shadow: inset 0 0 0 2px rgba(240,160,93,.45);
+}
+
+.flc-topbar {
+  grid-area: top;
+  display: grid;
+  grid-template-columns: minmax(260px, .9fr) minmax(320px, 1.2fr) auto;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--flc-line);
+  border-radius: 20px;
+  background: rgba(255,255,255,.82);
+  padding: 12px 14px;
+  box-shadow: 0 18px 50px rgba(11,22,36,.08);
+  backdrop-filter: blur(16px);
+}
+
+.flc-topbar p {
+  margin: 0 0 4px;
+  color: var(--flc-blue);
+  font-size: .68rem;
+  font-weight: 950;
+  letter-spacing: .15em;
+}
+
+.flc-topbar strong {
+  display: block;
+  font-size: 1.05rem;
+  letter-spacing: -.02em;
+}
+
+.flc-pulse {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.flc-pulse span {
+  border-radius: 999px;
+  background: var(--flc-soft);
+  color: var(--flc-muted);
+  padding: 8px 10px;
+  font-size: .78rem;
+  font-weight: 820;
+}
+
+.flc-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.flc-flow {
+  grid-area: flow;
+  border: 1px solid var(--flc-line);
+  border-radius: 24px;
+  background: rgba(255,255,255,.82);
+  padding: 16px;
+  box-shadow: 0 20px 60px rgba(11,22,36,.08);
+  overflow: hidden;
+}
+
+.flc-flow-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, .45fr);
+  gap: 16px;
+  align-items: end;
+}
+
+.flc-flow-head h1 {
+  margin: 0;
+  color: var(--flc-ink);
+  font-size: clamp(2.8rem, 5.5vw, 6.8rem);
+  line-height: .82;
+  letter-spacing: -.1em;
+}
+
+.flc-flow-head > p {
+  margin: 0;
+  color: var(--flc-muted);
+  font-weight: 760;
+  line-height: 1.45;
+}
+
+.flc-track {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(120px, 1fr));
+  gap: 10px;
+  margin: 24px 0 16px;
+  padding: 18px 0;
+}
+
+.flc-line {
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  top: 48px;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--flc-amber), var(--flc-blue), var(--flc-teal), var(--flc-copper), var(--flc-red));
+  opacity: .75;
+}
+
+.flc-station {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  min-height: 118px;
+  border-radius: 18px;
+  background: #fff;
+  text-align: center;
+  z-index: 1;
+}
+
+.flc-station.active {
+  outline: 3px solid rgba(199,101,50,.35);
+}
+
+.flc-dot {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--flc-ink);
+  color: #fff;
+  font-weight: 950;
+}
+
+.flc-station strong {
+  font-size: 1.05rem;
+}
+
+.flc-station small {
+  color: var(--flc-muted);
+}
+
+.flc-station em {
+  display: grid;
+  min-width: 34px;
+  height: 28px;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(23,111,159,.12);
+  color: var(--flc-blue);
+  font-style: normal;
+  font-weight: 950;
+}
+
+.flc-station-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px;
+}
+
+.flc-station-list button {
+  display: grid;
+  min-height: 112px;
+  gap: 7px;
+  background: var(--flc-soft);
+  text-align: left;
+}
+
+.flc-station-list button.active {
+  background: var(--flc-ink);
+  color: #fff;
+}
+
+.flc-station-list span {
+  color: var(--flc-blue);
+  font-size: .68rem;
+  font-weight: 950;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.flc-station-list button.active span,
+.flc-station-list button.active small {
+  color: rgba(255,255,255,.72);
+}
+
+.flc-station-list strong,
+.flc-station-list small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flc-station-list small {
+  color: var(--flc-muted);
+}
+
+.flc-ai {
+  grid-area: ai;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 24px;
+  background: linear-gradient(180deg, var(--flc-ink), var(--flc-ink2));
+  color: #fff;
+  padding: 16px;
+  box-shadow: 0 24px 70px rgba(11,22,36,.24);
+  overflow: auto;
+}
+
+.flc-ai-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.08);
+  padding: 9px 11px;
+  color: var(--flc-blue2);
+  font-size: .68rem;
+  font-weight: 950;
+  letter-spacing: .14em;
+}
+
+.flc-ai-status i {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--flc-blue2);
+  box-shadow: 0 0 0 0 rgba(122,197,232,.55);
+  animation: flcPulse 2.4s infinite;
+}
+
+.flc-ai-head {
+  margin-top: 18px;
+}
+
+.flc-ai-head span {
+  display: inline-block;
+  border-radius: 8px;
+  background: rgba(255,255,255,.1);
+  padding: 7px 9px;
+  color: var(--flc-blue2);
+  font-size: .68rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.flc-ai-head h2,
+.flc-ai-empty h2 {
+  margin: 12px 0 0;
+  color: #fff;
+  font-size: clamp(2.35rem, 4.7vw, 5.5rem);
+  line-height: .83;
+  letter-spacing: -.1em;
+}
+
+.flc-directive {
+  margin: 18px 0 12px;
+  border-left: 5px solid var(--flc-copper2);
+  border-radius: 10px;
+  background: rgba(255,255,255,.08);
+  padding: 12px 13px;
+  color: #fff;
+  font-weight: 950;
+}
+
+.flc-detail {
+  color: rgba(255,255,255,.76);
+  font-weight: 720;
+  line-height: 1.5;
+}
+
+.flc-facts {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.flc-facts div,
+.flc-ai-stack button {
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  background: rgba(255,255,255,.075);
+  padding: 11px;
+}
+
+.flc-facts span,
+.flc-editor span {
+  display: block;
+  color: var(--flc-blue2);
+  font-size: .66rem;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.flc-facts strong {
+  display: block;
+  margin-top: 5px;
+  color: #fff;
+}
+
+.flc-editor {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.flc-editor textarea {
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 12px;
+  background: rgba(255,255,255,.08);
+  color: #fff;
+  padding: 13px;
+}
+
+.flc-ai-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.flc-ai-actions .primary {
+  grid-column: 1 / -1;
+  min-height: 58px;
+}
+
+.flc-ai-stack {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.flc-ai-stack button {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 10px;
+  align-items: center;
+  color: #fff;
+  text-align: left;
+}
+
+.flc-ai-stack strong {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(122,197,232,.16);
+  color: var(--flc-blue2);
+}
+
+.flc-crew {
+  grid-area: crew;
+  border: 1px solid var(--flc-line);
+  border-radius: 24px;
+  background: rgba(255,255,255,.82);
+  padding: 14px;
+  box-shadow: 0 18px 50px rgba(11,22,36,.08);
+  overflow: auto;
+}
+
+.flc-crew-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.flc-crew-head h3 {
+  margin: 0;
+  font-size: clamp(1.4rem, 2.5vw, 2.4rem);
+  line-height: .9;
+  letter-spacing: -.07em;
+}
+
+.flc-timeline {
+  display: grid;
+  grid-template-columns: 180px repeat(3, minmax(180px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+  min-width: 760px;
+}
+
+.flc-time-head {
+  border-radius: 10px;
+  background: var(--flc-ink);
+  color: #fff;
+  padding: 9px 10px;
+  font-size: .75rem;
+  font-weight: 950;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.flc-worker-name,
+.flc-time-cell {
+  min-height: 70px;
+  border: 1px solid var(--flc-line);
+  border-radius: 12px;
+  background: var(--flc-soft);
+  padding: 10px;
+}
+
+.flc-worker-name {
+  display: grid;
+  align-content: center;
+}
+
+.flc-worker-name span {
+  color: var(--flc-muted);
+  font-size: .78rem;
+}
+
+.flc-time-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-content: flex-start;
+}
+
+.flc-time-cell button {
+  max-width: 100%;
+  overflow: hidden;
+  background: #fff;
+  padding: 7px 9px;
+  font-size: .78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flc-command {
+  grid-area: command;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  border: 1px solid var(--flc-line);
+  border-radius: 20px;
+  background: rgba(255,255,255,.82);
+  padding: 10px;
+  box-shadow: 0 16px 44px rgba(11,22,36,.07);
+}
+
+.flc-command input {
+  border: 1px solid var(--flc-line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--flc-ink);
+  padding: 0 14px;
+}
+
+.flc-empty-line,
+.flc-no-crew {
+  border: 1px dashed var(--flc-line);
+  border-radius: 14px;
+  padding: 18px;
+  color: var(--flc-muted);
+}
+
+@keyframes flcPulse {
+  0% { box-shadow: 0 0 0 0 rgba(122,197,232,.55); }
+  70% { box-shadow: 0 0 0 14px rgba(122,197,232,0); }
+  100% { box-shadow: 0 0 0 0 rgba(122,197,232,0); }
+}
+
+@media (max-width: 1180px) {
+  .flc {
+    display: block;
+    padding: 10px 10px 96px;
+  }
+
+  .flc-rail {
+    display: none;
+  }
+
+  .flc-topbar,
+  .flc-flow,
+  .flc-ai,
+  .flc-crew,
+  .flc-command {
+    margin-bottom: 12px;
+  }
+
+  .flc-topbar,
+  .flc-flow-head {
+    grid-template-columns: 1fr;
+  }
+
+  .flc-track {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .flc-line {
+    display: none;
+  }
+
+  .flc-ai-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .flc-ai-actions .primary {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .flc-track,
+  .flc-station-list,
+  .flc-command {
+    grid-template-columns: 1fr;
+  }
+
+  .flc-flow-head h1,
+  .flc-ai-head h2 {
+    font-size: 2.7rem;
+  }
+}

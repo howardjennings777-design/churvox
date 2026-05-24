@@ -1,11 +1,11 @@
 import React from "react";
 import SmartHubErrorBoundary from "../components/SmartHubErrorBoundary";
-import DispatchCommandCentre from "./DispatchCommandCentre";
+import FlowlineCommandCentre from "./FlowlineCommandCentre";
 
 export default function DashboardPage() {
   return (
     <SmartHubErrorBoundary>
-      <DispatchCommandCentre />
+      <FlowlineCommandCentre />
     </SmartHubErrorBoundary>
   );
 }

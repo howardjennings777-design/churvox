@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
-import "../styles/churvoxDispatchCommandCentre.css";
+import "../styles/churvoxFlowlineCommandCentre.css";
 
 const arr = (v) =>
   Array.isArray(v) ? v :
@@ -17,7 +17,6 @@ const idOf = (v) => String(v?.id || v?._id || "");
 const low = (v) => String(v || "").toLowerCase();
 const nz = (v) => `$${Number(v || 0).toLocaleString("en-NZ", { maximumFractionDigits: 0 })}`;
 const pendingStatuses = new Set(["", "pending", "ready", "edited", "draft", "watching"]);
-const doneStatuses = new Set(["completed", "approved", "dismissed", "rejected"]);
 const first = (...values) => values.find((v) => v !== undefined && v !== null && String(v).trim() !== "");
 
 const lineTotal = (items) => arr(items).reduce((sum, item) => {
@@ -39,12 +38,19 @@ function labelFor(type = "") {
 function makeDecision(raw) {
   const payload = raw.payload || raw.draft_payload || {};
   const type = raw.action_type || raw.type || "prepared_action";
+  const t = low(type);
+
+  let lane = "inbox";
+  if (t.includes("quote")) lane = "quote";
+  if (t.includes("assign")) lane = "dispatch";
+  if (t.includes("invoice") && !t.includes("reminder")) lane = "bill";
+  if (t.includes("reminder")) lane = "pay";
 
   return {
     id: `decision-${idOf(raw)}`,
     rawId: idOf(raw),
     raw,
-    lane: "needs",
+    lane,
     source: "AI",
     type,
     label: labelFor(type),
@@ -56,7 +62,7 @@ function makeDecision(raw) {
   };
 }
 
-function makeJob(job, lane = "scheduled") {
+function makeJob(job, lane = "dispatch") {
   return {
     id: `job-${idOf(job)}`,
     raw: job,
@@ -90,29 +96,14 @@ function makeInvoice(invoice) {
   };
 }
 
-function makeClient(client) {
-  return {
-    id: `client-${idOf(client)}`,
-    raw: client,
-    lane: "customers",
-    source: "Client",
-    type: "client",
-    label: "Client",
-    title: client.name || client.client_name || client.customer_name || "Client",
-    detail: client.email || client.phone || client.address || "Client record",
-    status: client.status || "active",
-    client: client.name || client.client_name || client.customer_name || "Client",
-  };
-}
-
 function makeQuote(quote) {
   return {
     id: `quote-${idOf(quote)}`,
     raw: quote,
-    lane: "needs",
+    lane: "quote",
     source: "Quote",
     type: "quote",
-    label: "Quote follow-up",
+    label: "Quote",
     title: quote.title || quote.customer_name || quote.client_name || "Quote",
     detail: quote.description || "Quote waiting for review or follow-up.",
     status: quote.status || "draft",
@@ -164,17 +155,16 @@ function displayTitle(item) {
   const type = low(item.type || "");
   const client = first(p.client_name, p.customer_name, p.client, item.client);
 
-  if (type.includes("invoice_reminder")) return `Send payment reminder${client ? ` to ${client}` : ""}`;
-  if (["create_invoice_draft", "invoice_draft"].includes(type)) return `Create invoice draft${client ? ` for ${client}` : ""}`;
-  if (type.includes("assign")) return "Assign crew to waiting job";
+  if (type.includes("invoice_reminder")) return `Send reminder${client ? ` to ${client}` : ""}`;
+  if (["create_invoice_draft", "invoice_draft"].includes(type)) return `Create invoice${client ? ` for ${client}` : ""}`;
+  if (type.includes("assign")) return "Assign crew to job";
   if (type.includes("quote")) return `Follow up quote${client ? ` for ${client}` : ""}`;
-  if (type.includes("customer")) return `Send customer update${client ? ` to ${client}` : ""}`;
-
+  if (type.includes("customer")) return `Update customer${client ? ` ${client}` : ""}`;
   return item.title || "AI action ready";
 }
 
 function displayDetail(item) {
-  if (!item) return "Run an AI check or choose a command lane.";
+  if (!item) return "Run an AI check or open a Flowline station.";
 
   const p = item.payload || {};
   const type = low(item.type || "");
@@ -205,12 +195,12 @@ function displayDetail(item) {
 
 function primaryLabel(item) {
   const type = low(item?.type || "");
-  if (type.includes("invoice_reminder")) return "Approve & send reminder";
-  if (["create_invoice_draft", "invoice_draft"].includes(type)) return "Approve invoice draft";
+  if (type.includes("invoice_reminder")) return "Approve & send";
+  if (["create_invoice_draft", "invoice_draft"].includes(type)) return "Approve invoice";
   if (type.includes("assign")) return "Approve assignment";
   if (type.includes("quote")) return "Approve follow-up";
   if (type.includes("customer")) return "Approve update";
-  return "Approve & run";
+  return "Approve";
 }
 
 function outcomeLine(item) {
@@ -220,7 +210,7 @@ function outcomeLine(item) {
   if (type.includes("assign")) return "Crew assignment saved";
   if (type.includes("quote")) return "Follow-up prepared";
   if (type.includes("customer")) return "Customer update prepared";
-  return item?.rawId ? "Action runs" : "Open inside centre";
+  return item?.rawId ? "Action runs" : "Open in Flowline";
 }
 
 function recordLine(item) {
@@ -252,7 +242,7 @@ function groupByWorker(items) {
       if (b.worker === "Unassigned") return 1;
       return b.jobs.length - a.jobs.length;
     })
-    .slice(0, 7);
+    .slice(0, 6);
 }
 
 function groupByLabel(items) {
@@ -262,26 +252,10 @@ function groupByLabel(items) {
     if (!map.has(key)) map.set(key, { title: key, count: 0, first: item });
     map.get(key).count += 1;
   }
-  return [...map.values()].sort((a, b) => b.count - a.count).slice(0, 8);
+  return [...map.values()].sort((a, b) => b.count - a.count).slice(0, 6);
 }
 
-function crewSummary(fieldJobs, scheduledJobs) {
-  const names = [...fieldJobs, ...scheduledJobs]
-    .map((j) => j.worker)
-    .filter(Boolean)
-    .filter((v) => v !== "Unassigned");
-
-  if (!names.length) return "No crew activity loaded";
-
-  const counts = names.reduce((acc, name) => {
-    acc[name] = (acc[name] || 0) + 1;
-    return acc;
-  }, {});
-
-  return Object.entries(counts).slice(0, 4).map(([name, count]) => `${name} ${count}`).join(" · ");
-}
-
-export default function DispatchCommandCentre() {
+export default function FlowlineCommandCentre() {
   const { get, post, patch } = useApi();
 
   const [actions, setActions] = useState([]);
@@ -291,7 +265,7 @@ export default function DispatchCommandCentre() {
   const [quotes, setQuotes] = useState([]);
   const [snapshot, setSnapshot] = useState(null);
 
-  const [lane, setLane] = useState("needs");
+  const [station, setStation] = useState("inbox");
   const [selected, setSelected] = useState(null);
   const [handled, setHandled] = useState([]);
   const [busy, setBusy] = useState("");
@@ -329,7 +303,7 @@ export default function DispatchCommandCentre() {
     setBusy("");
 
     if (res.success) {
-      if (!quiet) toast.success("Command Centre updated");
+      if (!quiet) toast.success("Flowline updated");
       await load();
       return true;
     }
@@ -344,7 +318,7 @@ export default function DispatchCommandCentre() {
     if (scanned.current) return;
     scanned.current = true;
 
-    const key = "churvox_dispatch_command_last_scan";
+    const key = "churvox_flowline_last_scan";
     const last = Number(localStorage.getItem(key) || 0);
 
     if (!last || Date.now() - last > 10 * 60 * 1000) {
@@ -365,11 +339,11 @@ export default function DispatchCommandCentre() {
 
   const quoteItems = useMemo(() => quotes.slice(0, 30).map(makeQuote), [quotes]);
 
-  const scheduledJobs = useMemo(
+  const dispatchJobs = useMemo(
     () => jobs
       .filter((j) => ["scheduled", "assigned", "booked"].includes(low(j.status)))
       .slice(0, 50)
-      .map((job) => makeJob(job, "scheduled")),
+      .map((job) => makeJob(job, "dispatch")),
     [jobs]
   );
 
@@ -397,48 +371,39 @@ export default function DispatchCommandCentre() {
     [invoices]
   );
 
-  const clientItems = useMemo(() => clients.slice(0, 50).map(makeClient), [clients]);
+  const inboxItems = useMemo(() => decisions.filter((d) => d.lane === "inbox"), [decisions]);
+  const quoteStation = useMemo(() => [...quoteItems, ...decisions.filter((d) => d.lane === "quote")], [quoteItems, decisions]);
+  const dispatchStation = useMemo(() => [...dispatchJobs, ...decisions.filter((d) => d.lane === "dispatch")], [dispatchJobs, decisions]);
+  const fieldStation = fieldJobs;
+  const billStation = useMemo(() => [...readyBillJobs, ...decisions.filter((d) => d.lane === "bill")], [readyBillJobs, decisions]);
+  const payStation = useMemo(() => [...waitingPay, ...decisions.filter((d) => d.lane === "pay")], [waitingPay, decisions]);
 
-  const doneItems = useMemo(
-    () => actions
-      .filter((a) => doneStatuses.has(low(a.status)))
-      .slice(0, 20)
-      .map(makeDecision),
-    [actions]
-  );
-
-  const needsItems = useMemo(
-    () => [...decisions, ...quoteItems].slice(0, 80),
-    [decisions, quoteItems]
-  );
-
-  const lanes = {
-    needs: needsItems,
-    scheduled: scheduledJobs,
-    field: fieldJobs,
-    bill: readyBillJobs,
-    pay: waitingPay,
-    customers: clientItems,
-    done: doneItems,
+  const stations = {
+    inbox: inboxItems,
+    quote: quoteStation,
+    dispatch: dispatchStation,
+    field: fieldStation,
+    bill: billStation,
+    pay: payStation,
   };
 
-  const activeItems = lanes[lane] || [];
-  const current = selected && selected.lane === lane ? selected : (lane === "needs" ? decisions[0] || activeItems[0] : activeItems[0]);
+  const activeItems = stations[station] || [];
+  const current = selected && selected.lane === station ? selected : decisions[0] || activeItems[0];
+  const dispatchRows = useMemo(() => groupByWorker([...dispatchJobs, ...fieldJobs]), [dispatchJobs, fieldJobs]);
   const grouped = useMemo(() => groupByLabel(decisions), [decisions]);
-  const dispatchRows = useMemo(() => groupByWorker([...scheduledJobs, ...fieldJobs]), [scheduledJobs, fieldJobs]);
 
   useEffect(() => {
     setEditOpen(false);
     setEditText(current?.payload?.message || current?.payload?.description || current?.detail || "");
   }, [current?.id, current?.payload?.message, current?.payload?.description, current?.detail]);
 
-  const openLane = (nextLane) => {
-    setLane(nextLane);
+  const openStation = (nextStation) => {
+    setStation(nextStation);
     setSelected(null);
   };
 
   const reviewNext = () => {
-    setLane("needs");
+    setStation("inbox");
     setSelected(decisions[0] || null);
   };
 
@@ -495,14 +460,14 @@ export default function DispatchCommandCentre() {
     const q = low(ask);
 
     if (!q.trim()) return;
-    if (q.includes("money") || q.includes("invoice") || q.includes("bill")) openLane("bill");
-    else if (q.includes("pay") || q.includes("overdue")) openLane("pay");
-    else if (q.includes("field") || q.includes("active")) openLane("field");
-    else if (q.includes("schedule") || q.includes("today") || q.includes("dispatch")) openLane("scheduled");
-    else if (q.includes("client") || q.includes("customer")) openLane("customers");
+    if (q.includes("quote")) openStation("quote");
+    else if (q.includes("dispatch") || q.includes("schedule") || q.includes("crew")) openStation("dispatch");
+    else if (q.includes("field") || q.includes("active")) openStation("field");
+    else if (q.includes("invoice") || q.includes("bill")) openStation("bill");
+    else if (q.includes("pay") || q.includes("overdue")) openStation("pay");
     else reviewNext();
 
-    toast.message("Command Centre changed");
+    toast.message("Flowline moved");
   };
 
   const openTotal = invoices.reduce((sum, invoice) => {
@@ -512,231 +477,183 @@ export default function DispatchCommandCentre() {
     return sum;
   }, 0);
 
-  const pulse = [
-    ["AI actions", decisions.length, "ready", "needs"],
-    ["Dispatch", scheduledJobs.length + fieldJobs.length, "jobs moving", "scheduled"],
-    ["Ready bill", readyBillJobs.length, nz(readyBillJobs.reduce((s, j) => s + Number(j.amount || 0), 0)), "bill"],
-    ["Waiting pay", waitingPay.length, nz(openTotal), "pay"],
-  ];
-
-  const flowLanes = [
-    { key: "needs", title: "Needs Action", hint: "AI decisions, unassigned work, quotes.", items: needsItems },
-    { key: "scheduled", title: "Scheduled", hint: "Booked jobs and crew commitments.", items: scheduledJobs },
-    { key: "field", title: "In Field", hint: "Active jobs, time, notes and photos.", items: fieldJobs },
-    { key: "bill", title: "Ready to Bill", hint: "Completed work and invoice drafts.", items: readyBillJobs },
-    { key: "pay", title: "Waiting Pay", hint: "Open invoices and reminders.", items: waitingPay },
+  const stationConfig = [
+    { key: "inbox", title: "Inbox", sub: "AI actions", items: inboxItems },
+    { key: "quote", title: "Quote", sub: "Win work", items: quoteStation },
+    { key: "dispatch", title: "Dispatch", sub: "Book crew", items: dispatchStation },
+    { key: "field", title: "Field", sub: "Work happening", items: fieldStation },
+    { key: "bill", title: "Bill", sub: "Ready invoice", items: billStation },
+    { key: "pay", title: "Pay", sub: "Chase money", items: payStation },
   ];
 
   return (
-    <main className="dcc" data-version="CHURVOX_DISPATCH_COMMAND_CENTRE_20260524">
-      <section className="dcc-commandbar">
-        <div>
-          <p className="dcc-kicker">Churvox Command Centre</p>
-          <h1>Dispatch, admin, money — one screen.</h1>
-        </div>
-
-        <div className="dcc-command-summary">
-          <span>{decisions.length} AI actions</span>
-          <span>{scheduledJobs.length + fieldJobs.length} jobs moving</span>
-          <span>{readyBillJobs.length} ready to bill</span>
-          <span>{waitingPay.length} waiting pay</span>
-        </div>
-
-        <div className="dcc-command-actions">
-          <button onClick={() => scan(false)} disabled={busy === "scan"}>{busy === "scan" ? "Checking…" : "Run AI"}</button>
-          <button onClick={askChurvox}>Ask Churvox</button>
-          <button className="dcc-primary" onClick={reviewNext}>Review next</button>
-        </div>
-      </section>
-
-      <section className="dcc-pulse">
-        {pulse.map(([label, value, note, target]) => (
-          <button key={label} className={lane === target ? "active" : ""} onClick={() => openLane(target)}>
-            <span>{label}</span>
-            <strong>{value}</strong>
-            <small>{note}</small>
+    <main className="flc" data-version="CHURVOX_FLOWLINE_COMMAND_CENTRE_20260524">
+      <nav className="flc-rail" aria-label="Churvox areas">
+        <div className="flc-mark">C</div>
+        {stationConfig.map((s) => (
+          <button key={s.key} className={station === s.key ? "active" : ""} onClick={() => openStation(s.key)}>
+            {s.title.slice(0, 1)}
           </button>
         ))}
+      </nav>
+
+      <header className="flc-topbar">
+        <div>
+          <p>CHURVOX FLOWLINE</p>
+          <strong>Work enters → crew moves → invoice prepared → payment chased</strong>
+        </div>
+        <div className="flc-pulse">
+          <span>{decisions.length} AI</span>
+          <span>{dispatchJobs.length + fieldJobs.length} jobs moving</span>
+          <span>{billStation.length} ready bill</span>
+          <span>{nz(openTotal)} waiting</span>
+        </div>
+        <div className="flc-actions">
+          <button onClick={() => scan(false)} disabled={busy === "scan"}>{busy === "scan" ? "Checking…" : "Run AI"}</button>
+          <button className="primary" onClick={reviewNext}>Review next</button>
+        </div>
+      </header>
+
+      <section className="flc-flow">
+        <div className="flc-flow-head">
+          <div>
+            <p className="flc-kicker">Live Flowline</p>
+            <h1>Run the day from the line.</h1>
+          </div>
+          <p>{snapshot?.next_best_move || "Each station shows where work is sitting. The AI tape on the right prepares the next admin move."}</p>
+        </div>
+
+        <div className="flc-track">
+          <div className="flc-line" />
+          {stationConfig.map((s, index) => (
+            <button key={s.key} className={`flc-station ${station === s.key ? "active" : ""}`} onClick={() => openStation(s.key)}>
+              <span className="flc-dot">{index + 1}</span>
+              <strong>{s.title}</strong>
+              <small>{s.sub}</small>
+              <em>{s.items.length}</em>
+            </button>
+          ))}
+        </div>
+
+        <div className="flc-station-list">
+          {activeItems.slice(0, 8).map((item) => (
+            <button key={item.id} className={current?.id === item.id ? "active" : ""} onClick={() => setSelected(item)}>
+              <span>{item.label}</span>
+              <strong>{item.title}</strong>
+              <small>{item.detail}</small>
+            </button>
+          ))}
+          {!activeItems.length ? <div className="flc-empty-line">No items sitting in this station.</div> : null}
+        </div>
       </section>
 
-      <section className="dcc-main">
-        <section className="dcc-dispatch">
-          <div className="dcc-section-head">
-            <div>
-              <p className="dcc-kicker">Today / Dispatch</p>
-              <h2>Crew and jobs moving now</h2>
-            </div>
-            <button onClick={() => openLane("scheduled")}>Open schedule</button>
-          </div>
+      <aside className="flc-ai">
+        <div className="flc-ai-status"><i /> AI OPERATOR TAPE</div>
 
-          <div className="dcc-crew-rows">
-            {dispatchRows.length ? dispatchRows.map((row) => (
-              <button key={row.worker} className="dcc-crew-row" onClick={() => openLane(row.worker === "Unassigned" ? "needs" : "scheduled")}>
-                <div className="dcc-worker">
-                  <span>{row.worker}</span>
-                  <strong>{row.jobs.length} jobs</strong>
-                </div>
-                <div className="dcc-worker-jobs">
-                  {row.jobs.slice(0, 4).map((job) => (
-                    <em key={job.id}>{job.title}</em>
+        {loading ? (
+          <p className="flc-detail">Loading Churvox…</p>
+        ) : current ? (
+          <>
+            <div className="flc-ai-head">
+              <span>{current.source}</span>
+              <h2>{displayTitle(current)}</h2>
+            </div>
+
+            <p className="flc-directive">Approve it, edit it, or skip it. Churvox moves the next admin step into place.</p>
+            <p className="flc-detail">{displayDetail(current)}</p>
+
+            <div className="flc-facts">
+              <div><span>Result</span><strong>{outcomeLine(current)}</strong></div>
+              <div><span>Record</span><strong>{recordLine(current)}</strong></div>
+              <div><span>Risk</span><strong>{current.risk || "low"}</strong></div>
+            </div>
+
+            {editOpen ? (
+              <label className="flc-editor">
+                <span>Edit before approving</span>
+                <textarea value={editText} onChange={(event) => setEditText(event.target.value)} />
+              </label>
+            ) : null}
+
+            <div className="flc-ai-actions">
+              {current.rawId ? (
+                <>
+                  <button className="primary" onClick={() => approveCurrent(current)} disabled={busy === current.rawId}>
+                    {busy === current.rawId ? "Running…" : primaryLabel(current)}
+                  </button>
+                  <button onClick={() => setEditOpen((value) => !value)}>Edit</button>
+                  <button onClick={() => skipCurrent(current)} disabled={busy === current.rawId}>Skip</button>
+                </>
+              ) : (
+                <>
+                  <button className="primary" onClick={reviewNext}>Back to AI actions</button>
+                  <button onClick={() => scan(false)}>Ask AI to prepare</button>
+                </>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="flc-ai-empty">
+            <h2>Nothing waiting.</h2>
+            <p>Run AI or open another Flowline station.</p>
+            <button className="primary" onClick={() => scan(false)}>Run AI</button>
+          </div>
+        )}
+
+        <div className="flc-ai-stack">
+          <p className="flc-kicker">Prepared stack</p>
+          {grouped.length ? grouped.map((g) => (
+            <button key={g.title} onClick={() => { openStation(g.first.lane || "inbox"); setSelected(g.first); }}>
+              <strong>{g.count}</strong>
+              <span>{g.title}</span>
+            </button>
+          )) : <span>No AI stack waiting.</span>}
+        </div>
+      </aside>
+
+      <section className="flc-crew">
+        <div className="flc-crew-head">
+          <div>
+            <p className="flc-kicker">Crew Timeline</p>
+            <h3>Who is moving today</h3>
+          </div>
+          <button onClick={() => openStation("dispatch")}>Open dispatch</button>
+        </div>
+
+        <div className="flc-timeline">
+          <div className="flc-time-head">Crew</div>
+          <div className="flc-time-head">Morning</div>
+          <div className="flc-time-head">Midday</div>
+          <div className="flc-time-head">Afternoon</div>
+
+          {dispatchRows.length ? dispatchRows.map((row) => (
+            <React.Fragment key={row.worker}>
+              <div className="flc-worker-name">
+                <strong>{row.worker}</strong>
+                <span>{row.jobs.length} jobs</span>
+              </div>
+              {[0, 1, 2].map((slot) => (
+                <div key={`${row.worker}-${slot}`} className="flc-time-cell">
+                  {row.jobs.filter((_, index) => index % 3 === slot).slice(0, 2).map((job) => (
+                    <button key={job.id} onClick={() => { openStation(job.lane || "dispatch"); setSelected(job); }}>
+                      {job.title}
+                    </button>
                   ))}
                 </div>
-              </button>
-            )) : (
-              <div className="dcc-empty-small">No scheduled or active crew work loaded yet.</div>
-            )}
-          </div>
-        </section>
-
-        <section className="dcc-flow">
-          <div className="dcc-section-head">
-            <div>
-              <p className="dcc-kicker">Job-to-cash flow</p>
-              <h2>From work to payment</h2>
-            </div>
-            <div className="dcc-live"><i /> AI operator live</div>
-          </div>
-
-          <div className="dcc-flow-lanes">
-            {flowLanes.map((flowLane) => (
-              <button key={flowLane.key} className={`dcc-flow-lane ${lane === flowLane.key ? "active" : ""}`} onClick={() => openLane(flowLane.key)}>
-                <div className="dcc-lane-head">
-                  <span>{flowLane.title}</span>
-                  <strong>{flowLane.items.length}</strong>
-                </div>
-                <p>{flowLane.hint}</p>
-                <div className="dcc-mini-list">
-                  {flowLane.items.slice(0, 3).map((item) => <em key={item.id}>{item.title}</em>)}
-                  {!flowLane.items.length ? <em>No items waiting</em> : null}
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <aside className="dcc-ai-desk">
-          <div className="dcc-ai-head">
-            <div>
-              <p className="dcc-kicker">AI Operator Desk</p>
-              <h2>{current ? displayTitle(current) : "Nothing waiting here."}</h2>
-            </div>
-            <span>{current?.source || "Board"}</span>
-          </div>
-
-          {loading ? (
-            <p className="dcc-detail">Loading Churvox…</p>
-          ) : current ? (
-            <>
-              <p className="dcc-directive">Do this now: approve, edit, or skip. Churvox moves the next admin step into place.</p>
-              <p className="dcc-detail">{displayDetail(current)}</p>
-
-              <div className="dcc-facts">
-                <div><span>Result</span><strong>{outcomeLine(current)}</strong></div>
-                <div><span>Record</span><strong>{recordLine(current)}</strong></div>
-                <div><span>Risk</span><strong>{current.risk || "low"}</strong></div>
-              </div>
-
-              {editOpen ? (
-                <label className="dcc-editor">
-                  <span>Edit before approving</span>
-                  <textarea value={editText} onChange={(event) => setEditText(event.target.value)} />
-                </label>
-              ) : null}
-
-              <div className="dcc-ai-actions">
-                {current.rawId ? (
-                  <>
-                    <button className="dcc-primary" onClick={() => approveCurrent(current)} disabled={busy === current.rawId}>
-                      {busy === current.rawId ? "Running…" : primaryLabel(current)}
-                    </button>
-                    <button onClick={() => setEditOpen((value) => !value)}>Edit first</button>
-                    <button onClick={() => skipCurrent(current)} disabled={busy === current.rawId}>Skip</button>
-                  </>
-                ) : (
-                  <>
-                    <button className="dcc-primary" onClick={reviewNext}>Back to AI actions</button>
-                    <button onClick={() => scan(false)}>Ask AI to prepare</button>
-                  </>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="dcc-empty">
-              <h3>Nothing waiting here.</h3>
-              <p>Run an AI check or open another command lane.</p>
-              <button className="dcc-primary" onClick={() => scan(false)}>Run AI check</button>
-            </div>
+              ))}
+            </React.Fragment>
+          )) : (
+            <div className="flc-no-crew">No scheduled or active crew work loaded yet.</div>
           )}
-        </aside>
-      </section>
-
-      <section className="dcc-trays">
-        <div className="dcc-tray">
-          <div>
-            <p className="dcc-kicker">Money tray</p>
-            <h3>{nz(openTotal)} waiting</h3>
-            <span>{readyBillJobs.length} ready to bill · {waitingPay.length} open invoices</span>
-          </div>
-          <button onClick={() => openLane("pay")}>Open money</button>
-        </div>
-
-        <div className="dcc-tray">
-          <div>
-            <p className="dcc-kicker">Customer/admin tray</p>
-            <h3>{clientItems.length + quoteItems.length} records</h3>
-            <span>{quoteItems.length} quotes · {clientItems.length} clients</span>
-          </div>
-          <button onClick={() => openLane("customers")}>Open customers</button>
-        </div>
-
-        <div className="dcc-tray">
-          <div>
-            <p className="dcc-kicker">Crew strip</p>
-            <h3>{scheduledJobs.length + fieldJobs.length} jobs moving</h3>
-            <span>{crewSummary(fieldJobs, scheduledJobs)}</span>
-          </div>
-          <button onClick={() => openLane("scheduled")}>Open dispatch</button>
         </div>
       </section>
 
-      <section className="dcc-open">
-        <div className="dcc-panel">
-          <div>
-            <p className="dcc-kicker">Open lane</p>
-            <h3>{lane}</h3>
-          </div>
-          <div className="dcc-card-grid">
-            {activeItems.slice(0, 10).map((item) => (
-              <button key={item.id} className={current?.id === item.id ? "active" : ""} onClick={() => setSelected(item)}>
-                <strong>{item.title}</strong>
-                <span>{item.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="dcc-panel">
-          <div>
-            <p className="dcc-kicker">Prepared by AI</p>
-            <h3>Grouped admin work</h3>
-          </div>
-          <div className="dcc-card-grid">
-            {grouped.length ? grouped.map((stack) => (
-              <button key={stack.title} onClick={() => { setLane("needs"); setSelected(stack.first); }}>
-                <strong>{stack.count} · {stack.title}</strong>
-                <span>{stack.first.detail}</span>
-              </button>
-            )) : <p>No prepared decisions waiting.</p>}
-          </div>
-        </div>
-      </section>
-
-      <section className="dcc-ask">
+      <section className="flc-command">
         <input
           value={ask}
           onChange={(event) => setAsk(event.target.value)}
           onKeyDown={(event) => { if (event.key === "Enter") askChurvox(); }}
-          placeholder="Ask Churvox… show dispatch, jobs ready to invoice, overdue invoices, active field jobs"
+          placeholder="Ask Churvox… show dispatch, ready to bill, overdue invoices, field jobs"
         />
         <button onClick={askChurvox}>Ask</button>
       </section>
