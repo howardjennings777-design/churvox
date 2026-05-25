@@ -1,0 +1,203 @@
+/* CHURVOX_PUBLIC_SITE_COMMAND_FLOOR_FINAL_ALIGN_20260526 */
+/* CSS-only polish so the public site visually matches the app Command Floor theme. */
+
+.ex-site {
+  background:
+    radial-gradient(circle at 8% -12%, rgba(37,99,235,.22), transparent 29%),
+    radial-gradient(circle at 92% 0%, rgba(34,211,238,.13), transparent 28%),
+    linear-gradient(135deg, #07111f 0, #0b1628 86px, #edf4f8 87px, #f8fbff 100%) !important;
+}
+
+.ex-nav {
+  width: min(1240px, calc(100% - 30px)) !important;
+  min-height: 52px !important;
+  border-radius: 22px !important;
+  padding: 7px 10px !important;
+  background: linear-gradient(135deg, rgba(5,9,20,.99), rgba(15,23,42,.965)) !important;
+  box-shadow: 0 20px 62px rgba(2,6,23,.32), inset 0 1px 0 rgba(255,255,255,.12) !important;
+}
+
+.ex-brand {
+  padding: 5px 8px !important;
+  border-radius: 17px !important;
+  background: rgba(255,255,255,.055) !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+}
+
+.ex-nav-links {
+  background: rgba(255,255,255,.065) !important;
+}
+
+.ex-nav-links a:first-child,
+.ex-nav-links a:hover {
+  background: linear-gradient(135deg, rgba(37,99,235,.34), rgba(29,78,216,.26)) !important;
+}
+
+.ex-hero {
+  width: min(1240px, calc(100% - 30px)) !important;
+  min-height: calc(100vh - 82px) !important;
+  grid-template-columns: minmax(360px, .9fr) minmax(520px, 1.1fr) !important;
+  gap: 28px !important;
+  padding: 34px 0 58px !important;
+  align-items: center !important;
+}
+
+.ex-hero-copy {
+  position: relative !important;
+  padding: 30px 30px 28px !important;
+  border-radius: 32px !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 0 0, rgba(37,99,235,.11), transparent 34%),
+    linear-gradient(135deg, rgba(255,255,255,.995), rgba(241,247,252,.965)) !important;
+  box-shadow: 0 24px 72px rgba(15,23,42,.12), inset 0 1px 0 rgba(255,255,255,.92) !important;
+}
+
+.ex-hero-copy:before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 0 auto 0 !important;
+  height: 5px !important;
+  background: linear-gradient(90deg, #2563eb, #22d3ee, #16a34a) !important;
+}
+
+.ex-hero h1 {
+  font-size: clamp(50px, 5.25vw, 78px) !important;
+  line-height: .9 !important;
+  letter-spacing: -.078em !important;
+}
+
+.ex-lead {
+  color: #334155 !important;
+  font-size: 16px !important;
+  line-height: 1.55 !important;
+  font-weight: 760 !important;
+  max-width: 610px !important;
+}
+
+.ex-actions {
+  margin-top: 24px !important;
+}
+
+.ex-notes {
+  margin-top: 22px !important;
+}
+
+.ex-notes span {
+  background: rgba(37,99,235,.075) !important;
+  color: #1e3a8a !important;
+  border-color: rgba(37,99,235,.14) !important;
+}
+
+.ex-product-shot {
+  border-radius: 34px !important;
+  padding: 14px !important;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(37,99,235,.10), transparent 32%),
+    linear-gradient(145deg, rgba(255,255,255,.995), rgba(241,247,252,.965)) !important;
+  border-color: rgba(15,23,42,.085) !important;
+  box-shadow: 0 30px 88px rgba(15,23,42,.16), inset 0 1px 0 rgba(255,255,255,.92) !important;
+  transform: perspective(1200px) rotateY(-3deg) rotateX(1deg) !important;
+}
+
+.ex-window-top {
+  height: 46px !important;
+  margin: -14px -14px 13px !important;
+  background: linear-gradient(135deg, rgba(5,9,20,.99), rgba(15,23,42,.965)) !important;
+}
+
+.ex-kpi-row {
+  gap: 8px !important;
+}
+
+.ex-kpi-row article {
+  border-radius: 18px !important;
+  padding: 12px !important;
+}
+
+.ex-dashboard-grid {
+  gap: 9px !important;
+}
+
+.ex-shot-panel {
+  border-radius: 20px !important;
+  background: rgba(255,255,255,.82) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.85) !important;
+}
+
+.ex-shot-actions {
+  background:
+    radial-gradient(circle at 0 0, rgba(37,99,235,.06), transparent 30%),
+    rgba(255,255,255,.86) !important;
+}
+
+.ex-map {
+  height: 104px !important;
+  border-radius: 18px !important;
+}
+
+.ex-shot-money {
+  background: linear-gradient(135deg, #07111f, #0f2745) !important;
+  color: #fff !important;
+}
+
+.ex-shot-money header span,
+.ex-shot-money header b,
+.ex-shot-money strong {
+  color: #fff !important;
+}
+
+.ex-shot-money p {
+  color: rgba(219,234,254,.72) !important;
+}
+
+.ex-money-line {
+  background: linear-gradient(120deg, rgba(37,99,235,.18), rgba(34,211,238,.18), rgba(34,197,94,.14)) !important;
+}
+
+.ex-proof,
+.ex-command-story,
+.ex-footer {
+  width: min(1060px, calc(100% - 34px)) !important;
+}
+
+.ex-proof {
+  padding-top: 42px !important;
+}
+
+.ex-proof article,
+.ex-command-story {
+  border-radius: 30px !important;
+  background:
+    radial-gradient(circle at 0 0, rgba(37,99,235,.08), transparent 30%),
+    linear-gradient(135deg, rgba(255,255,255,.995), rgba(241,247,252,.965)) !important;
+}
+
+.ex-command-story {
+  box-shadow: 0 24px 72px rgba(15,23,42,.11), inset 0 1px 0 rgba(255,255,255,.9) !important;
+}
+
+.ex-footer {
+  margin-top: 4px !important;
+  margin-bottom: 30px !important;
+  border-radius: 28px !important;
+}
+
+@media (max-width: 1050px) {
+  .ex-hero {
+    grid-template-columns: 1fr !important;
+    padding: 36px 0 56px !important;
+  }
+  .ex-product-shot {
+    transform: none !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .ex-hero-copy {
+    padding: 24px 20px !important;
+  }
+  .ex-hero h1 {
+    font-size: clamp(42px, 12vw, 64px) !important;
+  }
+}
