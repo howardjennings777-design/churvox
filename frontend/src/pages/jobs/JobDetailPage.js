@@ -174,6 +174,15 @@ export default function JobDetailPage() {
     loadPage();
   }, [loadPage]);
 
+  useEffect(() => {
+    if (selectedPhotoIndex === null) return undefined;
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setSelectedPhotoIndex(null);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedPhotoIndex]);
+
   const handleAssign = async () => {
     if (!selectedWorker) {
       toast.error("Choose a worker first");
@@ -739,7 +748,7 @@ export default function JobDetailPage() {
             role="dialog"
             aria-modal="true"
             onClick={() => setSelectedPhotoIndex(null)}
-            data-marker="CHURVOX_JOB_DETAIL_OWNER_PHOTO_BACKDROP_CLOSE_20260525"
+            data-marker="CHURVOX_JOB_DETAIL_OWNER_PHOTO_BACKDROP_ESCAPE_CLOSE_20260525"
           >
             <div
               className="bg-white rounded-3xl max-w-5xl w-full max-h-[92vh] overflow-hidden shadow-2xl"
