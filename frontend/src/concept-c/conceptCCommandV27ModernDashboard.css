@@ -1,0 +1,478 @@
+/* CHURVOX_COMMAND_FLOOR_V27_MODERN_DASHBOARD_20260526 */
+/* Targeted at ConceptCPage.jsx only. Visual CSS only. No data/auth/API/backend/routes touched. */
+
+/* Whole command floor */
+html body .cc-app {
+  min-height: 100dvh !important;
+  color: #07111f !important;
+  background:
+    radial-gradient(circle at 10% -8%, rgba(37, 99, 235, 0.20), transparent 32%),
+    radial-gradient(circle at 92% 0%, rgba(34, 211, 238, 0.11), transparent 30%),
+    linear-gradient(135deg, #07111f 0%, #0b1628 104px, #eef4f8 105px, #f8fbff 100%) !important;
+}
+
+/* Hide old left sidebar on command floor so bottom dock is the main nav */
+html body .cc-app .cc-side {
+  display: none !important;
+}
+
+html body .cc-app .cc-main {
+  height: 100dvh !important;
+  max-width: 1500px !important;
+  width: min(1500px, calc(100vw - 36px)) !important;
+  margin: 0 auto !important;
+  padding: 14px 0 98px !important;
+  display: grid !important;
+  grid-template-rows: 44px 84px 86px minmax(0, 1fr) !important;
+  gap: 12px !important;
+  overflow: hidden !important;
+  background: transparent !important;
+}
+
+/* Header title from pseudo element */
+html body .cc-app .cc-main:before {
+  content: "Command Floor\AChurvox does the admin. You approve." !important;
+  white-space: pre-line !important;
+  align-self: end !important;
+  display: block !important;
+  margin: 0 !important;
+  color: #07111f !important;
+  font-size: clamp(2rem, 2.55vw, 3.2rem) !important;
+  line-height: 0.92 !important;
+  letter-spacing: -0.075em !important;
+  font-weight: 950 !important;
+}
+
+html body .cc-app .cc-main:after {
+  display: none !important;
+}
+
+/* Top command bar */
+html body .cc-app .cc-top {
+  height: 44px !important;
+  display: grid !important;
+  grid-template-columns: minmax(240px, 430px) 1fr auto !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin: 0 !important;
+  padding: 6px 10px !important;
+  border: 1px solid rgba(147, 197, 253, 0.20) !important;
+  border-radius: 18px !important;
+  background:
+    linear-gradient(135deg, rgba(5, 9, 20, 0.97), rgba(15, 23, 42, 0.94)) !important;
+  box-shadow:
+    0 18px 52px rgba(2, 6, 23, 0.28),
+    inset 0 1px 0 rgba(255,255,255,.10) !important;
+}
+
+html body .cc-app .cc-search {
+  height: 30px !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(148, 163, 184, 0.22) !important;
+  background: rgba(255,255,255,.065) !important;
+  color: #d7e2f0 !important;
+  font-size: 0 !important;
+  box-shadow: none !important;
+}
+
+html body .cc-app .cc-search:before {
+  content: "Find jobs, clients and invoices" !important;
+  font-size: .74rem !important;
+  color: #d7e2f0 !important;
+  font-weight: 850 !important;
+}
+
+html body .cc-app .cc-search em {
+  background: rgba(255,255,255,.08) !important;
+  color: #9fb0c5 !important;
+  border-radius: 9px !important;
+}
+
+/* Top actions */
+html body .cc-app .cc-top nav {
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+}
+
+html body .cc-app .cc-top nav a {
+  height: 32px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  border-radius: 10px !important;
+  padding: 0 12px !important;
+  border: 1px solid rgba(148,163,184,.20) !important;
+  background: rgba(255,255,255,.06) !important;
+  color: #d7e2f0 !important;
+  font-size: .74rem !important;
+  font-weight: 850 !important;
+}
+
+html body .cc-app .cc-top nav a:first-child {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+  border-color: #2563eb !important;
+  color: #fff !important;
+  box-shadow: 0 10px 28px rgba(37,99,235,.30) !important;
+}
+
+html body .cc-app .cc-user {
+  color: #fff !important;
+}
+
+html body .cc-app .cc-user span {
+  color: #9fb0c5 !important;
+}
+
+/* Stats row as real cards */
+html body .cc-app .cc-snapshot {
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+html body .cc-app .cc-snapshot > p {
+  display: none !important;
+}
+
+html body .cc-app .cc-stat {
+  position: relative !important;
+  min-height: 76px !important;
+  border-radius: 18px !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  background: linear-gradient(145deg, rgba(255,255,255,.98), rgba(241,247,252,.94)) !important;
+  box-shadow: 0 16px 42px rgba(2, 6, 23, 0.10), inset 0 1px 0 rgba(255,255,255,.78) !important;
+  padding: 14px 14px 12px 58px !important;
+}
+
+html body .cc-app .cc-stat:before {
+  content: "" !important;
+  position: absolute !important;
+  left: 16px !important;
+  top: 18px !important;
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 12px !important;
+  background: rgba(37,99,235,.11) !important;
+}
+
+html body .cc-app .cc-stat:after {
+  content: "" !important;
+  position: absolute !important;
+  left: 27px !important;
+  top: 29px !important;
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 999px !important;
+  background: #2563eb !important;
+  box-shadow: 8px 0 0 rgba(37,99,235,.45), 16px 0 0 rgba(37,99,235,.22) !important;
+}
+
+html body .cc-app .cc-stat.green:before { background: rgba(34,197,94,.11) !important; }
+html body .cc-app .cc-stat.green:after { background: #22c55e !important; box-shadow: 8px 0 0 rgba(34,197,94,.45), 16px 0 0 rgba(34,197,94,.22) !important; }
+html body .cc-app .cc-stat.gold:before { background: rgba(245,158,11,.12) !important; }
+html body .cc-app .cc-stat.gold:after { background: #f59e0b !important; box-shadow: 8px 0 0 rgba(245,158,11,.42), 16px 0 0 rgba(245,158,11,.22) !important; }
+html body .cc-app .cc-stat.red:before { background: rgba(239,68,68,.12) !important; }
+html body .cc-app .cc-stat.red:after { background: #ef4444 !important; box-shadow: 8px 0 0 rgba(239,68,68,.42), 16px 0 0 rgba(239,68,68,.22) !important; }
+
+html body .cc-app .cc-stat span {
+  color: #475569 !important;
+  font-size: .68rem !important;
+  font-weight: 900 !important;
+  letter-spacing: .02em !important;
+}
+
+html body .cc-app .cc-stat b {
+  margin-top: 4px !important;
+  color: #07111f !important;
+  font-size: 1.28rem !important;
+  line-height: 1 !important;
+  letter-spacing: -.055em !important;
+}
+
+html body .cc-app .cc-stat small {
+  margin-top: 4px !important;
+  color: #64748b !important;
+  font-size: .68rem !important;
+  font-weight: 700 !important;
+}
+
+/* Main grid */
+html body .cc-app .cc-grid {
+  min-height: 0 !important;
+  height: 100% !important;
+  display: grid !important;
+  grid-template-columns: 1.05fr 1.25fr 1fr !important;
+  grid-template-rows: minmax(0, 1.05fr) minmax(0, .88fr) !important;
+  gap: 12px !important;
+}
+
+/* Cards */
+html body .cc-app .cc-panel {
+  min-height: 0 !important;
+  border-radius: 20px !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  background: linear-gradient(145deg, rgba(255,255,255,.98), rgba(243,248,252,.94)) !important;
+  box-shadow: 0 18px 52px rgba(2, 6, 23, 0.10), inset 0 1px 0 rgba(255,255,255,.72) !important;
+  color: #07111f !important;
+  overflow: hidden !important;
+}
+
+html body .cc-app .cc-panel header {
+  min-height: 44px !important;
+  padding: 12px 14px !important;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(245,249,252,.96)) !important;
+  color: #07111f !important;
+}
+
+html body .cc-app .cc-panel header p {
+  color: #2563eb !important;
+  font-size: .66rem !important;
+  font-weight: 950 !important;
+  letter-spacing: .13em !important;
+}
+
+html body .cc-app .cc-panel h2 {
+  color: #07111f !important;
+  font-size: .92rem !important;
+  letter-spacing: -.015em !important;
+  text-transform: none !important;
+}
+
+html body .cc-app .cc-panel header strong,
+html body .cc-app .cc-panel header a {
+  border: 1px solid rgba(37, 99, 235, 0.14) !important;
+  background: rgba(37, 99, 235, 0.08) !important;
+  color: #1d4ed8 !important;
+  border-radius: 999px !important;
+  padding: 6px 9px !important;
+  font-size: .68rem !important;
+}
+
+/* Lists */
+html body .cc-app .cc-action-list,
+html body .cc-app .cc-list {
+  padding: 7px 12px !important;
+  min-height: 0 !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: #cbd5e1 transparent !important;
+}
+
+html body .cc-app .cc-action-row {
+  grid-template-columns: 28px 1fr 48px 54px !important;
+  gap: 9px !important;
+  min-height: 42px !important;
+  padding: 8px 0 !important;
+  background: transparent !important;
+  border-left-width: 0 !important;
+  border-bottom: 1px solid rgba(15,23,42,.07) !important;
+  border-radius: 0 !important;
+  color: #07111f !important;
+}
+
+html body .cc-app .cc-action-row i {
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 999px !important;
+  background: #ef4444 !important;
+  align-self: center !important;
+}
+
+html body .cc-app .cc-action-row b,
+html body .cc-app .cc-mini b {
+  color: #07111f !important;
+  font-size: .75rem !important;
+  line-height: 1.15 !important;
+}
+
+html body .cc-app .cc-action-row span,
+html body .cc-app .cc-mini span {
+  color: #64748b !important;
+  font-size: .64rem !important;
+}
+
+html body .cc-app .cc-action-row em {
+  border-radius: 999px !important;
+  background: rgba(37,99,235,.08) !important;
+  color: #1d4ed8 !important;
+}
+
+html body .cc-app .cc-action-row small {
+  color: #ef4444 !important;
+}
+
+/* Live crew */
+html body .cc-app .cc-live-grid {
+  height: 100% !important;
+  grid-template-columns: 1.05fr .95fr !important;
+  gap: 12px !important;
+}
+
+html body .cc-app .cc-map,
+html body .cc-app .cc-live-map-open {
+  min-height: 0 !important;
+  height: 100% !important;
+  border-radius: 18px !important;
+  border: 1px solid rgba(96, 165, 250, .24) !important;
+  background:
+    linear-gradient(90deg, rgba(96,165,250,.10) 1px, transparent 1px),
+    linear-gradient(rgba(96,165,250,.08) 1px, transparent 1px),
+    radial-gradient(circle at 50% 45%, rgba(37,99,235,.30), transparent 30%),
+    #071426 !important;
+  background-size: 38px 38px, 38px 38px, 100% 100%, 100% 100% !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 16px 46px rgba(2,6,23,.20) !important;
+}
+
+html body .cc-app .cc-mini {
+  grid-template-columns: 7px 1fr auto !important;
+  gap: 8px !important;
+  padding: 7px 0 !important;
+  color: #07111f !important;
+  border-bottom: 1px solid rgba(15,23,42,.07) !important;
+}
+
+/* Money panel */
+html body .cc-app .cc-money {
+  background: linear-gradient(145deg, rgba(255,255,255,.98), rgba(243,248,252,.94)) !important;
+}
+
+html body .cc-app .cc-money-main {
+  padding: 11px 14px !important;
+  grid-template-columns: 1fr 120px !important;
+  color: #07111f !important;
+}
+
+html body .cc-app .cc-money-main b {
+  color: #07111f !important;
+  font-size: 1.55rem !important;
+}
+
+html body .cc-app .cc-money-main span,
+html body .cc-app .cc-money-main small {
+  color: #64748b !important;
+}
+
+html body .cc-app .cc-money-stats {
+  gap: 8px !important;
+  padding: 0 12px 8px !important;
+}
+
+html body .cc-app .cc-money-stats .cc-stat {
+  min-height: 48px !important;
+  padding: 9px 0 9px 36px !important;
+}
+
+/* Bottom command dock */
+html body .cc-app .cc-status-strip,
+html body .cc-app:after {
+  display: none !important;
+}
+
+html body .cc-app .c2-dock,
+html body .cc-app .mobile-nav,
+html body nav.fixed.inset-x-0.bottom-0,
+html body .fixed.bottom-0,
+html body [class*="bottom"][class*="nav"] {
+  position: fixed !important;
+  left: 22px !important;
+  right: 22px !important;
+  bottom: 14px !important;
+  z-index: 90 !important;
+  min-height: 66px !important;
+  padding: 9px 12px !important;
+  border-radius: 28px !important;
+  border: 1px solid rgba(147,197,253,.26) !important;
+  background:
+    radial-gradient(circle at 10% 50%, rgba(14,165,233,.30), transparent 25%),
+    radial-gradient(circle at 45% 0%, rgba(99,102,241,.20), transparent 30%),
+    linear-gradient(135deg, rgba(3,7,18,.98), rgba(15,23,42,.96)) !important;
+  box-shadow: 0 26px 82px rgba(0,0,0,.42), 0 0 38px rgba(37,99,235,.22), inset 0 1px 0 rgba(255,255,255,.12) !important;
+  backdrop-filter: blur(24px) saturate(1.32) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.32) !important;
+  overflow: hidden !important;
+}
+
+html body nav.fixed.inset-x-0.bottom-0 a,
+html body .fixed.bottom-0 a,
+html body [class*="bottom"][class*="nav"] a,
+html body nav.fixed.inset-x-0.bottom-0 button,
+html body .fixed.bottom-0 button,
+html body [class*="bottom"][class*="nav"] button {
+  min-height: 42px !important;
+  border-radius: 16px !important;
+  color: rgba(255,255,255,.78) !important;
+  border: 1px solid transparent !important;
+}
+
+html body nav.fixed.inset-x-0.bottom-0 a.bg-\[var\(--cx-accent-soft\)\],
+html body nav.fixed.inset-x-0.bottom-0 .active,
+html body .fixed.bottom-0 .active,
+html body [class*="bottom"][class*="nav"] .active {
+  color: #fff !important;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+  box-shadow: 0 12px 28px rgba(37,99,235,.38), inset 0 1px 0 rgba(255,255,255,.18) !important;
+}
+
+/* Responsive */
+@media (max-width: 1240px) {
+  html body .cc-app .cc-main {
+    overflow: auto !important;
+    grid-template-rows: 44px auto auto auto !important;
+    padding-bottom: 96px !important;
+  }
+
+  html body .cc-app .cc-snapshot {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  html body .cc-app .cc-grid {
+    height: auto !important;
+    grid-template-columns: 1fr 1fr !important;
+    grid-template-rows: auto !important;
+  }
+
+  html body .cc-app .cc-money {
+    grid-column: span 2 !important;
+  }
+}
+
+@media (max-width: 900px) {
+  html body .cc-app .cc-main {
+    width: calc(100vw - 20px) !important;
+    padding: 10px 0 92px !important;
+  }
+
+  html body .cc-app .cc-top nav {
+    display: none !important;
+  }
+
+  html body .cc-app .cc-snapshot {
+    grid-template-columns: repeat(2, minmax(160px, 1fr)) !important;
+  }
+
+  html body .cc-app .cc-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body .cc-app .cc-money {
+    grid-column: auto !important;
+  }
+
+  html body .cc-app .cc-live-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body nav.fixed.inset-x-0.bottom-0,
+  html body .fixed.bottom-0,
+  html body [class*="bottom"][class*="nav"] {
+    left: 10px !important;
+    right: 10px !important;
+    bottom: 10px !important;
+    min-height: 68px !important;
+    border-radius: 26px !important;
+  }
+}
