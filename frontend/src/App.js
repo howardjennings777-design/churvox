@@ -4,7 +4,7 @@ import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AppOwnerPage from "./pages/AppOwnerPage";
 import { AuthProvider, useAuth } from "./context/AuthContext";
-import { Toaster } from "./components/ui/sonner";
+import { Toaster } from "sonner";
 import { toast } from "sonner";
 import { getDefaultRoute } from "./lib/roles";
 
@@ -46,7 +46,7 @@ import PricingPage from "./pages/marketing/ExecutivePricingPage";
 import FeaturesPage from "./pages/marketing/ExecutiveFeaturesPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import FloatingBottomNav from "./components/FloatingBottomNav";
-import ConceptCPage from "./concept-c/ConceptCPage";
+import ConceptCPage from "./concept-c/ConceptCPageExact";
 import ConceptCFrame from "./concept-c/ConceptCFrame";
 
 const Spinner = () => (
