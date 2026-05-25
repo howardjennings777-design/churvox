@@ -84,11 +84,24 @@ html body main.cc-app .cc-search {
   height: 30px !important;
   min-height: 30px !important;
   border-radius: 999px !important;
-  font-size: .74rem !important;
+  font-size: 0 !important;
   color: #d7e2f0 !important;
   background: rgba(255,255,255,.07) !important;
   border: 1px solid rgba(148,163,184,.20) !important;
   padding-left: 42px !important;
+  justify-content: flex-start !important;
+}
+
+html body main.cc-app .cc-search:after {
+  content: "Find jobs, clients and invoices" !important;
+  font-size: .74rem !important;
+  font-weight: 850 !important;
+  color: #d7e2f0 !important;
+  line-height: 1 !important;
+}
+
+html body main.cc-app .cc-search em {
+  display: none !important;
 }
 
 html body main.cc-app .cc-modern-hero {
@@ -96,7 +109,7 @@ html body main.cc-app .cc-modern-hero {
   align-items: center !important;
   justify-content: space-between !important;
   min-height: 74px !important;
-  padding: 12px 18px 12px 88px !important;
+  padding: 12px 18px 12px 74px !important;
   border-radius: 24px !important;
   border: 1px solid rgba(15,23,42,.08) !important;
   background:
@@ -106,13 +119,19 @@ html body main.cc-app .cc-modern-hero {
   overflow: hidden !important;
 }
 
+html body main.cc-app .cc-modern-hero > div {
+  min-width: 0 !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
 html body main.cc-app .cc-modern-hero:before {
   left: 18px !important;
-  top: 13px !important;
-  width: 48px !important;
-  height: 48px !important;
-  border-radius: 16px !important;
-  filter: drop-shadow(0 14px 28px rgba(37,99,235,.24)) !important;
+  top: 18px !important;
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 14px !important;
+  filter: drop-shadow(0 12px 24px rgba(37,99,235,.22)) !important;
 }
 
 html body main.cc-app .cc-modern-hero h1 {
@@ -275,8 +294,8 @@ html body main.cc-app > aside.cc-side nav a:first-child {
 
 @media (max-width: 760px) {
   html body main.cc-app section.cc-main { width: calc(100vw - 20px) !important; padding: 10px 0 92px !important; }
-  html body main.cc-app .cc-modern-hero { min-height: auto !important; padding: 16px 16px 16px 74px !important; }
-  html body main.cc-app .cc-modern-hero:before { left: 14px !important; top: 16px !important; width: 42px !important; height: 42px !important; }
+  html body main.cc-app .cc-modern-hero { min-height: auto !important; padding: 16px 16px 16px 66px !important; }
+  html body main.cc-app .cc-modern-hero:before { left: 14px !important; top: 18px !important; width: 34px !important; height: 34px !important; }
   html body main.cc-app .cc-modern-hero strong { display: none !important; }
   html body main.cc-app > aside.cc-side { grid-template-columns: 78px minmax(0,1fr) !important; height: 68px !important; min-height: 68px !important; max-height: 68px !important; border-radius: 26px !important; }
   html body main.cc-app > aside.cc-side .cc-side-brand { padding-left: 46px !important; }
