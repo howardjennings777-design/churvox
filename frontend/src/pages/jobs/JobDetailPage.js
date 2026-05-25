@@ -101,6 +101,7 @@ export default function JobDetailPage() {
   const [employerNotes, setEmployerNotes] = useState("");
   const [savingEmployerNotes, setSavingEmployerNotes] = useState(false);
   const [proofPack, setProofPack] = useState(null);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(null);
 
   const loadPage = useCallback(async () => {
     setPageLoading(true);
@@ -325,10 +326,12 @@ export default function JobDetailPage() {
   const isSentBackFromReview = workReviewStatus === "sent_back" || job?.worker_action_required === true;
   const isApprovedFromReview = workReviewStatus === "approved" || job?.work_approved || job?.owner_approved || job?.job_approved;
   const isInvoicedFromReview = workReviewStatus === "invoiced" || job?.invoiced || !!job?.invoice_id;
+  const ownerPhotos = Array.isArray(job?.photos) ? job.photos : [];
+  const selectedPhoto = selectedPhotoIndex !== null ? ownerPhotos[selectedPhotoIndex] : null;
 
   return (
     <Layout>
-      <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6" data-testid="job-detail-page" data-marker="CHURVOX_JOB_DETAIL_PREFILLED_INVOICE_NAV_20260525">
+      <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6" data-testid="job-detail-page" data-marker="CHURVOX_JOB_DETAIL_OWNER_PHOTO_LIGHTBOX_20260525">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">
@@ -691,19 +694,39 @@ export default function JobDetailPage() {
           </Card>
         )}
 
-        {isOwnerView && Array.isArray(job.photos) && job.photos.length > 0 && (
+        {isOwnerView && ownerPhotos.length > 0 && (
           <Card className="bg-white border-slate-200 shadow-sm" data-testid="owner-photos-card">
             <CardContent className="p-5 space-y-3">
               <div className="text-slate-900 font-semibold inline-flex items-center gap-2"><Image size={16} /> Job photos</div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {job.photos.map((src, idx) => (
-                  <a key={idx} href={src} target="_blank" rel="noreferrer">
+                {ownerPhotos.map((src, idx) => (
+                  <button key={idx} type="button" onClick={() => setSelectedPhotoIndex(idx)} className="block text-left rounded-lg focus:outline-none focus:ring-2 focus:ring-churvox-accent" data-testid={`owner-photo-${idx}`}>
                     <img src={src} alt={`Job photo ${idx + 1}`} className="w-full h-28 object-cover rounded-lg border border-slate-200" />
-                  </a>
+                  </button>
                 ))}
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {isOwnerView && selectedPhoto && (
+          <div className="fixed inset-0 z-[9999] bg-black/80 p-4 flex items-center justify-center" role="dialog" aria-modal="true" data-marker="CHURVOX_JOB_DETAIL_OWNER_PHOTO_LIGHTBOX_20260525">
+            <div className="bg-white rounded-3xl max-w-5xl w-full max-h-[92vh] overflow-hidden shadow-2xl">
+              <div className="flex items-center justify-between gap-3 border-b border-slate-200 p-3">
+                <div className="text-sm font-black text-slate-900">Job photo {Number(selectedPhotoIndex) + 1} of {ownerPhotos.length}</div>
+                <button type="button" onClick={() => setSelectedPhotoIndex(null)} className="rounded-full bg-slate-900 px-4 py-2 text-xs font-black text-white">Close</button>
+              </div>
+              <div className="bg-slate-950 p-3 flex items-center justify-center min-h-[55vh]">
+                <img src={selectedPhoto} alt="Selected job evidence" className="max-h-[72vh] max-w-full object-contain rounded-2xl" />
+              </div>
+              {ownerPhotos.length > 1 && (
+                <div className="flex justify-between gap-3 border-t border-slate-200 p-3">
+                  <button type="button" onClick={() => setSelectedPhotoIndex((Number(selectedPhotoIndex) - 1 + ownerPhotos.length) % ownerPhotos.length)} className="rounded-full border border-slate-300 px-4 py-2 text-xs font-black text-slate-900">Previous</button>
+                  <button type="button" onClick={() => setSelectedPhotoIndex((Number(selectedPhotoIndex) + 1) % ownerPhotos.length)} className="rounded-full border border-slate-300 px-4 py-2 text-xs font-black text-slate-900">Next</button>
+                </div>
+              )}
+            </div>
+          </div>
         )}
 
         {isOwnerView && (job.location_status || job.start_lat != null) && (
