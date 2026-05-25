@@ -3,16 +3,155 @@ import { Link } from "react-router-dom";
 import "./ExecutivePublicSite.css";
 import "./ExecutiveCommandFloorPublicOverride.css";
 
-const brandTextStyle={color:"#f6fbfc",fontWeight:950,fontSize:20,letterSpacing:"-0.05em",textShadow:"0 2px 14px rgba(0,0,0,.32)"};
-function ChurvoxCMark(){return <span className="ex-c-logo" aria-hidden="true"><svg viewBox="0 0 64 64" role="presentation"><defs><linearGradient id="cx-cyan" x1="8" y1="48" x2="56" y2="14" gradientUnits="userSpaceOnUse"><stop stopColor="#b8fbff"/><stop offset=".42" stopColor="#22d7ff"/><stop offset="1" stopColor="#1888ff"/></linearGradient><linearGradient id="cx-glass" x1="7" y1="8" x2="58" y2="58" gradientUnits="userSpaceOnUse"><stop stopColor="#13395a"/><stop offset=".56" stopColor="#071827"/><stop offset="1" stopColor="#020814"/></linearGradient><filter id="cx-glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.8" result="blur"/><feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.05 0 0 0 0 0.8 0 0 0 0 1 0 0 0 .95 0"/><feBlend in="SourceGraphic"/></filter></defs><rect x="1" y="1" width="62" height="62" rx="16" fill="url(#cx-glass)"/><rect x="1.5" y="1.5" width="61" height="61" rx="15.5" fill="none" stroke="#2ad7ff" strokeOpacity=".22"/><path d="M48.8 14.2A22.8 22.8 0 1 0 48.8 49.8" fill="none" stroke="url(#cx-cyan)" strokeWidth="8.2" strokeLinecap="round" filter="url(#cx-glow)"/><path d="M50 15.3 57 20.8 48.2 25.5Z" fill="url(#cx-cyan)" filter="url(#cx-glow)"/><path d="M48.2 38.5 57 43.2 50 48.7Z" fill="url(#cx-cyan)" filter="url(#cx-glow)"/><path d="M8 27.2h21.4c5 0 7.2 2.8 9.4 6.2 2.8 4.4 7 6.9 13.4 6.9" fill="none" stroke="url(#cx-cyan)" strokeWidth="4.5" strokeLinecap="round" filter="url(#cx-glow)"/><path d="M5.5 32h23.5" fill="none" stroke="url(#cx-cyan)" strokeWidth="4.1" strokeLinecap="round" opacity=".96"/><path d="M10 36.8h18" fill="none" stroke="url(#cx-cyan)" strokeWidth="4.1" strokeLinecap="round" opacity=".72"/></svg></span>}
-function Brand(){return <><ChurvoxCMark/><span style={brandTextStyle}>Churvox</span></>}
-function Nav(){return <header className="ex-nav"><Link to="/" className="ex-brand"><Brand/></Link><nav className="ex-nav-links"><Link to="/">Home</Link><Link to="/features">Features</Link><Link to="/pricing">Pricing</Link><Link to="/login" className="ex-nav-login">Log in</Link></nav><div className="ex-nav-actions"><Link to="/login" className="ex-login">Log in</Link><Link to="/signup" className="ex-btn ex-btn--primary">Start free</Link></div></header>}
-function Footer(){return <footer className="ex-footer"><div><Link to="/" className="ex-brand ex-brand--footer"><Brand/></Link><p>AI command software for trade and service owners.</p></div><div className="ex-footer-links"><Link to="/features">Features</Link><Link to="/pricing">Pricing</Link><Link to="/login">Log in</Link><Link to="/signup">Start free</Link></div></footer>}
+const brandTextStyle = {
+  color: "#f6fbfc",
+  fontWeight: 950,
+  fontSize: 20,
+  letterSpacing: "-0.05em",
+  textShadow: "0 2px 14px rgba(0,0,0,.32)",
+};
+
+function ChurvoxCMark() {
+  return (
+    <span className="ex-c-logo" aria-hidden="true">
+      <svg viewBox="0 0 64 64" role="presentation">
+        <defs>
+          <linearGradient id="cx-cyan" x1="8" y1="48" x2="56" y2="14" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#b8fbff" />
+            <stop offset=".42" stopColor="#22d7ff" />
+            <stop offset="1" stopColor="#1888ff" />
+          </linearGradient>
+          <linearGradient id="cx-glass" x1="7" y1="8" x2="58" y2="58" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#13395a" />
+            <stop offset=".56" stopColor="#071827" />
+            <stop offset="1" stopColor="#020814" />
+          </linearGradient>
+          <filter id="cx-glow" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="2.8" result="blur" />
+            <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.05 0 0 0 0 0.8 0 0 0 0 1 0 0 0 .95 0" />
+            <feBlend in="SourceGraphic" />
+          </filter>
+        </defs>
+        <rect x="1" y="1" width="62" height="62" rx="16" fill="url(#cx-glass)" />
+        <rect x="1.5" y="1.5" width="61" height="61" rx="15.5" fill="none" stroke="#2ad7ff" strokeOpacity=".22" />
+        <path d="M48.8 14.2A22.8 22.8 0 1 0 48.8 49.8" fill="none" stroke="url(#cx-cyan)" strokeWidth="8.2" strokeLinecap="round" filter="url(#cx-glow)" />
+        <path d="M50 15.3 57 20.8 48.2 25.5Z" fill="url(#cx-cyan)" filter="url(#cx-glow)" />
+        <path d="M48.2 38.5 57 43.2 50 48.7Z" fill="url(#cx-cyan)" filter="url(#cx-glow)" />
+        <path d="M8 27.2h21.4c5 0 7.2 2.8 9.4 6.2 2.8 4.4 7 6.9 13.4 6.9" fill="none" stroke="url(#cx-cyan)" strokeWidth="4.5" strokeLinecap="round" filter="url(#cx-glow)" />
+        <path d="M5.5 32h23.5" fill="none" stroke="url(#cx-cyan)" strokeWidth="4.1" strokeLinecap="round" opacity=".96" />
+        <path d="M10 36.8h18" fill="none" stroke="url(#cx-cyan)" strokeWidth="4.1" strokeLinecap="round" opacity=".72" />
+      </svg>
+    </span>
+  );
+}
+
+function Brand() {
+  return <><ChurvoxCMark /><span style={brandTextStyle}>Churvox</span></>;
+}
+
+function Nav() {
+  return (
+    <header className="ex-nav">
+      <Link to="/" className="ex-brand"><Brand /></Link>
+      <nav className="ex-nav-links">
+        <Link to="/">Home</Link>
+        <Link to="/features">Features</Link>
+        <Link to="/pricing">Pricing</Link>
+        <Link to="/login" className="ex-nav-login">Log in</Link>
+      </nav>
+      <div className="ex-nav-actions">
+        <Link to="/login" className="ex-login">Log in</Link>
+        <Link to="/signup" className="ex-btn ex-btn--primary">Start free</Link>
+      </div>
+    </header>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="ex-footer">
+      <div>
+        <Link to="/" className="ex-brand ex-brand--footer"><Brand /></Link>
+        <p>AI command software for trade and service owners.</p>
+      </div>
+      <div className="ex-footer-links">
+        <Link to="/features">Features</Link>
+        <Link to="/pricing">Pricing</Link>
+        <Link to="/login">Log in</Link>
+        <Link to="/signup">Start free</Link>
+      </div>
+    </footer>
+  );
+}
 
 export { Nav, Footer };
 
-const actions=["Send payment reminder","Assign worker to job","Approve draft invoice","Follow up accepted quote"];
-const liveCrew=["Crew lead · On site","Field worker · GPS verified","Apprentice · Started 8:12","Service tech · On job"];
-const stats=[["Needs Action","12","8 overdue"],["Live Crew","9","On job now"],["Ready To Bill","$4.8k","5 invoices"],["Owing","$23.6k","14 invoices"]];
+const actions = [
+  ["Send payment reminder", "Review", "red"],
+  ["Assign worker to job", "Assign", "green"],
+  ["Approve draft invoice", "Approve", "blue"],
+  ["Follow up accepted quote", "Review", "amber"],
+];
 
-export default function ExecutiveHomePage(){return <main className="ex-site" data-version="CHURVOX_DARK_LANDING_COMMAND_CENTER_20260524"><Nav/><section className="ex-hero"><div className="ex-hero-copy"><p className="ex-kicker">AI Command Center for trade businesses</p><h1>Run jobs, crew and money from one command floor.</h1><p className="ex-lead">Churvox turns daily trade admin into a clear operating screen. AI prepares the next actions, live crew stays visible, invoices surface when money is waiting, and the owner approves what matters.</p><div className="ex-actions"><Link to="/signup" className="ex-btn ex-btn--primary">Start free</Link><Link to="/features" className="ex-btn ex-btn--quiet">See how it works</Link></div><div className="ex-notes"><span>AI prepares admin</span><span>Owner approves</span><span>Live crew view</span><span>Money desk</span></div></div><aside className="ex-product-shot"><div className="ex-window-top"><b>Churvox</b><span>Command Floor</span></div><div className="ex-kpi-row">{stats.map(([label,value,note])=><article key={label}><span>{label}</span><b>{value}</b><small>{note}</small></article>)}</div><div className="ex-dashboard-grid"><section className="ex-shot-panel ex-shot-actions"><header><span>Smart priorities</span><b>AI Action Queue</b></header>{actions.map((item,i)=><div key={item} className={`ex-shot-row tone-${i}`}><i/><p>{item}</p><em>{i===2?"Approve":"Review"}</em></div>)}</section><section className="ex-shot-panel ex-shot-live"><header><span>Field live</span><b>Live Crew</b></header><div className="ex-map"><i/><i/><i/><i/></div>{liveCrew.slice(0,3).map((item)=><div key={item} className="ex-live-row"><span/><p>{item}</p><em>GPS</em></div>)}</section><section className="ex-shot-panel ex-shot-money"><header><span>Cashflow</span><b>Money Desk</b></header><strong>$28,510</strong><p>Ready to bill and owing now</p><div className="ex-money-line"/></section></div></aside></section><section className="ex-proof"><article><span>01</span><h2>AI finds the work.</h2><p>Unassigned jobs, missing details, quote follow-ups, draft invoices and overdue reminders appear in one owner queue.</p></article><article><span>02</span><h2>Crew stays visible.</h2><p>See who is on a job, what they are working on, and what needs attention without hunting through pages.</p></article><article><span>03</span><h2>Money gets surfaced.</h2><p>Completed work, invoices owing and payment reminders stay close to the owner’s next decision.</p></article></section><section className="ex-command-story"><p className="ex-kicker">Why Churvox feels different</p><h2>It is not another dashboard. It is the daily operating floor.</h2><p>Most job apps make owners click through screens to find work. Churvox brings the business position forward first: actions, live crew, cashflow, issues, quotes and clients. Then the owner opens details only when needed.</p><Link to="/pricing" className="ex-btn ex-btn--primary">View pricing</Link></section><Footer/></main>}
+const liveCrew = ["Crew lead · On site", "Field worker · GPS verified", "Apprentice · Started 8:12"];
+const stats = [["Needs Action", "12", "8 overdue"], ["Live Crew", "9", "On job now"], ["Ready To Bill", "$4.8k", "5 invoices"], ["Owing", "$23.6k", "14 invoices"]];
+const operatingWins = [["01", "AI finds the work.", "Unassigned jobs, missing details, quote follow-ups, draft invoices and overdue reminders appear in one owner queue."], ["02", "Crew stays visible.", "See who is on a job, what they are working on, and what needs attention without hunting through pages."], ["03", "Money gets surfaced.", "Completed work, invoices owing and payment reminders stay close to the owner’s next decision."]];
+const rail = [["Admin prepared", "Payment reminders, invoices and job slips are drafted before you chase them."], ["Owner approves", "You stay in control of sends, invoices, pricing and customer touch points."], ["Crew visible", "Live job status, worker activity and job evidence stay in one command view."], ["Money surfaced", "Ready-to-bill work and owing invoices are pushed to the front."]];
+
+function ProductShot() {
+  return (
+    <aside className="ex-product-shot ex-product-shot--wow">
+      <div className="ex-window-top"><b>Churvox</b><span>Command Floor</span></div>
+      <div className="ex-kpi-row">{stats.map(([label, value, note]) => <article key={label}><span>{label}</span><b>{value}</b><small>{note}</small></article>)}</div>
+      <div className="ex-dashboard-grid">
+        <section className="ex-shot-panel ex-shot-actions">
+          <header><span>Smart priorities</span><b>Action Hub</b></header>
+          {actions.map(([item, tag, tone]) => <div key={item} className={`ex-shot-row tone-${tone}`}><i /><p>{item}</p><em>{tag}</em></div>)}
+        </section>
+        <section className="ex-shot-panel ex-shot-live">
+          <header><span>Field live</span><b>Live Crew</b></header>
+          <div className="ex-map"><i /><i /><i /><i /></div>
+          {liveCrew.map((item) => <div key={item} className="ex-live-row"><span /><p>{item}</p><em>GPS</em></div>)}
+        </section>
+        <section className="ex-shot-panel ex-shot-money">
+          <header><span>Cashflow</span><b>Money Desk</b></header>
+          <strong>$28,510</strong>
+          <p>Ready to bill and owing now</p>
+          <div className="ex-money-line" />
+        </section>
+      </div>
+      <div className="ex-wow-pulse"><span>AI operator live</span><b>Owner approval queue ready</b></div>
+    </aside>
+  );
+}
+
+export default function ExecutiveHomePage() {
+  return (
+    <main className="ex-site" data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526">
+      <Nav />
+      <section className="ex-hero ex-hero--wow">
+        <div className="ex-hero-copy">
+          <p className="ex-kicker">AI command center for trade businesses</p>
+          <h1>Run jobs, crew and money from one command floor.</h1>
+          <p className="ex-lead">Churvox turns daily trade admin into a live operating screen. AI prepares the next actions, crew stays visible, invoices surface when money is waiting, and the owner approves what matters.</p>
+          <div className="ex-actions"><Link to="/signup" className="ex-btn ex-btn--primary">Start free</Link><Link to="/features" className="ex-btn ex-btn--quiet">See how it works</Link></div>
+          <div className="ex-notes"><span>AI prepares admin</span><span>Owner approves</span><span>Live crew view</span><span>Money desk</span></div>
+        </div>
+        <ProductShot />
+        <div className="ex-wow-rail">
+          {rail.map(([title, copy]) => <article key={title}><b>{title}</b><span>{copy}</span></article>)}
+        </div>
+      </section>
+      <section className="ex-proof">
+        {operatingWins.map(([number, title, copy]) => <article key={title}><span>{number}</span><h2>{title}</h2><p>{copy}</p></article>)}
+      </section>
+      <section className="ex-command-story">
+        <p className="ex-kicker">Why Churvox feels different</p>
+        <h2>It is not another dashboard. It is the daily operating floor.</h2>
+        <p>Most job apps make owners click through screens to find work. Churvox brings the business position forward first: actions, live crew, cashflow, issues, quotes and clients. Then the owner opens details only when needed.</p>
+        <Link to="/pricing" className="ex-btn ex-btn--primary">View pricing</Link>
+      </section>
+      <Footer />
+    </main>
+  );
+}
