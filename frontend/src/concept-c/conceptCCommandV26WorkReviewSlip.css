@@ -18,3 +18,113 @@
 @media(min-width:901px){.cc-simple .cc-page-list{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(300px,360px)!important;gap:14px!important;align-items:start!important}.cc-simple .cc-page-list .cc-mini{grid-column:1!important}.cc-simple .cc-page-list:after{content:"Workspace Command Panel\A\AJobs that need owner attention stay on the left. Use this side panel as the quick operating guide.\A\A• Unassigned work\A• Work Review finished jobs\A• Ready To Bill approved jobs\A• Missing client or job details\A• Overdue money or admin follow-up\A\ANext best action\AOpen a row to review, assign, invoice, or fix details before it becomes noise.";grid-column:2!important;grid-row:1 / span 40!important;position:sticky!important;top:72px!important;white-space:pre-line!important;border:1px solid #dbeafe!important;border-radius:22px!important;background:linear-gradient(180deg,#ffffff,#f8fbff)!important;box-shadow:0 20px 54px rgba(15,23,42,.08)!important;padding:20px!important;color:#334155!important;font-size:.86rem!important;font-weight:760!important;line-height:1.48!important;min-height:360px!important}.cc-simple .cc-page-list:before{content:"Owner flow\AWork comes in → Churvox prepares admin → you approve.";grid-column:2!important;grid-row:41!important;white-space:pre-line!important;border:1px solid #dcfce7!important;border-radius:18px!important;background:linear-gradient(135deg,#f0fdf4,#ffffff)!important;color:#14532d!important;padding:16px!important;font-weight:900!important;line-height:1.45!important;box-shadow:0 14px 34px rgba(22,163,74,.08)!important}}
 @media(max-width:900px){.cc-simple .cc-page-list:after{content:"Command panel: open a row to review, assign, invoice or fix details.";display:block!important;border:1px solid #dbeafe!important;border-radius:18px!important;background:#fff!important;padding:14px!important;color:#334155!important;font-weight:850!important;margin-top:12px!important}.cc-drawer{left:8px!important;right:8px!important;top:8px!important;bottom:68px!important;border-radius:22px!important;padding:18px!important}.cc-drawer dl{grid-template-columns:1fr 1fr!important}.cc-drawer>h2{font-size:clamp(2rem,12vw,3rem)!important}.cc-work-extra{grid-template-columns:1fr!important}}
 @media(max-width:700px){.cc-work-extra{grid-template-columns:1fr!important;max-height:none!important}.cc-drawer section{display:grid!important;grid-template-columns:1fr!important}.cc-drawer section button,.cc-drawer section a{width:100%!important}.cc-drawer dl{grid-template-columns:1fr!important}}
+
+/* CHURVOX_SAME_PAGE_EDIT_RECORD_20260525 */
+.cc-edit-panel{
+  margin:18px 0!important;
+  border:1px solid #dbeafe!important;
+  border-radius:24px!important;
+  background:linear-gradient(180deg,#ffffff,#f8fbff)!important;
+  padding:18px!important;
+  box-shadow:0 18px 50px rgba(15,23,42,.08)!important;
+}
+.cc-edit-panel header{
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:space-between!important;
+  gap:14px!important;
+  margin-bottom:14px!important;
+}
+.cc-edit-panel header p{
+  margin:0 0 5px!important;
+  color:#075be8!important;
+  font-size:.72rem!important;
+  font-weight:1000!important;
+  letter-spacing:.14em!important;
+  text-transform:uppercase!important;
+}
+.cc-edit-panel header h3{
+  margin:0!important;
+  color:#071225!important;
+  font-size:clamp(1.25rem,2vw,2rem)!important;
+  letter-spacing:-.045em!important;
+  font-weight:1000!important;
+}
+.cc-edit-panel header button{
+  border:1px solid #e2e8f0!important;
+  background:#fff!important;
+  color:#071225!important;
+  border-radius:999px!important;
+  min-height:38px!important;
+  padding:0 14px!important;
+  font-weight:950!important;
+}
+.cc-edit-panel>div{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:12px!important;
+}
+.cc-edit-panel label{
+  display:grid!important;
+  gap:7px!important;
+}
+.cc-edit-panel label span{
+  color:#64748b!important;
+  font-size:.72rem!important;
+  font-weight:950!important;
+  text-transform:uppercase!important;
+  letter-spacing:.08em!important;
+}
+.cc-edit-panel input,
+.cc-edit-panel textarea{
+  width:100%!important;
+  border:1px solid #dbeafe!important;
+  border-radius:16px!important;
+  background:#fff!important;
+  color:#071225!important;
+  padding:12px!important;
+  font-weight:800!important;
+  outline:none!important;
+}
+.cc-edit-panel textarea{
+  resize:vertical!important;
+}
+.cc-edit-panel input:focus,
+.cc-edit-panel textarea:focus{
+  border-color:#075be8!important;
+  box-shadow:0 0 0 4px rgba(7,91,232,.10)!important;
+}
+.cc-edit-panel footer{
+  margin-top:14px!important;
+  display:flex!important;
+  flex-wrap:wrap!important;
+  align-items:center!important;
+  gap:12px!important;
+}
+.cc-edit-panel footer button,
+.cc-record-edit{
+  border:0!important;
+  background:#075be8!important;
+  color:#fff!important;
+  border-radius:999px!important;
+  min-height:44px!important;
+  padding:0 18px!important;
+  font-weight:1000!important;
+}
+.cc-edit-panel footer small{
+  color:#64748b!important;
+  font-weight:750!important;
+}
+.cc-edit-error{
+  display:block!important;
+  margin-bottom:12px!important;
+  border:1px solid rgba(239,68,68,.24)!important;
+  border-radius:16px!important;
+  background:rgba(239,68,68,.08)!important;
+  color:#991b1b!important;
+  padding:12px!important;
+}
+@media(max-width:800px){
+  .cc-edit-panel>div{grid-template-columns:1fr!important}
+  .cc-edit-panel header{display:grid!important}
+}
