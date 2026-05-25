@@ -9,6 +9,12 @@ import { formatDate, formatCurrency, INVOICE_STATUSES, MYOB_SYNC_STATUSES } from
 import { confirmDialog } from "../../lib/confirmDialog";
 import { PremiumPage, PremiumHero, PremiumCard, PremiumButton } from "../../components/premium";
 
+const CHURVOX_INVOICE_DETAIL_LINKED_JOB_CONTEXT_20260525 = true;
+
+function linkedJobIdOf(invoice) {
+  return invoice?.job_id || invoice?.jobId || invoice?.source_job_id || invoice?.linked_job_id || "";
+}
+
 export default function InvoiceDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -93,6 +99,7 @@ export default function InvoiceDetailPage() {
   const pricingLabel = { fixed: "Fixed", hourly: "Hourly", fixed_extras: "Fixed + Extras", hourly_extras: "Hourly + Extras" }[invoice.pricing_type] || "";
   const mode = accounting?.invoice_mode || "churvox_only";
   const myobConnected = Boolean(accounting?.myob_connected);
+  const linkedJobId = linkedJobIdOf(invoice);
 
   return (
     <Layout>
@@ -117,6 +124,21 @@ export default function InvoiceDetailPage() {
             </div>
           }
         />
+
+        {linkedJobId && (
+          <div className="rounded-2xl border border-[#bfdbfe] bg-[#eff6ff] p-4 text-sm text-[#1e3a8a]" data-marker="CHURVOX_INVOICE_DETAIL_LINKED_JOB_CONTEXT_20260525">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <div className="font-black flex items-center gap-2"><Briefcase size={16} /> Linked approved job</div>
+                <div className="mt-1 font-semibold">This invoice was created from an approved job or Work Review item.</div>
+                <div className="mt-1 text-xs font-bold opacity-80">Job ID: {linkedJobId}</div>
+              </div>
+              <Link to={`/jobs/${linkedJobId}`} className="inline-flex rounded-full bg-[#1d4ed8] px-4 py-2 text-xs font-black text-white no-underline">
+                Open linked job
+              </Link>
+            </div>
+          </div>
+        )}
 
         <PremiumCard data-testid="invoice-card">
           <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
@@ -181,9 +203,9 @@ export default function InvoiceDetailPage() {
             </div>
           </div>
 
-          {invoice.job_id && (
+          {linkedJobId && (
             <div className="mt-4 pt-4 border-t border-[#e6eef9]">
-              <Link to={`/jobs/${invoice.job_id}`} className="text-xs text-[#2563eb] hover:underline flex items-center gap-1 font-semibold" data-testid="linked-job">
+              <Link to={`/jobs/${linkedJobId}`} className="text-xs text-[#2563eb] hover:underline flex items-center gap-1 font-semibold" data-testid="linked-job">
                 <Briefcase size={12} /> View linked job
               </Link>
             </div>
