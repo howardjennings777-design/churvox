@@ -20,111 +20,29 @@
 @media(max-width:700px){.cc-work-extra{grid-template-columns:1fr!important;max-height:none!important}.cc-drawer section{display:grid!important;grid-template-columns:1fr!important}.cc-drawer section button,.cc-drawer section a{width:100%!important}.cc-drawer dl{grid-template-columns:1fr!important}}
 
 /* CHURVOX_SAME_PAGE_EDIT_RECORD_20260525 */
-.cc-edit-panel{
-  margin:18px 0!important;
-  border:1px solid #dbeafe!important;
-  border-radius:24px!important;
-  background:linear-gradient(180deg,#ffffff,#f8fbff)!important;
-  padding:18px!important;
-  box-shadow:0 18px 50px rgba(15,23,42,.08)!important;
-}
-.cc-edit-panel header{
-  display:flex!important;
-  align-items:flex-start!important;
-  justify-content:space-between!important;
-  gap:14px!important;
-  margin-bottom:14px!important;
-}
-.cc-edit-panel header p{
-  margin:0 0 5px!important;
-  color:#075be8!important;
-  font-size:.72rem!important;
-  font-weight:1000!important;
-  letter-spacing:.14em!important;
-  text-transform:uppercase!important;
-}
-.cc-edit-panel header h3{
-  margin:0!important;
-  color:#071225!important;
-  font-size:clamp(1.25rem,2vw,2rem)!important;
-  letter-spacing:-.045em!important;
-  font-weight:1000!important;
-}
-.cc-edit-panel header button{
-  border:1px solid #e2e8f0!important;
-  background:#fff!important;
-  color:#071225!important;
-  border-radius:999px!important;
-  min-height:38px!important;
-  padding:0 14px!important;
-  font-weight:950!important;
-}
-.cc-edit-panel>div{
-  display:grid!important;
-  grid-template-columns:repeat(2,minmax(0,1fr))!important;
-  gap:12px!important;
-}
-.cc-edit-panel label{
-  display:grid!important;
-  gap:7px!important;
-}
-.cc-edit-panel label span{
-  color:#64748b!important;
-  font-size:.72rem!important;
-  font-weight:950!important;
-  text-transform:uppercase!important;
-  letter-spacing:.08em!important;
-}
-.cc-edit-panel input,
-.cc-edit-panel textarea{
-  width:100%!important;
-  border:1px solid #dbeafe!important;
-  border-radius:16px!important;
-  background:#fff!important;
-  color:#071225!important;
-  padding:12px!important;
-  font-weight:800!important;
-  outline:none!important;
-}
-.cc-edit-panel textarea{
-  resize:vertical!important;
-}
-.cc-edit-panel input:focus,
-.cc-edit-panel textarea:focus{
-  border-color:#075be8!important;
-  box-shadow:0 0 0 4px rgba(7,91,232,.10)!important;
-}
-.cc-edit-panel footer{
-  margin-top:14px!important;
-  display:flex!important;
-  flex-wrap:wrap!important;
-  align-items:center!important;
-  gap:12px!important;
-}
-.cc-edit-panel footer button,
-.cc-record-edit{
-  border:0!important;
-  background:#075be8!important;
-  color:#fff!important;
-  border-radius:999px!important;
-  min-height:44px!important;
-  padding:0 18px!important;
-  font-weight:1000!important;
-}
-.cc-edit-panel footer small{
-  color:#64748b!important;
-  font-weight:750!important;
-}
-.cc-edit-error{
-  display:block!important;
-  margin-bottom:12px!important;
-  border:1px solid rgba(239,68,68,.24)!important;
-  border-radius:16px!important;
-  background:rgba(239,68,68,.08)!important;
-  color:#991b1b!important;
-  padding:12px!important;
-}
-@media(max-width:800px){
-  .cc-edit-panel>div{grid-template-columns:1fr!important}
-  .cc-edit-panel header{display:grid!important}
-}
+.cc-edit-panel{margin:18px 0!important;border:1px solid #dbeafe!important;border-radius:24px!important;background:linear-gradient(180deg,#ffffff,#f8fbff)!important;padding:18px!important;box-shadow:0 18px 50px rgba(15,23,42,.08)!important}
+.cc-edit-panel header{display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:14px!important;margin-bottom:14px!important}
+.cc-edit-panel header p{margin:0 0 5px!important;color:#075be8!important;font-size:.72rem!important;font-weight:1000!important;letter-spacing:.14em!important;text-transform:uppercase!important}
+.cc-edit-panel header h3{margin:0!important;color:#071225!important;font-size:clamp(1.25rem,2vw,2rem)!important;letter-spacing:-.045em!important;font-weight:1000!important}
+.cc-edit-panel header button{border:1px solid #e2e8f0!important;background:#fff!important;color:#071225!important;border-radius:999px!important;min-height:38px!important;padding:0 14px!important;font-weight:950!important}
+.cc-edit-panel>div{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}
+.cc-edit-panel label{display:grid!important;gap:7px!important}
+.cc-edit-panel label span{color:#64748b!important;font-size:.72rem!important;font-weight:950!important;text-transform:uppercase!important;letter-spacing:.08em!important}
+.cc-edit-panel input,.cc-edit-panel textarea{width:100%!important;border:1px solid #dbeafe!important;border-radius:16px!important;background:#fff!important;color:#071225!important;padding:12px!important;font-weight:800!important;outline:none!important}
+.cc-edit-panel textarea{resize:vertical!important}
+.cc-edit-panel input:focus,.cc-edit-panel textarea:focus{border-color:#075be8!important;box-shadow:0 0 0 4px rgba(7,91,232,.10)!important}
+.cc-edit-panel footer{margin-top:14px!important;display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:12px!important}
+.cc-edit-panel footer button,.cc-record-edit{border:0!important;background:#075be8!important;color:#fff!important;border-radius:999px!important;min-height:44px!important;padding:0 18px!important;font-weight:1000!important}
+.cc-edit-panel footer small{color:#64748b!important;font-weight:750!important}
+.cc-edit-error{display:block!important;margin-bottom:12px!important;border:1px solid rgba(239,68,68,.24)!important;border-radius:16px!important;background:rgba(239,68,68,.08)!important;color:#991b1b!important;padding:12px!important}
+@media(max-width:800px){.cc-edit-panel>div{grid-template-columns:1fr!important}.cc-edit-panel header{display:grid!important}}
+
+/* CHURVOX_COMMAND_FLOOR_V29_LAST_WORD_20260526 */
+html body main.cc-app section.cc-main:before,
+html body main.cc-app section.cc-main:after{display:none!important;content:none!important}
+html body main.cc-app section.cc-main section.cc-modern-hero{display:flex!important;visibility:visible!important;opacity:1!important;align-items:end!important;justify-content:space-between!important;min-height:104px!important;padding:18px 22px!important;border-radius:28px!important;border:1px solid rgba(15,23,42,.08)!important;background:radial-gradient(circle at 8% 0%,rgba(37,99,235,.13),transparent 34%),linear-gradient(135deg,rgba(255,255,255,.98),rgba(240,247,252,.94))!important;box-shadow:0 22px 65px rgba(2,6,23,.11),inset 0 1px 0 rgba(255,255,255,.80)!important}
+html body main.cc-app section.cc-main section.cc-modern-hero p{margin:0 0 7px!important;color:#2563eb!important;font-size:.72rem!important;font-weight:950!important;letter-spacing:.16em!important}
+html body main.cc-app section.cc-main section.cc-modern-hero h1{margin:0!important;color:#07111f!important;font-size:clamp(2.3rem,3.2vw,4.1rem)!important;line-height:.86!important;letter-spacing:-.08em!important;font-weight:950!important}
+html body main.cc-app section.cc-main section.cc-modern-hero span{display:block!important;margin-top:8px!important;color:#475569!important;font-size:clamp(1rem,1.25vw,1.22rem)!important;font-weight:760!important}
+html body main.cc-app section.cc-main section.cc-modern-hero strong{flex:0 0 auto!important;align-self:start!important;border-radius:999px!important;padding:9px 13px!important;border:1px solid rgba(34,197,94,.20)!important;background:rgba(34,197,94,.10)!important;color:#166534!important;font-size:.76rem!important;font-weight:950!important}
+html body main.cc-app section.cc-main{grid-template-rows:44px 104px 82px minmax(0,1fr)!important}
