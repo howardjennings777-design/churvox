@@ -82,6 +82,30 @@ function getSendBackNote(job) {
   return safeText(job?.send_back_note || job?.owner_note || job?.worker_note || "", "");
 }
 
+function collectJobPhotos(job) {
+  const buckets = [
+    job?.photos,
+    job?.job_photos,
+    job?.uploaded_photos,
+    job?.completion_photos,
+    job?.images,
+    job?.attachments,
+  ];
+
+  const urls = [];
+  buckets.forEach((bucket) => {
+    if (!Array.isArray(bucket)) return;
+    bucket.forEach((item) => {
+      const url = typeof item === "string"
+        ? item
+        : item?.url || item?.photo_url || item?.image_url || item?.file_url || item?.src;
+      if (url && !urls.includes(url)) urls.push(url);
+    });
+  });
+
+  return urls;
+}
+
 export default function JobDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -326,12 +350,12 @@ export default function JobDetailPage() {
   const isSentBackFromReview = workReviewStatus === "sent_back" || job?.worker_action_required === true;
   const isApprovedFromReview = workReviewStatus === "approved" || job?.work_approved || job?.owner_approved || job?.job_approved;
   const isInvoicedFromReview = workReviewStatus === "invoiced" || job?.invoiced || !!job?.invoice_id;
-  const ownerPhotos = Array.isArray(job?.photos) ? job.photos : [];
+  const ownerPhotos = collectJobPhotos(job);
   const selectedPhoto = selectedPhotoIndex !== null ? ownerPhotos[selectedPhotoIndex] : null;
 
   return (
     <Layout>
-      <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6" data-testid="job-detail-page" data-marker="CHURVOX_JOB_DETAIL_OWNER_PHOTO_LIGHTBOX_20260525">
+      <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6" data-testid="job-detail-page" data-marker="CHURVOX_JOB_DETAIL_OWNER_PHOTO_SOURCES_20260525">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">
@@ -710,7 +734,7 @@ export default function JobDetailPage() {
         )}
 
         {isOwnerView && selectedPhoto && (
-          <div className="fixed inset-0 z-[9999] bg-black/80 p-4 flex items-center justify-center" role="dialog" aria-modal="true" data-marker="CHURVOX_JOB_DETAIL_OWNER_PHOTO_LIGHTBOX_20260525">
+          <div className="fixed inset-0 z-[9999] bg-black/80 p-4 flex items-center justify-center" role="dialog" aria-modal="true" data-marker="CHURVOX_JOB_DETAIL_OWNER_PHOTO_SOURCES_20260525">
             <div className="bg-white rounded-3xl max-w-5xl w-full max-h-[92vh] overflow-hidden shadow-2xl">
               <div className="flex items-center justify-between gap-3 border-b border-slate-200 p-3">
                 <div className="text-sm font-black text-slate-900">Job photo {Number(selectedPhotoIndex) + 1} of {ownerPhotos.length}</div>
