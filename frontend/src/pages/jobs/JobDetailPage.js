@@ -617,7 +617,7 @@ export default function JobDetailPage() {
               </div>
               <div>
                 <div className="text-xs uppercase tracking-wide text-slate-500">AI Visit Summary</div>
-                <div className="text-sm text-slate-800">{job?.ai_visit_summary || "Visit summary will appear when the job is completed."}</div>
+                <div className="text-sm text-slate-800">{job?.ai_visit_summary || "No AI visit summary has been saved for this visit yet."}</div>
               </div>
             </CardContent>
           </Card>
