@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-const CHURVOX_INVOICE_JOB_PREFILL_MARKER = "CHURVOX_WORK_REVIEW_INVOICE_LINKBACK_HARDENED_20260525";
+const CHURVOX_INVOICE_JOB_PREFILL_MARKER = "CHURVOX_INVOICE_LINKED_JOB_CONTEXT_20260525";
 
 function getJobIdFromUrl() {
   const params = new URLSearchParams(window.location.search || "");
@@ -54,11 +54,20 @@ function getRecordId(record) {
   return getRecordId(record.data || record.invoice || record.record || record.result || record.item);
 }
 
+function buildJobContext(job, jobId) {
+  if (!job) return "";
+  const title = firstValue(job.title, job.job_name, job.client_name, job.customer_name, "Approved job");
+  const address = firstValue(job.address, job.site_address, job.job_address);
+  const worker = firstValue(job.assigned_worker_name, job.worker_name);
+  return [title, address, worker ? `Worker: ${worker}` : "", jobId ? `Job ID: ${jobId}` : ""].filter(Boolean).join(" · ");
+}
+
 export default function InvoiceCreateForm({ onSuccess, onCancel, submitLabel = "Create invoice" }) {
   const { get, post, patch, loading } = useApi();
   const [clients, setClients] = useState([]);
   const [prefilledJobId, setPrefilledJobId] = useState("");
   const [prefillNotice, setPrefillNotice] = useState("");
+  const [jobContext, setJobContext] = useState("");
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     client_id: "",
@@ -87,6 +96,7 @@ export default function InvoiceCreateForm({ onSuccess, onCancel, submitLabel = "
 
       if (!result?.success || !result?.data) {
         setPrefillNotice("Could not load the reviewed job. You can still create the invoice manually.");
+        setJobContext(jobId ? `Job ID: ${jobId}` : "");
         setPrefilledJobId(jobId);
         return;
       }
@@ -109,7 +119,8 @@ export default function InvoiceCreateForm({ onSuccess, onCancel, submitLabel = "
         notes: firstValue(job.invoice_notes, job.completion_notes, prev.notes),
       }));
 
-      setPrefillNotice(amountNumber > 0 ? "Invoice prefilled from the reviewed job. Check the amount before creating." : "Invoice prefilled from the reviewed job, but no job price was found. Add the subtotal before creating.");
+      setJobContext(buildJobContext(job, jobId));
+      setPrefillNotice(amountNumber > 0 ? "Invoice prefilled from the approved job. Check the amount before creating." : "Invoice prefilled from the approved job, but no job price was found. Add the subtotal before creating.");
       setPrefilledJobId(jobId);
     };
 
@@ -209,6 +220,13 @@ export default function InvoiceCreateForm({ onSuccess, onCancel, submitLabel = "
   return (
     <form onSubmit={handleSubmit} className="min-h-full flex flex-col" data-marker={CHURVOX_INVOICE_JOB_PREFILL_MARKER}>
       <div className="space-y-4 pb-28">
+        {jobContext && (
+          <div className="rounded-2xl border border-[#bfdbfe] bg-[#eff6ff] p-3 text-sm text-[#1e3a8a]">
+            <div className="font-black">Linked approved job</div>
+            <div className="mt-1 font-semibold">{jobContext}</div>
+          </div>
+        )}
+
         {prefillNotice && (
           <div className="rounded-2xl border border-[#bbf7d0] bg-[#f0fdf4] p-3 text-sm font-semibold text-[#14532d]">
             {prefillNotice}
