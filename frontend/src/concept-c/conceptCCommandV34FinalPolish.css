@@ -1,11 +1,10 @@
-/* CHURVOX_COMMAND_FLOOR_V35_LOGO_EVERYWHERE_20260526 */
-/* CSS-only polish. No JS runtime, no auth, no routes, no API, no backend, no data wiring. */
+/* CHURVOX_COMMAND_FLOOR_V36_BUILD_SAFE_LOGO_POLISH_20260526 */
+/* CSS-only. No JS runtime, no auth, no routes, no API, no backend, no data wiring. */
 
 :root {
-  --cv-logo-mark: url('/churvox-mark.svg?v=9');
+  --cv-logo-mark: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjggMTI4Ij4KPGRlZnM+CjxsaW5lYXJHcmFkaWVudCBpZD0iZCIgeDE9IjE4IiB5MT0iMTIiIHgyPSIxMDgiIHkyPSIxMTgiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPHN0b3Agc3RvcC1jb2xvcj0iIzA2MTQyQiIvPjxzdG9wIG9mZnNldD0iLjU1IiBzdG9wLWNvbG9yPSIjMDYxMDFGIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMDIwNzEzIi8+CjwvbGluZWFyR3JhZGllbnQ+CjxsaW5lYXJHcmFkaWVudCBpZD0iYiIgeDE9IjIxIiB5MT0iOTIiIHgyPSIxMDciIHkyPSIyNiIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPgo8c3RvcCBzdG9wLWNvbG9yPSIjMjJEM0VFIi8+PHN0b3Agb2Zmc2V0PSIuNDQiIHN0b3AtY29sb3I9IiMyNTYzRUIiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwQjFCNTQiLz4KPC9saW5lYXJHcmFkaWVudD4KPGxpbmVhckdyYWRpZW50IGlkPSJjIiB4MT0iMjgiIHkxPSI4NSIgeDI9Ijk0IiB5Mj0iMzYiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPHN0b3Agc3RvcC1jb2xvcj0iIzY3RThGOSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzA4QkRGMCIvPgo8L2xpbmVhckdyYWRpZW50Pgo8L2RlZnM+CjxyZWN0IHg9IjYiIHk9IjYiIHdpZHRoPSIxMTYiIGhlaWdodD0iMTE2IiByeD0iMjkiIGZpbGw9InVybCgjZCkiLz4KPHJlY3QgeD0iNy41IiB5PSI3LjUiIHdpZHRoPSIxMTMiIGhlaWdodD0iMTEzIiByeD0iMjcuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMzhCREY4IiBzdHJva2Utb3BhY2l0eT0iLjIyIi8+CjxwYXRoIGQ9Ik05Mi40IDIyLjVBNDUgNDQgMCAxIDAgOTIuNCAxMDUuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ1cmwoI2IpIiBzdHJva2Utd2lkdGg9IjE1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPHBhdGggZD0iTTk0IDI0LjUgMTEyIDM2LjUgOTIuNSA0OC43WiIgZmlsbD0idXJsKCNiKSIvPgo8cGF0aCBkPSJNOTIuNSA3OS4zIDExMiA5MS41IDk0IDEwMy41WiIgZmlsbD0idXJsKCNiKSIvPgo8cGF0aCBkPSJNMTcgNDhoMzljMTAgMCAxMy4yLTUuNiAxOS43LTEwLjIgNS4xLTMuNiAxMC00LjEgMTYuMy0zLjgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0Y4RkJGRiIgc3Ryb2tlLXdpZHRoPSIxMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CjxwYXRoIGQ9Ik0xNyA2NGgzOWMxMCAwIDEzLjMgNS44IDE5LjcgMTAuNCA1IDMuNSAxMC4yIDQuMSAxNi4zIDMuNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRjhGQkZGIiBzdHJva2Utd2lkdGg9IjEyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPHBhdGggZD0iTTE3IDQ4aDM5YzEwIDAgMTMuMi01LjYgMTkuNy0xMC4yIDUuMS0zLjYgMTAtNC4xIDE2LjMtMy44IiBmaWxsPSJub25lIiBzdHJva2U9InVybCgjYykiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CjxwYXRoIGQ9Ik0xNyA2NGgzOWMxMCAwIDEzLjMgNS44IDE5LjcgMTAuNCA1IDMuNSAxMC4yIDQuMSAxNi4zIDMuNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ1cmwoI2MpIiBzdHJva2Utd2lkdGg9IjYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8cGF0aCBkPSJNMTQgODBoNDIiIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNjKSIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiIG9wYWNpdHk9Ii45MiIvPgo8Y2lyY2xlIGN4PSIxMCIgY3k9IjQ4IiByPSI0LjUiIGZpbGw9IiMyMkQzRUUiLz48Y2lyY2xlIGN4PSIxMCIgY3k9IjY0IiByPSI0LjUiIGZpbGw9IiMyMkQzRUUiLz48Y2lyY2xlIGN4PSIxMCIgY3k9IjgwIiByPSI0LjUiIGZpbGw9IiMyMkQzRUUiLz4KPHBhdGggZD0iTTY3IDUxLjUgODAgNDRsMTMgNy41djE1TDgwIDc0bC0xMy03LjV6IiBmaWxsPSIjMjJEM0VFIi8+Cjwvc3ZnPg==");
 }
 
-html body main.cc-app section.cc-main .cc-modern-hero > div > p,
 html body main.cc-app .cc-modern-hero > div > p,
 html body main.cc-app .cc-modern-hero p:first-child {
   display: none !important;
@@ -18,11 +17,11 @@ html body main.cc-app .cc-modern-hero p:first-child {
 
 html body main.cc-app {
   grid-template-columns: 1fr !important;
+  color: #07111f !important;
   background:
     radial-gradient(circle at 10% -12%, rgba(37,99,235,.18), transparent 30%),
     radial-gradient(circle at 92% 0%, rgba(34,211,238,.10), transparent 28%),
     linear-gradient(135deg,#07111f 0%,#0b1628 92px,#eef4f8 93px,#f8fbff 100%) !important;
-  color: #07111f !important;
 }
 
 html body main.cc-app .cc-status-strip,
@@ -44,8 +43,14 @@ html body main.cc-app section.cc-main {
   background: transparent !important;
 }
 
-html body main.cc-app .cc-top {
+html body main.cc-app .cc-top,
+html body main.cc-app .cc-modern-hero,
+html body main.cc-app > aside.cc-side,
+html body main.cc-app > aside.cc-side .cc-side-brand {
   position: relative !important;
+}
+
+html body main.cc-app .cc-top {
   height: 42px !important;
   min-height: 42px !important;
   border-radius: 18px !important;
@@ -54,18 +59,23 @@ html body main.cc-app .cc-top {
   box-shadow: 0 18px 52px rgba(2,6,23,.28), inset 0 1px 0 rgba(255,255,255,.10) !important;
 }
 
-html body main.cc-app .cc-top:before {
+html body main.cc-app .cc-top:before,
+html body main.cc-app .cc-modern-hero:before,
+html body main.cc-app > aside.cc-side .cc-side-brand:before {
   content: "" !important;
   position: absolute !important;
+  background-image: var(--cv-logo-mark) !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+}
+
+html body main.cc-app .cc-top:before {
   left: 12px !important;
   top: 8px !important;
   width: 26px !important;
   height: 26px !important;
   border-radius: 10px !important;
-  background-image: var(--cv-logo-mark) !important;
-  background-size: contain !important;
-  background-repeat: no-repeat !important;
-  background-position: center !important;
   filter: drop-shadow(0 8px 18px rgba(37,99,235,.35)) !important;
   z-index: 2 !important;
 }
@@ -82,7 +92,6 @@ html body main.cc-app .cc-search {
 }
 
 html body main.cc-app .cc-modern-hero {
-  position: relative !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
@@ -98,17 +107,11 @@ html body main.cc-app .cc-modern-hero {
 }
 
 html body main.cc-app .cc-modern-hero:before {
-  content: "" !important;
-  position: absolute !important;
   left: 18px !important;
   top: 13px !important;
   width: 48px !important;
   height: 48px !important;
   border-radius: 16px !important;
-  background-image: var(--cv-logo-mark) !important;
-  background-size: contain !important;
-  background-repeat: no-repeat !important;
-  background-position: center !important;
   filter: drop-shadow(0 14px 28px rgba(37,99,235,.24)) !important;
 }
 
@@ -139,7 +142,6 @@ html body main.cc-app .cc-modern-hero strong {
   font-weight: 950 !important;
 }
 
-/* Modern bottom nav from the existing sidebar markup. */
 html body main.cc-app > aside.cc-side {
   display: grid !important;
   position: fixed !important;
@@ -183,7 +185,6 @@ html body main.cc-app > aside.cc-side:before {
 }
 
 html body main.cc-app > aside.cc-side .cc-side-brand {
-  position: relative !important;
   height: 44px !important;
   min-height: 44px !important;
   display: flex !important;
@@ -199,20 +200,11 @@ html body main.cc-app > aside.cc-side .cc-side-brand {
 }
 
 html body main.cc-app > aside.cc-side .cc-side-brand:before {
-  content: "" !important;
-  position: absolute !important;
   left: 9px !important;
   top: 6px !important;
   width: 32px !important;
   height: 32px !important;
-  display: block !important;
   border-radius: 12px !important;
-  background-image: var(--cv-logo-mark) !important;
-  background-size: contain !important;
-  background-repeat: no-repeat !important;
-  background-position: center !important;
-  color: transparent !important;
-  font-size: 0 !important;
   box-shadow: 0 10px 24px rgba(37,99,235,.28) !important;
 }
 
@@ -241,7 +233,6 @@ html body main.cc-app > aside.cc-side nav {
 }
 
 html body main.cc-app > aside.cc-side nav a {
-  position: relative !important;
   height: 44px !important;
   min-height: 44px !important;
   display: flex !important;
