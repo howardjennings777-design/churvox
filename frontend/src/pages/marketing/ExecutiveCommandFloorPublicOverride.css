@@ -1,4 +1,208 @@
 @import "./ExecutiveFullScreenWow.css";
 
 /* CHURVOX_PUBLIC_SITE_COMMAND_FLOOR_IMPORT_FIX_20260526 */
-/* This file is already imported by ExecutiveHomePage.jsx. It now pulls in the full-screen wow layer. */
+/* This file is already imported by ExecutiveHomePage.jsx. It pulls in the full-screen wow layer. */
+
+/* CHURVOX_PUBLIC_WOW_VIEWPORT_FIT_20260526 */
+/* Make the wow hero actually fit a laptop viewport instead of feeling cut off. Visual CSS only. */
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] {
+  overflow-x: hidden !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-nav {
+  min-height: 48px !important;
+  margin-top: 10px !important;
+  top: 10px !important;
+  border-radius: 22px !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-brand,
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-nav-links a,
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-nav-actions a {
+  transform: scale(.94) !important;
+  transform-origin: center !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-hero--wow {
+  width: min(1340px, calc(100% - 26px)) !important;
+  min-height: calc(100vh - 74px) !important;
+  grid-template-columns: minmax(380px, .86fr) minmax(520px, 1.14fr) !important;
+  grid-template-rows: minmax(0, 1fr) 96px !important;
+  gap: 14px !important;
+  padding: 12px 0 18px !important;
+  align-items: stretch !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-hero-copy {
+  padding: clamp(22px, 3.2vw, 42px) !important;
+  border-radius: 34px !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-hero h1 {
+  font-size: clamp(48px, 5.6vw, 86px) !important;
+  line-height: .86 !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-lead {
+  margin-top: 18px !important;
+  font-size: clamp(15px, 1.1vw, 18px) !important;
+  line-height: 1.48 !important;
+  max-width: 640px !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-actions {
+  margin-top: 20px !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-btn {
+  min-height: 44px !important;
+  padding: 0 18px !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-notes {
+  margin-top: 18px !important;
+  gap: 7px !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-notes span {
+  padding: 8px 11px !important;
+  font-size: 11px !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-product-shot--wow {
+  border-radius: 34px !important;
+  padding: 13px !important;
+  transform: perspective(1500px) rotateY(-4deg) rotateX(1deg) translateY(4px) !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-window-top {
+  height: 42px !important;
+  margin: -13px -13px 11px !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-kpi-row {
+  gap: 8px !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-kpi-row article {
+  min-height: 78px !important;
+  padding: 10px !important;
+  border-radius: 18px !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-kpi-row span {
+  font-size: .56rem !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-kpi-row b {
+  font-size: 1.35rem !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-kpi-row small {
+  font-size: .62rem !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-dashboard-grid {
+  gap: 9px !important;
+  margin-top: 9px !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-shot-panel {
+  border-radius: 20px !important;
+  padding: 11px !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-shot-panel header {
+  margin-bottom: 7px !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-shot-row {
+  min-height: 46px !important;
+  margin-bottom: 6px !important;
+  padding: 8px !important;
+  border-radius: 15px !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-shot-row p {
+  font-size: .72rem !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-map {
+  height: 108px !important;
+  border-radius: 18px !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-live-row {
+  padding: 6px 0 !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-live-row p {
+  font-size: .68rem !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-shot-money strong {
+  font-size: 2rem !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-wow-pulse {
+  min-height: 54px !important;
+  padding: 10px 14px 10px 48px !important;
+  border-radius: 20px !important;
+  margin-top: 9px !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-wow-pulse:before {
+  left: 17px !important;
+  top: 18px !important;
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-wow-rail {
+  min-height: 96px !important;
+  gap: 10px !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-wow-rail article {
+  padding: 14px 16px !important;
+  border-radius: 24px !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-wow-rail b {
+  font-size: .96rem !important;
+}
+
+.ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-wow-rail span {
+  font-size: .7rem !important;
+  line-height: 1.28 !important;
+}
+
+@media (max-height: 760px) and (min-width: 1050px) {
+  .ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-hero--wow {
+    grid-template-rows: minmax(0, 1fr) 76px !important;
+    gap: 10px !important;
+    padding-bottom: 12px !important;
+  }
+
+  .ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-hero h1 {
+    font-size: clamp(42px, 5vw, 76px) !important;
+  }
+
+  .ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-lead {
+    font-size: 14px !important;
+    line-height: 1.42 !important;
+  }
+
+  .ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-product-shot--wow {
+    transform: perspective(1500px) rotateY(-3deg) rotateX(.8deg) translateY(0) !important;
+  }
+
+  .ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-map {
+    height: 88px !important;
+  }
+
+  .ex-site[data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526"] .ex-wow-rail article:nth-child(4) {
+    display: none !important;
+  }
+}
