@@ -1,21 +1,25 @@
-/* CHURVOX_EXACT_FULL_SCREEN_ACTION_HUB_20260526 */
-/* Full-screen dashboard replacement. Visual/component layer only. */
+/* CHURVOX_EXACT_FULL_SCREEN_IMAGE_LAYOUT_V2_20260526 */
+/* Dashboard/workspace visual layer only. No backend, auth, API, billing, or database wiring touched. */
 
-html, body, #root {
+html,
+body,
+#root {
   min-height: 100%;
 }
 
 body:has(.xcf-shell) {
-  margin: 0;
-  background: #eef4f8;
-  overflow: hidden;
+  margin: 0 !important;
+  background: #eef4f8 !important;
+  overflow: hidden !important;
 }
 
 body:has(.xcf-shell) .floating-bottom-nav,
 body:has(.xcf-shell) .mobile-nav,
 body:has(.xcf-shell) .bottom-nav,
 body:has(.xcf-shell) .cv-v30-bottom-dock,
-body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
+body:has(.xcf-shell) #churvox-command-v30-bottom-dock,
+body:has(.xcf-shell) main.cc-app,
+body:has(.xcf-shell) aside.cc-side {
   display: none !important;
 }
 
@@ -23,13 +27,16 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
   min-height: 100dvh;
   height: 100dvh;
   width: 100vw;
-  padding: 14px 18px 96px;
+  display: grid;
+  grid-template-rows: 52px 124px 112px minmax(0, 1fr) 76px;
+  gap: 12px;
+  padding: 14px 22px 12px;
   box-sizing: border-box;
   overflow: hidden;
   color: #07111f;
   background:
     radial-gradient(circle at 9% -12%, rgba(37, 99, 235, .22), transparent 31%),
-    radial-gradient(circle at 90% 2%, rgba(34, 211, 238, .14), transparent 30%),
+    radial-gradient(circle at 88% 0%, rgba(34, 211, 238, .15), transparent 30%),
     linear-gradient(135deg, #07111f 0, #0b1628 92px, #edf4f8 93px, #f8fbff 100%);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -37,14 +44,14 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
 .xcf-topbar {
   height: 52px;
   display: grid;
-  grid-template-columns: 172px minmax(240px, 1fr) auto 90px;
+  grid-template-columns: 178px minmax(260px, 1fr) auto 86px;
   align-items: center;
   gap: 12px;
   padding: 7px 10px;
   border-radius: 22px;
-  border: 1px solid rgba(147,197,253,.22);
-  background: linear-gradient(135deg, rgba(5,9,20,.98), rgba(15,23,42,.94));
-  box-shadow: 0 20px 62px rgba(2,6,23,.30), inset 0 1px 0 rgba(255,255,255,.11);
+  border: 1px solid rgba(147, 197, 253, .24);
+  background: linear-gradient(135deg, rgba(5, 9, 20, .985), rgba(15, 23, 42, .955));
+  box-shadow: 0 20px 62px rgba(2, 6, 23, .30), inset 0 1px 0 rgba(255, 255, 255, .11);
 }
 
 .xcf-brand,
@@ -64,8 +71,8 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
   padding: 0 10px;
   border-radius: 17px;
   color: #fff;
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.09);
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .09);
 }
 
 .xcf-brand i {
@@ -88,11 +95,13 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
 }
 
 .xcf-brand b {
+  color: #fff;
   font-size: .78rem;
+  font-weight: 950;
 }
 
 .xcf-brand small {
-  color: rgba(219,234,254,.72);
+  color: rgba(219, 234, 254, .72);
   font-size: .58rem;
   font-weight: 850;
 }
@@ -106,12 +115,16 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
   color: #dbeafe;
   font-size: .78rem;
   font-weight: 850;
-  background: rgba(255,255,255,.07);
-  border: 1px solid rgba(148,163,184,.22);
+  background: rgba(255, 255, 255, .07);
+  border: 1px solid rgba(148, 163, 184, .22);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .xcf-topbar nav {
   display: flex;
+  align-items: center;
   gap: 8px;
 }
 
@@ -119,11 +132,12 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
   height: 36px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   padding: 0 13px;
   border-radius: 999px;
-  color: rgba(255,255,255,.86);
-  background: rgba(255,255,255,.07);
-  border: 1px solid rgba(255,255,255,.08);
+  color: rgba(255, 255, 255, .86);
+  background: rgba(255, 255, 255, .07);
+  border: 1px solid rgba(255, 255, 255, .08);
   font-size: .74rem;
   font-weight: 900;
 }
@@ -131,7 +145,7 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
 .xcf-topbar nav a:first-child {
   color: #fff;
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  box-shadow: 0 12px 28px rgba(37,99,235,.36);
+  box-shadow: 0 12px 28px rgba(37, 99, 235, .36);
 }
 
 .xcf-topbar > strong {
@@ -142,27 +156,26 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
   font-size: .72rem;
   font-weight: 950;
   color: #bbf7d0;
-  background: rgba(34,197,94,.12);
-  border: 1px solid rgba(34,197,94,.20);
+  background: rgba(34, 197, 94, .12);
+  border: 1px solid rgba(34, 197, 94, .20);
 }
 
 .xcf-hero {
-  height: 112px;
+  min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;
   align-items: stretch;
   gap: 14px;
-  margin-top: 12px;
 }
 
 .xcf-hero > div,
 .xcf-hero > aside,
-.xcf-action-hub,
+.xcf-metric,
 .xcf-card,
 .xcf-workspace-list {
-  border: 1px solid rgba(15,23,42,.08);
-  background: linear-gradient(135deg, rgba(255,255,255,.99), rgba(241,247,252,.95));
-  box-shadow: 0 20px 58px rgba(15,23,42,.10), inset 0 1px 0 rgba(255,255,255,.84);
+  border: 1px solid rgba(15, 23, 42, .08);
+  background: linear-gradient(135deg, rgba(255, 255, 255, .99), rgba(241, 247, 252, .95));
+  box-shadow: 0 20px 58px rgba(15, 23, 42, .10), inset 0 1px 0 rgba(255, 255, 255, .84);
 }
 
 .xcf-hero > div {
@@ -170,11 +183,10 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
   flex-direction: column;
   justify-content: center;
   padding: 16px 22px;
-  border-radius: 28px;
+  border-radius: 30px;
 }
 
 .xcf-hero p,
-.xcf-section-title span,
 .xcf-card header small,
 .xcf-drawer p {
   margin: 0;
@@ -188,8 +200,8 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
 .xcf-hero h1 {
   margin: 4px 0 0;
   color: #07111f;
-  font-size: clamp(2.6rem, 4vw, 4.7rem);
-  line-height: .85;
+  font-size: clamp(2.65rem, 4vw, 4.8rem);
+  line-height: .84;
   letter-spacing: -.09em;
   font-weight: 950;
 }
@@ -203,13 +215,29 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
 
 .xcf-hero > aside {
   display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
   align-content: center;
-  gap: 5px;
+  column-gap: 12px;
+  row-gap: 4px;
   padding: 16px 18px;
-  border-radius: 28px;
+  border-radius: 30px;
   background:
-    radial-gradient(circle at 12% 10%, rgba(37,99,235,.14), transparent 35%),
-    linear-gradient(135deg, rgba(239,246,255,.99), rgba(255,255,255,.97));
+    radial-gradient(circle at 12% 10%, rgba(37, 99, 235, .16), transparent 35%),
+    linear-gradient(135deg, rgba(239, 246, 255, .99), rgba(255, 255, 255, .97));
+}
+
+.xcf-hero aside i {
+  grid-row: 1 / 4;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  color: #fff;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  box-shadow: 0 16px 34px rgba(37, 99, 235, .28);
+  font-style: normal;
 }
 
 .xcf-hero aside small,
@@ -222,113 +250,110 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
 
 .xcf-hero aside b {
   color: #07111f;
-  font-size: 1.28rem;
+  font-size: 1.2rem;
   font-weight: 950;
   letter-spacing: -.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.xcf-action-hub {
-  min-height: 134px;
+.xcf-metrics {
+  min-height: 0;
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
-  align-items: stretch;
-  gap: 14px;
-  margin-top: 12px;
-  padding: 14px;
-  border-radius: 30px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 11px;
 }
 
-.xcf-section-title {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.xcf-section-title h2 {
-  margin: 0;
-  color: #07111f;
-  font-size: 1.44rem;
-  line-height: .98;
-  letter-spacing: -.06em;
-  font-weight: 950;
-}
-
-.xcf-section-title p {
-  margin: 0;
-  color: #64748b;
-  font-size: .78rem;
-  line-height: 1.35;
-  font-weight: 760;
-}
-
-.xcf-action-grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.xcf-action-box {
+.xcf-metric {
   position: relative;
-  min-height: 104px;
+  min-width: 0;
   display: grid;
-  align-content: space-between;
-  gap: 8px;
-  padding: 14px 13px;
-  border-radius: 23px;
-  color: #0f172a;
-  background: linear-gradient(145deg, #fff, #f3f8fc);
-  border: 1px solid rgba(15,23,42,.08);
-  box-shadow: 0 13px 30px rgba(15,23,42,.06), inset 0 1px 0 rgba(255,255,255,.90);
+  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
+  align-content: center;
+  column-gap: 11px;
+  row-gap: 3px;
+  padding: 15px 16px;
+  border-radius: 24px;
   overflow: hidden;
 }
 
-.xcf-action-box:before {
+.xcf-metric:before {
   content: "";
   position: absolute;
   inset: 0 0 auto 0;
-  height: 5px;
+  height: 4px;
   background: #2563eb;
 }
 
-.xcf-action-box.blue:before { background: #2563eb; }
-.xcf-action-box.green:before { background: #16a34a; }
-.xcf-action-box.purple:before { background: #7c3aed; }
-.xcf-action-box.amber:before { background: #f59e0b; }
-.xcf-action-box.red:before { background: #ef4444; }
-
-.xcf-action-box span,
-.xcf-action-box small {
-  color: #475569;
-  font-weight: 900;
-  line-height: 1.14;
+.xcf-metric i {
+  grid-row: 1 / 4;
+  width: 38px;
+  height: 38px;
+  border-radius: 16px;
+  background: rgba(37, 99, 235, .10);
+  position: relative;
 }
 
+.xcf-metric i:after {
+  content: "";
+  position: absolute;
+  left: 15px;
+  top: 15px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #2563eb;
+  box-shadow: 10px 0 0 rgba(37,99,235,.44), 20px 0 0 rgba(37,99,235,.18);
+}
+
+.xcf-metric span,
 .xcf-action-box span {
+  color: #334155;
   font-size: .76rem;
+  font-weight: 950;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.xcf-action-box b {
+.xcf-metric b {
   color: #07111f;
-  font-size: 2rem;
-  line-height: .86;
-  letter-spacing: -.07em;
+  font-size: 1.46rem;
+  line-height: .94;
+  letter-spacing: -.055em;
   font-weight: 950;
 }
 
+.xcf-metric small,
 .xcf-action-box small {
+  color: #64748b;
   font-size: .66rem;
+  line-height: 1.15;
+  font-weight: 820;
 }
 
+.xcf-metric.green:before { background: #16a34a; }
+.xcf-metric.green i { background: rgba(34,197,94,.11); }
+.xcf-metric.green i:after { background: #16a34a; box-shadow: 10px 0 0 rgba(22,163,74,.44), 20px 0 0 rgba(22,163,74,.18); }
+.xcf-metric.blue:before { background: #2563eb; }
+.xcf-metric.amber:before { background: #f59e0b; }
+.xcf-metric.amber i { background: rgba(245,158,11,.12); }
+.xcf-metric.amber i:after { background: #f59e0b; box-shadow: 10px 0 0 rgba(245,158,11,.44), 20px 0 0 rgba(245,158,11,.18); }
+.xcf-metric.purple:before { background: #7c3aed; }
+.xcf-metric.purple i { background: rgba(124,58,237,.11); }
+.xcf-metric.purple i:after { background: #7c3aed; box-shadow: 10px 0 0 rgba(124,58,237,.44), 20px 0 0 rgba(124,58,237,.18); }
+.xcf-metric.cyan:before { background: #0891b2; }
+.xcf-metric.cyan i { background: rgba(8,145,178,.11); }
+.xcf-metric.cyan i:after { background: #0891b2; box-shadow: 10px 0 0 rgba(8,145,178,.44), 20px 0 0 rgba(8,145,178,.18); }
+
 .xcf-main-grid {
-  height: calc(100dvh - 14px - 52px - 12px - 112px - 12px - 134px - 112px);
   min-height: 0;
   display: grid;
-  grid-template-columns: 1.15fr 1.05fr 1fr;
-  grid-template-rows: minmax(0, 1.02fr) minmax(0, .88fr);
+  grid-template-columns: 1.25fr 1.04fr .96fr;
+  grid-template-rows: minmax(0, 1fr);
   gap: 12px;
-  margin-top: 12px;
 }
 
 .xcf-card {
@@ -339,18 +364,15 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
   overflow: hidden;
 }
 
-.xcf-live-card { grid-row: span 2; }
-.xcf-money-card { grid-row: span 2; }
-
 .xcf-card header {
-  min-height: 54px;
+  min-height: 56px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
-  border-bottom: 1px solid rgba(15,23,42,.07);
-  background: linear-gradient(180deg, rgba(255,255,255,.99), rgba(246,250,253,.96));
+  border-bottom: 1px solid rgba(15, 23, 42, .07);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .99), rgba(246, 250, 253, .96));
 }
 
 .xcf-card header b {
@@ -362,7 +384,7 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
 }
 
 .xcf-card header strong {
-  min-width: 36px;
+  min-width: 38px;
   height: 32px;
   display: grid;
   place-items: center;
@@ -370,7 +392,7 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
   color: #07111f;
   font-size: .82rem;
   font-weight: 950;
-  background: rgba(15,23,42,.06);
+  background: rgba(15, 23, 42, .06);
 }
 
 .xcf-card header a {
@@ -380,9 +402,81 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
   padding: 0 11px;
   border-radius: 999px;
   color: #2563eb;
-  background: rgba(37,99,235,.08);
+  background: rgba(37, 99, 235, .08);
   font-size: .7rem;
   font-weight: 950;
+}
+
+.xcf-action-hub-card {
+  grid-column: 1;
+}
+
+.xcf-action-box-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 9px;
+  padding: 12px 12px 0;
+}
+
+.xcf-action-box {
+  position: relative;
+  min-height: 96px;
+  display: grid;
+  align-content: space-between;
+  gap: 7px;
+  padding: 13px 12px;
+  border-radius: 22px;
+  color: #0f172a;
+  background: linear-gradient(145deg, #fff, #f3f8fc);
+  border: 1px solid rgba(15, 23, 42, .08);
+  box-shadow: 0 13px 30px rgba(15, 23, 42, .06), inset 0 1px 0 rgba(255, 255, 255, .90);
+  overflow: hidden;
+}
+
+.xcf-action-box:before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 5px;
+  background: #2563eb;
+}
+
+.xcf-action-box.green:before { background: #16a34a; }
+.xcf-action-box.blue:before { background: #2563eb; }
+.xcf-action-box.amber:before { background: #f59e0b; }
+.xcf-action-box.purple:before { background: #7c3aed; }
+.xcf-action-box.red:before { background: #ef4444; }
+
+.xcf-action-box b {
+  color: #07111f;
+  font-size: 1.82rem;
+  line-height: .88;
+  letter-spacing: -.07em;
+  font-weight: 950;
+}
+
+.xcf-urgent-list {
+  padding-top: 10px !important;
+}
+
+.xcf-live-card {
+  grid-column: 2;
+}
+
+.xcf-money-card,
+.xcf-review-card {
+  grid-column: 3;
+}
+
+.xcf-money-card {
+  grid-row: 1;
+  height: calc(50% - 6px);
+}
+
+.xcf-review-card {
+  grid-row: 1;
+  align-self: end;
+  height: calc(50% - 6px);
 }
 
 .xcf-list {
@@ -404,8 +498,8 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
   gap: 10px;
   padding: 9px 10px;
   border-radius: 18px;
-  border: 1px solid rgba(15,23,42,.06);
-  background: rgba(255,255,255,.78);
+  border: 1px solid rgba(15, 23, 42, .06);
+  background: rgba(255, 255, 255, .78);
   text-align: left;
   cursor: pointer;
 }
@@ -415,7 +509,7 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
   height: 8px;
   border-radius: 999px;
   background: #2563eb;
-  box-shadow: 0 0 0 5px rgba(37,99,235,.09);
+  box-shadow: 0 0 0 5px rgba(37, 99, 235, .09);
 }
 
 .xcf-row b,
@@ -448,7 +542,7 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
 }
 
 .xcf-map-card {
-  min-height: 184px;
+  min-height: 210px;
   margin: 12px 12px 0;
   border-radius: 24px;
   display: grid;
@@ -457,13 +551,13 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
   padding: 16px;
   color: #dbeafe;
   background:
-    linear-gradient(90deg, rgba(96,165,250,.12) 1px, transparent 1px),
-    linear-gradient(rgba(96,165,250,.10) 1px, transparent 1px),
-    radial-gradient(circle at 26% 38%, rgba(34,197,94,.26), transparent 13%),
-    radial-gradient(circle at 72% 55%, rgba(37,99,235,.30), transparent 14%),
+    linear-gradient(90deg, rgba(96, 165, 250, .12) 1px, transparent 1px),
+    linear-gradient(rgba(96, 165, 250, .10) 1px, transparent 1px),
+    radial-gradient(circle at 26% 38%, rgba(34, 197, 94, .26), transparent 13%),
+    radial-gradient(circle at 72% 55%, rgba(37, 99, 235, .30), transparent 14%),
     #071426;
   background-size: 36px 36px, 36px 36px, 100% 100%, 100% 100%, 100% 100%;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.09);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .09);
 }
 
 .xcf-map-card span {
@@ -478,6 +572,32 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
   font-size: .8rem;
 }
 
+.xcf-live-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 10px 12px 0;
+}
+
+.xcf-live-stats i {
+  padding: 9px;
+  border-radius: 16px;
+  color: #0f172a;
+  background: rgba(248, 250, 252, .92);
+  border: 1px solid rgba(15, 23, 42, .06);
+  font-size: 1rem;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.xcf-live-stats small {
+  display: block;
+  margin-top: 2px;
+  color: #64748b;
+  font-size: .6rem;
+  font-weight: 850;
+}
+
 .xcf-money-hero {
   margin: 12px 12px 0;
   padding: 15px;
@@ -488,7 +608,7 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
 
 .xcf-money-hero span,
 .xcf-money-hero small {
-  color: rgba(219,234,254,.72);
+  color: rgba(219, 234, 254, .72);
   font-size: .72rem;
   font-weight: 850;
 }
@@ -496,27 +616,41 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
 .xcf-money-hero b {
   display: block;
   margin: 4px 0;
-  font-size: 2.35rem;
+  font-size: 2.15rem;
   line-height: .9;
   letter-spacing: -.07em;
 }
 
-.xcf-mini-stats {
+.xcf-money-queue {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  padding: 10px 12px 0;
+  padding: 10px 12px 12px;
 }
 
-.xcf-mini-stats i {
-  padding: 9px;
+.xcf-money-queue p {
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  margin: 0;
+  padding: 9px 10px;
   border-radius: 16px;
-  color: #334155;
-  background: rgba(248,250,252,.92);
-  border: 1px solid rgba(15,23,42,.06);
+  background: rgba(248, 250, 252, .92);
+  border: 1px solid rgba(15, 23, 42, .06);
+}
+
+.xcf-money-queue span,
+.xcf-money-queue em {
+  color: #64748b;
   font-size: .68rem;
   font-style: normal;
   font-weight: 850;
+}
+
+.xcf-money-queue b {
+  color: #07111f;
+  font-weight: 950;
 }
 
 .xcf-empty {
@@ -524,29 +658,25 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
   display: grid;
   place-items: center;
   border-radius: 20px;
-  background: rgba(248,250,252,.74);
-  border: 1px dashed rgba(15,23,42,.12);
+  background: rgba(248, 250, 252, .74);
+  border: 1px dashed rgba(15, 23, 42, .12);
 }
 
 .xcf-bottom-nav {
-  position: fixed;
-  left: 18px;
-  right: 18px;
-  bottom: 14px;
-  z-index: 60;
   height: 70px;
+  min-height: 0;
   display: grid;
   grid-template-columns: repeat(10, minmax(0, 1fr));
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
   border-radius: 32px;
-  border: 1px solid rgba(147,197,253,.30);
+  border: 1px solid rgba(147, 197, 253, .30);
   background:
-    radial-gradient(circle at 10% 50%, rgba(14,165,233,.32), transparent 24%),
-    radial-gradient(circle at 44% 0%, rgba(99,102,241,.22), transparent 32%),
-    linear-gradient(135deg, rgba(3,7,18,.985), rgba(15,23,42,.965));
-  box-shadow: 0 28px 86px rgba(0,0,0,.44), 0 0 44px rgba(37,99,235,.24), inset 0 1px 0 rgba(255,255,255,.13);
+    radial-gradient(circle at 10% 50%, rgba(14, 165, 233, .32), transparent 24%),
+    radial-gradient(circle at 44% 0%, rgba(99, 102, 241, .22), transparent 32%),
+    linear-gradient(135deg, rgba(3, 7, 18, .985), rgba(15, 23, 42, .965));
+  box-shadow: 0 28px 86px rgba(0, 0, 0, .44), 0 0 44px rgba(37, 99, 235, .24), inset 0 1px 0 rgba(255, 255, 255, .13);
   backdrop-filter: blur(24px) saturate(1.35);
 }
 
@@ -555,7 +685,7 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
   display: grid;
   place-items: center;
   border-radius: 19px;
-  color: rgba(255,255,255,.78);
+  color: rgba(255, 255, 255, .78);
   font-size: .72rem;
   font-weight: 900;
 }
@@ -564,12 +694,11 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
 .xcf-bottom-nav a:hover {
   color: #fff;
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  box-shadow: 0 12px 28px rgba(37,99,235,.40), inset 0 1px 0 rgba(255,255,255,.18);
+  box-shadow: 0 12px 28px rgba(37, 99, 235, .40), inset 0 1px 0 rgba(255, 255, 255, .18);
 }
 
 .xcf-workspace-list {
-  margin-top: 12px;
-  height: calc(100dvh - 14px - 52px - 12px - 112px - 110px);
+  min-height: 0;
   overflow: auto;
   padding: 14px;
   border-radius: 30px;
@@ -591,9 +720,9 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
   padding: 18px;
   border-radius: 30px;
   color: #07111f;
-  background: rgba(255,255,255,.98);
-  border: 1px solid rgba(15,23,42,.10);
-  box-shadow: 0 30px 90px rgba(2,6,23,.28);
+  background: rgba(255, 255, 255, .98);
+  border: 1px solid rgba(15, 23, 42, .10);
+  box-shadow: 0 30px 90px rgba(2, 6, 23, .28);
 }
 
 .xcf-drawer > button {
@@ -628,7 +757,7 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
   padding: 12px;
   border-radius: 16px;
   background: #f8fafc;
-  border: 1px solid rgba(15,23,42,.07);
+  border: 1px solid rgba(15, 23, 42, .07);
 }
 
 .xcf-drawer dt {
@@ -655,14 +784,54 @@ body:has(.xcf-shell) #churvox-command-v30-bottom-dock {
   font-weight: 950;
 }
 
-@media (max-width: 1180px) {
-  .xcf-shell { overflow: auto; height: auto; min-height: 100dvh; }
-  .xcf-topbar { grid-template-columns: 160px 1fr; height: auto; }
-  .xcf-topbar nav, .xcf-topbar > strong { display: none; }
-  .xcf-hero { grid-template-columns: 1fr; height: auto; }
-  .xcf-action-hub { grid-template-columns: 1fr; }
-  .xcf-action-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .xcf-main-grid { height: auto; grid-template-columns: 1fr; grid-template-rows: none; }
-  .xcf-live-card, .xcf-money-card { grid-row: auto; }
-  .xcf-bottom-nav { overflow-x: auto; grid-template-columns: repeat(10, 92px); }
+@media (max-width: 1220px) {
+  body:has(.xcf-shell) {
+    overflow: auto !important;
+  }
+
+  .xcf-shell {
+    height: auto;
+    min-height: 100dvh;
+    grid-template-rows: auto auto auto auto 76px;
+    overflow: visible;
+  }
+
+  .xcf-topbar {
+    grid-template-columns: 160px 1fr;
+    height: auto;
+  }
+
+  .xcf-topbar nav,
+  .xcf-topbar > strong {
+    display: none;
+  }
+
+  .xcf-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .xcf-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .xcf-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .xcf-action-box-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .xcf-live-card,
+  .xcf-money-card,
+  .xcf-review-card {
+    grid-column: auto;
+    grid-row: auto;
+    height: auto;
+  }
+
+  .xcf-bottom-nav {
+    overflow-x: auto;
+    grid-template-columns: repeat(10, 92px);
+  }
 }
