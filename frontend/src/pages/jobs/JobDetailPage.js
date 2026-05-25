@@ -396,6 +396,7 @@ export default function JobDetailPage() {
   const ownerPhotos = collectJobPhotos(job);
   const selectedPhoto = selectedPhotoIndex !== null ? ownerPhotos[selectedPhotoIndex] : null;
   const startGps = gpsPair(job, "start");
+  const endGps = gpsPair(job, "end");
 
   return (
     <Layout>
@@ -806,23 +807,44 @@ export default function JobDetailPage() {
           </div>
         )}
 
-        {isOwnerView && (gpsStatus(job, "start") !== "unknown" || startGps) && (
-          <Card className="bg-white border-slate-200 shadow-sm" data-testid="owner-gps-card" data-marker="CHURVOX_JOB_DETAIL_OWNER_GPS_FIELD_HARDENING_20260525">
-            <CardContent className="p-5 space-y-2">
-              <div className="text-slate-900 font-semibold">Start Location</div>
-              <div className="text-sm text-slate-600">
-                Status: <span className="font-medium">{gpsStatus(job, "start")}</span>
-              </div>
-              {startGps && (
+        {isOwnerView && (gpsStatus(job, "start") !== "unknown" || startGps || gpsStatus(job, "end") !== "unknown" || endGps) && (
+          <Card className="bg-white border-slate-200 shadow-sm" data-testid="owner-gps-card" data-marker="CHURVOX_JOB_DETAIL_OWNER_GPS_START_FINISH_20260525">
+            <CardContent className="p-5 space-y-4">
+              <div className="text-slate-900 font-semibold">GPS Evidence</div>
+
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+                <div className="text-sm font-semibold text-slate-900">Start location</div>
                 <div className="text-sm text-slate-600">
-                  Coords: {Number(startGps.lat).toFixed(5)}, {Number(startGps.lng).toFixed(5)}
-                  {" · "}
-                  <a className="text-churvox-accent hover:underline" href={`https://www.google.com/maps?q=${startGps.lat},${startGps.lng}`} target="_blank" rel="noreferrer">open in Google Maps</a>
+                  Status: <span className="font-medium">{gpsStatus(job, "start")}</span>
                 </div>
-              )}
-              {gpsCapturedAt(job, "start") && (
-                <div className="text-xs text-slate-400">Captured: {safeDate(gpsCapturedAt(job, "start"))}</div>
-              )}
+                {startGps && (
+                  <div className="text-sm text-slate-600">
+                    Coords: {Number(startGps.lat).toFixed(5)}, {Number(startGps.lng).toFixed(5)}
+                    {" · "}
+                    <a className="text-churvox-accent hover:underline" href={`https://www.google.com/maps?q=${startGps.lat},${startGps.lng}`} target="_blank" rel="noreferrer">open start map</a>
+                  </div>
+                )}
+                {gpsCapturedAt(job, "start") && (
+                  <div className="text-xs text-slate-400">Captured: {safeDate(gpsCapturedAt(job, "start"))}</div>
+                )}
+              </div>
+
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+                <div className="text-sm font-semibold text-slate-900">Finish location</div>
+                <div className="text-sm text-slate-600">
+                  Status: <span className="font-medium">{gpsStatus(job, "end")}</span>
+                </div>
+                {endGps && (
+                  <div className="text-sm text-slate-600">
+                    Coords: {Number(endGps.lat).toFixed(5)}, {Number(endGps.lng).toFixed(5)}
+                    {" · "}
+                    <a className="text-churvox-accent hover:underline" href={`https://www.google.com/maps?q=${endGps.lat},${endGps.lng}`} target="_blank" rel="noreferrer">open finish map</a>
+                  </div>
+                )}
+                {gpsCapturedAt(job, "end") && (
+                  <div className="text-xs text-slate-400">Captured: {safeDate(gpsCapturedAt(job, "end"))}</div>
+                )}
+              </div>
             </CardContent>
           </Card>
         )}
