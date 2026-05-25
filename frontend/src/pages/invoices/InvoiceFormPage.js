@@ -12,6 +12,10 @@ import Layout from "@/components/Layout";
 import { PremiumPage, PremiumHero, PremiumCard, PremiumButton } from "@/components/premium";
 import InvoiceCreateForm from "@/components/forms/InvoiceCreateForm";
 
+function invoiceIdOf(invoice) {
+  return invoice?.id || invoice?._id || invoice?.invoice_id || "";
+}
+
 export default function InvoiceFormPage() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -111,8 +115,13 @@ export default function InvoiceFormPage() {
       : await post("/invoices", invoiceData);
 
     if (result.success) {
+      const createdId = invoiceIdOf(result.data || result.invoice || result);
       toast.success(isEdit ? "Invoice updated" : "Invoice created");
-      navigate("/invoices");
+      if (!isEdit && createdId) {
+        navigate(`/invoices/${createdId}`);
+      } else {
+        navigate("/invoices");
+      }
     } else {
       toast.error(result.error);
     }
@@ -130,7 +139,7 @@ export default function InvoiceFormPage() {
         <PremiumPage maxWidth={820}>
           <PremiumHero eyebrow="New" title="New Invoice" subtitle="Create in full page layout." />
           <PremiumCard>
-            <InvoiceCreateForm onCancel={() => navigate("/invoices")} onSuccess={() => navigate("/invoices")} submitLabel="Create" />
+            <InvoiceCreateForm onCancel={() => navigate("/invoices")} onSuccess={(invoice) => { const createdId = invoiceIdOf(invoice); navigate(createdId ? `/invoices/${createdId}` : "/invoices"); }} submitLabel="Create" />
           </PremiumCard>
         </PremiumPage>
       </Layout>
@@ -151,7 +160,7 @@ export default function InvoiceFormPage() {
           icon={<Receipt className="h-6 w-6" />}
         />
 
-        <form onSubmit={handleSubmit} className="space-y-6" data-testid="invoice-form-page">
+        <form onSubmit={handleSubmit} className="space-y-6" data-testid="invoice-form-page" data-marker="CHURVOX_OPEN_INVOICE_AFTER_CREATE_20260525">
           <PremiumCard title="Customer details" icon={<Receipt className="h-5 w-5" />}>
             <div className="space-y-4">
               <div className="space-y-2">
@@ -225,8 +234,9 @@ export default function InvoiceFormPage() {
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
-                  placeholder="Describe the services provided..."
-                  className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34] min-h-[120px]"
+                  placeholder="Lawn mowing and garden maintenance"
+                  rows={4}
+                  className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]"
                   required
                   data-testid="invoice-description-input"
                 />
@@ -234,16 +244,16 @@ export default function InvoiceFormPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="subtotal" className="text-[#0d1b34] font-semibold">Subtotal (NZD) *</Label>
+                  <Label htmlFor="subtotal" className="text-[#0d1b34] font-semibold">Subtotal *</Label>
                   <Input
                     id="subtotal"
                     name="subtotal"
                     type="number"
-                    value={formData.subtotal}
-                    onChange={handleChange}
-                    placeholder="0.00"
                     min="0"
                     step="0.01"
+                    value={formData.subtotal}
+                    onChange={handleChange}
+                    placeholder="150.00"
                     className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]"
                     required
                     data-testid="invoice-subtotal-input"
@@ -251,34 +261,34 @@ export default function InvoiceFormPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="gst_rate" className="text-[#0d1b34] font-semibold">GST Rate (%)</Label>
+                  <Label htmlFor="gst_rate" className="text-[#0d1b34] font-semibold">GST Rate %</Label>
                   <Input
                     id="gst_rate"
                     name="gst_rate"
                     type="number"
-                    value={formData.gst_rate}
-                    onChange={handleChange}
                     min="0"
                     max="100"
-                    step="0.5"
+                    step="0.1"
+                    value={formData.gst_rate}
+                    onChange={handleChange}
                     className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]"
                     data-testid="invoice-gst-rate-input"
                   />
                 </div>
               </div>
 
-              <div className="p-4 bg-[#eff4ff] border border-[#dbe7ff] rounded-xl space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-[#5b6c87]">Subtotal</span>
-                  <span className="text-[#0d1b34] font-semibold">${subtotal.toFixed(2)}</span>
+              <div className="bg-[#f6faff] border border-[#d8e3f3] rounded-xl p-4">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-[#5b6c87]">Subtotal:</span>
+                  <span className="text-[#0d1b34]">${subtotal.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-[#5b6c87]">GST ({gstRate}%)</span>
-                  <span className="text-[#0d1b34] font-semibold">${gstAmount.toFixed(2)}</span>
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-[#5b6c87]">GST ({gstRate}%):</span>
+                  <span className="text-[#0d1b34]">${gstAmount.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-lg font-bold pt-2 border-t border-[#d8e3f3]">
-                  <span className="text-[#0d1b34]">Total</span>
-                  <span className="text-[#2563eb]" style={{ fontFamily: "'Outfit', sans-serif" }}>${total.toFixed(2)}</span>
+                <div className="flex justify-between font-bold text-lg border-t border-[#d8e3f3] pt-2">
+                  <span className="text-[#0d1b34]">Total:</span>
+                  <span className="text-[#0d1b34]">${total.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -289,41 +299,21 @@ export default function InvoiceFormPage() {
                   name="notes"
                   value={formData.notes}
                   onChange={handleChange}
-                  placeholder="Any additional notes or payment terms..."
-                  className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34] min-h-[80px]"
+                  placeholder="Payment terms, special instructions..."
+                  rows={3}
+                  className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]"
                   data-testid="invoice-notes-input"
                 />
               </div>
             </div>
           </PremiumCard>
 
-          <div className="flex gap-3 flex-wrap">
-            <Button
-              type="button"
-              variant="outline"
-              className="flex-1 min-w-[140px] border-[#d8e3f3] text-[#1a2c4d] hover:bg-[#eff4ff]"
-              onClick={() => navigate("/invoices")}
-              data-testid="cancel-button"
-            >
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="outline" onClick={() => navigate("/invoices")}>
               Cancel
             </Button>
-            <PremiumButton
-              type="submit"
-              disabled={loading}
-              dataTestId="save-invoice-button"
-              className="flex-1 min-w-[200px]"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  {isEdit ? "Update Invoice" : "Create Invoice"}
-                </>
-              )}
+            <PremiumButton type="submit" disabled={loading} iconLeft={loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}>
+              {loading ? "Saving..." : isEdit ? "Update Invoice" : "Create Invoice"}
             </PremiumButton>
           </div>
         </form>
