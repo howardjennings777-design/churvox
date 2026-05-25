@@ -8,6 +8,7 @@ import './concept-c/conceptCHybridWorkspace.css';
 import './concept-c/conceptCCommandV34FinalPolish.css';
 import './concept-c/conceptCCommandV37RemoveHeroLogo.css';
 import './concept-c/conceptCCommandV38UsefulPolish.css';
+import './concept-c/commandFloorActionHubBoxes.css';
 import './concept-c/commandFloorActionHubRuntime';
 import './workhorseLiveCheck';
 import './renderDeployMarker';
