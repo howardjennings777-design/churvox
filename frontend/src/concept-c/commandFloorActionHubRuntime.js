@@ -1,16 +1,17 @@
-// CHURVOX_COMMAND_FLOOR_ACTION_HUB_RUNTIME_20260526
-// Presentation-only helper: groups existing dashboard actions into clear owner sections.
+// CHURVOX_COMMAND_FLOOR_ACTION_HUB_RUNTIME_V2_20260526
+// Presentation-only helper: creates real separate action boxes inside the existing Take Action card.
 // No API calls, no backend changes, no auth/routes/data wiring changes.
 
 const HUB_ID = "cv-action-hub";
+const ROOT_SELECTOR = "main.cc-app .cc-actions";
 
 function getText(el) {
   return (el && el.textContent ? el.textContent : "").trim();
 }
 
 function getStatValue(label) {
-  const cards = Array.from(document.querySelectorAll("main.cc-app .cc-stat"));
   const wanted = String(label || "").toLowerCase();
+  const cards = Array.from(document.querySelectorAll("main.cc-app .cc-stat"));
   const card = cards.find((node) => getText(node.querySelector("span")).toLowerCase() === wanted);
   return getText(card && card.querySelector("b")) || "0";
 }
@@ -26,43 +27,55 @@ function makeEl(tag, className, textValue) {
   return el;
 }
 
-function renderHub() {
-  const list = document.querySelector("main.cc-app .cc-actions .cc-action-list");
-  if (!list) return;
+function makeBox({ title, value, note, href, tone }) {
+  const a = makeEl("a", "cv-action-hub-box " + tone);
+  a.href = href;
+  a.setAttribute("aria-label", title + " actions");
+  a.appendChild(makeEl("span", "", title));
+  a.appendChild(makeEl("b", "", value));
+  a.appendChild(makeEl("small", "", note));
+  return a;
+}
 
-  let hub = document.getElementById(HUB_ID);
+function renderHub() {
+  const panel = document.querySelector(ROOT_SELECTOR);
+  if (!panel) return false;
+
+  const body = panel.querySelector(".cc-action-list") || panel;
+  let hub = panel.querySelector("#" + HUB_ID);
   if (!hub) {
     hub = makeEl("section", "cv-action-hub");
     hub.id = HUB_ID;
-    list.prepend(hub);
+    body.prepend(hub);
   }
+
+  const readyToBill = getStatValue("Ready To Bill");
+  const unassigned = getStatValue("Unassigned Jobs");
+  const review = getStatValue("Work Review");
+  const follow = getStatValue("Take Action");
+  const fix = getPanelValue(".cc-risks") || "0";
 
   hub.replaceChildren();
 
   const head = makeEl("div", "cv-action-hub-head");
-  head.appendChild(makeEl("span", "", "Action Hub"));
-  head.appendChild(makeEl("strong", "", "Choose the job type first"));
+  const eyebrow = makeEl("span", "", "Take Action");
+  const title = makeEl("strong", "", "Pick what type of work needs doing");
+  head.appendChild(eyebrow);
+  head.appendChild(title);
   hub.appendChild(head);
 
   const grid = makeEl("div", "cv-action-hub-grid");
-  const sections = [
-    ["Invoices", getStatValue("Ready To Bill"), "prepare and send", "/invoices", "blue"],
-    ["Assign", getStatValue("Unassigned Jobs"), "jobs need crew", "/dispatch", "green"],
-    ["Review", getStatValue("Work Review"), "finished work", "/jobs", "lime"],
-    ["Follow up", getStatValue("Take Action"), "customers and admin", "/ai-operator/approvals", "red"],
-    ["Fix", getPanelValue(".cc-risks"), "risks and missing info", "/notifications", "amber"],
-  ];
-
-  sections.forEach(([title, value, note, href, tone]) => {
-    const card = makeEl("a", "cv-action-hub-card " + tone);
-    card.setAttribute("href", href);
-    card.appendChild(makeEl("span", "", title));
-    card.appendChild(makeEl("b", "", value));
-    card.appendChild(makeEl("small", "", note));
-    grid.appendChild(card);
-  });
+  [
+    { title: "Invoices", value: readyToBill, note: "ready to prepare", href: "/invoices", tone: "blue" },
+    { title: "Assign Worker", value: unassigned, note: "jobs need crew", href: "/dispatch", tone: "green" },
+    { title: "Review Work", value: review, note: "finished jobs", href: "/jobs", tone: "purple" },
+    { title: "Customer Follow-up", value: follow, note: "messages & reminders", href: "/ai-operator/approvals", tone: "amber" },
+    { title: "Fix Issues", value: fix, note: "risks & missing info", href: "/notifications", tone: "red" },
+  ].forEach((item) => grid.appendChild(makeBox(item)));
 
   hub.appendChild(grid);
+  panel.classList.add("cv-action-hub-ready");
+  return true;
 }
 
 function bootActionHub() {
@@ -74,11 +87,21 @@ function bootActionHub() {
 }
 
 if (typeof window !== "undefined") {
-  window.addEventListener("DOMContentLoaded", bootActionHub);
-  window.addEventListener("load", bootActionHub);
-  window.addEventListener("popstate", bootActionHub);
-  setTimeout(bootActionHub, 0);
-  setTimeout(bootActionHub, 450);
-  setTimeout(bootActionHub, 1200);
-  setTimeout(bootActionHub, 2400);
+  let raf = 0;
+  const schedule = () => {
+    if (raf) return;
+    raf = window.requestAnimationFrame(() => {
+      raf = 0;
+      bootActionHub();
+    });
+  };
+
+  window.addEventListener("DOMContentLoaded", schedule);
+  window.addEventListener("load", schedule);
+  window.addEventListener("popstate", schedule);
+
+  const observer = new MutationObserver(schedule);
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+
+  [0, 250, 700, 1400, 2600, 5000].forEach((ms) => setTimeout(schedule, ms));
 }
