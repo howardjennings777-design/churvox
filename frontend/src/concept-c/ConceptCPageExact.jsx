@@ -65,7 +65,7 @@ function useLive(area, get) {
   }, [get, endpoints]);
 
   useEffect(() => { load(); }, [load]);
-  return { data, loading };
+  return { data, loading, reload: load };
 }
 
 function item(type, record) {
@@ -144,40 +144,52 @@ function BottomNav() {
   return <nav className="xcf-bottom-nav">{links.map(([href, label]) => <Link key={href} to={href}>{label}</Link>)}</nav>;
 }
 
-function Metric({ label, value, note, tone }) {
-  return <article className={`xcf-metric ${tone}`}><i /><span>{label}</span><b>{value}</b><small>{note}</small></article>;
+function Metric({ label, value, note, tone, onClick }) {
+  return <button className={`xcf-metric ${tone}`} type="button" onClick={onClick}><i /><span>{label}</span><b>{value}</b><small>{note}</small></button>;
 }
 
-function ActionBox({ title, value, note, href, tone }) {
-  return <Link className={`xcf-action-box ${tone}`} to={href}><span>{title}</span><b>{value}</b><small>{note}</small></Link>;
+function ActionBox({ title, value, note, tone, onClick }) {
+  return <button className={`xcf-action-box ${tone}`} type="button" onClick={onClick}><span>{title}</span><b>{value}</b><small>{note}</small></button>;
 }
 
 function Row({ item: x, onPick }) {
   return <button className="xcf-row" type="button" onClick={() => onPick(x)}><i /><span><b>{x.title}</b><small>{x.code} · {x.meta}</small></span><em>{Number(x.amount || 0) > 0 ? cash(x.amount) : x.state}</em></button>;
 }
 
-function Card({ title, eyebrow, value, children, href, className = "" }) {
-  return <section className={`xcf-card ${className}`}><header><span><small>{eyebrow}</small><b>{title}</b></span>{value !== undefined && <strong>{value}</strong>}{href && <Link to={href}>View all</Link>}</header>{children}</section>;
+function Card({ title, eyebrow, value, children, onOpen, className = "" }) {
+  return <section className={`xcf-card ${className}`}><header><span><small>{eyebrow}</small><b>{title}</b></span>{value !== undefined && <strong>{value}</strong>}{onOpen && <button type="button" onClick={onOpen}>Open slip</button>}</header>{children}</section>;
 }
 
 function Empty({ text = "Clear right now." }) { return <div className="xcf-empty">{text}</div>; }
 
+function makeGroup(title, subtitle, items, tone = "blue") {
+  return { type: "action_group", title, code: "ACTION SLIP", state: `${items.length} items`, meta: subtitle, items, tone, amount: sum(items), href: "#" };
+}
+
 function ActionHub({ m, onPick }) {
   const urgent = [...m.bill, ...m.unassigned, ...m.workReview, ...m.followUp, ...m.issues];
+  const groups = {
+    invoices: makeGroup("Invoices", "Ready-to-bill work and invoice records in one slip.", m.bill, "green"),
+    assign: makeGroup("Assign Worker", "Unassigned work and dispatch gaps ready to assign.", m.unassigned, "blue"),
+    review: makeGroup("Review Work", "Finished jobs waiting for owner approval.", m.workReview, "amber"),
+    follow: makeGroup("Customer Follow-up", "Customer reminders, quote follow-ups and prepared messages.", m.followUp, "purple"),
+    issues: makeGroup("Fix Issues", "Risks, missing details and items needing attention.", m.issues, "red"),
+  };
   return <section className="xcf-card xcf-action-hub-card">
-    <header><span><small>Focus on what needs you</small><b>Take Action</b></span><strong>{urgent.length}</strong><Link to="/ai-operator/approvals">View all</Link></header>
+    <header><span><small>Tap once. Work in the slip.</small><b>Take Action</b></span><strong>{urgent.length}</strong><button type="button" onClick={() => onPick(makeGroup("All Actions", "Everything needing owner attention.", urgent, "purple"))}>Open slip</button></header>
     <div className="xcf-action-box-grid">
-      <ActionBox title="Invoices" value={m.bill.length} note="ready to send" href="/invoices" tone="green" />
-      <ActionBox title="Assign Worker" value={m.unassigned.length} note="unassigned jobs" href="/dispatch" tone="blue" />
-      <ActionBox title="Review Work" value={m.workReview.length} note="awaiting approval" href="/jobs" tone="amber" />
-      <ActionBox title="Customer Follow-up" value={m.followUp.length} note="messages & reminders" href="/ai-operator/approvals" tone="purple" />
-      <ActionBox title="Fix Issues" value={m.issues.length} note="need attention" href="/notifications" tone="red" />
+      <ActionBox title="Invoices" value={m.bill.length} note="ready to send" tone="green" onClick={() => onPick(groups.invoices)} />
+      <ActionBox title="Assign Worker" value={m.unassigned.length} note="unassigned jobs" tone="blue" onClick={() => onPick(groups.assign)} />
+      <ActionBox title="Review Work" value={m.workReview.length} note="awaiting approval" tone="amber" onClick={() => onPick(groups.review)} />
+      <ActionBox title="Customer Follow-up" value={m.followUp.length} note="messages & reminders" tone="purple" onClick={() => onPick(groups.follow)} />
+      <ActionBox title="Fix Issues" value={m.issues.length} note="need attention" tone="red" onClick={() => onPick(groups.issues)} />
     </div>
     <div className="xcf-list xcf-urgent-list">{urgent.length ? urgent.slice(0, 5).map((x, i) => <Row key={`urgent-${i}`} item={x} onPick={onPick} />) : <Empty text="No priority actions waiting." />}</div>
   </section>;
 }
 
 function Dashboard({ m, loading, onPick }) {
+  const urgent = [...m.bill, ...m.unassigned, ...m.workReview, ...m.followUp, ...m.issues];
   const nextAction = m.workReview.length ? "Review finished work → prepare invoices" : m.bill.length ? "Prepare invoices" : m.unassigned.length ? "Assign workers" : m.issues.length ? "Fix issues" : "All clear";
   return <main className="xcf-shell" data-version="CHURVOX_EXACT_FULL_SCREEN_IMAGE_LAYOUT_20260526">
     <TopBar loading={loading} />
@@ -188,29 +200,29 @@ function Dashboard({ m, loading, onPick }) {
     </section>
 
     <section className="xcf-metrics">
-      <Metric label="Ready to Bill" value={cash(sum(m.bill))} note={`${m.bill.length} invoices`} tone="green" />
-      <Metric label="Unassigned Jobs" value={m.unassigned.length} note="needs workers" tone="blue" />
-      <Metric label="Work Review" value={m.workReview.length} note="awaiting approval" tone="amber" />
-      <Metric label="Take Action" value={[...m.bill, ...m.unassigned, ...m.workReview, ...m.followUp, ...m.issues].length} note="items need attention" tone="purple" />
-      <Metric label="Team On Jobs" value={m.live.length} note="field activity" tone="cyan" />
-      <Metric label="Completed This Week" value={m.doneJobs.length} note="jobs closed" tone="green" />
+      <Metric label="Ready to Bill" value={cash(sum(m.bill))} note={`${m.bill.length} invoices`} tone="green" onClick={() => onPick(makeGroup("Ready to Bill", "Approved work ready for invoice action.", m.bill, "green"))} />
+      <Metric label="Unassigned Jobs" value={m.unassigned.length} note="needs workers" tone="blue" onClick={() => onPick(makeGroup("Unassigned Jobs", "Jobs needing worker assignment.", m.unassigned, "blue"))} />
+      <Metric label="Work Review" value={m.workReview.length} note="awaiting approval" tone="amber" onClick={() => onPick(makeGroup("Work Review", "Finished jobs waiting for approval.", m.workReview, "amber"))} />
+      <Metric label="Take Action" value={urgent.length} note="items need attention" tone="purple" onClick={() => onPick(makeGroup("Take Action", "All owner actions in one slip.", urgent, "purple"))} />
+      <Metric label="Team On Jobs" value={m.live.length} note="field activity" tone="cyan" onClick={() => onPick(makeGroup("Team On Jobs", "Live crew and active field activity.", m.live, "cyan"))} />
+      <Metric label="Completed This Week" value={m.doneJobs.length} note="jobs closed" tone="green" onClick={() => onPick(makeGroup("Completed This Week", "Completed job records.", m.doneJobs, "green"))} />
     </section>
 
     <section className="xcf-main-grid">
       <ActionHub m={m} onPick={onPick} />
 
-      <Card title="Live Crew" eyebrow="Real-time crew activity in the field" value={m.live.length} href="/team" className="xcf-live-card">
+      <Card title="Live Crew" eyebrow="Real-time crew activity in the field" value={m.live.length} onOpen={() => onPick(makeGroup("Live Crew", "Crew, job status, GPS and evidence in one place.", m.live, "cyan"))} className="xcf-live-card">
         <div className="xcf-map-card"><span>Owner crew map</span><b>Timers • GPS • photos • status</b></div>
         <div className="xcf-live-stats"><i>{m.live.length}<small>Crew on jobs</small></i><i>{m.active.length}<small>Active jobs</small></i><i>{m.unassigned.length}<small>Need worker</small></i></div>
         <div className="xcf-list">{m.live.length ? m.live.slice(0, 4).map((x, i) => <Row key={`live-${i}`} item={x} onPick={onPick} />) : <Empty text="No crew on jobs right now." />}</div>
       </Card>
 
-      <Card title="Money Desk" eyebrow="Your cashflow at a glance" value={cash(sum(m.money))} href="/invoices" className="xcf-money-card">
+      <Card title="Money Desk" eyebrow="Your cashflow at a glance" value={cash(sum(m.money))} onOpen={() => onPick(makeGroup("Money Desk", "Ready-to-bill, owing and overdue work in one slip.", m.money, "green"))} className="xcf-money-card">
         <div className="xcf-money-hero"><span>Ready to bill</span><b>{cash(sum(m.bill))}</b><small>{m.bill.length} approved jobs</small></div>
         <div className="xcf-money-queue"><p><span>Invoice Queue</span><b>{m.bill.length}</b><em>{cash(sum(m.bill))}</em></p><p><span>Overdue</span><b>{m.overdue.length}</b><em>{cash(sum(m.overdue))}</em></p><p><span>Owing</span><b>{m.owing.length}</b><em>{cash(sum(m.owing))}</em></p></div>
       </Card>
 
-      <Card title="Work Review" eyebrow="Jobs waiting for your approval" value={m.workReview.length} href="/jobs" className="xcf-review-card">
+      <Card title="Work Review" eyebrow="Jobs waiting for your approval" value={m.workReview.length} onOpen={() => onPick(makeGroup("Work Review", "Approve finished work without leaving the command floor.", m.workReview, "amber"))} className="xcf-review-card">
         <div className="xcf-list">{m.workReview.length ? m.workReview.slice(0, 6).map((x, i) => <Row key={`review-${i}`} item={x} onPick={onPick} />) : <Empty text="No finished jobs waiting for review." />}</div>
       </Card>
     </section>
@@ -223,18 +235,105 @@ function Workspace({ area, m, loading, onPick }) {
   const [title, subtitle] = PAGES[area] || ["Workspace", "Simple workspace"];
   const rowsByArea = { jobs: m.jobs, dispatch: m.dispatch, clients: m.clients, quotes: m.quotes, invoices: m.invoices, team: m.crew, sms: m.messages, notifications: [...m.alerts, ...m.issues], reports: m.done, integrations: m.invoices, payroll: [...m.crew, ...m.doneJobs], automation: m.actions, settings: m.issues };
   const rows = rowsByArea[area] || m.actions;
-  return <main className="xcf-shell xcf-workspace"><TopBar loading={loading} /><section className="xcf-hero"><div><p>Workspace</p><h1>{title}</h1><span>{subtitle}</span></div><aside><small>Records</small><b>{rows.length}</b><em>Tap a record to inspect it.</em></aside></section><section className="xcf-workspace-list">{rows.length ? rows.slice(0, 40).map((x, i) => <Row key={`${area}-${i}`} item={x} onPick={onPick} />) : <Empty />}</section><BottomNav /></main>;
+  return <main className="xcf-shell xcf-workspace"><TopBar loading={loading} /><section className="xcf-hero"><div><p>Workspace</p><h1>{title}</h1><span>{subtitle}</span></div><aside><small>Records</small><b>{rows.length}</b><em>Tap a record to inspect, edit, approve or open the full record only when needed.</em></aside></section><section className="xcf-workspace-list">{rows.length ? rows.slice(0, 40).map((x, i) => <Row key={`${area}-${i}`} item={x} onPick={onPick} />) : <Empty />}</section><BottomNav /></main>;
 }
 
-function DetailDrawer({ picked, onClose }) {
+function EditableField({ label, value, onChange, textarea = false }) {
+  return <label className="xcf-edit-field"><span>{label}</span>{textarea ? <textarea value={value} onChange={(e) => onChange(e.target.value)} /> : <input value={value} onChange={(e) => onChange(e.target.value)} />}</label>;
+}
+
+function DetailDrawer({ picked, onClose, onAction }) {
+  const [draft, setDraft] = useState({ title: "", meta: "", status: "" });
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    setDraft({ title: picked?.title || "", meta: picked?.meta || "", status: picked?.state || "" });
+    setNotice("");
+    setBusy(false);
+  }, [picked]);
+
   if (!picked) return null;
-  return <aside className="xcf-drawer"><button type="button" onClick={onClose}>Close</button><p>{picked.type}</p><h2>{picked.title}</h2><span>{picked.meta}</span><dl><div><dt>Status</dt><dd>{picked.state}</dd></div><div><dt>Value</dt><dd>{Number(picked.amount || 0) > 0 ? cash(picked.amount) : "—"}</dd></div><div><dt>Code</dt><dd>{picked.code}</dd></div></dl>{picked.href && picked.href !== "#" && <Link to={picked.href}>Open record</Link>}</aside>;
+  const isGroup = picked.type === "action_group";
+  const items = picked.items || [];
+
+  const run = async (action) => {
+    setBusy(true);
+    setNotice("");
+    const msg = await onAction(action, picked, draft);
+    setNotice(msg);
+    setBusy(false);
+  };
+
+  return <aside className={`xcf-drawer xcf-drawer-${isGroup ? "group" : "record"}`}>
+    <button className="xcf-close" type="button" onClick={onClose}>Close</button>
+    <p>{picked.code || picked.type}</p>
+    <h2>{picked.title}</h2>
+    <span>{picked.meta}</span>
+
+    {isGroup ? <div className="xcf-slip-list">
+      {items.length ? items.slice(0, 12).map((x, i) => <button className="xcf-slip-row" type="button" key={`${x.type}-${x.id}-${i}`} onClick={() => setDraft({ title: x.title, meta: x.meta, status: x.state })}>
+        <b>{x.title}</b><small>{x.code} · {x.meta}</small><em>{Number(x.amount || 0) > 0 ? cash(x.amount) : x.state}</em>
+      </button>) : <Empty text="Nothing waiting in this slip." />}
+    </div> : <>
+      <dl><div><dt>Status</dt><dd>{picked.state}</dd></div><div><dt>Value</dt><dd>{Number(picked.amount || 0) > 0 ? cash(picked.amount) : "—"}</dd></div><div><dt>Code</dt><dd>{picked.code}</dd></div></dl>
+      <EditableField label="Title" value={draft.title} onChange={(v) => setDraft((d) => ({ ...d, title: v }))} />
+      <EditableField label="Notes / description" value={draft.meta} onChange={(v) => setDraft((d) => ({ ...d, meta: v }))} textarea />
+      <EditableField label="Status" value={draft.status} onChange={(v) => setDraft((d) => ({ ...d, status: v }))} />
+    </>}
+
+    <div className="xcf-drawer-actions">
+      {!isGroup && <button type="button" disabled={busy} onClick={() => run("save")}>Save changes</button>}
+      <button type="button" disabled={busy} onClick={() => run("approve")}>{isGroup ? "Approve selected" : "Approve"}</button>
+      <button type="button" disabled={busy} onClick={() => run("invoice")}>Prepare invoice</button>
+      <button type="button" disabled={busy} onClick={() => run("message")}>Draft message</button>
+      {picked.href && picked.href !== "#" && <Link to={picked.href}>Full page</Link>}
+    </div>
+    {notice && <strong className="xcf-drawer-notice">{notice}</strong>}
+  </aside>;
+}
+
+async function runRecordAction(action, picked, draft, api, reload) {
+  if (!picked || picked.type === "action_group") return "Open a record inside the slip first.";
+  const id = picked.id;
+  if (!id && ["save", "approve", "invoice"].includes(action)) return "This record has no saved ID yet.";
+  const titlePayload = { title: draft.title, description: draft.meta, status: draft.status };
+
+  try {
+    if (action === "save") {
+      const endpoint = picked.type === "invoice" ? `/invoices/${id}` : picked.type === "quote" ? `/quotes/${id}` : picked.type === "client" ? `/clients/${id}` : `/jobs/${id}`;
+      const res = await api.patch(endpoint, titlePayload);
+      await reload();
+      return res?.success ? "Saved in this slip." : `Could not save: ${res?.error || "unknown error"}`;
+    }
+    if (action === "approve") {
+      if (picked.type === "invoice") {
+        const res = await api.patch(`/invoices/${id}`, { status: "approved" });
+        await reload();
+        return res?.success ? "Invoice approved." : `Could not approve: ${res?.error || "unknown error"}`;
+      }
+      const res = await api.patch(`/jobs/${id}`, { owner_review_status: "approved", work_review_status: "approved", reviewed: true });
+      await reload();
+      return res?.success ? "Work approved." : `Could not approve: ${res?.error || "unknown error"}`;
+    }
+    if (action === "invoice") {
+      if (picked.type === "job") return "Use Full page only if you need the full invoice form. Draft invoice action stays here next.";
+      return "Invoice prep is ready in the slip. Select a job first.";
+    }
+    if (action === "message") return "Message draft stays in this slip next; no page jump needed.";
+  } catch (err) {
+    return `Action failed: ${err?.message || "unknown error"}`;
+  }
+  return "Action ready.";
 }
 
 export default function ConceptCPageExact({ area = "dashboard" }) {
-  const { get } = useApi();
-  const { data, loading } = useLive(area, get);
+  const api = useApi();
+  const { get } = api;
+  const { data, loading, reload } = useLive(area, get);
   const m = useMemo(() => build(data), [data]);
   const [picked, setPicked] = useState(null);
-  return <>{area === "dashboard" ? <Dashboard m={m} loading={loading} onPick={setPicked} /> : <Workspace area={area} m={m} loading={loading} onPick={setPicked} />}<DetailDrawer picked={picked} onClose={() => setPicked(null)} /></>;
+  const onAction = useCallback((action, record, draft) => runRecordAction(action, record, draft, api, reload), [api, reload]);
+
+  return <>{area === "dashboard" ? <Dashboard m={m} loading={loading} onPick={setPicked} /> : <Workspace area={area} m={m} loading={loading} onPick={setPicked} />}<DetailDrawer picked={picked} onClose={() => setPicked(null)} onAction={onAction} /></>;
 }
