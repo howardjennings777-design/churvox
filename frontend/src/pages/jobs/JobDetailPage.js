@@ -106,6 +106,28 @@ function collectJobPhotos(job) {
   return urls;
 }
 
+function gpsValue(job, ...keys) {
+  for (const key of keys) {
+    const value = job?.[key];
+    if (value !== undefined && value !== null && String(value).trim() !== "") return value;
+  }
+  return "";
+}
+
+function gpsPair(job, prefix) {
+  const lat = gpsValue(job, `${prefix}_lat`, `${prefix}_location_lat`, `${prefix}_latitude`, `${prefix}_gps_lat`);
+  const lng = gpsValue(job, `${prefix}_lng`, `${prefix}_location_lng`, `${prefix}_longitude`, `${prefix}_gps_lng`);
+  return lat !== "" && lng !== "" ? { lat, lng } : null;
+}
+
+function gpsStatus(job, prefix) {
+  return gpsValue(job, `${prefix}_location_status`, `${prefix}_status`, "location_status") || "unknown";
+}
+
+function gpsCapturedAt(job, prefix) {
+  return gpsValue(job, `${prefix}_location_captured_at`, `${prefix}_captured_at`, "location_captured_at");
+}
+
 export default function JobDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -373,6 +395,7 @@ export default function JobDetailPage() {
   const isInvoicedFromReview = workReviewStatus === "invoiced" || job?.invoiced || !!job?.invoice_id;
   const ownerPhotos = collectJobPhotos(job);
   const selectedPhoto = selectedPhotoIndex !== null ? ownerPhotos[selectedPhotoIndex] : null;
+  const startGps = gpsPair(job, "start");
 
   return (
     <Layout>
@@ -783,22 +806,22 @@ export default function JobDetailPage() {
           </div>
         )}
 
-        {isOwnerView && (job.location_status || job.start_lat != null) && (
-          <Card className="bg-white border-slate-200 shadow-sm" data-testid="owner-gps-card">
+        {isOwnerView && (gpsStatus(job, "start") !== "unknown" || startGps) && (
+          <Card className="bg-white border-slate-200 shadow-sm" data-testid="owner-gps-card" data-marker="CHURVOX_JOB_DETAIL_OWNER_GPS_FIELD_HARDENING_20260525">
             <CardContent className="p-5 space-y-2">
               <div className="text-slate-900 font-semibold">Start Location</div>
               <div className="text-sm text-slate-600">
-                Status: <span className="font-medium">{job.location_status || "unknown"}</span>
+                Status: <span className="font-medium">{gpsStatus(job, "start")}</span>
               </div>
-              {job.start_lat != null && job.start_lng != null && (
+              {startGps && (
                 <div className="text-sm text-slate-600">
-                  Coords: {Number(job.start_lat).toFixed(5)}, {Number(job.start_lng).toFixed(5)}
+                  Coords: {Number(startGps.lat).toFixed(5)}, {Number(startGps.lng).toFixed(5)}
                   {" · "}
-                  <a className="text-churvox-accent hover:underline" href={`https://www.google.com/maps?q=${job.start_lat},${job.start_lng}`} target="_blank" rel="noreferrer">open in Google Maps</a>
+                  <a className="text-churvox-accent hover:underline" href={`https://www.google.com/maps?q=${startGps.lat},${startGps.lng}`} target="_blank" rel="noreferrer">open in Google Maps</a>
                 </div>
               )}
-              {job.location_captured_at && (
-                <div className="text-xs text-slate-400">Captured: {safeDate(job.location_captured_at)}</div>
+              {gpsCapturedAt(job, "start") && (
+                <div className="text-xs text-slate-400">Captured: {safeDate(gpsCapturedAt(job, "start"))}</div>
               )}
             </CardContent>
           </Card>
