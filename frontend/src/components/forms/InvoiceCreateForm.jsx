@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-const CHURVOX_INVOICE_JOB_PREFILL_MARKER = "CHURVOX_INVOICE_JOB_PREFILL_FROM_WORK_REVIEW_20260525";
+const CHURVOX_INVOICE_JOB_PREFILL_MARKER = "CHURVOX_INVOICE_JOB_LINK_BACK_20260525";
 
 function getJobIdFromUrl() {
   const params = new URLSearchParams(window.location.search || "");
@@ -33,8 +33,12 @@ function buildJobDescription(job) {
   );
 }
 
+function getRecordId(record) {
+  return record?.id || record?._id || record?.invoice_id || "";
+}
+
 export default function InvoiceCreateForm({ onSuccess, onCancel, submitLabel = "Create invoice" }) {
-  const { get, post, loading } = useApi();
+  const { get, post, patch, loading } = useApi();
   const [clients, setClients] = useState([]);
   const [prefilledJobId, setPrefilledJobId] = useState("");
   const [prefillNotice, setPrefillNotice] = useState("");
@@ -124,7 +128,22 @@ export default function InvoiceCreateForm({ onSuccess, onCancel, submitLabel = "
       subtotal: Number(formData.subtotal),
       gst_rate: Number(formData.gst_rate),
     });
-    if (res?.success) onSuccess?.(res.data);
+
+    if (res?.success) {
+      const invoice = res.data || {};
+      const invoiceId = getRecordId(invoice);
+      if (formData.job_id && invoiceId) {
+        await patch(`/jobs/${formData.job_id}`, {
+          invoice_id: invoiceId,
+          draft_invoice_id: invoiceId,
+          invoiced: true,
+          invoice_created_at: new Date().toISOString(),
+          work_review_status: "invoiced",
+          review_status: "invoiced",
+        });
+      }
+      onSuccess?.(invoice);
+    }
   };
 
   return (
