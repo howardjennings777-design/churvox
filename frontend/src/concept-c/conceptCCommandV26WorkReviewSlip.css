@@ -1,5 +1,6 @@
 /* CHURVOX_COMMAND_FLOOR_V31_WORK_REVIEW_DETAILS_20260525 */
 /* CHURVOX_RENDER_FORCE_DEPLOY_WORK_REVIEW_20260525_0105 */
+/* CHURVOX_WORK_REVIEW_ACTION_BUTTON_POLISH_20260525 */
 .cc-work-review{border-color:#bbf7d0!important}
 .cc-work-review header h2{color:#14532d!important}
 .cc-work-extra{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;margin-top:14px!important}
@@ -8,5 +9,8 @@
 .cc-work-extra span{display:block!important;color:#64748b!important;font-size:.72rem!important;font-weight:900!important;text-transform:uppercase!important;letter-spacing:.08em!important}
 .cc-work-extra b{display:block!important;color:#071225!important;font-size:.9rem!important;font-weight:950!important;margin-top:5px!important;overflow-wrap:anywhere!important}
 .cc-work-extra p{margin:7px 0 0!important;color:#334155!important;font-size:.88rem!important;font-weight:720!important;line-height:1.45!important}
-.cc-drawer:has(.cc-work-extra){width:min(860px,calc(100vw - 32px))!important}
-@media(max-width:700px){.cc-work-extra{grid-template-columns:1fr!important}}
+.cc-drawer{width:min(860px,calc(100vw - 32px))!important}
+.cc-drawer section button,.cc-drawer section a{min-height:44px!important;border-radius:999px!important;padding:0 16px!important;font-size:.82rem!important;font-weight:950!important;text-decoration:none!important;cursor:pointer!important}
+.cc-work-approve{border:0!important;background:#16a34a!important;color:#fff!important}
+.cc-work-sendback{border:0!important;background:#ef4444!important;color:#fff!important}
+@media(max-width:700px){.cc-work-extra{grid-template-columns:1fr!important}.cc-drawer section{display:grid!important;grid-template-columns:1fr!important}.cc-drawer section button,.cc-drawer section a{width:100%!important}}
