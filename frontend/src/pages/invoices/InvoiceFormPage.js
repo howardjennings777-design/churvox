@@ -13,7 +13,10 @@ import { PremiumPage, PremiumHero, PremiumCard, PremiumButton } from "@/componen
 import InvoiceCreateForm from "@/components/forms/InvoiceCreateForm";
 
 function invoiceIdOf(invoice) {
-  return invoice?.id || invoice?._id || invoice?.invoice_id || "";
+  if (!invoice) return "";
+  const direct = invoice.id || invoice._id || invoice.invoice_id;
+  if (direct) return String(direct);
+  return invoiceIdOf(invoice.data || invoice.invoice || invoice.record || invoice.result || invoice.item);
 }
 
 export default function InvoiceFormPage() {
@@ -115,7 +118,7 @@ export default function InvoiceFormPage() {
       : await post("/invoices", invoiceData);
 
     if (result.success) {
-      const createdId = invoiceIdOf(result.data || result.invoice || result);
+      const createdId = invoiceIdOf(result);
       toast.success(isEdit ? "Invoice updated" : "Invoice created");
       if (!isEdit && createdId) {
         navigate(`/invoices/${createdId}`);
@@ -160,7 +163,7 @@ export default function InvoiceFormPage() {
           icon={<Receipt className="h-6 w-6" />}
         />
 
-        <form onSubmit={handleSubmit} className="space-y-6" data-testid="invoice-form-page" data-marker="CHURVOX_OPEN_INVOICE_AFTER_CREATE_20260525">
+        <form onSubmit={handleSubmit} className="space-y-6" data-testid="invoice-form-page" data-marker="CHURVOX_HARDEN_CREATED_INVOICE_NAVIGATION_20260525">
           <PremiumCard title="Customer details" icon={<Receipt className="h-5 w-5" />}>
             <div className="space-y-4">
               <div className="space-y-2">
