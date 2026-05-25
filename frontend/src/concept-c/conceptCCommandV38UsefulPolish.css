@@ -1,4 +1,4 @@
-/* CHURVOX_COMMAND_FLOOR_V38_USEFUL_POLISH_20260526 */
+/* CHURVOX_COMMAND_FLOOR_V39_USEFUL_POLISH_TIGHTEN_20260526 */
 /* CSS-only Command Floor usefulness pass. No auth, route, API, backend, billing, or data wiring touched. */
 
 html body main.cc-app {
@@ -9,17 +9,19 @@ html body main.cc-app {
 }
 
 html body main.cc-app section.cc-main {
-  grid-template-rows: 42px 88px 82px minmax(0,1fr) !important;
-  gap: 12px !important;
+  grid-template-rows: 42px 86px 78px minmax(0,1fr) !important;
+  gap: 11px !important;
 }
 
-/* Header/search: one clean search label only */
+/* Header: stop duplicate search wording and keep one short, useful label. */
 html body main.cc-app .cc-search {
   color: transparent !important;
   font-size: 0 !important;
   justify-content: flex-start !important;
   gap: 0 !important;
   overflow: hidden !important;
+  max-width: 330px !important;
+  min-width: 260px !important;
 }
 
 html body main.cc-app .cc-search em,
@@ -28,19 +30,30 @@ html body main.cc-app .cc-search * {
 }
 
 html body main.cc-app .cc-search:after {
-  content: "Find jobs, clients and invoices" !important;
+  content: "Quick find" !important;
   display: block !important;
   color: #dbeafe !important;
   font-size: .74rem !important;
-  font-weight: 900 !important;
+  font-weight: 950 !important;
   line-height: 1 !important;
   white-space: nowrap !important;
 }
 
-/* Hero: remove oversized mark and turn badge into useful next action */
+html body main.cc-app .cc-top nav {
+  gap: 8px !important;
+}
+
+html body main.cc-app .cc-top nav a {
+  min-height: 30px !important;
+  padding: 0 12px !important;
+  border-radius: 999px !important;
+  font-size: .72rem !important;
+}
+
+/* Hero: useful, but not noisy. */
 html body main.cc-app .cc-modern-hero {
-  min-height: 88px !important;
-  padding: 15px 18px !important;
+  min-height: 86px !important;
+  padding: 14px 18px !important;
   border-radius: 26px !important;
   background:
     radial-gradient(circle at 5% 0%, rgba(37,99,235,.12), transparent 31%),
@@ -54,17 +67,17 @@ html body main.cc-app .cc-modern-hero:before {
 }
 
 html body main.cc-app .cc-modern-hero h1 {
-  font-size: clamp(2.12rem, 2.78vw, 3.45rem) !important;
+  font-size: clamp(2.08rem, 2.7vw, 3.36rem) !important;
   letter-spacing: -.082em !important;
 }
 
 html body main.cc-app .cc-modern-hero strong {
-  min-width: 312px !important;
+  min-width: 292px !important;
   display: grid !important;
   gap: 3px !important;
   align-self: center !important;
   border-radius: 18px !important;
-  padding: 11px 14px !important;
+  padding: 10px 13px !important;
   border: 1px solid rgba(37,99,235,.16) !important;
   background: linear-gradient(135deg, rgba(239,246,255,.98), rgba(255,255,255,.96)) !important;
   color: transparent !important;
@@ -74,22 +87,22 @@ html body main.cc-app .cc-modern-hero strong {
 html body main.cc-app .cc-modern-hero strong:before {
   content: "NEXT BEST ACTION" !important;
   color: #2563eb !important;
-  font-size: .62rem !important;
+  font-size: .6rem !important;
   font-weight: 950 !important;
   letter-spacing: .14em !important;
 }
 
 html body main.cc-app .cc-modern-hero strong:after {
-  content: "Review finished work → create invoices → dispatch gaps" !important;
+  content: "Review work → invoice → dispatch gaps" !important;
   color: #07111f !important;
-  font-size: .78rem !important;
+  font-size: .76rem !important;
   font-weight: 920 !important;
   letter-spacing: -.01em !important;
 }
 
 /* Snapshot: make the numbers feel like operating controls */
 html body main.cc-app .cc-snapshot {
-  gap: 12px !important;
+  gap: 10px !important;
 }
 
 html body main.cc-app .cc-stat {
@@ -128,7 +141,6 @@ html body main.cc-app .cc-stat.gold:after { background:#f59e0b !important; box-s
 html body main.cc-app .cc-stat.red:before { background: rgba(239,68,68,.12) !important; }
 html body main.cc-app .cc-stat.red:after { background:#ef4444 !important; box-shadow:9px 0 0 rgba(239,68,68,.42),18px 0 0 rgba(239,68,68,.20) !important; }
 
-/* Stronger dashboard layout: the owner sees work, crew, money, then details */
 html body main.cc-app .cc-grid {
   grid-template-columns: 1.06fr 1.24fr 1fr !important;
   grid-template-rows: minmax(0, 1.04fr) minmax(0, .9fr) !important;
@@ -143,7 +155,7 @@ html body main.cc-app .cc-panel {
 }
 
 html body main.cc-app .cc-panel header {
-  min-height: 48px !important;
+  min-height: 46px !important;
   background: linear-gradient(180deg, rgba(255,255,255,.99), rgba(246,250,253,.96)) !important;
 }
 
@@ -153,7 +165,6 @@ html body main.cc-app .cc-panel h2 {
   text-transform: none !important;
 }
 
-/* Take Action becomes an operator-prepared work tray */
 html body main.cc-app .cc-actions {
   border-color: rgba(239,68,68,.13) !important;
 }
@@ -162,12 +173,12 @@ html body main.cc-app .cc-actions header:after {
   content: "Grouped work, not noise" !important;
   display: inline-flex !important;
   align-items: center !important;
-  height: 28px !important;
+  height: 26px !important;
   border-radius: 999px !important;
-  padding: 0 10px !important;
+  padding: 0 9px !important;
   color: #991b1b !important;
   background: rgba(239,68,68,.08) !important;
-  font-size: .66rem !important;
+  font-size: .62rem !important;
   font-weight: 950 !important;
 }
 
@@ -199,14 +210,14 @@ html body main.cc-app .cc-actions footer {
   border-top: 1px solid rgba(37,99,235,.10) !important;
   background: linear-gradient(135deg, rgba(239,246,255,.86), rgba(255,255,255,.94)) !important;
   color: transparent !important;
-  min-height: 58px !important;
+  min-height: 54px !important;
 }
 
 html body main.cc-app .cc-actions footer:before {
   content: "AI reasoning" !important;
   display: block !important;
   color: #2563eb !important;
-  font-size: .63rem !important;
+  font-size: .61rem !important;
   font-weight: 950 !important;
   letter-spacing: .14em !important;
   text-transform: uppercase !important;
@@ -214,15 +225,14 @@ html body main.cc-app .cc-actions footer:before {
 }
 
 html body main.cc-app .cc-actions footer:after {
-  content: "Churvox is surfacing admin that can unblock money, workers, or customer follow-up first." !important;
+  content: "Churvox surfaces the admin that can unlock money, workers, or customer follow-up first." !important;
   display: block !important;
   color: #334155 !important;
-  font-size: .76rem !important;
+  font-size: .73rem !important;
   font-weight: 780 !important;
-  line-height: 1.35 !important;
+  line-height: 1.32 !important;
 }
 
-/* Crew panel feels operational instead of decorative */
 html body main.cc-app .cc-live {
   border-color: rgba(34,197,94,.13) !important;
 }
@@ -234,7 +244,7 @@ html body main.cc-app .cc-live-grid {
 
 html body main.cc-app .cc-live-map-open {
   position: relative !important;
-  min-height: 176px !important;
+  min-height: 172px !important;
   overflow: hidden !important;
 }
 
@@ -269,21 +279,20 @@ html body main.cc-app .cc-live footer {
 html body main.cc-app .cc-live footer:after {
   content: "Owner only: tap any worker/job to open the full slip." !important;
   color: #64748b !important;
-  font-size: .76rem !important;
+  font-size: .74rem !important;
   font-weight: 820 !important;
 }
 
-/* Money card: make cash queue clearer */
 html body main.cc-app .cc-money header:after {
   content: "Invoice queue" !important;
   display: inline-flex !important;
   align-items: center !important;
-  height: 28px !important;
+  height: 26px !important;
   border-radius: 999px !important;
-  padding: 0 10px !important;
+  padding: 0 9px !important;
   color: #92400e !important;
   background: rgba(245,158,11,.12) !important;
-  font-size: .66rem !important;
+  font-size: .62rem !important;
   font-weight: 950 !important;
 }
 
@@ -299,7 +308,6 @@ html body main.cc-app .cc-money-main b {
   font-size: clamp(1.8rem, 2.6vw, 2.7rem) !important;
 }
 
-/* Work review deserves stronger attention */
 html body main.cc-app .cc-work-review {
   border-color: rgba(22,163,74,.18) !important;
 }
@@ -308,16 +316,15 @@ html body main.cc-app .cc-work-review header:after {
   content: "Approve → invoice" !important;
   display: inline-flex !important;
   align-items: center !important;
-  height: 28px !important;
+  height: 26px !important;
   border-radius: 999px !important;
-  padding: 0 10px !important;
+  padding: 0 9px !important;
   color: #166534 !important;
   background: rgba(34,197,94,.11) !important;
-  font-size: .66rem !important;
+  font-size: .62rem !important;
   font-weight: 950 !important;
 }
 
-/* Bottom dock: clearer, less plain */
 html body main.cc-app > aside.cc-side {
   height: 70px !important;
   min-height: 70px !important;
@@ -363,7 +370,7 @@ html body main.cc-app > aside.cc-side nav a:first-child:after {
     grid-template-rows: auto !important;
   }
   html body main.cc-app .cc-modern-hero strong {
-    min-width: 260px !important;
+    min-width: 250px !important;
   }
 }
 
