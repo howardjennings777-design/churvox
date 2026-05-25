@@ -605,14 +605,14 @@ export default function JobDetailPage() {
                 <div className="rounded border border-slate-200 p-3">
                   <div className="text-sm font-semibold text-slate-900">Arrived / started</div>
                   <div className="text-sm text-slate-700">{safeDate(job?.started_at)}</div>
-                  <div className="text-xs text-slate-500">{formatMeters(job?.start_distance_from_site_meters)} · {niceStatus(job?.start_location_status)}</div>
-                  {startGps && <a className="text-xs text-churvox-accent hover:underline" href={`https://maps.google.com/?q=${startGps.lat},${startGps.lng}`} target="_blank" rel="noreferrer" data-marker="CHURVOX_VISIT_TIMELINE_HARDENED_START_MAP_20260525">Open start map</a>}
+                  <div className="text-xs text-slate-500">{formatMeters(job?.start_distance_from_site_meters)} · {niceStatus(gpsStatus(job, "start"))}</div>
+                  {startGps && <a className="text-xs text-churvox-accent hover:underline" href={`https://maps.google.com/?q=${startGps.lat},${startGps.lng}`} target="_blank" rel="noreferrer" data-marker="CHURVOX_VISIT_TIMELINE_HARDENED_START_STATUS_MAP_20260525">Open start map</a>}
                 </div>
                 <div className="rounded border border-slate-200 p-3">
                   <div className="text-sm font-semibold text-slate-900">Completed / left</div>
                   <div className="text-sm text-slate-700">{safeDate(job?.completed_at)}</div>
-                  <div className="text-xs text-slate-500">{formatMeters(job?.end_distance_from_site_meters)} · {niceStatus(job?.end_location_status)}</div>
-                  {endGps && <a className="text-xs text-churvox-accent hover:underline" href={`https://maps.google.com/?q=${endGps.lat},${endGps.lng}`} target="_blank" rel="noreferrer" data-marker="CHURVOX_VISIT_TIMELINE_HARDENED_FINISH_MAP_20260525">Open finish map</a>}
+                  <div className="text-xs text-slate-500">{formatMeters(job?.end_distance_from_site_meters)} · {niceStatus(gpsStatus(job, "end"))}</div>
+                  {endGps && <a className="text-xs text-churvox-accent hover:underline" href={`https://maps.google.com/?q=${endGps.lat},${endGps.lng}`} target="_blank" rel="noreferrer" data-marker="CHURVOX_VISIT_TIMELINE_HARDENED_FINISH_STATUS_MAP_20260525">Open finish map</a>}
                 </div>
               </div>
               <div>
