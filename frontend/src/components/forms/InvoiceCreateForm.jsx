@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-const CHURVOX_INVOICE_JOB_PREFILL_MARKER = "CHURVOX_INVOICE_CREATE_FEEDBACK_20260525";
+const CHURVOX_INVOICE_JOB_PREFILL_MARKER = "CHURVOX_INVOICE_AMOUNT_VALIDATION_20260525";
 
 function getJobIdFromUrl() {
   const params = new URLSearchParams(window.location.search || "");
@@ -17,6 +17,19 @@ function firstValue(...values) {
     if (value !== undefined && value !== null && String(value).trim() !== "") return value;
   }
   return "";
+}
+
+function toMoneyNumber(value) {
+  const cleaned = String(value ?? "").replace(/[^0-9.-]/g, "");
+  const number = Number(cleaned);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function toGstNumber(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) return 0;
+  if (number > 100) return 100;
+  return number;
 }
 
 function moneyValue(job) {
@@ -79,6 +92,7 @@ export default function InvoiceCreateForm({ onSuccess, onCancel, submitLabel = "
       const clientId = firstValue(job.client_id, job.customer_id);
       const client = clients.find((c) => String(c.id || c._id) === String(clientId));
       const amount = moneyValue(job);
+      const amountNumber = toMoneyNumber(amount);
 
       setFormData((prev) => ({
         ...prev,
@@ -88,11 +102,11 @@ export default function InvoiceCreateForm({ onSuccess, onCancel, submitLabel = "
         customer_email: firstValue(job.customer_email, job.client_email, client?.email, prev.customer_email),
         address: firstValue(job.address, job.site_address, job.job_address, client?.address, prev.address),
         description: buildJobDescription(job) || prev.description,
-        subtotal: amount !== "" ? String(amount) : prev.subtotal,
+        subtotal: amountNumber > 0 ? String(amountNumber) : prev.subtotal,
         notes: firstValue(job.invoice_notes, job.completion_notes, prev.notes),
       }));
 
-      setPrefillNotice("Invoice prefilled from the reviewed job. Check the amount before creating.");
+      setPrefillNotice(amountNumber > 0 ? "Invoice prefilled from the reviewed job. Check the amount before creating." : "Invoice prefilled from the reviewed job, but no job price was found. Add the subtotal before creating.");
       setPrefilledJobId(jobId);
     };
 
@@ -124,6 +138,9 @@ export default function InvoiceCreateForm({ onSuccess, onCancel, submitLabel = "
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const subtotalNumber = toMoneyNumber(formData.subtotal);
+    const gstNumber = toGstNumber(formData.gst_rate);
+
     if (!String(formData.customer_name || "").trim()) {
       toast.error("Customer name is required");
       return;
@@ -132,9 +149,12 @@ export default function InvoiceCreateForm({ onSuccess, onCancel, submitLabel = "
       toast.error("Description is required");
       return;
     }
-    if (!formData.subtotal || Number(formData.subtotal) <= 0) {
+    if (subtotalNumber <= 0) {
       toast.error("Enter a valid invoice subtotal");
       return;
+    }
+    if (Number(formData.gst_rate) !== gstNumber) {
+      toast.warning("GST was adjusted to a valid percentage.");
     }
 
     setSaving(true);
@@ -143,8 +163,8 @@ export default function InvoiceCreateForm({ onSuccess, onCancel, submitLabel = "
         ...formData,
         client_id: formData.client_id || null,
         job_id: formData.job_id || null,
-        subtotal: Number(formData.subtotal),
-        gst_rate: Number(formData.gst_rate),
+        subtotal: subtotalNumber,
+        gst_rate: gstNumber,
       });
 
       if (!res?.success) {
@@ -178,6 +198,10 @@ export default function InvoiceCreateForm({ onSuccess, onCancel, submitLabel = "
   };
 
   const busy = loading || saving;
+  const subtotalPreview = toMoneyNumber(formData.subtotal);
+  const gstPreview = toGstNumber(formData.gst_rate);
+  const gstAmount = subtotalPreview * (gstPreview / 100);
+  const totalPreview = subtotalPreview + gstAmount;
 
   return (
     <form onSubmit={handleSubmit} className="min-h-full flex flex-col" data-marker={CHURVOX_INVOICE_JOB_PREFILL_MARKER}>
@@ -201,8 +225,13 @@ export default function InvoiceCreateForm({ onSuccess, onCancel, submitLabel = "
           <div><Label>Address</Label><Input name="address" value={formData.address} onChange={handleChange}/></div>
           <div><Label>Description *</Label><Textarea name="description" value={formData.description} onChange={handleChange} required /></div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Subtotal *</Label><Input name="subtotal" type="number" step="0.01" value={formData.subtotal} onChange={handleChange} required/></div>
-            <div><Label>GST %</Label><Input name="gst_rate" type="number" value={formData.gst_rate} onChange={handleChange}/></div>
+            <div><Label>Subtotal *</Label><Input name="subtotal" type="number" step="0.01" min="0" value={formData.subtotal} onChange={handleChange} required/></div>
+            <div><Label>GST %</Label><Input name="gst_rate" type="number" min="0" max="100" step="0.5" value={formData.gst_rate} onChange={handleChange}/></div>
+          </div>
+          <div className="rounded-2xl border border-[#d8e3f3] bg-[#f8fafc] p-3 text-sm text-[#334155] space-y-1">
+            <div className="flex justify-between"><span>Subtotal</span><b>${subtotalPreview.toFixed(2)}</b></div>
+            <div className="flex justify-between"><span>GST ({gstPreview}%)</span><b>${gstAmount.toFixed(2)}</b></div>
+            <div className="flex justify-between border-t border-[#d8e3f3] pt-2 text-[#071225]"><span>Total</span><b>${totalPreview.toFixed(2)}</b></div>
           </div>
         </div>
       </div>
