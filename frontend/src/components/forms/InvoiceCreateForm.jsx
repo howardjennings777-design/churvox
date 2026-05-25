@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-const CHURVOX_INVOICE_JOB_PREFILL_MARKER = "CHURVOX_INVOICE_AMOUNT_VALIDATION_20260525";
+const CHURVOX_INVOICE_JOB_PREFILL_MARKER = "CHURVOX_WORK_REVIEW_INVOICE_LINKBACK_HARDENED_20260525";
 
 function getJobIdFromUrl() {
   const params = new URLSearchParams(window.location.search || "");
@@ -48,7 +48,10 @@ function buildJobDescription(job) {
 }
 
 function getRecordId(record) {
-  return record?.id || record?._id || record?.invoice_id || "";
+  if (!record) return "";
+  const direct = record.id || record._id || record.invoice_id;
+  if (direct) return String(direct);
+  return getRecordId(record.data || record.invoice || record.record || record.result || record.item);
 }
 
 export default function InvoiceCreateForm({ onSuccess, onCancel, submitLabel = "Create invoice" }) {
@@ -172,8 +175,8 @@ export default function InvoiceCreateForm({ onSuccess, onCancel, submitLabel = "
         return;
       }
 
-      const invoice = res.data || {};
-      const invoiceId = getRecordId(invoice);
+      const invoice = res.data || res.invoice || res.record || res.result || res;
+      const invoiceId = getRecordId(res);
       if (formData.job_id && invoiceId) {
         const linkRes = await patch(`/jobs/${formData.job_id}`, {
           invoice_id: invoiceId,
