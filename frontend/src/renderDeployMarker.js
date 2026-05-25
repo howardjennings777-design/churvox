@@ -1,1 +1,1 @@
-export const renderDeployMarker = 'CHURVOX_COMMAND_FLOOR_HARD_RESHAPE_20260524';
+export const renderDeployMarker = 'CHURVOX_EMERGENCY_REDEPLOY_ASSET_REFRESH_20260526';
