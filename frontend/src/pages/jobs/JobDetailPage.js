@@ -529,7 +529,7 @@ export default function JobDetailPage() {
             ) : hasValue(job.notes) ? (
               <div>
                 <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">Notes</div>
-                <div className="text-white whitespace-pre-wrap">{job.notes}</div>
+                <div className="text-slate-800 whitespace-pre-wrap" data-marker="CHURVOX_JOB_DETAIL_VISIBLE_NOTES_TEXT_20260525">{job.notes}</div>
               </div>
             ) : null}
           </CardContent>
