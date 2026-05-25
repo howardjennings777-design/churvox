@@ -5,6 +5,7 @@ import './index.css';
 import './styles/churvoxFullPageModals.css';
 import './concept-c/conceptC.css';
 import './concept-c/conceptCHybridWorkspace.css';
+import './styles/churvox-safe-modern-command-floor.css';
 import './workhorseLiveCheck';
 import './renderDeployMarker';
 import './deploy/guidedOperatorFloorDeployMarker';
