@@ -74,6 +74,14 @@ function workerMatchesJobRegion(worker, job) {
   return jobCountry === workerCountry && jobRegion === workerRegion;
 }
 
+function getWorkReviewStatus(job) {
+  return norm(job?.work_review_status || job?.review_status || job?.owner_review_status || "");
+}
+
+function getSendBackNote(job) {
+  return safeText(job?.send_back_note || job?.owner_note || job?.worker_note || "", "");
+}
+
 export default function JobDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -328,10 +336,15 @@ export default function JobDetailPage() {
     user?.is_admin === true ||
     user?.is_owner === true;
   const hasAssignedWorker = !!(job?.assigned_worker_id || job?.assigned_worker_name);
+  const workReviewStatus = getWorkReviewStatus(job);
+  const sendBackNote = getSendBackNote(job);
+  const isSentBackFromReview = workReviewStatus === "sent_back" || job?.worker_action_required === true;
+  const isApprovedFromReview = workReviewStatus === "approved" || job?.work_approved || job?.owner_approved || job?.job_approved;
+  const isInvoicedFromReview = workReviewStatus === "invoiced" || job?.invoiced || !!job?.invoice_id;
 
   return (
     <Layout>
-      <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6" data-testid="job-detail-page">
+      <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6" data-testid="job-detail-page" data-marker="CHURVOX_JOB_DETAIL_WORK_REVIEW_STATE_20260525">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">
@@ -373,6 +386,35 @@ export default function JobDetailPage() {
             )}
           </div>
         </div>
+
+        {isSentBackFromReview && (
+          <Card className="border-orange-200 bg-orange-50 shadow-sm" data-testid="work-review-sent-back-banner">
+            <CardContent className="p-5 space-y-2">
+              <div className="text-orange-950 font-bold">Work Review: sent back to worker</div>
+              <div className="text-sm text-orange-900">
+                This job needs fixing before it can be approved or invoiced.
+              </div>
+              {sendBackNote && (
+                <div className="rounded-xl border border-orange-200 bg-white/80 p-3 text-sm text-orange-950 whitespace-pre-wrap">
+                  {sendBackNote}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {!isSentBackFromReview && (isApprovedFromReview || isInvoicedFromReview) && isOwnerView && (
+          <Card className="border-emerald-200 bg-emerald-50 shadow-sm" data-testid="work-review-approved-banner">
+            <CardContent className="p-5 space-y-2">
+              <div className="text-emerald-950 font-bold">
+                Work Review: {isInvoicedFromReview ? "invoiced" : "approved"}
+              </div>
+              <div className="text-sm text-emerald-900">
+                This completed job has been reviewed. {job?.invoice_id ? "An invoice is linked to this job." : "It is ready for invoice creation."}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="bg-white border-slate-200 shadow-sm">
           <CardContent className="p-5 space-y-4">
@@ -586,6 +628,20 @@ export default function JobDetailPage() {
               >
                 {saving ? "Saving..." : "Accept Job"}
               </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {isWorker && isSentBackFromReview && (
+          <Card className="border-orange-200 bg-orange-50 shadow-sm" data-testid="worker-send-back-note-card">
+            <CardContent className="p-5 space-y-2">
+              <div className="text-orange-950 font-bold">This job was sent back from Work Review</div>
+              <div className="text-sm text-orange-900">Fix the item below, add notes/photos if needed, then mark the job completed again.</div>
+              {sendBackNote && (
+                <div className="rounded-xl border border-orange-200 bg-white/80 p-3 text-sm text-orange-950 whitespace-pre-wrap">
+                  {sendBackNote}
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
