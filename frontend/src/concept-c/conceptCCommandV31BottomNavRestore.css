@@ -1,0 +1,209 @@
+/* CHURVOX_COMMAND_FLOOR_V31_BOTTOM_NAV_RESTORE_20260526 */
+/* CSS-only restore of the real ConceptCPage sidebar as a fixed bottom nav. No runtime JS. */
+
+html body main.cc-app {
+  grid-template-columns: 1fr !important;
+}
+
+html body main.cc-app > aside.cc-side {
+  display: grid !important;
+  position: fixed !important;
+  left: 18px !important;
+  right: 18px !important;
+  bottom: 14px !important;
+  top: auto !important;
+  z-index: 180 !important;
+  width: auto !important;
+  height: 66px !important;
+  min-height: 66px !important;
+  max-height: 66px !important;
+  grid-template-columns: 132px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 9px !important;
+  padding: 9px 11px !important;
+  border-radius: 30px !important;
+  border: 1px solid rgba(147, 197, 253, 0.28) !important;
+  background:
+    radial-gradient(circle at 10% 50%, rgba(14,165,233,.32), transparent 24%),
+    radial-gradient(circle at 44% 0%, rgba(99,102,241,.22), transparent 32%),
+    linear-gradient(135deg, rgba(3,7,18,.985), rgba(15,23,42,.965)) !important;
+  box-shadow:
+    0 28px 86px rgba(0,0,0,.44),
+    0 0 44px rgba(37,99,235,.24),
+    inset 0 1px 0 rgba(255,255,255,.13) !important;
+  backdrop-filter: blur(24px) saturate(1.35) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.35) !important;
+  overflow: hidden !important;
+}
+
+html body main.cc-app > aside.cc-side:before {
+  content: "" !important;
+  position: absolute !important;
+  left: 26px !important;
+  right: 26px !important;
+  top: 0 !important;
+  height: 1px !important;
+  background: linear-gradient(90deg, transparent, rgba(125,211,252,.98), rgba(59,130,246,.9), transparent) !important;
+  pointer-events: none !important;
+}
+
+html body main.cc-app > aside.cc-side .cc-side-brand {
+  position: relative !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  margin: 0 !important;
+  padding: 0 10px 0 44px !important;
+  border-radius: 18px !important;
+  color: #fff !important;
+  text-decoration: none !important;
+  background: rgba(255,255,255,.06) !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  box-shadow: none !important;
+}
+
+html body main.cc-app > aside.cc-side .cc-side-brand:before {
+  content: "C" !important;
+  position: absolute !important;
+  left: 9px !important;
+  top: 8px !important;
+  width: 28px !important;
+  height: 28px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 10px !important;
+  margin: 0 !important;
+  background: linear-gradient(135deg,#22d3ee,#2563eb) !important;
+  color: #fff !important;
+  font-size: .95rem !important;
+  font-weight: 950 !important;
+  box-shadow: 0 10px 24px rgba(37,99,235,.28) !important;
+}
+
+html body main.cc-app > aside.cc-side .cc-side-brand b {
+  display: block !important;
+  color: #fff !important;
+  font-size: .72rem !important;
+  line-height: 1.05 !important;
+  letter-spacing: .08em !important;
+  text-transform: uppercase !important;
+}
+
+html body main.cc-app > aside.cc-side .cc-side-brand span {
+  display: none !important;
+}
+
+html body main.cc-app > aside.cc-side nav {
+  display: grid !important;
+  grid-template-columns: repeat(10, minmax(0, 1fr)) !important;
+  align-items: center !important;
+  gap: 7px !important;
+  width: 100% !important;
+  height: 44px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+html body main.cc-app > aside.cc-side nav a {
+  position: relative !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  padding: 0 8px !important;
+  border-radius: 18px !important;
+  color: rgba(255,255,255,.78) !important;
+  text-decoration: none !important;
+  font-size: .72rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body main.cc-app > aside.cc-side nav a:before,
+html body main.cc-app > aside.cc-side nav a:after {
+  display: none !important;
+  content: none !important;
+}
+
+html body main.cc-app > aside.cc-side nav a:hover,
+html body main.cc-app > aside.cc-side nav a:first-child {
+  color: #fff !important;
+  background: linear-gradient(135deg,#2563eb,#1d4ed8) !important;
+  border-color: rgba(191,219,254,.40) !important;
+  box-shadow:
+    0 12px 28px rgba(37,99,235,.40),
+    inset 0 1px 0 rgba(255,255,255,.18) !important;
+}
+
+html body main.cc-app > aside.cc-side .cc-service {
+  display: none !important;
+}
+
+html body main.cc-app .cc-main {
+  padding-bottom: 102px !important;
+}
+
+html body main.cc-app .cc-modern-hero {
+  min-height: 86px !important;
+  padding: 14px 18px !important;
+}
+
+html body main.cc-app .cc-modern-hero h1 {
+  font-size: clamp(2rem, 2.75vw, 3.45rem) !important;
+}
+
+@media (max-width: 1100px) {
+  html body main.cc-app > aside.cc-side {
+    left: 10px !important;
+    right: 10px !important;
+    bottom: 10px !important;
+    grid-template-columns: 104px minmax(0, 1fr) !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+  }
+
+  html body main.cc-app > aside.cc-side::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html body main.cc-app > aside.cc-side nav {
+    min-width: 900px !important;
+    grid-template-columns: repeat(10, 86px) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html body main.cc-app > aside.cc-side {
+    grid-template-columns: 82px minmax(0, 1fr) !important;
+    height: 68px !important;
+    min-height: 68px !important;
+    max-height: 68px !important;
+    border-radius: 26px !important;
+  }
+
+  html body main.cc-app > aside.cc-side .cc-side-brand {
+    padding-left: 40px !important;
+  }
+
+  html body main.cc-app > aside.cc-side .cc-side-brand b {
+    font-size: 0 !important;
+  }
+
+  html body main.cc-app > aside.cc-side .cc-side-brand b:after {
+    content: "CV" !important;
+    font-size: .72rem !important;
+  }
+
+  html body main.cc-app > aside.cc-side nav {
+    min-width: 820px !important;
+    grid-template-columns: repeat(10, 78px) !important;
+  }
+}
