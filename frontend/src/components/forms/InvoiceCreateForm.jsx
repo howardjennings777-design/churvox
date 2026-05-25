@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useApi } from "@/hooks/useApi";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-const CHURVOX_INVOICE_JOB_PREFILL_MARKER = "CHURVOX_INVOICE_JOB_LINK_BACK_20260525";
+const CHURVOX_INVOICE_JOB_PREFILL_MARKER = "CHURVOX_INVOICE_CREATE_FEEDBACK_20260525";
 
 function getJobIdFromUrl() {
   const params = new URLSearchParams(window.location.search || "");
@@ -42,6 +43,7 @@ export default function InvoiceCreateForm({ onSuccess, onCancel, submitLabel = "
   const [clients, setClients] = useState([]);
   const [prefilledJobId, setPrefilledJobId] = useState("");
   const [prefillNotice, setPrefillNotice] = useState("");
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     client_id: "",
     customer_name: "",
@@ -121,19 +123,39 @@ export default function InvoiceCreateForm({ onSuccess, onCancel, submitLabel = "
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await post("/invoices", {
-      ...formData,
-      client_id: formData.client_id || null,
-      job_id: formData.job_id || null,
-      subtotal: Number(formData.subtotal),
-      gst_rate: Number(formData.gst_rate),
-    });
 
-    if (res?.success) {
+    if (!String(formData.customer_name || "").trim()) {
+      toast.error("Customer name is required");
+      return;
+    }
+    if (!String(formData.description || "").trim()) {
+      toast.error("Description is required");
+      return;
+    }
+    if (!formData.subtotal || Number(formData.subtotal) <= 0) {
+      toast.error("Enter a valid invoice subtotal");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await post("/invoices", {
+        ...formData,
+        client_id: formData.client_id || null,
+        job_id: formData.job_id || null,
+        subtotal: Number(formData.subtotal),
+        gst_rate: Number(formData.gst_rate),
+      });
+
+      if (!res?.success) {
+        toast.error(res?.error || "Could not create invoice");
+        return;
+      }
+
       const invoice = res.data || {};
       const invoiceId = getRecordId(invoice);
       if (formData.job_id && invoiceId) {
-        await patch(`/jobs/${formData.job_id}`, {
+        const linkRes = await patch(`/jobs/${formData.job_id}`, {
           invoice_id: invoiceId,
           draft_invoice_id: invoiceId,
           invoiced: true,
@@ -141,10 +163,21 @@ export default function InvoiceCreateForm({ onSuccess, onCancel, submitLabel = "
           work_review_status: "invoiced",
           review_status: "invoiced",
         });
+        if (!linkRes?.success) {
+          toast.warning("Invoice created, but the job link needs checking.");
+        }
       }
+
+      toast.success("Invoice created");
       onSuccess?.(invoice);
+    } catch (err) {
+      toast.error("Could not create invoice");
+    } finally {
+      setSaving(false);
     }
   };
+
+  const busy = loading || saving;
 
   return (
     <form onSubmit={handleSubmit} className="min-h-full flex flex-col" data-marker={CHURVOX_INVOICE_JOB_PREFILL_MARKER}>
@@ -174,8 +207,8 @@ export default function InvoiceCreateForm({ onSuccess, onCancel, submitLabel = "
         </div>
       </div>
       <div className="sticky bottom-0 mt-auto border-t border-[#d8e3f3] bg-white/95 backdrop-blur px-1 py-3 flex items-center justify-between gap-3">
-        <button type="button" className="px-button-secondary" onClick={onCancel}>Cancel</button>
-        <button type="submit" className="px-button-primary" disabled={loading}>{loading?"Saving...":submitLabel}</button>
+        <button type="button" className="px-button-secondary" onClick={onCancel} disabled={busy}>Cancel</button>
+        <button type="submit" className="px-button-primary" disabled={busy}>{busy?"Saving...":submitLabel}</button>
       </div>
     </form>
   );
