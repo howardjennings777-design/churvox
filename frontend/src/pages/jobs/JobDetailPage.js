@@ -734,8 +734,17 @@ export default function JobDetailPage() {
         )}
 
         {isOwnerView && selectedPhoto && (
-          <div className="fixed inset-0 z-[9999] bg-black/80 p-4 flex items-center justify-center" role="dialog" aria-modal="true" data-marker="CHURVOX_JOB_DETAIL_OWNER_PHOTO_SOURCES_20260525">
-            <div className="bg-white rounded-3xl max-w-5xl w-full max-h-[92vh] overflow-hidden shadow-2xl">
+          <div
+            className="fixed inset-0 z-[9999] bg-black/80 p-4 flex items-center justify-center"
+            role="dialog"
+            aria-modal="true"
+            onClick={() => setSelectedPhotoIndex(null)}
+            data-marker="CHURVOX_JOB_DETAIL_OWNER_PHOTO_BACKDROP_CLOSE_20260525"
+          >
+            <div
+              className="bg-white rounded-3xl max-w-5xl w-full max-h-[92vh] overflow-hidden shadow-2xl"
+              onClick={(event) => event.stopPropagation()}
+            >
               <div className="flex items-center justify-between gap-3 border-b border-slate-200 p-3">
                 <div className="text-sm font-black text-slate-900">Job photo {Number(selectedPhotoIndex) + 1} of {ownerPhotos.length}</div>
                 <button type="button" onClick={() => setSelectedPhotoIndex(null)} className="rounded-full bg-slate-900 px-4 py-2 text-xs font-black text-white">Close</button>
