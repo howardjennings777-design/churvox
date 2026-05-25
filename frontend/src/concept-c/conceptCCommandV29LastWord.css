@@ -1,0 +1,22 @@
+/* CHURVOX_COMMAND_FLOOR_V29_LAST_WORD_20260526 */
+html body main.cc-app section.cc-main:before,
+html body main.cc-app section.cc-main:after {
+  display: none !important;
+  content: none !important;
+}
+html body main.cc-app section.cc-main section.cc-modern-hero {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+html body main.cc-app section.cc-main section.cc-modern-hero h1 {
+  margin: 0 !important;
+  color: #07111f !important;
+  font-size: clamp(2.3rem, 3.2vw, 4.1rem) !important;
+  line-height: .86 !important;
+  letter-spacing: -.08em !important;
+  font-weight: 950 !important;
+}
+html body main.cc-app section.cc-main {
+  grid-template-rows: 44px 104px 82px minmax(0, 1fr) !important;
+}
