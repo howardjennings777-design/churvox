@@ -177,11 +177,23 @@ export default function JobDetailPage() {
   useEffect(() => {
     if (selectedPhotoIndex === null) return undefined;
     const handleKeyDown = (event) => {
-      if (event.key === "Escape") setSelectedPhotoIndex(null);
+      if (event.key === "Escape") {
+        setSelectedPhotoIndex(null);
+        return;
+      }
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      const photos = collectJobPhotos(job);
+      if (photos.length <= 1) return;
+      setSelectedPhotoIndex((current) => {
+        if (current === null) return current;
+        return event.key === "ArrowLeft"
+          ? (Number(current) - 1 + photos.length) % photos.length
+          : (Number(current) + 1) % photos.length;
+      });
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedPhotoIndex]);
+  }, [selectedPhotoIndex, job]);
 
   const handleAssign = async () => {
     if (!selectedWorker) {
@@ -748,7 +760,7 @@ export default function JobDetailPage() {
             role="dialog"
             aria-modal="true"
             onClick={() => setSelectedPhotoIndex(null)}
-            data-marker="CHURVOX_JOB_DETAIL_OWNER_PHOTO_BACKDROP_ESCAPE_CLOSE_20260525"
+            data-marker="CHURVOX_JOB_DETAIL_OWNER_PHOTO_KEYBOARD_NAV_20260525"
           >
             <div
               className="bg-white rounded-3xl max-w-5xl w-full max-h-[92vh] overflow-hidden shadow-2xl"
