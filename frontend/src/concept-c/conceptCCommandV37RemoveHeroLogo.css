@@ -1,0 +1,18 @@
+/* CHURVOX_COMMAND_FLOOR_V37_REMOVE_HERO_LOGO_20260526 */
+/* CSS-only: remove the large logo from the Command Floor hero only. Keep small header/nav branding. */
+
+html body main.cc-app .cc-modern-hero {
+  padding-left: 18px !important;
+}
+
+html body main.cc-app .cc-modern-hero:before {
+  display: none !important;
+  content: none !important;
+  background-image: none !important;
+}
+
+@media (max-width: 760px) {
+  html body main.cc-app .cc-modern-hero {
+    padding-left: 16px !important;
+  }
+}
