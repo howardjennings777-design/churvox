@@ -229,24 +229,8 @@ export default function JobDetailPage() {
     }
   };
 
-  const handleCreateDraftInvoice = async () => {
-    setSaving(true);
-    try {
-      const res = await post(`/jobs/${id}/create-draft-invoice`);
-      if (res?.success && res?.data?.invoice_id) {
-        toast.success(res?.data?.message || "Draft invoice created");
-        navigate(`/invoices/${res.data.invoice_id}`);
-      } else if (res?.success && res?.invoice_id) {
-        toast.success(res?.message || "Draft invoice ready");
-        navigate(`/invoices/${res.invoice_id}`);
-      } else {
-        toast.error(safeText(res?.error, "Failed to create draft invoice"));
-      }
-    } catch {
-      toast.error("Failed to create draft invoice");
-    } finally {
-      setSaving(false);
-    }
+  const handleCreateDraftInvoice = () => {
+    navigate(`/invoices/new?job_id=${encodeURIComponent(id)}`);
   };
   const handlePrepareProofPack = async () => {
     await post(`/proof-packs/prepare-for-job/${id}`, {});
@@ -344,7 +328,7 @@ export default function JobDetailPage() {
 
   return (
     <Layout>
-      <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6" data-testid="job-detail-page" data-marker="CHURVOX_JOB_DETAIL_WORK_REVIEW_STATE_20260525">
+      <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6" data-testid="job-detail-page" data-marker="CHURVOX_JOB_DETAIL_PREFILLED_INVOICE_NAV_20260525">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">
