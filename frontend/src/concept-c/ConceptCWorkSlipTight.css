@@ -1,60 +1,127 @@
-/* CHURVOX_WORK_SLIP_AI_APPROVAL_BRIEF_20260526 */
-/* Small override after ConceptCFullScreenSlip.css. Keeps backend/actions untouched. */
+/* CHURVOX_WORK_SLIP_COMMAND_PANEL_LAYOUT_20260526 */
+/* Full-screen Work Slip layout pass. CSS-only: no backend/actions touched. */
 
 .xcf-drawer{
   inset:18px!important;
   grid-template-columns:minmax(270px,330px) minmax(0,1fr)!important;
-  grid-template-rows:auto auto auto minmax(220px,auto) minmax(70px,auto) minmax(120px,1fr) minmax(70px,auto) auto auto!important;
+  grid-template-rows:auto auto auto minmax(200px,auto) minmax(150px,auto) minmax(82px,auto) minmax(76px,auto) minmax(112px,1fr) auto auto!important;
   gap:12px 16px!important;
   padding:22px!important;
 }
 
 .xcf-drawer>h2{
   max-width:1040px!important;
-  font-size:clamp(1.85rem,3.35vw,3.15rem)!important;
+  font-size:clamp(1.85rem,3.15vw,3rem)!important;
   line-height:1.02!important;
   letter-spacing:-.055em!important;
 }
 
-.xcf-drawer>span{font-size:.92rem!important;color:#64748b!important}
+.xcf-drawer>span{font-size:.92rem!important;color:#64748b!important;max-width:980px!important}
 
-.xcf-drawer dl{grid-row:4/8!important;grid-template-rows:auto repeat(3,minmax(82px,1fr))!important;gap:10px!important}
-.xcf-drawer dl:before{content:"Work summary"!important;min-height:34px!important;display:flex!important;align-items:center!important;padding:0 4px!important;color:#334155!important;font-size:.72rem!important;font-weight:950!important;letter-spacing:.12em!important;text-transform:uppercase!important}
-.xcf-drawer dl div{min-height:82px!important;padding:16px!important;border-radius:22px!important}
+.xcf-drawer dl{
+  grid-column:1!important;
+  grid-row:4/9!important;
+  display:grid!important;
+  grid-template-rows:auto repeat(3,minmax(82px,auto)) 1fr!important;
+  gap:10px!important;
+  min-height:0!important;
+}
+.xcf-drawer dl:before{
+  content:"Work summary"!important;
+  min-height:34px!important;
+  display:flex!important;
+  align-items:center!important;
+  padding:0 4px!important;
+  color:#334155!important;
+  font-size:.72rem!important;
+  font-weight:950!important;
+  letter-spacing:.12em!important;
+  text-transform:uppercase!important;
+}
+.xcf-drawer dl:after{
+  content:"Review the AI brief, adjust the draft, then approve only when the details are right."!important;
+  display:flex!important;
+  align-items:flex-end!important;
+  padding:16px!important;
+  border-radius:22px!important;
+  color:#475569!important;
+  background:rgba(241,245,249,.82)!important;
+  border:1px dashed rgba(15,23,42,.12)!important;
+  font-size:.82rem!important;
+  line-height:1.35!important;
+  font-weight:850!important;
+}
+.xcf-drawer dl div{min-height:82px!important;padding:16px!important;border-radius:22px!important;background:rgba(255,255,255,.92)!important}
 
 .xcf-approval-brief{
-  grid-column:2!important;grid-row:4!important;display:grid!important;gap:12px!important;padding:18px!important;border-radius:26px!important;
-  background:linear-gradient(135deg,rgba(15,23,42,.96),rgba(15,35,58,.94))!important;color:#fff!important;
-  border:1px solid rgba(255,255,255,.12)!important;box-shadow:0 20px 46px rgba(2,6,23,.18)!important;min-height:220px!important
+  grid-column:2!important;
+  grid-row:4!important;
+  display:grid!important;
+  gap:12px!important;
+  padding:18px!important;
+  border-radius:26px!important;
+  background:linear-gradient(135deg,rgba(15,23,42,.96),rgba(15,35,58,.94))!important;
+  color:#fff!important;
+  border:1px solid rgba(255,255,255,.12)!important;
+  box-shadow:0 20px 46px rgba(2,6,23,.18)!important;
+  min-height:200px!important;
 }
 .xcf-approval-brief header{display:flex!important;align-items:flex-end!important;justify-content:space-between!important;gap:12px!important;border:0!important;padding:0!important;margin:0!important;background:transparent!important}
 .xcf-approval-brief header small{color:#93c5fd!important;font-size:.7rem!important;font-weight:950!important;letter-spacing:.13em!important;text-transform:uppercase!important}
 .xcf-approval-brief header b{color:#fff!important;font-size:1.25rem!important;font-weight:950!important;letter-spacing:-.04em!important}
-.xcf-approval-brief p{margin:0!important;color:#e5eefc!important;font-size:1rem!important;line-height:1.45!important;font-weight:780!important;max-height:110px!important;overflow:auto!important}
+.xcf-approval-brief p{margin:0!important;color:#e5eefc!important;font-size:1rem!important;line-height:1.45!important;font-weight:780!important;max-height:96px!important;overflow:auto!important;white-space:pre-wrap!important}
 .xcf-approval-brief div{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}
 .xcf-approval-brief span{display:grid!important;gap:3px!important;padding:10px!important;border-radius:16px!important;background:rgba(255,255,255,.08)!important;border:1px solid rgba(255,255,255,.08)!important;min-width:0!important}
 .xcf-approval-brief span small{color:#93c5fd!important;font-size:.62rem!important;font-weight:950!important;text-transform:uppercase!important;letter-spacing:.08em!important}
 .xcf-approval-brief span b{color:#fff!important;font-size:.78rem!important;line-height:1.25!important;font-weight:900!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
 .xcf-approval-brief strong{display:block!important;margin:0!important;color:#bbf7d0!important;font-size:.84rem!important;line-height:1.35!important;font-weight:900!important}
 
-.xcf-message-draft{
-  grid-column:2!important;display:grid!important;gap:9px!important;padding:14px!important;border-radius:22px!important;background:rgba(255,255,255,.92)!important;border:1px solid rgba(15,23,42,.08)!important;box-shadow:0 12px 28px rgba(15,23,42,.055)!important
+.xcf-message-draft,
+.xcf-worker-assign{
+  grid-column:2!important;
+  display:grid!important;
+  gap:9px!important;
+  padding:14px!important;
+  border-radius:22px!important;
+  background:rgba(255,255,255,.94)!important;
+  border:1px solid rgba(15,23,42,.08)!important;
+  box-shadow:0 12px 28px rgba(15,23,42,.055)!important;
 }
-.xcf-message-draft header{display:flex!important;align-items:flex-end!important;justify-content:space-between!important;gap:12px!important;padding:0!important;margin:0!important;background:transparent!important;border:0!important}
-.xcf-message-draft header small{color:#2563eb!important;font-size:.66rem!important;font-weight:950!important;letter-spacing:.12em!important;text-transform:uppercase!important}
-.xcf-message-draft header b{color:#07111f!important;font-size:1rem!important;font-weight:950!important}
-.xcf-message-draft textarea{width:100%!important;min-height:118px!important;padding:13px 14px!important;border-radius:18px!important;border:1px solid rgba(15,23,42,.1)!important;background:#f8fafc!important;color:#07111f!important;font:inherit!important;font-size:.9rem!important;line-height:1.4!important;font-weight:760!important;resize:vertical!important}
-.xcf-message-draft p{margin:0!important;color:#64748b!important;font-size:.76rem!important;font-weight:800!important}
+.xcf-message-draft{grid-row:5!important}
+.xcf-worker-assign{grid-row:6!important;background:linear-gradient(135deg,rgba(239,246,255,.95),rgba(255,255,255,.95))!important}
+.xcf-message-draft header,
+.xcf-worker-assign header{display:flex!important;align-items:flex-end!important;justify-content:space-between!important;gap:12px!important;padding:0!important;margin:0!important;background:transparent!important;border:0!important}
+.xcf-message-draft header small,
+.xcf-worker-assign header small{color:#2563eb!important;font-size:.66rem!important;font-weight:950!important;letter-spacing:.12em!important;text-transform:uppercase!important}
+.xcf-message-draft header b,
+.xcf-worker-assign header b{color:#07111f!important;font-size:1rem!important;font-weight:950!important}
+.xcf-message-draft textarea{width:100%!important;min-height:112px!important;padding:13px 14px!important;border-radius:18px!important;border:1px solid rgba(15,23,42,.1)!important;background:#f8fafc!important;color:#07111f!important;font:inherit!important;font-size:.9rem!important;line-height:1.4!important;font-weight:760!important;resize:vertical!important}
+.xcf-message-draft p,
+.xcf-worker-assign p{margin:0!important;color:#64748b!important;font-size:.76rem!important;font-weight:800!important}
+.xcf-worker-assign select{width:100%!important;min-height:48px!important;padding:0 14px!important;border-radius:18px!important;border:1px solid rgba(37,99,235,.18)!important;background:#fff!important;color:#07111f!important;font:inherit!important;font-size:.9rem!important;font-weight:900!important;outline:none!important}
 
-.xcf-drawer-record .xcf-edit-field:nth-of-type(1){grid-row:5!important}.xcf-drawer-record .xcf-edit-field:nth-of-type(2){grid-row:6!important}.xcf-drawer-record .xcf-edit-field:nth-of-type(3){grid-row:7!important}
+.xcf-drawer-record .xcf-edit-field:nth-of-type(1){grid-column:2!important;grid-row:7!important;width:calc(50% - 8px)!important;justify-self:start!important}
+.xcf-drawer-record .xcf-edit-field:nth-of-type(3){grid-column:2!important;grid-row:7!important;width:calc(50% - 8px)!important;justify-self:end!important}
+.xcf-drawer-record .xcf-edit-field:nth-of-type(2){grid-column:2!important;grid-row:8!important;width:100%!important}
 .xcf-edit-field input,.xcf-edit-field textarea{min-height:54px!important;box-shadow:0 12px 28px rgba(15,23,42,.055),inset 0 1px 0 rgba(255,255,255,.92)!important}
-.xcf-edit-field textarea{min-height:120px!important}
-.xcf-drawer-actions{grid-row:8!important;margin-top:0!important;padding:13px!important;border-radius:23px!important;background:rgba(255,255,255,.9)!important}
-.xcf-drawer-actions button,.xcf-drawer-actions a{min-height:48px!important;padding:0 18px!important}.xcf-drawer-notice{grid-row:9!important}
+.xcf-edit-field textarea{min-height:108px!important}
+
+.xcf-drawer-actions{
+  grid-column:1/-1!important;
+  grid-row:9!important;
+  margin-top:0!important;
+  padding:13px!important;
+  border-radius:23px!important;
+  background:rgba(255,255,255,.92)!important;
+  box-shadow:0 12px 34px rgba(15,23,42,.075)!important;
+}
+.xcf-drawer-actions button,.xcf-drawer-actions a{min-height:48px!important;padding:0 18px!important}.xcf-drawer-notice{grid-column:1/-1!important;grid-row:10!important}
 
 @media(max-width:980px){
   .xcf-drawer{inset:8px!important;grid-template-columns:1fr!important;overflow:auto!important;grid-template-rows:auto!important}
   .xcf-drawer>h2{font-size:clamp(1.9rem,10vw,3rem)!important}
-  .xcf-approval-brief,.xcf-message-draft,.xcf-drawer dl,.xcf-drawer-record .xcf-edit-field:nth-of-type(1),.xcf-drawer-record .xcf-edit-field:nth-of-type(2),.xcf-drawer-record .xcf-edit-field:nth-of-type(3),.xcf-drawer-actions,.xcf-drawer-notice{grid-column:1!important;grid-row:auto!important}
+  .xcf-approval-brief,.xcf-message-draft,.xcf-worker-assign,.xcf-drawer dl,.xcf-drawer-record .xcf-edit-field:nth-of-type(1),.xcf-drawer-record .xcf-edit-field:nth-of-type(2),.xcf-drawer-record .xcf-edit-field:nth-of-type(3),.xcf-drawer-actions,.xcf-drawer-notice{grid-column:1!important;grid-row:auto!important;width:100%!important;justify-self:stretch!important}
   .xcf-approval-brief div{grid-template-columns:1fr 1fr!important}
+  .xcf-drawer dl{grid-template-rows:auto!important}
+  .xcf-drawer dl:after{display:none!important}
 }
