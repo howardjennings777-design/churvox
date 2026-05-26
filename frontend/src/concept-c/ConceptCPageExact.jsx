@@ -25,6 +25,14 @@ const recordIdFromResponse = (res) => idOf(res?.data) || idOf(res?.data?.invoice
 const detailText = (record, fallback = "") => firstText(record?.owner_facing_explanation, record?.reason, record?.recommendation, record?.what_happens, record?.generated_message, record?.description, record?.job_description, record?.service_description, record?.scope, record?.completion_notes, record?.worker_notes, record?.job_notes, record?.notes, record?.admin_notes, record?.message, record?.address, fallback);
 const workerNameOf = (worker) => firstText(worker?.raw?.name, worker?.raw?.full_name, worker?.raw?.email, worker?.title, worker?.name, "Worker");
 const workerIdOf = (worker) => idOf(worker?.raw || worker) || idOf(worker);
+const apiOk = (res) => Boolean(res?.success && res?.data?.success !== false);
+const apiError = (res, fallback = "unknown error") => firstText(res?.error, res?.data?.error, res?.data?.detail, res?.data?.message, fallback);
+async function patchWithFallback(api, endpoint, payload) {
+  const res = await api.patch(endpoint, payload);
+  if (apiOk(res)) return res;
+  if (/405|method not allowed/i.test(apiError(res, ""))) return api.put(endpoint, payload);
+  return res;
+}
 
 function messageDraftFromPicked(picked, draft) {
   const raw = picked?.raw || {};
@@ -455,8 +463,8 @@ async function runRecordAction(action, picked, draft, api, reload) {
 
   try {
     if (picked.type === "action") {
-      if (action === "approve") { const res = await api.post(`/ai-operator/actions/${id}/approve`, {}); await reload(); return res?.success ? "AI action approved and executed." : `Could not approve AI action: ${res?.error || "unknown error"}`; }
-      if (action === "reject") { const res = await api.post(`/ai-operator/actions/${id}/reject`, {}); await reload(); return res?.success ? "AI action rejected." : `Could not reject AI action: ${res?.error || "unknown error"}`; }
+      if (action === "approve") { const res = await api.post(`/ai-operator/actions/${id}/approve`, {}); if (apiOk(res)) { await reload(); return "AI action approved and executed."; } return `Could not approve AI action: ${apiError(res)}`; }
+      if (action === "reject") { const res = await api.post(`/ai-operator/actions/${id}/reject`, {}); if (apiOk(res)) { await reload(); return "AI action rejected."; } return `Could not reject AI action: ${apiError(res)}`; }
       if (action === "message") return draft.message || firstText(picked.raw?.generated_message, picked.raw?.draft_message, "No drafted message saved for this AI action yet.");
       return "AI action is ready for approve or reject.";
     }
@@ -464,20 +472,20 @@ async function runRecordAction(action, picked, draft, api, reload) {
     if (action === "assign") {
       if (picked.type !== "job" && picked.type !== "work_review") return "Select a job before assigning a worker.";
       if (!draft.worker_id) return "Choose a worker first.";
-      const res = await api.patch(`/jobs/${id}`, { assigned_worker_id: draft.worker_id, assigned_worker_name: draft.worker_name, assigned_to: draft.worker_id, status: picked.raw?.status || "assigned" });
-      await reload();
-      return res?.success ? `Assigned to ${draft.worker_name || "selected worker"}.` : `Could not assign worker: ${res?.error || "unknown error"}`;
+      const res = await patchWithFallback(api, `/jobs/${id}`, { assigned_worker_id: draft.worker_id, assigned_worker_name: draft.worker_name, assigned_to: draft.worker_id, status: picked.raw?.status || "assigned" });
+      if (apiOk(res)) { await reload(); return `Assigned to ${draft.worker_name || "selected worker"}.`; }
+      return `Could not assign worker: ${apiError(res)}`;
     }
-    if (action === "save") { const endpoint = picked.type === "invoice" ? `/invoices/${id}` : picked.type === "quote" ? `/quotes/${id}` : picked.type === "client" ? `/clients/${id}` : `/jobs/${id}`; const res = await api.patch(endpoint, titlePayload); await reload(); return res?.success ? "Saved in this slip." : `Could not save: ${res?.error || "unknown error"}`; }
-    if (action === "approve") { if (picked.type === "invoice") { const res = await api.patch(`/invoices/${id}`, { status: "approved" }); await reload(); return res?.success ? "Invoice approved." : `Could not approve: ${res?.error || "unknown error"}`; } const res = await api.patch(`/jobs/${id}`, { owner_review_status: "approved", work_review_status: "approved", reviewed: true }); await reload(); return res?.success ? "Work approved." : `Could not approve: ${res?.error || "unknown error"}`; }
+    if (action === "save") { const endpoint = picked.type === "invoice" ? `/invoices/${id}` : picked.type === "quote" ? `/quotes/${id}` : picked.type === "client" ? `/clients/${id}` : `/jobs/${id}`; const res = await patchWithFallback(api, endpoint, titlePayload); if (apiOk(res)) { await reload(); return "Saved in this slip."; } return `Could not save: ${apiError(res)}`; }
+    if (action === "approve") { if (picked.type === "invoice") { const res = await patchWithFallback(api, `/invoices/${id}`, { status: "approved" }); if (apiOk(res)) { await reload(); return "Invoice approved."; } return `Could not approve: ${apiError(res)}`; } const res = await patchWithFallback(api, `/jobs/${id}`, { owner_review_status: "approved", work_review_status: "approved", reviewed: true }); if (apiOk(res)) { await reload(); return "Work approved."; } return `Could not approve: ${apiError(res)}`; }
     if (action === "invoice") {
       if (picked.type !== "job" && picked.type !== "work_review") return "Select a job or work review item before preparing an invoice.";
       const payload = invoicePayloadFromPicked(picked, draft);
       if (!payload.ok) return payload.error;
       const res = await api.post("/invoices", payload.data);
-      if (!res?.success) return `Could not prepare invoice: ${res?.error || "unknown error"}`;
+      if (!apiOk(res)) return `Could not prepare invoice: ${apiError(res)}`;
       const invoiceId = recordIdFromResponse(res);
-      if (invoiceId && id) { try { await api.patch(`/jobs/${id}`, { draft_invoice_id: invoiceId, invoice_description_draft: payload.data.description }); } catch (_err) {} }
+      if (invoiceId && id) { try { await patchWithFallback(api, `/jobs/${id}`, { draft_invoice_id: invoiceId, invoice_description_draft: payload.data.description }); } catch (_err) {} }
       await reload();
       return invoiceId ? `Draft invoice prepared: INV ${invoiceId}. Open Money Desk or Full page to review/send.` : "Draft invoice prepared. Open Money Desk to review/send.";
     }
@@ -485,9 +493,9 @@ async function runRecordAction(action, picked, draft, api, reload) {
       const message = draft.message || messageDraftFromPicked(picked, draft);
       if (!message) return "No message draft to save.";
       const endpoint = picked.type === "invoice" ? `/invoices/${id}` : picked.type === "quote" ? `/quotes/${id}` : picked.type === "client" ? `/clients/${id}` : `/jobs/${id}`;
-      const res = await api.patch(endpoint, { customer_message_draft: message, draft_message: message, last_message_draft: message });
-      await reload();
-      return res?.success ? "Message draft saved. Nothing has been sent." : `Could not save message draft: ${res?.error || "unknown error"}`;
+      const res = await patchWithFallback(api, endpoint, { customer_message_draft: message, draft_message: message, last_message_draft: message });
+      if (apiOk(res)) { await reload(); return "Message draft saved. Nothing has been sent."; }
+      return `Could not save message draft: ${apiError(res)}`;
     }
   } catch (err) {
     return `Action failed: ${err?.message || "unknown error"}`;
