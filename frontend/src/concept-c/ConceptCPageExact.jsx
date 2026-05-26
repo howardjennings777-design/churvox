@@ -439,7 +439,7 @@ function DetailDrawer({ picked, onClose, onAction, onPick, workers = [] }) {
         {isAction && <button className="xcf-action-danger" type="button" disabled={busy} onClick={() => run("reject")}>Reject action</button>}
         {isJobLike && <button type="button" disabled={busy || !draft.worker_id} onClick={() => run("assign")}>Assign worker</button>}
         {!isAction && <button type="button" disabled={busy} onClick={() => run("invoice")}>Prepare invoice</button>}
-        <button type="button" disabled={busy} onClick={() => run("message")}>Draft message</button>
+        <button type="button" disabled={busy} onClick={() => run("message")}>Save message draft</button>
         {picked.href && picked.href !== "#" && <Link to={picked.href}>Full page</Link>}
       </>}
     </div>
@@ -450,7 +450,7 @@ function DetailDrawer({ picked, onClose, onAction, onPick, workers = [] }) {
 async function runRecordAction(action, picked, draft, api, reload) {
   if (!picked || picked.type === "action_group") return "Open a record inside the slip first.";
   const id = picked.id;
-  if (!id && ["save", "approve", "reject", "invoice", "assign"].includes(action)) return "This record has no saved ID yet.";
+  if (!id && ["save", "approve", "reject", "invoice", "assign", "message"].includes(action)) return "This record has no saved ID yet.";
   const titlePayload = { title: draft.title, description: draft.meta, status: draft.status };
 
   try {
@@ -481,7 +481,14 @@ async function runRecordAction(action, picked, draft, api, reload) {
       await reload();
       return invoiceId ? `Draft invoice prepared: INV ${invoiceId}. Open Money Desk or Full page to review/send.` : "Draft invoice prepared. Open Money Desk to review/send.";
     }
-    if (action === "message") return draft.message || messageDraftFromPicked(picked, draft);
+    if (action === "message") {
+      const message = draft.message || messageDraftFromPicked(picked, draft);
+      if (!message) return "No message draft to save.";
+      const endpoint = picked.type === "invoice" ? `/invoices/${id}` : picked.type === "quote" ? `/quotes/${id}` : picked.type === "client" ? `/clients/${id}` : `/jobs/${id}`;
+      const res = await api.patch(endpoint, { customer_message_draft: message, draft_message: message, last_message_draft: message });
+      await reload();
+      return res?.success ? "Message draft saved. Nothing has been sent." : `Could not save message draft: ${res?.error || "unknown error"}`;
+    }
   } catch (err) {
     return `Action failed: ${err?.message || "unknown error"}`;
   }
