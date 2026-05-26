@@ -26,6 +26,50 @@ const detailText = (record, fallback = "") => firstText(record?.owner_facing_exp
 const workerNameOf = (worker) => firstText(worker?.raw?.name, worker?.raw?.full_name, worker?.raw?.email, worker?.title, worker?.name, "Worker");
 const workerIdOf = (worker) => idOf(worker?.raw || worker) || idOf(worker);
 
+function messageDraftFromPicked(picked, draft) {
+  const raw = picked?.raw || {};
+  const type = picked?.type || "record";
+  const customer = firstText(raw.customer_name, raw.client_name, raw.name, picked?.title, "there");
+  const site = firstText(raw.address, raw.site_address, raw.job_address, raw.location);
+  const description = firstText(
+    raw.generated_message,
+    raw.draft_message,
+    raw.customer_message_draft,
+    raw.message,
+    raw.completion_notes,
+    raw.worker_completion_notes,
+    raw.worker_notes,
+    raw.job_notes,
+    raw.notes,
+    raw.description,
+    draft?.meta,
+    picked?.meta
+  );
+  const amount = moneyNumber(picked?.amount, raw.total, raw.amount, raw.balance_due, raw.subtotal, raw.price, raw.job_price, raw.fixed_price);
+  const siteLine = site ? ` at ${site}` : "";
+
+  if (type === "invoice") {
+    return `Hi ${customer},\n\nYour invoice is ready for review${amount ? ` for ${cash(amount)}` : ""}.\n\n${description || "This covers the completed service work."}\n\nThanks,\nChurvox`;
+  }
+
+  if (type === "quote") {
+    return `Hi ${customer},\n\nYour quote is ready for review${amount ? ` for ${cash(amount)}` : ""}.\n\n${description || "Please check the scope and let us know if you would like to go ahead."}\n\nThanks,\nChurvox`;
+  }
+
+  if (type === "action") {
+    return firstText(
+      raw.generated_message,
+      raw.draft_message,
+      raw.recommendation,
+      raw.owner_facing_explanation,
+      raw.reason,
+      "AI prepared this action. Review the wording before sending anything to the customer."
+    );
+  }
+
+  return `Hi ${customer},\n\nQuick update on your job${siteLine}.\n\n${description || "The work has been reviewed and the next admin step is being prepared."}\n\nThanks,\nChurvox`;
+}
+
 function invoicePayloadFromPicked(picked, draft) {
   const raw = picked?.raw || {};
   const customer = firstText(raw.customer_name, raw.client_name, raw.name, raw.contact_name, picked?.title);
@@ -336,7 +380,7 @@ function EditableField({ label, value, onChange, textarea = false }) {
 }
 
 function DetailDrawer({ picked, onClose, onAction, onPick, workers = [] }) {
-  const [draft, setDraft] = useState({ title: "", meta: "", status: "", worker_id: "", worker_name: "" });
+  const [draft, setDraft] = useState({ title: "", meta: "", status: "", worker_id: "", worker_name: "", message: "" });
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
 
@@ -344,7 +388,8 @@ function DetailDrawer({ picked, onClose, onAction, onPick, workers = [] }) {
     const raw = picked?.raw || {};
     const currentWorkerId = firstText(raw.assigned_worker_id, raw.worker_id, raw.assigned_to);
     const currentWorkerName = firstText(raw.assigned_worker_name, raw.worker_name, raw.assigned_to_name, raw.assigned_worker_email);
-    setDraft({ title: picked?.title || "", meta: detailText(raw, picked?.meta || ""), status: picked?.state || "", worker_id: currentWorkerId, worker_name: currentWorkerName });
+    const nextMeta = detailText(raw, picked?.meta || "");
+    setDraft({ title: picked?.title || "", meta: nextMeta, status: picked?.state || "", worker_id: currentWorkerId, worker_name: currentWorkerName, message: messageDraftFromPicked(picked, { meta: nextMeta }) });
     setNotice("");
     setBusy(false);
   }, [picked]);
@@ -380,6 +425,7 @@ function DetailDrawer({ picked, onClose, onAction, onPick, workers = [] }) {
     </div> : <>
       <dl><div><dt>Status</dt><dd>{picked.state}</dd></div><div><dt>Value</dt><dd>{Number(picked.amount || 0) > 0 ? cash(picked.amount) : "—"}</dd></div><div><dt>Code</dt><dd>{picked.code}</dd></div></dl>
       <section className="xcf-approval-brief"><header><small>{isAction ? "AI operator action" : "AI approval brief"}</small><b>{isAction ? "Approve or reject this action" : "What you are approving"}</b></header><p>{brief.description}</p><div>{brief.facts.map(([label, value]) => <span key={label}><small>{label}</small><b>{value}</b></span>)}</div><strong>{brief.outcome}</strong></section>
+      <section className="xcf-message-draft"><header><small>Customer message</small><b>Draft before sending</b></header><textarea value={draft.message} onChange={(e) => setDraft((d) => ({ ...d, message: e.target.value }))} /><p>No message sends from here yet. This stays owner-editable and approval-first.</p></section>
       {isJobLike && <section className="xcf-worker-assign"><header><small>Dispatch</small><b>Assign worker in this slip</b></header><select value={draft.worker_id} onChange={(e) => changeWorker(e.target.value)}><option value="">Choose worker</option>{workers.map((worker) => { const wid = workerIdOf(worker); return <option key={wid || worker.title} value={wid}>{workerNameOf(worker)}{worker.state ? ` · ${worker.state}` : ""}</option>; })}</select><p>{draft.worker_name ? `Selected: ${draft.worker_name}` : workers.length ? "Pick a worker, then tap Assign worker." : "No workers loaded yet."}</p></section>}
       <EditableField label="Title" value={draft.title} onChange={(v) => setDraft((d) => ({ ...d, title: v }))} />
       <EditableField label={isAction ? "AI reason / drafted message" : "Approval description / edit before saving"} value={draft.meta} onChange={(v) => setDraft((d) => ({ ...d, meta: v }))} textarea />
@@ -411,7 +457,7 @@ async function runRecordAction(action, picked, draft, api, reload) {
     if (picked.type === "action") {
       if (action === "approve") { const res = await api.post(`/ai-operator/actions/${id}/approve`, {}); await reload(); return res?.success ? "AI action approved and executed." : `Could not approve AI action: ${res?.error || "unknown error"}`; }
       if (action === "reject") { const res = await api.post(`/ai-operator/actions/${id}/reject`, {}); await reload(); return res?.success ? "AI action rejected." : `Could not reject AI action: ${res?.error || "unknown error"}`; }
-      if (action === "message") return firstText(picked.raw?.generated_message, picked.raw?.draft_message, "No drafted message saved for this AI action yet.");
+      if (action === "message") return draft.message || firstText(picked.raw?.generated_message, picked.raw?.draft_message, "No drafted message saved for this AI action yet.");
       return "AI action is ready for approve or reject.";
     }
 
@@ -435,7 +481,7 @@ async function runRecordAction(action, picked, draft, api, reload) {
       await reload();
       return invoiceId ? `Draft invoice prepared: INV ${invoiceId}. Open Money Desk or Full page to review/send.` : "Draft invoice prepared. Open Money Desk to review/send.";
     }
-    if (action === "message") return "Message draft stays in this slip next; no page jump needed.";
+    if (action === "message") return draft.message || messageDraftFromPicked(picked, draft);
   } catch (err) {
     return `Action failed: ${err?.message || "unknown error"}`;
   }
