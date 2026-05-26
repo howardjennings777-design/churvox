@@ -38,3 +38,18 @@ button:active:not(:disabled) {
 .transition-smooth {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* CHURVOX_COMMAND_FLOOR_APPROVED_CARD_STYLE_20260526 */
+.xcf-approved-page-card {
+  background: linear-gradient(135deg, #052e16 0%, #166534 52%, #22c55e 100%) !important;
+  border-color: rgba(22, 163, 74, .34) !important;
+  color: #ecfdf5 !important;
+  box-shadow: 0 24px 60px rgba(22, 163, 74, .22), inset 0 1px 0 rgba(255, 255, 255, .18) !important;
+}
+.xcf-approved-page-card * {
+  color: inherit !important;
+}
+.xcf-approved-page-card header strong {
+  background: rgba(255, 255, 255, .16) !important;
+  border-color: rgba(255, 255, 255, .18) !important;
+}
