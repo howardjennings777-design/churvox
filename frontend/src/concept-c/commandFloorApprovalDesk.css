@@ -1,4 +1,5 @@
 /* CHURVOX_COMMAND_FLOOR_APPROVAL_DESK_20260527 */
+/* CHURVOX_COMMAND_FLOOR_MODERN_HERO_BOX_20260527 */
 
 .xcf-approval-desk {
   background:
@@ -8,21 +9,156 @@
 }
 
 .xcf-approval-hero {
-  min-height: 132px !important;
+  min-height: 168px !important;
   display: grid !important;
-  grid-template-columns: minmax(0, 1fr) minmax(240px, 320px) !important;
+  grid-template-columns: minmax(0, 1fr) minmax(270px, 370px) !important;
   align-items: stretch !important;
-  gap: 16px !important;
+  gap: 22px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  padding: 26px 28px 24px 118px !important;
+  border-radius: 34px !important;
+  border: 1px solid rgba(37, 99, 235, .20) !important;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(37, 99, 235, .18), transparent 26%),
+    radial-gradient(circle at 84% 32%, rgba(147, 197, 253, .34), transparent 24%),
+    linear-gradient(135deg, rgba(255,255,255,.98) 0%, rgba(239,246,255,.96) 48%, rgba(248,250,252,.98) 100%) !important;
+  box-shadow:
+    0 28px 80px rgba(37, 99, 235, .16),
+    0 10px 26px rgba(15, 23, 42, .08),
+    inset 0 1px 0 rgba(255,255,255,.95) !important;
+}
+
+.xcf-approval-hero::before {
+  content: "✓" !important;
+  position: absolute !important;
+  left: 28px !important;
+  top: 30px !important;
+  width: 66px !important;
+  height: 66px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 23px !important;
+  color: #fff !important;
+  font-size: 1.35rem !important;
+  font-weight: 950 !important;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 55%, #0f172a 100%) !important;
+  box-shadow: 0 18px 42px rgba(37,99,235,.28), inset 0 1px 0 rgba(255,255,255,.22) !important;
+}
+
+.xcf-approval-hero::after {
+  content: "" !important;
+  position: absolute !important;
+  right: -92px !important;
+  top: -82px !important;
+  width: 320px !important;
+  height: 320px !important;
+  border-radius: 999px !important;
+  background: radial-gradient(circle, rgba(37,99,235,.12), transparent 68%) !important;
+  pointer-events: none !important;
+}
+
+.xcf-approval-hero > div,
+.xcf-approval-hero > aside {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.xcf-approval-hero p {
+  margin: 0 0 9px !important;
+  color: #2563eb !important;
+  font-size: .73rem !important;
+  line-height: 1 !important;
+  font-weight: 950 !important;
+  letter-spacing: .22em !important;
+  text-transform: uppercase !important;
 }
 
 .xcf-approval-hero h1 {
-  font-size: clamp(2.35rem, 5vw, 4.9rem) !important;
-  letter-spacing: -.08em !important;
+  margin: 0 !important;
+  font-size: clamp(2.75rem, 5.5vw, 5.6rem) !important;
+  line-height: .82 !important;
+  letter-spacing: -.095em !important;
+  color: #07111f !important;
+  text-wrap: balance !important;
 }
 
 .xcf-approval-hero span {
+  display: block !important;
+  max-width: 620px !important;
+  margin-top: 14px !important;
+  font-size: clamp(.92rem, 1.25vw, 1.08rem) !important;
+  line-height: 1.34 !important;
   font-weight: 850 !important;
   color: #334155 !important;
+}
+
+.xcf-approval-hero aside {
+  align-self: center !important;
+  min-height: 106px !important;
+  display: grid !important;
+  grid-template-columns: 54px minmax(0, 1fr) auto !important;
+  grid-template-rows: auto auto auto !important;
+  column-gap: 14px !important;
+  align-items: center !important;
+  padding: 18px 18px !important;
+  border-radius: 28px !important;
+  border: 1px solid rgba(37, 99, 235, .14) !important;
+  background: rgba(255,255,255,.78) !important;
+  box-shadow: 0 18px 45px rgba(15,23,42,.08), inset 0 1px 0 rgba(255,255,255,.9) !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+.xcf-approval-hero aside i {
+  grid-row: 1 / span 3 !important;
+  width: 54px !important;
+  height: 54px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 19px !important;
+  color: #fff !important;
+  font-size: 1.15rem !important;
+  font-style: normal !important;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+  box-shadow: 0 14px 32px rgba(37,99,235,.22) !important;
+}
+
+.xcf-approval-hero aside small {
+  color: #64748b !important;
+  font-size: .68rem !important;
+  font-weight: 950 !important;
+  letter-spacing: .04em !important;
+  text-transform: none !important;
+}
+
+.xcf-approval-hero aside b {
+  color: #0f172a !important;
+  font-size: clamp(1.02rem, 1.55vw, 1.32rem) !important;
+  line-height: 1.02 !important;
+  font-weight: 950 !important;
+  letter-spacing: -.04em !important;
+}
+
+.xcf-approval-hero aside em {
+  color: #475569 !important;
+  font-size: .78rem !important;
+  line-height: 1.25 !important;
+  font-style: normal !important;
+  font-weight: 800 !important;
+}
+
+.xcf-approval-hero aside::after {
+  content: "→" !important;
+  grid-column: 3 !important;
+  grid-row: 1 / span 3 !important;
+  width: 34px !important;
+  height: 34px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 999px !important;
+  color: #2563eb !important;
+  background: rgba(37,99,235,.08) !important;
+  font-weight: 950 !important;
 }
 
 .xcf-approval-summary {
@@ -55,14 +191,8 @@
   box-shadow: 0 22px 55px rgba(15,23,42,.08) !important;
 }
 
-.xcf-approval-lane header {
-  margin: 0 !important;
-}
-
-.xcf-approval-lane header b {
-  font-size: 1.15rem !important;
-  letter-spacing: -.04em !important;
-}
+.xcf-approval-lane header { margin: 0 !important; }
+.xcf-approval-lane header b { font-size: 1.15rem !important; letter-spacing: -.04em !important; }
 
 .xcf-lane-description {
   margin: 0 !important;
@@ -86,56 +216,23 @@
   box-shadow: 0 14px 32px rgba(15,23,42,.16) !important;
 }
 
-.xcf-lane-note {
-  color: #64748b !important;
-  font-size: .72rem !important;
-  line-height: 1.25 !important;
-  font-weight: 850 !important;
-}
-
-.xcf-lane-amber {
-  border-top: 4px solid #f59e0b !important;
-}
-.xcf-lane-green {
-  border-top: 4px solid #22c55e !important;
-}
-.xcf-lane-blue {
-  border-top: 4px solid #2563eb !important;
-}
-.xcf-lane-purple {
-  border-top: 4px solid #7c3aed !important;
-}
-.xcf-lane-red {
-  border-top: 4px solid #ef4444 !important;
-}
-
+.xcf-lane-note { color: #64748b !important; font-size: .72rem !important; line-height: 1.25 !important; font-weight: 850 !important; }
+.xcf-lane-amber { border-top: 4px solid #f59e0b !important; }
+.xcf-lane-green { border-top: 4px solid #22c55e !important; }
+.xcf-lane-blue { border-top: 4px solid #2563eb !important; }
+.xcf-lane-purple { border-top: 4px solid #7c3aed !important; }
+.xcf-lane-red { border-top: 4px solid #ef4444 !important; }
 .xcf-lane-amber .xcf-lane-primary { background: #b45309 !important; }
 .xcf-lane-green .xcf-lane-primary { background: #166534 !important; }
 .xcf-lane-blue .xcf-lane-primary { background: #1d4ed8 !important; }
 .xcf-lane-purple .xcf-lane-primary { background: #6d28d9 !important; }
 .xcf-lane-red .xcf-lane-primary { background: #b91c1c !important; }
 
-.xcf-approval-lane .xcf-list {
-  display: grid !important;
-  align-content: start !important;
-  gap: 7px !important;
-  min-height: 160px !important;
-}
-
-.xcf-approval-lane .xcf-row {
-  min-height: 54px !important;
-  padding: 9px !important;
-  border-radius: 16px !important;
-}
-
-.xcf-approval-lane .xcf-row b {
-  font-size: .82rem !important;
-}
-
+.xcf-approval-lane .xcf-list { display: grid !important; align-content: start !important; gap: 7px !important; min-height: 160px !important; }
+.xcf-approval-lane .xcf-row { min-height: 54px !important; padding: 9px !important; border-radius: 16px !important; }
+.xcf-approval-lane .xcf-row b { font-size: .82rem !important; }
 .xcf-approval-lane .xcf-row small,
-.xcf-approval-lane .xcf-row em {
-  font-size: .64rem !important;
-}
+.xcf-approval-lane .xcf-row em { font-size: .64rem !important; }
 
 .xcf-field-strip {
   display: flex !important;
@@ -149,60 +246,24 @@
   color: #fff !important;
   box-shadow: 0 18px 50px rgba(15,23,42,.18) !important;
 }
-
 .xcf-field-strip small,
-.xcf-field-strip b {
-  display: block !important;
-}
-
-.xcf-field-strip small {
-  color: #93c5fd !important;
-  font-size: .68rem !important;
-  font-weight: 950 !important;
-  letter-spacing: .12em !important;
-  text-transform: uppercase !important;
-}
-
-.xcf-field-strip b {
-  margin-top: 3px !important;
-  font-size: .98rem !important;
-}
-
-.xcf-field-strip button {
-  min-height: 40px !important;
-  border: 0 !important;
-  border-radius: 999px !important;
-  padding: 0 16px !important;
-  color: #0f172a !important;
-  background: #fff !important;
-  font-size: .78rem !important;
-  font-weight: 950 !important;
-  cursor: pointer !important;
-}
-
-.xcf-bottom-nav {
-  width: min(780px, calc(100vw - 34px)) !important;
-}
+.xcf-field-strip b { display: block !important; }
+.xcf-field-strip small { color: #93c5fd !important; font-size: .68rem !important; font-weight: 950 !important; letter-spacing: .12em !important; text-transform: uppercase !important; }
+.xcf-field-strip b { margin-top: 3px !important; font-size: .98rem !important; }
+.xcf-field-strip button { min-height: 40px !important; border: 0 !important; border-radius: 999px !important; padding: 0 16px !important; color: #0f172a !important; background: #fff !important; font-size: .78rem !important; font-weight: 950 !important; cursor: pointer !important; }
+.xcf-bottom-nav { width: min(780px, calc(100vw - 34px)) !important; }
 
 @media (max-width: 1280px) {
-  .xcf-approval-lanes {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  }
+  .xcf-approval-lanes { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
 }
 
 @media (max-width: 980px) {
   .xcf-approval-hero,
   .xcf-approval-summary,
-  .xcf-approval-lanes {
-    grid-template-columns: 1fr !important;
-  }
-
-  .xcf-approval-lane {
-    min-height: auto !important;
-  }
-
-  .xcf-field-strip {
-    align-items: flex-start !important;
-    flex-direction: column !important;
-  }
+  .xcf-approval-lanes { grid-template-columns: 1fr !important; }
+  .xcf-approval-hero { padding: 88px 18px 18px !important; }
+  .xcf-approval-hero::before { left: 18px !important; top: 18px !important; width: 52px !important; height: 52px !important; border-radius: 18px !important; }
+  .xcf-approval-hero aside { grid-template-columns: 48px minmax(0, 1fr) auto !important; }
+  .xcf-approval-lane { min-height: auto !important; }
+  .xcf-field-strip { align-items: flex-start !important; flex-direction: column !important; }
 }
