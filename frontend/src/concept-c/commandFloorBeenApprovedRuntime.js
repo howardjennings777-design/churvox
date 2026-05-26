@@ -1,5 +1,6 @@
 // CHURVOX_COMMAND_FLOOR_BEEN_APPROVED_RUNTIME_20260526
 // CHURVOX_COMMAND_FLOOR_FORCE_SCROLL_TALL_BOXES_20260526
+// CHURVOX_COMMAND_FLOOR_BEEN_APPROVED_CARD_POLISH_20260526
 
 const CARD_ID = "churvox-been-approved-page-card";
 const SCROLL_STYLE_ID = "churvox-command-floor-scroll-tall-boxes";
@@ -31,7 +32,7 @@ function installScrollAndTallBoxStyle() {
       display: grid !important;
       grid-template-rows: auto auto auto auto !important;
       gap: 16px !important;
-      padding-bottom: 116px !important;
+      padding-bottom: 148px !important;
     }
 
     .xcf-hero {
@@ -60,7 +61,7 @@ function installScrollAndTallBoxStyle() {
       min-height: auto !important;
       height: auto !important;
       grid-template-rows: auto !important;
-      grid-auto-rows: minmax(230px, auto) !important;
+      grid-auto-rows: minmax(250px, auto) !important;
       align-items: stretch !important;
       gap: 16px !important;
       overflow: visible !important;
@@ -68,14 +69,14 @@ function installScrollAndTallBoxStyle() {
 
     .xcf-card,
     #${CARD_ID} {
-      min-height: 230px !important;
+      min-height: 250px !important;
       height: auto !important;
       overflow: visible !important;
       border-radius: 30px !important;
     }
 
     .xcf-action-hub-card {
-      min-height: 390px !important;
+      min-height: 410px !important;
     }
 
     .xcf-action-box-grid {
@@ -83,32 +84,117 @@ function installScrollAndTallBoxStyle() {
     }
 
     .xcf-action-box {
-      min-height: 118px !important;
+      min-height: 126px !important;
       height: auto !important;
       padding: 16px !important;
     }
 
     .xcf-live-card {
-      min-height: 430px !important;
+      min-height: 450px !important;
     }
 
     .xcf-map-card {
-      min-height: 230px !important;
+      min-height: 240px !important;
     }
 
     .xcf-money-card,
     .xcf-review-card {
       height: auto !important;
-      min-height: 250px !important;
+      min-height: 270px !important;
       align-self: stretch !important;
     }
 
     .xcf-money-hero {
-      min-height: 128px !important;
+      min-height: 138px !important;
     }
 
     #${CARD_ID} {
-      min-height: 220px !important;
+      min-height: 245px !important;
+      display: grid !important;
+      align-content: stretch !important;
+      gap: 14px !important;
+      padding: 18px !important;
+      text-align: left !important;
+      cursor: pointer !important;
+      color: #ecfdf5 !important;
+      background: linear-gradient(135deg, #052e16 0%, #166534 58%, #22c55e 100%) !important;
+      border: 1px solid rgba(22, 163, 74, .36) !important;
+      box-shadow: 0 24px 60px rgba(22, 163, 74, .24), inset 0 1px 0 rgba(255, 255, 255, .18) !important;
+    }
+
+    #${CARD_ID} header {
+      min-height: auto !important;
+      display: flex !important;
+      align-items: flex-start !important;
+      justify-content: space-between !important;
+      gap: 12px !important;
+      padding: 0 !important;
+      border: 0 !important;
+      background: transparent !important;
+    }
+
+    #${CARD_ID} header small,
+    #${CARD_ID} .xcf-approved-page-hero span {
+      display: block !important;
+      color: #bbf7d0 !important;
+      font-size: .68rem !important;
+      font-weight: 950 !important;
+      letter-spacing: .13em !important;
+      text-transform: uppercase !important;
+      line-height: 1.15 !important;
+    }
+
+    #${CARD_ID} header b {
+      display: block !important;
+      margin-top: 4px !important;
+      color: #fff !important;
+      font-size: 1.2rem !important;
+      line-height: 1 !important;
+      font-weight: 950 !important;
+      letter-spacing: -.04em !important;
+    }
+
+    #${CARD_ID} header strong {
+      min-width: 42px !important;
+      height: 34px !important;
+      display: grid !important;
+      place-items: center !important;
+      border-radius: 999px !important;
+      color: #fff !important;
+      background: rgba(255, 255, 255, .16) !important;
+      border: 1px solid rgba(255, 255, 255, .18) !important;
+      font-size: .86rem !important;
+      font-weight: 950 !important;
+    }
+
+    #${CARD_ID} .xcf-approved-page-hero {
+      display: grid !important;
+      align-content: center !important;
+      gap: 6px !important;
+      min-height: 105px !important;
+      padding: 14px !important;
+      border-radius: 22px !important;
+      background: rgba(255, 255, 255, .12) !important;
+      border: 1px solid rgba(255, 255, 255, .14) !important;
+    }
+
+    #${CARD_ID} .xcf-approved-page-hero b {
+      display: block !important;
+      color: #fff !important;
+      font-size: clamp(2rem, 3vw, 3rem) !important;
+      line-height: .92 !important;
+      font-weight: 950 !important;
+      letter-spacing: -.07em !important;
+    }
+
+    #${CARD_ID} .xcf-approved-page-hero small,
+    #${CARD_ID} .xcf-been-approved-copy {
+      display: block !important;
+      color: #dcfce7 !important;
+      font-size: .82rem !important;
+      line-height: 1.35 !important;
+      font-weight: 850 !important;
+      margin: 0 !important;
     }
 
     .xcf-bottom-nav {
@@ -122,14 +208,14 @@ function installScrollAndTallBoxStyle() {
     }
 
     @media (max-height: 820px) and (min-width: 981px) {
-      .xcf-shell { padding-bottom: 108px !important; }
-      .xcf-hero { min-height: 145px !important; }
-      .xcf-metric { min-height: 104px !important; }
-      .xcf-card, #${CARD_ID} { min-height: 215px !important; }
-      .xcf-action-hub-card { min-height: 360px !important; }
-      .xcf-action-box { min-height: 108px !important; }
-      .xcf-live-card { min-height: 390px !important; }
-      .xcf-map-card { min-height: 205px !important; }
+      .xcf-shell { padding-bottom: 140px !important; }
+      .xcf-hero { min-height: 150px !important; }
+      .xcf-metric { min-height: 110px !important; }
+      .xcf-card, #${CARD_ID} { min-height: 238px !important; }
+      .xcf-action-hub-card { min-height: 385px !important; }
+      .xcf-action-box { min-height: 118px !important; }
+      .xcf-live-card { min-height: 420px !important; }
+      .xcf-map-card { min-height: 220px !important; }
     }
 
     @media (max-width: 1220px) {
@@ -138,7 +224,7 @@ function installScrollAndTallBoxStyle() {
       }
       .xcf-card,
       #${CARD_ID} {
-        min-height: 220px !important;
+        min-height: 240px !important;
       }
     }
   `;
