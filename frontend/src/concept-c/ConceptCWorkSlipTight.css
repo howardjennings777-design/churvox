@@ -64,12 +64,27 @@
   color:#fff!important;
   border:1px solid rgba(255,255,255,.12)!important;
   box-shadow:0 20px 46px rgba(2,6,23,.18)!important;
-  min-height:200px!important;
+  min-height:240px!important;
 }
 .xcf-approval-brief header{display:flex!important;align-items:flex-end!important;justify-content:space-between!important;gap:12px!important;border:0!important;padding:0!important;margin:0!important;background:transparent!important}
 .xcf-approval-brief header small{color:#93c5fd!important;font-size:.7rem!important;font-weight:950!important;letter-spacing:.13em!important;text-transform:uppercase!important}
 .xcf-approval-brief header b{color:#fff!important;font-size:1.25rem!important;font-weight:950!important;letter-spacing:-.04em!important}
-.xcf-approval-brief p{margin:0!important;color:#e5eefc!important;font-size:1rem!important;line-height:1.45!important;font-weight:780!important;max-height:96px!important;overflow:auto!important;white-space:pre-wrap!important}
+.xcf-approval-brief p{
+  margin:0!important;
+  color:#e5eefc!important;
+  font-size:.95rem!important;
+  line-height:1.62!important;
+  font-weight:780!important;
+  max-height:170px!important;
+  overflow:auto!important;
+  white-space:pre-wrap!important;
+  padding:13px 14px!important;
+  border-radius:18px!important;
+  background:rgba(255,255,255,.075)!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+}
+.xcf-approval-brief p::-webkit-scrollbar{width:8px!important}
+.xcf-approval-brief p::-webkit-scrollbar-thumb{background:rgba(147,197,253,.45)!important;border-radius:99px!important}
 .xcf-approval-brief div{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}
 .xcf-approval-brief span{display:grid!important;gap:3px!important;padding:10px!important;border-radius:16px!important;background:rgba(255,255,255,.08)!important;border:1px solid rgba(255,255,255,.08)!important;min-width:0!important}
 .xcf-approval-brief span small{color:#93c5fd!important;font-size:.62rem!important;font-weight:950!important;text-transform:uppercase!important;letter-spacing:.08em!important}
@@ -158,6 +173,7 @@
   .xcf-drawer>h2{font-size:clamp(1.9rem,10vw,3rem)!important}
   .xcf-approval-brief,.xcf-message-draft,.xcf-worker-assign,.xcf-drawer dl,.xcf-drawer-record .xcf-edit-field:nth-of-type(1),.xcf-drawer-record .xcf-edit-field:nth-of-type(2),.xcf-drawer-record .xcf-edit-field:nth-of-type(3),.xcf-drawer-actions,.xcf-drawer-notice{grid-column:1!important;grid-row:auto!important;width:100%!important;justify-self:stretch!important}
   .xcf-approval-brief div{grid-template-columns:1fr 1fr!important}
+  .xcf-approval-brief p{max-height:220px!important}
   .xcf-drawer dl{grid-template-rows:auto!important}
   .xcf-drawer dl:after{display:none!important}
   .xcf-drawer-notice{bottom:8px!important}
