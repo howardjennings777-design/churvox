@@ -1,125 +1,58 @@
-// CHURVOX_COMMAND_FLOOR_BEEN_APPROVED_RUNTIME_20260526
-// CHURVOX_COMMAND_FLOOR_FORCE_SCROLL_TALL_BOXES_20260526
-// CHURVOX_COMMAND_FLOOR_BEEN_APPROVED_CARD_POLISH_20260526
+// CHURVOX_COMMAND_FLOOR_BEEN_APPROVED_CLEAN_CARD_20260527
+// Small page-card enhancer only. Scroll/layout now lives in real CSS.
 
 const CARD_ID = "churvox-been-approved-page-card";
-const SCROLL_STYLE_ID = "churvox-command-floor-scroll-tall-boxes";
+const STYLE_ID = "churvox-been-approved-page-card-style";
 
-function installScrollAndTallBoxStyle() {
-  if (document.getElementById(SCROLL_STYLE_ID)) return;
+function cleanText(node) {
+  return String(node?.textContent || "").replace(/\s+/g, " ").trim();
+}
+
+function readyToBillMetric() {
+  return Array.from(document.querySelectorAll("button, .xcf-metric")).find((node) => /Ready to Bill/i.test(cleanText(node)));
+}
+
+function readReadyToBill(metric) {
+  const amount = metric?.querySelector("b")?.textContent?.trim() || "$0";
+  const note = metric?.querySelector("small")?.textContent?.trim() || "0 approved jobs";
+  const count = Number((note.match(/\d+/) || ["0"])[0]);
+  return { amount, note, count };
+}
+
+function makeLine(tag, text, className = "") {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  node.textContent = text;
+  return node;
+}
+
+function installCardStyle() {
+  if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement("style");
-  style.id = SCROLL_STYLE_ID;
+  style.id = STYLE_ID;
   style.textContent = `
-    html,
-    body,
-    #root {
-      height: auto !important;
-      min-height: 100% !important;
-      overflow-y: auto !important;
-    }
-
-    body:has(.xcf-shell) {
-      overflow-y: auto !important;
-      overflow-x: hidden !important;
-      height: auto !important;
-    }
-
-    .xcf-shell {
-      height: auto !important;
-      min-height: 100vh !important;
-      max-height: none !important;
-      overflow: visible !important;
-      display: grid !important;
-      grid-template-rows: auto auto auto auto !important;
-      gap: 16px !important;
-      padding-bottom: 148px !important;
-    }
-
-    .xcf-hero {
-      min-height: 160px !important;
-      height: auto !important;
-    }
-
-    .xcf-metrics {
-      min-height: auto !important;
-      grid-auto-rows: minmax(112px, auto) !important;
-      gap: 14px !important;
-    }
-
-    .xcf-metric {
-      min-height: 112px !important;
-      height: auto !important;
-      padding: 18px !important;
-      border-radius: 26px !important;
-    }
-
-    .xcf-metric b {
-      font-size: clamp(1.65rem, 2.6vw, 2.35rem) !important;
-    }
-
-    .xcf-main-grid {
-      min-height: auto !important;
-      height: auto !important;
-      grid-template-rows: auto !important;
-      grid-auto-rows: minmax(250px, auto) !important;
-      align-items: stretch !important;
-      gap: 16px !important;
-      overflow: visible !important;
-    }
-
-    .xcf-card,
     #${CARD_ID} {
-      min-height: 250px !important;
-      height: auto !important;
-      overflow: visible !important;
-      border-radius: 30px !important;
-    }
-
-    .xcf-action-hub-card {
-      min-height: 410px !important;
-    }
-
-    .xcf-action-box-grid {
-      gap: 12px !important;
-    }
-
-    .xcf-action-box {
-      min-height: 126px !important;
-      height: auto !important;
-      padding: 16px !important;
-    }
-
-    .xcf-live-card {
-      min-height: 450px !important;
-    }
-
-    .xcf-map-card {
-      min-height: 240px !important;
-    }
-
-    .xcf-money-card,
-    .xcf-review-card {
-      height: auto !important;
-      min-height: 270px !important;
-      align-self: stretch !important;
-    }
-
-    .xcf-money-hero {
-      min-height: 138px !important;
-    }
-
-    #${CARD_ID} {
-      min-height: 245px !important;
+      min-height: 255px !important;
       display: grid !important;
+      grid-template-rows: auto minmax(118px, auto) auto !important;
       align-content: stretch !important;
       gap: 14px !important;
       padding: 18px !important;
+      border-radius: 30px !important;
+      border: 1px solid rgba(22, 163, 74, .36) !important;
+      color: #ecfdf5 !important;
+      background:
+        radial-gradient(circle at 14% 12%, rgba(187, 247, 208, .24), transparent 28%),
+        linear-gradient(135deg, #052e16 0%, #166534 58%, #22c55e 100%) !important;
+      box-shadow: 0 24px 60px rgba(22, 163, 74, .24), inset 0 1px 0 rgba(255, 255, 255, .18) !important;
       text-align: left !important;
       cursor: pointer !important;
-      color: #ecfdf5 !important;
-      background: linear-gradient(135deg, #052e16 0%, #166534 58%, #22c55e 100%) !important;
-      border: 1px solid rgba(22, 163, 74, .36) !important;
-      box-shadow: 0 24px 60px rgba(22, 163, 74, .24), inset 0 1px 0 rgba(255, 255, 255, .18) !important;
+      overflow: hidden !important;
+    }
+
+    #${CARD_ID}:hover {
+      transform: translateY(-1px) !important;
+      box-shadow: 0 30px 70px rgba(22, 163, 74, .30), inset 0 1px 0 rgba(255, 255, 255, .18) !important;
     }
 
     #${CARD_ID} header {
@@ -134,7 +67,7 @@ function installScrollAndTallBoxStyle() {
     }
 
     #${CARD_ID} header small,
-    #${CARD_ID} .xcf-approved-page-hero span {
+    #${CARD_ID} .xcf-been-approved-eyebrow {
       display: block !important;
       color: #bbf7d0 !important;
       font-size: .68rem !important;
@@ -146,118 +79,74 @@ function installScrollAndTallBoxStyle() {
 
     #${CARD_ID} header b {
       display: block !important;
-      margin-top: 4px !important;
+      margin-top: 5px !important;
       color: #fff !important;
-      font-size: 1.2rem !important;
+      font-size: 1.22rem !important;
       line-height: 1 !important;
       font-weight: 950 !important;
       letter-spacing: -.04em !important;
     }
 
     #${CARD_ID} header strong {
-      min-width: 42px !important;
-      height: 34px !important;
+      min-width: 44px !important;
+      height: 36px !important;
       display: grid !important;
       place-items: center !important;
       border-radius: 999px !important;
       color: #fff !important;
       background: rgba(255, 255, 255, .16) !important;
       border: 1px solid rgba(255, 255, 255, .18) !important;
-      font-size: .86rem !important;
+      font-size: .9rem !important;
       font-weight: 950 !important;
     }
 
-    #${CARD_ID} .xcf-approved-page-hero {
+    #${CARD_ID} .xcf-been-approved-panel {
       display: grid !important;
       align-content: center !important;
-      gap: 6px !important;
-      min-height: 105px !important;
-      padding: 14px !important;
-      border-radius: 22px !important;
-      background: rgba(255, 255, 255, .12) !important;
-      border: 1px solid rgba(255, 255, 255, .14) !important;
+      gap: 7px !important;
+      min-height: 118px !important;
+      padding: 16px !important;
+      border-radius: 24px !important;
+      background: rgba(255, 255, 255, .13) !important;
+      border: 1px solid rgba(255, 255, 255, .16) !important;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.12) !important;
     }
 
-    #${CARD_ID} .xcf-approved-page-hero b {
+    #${CARD_ID} .xcf-been-approved-amount {
       display: block !important;
       color: #fff !important;
-      font-size: clamp(2rem, 3vw, 3rem) !important;
-      line-height: .92 !important;
+      font-size: clamp(2.1rem, 3.3vw, 3.25rem) !important;
+      line-height: .9 !important;
       font-weight: 950 !important;
-      letter-spacing: -.07em !important;
+      letter-spacing: -.075em !important;
     }
 
-    #${CARD_ID} .xcf-approved-page-hero small,
+    #${CARD_ID} .xcf-been-approved-note,
     #${CARD_ID} .xcf-been-approved-copy {
       display: block !important;
       color: #dcfce7 !important;
-      font-size: .82rem !important;
+      font-size: .83rem !important;
       line-height: 1.35 !important;
       font-weight: 850 !important;
       margin: 0 !important;
     }
 
-    .xcf-bottom-nav {
-      position: fixed !important;
-      left: max(18px, env(safe-area-inset-left)) !important;
-      right: max(18px, env(safe-area-inset-right)) !important;
-      bottom: max(12px, env(safe-area-inset-bottom)) !important;
-      z-index: 60 !important;
-      max-width: 1280px !important;
-      margin: 0 auto !important;
-    }
-
-    @media (max-height: 820px) and (min-width: 981px) {
-      .xcf-shell { padding-bottom: 140px !important; }
-      .xcf-hero { min-height: 150px !important; }
-      .xcf-metric { min-height: 110px !important; }
-      .xcf-card, #${CARD_ID} { min-height: 238px !important; }
-      .xcf-action-hub-card { min-height: 385px !important; }
-      .xcf-action-box { min-height: 118px !important; }
-      .xcf-live-card { min-height: 420px !important; }
-      .xcf-map-card { min-height: 220px !important; }
+    #${CARD_ID} .xcf-been-approved-copy {
+      padding-top: 2px !important;
     }
 
     @media (max-width: 1220px) {
-      .xcf-main-grid {
-        grid-template-columns: 1fr !important;
-      }
-      .xcf-card,
-      #${CARD_ID} {
-        min-height: 240px !important;
-      }
+      #${CARD_ID} { min-height: 240px !important; }
     }
   `;
   document.head.appendChild(style);
 }
 
-function cleanText(node) {
-  return String(node?.textContent || "").replace(/\s+/g, " ").trim();
-}
-
-function readyToBillMetric() {
-  return Array.from(document.querySelectorAll("button, .xcf-metric")).find((node) => /Ready to Bill/i.test(cleanText(node)));
-}
-
-function readReadyToBill(metric) {
-  return {
-    amount: metric?.querySelector("b")?.textContent?.trim() || "$0",
-    note: metric?.querySelector("small")?.textContent?.trim() || "approved work",
-  };
-}
-
-function makeLine(tag, text) {
-  const node = document.createElement(tag);
-  node.textContent = text;
-  return node;
-}
-
 function ensureBeenApprovedCard() {
-  const shell = document.querySelector(".xcf-shell");
   const grid = document.querySelector(".xcf-main-grid");
-  if (!shell || !grid) return;
+  if (!grid) return;
 
-  installScrollAndTallBoxStyle();
+  installCardStyle();
 
   const metric = readyToBillMetric();
   const data = readReadyToBill(metric);
@@ -267,7 +156,7 @@ function ensureBeenApprovedCard() {
     card = document.createElement("button");
     card.id = CARD_ID;
     card.type = "button";
-    card.className = "xcf-card xcf-approved-page-card";
+    card.className = "xcf-card xcf-been-approved-card";
     card.setAttribute("aria-label", "Open Been Approved work");
     card.addEventListener("click", () => {
       const ready = readyToBillMetric();
@@ -278,26 +167,20 @@ function ensureBeenApprovedCard() {
     const titleWrap = document.createElement("span");
     titleWrap.appendChild(makeLine("small", "Signed-off work ready for admin"));
     titleWrap.appendChild(makeLine("b", "Been Approved"));
-    const count = makeLine("strong", "0");
-    count.className = "xcf-been-approved-count";
+    const count = makeLine("strong", "0", "xcf-been-approved-count");
     header.appendChild(titleWrap);
     header.appendChild(count);
 
-    const hero = document.createElement("div");
-    hero.className = "xcf-approved-page-hero";
-    hero.appendChild(makeLine("span", "Approved work"));
-    const amount = makeLine("b", data.amount);
-    amount.className = "xcf-been-approved-amount";
-    hero.appendChild(amount);
-    const note = makeLine("small", data.note);
-    note.className = "xcf-been-approved-note";
-    hero.appendChild(note);
+    const panel = document.createElement("div");
+    panel.className = "xcf-been-approved-panel";
+    panel.appendChild(makeLine("span", "Approved work", "xcf-been-approved-eyebrow"));
+    panel.appendChild(makeLine("b", data.amount, "xcf-been-approved-amount"));
+    panel.appendChild(makeLine("small", data.note, "xcf-been-approved-note"));
 
-    const copy = makeLine("p", "Tap to open approved work and prepare the next step without leaving Command Floor.");
-    copy.className = "xcf-been-approved-copy";
+    const copy = makeLine("p", "Open signed-off jobs and prepare the next admin step without leaving Command Floor.", "xcf-been-approved-copy");
 
     card.appendChild(header);
-    card.appendChild(hero);
+    card.appendChild(panel);
     card.appendChild(copy);
     grid.appendChild(card);
   }
@@ -307,14 +190,23 @@ function ensureBeenApprovedCard() {
   const count = card.querySelector(".xcf-been-approved-count");
   if (amount) amount.textContent = data.amount;
   if (note) note.textContent = data.note;
-  if (count) count.textContent = String((data.note.match(/\d+/) || ["0"])[0]);
+  if (count) count.textContent = String(data.count || 0);
 }
 
 function start() {
   if (typeof window === "undefined" || typeof document === "undefined") return;
-  const run = () => window.requestAnimationFrame(ensureBeenApprovedCard);
+  let raf = 0;
+  const run = () => {
+    if (raf) return;
+    raf = window.requestAnimationFrame(() => {
+      raf = 0;
+      ensureBeenApprovedCard();
+    });
+  };
   run();
-  window.setInterval(run, 1200);
+  const observer = new MutationObserver(run);
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+  [300, 900, 1800, 3500].forEach((ms) => window.setTimeout(run, ms));
 }
 
 start();
