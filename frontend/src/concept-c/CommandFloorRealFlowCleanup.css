@@ -1,0 +1,157 @@
+/* CHURVOX_COMMAND_FLOOR_REAL_FLOW_CLEANUP_20260527 */
+/* Final CSS layer for the real React Command Floor flow. */
+
+html:has(.xcf-shell),
+body:has(.xcf-shell),
+#root:has(.xcf-shell){
+  height:auto!important;
+  min-height:100%!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+}
+
+.xcf-shell{
+  height:auto!important;
+  min-height:100vh!important;
+  max-height:none!important;
+  overflow:visible!important;
+  padding-bottom:150px!important;
+}
+
+.xcf-main-grid{
+  height:auto!important;
+  min-height:auto!important;
+  align-items:stretch!important;
+  grid-auto-rows:minmax(255px,auto)!important;
+  overflow:visible!important;
+}
+
+.xcf-card-clickable{
+  cursor:pointer!important;
+  outline:none!important;
+}
+
+.xcf-card-clickable:hover{
+  transform:translateY(-1px)!important;
+}
+
+.xcf-card-clickable:focus-visible{
+  box-shadow:0 0 0 4px rgba(37,99,235,.22),0 24px 60px rgba(15,23,42,.12)!important;
+}
+
+.xcf-approved-page-card{
+  background:linear-gradient(135deg,#052e16 0%,#166534 58%,#22c55e 100%)!important;
+  border-color:rgba(22,163,74,.36)!important;
+  color:#ecfdf5!important;
+  box-shadow:0 24px 60px rgba(22,163,74,.24),inset 0 1px 0 rgba(255,255,255,.18)!important;
+}
+
+.xcf-approved-page-card *{
+  color:inherit!important;
+}
+
+.xcf-approved-page-card header strong{
+  background:rgba(255,255,255,.16)!important;
+  border-color:rgba(255,255,255,.18)!important;
+}
+
+.xcf-approved-page-card .xcf-money-hero{
+  background:rgba(255,255,255,.13)!important;
+  border:1px solid rgba(255,255,255,.16)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12)!important;
+}
+
+.xcf-approved-page-card .xcf-row{
+  background:rgba(255,255,255,.13)!important;
+  border-color:rgba(255,255,255,.15)!important;
+}
+
+.xcf-approved-page-card .xcf-row em{
+  background:rgba(255,255,255,.16)!important;
+  color:#fff!important;
+}
+
+.xcf-group-summary{
+  grid-column:1/-1!important;
+  grid-row:4!important;
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,190px)) minmax(0,1fr)!important;
+  gap:12px!important;
+  padding:14px!important;
+  border-radius:22px!important;
+  background:rgba(255,255,255,.96)!important;
+  border:1px solid rgba(15,23,42,.09)!important;
+  box-shadow:0 14px 34px rgba(15,23,42,.07)!important;
+}
+
+.xcf-group-summary span{
+  display:grid!important;
+  align-content:center!important;
+  gap:4px!important;
+  padding:12px!important;
+  border-radius:16px!important;
+  background:rgba(37,99,235,.08)!important;
+}
+
+.xcf-group-summary small{
+  color:#2563eb!important;
+  font-size:.65rem!important;
+  font-weight:950!important;
+  letter-spacing:.1em!important;
+  text-transform:uppercase!important;
+}
+
+.xcf-group-summary b{
+  color:#07111f!important;
+  font-size:1.35rem!important;
+  line-height:1!important;
+  font-weight:950!important;
+}
+
+.xcf-group-summary p{
+  margin:0!important;
+  align-self:center!important;
+  color:#475569!important;
+  font-size:.9rem!important;
+  line-height:1.35!important;
+  font-weight:850!important;
+}
+
+.xcf-drawer-group .xcf-slip-list{
+  grid-row:5/7!important;
+}
+
+.xcf-drawer-actions .xcf-action-primary{
+  background:#16a34a!important;
+  color:#fff!important;
+  box-shadow:0 14px 34px rgba(22,163,74,.22)!important;
+}
+
+.xcf-drawer-actions .xcf-action-muted{
+  background:#0f172a!important;
+  color:#fff!important;
+}
+
+.xcf-drawer-actions .xcf-action-danger{
+  background:#ef4444!important;
+  color:#fff!important;
+}
+
+.xcf-bottom-nav{
+  position:fixed!important;
+  left:max(18px,env(safe-area-inset-left))!important;
+  right:max(18px,env(safe-area-inset-right))!important;
+  bottom:max(12px,env(safe-area-inset-bottom))!important;
+  z-index:60!important;
+  max-width:1280px!important;
+  margin:0 auto!important;
+}
+
+@media(max-width:980px){
+  .xcf-shell{padding-bottom:122px!important;}
+  .xcf-main-grid{grid-template-columns:1fr!important;}
+  .xcf-group-summary{
+    grid-template-columns:1fr!important;
+    grid-row:auto!important;
+  }
+}
