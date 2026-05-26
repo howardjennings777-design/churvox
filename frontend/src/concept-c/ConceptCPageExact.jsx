@@ -3,14 +3,54 @@ import { Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
 import "./ConceptCPageExact.css";
 import "./ConceptCFullScreenSlip.css";
+import "./ConceptCWorkSlipTight.css";
 
 const arr = (v) => Array.isArray(v) ? v : Array.isArray(v?.data) ? v.data : Array.isArray(v?.items) ? v.items : Array.isArray(v?.jobs) ? v.jobs : Array.isArray(v?.clients) ? v.clients : Array.isArray(v?.invoices) ? v.invoices : Array.isArray(v?.quotes) ? v.quotes : Array.isArray(v?.workers) ? v.workers : Array.isArray(v?.actions) ? v.actions : Array.isArray(v?.notifications) ? v.notifications : [];
-const str = (v) => String(v || "");
+const str = (v) => String(v || "").trim();
 const low = (v) => str(v).toLowerCase();
 const idOf = (v) => str(v?.id || v?._id || v?.uuid || "");
 const cash = (v) => `$${Number(v || 0).toLocaleString("en-NZ", { maximumFractionDigits: 0 })}`;
 const sum = (items) => items.reduce((total, item) => total + Number(item.amount || 0), 0);
-const detailText = (record, fallback = "") => str(record?.description || record?.job_description || record?.service_description || record?.scope || record?.completion_notes || record?.worker_notes || record?.job_notes || record?.notes || record?.admin_notes || record?.message || record?.reason || record?.address || fallback);
+const firstText = (...values) => values.map(str).find(Boolean) || "";
+const detailText = (record, fallback = "") => firstText(record?.description, record?.job_description, record?.service_description, record?.scope, record?.completion_notes, record?.worker_notes, record?.job_notes, record?.notes, record?.admin_notes, record?.message, record?.reason, record?.address, fallback);
+
+function approvalBrief(picked, draft) {
+  const raw = picked?.raw || {};
+  const type = picked?.type || "record";
+  const customer = firstText(raw.client_name, raw.customer_name, raw.name, raw.email, picked?.title, "Customer not recorded");
+  const site = firstText(raw.address, raw.site_address, raw.job_address, raw.location, "No site address recorded");
+  const assigned = firstText(raw.assigned_worker_name, raw.worker_name, raw.assigned_to_name, raw.assigned_worker_email, raw.assigned_worker_id, "Not assigned yet");
+  const finished = firstText(raw.completed_at, raw.finished_at, raw.updated_at, raw.date, "No finish time recorded");
+  const description = detailText(raw, draft?.meta || picked?.meta || "No job detail recorded yet. Add the approval notes here before approving.");
+  const value = Number(picked?.amount || raw.total || raw.amount || raw.price || raw.job_price || raw.fixed_price || 0) > 0 ? cash(picked?.amount || raw.total || raw.amount || raw.price || raw.job_price || raw.fixed_price) : "No price set";
+  const status = picked?.state || raw.status || "Review";
+  const summary = type === "invoice"
+    ? `Approve this invoice for ${customer}. Check the description, value and status before sending or syncing.`
+    : type === "quote"
+      ? `Approve or review this quote for ${customer}. Check scope, value and customer detail before follow-up.`
+      : type === "client"
+        ? `Review this customer record and confirm the missing or changed details are correct.`
+        : `Approve this job only if the work details below match what was done on site.`;
+  const outcome = type === "invoice"
+    ? "Approval marks the invoice as approved. Sending/payment steps stay separate."
+    : type === "quote"
+      ? "Approval confirms the quote is ready for customer follow-up."
+      : "Approval marks this work as reviewed so Churvox can prepare the next admin step, usually invoice or customer follow-up.";
+
+  return {
+    summary,
+    description,
+    outcome,
+    facts: [
+      ["Customer", customer],
+      ["Site", site],
+      ["Assigned", assigned],
+      ["Value", value],
+      ["Status", status],
+      ["Last update", finished],
+    ],
+  };
+}
 
 const API = {
   dashboard: { jobs: "/jobs", clients: "/clients", invoices: "/invoices", quotes: "/quotes", workers: "/team/workers", actions: "/ai-operator/actions", notifications: "/notifications" },
@@ -259,6 +299,7 @@ function DetailDrawer({ picked, onClose, onAction }) {
   if (!picked) return null;
   const isGroup = picked.type === "action_group";
   const items = picked.items || [];
+  const brief = isGroup ? null : approvalBrief(picked, draft);
 
   const run = async (action) => {
     setBusy(true);
@@ -272,7 +313,7 @@ function DetailDrawer({ picked, onClose, onAction }) {
     <button className="xcf-close" type="button" onClick={onClose}>Close</button>
     <p>{picked.code || picked.type}</p>
     <h2>{picked.title}</h2>
-    <span>{isGroup ? picked.meta : draft.meta}</span>
+    <span>{isGroup ? picked.meta : brief.summary}</span>
 
     {isGroup ? <div className="xcf-slip-list">
       {items.length ? items.slice(0, 12).map((x, i) => <button className="xcf-slip-row" type="button" key={`${x.type}-${x.id}-${i}`} onClick={() => setDraft({ title: x.title, meta: detailText(x.raw || {}, x.meta), status: x.state })}>
@@ -280,8 +321,14 @@ function DetailDrawer({ picked, onClose, onAction }) {
       </button>) : <Empty text="Nothing waiting in this slip." />}
     </div> : <>
       <dl><div><dt>Status</dt><dd>{picked.state}</dd></div><div><dt>Value</dt><dd>{Number(picked.amount || 0) > 0 ? cash(picked.amount) : "—"}</dd></div><div><dt>Code</dt><dd>{picked.code}</dd></div></dl>
+      <section className="xcf-approval-brief">
+        <header><small>AI approval brief</small><b>What you are approving</b></header>
+        <p>{brief.description}</p>
+        <div>{brief.facts.map(([label, value]) => <span key={label}><small>{label}</small><b>{value}</b></span>)}</div>
+        <strong>{brief.outcome}</strong>
+      </section>
       <EditableField label="Title" value={draft.title} onChange={(v) => setDraft((d) => ({ ...d, title: v }))} />
-      <EditableField label="What you are approving" value={draft.meta} onChange={(v) => setDraft((d) => ({ ...d, meta: v }))} textarea />
+      <EditableField label="Approval description / edit before saving" value={draft.meta} onChange={(v) => setDraft((d) => ({ ...d, meta: v }))} textarea />
       <EditableField label="Status" value={draft.status} onChange={(v) => setDraft((d) => ({ ...d, status: v }))} />
     </>}
 
