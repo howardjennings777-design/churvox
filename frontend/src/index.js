@@ -14,6 +14,7 @@ import './workhorseLiveCheck';
 import './renderDeployMarker';
 import './deploy/guidedOperatorFloorDeployMarker';
 import './deploy/commandFloorTestingDeployMarker';
+import './deploy/commandFloorRuntimeMarkers';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
