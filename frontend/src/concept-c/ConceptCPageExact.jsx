@@ -12,11 +12,32 @@ const idOf = (v) => str(v?.id || v?._id || v?.uuid || "");
 const cash = (v) => `$${Number(v || 0).toLocaleString("en-NZ", { maximumFractionDigits: 0 })}`;
 const sum = (items) => items.reduce((total, item) => total + Number(item.amount || 0), 0);
 const firstText = (...values) => values.map(str).find(Boolean) || "";
-const detailText = (record, fallback = "") => firstText(record?.description, record?.job_description, record?.service_description, record?.scope, record?.completion_notes, record?.worker_notes, record?.job_notes, record?.notes, record?.admin_notes, record?.message, record?.reason, record?.address, fallback);
+const pretty = (v) => str(v).replace(/_/g, " ");
+const detailText = (record, fallback = "") => firstText(record?.owner_facing_explanation, record?.reason, record?.recommendation, record?.what_happens, record?.generated_message, record?.description, record?.job_description, record?.service_description, record?.scope, record?.completion_notes, record?.worker_notes, record?.job_notes, record?.notes, record?.admin_notes, record?.message, record?.address, fallback);
 
 function approvalBrief(picked, draft) {
   const raw = picked?.raw || {};
   const type = picked?.type || "record";
+
+  if (type === "action") {
+    const reason = firstText(raw.owner_facing_explanation, raw.reason, raw.subtitle, raw.description, raw.message, picked?.meta, "AI prepared this action for owner review.");
+    const happens = firstText(raw.what_happens, raw.outcome, raw.result, "Approving runs this AI Operator action using the saved approval endpoint.");
+    const recommendation = firstText(raw.recommendation, raw.generated_message, raw.draft_message, "Review the details, then approve or reject.");
+    return {
+      summary: `AI prepared this action. Check the reason, risk and what will happen before approving.`,
+      description: `${reason}${recommendation && recommendation !== reason ? `\n\nRecommendation: ${recommendation}` : ""}`,
+      outcome: happens,
+      facts: [
+        ["Risk", pretty(raw.risk || raw.risk_level || "medium")],
+        ["Action", pretty(raw.action_type || raw.type || "AI action")],
+        ["Group", pretty(raw.group || "general")],
+        ["Status", pretty(raw.status || picked?.state || "pending")],
+        ["Related", pretty(raw.related_type || raw.target_type || "record")],
+        ["Created", firstText(raw.created_at, raw.updated_at, "Not recorded")],
+      ],
+    };
+  }
+
   const customer = firstText(raw.client_name, raw.customer_name, raw.name, raw.email, picked?.title, "Customer not recorded");
   const site = firstText(raw.address, raw.site_address, raw.job_address, raw.location, "No site address recorded");
   const assigned = firstText(raw.assigned_worker_name, raw.worker_name, raw.assigned_to_name, raw.assigned_worker_email, raw.assigned_worker_id, "Not assigned yet");
@@ -128,7 +149,7 @@ function item(type, record) {
     return { ...base, code: "CREW", title: record.name || record.full_name || record.email || "Worker", meta: active ? `On site · ${active}` : (record.role || record.email || "Worker record"), state: active ? "On job" : "Available", href: "/team" };
   }
 
-  return { ...base, code: type === "alert" ? "ALERT" : "AI", title: record.title || record.summary || record.subject || "Prepared action", meta: detailText(record, "Prepared for review."), state: record.status || "Review", href: record.target_url || record.url || "#" };
+  return { ...base, code: type === "alert" ? "ALERT" : "AI ACTION", title: record.title || record.summary || record.subject || "Prepared action", meta: detailText(record, "Prepared for review."), state: record.status || "Review", href: record.target_url || record.url || "#" };
 }
 
 function reviewed(x) {
@@ -284,7 +305,7 @@ function EditableField({ label, value, onChange, textarea = false }) {
   return <label className="xcf-edit-field"><span>{label}</span>{textarea ? <textarea value={value} onChange={(e) => onChange(e.target.value)} /> : <input value={value} onChange={(e) => onChange(e.target.value)} />}</label>;
 }
 
-function DetailDrawer({ picked, onClose, onAction }) {
+function DetailDrawer({ picked, onClose, onAction, onPick }) {
   const [draft, setDraft] = useState({ title: "", meta: "", status: "" });
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
@@ -298,6 +319,7 @@ function DetailDrawer({ picked, onClose, onAction }) {
 
   if (!picked) return null;
   const isGroup = picked.type === "action_group";
+  const isAction = picked.type === "action";
   const items = picked.items || [];
   const brief = isGroup ? null : approvalBrief(picked, draft);
 
@@ -316,28 +338,31 @@ function DetailDrawer({ picked, onClose, onAction }) {
     <span>{isGroup ? picked.meta : brief.summary}</span>
 
     {isGroup ? <div className="xcf-slip-list">
-      {items.length ? items.slice(0, 12).map((x, i) => <button className="xcf-slip-row" type="button" key={`${x.type}-${x.id}-${i}`} onClick={() => setDraft({ title: x.title, meta: detailText(x.raw || {}, x.meta), status: x.state })}>
+      {items.length ? items.slice(0, 12).map((x, i) => <button className="xcf-slip-row" type="button" key={`${x.type}-${x.id}-${i}`} onClick={() => onPick(x)}>
         <b>{x.title}</b><small>{x.code} · {detailText(x.raw || {}, x.meta)}</small><em>{Number(x.amount || 0) > 0 ? cash(x.amount) : x.state}</em>
       </button>) : <Empty text="Nothing waiting in this slip." />}
     </div> : <>
       <dl><div><dt>Status</dt><dd>{picked.state}</dd></div><div><dt>Value</dt><dd>{Number(picked.amount || 0) > 0 ? cash(picked.amount) : "—"}</dd></div><div><dt>Code</dt><dd>{picked.code}</dd></div></dl>
       <section className="xcf-approval-brief">
-        <header><small>AI approval brief</small><b>What you are approving</b></header>
+        <header><small>{isAction ? "AI operator action" : "AI approval brief"}</small><b>{isAction ? "Approve or reject this action" : "What you are approving"}</b></header>
         <p>{brief.description}</p>
         <div>{brief.facts.map(([label, value]) => <span key={label}><small>{label}</small><b>{value}</b></span>)}</div>
         <strong>{brief.outcome}</strong>
       </section>
       <EditableField label="Title" value={draft.title} onChange={(v) => setDraft((d) => ({ ...d, title: v }))} />
-      <EditableField label="Approval description / edit before saving" value={draft.meta} onChange={(v) => setDraft((d) => ({ ...d, meta: v }))} textarea />
+      <EditableField label={isAction ? "AI reason / drafted message" : "Approval description / edit before saving"} value={draft.meta} onChange={(v) => setDraft((d) => ({ ...d, meta: v }))} textarea />
       <EditableField label="Status" value={draft.status} onChange={(v) => setDraft((d) => ({ ...d, status: v }))} />
     </>}
 
     <div className="xcf-drawer-actions">
-      {!isGroup && <button type="button" disabled={busy} onClick={() => run("save")}>Save changes</button>}
-      <button type="button" disabled={busy} onClick={() => run("approve")}>{isGroup ? "Approve selected" : "Approve"}</button>
-      <button type="button" disabled={busy} onClick={() => run("invoice")}>Prepare invoice</button>
-      <button type="button" disabled={busy} onClick={() => run("message")}>Draft message</button>
-      {picked.href && picked.href !== "#" && <Link to={picked.href}>Full page</Link>}
+      {isGroup ? <button className="xcf-action-primary" type="button" disabled={!items.length} onClick={() => items[0] && onPick(items[0])}>Open first item</button> : <>
+        {!isAction && <button className="xcf-action-muted" type="button" disabled={busy} onClick={() => run("save")}>Save changes</button>}
+        <button className="xcf-action-primary" type="button" disabled={busy} onClick={() => run("approve")}>{isAction ? "Approve & execute" : "Approve work"}</button>
+        {isAction && <button className="xcf-action-danger" type="button" disabled={busy} onClick={() => run("reject")}>Reject action</button>}
+        {!isAction && <button type="button" disabled={busy} onClick={() => run("invoice")}>Prepare invoice</button>}
+        <button type="button" disabled={busy} onClick={() => run("message")}>Draft message</button>
+        {picked.href && picked.href !== "#" && <Link to={picked.href}>Full page</Link>}
+      </>}
     </div>
     {notice && <strong className="xcf-drawer-notice">{notice}</strong>}
   </aside>;
@@ -346,10 +371,25 @@ function DetailDrawer({ picked, onClose, onAction }) {
 async function runRecordAction(action, picked, draft, api, reload) {
   if (!picked || picked.type === "action_group") return "Open a record inside the slip first.";
   const id = picked.id;
-  if (!id && ["save", "approve", "invoice"].includes(action)) return "This record has no saved ID yet.";
+  if (!id && ["save", "approve", "reject", "invoice"].includes(action)) return "This record has no saved ID yet.";
   const titlePayload = { title: draft.title, description: draft.meta, status: draft.status };
 
   try {
+    if (picked.type === "action") {
+      if (action === "approve") {
+        const res = await api.post(`/ai-operator/actions/${id}/approve`, {});
+        await reload();
+        return res?.success ? "AI action approved and executed." : `Could not approve AI action: ${res?.error || "unknown error"}`;
+      }
+      if (action === "reject") {
+        const res = await api.post(`/ai-operator/actions/${id}/reject`, {});
+        await reload();
+        return res?.success ? "AI action rejected." : `Could not reject AI action: ${res?.error || "unknown error"}`;
+      }
+      if (action === "message") return firstText(picked.raw?.generated_message, picked.raw?.draft_message, "No drafted message saved for this AI action yet.");
+      return "AI action is ready for approve or reject.";
+    }
+
     if (action === "save") {
       const endpoint = picked.type === "invoice" ? `/invoices/${id}` : picked.type === "quote" ? `/quotes/${id}` : picked.type === "client" ? `/clients/${id}` : `/jobs/${id}`;
       const res = await api.patch(endpoint, titlePayload);
@@ -367,7 +407,7 @@ async function runRecordAction(action, picked, draft, api, reload) {
       return res?.success ? "Work approved." : `Could not approve: ${res?.error || "unknown error"}`;
     }
     if (action === "invoice") {
-      if (picked.type === "job") return "Use Full page only if you need the full invoice form. Draft invoice action stays here next.";
+      if (picked.type === "job" || picked.type === "work_review") return "Invoice prep is next: this should create a draft invoice in the slip instead of jumping pages.";
       return "Invoice prep is ready in the slip. Select a job first.";
     }
     if (action === "message") return "Message draft stays in this slip next; no page jump needed.";
@@ -385,5 +425,5 @@ export default function ConceptCPageExact({ area = "dashboard" }) {
   const [picked, setPicked] = useState(null);
   const onAction = useCallback((action, record, draft) => runRecordAction(action, record, draft, api, reload), [api, reload]);
 
-  return <>{area === "dashboard" ? <Dashboard m={m} loading={loading} onPick={setPicked} /> : <Workspace area={area} m={m} loading={loading} onPick={setPicked} />}<DetailDrawer picked={picked} onClose={() => setPicked(null)} onAction={onAction} /></>;
+  return <>{area === "dashboard" ? <Dashboard m={m} loading={loading} onPick={setPicked} /> : <Workspace area={area} m={m} loading={loading} onPick={setPicked} />}<DetailDrawer picked={picked} onClose={() => setPicked(null)} onAction={onAction} onPick={setPicked} /></>;
 }
