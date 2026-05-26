@@ -13,6 +13,7 @@ import './concept-c/commandFloorBalancedLayout.css';
 import './concept-c/commandFloorApprovalDesk.css';
 import './concept-c/commandFloorWorkSlipClarity.css';
 import './concept-c/commandFloorWorkSlipCleanOverride.css';
+import './concept-c/commandFloorSlipScrollFix.css';
 import './workhorseLiveCheck';
 import './renderDeployMarker';
 import './deploy/guidedOperatorFloorDeployMarker';
