@@ -1,0 +1,67 @@
+/* CHURVOX_WORK_SLIP_SCROLL_FIX_20260527 */
+/* Make full-screen Work Slips scroll inside the slip, not the page behind it. */
+
+html:has(.xcf-drawer),
+body:has(.xcf-drawer),
+#root:has(.xcf-drawer) {
+  overflow: hidden !important;
+  height: 100% !important;
+}
+
+.xcf-drawer {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
+  padding-bottom: max(118px, calc(96px + env(safe-area-inset-bottom))) !important;
+  z-index: 9999 !important;
+}
+
+.xcf-drawer::after {
+  content: "" !important;
+  display: block !important;
+  height: max(70px, env(safe-area-inset-bottom)) !important;
+  grid-column: 1 / -1 !important;
+}
+
+.xcf-drawer .xcf-close {
+  position: sticky !important;
+  top: 18px !important;
+  margin-left: auto !important;
+  z-index: 30 !important;
+}
+
+.xcf-drawer-actions {
+  position: sticky !important;
+  bottom: max(10px, env(safe-area-inset-bottom)) !important;
+  z-index: 25 !important;
+}
+
+.xcf-drawer-group .xcf-slip-list,
+.xcf-drawer-record .xcf-slip-list {
+  overflow: visible !important;
+  max-height: none !important;
+}
+
+@media (max-width: 900px) {
+  .xcf-drawer {
+    height: 100svh !important;
+    max-height: 100svh !important;
+    padding: 14px 12px max(120px, calc(100px + env(safe-area-inset-bottom))) !important;
+  }
+
+  .xcf-drawer .xcf-close {
+    top: 10px !important;
+  }
+
+  .xcf-drawer-actions {
+    position: sticky !important;
+    bottom: max(8px, env(safe-area-inset-bottom)) !important;
+  }
+}
