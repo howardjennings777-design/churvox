@@ -11,6 +11,7 @@ import './concept-c/conceptCCommandV38UsefulPolish.css';
 import './concept-c/commandFloorActionHubBoxes.css';
 import './concept-c/commandFloorBalancedLayout.css';
 import './concept-c/commandFloorApprovalDesk.css';
+import './concept-c/commandFloorWorkSlipClarity.css';
 import './workhorseLiveCheck';
 import './renderDeployMarker';
 import './deploy/guidedOperatorFloorDeployMarker';
