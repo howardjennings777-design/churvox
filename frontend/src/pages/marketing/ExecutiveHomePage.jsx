@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import "./ExecutivePublicSite.css";
 import "./ExecutiveCommandFloorPublicOverride.css";
+import "./ExecutiveApprovalLanding.css";
 
 const brandTextStyle = {
   color: "#f6fbfc",
@@ -72,7 +73,7 @@ function Footer() {
     <footer className="ex-footer">
       <div>
         <Link to="/" className="ex-brand ex-brand--footer"><Brand /></Link>
-        <p>AI command software for trade and service owners.</p>
+        <p>AI approval software for trade and service owners.</p>
       </div>
       <div className="ex-footer-links">
         <Link to="/features">Features</Link>
@@ -86,70 +87,88 @@ function Footer() {
 
 export { Nav, Footer };
 
-const actions = [
-  ["Send payment reminder", "Review", "red"],
-  ["Assign worker to job", "Assign", "green"],
-  ["Approve draft invoice", "Approve", "blue"],
-  ["Follow up accepted quote", "Review", "amber"],
+const lanes = [
+  ["Approve Work", "5", "Finished jobs with notes, evidence and value ready to review.", "amber"],
+  ["Approve Invoices", "$1.2k", "Draft invoices and owing work waiting for owner approval.", "green"],
+  ["Assign Workers", "26", "Unassigned jobs and crew gaps surfaced before they become problems.", "blue"],
+  ["Approve Messages", "20", "Quote follow-ups and customer updates drafted before sending.", "purple"],
+  ["Fix Issues", "25", "Missing price, missing details and blocked admin in one lane.", "red"],
 ];
 
-const liveCrew = ["Crew lead · On site", "Field worker · GPS verified", "Apprentice · Started 8:12"];
-const stats = [["Needs Action", "12", "8 overdue"], ["Live Crew", "9", "On job now"], ["Ready To Bill", "$4.8k", "5 invoices"], ["Owing", "$23.6k", "14 invoices"]];
-const operatingWins = [["01", "AI finds the work.", "Unassigned jobs, missing details, quote follow-ups, draft invoices and overdue reminders appear in one owner queue."], ["02", "Crew stays visible.", "See who is on a job, what they are working on, and what needs attention without hunting through pages."], ["03", "Money gets surfaced.", "Completed work, invoices owing and payment reminders stay close to the owner’s next decision."]];
-const rail = [["Admin prepared", "Payment reminders, invoices and job slips are drafted before you chase them."], ["Owner approves", "You stay in control of sends, invoices, pricing and customer touch points."], ["Crew visible", "Live job status, worker activity and job evidence stay in one command view."], ["Money surfaced", "Ready-to-bill work and owing invoices are pushed to the front."]];
+const steps = [
+  ["01", "Work comes in", "Jobs, quotes, invoices, crew updates and client details land in Churvox."],
+  ["02", "AI prepares the admin", "Churvox turns the noise into owner-ready approval lanes."],
+  ["03", "You approve the next step", "Open the slip, check the details, approve, assign, invoice or save the draft."],
+];
 
-function ProductShot() {
+const plans = [
+  ["Start", "$39", "Simple AI admin for solo operators."],
+  ["Crew", "$89", "Jobs, workers and core admin control."],
+  ["Operator", "$149", "The main Churvox AI Operator plan."],
+  ["Command", "$299", "Advanced roles, MYOB, payroll workspace and scale."],
+];
+
+function ApprovalDeskMockup() {
   return (
-    <aside className="ex-product-shot ex-product-shot--wow">
-      <div className="ex-window-top"><b>Churvox</b><span>Command Floor</span></div>
-      <div className="ex-kpi-row">{stats.map(([label, value, note]) => <article key={label}><span>{label}</span><b>{value}</b><small>{note}</small></article>)}</div>
-      <div className="ex-dashboard-grid">
-        <section className="ex-shot-panel ex-shot-actions">
-          <header><span>Smart priorities</span><b>Action Hub</b></header>
-          {actions.map(([item, tag, tone]) => <div key={item} className={`ex-shot-row tone-${tone}`}><i /><p>{item}</p><em>{tag}</em></div>)}
-        </section>
-        <section className="ex-shot-panel ex-shot-live">
-          <header><span>Field live</span><b>Live Crew</b></header>
-          <div className="ex-map"><i /><i /><i /><i /></div>
-          {liveCrew.map((item) => <div key={item} className="ex-live-row"><span /><p>{item}</p><em>GPS</em></div>)}
-        </section>
-        <section className="ex-shot-panel ex-shot-money">
-          <header><span>Cashflow</span><b>Money Desk</b></header>
-          <strong>$28,510</strong>
-          <p>Ready to bill and owing now</p>
-          <div className="ex-money-line" />
-        </section>
+    <aside className="ex-approval-mockup" aria-label="Churvox approval desk preview">
+      <div className="ex-mock-top"><b>Command Floor</b><span>Owner Approval Desk</span></div>
+      <section className="ex-mock-hero">
+        <div><small>Next approval</small><b>Approve finished work</b><span>89 decisions waiting</span></div>
+        <i>✓</i>
+      </section>
+      <div className="ex-mock-lanes">
+        {lanes.map(([title, value, copy, tone]) => (
+          <article key={title} className={`ex-mock-lane tone-${tone}`}>
+            <span>{title}</span>
+            <b>{value}</b>
+            <p>{copy}</p>
+            <em>{title.includes("Workers") ? "Assign" : title.includes("Issues") ? "Fix" : "Review"}</em>
+          </article>
+        ))}
       </div>
-      <div className="ex-wow-pulse"><span>AI operator live</span><b>Owner approval queue ready</b></div>
+      <div className="ex-mock-slip">
+        <small>Work Slip</small>
+        <b>Evidence, price, customer message and approval buttons stay on the same page.</b>
+      </div>
     </aside>
   );
 }
 
+function LaneCard({ title, value, copy, tone }) {
+  return <article className={`ex-lane-card tone-${tone}`}><span>{title}</span><b>{value}</b><p>{copy}</p></article>;
+}
+
 export default function ExecutiveHomePage() {
   return (
-    <main className="ex-site" data-version="CHURVOX_FULL_SCREEN_WOW_PUBLIC_20260526">
+    <main className="ex-site ex-approval-landing" data-version="CHURVOX_APPROVAL_LANDING_20260527">
       <Nav />
-      <section className="ex-hero ex-hero--wow">
-        <div className="ex-hero-copy">
-          <p className="ex-kicker">AI command center for trade businesses</p>
-          <h1>Run jobs, crew and money from one command floor.</h1>
-          <p className="ex-lead">Churvox turns daily trade admin into a live operating screen. AI prepares the next actions, crew stays visible, invoices surface when money is waiting, and the owner approves what matters.</p>
-          <div className="ex-actions"><Link to="/signup" className="ex-btn ex-btn--primary">Start free</Link><Link to="/features" className="ex-btn ex-btn--quiet">See how it works</Link></div>
-          <div className="ex-notes"><span>AI prepares admin</span><span>Owner approves</span><span>Live crew view</span><span>Money desk</span></div>
+      <section className="ex-landing-hero">
+        <div className="ex-landing-copy">
+          <p className="ex-kicker">AI approval desk for trade and service businesses</p>
+          <h1>Churvox does the admin. You approve.</h1>
+          <p className="ex-lead">Churvox turns finished work, invoices, worker assignments, customer messages and admin problems into clear approval lanes. Open the slip, check the details, approve the next step.</p>
+          <div className="ex-actions"><Link to="/signup" className="ex-btn ex-btn--primary">Start free trial</Link><Link to="/features" className="ex-btn ex-btn--quiet">See the approval flow</Link></div>
+          <div className="ex-notes"><span>Work approvals</span><span>Invoice approvals</span><span>Worker assignment</span><span>Message drafts</span><span>Fix issues</span></div>
         </div>
-        <ProductShot />
-        <div className="ex-wow-rail">
-          {rail.map(([title, copy]) => <article key={title}><b>{title}</b><span>{copy}</span></article>)}
+        <ApprovalDeskMockup />
+      </section>
+      <section className="ex-lane-strip">
+        {lanes.map(([title, value, copy, tone]) => <LaneCard key={title} title={title} value={value} copy={copy} tone={tone} />)}
+      </section>
+      <section className="ex-approval-flow">
+        <div>
+          <p className="ex-kicker">How it works</p>
+          <h2>One page for the owner’s decisions.</h2>
+          <p>Instead of hunting through jobs, invoices, messages and worker screens, the owner starts in Command Floor. Churvox separates the work into clear lanes so the next decision is obvious.</p>
+          <Link to="/pricing" className="ex-btn ex-btn--primary">View pricing</Link>
+        </div>
+        <div className="ex-flow-steps">
+          {steps.map(([number, title, copy]) => <article key={title}><span>{number}</span><b>{title}</b><p>{copy}</p></article>)}
         </div>
       </section>
-      <section className="ex-proof">
-        {operatingWins.map(([number, title, copy]) => <article key={title}><span>{number}</span><h2>{title}</h2><p>{copy}</p></article>)}
-      </section>
-      <section className="ex-command-story">
-        <p className="ex-kicker">Why Churvox feels different</p>
-        <h2>It is not another dashboard. It is the daily operating floor.</h2>
-        <p>Most job apps make owners click through screens to find work. Churvox brings the business position forward first: actions, live crew, cashflow, issues, quotes and clients. Then the owner opens details only when needed.</p>
-        <Link to="/pricing" className="ex-btn ex-btn--primary">View pricing</Link>
+      <section className="ex-pricing-teaser">
+        <div><p className="ex-kicker">Plans</p><h2>Start simple. Grow into the Operator plan.</h2></div>
+        <div className="ex-plan-row">{plans.map(([name, price, copy]) => <article key={name}><span>{name}</span><b>{price}</b><small>/month + GST</small><p>{copy}</p></article>)}</div>
       </section>
       <Footer />
     </main>
