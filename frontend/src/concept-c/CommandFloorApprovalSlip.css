@@ -1,4 +1,11 @@
-/* CHURVOX_REAL_APPROVAL_SLIP_REPLACEMENT_20260527 */
+/* CHURVOX_REAL_APPROVAL_SLIP_FULLSCREEN_20260527 */
+
+html:has(.cfs-overlay),
+body:has(.cfs-overlay),
+#root:has(.cfs-overlay) {
+  height: 100%;
+  overflow: hidden;
+}
 
 .cfs-overlay {
   position: fixed;
@@ -6,7 +13,7 @@
   z-index: 99999;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 14px 14px 86px;
+  padding: 10px 10px 78px;
   background: rgba(238, 244, 251, .98);
   color: #07111f;
 }
@@ -14,10 +21,12 @@
 .cfs-overlay * { box-sizing: border-box; }
 
 .cfs-sheet {
-  width: min(1180px, 100%);
-  margin: 0 auto;
+  width: 100%;
+  min-height: calc(100dvh - 88px);
+  margin: 0;
   display: grid;
-  gap: 10px;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
+  gap: 9px;
 }
 
 .cfs-head,
@@ -34,13 +43,13 @@
 }
 
 .cfs-head {
-  min-height: 96px;
+  min-height: 86px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 14px;
   align-items: start;
-  padding: 16px 18px;
-  border-radius: 26px;
+  padding: 13px 16px;
+  border-radius: 22px;
   background: linear-gradient(135deg, #fff, #eff6ff);
 }
 
@@ -50,38 +59,39 @@
 .cfs-lane-summary small {
   margin: 0;
   color: #2563eb;
-  font-size: .62rem;
+  font-size: .58rem;
   font-weight: 950;
-  letter-spacing: .13em;
+  letter-spacing: .12em;
   text-transform: uppercase;
 }
 
 .cfs-head h2 {
-  margin: 4px 0 0;
-  font-size: clamp(2rem, 4vw, 4.4rem);
-  line-height: .86;
+  margin: 3px 0 0;
+  font-size: clamp(2.1rem, 4.6vw, 4.9rem);
+  line-height: .84;
   letter-spacing: -.085em;
   color: #07111f;
 }
 
 .cfs-head em {
   display: block;
-  max-width: 820px;
-  margin-top: 8px;
+  max-width: 1100px;
+  margin-top: 6px;
   color: #475569;
   font-style: normal;
-  font-size: .94rem;
-  line-height: 1.35;
+  font-size: .9rem;
+  line-height: 1.28;
   font-weight: 800;
 }
 
 .cfs-head button {
-  min-width: 86px;
-  height: 38px;
+  min-width: 84px;
+  height: 36px;
   border: 0;
   border-radius: 999px;
   background: #07111f;
   color: #fff;
+  font-size: .78rem;
   font-weight: 950;
   cursor: pointer;
 }
@@ -89,19 +99,19 @@
 .cfs-facts {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 8px;
-  padding: 10px;
-  border-radius: 20px;
+  gap: 7px;
+  padding: 8px;
+  border-radius: 18px;
 }
 
 .cfs-facts span,
 .cfs-lane-summary span {
-  min-height: 56px;
+  min-height: 48px;
   display: grid;
   align-content: center;
-  gap: 3px;
-  padding: 9px 10px;
-  border-radius: 14px;
+  gap: 2px;
+  padding: 8px 9px;
+  border-radius: 13px;
   background: #f8fafc;
   border: 1px solid rgba(15,23,42,.065);
 }
@@ -109,30 +119,32 @@
 .cfs-facts b,
 .cfs-lane-summary b {
   color: #07111f;
-  font-size: .82rem;
-  line-height: 1.12;
+  font-size: .8rem;
+  line-height: 1.08;
   font-weight: 950;
 }
 
 .cfs-main {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(250px, .65fr);
-  gap: 10px;
+  grid-template-columns: minmax(0, 1.35fr) minmax(260px, .65fr);
+  gap: 9px;
+  min-height: 0;
 }
 
 .cfs-card {
-  border-radius: 22px;
-  padding: 14px;
+  border-radius: 20px;
+  padding: 12px;
+  min-width: 0;
 }
 
 .cfs-card header {
-  margin-bottom: 9px;
+  margin-bottom: 7px;
 }
 
 .cfs-card b {
   display: block;
   color: #07111f;
-  font-size: 1rem;
+  font-size: .96rem;
   line-height: 1.12;
   font-weight: 950;
 }
@@ -140,13 +152,13 @@
 .cfs-card p,
 .cfs-card strong {
   color: #334155;
-  font-size: .86rem;
-  line-height: 1.42;
+  font-size: .82rem;
+  line-height: 1.34;
   font-weight: 760;
 }
 
 .cfs-brief {
-  min-height: 210px;
+  min-height: 190px;
   border-left: 5px solid #2563eb;
 }
 
@@ -159,61 +171,61 @@
 
 .cfs-brief strong {
   display: block;
-  margin-top: 12px;
-  padding: 10px 12px;
-  border-radius: 14px;
+  margin-top: 10px;
+  padding: 9px 11px;
+  border-radius: 13px;
   background: #eef6ff;
   color: #0f172a;
   font-weight: 900;
 }
 
 .cfs-evidence {
-  min-height: 210px;
+  min-height: 190px;
 }
 
 .cfs-photo-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 7px;
 }
 
 .cfs-photo-row span {
   overflow: hidden;
-  border-radius: 14px;
+  border-radius: 13px;
   border: 1px solid rgba(15,23,42,.08);
   background: #f8fafc;
 }
 
 .cfs-photo-row img {
   width: 100%;
-  height: 88px;
+  height: 78px;
   object-fit: cover;
   display: block;
 }
 
 .cfs-photo-row small {
   display: block;
-  padding: 6px;
-  font-size: .58rem;
+  padding: 5px;
+  font-size: .56rem;
 }
 
 .cfs-edit {
   display: grid;
-  grid-template-columns: minmax(160px, .8fr) minmax(0, 1.4fr) minmax(150px, .8fr);
-  gap: 9px;
-  padding: 12px;
-  border-radius: 22px;
+  grid-template-columns: minmax(160px, .75fr) minmax(0, 1.5fr) minmax(150px, .75fr);
+  gap: 8px;
+  padding: 10px;
+  border-radius: 20px;
 }
 
 .cfs-field {
   display: grid;
-  gap: 5px;
+  gap: 4px;
 }
 
 .cfs-field span {
   color: #64748b;
-  font-size: .58rem;
-  letter-spacing: .12em;
+  font-size: .56rem;
+  letter-spacing: .11em;
   text-transform: uppercase;
   font-weight: 950;
 }
@@ -224,26 +236,26 @@
 .cfs-card select {
   width: 100%;
   border: 1px solid rgba(15,23,42,.12);
-  border-radius: 12px;
+  border-radius: 11px;
   background: #fff;
   color: #07111f;
-  padding: 8px 9px;
+  padding: 7px 8px;
   font: inherit;
-  font-size: .82rem;
+  font-size: .78rem;
   font-weight: 760;
 }
 
 .cfs-field textarea,
 .cfs-card textarea {
-  min-height: 86px;
+  min-height: 74px;
   resize: vertical;
-  line-height: 1.34;
+  line-height: 1.3;
 }
 
 .cfs-lower {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(220px, .8fr) minmax(180px, .6fr);
-  gap: 10px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(240px, .85fr) minmax(200px, .65fr);
+  gap: 9px;
 }
 
 .cfs-next {
@@ -257,31 +269,33 @@
 }
 
 .cfs-actions {
-  position: sticky;
-  bottom: 8px;
+  position: fixed;
+  left: 10px;
+  right: 10px;
+  bottom: max(8px, env(safe-area-inset-bottom));
   z-index: 5;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 7px;
-  padding: 8px;
-  border-radius: 18px;
-  background: rgba(255,255,255,.95);
+  padding: 7px;
+  border-radius: 17px;
+  background: rgba(255,255,255,.96);
   box-shadow: 0 -10px 30px rgba(15,23,42,.12);
 }
 
 .cfs-actions button,
 .cfs-actions a {
-  min-height: 34px;
+  min-height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: 0;
   border-radius: 999px;
-  padding: 0 12px;
+  padding: 0 11px;
   color: #0f172a;
   background: #eef2f7;
-  font-size: .72rem;
+  font-size: .7rem;
   font-weight: 950;
   text-decoration: none;
   cursor: pointer;
@@ -304,44 +318,45 @@
 
 .cfs-notice {
   display: block;
-  padding: 10px 12px;
-  border-radius: 16px;
+  padding: 9px 11px;
+  border-radius: 14px;
   background: rgba(22,163,74,.10);
   color: #166534;
+  font-size: .8rem;
   font-weight: 900;
 }
 
 .cfs-lane-summary {
   display: grid;
   grid-template-columns: 140px 160px minmax(0, 1fr);
-  gap: 9px;
-  padding: 10px;
-  border-radius: 20px;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 18px;
 }
 
 .cfs-lane-summary strong {
   align-self: center;
   color: #334155;
-  font-size: .9rem;
+  font-size: .86rem;
 }
 
 .cfs-lane-list {
   display: grid;
   gap: 7px;
-  padding: 10px;
-  border-radius: 22px;
+  padding: 9px;
+  border-radius: 20px;
 }
 
 .cfs-lane-row {
-  min-height: 58px;
+  min-height: 54px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
   border: 1px solid rgba(15,23,42,.08);
-  border-radius: 16px;
+  border-radius: 15px;
   background: #fff;
-  padding: 10px;
+  padding: 9px;
   text-align: left;
   cursor: pointer;
 }
@@ -364,16 +379,17 @@
 }
 
 .cfs-empty {
-  min-height: 80px;
+  min-height: 76px;
   display: grid;
   place-items: center;
   color: #64748b;
-  border-radius: 16px;
+  border-radius: 15px;
   background: #f8fafc;
 }
 
 @media (max-width: 920px) {
   .cfs-overlay { padding: 10px 8px 86px; }
+  .cfs-sheet { min-height: calc(100svh - 90px); }
   .cfs-main,
   .cfs-edit,
   .cfs-lower,
