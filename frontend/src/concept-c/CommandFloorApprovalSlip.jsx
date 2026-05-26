@@ -40,11 +40,66 @@ function evidencePhotos(raw = {}) {
     });
 }
 
-function workerNameOf(worker) {
-  return firstText(worker?.raw?.name, worker?.raw?.full_name, worker?.raw?.email, worker?.title, worker?.name, "Worker");
+function workerRaw(worker) { return worker?.raw || worker || {}; }
+function workerNameOf(worker) { const raw = workerRaw(worker); return firstText(raw.name, raw.full_name, raw.email, worker?.title, worker?.name, "Worker"); }
+function workerIdOf(worker) { return idOf(workerRaw(worker)) || idOf(worker); }
+function workerRoleOf(worker) { const raw = workerRaw(worker); return low(raw.role || raw.position || raw.type || worker?.raw?.role || worker?.meta); }
+function workerAreaOf(worker) { const raw = workerRaw(worker); return low(raw.region || raw.area || raw.suburb || raw.zone || raw.base_area || raw.location); }
+function jobAreaOf(job) { const raw = job?.raw || job || {}; return low(raw.region || raw.area || raw.suburb || raw.zone || raw.address || raw.site_address || raw.job_address || raw.location); }
+function assignedWorkerIdOf(job) { const raw = job?.raw || job || {}; return firstText(raw.assigned_worker_id, raw.worker_id, raw.assigned_to, raw.assigned_user_id); }
+function assignedWorkerNameOf(job) { const raw = job?.raw || job || {}; return firstText(raw.assigned_worker_name, raw.worker_name, raw.assigned_to_name, raw.assigned_worker_email); }
+function isOpenJob(job) { const s = low((job?.raw || job || {}).status || job?.status); return !["completed", "complete", "done", "cancelled", "canceled", "paid"].includes(s); }
+function isWorkerBlocked(worker) {
+  const raw = workerRaw(worker);
+  const status = low(raw.status || raw.availability || raw.active_status || worker?.state);
+  const role = workerRoleOf(worker);
+  if (raw.disabled || raw.archived || raw.is_active === false || raw.active === false) return "worker is inactive";
+  if (["inactive", "disabled", "unavailable", "away", "off", "leave", "blocked"].some((x) => status.includes(x))) return status || "worker unavailable";
+  if (["payroll", "office", "admin", "owner", "accountant"].some((x) => role.includes(x))) return `${role} role is not a field-worker role`;
+  return "";
 }
-function workerIdOf(worker) {
-  return idOf(worker?.raw || worker) || idOf(worker);
+function workerHasActiveConflict(worker, jobs = [], picked) {
+  const wid = workerIdOf(worker);
+  const wname = low(workerNameOf(worker));
+  const raw = workerRaw(worker);
+  const activeJob = firstText(raw.current_job_id, raw.active_job_id, raw.current_job_title, raw.active_job_title);
+  if (activeJob) return `already active on ${activeJob}`;
+  const conflicts = (jobs || []).filter((job) => {
+    if (!job || job.id === picked?.id) return false;
+    if (!isOpenJob(job)) return false;
+    const jid = assignedWorkerIdOf(job);
+    const jname = low(assignedWorkerNameOf(job));
+    return Boolean((wid && jid && wid === jid) || (wname && jname && wname === jname));
+  });
+  if (conflicts.length) return `already assigned to ${conflicts.length} open job${conflicts.length === 1 ? "" : "s"}`;
+  return "";
+}
+function recommendWorkerForJob(picked, workers = [], jobs = []) {
+  const candidates = (workers || []).filter(Boolean).map((worker) => {
+    const blocked = isWorkerBlocked(worker);
+    const conflict = blocked ? "" : workerHasActiveConflict(worker, jobs, picked);
+    const role = workerRoleOf(worker);
+    const workerArea = workerAreaOf(worker);
+    const jobArea = jobAreaOf(picked);
+    const reasons = [];
+    let score = 0;
+    if (blocked) return { worker, score: -999, blocked, conflict, reasons: [blocked] };
+    if (conflict) return { worker, score: -500, blocked, conflict, reasons: [conflict] };
+    score += 50; reasons.push("no active conflict found");
+    if (workerArea && jobArea && (jobArea.includes(workerArea) || workerArea.includes(jobArea))) { score += 25; reasons.push("area match"); }
+    if (role.includes("worker") || role.includes("field") || role.includes("manager")) { score += 12; reasons.push(`${role || "field"} role can take jobs`); }
+    if (low(worker?.state).includes("available") || low(workerRaw(worker).availability).includes("available")) { score += 10; reasons.push("marked available"); }
+    if (!reasons.length) reasons.push("best available team member");
+    return { worker, score, blocked, conflict, reasons };
+  }).sort((a, b) => b.score - a.score);
+  const best = candidates.find((c) => c.score > 0) || null;
+  const blocked = candidates.filter((c) => c.score <= 0).slice(0, 4);
+  return {
+    best,
+    blocked,
+    summary: best ? `${workerNameOf(best.worker)} is recommended because ${best.reasons.join(", ")}.` : "No conflict-free field worker was found from the loaded team list.",
+    warning: best ? "Owner can still change the worker before assigning." : "Choose manually or clear a worker conflict first."
+  };
 }
 
 function messageDraftFromPicked(picked, draft = {}) {
@@ -67,22 +122,19 @@ function evidenceText(raw = {}, fallback = "") {
   return [`Scope: ${scope}`, `Worker notes: ${workerNotes}`, `Evidence: ${photos ? `${photos} photo${photos === 1 ? "" : "s"}` : "No photos recorded"}`, `Price: ${price ? cash(price) : "No price set"}`, `Invoice: ${firstText(raw.invoice_number, raw.draft_invoice_id, raw.invoice_id, raw.invoiced ? "Linked" : "Not linked")}`].join("\n");
 }
 
-function approvalBrief(picked, draft) {
+function approvalBrief(picked, draft, recommendation) {
   const raw = picked?.raw || {};
   const isJobLike = picked?.type === "job" || picked?.type === "work_review";
   const isAction = picked?.type === "action";
   const customer = firstText(raw.client_name, raw.customer_name, raw.name, raw.email, picked?.title, "Customer not recorded");
   const site = firstText(raw.address, raw.site_address, raw.job_address, raw.location, "No site address recorded");
-  const assigned = firstText(raw.assigned_worker_name, raw.worker_name, raw.assigned_to_name, raw.assigned_worker_email, raw.assigned_worker_id, "Not assigned yet");
+  const assigned = firstText(draft?.worker_name, raw.assigned_worker_name, raw.worker_name, raw.assigned_to_name, raw.assigned_worker_email, raw.assigned_worker_id, recommendation?.best ? workerNameOf(recommendation.best.worker) : "Not assigned yet");
   const value = Number(picked?.amount || 0) > 0 ? cash(picked.amount) : "No price set";
   if (isAction) return { summary: "AI prepared this action. Check the reason and outcome before approving.", description: detailText(raw, picked?.meta || "AI action waiting for approval."), outcome: firstText(raw.what_happens, raw.outcome, "Approval runs the saved AI Operator action."), facts: [["Risk", raw.risk || raw.risk_level || "medium"], ["Action", raw.action_type || raw.type || "AI action"], ["Status", raw.status || picked.state || "pending"], ["Created", firstText(raw.created_at, raw.updated_at, "Not recorded")]] };
-  return { summary: isJobLike ? "Approve this job only if the evidence matches the work done on site." : `Review this ${picked?.type || "record"} before taking the next step.`, description: isJobLike ? evidenceText(raw, draft?.meta || picked?.meta) : detailText(raw, draft?.meta || picked?.meta || "No detail recorded."), outcome: isJobLike ? "Approval moves this work into the invoice/admin lane." : "Save changes only. Approval buttons are limited by record type.", facts: [["Customer", customer], ["Site", site], ["Assigned", assigned], ["Value", value], ["Status", picked?.state || raw.status || "Review"]] };
+  return { summary: isJobLike ? "Approve this job only if the evidence and AI-prepared admin look right." : `Review this ${picked?.type || "record"} before taking the next step.`, description: isJobLike ? `${evidenceText(raw, draft?.meta || picked?.meta)}\n\nWorker recommendation: ${recommendation?.summary || "No worker recommendation needed."}` : detailText(raw, draft?.meta || picked?.meta || "No detail recorded."), outcome: isJobLike ? "Approval can move this work into invoice/admin. Assignment is still owner-approved." : "Save changes only. Approval buttons are limited by record type.", facts: [["Customer", customer], ["Site", site], ["Assigned", assigned], ["Value", value], ["Status", picked?.state || raw.status || "Review"]] };
 }
 
-function actionWorked(msg) {
-  return !/^(could not|action failed|need |select |choose |no message|this record|open a record|only jobs)/i.test(str(msg));
-}
-
+function actionWorked(msg) { return !/^(could not|action failed|need |select |choose |no message|this record|open a record|only jobs)/i.test(str(msg)); }
 function patchPickedAfterAction(picked, action, draft, msg) {
   if (!actionWorked(msg)) return null;
   const raw = { ...(picked?.raw || {}) };
@@ -96,27 +148,15 @@ function patchPickedAfterAction(picked, action, draft, msg) {
   return next;
 }
 
-function Field({ label, value, onChange, textarea = false }) {
-  return <label className="cfs-field"><span>{label}</span>{textarea ? <textarea value={value} onChange={(e) => onChange(e.target.value)} /> : <input value={value} onChange={(e) => onChange(e.target.value)} />}</label>;
-}
-
-function Fact({ label, value }) {
-  return <span><small>{label}</small><b>{value || "—"}</b></span>;
-}
+function Field({ label, value, onChange, textarea = false }) { return <label className="cfs-field"><span>{label}</span>{textarea ? <textarea value={value} onChange={(e) => onChange(e.target.value)} /> : <input value={value} onChange={(e) => onChange(e.target.value)} />}</label>; }
+function Fact({ label, value }) { return <span><small>{label}</small><b>{value || "—"}</b></span>; }
 
 function LaneSlip({ active, onClose, onPick }) {
   const items = active.items || [];
-  return <aside className="cfs-overlay cfs-lane-slip" data-version="CHURVOX_REAL_APPROVAL_SLIP_REPLACEMENT_20260527">
-    <section className="cfs-sheet">
-      <header className="cfs-head"><div><p>{active.code || "APPROVAL LANE"}</p><h2>{active.title}</h2><em>{active.meta}</em></div><button type="button" onClick={onClose}>Close</button></header>
-      <section className="cfs-lane-summary"><Fact label="Waiting" value={items.length} /><Fact label="Total value" value={Number(active.amount || 0) > 0 ? cash(active.amount) : "—"} /><strong>{active.actionLabel || "Open a row to approve the detail."}</strong></section>
-      <section className="cfs-lane-list">{items.length ? items.slice(0, 12).map((x, i) => <button className="cfs-lane-row" type="button" key={`${x.type}-${x.id}-${i}`} onClick={() => onPick(x)}><span><b>{x.title}</b><small>{x.code} · {detailText(x.raw || {}, x.meta)}</small></span><em>{Number(x.amount || 0) > 0 ? cash(x.amount) : x.state}</em></button>) : <div className="cfs-empty">Nothing waiting in this lane.</div>}</section>
-      <footer className="cfs-actions">{items.length ? <button className="primary" type="button" onClick={() => onPick(items[0])}>Open first waiting item</button> : <button disabled type="button">Nothing waiting</button>}</footer>
-    </section>
-  </aside>;
+  return <aside className="cfs-overlay cfs-lane-slip" data-version="CHURVOX_AI_PREFILL_RECOMMENDATION_20260527"><section className="cfs-sheet"><header className="cfs-head"><div><p>{active.code || "APPROVAL LANE"}</p><h2>{active.title}</h2><em>{active.meta}</em></div><button type="button" onClick={onClose}>Close</button></header><section className="cfs-lane-summary"><Fact label="Waiting" value={items.length} /><Fact label="Total value" value={Number(active.amount || 0) > 0 ? cash(active.amount) : "—"} /><strong>{active.actionLabel || "Open a row to approve the detail."}</strong></section><section className="cfs-lane-list">{items.length ? items.slice(0, 12).map((x, i) => <button className="cfs-lane-row" type="button" key={`${x.type}-${x.id}-${i}`} onClick={() => onPick(x)}><span><b>{x.title}</b><small>{x.code} · {detailText(x.raw || {}, x.meta)}</small></span><em>{Number(x.amount || 0) > 0 ? cash(x.amount) : x.state}</em></button>) : <div className="cfs-empty">Nothing waiting in this lane.</div>}</section><footer className="cfs-actions">{items.length ? <button className="primary" type="button" onClick={() => onPick(items[0])}>Open first waiting item</button> : <button disabled type="button">Nothing waiting</button>}</footer></section></aside>;
 }
 
-export default function CommandFloorApprovalSlip({ picked, onClose, onAction, onPick, workers = [] }) {
+export default function CommandFloorApprovalSlip({ picked, onClose, onAction, onPick, workers = [], jobs = [] }) {
   const [localPicked, setLocalPicked] = useState(null);
   const [draft, setDraft] = useState({ title: "", meta: "", status: "", worker_id: "", worker_name: "", message: "" });
   const [busy, setBusy] = useState(false);
@@ -125,13 +165,17 @@ export default function CommandFloorApprovalSlip({ picked, onClose, onAction, on
   useEffect(() => {
     setLocalPicked(picked);
     const raw = picked?.raw || {};
+    const isJob = picked?.type === "job" || picked?.type === "work_review";
     const currentWorkerId = firstText(raw.assigned_worker_id, raw.worker_id, raw.assigned_to);
     const currentWorkerName = firstText(raw.assigned_worker_name, raw.worker_name, raw.assigned_to_name, raw.assigned_worker_email);
+    const rec = isJob ? recommendWorkerForJob(picked, workers, jobs) : null;
+    const recommendedId = rec?.best ? workerIdOf(rec.best.worker) : "";
+    const recommendedName = rec?.best ? workerNameOf(rec.best.worker) : "";
     const nextMeta = detailText(raw, picked?.meta || "");
-    setDraft({ title: picked?.title || "", meta: nextMeta, status: picked?.state || "", worker_id: currentWorkerId, worker_name: currentWorkerName, message: messageDraftFromPicked(picked, { meta: nextMeta }) });
+    setDraft({ title: picked?.title || "", meta: nextMeta, status: picked?.state || "", worker_id: currentWorkerId || recommendedId, worker_name: currentWorkerName || recommendedName, message: messageDraftFromPicked(picked, { meta: nextMeta }) });
     setNotice("");
     setBusy(false);
-  }, [picked]);
+  }, [picked, workers, jobs]);
 
   const active = localPicked || picked;
   const photos = useMemo(() => evidencePhotos(active?.raw || {}), [active]);
@@ -140,7 +184,8 @@ export default function CommandFloorApprovalSlip({ picked, onClose, onAction, on
 
   const isAction = active.type === "action";
   const isJobLike = active.type === "job" || active.type === "work_review";
-  const brief = approvalBrief(active, draft);
+  const recommendation = useMemo(() => isJobLike ? recommendWorkerForJob(active, workers, jobs) : null, [active, isJobLike, workers, jobs]);
+  const brief = approvalBrief(active, draft, recommendation);
 
   const run = async (action) => {
     setBusy(true);
@@ -157,20 +202,5 @@ export default function CommandFloorApprovalSlip({ picked, onClose, onAction, on
     setDraft((d) => ({ ...d, worker_id: value, worker_name: selected ? workerNameOf(selected) : "" }));
   };
 
-  return <aside className="cfs-overlay" data-version="CHURVOX_REAL_APPROVAL_SLIP_REPLACEMENT_20260527">
-    <section className="cfs-sheet">
-      <header className="cfs-head"><div><p>{active.code || active.type}</p><h2>{active.title}</h2><em>{brief.summary}</em></div><button type="button" onClick={onClose}>Close</button></header>
-
-      <section className="cfs-facts"><Fact label="Status" value={active.state} /><Fact label="Value" value={Number(active.amount || 0) > 0 ? cash(active.amount) : "—"} /><Fact label="Code" value={active.code} />{brief.facts.slice(0, 3).map(([label, value]) => <Fact key={label} label={label} value={value} />)}</section>
-
-      <section className="cfs-main"><article className="cfs-card cfs-brief"><header><small>{isAction ? "AI action" : isJobLike ? "Evidence brief" : "Approval brief"}</small><b>{isAction ? "Approve or reject this action" : isJobLike ? "Evidence before approval" : "What you are reviewing"}</b></header><p>{brief.description}</p><strong>{brief.outcome}</strong></article><article className="cfs-card cfs-evidence"><header><small>Evidence</small><b>{photos.length ? `${photos.length} photo${photos.length === 1 ? "" : "s"}` : "No photos saved"}</b></header>{photos.length ? <div className="cfs-photo-row">{photos.slice(0, 4).map((photo, i) => <span key={`${photo.url || photo.label}-${i}`}>{photo.url ? <img src={photo.url} alt={photo.label} /> : null}<small>{photo.label}</small></span>)}</div> : <p>No site photos are saved on this record.</p>}</article></section>
-
-      <section className="cfs-edit"><Field label="Title" value={draft.title} onChange={(v) => setDraft((d) => ({ ...d, title: v }))} /><Field label="Approval description / edit before saving" value={draft.meta} onChange={(v) => setDraft((d) => ({ ...d, meta: v }))} textarea /><Field label="Status" value={draft.status} onChange={(v) => setDraft((d) => ({ ...d, status: v }))} /></section>
-
-      <section className="cfs-lower"><article className="cfs-card"><header><small>Customer message</small><b>Draft before sending</b></header><textarea value={draft.message} onChange={(e) => setDraft((d) => ({ ...d, message: e.target.value }))} /><p>Nothing sends from here. This only saves the draft.</p></article>{isJobLike && <article className="cfs-card"><header><small>Worker assignment</small><b>Assign worker in this slip</b></header><select value={draft.worker_id} onChange={(e) => changeWorker(e.target.value)}><option value="">Choose worker</option>{workers.map((worker) => { const wid = workerIdOf(worker); return <option key={wid || worker.title} value={wid}>{workerNameOf(worker)}{worker.state ? ` · ${worker.state}` : ""}</option>; })}</select><p>{draft.worker_name ? `Selected: ${draft.worker_name}` : workers.length ? "Pick a worker, then tap Assign worker." : "No workers loaded yet."}</p></article>}<article className="cfs-card cfs-next"><header><small>Next step</small><b>Owner approval only</b></header><p>Use the buttons below. Nothing sends without owner action.</p></article></section>
-
-      {notice && <strong className="cfs-notice">{notice}</strong>}
-      <footer className="cfs-actions">{!isAction && <button type="button" disabled={busy} onClick={() => run("save")}>Save changes</button>}{isAction && <button className="primary" type="button" disabled={busy} onClick={() => run("approve")}>Approve & execute</button>}{isAction && <button className="danger" type="button" disabled={busy} onClick={() => run("reject")}>Reject action</button>}{isJobLike && <button className="primary" type="button" disabled={busy} onClick={() => run("approve")}>Approve work</button>}{active.type === "invoice" && <button className="primary" type="button" disabled={busy} onClick={() => run("approve")}>Approve invoice</button>}{isJobLike && <button type="button" disabled={busy || !draft.worker_id} onClick={() => run("assign")}>Assign worker</button>}{isJobLike && <button type="button" disabled={busy} onClick={() => run("invoice")}>Prepare invoice</button>}{!isAction && <button type="button" disabled={busy} onClick={() => run("message")}>Save message draft</button>}{active.href && active.href !== "#" && <Link to={active.href}>Full page backup</Link>}</footer>
-    </section>
-  </aside>;
+  return <aside className="cfs-overlay" data-version="CHURVOX_AI_PREFILL_RECOMMENDATION_20260527"><section className="cfs-sheet"><header className="cfs-head"><div><p>{active.code || active.type}</p><h2>{active.title}</h2><em>{brief.summary}</em></div><button type="button" onClick={onClose}>Close</button></header><section className="cfs-facts"><Fact label="Status" value={active.state} /><Fact label="Value" value={Number(active.amount || 0) > 0 ? cash(active.amount) : "—"} /><Fact label="Code" value={active.code} />{isJobLike && <Fact label="AI worker" value={recommendation?.best ? workerNameOf(recommendation.best.worker) : "No safe match"} />}{brief.facts.slice(0, isJobLike ? 2 : 3).map(([label, value]) => <Fact key={label} label={label} value={value} />)}</section><section className="cfs-main"><article className="cfs-card cfs-brief"><header><small>{isAction ? "AI action" : isJobLike ? "AI-prepared approval" : "Approval brief"}</small><b>{isAction ? "Approve or reject this action" : isJobLike ? "Everything is prefilled for approval" : "What you are reviewing"}</b></header><p>{brief.description}</p><strong>{brief.outcome}</strong></article><article className="cfs-card cfs-evidence"><header><small>Evidence</small><b>{photos.length ? `${photos.length} photo${photos.length === 1 ? "" : "s"}` : "No photos saved"}</b></header>{photos.length ? <div className="cfs-photo-row">{photos.slice(0, 4).map((photo, i) => <span key={`${photo.url || photo.label}-${i}`}>{photo.url ? <img src={photo.url} alt={photo.label} /> : null}<small>{photo.label}</small></span>)}</div> : <p>No site photos are saved on this record.</p>}</article></section><section className="cfs-edit"><Field label="Title" value={draft.title} onChange={(v) => setDraft((d) => ({ ...d, title: v }))} /><Field label="Approval description / edit before saving" value={draft.meta} onChange={(v) => setDraft((d) => ({ ...d, meta: v }))} textarea /><Field label="Status" value={draft.status} onChange={(v) => setDraft((d) => ({ ...d, status: v }))} /></section><section className="cfs-lower"><article className="cfs-card"><header><small>Customer message</small><b>Draft before sending</b></header><textarea value={draft.message} onChange={(e) => setDraft((d) => ({ ...d, message: e.target.value }))} /><p>Nothing sends from here. This only saves the draft.</p></article>{isJobLike && <article className="cfs-card"><header><small>Worker assignment</small><b>{recommendation?.best ? `Churvox pick: ${workerNameOf(recommendation.best.worker)}` : "Assign worker in this slip"}</b></header><p>{recommendation?.summary}</p>{recommendation?.blocked?.length ? <p>Skipped: {recommendation.blocked.map((x) => `${workerNameOf(x.worker)} (${x.blocked || x.conflict})`).join("; ")}</p> : null}<select value={draft.worker_id} onChange={(e) => changeWorker(e.target.value)}><option value="">Choose worker</option>{workers.map((worker) => { const wid = workerIdOf(worker); const blocked = isWorkerBlocked(worker) || workerHasActiveConflict(worker, jobs, active); return <option key={wid || worker.title} value={wid}>{workerNameOf(worker)}{blocked ? ` · ${blocked}` : worker.state ? ` · ${worker.state}` : ""}</option>; })}</select><p>{draft.worker_name ? `Selected: ${draft.worker_name}. ${recommendation?.warning || "Owner can approve or adjust."}` : workers.length ? "Pick a worker, then tap Assign worker." : "No workers loaded yet."}</p></article>}<article className="cfs-card cfs-next"><header><small>Next step</small><b>Owner approval only</b></header><p>Use the buttons below. Churvox has prefilled what it can, but nothing sends or assigns without owner approval.</p></article></section>{notice && <strong className="cfs-notice">{notice}</strong>}<footer className="cfs-actions">{!isAction && <button type="button" disabled={busy} onClick={() => run("save")}>Save changes</button>}{isAction && <button className="primary" type="button" disabled={busy} onClick={() => run("approve")}>Approve & execute</button>}{isAction && <button className="danger" type="button" disabled={busy} onClick={() => run("reject")}>Reject action</button>}{isJobLike && <button className="primary" type="button" disabled={busy} onClick={() => run("approve")}>Approve work</button>}{active.type === "invoice" && <button className="primary" type="button" disabled={busy} onClick={() => run("approve")}>Approve invoice</button>}{isJobLike && <button type="button" disabled={busy || !draft.worker_id} onClick={() => run("assign")}>Assign worker</button>}{isJobLike && <button type="button" disabled={busy} onClick={() => run("invoice")}>Prepare invoice</button>}{!isAction && <button type="button" disabled={busy} onClick={() => run("message")}>Save message draft</button>}{active.href && active.href !== "#" && <Link to={active.href}>Full page backup</Link>}</footer></section></aside>;
 }
