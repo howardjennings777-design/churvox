@@ -1,0 +1,340 @@
+/* CHURVOX_COMMAND_FLOOR_BALANCED_LAYOUT_20260527 */
+/* Layout-only polish: reduce dead space, keep page scroll, raise Live Crew, keep bottom nav clear. */
+
+html:has(.xcf-shell),
+body:has(.xcf-shell),
+#root:has(.xcf-shell) {
+  height: auto !important;
+  min-height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+body:has(.xcf-shell) {
+  background: #eef4fb !important;
+}
+
+.xcf-shell {
+  min-height: 100vh !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  display: grid !important;
+  grid-template-rows: auto auto auto 1fr auto !important;
+  gap: 12px !important;
+  padding: 12px clamp(14px, 2vw, 28px) 118px !important;
+}
+
+.xcf-topbar {
+  min-height: 42px !important;
+  border-radius: 18px !important;
+}
+
+.xcf-hero {
+  min-height: 118px !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 18px 20px !important;
+  border-radius: 28px !important;
+}
+
+.xcf-hero h1 {
+  font-size: clamp(2.2rem, 4.8vw, 4.4rem) !important;
+  line-height: .88 !important;
+}
+
+.xcf-hero aside {
+  min-height: 94px !important;
+  padding: 15px !important;
+  border-radius: 22px !important;
+}
+
+.xcf-metrics {
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(120px, 1fr)) !important;
+  gap: 10px !important;
+  margin: 0 !important;
+}
+
+.xcf-metric {
+  min-height: 82px !important;
+  padding: 12px 13px !important;
+  border-radius: 20px !important;
+}
+
+.xcf-metric b {
+  font-size: clamp(1.3rem, 2vw, 1.9rem) !important;
+  line-height: .95 !important;
+}
+
+.xcf-metric span,
+.xcf-metric small {
+  font-size: .68rem !important;
+  line-height: 1.15 !important;
+}
+
+.xcf-main-grid {
+  display: grid !important;
+  grid-template-columns: minmax(320px, 1.12fr) minmax(300px, .95fr) minmax(300px, .95fr) !important;
+  grid-auto-rows: auto !important;
+  align-items: start !important;
+  gap: 12px !important;
+  min-height: auto !important;
+  height: auto !important;
+  overflow: visible !important;
+  padding: 0 0 22px !important;
+}
+
+.xcf-card {
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 14px !important;
+  border-radius: 24px !important;
+  overflow: hidden !important;
+}
+
+.xcf-card header {
+  margin-bottom: 9px !important;
+  min-height: 34px !important;
+}
+
+.xcf-card header b {
+  font-size: .98rem !important;
+  line-height: 1 !important;
+}
+
+.xcf-card header small {
+  font-size: .62rem !important;
+  line-height: 1.1 !important;
+}
+
+.xcf-card header strong {
+  min-width: 36px !important;
+  height: 30px !important;
+  padding: 0 8px !important;
+  font-size: .78rem !important;
+}
+
+.xcf-action-hub-card {
+  grid-column: 1 !important;
+  grid-row: span 2 !important;
+  min-height: 392px !important;
+}
+
+.xcf-action-box-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+.xcf-action-box {
+  min-height: 78px !important;
+  padding: 10px !important;
+  border-radius: 16px !important;
+}
+
+.xcf-action-box b {
+  font-size: 1.36rem !important;
+}
+
+.xcf-action-box span,
+.xcf-action-box small {
+  font-size: .66rem !important;
+  line-height: 1.15 !important;
+}
+
+.xcf-urgent-list,
+.xcf-list {
+  gap: 6px !important;
+}
+
+.xcf-row {
+  min-height: 42px !important;
+  padding: 8px 9px !important;
+  border-radius: 14px !important;
+}
+
+.xcf-row b {
+  font-size: .78rem !important;
+}
+
+.xcf-row small,
+.xcf-row em {
+  font-size: .62rem !important;
+  line-height: 1.2 !important;
+}
+
+.xcf-approved-page-card {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  min-height: 214px !important;
+}
+
+.xcf-review-card {
+  grid-column: 1 !important;
+  grid-row: span 1 !important;
+  min-height: 214px !important;
+}
+
+.xcf-money-card {
+  grid-column: 3 !important;
+  grid-row: 1 / span 2 !important;
+  min-height: 392px !important;
+}
+
+.xcf-live-card {
+  grid-column: 2 !important;
+  grid-row: 2 !important;
+  min-height: 300px !important;
+}
+
+.xcf-money-hero {
+  min-height: 90px !important;
+  padding: 12px !important;
+  border-radius: 18px !important;
+}
+
+.xcf-money-hero b {
+  font-size: clamp(1.7rem, 2.8vw, 2.6rem) !important;
+  line-height: .9 !important;
+}
+
+.xcf-money-queue {
+  gap: 7px !important;
+}
+
+.xcf-money-queue p {
+  min-height: 42px !important;
+  padding: 8px !important;
+  border-radius: 14px !important;
+}
+
+.xcf-map-card {
+  min-height: 126px !important;
+  padding: 14px !important;
+  border-radius: 18px !important;
+}
+
+.xcf-live-stats {
+  gap: 7px !important;
+}
+
+.xcf-live-stats i {
+  min-height: 48px !important;
+  padding: 8px !important;
+  border-radius: 14px !important;
+}
+
+.xcf-empty {
+  min-height: 42px !important;
+  padding: 10px !important;
+  border-radius: 14px !important;
+}
+
+.xcf-bottom-nav {
+  position: fixed !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  transform: translateX(-50%) !important;
+  width: min(980px, calc(100vw - 32px)) !important;
+  z-index: 80 !important;
+  margin: 0 !important;
+  border-radius: 22px !important;
+}
+
+@media (max-height: 820px) and (min-width: 981px) {
+  .xcf-shell {
+    gap: 9px !important;
+    padding-top: 8px !important;
+    padding-bottom: 104px !important;
+  }
+
+  .xcf-hero {
+    min-height: 104px !important;
+    padding: 15px 18px !important;
+  }
+
+  .xcf-metric {
+    min-height: 74px !important;
+    padding: 10px 11px !important;
+  }
+
+  .xcf-main-grid {
+    gap: 10px !important;
+  }
+
+  .xcf-card {
+    padding: 12px !important;
+    border-radius: 22px !important;
+  }
+
+  .xcf-action-hub-card,
+  .xcf-money-card {
+    min-height: 350px !important;
+  }
+
+  .xcf-action-box {
+    min-height: 68px !important;
+  }
+
+  .xcf-approved-page-card,
+  .xcf-review-card {
+    min-height: 190px !important;
+  }
+
+  .xcf-live-card {
+    min-height: 270px !important;
+  }
+
+  .xcf-map-card {
+    min-height: 104px !important;
+  }
+}
+
+@media (max-width: 1180px) {
+  .xcf-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .xcf-main-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .xcf-action-hub-card,
+  .xcf-money-card,
+  .xcf-approved-page-card,
+  .xcf-review-card,
+  .xcf-live-card {
+    grid-column: auto !important;
+    grid-row: auto !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .xcf-shell {
+    padding: 10px 10px 108px !important;
+  }
+
+  .xcf-hero,
+  .xcf-metrics,
+  .xcf-main-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .xcf-main-grid {
+    gap: 10px !important;
+  }
+
+  .xcf-card,
+  .xcf-action-hub-card,
+  .xcf-money-card,
+  .xcf-approved-page-card,
+  .xcf-review-card,
+  .xcf-live-card {
+    min-height: auto !important;
+  }
+
+  .xcf-action-box-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
