@@ -4,7 +4,7 @@
 .xcf-drawer{
   inset:18px!important;
   grid-template-columns:minmax(270px,330px) minmax(0,1fr)!important;
-  grid-template-rows:auto auto auto minmax(200px,auto) minmax(150px,auto) minmax(82px,auto) minmax(76px,auto) minmax(112px,1fr) auto auto!important;
+  grid-template-rows:auto auto auto minmax(200px,auto) minmax(150px,auto) minmax(82px,auto) minmax(76px,auto) minmax(112px,1fr) minmax(112px,auto) auto auto!important;
   gap:12px 16px!important;
   padding:22px!important;
 }
