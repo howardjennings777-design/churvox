@@ -23,6 +23,8 @@ const moneyNumber = (...values) => {
 };
 const recordIdFromResponse = (res) => idOf(res?.data) || idOf(res?.data?.invoice) || idOf(res?.data?.data) || idOf(res?.data?.record) || idOf(res?.data?.item) || idOf(res?.invoice) || idOf(res);
 const detailText = (record, fallback = "") => firstText(record?.owner_facing_explanation, record?.reason, record?.recommendation, record?.what_happens, record?.generated_message, record?.description, record?.job_description, record?.service_description, record?.scope, record?.completion_notes, record?.worker_notes, record?.job_notes, record?.notes, record?.admin_notes, record?.message, record?.address, fallback);
+const workerNameOf = (worker) => firstText(worker?.raw?.name, worker?.raw?.full_name, worker?.raw?.email, worker?.title, worker?.name, "Worker");
+const workerIdOf = (worker) => idOf(worker?.raw || worker) || idOf(worker);
 
 function invoicePayloadFromPicked(picked, draft) {
   const raw = picked?.raw || {};
@@ -303,12 +305,7 @@ function Dashboard({ m, loading, onPick }) {
   const nextAction = m.workReview.length ? "Review finished work → prepare invoices" : m.bill.length ? "Prepare invoices" : m.unassigned.length ? "Assign workers" : m.issues.length ? "Fix issues" : "All clear";
   return <main className="xcf-shell" data-version="CHURVOX_EXACT_FULL_SCREEN_IMAGE_LAYOUT_20260526">
     <TopBar loading={loading} />
-
-    <section className="xcf-hero">
-      <div><p>AI OPERATOR COMMAND FLOOR</p><h1>Command Floor</h1><span>Churvox does the admin. You approve.</span></div>
-      <aside><i>⚡</i><small>Next Best Action</small><b>{nextAction}</b><em>{m.bill.length + m.workReview.length} jobs are ready to move toward invoice</em></aside>
-    </section>
-
+    <section className="xcf-hero"><div><p>AI OPERATOR COMMAND FLOOR</p><h1>Command Floor</h1><span>Churvox does the admin. You approve.</span></div><aside><i>⚡</i><small>Next Best Action</small><b>{nextAction}</b><em>{m.bill.length + m.workReview.length} jobs are ready to move toward invoice</em></aside></section>
     <section className="xcf-metrics">
       <Metric label="Ready to Bill" value={cash(sum(m.bill))} note={`${m.bill.length} invoices`} tone="green" onClick={() => onPick(makeGroup("Ready to Bill", "Approved work ready for invoice action.", m.bill, "green"))} />
       <Metric label="Unassigned Jobs" value={m.unassigned.length} note="needs workers" tone="blue" onClick={() => onPick(makeGroup("Unassigned Jobs", "Jobs needing worker assignment.", m.unassigned, "blue"))} />
@@ -317,26 +314,12 @@ function Dashboard({ m, loading, onPick }) {
       <Metric label="Team On Jobs" value={m.live.length} note="field activity" tone="cyan" onClick={() => onPick(makeGroup("Team On Jobs", "Live crew and active field activity.", m.live, "cyan"))} />
       <Metric label="Completed This Week" value={m.doneJobs.length} note="jobs closed" tone="green" onClick={() => onPick(makeGroup("Completed This Week", "Completed job records.", m.doneJobs, "green"))} />
     </section>
-
     <section className="xcf-main-grid">
       <ActionHub m={m} onPick={onPick} />
-
-      <Card title="Live Crew" eyebrow="Real-time crew activity in the field" value={m.live.length} onOpen={() => onPick(makeGroup("Live Crew", "Crew, job status, GPS and evidence in one place.", m.live, "cyan"))} className="xcf-live-card">
-        <div className="xcf-map-card"><span>Owner crew map</span><b>Timers • GPS • photos • status</b></div>
-        <div className="xcf-live-stats"><i>{m.live.length}<small>Crew on jobs</small></i><i>{m.active.length}<small>Active jobs</small></i><i>{m.unassigned.length}<small>Need worker</small></i></div>
-        <div className="xcf-list">{m.live.length ? m.live.slice(0, 4).map((x, i) => <Row key={`live-${i}`} item={x} onPick={onPick} />) : <Empty text="No crew on jobs right now." />}</div>
-      </Card>
-
-      <Card title="Money Desk" eyebrow="Your cashflow at a glance" value={cash(sum(m.money))} onOpen={() => onPick(makeGroup("Money Desk", "Ready-to-bill, owing and overdue work in one slip.", m.money, "green"))} className="xcf-money-card">
-        <div className="xcf-money-hero"><span>Ready to bill</span><b>{cash(sum(m.bill))}</b><small>{m.bill.length} approved jobs</small></div>
-        <div className="xcf-money-queue"><p><span>Invoice Queue</span><b>{m.bill.length}</b><em>{cash(sum(m.bill))}</em></p><p><span>Overdue</span><b>{m.overdue.length}</b><em>{cash(sum(m.overdue))}</em></p><p><span>Owing</span><b>{m.owing.length}</b><em>{cash(sum(m.owing))}</em></p></div>
-      </Card>
-
-      <Card title="Work Review" eyebrow="Jobs waiting for your approval" value={m.workReview.length} onOpen={() => onPick(makeGroup("Work Review", "Approve finished work without leaving the command floor.", m.workReview, "amber"))} className="xcf-review-card">
-        <div className="xcf-list">{m.workReview.length ? m.workReview.slice(0, 6).map((x, i) => <Row key={`review-${i}`} item={x} onPick={onPick} />) : <Empty text="No finished jobs waiting for review." />}</div>
-      </Card>
+      <Card title="Live Crew" eyebrow="Real-time crew activity in the field" value={m.live.length} onOpen={() => onPick(makeGroup("Live Crew", "Crew, job status, GPS and evidence in one place.", m.live, "cyan"))} className="xcf-live-card"><div className="xcf-map-card"><span>Owner crew map</span><b>Timers • GPS • photos • status</b></div><div className="xcf-live-stats"><i>{m.live.length}<small>Crew on jobs</small></i><i>{m.active.length}<small>Active jobs</small></i><i>{m.unassigned.length}<small>Need worker</small></i></div><div className="xcf-list">{m.live.length ? m.live.slice(0, 4).map((x, i) => <Row key={`live-${i}`} item={x} onPick={onPick} />) : <Empty text="No crew on jobs right now." />}</div></Card>
+      <Card title="Money Desk" eyebrow="Your cashflow at a glance" value={cash(sum(m.money))} onOpen={() => onPick(makeGroup("Money Desk", "Ready-to-bill, owing and overdue work in one slip.", m.money, "green"))} className="xcf-money-card"><div className="xcf-money-hero"><span>Ready to bill</span><b>{cash(sum(m.bill))}</b><small>{m.bill.length} approved jobs</small></div><div className="xcf-money-queue"><p><span>Invoice Queue</span><b>{m.bill.length}</b><em>{cash(sum(m.bill))}</em></p><p><span>Overdue</span><b>{m.overdue.length}</b><em>{cash(sum(m.overdue))}</em></p><p><span>Owing</span><b>{m.owing.length}</b><em>{cash(sum(m.owing))}</em></p></div></Card>
+      <Card title="Work Review" eyebrow="Jobs waiting for your approval" value={m.workReview.length} onOpen={() => onPick(makeGroup("Work Review", "Approve finished work without leaving the command floor.", m.workReview, "amber"))} className="xcf-review-card"><div className="xcf-list">{m.workReview.length ? m.workReview.slice(0, 6).map((x, i) => <Row key={`review-${i}`} item={x} onPick={onPick} />) : <Empty text="No finished jobs waiting for review." />}</div></Card>
     </section>
-
     <BottomNav />
   </main>;
 }
@@ -352,14 +335,16 @@ function EditableField({ label, value, onChange, textarea = false }) {
   return <label className="xcf-edit-field"><span>{label}</span>{textarea ? <textarea value={value} onChange={(e) => onChange(e.target.value)} /> : <input value={value} onChange={(e) => onChange(e.target.value)} />}</label>;
 }
 
-function DetailDrawer({ picked, onClose, onAction, onPick }) {
-  const [draft, setDraft] = useState({ title: "", meta: "", status: "" });
+function DetailDrawer({ picked, onClose, onAction, onPick, workers = [] }) {
+  const [draft, setDraft] = useState({ title: "", meta: "", status: "", worker_id: "", worker_name: "" });
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
     const raw = picked?.raw || {};
-    setDraft({ title: picked?.title || "", meta: detailText(raw, picked?.meta || ""), status: picked?.state || "" });
+    const currentWorkerId = firstText(raw.assigned_worker_id, raw.worker_id, raw.assigned_to);
+    const currentWorkerName = firstText(raw.assigned_worker_name, raw.worker_name, raw.assigned_to_name, raw.assigned_worker_email);
+    setDraft({ title: picked?.title || "", meta: detailText(raw, picked?.meta || ""), status: picked?.state || "", worker_id: currentWorkerId, worker_name: currentWorkerName });
     setNotice("");
     setBusy(false);
   }, [picked]);
@@ -367,6 +352,7 @@ function DetailDrawer({ picked, onClose, onAction, onPick }) {
   if (!picked) return null;
   const isGroup = picked.type === "action_group";
   const isAction = picked.type === "action";
+  const isJobLike = picked.type === "job" || picked.type === "work_review";
   const items = picked.items || [];
   const brief = isGroup ? null : approvalBrief(picked, draft);
 
@@ -378,6 +364,11 @@ function DetailDrawer({ picked, onClose, onAction, onPick }) {
     setBusy(false);
   };
 
+  const changeWorker = (value) => {
+    const selected = workers.find((worker) => workerIdOf(worker) === value);
+    setDraft((d) => ({ ...d, worker_id: value, worker_name: selected ? workerNameOf(selected) : "" }));
+  };
+
   return <aside className={`xcf-drawer xcf-drawer-${isGroup ? "group" : "record"}`}>
     <button className="xcf-close" type="button" onClick={onClose}>Close</button>
     <p>{picked.code || picked.type}</p>
@@ -385,17 +376,11 @@ function DetailDrawer({ picked, onClose, onAction, onPick }) {
     <span>{isGroup ? picked.meta : brief.summary}</span>
 
     {isGroup ? <div className="xcf-slip-list">
-      {items.length ? items.slice(0, 12).map((x, i) => <button className="xcf-slip-row" type="button" key={`${x.type}-${x.id}-${i}`} onClick={() => onPick(x)}>
-        <b>{x.title}</b><small>{x.code} · {detailText(x.raw || {}, x.meta)}</small><em>{Number(x.amount || 0) > 0 ? cash(x.amount) : x.state}</em>
-      </button>) : <Empty text="Nothing waiting in this slip." />}
+      {items.length ? items.slice(0, 12).map((x, i) => <button className="xcf-slip-row" type="button" key={`${x.type}-${x.id}-${i}`} onClick={() => onPick(x)}><b>{x.title}</b><small>{x.code} · {detailText(x.raw || {}, x.meta)}</small><em>{Number(x.amount || 0) > 0 ? cash(x.amount) : x.state}</em></button>) : <Empty text="Nothing waiting in this slip." />}
     </div> : <>
       <dl><div><dt>Status</dt><dd>{picked.state}</dd></div><div><dt>Value</dt><dd>{Number(picked.amount || 0) > 0 ? cash(picked.amount) : "—"}</dd></div><div><dt>Code</dt><dd>{picked.code}</dd></div></dl>
-      <section className="xcf-approval-brief">
-        <header><small>{isAction ? "AI operator action" : "AI approval brief"}</small><b>{isAction ? "Approve or reject this action" : "What you are approving"}</b></header>
-        <p>{brief.description}</p>
-        <div>{brief.facts.map(([label, value]) => <span key={label}><small>{label}</small><b>{value}</b></span>)}</div>
-        <strong>{brief.outcome}</strong>
-      </section>
+      <section className="xcf-approval-brief"><header><small>{isAction ? "AI operator action" : "AI approval brief"}</small><b>{isAction ? "Approve or reject this action" : "What you are approving"}</b></header><p>{brief.description}</p><div>{brief.facts.map(([label, value]) => <span key={label}><small>{label}</small><b>{value}</b></span>)}</div><strong>{brief.outcome}</strong></section>
+      {isJobLike && <section className="xcf-worker-assign"><header><small>Dispatch</small><b>Assign worker in this slip</b></header><select value={draft.worker_id} onChange={(e) => changeWorker(e.target.value)}><option value="">Choose worker</option>{workers.map((worker) => { const wid = workerIdOf(worker); return <option key={wid || worker.title} value={wid}>{workerNameOf(worker)}{worker.state ? ` · ${worker.state}` : ""}</option>; })}</select><p>{draft.worker_name ? `Selected: ${draft.worker_name}` : workers.length ? "Pick a worker, then tap Assign worker." : "No workers loaded yet."}</p></section>}
       <EditableField label="Title" value={draft.title} onChange={(v) => setDraft((d) => ({ ...d, title: v }))} />
       <EditableField label={isAction ? "AI reason / drafted message" : "Approval description / edit before saving"} value={draft.meta} onChange={(v) => setDraft((d) => ({ ...d, meta: v }))} textarea />
       <EditableField label="Status" value={draft.status} onChange={(v) => setDraft((d) => ({ ...d, status: v }))} />
@@ -406,6 +391,7 @@ function DetailDrawer({ picked, onClose, onAction, onPick }) {
         {!isAction && <button className="xcf-action-muted" type="button" disabled={busy} onClick={() => run("save")}>Save changes</button>}
         <button className="xcf-action-primary" type="button" disabled={busy} onClick={() => run("approve")}>{isAction ? "Approve & execute" : "Approve work"}</button>
         {isAction && <button className="xcf-action-danger" type="button" disabled={busy} onClick={() => run("reject")}>Reject action</button>}
+        {isJobLike && <button type="button" disabled={busy || !draft.worker_id} onClick={() => run("assign")}>Assign worker</button>}
         {!isAction && <button type="button" disabled={busy} onClick={() => run("invoice")}>Prepare invoice</button>}
         <button type="button" disabled={busy} onClick={() => run("message")}>Draft message</button>
         {picked.href && picked.href !== "#" && <Link to={picked.href}>Full page</Link>}
@@ -418,41 +404,26 @@ function DetailDrawer({ picked, onClose, onAction, onPick }) {
 async function runRecordAction(action, picked, draft, api, reload) {
   if (!picked || picked.type === "action_group") return "Open a record inside the slip first.";
   const id = picked.id;
-  if (!id && ["save", "approve", "reject", "invoice"].includes(action)) return "This record has no saved ID yet.";
+  if (!id && ["save", "approve", "reject", "invoice", "assign"].includes(action)) return "This record has no saved ID yet.";
   const titlePayload = { title: draft.title, description: draft.meta, status: draft.status };
 
   try {
     if (picked.type === "action") {
-      if (action === "approve") {
-        const res = await api.post(`/ai-operator/actions/${id}/approve`, {});
-        await reload();
-        return res?.success ? "AI action approved and executed." : `Could not approve AI action: ${res?.error || "unknown error"}`;
-      }
-      if (action === "reject") {
-        const res = await api.post(`/ai-operator/actions/${id}/reject`, {});
-        await reload();
-        return res?.success ? "AI action rejected." : `Could not reject AI action: ${res?.error || "unknown error"}`;
-      }
+      if (action === "approve") { const res = await api.post(`/ai-operator/actions/${id}/approve`, {}); await reload(); return res?.success ? "AI action approved and executed." : `Could not approve AI action: ${res?.error || "unknown error"}`; }
+      if (action === "reject") { const res = await api.post(`/ai-operator/actions/${id}/reject`, {}); await reload(); return res?.success ? "AI action rejected." : `Could not reject AI action: ${res?.error || "unknown error"}`; }
       if (action === "message") return firstText(picked.raw?.generated_message, picked.raw?.draft_message, "No drafted message saved for this AI action yet.");
       return "AI action is ready for approve or reject.";
     }
 
-    if (action === "save") {
-      const endpoint = picked.type === "invoice" ? `/invoices/${id}` : picked.type === "quote" ? `/quotes/${id}` : picked.type === "client" ? `/clients/${id}` : `/jobs/${id}`;
-      const res = await api.patch(endpoint, titlePayload);
+    if (action === "assign") {
+      if (picked.type !== "job" && picked.type !== "work_review") return "Select a job before assigning a worker.";
+      if (!draft.worker_id) return "Choose a worker first.";
+      const res = await api.patch(`/jobs/${id}`, { assigned_worker_id: draft.worker_id, assigned_worker_name: draft.worker_name, assigned_to: draft.worker_id, status: picked.raw?.status || "assigned" });
       await reload();
-      return res?.success ? "Saved in this slip." : `Could not save: ${res?.error || "unknown error"}`;
+      return res?.success ? `Assigned to ${draft.worker_name || "selected worker"}.` : `Could not assign worker: ${res?.error || "unknown error"}`;
     }
-    if (action === "approve") {
-      if (picked.type === "invoice") {
-        const res = await api.patch(`/invoices/${id}`, { status: "approved" });
-        await reload();
-        return res?.success ? "Invoice approved." : `Could not approve: ${res?.error || "unknown error"}`;
-      }
-      const res = await api.patch(`/jobs/${id}`, { owner_review_status: "approved", work_review_status: "approved", reviewed: true });
-      await reload();
-      return res?.success ? "Work approved." : `Could not approve: ${res?.error || "unknown error"}`;
-    }
+    if (action === "save") { const endpoint = picked.type === "invoice" ? `/invoices/${id}` : picked.type === "quote" ? `/quotes/${id}` : picked.type === "client" ? `/clients/${id}` : `/jobs/${id}`; const res = await api.patch(endpoint, titlePayload); await reload(); return res?.success ? "Saved in this slip." : `Could not save: ${res?.error || "unknown error"}`; }
+    if (action === "approve") { if (picked.type === "invoice") { const res = await api.patch(`/invoices/${id}`, { status: "approved" }); await reload(); return res?.success ? "Invoice approved." : `Could not approve: ${res?.error || "unknown error"}`; } const res = await api.patch(`/jobs/${id}`, { owner_review_status: "approved", work_review_status: "approved", reviewed: true }); await reload(); return res?.success ? "Work approved." : `Could not approve: ${res?.error || "unknown error"}`; }
     if (action === "invoice") {
       if (picked.type !== "job" && picked.type !== "work_review") return "Select a job or work review item before preparing an invoice.";
       const payload = invoicePayloadFromPicked(picked, draft);
@@ -460,13 +431,7 @@ async function runRecordAction(action, picked, draft, api, reload) {
       const res = await api.post("/invoices", payload.data);
       if (!res?.success) return `Could not prepare invoice: ${res?.error || "unknown error"}`;
       const invoiceId = recordIdFromResponse(res);
-      if (invoiceId && id) {
-        try {
-          await api.patch(`/jobs/${id}`, { draft_invoice_id: invoiceId, invoice_description_draft: payload.data.description });
-        } catch (_err) {
-          // Invoice was created. Job back-link is helpful but not critical.
-        }
-      }
+      if (invoiceId && id) { try { await api.patch(`/jobs/${id}`, { draft_invoice_id: invoiceId, invoice_description_draft: payload.data.description }); } catch (_err) {} }
       await reload();
       return invoiceId ? `Draft invoice prepared: INV ${invoiceId}. Open Money Desk or Full page to review/send.` : "Draft invoice prepared. Open Money Desk to review/send.";
     }
@@ -485,5 +450,5 @@ export default function ConceptCPageExact({ area = "dashboard" }) {
   const [picked, setPicked] = useState(null);
   const onAction = useCallback((action, record, draft) => runRecordAction(action, record, draft, api, reload), [api, reload]);
 
-  return <>{area === "dashboard" ? <Dashboard m={m} loading={loading} onPick={setPicked} /> : <Workspace area={area} m={m} loading={loading} onPick={setPicked} />}<DetailDrawer picked={picked} onClose={() => setPicked(null)} onAction={onAction} onPick={setPicked} /></>;
+  return <>{area === "dashboard" ? <Dashboard m={m} loading={loading} onPick={setPicked} /> : <Workspace area={area} m={m} loading={loading} onPick={setPicked} />}<DetailDrawer picked={picked} onClose={() => setPicked(null)} onAction={onAction} onPick={setPicked} workers={m.crew} /></>;
 }
