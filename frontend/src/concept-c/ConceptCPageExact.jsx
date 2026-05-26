@@ -13,7 +13,54 @@ const cash = (v) => `$${Number(v || 0).toLocaleString("en-NZ", { maximumFraction
 const sum = (items) => items.reduce((total, item) => total + Number(item.amount || 0), 0);
 const firstText = (...values) => values.map(str).find(Boolean) || "";
 const pretty = (v) => str(v).replace(/_/g, " ");
+const moneyNumber = (...values) => {
+  for (const value of values) {
+    if (value === null || value === undefined || value === "") continue;
+    const n = Number(String(value).replace(/[^0-9.-]/g, ""));
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  return 0;
+};
+const recordIdFromResponse = (res) => idOf(res?.data) || idOf(res?.data?.invoice) || idOf(res?.data?.data) || idOf(res?.data?.record) || idOf(res?.data?.item) || idOf(res?.invoice) || idOf(res);
 const detailText = (record, fallback = "") => firstText(record?.owner_facing_explanation, record?.reason, record?.recommendation, record?.what_happens, record?.generated_message, record?.description, record?.job_description, record?.service_description, record?.scope, record?.completion_notes, record?.worker_notes, record?.job_notes, record?.notes, record?.admin_notes, record?.message, record?.address, fallback);
+
+function invoicePayloadFromPicked(picked, draft) {
+  const raw = picked?.raw || {};
+  const customer = firstText(raw.customer_name, raw.client_name, raw.name, raw.contact_name, picked?.title);
+  const address = firstText(raw.address, raw.site_address, raw.job_address, raw.service_address, raw.location);
+  const description = firstText(
+    raw.ai_invoice_description,
+    raw.invoice_description_draft,
+    raw.completion_notes,
+    raw.worker_completion_notes,
+    raw.worker_notes,
+    raw.job_notes,
+    raw.notes,
+    raw.description,
+    draft?.meta,
+    picked?.meta,
+    `${picked?.title || "Service work"} completed${customer ? ` for ${customer}` : ""}${address ? ` at ${address}` : ""}.`
+  );
+  const subtotal = moneyNumber(picked?.amount, raw.subtotal, raw.total, raw.amount, raw.price, raw.job_price, raw.fixed_price, raw.hourly_total);
+
+  if (!customer) return { ok: false, error: "Need a customer name before Churvox can prepare an invoice." };
+  if (!description) return { ok: false, error: "Need an invoice description before Churvox can prepare an invoice." };
+  if (!subtotal) return { ok: false, error: "Need a job price or subtotal before Churvox can prepare an invoice." };
+
+  return {
+    ok: true,
+    data: {
+      client_id: firstText(raw.client_id, raw.customer_id) || null,
+      customer_name: customer,
+      customer_email: firstText(raw.customer_email, raw.client_email, raw.email),
+      address,
+      description,
+      subtotal,
+      gst_rate: moneyNumber(raw.gst_rate) || 15,
+      notes: firstText(raw.invoice_notes, `Prepared by Churvox Command Floor from ${picked?.code || "work slip"}. Review before sending.`),
+    },
+  };
+}
 
 function approvalBrief(picked, draft) {
   const raw = picked?.raw || {};
@@ -43,7 +90,7 @@ function approvalBrief(picked, draft) {
   const assigned = firstText(raw.assigned_worker_name, raw.worker_name, raw.assigned_to_name, raw.assigned_worker_email, raw.assigned_worker_id, "Not assigned yet");
   const finished = firstText(raw.completed_at, raw.finished_at, raw.updated_at, raw.date, "No finish time recorded");
   const description = detailText(raw, draft?.meta || picked?.meta || "No job detail recorded yet. Add the approval notes here before approving.");
-  const value = Number(picked?.amount || raw.total || raw.amount || raw.price || raw.job_price || raw.fixed_price || 0) > 0 ? cash(picked?.amount || raw.total || raw.amount || raw.price || raw.job_price || raw.fixed_price) : "No price set";
+  const value = moneyNumber(picked?.amount, raw.total, raw.amount, raw.price, raw.job_price, raw.fixed_price) > 0 ? cash(moneyNumber(picked?.amount, raw.total, raw.amount, raw.price, raw.job_price, raw.fixed_price)) : "No price set";
   const status = picked?.state || raw.status || "Review";
   const summary = type === "invoice"
     ? `Approve this invoice for ${customer}. Check the description, value and status before sending or syncing.`
@@ -138,7 +185,7 @@ function item(type, record) {
 
   if (type === "job") {
     const assigned = record.assigned_worker_id || record.assigned_worker_name || record.worker_name;
-    return { ...base, code: record.job_number || record.reference || `JOB-${id.slice(-4) || "000"}`, title: record.title || record.job_name || record.client_name || "Job", meta: detailText(record, record.client_name || "Job record"), state: !assigned ? "Unassigned" : record.status || "Job", amount: record.price || record.job_price || record.fixed_price || record.total || record.amount || 0, href: id ? `/jobs/${id}` : "/jobs" };
+    return { ...base, code: record.job_number || record.reference || `JOB-${id.slice(-4) || "000"}`, title: record.title || record.job_name || record.client_name || "Job", meta: detailText(record, record.client_name || "Job record"), state: !assigned ? "Unassigned" : record.status || "Job", amount: moneyNumber(record.price, record.job_price, record.fixed_price, record.total, record.amount, record.subtotal), href: id ? `/jobs/${id}` : "/jobs" };
   }
 
   if (type === "invoice") return { ...base, code: record.invoice_number || `INV-${id.slice(-4) || "000"}`, title: record.customer_name || record.client_name || "Invoice", meta: detailText(record, record.email || "Invoice record"), state: record.status || "Invoice", amount: record.balance_due || record.balance || record.total || record.amount || 0, href: id ? `/invoices/${id}` : "/invoices" };
@@ -407,8 +454,21 @@ async function runRecordAction(action, picked, draft, api, reload) {
       return res?.success ? "Work approved." : `Could not approve: ${res?.error || "unknown error"}`;
     }
     if (action === "invoice") {
-      if (picked.type === "job" || picked.type === "work_review") return "Invoice prep is next: this should create a draft invoice in the slip instead of jumping pages.";
-      return "Invoice prep is ready in the slip. Select a job first.";
+      if (picked.type !== "job" && picked.type !== "work_review") return "Select a job or work review item before preparing an invoice.";
+      const payload = invoicePayloadFromPicked(picked, draft);
+      if (!payload.ok) return payload.error;
+      const res = await api.post("/invoices", payload.data);
+      if (!res?.success) return `Could not prepare invoice: ${res?.error || "unknown error"}`;
+      const invoiceId = recordIdFromResponse(res);
+      if (invoiceId && id) {
+        try {
+          await api.patch(`/jobs/${id}`, { draft_invoice_id: invoiceId, invoice_description_draft: payload.data.description });
+        } catch (_err) {
+          // Invoice was created. Job back-link is helpful but not critical.
+        }
+      }
+      await reload();
+      return invoiceId ? `Draft invoice prepared: INV ${invoiceId}. Open Money Desk or Full page to review/send.` : "Draft invoice prepared. Open Money Desk to review/send.";
     }
     if (action === "message") return "Message draft stays in this slip next; no page jump needed.";
   } catch (err) {
