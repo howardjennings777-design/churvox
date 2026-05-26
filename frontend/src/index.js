@@ -14,6 +14,7 @@ import './concept-c/commandFloorApprovalDesk.css';
 import './concept-c/commandFloorWorkSlipClarity.css';
 import './concept-c/commandFloorWorkSlipCleanOverride.css';
 import './concept-c/commandFloorSlipScrollFix.css';
+import './concept-c/commandFloorSlipRedesign.css';
 import './workhorseLiveCheck';
 import './renderDeployMarker';
 import './deploy/guidedOperatorFloorDeployMarker';
