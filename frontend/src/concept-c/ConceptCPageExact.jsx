@@ -10,6 +10,7 @@ const low = (v) => str(v).toLowerCase();
 const idOf = (v) => str(v?.id || v?._id || v?.uuid || "");
 const cash = (v) => `$${Number(v || 0).toLocaleString("en-NZ", { maximumFractionDigits: 0 })}`;
 const sum = (items) => items.reduce((total, item) => total + Number(item.amount || 0), 0);
+const detailText = (record, fallback = "") => str(record?.description || record?.job_description || record?.service_description || record?.scope || record?.completion_notes || record?.worker_notes || record?.job_notes || record?.notes || record?.admin_notes || record?.message || record?.reason || record?.address || fallback);
 
 const API = {
   dashboard: { jobs: "/jobs", clients: "/clients", invoices: "/invoices", quotes: "/quotes", workers: "/team/workers", actions: "/ai-operator/actions", notifications: "/notifications" },
@@ -76,18 +77,18 @@ function item(type, record) {
 
   if (type === "job") {
     const assigned = record.assigned_worker_id || record.assigned_worker_name || record.worker_name;
-    return { ...base, code: record.job_number || record.reference || `JOB-${id.slice(-4) || "000"}`, title: record.title || record.job_name || record.client_name || "Job", meta: record.address || record.description || record.client_name || "Job record", state: !assigned ? "Unassigned" : record.status || "Job", amount: record.price || record.job_price || record.fixed_price || record.total || record.amount || 0, href: id ? `/jobs/${id}` : "/jobs" };
+    return { ...base, code: record.job_number || record.reference || `JOB-${id.slice(-4) || "000"}`, title: record.title || record.job_name || record.client_name || "Job", meta: detailText(record, record.client_name || "Job record"), state: !assigned ? "Unassigned" : record.status || "Job", amount: record.price || record.job_price || record.fixed_price || record.total || record.amount || 0, href: id ? `/jobs/${id}` : "/jobs" };
   }
 
-  if (type === "invoice") return { ...base, code: record.invoice_number || `INV-${id.slice(-4) || "000"}`, title: record.customer_name || record.client_name || "Invoice", meta: record.description || record.email || "Invoice record", state: record.status || "Invoice", amount: record.balance_due || record.balance || record.total || record.amount || 0, href: id ? `/invoices/${id}` : "/invoices" };
-  if (type === "quote") return { ...base, code: record.quote_number || `QTE-${id.slice(-4) || "000"}`, title: record.title || record.customer_name || record.client_name || "Quote", meta: record.description || "Quote record", state: record.status || "Quote", amount: record.total || record.amount || record.price || 0, href: id ? `/quotes/${id}` : "/quotes" };
+  if (type === "invoice") return { ...base, code: record.invoice_number || `INV-${id.slice(-4) || "000"}`, title: record.customer_name || record.client_name || "Invoice", meta: detailText(record, record.email || "Invoice record"), state: record.status || "Invoice", amount: record.balance_due || record.balance || record.total || record.amount || 0, href: id ? `/invoices/${id}` : "/invoices" };
+  if (type === "quote") return { ...base, code: record.quote_number || `QTE-${id.slice(-4) || "000"}`, title: record.title || record.customer_name || record.client_name || "Quote", meta: detailText(record, "Quote record"), state: record.status || "Quote", amount: record.total || record.amount || record.price || 0, href: id ? `/quotes/${id}` : "/quotes" };
   if (type === "client") return { ...base, code: "CLIENT", title: record.name || record.client_name || record.customer_name || "Client", meta: record.email || record.phone || record.address || "Client record", state: record.email && record.phone ? "Good" : "Missing details", href: id ? `/clients/${id}` : "/clients" };
   if (type === "worker") {
     const active = record.current_job_title || record.active_job_title || record.current_job_id || record.active_job_id;
     return { ...base, code: "CREW", title: record.name || record.full_name || record.email || "Worker", meta: active ? `On site · ${active}` : (record.role || record.email || "Worker record"), state: active ? "On job" : "Available", href: "/team" };
   }
 
-  return { ...base, code: type === "alert" ? "ALERT" : "AI", title: record.title || record.summary || record.subject || "Prepared action", meta: record.message || record.reason || record.description || record.body || "Prepared for review.", state: record.status || "Review", href: record.target_url || record.url || "#" };
+  return { ...base, code: type === "alert" ? "ALERT" : "AI", title: record.title || record.summary || record.subject || "Prepared action", meta: detailText(record, "Prepared for review."), state: record.status || "Review", href: record.target_url || record.url || "#" };
 }
 
 function reviewed(x) {
@@ -249,7 +250,8 @@ function DetailDrawer({ picked, onClose, onAction }) {
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
-    setDraft({ title: picked?.title || "", meta: picked?.meta || "", status: picked?.state || "" });
+    const raw = picked?.raw || {};
+    setDraft({ title: picked?.title || "", meta: detailText(raw, picked?.meta || ""), status: picked?.state || "" });
     setNotice("");
     setBusy(false);
   }, [picked]);
@@ -270,16 +272,16 @@ function DetailDrawer({ picked, onClose, onAction }) {
     <button className="xcf-close" type="button" onClick={onClose}>Close</button>
     <p>{picked.code || picked.type}</p>
     <h2>{picked.title}</h2>
-    <span>{picked.meta}</span>
+    <span>{isGroup ? picked.meta : draft.meta}</span>
 
     {isGroup ? <div className="xcf-slip-list">
-      {items.length ? items.slice(0, 12).map((x, i) => <button className="xcf-slip-row" type="button" key={`${x.type}-${x.id}-${i}`} onClick={() => setDraft({ title: x.title, meta: x.meta, status: x.state })}>
-        <b>{x.title}</b><small>{x.code} · {x.meta}</small><em>{Number(x.amount || 0) > 0 ? cash(x.amount) : x.state}</em>
+      {items.length ? items.slice(0, 12).map((x, i) => <button className="xcf-slip-row" type="button" key={`${x.type}-${x.id}-${i}`} onClick={() => setDraft({ title: x.title, meta: detailText(x.raw || {}, x.meta), status: x.state })}>
+        <b>{x.title}</b><small>{x.code} · {detailText(x.raw || {}, x.meta)}</small><em>{Number(x.amount || 0) > 0 ? cash(x.amount) : x.state}</em>
       </button>) : <Empty text="Nothing waiting in this slip." />}
     </div> : <>
       <dl><div><dt>Status</dt><dd>{picked.state}</dd></div><div><dt>Value</dt><dd>{Number(picked.amount || 0) > 0 ? cash(picked.amount) : "—"}</dd></div><div><dt>Code</dt><dd>{picked.code}</dd></div></dl>
       <EditableField label="Title" value={draft.title} onChange={(v) => setDraft((d) => ({ ...d, title: v }))} />
-      <EditableField label="Notes / description" value={draft.meta} onChange={(v) => setDraft((d) => ({ ...d, meta: v }))} textarea />
+      <EditableField label="What you are approving" value={draft.meta} onChange={(v) => setDraft((d) => ({ ...d, meta: v }))} textarea />
       <EditableField label="Status" value={draft.status} onChange={(v) => setDraft((d) => ({ ...d, status: v }))} />
     </>}
 
