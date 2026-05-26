@@ -13,6 +13,7 @@ import './concept-c/commandFloorActionHubRuntime';
 import './workhorseLiveCheck';
 import './renderDeployMarker';
 import './deploy/guidedOperatorFloorDeployMarker';
+import './deploy/commandFloorTestingDeployMarker';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
