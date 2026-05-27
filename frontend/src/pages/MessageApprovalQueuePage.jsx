@@ -1,4 +1,5 @@
 // CHURVOX_MESSAGE_APPROVAL_QUEUE_PAGE_20260528
+// CHURVOX_MESSAGE_QUEUE_REAL_RECORD_DRAFTS_20260528
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAiAuditLog } from "../concept-c/churvoxTopTierApi";
@@ -35,37 +36,73 @@ async function fetchJson(path) {
   return data;
 }
 
+function listFrom(payload, key) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.[key])) return payload[key];
+  if (Array.isArray(payload?.items)) return payload.items;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+}
+
+function idOf(item) {
+  return item?.id || item?._id || item?.uuid || "";
+}
+
+function pickDraft(item) {
+  return item?.customer_message_draft || item?.draft_message || item?.last_message_draft || item?.generated_message || item?.message || "";
+}
+
+function recordTitle(item, fallback) {
+  return item?.title || item?.job_name || item?.customer_name || item?.client_name || item?.name || item?.summary || fallback;
+}
+
+function draftFromRecord(type, item) {
+  const draft = pickDraft(item);
+  if (!draft) return null;
+  const id = idOf(item);
+  const href = type === "job" ? `/jobs/${id}` : type === "invoice" ? `/invoices/${id}` : type === "quote" ? `/quotes/${id}` : "/dashboard";
+  return {
+    id: `${type}-${id || Math.random()}`,
+    type,
+    title: recordTitle(item, `${type} message draft`),
+    message: draft,
+    href: id ? href : "/dashboard",
+    state: item?.status || item?.owner_review_status || "Draft",
+  };
+}
+
 export default function MessageApprovalQueuePage() {
-  const [state, setState] = useState({ loading: true, error: "", actions: [], audit: [] });
+  const [state, setState] = useState({ loading: true, error: "", actions: [], audit: [], jobs: [], invoices: [], quotes: [] });
 
   useEffect(() => {
     let alive = true;
 
     async function load() {
       try {
-        const [actionsRes, auditRes] = await Promise.allSettled([
+        const [actionsRes, auditRes, jobsRes, invoicesRes, quotesRes] = await Promise.allSettled([
           fetchJson("/api/ai-operator/actions"),
           getAiAuditLog(),
+          fetchJson("/api/jobs"),
+          fetchJson("/api/invoices"),
+          fetchJson("/api/quotes"),
         ]);
 
         if (!alive) return;
 
         const actionPayload = actionsRes.status === "fulfilled" ? actionsRes.value : {};
-        const actionItems =
-          actionPayload.items ||
-          actionPayload.actions ||
-          actionPayload.data ||
-          [];
 
         setState({
           loading: false,
           error: "",
-          actions: Array.isArray(actionItems) ? actionItems : [],
+          actions: listFrom(actionPayload, "actions"),
           audit: auditRes.status === "fulfilled" ? auditRes.value.items || [] : [],
+          jobs: jobsRes.status === "fulfilled" ? listFrom(jobsRes.value, "jobs") : [],
+          invoices: invoicesRes.status === "fulfilled" ? listFrom(invoicesRes.value, "invoices") : [],
+          quotes: quotesRes.status === "fulfilled" ? listFrom(quotesRes.value, "quotes") : [],
         });
       } catch (err) {
         if (!alive) return;
-        setState({ loading: false, error: err?.message || "Could not load message queue", actions: [], audit: [] });
+        setState({ loading: false, error: err?.message || "Could not load message queue", actions: [], audit: [], jobs: [], invoices: [], quotes: [] });
       }
     }
 
@@ -77,21 +114,41 @@ export default function MessageApprovalQueuePage() {
   }, []);
 
   const messages = useMemo(() => {
+    const recordDrafts = [
+      ...state.jobs.map((item) => draftFromRecord("job", item)),
+      ...state.invoices.map((item) => draftFromRecord("invoice", item)),
+      ...state.quotes.map((item) => draftFromRecord("quote", item)),
+    ].filter(Boolean);
+
     const actionMessages = state.actions.filter((item) => {
       const text = `${item.type || ""} ${item.title || ""} ${item.summary || ""} ${item.generated_message || ""} ${item.draft_message || ""}`.toLowerCase();
       return text.includes("message") || text.includes("sms") || text.includes("email") || text.includes("follow");
-    });
+    }).map((item) => ({
+      id: item.id || item._id || item.title,
+      type: item.type || "ai action",
+      title: item.title || item.summary || "Prepared message",
+      message: item.generated_message || item.draft_message || item.message || item.summary || "Prepared for owner review.",
+      href: item.target_url || "/dashboard",
+      state: item.status || "Draft",
+    }));
 
     const auditMessages = state.audit.filter((item) => {
       const text = `${item.action || ""} ${item.note || ""} ${item.target_type || ""}`.toLowerCase();
       return text.includes("message") || text.includes("draft") || text.includes("email") || text.includes("sms");
-    });
+    }).map((item) => ({
+      id: item.id || item._id || item.created_at,
+      type: "audit",
+      title: item.action || "Audit message record",
+      message: item.note || "Message-related audit record.",
+      href: "/operator-tools",
+      state: "Logged",
+    }));
 
-    return [...actionMessages, ...auditMessages].slice(0, 80);
-  }, [state.actions, state.audit]);
+    return [...recordDrafts, ...actionMessages, ...auditMessages].slice(0, 100);
+  }, [state.actions, state.audit, state.jobs, state.invoices, state.quotes]);
 
   return (
-    <main className="cmq-shell" data-version="CHURVOX_MESSAGE_APPROVAL_QUEUE_PAGE_20260528">
+    <main className="cmq-shell" data-version="CHURVOX_MESSAGE_APPROVAL_QUEUE_PAGE_20260528 CHURVOX_MESSAGE_QUEUE_REAL_RECORD_DRAFTS_20260528">
       <section className="cmq-hero">
         <div>
           <p>MESSAGE APPROVAL QUEUE</p>
@@ -109,10 +166,11 @@ export default function MessageApprovalQueuePage() {
 
       <section className="cmq-list">
         {messages.length ? messages.map((item, index) => (
-          <article className="cmq-card" key={item.id || item._id || index}>
-            <small>{item.type || item.action || "draft"}</small>
-            <h2>{item.title || item.summary || item.action || "Prepared message"}</h2>
-            <p>{item.generated_message || item.draft_message || item.message || item.note || "Prepared for owner review."}</p>
+          <article className="cmq-card" key={item.id || index}>
+            <small>{item.type || "draft"} · {item.state || "Draft"}</small>
+            <h2>{item.title || "Prepared message"}</h2>
+            <p>{item.message || "Prepared for owner review."}</p>
+            <Link to={item.href || "/dashboard"}>Open source record</Link>
             <span>Review inside the Work Slip before sending.</span>
           </article>
         )) : (
