@@ -100,14 +100,26 @@ function recommendWorkerForJob(picked, workers = [], jobs = []) {
     return { worker, score, blocked, conflict, reasons };
   }).sort((a, b) => b.score - a.score);
   const best = candidates.find((c) => c.score > 0) || null;
-  const blocked = candidates.filter((c) => c.score <= 0).slice(0, 4);
   return {
     best,
-    blocked,
     summary: best ? `${workerNameOf(best.worker)} is recommended because ${best.reasons.join(", ")}.` : "No conflict-free field worker was found from the loaded team list.",
-    warning: best ? "Owner can still change the worker before assigning." : "Choose manually or clear a worker conflict first.",
   };
 }
+
+function pad2(n) { return String(n).padStart(2, "0"); }
+function localDateTimeValue(date) {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}T${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+}
+function quickScheduleValue(kind) {
+  const d = new Date();
+  if (kind === "none") return "";
+  if (kind === "today") d.setHours(9, 0, 0, 0);
+  if (kind === "tomorrow") { d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); }
+  if (kind === "next_week") { d.setDate(d.getDate() + 7); d.setHours(9, 0, 0, 0); }
+  if (kind === "afternoon") d.setHours(13, 0, 0, 0);
+  return localDateTimeValue(d);
+}
+function isDateTimeLocal(v) { return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(str(v)); }
 
 function messageDraftFromPicked(picked, draft = {}) {
   const raw = picked?.raw || {};
@@ -219,6 +231,13 @@ function Field({ label, value, onChange, textarea = false, type = "text", missin
   const helper = missing ? "Needs owner input" : note;
   return <label className={className}><span>{label}</span>{textarea ? <textarea placeholder={missing ? "Needs owner input" : ""} value={value || ""} onChange={(e) => onChange(e.target.value)} /> : <input type={type} placeholder={missing ? "Needs owner input" : ""} value={value || ""} onChange={(e) => onChange(e.target.value)} />}<em>{helper}</em></label>;
 }
+
+function ScheduleField({ value, onChange, missing }) {
+  const className = `cfs-field cfs-schedule-field ${missing ? "is-missing" : "is-filled"}`;
+  const quickValue = !value ? "none" : isDateTimeLocal(value) ? "custom" : "manual";
+  return <label className={className}><span>Scheduled date / time</span><select value={quickValue} onChange={(e) => { const v = e.target.value; if (v === "custom") return; onChange(v === "manual" ? value : quickScheduleValue(v)); }}><option value="none">Not scheduled</option><option value="today">Today 9:00 AM</option><option value="afternoon">Today 1:00 PM</option><option value="tomorrow">Tomorrow 9:00 AM</option><option value="next_week">Next week 9:00 AM</option><option value="custom">Pick exact date/time</option>{quickValue === "manual" && <option value="manual">Saved schedule</option>}</select><input type="datetime-local" value={isDateTimeLocal(value) ? value.slice(0, 16) : ""} onChange={(e) => onChange(e.target.value)} /><em>{missing ? "Choose a schedule or leave as Not scheduled" : "Dropdown + exact picker"}</em></label>;
+}
+
 function Fact({ label, value, missing = false }) { return <span className={missing ? "is-missing" : ""}><small>{label}</small><b>{value || "Needs input"}</b></span>; }
 function CheckLine({ children }) { return <li><i>✓</i><span>{children}</span></li>; }
 function WarnLine({ children }) { return <li><i>!</i><span>{children}</span></li>; }
@@ -226,7 +245,7 @@ function updateDraft(setDraft, key) { return (value) => setDraft((d) => ({ ...d,
 
 function LaneSlip({ active, onClose, onPick }) {
   const items = active.items || [];
-  return <aside className="cfs-overlay cfs-lane-slip" data-version="CHURVOX_WORK_SLIP_MISSING_FIELD_HIGHLIGHTS_20260527"><section className="cfs-sheet"><header className="cfs-head"><div><p>WORK SLIP</p><h2>{active.title}</h2><em>{active.meta}</em></div><button type="button" onClick={onClose}>× Close</button></header><section className="cfs-lane-summary"><Fact label="Waiting" value={items.length} /><Fact label="Total value" value={Number(active.amount || 0) > 0 ? cash(active.amount) : "—"} /><strong>{active.actionLabel || "Open a row to approve the detail."}</strong></section><section className="cfs-lane-list">{items.length ? items.slice(0, 12).map((x, i) => <button className="cfs-lane-row" type="button" key={`${x.type}-${x.id}-${i}`} onClick={() => onPick(x)}><span><b>{x.title}</b><small>{x.code} · {detailText(x.raw || {}, x.meta)}</small></span><em>{Number(x.amount || 0) > 0 ? cash(x.amount) : x.state}</em></button>) : <div className="cfs-empty">Nothing waiting in this lane.</div>}</section><footer className="cfs-actions">{items.length ? <button className="primary" type="button" onClick={() => onPick(items[0])}>Open first waiting item</button> : <button disabled type="button">Nothing waiting</button>}</footer></section></aside>;
+  return <aside className="cfs-overlay cfs-lane-slip" data-version="CHURVOX_WORK_SLIP_SCHEDULE_DROPDOWN_20260527"><section className="cfs-sheet"><header className="cfs-head"><div><p>WORK SLIP</p><h2>{active.title}</h2><em>{active.meta}</em></div><button type="button" onClick={onClose}>× Close</button></header><section className="cfs-lane-summary"><Fact label="Waiting" value={items.length} /><Fact label="Total value" value={Number(active.amount || 0) > 0 ? cash(active.amount) : "—"} /><strong>{active.actionLabel || "Open a row to approve the detail."}</strong></section><section className="cfs-lane-list">{items.length ? items.slice(0, 12).map((x, i) => <button className="cfs-lane-row" type="button" key={`${x.type}-${x.id}-${i}`} onClick={() => onPick(x)}><span><b>{x.title}</b><small>{x.code} · {detailText(x.raw || {}, x.meta)}</small></span><em>{Number(x.amount || 0) > 0 ? cash(x.amount) : x.state}</em></button>) : <div className="cfs-empty">Nothing waiting in this lane.</div>}</section><footer className="cfs-actions">{items.length ? <button className="primary" type="button" onClick={() => onPick(items[0])}>Open first waiting item</button> : <button disabled type="button">Nothing waiting</button>}</footer></section></aside>;
 }
 
 export default function CommandFloorApprovalSlip({ picked, onClose, onAction, onPick, workers = [], jobs = [] }) {
@@ -256,7 +275,7 @@ export default function CommandFloorApprovalSlip({ picked, onClose, onAction, on
     customer: !hasText(draft.customer_name) || isGenericCustomer(draft.customer_name),
     site: !hasText(draft.site_address),
     service: !hasText(draft.service_type),
-    scheduled: !hasText(draft.scheduled),
+    scheduled: false,
     status: !hasText(draft.status),
     description: !hasText(draft.meta),
     worker: !hasText(draft.worker_id) && !hasText(draft.worker_name),
@@ -291,13 +310,13 @@ export default function CommandFloorApprovalSlip({ picked, onClose, onAction, on
     setDraft((d) => ({ ...d, worker_id: value, worker_name: selected ? workerNameOf(selected) : "" }));
   };
 
-  return <aside className="cfs-overlay" data-version="CHURVOX_WORK_SLIP_MISSING_FIELD_HIGHLIGHTS_20260527"><section className="cfs-sheet">
+  return <aside className="cfs-overlay" data-version="CHURVOX_WORK_SLIP_SCHEDULE_DROPDOWN_20260527"><section className="cfs-sheet">
     <header className="cfs-head"><div><p>WORK SLIP</p><h2>{draft.customer_name || active.title}</h2><em>{active.code || active.type}</em><span>Churvox filled what it could. Red fields still need owner input before this is safe to approve.</span></div><button type="button" onClick={onClose}>× Close</button></header>
     <section className="cfs-facts"><Fact label="Status" value={draft.status} missing={missing.status} /><Fact label="Value" value={value} missing={missing.amount} /><Fact label="Site" value={draft.site_address} missing={missing.site} /><Fact label="Customer" value={draft.customer_name} missing={missing.customer} /><Fact label="Worker" value={draft.worker_name || (recommendation?.best ? workerNameOf(recommendation.best.worker) : "")} missing={missing.worker} /><Fact label="Invoice" value={draft.invoice_status} missing={missing.invoiceDescription} /></section>
     <section className="cfs-decision-grid"><article className="cfs-decision cfs-happened"><header><i>1</i><b>What happened</b></header><ul>{situation.map((x) => <CheckLine key={x}>{x}</CheckLine>)}</ul></article><article className="cfs-decision cfs-ai"><header><i>2</i><b>AI Recommendation</b></header><div className="cfs-ai-box"><strong>{blocked ? "⚠ Review first" : "✓ Approve work"}</strong><p>{blocked ? "Churvox filled the form, but red fields still need owner input before approval." : recommendation?.best ? `No worker conflict found, ${workerNameOf(recommendation.best.worker)} selected, invoice draft prepared, and customer update drafted.` : "Review the job form, choose a worker if needed, then approve when ready."}</p></div></article><article className={`cfs-decision cfs-attention ${blocked ? "cfs-blocked" : ""}`}><header><i>3</i><b>Needs attention</b></header><ul>{needs.map((x) => <WarnLine key={x}>{x}</WarnLine>)}</ul></article></section>
     <h3 className="cfs-section-title">Editable job form Churvox prepared</h3>
     <section className="cfs-job-form cfs-job-form-editable">
-      <article className={mainMissing ? "cfs-missing-card" : ""}><header><small>Job details</small><b>Proper editable job record</b></header><div className="cfs-form-grid"><Field label="Job title" value={draft.title} onChange={updateDraft(setDraft, "title")} missing={missing.title} /><Field label="Client / customer" value={draft.customer_name} onChange={updateDraft(setDraft, "customer_name")} missing={missing.customer} /><Field label="Site address" value={draft.site_address} onChange={updateDraft(setDraft, "site_address")} missing={missing.site} /><Field label="Service type" value={draft.service_type} onChange={updateDraft(setDraft, "service_type")} missing={missing.service} /><Field label="Scheduled date / time" value={draft.scheduled} onChange={updateDraft(setDraft, "scheduled")} missing={missing.scheduled} note="Optional but helpful" /><Field label="Status" value={draft.status} onChange={updateDraft(setDraft, "status")} missing={missing.status} /><Field label="Job description / scope" value={draft.meta} onChange={updateDraft(setDraft, "meta")} missing={missing.description} textarea /></div></article>
+      <article className={mainMissing ? "cfs-missing-card" : ""}><header><small>Job details</small><b>Proper editable job record</b></header><div className="cfs-form-grid"><Field label="Job title" value={draft.title} onChange={updateDraft(setDraft, "title")} missing={missing.title} /><Field label="Client / customer" value={draft.customer_name} onChange={updateDraft(setDraft, "customer_name")} missing={missing.customer} /><Field label="Site address" value={draft.site_address} onChange={updateDraft(setDraft, "site_address")} missing={missing.site} /><Field label="Service type" value={draft.service_type} onChange={updateDraft(setDraft, "service_type")} missing={missing.service} /><ScheduleField value={draft.scheduled} onChange={updateDraft(setDraft, "scheduled")} missing={missing.scheduled} /><Field label="Status" value={draft.status} onChange={updateDraft(setDraft, "status")} missing={missing.status} /><Field label="Job description / scope" value={draft.meta} onChange={updateDraft(setDraft, "meta")} missing={missing.description} textarea /></div></article>
       <article className={assignmentMissing ? "cfs-missing-card" : ""}><header><small>Assignment</small><b>Worker selected by AI</b></header><div className="cfs-form-grid cfs-form-grid-small"><label className={`cfs-field ${missing.worker ? "is-missing" : "is-filled"}`}><span>Assigned worker</span><select value={draft.worker_id || ""} onChange={(e) => changeWorker(e.target.value)}><option value="">Needs owner input</option>{workers.map((worker) => { const wid = workerIdOf(worker); const blockedWorker = isWorkerBlocked(worker) || workerHasActiveConflict(worker, jobs, active); return <option key={wid || worker.title} value={wid}>{workerNameOf(worker)}{blockedWorker ? ` · ${blockedWorker}` : worker.state ? ` · ${worker.state}` : ""}</option>; })}</select><em>{missing.worker ? "Needs owner input" : "AI selected"}</em></label><Field label="Assigned worker name" value={draft.worker_name} onChange={updateDraft(setDraft, "worker_name")} missing={missing.worker} /><Field label="AI reason / conflict check" value={recommendation?.summary || "Needs manual check"} onChange={() => {}} textarea note="AI filled" /></div></article>
       <article className={pricingMissing ? "cfs-missing-card" : ""}><header><small>Pricing + invoice prep</small><b>Editable admin fields</b></header><div className="cfs-form-grid cfs-form-grid-small"><Field label="Pricing type" value={draft.pricing_type} onChange={updateDraft(setDraft, "pricing_type")} missing={missing.pricing} /><Field label="Amount" type="number" value={draft.amount} onChange={updateDraft(setDraft, "amount")} missing={missing.amount} /><Field label="Invoice status" value={draft.invoice_status} onChange={updateDraft(setDraft, "invoice_status")} note="AI filled" /><Field label="Invoice description" value={draft.invoice_description} onChange={updateDraft(setDraft, "invoice_description")} missing={missing.invoiceDescription} textarea /></div></article>
       <article className={completionMissing ? "cfs-missing-card" : ""}><header><small>Completion</small><b>Editable worker evidence</b></header><div className="cfs-form-grid cfs-form-grid-small"><Field label="Worker notes" value={draft.worker_notes} onChange={updateDraft(setDraft, "worker_notes")} missing={missing.workerNotes} textarea /><Field label="Photos" value={photos.length ? `${photos.length} uploaded` : ""} onChange={() => {}} missing={missing.photos} /><Field label="Owner approval" value="Waiting for your approval" onChange={() => {}} note="Ready when red fields are fixed" /></div></article>
