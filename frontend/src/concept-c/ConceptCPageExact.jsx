@@ -360,9 +360,18 @@ async function runRecordAction(action, picked, draft, api, reload) {
           const fallbackInvoiceId = recordIdFromResponse(res) || res?.data?.invoice_id || res?.data?.id || res?.id;
           if (fallbackInvoiceId) {
             await patchWithFallback(api, `/jobs/${id}`, {
+              // CHURVOX_WORK_SLIP_STRONG_INVOICE_LINK_FLAGS_20260527
               draft_invoice_id: fallbackInvoiceId,
               invoice_id: fallbackInvoiceId,
+              linked_invoice_id: fallbackInvoiceId,
+              invoice_number: fallbackInvoiceId,
               invoice_prepared: true,
+              invoiced: true,
+              invoice_status: "draft",
+              command_floor_status: "invoice_prepared",
+              work_review_status: "invoiced",
+              owner_review_status: "invoiced",
+              invoice_prepared_at: new Date().toISOString(),
               invoice_description_draft: payload.data.description,
             });
           }
