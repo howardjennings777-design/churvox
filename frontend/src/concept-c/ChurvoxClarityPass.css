@@ -1,60 +1,56 @@
-/* CHURVOX_CLARITY_PASS_20260527
-   Makes the app story obvious:
-   Command Floor = what needs approval.
-   Work Slip = one editable decision form.
+/* CHURVOX_CLARITY_PASS_CLEAN_20260527
+   Keep the product story clear without making the page noisy.
+   Command Floor = pick the approval lane.
+   Work Slip = edit one filled job form and approve.
 */
 
-/* COMMAND FLOOR: make the page explain itself */
+/* COMMAND FLOOR: clear, not cluttered */
 .xcf-approval-desk .xcf-hero > div {
   position: relative;
-  padding-right: min(360px, 34vw);
+  padding-right: min(300px, 28vw);
 }
 
 .xcf-approval-desk .xcf-hero > div::after {
-  content: "Simple flow: 1) Choose a lane  2) Open a Work Slip  3) Check the filled job form  4) Adjust if needed  5) Approve.";
+  content: "Pick a lane. Open a Work Slip. Check the form. Approve.";
   position: absolute;
   right: 18px;
   top: 50%;
   transform: translateY(-50%);
-  width: min(330px, 32vw);
-  padding: 13px 15px;
-  border-radius: 18px;
-  color: #0f172a;
+  width: min(270px, 27vw);
+  padding: 11px 13px;
+  border-radius: 16px;
+  color: #1d4ed8;
   background: #eff6ff;
-  border: 1px solid rgba(37, 99, 235, .18);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.85);
-  font-size: .82rem;
-  line-height: 1.35;
+  border: 1px solid rgba(37, 99, 235, .15);
+  font-size: .8rem;
+  line-height: 1.3;
   font-weight: 900;
 }
 
-.xcf-approval-summary {
+.xcf-approval-summary,
+.xcf-approval-lanes {
   position: relative;
 }
 
 .xcf-approval-summary::before {
-  content: "Start here — these are the only decisions waiting for you";
+  content: "Decisions waiting";
   position: absolute;
   left: 0;
-  top: -22px;
+  top: -20px;
   color: #2563eb;
-  font-size: .68rem;
+  font-size: .66rem;
   font-weight: 950;
   letter-spacing: .13em;
   text-transform: uppercase;
 }
 
-.xcf-approval-lanes {
-  position: relative;
-}
-
 .xcf-approval-lanes::before {
-  content: "Approval lanes — each card opens a Work Slip, not another confusing page";
+  content: "Approval lanes";
   position: absolute;
   left: 2px;
-  top: -24px;
+  top: -22px;
   color: #2563eb;
-  font-size: .68rem;
+  font-size: .66rem;
   font-weight: 950;
   letter-spacing: .13em;
   text-transform: uppercase;
@@ -68,38 +64,38 @@
   position: absolute;
   right: 14px;
   top: 14px;
-  padding: 6px 9px;
+  padding: 5px 8px;
   border-radius: 999px;
-  background: rgba(15, 23, 42, .06);
-  color: #334155;
-  font-size: .62rem;
+  background: rgba(15, 23, 42, .055);
+  color: #475569;
+  font-size: .6rem;
   font-weight: 950;
-  letter-spacing: .09em;
+  letter-spacing: .08em;
   text-transform: uppercase;
 }
 
-.xcf-lane-amber::after { content: "1. Work"; }
-.xcf-lane-green::after { content: "2. Money"; }
-.xcf-lane-blue::after { content: "3. Worker"; }
-.xcf-lane-purple::after { content: "4. Message"; }
-.xcf-lane-red::after { content: "5. Fix"; }
+.xcf-lane-amber::after { content: "Work"; }
+.xcf-lane-green::after { content: "Money"; }
+.xcf-lane-blue::after { content: "Worker"; }
+.xcf-lane-purple::after { content: "Message"; }
+.xcf-lane-red::after { content: "Fix"; }
 
 .xcf-lane-description {
-  min-height: 44px;
-  font-size: .9rem !important;
+  min-height: 42px;
+  font-size: .88rem !important;
   line-height: 1.35 !important;
   color: #1f2937 !important;
-  font-weight: 850 !important;
+  font-weight: 820 !important;
 }
 
+/* Fix duplicate "Open slipOpen Work Slip" text */
 .xcf-lane-primary {
-  font-size: 0 !important;
+  font-size: .78rem !important;
+  font-weight: 950 !important;
 }
 
 .xcf-lane-primary::after {
-  content: "Open Work Slip";
-  font-size: .78rem;
-  font-weight: 950;
+  content: "" !important;
 }
 
 .xcf-approval-lane .xcf-list {
@@ -113,10 +109,13 @@
 }
 
 .xcf-row::after {
-  content: "Open slip";
+  content: "Slip";
   margin-left: 8px;
+  padding: 4px 7px;
+  border-radius: 999px;
   color: #2563eb;
-  font-size: .64rem;
+  background: rgba(37,99,235,.08);
+  font-size: .58rem;
   font-weight: 950;
   white-space: nowrap;
 }
@@ -131,49 +130,49 @@
 }
 
 .xcf-field-strip::before {
-  content: "Secondary info only — your main work is in the approval lanes above";
+  content: "Field pulse";
   display: block;
   margin-bottom: 4px;
   color: #64748b;
-  font-size: .66rem;
-  font-weight: 900;
-  letter-spacing: .08em;
+  font-size: .62rem;
+  font-weight: 950;
+  letter-spacing: .1em;
   text-transform: uppercase;
 }
 
-/* WORKSPACE PAGES: make it clear these are backup/manual pages */
+/* WORKSPACE PAGES: light reminder only */
 .xcf-workspace .xcf-hero > div::after {
-  content: "Manual backup page. Command Floor is where approvals happen.";
+  content: "Manual records page";
   display: inline-flex;
   width: max-content;
   max-width: 100%;
   margin-top: 10px;
-  padding: 8px 11px;
+  padding: 7px 10px;
   border-radius: 999px;
   background: #eff6ff;
   color: #1d4ed8;
-  font-size: .72rem;
+  font-size: .7rem;
   font-weight: 950;
 }
 
-/* WORK SLIP: make the single-decision flow unmistakable */
+/* WORK SLIP: guide without clutter */
 .cfs-overlay .cfs-head {
   position: relative;
 }
 
 .cfs-overlay .cfs-head::after {
-  content: "One job. One filled form. Edit what is wrong, then approve.";
+  content: "Edit the form, then approve.";
   position: absolute;
   right: 142px;
   top: 18px;
-  max-width: 360px;
-  padding: 10px 12px;
-  border-radius: 14px;
+  max-width: 260px;
+  padding: 9px 11px;
+  border-radius: 13px;
   color: #1d4ed8;
   background: #eff6ff;
-  border: 1px solid rgba(37,99,235,.18);
-  font-size: .78rem;
-  line-height: 1.28;
+  border: 1px solid rgba(37,99,235,.16);
+  font-size: .76rem;
+  line-height: 1.25;
   font-weight: 950;
 }
 
@@ -184,7 +183,7 @@
 }
 
 .cfs-section-title::after {
-  content: "This is the actual job form. Change these fields if Churvox guessed anything wrong.";
+  content: "The real job form.";
   color: #64748b;
   font-size: .72rem;
   font-weight: 850;
@@ -209,18 +208,9 @@
   text-transform: uppercase;
 }
 
+/* Do not stamp "editable" after every field; it made the form noisy */
 .cfs-field span::after {
-  content: " editable";
-  color: #16a34a;
-  font-size: .64rem;
-  font-weight: 900;
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-.cfs-card.cfs-photos .cfs-field span::after,
-.cfs-card.cfs-next .cfs-field span::after {
-  content: "";
+  content: "" !important;
 }
 
 .cfs-actions .primary {
