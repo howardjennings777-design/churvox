@@ -194,7 +194,13 @@ function build(data) {
 
   const doneJobs = jobs.filter((x) => ["completed", "complete", "done"].includes(x.status));
   const approved = doneJobs.filter((x) => reviewed(x));
-  const workReview = doneJobs.filter((x) => !reviewed(x)).map((x) => ({ ...x, type: "work_review", state: "Needs approval", meta: `${x.meta} · finished work` }));
+  const workReview = doneJobs.filter((x) => !reviewed(x)).map((x) => ({
+    // CHURVOX_OWNER_REVIEW_CLEAR_LABELS_20260527
+    ...x,
+    type: "work_review",
+    state: "Ready for owner review",
+    meta: `${x.meta} · worker finished · check notes, price and optional photos`,
+  }));
   const readyInvoice = approved.filter((x) => !invoiceLinked(x));
   const openJobs = jobs.filter((x) => !["completed", "complete", "done", "cancelled"].includes(x.status));
   const active = jobs.filter((x) => ["in_progress", "in progress", "started", "paused"].includes(x.status));
