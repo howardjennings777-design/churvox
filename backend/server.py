@@ -11375,7 +11375,22 @@ async def churvox_work_slip_create_draft_invoice(job_id: str, payload: dict = Bo
         "updated_at": now,
     }})
 
-    return {"success": True, "id": invoice_id, "invoice_id": invoice_id, "message": "Draft invoice prepared and linked to this job"}
+    # CHURVOX_WORK_SLIP_DRAFT_INVOICE_NOTIFY_20260527
+    try:
+        await notify(
+            user_id=owner_id,
+            business_id=business_id,
+            type="draft_invoice_ready",
+            title="Draft invoice ready",
+            message=f"Draft invoice prepared for {customer_name}. Review before sending.",
+            route=f"/invoices/{invoice_id}",
+            target_type="invoice",
+            target_id=invoice_id,
+        )
+    except Exception as e:
+        print("WORK_SLIP_DRAFT_INVOICE_NOTIFY_ERROR", e)
+
+    return {"success": True, "id": invoice_id, "invoice_id": invoice_id, "route": f"/invoices/{invoice_id}", "message": "Draft invoice prepared and linked to this job"}
 
 
 app.include_router(api_router)
