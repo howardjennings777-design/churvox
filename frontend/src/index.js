@@ -16,6 +16,7 @@ import './concept-c/commandFloorWorkSlipCleanOverride.css';
 import './concept-c/commandFloorSlipScrollFix.css';
 import './concept-c/commandFloorSlipRedesign.css';
 import './concept-c/churvoxTopTierRuntimePatch';
+import './concept-c/churvoxWorkerOfflineRuntimePatch';
 import './workhorseLiveCheck';
 import './renderDeployMarker';
 import './deploy/guidedOperatorFloorDeployMarker';
