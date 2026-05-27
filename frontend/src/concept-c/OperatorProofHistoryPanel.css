@@ -1,0 +1,164 @@
+/* CHURVOX_OPERATOR_PROOF_HISTORY_PANEL_20260527 */
+
+.xcf-operator-proof-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(260px, .45fr) minmax(320px, .7fr);
+  gap: 14px;
+  align-items: stretch;
+  padding: 18px;
+  border-radius: 30px;
+  background:
+    linear-gradient(135deg, rgba(5,7,13,.98), rgba(15,23,42,.96)),
+    radial-gradient(circle at 0 0, rgba(37,99,235,.28), transparent 42%);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 26px 70px rgba(2,6,23,.28);
+}
+
+.xcf-operator-proof-copy {
+  display: grid;
+  gap: 8px;
+  align-content: center;
+}
+
+.xcf-operator-proof-copy p {
+  margin: 0;
+  color: #93c5fd;
+  font-size: .68rem;
+  font-weight: 950;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.xcf-operator-proof-copy h2 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(1.4rem, 2vw, 2.2rem);
+  line-height: 1.02;
+  letter-spacing: -.06em;
+  font-weight: 950;
+}
+
+.xcf-operator-proof-copy span {
+  color: #cbd5e1;
+  font-size: .92rem;
+  line-height: 1.42;
+  font-weight: 750;
+  max-width: 720px;
+}
+
+.xcf-operator-proof-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.xcf-operator-proof-stats button {
+  min-height: 118px;
+  display: grid;
+  align-content: space-between;
+  text-align: left;
+  padding: 14px;
+  border-radius: 22px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+  color: #fff;
+}
+
+.xcf-operator-proof-stats small {
+  color: #bfdbfe;
+  font-size: .66rem;
+  font-weight: 950;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.xcf-operator-proof-stats b {
+  color: #fff;
+  font-size: 2rem;
+  line-height: 1;
+  font-weight: 950;
+}
+
+.xcf-operator-proof-list {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.xcf-operator-proof-list button,
+.xcf-operator-proof-empty {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 12px;
+  border-radius: 18px;
+  color: #fff;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+}
+
+.xcf-operator-proof-list button b {
+  display: block;
+  color: #fff;
+  font-size: .9rem;
+  line-height: 1.15;
+  font-weight: 950;
+}
+
+.xcf-operator-proof-list button small {
+  display: block;
+  max-width: 100%;
+  color: #cbd5e1;
+  font-size: .72rem;
+  font-weight: 750;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.xcf-operator-proof-list button em {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border-radius: 999px;
+  color: #bfdbfe;
+  background: rgba(37,99,235,.22);
+  border: 1px solid rgba(147,197,253,.24);
+  font-size: .68rem;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.xcf-operator-proof-empty {
+  color: #cbd5e1;
+  justify-content: center;
+  text-align: center;
+  font-weight: 850;
+}
+
+@media (max-width: 1180px) {
+  .xcf-operator-proof-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .xcf-operator-proof-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .xcf-operator-proof-panel {
+    padding: 14px;
+    border-radius: 24px;
+  }
+
+  .xcf-operator-proof-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .xcf-operator-proof-stats button {
+    min-height: 92px;
+  }
+}

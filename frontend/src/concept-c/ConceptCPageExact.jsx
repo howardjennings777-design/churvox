@@ -28,7 +28,7 @@ function moneyNumber(...values) {
 }
 
 const API = {
-  dashboard: { jobs: "/jobs", clients: "/clients", invoices: "/invoices", quotes: "/quotes", workers: "/team/workers", actions: "/ai-operator/actions", notifications: "/notifications" },
+  dashboard: { jobs: "/jobs", clients: "/clients", invoices: "/invoices", quotes: "/quotes", workers: "/team/workers", actions: "/ai-operator/actions", activity: "/smart-hub/activity", notifications: "/notifications" },
   jobs: { jobs: "/jobs", workers: "/team/workers", invoices: "/invoices", actions: "/ai-operator/actions" },
   dispatch: { jobs: "/jobs", workers: "/team/workers", actions: "/ai-operator/actions" },
   clients: { clients: "/clients", jobs: "/jobs", quotes: "/quotes", invoices: "/invoices" },
@@ -173,6 +173,7 @@ function build(data) {
   const actions = arr(data.actions).map((x) => item("action", x));
   const alerts = arr(data.notifications).map((x) => item("alert", x));
   const messages = arr(data.history).map((x) => item("message", x));
+  const activity = arr(data.activity).map((x) => item("activity", x));
 
   const doneJobs = jobs.filter((x) => ["completed", "complete", "done"].includes(x.status));
   const approved = doneJobs.filter((x) => reviewed(x));
@@ -194,7 +195,7 @@ function build(data) {
   const done = [...doneJobs, ...invoices.filter((x) => ["paid", "complete", "completed"].includes(x.status))];
   const urgent = [...workReview, ...invoiceActions, ...workerActions, ...messageActions, ...issues];
 
-  return { jobs, invoices, quotes, clients, crew, actions, alerts, messages, doneJobs, approved, approvedValue: sum(approved), workReview, readyInvoice, openJobs, active, unassigned, owing, overdue, draftInvoices, quoteFollow, clientWatch, invoiceActions, workerActions, messageActions, issues, live, done, urgent };
+  return { jobs, invoices, quotes, clients, crew, actions, alerts, messages, activity, doneJobs, approved, approvedValue: sum(approved), workReview, readyInvoice, openJobs, active, unassigned, owing, overdue, draftInvoices, quoteFollow, clientWatch, invoiceActions, workerActions, messageActions, issues, live, done, urgent };
 }
 
 function useLive(area, get) {
@@ -244,6 +245,37 @@ function ApprovalLane({ title, eyebrow, description, value, note, tone, items, g
   return <section className={`xcf-card xcf-approval-lane xcf-lane-${tone}`}><header><span><small>{eyebrow}</small><b>{title}</b></span><strong>{value}</strong></header><p className="xcf-lane-description">{description}</p><button className="xcf-lane-primary" type="button" onClick={() => onPick(group)}>{primary}</button><div className="xcf-list">{items.length ? items.slice(0, 4).map((x, i) => <Row key={`${title}-${x.type}-${x.id || i}`} item={x} onPick={onPick} />) : <Empty />}</div><small className="xcf-lane-note">{note}</small></section>;
 }
 
+// CHURVOX_OPERATOR_PROOF_HISTORY_PANEL_20260527
+function OperatorProofHistory({ m, onPick }) {
+  const prepared = Array.isArray(m.actions) ? m.actions : [];
+  const history = Array.isArray(m.activity) ? m.activity : [];
+  const blocked = prepared.filter((x) => low(x.status) === "blocked" || (Array.isArray(x.raw?.blockers) && x.raw.blockers.length));
+  const safe = prepared.filter((x) => !blocked.includes(x));
+  const proofItems = history.length ? history.slice(0, 5) : prepared.slice(0, 5);
+
+  return <section className="xcf-operator-proof-panel">
+    <div className="xcf-operator-proof-copy">
+      <p>OPERATOR PROOF</p>
+      <h2>Churvox shows the audit trail before you trust the automation.</h2>
+      <span>Prepared actions, approvals, rejections, draft invoices and saved message drafts appear here so the owner can see what Churvox did and why.</span>
+    </div>
+    <div className="xcf-operator-proof-stats">
+      <button type="button" onClick={() => onPick(makeGroup("Safe prepared actions", "Actions Churvox believes are ready for owner review.", safe, "green", "Open safe actions"))}><small>Safe</small><b>{safe.length}</b></button>
+      <button type="button" onClick={() => onPick(makeGroup("Blocked actions", "Actions that need owner input before approval.", blocked, "red", "Open blocked actions"))}><small>Blocked</small><b>{blocked.length}</b></button>
+      <button type="button" onClick={() => onPick(makeGroup("Recent proof history", "Recent Smart Hub / Operator activity.", proofItems, "blue", "Open proof history"))}><small>History</small><b>{proofItems.length}</b></button>
+    </div>
+    <div className="xcf-operator-proof-list">
+      {proofItems.length ? proofItems.map((x, i) => (
+        <button key={`${x.type}-${x.id || i}`} type="button" onClick={() => onPick(x)}>
+          <span><b>{x.title}</b><small>{x.code} · {x.meta}</small></span>
+          <em>{x.state || x.status || "Review"}</em>
+        </button>
+      )) : <div className="xcf-operator-proof-empty">No proof history yet. Approvals and prepared actions will appear here.</div>}
+    </div>
+  </section>;
+}
+
+
 function Dashboard({ m, loading, onPick }) {
   const workLane = makeGroup("Approve Work", "Finished jobs waiting for your approval. Check evidence, photos, notes and value before signing off.", m.workReview, "amber", "Open work approvals");
   const invoiceLane = makeGroup("Approve Invoices", "Approved work and invoice records waiting for invoice action.", m.invoiceActions, "green", "Open invoice actions");
@@ -251,7 +283,7 @@ function Dashboard({ m, loading, onPick }) {
   const messageLane = makeGroup("Approve Messages", "AI-prepared quote follow-ups, customer updates and reminders to review before sending.", m.messageActions, "purple", "Open message approvals");
   const issueLane = makeGroup("Fix Issues", "Missing price, missing customer details, overdue money or blocked admin work.", m.issues, "red", "Open issues");
   const nextAction = m.workReview.length ? "Approve finished work" : m.invoiceActions.length ? "Approve invoices" : m.workerActions.length ? "Assign workers" : m.messageActions.length ? "Approve messages" : m.issues.length ? "Fix issues" : "All clear";
-  return <main className="xcf-shell xcf-approval-desk" data-version="CHURVOX_COMMAND_FLOOR_CLARITY_PASS_20260527"><TopBar loading={loading} /><section className="xcf-hero xcf-approval-hero"><div><p>OWNER APPROVAL DESK</p><h1>Command Floor</h1><span>Churvox prepared today’s admin. Open a Work Slip, check the filled form, adjust if needed, then approve.</span></div><aside><i>✓</i><small>Next decision</small><b>{nextAction}</b><em>{m.workReview.length + m.invoiceActions.length + m.workerActions.length + m.messageActions.length + m.issues.length} decisions waiting</em></aside></section><section className="xcf-metrics xcf-approval-summary"><Metric label="Approve Work" value={m.workReview.length} note="finished jobs" tone="amber" onClick={() => onPick(workLane)} /><Metric label="Approve Invoices" value={m.invoiceActions.length} note={cash(sum(m.invoiceActions))} tone="green" onClick={() => onPick(invoiceLane)} /><Metric label="Assign Workers" value={m.workerActions.length} note="dispatch decisions" tone="blue" onClick={() => onPick(workerLane)} /><Metric label="Approve Messages" value={m.messageActions.length} note="drafts & follow-ups" tone="purple" onClick={() => onPick(messageLane)} /><Metric label="Fix Issues" value={m.issues.length} note="blocking admin" tone="red" onClick={() => onPick(issueLane)} /></section><section className="xcf-approval-lanes"><ApprovalLane title="Approve Work" eyebrow="Worker finished work" description="Open a Work Slip. Check the filled job form, photos, notes and price. Then approve the work." value={m.workReview.length} note="Approval moves the job to invoice/admin." tone="amber" items={m.workReview} group={workLane} onPick={onPick} primary="Open slip" /><ApprovalLane title="Approve Invoices" eyebrow="Money waiting on approval" description="Open a Work Slip. Review the prepared invoice details before anything is sent." value={cash(sum(m.invoiceActions))} note={`${m.readyInvoice.length} jobs ready to invoice`} tone="green" items={m.invoiceActions} group={invoiceLane} onPick={onPick} primary="Open slip" /><ApprovalLane title="Assign Workers" eyebrow="Dispatch decisions" description="Open a Work Slip. Churvox recommends a worker and shows conflict checks before you assign." value={m.workerActions.length} note={`${m.unassigned.length} jobs without workers`} tone="blue" items={m.workerActions} group={workerLane} onPick={onPick} primary="Open slip" /><ApprovalLane title="Approve Messages" eyebrow="Customer communication" description="Open a Work Slip. Review the drafted customer update. Nothing sends without approval." value={m.messageActions.length} note="Nothing sends without approval." tone="purple" items={m.messageActions} group={messageLane} onPick={onPick} primary="Open slip" /><ApprovalLane title="Fix Issues" eyebrow="Blocked admin" description="Open a Work Slip. Fix missing price, missing client details, or anything blocking the next step." value={m.issues.length} note="Fix these before approval/send." tone="red" items={m.issues} group={issueLane} onPick={onPick} primary="Open slip" /></section><section className="xcf-field-strip"><span><small>Field pulse</small><b>{m.live.length} crew/job records live</b></span><button type="button" onClick={() => onPick(makeGroup("Field Pulse", "Live crew and active jobs. This is secondary information; approvals stay in the lanes above.", m.live, "cyan", "Open field pulse"))}>Open secondary info</button></section><BottomNav /></main>;
+  return <main className="xcf-shell xcf-approval-desk" data-version="CHURVOX_COMMAND_FLOOR_CLARITY_PASS_20260527"><TopBar loading={loading} /><section className="xcf-hero xcf-approval-hero"><div><p>OWNER APPROVAL DESK</p><h1>Command Floor</h1><span>Churvox prepared today’s admin. Open a Work Slip, check the filled form, adjust if needed, then approve.</span></div><aside><i>✓</i><small>Next decision</small><b>{nextAction}</b><em>{m.workReview.length + m.invoiceActions.length + m.workerActions.length + m.messageActions.length + m.issues.length} decisions waiting</em></aside></section><section className="xcf-metrics xcf-approval-summary"><Metric label="Approve Work" value={m.workReview.length} note="finished jobs" tone="amber" onClick={() => onPick(workLane)} /><Metric label="Approve Invoices" value={m.invoiceActions.length} note={cash(sum(m.invoiceActions))} tone="green" onClick={() => onPick(invoiceLane)} /><Metric label="Assign Workers" value={m.workerActions.length} note="dispatch decisions" tone="blue" onClick={() => onPick(workerLane)} /><Metric label="Approve Messages" value={m.messageActions.length} note="drafts & follow-ups" tone="purple" onClick={() => onPick(messageLane)} /><Metric label="Fix Issues" value={m.issues.length} note="blocking admin" tone="red" onClick={() => onPick(issueLane)} /></section><section className="xcf-approval-lanes"><ApprovalLane title="Approve Work" eyebrow="Worker finished work" description="Open a Work Slip. Check the filled job form, photos, notes and price. Then approve the work." value={m.workReview.length} note="Approval moves the job to invoice/admin." tone="amber" items={m.workReview} group={workLane} onPick={onPick} primary="Open slip" /><ApprovalLane title="Approve Invoices" eyebrow="Money waiting on approval" description="Open a Work Slip. Review the prepared invoice details before anything is sent." value={cash(sum(m.invoiceActions))} note={`${m.readyInvoice.length} jobs ready to invoice`} tone="green" items={m.invoiceActions} group={invoiceLane} onPick={onPick} primary="Open slip" /><ApprovalLane title="Assign Workers" eyebrow="Dispatch decisions" description="Open a Work Slip. Churvox recommends a worker and shows conflict checks before you assign." value={m.workerActions.length} note={`${m.unassigned.length} jobs without workers`} tone="blue" items={m.workerActions} group={workerLane} onPick={onPick} primary="Open slip" /><ApprovalLane title="Approve Messages" eyebrow="Customer communication" description="Open a Work Slip. Review the drafted customer update. Nothing sends without approval." value={m.messageActions.length} note="Nothing sends without approval." tone="purple" items={m.messageActions} group={messageLane} onPick={onPick} primary="Open slip" /><ApprovalLane title="Fix Issues" eyebrow="Blocked admin" description="Open a Work Slip. Fix missing price, missing client details, or anything blocking the next step." value={m.issues.length} note="Fix these before approval/send." tone="red" items={m.issues} group={issueLane} onPick={onPick} primary="Open slip" /></section><OperatorProofHistory m={m} onPick={onPick} /><section className="xcf-field-strip"><span><small>Field pulse</small><b>{m.live.length} crew/job records live</b></span><button type="button" onClick={() => onPick(makeGroup("Field Pulse", "Live crew and active jobs. This is secondary information; approvals stay in the lanes above.", m.live, "cyan", "Open field pulse"))}>Open secondary info</button></section><BottomNav /></main>;
 }
 
 function Workspace({ area, m, loading, onPick }) {
