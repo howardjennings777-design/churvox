@@ -1,4 +1,5 @@
 /* CHURVOX_TRADE_PRESETS_PAGE_20260528 */
+/* CHURVOX_TRADE_PRESETS_ACTIVE_WORKFLOW_20260528 */
 
 .ctp-shell {
   min-height: 100vh;
@@ -20,7 +21,9 @@
 
 .ctp-hero > div,
 .ctp-hero > aside,
-.ctp-card {
+.ctp-card,
+.ctp-active-panel,
+.ctp-notice {
   border-radius: 30px;
   background: rgba(255, 253, 247, 0.9);
   border: 1px solid rgba(17, 24, 39, 0.12);
@@ -32,7 +35,8 @@
 }
 
 .ctp-hero p,
-.ctp-card small {
+.ctp-card small,
+.ctp-active-panel small {
   margin: 0 0 10px;
   color: #4d7c0f;
   font-size: 12px;
@@ -76,6 +80,53 @@
   font-weight: 750;
 }
 
+.ctp-notice,
+.ctp-active-panel {
+  max-width: 1240px;
+  margin: 0 auto 18px;
+  padding: 18px;
+}
+
+.ctp-notice {
+  background: rgba(190, 242, 100, 0.24);
+  color: #365314;
+  font-weight: 950;
+}
+
+.ctp-active-panel {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+}
+
+.ctp-active-panel h2 {
+  margin: 0;
+  font-size: 30px;
+  letter-spacing: -0.045em;
+}
+
+.ctp-active-panel p {
+  color: rgba(17, 24, 39, 0.66);
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.ctp-active-panel a,
+.ctp-actions button,
+.ctp-actions a,
+.ctp-footer a {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 12px;
+  background: rgba(190, 242, 100, 0.28);
+  color: #365314;
+  font-size: 12px;
+  font-weight: 950;
+  text-decoration: none;
+  cursor: pointer;
+}
+
 .ctp-grid {
   max-width: 1240px;
   margin: 0 auto 22px;
@@ -86,7 +137,14 @@
 
 .ctp-card {
   padding: 22px;
-  min-height: 230px;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ctp-card.active {
+  outline: 3px solid rgba(190, 242, 100, 0.72);
+  background: linear-gradient(180deg, #fffdf7 0%, #f7ffd8 100%);
 }
 
 .ctp-card h2 {
@@ -101,36 +159,50 @@
   line-height: 1.45;
 }
 
-.ctp-tags {
+.ctp-tags,
+.ctp-actions,
+.ctp-footer {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.ctp-tags {
   margin-top: 18px;
 }
 
-.ctp-tags span,
-.ctp-footer a {
+.ctp-actions {
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+.ctp-tags span {
   border-radius: 999px;
   padding: 8px 11px;
-  background: rgba(190, 242, 100, 0.28);
-  color: #365314;
+  background: rgba(17, 24, 39, 0.06);
+  color: rgba(17, 24, 39, 0.72);
   font-size: 12px;
   font-weight: 900;
-  text-decoration: none;
+}
+
+.ctp-actions button:nth-child(2) {
+  background: #111827;
+  color: #fffaf0;
 }
 
 .ctp-footer {
   max-width: 1240px;
   margin: 0 auto;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
 }
 
 @media (max-width: 900px) {
   .ctp-hero,
   .ctp-grid {
     grid-template-columns: 1fr;
+  }
+
+  .ctp-active-panel {
+    display: grid;
   }
 
   .ctp-card {
