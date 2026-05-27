@@ -8,6 +8,7 @@
 @import './concept-c/WorkSlipRealScrollFix.css';
 @import './concept-c/WorkSlipPanelScrollLast.css';
 @import './concept-c/ChurvoxTopTierPanel.css';
+@import './concept-c/WorkSlipTopTierActions.css';
 
 @tailwind base;
 @tailwind components;
