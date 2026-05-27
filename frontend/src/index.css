@@ -6,6 +6,7 @@
 @import './concept-c/WorkSlipFullStructure.css';
 @import './concept-c/InvoiceApprovalFlowPolish.css';
 @import './concept-c/WorkSlipRealScrollFix.css';
+@import './concept-c/WorkSlipPanelScrollLast.css';
 
 @tailwind base;
 @tailwind components;
