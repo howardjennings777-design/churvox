@@ -695,11 +695,15 @@ class ClientCreate(BaseModel):
     notes: Optional[str] = None
 
 class ClientUpdate(BaseModel):
+    # CHURVOX_WORK_SLIP_MESSAGE_DRAFT_FIELDS_20260527
     name: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
     address: Optional[str] = None
     notes: Optional[str] = None
+    customer_message_draft: Optional[str] = None
+    draft_message: Optional[str] = None
+    last_message_draft: Optional[str] = None
 
 class JobCreate(BaseModel):
     title: Optional[str] = None
@@ -775,6 +779,7 @@ class QuoteCreate(BaseModel):
     valid_until: Optional[datetime] = None
 
 class QuoteUpdate(BaseModel):
+    # CHURVOX_WORK_SLIP_MESSAGE_DRAFT_FIELDS_20260527
     customer_name: Optional[str] = None
     customer_email: Optional[str] = None
     address: Optional[str] = None
@@ -783,6 +788,9 @@ class QuoteUpdate(BaseModel):
     notes: Optional[str] = None
     valid_until: Optional[datetime] = None
     status: Optional[QuoteStatus] = None
+    customer_message_draft: Optional[str] = None
+    draft_message: Optional[str] = None
+    last_message_draft: Optional[str] = None
 
 class InvoiceCreate(BaseModel):
     job_id: Optional[str] = None
@@ -796,6 +804,7 @@ class InvoiceCreate(BaseModel):
     notes: Optional[str] = None
 
 class InvoiceUpdate(BaseModel):
+    # CHURVOX_WORK_SLIP_MESSAGE_DRAFT_FIELDS_20260527
     customer_name: Optional[str] = None
     customer_email: Optional[str] = None
     address: Optional[str] = None
@@ -804,6 +813,9 @@ class InvoiceUpdate(BaseModel):
     gst_rate: Optional[float] = None
     notes: Optional[str] = None
     status: Optional[InvoiceStatus] = None
+    customer_message_draft: Optional[str] = None
+    draft_message: Optional[str] = None
+    last_message_draft: Optional[str] = None
 
 class PlanUpdate(BaseModel):
     plan: PlanType
