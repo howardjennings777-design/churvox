@@ -1,5 +1,8 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-28 NZT connector push
-Change: Worker job page note panel update.
-Render marker only.
+Change: Operator Tools hub navigation update.
+Includes:
+- Hub links on Operator Tools page
+- Navigation cards for Command Floor, messages, dispatch, presets, offline, and money desk
+- Render marker only
