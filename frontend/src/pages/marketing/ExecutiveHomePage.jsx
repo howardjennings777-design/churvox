@@ -43,6 +43,23 @@ export function Nav() {
   );
 }
 
+export function Footer() {
+  return (
+    <footer className="cvx-footer">
+      <div>
+        <b>Churvox</b>
+        <span>AI Operator for trade and service businesses. Churvox prepares the admin. You approve.</span>
+      </div>
+      <nav>
+        <Link to="/features">Features</Link>
+        <Link to="/pricing">Pricing</Link>
+        <Link to="/privacy-policy">Privacy</Link>
+        <Link to="/terms-of-service">Terms</Link>
+      </nav>
+    </footer>
+  );
+}
+
 export default function ExecutiveHomePage() {
   return (
     <main className="cvx-home" data-version="CHURVOX_WOW_LANDING_20260527">
@@ -143,6 +160,8 @@ export default function ExecutiveHomePage() {
         <h2>Let Churvox prepare the admin. You stay in control.</h2>
         <Link to="/signup" className="cvx-btn cvx-btn-primary">Start free</Link>
       </section>
+
+      <Footer />
     </main>
   );
 }
