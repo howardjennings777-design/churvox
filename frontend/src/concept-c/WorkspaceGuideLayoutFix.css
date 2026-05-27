@@ -2,6 +2,7 @@
 /* CHURVOX_WORKSPACE_GUIDE_HORIZONTAL_TEXT_FIX_20260527 */
 /* CHURVOX_BLACK_NAV_BARS_20260527 */
 /* CHURVOX_NAV_READABILITY_FORCE_20260527 */
+/* CHURVOX_OPERATOR_PROOF_TRUST_LAYER_20260527 */
 
 .xcf-workspace {
   display: grid !important;
@@ -94,6 +95,68 @@
   color: #ffffff !important;
   -webkit-text-fill-color: #ffffff !important;
   border-radius: 14px !important;
+}
+
+/* Command Floor trust/proof layer: shows why owner can trust the flow */
+.xcf-approval-desk .xcf-field-strip {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 14px !important;
+  align-items: center !important;
+  border: 1px solid rgba(37,99,235,.18) !important;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.98), rgba(239,246,255,.96)),
+    radial-gradient(circle at 0 0, rgba(37,99,235,.12), transparent 34%) !important;
+  box-shadow: 0 20px 52px rgba(37,99,235,.12) !important;
+}
+
+.xcf-approval-desk .xcf-field-strip::before {
+  content: "Operator Proof" !important;
+  grid-column: 1 / -1;
+  color: #1d4ed8 !important;
+  font-size: .68rem !important;
+  font-weight: 950 !important;
+  letter-spacing: .15em !important;
+  text-transform: uppercase !important;
+  margin: 0 !important;
+}
+
+.xcf-approval-desk .xcf-field-strip span::after {
+  content: "Churvox only prepares admin here. Work Slips show the filled job form, invoice prep, worker check, message draft and any blockers before owner approval.";
+  display: block;
+  margin-top: 7px;
+  max-width: 760px;
+  color: #475569;
+  font-size: .86rem;
+  line-height: 1.38;
+  font-weight: 800;
+}
+
+.xcf-approval-desk .xcf-field-strip button {
+  min-height: 44px !important;
+  padding: 0 16px !important;
+  border-radius: 999px !important;
+  background: #05070d !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(15,23,42,.18) !important;
+  font-weight: 950 !important;
+}
+
+.xcf-approval-desk .xcf-field-strip::after {
+  content: "Owner approval required · No customer message sends by itself · No worker assignment without confirmation · No invoice send without review";
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 10px 13px;
+  border-radius: 16px;
+  color: #0f172a;
+  background: #ffffff;
+  border: 1px solid rgba(15,23,42,.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.85);
+  font-size: .82rem;
+  line-height: 1.35;
+  font-weight: 900;
 }
 
 .xcf-workspace .xcf-hero {
@@ -201,5 +264,16 @@
 
   .xcf-workspace .xcf-workspace-list {
     margin-right: 0 !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .xcf-approval-desk .xcf-field-strip {
+    display: block !important;
+  }
+
+  .xcf-approval-desk .xcf-field-strip button {
+    width: 100% !important;
+    margin-top: 12px !important;
   }
 }
