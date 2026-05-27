@@ -720,21 +720,38 @@ class JobCreate(BaseModel):
     assigned_worker_id: Optional[str] = None
 
 class JobUpdate(BaseModel):
+    # CHURVOX_WORK_SLIP_JOBUPDATE_FIELDS_20260527
     title: Optional[str] = None
+    job_name: Optional[str] = None
     job_type: Optional[JobType] = None
+    service_type: Optional[str] = None
     client_id: Optional[str] = None
     customer_name: Optional[str] = None
+    client_name: Optional[str] = None
     address: Optional[str] = None
+    site_address: Optional[str] = None
     scheduled_date: Optional[datetime] = None
     scheduled_time: Optional[str] = None
     estimated_duration: Optional[int] = None
     price: Optional[float] = None
+    job_price: Optional[float] = None
     pricing_type: Optional[str] = None
     hourly_rate: Optional[float] = None
     extras: Optional[List[dict]] = None
     notes: Optional[str] = None
+    worker_notes: Optional[str] = None
     is_recurring: Optional[bool] = None
     recurrence_pattern: Optional[str] = None
+    assigned_worker_id: Optional[str] = None
+    assigned_worker_name: Optional[str] = None
+    assigned_to: Optional[str] = None
+    invoice_description_draft: Optional[str] = None
+    customer_message_draft: Optional[str] = None
+    owner_review_status: Optional[str] = None
+    work_review_status: Optional[str] = None
+    reviewed: Optional[bool] = None
+    owner_approved: Optional[bool] = None
+    work_approved: Optional[bool] = None
     status: Optional[JobStatus] = None
 
 class JobAssign(BaseModel):
