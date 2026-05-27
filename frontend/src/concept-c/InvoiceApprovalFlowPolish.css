@@ -1,0 +1,47 @@
+/* CHURVOX_INVOICE_APPROVAL_FLOW_POLISH_20260527 */
+
+.cfs-overlay .cfs-card.cfs-next {
+  background:
+    linear-gradient(180deg, #ffffff, #f0fdf4) !important;
+  border: 1px solid rgba(34,197,94,.20) !important;
+  box-shadow: 0 16px 38px rgba(34,197,94,.10) !important;
+}
+
+.cfs-overlay .cfs-card.cfs-next header small {
+  color: #16a34a !important;
+}
+
+.cfs-overlay .cfs-card.cfs-next header b::after {
+  content: " · approval-first";
+  color: #16a34a;
+  font-size: .75rem;
+  font-weight: 950;
+}
+
+.cfs-overlay .cfs-actions button[disabled] {
+  cursor: not-allowed !important;
+}
+
+.cfs-overlay .cfs-actions button:not(:disabled),
+.cfs-overlay .cfs-actions a {
+  cursor: pointer !important;
+}
+
+.cfs-overlay .cfs-actions button:nth-last-child(3)::after {
+  content: "";
+}
+
+.cfs-overlay .cfs-notice {
+  font-weight: 950 !important;
+}
+
+.xcf-approval-lane.xcf-lane-green {
+  border-color: rgba(34,197,94,.24) !important;
+  box-shadow: 0 18px 42px rgba(34,197,94,.10) !important;
+}
+
+.xcf-lane-green .xcf-lane-description::after {
+  content: " Drafts stay review-first until approved.";
+  color: #16a34a;
+  font-weight: 950;
+}

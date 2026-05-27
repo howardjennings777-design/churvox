@@ -516,6 +516,7 @@ class QuoteStatus(str, Enum):
 
 class InvoiceStatus(str, Enum):
     DRAFT = "draft"
+    APPROVED = "approved"
     SENT = "sent"
     PAID = "paid"
     OVERDUE = "overdue"
