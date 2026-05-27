@@ -13,6 +13,29 @@ const reviewStatus = (job) => String(job?.work_review_status || job?.review_stat
 const isSentBackJob = (job) => reviewStatus(job) === "sent_back" || job?.worker_action_required === true;
 const sendBackNote = (job) => String(job?.send_back_note || job?.owner_note || job?.worker_note || "").trim();
 
+// CHURVOX_WORKER_MOBILE_FLOW_PANEL_20260527
+function WorkerDayFlowPanel({ stats, nextJob, onContactOffice }) {
+  const hasWork = Number(stats?.total || 0) > 0;
+  const nextLabel = nextJob?.title || "Waiting for dispatch";
+  return (
+    <section className="worker-flow-panel">
+      <div className="worker-flow-panel__copy">
+        <p>FIELD FLOW</p>
+        <h2>{hasWork ? "Do the job. Churvox prepares the admin." : "No jobs assigned yet."}</h2>
+        <span>{hasWork ? `Next: ${nextLabel}. Start the job, add notes/photos, then complete it so the owner gets a clean Work Slip.` : "Refresh or contact the office if you are expecting work today."}</span>
+      </div>
+      <div className="worker-flow-steps">
+        <span><b>1</b><small>Open job</small></span>
+        <span><b>2</b><small>Start</small></span>
+        <span><b>3</b><small>Notes/photos</small></span>
+        <span><b>4</b><small>Complete</small></span>
+      </div>
+      <button type="button" onClick={onContactOffice}>Need help?</button>
+    </section>
+  );
+}
+
+
 export default function WorkerJobsPage() {
   const { user, logout } = useAuth();
   const { get, patch } = useApi();
@@ -57,7 +80,7 @@ export default function WorkerJobsPage() {
   };
 
   return (
-    <div className="px-app min-h-screen pb-28" data-marker="CHURVOX_WORKER_SENT_BACK_VISIBILITY_20260525">
+    <div className="px-app min-h-screen pb-28" data-marker="CHURVOX_WORKER_MOBILE_FLOW_PANEL_20260527">
       <header className="px-mobile-header">
         <ChurvoxLogo size="sm" />
         <div className="flex items-center gap-2">
@@ -73,6 +96,8 @@ export default function WorkerJobsPage() {
           <h1 className="px-hero__title" style={{ fontSize: "24px" }}>Hey {user?.name?.split(" ")[0] || "team"}</h1>
           <p className="px-hero__sub">Your field schedule, actions, and status updates — ready for the day.</p>
         </div>
+
+        <WorkerDayFlowPanel stats={stats} nextJob={nextJob} onContactOffice={() => setShowContactOffice(true)} />
 
         <PremiumCard>
           <div className="px-card__body flex items-center justify-between gap-3 py-3">

@@ -1,0 +1,150 @@
+/* CHURVOX_WORKER_MOBILE_FLOW_POLISH_20260527 */
+
+.worker-flow-panel,
+.worker-readiness-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 26px;
+  color: #ffffff;
+  background:
+    linear-gradient(135deg, #05070d, #111827),
+    radial-gradient(circle at 0 0, rgba(37,99,235,.34), transparent 44%);
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 22px 54px rgba(2,6,23,.28);
+}
+
+.worker-flow-panel__copy,
+.worker-readiness-card > div:first-child {
+  display: grid;
+  gap: 6px;
+}
+
+.worker-flow-panel p,
+.worker-readiness-card p {
+  margin: 0;
+  color: #93c5fd;
+  font-size: .68rem;
+  font-weight: 950;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.worker-flow-panel h2,
+.worker-readiness-card h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.25rem, 5vw, 1.7rem);
+  line-height: 1.05;
+  letter-spacing: -.05em;
+  font-weight: 950;
+}
+
+.worker-flow-panel span,
+.worker-readiness-card span {
+  color: #cbd5e1;
+  font-size: .9rem;
+  line-height: 1.4;
+  font-weight: 760;
+}
+
+.worker-flow-steps,
+.worker-readiness-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.worker-readiness-list {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.worker-flow-steps span,
+.worker-readiness-list span {
+  min-height: 72px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 4px;
+  padding: 10px 8px;
+  border-radius: 18px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+  text-align: center;
+}
+
+.worker-flow-steps b,
+.worker-readiness-list b {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: .82rem;
+  font-weight: 950;
+}
+
+.worker-flow-steps small,
+.worker-readiness-list small {
+  color: #e2e8f0;
+  font-size: .68rem;
+  line-height: 1.1;
+  font-weight: 900;
+}
+
+.worker-readiness-list span.is-done {
+  background: rgba(34,197,94,.14);
+  border-color: rgba(34,197,94,.34);
+}
+
+.worker-readiness-list span.is-done b {
+  background: #16a34a;
+}
+
+.worker-readiness-card--ready {
+  background:
+    linear-gradient(135deg, #052e16, #111827),
+    radial-gradient(circle at 0 0, rgba(34,197,94,.34), transparent 44%);
+}
+
+.worker-flow-panel button {
+  min-height: 44px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #05070d;
+  font-size: .86rem;
+  font-weight: 950;
+  border: 0;
+}
+
+.px-app[data-marker="CHURVOX_WORKER_MOBILE_FLOW_PANEL_20260527"] .px-mobile-header,
+.px-app[data-marker="CHURVOX_WORKER_WORK_SLIP_READINESS_20260527"] header {
+  background: #05070d !important;
+  color: #ffffff !important;
+  border-color: rgba(255,255,255,.12) !important;
+}
+
+.px-app[data-marker="CHURVOX_WORKER_MOBILE_FLOW_PANEL_20260527"] .px-mobile-header *,
+.px-app[data-marker="CHURVOX_WORKER_WORK_SLIP_READINESS_20260527"] header * {
+  color: #ffffff !important;
+}
+
+.px-app[data-marker="CHURVOX_WORKER_MOBILE_FLOW_PANEL_20260527"] .px-card,
+.px-app[data-marker="CHURVOX_WORKER_WORK_SLIP_READINESS_20260527"] .px-card {
+  border-radius: 24px !important;
+}
+
+@media (max-width: 520px) {
+  .worker-flow-steps,
+  .worker-readiness-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .worker-flow-panel,
+  .worker-readiness-card {
+    padding: 15px;
+    border-radius: 22px;
+  }
+}

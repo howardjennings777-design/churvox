@@ -14,6 +14,30 @@ const reviewStatus = (job) => String(job?.work_review_status || job?.review_stat
 const isSentBackJob = (job) => reviewStatus(job) === "sent_back" || job?.worker_action_required === true;
 const getSendBackNote = (job) => safeText(job?.send_back_note || job?.owner_note || job?.worker_note || "", "");
 
+// CHURVOX_WORKER_WORK_SLIP_READINESS_20260527
+function WorkerWorkSlipReadiness({ status, photoCount, workerNotes, sentBack }) {
+  const noteReady = String(workerNotes || "").trim().length > 0;
+  const photosReady = Number(photoCount || 0) > 0;
+  const completed = String(status || "").toLowerCase() === "completed";
+  const readyCount = [noteReady, photosReady, completed].filter(Boolean).length;
+
+  return (
+    <section className={`worker-readiness-card ${readyCount >= 2 ? "worker-readiness-card--ready" : ""}`}>
+      <div>
+        <p>OWNER WORK SLIP</p>
+        <h2>{sentBack ? "Fix it, then send it back to owner review." : "Make the owner approval easy."}</h2>
+        <span>Add a clear note and photos before completing. Churvox uses this evidence to prepare the owner Work Slip and invoice admin.</span>
+      </div>
+      <div className="worker-readiness-list">
+        <span className={noteReady ? "is-done" : ""}><b>{noteReady ? "✓" : "1"}</b><small>Worker note</small></span>
+        <span className={photosReady ? "is-done" : ""}><b>{photosReady ? "✓" : "2"}</b><small>Photos</small></span>
+        <span className={completed ? "is-done" : ""}><b>{completed ? "✓" : "3"}</b><small>Complete job</small></span>
+      </div>
+    </section>
+  );
+}
+
+
 export default function WorkerJobDetailPage() {
   const { id } = useParams();
   const { get, post, patch } = useApi();
@@ -122,12 +146,14 @@ export default function WorkerJobDetailPage() {
   if (!job) return <div className="min-h-screen flex items-center justify-center"><Link to="/worker/jobs">Back</Link></div>;
 
   return (
-    <div className="px-app min-h-screen pb-28" data-marker="CHURVOX_WORKER_SENT_BACK_DETAIL_FLOW_20260525">
+    <div className="px-app min-h-screen pb-28" data-marker="CHURVOX_WORKER_WORK_SLIP_READINESS_20260527">
       <header className="bg-[rgba(17,21,27,0.92)] backdrop-blur border-b border-[var(--cx-border)] px-4 py-4 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto flex items-center gap-3"><Link to="/worker/jobs"><ArrowLeft className="h-5 w-5 text-[var(--cx-muted)]" /></Link><h1 className="text-lg font-bold text-[var(--cx-text)]">Job checklist</h1></div>
       </header>
       <main className="max-w-2xl mx-auto px-4 py-5 space-y-4">
         <PremiumCard><div className="px-card__body space-y-2"><div className="flex justify-between gap-2"><h2 className="font-bold text-[var(--cx-text)]">{job.title || "Untitled Job"}</h2><PremiumStatusBadge status={status} /></div>{job.client_name ? <p className="text-sm text-[var(--cx-muted)] flex items-center gap-1"><User className="h-4 w-4" />{job.client_name}</p> : null}{job.address ? <p className="text-sm text-[var(--cx-muted)] flex items-center gap-1"><MapPin className="h-4 w-4" />{job.address}</p> : null}{job.scheduled_date ? <p className="text-sm text-[var(--cx-muted)] flex items-center gap-1"><Clock3 className="h-4 w-4" />{String(job.scheduled_date).slice(0, 10)} {job.scheduled_time ? `• ${job.scheduled_time}` : ""}</p> : null}</div></PremiumCard>
+
+        <WorkerWorkSlipReadiness status={status} photoCount={photoCount} workerNotes={workerNotes} sentBack={sentBack} />
 
         {sentBack ? (
           <PremiumCard>
