@@ -1,4 +1,4 @@
-/* CHURVOX_WORK_SLIP_CLEAR_ORDER_20260527
+/* CHURVOX_WORK_SLIP_APPROVE_BLOCKED_STATE_20260527
    Command Floor = pick a lane.
    Work Slip = check the real job form first, then AI checks, then approve.
 */
@@ -75,20 +75,8 @@
 .xcf-lane-purple::after { content: "Message"; }
 .xcf-lane-red::after { content: "Fix"; }
 
-.xcf-lane-description {
-  min-height: 40px;
-  font-size: .86rem !important;
-  line-height: 1.34 !important;
-  color: #1f2937 !important;
-  font-weight: 800 !important;
-}
-.xcf-lane-primary {
-  width: 100%;
-  min-height: 46px;
-  border-radius: 16px !important;
-  font-size: .82rem !important;
-  font-weight: 950 !important;
-}
+.xcf-lane-description { min-height: 40px; font-size: .86rem !important; line-height: 1.34 !important; color: #1f2937 !important; font-weight: 800 !important; }
+.xcf-lane-primary { width: 100%; min-height: 46px; border-radius: 16px !important; font-size: .82rem !important; font-weight: 950 !important; }
 .xcf-lane-primary::after { content: "" !important; }
 .xcf-approval-lane .xcf-list { border-top: 1px solid rgba(15,23,42,.07); margin-top: 10px; padding-top: 10px; }
 .xcf-approval-lane .xcf-list .xcf-row:nth-of-type(n+4) { display: none !important; }
@@ -99,25 +87,10 @@
 .xcf-field-strip::before { content: "Field pulse"; display: block; margin-bottom: 4px; color: #64748b; font-size: .62rem; font-weight: 950; letter-spacing: .1em; text-transform: uppercase; }
 
 /* WORKSPACE PAGES: light reminder only */
-.xcf-workspace .xcf-hero > div::after {
-  content: "Manual records page";
-  display: inline-flex;
-  width: max-content;
-  max-width: 100%;
-  margin-top: 10px;
-  padding: 7px 10px;
-  border-radius: 999px;
-  background: #eff6ff;
-  color: #1d4ed8;
-  font-size: .7rem;
-  font-weight: 950;
-}
+.xcf-workspace .xcf-hero > div::after { content: "Manual records page"; display: inline-flex; width: max-content; max-width: 100%; margin-top: 10px; padding: 7px 10px; border-radius: 999px; background: #eff6ff; color: #1d4ed8; font-size: .7rem; font-weight: 950; }
 
 /* WORK SLIP: make the order obvious */
-.cfs-overlay .cfs-sheet {
-  display: grid;
-}
-
+.cfs-overlay .cfs-sheet { display: grid; }
 .cfs-overlay .cfs-head { order: 1; position: relative; }
 .cfs-overlay .cfs-facts { order: 2; }
 .cfs-overlay .cfs-section-title { order: 3; }
@@ -143,107 +116,50 @@
   font-weight: 950;
 }
 
-.cfs-section-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.cfs-section-title::before {
-  content: "Step 1";
-  padding: 5px 9px;
-  border-radius: 999px;
-  background: #eff6ff;
-  color: #1d4ed8;
-  font-size: .62rem;
-  font-weight: 950;
-  letter-spacing: .08em;
-}
-.cfs-section-title::after {
-  content: "Main thing to check. Red fields need owner input.";
-  color: #64748b;
-  font-size: .72rem;
-  font-weight: 850;
-  letter-spacing: 0;
-  text-transform: none;
-}
+.cfs-section-title { display: flex; align-items: center; gap: 10px; }
+.cfs-section-title::before { content: "Step 1"; padding: 5px 9px; border-radius: 999px; background: #eff6ff; color: #1d4ed8; font-size: .62rem; font-weight: 950; letter-spacing: .08em; }
+.cfs-section-title::after { content: "Main thing to check. Red fields need owner input."; color: #64748b; font-size: .72rem; font-weight: 850; letter-spacing: 0; text-transform: none; }
+.cfs-job-form article:first-child { border-width: 2px; border-color: rgba(37,99,235,.28) !important; }
+.cfs-job-form article:first-child header::after { content: "Main form"; margin-left: auto; padding: 5px 9px; border-radius: 999px; background: #eff6ff; color: #1d4ed8; font-size: .62rem; font-weight: 950; text-transform: uppercase; }
 
-.cfs-job-form article:first-child {
-  border-width: 2px;
-  border-color: rgba(37,99,235,.28) !important;
-}
-.cfs-job-form article:first-child header::after {
-  content: "Main form";
-  margin-left: auto;
-  padding: 5px 9px;
-  border-radius: 999px;
-  background: #eff6ff;
-  color: #1d4ed8;
-  font-size: .62rem;
-  font-weight: 950;
-  text-transform: uppercase;
-}
-
-.cfs-decision-grid {
-  position: relative;
-  padding-top: 28px;
-}
-.cfs-decision-grid::before {
-  content: "Step 2 · AI checks — use these to understand what Churvox prepared";
-  position: absolute;
-  left: 0;
-  top: 0;
-  color: #2563eb;
-  font-size: .68rem;
-  font-weight: 950;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-
-.cfs-lower {
-  position: relative;
-  padding-top: 28px;
-}
-.cfs-lower::before {
-  content: "Step 3 · Drafts, photos and final outcome";
-  position: absolute;
-  left: 0;
-  top: 0;
-  color: #2563eb;
-  font-size: .68rem;
-  font-weight: 950;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
+.cfs-decision-grid { position: relative; padding-top: 28px; }
+.cfs-decision-grid::before { content: "Step 2 · AI checks — use these to understand what Churvox prepared"; position: absolute; left: 0; top: 0; color: #2563eb; font-size: .68rem; font-weight: 950; letter-spacing: .08em; text-transform: uppercase; }
+.cfs-lower { position: relative; padding-top: 28px; }
+.cfs-lower::before { content: "Step 3 · Drafts, photos and final outcome"; position: absolute; left: 0; top: 0; color: #2563eb; font-size: .68rem; font-weight: 950; letter-spacing: .08em; text-transform: uppercase; }
 
 .cfs-field span::after { content: "" !important; }
 .cfs-actions .primary { position: relative; }
-.cfs-actions .primary::before {
-  content: "Main action";
-  position: absolute;
-  left: 50%;
-  top: -22px;
-  transform: translateX(-50%);
-  color: #1d4ed8;
-  background: #eff6ff;
-  border: 1px solid rgba(37,99,235,.16);
-  border-radius: 999px;
-  padding: 3px 8px;
-  font-size: .56rem;
+.cfs-actions .primary::before { content: "Main action"; position: absolute; left: 50%; top: -22px; transform: translateX(-50%); color: #1d4ed8; background: #eff6ff; border: 1px solid rgba(37,99,235,.16); border-radius: 999px; padding: 3px 8px; font-size: .56rem; font-weight: 950; white-space: nowrap; }
+
+/* If the Work Slip has red missing-field cards, do not let the primary approve button run. Save changes still works. */
+.cfs-overlay:has(.cfs-missing-card) .cfs-actions .primary {
+  pointer-events: none;
+  cursor: not-allowed;
+  opacity: .72;
+  color: #7f1d1d !important;
+  background: #fee2e2 !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 10px 24px rgba(239,68,68,.12) !important;
+  font-size: 0 !important;
+}
+
+.cfs-overlay:has(.cfs-missing-card) .cfs-actions .primary::after {
+  content: "Fix red fields first";
+  font-size: .82rem;
   font-weight: 950;
-  white-space: nowrap;
+}
+
+.cfs-overlay:has(.cfs-missing-card) .cfs-actions .primary::before {
+  content: "Blocked";
+  color: #991b1b;
+  background: #fff1f2;
+  border-color: #fecaca;
 }
 
 @media (max-width: 1220px) {
   .xcf-approval-desk .xcf-hero > div { padding-right: 22px; }
   .xcf-approval-desk .xcf-hero > div::after,
-  .cfs-overlay .cfs-head::after {
-    position: static;
-    display: block;
-    width: auto;
-    max-width: none;
-    transform: none;
-    margin-top: 10px;
-  }
+  .cfs-overlay .cfs-head::after { position: static; display: block; width: auto; max-width: none; transform: none; margin-top: 10px; }
 }
 
 @media (max-width: 700px) {
