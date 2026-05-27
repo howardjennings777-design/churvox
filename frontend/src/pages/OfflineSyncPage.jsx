@@ -1,4 +1,5 @@
 // CHURVOX_OFFLINE_SYNC_PAGE_20260528
+// CHURVOX_OFFLINE_SYNC_PRODUCTION_QUEUE_20260528
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { syncOfflineActions } from "../concept-c/churvoxTopTierApi";
@@ -20,35 +21,47 @@ function saveQueue(items) {
   } catch {}
 }
 
+function niceDate(value) {
+  if (!value) return "Time not recorded";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleString("en-NZ", { dateStyle: "medium", timeStyle: "short" });
+}
+
+function actionTitle(item) {
+  return item?.note || item?.title || item?.message || item?.type || "Offline action";
+}
+
 export default function OfflineSyncPage() {
   const [queue, setQueue] = useState(() => readQueue());
   const [status, setStatus] = useState("");
 
-  const sampleAction = useMemo(() => ({
-    id: `offline-${Date.now()}`,
-    type: "worker_note",
-    note: "Offline worker note queued for sync.",
-    created_at: new Date().toISOString(),
-  }), []);
+  const summary = useMemo(() => {
+    const workerNotes = queue.filter((item) => String(item?.type || "").includes("worker_note")).length;
+    const jobActions = queue.filter((item) => String(item?.type || "").includes("job")).length;
+    return { workerNotes, jobActions, total: queue.length };
+  }, [queue]);
 
-  function addSample() {
-    const next = [sampleAction, ...queue];
-    saveQueue(next);
+  function refreshQueue() {
+    const next = readQueue();
     setQueue(next);
-    setStatus("Offline action queued.");
+    setStatus(`Queue refreshed. ${next.length} item${next.length === 1 ? "" : "s"} waiting.`);
   }
 
   async function syncNow() {
-    if (!queue.length) {
+    const latest = readQueue();
+    setQueue(latest);
+
+    if (!latest.length) {
       setStatus("Nothing to sync.");
       return;
     }
 
     try {
-      const result = await syncOfflineActions(queue);
+      const result = await syncOfflineActions(latest);
       saveQueue([]);
       setQueue([]);
-      setStatus(`Synced ${result.queued || queue.length} offline actions.`);
+      setStatus(`Synced ${result.queued || latest.length} offline action${latest.length === 1 ? "" : "s"}.`);
     } catch (err) {
       setStatus(err?.message || "Sync failed. Actions remain saved on this device.");
     }
@@ -57,11 +70,11 @@ export default function OfflineSyncPage() {
   function clearQueue() {
     saveQueue([]);
     setQueue([]);
-    setStatus("Offline queue cleared.");
+    setStatus("Offline queue cleared on this device.");
   }
 
   return (
-    <main className="cos-shell" data-version="CHURVOX_OFFLINE_SYNC_PAGE_20260528">
+    <main className="cos-shell" data-version="CHURVOX_OFFLINE_SYNC_PAGE_20260528 CHURVOX_OFFLINE_SYNC_PRODUCTION_QUEUE_20260528">
       <section className="cos-hero">
         <div>
           <p>OFFLINE SYNC</p>
@@ -72,23 +85,30 @@ export default function OfflineSyncPage() {
         </div>
         <aside>
           <small>Queue</small>
-          <b>{queue.length}</b>
+          <b>{summary.total}</b>
           <em>{status || "Device-safe worker actions"}</em>
         </aside>
       </section>
 
+      <section className="cos-summary">
+        <article><small>Worker notes</small><b>{summary.workerNotes}</b></article>
+        <article><small>Job actions</small><b>{summary.jobActions}</b></article>
+        <article><small>Total waiting</small><b>{summary.total}</b></article>
+      </section>
+
       <section className="cos-actions">
-        <button type="button" onClick={addSample}>Queue sample worker note</button>
+        <button type="button" onClick={refreshQueue}>Refresh queue</button>
         <button type="button" onClick={syncNow}>Sync now</button>
         <button type="button" onClick={clearQueue}>Clear queue</button>
       </section>
 
       <section className="cos-list">
-        {queue.length ? queue.map((item) => (
-          <article key={item.id} className="cos-card">
-            <small>{item.type}</small>
-            <h2>{item.note || "Offline action"}</h2>
-            <p>{item.created_at}</p>
+        {queue.length ? queue.map((item, index) => (
+          <article key={item.id || index} className="cos-card">
+            <small>{item.type || "offline action"}</small>
+            <h2>{actionTitle(item)}</h2>
+            <p>{item.job_id ? `Job: ${item.job_id}` : "Saved on this device until synced."}</p>
+            <em>{niceDate(item.created_at || item.createdAt)}</em>
           </article>
         )) : (
           <article className="cos-card">
