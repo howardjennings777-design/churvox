@@ -139,6 +139,23 @@ function invoiceLinked(item) {
   return Boolean(r.invoice_id || r.draft_invoice_id || r.invoice_number || r.invoiced);
 }
 
+// CHURVOX_WORKER_COMPLETE_OWNER_SLIP_DETECTION_20260527
+function resolvedJobStatus(record) {
+  const rawStatus = low(record?.status || record?.job_status || record?.workflow_status || record?.work_status);
+  if (
+    rawStatus === "completed" ||
+    rawStatus === "complete" ||
+    rawStatus === "done" ||
+    record?.completed === true ||
+    Boolean(record?.completed_at) ||
+    Boolean(record?.worker_completed_at)
+  ) {
+    return "completed";
+  }
+  if (rawStatus === "in progress") return "in_progress";
+  return rawStatus;
+}
+
 async function patchWithFallback(api, endpoint, payload) {
   const res = await api.patch(endpoint, payload);
   if (apiOk(res)) return res;
@@ -148,7 +165,7 @@ async function patchWithFallback(api, endpoint, payload) {
 
 function item(type, record) {
   const id = idOf(record);
-  const status = low(record?.status);
+  const status = type === "job" ? resolvedJobStatus(record) : low(record?.status);
   const base = { type, id, raw: record, status, amount: 0, href: "#" };
   if (type === "job") {
     const assigned = firstText(record.assigned_worker_id, record.assigned_worker_name, record.worker_name, record.assigned_to);
