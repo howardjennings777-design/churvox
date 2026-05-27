@@ -7001,6 +7001,470 @@ async def create_smart_hub_activity(payload: dict, current_user: dict = Depends(
     return {"success": True}
 
 
+
+
+# CHURVOX_OPERATOR_ACTIONS_BACKEND_V1_20260527
+# Real approval-first AI Operator actions for Command Floor.
+# Churvox prepares actions. Owner approves. Nothing sends/assigns/invoices silently.
+
+def _operator_text(value):
+    return str(value or "").strip()
+
+def _operator_money(*values):
+    for value in values:
+        try:
+            if value is None or value == "":
+                continue
+            amount = float(str(value).replace("$", "").replace(",", "").strip())
+            if amount > 0:
+                return amount
+        except Exception:
+            continue
+    return 0.0
+
+def _operator_doc_id(doc):
+    return str((doc or {}).get("_id") or (doc or {}).get("id") or "")
+
+def _operator_safe_iso(value):
+    if value is None:
+        return None
+    if hasattr(value, "isoformat"):
+        try:
+            return value.isoformat()
+        except Exception:
+            pass
+    return str(value)
+
+def _operator_business_query(business_id: str, owner_id: str):
+    return {"$or": [{"business_id": business_id}, {"business_id": str(business_id)}, {"owner_id": owner_id}]}
+
+def _operator_job_photos(job: dict):
+    photos = []
+    for key in ["photos", "job_photos", "worker_photos", "completion_photos", "photo_urls", "images", "attachments"]:
+        value = (job or {}).get(key)
+        if isinstance(value, list):
+            photos.extend([x for x in value if x])
+        elif value:
+            photos.append(value)
+    return photos
+
+def _operator_action(action_id, title, message, action_type, target_type, target_id, route, confidence=70, blockers=None, draft_message=None, amount=0):
+    blockers = [b for b in (blockers or []) if b]
+    return {
+        "id": action_id,
+        "title": title,
+        "summary": title,
+        "message": message,
+        "reason": message,
+        "recommendation": message,
+        "owner_facing_explanation": message,
+        "action_type": action_type,
+        "target_type": target_type,
+        "target_id": str(target_id or ""),
+        "target_url": route,
+        "route": route,
+        "status": "blocked" if blockers else "ready",
+        "confidence": max(0, min(int(confidence or 0), 100)),
+        "blockers": blockers,
+        "required_owner_fields": blockers,
+        "generated_message": draft_message or "",
+        "draft_message": draft_message or "",
+        "amount": amount or 0,
+        "value": amount or 0,
+        "approval_required": True,
+        "safety_note": "Owner approval required. Churvox prepares this action but does not send, assign, bill or change records silently.",
+        "source": "churvox_operator_actions_v1",
+    }
+
+async def _operator_candidate_worker(business_id: str, owner_id: str, job: dict):
+    workers = await db.business_users.find({
+        "$and": [
+            {"role": {"$in": ["worker", "manager", "field_worker", "employee"]}},
+            _operator_business_query(business_id, owner_id),
+        ]
+    }).limit(50).to_list(50)
+
+    job_region = _operator_text(job.get("region") or job.get("area") or job.get("address")).lower()
+    best = None
+    best_score = -1
+    best_reason = "No suitable worker found."
+
+    for worker in workers:
+        status = _operator_text(worker.get("status") or worker.get("availability")).lower()
+        role = _operator_text(worker.get("role")).lower()
+        if status in {"inactive", "disabled", "unavailable", "away", "leave"}:
+            continue
+        if role in {"payroll", "office_admin", "admin", "owner", "accountant"}:
+            continue
+
+        worker_id = str(worker.get("id") or worker.get("_id") or "")
+        worker_name = _operator_text(worker.get("name") or worker.get("email") or "Worker")
+        active_conflict = await db.jobs.count_documents({
+            "$and": [
+                _operator_business_query(business_id, owner_id),
+                {"assigned_worker_id": worker_id},
+                {"status": {"$in": ["assigned", "scheduled", "in_progress", "paused"]}},
+            ]
+        })
+
+        if active_conflict:
+            continue
+
+        score = 50
+        reasons = ["no active job conflict found"]
+        worker_region = _operator_text(worker.get("region") or worker.get("area") or worker.get("city")).lower()
+        if worker_region and job_region and (worker_region in job_region or job_region in worker_region):
+            score += 25
+            reasons.append("area match")
+        if "worker" in role or "field" in role or "manager" in role:
+            score += 10
+            reasons.append("role can take jobs")
+        if "available" in status:
+            score += 10
+            reasons.append("marked available")
+
+        if score > best_score:
+            best = worker
+            best_score = score
+            best_reason = f"{worker_name} recommended because " + ", ".join(reasons) + "."
+
+    return best, best_reason, max(best_score, 0)
+
+@api_router.get("/ai-operator/actions")
+async def get_ai_operator_actions(current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or "").lower()
+    if role not in BUSINESS_ROLES and role not in {"owner", "manager", "office_admin"}:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    business_id = _resolve_business_id(current_user)
+    owner_id = _resolve_owner_id(current_user)
+    if not business_id:
+        return {"success": True, "actions": [], "proof": {"safe": 0, "blocked": 0, "total": 0}}
+
+    actions = []
+    q = _operator_business_query(business_id, owner_id)
+
+    jobs = await db.jobs.find(q).sort("updated_at", -1).limit(120).to_list(120)
+    invoices = await db.invoices.find(q).sort("updated_at", -1).limit(80).to_list(80)
+    quotes = await db.quotes.find(q).sort("updated_at", -1).limit(60).to_list(60)
+    clients = await db.clients.find(q).sort("updated_at", -1).limit(80).to_list(80)
+
+    for job in jobs:
+        jid = _operator_doc_id(job)
+        status = _operator_text(job.get("status")).lower()
+        reviewed = bool(job.get("reviewed") or job.get("owner_approved") or job.get("work_approved") or job.get("approved_at"))
+        amount = _operator_money(job.get("price"), job.get("job_price"), job.get("fixed_price"), job.get("total"), job.get("amount"))
+        title = _operator_text(job.get("title") or job.get("job_name") or job.get("client_name") or job.get("customer_name") or "Job")
+        client = _operator_text(job.get("client_name") or job.get("customer_name") or "customer")
+        address = _operator_text(job.get("address") or job.get("site_address") or job.get("job_address"))
+        notes = _operator_text(job.get("worker_completion_notes") or job.get("completion_notes") or job.get("worker_notes") or job.get("job_notes") or job.get("notes"))
+        photos = _operator_job_photos(job)
+
+        if status in {"completed", "complete", "done"} and not reviewed:
+            blockers = []
+            if not amount:
+                blockers.append("Confirm job price")
+            if not notes:
+                blockers.append("Worker notes missing")
+            if not photos:
+                blockers.append("No completion photos saved")
+            if not _operator_text(job.get("assigned_worker_id") or job.get("assigned_worker_name")):
+                blockers.append("Worker not recorded")
+
+            message = f"{title} is complete for {client}. Review notes, photos, price and invoice prep before approving."
+            actions.append(_operator_action(
+                f"job_approve_{jid}",
+                "Approve finished work",
+                message,
+                "approve_work",
+                "job",
+                jid,
+                f"/jobs/{jid}",
+                confidence=85 if not blockers else 58,
+                blockers=blockers,
+                amount=amount,
+            ))
+
+        if status in {"completed", "complete", "done"} and reviewed and not (job.get("invoice_id") or job.get("draft_invoice_id") or job.get("invoice_created") or job.get("invoiced")):
+            blockers = []
+            if not amount:
+                blockers.append("Confirm price before invoice")
+            description = _operator_text(job.get("ai_invoice_description") or job.get("invoice_description_draft") or _format_invoice_description_from_job(job, client))
+            if not description:
+                blockers.append("Invoice description missing")
+            message = f"Churvox can prepare a draft invoice for {client}{f' at {address}' if address else ''}. Owner reviews before anything is sent."
+            actions.append(_operator_action(
+                f"job_invoice_{jid}",
+                "Prepare draft invoice",
+                message,
+                "prepare_invoice",
+                "job",
+                jid,
+                f"/jobs/{jid}",
+                confidence=82 if not blockers else 52,
+                blockers=blockers,
+                draft_message=description,
+                amount=amount,
+            ))
+
+        open_status = status not in {"completed", "complete", "done", "cancelled", "canceled"}
+        if open_status and not _operator_text(job.get("assigned_worker_id") or job.get("assigned_worker_name")):
+            worker, reason, score = await _operator_candidate_worker(business_id, owner_id, job)
+            blockers = []
+            worker_id = ""
+            worker_name = ""
+            if worker:
+                worker_id = str(worker.get("id") or worker.get("_id") or "")
+                worker_name = _operator_text(worker.get("name") or worker.get("email") or "Worker")
+            else:
+                blockers.append("No conflict-free worker found")
+
+            actions.append(_operator_action(
+                f"job_assign_{jid}_{worker_id or 'none'}",
+                "Assign worker",
+                f"{title} needs a worker. {reason}",
+                "assign_worker",
+                "job",
+                jid,
+                f"/jobs/{jid}",
+                confidence=score,
+                blockers=blockers,
+                draft_message=worker_name,
+                amount=amount,
+            ))
+
+    for invoice in invoices:
+        iid = _operator_doc_id(invoice)
+        status = _operator_text(invoice.get("status")).lower()
+        total = _operator_money(invoice.get("total"), invoice.get("subtotal"), invoice.get("amount"), invoice.get("balance_due"))
+        customer = _operator_text(invoice.get("customer_name") or invoice.get("client_name") or "customer")
+        if status in {"draft", "pending", ""}:
+            blockers = []
+            if not total:
+                blockers.append("Invoice amount missing")
+            if not _operator_text(invoice.get("description")):
+                blockers.append("Invoice description missing")
+            actions.append(_operator_action(
+                f"invoice_approve_{iid}",
+                "Approve invoice draft",
+                f"Invoice for {customer} is drafted. Review value and description before sending.",
+                "approve_invoice",
+                "invoice",
+                iid,
+                f"/invoices/{iid}",
+                confidence=80 if not blockers else 50,
+                blockers=blockers,
+                amount=total,
+            ))
+        if status in {"sent", "open", "unpaid", "overdue"}:
+            actions.append(_operator_action(
+                f"invoice_reminder_{iid}",
+                "Prepare payment reminder",
+                f"{customer} has an open invoice. Churvox can prepare a reminder draft for owner review.",
+                "prepare_message",
+                "invoice",
+                iid,
+                f"/invoices/{iid}",
+                confidence=72,
+                draft_message=f"Hi {customer}, just a quick reminder that your invoice is still open. Please let us know if you need anything.",
+                amount=total,
+            ))
+
+    for quote in quotes:
+        qid = _operator_doc_id(quote)
+        status = _operator_text(quote.get("status")).lower()
+        customer = _operator_text(quote.get("customer_name") or quote.get("client_name") or "customer")
+        if status in {"sent", "draft", "pending", ""}:
+            actions.append(_operator_action(
+                f"quote_followup_{qid}",
+                "Prepare quote follow-up",
+                f"Quote for {customer} may need follow-up. Churvox drafted a message but will not send it without approval.",
+                "prepare_message",
+                "quote",
+                qid,
+                f"/quotes/{qid}",
+                confidence=68,
+                draft_message=f"Hi {customer}, just checking whether you had any questions about the quote. Happy to help.",
+                amount=_operator_money(quote.get("total"), quote.get("price"), quote.get("amount")),
+            ))
+
+    for client in clients:
+        cid = _operator_doc_id(client)
+        name = _operator_text(client.get("name") or client.get("client_name") or client.get("customer_name") or "Client")
+        missing = []
+        if not _operator_text(client.get("email")):
+            missing.append("Email missing")
+        if not _operator_text(client.get("phone")):
+            missing.append("Phone missing")
+        if not _operator_text(client.get("address")):
+            missing.append("Address missing")
+        if missing:
+            actions.append(_operator_action(
+                f"client_fix_{cid}",
+                "Fix customer details",
+                f"{name} has missing customer details. Fix these before messages, reminders or invoices rely on this record.",
+                "fix_record",
+                "client",
+                cid,
+                f"/clients/{cid}",
+                confidence=90,
+                blockers=missing,
+            ))
+
+    safe_count = sum(1 for a in actions if not a.get("blockers"))
+    blocked_count = sum(1 for a in actions if a.get("blockers"))
+
+    return {
+        "success": True,
+        "actions": actions[:60],
+        "proof": {
+            "safe": safe_count,
+            "blocked": blocked_count,
+            "total": len(actions),
+            "message": "Churvox prepared these actions. Owner approval is required before records are changed, messages are sent, invoices are prepared or workers are assigned.",
+        },
+    }
+
+@api_router.post("/ai-operator/actions/{action_id}/approve")
+async def approve_ai_operator_action(action_id: str, current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or "").lower()
+    if role not in BUSINESS_ROLES and role not in {"owner", "manager", "office_admin"}:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    business_id = _resolve_business_id(current_user)
+    owner_id = _resolve_owner_id(current_user)
+    now = datetime.now(timezone.utc)
+    parts = str(action_id or "").split("_")
+    if len(parts) < 3:
+        raise HTTPException(status_code=400, detail="Invalid AI action")
+
+    action_prefix = "_".join(parts[:2])
+    target_id = parts[2]
+
+    def _obj(value):
+        try:
+            return ObjectId(value)
+        except Exception:
+            return None
+
+    async def _find_job(job_id: str):
+        filters = [{"id": job_id}]
+        oid = _obj(job_id)
+        if oid:
+            filters.append({"_id": oid})
+        return await db.jobs.find_one({"$and": [{"$or": filters}, _operator_business_query(business_id, owner_id)]})
+
+    if action_prefix == "job_approve":
+        job = await _find_job(target_id)
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        await db.jobs.update_one(
+            {"_id": job["_id"]},
+            {"$set": {
+                "reviewed": True,
+                "owner_approved": True,
+                "work_approved": True,
+                "owner_review_status": "approved",
+                "work_review_status": "approved",
+                "approved_at": now,
+                "updated_at": now,
+            }}
+        )
+        await log_smart_hub_activity(current_user, {
+            "action_type": "approve_work",
+            "title": "Work approved",
+            "message": _operator_text(job.get("title") or job.get("job_name") or "Job approved"),
+            "related_type": "job",
+            "related_id": target_id,
+            "related_job_id": target_id,
+            "status": "completed",
+        })
+        return {"success": True, "message": "Work approved"}
+
+    if action_prefix == "job_invoice":
+        result = await create_draft_invoice_from_job(target_id, {}, current_user)
+        await log_smart_hub_activity(current_user, {
+            "action_type": "invoice_draft_created",
+            "title": "Draft invoice prepared",
+            "message": str(result.get("message") or "Draft invoice prepared"),
+            "related_type": "job",
+            "related_id": target_id,
+            "related_job_id": target_id,
+            "related_invoice_id": str(result.get("invoice_id") or ""),
+            "status": "completed",
+        })
+        return result
+
+    if action_prefix == "job_assign":
+        if len(parts) < 4 or parts[3] == "none":
+            raise HTTPException(status_code=400, detail="No recommended worker is available")
+        worker_id = parts[3]
+        return await assign_job_worker_alias(target_id, {"worker_id": worker_id}, current_user)
+
+    if action_prefix == "invoice_approve":
+        invoice_id = target_id
+        oid = _obj(invoice_id)
+        invoice = None
+        if oid:
+            invoice = await db.invoices.find_one({"$and": [{"_id": oid}, _operator_business_query(business_id, owner_id)]})
+        if not invoice:
+            invoice = await db.invoices.find_one({"$and": [{"id": invoice_id}, _operator_business_query(business_id, owner_id)]})
+        if not invoice:
+            raise HTTPException(status_code=404, detail="Invoice not found")
+        await db.invoices.update_one({"_id": invoice["_id"]}, {"$set": {"status": "approved", "approved_at": now, "updated_at": now}})
+        await log_smart_hub_activity(current_user, {
+            "action_type": "invoice_approved",
+            "title": "Invoice approved",
+            "message": _operator_text(invoice.get("customer_name") or "Invoice approved"),
+            "related_type": "invoice",
+            "related_id": invoice_id,
+            "related_invoice_id": invoice_id,
+            "status": "completed",
+        })
+        return {"success": True, "message": "Invoice approved"}
+
+    if action_prefix in {"invoice_reminder", "quote_followup"}:
+        # Approval-first: save draft only. Do not send.
+        collection = db.invoices if action_prefix == "invoice_reminder" else db.quotes
+        oid = _obj(target_id)
+        doc = None
+        if oid:
+            doc = await collection.find_one({"$and": [{"_id": oid}, _operator_business_query(business_id, owner_id)]})
+        if not doc:
+            doc = await collection.find_one({"$and": [{"id": target_id}, _operator_business_query(business_id, owner_id)]})
+        if not doc:
+            raise HTTPException(status_code=404, detail="Record not found")
+        customer = _operator_text(doc.get("customer_name") or doc.get("client_name") or "there")
+        draft = f"Hi {customer}, just following up. Please let us know if you need anything."
+        await collection.update_one({"_id": doc["_id"]}, {"$set": {"customer_message_draft": draft, "draft_message": draft, "updated_at": now}})
+        await log_smart_hub_activity(current_user, {
+            "action_type": "message_draft_saved",
+            "title": "Message draft saved",
+            "message": "Draft saved only. Nothing was sent.",
+            "related_type": "invoice" if action_prefix == "invoice_reminder" else "quote",
+            "related_id": target_id,
+            "status": "completed",
+        })
+        return {"success": True, "message": "Message draft saved. Nothing has been sent."}
+
+    if action_prefix == "client_fix":
+        raise HTTPException(status_code=400, detail="Customer detail fixes need owner input")
+
+    raise HTTPException(status_code=400, detail="Unsupported AI action")
+
+@api_router.post("/ai-operator/actions/{action_id}/reject")
+async def reject_ai_operator_action(action_id: str, current_user: dict = Depends(get_current_user)):
+    await log_smart_hub_activity(current_user, {
+        "action_type": "ai_action_rejected",
+        "title": "AI action rejected",
+        "message": f"Owner rejected {action_id}. No record was changed.",
+        "related_type": "ai_action",
+        "related_id": action_id,
+        "status": "rejected",
+    })
+    return {"success": True, "message": "AI action rejected. No record was changed."}
+
+
 @api_router.post("/jobs/{job_id}/acknowledge")
 async def acknowledge_job(job_id: str, current_user: dict = Depends(get_current_user)):
     business_id = str(
