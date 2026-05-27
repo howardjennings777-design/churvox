@@ -7038,6 +7038,99 @@ def _operator_safe_iso(value):
 def _operator_business_query(business_id: str, owner_id: str):
     return {"$or": [{"business_id": business_id}, {"business_id": str(business_id)}, {"owner_id": owner_id}]}
 
+# CHURVOX_OPERATOR_WORKER_MATCHING_HELPERS_20260527
+def _operator_parse_datetime(value, fallback_time: str = ""):
+    if value is None:
+        return None
+    if hasattr(value, "astimezone"):
+        try:
+            dt = value
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt.astimezone(timezone.utc)
+        except Exception:
+            return None
+
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+
+    if fallback_time and "T" not in raw and len(raw) <= 10:
+        raw = raw + "T" + str(fallback_time).strip()
+
+    try:
+        cleaned = raw.replace("Z", "+00:00")
+        dt = datetime.fromisoformat(cleaned)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    except Exception:
+        return None
+
+def _operator_job_start(job: dict):
+    return (
+        _operator_parse_datetime(job.get("scheduled_date"), job.get("scheduled_time") or "")
+        or _operator_parse_datetime(job.get("start_time"))
+        or _operator_parse_datetime(job.get("due_date"))
+        or _operator_parse_datetime(job.get("date"), job.get("scheduled_time") or "")
+    )
+
+def _operator_duration_minutes(job: dict):
+    for key in ["estimated_duration", "duration_minutes", "job_duration_minutes", "scheduled_duration", "duration"]:
+        try:
+            value = int(float(job.get(key) or 0))
+            if value > 0:
+                return min(max(value, 15), 24 * 60)
+        except Exception:
+            pass
+    return 60
+
+def _operator_schedules_overlap(job_a: dict, job_b: dict):
+    start_a = _operator_job_start(job_a)
+    start_b = _operator_job_start(job_b)
+    if not start_a or not start_b:
+        return False
+
+    end_a = start_a + timedelta(minutes=_operator_duration_minutes(job_a))
+    end_b = start_b + timedelta(minutes=_operator_duration_minutes(job_b))
+    return start_a < end_b and start_b < end_a
+
+def _operator_same_day(job_a: dict, job_b: dict):
+    start_a = _operator_job_start(job_a)
+    start_b = _operator_job_start(job_b)
+    if not start_a or not start_b:
+        return False
+    return start_a.date() == start_b.date()
+
+def _operator_skill_match(worker: dict, job: dict):
+    job_terms = [
+        job.get("job_type"),
+        job.get("service_type"),
+        job.get("trade"),
+        job.get("category"),
+        job.get("title"),
+    ]
+    job_text = " ".join([str(x or "").lower().replace("_", " ") for x in job_terms if x])
+
+    worker_values = []
+    for key in ["skills", "skill_tags", "trades", "trade_types", "service_types", "services", "notes", "role"]:
+        value = worker.get(key)
+        if isinstance(value, list):
+            worker_values.extend([str(x or "") for x in value])
+        elif value:
+            worker_values.append(str(value))
+
+    worker_text = " ".join(worker_values).lower().replace("_", " ")
+    if not job_text or not worker_text:
+        return False, ""
+
+    for term in job_text.split():
+        if len(term) >= 4 and term in worker_text:
+            return True, term
+
+    return False, ""
+
+
 def _operator_job_photos(job: dict):
     photos = []
     for key in ["photos", "job_photos", "worker_photos", "completion_photos", "photo_urls", "images", "attachments"]:
@@ -7077,58 +7170,126 @@ def _operator_action(action_id, title, message, action_type, target_type, target
     }
 
 async def _operator_candidate_worker(business_id: str, owner_id: str, job: dict):
+    # CHURVOX_OPERATOR_WORKER_MATCHING_V2_20260527
+    # Stronger matching: active conflicts, scheduled overlap, same-day warnings,
+    # area/region, skills/trade match, availability and workload.
     workers = await db.business_users.find({
         "$and": [
             {"role": {"$in": ["worker", "manager", "field_worker", "employee"]}},
             _operator_business_query(business_id, owner_id),
         ]
-    }).limit(50).to_list(50)
+    }).limit(80).to_list(80)
 
-    job_region = _operator_text(job.get("region") or job.get("area") or job.get("address")).lower()
-    best = None
-    best_score = -1
-    best_reason = "No suitable worker found."
+    job_id = _operator_doc_id(job)
+    job_region = _operator_text(job.get("region") or job.get("area") or job.get("suburb") or job.get("address")).lower()
+    job_start = _operator_job_start(job)
+
+    candidates = []
 
     for worker in workers:
-        status = _operator_text(worker.get("status") or worker.get("availability")).lower()
+        status = _operator_text(worker.get("status") or worker.get("availability") or worker.get("active_status")).lower()
         role = _operator_text(worker.get("role")).lower()
-        if status in {"inactive", "disabled", "unavailable", "away", "leave"}:
+        worker_id = str(worker.get("id") or worker.get("_id") or "")
+        worker_name = _operator_text(worker.get("name") or worker.get("email") or "Worker")
+
+        if not worker_id:
             continue
+
+        if worker.get("disabled") or worker.get("archived") or worker.get("is_active") is False or worker.get("active") is False:
+            continue
+
+        if any(x in status for x in ["inactive", "disabled", "unavailable", "away", "leave", "blocked"]):
+            continue
+
         if role in {"payroll", "office_admin", "admin", "owner", "accountant"}:
             continue
 
-        worker_id = str(worker.get("id") or worker.get("_id") or "")
-        worker_name = _operator_text(worker.get("name") or worker.get("email") or "Worker")
-        active_conflict = await db.jobs.count_documents({
+        assigned_jobs = await db.jobs.find({
             "$and": [
                 _operator_business_query(business_id, owner_id),
                 {"assigned_worker_id": worker_id},
-                {"status": {"$in": ["assigned", "scheduled", "in_progress", "paused"]}},
+                {"status": {"$in": ["assigned", "scheduled", "in_progress", "paused", "acknowledged"]}},
             ]
-        })
+        }).sort("scheduled_date", 1).limit(30).to_list(30)
 
-        if active_conflict:
+        hard_conflicts = []
+        soft_warnings = []
+        open_workload = 0
+
+        for other in assigned_jobs:
+            other_id = _operator_doc_id(other)
+            if other_id and other_id == job_id:
+                continue
+
+            other_status = _operator_text(other.get("status")).lower()
+            open_workload += 1
+
+            if other_status in {"in_progress", "paused"}:
+                hard_conflicts.append(f"currently on {other.get('title') or other.get('job_type') or 'another job'}")
+                continue
+
+            if job_start and _operator_schedules_overlap(job, other):
+                hard_conflicts.append(f"time overlap with {other.get('title') or other.get('job_type') or 'another scheduled job'}")
+                continue
+
+            if job_start and _operator_same_day(job, other):
+                soft_warnings.append("same-day workload")
+
+        if hard_conflicts:
             continue
 
-        score = 50
-        reasons = ["no active job conflict found"]
-        worker_region = _operator_text(worker.get("region") or worker.get("area") or worker.get("city")).lower()
+        score = 55
+        reasons = ["no active conflict found"]
+
+        worker_region = _operator_text(worker.get("region") or worker.get("area") or worker.get("city") or worker.get("suburb")).lower()
         if worker_region and job_region and (worker_region in job_region or job_region in worker_region):
-            score += 25
+            score += 22
             reasons.append("area match")
-        if "worker" in role or "field" in role or "manager" in role:
-            score += 10
-            reasons.append("role can take jobs")
+
+        skill_ok, skill_term = _operator_skill_match(worker, job)
+        if skill_ok:
+            score += 18
+            reasons.append(f"skill match: {skill_term}")
+
         if "available" in status:
-            score += 10
+            score += 12
             reasons.append("marked available")
 
-        if score > best_score:
-            best = worker
-            best_score = score
-            best_reason = f"{worker_name} recommended because " + ", ".join(reasons) + "."
+        if "manager" in role:
+            score += 5
+            reasons.append("manager can cover dispatch")
+        elif "worker" in role or "field" in role or "employee" in role:
+            score += 10
+            reasons.append("field role can take jobs")
 
-    return best, best_reason, max(best_score, 0)
+        if open_workload:
+            score -= min(open_workload * 6, 24)
+            reasons.append(f"{open_workload} open assigned job{'s' if open_workload != 1 else ''}")
+
+        if soft_warnings:
+            score -= min(len(soft_warnings) * 8, 16)
+            reasons.append(", ".join(sorted(set(soft_warnings))))
+
+        if job_start:
+            reasons.append("schedule checked")
+
+        score = max(0, min(score, 100))
+        candidates.append({
+            "worker": worker,
+            "score": score,
+            "reason": f"{worker_name} recommended because " + ", ".join(reasons) + ".",
+            "worker_name": worker_name,
+            "worker_id": worker_id,
+            "open_workload": open_workload,
+        })
+
+    candidates.sort(key=lambda x: x["score"], reverse=True)
+
+    if not candidates:
+        return None, "No conflict-free worker found after checking active jobs, schedule overlap and availability.", 0
+
+    best = candidates[0]
+    return best["worker"], best["reason"], best["score"]
 
 @api_router.get("/ai-operator/actions")
 async def get_ai_operator_actions(current_user: dict = Depends(get_current_user)):
