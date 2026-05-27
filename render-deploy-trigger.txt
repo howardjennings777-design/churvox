@@ -1,9 +1,5 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-28 NZT connector push
-Change: Premium invoice quote and proof document polish.
-Includes:
-- Premium document CSS
-- Invoice/quote/proof pack card polish
-- Print-safe document styling
-- Render redeploy marker
+Change: Worker job page note panel update.
+Render marker only.
