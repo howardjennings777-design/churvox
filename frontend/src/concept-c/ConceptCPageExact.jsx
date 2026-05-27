@@ -61,6 +61,69 @@ const PAGES = {
   settings: ["Settings", "Business setup."],
 };
 
+const PAGE_GUIDES = {
+  jobs: {
+    eyebrow: "Job command records",
+    title: "Use this when you need the full job list.",
+    copy: "This page is for finding, opening and manually checking job records. Approvals should still happen from the Command Floor Work Slip so the owner sees the filled form, photos, price and next step together.",
+    action: "Main action: open a job or create a new one.",
+  },
+  dispatch: {
+    eyebrow: "Crew allocation",
+    title: "Use this to close worker gaps.",
+    copy: "This page shows jobs and crew records that may need assignment. Churvox should recommend workers in the Work Slip, but this area is the backup place to review dispatch manually.",
+    action: "Main action: open a job and assign the right worker.",
+  },
+  clients: {
+    eyebrow: "Customer records",
+    title: "Use this for customer detail cleanup.",
+    copy: "This page keeps customer names, emails, phone numbers and site details tidy. If a Work Slip is blocked by missing client info, fix the customer record here or inside the slip.",
+    action: "Main action: open a client or add a new customer.",
+  },
+  quotes: {
+    eyebrow: "Quote desk",
+    title: "Use this to review quote records.",
+    copy: "Quotes live here for manual review, follow-up and editing. Customer follow-up should stay approval-first: Churvox drafts it, the owner checks it, then it can be sent.",
+    action: "Main action: open a quote or create a new quote.",
+  },
+  invoices: {
+    eyebrow: "Money desk",
+    title: "Use this to check invoices and cashflow.",
+    copy: "This page is the manual money desk. Work Slips prepare invoices from approved jobs, and this page lets you inspect invoice records, totals and payment status.",
+    action: "Main action: open an invoice, review value, then send/pay outside the slip flow when ready.",
+  },
+  team: {
+    eyebrow: "Crew control",
+    title: "Use this to manage people and roles.",
+    copy: "This page is for workers, managers and role control. Job assignment decisions should still be reviewed through a Work Slip so conflicts and availability are clear.",
+    action: "Main action: open worker details or invite crew.",
+  },
+  notifications: {
+    eyebrow: "Issue feed",
+    title: "Use this to see what needs attention.",
+    copy: "This is a backup issue feed. Command Floor should show the important decisions first; this page helps you inspect alerts and admin risks manually.",
+    action: "Main action: open the issue and fix the linked record.",
+  },
+  reports: {
+    eyebrow: "Records overview",
+    title: "Use this when you want a wider view.",
+    copy: "Reports are for checking completed work and money records. They are not the approval flow; use Command Floor when a decision is needed.",
+    action: "Main action: review completed work and invoice history.",
+  },
+  payroll: {
+    eyebrow: "Payroll review",
+    title: "Use this for crew time and pay review.",
+    copy: "Payroll is for checking worker summaries and completed job time. Keep pricing, customer messages and invoice approval in the owner approval flow.",
+    action: "Main action: review crew records and pay-related job history.",
+  },
+  settings: {
+    eyebrow: "Business setup",
+    title: "Use this to control how Churvox behaves.",
+    copy: "Settings are for business setup, account details and app behaviour. Day-to-day admin should happen on Command Floor.",
+    action: "Main action: check setup before live customer use.",
+  },
+};
+
 function detailText(record, fallback = "") {
   return firstText(record?.owner_facing_explanation, record?.reason, record?.recommendation, record?.what_happens, record?.generated_message, record?.description, record?.job_description, record?.service_description, record?.scope, record?.completion_notes, record?.worker_completion_notes, record?.worker_notes, record?.job_notes, record?.notes, record?.admin_notes, record?.message, record?.address, fallback);
 }
@@ -161,7 +224,7 @@ function makeGroup(title, meta, items, tone = "blue", actionLabel = "Open action
 }
 
 function TopBar({ loading }) {
-  return <header className="xcf-topbar"><Link className="xcf-brand" to="/dashboard"><i>CV</i><span><b>Churvox</b><small>AI Operator</small></span></Link><div className="xcf-search">Search jobs, clients, invoices...</div><nav><Link to="/ai-operator/approvals">AI Actions</Link><Link to="/jobs/new">+ New</Link><Link to="/invoices">Money</Link></nav><strong className={loading ? "syncing" : "live"}>{loading ? "Syncing" : "Live"}</strong></header>;
+  return <header className="xcf-topbar"><Link className="xcf-brand" to="/dashboard"><i>CV</i><span><b>Churvox</b><small>AI Operator</small></span></Link><div className="xcf-search">Search jobs, clients, invoices...</div><nav><Link to="/dashboard">Command Floor</Link><Link to="/jobs/new">+ New</Link><Link to="/invoices">Money</Link></nav><strong className={loading ? "syncing" : "live"}>{loading ? "Syncing" : "Live"}</strong></header>;
 }
 
 function BottomNav() {
@@ -193,9 +256,10 @@ function Dashboard({ m, loading, onPick }) {
 
 function Workspace({ area, m, loading, onPick }) {
   const [title, subtitle] = PAGES[area] || ["Workspace", "Simple workspace"];
+  const guide = PAGE_GUIDES[area] || { eyebrow: "Manual workspace", title: "Use this as a backup record page.", copy: "Command Floor stays the main approval flow. This page is for opening records, checking details and making manual changes when needed.", action: "Main action: open a record and inspect it." };
   const rowsByArea = { jobs: m.jobs, dispatch: m.workerActions, clients: m.clients, quotes: m.quotes, invoices: m.invoices, team: m.crew, sms: m.messages, notifications: [...m.alerts, ...m.issues], reports: m.done, integrations: m.invoices, payroll: [...m.crew, ...m.doneJobs], automation: m.actions, settings: m.issues };
   const rows = rowsByArea[area] || m.actions;
-  return <main className="xcf-shell xcf-workspace"><TopBar loading={loading} /><section className="xcf-hero"><div><p>Manual backup page</p><h1>{title}</h1><span>{subtitle}. Use Command Floor when you want to approve prepared work.</span></div><aside><small>Records</small><b>{rows.length}</b><em>Tap a record to inspect it manually. Approval decisions should happen from a Work Slip.</em></aside></section><section className="xcf-workspace-list">{rows.length ? rows.slice(0, 40).map((x, i) => <Row key={`${area}-${i}`} item={x} onPick={onPick} />) : <Empty />}</section><BottomNav /></main>;
+  return <main className={`xcf-shell xcf-workspace xcf-workspace-${area}`} data-version="CHURVOX_MANUAL_PAGE_GUIDE_PANELS_20260527"><TopBar loading={loading} /><section className="xcf-hero xcf-workspace-hero"><div><p>Manual backup page</p><h1>{title}</h1><span>{subtitle}. Use Command Floor when you want to approve prepared work.</span></div><aside className="xcf-workspace-guide"><small>{guide.eyebrow}</small><b>{guide.title}</b><em>{guide.copy}</em><strong>{guide.action}</strong><span>{rows.length} records loaded</span></aside></section><section className="xcf-workspace-list">{rows.length ? rows.slice(0, 40).map((x, i) => <Row key={`${area}-${i}`} item={x} onPick={onPick} />) : <Empty />}</section><BottomNav /></main>;
 }
 
 function invoicePayloadFromPicked(picked, draft) {
