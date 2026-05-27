@@ -100,11 +100,13 @@
   line-height: 1.45;
 }
 
+.cmq-card a,
 .cmq-card span,
 .cmq-footer a {
   display: inline-flex;
   width: fit-content;
   margin-top: 12px;
+  margin-right: 8px;
   border-radius: 999px;
   padding: 8px 11px;
   background: rgba(168, 85, 247, 0.12);
@@ -112,6 +114,11 @@
   font-size: 12px;
   font-weight: 900;
   text-decoration: none;
+}
+
+.cmq-card a {
+  background: #111827;
+  color: #fffaf0;
 }
 
 .cmq-footer {
