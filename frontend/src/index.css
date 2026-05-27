@@ -9,6 +9,7 @@
 @import './concept-c/WorkSlipPanelScrollLast.css';
 @import './concept-c/ChurvoxTopTierPanel.css';
 @import './concept-c/WorkSlipTopTierActions.css';
+@import './concept-c/ChurvoxPremiumDocuments.css';
 
 @tailwind base;
 @tailwind components;
