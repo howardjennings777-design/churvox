@@ -1,5 +1,5 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-28 NZT connector push
-Change: Active Trade Preset panel on new job flow.
+Change: Production Offline Sync queue cleanup.
 Render marker only.
