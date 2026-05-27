@@ -6,8 +6,8 @@ const str = (v) => String(v || "").trim();
 const low = (v) => str(v).toLowerCase();
 const idOf = (v) => str(v?.id || v?._id || v?.uuid || "");
 const firstText = (...values) => values.map(str).find(Boolean) || "";
-const cash = (v) => `$${Number(v || 0).toLocaleString("en-NZ", { maximumFractionDigits: 0 })}`;
 const hasText = (v) => Boolean(str(v));
+const cash = (v) => `$${Number(v || 0).toLocaleString("en-NZ", { maximumFractionDigits: 0 })}`;
 const isGenericCustomer = (v) => ["customer", "client", "there"].includes(low(v));
 
 const SERVICE_OPTIONS = ["Service work", "Lawn care", "Landscaping", "Cleaning", "Handyman", "Painting", "Plumbing", "Electrical", "Pest control", "Gardening", "Other"];
@@ -164,10 +164,15 @@ function editableDraftFromPicked(picked, workers, jobs) {
   };
 }
 
-function buildSituation(active, photos, draft) {
+function buildSituation(active, photos, draft, isJobLike) {
   const raw = active?.raw || {};
   const price = moneyNumber(draft?.amount, active?.amount, raw.price, raw.job_price, raw.fixed_price, raw.total, raw.amount, raw.subtotal, raw.hourly_total);
   const worker = firstText(draft?.worker_name, raw.assigned_worker_name, raw.worker_name, raw.assigned_to_name, "Selected worker");
+  if (!isJobLike) return [
+    `${active?.code || "Record"} is open for review.`,
+    price ? `Value is ${cash(price)}.` : "Value may still need owner review.",
+    "Only buttons that make sense for this record are shown below.",
+  ];
   return [
     `${worker} completed or is ready for this job.`,
     photos.length ? `${photos.length} completion photo${photos.length === 1 ? " has" : "s have"} been uploaded.` : "No completion photos are saved yet.",
@@ -177,16 +182,17 @@ function buildSituation(active, photos, draft) {
   ];
 }
 
-function buildNeedsAttention(active, photos, draft) {
-  const raw = active?.raw || {};
-  const price = moneyNumber(draft?.amount, active?.amount, raw.price, raw.job_price, raw.fixed_price, raw.total, raw.amount, raw.subtotal, raw.hourly_total);
-  const notes = firstText(draft?.worker_notes, raw.completion_notes, raw.worker_completion_notes, raw.worker_notes, raw.job_notes, raw.notes);
+function buildNeedsAttention(missing, isJobLike, isInvoice) {
   const needs = [];
-  if (!photos.length) needs.push("No photos saved — highlighted in red."); else needs.push("Check photos to confirm quality.");
-  if (!price) needs.push("Job price is missing — highlighted in red."); else needs.push("Confirm invoice amount is correct.");
-  if (!notes) needs.push("Worker notes are missing — highlighted in red.");
-  if (!draft?.message) needs.push("Customer message needs owner input."); else needs.push("Review customer message before sending.");
-  return needs.slice(0, 4);
+  if (missing.customer) needs.push("Customer needs owner input.");
+  if (missing.site && isJobLike) needs.push("Site address needs owner input.");
+  if (missing.worker && isJobLike) needs.push("Worker must be chosen before approval.");
+  if (missing.amount) needs.push(`${isInvoice ? "Invoice" : "Job"} price is missing.`);
+  if (missing.invoiceDescription && (isJobLike || isInvoice)) needs.push("Invoice description needs owner input.");
+  if (missing.workerNotes && isJobLike) needs.push("Worker notes are missing.");
+  if (missing.photos && isJobLike) needs.push("No photos/evidence saved.");
+  if (missing.message && isJobLike) needs.push("Customer message needs owner input.");
+  return needs.length ? needs.slice(0, 4) : ["Everything important is filled. Review once, then approve."];
 }
 
 function actionWorked(msg) { return !/^(could not|action failed|need |select |choose |no message|this record|open a record|only jobs)/i.test(str(msg)); }
@@ -209,10 +215,10 @@ function patchPickedAfterAction(picked, action, draft, msg) {
   return next;
 }
 
-function Field({ label, value, onChange, textarea = false, type = "text", missing = false, note = "AI filled" }) {
+function Field({ label, value, onChange, textarea = false, type = "text", missing = false, note = "AI filled", readOnly = false }) {
   const className = `cfs-field ${missing ? "is-missing" : "is-filled"}`;
   const helper = missing ? "Needs owner input" : note;
-  return <label className={className}><span>{label}</span>{textarea ? <textarea placeholder={missing ? "Needs owner input" : ""} value={value || ""} onChange={(e) => onChange(e.target.value)} /> : <input type={type} placeholder={missing ? "Needs owner input" : ""} value={value || ""} onChange={(e) => onChange(e.target.value)} />}<em>{helper}</em></label>;
+  return <label className={className}><span>{label}</span>{textarea ? <textarea readOnly={readOnly} placeholder={missing ? "Needs owner input" : ""} value={value || ""} onChange={(e) => onChange(e.target.value)} /> : <input readOnly={readOnly} type={type} placeholder={missing ? "Needs owner input" : ""} value={value || ""} onChange={(e) => onChange(e.target.value)} />}<em>{helper}</em></label>;
 }
 
 function SelectField({ label, value, onChange, options, missing = false, note = "Choose from list" }) {
@@ -234,7 +240,7 @@ function updateDraft(setDraft, key) { return (value) => setDraft((d) => ({ ...d,
 
 function LaneSlip({ active, onClose, onPick }) {
   const items = active.items || [];
-  return <aside className="cfs-overlay cfs-lane-slip" data-version="CHURVOX_WORK_SLIP_CHOICE_DROPDOWNS_20260527"><section className="cfs-sheet"><header className="cfs-head"><div><p>WORK SLIP</p><h2>{active.title}</h2><em>{active.meta}</em></div><button type="button" onClick={onClose}>× Close</button></header><section className="cfs-lane-summary"><Fact label="Waiting" value={items.length} /><Fact label="Total value" value={Number(active.amount || 0) > 0 ? cash(active.amount) : "—"} /><strong>{active.actionLabel || "Open a row to approve the detail."}</strong></section><section className="cfs-lane-list">{items.length ? items.slice(0, 12).map((x, i) => <button className="cfs-lane-row" type="button" key={`${x.type}-${x.id}-${i}`} onClick={() => onPick(x)}><span><b>{x.title}</b><small>{x.code} · {detailText(x.raw || {}, x.meta)}</small></span><em>{Number(x.amount || 0) > 0 ? cash(x.amount) : x.state}</em></button>) : <div className="cfs-empty">Nothing waiting in this lane.</div>}</section><footer className="cfs-actions">{items.length ? <button className="primary" type="button" onClick={() => onPick(items[0])}>Open first waiting item</button> : <button disabled type="button">Nothing waiting</button>}</footer></section></aside>;
+  return <aside className="cfs-overlay cfs-lane-slip" data-version="CHURVOX_WORK_SLIP_TYPE_AWARE_BUTTONS_20260527"><section className="cfs-sheet"><header className="cfs-head"><div><p>WORK SLIP</p><h2>{active.title}</h2><em>{active.meta}</em></div><button type="button" onClick={onClose}>× Close</button></header><section className="cfs-lane-summary"><Fact label="Waiting" value={items.length} /><Fact label="Total value" value={Number(active.amount || 0) > 0 ? cash(active.amount) : "—"} /><strong>{active.actionLabel || "Open a row to approve the detail."}</strong></section><section className="cfs-lane-list">{items.length ? items.slice(0, 12).map((x, i) => <button className="cfs-lane-row" type="button" key={`${x.type}-${x.id}-${i}`} onClick={() => onPick(x)}><span><b>{x.title}</b><small>{x.code} · {detailText(x.raw || {}, x.meta)}</small></span><em>{Number(x.amount || 0) > 0 ? cash(x.amount) : x.state}</em></button>) : <div className="cfs-empty">Nothing waiting in this lane.</div>}</section><footer className="cfs-actions">{items.length ? <button className="primary" type="button" onClick={() => onPick(items[0])}>Open first waiting item</button> : <button disabled type="button">Nothing waiting</button>}</footer></section></aside>;
 }
 
 export default function CommandFloorApprovalSlip({ picked, onClose, onAction, onPick, workers = [], jobs = [] }) {
@@ -249,39 +255,61 @@ export default function CommandFloorApprovalSlip({ picked, onClose, onAction, on
   const photos = useMemo(() => evidencePhotos(active?.raw || {}), [active]);
   const isAction = active?.type === "action";
   const isJobLike = active?.type === "job" || active?.type === "work_review";
+  const isInvoice = active?.type === "invoice";
+  const isQuote = active?.type === "quote";
+  const isClient = active?.type === "client";
+  const isEditableRecord = isJobLike || isInvoice || isQuote || isClient;
   const recommendation = useMemo(() => isJobLike && active ? recommendWorkerForJob(active, workers, jobs) : null, [active, isJobLike, workers, jobs]);
 
   if (!active) return null;
   if (active.type === "action_group") return <LaneSlip active={active} onClose={onClose} onPick={onPick} />;
 
   const missing = {
-    title: !hasText(draft.title), customer: !hasText(draft.customer_name) || isGenericCustomer(draft.customer_name), site: !hasText(draft.site_address), service: !hasText(draft.service_type), scheduled: false, status: !hasText(draft.status), description: !hasText(draft.meta), worker: !hasText(draft.worker_id) && !hasText(draft.worker_name), pricing: !hasText(draft.pricing_type) || low(draft.pricing_type).includes("needs"), amount: !moneyNumber(draft.amount), workerNotes: !hasText(draft.worker_notes), invoiceDescription: !hasText(draft.invoice_description), message: !hasText(draft.message), photos: photos.length === 0,
+    title: !hasText(draft.title),
+    customer: !hasText(draft.customer_name) || isGenericCustomer(draft.customer_name),
+    site: isJobLike && !hasText(draft.site_address),
+    service: isJobLike && !hasText(draft.service_type),
+    scheduled: false,
+    status: isEditableRecord && !hasText(draft.status),
+    description: isEditableRecord && !hasText(draft.meta),
+    worker: isJobLike && !hasText(draft.worker_id) && !hasText(draft.worker_name),
+    pricing: (isJobLike || isInvoice) && (!hasText(draft.pricing_type) || low(draft.pricing_type).includes("needs")),
+    amount: (isJobLike || isInvoice || isQuote) && !moneyNumber(draft.amount),
+    workerNotes: isJobLike && !hasText(draft.worker_notes),
+    invoiceDescription: (isJobLike || isInvoice) && !hasText(draft.invoice_description),
+    message: isJobLike && !hasText(draft.message),
+    photos: isJobLike && photos.length === 0,
   };
   const mainMissing = missing.title || missing.customer || missing.site || missing.description || missing.status;
   const assignmentMissing = missing.worker;
   const pricingMissing = missing.amount || missing.pricing || missing.invoiceDescription;
   const completionMissing = missing.workerNotes || missing.photos;
-  const blocked = mainMissing || assignmentMissing || pricingMissing || completionMissing || missing.message;
+  const jobBlocked = mainMissing || assignmentMissing || pricingMissing || completionMissing || missing.message;
+  const invoiceBlocked = missing.customer || missing.amount || missing.invoiceDescription;
+  const quoteBlocked = missing.customer || missing.amount;
+  const blocked = isJobLike ? jobBlocked : isInvoice ? invoiceBlocked : isQuote ? quoteBlocked : false;
+  const canPrepareInvoice = isJobLike && !missing.customer && !missing.amount && !missing.invoiceDescription;
   const value = moneyNumber(draft.amount, active.amount) ? cash(moneyNumber(draft.amount, active.amount)) : "Needs input";
-  const situation = buildSituation(active, photos, draft);
-  const needs = buildNeedsAttention(active, photos, draft);
+  const situation = buildSituation(active, photos, draft, isJobLike);
+  const needs = buildNeedsAttention(missing, isJobLike, isInvoice);
+  const hasRealBackup = active.href && active.href !== "#";
 
   const run = async (action) => { setBusy(true); setNotice(""); const msg = await onAction(action, active, draft); const patched = patchPickedAfterAction(active, action, draft, msg); if (patched) setLocalPicked(patched); setNotice(msg); setBusy(false); };
   const changeWorker = (value) => { const selected = workers.find((worker) => workerIdOf(worker) === value); setDraft((d) => ({ ...d, worker_id: value, worker_name: selected ? workerNameOf(selected) : "" })); };
 
-  return <aside className="cfs-overlay" data-version="CHURVOX_WORK_SLIP_CHOICE_DROPDOWNS_20260527"><section className="cfs-sheet">
-    <header className="cfs-head"><div><p>WORK SLIP</p><h2>{draft.customer_name || active.title}</h2><em>{active.code || active.type}</em><span>Churvox filled what it could. Red fields still need owner input before this is safe to approve.</span></div><button type="button" onClick={onClose}>× Close</button></header>
-    <section className="cfs-facts"><Fact label="Status" value={draft.status} missing={missing.status} /><Fact label="Value" value={value} missing={missing.amount} /><Fact label="Site" value={draft.site_address} missing={missing.site} /><Fact label="Customer" value={draft.customer_name} missing={missing.customer} /><Fact label="Worker" value={draft.worker_name || (recommendation?.best ? workerNameOf(recommendation.best.worker) : "")} missing={missing.worker} /><Fact label="Invoice" value={draft.invoice_status} missing={missing.invoiceDescription} /></section>
-    <section className="cfs-decision-grid"><article className="cfs-decision cfs-happened"><header><i>1</i><b>What happened</b></header><ul>{situation.map((x) => <CheckLine key={x}>{x}</CheckLine>)}</ul></article><article className="cfs-decision cfs-ai"><header><i>2</i><b>AI Recommendation</b></header><div className="cfs-ai-box"><strong>{blocked ? "⚠ Review first" : "✓ Approve work"}</strong><p>{blocked ? "Churvox filled the form, but red fields still need owner input before approval." : recommendation?.best ? `No worker conflict found, ${workerNameOf(recommendation.best.worker)} selected, invoice draft prepared, and customer update drafted.` : "Review the job form, choose a worker if needed, then approve when ready."}</p></div></article><article className={`cfs-decision cfs-attention ${blocked ? "cfs-blocked" : ""}`}><header><i>3</i><b>Needs attention</b></header><ul>{needs.map((x) => <WarnLine key={x}>{x}</WarnLine>)}</ul></article></section>
+  return <aside className="cfs-overlay" data-version="CHURVOX_WORK_SLIP_TYPE_AWARE_BUTTONS_20260527"><section className="cfs-sheet">
+    <header className="cfs-head"><div><p>WORK SLIP</p><h2>{draft.customer_name || active.title}</h2><em>{active.code || active.type}</em><span>{isEditableRecord ? "Churvox filled what it could. Red fields still need owner input before this is safe to approve." : "This record is review-only here. Use the right action or open the full page backup."}</span></div><button type="button" onClick={onClose}>× Close</button></header>
+    <section className="cfs-facts"><Fact label="Status" value={draft.status || active.state} missing={missing.status} /><Fact label="Value" value={value} missing={missing.amount} /><Fact label="Site" value={draft.site_address || "—"} missing={missing.site} /><Fact label="Customer" value={draft.customer_name || active.title} missing={missing.customer} /><Fact label="Worker" value={draft.worker_name || (recommendation?.best ? workerNameOf(recommendation.best.worker) : "—")} missing={missing.worker} /><Fact label="Invoice" value={draft.invoice_status} missing={missing.invoiceDescription} /></section>
+    <section className="cfs-decision-grid"><article className="cfs-decision cfs-happened"><header><i>1</i><b>What happened</b></header><ul>{situation.map((x) => <CheckLine key={x}>{x}</CheckLine>)}</ul></article><article className="cfs-decision cfs-ai"><header><i>2</i><b>AI Recommendation</b></header><div className="cfs-ai-box"><strong>{blocked ? "⚠ Review first" : "✓ Ready"}</strong><p>{blocked ? "Churvox filled the form, but red fields still need owner input before approval." : isJobLike && recommendation?.best ? `No worker conflict found, ${workerNameOf(recommendation.best.worker)} selected, invoice draft prepared, and customer update drafted.` : "Only the actions that make sense for this record are available below."}</p></div></article><article className={`cfs-decision cfs-attention ${blocked ? "cfs-blocked" : ""}`}><header><i>3</i><b>Needs attention</b></header><ul>{needs.map((x) => <WarnLine key={x}>{x}</WarnLine>)}</ul></article></section>
     <h3 className="cfs-section-title">Editable job form Churvox prepared</h3>
     <section className="cfs-job-form cfs-job-form-editable">
-      <article className={mainMissing ? "cfs-missing-card" : ""}><header><small>Job details</small><b>Proper editable job record</b></header><div className="cfs-form-grid"><Field label="Job title" value={draft.title} onChange={updateDraft(setDraft, "title")} missing={missing.title} /><Field label="Client / customer" value={draft.customer_name} onChange={updateDraft(setDraft, "customer_name")} missing={missing.customer} /><Field label="Site address" value={draft.site_address} onChange={updateDraft(setDraft, "site_address")} missing={missing.site} /><SelectField label="Service type" value={draft.service_type} onChange={updateDraft(setDraft, "service_type")} options={SERVICE_OPTIONS} missing={missing.service} /><ScheduleField value={draft.scheduled} onChange={updateDraft(setDraft, "scheduled")} missing={missing.scheduled} /><SelectField label="Status" value={draft.status} onChange={updateDraft(setDraft, "status")} options={STATUS_OPTIONS} missing={missing.status} /><Field label="Job description / scope" value={draft.meta} onChange={updateDraft(setDraft, "meta")} missing={missing.description} textarea /></div></article>
-      <article className={assignmentMissing ? "cfs-missing-card" : ""}><header><small>Assignment</small><b>Worker selected by AI</b></header><div className="cfs-form-grid cfs-form-grid-small"><label className={`cfs-field ${missing.worker ? "is-missing" : "is-filled"}`}><span>Assigned worker</span><select value={draft.worker_id || ""} onChange={(e) => changeWorker(e.target.value)}><option value="">Needs owner input</option>{workers.map((worker) => { const wid = workerIdOf(worker); const blockedWorker = isWorkerBlocked(worker) || workerHasActiveConflict(worker, jobs, active); return <option key={wid || worker.title} value={wid}>{workerNameOf(worker)}{blockedWorker ? ` · ${blockedWorker}` : worker.state ? ` · ${worker.state}` : ""}</option>; })}</select><em>{missing.worker ? "Needs owner input" : "AI selected"}</em></label><Field label="Assigned worker name" value={draft.worker_name} onChange={updateDraft(setDraft, "worker_name")} missing={missing.worker} /><Field label="AI reason / conflict check" value={recommendation?.summary || "Needs manual check"} onChange={() => {}} textarea note="AI filled" /></div></article>
-      <article className={pricingMissing ? "cfs-missing-card" : ""}><header><small>Pricing + invoice prep</small><b>Editable admin fields</b></header><div className="cfs-form-grid cfs-form-grid-small"><SelectField label="Pricing type" value={draft.pricing_type} onChange={updateDraft(setDraft, "pricing_type")} options={PRICING_OPTIONS} missing={missing.pricing} /><Field label="Amount" type="number" value={draft.amount} onChange={updateDraft(setDraft, "amount")} missing={missing.amount} /><SelectField label="Invoice status" value={draft.invoice_status} onChange={updateDraft(setDraft, "invoice_status")} options={INVOICE_STATUS_OPTIONS} note="Choose from list" /><Field label="Invoice description" value={draft.invoice_description} onChange={updateDraft(setDraft, "invoice_description")} missing={missing.invoiceDescription} textarea /></div></article>
-      <article className={completionMissing ? "cfs-missing-card" : ""}><header><small>Completion</small><b>Editable worker evidence</b></header><div className="cfs-form-grid cfs-form-grid-small"><Field label="Worker notes" value={draft.worker_notes} onChange={updateDraft(setDraft, "worker_notes")} missing={missing.workerNotes} textarea /><Field label="Photos" value={photos.length ? `${photos.length} uploaded` : ""} onChange={() => {}} missing={missing.photos} /><Field label="Owner approval" value="Waiting for your approval" onChange={() => {}} note="Ready when red fields are fixed" /></div></article>
+      <article className={mainMissing ? "cfs-missing-card" : ""}><header><small>{isJobLike ? "Job details" : "Record details"}</small><b>{isEditableRecord ? "Editable record" : "Review-only record"}</b></header><div className="cfs-form-grid"><Field label="Title" value={draft.title} onChange={updateDraft(setDraft, "title")} missing={missing.title} readOnly={!isEditableRecord} /><Field label="Client / customer" value={draft.customer_name} onChange={updateDraft(setDraft, "customer_name")} missing={missing.customer} readOnly={!isEditableRecord} /><Field label="Site address" value={draft.site_address} onChange={updateDraft(setDraft, "site_address")} missing={missing.site} readOnly={!isEditableRecord} /><SelectField label="Service type" value={draft.service_type} onChange={updateDraft(setDraft, "service_type")} options={SERVICE_OPTIONS} missing={missing.service} /><ScheduleField value={draft.scheduled} onChange={updateDraft(setDraft, "scheduled")} missing={missing.scheduled} /><SelectField label="Status" value={draft.status} onChange={updateDraft(setDraft, "status")} options={STATUS_OPTIONS} missing={missing.status} /><Field label="Description / scope" value={draft.meta} onChange={updateDraft(setDraft, "meta")} missing={missing.description} textarea readOnly={!isEditableRecord} /></div></article>
+      <article className={assignmentMissing ? "cfs-missing-card" : ""}><header><small>Assignment</small><b>{isJobLike ? "Worker selected by AI" : "Not needed"}</b></header><div className="cfs-form-grid cfs-form-grid-small"><label className={`cfs-field ${missing.worker ? "is-missing" : "is-filled"}`}><span>Assigned worker</span><select disabled={!isJobLike} value={draft.worker_id || ""} onChange={(e) => changeWorker(e.target.value)}><option value="">{isJobLike ? "Needs owner input" : "Not needed"}</option>{workers.map((worker) => { const wid = workerIdOf(worker); const blockedWorker = isWorkerBlocked(worker) || workerHasActiveConflict(worker, jobs, active); return <option key={wid || worker.title} value={wid}>{workerNameOf(worker)}{blockedWorker ? ` · ${blockedWorker}` : worker.state ? ` · ${worker.state}` : ""}</option>; })}</select><em>{isJobLike ? (missing.worker ? "Needs owner input" : "AI selected") : "Not required"}</em></label><Field label="Assigned worker name" value={draft.worker_name} onChange={updateDraft(setDraft, "worker_name")} missing={missing.worker} readOnly={!isJobLike} /><Field label="AI reason / conflict check" value={recommendation?.summary || (isJobLike ? "Needs manual check" : "Not a worker-assignment record")} onChange={() => {}} textarea note="AI filled" readOnly /></div></article>
+      <article className={pricingMissing ? "cfs-missing-card" : ""}><header><small>Pricing + invoice prep</small><b>Admin fields</b></header><div className="cfs-form-grid cfs-form-grid-small"><SelectField label="Pricing type" value={draft.pricing_type} onChange={updateDraft(setDraft, "pricing_type")} options={PRICING_OPTIONS} missing={missing.pricing} /><Field label="Amount" type="number" value={draft.amount} onChange={updateDraft(setDraft, "amount")} missing={missing.amount} readOnly={!isEditableRecord} /><SelectField label="Invoice status" value={draft.invoice_status} onChange={updateDraft(setDraft, "invoice_status")} options={INVOICE_STATUS_OPTIONS} note="Choose from list" /><Field label="Invoice description" value={draft.invoice_description} onChange={updateDraft(setDraft, "invoice_description")} missing={missing.invoiceDescription} textarea readOnly={!isEditableRecord} /></div></article>
+      <article className={completionMissing ? "cfs-missing-card" : ""}><header><small>Completion</small><b>{isJobLike ? "Worker evidence" : "Not needed"}</b></header><div className="cfs-form-grid cfs-form-grid-small"><Field label="Worker notes" value={draft.worker_notes} onChange={updateDraft(setDraft, "worker_notes")} missing={missing.workerNotes} textarea readOnly={!isJobLike} /><Field label="Photos" value={photos.length ? `${photos.length} uploaded` : ""} onChange={() => {}} missing={missing.photos} readOnly /><Field label="Owner approval" value={blocked ? "Fix red fields first" : "Ready for available action"} onChange={() => {}} note="Type-aware" readOnly /></div></article>
     </section>
-    <section className="cfs-lower"><article className={`cfs-card cfs-message ${missing.message ? "cfs-missing-card" : ""}`}><header><small>Draft customer update</small><b>Draft before sending</b></header><textarea placeholder="Needs owner input" value={draft.message || ""} onChange={(e) => setDraft((d) => ({ ...d, message: e.target.value }))} /><p>{(draft.message || "").length} / 500</p></article><article className={`cfs-card cfs-photos ${missing.photos ? "cfs-missing-card" : ""}`}><header><small>Evidence & photos</small><b>{photos.length ? `${photos.length} photos uploaded` : "Needs owner input"}</b></header>{photos.length ? <div className="cfs-photo-row">{photos.slice(0, 3).map((photo, i) => <span key={`${photo.url || photo.label}-${i}`}>{photo.url ? <img src={photo.url} alt={photo.label} /> : null}</span>)}</div> : <div className="cfs-photo-placeholders"><span /><span /><span /></div>}<p>{photos.length ? `${photos.length} photos uploaded by worker` : "No photos saved. This box is red so the owner sees it."}</p></article><article className="cfs-card cfs-next"><header><small>What happens after approval</small><b>{blocked ? "Fix red fields first" : "Owner approval only"}</b></header><ul><CheckLine>Job will move to Approved status.</CheckLine><CheckLine>Invoice draft will be ready to send.</CheckLine><CheckLine>Customer message remains as draft until you send it.</CheckLine></ul></article></section>
+    <section className="cfs-lower"><article className={`cfs-card cfs-message ${missing.message ? "cfs-missing-card" : ""}`}><header><small>Draft customer update</small><b>{isEditableRecord ? "Draft before sending" : "Review-only"}</b></header><textarea readOnly={!isEditableRecord} placeholder="Needs owner input" value={draft.message || ""} onChange={(e) => setDraft((d) => ({ ...d, message: e.target.value }))} /><p>{(draft.message || "").length} / 500</p></article><article className={`cfs-card cfs-photos ${missing.photos ? "cfs-missing-card" : ""}`}><header><small>Evidence & photos</small><b>{photos.length ? `${photos.length} photos uploaded` : isJobLike ? "Needs owner input" : "Not needed"}</b></header>{photos.length ? <div className="cfs-photo-row">{photos.slice(0, 3).map((photo, i) => <span key={`${photo.url || photo.label}-${i}`}>{photo.url ? <img src={photo.url} alt={photo.label} /> : null}</span>)}</div> : <div className="cfs-photo-placeholders"><span /><span /><span /></div>}<p>{photos.length ? `${photos.length} photos uploaded by worker` : isJobLike ? "No photos saved. This box is red so the owner sees it." : "Photos are not required for this record type."}</p></article><article className="cfs-card cfs-next"><header><small>What happens after approval</small><b>{blocked ? "Fix red fields first" : "Action-specific"}</b></header><ul><CheckLine>Job approvals update job review status.</CheckLine><CheckLine>Invoice approval only appears for invoice records.</CheckLine><CheckLine>Customer message remains a draft until saved/sent elsewhere.</CheckLine></ul></article></section>
     {notice && <strong className="cfs-notice">{notice}</strong>}
-    <footer className="cfs-actions">{!isAction && <button type="button" disabled={busy} onClick={() => run("save")}>Save changes</button>}{isAction && <button className="primary" type="button" disabled={busy || blocked} onClick={() => run("approve")}>Approve & execute</button>}{isAction && <button className="danger" type="button" disabled={busy} onClick={() => run("reject")}>Reject action</button>}{isJobLike && <button className="primary" type="button" disabled={busy || blocked} onClick={() => run("approve")}>Approve work</button>}{active.type === "invoice" && <button className="primary" type="button" disabled={busy || blocked} onClick={() => run("approve")}>Approve invoice</button>}{isJobLike && <button type="button" disabled={busy || !draft.worker_id} onClick={() => run("assign")}>Assign worker</button>}{isJobLike && <button type="button" disabled={busy} onClick={() => run("invoice")}>Prepare invoice</button>}{!isAction && <button type="button" disabled={busy} onClick={() => run("message")}>Save message draft</button>}{active.href && active.href !== "#" && <Link to={active.href}>Full page backup</Link>}</footer>
+    <footer className="cfs-actions">{isEditableRecord && <button type="button" disabled={busy} onClick={() => run("save")}>Save changes</button>}{isAction && <button className="primary" type="button" disabled={busy} onClick={() => run("approve")}>Approve & execute</button>}{isAction && <button className="danger" type="button" disabled={busy} onClick={() => run("reject")}>Reject action</button>}{isJobLike && <button className="primary" type="button" disabled={busy || blocked} onClick={() => run("approve")}>Approve work</button>}{isInvoice && <button className="primary" type="button" disabled={busy || blocked} onClick={() => run("approve")}>Approve invoice</button>}{isJobLike && <button type="button" disabled={busy || !draft.worker_id} onClick={() => run("assign")}>Assign worker</button>}{isJobLike && <button type="button" disabled={busy || !canPrepareInvoice} onClick={() => run("invoice")}>Prepare invoice</button>}{isEditableRecord && <button type="button" disabled={busy} onClick={() => run("message")}>Save message draft</button>}{hasRealBackup && <Link to={active.href}>Full page backup</Link>}{!isEditableRecord && !isAction && !hasRealBackup && <button type="button" disabled>Review-only record</button>}</footer>
   </section></aside>;
 }
