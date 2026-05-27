@@ -1,0 +1,139 @@
+/* CHURVOX_PREMIUM_DOCUMENTS_20260528 */
+/* Safe document polish for invoices, quotes and customer proof packs. No business logic changed. */
+
+/* App-side invoice/quote/detail document cards */
+.invoice-template,
+.invoice-preview,
+.invoice-detail,
+.invoice-card,
+.quote-template,
+.quote-preview,
+.quote-detail,
+.quote-card,
+[class*="Invoice"] [class*="card"],
+[class*="invoice"] [class*="card"],
+[class*="Quote"] [class*="card"],
+[class*="quote"] [class*="card"] {
+  border-radius: 28px !important;
+  border: 1px solid rgba(17, 24, 39, 0.12) !important;
+  background: linear-gradient(180deg, #fffdf7 0%, #fff8ec 100%) !important;
+  box-shadow: 0 30px 90px rgba(17, 24, 39, 0.10) !important;
+}
+
+[class*="Invoice"] h1,
+[class*="Invoice"] h2,
+[class*="invoice"] h1,
+[class*="invoice"] h2,
+[class*="Quote"] h1,
+[class*="Quote"] h2,
+[class*="quote"] h1,
+[class*="quote"] h2 {
+  letter-spacing: -0.055em;
+}
+
+[class*="Invoice"] table,
+[class*="invoice"] table,
+[class*="Quote"] table,
+[class*="quote"] table {
+  width: 100%;
+  border-collapse: separate !important;
+  border-spacing: 0 8px !important;
+}
+
+[class*="Invoice"] th,
+[class*="Invoice"] td,
+[class*="invoice"] th,
+[class*="invoice"] td,
+[class*="Quote"] th,
+[class*="Quote"] td,
+[class*="quote"] th,
+[class*="quote"] td {
+  padding: 12px 14px !important;
+}
+
+[class*="Invoice"] tr,
+[class*="invoice"] tr,
+[class*="Quote"] tr,
+[class*="quote"] tr {
+  border-radius: 16px;
+}
+
+/* Public proof pack polish */
+.cpp-shell {
+  position: relative;
+}
+
+.cpp-shell::before {
+  content: "Churvox proof pack";
+  position: fixed;
+  right: clamp(18px, 4vw, 46px);
+  bottom: clamp(18px, 4vw, 46px);
+  z-index: 0;
+  pointer-events: none;
+  color: rgba(17, 24, 39, 0.055);
+  font-size: clamp(44px, 10vw, 150px);
+  font-weight: 950;
+  letter-spacing: -0.09em;
+  line-height: 0.8;
+}
+
+.cpp-hero,
+.cpp-grid,
+.cpp-photos,
+.cpp-footer {
+  position: relative;
+  z-index: 1;
+}
+
+.cpp-card,
+.cpp-hero > div,
+.cpp-hero > aside {
+  backdrop-filter: blur(18px);
+}
+
+.cpp-card h2,
+.cpp-hero h1 {
+  text-wrap: balance;
+}
+
+.cpp-card strong {
+  color: #365314;
+}
+
+.cpp-footer {
+  padding: 14px 0 24px;
+}
+
+@media print {
+  body {
+    background: white !important;
+  }
+
+  .cpp-shell,
+  .invoice-template,
+  .invoice-preview,
+  .invoice-detail,
+  .quote-template,
+  .quote-preview,
+  .quote-detail {
+    background: white !important;
+    box-shadow: none !important;
+  }
+
+  .cpp-shell::before {
+    display: none !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .invoice-template,
+  .invoice-preview,
+  .invoice-detail,
+  .invoice-card,
+  .quote-template,
+  .quote-preview,
+  .quote-detail,
+  .quote-card {
+    border-radius: 22px !important;
+  }
+}
