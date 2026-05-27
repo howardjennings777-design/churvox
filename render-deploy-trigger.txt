@@ -1,8 +1,9 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-28 NZT connector push
-Change: Operator Tools hub navigation update.
+Change: Operator Tools recent proof pack list.
 Includes:
-- Hub links on Operator Tools page
-- Navigation cards for Command Floor, messages, dispatch, presets, offline, and money desk
+- Recent proof packs on Operator Tools page
+- Public proof pack links
+- Proof pack empty state
 - Render marker only
