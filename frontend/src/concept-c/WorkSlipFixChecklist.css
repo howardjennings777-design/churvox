@@ -1,0 +1,31 @@
+/* CHURVOX_WORK_SLIP_FIX_CHECKLIST_20260527 */
+
+.cfs-overlay:has(.cfs-missing-card) .cfs-facts {
+  margin-bottom: 84px;
+}
+
+.cfs-overlay:has(.cfs-missing-card) .cfs-facts::after {
+  content: "Fix before approval: complete the red fields below, then tap Save changes. Common blockers: price, worker, customer message, worker notes, photos/evidence, customer/site details.";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 12px);
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 18px;
+  color: #7f1d1d;
+  background: linear-gradient(90deg, #fff1f2, #fff7ed);
+  border: 2px solid #fecaca;
+  box-shadow: 0 14px 30px rgba(239,68,68,.10);
+  font-size: .88rem;
+  line-height: 1.35;
+  font-weight: 950;
+}
+
+@media (max-width: 700px) {
+  .cfs-overlay:has(.cfs-missing-card) .cfs-facts {
+    margin-bottom: 118px;
+  }
+}
