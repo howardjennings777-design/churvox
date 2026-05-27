@@ -1,5 +1,6 @@
 Churvox Render deploy trigger
 
 Purpose: harmless marker file used to trigger Render auto-deploy after GitHub connector push.
-Triggered at: 2026-05-27 NZT
-Latest target change to deploy: Work Slip photos optional / approval-safe polish.
+Triggered at: 2026-05-27 NZT connector push
+Latest target change to deploy: Work Slip scroll/action bar safe connector polish.
+Latest connector commit before this marker: 8088c66a74976de0918aa7cbfad8814ae8649d12
