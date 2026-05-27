@@ -1,10 +1,9 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-28 NZT connector push
-Change: Missing Code 4 + 5 + 6 pushed by GitHub connector.
+Change: Runtime patch for visible tools and Work Slip top-tier actions.
 Includes:
-- Public proof pack page and CSS
-- Top-tier operator tools page and CSS
-- Work Slip top-tier polish CSS
-- /public/proof/:token route
-- /operator-tools route
+- Top-tier runtime patch file
+- index.js import for runtime patch
+- Operator Tools links injected into Command Floor
+- Work Slip runtime buttons for proof pack, undo/reopen, client memory, and audit trail
