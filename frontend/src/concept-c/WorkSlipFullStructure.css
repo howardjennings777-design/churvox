@@ -1,0 +1,339 @@
+/* CHURVOX_WORK_SLIP_FULL_STRUCTURE_20260527
+   Work Slip becomes the main approval product:
+   Job -> Customer -> Worker -> Evidence -> Price -> Invoice -> Message -> Approval.
+*/
+
+.cfs-overlay {
+  background: rgba(2, 6, 23, .76) !important;
+  backdrop-filter: blur(14px) !important;
+}
+
+.cfs-overlay .cfs-sheet {
+  width: min(1440px, calc(100vw - 28px)) !important;
+  height: min(920px, calc(100vh - 28px)) !important;
+  max-height: calc(100vh - 28px) !important;
+  display: grid !important;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto auto !important;
+  gap: 14px !important;
+  padding: 18px !important;
+  border-radius: 30px !important;
+  background:
+    linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%) !important;
+  border: 1px solid rgba(255,255,255,.32) !important;
+  box-shadow: 0 34px 110px rgba(2,6,23,.45) !important;
+  overflow: hidden !important;
+}
+
+.cfs-overlay .cfs-head {
+  order: unset !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: start !important;
+  gap: 16px !important;
+  padding: 18px 20px !important;
+  border-radius: 24px !important;
+  background: #05070d !important;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  box-shadow: 0 18px 45px rgba(2,6,23,.28) !important;
+}
+
+.cfs-overlay .cfs-head p,
+.cfs-overlay .cfs-head h2,
+.cfs-overlay .cfs-head em,
+.cfs-overlay .cfs-head span {
+  color: #fff !important;
+  opacity: 1 !important;
+}
+
+.cfs-overlay .cfs-head p {
+  color: #93c5fd !important;
+  font-weight: 950 !important;
+  letter-spacing: .14em !important;
+}
+
+.cfs-overlay .cfs-head h2 {
+  font-size: clamp(1.6rem, 2.8vw, 2.6rem) !important;
+  line-height: 1 !important;
+  letter-spacing: -.06em !important;
+}
+
+.cfs-overlay .cfs-head button {
+  background: rgba(255,255,255,.1) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,.18) !important;
+  border-radius: 999px !important;
+  font-weight: 950 !important;
+}
+
+.cfs-overlay .cfs-head::after {
+  content: "1. Check filled form  ·  2. Fix red fields  ·  3. Save  ·  4. Approve" !important;
+  position: static !important;
+  grid-column: 1 / -1 !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  padding: 9px 12px !important;
+  border-radius: 999px !important;
+  color: #bfdbfe !important;
+  background: rgba(37,99,235,.22) !important;
+  border: 1px solid rgba(147,197,253,.24) !important;
+  font-size: .78rem !important;
+  font-weight: 950 !important;
+}
+
+.cfs-overlay .cfs-facts {
+  order: unset !important;
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  margin: 0 !important;
+}
+
+.cfs-overlay .cfs-facts > span {
+  min-height: 74px !important;
+  border-radius: 18px !important;
+  background: #fff !important;
+  border: 1px solid rgba(15,23,42,.08) !important;
+  box-shadow: 0 10px 24px rgba(15,23,42,.055) !important;
+}
+
+.cfs-overlay .cfs-facts > span.is-missing {
+  border: 2px solid #ef4444 !important;
+  background: #fff1f2 !important;
+}
+
+.cfs-overlay:has(.cfs-missing-card) .cfs-facts {
+  margin-bottom: 0 !important;
+}
+
+.cfs-overlay:has(.cfs-missing-card) .cfs-facts::after {
+  position: static !important;
+  grid-column: 1 / -1 !important;
+  content: "Fix before approval: the red cards below show exactly what needs owner input. Save changes first, then approve." !important;
+  min-height: auto !important;
+  padding: 11px 14px !important;
+  border-radius: 16px !important;
+  color: #991b1b !important;
+  background: #fff1f2 !important;
+  border: 2px solid #fecaca !important;
+  font-size: .86rem !important;
+  font-weight: 950 !important;
+}
+
+.cfs-overlay .cfs-decision-grid {
+  order: unset !important;
+  padding-top: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+.cfs-overlay .cfs-decision-grid::before {
+  display: none !important;
+}
+
+.cfs-overlay .cfs-decision {
+  border-radius: 22px !important;
+  background: #fff !important;
+  border: 1px solid rgba(15,23,42,.08) !important;
+  box-shadow: 0 12px 28px rgba(15,23,42,.06) !important;
+}
+
+.cfs-overlay .cfs-section-title {
+  order: unset !important;
+  margin: 0 !important;
+  padding: 10px 4px 0 !important;
+  color: #0f172a !important;
+  font-size: .9rem !important;
+  font-weight: 950 !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+}
+
+.cfs-overlay .cfs-section-title::before {
+  content: "Approval form" !important;
+  background: #05070d !important;
+  color: #fff !important;
+}
+
+.cfs-overlay .cfs-section-title::after {
+  content: "Churvox filled this like a form. Owner adjusts only what is wrong or red." !important;
+}
+
+.cfs-overlay .cfs-job-form,
+.cfs-overlay .cfs-lower {
+  order: unset !important;
+  min-height: 0 !important;
+}
+
+.cfs-overlay .cfs-job-form {
+  overflow: auto !important;
+  padding: 2px 4px 12px !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+}
+
+.cfs-overlay .cfs-job-form article,
+.cfs-overlay .cfs-card {
+  border-radius: 24px !important;
+  background: #fff !important;
+  border: 1px solid rgba(15,23,42,.08) !important;
+  box-shadow: 0 14px 32px rgba(15,23,42,.06) !important;
+}
+
+.cfs-overlay .cfs-job-form article header {
+  border-bottom: 1px solid rgba(15,23,42,.06) !important;
+  padding-bottom: 10px !important;
+  margin-bottom: 12px !important;
+}
+
+.cfs-overlay .cfs-job-form article header small {
+  color: #2563eb !important;
+  font-weight: 950 !important;
+  letter-spacing: .12em !important;
+}
+
+.cfs-overlay .cfs-job-form article header b {
+  color: #0f172a !important;
+  font-size: 1.05rem !important;
+  font-weight: 950 !important;
+}
+
+.cfs-overlay .cfs-missing-card {
+  border: 2px solid #ef4444 !important;
+  background: linear-gradient(180deg, #fff, #fff1f2) !important;
+  box-shadow: 0 16px 38px rgba(239,68,68,.12) !important;
+}
+
+.cfs-overlay .cfs-field {
+  border-radius: 16px !important;
+}
+
+.cfs-overlay .cfs-field input,
+.cfs-overlay .cfs-field select,
+.cfs-overlay .cfs-field textarea {
+  border-radius: 14px !important;
+  border: 1px solid rgba(15,23,42,.12) !important;
+  background: #f8fbff !important;
+  color: #0f172a !important;
+  font-weight: 850 !important;
+}
+
+.cfs-overlay .cfs-field.is-missing input,
+.cfs-overlay .cfs-field.is-missing select,
+.cfs-overlay .cfs-field.is-missing textarea {
+  background: #fff1f2 !important;
+  border: 2px solid #ef4444 !important;
+}
+
+.cfs-overlay .cfs-lower {
+  display: grid !important;
+  grid-template-columns: 1.15fr .85fr .85fr !important;
+  gap: 14px !important;
+  padding-top: 0 !important;
+}
+
+.cfs-overlay .cfs-lower::before {
+  display: none !important;
+}
+
+.cfs-overlay .cfs-message textarea {
+  min-height: 130px !important;
+  border-radius: 16px !important;
+  background: #f8fbff !important;
+  border: 1px solid rgba(15,23,42,.12) !important;
+}
+
+.cfs-overlay .cfs-actions {
+  order: unset !important;
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 10 !important;
+  display: flex !important;
+  gap: 10px !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  padding: 14px !important;
+  border-radius: 22px !important;
+  background: rgba(255,255,255,.94) !important;
+  border: 1px solid rgba(15,23,42,.08) !important;
+  box-shadow: 0 -12px 30px rgba(15,23,42,.08) !important;
+  backdrop-filter: blur(14px) !important;
+}
+
+.cfs-overlay .cfs-actions button,
+.cfs-overlay .cfs-actions a {
+  min-height: 44px !important;
+  border-radius: 999px !important;
+  font-weight: 950 !important;
+}
+
+.cfs-overlay .cfs-actions .primary {
+  background: #05070d !important;
+  color: #fff !important;
+  border-color: #05070d !important;
+}
+
+.cfs-overlay .cfs-actions .primary:not(:disabled)::before {
+  content: "Ready to approve" !important;
+  background: #dcfce7 !important;
+  color: #166534 !important;
+  border-color: #bbf7d0 !important;
+}
+
+.cfs-overlay .cfs-actions .primary:disabled::before {
+  content: "Blocked" !important;
+}
+
+.cfs-overlay .cfs-notice {
+  order: unset !important;
+  border-radius: 16px !important;
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+  border: 1px solid rgba(37,99,235,.18) !important;
+}
+
+@media (max-width: 1100px) {
+  .cfs-overlay .cfs-sheet {
+    height: calc(100vh - 18px) !important;
+    width: calc(100vw - 18px) !important;
+    border-radius: 22px !important;
+  }
+
+  .cfs-overlay .cfs-facts,
+  .cfs-overlay .cfs-decision-grid,
+  .cfs-overlay .cfs-job-form,
+  .cfs-overlay .cfs-lower {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cfs-overlay .cfs-head {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cfs-overlay .cfs-actions {
+    max-height: 160px !important;
+    overflow: auto !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .cfs-overlay .cfs-sheet {
+    padding: 10px !important;
+    gap: 10px !important;
+  }
+
+  .cfs-overlay .cfs-head {
+    padding: 14px !important;
+  }
+
+  .cfs-overlay .cfs-head h2 {
+    font-size: 1.45rem !important;
+  }
+
+  .cfs-overlay .cfs-actions button,
+  .cfs-overlay .cfs-actions a {
+    width: 100% !important;
+  }
+}

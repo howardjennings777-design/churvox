@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700&display=swap');
 @import './concept-c/WorkSlipFixChecklist.css';
 @import './concept-c/WorkspaceGuideLayoutFix.css';
+@import './concept-c/WorkSlipFullStructure.css';
 
 @tailwind base;
 @tailwind components;
