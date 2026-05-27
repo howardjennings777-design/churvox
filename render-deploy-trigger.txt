@@ -1,7 +1,8 @@
 Churvox Render deploy trigger
 
 Purpose: harmless marker file used to trigger Render auto-deploy after GitHub connector push.
-Triggered at: 2026-05-27 NZT connector push
-Latest safe connector action: confirmed backend route /api/jobs/{job_id}/create-draft-invoice is missing and needs Codespaces patch because backend/server.py is too large to safely whole-file replace through connector.
+Triggered at: 2026-05-27 NZT connector push after Codespaces crash
+Latest safe connector action: confirmed backend route /api/jobs/{job_id}/create-draft-invoice is still the real missing piece.
+Important: I did not edit backend/server.py through connector because it is huge and whole-file replacement is too risky without a local syntax/build check.
 Current live safe work: Work Slip photos optional, full-screen scroll/action bar polish, and existing frontend real action handler confirmed.
-Next required Codespaces patch: add Work Slip draft invoice backend route to backend/server.py, then build, commit, push.
+Next required Codespaces patch: add Work Slip draft invoice backend route to backend/server.py, then python syntax check, frontend build, commit, push.
