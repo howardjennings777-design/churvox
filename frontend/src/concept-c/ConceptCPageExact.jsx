@@ -326,7 +326,19 @@ async function runRecordAction(action, picked, draft, api, reload) {
       return `Could not assign worker: ${apiError(res)}`;
     }
     if (action === "save") { const endpoint = picked.type === "invoice" ? `/invoices/${id}` : picked.type === "quote" ? `/quotes/${id}` : picked.type === "client" ? `/clients/${id}` : `/jobs/${id}`; const res = await patchWithFallback(api, endpoint, titlePayload); if (apiOk(res)) { await reload(); return "Saved in this slip."; } return `Could not save: ${apiError(res)}`; }
-    if (action === "approve") { if (picked.type === "invoice") { const res = await patchWithFallback(api, `/invoices/${id}`, { ...titlePayload, status: "approved" }); if (apiOk(res)) { await reload(); return "Invoice approved."; } return `Could not approve: ${apiError(res)}`; } if (picked.type !== "job" && picked.type !== "work_review") return "Only jobs, work reviews and invoices can be approved from this slip."; const res = await patchWithFallback(api, `/jobs/${id}`, { ...titlePayload, owner_review_status: "approved", work_review_status: "approved", reviewed: true }); if (apiOk(res)) { await reload(); return "Work approved."; } return `Could not approve: ${apiError(res)}`; }
+    if (action === "approve") { if (picked.type === "invoice") { const res = await patchWithFallback(api, `/invoices/${id}`, { ...titlePayload, status: "approved" }); if (apiOk(res)) { await reload(); return "Invoice approved."; } return `Could not approve: ${apiError(res)}`; } if (picked.type !== "job" && picked.type !== "work_review") return "Only jobs, work reviews and invoices can be approved from this slip."; const res = await patchWithFallback(api, `/jobs/${id}`, {
+      // CHURVOX_WORK_SLIP_STRONG_APPROVE_FLAGS_20260527
+      ...titlePayload,
+      owner_review_status: "approved",
+      work_review_status: "approved",
+      approval_status: "approved",
+      command_floor_status: "approved",
+      reviewed: true,
+      owner_approved: true,
+      work_approved: true,
+      job_approved: true,
+      approved_at: new Date().toISOString(),
+    }); if (apiOk(res)) { await reload(); return "Work approved."; } return `Could not approve: ${apiError(res)}`; }
     if (action === "invoice") { // CHURVOX_WORK_SLIP_LINKED_DRAFT_INVOICE_20260527
       // CHURVOX_WORK_SLIP_INVOICE_FALLBACK_20260527
       if (picked.type !== "job" && picked.type !== "work_review") return "Select a job or work review item before preparing an invoice.";
