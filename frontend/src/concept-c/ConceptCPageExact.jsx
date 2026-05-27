@@ -252,7 +252,15 @@ function TopBar({ loading }) {
 }
 
 function BottomNav() {
-  const links = [["/dashboard", "Command"], ["/jobs", "Jobs"], ["/team", "Crew"], ["/clients", "Clients"], ["/invoices", "Money"], ["/quotes", "Quotes"], ["/dispatch", "Dispatch"], ["/notifications", "Issues"], ["/reports", "Reports"], ["/settings", "Settings"]];
+  // CHURVOX_LAUNCH_READY_BOTTOM_NAV_20260527
+  const links = [
+    ["/dashboard", "Command"],
+    ["/jobs", "Jobs"],
+    ["/team", "Crew"],
+    ["/clients", "Clients"],
+    ["/invoices", "Money"],
+    ["/quotes", "Quotes"],
+  ];
   return <nav className="xcf-bottom-nav">{links.map(([href, label]) => <Link key={href} to={href}>{label}</Link>)}</nav>;
 }
 
