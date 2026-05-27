@@ -1,4 +1,5 @@
 // CHURVOX_PUBLIC_PROOF_PACK_PAGE_20260528
+// CHURVOX_PUBLIC_PROOF_PACK_ACTIONS_20260528
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import "./PublicProofPackPage.css";
@@ -15,6 +16,7 @@ function money(value) {
 export default function PublicProofPackPage() {
   const { token } = useParams();
   const [state, setState] = useState({ loading: true, error: "", pack: null });
+  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     let alive = true;
@@ -38,11 +40,27 @@ export default function PublicProofPackPage() {
     return raw.map((p) => typeof p === "string" ? { url: p } : (p || {})).filter((p) => p.url || p.photo_url || p.src);
   }, [pack.photos]);
 
+  async function copyProofLink() {
+    const href = window.location.href;
+    try {
+      await navigator.clipboard.writeText(href);
+      setNotice("Proof link copied.");
+    } catch {
+      setNotice(href);
+    }
+  }
+
   if (state.loading) return <main className="cpp-shell"><section className="cpp-card"><p>Loading proof pack...</p></section></main>;
   if (state.error) return <main className="cpp-shell"><section className="cpp-card"><h1>Proof pack unavailable</h1><p>{state.error}</p></section></main>;
 
   return (
-    <main className="cpp-shell" data-version="CHURVOX_PUBLIC_PROOF_PACK_PAGE_20260528">
+    <main className="cpp-shell" data-version="CHURVOX_PUBLIC_PROOF_PACK_PAGE_20260528 CHURVOX_PUBLIC_PROOF_PACK_ACTIONS_20260528">
+      <section className="cpp-actions-bar">
+        <b>Customer proof pack</b>
+        <button type="button" onClick={() => window.print()}>Print / PDF</button>
+        <button type="button" onClick={copyProofLink}>Copy link</button>
+        {notice ? <span>{notice}</span> : null}
+      </section>
       <section className="cpp-hero">
         <div><p>CHURVOX CUSTOMER PROOF PACK</p><h1>{pack.job_title || pack.title || "Completed work"}</h1><span>{pack.customer_name || "Customer"} · Review completed work, notes, photos and invoice details.</span></div>
         <aside><small>Status</small><b>{pack.status || "Draft"}</b><em>Prepared by Churvox</em></aside>
