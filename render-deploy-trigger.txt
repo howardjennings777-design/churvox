@@ -1,9 +1,5 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-28 NZT connector push
-Change: Operator Tools recent proof pack list.
-Includes:
-- Recent proof packs on Operator Tools page
-- Public proof pack links
-- Proof pack empty state
-- Render marker only
+Change: Operator Tools audit list update.
+Render marker only.
