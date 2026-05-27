@@ -36,6 +36,7 @@ import PlatformUnlock from "./pages/admin/PlatformUnlock";
 import PublicQuotePage from "./pages/public/PublicQuotePage";
 import PublicInvoicePage from "./pages/public/PublicInvoicePage";
 import PublicClientPortalPage from "./pages/public/PublicClientPortalPage";
+import PublicProofPackPage from "./pages/public/PublicProofPackPage";
 import QAAuditorPage from "./pages/admin/QAAuditorPage";
 import HomePage from "./pages/marketing/ExecutiveHomePage";
 import PricingPage from "./pages/marketing/ExecutivePricingPage";
@@ -48,6 +49,7 @@ import TradePresetsPage from "./pages/TradePresetsPage";
 import MessageApprovalQueuePage from "./pages/MessageApprovalQueuePage";
 import DispatchBoardPage from "./pages/DispatchBoardPage";
 import OfflineSyncPage from "./pages/OfflineSyncPage";
+import TopTierOperatorToolsPage from "./pages/TopTierOperatorToolsPage";
 
 const Spinner = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -192,10 +194,12 @@ function App() {
           <Toaster position="top-right" richColors />
           <FloatingBottomNav />
           <Routes>
-        <Route path="/offline-sync" element={<OfflineSyncPage />} />
-        <Route path="/dispatch-board" element={<DispatchBoardPage />} />
-        <Route path="/message-approvals" element={<MessageApprovalQueuePage />} />
-        <Route path="/trade-presets" element={<TradePresetsPage />} />
+            <Route path="/operator-tools" element={<BusinessRoute><TopTierOperatorToolsPage /></BusinessRoute>} />
+            <Route path="/public/proof/:token" element={<PublicProofPackPage />} />
+            <Route path="/offline-sync" element={<OfflineSyncPage />} />
+            <Route path="/dispatch-board" element={<DispatchBoardPage />} />
+            <Route path="/message-approvals" element={<MessageApprovalQueuePage />} />
+            <Route path="/trade-presets" element={<TradePresetsPage />} />
             <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
