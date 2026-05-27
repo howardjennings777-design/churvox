@@ -44,6 +44,10 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import FloatingBottomNav from "./components/FloatingBottomNav";
 import ConceptCPage from "./concept-c/ConceptCPageExact";
 import ConceptCFrame from "./concept-c/ConceptCFrame";
+import TradePresetsPage from "./pages/TradePresetsPage";
+import MessageApprovalQueuePage from "./pages/MessageApprovalQueuePage";
+import DispatchBoardPage from "./pages/DispatchBoardPage";
+import OfflineSyncPage from "./pages/OfflineSyncPage";
 
 const Spinner = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -188,6 +192,10 @@ function App() {
           <Toaster position="top-right" richColors />
           <FloatingBottomNav />
           <Routes>
+        <Route path="/offline-sync" element={<OfflineSyncPage />} />
+        <Route path="/dispatch-board" element={<DispatchBoardPage />} />
+        <Route path="/message-approvals" element={<MessageApprovalQueuePage />} />
+        <Route path="/trade-presets" element={<TradePresetsPage />} />
             <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />

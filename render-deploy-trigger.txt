@@ -1,4 +1,9 @@
 Churvox Render deploy trigger
 
-Triggered at: 2026-05-27T12:35:16Z
-Change: Code 3 top-tier frontend helpers and polish.
+Triggered at: 2026-05-27T18:18:55Z
+Change: Big Code 7 + 8 + 9 + 10.
+Includes:
+- Trade Presets page
+- Message Approval Queue page
+- Dispatch Board page
+- Offline Sync page

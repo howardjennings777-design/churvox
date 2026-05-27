@@ -1,0 +1,169 @@
+/* CHURVOX_DISPATCH_BOARD_PAGE_20260528 */
+
+.cdb-shell {
+  min-height: 100vh;
+  padding: clamp(18px, 4vw, 48px);
+  color: #111827;
+  background:
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), transparent 28%),
+    linear-gradient(180deg, #fffaf0 0%, #f6eedf 100%);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.cdb-hero {
+  max-width: 1440px;
+  margin: 0 auto 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 18px;
+}
+
+.cdb-hero > div,
+.cdb-hero > aside,
+.cdb-lane {
+  border-radius: 30px;
+  background: rgba(255, 253, 247, 0.9);
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  box-shadow: 0 28px 80px rgba(17, 24, 39, 0.10);
+}
+
+.cdb-hero > div {
+  padding: clamp(24px, 5vw, 54px);
+}
+
+.cdb-hero p {
+  margin: 0 0 10px;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.cdb-hero h1 {
+  margin: 0;
+  max-width: 920px;
+  font-size: clamp(42px, 8vw, 88px);
+  line-height: 0.88;
+  letter-spacing: -0.07em;
+}
+
+.cdb-hero span {
+  display: block;
+  margin-top: 18px;
+  max-width: 860px;
+  color: rgba(17, 24, 39, 0.66);
+  font-size: 18px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.cdb-hero > aside {
+  padding: 24px;
+  display: grid;
+  align-content: center;
+}
+
+.cdb-hero aside small {
+  color: rgba(17, 24, 39, 0.5);
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cdb-hero aside b {
+  font-size: 34px;
+  letter-spacing: -0.04em;
+}
+
+.cdb-hero aside em {
+  color: rgba(17, 24, 39, 0.62);
+  font-style: normal;
+  font-weight: 750;
+}
+
+.cdb-board {
+  max-width: 1440px;
+  margin: 0 auto 22px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(220px, 1fr));
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.cdb-lane {
+  min-height: 520px;
+  padding: 16px;
+}
+
+.cdb-lane header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.cdb-lane header span {
+  font-weight: 950;
+  letter-spacing: -0.035em;
+}
+
+.cdb-lane header b {
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: rgba(17, 24, 39, 0.08);
+}
+
+.cdb-rows {
+  display: grid;
+  gap: 10px;
+}
+
+.cdb-job,
+.cdb-empty,
+.cdb-footer a {
+  display: block;
+  border-radius: 18px;
+  padding: 13px;
+  background: rgba(17, 24, 39, 0.045);
+  color: inherit;
+  text-decoration: none;
+}
+
+.cdb-job strong {
+  display: block;
+  font-size: 14px;
+  letter-spacing: -0.025em;
+}
+
+.cdb-job small,
+.cdb-empty {
+  color: rgba(17, 24, 39, 0.58);
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.cdb-footer {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cdb-footer a {
+  width: fit-content;
+  background: rgba(59, 130, 246, 0.12);
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+@media (max-width: 900px) {
+  .cdb-hero {
+    grid-template-columns: 1fr;
+  }
+}
