@@ -11274,6 +11274,81 @@ async def automation_test_rule(rule_id: str, current_user: dict = Depends(get_cu
 from command_hub_routes import register_command_hub_routes
 register_command_hub_routes(api_router, db, get_current_user, get_user_business_id)
 
+
+
+# CHURVOX_MIN_WORK_SLIP_DRAFT_INVOICE_ROUTE_20260527
+@api_router.post("/jobs/{job_id}/create-draft-invoice")
+async def churvox_work_slip_create_draft_invoice(job_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in BUSINESS_ROLES:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    business_id = _resolve_business_id(current_user)
+    owner_id = _resolve_owner_id(current_user)
+    now = datetime.now(timezone.utc)
+
+    job = None
+    if ObjectId.is_valid(str(job_id)):
+        job = await db.jobs.find_one({"_id": ObjectId(job_id), "$or": [{"business_id": business_id}, {"owner_id": owner_id}]})
+    if not job:
+        job = await db.jobs.find_one({"id": str(job_id), "$or": [{"business_id": business_id}, {"owner_id": owner_id}]})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    def num(v):
+        try:
+            return float(v or 0)
+        except Exception:
+            return 0
+
+    customer_name = payload.get("customer_name") or job.get("customer_name") or job.get("client_name") or "Customer"
+    subtotal = num(payload.get("subtotal") or job.get("price") or job.get("job_price") or job.get("fixed_price") or job.get("total") or job.get("amount"))
+
+    if subtotal <= 0:
+        raise HTTPException(status_code=400, detail="Add a job price before preparing the invoice.")
+
+    description = payload.get("description") or job.get("invoice_description_draft") or job.get("ai_invoice_description") or _format_invoice_description_from_job(job, customer_name)
+    gst_rate = num(payload.get("gst_rate") or DEFAULT_GST_RATE)
+
+    invoice_doc = {
+        "invoice_number": f"INV-{int(now.timestamp())}",
+        "job_id": str(job.get("_id") or job_id),
+        "source_job_id": str(job.get("_id") or job_id),
+        "linked_job_id": str(job.get("_id") or job_id),
+        "client_id": payload.get("client_id") or job.get("client_id"),
+        "customer_name": customer_name,
+        "customer_email": payload.get("customer_email") or job.get("customer_email") or job.get("client_email") or "",
+        "address": payload.get("address") or job.get("address") or job.get("site_address") or "",
+        "description": description,
+        "subtotal": subtotal,
+        "gst_rate": gst_rate,
+        "total": subtotal + (subtotal * gst_rate / 100),
+        "status": "draft",
+        "pricing_type": payload.get("pricing_type") or job.get("pricing_type") or "fixed",
+        "notes": payload.get("notes") or "Prepared by Churvox Command Floor. Review before sending.",
+        "source": "command_floor_work_slip",
+        "myob_sync_status": "not_synced",
+        "official_invoice_source": "churvox",
+        "business_id": business_id,
+        "owner_id": owner_id,
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    result = await db.invoices.insert_one(invoice_doc)
+    invoice_id = str(result.inserted_id)
+
+    await db.jobs.update_one({"_id": job["_id"]}, {"$set": {
+        "draft_invoice_id": invoice_id,
+        "invoice_id": invoice_id,
+        "invoice_prepared": True,
+        "invoice_prepared_at": now,
+        "invoice_description_draft": description,
+        "updated_at": now,
+    }})
+
+    return {"success": True, "id": invoice_id, "invoice_id": invoice_id, "message": "Draft invoice prepared and linked to this job"}
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")
