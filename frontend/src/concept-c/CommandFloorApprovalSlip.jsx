@@ -107,6 +107,17 @@ function recommendWorkerForJob(picked, workers = [], jobs = []) {
   };
 }
 
+function messageDraftFromPicked(picked, draft = {}) {
+  const raw = picked?.raw || {};
+  const customer = firstText(draft.customer_name, raw.customer_name, raw.client_name, raw.name, picked?.title, "there");
+  const site = firstText(draft.site_address, raw.address, raw.site_address, raw.job_address, raw.location);
+  const price = moneyNumber(draft.amount, picked?.amount, raw.price, raw.job_price, raw.fixed_price, raw.total, raw.amount, raw.subtotal, raw.hourly_total);
+  if (picked?.type === "invoice") return `Hi ${customer},\n\nYour invoice is ready for review.\n\n${draft?.meta || "This covers the completed service work."}\n\nThanks,\nChurvox`;
+  if (picked?.type === "quote") return `Hi ${customer},\n\nYour quote is ready for review.\n\n${draft?.meta || "Please check the scope and let us know if you would like to go ahead."}\n\nThanks,\nChurvox`;
+  if (picked?.type === "action") return firstText(raw.generated_message, raw.draft_message, raw.recommendation, raw.owner_facing_explanation, raw.reason, "AI prepared this action. Review before approving.");
+  return firstText(draft.message, raw.customer_message_draft, raw.draft_message, raw.last_message_draft, `Hi ${customer},\n\nYour job${site ? ` at ${site}` : ""} has been completed. We have reviewed the work${price ? ` and prepared your invoice for ${cash(price)}` : " and prepared the next admin step"}.\n\nPlease let us know if you need anything else.`);
+}
+
 function editableDraftFromPicked(picked, workers, jobs) {
   const raw = picked?.raw || {};
   const isJob = picked?.type === "job" || picked?.type === "work_review";
@@ -120,7 +131,7 @@ function editableDraftFromPicked(picked, workers, jobs) {
   const description = firstText(raw.ai_approval_summary, raw.approval_description, raw.invoice_description_draft, raw.description, raw.job_description, raw.service_description, raw.scope, raw.completion_notes, raw.worker_completion_notes, raw.worker_notes, raw.job_notes, raw.notes, `${customer} job${site ? ` at ${site}` : ""} is ready for owner review.${price ? ` Final job amount confirmed at ${cash(price)}.` : " Price still needs confirmation."}`);
   const recommendedId = rec?.best ? workerIdOf(rec.best.worker) : "";
   const recommendedName = rec?.best ? workerNameOf(rec.best.worker) : "";
-  const message = firstText(raw.customer_message_draft, raw.draft_message, raw.last_message_draft, `Hi ${customer},\n\nYour job${site ? ` at ${site}` : ""} has been completed. We have reviewed the work${price ? ` and prepared your invoice for ${cash(price)}` : " and prepared the next admin step"}.\n\nPlease let us know if you need anything else.`);
+  const draftBase = { customer_name: customer, site_address: site, amount: price, meta: description };
   return {
     title,
     customer_name: customer,
@@ -136,19 +147,8 @@ function editableDraftFromPicked(picked, workers, jobs) {
     worker_notes: firstText(raw.worker_completion_notes, raw.completion_notes, raw.worker_notes, raw.job_notes, raw.notes, ""),
     invoice_status: firstText(raw.invoice_number, raw.draft_invoice_id, raw.invoice_id, raw.invoiced ? "Draft ready" : "", "Draft ready"),
     invoice_description: firstText(raw.ai_invoice_description, raw.invoice_description_draft, description),
-    message,
+    message: messageDraftFromPicked(picked, draftBase),
   };
-}
-
-function messageDraftFromPicked(picked, draft = {}) {
-  const raw = picked?.raw || {};
-  const customer = firstText(draft.customer_name, raw.customer_name, raw.client_name, raw.name, picked?.title, "there");
-  const site = firstText(draft.site_address, raw.address, raw.site_address, raw.job_address, raw.location);
-  const price = moneyNumber(draft.amount, picked?.amount, raw.price, raw.job_price, raw.fixed_price, raw.total, raw.amount, raw.subtotal, raw.hourly_total);
-  if (picked?.type === "invoice") return `Hi ${customer},\n\nYour invoice is ready for review.\n\n${draft?.meta || "This covers the completed service work."}\n\nThanks,\nChurvox`;
-  if (picked?.type === "quote") return `Hi ${customer},\n\nYour quote is ready for review.\n\n${draft?.meta || "Please check the scope and let us know if you would like to go ahead."}\n\nThanks,\nChurvox`;
-  if (picked?.type === "action") return firstText(raw.generated_message, raw.draft_message, raw.recommendation, raw.owner_facing_explanation, raw.reason, "AI prepared this action. Review before approving.");
-  return firstText(draft.message, raw.customer_message_draft, raw.draft_message, raw.last_message_draft, `Hi ${customer},\n\nYour job${site ? ` at ${site}` : ""} has been completed. We have reviewed the work${price ? ` and prepared your invoice for ${cash(price)}` : " and prepared the next admin step"}.\n\nPlease let us know if you need anything else.`);
 }
 
 function buildSituation(active, photos, draft) {
