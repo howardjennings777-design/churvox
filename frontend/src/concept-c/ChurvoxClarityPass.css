@@ -1,6 +1,6 @@
-/* CHURVOX_CLARITY_PASS_CALM_CARDS_20260527
-   Command Floor should feel simple:
-   Pick a lane -> open one Work Slip -> edit form -> approve.
+/* CHURVOX_WORK_SLIP_CLEAR_ORDER_20260527
+   Command Floor = pick a lane.
+   Work Slip = check the real job form first, then AI checks, then approve.
 */
 
 /* COMMAND FLOOR: clear, calm, not overloaded */
@@ -55,11 +55,7 @@
   text-transform: uppercase;
 }
 
-.xcf-approval-lane {
-  position: relative;
-  overflow: hidden;
-}
-
+.xcf-approval-lane { position: relative; overflow: hidden; }
 .xcf-approval-lane::after {
   position: absolute;
   right: 14px;
@@ -73,7 +69,6 @@
   letter-spacing: .08em;
   text-transform: uppercase;
 }
-
 .xcf-lane-amber::after { content: "Work"; }
 .xcf-lane-green::after { content: "Money"; }
 .xcf-lane-blue::after { content: "Worker"; }
@@ -87,8 +82,6 @@
   color: #1f2937 !important;
   font-weight: 800 !important;
 }
-
-/* One clean lane button only */
 .xcf-lane-primary {
   width: 100%;
   min-height: 46px;
@@ -96,59 +89,14 @@
   font-size: .82rem !important;
   font-weight: 950 !important;
 }
-
-.xcf-lane-primary::after {
-  content: "" !important;
-}
-
-.xcf-approval-lane .xcf-list {
-  border-top: 1px solid rgba(15,23,42,.07);
-  margin-top: 10px;
-  padding-top: 10px;
-}
-
-/* Keep only the top few examples visible so cards don't feel packed */
-.xcf-approval-lane .xcf-list .xcf-row:nth-of-type(n+4) {
-  display: none !important;
-}
-
-.xcf-row {
-  position: relative;
-  min-height: 44px !important;
-}
-
-/* Remove repeated row tags; the lane button already says what to do */
-.xcf-row::after {
-  content: "" !important;
-  display: none !important;
-}
-
-.xcf-row small {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.xcf-field-strip {
-  position: relative;
-  border: 1px solid rgba(15,23,42,.08);
-  border-radius: 24px;
-  background: rgba(255,255,255,.88);
-  box-shadow: 0 16px 38px rgba(15,23,42,.07);
-  padding: 12px 14px;
-}
-
-.xcf-field-strip::before {
-  content: "Field pulse";
-  display: block;
-  margin-bottom: 4px;
-  color: #64748b;
-  font-size: .62rem;
-  font-weight: 950;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-}
+.xcf-lane-primary::after { content: "" !important; }
+.xcf-approval-lane .xcf-list { border-top: 1px solid rgba(15,23,42,.07); margin-top: 10px; padding-top: 10px; }
+.xcf-approval-lane .xcf-list .xcf-row:nth-of-type(n+4) { display: none !important; }
+.xcf-row { position: relative; min-height: 44px !important; }
+.xcf-row::after { content: "" !important; display: none !important; }
+.xcf-row small { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.xcf-field-strip { position: relative; border: 1px solid rgba(15,23,42,.08); border-radius: 24px; background: rgba(255,255,255,.88); box-shadow: 0 16px 38px rgba(15,23,42,.07); padding: 12px 14px; }
+.xcf-field-strip::before { content: "Field pulse"; display: block; margin-bottom: 4px; color: #64748b; font-size: .62rem; font-weight: 950; letter-spacing: .1em; text-transform: uppercase; }
 
 /* WORKSPACE PAGES: light reminder only */
 .xcf-workspace .xcf-hero > div::after {
@@ -165,18 +113,27 @@
   font-weight: 950;
 }
 
-/* WORK SLIP: guide without clutter */
-.cfs-overlay .cfs-head {
-  position: relative;
+/* WORK SLIP: make the order obvious */
+.cfs-overlay .cfs-sheet {
+  display: grid;
 }
 
+.cfs-overlay .cfs-head { order: 1; position: relative; }
+.cfs-overlay .cfs-facts { order: 2; }
+.cfs-overlay .cfs-section-title { order: 3; }
+.cfs-overlay .cfs-job-form { order: 4; }
+.cfs-overlay .cfs-decision-grid { order: 5; }
+.cfs-overlay .cfs-lower { order: 6; }
+.cfs-overlay .cfs-notice { order: 7; }
+.cfs-overlay .cfs-actions { order: 8; }
+
 .cfs-overlay .cfs-head::after {
-  content: "Edit the form, then approve.";
+  content: "1. Fix red fields  2. Save changes  3. Approve";
   position: absolute;
   right: 142px;
   top: 18px;
-  max-width: 260px;
-  padding: 9px 11px;
+  max-width: 360px;
+  padding: 9px 12px;
   border-radius: 13px;
   color: #1d4ed8;
   background: #eff6ff;
@@ -191,9 +148,18 @@
   align-items: center;
   gap: 10px;
 }
-
+.cfs-section-title::before {
+  content: "Step 1";
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: .62rem;
+  font-weight: 950;
+  letter-spacing: .08em;
+}
 .cfs-section-title::after {
-  content: "The real job form.";
+  content: "Main thing to check. Red fields need owner input.";
   color: #64748b;
   font-size: .72rem;
   font-weight: 850;
@@ -205,7 +171,6 @@
   border-width: 2px;
   border-color: rgba(37,99,235,.28) !important;
 }
-
 .cfs-job-form article:first-child header::after {
   content: "Main form";
   margin-left: auto;
@@ -218,15 +183,40 @@
   text-transform: uppercase;
 }
 
-/* Do not stamp "editable" after every field; it made the form noisy */
-.cfs-field span::after {
-  content: "" !important;
-}
-
-.cfs-actions .primary {
+.cfs-decision-grid {
   position: relative;
+  padding-top: 28px;
+}
+.cfs-decision-grid::before {
+  content: "Step 2 · AI checks — use these to understand what Churvox prepared";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #2563eb;
+  font-size: .68rem;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
 }
 
+.cfs-lower {
+  position: relative;
+  padding-top: 28px;
+}
+.cfs-lower::before {
+  content: "Step 3 · Drafts, photos and final outcome";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #2563eb;
+  font-size: .68rem;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.cfs-field span::after { content: "" !important; }
+.cfs-actions .primary { position: relative; }
 .cfs-actions .primary::before {
   content: "Main action";
   position: absolute;
@@ -244,9 +234,7 @@
 }
 
 @media (max-width: 1220px) {
-  .xcf-approval-desk .xcf-hero > div {
-    padding-right: 22px;
-  }
+  .xcf-approval-desk .xcf-hero > div { padding-right: 22px; }
   .xcf-approval-desk .xcf-hero > div::after,
   .cfs-overlay .cfs-head::after {
     position: static;
@@ -260,12 +248,10 @@
 
 @media (max-width: 700px) {
   .xcf-approval-summary::before,
-  .xcf-approval-lanes::before {
-    position: static;
-    display: block;
-    margin: 0 0 8px;
-  }
-  .cfs-section-title {
-    display: grid;
-  }
+  .xcf-approval-lanes::before { position: static; display: block; margin: 0 0 8px; }
+  .cfs-section-title { display: grid; }
+  .cfs-decision-grid::before,
+  .cfs-lower::before { position: static; display: block; margin-bottom: 8px; }
+  .cfs-decision-grid,
+  .cfs-lower { padding-top: 0; }
 }
