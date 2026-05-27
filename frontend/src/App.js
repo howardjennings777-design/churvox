@@ -36,11 +36,7 @@ import PlatformUnlock from "./pages/admin/PlatformUnlock";
 import PublicQuotePage from "./pages/public/PublicQuotePage";
 import PublicInvoicePage from "./pages/public/PublicInvoicePage";
 import PublicClientPortalPage from "./pages/public/PublicClientPortalPage";
-import ProofToPaidPage from "./pages/ProofToPaidPage";
 import QAAuditorPage from "./pages/admin/QAAuditorPage";
-import AIControlRoomPage from "./pages/AIControlRoomPage";
-import AIOperatorApprovalsPage from "./pages/AIOperatorApprovalsPage";
-import AIOperatorSettingsPage from "./pages/AIOperatorSettingsPage";
 import HomePage from "./pages/marketing/ExecutiveHomePage";
 import PricingPage from "./pages/marketing/ExecutivePricingPage";
 import FeaturesPage from "./pages/marketing/ExecutiveFeaturesPage";
@@ -204,10 +200,10 @@ function App() {
             <Route path="/admin/login" element={<Navigate to="/login" replace />} />
             <Route path="/owner" element={<Navigate to="/admin" replace />} />
             <Route path="/owner/login" element={<Navigate to="/login" replace />} />
-            <Route path="/proof-to-paid" element={<BusinessRoute><ProofToPaidPage /></BusinessRoute>} />
-            <Route path="/ai-operator" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><AIControlRoomPage /></ErrorBoundary></BusinessRoute>} />
-            <Route path="/ai-operator/approvals" element={<BusinessRoute><AIOperatorApprovalsPage /></BusinessRoute>} />
-            <Route path="/ai-operator/settings" element={<BusinessRoute><AIOperatorSettingsPage /></BusinessRoute>} />
+            <Route path="/proof-to-paid" element={<BusinessRoute><Navigate to="/dashboard" replace /></BusinessRoute>} />
+            <Route path="/ai-operator" element={<BusinessRoute><Navigate to="/dashboard" replace /></BusinessRoute>} />
+            <Route path="/ai-operator/approvals" element={<BusinessRoute><Navigate to="/dashboard" replace /></BusinessRoute>} />
+            <Route path="/ai-operator/settings" element={<BusinessRoute><Navigate to="/settings" replace /></BusinessRoute>} />
             <Route path="/admin" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
             <Route path="/owner/dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
             <Route path="/platform-dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
@@ -235,16 +231,16 @@ function App() {
             <Route path="/invoices" element={<BusinessRoute><ConceptCPage area="invoices" /></BusinessRoute>} />
             <Route path="/invoices/new" element={<BusinessRoute><ConceptCFrame area="invoices"><InvoiceFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/invoices/:id" element={<BusinessRoute><ConceptCFrame area="invoices"><InvoiceDetailPage /></ConceptCFrame></BusinessRoute>} />
-            <Route path="/sms" element={<BusinessRoute><ConceptCPage area="sms" /></BusinessRoute>} />
+            <Route path="/sms" element={<BusinessRoute><Navigate to="/dashboard" replace /></BusinessRoute>} />
             <Route path="/reports" element={<ReportsRoute><ConceptCPage area="reports" /></ReportsRoute>} />
-            <Route path="/integrations" element={<BusinessRoute><ConceptCPage area="integrations" /></BusinessRoute>} />
+            <Route path="/integrations" element={<BusinessRoute><Navigate to="/dashboard" replace /></BusinessRoute>} />
             <Route path="/settings" element={<BusinessRoute><ConceptCPage area="settings" /></BusinessRoute>} />
             <Route path="/contact" element={<PrivateRoute><ConceptCFrame area="settings"><ContactPage /></ConceptCFrame></PrivateRoute>} />
             <Route path="/plans" element={<OwnerRoute><ConceptCFrame area="plans"><PlansPage /></ConceptCFrame></OwnerRoute>} />
             <Route path="/team" element={<TeamRoute><ConceptCPage area="team" /></TeamRoute>} />
-            <Route path="/notifications" element={<PrivateRoute><ConceptCPage area="notifications" /></PrivateRoute>} />
-            <Route path="/automation" element={<TeamRoute><ConceptCPage area="automation" /></TeamRoute>} />
-            <Route path="/automation/runs" element={<TeamRoute><ConceptCPage area="automation" /></TeamRoute>} />
+            <Route path="/notifications" element={<BusinessRoute><ConceptCPage area="notifications" /></BusinessRoute>} />
+            <Route path="/automation" element={<TeamRoute><Navigate to="/dashboard" replace /></TeamRoute>} />
+            <Route path="/automation/runs" element={<TeamRoute><Navigate to="/dashboard" replace /></TeamRoute>} />
             <Route path="/payroll" element={<PayrollRoute><ConceptCPage area="payroll" /></PayrollRoute>} />
             <Route path="/worker/jobs" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobsPage /></ConceptCFrame></WorkerRoute>} />
             <Route path="/worker/jobs/:id" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobDetailPage /></ConceptCFrame></WorkerRoute>} />
