@@ -6,6 +6,7 @@ import "./ConceptCPageExact.css";
 import "./ConceptCFullScreenSlip.css";
 import "./ConceptCWorkSlipTight.css";
 import "./ChurvoxClarityPass.css";
+import "./WorkSlipFixChecklist.css";
 
 const arr = (v) => Array.isArray(v) ? v : Array.isArray(v?.data) ? v.data : Array.isArray(v?.items) ? v.items : Array.isArray(v?.jobs) ? v.jobs : Array.isArray(v?.clients) ? v.clients : Array.isArray(v?.invoices) ? v.invoices : Array.isArray(v?.quotes) ? v.quotes : Array.isArray(v?.workers) ? v.workers : Array.isArray(v?.actions) ? v.actions : Array.isArray(v?.notifications) ? v.notifications : [];
 const str = (v) => String(v || "").trim();
@@ -230,19 +231,4 @@ async function runRecordAction(action, picked, draft, api, reload) {
       return `Could not assign worker: ${apiError(res)}`;
     }
     if (action === "save") { const endpoint = picked.type === "invoice" ? `/invoices/${id}` : picked.type === "quote" ? `/quotes/${id}` : picked.type === "client" ? `/clients/${id}` : `/jobs/${id}`; const res = await patchWithFallback(api, endpoint, titlePayload); if (apiOk(res)) { await reload(); return "Saved in this slip."; } return `Could not save: ${apiError(res)}`; }
-    if (action === "approve") { if (picked.type === "invoice") { const res = await patchWithFallback(api, `/invoices/${id}`, { ...titlePayload, status: "approved" }); if (apiOk(res)) { await reload(); return "Invoice approved."; } return `Could not approve: ${apiError(res)}`; } if (picked.type !== "job" && picked.type !== "work_review") return "Only jobs, work reviews and invoices can be approved from this slip."; const res = await patchWithFallback(api, `/jobs/${id}`, { ...titlePayload, owner_review_status: "approved", work_review_status: "approved", reviewed: true }); if (apiOk(res)) { await reload(); return "Work approved."; } return `Could not approve: ${apiError(res)}`; }
-    if (action === "invoice") { if (picked.type !== "job" && picked.type !== "work_review") return "Select a job or work review item before preparing an invoice."; const payload = invoicePayloadFromPicked(picked, draft); if (!payload.ok) return payload.error; const res = await api.post("/invoices", payload.data); if (!apiOk(res)) return `Could not prepare invoice: ${apiError(res)}`; const invoiceId = recordIdFromResponse(res); if (invoiceId && id) { try { await patchWithFallback(api, `/jobs/${id}`, { ...titlePayload, draft_invoice_id: invoiceId, invoice_description_draft: payload.data.description }); } catch (_err) {} } await reload(); return invoiceId ? `Draft invoice prepared: INV ${invoiceId}. Open invoice lane to review/send.` : "Draft invoice prepared. Open invoice lane to review/send."; }
-    if (action === "message") { const message = draft.message; if (!message) return "No message draft to save."; const endpoint = picked.type === "invoice" ? `/invoices/${id}` : picked.type === "quote" ? `/quotes/${id}` : picked.type === "client" ? `/clients/${id}` : `/jobs/${id}`; const res = await patchWithFallback(api, endpoint, { customer_message_draft: message, draft_message: message, last_message_draft: message }); if (apiOk(res)) { await reload(); return "Message draft saved. Nothing has been sent."; } return `Could not save message draft: ${apiError(res)}`; }
-  } catch (err) { return `Action failed: ${err?.message || "unknown error"}`; }
-  return "Action ready.";
-}
-
-export default function ConceptCPageExact({ area = "dashboard" }) {
-  const api = useApi();
-  const { get } = api;
-  const { data, loading, reload } = useLive(area, get);
-  const m = useMemo(() => build(data), [data]);
-  const [picked, setPicked] = useState(null);
-  const onAction = useCallback((action, record, draft) => runRecordAction(action, record, draft, api, reload), [api, reload]);
-  return <>{area === "dashboard" ? <Dashboard m={m} loading={loading} onPick={setPicked} /> : <Workspace area={area} m={m} loading={loading} onPick={setPicked} />}<CommandFloorApprovalSlip picked={picked} onClose={() => setPicked(null)} onAction={onAction} onPick={setPicked} workers={m.crew} jobs={m.jobs} /></>;
-}
+    if (action === "approve") { if (picked.type === "invoice"... (truncated)
