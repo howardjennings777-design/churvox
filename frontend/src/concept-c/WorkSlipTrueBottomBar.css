@@ -1,0 +1,21 @@
+/* CHURVOX_WORK_SLIP_TRUE_BOTTOM_BAR_20260527 */
+.cfs-overlay .cfs-sheet {
+  padding-bottom: 150px !important;
+}
+.cfs-overlay .cfs-actions {
+  position: fixed !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: 12px !important;
+  width: min(1460px, calc(100vw - 24px)) !important;
+  transform: translateX(-50%) !important;
+  z-index: 9999 !important;
+  margin: 0 !important;
+}
+@media (max-width: 560px) {
+  .cfs-overlay .cfs-actions {
+    bottom: 0 !important;
+    width: 100vw !important;
+    border-radius: 16px 16px 0 0 !important;
+  }
+}
