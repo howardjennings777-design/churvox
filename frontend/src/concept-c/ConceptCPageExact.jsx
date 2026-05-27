@@ -361,7 +361,21 @@ async function runRecordAction(action, picked, draft, api, reload) {
       work_approved: true,
       job_approved: true,
       approved_at: new Date().toISOString(),
-    }); if (apiOk(res)) { await reload(); return "Work approved."; } return `Could not approve: ${apiError(res)}`; }
+    }); if (apiOk(res)) {
+      // CHURVOX_WORK_APPROVED_LOCAL_NOTIFY_20260527
+      try {
+        await api.post("/notifications", {
+          type: "work_approved",
+          title: "Work approved",
+          message: `${picked?.title || "Completed work"} was approved from the Work Slip.`,
+          route: `/jobs/${id}`,
+          target_type: "job",
+          target_id: id,
+        });
+      } catch {}
+      await reload();
+      return "Work approved — ready for invoice/admin.";
+    } return `Could not approve: ${apiError(res)}`; }
     if (action === "invoice") { // CHURVOX_WORK_SLIP_LINKED_DRAFT_INVOICE_20260527
       // CHURVOX_WORK_SLIP_INVOICE_FALLBACK_20260527
       if (picked.type !== "job" && picked.type !== "work_review") return "Select a job or work review item before preparing an invoice.";
