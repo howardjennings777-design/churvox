@@ -1,4 +1,5 @@
 /* CHURVOX_DISPATCH_BOARD_PAGE_20260528 */
+/* CHURVOX_DISPATCH_BOARD_OPERATOR_UPGRADE_20260528 */
 
 .cdb-shell {
   min-height: 100vh;
@@ -20,7 +21,8 @@
 
 .cdb-hero > div,
 .cdb-hero > aside,
-.cdb-lane {
+.cdb-lane,
+.cdb-summary-strip article {
   border-radius: 30px;
   background: rgba(255, 253, 247, 0.9);
   border: 1px solid rgba(17, 24, 39, 0.12);
@@ -64,7 +66,9 @@
   align-content: center;
 }
 
-.cdb-hero aside small {
+.cdb-hero aside small,
+.cdb-summary-strip small,
+.cdb-lane header small {
   color: rgba(17, 24, 39, 0.5);
   font-size: 12px;
   font-weight: 950;
@@ -83,25 +87,44 @@
   font-weight: 750;
 }
 
+.cdb-summary-strip {
+  max-width: 1440px;
+  margin: 0 auto 18px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.cdb-summary-strip article {
+  padding: 18px;
+}
+
+.cdb-summary-strip b {
+  display: block;
+  margin-top: 4px;
+  font-size: 36px;
+  letter-spacing: -0.06em;
+}
+
 .cdb-board {
   max-width: 1440px;
   margin: 0 auto 22px;
   display: grid;
-  grid-template-columns: repeat(6, minmax(220px, 1fr));
+  grid-template-columns: repeat(6, minmax(240px, 1fr));
   gap: 14px;
   overflow-x: auto;
   padding-bottom: 8px;
 }
 
 .cdb-lane {
-  min-height: 520px;
+  min-height: 560px;
   padding: 16px;
 }
 
 .cdb-lane header {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 12px;
   align-items: center;
   margin-bottom: 12px;
 }
@@ -115,6 +138,13 @@
   border-radius: 999px;
   padding: 6px 10px;
   background: rgba(17, 24, 39, 0.08);
+}
+
+.cdb-lane header small {
+  grid-column: 1 / -1;
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 780;
 }
 
 .cdb-rows {
@@ -133,6 +163,10 @@
   text-decoration: none;
 }
 
+.cdb-job {
+  border: 1px solid rgba(17, 24, 39, 0.06);
+}
+
 .cdb-job strong {
   display: block;
   font-size: 14px;
@@ -140,10 +174,25 @@
 }
 
 .cdb-job small,
+.cdb-job em,
+.cdb-job span,
 .cdb-empty {
+  display: block;
+  margin-top: 5px;
   color: rgba(17, 24, 39, 0.58);
+  font-style: normal;
   font-weight: 750;
   line-height: 1.35;
+}
+
+.cdb-job span {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 5px 8px;
+  background: rgba(59, 130, 246, 0.10);
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 950;
 }
 
 .cdb-footer {
@@ -163,7 +212,8 @@
 }
 
 @media (max-width: 900px) {
-  .cdb-hero {
+  .cdb-hero,
+  .cdb-summary-strip {
     grid-template-columns: 1fr;
   }
 }
