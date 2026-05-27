@@ -1,4 +1,5 @@
 // CHURVOX_TOP_TIER_RUNTIME_PATCH_20260528
+// CHURVOX_CLIENT_MEMORY_POPUP_20260528
 // Safe additive runtime patch: exposes top-tier tools and adds Work Slip action buttons
 // without rewriting the fragile Work Slip JSX file.
 
@@ -37,6 +38,15 @@ async function cvRequest(path, options = {}) {
   return data;
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function notify(text) {
   const old = document.querySelector(".cv-top-tier-runtime-toast");
   if (old) old.remove();
@@ -52,7 +62,7 @@ function addStyle() {
   const style = document.createElement("style");
   style.id = "cv-top-tier-runtime-style";
   style.textContent = `
-    .cv-top-tier-runtime-strip{margin:16px 0;padding:14px;border-radius:22px;background:rgba(255,253,247,.86);border:1px solid rgba(17,24,39,.12);box-shadow:0 18px 44px rgba(17,24,39,.08);display:flex;gap:10px;align-items:center;flex-wrap:wrap}.cv-top-tier-runtime-strip b{font-weight:950;letter-spacing:-.03em}.cv-top-tier-runtime-strip a{border-radius:999px;padding:10px 13px;background:rgba(190,242,100,.22);color:#365314;text-decoration:none;font-weight:900;font-size:13px}.cv-top-tier-runtime-button{border-radius:999px!important;border:1px solid rgba(77,124,15,.26)!important;background:rgba(190,242,100,.20)!important;color:#365314!important;font-weight:950!important}.cv-top-tier-runtime-toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);z-index:2147483647;max-width:min(560px,calc(100vw - 28px));padding:13px 16px;border-radius:18px;background:#111827;color:#fffaf0;font-weight:900;box-shadow:0 26px 80px rgba(17,24,39,.3);text-align:center}.xcf-topbar nav a[href='/operator-tools'],.xcf-bottom-nav a[href='/operator-tools']{background:rgba(190,242,100,.22);color:#365314;border-radius:999px}@media(max-width:760px){.cv-top-tier-runtime-strip{display:grid}.cv-top-tier-runtime-strip a{width:100%;text-align:center}.cv-top-tier-runtime-button{width:100%}}`;
+    .cv-top-tier-runtime-strip{margin:16px 0;padding:14px;border-radius:22px;background:rgba(255,253,247,.86);border:1px solid rgba(17,24,39,.12);box-shadow:0 18px 44px rgba(17,24,39,.08);display:flex;gap:10px;align-items:center;flex-wrap:wrap}.cv-top-tier-runtime-strip b{font-weight:950;letter-spacing:-.03em}.cv-top-tier-runtime-strip a{border-radius:999px;padding:10px 13px;background:rgba(190,242,100,.22);color:#365314;text-decoration:none;font-weight:900;font-size:13px}.cv-top-tier-runtime-button{border-radius:999px!important;border:1px solid rgba(77,124,15,.26)!important;background:rgba(190,242,100,.20)!important;color:#365314!important;font-weight:950!important}.cv-top-tier-runtime-toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);z-index:2147483647;max-width:min(560px,calc(100vw - 28px));padding:13px 16px;border-radius:18px;background:#111827;color:#fffaf0;font-weight:900;box-shadow:0 26px 80px rgba(17,24,39,.3);text-align:center}.xcf-topbar nav a[href='/operator-tools'],.xcf-bottom-nav a[href='/operator-tools']{background:rgba(190,242,100,.22);color:#365314;border-radius:999px}.cv-client-memory-backdrop{position:fixed;inset:0;z-index:2147483646;background:rgba(17,24,39,.48);display:grid;place-items:center;padding:18px}.cv-client-memory-modal{width:min(980px,100%);max-height:min(860px,92vh);overflow:auto;border-radius:30px;background:#fffaf0;color:#111827;box-shadow:0 40px 120px rgba(17,24,39,.38);border:1px solid rgba(17,24,39,.12)}.cv-client-memory-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;padding:24px;border-bottom:1px solid rgba(17,24,39,.10)}.cv-client-memory-head p{margin:0 0 6px;color:#4d7c0f;font-size:12px;font-weight:950;letter-spacing:.14em;text-transform:uppercase}.cv-client-memory-head h2{margin:0;font-size:34px;letter-spacing:-.055em}.cv-client-memory-head button{border:0;border-radius:999px;background:#111827;color:#fffaf0;padding:10px 13px;font-weight:950;cursor:pointer}.cv-client-memory-body{display:grid;gap:14px;padding:18px}.cv-client-memory-card{border-radius:22px;background:rgba(255,253,247,.92);border:1px solid rgba(17,24,39,.10);padding:16px}.cv-client-memory-card h3{margin:0 0 10px;font-size:20px;letter-spacing:-.035em}.cv-client-memory-card p,.cv-client-memory-card small{color:rgba(17,24,39,.66);font-weight:750;line-height:1.45}.cv-client-memory-list{display:grid;gap:8px}.cv-client-memory-row{border-radius:16px;background:rgba(17,24,39,.045);padding:11px}.cv-client-memory-row b{display:block;letter-spacing:-.02em}.cv-client-memory-row small{display:block;margin-top:4px}@media(max-width:760px){.cv-top-tier-runtime-strip{display:grid}.cv-top-tier-runtime-strip a{width:100%;text-align:center}.cv-top-tier-runtime-button{width:100%}.cv-client-memory-head{display:grid}.cv-client-memory-head h2{font-size:28px}}`;
   document.head.appendChild(style);
 }
 
@@ -87,6 +97,51 @@ function idFromHref(prefix) {
   const link = [...document.querySelectorAll(".cfs-actions a[href], .cfs-sheet a[href]")].find((a) => String(a.getAttribute("href") || "").startsWith(prefix));
   const href = link?.getAttribute("href") || "";
   return href.split("/").filter(Boolean).pop() || "";
+}
+
+function firstText(...values) {
+  return values.find((v) => String(v || "").trim()) || "";
+}
+
+function recordTitle(row, fallback) {
+  return firstText(row?.title, row?.job_name, row?.invoice_number, row?.quote_number, row?.customer_name, row?.client_name, fallback);
+}
+
+function showClientMemory(memory) {
+  const old = document.querySelector(".cv-client-memory-backdrop");
+  if (old) old.remove();
+
+  const client = memory?.client || {};
+  const jobs = Array.isArray(memory?.last_jobs) ? memory.last_jobs.slice(0, 6) : [];
+  const invoices = Array.isArray(memory?.last_invoices) ? memory.last_invoices.slice(0, 6) : [];
+  const quotes = Array.isArray(memory?.last_quotes) ? memory.last_quotes.slice(0, 4) : [];
+  const warnings = firstText(memory?.warnings, client?.warnings, client?.access_notes, client?.notes, "No warnings saved.");
+  const preferredWorker = firstText(memory?.preferred_worker, client?.preferred_worker, client?.preferred_worker_id, "No preferred worker set.");
+
+  const listRows = (rows, fallback) => rows.length
+    ? rows.map((row) => `<div class="cv-client-memory-row"><b>${escapeHtml(recordTitle(row, fallback))}</b><small>${escapeHtml(firstText(row?.status, row?.address, row?.site_address, row?.created_at, "Record saved"))}</small></div>`).join("")
+    : `<div class="cv-client-memory-row"><small>No records found yet.</small></div>`;
+
+  const el = document.createElement("div");
+  el.className = "cv-client-memory-backdrop";
+  el.innerHTML = `
+    <section class="cv-client-memory-modal" role="dialog" aria-modal="true" aria-label="Client memory">
+      <header class="cv-client-memory-head">
+        <div><p>Client memory</p><h2>${escapeHtml(firstText(client?.name, client?.customer_name, "Client"))}</h2></div>
+        <button type="button" data-cv-client-memory-close>Close</button>
+      </header>
+      <div class="cv-client-memory-body">
+        <article class="cv-client-memory-card"><h3>Warnings / notes</h3><p>${escapeHtml(warnings)}</p></article>
+        <article class="cv-client-memory-card"><h3>Preferred worker</h3><p>${escapeHtml(preferredWorker)}</p></article>
+        <article class="cv-client-memory-card"><h3>Recent jobs</h3><div class="cv-client-memory-list">${listRows(jobs, "Job")}</div></article>
+        <article class="cv-client-memory-card"><h3>Recent invoices</h3><div class="cv-client-memory-list">${listRows(invoices, "Invoice")}</div></article>
+        <article class="cv-client-memory-card"><h3>Recent quotes</h3><div class="cv-client-memory-list">${listRows(quotes, "Quote")}</div></article>
+      </div>
+    </section>`;
+  el.addEventListener("click", (event) => {
+    if (event.target === el || event.target?.matches?.("[data-cv-client-memory-close]")) el.remove();
+  });
+  document.body.appendChild(el);
 }
 
 function addButton(actions, label, handler) {
@@ -142,9 +197,7 @@ function ensureWorkSlipButtons() {
     if (!id) throw new Error("No client record link found in this Work Slip yet.");
     const data = await cvRequest(`/clients/${encodeURIComponent(id)}/memory`);
     const memory = data.memory || data?.data?.memory || {};
-    const jobs = Array.isArray(memory.last_jobs) ? memory.last_jobs.length : 0;
-    const invoices = Array.isArray(memory.last_invoices) ? memory.last_invoices.length : 0;
-    notify(`Client memory: ${jobs} recent jobs, ${invoices} recent invoices.`);
+    showClientMemory(memory);
   });
 
   addButton(actions, "Audit trail", async () => {
