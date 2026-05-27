@@ -1,5 +1,6 @@
 // CHURVOX_TRADE_PRESETS_PAGE_20260528
 // CHURVOX_TRADE_PRESETS_ACTIVE_WORKFLOW_20260528
+// CHURVOX_TRADE_PRESETS_HOOK_NAME_FIX_20260528
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getTradePresets } from "../concept-c/churvoxTopTierApi";
@@ -63,7 +64,7 @@ export default function TradePresetsPage() {
     };
   }, []);
 
-  function usePreset(preset) {
+  function applyPreset(preset) {
     saveActivePreset(preset);
     setActivePreset(preset);
     setNotice(`${preset.name} is now your active trade preset on this device.`);
@@ -79,7 +80,7 @@ export default function TradePresetsPage() {
   }
 
   return (
-    <main className="ctp-shell" data-version="CHURVOX_TRADE_PRESETS_PAGE_20260528 CHURVOX_TRADE_PRESETS_ACTIVE_WORKFLOW_20260528">
+    <main className="ctp-shell" data-version="CHURVOX_TRADE_PRESETS_PAGE_20260528 CHURVOX_TRADE_PRESETS_ACTIVE_WORKFLOW_20260528 CHURVOX_TRADE_PRESETS_HOOK_NAME_FIX_20260528">
       <section className="ctp-hero">
         <div>
           <p>TRADE PRESETS</p>
@@ -120,7 +121,7 @@ export default function TradePresetsPage() {
                 ))}
               </div>
               <div className="ctp-actions">
-                <button type="button" onClick={() => usePreset(preset)}>{active ? "Active" : "Use preset"}</button>
+                <button type="button" onClick={() => applyPreset(preset)}>{active ? "Active" : "Use preset"}</button>
                 <button type="button" onClick={() => copyInvoiceLine(preset)}>Copy invoice wording</button>
                 <Link to="/jobs/new">Start job</Link>
               </div>
