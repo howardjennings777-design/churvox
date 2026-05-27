@@ -30,27 +30,29 @@ function photoUrl(photo) {
 function evidencePhotos(raw = {}) {
   const buckets = [raw.photos, raw.job_photos, raw.worker_photos, raw.completion_photos, raw.photo_urls, raw.images, raw.attachments];
   const seen = new Set();
-  return buckets.flatMap((bucket) => Array.isArray(bucket) ? bucket : bucket ? [bucket] : [])
-    .map((photo, index) => ({ url: photoUrl(photo), label: typeof photo === "string" ? `Evidence ${index + 1}` : firstText(photo.label, photo.caption, photo.filename, photo.name, photo.title, `Evidence ${index + 1}`) }))
-    .filter((photo) => {
-      const key = photo.url || photo.label;
-      if (!key || seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
+  return buckets.flatMap((bucket) => Array.isArray(bucket) ? bucket : bucket ? [bucket] : []).map((photo, index) => ({
+    url: photoUrl(photo),
+    label: typeof photo === "string" ? `Evidence ${index + 1}` : firstText(photo.label, photo.caption, photo.filename, photo.name, photo.title, `Evidence ${index + 1}`),
+  })).filter((photo) => {
+    const key = photo.url || photo.label;
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
-function workerRaw(worker) { return worker?.raw || worker || {}; }
-function workerNameOf(worker) { const raw = workerRaw(worker); return firstText(raw.name, raw.full_name, raw.email, worker?.title, worker?.name, "Worker"); }
-function workerIdOf(worker) { return idOf(workerRaw(worker)) || idOf(worker); }
-function workerRoleOf(worker) { const raw = workerRaw(worker); return low(raw.role || raw.position || raw.type || worker?.raw?.role || worker?.meta); }
-function workerAreaOf(worker) { const raw = workerRaw(worker); return low(raw.region || raw.area || raw.suburb || raw.zone || raw.base_area || raw.location); }
+function rawOf(worker) { return worker?.raw || worker || {}; }
+function workerNameOf(worker) { const raw = rawOf(worker); return firstText(raw.name, raw.full_name, raw.email, worker?.title, worker?.name, "Worker"); }
+function workerIdOf(worker) { return idOf(rawOf(worker)) || idOf(worker); }
+function workerRoleOf(worker) { const raw = rawOf(worker); return low(raw.role || raw.position || raw.type || worker?.meta); }
+function workerAreaOf(worker) { const raw = rawOf(worker); return low(raw.region || raw.area || raw.suburb || raw.zone || raw.location); }
 function jobAreaOf(job) { const raw = job?.raw || job || {}; return low(raw.region || raw.area || raw.suburb || raw.zone || raw.address || raw.site_address || raw.job_address || raw.location); }
 function assignedWorkerIdOf(job) { const raw = job?.raw || job || {}; return firstText(raw.assigned_worker_id, raw.worker_id, raw.assigned_to, raw.assigned_user_id); }
 function assignedWorkerNameOf(job) { const raw = job?.raw || job || {}; return firstText(raw.assigned_worker_name, raw.worker_name, raw.assigned_to_name, raw.assigned_worker_email); }
 function isOpenJob(job) { const s = low((job?.raw || job || {}).status || job?.status); return !["completed", "complete", "done", "cancelled", "canceled", "paid"].includes(s); }
+
 function isWorkerBlocked(worker) {
-  const raw = workerRaw(worker);
+  const raw = rawOf(worker);
   const status = low(raw.status || raw.availability || raw.active_status || worker?.state);
   const role = workerRoleOf(worker);
   if (raw.disabled || raw.archived || raw.is_active === false || raw.active === false) return "worker is inactive";
@@ -58,10 +60,11 @@ function isWorkerBlocked(worker) {
   if (["payroll", "office", "admin", "owner", "accountant"].some((x) => role.includes(x))) return `${role} role is not a field-worker role`;
   return "";
 }
+
 function workerHasActiveConflict(worker, jobs = [], picked) {
   const wid = workerIdOf(worker);
   const wname = low(workerNameOf(worker));
-  const raw = workerRaw(worker);
+  const raw = rawOf(worker);
   const activeJob = firstText(raw.current_job_id, raw.active_job_id, raw.current_job_title, raw.active_job_title);
   if (activeJob) return `already active on ${activeJob}`;
   const conflicts = (jobs || []).filter((job) => {
@@ -71,9 +74,9 @@ function workerHasActiveConflict(worker, jobs = [], picked) {
     const jname = low(assignedWorkerNameOf(job));
     return Boolean((wid && jid && wid === jid) || (wname && jname && wname === jname));
   });
-  if (conflicts.length) return `already assigned to ${conflicts.length} open job${conflicts.length === 1 ? "" : "s"}`;
-  return "";
+  return conflicts.length ? `already assigned to ${conflicts.length} open job${conflicts.length === 1 ? "" : "s"}` : "";
 }
+
 function recommendWorkerForJob(picked, workers = [], jobs = []) {
   const candidates = (workers || []).filter(Boolean).map((worker) => {
     const blocked = isWorkerBlocked(worker);
@@ -88,8 +91,7 @@ function recommendWorkerForJob(picked, workers = [], jobs = []) {
     score += 50; reasons.push("no active conflict found");
     if (workerArea && jobArea && (jobArea.includes(workerArea) || workerArea.includes(jobArea))) { score += 25; reasons.push("area match"); }
     if (role.includes("worker") || role.includes("field") || role.includes("manager")) { score += 12; reasons.push(`${role || "field"} role can take jobs`); }
-    if (low(worker?.state).includes("available") || low(workerRaw(worker).availability).includes("available")) { score += 10; reasons.push("marked available"); }
-    if (!reasons.length) reasons.push("best available team member");
+    if (low(worker?.state).includes("available") || low(rawOf(worker).availability).includes("available")) { score += 10; reasons.push("marked available"); }
     return { worker, score, blocked, conflict, reasons };
   }).sort((a, b) => b.score - a.score);
   const best = candidates.find((c) => c.score > 0) || null;
@@ -98,7 +100,7 @@ function recommendWorkerForJob(picked, workers = [], jobs = []) {
     best,
     blocked,
     summary: best ? `${workerNameOf(best.worker)} is recommended because ${best.reasons.join(", ")}.` : "No conflict-free field worker was found from the loaded team list.",
-    warning: best ? "Owner can still change the worker before assigning." : "Choose manually or clear a worker conflict first."
+    warning: best ? "Owner can still change the worker before assigning." : "Choose manually or clear a worker conflict first.",
   };
 }
 
@@ -179,12 +181,13 @@ export default function CommandFloorApprovalSlip({ picked, onClose, onAction, on
 
   const active = localPicked || picked;
   const photos = useMemo(() => evidencePhotos(active?.raw || {}), [active]);
+  const isAction = active?.type === "action";
+  const isJobLike = active?.type === "job" || active?.type === "work_review";
+  const recommendation = useMemo(() => isJobLike && active ? recommendWorkerForJob(active, workers, jobs) : null, [active, isJobLike, workers, jobs]);
+
   if (!active) return null;
   if (active.type === "action_group") return <LaneSlip active={active} onClose={onClose} onPick={onPick} />;
 
-  const isAction = active.type === "action";
-  const isJobLike = active.type === "job" || active.type === "work_review";
-  const recommendation = useMemo(() => isJobLike ? recommendWorkerForJob(active, workers, jobs) : null, [active, isJobLike, workers, jobs]);
   const brief = approvalBrief(active, draft, recommendation);
 
   const run = async (action) => {
