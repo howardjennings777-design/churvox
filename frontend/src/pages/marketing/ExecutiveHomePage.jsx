@@ -22,25 +22,31 @@ const steps = [
   ["Owner approves", "Open one Work Slip, adjust if needed, then approve."],
 ];
 
+export function Nav() {
+  return (
+    <nav className="cvx-home-nav">
+      <Link to="/" className="cvx-home-brand">
+        <span className="cvx-home-brand-mark">C</span>
+        <span>
+          <b>Churvox</b>
+          <small>AI Operator for trade businesses</small>
+        </span>
+      </Link>
+
+      <div className="cvx-home-links">
+        <Link to="/features">Features</Link>
+        <Link to="/pricing">Pricing</Link>
+        <Link to="/login">Log in</Link>
+        <Link to="/signup" className="cvx-nav-cta">Start free</Link>
+      </div>
+    </nav>
+  );
+}
+
 export default function ExecutiveHomePage() {
   return (
     <main className="cvx-home" data-version="CHURVOX_WOW_LANDING_20260527">
-      <nav className="cvx-home-nav">
-        <Link to="/" className="cvx-home-brand">
-          <span className="cvx-home-brand-mark">C</span>
-          <span>
-            <b>Churvox</b>
-            <small>AI Operator for trade businesses</small>
-          </span>
-        </Link>
-
-        <div className="cvx-home-links">
-          <Link to="/features">Features</Link>
-          <Link to="/pricing">Pricing</Link>
-          <Link to="/login">Log in</Link>
-          <Link to="/signup" className="cvx-nav-cta">Start free</Link>
-        </div>
-      </nav>
+      <Nav />
 
       <section className="cvx-hero">
         <div className="cvx-hero-copy">
