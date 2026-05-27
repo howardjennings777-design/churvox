@@ -1,0 +1,96 @@
+/* CHURVOX_WORKSPACE_GUIDE_REAL_COLUMNS_20260527 */
+
+.xcf-workspace {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 360px !important;
+  gap: 14px !important;
+  align-items: start !important;
+}
+
+.xcf-workspace .xcf-topbar,
+.xcf-workspace .xcf-bottom-nav {
+  grid-column: 1 / -1 !important;
+}
+
+.xcf-workspace .xcf-hero {
+  display: contents !important;
+}
+
+.xcf-workspace .xcf-hero::before {
+  display: none !important;
+}
+
+.xcf-workspace .xcf-hero > div {
+  grid-column: 1 / -1 !important;
+  padding: 22px 26px !important;
+  max-width: none !important;
+  border: 1px solid rgba(15,23,42,.08) !important;
+  border-radius: 28px !important;
+  background: linear-gradient(135deg, rgba(255,255,255,.96), rgba(239,246,255,.94)) !important;
+  box-shadow: 0 18px 42px rgba(15,23,42,.08) !important;
+}
+
+.xcf-workspace .xcf-workspace-list {
+  grid-column: 1 !important;
+  grid-row: 3 !important;
+  margin-right: 0 !important;
+}
+
+.xcf-workspace .xcf-workspace-guide {
+  grid-column: 2 !important;
+  grid-row: 3 !important;
+  position: sticky !important;
+  top: 86px !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  align-self: start !important;
+  display: grid !important;
+  gap: 12px !important;
+  padding: 20px !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+}
+
+.xcf-workspace .xcf-workspace-guide b,
+.xcf-workspace .xcf-workspace-guide em,
+.xcf-workspace .xcf-workspace-guide strong,
+.xcf-workspace .xcf-workspace-guide span {
+  display: block !important;
+  width: auto !important;
+  max-width: none !important;
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+}
+
+.xcf-workspace .xcf-workspace-guide b {
+  font-size: 1.15rem !important;
+  line-height: 1.18 !important;
+}
+
+.xcf-workspace .xcf-workspace-guide em {
+  font-size: .9rem !important;
+  line-height: 1.45 !important;
+}
+
+@media (max-width: 1100px) {
+  .xcf-workspace {
+    display: block !important;
+  }
+
+  .xcf-workspace .xcf-hero {
+    display: block !important;
+  }
+
+  .xcf-workspace .xcf-workspace-guide {
+    position: static !important;
+    width: auto !important;
+    margin: 0 0 14px !important;
+  }
+
+  .xcf-workspace .xcf-workspace-list {
+    margin-right: 0 !important;
+  }
+}
