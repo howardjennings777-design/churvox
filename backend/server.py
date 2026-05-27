@@ -11526,6 +11526,322 @@ async def churvox_complete_job_for_owner_review(job_id: str, payload: dict = Bod
     }
 
 
+
+
+# CHURVOX_TOP_TIER_BACKEND_FOUNDATIONS_20260528
+# Additive launch-safe AI Operator foundations:
+# 1 proof packs, 2 customer proof page data, 3 AI audit trail, 4 undo/reopen, 5 client memory,
+# 6 worker voice notes, 7 trade presets, 8 approval-first message drafts,
+# 9 dispatch board, 10 offline sync queue.
+
+def _cv_top_now():
+    return datetime.now(timezone.utc)
+
+def _cv_top_id():
+    try:
+        return secrets.token_urlsafe(12)
+    except Exception:
+        return str(int(_cv_top_now().timestamp()))
+
+def _cv_top_str(value):
+    return str(value or "").strip()
+
+def _cv_top_business_id(user: dict):
+    try:
+        return _resolve_business_id(user)
+    except Exception:
+        return _cv_top_str((user or {}).get("business_id") or (user or {}).get("id") or (user or {}).get("_id"))
+
+def _cv_top_owner_id(user: dict):
+    try:
+        return _resolve_owner_id(user)
+    except Exception:
+        return _cv_top_str((user or {}).get("id") or (user or {}).get("_id") or (user or {}).get("user_id"))
+
+def _cv_top_doc(doc):
+    if not doc:
+        return doc
+    d = dict(doc)
+    if "_id" in d:
+        d["id"] = str(d.pop("_id"))
+    for k, v in list(d.items()):
+        if hasattr(v, "isoformat"):
+            d[k] = v.isoformat()
+        elif isinstance(v, ObjectId):
+            d[k] = str(v)
+    return d
+
+def _cv_top_docs(rows):
+    return [_cv_top_doc(x) for x in rows]
+
+async def _cv_top_find_job(job_id: str, user: dict):
+    business_id = _cv_top_business_id(user)
+    owner_id = _cv_top_owner_id(user)
+    possible = []
+    if ObjectId.is_valid(str(job_id)):
+        possible.append({"_id": ObjectId(job_id)})
+    possible.append({"id": str(job_id)})
+
+    for base in possible:
+        job = await db.jobs.find_one({
+            **base,
+            "$or": [
+                {"business_id": business_id},
+                {"business_id": str(business_id)},
+                {"owner_id": owner_id},
+                {"assigned_worker_id": _cv_top_str(user.get("id"))},
+                {"assigned_to": _cv_top_str(user.get("id"))},
+            ],
+        })
+        if job:
+            return job
+    return None
+
+async def _cv_top_audit(user: dict, action: str, target_type: str = "", target_id: str = "", before=None, after=None, note: str = ""):
+    business_id = _cv_top_business_id(user)
+    row = {
+        "id": _cv_top_id(),
+        "business_id": business_id,
+        "actor_id": _cv_top_owner_id(user),
+        "actor_email": user.get("email"),
+        "action": action,
+        "target_type": target_type,
+        "target_id": target_id,
+        "before": before or {},
+        "after": after or {},
+        "note": note,
+        "created_at": _cv_top_now(),
+    }
+    try:
+        await db.ai_audit_log.insert_one(row)
+    except Exception as e:
+        print("CV_TOP_AUDIT_ERROR", e)
+    return row
+
+@api_router.get("/ai/audit-log")
+async def churvox_ai_audit_log(limit: int = 100, current_user: dict = Depends(get_current_user)):
+    business_id = _cv_top_business_id(current_user)
+    rows = await db.ai_audit_log.find({"business_id": business_id}).sort("created_at", -1).limit(min(max(limit, 1), 300)).to_list(length=min(max(limit, 1), 300))
+    return {"success": True, "items": _cv_top_docs(rows)}
+
+@api_router.post("/ai/audit-log")
+async def churvox_ai_audit_log_create(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    row = await _cv_top_audit(
+        current_user,
+        _cv_top_str(payload.get("action") or "manual_note"),
+        _cv_top_str(payload.get("target_type")),
+        _cv_top_str(payload.get("target_id")),
+        payload.get("before") or {},
+        payload.get("after") or {},
+        _cv_top_str(payload.get("note")),
+    )
+    return {"success": True, "item": _cv_top_doc(row)}
+
+@api_router.post("/work-slips/{job_id}/reopen")
+async def churvox_reopen_work_slip(job_id: str, current_user: dict = Depends(get_current_user)):
+    job = await _cv_top_find_job(job_id, current_user)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    now = _cv_top_now()
+    patch = {
+        "owner_review_status": "ready_for_review",
+        "work_review_status": "ready_for_review",
+        "approval_status": "reopened",
+        "command_floor_status": "ready_for_owner_review",
+        "reviewed": False,
+        "owner_approved": False,
+        "work_approved": False,
+        "job_approved": False,
+        "reopened_at": now,
+        "updated_at": now,
+    }
+    await db.jobs.update_one({"_id": job["_id"]}, {"$set": patch})
+    await _cv_top_audit(current_user, "reopen_work_slip", "job", str(job["_id"]), before=_cv_top_doc(job), after=patch, note="Owner reopened Work Slip.")
+    return {"success": True, "message": "Work Slip reopened", "job_id": str(job["_id"])}
+
+@api_router.get("/clients/{client_id}/memory")
+async def churvox_client_memory(client_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = _cv_top_business_id(current_user)
+    client = None
+    if ObjectId.is_valid(str(client_id)):
+        client = await db.clients.find_one({"_id": ObjectId(client_id), "business_id": business_id})
+    if not client:
+        client = await db.clients.find_one({"id": str(client_id), "business_id": business_id})
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    cid = str(client.get("_id") or client.get("id") or client_id)
+    jobs = await db.jobs.find({"business_id": business_id, "$or": [{"client_id": cid}, {"customer_name": client.get("name")}, {"client_name": client.get("name")}]}).sort("created_at", -1).limit(20).to_list(length=20)
+    invoices = await db.invoices.find({"business_id": business_id, "$or": [{"client_id": cid}, {"customer_name": client.get("name")}]}).sort("created_at", -1).limit(20).to_list(length=20)
+    quotes = await db.quotes.find({"business_id": business_id, "$or": [{"client_id": cid}, {"customer_name": client.get("name")}]}).sort("created_at", -1).limit(20).to_list(length=20)
+
+    memory = {
+        "client": _cv_top_doc(client),
+        "last_jobs": _cv_top_docs(jobs),
+        "last_invoices": _cv_top_docs(invoices),
+        "last_quotes": _cv_top_docs(quotes),
+        "warnings": client.get("warnings") or client.get("access_notes") or client.get("notes") or "",
+        "preferred_worker": client.get("preferred_worker") or client.get("preferred_worker_id") or "",
+        "pricing_history": [j for j in _cv_top_docs(jobs) if j.get("price") or j.get("job_price") or j.get("amount")],
+    }
+    return {"success": True, "memory": memory}
+
+@api_router.post("/proof-packs/from-job/{job_id}")
+async def churvox_create_proof_pack_from_job(job_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    job = await _cv_top_find_job(job_id, current_user)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    business_id = _cv_top_business_id(current_user)
+    now = _cv_top_now()
+    public_token = job.get("proof_public_token") or _cv_top_id()
+
+    photos = payload.get("photos") or job.get("photos") or job.get("worker_photos") or job.get("job_photos") or []
+    if not isinstance(photos, list):
+        photos = []
+
+    pack = {
+        "id": _cv_top_id(),
+        "business_id": business_id,
+        "job_id": str(job.get("_id") or job.get("id") or job_id),
+        "client_id": job.get("client_id"),
+        "customer_name": job.get("customer_name") or job.get("client_name") or payload.get("customer_name") or "",
+        "job_title": job.get("title") or job.get("job_name") or "Completed work",
+        "status": "draft",
+        "public_token": public_token,
+        "owner_message": payload.get("owner_message") or job.get("customer_message_draft") or "",
+        "ai_summary": payload.get("ai_summary") or job.get("invoice_description_draft") or job.get("worker_notes") or job.get("notes") or "",
+        "photos": photos,
+        "invoice_id": job.get("invoice_id") or job.get("draft_invoice_id"),
+        "quote_id": job.get("quote_id"),
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    existing = await db.customer_proof_packs.find_one({"business_id": business_id, "job_id": pack["job_id"]})
+    if existing:
+        await db.customer_proof_packs.update_one({"_id": existing["_id"]}, {"$set": {**pack, "id": existing.get("id") or pack["id"], "created_at": existing.get("created_at") or now}})
+        row = await db.customer_proof_packs.find_one({"_id": existing["_id"]})
+    else:
+        await db.customer_proof_packs.insert_one(pack)
+        row = pack
+
+    await db.jobs.update_one({"_id": job["_id"]}, {"$set": {"proof_pack_id": row.get("id"), "proof_public_token": public_token, "updated_at": now}})
+    await _cv_top_audit(current_user, "prepare_customer_proof_pack", "job", str(job.get("_id")), after={"proof_pack_id": row.get("id")})
+    return {"success": True, "proof_pack": _cv_top_doc(row), "public_path": f"/public/proof/{public_token}"}
+
+@api_router.get("/proof-packs")
+async def churvox_list_proof_packs(current_user: dict = Depends(get_current_user)):
+    business_id = _cv_top_business_id(current_user)
+    rows = await db.customer_proof_packs.find({"business_id": business_id}).sort("updated_at", -1).limit(200).to_list(length=200)
+    return {"success": True, "items": _cv_top_docs(rows)}
+
+@api_router.get("/public/proof/{token}")
+async def churvox_public_proof_pack(token: str):
+    pack = await db.customer_proof_packs.find_one({"public_token": token})
+    if not pack:
+        raise HTTPException(status_code=404, detail="Proof pack not found")
+    return {"success": True, "proof_pack": _cv_top_doc(pack)}
+
+@api_router.post("/worker/voice-notes/draft")
+async def churvox_worker_voice_note_draft(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = _cv_top_business_id(current_user)
+    now = _cv_top_now()
+    raw_note = _cv_top_str(payload.get("note") or payload.get("transcript") or payload.get("text"))
+    job_id = _cv_top_str(payload.get("job_id"))
+
+    draft = {
+        "id": _cv_top_id(),
+        "business_id": business_id,
+        "job_id": job_id,
+        "worker_id": _cv_top_owner_id(current_user),
+        "raw_note": raw_note,
+        "job_note": raw_note,
+        "invoice_description": raw_note,
+        "customer_message": f"Work has been completed. Notes: {raw_note}" if raw_note else "",
+        "status": "draft",
+        "created_at": now,
+        "updated_at": now,
+    }
+    await db.worker_voice_note_drafts.insert_one(draft)
+    if job_id:
+        job = await _cv_top_find_job(job_id, current_user)
+        if job:
+            await db.jobs.update_one({"_id": job["_id"]}, {"$set": {"worker_notes": raw_note, "invoice_description_draft": raw_note, "updated_at": now}})
+    return {"success": True, "draft": _cv_top_doc(draft)}
+
+@api_router.get("/worker/voice-notes")
+async def churvox_worker_voice_notes(current_user: dict = Depends(get_current_user)):
+    business_id = _cv_top_business_id(current_user)
+    rows = await db.worker_voice_note_drafts.find({"business_id": business_id}).sort("created_at", -1).limit(100).to_list(length=100)
+    return {"success": True, "items": _cv_top_docs(rows)}
+
+@api_router.get("/trade-presets")
+async def churvox_trade_presets():
+    presets = [
+        {"id": "lawn_care", "name": "Lawn Care", "job_types": ["Mow", "Edge", "Hedge trim", "Spray weeds"], "invoice_line": "Lawn and grounds maintenance completed."},
+        {"id": "cleaning", "name": "Cleaning", "job_types": ["General clean", "Deep clean", "Window clean", "End of tenancy"], "invoice_line": "Cleaning service completed."},
+        {"id": "handyman", "name": "Handyman", "job_types": ["Repair", "Install", "Maintenance", "Inspection"], "invoice_line": "Handyman maintenance work completed."},
+        {"id": "landscaping", "name": "Landscaping", "job_types": ["Planting", "Mulch", "Garden tidy", "Soft landscaping"], "invoice_line": "Landscaping work completed."},
+        {"id": "plumbing", "name": "Plumbing", "job_types": ["Repair", "Inspection", "Install", "Maintenance"], "invoice_line": "Plumbing work completed."},
+        {"id": "electrical", "name": "Electrical", "job_types": ["Repair", "Install", "Inspection", "Maintenance"], "invoice_line": "Electrical work completed."},
+        {"id": "pest_control", "name": "Pest Control", "job_types": ["Treatment", "Inspection", "Follow-up", "Prevention"], "invoice_line": "Pest control service completed."},
+    ]
+    return {"success": True, "presets": presets}
+
+@api_router.get("/dispatch/board")
+async def churvox_dispatch_board(current_user: dict = Depends(get_current_user)):
+    business_id = _cv_top_business_id(current_user)
+    jobs = await db.jobs.find({"business_id": business_id}).sort("created_at", -1).limit(500).to_list(length=500)
+    lanes = {
+        "unassigned": [],
+        "assigned": [],
+        "in_progress": [],
+        "completed": [],
+        "needs_review": [],
+        "ready_to_invoice": [],
+    }
+    for job in _cv_top_docs(jobs):
+        status = _cv_top_str(job.get("status")).lower()
+        if job.get("owner_review_status") in {"ready_for_review", "reopened"} or job.get("work_review_status") in {"ready_for_review", "reopened"}:
+            lanes["needs_review"].append(job)
+        elif job.get("invoice_prepared") or job.get("draft_invoice_id") or job.get("invoice_id"):
+            lanes["ready_to_invoice"].append(job)
+        elif status in {"completed", "complete", "done"} or job.get("completed_at"):
+            lanes["completed"].append(job)
+        elif status in {"in_progress", "in progress", "started", "paused"}:
+            lanes["in_progress"].append(job)
+        elif job.get("assigned_worker_id") or job.get("assigned_to"):
+            lanes["assigned"].append(job)
+        else:
+            lanes["unassigned"].append(job)
+    return {"success": True, "lanes": lanes}
+
+@api_router.post("/offline-sync")
+async def churvox_offline_sync(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = _cv_top_business_id(current_user)
+    now = _cv_top_now()
+    actions = payload.get("actions") if isinstance(payload.get("actions"), list) else []
+    saved = []
+    for action in actions:
+        if not isinstance(action, dict):
+            continue
+        row = {
+            "id": _cv_top_id(),
+            "business_id": business_id,
+            "worker_id": _cv_top_owner_id(current_user),
+            "action_type": action.get("type") or "offline_action",
+            "payload": action,
+            "status": "queued",
+            "created_at": now,
+            "updated_at": now,
+        }
+        await db.offline_sync_queue.insert_one(row)
+        saved.append(_cv_top_doc(row))
+    return {"success": True, "queued": len(saved), "items": saved}
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")
