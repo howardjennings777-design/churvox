@@ -1,5 +1,6 @@
 // CHURVOX_TOP_TIER_TOOLS_PAGE_20260528
 // CHURVOX_OPERATOR_TOOLS_HUB_LINKS_20260528
+// CHURVOX_OPERATOR_TOOLS_PROOF_PACK_LIST_20260528
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAiAuditLog, getDispatchBoard, getTradePresets, listProofPacks, topTierFeatureList } from "../concept-c/churvoxTopTierApi";
@@ -13,6 +14,15 @@ const hubLinks = [
   ["/offline-sync", "Offline sync", "Check queued field notes and sync actions from worker devices."],
   ["/invoices", "Money desk", "Open invoices, draft records and payment follow-up."],
 ];
+
+function proofLink(pack) {
+  const token = pack?.public_token || pack?.token || pack?.proof_public_token || "";
+  return token ? `/public/proof/${token}` : "";
+}
+
+function proofTitle(pack) {
+  return pack?.job_title || pack?.title || pack?.customer_name || "Customer proof pack";
+}
 
 export default function TopTierOperatorToolsPage() {
   const [state, setState] = useState({ loading: true, error: "", audit: [], proofPacks: [], presets: [], lanes: {} });
@@ -33,9 +43,10 @@ export default function TopTierOperatorToolsPage() {
   }, []);
 
   const laneCount = useMemo(() => Object.values(state.lanes || {}).reduce((total, lane) => total + (Array.isArray(lane) ? lane.length : 0), 0), [state.lanes]);
+  const recentProofPacks = state.proofPacks.slice(0, 6);
 
   return (
-    <main className="tt-shell" data-version="CHURVOX_TOP_TIER_TOOLS_PAGE_20260528 CHURVOX_OPERATOR_TOOLS_HUB_LINKS_20260528">
+    <main className="tt-shell" data-version="CHURVOX_TOP_TIER_TOOLS_PAGE_20260528 CHURVOX_OPERATOR_TOOLS_HUB_LINKS_20260528 CHURVOX_OPERATOR_TOOLS_PROOF_PACK_LIST_20260528">
       <section className="tt-hero">
         <div>
           <p>AI OPERATOR TOOLS</p>
@@ -54,6 +65,29 @@ export default function TopTierOperatorToolsPage() {
             <b>Go →</b>
           </Link>
         ))}
+      </section>
+
+      <section className="tt-proof-panel">
+        <header>
+          <small>Customer proof packs</small>
+          <h2>Recent proof packs</h2>
+          <p>Open the customer-ready proof page prepared from completed work.</p>
+        </header>
+        <div className="tt-proof-list">
+          {recentProofPacks.length ? recentProofPacks.map((pack, index) => {
+            const href = proofLink(pack);
+            const body = pack.ai_summary || pack.owner_message || pack.customer_name || "Prepared customer proof record.";
+            return href ? (
+              <a key={pack.id || pack._id || index} href={href} target="_blank" rel="noreferrer" className="tt-proof-row">
+                <span><b>{proofTitle(pack)}</b><small>{body}</small></span><em>Open proof →</em>
+              </a>
+            ) : (
+              <div key={pack.id || pack._id || index} className="tt-proof-row">
+                <span><b>{proofTitle(pack)}</b><small>{body}</small></span><em>No public token yet</em>
+              </div>
+            );
+          }) : <div className="tt-proof-empty">No proof packs yet. Open a Work Slip and tap Prepare proof pack.</div>}
+        </div>
       </section>
 
       <section className="tt-grid tt-feature-grid">{topTierFeatureList.map((feature) => <article key={feature} className="tt-card"><small>Foundation</small><h2>{feature}</h2><p>Wired as part of the AI Operator system. Churvox prepares the admin; the owner stays in control.</p></article>)}</section>
