@@ -1,7 +1,4 @@
 Churvox Render deploy trigger
 
-Triggered at: 2026-05-28 NZT connector push
-Change: Top tier Command Floor panel styling added and imported.
-Latest commits:
-- 8d1a5d1 Add top tier Command Floor panel styling
-- 807e520 Import top tier Command Floor panel styling
+Triggered at: 2026-05-27T12:35:16Z
+Change: Code 3 top-tier frontend helpers and polish.
