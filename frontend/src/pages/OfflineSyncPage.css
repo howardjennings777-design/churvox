@@ -1,4 +1,5 @@
 /* CHURVOX_OFFLINE_SYNC_PAGE_20260528 */
+/* CHURVOX_OFFLINE_SYNC_PRODUCTION_QUEUE_20260528 */
 
 .cos-shell {
   min-height: 100vh;
@@ -20,7 +21,8 @@
 
 .cos-hero > div,
 .cos-hero > aside,
-.cos-card {
+.cos-card,
+.cos-summary article {
   border-radius: 30px;
   background: rgba(255, 253, 247, 0.9);
   border: 1px solid rgba(17, 24, 39, 0.12);
@@ -32,7 +34,8 @@
 }
 
 .cos-hero p,
-.cos-card small {
+.cos-card small,
+.cos-summary small {
   margin: 0 0 10px;
   color: #a16207;
   font-size: 12px;
@@ -76,11 +79,28 @@
   font-weight: 750;
 }
 
+.cos-summary,
 .cos-actions,
 .cos-list,
 .cos-footer {
   max-width: 1240px;
   margin: 0 auto 18px;
+}
+
+.cos-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.cos-summary article {
+  padding: 18px;
+}
+
+.cos-summary b {
+  display: block;
+  font-size: 36px;
+  letter-spacing: -0.06em;
 }
 
 .cos-actions {
@@ -125,10 +145,24 @@
   letter-spacing: -0.045em;
 }
 
-.cos-card p {
+.cos-card p,
+.cos-card em {
+  display: block;
   color: rgba(17, 24, 39, 0.66);
   font-weight: 750;
   line-height: 1.45;
+  font-style: normal;
+}
+
+.cos-card em {
+  margin-top: 10px;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: rgba(234, 179, 8, 0.14);
+  color: #92400e;
+  font-size: 12px;
+  font-weight: 950;
 }
 
 .cos-footer {
@@ -138,7 +172,8 @@
 }
 
 @media (max-width: 800px) {
-  .cos-hero {
+  .cos-hero,
+  .cos-summary {
     grid-template-columns: 1fr;
   }
 }
