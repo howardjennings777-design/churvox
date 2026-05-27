@@ -2,6 +2,6 @@ Churvox Render deploy trigger
 
 Purpose: harmless marker file used to trigger Render auto-deploy after GitHub connector push.
 Triggered at: 2026-05-27 NZT connector push
-Latest target change to deploy: confirmed Work Slip real action handler is present; redeploy latest Command Floor action + scroll build.
-Confirmed action file: frontend/src/concept-c/ConceptCPageExact.jsx
-Confirmed actions: save, approve work, assign worker, prepare invoice, save message draft.
+Latest safe connector action: confirmed backend route /api/jobs/{job_id}/create-draft-invoice is missing and needs Codespaces patch because backend/server.py is too large to safely whole-file replace through connector.
+Current live safe work: Work Slip photos optional, full-screen scroll/action bar polish, and existing frontend real action handler confirmed.
+Next required Codespaces patch: add Work Slip draft invoice backend route to backend/server.py, then build, commit, push.
