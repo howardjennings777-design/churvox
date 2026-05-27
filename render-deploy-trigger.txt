@@ -1,9 +1,10 @@
 Churvox Render deploy trigger
 
-Triggered at: 2026-05-27T18:18:55Z
-Change: Big Code 7 + 8 + 9 + 10.
+Triggered at: 2026-05-28 NZT connector push
+Change: Missing Code 4 + 5 + 6 pushed by GitHub connector.
 Includes:
-- Trade Presets page
-- Message Approval Queue page
-- Dispatch Board page
-- Offline Sync page
+- Public proof pack page and CSS
+- Top-tier operator tools page and CSS
+- Work Slip top-tier polish CSS
+- /public/proof/:token route
+- /operator-tools route
