@@ -1,7 +1,11 @@
 Churvox Render deploy trigger
 
-Purpose: harmless marker file used to trigger Render auto-deploy after GitHub connector push.
-Triggered at: 2026-05-28 NZT manual redeploy marker
-Reason: user reports Render did not deploy after latest launch polish commits.
-Latest expected commits include: Work Slip draft invoice endpoint, stronger approve flags, invoice fallback/link flags, owner review labels, notifications, simplified launch bottom nav, and backup page wording polish.
-Action: This marker commit is only to wake Render auto-deploy. No app logic changed.
+Purpose: trigger Render auto-deploy after big launch finish pass.
+Triggered at: 2026-05-27T12:17:18Z
+Latest target changes:
+- Backend Work Slip fallback update route
+- Backend complete-for-owner-review route
+- Frontend job PATCH fallback to Work Slip update route
+- Stronger Work Slip action feedback
+- Launch invoice/backup-page CSS polish
+- Final marker for Render deployment

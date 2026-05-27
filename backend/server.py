@@ -11393,6 +11393,139 @@ async def churvox_work_slip_create_draft_invoice(job_id: str, payload: dict = Bo
     return {"success": True, "id": invoice_id, "invoice_id": invoice_id, "route": f"/invoices/{invoice_id}", "message": "Draft invoice prepared and linked to this job"}
 
 
+
+
+# CHURVOX_BIG_LAUNCH_FINISH_BACKEND_20260528
+# Safe fallback routes for Command Floor / Work Slip.
+# These do not replace existing routes. Frontend can call these if normal PATCH /jobs/{id} fails.
+
+def _churvox_safe_job_patch_payload(payload: dict):
+    allowed = {
+        "title", "job_name", "job_type", "service_type",
+        "client_id", "customer_name", "client_name",
+        "address", "site_address", "scheduled_date", "scheduled_time",
+        "description", "notes", "worker_notes", "completion_notes",
+        "price", "job_price", "pricing_type", "hourly_rate", "extras",
+        "assigned_worker_id", "assigned_worker_name", "assigned_to",
+        "invoice_description_draft", "customer_message_draft", "draft_message", "last_message_draft",
+        "draft_invoice_id", "invoice_id", "linked_invoice_id", "invoice_number",
+        "invoice_prepared", "invoice_status", "invoiced",
+        "owner_review_status", "work_review_status", "approval_status", "command_floor_status",
+        "reviewed", "owner_approved", "work_approved", "job_approved",
+        "approved_at", "completed_at", "worker_completed_at",
+        "status",
+    }
+    if not isinstance(payload, dict):
+        return {}
+    return {k: v for k, v in payload.items() if k in allowed}
+
+async def _churvox_find_job_for_user(job_id: str, current_user: dict):
+    business_id = _resolve_business_id(current_user)
+    owner_id = _resolve_owner_id(current_user)
+    queries = []
+    if ObjectId.is_valid(str(job_id)):
+        queries.append({"_id": ObjectId(job_id)})
+    queries.append({"id": str(job_id)})
+
+    for base in queries:
+        job = await db.jobs.find_one({
+            **base,
+            "$or": [
+                {"business_id": business_id},
+                {"business_id": str(business_id)},
+                {"owner_id": owner_id},
+                {"assigned_worker_id": str(current_user.get("id") or "")},
+                {"assigned_to": str(current_user.get("id") or "")},
+            ],
+        })
+        if job:
+            return job
+    return None
+
+@api_router.patch("/jobs/{job_id}/work-slip-update")
+async def churvox_work_slip_update_job(job_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    job = await _churvox_find_job_for_user(job_id, current_user)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    patch = _churvox_safe_job_patch_payload(payload)
+    if not patch:
+        raise HTTPException(status_code=400, detail="No valid Work Slip fields to save")
+
+    now = datetime.now(timezone.utc)
+    patch["updated_at"] = now
+
+    status_text = str(patch.get("status") or "").lower()
+    if status_text in {"completed", "complete", "done"} or patch.get("completed_at") or patch.get("worker_completed_at"):
+        patch.setdefault("status", "completed")
+        patch.setdefault("completed_at", now)
+        patch.setdefault("worker_completed_at", now)
+        patch.setdefault("owner_review_status", "ready_for_review")
+        patch.setdefault("work_review_status", "ready_for_review")
+        patch.setdefault("command_floor_status", "ready_for_owner_review")
+        patch.setdefault("reviewed", False)
+        patch.setdefault("owner_approved", False)
+        patch.setdefault("work_approved", False)
+
+    if patch.get("owner_review_status") in {"approved", "invoiced"} or patch.get("work_review_status") in {"approved", "invoiced"}:
+        patch.setdefault("reviewed", True)
+        patch.setdefault("owner_approved", True)
+        patch.setdefault("work_approved", True)
+
+    await db.jobs.update_one({"_id": job["_id"]}, {"$set": patch})
+
+    return {
+        "success": True,
+        "id": str(job["_id"]),
+        "message": "Work Slip job update saved",
+    }
+
+@api_router.post("/jobs/{job_id}/complete-for-owner-review")
+async def churvox_complete_job_for_owner_review(job_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    job = await _churvox_find_job_for_user(job_id, current_user)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    now = datetime.now(timezone.utc)
+    patch = _churvox_safe_job_patch_payload(payload)
+    patch.update({
+        "status": "completed",
+        "completed_at": patch.get("completed_at") or now,
+        "worker_completed_at": patch.get("worker_completed_at") or now,
+        "owner_review_status": "ready_for_review",
+        "work_review_status": "ready_for_review",
+        "command_floor_status": "ready_for_owner_review",
+        "reviewed": False,
+        "owner_approved": False,
+        "work_approved": False,
+        "updated_at": now,
+    })
+
+    await db.jobs.update_one({"_id": job["_id"]}, {"$set": patch})
+
+    try:
+        owner_id = str(job.get("owner_id") or current_user.get("business_id") or current_user.get("id") or "")
+        business_id = _resolve_business_id(current_user)
+        await notify(
+            user_id=owner_id,
+            business_id=business_id,
+            type="work_ready_for_review",
+            title="Work ready for review",
+            message=f"{job.get('title') or job.get('job_name') or 'Completed work'} is ready for owner review.",
+            route="/dashboard",
+            target_type="job",
+            target_id=str(job["_id"]),
+        )
+    except Exception as e:
+        print("WORK_READY_FOR_REVIEW_NOTIFY_ERROR", e)
+
+    return {
+        "success": True,
+        "id": str(job["_id"]),
+        "message": "Job marked complete and ready for owner review",
+    }
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")

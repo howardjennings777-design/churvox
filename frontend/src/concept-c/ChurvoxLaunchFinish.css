@@ -1,0 +1,69 @@
+/* CHURVOX_BIG_LAUNCH_FINISH_CSS_20260528 */
+
+/* Make backup pages feel intentional, not unfinished. */
+.xcf-workspace-hero .xcf-workspace-guide,
+.xcf-workspace-list {
+  border: 1px solid rgba(17, 24, 39, 0.10);
+  box-shadow: 0 22px 70px rgba(17, 24, 39, 0.08);
+}
+
+.xcf-workspace-hero .xcf-workspace-guide strong {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 12px;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: rgba(20, 184, 166, 0.12);
+  color: #0f766e;
+  font-weight: 900;
+}
+
+/* Keep Work Slip actions obvious and tappable. */
+.cfs-actions,
+.work-slip-actions,
+.work-slip-action-bar {
+  gap: 10px !important;
+}
+
+.cfs-actions button,
+.work-slip-actions button,
+.work-slip-action-bar button {
+  min-height: 48px !important;
+  font-weight: 900 !important;
+}
+
+/* Give invoice pages/cards a more proper document feel without risky JSX changes. */
+.invoice-template,
+.invoice-preview,
+.invoice-detail,
+.invoice-card,
+[class*="invoice"] .document,
+[class*="Invoice"] .document,
+[class*="invoice"] .preview,
+[class*="Invoice"] .preview {
+  background: #fffdf7;
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  box-shadow: 0 26px 80px rgba(17, 24, 39, 0.10);
+  border-radius: 22px;
+}
+
+.invoice-template h1,
+.invoice-preview h1,
+.invoice-detail h1,
+[class*="invoice"] h1,
+[class*="Invoice"] h1 {
+  letter-spacing: -0.04em;
+}
+
+@media (max-width: 760px) {
+  .xcf-workspace-list {
+    margin-bottom: 92px;
+  }
+
+  .invoice-template,
+  .invoice-preview,
+  .invoice-detail,
+  .invoice-card {
+    border-radius: 18px;
+  }
+}
