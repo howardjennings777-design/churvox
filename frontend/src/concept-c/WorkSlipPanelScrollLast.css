@@ -1,0 +1,21 @@
+/* CHURVOX_WORK_SLIP_PANEL_SCROLL_LAST_20260527 */
+.cfs-overlay .cfs-sheet {
+  height: calc(100vh - 24px) !important;
+  max-height: calc(100vh - 24px) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding-bottom: 120px !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: #2563eb #e5e7eb !important;
+}
+.cfs-overlay .cfs-actions {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 90 !important;
+}
+@media (max-height: 820px) {
+  .cfs-overlay .cfs-sheet {
+    height: calc(100vh - 16px) !important;
+    max-height: calc(100vh - 16px) !important;
+  }
+}
