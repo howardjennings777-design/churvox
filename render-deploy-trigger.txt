@@ -1,5 +1,5 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-28 NZT connector push
-Change: Fix Trade Presets hook naming build error.
+Change: Active Trade Preset panel on new job flow.
 Render marker only.
