@@ -1,6 +1,7 @@
 // CHURVOX_TOP_TIER_TOOLS_PAGE_20260528
 // CHURVOX_OPERATOR_TOOLS_HUB_LINKS_20260528
 // CHURVOX_OPERATOR_TOOLS_PROOF_PACK_LIST_20260528
+// CHURVOX_OPERATOR_TOOLS_AUDIT_LIST_20260528
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAiAuditLog, getDispatchBoard, getTradePresets, listProofPacks, topTierFeatureList } from "../concept-c/churvoxTopTierApi";
@@ -24,6 +25,21 @@ function proofTitle(pack) {
   return pack?.job_title || pack?.title || pack?.customer_name || "Customer proof pack";
 }
 
+function niceDate(value) {
+  if (!value) return "Time not recorded";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleString("en-NZ", { dateStyle: "medium", timeStyle: "short" });
+}
+
+function auditTitle(item) {
+  return item?.action || item?.title || "Operator action";
+}
+
+function auditCopy(item) {
+  return item?.note || item?.message || item?.target_type || "Action recorded in the AI Operator audit trail.";
+}
+
 export default function TopTierOperatorToolsPage() {
   const [state, setState] = useState({ loading: true, error: "", audit: [], proofPacks: [], presets: [], lanes: {} });
 
@@ -44,9 +60,10 @@ export default function TopTierOperatorToolsPage() {
 
   const laneCount = useMemo(() => Object.values(state.lanes || {}).reduce((total, lane) => total + (Array.isArray(lane) ? lane.length : 0), 0), [state.lanes]);
   const recentProofPacks = state.proofPacks.slice(0, 6);
+  const recentAudit = state.audit.slice(0, 8);
 
   return (
-    <main className="tt-shell" data-version="CHURVOX_TOP_TIER_TOOLS_PAGE_20260528 CHURVOX_OPERATOR_TOOLS_HUB_LINKS_20260528 CHURVOX_OPERATOR_TOOLS_PROOF_PACK_LIST_20260528">
+    <main className="tt-shell" data-version="CHURVOX_TOP_TIER_TOOLS_PAGE_20260528 CHURVOX_OPERATOR_TOOLS_HUB_LINKS_20260528 CHURVOX_OPERATOR_TOOLS_PROOF_PACK_LIST_20260528 CHURVOX_OPERATOR_TOOLS_AUDIT_LIST_20260528">
       <section className="tt-hero">
         <div>
           <p>AI OPERATOR TOOLS</p>
@@ -87,6 +104,22 @@ export default function TopTierOperatorToolsPage() {
               </div>
             );
           }) : <div className="tt-proof-empty">No proof packs yet. Open a Work Slip and tap Prepare proof pack.</div>}
+        </div>
+      </section>
+
+      <section className="tt-proof-panel tt-audit-panel">
+        <header>
+          <small>AI audit trail</small>
+          <h2>Recent operator activity</h2>
+          <p>See what Churvox prepared, opened, reopened or logged for owner review.</p>
+        </header>
+        <div className="tt-proof-list">
+          {recentAudit.length ? recentAudit.map((item, index) => (
+            <div key={item.id || item._id || index} className="tt-proof-row tt-audit-row">
+              <span><b>{auditTitle(item)}</b><small>{auditCopy(item)}</small></span>
+              <em>{niceDate(item.created_at || item.createdAt || item.time)}</em>
+            </div>
+          )) : <div className="tt-proof-empty">No audit records yet. Work Slip actions will appear here once used.</div>}
         </div>
       </section>
 
