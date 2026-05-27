@@ -1,29 +1,28 @@
-/* CHURVOX_CLARITY_PASS_CLEAN_20260527
-   Keep the product story clear without making the page noisy.
-   Command Floor = pick the approval lane.
-   Work Slip = edit one filled job form and approve.
+/* CHURVOX_CLARITY_PASS_CALM_CARDS_20260527
+   Command Floor should feel simple:
+   Pick a lane -> open one Work Slip -> edit form -> approve.
 */
 
-/* COMMAND FLOOR: clear, not cluttered */
+/* COMMAND FLOOR: clear, calm, not overloaded */
 .xcf-approval-desk .xcf-hero > div {
   position: relative;
-  padding-right: min(300px, 28vw);
+  padding-right: min(280px, 26vw);
 }
 
 .xcf-approval-desk .xcf-hero > div::after {
-  content: "Pick a lane. Open a Work Slip. Check the form. Approve.";
+  content: "Pick a lane → open a Work Slip → approve.";
   position: absolute;
   right: 18px;
   top: 50%;
   transform: translateY(-50%);
-  width: min(270px, 27vw);
-  padding: 11px 13px;
+  width: min(250px, 25vw);
+  padding: 10px 12px;
   border-radius: 16px;
   color: #1d4ed8;
   background: #eff6ff;
-  border: 1px solid rgba(37, 99, 235, .15);
-  font-size: .8rem;
-  line-height: 1.3;
+  border: 1px solid rgba(37, 99, 235, .14);
+  font-size: .78rem;
+  line-height: 1.28;
   font-weight: 900;
 }
 
@@ -38,7 +37,7 @@
   left: 0;
   top: -20px;
   color: #2563eb;
-  font-size: .66rem;
+  font-size: .64rem;
   font-weight: 950;
   letter-spacing: .13em;
   text-transform: uppercase;
@@ -50,7 +49,7 @@
   left: 2px;
   top: -22px;
   color: #2563eb;
-  font-size: .66rem;
+  font-size: .64rem;
   font-weight: 950;
   letter-spacing: .13em;
   text-transform: uppercase;
@@ -58,6 +57,7 @@
 
 .xcf-approval-lane {
   position: relative;
+  overflow: hidden;
 }
 
 .xcf-approval-lane::after {
@@ -66,9 +66,9 @@
   top: 14px;
   padding: 5px 8px;
   border-radius: 999px;
-  background: rgba(15, 23, 42, .055);
+  background: rgba(15, 23, 42, .05);
   color: #475569;
-  font-size: .6rem;
+  font-size: .58rem;
   font-weight: 950;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -81,16 +81,19 @@
 .xcf-lane-red::after { content: "Fix"; }
 
 .xcf-lane-description {
-  min-height: 42px;
-  font-size: .88rem !important;
-  line-height: 1.35 !important;
+  min-height: 40px;
+  font-size: .86rem !important;
+  line-height: 1.34 !important;
   color: #1f2937 !important;
-  font-weight: 820 !important;
+  font-weight: 800 !important;
 }
 
-/* Fix duplicate "Open slipOpen Work Slip" text */
+/* One clean lane button only */
 .xcf-lane-primary {
-  font-size: .78rem !important;
+  width: 100%;
+  min-height: 46px;
+  border-radius: 16px !important;
+  font-size: .82rem !important;
   font-weight: 950 !important;
 }
 
@@ -100,23 +103,30 @@
 
 .xcf-approval-lane .xcf-list {
   border-top: 1px solid rgba(15,23,42,.07);
-  margin-top: 8px;
+  margin-top: 10px;
   padding-top: 10px;
+}
+
+/* Keep only the top few examples visible so cards don't feel packed */
+.xcf-approval-lane .xcf-list .xcf-row:nth-of-type(n+4) {
+  display: none !important;
 }
 
 .xcf-row {
   position: relative;
+  min-height: 44px !important;
 }
 
+/* Remove repeated row tags; the lane button already says what to do */
 .xcf-row::after {
-  content: "Slip";
-  margin-left: 8px;
-  padding: 4px 7px;
-  border-radius: 999px;
-  color: #2563eb;
-  background: rgba(37,99,235,.08);
-  font-size: .58rem;
-  font-weight: 950;
+  content: "" !important;
+  display: none !important;
+}
+
+.xcf-row small {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
