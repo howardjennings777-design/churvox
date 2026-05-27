@@ -1,16 +1,29 @@
 /* CHURVOX_WORK_SLIP_REAL_SCROLL_FIX_20260527
-   Fixes Work Slip clipping on laptop/smaller browser heights.
-   The sheet itself scrolls, footer remains reachable, and form content is not trapped below the fold.
+   Final override loaded after all Work Slip styles.
+   Fixes laptop/small-height clipping by making the overlay viewport scroll.
 */
+
+html:has(.cfs-overlay),
+body:has(.cfs-overlay),
+#root:has(.cfs-overlay) {
+  overflow: hidden !important;
+  height: 100% !important;
+}
 
 .cfs-overlay {
   position: fixed !important;
   inset: 0 !important;
   display: block !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
   padding: 12px !important;
-  overflow-y: auto !important;
+  overflow-y: scroll !important;
   overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
   -webkit-overflow-scrolling: touch !important;
+  align-items: unset !important;
+  justify-content: unset !important;
 }
 
 .cfs-overlay .cfs-sheet {
@@ -18,12 +31,13 @@
   min-height: auto !important;
   height: auto !important;
   max-height: none !important;
-  margin: 0 auto 26px !important;
+  margin: 0 auto 110px !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 14px !important;
   overflow: visible !important;
-  padding-bottom: 18px !important;
+  padding-bottom: 22px !important;
+  transform: none !important;
 }
 
 .cfs-overlay .cfs-head,
@@ -36,23 +50,22 @@
 .cfs-overlay .cfs-actions {
   flex: 0 0 auto !important;
   min-height: 0 !important;
-}
-
-.cfs-overlay .cfs-job-form,
-.cfs-overlay .cfs-lower {
-  overflow: visible !important;
   max-height: none !important;
 }
 
-.cfs-overlay .cfs-job-form article,
-.cfs-overlay .cfs-card {
+.cfs-overlay .cfs-job-form,
+.cfs-overlay .cfs-lower,
+.cfs-overlay .cfs-card,
+.cfs-overlay .cfs-job-form article {
+  overflow: visible !important;
+  max-height: none !important;
   min-height: auto !important;
 }
 
 .cfs-overlay .cfs-actions {
   position: sticky !important;
   bottom: 10px !important;
-  z-index: 40 !important;
+  z-index: 80 !important;
   margin-top: 4px !important;
 }
 
@@ -72,7 +85,7 @@
     border-radius: 22px !important;
     gap: 10px !important;
     padding: 10px !important;
-    margin-bottom: 18px !important;
+    margin-bottom: 120px !important;
   }
 
   .cfs-overlay .cfs-head {
@@ -87,12 +100,14 @@
   .cfs-overlay .cfs-facts {
     grid-template-columns: repeat(6, minmax(120px, 1fr)) !important;
     overflow-x: auto !important;
+    overflow-y: visible !important;
     padding-bottom: 2px !important;
   }
 
   .cfs-overlay .cfs-decision-grid {
     grid-template-columns: repeat(3, minmax(220px, 1fr)) !important;
     overflow-x: auto !important;
+    overflow-y: visible !important;
     padding-bottom: 2px !important;
   }
 
@@ -103,6 +118,7 @@
   .cfs-overlay .cfs-lower {
     grid-template-columns: repeat(3, minmax(260px, 1fr)) !important;
     overflow-x: auto !important;
+    overflow-y: visible !important;
     padding-bottom: 4px !important;
   }
 
@@ -135,7 +151,7 @@
 
   .cfs-overlay .cfs-sheet {
     width: 100vw !important;
-    margin: 0 !important;
+    margin: 0 0 110px !important;
     border-radius: 0 !important;
     padding: 10px !important;
   }
