@@ -1,0 +1,5 @@
+Churvox Render deploy trigger
+
+Purpose: harmless marker file used to trigger Render auto-deploy after GitHub connector push.
+Triggered at: 2026-05-27 NZT
+Latest target change to deploy: Work Slip photos optional / approval-safe polish.
