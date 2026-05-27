@@ -29,6 +29,7 @@
 */
 
 .xcf-workspace {
+  position: relative;
   background:
     radial-gradient(circle at 9% 0%, rgba(37,99,235,.10), transparent 30%),
     radial-gradient(circle at 92% 12%, rgba(14,165,233,.10), transparent 28%),
@@ -36,7 +37,7 @@
 }
 
 .xcf-workspace .xcf-topbar {
-  margin-bottom: 18px;
+  margin-bottom: 14px;
   border: 1px solid rgba(15,23,42,.08);
   background: rgba(255,255,255,.88);
   backdrop-filter: blur(16px);
@@ -44,13 +45,17 @@
 }
 
 .xcf-workspace .xcf-hero {
+  min-height: auto !important;
+  padding: 24px 28px !important;
+  margin-bottom: 14px !important;
+  display: block !important;
   position: relative;
-  overflow: hidden;
+  overflow: visible !important;
   border: 1px solid rgba(15,23,42,.08);
   background:
     linear-gradient(135deg, rgba(255,255,255,.96), rgba(239,246,255,.94)),
     repeating-linear-gradient(135deg, rgba(37,99,235,.08) 0 1px, transparent 1px 18px);
-  box-shadow: 0 26px 70px rgba(15,23,42,.10);
+  box-shadow: 0 18px 42px rgba(15,23,42,.08);
 }
 
 .xcf-workspace .xcf-hero::before {
@@ -59,8 +64,12 @@
   inset: auto -18% -55% auto;
   width: 52%;
   height: 180%;
-  background: radial-gradient(circle, rgba(37,99,235,.16), transparent 64%);
+  background: radial-gradient(circle, rgba(37,99,235,.12), transparent 64%);
   pointer-events: none;
+}
+
+.xcf-workspace .xcf-hero > div {
+  max-width: 760px;
 }
 
 .xcf-workspace .xcf-hero p {
@@ -80,15 +89,69 @@
   font-weight: 760 !important;
 }
 
-.xcf-workspace .xcf-hero aside {
-  border: 1px solid rgba(37,99,235,.16);
-  background: linear-gradient(180deg, #ffffff, #eff6ff);
-  box-shadow: 0 16px 36px rgba(37,99,235,.12);
+.xcf-workspace .xcf-workspace-guide {
+  position: absolute !important;
+  right: 24px;
+  top: 244px;
+  width: 330px;
+  z-index: 3;
+  display: grid !important;
+  gap: 10px;
+  padding: 18px !important;
+  border: 1px solid rgba(37,99,235,.16) !important;
+  border-radius: 24px !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(239,246,255,.96)) !important;
+  box-shadow: 0 20px 48px rgba(37,99,235,.14) !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  white-space: normal !important;
+}
+
+.xcf-workspace .xcf-workspace-guide small {
+  color: #1d4ed8 !important;
+  font-size: .68rem !important;
+  line-height: 1.2 !important;
+  font-weight: 950 !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase;
+}
+
+.xcf-workspace .xcf-workspace-guide b {
+  color: #0f172a !important;
+  font-size: 1.05rem !important;
+  line-height: 1.18 !important;
+  font-weight: 950 !important;
+}
+
+.xcf-workspace .xcf-workspace-guide em {
+  color: #475569 !important;
+  font-size: .86rem !important;
+  line-height: 1.4 !important;
+  font-style: normal !important;
+  font-weight: 750 !important;
+}
+
+.xcf-workspace .xcf-workspace-guide strong {
+  padding: 10px 12px;
+  border-radius: 16px;
+  color: #1d4ed8;
+  background: #eff6ff;
+  border: 1px solid rgba(37,99,235,.14);
+  font-size: .82rem;
+  line-height: 1.32;
+  font-weight: 950;
+}
+
+.xcf-workspace .xcf-workspace-guide span {
+  color: #64748b !important;
+  font-size: .78rem !important;
+  font-weight: 900 !important;
 }
 
 .xcf-workspace .xcf-workspace-list {
   display: grid;
   gap: 12px;
+  margin-right: 354px;
   padding: 18px;
   border: 1px solid rgba(15,23,42,.08);
   border-radius: 30px;
@@ -154,9 +217,25 @@
   box-shadow: 0 -12px 36px rgba(15,23,42,.08);
 }
 
+@media (max-width: 1100px) {
+  .xcf-workspace .xcf-workspace-guide {
+    position: static !important;
+    width: auto;
+    margin: 0 0 14px;
+  }
+
+  .xcf-workspace .xcf-workspace-list {
+    margin-right: 0;
+  }
+}
+
 @media (max-width: 700px) {
   .cfs-overlay:has(.cfs-missing-card) .cfs-facts {
     margin-bottom: 118px;
+  }
+
+  .xcf-workspace .xcf-hero {
+    padding: 20px !important;
   }
 
   .xcf-workspace .xcf-workspace-list {
