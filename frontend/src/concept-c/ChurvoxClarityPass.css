@@ -1,6 +1,7 @@
-/* CHURVOX_WORK_SLIP_APPROVE_BLOCKED_STATE_20260527
+/* CHURVOX_WORK_SLIP_TYPE_AWARE_BLOCKING_CSS_20260527
    Command Floor = pick a lane.
    Work Slip = check the real job form first, then AI checks, then approve.
+   Button blocking is handled by type-aware JSX, not broad CSS.
 */
 
 /* COMMAND FLOOR: clear, calm, not overloaded */
@@ -131,25 +132,17 @@
 .cfs-actions .primary { position: relative; }
 .cfs-actions .primary::before { content: "Main action"; position: absolute; left: 50%; top: -22px; transform: translateX(-50%); color: #1d4ed8; background: #eff6ff; border: 1px solid rgba(37,99,235,.16); border-radius: 999px; padding: 3px 8px; font-size: .56rem; font-weight: 950; white-space: nowrap; }
 
-/* If the Work Slip has red missing-field cards, do not let the primary approve button run. Save changes still works. */
-.cfs-overlay:has(.cfs-missing-card) .cfs-actions .primary {
-  pointer-events: none;
+/* Type-aware JSX now controls which primary buttons are disabled. This only styles disabled primary buttons. */
+.cfs-actions .primary:disabled {
   cursor: not-allowed;
   opacity: .72;
   color: #7f1d1d !important;
   background: #fee2e2 !important;
   border-color: #ef4444 !important;
   box-shadow: 0 10px 24px rgba(239,68,68,.12) !important;
-  font-size: 0 !important;
 }
 
-.cfs-overlay:has(.cfs-missing-card) .cfs-actions .primary::after {
-  content: "Fix red fields first";
-  font-size: .82rem;
-  font-weight: 950;
-}
-
-.cfs-overlay:has(.cfs-missing-card) .cfs-actions .primary::before {
+.cfs-actions .primary:disabled::before {
   content: "Blocked";
   color: #991b1b;
   background: #fff1f2;
