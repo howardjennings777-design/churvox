@@ -1,12 +1,11 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT connector push
-Change: Final launch-safe hardening sweep.
+Change: Final public document total fallback hardening.
 Includes:
-- Public invoice line items, GST, total, payment details and notes
-- Public quote line items, total, notes and validity
-- Internal launch pages guarded behind auth/business routes
+- Public invoice line items win when saved totals are missing/zero
+- Public quote line items win when saved totals are missing/zero
+- Public invoice/quote templates still show totals, notes and payment/validity info
+- Internal launch pages remain guarded
 - Message Approval client email prefill remains included
-- Invoice/quote editor polish remains included
-- Dispatch, Money Desk, Offline Sync and Work Slip linked flows remain included
-- Launch final proof checkpoint added
+- Final launch proof checkpoint remains included
