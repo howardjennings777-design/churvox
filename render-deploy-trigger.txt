@@ -1,8 +1,8 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-28 NZT connector push
-Change: Public document import safety fix.
+Change: Public proof/document compatibility sweep.
 Includes:
-- Self-contained invoice API/currency helpers
-- Self-contained quote API/currency helpers
-- Safer public document build
+- Public invoice self-contained helpers
+- Public quote self-contained helpers
+- Proof pack/public document route compatibility check
