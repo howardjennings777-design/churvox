@@ -1,13 +1,11 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT connector push
-Change: Launch-safe all-7 wiring sweep partial.
+Change: Invoice and quote editor launch polish pushed.
 Includes:
-- Backend send-after-owner-approval endpoint for Message Approval
-- Editable Message Approval send flow with sent/failed history
-- Native Dispatch worker assignment action
-- Money Desk linked job invoice filter patch loaded
-- Expanded worker offline queue for start, pause, resume, complete, issue and photo notes
-- Offline sync backend applies queued job actions to job records
-Notes:
-- Invoice/quote full editor polish was not pushed here because the connector blocked the large replacement; do via Codespaces after deploy check.
+- Invoice create editor has line items
+- Invoice GST, payment details, notes and total preview
+- Job-linked invoice prefill preserved
+- Quote create editor has line items
+- Quote customer-readable total preview
+- Prior all-7 wiring sweep remains included
