@@ -1,10 +1,10 @@
 Churvox Render deploy trigger
 
-Triggered at: 2026-05-28 NZT connector push
-Change: Launch route aliases.
+Triggered at: 2026-05-29 NZT connector push
+Change: Consolidated Work Slip linked action bridge.
 Includes:
-- /command -> /dashboard
-- /command-floor -> /dashboard
-- /money -> /invoices
-- /crew -> /team
-- /tools -> /operator-tools
+- One combined Work Slip action bridge import
+- Draft invoice shortcut preserved
+- Message approval shortcut preserved
+- Money Desk shortcut preserved
+- Dispatch/context patch left active for linked dispatch board
