@@ -1,9 +1,9 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-28 NZT connector push
-Change: Work Slip message approval action.
+Change: Message approvals linked job context.
 Includes:
-- Message approval button inside Work Slip
-- Opens /message-approvals?job_id=...
-- Logs owner action through audit endpoint
-- No auto-send
+- /message-approvals?job_id context panel
+- linked Work Slip draft card highlighted
+- open linked job action
+- no auto-send
