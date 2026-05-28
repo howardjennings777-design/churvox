@@ -1,9 +1,9 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-28 NZT connector push
-Change: Draft invoice linked job context panel.
+Change: Work Slip message approval action.
 Includes:
-- /invoices/new?job_id linked job panel
-- Copy invoice description
-- Gentle blank-field prefill
-- Open linked job action
+- Message approval button inside Work Slip
+- Opens /message-approvals?job_id=...
+- Logs owner action through audit endpoint
+- No auto-send
