@@ -76,3 +76,25 @@ def can_use_feature(plan, feature_key):
 
 def get_max_clients(plan):
     return int(get_plan_features(plan).get("max_clients", 20))
+
+# CHURVOX_TOP_TIER_BACKEND_ENDPOINTS_PLAN_RULES_HOOK_20260528
+# Fallback startup hook: server.py imports this module, so retry route registration
+# after server.py has finished creating app/db/dependencies.
+def _churvox_try_register_top_tier_routes(attempt=0):
+    try:
+        import importlib
+        server = importlib.import_module("server")
+        routes = importlib.import_module("churvox_top_tier_routes")
+        if routes.register(server):
+            return
+    except Exception as exc:
+        if attempt >= 12:
+            print("CHURVOX_TOP_TIER_PLAN_RULES_HOOK_FAILED", repr(exc))
+            return
+    try:
+        import threading
+        threading.Timer(0.25, _churvox_try_register_top_tier_routes, kwargs={"attempt": attempt + 1}).start()
+    except Exception as exc:
+        print("CHURVOX_TOP_TIER_PLAN_RULES_TIMER_FAILED", repr(exc))
+
+_churvox_try_register_top_tier_routes()
