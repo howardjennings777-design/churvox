@@ -1,10 +1,9 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT connector push
-Change: Consolidated Work Slip linked action bridge.
+Change: Native Dispatch Board linked Work Slip highlight.
 Includes:
-- One combined Work Slip action bridge import
-- Draft invoice shortcut preserved
-- Message approval shortcut preserved
-- Money Desk shortcut preserved
-- Dispatch/context patch left active for linked dispatch board
+- /dispatch-board?job_id=... shows linked job panel in React
+- Linked dispatch job card is highlighted
+- Board scrolls to linked job after load
+- Owner can open job, return to Work Slip queue, or prepare invoice
