@@ -2,6 +2,7 @@
 // CHURVOX_OPERATOR_TOOLS_HUB_LINKS_20260528
 // CHURVOX_OPERATOR_TOOLS_PROOF_PACK_LIST_20260528
 // CHURVOX_OPERATOR_TOOLS_AUDIT_LIST_20260528
+// CHURVOX_TOOLS_LAUNCH_CONTROL_LINK_20260528
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAiAuditLog, getDispatchBoard, getTradePresets, listProofPacks, topTierFeatureList } from "../concept-c/churvoxTopTierApi";
@@ -9,6 +10,7 @@ import "./TopTierOperatorToolsPage.css";
 
 const hubLinks = [
   ["/dashboard", "Command Floor", "Return to the main owner approval flow."],
+  ["/launch-control", "Launch Control", "See the simple operating model and what each top-tier tool is for."],
   ["/message-approvals", "Message approvals", "Review drafted customer emails, SMS notes and follow-ups."],
   ["/dispatch-board", "Dispatch board", "See jobs across unassigned, assigned, in progress, review and invoice lanes."],
   ["/trade-presets", "Trade presets", "Shape job types, invoice wording and AI suggestions by trade."],
@@ -63,7 +65,7 @@ export default function TopTierOperatorToolsPage() {
   const recentAudit = state.audit.slice(0, 8);
 
   return (
-    <main className="tt-shell" data-version="CHURVOX_TOP_TIER_TOOLS_PAGE_20260528 CHURVOX_OPERATOR_TOOLS_HUB_LINKS_20260528 CHURVOX_OPERATOR_TOOLS_PROOF_PACK_LIST_20260528 CHURVOX_OPERATOR_TOOLS_AUDIT_LIST_20260528">
+    <main className="tt-shell" data-version="CHURVOX_TOP_TIER_TOOLS_PAGE_20260528 CHURVOX_OPERATOR_TOOLS_HUB_LINKS_20260528 CHURVOX_OPERATOR_TOOLS_PROOF_PACK_LIST_20260528 CHURVOX_OPERATOR_TOOLS_AUDIT_LIST_20260528 CHURVOX_TOOLS_LAUNCH_CONTROL_LINK_20260528">
       <section className="tt-hero">
         <div>
           <p>AI OPERATOR TOOLS</p>
