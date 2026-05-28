@@ -1,5 +1,6 @@
 // CHURVOX_TOP_TIER_RUNTIME_PATCH_20260528
 // CHURVOX_CLIENT_MEMORY_POPUP_20260528
+// CHURVOX_WORK_SLIP_ACTION_FEEDBACK_20260528
 // Safe additive runtime patch: exposes top-tier tools and adds Work Slip action buttons
 // without rewriting the fragile Work Slip JSX file.
 
@@ -57,12 +58,28 @@ function notify(text) {
   setTimeout(() => el.remove(), 4200);
 }
 
+function workSlipLog(text, tone = "ok") {
+  notify(text);
+  const sheet = document.querySelector(".cfs-sheet") || document.querySelector(".cfs-actions")?.closest("section") || document.body;
+  let panel = document.querySelector(".cv-work-slip-action-log");
+  if (!panel) {
+    panel = document.createElement("section");
+    panel.className = "cv-work-slip-action-log";
+    panel.innerHTML = `<small>Latest owner action</small><b>No action yet</b><p>Work Slip actions will show here after you use them.</p>`;
+    const actions = document.querySelector(".cfs-actions");
+    if (actions) actions.insertAdjacentElement("beforebegin", panel);
+    else sheet.appendChild(panel);
+  }
+  panel.dataset.tone = tone;
+  panel.innerHTML = `<small>Latest owner action</small><b>${escapeHtml(text)}</b><p>${tone === "error" ? "Nothing was changed. Check the message and try again." : "Logged in the owner review flow."}</p>`;
+}
+
 function addStyle() {
   if (document.getElementById("cv-top-tier-runtime-style")) return;
   const style = document.createElement("style");
   style.id = "cv-top-tier-runtime-style";
   style.textContent = `
-    .cv-top-tier-runtime-strip{margin:16px 0;padding:14px;border-radius:22px;background:rgba(255,253,247,.86);border:1px solid rgba(17,24,39,.12);box-shadow:0 18px 44px rgba(17,24,39,.08);display:flex;gap:10px;align-items:center;flex-wrap:wrap}.cv-top-tier-runtime-strip b{font-weight:950;letter-spacing:-.03em}.cv-top-tier-runtime-strip a{border-radius:999px;padding:10px 13px;background:rgba(190,242,100,.22);color:#365314;text-decoration:none;font-weight:900;font-size:13px}.cv-top-tier-runtime-button{border-radius:999px!important;border:1px solid rgba(77,124,15,.26)!important;background:rgba(190,242,100,.20)!important;color:#365314!important;font-weight:950!important}.cv-top-tier-runtime-toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);z-index:2147483647;max-width:min(560px,calc(100vw - 28px));padding:13px 16px;border-radius:18px;background:#111827;color:#fffaf0;font-weight:900;box-shadow:0 26px 80px rgba(17,24,39,.3);text-align:center}.xcf-topbar nav a[href='/operator-tools'],.xcf-bottom-nav a[href='/operator-tools']{background:rgba(190,242,100,.22);color:#365314;border-radius:999px}.cv-client-memory-backdrop{position:fixed;inset:0;z-index:2147483646;background:rgba(17,24,39,.48);display:grid;place-items:center;padding:18px}.cv-client-memory-modal{width:min(980px,100%);max-height:min(860px,92vh);overflow:auto;border-radius:30px;background:#fffaf0;color:#111827;box-shadow:0 40px 120px rgba(17,24,39,.38);border:1px solid rgba(17,24,39,.12)}.cv-client-memory-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;padding:24px;border-bottom:1px solid rgba(17,24,39,.10)}.cv-client-memory-head p{margin:0 0 6px;color:#4d7c0f;font-size:12px;font-weight:950;letter-spacing:.14em;text-transform:uppercase}.cv-client-memory-head h2{margin:0;font-size:34px;letter-spacing:-.055em}.cv-client-memory-head button{border:0;border-radius:999px;background:#111827;color:#fffaf0;padding:10px 13px;font-weight:950;cursor:pointer}.cv-client-memory-body{display:grid;gap:14px;padding:18px}.cv-client-memory-card{border-radius:22px;background:rgba(255,253,247,.92);border:1px solid rgba(17,24,39,.10);padding:16px}.cv-client-memory-card h3{margin:0 0 10px;font-size:20px;letter-spacing:-.035em}.cv-client-memory-card p,.cv-client-memory-card small{color:rgba(17,24,39,.66);font-weight:750;line-height:1.45}.cv-client-memory-list{display:grid;gap:8px}.cv-client-memory-row{border-radius:16px;background:rgba(17,24,39,.045);padding:11px}.cv-client-memory-row b{display:block;letter-spacing:-.02em}.cv-client-memory-row small{display:block;margin-top:4px}@media(max-width:760px){.cv-top-tier-runtime-strip{display:grid}.cv-top-tier-runtime-strip a{width:100%;text-align:center}.cv-top-tier-runtime-button{width:100%}.cv-client-memory-head{display:grid}.cv-client-memory-head h2{font-size:28px}}`;
+    .cv-top-tier-runtime-strip{margin:16px 0;padding:14px;border-radius:22px;background:rgba(255,253,247,.86);border:1px solid rgba(17,24,39,.12);box-shadow:0 18px 44px rgba(17,24,39,.08);display:flex;gap:10px;align-items:center;flex-wrap:wrap}.cv-top-tier-runtime-strip b{font-weight:950;letter-spacing:-.03em}.cv-top-tier-runtime-strip a{border-radius:999px;padding:10px 13px;background:rgba(190,242,100,.22);color:#365314;text-decoration:none;font-weight:900;font-size:13px}.cv-top-tier-runtime-button{border-radius:999px!important;border:1px solid rgba(77,124,15,.26)!important;background:rgba(190,242,100,.20)!important;color:#365314!important;font-weight:950!important}.cv-top-tier-runtime-toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);z-index:2147483647;max-width:min(560px,calc(100vw - 28px));padding:13px 16px;border-radius:18px;background:#111827;color:#fffaf0;font-weight:900;box-shadow:0 26px 80px rgba(17,24,39,.3);text-align:center}.xcf-topbar nav a[href='/operator-tools'],.xcf-bottom-nav a[href='/operator-tools']{background:rgba(190,242,100,.22);color:#365314;border-radius:999px}.cv-work-slip-action-log{margin:12px 0;border-radius:20px;padding:14px;background:rgba(190,242,100,.18);border:1px solid rgba(77,124,15,.22);color:#365314}.cv-work-slip-action-log[data-tone='error']{background:rgba(254,226,226,.9);border-color:rgba(185,28,28,.2);color:#991b1b}.cv-work-slip-action-log small{display:block;margin:0 0 5px;font-size:11px;font-weight:950;letter-spacing:.13em;text-transform:uppercase}.cv-work-slip-action-log b{display:block;letter-spacing:-.025em}.cv-work-slip-action-log p{margin:6px 0 0;font-size:12px;font-weight:800;opacity:.75}.cv-client-memory-backdrop{position:fixed;inset:0;z-index:2147483646;background:rgba(17,24,39,.48);display:grid;place-items:center;padding:18px}.cv-client-memory-modal{width:min(980px,100%);max-height:min(860px,92vh);overflow:auto;border-radius:30px;background:#fffaf0;color:#111827;box-shadow:0 40px 120px rgba(17,24,39,.38);border:1px solid rgba(17,24,39,.12)}.cv-client-memory-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;padding:24px;border-bottom:1px solid rgba(17,24,39,.10)}.cv-client-memory-head p{margin:0 0 6px;color:#4d7c0f;font-size:12px;font-weight:950;letter-spacing:.14em;text-transform:uppercase}.cv-client-memory-head h2{margin:0;font-size:34px;letter-spacing:-.055em}.cv-client-memory-head button{border:0;border-radius:999px;background:#111827;color:#fffaf0;padding:10px 13px;font-weight:950;cursor:pointer}.cv-client-memory-body{display:grid;gap:14px;padding:18px}.cv-client-memory-card{border-radius:22px;background:rgba(255,253,247,.92);border:1px solid rgba(17,24,39,.10);padding:16px}.cv-client-memory-card h3{margin:0 0 10px;font-size:20px;letter-spacing:-.035em}.cv-client-memory-card p,.cv-client-memory-card small{color:rgba(17,24,39,.66);font-weight:750;line-height:1.45}.cv-client-memory-list{display:grid;gap:8px}.cv-client-memory-row{border-radius:16px;background:rgba(17,24,39,.045);padding:11px}.cv-client-memory-row b{display:block;letter-spacing:-.02em}.cv-client-memory-row small{display:block;margin-top:4px}@media(max-width:760px){.cv-top-tier-runtime-strip{display:grid}.cv-top-tier-runtime-strip a{width:100%;text-align:center}.cv-top-tier-runtime-button{width:100%}.cv-client-memory-head{display:grid}.cv-client-memory-head h2{font-size:28px}}`;
   document.head.appendChild(style);
 }
 
@@ -159,7 +176,7 @@ function addButton(actions, label, handler) {
     try {
       await handler();
     } catch (err) {
-      notify(err?.message || "Action failed");
+      workSlipLog(err?.message || "Action failed", "error");
     } finally {
       btn.disabled = false;
       btn.textContent = oldText;
@@ -181,7 +198,7 @@ function ensureWorkSlipButtons() {
     if (!id) throw new Error("Open a job Work Slip before preparing a proof pack.");
     const data = await cvRequest(`/proof-packs/from-job/${encodeURIComponent(id)}`, { method: "POST", body: JSON.stringify({}) });
     const publicPath = data.public_path || data?.proof_pack?.public_path || "";
-    notify(publicPath ? `Proof pack prepared: ${publicPath}` : "Proof pack prepared");
+    workSlipLog(publicPath ? `Proof pack prepared: ${publicPath}` : "Proof pack prepared");
     if (publicPath) window.open(publicPath, "_blank", "noopener,noreferrer");
   });
 
@@ -189,7 +206,7 @@ function ensureWorkSlipButtons() {
     const id = jobId();
     if (!id) throw new Error("Open a job Work Slip before reopening.");
     await cvRequest(`/work-slips/${encodeURIComponent(id)}/reopen`, { method: "POST", body: JSON.stringify({}) });
-    notify("Work Slip reopened — owner can review it again.");
+    workSlipLog("Work Slip reopened — owner can review it again.");
   });
 
   addButton(actions, "Client memory", async () => {
@@ -198,6 +215,7 @@ function ensureWorkSlipButtons() {
     const data = await cvRequest(`/clients/${encodeURIComponent(id)}/memory`);
     const memory = data.memory || data?.data?.memory || {};
     showClientMemory(memory);
+    workSlipLog("Client memory opened.");
   });
 
   addButton(actions, "Audit trail", async () => {
@@ -205,7 +223,7 @@ function ensureWorkSlipButtons() {
     try {
       await cvRequest("/ai/audit-log", { method: "POST", body: JSON.stringify({ action: "view_work_slip_audit", target_type: "work_slip", target_id: id, note: "Owner opened audit context from Work Slip." }) });
     } catch {}
-    notify("Opening audit trail in Operator Tools.");
+    workSlipLog("Opening audit trail in Operator Tools.");
     window.open("/operator-tools", "_blank", "noopener,noreferrer");
   });
 }
