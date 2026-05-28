@@ -20,6 +20,7 @@ import './concept-c/churvoxWorkerOfflineRuntimePatch';
 import './concept-c/churvoxActivePresetJobRuntimePatch';
 import './concept-c/churvoxLaunchNavRuntimePatch';
 import './concept-c/churvoxWorkSlipDraftInvoicePatch';
+import './concept-c/churvoxInvoiceJobContextPatch';
 import './workhorseLiveCheck';
 import './renderDeployMarker';
 import './deploy/guidedOperatorFloorDeployMarker';
