@@ -1,9 +1,8 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-28 NZT connector push
-Change: Proof pack actions in Tools hub.
+Change: Audit row actions in Tools hub.
 Includes:
-- Open proof
-- Copy proof link
-- Print/PDF proof link
-- Tools notice after copy
+- Open source record from audit row
+- Copy audit record
+- Mobile-safe audit action buttons
