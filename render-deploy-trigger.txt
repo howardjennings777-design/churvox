@@ -1,8 +1,8 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-28 NZT connector push
-Change: Work Slip action feedback panel.
+Change: Work Slip draft invoice action.
 Includes:
-- persistent latest action panel
-- clearer success/error state
-- proof pack/reopen/client memory/audit feedback
+- Draft invoice button inside Work Slip
+- Opens /invoices/new?job_id=...
+- Logs owner action through audit endpoint
