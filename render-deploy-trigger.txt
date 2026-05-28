@@ -1,9 +1,8 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-28 NZT connector push
-Change: Work Slip action bar polish.
+Change: Worker offline note runtime confirmed.
 Includes:
-- wrapped button layout
-- mobile two-column/one-column fallback
-- action log pinned above buttons
-- clearer button ordering
+- existing worker offline note panel remains active
+- removed duplicate unused worker offline note patch
+- worker note save/queue/sync flow preserved
