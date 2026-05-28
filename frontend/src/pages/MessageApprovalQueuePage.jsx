@@ -1,6 +1,7 @@
 // CHURVOX_MESSAGE_APPROVAL_QUEUE_PAGE_20260528
 // CHURVOX_MESSAGE_QUEUE_REAL_RECORD_DRAFTS_20260528
 // CHURVOX_MESSAGE_QUEUE_APPROVAL_ACTIONS_20260528
+// CHURVOX_MESSAGE_QUEUE_JOB_CONTEXT_20260528
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAiAuditLog } from "../concept-c/churvoxTopTierApi";
@@ -18,6 +19,14 @@ function cleanBase(base) {
 function getToken() {
   try {
     return localStorage.getItem("token") || localStorage.getItem("authToken") || "";
+  } catch {
+    return "";
+  }
+}
+
+function queryParam(name) {
+  try {
+    return new URLSearchParams(window.location.search).get(name) || "";
   } catch {
     return "";
   }
@@ -75,8 +84,17 @@ function draftFromRecord(type, item) {
   };
 }
 
+function sameId(a, b) {
+  return String(a || "") && String(a || "") === String(b || "");
+}
+
+function jobDescription(job, fallbackId) {
+  return job?.customer_message_draft || job?.draft_message || job?.last_message_draft || job?.invoice_description_draft || job?.description || job?.notes || `Prepared customer update for job ${fallbackId}.`;
+}
+
 export default function MessageApprovalQueuePage() {
-  const [state, setState] = useState({ loading: true, error: "", actions: [], audit: [], jobs: [], invoices: [], quotes: [] });
+  const linkedJobId = queryParam("job_id");
+  const [state, setState] = useState({ loading: true, error: "", actions: [], audit: [], jobs: [], invoices: [], quotes: [], linkedJob: null });
   const [localStatus, setLocalStatus] = useState({});
   const [notice, setNotice] = useState("");
 
@@ -85,17 +103,20 @@ export default function MessageApprovalQueuePage() {
 
     async function load() {
       try {
-        const [actionsRes, auditRes, jobsRes, invoicesRes, quotesRes] = await Promise.allSettled([
+        const requests = [
           fetchJson("/api/ai-operator/actions"),
           getAiAuditLog(),
           fetchJson("/api/jobs"),
           fetchJson("/api/invoices"),
           fetchJson("/api/quotes"),
-        ]);
+        ];
+        if (linkedJobId) requests.push(fetchJson(`/api/jobs/${encodeURIComponent(linkedJobId)}`));
+        const [actionsRes, auditRes, jobsRes, invoicesRes, quotesRes, linkedJobRes] = await Promise.allSettled(requests);
 
         if (!alive) return;
 
         const actionPayload = actionsRes.status === "fulfilled" ? actionsRes.value : {};
+        const linkedJobPayload = linkedJobRes?.status === "fulfilled" ? linkedJobRes.value : null;
 
         setState({
           loading: false,
@@ -105,10 +126,11 @@ export default function MessageApprovalQueuePage() {
           jobs: jobsRes.status === "fulfilled" ? listFrom(jobsRes.value, "jobs") : [],
           invoices: invoicesRes.status === "fulfilled" ? listFrom(invoicesRes.value, "invoices") : [],
           quotes: quotesRes.status === "fulfilled" ? listFrom(quotesRes.value, "quotes") : [],
+          linkedJob: linkedJobPayload?.job || linkedJobPayload?.item || linkedJobPayload?.data || linkedJobPayload || null,
         });
       } catch (err) {
         if (!alive) return;
-        setState({ loading: false, error: err?.message || "Could not load message queue", actions: [], audit: [], jobs: [], invoices: [], quotes: [] });
+        setState({ loading: false, error: err?.message || "Could not load message queue", actions: [], audit: [], jobs: [], invoices: [], quotes: [], linkedJob: null });
       }
     }
 
@@ -117,7 +139,7 @@ export default function MessageApprovalQueuePage() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [linkedJobId]);
 
   const messages = useMemo(() => {
     const recordDrafts = [
@@ -131,11 +153,11 @@ export default function MessageApprovalQueuePage() {
       return text.includes("message") || text.includes("sms") || text.includes("email") || text.includes("follow");
     }).map((item) => ({
       id: item.id || item._id || item.title,
-      record_id: item.id || item._id || "",
+      record_id: item.target_id || item.job_id || item.id || item._id || "",
       type: item.type || "ai action",
       title: item.title || item.summary || "Prepared message",
       message: item.generated_message || item.draft_message || item.message || item.summary || "Prepared for owner review.",
-      href: item.target_url || "/dashboard",
+      href: item.target_url || (item.job_id ? `/jobs/${item.job_id}` : "/dashboard"),
       state: item.status || "Draft",
     }));
 
@@ -148,12 +170,26 @@ export default function MessageApprovalQueuePage() {
       type: "audit",
       title: item.action || "Audit message record",
       message: item.note || "Message-related audit record.",
-      href: "/operator-tools",
+      href: item.target_id ? `/jobs/${item.target_id}` : "/operator-tools",
       state: "Logged",
     }));
 
-    return [...recordDrafts, ...actionMessages, ...auditMessages].slice(0, 100);
-  }, [state.actions, state.audit, state.jobs, state.invoices, state.quotes]);
+    const linkedJobMessage = linkedJobId && state.linkedJob ? [{
+      id: `linked-job-${linkedJobId}`,
+      record_id: linkedJobId,
+      type: "work slip",
+      title: `Work Slip message for ${recordTitle(state.linkedJob, "linked job")}`,
+      message: jobDescription(state.linkedJob, linkedJobId),
+      href: `/jobs/${linkedJobId}`,
+      state: "Draft",
+    }] : [];
+
+    const all = [...linkedJobMessage, ...recordDrafts, ...actionMessages, ...auditMessages];
+    if (!linkedJobId) return all.slice(0, 100);
+    const linkedFirst = all.filter((item) => sameId(item.record_id, linkedJobId) || String(item.href || "").includes(`/jobs/${linkedJobId}`));
+    const others = all.filter((item) => !linkedFirst.includes(item));
+    return [...linkedFirst, ...others].slice(0, 100);
+  }, [state.actions, state.audit, state.jobs, state.invoices, state.quotes, state.linkedJob, linkedJobId]);
 
   async function logMessageAction(item, action) {
     await fetchJson("/api/ai/audit-log", {
@@ -178,9 +214,10 @@ export default function MessageApprovalQueuePage() {
   }
 
   const visibleMessages = messages.filter((item) => localStatus[item.id] !== "dismissed");
+  const linkedJobTitle = recordTitle(state.linkedJob || {}, linkedJobId ? `Job ${linkedJobId}` : "Linked job");
 
   return (
-    <main className="cmq-shell" data-version="CHURVOX_MESSAGE_APPROVAL_QUEUE_PAGE_20260528 CHURVOX_MESSAGE_QUEUE_REAL_RECORD_DRAFTS_20260528 CHURVOX_MESSAGE_QUEUE_APPROVAL_ACTIONS_20260528">
+    <main className="cmq-shell" data-version="CHURVOX_MESSAGE_APPROVAL_QUEUE_PAGE_20260528 CHURVOX_MESSAGE_QUEUE_REAL_RECORD_DRAFTS_20260528 CHURVOX_MESSAGE_QUEUE_APPROVAL_ACTIONS_20260528 CHURVOX_MESSAGE_QUEUE_JOB_CONTEXT_20260528">
       <section className="cmq-hero">
         <div>
           <p>MESSAGE APPROVAL QUEUE</p>
@@ -196,14 +233,26 @@ export default function MessageApprovalQueuePage() {
         </aside>
       </section>
 
+      {linkedJobId ? (
+        <section className="cmq-linked-job-panel">
+          <div>
+            <small>Opened from Work Slip</small>
+            <h2>{linkedJobTitle}</h2>
+            <p>{state.linkedJob ? jobDescription(state.linkedJob, linkedJobId) : "Linked job context is loading or unavailable. The queue is still approval-first."}</p>
+          </div>
+          <Link to={`/jobs/${linkedJobId}`}>Open linked job</Link>
+        </section>
+      ) : null}
+
       {notice ? <section className="cmq-notice">{notice}</section> : null}
 
       <section className="cmq-list">
         {visibleMessages.length ? visibleMessages.map((item, index) => {
           const status = localStatus[item.id] || item.state || "Draft";
+          const isLinked = linkedJobId && (sameId(item.record_id, linkedJobId) || String(item.href || "").includes(`/jobs/${linkedJobId}`));
           return (
-            <article className={`cmq-card ${status === "approved" ? "approved" : ""}`} key={item.id || index}>
-              <small>{item.type || "draft"} · {status}</small>
+            <article className={`cmq-card ${status === "approved" ? "approved" : ""} ${isLinked ? "linked" : ""}`} key={item.id || index}>
+              <small>{isLinked ? "linked work slip · " : ""}{item.type || "draft"} · {status}</small>
               <h2>{item.title || "Prepared message"}</h2>
               <p>{item.message || "Prepared for owner review."}</p>
               <div className="cmq-actions-row">
