@@ -3,6 +3,7 @@
 // CHURVOX_OPERATOR_TOOLS_PROOF_PACK_LIST_20260528
 // CHURVOX_OPERATOR_TOOLS_AUDIT_LIST_20260528
 // CHURVOX_TOOLS_LAUNCH_CONTROL_LINK_20260528
+// CHURVOX_TOOLS_PROOF_PACK_ACTIONS_20260528
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAiAuditLog, getDispatchBoard, getTradePresets, listProofPacks, topTierFeatureList } from "../concept-c/churvoxTopTierApi";
@@ -21,6 +22,15 @@ const hubLinks = [
 function proofLink(pack) {
   const token = pack?.public_token || pack?.token || pack?.proof_public_token || "";
   return token ? `/public/proof/${token}` : "";
+}
+
+function absoluteProofLink(href) {
+  if (!href) return "";
+  try {
+    return new URL(href, window.location.origin).toString();
+  } catch {
+    return href;
+  }
 }
 
 function proofTitle(pack) {
@@ -44,6 +54,7 @@ function auditCopy(item) {
 
 export default function TopTierOperatorToolsPage() {
   const [state, setState] = useState({ loading: true, error: "", audit: [], proofPacks: [], presets: [], lanes: {} });
+  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     let alive = true;
@@ -60,12 +71,26 @@ export default function TopTierOperatorToolsPage() {
     return () => { alive = false; };
   }, []);
 
+  async function copyProof(href, title) {
+    const fullLink = absoluteProofLink(href);
+    if (!fullLink) {
+      setNotice("This proof pack does not have a public link yet.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(fullLink);
+      setNotice(`Copied proof link for ${title}.`);
+    } catch {
+      setNotice(fullLink);
+    }
+  }
+
   const laneCount = useMemo(() => Object.values(state.lanes || {}).reduce((total, lane) => total + (Array.isArray(lane) ? lane.length : 0), 0), [state.lanes]);
   const recentProofPacks = state.proofPacks.slice(0, 6);
   const recentAudit = state.audit.slice(0, 8);
 
   return (
-    <main className="tt-shell" data-version="CHURVOX_TOP_TIER_TOOLS_PAGE_20260528 CHURVOX_OPERATOR_TOOLS_HUB_LINKS_20260528 CHURVOX_OPERATOR_TOOLS_PROOF_PACK_LIST_20260528 CHURVOX_OPERATOR_TOOLS_AUDIT_LIST_20260528 CHURVOX_TOOLS_LAUNCH_CONTROL_LINK_20260528">
+    <main className="tt-shell" data-version="CHURVOX_TOP_TIER_TOOLS_PAGE_20260528 CHURVOX_OPERATOR_TOOLS_HUB_LINKS_20260528 CHURVOX_OPERATOR_TOOLS_PROOF_PACK_LIST_20260528 CHURVOX_OPERATOR_TOOLS_AUDIT_LIST_20260528 CHURVOX_TOOLS_LAUNCH_CONTROL_LINK_20260528 CHURVOX_TOOLS_PROOF_PACK_ACTIONS_20260528">
       <section className="tt-hero">
         <div>
           <p>AI OPERATOR TOOLS</p>
@@ -74,6 +99,8 @@ export default function TopTierOperatorToolsPage() {
         </div>
         <aside><small>Status</small><b>{state.loading ? "Loading" : "Ready"}</b><em>{state.error || "Approval-first tools"}</em></aside>
       </section>
+
+      {notice ? <section className="tt-notice">{notice}</section> : null}
 
       <section className="tt-hub-grid" aria-label="Operator tool shortcuts">
         {hubLinks.map(([href, title, copy]) => (
@@ -90,19 +117,23 @@ export default function TopTierOperatorToolsPage() {
         <header>
           <small>Customer proof packs</small>
           <h2>Recent proof packs</h2>
-          <p>Open the customer-ready proof page prepared from completed work.</p>
+          <p>Open, copy or print the customer-ready proof page prepared from completed work.</p>
         </header>
         <div className="tt-proof-list">
           {recentProofPacks.length ? recentProofPacks.map((pack, index) => {
             const href = proofLink(pack);
+            const title = proofTitle(pack);
             const body = pack.ai_summary || pack.owner_message || pack.customer_name || "Prepared customer proof record.";
-            return href ? (
-              <a key={pack.id || pack._id || index} href={href} target="_blank" rel="noreferrer" className="tt-proof-row">
-                <span><b>{proofTitle(pack)}</b><small>{body}</small></span><em>Open proof →</em>
-              </a>
-            ) : (
-              <div key={pack.id || pack._id || index} className="tt-proof-row">
-                <span><b>{proofTitle(pack)}</b><small>{body}</small></span><em>No public token yet</em>
+            return (
+              <div key={pack.id || pack._id || index} className="tt-proof-row tt-proof-action-row">
+                <span><b>{title}</b><small>{body}</small></span>
+                {href ? (
+                  <div className="tt-proof-actions">
+                    <a href={href} target="_blank" rel="noreferrer">Open</a>
+                    <button type="button" onClick={() => copyProof(href, title)}>Copy link</button>
+                    <a href={href} target="_blank" rel="noreferrer">Print / PDF</a>
+                  </div>
+                ) : <em>No public token yet</em>}
               </div>
             );
           }) : <div className="tt-proof-empty">No proof packs yet. Open a Work Slip and tap Prepare proof pack.</div>}
