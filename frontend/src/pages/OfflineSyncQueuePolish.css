@@ -1,0 +1,10 @@
+/* CHURVOX_WORKER_OFFLINE_ACTION_QUEUE_EXPANSION_20260529 */
+.cos-summary { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.cos-result { max-width: 1240px; margin: 0 auto 18px; border-radius: 30px; padding: 16px; background: rgba(190, 242, 100, 0.22); color: #365314; font-weight: 950; border: 1px solid rgba(17, 24, 39, 0.12); box-shadow: 0 28px 80px rgba(17, 24, 39, 0.10); }
+.cos-card { border-left: 8px solid rgba(234,179,8,.5); }
+.cos-card.tone-complete { border-left-color: #16a34a; }
+.cos-card.tone-issue { border-left-color: #dc2626; }
+.cos-card.tone-photo { border-left-color: #2563eb; }
+.cos-card.tone-time { border-left-color: #7c3aed; }
+.cos-card blockquote { display: block; margin: 12px 0 0; border-left: 4px solid rgba(17,24,39,.12); padding: 10px 12px; border-radius: 12px; background: rgba(17,24,39,.045); color: rgba(17,24,39,.66); font-weight: 750; line-height: 1.45; }
+@media (max-width: 900px) { .cos-summary { grid-template-columns: 1fr; } .cos-actions button, .cos-footer a { width: 100%; text-align: center; } }
