@@ -1,5 +1,6 @@
 // CHURVOX_TOP_TIER_FRONTEND_HELPERS_20260528
 // Frontend helper layer for the top-tier AI Operator foundations.
+// CHURVOX_LAUNCH_SAFE_ALL7_FRONTEND_HELPERS_20260529
 
 const API_BASE =
   process.env.REACT_APP_BACKEND_URL ||
@@ -90,6 +91,20 @@ export function getTradePresets() {
 
 export function getDispatchBoard() {
   return request("/api/dispatch/board");
+}
+
+export function assignDispatchWorker(payload = {}) {
+  return request("/api/dispatch/assign", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function sendApprovedMessage(payload = {}) {
+  return request("/api/message-approvals/send", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 export function syncOfflineActions(actions = []) {
