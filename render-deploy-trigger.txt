@@ -1,10 +1,10 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT connector push
-Change: Harden invoice editor helper after editor polish.
+Change: Message Approval client email prefill hardening.
 Includes:
-- Safe invoice ID helper with recursion guard
-- Invoice line items still active
-- Invoice GST/payment details/total preview still active
-- Quote line items still active
+- Message Approval loads saved clients
+- Draft email can prefill from linked client_id/customer_id
+- Work Slip message approval is less likely to block on blank customer email
+- Invoice/quote editor polish remains included
 - Prior all-7 wiring sweep remains included
