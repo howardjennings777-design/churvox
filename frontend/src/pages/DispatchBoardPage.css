@@ -1,5 +1,6 @@
 /* CHURVOX_DISPATCH_BOARD_PAGE_20260528 */
 /* CHURVOX_DISPATCH_BOARD_OPERATOR_UPGRADE_20260528 */
+/* CHURVOX_DISPATCH_LINKED_JOB_NATIVE_HIGHLIGHT_20260529 */
 
 .cdb-shell {
   min-height: 100vh;
@@ -87,6 +88,86 @@
   font-weight: 750;
 }
 
+.cdb-linked-job-panel {
+  max-width: 1440px;
+  margin: 0 auto 18px;
+  border-radius: 30px;
+  padding: 20px;
+  background: linear-gradient(135deg, #111827, #0f172a);
+  color: #fffaf0;
+  box-shadow: 0 28px 90px rgba(17, 24, 39, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cdb-linked-job-panel small {
+  display: block;
+  margin: 0 0 8px;
+  color: #bfdbfe;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.cdb-linked-job-panel h2 {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 46px);
+  line-height: 0.92;
+  letter-spacing: -0.055em;
+}
+
+.cdb-linked-job-panel p {
+  margin: 9px 0 0;
+  color: rgba(255, 253, 247, 0.74);
+  font-weight: 780;
+  line-height: 1.45;
+}
+
+.cdb-linked-meta,
+.cdb-linked-job-panel nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cdb-linked-meta {
+  margin-top: 12px;
+}
+
+.cdb-linked-meta span,
+.cdb-linked-job-panel nav a {
+  border-radius: 999px;
+  padding: 9px 11px;
+  font-size: 12px;
+  font-weight: 950;
+  text-decoration: none;
+}
+
+.cdb-linked-meta span {
+  background: rgba(255, 255, 255, 0.10);
+  color: #fffaf0;
+}
+
+.cdb-linked-job-panel nav a {
+  background: #bef264;
+  color: #365314;
+  white-space: nowrap;
+}
+
+.cdb-linked-job-panel nav a:nth-child(2),
+.cdb-linked-job-panel nav a:nth-child(3) {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fffaf0;
+}
+
+.cdb-linked-job-panel.is-missing {
+  background: linear-gradient(135deg, #7f1d1d, #111827);
+}
+
 .cdb-summary-strip {
   max-width: 1440px;
   margin: 0 auto 18px;
@@ -167,6 +248,28 @@
   border: 1px solid rgba(17, 24, 39, 0.06);
 }
 
+.cdb-job.is-linked {
+  position: relative;
+  border: 2px solid #bef264;
+  background: linear-gradient(180deg, rgba(190, 242, 100, 0.24), rgba(255, 253, 247, 0.92));
+  box-shadow: 0 18px 45px rgba(54, 83, 20, 0.18);
+}
+
+.cdb-job i {
+  display: inline-flex;
+  width: fit-content;
+  margin-bottom: 8px;
+  border-radius: 999px;
+  padding: 5px 8px;
+  background: #111827;
+  color: #fffaf0;
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .cdb-job strong {
   display: block;
   font-size: 14px;
@@ -213,7 +316,21 @@
 
 @media (max-width: 900px) {
   .cdb-hero,
-  .cdb-summary-strip {
+  .cdb-summary-strip,
+  .cdb-linked-job-panel {
     grid-template-columns: 1fr;
+  }
+
+  .cdb-linked-job-panel {
+    display: grid;
+  }
+
+  .cdb-linked-job-panel nav {
+    display: grid;
+  }
+
+  .cdb-linked-job-panel nav a {
+    width: 100%;
+    text-align: center;
   }
 }
