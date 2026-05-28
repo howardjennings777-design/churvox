@@ -5,10 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-const MARKER = "CHURVOX_INVOICE_EDITOR_LINE_ITEMS_PREVIEW_20260529";
+const MARKER = "CHURVOX_INVOICE_EDITOR_LINE_ITEMS_PREVIEW_20260529 CHURVOX_SAFE_INVOICE_ID_HELPER_20260529";
 const cleanMoney = (value) => { const n = Number(String(value ?? "").replace(/[^0-9.-]/g, "")); return Number.isFinite(n) ? n : 0; };
 const first = (...values) => values.find((v) => String(v ?? "").trim()) || "";
-const recordId = (record) => record?.id || record?._id || record?.invoice_id || recordId(record?.data || record?.invoice || record?.record || record?.item || record?.result) || "";
+function recordId(record, depth = 0) { if (!record || depth > 6) return ""; const direct = record.id || record._id || record.invoice_id; if (direct) return String(direct); return recordId(record.data || record.invoice || record.record || record.item || record.result, depth + 1); }
 const jobIdFromUrl = () => new URLSearchParams(window.location.search || "").get("job_id") || "";
 const lineTotal = (line) => (cleanMoney(line.qty) || 1) * cleanMoney(line.rate);
 
