@@ -24,6 +24,7 @@ import './concept-c/churvoxInvoiceJobContextPatch';
 import './concept-c/churvoxWorkSlipMessageApprovalPatch';
 import './concept-c/churvoxMoneyDeskJobContextPatch';
 import './concept-c/churvoxWorkSlipMoneyDeskPatch';
+import './concept-c/churvoxWorkSlipDispatchPatch';
 import './workhorseLiveCheck';
 import './renderDeployMarker';
 import './deploy/guidedOperatorFloorDeployMarker';
