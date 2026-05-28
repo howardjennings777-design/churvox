@@ -1,8 +1,8 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-28 NZT connector push
-Change: Backend top-tier route fallback registration hook.
+Change: Work Slip action feedback panel.
 Includes:
-- plan_rules fallback hook
-- safer endpoint registration retry
-- proof/work-slip/client-memory/audit/offline/worker-note route support
+- persistent latest action panel
+- clearer success/error state
+- proof pack/reopen/client memory/audit feedback
