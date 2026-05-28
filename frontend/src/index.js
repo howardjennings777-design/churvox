@@ -24,6 +24,7 @@ import './concept-c/churvoxLaunchNavRuntimePatch';
 import './concept-c/churvoxWorkSlipLinkedActionsBridge';
 import './concept-c/churvoxInvoiceJobContextPatch';
 import './concept-c/churvoxMoneyDeskJobContextPatch';
+import './concept-c/churvoxMoneyDeskLinkedJobFilterPatch';
 import './concept-c/churvoxWorkSlipDispatchPatch';
 import './workhorseLiveCheck';
 import './renderDeployMarker';
