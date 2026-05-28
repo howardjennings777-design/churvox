@@ -1,8 +1,8 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-28 NZT connector push
-Change: Launch Control page and Tools shortcut.
+Change: Public document import safety fix.
 Includes:
-- /launch-control route
-- Launch Control page
-- Launch Control Tools card
+- Self-contained invoice API/currency helpers
+- Self-contained quote API/currency helpers
+- Safer public document build
