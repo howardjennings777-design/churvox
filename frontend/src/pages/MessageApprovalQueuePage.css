@@ -1,6 +1,7 @@
 /* CHURVOX_MESSAGE_APPROVAL_QUEUE_PAGE_20260528 */
 /* CHURVOX_MESSAGE_QUEUE_APPROVAL_ACTIONS_20260528 */
 /* CHURVOX_MESSAGE_QUEUE_JOB_CONTEXT_20260528 */
+/* CHURVOX_MESSAGE_APPROVAL_EDIT_SEND_HISTORY_20260529 */
 
 .cmq-shell {
   min-height: 100vh;
@@ -24,7 +25,8 @@
 .cmq-hero > aside,
 .cmq-card,
 .cmq-notice,
-.cmq-linked-job-panel {
+.cmq-linked-job-panel,
+.cmq-history {
   border-radius: 30px;
   background: rgba(255, 253, 247, 0.9);
   border: 1px solid rgba(17, 24, 39, 0.12);
@@ -37,7 +39,8 @@
 
 .cmq-hero p,
 .cmq-card small,
-.cmq-linked-job-panel small {
+.cmq-linked-job-panel small,
+.cmq-history small {
   margin: 0 0 10px;
   color: #7e22ce;
   font-size: 12px;
@@ -82,7 +85,8 @@
 }
 
 .cmq-linked-job-panel,
-.cmq-notice {
+.cmq-notice,
+.cmq-history {
   max-width: 1240px;
   margin: 0 auto 18px;
   padding: 18px;
@@ -141,13 +145,18 @@
   outline: 3px solid rgba(190, 242, 100, 0.65);
 }
 
+.cmq-card.failed {
+  outline: 3px solid rgba(248, 113, 113, 0.55);
+  background: linear-gradient(180deg, rgba(255, 253, 247, 0.98), rgba(254, 242, 242, 0.96));
+}
+
 .cmq-card.linked {
   outline: 3px solid rgba(168, 85, 247, 0.34);
   background: linear-gradient(180deg, rgba(255, 253, 247, 0.96), rgba(250, 245, 255, 0.96));
 }
 
 .cmq-card h2 {
-  margin: 0;
+  margin: 0 0 14px;
   font-size: 28px;
   letter-spacing: -0.045em;
 }
@@ -156,6 +165,44 @@
   color: rgba(17, 24, 39, 0.66);
   font-weight: 750;
   line-height: 1.45;
+}
+
+.cmq-field {
+  display: grid;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.cmq-field span {
+  color: rgba(17, 24, 39, 0.58);
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cmq-field input,
+.cmq-field textarea {
+  width: 100%;
+  border: 1px solid rgba(17, 24, 39, 0.14);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #111827;
+  padding: 12px 13px;
+  font: inherit;
+  font-weight: 720;
+}
+
+.cmq-field textarea {
+  min-height: 150px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.cmq-field input:disabled,
+.cmq-field textarea:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
 }
 
 .cmq-actions-row {
@@ -167,7 +214,7 @@
 
 .cmq-actions-row button,
 .cmq-card a,
-.cmq-card span,
+.cmq-card > span,
 .cmq-footer a {
   display: inline-flex;
   width: fit-content;
@@ -188,6 +235,11 @@
   cursor: pointer;
 }
 
+.cmq-actions-row button:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+
 .cmq-actions-row button:first-child {
   background: #111827;
   color: #fffaf0;
@@ -206,6 +258,59 @@
 .cmq-card a {
   background: #111827;
   color: #fffaf0;
+}
+
+.cmq-history {
+  display: grid;
+  gap: 10px;
+}
+
+.cmq-history header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cmq-history header b {
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: rgba(17, 24, 39, 0.08);
+}
+
+.cmq-history article {
+  border-radius: 18px;
+  padding: 12px;
+  background: rgba(17, 24, 39, 0.045);
+  display: grid;
+  gap: 4px;
+}
+
+.cmq-history article.failed {
+  background: rgba(248, 113, 113, 0.12);
+}
+
+.cmq-history article.sent {
+  background: rgba(190, 242, 100, 0.16);
+}
+
+.cmq-history article span {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: #111827;
+  color: #fffaf0;
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.cmq-history article b,
+.cmq-history article em,
+.cmq-history article p {
+  color: #111827;
+  font-style: normal;
+  font-weight: 800;
 }
 
 .cmq-footer {
@@ -230,7 +335,7 @@
   .cmq-actions-row,
   .cmq-actions-row button,
   .cmq-card a,
-  .cmq-card span {
+  .cmq-card > span {
     width: 100%;
   }
 }
