@@ -1,10 +1,16 @@
 // CHURVOX_PUBLIC_INVOICE_TEMPLATE_20260528
+// CHURVOX_PUBLIC_DOCUMENT_IMPORT_SAFETY_20260528
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { API_BASE } from "@/lib/apiBase";
-import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import "./PublicDocumentTemplate.css";
+
+const API_BASE = (process.env.REACT_APP_BACKEND_URL || process.env.VITE_BACKEND_URL || "https://grassley-backend.onrender.com").replace(/\/$/, "");
+
+function formatCurrency(value) {
+  const n = Number(value || 0);
+  return n.toLocaleString("en-NZ", { style: "currency", currency: "NZD" });
+}
 
 export default function PublicInvoicePage() {
   const { token } = useParams();
@@ -38,7 +44,7 @@ export default function PublicInvoicePage() {
     }
   }
 
-  if (loading) return <div className="cpd-shell"><div className="cpd-document"><div className="cpd-body">Loading invoice…</div></div></div>;
+  if (loading) return <div className="cpd-shell"><div className="cpd-document"><div className="cpd-body">Loading invoice...</div></div></div>;
   if (!invoice) return <div className="cpd-shell"><div className="cpd-document"><div className="cpd-body">Invoice not found.</div></div></div>;
 
   const invoiceNumber = invoice.invoice_number || invoice.number || "Invoice";
@@ -49,7 +55,7 @@ export default function PublicInvoicePage() {
   const paymentLink = invoice.payment_link || invoice.payment_url || invoice.stripe_payment_url || "";
 
   return (
-    <main className="cpd-shell" data-version="CHURVOX_PUBLIC_INVOICE_TEMPLATE_20260528">
+    <main className="cpd-shell" data-version="CHURVOX_PUBLIC_INVOICE_TEMPLATE_20260528 CHURVOX_PUBLIC_DOCUMENT_IMPORT_SAFETY_20260528">
       <section className="cpd-actions">
         <b>Churvox invoice</b>
         <button type="button" onClick={() => window.print()}>Print / PDF</button>
