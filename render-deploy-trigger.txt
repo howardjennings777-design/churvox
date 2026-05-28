@@ -1,8 +1,10 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-28 NZT connector push
-Change: Audit row actions in Tools hub.
+Change: Launch route aliases.
 Includes:
-- Open source record from audit row
-- Copy audit record
-- Mobile-safe audit action buttons
+- /command -> /dashboard
+- /command-floor -> /dashboard
+- /money -> /invoices
+- /crew -> /team
+- /tools -> /operator-tools
