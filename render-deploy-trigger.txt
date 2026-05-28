@@ -1,8 +1,8 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-28 NZT connector push
-Change: Public proof/document compatibility sweep.
+Change: Backend top-tier route fallback registration hook.
 Includes:
-- Public invoice self-contained helpers
-- Public quote self-contained helpers
-- Proof pack/public document route compatibility check
+- plan_rules fallback hook
+- safer endpoint registration retry
+- proof/work-slip/client-memory/audit/offline/worker-note route support
