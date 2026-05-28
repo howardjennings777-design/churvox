@@ -1,7 +1,8 @@
 // CHURVOX_DISPATCH_BOARD_PAGE_20260528
 // CHURVOX_DISPATCH_BOARD_OPERATOR_UPGRADE_20260528
+// CHURVOX_DISPATCH_LINKED_JOB_NATIVE_HIGHLIGHT_20260529
 import React, { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { getDispatchBoard } from "../concept-c/churvoxTopTierApi";
 import "./DispatchBoardPage.css";
 
@@ -43,7 +44,23 @@ function jobWorker(job) {
   return job?.assigned_worker_name || job?.worker_name || job?.assigned_to_name || job?.assigned_worker_id || "No worker shown";
 }
 
+function jobStatus(job) {
+  return job?.status || job?.owner_review_status || job?.work_review_status || "Review";
+}
+
+function findLinkedJob(lanes, linkedJobId) {
+  if (!linkedJobId) return null;
+  for (const [laneKey, rows] of Object.entries(lanes || {})) {
+    if (!Array.isArray(rows)) continue;
+    const job = rows.find((row) => String(jobId(row)) === String(linkedJobId));
+    if (job) return { job, laneKey };
+  }
+  return null;
+}
+
 export default function DispatchBoardPage() {
+  const location = useLocation();
+  const linkedJobId = useMemo(() => new URLSearchParams(location.search).get("job_id") || "", [location.search]);
   const [state, setState] = useState({ loading: true, error: "", lanes: {} });
 
   useEffect(() => {
@@ -73,8 +90,19 @@ export default function DispatchBoardPage() {
     return { counts, total };
   }, [state.lanes]);
 
+  const linked = useMemo(() => findLinkedJob(state.lanes, linkedJobId), [state.lanes, linkedJobId]);
+
+  useEffect(() => {
+    if (state.loading || !linkedJobId) return;
+    const timer = window.setTimeout(() => {
+      const target = document.querySelector(`[data-cdb-job-id="${CSS.escape(linkedJobId)}"]`);
+      target?.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [state.loading, linkedJobId]);
+
   return (
-    <main className="cdb-shell" data-version="CHURVOX_DISPATCH_BOARD_PAGE_20260528 CHURVOX_DISPATCH_BOARD_OPERATOR_UPGRADE_20260528">
+    <main className="cdb-shell" data-version="CHURVOX_DISPATCH_BOARD_PAGE_20260528 CHURVOX_DISPATCH_BOARD_OPERATOR_UPGRADE_20260528 CHURVOX_DISPATCH_LINKED_JOB_NATIVE_HIGHLIGHT_20260529">
       <section className="cdb-hero">
         <div>
           <p>DISPATCH BOARD</p>
@@ -86,9 +114,37 @@ export default function DispatchBoardPage() {
         <aside>
           <small>Status</small>
           <b>{state.loading ? "Loading" : `${summary.total} jobs`}</b>
-          <em>{state.error || "Command Floor remains the approval flow"}</em>
+          <em>{state.error || (linkedJobId ? "Linked Work Slip highlighted below" : "Command Floor remains the approval flow")}</em>
         </aside>
       </section>
+
+      {linkedJobId && (
+        <section className={`cdb-linked-job-panel ${linked ? "is-found" : "is-missing"}`}>
+          <div>
+            <small>Dispatch from Work Slip</small>
+            <h2>{linked ? jobTitle(linked.job) : `Job ${linkedJobId}`}</h2>
+            <p>
+              {state.loading
+                ? "Loading linked dispatch context..."
+                : linked
+                  ? `${jobClient(linked.job)} · ${jobWorker(linked.job)} · ${laneLabels[linked.laneKey] || linked.laneKey} lane`
+                  : "This job was opened from a Work Slip, but it is not visible in the loaded dispatch lanes yet."}
+            </p>
+            {linked && (
+              <div className="cdb-linked-meta">
+                <span>{jobStatus(linked.job)}</span>
+                <span>{jobPlace(linked.job)}</span>
+                <span>{laneLabels[linked.laneKey] || linked.laneKey}</span>
+              </div>
+            )}
+          </div>
+          <nav>
+            <Link to={`/jobs/${linkedJobId}`}>Open linked job</Link>
+            <Link to="/dashboard">Back to Work Slip queue</Link>
+            <Link to={`/invoices/new?job_id=${encodeURIComponent(linkedJobId)}`}>Prepare invoice</Link>
+          </nav>
+        </section>
+      )}
 
       <section className="cdb-summary-strip">
         <article><small>Needs crew</small><b>{summary.counts.unassigned || 0}</b></article>
@@ -112,8 +168,15 @@ export default function DispatchBoardPage() {
               <div className="cdb-rows">
                 {rows.length ? rows.slice(0, 18).map((job, index) => {
                   const id = jobId(job);
+                  const isLinked = linkedJobId && String(id) === String(linkedJobId);
                   return (
-                    <Link to={id ? `/jobs/${id}` : "/jobs"} className="cdb-job" key={id || index}>
+                    <Link
+                      to={id ? `/jobs/${id}` : "/jobs"}
+                      className={`cdb-job ${isLinked ? "is-linked" : ""}`}
+                      data-cdb-job-id={id || undefined}
+                      key={id || index}
+                    >
+                      {isLinked && <i>Opened from Work Slip</i>}
                       <strong>{jobTitle(job)}</strong>
                       <small>{jobClient(job)}</small>
                       <em>{jobPlace(job)}</em>
