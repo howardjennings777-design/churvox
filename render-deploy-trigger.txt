@@ -1,9 +1,9 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-28 NZT connector push
-Change: Work Slip Money Desk action.
+Change: Work Slip Dispatch handoff.
 Includes:
-- Money Desk button inside Work Slip
-- Opens /invoices?job_id=...
-- Logs owner action through audit endpoint
-- Uses linked Money Desk context panel
+- Dispatch button inside Work Slip
+- Opens /dispatch-board?job_id=...
+- Linked job context panel on Dispatch Board
+- Audit log entry
