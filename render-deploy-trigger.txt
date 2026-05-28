@@ -1,11 +1,11 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT connector push
-Change: Final public document total fallback hardening.
+Change: Duplicate cleanup for Money Desk and Dispatch linked panels.
 Includes:
-- Public invoice line items win when saved totals are missing/zero
-- Public quote line items win when saved totals are missing/zero
-- Public invoice/quote templates still show totals, notes and payment/validity info
-- Internal launch pages remain guarded
-- Message Approval client email prefill remains included
-- Final launch proof checkpoint remains included
+- Removed older Money Desk context patch import to stop duplicate panels on /invoices?job_id=...
+- Kept newer Money Desk linked invoice filter panel
+- Removed duplicate Dispatch Board linked panel injection from runtime patch
+- Kept Work Slip Dispatch button
+- App routes/imports checked for obvious duplicates
+- Public invoice/quote total fallback hardening remains included
