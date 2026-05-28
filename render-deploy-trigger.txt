@@ -1,9 +1,9 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-28 NZT connector push
-Change: Message approvals linked job context.
+Change: Money Desk linked job context.
 Includes:
-- /message-approvals?job_id context panel
-- linked Work Slip draft card highlighted
+- /invoices?job_id linked Work Slip panel
+- create draft invoice handoff
 - open linked job action
-- no auto-send
+- copy job note
