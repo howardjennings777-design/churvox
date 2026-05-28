@@ -50,6 +50,7 @@ import MessageApprovalQueuePage from "./pages/MessageApprovalQueuePage";
 import DispatchBoardPage from "./pages/DispatchBoardPage";
 import OfflineSyncPage from "./pages/OfflineSyncPage";
 import TopTierOperatorToolsPage from "./pages/TopTierOperatorToolsPage";
+import LaunchReadinessPage from "./pages/LaunchReadinessPage";
 
 const Spinner = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -195,6 +196,7 @@ function App() {
           <FloatingBottomNav />
           <Routes>
             <Route path="/operator-tools" element={<BusinessRoute><TopTierOperatorToolsPage /></BusinessRoute>} />
+            <Route path="/launch-control" element={<BusinessRoute><LaunchReadinessPage /></BusinessRoute>} />
             <Route path="/public/proof/:token" element={<PublicProofPackPage />} />
             <Route path="/offline-sync" element={<OfflineSyncPage />} />
             <Route path="/dispatch-board" element={<DispatchBoardPage />} />
