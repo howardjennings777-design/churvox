@@ -1,4 +1,5 @@
 /* CHURVOX_MESSAGE_APPROVAL_QUEUE_PAGE_20260528 */
+/* CHURVOX_MESSAGE_QUEUE_APPROVAL_ACTIONS_20260528 */
 
 .cmq-shell {
   min-height: 100vh;
@@ -20,7 +21,8 @@
 
 .cmq-hero > div,
 .cmq-hero > aside,
-.cmq-card {
+.cmq-card,
+.cmq-notice {
   border-radius: 30px;
   background: rgba(255, 253, 247, 0.9);
   border: 1px solid rgba(17, 24, 39, 0.12);
@@ -76,6 +78,15 @@
   font-weight: 750;
 }
 
+.cmq-notice {
+  max-width: 1240px;
+  margin: 0 auto 18px;
+  padding: 15px 18px;
+  background: rgba(190, 242, 100, 0.24);
+  color: #365314;
+  font-weight: 950;
+}
+
 .cmq-list {
   max-width: 1240px;
   margin: 0 auto 22px;
@@ -86,6 +97,10 @@
 
 .cmq-card {
   padding: 22px;
+}
+
+.cmq-card.approved {
+  outline: 3px solid rgba(190, 242, 100, 0.65);
 }
 
 .cmq-card h2 {
@@ -100,6 +115,14 @@
   line-height: 1.45;
 }
 
+.cmq-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.cmq-actions-row button,
 .cmq-card a,
 .cmq-card span,
 .cmq-footer a {
@@ -114,6 +137,27 @@
   font-size: 12px;
   font-weight: 900;
   text-decoration: none;
+}
+
+.cmq-actions-row button {
+  margin: 0;
+  border: 0;
+  cursor: pointer;
+}
+
+.cmq-actions-row button:first-child {
+  background: #111827;
+  color: #fffaf0;
+}
+
+.cmq-actions-row button:nth-child(2) {
+  background: rgba(190, 242, 100, 0.28);
+  color: #365314;
+}
+
+.cmq-actions-row button:nth-child(3) {
+  background: rgba(220, 38, 38, 0.10);
+  color: #991b1b;
 }
 
 .cmq-card a {
@@ -133,5 +177,12 @@
   .cmq-hero,
   .cmq-list {
     grid-template-columns: 1fr;
+  }
+
+  .cmq-actions-row,
+  .cmq-actions-row button,
+  .cmq-card a,
+  .cmq-card span {
+    width: 100%;
   }
 }
