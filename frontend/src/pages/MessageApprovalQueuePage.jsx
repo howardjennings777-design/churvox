@@ -1,5 +1,6 @@
 // CHURVOX_MESSAGE_APPROVAL_QUEUE_PAGE_20260528
 // CHURVOX_MESSAGE_QUEUE_REAL_RECORD_DRAFTS_20260528
+// CHURVOX_MESSAGE_QUEUE_APPROVAL_ACTIONS_20260528
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAiAuditLog } from "../concept-c/churvoxTopTierApi";
@@ -22,14 +23,16 @@ function getToken() {
   }
 }
 
-async function fetchJson(path) {
+async function fetchJson(path, options = {}) {
   const token = getToken();
   const res = await fetch(`${cleanBase(API_BASE)}${path}`, {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers || {}),
     },
+    ...options,
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data?.detail || data?.message || `Request failed ${res.status}`);
@@ -63,16 +66,19 @@ function draftFromRecord(type, item) {
   const href = type === "job" ? `/jobs/${id}` : type === "invoice" ? `/invoices/${id}` : type === "quote" ? `/quotes/${id}` : "/dashboard";
   return {
     id: `${type}-${id || Math.random()}`,
+    record_id: id,
     type,
     title: recordTitle(item, `${type} message draft`),
     message: draft,
     href: id ? href : "/dashboard",
-    state: item?.status || item?.owner_review_status || "Draft",
+    state: item?.message_approval_status || item?.status || item?.owner_review_status || "Draft",
   };
 }
 
 export default function MessageApprovalQueuePage() {
   const [state, setState] = useState({ loading: true, error: "", actions: [], audit: [], jobs: [], invoices: [], quotes: [] });
+  const [localStatus, setLocalStatus] = useState({});
+  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     let alive = true;
@@ -125,6 +131,7 @@ export default function MessageApprovalQueuePage() {
       return text.includes("message") || text.includes("sms") || text.includes("email") || text.includes("follow");
     }).map((item) => ({
       id: item.id || item._id || item.title,
+      record_id: item.id || item._id || "",
       type: item.type || "ai action",
       title: item.title || item.summary || "Prepared message",
       message: item.generated_message || item.draft_message || item.message || item.summary || "Prepared for owner review.",
@@ -137,6 +144,7 @@ export default function MessageApprovalQueuePage() {
       return text.includes("message") || text.includes("draft") || text.includes("email") || text.includes("sms");
     }).map((item) => ({
       id: item.id || item._id || item.created_at,
+      record_id: item.target_id || item.id || item._id || "",
       type: "audit",
       title: item.action || "Audit message record",
       message: item.note || "Message-related audit record.",
@@ -147,8 +155,32 @@ export default function MessageApprovalQueuePage() {
     return [...recordDrafts, ...actionMessages, ...auditMessages].slice(0, 100);
   }, [state.actions, state.audit, state.jobs, state.invoices, state.quotes]);
 
+  async function logMessageAction(item, action) {
+    await fetchJson("/api/ai/audit-log", {
+      method: "POST",
+      body: JSON.stringify({
+        action,
+        target_type: item.type || "message",
+        target_id: item.record_id || item.id || "",
+        note: `${action.replace(/_/g, " ")}: ${item.title || "Prepared message"}. Nothing was auto-sent.`,
+      }),
+    });
+  }
+
+  async function markMessage(item, status) {
+    try {
+      await logMessageAction(item, status === "approved" ? "message_draft_approved" : status === "dismissed" ? "message_draft_dismissed" : "message_draft_saved_for_later");
+      setLocalStatus((prev) => ({ ...prev, [item.id]: status }));
+      setNotice(status === "approved" ? "Message approved for owner review. Sending still happens from the source record." : status === "dismissed" ? "Message draft dismissed from this queue." : "Message saved for later.");
+    } catch (err) {
+      setNotice(err?.message || "Could not update message status.");
+    }
+  }
+
+  const visibleMessages = messages.filter((item) => localStatus[item.id] !== "dismissed");
+
   return (
-    <main className="cmq-shell" data-version="CHURVOX_MESSAGE_APPROVAL_QUEUE_PAGE_20260528 CHURVOX_MESSAGE_QUEUE_REAL_RECORD_DRAFTS_20260528">
+    <main className="cmq-shell" data-version="CHURVOX_MESSAGE_APPROVAL_QUEUE_PAGE_20260528 CHURVOX_MESSAGE_QUEUE_REAL_RECORD_DRAFTS_20260528 CHURVOX_MESSAGE_QUEUE_APPROVAL_ACTIONS_20260528">
       <section className="cmq-hero">
         <div>
           <p>MESSAGE APPROVAL QUEUE</p>
@@ -159,21 +191,31 @@ export default function MessageApprovalQueuePage() {
         </div>
         <aside>
           <small>Status</small>
-          <b>{state.loading ? "Loading" : `${messages.length} drafts`}</b>
+          <b>{state.loading ? "Loading" : `${visibleMessages.length} drafts`}</b>
           <em>{state.error || "Nothing auto-sends"}</em>
         </aside>
       </section>
 
+      {notice ? <section className="cmq-notice">{notice}</section> : null}
+
       <section className="cmq-list">
-        {messages.length ? messages.map((item, index) => (
-          <article className="cmq-card" key={item.id || index}>
-            <small>{item.type || "draft"} · {item.state || "Draft"}</small>
-            <h2>{item.title || "Prepared message"}</h2>
-            <p>{item.message || "Prepared for owner review."}</p>
-            <Link to={item.href || "/dashboard"}>Open source record</Link>
-            <span>Review inside the Work Slip before sending.</span>
-          </article>
-        )) : (
+        {visibleMessages.length ? visibleMessages.map((item, index) => {
+          const status = localStatus[item.id] || item.state || "Draft";
+          return (
+            <article className={`cmq-card ${status === "approved" ? "approved" : ""}`} key={item.id || index}>
+              <small>{item.type || "draft"} · {status}</small>
+              <h2>{item.title || "Prepared message"}</h2>
+              <p>{item.message || "Prepared for owner review."}</p>
+              <div className="cmq-actions-row">
+                <button type="button" onClick={() => markMessage(item, "approved")}>Approve draft</button>
+                <button type="button" onClick={() => markMessage(item, "later")}>Save for later</button>
+                <button type="button" onClick={() => markMessage(item, "dismissed")}>Dismiss</button>
+              </div>
+              <Link to={item.href || "/dashboard"}>Open source record</Link>
+              <span>Approve here to log the decision. Send/share from the source record.</span>
+            </article>
+          );
+        }) : (
           <article className="cmq-card">
             <small>Clear</small>
             <h2>No message drafts waiting</h2>
