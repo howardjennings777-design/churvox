@@ -1,11 +1,10 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT connector push
-Change: Invoice and quote editor launch polish pushed.
+Change: Harden invoice editor helper after editor polish.
 Includes:
-- Invoice create editor has line items
-- Invoice GST, payment details, notes and total preview
-- Job-linked invoice prefill preserved
-- Quote create editor has line items
-- Quote customer-readable total preview
+- Safe invoice ID helper with recursion guard
+- Invoice line items still active
+- Invoice GST/payment details/total preview still active
+- Quote line items still active
 - Prior all-7 wiring sweep remains included
