@@ -119,9 +119,7 @@ function PayrollRoute({ children }) {
   const { user, loading, normalizedRole } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
-  if (normalizedRole !== "owner" && normalizedRole !== "manager" && normalizedRole !== "payroll") {
-    return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
-  }
+  if (normalizedRole !== "owner" && normalizedRole !== "manager" && normalizedRole !== "payroll") return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
   return <AppPage>{children}</AppPage>;
 }
 
@@ -129,9 +127,7 @@ function ReportsRoute({ children }) {
   const { user, loading, normalizedRole } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
-  if (!["owner", "manager", "office_admin"].includes(normalizedRole)) {
-    return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
-  }
+  if (!["owner", "manager", "office_admin"].includes(normalizedRole)) return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
   return <AppPage>{children}</AppPage>;
 }
 
@@ -169,12 +165,7 @@ function App() {
         const backendUrl = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || process.env.REACT_APP_BACKEND_URL || "").replace(/\/$/, "");
         if (sessionId && token && backendUrl) {
           try {
-            await fetch(`${backendUrl}/api/billing/confirm-checkout`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-              credentials: "include",
-              body: JSON.stringify({ session_id: sessionId }),
-            });
+            await fetch(`${backendUrl}/api/billing/confirm-checkout`, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }, credentials: "include", body: JSON.stringify({ session_id: sessionId }) });
           } catch (err) { console.warn("confirm-checkout failed (non-fatal):", err); }
         }
         if (checkout === "success") toast.success(plan ? `Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan is now active` : "Plan updated");
@@ -198,10 +189,10 @@ function App() {
             <Route path="/operator-tools" element={<BusinessRoute><TopTierOperatorToolsPage /></BusinessRoute>} />
             <Route path="/launch-control" element={<BusinessRoute><LaunchReadinessPage /></BusinessRoute>} />
             <Route path="/public/proof/:token" element={<PublicProofPackPage />} />
-            <Route path="/offline-sync" element={<OfflineSyncPage />} />
-            <Route path="/dispatch-board" element={<DispatchBoardPage />} />
-            <Route path="/message-approvals" element={<MessageApprovalQueuePage />} />
-            <Route path="/trade-presets" element={<TradePresetsPage />} />
+            <Route path="/offline-sync" element={<PrivateRoute><OfflineSyncPage /></PrivateRoute>} />
+            <Route path="/dispatch-board" element={<BusinessRoute><DispatchBoardPage /></BusinessRoute>} />
+            <Route path="/message-approvals" element={<BusinessRoute><MessageApprovalQueuePage /></BusinessRoute>} />
+            <Route path="/trade-presets" element={<BusinessRoute><TradePresetsPage /></BusinessRoute>} />
             <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
