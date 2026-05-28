@@ -1,11 +1,8 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-28 NZT connector push
-Change: Final launch navigation cleanup.
+Change: Launch Control page and Tools shortcut.
 Includes:
-- Command
-- Jobs
-- Clients
-- Money
-- Crew
-- Tools
+- /launch-control route
+- Launch Control page
+- Launch Control Tools card
