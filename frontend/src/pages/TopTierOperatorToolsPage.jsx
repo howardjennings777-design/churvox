@@ -9,6 +9,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAiAuditLog, getDispatchBoard, getTradePresets, listProofPacks, topTierFeatureList } from "../concept-c/churvoxTopTierApi";
 import "./TopTierOperatorToolsPage.css";
+import "./TopTierOperatorToolsAuditActions.css";
 
 const hubLinks = [
   ["/dashboard", "Command Floor", "Return to the main owner approval flow."],
@@ -121,80 +122,11 @@ export default function TopTierOperatorToolsPage() {
 
   return (
     <main className="tt-shell" data-version="CHURVOX_TOP_TIER_TOOLS_PAGE_20260528 CHURVOX_OPERATOR_TOOLS_HUB_LINKS_20260528 CHURVOX_OPERATOR_TOOLS_PROOF_PACK_LIST_20260528 CHURVOX_OPERATOR_TOOLS_AUDIT_LIST_20260528 CHURVOX_TOOLS_LAUNCH_CONTROL_LINK_20260528 CHURVOX_TOOLS_PROOF_PACK_ACTIONS_20260528 CHURVOX_TOOLS_AUDIT_ROW_ACTIONS_20260528">
-      <section className="tt-hero">
-        <div>
-          <p>AI OPERATOR TOOLS</p>
-          <h1>Top-tier control room</h1>
-          <span>Proof packs, audit trail, client memory, dispatch lanes, trade presets and offline worker safety are now part of the Churvox system.</span>
-        </div>
-        <aside><small>Status</small><b>{state.loading ? "Loading" : "Ready"}</b><em>{state.error || "Approval-first tools"}</em></aside>
-      </section>
-
+      <section className="tt-hero"><div><p>AI OPERATOR TOOLS</p><h1>Top-tier control room</h1><span>Proof packs, audit trail, client memory, dispatch lanes, trade presets and offline worker safety are now part of the Churvox system.</span></div><aside><small>Status</small><b>{state.loading ? "Loading" : "Ready"}</b><em>{state.error || "Approval-first tools"}</em></aside></section>
       {notice ? <section className="tt-notice">{notice}</section> : null}
-
-      <section className="tt-hub-grid" aria-label="Operator tool shortcuts">
-        {hubLinks.map(([href, title, copy]) => (
-          <Link key={href} to={href} className="tt-hub-card">
-            <small>Open</small>
-            <h2>{title}</h2>
-            <p>{copy}</p>
-            <b>Go →</b>
-          </Link>
-        ))}
-      </section>
-
-      <section className="tt-proof-panel">
-        <header>
-          <small>Customer proof packs</small>
-          <h2>Recent proof packs</h2>
-          <p>Open, copy or print the customer-ready proof page prepared from completed work.</p>
-        </header>
-        <div className="tt-proof-list">
-          {recentProofPacks.length ? recentProofPacks.map((pack, index) => {
-            const href = proofLink(pack);
-            const title = proofTitle(pack);
-            const body = pack.ai_summary || pack.owner_message || pack.customer_name || "Prepared customer proof record.";
-            return (
-              <div key={pack.id || pack._id || index} className="tt-proof-row tt-proof-action-row">
-                <span><b>{title}</b><small>{body}</small></span>
-                {href ? (
-                  <div className="tt-proof-actions">
-                    <a href={href} target="_blank" rel="noreferrer">Open</a>
-                    <button type="button" onClick={() => copyProof(href, title)}>Copy link</button>
-                    <a href={href} target="_blank" rel="noreferrer">Print / PDF</a>
-                  </div>
-                ) : <em>No public token yet</em>}
-              </div>
-            );
-          }) : <div className="tt-proof-empty">No proof packs yet. Open a Work Slip and tap Prepare proof pack.</div>}
-        </div>
-      </section>
-
-      <section className="tt-proof-panel tt-audit-panel">
-        <header>
-          <small>AI audit trail</small>
-          <h2>Recent operator activity</h2>
-          <p>See what Churvox prepared, opened, reopened or logged for owner review.</p>
-        </header>
-        <div className="tt-proof-list">
-          {recentAudit.length ? recentAudit.map((item, index) => {
-            const href = auditTargetHref(item);
-            return (
-              <div key={item.id || item._id || index} className="tt-proof-row tt-audit-row tt-audit-action-row">
-                <span><b>{auditTitle(item)}</b><small>{auditCopy(item)}</small></span>
-                <div className="tt-audit-meta-actions">
-                  <em>{niceDate(item.created_at || item.createdAt || item.time)}</em>
-                  <div className="tt-audit-actions">
-                    <Link to={href}>Open</Link>
-                    <button type="button" onClick={() => copyAudit(item)}>Copy</button>
-                  </div>
-                </div>
-              </div>
-            );
-          }) : <div className="tt-proof-empty">No audit records yet. Work Slip actions will appear here once used.</div>}
-        </div>
-      </section>
-
+      <section className="tt-hub-grid" aria-label="Operator tool shortcuts">{hubLinks.map(([href, title, copy]) => <Link key={href} to={href} className="tt-hub-card"><small>Open</small><h2>{title}</h2><p>{copy}</p><b>Go →</b></Link>)}</section>
+      <section className="tt-proof-panel"><header><small>Customer proof packs</small><h2>Recent proof packs</h2><p>Open, copy or print the customer-ready proof page prepared from completed work.</p></header><div className="tt-proof-list">{recentProofPacks.length ? recentProofPacks.map((pack, index) => { const href = proofLink(pack); const title = proofTitle(pack); const body = pack.ai_summary || pack.owner_message || pack.customer_name || "Prepared customer proof record."; return <div key={pack.id || pack._id || index} className="tt-proof-row tt-proof-action-row"><span><b>{title}</b><small>{body}</small></span>{href ? <div className="tt-proof-actions"><a href={href} target="_blank" rel="noreferrer">Open</a><button type="button" onClick={() => copyProof(href, title)}>Copy link</button><a href={href} target="_blank" rel="noreferrer">Print / PDF</a></div> : <em>No public token yet</em>}</div>; }) : <div className="tt-proof-empty">No proof packs yet. Open a Work Slip and tap Prepare proof pack.</div>}</div></section>
+      <section className="tt-proof-panel tt-audit-panel"><header><small>AI audit trail</small><h2>Recent operator activity</h2><p>See what Churvox prepared, opened, reopened or logged for owner review.</p></header><div className="tt-proof-list">{recentAudit.length ? recentAudit.map((item, index) => { const href = auditTargetHref(item); return <div key={item.id || item._id || index} className="tt-proof-row tt-audit-row tt-audit-action-row"><span><b>{auditTitle(item)}</b><small>{auditCopy(item)}</small></span><div className="tt-audit-meta-actions"><em>{niceDate(item.created_at || item.createdAt || item.time)}</em><div className="tt-audit-actions"><Link to={href}>Open</Link><button type="button" onClick={() => copyAudit(item)}>Copy</button></div></div></div>; }) : <div className="tt-proof-empty">No audit records yet. Work Slip actions will appear here once used.</div>}</div></section>
       <section className="tt-grid tt-feature-grid">{topTierFeatureList.map((feature) => <article key={feature} className="tt-card"><small>Foundation</small><h2>{feature}</h2><p>Wired as part of the AI Operator system. Churvox prepares the admin; the owner stays in control.</p></article>)}</section>
       <section className="tt-grid"><article className="tt-card"><small>AI audit trail</small><h2>{state.audit.length} audit records</h2><p>Prepared actions, approvals, reopened slips, draft invoices and operator activity.</p></article><article className="tt-card"><small>Proof packs</small><h2>{state.proofPacks.length}</h2><p>Customer-ready proof records prepared from completed jobs.</p></article><article className="tt-card"><small>Dispatch board</small><h2>{laneCount}</h2><p>Jobs grouped into dispatch and review lanes.</p></article><article className="tt-card"><small>Trade presets</small><h2>{state.presets.length}</h2><p>Trade-specific wording and setup foundations.</p></article></section>
     </main>
