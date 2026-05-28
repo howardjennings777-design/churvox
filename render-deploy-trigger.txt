@@ -1,8 +1,9 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-28 NZT connector push
-Change: Worker offline note runtime confirmed.
+Change: Proof pack actions in Tools hub.
 Includes:
-- existing worker offline note panel remains active
-- removed duplicate unused worker offline note patch
-- worker note save/queue/sync flow preserved
+- Open proof
+- Copy proof link
+- Print/PDF proof link
+- Tools notice after copy
