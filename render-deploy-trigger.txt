@@ -1,10 +1,12 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT connector push
-Change: Message Approval client email prefill hardening.
+Change: Final launch-safe hardening sweep.
 Includes:
-- Message Approval loads saved clients
-- Draft email can prefill from linked client_id/customer_id
-- Work Slip message approval is less likely to block on blank customer email
+- Public invoice line items, GST, total, payment details and notes
+- Public quote line items, total, notes and validity
+- Internal launch pages guarded behind auth/business routes
+- Message Approval client email prefill remains included
 - Invoice/quote editor polish remains included
-- Prior all-7 wiring sweep remains included
+- Dispatch, Money Desk, Offline Sync and Work Slip linked flows remain included
+- Launch final proof checkpoint added
