@@ -1,0 +1,52 @@
+/* CHURVOX_TOOLS_AUDIT_ROW_ACTIONS_20260528 */
+
+.tt-audit-action-row {
+  align-items: flex-start;
+}
+
+.tt-audit-meta-actions {
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+}
+
+.tt-audit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.tt-audit-actions a,
+.tt-audit-actions button {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 11px;
+  background: #111827;
+  color: #fffaf0;
+  font-size: 12px;
+  font-weight: 950;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.tt-audit-actions button {
+  background: rgba(17, 24, 39, 0.08);
+  color: #111827;
+}
+
+@media (max-width: 760px) {
+  .tt-audit-meta-actions {
+    justify-items: stretch;
+  }
+
+  .tt-audit-actions {
+    justify-content: stretch;
+  }
+
+  .tt-audit-actions a,
+  .tt-audit-actions button {
+    width: 100%;
+    text-align: center;
+  }
+}
