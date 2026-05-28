@@ -1,10 +1,11 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-28 NZT connector push
-Change: Message approval queue action layer.
+Change: Final launch navigation cleanup.
 Includes:
-- Approve draft
-- Save for later
-- Dismiss draft
-- Audit log entry for owner decision
-- No auto-send
+- Command
+- Jobs
+- Clients
+- Money
+- Crew
+- Tools
