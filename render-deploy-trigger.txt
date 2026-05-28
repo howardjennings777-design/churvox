@@ -1,5 +1,13 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-28 NZT connector push
-Change: Production Offline Sync queue cleanup.
-Render marker only.
+Change: Backend top-tier endpoint route module and startup hook.
+Includes:
+- /api/proof-packs
+- /api/proof-packs/from-job/{job_id}
+- /api/public/proof/{token}
+- /api/work-slips/{job_id}/reopen
+- /api/clients/{client_id}/memory
+- /api/ai/audit-log
+- /api/offline-sync
+- /api/worker/voice-notes/draft
