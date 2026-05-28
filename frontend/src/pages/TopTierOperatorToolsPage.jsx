@@ -4,6 +4,7 @@
 // CHURVOX_OPERATOR_TOOLS_AUDIT_LIST_20260528
 // CHURVOX_TOOLS_LAUNCH_CONTROL_LINK_20260528
 // CHURVOX_TOOLS_PROOF_PACK_ACTIONS_20260528
+// CHURVOX_TOOLS_AUDIT_ROW_ACTIONS_20260528
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAiAuditLog, getDispatchBoard, getTradePresets, listProofPacks, topTierFeatureList } from "../concept-c/churvoxTopTierApi";
@@ -52,6 +53,26 @@ function auditCopy(item) {
   return item?.note || item?.message || item?.target_type || "Action recorded in the AI Operator audit trail.";
 }
 
+function auditTargetHref(item) {
+  const id = item?.target_id || item?.job_id || item?.client_id || item?.invoice_id || item?.quote_id || "";
+  const type = String(item?.target_type || item?.type || item?.action || "").toLowerCase();
+  if (!id) return "/operator-tools";
+  if (type.includes("invoice")) return `/invoices/${id}`;
+  if (type.includes("quote")) return `/quotes/${id}`;
+  if (type.includes("client") || type.includes("customer")) return `/clients/${id}`;
+  if (type.includes("job") || type.includes("work") || type.includes("dispatch") || type.includes("proof") || type.includes("message")) return `/jobs/${id}`;
+  return "/operator-tools";
+}
+
+function auditText(item) {
+  return [
+    `Action: ${auditTitle(item)}`,
+    `Note: ${auditCopy(item)}`,
+    `Target: ${item?.target_type || item?.type || "record"} ${item?.target_id || item?.job_id || ""}`.trim(),
+    `Time: ${niceDate(item?.created_at || item?.createdAt || item?.time)}`,
+  ].join("\n");
+}
+
 export default function TopTierOperatorToolsPage() {
   const [state, setState] = useState({ loading: true, error: "", audit: [], proofPacks: [], presets: [], lanes: {} });
   const [notice, setNotice] = useState("");
@@ -85,12 +106,21 @@ export default function TopTierOperatorToolsPage() {
     }
   }
 
+  async function copyAudit(item) {
+    try {
+      await navigator.clipboard.writeText(auditText(item));
+      setNotice(`Copied audit record: ${auditTitle(item)}.`);
+    } catch {
+      setNotice(auditText(item));
+    }
+  }
+
   const laneCount = useMemo(() => Object.values(state.lanes || {}).reduce((total, lane) => total + (Array.isArray(lane) ? lane.length : 0), 0), [state.lanes]);
   const recentProofPacks = state.proofPacks.slice(0, 6);
   const recentAudit = state.audit.slice(0, 8);
 
   return (
-    <main className="tt-shell" data-version="CHURVOX_TOP_TIER_TOOLS_PAGE_20260528 CHURVOX_OPERATOR_TOOLS_HUB_LINKS_20260528 CHURVOX_OPERATOR_TOOLS_PROOF_PACK_LIST_20260528 CHURVOX_OPERATOR_TOOLS_AUDIT_LIST_20260528 CHURVOX_TOOLS_LAUNCH_CONTROL_LINK_20260528 CHURVOX_TOOLS_PROOF_PACK_ACTIONS_20260528">
+    <main className="tt-shell" data-version="CHURVOX_TOP_TIER_TOOLS_PAGE_20260528 CHURVOX_OPERATOR_TOOLS_HUB_LINKS_20260528 CHURVOX_OPERATOR_TOOLS_PROOF_PACK_LIST_20260528 CHURVOX_OPERATOR_TOOLS_AUDIT_LIST_20260528 CHURVOX_TOOLS_LAUNCH_CONTROL_LINK_20260528 CHURVOX_TOOLS_PROOF_PACK_ACTIONS_20260528 CHURVOX_TOOLS_AUDIT_ROW_ACTIONS_20260528">
       <section className="tt-hero">
         <div>
           <p>AI OPERATOR TOOLS</p>
@@ -147,12 +177,21 @@ export default function TopTierOperatorToolsPage() {
           <p>See what Churvox prepared, opened, reopened or logged for owner review.</p>
         </header>
         <div className="tt-proof-list">
-          {recentAudit.length ? recentAudit.map((item, index) => (
-            <div key={item.id || item._id || index} className="tt-proof-row tt-audit-row">
-              <span><b>{auditTitle(item)}</b><small>{auditCopy(item)}</small></span>
-              <em>{niceDate(item.created_at || item.createdAt || item.time)}</em>
-            </div>
-          )) : <div className="tt-proof-empty">No audit records yet. Work Slip actions will appear here once used.</div>}
+          {recentAudit.length ? recentAudit.map((item, index) => {
+            const href = auditTargetHref(item);
+            return (
+              <div key={item.id || item._id || index} className="tt-proof-row tt-audit-row tt-audit-action-row">
+                <span><b>{auditTitle(item)}</b><small>{auditCopy(item)}</small></span>
+                <div className="tt-audit-meta-actions">
+                  <em>{niceDate(item.created_at || item.createdAt || item.time)}</em>
+                  <div className="tt-audit-actions">
+                    <Link to={href}>Open</Link>
+                    <button type="button" onClick={() => copyAudit(item)}>Copy</button>
+                  </div>
+                </div>
+              </div>
+            );
+          }) : <div className="tt-proof-empty">No audit records yet. Work Slip actions will appear here once used.</div>}
         </div>
       </section>
 
