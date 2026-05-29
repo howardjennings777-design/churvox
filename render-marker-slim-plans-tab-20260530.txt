@@ -1,0 +1,5 @@
+slim Plans tab in bottom navigation
+bottom nav forced to one row
+Plan Command long label removed
+frontend only
+backend unchanged
