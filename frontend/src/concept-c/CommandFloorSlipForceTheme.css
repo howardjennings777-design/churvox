@@ -1,0 +1,208 @@
+/* CHURVOX_FORCE_REAL_SLIP_THEME_20260529
+   Loaded from index.js so it wins over component CSS.
+   Forces the actual Work Slip shell/list/actions to match Command Floor.
+*/
+
+html:has(.cfs-overlay),
+body:has(.cfs-overlay),
+#root:has(.cfs-overlay) {
+  background: #020817 !important;
+  overflow: hidden !important;
+}
+
+/* Full page overlay */
+body .cfs-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99999 !important;
+  overflow: auto !important;
+  padding: 18px !important;
+  color: #f8fbff !important;
+  background:
+    radial-gradient(circle at 12% 2%, rgba(38, 211, 238, .20), transparent 30%),
+    radial-gradient(circle at 88% 4%, rgba(98, 72, 255, .26), transparent 32%),
+    linear-gradient(135deg, #020817 0%, #06152c 42%, #071d3d 100%) !important;
+}
+
+/* Kill the white/light slip shell */
+body .cfs-overlay > *,
+body .cfs-overlay .cfs-sheet {
+  background:
+    radial-gradient(circle at 82% 10%, rgba(98,72,255,.18), transparent 32%),
+    linear-gradient(135deg, rgba(3,13,33,.96), rgba(6,21,44,.94)) !important;
+  color: #f8fbff !important;
+  border-color: rgba(125,189,255,.20) !important;
+  box-shadow: 0 28px 100px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+
+/* Main sheet */
+body .cfs-overlay .cfs-sheet {
+  width: min(1560px, calc(100vw - 36px)) !important;
+  margin: 0 auto !important;
+  padding: 14px !important;
+  border: 1px solid rgba(125,189,255,.20) !important;
+  border-radius: 30px !important;
+  display: grid !important;
+  gap: 16px !important;
+}
+
+/* Header */
+body .cfs-overlay .cfs-head {
+  border-radius: 24px !important;
+  padding: clamp(24px, 3vw, 38px) !important;
+  background:
+    radial-gradient(circle at 78% 18%, rgba(98,72,255,.32), transparent 32%),
+    radial-gradient(circle at 8% 88%, rgba(38,211,238,.18), transparent 34%),
+    rgba(3,13,33,.98) !important;
+  border: 1px solid rgba(125,189,255,.20) !important;
+}
+
+body .cfs-overlay :is(h1,h2,h3,h4,b,strong,label) {
+  color: #fff !important;
+}
+
+body .cfs-overlay :is(p,span,small,em,li) {
+  color: rgba(248,251,255,.78) !important;
+}
+
+body .cfs-overlay .cfs-head :is(p,small),
+body .cfs-overlay .cfs-section-title {
+  color: #62e8f5 !important;
+  letter-spacing: .18em !important;
+  text-transform: uppercase !important;
+  font-weight: 950 !important;
+}
+
+body .cfs-overlay .cfs-head h2 {
+  color: #fff !important;
+  text-shadow: 0 24px 70px rgba(0,0,0,.38) !important;
+}
+
+/* Every panel/card/summary/list must be dark */
+body .cfs-overlay :is(
+  .cfs-facts span,
+  .cfs-decision,
+  .cfs-job-form article,
+  .cfs-card,
+  .cfs-lane-summary,
+  .cfs-lane-summary > *,
+  .cfs-lane-list,
+  .cfs-lane-row,
+  .cfs-empty,
+  .cfs-read-field,
+  .cfs-ai-box,
+  .cfs-next,
+  .cfs-attention,
+  .cfs-happened,
+  .cfs-ai,
+  article,
+  section
+) {
+  color: #f8fbff !important;
+  background:
+    radial-gradient(circle at 82% 12%, rgba(98,72,255,.12), transparent 30%),
+    linear-gradient(135deg, rgba(4,16,39,.92), rgba(8,30,66,.84)) !important;
+  border-color: rgba(125,189,255,.18) !important;
+}
+
+/* Visible list rows */
+body .cfs-overlay :is(.cfs-lane-row, .cfs-lane-list button, button.cfs-lane-row) {
+  min-height: 72px !important;
+  border-radius: 16px !important;
+  padding: 14px 16px !important;
+  background: linear-gradient(135deg, rgba(255,255,255,.085), rgba(255,255,255,.045)) !important;
+  border: 1px solid rgba(125,189,255,.16) !important;
+  color: #fff !important;
+}
+
+body .cfs-overlay :is(.cfs-lane-row, .cfs-lane-list button, button.cfs-lane-row):hover {
+  transform: translateY(-1px) !important;
+  border-color: rgba(98,232,245,.40) !important;
+  background: linear-gradient(135deg, rgba(20,216,244,.14), rgba(98,72,255,.12)) !important;
+}
+
+/* Inputs/forms */
+body .cfs-overlay :is(input, textarea, select, .cfs-read-field) {
+  background: rgba(255,255,255,.075) !important;
+  color: #fff !important;
+  border: 1px solid rgba(125,189,255,.18) !important;
+  border-radius: 14px !important;
+}
+
+body .cfs-overlay :is(input, textarea, select):focus {
+  outline: none !important;
+  border-color: rgba(98,232,245,.60) !important;
+  box-shadow: 0 0 0 4px rgba(98,232,245,.10) !important;
+}
+
+/* Missing fields */
+body .cfs-overlay :is(.is-missing, .cfs-missing-card, .cfs-blocked) {
+  background: linear-gradient(135deg, rgba(127,29,29,.42), rgba(45,18,38,.84)) !important;
+  border-color: rgba(248,113,113,.50) !important;
+}
+
+/* Bottom actions / old cream pills */
+body .cfs-overlay :is(.cfs-actions, footer, nav) {
+  position: fixed !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  z-index: 100001 !important;
+  width: min(1180px, calc(100vw - 36px)) !important;
+  transform: translateX(-50%) !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  padding: 10px !important;
+  border: 1px solid rgba(125,189,255,.18) !important;
+  border-radius: 24px !important;
+  background: rgba(3,13,33,.92) !important;
+  box-shadow: 0 24px 90px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.08) !important;
+  backdrop-filter: blur(22px) saturate(150%) !important;
+}
+
+body .cfs-overlay :is(.cfs-actions, footer, nav) :is(button, a),
+body .cfs-overlay :is(button, a) {
+  border-radius: 14px !important;
+  border: 1px solid rgba(125,189,255,.18) !important;
+  background: rgba(255,255,255,.075) !important;
+  color: #f8fbff !important;
+  font-weight: 900 !important;
+  text-decoration: none !important;
+}
+
+body .cfs-overlay :is(.cfs-actions, footer, nav) :is(button:first-child, .primary, [class*="primary"]) {
+  background: linear-gradient(135deg, #14d8f4, #245cff 48%, #9333ea) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+  box-shadow: 0 16px 42px rgba(36,92,255,.28) !important;
+}
+
+/* Photos/evidence */
+body .cfs-overlay :is(.cfs-photo-row span, .cfs-photo-placeholders span) {
+  background: linear-gradient(135deg, rgba(20,216,244,.24), rgba(36,92,255,.18)) !important;
+  border: 1px solid rgba(125,189,255,.18) !important;
+  border-radius: 14px !important;
+}
+
+/* Mobile */
+@media(max-width: 700px) {
+  body .cfs-overlay {
+    padding: 10px 10px 170px !important;
+  }
+
+  body .cfs-overlay .cfs-sheet {
+    width: min(100%, calc(100vw - 20px)) !important;
+    padding: 10px !important;
+  }
+
+  body .cfs-overlay .cfs-head {
+    grid-template-columns: 1fr !important;
+    padding: 24px !important;
+  }
+
+  body .cfs-overlay :is(.cfs-actions, footer, nav) {
+    width: min(100%, calc(100vw - 20px)) !important;
+  }
+}
