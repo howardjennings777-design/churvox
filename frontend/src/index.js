@@ -17,6 +17,8 @@ import './concept-c/commandFloorWorkSlipCleanOverride.css';
 import './concept-c/commandFloorSlipScrollFix.css';
 import './concept-c/commandFloorSlipRedesign.css';
 import './concept-c/churvoxWorkSlipActionBarPolish.css';
+import './concept-c/CommandFloorSlipForceTheme.css';
+import './concept-c/CommandFloorSlipFinalFit.css';
 import './concept-c/churvoxTopTierRuntimePatch';
 import './concept-c/churvoxWorkerOfflineRuntimePatch';
 import './concept-c/churvoxActivePresetJobRuntimePatch';
@@ -32,13 +34,22 @@ import './deploy/guidedOperatorFloorDeployMarker';
 import './deploy/commandFloorTestingDeployMarker';
 import './deploy/commandFloorRuntimeMarkers';
 
+// CHURVOX_DISABLE_STALE_SERVICE_WORKER_20260529
+// Do not register the PWA service worker while launch UI is changing quickly.
+// This prevents old cached index.html files from asking for deleted hashed bundles.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then((reg) => {
-      reg.update().catch(() => {});
-    }).catch((err) => {
-      console.warn('SW registration failed:', err);
-    });
+    navigator.serviceWorker.getRegistrations()
+      .then((regs) => Promise.all(regs.map((reg) => reg.unregister())))
+      .catch(() => {});
+  });
+}
+
+if ('caches' in window) {
+  window.addEventListener('load', () => {
+    caches.keys()
+      .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+      .catch(() => {});
   });
 }
 
@@ -48,5 +59,3 @@ root.render(
     <App />
   </React.StrictMode>
 );
-import "./concept-c/CommandFloorSlipForceTheme.css";
-import "./concept-c/CommandFloorSlipFinalFit.css";
