@@ -1,0 +1,43 @@
+/* CHURVOX_HIDE_TOP_NAV_KEEP_BOTTOM_NAV_20260530
+   Removes the top Command nav bar from logged-in app pages.
+   Bottom nav remains the main navigation.
+*/
+
+.xcf-shell > .xcf-topbar,
+.xcf-real-page .xcf-topbar,
+.xcf-command-10 .xcf-topbar,
+.xcf-workspace .xcf-topbar {
+  display: none !important;
+}
+
+.xcf-shell.xcf-real-page,
+.xcf-shell.xcf-workspace.xcf-real-page {
+  grid-template-areas:
+    "hero"
+    "records"
+    "dock" !important;
+  grid-template-rows: 126px minmax(0, 1fr) 72px !important;
+}
+
+.xcf-shell.xcf-command-10 {
+  padding-top: 14px !important;
+}
+
+.xcf-shell.xcf-command-10 .xcf10-top-grid {
+  margin-top: 0 !important;
+}
+
+.xcf-shell.xcf-workspace:not(.xcf-real-page) {
+  padding-top: 14px !important;
+}
+
+.xcf-bottom-nav {
+  z-index: 200 !important;
+}
+
+@media (max-width: 1220px) {
+  .xcf-shell.xcf-real-page,
+  .xcf-shell.xcf-workspace.xcf-real-page {
+    grid-template-rows: auto auto 72px !important;
+  }
+}
