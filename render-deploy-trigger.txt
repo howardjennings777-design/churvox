@@ -1,11 +1,14 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT
-Change: Command Floor right edge safe area
+Change: Command Floor final product polish
 
 Frontend:
-- fixed right-side card cutoff
-- added safe viewport gutter
-- kept cockpit centred
-- adjusted lane grid for laptop widths
+- fixes right edge cutoff
+- centres cockpit
+- tightens operating lanes
+- improves AI operator feel
+- improves bottom dock spacing
+- hides old clutter
+- adds Work Slip cockpit-style carry-through
 - backend unchanged

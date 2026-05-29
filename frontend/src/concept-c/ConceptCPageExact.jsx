@@ -8,6 +8,7 @@ import "./ConceptCWorkSlipTight.css";
 import "./ChurvoxClarityPass.css";
 import "./commandFloorProperControlTower.css";
 import "./commandFloorFullScreen10.css";
+import "./commandFloorFinalProductPolish.css";
 import "./commandFloorWowOperatorLayout.css";
 import "./commandFloorCompactHeroNoTopbar.css";
 
