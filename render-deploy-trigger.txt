@@ -1,9 +1,11 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT
-Change: tiny Command Floor border gap
+Change: Command Floor right edge safe area
 
 Frontend:
-- added small premium edge gap around full-screen Command Floor
-- CSS only
+- fixed right-side card cutoff
+- added safe viewport gutter
+- kept cockpit centred
+- adjusted lane grid for laptop widths
 - backend unchanged

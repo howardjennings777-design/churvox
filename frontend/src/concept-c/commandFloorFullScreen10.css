@@ -649,3 +649,141 @@
     width: min(100%, calc(100vw - 20px)) !important;
   }
 }
+
+/* CHURVOX_COMMAND_FLOOR_RIGHT_EDGE_SAFE_AREA_20260529 */
+/* Stops the right-side lane/card from being cut off by the viewport/scrollbar. */
+
+html,
+body {
+  overflow-x: hidden !important;
+}
+
+body:has(.xcf-command-10) {
+  background: #020817 !important;
+  overflow-x: hidden !important;
+}
+
+.xcf-command-10 {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+  padding-left: clamp(18px, 2.4vw, 38px) !important;
+  padding-right: clamp(34px, 4vw, 72px) !important;
+}
+
+.xcf10-top-grid,
+.xcf10-lanes-head,
+.xcf10-lanes,
+.xcf10-snapshot {
+  box-sizing: border-box !important;
+  width: min(1500px, calc(100vw - 118px)) !important;
+  max-width: calc(100vw - 118px) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.xcf10-lanes {
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  overflow: visible !important;
+}
+
+.xcf10-lane {
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  padding: 16px !important;
+}
+
+.xcf10-lane h3 {
+  font-size: clamp(18px, 1.25vw, 22px) !important;
+}
+
+.xcf10-lane p {
+  font-size: clamp(12px, .9vw, 14px) !important;
+}
+
+.xcf10-lane header {
+  grid-template-columns: 46px 1fr auto !important;
+}
+
+.xcf10-lane header i {
+  width: 46px !important;
+  height: 46px !important;
+}
+
+.xcf10-lane header strong {
+  font-size: clamp(22px, 1.8vw, 28px) !important;
+}
+
+.xcf10-lanes-head {
+  padding-right: 0 !important;
+}
+
+.xcf10-lanes-head button {
+  white-space: nowrap !important;
+  margin-right: 0 !important;
+}
+
+.xcf10-dock {
+  box-sizing: border-box !important;
+  width: min(1280px, calc(100vw - 118px)) !important;
+  max-width: calc(100vw - 118px) !important;
+}
+
+/* Laptop-size fallback: keep six cards from overflowing by using 3 columns cleanly. */
+@media (max-width: 1450px) {
+  .xcf10-top-grid,
+  .xcf10-lanes-head,
+  .xcf10-lanes,
+  .xcf10-snapshot,
+  .xcf10-dock {
+    width: min(100%, calc(100vw - 90px)) !important;
+    max-width: calc(100vw - 90px) !important;
+  }
+
+  .xcf10-lanes {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Smaller laptop/tablet. */
+@media (max-width: 980px) {
+  .xcf-command-10 {
+    padding-left: 16px !important;
+    padding-right: 28px !important;
+  }
+
+  .xcf10-top-grid,
+  .xcf10-lanes-head,
+  .xcf10-lanes,
+  .xcf10-snapshot,
+  .xcf10-dock {
+    width: min(100%, calc(100vw - 48px)) !important;
+    max-width: calc(100vw - 48px) !important;
+  }
+
+  .xcf10-lanes {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .xcf-command-10 {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .xcf10-top-grid,
+  .xcf10-lanes-head,
+  .xcf10-lanes,
+  .xcf10-snapshot,
+  .xcf10-dock {
+    width: min(100%, calc(100vw - 20px)) !important;
+    max-width: calc(100vw - 20px) !important;
+  }
+
+  .xcf10-lanes {
+    grid-template-columns: 1fr !important;
+  }
+}
