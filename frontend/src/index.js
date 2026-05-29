@@ -21,6 +21,7 @@ import './concept-c/CommandFloorSlipForceTheme.css';
 import './concept-c/CommandFloorSlipFinalFit.css';
 import './concept-c/CommandRealPagesTheme.css';
 import './concept-c/CommandRealPagesUsabilityFix.css';
+import './concept-c/CommandRealPagesBadgeFix.css';
 import './concept-c/churvoxTopTierRuntimePatch';
 import './concept-c/churvoxWorkerOfflineRuntimePatch';
 import './concept-c/churvoxActivePresetJobRuntimePatch';
