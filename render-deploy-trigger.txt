@@ -1,10 +1,10 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT
-Change: force inline Command Floor Work Slip theme
+Change: final Work Slip white card/action bar fix
 
 Frontend:
-- injects Work Slip cockpit theme inside real React component
-- white slip shell cannot stay white
-- rows, panels, inputs, actions match Command Floor gradient
+- forces bottom-right Work Slip card dark
+- keeps all lower cards in Command Floor gradient theme
+- action bar no longer covers content as badly
 - backend unchanged

@@ -441,6 +441,81 @@ const SLIP_FORCE_CSS = `
   border-radius: 14px !important;
 }
 
+
+/* CHURVOX_FINAL_WHITE_CARD_ACTION_BAR_FIX_20260529 */
+/* Kill the last pale lower card and make actions sit cleanly. */
+
+.cfs-force-command-theme .cfs-lower {
+  display: grid !important;
+  grid-template-columns: 1.25fr 1fr .9fr !important;
+  gap: 16px !important;
+  padding-bottom: 18px !important;
+}
+
+.cfs-force-command-theme .cfs-lower > article,
+.cfs-force-command-theme .cfs-lower .cfs-card,
+.cfs-force-command-theme .cfs-lower .cfs-card.cfs-next,
+.cfs-force-command-theme article.cfs-card.cfs-next,
+.cfs-force-command-theme .cfs-next {
+  color: #f8fbff !important;
+  background:
+    radial-gradient(circle at 82% 12%, rgba(98,72,255,.16), transparent 30%),
+    linear-gradient(135deg, rgba(4,16,39,.96), rgba(8,30,66,.88)) !important;
+  border: 1px solid rgba(125,189,255,.22) !important;
+  box-shadow: 0 18px 58px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+
+.cfs-force-command-theme .cfs-lower .cfs-card.cfs-next *,
+.cfs-force-command-theme article.cfs-card.cfs-next *,
+.cfs-force-command-theme .cfs-next * {
+  color: rgba(248,251,255,.78) !important;
+}
+
+.cfs-force-command-theme .cfs-lower .cfs-card.cfs-next :is(b,strong,h3,h4),
+.cfs-force-command-theme article.cfs-card.cfs-next :is(b,strong,h3,h4),
+.cfs-force-command-theme .cfs-next :is(b,strong,h3,h4) {
+  color: #fff !important;
+}
+
+.cfs-force-command-theme .cfs-lower .cfs-card.cfs-next :is(small,.cfs-section-title),
+.cfs-force-command-theme article.cfs-card.cfs-next :is(small,.cfs-section-title),
+.cfs-force-command-theme .cfs-next :is(small,.cfs-section-title) {
+  color: #62e8f5 !important;
+}
+
+.cfs-force-command-theme .cfs-actions {
+  position: sticky !important;
+  bottom: 10px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  width: min(940px, 100%) !important;
+  margin: 16px auto 0 !important;
+  z-index: 6 !important;
+  border-radius: 24px !important;
+  background: rgba(3,13,33,.94) !important;
+}
+
+/* Stop any white/yellow helper chip from leaking into the slip */
+.cfs-force-command-theme :is(
+  [class*="bg-white"],
+  [class*="bg-slate"],
+  [class*="bg-gray"],
+  [class*="bg-zinc"],
+  [class*="bg-neutral"],
+  [class*="bg-yellow"],
+  [class*="bg-amber"],
+  [style*="background: white"],
+  [style*="background:#fff"],
+  [style*="background-color: white"],
+  [style*="background-color:#fff"]
+) {
+  background: rgba(255,255,255,.075) !important;
+  color: #f8fbff !important;
+  border-color: rgba(125,189,255,.18) !important;
+}
+
+
 @media(max-width: 700px) {
   .cfs-force-command-theme .cfs-force-command-sheet,
   .cfs-force-command-theme .cfs-sheet {
