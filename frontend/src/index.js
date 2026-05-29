@@ -26,6 +26,7 @@ import './concept-c/churvoxTopTierRuntimePatch';
 import './concept-c/churvoxWorkerOfflineRuntimePatch';
 import './concept-c/churvoxActivePresetJobRuntimePatch';
 import './concept-c/churvoxLaunchNavRuntimePatch';
+import './concept-c/churvoxPlansNavPatch';
 import './concept-c/churvoxWorkSlipLinkedActionsBridge';
 import './concept-c/churvoxInvoiceJobContextPatch';
 import './concept-c/churvoxMoneyDeskLinkedJobFilterPatch';
