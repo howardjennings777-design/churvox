@@ -1,0 +1,7 @@
+real pages usability fix
+jobs page headline no longer cut off
+list spacing improved
+bottom nav overlap reduced
+css imports moved before render
+frontend only
+backend unchanged
