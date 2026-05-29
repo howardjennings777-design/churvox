@@ -1,9 +1,12 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT connector push
-Change: Plans page and SMS credit block pricing.
+Change: Deep launch audit tool and report added.
 Includes:
-- Public pricing page shows locked Churvox plans
-- Public pricing page shows SMS blocks: 100 credits $10 + GST, 500 credits $45 + GST, 1,000 credits $80 + GST
-- In-app Plans page shows the same SMS credit blocks
-- SMS remains separate/approval-first instead of bundled silently
+- Added frontend/scripts/churvox-deep-launch-audit.js
+- Added LAUNCH_DEEP_AUDIT_20260529.md
+- Audit covers duplicate routes/imports/runtime panels
+- Audit covers approval-first locks and route guards
+- Audit covers public invoice/quote document rendering
+- Audit covers plans and SMS block pricing
+- Audit records remaining terminal-only checks and Work Slip HTML hardening item
