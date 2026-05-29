@@ -1,10 +1,11 @@
 Churvox Render deploy trigger
 
-Triggered at: 2026-05-29 NZT
-Change: safe real pages crash fix
+Triggered at: 2026-05-30 NZT
+Change: fix frontend CSS/JS MIME serving
 
 Frontend:
-- fixes undefined .length crash on real pages
-- protects missing API buckets
-- keeps Command themed jobs/crew/client/invoice/quote pages
-- backend unchanged
+- adds custom static server with correct Content-Type for CSS and JS
+- disables stale index.html caching
+- prevents missing /static assets from falling back to index.html
+- keeps SPA route fallback for app routes
+- backend untouched
