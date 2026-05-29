@@ -1,0 +1,4 @@
+hide top app nav bar
+bottom nav remains main navigation
+frontend only
+backend unchanged
