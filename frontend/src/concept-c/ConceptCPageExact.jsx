@@ -479,23 +479,27 @@ function Workspace({ area, m, loading, onPick }) {
     action: "Main action: open a record or create a new one."
   };
 
+  // CHURVOX_REAL_PAGES_SAFE_BUCKETS_20260529
+  const bucket = (value) => Array.isArray(value) ? value : [];
+  const count = (value) => bucket(value).length;
+
   const rowsByArea = {
-    jobs: m.jobs,
-    dispatch: m.workerActions,
-    clients: m.clients,
-    quotes: m.quotes,
-    invoices: m.invoices,
-    team: m.crew,
-    sms: m.messages,
-    notifications: [...m.alerts, ...m.issues],
-    reports: m.done,
-    integrations: m.invoices,
-    payroll: [...m.crew, ...m.doneJobs],
-    automation: m.actions,
-    settings: m.issues,
+    jobs: bucket(m?.jobs),
+    dispatch: bucket(m?.workerActions),
+    clients: bucket(m?.clients),
+    quotes: bucket(m?.quotes),
+    invoices: bucket(m?.invoices),
+    team: bucket(m?.crew),
+    sms: bucket(m?.messages),
+    notifications: [...bucket(m?.alerts), ...bucket(m?.issues)],
+    reports: bucket(m?.done),
+    integrations: bucket(m?.invoices),
+    payroll: [...bucket(m?.crew), ...bucket(m?.doneJobs)],
+    automation: bucket(m?.actions),
+    settings: bucket(m?.issues),
   };
 
-  const rows = rowsByArea[area] || m.actions;
+  const rows = rowsByArea[area] || bucket(m?.actions);
 
   const pageActions = {
     jobs: {
@@ -505,9 +509,9 @@ function Workspace({ area, m, loading, onPick }) {
       primary: ["+ Add job", "/jobs/new"],
       secondary: ["Dispatch board", "/dispatch-board"],
       stats: [
-        ["Open jobs", m.live.length + m.unassigned.length],
-        ["Need crew", m.unassigned.length],
-        ["Ready slips", m.workReview.length],
+        ["Open jobs", count(m?.live) + count(m?.unassigned)],
+        ["Need crew", count(m?.unassigned)],
+        ["Ready slips", count(m?.workReview)],
       ],
     },
     team: {
@@ -517,9 +521,9 @@ function Workspace({ area, m, loading, onPick }) {
       primary: ["Invite crew", "/team"],
       secondary: ["Dispatch board", "/dispatch-board"],
       stats: [
-        ["Crew loaded", m.crew.length],
-        ["On jobs", m.live.length],
-        ["Unassigned work", m.unassigned.length],
+        ["Crew loaded", count(m?.crew)],
+        ["On jobs", count(m?.live)],
+        ["Unassigned work", count(m?.unassigned)],
       ],
     },
     clients: {
@@ -529,9 +533,9 @@ function Workspace({ area, m, loading, onPick }) {
       primary: ["+ Add client", "/clients/new"],
       secondary: ["Client list", "/clients"],
       stats: [
-        ["Clients", m.clients.length],
-        ["Quotes", m.quotes.length],
-        ["Invoices", m.invoices.length],
+        ["Clients", count(m?.clients)],
+        ["Quotes", count(m?.quotes)],
+        ["Invoices", count(m?.invoices)],
       ],
     },
     invoices: {
@@ -541,9 +545,9 @@ function Workspace({ area, m, loading, onPick }) {
       primary: ["+ New invoice", "/invoices/new"],
       secondary: ["Command Floor", "/dashboard"],
       stats: [
-        ["Invoices", m.invoices.length],
-        ["Waiting", cash(sum(m.invoiceActions))],
-        ["Approved work", m.workReview.length],
+        ["Invoices", count(m?.invoices)],
+        ["Waiting", cash(sum(bucket(m?.invoiceActions)))],
+        ["Approved work", count(m?.workReview)],
       ],
     },
     quotes: {
@@ -553,9 +557,9 @@ function Workspace({ area, m, loading, onPick }) {
       primary: ["+ New quote", "/quotes/new"],
       secondary: ["Clients", "/clients"],
       stats: [
-        ["Quotes", m.quotes.length],
-        ["Clients", m.clients.length],
-        ["Actions", m.quoteActions.length],
+        ["Quotes", count(m?.quotes)],
+        ["Clients", count(m?.clients)],
+        ["Actions", count(m?.quoteActions)],
       ],
     },
     dispatch: {
@@ -565,9 +569,9 @@ function Workspace({ area, m, loading, onPick }) {
       primary: ["Open dispatch", "/dispatch-board"],
       secondary: ["Add job", "/jobs/new"],
       stats: [
-        ["Need crew", m.unassigned.length],
-        ["Crew", m.crew.length],
-        ["Live jobs", m.live.length],
+        ["Need crew", count(m?.unassigned)],
+        ["Crew", count(m?.crew)],
+        ["Live jobs", count(m?.live)],
       ],
     },
   };
@@ -580,8 +584,8 @@ function Workspace({ area, m, loading, onPick }) {
     secondary: ["Tools", "/operator-tools"],
     stats: [
       ["Records", rows.length],
-      ["Actions", m.actions.length],
-      ["Issues", m.issues.length],
+      ["Actions", count(m?.actions)],
+      ["Issues", count(m?.issues)],
     ],
   };
 

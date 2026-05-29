@@ -1,11 +1,10 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT
-Change: real app pages Command theme
+Change: safe real pages crash fix
 
 Frontend:
-- upgrades /jobs, /team, /clients, /quotes, /invoices, /dispatch
-- adds real action buttons: add job, add client, new quote, new invoice, dispatch board
-- keeps existing data/API/routes
-- same Command Floor dark gradient theme
+- fixes undefined .length crash on real pages
+- protects missing API buckets
+- keeps Command themed jobs/crew/client/invoice/quote pages
 - backend unchanged
