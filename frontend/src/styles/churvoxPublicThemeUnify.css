@@ -1,0 +1,236 @@
+/* CHURVOX_PUBLIC_THEME_UNIFY_20260529
+   Launch-safe visual layer only.
+   Goal: bring the app surfaces closer to the public dark AI command brand without touching data/auth/API logic.
+*/
+
+:root {
+  --cvx-brand-bg: #020617;
+  --cvx-brand-bg-2: #05070d;
+  --cvx-brand-panel: rgba(15, 23, 42, 0.88);
+  --cvx-brand-panel-2: rgba(17, 24, 39, 0.76);
+  --cvx-brand-border: rgba(255, 255, 255, 0.13);
+  --cvx-brand-text: #f8fafc;
+  --cvx-brand-muted: #cbd5e1;
+  --cvx-brand-muted-2: #94a3b8;
+  --cvx-brand-blue: #2563eb;
+  --cvx-brand-sky: #38bdf8;
+  --cvx-brand-green: #22c55e;
+  --cvx-brand-lime: #bef264;
+}
+
+body:has(.xcf-shell),
+body:has(.cv-plans),
+body:has(.px-app),
+body:has(.cmq-shell),
+body:has(.cdb-shell),
+body:has(.cos-shell),
+body:has(.cpd-shell) {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(37, 99, 235, .34), transparent 28%),
+    radial-gradient(circle at 82% 18%, rgba(56, 189, 248, .22), transparent 24%),
+    radial-gradient(circle at 48% 92%, rgba(34, 197, 94, .14), transparent 28%),
+    linear-gradient(135deg, var(--cvx-brand-bg) 0%, var(--cvx-brand-bg-2) 44%, #0f172a 100%) !important;
+}
+
+/* Command Floor */
+.xcf-shell {
+  color: var(--cvx-brand-text) !important;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(37, 99, 235, .34), transparent 28%),
+    radial-gradient(circle at 82% 18%, rgba(56, 189, 248, .22), transparent 24%),
+    radial-gradient(circle at 48% 92%, rgba(34, 197, 94, .14), transparent 28%),
+    linear-gradient(135deg, var(--cvx-brand-bg) 0%, var(--cvx-brand-bg-2) 44%, #0f172a 100%) !important;
+}
+
+.xcf-shell::before,
+.cv-plans::before,
+.px-app::before,
+.cmq-shell::before,
+.cdb-shell::before,
+.cos-shell::before,
+.cpd-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(circle at 50% 20%, black, transparent 72%);
+  opacity: .42;
+}
+
+.xcf-shell > *,
+.cv-plans > *,
+.px-app > *,
+.cmq-shell > *,
+.cdb-shell > *,
+.cos-shell > *,
+.cpd-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+.xcf-shell :is(.xcf-hero > div, .xcf-hero > aside, .xcf-metric, .xcf-card, .xcf-workspace-list),
+.xcf-shell :is(.cfs-sheet, .cfs-panel, .cfs-section, .cfs-card, .cfs-actions, .cfs-detail, .cfs-review-panel),
+.xcf-shell :is(.cv-work-slip-action-log) {
+  color: var(--cvx-brand-text) !important;
+  background: linear-gradient(180deg, rgba(15, 23, 42, .92), rgba(2, 6, 23, .78)) !important;
+  border-color: var(--cvx-brand-border) !important;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, .32), inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+
+.xcf-shell :is(h1, h2, h3, h4, b, strong, label),
+.xcf-shell :is(.cfs-sheet h1, .cfs-sheet h2, .cfs-sheet b),
+.xcf-shell :is(.xcf-card strong, .xcf-card b, .xcf-metric b, .xcf-hero h1) {
+  color: var(--cvx-brand-text) !important;
+}
+
+.xcf-shell :is(p, span, small, em, li),
+.xcf-shell :is(.cfs-sheet p, .cfs-sheet span, .cfs-sheet small, .cfs-sheet em) {
+  color: var(--cvx-brand-muted) !important;
+}
+
+.xcf-shell :is(.xcf-hero p, .xcf-card header small, .cfs-sheet small, .cv-work-slip-action-log small) {
+  color: #93c5fd !important;
+}
+
+.xcf-shell :is(a, button),
+.cfs-sheet :is(a, button) {
+  border-color: rgba(147, 197, 253, .20) !important;
+}
+
+/* In-app plans */
+.cv-plans {
+  color: var(--cvx-brand-text) !important;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(37,99,235,.34), transparent 28%),
+    radial-gradient(circle at 82% 18%, rgba(56,189,248,.22), transparent 24%),
+    radial-gradient(circle at 48% 92%, rgba(34,197,94,.14), transparent 28%),
+    linear-gradient(135deg, var(--cvx-brand-bg) 0%, var(--cvx-brand-bg-2) 44%, #0f172a 100%) !important;
+}
+
+.cv-plans :is(.cv-plans-hero, .cv-card, .cv-sms-pricing, .cv-footer-row div, .cv-notice) {
+  color: var(--cvx-brand-text) !important;
+  background: linear-gradient(180deg, rgba(15, 23, 42, .92), rgba(2, 6, 23, .78)) !important;
+  border-color: var(--cvx-brand-border) !important;
+  box-shadow: 0 28px 90px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+
+.cv-plans :is(h1, h2, b, strong, .cv-price b) { color: var(--cvx-brand-text) !important; }
+.cv-plans :is(p, span, li, small, em) { color: var(--cvx-brand-muted) !important; }
+.cv-plans :is(.cv-kicker, .cv-card > span, .cv-sms-grid small) { color: #93c5fd !important; }
+.cv-plans .cv-sms-pricing > div:first-child { background: rgba(37, 99, 235, .18) !important; }
+.cv-plans .cv-sms-grid article { background: rgba(255,255,255,.07) !important; border-color: var(--cvx-brand-border) !important; }
+
+/* Worker app */
+.px-app {
+  --cx-bg: var(--cvx-brand-bg);
+  --cx-surface: rgba(15, 23, 42, .88);
+  --cx-surface-2: rgba(30, 41, 59, .82);
+  --cx-border: rgba(255, 255, 255, .13);
+  --cx-text: var(--cvx-brand-text);
+  --cx-muted: var(--cvx-brand-muted);
+  --cx-muted-2: var(--cvx-brand-muted-2);
+  --cx-accent: #38bdf8;
+  --cx-accent-soft: rgba(37, 99, 235, .18);
+  color: var(--cvx-brand-text) !important;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(37,99,235,.34), transparent 28%),
+    radial-gradient(circle at 82% 18%, rgba(56,189,248,.22), transparent 24%),
+    linear-gradient(135deg, var(--cvx-brand-bg) 0%, var(--cvx-brand-bg-2) 44%, #0f172a 100%) !important;
+}
+
+.px-app :is(.px-hero, .px-mobile-header, .worker-flow-panel, .worker-readiness-card, .px-card, .px-empty, .px-loading, .px-input, .premium-card) {
+  color: var(--cvx-brand-text) !important;
+  background: linear-gradient(180deg, rgba(15, 23, 42, .92), rgba(2, 6, 23, .78)) !important;
+  border-color: var(--cvx-brand-border) !important;
+  box-shadow: 0 22px 70px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+
+.px-app :is(h1, h2, h3, b, strong, label, .px-hero__title) { color: var(--cvx-brand-text) !important; }
+.px-app :is(p, span, small, textarea, input) { color: var(--cvx-brand-muted) !important; }
+.px-app textarea,
+.px-app input,
+.px-app .px-input { background: rgba(255,255,255,.07) !important; color: var(--cvx-brand-text) !important; }
+
+/* Operator pages: message approvals, dispatch, offline sync */
+.cmq-shell,
+.cdb-shell,
+.cos-shell,
+.cpd-shell {
+  color: var(--cvx-brand-text) !important;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(37,99,235,.34), transparent 28%),
+    radial-gradient(circle at 82% 18%, rgba(56,189,248,.22), transparent 24%),
+    radial-gradient(circle at 48% 92%, rgba(34,197,94,.14), transparent 28%),
+    linear-gradient(135deg, var(--cvx-brand-bg) 0%, var(--cvx-brand-bg-2) 44%, #0f172a 100%) !important;
+}
+
+.cmq-shell :is(.cmq-hero > div, .cmq-hero > aside, .cmq-card, .cmq-notice, .cmq-history, .cmq-linked-job-panel),
+.cdb-shell :is(.cdb-hero > div, .cdb-hero > aside, .cdb-lane, .cdb-summary-strip article, .cdb-linked-job-panel),
+.cos-shell :is(.cos-hero > div, .cos-hero > aside, .cos-card, .cos-summary article, .cos-result),
+.cpd-shell :is(.cpd-actions, .cpd-document, .cpd-card, .cpd-total-card) {
+  color: var(--cvx-brand-text) !important;
+  background: linear-gradient(180deg, rgba(15, 23, 42, .92), rgba(2, 6, 23, .78)) !important;
+  border-color: var(--cvx-brand-border) !important;
+  box-shadow: 0 28px 90px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+
+.cmq-shell :is(h1,h2,b,strong,label),
+.cdb-shell :is(h1,h2,b,strong,label),
+.cos-shell :is(h1,h2,b,strong,label),
+.cpd-shell :is(h1,h2,b,strong,label) { color: var(--cvx-brand-text) !important; }
+
+.cmq-shell :is(p,span,small,em,input,textarea),
+.cdb-shell :is(p,span,small,em),
+.cos-shell :is(p,span,small,em,blockquote),
+.cpd-shell :is(p,span,small,em,td,th) { color: var(--cvx-brand-muted) !important; }
+
+.cmq-shell :is(input, textarea),
+.cdb-shell :is(select),
+.cpd-shell :is(.cpd-line-table td) {
+  background: rgba(255,255,255,.07) !important;
+  color: var(--cvx-brand-text) !important;
+  border-color: var(--cvx-brand-border) !important;
+}
+
+.cpd-shell .cpd-head {
+  background:
+    radial-gradient(circle at top right, rgba(56,189,248,.26), transparent 42%),
+    linear-gradient(135deg, rgba(2,6,23,.98), rgba(15,23,42,.96)) !important;
+}
+
+.cpd-shell .cpd-line-table tr,
+.cpd-shell .cpd-line-table td {
+  background: rgba(255,255,255,.06) !important;
+}
+
+/* Shared call-to-action polish */
+.xcf-shell :is(button, .px-button-primary, .cvx-btn-primary),
+.cv-plans button:not(:disabled),
+.px-app :is(button:not(:disabled), .px-btn, .px-button-primary),
+.cmq-shell button:first-child:not(:disabled),
+.cdb-shell button:not(:disabled),
+.cos-shell button:not(:disabled),
+.cpd-shell :is(button, a.cpd-primary-action) {
+  background: linear-gradient(135deg, var(--cvx-brand-blue), #1d4ed8) !important;
+  color: #fff !important;
+  box-shadow: 0 18px 40px rgba(37, 99, 235, .28) !important;
+}
+
+@media (max-width: 820px) {
+  .xcf-shell,
+  .cv-plans,
+  .px-app,
+  .cmq-shell,
+  .cdb-shell,
+  .cos-shell,
+  .cpd-shell {
+    background:
+      radial-gradient(circle at 0% 0%, rgba(37,99,235,.30), transparent 34%),
+      linear-gradient(135deg, var(--cvx-brand-bg) 0%, #0f172a 100%) !important;
+  }
+}
