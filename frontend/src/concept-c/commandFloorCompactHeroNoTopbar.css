@@ -1,165 +1,398 @@
-/* CHURVOX_COMPACT_HERO_NO_TOPBAR_20260529
-   Targeted Command Floor polish.
-   Hides the top black nav on Command Floor only and makes the two top control boxes smaller.
+/* CHURVOX_COMMAND_FLOOR_FULLSCREEN_COCKPIT_CSS_20260529
+   Safe CSS-only push through an already imported file.
+   Goal: make current React Command Floor feel like the 10/10 cockpit mockup without touching JS.
 */
 
-.xcf-control-tower .xcf-topbar {
+.xcf-control-tower .xcf-topbar,
+.xcf-control-tower .xcf-operator-proof-panel,
+.xcf-control-tower .xcf-field-strip,
+.xcf-control-tower :is(.xcf-approval-hero, .xcf-approval-summary, .xcf-approval-lanes) {
   display: none !important;
 }
 
 .xcf-control-tower {
-  padding-top: 16px !important;
+  min-height: 100vh !important;
+  padding: 16px 16px 110px !important;
+  color: #f8fbff !important;
+  background:
+    radial-gradient(circle at 12% 2%, rgba(38, 211, 238, .18), transparent 30%),
+    radial-gradient(circle at 82% 7%, rgba(98, 72, 255, .22), transparent 32%),
+    radial-gradient(circle at 50% 82%, rgba(34, 197, 94, .08), transparent 34%),
+    linear-gradient(135deg, #020817 0%, #06152c 42%, #071d3d 100%) !important;
+  overflow-x: hidden !important;
+}
+
+.xcf-control-tower::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(125,189,255,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(125,189,255,.04) 1px, transparent 1px);
+  background-size: 54px 54px;
+  mask-image: radial-gradient(circle at 50% 20%, black, transparent 82%);
+}
+
+.xcf-control-hero,
+.xcf-control-summary,
+.xcf-control-board,
+.xcf-bottom-nav {
+  width: min(1720px, calc(100vw - 32px)) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
 
 .xcf-control-hero {
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 430px) !important;
-  gap: 16px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(430px, 590px) !important;
+  gap: 20px !important;
   margin-top: 0 !important;
-  margin-bottom: 14px !important;
+  margin-bottom: 18px !important;
 }
 
 .xcf-control-hero-main,
-.xcf-control-next {
-  border-radius: 26px !important;
+.xcf-control-next,
+.xcf-control-board,
+.xcf-control-metric,
+.xcf-control-lane,
+.xcf-bottom-nav {
+  border: 1px solid rgba(125,189,255,.18) !important;
+  box-shadow: 0 24px 90px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.08) !important;
+  backdrop-filter: blur(22px) saturate(150%) !important;
 }
 
 .xcf-control-hero-main {
-  min-height: 245px !important;
-  padding: clamp(24px, 3vw, 36px) !important;
+  min-height: 350px !important;
+  border-radius: 28px !important;
+  padding: 42px 44px 26px !important;
+  background:
+    radial-gradient(circle at 80% 18%, rgba(93,74,255,.24), transparent 30%),
+    radial-gradient(circle at 10% 86%, rgba(34,211,238,.14), transparent 32%),
+    rgba(3,13,33,.74) !important;
 }
 
-.xcf-control-next {
-  min-height: 245px !important;
-  padding: 26px !important;
+.xcf-control-hero-main p,
+.xcf-control-next small,
+.xcf-control-board-head p {
+  margin: 0 !important;
+  color: #62e8f5 !important;
+  font-size: 13px !important;
+  letter-spacing: .22em !important;
+  text-transform: uppercase !important;
+  font-weight: 950 !important;
 }
 
 .xcf-control-hero-main h1 {
-  font-size: clamp(52px, 5.7vw, 90px) !important;
-  line-height: .84 !important;
-  letter-spacing: -.085em !important;
+  max-width: 980px !important;
+  margin: 18px 0 14px !important;
+  color: #fff !important;
+  font-size: clamp(52px, 4.1vw, 74px) !important;
+  line-height: 1.03 !important;
+  letter-spacing: -.065em !important;
 }
 
 .xcf-control-hero-main h2 {
-  margin-top: 14px !important;
-  font-size: clamp(18px, 1.7vw, 25px) !important;
+  display: none !important;
 }
 
 .xcf-control-hero-main > span {
-  margin-top: 9px !important;
-  max-width: 680px !important;
-  font-size: 15px !important;
-  line-height: 1.42 !important;
+  display: block !important;
+  max-width: 780px !important;
+  color: rgba(248,251,255,.82) !important;
+  font-size: 19px !important;
+  line-height: 1.45 !important;
 }
 
 .xcf-control-chips {
-  grid-template-columns: repeat(4, minmax(90px, 1fr)) !important;
-  gap: 9px !important;
-  margin-top: 18px !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  margin-top: 34px !important;
 }
 
 .xcf-control-chips button {
-  min-height: 58px !important;
-  border-radius: 16px !important;
-  padding: 10px 12px !important;
+  min-height: 116px !important;
+  display: grid !important;
+  align-content: center !important;
+  border: 1px solid rgba(125,189,255,.18) !important;
+  border-radius: 20px !important;
+  padding: 16px !important;
+  color: #fff !important;
+  text-align: left !important;
+  background: rgba(255,255,255,.055) !important;
+  cursor: pointer !important;
 }
 
 .xcf-control-chips b {
-  font-size: 20px !important;
+  font-size: 30px !important;
+  line-height: 1 !important;
+  color: #fff !important;
 }
 
 .xcf-control-chips span {
-  font-size: 11px !important;
+  color: rgba(248,251,255,.72) !important;
+  font-size: 14px !important;
+}
+
+.xcf-control-next {
+  position: relative !important;
+  min-height: 350px !important;
+  border-radius: 28px !important;
+  padding: 42px 34px !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 78% 34%, rgba(98,72,255,.34), transparent 28%),
+    linear-gradient(135deg, rgba(5,22,58,.90), rgba(20,18,72,.84)) !important;
 }
 
 .xcf-control-next::after {
-  right: 34px !important;
-  top: 42px !important;
-  width: 96px !important;
-  height: 96px !important;
-  font-size: 42px !important;
+  content: "✦" !important;
+  position: absolute !important;
+  right: 56px !important;
+  top: 70px !important;
+  width: 126px !important;
+  height: 126px !important;
+  display: grid !important;
+  place-items: center !important;
+  border: 1px solid rgba(95,125,255,.45) !important;
+  border-radius: 999px !important;
+  color: #fff !important;
+  font-size: 58px !important;
+  background: radial-gradient(circle, rgba(95,125,255,.24), transparent 70%) !important;
+  box-shadow: 0 0 70px rgba(95,125,255,.32) !important;
 }
 
 .xcf-control-next h3 {
-  max-width: 280px !important;
-  margin-top: 14px !important;
-  font-size: 25px !important;
+  max-width: 360px !important;
+  margin: 22px 0 14px !important;
+  color: #fff !important;
+  font-size: 34px !important;
+  line-height: 1.06 !important;
+  letter-spacing: -.04em !important;
 }
 
 .xcf-control-next p {
-  max-width: 285px !important;
-  font-size: 13px !important;
-  line-height: 1.38 !important;
+  max-width: 380px !important;
+  color: rgba(248,251,255,.78) !important;
+  font-size: 16px !important;
+  line-height: 1.48 !important;
 }
 
 .xcf-control-next div {
-  margin: 12px 0 !important;
+  display: flex !important;
+  gap: 10px !important;
+  margin: 22px 0 18px !important;
 }
 
 .xcf-control-next div span {
-  padding: 6px 9px !important;
-  font-size: 10px !important;
+  border-radius: 999px !important;
+  padding: 7px 10px !important;
+  background: rgba(255,255,255,.08) !important;
+  color: rgba(248,251,255,.82) !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
 }
 
-.xcf-control-next button {
-  min-height: 38px !important;
-  border-radius: 13px !important;
-  padding: 0 14px !important;
+.xcf-control-next button,
+.xcf-control-lane > button {
+  border: 0 !important;
+  border-radius: 14px !important;
+  min-height: 52px !important;
+  padding: 0 22px !important;
+  background: linear-gradient(135deg, #14d8f4, #245cff 48%, #9333ea) !important;
+  color: #fff !important;
+  font-size: 17px !important;
+  font-weight: 900 !important;
+  cursor: pointer !important;
+  box-shadow: 0 16px 42px rgba(36,92,255,.30) !important;
 }
 
 .xcf-control-next em {
-  left: 26px !important;
-  bottom: 22px !important;
-  font-size: 12px !important;
+  display: block !important;
+  margin-top: 14px !important;
+  color: rgba(248,251,255,.74) !important;
+  font-style: normal !important;
 }
 
 .xcf-control-summary {
-  gap: 12px !important;
-  margin-bottom: 14px !important;
-}
-
-.xcf-control-metric {
-  min-height: 112px !important;
-  border-radius: 20px !important;
-  padding: 16px !important;
-}
-
-.xcf-control-metric i {
-  width: 42px !important;
-  height: 42px !important;
-  border-radius: 15px !important;
-  margin-bottom: 8px !important;
-}
-
-.xcf-control-metric b {
-  font-size: 34px !important;
+  display: none !important;
 }
 
 .xcf-control-board {
-  padding-top: 18px !important;
+  border-radius: 28px !important;
+  padding: 22px !important;
+  background: rgba(3,13,33,.72) !important;
 }
 
-/* Keep lower proof/field panels from washing out white */
-.xcf-control-tower .xcf-operator-proof-panel,
-.xcf-control-tower .xcf-field-strip {
-  background:
-    radial-gradient(circle at 16% 0%, rgba(84,215,238,.14), transparent 30%),
-    linear-gradient(135deg, rgba(18,47,112,.86), rgba(5,19,46,.90)) !important;
-  color: #f8fbff !important;
+.xcf-control-board-head {
+  display: flex !important;
+  align-items: end !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+  margin-bottom: 16px !important;
 }
 
-.xcf-control-tower .xcf-operator-proof-panel *,
-.xcf-control-tower .xcf-field-strip * {
-  color: rgba(248,251,255,.82) !important;
+.xcf-control-board-head h2 {
+  margin: 6px 0 0 !important;
+  color: #fff !important;
+  font-size: 19px !important;
+  font-weight: 650 !important;
 }
 
-.xcf-control-tower .xcf-operator-proof-panel :is(.bg-white, .bg-slate-50, .bg-gray-50, [class*="bg-white"], [class*="bg-slate"], [class*="bg-gray"], [class*="bg-zinc"]),
-.xcf-control-tower .xcf-field-strip :is(.bg-white, .bg-slate-50, .bg-gray-50, [class*="bg-white"], [class*="bg-slate"], [class*="bg-gray"], [class*="bg-zinc"]) {
+.xcf-control-lanes {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+}
+
+.xcf-control-lane {
+  min-height: 390px !important;
+  border-radius: 24px !important;
+  padding: 18px !important;
+  color: #fff !important;
+  overflow: hidden !important;
+}
+
+.xcf-control-lane.amber { background: linear-gradient(155deg, rgba(0,184,198,.33), rgba(5,34,56,.86)) !important; }
+.xcf-control-lane.green { background: linear-gradient(155deg, rgba(35,180,90,.34), rgba(6,55,41,.86)) !important; }
+.xcf-control-lane.blue { background: linear-gradient(155deg, rgba(50,120,255,.35), rgba(8,40,90,.86)) !important; }
+.xcf-control-lane.purple { background: linear-gradient(155deg, rgba(122,68,232,.40), rgba(35,25,82,.86)) !important; }
+.xcf-control-lane.red { background: linear-gradient(155deg, rgba(200,124,57,.38), rgba(67,41,30,.86)) !important; }
+
+.xcf-control-lane header {
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  gap: 10px !important;
+  align-items: start !important;
+}
+
+.xcf-control-lane header small {
+  grid-column: 1 / -1 !important;
+  color: rgba(248,251,255,.76) !important;
+  letter-spacing: .16em !important;
+  text-transform: uppercase !important;
+  font-weight: 950 !important;
+  font-size: 11px !important;
+}
+
+.xcf-control-lane h3 {
+  margin: 0 !important;
+  color: #fff !important;
+  font-size: 23px !important;
+  letter-spacing: -.035em !important;
+}
+
+.xcf-control-lane strong {
+  color: #fff !important;
+  font-size: 30px !important;
+}
+
+.xcf-control-lane p {
+  min-height: 92px !important;
+  color: rgba(248,251,255,.78) !important;
+  font-size: 15px !important;
+  line-height: 1.48 !important;
+}
+
+.xcf-control-lane > button {
+  width: 100% !important;
+  margin-bottom: 14px !important;
+}
+
+.xcf-control-preview {
+  display: grid !important;
+  gap: 8px !important;
+  margin-top: 0 !important;
+}
+
+.xcf-control-preview button,
+.xcf-control-empty {
+  min-height: 74px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  border-radius: 13px !important;
+  padding: 12px !important;
   background: rgba(255,255,255,.07) !important;
-  color: #f8fbff !important;
+  color: #fff !important;
+  text-align: left !important;
 }
 
-@media (max-width: 1000px) {
-  .xcf-control-hero {
-    grid-template-columns: 1fr !important;
-  }
+.xcf-control-preview b,
+.xcf-control-empty b {
+  display: block !important;
+  color: #fff !important;
+  font-size: 13px !important;
+}
+
+.xcf-control-preview small,
+.xcf-control-empty small {
+  display: block !important;
+  margin-top: 4px !important;
+  color: rgba(248,251,255,.62) !important;
+  font-size: 12px !important;
+}
+
+.xcf-control-preview em {
+  color: rgba(248,251,255,.70) !important;
+  font-size: 12px !important;
+  font-style: normal !important;
+}
+
+.xcf-bottom-nav {
+  position: fixed !important;
+  left: 50% !important;
+  bottom: 14px !important;
+  z-index: 80 !important;
+  transform: translateX(-50%) !important;
+  width: min(980px, calc(100vw - 32px)) !important;
+  min-height: 70px !important;
+  display: grid !important;
+  grid-template-columns: repeat(6, 1fr) !important;
+  gap: 10px !important;
+  align-items: center !important;
+  border: 1px solid rgba(125,189,255,.18) !important;
+  border-radius: 26px !important;
+  padding: 10px 14px !important;
+  background: rgba(3,13,33,.86) !important;
+  box-shadow: 0 24px 90px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.08) !important;
+  backdrop-filter: blur(22px) saturate(150%) !important;
+}
+
+.xcf-bottom-nav a {
+  height: 50px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 16px !important;
+  padding: 0 12px !important;
+  color: rgba(248,251,255,.72) !important;
+  text-decoration: none !important;
+  background: transparent !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+}
+
+.xcf-bottom-nav a:first-child {
+  background: rgba(84,215,238,.12) !important;
+  color: #fff !important;
+}
+
+@media (max-width: 1300px) {
+  .xcf-control-hero { grid-template-columns: 1fr !important; }
+  .xcf-control-lanes { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+}
+
+@media (max-width: 760px) {
+  .xcf-control-tower { padding: 12px 10px 92px !important; }
+  .xcf-control-hero,
+  .xcf-control-board,
+  .xcf-bottom-nav { width: min(100%, calc(100vw - 20px)) !important; }
+  .xcf-control-chips,
+  .xcf-control-lanes { grid-template-columns: 1fr !important; }
+  .xcf-control-hero-main h1 { font-size: clamp(40px, 12vw, 58px) !important; }
+  .xcf-bottom-nav { min-height: 62px !important; border-radius: 22px !important; grid-template-columns: repeat(4, 1fr) !important; }
+  .xcf-bottom-nav a:nth-of-type(n+5) { display: none !important; }
 }
