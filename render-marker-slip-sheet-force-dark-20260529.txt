@@ -1,0 +1,3 @@
+force full work slip sheet dark command theme
+css only
+backend unchanged
