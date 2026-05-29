@@ -1,21 +1,25 @@
 /* CHURVOX_PUBLIC_THEME_UNIFY_20260529
+   CHURVOX_MODERN_GRAPHITE_THEME_20260529
    Launch-safe visual layer only.
-   Goal: bring the app surfaces closer to the public dark AI command brand without touching data/auth/API logic.
+   Goal: unify the product around a modern graphite command theme without touching data/auth/API logic.
 */
 
 :root {
-  --cvx-brand-bg: #020617;
-  --cvx-brand-bg-2: #05070d;
-  --cvx-brand-panel: rgba(15, 23, 42, 0.88);
-  --cvx-brand-panel-2: rgba(17, 24, 39, 0.76);
-  --cvx-brand-border: rgba(255, 255, 255, 0.13);
-  --cvx-brand-text: #f8fafc;
-  --cvx-brand-muted: #cbd5e1;
-  --cvx-brand-muted-2: #94a3b8;
-  --cvx-brand-blue: #2563eb;
-  --cvx-brand-sky: #38bdf8;
-  --cvx-brand-green: #22c55e;
-  --cvx-brand-lime: #bef264;
+  --cvx-brand-bg: #080b10;
+  --cvx-brand-bg-2: #11151c;
+  --cvx-brand-bg-3: #171c24;
+  --cvx-brand-panel: rgba(19, 24, 32, 0.90);
+  --cvx-brand-panel-2: rgba(26, 32, 42, 0.78);
+  --cvx-brand-border: rgba(226, 232, 240, 0.12);
+  --cvx-brand-text: #f5f7f8;
+  --cvx-brand-muted: #c7d0d8;
+  --cvx-brand-muted-2: #8e9aa6;
+  --cvx-brand-blue: #2f6f73;
+  --cvx-brand-sky: #65aeb2;
+  --cvx-brand-green: #6ea87a;
+  --cvx-brand-lime: #b8d79a;
+  --cvx-brand-cta: #4f8f8c;
+  --cvx-brand-cta-2: #2f6f73;
 }
 
 body:has(.xcf-shell),
@@ -26,20 +30,20 @@ body:has(.cdb-shell),
 body:has(.cos-shell),
 body:has(.cpd-shell) {
   background:
-    radial-gradient(circle at 12% 8%, rgba(37, 99, 235, .34), transparent 28%),
-    radial-gradient(circle at 82% 18%, rgba(56, 189, 248, .22), transparent 24%),
-    radial-gradient(circle at 48% 92%, rgba(34, 197, 94, .14), transparent 28%),
-    linear-gradient(135deg, var(--cvx-brand-bg) 0%, var(--cvx-brand-bg-2) 44%, #0f172a 100%) !important;
+    radial-gradient(circle at 12% 8%, rgba(101, 174, 178, .16), transparent 30%),
+    radial-gradient(circle at 82% 18%, rgba(184, 215, 154, .10), transparent 25%),
+    radial-gradient(circle at 48% 92%, rgba(110, 168, 122, .08), transparent 30%),
+    linear-gradient(135deg, var(--cvx-brand-bg) 0%, var(--cvx-brand-bg-2) 48%, var(--cvx-brand-bg-3) 100%) !important;
 }
 
 /* Command Floor */
 .xcf-shell {
   color: var(--cvx-brand-text) !important;
   background:
-    radial-gradient(circle at 12% 8%, rgba(37, 99, 235, .34), transparent 28%),
-    radial-gradient(circle at 82% 18%, rgba(56, 189, 248, .22), transparent 24%),
-    radial-gradient(circle at 48% 92%, rgba(34, 197, 94, .14), transparent 28%),
-    linear-gradient(135deg, var(--cvx-brand-bg) 0%, var(--cvx-brand-bg-2) 44%, #0f172a 100%) !important;
+    radial-gradient(circle at 12% 8%, rgba(101, 174, 178, .16), transparent 30%),
+    radial-gradient(circle at 82% 18%, rgba(184, 215, 154, .10), transparent 25%),
+    radial-gradient(circle at 48% 92%, rgba(110, 168, 122, .08), transparent 30%),
+    linear-gradient(135deg, var(--cvx-brand-bg) 0%, var(--cvx-brand-bg-2) 48%, var(--cvx-brand-bg-3) 100%) !important;
 }
 
 .xcf-shell::before,
@@ -55,11 +59,11 @@ body:has(.cpd-shell) {
   pointer-events: none;
   z-index: 0;
   background-image:
-    linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
-  background-size: 42px 42px;
-  mask-image: radial-gradient(circle at 50% 20%, black, transparent 72%);
-  opacity: .42;
+    linear-gradient(rgba(255,255,255,.026) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.026) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(circle at 50% 20%, black, transparent 76%);
+  opacity: .32;
 }
 
 .xcf-shell > *,
@@ -77,9 +81,9 @@ body:has(.cpd-shell) {
 .xcf-shell :is(.cfs-sheet, .cfs-panel, .cfs-section, .cfs-card, .cfs-actions, .cfs-detail, .cfs-review-panel),
 .xcf-shell :is(.cv-work-slip-action-log) {
   color: var(--cvx-brand-text) !important;
-  background: linear-gradient(180deg, rgba(15, 23, 42, .92), rgba(2, 6, 23, .78)) !important;
+  background: linear-gradient(180deg, rgba(23, 28, 36, .94), rgba(13, 17, 23, .86)) !important;
   border-color: var(--cvx-brand-border) !important;
-  box-shadow: 0 28px 90px rgba(0, 0, 0, .32), inset 0 1px 0 rgba(255,255,255,.08) !important;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .28), inset 0 1px 0 rgba(255,255,255,.055) !important;
 }
 
 .xcf-shell :is(h1, h2, h3, h4, b, strong, label),
@@ -94,67 +98,67 @@ body:has(.cpd-shell) {
 }
 
 .xcf-shell :is(.xcf-hero p, .xcf-card header small, .cfs-sheet small, .cv-work-slip-action-log small) {
-  color: #93c5fd !important;
+  color: #9dc7c8 !important;
 }
 
 .xcf-shell :is(a, button),
 .cfs-sheet :is(a, button) {
-  border-color: rgba(147, 197, 253, .20) !important;
+  border-color: rgba(157, 199, 200, .20) !important;
 }
 
 /* In-app plans */
 .cv-plans {
   color: var(--cvx-brand-text) !important;
   background:
-    radial-gradient(circle at 12% 8%, rgba(37,99,235,.34), transparent 28%),
-    radial-gradient(circle at 82% 18%, rgba(56,189,248,.22), transparent 24%),
-    radial-gradient(circle at 48% 92%, rgba(34,197,94,.14), transparent 28%),
-    linear-gradient(135deg, var(--cvx-brand-bg) 0%, var(--cvx-brand-bg-2) 44%, #0f172a 100%) !important;
+    radial-gradient(circle at 12% 8%, rgba(101, 174, 178, .16), transparent 30%),
+    radial-gradient(circle at 82% 18%, rgba(184, 215, 154, .10), transparent 25%),
+    radial-gradient(circle at 48% 92%, rgba(110, 168, 122, .08), transparent 30%),
+    linear-gradient(135deg, var(--cvx-brand-bg) 0%, var(--cvx-brand-bg-2) 48%, var(--cvx-brand-bg-3) 100%) !important;
 }
 
 .cv-plans :is(.cv-plans-hero, .cv-card, .cv-sms-pricing, .cv-footer-row div, .cv-notice) {
   color: var(--cvx-brand-text) !important;
-  background: linear-gradient(180deg, rgba(15, 23, 42, .92), rgba(2, 6, 23, .78)) !important;
+  background: linear-gradient(180deg, rgba(23, 28, 36, .94), rgba(13, 17, 23, .86)) !important;
   border-color: var(--cvx-brand-border) !important;
-  box-shadow: 0 28px 90px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.08) !important;
+  box-shadow: 0 24px 70px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.055) !important;
 }
 
 .cv-plans :is(h1, h2, b, strong, .cv-price b) { color: var(--cvx-brand-text) !important; }
 .cv-plans :is(p, span, li, small, em) { color: var(--cvx-brand-muted) !important; }
-.cv-plans :is(.cv-kicker, .cv-card > span, .cv-sms-grid small) { color: #93c5fd !important; }
-.cv-plans .cv-sms-pricing > div:first-child { background: rgba(37, 99, 235, .18) !important; }
-.cv-plans .cv-sms-grid article { background: rgba(255,255,255,.07) !important; border-color: var(--cvx-brand-border) !important; }
+.cv-plans :is(.cv-kicker, .cv-card > span, .cv-sms-grid small) { color: #9dc7c8 !important; }
+.cv-plans .cv-sms-pricing > div:first-child { background: rgba(101, 174, 178, .10) !important; }
+.cv-plans .cv-sms-grid article { background: rgba(255,255,255,.055) !important; border-color: var(--cvx-brand-border) !important; }
 
 /* Worker app */
 .px-app {
   --cx-bg: var(--cvx-brand-bg);
-  --cx-surface: rgba(15, 23, 42, .88);
-  --cx-surface-2: rgba(30, 41, 59, .82);
-  --cx-border: rgba(255, 255, 255, .13);
+  --cx-surface: rgba(23, 28, 36, .92);
+  --cx-surface-2: rgba(31, 38, 49, .82);
+  --cx-border: rgba(226, 232, 240, .12);
   --cx-text: var(--cvx-brand-text);
   --cx-muted: var(--cvx-brand-muted);
   --cx-muted-2: var(--cvx-brand-muted-2);
-  --cx-accent: #38bdf8;
-  --cx-accent-soft: rgba(37, 99, 235, .18);
+  --cx-accent: #8fc9c8;
+  --cx-accent-soft: rgba(101, 174, 178, .13);
   color: var(--cvx-brand-text) !important;
   background:
-    radial-gradient(circle at 12% 8%, rgba(37,99,235,.34), transparent 28%),
-    radial-gradient(circle at 82% 18%, rgba(56,189,248,.22), transparent 24%),
-    linear-gradient(135deg, var(--cvx-brand-bg) 0%, var(--cvx-brand-bg-2) 44%, #0f172a 100%) !important;
+    radial-gradient(circle at 12% 8%, rgba(101, 174, 178, .16), transparent 30%),
+    radial-gradient(circle at 82% 18%, rgba(184, 215, 154, .10), transparent 25%),
+    linear-gradient(135deg, var(--cvx-brand-bg) 0%, var(--cvx-brand-bg-2) 48%, var(--cvx-brand-bg-3) 100%) !important;
 }
 
 .px-app :is(.px-hero, .px-mobile-header, .worker-flow-panel, .worker-readiness-card, .px-card, .px-empty, .px-loading, .px-input, .premium-card) {
   color: var(--cvx-brand-text) !important;
-  background: linear-gradient(180deg, rgba(15, 23, 42, .92), rgba(2, 6, 23, .78)) !important;
+  background: linear-gradient(180deg, rgba(23, 28, 36, .94), rgba(13, 17, 23, .86)) !important;
   border-color: var(--cvx-brand-border) !important;
-  box-shadow: 0 22px 70px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.08) !important;
+  box-shadow: 0 20px 58px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.055) !important;
 }
 
 .px-app :is(h1, h2, h3, b, strong, label, .px-hero__title) { color: var(--cvx-brand-text) !important; }
 .px-app :is(p, span, small, textarea, input) { color: var(--cvx-brand-muted) !important; }
 .px-app textarea,
 .px-app input,
-.px-app .px-input { background: rgba(255,255,255,.07) !important; color: var(--cvx-brand-text) !important; }
+.px-app .px-input { background: rgba(255,255,255,.055) !important; color: var(--cvx-brand-text) !important; }
 
 /* Operator pages: message approvals, dispatch, offline sync */
 .cmq-shell,
@@ -163,10 +167,10 @@ body:has(.cpd-shell) {
 .cpd-shell {
   color: var(--cvx-brand-text) !important;
   background:
-    radial-gradient(circle at 12% 8%, rgba(37,99,235,.34), transparent 28%),
-    radial-gradient(circle at 82% 18%, rgba(56,189,248,.22), transparent 24%),
-    radial-gradient(circle at 48% 92%, rgba(34,197,94,.14), transparent 28%),
-    linear-gradient(135deg, var(--cvx-brand-bg) 0%, var(--cvx-brand-bg-2) 44%, #0f172a 100%) !important;
+    radial-gradient(circle at 12% 8%, rgba(101, 174, 178, .16), transparent 30%),
+    radial-gradient(circle at 82% 18%, rgba(184, 215, 154, .10), transparent 25%),
+    radial-gradient(circle at 48% 92%, rgba(110, 168, 122, .08), transparent 30%),
+    linear-gradient(135deg, var(--cvx-brand-bg) 0%, var(--cvx-brand-bg-2) 48%, var(--cvx-brand-bg-3) 100%) !important;
 }
 
 .cmq-shell :is(.cmq-hero > div, .cmq-hero > aside, .cmq-card, .cmq-notice, .cmq-history, .cmq-linked-job-panel),
@@ -174,9 +178,9 @@ body:has(.cpd-shell) {
 .cos-shell :is(.cos-hero > div, .cos-hero > aside, .cos-card, .cos-summary article, .cos-result),
 .cpd-shell :is(.cpd-actions, .cpd-document, .cpd-card, .cpd-total-card) {
   color: var(--cvx-brand-text) !important;
-  background: linear-gradient(180deg, rgba(15, 23, 42, .92), rgba(2, 6, 23, .78)) !important;
+  background: linear-gradient(180deg, rgba(23, 28, 36, .94), rgba(13, 17, 23, .86)) !important;
   border-color: var(--cvx-brand-border) !important;
-  box-shadow: 0 28px 90px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.08) !important;
+  box-shadow: 0 24px 70px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.055) !important;
 }
 
 .cmq-shell :is(h1,h2,b,strong,label),
@@ -192,20 +196,20 @@ body:has(.cpd-shell) {
 .cmq-shell :is(input, textarea),
 .cdb-shell :is(select),
 .cpd-shell :is(.cpd-line-table td) {
-  background: rgba(255,255,255,.07) !important;
+  background: rgba(255,255,255,.055) !important;
   color: var(--cvx-brand-text) !important;
   border-color: var(--cvx-brand-border) !important;
 }
 
 .cpd-shell .cpd-head {
   background:
-    radial-gradient(circle at top right, rgba(56,189,248,.26), transparent 42%),
-    linear-gradient(135deg, rgba(2,6,23,.98), rgba(15,23,42,.96)) !important;
+    radial-gradient(circle at top right, rgba(101,174,178,.16), transparent 42%),
+    linear-gradient(135deg, rgba(8,11,16,.98), rgba(23,28,36,.96)) !important;
 }
 
 .cpd-shell .cpd-line-table tr,
 .cpd-shell .cpd-line-table td {
-  background: rgba(255,255,255,.06) !important;
+  background: rgba(255,255,255,.05) !important;
 }
 
 /* Shared call-to-action polish */
@@ -216,9 +220,9 @@ body:has(.cpd-shell) {
 .cdb-shell button:not(:disabled),
 .cos-shell button:not(:disabled),
 .cpd-shell :is(button, a.cpd-primary-action) {
-  background: linear-gradient(135deg, var(--cvx-brand-blue), #1d4ed8) !important;
-  color: #fff !important;
-  box-shadow: 0 18px 40px rgba(37, 99, 235, .28) !important;
+  background: linear-gradient(135deg, var(--cvx-brand-cta), var(--cvx-brand-cta-2)) !important;
+  color: #f8fafc !important;
+  box-shadow: 0 14px 32px rgba(79, 143, 140, .20) !important;
 }
 
 @media (max-width: 820px) {
@@ -230,7 +234,7 @@ body:has(.cpd-shell) {
   .cos-shell,
   .cpd-shell {
     background:
-      radial-gradient(circle at 0% 0%, rgba(37,99,235,.30), transparent 34%),
-      linear-gradient(135deg, var(--cvx-brand-bg) 0%, #0f172a 100%) !important;
+      radial-gradient(circle at 0% 0%, rgba(101,174,178,.14), transparent 34%),
+      linear-gradient(135deg, var(--cvx-brand-bg) 0%, var(--cvx-brand-bg-3) 100%) !important;
   }
 }
