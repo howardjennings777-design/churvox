@@ -1,0 +1,6 @@
+command themed public home
+full screen landing page
+short sales copy
+matches command floor theme
+frontend only
+backend unchanged
