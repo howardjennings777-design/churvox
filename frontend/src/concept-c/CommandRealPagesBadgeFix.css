@@ -1,0 +1,51 @@
+/* CHURVOX_REAL_PAGES_BADGE_FIX_20260530 */
+
+.xcf-real-page .xcf-real-list {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(98,232,245,.42) rgba(3,13,33,.72) !important;
+}
+
+.xcf-real-page .xcf-real-list::-webkit-scrollbar {
+  width: 9px !important;
+}
+
+.xcf-real-page .xcf-real-list::-webkit-scrollbar-track {
+  background: rgba(3,13,33,.72) !important;
+  border-radius: 999px !important;
+}
+
+.xcf-real-page .xcf-real-list::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #14d8f4, #245cff 60%, #9333ea) !important;
+  border-radius: 999px !important;
+}
+
+.xcf-real-page .xcf-row em,
+.xcf-real-page .xcf-row strong,
+.xcf-real-page .xcf-row span:last-child {
+  min-width: 82px !important;
+  max-width: 150px !important;
+  min-height: 30px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  border-radius: 999px !important;
+  color: rgba(248,251,255,.88) !important;
+  background: rgba(255,255,255,.075) !important;
+  border: 1px solid rgba(125,189,255,.18) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+
+.xcf-real-page .xcf-row em:empty,
+.xcf-real-page .xcf-row strong:empty,
+.xcf-real-page .xcf-row span:last-child:empty {
+  display: none !important;
+}
+
+.xcf-real-page .xcf-row :is(.badge, .pill, .status, [class*="badge"], [class*="pill"], [class*="status"]) {
+  color: rgba(248,251,255,.88) !important;
+  background: rgba(255,255,255,.075) !important;
+  border: 1px solid rgba(125,189,255,.18) !important;
+}
