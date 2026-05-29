@@ -1,0 +1,5 @@
+public page nav click and z-index fix
+sticky nav above all page sections
+links wired to existing routes
+frontend only
+backend unchanged
