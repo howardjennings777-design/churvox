@@ -1,0 +1,5 @@
+Plans link added to app navigation
+runtime nav patch loaded in index.js
+links to /plans
+frontend only
+backend unchanged
