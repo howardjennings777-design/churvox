@@ -1,0 +1,6 @@
+safe Plans nav helper
+adds Plans once only
+no MutationObserver
+no route event loop
+frontend only
+backend unchanged
