@@ -1,166 +1,252 @@
-/* CHURVOX_REAL_PAGES_USABILITY_FIX_20260529
-   Fixes real Jobs/Crew/etc pages after Command theme:
-   - headline no longer gets cut off
-   - right rail becomes useful and compact
-   - list has proper breathing room
-   - Add Job/Add Client/New Invoice remains obvious
-   - bottom nav stops covering rows
+/* CHURVOX_REAL_PAGES_CLEAN_WORKSPACE_20260529
+   Strong cleanup for real Jobs/Crew/Clients/Invoices/Quotes pages.
+   Goal: real page, not another dashboard.
 */
 
-.xcf-real-page {
-  grid-template-rows: 52px 156px 74px minmax(0, 1fr) 78px !important;
-  gap: 12px !important;
-  padding-bottom: 10px !important;
-}
-
-.xcf-real-page .xcf-topbar {
-  z-index: 50 !important;
-}
-
-.xcf-real-hero {
-  min-height: 0 !important;
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 330px) !important;
-  gap: 12px !important;
-}
-
-.xcf-real-hero-main {
-  min-width: 0 !important;
-  min-height: 0 !important;
-  padding: 20px 24px !important;
-  border-radius: 26px !important;
+body:has(.xcf-real-page) {
+  background: #020817 !important;
   overflow: hidden !important;
 }
 
+.xcf-real-page {
+  grid-template-rows: 52px 118px 58px minmax(0, 1fr) 74px !important;
+  gap: 10px !important;
+  padding: 10px 18px 8px !important;
+  color: #f8fbff !important;
+}
+
+.xcf-real-page .xcf-topbar {
+  z-index: 80 !important;
+  min-height: 46px !important;
+}
+
+/* Clean hero: one useful header, no side clutter */
+.xcf-real-hero {
+  min-height: 0 !important;
+  display: block !important;
+}
+
+.xcf-real-command-card {
+  display: none !important;
+}
+
+.xcf-real-hero-main {
+  min-height: 0 !important;
+  height: 100% !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-areas:
+    "eyebrow actions"
+    "title actions"
+    "copy actions" !important;
+  align-content: center !important;
+  column-gap: 22px !important;
+  row-gap: 6px !important;
+  padding: 18px 22px !important;
+  border-radius: 26px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(125, 189, 255, .20) !important;
+  background:
+    radial-gradient(circle at 82% 12%, rgba(98,72,255,.16), transparent 30%),
+    linear-gradient(135deg, rgba(4,16,39,.94), rgba(8,30,66,.86)) !important;
+  box-shadow: 0 18px 58px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+
+.xcf-real-hero-main p {
+  grid-area: eyebrow !important;
+  margin: 0 !important;
+  color: #62e8f5 !important;
+  font-size: .65rem !important;
+  font-weight: 950 !important;
+  letter-spacing: .18em !important;
+  text-transform: uppercase !important;
+}
+
 .xcf-real-hero-main h1 {
-  max-width: 920px !important;
-  font-size: clamp(2.35rem, 4vw, 4.55rem) !important;
-  line-height: .86 !important;
-  letter-spacing: -.08em !important;
+  grid-area: title !important;
+  margin: 0 !important;
+  max-width: 850px !important;
+  color: #fff !important;
+  font-size: clamp(2rem, 3vw, 3.2rem) !important;
+  line-height: .9 !important;
+  letter-spacing: -.07em !important;
   white-space: normal !important;
   overflow-wrap: normal !important;
+  word-break: normal !important;
 }
 
 .xcf-real-hero-main span {
+  grid-area: copy !important;
   max-width: 780px !important;
-  font-size: .9rem !important;
-  line-height: 1.35 !important;
+  color: rgba(248,251,255,.70) !important;
+  font-size: .82rem !important;
+  line-height: 1.28 !important;
+  font-weight: 750 !important;
 }
 
 .xcf-real-actions {
-  margin-top: 0 !important;
+  grid-area: actions !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 9px !important;
+  align-content: center !important;
+  min-width: 178px !important;
+  margin: 0 !important;
 }
 
 .xcf-real-actions a,
 .xcf-real-list-head a {
-  min-height: 42px !important;
+  min-height: 40px !important;
   padding: 0 16px !important;
   border-radius: 14px !important;
+  text-decoration: none !important;
+  font-size: .84rem !important;
+  font-weight: 950 !important;
 }
 
-.xcf-real-command-card {
-  min-width: 0 !important;
-  padding: 18px !important;
-  border-radius: 26px !important;
+.xcf-real-primary,
+.xcf-real-list-head a {
+  color: #fff !important;
+  background: linear-gradient(135deg, #14d8f4, #245cff 48%, #9333ea) !important;
+  box-shadow: 0 16px 42px rgba(36,92,255,.28) !important;
 }
 
-.xcf-real-command-card b {
-  font-size: 1.26rem !important;
-  line-height: .98 !important;
+.xcf-real-secondary {
+  color: #f8fbff !important;
+  background: rgba(255,255,255,.075) !important;
+  border: 1px solid rgba(125,189,255,.18) !important;
 }
 
-.xcf-real-command-card em {
-  font-size: .82rem !important;
-  line-height: 1.25 !important;
-}
-
-.xcf-real-command-card strong {
-  font-size: .7rem !important;
-}
-
+/* Remove dashboard stat clutter from real pages */
 .xcf-real-stats {
-  display: grid !important;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  gap: 10px !important;
+  display: none !important;
 }
 
-.xcf-real-stats article {
-  min-height: 68px !important;
-  padding: 11px 13px !important;
-  border-radius: 18px !important;
-}
-
-.xcf-real-stats b {
-  font-size: 1.05rem !important;
-}
-
+/* Turn the list header into a simple toolbar */
 .xcf-real-list-head {
   min-height: 0 !important;
-  padding: 12px 14px !important;
-  border-radius: 22px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding: 10px 14px !important;
+  border-radius: 20px !important;
+  border: 1px solid rgba(125, 189, 255, .18) !important;
+  background: rgba(3,13,33,.78) !important;
+  box-shadow: 0 14px 42px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.07) !important;
+}
+
+.xcf-real-list-head p {
+  margin: 0 0 2px !important;
+  color: #62e8f5 !important;
+  font-size: .62rem !important;
+  font-weight: 950 !important;
+  letter-spacing: .16em !important;
+  text-transform: uppercase !important;
 }
 
 .xcf-real-list-head h2 {
+  margin: 0 !important;
   max-width: 760px !important;
-  font-size: .92rem !important;
+  color: rgba(248,251,255,.82) !important;
+  font-size: .86rem !important;
   line-height: 1.25 !important;
+  font-weight: 850 !important;
 }
 
+/* Give the real records the page */
 .xcf-real-list {
   min-height: 0 !important;
-  padding: 12px !important;
-  padding-bottom: 92px !important;
+  padding: 10px !important;
+  padding-bottom: 86px !important;
   overflow: auto !important;
-  border-radius: 26px !important;
+  border-radius: 24px !important;
+  border: 1px solid rgba(125, 189, 255, .18) !important;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(20,216,244,.10), transparent 32%),
+    rgba(3,13,33,.62) !important;
 }
 
 .xcf-real-page .xcf-row {
-  min-height: 54px !important;
-  padding: 11px 14px !important;
-  border-radius: 16px !important;
+  min-height: 50px !important;
+  padding: 9px 12px !important;
+  border-radius: 15px !important;
+  border: 1px solid rgba(125,189,255,.16) !important;
+  background: linear-gradient(135deg, rgba(255,255,255,.085), rgba(255,255,255,.045)) !important;
+  color: #fff !important;
 }
 
-.xcf-real-page .xcf-row b {
-  font-size: .9rem !important;
-  line-height: 1.14 !important;
+.xcf-real-page .xcf-row + .xcf-row {
+  margin-top: 8px !important;
+}
+
+.xcf-real-page .xcf-row:hover {
+  transform: translateY(-1px) !important;
+  border-color: rgba(98,232,245,.38) !important;
+  background: linear-gradient(135deg, rgba(20,216,244,.12), rgba(98,72,255,.10)) !important;
+}
+
+.xcf-real-page .xcf-row b,
+.xcf-real-page .xcf-row em {
+  color: #fff !important;
+  font-size: .86rem !important;
+  line-height: 1.12 !important;
 }
 
 .xcf-real-page .xcf-row small {
-  font-size: .73rem !important;
-  line-height: 1.22 !important;
+  color: rgba(248,251,255,.62) !important;
+  font-size: .7rem !important;
+  line-height: 1.18 !important;
+}
+
+.xcf-real-page .xcf-row i {
+  background: #14d8f4 !important;
+  box-shadow: 0 0 0 5px rgba(20,216,244,.12) !important;
 }
 
 .xcf-real-page .xcf-row em,
 .xcf-real-page .xcf-row strong,
 .xcf-real-page .xcf-row span:last-child {
-  max-width: 160px !important;
+  max-width: 150px !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
 }
 
-.xcf-real-page .xcf-bottom-nav {
-  z-index: 60 !important;
+.xcf-real-page .xcf-empty {
+  color: rgba(248,251,255,.72) !important;
+  background: rgba(255,255,255,.06) !important;
+  border: 1px dashed rgba(125,189,255,.18) !important;
 }
 
-.xcf-real-page-jobs .xcf-real-hero-main h1::after,
-.xcf-real-page-clients .xcf-real-hero-main h1::after,
-.xcf-real-page-invoices .xcf-real-hero-main h1::after,
-.xcf-real-page-quotes .xcf-real-hero-main h1::after,
-.xcf-real-page-team .xcf-real-hero-main h1::after {
-  content: "";
+.xcf-real-page .xcf-bottom-nav {
+  z-index: 90 !important;
 }
 
 @media (max-width: 1220px) {
+  body:has(.xcf-real-page) {
+    overflow: auto !important;
+  }
+
   .xcf-real-page {
     height: auto !important;
     min-height: 100dvh !important;
-    grid-template-rows: auto auto auto auto 78px !important;
+    grid-template-rows: auto auto auto auto !important;
     overflow: visible !important;
   }
 
-  .xcf-real-hero {
+  .xcf-real-hero-main {
     grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "eyebrow"
+      "title"
+      "copy"
+      "actions" !important;
+  }
+
+  .xcf-real-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    min-width: 0 !important;
   }
 
   .xcf-real-list {
@@ -170,17 +256,21 @@
 }
 
 @media (max-width: 760px) {
-  .xcf-real-hero-main h1 {
-    font-size: clamp(2.3rem, 12vw, 3.9rem) !important;
+  .xcf-real-page {
+    padding: 10px !important;
   }
 
-  .xcf-real-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  .xcf-real-hero-main h1 {
+    font-size: clamp(2.1rem, 11vw, 3.4rem) !important;
   }
 
   .xcf-real-actions,
   .xcf-real-list-head {
     display: grid !important;
+  }
+
+  .xcf-real-actions {
+    grid-template-columns: 1fr !important;
   }
 
   .xcf-real-actions a,
