@@ -19,6 +19,8 @@ import './concept-c/commandFloorSlipRedesign.css';
 import './concept-c/churvoxWorkSlipActionBarPolish.css';
 import './concept-c/CommandFloorSlipForceTheme.css';
 import './concept-c/CommandFloorSlipFinalFit.css';
+import './concept-c/CommandRealPagesTheme.css';
+import './concept-c/CommandRealPagesUsabilityFix.css';
 import './concept-c/churvoxTopTierRuntimePatch';
 import './concept-c/churvoxWorkerOfflineRuntimePatch';
 import './concept-c/churvoxActivePresetJobRuntimePatch';
@@ -59,4 +61,3 @@ root.render(
     <App />
   </React.StrictMode>
 );
-import "./concept-c/CommandRealPagesTheme.css";
