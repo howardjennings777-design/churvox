@@ -1,0 +1,69 @@
+/* CHURVOX_BOTTOM_NAV_ONE_ROW_WITH_PLANS_20260530 */
+
+.xcf10-dock,
+.xcf-bottom-nav {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  overflow: hidden !important;
+  min-height: 54px !important;
+  max-height: 62px !important;
+  padding: 7px 10px !important;
+  gap: 7px !important;
+}
+
+.xcf10-dock a,
+.xcf-bottom-nav a,
+.xcf10-dock button,
+.xcf-bottom-nav button,
+.xcf10-dock b,
+.xcf-bottom-nav b,
+.xcf10-dock label,
+.xcf-bottom-nav label {
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+  min-height: 38px !important;
+  max-height: 42px !important;
+}
+
+.xcf10-dock a,
+.xcf-bottom-nav a {
+  padding: 0 10px !important;
+  font-size: .74rem !important;
+  line-height: 1 !important;
+}
+
+.xcf10-dock label {
+  flex: 1 1 180px !important;
+  min-width: 120px !important;
+  max-width: 260px !important;
+}
+
+.xcf10-dock [data-churvox-plans-link='true'],
+.xcf-bottom-nav [data-churvox-plans-link='true'],
+.xcf10-dock a[href='/plans'],
+.xcf-bottom-nav a[href='/plans'] {
+  display: inline-flex !important;
+  color: #fff !important;
+  background: rgba(98,72,255,.22) !important;
+  border: 1px solid rgba(125,189,255,.22) !important;
+}
+
+@media (max-width: 900px) {
+  .xcf10-dock label,
+  .xcf10-dock button,
+  .xcf10-dock b {
+    display: none !important;
+  }
+
+  .xcf10-dock,
+  .xcf-bottom-nav {
+    justify-content: space-between !important;
+  }
+
+  .xcf10-dock a,
+  .xcf-bottom-nav a {
+    padding: 0 7px !important;
+    font-size: .68rem !important;
+  }
+}
