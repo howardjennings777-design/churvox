@@ -1,8 +1,7 @@
-// CHURVOX_CLEAR_WORK_SLIP_ACTION_FEEDBACK_20260527
-// CHURVOX_BIG_LAUNCH_FINISH_SLIP_MARKER_20260528
+// CHURVOX_CLEAN_WORK_SLIP_REBUILD_20260529
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import "./CommandFloorApprovalSlip.css";
+import "./CommandFloorApprovalSlipCleanRebuild.css";
 
 const str = (v) => String(v || "").trim();
 const low = (v) => str(v).toLowerCase();
@@ -166,36 +165,6 @@ function editableDraftFromPicked(picked, workers, jobs) {
   };
 }
 
-function buildSituation(active, photos, draft, isJobLike) {
-  const raw = active?.raw || {};
-  const price = moneyNumber(draft?.amount, active?.amount, raw.price, raw.job_price, raw.fixed_price, raw.total, raw.amount, raw.subtotal, raw.hourly_total);
-  const worker = firstText(draft?.worker_name, raw.assigned_worker_name, raw.worker_name, raw.assigned_to_name, "Selected worker");
-  if (!isJobLike) return [
-    `${active?.code || "Record"} is open for review.`,
-    price ? `Value is ${cash(price)}.` : "Value may still need owner review.",
-    "Only buttons that make sense for this record are shown below.",
-  ];
-  return [
-    `${worker} completed or is ready for this job.`,
-    photos.length ? `${photos.length} completion photo${photos.length === 1 ? " has" : "s have"} been uploaded.` : "Photos are optional and can be added later.",
-    firstText(draft?.worker_notes, raw.completion_notes, raw.worker_completion_notes, raw.worker_notes, raw.job_notes, raw.notes) ? "Worker notes have been added." : "No worker notes are recorded yet.",
-    price ? `Job price confirmed at ${cash(price)}.` : "Job price still needs confirming.",
-    firstText(draft?.invoice_status, raw.invoice_number, raw.draft_invoice_id, raw.invoice_id, raw.invoiced ? "yes" : "") ? "Invoice draft is already linked." : "Invoice draft can be prepared from this slip.",
-  ];
-}
-
-function buildNeedsAttention(missing, isJobLike, isInvoice) {
-  const needs = [];
-  if (missing.customer) needs.push("Customer needs owner input.");
-  if (missing.site && isJobLike) needs.push("Site address needs owner input.");
-  if (missing.worker && isJobLike) needs.push("Worker must be chosen before approval.");
-  if (missing.amount) needs.push(`${isInvoice ? "Invoice" : "Job"} price is missing.`);
-  if (missing.invoiceDescription && (isJobLike || isInvoice)) needs.push("Invoice description needs owner input.");
-  if (missing.workerNotes && isJobLike) needs.push("Worker notes are missing.");
-  if (missing.message && isJobLike) needs.push("Customer message needs owner input.");
-  return needs.length ? needs.slice(0, 4) : ["Everything important is filled. Photos are optional. Review once, then approve."];
-}
-
 function actionWorked(msg) { return !/^(could not|action failed|need |select |choose |no message|this record|open a record|only jobs)/i.test(str(msg)); }
 function patchPickedAfterAction(picked, action, draft, msg) {
   if (!actionWorked(msg)) return null;
@@ -216,545 +185,27 @@ function patchPickedAfterAction(picked, action, draft, msg) {
   return next;
 }
 
-function Field({ label, value, onChange, textarea = false, type = "text", missing = false, note = "AI filled", readOnly = false }) {
-  const className = `cfs-field ${missing ? "is-missing" : "is-filled"}`;
-  const helper = missing ? "Needs owner input" : note;
-  return <label className={className}><span>{label}</span>{textarea ? <textarea readOnly={readOnly} placeholder={missing ? "Needs owner input" : ""} value={value || ""} onChange={(e) => onChange(e.target.value)} /> : <input readOnly={readOnly} type={type} placeholder={missing ? "Needs owner input" : ""} value={value || ""} onChange={(e) => onChange(e.target.value)} />}<em>{helper}</em></label>;
+function Field({ label, value, onChange, textarea = false, type = "text", missing = false, note = "AI prepared", readOnly = false, wide = false }) {
+  const className = `cws-field ${missing ? "missing" : ""} ${wide ? "cws-wide" : ""}`;
+  return <label className={className}><span>{label}</span>{textarea ? <textarea readOnly={readOnly} placeholder={missing ? "Needs owner input" : ""} value={value || ""} onChange={(e) => onChange(e.target.value)} /> : <input readOnly={readOnly} type={type} placeholder={missing ? "Needs owner input" : ""} value={value || ""} onChange={(e) => onChange(e.target.value)} />}<em>{missing ? "Needs owner input" : note}</em></label>;
 }
 
-function SelectField({ label, value, onChange, options, missing = false, note = "Choose from list" }) {
-  const className = `cfs-field cfs-select-field ${missing ? "is-missing" : "is-filled"}`;
+function SelectField({ label, value, onChange, options, missing = false, note = "Prepared" }) {
   const normalized = options.includes(value) ? value : value ? "__custom" : "";
-  return <label className={className}><span>{label}</span><select value={normalized} onChange={(e) => onChange(e.target.value === "__custom" ? value : e.target.value)}><option value="">Needs owner input</option>{options.map((option) => <option key={option} value={option}>{option}</option>)}{value && !options.includes(value) && <option value="__custom">{value}</option>}</select><em>{missing ? "Needs owner input" : note}</em></label>;
+  return <label className={`cws-field ${missing ? "missing" : ""}`}><span>{label}</span><select value={normalized} onChange={(e) => onChange(e.target.value === "__custom" ? value : e.target.value)}><option value="">Needs owner input</option>{options.map((option) => <option key={option} value={option}>{option}</option>)}{value && !options.includes(value) && <option value="__custom">{value}</option>}</select><em>{missing ? "Needs owner input" : note}</em></label>;
 }
 
 function ScheduleField({ value, onChange, missing }) {
-  const className = `cfs-field cfs-schedule-field ${missing ? "is-missing" : "is-filled"}`;
   const quickValue = !value ? "none" : isDateTimeLocal(value) ? "custom" : "manual";
-  return <label className={className}><span>Scheduled date / time</span><select value={quickValue} onChange={(e) => { const v = e.target.value; if (v === "custom") return; onChange(v === "manual" ? value : quickScheduleValue(v)); }}><option value="none">Not scheduled</option><option value="today">Today 9:00 AM</option><option value="afternoon">Today 1:00 PM</option><option value="tomorrow">Tomorrow 9:00 AM</option><option value="next_week">Next week 9:00 AM</option><option value="custom">Pick exact date/time</option>{quickValue === "manual" && <option value="manual">Saved schedule</option>}</select><input type="datetime-local" value={isDateTimeLocal(value) ? value.slice(0, 16) : ""} onChange={(e) => onChange(e.target.value)} /><em>{missing ? "Choose a schedule or leave as Not scheduled" : "Dropdown + exact picker"}</em></label>;
+  return <label className={`cws-field ${missing ? "missing" : ""}`}><span>Schedule</span><select value={quickValue} onChange={(e) => { const v = e.target.value; if (v === "custom") return; onChange(v === "manual" ? value : quickScheduleValue(v)); }}><option value="none">Not scheduled</option><option value="today">Today 9:00 AM</option><option value="afternoon">Today 1:00 PM</option><option value="tomorrow">Tomorrow 9:00 AM</option><option value="next_week">Next week 9:00 AM</option><option value="custom">Pick exact time</option>{quickValue === "manual" && <option value="manual">Saved schedule</option>}</select><input type="datetime-local" value={isDateTimeLocal(value) ? value.slice(0, 16) : ""} onChange={(e) => onChange(e.target.value)} /><em>{missing ? "Needs owner input" : "Prepared"}</em></label>;
 }
 
-function Fact({ label, value, missing = false }) { return <span className={missing ? "is-missing" : ""}><small>{label}</small><b>{value || "Needs input"}</b></span>; }
-function CheckLine({ children }) { return <li><i>✓</i><span>{children}</span></li>; }
-function WarnLine({ children }) { return <li><i>!</i><span>{children}</span></li>; }
+function Fact({ label, value, missing = false }) { return <div className={`cws-fact ${missing ? "missing" : ""}`}><small>{label}</small><b>{value || "Needs input"}</b></div>; }
 function updateDraft(setDraft, key) { return (value) => setDraft((d) => ({ ...d, [key]: value })); }
-
-
-const SLIP_FORCE_CSS = `
-/* CHURVOX_FORCE_INLINE_SLIP_THEME_20260529 */
-.cfs-force-command-theme,
-.cfs-force-command-theme.cfs-overlay {
-  color: #f8fbff !important;
-  background:
-    radial-gradient(circle at 12% 2%, rgba(38, 211, 238, .20), transparent 30%),
-    radial-gradient(circle at 88% 4%, rgba(98, 72, 255, .26), transparent 32%),
-    linear-gradient(135deg, #020817 0%, #06152c 42%, #071d3d 100%) !important;
-}
-
-.cfs-force-command-theme::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(125,189,255,.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(125,189,255,.045) 1px, transparent 1px);
-  background-size: 54px 54px;
-  mask-image: radial-gradient(circle at 50% 22%, black, transparent 84%);
-}
-
-.cfs-force-command-theme .cfs-force-command-sheet,
-.cfs-force-command-theme .cfs-sheet {
-  padding: 16px !important;
-  border-radius: 32px !important;
-  color: #f8fbff !important;
-  background:
-    radial-gradient(circle at 80% 8%, rgba(98,72,255,.22), transparent 34%),
-    radial-gradient(circle at 12% 92%, rgba(38,211,238,.13), transparent 34%),
-    linear-gradient(135deg, rgba(2,8,23,.97), rgba(6,21,44,.95)) !important;
-  border: 1px solid rgba(125,189,255,.22) !important;
-  box-shadow: 0 34px 120px rgba(0,0,0,.48), inset 0 1px 0 rgba(255,255,255,.08) !important;
-}
-
-.cfs-force-command-theme .cfs-head {
-  border-radius: 26px !important;
-  background:
-    radial-gradient(circle at 78% 18%, rgba(98,72,255,.34), transparent 32%),
-    radial-gradient(circle at 8% 88%, rgba(38,211,238,.18), transparent 34%),
-    rgba(3,13,33,.96) !important;
-  border: 1px solid rgba(125,189,255,.22) !important;
-  color: #f8fbff !important;
-}
-
-.cfs-force-command-theme :is(h1,h2,h3,h4,b,strong,label) {
-  color: #fff !important;
-}
-
-.cfs-force-command-theme :is(p,span,small,em,li) {
-  color: rgba(248,251,255,.78) !important;
-}
-
-.cfs-force-command-theme :is(.cfs-head p,.cfs-section-title,.cfs-facts:before,.cfs-job-form small,.cfs-card small,.cfs-read-field small) {
-  color: #62e8f5 !important;
-  letter-spacing: .18em !important;
-  text-transform: uppercase !important;
-  font-weight: 950 !important;
-}
-
-.cfs-force-command-theme :is(
-  .cfs-facts span,
-  .cfs-lane-summary,
-  .cfs-lane-summary > *,
-  .cfs-lane-list,
-  .cfs-lane-row,
-  .cfs-decision,
-  .cfs-job-form article,
-  .cfs-card,
-  .cfs-empty,
-  .cfs-read-field,
-  .cfs-ai-box,
-  .cfs-next,
-  .cfs-attention,
-  .cfs-happened,
-  .cfs-ai
-) {
-  color: #f8fbff !important;
-  background:
-    radial-gradient(circle at 82% 12%, rgba(98,72,255,.13), transparent 30%),
-    linear-gradient(135deg, rgba(4,16,39,.93), rgba(8,30,66,.85)) !important;
-  border-color: rgba(125,189,255,.20) !important;
-  box-shadow: 0 18px 58px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.08) !important;
-}
-
-.cfs-force-command-theme .cfs-lane-summary {
-  border-radius: 18px !important;
-  padding: 12px !important;
-}
-
-.cfs-force-command-theme .cfs-lane-summary > * {
-  border-radius: 14px !important;
-  padding: 12px !important;
-  background: rgba(255,255,255,.07) !important;
-}
-
-.cfs-force-command-theme .cfs-lane-list {
-  border-radius: 24px !important;
-  padding: 16px !important;
-  gap: 10px !important;
-  background:
-    radial-gradient(circle at 8% 0%, rgba(20,216,244,.10), transparent 32%),
-    rgba(3,13,33,.62) !important;
-}
-
-.cfs-force-command-theme .cfs-lane-row {
-  min-height: 78px !important;
-  border-radius: 18px !important;
-  padding: 16px 18px !important;
-  color: #fff !important;
-  background:
-    linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.045)) !important;
-  border: 1px solid rgba(125,189,255,.22) !important;
-}
-
-.cfs-force-command-theme .cfs-lane-row:hover {
-  transform: translateY(-1px) !important;
-  border-color: rgba(98,232,245,.42) !important;
-  background:
-    linear-gradient(135deg, rgba(20,216,244,.16), rgba(98,72,255,.13)) !important;
-}
-
-.cfs-force-command-theme .cfs-lane-row em {
-  color: #62e8f5 !important;
-  font-style: normal !important;
-  font-weight: 950 !important;
-}
-
-.cfs-force-command-theme :is(input,textarea,select,.cfs-read-field) {
-  background: rgba(255,255,255,.075) !important;
-  color: #fff !important;
-  border: 1px solid rgba(125,189,255,.20) !important;
-  border-radius: 14px !important;
-}
-
-.cfs-force-command-theme :is(input,textarea,select):focus {
-  outline: none !important;
-  border-color: rgba(98,232,245,.62) !important;
-  box-shadow: 0 0 0 4px rgba(98,232,245,.10) !important;
-}
-
-.cfs-force-command-theme :is(.is-missing,.cfs-missing-card,.cfs-blocked) {
-  background:
-    linear-gradient(135deg, rgba(127,29,29,.42), rgba(45,18,38,.84)) !important;
-  border-color: rgba(248,113,113,.52) !important;
-}
-
-.cfs-force-command-theme :is(.cfs-photo-row span,.cfs-photo-placeholders span) {
-  border-radius: 14px !important;
-  border: 1px solid rgba(125,189,255,.20) !important;
-  background:
-    linear-gradient(135deg, rgba(20,216,244,.24), rgba(36,92,255,.18)) !important;
-}
-
-.cfs-force-command-theme .cfs-actions {
-  position: sticky !important;
-  left: auto !important;
-  right: auto !important;
-  bottom: 12px !important;
-  transform: none !important;
-  width: min(900px, 100%) !important;
-  margin: 18px auto 0 !important;
-  z-index: 5 !important;
-  display: flex !important;
-  flex-wrap: wrap !important;
-  justify-content: center !important;
-  gap: 10px !important;
-  padding: 10px !important;
-  border-radius: 24px !important;
-  background: rgba(3,13,33,.94) !important;
-  border: 1px solid rgba(125,189,255,.22) !important;
-  box-shadow: 0 24px 90px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.08) !important;
-  backdrop-filter: blur(22px) saturate(150%) !important;
-}
-
-.cfs-force-command-theme .cfs-actions :is(button,a) {
-  min-height: 46px !important;
-  border-radius: 14px !important;
-  padding: 0 16px !important;
-  border: 1px solid rgba(125,189,255,.20) !important;
-  background: rgba(255,255,255,.075) !important;
-  color: #f8fbff !important;
-  font-weight: 900 !important;
-  text-decoration: none !important;
-}
-
-.cfs-force-command-theme .cfs-actions :is(button:first-child,.primary) {
-  background: linear-gradient(135deg, #14d8f4, #245cff 48%, #9333ea) !important;
-  color: #fff !important;
-  border-color: transparent !important;
-  box-shadow: 0 16px 42px rgba(36,92,255,.30) !important;
-}
-
-.cfs-force-command-theme .cfs-notice {
-  background: rgba(119,255,193,.12) !important;
-  color: #77ffc1 !important;
-  border: 1px solid rgba(119,255,193,.20) !important;
-  border-radius: 14px !important;
-}
-
-
-
-/* CHURVOX_CLEAN_WORK_SLIP_LAYOUT_20260529 */
-/* Cleans the cockpit Work Slip after theme was applied. */
-
-.cfs-force-command-theme.cfs-overlay {
-  padding: 14px 18px 28px !important;
-}
-
-.cfs-force-command-theme .cfs-force-command-sheet,
-.cfs-force-command-theme .cfs-sheet {
-  width: min(1500px, calc(100vw - 44px)) !important;
-  min-height: auto !important;
-  padding: 16px !important;
-  gap: 14px !important;
-}
-
-/* Header: strong but not huge */
-.cfs-force-command-theme .cfs-head {
-  min-height: 124px !important;
-  padding: 24px 28px !important;
-  border-radius: 26px !important;
-}
-
-.cfs-force-command-theme .cfs-head h2 {
-  font-size: clamp(2.6rem, 4vw, 4.9rem) !important;
-  line-height: .92 !important;
-  letter-spacing: -.07em !important;
-}
-
-.cfs-force-command-theme .cfs-head span {
-  max-width: 980px !important;
-  margin-top: 8px !important;
-  font-size: .95rem !important;
-}
-
-/* Fix AT A GLANCE overlap */
-.cfs-force-command-theme .cfs-facts {
-  position: relative !important;
-  display: grid !important;
-  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
-  gap: 10px !important;
-  padding-top: 0 !important;
-  margin-top: 0 !important;
-}
-
-.cfs-force-command-theme .cfs-facts::before {
-  display: none !important;
-}
-
-.cfs-force-command-theme .cfs-facts span {
-  min-height: 74px !important;
-  padding: 12px !important;
-  border-radius: 16px !important;
-}
-
-.cfs-force-command-theme .cfs-facts span::before {
-  width: 34px !important;
-  height: 34px !important;
-  border-radius: 12px !important;
-}
-
-.cfs-force-command-theme .cfs-facts small {
-  font-size: .64rem !important;
-}
-
-.cfs-force-command-theme .cfs-facts b {
-  font-size: .82rem !important;
-  line-height: 1.18 !important;
-}
-
-/* Decision cards: clean lane, no crash */
-.cfs-force-command-theme .cfs-decision-grid {
-  display: grid !important;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  gap: 12px !important;
-  align-items: stretch !important;
-}
-
-.cfs-force-command-theme .cfs-decision {
-  min-height: 178px !important;
-  padding: 16px !important;
-  border-radius: 22px !important;
-  overflow: hidden !important;
-}
-
-.cfs-force-command-theme .cfs-decision header {
-  margin-bottom: 10px !important;
-}
-
-.cfs-force-command-theme .cfs-decision li {
-  font-size: .82rem !important;
-  line-height: 1.28 !important;
-  gap: 8px !important;
-}
-
-/* Form grid: make it feel like a proper full-screen slip */
-.cfs-force-command-theme .cfs-job-form {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(260px, .72fr) !important;
-  grid-template-areas:
-    "details details details"
-    "assignment pricing completion" !important;
-  gap: 14px !important;
-}
-
-.cfs-force-command-theme .cfs-job-form article,
-.cfs-force-command-theme .cfs-card {
-  border-radius: 22px !important;
-  padding: 16px !important;
-  min-width: 0 !important;
-}
-
-.cfs-force-command-theme .cfs-form-grid {
-  gap: 12px !important;
-}
-
-.cfs-force-command-theme .cfs-form-grid-small {
-  grid-template-columns: 1fr !important;
-}
-
-.cfs-force-command-theme :is(input, textarea, select, .cfs-read-field) {
-  min-height: 44px !important;
-  font-size: .88rem !important;
-}
-
-.cfs-force-command-theme textarea {
-  min-height: 104px !important;
-}
-
-/* Lower row: stop cramped feel */
-.cfs-force-command-theme .cfs-lower {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr) minmax(280px, .75fr) !important;
-  gap: 14px !important;
-  padding-bottom: 0 !important;
-}
-
-.cfs-force-command-theme .cfs-lower > article {
-  min-height: 190px !important;
-  border-radius: 22px !important;
-}
-
-.cfs-force-command-theme .cfs-photo-row span,
-.cfs-force-command-theme .cfs-photo-placeholders span {
-  height: 96px !important;
-}
-
-/* Action bar: no overlay, clean grouped footer */
-.cfs-force-command-theme .cfs-actions {
-  position: relative !important;
-  left: auto !important;
-  right: auto !important;
-  bottom: auto !important;
-  transform: none !important;
-  width: 100% !important;
-  margin: 4px auto 0 !important;
-  padding: 12px !important;
-  display: flex !important;
-  flex-wrap: wrap !important;
-  justify-content: center !important;
-  gap: 10px !important;
-  border-radius: 24px !important;
-  background: rgba(3,13,33,.86) !important;
-}
-
-.cfs-force-command-theme .cfs-actions button,
-.cfs-force-command-theme .cfs-actions a {
-  min-height: 42px !important;
-  padding: 0 14px !important;
-  font-size: .84rem !important;
-}
-
-.cfs-force-command-theme .cfs-actions button:disabled {
-  opacity: .55 !important;
-  cursor: not-allowed !important;
-}
-
-@media(max-width: 1180px) {
-  .cfs-force-command-theme .cfs-facts {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  }
-
-  .cfs-force-command-theme .cfs-decision-grid,
-  .cfs-force-command-theme .cfs-job-form,
-  .cfs-force-command-theme .cfs-lower {
-    grid-template-columns: 1fr !important;
-    grid-template-areas: none !important;
-  }
-
-  .cfs-force-command-theme .cfs-job-form article {
-    grid-area: auto !important;
-  }
-}
-
-@media(max-width: 700px) {
-  .cfs-force-command-theme.cfs-overlay {
-    padding: 10px !important;
-  }
-
-  .cfs-force-command-theme .cfs-force-command-sheet,
-  .cfs-force-command-theme .cfs-sheet {
-    width: min(100%, calc(100vw - 20px)) !important;
-  }
-
-  .cfs-force-command-theme .cfs-head {
-    grid-template-columns: 1fr !important;
-    padding: 22px !important;
-  }
-
-  .cfs-force-command-theme .cfs-head h2 {
-    font-size: clamp(2.3rem, 14vw, 3.8rem) !important;
-  }
-
-  .cfs-force-command-theme .cfs-facts {
-    grid-template-columns: 1fr !important;
-  }
-
-  .cfs-force-command-theme .cfs-actions {
-    justify-content: stretch !important;
-  }
-
-  .cfs-force-command-theme .cfs-actions button,
-  .cfs-force-command-theme .cfs-actions a {
-    flex: 1 1 100% !important;
-  }
-}
-
-
-/* CHURVOX_FINAL_WHITE_CARD_ACTION_BAR_FIX_20260529 */
-/* Kill the last pale lower card and make actions sit cleanly. */
-
-.cfs-force-command-theme .cfs-lower {
-  display: grid !important;
-  grid-template-columns: 1.25fr 1fr .9fr !important;
-  gap: 16px !important;
-  padding-bottom: 18px !important;
-}
-
-.cfs-force-command-theme .cfs-lower > article,
-.cfs-force-command-theme .cfs-lower .cfs-card,
-.cfs-force-command-theme .cfs-lower .cfs-card.cfs-next,
-.cfs-force-command-theme article.cfs-card.cfs-next,
-.cfs-force-command-theme .cfs-next {
-  color: #f8fbff !important;
-  background:
-    radial-gradient(circle at 82% 12%, rgba(98,72,255,.16), transparent 30%),
-    linear-gradient(135deg, rgba(4,16,39,.96), rgba(8,30,66,.88)) !important;
-  border: 1px solid rgba(125,189,255,.22) !important;
-  box-shadow: 0 18px 58px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.08) !important;
-}
-
-.cfs-force-command-theme .cfs-lower .cfs-card.cfs-next *,
-.cfs-force-command-theme article.cfs-card.cfs-next *,
-.cfs-force-command-theme .cfs-next * {
-  color: rgba(248,251,255,.78) !important;
-}
-
-.cfs-force-command-theme .cfs-lower .cfs-card.cfs-next :is(b,strong,h3,h4),
-.cfs-force-command-theme article.cfs-card.cfs-next :is(b,strong,h3,h4),
-.cfs-force-command-theme .cfs-next :is(b,strong,h3,h4) {
-  color: #fff !important;
-}
-
-.cfs-force-command-theme .cfs-lower .cfs-card.cfs-next :is(small,.cfs-section-title),
-.cfs-force-command-theme article.cfs-card.cfs-next :is(small,.cfs-section-title),
-.cfs-force-command-theme .cfs-next :is(small,.cfs-section-title) {
-  color: #62e8f5 !important;
-}
-
-.cfs-force-command-theme .cfs-actions {
-  position: sticky !important;
-  bottom: 10px !important;
-  left: auto !important;
-  right: auto !important;
-  transform: none !important;
-  width: min(940px, 100%) !important;
-  margin: 16px auto 0 !important;
-  z-index: 6 !important;
-  border-radius: 24px !important;
-  background: rgba(3,13,33,.94) !important;
-}
-
-/* Stop any white/yellow helper chip from leaking into the slip */
-.cfs-force-command-theme :is(
-  [class*="bg-white"],
-  [class*="bg-slate"],
-  [class*="bg-gray"],
-  [class*="bg-zinc"],
-  [class*="bg-neutral"],
-  [class*="bg-yellow"],
-  [class*="bg-amber"],
-  [style*="background: white"],
-  [style*="background:#fff"],
-  [style*="background-color: white"],
-  [style*="background-color:#fff"]
-) {
-  background: rgba(255,255,255,.075) !important;
-  color: #f8fbff !important;
-  border-color: rgba(125,189,255,.18) !important;
-}
-
-
-@media(max-width: 700px) {
-  .cfs-force-command-theme .cfs-force-command-sheet,
-  .cfs-force-command-theme .cfs-sheet {
-    padding: 10px !important;
-  }
-}
-`;
 
 function LaneSlip({ active, onClose, onPick }) {
   const items = active.items || [];
-  return <aside className="cfs-overlay cfs-lane-slip cfs-force-command-theme" data-version="CHURVOX_FORCE_INLINE_SLIP_THEME_20260529"><style>{SLIP_FORCE_CSS}</style><section className="cfs-sheet cfs-force-command-sheet"><header className="cfs-head"><div><p>WORK SLIP</p><h2>{active.title}</h2><em>{active.meta}</em></div><button type="button" onClick={onClose}>× Close</button></header><section className="cfs-lane-summary"><Fact label="Waiting" value={items.length} /><Fact label="Total value" value={Number(active.amount || 0) > 0 ? cash(active.amount) : "—"} /><strong>{active.actionLabel || "Open a row to approve the detail."}</strong></section><section className="cfs-lane-list">{items.length ? items.slice(0, 12).map((x, i) => <button className="cfs-lane-row" type="button" key={`${x.type}-${x.id}-${i}`} onClick={() => onPick(x)}><span><b>{x.title}</b><small>{x.code} · {detailText(x.raw || {}, x.meta)}</small></span><em>{Number(x.amount || 0) > 0 ? cash(x.amount) : x.state}</em></button>) : <div className="cfs-empty">Nothing waiting in this lane.</div>}</section><footer className="cfs-actions">{items.length ? <button className="primary" type="button" onClick={() => onPick(items[0])}>Open first waiting item</button> : <button disabled type="button">Nothing waiting</button>}</footer></section></aside>;
+  return <aside className="cws-overlay" data-version="CHURVOX_CLEAN_WORK_SLIP_REBUILD_20260529"><section className="cws-shell"><header className="cws-hero"><div><p className="cws-kicker">WORK SLIP LANE</p><h2>{active.title}</h2><span className="cws-state">{active.meta}</span><p>{active.actionLabel || "Open a row to approve the detail."}</p></div><button className="cws-close" type="button" onClick={onClose}>× Close</button></header><section className="cws-summary"><div className="cws-summary-card"><small>Waiting</small><b>{items.length}</b></div><div className="cws-summary-card"><small>Total value</small><b>{Number(active.amount || 0) > 0 ? cash(active.amount) : "—"}</b></div><div className="cws-summary-card"><small>Owner action</small><b>{active.actionLabel || "Review the next item"}</b></div></section><section className="cws-lane-list">{items.length ? items.slice(0, 12).map((x, i) => <button className="cws-lane-row" type="button" key={`${x.type}-${x.id}-${i}`} onClick={() => onPick(x)}><span><b>{x.title}</b><small>{x.code} · {detailText(x.raw || {}, x.meta)}</small></span><em>{Number(x.amount || 0) > 0 ? cash(x.amount) : x.state}</em></button>) : <div className="cws-empty">Nothing waiting in this lane.</div>}</section><footer className="cws-actions">{items.length ? <button className="primary" type="button" onClick={() => onPick(items[0])}>Open first waiting item</button> : <button disabled type="button">Nothing waiting</button>}</footer></section></aside>;
 }
 
 export default function CommandFloorApprovalSlip({ picked, onClose, onAction, onPick, workers = [], jobs = [] }) {
@@ -778,13 +229,11 @@ export default function CommandFloorApprovalSlip({ picked, onClose, onAction, on
   if (!active) return null;
   if (active.type === "action_group") return <LaneSlip active={active} onClose={onClose} onPick={onPick} />;
 
-  const photosMissingOptional = isJobLike && photos.length === 0;
   const missing = {
     title: !hasText(draft.title),
     customer: !hasText(draft.customer_name) || isGenericCustomer(draft.customer_name),
     site: isJobLike && !hasText(draft.site_address),
     service: isJobLike && !hasText(draft.service_type),
-    scheduled: false,
     status: isEditableRecord && !hasText(draft.status),
     description: isEditableRecord && !hasText(draft.meta),
     worker: isJobLike && !hasText(draft.worker_id) && !hasText(draft.worker_name),
@@ -793,8 +242,8 @@ export default function CommandFloorApprovalSlip({ picked, onClose, onAction, on
     workerNotes: isJobLike && !hasText(draft.worker_notes),
     invoiceDescription: (isJobLike || isInvoice) && !hasText(draft.invoice_description),
     message: isJobLike && !hasText(draft.message),
-    photos: false,
   };
+
   const mainMissing = missing.title || missing.customer || missing.site || missing.description || missing.status;
   const assignmentMissing = missing.worker;
   const pricingMissing = missing.amount || missing.pricing || missing.invoiceDescription;
@@ -805,26 +254,42 @@ export default function CommandFloorApprovalSlip({ picked, onClose, onAction, on
   const blocked = isJobLike ? jobBlocked : isInvoice ? invoiceBlocked : isQuote ? quoteBlocked : false;
   const canPrepareInvoice = isJobLike && !missing.customer && !missing.amount && !missing.invoiceDescription;
   const value = moneyNumber(draft.amount, active.amount) ? cash(moneyNumber(draft.amount, active.amount)) : "Needs input";
-  const situation = buildSituation(active, photos, draft, isJobLike);
-  const needs = buildNeedsAttention(missing, isJobLike, isInvoice);
   const hasRealBackup = active.href && active.href !== "#";
+
+  const needs = [];
+  if (missing.customer) needs.push("Customer needs owner input.");
+  if (missing.site) needs.push("Site address needs owner input.");
+  if (missing.worker) needs.push("Worker must be chosen before approval.");
+  if (missing.amount) needs.push("Price is missing.");
+  if (missing.invoiceDescription) needs.push("Invoice description needs owner input.");
+  if (missing.workerNotes) needs.push("Worker notes are missing.");
+  if (missing.message) needs.push("Customer message needs owner input.");
+  const visibleNeeds = needs.length ? needs.slice(0, 5) : ["Everything important is filled. Review once, then approve."];
 
   const run = async (action) => { setBusy(true); setNotice(""); const msg = await onAction(action, active, draft); const patched = patchPickedAfterAction(active, action, draft, msg); if (patched) setLocalPicked(patched); setNotice(msg); setBusy(false); };
   const changeWorker = (value) => { const selected = workers.find((worker) => workerIdOf(worker) === value); setDraft((d) => ({ ...d, worker_id: value, worker_name: selected ? workerNameOf(selected) : "" })); };
 
-  return <aside className="cfs-overlay cfs-force-command-theme" data-version="CHURVOX_FORCE_INLINE_SLIP_THEME_20260529"><style>{SLIP_FORCE_CSS}</style><section className="cfs-sheet cfs-force-command-sheet">
-    <header className="cfs-head"><div><p>WORK SLIP</p><h2>{draft.customer_name || active.title}</h2><em>{active.code || active.type}</em><span>{isEditableRecord ? "Churvox filled what it could. Red fields need owner input. Photos are optional evidence and do not block approval." : "This record is review-only here. Use the right action or open the full page backup."}</span></div><button type="button" onClick={onClose}>× Close</button></header>
-    <section className="cfs-facts"><Fact label="Status" value={draft.status || active.state} missing={missing.status} /><Fact label="Value" value={value} missing={missing.amount} /><Fact label="Site" value={draft.site_address || "—"} missing={missing.site} /><Fact label="Customer" value={draft.customer_name || active.title} missing={missing.customer} /><Fact label="Worker" value={draft.worker_name || (recommendation?.best ? workerNameOf(recommendation.best.worker) : "—")} missing={missing.worker} /><Fact label="Invoice" value={draft.invoice_status} missing={missing.invoiceDescription} /></section>
-    <section className="cfs-decision-grid"><article className="cfs-decision cfs-happened"><header><i>1</i><b>What happened</b></header><ul>{situation.map((x) => <CheckLine key={x}>{x}</CheckLine>)}</ul></article><article className="cfs-decision cfs-ai"><header><i>2</i><b>AI Recommendation</b></header><div className="cfs-ai-box"><strong>{blocked ? "⚠ Review first" : "✓ Ready"}</strong><p>{blocked ? "Churvox filled the form, but red fields still need owner input before approval. Photos are optional." : isJobLike && recommendation?.best ? `No worker conflict found, ${workerNameOf(recommendation.best.worker)} selected, invoice draft prepared, and customer update drafted.` : "Only the actions that make sense for this record are available below."}</p></div></article><article className={`cfs-decision cfs-attention ${blocked ? "cfs-blocked" : ""}`}><header><i>3</i><b>Needs attention</b></header><ul>{needs.map((x) => <WarnLine key={x}>{x}</WarnLine>)}</ul></article></section>
-    <h3 className="cfs-section-title">Editable job form Churvox prepared</h3>
-    <section className="cfs-job-form cfs-job-form-editable">
-      <article className={mainMissing ? "cfs-missing-card" : ""}><header><small>{isJobLike ? "Job details" : "Record details"}</small><b>{isEditableRecord ? "Editable record" : "Review-only record"}</b></header><div className="cfs-form-grid"><Field label="Title" value={draft.title} onChange={updateDraft(setDraft, "title")} missing={missing.title} readOnly={!isEditableRecord} /><Field label="Client / customer" value={draft.customer_name} onChange={updateDraft(setDraft, "customer_name")} missing={missing.customer} readOnly={!isEditableRecord} /><Field label="Site address" value={draft.site_address} onChange={updateDraft(setDraft, "site_address")} missing={missing.site} readOnly={!isEditableRecord} /><SelectField label="Service type" value={draft.service_type} onChange={updateDraft(setDraft, "service_type")} options={SERVICE_OPTIONS} missing={missing.service} /><ScheduleField value={draft.scheduled} onChange={updateDraft(setDraft, "scheduled")} missing={missing.scheduled} /><SelectField label="Status" value={draft.status} onChange={updateDraft(setDraft, "status")} options={STATUS_OPTIONS} missing={missing.status} /><Field label="Description / scope" value={draft.meta} onChange={updateDraft(setDraft, "meta")} missing={missing.description} textarea readOnly={!isEditableRecord} /></div></article>
-      <article className={assignmentMissing ? "cfs-missing-card" : ""}><header><small>Assignment</small><b>{isJobLike ? "Worker selected by AI" : "Not needed"}</b></header><div className="cfs-form-grid cfs-form-grid-small"><label className={`cfs-field ${missing.worker ? "is-missing" : "is-filled"}`}><span>Assigned worker</span><select disabled={!isJobLike} value={draft.worker_id || ""} onChange={(e) => changeWorker(e.target.value)}><option value="">{isJobLike ? "Needs owner input" : "Not needed"}</option>{workers.map((worker) => { const wid = workerIdOf(worker); const blockedWorker = isWorkerBlocked(worker) || workerHasActiveConflict(worker, jobs, active); return <option key={wid || worker.title} value={wid}>{workerNameOf(worker)}{blockedWorker ? ` · ${blockedWorker}` : worker.state ? ` · ${worker.state}` : ""}</option>; })}</select><em>{isJobLike ? (missing.worker ? "Needs owner input" : "AI selected") : "Not required"}</em></label><Field label="Assigned worker name" value={draft.worker_name} onChange={updateDraft(setDraft, "worker_name")} missing={missing.worker} readOnly={!isJobLike} /><Field label="AI reason / conflict check" value={recommendation?.summary || (isJobLike ? "Needs manual check" : "Not a worker-assignment record")} onChange={() => {}} textarea note="AI filled" readOnly /></div></article>
-      <article className={pricingMissing ? "cfs-missing-card" : ""}><header><small>Pricing + invoice prep</small><b>Admin fields</b></header><div className="cfs-form-grid cfs-form-grid-small"><SelectField label="Pricing type" value={draft.pricing_type} onChange={updateDraft(setDraft, "pricing_type")} options={PRICING_OPTIONS} missing={missing.pricing} /><Field label="Amount" type="number" value={draft.amount} onChange={updateDraft(setDraft, "amount")} missing={missing.amount} readOnly={!isEditableRecord} /><SelectField label="Invoice status" value={draft.invoice_status} onChange={updateDraft(setDraft, "invoice_status")} options={INVOICE_STATUS_OPTIONS} note="Choose from list" /><Field label="Invoice description" value={draft.invoice_description} onChange={updateDraft(setDraft, "invoice_description")} missing={missing.invoiceDescription} textarea readOnly={!isEditableRecord} /></div></article>
-      <article className={completionMissing ? "cfs-missing-card" : ""}><header><small>Completion</small><b>{isJobLike ? "Worker evidence" : "Not needed"}</b></header><div className="cfs-form-grid cfs-form-grid-small"><Field label="Worker notes" value={draft.worker_notes} onChange={updateDraft(setDraft, "worker_notes")} missing={missing.workerNotes} textarea readOnly={!isJobLike} /><Field label="Photos" value={photos.length ? `${photos.length} uploaded` : "Optional"} onChange={() => {}} missing={false} note="Optional evidence" readOnly /><Field label="Owner approval" value={blocked ? "Fix red fields first" : "Ready for available action"} onChange={() => {}} note="Type-aware" readOnly /></div></article>
+  const primaryApproveLabel = isAction ? "Approve & execute" : isInvoice ? "Approve invoice" : isJobLike ? "Approve work" : "Approve";
+
+  return <aside className="cws-overlay" data-version="CHURVOX_CLEAN_WORK_SLIP_REBUILD_20260529"><section className="cws-shell">
+    <header className="cws-hero"><div><p className="cws-kicker">WORK SLIP</p><h2>{draft.customer_name || active.title}</h2><span className="cws-state">{blocked ? `${visibleNeeds.length} owner check${visibleNeeds.length === 1 ? "" : "s"}` : "Ready for approval"}</span><p>Churvox prepared the admin. Check the fields below, fix anything highlighted, then approve the next move.</p></div><button className="cws-close" type="button" onClick={onClose}>× Close</button></header>
+
+    <section className="cws-facts"><Fact label="Status" value={draft.status || active.state} missing={missing.status} /><Fact label="Value" value={value} missing={missing.amount} /><Fact label="Site" value={draft.site_address || "—"} missing={missing.site} /><Fact label="Customer" value={draft.customer_name || active.title} missing={missing.customer} /><Fact label="Worker" value={draft.worker_name || (recommendation?.best ? workerNameOf(recommendation.best.worker) : "—")} missing={missing.worker} /><Fact label="Invoice" value={draft.invoice_status} missing={missing.invoiceDescription} /></section>
+
+    <section className={`cws-fix ${blocked ? "" : "ready"}`}><h3>{blocked ? "Owner must check" : "Ready to approve"}</h3><ul>{visibleNeeds.map((x) => <li key={x}><span className="cws-dot">{blocked ? "!" : "✓"}</span>{x}</li>)}</ul></section>
+
+    <section className="cws-grid">
+      <div className="cws-panel cws-prepared"><p className="cws-section-title">Churvox prepared</p><div className="cws-field-grid"><Field label="Title" value={draft.title} onChange={updateDraft(setDraft, "title")} missing={missing.title} readOnly={!isEditableRecord} /><Field label="Client / customer" value={draft.customer_name} onChange={updateDraft(setDraft, "customer_name")} missing={missing.customer} readOnly={!isEditableRecord} /><Field label="Site address" value={draft.site_address} onChange={updateDraft(setDraft, "site_address")} missing={missing.site} readOnly={!isEditableRecord} /><SelectField label="Service type" value={draft.service_type} onChange={updateDraft(setDraft, "service_type")} options={SERVICE_OPTIONS} missing={missing.service} /><ScheduleField value={draft.scheduled} onChange={updateDraft(setDraft, "scheduled")} missing={false} /><SelectField label="Status" value={draft.status} onChange={updateDraft(setDraft, "status")} options={STATUS_OPTIONS} missing={missing.status} /><Field label="Description / scope" value={draft.meta} onChange={updateDraft(setDraft, "meta")} missing={missing.description} textarea wide readOnly={!isEditableRecord} /></div></div>
+      <div className="cws-side">
+        <article className="cws-card"><p className="cws-label">Assignment</p><div className="cws-field-grid"><label className={`cws-field ${missing.worker ? "missing" : ""}`}><span>Assigned worker</span><select disabled={!isJobLike} value={draft.worker_id || ""} onChange={(e) => changeWorker(e.target.value)}><option value="">{isJobLike ? "Needs owner input" : "Not needed"}</option>{workers.map((worker) => { const wid = workerIdOf(worker); const blockedWorker = isWorkerBlocked(worker) || workerHasActiveConflict(worker, jobs, active); return <option key={wid || worker.title} value={wid}>{workerNameOf(worker)}{blockedWorker ? ` · ${blockedWorker}` : worker.state ? ` · ${worker.state}` : ""}</option>; })}</select><em>{isJobLike ? (missing.worker ? "Needs owner input" : "AI selected") : "Not required"}</em></label><Field label="Worker name" value={draft.worker_name} onChange={updateDraft(setDraft, "worker_name")} missing={missing.worker} readOnly={!isJobLike} /></div><p>{recommendation?.summary || (isJobLike ? "Choose a worker or approve the current selection." : "No worker action needed.")}</p></article>
+        <article className="cws-card"><p className="cws-label">Pricing + invoice</p><div className="cws-field-grid"><SelectField label="Pricing type" value={draft.pricing_type} onChange={updateDraft(setDraft, "pricing_type")} options={PRICING_OPTIONS} missing={missing.pricing} /><Field label="Amount" type="number" value={draft.amount} onChange={updateDraft(setDraft, "amount")} missing={missing.amount} readOnly={!isEditableRecord} /><SelectField label="Invoice status" value={draft.invoice_status} onChange={updateDraft(setDraft, "invoice_status")} options={INVOICE_STATUS_OPTIONS} /><Field label="Invoice description" value={draft.invoice_description} onChange={updateDraft(setDraft, "invoice_description")} missing={missing.invoiceDescription} textarea wide readOnly={!isEditableRecord} /></div></article>
+      </div>
     </section>
-    <section className="cfs-lower"><article className={`cfs-card cfs-message ${missing.message ? "cfs-missing-card" : ""}`}><header><small>Draft customer update</small><b>{isEditableRecord ? "Draft before sending" : "Review-only"}</b></header><textarea readOnly={!isEditableRecord} placeholder="Needs owner input" value={draft.message || ""} onChange={(e) => setDraft((d) => ({ ...d, message: e.target.value }))} /><p>{(draft.message || "").length} / 500</p></article><article className="cfs-card cfs-photos"><header><small>Evidence & photos</small><b>{photos.length ? `${photos.length} photos uploaded` : isJobLike ? "Optional" : "Not needed"}</b></header>{photos.length ? <div className="cfs-photo-row">{photos.slice(0, 3).map((photo, i) => <span key={`${photo.url || photo.label}-${i}`}>{photo.url ? <img src={photo.url} alt={photo.label} /> : null}</span>)}</div> : <div className="cfs-photo-placeholders"><span /><span /><span /></div>}<p>{photos.length ? `${photos.length} photos uploaded by worker` : isJobLike ? "Photos are optional. You can approve this work without photos." : "Photos are not required for this record type."}</p></article><article className="cfs-card cfs-next"><header><small>What happens after approval</small><b>{blocked ? "Fix red fields first" : "Action-specific"}</b></header><ul><CheckLine>Job approvals update job review status.</CheckLine><CheckLine>Invoice approval only appears for invoice records.</CheckLine><CheckLine>Customer message remains a draft until saved/sent elsewhere.</CheckLine></ul></article></section>
-    {notice && <strong className="cfs-notice">{notice}</strong>}
-    <footer className="cfs-actions">{isEditableRecord && <button type="button" disabled={busy} onClick={() => run("save")}>Save changes</button>}{isAction && <button className="primary" type="button" disabled={busy} onClick={() => run("approve")}>Approve & execute</button>}{isAction && <button className="danger" type="button" disabled={busy} onClick={() => run("reject")}>Reject action</button>}{isJobLike && <button className="primary" type="button" disabled={busy || blocked} onClick={() => run("approve")}>Approve work</button>}{isInvoice && <button className="primary" type="button" disabled={busy || blocked} onClick={() => run("approve")}>Approve invoice</button>}{isJobLike && <button type="button" disabled={busy || !draft.worker_id} onClick={() => run("assign")}>Assign worker</button>}{isJobLike && <button type="button" disabled={busy || !canPrepareInvoice} onClick={() => run("invoice")}>Prepare invoice</button>}{isEditableRecord && <button type="button" disabled={busy} onClick={() => run("message")}>Save message draft</button>}{hasRealBackup && <Link to={active.href}>Full page backup</Link>}{!isEditableRecord && !isAction && !hasRealBackup && <button type="button" disabled>Review-only record</button>}</footer>
+
+    <section className="cws-grid"><article className="cws-card cws-message"><p className="cws-label">Draft customer update</p><textarea readOnly={!isEditableRecord} placeholder="Needs owner input" value={draft.message || ""} onChange={(e) => setDraft((d) => ({ ...d, message: e.target.value }))} /><span className="cws-counter">{(draft.message || "").length} / 500</span></article><aside className="cws-side"><article className="cws-card"><p className="cws-label">Worker notes</p><Field label="Completion notes" value={draft.worker_notes} onChange={updateDraft(setDraft, "worker_notes")} missing={missing.workerNotes} textarea readOnly={!isJobLike} /></article><article className="cws-card"><p className="cws-label">Evidence & photos</p>{photos.length ? <div className="cws-photo-row">{photos.slice(0, 3).map((photo, i) => <span key={`${photo.url || photo.label}-${i}`}>{photo.url ? <img src={photo.url} alt={photo.label} /> : null}</span>)}</div> : <div className="cws-photo-empty"><span /><span /><span /></div>}<p>{photos.length ? `${photos.length} photos uploaded by worker.` : "Photos are optional evidence and do not block approval."}</p></article></aside></section>
+
+    {notice && <strong className="cws-notice">{notice}</strong>}
+
+    <footer className="cws-actions">{isEditableRecord && <button type="button" disabled={busy} onClick={() => run("save")}>Save changes</button>}{(isAction || isJobLike || isInvoice) && <button className="primary" type="button" disabled={busy || (!isAction && blocked)} onClick={() => run("approve")}>{primaryApproveLabel}</button>}{isJobLike && <button type="button" disabled={busy || !canPrepareInvoice} onClick={() => run("invoice")}>Prepare invoice</button>}<details className="cws-more"><summary>More tools</summary><div className="cws-more-panel">{isAction && <button className="danger" type="button" disabled={busy} onClick={() => run("reject")}>Reject action</button>}{isJobLike && <button type="button" disabled={busy || !draft.worker_id} onClick={() => run("assign")}>Assign worker</button>}{isEditableRecord && <button type="button" disabled={busy} onClick={() => run("message")}>Save message draft</button>}{hasRealBackup && <Link to={active.href}>Full page backup</Link>}{!isEditableRecord && !isAction && !hasRealBackup && <button type="button" disabled>Review-only record</button>}</div></details></footer>
   </section></aside>;
 }
