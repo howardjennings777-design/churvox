@@ -1,11 +1,10 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT
-Change: stale bundle rescue for missing main.ba074485.js
+Change: force inline Command Floor Work Slip theme
 
 Frontend:
-- adds rescue JS for old cached bundle main.ba074485.js
-- adds old CSS placeholder rescue
-- clears old service worker/cache once
-- fixes MIME/404 stale asset issue
+- injects Work Slip cockpit theme inside real React component
+- white slip shell cannot stay white
+- rows, panels, inputs, actions match Command Floor gradient
 - backend unchanged

@@ -239,9 +239,219 @@ function CheckLine({ children }) { return <li><i>✓</i><span>{children}</span><
 function WarnLine({ children }) { return <li><i>!</i><span>{children}</span></li>; }
 function updateDraft(setDraft, key) { return (value) => setDraft((d) => ({ ...d, [key]: value })); }
 
+
+const SLIP_FORCE_CSS = `
+/* CHURVOX_FORCE_INLINE_SLIP_THEME_20260529 */
+.cfs-force-command-theme,
+.cfs-force-command-theme.cfs-overlay {
+  color: #f8fbff !important;
+  background:
+    radial-gradient(circle at 12% 2%, rgba(38, 211, 238, .20), transparent 30%),
+    radial-gradient(circle at 88% 4%, rgba(98, 72, 255, .26), transparent 32%),
+    linear-gradient(135deg, #020817 0%, #06152c 42%, #071d3d 100%) !important;
+}
+
+.cfs-force-command-theme::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(125,189,255,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(125,189,255,.045) 1px, transparent 1px);
+  background-size: 54px 54px;
+  mask-image: radial-gradient(circle at 50% 22%, black, transparent 84%);
+}
+
+.cfs-force-command-theme .cfs-force-command-sheet,
+.cfs-force-command-theme .cfs-sheet {
+  padding: 16px !important;
+  border-radius: 32px !important;
+  color: #f8fbff !important;
+  background:
+    radial-gradient(circle at 80% 8%, rgba(98,72,255,.22), transparent 34%),
+    radial-gradient(circle at 12% 92%, rgba(38,211,238,.13), transparent 34%),
+    linear-gradient(135deg, rgba(2,8,23,.97), rgba(6,21,44,.95)) !important;
+  border: 1px solid rgba(125,189,255,.22) !important;
+  box-shadow: 0 34px 120px rgba(0,0,0,.48), inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+
+.cfs-force-command-theme .cfs-head {
+  border-radius: 26px !important;
+  background:
+    radial-gradient(circle at 78% 18%, rgba(98,72,255,.34), transparent 32%),
+    radial-gradient(circle at 8% 88%, rgba(38,211,238,.18), transparent 34%),
+    rgba(3,13,33,.96) !important;
+  border: 1px solid rgba(125,189,255,.22) !important;
+  color: #f8fbff !important;
+}
+
+.cfs-force-command-theme :is(h1,h2,h3,h4,b,strong,label) {
+  color: #fff !important;
+}
+
+.cfs-force-command-theme :is(p,span,small,em,li) {
+  color: rgba(248,251,255,.78) !important;
+}
+
+.cfs-force-command-theme :is(.cfs-head p,.cfs-section-title,.cfs-facts:before,.cfs-job-form small,.cfs-card small,.cfs-read-field small) {
+  color: #62e8f5 !important;
+  letter-spacing: .18em !important;
+  text-transform: uppercase !important;
+  font-weight: 950 !important;
+}
+
+.cfs-force-command-theme :is(
+  .cfs-facts span,
+  .cfs-lane-summary,
+  .cfs-lane-summary > *,
+  .cfs-lane-list,
+  .cfs-lane-row,
+  .cfs-decision,
+  .cfs-job-form article,
+  .cfs-card,
+  .cfs-empty,
+  .cfs-read-field,
+  .cfs-ai-box,
+  .cfs-next,
+  .cfs-attention,
+  .cfs-happened,
+  .cfs-ai
+) {
+  color: #f8fbff !important;
+  background:
+    radial-gradient(circle at 82% 12%, rgba(98,72,255,.13), transparent 30%),
+    linear-gradient(135deg, rgba(4,16,39,.93), rgba(8,30,66,.85)) !important;
+  border-color: rgba(125,189,255,.20) !important;
+  box-shadow: 0 18px 58px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+
+.cfs-force-command-theme .cfs-lane-summary {
+  border-radius: 18px !important;
+  padding: 12px !important;
+}
+
+.cfs-force-command-theme .cfs-lane-summary > * {
+  border-radius: 14px !important;
+  padding: 12px !important;
+  background: rgba(255,255,255,.07) !important;
+}
+
+.cfs-force-command-theme .cfs-lane-list {
+  border-radius: 24px !important;
+  padding: 16px !important;
+  gap: 10px !important;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(20,216,244,.10), transparent 32%),
+    rgba(3,13,33,.62) !important;
+}
+
+.cfs-force-command-theme .cfs-lane-row {
+  min-height: 78px !important;
+  border-radius: 18px !important;
+  padding: 16px 18px !important;
+  color: #fff !important;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.045)) !important;
+  border: 1px solid rgba(125,189,255,.22) !important;
+}
+
+.cfs-force-command-theme .cfs-lane-row:hover {
+  transform: translateY(-1px) !important;
+  border-color: rgba(98,232,245,.42) !important;
+  background:
+    linear-gradient(135deg, rgba(20,216,244,.16), rgba(98,72,255,.13)) !important;
+}
+
+.cfs-force-command-theme .cfs-lane-row em {
+  color: #62e8f5 !important;
+  font-style: normal !important;
+  font-weight: 950 !important;
+}
+
+.cfs-force-command-theme :is(input,textarea,select,.cfs-read-field) {
+  background: rgba(255,255,255,.075) !important;
+  color: #fff !important;
+  border: 1px solid rgba(125,189,255,.20) !important;
+  border-radius: 14px !important;
+}
+
+.cfs-force-command-theme :is(input,textarea,select):focus {
+  outline: none !important;
+  border-color: rgba(98,232,245,.62) !important;
+  box-shadow: 0 0 0 4px rgba(98,232,245,.10) !important;
+}
+
+.cfs-force-command-theme :is(.is-missing,.cfs-missing-card,.cfs-blocked) {
+  background:
+    linear-gradient(135deg, rgba(127,29,29,.42), rgba(45,18,38,.84)) !important;
+  border-color: rgba(248,113,113,.52) !important;
+}
+
+.cfs-force-command-theme :is(.cfs-photo-row span,.cfs-photo-placeholders span) {
+  border-radius: 14px !important;
+  border: 1px solid rgba(125,189,255,.20) !important;
+  background:
+    linear-gradient(135deg, rgba(20,216,244,.24), rgba(36,92,255,.18)) !important;
+}
+
+.cfs-force-command-theme .cfs-actions {
+  position: sticky !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: 12px !important;
+  transform: none !important;
+  width: min(900px, 100%) !important;
+  margin: 18px auto 0 !important;
+  z-index: 5 !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  padding: 10px !important;
+  border-radius: 24px !important;
+  background: rgba(3,13,33,.94) !important;
+  border: 1px solid rgba(125,189,255,.22) !important;
+  box-shadow: 0 24px 90px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.08) !important;
+  backdrop-filter: blur(22px) saturate(150%) !important;
+}
+
+.cfs-force-command-theme .cfs-actions :is(button,a) {
+  min-height: 46px !important;
+  border-radius: 14px !important;
+  padding: 0 16px !important;
+  border: 1px solid rgba(125,189,255,.20) !important;
+  background: rgba(255,255,255,.075) !important;
+  color: #f8fbff !important;
+  font-weight: 900 !important;
+  text-decoration: none !important;
+}
+
+.cfs-force-command-theme .cfs-actions :is(button:first-child,.primary) {
+  background: linear-gradient(135deg, #14d8f4, #245cff 48%, #9333ea) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+  box-shadow: 0 16px 42px rgba(36,92,255,.30) !important;
+}
+
+.cfs-force-command-theme .cfs-notice {
+  background: rgba(119,255,193,.12) !important;
+  color: #77ffc1 !important;
+  border: 1px solid rgba(119,255,193,.20) !important;
+  border-radius: 14px !important;
+}
+
+@media(max-width: 700px) {
+  .cfs-force-command-theme .cfs-force-command-sheet,
+  .cfs-force-command-theme .cfs-sheet {
+    padding: 10px !important;
+  }
+}
+`;
+
 function LaneSlip({ active, onClose, onPick }) {
   const items = active.items || [];
-  return <aside className="cfs-overlay cfs-lane-slip" data-version="CHURVOX_WORK_SLIP_TYPE_AWARE_BUTTONS_20260527"><section className="cfs-sheet"><header className="cfs-head"><div><p>WORK SLIP</p><h2>{active.title}</h2><em>{active.meta}</em></div><button type="button" onClick={onClose}>× Close</button></header><section className="cfs-lane-summary"><Fact label="Waiting" value={items.length} /><Fact label="Total value" value={Number(active.amount || 0) > 0 ? cash(active.amount) : "—"} /><strong>{active.actionLabel || "Open a row to approve the detail."}</strong></section><section className="cfs-lane-list">{items.length ? items.slice(0, 12).map((x, i) => <button className="cfs-lane-row" type="button" key={`${x.type}-${x.id}-${i}`} onClick={() => onPick(x)}><span><b>{x.title}</b><small>{x.code} · {detailText(x.raw || {}, x.meta)}</small></span><em>{Number(x.amount || 0) > 0 ? cash(x.amount) : x.state}</em></button>) : <div className="cfs-empty">Nothing waiting in this lane.</div>}</section><footer className="cfs-actions">{items.length ? <button className="primary" type="button" onClick={() => onPick(items[0])}>Open first waiting item</button> : <button disabled type="button">Nothing waiting</button>}</footer></section></aside>;
+  return <aside className="cfs-overlay cfs-lane-slip cfs-force-command-theme" data-version="CHURVOX_FORCE_INLINE_SLIP_THEME_20260529"><style>{SLIP_FORCE_CSS}</style><section className="cfs-sheet cfs-force-command-sheet"><header className="cfs-head"><div><p>WORK SLIP</p><h2>{active.title}</h2><em>{active.meta}</em></div><button type="button" onClick={onClose}>× Close</button></header><section className="cfs-lane-summary"><Fact label="Waiting" value={items.length} /><Fact label="Total value" value={Number(active.amount || 0) > 0 ? cash(active.amount) : "—"} /><strong>{active.actionLabel || "Open a row to approve the detail."}</strong></section><section className="cfs-lane-list">{items.length ? items.slice(0, 12).map((x, i) => <button className="cfs-lane-row" type="button" key={`${x.type}-${x.id}-${i}`} onClick={() => onPick(x)}><span><b>{x.title}</b><small>{x.code} · {detailText(x.raw || {}, x.meta)}</small></span><em>{Number(x.amount || 0) > 0 ? cash(x.amount) : x.state}</em></button>) : <div className="cfs-empty">Nothing waiting in this lane.</div>}</section><footer className="cfs-actions">{items.length ? <button className="primary" type="button" onClick={() => onPick(items[0])}>Open first waiting item</button> : <button disabled type="button">Nothing waiting</button>}</footer></section></aside>;
 }
 
 export default function CommandFloorApprovalSlip({ picked, onClose, onAction, onPick, workers = [], jobs = [] }) {
@@ -299,7 +509,7 @@ export default function CommandFloorApprovalSlip({ picked, onClose, onAction, on
   const run = async (action) => { setBusy(true); setNotice(""); const msg = await onAction(action, active, draft); const patched = patchPickedAfterAction(active, action, draft, msg); if (patched) setLocalPicked(patched); setNotice(msg); setBusy(false); };
   const changeWorker = (value) => { const selected = workers.find((worker) => workerIdOf(worker) === value); setDraft((d) => ({ ...d, worker_id: value, worker_name: selected ? workerNameOf(selected) : "" })); };
 
-  return <aside className="cfs-overlay" data-version="CHURVOX_WORK_SLIP_PHOTOS_OPTIONAL_20260527"><section className="cfs-sheet">
+  return <aside className="cfs-overlay cfs-force-command-theme" data-version="CHURVOX_FORCE_INLINE_SLIP_THEME_20260529"><style>{SLIP_FORCE_CSS}</style><section className="cfs-sheet cfs-force-command-sheet">
     <header className="cfs-head"><div><p>WORK SLIP</p><h2>{draft.customer_name || active.title}</h2><em>{active.code || active.type}</em><span>{isEditableRecord ? "Churvox filled what it could. Red fields need owner input. Photos are optional evidence and do not block approval." : "This record is review-only here. Use the right action or open the full page backup."}</span></div><button type="button" onClick={onClose}>× Close</button></header>
     <section className="cfs-facts"><Fact label="Status" value={draft.status || active.state} missing={missing.status} /><Fact label="Value" value={value} missing={missing.amount} /><Fact label="Site" value={draft.site_address || "—"} missing={missing.site} /><Fact label="Customer" value={draft.customer_name || active.title} missing={missing.customer} /><Fact label="Worker" value={draft.worker_name || (recommendation?.best ? workerNameOf(recommendation.best.worker) : "—")} missing={missing.worker} /><Fact label="Invoice" value={draft.invoice_status} missing={missing.invoiceDescription} /></section>
     <section className="cfs-decision-grid"><article className="cfs-decision cfs-happened"><header><i>1</i><b>What happened</b></header><ul>{situation.map((x) => <CheckLine key={x}>{x}</CheckLine>)}</ul></article><article className="cfs-decision cfs-ai"><header><i>2</i><b>AI Recommendation</b></header><div className="cfs-ai-box"><strong>{blocked ? "⚠ Review first" : "✓ Ready"}</strong><p>{blocked ? "Churvox filled the form, but red fields still need owner input before approval. Photos are optional." : isJobLike && recommendation?.best ? `No worker conflict found, ${workerNameOf(recommendation.best.worker)} selected, invoice draft prepared, and customer update drafted.` : "Only the actions that make sense for this record are available below."}</p></div></article><article className={`cfs-decision cfs-attention ${blocked ? "cfs-blocked" : ""}`}><header><i>3</i><b>Needs attention</b></header><ul>{needs.map((x) => <WarnLine key={x}>{x}</WarnLine>)}</ul></article></section>
