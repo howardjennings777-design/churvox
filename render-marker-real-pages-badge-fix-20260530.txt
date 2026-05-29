@@ -1,0 +1,5 @@
+real pages badge fix
+blank white row pills replaced by dark command chips
+scrollbar styled to match command theme
+frontend only
+backend unchanged
