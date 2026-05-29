@@ -1,0 +1,6 @@
+recover blank screen
+remove risky runtime Plans nav injector from bundle
+remove bottom nav override import from bundle
+keep plans route available
+frontend only
+backend unchanged
