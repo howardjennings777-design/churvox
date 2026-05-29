@@ -1,12 +1,13 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT
-Change: Modern graphite theme update
+Change: Graphite theme refinement from screenshot
 
-Theme update:
-- Graphite background
-- Muted teal accents
-- Softer green highlights
-- Reduced glow intensity
+Visual update:
+- Dark glass tool strip
+- Softer graphite cards
+- Muted steel-teal buttons
+- Dark glass bottom navigation
+- Less neon and less cream
 
 No backend logic changed.
