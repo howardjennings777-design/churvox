@@ -7,11 +7,42 @@
   transform: none !important;
   margin: 12px auto 0 !important;
   width: min(1320px, calc(100vw - 32px)) !important;
-  z-index: 50 !important;
+  z-index: 2147483000 !important;
+  isolation: isolate !important;
+  pointer-events: auto !important;
+  background: rgba(3, 13, 33, .96) !important;
+  border: 1px solid rgba(125, 189, 255, .28) !important;
+}
+
+.cvx-home .cvx-home-nav,
+.cvx-home .cvx-home-nav * {
+  pointer-events: auto !important;
+}
+
+.cvx-home .cvx-home-nav a {
+  position: relative !important;
+  z-index: 2147483001 !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.cvx-home::before {
+  z-index: 0 !important;
+  pointer-events: none !important;
+}
+
+.cvx-home > *:not(.cvx-home-nav) {
+  z-index: 1 !important;
 }
 
 .cvx-home .cvx-command-hero {
   padding-top: 34px !important;
+}
+
+.cvx-home .cvx-home-links {
+  position: relative !important;
+  z-index: 2147483001 !important;
+  pointer-events: auto !important;
 }
 
 .cvx-home .cvx-home-links a {
