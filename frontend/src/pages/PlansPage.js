@@ -4,6 +4,7 @@ import { useApi } from "../hooks/useApi";
 import { detectCountryHint } from "../lib/country";
 import { ChurvoxLogo } from "../components/ChurvoxLogo";
 import "./PlansCommand.css";
+import "./PlansUserBlocks.css";
 
 const displayPlans = [
   { key: "solo", name: "Start", price: "$39", period: "/month + GST", tag: "Owner-operator", blurb: "For a solo trade owner who wants the basics tidy without the admin mess.", limits: ["Jobs, clients, quotes and invoices", "Simple Command Floor view", "Ready-to-bill work surfaced", "Basic owner workflow", "No MYOB sync"] },
