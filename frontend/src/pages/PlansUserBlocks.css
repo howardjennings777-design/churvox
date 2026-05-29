@@ -1,0 +1,124 @@
+/* CHURVOX_COMMAND_GROWTH_USER_BLOCKS_STYLE_20260530
+   Styles only for the visible Command Growth Pack user-block section.
+*/
+
+.cv-user-blocks {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.2fr) minmax(220px, .7fr) minmax(260px, 1fr);
+  gap: 14px;
+  align-items: stretch;
+  border: 1px solid rgba(125,189,255,.20);
+  border-radius: 30px;
+  padding: 18px;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(119,255,193,.16), transparent 34%),
+    radial-gradient(circle at 92% 20%, rgba(147,51,234,.16), transparent 32%),
+    rgba(3,13,33,.78);
+  box-shadow: 0 18px 58px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.08);
+  backdrop-filter: blur(18px) saturate(145%);
+}
+
+.cv-user-blocks > div,
+.cv-user-blocks > article,
+.cv-user-blocks > ul {
+  margin: 0;
+  border: 1px solid rgba(125,189,255,.16);
+  border-radius: 24px;
+  background: rgba(255,255,255,.065);
+  padding: 20px;
+}
+
+.cv-user-blocks small {
+  display: block;
+  margin: 0 0 10px;
+  color: #77ffc1;
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .16em;
+}
+
+.cv-user-blocks b {
+  display: block;
+  color: #fff;
+  font-size: clamp(30px, 4vw, 54px);
+  line-height: .9;
+  letter-spacing: -.075em;
+  font-weight: 950;
+}
+
+.cv-user-blocks span,
+.cv-user-blocks p {
+  display: block;
+  margin: 12px 0 0;
+  color: rgba(248,251,255,.72);
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 760;
+}
+
+.cv-user-blocks strong {
+  display: block;
+  color: #fff;
+  font-size: 56px;
+  line-height: .86;
+  letter-spacing: -.08em;
+  font-weight: 950;
+}
+
+.cv-user-blocks strong em {
+  display: inline-block;
+  max-width: 110px;
+  color: rgba(248,251,255,.62);
+  font-size: 13px;
+  line-height: 1.1;
+  font-style: normal;
+  letter-spacing: 0;
+}
+
+.cv-user-blocks ul {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+}
+
+.cv-user-blocks li {
+  position: relative;
+  padding-left: 24px;
+  color: rgba(248,251,255,.84);
+  font-size: 14px;
+  line-height: 1.38;
+  font-weight: 780;
+}
+
+.cv-user-blocks li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: .46em;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #77ffc1, #14d8f4);
+  box-shadow: 0 0 0 5px rgba(119,255,193,.10);
+}
+
+@media (max-width: 1140px) {
+  .cv-user-blocks { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 760px) {
+  .cv-user-blocks {
+    border-radius: 24px;
+    padding: 12px;
+  }
+
+  .cv-user-blocks > div,
+  .cv-user-blocks > article,
+  .cv-user-blocks > ul {
+    border-radius: 20px;
+    padding: 16px;
+  }
+
+  .cv-user-blocks strong { font-size: 44px; }
+}
