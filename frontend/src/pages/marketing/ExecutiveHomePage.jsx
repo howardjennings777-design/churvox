@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import "./ExecutiveHomePage.css";
+import "./ExecutiveHomeCommandTheme.css";
 
 const lanes = [
   ["Work ready", "5", "Check photos, notes, price"],
