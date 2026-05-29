@@ -1,0 +1,4 @@
+Render repair marker 2026-05-29
+
+Restored main to safe Command Floor state before truncated ConceptCPageExact.jsx commit.
+Backend unchanged.
