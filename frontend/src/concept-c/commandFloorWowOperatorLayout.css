@@ -1,23 +1,19 @@
-/* CHURVOX_COMMAND_FLOOR_WOW_OPERATOR_LAYOUT_20260529
-   Proper Command Floor polish.
-   Goal: fewer pointless sections, stronger owner-control layout, business-machine feel.
-   CSS only. No backend/data/API changes.
+/* CHURVOX_COMMAND_FLOOR_TOP_PLAYER_TIGHTEN_20260529
+   Targeted Command Floor layout polish.
+   CSS only. No React/API/backend changes.
 */
 
-/* Hide unneeded top chrome on Command Floor only */
-.xcf-control-tower .xcf-topbar {
-  display: none !important;
-}
-
-/* Hide lower clutter that was making the page feel unfinished */
+/* Remove clutter from Command Floor only */
+.xcf-control-tower .xcf-topbar,
 .xcf-control-tower .xcf-operator-proof-panel,
-.xcf-control-tower .xcf-field-strip {
+.xcf-control-tower .xcf-field-strip,
+.xcf-control-tower :is(.xcf-approval-hero, .xcf-approval-summary, .xcf-approval-lanes) {
   display: none !important;
 }
 
-/* Make the page feel like one focused operating screen */
+/* One focused owner operating screen */
 .xcf-control-tower {
-  padding: 18px 28px 110px !important;
+  padding: 18px 28px 128px !important;
   background:
     radial-gradient(circle at 12% 4%, rgba(64, 220, 238, .24), transparent 28%),
     radial-gradient(circle at 82% 9%, rgba(141, 92, 246, .22), transparent 30%),
@@ -25,13 +21,22 @@
     linear-gradient(135deg, #041226 0%, #071d44 42%, #0b2c65 100%) !important;
 }
 
-/* Smaller, sharper top cockpit */
-.xcf-control-hero {
+/* Main width */
+.xcf-control-hero,
+.xcf-control-summary,
+.xcf-control-board {
   width: min(1500px, calc(100vw - 56px)) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Compact hero */
+.xcf-control-hero {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) minmax(310px, 420px) !important;
   gap: 16px !important;
-  margin: 0 auto 16px !important;
+  margin-top: 0 !important;
+  margin-bottom: 14px !important;
 }
 
 .xcf-control-hero-main,
@@ -42,8 +47,8 @@
 }
 
 .xcf-control-hero-main {
-  min-height: 255px !important;
-  padding: clamp(26px, 3vw, 38px) !important;
+  min-height: 248px !important;
+  padding: clamp(24px, 3vw, 36px) !important;
   background:
     radial-gradient(circle at 84% 20%, rgba(141,92,246,.32), transparent 30%),
     radial-gradient(circle at 8% 80%, rgba(64,220,238,.22), transparent 32%),
@@ -56,15 +61,14 @@
 }
 
 .xcf-control-hero-main h1 {
-  margin-top: 10px !important;
-  font-size: clamp(58px, 5.8vw, 92px) !important;
+  margin-top: 9px !important;
+  font-size: clamp(56px, 5.5vw, 88px) !important;
   line-height: .84 !important;
-  letter-spacing: -.085em !important;
 }
 
 .xcf-control-hero-main h2 {
-  margin-top: 12px !important;
-  font-size: clamp(20px, 1.8vw, 27px) !important;
+  margin-top: 11px !important;
+  font-size: clamp(19px, 1.7vw, 25px) !important;
 }
 
 .xcf-control-hero-main > span {
@@ -74,34 +78,33 @@
   line-height: 1.42 !important;
 }
 
-/* Turn chips into a strong business-status strip */
+/* Smaller status chips */
 .xcf-control-chips {
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   gap: 10px !important;
-  margin-top: 18px !important;
+  margin-top: 16px !important;
 }
 
 .xcf-control-chips button {
-  min-height: 62px !important;
+  min-height: 58px !important;
   border-radius: 18px !important;
-  padding: 11px 13px !important;
+  padding: 10px 13px !important;
   background: rgba(255,255,255,.10) !important;
   border: 1px solid rgba(255,255,255,.14) !important;
 }
 
 .xcf-control-chips b {
-  font-size: 22px !important;
+  font-size: 21px !important;
 }
 
 .xcf-control-chips span {
   font-size: 11px !important;
-  color: rgba(248,251,255,.72) !important;
 }
 
-/* Next decision card: compact and useful */
+/* Next decision smaller */
 .xcf-control-next {
-  min-height: 255px !important;
-  padding: 26px !important;
+  min-height: 248px !important;
+  padding: 25px !important;
   background:
     radial-gradient(circle at 82% 38%, rgba(141,92,246,.34), transparent 28%),
     radial-gradient(circle at 14% 18%, rgba(64,220,238,.20), transparent 24%),
@@ -144,61 +147,49 @@
 }
 
 .xcf-control-next em {
-  left: 26px !important;
+  left: 25px !important;
   bottom: 20px !important;
   font-size: 12px !important;
 }
 
-/* Business lane cards: make these feel like the actual control modules */
+/* Business lane summary */
 .xcf-control-summary {
-  width: min(1500px, calc(100vw - 56px)) !important;
   gap: 12px !important;
-  margin: 0 auto 14px !important;
+  margin-top: 0 !important;
+  margin-bottom: 14px !important;
 }
 
 .xcf-control-metric {
-  min-height: 118px !important;
+  min-height: 112px !important;
   border-radius: 22px !important;
-  padding: 16px !important;
-  position: relative !important;
-  overflow: hidden !important;
-}
-
-.xcf-control-metric::after {
-  content: "";
-  position: absolute;
-  inset: auto 14px 12px 14px;
-  height: 3px;
-  border-radius: 999px;
-  background: rgba(255,255,255,.35);
+  padding: 15px !important;
 }
 
 .xcf-control-metric i {
-  width: 42px !important;
-  height: 42px !important;
-  border-radius: 16px !important;
-  margin-bottom: 8px !important;
-}
-
-.xcf-control-metric span {
-  font-size: 13px !important;
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 15px !important;
+  margin-bottom: 7px !important;
 }
 
 .xcf-control-metric b {
-  font-size: 34px !important;
+  font-size: 33px !important;
 }
 
-/* Main board becomes the business machine */
+.xcf-control-metric small {
+  font-size: 11px !important;
+}
+
+/* Main approval board */
 .xcf-control-board {
-  width: min(1500px, calc(100vw - 56px)) !important;
-  margin: 0 auto !important;
-  padding: 20px !important;
+  margin-top: 0 !important;
+  padding: 19px !important;
   border-radius: 32px !important;
   background:
     radial-gradient(circle at 10% 0%, rgba(64,220,238,.16), transparent 30%),
-    linear-gradient(135deg, rgba(10, 37, 88, .72), rgba(3, 14, 35, .70)) !important;
+    linear-gradient(135deg, rgba(10, 37, 88, .78), rgba(3, 14, 35, .76)) !important;
   border: 1px solid rgba(155,210,255,.20) !important;
-  box-shadow: 0 28px 90px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.10) !important;
+  box-shadow: 0 28px 90px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.10) !important;
 }
 
 .xcf-control-board-head {
@@ -206,19 +197,19 @@
   grid-template-columns: minmax(0, 1fr) auto !important;
   gap: 16px !important;
   align-items: end !important;
-  margin-bottom: 16px !important;
+  margin-bottom: 15px !important;
 }
 
 .xcf-control-board-head::after {
-  content: "AI has prepared the admin. You approve the move.";
+  content: "AI prepared the admin. You approve the move.";
   display: inline-flex;
   align-items: center;
-  min-height: 38px;
+  min-height: 36px;
   border-radius: 999px;
   padding: 0 14px;
   background: rgba(255,255,255,.09);
   border: 1px solid rgba(255,255,255,.14);
-  color: rgba(248,251,255,.82);
+  color: rgba(248,251,255,.84);
   font-size: 12px;
   font-weight: 850;
 }
@@ -235,15 +226,9 @@
 }
 
 .xcf-control-lane {
-  min-height: 335px !important;
+  min-height: 318px !important;
   border-radius: 26px !important;
-  padding: 18px !important;
-  transition: transform .18s ease, box-shadow .18s ease;
-}
-
-.xcf-control-lane:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 30px 88px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.12) !important;
+  padding: 17px !important;
 }
 
 .xcf-control-lane header small {
@@ -251,36 +236,34 @@
 }
 
 .xcf-control-lane h3 {
-  font-size: 21px !important;
+  font-size: 20px !important;
 }
 
 .xcf-control-lane strong {
-  font-size: 26px !important;
+  font-size: 25px !important;
 }
 
 .xcf-control-lane p {
-  min-height: 54px !important;
-  font-size: 13px !important;
-  line-height: 1.38 !important;
+  min-height: 48px !important;
+  font-size: 12px !important;
+  line-height: 1.35 !important;
 }
 
 .xcf-control-lane > button {
-  min-height: 44px !important;
+  min-height: 42px !important;
   border-radius: 15px !important;
-  background: linear-gradient(135deg, #54d7ee, #8d5cf6) !important;
 }
 
 .xcf-control-preview {
-  margin-top: 12px !important;
-  gap: 8px !important;
+  margin-top: 11px !important;
+  gap: 7px !important;
 }
 
 .xcf-control-preview button,
 .xcf-control-empty {
-  min-height: 47px !important;
+  min-height: 43px !important;
   border-radius: 14px !important;
   padding: 8px 10px !important;
-  background: rgba(255,255,255,.105) !important;
 }
 
 .xcf-control-preview b,
@@ -293,17 +276,21 @@
   font-size: 10px !important;
 }
 
-/* Bottom dock should not sit on top of the important board */
+.xcf-control-preview em {
+  font-size: 10px !important;
+}
+
+/* Dock down and smaller */
 .xcf-bottom-nav {
-  height: 54px !important;
-  bottom: 12px !important;
-  background: rgba(3, 14, 35, .82) !important;
+  height: 52px !important;
+  bottom: 10px !important;
+  max-width: 680px !important;
+  background: rgba(3, 14, 35, .88) !important;
   border-color: rgba(155,210,255,.20) !important;
 }
 
-/* Remove old/washed text ghosts if any older sections still leak through */
-.xcf-control-tower :is(.xcf-approval-hero, .xcf-approval-summary, .xcf-approval-lanes) {
-  display: none !important;
+.xcf-bottom-nav a {
+  font-size: 11px !important;
 }
 
 @media (max-width: 1200px) {
@@ -340,9 +327,5 @@
 
   .xcf-control-hero-main h1 {
     font-size: clamp(48px, 17vw, 72px) !important;
-  }
-
-  .xcf-control-board-head::after {
-    justify-content: center;
   }
 }

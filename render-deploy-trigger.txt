@@ -1,13 +1,11 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT
-Change: Command Floor wow operator layout cleanup
+Change: Command Floor top-player tightening
 
 Frontend:
-- hide unneeded Command Floor top chrome
-- hide washed lower proof/field clutter
-- tighten hero
-- make approval lanes the main operating board
-- stronger business-machine layout
-
-Backend unchanged.
+- removed lower washed-out clutter
+- kept Command Floor focused on approval lanes
+- tightened hero and next-decision card
+- made dock smaller and lower
+- no backend changes
