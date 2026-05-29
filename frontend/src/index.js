@@ -25,6 +25,7 @@ import './concept-c/churvoxWorkSlipLinkedActionsBridge';
 import './concept-c/churvoxInvoiceJobContextPatch';
 import './concept-c/churvoxMoneyDeskLinkedJobFilterPatch';
 import './concept-c/churvoxWorkSlipDispatchPatch';
+import './concept-c/churvoxCommandFloorControlCopyPatch';
 import './styles/churvoxPublicThemeUnify.css';
 import './styles/churvoxGraphiteRefine.css';
 import './styles/churvoxCommandFloorNoSidebarRedesign.css';
