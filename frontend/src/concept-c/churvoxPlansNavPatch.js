@@ -1,5 +1,5 @@
-// CHURVOX_PLANS_NAV_PATCH_20260530
-// Adds Plans to the Command navigation without touching existing routes.
+// CHURVOX_PLANS_BOTTOM_NAV_PATCH_20260530
+// Adds Plans to every bottom Command navigation, including the dashboard dock.
 
 function makePlansLink(className = "") {
   const link = document.createElement("a");
@@ -16,22 +16,26 @@ function makePlansLink(className = "") {
   return link;
 }
 
-function ensurePlansLink() {
-  const topNav = document.querySelector(".xcf-topbar nav");
-  if (topNav && !topNav.querySelector('[data-churvox-plans-link="true"]')) {
-    const money = [...topNav.querySelectorAll("a")].find((a) => /money/i.test(a.textContent || ""));
-    const link = makePlansLink();
-    if (money?.nextSibling) topNav.insertBefore(link, money.nextSibling);
-    else topNav.appendChild(link);
-  }
+function insertPlansLink(nav) {
+  if (!nav || nav.querySelector('[data-churvox-plans-link="true"]')) return;
+  const links = [...nav.querySelectorAll("a")];
+  const money = links.find((a) => /money|invoice/i.test(a.textContent || ""));
+  const crew = links.find((a) => /crew|team/i.test(a.textContent || ""));
+  const link = makePlansLink();
+  if (money?.nextSibling) nav.insertBefore(link, money.nextSibling);
+  else if (crew) nav.insertBefore(link, crew);
+  else nav.appendChild(link);
+}
 
-  const bottomNav = document.querySelector(".xcf-bottom-nav");
-  if (bottomNav && !bottomNav.querySelector('[data-churvox-plans-link="true"]')) {
-    const link = makePlansLink();
-    const money = [...bottomNav.querySelectorAll("a")].find((a) => /money/i.test(a.textContent || ""));
-    if (money?.nextSibling) bottomNav.insertBefore(link, money.nextSibling);
-    else bottomNav.appendChild(link);
-  }
+function ensurePlansLink() {
+  // Top nav is currently hidden, but keep this harmless in case it comes back later.
+  insertPlansLink(document.querySelector(".xcf-topbar nav"));
+
+  // Real pages bottom nav.
+  document.querySelectorAll(".xcf-bottom-nav").forEach(insertPlansLink);
+
+  // Command Floor dashboard dock.
+  document.querySelectorAll(".xcf10-dock").forEach(insertPlansLink);
 }
 
 if (typeof window !== "undefined") {
