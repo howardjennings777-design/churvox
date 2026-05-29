@@ -1,0 +1,5 @@
+worker notes optional for Work Slip approval
+completion notes remain visible as optional evidence
+approve work no longer blocked by blank worker notes
+frontend only
+backend unchanged
