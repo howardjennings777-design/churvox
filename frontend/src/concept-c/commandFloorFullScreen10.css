@@ -608,3 +608,44 @@
     width: min(100%, calc(100vw - 20px)) !important;
   }
 }
+
+/* CHURVOX_COMMAND_FLOOR_TINY_BORDER_GAP_20260529 */
+/* Adds a small premium breathing gap around the full-screen cockpit. */
+
+.xcf-command-10 {
+  padding: 14px 14px 108px !important;
+}
+
+.xcf10-top-grid,
+.xcf10-lanes-head,
+.xcf10-lanes,
+.xcf10-snapshot,
+.xcf10-dock {
+  width: min(1720px, calc(100vw - 28px)) !important;
+}
+
+.xcf10-top-grid {
+  margin-top: 2px !important;
+}
+
+.xcf10-hero,
+.xcf10-next,
+.xcf10-lane,
+.xcf10-snapshot,
+.xcf10-dock {
+  outline: 1px solid rgba(255, 255, 255, .035) !important;
+}
+
+@media (max-width: 760px) {
+  .xcf-command-10 {
+    padding: 10px 10px 96px !important;
+  }
+
+  .xcf10-top-grid,
+  .xcf10-lanes-head,
+  .xcf10-lanes,
+  .xcf10-snapshot,
+  .xcf10-dock {
+    width: min(100%, calc(100vw - 20px)) !important;
+  }
+}
