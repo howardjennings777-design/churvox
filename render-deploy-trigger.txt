@@ -1,12 +1,12 @@
 Churvox Render deploy trigger
 
-Triggered at: 2026-05-29 NZT connector push
-Change: Public brand theme unified across app surfaces.
-Includes:
-- Added frontend/src/styles/churvoxPublicThemeUnify.css
-- Imported theme unifier last in frontend/src/index.js
-- Command Floor now follows dark public AI command brand
-- In-app Plans follows dark public AI command brand
-- Worker app follows dark public AI command brand
-- Message Approval, Dispatch, Offline Sync and public document surfaces follow dark brand layer
-- Visual layer only; no API/auth/database logic changed
+Triggered at: 2026-05-29 NZT
+Change: Modern graphite theme update
+
+Theme update:
+- Graphite background
+- Muted teal accents
+- Softer green highlights
+- Reduced glow intensity
+
+No backend logic changed.
