@@ -469,13 +469,186 @@ function Dashboard({ m, loading, onPick }) {
   );
 }
 
+
 function Workspace({ area, m, loading, onPick }) {
   const [title, subtitle] = PAGES[area] || ["Workspace", "Simple workspace"];
-  const guide = PAGE_GUIDES[area] || { eyebrow: "Manual workspace", title: "Use this as a backup record page.", copy: "Command Floor stays the main approval flow. This backup page is for finding records, checking details, and making manual changes when needed.", action: "Main action: open a record and inspect it." };
-  const rowsByArea = { jobs: m.jobs, dispatch: m.workerActions, clients: m.clients, quotes: m.quotes, invoices: m.invoices, team: m.crew, sms: m.messages, notifications: [...m.alerts, ...m.issues], reports: m.done, integrations: m.invoices, payroll: [...m.crew, ...m.doneJobs], automation: m.actions, settings: m.issues };
+  const guide = PAGE_GUIDES[area] || {
+    eyebrow: "Manual workspace",
+    title: "Find records and make changes.",
+    copy: "Command Floor stays the approval flow. This page is the real workspace for adding, opening and managing records.",
+    action: "Main action: open a record or create a new one."
+  };
+
+  const rowsByArea = {
+    jobs: m.jobs,
+    dispatch: m.workerActions,
+    clients: m.clients,
+    quotes: m.quotes,
+    invoices: m.invoices,
+    team: m.crew,
+    sms: m.messages,
+    notifications: [...m.alerts, ...m.issues],
+    reports: m.done,
+    integrations: m.invoices,
+    payroll: [...m.crew, ...m.doneJobs],
+    automation: m.actions,
+    settings: m.issues,
+  };
+
   const rows = rowsByArea[area] || m.actions;
-  return <main className={`xcf-shell xcf-workspace xcf-workspace-${area}`} data-version="CHURVOX_MANUAL_PAGE_GUIDE_PANELS_20260527 CHURVOX_BACKUP_PAGE_LAUNCH_POLISH_20260527"><TopBar loading={loading} /><section className="xcf-hero xcf-workspace-hero"><div><p>Backup record page</p><h1>{title}</h1><span>{subtitle}. Use Command Floor for approvals. This page is here when you need to find or check records manually.</span></div><aside className="xcf-workspace-guide"><small>{guide.eyebrow}</small><b>{guide.title}</b><em>{guide.copy}</em><strong>{guide.action}</strong><span>{rows.length} records loaded</span></aside></section><section className="xcf-workspace-list">{rows.length ? rows.slice(0, 40).map((x, i) => <Row key={`${area}-${i}`} item={x} onPick={onPick} />) : <Empty />}</section><BottomNav /></main>;
+
+  const pageActions = {
+    jobs: {
+      eyebrow: "REAL JOB PAGE",
+      title: "Jobs that can be created, opened and worked.",
+      copy: "Add a job here, then let Command Floor turn finished work into a Work Slip for approval.",
+      primary: ["+ Add job", "/jobs/new"],
+      secondary: ["Dispatch board", "/dispatch-board"],
+      stats: [
+        ["Open jobs", m.live.length + m.unassigned.length],
+        ["Need crew", m.unassigned.length],
+        ["Ready slips", m.workReview.length],
+      ],
+    },
+    team: {
+      eyebrow: "CREW CONTROL",
+      title: "Crew records, worker status and assignments.",
+      copy: "Use this page to check your people. Assignments still stay approval-first through the Work Slip.",
+      primary: ["Invite crew", "/team"],
+      secondary: ["Dispatch board", "/dispatch-board"],
+      stats: [
+        ["Crew loaded", m.crew.length],
+        ["On jobs", m.live.length],
+        ["Unassigned work", m.unassigned.length],
+      ],
+    },
+    clients: {
+      eyebrow: "CLIENT WORKBENCH",
+      title: "Clients, sites and missing customer details.",
+      copy: "Add clients here and keep details clean so invoices and messages are ready without chasing.",
+      primary: ["+ Add client", "/clients/new"],
+      secondary: ["Client list", "/clients"],
+      stats: [
+        ["Clients", m.clients.length],
+        ["Quotes", m.quotes.length],
+        ["Invoices", m.invoices.length],
+      ],
+    },
+    invoices: {
+      eyebrow: "MONEY DESK",
+      title: "Invoices that start from real work.",
+      copy: "Create or open invoices here. Sending still stays approval-first.",
+      primary: ["+ New invoice", "/invoices/new"],
+      secondary: ["Command Floor", "/dashboard"],
+      stats: [
+        ["Invoices", m.invoices.length],
+        ["Waiting", cash(sum(m.invoiceActions))],
+        ["Approved work", m.workReview.length],
+      ],
+    },
+    quotes: {
+      eyebrow: "QUOTE DESK",
+      title: "Quotes ready to create, open and follow up.",
+      copy: "Build quotes here, then keep follow-ups drafted until the owner approves.",
+      primary: ["+ New quote", "/quotes/new"],
+      secondary: ["Clients", "/clients"],
+      stats: [
+        ["Quotes", m.quotes.length],
+        ["Clients", m.clients.length],
+        ["Actions", m.quoteActions.length],
+      ],
+    },
+    dispatch: {
+      eyebrow: "DISPATCH BOARD",
+      title: "Jobs without workers and crew that can take work.",
+      copy: "Use this as the manual dispatch view. Command Floor still shows the owner the final assignment choice.",
+      primary: ["Open dispatch", "/dispatch-board"],
+      secondary: ["Add job", "/jobs/new"],
+      stats: [
+        ["Need crew", m.unassigned.length],
+        ["Crew", m.crew.length],
+        ["Live jobs", m.live.length],
+      ],
+    },
+  };
+
+  const page = pageActions[area] || {
+    eyebrow: guide.eyebrow,
+    title,
+    copy: guide.copy,
+    primary: ["Command Floor", "/dashboard"],
+    secondary: ["Tools", "/operator-tools"],
+    stats: [
+      ["Records", rows.length],
+      ["Actions", m.actions.length],
+      ["Issues", m.issues.length],
+    ],
+  };
+
+  const primaryHref = page.primary?.[1] || "/dashboard";
+  const secondaryHref = page.secondary?.[1] || "/dashboard";
+
+  return (
+    <main
+      className={`xcf-shell xcf-workspace xcf-real-page xcf-real-page-${area}`}
+      data-version="CHURVOX_REAL_PAGES_COMMAND_THEME_20260529"
+    >
+      <TopBar loading={loading} />
+
+      <section className="xcf-real-hero">
+        <div className="xcf-real-hero-main">
+          <p>{page.eyebrow}</p>
+          <h1>{page.title}</h1>
+          <span>{page.copy}</span>
+
+          <div className="xcf-real-actions">
+            <Link className="xcf-real-primary" to={primaryHref}>{page.primary?.[0] || "Open"}</Link>
+            <Link className="xcf-real-secondary" to={secondaryHref}>{page.secondary?.[0] || "More"}</Link>
+          </div>
+        </div>
+
+        <aside className="xcf-real-command-card">
+          <small>COMMAND LINK</small>
+          <b>{title}</b>
+          <em>{subtitle}</em>
+          <strong>{rows.length} records loaded</strong>
+        </aside>
+      </section>
+
+      <section className="xcf-real-stats">
+        {(page.stats || []).map(([label, value]) => (
+          <article key={label}>
+            <small>{label}</small>
+            <b>{value}</b>
+          </article>
+        ))}
+        <article>
+          <small>Owner flow</small>
+          <b>Approval-first</b>
+        </article>
+      </section>
+
+      <section className="xcf-real-list-head">
+        <div>
+          <p>{guide.eyebrow}</p>
+          <h2>{guide.action}</h2>
+        </div>
+        <Link to={primaryHref}>{page.primary?.[0] || "Open"}</Link>
+      </section>
+
+      <section className="xcf-workspace-list xcf-real-list">
+        {rows.length ? rows.slice(0, 40).map((x, i) => (
+          <Row key={`${area}-${i}`} item={x} onPick={onPick} />
+        )) : (
+          <Empty />
+        )}
+      </section>
+
+      <BottomNav />
+    </main>
+  );
 }
+
 
 function invoicePayloadFromPicked(picked, draft) {
   const raw = picked?.raw || {};

@@ -1,12 +1,11 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT
-Change: clean Work Slip cockpit layout
+Change: real app pages Command theme
 
 Frontend:
-- fixes At A Glance overlap
-- tightens header
-- improves decision card spacing
-- cleans form and lower card layout
-- action buttons no longer overlay content
+- upgrades /jobs, /team, /clients, /quotes, /invoices, /dispatch
+- adds real action buttons: add job, add client, new quote, new invoice, dispatch board
+- keeps existing data/API/routes
+- same Command Floor dark gradient theme
 - backend unchanged

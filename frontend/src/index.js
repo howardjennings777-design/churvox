@@ -59,3 +59,4 @@ root.render(
     <App />
   </React.StrictMode>
 );
+import "./concept-c/CommandRealPagesTheme.css";
