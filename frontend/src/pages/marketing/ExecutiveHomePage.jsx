@@ -2,25 +2,20 @@ import React from "react";
 import { Link } from "react-router-dom";
 import "./ExecutiveHomePage.css";
 
-const proof = [
-  "No invoice sends without review",
-  "No customer message sends by itself",
-  "No worker assignment without approval",
-  "Every action explains why",
-];
-
 const lanes = [
-  ["Approve Work", "3", "Finished jobs waiting for sign-off"],
-  ["Approve Invoices", "$1.8k", "Drafts prepared from approved work"],
-  ["Assign Workers", "2", "Jobs needing the right crew member"],
-  ["Fix Blockers", "4", "Missing price, customer detail or evidence"],
+  ["Work ready", "5", "Check photos, notes, price"],
+  ["Money waiting", "$2.4k", "Draft invoices ready"],
+  ["Crew gaps", "2", "Jobs need assignment"],
+  ["Fix now", "3", "Missing details only"],
 ];
 
-const steps = [
-  ["Crew finishes job", "Workers add notes, photos and completion details from the field."],
-  ["Churvox prepares admin", "Draft invoices, customer updates, worker checks and blockers are prepared."],
-  ["Owner approves", "Open one Work Slip, adjust if needed, then approve."],
+const flow = [
+  ["Crew finishes", "Photos, notes and job details land in Churvox."],
+  ["Churvox prepares", "Invoices, messages and blockers are lined up."],
+  ["You approve", "Open the Work Slip. Check it. Approve it."],
 ];
+
+const wins = ["No auto-send", "No surprise invoices", "Owner approves", "Built for trades"];
 
 export function Nav() {
   return (
@@ -29,7 +24,7 @@ export function Nav() {
         <span className="cvx-home-brand-mark">C</span>
         <span>
           <b>Churvox</b>
-          <small>AI Operator for trade businesses</small>
+          <small>AI Operator</small>
         </span>
       </Link>
 
@@ -48,7 +43,7 @@ export function Footer() {
     <footer className="cvx-footer">
       <div>
         <b>Churvox</b>
-        <span>AI Operator for trade and service businesses. Churvox prepares the admin. You approve.</span>
+        <span>Work done. Admin ready. You approve.</span>
       </div>
       <nav>
         <Link to="/features">Features</Link>
@@ -62,40 +57,40 @@ export function Footer() {
 
 export default function ExecutiveHomePage() {
   return (
-    <main className="cvx-home" data-version="CHURVOX_WOW_LANDING_20260527">
+    <main className="cvx-home" data-version="CHURVOX_COMMAND_PUBLIC_HOME_20260529">
       <Nav />
 
-      <section className="cvx-hero">
-        <div className="cvx-hero-copy">
+      <section className="cvx-command-hero">
+        <div className="cvx-command-copy">
           <p className="cvx-eyebrow">AI COMMAND FLOOR FOR TRADES</p>
           <h1>
-            Your crew finishes the work.
-            <span>Churvox prepares the admin.</span>
+            Work done.
+            <span>Admin ready.</span>
             You approve.
           </h1>
           <p className="cvx-hero-sub">
-            Churvox turns completed jobs into approval-ready Work Slips: worker notes, photos,
-            draft invoices, customer updates, crew checks and blockers — all in one place.
+            Churvox turns finished jobs into Work Slips: proof, price, invoice draft,
+            customer update and next action.
           </p>
 
           <div className="cvx-actions">
-            <Link to="/signup" className="cvx-btn cvx-btn-primary">Start running admin with AI</Link>
+            <Link to="/signup" className="cvx-btn cvx-btn-primary">Start free</Link>
             <Link to="/pricing" className="cvx-btn cvx-btn-secondary">See plans</Link>
           </div>
 
           <div className="cvx-proof">
-            {proof.map((item) => <span key={item}>✓ {item}</span>)}
+            {wins.map((item) => <span key={item}>✓ {item}</span>)}
           </div>
         </div>
 
-        <aside className="cvx-demo">
-          <div className="cvx-demo-head">
+        <aside className="cvx-command-demo" aria-label="Churvox Command Floor preview">
+          <div className="cvx-demo-top">
             <small>COMMAND FLOOR</small>
-            <b>Live owner approvals</b>
+            <b>Today is sorted.</b>
             <span>AI prepared · owner controlled</span>
           </div>
 
-          <div className="cvx-demo-grid">
+          <div className="cvx-demo-lanes">
             {lanes.map(([title, value, note]) => (
               <article key={title}>
                 <small>{title}</small>
@@ -105,59 +100,47 @@ export default function ExecutiveHomePage() {
             ))}
           </div>
 
-          <div className="cvx-slip">
+          <div className="cvx-work-slip-card">
             <div>
               <small>WORK SLIP READY</small>
-              <b>Greenlane Lawn Service</b>
-              <span>Photos uploaded · worker note saved · invoice draft prepared</span>
+              <b>Greenlane lawn service</b>
+              <span>Photos checked · message drafted · invoice ready</span>
             </div>
             <button type="button">Approve</button>
+          </div>
+
+          <div className="cvx-mini-dock">
+            <span>Work</span><span>Money</span><span>Crew</span><span>Tools</span>
           </div>
         </aside>
       </section>
 
-      <section className="cvx-section">
-        <div className="cvx-section-head">
-          <p className="cvx-eyebrow">THE SIMPLE FLOW</p>
-          <h2>Built around approval, not clutter.</h2>
-          <span>
-            Jobs, clients, invoices and crew still exist — but the owner’s daily job is simple:
-            open the Command Floor and approve what Churvox prepared.
-          </span>
-        </div>
-
-        <div className="cvx-steps">
-          {steps.map(([title, copy], index) => (
-            <article key={title}>
-              <i>{index + 1}</i>
-              <b>{title}</b>
-              <span>{copy}</span>
-            </article>
-          ))}
-        </div>
+      <section className="cvx-flow-band">
+        {flow.map(([title, copy], index) => (
+          <article key={title}>
+            <i>{index + 1}</i>
+            <b>{title}</b>
+            <span>{copy}</span>
+          </article>
+        ))}
       </section>
 
-      <section className="cvx-split">
+      <section className="cvx-sell-strip">
         <div>
-          <p className="cvx-eyebrow">WHY IT FEELS DIFFERENT</p>
-          <h2>Not another busy job app.</h2>
-          <span>
-            Most systems give you more pages to manage. Churvox gives you a daily approval desk.
-            It finds the admin, prepares the next step and shows exactly what needs checking.
-          </span>
+          <p className="cvx-eyebrow">WHY IT SELLS</p>
+          <h2>Less admin. Faster money. Cleaner control.</h2>
         </div>
-
-        <div className="cvx-feature-list">
-          <article><b>Work Slips</b><span>One approval screen for job evidence, invoice prep, worker checks and message drafts.</span></article>
-          <article><b>AI Operator Actions</b><span>Churvox prepares executable work for owner approval instead of just giving advice.</span></article>
-          <article><b>Field evidence</b><span>Worker notes and photos flow straight into the owner’s approval process.</span></article>
-          <article><b>Money desk</b><span>Approved work can become draft invoices without typing everything again.</span></article>
+        <div className="cvx-sell-list">
+          <span>Jobs become approval slips</span>
+          <span>Invoices start from real work</span>
+          <span>Messages wait for approval</span>
+          <span>Crew gaps show up fast</span>
         </div>
       </section>
 
       <section className="cvx-final">
-        <p className="cvx-eyebrow">READY TO SEE THE FUTURE OF TRADE ADMIN?</p>
-        <h2>Let Churvox prepare the admin. You stay in control.</h2>
+        <p className="cvx-eyebrow">READY?</p>
+        <h2>Let Churvox run the admin lane.</h2>
         <Link to="/signup" className="cvx-btn cvx-btn-primary">Start free</Link>
       </section>
 
