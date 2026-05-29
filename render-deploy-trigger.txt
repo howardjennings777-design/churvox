@@ -1,14 +1,12 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT
-Change: No-sidebar Command Floor redesign
+Change: Command Floor control update
 
-Visual update:
-- No left sidebar on Command Floor
-- Wider owner-control layout
-- Gradient control hero
-- Cleaner command cards
-- Integrated glass tool strip
-- Glass capsule bottom nav
+Frontend update:
+- Updated Command Floor visual layer
+- Added control copy helper
+- Kept no-sidebar layout
+- Kept owner approval wording
 
 No backend logic changed.
