@@ -1,0 +1,190 @@
+/* CHURVOX_REAL_PAGES_USABILITY_FIX_20260529
+   Fixes real Jobs/Crew/etc pages after Command theme:
+   - headline no longer gets cut off
+   - right rail becomes useful and compact
+   - list has proper breathing room
+   - Add Job/Add Client/New Invoice remains obvious
+   - bottom nav stops covering rows
+*/
+
+.xcf-real-page {
+  grid-template-rows: 52px 156px 74px minmax(0, 1fr) 78px !important;
+  gap: 12px !important;
+  padding-bottom: 10px !important;
+}
+
+.xcf-real-page .xcf-topbar {
+  z-index: 50 !important;
+}
+
+.xcf-real-hero {
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 330px) !important;
+  gap: 12px !important;
+}
+
+.xcf-real-hero-main {
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 20px 24px !important;
+  border-radius: 26px !important;
+  overflow: hidden !important;
+}
+
+.xcf-real-hero-main h1 {
+  max-width: 920px !important;
+  font-size: clamp(2.35rem, 4vw, 4.55rem) !important;
+  line-height: .86 !important;
+  letter-spacing: -.08em !important;
+  white-space: normal !important;
+  overflow-wrap: normal !important;
+}
+
+.xcf-real-hero-main span {
+  max-width: 780px !important;
+  font-size: .9rem !important;
+  line-height: 1.35 !important;
+}
+
+.xcf-real-actions {
+  margin-top: 0 !important;
+}
+
+.xcf-real-actions a,
+.xcf-real-list-head a {
+  min-height: 42px !important;
+  padding: 0 16px !important;
+  border-radius: 14px !important;
+}
+
+.xcf-real-command-card {
+  min-width: 0 !important;
+  padding: 18px !important;
+  border-radius: 26px !important;
+}
+
+.xcf-real-command-card b {
+  font-size: 1.26rem !important;
+  line-height: .98 !important;
+}
+
+.xcf-real-command-card em {
+  font-size: .82rem !important;
+  line-height: 1.25 !important;
+}
+
+.xcf-real-command-card strong {
+  font-size: .7rem !important;
+}
+
+.xcf-real-stats {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.xcf-real-stats article {
+  min-height: 68px !important;
+  padding: 11px 13px !important;
+  border-radius: 18px !important;
+}
+
+.xcf-real-stats b {
+  font-size: 1.05rem !important;
+}
+
+.xcf-real-list-head {
+  min-height: 0 !important;
+  padding: 12px 14px !important;
+  border-radius: 22px !important;
+}
+
+.xcf-real-list-head h2 {
+  max-width: 760px !important;
+  font-size: .92rem !important;
+  line-height: 1.25 !important;
+}
+
+.xcf-real-list {
+  min-height: 0 !important;
+  padding: 12px !important;
+  padding-bottom: 92px !important;
+  overflow: auto !important;
+  border-radius: 26px !important;
+}
+
+.xcf-real-page .xcf-row {
+  min-height: 54px !important;
+  padding: 11px 14px !important;
+  border-radius: 16px !important;
+}
+
+.xcf-real-page .xcf-row b {
+  font-size: .9rem !important;
+  line-height: 1.14 !important;
+}
+
+.xcf-real-page .xcf-row small {
+  font-size: .73rem !important;
+  line-height: 1.22 !important;
+}
+
+.xcf-real-page .xcf-row em,
+.xcf-real-page .xcf-row strong,
+.xcf-real-page .xcf-row span:last-child {
+  max-width: 160px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.xcf-real-page .xcf-bottom-nav {
+  z-index: 60 !important;
+}
+
+.xcf-real-page-jobs .xcf-real-hero-main h1::after,
+.xcf-real-page-clients .xcf-real-hero-main h1::after,
+.xcf-real-page-invoices .xcf-real-hero-main h1::after,
+.xcf-real-page-quotes .xcf-real-hero-main h1::after,
+.xcf-real-page-team .xcf-real-hero-main h1::after {
+  content: "";
+}
+
+@media (max-width: 1220px) {
+  .xcf-real-page {
+    height: auto !important;
+    min-height: 100dvh !important;
+    grid-template-rows: auto auto auto auto 78px !important;
+    overflow: visible !important;
+  }
+
+  .xcf-real-hero {
+    grid-template-columns: 1fr !important;
+  }
+
+  .xcf-real-list {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .xcf-real-hero-main h1 {
+    font-size: clamp(2.3rem, 12vw, 3.9rem) !important;
+  }
+
+  .xcf-real-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .xcf-real-actions,
+  .xcf-real-list-head {
+    display: grid !important;
+  }
+
+  .xcf-real-actions a,
+  .xcf-real-list-head a {
+    width: 100% !important;
+  }
+}
