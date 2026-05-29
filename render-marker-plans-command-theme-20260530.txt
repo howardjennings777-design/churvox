@@ -1,0 +1,6 @@
+plans page command theme update
+same dark gradient glass style as Command Floor
+pricing logic untouched
+trial checkout currency logic untouched
+frontend CSS only
+backend unchanged
