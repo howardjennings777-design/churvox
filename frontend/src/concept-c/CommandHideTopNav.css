@@ -51,8 +51,27 @@
   padding-top: 12px !important;
 }
 
-.xcf-bottom-nav {
+/* CHURVOX_BOTTOM_NAV_ONE_ROW_AFTER_PLANS_REMOVE_20260530 */
+.xcf-bottom-nav,
+.xcf10-dock {
   z-index: 200 !important;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  overflow: hidden !important;
+  min-height: 58px !important;
+  max-height: 66px !important;
+}
+
+.xcf-bottom-nav a,
+.xcf10-dock a {
+  white-space: nowrap !important;
+  flex: 0 0 auto !important;
+}
+
+.xcf-bottom-nav a[data-churvox-plans-link="true"],
+.xcf10-dock a[data-churvox-plans-link="true"] {
+  display: none !important;
 }
 
 @media (max-width: 1220px) {
