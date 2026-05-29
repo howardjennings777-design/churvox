@@ -39,12 +39,17 @@ const plans = [
 const addons = [
   ["Command Growth Pack", "$99/month + GST", "Adds 50 more active team members plus extra job capacity, AI Operator Actions, automation runs and admin/payroll capacity."],
   ["MYOB add-on for Operator", "$39/month + GST", "Optional on Operator. Included by default on Command."],
-  ["SMS credits", "Separate packs", "Buy customer reminder, job update and payment follow-up credits when you need them."],
+];
+
+const smsBlocks = [
+  { credits: "100", price: "$10", note: "Light reminders and small follow-up runs." },
+  { credits: "500", price: "$45", note: "Best for active crews using reminders regularly." },
+  { credits: "1,000", price: "$80", note: "Lowest cost per credit for busy operators." },
 ];
 
 export default function ExecutivePricingPage() {
   return (
-    <main className="cvx-home cvx-public-page cvx-pricing-page" data-version="CHURVOX_WOW_PRICING_20260527">
+    <main className="cvx-home cvx-public-page cvx-pricing-page" data-version="CHURVOX_WOW_PRICING_20260527 CHURVOX_SMS_BLOCK_PRICING_20260529">
       <Nav />
 
       <section className="cvx-public-hero">
@@ -92,7 +97,7 @@ export default function ExecutivePricingPage() {
         <div>
           <p className="cvx-eyebrow">ADD-ONS AND SCALE</p>
           <h2>Grow without changing systems.</h2>
-          <span>Command includes the bigger operating setup. Operator can add MYOB when ready. SMS stays as credits so you only buy what you use.</span>
+          <span>Command includes the bigger operating setup. Operator can add MYOB when ready. SMS stays as credit blocks so you only buy what you use.</span>
         </div>
         <div className="cvx-addon-grid">
           {addons.map(([name, price, text]) => (
@@ -100,6 +105,23 @@ export default function ExecutivePricingPage() {
               <small>{name}</small>
               <b>{price}</b>
               <span>{text}</span>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="cvx-addon-section cvx-sms-blocks">
+        <div>
+          <p className="cvx-eyebrow">SMS CREDIT BLOCKS</p>
+          <h2>SMS is separate, simple and approval-first.</h2>
+          <span>Use SMS credits for customer reminders, job updates and payment follow-ups. Messages are drafted for owner approval before sending.</span>
+        </div>
+        <div className="cvx-addon-grid">
+          {smsBlocks.map((pack) => (
+            <article key={pack.credits}>
+              <small>{pack.credits} SMS credits</small>
+              <b>{pack.price} + GST</b>
+              <span>{pack.note}</span>
             </article>
           ))}
         </div>
