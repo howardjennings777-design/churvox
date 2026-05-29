@@ -36,6 +36,7 @@ export default function PlansPage() {
   const [billing, setBilling] = useState(null);
   const [currentPlan, setCurrentPlan] = useState("none");
   const [busyPlan, setBusyPlan] = useState("");
+  const [busyAddon, setBusyAddon] = useState("");
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState(null);
   const [currencyInfo, setCurrencyInfo] = useState(null);
@@ -45,6 +46,7 @@ export default function PlansPage() {
       const params = new URLSearchParams(window.location.search);
       const checkout = params.get("checkout");
       const plan = (params.get("plan") || "").toLowerCase();
+      const addon = (params.get("addon") || "").toLowerCase();
       const sessionId = params.get("session_id") || "";
       if (!checkout) return;
       if (checkout === "success") {
@@ -53,14 +55,17 @@ export default function PlansPage() {
             await api.post("/billing/confirm-checkout", { session_id: sessionId });
             window.dispatchEvent(new Event("churvox-auth-refresh"));
           }
-          if (plan) setCurrentPlan(plan);
-          setNotice({ type: "success", title: "Plan updated", text: `${nicePlanName(plan)} is now active.` });
+          if (addon === "command_growth_pack") setNotice({ type: "success", title: "Growth Pack added", text: "Your Command Growth Pack checkout completed." });
+          else {
+            if (plan) setCurrentPlan(plan);
+            setNotice({ type: "success", title: "Plan updated", text: `${nicePlanName(plan)} is now active.` });
+          }
         } catch (err) {
           console.error("Failed to confirm checkout:", err);
-          setNotice({ type: "warning", title: "Checkout completed", text: "Refresh once if the plan does not update straight away." });
+          setNotice({ type: "warning", title: "Checkout completed", text: "Refresh once if the plan or add-on does not update straight away." });
         }
       }
-      if (checkout === "cancelled") setNotice({ type: "warning", title: "Checkout cancelled", text: "No changes were made to your plan." });
+      if (checkout === "cancelled") setNotice({ type: "warning", title: "Checkout cancelled", text: "No changes were made to your plan or add-ons." });
       window.history.replaceState({}, document.title, window.location.pathname);
     };
     handleCheckoutReturn();
@@ -103,10 +108,10 @@ export default function PlansPage() {
     return `Choose ${plan.name}`;
   };
 
-  const isDisabled = (plan) => { if (busyPlan) return true; return (isPaid || isActiveTrial) && currentPlan === plan.key && !isTrialExpired; };
+  const isDisabled = (plan) => { if (busyPlan || busyAddon) return true; return (isPaid || isActiveTrial) && currentPlan === plan.key && !isTrialExpired; };
 
   const handleSelectPlan = async (planKey) => {
-    if (!planKey || busyPlan) return;
+    if (!planKey || busyPlan || busyAddon) return;
     if (isNewUser) {
       try {
         setBusyPlan(planKey);
@@ -134,16 +139,65 @@ export default function PlansPage() {
     finally { setBusyPlan(""); }
   };
 
+  const handleBuyGrowthPack = async () => {
+    if (busyPlan || busyAddon) return;
+    if (isNewUser) {
+      toast.error("Choose a Churvox plan before adding a Growth Pack.");
+      return;
+    }
+
+    const payload = {
+      plan_type: "command_growth_pack",
+      addon_type: "command_growth_pack",
+      addon: "command_growth_pack",
+      quantity: 1,
+      country: currencyInfo?.country || detectCountryHint() || "",
+      success_path: "/plans?checkout=success&addon=command_growth_pack",
+      cancel_path: "/plans?checkout=cancelled&addon=command_growth_pack",
+    };
+
+    const attempts = [
+      ["/stripe/create-checkout-session", payload],
+      ["/billing/create-addon-checkout-session", payload],
+      ["/billing/addons/checkout", payload],
+    ];
+
+    try {
+      setBusyAddon("command_growth_pack");
+      let lastError = null;
+      for (const [endpoint, body] of attempts) {
+        try {
+          const res = await api.post(endpoint, body);
+          if (res?.success === false) throw new Error(res.error || res.detail || "Checkout failed");
+          const data = getPayload(res) || {};
+          const url = data?.checkout_url || data?.url;
+          if (url) {
+            window.location.assign(url);
+            return;
+          }
+          lastError = new Error(data?.detail || data?.error || "No checkout URL returned");
+        } catch (err) {
+          lastError = err;
+        }
+      }
+      throw lastError || new Error("Could not open Growth Pack checkout");
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || err?.data?.detail || err?.message || "Failed to open Growth Pack checkout");
+    } finally {
+      setBusyAddon("");
+    }
+  };
+
   if (loading) return <main className="cv-plans"><div className="cv-plans-shell"><section className="cv-plans-hero"><p>Loading plans…</p></section></div></main>;
 
   return (
-    <main className="cv-plans" data-version="CHURVOX_APP_PLANS_COMMAND_20260524 CHURVOX_SMS_BLOCK_PRICING_20260529 CHURVOX_COMMAND_GROWTH_USER_BLOCKS_20260530">
+    <main className="cv-plans" data-version="CHURVOX_APP_PLANS_COMMAND_20260524 CHURVOX_SMS_BLOCK_PRICING_20260529 CHURVOX_COMMAND_GROWTH_USER_BLOCKS_20260530 CHURVOX_BUY_GROWTH_PACK_BUTTON_20260530">
       <div className="cv-plans-shell">
         <header className="cv-plans-top"><ChurvoxLogo size="lg" /><span>{status.label}</span></header>
         <section className="cv-plans-hero"><div><p className="cv-kicker">Plans & billing</p><h1>Choose how much admin Churvox should run for you.</h1><p>Start with core workflow, move into crew control, or choose Operator where Churvox prepares the daily admin and the owner approves.</p></div><div className="cv-status-pill">{currencyInfo?.currency ? `Billed in ${currencyInfo.currency}` : status.label}</div></section>
         {notice && <div className={`cv-notice ${notice.type === "warning" ? "warn" : ""}`}><b>{notice.title}</b><span>{notice.text}</span></div>}
         <section className="cv-grid">{displayPlans.map((plan) => { const featured = plan.key === "pro"; const current = currentPlan === plan.key && !isTrialExpired; return <article key={plan.key} className={`cv-card ${featured ? "featured" : ""} ${current ? "current" : ""}`}><span>{plan.tag}</span><h2>{plan.name}</h2><div className="cv-price"><b>{plan.price}</b><small>{plan.period}</small></div><p>{plan.blurb}</p><ul>{plan.limits.map((item) => <li key={item}>{item}</li>)}</ul><button type="button" onClick={() => handleSelectPlan(plan.key)} disabled={isDisabled(plan)} data-testid={`plan-btn-${plan.key}`}>{buttonLabel(plan)}</button></article>; })}</section>
-        <section className="cv-user-blocks"><div><small>Command Growth Pack</small><b>+50 active team members</b><span>Add more crew, jobs and AI Operator capacity as your business grows. Built for Command customers who need more capacity without changing the whole plan.</span></div><article><small>Growth Pack</small><strong>$99<em> /month + GST</em></strong><p>Each block adds 50 more active team members.</p></article><ul>{userBlocks.map((item) => <li key={item}>{item}</li>)}</ul></section>
+        <section className="cv-user-blocks"><div><small>Command Growth Pack</small><b>+50 active team members</b><span>Add more crew, jobs and AI Operator capacity as your business grows. Built for Command customers who need more capacity without changing the whole plan.</span></div><article><small>Growth Pack</small><strong>$99<em> /month + GST</em></strong><p>Each block adds 50 more active team members.</p><button className="cv-user-block-buy" type="button" onClick={handleBuyGrowthPack} disabled={Boolean(busyPlan || busyAddon)} data-testid="buy-command-growth-pack">{busyAddon ? "Opening checkout…" : "Buy Growth Pack"}</button></article><ul>{userBlocks.map((item) => <li key={item}>{item}</li>)}</ul></section>
         <section className="cv-sms-pricing"><div><b>SMS credit blocks</b><span>SMS is separate so you only buy what you use. Customer reminders and follow-ups stay approval-first.</span></div><div className="cv-sms-grid">{smsBlocks.map((pack) => <article key={pack.credits}><small>{pack.credits} credits</small><strong>{pack.price}<em> + GST</em></strong><span>{pack.note}</span></article>)}</div></section>
         <section className="cv-footer-row"><div><b>Churvox does the admin</b><span>AI prepares daily actions for owner approval.</span></div><div><b>Command scales</b><span>Growth Pack adds 50 active team members for $99/month + GST.</span></div><div><b>MYOB ready</b><span>Operator add-on available. Included in Command.</span></div></section>
       </div>
