@@ -1,12 +1,14 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT
-Change: Load real cockpit Command Floor patch
+Change: proper React Command Floor control tower
 
-Frontend update:
-- Cockpit DOM patch loads from existing helper
-- Cockpit CSS loads from existing helper
-- Old hero and lanes are hidden after cockpit builds
-- New dashboard surface uses existing live counts and buttons
+Frontend:
+- real React dashboard structure
+- no DOM patch
+- no risky generated import
+- owner control hero
+- business lanes
+- approval board
 
-No backend logic changed.
+Backend unchanged.
