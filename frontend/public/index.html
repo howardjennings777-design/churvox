@@ -26,6 +26,29 @@
       }
       #root { min-height: 100vh; }
     </style>
+
+<script>
+/* CHURVOX_CURRENT_CACHE_GUARD_20260529 */
+(function () {
+  try {
+    var key = "churvox_current_cache_guard_20260529";
+    if (!localStorage.getItem(key)) {
+      localStorage.setItem(key, "1");
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          regs.forEach(function (reg) { reg.unregister(); });
+        });
+      }
+      if ("caches" in window) {
+        caches.keys().then(function (keys) {
+          keys.forEach(function (k) { caches.delete(k); });
+        });
+      }
+    }
+  } catch (e) {}
+})();
+</script>
+
 </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

@@ -1,10 +1,11 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT
-Change: final Work Slip cockpit fit
+Change: stale bundle rescue for missing main.ba074485.js
 
 Frontend:
-- action dock no longer covers slip rows
-- slip sheet has full Command Floor cockpit body
-- rows and actions polished
+- adds rescue JS for old cached bundle main.ba074485.js
+- adds old CSS placeholder rescue
+- clears old service worker/cache once
+- fixes MIME/404 stale asset issue
 - backend unchanged
