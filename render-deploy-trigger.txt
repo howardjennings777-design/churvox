@@ -1,12 +1,9 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT
-Change: exact full-screen Command Floor cockpit
+Change: tiny Command Floor border gap
 
 Frontend:
-- full-screen dark cockpit dashboard
-- 6 operating lanes
-- next owner decision panel
-- today snapshot bar
-- bottom command dock
-- no backend changes
+- added small premium edge gap around full-screen Command Floor
+- CSS only
+- backend unchanged
