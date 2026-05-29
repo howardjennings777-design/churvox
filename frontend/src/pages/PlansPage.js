@@ -12,6 +12,14 @@ const displayPlans = [
   { key: "enterprise", name: "Command", price: "$299", period: "/month + GST", tag: "Full command", blurb: "For larger operators that want roles, payroll workspace and accounting sync included.", limits: ["Everything in Operator", "MYOB sync included", "Payroll workspace", "Advanced roles and permissions", "Up to 50 active team members"] },
 ];
 
+const userBlocks = [
+  "Command includes up to 50 active team members",
+  "Each Growth Pack adds 50 more active team members",
+  "Extra job capacity, AI Operator Actions and automation runs",
+  "Extra admin and payroll capacity as the crew grows",
+  "Inactive or old staff records should not count as billable",
+];
+
 const smsBlocks = [
   { credits: "100", price: "$10", note: "Light reminders and small follow-up runs." },
   { credits: "500", price: "$45", note: "Best for active crews using reminders regularly." },
@@ -128,12 +136,13 @@ export default function PlansPage() {
   if (loading) return <main className="cv-plans"><div className="cv-plans-shell"><section className="cv-plans-hero"><p>Loading plans…</p></section></div></main>;
 
   return (
-    <main className="cv-plans" data-version="CHURVOX_APP_PLANS_COMMAND_20260524 CHURVOX_SMS_BLOCK_PRICING_20260529">
+    <main className="cv-plans" data-version="CHURVOX_APP_PLANS_COMMAND_20260524 CHURVOX_SMS_BLOCK_PRICING_20260529 CHURVOX_COMMAND_GROWTH_USER_BLOCKS_20260530">
       <div className="cv-plans-shell">
         <header className="cv-plans-top"><ChurvoxLogo size="lg" /><span>{status.label}</span></header>
         <section className="cv-plans-hero"><div><p className="cv-kicker">Plans & billing</p><h1>Choose how much admin Churvox should run for you.</h1><p>Start with core workflow, move into crew control, or choose Operator where Churvox prepares the daily admin and the owner approves.</p></div><div className="cv-status-pill">{currencyInfo?.currency ? `Billed in ${currencyInfo.currency}` : status.label}</div></section>
         {notice && <div className={`cv-notice ${notice.type === "warning" ? "warn" : ""}`}><b>{notice.title}</b><span>{notice.text}</span></div>}
         <section className="cv-grid">{displayPlans.map((plan) => { const featured = plan.key === "pro"; const current = currentPlan === plan.key && !isTrialExpired; return <article key={plan.key} className={`cv-card ${featured ? "featured" : ""} ${current ? "current" : ""}`}><span>{plan.tag}</span><h2>{plan.name}</h2><div className="cv-price"><b>{plan.price}</b><small>{plan.period}</small></div><p>{plan.blurb}</p><ul>{plan.limits.map((item) => <li key={item}>{item}</li>)}</ul><button type="button" onClick={() => handleSelectPlan(plan.key)} disabled={isDisabled(plan)} data-testid={`plan-btn-${plan.key}`}>{buttonLabel(plan)}</button></article>; })}</section>
+        <section className="cv-user-blocks"><div><small>Command Growth Pack</small><b>+50 active team members</b><span>Add more crew, jobs and AI Operator capacity as your business grows. Built for Command customers who need more capacity without changing the whole plan.</span></div><article><small>Growth Pack</small><strong>$99<em> /month + GST</em></strong><p>Each block adds 50 more active team members.</p></article><ul>{userBlocks.map((item) => <li key={item}>{item}</li>)}</ul></section>
         <section className="cv-sms-pricing"><div><b>SMS credit blocks</b><span>SMS is separate so you only buy what you use. Customer reminders and follow-ups stay approval-first.</span></div><div className="cv-sms-grid">{smsBlocks.map((pack) => <article key={pack.credits}><small>{pack.credits} credits</small><strong>{pack.price}<em> + GST</em></strong><span>{pack.note}</span></article>)}</div></section>
         <section className="cv-footer-row"><div><b>Churvox does the admin</b><span>AI prepares daily actions for owner approval.</span></div><div><b>Command scales</b><span>Growth Pack adds 50 active team members for $99/month + GST.</span></div><div><b>MYOB ready</b><span>Operator add-on available. Included in Command.</span></div></section>
       </div>
