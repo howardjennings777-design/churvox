@@ -1,0 +1,114 @@
+/* CHURVOX_WORK_SLIP_FINAL_FIT_20260529
+   Fixes Work Slip cockpit fit:
+   - action bar no longer floats over rows
+   - slip sheet has better dark cockpit body
+   - rows look more premium
+   - bottom actions sit cleanly
+*/
+
+body .cfs-overlay {
+  padding: 18px 18px 150px !important;
+}
+
+body .cfs-overlay .cfs-sheet {
+  min-height: calc(100dvh - 168px) !important;
+  padding: 16px !important;
+  border-radius: 32px !important;
+  background:
+    radial-gradient(circle at 80% 8%, rgba(98,72,255,.20), transparent 34%),
+    radial-gradient(circle at 12% 92%, rgba(38,211,238,.12), transparent 34%),
+    linear-gradient(135deg, rgba(2,8,23,.96), rgba(6,21,44,.94)) !important;
+}
+
+body .cfs-overlay .cfs-head {
+  min-height: 145px !important;
+  border-radius: 26px !important;
+}
+
+body .cfs-overlay .cfs-lane-summary {
+  background: rgba(3,13,33,.58) !important;
+  border-radius: 18px !important;
+}
+
+body .cfs-overlay .cfs-lane-list {
+  padding: 16px !important;
+  border-radius: 24px !important;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(20,216,244,.10), transparent 32%),
+    rgba(3,13,33,.58) !important;
+}
+
+body .cfs-overlay .cfs-lane-row {
+  min-height: 78px !important;
+  border-radius: 18px !important;
+  padding: 16px 18px !important;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.045)) !important;
+  border: 1px solid rgba(125,189,255,.20) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+
+body .cfs-overlay .cfs-lane-row b {
+  font-size: 14px !important;
+  color: #fff !important;
+}
+
+body .cfs-overlay .cfs-lane-row small {
+  color: rgba(248,251,255,.68) !important;
+}
+
+body .cfs-overlay .cfs-lane-row em {
+  color: #62e8f5 !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+}
+
+/* Keep actions dock from covering the list */
+body .cfs-overlay .cfs-actions,
+body .cfs-overlay footer.cfs-actions {
+  position: sticky !important;
+  bottom: 12px !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  width: min(900px, 100%) !important;
+  margin: 18px auto 0 !important;
+  z-index: 5 !important;
+  border-radius: 24px !important;
+  background: rgba(3,13,33,.92) !important;
+}
+
+body .cfs-overlay .cfs-actions button,
+body .cfs-overlay .cfs-actions a {
+  min-height: 46px !important;
+  padding: 0 16px !important;
+}
+
+body .cfs-overlay .cfs-actions button:first-child,
+body .cfs-overlay .cfs-actions .primary {
+  background: linear-gradient(135deg, #14d8f4, #245cff 48%, #9333ea) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+
+/* Hide any pale helper text strips */
+body .cfs-overlay :is(.bg-white, .bg-slate-50, .bg-gray-50, .bg-yellow-50, [class*="bg-white"], [class*="bg-yellow"], [class*="bg-amber"]) {
+  background: rgba(255,255,255,.07) !important;
+  color: #f8fbff !important;
+  border-color: rgba(125,189,255,.18) !important;
+}
+
+@media(max-width: 700px) {
+  body .cfs-overlay {
+    padding: 10px 10px 130px !important;
+  }
+
+  body .cfs-overlay .cfs-sheet {
+    min-height: calc(100dvh - 140px) !important;
+    padding: 10px !important;
+  }
+
+  body .cfs-overlay .cfs-actions {
+    width: 100% !important;
+  }
+}

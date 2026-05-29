@@ -1,10 +1,10 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT
-Change: force real Work Slip Command theme
+Change: final Work Slip cockpit fit
 
 Frontend:
-- loads slip theme from index.js last
-- forces white slip shell dark
-- forces rows/buttons/actions to Command Floor gradient theme
+- action dock no longer covers slip rows
+- slip sheet has full Command Floor cockpit body
+- rows and actions polished
 - backend unchanged
