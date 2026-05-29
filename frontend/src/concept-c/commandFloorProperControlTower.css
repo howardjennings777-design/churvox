@@ -1,4 +1,5 @@
 /* CHURVOX_PROPER_COMMAND_FLOOR_CONTROL_TOWER_20260529 */
+/* CHURVOX_CONTROL_TOWER_LOWER_PANEL_DEWASH_20260529 */
 /* Real Command Floor redesign. Component-owned classes only. No DOM patch. */
 
 .xcf-control-tower {
@@ -413,9 +414,57 @@
 .xcf-control-tower .xcf-field-strip {
   margin-top: 18px !important;
   border-radius: 30px !important;
-  background: linear-gradient(135deg, rgba(18,47,112,.82), rgba(5,19,46,.84)) !important;
+  background:
+    radial-gradient(circle at 16% 0%, rgba(84,215,238,.16), transparent 30%),
+    linear-gradient(135deg, rgba(18,47,112,.86), rgba(5,19,46,.90)) !important;
   border: 1px solid rgba(155,210,255,.18) !important;
   box-shadow: 0 26px 90px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.1) !important;
+  color: #f8fbff !important;
+}
+
+.xcf-control-tower .xcf-operator-proof-panel *,
+.xcf-control-tower .xcf-field-strip * {
+  color: rgba(248,251,255,.82) !important;
+}
+
+.xcf-control-tower .xcf-operator-proof-panel h1,
+.xcf-control-tower .xcf-operator-proof-panel h2,
+.xcf-control-tower .xcf-operator-proof-panel h3,
+.xcf-control-tower .xcf-operator-proof-panel b,
+.xcf-control-tower .xcf-operator-proof-panel strong,
+.xcf-control-tower .xcf-field-strip h1,
+.xcf-control-tower .xcf-field-strip h2,
+.xcf-control-tower .xcf-field-strip h3,
+.xcf-control-tower .xcf-field-strip b,
+.xcf-control-tower .xcf-field-strip strong {
+  color: #fff !important;
+}
+
+.xcf-control-tower .xcf-operator-proof-panel :is(section, article, div, button, span, input, textarea),
+.xcf-control-tower .xcf-field-strip :is(section, article, div, button, span, input, textarea) {
+  background-color: rgba(255,255,255,.075) !important;
+  border-color: rgba(155,210,255,.14) !important;
+}
+
+.xcf-control-tower .xcf-operator-proof-panel :is(.bg-white, .bg-slate-50, .bg-gray-50, [class*="bg-white"], [class*="bg-slate"], [class*="bg-gray"], [class*="bg-zinc"]),
+.xcf-control-tower .xcf-field-strip :is(.bg-white, .bg-slate-50, .bg-gray-50, [class*="bg-white"], [class*="bg-slate"], [class*="bg-gray"], [class*="bg-zinc"]) {
+  background: rgba(255,255,255,.07) !important;
+  color: #f8fbff !important;
+}
+
+.xcf-control-tower .xcf-operator-proof-panel button,
+.xcf-control-tower .xcf-field-strip button {
+  border-radius: 999px !important;
+  background: rgba(5, 18, 43, .72) !important;
+  color: #fff !important;
+  border: 1px solid rgba(155,210,255,.20) !important;
+  box-shadow: none !important;
+}
+
+.xcf-control-tower .xcf-operator-proof-panel button:last-child,
+.xcf-control-tower .xcf-field-strip button:last-child {
+  background: linear-gradient(135deg, rgba(84,215,238,.90), rgba(166,106,244,.78)) !important;
+  color: #061226 !important;
 }
 
 @media (max-width: 1200px) {
