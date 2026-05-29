@@ -1,12 +1,12 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT connector push
-Change: Deep launch audit tool and report added.
+Change: Public brand theme unified across app surfaces.
 Includes:
-- Added frontend/scripts/churvox-deep-launch-audit.js
-- Added LAUNCH_DEEP_AUDIT_20260529.md
-- Audit covers duplicate routes/imports/runtime panels
-- Audit covers approval-first locks and route guards
-- Audit covers public invoice/quote document rendering
-- Audit covers plans and SMS block pricing
-- Audit records remaining terminal-only checks and Work Slip HTML hardening item
+- Added frontend/src/styles/churvoxPublicThemeUnify.css
+- Imported theme unifier last in frontend/src/index.js
+- Command Floor now follows dark public AI command brand
+- In-app Plans follows dark public AI command brand
+- Worker app follows dark public AI command brand
+- Message Approval, Dispatch, Offline Sync and public document surfaces follow dark brand layer
+- Visual layer only; no API/auth/database logic changed
