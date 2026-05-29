@@ -1,11 +1,12 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT
-Change: Import generated Command Floor match layer
+Change: Load real cockpit Command Floor patch
 
 Frontend update:
-- Generated match CSS is now imported last
-- Old white wrapper should be overridden
-- Command Floor should move closer to generated cockpit mockup
+- Cockpit DOM patch loads from existing helper
+- Cockpit CSS loads from existing helper
+- Old hero and lanes are hidden after cockpit builds
+- New dashboard surface uses existing live counts and buttons
 
 No backend logic changed.
