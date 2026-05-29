@@ -23,6 +23,7 @@ import './concept-c/CommandRealPagesTheme.css';
 import './concept-c/CommandRealPagesUsabilityFix.css';
 import './concept-c/CommandRealPagesBadgeFix.css';
 import './concept-c/CommandHideTopNav.css';
+import './pages/PlansFullScreenFix.css';
 import './concept-c/churvoxTopTierRuntimePatch';
 import './concept-c/churvoxWorkerOfflineRuntimePatch';
 import './concept-c/churvoxActivePresetJobRuntimePatch';
