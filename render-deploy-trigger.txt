@@ -1,14 +1,12 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT
-Change: proper React Command Floor control tower
+Change: compact Command Floor hero and hide topbar
 
 Frontend:
-- real React dashboard structure
-- no DOM patch
-- no risky generated import
-- owner control hero
-- business lanes
-- approval board
+- hide Command Floor top black nav
+- make the two top control boxes smaller
+- reduce oversized Command Floor title
+- keep lower proof panels dark
 
 Backend unchanged.

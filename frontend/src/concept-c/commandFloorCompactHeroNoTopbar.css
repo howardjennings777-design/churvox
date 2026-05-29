@@ -1,6 +1,6 @@
 /* CHURVOX_COMPACT_HERO_NO_TOPBAR_20260529
-   Targeted Command Floor polish from live screenshot.
-   Hide top app nav on Command Floor only and make the two top control boxes smaller.
+   Targeted Command Floor polish.
+   Hides the top black nav on Command Floor only and makes the two top control boxes smaller.
 */
 
 .xcf-control-tower .xcf-topbar {
@@ -8,7 +8,7 @@
 }
 
 .xcf-control-tower {
-  padding-top: 18px !important;
+  padding-top: 16px !important;
 }
 
 .xcf-control-hero {
@@ -24,17 +24,17 @@
 }
 
 .xcf-control-hero-main {
-  min-height: 250px !important;
+  min-height: 245px !important;
   padding: clamp(24px, 3vw, 36px) !important;
 }
 
 .xcf-control-next {
-  min-height: 250px !important;
+  min-height: 245px !important;
   padding: 26px !important;
 }
 
 .xcf-control-hero-main h1 {
-  font-size: clamp(52px, 5.8vw, 92px) !important;
+  font-size: clamp(52px, 5.7vw, 90px) !important;
   line-height: .84 !important;
   letter-spacing: -.085em !important;
 }
@@ -136,6 +136,26 @@
 
 .xcf-control-board {
   padding-top: 18px !important;
+}
+
+/* Keep lower proof/field panels from washing out white */
+.xcf-control-tower .xcf-operator-proof-panel,
+.xcf-control-tower .xcf-field-strip {
+  background:
+    radial-gradient(circle at 16% 0%, rgba(84,215,238,.14), transparent 30%),
+    linear-gradient(135deg, rgba(18,47,112,.86), rgba(5,19,46,.90)) !important;
+  color: #f8fbff !important;
+}
+
+.xcf-control-tower .xcf-operator-proof-panel *,
+.xcf-control-tower .xcf-field-strip * {
+  color: rgba(248,251,255,.82) !important;
+}
+
+.xcf-control-tower .xcf-operator-proof-panel :is(.bg-white, .bg-slate-50, .bg-gray-50, [class*="bg-white"], [class*="bg-slate"], [class*="bg-gray"], [class*="bg-zinc"]),
+.xcf-control-tower .xcf-field-strip :is(.bg-white, .bg-slate-50, .bg-gray-50, [class*="bg-white"], [class*="bg-slate"], [class*="bg-gray"], [class*="bg-zinc"]) {
+  background: rgba(255,255,255,.07) !important;
+  color: #f8fbff !important;
 }
 
 @media (max-width: 1000px) {
