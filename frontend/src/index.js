@@ -30,6 +30,7 @@ import './styles/churvoxPublicThemeUnify.css';
 import './styles/churvoxGraphiteRefine.css';
 import './styles/churvoxCommandFloorNoSidebarRedesign.css';
 import './styles/churvoxAiOperatorCockpitFinal.css';
+import './styles/churvoxCommandFloorGeneratedMatch.css';
 import './workhorseLiveCheck';
 import './renderDeployMarker';
 import './deploy/guidedOperatorFloorDeployMarker';
