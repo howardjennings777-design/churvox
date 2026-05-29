@@ -1,0 +1,328 @@
+/* CHURVOX_COMMAND_FLOOR_GENERATED_MATCH_20260529
+   Stricter Command Floor-only layer to match the generated AI business control dashboard.
+   Purpose: kill the old white wrapper, force premium blue/teal/violet cockpit modules, no sidebar.
+   Visual-only. No data/API/auth changes.
+*/
+
+.xcf-shell.xcf-approval-desk,
+body:has(.xcf-shell.xcf-approval-desk) {
+  background:
+    radial-gradient(circle at 16% 4%, rgba(34,211,238,.22), transparent 30%),
+    radial-gradient(circle at 86% 14%, rgba(168,85,247,.22), transparent 30%),
+    radial-gradient(circle at 45% 86%, rgba(34,197,94,.12), transparent 34%),
+    linear-gradient(135deg, #031226 0%, #061a3e 42%, #08265c 100%) !important;
+}
+
+.xcf-shell.xcf-approval-desk {
+  padding: 0 32px 96px !important;
+  color: #f8fbff !important;
+}
+
+/* Remove old pale command wrapper completely */
+.xcf-shell.xcf-approval-desk .xcf-approval-hero,
+.xcf-shell.xcf-approval-desk .xcf-hero {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.xcf-shell.xcf-approval-desk :is(.bg-white, .bg-slate-50, .bg-gray-50, [class*="bg-white"], [class*="bg-slate-50"], [class*="bg-gray-50"]) {
+  background: rgba(255,255,255,.08) !important;
+  color: #f8fbff !important;
+}
+
+/* Top bar closer to generated mockup */
+.xcf-shell.xcf-approval-desk .xcf-topbar {
+  width: min(1600px, calc(100vw - 64px)) !important;
+  margin: 0 auto 24px !important;
+  height: 64px !important;
+  border-radius: 0 0 26px 26px !important;
+  padding: 0 18px !important;
+  background: rgba(3, 13, 34, .82) !important;
+  border: 1px solid rgba(125, 189, 255, .20) !important;
+  box-shadow: 0 22px 70px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.10) !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
+}
+
+.xcf-shell.xcf-approval-desk .xcf-brand i {
+  background: linear-gradient(135deg, #39d9ff, #2f67ff) !important;
+}
+
+.xcf-shell.xcf-approval-desk .xcf-topbar nav a:first-child,
+.xcf-shell.xcf-approval-desk .xcf-topbar .live {
+  background: linear-gradient(135deg, rgba(57,217,255,.22), rgba(47,103,255,.24)) !important;
+  color: #fff !important;
+  border: 1px solid rgba(125,189,255,.18) !important;
+}
+
+/* Hero: full generated-style control deck */
+.xcf-shell.xcf-approval-desk .xcf-approval-hero {
+  width: min(1600px, calc(100vw - 64px)) !important;
+  margin: 0 auto 18px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, .92fr) minmax(520px, .78fr) !important;
+  gap: 22px !important;
+  align-items: stretch !important;
+}
+
+.xcf-shell.xcf-approval-desk .xcf-approval-hero > div:first-child {
+  min-height: 330px !important;
+  border-radius: 34px !important;
+  padding: 46px 50px !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 74% 32%, rgba(168,85,247,.36), transparent 30%),
+    radial-gradient(circle at 16% 84%, rgba(34,211,238,.22), transparent 32%),
+    linear-gradient(135deg, rgba(5, 30, 75, .95), rgba(10, 33, 82, .86)) !important;
+  border: 1px solid rgba(125,189,255,.22) !important;
+  box-shadow: 0 32px 100px rgba(0,0,0,.36), inset 0 1px 0 rgba(255,255,255,.12) !important;
+}
+
+.xcf-shell.xcf-approval-desk .xcf-approval-hero > div:first-child::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(125,189,255,.32) 1px, transparent 1px);
+  background-size: 18px 18px;
+  mask-image: linear-gradient(90deg, transparent, black 32%, transparent 80%);
+  opacity: .35;
+}
+
+.xcf-shell.xcf-approval-desk .xcf-approval-hero p {
+  position: relative;
+  z-index: 1;
+  color: #9fdcf2 !important;
+  font-size: 13px !important;
+  letter-spacing: .20em !important;
+  text-transform: uppercase !important;
+  font-weight: 950 !important;
+}
+
+.xcf-shell.xcf-approval-desk .xcf-approval-hero h1 {
+  position: relative;
+  z-index: 1;
+  max-width: 820px !important;
+  color: #fff !important;
+  font-size: clamp(72px, 7.6vw, 128px) !important;
+  line-height: .80 !important;
+  letter-spacing: -.095em !important;
+  text-shadow: 0 24px 70px rgba(0,0,0,.40) !important;
+}
+
+.xcf-shell.xcf-approval-desk .xcf-approval-hero span {
+  position: relative;
+  z-index: 1;
+  display: block !important;
+  max-width: 760px !important;
+  color: rgba(248,251,255,.86) !important;
+  font-size: 18px !important;
+  line-height: 1.48 !important;
+  font-weight: 700 !important;
+}
+
+.xcf-shell.xcf-approval-desk .xcf-approval-hero > div:first-child::after {
+  content: "AI prepared  ·  Owner approves  ·  Actions ready";
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  margin-top: 22px;
+  border-radius: 999px;
+  padding: 11px 14px;
+  color: rgba(248,251,255,.86);
+  font-size: 13px;
+  font-weight: 900;
+  background: rgba(255,255,255,.085);
+  border: 1px solid rgba(255,255,255,.14);
+}
+
+/* Next decision panel */
+.xcf-shell.xcf-approval-desk .xcf-approval-hero > aside {
+  min-height: 330px !important;
+  border-radius: 34px !important;
+  padding: 38px 40px !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 82% 43%, rgba(168,85,247,.38), transparent 25%),
+    radial-gradient(circle at 14% 18%, rgba(34,211,238,.22), transparent 24%),
+    linear-gradient(135deg, rgba(7, 31, 82, .94), rgba(38, 34, 101, .86)) !important;
+  border: 1px solid rgba(125,189,255,.22) !important;
+  box-shadow: 0 32px 100px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.12) !important;
+}
+
+.xcf-shell.xcf-approval-desk .xcf-approval-hero > aside::after {
+  content: "✦";
+  position: absolute;
+  right: 68px;
+  top: 70px;
+  width: 144px;
+  height: 144px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 62px;
+  background: radial-gradient(circle, rgba(168,85,247,.46), rgba(47,103,255,.18) 50%, transparent 72%);
+  box-shadow: 0 0 90px rgba(47,103,255,.40);
+}
+
+.xcf-shell.xcf-approval-desk .xcf-approval-hero > aside small {
+  color: #9fdcf2 !important;
+  letter-spacing: .20em !important;
+}
+.xcf-shell.xcf-approval-desk .xcf-approval-hero > aside b {
+  max-width: 340px !important;
+  color: #fff !important;
+  font-size: 30px !important;
+  line-height: 1.1 !important;
+}
+.xcf-shell.xcf-approval-desk .xcf-approval-hero > aside em {
+  color: rgba(248,251,255,.76) !important;
+  font-size: 15px !important;
+}
+
+/* Lane title heading */
+.cfcp-section-heading,
+.xcf-shell.xcf-approval-desk .xcf-approval-summary,
+.xcf-shell.xcf-approval-desk .xcf-approval-lanes,
+.xcf-shell.xcf-approval-desk .xcf-operator-proof-panel,
+.xcf-shell.xcf-approval-desk .xcf-field-strip {
+  width: min(1600px, calc(100vw - 64px)) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.cfcp-section-heading {
+  margin-top: 22px !important;
+  margin-bottom: 14px !important;
+}
+.cfcp-section-heading small { color: #9fdcf2 !important; }
+.cfcp-section-heading h2 { color: #fff !important; font-size: 20px !important; }
+
+/* Top business lane modules */
+.xcf-shell.xcf-approval-desk .xcf-approval-summary {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  margin-bottom: 18px !important;
+}
+
+.xcf-shell.xcf-approval-desk .xcf-metric {
+  min-height: 148px !important;
+  padding: 22px !important;
+  border-radius: 25px !important;
+  display: grid !important;
+  align-content: start !important;
+  justify-items: start !important;
+  text-align: left !important;
+  background: linear-gradient(160deg, rgba(255,255,255,.12), rgba(255,255,255,.055)) !important;
+  border: 1px solid rgba(255,255,255,.15) !important;
+  box-shadow: 0 22px 62px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.10) !important;
+}
+.xcf-shell.xcf-approval-desk .xcf-metric i { width: 56px !important; height: 56px !important; border-radius: 20px !important; }
+.xcf-shell.xcf-approval-desk .xcf-metric span { color: #fff !important; font-size: 15px !important; font-weight: 950 !important; }
+.xcf-shell.xcf-approval-desk .xcf-metric b { color: #fff !important; font-size: 44px !important; line-height: .88 !important; }
+.xcf-shell.xcf-approval-desk .xcf-metric small { color: rgba(248,251,255,.72) !important; }
+.xcf-shell.xcf-approval-desk .xcf-metric.amber { background: linear-gradient(150deg, rgba(9, 191, 184, .36), rgba(9, 54, 82, .78)) !important; }
+.xcf-shell.xcf-approval-desk .xcf-metric.green { background: linear-gradient(150deg, rgba(32, 199, 122, .36), rgba(9, 76, 58, .78)) !important; }
+.xcf-shell.xcf-approval-desk .xcf-metric.blue { background: linear-gradient(150deg, rgba(49, 119, 255, .38), rgba(13, 56, 122, .78)) !important; }
+.xcf-shell.xcf-approval-desk .xcf-metric.purple { background: linear-gradient(150deg, rgba(168, 85, 247, .38), rgba(69, 36, 126, .78)) !important; }
+.xcf-shell.xcf-approval-desk .xcf-metric.red { background: linear-gradient(150deg, rgba(217, 137, 63, .38), rgba(95, 55, 35, .78)) !important; }
+
+/* Big work lane panels */
+.xcf-shell.xcf-approval-desk .xcf-approval-lanes {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(230px, 1fr)) !important;
+  gap: 14px !important;
+}
+.xcf-shell.xcf-approval-desk .xcf-approval-lane {
+  min-height: 380px !important;
+  border-radius: 28px !important;
+  padding: 22px !important;
+  border: 1px solid rgba(255,255,255,.15) !important;
+  box-shadow: 0 24px 74px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.10) !important;
+}
+.xcf-shell.xcf-approval-desk .xcf-lane-amber { background: linear-gradient(160deg, rgba(0,183,172,.38), rgba(8,51,70,.82)) !important; }
+.xcf-shell.xcf-approval-desk .xcf-lane-green { background: linear-gradient(160deg, rgba(32,199,122,.38), rgba(14,64,52,.82)) !important; }
+.xcf-shell.xcf-approval-desk .xcf-lane-blue { background: linear-gradient(160deg, rgba(49,119,255,.38), rgba(15,51,108,.82)) !important; }
+.xcf-shell.xcf-approval-desk .xcf-lane-purple { background: linear-gradient(160deg, rgba(168,85,247,.40), rgba(57,31,100,.82)) !important; }
+.xcf-shell.xcf-approval-desk .xcf-lane-red { background: linear-gradient(160deg, rgba(217,137,63,.38), rgba(82,44,32,.82)) !important; }
+
+.xcf-shell.xcf-approval-desk .xcf-approval-lane header b,
+.xcf-shell.xcf-approval-desk .xcf-approval-lane header strong,
+.xcf-shell.xcf-approval-desk .xcf-row b { color: #fff !important; }
+.xcf-shell.xcf-approval-desk .xcf-lane-description,
+.xcf-shell.xcf-approval-desk .xcf-row small,
+.xcf-shell.xcf-approval-desk .xcf-row em,
+.xcf-shell.xcf-approval-desk .xcf-lane-note { color: rgba(248,251,255,.74) !important; }
+
+.xcf-shell.xcf-approval-desk .xcf-lane-primary {
+  width: 100% !important;
+  border-radius: 16px !important;
+  min-height: 46px !important;
+  background: linear-gradient(135deg, #4fd5ee, #a855f7) !important;
+  color: #061226 !important;
+  font-weight: 950 !important;
+  box-shadow: 0 16px 40px rgba(79,213,238,.24) !important;
+}
+
+.xcf-shell.xcf-approval-desk .xcf-row {
+  border-radius: 15px !important;
+  min-height: 50px !important;
+  margin-bottom: 9px !important;
+  background: rgba(255,255,255,.105) !important;
+  border: 1px solid rgba(255,255,255,.11) !important;
+  box-shadow: none !important;
+}
+
+/* Proof/intelligence */
+.xcf-shell.xcf-approval-desk .xcf-operator-proof-panel,
+.xcf-shell.xcf-approval-desk .xcf-field-strip {
+  margin-top: 18px !important;
+  border-radius: 30px !important;
+  background: linear-gradient(135deg, rgba(18,47,112,.82), rgba(5,19,46,.84)) !important;
+  border: 1px solid rgba(125,189,255,.18) !important;
+  box-shadow: 0 26px 90px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.10) !important;
+}
+
+/* Bottom generated-style dock */
+.xcf-shell.xcf-approval-desk .xcf-bottom-nav {
+  position: fixed !important;
+  left: 50% !important;
+  bottom: 18px !important;
+  transform: translateX(-50%) !important;
+  z-index: 100 !important;
+  width: min(820px, calc(100vw - 28px)) !important;
+  height: 62px !important;
+  padding: 8px !important;
+  border-radius: 999px !important;
+  background: rgba(5, 18, 43, .74) !important;
+  border: 1px solid rgba(125,189,255,.24) !important;
+  box-shadow: 0 24px 80px rgba(0,0,0,.40), inset 0 1px 0 rgba(255,255,255,.10) !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
+}
+.xcf-shell.xcf-approval-desk .xcf-bottom-nav a:first-child {
+  background: linear-gradient(135deg, rgba(79,213,238,.34), rgba(49,119,255,.46)) !important;
+  color: #fff !important;
+}
+
+@media (max-width: 1200px) {
+  .xcf-shell.xcf-approval-desk .xcf-approval-hero { grid-template-columns: 1fr !important; }
+  .xcf-shell.xcf-approval-desk .xcf-approval-summary,
+  .xcf-shell.xcf-approval-desk .xcf-approval-lanes { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+}
+
+@media (max-width: 720px) {
+  .xcf-shell.xcf-approval-desk { padding: 0 12px 90px !important; }
+  .xcf-shell.xcf-approval-desk .xcf-topbar,
+  .xcf-shell.xcf-approval-desk .xcf-approval-hero,
+  .xcf-shell.xcf-approval-desk .xcf-approval-summary,
+  .xcf-shell.xcf-approval-desk .xcf-approval-lanes,
+  .xcf-shell.xcf-approval-desk .xcf-operator-proof-panel,
+  .xcf-shell.xcf-approval-desk .xcf-field-strip,
+  .cfcp-section-heading { width: min(100%, calc(100vw - 20px)) !important; }
+  .xcf-shell.xcf-approval-desk .xcf-approval-summary,
+  .xcf-shell.xcf-approval-desk .xcf-approval-lanes { grid-template-columns: 1fr !important; }
+  .xcf-shell.xcf-approval-desk .xcf-approval-hero h1 { font-size: clamp(54px, 18vw, 78px) !important; }
+}
