@@ -1,0 +1,5 @@
+recover blank screen risk
+restore slim Plans tab
+force bottom nav one row
+frontend only
+backend unchanged
