@@ -1,13 +1,11 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT
-Change: Final AI Operator cockpit Command Floor
+Change: Import generated Command Floor match layer
 
 Frontend update:
-- Added final Command Floor cockpit CSS
-- Imported it last
-- Stronger business-control dashboard
-- No sidebar
-- Top navigation and floating bottom dock remain
+- Generated match CSS is now imported last
+- Old white wrapper should be overridden
+- Command Floor should move closer to generated cockpit mockup
 
 No backend logic changed.
