@@ -1,12 +1,9 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT connector push
-Change: Connector duplicate audit report added after Codespaces crash.
+Change: Plans page and SMS credit block pricing.
 Includes:
-- index.js duplicate import hotspot checked
-- App.js visible route hotspot checked
-- Money Desk duplicate panel cleanup confirmed
-- Dispatch duplicate panel cleanup confirmed
-- Public invoice/quote markers checked
-- Invoice/quote editor markers checked
-- Full terminal build still needs Render/Codespaces verification
+- Public pricing page shows locked Churvox plans
+- Public pricing page shows SMS blocks: 100 credits $10 + GST, 500 credits $45 + GST, 1,000 credits $80 + GST
+- In-app Plans page shows the same SMS credit blocks
+- SMS remains separate/approval-first instead of bundled silently
