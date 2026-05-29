@@ -1,10 +1,12 @@
 Churvox Render deploy trigger
 
 Triggered at: 2026-05-29 NZT
-Change: final Work Slip white card/action bar fix
+Change: clean Work Slip cockpit layout
 
 Frontend:
-- forces bottom-right Work Slip card dark
-- keeps all lower cards in Command Floor gradient theme
-- action bar no longer covers content as badly
+- fixes At A Glance overlap
+- tightens header
+- improves decision card spacing
+- cleans form and lower card layout
+- action buttons no longer overlay content
 - backend unchanged

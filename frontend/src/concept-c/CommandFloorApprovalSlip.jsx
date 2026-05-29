@@ -442,6 +442,234 @@ const SLIP_FORCE_CSS = `
 }
 
 
+
+/* CHURVOX_CLEAN_WORK_SLIP_LAYOUT_20260529 */
+/* Cleans the cockpit Work Slip after theme was applied. */
+
+.cfs-force-command-theme.cfs-overlay {
+  padding: 14px 18px 28px !important;
+}
+
+.cfs-force-command-theme .cfs-force-command-sheet,
+.cfs-force-command-theme .cfs-sheet {
+  width: min(1500px, calc(100vw - 44px)) !important;
+  min-height: auto !important;
+  padding: 16px !important;
+  gap: 14px !important;
+}
+
+/* Header: strong but not huge */
+.cfs-force-command-theme .cfs-head {
+  min-height: 124px !important;
+  padding: 24px 28px !important;
+  border-radius: 26px !important;
+}
+
+.cfs-force-command-theme .cfs-head h2 {
+  font-size: clamp(2.6rem, 4vw, 4.9rem) !important;
+  line-height: .92 !important;
+  letter-spacing: -.07em !important;
+}
+
+.cfs-force-command-theme .cfs-head span {
+  max-width: 980px !important;
+  margin-top: 8px !important;
+  font-size: .95rem !important;
+}
+
+/* Fix AT A GLANCE overlap */
+.cfs-force-command-theme .cfs-facts {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+.cfs-force-command-theme .cfs-facts::before {
+  display: none !important;
+}
+
+.cfs-force-command-theme .cfs-facts span {
+  min-height: 74px !important;
+  padding: 12px !important;
+  border-radius: 16px !important;
+}
+
+.cfs-force-command-theme .cfs-facts span::before {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 12px !important;
+}
+
+.cfs-force-command-theme .cfs-facts small {
+  font-size: .64rem !important;
+}
+
+.cfs-force-command-theme .cfs-facts b {
+  font-size: .82rem !important;
+  line-height: 1.18 !important;
+}
+
+/* Decision cards: clean lane, no crash */
+.cfs-force-command-theme .cfs-decision-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  align-items: stretch !important;
+}
+
+.cfs-force-command-theme .cfs-decision {
+  min-height: 178px !important;
+  padding: 16px !important;
+  border-radius: 22px !important;
+  overflow: hidden !important;
+}
+
+.cfs-force-command-theme .cfs-decision header {
+  margin-bottom: 10px !important;
+}
+
+.cfs-force-command-theme .cfs-decision li {
+  font-size: .82rem !important;
+  line-height: 1.28 !important;
+  gap: 8px !important;
+}
+
+/* Form grid: make it feel like a proper full-screen slip */
+.cfs-force-command-theme .cfs-job-form {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(260px, .72fr) !important;
+  grid-template-areas:
+    "details details details"
+    "assignment pricing completion" !important;
+  gap: 14px !important;
+}
+
+.cfs-force-command-theme .cfs-job-form article,
+.cfs-force-command-theme .cfs-card {
+  border-radius: 22px !important;
+  padding: 16px !important;
+  min-width: 0 !important;
+}
+
+.cfs-force-command-theme .cfs-form-grid {
+  gap: 12px !important;
+}
+
+.cfs-force-command-theme .cfs-form-grid-small {
+  grid-template-columns: 1fr !important;
+}
+
+.cfs-force-command-theme :is(input, textarea, select, .cfs-read-field) {
+  min-height: 44px !important;
+  font-size: .88rem !important;
+}
+
+.cfs-force-command-theme textarea {
+  min-height: 104px !important;
+}
+
+/* Lower row: stop cramped feel */
+.cfs-force-command-theme .cfs-lower {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr) minmax(280px, .75fr) !important;
+  gap: 14px !important;
+  padding-bottom: 0 !important;
+}
+
+.cfs-force-command-theme .cfs-lower > article {
+  min-height: 190px !important;
+  border-radius: 22px !important;
+}
+
+.cfs-force-command-theme .cfs-photo-row span,
+.cfs-force-command-theme .cfs-photo-placeholders span {
+  height: 96px !important;
+}
+
+/* Action bar: no overlay, clean grouped footer */
+.cfs-force-command-theme .cfs-actions {
+  position: relative !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  width: 100% !important;
+  margin: 4px auto 0 !important;
+  padding: 12px !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  border-radius: 24px !important;
+  background: rgba(3,13,33,.86) !important;
+}
+
+.cfs-force-command-theme .cfs-actions button,
+.cfs-force-command-theme .cfs-actions a {
+  min-height: 42px !important;
+  padding: 0 14px !important;
+  font-size: .84rem !important;
+}
+
+.cfs-force-command-theme .cfs-actions button:disabled {
+  opacity: .55 !important;
+  cursor: not-allowed !important;
+}
+
+@media(max-width: 1180px) {
+  .cfs-force-command-theme .cfs-facts {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .cfs-force-command-theme .cfs-decision-grid,
+  .cfs-force-command-theme .cfs-job-form,
+  .cfs-force-command-theme .cfs-lower {
+    grid-template-columns: 1fr !important;
+    grid-template-areas: none !important;
+  }
+
+  .cfs-force-command-theme .cfs-job-form article {
+    grid-area: auto !important;
+  }
+}
+
+@media(max-width: 700px) {
+  .cfs-force-command-theme.cfs-overlay {
+    padding: 10px !important;
+  }
+
+  .cfs-force-command-theme .cfs-force-command-sheet,
+  .cfs-force-command-theme .cfs-sheet {
+    width: min(100%, calc(100vw - 20px)) !important;
+  }
+
+  .cfs-force-command-theme .cfs-head {
+    grid-template-columns: 1fr !important;
+    padding: 22px !important;
+  }
+
+  .cfs-force-command-theme .cfs-head h2 {
+    font-size: clamp(2.3rem, 14vw, 3.8rem) !important;
+  }
+
+  .cfs-force-command-theme .cfs-facts {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cfs-force-command-theme .cfs-actions {
+    justify-content: stretch !important;
+  }
+
+  .cfs-force-command-theme .cfs-actions button,
+  .cfs-force-command-theme .cfs-actions a {
+    flex: 1 1 100% !important;
+  }
+}
+
+
 /* CHURVOX_FINAL_WHITE_CARD_ACTION_BAR_FIX_20260529 */
 /* Kill the last pale lower card and make actions sit cleanly. */
 
