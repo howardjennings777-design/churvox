@@ -1,0 +1,6 @@
+plans full screen frame escape
+plans no longer squeezed inside ConceptCFrame side rails
+pricing cards get full browser width
+frontend CSS only
+billing logic untouched
+backend unchanged
