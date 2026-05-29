@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import "./ExecutiveHomePage.css";
 import "./ExecutiveHomeCommandTheme.css";
+import "./ExecutiveHomeNavFix.css";
 
 const lanes = [
   ["Work ready", "5", "Check proof and price"],
@@ -58,7 +59,7 @@ export function Footer() {
 
 export default function ExecutiveHomePage() {
   return (
-    <main className="cvx-home" data-version="CHURVOX_PUBLIC_NAV_WORDING_FIX_20260529">
+    <main className="cvx-home" data-version="CHURVOX_PUBLIC_NAV_CLICK_FIX_20260529">
       <Nav />
 
       <section className="cvx-command-hero">
