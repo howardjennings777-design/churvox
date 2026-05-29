@@ -1,0 +1,5 @@
+real pages layout update
+single column jobs crew clients invoices quotes
+full width records list
+frontend only
+backend unchanged
