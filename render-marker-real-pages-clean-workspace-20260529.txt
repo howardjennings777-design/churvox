@@ -1,0 +1,6 @@
+real pages clean workspace layout
+hide command side card and stats clutter
+make jobs/crew pages header + actions + full records list
+add job stays prominent
+frontend only
+backend unchanged
