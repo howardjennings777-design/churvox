@@ -1,0 +1,165 @@
+/* CHURVOX_GRAPHITE_REFINE_20260529
+   Final visual refinement from screenshot feedback.
+   Makes the app feel modern graphite instead of neon/cream mixed.
+   Visual-only layer. No logic changes.
+*/
+
+:root {
+  --cvx-refine-bg: #0b0f14;
+  --cvx-refine-panel: rgba(20, 25, 32, 0.92);
+  --cvx-refine-panel-soft: rgba(27, 33, 42, 0.84);
+  --cvx-refine-border: rgba(226, 232, 240, 0.11);
+  --cvx-refine-text: #f4f1ea;
+  --cvx-refine-muted: #b5b9b6;
+  --cvx-refine-dim: #838b8b;
+  --cvx-refine-accent: #6faaa5;
+  --cvx-refine-accent-2: #4d7e7b;
+  --cvx-refine-accent-soft: rgba(111, 170, 165, 0.15);
+  --cvx-refine-warm: #d7c7a1;
+}
+
+/* Kill the remaining cream/yellow strip and make toolbar dark glass */
+.xcf-shell :is(.xcf-tools, .xcf-tabs, .xcf-nav-strip, .xcf-filter-strip, .xcf-tool-row, .xcf-subnav, .command-floor-tools, .command-tabs),
+.xcf-shell :is([class*="tool"], [class*="Tool"], [class*="tabs"], [class*="Tabs"]) {
+  background: rgba(17, 22, 29, 0.88) !important;
+  border: 1px solid var(--cvx-refine-border) !important;
+  color: var(--cvx-refine-muted) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.045), 0 14px 42px rgba(0,0,0,.22) !important;
+}
+
+.xcf-shell :is(.xcf-tools, .xcf-tabs, .xcf-nav-strip, .xcf-filter-strip, .xcf-tool-row, .xcf-subnav, .command-floor-tools, .command-tabs) :is(a, button, span),
+.xcf-shell :is([class*="tool"], [class*="Tool"], [class*="tabs"], [class*="Tabs"]) :is(a, button, span) {
+  color: var(--cvx-refine-muted) !important;
+}
+
+.xcf-shell :is(.xcf-tools, .xcf-tabs, .xcf-nav-strip, .xcf-filter-strip, .xcf-tool-row, .xcf-subnav, .command-floor-tools, .command-tabs) :is(a:hover, button:hover),
+.xcf-shell :is(.xcf-tools, .xcf-tabs, .xcf-nav-strip, .xcf-filter-strip, .xcf-tool-row, .xcf-subnav, .command-floor-tools, .command-tabs) :is(.active, [aria-current="page"], [data-active="true"]) {
+  background: rgba(111,170,165,.14) !important;
+  color: var(--cvx-refine-text) !important;
+}
+
+/* Cards: softer graphite, clearer separation, less black block */
+.xcf-shell :is(.xcf-card, .xcf-metric, .xcf-workspace-list, .cfs-sheet, .cfs-card, .cfs-section, .cfs-panel),
+.cmq-shell :is(.cmq-card, .cmq-hero > div, .cmq-hero > aside),
+.cdb-shell :is(.cdb-lane, .cdb-hero > div, .cdb-hero > aside),
+.cos-shell :is(.cos-card, .cos-hero > div, .cos-hero > aside),
+.cv-plans :is(.cv-card, .cv-plans-hero, .cv-sms-pricing),
+.px-app :is(.px-card, .px-hero, .worker-flow-panel, .worker-readiness-card) {
+  background: linear-gradient(180deg, rgba(26,32,41,.94), rgba(14,18,24,.90)) !important;
+  border: 1px solid rgba(226,232,240,.105) !important;
+  box-shadow: 0 18px 52px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.045) !important;
+}
+
+/* Hero should stay strong but not blue-blasted */
+.xcf-shell :is(.xcf-hero > div, .xcf-hero > aside),
+.cfs-sheet,
+.cmq-linked-job-panel,
+.cdb-linked-job-panel {
+  background:
+    radial-gradient(circle at 10% 10%, rgba(111,170,165,.13), transparent 32%),
+    linear-gradient(180deg, rgba(28,34,43,.96), rgba(12,15,20,.92)) !important;
+}
+
+/* Replace aqua buttons with muted steel-teal */
+.xcf-shell :is(button:not(:disabled), .px-button-primary, .cvx-btn-primary),
+.xcf-shell :is(a[role="button"], .xcf-action, .cfs-actions a, .cfs-actions button),
+.cv-plans button:not(:disabled),
+.px-app :is(button:not(:disabled), .px-btn, .px-button-primary),
+.cmq-shell button:first-child:not(:disabled),
+.cdb-shell button:not(:disabled),
+.cos-shell button:not(:disabled),
+.cpd-shell :is(button, a.cpd-primary-action) {
+  background: linear-gradient(135deg, #6faaa5, #4d7e7b) !important;
+  color: #07100f !important;
+  border: 1px solid rgba(215, 242, 238, .18) !important;
+  box-shadow: 0 12px 30px rgba(79, 143, 140, .18) !important;
+  text-shadow: none !important;
+}
+
+.xcf-shell :is(button:not(:disabled):hover, a[role="button"]:hover),
+.cv-plans button:not(:disabled):hover,
+.px-app button:not(:disabled):hover,
+.cmq-shell button:not(:disabled):hover,
+.cdb-shell button:not(:disabled):hover,
+.cos-shell button:not(:disabled):hover,
+.cpd-shell button:not(:disabled):hover {
+  filter: brightness(1.04) saturate(.96) !important;
+  transform: translateY(-1px);
+}
+
+/* Secondary buttons should be quiet glass, not bright */
+.xcf-shell :is(.px-button-secondary, button:nth-child(n+2), .cfs-actions a),
+.cmq-shell .cmq-actions-row button:nth-child(n+2),
+.cdb-shell .cdb-linked-job-panel nav a:nth-child(n+2),
+.cos-shell .cos-actions button:nth-child(n+2) {
+  background: rgba(255,255,255,.075) !important;
+  color: var(--cvx-refine-text) !important;
+  border: 1px solid rgba(226,232,240,.12) !important;
+  box-shadow: none !important;
+}
+
+/* Bottom nav: dark glass active pill instead of random green */
+body :is(.floating-bottom-nav, .bottom-nav, .mobile-bottom-nav, .px-bottom-nav, nav[class*="bottom"], div[class*="BottomNav"]) {
+  background: rgba(10, 13, 18, .86) !important;
+  border: 1px solid rgba(226,232,240,.12) !important;
+  box-shadow: 0 18px 55px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.05) !important;
+  backdrop-filter: blur(18px) !important;
+}
+
+body :is(.floating-bottom-nav, .bottom-nav, .mobile-bottom-nav, .px-bottom-nav, nav[class*="bottom"], div[class*="BottomNav"]) :is(a, button) {
+  color: var(--cvx-refine-muted) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body :is(.floating-bottom-nav, .bottom-nav, .mobile-bottom-nav, .px-bottom-nav, nav[class*="bottom"], div[class*="BottomNav"]) :is(a.active, button.active, a[aria-current="page"], [data-active="true"], .active) {
+  color: var(--cvx-refine-text) !important;
+  background: rgba(111,170,165,.14) !important;
+  border: 1px solid rgba(111,170,165,.22) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.07) !important;
+}
+
+/* Text: warmer, less harsh */
+.xcf-shell :is(h1,h2,h3,h4,b,strong),
+.cv-plans :is(h1,h2,h3,b,strong),
+.px-app :is(h1,h2,h3,b,strong),
+.cmq-shell :is(h1,h2,h3,b,strong),
+.cdb-shell :is(h1,h2,h3,b,strong),
+.cos-shell :is(h1,h2,h3,b,strong),
+.cpd-shell :is(h1,h2,h3,b,strong) {
+  color: var(--cvx-refine-text) !important;
+}
+
+.xcf-shell :is(p,span,small,em,li),
+.cv-plans :is(p,span,small,em,li),
+.px-app :is(p,span,small,em,li),
+.cmq-shell :is(p,span,small,em,li),
+.cdb-shell :is(p,span,small,em,li),
+.cos-shell :is(p,span,small,em,li),
+.cpd-shell :is(p,span,small,em,li,td,th) {
+  color: var(--cvx-refine-muted) !important;
+}
+
+/* Little labels: muted teal, not neon blue */
+.xcf-shell :is(.xcf-hero p, .xcf-card header small, .cfs-sheet small, .cv-work-slip-action-log small),
+.cv-plans :is(.cv-kicker, .cv-card > span, .cv-sms-grid small),
+.cmq-shell :is(.cmq-hero p, .cmq-card small),
+.cdb-shell :is(.cdb-hero p, .cdb-lane header small),
+.cos-shell :is(.cos-hero p, .cos-card small),
+.cpd-shell :is(.cpd-head small, .cpd-card small, .cpd-total-card small) {
+  color: #9bbfbb !important;
+}
+
+/* Keep status colors readable but calmer */
+.xcf-shell :is(.status-completed, .completed, [class*="complete"]) { color: #8fbf8f !important; }
+.xcf-shell :is(.status-paused, .paused, [class*="pause"]) { color: #d7c7a1 !important; }
+.xcf-shell :is(.status-cancelled, .cancelled, [class*="cancel"]) { color: #d99a9a !important; }
+
+@media (max-width: 820px) {
+  .xcf-shell :is(.xcf-card, .xcf-metric, .cfs-sheet, .cfs-card),
+  .px-app :is(.px-card, .px-hero, .worker-flow-panel),
+  .cmq-shell .cmq-card,
+  .cdb-shell .cdb-lane {
+    border-radius: 22px !important;
+  }
+}
