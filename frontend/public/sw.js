@@ -1,37 +1,23 @@
-// Churvox Service Worker — network-first and deploy-safe
-// Bumped to force old PWA/browser caches to drop stale dashboard bundles.
+// CHURVOX_NO_CACHE_SERVICE_WORKER_20260529
+// Temporary launch-safe service worker.
+// It immediately unregisters itself and clears old caches so stale hashed JS/CSS bundles do not break app loading.
 
-const CACHE_NAME = "churvox-command-office-v4";
-
-self.addEventListener("install", () => {
+self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-self.addEventListener("activate", (event) => {
+self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
-      .then(() => self.clients.claim())
+      .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+      .then(() => self.clients.matchAll({ type: 'window', includeUncontrolled: true }))
+      .then((clients) => {
+        clients.forEach((client) => client.navigate(client.url));
+      })
+      .then(() => self.registration.unregister())
   );
 });
 
-self.addEventListener("fetch", (event) => {
-  if (!event.request.url.startsWith(self.location.origin)) return;
-
-  const url = new URL(event.request.url);
-  const isAppAsset =
-    event.request.mode === "navigate" ||
-    url.pathname.endsWith(".js") ||
-    url.pathname.endsWith(".css") ||
-    url.pathname.endsWith(".html") ||
-    url.pathname === "/";
-
-  if (isAppAsset) {
-    event.respondWith(
-      fetch(new Request(event.request, { cache: "no-store" })).catch(() => fetch(event.request))
-    );
-    return;
-  }
-
-  event.respondWith(fetch(event.request));
+self.addEventListener('fetch', () => {
+  // No fetch interception. Browser/network handles every request normally.
 });
