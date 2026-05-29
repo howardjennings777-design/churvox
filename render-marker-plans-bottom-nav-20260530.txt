@@ -1,0 +1,3 @@
+plans page added to bottom nav and command dashboard dock
+frontend only
+backend unchanged
