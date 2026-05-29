@@ -3,13 +3,30 @@
    Bottom nav remains the main navigation.
 */
 
+/* Hide every known Command top app/header/nav bar */
 .xcf-shell > .xcf-topbar,
 .xcf-real-page .xcf-topbar,
 .xcf-command-10 .xcf-topbar,
-.xcf-workspace .xcf-topbar {
+.xcf-workspace .xcf-topbar,
+.xcf-shell > header.xcf-topbar,
+.xcf-shell > header:first-child:has(input),
+.xcf-shell > header:first-child:has(nav),
+.xcf-shell > div:first-child:has(input[placeholder*="Search"]),
+.xcf-shell > div:first-child:has(input[placeholder*="jobs"]),
+.xcf-shell > div:first-child:has(nav),
+.xcf-shell > nav:first-child {
   display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
 }
 
+/* Pull pages up after top nav is removed */
 .xcf-shell.xcf-real-page,
 .xcf-shell.xcf-workspace.xcf-real-page {
   grid-template-areas:
@@ -17,18 +34,21 @@
     "records"
     "dock" !important;
   grid-template-rows: 126px minmax(0, 1fr) 72px !important;
+  padding-top: 10px !important;
 }
 
 .xcf-shell.xcf-command-10 {
-  padding-top: 14px !important;
+  padding-top: 12px !important;
 }
 
-.xcf-shell.xcf-command-10 .xcf10-top-grid {
+.xcf-shell.xcf-command-10 .xcf10-top-grid,
+.xcf-shell.xcf-command-10 > section:first-of-type,
+.xcf-shell.xcf-workspace:not(.xcf-real-page) > section:first-of-type {
   margin-top: 0 !important;
 }
 
 .xcf-shell.xcf-workspace:not(.xcf-real-page) {
-  padding-top: 14px !important;
+  padding-top: 12px !important;
 }
 
 .xcf-bottom-nav {
