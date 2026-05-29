@@ -1,0 +1,6 @@
+reliable Plans nav tab
+bounded retry only
+no MutationObserver
+no route loop
+frontend only
+backend unchanged
