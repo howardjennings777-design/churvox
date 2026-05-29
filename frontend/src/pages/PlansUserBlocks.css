@@ -76,6 +76,25 @@
   letter-spacing: 0;
 }
 
+.cv-user-block-buy {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 16px;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #77ffc1, #14d8f4 44%, #245cff 100%);
+  color: #021024;
+  font-size: 14px;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow: 0 18px 44px rgba(20,216,244,.24);
+}
+
+.cv-user-block-buy:disabled {
+  opacity: .56;
+  cursor: default;
+}
+
 .cv-user-blocks ul {
   display: grid;
   gap: 10px;
