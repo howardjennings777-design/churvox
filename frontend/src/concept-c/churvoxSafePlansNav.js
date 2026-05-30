@@ -1,85 +1,96 @@
-// CHURVOX_RELIABLE_PLANS_NAV_20260530_HARDENED
-// Keeps a small Plans tab in the Command bottom nav without route loops.
-// Safe runtime-only helper: no billing, trial, Stripe, API, auth, or page logic touched.
+// CHURVOX_STABLE_COMMAND_BOTTOM_NAV_20260531
+// Stabilises the Command Floor bottom nav into one slim set of links.
+// Runtime-only: no billing, trial, Stripe, API, auth, or backend logic touched.
 
-function normalizeNavLabels(nav) {
-  Array.from(nav.querySelectorAll('a')).forEach((link) => {
-    const text = String(link.textContent || '').trim().toLowerCase();
-    if (text === 'command floor' || text === '⚡ command floor') link.textContent = 'Command';
-    if (text === 'client workbench') link.textContent = 'Clients';
-    if (text === 'plan command') link.textContent = 'Plans';
-    if (text === 'plans') {
-      link.href = '/plans';
-      link.setAttribute('data-churvox-safe-plans', 'true');
-      link.setAttribute('aria-label', 'Plans');
-    }
-  });
+const COMMAND_NAV_LINKS = [
+  ["/dashboard", "Command"],
+  ["/jobs", "Jobs"],
+  ["/team", "Crew"],
+  ["/clients", "Clients"],
+  ["/invoices", "Money"],
+  ["/plans", "Plans"],
+  ["/quotes", "Quotes"],
+];
+
+function currentPath() {
+  return String(window.location?.pathname || "/dashboard").replace(/\/$/, "") || "/dashboard";
 }
 
-function buildPlansLink() {
-  const link = document.createElement('a');
-  link.href = '/plans';
-  link.textContent = 'Plans';
-  link.setAttribute('data-churvox-safe-plans', 'true');
-  link.setAttribute('aria-label', 'Plans');
+function isActiveLink(href) {
+  const path = currentPath();
+  if (href === "/dashboard") return path === "/dashboard" || path === "/";
+  return path === href || path.startsWith(`${href}/`);
+}
+
+function makeNavLink(href, label) {
+  const link = document.createElement("a");
+  link.href = href;
+  link.textContent = label;
+  link.setAttribute("aria-label", label);
+  link.setAttribute("data-churvox-stable-nav-link", "true");
+  if (label === "Plans") link.setAttribute("data-churvox-safe-plans", "true");
+  if (isActiveLink(href)) link.classList.add("active");
   return link;
 }
 
-function addPlansToNav(nav) {
+function rebuildNav(nav) {
   if (!nav) return;
-  normalizeNavLabels(nav);
-  if (nav.querySelector('a[href="/plans"], [data-churvox-safe-plans="true"]')) return;
 
-  const link = buildPlansLink();
-  const links = Array.from(nav.querySelectorAll('a'));
-  const money = links.find((a) => /money/i.test(a.textContent || ''));
-  const quotes = links.find((a) => /quotes/i.test(a.textContent || ''));
-  const tools = links.find((a) => /tools/i.test(a.textContent || ''));
+  const alreadyClean =
+    nav.getAttribute("data-churvox-stable-command-nav") === "true" &&
+    Array.from(nav.querySelectorAll("a[data-churvox-stable-nav-link='true']")).length === COMMAND_NAV_LINKS.length &&
+    !nav.querySelector("label,input,button,b");
 
-  if (money && money.parentNode === nav) money.insertAdjacentElement('afterend', link);
-  else if (quotes && quotes.parentNode === nav) quotes.insertAdjacentElement('beforebegin', link);
-  else if (tools && tools.parentNode === nav) tools.insertAdjacentElement('beforebegin', link);
-  else nav.appendChild(link);
+  if (!alreadyClean) {
+    nav.innerHTML = "";
+    COMMAND_NAV_LINKS.forEach(([href, label]) => nav.appendChild(makeNavLink(href, label)));
+    nav.setAttribute("data-churvox-stable-command-nav", "true");
+  } else {
+    Array.from(nav.querySelectorAll("a[data-churvox-stable-nav-link='true']")).forEach((link) => {
+      const href = link.getAttribute("href") || "";
+      link.classList.toggle("active", isActiveLink(href));
+    });
+  }
 }
 
-function addPlansOnce() {
-  document.querySelectorAll('.xcf10-dock, .xcf-bottom-nav').forEach(addPlansToNav);
+function fixNavsOnce() {
+  document.querySelectorAll(".xcf10-dock, .xcf-bottom-nav").forEach(rebuildNav);
 }
 
-function startPlansRetry() {
-  addPlansOnce();
+function startNavFixRetry() {
+  fixNavsOnce();
   let attempts = 0;
   const timer = window.setInterval(() => {
     attempts += 1;
-    addPlansOnce();
+    fixNavsOnce();
     if (attempts >= 40) window.clearInterval(timer);
   }, 350);
 }
 
-function hookHistoryNav() {
-  if (window.__churvoxPlansNavHistoryHooked) return;
-  window.__churvoxPlansNavHistoryHooked = true;
+function hookNavigationRefresh() {
+  if (window.__churvoxStableCommandNavHooked) return;
+  window.__churvoxStableCommandNavHooked = true;
 
-  ['pushState', 'replaceState'].forEach((method) => {
+  ["pushState", "replaceState"].forEach((method) => {
     const original = window.history && window.history[method];
-    if (typeof original !== 'function') return;
+    if (typeof original !== "function") return;
     window.history[method] = function patchedHistoryMethod(...args) {
       const result = original.apply(this, args);
-      window.setTimeout(startPlansRetry, 50);
+      window.setTimeout(fixNavsOnce, 50);
       return result;
     };
   });
 
-  window.addEventListener('popstate', () => window.setTimeout(startPlansRetry, 50));
-  window.addEventListener('click', () => window.setTimeout(addPlansOnce, 80), true);
+  window.addEventListener("popstate", () => window.setTimeout(fixNavsOnce, 50));
+  window.addEventListener("click", () => window.setTimeout(fixNavsOnce, 80), true);
 }
 
-if (typeof window !== 'undefined') {
-  hookHistoryNav();
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startPlansRetry, { once: true });
+if (typeof window !== "undefined") {
+  hookNavigationRefresh();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", startNavFixRetry, { once: true });
   } else {
-    startPlansRetry();
+    startNavFixRetry();
   }
-  window.addEventListener('load', startPlansRetry, { once: true });
+  window.addEventListener("load", startNavFixRetry, { once: true });
 }
