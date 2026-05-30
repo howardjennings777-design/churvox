@@ -1,4 +1,6 @@
-import "./churvoxJobsNextMovePanel";
+// CHURVOX_DISABLE_JOBS_NEXT_MOVE_PANEL_RUNTIME_20260531
+// Temporarily disabled after crash report. This keeps the app stable while we rebuild the panel safely.
+// import "./churvoxJobsNextMovePanel";
 
 // CHURVOX_COMMAND_FLOOR_CONTROL_COPY_PATCH_20260529
 // CHURVOX_ROLLBACK_RISKY_COCKPIT_DOM_LOAD_20260529
