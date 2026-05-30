@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 import "./ExecutiveHomeProper.css";
 
 const lanes = [
@@ -28,7 +29,7 @@ export function Nav() {
   return (
     <nav className="cvp-nav">
       <Link to="/" className="cvp-brand">
-        <span className="cvp-brand-mark">C</span>
+        <ChurvoxLogo variant="mark" size="lg" className="cvp-brand-logo" />
         <span>
           <b>Churvox</b>
           <small>AI Operator for trades</small>
@@ -63,7 +64,7 @@ export function Footer() {
 
 export default function ExecutiveHomePage() {
   return (
-    <main className="cvp-home" data-version="CHURVOX_PUBLIC_HOME_PROPER_FULLSCREEN_20260531_BUILD_FIXED">
+    <main className="cvp-home" data-version="CHURVOX_PUBLIC_HOME_FINAL_LOGO_20260531">
       <div className="cvp-shell">
         <Nav />
 
