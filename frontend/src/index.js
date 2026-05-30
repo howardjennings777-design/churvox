@@ -24,6 +24,7 @@ import './concept-c/CommandRealPagesUsabilityFix.css';
 import './concept-c/CommandRealPagesBadgeFix.css';
 import './concept-c/CommandHideTopNav.css';
 import './concept-c/CommandBusinessPulseBigger.css';
+import './concept-c/CommandFloorClearActionFinal.css';
 import './pages/PlansFullScreenFix.css';
 import './pages/PlansSmsBuyPatch';
 import './concept-c/churvoxTopTierRuntimePatch';
