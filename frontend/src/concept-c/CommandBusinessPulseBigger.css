@@ -1,0 +1,73 @@
+/* CHURVOX_COMMAND_BUSINESS_PULSE_BIGGER_20260531
+   Slightly bigger dashboard/business pulse boxes. CSS only.
+*/
+
+.xcf-command-10 .xcf10-business-pulse {
+  gap: 12px !important;
+  margin-top: 14px !important;
+}
+
+.xcf-command-10 .xcf10-business-card {
+  min-height: 182px !important;
+  border-radius: 23px !important;
+  padding: 16px !important;
+}
+
+.xcf-command-10 .xcf10-business-card header {
+  margin-bottom: 12px !important;
+}
+
+.xcf-command-10 .xcf10-business-card header small {
+  font-size: 10px !important;
+}
+
+.xcf-command-10 .xcf10-business-card header strong {
+  font-size: clamp(20px, 1.75vw, 30px) !important;
+}
+
+.xcf-command-10 .xcf10-pulse-grid,
+.xcf-command-10 .xcf10-pulse-list {
+  gap: 9px !important;
+}
+
+.xcf-command-10 .xcf10-pulse-line,
+.xcf-command-10 .xcf10-business-feed button,
+.xcf-command-10 .xcf10-pulse-empty {
+  min-height: 46px !important;
+  border-radius: 15px !important;
+  padding: 10px !important;
+}
+
+.xcf-command-10 .xcf10-pulse-line small,
+.xcf-command-10 .xcf10-business-feed button small {
+  font-size: 10px !important;
+}
+
+.xcf-command-10 .xcf10-pulse-line b,
+.xcf-command-10 .xcf10-business-feed button b {
+  font-size: 13px !important;
+}
+
+.xcf-command-10 .xcf10-pulse-line em,
+.xcf-command-10 .xcf10-business-feed button em {
+  max-width: 104px !important;
+  padding: 6px 8px !important;
+  font-size: 9.5px !important;
+}
+
+.xcf-command-10 .xcf10-pulse-empty {
+  min-height: 106px !important;
+  font-size: 12px !important;
+}
+
+@media (min-width: 1460px) {
+  .xcf-command-10 .xcf10-business-pulse {
+    grid-template-columns: 1.22fr .82fr .82fr 1.08fr 1.08fr !important;
+  }
+}
+
+@media (max-width: 1450px) {
+  .xcf-command-10 .xcf10-business-card {
+    min-height: 174px !important;
+  }
+}
