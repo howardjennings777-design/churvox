@@ -1,1 +1,1 @@
-export { default } from "./AppOwnerPage.jsx";
+export { default } from "./AdminTrackingPage.jsx";
