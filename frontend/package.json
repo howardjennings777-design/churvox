@@ -63,7 +63,8 @@
     "render-build": "npm install --legacy-peer-deps && npm run build",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:launch": "playwright test tests/e2e/launch-smoke.spec.js"
+    "test:launch": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-big-launch-audit.spec.js",
+    "test:launch:local": "playwright test tests/e2e/churvox-big-launch-audit.spec.js"
   },
   "browserslist": {
     "production": [
