@@ -23,6 +23,47 @@ const apiOk = (res) => Boolean(res?.success && res?.data?.success !== false);
 const apiError = (res, fallback = "unknown error") => firstText(res?.error, res?.data?.error, res?.data?.detail, res?.data?.message, fallback);
 const recordIdFromResponse = (res) => idOf(res?.data) || idOf(res?.data?.invoice) || idOf(res?.data?.data) || idOf(res?.data?.record) || idOf(res?.data?.item) || idOf(res?.invoice) || idOf(res);
 
+// CHURVOX_COMMAND_FLOOR_LOGIC_CLEANUP_20260531
+// Keeps Command Floor counts honest by avoiding duplicate records across buckets.
+function uniqueKey(item, fallbackIndex = 0) {
+  const raw = item?.raw || {};
+  return firstText(
+    item?.type && item?.id ? `${item.type}:${item.id}` : "",
+    item?.id ? `${item?.type || "record"}:${item.id}` : "",
+    raw.id ? `${item?.type || "record"}:${raw.id}` : "",
+    raw._id ? `${item?.type || "record"}:${raw._id}` : "",
+    raw.uuid ? `${item?.type || "record"}:${raw.uuid}` : "",
+    raw.job_number ? `job:${raw.job_number}` : "",
+    raw.invoice_number ? `invoice:${raw.invoice_number}` : "",
+    raw.quote_number ? `quote:${raw.quote_number}` : "",
+    `${item?.type || "record"}:${item?.code || ""}:${item?.title || ""}:${fallbackIndex}`
+  );
+}
+
+function uniqueItems(items) {
+  const seen = new Set();
+  return (Array.isArray(items) ? items : []).filter((item, index) => {
+    const key = uniqueKey(item, index);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function hasSavedId(item) {
+  return Boolean(idOf(item) || idOf(item?.raw));
+}
+
+function isMessageLike(item) {
+  const raw = item?.raw || {};
+  const haystack = low(`${item?.type || ""} ${item?.title || ""} ${item?.code || ""} ${item?.state || ""} ${raw.type || ""} ${raw.action_type || ""} ${raw.category || ""} ${raw.generated_message || ""} ${raw.draft_message || ""} ${raw.message || ""}`);
+  return item?.type === "message" || item?.type === "quote" || /message|sms|email|customer|follow.?up|quote/.test(haystack);
+}
+
+function realOwnerDecisions(...groups) {
+  return uniqueItems(groups.flat()).filter((item) => item && item.type !== "worker");
+}
+
 function moneyNumber(...values) {
   for (const value of values) {
     if (value === null || value === undefined || value === "") continue;
@@ -200,43 +241,96 @@ function item(type, record) {
 }
 
 function build(data) {
-  const jobs = arr(data.jobs).map((x) => item("job", x));
-  const invoices = arr(data.invoices).map((x) => item("invoice", x));
-  const quotes = arr(data.quotes).map((x) => item("quote", x));
-  const clients = arr(data.clients).map((x) => item("client", x));
-  const crew = arr(data.workers).map((x) => item("worker", x));
-  const actions = arr(data.actions).map((x) => item("action", x));
-  const alerts = arr(data.notifications).map((x) => item("alert", x));
-  const messages = arr(data.history).map((x) => item("message", x));
-  const activity = arr(data.activity).map((x) => item("activity", x));
+  const jobs = uniqueItems(arr(data.jobs).map((x) => item("job", x)));
+  const invoices = uniqueItems(arr(data.invoices).map((x) => item("invoice", x)));
+  const quotes = uniqueItems(arr(data.quotes).map((x) => item("quote", x)));
+  const clients = uniqueItems(arr(data.clients).map((x) => item("client", x)));
+  const crew = uniqueItems(arr(data.workers).map((x) => item("worker", x)));
+  const actions = uniqueItems(arr(data.actions).map((x) => item("action", x)));
+  const alerts = uniqueItems(arr(data.notifications).map((x) => item("alert", x)));
+  const messages = uniqueItems(arr(data.history).map((x) => item("message", x)));
+  const activity = uniqueItems(arr(data.activity).map((x) => item("activity", x)));
 
-  const doneJobs = jobs.filter((x) => ["completed", "complete", "done"].includes(x.status));
-  const approved = doneJobs.filter((x) => reviewed(x));
-  const workReview = doneJobs.filter((x) => !reviewed(x)).map((x) => ({
+  const doneJobs = uniqueItems(jobs.filter((x) => ["completed", "complete", "done"].includes(x.status)));
+  const approved = uniqueItems(doneJobs.filter((x) => reviewed(x)));
+  const workReview = uniqueItems(doneJobs.filter((x) => !reviewed(x)).map((x) => ({
     // CHURVOX_OWNER_REVIEW_CLEAR_LABELS_20260527
     ...x,
     type: "work_review",
     state: "Ready for owner review",
     meta: `${x.meta} · worker finished · check notes, price and optional photos`,
-  }));
-  const readyInvoice = approved.filter((x) => !invoiceLinked(x));
-  const openJobs = jobs.filter((x) => !["completed", "complete", "done", "cancelled"].includes(x.status));
-  const active = jobs.filter((x) => ["in_progress", "in progress", "started", "paused"].includes(x.status));
-  const unassigned = jobs.filter((x) => x.state === "Unassigned");
-  const owing = invoices.filter((x) => ["sent", "open", "unpaid", "overdue"].includes(x.status));
-  const overdue = invoices.filter((x) => x.status === "overdue");
-  const draftInvoices = invoices.filter((x) => ["draft", "pending", ""].includes(x.status));
-  const quoteFollow = quotes.filter((x) => !["accepted", "approved", "lost", "declined"].includes(x.status));
-  const clientWatch = clients.filter((x) => x.state === "Missing details");
-  const invoiceActions = [...readyInvoice, ...draftInvoices, ...owing];
-  const workerActions = [...unassigned, ...openJobs.filter((x) => !active.includes(x))];
-  const messageActions = [...actions, ...quoteFollow, ...messages].slice(0, 20);
-  const issues = [...overdue, ...clientWatch, ...alerts, ...jobs.filter((x) => !moneyNumber(x.amount) && ["completed", "complete", "done"].includes(x.status))];
-  const live = [...active, ...crew].slice(0, 8);
-  const done = [...doneJobs, ...invoices.filter((x) => ["paid", "complete", "completed"].includes(x.status))];
-  const urgent = [...workReview, ...invoiceActions, ...workerActions, ...messageActions, ...issues];
+  })));
 
-  return { jobs, invoices, quotes, clients, crew, actions, alerts, messages, activity, doneJobs, approved, approvedValue: sum(approved), workReview, readyInvoice, openJobs, active, unassigned, owing, overdue, draftInvoices, quoteFollow, clientWatch, invoiceActions, workerActions, messageActions, issues, live, done, urgent };
+  const readyInvoice = uniqueItems(approved.filter((x) => !invoiceLinked(x)));
+  const openJobs = uniqueItems(jobs.filter((x) => !["completed", "complete", "done", "cancelled", "canceled"].includes(x.status)));
+  const activeJobs = uniqueItems(jobs.filter((x) => ["in_progress", "in progress", "started", "paused"].includes(x.status)));
+  const unassigned = uniqueItems(openJobs.filter((x) => x.state === "Unassigned"));
+
+  const owing = uniqueItems(invoices.filter((x) => ["sent", "open", "unpaid", "overdue"].includes(x.status)));
+  const overdue = uniqueItems(invoices.filter((x) => x.status === "overdue"));
+  const draftInvoices = uniqueItems(invoices.filter((x) => ["draft", "pending", ""].includes(x.status)));
+
+  const quoteFollow = uniqueItems(quotes.filter((x) => !["accepted", "approved", "lost", "declined"].includes(x.status)));
+  const clientWatch = uniqueItems(clients.filter((x) => x.state === "Missing details"));
+
+  // Money means owner needs to review money/admin, not necessarily send today.
+  const invoiceActions = uniqueItems([...readyInvoice, ...draftInvoices, ...owing]);
+
+  // Worker actions now mean actual jobs needing assignment. No duplicate open job inflation.
+  const workerActions = uniqueItems(unassigned);
+
+  // Message actions now stay message/customer/quote related instead of every AI action.
+  const messageActions = uniqueItems([...quoteFollow, ...messages, ...actions.filter(isMessageLike)]).slice(0, 20);
+
+  const missingPriceDoneJobs = uniqueItems(doneJobs.filter((x) => !moneyNumber(x.amount)));
+  const issues = uniqueItems([...overdue, ...clientWatch, ...alerts, ...missingPriceDoneJobs]);
+
+  // Keep live jobs and crew records separate so counts are honest.
+  const liveJobs = uniqueItems(activeJobs);
+  const crewLive = uniqueItems(crew.filter((x) => low(x.state).includes("on job") || low(x.meta).includes("on site")));
+  const dispatchWatch = uniqueItems([...liveJobs, ...unassigned]);
+  const live = uniqueItems([...liveJobs, ...crewLive]).slice(0, 8);
+
+  const done = uniqueItems([...doneJobs, ...invoices.filter((x) => ["paid", "complete", "completed"].includes(x.status))]);
+  const urgent = realOwnerDecisions(workReview, invoiceActions, workerActions, messageActions, issues);
+  const ownerDecisionCount = urgent.length;
+
+  return {
+    jobs,
+    invoices,
+    quotes,
+    clients,
+    crew,
+    actions,
+    alerts,
+    messages,
+    activity,
+    doneJobs,
+    approved,
+    approvedValue: sum(approved),
+    workReview,
+    readyInvoice,
+    openJobs,
+    active: activeJobs,
+    activeJobs,
+    unassigned,
+    owing,
+    overdue,
+    draftInvoices,
+    quoteFollow,
+    clientWatch,
+    invoiceActions,
+    workerActions,
+    messageActions,
+    issues,
+    liveJobs,
+    crewLive,
+    dispatchWatch,
+    live,
+    done,
+    urgent,
+    ownerDecisionCount,
+  };
 }
 
 function useLive(area, get) {
@@ -448,9 +542,9 @@ function Dashboard({ m, loading, onPick }) {
   const workerLane = makeGroup("Assign Workers", "Jobs that need a worker or dispatch decision.", m.workerActions, "blue", "Open worker assignments");
   const messageLane = makeGroup("Customer Updates", "AI-prepared customer updates and reminders to review before anything sends.", m.messageActions, "purple", "Open message approvals");
   const issueLane = makeGroup("Fix Issues", "Missing prices, customer details and admin blockers grouped for owner input.", m.issues, "red", "Open issues");
-  const dispatchLane = makeGroup("Dispatch Control", "Crew movement, work records and job visibility in one place.", m.live, "cyan", "Open dispatch");
+  const dispatchLane = makeGroup("Dispatch Control", "Live jobs and unassigned work that need visibility, without inflating owner decision counts.", m.dispatchWatch || m.live, "cyan", "Open dispatch");
 
-  const totalActions = m.workReview.length + m.invoiceActions.length + m.workerActions.length + m.messageActions.length + m.issues.length + m.live.length;
+  const totalActions = m.ownerDecisionCount || m.urgent.length;
   const moneyWaiting = cash(sum(m.invoiceActions));
   const nextLane = m.workReview.length ? workLane : m.invoiceActions.length ? invoiceLane : m.workerActions.length ? workerLane : m.messageActions.length ? messageLane : m.issues.length ? issueLane : dispatchLane;
 
@@ -460,7 +554,7 @@ function Dashboard({ m, loading, onPick }) {
     { key: "crew", tone: "blue", icon: "👥", label: "Assign Workers", value: m.workerActions.length, title: "Assign Crew", body: "Unassigned work needs a crew decision. Review availability, conflicts and the suggested next move.", button: "Assign Crew", group: workerLane, items: m.workerActions },
     { key: "messages", tone: "purple", icon: "💬", label: "Customer Updates", value: m.messageActions.length, title: "Review Drafts", body: "Customer follow-ups are drafted, but nothing sends until you approve it.", button: "Review Drafts", group: messageLane, items: m.messageActions },
     { key: "issues", tone: "orange", icon: "🛡", label: "Fix Issues", value: m.issues.length, title: "Clear Blockers", body: "Missing prices, customer details and admin blockers are grouped so work does not stall.", button: "Clear Blockers", group: issueLane, items: m.issues },
-    { key: "dispatch", tone: "slate", icon: "▣", label: "Dispatch Control", value: m.live.length, title: "Dispatch Board", body: "Crew movements, audits and job records with full visibility.", button: "Dispatch Board", group: dispatchLane, items: m.live },
+    { key: "dispatch", tone: "slate", icon: "▣", label: "Dispatch Control", value: (m.dispatchWatch || m.live).length, title: "Dispatch Board", body: "Live jobs and unassigned work with full visibility.", button: "Dispatch Board", group: dispatchLane, items: m.dispatchWatch || m.live },
   ];
 
   const previewItem = (item, index) => (
@@ -499,8 +593,8 @@ function Dashboard({ m, loading, onPick }) {
             </button>
             <button type="button" onClick={() => onPick(dispatchLane)}>
               <i>👥</i>
-              <b>{m.live.length}</b>
-              <span>Crew / Job Records Live</span>
+              <b>{(m.liveJobs || m.active || []).length}</b>
+              <span>Live Jobs</span>
             </button>
           </div>
         </div>
