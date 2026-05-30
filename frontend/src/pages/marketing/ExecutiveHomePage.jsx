@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import "./ExecutiveHomePage.css";
 import "./ExecutiveHomeCommandTheme.css";
 import "./ExecutiveHomeNavFix.css";
+import "./ExecutiveHomeAlignmentPass.css";
 
 const lanes = [
   ["Work ready", "5", "Check proof and price"],
@@ -59,7 +60,7 @@ export function Footer() {
 
 export default function ExecutiveHomePage() {
   return (
-    <main className="cvx-home" data-version="CHURVOX_PUBLIC_NAV_CLICK_FIX_20260529">
+    <main className="cvx-home" data-version="CHURVOX_PUBLIC_HOME_ALIGNMENT_PASS_20260531">
       <Nav />
 
       <section className="cvx-command-hero">
