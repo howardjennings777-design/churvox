@@ -1,3 +1,5 @@
+import "./churvoxJobsNextMovePanel";
+
 // CHURVOX_COMMAND_FLOOR_CONTROL_COPY_PATCH_20260529
 // CHURVOX_ROLLBACK_RISKY_COCKPIT_DOM_LOAD_20260529
 // Visual/copy-only enhancement for Command Floor. No API/auth/data logic changes.
