@@ -325,6 +325,123 @@ function OperatorProofHistory({ m, onPick }) {
 }
 
 
+
+function PulseLine({ label, value, note, onClick }) {
+  return (
+    <button className="xcf10-pulse-line" type="button" onClick={onClick}>
+      <span>
+        <small>{label}</small>
+        <b>{value}</b>
+      </span>
+      <em>{note}</em>
+    </button>
+  );
+}
+
+function PulseFeed({ title, value, items, emptyText, onPick }) {
+  const safeItems = Array.isArray(items) ? items.filter(Boolean).slice(0, 3) : [];
+  return (
+    <article className="xcf10-business-card xcf10-business-feed">
+      <header>
+        <small>{title}</small>
+        <strong>{value}</strong>
+      </header>
+      <div className="xcf10-pulse-list">
+        {safeItems.length ? safeItems.map((x, i) => (
+          <button key={`${title}-${x.type || "item"}-${x.id || i}`} type="button" onClick={() => onPick(x)}>
+            <span>
+              <b>{x.title || "Business update"}</b>
+              <small>{x.code || "CHURVOX"} · {x.meta || x.state || "Open"}</small>
+            </span>
+            <em>{Number(x.amount || 0) > 0 ? cash(x.amount) : x.state || x.status || "Open"}</em>
+          </button>
+        )) : (
+          <div className="xcf10-pulse-empty">{emptyText}</div>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function BusinessPulse({ m, onPick }) {
+  const readyInvoice = Array.isArray(m.readyInvoice) ? m.readyInvoice : [];
+  const draftInvoices = Array.isArray(m.draftInvoices) ? m.draftInvoices : [];
+  const owing = Array.isArray(m.owing) ? m.owing : [];
+  const overdue = Array.isArray(m.overdue) ? m.overdue : [];
+  const live = Array.isArray(m.live) ? m.live : [];
+  const unassigned = Array.isArray(m.unassigned) ? m.unassigned : [];
+  const workReview = Array.isArray(m.workReview) ? m.workReview : [];
+  const issues = Array.isArray(m.issues) ? m.issues : [];
+  const clientWatch = Array.isArray(m.clientWatch) ? m.clientWatch : [];
+  const messageActions = Array.isArray(m.messageActions) ? m.messageActions : [];
+  const invoiceActions = Array.isArray(m.invoiceActions) ? m.invoiceActions : [];
+  const activity = Array.isArray(m.activity) ? m.activity : [];
+  const done = Array.isArray(m.done) ? m.done : [];
+  const actions = Array.isArray(m.actions) ? m.actions : [];
+
+  const moneyItems = [...readyInvoice, ...draftInvoices, ...owing];
+  const crewItems = [...live, ...unassigned, ...workReview];
+  const blockerItems = [...issues, ...clientWatch];
+  const preparedItems = [...workReview, ...invoiceActions, ...messageActions, ...actions];
+  const movementItems = [...activity, ...done, ...preparedItems];
+
+  const moneyGroup = makeGroup("Money Watch", "Invoices, overdue balances and completed work waiting for owner attention.", moneyItems, "green", "Open money watch");
+  const crewGroup = makeGroup("Crew Live", "Active work, unassigned jobs and worker-finished jobs.", crewItems, "blue", "Open crew live");
+  const blockersGroup = makeGroup("Needs Fixing", "Missing prices, customer details and admin blockers.", blockerItems, "red", "Clear blockers");
+  const preparedGroup = makeGroup("AI Prepared Today", "Work Slips, invoice drafts, message drafts and approval work Churvox has prepared.", preparedItems, "purple", "Open AI prepared work");
+
+  const moneyWaiting = sum(invoiceActions);
+  const readyValue = sum(readyInvoice);
+  const overdueValue = sum(overdue);
+  const paidSignal = sum((Array.isArray(m.invoices) ? m.invoices : []).filter((x) => ["paid", "complete", "completed"].includes(x.status)));
+  const avgJob = (Array.isArray(m.doneJobs) && m.doneJobs.length) ? Math.round(sum(m.doneJobs) / Math.max(m.doneJobs.length, 1)) : 0;
+
+  return (
+    <section className="xcf10-business-pulse" aria-label="Business pulse">
+      <article className="xcf10-business-card money">
+        <header>
+          <small>Money watch</small>
+          <strong>{cash(moneyWaiting)}</strong>
+        </header>
+        <div className="xcf10-pulse-grid">
+          <PulseLine label="Ready to invoice" value={cash(readyValue)} note={`${readyInvoice.length} jobs`} onClick={() => onPick(moneyGroup)} />
+          <PulseLine label="Draft invoices" value={draftInvoices.length} note="waiting review" onClick={() => onPick(moneyGroup)} />
+          <PulseLine label="Overdue" value={cash(overdueValue)} note={`${overdue.length} invoices`} onClick={() => onPick(moneyGroup)} />
+          <PulseLine label="Paid signal" value={cash(paidSignal)} note="paid records" onClick={() => onPick(moneyGroup)} />
+          <PulseLine label="Avg job" value={avgJob ? cash(avgJob) : "$0"} note="completed work" onClick={() => onPick(moneyGroup)} />
+        </div>
+      </article>
+
+      <article className="xcf10-business-card crew">
+        <header>
+          <small>Crew live</small>
+          <strong>{live.length}/{Math.max(live.length + unassigned.length, 1)}</strong>
+        </header>
+        <div className="xcf10-pulse-list">
+          <PulseLine label="Live now" value={live.length} note="crew/job records" onClick={() => onPick(crewGroup)} />
+          <PulseLine label="Need worker" value={unassigned.length} note="unassigned jobs" onClick={() => onPick(crewGroup)} />
+          <PulseLine label="Ready review" value={workReview.length} note="worker finished" onClick={() => onPick(preparedGroup)} />
+        </div>
+      </article>
+
+      <article className="xcf10-business-card fix">
+        <header>
+          <small>Needs fixing</small>
+          <strong>{blockerItems.length}</strong>
+        </header>
+        <div className="xcf10-pulse-list">
+          <PulseLine label="Missing price/admin" value={issues.length} note="blocks invoices" onClick={() => onPick(blockersGroup)} />
+          <PulseLine label="Client details" value={clientWatch.length} note="missing contact info" onClick={() => onPick(blockersGroup)} />
+          <PulseLine label="Owner queue" value={(m.urgent || []).length || preparedItems.length} note="decisions waiting" onClick={() => onPick(blockersGroup)} />
+        </div>
+      </article>
+
+      <PulseFeed title="Latest movement" value={movementItems.slice(0, 6).length} items={movementItems} emptyText="Job updates, approvals and invoice drafts will appear here." onPick={onPick} />
+      <PulseFeed title="AI prepared today" value={preparedItems.length} items={preparedItems} emptyText="Completed work will create Work Slips, invoice drafts and customer messages here." onPick={onPick} />
+    </section>
+  );
+}
+
 function Dashboard({ m, loading, onPick }) {
   const workLane = makeGroup("Approve Work", "Finished jobs waiting for your approval. Check evidence, photos, notes and value before signing off.", m.workReview, "amber", "Open work approvals");
   const invoiceLane = makeGroup("Approve Invoices", "Approved work and invoice records waiting for invoice action.", m.invoiceActions, "green", "Open invoice actions");
@@ -432,6 +549,8 @@ function Dashboard({ m, loading, onPick }) {
           </article>
         ))}
       </section>
+
+      <BusinessPulse m={m} onPick={onPick} />
 
       <section className="xcf10-snapshot">
         <div className="xcf10-spark">
