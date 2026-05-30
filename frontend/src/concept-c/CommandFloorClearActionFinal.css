@@ -1,0 +1,146 @@
+/* CHURVOX_COMMAND_FLOOR_CLEAR_ACTION_FINAL_20260531
+   Final clarity polish: less height, clearer action names, easier Next up rows, more breathing room above dock.
+   CSS only. No API/backend/auth/billing changes.
+*/
+
+.xcf-command-10 {
+  padding-bottom: 112px !important;
+}
+
+.xcf-command-10 .xcf10-top-grid {
+  margin-bottom: 8px !important;
+}
+
+.xcf-command-10 .xcf10-hero,
+.xcf-command-10 .xcf10-next {
+  min-height: 224px !important;
+}
+
+.xcf-command-10 .xcf10-hero {
+  padding: 20px 24px !important;
+}
+
+.xcf-command-10 .xcf10-hero h1 {
+  margin-top: 8px !important;
+  margin-bottom: 8px !important;
+  font-size: clamp(35px, 3.6vw, 54px) !important;
+}
+
+.xcf-command-10 .xcf10-hero > span::after {
+  font-size: 15px !important;
+  line-height: 1.3 !important;
+}
+
+.xcf-command-10 .xcf10-hero-stats {
+  margin-top: 14px !important;
+}
+
+.xcf-command-10 .xcf10-hero-stats button {
+  min-height: 62px !important;
+  padding: 9px 11px !important;
+}
+
+.xcf-command-10 .xcf10-next {
+  padding: 21px 24px !important;
+}
+
+.xcf-command-10 .xcf10-next h2::after {
+  font-size: clamp(28px, 2.35vw, 36px) !important;
+}
+
+.xcf-command-10 .xcf10-next p::after {
+  font-size: 14.5px !important;
+  line-height: 1.35 !important;
+}
+
+.xcf-command-10 .xcf10-next em {
+  font-size: 0 !important;
+}
+
+.xcf-command-10 .xcf10-next em::after {
+  content: "Things waiting — start with this one" !important;
+  color: rgba(248,251,255,.78) !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+}
+
+.xcf-command-10 .xcf10-lanes-head {
+  margin-top: 6px !important;
+  margin-bottom: 9px !important;
+}
+
+.xcf-command-10 .xcf10-lane {
+  min-height: 276px !important;
+  padding: 15px !important;
+}
+
+.xcf-command-10 .xcf10-lane:nth-child(1) h3::after { content: "Check finished jobs" !important; }
+.xcf-command-10 .xcf10-lane:nth-child(2) h3::after { content: "Send invoices" !important; }
+.xcf-command-10 .xcf10-lane:nth-child(3) h3::after { content: "Assign workers" !important; }
+.xcf-command-10 .xcf10-lane:nth-child(4) h3::after { content: "Approve messages" !important; }
+.xcf-command-10 .xcf10-lane:nth-child(5) h3::after { content: "Clear problems" !important; }
+.xcf-command-10 .xcf10-lane:nth-child(6) h3::after { content: "Watch live work" !important; }
+
+.xcf-command-10 .xcf10-lane:nth-child(2) > button::after { content: "Send invoices" !important; }
+.xcf-command-10 .xcf10-lane:nth-child(3) > button::after { content: "Assign workers" !important; }
+.xcf-command-10 .xcf10-lane:nth-child(4) > button::after { content: "Approve messages" !important; }
+.xcf-command-10 .xcf10-lane:nth-child(6) > button::after { content: "Watch live work" !important; }
+
+.xcf-command-10 .xcf10-next-up {
+  gap: 7px !important;
+  margin-top: 10px !important;
+}
+
+.xcf-command-10 .xcf10-next-up > small {
+  font-size: 11px !important;
+  letter-spacing: .11em !important;
+}
+
+.xcf-command-10 .xcf10-next-up button,
+.xcf-command-10 .xcf10-clear {
+  min-height: 58px !important;
+  padding: 10px !important;
+  border-radius: 14px !important;
+}
+
+.xcf-command-10 .xcf10-next-up b,
+.xcf-command-10 .xcf10-clear b {
+  font-size: 13px !important;
+  line-height: 1.12 !important;
+}
+
+.xcf-command-10 .xcf10-next-up small,
+.xcf-command-10 .xcf10-clear span,
+.xcf-command-10 .xcf10-next-up em {
+  font-size: 10.5px !important;
+  line-height: 1.18 !important;
+}
+
+.xcf-command-10 .xcf10-business-pulse {
+  margin-top: 16px !important;
+  margin-bottom: 18px !important;
+}
+
+.xcf-command-10 .xcf10-business-card {
+  min-height: 188px !important;
+}
+
+.xcf-command-10 .xcf10-pulse-line,
+.xcf-command-10 .xcf10-business-feed button {
+  min-height: 56px !important;
+}
+
+.xcf-command-10 .xcf10-dock {
+  bottom: 18px !important;
+}
+
+@media (max-width: 1450px) {
+  .xcf-command-10 .xcf10-hero,
+  .xcf-command-10 .xcf10-next {
+    min-height: 210px !important;
+  }
+
+  .xcf-command-10 .xcf10-lane {
+    min-height: 270px !important;
+  }
+}
