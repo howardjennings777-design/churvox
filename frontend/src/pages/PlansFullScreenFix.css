@@ -1,23 +1,29 @@
-/* CHURVOX_PLANS_FULL_SCREEN_FRAME_ESCAPE_20260530
-   Fix /plans being squeezed inside the old ConceptCFrame side rails.
-   CSS only: billing, trial, Stripe and route logic untouched.
+/* CHURVOX_PLANS_FULL_SCREEN_SCROLL_FIX_20260531
+   Fix /plans being squeezed inside the old ConceptCFrame side rails while keeping scroll working.
+   CSS only: billing, trial, Stripe, SMS and route logic untouched.
 */
 
-body:has(.cv-plans) {
-  overflow: hidden !important;
+html:has(.cv-plans),
+body:has(.cv-plans),
+#root:has(.cv-plans) {
+  min-height: 100% !important;
+  height: auto !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
   background: #020817 !important;
 }
 
 body:has(.cv-plans) .cv-plans {
-  position: fixed !important;
-  inset: 0 !important;
+  position: relative !important;
+  inset: auto !important;
   z-index: 120 !important;
   width: 100vw !important;
   max-width: none !important;
-  height: 100dvh !important;
   min-height: 100dvh !important;
-  overflow: auto !important;
-  padding: 14px 18px 96px !important;
+  height: auto !important;
+  overflow: visible !important;
+  padding: 14px 18px 112px !important;
+  touch-action: pan-y !important;
 }
 
 body:has(.cv-plans) .cv-plans-shell {
@@ -25,6 +31,7 @@ body:has(.cv-plans) .cv-plans-shell {
   max-width: none !important;
   margin: 0 auto !important;
   gap: 14px !important;
+  padding-bottom: 24px !important;
 }
 
 body:has(.cv-plans) .cv-plans-top {
@@ -93,6 +100,10 @@ body:has(.cv-plans) .cv-card button {
   border-radius: 14px !important;
 }
 
+body:has(.cv-plans) .cv-user-blocks {
+  margin-top: 2px !important;
+}
+
 body:has(.cv-plans) .cv-sms-pricing {
   grid-template-columns: minmax(220px, 310px) 1fr !important;
   border-radius: 24px !important;
@@ -116,17 +127,6 @@ body:has(.cv-plans) .cv-footer-row div {
 }
 
 @media (max-width: 1180px) {
-  body:has(.cv-plans) {
-    overflow: auto !important;
-  }
-
-  body:has(.cv-plans) .cv-plans {
-    position: relative !important;
-    inset: auto !important;
-    height: auto !important;
-    min-height: 100dvh !important;
-  }
-
   body:has(.cv-plans) .cv-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
@@ -139,7 +139,7 @@ body:has(.cv-plans) .cv-footer-row div {
 
 @media (max-width: 720px) {
   body:has(.cv-plans) .cv-plans {
-    padding: 10px 10px 92px !important;
+    padding: 10px 10px 112px !important;
   }
 
   body:has(.cv-plans) .cv-grid,
