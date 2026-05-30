@@ -95,6 +95,260 @@
   display: none !important;
 }
 
+/* CHURVOX_COMMAND_CLEAR_DAILY_INSTRUCTIONS_20260531
+   Make Command Floor read like a daily checklist: what to do first, why, and where to tap.
+   CSS-only wording/size pass. No API/backend/auth/billing changes.
+*/
+
+.xcf-command-10 .xcf10-hero p {
+  font-size: 11px !important;
+  letter-spacing: .16em !important;
+}
+
+.xcf-command-10 .xcf10-hero h1 {
+  font-size: clamp(38px, 4.2vw, 62px) !important;
+  line-height: .92 !important;
+}
+
+.xcf-command-10 .xcf10-hero > span {
+  font-size: 0 !important;
+  max-width: 780px !important;
+}
+
+.xcf-command-10 .xcf10-hero > span::after {
+  content: "Start here each morning. Churvox has lined up the work, money, crew and problems. Open the first Work Slip, check it, then approve the next move." !important;
+  display: block !important;
+  color: rgba(248,251,255,.84) !important;
+  font-size: 16px !important;
+  line-height: 1.35 !important;
+  font-weight: 760 !important;
+}
+
+.xcf-command-10 .xcf10-next small {
+  font-size: 0 !important;
+}
+
+.xcf-command-10 .xcf10-next small::after {
+  content: "DO THIS FIRST" !important;
+  color: #77ffc1 !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+  letter-spacing: .16em !important;
+}
+
+.xcf-command-10 .xcf10-next h2 {
+  font-size: 0 !important;
+  max-width: 330px !important;
+}
+
+.xcf-command-10 .xcf10-next h2::after {
+  content: "Open the next Work Slip" !important;
+  display: block !important;
+  color: #fff !important;
+  font-size: clamp(30px, 2.5vw, 40px) !important;
+  line-height: .98 !important;
+  letter-spacing: -.045em !important;
+}
+
+.xcf-command-10 .xcf10-next p {
+  font-size: 0 !important;
+  max-width: 355px !important;
+}
+
+.xcf-command-10 .xcf10-next p::after {
+  content: "Why: finished work is waiting. Check the proof, notes, price and invoice details, then approve it. Nothing sends until you say go." !important;
+  display: block !important;
+  color: rgba(248,251,255,.84) !important;
+  font-size: 15px !important;
+  line-height: 1.38 !important;
+  font-weight: 740 !important;
+}
+
+.xcf-command-10 .xcf10-next div span {
+  font-size: 12px !important;
+  padding: 8px 11px !important;
+}
+
+.xcf-command-10 .xcf10-next button {
+  min-height: 48px !important;
+  font-size: 0 !important;
+}
+
+.xcf-command-10 .xcf10-next button::after {
+  content: "Open Work Slip →" !important;
+  font-size: 15px !important;
+  font-weight: 950 !important;
+}
+
+.xcf-command-10 .xcf10-next em {
+  font-size: 13px !important;
+  font-weight: 850 !important;
+}
+
+.xcf-command-10 .xcf10-lanes-head p {
+  font-size: 0 !important;
+}
+
+.xcf-command-10 .xcf10-lanes-head p::after {
+  content: "TODAY'S CHECKLIST" !important;
+  font-size: 11px !important;
+  color: #62e8f5 !important;
+  font-weight: 950 !important;
+  letter-spacing: .16em !important;
+}
+
+.xcf-command-10 .xcf10-lanes-head h2 {
+  font-size: 0 !important;
+}
+
+.xcf-command-10 .xcf10-lanes-head h2::after {
+  content: "Tap the box that matches what you need to do. Start at 1 if you are not sure." !important;
+  display: block !important;
+  color: rgba(248,251,255,.82) !important;
+  font-size: 17px !important;
+  line-height: 1.25 !important;
+  font-weight: 780 !important;
+}
+
+.xcf-command-10 .xcf10-lane {
+  min-height: 286px !important;
+  padding: 16px !important;
+}
+
+.xcf-command-10 .xcf10-lane header small {
+  font-size: 0 !important;
+}
+
+.xcf-command-10 .xcf10-lane h3 {
+  font-size: 0 !important;
+  margin-top: 12px !important;
+  margin-bottom: 8px !important;
+}
+
+.xcf-command-10 .xcf10-lane p {
+  font-size: 0 !important;
+  min-height: 48px !important;
+}
+
+.xcf-command-10 .xcf10-lane > button {
+  min-height: 42px !important;
+  font-size: 0 !important;
+}
+
+.xcf-command-10 .xcf10-lane header small::after,
+.xcf-command-10 .xcf10-lane h3::after,
+.xcf-command-10 .xcf10-lane p::after,
+.xcf-command-10 .xcf10-lane > button::after {
+  display: block !important;
+}
+
+.xcf-command-10 .xcf10-lane header small::after {
+  color: rgba(248,251,255,.76) !important;
+  font-size: 10px !important;
+  font-weight: 950 !important;
+  letter-spacing: .13em !important;
+  text-transform: uppercase !important;
+}
+
+.xcf-command-10 .xcf10-lane h3::after {
+  color: #fff !important;
+  font-size: clamp(19px, 1.45vw, 24px) !important;
+  line-height: 1.05 !important;
+  letter-spacing: -.035em !important;
+}
+
+.xcf-command-10 .xcf10-lane p::after {
+  color: rgba(248,251,255,.82) !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+  font-weight: 740 !important;
+}
+
+.xcf-command-10 .xcf10-lane > button::after {
+  font-size: 13px !important;
+  font-weight: 950 !important;
+}
+
+.xcf-command-10 .xcf10-lane:nth-child(1) header small::after { content: "1 · CHECK FINISHED JOBS" !important; }
+.xcf-command-10 .xcf10-lane:nth-child(1) h3::after { content: "Open Work Slips" !important; }
+.xcf-command-10 .xcf10-lane:nth-child(1) p::after { content: "Check photos, notes, price and invoice details before approving finished work." !important; }
+.xcf-command-10 .xcf10-lane:nth-child(1) > button::after { content: "Open Work Slips" !important; }
+
+.xcf-command-10 .xcf10-lane:nth-child(2) header small::after { content: "2 · SEND INVOICE DRAFTS" !important; }
+.xcf-command-10 .xcf10-lane:nth-child(2) h3::after { content: "Sort money" !important; }
+.xcf-command-10 .xcf10-lane:nth-child(2) p::after { content: "Review the invoice drafts Churvox prepared from completed work." !important; }
+.xcf-command-10 .xcf10-lane:nth-child(2) > button::after { content: "Review invoices" !important; }
+
+.xcf-command-10 .xcf10-lane:nth-child(3) header small::after { content: "3 · ASSIGN CREW" !important; }
+.xcf-command-10 .xcf10-lane:nth-child(3) h3::after { content: "Put workers on jobs" !important; }
+.xcf-command-10 .xcf10-lane:nth-child(3) p::after { content: "Jobs need a worker. Check the suggested crew move before assigning." !important; }
+.xcf-command-10 .xcf10-lane:nth-child(3) > button::after { content: "Assign crew" !important; }
+
+.xcf-command-10 .xcf10-lane:nth-child(4) header small::after { content: "4 · CHECK CUSTOMER MESSAGES" !important; }
+.xcf-command-10 .xcf10-lane:nth-child(4) h3::after { content: "Review drafts" !important; }
+.xcf-command-10 .xcf10-lane:nth-child(4) p::after { content: "Messages are drafted, but nothing sends until you approve the wording." !important; }
+.xcf-command-10 .xcf10-lane:nth-child(4) > button::after { content: "Check messages" !important; }
+
+.xcf-command-10 .xcf10-lane:nth-child(5) header small::after { content: "5 · FIX BLOCKERS" !important; }
+.xcf-command-10 .xcf10-lane:nth-child(5) h3::after { content: "Clear problems" !important; }
+.xcf-command-10 .xcf10-lane:nth-child(5) p::after { content: "Missing price, client details or job info is stopping work from moving." !important; }
+.xcf-command-10 .xcf10-lane:nth-child(5) > button::after { content: "Fix blockers" !important; }
+
+.xcf-command-10 .xcf10-lane:nth-child(6) header small::after { content: "6 · WATCH LIVE WORK" !important; }
+.xcf-command-10 .xcf10-lane:nth-child(6) h3::after { content: "See what is moving" !important; }
+.xcf-command-10 .xcf10-lane:nth-child(6) p::after { content: "Check live crew and job records when you want the wider picture." !important; }
+.xcf-command-10 .xcf10-lane:nth-child(6) > button::after { content: "Open live work" !important; }
+
+.xcf-command-10 .xcf10-next-up > small {
+  font-size: 10px !important;
+  color: #77ffc1 !important;
+}
+
+.xcf-command-10 .xcf10-next-up b,
+.xcf-command-10 .xcf10-clear b {
+  font-size: 12px !important;
+}
+
+.xcf-command-10 .xcf10-next-up small,
+.xcf-command-10 .xcf10-clear span,
+.xcf-command-10 .xcf10-next-up em {
+  font-size: 10px !important;
+}
+
+.xcf-command-10 .xcf10-business-card header small {
+  font-size: 0 !important;
+}
+
+.xcf-command-10 .xcf10-business-card header small::after {
+  color: #77ffc1 !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+  letter-spacing: .14em !important;
+  text-transform: uppercase !important;
+}
+
+.xcf-command-10 .xcf10-business-pulse > .xcf10-business-card:nth-child(1) header small::after { content: "MONEY TO SORT" !important; }
+.xcf-command-10 .xcf10-business-pulse > .xcf10-business-card:nth-child(2) header small::after { content: "CREW TO SORT" !important; }
+.xcf-command-10 .xcf10-business-pulse > .xcf10-business-card:nth-child(3) header small::after { content: "PROBLEMS TO FIX" !important; }
+.xcf-command-10 .xcf10-business-pulse > .xcf10-business-card:nth-child(4) header small::after { content: "WHAT JUST HAPPENED" !important; }
+
+.xcf-command-10 .xcf10-pulse-line small,
+.xcf-command-10 .xcf10-business-feed button small {
+  font-size: 11px !important;
+  color: rgba(248,251,255,.68) !important;
+}
+
+.xcf-command-10 .xcf10-pulse-line b,
+.xcf-command-10 .xcf10-business-feed button b {
+  font-size: 15px !important;
+  line-height: 1.1 !important;
+}
+
+.xcf-command-10 .xcf10-pulse-line,
+.xcf-command-10 .xcf10-business-feed button {
+  min-height: 52px !important;
+}
+
 @media (min-width: 1460px) {
   .xcf-command-10 .xcf10-business-pulse {
     grid-template-columns: 1.28fr .95fr .95fr 1.28fr !important;
