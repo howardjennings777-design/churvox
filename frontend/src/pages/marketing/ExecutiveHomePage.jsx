@@ -24,7 +24,7 @@ const cards = [
   ["Proof first", "Photos, notes and job details stay attached to the work."],
 ];
 
-function Nav() {
+export function Nav() {
   return (
     <nav className="cvp-nav">
       <Link to="/" className="cvp-brand">
@@ -44,7 +44,7 @@ function Nav() {
   );
 }
 
-function Footer() {
+export function Footer() {
   return (
     <footer className="cvp-footer">
       <div>
@@ -63,7 +63,7 @@ function Footer() {
 
 export default function ExecutiveHomePage() {
   return (
-    <main className="cvp-home" data-version="CHURVOX_PUBLIC_HOME_PROPER_FULLSCREEN_20260531">
+    <main className="cvp-home" data-version="CHURVOX_PUBLIC_HOME_PROPER_FULLSCREEN_20260531_BUILD_FIXED">
       <div className="cvp-shell">
         <Nav />
 
