@@ -1,258 +1,308 @@
-/* CHURVOX_PUBLIC_HOME_ALIGNMENT_PASS_20260531
-   Final public homepage polish: tighter alignment, calmer text scale, cleaner spacing.
+/* CHURVOX_PUBLIC_HOME_FULL_SCREEN_FIT_20260531
+   Whole public homepage fit pass: every section uses tighter width, smaller copy,
+   smaller cards, less empty space and no sideways overflow.
    CSS only. No routing, auth, billing, Stripe, SMS, or app logic touched.
 */
 
+.cvx-home,
+.cvx-home * {
+  box-sizing: border-box !important;
+}
+
 .cvx-home {
   text-rendering: geometricPrecision;
+  overflow-x: hidden !important;
+}
+
+.cvx-home .cvx-home-nav,
+.cvx-home .cvx-command-hero,
+.cvx-home .cvx-flow-band,
+.cvx-home .cvx-sell-strip,
+.cvx-home .cvx-final,
+.cvx-home .cvx-footer {
+  width: min(1080px, calc(100vw - 28px)) !important;
+  max-width: calc(100vw - 28px) !important;
 }
 
 .cvx-home .cvx-home-nav {
-  width: min(1180px, calc(100vw - 32px)) !important;
-  min-height: 62px !important;
-  padding: 9px 12px !important;
-  border-radius: 22px !important;
+  min-height: 52px !important;
+  padding: 7px 10px !important;
+  border-radius: 18px !important;
+}
+
+.cvx-home .cvx-home-brand {
+  gap: 8px !important;
 }
 
 .cvx-home .cvx-home-brand-mark {
-  width: 40px !important;
-  height: 40px !important;
-  border-radius: 15px !important;
-  font-size: 1.05rem !important;
+  width: 33px !important;
+  height: 33px !important;
+  border-radius: 12px !important;
+  font-size: .9rem !important;
 }
 
 .cvx-home .cvx-home-brand b {
-  font-size: .94rem !important;
+  font-size: .84rem !important;
 }
 
 .cvx-home .cvx-home-brand small {
-  font-size: .66rem !important;
+  font-size: .56rem !important;
 }
 
 .cvx-home .cvx-home-links {
-  gap: 6px !important;
+  gap: 5px !important;
 }
 
 .cvx-home .cvx-home-links a {
-  min-height: 36px !important;
-  padding: 0 12px !important;
-  font-size: .8rem !important;
-  border-radius: 13px !important;
+  min-height: 31px !important;
+  padding: 0 9px !important;
+  font-size: .72rem !important;
+  border-radius: 11px !important;
 }
 
 .cvx-home .cvx-command-hero {
-  width: min(1220px, calc(100vw - 36px)) !important;
   min-height: auto !important;
-  padding: 30px 0 30px !important;
-  grid-template-columns: minmax(0, 1fr) minmax(360px, 520px) !important;
+  padding: 12px 0 18px !important;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 410px) !important;
   align-items: stretch !important;
-  gap: 18px !important;
+  gap: 12px !important;
 }
 
 .cvx-home .cvx-command-copy,
 .cvx-home .cvx-command-demo {
-  min-height: 520px !important;
-  border-radius: 28px !important;
+  min-height: 0 !important;
+  height: auto !important;
+  border-radius: 22px !important;
 }
 
 .cvx-home .cvx-command-copy {
   align-content: center !important;
   justify-items: start !important;
-  gap: 16px !important;
-  padding: clamp(28px, 3.2vw, 44px) !important;
+  gap: 11px !important;
+  padding: clamp(20px, 2.25vw, 30px) !important;
 }
 
 .cvx-home .cvx-eyebrow {
-  padding: 7px 10px !important;
-  font-size: .64rem !important;
-  letter-spacing: .12em !important;
+  padding: 5px 8px !important;
+  font-size: .54rem !important;
+  letter-spacing: .105em !important;
+  line-height: 1 !important;
 }
 
 .cvx-home .cvx-command-copy h1 {
-  max-width: 760px !important;
-  font-size: clamp(3.15rem, 5.8vw, 6.6rem) !important;
-  line-height: .88 !important;
-  letter-spacing: -.078em !important;
+  max-width: 620px !important;
+  font-size: clamp(2.55rem, 4.55vw, 4.95rem) !important;
+  line-height: .91 !important;
+  letter-spacing: -.07em !important;
 }
 
 .cvx-home .cvx-hero-sub {
-  max-width: 620px !important;
-  font-size: clamp(.94rem, 1.08vw, 1.08rem) !important;
-  line-height: 1.46 !important;
-  font-weight: 680 !important;
+  max-width: 540px !important;
+  font-size: clamp(.8rem, .88vw, .92rem) !important;
+  line-height: 1.34 !important;
+  font-weight: 650 !important;
 }
 
 .cvx-home .cvx-actions {
-  gap: 10px !important;
+  gap: 7px !important;
 }
 
 .cvx-home .cvx-btn {
-  min-height: 44px !important;
-  padding: 0 18px !important;
-  border-radius: 14px !important;
-  font-size: .86rem !important;
+  min-height: 36px !important;
+  padding: 0 14px !important;
+  border-radius: 12px !important;
+  font-size: .74rem !important;
 }
 
 .cvx-home .cvx-proof {
-  gap: 7px !important;
-  max-width: 650px !important;
+  gap: 5px !important;
+  max-width: 540px !important;
 }
 
 .cvx-home .cvx-proof span {
-  padding: 7px 9px !important;
-  font-size: .68rem !important;
+  padding: 5px 7px !important;
+  font-size: .57rem !important;
   line-height: 1 !important;
 }
 
 .cvx-home .cvx-command-demo {
-  gap: 12px !important;
-  padding: 15px !important;
+  gap: 8px !important;
+  padding: 11px !important;
+  align-content: start !important;
 }
 
 .cvx-home .cvx-demo-top {
-  padding: 18px !important;
-  border-radius: 22px !important;
+  padding: 12px !important;
+  border-radius: 17px !important;
+  gap: 4px !important;
+}
+
+.cvx-home .cvx-demo-top small,
+.cvx-home .cvx-demo-lanes small,
+.cvx-home .cvx-work-slip-card small {
+  font-size: .54rem !important;
+  letter-spacing: .105em !important;
 }
 
 .cvx-home .cvx-demo-top b {
-  font-size: 1.68rem !important;
+  font-size: 1.22rem !important;
   line-height: 1.02 !important;
 }
 
 .cvx-home .cvx-demo-top span,
 .cvx-home .cvx-demo-lanes span,
 .cvx-home .cvx-work-slip-card span {
-  font-size: .78rem !important;
-  line-height: 1.35 !important;
+  font-size: .64rem !important;
+  line-height: 1.22 !important;
 }
 
 .cvx-home .cvx-demo-lanes {
-  gap: 10px !important;
+  gap: 7px !important;
 }
 
 .cvx-home .cvx-demo-lanes article {
-  min-height: 108px !important;
-  padding: 14px !important;
-  border-radius: 20px !important;
+  min-height: 72px !important;
+  gap: 4px !important;
+  padding: 9px !important;
+  border-radius: 15px !important;
 }
 
 .cvx-home .cvx-demo-lanes b {
-  font-size: 1.65rem !important;
+  font-size: 1.2rem !important;
+  line-height: .96 !important;
 }
 
 .cvx-home .cvx-work-slip-card {
-  padding: 15px !important;
-  border-radius: 20px !important;
+  padding: 10px !important;
+  border-radius: 15px !important;
+  gap: 8px !important;
 }
 
 .cvx-home .cvx-work-slip-card b {
-  font-size: .98rem !important;
+  font-size: .8rem !important;
 }
 
 .cvx-home .cvx-work-slip-card button {
-  min-height: 38px !important;
-  padding: 0 14px !important;
-  border-radius: 13px !important;
-  font-size: .78rem !important;
+  min-height: 30px !important;
+  padding: 0 10px !important;
+  border-radius: 10px !important;
+  font-size: .64rem !important;
 }
 
 .cvx-home .cvx-mini-dock {
-  min-height: 54px !important;
-  border-radius: 18px !important;
+  min-height: 38px !important;
+  border-radius: 14px !important;
+  gap: 5px !important;
+  padding: 6px !important;
 }
 
-.cvx-home .cvx-flow-band,
-.cvx-home .cvx-sell-strip,
-.cvx-home .cvx-final,
-.cvx-home .cvx-footer {
-  width: min(1180px, calc(100vw - 36px)) !important;
+.cvx-home .cvx-mini-dock span {
+  border-radius: 10px !important;
+  font-size: .58rem !important;
 }
 
 .cvx-home .cvx-flow-band {
-  gap: 12px !important;
-  padding: 0 0 26px !important;
+  gap: 9px !important;
+  padding: 0 0 16px !important;
 }
 
 .cvx-home .cvx-flow-band article {
-  min-height: 126px !important;
-  gap: 9px !important;
-  padding: 17px !important;
-  border-radius: 22px !important;
+  min-height: 88px !important;
+  gap: 6px !important;
+  padding: 12px !important;
+  border-radius: 17px !important;
 }
 
 .cvx-home .cvx-flow-band i {
-  width: 34px !important;
-  height: 34px !important;
-  border-radius: 12px !important;
-  font-size: .84rem !important;
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 9px !important;
+  font-size: .68rem !important;
 }
 
 .cvx-home .cvx-flow-band b {
-  font-size: .96rem !important;
+  font-size: .8rem !important;
 }
 
 .cvx-home .cvx-flow-band span {
-  font-size: .82rem !important;
-  line-height: 1.35 !important;
+  font-size: .66rem !important;
+  line-height: 1.22 !important;
 }
 
 .cvx-home .cvx-sell-strip {
-  grid-template-columns: .78fr 1fr !important;
-  gap: 18px !important;
-  border-radius: 28px !important;
-  padding: 24px !important;
-  margin-bottom: 26px !important;
+  grid-template-columns: .68fr 1fr !important;
+  gap: 12px !important;
+  border-radius: 22px !important;
+  padding: 16px !important;
+  margin-bottom: 16px !important;
 }
 
 .cvx-home .cvx-sell-strip h2,
 .cvx-home .cvx-final h2 {
-  font-size: clamp(2rem, 3.8vw, 4.15rem) !important;
-  line-height: .92 !important;
-  letter-spacing: -.065em !important;
+  font-size: clamp(1.45rem, 2.65vw, 2.8rem) !important;
+  line-height: .95 !important;
+  letter-spacing: -.052em !important;
 }
 
 .cvx-home .cvx-sell-list {
-  gap: 9px !important;
+  gap: 6px !important;
 }
 
 .cvx-home .cvx-sell-list span {
-  min-height: 56px !important;
-  padding: 10px !important;
-  border-radius: 16px !important;
-  font-size: .82rem !important;
-  line-height: 1.25 !important;
+  min-height: 40px !important;
+  padding: 7px !important;
+  border-radius: 12px !important;
+  font-size: .66rem !important;
+  line-height: 1.15 !important;
 }
 
 .cvx-home .cvx-final {
-  min-height: 260px !important;
+  min-height: 170px !important;
   display: grid !important;
   align-content: center !important;
   justify-items: start !important;
-  border-radius: 30px !important;
-  padding: 32px !important;
-  margin-bottom: 22px !important;
+  gap: 10px !important;
+  border-radius: 23px !important;
+  padding: 22px !important;
+  margin-bottom: 14px !important;
 }
 
 .cvx-home .cvx-footer {
-  min-height: 76px !important;
-  padding: 18px 0 30px !important;
-  font-size: .86rem !important;
+  min-height: 58px !important;
+  padding: 12px 0 20px !important;
+  font-size: .72rem !important;
+}
+
+.cvx-home .cvx-footer nav {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+}
+
+.cvx-home .cvx-footer a {
+  font-size: .72rem !important;
 }
 
 @media (max-width: 980px) {
-  .cvx-home .cvx-home-nav {
+  .cvx-home .cvx-home-nav,
+  .cvx-home .cvx-command-hero,
+  .cvx-home .cvx-flow-band,
+  .cvx-home .cvx-sell-strip,
+  .cvx-home .cvx-final,
+  .cvx-home .cvx-footer {
     width: calc(100vw - 20px) !important;
+    max-width: calc(100vw - 20px) !important;
   }
 
   .cvx-home .cvx-command-hero {
-    width: calc(100vw - 24px) !important;
     grid-template-columns: 1fr !important;
-    padding: 16px 0 24px !important;
+    padding: 10px 0 16px !important;
   }
 
   .cvx-home .cvx-command-copy,
   .cvx-home .cvx-command-demo {
     min-height: auto !important;
+    max-height: none !important;
   }
 
   .cvx-home .cvx-command-demo {
@@ -260,33 +310,42 @@
   }
 
   .cvx-home .cvx-flow-band,
-  .cvx-home .cvx-sell-strip,
-  .cvx-home .cvx-final,
-  .cvx-home .cvx-footer {
-    width: calc(100vw - 24px) !important;
-  }
-
   .cvx-home .cvx-sell-strip {
     grid-template-columns: 1fr !important;
+  }
+
+  .cvx-home .cvx-flow-band article,
+  .cvx-home .cvx-sell-strip,
+  .cvx-home .cvx-final {
+    min-height: auto !important;
   }
 }
 
 @media (max-width: 620px) {
+  .cvx-home .cvx-home-nav {
+    min-height: 50px !important;
+    padding: 7px 8px !important;
+  }
+
+  .cvx-home .cvx-home-links a:not(.cvx-nav-cta):not(:last-child) {
+    display: none !important;
+  }
+
   .cvx-home .cvx-command-copy {
-    padding: 24px !important;
-    border-radius: 24px !important;
+    padding: 18px !important;
+    border-radius: 20px !important;
   }
 
   .cvx-home .cvx-command-copy h1 {
-    font-size: clamp(2.8rem, 13.5vw, 4.7rem) !important;
+    font-size: clamp(2.15rem, 10.5vw, 3.45rem) !important;
   }
 
   .cvx-home .cvx-hero-sub {
-    font-size: .92rem !important;
+    font-size: .78rem !important;
   }
 
   .cvx-home .cvx-proof span {
-    font-size: .64rem !important;
+    font-size: .55rem !important;
   }
 
   .cvx-home .cvx-demo-lanes,
@@ -296,7 +355,6 @@
   }
 
   .cvx-home .cvx-final {
-    min-height: 230px !important;
-    padding: 26px !important;
+    padding: 18px !important;
   }
 }
