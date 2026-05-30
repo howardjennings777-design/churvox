@@ -60,14 +60,59 @@
   font-size: 12px !important;
 }
 
+/* CHURVOX_COMMAND_DUPLICATE_CLEANUP_20260531
+   Remove repeated dashboard information visually. CSS only.
+   Keep: Work Slips, Money Waiting, Crew Live, lanes, Money Watch, Crew Live, Needs Fixing, Latest Movement.
+*/
+
+.xcf-command-10 .xcf10-hero-stats {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+.xcf-command-10 .xcf10-hero-stats > button:first-child {
+  display: none !important;
+}
+
+.xcf-command-10 .xcf10-hero-stats > button:nth-child(4) span {
+  font-size: 0 !important;
+}
+
+.xcf-command-10 .xcf10-hero-stats > button:nth-child(4) span::after {
+  content: "Crew Live" !important;
+  font-size: 10px !important;
+  line-height: 1.1 !important;
+}
+
+.xcf-command-10 .xcf10-business-pulse {
+  grid-template-columns: 1.2fr .9fr .9fr 1.2fr !important;
+}
+
+.xcf-command-10 .xcf10-business-pulse > .xcf10-business-card:nth-child(5) {
+  display: none !important;
+}
+
+.xcf-command-10 .xcf10-snapshot {
+  display: none !important;
+}
+
 @media (min-width: 1460px) {
   .xcf-command-10 .xcf10-business-pulse {
-    grid-template-columns: 1.22fr .82fr .82fr 1.08fr 1.08fr !important;
+    grid-template-columns: 1.28fr .95fr .95fr 1.28fr !important;
   }
 }
 
 @media (max-width: 1450px) {
   .xcf-command-10 .xcf10-business-card {
     min-height: 174px !important;
+  }
+
+  .xcf-command-10 .xcf10-business-pulse {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .xcf-command-10 .xcf10-business-pulse {
+    grid-template-columns: 1fr !important;
   }
 }
