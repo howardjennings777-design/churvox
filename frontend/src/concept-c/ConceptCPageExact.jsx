@@ -662,14 +662,14 @@ function Dashboard({ m, loading, onPick }) {
         <div className="xcf10-health"><small>Business Health</small><b>94%</b><span>Strong</span></div>
       </section>
 
-      <nav className="xcf10-dock xcf10-dock-launch" aria-label="Command Floor navigation">
-        <Link to="/dashboard" className="active">⚡ Command</Link>
-        <Link to="/onboarding" data-churvox-setup-link="true">Setup</Link>
+      <nav className="xcf10-dock xcf10-dock-launch-final" aria-label="Command Floor navigation">
+        <Link to="/dashboard" className="active">Command</Link>
+        <Link to="/onboarding">Setup</Link>
         <Link to="/jobs">Jobs</Link>
         <Link to="/clients">Clients</Link>
         <Link to="/invoices">Money</Link>
-        <Link to="/plans" data-churvox-plans-link="true">Plans</Link>
-        <Link to="/demo-mode" data-churvox-demo-link="true">Demo</Link>
+        <Link to="/plans">Plans</Link>
+        <Link to="/demo-mode">Demo</Link>
         <Link to="/notifications">Alerts</Link>
         <Link to="/team">Crew</Link>
         <Link to="/operator-tools">Tools</Link>

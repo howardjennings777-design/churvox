@@ -123,3 +123,66 @@
   }
 }
 
+
+
+/* CHURVOX_FORCE_COMMAND_NAV_VISIBLE_20260601 */
+.xcf10-dock-launch-final {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  height: auto !important;
+  min-height: 58px !important;
+  max-width: calc(100vw - 34px) !important;
+  padding: 8px !important;
+  scrollbar-width: thin !important;
+}
+
+.xcf10-dock-launch-final a {
+  flex: 0 0 auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 42px !important;
+  min-width: max-content !important;
+  padding: 10px 16px !important;
+  border-radius: 999px !important;
+  white-space: nowrap !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
+}
+
+.xcf10-dock-launch-final a.active {
+  box-shadow: 0 0 0 1px rgba(255,255,255,.18), 0 10px 28px rgba(0,0,0,.22) !important;
+}
+
+.xcf10-dock-launch-final label,
+.xcf10-dock-launch-final input,
+.xcf10-dock-launch-final button,
+.xcf10-dock-launch-final b {
+  display: none !important;
+}
+
+@media (max-width: 900px) {
+  .xcf10-dock-launch-final {
+    position: fixed !important;
+    left: 10px !important;
+    right: 10px !important;
+    bottom: 10px !important;
+    z-index: 999 !important;
+    max-width: calc(100vw - 20px) !important;
+    border-radius: 24px !important;
+  }
+
+  .xcf10-dock-launch-final a {
+    min-height: 44px !important;
+    padding: 10px 14px !important;
+    font-size: 0.82rem !important;
+  }
+}
+
