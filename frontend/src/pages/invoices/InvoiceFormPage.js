@@ -1,4 +1,4 @@
-// CHURVOX_INVOICE_USES_BUSINESS_DEFAULTS_20260601
+// CHURVOX_INVOICE_FROM_QUOTE_STABLE_FLOW_20260601
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Layout from "../../components/Layout";
@@ -17,11 +17,7 @@ function arr(value) {
   if (Array.isArray(value?.results)) return value.results;
   return [];
 }
-function invoiceIdOf(result) {
-  const data = result?.data ?? result;
-  const invoice = data?.invoice || data?.item || data?.record || data;
-  return String(data?.id || data?._id || invoice?.id || invoice?._id || "");
-}
+function invoiceIdOf(result) { const data = result?.data ?? result; const invoice = data?.invoice || data?.item || data?.record || data; return String(data?.id || data?._id || invoice?.id || invoice?._id || ""); }
 function n(value) { const num = Number(value || 0); return Number.isFinite(num) ? num : 0; }
 function money(value) { return n(value).toLocaleString("en-NZ", { style: "currency", currency: "NZD" }); }
 function clientId(client) { return String(client?.id || client?._id || client?.client_id || ""); }
@@ -30,7 +26,20 @@ function clientName(client) { return client?.client_name || client?.name || clie
 function jobTitle(job) { return job?.title || job?.job_name || job?.customer_name || job?.client_name || "Job"; }
 function emptyLine(desc = "", price = "") { return { description: desc, quantity: 1, unit_price: price, amount: n(price) }; }
 function readInvoice(payload) { const data = payload?.data ?? payload; return data?.invoice || data?.item || data?.record || data || {}; }
+function readQuote(payload) { const data = payload?.data ?? payload; return data?.quote || data?.item || data?.record || data || {}; }
 function buildInvoiceNumber(settings) { return `${settings?.invoice_prefix || "INV"}-${Date.now().toString().slice(-6)}`; }
+function quoteTotal(quote) { return n(quote?.price || quote?.total || quote?.amount || quote?.subtotal || 0); }
+function quoteDescription(quote) { return quote?.job_description || quote?.description || quote?.notes || quote?.customer_name || "Quoted service work"; }
+function quoteLineItems(quote) {
+  const lines = Array.isArray(quote?.line_items) ? quote.line_items : [];
+  if (lines.length) return lines.map((line) => ({
+    description: line.description || quoteDescription(quote),
+    quantity: line.quantity || line.qty || 1,
+    unit_price: line.unit_price ?? line.rate ?? line.amount ?? 0,
+    amount: line.amount ?? n(line.unit_price || line.rate || 0) * n(line.quantity || line.qty || 1),
+  }));
+  return [emptyLine(quoteDescription(quote), quoteTotal(quote))];
+}
 
 export default function InvoiceFormPage() {
   const { id } = useParams();
@@ -96,10 +105,11 @@ export default function InvoiceFormPage() {
     let mounted = true;
     async function load() {
       setLoadingData(true);
-      const [clientRes, jobRes, invoiceRes] = await Promise.all([
+      const [clientRes, jobRes, invoiceRes, quoteRes] = await Promise.all([
         api.get("/clients"),
         api.get("/jobs"),
         isEdit ? api.get(`/invoices/${encodeURIComponent(id)}`) : Promise.resolve(null),
+        !isEdit && quoteFromQuery ? api.get(`/quotes/${encodeURIComponent(quoteFromQuery)}`) : Promise.resolve(null),
       ]);
       if (!mounted) return;
       const nextClients = clientRes?.success ? arr(clientRes.data) : [];
@@ -140,6 +150,7 @@ export default function InvoiceFormPage() {
           const client = nextClients.find((x) => clientId(x) === String(clientFromQuery));
           if (client) applyClientRecord(client, false);
         }
+        if (quoteRes?.success) applyQuoteRecord(readQuote(quoteRes), false);
         if (jobFromQuery) {
           const job = nextJobs.find((x) => jobId(x) === String(jobFromQuery));
           if (job) applyJobRecord(job, false);
@@ -149,7 +160,7 @@ export default function InvoiceFormPage() {
     }
     load();
     return () => { mounted = false; };
-  }, [api, id, isEdit, jobFromQuery, clientFromQuery, settings.default_invoice_due_days, settings.default_gst_rate]);
+  }, [api, id, isEdit, jobFromQuery, clientFromQuery, quoteFromQuery, settings.default_invoice_due_days, settings.default_gst_rate]);
 
   function update(key, value) { setFormData((current) => ({ ...current, [key]: value })); }
   function updateLine(index, key, value) {
@@ -205,6 +216,22 @@ export default function InvoiceFormPage() {
     const job = jobs.find((x) => jobId(x) === String(selectedId));
     if (job) applyJobRecord(job, false);
   }
+  function applyQuoteRecord(quote, setQuoteId = true) {
+    const desc = quoteDescription(quote);
+    setFormData((current) => ({
+      ...current,
+      quote_id: setQuoteId ? (quote?.id || quote?._id || quoteFromQuery) : current.quote_id || quoteFromQuery,
+      client_id: quote.client_id || current.client_id,
+      customer_name: quote.customer_name || quote.client_name || current.customer_name,
+      customer_email: quote.customer_email || quote.client_email || current.customer_email,
+      customer_phone: quote.customer_phone || quote.phone || current.customer_phone,
+      address: quote.address || quote.site_address || current.address,
+      site_address: quote.site_address || quote.address || current.site_address,
+      description: desc,
+      notes: quote.notes || current.notes,
+      line_items: quoteLineItems(quote),
+    }));
+  }
 
   const subtotal = useMemo(() => formData.line_items.reduce((sum, line) => sum + n(line.amount), 0), [formData.line_items]);
   const discount = n(formData.discount_amount);
@@ -223,6 +250,8 @@ export default function InvoiceFormPage() {
       ...formData,
       client_name: formData.customer_name,
       customer_name: formData.customer_name,
+      linked_quote_id: formData.quote_id || null,
+      linked_job_id: formData.job_id || null,
       address: formData.site_address || formData.address || formData.billing_address,
       site_address: formData.site_address || formData.address,
       line_items: formData.line_items.map((line) => ({ description: line.description, quantity: n(line.quantity) || 1, qty: n(line.quantity) || 1, unit_price: n(line.unit_price), rate: n(line.unit_price), amount: n(line.amount) })),
@@ -258,8 +287,8 @@ export default function InvoiceFormPage() {
 
   return <Layout><PremiumPage maxWidth={1080}>
     <button type="button" onClick={() => navigate("/invoices")} className="mb-3 inline-flex items-center gap-2 text-sm font-black text-slate-300 hover:text-white"><ArrowLeft size={16} /> Back to invoices</button>
-    <PremiumHero eyebrow={isEdit ? "Edit invoice" : "First invoice"} title={isEdit ? "Edit invoice" : "Create an invoice ready to send"} subtitle="Invoices use your business setup defaults for GST, due date, prefixes, bank details and business snapshot." icon={<Receipt className="h-6 w-6" />} />
-    {loadingData ? <PremiumCard><div className="p-8 text-center font-bold text-slate-300">Loading invoice workspace…</div></PremiumCard> : <form onSubmit={save} className="space-y-6" data-testid="stable-invoice-form" data-version="CHURVOX_INVOICE_USES_BUSINESS_DEFAULTS_20260601">
+    <PremiumHero eyebrow={isEdit ? "Edit invoice" : quoteFromQuery ? "Invoice from quote" : "First invoice"} title={isEdit ? "Edit invoice" : quoteFromQuery ? "Create invoice from accepted quote" : "Create an invoice ready to send"} subtitle="Invoices can now pull directly from clients, jobs, quotes and business setup defaults." icon={<Receipt className="h-6 w-6" />} />
+    {loadingData ? <PremiumCard><div className="p-8 text-center font-bold text-slate-300">Loading invoice workspace…</div></PremiumCard> : <form onSubmit={save} className="space-y-6" data-testid="stable-invoice-form" data-version="CHURVOX_INVOICE_FROM_QUOTE_STABLE_FLOW_20260601">
       <PremiumCard title="Business defaults"><div className="rounded-2xl border border-lime-300/20 bg-lime-300/10 p-3 text-sm font-bold text-lime-100">{settings.business_name || "No business name yet"} · Prefix {settings.invoice_prefix || "INV"} · GST {settings.default_gst_rate || 15}% · Due in {settings.default_invoice_due_days || 7} days</div></PremiumCard>
       <PremiumCard title="Customer and linked work"><div className="grid grid-cols-1 gap-4 md:grid-cols-2"><label className="space-y-2"><span className={labelClass}>Saved client</span><select value={formData.client_id} onChange={(e) => applyClient(e.target.value)} className={inputClass}><option value="">Select client</option>{clients.map((client) => <option key={clientId(client)} value={clientId(client)}>{clientName(client)}</option>)}</select></label><label className="space-y-2"><span className={labelClass}>Linked job</span><select value={formData.job_id} onChange={(e) => applyJobId(e.target.value)} className={inputClass}><option value="">No linked job</option>{jobs.map((job) => <option key={jobId(job)} value={jobId(job)}>{jobTitle(job)} — {job.status || "open"}</option>)}</select></label>{[["customer_name", "Customer name *"], ["customer_email", "Customer email"], ["customer_phone", "Customer phone"], ["billing_address", "Billing address"], ["site_address", "Site / job address"], ["quote_id", "Linked quote ID"]].map(([key, label]) => <label className="space-y-2" key={key}><span className={labelClass}>{label}</span><input value={formData[key] || ""} onChange={(e) => update(key, e.target.value)} className={inputClass} /></label>)}</div></PremiumCard>
       <PremiumCard title="Invoice lines"><div className="space-y-3">{formData.line_items.map((line, index) => <div key={index} className="grid grid-cols-12 gap-3 items-end rounded-2xl border border-slate-700 bg-slate-950/50 p-3"><label className="col-span-12 space-y-1 md:col-span-5"><span className="text-xs font-black text-slate-300">Description</span><input value={line.description} onChange={(e) => updateLine(index, "description", e.target.value)} className={inputClass} /></label><label className="col-span-4 space-y-1 md:col-span-2"><span className="text-xs font-black text-slate-300">Qty</span><input type="number" step="0.01" value={line.quantity} onChange={(e) => updateLine(index, "quantity", e.target.value)} className={inputClass} /></label><label className="col-span-4 space-y-1 md:col-span-2"><span className="text-xs font-black text-slate-300">Unit price</span><input type="number" step="0.01" value={line.unit_price} onChange={(e) => updateLine(index, "unit_price", e.target.value)} className={inputClass} /></label><label className="col-span-4 space-y-1 md:col-span-2"><span className="text-xs font-black text-slate-300">Line total</span><input type="number" step="0.01" value={line.amount} onChange={(e) => updateLine(index, "amount", e.target.value)} className={inputClass} /></label><button type="button" onClick={() => removeLine(index)} className="col-span-12 rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-red-200 md:col-span-1"><Trash2 size={16} /></button></div>)}<button type="button" onClick={addLine} className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-black text-slate-950"><Plus size={16} /> Add line item</button></div></PremiumCard>
