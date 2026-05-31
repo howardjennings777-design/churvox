@@ -1,10 +1,11 @@
-// CHURVOX_FIRST_QUOTE_FLOW_STABLE_20260601
+// CHURVOX_QUOTE_USES_BUSINESS_DEFAULTS_20260601
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useApi } from "@/hooks/useApi";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { addDaysIso, loadBusinessSettings } from "@/lib/businessSettings";
 
 function arr(value) {
   if (Array.isArray(value)) return value;
@@ -23,32 +24,50 @@ function clientId(client) { return String(client?.id || client?._id || client?.c
 function clientName(client) { return client?.name || client?.client_name || client?.customer_name || client?.contact_name || "Client"; }
 function money(value) { const n = Number(String(value ?? "").replace(/[^0-9.-]/g, "")); return Number.isFinite(n) ? n : 0; }
 function lineTotal(line) { return (money(line.qty) || 1) * money(line.rate); }
-function todayPlus(days = 14) { const d = new Date(); d.setDate(d.getDate() + Number(days || 14)); return d.toISOString().slice(0, 10); }
+function firstService(settings) { return settings?.default_job_types?.[0] || settings?.trade_industry_type || "Service work"; }
+function validNote(settings) { return `Quote is valid for ${Number(settings?.default_quote_expiry_days || 14)} days unless stated otherwise.`; }
 
 export default function QuoteCreateForm({ onSuccess, onCancel, submitLabel = "Create quote" }) {
   const { get, post, loading } = useApi();
+  const [settings, setSettings] = useState(() => loadBusinessSettings());
   const [clients, setClients] = useState([]);
   const [saving, setSaving] = useState(false);
-  const [lines, setLines] = useState([{ description: "Service work", qty: "1", rate: "" }]);
-  const [form, setForm] = useState({
-    client_id: "",
-    customer_name: "",
-    customer_email: "",
-    customer_phone: "",
-    address: "",
-    job_description: "",
-    job_type: "general_service",
-    price: "",
-    pricing_type: "fixed",
-    notes: "Quote is valid for 14 days unless stated otherwise.",
-    valid_until: todayPlus(14),
-    status: "draft",
+  const [lines, setLines] = useState(() => [{ description: firstService(loadBusinessSettings()), qty: "1", rate: "" }]);
+  const [form, setForm] = useState(() => {
+    const s = loadBusinessSettings();
+    return {
+      client_id: "",
+      customer_name: "",
+      customer_email: "",
+      customer_phone: "",
+      address: "",
+      job_description: firstService(s),
+      job_type: s.trade_industry_type || "general_service",
+      price: "",
+      pricing_type: "fixed",
+      notes: validNote(s),
+      valid_until: addDaysIso(s.default_quote_expiry_days || 14),
+      status: "draft",
+      quote_prefix: s.quote_prefix || "QUO",
+    };
   });
 
   useEffect(() => {
     let alive = true;
     get("/clients").then((r) => { if (alive) setClients(r?.success ? arr(r.data) : []); });
-    return () => { alive = false; };
+    const onSettings = (event) => {
+      const next = event?.detail || loadBusinessSettings();
+      setSettings(next);
+      setForm((current) => ({
+        ...current,
+        job_type: current.job_type || next.trade_industry_type || "general_service",
+        notes: current.notes || validNote(next),
+        valid_until: current.valid_until || addDaysIso(next.default_quote_expiry_days || 14),
+        quote_prefix: next.quote_prefix || "QUO",
+      }));
+    };
+    window.addEventListener("churvox-business-settings-updated", onSettings);
+    return () => { alive = false; window.removeEventListener("churvox-business-settings-updated", onSettings); };
   }, [get]);
 
   const subtotal = useMemo(() => lines.reduce((sum, line) => sum + lineTotal(line), 0), [lines]);
@@ -103,6 +122,12 @@ export default function QuoteCreateForm({ onSuccess, onCancel, submitLabel = "Cr
       amount: previewTotal,
       line_items: cleanLines,
       status: form.status || "draft",
+      quote_prefix: settings.quote_prefix || form.quote_prefix || "QUO",
+      business_snapshot: settings,
+      business_name: settings.business_name || "",
+      business_email: settings.email || "",
+      business_phone: settings.phone || "",
+      business_address: settings.business_address || "",
       valid_until: form.valid_until ? new Date(`${form.valid_until}T23:59:59`).toISOString() : null,
     };
     const res = await post("/quotes", payload);
@@ -116,10 +141,11 @@ export default function QuoteCreateForm({ onSuccess, onCancel, submitLabel = "Cr
   const section = "rounded-2xl border border-slate-700 bg-slate-950/50 p-4 md:p-5 space-y-4 shadow-[0_8px_28px_rgba(0,0,0,0.18)]";
   const fieldClass = "w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2.5 text-white";
 
-  return <form onSubmit={submit} className="min-h-full flex flex-col" data-version="CHURVOX_FIRST_QUOTE_FLOW_STABLE_20260601">
+  return <form onSubmit={submit} className="min-h-full flex flex-col" data-version="CHURVOX_QUOTE_USES_BUSINESS_DEFAULTS_20260601">
     <div className="space-y-4 pb-28">
       <section className={section}>
-        <div><p className="text-sm font-black text-white">Quote details</p><p className="text-xs font-semibold text-slate-300">A quote can later become job context or invoice wording.</p></div>
+        <div><p className="text-sm font-black text-white">Quote details</p><p className="text-xs font-semibold text-slate-300">Uses your business setup for expiry, prefix, trade and document defaults.</p></div>
+        <div className="rounded-2xl border border-lime-300/20 bg-lime-300/10 p-3 text-xs font-bold text-lime-100">Business defaults: {settings.business_name || "No business name yet"} · Prefix {settings.quote_prefix || "QUO"} · Expires in {settings.default_quote_expiry_days || 14} days</div>
         <div><Label>Client</Label><select className={fieldClass} value={form.client_id} onChange={(e)=>pickClient(e.target.value)}><option value="">Select client</option>{clients.map((c)=><option key={clientId(c)} value={clientId(c)}>{clientName(c)}</option>)}</select></div>
         <div><Label>Customer Name *</Label><Input className="rounded-xl" required value={form.customer_name} onChange={(e)=>change("customer_name", e.target.value)} /></div>
         <div className="grid gap-3 md:grid-cols-2"><div><Label>Customer Email</Label><Input className="rounded-xl" type="email" value={form.customer_email} onChange={(e)=>change("customer_email", e.target.value)} /></div><div><Label>Customer Phone</Label><Input className="rounded-xl" value={form.customer_phone} onChange={(e)=>change("customer_phone", e.target.value)} /></div></div>
