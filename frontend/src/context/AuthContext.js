@@ -38,6 +38,19 @@ export function AuthProvider({ children }) {
     checkAuth();
   }, [checkAuth]);
 
+  // CHURVOX_AUTH_REFRESH_EVENT_20260601
+  // Billing/plan checkout, trial start and onboarding steps dispatch this event after
+  // backend state changes. Refresh /auth/me so routes immediately see the new plan,
+  // role and access state instead of bouncing back to /plans with stale user data.
+  useEffect(() => {
+    const refresh = () => {
+      setLoading(true);
+      checkAuth();
+    };
+    window.addEventListener("churvox-auth-refresh", refresh);
+    return () => window.removeEventListener("churvox-auth-refresh", refresh);
+  }, [checkAuth]);
+
   const login = useCallback(async (email, password) => {
     const response = await axios.post(
       `${API_BASE}/api/auth/login`,
