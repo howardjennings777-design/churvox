@@ -1,901 +1,603 @@
-/* CHURVOX_COMMAND_FLOOR_FULLSCREEN_COCKPIT_CSS_20260529
-   Safe CSS-only push through an already imported file.
-   Goal: make current React Command Floor feel like the 10/10 cockpit mockup without touching JS.
+/* CHURVOX_CALM_COMMAND_DESK_POLISH_20260601
+   CSS-only Command Floor polish. No API, auth, route, billing, or backend logic touched.
+   Goal: make Command feel premium, clear and useful without becoming complicated.
 */
 
-.xcf-control-tower .xcf-topbar,
-.xcf-control-tower .xcf-operator-proof-panel,
-.xcf-control-tower .xcf-field-strip,
-.xcf-control-tower :is(.xcf-approval-hero, .xcf-approval-summary, .xcf-approval-lanes) {
-  display: none !important;
-}
-
-.xcf-control-tower {
+.xcf-command-10 {
   min-height: 100vh !important;
-  padding: 16px 16px 110px !important;
-  color: #f8fbff !important;
+  padding: 22px 18px 104px !important;
+  color: #111827 !important;
   background:
-    radial-gradient(circle at 12% 2%, rgba(38, 211, 238, .18), transparent 30%),
-    radial-gradient(circle at 82% 7%, rgba(98, 72, 255, .22), transparent 32%),
-    radial-gradient(circle at 50% 82%, rgba(34, 197, 94, .08), transparent 34%),
-    linear-gradient(135deg, #020817 0%, #06152c 42%, #071d3d 100%) !important;
+    radial-gradient(circle at 12% -4%, rgba(190, 255, 92, .34), transparent 28%),
+    radial-gradient(circle at 88% 4%, rgba(32, 211, 238, .22), transparent 28%),
+    linear-gradient(180deg, #f8f4ea 0%, #efe7d7 44%, #e9dfcb 100%) !important;
   overflow-x: hidden !important;
 }
 
-.xcf-control-tower::before {
+.xcf-command-10::before {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(125,189,255,.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(125,189,255,.04) 1px, transparent 1px);
-  background-size: 54px 54px;
-  mask-image: radial-gradient(circle at 50% 20%, black, transparent 82%);
+    linear-gradient(rgba(15, 23, 42, .035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, .035) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(180deg, rgba(0,0,0,.72), transparent 72%);
 }
 
-.xcf-control-hero,
-.xcf-control-summary,
-.xcf-control-board,
-.xcf-bottom-nav {
-  width: min(1720px, calc(100vw - 32px)) !important;
+.xcf-command-10 :is(.xcf10-top-grid, .xcf10-launch-shortcuts, .xcf10-lanes-head, .xcf10-lanes, .xcf10-business-pulse, .xcf10-snapshot, .cv-command-switcher) {
+  width: min(1240px, calc(100vw - 40px)) !important;
+  max-width: calc(100vw - 40px) !important;
   margin-left: auto !important;
   margin-right: auto !important;
-}
-
-.xcf-control-hero {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) minmax(430px, 590px) !important;
-  gap: 20px !important;
-  margin-top: 0 !important;
-  margin-bottom: 18px !important;
-}
-
-.xcf-control-hero-main,
-.xcf-control-next,
-.xcf-control-board,
-.xcf-control-metric,
-.xcf-control-lane,
-.xcf-bottom-nav {
-  border: 1px solid rgba(125,189,255,.18) !important;
-  box-shadow: 0 24px 90px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.08) !important;
-  backdrop-filter: blur(22px) saturate(150%) !important;
-}
-
-.xcf-control-hero-main {
-  min-height: 350px !important;
-  border-radius: 28px !important;
-  padding: 42px 44px 26px !important;
-  background:
-    radial-gradient(circle at 80% 18%, rgba(93,74,255,.24), transparent 30%),
-    radial-gradient(circle at 10% 86%, rgba(34,211,238,.14), transparent 32%),
-    rgba(3,13,33,.74) !important;
-}
-
-.xcf-control-hero-main p,
-.xcf-control-next small,
-.xcf-control-board-head p {
-  margin: 0 !important;
-  color: #62e8f5 !important;
-  font-size: 13px !important;
-  letter-spacing: .22em !important;
-  text-transform: uppercase !important;
-  font-weight: 950 !important;
-}
-
-.xcf-control-hero-main h1 {
-  max-width: 980px !important;
-  margin: 18px 0 14px !important;
-  color: #fff !important;
-  font-size: clamp(52px, 4.1vw, 74px) !important;
-  line-height: 1.03 !important;
-  letter-spacing: -.065em !important;
-}
-
-.xcf-control-hero-main h2 {
-  display: none !important;
-}
-
-.xcf-control-hero-main > span {
-  display: block !important;
-  max-width: 780px !important;
-  color: rgba(248,251,255,.82) !important;
-  font-size: 19px !important;
-  line-height: 1.45 !important;
-}
-
-.xcf-control-chips {
-  display: grid !important;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  gap: 16px !important;
-  margin-top: 34px !important;
-}
-
-.xcf-control-chips button {
-  min-height: 116px !important;
-  display: grid !important;
-  align-content: center !important;
-  border: 1px solid rgba(125,189,255,.18) !important;
-  border-radius: 20px !important;
-  padding: 16px !important;
-  color: #fff !important;
-  text-align: left !important;
-  background: rgba(255,255,255,.055) !important;
-  cursor: pointer !important;
-}
-
-.xcf-control-chips b {
-  font-size: 30px !important;
-  line-height: 1 !important;
-  color: #fff !important;
-}
-
-.xcf-control-chips span {
-  color: rgba(248,251,255,.72) !important;
-  font-size: 14px !important;
-}
-
-.xcf-control-next {
   position: relative !important;
-  min-height: 350px !important;
-  border-radius: 28px !important;
-  padding: 42px 34px !important;
-  overflow: hidden !important;
-  background:
-    radial-gradient(circle at 78% 34%, rgba(98,72,255,.34), transparent 28%),
-    linear-gradient(135deg, rgba(5,22,58,.90), rgba(20,18,72,.84)) !important;
+  z-index: 1 !important;
 }
 
-.xcf-control-next::after {
-  content: "✦" !important;
-  position: absolute !important;
-  right: 56px !important;
-  top: 70px !important;
-  width: 126px !important;
-  height: 126px !important;
+.xcf-command-10 .xcf10-top-grid {
   display: grid !important;
-  place-items: center !important;
-  border: 1px solid rgba(95,125,255,.45) !important;
-  border-radius: 999px !important;
-  color: #fff !important;
-  font-size: 58px !important;
-  background: radial-gradient(circle, rgba(95,125,255,.24), transparent 70%) !important;
-  box-shadow: 0 0 70px rgba(95,125,255,.32) !important;
-}
-
-.xcf-control-next h3 {
-  max-width: 360px !important;
-  margin: 22px 0 14px !important;
-  color: #fff !important;
-  font-size: 34px !important;
-  line-height: 1.06 !important;
-  letter-spacing: -.04em !important;
-}
-
-.xcf-control-next p {
-  max-width: 380px !important;
-  color: rgba(248,251,255,.78) !important;
-  font-size: 16px !important;
-  line-height: 1.48 !important;
-}
-
-.xcf-control-next div {
-  display: flex !important;
-  gap: 10px !important;
-  margin: 22px 0 18px !important;
-}
-
-.xcf-control-next div span {
-  border-radius: 999px !important;
-  padding: 7px 10px !important;
-  background: rgba(255,255,255,.08) !important;
-  color: rgba(248,251,255,.82) !important;
-  font-size: 12px !important;
-  font-weight: 900 !important;
-}
-
-.xcf-control-next button,
-.xcf-control-lane > button {
-  border: 0 !important;
-  border-radius: 14px !important;
-  min-height: 52px !important;
-  padding: 0 22px !important;
-  background: linear-gradient(135deg, #14d8f4, #245cff 48%, #9333ea) !important;
-  color: #fff !important;
-  font-size: 17px !important;
-  font-weight: 900 !important;
-  cursor: pointer !important;
-  box-shadow: 0 16px 42px rgba(36,92,255,.30) !important;
-}
-
-.xcf-control-next em {
-  display: block !important;
-  margin-top: 14px !important;
-  color: rgba(248,251,255,.74) !important;
-  font-style: normal !important;
-}
-
-.xcf-control-summary {
-  display: none !important;
-}
-
-.xcf-control-board {
-  border-radius: 28px !important;
-  padding: 22px !important;
-  background: rgba(3,13,33,.72) !important;
-}
-
-.xcf-control-board-head {
-  display: flex !important;
-  align-items: end !important;
-  justify-content: space-between !important;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, .72fr) !important;
   gap: 18px !important;
-  margin-bottom: 16px !important;
-}
-
-.xcf-control-board-head h2 {
-  margin: 6px 0 0 !important;
-  color: #fff !important;
-  font-size: 19px !important;
-  font-weight: 650 !important;
-}
-
-.xcf-control-lanes {
-  display: grid !important;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-  gap: 14px !important;
-}
-
-.xcf-control-lane {
-  min-height: 390px !important;
-  border-radius: 24px !important;
-  padding: 18px !important;
-  color: #fff !important;
-  overflow: hidden !important;
-}
-
-.xcf-control-lane.amber { background: linear-gradient(155deg, rgba(0,184,198,.33), rgba(5,34,56,.86)) !important; }
-.xcf-control-lane.green { background: linear-gradient(155deg, rgba(35,180,90,.34), rgba(6,55,41,.86)) !important; }
-.xcf-control-lane.blue { background: linear-gradient(155deg, rgba(50,120,255,.35), rgba(8,40,90,.86)) !important; }
-.xcf-control-lane.purple { background: linear-gradient(155deg, rgba(122,68,232,.40), rgba(35,25,82,.86)) !important; }
-.xcf-control-lane.red { background: linear-gradient(155deg, rgba(200,124,57,.38), rgba(67,41,30,.86)) !important; }
-
-.xcf-control-lane header {
-  display: grid !important;
-  grid-template-columns: 1fr auto !important;
-  gap: 10px !important;
-  align-items: start !important;
-}
-
-.xcf-control-lane header small {
-  grid-column: 1 / -1 !important;
-  color: rgba(248,251,255,.76) !important;
-  letter-spacing: .16em !important;
-  text-transform: uppercase !important;
-  font-weight: 950 !important;
-  font-size: 11px !important;
-}
-
-.xcf-control-lane h3 {
-  margin: 0 !important;
-  color: #fff !important;
-  font-size: 23px !important;
-  letter-spacing: -.035em !important;
-}
-
-.xcf-control-lane strong {
-  color: #fff !important;
-  font-size: 30px !important;
-}
-
-.xcf-control-lane p {
-  min-height: 92px !important;
-  color: rgba(248,251,255,.78) !important;
-  font-size: 15px !important;
-  line-height: 1.48 !important;
-}
-
-.xcf-control-lane > button {
-  width: 100% !important;
   margin-bottom: 14px !important;
 }
 
-.xcf-control-preview {
-  display: grid !important;
-  gap: 8px !important;
-  margin-top: 0 !important;
+.xcf-command-10 .xcf10-hero,
+.xcf-command-10 .xcf10-next,
+.xcf-command-10 .xcf10-lane,
+.xcf-command-10 .xcf10-business-card,
+.xcf-command-10 .xcf10-snapshot {
+  border: 1px solid rgba(17, 24, 39, .10) !important;
+  box-shadow: 0 24px 70px rgba(17, 24, 39, .12), inset 0 1px 0 rgba(255,255,255,.55) !important;
+  backdrop-filter: blur(18px) saturate(145%) !important;
 }
 
-.xcf-control-preview button,
-.xcf-control-empty {
-  min-height: 74px !important;
+.xcf-command-10 .xcf10-hero {
+  min-height: 310px !important;
+  border-radius: 34px !important;
+  padding: clamp(26px, 3.4vw, 44px) !important;
+  color: #fff !important;
+  background:
+    radial-gradient(circle at 86% 12%, rgba(190, 255, 92, .18), transparent 28%),
+    radial-gradient(circle at 0% 94%, rgba(34, 211, 238, .12), transparent 38%),
+    linear-gradient(135deg, #111827 0%, #172033 58%, #070b12 100%) !important;
+}
+
+.xcf-command-10 .xcf10-hero p,
+.xcf-command-10 .xcf10-lanes-head p,
+.xcf-command-10 .xcf10-business-card header small,
+.xcf-command-10 .xcf10-snapshot small,
+.xcf-command-10 .xcf10-next small {
+  margin: 0 !important;
+  color: #bef264 !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+  letter-spacing: .18em !important;
+  text-transform: uppercase !important;
+}
+
+.xcf-command-10 .xcf10-hero h1 {
+  max-width: 760px !important;
+  margin: 12px 0 12px !important;
+  color: #fff !important;
+  font-size: clamp(44px, 5.2vw, 72px) !important;
+  line-height: .95 !important;
+  letter-spacing: -.07em !important;
+}
+
+.xcf-command-10 .xcf10-hero > span {
+  display: block !important;
+  max-width: 660px !important;
+  color: rgba(255,255,255,.78) !important;
+  font-size: 16px !important;
+  line-height: 1.45 !important;
+}
+
+.xcf-command-10 .xcf10-hero-stats {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  margin-top: 26px !important;
+}
+
+.xcf-command-10 .xcf10-hero-stats button {
+  min-height: 94px !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  border-radius: 22px !important;
+  padding: 15px !important;
+  color: #fff !important;
+  text-align: left !important;
+  background: rgba(255,255,255,.06) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08) !important;
+  cursor: pointer !important;
+}
+
+.xcf-command-10 .xcf10-hero-stats button:hover {
+  transform: translateY(-1px) !important;
+  background: rgba(255,255,255,.10) !important;
+}
+
+.xcf-command-10 .xcf10-hero-stats i {
+  width: 34px !important;
+  height: 34px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 14px !important;
+  color: #111827 !important;
+  background: #bef264 !important;
+  font-style: normal !important;
+}
+
+.xcf-command-10 .xcf10-hero-stats b {
+  display: block !important;
+  margin-top: 8px !important;
+  color: #fff !important;
+  font-size: clamp(24px, 2.5vw, 36px) !important;
+  line-height: 1 !important;
+  letter-spacing: -.045em !important;
+  white-space: nowrap !important;
+}
+
+.xcf-command-10 .xcf10-hero-stats span {
+  display: block !important;
+  margin-top: 5px !important;
+  color: rgba(255,255,255,.66) !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+}
+
+.xcf-command-10 .xcf10-next {
+  min-height: 310px !important;
+  border-radius: 34px !important;
+  padding: 30px !important;
+  color: #111827 !important;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(190, 255, 92, .42), transparent 34%),
+    linear-gradient(145deg, rgba(255,255,255,.88), rgba(255,255,255,.54)) !important;
+}
+
+.xcf-command-10 .xcf10-next::after {
+  content: "AI" !important;
+  position: absolute !important;
+  right: 26px !important;
+  top: 24px !important;
+  width: 72px !important;
+  height: 72px !important;
+  display: grid !important;
+  place-items: center !important;
+  border: 1px solid rgba(17, 24, 39, .12) !important;
+  border-radius: 26px !important;
+  color: #111827 !important;
+  font-size: 24px !important;
+  font-weight: 950 !important;
+  background: #bef264 !important;
+  box-shadow: 0 18px 42px rgba(132, 204, 22, .28) !important;
+}
+
+.xcf-command-10 .xcf10-next h2 {
+  max-width: 260px !important;
+  margin: 14px 0 10px !important;
+  color: #111827 !important;
+  font-size: clamp(28px, 3vw, 42px) !important;
+  line-height: .98 !important;
+  letter-spacing: -.055em !important;
+}
+
+.xcf-command-10 .xcf10-next p {
+  max-width: 320px !important;
+  margin: 0 !important;
+  color: rgba(17,24,39,.68) !important;
+  font-size: 14px !important;
+  line-height: 1.44 !important;
+}
+
+.xcf-command-10 .xcf10-next div {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  margin: 18px 0 14px !important;
+}
+
+.xcf-command-10 .xcf10-next div span {
+  border: 1px solid rgba(17,24,39,.10) !important;
+  border-radius: 999px !important;
+  padding: 7px 10px !important;
+  color: #111827 !important;
+  background: rgba(255,255,255,.62) !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+}
+
+.xcf-command-10 .xcf10-next button,
+.xcf-command-10 .xcf10-lane > button {
+  min-height: 46px !important;
+  border: 0 !important;
+  border-radius: 16px !important;
+  padding: 0 18px !important;
+  color: #111827 !important;
+  background: #bef264 !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+  cursor: pointer !important;
+  box-shadow: 0 14px 34px rgba(132, 204, 22, .26) !important;
+}
+
+.xcf-command-10 .xcf10-next em {
+  display: block !important;
+  margin-top: 12px !important;
+  color: rgba(17,24,39,.58) !important;
+  font-style: normal !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+}
+
+.xcf-command-10 .xcf10-launch-shortcuts {
+  display: none !important;
+}
+
+.xcf-command-10 .xcf10-lanes-head {
+  display: flex !important;
+  align-items: end !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+  margin-top: 18px !important;
+  margin-bottom: 10px !important;
+}
+
+.xcf-command-10 .xcf10-lanes-head h2 {
+  max-width: 640px !important;
+  margin: 5px 0 0 !important;
+  color: #111827 !important;
+  font-size: clamp(22px, 2.2vw, 34px) !important;
+  line-height: 1.02 !important;
+  letter-spacing: -.04em !important;
+}
+
+.xcf-command-10 .xcf10-lanes-head button {
+  min-height: 42px !important;
+  border: 1px solid rgba(17,24,39,.12) !important;
+  border-radius: 999px !important;
+  padding: 0 16px !important;
+  color: #111827 !important;
+  background: rgba(255,255,255,.66) !important;
+  font-weight: 900 !important;
+  cursor: pointer !important;
+}
+
+.xcf-command-10 .xcf10-lanes {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+}
+
+.xcf-command-10 .xcf10-lane {
+  min-height: 285px !important;
+  display: grid !important;
+  grid-template-rows: auto auto auto auto 1fr !important;
+  border-radius: 28px !important;
+  padding: 18px !important;
+  overflow: hidden !important;
+  color: #fff !important;
+  background: linear-gradient(145deg, #111827, #1f2937) !important;
+}
+
+.xcf-command-10 .xcf10-lane:nth-child(1) { background: linear-gradient(145deg, #172033, #064e3b) !important; }
+.xcf-command-10 .xcf10-lane:nth-child(2) { background: linear-gradient(145deg, #172033, #14532d) !important; }
+.xcf-command-10 .xcf10-lane:nth-child(3) { background: linear-gradient(145deg, #172033, #1e3a8a) !important; }
+.xcf-command-10 .xcf10-lane:nth-child(4) { background: linear-gradient(145deg, #172033, #581c87) !important; }
+.xcf-command-10 .xcf10-lane:nth-child(n+5) {
+  min-height: 220px !important;
+  background: rgba(255,255,255,.72) !important;
+  color: #111827 !important;
+}
+
+.xcf-command-10 .xcf10-lane header {
+  display: grid !important;
+  grid-template-columns: 38px minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.xcf-command-10 .xcf10-lane header i {
+  width: 38px !important;
+  height: 38px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 15px !important;
+  color: #111827 !important;
+  background: #bef264 !important;
+  font-style: normal !important;
+  font-weight: 950 !important;
+}
+
+.xcf-command-10 .xcf10-lane header small {
+  color: rgba(255,255,255,.68) !important;
+  font-size: 10px !important;
+  letter-spacing: .15em !important;
+}
+
+.xcf-command-10 .xcf10-lane:nth-child(n+5) header small,
+.xcf-command-10 .xcf10-lane:nth-child(n+5) p,
+.xcf-command-10 .xcf10-lane:nth-child(n+5) .xcf10-next-up > small {
+  color: rgba(17,24,39,.58) !important;
+}
+
+.xcf-command-10 .xcf10-lane header strong {
+  color: inherit !important;
+  font-size: clamp(24px, 2.2vw, 36px) !important;
+  letter-spacing: -.045em !important;
+}
+
+.xcf-command-10 .xcf10-lane h3 {
+  margin: 18px 0 7px !important;
+  color: inherit !important;
+  font-size: clamp(20px, 1.55vw, 26px) !important;
+  line-height: 1.02 !important;
+  letter-spacing: -.04em !important;
+}
+
+.xcf-command-10 .xcf10-lane p {
+  min-height: 52px !important;
+  margin: 0 !important;
+  color: rgba(255,255,255,.72) !important;
+  font-size: 13px !important;
+  line-height: 1.36 !important;
+}
+
+.xcf-command-10 .xcf10-lane > button {
+  width: 100% !important;
+  margin-top: 15px !important;
+}
+
+.xcf-command-10 .xcf10-next-up {
+  display: grid !important;
+  gap: 8px !important;
+  margin-top: 13px !important;
+}
+
+.xcf-command-10 .xcf10-next-up > small {
+  color: rgba(255,255,255,.56) !important;
+  font-size: 10px !important;
+  font-weight: 950 !important;
+  letter-spacing: .14em !important;
+  text-transform: uppercase !important;
+}
+
+.xcf-command-10 .xcf10-next-up button,
+.xcf-command-10 .xcf10-clear {
+  min-height: 64px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   gap: 12px !important;
   border: 1px solid rgba(255,255,255,.12) !important;
-  border-radius: 13px !important;
+  border-radius: 18px !important;
   padding: 12px !important;
-  background: rgba(255,255,255,.07) !important;
-  color: #fff !important;
+  color: inherit !important;
+  background: rgba(255,255,255,.08) !important;
   text-align: left !important;
+  cursor: pointer !important;
 }
 
-.xcf-control-preview b,
-.xcf-control-empty b {
-  display: block !important;
-  color: #fff !important;
-  font-size: 13px !important;
-}
-
-.xcf-control-preview small,
-.xcf-control-empty small {
-  display: block !important;
-  margin-top: 4px !important;
-  color: rgba(248,251,255,.62) !important;
-  font-size: 12px !important;
-}
-
-.xcf-control-preview em {
-  color: rgba(248,251,255,.70) !important;
-  font-size: 12px !important;
-  font-style: normal !important;
-}
-
-.xcf-bottom-nav {
-  position: fixed !important;
-  left: 50% !important;
-  bottom: 14px !important;
-  z-index: 80 !important;
-  transform: translateX(-50%) !important;
-  width: min(980px, calc(100vw - 32px)) !important;
-  min-height: 70px !important;
-  display: grid !important;
-  grid-template-columns: repeat(6, 1fr) !important;
-  gap: 10px !important;
-  align-items: center !important;
-  border: 1px solid rgba(125,189,255,.18) !important;
-  border-radius: 26px !important;
-  padding: 10px 14px !important;
-  background: rgba(3,13,33,.86) !important;
-  box-shadow: 0 24px 90px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.08) !important;
-  backdrop-filter: blur(22px) saturate(150%) !important;
-}
-
-.xcf-bottom-nav a {
-  height: 50px !important;
-  display: grid !important;
-  place-items: center !important;
-  border-radius: 16px !important;
-  padding: 0 12px !important;
-  color: rgba(248,251,255,.72) !important;
-  text-decoration: none !important;
-  background: transparent !important;
-  font-size: 12px !important;
-  font-weight: 850 !important;
-}
-
-.xcf-bottom-nav a:first-child {
-  background: rgba(84,215,238,.12) !important;
-  color: #fff !important;
-}
-
-@media (max-width: 1300px) {
-  .xcf-control-hero { grid-template-columns: 1fr !important; }
-  .xcf-control-lanes { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
-}
-
-@media (max-width: 760px) {
-  .xcf-control-tower { padding: 12px 10px 92px !important; }
-  .xcf-control-hero,
-  .xcf-control-board,
-  .xcf-bottom-nav { width: min(100%, calc(100vw - 20px)) !important; }
-  .xcf-control-chips,
-  .xcf-control-lanes { grid-template-columns: 1fr !important; }
-  .xcf-control-hero-main h1 { font-size: clamp(40px, 12vw, 58px) !important; }
-  .xcf-bottom-nav { min-height: 62px !important; border-radius: 22px !important; grid-template-columns: repeat(4, 1fr) !important; }
-  .xcf-bottom-nav a:nth-of-type(n+5) { display: none !important; }
-}
-
-/* CHURVOX_COMMAND_FLOOR_10_POLISH_20260531
-   Dashboard-only polish. CSS only. No route, API, auth, billing or backend logic touched.
-*/
-
-.xcf-command-10 {
-  padding-top: 10px !important;
-  padding-bottom: 88px !important;
-}
-
-.xcf-command-10 .xcf10-top-grid,
-.xcf-command-10 .xcf10-lanes-head,
-.xcf-command-10 .xcf10-lanes,
-.xcf-command-10 .xcf10-snapshot {
-  width: min(1500px, calc(100vw - 72px)) !important;
-  max-width: calc(100vw - 72px) !important;
-}
-
-.xcf-command-10 .xcf10-top-grid {
-  grid-template-columns: minmax(0, 1.45fr) minmax(310px, .72fr) !important;
-  gap: 12px !important;
-  margin-bottom: 12px !important;
-}
-
-.xcf-command-10 .xcf10-hero,
-.xcf-command-10 .xcf10-next {
-  min-height: 252px !important;
-  border-radius: 25px !important;
-}
-
-.xcf-command-10 .xcf10-hero {
-  padding: 24px 28px !important;
-}
-
-.xcf-command-10 .xcf10-hero p {
-  font-size: 10px !important;
-  letter-spacing: .16em !important;
-  color: #62e8f5 !important;
-}
-
-.xcf-command-10 .xcf10-hero h1 {
-  max-width: 700px !important;
-  margin: 9px 0 10px !important;
-  font-size: clamp(36px, 4vw, 58px) !important;
-  line-height: .94 !important;
-  letter-spacing: -.067em !important;
-}
-
-.xcf-command-10 .xcf10-hero > span {
-  max-width: 720px !important;
-  font-size: 13px !important;
-  line-height: 1.32 !important;
-  color: rgba(248,251,255,.78) !important;
-}
-
-.xcf-command-10 .xcf10-hero-stats {
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  gap: 10px !important;
-  margin-top: 18px !important;
-}
-
-.xcf-command-10 .xcf10-hero-stats button {
-  min-width: 0 !important;
-  min-height: 70px !important;
-  border-radius: 17px !important;
-  padding: 11px 12px !important;
-  overflow: hidden !important;
-}
-
-.xcf-command-10 .xcf10-hero-stats i {
-  width: 28px !important;
-  height: 28px !important;
-  border-radius: 10px !important;
-}
-
-.xcf-command-10 .xcf10-hero-stats b {
-  max-width: 100% !important;
-  display: block !important;
-  overflow: visible !important;
-  white-space: nowrap !important;
-  font-size: clamp(20px, 1.8vw, 27px) !important;
-  line-height: 1 !important;
-  letter-spacing: -.035em !important;
-}
-
-.xcf-command-10 .xcf10-hero-stats span {
-  font-size: 10px !important;
-  line-height: 1.1 !important;
-}
-
-.xcf-command-10 .xcf10-next {
-  padding: 23px 24px !important;
-  background:
-    radial-gradient(circle at 76% 28%, rgba(98,72,255,.42), transparent 30%),
-    linear-gradient(135deg, rgba(5,22,58,.94), rgba(20,18,72,.88)) !important;
-}
-
-.xcf-command-10 .xcf10-next::after {
-  width: 84px !important;
-  height: 84px !important;
-  right: 30px !important;
-  top: 34px !important;
-  font-size: 42px !important;
-}
-
-.xcf-command-10 .xcf10-next small {
-  font-size: 10px !important;
-  letter-spacing: .15em !important;
-  color: #77ffc1 !important;
-}
-
-.xcf-command-10 .xcf10-next h2 {
-  max-width: 250px !important;
-  margin-top: 12px !important;
-  font-size: clamp(24px, 2.35vw, 34px) !important;
-  line-height: .98 !important;
-}
-
-.xcf-command-10 .xcf10-next p {
-  max-width: 290px !important;
-  font-size: 12px !important;
-  line-height: 1.34 !important;
-  color: rgba(248,251,255,.76) !important;
-}
-
-.xcf-command-10 .xcf10-next button {
-  min-height: 39px !important;
-  border-radius: 13px !important;
-  font-size: 12px !important;
-  font-weight: 950 !important;
-}
-
-.xcf-command-10 .xcf10-lanes-head {
-  margin-top: 8px !important;
-  margin-bottom: 8px !important;
-}
-
-.xcf-command-10 .xcf10-lanes-head p {
-  font-size: 10px !important;
-  letter-spacing: .15em !important;
-}
-
-.xcf-command-10 .xcf10-lanes-head h2 {
-  font-size: 15px !important;
-  line-height: 1.2 !important;
-}
-
-.xcf-command-10 .xcf10-lanes {
-  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
-  gap: 9px !important;
-}
-
-.xcf-command-10 .xcf10-lane {
-  min-height: 246px !important;
-  display: grid !important;
-  grid-template-rows: auto auto minmax(50px, auto) auto minmax(54px, 1fr) !important;
-  border-radius: 20px !important;
-  padding: 12px !important;
-}
-
-.xcf-command-10 .xcf10-lane header {
-  grid-template-columns: 28px 1fr auto !important;
-  gap: 7px !important;
-}
-
-.xcf-command-10 .xcf10-lane header i {
-  width: 28px !important;
-  height: 28px !important;
-  border-radius: 10px !important;
-}
-
-.xcf-command-10 .xcf10-lane header small {
-  font-size: 8.5px !important;
-  letter-spacing: .14em !important;
-}
-
-.xcf-command-10 .xcf10-lane header strong {
-  font-size: clamp(17px, 1.5vw, 25px) !important;
-}
-
-.xcf-command-10 .xcf10-lane h3 {
-  margin-top: 10px !important;
-  margin-bottom: 6px !important;
-  font-size: clamp(15px, 1.1vw, 19px) !important;
-  line-height: 1.05 !important;
-}
-
-.xcf-command-10 .xcf10-lane p {
-  min-height: 0 !important;
-  margin: 0 !important;
-  font-size: 11px !important;
-  line-height: 1.28 !important;
-}
-
-.xcf-command-10 .xcf10-lane > button {
-  min-height: 34px !important;
-  margin-top: 9px !important;
-  border-radius: 12px !important;
-  font-size: 11px !important;
-}
-
-.xcf-command-10 .xcf10-next-up {
-  gap: 5px !important;
-}
-
-.xcf-command-10 .xcf10-next-up > small {
-  font-size: 8.5px !important;
-}
-
-.xcf-command-10 .xcf10-next-up button,
-.xcf-command-10 .xcf10-clear {
-  min-height: 47px !important;
-  padding: 8px !important;
-  border-radius: 12px !important;
+.xcf-command-10 .xcf10-lane:nth-child(n+5) .xcf10-next-up button,
+.xcf-command-10 .xcf10-lane:nth-child(n+5) .xcf10-clear {
+  border-color: rgba(17,24,39,.10) !important;
+  background: rgba(17,24,39,.045) !important;
 }
 
 .xcf-command-10 .xcf10-next-up b,
 .xcf-command-10 .xcf10-clear b {
-  font-size: 10.5px !important;
+  display: block !important;
+  color: inherit !important;
+  font-size: 12px !important;
+  line-height: 1.15 !important;
 }
 
 .xcf-command-10 .xcf10-next-up small,
 .xcf-command-10 .xcf10-clear span,
 .xcf-command-10 .xcf10-next-up em {
-  font-size: 9px !important;
-  line-height: 1.14 !important;
+  display: block !important;
+  margin-top: 3px !important;
+  color: rgba(255,255,255,.58) !important;
+  font-size: 10px !important;
+  line-height: 1.2 !important;
+  font-style: normal !important;
 }
 
-.xcf-command-10 .xcf10-snapshot {
-  min-height: 74px !important;
-  margin-top: 10px !important;
-  padding: 11px 14px !important;
-  border-radius: 20px !important;
+.xcf-command-10 .xcf10-lane:nth-child(n+5) .xcf10-next-up small,
+.xcf-command-10 .xcf10-lane:nth-child(n+5) .xcf10-clear span,
+.xcf-command-10 .xcf10-lane:nth-child(n+5) .xcf10-next-up em {
+  color: rgba(17,24,39,.56) !important;
 }
-
-.xcf-command-10 .xcf10-snapshot small {
-  font-size: 9px !important;
-}
-
-.xcf-command-10 .xcf10-snapshot b {
-  font-size: clamp(17px, 1.35vw, 24px) !important;
-  white-space: nowrap !important;
-}
-
-.xcf-command-10 .xcf10-dock {
-  width: min(760px, calc(100vw - 24px)) !important;
-  max-width: calc(100vw - 24px) !important;
-  min-height: 48px !important;
-  height: 48px !important;
-  display: grid !important;
-  grid-template-columns: repeat(6, minmax(58px, 1fr)) minmax(125px, 1.35fr) !important;
-  gap: 5px !important;
-  padding: 5px !important;
-  border-radius: 18px !important;
-  overflow: hidden !important;
-}
-
-.xcf-command-10 .xcf10-dock a,
-.xcf-command-10 .xcf10-dock label {
-  min-width: 0 !important;
-  height: 38px !important;
-  min-height: 38px !important;
-  border-radius: 13px !important;
-  padding: 0 8px !important;
-  font-size: 0 !important;
-  line-height: 1 !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-}
-
-.xcf-command-10 .xcf10-dock a::after {
-  font-size: 10.5px !important;
-  font-weight: 950 !important;
-  line-height: 1 !important;
-}
-
-.xcf-command-10 .xcf10-dock a[href="/dashboard"]::after { content: "Command" !important; }
-.xcf-command-10 .xcf10-dock a[href="/jobs"]::after { content: "Jobs" !important; }
-.xcf-command-10 .xcf10-dock a[href="/clients"]::after { content: "Clients" !important; }
-.xcf-command-10 .xcf10-dock a[href="/invoices"]::after { content: "Money" !important; }
-.xcf-command-10 .xcf10-dock a[href="/team"]::after { content: "Crew" !important; }
-.xcf-command-10 .xcf10-dock a[href="/operator-tools"]::after { content: "Tools" !important; }
-
-.xcf-command-10 .xcf10-dock label {
-  display: flex !important;
-  align-items: center !important;
-  gap: 5px !important;
-}
-
-.xcf-command-10 .xcf10-dock label span,
-.xcf-command-10 .xcf10-dock label input {
-  font-size: 10.5px !important;
-}
-
-.xcf-command-10 .xcf10-dock label input {
-  min-width: 0 !important;
-  width: 100% !important;
-}
-
-.xcf-command-10 .xcf10-dock button,
-.xcf-command-10 .xcf10-dock b {
-  display: none !important;
-}
-
-@media (max-width: 1450px) {
-  .xcf-command-10 .xcf10-lanes { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
-  .xcf-command-10 .xcf10-lane { min-height: 250px !important; }
-}
-
-@media (max-width: 980px) {
-  .xcf-command-10 .xcf10-top-grid { grid-template-columns: 1fr !important; }
-  .xcf-command-10 .xcf10-hero,
-  .xcf-command-10 .xcf10-next { min-height: auto !important; }
-  .xcf-command-10 .xcf10-lanes { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-}
-
-@media (max-width: 760px) {
-  .xcf-command-10 .xcf10-lanes,
-  .xcf-command-10 .xcf10-hero-stats { grid-template-columns: 1fr !important; }
-  .xcf-command-10 .xcf10-dock {
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-    width: calc(100vw - 12px) !important;
-  }
-  .xcf-command-10 .xcf10-dock label,
-  .xcf-command-10 .xcf10-dock a[href="/operator-tools"] {
-    display: none !important;
-  }
-}
-
-/* CHURVOX_COMMAND_FLOOR_BUSINESS_PULSE_REACT_20260531
-   Real React dashboard panels. No runtime DOM injection.
-*/
 
 .xcf-command-10 .xcf10-business-pulse {
-  width: min(1500px, calc(100vw - 72px)) !important;
-  max-width: calc(100vw - 72px) !important;
-  margin: 10px auto 0 !important;
   display: grid !important;
-  grid-template-columns: 1.15fr .75fr .75fr 1fr 1fr !important;
-  gap: 10px !important;
-  align-items: stretch !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  margin-top: 14px !important;
 }
 
 .xcf-command-10 .xcf10-business-card {
-  min-width: 0 !important;
-  min-height: 154px !important;
-  border: 1px solid rgba(125,189,255,.18) !important;
-  border-radius: 20px !important;
-  padding: 12px !important;
-  overflow: hidden !important;
-  background:
-    radial-gradient(circle at 0% 0%, rgba(20,216,244,.12), transparent 36%),
-    rgba(3,13,33,.70) !important;
-  box-shadow: 0 18px 58px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.08) !important;
-  backdrop-filter: blur(18px) saturate(145%) !important;
+  min-height: 170px !important;
+  border-radius: 28px !important;
+  padding: 18px !important;
+  color: #111827 !important;
+  background: rgba(255,255,255,.76) !important;
 }
 
-.xcf-command-10 .xcf10-business-card.money {
-  background:
-    radial-gradient(circle at 0% 0%, rgba(34,197,94,.16), transparent 36%),
-    rgba(3,13,33,.72) !important;
-}
-
-.xcf-command-10 .xcf10-business-card.crew {
-  background:
-    radial-gradient(circle at 0% 0%, rgba(20,216,244,.15), transparent 36%),
-    rgba(3,13,33,.72) !important;
-}
-
-.xcf-command-10 .xcf10-business-card.fix {
-  background:
-    radial-gradient(circle at 0% 0%, rgba(245,158,11,.17), transparent 38%),
-    rgba(3,13,33,.72) !important;
+.xcf-command-10 .xcf10-business-card:nth-child(n+4) {
+  display: none !important;
 }
 
 .xcf-command-10 .xcf10-business-card header {
   display: flex !important;
-  align-items: flex-start !important;
+  align-items: start !important;
   justify-content: space-between !important;
-  gap: 10px !important;
-  margin-bottom: 9px !important;
-}
-
-.xcf-command-10 .xcf10-business-card header small {
-  color: #77ffc1 !important;
-  font-size: 9px !important;
-  font-weight: 950 !important;
-  letter-spacing: .15em !important;
-  text-transform: uppercase !important;
+  gap: 12px !important;
 }
 
 .xcf-command-10 .xcf10-business-card header strong {
-  color: #fff !important;
-  font-size: clamp(17px, 1.5vw, 25px) !important;
+  color: #111827 !important;
+  font-size: 30px !important;
   line-height: 1 !important;
   letter-spacing: -.04em !important;
-  white-space: nowrap !important;
-}
-
-.xcf-command-10 .xcf10-pulse-grid {
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 7px !important;
 }
 
 .xcf-command-10 .xcf10-pulse-list {
   display: grid !important;
-  gap: 7px !important;
+  gap: 8px !important;
+  margin-top: 12px !important;
 }
 
 .xcf-command-10 .xcf10-pulse-line,
 .xcf-command-10 .xcf10-business-feed button,
 .xcf-command-10 .xcf10-pulse-empty {
-  min-width: 0 !important;
-  min-height: 38px !important;
-  width: 100% !important;
+  min-height: 52px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  gap: 8px !important;
-  border: 1px solid rgba(125,189,255,.13) !important;
-  border-radius: 13px !important;
-  padding: 8px !important;
-  background: rgba(255,255,255,.055) !important;
-  color: #fff !important;
+  gap: 12px !important;
+  border: 1px solid rgba(17,24,39,.08) !important;
+  border-radius: 17px !important;
+  padding: 10px 12px !important;
+  color: #111827 !important;
+  background: rgba(17,24,39,.04) !important;
   text-align: left !important;
-  cursor: pointer !important;
-}
-
-.xcf-command-10 .xcf10-pulse-line:hover,
-.xcf-command-10 .xcf10-business-feed button:hover {
-  border-color: rgba(98,232,245,.34) !important;
-  background: rgba(20,216,244,.10) !important;
-}
-
-.xcf-command-10 .xcf10-pulse-line span,
-.xcf-command-10 .xcf10-business-feed button span {
-  min-width: 0 !important;
-}
-
-.xcf-command-10 .xcf10-pulse-line small,
-.xcf-command-10 .xcf10-business-feed button small {
-  display: block !important;
-  color: rgba(248,251,255,.60) !important;
-  font-size: 9px !important;
-  line-height: 1.12 !important;
-  font-weight: 800 !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
 }
 
 .xcf-command-10 .xcf10-pulse-line b,
-.xcf-command-10 .xcf10-business-feed button b {
-  display: block !important;
-  margin-top: 2px !important;
-  color: #fff !important;
-  font-size: 12px !important;
-  line-height: 1.05 !important;
-  font-weight: 950 !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
+.xcf-command-10 .xcf10-business-feed b {
+  color: #111827 !important;
+  font-size: 13px !important;
 }
 
+.xcf-command-10 .xcf10-pulse-line small,
+.xcf-command-10 .xcf10-business-feed small,
 .xcf-command-10 .xcf10-pulse-line em,
-.xcf-command-10 .xcf10-business-feed button em {
-  flex: 0 0 auto !important;
-  max-width: 88px !important;
-  border-radius: 999px !important;
-  padding: 5px 7px !important;
-  background: rgba(20,216,244,.10) !important;
-  color: rgba(248,251,255,.74) !important;
-  font-size: 8.5px !important;
-  font-style: normal !important;
-  font-weight: 900 !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-}
-
-.xcf-command-10 .xcf10-pulse-empty {
-  min-height: 86px !important;
-  align-items: center !important;
-  color: rgba(248,251,255,.62) !important;
+.xcf-command-10 .xcf10-business-feed em {
+  color: rgba(17,24,39,.56) !important;
   font-size: 11px !important;
-  line-height: 1.35 !important;
-  cursor: default !important;
+  font-style: normal !important;
 }
 
-@media (max-width: 1450px) {
-  .xcf-command-10 .xcf10-business-pulse {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+.xcf-command-10 .xcf10-snapshot {
+  display: none !important;
+}
+
+.xcf-command-10 .cv-command-switcher {
+  position: fixed !important;
+  left: 50% !important;
+  bottom: 16px !important;
+  z-index: 90 !important;
+  transform: translateX(-50%) !important;
+  width: min(820px, calc(100vw - 24px)) !important;
+  min-height: 62px !important;
+  display: grid !important;
+  grid-template-columns: repeat(9, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+  border: 1px solid rgba(17,24,39,.12) !important;
+  border-radius: 26px !important;
+  padding: 8px !important;
+  background: rgba(255,255,255,.78) !important;
+  box-shadow: 0 24px 70px rgba(17,24,39,.16), inset 0 1px 0 rgba(255,255,255,.72) !important;
+  backdrop-filter: blur(20px) saturate(150%) !important;
+}
+
+.xcf-command-10 .cv-command-switcher a {
+  min-width: 0 !important;
+  height: 46px !important;
+  display: grid !important;
+  place-items: center !important;
+  gap: 2px !important;
+  border-radius: 18px !important;
+  color: rgba(17,24,39,.62) !important;
+  text-decoration: none !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+}
+
+.xcf-command-10 .cv-command-switcher a.active,
+.xcf-command-10 .cv-command-switcher a:first-child {
+  color: #111827 !important;
+  background: #bef264 !important;
+}
+
+.xcf-command-10 .cv-command-switcher i {
+  font-style: normal !important;
+  font-size: 13px !important;
+  line-height: 1 !important;
+}
+
+.xcf-command-10 .xcf10-loading {
+  position: fixed !important;
+  right: 18px !important;
+  bottom: 92px !important;
+  z-index: 91 !important;
+  border-radius: 999px !important;
+  padding: 9px 12px !important;
+  color: #111827 !important;
+  background: #bef264 !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+  box-shadow: 0 18px 42px rgba(17,24,39,.16) !important;
+}
+
+@media (max-width: 1180px) {
+  .xcf-command-10 .xcf10-top-grid { grid-template-columns: 1fr !important; }
+  .xcf-command-10 .xcf10-next { min-height: auto !important; }
+  .xcf-command-10 .xcf10-lanes { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .xcf-command-10 .xcf10-business-pulse { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 760px) {
+  .xcf-command-10 {
+    padding: 12px 10px 92px !important;
   }
-}
 
-@media (max-width: 980px) {
-  .xcf-command-10 .xcf10-business-pulse {
-    width: min(100%, calc(100vw - 44px)) !important;
-    max-width: calc(100vw - 44px) !important;
+  .xcf-command-10 :is(.xcf10-top-grid, .xcf10-launch-shortcuts, .xcf10-lanes-head, .xcf10-lanes, .xcf10-business-pulse, .xcf10-snapshot, .cv-command-switcher) {
+    width: calc(100vw - 20px) !important;
+    max-width: calc(100vw - 20px) !important;
+  }
+
+  .xcf-command-10 .xcf10-hero {
+    min-height: auto !important;
+    border-radius: 28px !important;
+    padding: 26px 20px !important;
+  }
+
+  .xcf-command-10 .xcf10-hero h1 {
+    font-size: clamp(38px, 12vw, 58px) !important;
+  }
+
+  .xcf-command-10 .xcf10-hero-stats,
+  .xcf-command-10 .xcf10-lanes {
     grid-template-columns: 1fr !important;
+  }
+
+  .xcf-command-10 .xcf10-lane {
+    min-height: auto !important;
+  }
+
+  .xcf-command-10 .xcf10-lanes-head {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+
+  .xcf-command-10 .cv-command-switcher {
+    width: calc(100vw - 12px) !important;
+    min-height: 58px !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 4px !important;
+    bottom: 8px !important;
+    border-radius: 22px !important;
+  }
+
+  .xcf-command-10 .cv-command-switcher a {
+    height: 42px !important;
+    font-size: 10px !important;
+  }
+
+  .xcf-command-10 .cv-command-switcher a:nth-child(n+6) {
+    display: none !important;
   }
 }
