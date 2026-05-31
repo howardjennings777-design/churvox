@@ -6,12 +6,34 @@ import { Building2, FileText, Plus, RefreshCw, Save, Search, UserRound } from "l
 import { toast } from "sonner";
 import "./CustomerRecordsPage.css";
 
+// CHURVOX_CUSTOMER_RECORDS_NO_MISSING_ROUTE_20260601
+// The old customer records page called /api/customer-records, which is not live.
+// This page now builds the customer workspace from stable endpoints: /clients, /jobs, /quotes and /invoices.
+
 function arr(value) {
-  return Array.isArray(value) ? value : [];
+  if (Array.isArray(value)) return value;
+  if (Array.isArray(value?.data)) return value.data;
+  if (Array.isArray(value?.items)) return value.items;
+  if (Array.isArray(value?.results)) return value.results;
+  if (Array.isArray(value?.clients)) return value.clients;
+  if (Array.isArray(value?.customers)) return value.customers;
+  if (Array.isArray(value?.jobs)) return value.jobs;
+  if (Array.isArray(value?.quotes)) return value.quotes;
+  if (Array.isArray(value?.invoices)) return value.invoices;
+  return [];
+}
+
+function pickList(response, keys = []) {
+  const data = response?.data ?? response;
+  for (const key of keys) {
+    if (Array.isArray(data?.[key])) return data[key];
+    if (Array.isArray(data?.data?.[key])) return data.data[key];
+  }
+  return arr(data);
 }
 
 function idOf(value) {
-  return String(value?.id || value?._id || "");
+  return String(value?.id || value?._id || value?.client_id || value?.customer_id || "");
 }
 
 function money(value) {
@@ -20,7 +42,79 @@ function money(value) {
 }
 
 function customerName(customer) {
-  return customer?.name || customer?.client_name || customer?.contact_name || "Unnamed customer";
+  return customer?.name || customer?.client_name || customer?.customer_name || customer?.contact_name || "Unnamed customer";
+}
+
+function customerEmail(customer) {
+  return customer?.email || customer?.customer_email || customer?.contact_email || "";
+}
+
+function customerPhone(customer) {
+  return customer?.phone || customer?.mobile || customer?.customer_phone || customer?.contact_phone || "";
+}
+
+function customerAddress(customer) {
+  return customer?.billing_address || customer?.address || customer?.site_address || customer?.customer_address || "";
+}
+
+function matchesCustomer(record, customer) {
+  const clientId = idOf(customer);
+  const names = [customerName(customer), customer?.client_name, customer?.customer_name].filter(Boolean).map((x) => String(x).toLowerCase());
+  const recordIds = [record?.client_id, record?.customer_id, record?.client, record?.customer].filter(Boolean).map(String);
+  if (clientId && recordIds.includes(clientId)) return true;
+  const recordText = [record?.client_name, record?.customer_name, record?.name].join(" ").toLowerCase();
+  return names.some((name) => name && recordText.includes(name));
+}
+
+function isPaid(invoice) {
+  const status = String(invoice?.status || invoice?.payment_status || "").toLowerCase();
+  return status.includes("paid") || Number(invoice?.amount_due || 0) <= 0 && Number(invoice?.amount_paid || 0) > 0;
+}
+
+function enrichCustomer(customer, jobs, quotes, invoices) {
+  const customerJobs = jobs.filter((job) => matchesCustomer(job, customer));
+  const customerQuotes = quotes.filter((quote) => matchesCustomer(quote, customer));
+  const customerInvoices = invoices.filter((invoice) => matchesCustomer(invoice, customer));
+  const unpaid = customerInvoices.filter((invoice) => !isPaid(invoice)).reduce((sum, invoice) => sum + Number(invoice.amount_due || invoice.balance_due || invoice.total || invoice.amount || 0), 0);
+  const paid = customerInvoices.filter(isPaid).reduce((sum, invoice) => sum + Number(invoice.amount_paid || invoice.total || invoice.amount || 0), 0);
+  const missingFields = [];
+  if (!customerName(customer) || customerName(customer) === "Unnamed customer") missingFields.push("name");
+  if (!customerEmail(customer)) missingFields.push("email");
+  if (!customerPhone(customer)) missingFields.push("phone");
+  if (!customerAddress(customer)) missingFields.push("address");
+
+  return {
+    ...customer,
+    name: customerName(customer),
+    email: customerEmail(customer),
+    phone: customerPhone(customer),
+    billing_address: customerAddress(customer),
+    site_addresses: arr(customer.site_addresses),
+    jobs: customerJobs,
+    quotes: customerQuotes,
+    invoices: customerInvoices,
+    summary: {
+      is_missing_info: missingFields.length > 0,
+      missing_fields: missingFields,
+      jobs_count: customerJobs.length,
+      quotes_count: customerQuotes.length,
+      invoices_count: customerInvoices.length,
+      unpaid_balance: unpaid,
+      paid_total: paid,
+      photos_count: customerJobs.reduce((sum, job) => sum + arr(job.photos || job.job_photos || job.uploaded_photos).length, 0),
+    },
+  };
+}
+
+function buildTotals(customers) {
+  return {
+    customers: customers.length,
+    missing_info: customers.filter((customer) => customer.summary?.is_missing_info).length,
+    jobs: customers.reduce((sum, customer) => sum + Number(customer.summary?.jobs_count || 0), 0),
+    quotes: customers.reduce((sum, customer) => sum + Number(customer.summary?.quotes_count || 0), 0),
+    invoices: customers.reduce((sum, customer) => sum + Number(customer.summary?.invoices_count || 0), 0),
+    unpaid_balance: customers.reduce((sum, customer) => sum + Number(customer.summary?.unpaid_balance || 0), 0),
+  };
 }
 
 const editableFields = [
@@ -54,11 +148,24 @@ export default function CustomerRecordsPage() {
 
   async function loadCustomers() {
     setLoading(true);
-    const res = await api.get("/customer-records");
-    if (res.success) {
-      const next = arr(res.data?.customers);
+
+    const [clientsRes, jobsRes, quotesRes, invoicesRes] = await Promise.all([
+      api.get("/clients"),
+      api.get("/jobs"),
+      api.get("/quotes"),
+      api.get("/invoices"),
+    ]);
+
+    if (clientsRes.success) {
+      const clients = pickList(clientsRes, ["clients", "customers", "items", "results"]);
+      const jobs = jobsRes.success ? pickList(jobsRes, ["jobs", "items", "results"]) : [];
+      const quotes = quotesRes.success ? pickList(quotesRes, ["quotes", "items", "results"]) : [];
+      const invoices = invoicesRes.success ? pickList(invoicesRes, ["invoices", "items", "results"]) : [];
+      const next = clients.map((client) => enrichCustomer(client, jobs, quotes, invoices));
+
       setCustomers(next);
-      setTotals(res.data?.totals || {});
+      setTotals(buildTotals(next));
+
       if (!selectedId && next[0]) {
         setSelectedId(idOf(next[0]));
         setDraft(next[0]);
@@ -67,12 +174,13 @@ export default function CustomerRecordsPage() {
         if (selected) setDraft(selected);
       }
     } else {
-      toast.error(res.error || "Could not load customer records");
+      toast.error(clientsRes.error || "Could not load customer records");
     }
+
     setLoading(false);
   }
 
-  useEffect(() => { loadCustomers(); }, []);
+  useEffect(() => { loadCustomers(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selected = useMemo(() => customers.find((x) => idOf(x) === selectedId) || draft, [customers, selectedId, draft]);
 
@@ -107,7 +215,13 @@ export default function CustomerRecordsPage() {
   async function saveCustomer() {
     if (!draft) return;
     setBusy("save");
-    const res = await api.patch(`/customer-records/${idOf(draft)}`, draft);
+    const payload = {
+      ...draft,
+      client_name: draft.name || draft.client_name,
+      contact_name: draft.contact_name || draft.name,
+      address: draft.billing_address || draft.address,
+    };
+    const res = await api.patch(`/clients/${idOf(draft)}`, payload);
     setBusy("");
     if (res.success) {
       toast.success("Customer record saved");
@@ -120,8 +234,9 @@ export default function CustomerRecordsPage() {
   async function addSite() {
     if (!selected) return;
     if (!siteDraft.address.trim()) return toast.error("Site address is required");
+    const nextSites = [...arr(selected.site_addresses), { ...siteDraft }];
     setBusy("site");
-    const res = await api.post(`/customer-records/${idOf(selected)}/site-addresses`, siteDraft);
+    const res = await api.patch(`/clients/${idOf(selected)}`, { site_addresses: nextSites });
     setBusy("");
     if (res.success) {
       toast.success("Site added");
@@ -135,8 +250,11 @@ export default function CustomerRecordsPage() {
   async function addNote() {
     if (!selected) return;
     if (!noteDraft.trim()) return toast.error("Write a note first");
+    const stamp = new Date().toLocaleString("en-NZ");
+    const currentNotes = selected.internal_notes || selected.notes || "";
+    const nextNotes = `${currentNotes ? `${currentNotes}\n\n` : ""}${stamp}: ${noteDraft.trim()}`;
     setBusy("note");
-    const res = await api.post(`/customer-records/${idOf(selected)}/notes`, { note: noteDraft });
+    const res = await api.patch(`/clients/${idOf(selected)}`, { internal_notes: nextNotes, notes: nextNotes });
     setBusy("");
     if (res.success) {
       toast.success("Note added");
