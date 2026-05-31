@@ -56,6 +56,7 @@ import MessageApprovalQueuePage from "./pages/MessageApprovalQueuePage";
 import DispatchBoardPage from "./pages/DispatchBoardPage";
 import IntegrationsWorkspacePage from "./pages/IntegrationsWorkspacePage";
 import AutomationWorkspacePage from "./pages/AutomationWorkspacePage";
+import AIOperatorActionsPage from "./pages/AIOperatorActionsPage";
 import OfflineSyncPage from "./pages/OfflineSyncPage";
 import TopTierOperatorToolsPage from "./pages/TopTierOperatorToolsPage";
 import LaunchReadinessPage from "./pages/LaunchReadinessPage";

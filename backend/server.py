@@ -14655,6 +14655,476 @@ async def test_run_automation_rule(rule_id: str, current_user: dict = Depends(ge
     return {"success": True, "run": safe_doc(run)}
 
 
+
+
+# CHURVOX_AREA12_AI_OPERATOR_REAL_ACTIONS_20260531
+# AI Operator real actions: owner approval queue with executable actions.
+def _area12_text(value) -> str:
+    return str(value or "").strip()
+
+def _area12_doc_id(doc: dict) -> str:
+    return str((doc or {}).get("_id") or (doc or {}).get("id") or "")
+
+def _area12_num(value, fallback=0.0):
+    try:
+        if value is None or value == "":
+            return float(fallback)
+        return float(str(value).replace("$", "").replace(",", "").strip())
+    except Exception:
+        return float(fallback or 0)
+
+def _area12_status(doc: dict) -> str:
+    return str((doc or {}).get("status") or "").lower().replace(" ", "_")
+
+def _area12_action_key(action_type: str, record_type: str, record_id: str) -> str:
+    raw = f"{action_type}:{record_type}:{record_id}"
+    return raw[:220]
+
+def _area12_lookup_query(record_id: str, business_id: str) -> dict:
+    clauses = [{"id": str(record_id)}]
+    if ObjectId.is_valid(str(record_id)):
+        clauses.insert(0, {"_id": ObjectId(str(record_id))})
+    return {"business_id": str(business_id), "$or": clauses}
+
+def _area12_completed_job(job: dict) -> bool:
+    status = _area12_status(job)
+    return status in {"completed", "complete", "done"} or bool(job.get("completed") or job.get("completed_at") or job.get("worker_completed_at"))
+
+def _area12_has_invoice(job: dict) -> bool:
+    return bool(job.get("invoice_id") or job.get("draft_invoice_id") or job.get("invoiced"))
+
+def _area12_invoice_due(invoice: dict) -> float:
+    return max(
+        _area12_num(invoice.get("amount_due"), 0),
+        _area12_num(invoice.get("balance_due"), 0),
+        _area12_num(invoice.get("remaining_balance"), 0),
+        _area12_num(invoice.get("total"), 0),
+    )
+
+def _area12_due_date_passed(invoice: dict) -> bool:
+    if _area12_status(invoice) in {"paid", "void", "cancelled"}:
+        return False
+    raw = invoice.get("due_date")
+    if not raw:
+        return _area12_status(invoice) == "overdue"
+    try:
+        due = raw if isinstance(raw, datetime) else datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+        return due < datetime.now(timezone.utc)
+    except Exception:
+        return _area12_status(invoice) == "overdue"
+
+async def _area12_workers_for_business(business_id: str) -> list:
+    workers = []
+    seen = set()
+    try:
+        async for worker in db.business_users.find({"business_id": str(business_id)}).limit(500):
+            wid = _area12_doc_id(worker)
+            if wid not in seen:
+                seen.add(wid)
+                workers.append(safe_doc(worker))
+    except Exception:
+        pass
+    try:
+        async for user in db.users.find({"business_id": str(business_id), "role": {"$in": ["worker", "employee", "crew", "field_worker", "staff"]}}).limit(500):
+            uid = _area12_doc_id(user)
+            if uid not in seen:
+                seen.add(uid)
+                workers.append(safe_doc(user))
+    except Exception:
+        pass
+    return workers
+
+def _area12_worker_name(worker: dict) -> str:
+    return _area12_text(worker.get("display_name") or worker.get("name") or worker.get("full_name") or worker.get("email") or "Worker")
+
+async def _area12_upsert_action(business_id: str, action: dict):
+    now = datetime.now(timezone.utc)
+    action["business_id"] = str(business_id)
+    action["status"] = action.get("status") or "pending"
+    action["created_at"] = action.get("created_at") or now
+    action["updated_at"] = now
+    action["approval_required"] = True
+    action["source"] = "ai_operator_area12"
+
+    existing = await db.ai_operator_actions.find_one({
+        "business_id": str(business_id),
+        "action_key": action["action_key"],
+    })
+
+    if existing and str(existing.get("status") or "").lower() in {"approved", "rejected", "completed"}:
+        return safe_doc(existing)
+
+    await db.ai_operator_actions.update_one(
+        {"business_id": str(business_id), "action_key": action["action_key"]},
+        {"$set": action, "$setOnInsert": {"created_at": action["created_at"]}},
+        upsert=True,
+    )
+    saved = await db.ai_operator_actions.find_one({"business_id": str(business_id), "action_key": action["action_key"]})
+    return safe_doc(saved)
+
+async def _area12_generate_actions(business_id: str):
+    jobs = [safe_doc(j) async for j in db.jobs.find({"business_id": str(business_id)}).sort("updated_at", -1).limit(500)]
+    invoices = [safe_doc(i) async for i in db.invoices.find({"business_id": str(business_id)}).sort("updated_at", -1).limit(500)]
+    clients = [safe_doc(c) async for c in db.clients.find({"business_id": str(business_id)}).sort("updated_at", -1).limit(500)]
+    workers = await _area12_workers_for_business(str(business_id))
+
+    for job in jobs:
+        jid = _area12_doc_id(job)
+
+        if _area12_completed_job(job) and not _area12_has_invoice(job):
+            price = _area12_num(job.get("price") or job.get("job_price") or job.get("total") or job.get("amount"), 0)
+            desc = job.get("ai_invoice_description") or job.get("invoice_description_draft") or job.get("description") or job.get("title") or "Service work completed"
+            await _area12_upsert_action(str(business_id), {
+                "action_key": _area12_action_key("create_invoice_draft", "job", jid),
+                "action_type": "create_invoice_draft",
+                "record_type": "job",
+                "record_id": jid,
+                "title": f"Prepare draft invoice for {job.get('customer_name') or job.get('client_name') or 'completed job'}",
+                "reason": "The worker completed this job and there is no linked invoice yet.",
+                "data_used": {
+                    "job_status": job.get("status"),
+                    "customer": job.get("customer_name") or job.get("client_name"),
+                    "price": price,
+                    "address": job.get("address") or job.get("site_address"),
+                },
+                "proposed_changes": {
+                    "create_invoice": True,
+                    "job_id": jid,
+                    "description": desc,
+                    "line_items": [{"description": desc, "quantity": 1, "unit_price": price, "amount": price}],
+                    "status": "draft",
+                },
+                "editable_payload": {
+                    "description": desc,
+                    "amount": price,
+                },
+                "risk_level": "medium",
+                "confidence": 0.9 if price else 0.68,
+            })
+
+        if not (job.get("assigned_worker_id") or job.get("worker_id") or job.get("assigned_worker_name")) and _area12_status(job) not in {"completed", "cancelled", "canceled", "void"}:
+            suggested = workers[0] if workers else {}
+            await _area12_upsert_action(str(business_id), {
+                "action_key": _area12_action_key("suggest_worker_assignment", "job", jid),
+                "action_type": "suggest_worker_assignment",
+                "record_type": "job",
+                "record_id": jid,
+                "title": f"Suggest worker for {job.get('title') or job.get('customer_name') or 'unassigned job'}",
+                "reason": "This job has no assigned worker. Churvox can prepare an assignment for owner approval.",
+                "data_used": {
+                    "job_date": job.get("scheduled_date") or job.get("date"),
+                    "area": job.get("region") or job.get("area") or job.get("address"),
+                    "available_worker_count": len(workers),
+                },
+                "proposed_changes": {
+                    "assigned_worker_id": _area12_doc_id(suggested),
+                    "assigned_worker_name": _area12_worker_name(suggested) if suggested else "",
+                },
+                "editable_payload": {
+                    "worker_id": _area12_doc_id(suggested),
+                    "worker_name": _area12_worker_name(suggested) if suggested else "",
+                },
+                "risk_level": "medium",
+                "confidence": 0.74 if suggested else 0.35,
+            })
+
+        if _area12_status(job) in {"cannot_complete", "blocked", "issue"} or job.get("cannot_complete_reason"):
+            await _area12_upsert_action(str(business_id), {
+                "action_key": _area12_action_key("review_worker_issue", "job", jid),
+                "action_type": "review_worker_issue",
+                "record_type": "job",
+                "record_id": jid,
+                "title": f"Review worker issue on {job.get('title') or job.get('customer_name') or 'job'}",
+                "reason": job.get("cannot_complete_reason") or "Worker reported an issue.",
+                "data_used": {"status": job.get("status"), "worker": job.get("assigned_worker_name"), "address": job.get("address")},
+                "proposed_changes": {"flag_for_owner_review": True, "owner_review_status": "needs_review"},
+                "editable_payload": {"owner_note": job.get("cannot_complete_reason") or "Review worker issue."},
+                "risk_level": "low",
+                "confidence": 0.92,
+            })
+
+    for invoice in invoices:
+        iid = _area12_doc_id(invoice)
+        if _area12_due_date_passed(invoice):
+            amount_due = _area12_invoice_due(invoice)
+            customer = invoice.get("customer_name") or invoice.get("client_name") or "there"
+            message = f"Hi {customer}, just a friendly reminder that {invoice.get('invoice_number') or 'your invoice'} for ${amount_due:,.2f} is still showing as unpaid. Please let us know if you need the invoice link resent. Thanks."
+            await _area12_upsert_action(str(business_id), {
+                "action_key": _area12_action_key("draft_overdue_invoice_reminder", "invoice", iid),
+                "action_type": "draft_overdue_invoice_reminder",
+                "record_type": "invoice",
+                "record_id": iid,
+                "title": f"Prepare overdue reminder for {invoice.get('invoice_number') or 'invoice'}",
+                "reason": "This invoice is overdue or marked overdue and still has an amount due.",
+                "data_used": {"status": invoice.get("status"), "amount_due": amount_due, "due_date": invoice.get("due_date")},
+                "proposed_changes": {"message_draft": message, "send_now": False},
+                "editable_payload": {"message": message},
+                "risk_level": "medium",
+                "confidence": 0.88,
+            })
+
+        if invoice.get("myob_error") or str(invoice.get("myob_sync_status") or "").lower() == "failed":
+            await _area12_upsert_action(str(business_id), {
+                "action_key": _area12_action_key("flag_myob_sync_issue", "invoice", iid),
+                "action_type": "flag_myob_sync_issue",
+                "record_type": "invoice",
+                "record_id": iid,
+                "title": f"Review MYOB sync issue for {invoice.get('invoice_number') or 'invoice'}",
+                "reason": invoice.get("myob_error") or "MYOB sync failed.",
+                "data_used": {"sync_status": invoice.get("myob_sync_status"), "error": invoice.get("myob_error")},
+                "proposed_changes": {"flag_sync_issue": True},
+                "editable_payload": {"note": invoice.get("myob_error") or "Review MYOB sync issue."},
+                "risk_level": "low",
+                "confidence": 0.9,
+            })
+
+    for client in clients:
+        missing = []
+        if not _area12_text(client.get("email")):
+            missing.append("email")
+        if not _area12_text(client.get("phone") or client.get("mobile")):
+            missing.append("phone")
+        if missing:
+            cid = _area12_doc_id(client)
+            await _area12_upsert_action(str(business_id), {
+                "action_key": _area12_action_key("flag_customer_cleanup", "client", cid),
+                "action_type": "flag_customer_cleanup",
+                "record_type": "client",
+                "record_id": cid,
+                "title": f"Clean up missing customer info for {client.get('client_name') or client.get('name') or 'customer'}",
+                "reason": f"Customer is missing: {', '.join(missing)}.",
+                "data_used": {"missing_fields": missing},
+                "proposed_changes": {"customer_cleanup_flag": True, "missing_fields": missing},
+                "editable_payload": {"note": f"Missing customer info: {', '.join(missing)}"},
+                "risk_level": "low",
+                "confidence": 0.96,
+            })
+
+@api_router.get("/ai-operator/actions")
+async def get_ai_operator_actions(current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    await _area12_generate_actions(str(business_id))
+
+    actions = [safe_doc(a) async for a in db.ai_operator_actions.find({"business_id": str(business_id)}).sort("updated_at", -1).limit(250)]
+    pending = [a for a in actions if str(a.get("status") or "pending").lower() in {"pending", "edited", "prepared"}]
+    approved = [a for a in actions if str(a.get("status") or "").lower() in {"approved", "completed"}]
+    rejected = [a for a in actions if str(a.get("status") or "").lower() == "rejected"]
+
+    return {
+        "success": True,
+        "ai_operator": {
+            "actions": actions,
+            "pending_actions": pending,
+            "approved_actions": approved[:50],
+            "rejected_actions": rejected[:50],
+            "metrics": {
+                "total_actions": len(actions),
+                "pending": len(pending),
+                "approved": len(approved),
+                "rejected": len(rejected),
+                "high_risk": len([a for a in pending if a.get("risk_level") == "high"]),
+                "medium_risk": len([a for a in pending if a.get("risk_level") == "medium"]),
+            },
+            "guardrails": [
+                "AI prepares actions. Owner approves before important changes.",
+                "AI does not auto-send customer messages.",
+                "AI does not charge customers, change payroll, delete records, change billing, or alter MYOB records without explicit approval.",
+            ],
+        },
+    }
+
+@api_router.patch("/ai-operator/actions/{action_id}")
+async def update_ai_operator_action(action_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    clauses = [{"id": str(action_id)}, {"action_key": str(action_id)}]
+    if ObjectId.is_valid(str(action_id)):
+        clauses.insert(0, {"_id": ObjectId(str(action_id))})
+
+    action = await db.ai_operator_actions.find_one({"business_id": str(business_id), "$or": clauses})
+    if not action:
+        raise HTTPException(status_code=404, detail="AI action not found")
+
+    update = {
+        "editable_payload": (payload or {}).get("editable_payload") if isinstance((payload or {}).get("editable_payload"), dict) else action.get("editable_payload", {}),
+        "status": "edited",
+        "updated_at": datetime.now(timezone.utc),
+        "edited_by": current_user.get("email") or current_user.get("id"),
+    }
+    await db.ai_operator_actions.update_one({"_id": action["_id"], "business_id": str(business_id)}, {"$set": update})
+    saved = await db.ai_operator_actions.find_one({"_id": action["_id"]})
+    return {"success": True, "action": safe_doc(saved)}
+
+@api_router.post("/ai-operator/actions/{action_id}/reject")
+async def reject_ai_operator_action(action_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    clauses = [{"id": str(action_id)}, {"action_key": str(action_id)}]
+    if ObjectId.is_valid(str(action_id)):
+        clauses.insert(0, {"_id": ObjectId(str(action_id))})
+
+    action = await db.ai_operator_actions.find_one({"business_id": str(business_id), "$or": clauses})
+    if not action:
+        raise HTTPException(status_code=404, detail="AI action not found")
+
+    await db.ai_operator_actions.update_one(
+        {"_id": action["_id"], "business_id": str(business_id)},
+        {"$set": {
+            "status": "rejected",
+            "rejected_at": datetime.now(timezone.utc),
+            "reject_reason": _area12_text((payload or {}).get("reason") or "Rejected by owner"),
+            "updated_at": datetime.now(timezone.utc),
+            "rejected_by": current_user.get("email") or current_user.get("id"),
+        }}
+    )
+    saved = await db.ai_operator_actions.find_one({"_id": action["_id"]})
+    return {"success": True, "action": safe_doc(saved)}
+
+@api_router.post("/ai-operator/actions/{action_id}/approve")
+async def approve_ai_operator_action(action_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    clauses = [{"id": str(action_id)}, {"action_key": str(action_id)}]
+    if ObjectId.is_valid(str(action_id)):
+        clauses.insert(0, {"_id": ObjectId(str(action_id))})
+
+    action = await db.ai_operator_actions.find_one({"business_id": str(business_id), "$or": clauses})
+    if not action:
+        raise HTTPException(status_code=404, detail="AI action not found")
+
+    status = str(action.get("status") or "").lower()
+    if status in {"approved", "completed"}:
+        return {"success": True, "action": safe_doc(action), "message": "Action was already approved."}
+
+    action_type = action.get("action_type")
+    record_id = _area12_text(action.get("record_id"))
+    payload = action.get("editable_payload") if isinstance(action.get("editable_payload"), dict) else {}
+    result = {"message": "Action approved."}
+    now = datetime.now(timezone.utc)
+
+    if action_type == "create_invoice_draft":
+        job = await db.jobs.find_one(_area12_lookup_query(record_id, business_id))
+        if not job:
+            raise HTTPException(status_code=404, detail="Linked job not found")
+
+        existing_invoice_id = job.get("invoice_id") or job.get("draft_invoice_id")
+        if existing_invoice_id:
+            existing = await db.invoices.find_one(_area12_lookup_query(str(existing_invoice_id), business_id))
+            if existing:
+                result = {"message": "Job already had an invoice.", "invoice_id": _area12_doc_id(existing)}
+            else:
+                existing_invoice_id = None
+
+        if not existing_invoice_id:
+            amount = _area12_num(payload.get("amount") or job.get("price") or job.get("job_price") or job.get("total"), 0)
+            desc = payload.get("description") or job.get("ai_invoice_description") or job.get("invoice_description_draft") or job.get("description") or "Service work completed"
+            invoice_payload = {
+                "job_id": _area12_doc_id(job),
+                "linked_job_id": _area12_doc_id(job),
+                "quote_id": job.get("quote_id") or job.get("linked_quote_id") or "",
+                "client_id": job.get("client_id"),
+                "customer_name": job.get("customer_name") or job.get("client_name") or "Customer",
+                "customer_email": job.get("customer_email") or job.get("email") or "",
+                "customer_phone": job.get("customer_phone") or job.get("phone") or "",
+                "address": job.get("address") or job.get("site_address") or "",
+                "site_address": job.get("site_address") or job.get("address") or "",
+                "description": desc,
+                "line_items": [{"description": desc, "quantity": 1, "unit_price": amount, "amount": amount}],
+                "subtotal": amount,
+                "status": "draft",
+                "source": "ai_operator_approved",
+            }
+            invoice_doc = await _area4_prepare_invoice_doc(invoice_payload, current_user) if "_area4_prepare_invoice_doc" in globals() else {
+                **invoice_payload,
+                "business_id": str(business_id),
+                "created_at": now,
+                "updated_at": now,
+                "public_token": secrets.token_urlsafe(24),
+                "total": amount,
+                "amount_due": amount,
+            }
+            inserted = await db.invoices.insert_one(invoice_doc)
+            await db.jobs.update_one({"_id": job["_id"], "business_id": str(business_id)}, {"$set": {"draft_invoice_id": str(inserted.inserted_id), "invoice_id": str(inserted.inserted_id), "invoiced": True, "updated_at": now}})
+            result = {"message": "Draft invoice created.", "invoice_id": str(inserted.inserted_id)}
+
+    elif action_type == "suggest_worker_assignment":
+        job = await db.jobs.find_one(_area12_lookup_query(record_id, business_id))
+        if not job:
+            raise HTTPException(status_code=404, detail="Linked job not found")
+        worker_id = _area12_text(payload.get("worker_id") or action.get("proposed_changes", {}).get("assigned_worker_id"))
+        worker_name = _area12_text(payload.get("worker_name") or action.get("proposed_changes", {}).get("assigned_worker_name"))
+        if not worker_id and not worker_name:
+            raise HTTPException(status_code=400, detail="Choose a worker before approving this action")
+        await db.jobs.update_one({"_id": job["_id"], "business_id": str(business_id)}, {"$set": {"assigned_worker_id": worker_id, "worker_id": worker_id, "assigned_worker_name": worker_name, "worker_name": worker_name, "status": "assigned", "updated_at": now}})
+        result = {"message": "Worker assigned.", "job_id": _area12_doc_id(job), "worker_name": worker_name}
+
+    elif action_type == "draft_overdue_invoice_reminder":
+        invoice = await db.invoices.find_one(_area12_lookup_query(record_id, business_id))
+        if not invoice:
+            raise HTTPException(status_code=404, detail="Linked invoice not found")
+        message = payload.get("message") or action.get("proposed_changes", {}).get("message_draft") or "Invoice reminder prepared."
+        reminder = {
+            "business_id": str(business_id),
+            "type": "ai_invoice_reminder_draft",
+            "invoice_id": _area12_doc_id(invoice),
+            "message": message,
+            "status": "draft",
+            "created_at": now,
+            "updated_at": now,
+            "created_by": current_user.get("email") or current_user.get("id"),
+        }
+        inserted = await db.business_activity.insert_one(reminder)
+        result = {"message": "Reminder draft saved.", "activity_id": str(inserted.inserted_id)}
+
+    elif action_type == "flag_customer_cleanup":
+        client = await db.clients.find_one(_area12_lookup_query(record_id, business_id))
+        if not client:
+            raise HTTPException(status_code=404, detail="Linked customer not found")
+        await db.clients.update_one({"_id": client["_id"], "business_id": str(business_id)}, {"$set": {"customer_cleanup_flag": True, "cleanup_note": payload.get("note") or action.get("reason"), "updated_at": now}})
+        result = {"message": "Customer cleanup flag saved.", "client_id": _area12_doc_id(client)}
+
+    elif action_type in {"flag_myob_sync_issue", "review_worker_issue"}:
+        activity = {
+            "business_id": str(business_id),
+            "type": f"ai_{action_type}",
+            "record_type": action.get("record_type"),
+            "record_id": record_id,
+            "note": payload.get("note") or payload.get("owner_note") or action.get("reason"),
+            "status": "review_required",
+            "created_at": now,
+            "updated_at": now,
+            "created_by": current_user.get("email") or current_user.get("id"),
+        }
+        inserted = await db.business_activity.insert_one(activity)
+        result = {"message": "Review activity saved.", "activity_id": str(inserted.inserted_id)}
+
+    else:
+        activity = {
+            "business_id": str(business_id),
+            "type": "ai_operator_generic_approval",
+            "record_type": action.get("record_type"),
+            "record_id": record_id,
+            "note": action.get("title") or "AI action approved",
+            "payload": payload,
+            "status": "approved",
+            "created_at": now,
+            "updated_at": now,
+            "created_by": current_user.get("email") or current_user.get("id"),
+        }
+        inserted = await db.business_activity.insert_one(activity)
+        result = {"message": "Generic AI action approval logged.", "activity_id": str(inserted.inserted_id)}
+
+    await db.ai_operator_actions.update_one(
+        {"_id": action["_id"], "business_id": str(business_id)},
+        {"$set": {
+            "status": "approved",
+            "approved_at": now,
+            "updated_at": now,
+            "approved_by": current_user.get("email") or current_user.get("id"),
+            "executed_result": result,
+        }}
+    )
+    saved = await db.ai_operator_actions.find_one({"_id": action["_id"]})
+    return {"success": True, "action": safe_doc(saved), "result": result}
+
+
 # CORS_HARD_FIX_20260412
 
 
