@@ -1256,3 +1256,206 @@ body:has(.xcf-command-10) {
     padding: 0 13px !important;
   }
 }
+
+/* CHURVOX_COMMAND_DOCK_NO_OVERLAP_20260601
+   Final actual Command Floor dock fix.
+   Stops labels from stacking/overlapping and turns laptop dock into a clean two-row command bar. */
+
+.xcf-command-10 .xcf10-dock,
+.xcf-command-10 .xcf10-dock-launch-final,
+.xcf-command-10 .xcf10-command-dock-complete {
+  position: fixed !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  transform: translateX(-50%) !important;
+  z-index: 2147483000 !important;
+
+  width: min(1060px, calc(100vw - 22px)) !important;
+  max-width: calc(100vw - 22px) !important;
+  min-height: auto !important;
+  height: auto !important;
+
+  display: grid !important;
+  grid-template-columns: repeat(8, minmax(86px, 1fr)) !important;
+  grid-auto-rows: 44px !important;
+  align-items: stretch !important;
+  justify-content: center !important;
+  gap: 8px !important;
+
+  overflow: visible !important;
+  white-space: normal !important;
+
+  padding: 10px !important;
+  border-radius: 24px !important;
+  border: 1px solid rgba(125, 189, 255, .30) !important;
+  background: linear-gradient(135deg, rgba(3, 13, 33, .98), rgba(8, 34, 72, .97)) !important;
+  box-shadow: 0 24px 80px rgba(0,0,0,.50), inset 0 1px 0 rgba(255,255,255,.10) !important;
+  backdrop-filter: blur(18px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
+}
+
+/* Kill old dock extras if they are still being injected. */
+.xcf-command-10 .xcf10-dock label,
+.xcf-command-10 .xcf10-dock button,
+.xcf-command-10 .xcf10-dock b {
+  display: none !important;
+}
+
+/* Every command link gets its own clean cell. */
+.xcf-command-10 .xcf10-dock a,
+.xcf-command-10 .xcf10-dock-launch-final a,
+.xcf-command-10 .xcf10-command-dock-complete a,
+.xcf-command-10 .xcf10-dock a:link,
+.xcf-command-10 .xcf10-dock a:visited {
+  position: relative !important;
+  flex: none !important;
+  display: flex !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  overflow: hidden !important;
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+
+  padding: 0 10px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(255,255,255,.16) !important;
+  background: rgba(255,255,255,.075) !important;
+  color: #f8fbff !important;
+
+  font-size: 12px !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
+  letter-spacing: -.01em !important;
+
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  text-indent: 0 !important;
+}
+
+/* Text label must be the only visible text layer. */
+.xcf-command-10 .xcf10-dock a span,
+.xcf-command-10 .xcf10-dock-launch-final a span,
+.xcf-command-10 .xcf10-command-dock-complete a span {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+
+  color: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  line-height: 1 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  text-indent: 0 !important;
+}
+
+/* No mobile/link hiding ever. */
+.xcf-command-10 .xcf10-dock a:nth-of-type(n+5),
+.xcf-command-10 .xcf10-dock-launch-final a:nth-of-type(n+5),
+.xcf-command-10 .xcf10-command-dock-complete a:nth-of-type(n+5) {
+  display: flex !important;
+}
+
+/* Active state */
+.xcf-command-10 .xcf10-dock a.active,
+.xcf-command-10 .xcf10-dock-launch-final a.active,
+.xcf-command-10 .xcf10-command-dock-complete a.active,
+.xcf-command-10 .xcf10-dock a:hover,
+.xcf-command-10 .xcf10-dock-launch-final a:hover,
+.xcf-command-10 .xcf10-command-dock-complete a:hover {
+  background: linear-gradient(135deg, rgba(38, 211, 238, .38), rgba(98, 72, 255, .34)) !important;
+  border-color: rgba(98, 232, 245, .55) !important;
+  color: #ffffff !important;
+  box-shadow: 0 12px 34px rgba(38, 211, 238, .20) !important;
+}
+
+.xcf-command-10 {
+  padding-bottom: 138px !important;
+}
+
+/* Medium laptop: 5 per row so labels have room. */
+@media (max-width: 1180px) {
+  .xcf-command-10 .xcf10-dock,
+  .xcf-command-10 .xcf10-dock-launch-final,
+  .xcf-command-10 .xcf10-command-dock-complete {
+    width: min(880px, calc(100vw - 20px)) !important;
+    grid-template-columns: repeat(5, minmax(96px, 1fr)) !important;
+  }
+
+  .xcf-command-10 {
+    padding-bottom: 180px !important;
+  }
+}
+
+/* Phone: one-row swipe dock. */
+@media (max-width: 760px) {
+  .xcf-command-10 {
+    padding-bottom: 112px !important;
+  }
+
+  .xcf-command-10 .xcf10-dock,
+  .xcf-command-10 .xcf10-dock-launch-final,
+  .xcf-command-10 .xcf10-command-dock-complete {
+    left: 8px !important;
+    right: 8px !important;
+    bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    transform: none !important;
+    width: auto !important;
+    max-width: none !important;
+
+    display: flex !important;
+    grid-template-columns: none !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    white-space: nowrap !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+
+    min-height: 62px !important;
+    padding: 8px !important;
+    border-radius: 24px !important;
+  }
+
+  .xcf-command-10 .xcf10-dock::-webkit-scrollbar,
+  .xcf-command-10 .xcf10-dock-launch-final::-webkit-scrollbar,
+  .xcf-command-10 .xcf10-command-dock-complete::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .xcf-command-10 .xcf10-dock a,
+  .xcf-command-10 .xcf10-dock-launch-final a,
+  .xcf-command-10 .xcf10-command-dock-complete a {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: max-content !important;
+    max-width: none !important;
+    height: 44px !important;
+    padding: 0 14px !important;
+    font-size: 12px !important;
+  }
+
+  .xcf-command-10 .xcf10-dock a span,
+  .xcf-command-10 .xcf10-dock-launch-final a span,
+  .xcf-command-10 .xcf10-command-dock-complete a span {
+    width: auto !important;
+    max-width: none !important;
+  }
+}
