@@ -22,9 +22,9 @@ const userBlocks = [
 ];
 
 const smsBlocks = [
-  { credits: "100", price: "$10", note: "Light reminders and small follow-up runs." },
-  { credits: "500", price: "$45", note: "Best for active crews using reminders regularly." },
-  { credits: "1,000", price: "$80", note: "Lowest cost per credit for busy operators." },
+  { key: "sms_100", credits: "100", price: "$10", note: "Light reminders and small follow-up runs." },
+  { key: "sms_500", credits: "500", price: "$45", note: "Best for active crews using reminders regularly." },
+  { key: "sms_1000", credits: "1,000", price: "$80", note: "Lowest cost per credit for busy operators." },
 ];
 
 const cap = (s) => s ? String(s).charAt(0).toUpperCase() + String(s).slice(1) : "";
@@ -37,6 +37,7 @@ export default function PlansPage() {
   const [currentPlan, setCurrentPlan] = useState("none");
   const [busyPlan, setBusyPlan] = useState("");
   const [busyAddon, setBusyAddon] = useState("");
+  const [busySms, setBusySms] = useState("");
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState(null);
   const [currencyInfo, setCurrencyInfo] = useState(null);
@@ -47,27 +48,40 @@ export default function PlansPage() {
       const checkout = params.get("checkout");
       const plan = (params.get("plan") || "").toLowerCase();
       const addon = (params.get("addon") || "").toLowerCase();
+      const smsPack = (params.get("sms_pack") || "").toLowerCase();
       const sessionId = params.get("session_id") || "";
       if (!checkout) return;
+
       if (checkout === "success") {
         try {
           if (sessionId) {
             await api.post("/billing/confirm-checkout", { session_id: sessionId });
             window.dispatchEvent(new Event("churvox-auth-refresh"));
           }
-          if (addon === "command_growth_pack") setNotice({ type: "success", title: "Growth Pack added", text: "Your Command Growth Pack checkout completed." });
-          else {
+
+          if (smsPack) {
+            setNotice({ type: "success", title: "SMS credits purchased", text: "Your SMS credit checkout completed. Refresh if the balance does not update straight away." });
+          } else if (addon === "command_growth_pack") {
+            setNotice({ type: "success", title: "Growth Pack added", text: "Your Command Growth Pack checkout completed." });
+          } else if (addon === "myob_addon") {
+            setNotice({ type: "success", title: "MYOB add-on added", text: "Your MYOB add-on checkout completed." });
+          } else {
             if (plan) setCurrentPlan(plan);
             setNotice({ type: "success", title: "Plan updated", text: `${nicePlanName(plan)} is now active.` });
           }
         } catch (err) {
           console.error("Failed to confirm checkout:", err);
-          setNotice({ type: "warning", title: "Checkout completed", text: "Refresh once if the plan or add-on does not update straight away." });
+          setNotice({ type: "warning", title: "Checkout completed", text: "Refresh once if the plan, add-on or credits do not update straight away." });
         }
       }
-      if (checkout === "cancelled") setNotice({ type: "warning", title: "Checkout cancelled", text: "No changes were made to your plan or add-ons." });
+
+      if (checkout === "cancelled") {
+        setNotice({ type: "warning", title: "Checkout cancelled", text: "No changes were made." });
+      }
+
       window.history.replaceState({}, document.title, window.location.pathname);
     };
+
     handleCheckoutReturn();
   }, []);
 
@@ -76,15 +90,29 @@ export default function PlansPage() {
       setLoading(true);
       try {
         const hintCountry = detectCountryHint();
-        const [billingRes, currencyRes] = await Promise.allSettled([api.get("/billing/status"), api.get(`/billing/currency?country=${encodeURIComponent(hintCountry || "")}`)]);
+        const [billingRes, currencyRes] = await Promise.allSettled([
+          api.get("/billing/status"),
+          api.get(`/billing/currency?country=${encodeURIComponent(hintCountry || "")}`)
+        ]);
         const billingData = billingRes.status === "fulfilled" ? getPayload(billingRes.value) : null;
         const currencyData = currencyRes.status === "fulfilled" ? getPayload(currencyRes.value) : null;
         if (currencyData?.currency) setCurrencyInfo(currencyData);
-        if (billingData && billingData.success !== false) { setBilling(billingData); setCurrentPlan(billingData?.plan ? String(billingData.plan).toLowerCase() : "none"); }
-        else { setBilling(null); setCurrentPlan("none"); }
-      } catch (err) { console.error("Failed to load billing:", err); setBilling(null); setCurrentPlan("none"); }
-      finally { setLoading(false); }
+        if (billingData && billingData.success !== false) {
+          setBilling(billingData);
+          setCurrentPlan(billingData?.plan ? String(billingData.plan).toLowerCase() : "none");
+        } else {
+          setBilling(null);
+          setCurrentPlan("none");
+        }
+      } catch (err) {
+        console.error("Failed to load billing:", err);
+        setBilling(null);
+        setCurrentPlan("none");
+      } finally {
+        setLoading(false);
+      }
     };
+
     loadBilling();
   }, []);
 
@@ -100,18 +128,37 @@ export default function PlansPage() {
   const isPaid = billing?.has_paid_subscription === true;
   const isActiveTrial = billing?.trial_active === true;
 
+  const checkoutCountry = () => currencyInfo?.country || detectCountryHint() || "";
+
+  const openCheckout = async (payload) => {
+    const res = await api.post("/billing/unified-checkout", {
+      country: checkoutCountry(),
+      ...payload,
+    });
+
+    if (res?.success === false) throw new Error(res.error || res.detail || "Failed to start checkout");
+    const data = getPayload(res) || {};
+    const url = data?.checkout_url || data?.url;
+    if (!url) throw new Error(data?.detail || data?.error || "No checkout URL returned by server");
+    window.location.assign(url);
+  };
+
   const buttonLabel = (plan) => {
     if (busyPlan === plan.key) return isNewUser ? "Starting trial…" : "Opening checkout…";
     if (isNewUser) return `Start free trial — ${plan.name}`;
     if ((isPaid || isActiveTrial) && currentPlan === plan.key && !isTrialExpired) return isPaid ? "Current plan" : "Current trial";
     if (isTrialExpired && currentPlan === plan.key) return `Continue with ${plan.name}`;
-    return `Choose ${plan.name}`;
+    return `Checkout ${plan.name}`;
   };
 
-  const isDisabled = (plan) => { if (busyPlan || busyAddon) return true; return (isPaid || isActiveTrial) && currentPlan === plan.key && !isTrialExpired; };
+  const isDisabled = (plan) => {
+    if (busyPlan || busyAddon || busySms) return true;
+    return (isPaid || isActiveTrial) && currentPlan === plan.key && !isTrialExpired;
+  };
 
   const handleSelectPlan = async (planKey) => {
-    if (!planKey || busyPlan || busyAddon) return;
+    if (!planKey || busyPlan || busyAddon || busySms) return;
+
     if (isNewUser) {
       try {
         setBusyPlan(planKey);
@@ -122,65 +169,45 @@ export default function PlansPage() {
         setCurrentPlan(planKey);
         setNotice({ type: "success", title: "Trial started", text: `Your 14-day ${nicePlanName(planKey)} trial is active. No card required.` });
         setTimeout(() => { window.location.href = "/dashboard"; }, 1100);
-      } catch (err) { toast.error(err?.response?.data?.detail || err?.message || "Failed to start trial"); }
-      finally { setBusyPlan(""); }
+      } catch (err) {
+        toast.error(err?.response?.data?.detail || err?.message || "Failed to start trial");
+      } finally {
+        setBusyPlan("");
+      }
       return;
     }
 
     try {
       setBusyPlan(planKey);
-      const res = await api.post("/stripe/create-checkout-session", { plan_type: planKey, country: currencyInfo?.country || detectCountryHint() || "" });
-      if (res?.success === false) throw new Error(res.error || "Failed to start checkout");
-      const data = getPayload(res) || {};
-      const url = data?.checkout_url || data?.url;
-      if (!url) throw new Error("No checkout URL returned by server");
-      window.location.assign(url);
-    } catch (err) { toast.error(err?.response?.data?.detail || err?.data?.detail || err?.message || "Failed to start checkout"); }
-    finally { setBusyPlan(""); }
+      await openCheckout({
+        checkout_type: "plan",
+        plan_type: planKey,
+        success_path: `/plans?checkout=success&plan=${encodeURIComponent(planKey)}`,
+        cancel_path: `/plans?checkout=cancelled&plan=${encodeURIComponent(planKey)}`,
+      });
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || err?.data?.detail || err?.message || "Failed to start checkout");
+    } finally {
+      setBusyPlan("");
+    }
   };
 
   const handleBuyGrowthPack = async () => {
-    if (busyPlan || busyAddon) return;
+    if (busyPlan || busyAddon || busySms) return;
     if (isNewUser) {
       toast.error("Choose a Churvox plan before adding a Growth Pack.");
       return;
     }
 
-    const payload = {
-      plan_type: "command_growth_pack",
-      addon_type: "command_growth_pack",
-      addon: "command_growth_pack",
-      quantity: 1,
-      country: currencyInfo?.country || detectCountryHint() || "",
-      success_path: "/plans?checkout=success&addon=command_growth_pack",
-      cancel_path: "/plans?checkout=cancelled&addon=command_growth_pack",
-    };
-
-    const attempts = [
-      ["/stripe/create-checkout-session", payload],
-      ["/billing/create-addon-checkout-session", payload],
-      ["/billing/addons/checkout", payload],
-    ];
-
     try {
       setBusyAddon("command_growth_pack");
-      let lastError = null;
-      for (const [endpoint, body] of attempts) {
-        try {
-          const res = await api.post(endpoint, body);
-          if (res?.success === false) throw new Error(res.error || res.detail || "Checkout failed");
-          const data = getPayload(res) || {};
-          const url = data?.checkout_url || data?.url;
-          if (url) {
-            window.location.assign(url);
-            return;
-          }
-          lastError = new Error(data?.detail || data?.error || "No checkout URL returned");
-        } catch (err) {
-          lastError = err;
-        }
-      }
-      throw lastError || new Error("Could not open Growth Pack checkout");
+      await openCheckout({
+        checkout_type: "growth_pack",
+        addon_type: "command_growth_pack",
+        quantity: 1,
+        success_path: "/plans?checkout=success&addon=command_growth_pack",
+        cancel_path: "/plans?checkout=cancelled&addon=command_growth_pack",
+      });
     } catch (err) {
       toast.error(err?.response?.data?.detail || err?.data?.detail || err?.message || "Failed to open Growth Pack checkout");
     } finally {
@@ -188,18 +215,162 @@ export default function PlansPage() {
     }
   };
 
-  if (loading) return <main className="cv-plans"><div className="cv-plans-shell"><section className="cv-plans-hero"><p>Loading plans…</p></section></div></main>;
+  const handleBuyMyobAddon = async () => {
+    if (busyPlan || busyAddon || busySms) return;
+    if (isNewUser) {
+      toast.error("Choose a Churvox plan before adding MYOB.");
+      return;
+    }
+
+    if (currentPlan === "enterprise") {
+      toast.success("MYOB is already included in Command.");
+      return;
+    }
+
+    try {
+      setBusyAddon("myob_addon");
+      await openCheckout({
+        checkout_type: "myob_addon",
+        addon_type: "myob_addon",
+        quantity: 1,
+        success_path: "/plans?checkout=success&addon=myob_addon",
+        cancel_path: "/plans?checkout=cancelled&addon=myob_addon",
+      });
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || err?.data?.detail || err?.message || "Failed to open MYOB checkout");
+    } finally {
+      setBusyAddon("");
+    }
+  };
+
+  const handleBuySmsPack = async (pack) => {
+    if (!pack || busyPlan || busyAddon || busySms) return;
+    if (isNewUser) {
+      toast.error("Choose a Churvox plan before buying SMS credits.");
+      return;
+    }
+
+    try {
+      setBusySms(pack.key);
+      await openCheckout({
+        checkout_type: "sms",
+        sms_pack: pack.key,
+        quantity: 1,
+        success_path: `/plans?checkout=success&sms_pack=${encodeURIComponent(pack.key)}`,
+        cancel_path: `/plans?checkout=cancelled&sms_pack=${encodeURIComponent(pack.key)}`,
+      });
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || err?.data?.detail || err?.message || "Failed to open SMS checkout");
+    } finally {
+      setBusySms("");
+    }
+  };
+
+  if (loading) {
+    return (
+      <main className="cv-plans">
+        <div className="cv-plans-shell">
+          <section className="cv-plans-hero"><p>Loading plans…</p></section>
+        </div>
+      </main>
+    );
+  }
 
   return (
-    <main className="cv-plans" data-version="CHURVOX_APP_PLANS_COMMAND_20260524 CHURVOX_SMS_BLOCK_PRICING_20260529 CHURVOX_COMMAND_GROWTH_USER_BLOCKS_20260530 CHURVOX_BUY_GROWTH_PACK_BUTTON_20260530">
+    <main className="cv-plans" data-version="CHURVOX_PLANS_SMS_BLOCKS_CHECKOUT_20260601">
       <div className="cv-plans-shell">
-        <header className="cv-plans-top"><ChurvoxLogo size="lg" /><span>{status.label}</span></header>
-        <section className="cv-plans-hero"><div><p className="cv-kicker">Plans & billing</p><h1>Choose how much admin Churvox should run for you.</h1><p>Start with core workflow, move into crew control, or choose Operator where Churvox prepares the daily admin and the owner approves.</p></div><div className="cv-status-pill">{currencyInfo?.currency ? `Billed in ${currencyInfo.currency}` : status.label}</div></section>
-        {notice && <div className={`cv-notice ${notice.type === "warning" ? "warn" : ""}`}><b>{notice.title}</b><span>{notice.text}</span></div>}
-        <section className="cv-grid">{displayPlans.map((plan) => { const featured = plan.key === "pro"; const current = currentPlan === plan.key && !isTrialExpired; return <article key={plan.key} className={`cv-card ${featured ? "featured" : ""} ${current ? "current" : ""}`}><span>{plan.tag}</span><h2>{plan.name}</h2><div className="cv-price"><b>{plan.price}</b><small>{plan.period}</small></div><p>{plan.blurb}</p><ul>{plan.limits.map((item) => <li key={item}>{item}</li>)}</ul><button type="button" onClick={() => handleSelectPlan(plan.key)} disabled={isDisabled(plan)} data-testid={`plan-btn-${plan.key}`}>{buttonLabel(plan)}</button></article>; })}</section>
-        <section className="cv-user-blocks"><div><small>Command Growth Pack</small><b>+50 active team members</b><span>Add more crew, jobs and AI Operator capacity as your business grows. Built for Command customers who need more capacity without changing the whole plan.</span></div><article><small>Growth Pack</small><strong>$99<em> /month + GST</em></strong><p>Each block adds 50 more active team members.</p><button className="cv-user-block-buy" type="button" onClick={handleBuyGrowthPack} disabled={Boolean(busyPlan || busyAddon)} data-testid="buy-command-growth-pack">{busyAddon ? "Opening checkout…" : "Buy Growth Pack"}</button></article><ul>{userBlocks.map((item) => <li key={item}>{item}</li>)}</ul></section>
-        <section className="cv-sms-pricing"><div><b>SMS credit blocks</b><span>SMS is separate so you only buy what you use. Customer reminders and follow-ups stay approval-first.</span></div><div className="cv-sms-grid">{smsBlocks.map((pack) => <article key={pack.credits}><small>{pack.credits} credits</small><strong>{pack.price}<em> + GST</em></strong><span>{pack.note}</span></article>)}</div></section>
-        <section className="cv-footer-row"><div><b>Churvox does the admin</b><span>AI prepares daily actions for owner approval.</span></div><div><b>Command scales</b><span>Growth Pack adds 50 active team members for $99/month + GST.</span></div><div><b>MYOB ready</b><span>Operator add-on available. Included in Command.</span></div></section>
+        <header className="cv-plans-top">
+          <ChurvoxLogo size="lg" />
+          <span>{status.label}</span>
+        </header>
+
+        <section className="cv-plans-hero">
+          <div>
+            <p className="cv-kicker">Plans & billing</p>
+            <h1>Choose how much admin Churvox should run for you.</h1>
+            <p>Start with core workflow, move into crew control, or choose Operator where Churvox prepares the daily admin and the owner approves.</p>
+          </div>
+          <div className="cv-status-pill">{currencyInfo?.currency ? `Billed in ${currencyInfo.currency}` : status.label}</div>
+        </section>
+
+        {notice && (
+          <div className={`cv-notice ${notice.type === "warning" ? "warn" : ""}`}>
+            <b>{notice.title}</b>
+            <span>{notice.text}</span>
+          </div>
+        )}
+
+        <section className="cv-grid">
+          {displayPlans.map((plan) => {
+            const featured = plan.key === "pro";
+            const current = currentPlan === plan.key && !isTrialExpired;
+            return (
+              <article key={plan.key} className={`cv-card ${featured ? "featured" : ""} ${current ? "current" : ""}`}>
+                <span>{plan.tag}</span>
+                <h2>{plan.name}</h2>
+                <div className="cv-price"><b>{plan.price}</b><small>{plan.period}</small></div>
+                <p>{plan.blurb}</p>
+                <ul>{plan.limits.map((item) => <li key={item}>{item}</li>)}</ul>
+                <button type="button" onClick={() => handleSelectPlan(plan.key)} disabled={isDisabled(plan)} data-testid={`plan-btn-${plan.key}`}>
+                  {buttonLabel(plan)}
+                </button>
+              </article>
+            );
+          })}
+        </section>
+
+        <section className="cv-user-blocks">
+          <div>
+            <small>Command Growth Pack</small>
+            <b>+50 active team members</b>
+            <span>Add more crew, jobs and AI Operator capacity as your business grows. Built for Command customers who need more capacity without changing the whole plan.</span>
+          </div>
+          <article>
+            <small>Growth Pack</small>
+            <strong>$99<em> /month + GST</em></strong>
+            <p>Each block adds 50 more active team members.</p>
+            <button className="cv-user-block-buy" type="button" onClick={handleBuyGrowthPack} disabled={Boolean(busyPlan || busyAddon || busySms)} data-testid="buy-command-growth-pack">
+              {busyAddon === "command_growth_pack" ? "Opening checkout…" : "Buy Growth Pack"}
+            </button>
+          </article>
+          <ul>{userBlocks.map((item) => <li key={item}>{item}</li>)}</ul>
+        </section>
+
+        <section className="cv-myob-addon">
+          <div>
+            <small>MYOB add-on</small>
+            <b>MYOB sync for Operator</b>
+            <span>Operator can add MYOB for $39/month + GST. Command includes MYOB by default.</span>
+          </div>
+          <button type="button" onClick={handleBuyMyobAddon} disabled={Boolean(busyPlan || busyAddon || busySms || currentPlan === "enterprise")} data-testid="buy-myob-addon">
+            {currentPlan === "enterprise" ? "Included in Command" : busyAddon === "myob_addon" ? "Opening checkout…" : "Add MYOB — $39/month"}
+          </button>
+        </section>
+
+        <section className="cv-sms-pricing">
+          <div>
+            <b>SMS credit blocks</b>
+            <span>SMS is separate so you only buy what you use. Customer reminders and follow-ups stay approval-first.</span>
+          </div>
+          <div className="cv-sms-grid">
+            {smsBlocks.map((pack) => (
+              <article key={pack.key}>
+                <small>{pack.credits} credits</small>
+                <strong>{pack.price}<em> + GST</em></strong>
+                <span>{pack.note}</span>
+                <button type="button" onClick={() => handleBuySmsPack(pack)} disabled={Boolean(busyPlan || busyAddon || busySms)} data-testid={`buy-${pack.key}`}>
+                  {busySms === pack.key ? "Opening checkout…" : "Buy credits"}
+                </button>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="cv-footer-row">
+          <div><b>Churvox does the admin</b><span>AI prepares daily actions for owner approval.</span></div>
+          <div><b>Command scales</b><span>Growth Pack adds 50 active team members for $99/month + GST.</span></div>
+          <div><b>MYOB ready</b><span>Operator add-on available. Included in Command.</span></div>
+        </section>
       </div>
     </main>
   );

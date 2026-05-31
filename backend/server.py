@@ -16090,6 +16090,375 @@ async def get_launch_polish_checklist(current_user: dict = Depends(get_current_u
     return {"success": True, "polish": {"items": checklist}}
 
 
+
+
+# CHURVOX_WIRE_PLANS_SMS_BLOCKS_CHECKOUT_20260601
+# Unified checkout for Churvox plans, Command Growth Packs, MYOB add-on and SMS credits.
+# Uses Stripe Price IDs when provided, otherwise uses Stripe Checkout price_data fallback.
+CHURVOX_CHECKOUT_CATALOG = {
+    "plans": {
+        "solo": {
+            "canonical": "solo",
+            "display": "Start",
+            "amount_cents": 3900,
+            "interval": "month",
+            "env_keys": ["STRIPE_PRICE_START", "STRIPE_PRICE_SOLO", "STRIPE_START_PRICE_ID", "STRIPE_SOLO_PRICE_ID"],
+            "metadata_plan": "solo",
+        },
+        "team": {
+            "canonical": "team",
+            "display": "Crew",
+            "amount_cents": 8900,
+            "interval": "month",
+            "env_keys": ["STRIPE_PRICE_CREW", "STRIPE_PRICE_TEAM", "STRIPE_CREW_PRICE_ID", "STRIPE_TEAM_PRICE_ID"],
+            "metadata_plan": "team",
+        },
+        "pro": {
+            "canonical": "pro",
+            "display": "Operator",
+            "amount_cents": 14900,
+            "interval": "month",
+            "env_keys": ["STRIPE_PRICE_OPERATOR", "STRIPE_PRICE_PRO", "STRIPE_OPERATOR_PRICE_ID", "STRIPE_PRO_PRICE_ID"],
+            "metadata_plan": "pro",
+        },
+        "enterprise": {
+            "canonical": "enterprise",
+            "display": "Command",
+            "amount_cents": 29900,
+            "interval": "month",
+            "env_keys": ["STRIPE_PRICE_COMMAND", "STRIPE_PRICE_ENTERPRISE", "STRIPE_COMMAND_PRICE_ID", "STRIPE_ENTERPRISE_PRICE_ID"],
+            "metadata_plan": "enterprise",
+        },
+    },
+    "addons": {
+        "command_growth_pack": {
+            "display": "Command Growth Pack",
+            "amount_cents": 9900,
+            "interval": "month",
+            "env_keys": ["STRIPE_PRICE_COMMAND_GROWTH_PACK", "STRIPE_PRICE_GROWTH_PACK", "STRIPE_GROWTH_PACK_PRICE_ID"],
+            "checkout_type": "growth_pack",
+        },
+        "myob_addon": {
+            "display": "MYOB add-on",
+            "amount_cents": 3900,
+            "interval": "month",
+            "env_keys": ["STRIPE_PRICE_MYOB_ADDON", "STRIPE_MYOB_ADDON_PRICE_ID"],
+            "checkout_type": "myob_addon",
+        },
+    },
+    "sms": {
+        "sms_100": {
+            "display": "100 SMS credits",
+            "amount_cents": 1000,
+            "credits": 100,
+            "env_keys": ["STRIPE_PRICE_SMS_100", "STRIPE_SMS_100_PRICE_ID"],
+        },
+        "sms_500": {
+            "display": "500 SMS credits",
+            "amount_cents": 4500,
+            "credits": 500,
+            "env_keys": ["STRIPE_PRICE_SMS_500", "STRIPE_SMS_500_PRICE_ID"],
+        },
+        "sms_1000": {
+            "display": "1,000 SMS credits",
+            "amount_cents": 8000,
+            "credits": 1000,
+            "env_keys": ["STRIPE_PRICE_SMS_1000", "STRIPE_SMS_1000_PRICE_ID"],
+        },
+    },
+}
+
+def _cv_checkout_text(value):
+    return str(value or "").strip()
+
+def _cv_checkout_secret():
+    return (
+        os.environ.get("STRIPE_SECRET_KEY")
+        or os.environ.get("STRIPE_API_KEY")
+        or os.environ.get("STRIPE_SK")
+        or ""
+    ).strip()
+
+def _cv_checkout_public_url():
+    return (
+        os.environ.get("FRONTEND_URL")
+        or os.environ.get("PUBLIC_APP_URL")
+        or os.environ.get("APP_URL")
+        or os.environ.get("REACT_APP_PUBLIC_URL")
+        or "https://www.churvox.com"
+    ).strip().rstrip("/")
+
+def _cv_checkout_price_id(item):
+    for key in item.get("env_keys", []):
+        value = os.environ.get(key, "").strip()
+        if value:
+            return value
+    return ""
+
+def _cv_checkout_success_url(path, item_key):
+    base = _cv_checkout_public_url()
+    raw = _cv_checkout_text(path) or f"/plans?checkout=success&item={item_key}"
+    sep = "&" if "?" in raw else "?"
+    if "session_id=" not in raw:
+        raw = f"{raw}{sep}session_id={{CHECKOUT_SESSION_ID}}"
+    if raw.startswith("http"):
+        return raw
+    return f"{base}{raw}"
+
+def _cv_checkout_cancel_url(path, item_key):
+    base = _cv_checkout_public_url()
+    raw = _cv_checkout_text(path) or f"/plans?checkout=cancelled&item={item_key}"
+    if raw.startswith("http"):
+        return raw
+    return f"{base}{raw}"
+
+def _cv_checkout_catalog_public():
+    def pack_item(key, item, kind):
+        return {
+            "key": key,
+            "kind": kind,
+            "display": item.get("display"),
+            "amount_cents": item.get("amount_cents"),
+            "amount_nzd": round(float(item.get("amount_cents") or 0) / 100, 2),
+            "credits": item.get("credits"),
+            "interval": item.get("interval"),
+            "stripe_price_configured": bool(_cv_checkout_price_id(item)),
+        }
+
+    return {
+        "plans": [pack_item(k, v, "plan") for k, v in CHURVOX_CHECKOUT_CATALOG["plans"].items()],
+        "addons": [pack_item(k, v, "addon") for k, v in CHURVOX_CHECKOUT_CATALOG["addons"].items()],
+        "sms": [pack_item(k, v, "sms") for k, v in CHURVOX_CHECKOUT_CATALOG["sms"].items()],
+        "stripe_ready": bool(_cv_checkout_secret()),
+    }
+
+def _cv_checkout_pick(payload: dict):
+    payload = payload or {}
+    checkout_type = _cv_checkout_text(payload.get("checkout_type") or payload.get("type")).lower()
+    plan_type = _cv_checkout_text(payload.get("plan_type") or payload.get("plan") or payload.get("plan_key")).lower()
+    addon_type = _cv_checkout_text(payload.get("addon_type") or payload.get("addon")).lower()
+    sms_pack = _cv_checkout_text(payload.get("sms_pack") or payload.get("pack") or payload.get("sms_pack_id")).lower()
+
+    plan_aliases = {
+        "start": "solo",
+        "solo": "solo",
+        "crew": "team",
+        "team": "team",
+        "operator": "pro",
+        "pro": "pro",
+        "command": "enterprise",
+        "enterprise": "enterprise",
+    }
+
+    if checkout_type in {"sms", "sms_pack", "sms_credits"} or sms_pack:
+        raw = sms_pack or _cv_checkout_text(payload.get("credits"))
+        key = {
+            "100": "sms_100",
+            "sms100": "sms_100",
+            "sms_100": "sms_100",
+            "500": "sms_500",
+            "sms500": "sms_500",
+            "sms_500": "sms_500",
+            "1000": "sms_1000",
+            "1,000": "sms_1000",
+            "sms1000": "sms_1000",
+            "sms_1000": "sms_1000",
+        }.get(str(raw).replace(" ", "").lower(), sms_pack)
+        item = CHURVOX_CHECKOUT_CATALOG["sms"].get(key)
+        if not item:
+            raise HTTPException(status_code=400, detail="Unknown SMS credit pack.")
+        return "sms", key, item
+
+    if checkout_type in {"growth_pack", "addon", "myob_addon"} or addon_type:
+        key = addon_type or checkout_type
+        if key in {"growth", "growth_pack", "command_growth", "command_growth_pack", "blocks", "block"}:
+            key = "command_growth_pack"
+        if key in {"myob", "myob_addon", "myob-sync"}:
+            key = "myob_addon"
+        item = CHURVOX_CHECKOUT_CATALOG["addons"].get(key)
+        if not item:
+            raise HTTPException(status_code=400, detail="Unknown add-on.")
+        return item.get("checkout_type") or "addon", key, item
+
+    plan_key = plan_aliases.get(plan_type, plan_type)
+    item = CHURVOX_CHECKOUT_CATALOG["plans"].get(plan_key)
+    if not item:
+        raise HTTPException(status_code=400, detail="Unknown plan.")
+    return "plan", plan_key, item
+
+async def _cv_create_stripe_checkout(payload: dict, current_user: dict):
+    import urllib.parse
+    import urllib.request
+    import urllib.error
+    import base64
+
+    secret = _cv_checkout_secret()
+    if not secret:
+        raise HTTPException(
+            status_code=503,
+            detail="Stripe is not configured yet. Add STRIPE_SECRET_KEY in Render before taking checkout payments.",
+        )
+
+    checkout_type, item_key, item = _cv_checkout_pick(payload)
+    business_id = str(await get_user_business_id(current_user))
+    user_email = _cv_checkout_text(current_user.get("email"))
+    user_id = _cv_checkout_text(current_user.get("id") or current_user.get("_id"))
+
+    quantity = 1
+    try:
+        quantity = max(1, min(int(payload.get("quantity") or 1), 50))
+    except Exception:
+        quantity = 1
+
+    mode = "payment" if checkout_type == "sms" else "subscription"
+    success_url = _cv_checkout_success_url(payload.get("success_path"), item_key)
+    cancel_url = _cv_checkout_cancel_url(payload.get("cancel_path"), item_key)
+    price_id = _cv_checkout_price_id(item)
+
+    fields = [
+        ("mode", mode),
+        ("success_url", success_url),
+        ("cancel_url", cancel_url),
+        ("client_reference_id", business_id),
+        ("allow_promotion_codes", "true"),
+        ("line_items[0][quantity]", str(quantity)),
+        ("metadata[checkout_type]", checkout_type),
+        ("metadata[item_key]", item_key),
+        ("metadata[business_id]", business_id),
+        ("metadata[user_id]", user_id),
+        ("metadata[user_email]", user_email),
+    ]
+
+    if checkout_type == "plan":
+        fields.extend([
+            ("metadata[plan_type]", item.get("metadata_plan") or item_key),
+            ("subscription_data[metadata][plan_type]", item.get("metadata_plan") or item_key),
+            ("subscription_data[metadata][business_id]", business_id),
+            ("subscription_data[metadata][checkout_type]", "plan"),
+        ])
+
+    if checkout_type in {"growth_pack", "myob_addon"}:
+        fields.extend([
+            ("metadata[addon_type]", item_key),
+            ("subscription_data[metadata][addon_type]", item_key),
+            ("subscription_data[metadata][business_id]", business_id),
+            ("subscription_data[metadata][checkout_type]", checkout_type),
+        ])
+
+    if checkout_type == "sms":
+        fields.extend([
+            ("metadata[sms_pack]", item_key),
+            ("metadata[credits]", str(item.get("credits") or "")),
+        ])
+
+    if user_email:
+        fields.append(("customer_email", user_email))
+
+    if price_id:
+        fields.append(("line_items[0][price]", price_id))
+    else:
+        fields.extend([
+            ("line_items[0][price_data][currency]", "nzd"),
+            ("line_items[0][price_data][unit_amount]", str(int(item["amount_cents"]))),
+            ("line_items[0][price_data][product_data][name]", f"Churvox {item['display']}"),
+            ("line_items[0][price_data][product_data][description]", f"{item['display']} for Churvox"),
+        ])
+        if mode == "subscription":
+            fields.append(("line_items[0][price_data][recurring][interval]", item.get("interval") or "month"))
+
+    encoded = urllib.parse.urlencode(fields).encode("utf-8")
+    req = urllib.request.Request(
+        "https://api.stripe.com/v1/checkout/sessions",
+        data=encoded,
+        headers={
+            "Authorization": f"Bearer {secret}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=30) as response:
+            raw = response.read().decode("utf-8")
+            data = json.loads(raw or "{}")
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        try:
+            parsed = json.loads(body)
+            msg = parsed.get("error", {}).get("message") or body
+        except Exception:
+            msg = body
+        raise HTTPException(status_code=400, detail=f"Stripe checkout failed: {msg}")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Stripe checkout error: {exc}")
+
+    session_id = data.get("id")
+    checkout_url = data.get("url")
+    if not checkout_url:
+        raise HTTPException(status_code=500, detail="Stripe did not return a checkout URL.")
+
+    now = datetime.now(timezone.utc)
+    try:
+        await db.checkout_sessions.update_one(
+            {"stripe_session_id": session_id},
+            {"$set": {
+                "stripe_session_id": session_id,
+                "business_id": business_id,
+                "user_id": user_id,
+                "user_email": user_email,
+                "checkout_type": checkout_type,
+                "item_key": item_key,
+                "mode": mode,
+                "quantity": quantity,
+                "amount_cents": int(item.get("amount_cents") or 0),
+                "credits": item.get("credits"),
+                "status": "created",
+                "checkout_url": checkout_url,
+                "created_at": now,
+                "updated_at": now,
+            }},
+            upsert=True,
+        )
+    except Exception:
+        pass
+
+    return {
+        "success": True,
+        "checkout_url": checkout_url,
+        "url": checkout_url,
+        "session_id": session_id,
+        "checkout_type": checkout_type,
+        "item_key": item_key,
+        "mode": mode,
+        "stripe_price_configured": bool(price_id),
+    }
+
+@api_router.get("/billing/checkout-catalog")
+async def get_churvox_checkout_catalog(current_user: dict = Depends(get_current_user)):
+    return {"success": True, "catalog": _cv_checkout_catalog_public()}
+
+@api_router.post("/billing/unified-checkout")
+async def create_churvox_unified_checkout(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    return await _cv_create_stripe_checkout(payload or {}, current_user)
+
+@api_router.post("/billing/create-checkout")
+async def create_churvox_billing_checkout_alias(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    return await _cv_create_stripe_checkout(payload or {}, current_user)
+
+@api_router.post("/billing/addons/checkout")
+async def create_churvox_addon_checkout_alias(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    payload = dict(payload or {})
+    if not payload.get("checkout_type"):
+        payload["checkout_type"] = payload.get("addon_type") or payload.get("addon") or "addon"
+    return await _cv_create_stripe_checkout(payload, current_user)
+
+@api_router.post("/billing/sms-checkout")
+async def create_churvox_sms_checkout(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    payload = dict(payload or {})
+    payload["checkout_type"] = "sms"
+    return await _cv_create_stripe_checkout(payload, current_user)
+
+
 # CORS_HARD_FIX_20260412
 
 
