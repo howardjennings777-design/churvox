@@ -958,3 +958,154 @@ body:has(.xcf-command-10) {
   }
 }
 
+
+/* CHURVOX_FIX_REAL_COMMAND_FLOOR_NAV_VISIBLE_20260601
+   This targets the real Command Floor nav only: .xcf-command-10 .xcf10-dock.
+   It stops the command nav from hiding links and turns it into a swipeable full-width dock. */
+
+.xcf-command-10 .xcf10-dock {
+  position: fixed !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  z-index: 2147483000 !important;
+  transform: translateX(-50%) !important;
+
+  width: min(1320px, calc(100vw - 18px)) !important;
+  max-width: calc(100vw - 18px) !important;
+  min-height: 64px !important;
+
+  display: flex !important;
+  grid-template-columns: none !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  white-space: nowrap !important;
+  flex-wrap: nowrap !important;
+  -webkit-overflow-scrolling: touch !important;
+  scrollbar-width: none !important;
+
+  padding: 8px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(125, 189, 255, .26) !important;
+  background: linear-gradient(135deg, rgba(3, 13, 33, .97), rgba(7, 29, 61, .97)) !important;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .46), inset 0 1px 0 rgba(255,255,255,.10) !important;
+  backdrop-filter: blur(18px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
+
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+.xcf-command-10 .xcf10-dock::-webkit-scrollbar {
+  display: none !important;
+}
+
+.xcf-command-10 .xcf10-dock a,
+.xcf-command-10 .xcf10-dock button,
+.xcf-command-10 .xcf10-dock b,
+.xcf-command-10 .xcf10-dock label {
+  flex: 0 0 auto !important;
+  display: inline-flex !important;
+  min-width: max-content !important;
+  width: auto !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 15px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  background: rgba(255,255,255,.065) !important;
+  color: rgba(248, 251, 255, .88) !important;
+  font-size: .86rem !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+/* Undo the old command-floor rule that hides nav links on mobile. */
+.xcf-command-10 .xcf10-dock a:nth-of-type(n+5) {
+  display: inline-flex !important;
+}
+
+/* Keep active/current command item obvious. */
+.xcf-command-10 .xcf10-dock a.active,
+.xcf-command-10 .xcf10-dock a:hover,
+.xcf-command-10 .xcf10-dock button:hover {
+  background: linear-gradient(135deg, rgba(38, 211, 238, .34), rgba(98, 72, 255, .30)) !important;
+  border-color: rgba(98, 232, 245, .46) !important;
+  color: #ffffff !important;
+  box-shadow: 0 12px 34px rgba(38, 211, 238, .18) !important;
+}
+
+/* Search and round icons can stay, but they must not eat the whole nav. */
+.xcf-command-10 .xcf10-dock label {
+  min-width: 210px !important;
+  max-width: 260px !important;
+  justify-content: flex-start !important;
+}
+
+.xcf-command-10 .xcf10-dock input {
+  min-width: 120px !important;
+  color: #ffffff !important;
+}
+
+/* Give the real Command page enough bottom space so the dock does not cover content. */
+.xcf-command-10 {
+  padding-bottom: 118px !important;
+}
+
+/* Tablet and mobile: never hide command nav links, just swipe sideways. */
+@media (max-width: 1300px) {
+  .xcf-command-10 .xcf10-dock {
+    display: flex !important;
+    grid-template-columns: none !important;
+  }
+
+  .xcf-command-10 .xcf10-dock label,
+  .xcf-command-10 .xcf10-dock button,
+  .xcf-command-10 .xcf10-dock b {
+    display: inline-flex !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .xcf-command-10 {
+    padding-bottom: 112px !important;
+  }
+
+  .xcf-command-10 .xcf10-dock {
+    left: 8px !important;
+    right: 8px !important;
+    bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    transform: none !important;
+    width: auto !important;
+    max-width: none !important;
+    min-height: 60px !important;
+    border-radius: 24px !important;
+    padding: 8px !important;
+  }
+
+  .xcf-command-10 .xcf10-dock a,
+  .xcf-command-10 .xcf10-dock button,
+  .xcf-command-10 .xcf10-dock b,
+  .xcf-command-10 .xcf10-dock label {
+    display: inline-flex !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 0 13px !important;
+    font-size: .8rem !important;
+  }
+
+  .xcf-command-10 .xcf10-dock label {
+    min-width: 180px !important;
+  }
+}
