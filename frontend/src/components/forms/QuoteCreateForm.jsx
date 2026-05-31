@@ -1,5 +1,6 @@
-// CHURVOX_QUOTE_USES_BUSINESS_DEFAULTS_20260601
+// CHURVOX_QUOTE_FROM_CLIENT_STABLE_PREFILL_20260601
 import React, { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { useApi } from "@/hooks/useApi";
 import { Input } from "@/components/ui/input";
@@ -26,17 +27,21 @@ function money(value) { const n = Number(String(value ?? "").replace(/[^0-9.-]/g
 function lineTotal(line) { return (money(line.qty) || 1) * money(line.rate); }
 function firstService(settings) { return settings?.default_job_types?.[0] || settings?.trade_industry_type || "Service work"; }
 function validNote(settings) { return `Quote is valid for ${Number(settings?.default_quote_expiry_days || 14)} days unless stated otherwise.`; }
+function queryValue(search, key) { try { return new URLSearchParams(search).get(key) || ""; } catch { return ""; } }
 
 export default function QuoteCreateForm({ onSuccess, onCancel, submitLabel = "Create quote" }) {
+  const location = useLocation();
+  const clientFromQuery = queryValue(location.search, "client_id");
   const { get, post, loading } = useApi();
   const [settings, setSettings] = useState(() => loadBusinessSettings());
   const [clients, setClients] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [prefilled, setPrefilled] = useState(false);
   const [lines, setLines] = useState(() => [{ description: firstService(loadBusinessSettings()), qty: "1", rate: "" }]);
   const [form, setForm] = useState(() => {
     const s = loadBusinessSettings();
     return {
-      client_id: "",
+      client_id: clientFromQuery,
       customer_name: "",
       customer_email: "",
       customer_phone: "",
@@ -70,6 +75,16 @@ export default function QuoteCreateForm({ onSuccess, onCancel, submitLabel = "Cr
     return () => { alive = false; window.removeEventListener("churvox-business-settings-updated", onSettings); };
   }, [get]);
 
+  useEffect(() => {
+    if (prefilled) return;
+    if (clientFromQuery && clients.length) {
+      const client = clients.find((c) => clientId(c) === String(clientFromQuery));
+      if (client) pickClient(clientFromQuery);
+      setPrefilled(true);
+    }
+    if (!clientFromQuery) setPrefilled(true);
+  }, [clients, clientFromQuery, prefilled]);
+
   const subtotal = useMemo(() => lines.reduce((sum, line) => sum + lineTotal(line), 0), [lines]);
   const previewTotal = money(form.price) || subtotal;
   const busy = loading || saving;
@@ -88,8 +103,9 @@ export default function QuoteCreateForm({ onSuccess, onCancel, submitLabel = "Cr
       client_id: selectedId,
       customer_name: client ? clientName(client) : p.customer_name,
       customer_email: client?.email || client?.customer_email || client?.client_email || p.customer_email,
-      customer_phone: client?.phone || client?.mobile || p.customer_phone,
+      customer_phone: client?.phone || client?.mobile || client?.customer_phone || p.customer_phone,
       address: client?.address || client?.site_address || client?.billing_address || p.address,
+      job_description: p.job_description || firstService(settings),
     }));
   }
 
@@ -114,6 +130,7 @@ export default function QuoteCreateForm({ onSuccess, onCancel, submitLabel = "Cr
       client_name: form.customer_name,
       customer_name: form.customer_name,
       customer_email: form.customer_email,
+      customer_phone: form.customer_phone,
       address: form.address,
       site_address: form.address,
       description: form.job_description,
@@ -141,11 +158,12 @@ export default function QuoteCreateForm({ onSuccess, onCancel, submitLabel = "Cr
   const section = "rounded-2xl border border-slate-700 bg-slate-950/50 p-4 md:p-5 space-y-4 shadow-[0_8px_28px_rgba(0,0,0,0.18)]";
   const fieldClass = "w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2.5 text-white";
 
-  return <form onSubmit={submit} className="min-h-full flex flex-col" data-version="CHURVOX_QUOTE_USES_BUSINESS_DEFAULTS_20260601">
+  return <form onSubmit={submit} className="min-h-full flex flex-col" data-version="CHURVOX_QUOTE_FROM_CLIENT_STABLE_PREFILL_20260601">
     <div className="space-y-4 pb-28">
       <section className={section}>
-        <div><p className="text-sm font-black text-white">Quote details</p><p className="text-xs font-semibold text-slate-300">Uses your business setup for expiry, prefix, trade and document defaults.</p></div>
+        <div><p className="text-sm font-black text-white">Quote details</p><p className="text-xs font-semibold text-slate-300">Uses your business setup and can prefill directly from a client record.</p></div>
         <div className="rounded-2xl border border-lime-300/20 bg-lime-300/10 p-3 text-xs font-bold text-lime-100">Business defaults: {settings.business_name || "No business name yet"} · Prefix {settings.quote_prefix || "QUO"} · Expires in {settings.default_quote_expiry_days || 14} days</div>
+        {clientFromQuery ? <div className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-3 text-xs font-bold text-cyan-100">Opened from a client record. Customer details will prefill once the client loads.</div> : null}
         <div><Label>Client</Label><select className={fieldClass} value={form.client_id} onChange={(e)=>pickClient(e.target.value)}><option value="">Select client</option>{clients.map((c)=><option key={clientId(c)} value={clientId(c)}>{clientName(c)}</option>)}</select></div>
         <div><Label>Customer Name *</Label><Input className="rounded-xl" required value={form.customer_name} onChange={(e)=>change("customer_name", e.target.value)} /></div>
         <div className="grid gap-3 md:grid-cols-2"><div><Label>Customer Email</Label><Input className="rounded-xl" type="email" value={form.customer_email} onChange={(e)=>change("customer_email", e.target.value)} /></div><div><Label>Customer Phone</Label><Input className="rounded-xl" value={form.customer_phone} onChange={(e)=>change("customer_phone", e.target.value)} /></div></div>
