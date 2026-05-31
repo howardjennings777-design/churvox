@@ -8,7 +8,9 @@ body.cv-has-floating-dock {
 .xcf-command-10 .xcf10-dock-launch-final,
 .xcf-command-10 .xcf10-command-dock-complete,
 .xcf-command-10 .cv-command-floor-nav,
-.xcf-command-10 .cv-command-switcher {
+.xcf-command-10 .cv-command-switcher,
+.concept-c2-frame .c2-dock,
+.concept-c2-frame .c2-dock-full {
   display: none !important;
   visibility: hidden !important;
   pointer-events: none !important;
