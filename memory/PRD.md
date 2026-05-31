@@ -138,3 +138,35 @@ Churvox is **launch-ready**. No further building until the user resumes.
 ## Deployment
 - Git: User owns the repo and must use Emergent's **"Save to GitHub"** button in the chat input to push. Render auto-deploy is wired to `main`.
 - Protected env vars: `REACT_APP_BACKEND_URL` (frontend), `MONGO_URL` + `DB_NAME` (backend), Stripe test keys (pod env).
+
+---
+
+## 14-Phase Command Floor Overhaul (Feb 2026 — in progress, branch `emergent-current-main`)
+Product promise: "Work comes in → Churvox organises it → crew do the job → proof comes back → AI prepares admin → owner approves → invoice goes out → money gets tracked."
+Rules: REAL wiring only (no fake UI); missing Stripe keys must fail safe (no crash, no fake success); customers see Start/Crew/Operator/Command, DB stays solo/team/pro/enterprise.
+
+> IMPORTANT (env): frontend serves a **production build** via `server.cjs` — NO hot reload. After ANY frontend change run `cd /app/frontend && yarn build && sudo supervisorctl restart frontend`.
+
+### Phase 1 — Public Pricing page `/pricing` (DONE — Feb 2026, verified)
+- `pages/marketing/ExecutivePricingPage.jsx` + `ExecutivePricingPagePolish.css`.
+- Fixed white-on-white bug: Start/Crew light cards inherited the dark-hero `.cvx-plan-grid` white text/buttons. Added dark text colours + readable secondary buttons scoped to `.cvx-plan-grid-v2`, plus dark text for all light sections (comparison table rows/values, FAQ, final CTA). All 4 plans, comparison matrix, add-ons, FAQ, trust strip render correctly.
+
+### Phase 2 — Logged-in `/plans` billing page (DONE — Feb 2026, verified)
+- `pages/PlansPage.js` + `PlansCommand.css`. Already had Start/Crew/Operator/Command names, trial-start (new users, no card) + Stripe checkout (existing), Growth Pack, SMS blocks.
+- **Routing fix**: removed `ConceptCFrame` wrapper (it cramped the full-width page into a narrow detail frame → overflow). `/plans` now renders full-width matching `/dashboard` Command Floor theme, with a "← Back to Command Floor" header link.
+- **Safe Stripe handling (backend `server.py`)**: new `billing_is_configured()` + `BILLING_NOT_CONFIGURED_MESSAGE`; `create_checkout_session` returns clean **503** friendly message when secret key/price IDs missing (was raw 500/400); `build_billing_status` now returns `billing_configured`.
+- **Frontend**: PlansPage reads `billing_configured`; shows persistent "Paid checkout isn't enabled" banner; paid-plan + Growth Pack clicks show a clear notice instead of attempting/crashing. Trial start still works (verified: fresh user → solo trialing).
+
+### Remaining phases (P1→P4, build in order, REAL wiring, end with full 14-area test report)
+- **P1 Phase 3** — Business setup / onboarding / settings (save business info, logo, GST, banks, MYOB status; scope to business_id).
+- **P1 Phase 4** — Business-grade invoices (taxes, discounts, partial payments, statuses).
+- **P2 Phase 5** — Quote→Job→Invoice→Paid pipeline + blockers.
+- **P2 Phase 6** — Money Desk (sent/overdue/paid).
+- **P2 Phase 7** — Customer records / CRM upgrade.
+- **P3 Phase 8** — Worker/crew operations. **Phase 9** — Dispatch board/calendar. **Phase 10** — Integrations workspace (MYOB sync). **Phase 11** — Automation workspace.
+- **P4 Phase 12** — AI Operator real actions (approve-first payloads). **Phase 13** — Reports/export/trust/security. **Phase 14** — Churvox HQ / platform admin.
+
+### Test accounts (see /app/memory/test_credentials.md)
+- owner.test@churvox.dev / OwnerTest123! (pro/Operator, active, full app access)
+- newuser.test@churvox.dev / NewUser123! (plan none → trial testing)
+

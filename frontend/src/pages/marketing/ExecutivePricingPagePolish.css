@@ -1,0 +1,487 @@
+/* CHURVOX_PRICING_OVERHAUL_20260601 — Pricing-page-only polish on top of existing
+   ExecutiveHomePage.css / ExecutiveMarketingPolish.css. Keeps existing public look,
+   adds Operator featured + Command serious tier, plan comparison, FAQ, trust strip. */
+
+.cvx-pricing-page .cvx-hero-ctas {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.cvx-pricing-page .cvx-hero-microcopy {
+  margin-top: 14px;
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+/* Plan grid v2 — distinguish Operator (featured) and Command (serious) */
+.cvx-plan-grid-v2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+  align-items: stretch;
+}
+
+.cvx-plan-grid-v2 article {
+  position: relative;
+  background: #fff;
+  color: #1a2230;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: auto;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.cvx-plan-grid-v2 article:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.08);
+}
+
+.cvx-plan-grid-v2 article.is-featured {
+  background: #fff;
+  border: 2px solid #1f6feb;
+  box-shadow: 0 10px 30px rgba(31, 111, 235, 0.18);
+  transform: translateY(-6px);
+}
+
+.cvx-plan-grid-v2 article.is-serious {
+  background: linear-gradient(180deg, #0f1419 0%, #161d28 100%);
+  color: #f5f7fa;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cvx-plan-grid-v2 article.is-serious small,
+.cvx-plan-grid-v2 article.is-serious p,
+.cvx-plan-grid-v2 article.is-serious ul li {
+  color: #cfd5df;
+}
+
+.cvx-plan-grid-v2 article.is-serious h2,
+.cvx-plan-grid-v2 article.is-serious strong {
+  color: #fff;
+}
+
+.cvx-plan-badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f6feb;
+  color: #fff;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.cvx-plan-badge-serious {
+  background: #f5b400;
+  color: #161d28;
+}
+
+.cvx-plan-grid-v2 article small {
+  color: #1f6feb;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 1;
+}
+
+.cvx-plan-grid-v2 article h2 {
+  color: #0f1419;
+  font-size: 28px;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.cvx-plan-grid-v2 article strong {
+  color: #0f1419;
+  font-size: 36px;
+  font-weight: 700;
+}
+
+.cvx-plan-grid-v2 article strong em {
+  display: inline;
+  margin-top: 0;
+  font-style: normal;
+  font-size: 14px;
+  font-weight: 500;
+  color: #5b6573;
+  opacity: 1;
+  margin-left: 4px;
+}
+
+.cvx-plan-grid-v2 article .cvx-plan-audience {
+  color: #3a4452;
+}
+
+.cvx-plan-grid-v2 article .cvx-plan-audience b {
+  color: #0f1419;
+}
+
+.cvx-plan-grid-v2 article .cvx-plan-summary {
+  color: #2a3340;
+}
+
+.cvx-plan-audience {
+  font-size: 13px;
+  line-height: 1.5;
+  opacity: 0.85;
+  margin: 0;
+}
+
+.cvx-plan-audience b {
+  font-weight: 700;
+}
+
+.cvx-plan-summary {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.cvx-plan-grid-v2 article ul {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cvx-plan-grid-v2 article ul li {
+  color: #2a3340;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.cvx-plan-grid-v2 article a {
+  margin-top: auto;
+  text-align: center;
+}
+
+/* Secondary CTA on light cards needs dark, readable styling (base is white-on-dark) */
+.cvx-plan-grid-v2 article:not(.is-serious) .cvx-btn-secondary {
+  color: #0f1419;
+  background: #fff;
+  border: 1.5px solid rgba(15, 20, 25, 0.18);
+}
+
+.cvx-plan-grid-v2 article:not(.is-serious) .cvx-btn-secondary:hover {
+  background: #f4f6f9;
+  border-color: rgba(31, 111, 235, 0.5);
+  color: #1f6feb;
+}
+
+.cvx-btn-serious {
+  background: #f5b400;
+  color: #161d28;
+  border: 1px solid #f5b400;
+  font-weight: 700;
+}
+
+.cvx-btn-serious:hover {
+  background: #ffc928;
+  border-color: #ffc928;
+}
+
+/* Comparison table */
+.cvx-compare-section {
+  padding: 60px 24px;
+  background: #fafbfc;
+}
+
+.cvx-compare-head {
+  text-align: center;
+  margin-bottom: 28px;
+  max-width: 680px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.cvx-compare-head h2 {
+  font-size: 32px;
+  margin: 8px 0;
+}
+
+.cvx-compare-table-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  overflow-x: auto;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+}
+
+.cvx-compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  min-width: 720px;
+}
+
+.cvx-compare-table th,
+.cvx-compare-table td {
+  padding: 12px 16px;
+  text-align: center;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.cvx-compare-table thead th {
+  background: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  padding: 18px 16px;
+}
+
+.cvx-compare-table thead th small {
+  display: block;
+  font-weight: 500;
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+
+.cvx-compare-table thead th.is-featured {
+  background: rgba(31, 111, 235, 0.08);
+  color: #1f6feb;
+}
+
+.cvx-compare-table thead th.is-serious {
+  background: #161d28;
+  color: #f5b400;
+}
+
+.cvx-compare-table tbody th {
+  text-align: left;
+  font-weight: 500;
+  background: #fafbfc;
+}
+
+.cvx-compare-table td.is-featured {
+  background: rgba(31, 111, 235, 0.04);
+}
+
+.cvx-compare-table td.is-serious {
+  background: rgba(245, 180, 0, 0.06);
+}
+
+.cv-cmp-group th {
+  background: #f0f2f5 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: left !important;
+  color: #555;
+  padding: 10px 16px !important;
+}
+
+.cv-cmp-yes {
+  color: #1a9c54;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.cv-cmp-no {
+  color: #bbb;
+  font-size: 16px;
+}
+
+.cv-cmp-text {
+  font-weight: 600;
+  font-size: 13.5px;
+}
+
+/* Addon grid headings */
+.cvx-addon-grid article h3 {
+  font-size: 18px;
+  margin: 4px 0;
+}
+
+/* FAQ */
+.cvx-faq-section {
+  padding: 60px 24px;
+  background: #fff;
+}
+
+.cvx-faq-head {
+  text-align: center;
+  max-width: 680px;
+  margin: 0 auto 28px;
+}
+
+.cvx-faq-head h2 {
+  font-size: 30px;
+  margin: 8px 0;
+}
+
+.cvx-faq-list {
+  max-width: 760px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cvx-faq-list article {
+  background: #fafbfc;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.cvx-faq-list article.is-open {
+  border-color: rgba(31, 111, 235, 0.4);
+  background: #fff;
+}
+
+.cvx-faq-list button {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  padding: 16px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  color: inherit;
+}
+
+.cvx-faq-list button i {
+  font-style: normal;
+  font-size: 22px;
+  color: #1f6feb;
+  font-weight: 400;
+}
+
+.cvx-faq-list p {
+  padding: 0 20px 18px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  opacity: 0.85;
+}
+
+/* Trust strip */
+.cvx-trust-strip {
+  padding: 40px 24px;
+  background: #161d28;
+  color: #f5f7fa;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
+  text-align: center;
+}
+
+.cvx-trust-strip > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cvx-trust-strip b {
+  color: #f5b400;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+}
+
+.cvx-trust-strip span {
+  font-size: 13px;
+  opacity: 0.8;
+  line-height: 1.5;
+}
+
+/* Final CTA */
+.cvx-cta-final {
+  padding: 70px 24px;
+  text-align: center;
+  background: linear-gradient(180deg, #fafbfc 0%, #fff 100%);
+}
+
+.cvx-cta-final h2 {
+  font-size: 32px;
+  margin: 0 0 10px;
+}
+
+.cvx-cta-final p {
+  font-size: 15px;
+  opacity: 0.75;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 720px) {
+  .cvx-plan-grid-v2 article.is-featured {
+    transform: none;
+  }
+  .cvx-compare-table {
+    font-size: 12.5px;
+  }
+  .cvx-compare-table th,
+  .cvx-compare-table td {
+    padding: 10px 8px;
+  }
+}
+
+/* ----------------------------------------------------------------------
+   Light-section readability fix.
+   The page root (.cvx-home) sets color:#fff for the dark hero. The
+   pricing-only light sections below must force dark, readable text. */
+.cvx-pricing-page .cvx-compare-section,
+.cvx-pricing-page .cvx-faq-section,
+.cvx-pricing-page .cvx-cta-final {
+  color: #1a2230;
+}
+
+.cvx-pricing-page .cvx-compare-head h2,
+.cvx-pricing-page .cvx-faq-head h2,
+.cvx-pricing-page .cvx-cta-final h2 {
+  color: #0f1419;
+}
+
+.cvx-pricing-page .cvx-compare-head .cvx-eyebrow,
+.cvx-pricing-page .cvx-faq-head .cvx-eyebrow {
+  color: #1f6feb;
+  background: rgba(31, 111, 235, 0.1);
+  border-color: rgba(31, 111, 235, 0.18);
+}
+
+.cvx-pricing-page .cvx-compare-head span,
+.cvx-pricing-page .cvx-cta-final p {
+  color: #4a5563;
+  opacity: 1;
+}
+
+.cvx-pricing-page .cvx-compare-table tbody th {
+  color: #1a2230;
+}
+
+.cvx-pricing-page .cv-cmp-text {
+  color: #1a2230;
+}
+
+.cvx-pricing-page .cvx-faq-list button {
+  color: #0f1419;
+}
+
+.cvx-pricing-page .cvx-faq-list button span {
+  color: #0f1419;
+}
+
+.cvx-pricing-page .cvx-faq-list p {
+  color: #2a3340;
+  opacity: 1;
+}

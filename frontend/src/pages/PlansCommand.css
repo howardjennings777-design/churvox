@@ -64,6 +64,37 @@
 .cv-plans-top svg text { fill: #f8fbff !important; }
 .cv-plans-top svg circle { fill: #14d8f4 !important; }
 
+.cv-plans-brand { display: inline-flex; align-items: center; text-decoration: none; }
+
+.cv-plans-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.cv-plans-back-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  text-decoration: none;
+  color: #bfe9ff;
+  background: rgba(20,216,244,.10);
+  border: 1px solid rgba(20,216,244,.26);
+  font-size: 13px;
+  font-weight: 900;
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease;
+}
+
+.cv-plans-back-link:hover {
+  background: rgba(20,216,244,.18);
+  border-color: rgba(20,216,244,.44);
+  color: #eafaff;
+}
+
 .cv-plans-top span {
   display: inline-flex;
   align-items: center;
