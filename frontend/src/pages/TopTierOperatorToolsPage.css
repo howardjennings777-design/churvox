@@ -1,3 +1,336 @@
-/* CHURVOX_TOP_TIER_TOOLS_PAGE_20260528 */
-/* CHURVOX_TOOLS_PROOF_PACK_ACTIONS_20260528 */
-.tt-shell{min-height:100vh;padding:clamp(18px,4vw,48px);color:#111827;background:#fffaf0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.tt-hero{max-width:1240px;margin:0 auto 20px;display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:18px}.tt-hero>div,.tt-hero>aside,.tt-card,.tt-hub-card,.tt-proof-panel,.tt-notice{border:1px solid rgba(17,24,39,.12);background:rgba(255,253,247,.9);box-shadow:0 28px 80px rgba(17,24,39,.10);border-radius:30px}.tt-hero>div{padding:clamp(24px,5vw,54px)}.tt-hero p,.tt-card small,.tt-hub-card small,.tt-proof-panel small{margin:0 0 10px;color:#4d7c0f;font-size:12px;font-weight:950;letter-spacing:.14em;text-transform:uppercase}.tt-hero h1{margin:0;font-size:clamp(42px,8vw,90px);line-height:.88;letter-spacing:-.07em}.tt-hero span{display:block;margin-top:18px;max-width:860px;color:rgba(17,24,39,.66);font-size:18px;font-weight:750;line-height:1.45}.tt-hero>aside{padding:24px;display:grid;align-content:center}.tt-hero aside b{display:block;font-size:34px;letter-spacing:-.04em}.tt-hero aside em{color:rgba(17,24,39,.62);font-style:normal;font-weight:750}.tt-notice{max-width:1240px;margin:0 auto 18px;padding:14px 18px;background:rgba(190,242,100,.24);color:#365314;font-weight:950}.tt-grid,.tt-hub-grid{max-width:1240px;margin:0 auto 18px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.tt-feature-grid{grid-template-columns:repeat(5,minmax(0,1fr))}.tt-card,.tt-hub-card{padding:22px;min-height:178px}.tt-card h2,.tt-hub-card h2,.tt-proof-panel h2{margin:0;font-size:26px;letter-spacing:-.045em}.tt-card p,.tt-hub-card p,.tt-proof-panel p{color:rgba(17,24,39,.66);font-weight:730;line-height:1.45}.tt-hub-grid{grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:22px}.tt-hub-card{display:flex;flex-direction:column;text-decoration:none;color:inherit}.tt-hub-card b{margin-top:auto;width:fit-content;border-radius:999px;padding:9px 12px;background:rgba(190,242,100,.26);color:#365314;font-size:13px;font-weight:950}.tt-proof-panel{max-width:1240px;margin:0 auto 18px;padding:22px}.tt-proof-list{display:grid;gap:10px;margin-top:14px}.tt-proof-row,.tt-proof-empty{display:flex;justify-content:space-between;gap:16px;align-items:center;border-radius:20px;padding:14px;background:rgba(17,24,39,.045);color:inherit;text-decoration:none}.tt-proof-row b{display:block;letter-spacing:-.025em}.tt-proof-row small,.tt-proof-row em,.tt-proof-empty{color:rgba(17,24,39,.62);font-weight:750}.tt-proof-row em{font-style:normal;color:#365314;font-weight:950}.tt-proof-action-row{align-items:flex-start}.tt-proof-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;min-width:280px}.tt-proof-actions a,.tt-proof-actions button{border:0;border-radius:999px;padding:9px 12px;background:#111827;color:#fffaf0;font-size:12px;font-weight:950;text-decoration:none;cursor:pointer}.tt-proof-actions button{background:rgba(190,242,100,.3);color:#365314}.tt-proof-actions a:nth-child(3){background:rgba(17,24,39,.08);color:#111827}.tt-audit-panel{background:linear-gradient(180deg,rgba(255,253,247,.95),rgba(255,248,236,.95))}.tt-audit-row{border-left:4px solid rgba(190,242,100,.8)}.tt-audit-row em{color:#6b7280;font-size:12px;min-width:150px;text-align:right}@media(max-width:1080px){.tt-grid,.tt-feature-grid,.tt-hub-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:760px){.tt-hero,.tt-grid,.tt-feature-grid,.tt-hub-grid{grid-template-columns:1fr}.tt-card,.tt-hub-card{min-height:auto}.tt-proof-row{display:grid}.tt-proof-actions{min-width:0;justify-content:stretch}.tt-proof-actions a,.tt-proof-actions button{width:100%;text-align:center}.tt-audit-row em{text-align:left;min-width:0}}
+/* CHURVOX_CLEAN_OPERATOR_TOOLS_PAGE_20260601
+   Removes the unfinished cream/light card look from /operator-tools and brings it into
+   the same dark Command workspace system as the rest of the app. */
+
+.tt-shell {
+  min-height: 100dvh;
+  padding: clamp(14px, 2vw, 26px) clamp(14px, 3vw, 42px) 128px;
+  color: #f8fbff;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(38, 211, 238, .13), transparent 28%),
+    radial-gradient(circle at 92% 0%, rgba(99, 102, 241, .14), transparent 32%),
+    linear-gradient(135deg, #07111f 0%, #08213c 52%, #061423 100%);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.tt-shell * {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.tt-hero,
+.tt-grid,
+.tt-hub-grid,
+.tt-proof-panel,
+.tt-notice {
+  width: min(1240px, 100%);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.tt-hero {
+  margin-bottom: 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.tt-hero > div,
+.tt-hero > aside,
+.tt-card,
+.tt-hub-card,
+.tt-proof-panel,
+.tt-notice {
+  border: 1px solid rgba(125, 189, 255, .18);
+  background: rgba(255, 255, 255, .055);
+  box-shadow: 0 18px 58px rgba(0, 0, 0, .24), inset 0 1px 0 rgba(255, 255, 255, .07);
+  backdrop-filter: blur(16px) saturate(145%);
+}
+
+.tt-hero > div {
+  min-height: 230px;
+  padding: clamp(26px, 4vw, 54px);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 88% 0%, rgba(99, 102, 241, .20), transparent 34%),
+    linear-gradient(135deg, rgba(7, 23, 48, .92), rgba(9, 36, 70, .78));
+}
+
+.tt-hero > aside {
+  border-radius: 28px;
+  padding: 22px;
+  display: grid;
+  align-content: center;
+  gap: 7px;
+}
+
+.tt-hero p,
+.tt-card small,
+.tt-hub-card small,
+.tt-proof-panel small,
+.tt-hero aside small {
+  margin: 0 0 10px;
+  color: #9cff72;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.tt-hero h1 {
+  max-width: 900px;
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(42px, 7vw, 88px);
+  line-height: .90;
+  letter-spacing: -.065em;
+  text-wrap: balance;
+}
+
+.tt-hero span {
+  display: block;
+  margin-top: 16px;
+  max-width: 860px;
+  color: rgba(248, 251, 255, .72);
+  font-size: 15px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.tt-hero aside b {
+  display: block;
+  color: #ffffff;
+  font-size: 34px;
+  line-height: .95;
+  letter-spacing: -.04em;
+}
+
+.tt-hero aside em {
+  color: rgba(248, 251, 255, .66);
+  font-style: normal;
+  font-weight: 750;
+}
+
+.tt-notice {
+  margin-bottom: 18px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  background: rgba(156, 255, 114, .12);
+  color: #dfffd2;
+  font-weight: 950;
+}
+
+.tt-grid,
+.tt-hub-grid {
+  margin-bottom: 18px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.tt-feature-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.tt-hub-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 20px;
+}
+
+.tt-card,
+.tt-hub-card {
+  min-height: 168px;
+  padding: 20px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(8, 25, 52, .88), rgba(8, 34, 72, .76));
+}
+
+.tt-hub-card {
+  display: flex;
+  flex-direction: column;
+  color: inherit;
+  text-decoration: none;
+}
+
+.tt-card h2,
+.tt-hub-card h2,
+.tt-proof-panel h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 25px;
+  line-height: 1.02;
+  letter-spacing: -.045em;
+}
+
+.tt-card p,
+.tt-hub-card p,
+.tt-proof-panel p {
+  color: rgba(248, 251, 255, .68);
+  font-size: 13px;
+  font-weight: 730;
+  line-height: 1.45;
+}
+
+.tt-hub-card b {
+  margin-top: auto;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 9px 12px;
+  background: rgba(156, 255, 114, .12);
+  color: #dfffd2;
+  border: 1px solid rgba(156, 255, 114, .20);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.tt-proof-panel {
+  margin-bottom: 18px;
+  padding: 20px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(8, 25, 52, .88), rgba(8, 34, 72, .76));
+}
+
+.tt-proof-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.tt-proof-row,
+.tt-proof-empty {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  border: 1px solid rgba(125, 189, 255, .14);
+  border-radius: 18px;
+  padding: 14px;
+  background: rgba(255, 255, 255, .055);
+  color: inherit;
+  text-decoration: none;
+}
+
+.tt-proof-row b {
+  display: block;
+  color: #ffffff;
+  letter-spacing: -.025em;
+}
+
+.tt-proof-row small,
+.tt-proof-row em,
+.tt-proof-empty {
+  color: rgba(248, 251, 255, .62);
+  font-weight: 750;
+}
+
+.tt-proof-row em {
+  font-style: normal;
+  color: #9cff72;
+  font-weight: 950;
+}
+
+.tt-proof-action-row {
+  align-items: flex-start;
+}
+
+.tt-proof-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  min-width: 280px;
+}
+
+.tt-proof-actions a,
+.tt-proof-actions button,
+.tt-audit-actions a,
+.tt-audit-actions button {
+  border: 1px solid rgba(125, 189, 255, .18);
+  border-radius: 999px;
+  padding: 9px 12px;
+  background: rgba(255, 255, 255, .075);
+  color: #f8fbff;
+  font-size: 12px;
+  font-weight: 950;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.tt-proof-actions a:first-child,
+.tt-audit-actions a {
+  background: linear-gradient(135deg, #14d8f4, #245cff 52%, #9333ea);
+  border-color: transparent;
+  color: #fff;
+}
+
+.tt-audit-panel {
+  background: linear-gradient(135deg, rgba(8, 25, 52, .90), rgba(8, 34, 72, .78));
+}
+
+.tt-audit-row {
+  border-left: 4px solid rgba(156, 255, 114, .7);
+}
+
+.tt-audit-row em {
+  color: rgba(248, 251, 255, .56);
+  font-size: 12px;
+  min-width: 150px;
+  text-align: right;
+}
+
+@media (max-width: 1080px) {
+  .tt-grid,
+  .tt-feature-grid,
+  .tt-hub-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .tt-shell {
+    padding: 10px 10px 112px;
+  }
+
+  .tt-hero,
+  .tt-grid,
+  .tt-feature-grid,
+  .tt-hub-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tt-hero > div {
+    min-height: auto;
+  }
+
+  .tt-hero h1 {
+    font-size: clamp(36px, 13vw, 54px);
+  }
+
+  .tt-card,
+  .tt-hub-card {
+    min-height: auto;
+  }
+
+  .tt-proof-row {
+    display: grid;
+  }
+
+  .tt-proof-actions {
+    min-width: 0;
+    justify-content: stretch;
+  }
+
+  .tt-proof-actions a,
+  .tt-proof-actions button,
+  .tt-audit-actions a,
+  .tt-audit-actions button {
+    width: 100%;
+    text-align: center;
+  }
+
+  .tt-audit-row em {
+    text-align: left;
+    min-width: 0;
+  }
+}
