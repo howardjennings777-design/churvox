@@ -1,4 +1,4 @@
-// CHURVOX_INVOICE_FROM_QUOTE_STABLE_FLOW_20260601
+// CHURVOX_INVOICE_BACKLINKS_STABLE_FLOW_20260601
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Layout from "../../components/Layout";
@@ -241,6 +241,32 @@ export default function InvoiceFormPage() {
   const paid = n(formData.amount_paid) + n(formData.deposit_amount);
   const due = Math.max(0, total - paid);
 
+  async function linkInvoiceBack(createdId, payload) {
+    if (!createdId) return;
+    const linkedAt = new Date().toISOString();
+    const updates = [];
+    if (payload.linked_job_id) {
+      updates.push(api.patch(`/jobs/${encodeURIComponent(payload.linked_job_id)}`, {
+        invoice_id: createdId,
+        linked_invoice_id: createdId,
+        invoice_status: payload.status || "draft",
+        invoice_total: payload.total,
+        invoice_amount_due: payload.amount_due,
+        invoiced_at: linkedAt,
+      }));
+    }
+    if (payload.linked_quote_id) {
+      updates.push(api.patch(`/quotes/${encodeURIComponent(payload.linked_quote_id)}`, {
+        invoice_id: createdId,
+        linked_invoice_id: createdId,
+        invoice_status: payload.status || "draft",
+        invoice_total: payload.total,
+        invoiced_at: linkedAt,
+      }));
+    }
+    if (updates.length) await Promise.allSettled(updates);
+  }
+
   async function save(event) {
     event.preventDefault();
     if (!formData.customer_name.trim()) return toast.error("Customer name is required");
@@ -274,12 +300,16 @@ export default function InvoiceFormPage() {
       gst_number: settings.gst_number || "",
     };
     const res = isEdit ? await api.patch(`/invoices/${encodeURIComponent(id)}`, payload) : await api.post("/invoices", payload);
-    setSaving(false);
     if (res.success) {
       const createdId = invoiceIdOf(res) || id;
-      toast.success(isEdit ? "Invoice updated" : "Invoice created");
+      await linkInvoiceBack(createdId, payload);
+      setSaving(false);
+      toast.success(isEdit ? "Invoice updated" : "Invoice created and linked back");
       navigate(createdId ? `/invoices/${createdId}` : "/invoices");
-    } else toast.error(res.error || "Could not save invoice");
+    } else {
+      setSaving(false);
+      toast.error(res.error || "Could not save invoice");
+    }
   }
 
   const inputClass = "w-full rounded-xl border border-slate-700 bg-slate-900/70 p-3 text-white";
@@ -287,8 +317,8 @@ export default function InvoiceFormPage() {
 
   return <Layout><PremiumPage maxWidth={1080}>
     <button type="button" onClick={() => navigate("/invoices")} className="mb-3 inline-flex items-center gap-2 text-sm font-black text-slate-300 hover:text-white"><ArrowLeft size={16} /> Back to invoices</button>
-    <PremiumHero eyebrow={isEdit ? "Edit invoice" : quoteFromQuery ? "Invoice from quote" : "First invoice"} title={isEdit ? "Edit invoice" : quoteFromQuery ? "Create invoice from accepted quote" : "Create an invoice ready to send"} subtitle="Invoices can now pull directly from clients, jobs, quotes and business setup defaults." icon={<Receipt className="h-6 w-6" />} />
-    {loadingData ? <PremiumCard><div className="p-8 text-center font-bold text-slate-300">Loading invoice workspace…</div></PremiumCard> : <form onSubmit={save} className="space-y-6" data-testid="stable-invoice-form" data-version="CHURVOX_INVOICE_FROM_QUOTE_STABLE_FLOW_20260601">
+    <PremiumHero eyebrow={isEdit ? "Edit invoice" : quoteFromQuery ? "Invoice from quote" : "First invoice"} title={isEdit ? "Edit invoice" : quoteFromQuery ? "Create invoice from accepted quote" : "Create an invoice ready to send"} subtitle="Invoices can now pull from clients, jobs, quotes, business defaults — and link back to the source record after save." icon={<Receipt className="h-6 w-6" />} />
+    {loadingData ? <PremiumCard><div className="p-8 text-center font-bold text-slate-300">Loading invoice workspace…</div></PremiumCard> : <form onSubmit={save} className="space-y-6" data-testid="stable-invoice-form" data-version="CHURVOX_INVOICE_BACKLINKS_STABLE_FLOW_20260601">
       <PremiumCard title="Business defaults"><div className="rounded-2xl border border-lime-300/20 bg-lime-300/10 p-3 text-sm font-bold text-lime-100">{settings.business_name || "No business name yet"} · Prefix {settings.invoice_prefix || "INV"} · GST {settings.default_gst_rate || 15}% · Due in {settings.default_invoice_due_days || 7} days</div></PremiumCard>
       <PremiumCard title="Customer and linked work"><div className="grid grid-cols-1 gap-4 md:grid-cols-2"><label className="space-y-2"><span className={labelClass}>Saved client</span><select value={formData.client_id} onChange={(e) => applyClient(e.target.value)} className={inputClass}><option value="">Select client</option>{clients.map((client) => <option key={clientId(client)} value={clientId(client)}>{clientName(client)}</option>)}</select></label><label className="space-y-2"><span className={labelClass}>Linked job</span><select value={formData.job_id} onChange={(e) => applyJobId(e.target.value)} className={inputClass}><option value="">No linked job</option>{jobs.map((job) => <option key={jobId(job)} value={jobId(job)}>{jobTitle(job)} — {job.status || "open"}</option>)}</select></label>{[["customer_name", "Customer name *"], ["customer_email", "Customer email"], ["customer_phone", "Customer phone"], ["billing_address", "Billing address"], ["site_address", "Site / job address"], ["quote_id", "Linked quote ID"]].map(([key, label]) => <label className="space-y-2" key={key}><span className={labelClass}>{label}</span><input value={formData[key] || ""} onChange={(e) => update(key, e.target.value)} className={inputClass} /></label>)}</div></PremiumCard>
       <PremiumCard title="Invoice lines"><div className="space-y-3">{formData.line_items.map((line, index) => <div key={index} className="grid grid-cols-12 gap-3 items-end rounded-2xl border border-slate-700 bg-slate-950/50 p-3"><label className="col-span-12 space-y-1 md:col-span-5"><span className="text-xs font-black text-slate-300">Description</span><input value={line.description} onChange={(e) => updateLine(index, "description", e.target.value)} className={inputClass} /></label><label className="col-span-4 space-y-1 md:col-span-2"><span className="text-xs font-black text-slate-300">Qty</span><input type="number" step="0.01" value={line.quantity} onChange={(e) => updateLine(index, "quantity", e.target.value)} className={inputClass} /></label><label className="col-span-4 space-y-1 md:col-span-2"><span className="text-xs font-black text-slate-300">Unit price</span><input type="number" step="0.01" value={line.unit_price} onChange={(e) => updateLine(index, "unit_price", e.target.value)} className={inputClass} /></label><label className="col-span-4 space-y-1 md:col-span-2"><span className="text-xs font-black text-slate-300">Line total</span><input type="number" step="0.01" value={line.amount} onChange={(e) => updateLine(index, "amount", e.target.value)} className={inputClass} /></label><button type="button" onClick={() => removeLine(index)} className="col-span-12 rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-red-200 md:col-span-1"><Trash2 size={16} /></button></div>)}<button type="button" onClick={addLine} className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-black text-slate-950"><Plus size={16} /> Add line item</button></div></PremiumCard>
