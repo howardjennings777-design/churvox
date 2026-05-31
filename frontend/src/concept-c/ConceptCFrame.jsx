@@ -79,8 +79,8 @@ export default function ConceptCFrame({ area = "jobs", children }) {
 
         <aside className="c2-ai">
           <p>AI OPERATOR</p>
-          <h2>No old page break.</h2>
-          <span>This screen now stays inside the Churvox Command style, so forms and detail pages do not drop back into an old app look.</span>
+          <h2>Command-ready page.</h2>
+          <span>This page now stays inside the Churvox command frame with consistent navigation and owner approval context.</span>
 
           <div>
             <small>Screen</small>

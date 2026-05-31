@@ -205,7 +205,7 @@ function App() {
           <Toaster position="top-right" richColors />
           <FloatingBottomNav />
           <Routes>
-            <Route path="/operator-tools" element={<BusinessRoute><TopTierOperatorToolsPage /></BusinessRoute>} />
+            <Route path="/operator-tools" element={<BusinessRoute><ConceptCFrame area="launch"><TopTierOperatorToolsPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/launch-control" element={<BusinessRoute><LaunchReadinessPage /></BusinessRoute>} />
             <Route path="/sales-polish" element={<BusinessRoute><ConceptCFrame area="launch"><LaunchSalesPolishPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/integration-proof" element={<BusinessRoute><ConceptCFrame area="integrations"><IntegrationProofPage /></ConceptCFrame></BusinessRoute>} />
