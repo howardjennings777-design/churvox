@@ -1459,3 +1459,146 @@ body:has(.xcf-command-10) {
     max-width: none !important;
   }
 }
+
+/* CHURVOX_COMMAND_SWITCHER_REBUILD_20260601
+   Broken old Command dock is deleted from JSX. This is the replacement.
+   Clean, fixed, readable, no overlapping labels, no old xcf10-dock grid. */
+
+.xcf-command-10 .xcf10-dock,
+.xcf-command-10 .xcf10-dock-launch-final,
+.xcf-command-10 .xcf10-command-dock-complete,
+.xcf-command-10 .cv-command-floor-nav {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.cv-command-switcher {
+  position: fixed !important;
+  left: 50% !important;
+  bottom: max(14px, env(safe-area-inset-bottom)) !important;
+  transform: translateX(-50%) !important;
+  z-index: 2147483000 !important;
+
+  width: min(960px, calc(100vw - 24px)) !important;
+  max-width: calc(100vw - 24px) !important;
+
+  display: grid !important;
+  grid-template-columns: repeat(9, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+
+  padding: 10px !important;
+  border-radius: 28px !important;
+  border: 1px solid rgba(125, 189, 255, .30) !important;
+  background:
+    radial-gradient(circle at 8% 10%, rgba(38, 211, 238, .20), transparent 36%),
+    radial-gradient(circle at 88% 0%, rgba(147, 51, 234, .20), transparent 38%),
+    linear-gradient(135deg, rgba(2, 8, 23, .98), rgba(8, 34, 72, .98)) !important;
+  box-shadow:
+    0 24px 90px rgba(0, 0, 0, .55),
+    inset 0 1px 0 rgba(255, 255, 255, .12) !important;
+  backdrop-filter: blur(20px) saturate(170%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(170%) !important;
+}
+
+.cv-command-switcher a,
+.cv-command-switcher a:link,
+.cv-command-switcher a:visited {
+  min-width: 0 !important;
+  height: 54px !important;
+  display: grid !important;
+  grid-template-rows: 20px 1fr !important;
+  place-items: center !important;
+  gap: 3px !important;
+
+  border-radius: 18px !important;
+  border: 1px solid rgba(255,255,255,.13) !important;
+  background: rgba(255,255,255,.065) !important;
+
+  color: rgba(248,251,255,.88) !important;
+  text-decoration: none !important;
+  overflow: hidden !important;
+
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+.cv-command-switcher a i {
+  display: block !important;
+  color: rgba(98, 232, 245, .95) !important;
+  font-size: 15px !important;
+  font-style: normal !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+}
+
+.cv-command-switcher a span {
+  display: block !important;
+  max-width: 100% !important;
+  color: #f8fbff !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  text-align: center !important;
+}
+
+.cv-command-switcher a.active,
+.cv-command-switcher a:hover {
+  background: linear-gradient(135deg, rgba(38, 211, 238, .34), rgba(98, 72, 255, .30)) !important;
+  border-color: rgba(98, 232, 245, .55) !important;
+  box-shadow: 0 12px 34px rgba(38, 211, 238, .20) !important;
+}
+
+.cv-command-switcher a.active i,
+.cv-command-switcher a:hover i,
+.cv-command-switcher a.active span,
+.cv-command-switcher a:hover span {
+  color: #ffffff !important;
+}
+
+.xcf-command-10 {
+  padding-bottom: 118px !important;
+}
+
+@media (max-width: 860px) {
+  .cv-command-switcher {
+    left: 8px !important;
+    right: 8px !important;
+    bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    transform: none !important;
+    width: auto !important;
+    max-width: none !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+
+    padding: 8px !important;
+    border-radius: 24px !important;
+  }
+
+  .cv-command-switcher::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .cv-command-switcher a {
+    flex: 0 0 auto !important;
+    width: 78px !important;
+    height: 52px !important;
+  }
+
+  .xcf-command-10 {
+    padding-bottom: 104px !important;
+  }
+}

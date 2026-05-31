@@ -555,6 +555,33 @@ function BusinessPulse({ m, onPick }) {
   );
 }
 
+
+// CHURVOX_COMMAND_SWITCHER_REBUILD_20260601
+function CommandFloorSwitcher() {
+  const items = [
+    ["Command", "/dashboard", "⌘"],
+    ["Setup", "/onboarding", "✓"],
+    ["Jobs", "/jobs", "◼"],
+    ["Dispatch", "/dispatch", "⇄"],
+    ["Clients", "/clients", "●"],
+    ["Quotes", "/quotes", "✎"],
+    ["Money", "/invoices", "$"],
+    ["Crew", "/team", "👥"],
+    ["More", "/operator-tools", "＋"],
+  ];
+
+  return (
+    <nav className="cv-command-switcher" aria-label="Command Floor navigation">
+      {items.map(([label, href, icon]) => (
+        <Link key={href} to={href} className={href === "/dashboard" ? "active" : ""}>
+          <i aria-hidden="true">{icon}</i>
+          <span>{label}</span>
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
 function Dashboard({ m, loading, onPick }) {
   const workLane = makeGroup("Approve Work", "Finished jobs waiting for your approval. Check evidence, photos, notes and value before signing off.", m.workReview, "amber", "Open work approvals");
   const invoiceLane = makeGroup("Approve Invoices", "Approved work and invoice records waiting for invoice action.", m.invoiceActions, "green", "Open invoice actions");
@@ -691,24 +718,7 @@ function Dashboard({ m, loading, onPick }) {
         <div><small>Crew Active</small><b>{m.live.length || 0} / {Math.max(m.live.length + m.unassigned.length, 1)}</b></div>
         <div className="xcf10-health"><small>Business Health</small><b>94%</b><span>Strong</span></div>
       </section>
-
-      <nav className="xcf10-dock xcf10-dock-launch-final xcf10-command-dock-complete" aria-label="Command Floor navigation" data-version="CHURVOX_REAL_COMMAND_DOCK_COMPLETE_20260601">
-        <Link to="/dashboard" className="active"><span>Command</span></Link>
-        <Link to="/onboarding"><span>Setup</span></Link>
-        <Link to="/jobs"><span>Jobs</span></Link>
-        <Link to="/dispatch"><span>Dispatch</span></Link>
-        <Link to="/clients"><span>Clients</span></Link>
-        <Link to="/quotes"><span>Quotes</span></Link>
-        <Link to="/invoices"><span>Money</span></Link>
-        <Link to="/team"><span>Crew</span></Link>
-        <Link to="/automation"><span>Automation</span></Link>
-        <Link to="/integrations"><span>Integrations</span></Link>
-        <Link to="/reports"><span>Reports</span></Link>
-        <Link to="/notifications"><span>Alerts</span></Link>
-        <Link to="/plans"><span>Plans</span></Link>
-        <Link to="/settings"><span>Settings</span></Link>
-        <Link to="/operator-tools"><span>Tools</span></Link>
-      </nav>
+      <CommandFloorSwitcher />
 
       {loading && <div className="xcf10-loading">Refreshing Command Floor…</div>}
     </main>
