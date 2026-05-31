@@ -1,46 +1,105 @@
-import React, { useState, useEffect, useCallback } from "react";
+// CHURVOX_CLIENT_DETAIL_STABLE_LINKED_RECORDS_20260601
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import Layout from "../../components/Layout";
 import { useApi } from "../../hooks/useApi";
-import { ArrowLeft, Edit, Trash2, Phone, Mail, MapPin, FileText, Clock, DollarSign, UserCircle2 } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Phone, Mail, MapPin, FileText, Clock, DollarSign, UserCircle2, Briefcase, Receipt, FileSignature, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency, JOB_STATUS_MAP } from "../../lib/utils";
 import { confirmDialog } from "../../lib/confirmDialog";
 import { PremiumPage, PremiumHero, PremiumCard, PremiumButton, PremiumEmptyState } from "../../components/premium";
 
+function arr(value) {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray(value?.data)) return value.data;
+  if (Array.isArray(value?.clients)) return value.clients;
+  if (Array.isArray(value?.jobs)) return value.jobs;
+  if (Array.isArray(value?.quotes)) return value.quotes;
+  if (Array.isArray(value?.invoices)) return value.invoices;
+  if (Array.isArray(value?.items)) return value.items;
+  if (Array.isArray(value?.results)) return value.results;
+  return [];
+}
+function readClient(payload) { const data = payload?.data ?? payload; return data?.client || data?.customer || data?.item || data?.record || data || {}; }
+function idOf(value) { return String(value?.id || value?._id || value?.client_id || value?.customer_id || ""); }
+function clientName(client) { return client?.name || client?.client_name || client?.customer_name || client?.contact_name || "Client"; }
+function recordClientId(record) { return String(record?.client_id || record?.customer_id || record?.clientId || record?.customerId || ""); }
+function recordClientName(record) { return String(record?.client_name || record?.customer_name || record?.name || "").toLowerCase(); }
+function sameClient(record, client) {
+  const cid = idOf(client);
+  const rid = recordClientId(record);
+  if (cid && rid && cid === rid) return true;
+  const name = clientName(client).toLowerCase();
+  return Boolean(name && recordClientName(record) && recordClientName(record) === name);
+}
+function jobTitle(job) { return job?.title || job?.job_name || job?.description || "Job"; }
+function quoteTitle(quote) { return quote?.quote_number || quote?.title || quote?.job_description || "Quote"; }
+function invoiceTitle(invoice) { return invoice?.invoice_number || invoice?.number || "Invoice"; }
+function money(value) { return formatCurrency(Number(value || 0)); }
+function dateValue(value) { return value ? formatDate(value) : "Not set"; }
+function totalOf(record) { return record?.total || record?.amount || record?.price || record?.amount_due || 0; }
+function statusOf(record) { return String(record?.status || record?.job_status || record?.payment_status || "draft").toLowerCase(); }
+function openRecords(items) { return items.filter((item) => !["paid", "complete", "completed", "done", "cancelled", "canceled", "void", "declined"].includes(statusOf(item))); }
+function buildMemory(client, jobs, quotes, invoices) {
+  const lastJob = [...jobs].sort((a, b) => new Date(b.completed_at || b.scheduled_date || b.created_at || 0) - new Date(a.completed_at || a.scheduled_date || a.created_at || 0))[0];
+  const paidInvoices = invoices.filter((invoice) => statusOf(invoice) === "paid");
+  const openInvoices = openRecords(invoices);
+  const totalInvoiced = invoices.reduce((sum, invoice) => sum + Number(totalOf(invoice) || 0), 0);
+  const commonService = lastJob?.title || lastJob?.job_name || quotes[0]?.job_description || quotes[0]?.description || "Not enough history yet";
+  return {
+    last_job: lastJob,
+    last_service_date: lastJob?.completed_at || lastJob?.scheduled_date || lastJob?.created_at,
+    common_service_type: commonService,
+    payment_pattern: invoices.length ? `${paidInvoices.length}/${invoices.length} invoices paid` : "No invoice history yet",
+    suggested_next_action: !jobs.length ? "Create the first job for this client." : openInvoices.length ? "Follow up unpaid invoice." : "Review next service or quote opportunity.",
+    ai_summary: `${clientName(client)} has ${jobs.length} job${jobs.length === 1 ? "" : "s"}, ${quotes.length} quote${quotes.length === 1 ? "" : "s"}, and ${money(totalInvoiced)} in invoice history.`,
+  };
+}
+
 export default function ClientDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { get, post, del } = useApi();
+  const api = useApi();
   const [client, setClient] = useState(null);
   const [jobs, setJobs] = useState([]);
-  const [clientMemory, setClientMemory] = useState(null);
+  const [quotes, setQuotes] = useState([]);
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
-    const [clientRes, jobsRes, memoryRes] = await Promise.all([
-      get(`/clients/${id}`),
-      get(`/clients/${id}/jobs`),
-      get(`/api/ai/client-memory/${id}`),
+    setLoading(true);
+    const [clientRes, jobsRes, quotesRes, invoicesRes] = await Promise.all([
+      api.get(`/clients/${encodeURIComponent(id)}`),
+      api.get("/jobs"),
+      api.get("/quotes"),
+      api.get("/invoices"),
     ]);
-    if (clientRes.success) setClient(clientRes.data);
-    else navigate("/clients");
-    if (jobsRes.success) setJobs(jobsRes.data);
-    if (memoryRes.success) setClientMemory(memoryRes.data);
-  }, [get, id, navigate]);
+    if (clientRes.success) {
+      const nextClient = readClient(clientRes);
+      setClient(nextClient);
+      const allJobs = jobsRes.success ? arr(jobsRes.data) : [];
+      const allQuotes = quotesRes.success ? arr(quotesRes.data) : [];
+      const allInvoices = invoicesRes.success ? arr(invoicesRes.data) : [];
+      setJobs(allJobs.filter((job) => sameClient(job, nextClient)));
+      setQuotes(allQuotes.filter((quote) => sameClient(quote, nextClient)));
+      setInvoices(allInvoices.filter((invoice) => sameClient(invoice, nextClient)));
+    } else {
+      toast.error(clientRes.error || "Client not found");
+      navigate("/clients");
+    }
+    setLoading(false);
+  }, [api, id, navigate]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const memory = useMemo(() => client ? buildMemory(client, jobs, quotes, invoices) : null, [client, jobs, quotes, invoices]);
+  const metrics = useMemo(() => ({
+    openJobs: openRecords(jobs).length,
+    openQuotes: openRecords(quotes).length,
+    openInvoices: openRecords(invoices).length,
+    totalInvoiced: invoices.reduce((sum, invoice) => sum + Number(totalOf(invoice) || 0), 0),
+  }), [jobs, quotes, invoices]);
 
-
-  const refreshClientMemory = async () => {
-    const res = await post(`/api/ai/client-memory/${id}/refresh`, {});
-    if (res.success) {
-      setClientMemory(res.data);
-      toast.success("Client memory refreshed");
-    } else {
-      toast.error("Unable to refresh client memory");
-    }
-  };
   const handleDelete = async () => {
     const confirmed = await confirmDialog({
       title: "Delete this client?",
@@ -49,119 +108,87 @@ export default function ClientDetailPage() {
       confirmLabel: "Delete",
     });
     if (!confirmed) return;
-    const res = await del(`/clients/${id}`);
+    const res = await api.del(`/clients/${encodeURIComponent(id)}`);
     if (res.success) {
       toast.success("Client deleted");
       navigate("/clients");
-    }
+    } else toast.error(res.error || "Could not delete client");
   };
 
-  if (!client) {
-    return (
-      <Layout>
-        <div className="p-6 flex items-center justify-center min-h-[50vh]">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#d94f17]" />
-        </div>
-      </Layout>
-    );
+  if (loading || !client) {
+    return <Layout><PremiumPage maxWidth={980}><PremiumCard><div className="p-8 text-center font-bold text-slate-300">Loading client…</div></PremiumCard></PremiumPage></Layout>;
   }
+
+  const name = clientName(client);
+  const clientId = idOf(client) || id;
 
   return (
     <Layout>
-      <PremiumPage maxWidth={960}>
-        <button onClick={() => navigate("/clients")} className="flex items-center gap-2 text-[#5f584f] hover:text-[#1f2329] text-sm font-semibold" data-testid="back-to-clients">
+      <PremiumPage maxWidth={1120}>
+        <button onClick={() => navigate("/clients")} className="mb-3 flex items-center gap-2 text-slate-300 hover:text-white text-sm font-black" data-testid="back-to-clients">
           <ArrowLeft size={16} /> Back to clients
         </button>
 
         <PremiumHero
-          eyebrow="Client"
-          title={client.name}
+          eyebrow="Client Work Slip"
+          title={name}
           subtitle={client.email || client.phone || "Client profile"}
           icon={<UserCircle2 className="h-6 w-6" />}
-          actions={
-            <div className="flex items-center gap-2">
-              <PremiumButton variant="secondary" size="sm" onClick={() => navigate(`/clients/${id}/edit`)} dataTestId="edit-client-button">
-                <Edit size={14} className="mr-1" /> Edit
-              </PremiumButton>
-              <PremiumButton variant="danger" size="sm" onClick={handleDelete} dataTestId="delete-client-trigger">
-                <Trash2 size={14} />
-              </PremiumButton>
-            </div>
-          }
+          actions={<div className="flex flex-wrap items-center gap-2"><PremiumButton variant="secondary" size="sm" onClick={() => navigate(`/clients/${id}/edit`)} dataTestId="edit-client-button"><Edit size={14} className="mr-1" /> Edit</PremiumButton><PremiumButton variant="danger" size="sm" onClick={handleDelete} dataTestId="delete-client-trigger"><Trash2 size={14} /></PremiumButton></div>}
         />
 
-        <PremiumCard title="Contact details" icon={<UserCircle2 className="h-5 w-5" />} data-testid="client-info-card">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            {client.email && (
-              <div className="flex items-center gap-2 text-[#2f343b]"><Mail size={14} className="text-[#746c60]" /> {client.email}</div>
-            )}
-            {client.phone && (
-              <div className="flex items-center gap-2 text-[#2f343b]"><Phone size={14} className="text-[#746c60]" /> {client.phone}</div>
-            )}
-            {client.address && (
-              <div className="flex items-center gap-2 text-[#2f343b] md:col-span-2"><MapPin size={14} className="text-[#746c60]" /> {client.address}</div>
-            )}
+        <section className="mb-5 grid gap-3 md:grid-cols-4">
+          <article className="rounded-3xl border border-slate-700 bg-slate-950/50 p-4"><span className="text-xs font-black uppercase tracking-[0.16em] text-cyan-300">Open jobs</span><b className="mt-2 block text-3xl text-white">{metrics.openJobs}</b></article>
+          <article className="rounded-3xl border border-slate-700 bg-slate-950/50 p-4"><span className="text-xs font-black uppercase tracking-[0.16em] text-purple-300">Open quotes</span><b className="mt-2 block text-3xl text-white">{metrics.openQuotes}</b></article>
+          <article className="rounded-3xl border border-slate-700 bg-slate-950/50 p-4"><span className="text-xs font-black uppercase tracking-[0.16em] text-amber-300">Open invoices</span><b className="mt-2 block text-3xl text-white">{metrics.openInvoices}</b></article>
+          <article className="rounded-3xl border border-slate-700 bg-slate-950/50 p-4"><span className="text-xs font-black uppercase tracking-[0.16em] text-lime-300">Invoiced</span><b className="mt-2 block text-3xl text-white">{money(metrics.totalInvoiced)}</b></article>
+        </section>
+
+        <section className="grid gap-5 lg:grid-cols-[1fr_340px]">
+          <div className="grid gap-5">
+            <PremiumCard title="Contact details" icon={<UserCircle2 className="h-5 w-5" />} data-testid="client-info-card">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                {client.email ? <div className="flex items-center gap-2 text-slate-200"><Mail size={14} className="text-cyan-300" /> {client.email}</div> : null}
+                {client.phone ? <div className="flex items-center gap-2 text-slate-200"><Phone size={14} className="text-cyan-300" /> {client.phone}</div> : null}
+                {client.address ? <div className="flex items-center gap-2 text-slate-200 md:col-span-2"><MapPin size={14} className="text-cyan-300" /> {client.address}</div> : null}
+              </div>
+              {client.notes ? <div className="mt-4 pt-4 border-t border-slate-700"><p className="text-xs text-slate-400 mb-1">Notes</p><p className="text-sm text-slate-200 whitespace-pre-wrap">{client.notes}</p></div> : null}
+            </PremiumCard>
+
+            <PremiumCard title="Client memory" icon={<Clock className="h-5 w-5" />} data-testid="client-memory-card">
+              <div className="space-y-2 text-sm text-slate-200">
+                <p><span className="font-black text-white">Last job:</span> {memory?.last_job?.title || memory?.last_job?.job_name || "—"}</p>
+                <p><span className="font-black text-white">Last service date:</span> {dateValue(memory?.last_service_date)}</p>
+                <p><span className="font-black text-white">Common service:</span> {memory?.common_service_type || "—"}</p>
+                <p><span className="font-black text-white">Payment pattern:</span> {memory?.payment_pattern || "—"}</p>
+                <p className="rounded-2xl bg-slate-950/60 border border-slate-700 p-3"><span className="font-black text-white">AI-style summary:</span> {memory?.ai_summary || "—"}</p>
+                <p><span className="font-black text-white">Suggested next action:</span> {memory?.suggested_next_action || "—"}</p>
+              </div>
+            </PremiumCard>
+
+            <PremiumCard title={`Job history (${jobs.length})`} icon={<Briefcase className="h-5 w-5" />} data-testid="client-job-history">
+              {jobs.length === 0 ? <PremiumEmptyState icon={<FileText className="h-10 w-10" />} title="No jobs yet" subtitle="Jobs you create for this client will appear here." /> : <div className="space-y-2">{jobs.map((job) => { const statusInfo = JOB_STATUS_MAP[job.status]; const jid = job.id || job._id; return <Link key={jid} to={`/jobs/${jid}`} data-testid={`client-job-${jid}`} className="block bg-slate-950/50 border border-slate-700 rounded-xl p-4 hover:border-cyan-300/50 transition-all"><div className="flex items-center justify-between gap-3"><div className="min-w-0"><p className="text-white font-semibold truncate">{jobTitle(job)}</p><div className="flex items-center gap-3 mt-1 text-xs text-slate-300 flex-wrap"><span className="flex items-center gap-1"><Clock size={11} /> {dateValue(job.scheduled_date)}</span>{Number(job.price || job.fixed_price || 0) > 0 ? <span className="text-lime-300 font-semibold flex items-center gap-0.5"><DollarSign size={11} />{money(job.price || job.fixed_price)}</span> : null}</div></div><span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase text-white flex-shrink-0 ${statusInfo?.color || "bg-slate-500"}`}>{statusInfo?.label || job.status}</span></div></Link>; })}</div>}
+            </PremiumCard>
           </div>
-          {client.notes && (
-            <div className="mt-4 pt-4 border-t border-[#b7ad9e]">
-              <p className="text-xs text-[#746c60] mb-1">Notes</p>
-              <p className="text-sm text-[#2f343b] whitespace-pre-wrap">{client.notes}</p>
-            </div>
-          )}
-        </PremiumCard>
 
+          <aside className="space-y-4">
+            <PremiumCard title="Create from this client">
+              <div className="grid gap-3">
+                <Link to={`/jobs/new?client_id=${encodeURIComponent(clientId)}`}><PremiumButton className="w-full" iconLeft={<Plus className="h-4 w-4" />}>Create job</PremiumButton></Link>
+                <Link to={`/quotes/new?client_id=${encodeURIComponent(clientId)}`}><PremiumButton variant="secondary" className="w-full" iconLeft={<FileSignature className="h-4 w-4" />}>Create quote</PremiumButton></Link>
+                <Link to={`/invoices/new?client_id=${encodeURIComponent(clientId)}`}><PremiumButton variant="secondary" className="w-full" iconLeft={<Receipt className="h-4 w-4" />}>Create invoice</PremiumButton></Link>
+              </div>
+            </PremiumCard>
 
+            <PremiumCard title={`Quotes (${quotes.length})`} icon={<FileSignature className="h-5 w-5" />}>
+              {quotes.length ? <div className="grid gap-2">{quotes.slice(0, 8).map((quote) => { const qid = quote.id || quote._id; return <Link key={qid} to={`/quotes/${qid}`} className="rounded-2xl border border-slate-700 bg-slate-950/50 p-3 text-sm no-underline"><b className="block text-white">{quoteTitle(quote)}</b><span className="text-slate-300">{statusOf(quote)} · {money(totalOf(quote))}</span></Link>; })}</div> : <p className="text-sm font-semibold text-slate-300">No quotes yet.</p>}
+            </PremiumCard>
 
-        <PremiumCard title="Client Memory" icon={<Clock className="h-5 w-5" />} data-testid="client-memory-card">
-          {!clientMemory ? <p className="text-sm text-[#5f584f]">No memory available yet.</p> : <div className="space-y-2 text-sm text-[#2f343b]">
-            <p><span className="font-semibold">Last job:</span> {clientMemory?.last_job?.title || "—"}</p>
-            <p><span className="font-semibold">Last service date:</span> {formatDate(clientMemory?.last_service_date) || "—"}</p>
-            <p><span className="font-semibold">Common service:</span> {clientMemory?.common_service_type || "—"}</p>
-            <p><span className="font-semibold">Avg duration:</span> {clientMemory?.average_job_duration ? `${clientMemory.average_job_duration} min` : "—"}</p>
-            <p><span className="font-semibold">Preferred worker:</span> {clientMemory?.preferred_worker?.name || "—"}</p>
-            <p><span className="font-semibold">Recent photos:</span> {clientMemory?.recent_photos_count ?? 0}</p>
-            <p><span className="font-semibold">Payment pattern:</span> {clientMemory?.payment_pattern || "—"}</p>
-            <p><span className="font-semibold">Recurring:</span> {clientMemory?.recurring_schedule || "—"}</p>
-            <p><span className="font-semibold">Property notes:</span> {clientMemory?.property_notes || "—"}</p>
-            <p className="rounded-lg bg-[#f4eee3] border border-[#b7ad9e] p-3"><span className="font-semibold">AI summary:</span> {clientMemory?.ai_summary || "—"}</p>
-            <p><span className="font-semibold">Suggested next action:</span> {clientMemory?.suggested_next_action || "—"}</p>
-          </div>}
-          <div className="mt-3">
-            <PremiumButton size="sm" variant="secondary" onClick={refreshClientMemory}>Refresh memory</PremiumButton>
-          </div>
-        </PremiumCard>
-        <PremiumCard title={`Job history (${jobs.length})`} icon={<FileText className="h-5 w-5" />} data-testid="client-job-history">
-          {jobs.length === 0 ? (
-            <PremiumEmptyState
-              icon={<FileText className="h-10 w-10" />}
-              title="No jobs yet"
-              subtitle="Jobs you create for this client will appear here."
-            />
-          ) : (
-            <div className="space-y-2">
-              {jobs.map((job) => {
-                const statusInfo = JOB_STATUS_MAP[job.status];
-                return (
-                  <Link key={job.id} to={`/jobs/${job.id}`} data-testid={`client-job-${job.id}`}
-                    className="block bg-[#d7d0c4] border border-[#746c60] rounded-xl p-4 hover:border-[#d94f17] hover:shadow-sm transition-all">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-[#1f2329] font-semibold truncate">{job.title}</p>
-                        <div className="flex items-center gap-3 mt-1 text-xs text-[#5f584f] flex-wrap">
-                          <span className="flex items-center gap-1"><Clock size={11} /> {formatDate(job.scheduled_date)}</span>
-                          {job.price > 0 && <span className="text-[#d94f17] font-semibold flex items-center gap-0.5"><DollarSign size={11} />{formatCurrency(job.price)}</span>}
-                        </div>
-                      </div>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase text-white flex-shrink-0 ${statusInfo?.color || "bg-slate-500"}`}>
-                        {statusInfo?.label || job.status}
-                      </span>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </PremiumCard>
+            <PremiumCard title={`Invoices (${invoices.length})`} icon={<Receipt className="h-5 w-5" />}>
+              {invoices.length ? <div className="grid gap-2">{invoices.slice(0, 8).map((invoice) => { const iid = invoice.id || invoice._id; return <Link key={iid} to={`/invoices/${iid}`} className="rounded-2xl border border-slate-700 bg-slate-950/50 p-3 text-sm no-underline"><b className="block text-white">{invoiceTitle(invoice)}</b><span className="text-slate-300">{statusOf(invoice)} · {money(totalOf(invoice))}</span></Link>; })}</div> : <p className="text-sm font-semibold text-slate-300">No invoices yet.</p>}
+            </PremiumCard>
+          </aside>
+        </section>
       </PremiumPage>
     </Layout>
   );
