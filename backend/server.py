@@ -12208,6 +12208,61 @@ async def churvox_405_direct_confirm_checkout(payload: dict = Body(default={}), 
     return await _cvx405_confirm_checkout(payload or {}, current_user)
 
 
+
+
+# CHURVOX_AUDIT_DIRECT_ROUTE_FIX_20260531
+# Some late api_router routes were defined after include_router, so they existed in source
+# but were not copied into the mounted /api router. These direct /api wrappers make
+# demo, notifications, billing confidence and launch proof routes live.
+@app.get("/api/demo/status")
+async def churvox_direct_demo_status(current_user: dict = Depends(get_current_user)):
+    return await get_launch_demo_status(current_user)
+
+@app.post("/api/demo/seed")
+async def churvox_direct_demo_seed(current_user: dict = Depends(get_current_user)):
+    return await seed_launch_demo_business(current_user)
+
+@app.post("/api/demo/clear")
+async def churvox_direct_demo_clear(current_user: dict = Depends(get_current_user)):
+    return await clear_launch_demo_business(current_user)
+
+@app.get("/api/notifications/workspace")
+async def churvox_direct_notifications_workspace(current_user: dict = Depends(get_current_user)):
+    return await get_launch_notifications_workspace(current_user)
+
+@app.post("/api/notifications/test")
+async def churvox_direct_notifications_test(current_user: dict = Depends(get_current_user)):
+    return await create_launch_test_notification(current_user)
+
+@app.post("/api/notifications/{notification_id}/read")
+async def churvox_direct_notifications_read(notification_id: str, current_user: dict = Depends(get_current_user)):
+    return await mark_launch_notification_read(notification_id, current_user)
+
+@app.get("/api/billing/confidence")
+async def churvox_direct_billing_confidence(current_user: dict = Depends(get_current_user)):
+    return await get_launch_billing_confidence(current_user)
+
+@app.get("/api/launch/sales-polish")
+async def churvox_direct_launch_sales_polish():
+    return await get_launch_sales_polish()
+
+@app.get("/api/launch/integration-proof")
+async def churvox_direct_launch_integration_proof(current_user: dict = Depends(get_current_user)):
+    return await get_launch_integration_proof(current_user)
+
+@app.get("/api/launch/ops")
+async def churvox_direct_launch_ops(current_user: dict = Depends(get_current_user)):
+    return await get_launch_ops(current_user)
+
+@app.get("/api/launch/backup-recovery")
+async def churvox_direct_launch_backup_recovery(current_user: dict = Depends(get_current_user)):
+    return await get_launch_backup_recovery(current_user)
+
+@app.get("/api/launch/polish-checklist")
+async def churvox_direct_launch_polish_checklist(current_user: dict = Depends(get_current_user)):
+    return await get_launch_polish_checklist(current_user)
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")

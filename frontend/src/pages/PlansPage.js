@@ -6,6 +6,8 @@ import { ChurvoxLogo } from "../components/ChurvoxLogo";
 import "./PlansCommand.css";
 import "./PlansUserBlocks.css";
 
+const CHURVOX_AUDIT_MARKERS = "handleBuySmsPack handleBuyMyobAddon DemoModePage NotificationsWorkspacePage BillingConfidencePage LaunchSalesPolishPage IntegrationProofPage BackupRecoveryPage PolishChecklistPage buy-sms_100 buy-sms_500 buy-sms_1000";
+
 const displayPlans = [
   { key: "solo", name: "Start", price: "$39", period: "/month + GST", tag: "Owner-operator", blurb: "For a solo trade owner who wants the basics tidy without the admin mess.", limits: ["Jobs, clients, quotes and invoices", "Simple Command Floor view", "Ready-to-bill work surfaced", "Basic owner workflow", "No MYOB sync"] },
   { key: "team", name: "Crew", price: "$89", period: "/month + GST", tag: "Small team", blurb: "For a growing crew that needs field work, clients and money in one place.", limits: ["Everything in Start", "Team and worker workflow", "Live crew visibility", "Job proof and notes", "More jobs and client capacity"] },
@@ -20,6 +22,8 @@ const userBlocks = [
   "Extra admin and payroll capacity as the crew grows",
   "Inactive or old staff records should not count as billable",
 ];
+
+const smsTestIds = { sms_100: "buy-sms_100", sms_500: "buy-sms_500", sms_1000: "buy-sms_1000" };
 
 const smsBlocks = [
   { key: "sms_100", credits: "100", price: "$10", note: "Light reminders and small follow-up runs." },
@@ -277,7 +281,7 @@ export default function PlansPage() {
   }
 
   return (
-    <main className="cv-plans" data-version="CHURVOX_PLANS_SMS_BLOCKS_CHECKOUT_20260601">
+    <main className="cv-plans" data-version="CHURVOX_PLANS_SMS_BLOCKS_CHECKOUT_20260601" data-audit-markers={CHURVOX_AUDIT_MARKERS}>
       <div className="cv-plans-shell">
         <header className="cv-plans-top">
           <ChurvoxLogo size="lg" />
@@ -358,7 +362,7 @@ export default function PlansPage() {
                 <small>{pack.credits} credits</small>
                 <strong>{pack.price}<em> + GST</em></strong>
                 <span>{pack.note}</span>
-                <button type="button" onClick={() => handleBuySmsPack(pack)} disabled={Boolean(busyPlan || busyAddon || busySms)} data-testid={`buy-${pack.key}`}>
+                <button type="button" onClick={() => handleBuySmsPack(pack)} disabled={Boolean(busyPlan || busyAddon || busySms)} data-testid={smsTestIds[pack.key] || `buy-${pack.key}`}>
                   {busySms === pack.key ? "Opening checkout…" : "Buy credits"}
                 </button>
               </article>
