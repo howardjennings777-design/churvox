@@ -6,9 +6,34 @@ import { AlertTriangle, CalendarDays, RefreshCw, Route, UserPlus } from "lucide-
 import { toast } from "sonner";
 import "./DispatchBoardPage.css";
 
-function arr(value) { return Array.isArray(value) ? value : []; }
-function idOf(value) { return String(value?.id || value?._id || ""); }
+// CHURVOX_DISPATCH_NO_MISSING_BACKEND_ROUTE_20260601
+// The old page called /api/dispatch-board, but that backend route does not exist live.
+// This page now builds the dispatch board from stable existing endpoints: /jobs and /team/workers.
+
+function arr(value) {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray(value?.data)) return value.data;
+  if (Array.isArray(value?.jobs)) return value.jobs;
+  if (Array.isArray(value?.workers)) return value.workers;
+  if (Array.isArray(value?.items)) return value.items;
+  if (Array.isArray(value?.results)) return value.results;
+  return [];
+}
+
+function pickList(response, keys = []) {
+  const data = response?.data ?? response;
+  for (const key of keys) {
+    if (Array.isArray(data?.[key])) return data[key];
+    if (Array.isArray(data?.data?.[key])) return data.data[key];
+  }
+  return arr(data);
+}
+
+function idOf(value) { return String(value?.id || value?._id || value?.uuid || ""); }
 function nameOf(worker) { return worker?.display_name || worker?.name || worker?.full_name || worker?.email || "Worker"; }
+function workerIdOf(job) { return String(job?.assigned_worker_id || job?.worker_id || job?.assigned_to || ""); }
+function jobDateOf(job) { return String(job?.scheduled_date || job?.date || job?.start_date || job?.due_date || "").slice(0, 10); }
+function jobTimeOf(job) { return job?.scheduled_time || job?.time || job?.start_time || "09:00"; }
 
 function today(offset = 0) {
   const d = new Date();
@@ -34,10 +59,35 @@ function statusClass(status) {
   return "grey";
 }
 
+function isOpenJob(job) {
+  const status = String(job?.status || job?.job_status || job?.workflow_status || "").toLowerCase();
+  return !["completed", "complete", "done", "cancelled", "canceled", "paid"].includes(status);
+}
+
+function buildConflicts(jobs) {
+  const active = jobs.filter(isOpenJob).filter((job) => workerIdOf(job));
+  const groups = new Map();
+  active.forEach((job) => {
+    const key = `${workerIdOf(job)}|${jobDateOf(job) || "unscheduled"}|${jobTimeOf(job) || "09:00"}`;
+    groups.set(key, [...(groups.get(key) || []), job]);
+  });
+  return Array.from(groups.values())
+    .filter((items) => items.length > 1)
+    .map((items) => ({ worker_id: workerIdOf(items[0]), jobs: items, count: items.length }));
+}
+
+function inDateRange(job, from, to) {
+  const day = jobDateOf(job);
+  if (!day) return true;
+  if (from && day < from) return false;
+  if (to && day > to) return false;
+  return true;
+}
+
 function JobChip({ job, workers, onAssign, onReschedule }) {
-  const [workerId, setWorkerId] = useState(job.assigned_worker_id || job.worker_id || "");
-  const [date, setDate] = useState(String(job.scheduled_date || job.date || "").slice(0, 10));
-  const [time, setTime] = useState(job.scheduled_time || job.time || "09:00");
+  const [workerId, setWorkerId] = useState(workerIdOf(job));
+  const [date, setDate] = useState(jobDateOf(job));
+  const [time, setTime] = useState(jobTimeOf(job));
 
   return (
     <article className={`cv-dispatch-job ${statusClass(job.status || job.job_status)}`}>
@@ -66,7 +116,7 @@ function JobChip({ job, workers, onAssign, onReschedule }) {
 
 export default function DispatchBoardPage() {
   const api = useApi();
-  const [dispatch, setDispatch] = useState({});
+  const [dispatch, setDispatch] = useState({ jobs: [], workers: [], unassigned_jobs: [], conflicts: [], metrics: {} });
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState("");
   const [from, setFrom] = useState(today(-1));
@@ -77,13 +127,40 @@ export default function DispatchBoardPage() {
 
   async function loadDispatch() {
     setLoading(true);
-    const res = await api.get(`/dispatch-board?date_from=${from}&date_to=${to}`);
-    if (res.success) setDispatch(res.data?.dispatch || {});
-    else toast.error(res.error || "Could not load dispatch board");
+
+    const [jobsRes, workersRes] = await Promise.all([
+      api.get("/jobs"),
+      api.get("/team/workers"),
+    ]);
+
+    if (!jobsRes.success) toast.error(jobsRes.error || "Could not load jobs for dispatch");
+    if (!workersRes.success) toast.error(workersRes.error || "Could not load workers for dispatch");
+
+    const allJobs = pickList(jobsRes, ["jobs", "items", "results"]);
+    const workers = pickList(workersRes, ["workers", "team", "items", "results"]);
+    const jobs = allJobs.filter((job) => inDateRange(job, from, to));
+    const unassigned = jobs.filter((job) => isOpenJob(job) && !workerIdOf(job));
+    const conflicts = buildConflicts(jobs);
+    const scheduledDays = new Set(jobs.map(jobDateOf).filter(Boolean)).size;
+
+    setDispatch({
+      jobs,
+      workers,
+      unassigned_jobs: unassigned,
+      conflicts,
+      metrics: {
+        jobs: jobs.length,
+        workers: workers.length,
+        unassigned_jobs: unassigned.length,
+        conflicts: conflicts.length,
+        scheduled_days: scheduledDays,
+      },
+    });
+
     setLoading(false);
   }
 
-  useEffect(() => { loadDispatch(); }, []);
+  useEffect(() => { loadDispatch(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const workers = arr(dispatch.workers);
   const jobs = arr(dispatch.jobs);
@@ -92,7 +169,7 @@ export default function DispatchBoardPage() {
 
   const filteredJobs = useMemo(() => {
     return jobs.filter((job) => {
-      const workerOk = !workerFilter || String(job.assigned_worker_id || job.worker_id || "") === workerFilter;
+      const workerOk = !workerFilter || workerIdOf(job) === workerFilter;
       const statusOk = !statusFilter || String(job.status || job.job_status || "").toLowerCase().includes(statusFilter);
       const areaText = [job.address, job.site_address, job.region, job.area].join(" ").toLowerCase();
       const areaOk = !areaFilter || areaText.includes(areaFilter.toLowerCase());
@@ -103,7 +180,7 @@ export default function DispatchBoardPage() {
   const byDay = useMemo(() => {
     const map = {};
     filteredJobs.forEach((job) => {
-      const day = String(job.scheduled_date || job.date || "unscheduled").slice(0, 10) || "unscheduled";
+      const day = jobDateOf(job) || "unscheduled";
       map[day] = map[day] || [];
       map[day].push(job);
     });
@@ -115,8 +192,7 @@ export default function DispatchBoardPage() {
     const res = await fn();
     setBusy("");
     if (res.success) {
-      if (res.data?.has_conflict) toast.warning("Saved, but there is a worker conflict.");
-      else toast.success("Dispatch updated");
+      toast.success("Dispatch updated");
       await loadDispatch();
       return res;
     }
@@ -127,16 +203,20 @@ export default function DispatchBoardPage() {
   async function assign(job, workerId) {
     if (!workerId) return toast.error("Choose a worker first");
     const worker = workers.find((w) => idOf(w) === String(workerId));
-    await run("assign", () => api.post(`/dispatch-board/jobs/${idOf(job)}/assign`, {
+    return run("assign", () => api.patch(`/jobs/${idOf(job)}`, {
+      assigned_worker_id: workerId,
       worker_id: workerId,
+      assigned_worker_name: nameOf(worker),
       worker_name: nameOf(worker),
+      status: job.status || "assigned",
     }));
   }
 
   async function reschedule(job, scheduledDate, scheduledTime) {
     if (!scheduledDate) return toast.error("Choose a date");
-    await run("reschedule", () => api.post(`/dispatch-board/jobs/${idOf(job)}/reschedule`, {
+    return run("reschedule", () => api.patch(`/jobs/${idOf(job)}`, {
       scheduled_date: scheduledDate,
+      date: scheduledDate,
       scheduled_time: scheduledTime || "09:00",
       estimated_duration: job.estimated_duration || job.duration_minutes || 60,
     }));
