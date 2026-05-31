@@ -231,7 +231,7 @@ function App() {
             <Route path="/admin/qa-auditor" element={<QaAuditorRoute><QAAuditorPage /></QaAuditorRoute>} />
             <Route path="/dashboard" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><ConceptCPage area="dashboard" /></ErrorBoundary></BusinessRoute>} />
             <Route path="/overview" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><ConceptCPage area="dashboard" /></ErrorBoundary></BusinessRoute>} />
-            <Route path="/onboarding" element={<BusinessRoute><OnboardingPage /></BusinessRoute>} />
+            <Route path="/onboarding" element={<BusinessRoute><ConceptCFrame area="onboarding"><OnboardingPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/jobs" element={<BusinessRoute><ConceptCPage area="jobs" /></BusinessRoute>} />
             <Route path="/jobs/new" element={<BusinessRoute><ConceptCFrame area="jobs"><JobFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/jobs/:id" element={<BusinessRoute><ConceptCFrame area="jobs"><JobDetailPage /></ConceptCFrame></BusinessRoute>} />
@@ -257,7 +257,9 @@ function App() {
             <Route path="/sms" element={<BusinessRoute><Navigate to="/dashboard" replace /></BusinessRoute>} />
             <Route path="/reports" element={<ReportsRoute><ConceptCFrame area="reports"><ReportsSecurityPage /></ConceptCFrame></ReportsRoute>} />
             <Route path="/settings" element={<BusinessRoute><ConceptCFrame area="settings"><BusinessSettingsPage /></ConceptCFrame></BusinessRoute>} />
-            <Route path="/contact" element={<PrivateRoute><ConceptCFrame area="settings"><ContactPage /></ConceptCFrame></PrivateRoute>} />
+            <Route path="/contact" element={<PrivateRoute><ConceptCFrame area="support"><ContactPage /></ConceptCFrame></PrivateRoute>} />
+            <Route path="/support" element={<PrivateRoute><ConceptCFrame area="support"><ContactPage /></ConceptCFrame></PrivateRoute>} />
+            <Route path="/trust" element={<PrivateRoute><ConceptCFrame area="support"><ContactPage /></ConceptCFrame></PrivateRoute>} />
             <Route path="/plans" element={<OwnerRoute><ConceptCFrame area="plans"><PlansPage /></ConceptCFrame></OwnerRoute>} />
             <Route path="/team" element={<TeamRoute><ConceptCPage area="team" /></TeamRoute>} />
             <Route path="/crew-ops" element={<BusinessRoute><ConceptCFrame area="team"><CrewOperationsPage /></ConceptCFrame></BusinessRoute>} />

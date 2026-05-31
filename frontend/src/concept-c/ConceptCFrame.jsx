@@ -9,6 +9,8 @@ const FRAME = {
   quotes: ["SALES CONTROL", "Quote card.", "Create, edit and review quotes inside the Churvox Command Floor.", "Back to quotes", "/quotes"],
   invoices: ["MONEY CONTROL", "Invoice card.", "Create, edit and review invoices inside the Churvox Command Floor.", "Back to invoices", "/invoices"],
   plans: ["PLAN CONTROL", "Plan desk.", "Choose and manage plan access inside the Churvox Command Floor.", "Back to dashboard", "/dashboard"],
+  onboarding: ["LAUNCH CONTROL", "Setup desk.", "Finish business setup, first client, first job, worker, invoice and trust steps.", "Back to setup", "/onboarding"],
+  support: ["TRUST CONTROL", "Support desk.", "Find support, billing, data control, privacy and AI guardrails.", "Back to support", "/contact"],
   worker: ["FIELD APP", "Worker mode.", "Worker jobs, details and settings inside the Churvox identity.", "Worker jobs", "/worker/jobs"],
   settings: ["SYSTEM CONTROL", "System card.", "Contact, settings and admin screens inside the Churvox Command Floor.", "Back to settings", "/settings"],
 };
@@ -20,16 +22,17 @@ export default function ConceptCFrame({ area = "jobs", children }) {
     area === "clients" ? "people" :
     area === "invoices" ? "finance" :
     area === "plans" ? "plans" :
+    area === "onboarding" || area === "support" ? "setup" :
     area === "quotes" || area === "worker" ? "jobs" :
     area === "settings" ? "more" :
     area;
 
   const links = [
     ["dashboard", "Command", "/dashboard"],
+    ["setup", "Setup", "/onboarding"],
     ["jobs", "Jobs", "/jobs"],
     ["schedule", "Dispatch", "/dispatch"],
     ["people", "Clients", "/clients"],
-    ["messages", "Messages", "/sms"],
     ["finance", "Money", "/invoices"],
     ["plans", "Plans", "/plans"],
     ["more", "More", "/settings"],
