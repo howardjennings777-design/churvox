@@ -13257,6 +13257,267 @@ async def prepare_money_desk_invoice_reminder(invoice_id: str, current_user: dic
     return {"success": True, "reminder": safe_doc(reminder), "message": message}
 
 
+
+
+# CHURVOX_AREA7_CUSTOMER_RECORDS_20260531
+# Customer records upgrade: CRM-style customer profile, sites, notes and history.
+CUSTOMER_RECORD_FIELDS = {
+    "name",
+    "client_name",
+    "email",
+    "phone",
+    "mobile",
+    "billing_address",
+    "address",
+    "site_addresses",
+    "site_contact",
+    "billing_contact",
+    "customer_type",
+    "tags",
+    "preferred_worker_id",
+    "preferred_worker_name",
+    "access_notes",
+    "gate_code",
+    "site_instructions",
+    "internal_notes",
+    "customer_message_draft",
+    "last_contacted",
+}
+
+def _area7_id(doc: dict) -> str:
+    return str((doc or {}).get("_id") or (doc or {}).get("id") or "")
+
+def _area7_num(value, fallback=0.0):
+    try:
+        if value is None or value == "":
+            return float(fallback)
+        return float(str(value).replace("$", "").replace(",", "").strip())
+    except Exception:
+        return float(fallback or 0)
+
+def _area7_text(value):
+    return str(value or "").strip()
+
+def _area7_client_query(client_id: str, business_id: str) -> dict:
+    clauses = [{"id": str(client_id)}]
+    if ObjectId.is_valid(str(client_id)):
+        clauses.insert(0, {"_id": ObjectId(str(client_id))})
+    return {"business_id": str(business_id), "$or": clauses}
+
+def _area7_matches_client(record: dict, client: dict) -> bool:
+    cid = _area7_id(client)
+    names = {
+        _area7_text(client.get("name")).lower(),
+        _area7_text(client.get("client_name")).lower(),
+        _area7_text(client.get("contact_name")).lower(),
+    }
+    names.discard("")
+    emails = {
+        _area7_text(client.get("email")).lower(),
+        _area7_text(client.get("customer_email")).lower(),
+    }
+    emails.discard("")
+
+    record_client_id = _area7_text(record.get("client_id") or record.get("customer_id"))
+    record_name = _area7_text(record.get("client_name") or record.get("customer_name") or record.get("name")).lower()
+    record_email = _area7_text(record.get("customer_email") or record.get("email")).lower()
+
+    return bool(
+        (cid and record_client_id and record_client_id == cid)
+        or (record_name and record_name in names)
+        or (record_email and record_email in emails)
+    )
+
+def _area7_clean_customer_payload(payload: dict) -> dict:
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="Invalid customer payload")
+
+    cleaned = {}
+    for key in CUSTOMER_RECORD_FIELDS:
+        if key not in payload:
+            continue
+        value = payload.get(key)
+
+        if key in {"site_addresses", "tags"}:
+            if isinstance(value, list):
+                cleaned[key] = [x for x in value if str(x).strip()] if key == "tags" else value
+            else:
+                cleaned[key] = [x.strip() for x in str(value or "").split(",") if x.strip()]
+            continue
+
+        cleaned[key] = _area7_text(value)
+
+    if cleaned.get("name") and not cleaned.get("client_name"):
+        cleaned["client_name"] = cleaned["name"]
+    if cleaned.get("client_name") and not cleaned.get("name"):
+        cleaned["name"] = cleaned["client_name"]
+
+    return cleaned
+
+def _area7_client_summary(client: dict, jobs: list, quotes: list, invoices: list) -> dict:
+    completed_jobs = [j for j in jobs if str(j.get("status") or "").lower() in {"completed", "complete", "done"}]
+    unpaid = [i for i in invoices if str(i.get("status") or "").lower() not in {"paid", "void", "cancelled"}]
+    paid = [i for i in invoices if str(i.get("status") or "").lower() == "paid"]
+    photos_count = 0
+    for job in jobs:
+        if isinstance(job.get("photos"), list):
+            photos_count += len(job.get("photos"))
+        if isinstance(job.get("job_photos"), list):
+            photos_count += len(job.get("job_photos"))
+        photos_count += int(_area7_num(job.get("photo_count"), 0))
+
+    unpaid_balance = round(sum(_area7_num(i.get("amount_due") or i.get("balance_due") or i.get("total"), 0) for i in unpaid), 2)
+    paid_total = round(sum(_area7_num(i.get("total") or i.get("amount") or i.get("amount_paid"), 0) for i in paid), 2)
+
+    last_job = sorted(jobs, key=lambda j: str(j.get("updated_at") or j.get("created_at") or ""), reverse=True)[0] if jobs else None
+    last_invoice = sorted(invoices, key=lambda i: str(i.get("updated_at") or i.get("created_at") or ""), reverse=True)[0] if invoices else None
+
+    missing = []
+    if not _area7_text(client.get("email")):
+        missing.append("email")
+    if not _area7_text(client.get("phone") or client.get("mobile")):
+        missing.append("phone")
+    if not _area7_text(client.get("address") or client.get("billing_address")):
+        missing.append("address")
+
+    return {
+        "jobs_count": len(jobs),
+        "completed_jobs_count": len(completed_jobs),
+        "quotes_count": len(quotes),
+        "invoices_count": len(invoices),
+        "paid_invoices_count": len(paid),
+        "unpaid_invoices_count": len(unpaid),
+        "unpaid_balance": unpaid_balance,
+        "paid_total": paid_total,
+        "photos_count": photos_count,
+        "last_job": safe_doc(last_job) if last_job else None,
+        "last_invoice": safe_doc(last_invoice) if last_invoice else None,
+        "missing_fields": missing,
+        "is_missing_info": bool(missing),
+    }
+
+async def _area7_build_customer_record(client: dict, business_id: str) -> dict:
+    jobs_raw = [safe_doc(j) async for j in db.jobs.find({"business_id": str(business_id)}).sort("updated_at", -1).limit(1000)]
+    quotes_raw = [safe_doc(q) async for q in db.quotes.find({"business_id": str(business_id)}).sort("updated_at", -1).limit(1000)]
+    invoices_raw = [safe_doc(i) async for i in db.invoices.find({"business_id": str(business_id)}).sort("updated_at", -1).limit(1000)]
+
+    jobs = [j for j in jobs_raw if _area7_matches_client(j, client)]
+    quotes = [q for q in quotes_raw if _area7_matches_client(q, client)]
+    invoices = [i for i in invoices_raw if _area7_matches_client(i, client)]
+
+    record = safe_doc(client)
+    record["id"] = _area7_id(client)
+    record["name"] = client.get("name") or client.get("client_name") or client.get("contact_name") or "Unnamed customer"
+    record["client_name"] = record["name"]
+    record["email"] = client.get("email") or client.get("customer_email") or ""
+    record["phone"] = client.get("phone") or client.get("mobile") or client.get("customer_phone") or ""
+    record["billing_address"] = client.get("billing_address") or client.get("address") or ""
+    record["site_addresses"] = client.get("site_addresses") if isinstance(client.get("site_addresses"), list) else []
+    record["customer_type"] = client.get("customer_type") or "other"
+    record["tags"] = client.get("tags") if isinstance(client.get("tags"), list) else []
+    record["access_notes"] = client.get("access_notes") or client.get("site_notes") or ""
+    record["site_instructions"] = client.get("site_instructions") or ""
+    record["internal_notes"] = client.get("internal_notes") or client.get("notes") or ""
+    record["customer_message_draft"] = client.get("customer_message_draft") or ""
+    record["jobs"] = jobs[:80]
+    record["quotes"] = quotes[:80]
+    record["invoices"] = invoices[:80]
+    record["summary"] = _area7_client_summary(client, jobs, quotes, invoices)
+    return record
+
+@api_router.get("/customer-records")
+async def list_customer_records(current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    clients = [c async for c in db.clients.find({"business_id": str(business_id)}).sort("updated_at", -1).limit(500)]
+    records = []
+    for client in clients:
+        records.append(await _area7_build_customer_record(client, business_id))
+
+    totals = {
+        "customers": len(records),
+        "missing_info": len([r for r in records if r.get("summary", {}).get("is_missing_info")]),
+        "unpaid_balance": round(sum(_area7_num(r.get("summary", {}).get("unpaid_balance"), 0) for r in records), 2),
+        "jobs": sum(int(r.get("summary", {}).get("jobs_count") or 0) for r in records),
+        "quotes": sum(int(r.get("summary", {}).get("quotes_count") or 0) for r in records),
+        "invoices": sum(int(r.get("summary", {}).get("invoices_count") or 0) for r in records),
+    }
+
+    return {"success": True, "customers": records, "totals": totals}
+
+@api_router.get("/customer-records/{client_id}")
+async def get_customer_record(client_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    client = await db.clients.find_one(_area7_client_query(client_id, business_id))
+    if not client:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    record = await _area7_build_customer_record(client, business_id)
+    return {"success": True, "customer": record}
+
+@api_router.patch("/customer-records/{client_id}")
+async def update_customer_record(client_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    client = await db.clients.find_one(_area7_client_query(client_id, business_id))
+    if not client:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    cleaned = _area7_clean_customer_payload(payload or {})
+    cleaned["updated_at"] = datetime.now(timezone.utc)
+    await db.clients.update_one({"_id": client["_id"], "business_id": str(business_id)}, {"$set": cleaned})
+    saved = await db.clients.find_one({"_id": client["_id"]})
+    return {"success": True, "customer": await _area7_build_customer_record(saved, business_id)}
+
+@api_router.post("/customer-records/{client_id}/site-addresses")
+async def add_customer_site_address(client_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    client = await db.clients.find_one(_area7_client_query(client_id, business_id))
+    if not client:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    site = {
+        "label": _area7_text((payload or {}).get("label") or "Site"),
+        "address": _area7_text((payload or {}).get("address")),
+        "contact": _area7_text((payload or {}).get("contact")),
+        "phone": _area7_text((payload or {}).get("phone")),
+        "access_notes": _area7_text((payload or {}).get("access_notes")),
+        "created_at": datetime.now(timezone.utc),
+    }
+    if not site["address"]:
+        raise HTTPException(status_code=400, detail="Site address is required")
+
+    sites = client.get("site_addresses") if isinstance(client.get("site_addresses"), list) else []
+    sites.append(site)
+    await db.clients.update_one({"_id": client["_id"], "business_id": str(business_id)}, {"$set": {"site_addresses": sites, "updated_at": datetime.now(timezone.utc)}})
+    saved = await db.clients.find_one({"_id": client["_id"]})
+    return {"success": True, "customer": await _area7_build_customer_record(saved, business_id)}
+
+@api_router.post("/customer-records/{client_id}/notes")
+async def add_customer_note(client_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    client = await db.clients.find_one(_area7_client_query(client_id, business_id))
+    if not client:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    note = _area7_text((payload or {}).get("note"))
+    if not note:
+        raise HTTPException(status_code=400, detail="Note is required")
+
+    note_doc = {
+        "business_id": str(business_id),
+        "client_id": _area7_id(client),
+        "type": "customer_note",
+        "note": note,
+        "created_at": datetime.now(timezone.utc),
+        "created_by": current_user.get("email") or current_user.get("id"),
+    }
+    await db.business_activity.insert_one(note_doc)
+
+    existing = _area7_text(client.get("internal_notes") or client.get("notes"))
+    merged = (existing + "\n" if existing else "") + f"- {note}"
+    await db.clients.update_one({"_id": client["_id"], "business_id": str(business_id)}, {"$set": {"internal_notes": merged, "notes": merged, "updated_at": datetime.now(timezone.utc)}})
+    saved = await db.clients.find_one({"_id": client["_id"]})
+    return {"success": True, "customer": await _area7_build_customer_record(saved, business_id)}
+
+
 # CORS_HARD_FIX_20260412
 
 
