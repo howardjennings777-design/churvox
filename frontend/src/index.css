@@ -989,3 +989,164 @@ body,
     font-size: .82rem !important;
   }
 }
+
+/* CHURVOX_COMMAND_NAV_VISIBLE_FINAL_20260601
+   The links are present, but were hard to see / clipped / sitting behind content.
+   This makes both Command Floor navs clearly visible and horizontally scrollable. */
+
+.xcf-bottom-nav,
+.xcf-bottom-nav-full,
+.c2-dock,
+.c2-dock-full,
+.xcf10-dock-launch-final {
+  position: fixed !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  transform: translateX(-50%) !important;
+  z-index: 2147483000 !important;
+  width: min(1180px, calc(100vw - 18px)) !important;
+  max-width: calc(100vw - 18px) !important;
+  min-height: 58px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  white-space: nowrap !important;
+  padding: 8px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(148, 163, 184, .28) !important;
+  background:
+    linear-gradient(135deg, rgba(4, 15, 24, .96), rgba(9, 30, 45, .96)) !important;
+  box-shadow:
+    0 22px 70px rgba(0, 0, 0, .42),
+    inset 0 1px 0 rgba(255, 255, 255, .10) !important;
+  backdrop-filter: blur(18px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(150%) !important;
+  scrollbar-width: none !important;
+  pointer-events: auto !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.xcf-bottom-nav::-webkit-scrollbar,
+.xcf-bottom-nav-full::-webkit-scrollbar,
+.c2-dock::-webkit-scrollbar,
+.c2-dock-full::-webkit-scrollbar,
+.xcf10-dock-launch-final::-webkit-scrollbar {
+  display: none !important;
+}
+
+.xcf-bottom-nav a,
+.xcf-bottom-nav-full a,
+.c2-dock a,
+.c2-dock-full a,
+.xcf10-dock-launch-final a {
+  flex: 0 0 auto !important;
+  min-width: max-content !important;
+  min-height: 42px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 10px 15px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(148, 163, 184, .20) !important;
+  background: rgba(255, 255, 255, .055) !important;
+  color: rgba(236, 253, 245, .90) !important;
+  font-size: .88rem !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
+  letter-spacing: -.01em !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  text-shadow: none !important;
+}
+
+.xcf-bottom-nav a:hover,
+.xcf-bottom-nav-full a:hover,
+.c2-dock a:hover,
+.c2-dock-full a:hover,
+.xcf10-dock-launch-final a:hover,
+.xcf-bottom-nav a.active,
+.xcf-bottom-nav-full a.active,
+.c2-dock a.active,
+.c2-dock-full a.active,
+.xcf10-dock-launch-final a.active {
+  background: linear-gradient(135deg, rgba(56, 189, 248, .38), rgba(163, 230, 53, .24)) !important;
+  border-color: rgba(163, 230, 53, .46) !important;
+  color: #ffffff !important;
+  box-shadow: 0 12px 34px rgba(56, 189, 248, .18) !important;
+}
+
+/* Make sure page content does not cover the fixed dock. */
+.xcf-shell,
+.xcf-workspace,
+.xcf-real-page,
+.concept-c2-frame,
+.concept-c2-frame .c2-frame,
+.concept-c2-frame .c2-real-page-card {
+  padding-bottom: 96px !important;
+}
+
+/* Stop old wrappers from clipping the fixed nav. */
+body,
+#root,
+.xcf-shell,
+.xcf-workspace,
+.concept-c2,
+.concept-c2-frame,
+.concept-c2-frame .c2-frame,
+.concept-c2-frame .c2-stage,
+.concept-c2-frame .c2-real-page-stage {
+  overflow-x: hidden !important;
+}
+
+.concept-c2-frame .c2-dock,
+.concept-c2-frame .c2-dock-full,
+.xcf-shell .xcf-bottom-nav,
+.xcf-shell .xcf-bottom-nav-full {
+  overflow-x: auto !important;
+}
+
+/* Phone: full-width bottom pill with clear swipeable links. */
+@media (max-width: 760px) {
+  .xcf-bottom-nav,
+  .xcf-bottom-nav-full,
+  .c2-dock,
+  .c2-dock-full,
+  .xcf10-dock-launch-final {
+    left: 8px !important;
+    right: 8px !important;
+    bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    transform: none !important;
+    width: auto !important;
+    max-width: none !important;
+    min-height: 58px !important;
+    border-radius: 24px !important;
+    padding: 8px !important;
+  }
+
+  .xcf-bottom-nav a,
+  .xcf-bottom-nav-full a,
+  .c2-dock a,
+  .c2-dock-full a,
+  .xcf10-dock-launch-final a {
+    min-height: 42px !important;
+    padding: 10px 13px !important;
+    font-size: .82rem !important;
+  }
+
+  .xcf-shell,
+  .xcf-workspace,
+  .xcf-real-page,
+  .concept-c2-frame,
+  .concept-c2-frame .c2-frame,
+  .concept-c2-frame .c2-real-page-card {
+    padding-bottom: 108px !important;
+  }
+}
