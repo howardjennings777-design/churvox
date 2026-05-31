@@ -1,143 +1,205 @@
-// CHURVOX_DISPATCH_BOARD_PAGE_20260528
-// CHURVOX_DISPATCH_BOARD_OPERATOR_UPGRADE_20260528
-// CHURVOX_DISPATCH_LINKED_JOB_NATIVE_HIGHLIGHT_20260529
-// CHURVOX_DISPATCH_NATIVE_ASSIGNMENT_ACTION_20260529
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { assignDispatchWorker, getDispatchBoard } from "../concept-c/churvoxTopTierApi";
+import { Link } from "react-router-dom";
+import { useApi } from "../hooks/useApi";
+import { PremiumButton, PremiumCard, PremiumHero, PremiumPage } from "../components/premium";
+import { AlertTriangle, CalendarDays, RefreshCw, Route, UserPlus } from "lucide-react";
+import { toast } from "sonner";
 import "./DispatchBoardPage.css";
 
-const API_BASE = process.env.REACT_APP_BACKEND_URL || process.env.VITE_BACKEND_URL || "https://grassley-backend.onrender.com";
+function arr(value) { return Array.isArray(value) ? value : []; }
+function idOf(value) { return String(value?.id || value?._id || ""); }
+function nameOf(worker) { return worker?.display_name || worker?.name || worker?.full_name || worker?.email || "Worker"; }
 
-const laneLabels = {
-  unassigned: "Unassigned",
-  assigned: "Assigned",
-  in_progress: "In progress",
-  completed: "Completed",
-  needs_review: "Needs review",
-  ready_to_invoice: "Ready to invoice",
-};
-
-const laneHelp = {
-  unassigned: "Needs owner/admin to assign crew.",
-  assigned: "Crew has the job.",
-  in_progress: "Work is active in the field.",
-  completed: "Worker marked it complete.",
-  needs_review: "Owner should open Work Slip.",
-  ready_to_invoice: "Admin is ready for money desk.",
-};
-
-function token() { try { return localStorage.getItem("token") || localStorage.getItem("authToken") || ""; } catch { return ""; } }
-function cleanBase(base) { return String(base || "").replace(/\/+$/, ""); }
-async function fetchJson(path) {
-  const t = token();
-  const res = await fetch(`${cleanBase(API_BASE)}${path}`, { credentials: "include", headers: { "Content-Type": "application/json", ...(t ? { Authorization: `Bearer ${t}` } : {}) } });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data?.detail || data?.message || `Request failed ${res.status}`);
-  return data;
+function today(offset = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return d.toISOString().slice(0, 10);
 }
-function listFrom(payload, key) {
-  if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload?.[key])) return payload[key];
-  if (Array.isArray(payload?.data)) return payload.data;
-  if (Array.isArray(payload?.items)) return payload.items;
-  return [];
-}
-function jobId(job) { return job?.id || job?._id || job?.job_id || ""; }
-function jobTitle(job) { return job?.title || job?.job_name || job?.customer_name || job?.client_name || "Job"; }
-function jobClient(job) { return job?.customer_name || job?.client_name || job?.client || "No client name"; }
-function jobPlace(job) { return job?.address || job?.site_address || job?.region || job?.suburb || "No address saved"; }
-function jobWorker(job) { return job?.assigned_worker_name || job?.worker_name || job?.assigned_to_name || job?.assigned_worker_id || "No worker shown"; }
-function jobStatus(job) { return job?.status || job?.owner_review_status || job?.work_review_status || "Review"; }
-function workerId(worker) { return worker?.id || worker?._id || worker?.worker_id || ""; }
-function workerName(worker) { return worker?.name || worker?.full_name || worker?.email || "Worker"; }
-function workerRole(worker) { return String(worker?.role || worker?.position || "").toLowerCase(); }
-function isFieldWorker(worker) { const role = workerRole(worker); return !["owner", "admin", "office", "payroll", "accountant"].some((x) => role.includes(x)); }
-function findLinkedJob(lanes, linkedJobId) {
-  if (!linkedJobId) return null;
-  for (const [laneKey, rows] of Object.entries(lanes || {})) {
-    if (!Array.isArray(rows)) continue;
-    const job = rows.find((row) => String(jobId(row)) === String(linkedJobId));
-    if (job) return { job, laneKey };
+
+function labelDate(day) {
+  if (!day || day === "unscheduled") return "Unscheduled";
+  try {
+    return new Date(`${day}T00:00:00`).toLocaleDateString("en-NZ", { weekday: "short", day: "numeric", month: "short" });
+  } catch {
+    return day;
   }
-  return null;
+}
+
+function statusClass(status) {
+  const s = String(status || "").toLowerCase();
+  if (s.includes("complete")) return "green";
+  if (s.includes("progress") || s.includes("start")) return "blue";
+  if (s.includes("pause")) return "amber";
+  if (s.includes("cancel") || s.includes("issue") || s.includes("cannot")) return "red";
+  return "grey";
+}
+
+function JobChip({ job, workers, onAssign, onReschedule }) {
+  const [workerId, setWorkerId] = useState(job.assigned_worker_id || job.worker_id || "");
+  const [date, setDate] = useState(String(job.scheduled_date || job.date || "").slice(0, 10));
+  const [time, setTime] = useState(job.scheduled_time || job.time || "09:00");
+
+  return (
+    <article className={`cv-dispatch-job ${statusClass(job.status || job.job_status)}`}>
+      <header>
+        <div>
+          <b>{job.title || job.job_name || job.customer_name || job.client_name || "Job"}</b>
+          <span>{job.address || job.site_address || "No address"} · {job.status || "open"}</span>
+          <small>{job.assigned_worker_name || job.worker_name || "Unassigned"} · {time || "No time"}</small>
+        </div>
+        <Link to={`/jobs/${idOf(job)}`}>Open</Link>
+      </header>
+
+      <div className="cv-dispatch-controls">
+        <select value={workerId} onChange={(e) => setWorkerId(e.target.value)}>
+          <option value="">Choose worker</option>
+          {workers.map((worker) => <option key={idOf(worker)} value={idOf(worker)}>{nameOf(worker)}</option>)}
+        </select>
+        <button type="button" onClick={() => onAssign(job, workerId)}>Assign</button>
+        <input type="date" value={date || ""} onChange={(e) => setDate(e.target.value)} />
+        <input type="time" value={time || ""} onChange={(e) => setTime(e.target.value)} />
+        <button type="button" className="secondary" onClick={() => onReschedule(job, date, time)}>Reschedule</button>
+      </div>
+    </article>
+  );
 }
 
 export default function DispatchBoardPage() {
-  const location = useLocation();
-  const linkedJobId = useMemo(() => new URLSearchParams(location.search).get("job_id") || "", [location.search]);
-  const [state, setState] = useState({ loading: true, error: "", lanes: {}, workers: [] });
-  const [selectedWorkerId, setSelectedWorkerId] = useState("");
-  const [notice, setNotice] = useState("");
-  const [assigning, setAssigning] = useState(false);
+  const api = useApi();
+  const [dispatch, setDispatch] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState("");
+  const [from, setFrom] = useState(today(-1));
+  const [to, setTo] = useState(today(14));
+  const [workerFilter, setWorkerFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [areaFilter, setAreaFilter] = useState("");
 
-  async function load() {
-    try {
-      const [boardRes, workersRes] = await Promise.allSettled([getDispatchBoard(), fetchJson("/api/team/workers")]);
-      setState({
-        loading: false,
-        error: boardRes.status === "rejected" ? boardRes.reason?.message || "Could not load dispatch board" : "",
-        lanes: boardRes.status === "fulfilled" ? boardRes.value.lanes || {} : {},
-        workers: workersRes.status === "fulfilled" ? listFrom(workersRes.value, "workers") : [],
-      });
-    } catch (err) {
-      setState({ loading: false, error: err?.message || "Could not load dispatch board", lanes: {}, workers: [] });
-    }
+  async function loadDispatch() {
+    setLoading(true);
+    const res = await api.get(`/dispatch-board?date_from=${from}&date_to=${to}`);
+    if (res.success) setDispatch(res.data?.dispatch || {});
+    else toast.error(res.error || "Could not load dispatch board");
+    setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { loadDispatch(); }, []);
 
-  const summary = useMemo(() => {
-    const counts = Object.fromEntries(Object.keys(laneLabels).map((key) => [key, Array.isArray(state.lanes?.[key]) ? state.lanes[key].length : 0]));
-    const total = Object.values(counts).reduce((sum, value) => sum + value, 0);
-    return { counts, total };
-  }, [state.lanes]);
+  const workers = arr(dispatch.workers);
+  const jobs = arr(dispatch.jobs);
+  const conflicts = arr(dispatch.conflicts);
+  const metrics = dispatch.metrics || {};
 
-  const linked = useMemo(() => findLinkedJob(state.lanes, linkedJobId), [state.lanes, linkedJobId]);
-  const selectedWorker = useMemo(() => state.workers.find((worker) => String(workerId(worker)) === String(selectedWorkerId)), [state.workers, selectedWorkerId]);
-  const fieldWorkers = useMemo(() => state.workers.filter(isFieldWorker), [state.workers]);
+  const filteredJobs = useMemo(() => {
+    return jobs.filter((job) => {
+      const workerOk = !workerFilter || String(job.assigned_worker_id || job.worker_id || "") === workerFilter;
+      const statusOk = !statusFilter || String(job.status || job.job_status || "").toLowerCase().includes(statusFilter);
+      const areaText = [job.address, job.site_address, job.region, job.area].join(" ").toLowerCase();
+      const areaOk = !areaFilter || areaText.includes(areaFilter.toLowerCase());
+      return workerOk && statusOk && areaOk;
+    });
+  }, [jobs, workerFilter, statusFilter, areaFilter]);
 
-  useEffect(() => {
-    if (state.loading || !linkedJobId) return;
-    const timer = window.setTimeout(() => {
-      const target = document.querySelector(`[data-cdb-job-id="${CSS.escape(linkedJobId)}"]`);
-      target?.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
-    }, 120);
-    return () => window.clearTimeout(timer);
-  }, [state.loading, linkedJobId]);
+  const byDay = useMemo(() => {
+    const map = {};
+    filteredJobs.forEach((job) => {
+      const day = String(job.scheduled_date || job.date || "unscheduled").slice(0, 10) || "unscheduled";
+      map[day] = map[day] || [];
+      map[day].push(job);
+    });
+    return Object.entries(map).sort(([a], [b]) => a.localeCompare(b));
+  }, [filteredJobs]);
 
-  async function assignSelectedWorker() {
-    if (!linkedJobId) return setNotice("Open a linked Work Slip job before assigning.");
-    if (!selectedWorker) return setNotice("Choose a worker before assigning.");
-    setAssigning(true);
-    try {
-      const res = await assignDispatchWorker({ job_id: linkedJobId, worker_id: workerId(selectedWorker), worker_name: workerName(selectedWorker) });
-      setNotice(res?.conflict_count ? `Assigned, but ${res.conflict_count} possible open-job conflict needs checking.` : `Assigned ${workerName(selectedWorker)} to this job.`);
-      await load();
-    } catch (err) {
-      setNotice(err?.message || "Could not assign worker.");
-    } finally {
-      setAssigning(false);
+  async function run(label, fn) {
+    setBusy(label);
+    const res = await fn();
+    setBusy("");
+    if (res.success) {
+      if (res.data?.has_conflict) toast.warning("Saved, but there is a worker conflict.");
+      else toast.success("Dispatch updated");
+      await loadDispatch();
+      return res;
     }
+    toast.error(res.error || "Dispatch action failed");
+    return res;
+  }
+
+  async function assign(job, workerId) {
+    if (!workerId) return toast.error("Choose a worker first");
+    const worker = workers.find((w) => idOf(w) === String(workerId));
+    await run("assign", () => api.post(`/dispatch-board/jobs/${idOf(job)}/assign`, {
+      worker_id: workerId,
+      worker_name: nameOf(worker),
+    }));
+  }
+
+  async function reschedule(job, scheduledDate, scheduledTime) {
+    if (!scheduledDate) return toast.error("Choose a date");
+    await run("reschedule", () => api.post(`/dispatch-board/jobs/${idOf(job)}/reschedule`, {
+      scheduled_date: scheduledDate,
+      scheduled_time: scheduledTime || "09:00",
+      estimated_duration: job.estimated_duration || job.duration_minutes || 60,
+    }));
   }
 
   return (
-    <main className="cdb-shell" data-version="CHURVOX_DISPATCH_BOARD_PAGE_20260528 CHURVOX_DISPATCH_BOARD_OPERATOR_UPGRADE_20260528 CHURVOX_DISPATCH_LINKED_JOB_NATIVE_HIGHLIGHT_20260529 CHURVOX_DISPATCH_NATIVE_ASSIGNMENT_ACTION_20260529">
-      <section className="cdb-hero"><div><p>DISPATCH BOARD</p><h1>See work moving across the business.</h1><span>Jobs grouped by unassigned, assigned, in progress, completed, review and invoice lanes.</span></div><aside><small>Status</small><b>{state.loading ? "Loading" : `${summary.total} jobs`}</b><em>{state.error || notice || (linkedJobId ? "Linked Work Slip highlighted below" : "Command Floor remains the approval flow")}</em></aside></section>
+    <PremiumPage maxWidth={1280}>
+      <PremiumHero
+        eyebrow="Dispatch board"
+        title="Plan the day, assign crew and catch conflicts."
+        subtitle="Jobs by day, worker, area and status with safe assign/reschedule controls."
+        icon={<Route className="h-6 w-6" />}
+        actions={<PremiumButton variant="secondary" onClick={loadDispatch} disabled={loading || Boolean(busy)}><RefreshCw size={16} className="mr-2" /> Refresh</PremiumButton>}
+      />
 
-      {linkedJobId && (
-        <section className={`cdb-linked-job-panel ${linked ? "is-found" : "is-missing"}`}>
-          <div><small>Dispatch from Work Slip</small><h2>{linked ? jobTitle(linked.job) : `Job ${linkedJobId}`}</h2><p>{state.loading ? "Loading linked dispatch context..." : linked ? `${jobClient(linked.job)} · ${jobWorker(linked.job)} · ${laneLabels[linked.laneKey] || linked.laneKey} lane` : "This job was opened from a Work Slip, but it is not visible in the loaded dispatch lanes yet."}</p>{linked && <div className="cdb-linked-meta"><span>{jobStatus(linked.job)}</span><span>{jobPlace(linked.job)}</span><span>{laneLabels[linked.laneKey] || linked.laneKey}</span></div>}</div>
-          <aside className="cdb-assign-box"><small>Assign worker</small><select value={selectedWorkerId} onChange={(e) => setSelectedWorkerId(e.target.value)}><option value="">Choose field worker</option>{fieldWorkers.map((worker) => <option key={workerId(worker)} value={workerId(worker)}>{workerName(worker)}{worker?.region ? ` · ${worker.region}` : ""}</option>)}</select><button type="button" disabled={assigning || !selectedWorkerId} onClick={assignSelectedWorker}>{assigning ? "Assigning..." : "Assign selected worker"}</button><em>{selectedWorker ? `Will assign ${workerName(selectedWorker)}. Churvox logs this for owner review.` : "Owner approval action — no worker is assigned until you tap the button."}</em></aside>
-          <nav><Link to={`/jobs/${linkedJobId}`}>Open linked job</Link><Link to="/dashboard">Back to Work Slip queue</Link><Link to={`/invoices/new?job_id=${encodeURIComponent(linkedJobId)}`}>Prepare invoice</Link></nav>
+      <section className="cv-dispatch-metrics">
+        <article><span>Jobs</span><b>{metrics.jobs || 0}</b><small>in range</small></article>
+        <article><span>Workers</span><b>{metrics.workers || 0}</b><small>available list</small></article>
+        <article className="amber"><span>Unassigned</span><b>{metrics.unassigned_jobs || 0}</b><small>needs worker</small></article>
+        <article className="red"><span>Conflicts</span><b>{metrics.conflicts || 0}</b><small>overlap warnings</small></article>
+        <article><span>Days</span><b>{metrics.scheduled_days || 0}</b><small>scheduled</small></article>
+      </section>
+
+      <section className="cv-dispatch-filters">
+        <label><span>From</span><input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
+        <label><span>To</span><input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></label>
+        <label><span>Worker</span><select value={workerFilter} onChange={(e) => setWorkerFilter(e.target.value)}><option value="">All workers</option>{workers.map((w) => <option key={idOf(w)} value={idOf(w)}>{nameOf(w)}</option>)}</select></label>
+        <label><span>Status</span><select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}><option value="">All statuses</option><option value="assigned">Assigned</option><option value="progress">In progress</option><option value="paused">Paused</option><option value="completed">Completed</option><option value="cancel">Cancelled</option></select></label>
+        <label><span>Area</span><input value={areaFilter} onChange={(e) => setAreaFilter(e.target.value)} placeholder="Suburb / region" /></label>
+        <button type="button" onClick={loadDispatch}>Apply</button>
+      </section>
+
+      {conflicts.length ? (
+        <section className="cv-dispatch-conflicts">
+          <AlertTriangle size={18} />
+          <div>
+            <b>{conflicts.length} worker conflict warning{conflicts.length === 1 ? "" : "s"}</b>
+            <span>Open the affected jobs and reschedule or assign a different worker.</span>
+          </div>
+        </section>
+      ) : null}
+
+      {loading ? (
+        <PremiumCard><div className="cv-dispatch-empty">Loading dispatch board…</div></PremiumCard>
+      ) : (
+        <section className="cv-dispatch-board">
+          {byDay.length ? byDay.map(([day, dayJobs]) => (
+            <PremiumCard key={day} title={labelDate(day)} icon={<CalendarDays className="h-5 w-5" />}>
+              {dayJobs.map((job) => (
+                <JobChip key={idOf(job)} job={job} workers={workers} onAssign={assign} onReschedule={reschedule} />
+              ))}
+            </PremiumCard>
+          )) : <div className="cv-dispatch-empty">No jobs match the current filters.</div>}
         </section>
       )}
 
-      <section className="cdb-summary-strip"><article><small>Needs crew</small><b>{summary.counts.unassigned || 0}</b></article><article><small>In field</small><b>{(summary.counts.assigned || 0) + (summary.counts.in_progress || 0)}</b></article><article><small>Owner review</small><b>{summary.counts.needs_review || 0}</b></article><article><small>Money desk</small><b>{summary.counts.ready_to_invoice || 0}</b></article></section>
-
-      <section className="cdb-board">{Object.entries(laneLabels).map(([key, label]) => { const rows = Array.isArray(state.lanes?.[key]) ? state.lanes[key] : []; return <article className={`cdb-lane cdb-lane-${key}`} key={key}><header><span>{label}</span><b>{rows.length}</b><small>{laneHelp[key]}</small></header><div className="cdb-rows">{rows.length ? rows.slice(0, 18).map((job, index) => { const id = jobId(job); const isLinked = linkedJobId && String(id) === String(linkedJobId); return <Link to={id ? `/jobs/${id}` : "/jobs"} className={`cdb-job ${isLinked ? "is-linked" : ""}`} data-cdb-job-id={id || undefined} key={id || index}>{isLinked && <i>Opened from Work Slip</i>}<strong>{jobTitle(job)}</strong><small>{jobClient(job)}</small><em>{jobPlace(job)}</em><span>{jobWorker(job)}</span></Link>; }) : <div className="cdb-empty">Nothing here.</div>}</div></article>; })}</section>
-
-      <footer className="cdb-footer"><Link to="/dashboard">Back to Command Floor</Link><Link to="/operator-tools">Open AI Operator tools</Link><Link to="/jobs/new">Create job</Link></footer>
-    </main>
+      <section className="cv-dispatch-side">
+        <PremiumCard title="Unassigned quick list" icon={<UserPlus className="h-5 w-5" />}>
+          {arr(dispatch.unassigned_jobs).length ? arr(dispatch.unassigned_jobs).slice(0, 12).map((job) => (
+            <Link key={idOf(job)} to={`/jobs/${idOf(job)}`}>{job.title || job.customer_name || "Unassigned job"}</Link>
+          )) : <div className="cv-dispatch-empty">No unassigned jobs.</div>}
+        </PremiumCard>
+      </section>
+    </PremiumPage>
   );
 }

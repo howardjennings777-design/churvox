@@ -13944,6 +13944,252 @@ async def worker_add_photo_note(job_id: str, payload: dict = Body(default={}), c
     return {"success": True, "job": _area8_worker_safe_job(saved) if _area8_role(current_user) in AREA8_WORKER_ROLES else safe_doc(saved)}
 
 
+
+
+# CHURVOX_AREA9_DISPATCH_BOARD_20260531
+# Dispatch board/calendar: jobs by day, worker, status, conflicts and assign/reschedule actions.
+def _area9_doc_id(doc: dict) -> str:
+    return str((doc or {}).get("_id") or (doc or {}).get("id") or "")
+
+def _area9_text(value) -> str:
+    return str(value or "").strip()
+
+def _area9_status(job: dict) -> str:
+    return str(job.get("status") or job.get("job_status") or job.get("workflow_status") or "open").lower().replace(" ", "_")
+
+def _area9_dt(value):
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+def _area9_day(value) -> str:
+    dt = _area9_dt(value)
+    if dt:
+        return dt.date().isoformat()
+    raw = str(value or "")
+    return raw[:10] if len(raw) >= 10 else ""
+
+def _area9_job_query(job_id: str, business_id: str) -> dict:
+    clauses = [{"id": str(job_id)}]
+    if ObjectId.is_valid(str(job_id)):
+        clauses.insert(0, {"_id": ObjectId(str(job_id))})
+    return {"business_id": str(business_id), "$or": clauses}
+
+def _area9_worker_name(worker: dict) -> str:
+    return _area9_text(worker.get("display_name") or worker.get("name") or worker.get("full_name") or worker.get("email") or "Worker")
+
+async def _area9_workers_for_business(business_id: str) -> list:
+    workers = []
+    seen = set()
+
+    try:
+        async for worker in db.business_users.find({"business_id": str(business_id)}).limit(500):
+            wid = _area9_doc_id(worker)
+            if wid not in seen:
+                seen.add(wid)
+                workers.append(safe_doc(worker))
+    except Exception:
+        pass
+
+    try:
+        async for user in db.users.find({"business_id": str(business_id), "role": {"$in": ["worker", "employee", "field_worker", "crew", "staff", "manager", "office_admin"]}}).limit(500):
+            uid = _area9_doc_id(user)
+            if uid not in seen:
+                seen.add(uid)
+                workers.append(safe_doc(user))
+    except Exception:
+        pass
+
+    return workers
+
+def _area9_job_worker_id(job: dict) -> str:
+    return _area9_text(job.get("assigned_worker_id") or job.get("worker_id") or job.get("assigned_to"))
+
+def _area9_duration_minutes(job: dict) -> int:
+    for key in ["estimated_duration", "duration_minutes", "estimated_duration_minutes", "duration"]:
+        raw = job.get(key)
+        try:
+            if raw not in (None, ""):
+                return max(15, int(float(raw)))
+        except Exception:
+            pass
+    return 60
+
+def _area9_start_minutes(job: dict) -> int:
+    raw = _area9_text(job.get("scheduled_time") or job.get("time") or job.get("start_time"))
+    if not raw:
+        dt = _area9_dt(job.get("scheduled_date") or job.get("date"))
+        if dt:
+            return dt.hour * 60 + dt.minute
+        return 9 * 60
+    try:
+        bits = raw.split(":")
+        return int(bits[0]) * 60 + int(bits[1][:2])
+    except Exception:
+        return 9 * 60
+
+def _area9_overlaps(a: dict, b: dict) -> bool:
+    if _area9_day(a.get("scheduled_date") or a.get("date")) != _area9_day(b.get("scheduled_date") or b.get("date")):
+        return False
+    a_start = _area9_start_minutes(a)
+    b_start = _area9_start_minutes(b)
+    a_end = a_start + _area9_duration_minutes(a)
+    b_end = b_start + _area9_duration_minutes(b)
+    return max(a_start, b_start) < min(a_end, b_end)
+
+def _area9_conflicts(job: dict, all_jobs: list, worker_id: str) -> list:
+    if not worker_id:
+        return []
+    conflicts = []
+    jid = _area9_doc_id(job)
+    for other in all_jobs:
+        if _area9_doc_id(other) == jid:
+            continue
+        if _area9_job_worker_id(other) != str(worker_id):
+            continue
+        if _area9_status(other) in {"completed", "cancelled", "canceled", "void"}:
+            continue
+        if _area9_overlaps(job, other):
+            conflicts.append(safe_doc(other))
+    return conflicts
+
+@api_router.get("/dispatch-board")
+async def get_dispatch_board(
+    date_from: str = Query(default=""),
+    date_to: str = Query(default=""),
+    current_user: dict = Depends(get_current_user)
+):
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+    start = _area9_dt(date_from) or (now - timedelta(days=3))
+    end = _area9_dt(date_to) or (now + timedelta(days=14))
+
+    jobs = [safe_doc(j) async for j in db.jobs.find({"business_id": str(business_id)}).sort("scheduled_date", 1).limit(1000)]
+    workers = await _area9_workers_for_business(business_id)
+
+    visible_jobs = []
+    for job in jobs:
+        day = _area9_day(job.get("scheduled_date") or job.get("date") or job.get("created_at"))
+        if not day:
+            visible_jobs.append(job)
+            continue
+        try:
+            d = datetime.fromisoformat(day).replace(tzinfo=timezone.utc)
+            if start.date() <= d.date() <= end.date():
+                visible_jobs.append(job)
+        except Exception:
+            visible_jobs.append(job)
+
+    by_day = {}
+    by_worker = {}
+    unassigned = []
+    conflict_rows = []
+
+    for job in visible_jobs:
+        day = _area9_day(job.get("scheduled_date") or job.get("date")) or "unscheduled"
+        by_day.setdefault(day, []).append(job)
+
+        worker_id = _area9_job_worker_id(job)
+        if worker_id:
+            by_worker.setdefault(worker_id, []).append(job)
+            conflicts = _area9_conflicts(job, visible_jobs, worker_id)
+            if conflicts:
+                conflict_rows.append({"job": job, "conflicts": conflicts})
+        else:
+            unassigned.append(job)
+
+    return {
+        "success": True,
+        "dispatch": {
+            "jobs": visible_jobs,
+            "workers": workers,
+            "by_day": by_day,
+            "by_worker": by_worker,
+            "unassigned_jobs": unassigned,
+            "conflicts": conflict_rows,
+            "metrics": {
+                "jobs": len(visible_jobs),
+                "workers": len(workers),
+                "unassigned_jobs": len(unassigned),
+                "conflicts": len(conflict_rows),
+                "scheduled_days": len([k for k in by_day.keys() if k != "unscheduled"]),
+            },
+        },
+    }
+
+@api_router.post("/dispatch-board/jobs/{job_id}/assign")
+async def dispatch_assign_job(job_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    job = await db.jobs.find_one(_area9_job_query(job_id, business_id))
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    worker_id = _area9_text((payload or {}).get("worker_id") or (payload or {}).get("assigned_worker_id"))
+    worker_name = _area9_text((payload or {}).get("worker_name") or (payload or {}).get("assigned_worker_name"))
+    if worker_id:
+        worker = None
+        try:
+            worker = await db.business_users.find_one({"business_id": str(business_id), "$or": [{"id": worker_id}, {"_id": ObjectId(worker_id)}] if ObjectId.is_valid(worker_id) else [{"id": worker_id}]})
+        except Exception:
+            worker = None
+        if worker:
+            worker_name = _area9_worker_name(worker)
+
+    if not worker_id and not worker_name:
+        raise HTTPException(status_code=400, detail="Worker is required")
+
+    jobs = [safe_doc(j) async for j in db.jobs.find({"business_id": str(business_id)}).limit(1000)]
+    projected = {**safe_doc(job), "assigned_worker_id": worker_id}
+    conflicts = _area9_conflicts(projected, jobs, worker_id)
+
+    update = {
+        "assigned_worker_id": worker_id,
+        "worker_id": worker_id,
+        "assigned_worker_name": worker_name,
+        "worker_name": worker_name,
+        "status": "assigned" if _area9_status(job) in {"", "open", "new", "quoted"} else job.get("status", "assigned"),
+        "updated_at": datetime.now(timezone.utc),
+    }
+    await db.jobs.update_one({"_id": job["_id"], "business_id": str(business_id)}, {"$set": update})
+    saved = await db.jobs.find_one({"_id": job["_id"]})
+    return {"success": True, "job": safe_doc(saved), "conflicts": conflicts, "has_conflict": bool(conflicts)}
+
+@api_router.post("/dispatch-board/jobs/{job_id}/reschedule")
+async def dispatch_reschedule_job(job_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    job = await db.jobs.find_one(_area9_job_query(job_id, business_id))
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    scheduled_date = _area9_text((payload or {}).get("scheduled_date") or (payload or {}).get("date"))
+    scheduled_time = _area9_text((payload or {}).get("scheduled_time") or (payload or {}).get("time"))
+    duration = (payload or {}).get("estimated_duration") or (payload or {}).get("duration_minutes") or job.get("estimated_duration")
+
+    if not scheduled_date:
+        raise HTTPException(status_code=400, detail="Scheduled date is required")
+
+    update = {
+        "scheduled_date": scheduled_date,
+        "date": scheduled_date,
+        "scheduled_time": scheduled_time,
+        "estimated_duration": int(float(duration or 60)),
+        "updated_at": datetime.now(timezone.utc),
+    }
+
+    projected = {**safe_doc(job), **update}
+    jobs = [safe_doc(j) async for j in db.jobs.find({"business_id": str(business_id)}).limit(1000)]
+    conflicts = _area9_conflicts(projected, jobs, _area9_job_worker_id(projected))
+
+    await db.jobs.update_one({"_id": job["_id"], "business_id": str(business_id)}, {"$set": update})
+    saved = await db.jobs.find_one({"_id": job["_id"]})
+    return {"success": True, "job": safe_doc(saved), "conflicts": conflicts, "has_conflict": bool(conflicts)}
+
+
 # CORS_HARD_FIX_20260412
 
 

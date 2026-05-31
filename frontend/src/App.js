@@ -229,7 +229,7 @@ function App() {
             <Route path="/jobs/new" element={<BusinessRoute><ConceptCFrame area="jobs"><JobFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/jobs/:id" element={<BusinessRoute><ConceptCFrame area="jobs"><JobDetailPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/jobs/:id/edit" element={<BusinessRoute><ConceptCFrame area="jobs"><JobFormPage /></ConceptCFrame></BusinessRoute>} />
-            <Route path="/dispatch" element={<BusinessRoute><ConceptCPage area="dispatch" /></BusinessRoute>} />
+            <Route path="/dispatch" element={<BusinessRoute><ConceptCFrame area="dispatch"><DispatchBoardPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/pipeline" element={<BusinessRoute><ConceptCFrame area="dashboard"><PipelinePage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/calendar" element={<Navigate to="/dispatch" replace />} />
             <Route path="/clients" element={<BusinessRoute><ConceptCFrame area="clients"><CustomerRecordsPage /></ConceptCFrame></BusinessRoute>} />
