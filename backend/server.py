@@ -11857,6 +11857,357 @@ async def churvox_offline_sync(payload: dict = Body(default={}), current_user: d
     return {"success": True, "queued": len(saved), "items": saved}
 
 
+
+
+# CHURVOX_CHECKOUT_POST_405_FIX_20260601
+# Hard-register checkout POST routes so /api/billing/unified-checkout never returns 405.
+CHURVOX_STRIPE_ITEMS_405_FIX = {
+    "plans": {
+        "solo": {"name": "Churvox Start", "amount": 3900, "interval": "month", "price_env": ["STRIPE_PRICE_START", "STRIPE_PRICE_SOLO"]},
+        "team": {"name": "Churvox Crew", "amount": 8900, "interval": "month", "price_env": ["STRIPE_PRICE_CREW", "STRIPE_PRICE_TEAM"]},
+        "pro": {"name": "Churvox Operator", "amount": 14900, "interval": "month", "price_env": ["STRIPE_PRICE_OPERATOR", "STRIPE_PRICE_PRO"]},
+        "enterprise": {"name": "Churvox Command", "amount": 29900, "interval": "month", "price_env": ["STRIPE_PRICE_COMMAND", "STRIPE_PRICE_ENTERPRISE"]},
+    },
+    "addons": {
+        "command_growth_pack": {"name": "Churvox Command Growth Pack", "amount": 9900, "interval": "month", "price_env": ["STRIPE_PRICE_COMMAND_GROWTH_PACK", "STRIPE_PRICE_GROWTH_PACK"]},
+        "myob_addon": {"name": "Churvox MYOB add-on", "amount": 3900, "interval": "month", "price_env": ["STRIPE_PRICE_MYOB_ADDON"]},
+    },
+    "sms": {
+        "sms_100": {"name": "Churvox 100 SMS credits", "amount": 1000, "credits": 100, "price_env": ["STRIPE_PRICE_SMS_100"]},
+        "sms_500": {"name": "Churvox 500 SMS credits", "amount": 4500, "credits": 500, "price_env": ["STRIPE_PRICE_SMS_500"]},
+        "sms_1000": {"name": "Churvox 1000 SMS credits", "amount": 8000, "credits": 1000, "price_env": ["STRIPE_PRICE_SMS_1000"]},
+    },
+}
+
+def _cvx405_text(v):
+    return str(v or "").strip()
+
+def _cvx405_stripe_secret():
+    return (
+        os.environ.get("STRIPE_SECRET_KEY")
+        or os.environ.get("STRIPE_API_KEY")
+        or os.environ.get("STRIPE_SK")
+        or ""
+    ).strip()
+
+def _cvx405_frontend_url():
+    return (
+        os.environ.get("FRONTEND_URL")
+        or os.environ.get("PUBLIC_APP_URL")
+        or os.environ.get("APP_URL")
+        or "https://www.churvox.com"
+    ).strip().rstrip("/")
+
+def _cvx405_price_id(item):
+    for env_key in item.get("price_env", []):
+        val = os.environ.get(env_key, "").strip()
+        if val:
+            return val
+    return ""
+
+def _cvx405_pick_item(payload):
+    payload = payload or {}
+    checkout_type = _cvx405_text(payload.get("checkout_type") or payload.get("type")).lower()
+    plan_type = _cvx405_text(payload.get("plan_type") or payload.get("plan") or payload.get("plan_key")).lower()
+    addon_type = _cvx405_text(payload.get("addon_type") or payload.get("addon")).lower()
+    sms_pack = _cvx405_text(payload.get("sms_pack") or payload.get("sms_pack_id") or payload.get("pack") or payload.get("credits")).lower()
+
+    plan_alias = {
+        "start": "solo",
+        "solo": "solo",
+        "crew": "team",
+        "team": "team",
+        "operator": "pro",
+        "pro": "pro",
+        "command": "enterprise",
+        "enterprise": "enterprise",
+    }
+
+    if checkout_type in {"sms", "sms_pack", "sms_credits"} or sms_pack:
+        sms_key = str(sms_pack).replace(",", "").replace(" ", "").lower()
+        sms_key = {"100": "sms_100", "sms100": "sms_100", "sms_100": "sms_100", "500": "sms_500", "sms500": "sms_500", "sms_500": "sms_500", "1000": "sms_1000", "sms1000": "sms_1000", "sms_1000": "sms_1000"}.get(sms_key, sms_key)
+        item = CHURVOX_STRIPE_ITEMS_405_FIX["sms"].get(sms_key)
+        if not item:
+            raise HTTPException(status_code=400, detail="Unknown SMS credit pack.")
+        return "sms", sms_key, item
+
+    if checkout_type in {"growth_pack", "addon", "myob_addon"} or addon_type:
+        addon_key = addon_type or checkout_type
+        if addon_key in {"growth", "growth_pack", "command_growth", "command_growth_pack", "blocks", "block"}:
+            addon_key = "command_growth_pack"
+        if addon_key in {"myob", "myob_addon", "myob-sync"}:
+            addon_key = "myob_addon"
+        item = CHURVOX_STRIPE_ITEMS_405_FIX["addons"].get(addon_key)
+        if not item:
+            raise HTTPException(status_code=400, detail="Unknown add-on.")
+        return addon_key, addon_key, item
+
+    plan_key = plan_alias.get(plan_type, plan_type)
+    item = CHURVOX_STRIPE_ITEMS_405_FIX["plans"].get(plan_key)
+    if not item:
+        raise HTTPException(status_code=400, detail="Unknown plan.")
+    return "plan", plan_key, item
+
+def _cvx405_success_url(payload, item_key):
+    base = _cvx405_frontend_url()
+    raw = _cvx405_text((payload or {}).get("success_path")) or f"/plans?checkout=success&item={item_key}"
+    sep = "&" if "?" in raw else "?"
+    if "session_id=" not in raw:
+        raw = f"{raw}{sep}session_id={{CHECKOUT_SESSION_ID}}"
+    return raw if raw.startswith("http") else f"{base}{raw}"
+
+def _cvx405_cancel_url(payload, item_key):
+    base = _cvx405_frontend_url()
+    raw = _cvx405_text((payload or {}).get("cancel_path")) or f"/plans?checkout=cancelled&item={item_key}"
+    return raw if raw.startswith("http") else f"{base}{raw}"
+
+async def _cvx405_create_checkout(payload: dict, current_user: dict):
+    import urllib.parse
+    import urllib.request
+    import urllib.error
+
+    secret = _cvx405_stripe_secret()
+    if not secret:
+        raise HTTPException(status_code=503, detail="Stripe is not configured yet. Add STRIPE_SECRET_KEY in Render.")
+
+    checkout_type, item_key, item = _cvx405_pick_item(payload or {})
+    business_id = str(await get_user_business_id(current_user))
+    user_id = _cvx405_text(current_user.get("id") or current_user.get("_id"))
+    email = _cvx405_text(current_user.get("email"))
+    mode = "payment" if checkout_type == "sms" else "subscription"
+
+    try:
+        quantity = max(1, min(int((payload or {}).get("quantity") or 1), 50))
+    except Exception:
+        quantity = 1
+
+    fields = [
+        ("mode", mode),
+        ("success_url", _cvx405_success_url(payload, item_key)),
+        ("cancel_url", _cvx405_cancel_url(payload, item_key)),
+        ("client_reference_id", business_id),
+        ("allow_promotion_codes", "true"),
+        ("line_items[0][quantity]", str(quantity)),
+        ("metadata[checkout_type]", checkout_type),
+        ("metadata[item_key]", item_key),
+        ("metadata[business_id]", business_id),
+        ("metadata[user_id]", user_id),
+        ("metadata[user_email]", email),
+    ]
+
+    if email:
+        fields.append(("customer_email", email))
+
+    if checkout_type == "plan":
+        fields.extend([
+            ("metadata[plan_type]", item_key),
+            ("subscription_data[metadata][plan_type]", item_key),
+            ("subscription_data[metadata][business_id]", business_id),
+            ("subscription_data[metadata][checkout_type]", "plan"),
+        ])
+
+    if checkout_type in {"command_growth_pack", "myob_addon"}:
+        fields.extend([
+            ("metadata[addon_type]", item_key),
+            ("subscription_data[metadata][addon_type]", item_key),
+            ("subscription_data[metadata][business_id]", business_id),
+            ("subscription_data[metadata][checkout_type]", checkout_type),
+        ])
+
+    if checkout_type == "sms":
+        fields.extend([
+            ("metadata[sms_pack]", item_key),
+            ("metadata[credits]", str(item.get("credits") or "")),
+        ])
+
+    price_id = _cvx405_price_id(item)
+    if price_id:
+        fields.append(("line_items[0][price]", price_id))
+    else:
+        fields.extend([
+            ("line_items[0][price_data][currency]", "nzd"),
+            ("line_items[0][price_data][unit_amount]", str(int(item["amount"]))),
+            ("line_items[0][price_data][product_data][name]", item["name"]),
+        ])
+        if mode == "subscription":
+            fields.append(("line_items[0][price_data][recurring][interval]", item.get("interval") or "month"))
+
+    req = urllib.request.Request(
+        "https://api.stripe.com/v1/checkout/sessions",
+        data=urllib.parse.urlencode(fields).encode("utf-8"),
+        headers={"Authorization": f"Bearer {secret}", "Content-Type": "application/x-www-form-urlencoded"},
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=30) as response:
+            data = json.loads(response.read().decode("utf-8") or "{}")
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        try:
+            detail = json.loads(body).get("error", {}).get("message") or body
+        except Exception:
+            detail = body
+        raise HTTPException(status_code=400, detail=f"Stripe checkout failed: {detail}")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Stripe checkout error: {exc}")
+
+    session_id = data.get("id")
+    checkout_url = data.get("url")
+    if not checkout_url:
+        raise HTTPException(status_code=500, detail="Stripe did not return a checkout URL.")
+
+    try:
+        await db.checkout_sessions.update_one(
+            {"stripe_session_id": session_id},
+            {"$set": {
+                "stripe_session_id": session_id,
+                "business_id": business_id,
+                "user_id": user_id,
+                "user_email": email,
+                "checkout_type": checkout_type,
+                "item_key": item_key,
+                "mode": mode,
+                "amount_cents": int(item.get("amount") or 0),
+                "credits": int(item.get("credits") or 0),
+                "quantity": quantity,
+                "status": "created",
+                "checkout_url": checkout_url,
+                "created_at": datetime.now(timezone.utc),
+                "updated_at": datetime.now(timezone.utc),
+            }},
+            upsert=True,
+        )
+    except Exception:
+        pass
+
+    return {"success": True, "checkout_url": checkout_url, "url": checkout_url, "session_id": session_id, "checkout_type": checkout_type, "item_key": item_key}
+
+async def _cvx405_confirm_checkout(payload: dict, current_user: dict):
+    session_id = _cvx405_text((payload or {}).get("session_id"))
+    if not session_id:
+        raise HTTPException(status_code=400, detail="session_id is required.")
+
+    business_id = str(await get_user_business_id(current_user))
+    session = None
+    try:
+        session = await db.checkout_sessions.find_one({"stripe_session_id": session_id, "business_id": business_id})
+    except Exception:
+        session = None
+
+    checkout_type = _cvx405_text((session or {}).get("checkout_type"))
+    item_key = _cvx405_text((session or {}).get("item_key"))
+    credits = int((session or {}).get("credits") or 0)
+
+    now = datetime.now(timezone.utc)
+
+    if checkout_type == "plan" and item_key:
+        plan_value = item_key
+        try:
+            query = {"$or": [{"id": str(current_user.get("id") or "")}, {"email": current_user.get("email")}]}
+            if ObjectId.is_valid(str(current_user.get("_id") or current_user.get("id") or "")):
+                query["$or"].append({"_id": ObjectId(str(current_user.get("_id") or current_user.get("id")))})
+            await db.users.update_one(query, {"$set": {"plan": plan_value, "selected_plan": plan_value, "plan_status": "active", "subscription_status": "active", "updated_at": now}})
+        except Exception:
+            pass
+
+    if checkout_type == "sms" and credits:
+        try:
+            await db.sms_balance.update_one({"business_id": business_id}, {"$inc": {"balance": credits}, "$set": {"updated_at": now}}, upsert=True)
+            await db.sms_credits.update_one({"business_id": business_id}, {"$inc": {"credits": credits}, "$set": {"updated_at": now}}, upsert=True)
+        except Exception:
+            pass
+
+    if checkout_type in {"command_growth_pack", "myob_addon"}:
+        try:
+            await db.business_settings.update_one(
+                {"business_id": business_id},
+                {"$set": {checkout_type: True, f"{checkout_type}_active": True, "updated_at": now}},
+                upsert=True,
+            )
+        except Exception:
+            pass
+
+    try:
+        await db.checkout_sessions.update_one({"stripe_session_id": session_id}, {"$set": {"status": "confirmed", "confirmed_at": now, "updated_at": now}})
+    except Exception:
+        pass
+
+    return {"success": True, "confirmed": True, "checkout_type": checkout_type, "item_key": item_key, "credits": credits}
+
+# Router-prefixed routes.
+@api_router.post("/billing/unified-checkout")
+async def churvox_405_billing_unified_checkout(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    return await _cvx405_create_checkout(payload or {}, current_user)
+
+@api_router.post("/billing/create-checkout")
+async def churvox_405_billing_create_checkout(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    return await _cvx405_create_checkout(payload or {}, current_user)
+
+@api_router.post("/stripe/create-checkout-session")
+async def churvox_405_stripe_checkout_alias(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    return await _cvx405_create_checkout(payload or {}, current_user)
+
+@api_router.post("/billing/addons/checkout")
+async def churvox_405_addon_checkout(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    body = dict(payload or {})
+    if not body.get("checkout_type"):
+        body["checkout_type"] = body.get("addon_type") or body.get("addon") or "addon"
+    return await _cvx405_create_checkout(body, current_user)
+
+@api_router.post("/billing/sms-checkout")
+async def churvox_405_sms_checkout(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    body = dict(payload or {})
+    body["checkout_type"] = "sms"
+    return await _cvx405_create_checkout(body, current_user)
+
+@api_router.post("/sms/buy-credits")
+async def churvox_405_sms_buy_credits(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    body = dict(payload or {})
+    body["checkout_type"] = "sms"
+    return await _cvx405_create_checkout(body, current_user)
+
+@api_router.post("/billing/confirm-checkout")
+async def churvox_405_confirm_checkout(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    return await _cvx405_confirm_checkout(payload or {}, current_user)
+
+# Direct /api routes too. This fixes cases where the router was already included before this patch.
+@app.post("/api/billing/unified-checkout")
+async def churvox_405_direct_billing_unified_checkout(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    return await _cvx405_create_checkout(payload or {}, current_user)
+
+@app.post("/api/billing/create-checkout")
+async def churvox_405_direct_billing_create_checkout(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    return await _cvx405_create_checkout(payload or {}, current_user)
+
+@app.post("/api/stripe/create-checkout-session")
+async def churvox_405_direct_stripe_checkout_alias(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    return await _cvx405_create_checkout(payload or {}, current_user)
+
+@app.post("/api/billing/addons/checkout")
+async def churvox_405_direct_addon_checkout(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    body = dict(payload or {})
+    if not body.get("checkout_type"):
+        body["checkout_type"] = body.get("addon_type") or body.get("addon") or "addon"
+    return await _cvx405_create_checkout(body, current_user)
+
+@app.post("/api/billing/sms-checkout")
+async def churvox_405_direct_sms_checkout(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    body = dict(payload or {})
+    body["checkout_type"] = "sms"
+    return await _cvx405_create_checkout(body, current_user)
+
+@app.post("/api/sms/buy-credits")
+async def churvox_405_direct_sms_buy_credits(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    body = dict(payload or {})
+    body["checkout_type"] = "sms"
+    return await _cvx405_create_checkout(body, current_user)
+
+@app.post("/api/billing/confirm-checkout")
+async def churvox_405_direct_confirm_checkout(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    return await _cvx405_confirm_checkout(payload or {}, current_user)
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")
