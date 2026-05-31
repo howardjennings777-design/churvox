@@ -15440,6 +15440,136 @@ async def request_account_deletion(payload: dict = Body(default={}), current_use
     }
 
 
+
+
+# CHURVOX_AREA14_PLATFORM_HQ_20260531
+# Platform owner / Churvox HQ: businesses, users, health, usage, risk and support overview.
+def _area14_role(current_user: dict) -> str:
+    return str((current_user or {}).get("role") or "").lower().replace(" ", "_")
+
+def _area14_platform_only(current_user: dict):
+    role = _area14_role(current_user)
+    email = str((current_user or {}).get("email") or "").lower()
+    if role in {"platform_owner", "platform_admin", "super_admin", "admin_owner"} or email == "hello@churvox.com":
+        return
+    raise HTTPException(status_code=403, detail="Platform owner access required.")
+
+def _area14_money(value, fallback=0.0):
+    try:
+        if value is None or value == "":
+            return float(fallback)
+        return float(str(value).replace("$", "").replace(",", "").strip())
+    except Exception:
+        return float(fallback or 0)
+
+def _area14_status(doc: dict) -> str:
+    return str((doc or {}).get("status") or (doc or {}).get("plan_status") or "").lower().replace(" ", "_")
+
+def _area14_id(doc: dict) -> str:
+    return str((doc or {}).get("_id") or (doc or {}).get("id") or "")
+
+async def _area14_count(collection_name: str, query: dict = None):
+    try:
+        return await getattr(db, collection_name).count_documents(query or {})
+    except Exception:
+        return 0
+
+async def _area14_recent(collection_name: str, query: dict = None, limit: int = 20):
+    try:
+        return [safe_doc(x) async for x in getattr(db, collection_name).find(query or {}).sort("created_at", -1).limit(limit)]
+    except Exception:
+        return []
+
+@api_router.get("/platform/hq")
+async def get_churvox_platform_hq(current_user: dict = Depends(get_current_user)):
+    _area14_platform_only(current_user)
+
+    users = await _area14_recent("users", {}, 300)
+    jobs = await _area14_recent("jobs", {}, 300)
+    invoices = await _area14_recent("invoices", {}, 300)
+    quotes = await _area14_recent("quotes", {}, 300)
+    clients = await _area14_recent("clients", {}, 300)
+    activities = await _area14_recent("business_activity", {}, 80)
+
+    business_ids = set()
+    for row in users + jobs + invoices + quotes + clients:
+        bid = str(row.get("business_id") or row.get("businessId") or "").strip()
+        if bid:
+            business_ids.add(bid)
+
+    paid_invoices = [i for i in invoices if _area14_status(i) == "paid"]
+    unpaid_invoices = [i for i in invoices if _area14_status(i) not in {"paid", "void", "cancelled", "canceled"}]
+    overdue_invoices = [i for i in unpaid_invoices if _area14_status(i) == "overdue"]
+
+    plans = {}
+    roles = {}
+    for u in users:
+        plan = str(u.get("plan") or u.get("selected_plan") or u.get("plan_name") or "none").lower()
+        role = str(u.get("role") or "unknown").lower()
+        plans[plan] = plans.get(plan, 0) + 1
+        roles[role] = roles.get(role, 0) + 1
+
+    risk_items = []
+    if not users:
+        risk_items.append({"level": "high", "title": "No users loaded", "detail": "Platform users query returned empty."})
+    if len(business_ids) == 0:
+        risk_items.append({"level": "high", "title": "No businesses detected", "detail": "No business_id values found across recent records."})
+    if overdue_invoices:
+        risk_items.append({"level": "medium", "title": "Overdue invoices exist", "detail": f"{len(overdue_invoices)} recent invoices are overdue."})
+    if not any(str(u.get("role") or "").lower() in {"platform_owner", "platform_admin"} for u in users):
+        risk_items.append({"level": "medium", "title": "No platform owner role in recent users", "detail": "Make sure at least one admin account has platform_owner role."})
+
+    return {
+        "success": True,
+        "hq": {
+            "metrics": {
+                "businesses": len(business_ids),
+                "users": await _area14_count("users"),
+                "clients": await _area14_count("clients"),
+                "jobs": await _area14_count("jobs"),
+                "quotes": await _area14_count("quotes"),
+                "invoices": await _area14_count("invoices"),
+                "recent_paid_total": round(sum(_area14_money(i.get("total") or i.get("amount_paid") or i.get("paid_amount"), 0) for i in paid_invoices), 2),
+                "recent_unpaid_total": round(sum(_area14_money(i.get("amount_due") or i.get("balance_due") or i.get("total"), 0) for i in unpaid_invoices), 2),
+                "overdue_invoices": len(overdue_invoices),
+                "risk_items": len(risk_items),
+            },
+            "plans": [{"label": k, "count": v} for k, v in sorted(plans.items())],
+            "roles": [{"label": k, "count": v} for k, v in sorted(roles.items())],
+            "recent_users": users[:30],
+            "recent_jobs": jobs[:30],
+            "recent_invoices": invoices[:30],
+            "recent_activity": activities[:30],
+            "risk_items": risk_items,
+            "checks": {
+                "business_isolation": "HQ reads across businesses, but normal app routes remain business_id scoped.",
+                "owner_approval_model": "AI Operator actions require owner approval for important changes.",
+                "data_control": "Reports/Data Control export and deletion request endpoints exist.",
+                "plans_nav": "Plans is available in the app navigation.",
+                "render_deploy": "Push to main should trigger Render auto-deploy.",
+            },
+        },
+    }
+
+@api_router.post("/platform/hq/activity-note")
+async def create_churvox_hq_activity_note(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    _area14_platform_only(current_user)
+    note = str((payload or {}).get("note") or "").strip()
+    if not note:
+        raise HTTPException(status_code=400, detail="Note is required.")
+
+    doc = {
+        "type": "platform_hq_note",
+        "note": note,
+        "created_by": current_user.get("email") or current_user.get("id"),
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
+    }
+    inserted = await db.business_activity.insert_one(doc)
+    doc["_id"] = inserted.inserted_id
+    return {"success": True, "note": safe_doc(doc)}
+
+
 # CORS_HARD_FIX_20260412
 
 
