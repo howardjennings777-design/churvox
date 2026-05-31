@@ -1,279 +1,239 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Layout from "../../components/Layout";
-import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 import { useApi } from "../../hooks/useApi";
-import { ArrowLeft, Trash2, Send, CheckCircle, MapPin, Mail, Briefcase, Clock, MessageSquare, RefreshCw, Link2, Receipt } from "lucide-react";
-import { toast } from "sonner";
-import { formatDate, formatCurrency, INVOICE_STATUSES, MYOB_SYNC_STATUSES } from "../../lib/utils";
-import { confirmDialog } from "../../lib/confirmDialog";
 import { PremiumPage, PremiumHero, PremiumCard, PremiumButton } from "../../components/premium";
+import { ArrowLeft, CheckCircle, Copy, CreditCard, Eye, Receipt, Send, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
-const CHURVOX_INVOICE_DETAIL_LINKED_JOB_CONTEXT_20260525 = true;
+function n(value) {
+  const num = Number(value || 0);
+  return Number.isFinite(num) ? num : 0;
+}
 
-function linkedJobIdOf(invoice) {
-  return invoice?.job_id || invoice?.jobId || invoice?.source_job_id || invoice?.linked_job_id || "";
+function money(value) {
+  return n(value).toLocaleString("en-NZ", { style: "currency", currency: "NZD" });
+}
+
+function date(value) {
+  if (!value) return "Not set";
+  try { return new Date(value).toLocaleDateString("en-NZ"); } catch { return String(value); }
+}
+
+function statusClass(status) {
+  const s = String(status || "draft").toLowerCase();
+  if (s === "paid") return "bg-green-100 text-green-800 border-green-200";
+  if (s === "partially_paid") return "bg-emerald-100 text-emerald-800 border-emerald-200";
+  if (s === "overdue" || s === "void" || s === "cancelled") return "bg-red-100 text-red-800 border-red-200";
+  if (s === "sent" || s === "approved") return "bg-blue-100 text-blue-800 border-blue-200";
+  return "bg-amber-100 text-amber-800 border-amber-200";
 }
 
 export default function InvoiceDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { get, post, del, loading } = useApi();
+  const api = useApi();
   const [invoice, setInvoice] = useState(null);
-  const [accounting, setAccounting] = useState(null);
+  const [busy, setBusy] = useState("");
 
-  const fetchInvoice = useCallback(async () => {
-    const [res, accountingRes] = await Promise.all([get(`/invoices/${id}`), get("/accounting/settings")]);
-    if (res.success) setInvoice(res.data);
-    else navigate("/invoices");
-    if (accountingRes?.success) setAccounting(accountingRes.data || null);
-  }, [get, id, navigate]);
+  const loadInvoice = useCallback(async () => {
+    const res = await api.get(`/invoices/${id}`);
+    if (res.success) setInvoice(res.data?.invoice || res.data);
+    else {
+      toast.error(res.error || "Invoice not found");
+      navigate("/invoices");
+    }
+  }, [id, navigate]);
 
-  useEffect(() => { fetchInvoice(); }, [fetchInvoice]);
+  useEffect(() => { loadInvoice(); }, [loadInvoice]);
 
-  const handleSend = async () => {
-    const res = await post(`/invoices/${id}/send`);
+  const rows = useMemo(() => {
+    const raw = invoice?.line_items || invoice?.items || [];
+    if (Array.isArray(raw) && raw.length) return raw;
+    if (!invoice) return [];
+    return [{ description: invoice.description || "Service work completed", quantity: 1, unit_price: invoice.subtotal || invoice.total || 0, amount: invoice.subtotal || invoice.total || 0 }];
+  }, [invoice]);
+
+  async function run(label, fn) {
+    setBusy(label);
+    const res = await fn();
+    setBusy("");
     if (res.success) {
-      toast.success("Invoice sent");
-      await fetchInvoice();
-      if (res?.data?.public_invoice_url) {
-        try { await navigator.clipboard.writeText(res.data.public_invoice_url); toast.success("Public invoice link copied"); } catch (_) {}
-      }
+      setInvoice(res.data?.invoice || res.data);
+      toast.success("Invoice updated");
+      await loadInvoice();
+    } else {
+      toast.error(res.error || "Action failed");
     }
-    else toast.error(res.error || "Failed to send invoice");
-  };
-
-  const handleMarkPaid = async () => {
-    const res = await post(`/invoices/${id}/mark-paid`);
-    if (res.success) { toast.success("Marked as paid"); setInvoice(res.data); }
-    else toast.error(res.error || "Failed to mark as paid");
-  };
-
-  const handleDelete = async () => {
-    const confirmed = await confirmDialog({
-      title: "Delete this invoice?",
-      message: "This cannot be undone. If the invoice was sent or synced to MYOB, you may need to handle that separately.",
-      danger: true,
-      confirmLabel: "Delete invoice",
-    });
-    if (!confirmed) return;
-    const res = await del(`/invoices/${id}`);
-    if (res.success) { toast.success("Invoice deleted"); navigate("/invoices"); }
-  };
-
-  const handleSendSMSReminder = async () => {
-    let phone = "";
-    if (invoice?.client_id) {
-      const cRes = await get(`/clients/${invoice.client_id}`);
-      if (cRes.success) phone = cRes.data.phone || "";
-    }
-    const res = await post("/sms/send", {
-      recipient_phone: phone,
-      message_type: "invoice_reminder",
-      invoice_id: id,
-      client_id: invoice?.client_id,
-    });
-    if (res.success) toast.success(`Invoice reminder sent — ${res.data.balance} credits left`);
-    else toast.error(res.error || "Failed to send SMS reminder");
-  };
-
-  const handleMyobSync = async () => {
-    const endpoint = String(invoice?.myob_sync_status || "") === "failed" ? `/invoices/${id}/myob-retry` : `/invoices/${id}/myob-sync`;
-    const res = await post(endpoint);
-    if (res.success) toast.success("MYOB sync updated");
-    else toast.error(res?.message || res?.error || "MYOB setup required");
-    await fetchInvoice();
-  };
-
-  if (!invoice) {
-    return (
-      <Layout>
-        <div className="p-6 flex items-center justify-center min-h-[50vh]">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#2563eb]" />
-        </div>
-      </Layout>
-    );
   }
 
-  const statusInfo = INVOICE_STATUSES.find((s) => s.value === invoice.status);
-  const pricingLabel = { fixed: "Fixed", hourly: "Hourly", fixed_extras: "Fixed + Extras", hourly_extras: "Hourly + Extras" }[invoice.pricing_type] || "";
-  const mode = accounting?.invoice_mode || "churvox_only";
-  const myobConnected = Boolean(accounting?.myob_connected);
-  const linkedJobId = linkedJobIdOf(invoice);
+  async function sendInvoice() {
+    await run("send", () => api.post(`/invoices/${id}/send`));
+  }
+
+  async function approveInvoice() {
+    await run("approve", () => api.post(`/invoices/${id}/approve`));
+  }
+
+  async function markPaid() {
+    const amount = invoice?.amount_due || invoice?.balance_due || Math.max(0, n(invoice?.total) - n(invoice?.amount_paid));
+    await run("paid", () => api.post(`/invoices/${id}/partial-payment`, { amount, note: "Marked paid by owner" }));
+  }
+
+  async function markPartial() {
+    const raw = window.prompt("Payment amount received?");
+    if (!raw) return;
+    const amount = Number(raw);
+    if (!Number.isFinite(amount) || amount <= 0) return toast.error("Enter a valid payment amount");
+    await run("partial", () => api.post(`/invoices/${id}/partial-payment`, { amount, note: "Partial payment recorded" }));
+  }
+
+  async function voidInvoice() {
+    const reason = window.prompt("Reason for voiding this invoice?", "Voided by owner");
+    if (reason === null) return;
+    await run("void", () => api.post(`/invoices/${id}/void`, { reason }));
+  }
+
+  async function copyPublicLink() {
+    const link = invoice?.public_invoice_url || (invoice?.public_token ? `${window.location.origin}/public/invoice/${invoice.public_token}` : "");
+    if (!link) return toast.error("No public link yet");
+    await navigator.clipboard.writeText(link);
+    toast.success("Public invoice link copied");
+  }
+
+  if (!invoice) {
+    return <Layout><PremiumPage><PremiumCard><div className="p-10 text-center font-bold text-[#5b6c87]">Loading invoice…</div></PremiumCard></PremiumPage></Layout>;
+  }
+
+  const biz = invoice.business_snapshot || {};
+  const publicLink = invoice.public_invoice_url || (invoice.public_token ? `/public/invoice/${invoice.public_token}` : "");
+  const status = String(invoice.status || "draft").toLowerCase();
 
   return (
     <Layout>
-      <PremiumPage maxWidth={960}>
-        <button onClick={() => navigate("/invoices")} className="flex items-center gap-2 text-[#5b6c87] hover:text-[#0d1b34] text-sm font-semibold" data-testid="back-to-invoices">
+      <PremiumPage maxWidth={1080}>
+        <button onClick={() => navigate("/invoices")} className="flex items-center gap-2 text-sm font-black text-[#5b6c87] hover:text-[#0d1b34]">
           <ArrowLeft size={16} /> Back to invoices
         </button>
 
         <PremiumHero
-          eyebrow="Invoice"
+          eyebrow="Invoice Work Slip"
           title={invoice.invoice_number || "Invoice"}
-          subtitle={`${invoice.customer_name || "Customer"} • Total ${formatCurrency(invoice.total)}`}
+          subtitle={`${invoice.customer_name || "Customer"} • ${money(invoice.total)} • due ${date(invoice.due_date)}`}
           icon={<Receipt className="h-6 w-6" />}
-          actions={
-            <div className="flex items-center gap-2">
-              <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase text-white ${statusInfo?.color || "bg-slate-500"}`} data-testid="invoice-status-badge">
-                {statusInfo?.label || invoice.status}
-              </span>
-              <PremiumButton variant="danger" size="sm" onClick={handleDelete} dataTestId="delete-invoice-trigger">
-                <Trash2 size={14} />
-              </PremiumButton>
-            </div>
-          }
+          actions={<span className={`rounded-full border px-3 py-1 text-xs font-black uppercase ${statusClass(status)}`}>{status.replace("_", " ")}</span>}
         />
 
-        {linkedJobId && (
-          <div className="rounded-2xl border border-[#bfdbfe] bg-[#eff6ff] p-4 text-sm text-[#1e3a8a]" data-marker="CHURVOX_INVOICE_DETAIL_LINKED_JOB_CONTEXT_20260525">
-            <div className="flex items-start justify-between gap-3 flex-wrap">
-              <div>
-                <div className="font-black flex items-center gap-2"><Briefcase size={16} /> Linked approved job</div>
-                <div className="mt-1 font-semibold">This invoice was created from an approved job or Work Review item.</div>
-                <div className="mt-1 text-xs font-bold opacity-80">Job ID: {linkedJobId}</div>
-              </div>
-              <Link to={`/jobs/${linkedJobId}`} className="inline-flex rounded-full bg-[#1d4ed8] px-4 py-2 text-xs font-black text-white no-underline">
-                Open linked job
-              </Link>
-            </div>
-          </div>
-        )}
-
-        <PremiumCard data-testid="invoice-card">
-          <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
-            <div>
-              <ChurvoxLogo size="md" className="mb-2" />
-              <p className="text-xs text-[#7d8ba3] font-mono">{invoice.invoice_number}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-[#7d8ba3] mb-1">Total</p>
-              <p className="text-2xl font-bold text-[#2563eb]" style={{ fontFamily: "'Outfit', sans-serif" }}>{formatCurrency(invoice.total)}</p>
-              {pricingLabel && <p className="text-xs text-[#5b6c87] mt-1">{pricingLabel}</p>}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 text-sm">
-            <div>
-              <p className="text-xs text-[#7d8ba3] mb-1 uppercase tracking-wide font-semibold">Bill to</p>
-              <p className="text-[#0d1b34] font-semibold">{invoice.customer_name}</p>
-              {invoice.customer_email && <p className="text-[#5b6c87] flex items-center gap-1 mt-0.5"><Mail size={12} /> {invoice.customer_email}</p>}
-              {invoice.address && <p className="text-[#5b6c87] flex items-center gap-1 mt-0.5"><MapPin size={12} /> {invoice.address}</p>}
-            </div>
-            <div className="md:text-right">
-              <p className="text-xs text-[#7d8ba3] mb-1 uppercase tracking-wide font-semibold">Date</p>
-              <p className="text-[#0d1b34]">{formatDate(invoice.created_at)}</p>
-            </div>
-          </div>
-
-          <div className="border-t border-[#e6eef9] pt-4 mb-4">
-            <p className="text-xs text-[#7d8ba3] mb-2 uppercase tracking-wide font-semibold">Description</p>
-            <pre className="text-sm text-[#1a2c4d] whitespace-pre-wrap font-sans">{invoice.description}</pre>
-          </div>
-
-          {(invoice.hours_worked > 0 || (invoice.extras && invoice.extras.length > 0)) && (
-            <div className="border-t border-[#e6eef9] pt-4 mb-4 text-sm space-y-1.5">
-              {invoice.hours_worked > 0 && (
-                <div className="flex items-center justify-between text-[#5b6c87]">
-                  <span className="flex items-center gap-1"><Clock size={12} /> {invoice.hours_worked}h @ {formatCurrency(invoice.hourly_rate)}/hr</span>
-                  <span className="text-[#0d1b34] font-semibold">{formatCurrency(invoice.hours_worked * invoice.hourly_rate)}</span>
+        <section className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+          <PremiumCard>
+            <article className="rounded-3xl bg-white p-6 text-[#0d1b34] shadow-sm" data-testid="business-grade-invoice-preview">
+              <header className="flex justify-between gap-5 border-b border-[#e6eef9] pb-5">
+                <div>
+                  {biz.logo_base64 ? <img src={biz.logo_base64} alt="Business logo" className="mb-3 max-h-16 max-w-40 object-contain" /> : <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-[#0d1b34] text-white font-black">CV</div>}
+                  <h2 className="text-2xl font-black">{biz.business_name || "Business"}</h2>
+                  <p className="text-sm text-[#5b6c87]">{biz.business_address || ""}</p>
+                  <p className="text-sm text-[#5b6c87]">{biz.email || ""} {biz.phone ? `• ${biz.phone}` : ""}</p>
+                  {biz.gst_number ? <p className="text-xs font-bold text-[#5b6c87]">GST: {biz.gst_number}</p> : null}
+                  {biz.nzbn ? <p className="text-xs font-bold text-[#5b6c87]">NZBN: {biz.nzbn}</p> : null}
                 </div>
-              )}
-              {invoice.extras && invoice.extras.map((ex, i) => (
-                <div key={i} className="flex items-center justify-between text-[#5b6c87]">
-                  <span>{ex.description}</span>
-                  <span className="text-[#0d1b34] font-semibold">{formatCurrency(ex.amount)}</span>
+                <div className="text-right">
+                  <p className="text-xs font-black uppercase text-[#5b6c87]">Invoice</p>
+                  <h1 className="text-3xl font-black">{invoice.invoice_number}</h1>
+                  <p className="mt-2 text-sm text-[#5b6c87]">Issued {date(invoice.created_at)}</p>
+                  <p className="text-sm text-[#5b6c87]">Due {date(invoice.due_date)}</p>
                 </div>
-              ))}
-            </div>
-          )}
+              </header>
 
-          <div className="border-t border-[#e6eef9] pt-4 space-y-2 text-sm">
-            <div className="flex justify-between text-[#5b6c87]">
-              <span>Subtotal</span>
-              <span className="text-[#0d1b34] font-semibold">{formatCurrency(invoice.subtotal)}</span>
-            </div>
-            <div className="flex justify-between text-[#5b6c87]">
-              <span>GST ({invoice.gst_rate}%)</span>
-              <span className="text-[#0d1b34] font-semibold">{formatCurrency(invoice.gst_amount)}</span>
-            </div>
-            <div className="flex justify-between font-bold text-lg border-t border-[#e6eef9] pt-2">
-              <span className="text-[#0d1b34]">Total</span>
-              <span className="text-[#2563eb]">{formatCurrency(invoice.total)}</span>
-            </div>
-          </div>
+              <section className="grid grid-cols-1 md:grid-cols-2 gap-4 py-5">
+                <div className="rounded-2xl bg-[#f6faff] p-4">
+                  <p className="text-xs font-black uppercase text-[#5b6c87]">Bill to</p>
+                  <h3 className="mt-1 font-black">{invoice.customer_name}</h3>
+                  <p className="text-sm text-[#5b6c87]">{invoice.customer_email}</p>
+                  <p className="text-sm text-[#5b6c87]">{invoice.customer_phone}</p>
+                  <p className="text-sm text-[#5b6c87]">{invoice.billing_address || invoice.address}</p>
+                </div>
+                <div className="rounded-2xl bg-[#f6faff] p-4">
+                  <p className="text-xs font-black uppercase text-[#5b6c87]">Job / payment</p>
+                  <p className="text-sm text-[#0d1b34]">{invoice.site_address || invoice.address || "No site address saved"}</p>
+                  <p className="mt-2 text-sm text-[#5b6c87]">{invoice.payment_terms || "Payment terms not set"}</p>
+                  {invoice.job_id || invoice.linked_job_id ? <Link className="mt-2 inline-block text-sm font-black text-[#2563eb]" to={`/jobs/${invoice.job_id || invoice.linked_job_id}`}>Open linked job</Link> : null}
+                </div>
+              </section>
 
-          {linkedJobId && (
-            <div className="mt-4 pt-4 border-t border-[#e6eef9]">
-              <Link to={`/jobs/${linkedJobId}`} className="text-xs text-[#2563eb] hover:underline flex items-center gap-1 font-semibold" data-testid="linked-job">
-                <Briefcase size={12} /> View linked job
-              </Link>
-            </div>
-          )}
+              {invoice.description ? <p className="mb-4 rounded-2xl bg-[#fff7ed] p-4 text-sm font-semibold text-[#7c2d12]">{invoice.description}</p> : null}
 
-          <div className="mt-4 pt-4 border-t border-[#e6eef9]" data-testid="myob-sync-section">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs text-[#7d8ba3]">Invoice mode:</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-[#eff4ff] text-[#1d4ed8]">{mode.replace("_", " ")}</span>
-                <span className="text-xs text-[#7d8ba3]">MYOB:</span>
-                {(() => {
-                  const syncKey = mode === "myob_external" ? "external" : (invoice.myob_sync_status || "not_synced");
-                  const syncInfo = MYOB_SYNC_STATUSES[syncKey] || MYOB_SYNC_STATUSES.not_synced;
-                  return (
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${syncInfo.bg} ${syncInfo.color}`} data-testid="myob-sync-badge">
-                      {syncInfo.label}
-                    </span>
-                  );
-                })()}
-                {invoice.myob_invoice_number && <span className="text-[10px] text-[#5b6c87]">#{invoice.myob_invoice_number}</span>}
-              </div>
-              {(mode === "myob_sync" || mode === "myob_external") && (
-                <PremiumButton variant="secondary" size="sm" onClick={handleMyobSync} disabled={loading || !myobConnected} dataTestId="sync-to-myob-button">
-                  <RefreshCw size={12} className="mr-1" /> {myobConnected ? (String(invoice.myob_sync_status) === "failed" ? "Retry sync" : "Sync to MYOB") : "Setup MYOB"}
-                </PremiumButton>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#e6eef9] text-left text-xs uppercase text-[#5b6c87]">
+                    <th className="py-2">Item</th>
+                    <th className="py-2 text-right">Qty</th>
+                    <th className="py-2 text-right">Rate</th>
+                    <th className="py-2 text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row, index) => (
+                    <tr key={index} className="border-b border-[#edf3fb]">
+                      <td className="py-3 font-bold">{row.description}</td>
+                      <td className="py-3 text-right">{row.quantity || 1}</td>
+                      <td className="py-3 text-right">{money(row.unit_price || row.rate)}</td>
+                      <td className="py-3 text-right font-black">{money(row.amount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <section className="ml-auto mt-5 max-w-sm space-y-2 text-sm">
+                <div className="flex justify-between"><span>Subtotal</span><b>{money(invoice.subtotal)}</b></div>
+                <div className="flex justify-between"><span>Discount</span><b>{money(invoice.discount_amount)}</b></div>
+                <div className="flex justify-between"><span>GST ({invoice.gst_rate || 15}%)</span><b>{money(invoice.gst_amount)}</b></div>
+                <div className="flex justify-between border-t border-[#e6eef9] pt-2 text-lg"><span>Total</span><b>{money(invoice.total)}</b></div>
+                <div className="flex justify-between"><span>Paid</span><b>{money(invoice.amount_paid)}</b></div>
+                <div className="flex justify-between rounded-2xl bg-[#ecfdf5] p-3 text-lg text-[#166534]"><span>Amount due</span><b>{money(invoice.amount_due || invoice.balance_due)}</b></div>
+              </section>
+
+              {(biz.bank_account_name || biz.bank_account_number || invoice.payment_link) && (
+                <footer className="mt-6 rounded-2xl bg-[#0d1b34] p-4 text-white">
+                  <p className="text-xs font-black uppercase opacity-70">Payment details</p>
+                  {biz.bank_account_name ? <p className="font-bold">{biz.bank_account_name}</p> : null}
+                  {biz.bank_account_number ? <p className="font-mono">{biz.bank_account_number}</p> : null}
+                  {invoice.payment_link ? <a className="mt-2 inline-block rounded-full bg-white px-4 py-2 text-sm font-black text-[#0d1b34]" href={invoice.payment_link} target="_blank" rel="noreferrer">Open payment link</a> : null}
+                </footer>
               )}
-            </div>
-            {invoice.myob_payment_status && (
-              <p className="text-[11px] text-[#5b6c87] mt-2">MYOB payment status: {invoice.myob_payment_status}</p>
-            )}
-            {invoice.myob_last_synced_at && (
-              <p className="text-[10px] text-[#7d8ba3] mt-1">Last synced: {formatDate(invoice.myob_last_synced_at)}</p>
-            )}
-            {invoice.myob_error && (
-              <p className="text-[10px] text-[#dc2626] mt-1">{invoice.myob_error}</p>
-            )}
-            {invoice.myob_invoice_url && <a href={invoice.myob_invoice_url} target="_blank" rel="noreferrer" className="text-xs text-[#2563eb] hover:underline mt-1 inline-block font-semibold">Open in MYOB →</a>}
-          </div>
-        </PremiumCard>
+            </article>
+          </PremiumCard>
 
-        <div className="flex gap-3 flex-wrap" data-testid="invoice-actions">
-          {invoice.status === "draft" && (
-            <PremiumButton onClick={handleSend} disabled={loading} dataTestId="send-invoice-button" className="flex-1 min-w-[200px]">
-              <Send size={16} className="mr-2" /> Send Invoice
-            </PremiumButton>
-          )}
-          {invoice.status === "sent" && (
-            <>
-              <PremiumButton variant="success" onClick={handleMarkPaid} disabled={loading} dataTestId="mark-paid-button" className="flex-1 min-w-[200px]">
-                <CheckCircle size={16} className="mr-2" /> Mark as Paid
-              </PremiumButton>
-              <PremiumButton variant="secondary" onClick={handleSendSMSReminder} disabled={loading} dataTestId="sms-invoice-reminder" className="flex-1 min-w-[200px]">
-                <MessageSquare size={16} className="mr-2" /> SMS Reminder
-              </PremiumButton>
-            </>
-          )}
-          {invoice.public_invoice_url && (
-            <PremiumButton variant="secondary" onClick={() => navigator.clipboard.writeText(invoice.public_invoice_url).then(() => toast.success("Public invoice link copied"))} className="flex-1 min-w-[200px]">
-              <Link2 size={16} className="mr-2" /> Copy Public Link
-            </PremiumButton>
-          )}
-          {invoice.status === "paid" && (
-            <div className="flex-1 min-w-[240px] bg-[#ccfbf1] border border-[#0d9488]/30 rounded-2xl p-4 text-center text-[#0d9488] text-sm font-bold flex items-center justify-center gap-2">
-              <CheckCircle size={18} /> Paid {invoice.paid_at && `on ${formatDate(invoice.paid_at)}`}
-            </div>
-          )}
-        </div>
+          <aside className="space-y-4">
+            <PremiumCard title="Owner actions">
+              <div className="grid gap-3">
+                {status === "draft" ? <PremiumButton onClick={approveInvoice} disabled={busy === "approve"}><CheckCircle size={16} className="mr-2" /> Approve invoice</PremiumButton> : null}
+                {["draft", "approved"].includes(status) ? <PremiumButton onClick={sendInvoice} disabled={busy === "send"}><Send size={16} className="mr-2" /> Send invoice</PremiumButton> : null}
+                {!["paid", "void", "cancelled"].includes(status) ? <PremiumButton variant="success" onClick={markPaid} disabled={busy === "paid"}><CreditCard size={16} className="mr-2" /> Mark paid</PremiumButton> : null}
+                {!["paid", "void", "cancelled"].includes(status) ? <PremiumButton variant="secondary" onClick={markPartial} disabled={busy === "partial"}>Record partial payment</PremiumButton> : null}
+                {publicLink ? <a href={publicLink} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-full border border-[#d8e3f3] px-4 py-3 text-sm font-black text-[#0d1b34]"><Eye size={16} /> View public invoice</a> : null}
+                {publicLink ? <button type="button" onClick={copyPublicLink} className="inline-flex items-center justify-center gap-2 rounded-full border border-[#d8e3f3] px-4 py-3 text-sm font-black text-[#0d1b34]"><Copy size={16} /> Copy public link</button> : null}
+                <Link to={`/invoices/${id}/edit`} className="inline-flex items-center justify-center rounded-full bg-[#0d1b34] px-4 py-3 text-sm font-black text-white">Edit invoice</Link>
+                {!["paid", "void"].includes(status) ? <button type="button" onClick={voidInvoice} className="inline-flex items-center justify-center gap-2 rounded-full bg-red-50 px-4 py-3 text-sm font-black text-red-700"><Trash2 size={16} /> Void invoice</button> : null}
+              </div>
+            </PremiumCard>
+
+            <PremiumCard title="Payment history">
+              {Array.isArray(invoice.payment_history) && invoice.payment_history.length ? (
+                <div className="space-y-2">
+                  {invoice.payment_history.map((payment, index) => (
+                    <div key={index} className="rounded-2xl bg-[#f6faff] p-3 text-sm">
+                      <b className="text-[#0d1b34]">{money(payment.amount)}</b>
+                      <p className="text-[#5b6c87]">{payment.note}</p>
+                      <small className="text-[#7d8ba3]">{date(payment.recorded_at)}</small>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm font-semibold text-[#5b6c87]">No payments recorded yet.</p>
+              )}
+            </PremiumCard>
+          </aside>
+        </section>
       </PremiumPage>
     </Layout>
   );

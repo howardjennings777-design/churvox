@@ -645,6 +645,21 @@ def _serialize_invoice(invoice: dict) -> dict:
         "hours_worked": float(invoice.get("hours_worked") or 0),
         "extras": invoice.get("extras") or [],
         "notes": invoice.get("notes") or "",
+        "customer_phone": invoice.get("customer_phone") or invoice.get("phone") or "",
+        "billing_address": invoice.get("billing_address") or "",
+        "site_address": invoice.get("site_address") or invoice.get("address") or "",
+        "due_date": _safe_iso(invoice.get("due_date")),
+        "payment_terms": invoice.get("payment_terms") or "",
+        "line_items": invoice.get("line_items") or invoice.get("items") or [],
+        "discount_amount": float(invoice.get("discount_amount") or 0),
+        "deposit_amount": float(invoice.get("deposit_amount") or 0),
+        "amount_paid": float(invoice.get("amount_paid") or invoice.get("paid_amount") or 0),
+        "amount_due": float(invoice.get("amount_due") or invoice.get("balance_due") or max(0, total - float(invoice.get("amount_paid") or invoice.get("paid_amount") or 0))),
+        "balance_due": float(invoice.get("balance_due") or invoice.get("amount_due") or max(0, total - float(invoice.get("amount_paid") or invoice.get("paid_amount") or 0))),
+        "payment_history": invoice.get("payment_history") or [],
+        "internal_notes": invoice.get("internal_notes") or "",
+        "public_notes": invoice.get("public_notes") or "",
+        "business_snapshot": invoice.get("business_snapshot") or {},
         "myob_sync_status": invoice.get("myob_sync_status") or "not_synced",
         "myob_invoice_id": invoice.get("myob_invoice_id") or "",
         "myob_invoice_number": invoice.get("myob_invoice_number") or "",
@@ -12428,6 +12443,303 @@ async def put_business_settings(payload: dict = Body(default={}), current_user: 
 @api_router.patch("/business/settings")
 async def patch_business_settings(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
     return await put_business_settings(payload, current_user)
+
+
+
+
+# CHURVOX_AREA4_BUSINESS_GRADE_INVOICES_20260531
+# Business-grade invoice endpoints. Additive and scoped to authenticated business_id.
+AREA4_INVOICE_STATUSES = {
+    "draft", "approved", "sent", "viewed", "partially_paid", "paid", "overdue", "cancelled", "void"
+}
+
+def _area4_num(value, fallback=0.0):
+    try:
+        if value is None or value == "":
+            return float(fallback)
+        return float(str(value).replace("$", "").replace(",", "").strip())
+    except Exception:
+        return float(fallback or 0.0)
+
+def _area4_text(value):
+    return str(value or "").strip()
+
+async def _area4_business_settings(business_id: str, current_user: dict | None = None) -> dict:
+    settings = await db.business_settings.find_one({"business_id": str(business_id)}) or {}
+    if settings:
+        settings = {k: v for k, v in settings.items() if k != "_id"}
+    current_user = current_user or {}
+    return {
+        "business_name": settings.get("business_name") or current_user.get("business_name") or current_user.get("company_name") or "Churvox business",
+        "trading_name": settings.get("trading_name") or settings.get("business_name") or current_user.get("business_name") or "",
+        "logo_base64": settings.get("logo_base64") or "",
+        "business_address": settings.get("business_address") or current_user.get("address") or "",
+        "phone": settings.get("phone") or current_user.get("phone") or current_user.get("mobile") or "",
+        "email": settings.get("email") or current_user.get("email") or "",
+        "website": settings.get("website") or "",
+        "gst_number": settings.get("gst_number") or "",
+        "nzbn": settings.get("nzbn") or "",
+        "bank_account_name": settings.get("bank_account_name") or "",
+        "bank_account_number": settings.get("bank_account_number") or "",
+        "invoice_prefix": settings.get("invoice_prefix") or "INV",
+        "quote_prefix": settings.get("quote_prefix") or "QUO",
+        "default_gst_rate": _area4_num(settings.get("default_gst_rate"), DEFAULT_GST_RATE),
+        "default_invoice_due_days": int(_area4_num(settings.get("default_invoice_due_days"), 7)),
+        "default_quote_expiry_days": int(_area4_num(settings.get("default_quote_expiry_days"), 14)),
+        "trade_industry_type": settings.get("trade_industry_type") or "",
+        "service_area_region": settings.get("service_area_region") or "",
+        "uses_myob": bool(settings.get("uses_myob")),
+    }
+
+async def _area4_next_invoice_number(business_id: str, prefix: str) -> str:
+    prefix = _area4_text(prefix) or "INV"
+    count = await db.invoices.count_documents({"business_id": str(business_id)})
+    return f"{prefix}-{count + 1:05d}"
+
+def _area4_due_date(payload: dict, settings: dict):
+    raw = payload.get("due_date")
+    if raw:
+        try:
+            if isinstance(raw, datetime):
+                return raw
+            return datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+        except Exception:
+            pass
+    days = int(_area4_num(payload.get("default_invoice_due_days"), settings.get("default_invoice_due_days") or 7))
+    return datetime.now(timezone.utc) + timedelta(days=days)
+
+def _area4_clean_line_items(payload: dict) -> list:
+    raw_items = payload.get("line_items") or payload.get("items") or payload.get("lines") or []
+    items = []
+    if isinstance(raw_items, list):
+        for row in raw_items:
+            if not isinstance(row, dict):
+                continue
+            desc = _area4_text(row.get("description") or row.get("name") or row.get("title") or row.get("item"))
+            qty = _area4_num(row.get("quantity") or row.get("qty"), 1)
+            unit_price = _area4_num(row.get("unit_price") or row.get("rate") or row.get("price"), 0)
+            amount = _area4_num(row.get("amount") or row.get("total") or row.get("line_total"), qty * unit_price)
+            if desc or amount > 0:
+                items.append({
+                    "description": desc or "Service work",
+                    "quantity": qty,
+                    "unit_price": unit_price,
+                    "amount": round(amount, 2),
+                })
+
+    if not items:
+        desc = _area4_text(payload.get("description") or payload.get("invoice_description") or "Service work completed")
+        subtotal = _area4_num(payload.get("subtotal") or payload.get("amount") or payload.get("price"), 0)
+        items.append({
+            "description": desc,
+            "quantity": 1,
+            "unit_price": round(subtotal, 2),
+            "amount": round(subtotal, 2),
+        })
+
+    return items
+
+def _area4_totals(payload: dict, settings: dict) -> dict:
+    line_items = _area4_clean_line_items(payload)
+    subtotal = round(sum(_area4_num(x.get("amount"), 0) for x in line_items), 2)
+    if payload.get("subtotal") not in (None, "") and not payload.get("line_items"):
+        subtotal = round(_area4_num(payload.get("subtotal"), subtotal), 2)
+    gst_rate = _area4_num(payload.get("gst_rate"), settings.get("default_gst_rate") or DEFAULT_GST_RATE)
+    discount_amount = round(_area4_num(payload.get("discount_amount") or payload.get("discount"), 0), 2)
+    deposit_amount = round(_area4_num(payload.get("deposit_amount") or payload.get("deposit"), 0), 2)
+    amount_paid = round(_area4_num(payload.get("amount_paid") or payload.get("paid_amount"), 0) + deposit_amount, 2)
+    taxable_subtotal = max(0, subtotal - discount_amount)
+    gst_amount = round(taxable_subtotal * gst_rate / 100.0, 2)
+    total = round(taxable_subtotal + gst_amount, 2)
+    amount_due = round(max(0, total - amount_paid), 2)
+    return {
+        "line_items": line_items,
+        "subtotal": subtotal,
+        "gst_rate": gst_rate,
+        "gst_amount": gst_amount,
+        "discount_amount": discount_amount,
+        "deposit_amount": deposit_amount,
+        "amount_paid": amount_paid,
+        "amount_due": amount_due,
+        "total": total,
+    }
+
+def _area4_invoice_status(payload: dict, totals: dict, fallback="draft") -> str:
+    status = _area4_text(payload.get("status") or fallback).lower()
+    if status not in AREA4_INVOICE_STATUSES:
+        status = fallback if fallback in AREA4_INVOICE_STATUSES else "draft"
+    if totals.get("total", 0) > 0 and totals.get("amount_due", 0) <= 0:
+        status = "paid"
+    elif totals.get("amount_paid", 0) > 0 and totals.get("amount_due", 0) > 0 and status not in {"void", "cancelled"}:
+        status = "partially_paid"
+    return status
+
+def _area4_invoice_lookup(invoice_id: str, business_id: str):
+    clauses = [{"id": str(invoice_id)}]
+    if ObjectId.is_valid(str(invoice_id)):
+        clauses.insert(0, {"_id": ObjectId(str(invoice_id))})
+    return {"business_id": str(business_id), "$or": clauses}
+
+def _area4_public_invoice_url(public_token: str) -> str:
+    return f"{FRONTEND_URL}/public/invoice/{public_token}" if public_token else ""
+
+async def _area4_prepare_invoice_doc(payload: dict, current_user: dict, existing: dict | None = None) -> dict:
+    business_id = await get_user_business_id(current_user)
+    settings = await _area4_business_settings(business_id, current_user)
+    now = datetime.now(timezone.utc)
+    existing = existing or {}
+    totals = _area4_totals(payload, settings)
+    invoice_number = _area4_text(payload.get("invoice_number") or existing.get("invoice_number"))
+    if not invoice_number:
+        invoice_number = await _area4_next_invoice_number(business_id, settings.get("invoice_prefix") or "INV")
+    public_token = _area4_text(existing.get("public_token") or payload.get("public_token") or secrets.token_urlsafe(24))
+    status = _area4_invoice_status(payload, totals, existing.get("status") or "draft")
+
+    doc = {
+        "business_id": str(business_id),
+        "owner_id": str(current_user.get("id") or current_user.get("_id") or ""),
+        "invoice_number": invoice_number,
+        "public_token": public_token,
+        "public_invoice_url": _area4_public_invoice_url(public_token),
+        "client_id": payload.get("client_id") or existing.get("client_id") or None,
+        "job_id": _area4_text(payload.get("job_id") or payload.get("linked_job_id") or existing.get("job_id")),
+        "linked_job_id": _area4_text(payload.get("linked_job_id") or payload.get("job_id") or existing.get("linked_job_id")),
+        "quote_id": _area4_text(payload.get("quote_id") or payload.get("linked_quote_id") or existing.get("quote_id")),
+        "linked_quote_id": _area4_text(payload.get("linked_quote_id") or payload.get("quote_id") or existing.get("linked_quote_id")),
+        "customer_name": _area4_text(payload.get("customer_name") or payload.get("client_name") or existing.get("customer_name")),
+        "customer_email": _area4_text(payload.get("customer_email") or payload.get("email") or existing.get("customer_email")),
+        "customer_phone": _area4_text(payload.get("customer_phone") or payload.get("phone") or existing.get("customer_phone")),
+        "billing_address": _area4_text(payload.get("billing_address") or payload.get("address") or existing.get("billing_address")),
+        "address": _area4_text(payload.get("address") or payload.get("site_address") or existing.get("address")),
+        "site_address": _area4_text(payload.get("site_address") or payload.get("address") or existing.get("site_address")),
+        "description": _area4_text(payload.get("description") or payload.get("invoice_description") or existing.get("description")),
+        "payment_terms": _area4_text(payload.get("payment_terms") or existing.get("payment_terms") or f"Payment due within {settings.get('default_invoice_due_days', 7)} days."),
+        "due_date": _area4_due_date(payload, settings),
+        "payment_link": _area4_text(payload.get("payment_link") or payload.get("payment_url") or existing.get("payment_link")),
+        "notes": _area4_text(payload.get("notes") or existing.get("notes")),
+        "internal_notes": _area4_text(payload.get("internal_notes") or existing.get("internal_notes")),
+        "public_notes": _area4_text(payload.get("public_notes") or payload.get("notes") or existing.get("public_notes")),
+        "status": status,
+        "business_snapshot": settings,
+        "updated_at": now,
+        "source": payload.get("source") or existing.get("source") or "business_grade_invoice",
+        "myob_sync_status": existing.get("myob_sync_status") or payload.get("myob_sync_status") or "not_synced",
+        "myob_invoice_id": existing.get("myob_invoice_id") or payload.get("myob_invoice_id") or "",
+        "myob_invoice_number": existing.get("myob_invoice_number") or payload.get("myob_invoice_number") or "",
+        **totals,
+    }
+
+    if not existing:
+        doc["created_at"] = now
+    if status == "approved" and not existing.get("approved_at"):
+        doc["approved_at"] = now
+    if status == "paid" and not existing.get("paid_at"):
+        doc["paid_at"] = now
+    return doc
+
+def _area4_public_response(invoice: dict) -> dict:
+    row = make_json_safe(safe_doc(dict(invoice)))
+    row["public_invoice_url"] = _area4_public_invoice_url(row.get("public_token") or "")
+    return row
+
+@api_router.post("/invoices/business-grade")
+async def create_business_grade_invoice(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    doc = await _area4_prepare_invoice_doc(payload or {}, current_user)
+    inserted = await db.invoices.insert_one(doc)
+    doc["_id"] = inserted.inserted_id
+
+    if doc.get("job_id") and ObjectId.is_valid(str(doc.get("job_id"))):
+        await db.jobs.update_one(
+            {"_id": ObjectId(str(doc.get("job_id"))), "business_id": doc["business_id"]},
+            {"$set": {"draft_invoice_id": str(inserted.inserted_id), "invoice_id": str(inserted.inserted_id), "invoiced": True, "updated_at": datetime.now(timezone.utc)}}
+        )
+
+    return {"success": True, "invoice": _area4_public_response(doc), "id": str(inserted.inserted_id)}
+
+@api_router.patch("/invoices/{invoice_id}/business-grade")
+async def update_business_grade_invoice(invoice_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    existing = await db.invoices.find_one(_area4_invoice_lookup(invoice_id, business_id))
+    if not existing:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    doc = await _area4_prepare_invoice_doc(payload or {}, current_user, existing=existing)
+    await db.invoices.update_one({"_id": existing["_id"], "business_id": str(business_id)}, {"$set": doc})
+    saved = await db.invoices.find_one({"_id": existing["_id"]})
+    return {"success": True, "invoice": _area4_public_response(saved), "id": str(existing["_id"])}
+
+@api_router.post("/invoices/{invoice_id}/approve")
+async def approve_business_grade_invoice(invoice_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    existing = await db.invoices.find_one(_area4_invoice_lookup(invoice_id, business_id))
+    if not existing:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    now = datetime.now(timezone.utc)
+    await db.invoices.update_one({"_id": existing["_id"], "business_id": str(business_id)}, {"$set": {"status": "approved", "approved_at": now, "updated_at": now}})
+    saved = await db.invoices.find_one({"_id": existing["_id"]})
+    return {"success": True, "invoice": _area4_public_response(saved)}
+
+@api_router.post("/invoices/{invoice_id}/partial-payment")
+async def record_business_grade_invoice_payment(invoice_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    existing = await db.invoices.find_one(_area4_invoice_lookup(invoice_id, business_id))
+    if not existing:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    amount = _area4_num((payload or {}).get("amount"), 0)
+    if amount <= 0:
+        raise HTTPException(status_code=400, detail="Payment amount must be greater than zero")
+
+    total = _area4_num(existing.get("total"), 0)
+    old_paid = _area4_num(existing.get("amount_paid") or existing.get("paid_amount"), 0)
+    new_paid = round(old_paid + amount, 2)
+    amount_due = round(max(0, total - new_paid), 2)
+    status = "paid" if amount_due <= 0 else "partially_paid"
+    now = datetime.now(timezone.utc)
+    payment = {
+        "amount": round(amount, 2),
+        "note": _area4_text((payload or {}).get("note") or "Payment recorded"),
+        "recorded_at": now,
+        "recorded_by": current_user.get("email") or current_user.get("id"),
+    }
+    history = existing.get("payment_history") if isinstance(existing.get("payment_history"), list) else []
+    history.append(payment)
+
+    update = {
+        "amount_paid": new_paid,
+        "paid_amount": new_paid,
+        "amount_due": amount_due,
+        "balance_due": amount_due,
+        "remaining_balance": amount_due,
+        "status": status,
+        "payment_history": history,
+        "updated_at": now,
+    }
+    if status == "paid":
+        update["paid_at"] = now
+
+    await db.invoices.update_one({"_id": existing["_id"], "business_id": str(business_id)}, {"$set": update})
+    saved = await db.invoices.find_one({"_id": existing["_id"]})
+    return {"success": True, "invoice": _area4_public_response(saved)}
+
+@api_router.post("/invoices/{invoice_id}/void")
+async def void_business_grade_invoice(invoice_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    existing = await db.invoices.find_one(_area4_invoice_lookup(invoice_id, business_id))
+    if not existing:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    now = datetime.now(timezone.utc)
+    await db.invoices.update_one(
+        {"_id": existing["_id"], "business_id": str(business_id)},
+        {"$set": {
+            "status": "void",
+            "voided_at": now,
+            "void_reason": _area4_text((payload or {}).get("reason") or "Voided by owner"),
+            "updated_at": now,
+        }}
+    )
+    saved = await db.invoices.find_one({"_id": existing["_id"]})
+    return {"success": True, "invoice": _area4_public_response(saved)}
 
 
 # CORS_HARD_FIX_20260412
