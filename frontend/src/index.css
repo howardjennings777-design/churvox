@@ -263,3 +263,237 @@
   }
 }
 
+
+
+/* CHURVOX_UNIFIED_COMMAND_THEME_20260601
+   Makes framed app pages feel like one product, not old light pages dropped inside a shell. */
+
+.concept-c2-frame {
+  --cvx-bg: #06111a;
+  --cvx-panel: rgba(9, 24, 36, .94);
+  --cvx-panel-2: rgba(12, 33, 48, .92);
+  --cvx-card: rgba(18, 48, 68, .82);
+  --cvx-card-soft: rgba(255,255,255,.055);
+  --cvx-line: rgba(125, 211, 252, .18);
+  --cvx-line-strong: rgba(125, 211, 252, .32);
+  --cvx-text: #f5fbff;
+  --cvx-muted: #a7bfca;
+  --cvx-blue: #38bdf8;
+  --cvx-lime: #a3e635;
+  --cvx-green: #22c55e;
+  --cvx-amber: #f59e0b;
+  --cvx-red: #ef4444;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(56,189,248,.16), transparent 32%),
+    radial-gradient(circle at 92% 0%, rgba(163,230,53,.11), transparent 30%),
+    linear-gradient(135deg, #06111a 0%, #091827 48%, #041017 100%) !important;
+  color: var(--cvx-text) !important;
+}
+
+.concept-c2-frame .c2-topbar,
+.concept-c2-frame .c2-spine,
+.concept-c2-frame .c2-ai,
+.concept-c2-frame .c2-real-page-card,
+.concept-c2-frame .c2-dock {
+  border-color: var(--cvx-line) !important;
+  background: linear-gradient(180deg, rgba(10,27,40,.96), rgba(5,16,25,.96)) !important;
+  box-shadow: 0 28px 90px rgba(0,0,0,.34) !important;
+  color: var(--cvx-text) !important;
+}
+
+.concept-c2-frame .c2-spine p,
+.concept-c2-frame .c2-ai p,
+.concept-c2-frame .c2-real-page-card [class*="eyebrow"],
+.concept-c2-frame .c2-real-page-card small,
+.concept-c2-frame .c2-real-page-card .uppercase {
+  color: var(--cvx-lime) !important;
+}
+
+.concept-c2-frame .c2-spine h1,
+.concept-c2-frame .c2-ai h2,
+.concept-c2-frame .c2-real-page-card h1,
+.concept-c2-frame .c2-real-page-card h2,
+.concept-c2-frame .c2-real-page-card h3,
+.concept-c2-frame .c2-real-page-card h4,
+.concept-c2-frame .c2-real-page-card b,
+.concept-c2-frame .c2-real-page-card strong,
+.concept-c2-frame .c2-real-page-card .text-slate-950,
+.concept-c2-frame .c2-real-page-card .text-slate-900,
+.concept-c2-frame .c2-real-page-card .text-gray-900,
+.concept-c2-frame .c2-real-page-card .text-black {
+  color: var(--cvx-text) !important;
+}
+
+.concept-c2-frame .c2-spine span,
+.concept-c2-frame .c2-ai span,
+.concept-c2-frame .c2-real-page-card p,
+.concept-c2-frame .c2-real-page-card li,
+.concept-c2-frame .c2-real-page-card span,
+.concept-c2-frame .c2-real-page-card label,
+.concept-c2-frame .c2-real-page-card .text-slate-600,
+.concept-c2-frame .c2-real-page-card .text-slate-500,
+.concept-c2-frame .c2-real-page-card .text-gray-600,
+.concept-c2-frame .c2-real-page-card .text-gray-500,
+.concept-c2-frame .c2-real-page-card .text-[#5b6c87] {
+  color: var(--cvx-muted) !important;
+}
+
+.concept-c2-frame .c2-real-page-card,
+.concept-c2-frame .c2-real-page-card main,
+.concept-c2-frame .c2-real-page-card section,
+.concept-c2-frame .c2-real-page-card article,
+.concept-c2-frame .c2-real-page-card .bg-white,
+.concept-c2-frame .c2-real-page-card .bg-slate-50,
+.concept-c2-frame .c2-real-page-card .bg-gray-50,
+.concept-c2-frame .c2-real-page-card .premium-card,
+.concept-c2-frame .c2-real-page-card [class*="PremiumCard"],
+.concept-c2-frame .c2-real-page-card [class*="card"],
+.concept-c2-frame .c2-real-page-card [class*="Card"],
+.concept-c2-frame .cv-demo-actions,
+.concept-c2-frame .cv-demo-card,
+.concept-c2-frame .cv-demo-path div,
+.concept-c2-frame .cv-notify-metrics article,
+.concept-c2-frame .cv-notify-item,
+.concept-c2-frame .cv-billing-summary article,
+.concept-c2-frame .cv-proof-metrics article,
+.concept-c2-frame .cv-ops-metrics article,
+.concept-c2-frame .cv-backup-counts article,
+.concept-c2-frame .cv-polish-row,
+.concept-c2-frame .cv-onboard-progress,
+.concept-c2-frame .cv-onboard-step,
+.concept-c2-frame .cv-trust-card,
+.concept-c2-frame .cv-ticket,
+.concept-c2-frame .cv-report-record,
+.concept-c2-frame .cv-report-bar,
+.concept-c2-frame .cv-report-trust div {
+  background: linear-gradient(180deg, rgba(16,44,62,.82), rgba(8,24,35,.88)) !important;
+  border-color: var(--cvx-line) !important;
+  color: var(--cvx-text) !important;
+  box-shadow: 0 18px 50px rgba(0,0,0,.20) !important;
+}
+
+.concept-c2-frame .c2-real-page-card .bg-emerald-50,
+.concept-c2-frame .c2-real-page-card .bg-green-50,
+.concept-c2-frame .c2-real-page-card .bg-blue-50,
+.concept-c2-frame .c2-real-page-card .bg-orange-50,
+.concept-c2-frame .c2-real-page-card .bg-amber-50,
+.concept-c2-frame .c2-real-page-card .bg-red-50,
+.concept-c2-frame .c2-real-page-card .bg-purple-50,
+.concept-c2-frame .c2-real-page-card .bg-indigo-50 {
+  background: rgba(255,255,255,.06) !important;
+}
+
+.concept-c2-frame .c2-real-page-card input,
+.concept-c2-frame .c2-real-page-card select,
+.concept-c2-frame .c2-real-page-card textarea,
+.concept-c2-frame .c2-real-page-card .px-input {
+  background: rgba(1, 13, 22, .82) !important;
+  border: 1px solid var(--cvx-line-strong) !important;
+  color: var(--cvx-text) !important;
+  box-shadow: none !important;
+}
+
+.concept-c2-frame .c2-real-page-card input::placeholder,
+.concept-c2-frame .c2-real-page-card textarea::placeholder {
+  color: rgba(213, 234, 242, .55) !important;
+}
+
+.concept-c2-frame .c2-real-page-card button,
+.concept-c2-frame .c2-real-page-card a.rounded-2xl,
+.concept-c2-frame .c2-real-page-card a.rounded-full,
+.concept-c2-frame .c2-real-page-card a[href],
+.concept-c2-frame .c2-spine a,
+.concept-c2-frame .c2-dock a {
+  border-color: rgba(125,211,252,.24) !important;
+}
+
+.concept-c2-frame .c2-real-page-card button,
+.concept-c2-frame .c2-real-page-card a.rounded-2xl,
+.concept-c2-frame .c2-real-page-card a.rounded-full,
+.concept-c2-frame .cv-demo-actions button,
+.concept-c2-frame .cv-notify-metrics button,
+.concept-c2-frame .cv-billing-links a,
+.concept-c2-frame .cv-proof-links a,
+.concept-c2-frame .cv-ops-links a {
+  background: linear-gradient(135deg, #20c7f4, #8b5cf6) !important;
+  color: #ffffff !important;
+  box-shadow: 0 12px 30px rgba(32,199,244,.18) !important;
+}
+
+.concept-c2-frame .c2-real-page-card button.danger,
+.concept-c2-frame .cv-demo-actions button.danger {
+  background: linear-gradient(135deg, #ef4444, #f97316) !important;
+}
+
+.concept-c2-frame .c2-dock {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  white-space: nowrap !important;
+  scrollbar-width: thin !important;
+}
+
+.concept-c2-frame .c2-dock a {
+  flex: 0 0 auto !important;
+  border-radius: 999px !important;
+  min-height: 42px !important;
+  padding: 10px 14px !important;
+  color: var(--cvx-muted) !important;
+}
+
+.concept-c2-frame .c2-dock a.active,
+.concept-c2-frame .c2-dock a:hover {
+  background: linear-gradient(135deg, rgba(56,189,248,.28), rgba(163,230,53,.16)) !important;
+  color: #ffffff !important;
+}
+
+.concept-c2-frame .c2-ai div {
+  border-color: var(--cvx-line) !important;
+}
+
+.concept-c2-frame .c2-ai small {
+  color: var(--cvx-lime) !important;
+}
+
+.concept-c2-frame .c2-ai strong {
+  color: var(--cvx-text) !important;
+}
+
+@media (max-width: 1120px) {
+  .concept-c2-frame .c2-ai {
+    display: none !important;
+  }
+
+  .concept-c2-frame .c2-frame {
+    grid-template-columns: 210px minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .concept-c2-frame .c2-frame {
+    display: block !important;
+    padding-bottom: 92px !important;
+  }
+
+  .concept-c2-frame .c2-spine {
+    margin-bottom: 12px !important;
+  }
+
+  .concept-c2-frame .c2-dock {
+    position: fixed !important;
+    left: 10px !important;
+    right: 10px !important;
+    bottom: 10px !important;
+    z-index: 999 !important;
+    flex-wrap: nowrap !important;
+    max-width: calc(100vw - 20px) !important;
+  }
+
+  .concept-c2-frame .c2-dock a {
+    min-width: max-content !important;
+    min-height: 44px !important;
+  }
+}
+
