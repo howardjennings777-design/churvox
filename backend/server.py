@@ -14387,6 +14387,274 @@ async def retry_integrations_myob_invoice(invoice_id: str, current_user: dict = 
     return {"success": True, "invoice": safe_doc(saved), "message": "MYOB sync retry queued."}
 
 
+
+
+# CHURVOX_AREA11_AUTOMATION_WORKSPACE_20260531
+# Automation workspace: approval-first rules, templates and recent runs.
+AUTOMATION_TEMPLATE_LIBRARY = [
+    {
+        "key": "job_completed_prepare_invoice",
+        "name": "Job completed → prepare draft invoice",
+        "description": "When a worker completes a job, prepare a draft invoice for owner review.",
+        "trigger": "job_completed",
+        "action": "prepare_invoice_draft",
+        "approval_required": True,
+        "risk_level": "medium",
+    },
+    {
+        "key": "job_completed_photos_notify_owner",
+        "name": "Job completed with photos → notify owner",
+        "description": "When completed work has photos, surface it for owner review.",
+        "trigger": "job_completed_with_photos",
+        "action": "notify_owner",
+        "approval_required": False,
+        "risk_level": "low",
+    },
+    {
+        "key": "invoice_overdue_prepare_reminder",
+        "name": "Invoice overdue → prepare reminder",
+        "description": "Prepare an overdue invoice reminder draft. Nothing sends without approval.",
+        "trigger": "invoice_overdue",
+        "action": "prepare_reminder_draft",
+        "approval_required": True,
+        "risk_level": "medium",
+    },
+    {
+        "key": "quote_waiting_follow_up",
+        "name": "Quote not accepted after X days → prepare follow-up",
+        "description": "Prepare a quote follow-up draft for owner approval.",
+        "trigger": "quote_waiting",
+        "action": "prepare_quote_follow_up",
+        "approval_required": True,
+        "risk_level": "medium",
+    },
+    {
+        "key": "client_missing_contact_flag",
+        "name": "Client missing email/phone → flag cleanup",
+        "description": "Flag customer records that are missing contact details.",
+        "trigger": "client_missing_contact",
+        "action": "flag_customer_cleanup",
+        "approval_required": False,
+        "risk_level": "low",
+    },
+    {
+        "key": "job_unassigned_suggest_worker",
+        "name": "Job unassigned → suggest worker",
+        "description": "Suggest a worker based on availability and workload.",
+        "trigger": "job_unassigned",
+        "action": "suggest_worker_assignment",
+        "approval_required": True,
+        "risk_level": "medium",
+    },
+    {
+        "key": "myob_paid_mark_paid",
+        "name": "Invoice paid in MYOB → mark paid in Churvox",
+        "description": "When MYOB payment sync exists, prepare a Churvox paid update.",
+        "trigger": "myob_invoice_paid",
+        "action": "prepare_mark_paid",
+        "approval_required": True,
+        "risk_level": "high",
+    },
+    {
+        "key": "worker_cannot_complete_notify",
+        "name": "Worker cannot complete job → notify owner/admin",
+        "description": "Surface blocked field work immediately.",
+        "trigger": "worker_cannot_complete",
+        "action": "notify_owner",
+        "approval_required": False,
+        "risk_level": "low",
+    },
+]
+
+def _area11_text(value) -> str:
+    return str(value or "").strip()
+
+def _area11_doc_id(doc: dict) -> str:
+    return str((doc or {}).get("_id") or (doc or {}).get("id") or "")
+
+def _area11_rule_key(value: str) -> str:
+    key = _area11_text(value).lower().replace(" ", "_")
+    return "".join(ch for ch in key if ch.isalnum() or ch in {"_", "-"}).strip("_")[:120] or secrets.token_urlsafe(8)
+
+def _area11_default_rules(business_id: str) -> list:
+    now = datetime.now(timezone.utc)
+    rules = []
+    for template in AUTOMATION_TEMPLATE_LIBRARY:
+        rules.append({
+            "id": template["key"],
+            "business_id": str(business_id),
+            "template_key": template["key"],
+            "name": template["name"],
+            "description": template["description"],
+            "trigger": template["trigger"],
+            "action": template["action"],
+            "enabled": template["key"] in {"job_completed_photos_notify_owner", "client_missing_contact_flag", "worker_cannot_complete_notify"},
+            "approval_required": bool(template["approval_required"]),
+            "risk_level": template["risk_level"],
+            "created_at": now,
+            "updated_at": now,
+            "source": "template",
+        })
+    return rules
+
+async def _area11_seed_rules_if_empty(business_id: str):
+    count = await db.automation_rules.count_documents({"business_id": str(business_id)})
+    if count:
+        return
+    await db.automation_rules.insert_many(_area11_default_rules(str(business_id)))
+
+async def _area11_recent_runs(business_id: str) -> list:
+    try:
+        return [safe_doc(r) async for r in db.automation_runs.find({"business_id": str(business_id)}).sort("created_at", -1).limit(120)]
+    except Exception:
+        return []
+
+async def _area11_rule_metrics(business_id: str, rules: list) -> dict:
+    runs = await _area11_recent_runs(business_id)
+    failed = [r for r in runs if str(r.get("status") or "").lower() in {"failed", "error"}]
+    prepared = [r for r in runs if str(r.get("status") or "").lower() in {"prepared", "pending_approval", "waiting_approval"}]
+    return {
+        "rules": len(rules),
+        "enabled_rules": len([r for r in rules if r.get("enabled")]),
+        "disabled_rules": len([r for r in rules if not r.get("enabled")]),
+        "recent_runs": len(runs),
+        "failed_runs": len(failed),
+        "prepared_actions": len(prepared),
+        "approval_required_rules": len([r for r in rules if r.get("approval_required")]),
+    }
+
+@api_router.get("/automation/workspace")
+async def get_automation_workspace(current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    await _area11_seed_rules_if_empty(str(business_id))
+
+    rules = [safe_doc(r) async for r in db.automation_rules.find({"business_id": str(business_id)}).sort("created_at", 1).limit(300)]
+    runs = await _area11_recent_runs(str(business_id))
+    metrics = await _area11_rule_metrics(str(business_id), rules)
+
+    return {
+        "success": True,
+        "automation": {
+            "templates": AUTOMATION_TEMPLATE_LIBRARY,
+            "rules": rules,
+            "runs": runs,
+            "metrics": metrics,
+            "guardrails": [
+                "Customer messages are drafted for approval before sending.",
+                "Pricing, payroll, MYOB records, billing and deleting data require explicit owner approval.",
+                "Automations prepare work; owners approve important actions.",
+                "Every run should leave an activity/audit trail.",
+            ],
+        },
+    }
+
+@api_router.post("/automation/rules")
+async def create_automation_rule(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    template_key = _area11_text((payload or {}).get("template_key"))
+    template = next((t for t in AUTOMATION_TEMPLATE_LIBRARY if t["key"] == template_key), None)
+
+    now = datetime.now(timezone.utc)
+    name = _area11_text((payload or {}).get("name") or (template or {}).get("name"))
+    if not name:
+        raise HTTPException(status_code=400, detail="Rule name is required")
+
+    rule = {
+        "business_id": str(business_id),
+        "template_key": template_key or "",
+        "name": name,
+        "description": _area11_text((payload or {}).get("description") or (template or {}).get("description")),
+        "trigger": _area11_text((payload or {}).get("trigger") or (template or {}).get("trigger")),
+        "action": _area11_text((payload or {}).get("action") or (template or {}).get("action")),
+        "enabled": bool((payload or {}).get("enabled", True)),
+        "approval_required": bool((payload or {}).get("approval_required", (template or {}).get("approval_required", True))),
+        "risk_level": _area11_text((payload or {}).get("risk_level") or (template or {}).get("risk_level") or "medium"),
+        "conditions": (payload or {}).get("conditions") if isinstance((payload or {}).get("conditions"), dict) else {},
+        "created_at": now,
+        "updated_at": now,
+        "source": "custom",
+    }
+    inserted = await db.automation_rules.insert_one(rule)
+    rule["_id"] = inserted.inserted_id
+    return {"success": True, "rule": safe_doc(rule)}
+
+@api_router.patch("/automation/rules/{rule_id}")
+async def update_automation_rule(rule_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    clauses = [{"id": str(rule_id)}, {"template_key": str(rule_id)}]
+    if ObjectId.is_valid(str(rule_id)):
+        clauses.insert(0, {"_id": ObjectId(str(rule_id))})
+
+    rule = await db.automation_rules.find_one({"business_id": str(business_id), "$or": clauses})
+    if not rule:
+        raise HTTPException(status_code=404, detail="Automation rule not found")
+
+    allowed = {"name", "description", "trigger", "action", "enabled", "approval_required", "risk_level", "conditions"}
+    update = {}
+    for key in allowed:
+        if key in (payload or {}):
+            if key in {"enabled", "approval_required"}:
+                update[key] = bool((payload or {}).get(key))
+            elif key == "conditions":
+                update[key] = (payload or {}).get(key) if isinstance((payload or {}).get(key), dict) else {}
+            else:
+                update[key] = _area11_text((payload or {}).get(key))
+    update["updated_at"] = datetime.now(timezone.utc)
+
+    await db.automation_rules.update_one({"_id": rule["_id"], "business_id": str(business_id)}, {"$set": update})
+    saved = await db.automation_rules.find_one({"_id": rule["_id"]})
+    return {"success": True, "rule": safe_doc(saved)}
+
+@api_router.post("/automation/rules/{rule_id}/toggle")
+async def toggle_automation_rule(rule_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    clauses = [{"id": str(rule_id)}, {"template_key": str(rule_id)}]
+    if ObjectId.is_valid(str(rule_id)):
+        clauses.insert(0, {"_id": ObjectId(str(rule_id))})
+
+    rule = await db.automation_rules.find_one({"business_id": str(business_id), "$or": clauses})
+    if not rule:
+        raise HTTPException(status_code=404, detail="Automation rule not found")
+
+    await db.automation_rules.update_one(
+        {"_id": rule["_id"], "business_id": str(business_id)},
+        {"$set": {"enabled": not bool(rule.get("enabled")), "updated_at": datetime.now(timezone.utc)}}
+    )
+    saved = await db.automation_rules.find_one({"_id": rule["_id"]})
+    return {"success": True, "rule": safe_doc(saved)}
+
+@api_router.post("/automation/rules/{rule_id}/test-run")
+async def test_run_automation_rule(rule_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    clauses = [{"id": str(rule_id)}, {"template_key": str(rule_id)}]
+    if ObjectId.is_valid(str(rule_id)):
+        clauses.insert(0, {"_id": ObjectId(str(rule_id))})
+
+    rule = await db.automation_rules.find_one({"business_id": str(business_id), "$or": clauses})
+    if not rule:
+        raise HTTPException(status_code=404, detail="Automation rule not found")
+
+    now = datetime.now(timezone.utc)
+    run = {
+        "business_id": str(business_id),
+        "rule_id": _area11_doc_id(rule),
+        "template_key": rule.get("template_key") or "",
+        "rule_name": rule.get("name") or "Automation rule",
+        "trigger": rule.get("trigger") or "",
+        "action": rule.get("action") or "",
+        "status": "prepared" if rule.get("approval_required") else "completed",
+        "approval_required": bool(rule.get("approval_required")),
+        "risk_level": rule.get("risk_level") or "medium",
+        "result": "Test run created. No customer message was sent and no external system was changed.",
+        "created_at": now,
+        "updated_at": now,
+        "created_by": current_user.get("email") or current_user.get("id"),
+    }
+    inserted = await db.automation_runs.insert_one(run)
+    run["_id"] = inserted.inserted_id
+    return {"success": True, "run": safe_doc(run)}
+
+
 # CORS_HARD_FIX_20260412
 
 
