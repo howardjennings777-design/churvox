@@ -12232,6 +12232,204 @@ async def _platform_stats_impl(current_user: dict):
     }
 
 
+
+
+# CHURVOX_AREA3_BUSINESS_SETTINGS_20260531
+# Business setup/settings for invoice, quote and onboarding readiness.
+BUSINESS_SETUP_FIELDS = [
+    "business_name",
+    "trading_name",
+    "logo_base64",
+    "business_address",
+    "phone",
+    "email",
+    "website",
+    "gst_number",
+    "nzbn",
+    "bank_account_name",
+    "bank_account_number",
+    "invoice_prefix",
+    "quote_prefix",
+    "default_gst_rate",
+    "default_invoice_due_days",
+    "default_quote_expiry_days",
+    "trade_industry_type",
+    "service_area_region",
+    "working_hours",
+    "default_job_types",
+    "uses_myob",
+    "default_customer_message_tone",
+]
+
+BUSINESS_SETUP_REQUIRED_FIELDS = [
+    "business_name",
+    "business_address",
+    "phone",
+    "email",
+    "gst_number",
+    "bank_account_name",
+    "bank_account_number",
+    "invoice_prefix",
+    "quote_prefix",
+    "default_gst_rate",
+    "default_invoice_due_days",
+    "default_quote_expiry_days",
+    "trade_industry_type",
+]
+
+def _business_settings_defaults(current_user: dict, business_id: str) -> dict:
+    return {
+        "business_id": str(business_id),
+        "business_name": current_user.get("business_name") or current_user.get("company_name") or "",
+        "trading_name": current_user.get("business_name") or current_user.get("company_name") or "",
+        "logo_base64": "",
+        "business_address": current_user.get("address") or "",
+        "phone": current_user.get("phone") or current_user.get("mobile") or "",
+        "email": current_user.get("email") or "",
+        "website": "",
+        "gst_number": "",
+        "nzbn": "",
+        "bank_account_name": "",
+        "bank_account_number": "",
+        "invoice_prefix": "INV",
+        "quote_prefix": "QUO",
+        "default_gst_rate": DEFAULT_GST_RATE,
+        "default_invoice_due_days": 7,
+        "default_quote_expiry_days": 14,
+        "trade_industry_type": current_user.get("trade_type") or current_user.get("industry") or "",
+        "service_area_region": current_user.get("region") or "",
+        "working_hours": "",
+        "default_job_types": [],
+        "uses_myob": False,
+        "default_customer_message_tone": "Friendly, clear and professional",
+    }
+
+def _clean_business_settings_payload(payload: dict) -> dict:
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="Invalid business settings payload")
+
+    cleaned = {}
+    for key in BUSINESS_SETUP_FIELDS:
+        if key not in payload:
+            continue
+
+        value = payload.get(key)
+
+        if key == "logo_base64":
+            logo = str(value or "").strip()
+            # About 500KB raw image is roughly 666KB base64 plus data URL prefix.
+            if logo and len(logo) > 700000:
+                raise HTTPException(status_code=413, detail="Logo is too large. Please use a logo under about 500KB.")
+            if logo and not (logo.startswith("data:image/") or logo.startswith("http")):
+                raise HTTPException(status_code=400, detail="Logo must be an image data URL.")
+            cleaned[key] = logo
+            continue
+
+        if key in {"default_gst_rate"}:
+            try:
+                cleaned[key] = float(value if value not in (None, "") else DEFAULT_GST_RATE)
+            except Exception:
+                raise HTTPException(status_code=400, detail=f"{key} must be a number")
+            continue
+
+        if key in {"default_invoice_due_days", "default_quote_expiry_days"}:
+            try:
+                cleaned[key] = max(0, int(value if value not in (None, "") else 0))
+            except Exception:
+                raise HTTPException(status_code=400, detail=f"{key} must be a whole number")
+            continue
+
+        if key == "uses_myob":
+            cleaned[key] = bool(value)
+            continue
+
+        if key == "default_job_types":
+            if isinstance(value, list):
+                cleaned[key] = [str(x).strip() for x in value if str(x).strip()]
+            else:
+                cleaned[key] = [x.strip() for x in str(value or "").split(",") if x.strip()]
+            continue
+
+        cleaned[key] = str(value or "").strip()
+
+    return cleaned
+
+def _business_setup_completion(settings: dict) -> dict:
+    missing = []
+    for field in BUSINESS_SETUP_REQUIRED_FIELDS:
+        value = settings.get(field)
+        if value is None or value == "" or value == []:
+            missing.append(field)
+
+    total = len(BUSINESS_SETUP_REQUIRED_FIELDS)
+    complete = max(0, total - len(missing))
+    percent = round((complete / total) * 100) if total else 100
+
+    return {
+        "required_total": total,
+        "complete_count": complete,
+        "missing_count": len(missing),
+        "percent": percent,
+        "missing_fields": missing,
+        "is_complete": len(missing) == 0,
+    }
+
+@api_router.get("/business/settings")
+async def get_business_settings(current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    defaults = _business_settings_defaults(current_user, business_id)
+    saved = await db.business_settings.find_one({"business_id": str(business_id)}) or {}
+    settings = {**defaults, **{k: v for k, v in saved.items() if k != "_id"}}
+    settings["business_id"] = str(business_id)
+
+    return {
+        "success": True,
+        "settings": make_json_safe(settings),
+        "completion": _business_setup_completion(settings),
+    }
+
+@api_router.put("/business/settings")
+async def put_business_settings(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+    cleaned = _clean_business_settings_payload(payload)
+    cleaned["business_id"] = str(business_id)
+    cleaned["updated_at"] = now
+
+    existing = await db.business_settings.find_one({"business_id": str(business_id)})
+    if not existing:
+        cleaned["created_at"] = now
+
+    await db.business_settings.update_one(
+        {"business_id": str(business_id)},
+        {"$set": cleaned, "$setOnInsert": {"created_at": now}},
+        upsert=True,
+    )
+
+    # Keep the owner user/business display name in sync for legacy pages.
+    sync_user = {}
+    if cleaned.get("business_name"):
+        sync_user["business_name"] = cleaned["business_name"]
+    if cleaned.get("trade_industry_type"):
+        sync_user["trade_type"] = cleaned["trade_industry_type"]
+    if sync_user:
+        await db.users.update_one({"_id": ObjectId(str(current_user.get("id")))}, {"$set": sync_user})
+
+    saved = await db.business_settings.find_one({"business_id": str(business_id)}) or cleaned
+    settings = {**_business_settings_defaults(current_user, business_id), **{k: v for k, v in saved.items() if k != "_id"}}
+
+    return {
+        "success": True,
+        "message": "Business setup saved.",
+        "settings": make_json_safe(settings),
+        "completion": _business_setup_completion(settings),
+    }
+
+@api_router.patch("/business/settings")
+async def patch_business_settings(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    return await put_business_settings(payload, current_user)
+
+
 # CORS_HARD_FIX_20260412
 
 

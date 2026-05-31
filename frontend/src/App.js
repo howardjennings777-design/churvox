@@ -23,6 +23,7 @@ import InvoiceFormPage from "./pages/invoices/InvoiceFormPage";
 import InvoiceDetailPage from "./pages/invoices/InvoiceDetailPage";
 import ContactPage from "./pages/ContactPage";
 import PlansPage from "./pages/PlansPage";
+import BusinessSettingsPage from "./pages/BusinessSettingsPage";
 import WorkerJobsPage from "./pages/worker/WorkerJobsPage";
 import WorkerJobDetailPage from "./pages/worker/WorkerJobDetailPage";
 import OnboardingPage from "./pages/OnboardingPage";
@@ -239,7 +240,7 @@ function App() {
             <Route path="/sms" element={<BusinessRoute><Navigate to="/dashboard" replace /></BusinessRoute>} />
             <Route path="/reports" element={<ReportsRoute><ConceptCPage area="reports" /></ReportsRoute>} />
             <Route path="/integrations" element={<BusinessRoute><Navigate to="/dashboard" replace /></BusinessRoute>} />
-            <Route path="/settings" element={<BusinessRoute><ConceptCPage area="settings" /></BusinessRoute>} />
+            <Route path="/settings" element={<BusinessRoute><ConceptCFrame area="settings"><BusinessSettingsPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/contact" element={<PrivateRoute><ConceptCFrame area="settings"><ContactPage /></ConceptCFrame></PrivateRoute>} />
             <Route path="/plans" element={<OwnerRoute><ConceptCFrame area="plans"><PlansPage /></ConceptCFrame></OwnerRoute>} />
             <Route path="/team" element={<TeamRoute><ConceptCPage area="team" /></TeamRoute>} />
