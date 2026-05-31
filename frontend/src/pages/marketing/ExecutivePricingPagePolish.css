@@ -27,12 +27,14 @@
 .cvx-plan-grid-v2 article {
   position: relative;
   background: #fff;
+  color: #1a2230;
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 16px;
   padding: 28px 24px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-height: auto;
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
@@ -42,6 +44,7 @@
 }
 
 .cvx-plan-grid-v2 article.is-featured {
+  background: #fff;
   border: 2px solid #1f6feb;
   box-shadow: 0 10px 30px rgba(31, 111, 235, 0.18);
   transform: translateY(-6px);
@@ -85,29 +88,48 @@
 }
 
 .cvx-plan-grid-v2 article small {
+  color: #1f6feb;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: 11px;
   font-weight: 700;
-  opacity: 0.7;
+  opacity: 1;
 }
 
 .cvx-plan-grid-v2 article h2 {
+  color: #0f1419;
   font-size: 28px;
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .cvx-plan-grid-v2 article strong {
+  color: #0f1419;
   font-size: 36px;
   font-weight: 700;
 }
 
 .cvx-plan-grid-v2 article strong em {
+  display: inline;
+  margin-top: 0;
   font-style: normal;
   font-size: 14px;
   font-weight: 500;
-  opacity: 0.7;
+  color: #5b6573;
+  opacity: 1;
   margin-left: 4px;
+}
+
+.cvx-plan-grid-v2 article .cvx-plan-audience {
+  color: #3a4452;
+}
+
+.cvx-plan-grid-v2 article .cvx-plan-audience b {
+  color: #0f1419;
+}
+
+.cvx-plan-grid-v2 article .cvx-plan-summary {
+  color: #2a3340;
 }
 
 .cvx-plan-audience {
@@ -137,6 +159,7 @@
 }
 
 .cvx-plan-grid-v2 article ul li {
+  color: #2a3340;
   font-size: 13.5px;
   line-height: 1.5;
 }
@@ -144,6 +167,19 @@
 .cvx-plan-grid-v2 article a {
   margin-top: auto;
   text-align: center;
+}
+
+/* Secondary CTA on light cards needs dark, readable styling (base is white-on-dark) */
+.cvx-plan-grid-v2 article:not(.is-serious) .cvx-btn-secondary {
+  color: #0f1419;
+  background: #fff;
+  border: 1.5px solid rgba(15, 20, 25, 0.18);
+}
+
+.cvx-plan-grid-v2 article:not(.is-serious) .cvx-btn-secondary:hover {
+  background: #f4f6f9;
+  border-color: rgba(31, 111, 235, 0.5);
+  color: #1f6feb;
 }
 
 .cvx-btn-serious {
@@ -398,4 +434,54 @@
   .cvx-compare-table td {
     padding: 10px 8px;
   }
+}
+
+/* ----------------------------------------------------------------------
+   Light-section readability fix.
+   The page root (.cvx-home) sets color:#fff for the dark hero. The
+   pricing-only light sections below must force dark, readable text. */
+.cvx-pricing-page .cvx-compare-section,
+.cvx-pricing-page .cvx-faq-section,
+.cvx-pricing-page .cvx-cta-final {
+  color: #1a2230;
+}
+
+.cvx-pricing-page .cvx-compare-head h2,
+.cvx-pricing-page .cvx-faq-head h2,
+.cvx-pricing-page .cvx-cta-final h2 {
+  color: #0f1419;
+}
+
+.cvx-pricing-page .cvx-compare-head .cvx-eyebrow,
+.cvx-pricing-page .cvx-faq-head .cvx-eyebrow {
+  color: #1f6feb;
+  background: rgba(31, 111, 235, 0.1);
+  border-color: rgba(31, 111, 235, 0.18);
+}
+
+.cvx-pricing-page .cvx-compare-head span,
+.cvx-pricing-page .cvx-cta-final p {
+  color: #4a5563;
+  opacity: 1;
+}
+
+.cvx-pricing-page .cvx-compare-table tbody th {
+  color: #1a2230;
+}
+
+.cvx-pricing-page .cv-cmp-text {
+  color: #1a2230;
+}
+
+.cvx-pricing-page .cvx-faq-list button {
+  color: #0f1419;
+}
+
+.cvx-pricing-page .cvx-faq-list button span {
+  color: #0f1419;
+}
+
+.cvx-pricing-page .cvx-faq-list p {
+  color: #2a3340;
+  opacity: 1;
 }

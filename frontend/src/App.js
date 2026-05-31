@@ -241,7 +241,7 @@ function App() {
             <Route path="/integrations" element={<BusinessRoute><Navigate to="/dashboard" replace /></BusinessRoute>} />
             <Route path="/settings" element={<BusinessRoute><ConceptCPage area="settings" /></BusinessRoute>} />
             <Route path="/contact" element={<PrivateRoute><ConceptCFrame area="settings"><ContactPage /></ConceptCFrame></PrivateRoute>} />
-            <Route path="/plans" element={<OwnerRoute><ConceptCFrame area="plans"><PlansPage /></ConceptCFrame></OwnerRoute>} />
+            <Route path="/plans" element={<OwnerRoute><PlansPage /></OwnerRoute>} />
             <Route path="/team" element={<TeamRoute><ConceptCPage area="team" /></TeamRoute>} />
             <Route path="/notifications" element={<BusinessRoute><ConceptCPage area="notifications" /></BusinessRoute>} />
             <Route path="/automation" element={<TeamRoute><Navigate to="/dashboard" replace /></TeamRoute>} />

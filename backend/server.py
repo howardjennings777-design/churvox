@@ -419,6 +419,34 @@ STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
 STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
 STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
 
+# Clear, safe message shown when paid checkout cannot run because Stripe env
+# vars (secret key / price IDs) are not configured in this environment.
+# The app must never crash or fake a successful payment — it shows this instead.
+BILLING_NOT_CONFIGURED_MESSAGE = (
+    "Billing checkout is not configured in this environment. "
+    "Your plan and free trial are unaffected — please contact support to enable paid checkout."
+)
+
+
+def billing_is_configured() -> bool:
+    """True only when Stripe is wired enough for a real paid checkout:
+    a secret key AND at least one plan price ID (base or per-currency)."""
+    if not STRIPE_SECRET_KEY:
+        return False
+    has_base_price = any([
+        STRIPE_PRICE_SOLO, STRIPE_PRICE_TEAM, STRIPE_PRICE_PRO, STRIPE_PRICE_ENTERPRISE
+    ])
+    has_ccy_price = False
+    try:
+        for ccy_map in STRIPE_PRICES_BY_CCY.values():
+            if any((ccy_map or {}).values()):
+                has_ccy_price = True
+                break
+    except Exception:
+        has_ccy_price = False
+    return bool(has_base_price or has_ccy_price)
+
+
 stripe.api_key = STRIPE_SECRET_KEY
 
 PLAN_PRICE_IDS = {
@@ -1376,16 +1404,21 @@ async def stripe_checkout_success(session_id: str):
 async def create_checkout_session(payload: dict, current_user: dict = Depends(get_current_user)):
     plan = (payload.get("plan_type") or "solo").lower()
 
-    if not STRIPE_SECRET_KEY:
-        raise HTTPException(status_code=500, detail="Stripe secret key is missing on the server")
+    if not billing_is_configured():
+        raise HTTPException(status_code=503, detail=BILLING_NOT_CONFIGURED_MESSAGE)
 
     # Resolve country & currency with the correct source-of-truth order:
     # saved user/business > request hint > safe NZ default.
     hint_country = str((payload or {}).get("country") or "").strip()
     country, currency = resolve_user_country_currency(current_user, hint_country=hint_country)
-    price_id = (get_stripe_price_id_for(plan, currency) or "").strip()
+    try:
+        price_id = (get_stripe_price_id_for(plan, currency) or "").strip()
+    except HTTPException:
+        # Missing price ID for this plan/currency — treat as "not configured"
+        # rather than surfacing a raw technical error to the owner.
+        raise HTTPException(status_code=503, detail=BILLING_NOT_CONFIGURED_MESSAGE)
     if not price_id:
-        raise HTTPException(status_code=400, detail=f"Missing Stripe price ID for {plan} ({currency})")
+        raise HTTPException(status_code=503, detail=BILLING_NOT_CONFIGURED_MESSAGE)
 
     stripe.api_key = STRIPE_SECRET_KEY
 
@@ -8567,6 +8600,7 @@ def build_billing_status(owner: dict):
         "days_left": days_left,
         "requires_payment": trial_expired and not on_paid_plan,
         "has_paid_subscription": on_paid_plan,
+        "billing_configured": billing_is_configured(),
         "stripe_customer_id": owner.get("stripe_customer_id"),
         "stripe_subscription_id": stripe_subscription_id,
     }

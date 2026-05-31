@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
 import { detectCountryHint } from "../lib/country";
@@ -99,6 +100,9 @@ export default function PlansPage() {
   const isTrialExpired = billing?.trial_expired === true;
   const isPaid = billing?.has_paid_subscription === true;
   const isActiveTrial = billing?.trial_active === true;
+  // When false, paid Stripe checkout is not wired in this environment.
+  // Trials still work (no card needed); paid upgrades show a clear message.
+  const billingConfigured = billing?.billing_configured !== false;
 
   const buttonLabel = (plan) => {
     if (busyPlan === plan.key) return isNewUser ? "Starting trial…" : "Opening checkout…";
@@ -129,6 +133,11 @@ export default function PlansPage() {
 
     try {
       setBusyPlan(planKey);
+      if (!billingConfigured) {
+        setNotice({ type: "warning", title: "Paid checkout not available here", text: "Billing checkout is not configured in this environment. Your plan and trial are unaffected — please contact support to switch to a paid plan." });
+        setBusyPlan("");
+        return;
+      }
       const res = await api.post("/stripe/create-checkout-session", { plan_type: planKey, country: currencyInfo?.country || detectCountryHint() || "" });
       if (res?.success === false) throw new Error(res.error || "Failed to start checkout");
       const data = getPayload(res) || {};
@@ -143,6 +152,11 @@ export default function PlansPage() {
     if (busyPlan || busyAddon) return;
     if (isNewUser) {
       toast.error("Choose a Churvox plan before adding a Growth Pack.");
+      return;
+    }
+
+    if (!billingConfigured) {
+      setNotice({ type: "warning", title: "Paid checkout not available here", text: "Billing checkout is not configured in this environment. The Command Growth Pack can be purchased once paid checkout is enabled — please contact support." });
       return;
     }
 
@@ -193,9 +207,10 @@ export default function PlansPage() {
   return (
     <main className="cv-plans" data-version="CHURVOX_APP_PLANS_COMMAND_20260524 CHURVOX_SMS_BLOCK_PRICING_20260529 CHURVOX_COMMAND_GROWTH_USER_BLOCKS_20260530 CHURVOX_BUY_GROWTH_PACK_BUTTON_20260530">
       <div className="cv-plans-shell">
-        <header className="cv-plans-top"><ChurvoxLogo size="lg" /><span>{status.label}</span></header>
+        <header className="cv-plans-top"><Link to="/dashboard" className="cv-plans-brand" data-testid="plans-brand-home" aria-label="Back to Command Floor"><ChurvoxLogo size="lg" /></Link><div className="cv-plans-top-actions"><span>{status.label}</span><Link to="/dashboard" className="cv-plans-back-link" data-testid="plans-back-to-dashboard">← Back to Command Floor</Link></div></header>
         <section className="cv-plans-hero"><div><p className="cv-kicker">Plans & billing</p><h1>Choose how much admin Churvox should run for you.</h1><p>Start with core workflow, move into crew control, or choose Operator where Churvox prepares the daily admin and the owner approves.</p></div><div className="cv-status-pill">{currencyInfo?.currency ? `Billed in ${currencyInfo.currency}` : status.label}</div></section>
         {notice && <div className={`cv-notice ${notice.type === "warning" ? "warn" : ""}`}><b>{notice.title}</b><span>{notice.text}</span></div>}
+        {!loading && !billingConfigured && <div className="cv-notice warn" data-testid="billing-not-configured-banner"><b>Paid checkout isn't enabled in this environment yet</b><span>You can still start and use a free trial with no card. Switching to a paid plan or buying add-ons will be available once billing is configured — contact support to enable it.</span></div>}
         <section className="cv-grid">{displayPlans.map((plan) => { const featured = plan.key === "pro"; const current = currentPlan === plan.key && !isTrialExpired; return <article key={plan.key} className={`cv-card ${featured ? "featured" : ""} ${current ? "current" : ""}`}><span>{plan.tag}</span><h2>{plan.name}</h2><div className="cv-price"><b>{plan.price}</b><small>{plan.period}</small></div><p>{plan.blurb}</p><ul>{plan.limits.map((item) => <li key={item}>{item}</li>)}</ul><button type="button" onClick={() => handleSelectPlan(plan.key)} disabled={isDisabled(plan)} data-testid={`plan-btn-${plan.key}`}>{buttonLabel(plan)}</button></article>; })}</section>
         <section className="cv-user-blocks"><div><small>Command Growth Pack</small><b>+50 active team members</b><span>Add more crew, jobs and AI Operator capacity as your business grows. Built for Command customers who need more capacity without changing the whole plan.</span></div><article><small>Growth Pack</small><strong>$99<em> /month + GST</em></strong><p>Each block adds 50 more active team members.</p><button className="cv-user-block-buy" type="button" onClick={handleBuyGrowthPack} disabled={Boolean(busyPlan || busyAddon)} data-testid="buy-command-growth-pack">{busyAddon ? "Opening checkout…" : "Buy Growth Pack"}</button></article><ul>{userBlocks.map((item) => <li key={item}>{item}</li>)}</ul></section>
         <section className="cv-sms-pricing"><div><b>SMS credit blocks</b><span>SMS is separate so you only buy what you use. Customer reminders and follow-ups stay approval-first.</span></div><div className="cv-sms-grid">{smsBlocks.map((pack) => <article key={pack.credits}><small>{pack.credits} credits</small><strong>{pack.price}<em> + GST</em></strong><span>{pack.note}</span></article>)}</div></section>
