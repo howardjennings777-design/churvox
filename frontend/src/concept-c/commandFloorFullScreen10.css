@@ -787,3 +787,69 @@ body:has(.xcf-command-10) {
     grid-template-columns: 1fr !important;
   }
 }
+
+
+/* CHURVOX_VISIBLE_LAUNCH_SHORTCUTS_20260601 */
+.xcf10-launch-shortcuts {
+  position: relative;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin: 14px 0 18px;
+  padding: 12px;
+  border: 1px solid rgba(125, 211, 252, 0.26);
+  border-radius: 24px;
+  background:
+    linear-gradient(135deg, rgba(8, 21, 36, 0.94), rgba(14, 36, 60, 0.88)),
+    radial-gradient(circle at 10% 0%, rgba(34, 211, 238, 0.20), transparent 34%);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.26);
+}
+
+.xcf10-launch-shortcuts a {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 11px 16px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  color: #f8fbff;
+  font-weight: 950;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.xcf10-launch-shortcuts a:first-child {
+  background: linear-gradient(135deg, #1fe3ff, #9f7aea);
+  color: #06111a;
+  border-color: transparent;
+  box-shadow: 0 14px 32px rgba(31, 227, 255, 0.20);
+}
+
+.xcf10-launch-shortcuts a:hover {
+  transform: translateY(-1px);
+  background: rgba(255,255,255,0.14);
+}
+
+@media (max-width: 900px) {
+  .xcf10-launch-shortcuts {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 10px 0 14px;
+    padding: 10px;
+    border-radius: 22px;
+  }
+
+  .xcf10-launch-shortcuts a {
+    min-height: 44px;
+    padding: 10px 14px;
+    font-size: 0.86rem;
+  }
+}
+

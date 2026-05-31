@@ -612,6 +612,17 @@ function Dashboard({ m, loading, onPick }) {
         </aside>
       </section>
 
+      <section className="xcf10-launch-shortcuts" aria-label="Launch shortcuts">
+        <Link to="/onboarding">Setup</Link>
+        <Link to="/plans">Plans</Link>
+        <Link to="/demo-mode">Demo</Link>
+        <Link to="/notifications">Alerts</Link>
+        <Link to="/billing-confidence">Billing</Link>
+        <Link to="/integration-proof">Proof</Link>
+        <Link to="/launch-ops">Ops</Link>
+        <Link to="/backup-recovery">Backup</Link>
+      </section>
+
       <section className="xcf10-lanes-head">
         <div>
           <p>OPERATING LANES</p>
