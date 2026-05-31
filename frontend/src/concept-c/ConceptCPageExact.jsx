@@ -692,17 +692,22 @@ function Dashboard({ m, loading, onPick }) {
         <div className="xcf10-health"><small>Business Health</small><b>94%</b><span>Strong</span></div>
       </section>
 
-      <nav className="xcf10-dock xcf10-dock-launch-final" aria-label="Command Floor navigation">
-        <Link to="/dashboard" className="active">Command</Link>
-        <Link to="/onboarding">Setup</Link>
-        <Link to="/jobs">Jobs</Link>
-        <Link to="/clients">Clients</Link>
-        <Link to="/invoices">Money</Link>
-        <Link to="/plans">Plans</Link>
-        <Link to="/demo-mode">Demo</Link>
-        <Link to="/notifications">Alerts</Link>
-        <Link to="/team">Crew</Link>
-        <Link to="/operator-tools">Tools</Link>
+      <nav className="xcf10-dock xcf10-dock-launch-final xcf10-command-dock-complete" aria-label="Command Floor navigation" data-version="CHURVOX_REAL_COMMAND_DOCK_COMPLETE_20260601">
+        <Link to="/dashboard" className="active"><span>Command</span></Link>
+        <Link to="/onboarding"><span>Setup</span></Link>
+        <Link to="/jobs"><span>Jobs</span></Link>
+        <Link to="/dispatch"><span>Dispatch</span></Link>
+        <Link to="/clients"><span>Clients</span></Link>
+        <Link to="/quotes"><span>Quotes</span></Link>
+        <Link to="/invoices"><span>Money</span></Link>
+        <Link to="/team"><span>Crew</span></Link>
+        <Link to="/automation"><span>Automation</span></Link>
+        <Link to="/integrations"><span>Integrations</span></Link>
+        <Link to="/reports"><span>Reports</span></Link>
+        <Link to="/notifications"><span>Alerts</span></Link>
+        <Link to="/plans"><span>Plans</span></Link>
+        <Link to="/settings"><span>Settings</span></Link>
+        <Link to="/operator-tools"><span>Tools</span></Link>
       </nav>
 
       {loading && <div className="xcf10-loading">Refreshing Command Floor…</div>}
