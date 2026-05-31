@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
 import CommandFloorApprovalSlip from "./CommandFloorApprovalSlip";
 import "./ConceptCPageExact.css";
@@ -364,16 +364,35 @@ function TopBar({ loading }) {
 }
 
 function BottomNav() {
-  // CHURVOX_LAUNCH_READY_BOTTOM_NAV_20260527
+  // CHURVOX_FULL_COMMAND_NAV_20260601
+  const { pathname } = useLocation();
   const links = [
     ["/dashboard", "Command"],
+    ["/onboarding", "Setup"],
     ["/jobs", "Jobs"],
-    ["/team", "Crew"],
+    ["/dispatch", "Dispatch"],
     ["/clients", "Clients"],
-    ["/invoices", "Money"],
     ["/quotes", "Quotes"],
+    ["/invoices", "Money"],
+    ["/team", "Crew"],
+    ["/automation", "Automation"],
+    ["/integrations", "Integrations"],
+    ["/reports", "Reports"],
+    ["/notifications", "Alerts"],
+    ["/plans", "Plans"],
+    ["/settings", "Settings"],
+    ["/operator-tools", "Tools"],
   ];
-  return <nav className="xcf-bottom-nav">{links.map(([href, label]) => <Link key={href} to={href}>{label}</Link>)}</nav>;
+
+  const isActive = (href) => pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`));
+
+  return (
+    <nav className="xcf-bottom-nav xcf-bottom-nav-full" aria-label="Churvox command navigation">
+      {links.map(([href, label]) => (
+        <Link key={href} to={href} className={isActive(href) ? "active" : ""}>{label}</Link>
+      ))}
+    </nav>
+  );
 }
 
 function Metric({ label, value, note, tone, onClick }) {
