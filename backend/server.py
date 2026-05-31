@@ -15917,6 +15917,179 @@ async def get_launch_billing_confidence(current_user: dict = Depends(get_current
     }
 
 
+
+
+# CHURVOX_LAUNCH_6_10_PROOF_OPS_BACKUP_POLISH_20260601
+# Launch 6-10: sales polish, integration proof, operating process, backup/recovery, polish checklist.
+def _launch610_text(value) -> str:
+    return str(value or "").strip()
+
+async def _launch610_count(collection_name: str, query: dict = None):
+    try:
+        return await getattr(db, collection_name).count_documents(query or {})
+    except Exception:
+        return 0
+
+async def _launch610_recent(collection_name: str, query: dict = None, limit: int = 20):
+    try:
+        return [safe_doc(x) async for x in getattr(db, collection_name).find(query or {}).sort("created_at", -1).limit(limit)]
+    except Exception:
+        return []
+
+@api_router.get("/launch/sales-polish")
+async def get_launch_sales_polish():
+    return {
+        "success": True,
+        "sales": {
+            "headline": "Churvox does the admin. You approve.",
+            "subheadline": "AI Operator for trade and service businesses: jobs, quotes, invoices, crew, reminders and daily admin in one command floor.",
+            "who_for": ["Lawn care", "Landscaping", "Cleaning", "Handyman", "Painting", "Plumbing", "Electrical", "Property maintenance"],
+            "proof_points": [
+                "Owner approval queue for prepared admin actions",
+                "Quote → job → invoice → paid workflow",
+                "Worker completion, photos and field proof",
+                "Money Desk and reports",
+                "MYOB-ready integration workspace",
+                "Plans, trust, support and data control",
+            ],
+            "homepage_sections": [
+                {"title": "The problem", "copy": "Trade owners lose time chasing notes, invoices, workers, quotes and follow-ups."},
+                {"title": "The promise", "copy": "Churvox prepares the admin and puts approvals in front of the owner."},
+                {"title": "The flow", "copy": "Client → quote → job → worker completion → invoice → paid → reports."},
+                {"title": "The trust", "copy": "Approval-first AI, worker-safe views, data export and support paths."},
+            ],
+            "cta": {"primary": "Start with Churvox", "secondary": "Request setup help"},
+        },
+    }
+
+@api_router.get("/launch/integration-proof")
+async def get_launch_integration_proof(current_user: dict = Depends(get_current_user)):
+    business_id = str(await get_user_business_id(current_user))
+
+    email_configured = bool(globals().get("POSTMARK_API_KEY") or globals().get("RESEND_API_KEY") or globals().get("SMTP_PASSWORD"))
+    stripe_configured = bool(globals().get("STRIPE_SECRET_KEY") or globals().get("STRIPE_API_KEY"))
+    sms_credits = 0
+    myob_connected = False
+
+    try:
+        sms_row = await db.sms_balances.find_one({"business_id": business_id}) or await db.sms_credits.find_one({"business_id": business_id})
+        if sms_row:
+            sms_credits = int(float(sms_row.get("balance") or sms_row.get("credits") or sms_row.get("sms_credits") or 0))
+    except Exception:
+        sms_credits = 0
+
+    try:
+        acct = await db.accounting_settings.find_one({"business_id": business_id}) or {}
+        myob_connected = bool(acct.get("myob_connected") or acct.get("access_token") or acct.get("myob_company_file_id"))
+    except Exception:
+        myob_connected = False
+
+    invoice_count = await _launch610_count("invoices", {"business_id": business_id})
+    public_invoice_count = await _launch610_count("invoices", {"business_id": business_id, "public_token": {"$exists": True, "$ne": ""}})
+    failed_myob = await _launch610_count("invoices", {"business_id": business_id, "$or": [{"myob_sync_status": "failed"}, {"myob_error": {"$exists": True, "$ne": ""}}]})
+
+    checks = [
+        {"key": "email", "label": "Email provider configured", "ok": email_configured, "action": "Set Postmark/Resend/SMTP env keys and send a real invoice email."},
+        {"key": "stripe", "label": "Stripe configured", "ok": stripe_configured, "action": "Confirm checkout, plan return URL and failed payment handling."},
+        {"key": "public_invoices", "label": "Public invoice links exist", "ok": public_invoice_count > 0 or invoice_count == 0, "action": "Create/send an invoice and open its public link."},
+        {"key": "myob", "label": "MYOB connection ready", "ok": myob_connected, "action": "Connect MYOB when developer/API approval is ready."},
+        {"key": "sms", "label": "SMS credits or Coming Soon state", "ok": sms_credits > 0, "action": "Either buy/test credits or keep SMS clearly disabled/Coming Soon."},
+        {"key": "myob_errors", "label": "No failed MYOB syncs", "ok": failed_myob == 0, "action": "Review failed sync rows in Integrations workspace."},
+    ]
+
+    return {
+        "success": True,
+        "proof": {
+            "checks": checks,
+            "metrics": {
+                "email_configured": email_configured,
+                "stripe_configured": stripe_configured,
+                "myob_connected": myob_connected,
+                "sms_credits": sms_credits,
+                "invoice_count": invoice_count,
+                "public_invoice_count": public_invoice_count,
+                "failed_myob_syncs": failed_myob,
+            },
+        },
+    }
+
+@api_router.get("/launch/ops")
+async def get_launch_ops(current_user: dict = Depends(get_current_user)):
+    business_id = str(await get_user_business_id(current_user))
+
+    support_open = await _launch610_count("business_activity", {"business_id": business_id, "type": {"$in": ["support_ticket", "bug_report", "feature_request"]}, "status": {"$ne": "closed"}})
+    unread_notifications = await _launch610_count("business_activity", {"business_id": business_id, "type": {"$in": ["notification", "ai_notification"]}, "status": {"$ne": "read"}})
+    ai_pending = await _launch610_count("ai_operator_actions", {"business_id": business_id, "status": {"$in": ["pending", "edited", "prepared"]}})
+    overdue_invoices = await _launch610_count("invoices", {"business_id": business_id, "status": "overdue"})
+    failed_sync = await _launch610_count("invoices", {"business_id": business_id, "$or": [{"myob_sync_status": "failed"}, {"myob_error": {"$exists": True, "$ne": ""}}]})
+
+    routine = [
+        {"cadence": "Daily", "task": "Open Churvox HQ / Reports and check failed payments, support, AI actions and urgent jobs."},
+        {"cadence": "Daily", "task": "Check Notifications for worker completions, invoice issues and owner approvals."},
+        {"cadence": "Daily", "task": "Check support inbox and reply to trial/customer questions."},
+        {"cadence": "Weekly", "task": "Review trials, plan upgrades, failed deploys and integration errors."},
+        {"cadence": "Weekly", "task": "Export/backup business data and confirm rollback plan still works."},
+    ]
+
+    return {
+        "success": True,
+        "ops": {
+            "metrics": {
+                "support_open": support_open,
+                "unread_notifications": unread_notifications,
+                "ai_pending": ai_pending,
+                "overdue_invoices": overdue_invoices,
+                "failed_sync": failed_sync,
+            },
+            "routine": routine,
+            "recent_support": await _launch610_recent("business_activity", {"business_id": business_id, "type": {"$in": ["support_ticket", "bug_report", "feature_request"]}}, 20),
+        },
+    }
+
+@api_router.get("/launch/backup-recovery")
+async def get_launch_backup_recovery(current_user: dict = Depends(get_current_user)):
+    business_id = str(await get_user_business_id(current_user))
+    counts = {
+        "clients": await _launch610_count("clients", {"business_id": business_id}),
+        "jobs": await _launch610_count("jobs", {"business_id": business_id}),
+        "quotes": await _launch610_count("quotes", {"business_id": business_id}),
+        "invoices": await _launch610_count("invoices", {"business_id": business_id}),
+    }
+    checklist = [
+        {"label": "Business data export exists", "ok": True, "href": "/reports"},
+        {"label": "GitHub main branch contains production source", "ok": True, "href": "/churvox-hq"},
+        {"label": "Render rollback/manual deploy process known", "ok": True, "href": "/contact"},
+        {"label": "Database backup process documented", "ok": False, "href": "/backup-recovery"},
+        {"label": "Emergency support message path ready", "ok": True, "href": "/contact"},
+        {"label": "Incident checklist ready", "ok": True, "href": "/backup-recovery"},
+    ]
+    incident_steps = [
+        "Confirm if issue is frontend, backend, database, email/SMS/MYOB or DNS.",
+        "Check Render deploy logs and live route status.",
+        "Pause risky customer sends if email/SMS/MYOB is failing.",
+        "Use GitHub/Render rollback if the latest deploy broke core routes.",
+        "Export affected business data before destructive fixes.",
+        "Update customer/support note with plain-English status.",
+    ]
+    return {"success": True, "recovery": {"counts": counts, "checklist": checklist, "incident_steps": incident_steps}}
+
+@api_router.get("/launch/polish-checklist")
+async def get_launch_polish_checklist(current_user: dict = Depends(get_current_user)):
+    checklist = [
+        {"area": "Mobile", "item": "Bottom nav does not cover buttons", "status": "needs phone check"},
+        {"area": "Mobile", "item": "Invoice form is usable on phone", "status": "needs phone check"},
+        {"area": "Mobile", "item": "Worker start/complete/photo flow is easy", "status": "needs phone check"},
+        {"area": "Build", "item": "React hook warnings cleaned", "status": "later polish"},
+        {"area": "Build", "item": "npm vulnerabilities reviewed", "status": "later polish"},
+        {"area": "UX", "item": "Every empty page has a clear next action", "status": "ongoing"},
+        {"area": "UX", "item": "Every error says what to do next", "status": "ongoing"},
+        {"area": "Website", "item": "Homepage sells outcome not just features", "status": "in progress"},
+        {"area": "Trust", "item": "Privacy, Terms, Account Deletion links visible", "status": "done"},
+        {"area": "Sales", "item": "Demo mode available for screenshots and calls", "status": "done if seeded"},
+    ]
+    return {"success": True, "polish": {"items": checklist}}
+
+
 # CORS_HARD_FIX_20260412
 
 

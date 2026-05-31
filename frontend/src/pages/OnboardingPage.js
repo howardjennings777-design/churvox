@@ -17,6 +17,11 @@ const launchSteps = [
   { key: 'demo', title: 'Create demo sample data', href: '/demo-mode', why: 'Use sample data for screenshots, sales demos and full workflow practice.' },
   { key: 'ai', title: 'Review AI Operator actions', href: '/ai-operator', why: 'Churvox prepares admin; you approve the important actions.' },
   { key: 'trust', title: 'Review trust and support', href: '/contact', why: 'Know where support, privacy, data control and help live.' },
+  { key: 'salespolish', title: 'Review sales message', href: '/sales-polish', why: 'Make sure the public promise is clear: Churvox does the admin. You approve.' },
+  { key: 'integrationproof', title: 'Review integration proof', href: '/integration-proof', why: 'Check email, Stripe, MYOB, SMS and public invoice readiness.' },
+  { key: 'launchops', title: 'Review launch operations', href: '/launch-ops', why: 'Know the daily admin routine for running Churvox.' },
+  { key: 'backup', title: 'Review backup and recovery', href: '/backup-recovery', why: 'Know what to do if deployment, database or integrations break.' },
+  { key: 'polish', title: 'Review final polish checklist', href: '/polish-checklist', why: 'Track the last 10% that makes the app feel top-tier.' },
 ];
 
 export default function OnboardingPage() {
@@ -71,6 +76,11 @@ export default function OnboardingPage() {
     done.add('demo');
     done.add('ai');
     done.add('trust');
+    done.add('polish');
+    done.add('backup');
+    done.add('launchops');
+    done.add('integrationproof');
+    done.add('salespolish');
     return done;
   }, [form.business_name, setupCounts, user]);
 

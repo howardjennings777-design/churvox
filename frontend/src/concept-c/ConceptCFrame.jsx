@@ -17,6 +17,7 @@ const FRAME = {
   onboarding: ["LAUNCH CONTROL", "Setup desk.", "Finish business setup, first client, first job, worker, invoice and trust steps.", "Back to setup", "/onboarding"],
   support: ["TRUST CONTROL", "Support desk.", "Find support, billing, data control, privacy and AI guardrails.", "Back to support", "/contact"],
   worker: ["FIELD APP", "Worker mode.", "Worker jobs, details and settings inside the Churvox identity.", "Worker jobs", "/worker/jobs"],
+  launch: ["LAUNCH CONTROL", "Launch desk.", "Sales polish, integration proof, operating process, recovery and final polish.", "Back to launch control", "/launch-control"],
   settings: ["SYSTEM CONTROL", "System card.", "Contact, settings and admin screens inside the Churvox Command Floor.", "Back to settings", "/settings"],
 };
 
@@ -30,6 +31,7 @@ export default function ConceptCFrame({ area = "jobs", children }) {
     area === "demo" || area === "billing" || area === "notifications" || area === "onboarding" || area === "support" ? "setup" :
     area === "onboarding" || area === "support" ? "setup" :
     area === "quotes" || area === "worker" ? "jobs" :
+    area === "launch" ? "setup" :
     area === "settings" ? "more" :
     area;
 

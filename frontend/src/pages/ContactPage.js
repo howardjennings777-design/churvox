@@ -67,6 +67,11 @@ export default function ContactPage() {
             <a className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-black text-slate-800" href="/privacy">Privacy</a>
             <a className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-black text-slate-800" href="/terms">Terms</a>
             <a className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-black text-slate-800" href="/account-deletion">Account deletion</a>
+            <a className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-black text-slate-800" href="/sales-polish">Sales polish</a>
+            <a className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-black text-slate-800" href="/integration-proof">Integration proof</a>
+            <a className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-black text-slate-800" href="/launch-ops">Launch ops</a>
+            <a className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-black text-slate-800" href="/backup-recovery">Backup recovery</a>
+            <a className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-black text-slate-800" href="/polish-checklist">Polish checklist</a>
           </div>
         </section>
       </main>

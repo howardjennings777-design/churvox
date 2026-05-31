@@ -62,6 +62,11 @@ import ReportsSecurityPage from "./pages/ReportsSecurityPage";
 import OfflineSyncPage from "./pages/OfflineSyncPage";
 import TopTierOperatorToolsPage from "./pages/TopTierOperatorToolsPage";
 import LaunchReadinessPage from "./pages/LaunchReadinessPage";
+import LaunchSalesPolishPage from "./pages/LaunchSalesPolishPage";
+import IntegrationProofPage from "./pages/IntegrationProofPage";
+import LaunchOpsPage from "./pages/LaunchOpsPage";
+import BackupRecoveryPage from "./pages/BackupRecoveryPage";
+import PolishChecklistPage from "./pages/PolishChecklistPage";
 import DemoModePage from "./pages/DemoModePage";
 import NotificationsWorkspacePage from "./pages/NotificationsWorkspacePage";
 import BillingConfidencePage from "./pages/BillingConfidencePage";
@@ -202,6 +207,11 @@ function App() {
           <Routes>
             <Route path="/operator-tools" element={<BusinessRoute><TopTierOperatorToolsPage /></BusinessRoute>} />
             <Route path="/launch-control" element={<BusinessRoute><LaunchReadinessPage /></BusinessRoute>} />
+            <Route path="/sales-polish" element={<BusinessRoute><ConceptCFrame area="launch"><LaunchSalesPolishPage /></ConceptCFrame></BusinessRoute>} />
+            <Route path="/integration-proof" element={<BusinessRoute><ConceptCFrame area="integrations"><IntegrationProofPage /></ConceptCFrame></BusinessRoute>} />
+            <Route path="/launch-ops" element={<BusinessRoute><ConceptCFrame area="launch"><LaunchOpsPage /></ConceptCFrame></BusinessRoute>} />
+            <Route path="/backup-recovery" element={<BusinessRoute><ConceptCFrame area="launch"><BackupRecoveryPage /></ConceptCFrame></BusinessRoute>} />
+            <Route path="/polish-checklist" element={<BusinessRoute><ConceptCFrame area="launch"><PolishChecklistPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/demo-mode" element={<BusinessRoute><ConceptCFrame area="demo"><DemoModePage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/sample-mode" element={<BusinessRoute><ConceptCFrame area="demo"><DemoModePage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/public/proof/:token" element={<PublicProofPackPage />} />
