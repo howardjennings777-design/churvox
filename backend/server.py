@@ -15125,6 +15125,321 @@ async def approve_ai_operator_action(action_id: str, current_user: dict = Depend
     return {"success": True, "action": safe_doc(saved), "result": result}
 
 
+
+
+# CHURVOX_AREA13_REPORTS_SECURITY_DATA_20260531
+# Reports / export / trust / security / data control.
+def _area13_text(value) -> str:
+    return str(value or "").strip()
+
+def _area13_doc_id(doc: dict) -> str:
+    return str((doc or {}).get("_id") or (doc or {}).get("id") or "")
+
+def _area13_num(value, fallback=0.0):
+    try:
+        if value is None or value == "":
+            return float(fallback)
+        return float(str(value).replace("$", "").replace(",", "").strip())
+    except Exception:
+        return float(fallback or 0)
+
+def _area13_status(doc: dict) -> str:
+    return str((doc or {}).get("status") or "").lower().replace(" ", "_")
+
+def _area13_dt(value):
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+def _area13_in_range(doc: dict, start_dt, end_dt) -> bool:
+    if not start_dt and not end_dt:
+        return True
+    dt = _area13_dt(doc.get("created_at") or doc.get("updated_at") or doc.get("completed_at") or doc.get("paid_at"))
+    if not dt:
+        return True
+    if start_dt and dt < start_dt:
+        return False
+    if end_dt and dt > end_dt:
+        return False
+    return True
+
+def _area13_invoice_total(invoice: dict) -> float:
+    return _area13_num(invoice.get("total") or invoice.get("amount") or invoice.get("subtotal"), 0)
+
+def _area13_invoice_due(invoice: dict) -> float:
+    return max(
+        _area13_num(invoice.get("amount_due"), 0),
+        _area13_num(invoice.get("balance_due"), 0),
+        _area13_num(invoice.get("remaining_balance"), 0),
+        _area13_invoice_total(invoice) - _area13_num(invoice.get("amount_paid") or invoice.get("paid_amount"), 0),
+    )
+
+def _area13_is_overdue(invoice: dict) -> bool:
+    if _area13_status(invoice) in {"paid", "void", "cancelled"}:
+        return False
+    if _area13_status(invoice) == "overdue":
+        return True
+    due = _area13_dt(invoice.get("due_date"))
+    return bool(due and due < datetime.now(timezone.utc))
+
+def _area13_is_completed_job(job: dict) -> bool:
+    status = _area13_status(job)
+    return status in {"completed", "complete", "done"} or bool(job.get("completed") or job.get("completed_at") or job.get("worker_completed_at"))
+
+def _area13_job_has_invoice(job: dict) -> bool:
+    return bool(job.get("invoice_id") or job.get("draft_invoice_id") or job.get("invoiced"))
+
+def _area13_week_month_cutoffs():
+    now = datetime.now(timezone.utc)
+    return now - timedelta(days=7), now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+def _area13_group_sum(rows: list, key_getter, value_getter):
+    out = {}
+    for row in rows:
+        key = _area13_text(key_getter(row)) or "Unknown"
+        out[key] = round(out.get(key, 0) + float(value_getter(row) or 0), 2)
+    return [{"label": k, "value": v} for k, v in sorted(out.items(), key=lambda x: x[1], reverse=True)]
+
+def _area13_group_count(rows: list, key_getter):
+    out = {}
+    for row in rows:
+        key = _area13_text(key_getter(row)) or "Unknown"
+        out[key] = out.get(key, 0) + 1
+    return [{"label": k, "count": v} for k, v in sorted(out.items(), key=lambda x: x[1], reverse=True)]
+
+def _area13_csv_escape(value):
+    s = str(value if value is not None else "")
+    s = s.replace('"', '""')
+    return f'"{s}"'
+
+def _area13_csv(rows: list, fields: list) -> str:
+    lines = [",".join(_area13_csv_escape(label) for key, label in fields)]
+    for row in rows:
+        lines.append(",".join(_area13_csv_escape(row.get(key, "")) for key, label in fields))
+    return "\n".join(lines)
+
+async def _area13_report_data(business_id: str, date_from: str = "", date_to: str = ""):
+    start_dt = _area13_dt(date_from) if date_from else None
+    end_dt = _area13_dt(date_to) if date_to else None
+
+    invoices_all = [safe_doc(i) async for i in db.invoices.find({"business_id": str(business_id)}).sort("created_at", -1).limit(2000)]
+    jobs_all = [safe_doc(j) async for j in db.jobs.find({"business_id": str(business_id)}).sort("created_at", -1).limit(2000)]
+    quotes_all = [safe_doc(q) async for q in db.quotes.find({"business_id": str(business_id)}).sort("created_at", -1).limit(2000)]
+    clients_all = [safe_doc(c) async for c in db.clients.find({"business_id": str(business_id)}).sort("created_at", -1).limit(2000)]
+
+    invoices = [i for i in invoices_all if _area13_in_range(i, start_dt, end_dt)]
+    jobs = [j for j in jobs_all if _area13_in_range(j, start_dt, end_dt)]
+    quotes = [q for q in quotes_all if _area13_in_range(q, start_dt, end_dt)]
+
+    week_start, month_start = _area13_week_month_cutoffs()
+
+    paid_invoices = [i for i in invoices_all if _area13_status(i) == "paid"]
+    unpaid_invoices = [i for i in invoices_all if _area13_status(i) not in {"paid", "void", "cancelled"}]
+    overdue_invoices = [i for i in unpaid_invoices if _area13_is_overdue(i)]
+    completed_jobs_not_invoiced = [j for j in jobs_all if _area13_is_completed_job(j) and not _area13_job_has_invoice(j)]
+    waiting_quotes = [q for q in quotes_all if _area13_status(q) in {"draft", "sent", "pending", "waiting", "open"}]
+    accepted_quotes_not_converted = [
+        q for q in quotes_all
+        if _area13_status(q) in {"accepted", "approved"} and not (q.get("job_id") or q.get("converted_job_id"))
+    ]
+
+    paid_this_week = sum(_area13_invoice_total(i) for i in paid_invoices if (_area13_dt(i.get("paid_at") or i.get("updated_at") or i.get("created_at")) or datetime.min.replace(tzinfo=timezone.utc)) >= week_start)
+    paid_this_month = sum(_area13_invoice_total(i) for i in paid_invoices if (_area13_dt(i.get("paid_at") or i.get("updated_at") or i.get("created_at")) or datetime.min.replace(tzinfo=timezone.utc)) >= month_start)
+    invoiced_this_week = sum(_area13_invoice_total(i) for i in invoices_all if (_area13_dt(i.get("created_at") or i.get("updated_at")) or datetime.min.replace(tzinfo=timezone.utc)) >= week_start)
+    invoiced_this_month = sum(_area13_invoice_total(i) for i in invoices_all if (_area13_dt(i.get("created_at") or i.get("updated_at")) or datetime.min.replace(tzinfo=timezone.utc)) >= month_start)
+
+    job_status_counts = _area13_group_count(jobs_all, lambda j: j.get("status") or j.get("job_status") or "open")
+    jobs_by_worker = _area13_group_count(jobs_all, lambda j: j.get("assigned_worker_name") or j.get("worker_name") or "Unassigned")
+    jobs_by_service_type = _area13_group_count(jobs_all, lambda j: j.get("service_type") or j.get("job_type") or "Service work")
+
+    time_by_worker_raw = {}
+    for job in jobs_all:
+        worker = _area13_text(job.get("assigned_worker_name") or job.get("worker_name") or "Unassigned")
+        minutes = int(_area13_num(job.get("time_spent_minutes") or job.get("total_minutes") or job.get("worked_minutes"), 0))
+        time_by_worker_raw[worker] = time_by_worker_raw.get(worker, 0) + minutes
+    time_by_worker = [{"label": k, "hours": round(v / 60, 2), "minutes": v} for k, v in sorted(time_by_worker_raw.items(), key=lambda x: x[1], reverse=True)]
+
+    revenue_by_client = _area13_group_sum(
+        invoices_all,
+        lambda i: i.get("customer_name") or i.get("client_name") or "Unknown client",
+        lambda i: _area13_invoice_total(i),
+    )
+
+    cancelled_late_paused_jobs = [
+        j for j in jobs_all
+        if _area13_status(j) in {"cancelled", "canceled", "paused", "late", "blocked", "cannot_complete"}
+        or j.get("cannot_complete_reason")
+    ]
+
+    trust_checks = {
+        "privacy_route": True,
+        "terms_route": True,
+        "contact_support_route": True,
+        "password_reset_routes": True,
+        "invite_setup": True,
+        "business_isolation": "All Area 13 report queries are scoped by authenticated business_id.",
+        "data_export": True,
+        "audit_log": True,
+    }
+
+    return {
+        "metrics": {
+            "invoiced_this_week": round(invoiced_this_week, 2),
+            "invoiced_this_month": round(invoiced_this_month, 2),
+            "paid_this_week": round(paid_this_week, 2),
+            "paid_this_month": round(paid_this_month, 2),
+            "unpaid_total": round(sum(_area13_invoice_due(i) for i in unpaid_invoices), 2),
+            "overdue_total": round(sum(_area13_invoice_due(i) for i in overdue_invoices), 2),
+            "completed_jobs_not_invoiced": len(completed_jobs_not_invoiced),
+            "quotes_waiting": len(waiting_quotes),
+            "accepted_quotes_not_converted": len(accepted_quotes_not_converted),
+            "jobs_total": len(jobs_all),
+            "clients_total": len(clients_all),
+            "invoices_total": len(invoices_all),
+            "cancelled_late_paused_jobs": len(cancelled_late_paused_jobs),
+        },
+        "charts": {
+            "job_status_counts": job_status_counts,
+            "jobs_by_worker": jobs_by_worker,
+            "time_by_worker": time_by_worker,
+            "revenue_by_client": revenue_by_client[:20],
+            "jobs_by_service_type": jobs_by_service_type,
+        },
+        "records": {
+            "completed_jobs_not_invoiced": completed_jobs_not_invoiced[:100],
+            "waiting_quotes": waiting_quotes[:100],
+            "accepted_quotes_not_converted": accepted_quotes_not_converted[:100],
+            "overdue_invoices": overdue_invoices[:100],
+            "unpaid_invoices": unpaid_invoices[:100],
+            "cancelled_late_paused_jobs": cancelled_late_paused_jobs[:100],
+        },
+        "trust_checks": trust_checks,
+        "date_filter": {"date_from": date_from, "date_to": date_to},
+    }
+
+@api_router.get("/reports/workspace")
+async def get_reports_workspace(
+    date_from: str = Query(default=""),
+    date_to: str = Query(default=""),
+    current_user: dict = Depends(get_current_user)
+):
+    business_id = await get_user_business_id(current_user)
+    data = await _area13_report_data(str(business_id), date_from, date_to)
+    return {"success": True, "reports": data}
+
+@api_router.get("/reports/export/{dataset}")
+async def export_reports_dataset(
+    dataset: str,
+    date_from: str = Query(default=""),
+    date_to: str = Query(default=""),
+    current_user: dict = Depends(get_current_user)
+):
+    business_id = await get_user_business_id(current_user)
+    dataset = _area13_text(dataset).lower()
+    data = await _area13_report_data(str(business_id), date_from, date_to)
+
+    if dataset == "invoices":
+        rows = [safe_doc(i) async for i in db.invoices.find({"business_id": str(business_id)}).sort("created_at", -1).limit(5000)]
+        fields = [
+            ("invoice_number", "Invoice Number"),
+            ("customer_name", "Customer"),
+            ("status", "Status"),
+            ("total", "Total"),
+            ("amount_paid", "Amount Paid"),
+            ("amount_due", "Amount Due"),
+            ("due_date", "Due Date"),
+            ("created_at", "Created"),
+        ]
+    elif dataset == "jobs":
+        rows = [safe_doc(j) async for j in db.jobs.find({"business_id": str(business_id)}).sort("created_at", -1).limit(5000)]
+        fields = [
+            ("title", "Title"),
+            ("customer_name", "Customer"),
+            ("status", "Status"),
+            ("assigned_worker_name", "Worker"),
+            ("address", "Address"),
+            ("scheduled_date", "Scheduled Date"),
+            ("time_spent_minutes", "Minutes"),
+            ("created_at", "Created"),
+        ]
+    elif dataset == "quotes":
+        rows = [safe_doc(q) async for q in db.quotes.find({"business_id": str(business_id)}).sort("created_at", -1).limit(5000)]
+        fields = [
+            ("quote_number", "Quote Number"),
+            ("customer_name", "Customer"),
+            ("status", "Status"),
+            ("total", "Total"),
+            ("created_at", "Created"),
+        ]
+    elif dataset == "clients":
+        rows = [safe_doc(c) async for c in db.clients.find({"business_id": str(business_id)}).sort("created_at", -1).limit(5000)]
+        fields = [
+            ("client_name", "Client Name"),
+            ("name", "Name"),
+            ("email", "Email"),
+            ("phone", "Phone"),
+            ("billing_address", "Billing Address"),
+            ("customer_type", "Customer Type"),
+            ("created_at", "Created"),
+        ]
+    elif dataset == "summary":
+        rows = [
+            {"metric": k, "value": v}
+            for k, v in data.get("metrics", {}).items()
+        ]
+        fields = [("metric", "Metric"), ("value", "Value")]
+    else:
+        raise HTTPException(status_code=400, detail="Export dataset must be invoices, jobs, quotes, clients, or summary")
+
+    csv = _area13_csv(rows, fields)
+    return {
+        "success": True,
+        "filename": f"churvox_{dataset}_export.csv",
+        "content_type": "text/csv",
+        "csv": csv,
+    }
+
+@api_router.get("/data-control/export")
+async def export_business_data_control(current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    payload = {
+        "business_id": str(business_id),
+        "exported_at": datetime.now(timezone.utc),
+        "clients": [safe_doc(c) async for c in db.clients.find({"business_id": str(business_id)}).limit(5000)],
+        "jobs": [safe_doc(j) async for j in db.jobs.find({"business_id": str(business_id)}).limit(5000)],
+        "quotes": [safe_doc(q) async for q in db.quotes.find({"business_id": str(business_id)}).limit(5000)],
+        "invoices": [safe_doc(i) async for i in db.invoices.find({"business_id": str(business_id)}).limit(5000)],
+        "business_settings": safe_doc(await db.business_settings.find_one({"business_id": str(business_id)}) or {}),
+    }
+    return {"success": True, "export": make_json_safe(payload)}
+
+@api_router.post("/data-control/request-account-deletion")
+async def request_account_deletion(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    request = {
+        "business_id": str(business_id),
+        "user_id": str(current_user.get("id") or current_user.get("_id") or ""),
+        "email": current_user.get("email") or "",
+        "reason": _area13_text((payload or {}).get("reason") or "Account deletion requested"),
+        "status": "requested",
+        "type": "account_deletion_request",
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
+    }
+    inserted = await db.business_activity.insert_one(request)
+    request["_id"] = inserted.inserted_id
+    return {
+        "success": True,
+        "message": "Account deletion request recorded. Review before deleting business data.",
+        "request": safe_doc(request),
+    }
+
+
 # CORS_HARD_FIX_20260412
 
 

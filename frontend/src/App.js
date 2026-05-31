@@ -57,6 +57,7 @@ import DispatchBoardPage from "./pages/DispatchBoardPage";
 import IntegrationsWorkspacePage from "./pages/IntegrationsWorkspacePage";
 import AutomationWorkspacePage from "./pages/AutomationWorkspacePage";
 import AIOperatorActionsPage from "./pages/AIOperatorActionsPage";
+import ReportsSecurityPage from "./pages/ReportsSecurityPage";
 import OfflineSyncPage from "./pages/OfflineSyncPage";
 import TopTierOperatorToolsPage from "./pages/TopTierOperatorToolsPage";
 import LaunchReadinessPage from "./pages/LaunchReadinessPage";
@@ -251,7 +252,7 @@ function App() {
             <Route path="/invoices/new" element={<BusinessRoute><ConceptCFrame area="invoices"><InvoiceFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/invoices/:id" element={<BusinessRoute><ConceptCFrame area="invoices"><InvoiceDetailPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/sms" element={<BusinessRoute><Navigate to="/dashboard" replace /></BusinessRoute>} />
-            <Route path="/reports" element={<ReportsRoute><ConceptCPage area="reports" /></ReportsRoute>} />
+            <Route path="/reports" element={<ReportsRoute><ConceptCFrame area="reports"><ReportsSecurityPage /></ConceptCFrame></ReportsRoute>} />
             <Route path="/integrations" element={<BusinessRoute><Navigate to="/dashboard" replace /></BusinessRoute>} />
             <Route path="/settings" element={<BusinessRoute><ConceptCFrame area="settings"><BusinessSettingsPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/contact" element={<PrivateRoute><ConceptCFrame area="settings"><ContactPage /></ConceptCFrame></PrivateRoute>} />
