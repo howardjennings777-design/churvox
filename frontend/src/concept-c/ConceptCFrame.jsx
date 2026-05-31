@@ -79,8 +79,8 @@ export default function ConceptCFrame({ area = "jobs", children }) {
 
         <aside className="c2-ai">
           <p>AI OPERATOR</p>
-          <h2>Command-ready page.</h2>
-          <span>This page belongs to the same Churvox command system: owner approval, live admin, clear next action.</span>
+          <h2>Command page.</h2>
+          <span>Full-screen workspace. Same Churvox command system, owner approval and clear next action.</span>
 
           <div>
             <small>Screen</small>
