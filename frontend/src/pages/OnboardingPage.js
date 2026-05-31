@@ -14,6 +14,7 @@ const launchSteps = [
   { key: 'job', title: 'Create your first job', href: '/jobs', why: 'This starts the real field workflow.' },
   { key: 'worker', title: 'Invite or add your first worker', href: '/team', why: 'Dispatch, crew ops and worker completion need a worker record.' },
   { key: 'invoice', title: 'Create your first invoice', href: '/invoices', why: 'Money Desk and Reports become useful once invoices exist.' },
+  { key: 'demo', title: 'Create demo sample data', href: '/demo-mode', why: 'Use sample data for screenshots, sales demos and full workflow practice.' },
   { key: 'ai', title: 'Review AI Operator actions', href: '/ai-operator', why: 'Churvox prepares admin; you approve the important actions.' },
   { key: 'trust', title: 'Review trust and support', href: '/contact', why: 'Know where support, privacy, data control and help live.' },
 ];
@@ -67,6 +68,7 @@ export default function OnboardingPage() {
     if (setupCounts.jobs > 0) done.add('job');
     if (setupCounts.workers > 0) done.add('worker');
     if (setupCounts.invoices > 0) done.add('invoice');
+    done.add('demo');
     done.add('ai');
     done.add('trust');
     return done;

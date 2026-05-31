@@ -669,6 +669,8 @@ function Dashboard({ m, loading, onPick }) {
         <Link to="/invoices">Money</Link>
         <Link to="/plans" data-churvox-plans-link="true">Plans</Link>
         <Link to="/onboarding" data-churvox-setup-link="true">Setup</Link>
+        <Link to="/demo-mode" data-churvox-demo-link="true">Demo</Link>
+        <Link to="/onboarding" data-churvox-setup-link="true">Setup</Link>
         <Link to="/team">Crew</Link>
         <Link to="/operator-tools">Tools</Link>
         <label>

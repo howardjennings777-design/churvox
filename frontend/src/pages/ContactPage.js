@@ -61,6 +61,9 @@ export default function ContactPage() {
           <div className="mt-4 flex flex-wrap gap-3">
             <a className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-black text-slate-800" href="/dashboard">Command Floor</a>
             <a className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-black text-slate-800" href="/onboarding">Setup checklist</a>
+            <a className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-black text-slate-800" href="/demo-mode">Demo mode</a>
+            <a className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-black text-slate-800" href="/notifications">Notifications</a>
+            <a className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-black text-slate-800" href="/billing-confidence">Billing confidence</a>
             <a className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-black text-slate-800" href="/privacy">Privacy</a>
             <a className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-black text-slate-800" href="/terms">Terms</a>
             <a className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-black text-slate-800" href="/account-deletion">Account deletion</a>

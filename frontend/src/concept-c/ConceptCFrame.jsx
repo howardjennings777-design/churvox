@@ -9,6 +9,11 @@ const FRAME = {
   quotes: ["SALES CONTROL", "Quote card.", "Create, edit and review quotes inside the Churvox Command Floor.", "Back to quotes", "/quotes"],
   invoices: ["MONEY CONTROL", "Invoice card.", "Create, edit and review invoices inside the Churvox Command Floor.", "Back to invoices", "/invoices"],
   plans: ["PLAN CONTROL", "Plan desk.", "Choose and manage plan access inside the Churvox Command Floor.", "Back to dashboard", "/dashboard"],
+  demo: ["DEMO CONTROL", "Demo desk.", "Create sample clients, jobs, invoices, AI actions and notifications for sales demos.", "Back to demo", "/demo-mode"],
+  billing: ["BILLING CONTROL", "Billing confidence.", "Check plan, trial, GST, Stripe and support clarity.", "Back to billing", "/billing-confidence"],
+  notifications: ["ALERT CONTROL", "Notification desk.", "Review owner alerts, support tickets and AI notifications.", "Back to notifications", "/notifications"],
+  onboarding: ["LAUNCH CONTROL", "Setup desk.", "Finish business setup, first client, first job, worker, invoice and trust steps.", "Back to setup", "/onboarding"],
+  support: ["TRUST CONTROL", "Support desk.", "Find support, billing, data control, privacy and AI guardrails.", "Back to support", "/contact"],
   onboarding: ["LAUNCH CONTROL", "Setup desk.", "Finish business setup, first client, first job, worker, invoice and trust steps.", "Back to setup", "/onboarding"],
   support: ["TRUST CONTROL", "Support desk.", "Find support, billing, data control, privacy and AI guardrails.", "Back to support", "/contact"],
   worker: ["FIELD APP", "Worker mode.", "Worker jobs, details and settings inside the Churvox identity.", "Worker jobs", "/worker/jobs"],
@@ -22,6 +27,7 @@ export default function ConceptCFrame({ area = "jobs", children }) {
     area === "clients" ? "people" :
     area === "invoices" ? "finance" :
     area === "plans" ? "plans" :
+    area === "demo" || area === "billing" || area === "notifications" || area === "onboarding" || area === "support" ? "setup" :
     area === "onboarding" || area === "support" ? "setup" :
     area === "quotes" || area === "worker" ? "jobs" :
     area === "settings" ? "more" :

@@ -1,0 +1,136 @@
+/* CHURVOX_LAUNCH_MOBILE_POLISH_20260601 */
+@media (max-width: 860px) {
+  html, body, #root {
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    touch-action: manipulation;
+  }
+
+  .concept-c2,
+  .concept-c2-frame,
+  .xcf10 {
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  .c2-topbar,
+  .xcf10-topbar {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  .c2-frame {
+    display: block !important;
+    padding: 12px !important;
+    padding-bottom: 92px !important;
+  }
+
+  .c2-spine,
+  .c2-ai {
+    margin-bottom: 12px !important;
+  }
+
+  .c2-real-page-card {
+    border-radius: 24px !important;
+    padding: 12px !important;
+    min-width: 0 !important;
+  }
+
+  .c2-dock,
+  .xcf10-dock {
+    position: fixed !important;
+    left: 10px !important;
+    right: 10px !important;
+    bottom: 10px !important;
+    z-index: 60 !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap !important;
+    border-radius: 24px !important;
+    padding: 8px !important;
+    gap: 6px !important;
+  }
+
+  .c2-dock a,
+  .xcf10-dock a,
+  .c2-dock button,
+  .xcf10-dock button {
+    min-height: 44px !important;
+    min-width: max-content !important;
+    padding: 10px 13px !important;
+    font-size: 0.78rem !important;
+  }
+
+  .xcf10-dock label {
+    display: none !important;
+  }
+
+  .cv-demo-grid,
+  .cv-notify-metrics,
+  .cv-billing-summary,
+  .cv-report-metrics,
+  .cv-auto-metrics,
+  .cv-ai-metrics,
+  .cv-int-metrics,
+  .cv-dispatch-metrics,
+  .cv-crew-metrics {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cv-demo-actions,
+  .cv-notify-item,
+  .cv-billing-grid,
+  .cv-report-grid,
+  .cv-report-record-grid,
+  .cv-report-export,
+  .cv-ai-layout,
+  .cv-auto-grid,
+  .cv-int-grid,
+  .cv-dispatch-board {
+    grid-template-columns: 1fr !important;
+    display: grid !important;
+  }
+
+  .cv-ai-action,
+  .cv-auto-rule,
+  .cv-dispatch-job,
+  .cv-int-sync-row,
+  .cv-report-record,
+  .cv-demo-actions,
+  .cv-notify-item {
+    border-radius: 20px !important;
+  }
+
+  .cv-ai-data,
+  .cv-auto-rule-flow,
+  .cv-dispatch-controls {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cv-ai-action footer,
+  .cv-auto-rule footer,
+  .cv-int-actions,
+  .cv-report-export-buttons,
+  .cv-report-data-actions {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .cv-ai-action footer a,
+  .cv-ai-action footer button,
+  .cv-auto-rule button,
+  .cv-int-actions button,
+  .cv-report-export-buttons button,
+  .cv-report-data-actions button {
+    width: 100% !important;
+    justify-content: center !important;
+    min-height: 44px !important;
+  }
+}

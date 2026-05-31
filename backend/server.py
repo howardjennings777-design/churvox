@@ -15570,6 +15570,353 @@ async def create_churvox_hq_activity_note(payload: dict = Body(default={}), curr
     return {"success": True, "note": safe_doc(doc)}
 
 
+
+
+# CHURVOX_LAUNCH_1_5_DEMO_NOTIFY_BILLING_20260601
+# Launch 1-5: demo/sample mode, notification workspace, billing confidence.
+def _launch15_text(value) -> str:
+    return str(value or "").strip()
+
+def _launch15_doc_id(doc: dict) -> str:
+    return str((doc or {}).get("_id") or (doc or {}).get("id") or "")
+
+def _launch15_money(value, fallback=0.0):
+    try:
+        if value is None or value == "":
+            return float(fallback)
+        return float(str(value).replace("$", "").replace(",", "").strip())
+    except Exception:
+        return float(fallback or 0)
+
+async def _launch15_count(collection_name: str, query: dict):
+    try:
+        return await getattr(db, collection_name).count_documents(query)
+    except Exception:
+        return 0
+
+async def _launch15_demo_status(business_id: str):
+    query = {"business_id": str(business_id), "demo_record": True}
+    return {
+        "clients": await _launch15_count("clients", query),
+        "jobs": await _launch15_count("jobs", query),
+        "quotes": await _launch15_count("quotes", query),
+        "invoices": await _launch15_count("invoices", query),
+        "ai_actions": await _launch15_count("ai_operator_actions", query),
+        "notifications": await _launch15_count("business_activity", {**query, "type": {"$in": ["notification", "support_ticket", "ai_notification"]}}),
+    }
+
+@api_router.get("/demo/status")
+async def get_launch_demo_status(current_user: dict = Depends(get_current_user)):
+    business_id = str(await get_user_business_id(current_user))
+    counts = await _launch15_demo_status(business_id)
+    return {
+        "success": True,
+        "demo": {
+            "seeded": any(v > 0 for v in counts.values()),
+            "counts": counts,
+            "message": "Demo mode creates safe sample records marked demo_record=true.",
+        },
+    }
+
+@api_router.post("/demo/seed")
+async def seed_launch_demo_business(current_user: dict = Depends(get_current_user)):
+    business_id = str(await get_user_business_id(current_user))
+    now = datetime.now(timezone.utc)
+
+    client = {
+        "business_id": business_id,
+        "demo_key": "demo_client_green_valley",
+        "demo_record": True,
+        "client_name": "Green Valley Property Group",
+        "name": "Green Valley Property Group",
+        "email": "demo.client@example.com",
+        "phone": "+64210000000",
+        "billing_address": "12 Demo Lane, Wellington",
+        "customer_type": "Property manager",
+        "notes": "Demo client for screenshots, sales demos and live workflow testing.",
+        "created_at": now,
+        "updated_at": now,
+    }
+    await db.clients.update_one(
+        {"business_id": business_id, "demo_key": client["demo_key"]},
+        {"$set": client, "$setOnInsert": {"created_at": now}},
+        upsert=True,
+    )
+    saved_client = await db.clients.find_one({"business_id": business_id, "demo_key": client["demo_key"]})
+    client_id = _launch15_doc_id(saved_client)
+
+    worker = {
+        "business_id": business_id,
+        "demo_key": "demo_worker_jamie",
+        "demo_record": True,
+        "display_name": "Jamie Demo",
+        "name": "Jamie Demo",
+        "email": "demo.worker@example.com",
+        "role": "worker",
+        "region": "Wellington",
+        "skills": ["lawn care", "property maintenance", "photos"],
+        "status": "active",
+        "created_at": now,
+        "updated_at": now,
+    }
+    await db.business_users.update_one(
+        {"business_id": business_id, "demo_key": worker["demo_key"]},
+        {"$set": worker, "$setOnInsert": {"created_at": now}},
+        upsert=True,
+    )
+    saved_worker = await db.business_users.find_one({"business_id": business_id, "demo_key": worker["demo_key"]})
+    worker_id = _launch15_doc_id(saved_worker)
+
+    quote = {
+        "business_id": business_id,
+        "demo_key": "demo_quote_green_valley",
+        "demo_record": True,
+        "client_id": client_id,
+        "customer_name": "Green Valley Property Group",
+        "quote_number": "DEMO-Q-1001",
+        "status": "accepted",
+        "job_description": "Monthly grounds maintenance and tidy-up.",
+        "description": "Monthly grounds maintenance, edges, green waste and completion photos.",
+        "total": 245.00,
+        "created_at": now,
+        "updated_at": now,
+    }
+    await db.quotes.update_one(
+        {"business_id": business_id, "demo_key": quote["demo_key"]},
+        {"$set": quote, "$setOnInsert": {"created_at": now}},
+        upsert=True,
+    )
+    saved_quote = await db.quotes.find_one({"business_id": business_id, "demo_key": quote["demo_key"]})
+    quote_id = _launch15_doc_id(saved_quote)
+
+    job = {
+        "business_id": business_id,
+        "demo_key": "demo_job_green_valley",
+        "demo_record": True,
+        "client_id": client_id,
+        "quote_id": quote_id,
+        "customer_name": "Green Valley Property Group",
+        "title": "Green Valley monthly property service",
+        "description": "Mow lawns, trim edges, clear green waste, upload completion photos.",
+        "address": "12 Demo Lane, Wellington",
+        "site_address": "12 Demo Lane, Wellington",
+        "status": "completed",
+        "assigned_worker_id": worker_id,
+        "worker_id": worker_id,
+        "assigned_worker_name": "Jamie Demo",
+        "worker_name": "Jamie Demo",
+        "scheduled_date": now.date().isoformat(),
+        "scheduled_time": "09:00",
+        "completed_at": now,
+        "price": 245.00,
+        "job_price": 245.00,
+        "pricing_type": "fixed",
+        "ai_invoice_description": "Monthly grounds maintenance, edges, green waste and completion photos at 12 Demo Lane.",
+        "created_at": now,
+        "updated_at": now,
+    }
+    await db.jobs.update_one(
+        {"business_id": business_id, "demo_key": job["demo_key"]},
+        {"$set": job, "$setOnInsert": {"created_at": now}},
+        upsert=True,
+    )
+    saved_job = await db.jobs.find_one({"business_id": business_id, "demo_key": job["demo_key"]})
+    job_id = _launch15_doc_id(saved_job)
+
+    invoice = {
+        "business_id": business_id,
+        "demo_key": "demo_invoice_green_valley",
+        "demo_record": True,
+        "client_id": client_id,
+        "job_id": job_id,
+        "quote_id": quote_id,
+        "customer_name": "Green Valley Property Group",
+        "customer_email": "demo.client@example.com",
+        "invoice_number": "DEMO-INV-1001",
+        "status": "sent",
+        "description": "Monthly grounds maintenance, edges, green waste and completion photos at 12 Demo Lane.",
+        "line_items": [{"description": "Monthly property service", "quantity": 1, "unit_price": 245.00, "amount": 245.00}],
+        "subtotal": 245.00,
+        "total": 245.00,
+        "amount_due": 245.00,
+        "amount_paid": 0,
+        "due_date": (now + timedelta(days=7)).date().isoformat(),
+        "created_at": now,
+        "updated_at": now,
+    }
+    await db.invoices.update_one(
+        {"business_id": business_id, "demo_key": invoice["demo_key"]},
+        {"$set": invoice, "$setOnInsert": {"created_at": now}},
+        upsert=True,
+    )
+    saved_invoice = await db.invoices.find_one({"business_id": business_id, "demo_key": invoice["demo_key"]})
+    invoice_id = _launch15_doc_id(saved_invoice)
+
+    await db.jobs.update_one(
+        {"business_id": business_id, "demo_key": job["demo_key"]},
+        {"$set": {"invoice_id": invoice_id, "draft_invoice_id": invoice_id, "invoiced": True, "updated_at": now}},
+    )
+
+    ai_action = {
+        "business_id": business_id,
+        "demo_key": "demo_ai_overdue_followup",
+        "demo_record": True,
+        "action_key": f"demo:invoice_followup:{invoice_id}",
+        "action_type": "draft_overdue_invoice_reminder",
+        "record_type": "invoice",
+        "record_id": invoice_id,
+        "title": "Demo: prepare invoice follow-up",
+        "reason": "This sample shows how Churvox prepares admin for owner approval.",
+        "status": "pending",
+        "risk_level": "medium",
+        "confidence": 0.89,
+        "approval_required": True,
+        "data_used": {"invoice_number": "DEMO-INV-1001", "amount_due": 245.00},
+        "proposed_changes": {"message_draft": "Friendly follow-up for DEMO-INV-1001."},
+        "editable_payload": {"message": "Hi Green Valley, just checking you received DEMO-INV-1001. Thanks."},
+        "created_at": now,
+        "updated_at": now,
+    }
+    await db.ai_operator_actions.update_one(
+        {"business_id": business_id, "demo_key": ai_action["demo_key"]},
+        {"$set": ai_action, "$setOnInsert": {"created_at": now}},
+        upsert=True,
+    )
+
+    notification = {
+        "business_id": business_id,
+        "demo_key": "demo_notification_worker_completed",
+        "demo_record": True,
+        "type": "notification",
+        "title": "Demo worker completed a job",
+        "message": "Jamie Demo completed Green Valley monthly property service. Invoice draft is ready.",
+        "status": "unread",
+        "href": f"/jobs/{job_id}",
+        "priority": "normal",
+        "created_at": now,
+        "updated_at": now,
+    }
+    await db.business_activity.update_one(
+        {"business_id": business_id, "demo_key": notification["demo_key"]},
+        {"$set": notification, "$setOnInsert": {"created_at": now}},
+        upsert=True,
+    )
+
+    counts = await _launch15_demo_status(business_id)
+    return {
+        "success": True,
+        "message": "Demo/sample business records are ready.",
+        "demo": {
+            "counts": counts,
+            "client_id": client_id,
+            "worker_id": worker_id,
+            "quote_id": quote_id,
+            "job_id": job_id,
+            "invoice_id": invoice_id,
+        },
+    }
+
+@api_router.post("/demo/clear")
+async def clear_launch_demo_business(current_user: dict = Depends(get_current_user)):
+    business_id = str(await get_user_business_id(current_user))
+    query = {"business_id": business_id, "demo_record": True}
+    results = {}
+    for name in ["clients", "jobs", "quotes", "invoices", "ai_operator_actions", "business_activity", "business_users"]:
+        try:
+            res = await getattr(db, name).delete_many(query)
+            results[name] = res.deleted_count
+        except Exception:
+            results[name] = 0
+    return {"success": True, "message": "Demo records cleared only where demo_record=true.", "deleted": results}
+
+@api_router.get("/notifications/workspace")
+async def get_launch_notifications_workspace(current_user: dict = Depends(get_current_user)):
+    business_id = str(await get_user_business_id(current_user))
+    query = {"business_id": business_id, "type": {"$in": ["notification", "ai_notification", "support_ticket", "bug_report", "feature_request"]}}
+    try:
+        notifications = [safe_doc(n) async for n in db.business_activity.find(query).sort("created_at", -1).limit(150)]
+    except Exception:
+        notifications = []
+
+    unread = [n for n in notifications if str(n.get("status") or "").lower() not in {"read", "closed", "done"}]
+    return {
+        "success": True,
+        "notifications": {
+            "items": notifications,
+            "metrics": {
+                "total": len(notifications),
+                "unread": len(unread),
+                "support_open": len([n for n in notifications if n.get("type") in {"support_ticket", "bug_report", "feature_request"} and str(n.get("status") or "open") == "open"]),
+            },
+        },
+    }
+
+@api_router.post("/notifications/test")
+async def create_launch_test_notification(current_user: dict = Depends(get_current_user)):
+    business_id = str(await get_user_business_id(current_user))
+    now = datetime.now(timezone.utc)
+    doc = {
+        "business_id": business_id,
+        "type": "notification",
+        "title": "Test notification",
+        "message": "This proves the notification centre can receive owner alerts.",
+        "status": "unread",
+        "href": "/notifications",
+        "priority": "normal",
+        "created_by": current_user.get("email") or current_user.get("id"),
+        "created_at": now,
+        "updated_at": now,
+    }
+    inserted = await db.business_activity.insert_one(doc)
+    doc["_id"] = inserted.inserted_id
+    return {"success": True, "notification": safe_doc(doc)}
+
+@api_router.post("/notifications/{notification_id}/read")
+async def mark_launch_notification_read(notification_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = str(await get_user_business_id(current_user))
+    clauses = [{"id": str(notification_id)}]
+    if ObjectId.is_valid(str(notification_id)):
+        clauses.insert(0, {"_id": ObjectId(str(notification_id))})
+    doc = await db.business_activity.find_one({"business_id": business_id, "$or": clauses})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    await db.business_activity.update_one({"_id": doc["_id"], "business_id": business_id}, {"$set": {"status": "read", "read_at": datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc)}})
+    saved = await db.business_activity.find_one({"_id": doc["_id"]})
+    return {"success": True, "notification": safe_doc(saved)}
+
+@api_router.get("/billing/confidence")
+async def get_launch_billing_confidence(current_user: dict = Depends(get_current_user)):
+    plan = _launch15_text(current_user.get("plan") or current_user.get("selected_plan") or current_user.get("plan_name") or "No plan selected")
+    plan_status = _launch15_text(current_user.get("plan_status") or current_user.get("subscription_status") or "unknown")
+    trial_ends_at = current_user.get("trial_ends_at") or current_user.get("trial_end") or ""
+    stripe_configured = bool(globals().get("STRIPE_SECRET_KEY") or globals().get("STRIPE_API_KEY"))
+    return {
+        "success": True,
+        "billing": {
+            "plan": plan,
+            "plan_status": plan_status,
+            "trial_ends_at": trial_ends_at,
+            "stripe_configured": stripe_configured,
+            "currency": "NZD",
+            "gst_note": "Pricing should be shown as + GST where applicable.",
+            "cancel_note": "Customers should be able to ask for cancellation/support clearly from Contact.",
+            "failed_payment_note": "If Stripe reports a failed payment, show a clear warning and keep the owner on Plans.",
+            "links": [
+                {"label": "Open Plans", "href": "/plans"},
+                {"label": "Contact support", "href": "/contact"},
+                {"label": "Reports/Data Control", "href": "/reports"},
+            ],
+            "checks": [
+                {"label": "Current plan visible", "ok": bool(plan and plan != "No plan selected")},
+                {"label": "Plan status visible", "ok": bool(plan_status and plan_status != "unknown")},
+                {"label": "Stripe configured in backend", "ok": stripe_configured},
+                {"label": "GST wording present", "ok": True},
+                {"label": "Support path present", "ok": True},
+            ],
+        },
+    }
+
+
 # CORS_HARD_FIX_20260412
 
 

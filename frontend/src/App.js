@@ -62,6 +62,9 @@ import ReportsSecurityPage from "./pages/ReportsSecurityPage";
 import OfflineSyncPage from "./pages/OfflineSyncPage";
 import TopTierOperatorToolsPage from "./pages/TopTierOperatorToolsPage";
 import LaunchReadinessPage from "./pages/LaunchReadinessPage";
+import DemoModePage from "./pages/DemoModePage";
+import NotificationsWorkspacePage from "./pages/NotificationsWorkspacePage";
+import BillingConfidencePage from "./pages/BillingConfidencePage";
 
 const Spinner = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -199,6 +202,8 @@ function App() {
           <Routes>
             <Route path="/operator-tools" element={<BusinessRoute><TopTierOperatorToolsPage /></BusinessRoute>} />
             <Route path="/launch-control" element={<BusinessRoute><LaunchReadinessPage /></BusinessRoute>} />
+            <Route path="/demo-mode" element={<BusinessRoute><ConceptCFrame area="demo"><DemoModePage /></ConceptCFrame></BusinessRoute>} />
+            <Route path="/sample-mode" element={<BusinessRoute><ConceptCFrame area="demo"><DemoModePage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/public/proof/:token" element={<PublicProofPackPage />} />
             <Route path="/offline-sync" element={<PrivateRoute><OfflineSyncPage /></PrivateRoute>} />
             <Route path="/dispatch-board" element={<BusinessRoute><DispatchBoardPage /></BusinessRoute>} />
@@ -261,9 +266,10 @@ function App() {
             <Route path="/support" element={<PrivateRoute><ConceptCFrame area="support"><ContactPage /></ConceptCFrame></PrivateRoute>} />
             <Route path="/trust" element={<PrivateRoute><ConceptCFrame area="support"><ContactPage /></ConceptCFrame></PrivateRoute>} />
             <Route path="/plans" element={<OwnerRoute><ConceptCFrame area="plans"><PlansPage /></ConceptCFrame></OwnerRoute>} />
+            <Route path="/billing-confidence" element={<OwnerRoute><ConceptCFrame area="billing"><BillingConfidencePage /></ConceptCFrame></OwnerRoute>} />
             <Route path="/team" element={<TeamRoute><ConceptCPage area="team" /></TeamRoute>} />
             <Route path="/crew-ops" element={<BusinessRoute><ConceptCFrame area="team"><CrewOperationsPage /></ConceptCFrame></BusinessRoute>} />
-            <Route path="/notifications" element={<BusinessRoute><ConceptCPage area="notifications" /></BusinessRoute>} />
+            <Route path="/notifications" element={<BusinessRoute><ConceptCFrame area="notifications"><NotificationsWorkspacePage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/automation/runs" element={<TeamRoute><Navigate to="/dashboard" replace /></TeamRoute>} />
             <Route path="/payroll" element={<PayrollRoute><ConceptCPage area="payroll" /></PayrollRoute>} />
             <Route path="/worker/jobs" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobsPage /></ConceptCFrame></WorkerRoute>} />
