@@ -1,210 +1,138 @@
+/* CHURVOX_CLEAN_FLOATING_COMMAND_NAV_20260601 */
 body.cv-has-floating-dock {
-  padding-bottom: 104px;
+  padding-bottom: 112px;
 }
 
-.cv-floating-dock {
-  position: fixed;
-  left: 50%;
-  bottom: max(14px, env(safe-area-inset-bottom));
-  z-index: 9998;
-  width: min(760px, calc(100vw - 22px));
-  transform: translateX(-50%);
-  pointer-events: none;
+/* Hide the broken old Command Floor dock and old switcher attempts. */
+.xcf-command-10 .xcf10-dock,
+.xcf-command-10 .xcf10-dock-launch-final,
+.xcf-command-10 .xcf10-command-dock-complete,
+.xcf-command-10 .cv-command-floor-nav,
+.xcf-command-10 .cv-command-switcher {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
-.cv-floating-dock__inner {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(72px, 1fr);
-  gap: 8px;
-  align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 999px;
+.cv-clean-command-nav {
+  position: fixed !important;
+  left: 50% !important;
+  bottom: max(14px, env(safe-area-inset-bottom)) !important;
+  transform: translateX(-50%) !important;
+  z-index: 2147483000 !important;
+  width: min(980px, calc(100vw - 24px)) !important;
+  max-width: calc(100vw - 24px) !important;
+  display: grid !important;
+  grid-template-columns: repeat(9, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  padding: 10px !important;
+  border-radius: 28px !important;
+  border: 1px solid rgba(125, 189, 255, .30) !important;
   background:
-    linear-gradient(135deg, rgba(18, 18, 14, 0.94), rgba(45, 31, 15, 0.92)),
-    radial-gradient(circle at 20% 0%, rgba(185, 244, 80, 0.16), transparent 40%);
-  box-shadow: 0 20px 70px rgba(17, 18, 13, 0.32);
-  padding: 8px;
-  pointer-events: auto;
-  backdrop-filter: blur(18px);
+    radial-gradient(circle at 8% 10%, rgba(38, 211, 238, .22), transparent 36%),
+    radial-gradient(circle at 88% 0%, rgba(147, 51, 234, .20), transparent 38%),
+    linear-gradient(135deg, rgba(2, 8, 23, .98), rgba(8, 34, 72, .98)) !important;
+  box-shadow: 0 24px 90px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .12) !important;
+  backdrop-filter: blur(20px) saturate(170%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(170%) !important;
 }
 
-.cv-float-link {
-  position: relative;
-  display: grid;
-  min-height: 58px;
-  place-items: center;
-  gap: 3px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: rgba(255, 248, 230, 0.74);
-  padding: 8px 10px;
-  text-decoration: none;
-  font: inherit;
-  cursor: pointer;
-  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+.cv-clean-command-nav a {
+  min-width: 0 !important;
+  height: 54px !important;
+  display: grid !important;
+  grid-template-rows: 20px 1fr !important;
+  place-items: center !important;
+  gap: 3px !important;
+  border-radius: 18px !important;
+  border: 1px solid rgba(255, 255, 255, .13) !important;
+  background: rgba(255, 255, 255, .065) !important;
+  color: rgba(248, 251, 255, .88) !important;
+  text-decoration: none !important;
+  overflow: hidden !important;
+  transition: transform .16s ease, background .16s ease, border-color .16s ease;
 }
 
-.cv-float-link:hover,
-.cv-float-link.is-active {
-  background: rgba(185, 244, 80, 0.16);
-  color: #faffdf;
+.cv-clean-command-nav a i {
+  display: block !important;
+  color: rgba(98, 232, 245, .95) !important;
+  font-size: 15px !important;
+  font-style: normal !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+}
+
+.cv-clean-command-nav a span {
+  display: block !important;
+  max-width: 100% !important;
+  color: #f8fbff !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  text-align: center !important;
+}
+
+.cv-clean-command-nav a.active,
+.cv-clean-command-nav a:hover {
   transform: translateY(-1px);
+  background: linear-gradient(135deg, rgba(38, 211, 238, .34), rgba(98, 72, 255, .30)) !important;
+  border-color: rgba(98, 232, 245, .55) !important;
+  box-shadow: 0 12px 34px rgba(38, 211, 238, .20) !important;
 }
 
-.cv-float-link.is-active::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: 7px;
-  width: 22px;
-  height: 3px;
-  border-radius: 999px;
-  background: #b9f450;
-  transform: translateX(-50%);
+.cv-clean-command-nav a.active i,
+.cv-clean-command-nav a:hover i,
+.cv-clean-command-nav a.active span,
+.cv-clean-command-nav a:hover span {
+  color: #ffffff !important;
 }
 
-.cv-float-icon {
-  display: grid;
-  width: 24px;
-  height: 24px;
-  place-items: center;
-  color: #b9f450;
-  font-size: 1rem;
-  font-weight: 950;
-  line-height: 1;
+.xcf-command-10,
+.concept-c2-frame .c2-frame {
+  padding-bottom: 112px !important;
 }
 
-.cv-float-label {
-  max-width: 72px;
-  overflow: hidden;
-  font-size: 0.68rem;
-  font-weight: 900;
-  letter-spacing: 0.02em;
-  line-height: 1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.cv-float-more {
-  position: fixed;
-  left: 50%;
-  bottom: calc(max(92px, env(safe-area-inset-bottom) + 92px));
-  z-index: 9997;
-  width: min(560px, calc(100vw - 26px));
-  border: 1px solid rgba(17, 18, 13, 0.12);
-  border-radius: 24px;
-  background: rgba(255, 253, 247, 0.96);
-  box-shadow: 0 24px 80px rgba(17, 18, 13, 0.24);
-  padding: 14px;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateX(-50%) translateY(16px) scale(0.98);
-  transition: opacity 160ms ease, transform 160ms ease;
-  backdrop-filter: blur(18px);
-}
-
-.cv-float-more.is-open {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateX(-50%) translateY(0) scale(1);
-}
-
-.cv-float-more-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.cv-float-more-head span {
-  color: #11120d;
-  font-size: 0.78rem;
-  font-weight: 950;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.cv-float-more-head button {
-  border: 0;
-  border-radius: 999px;
-  background: #11120d;
-  color: #fff8e6;
-  padding: 7px 10px;
-  font-size: 0.72rem;
-  font-weight: 900;
-  cursor: pointer;
-}
-
-.cv-float-more-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.cv-float-more-grid .cv-float-link {
-  min-height: 76px;
-  border: 1px solid #e3d8c4;
-  background: #fff8e8;
-  color: #11120d;
-}
-
-.cv-float-more-grid .cv-float-link:hover,
-.cv-float-more-grid .cv-float-link.is-active {
-  background: #e7ffc1;
-  color: #11120d;
-}
-
-.cv-float-more-grid .cv-float-label {
-  max-width: 100%;
-}
-
-.cv-float-more-grid .cv-float-link.is-active::after {
-  background: #11120d;
-}
-
-@media (max-width: 680px) {
+@media (max-width: 860px) {
   body.cv-has-floating-dock {
-    padding-bottom: 112px;
+    padding-bottom: 104px;
   }
 
-  .cv-floating-dock {
-    width: calc(100vw - 14px);
-    bottom: max(8px, env(safe-area-inset-bottom));
+  .cv-clean-command-nav {
+    left: 8px !important;
+    right: 8px !important;
+    bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    transform: none !important;
+    width: auto !important;
+    max-width: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding: 8px !important;
+    border-radius: 24px !important;
   }
 
-  .cv-floating-dock__inner {
-    grid-auto-columns: minmax(58px, 1fr);
-    gap: 4px;
-    border-radius: 28px;
-    padding: 6px;
+  .cv-clean-command-nav::-webkit-scrollbar {
+    display: none !important;
   }
 
-  .cv-float-link {
-    min-height: 54px;
-    padding: 7px 5px;
-  }
-
-  .cv-float-label {
-    max-width: 56px;
-    font-size: 0.62rem;
-  }
-
-  .cv-float-more {
-    bottom: calc(max(82px, env(safe-area-inset-bottom) + 82px));
-    width: calc(100vw - 16px);
-  }
-
-  .cv-float-more-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .cv-clean-command-nav a {
+    flex: 0 0 auto !important;
+    width: 78px !important;
+    height: 52px !important;
   }
 }
 
 @media print {
-  .cv-floating-dock,
-  .cv-float-more {
+  .cv-clean-command-nav {
     display: none !important;
   }
 
