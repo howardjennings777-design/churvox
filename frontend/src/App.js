@@ -24,6 +24,7 @@ import InvoiceDetailPage from "./pages/invoices/InvoiceDetailPage";
 import ContactPage from "./pages/ContactPage";
 import PlansPage from "./pages/PlansPage";
 import PipelinePage from "./pages/PipelinePage";
+import MoneyDeskPage from "./pages/MoneyDeskPage";
 import BusinessSettingsPage from "./pages/BusinessSettingsPage";
 import WorkerJobsPage from "./pages/worker/WorkerJobsPage";
 import WorkerJobDetailPage from "./pages/worker/WorkerJobDetailPage";
@@ -236,6 +237,8 @@ function App() {
             <Route path="/quotes/new" element={<BusinessRoute><ConceptCFrame area="quotes"><QuoteFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/quotes/:id" element={<BusinessRoute><ConceptCFrame area="quotes"><QuoteDetailPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/quotes/:id/edit" element={<BusinessRoute><ConceptCFrame area="quotes"><QuoteFormPage /></ConceptCFrame></BusinessRoute>} />
+            <Route path="/money-desk" element={<BusinessRoute><ConceptCFrame area="invoices"><MoneyDeskPage /></ConceptCFrame></BusinessRoute>} />
+            <Route path="/money" element={<BusinessRoute><ConceptCFrame area="invoices"><MoneyDeskPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/invoices" element={<BusinessRoute><ConceptCPage area="invoices" /></BusinessRoute>} />
             <Route path="/invoices/new" element={<BusinessRoute><ConceptCFrame area="invoices"><InvoiceFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/invoices/:id" element={<BusinessRoute><ConceptCFrame area="invoices"><InvoiceDetailPage /></ConceptCFrame></BusinessRoute>} />

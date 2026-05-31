@@ -13090,6 +13090,173 @@ async def mark_invoice_paid_pipeline(invoice_id: str, current_user: dict = Depen
     return {"success": True, "invoice": _area4_public_response(saved) if "_area4_public_response" in globals() else safe_doc(saved)}
 
 
+
+
+# CHURVOX_AREA6_MONEY_DESK_20260531
+# Owner Money Desk: real invoice/job totals and money actions.
+def _area6_num(value, fallback=0.0):
+    try:
+        if value is None or value == "":
+            return float(fallback)
+        return float(str(value).replace("$", "").replace(",", "").strip())
+    except Exception:
+        return float(fallback or 0)
+
+def _area6_status(doc: dict) -> str:
+    return str((doc or {}).get("status") or "").lower().strip()
+
+def _area6_dt(value):
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+def _area6_invoice_value(invoice: dict) -> float:
+    return max(
+        _area6_num(invoice.get("amount_due"), 0),
+        _area6_num(invoice.get("balance_due"), 0),
+        _area6_num(invoice.get("remaining_balance"), 0),
+        _area6_num(invoice.get("total"), 0),
+        _area6_num(invoice.get("amount"), 0),
+    )
+
+def _area6_job_ready_value(job: dict) -> float:
+    return max(
+        _area6_num(job.get("price"), 0),
+        _area6_num(job.get("job_price"), 0),
+        _area6_num(job.get("fixed_price"), 0),
+        _area6_num(job.get("total"), 0),
+        _area6_num(job.get("amount"), 0),
+    )
+
+def _area6_is_completed_job(job: dict) -> bool:
+    status = str(job.get("status") or job.get("job_status") or job.get("workflow_status") or "").lower()
+    return status in {"completed", "complete", "done"} or bool(job.get("completed") or job.get("completed_at") or job.get("worker_completed_at"))
+
+def _area6_job_has_invoice(job: dict) -> bool:
+    return bool(job.get("invoice_id") or job.get("draft_invoice_id") or job.get("invoiced"))
+
+def _area6_doc_id(doc: dict) -> str:
+    return str(doc.get("_id") or doc.get("id") or "")
+
+@api_router.get("/money-desk")
+async def get_money_desk(current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+    week_start = now - timedelta(days=7)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    invoices = [safe_doc(i) async for i in db.invoices.find({"business_id": str(business_id)}).sort("updated_at", -1).limit(800)]
+    jobs = [safe_doc(j) async for j in db.jobs.find({"business_id": str(business_id)}).sort("updated_at", -1).limit(800)]
+
+    completed_jobs_not_invoiced = [j for j in jobs if _area6_is_completed_job(j) and not _area6_job_has_invoice(j)]
+
+    draft_invoices = [i for i in invoices if _area6_status(i) in {"", "draft", "pending"}]
+    sent_invoices = [i for i in invoices if _area6_status(i) in {"sent", "approved", "open", "unpaid"}]
+    paid_invoices = [i for i in invoices if _area6_status(i) == "paid"]
+    partial_invoices = [i for i in invoices if _area6_status(i) == "partially_paid"]
+
+    overdue_invoices = []
+    for invoice in invoices:
+        status = _area6_status(invoice)
+        due_date = _area6_dt(invoice.get("due_date"))
+        if status in {"paid", "void", "cancelled"}:
+            continue
+        if status == "overdue" or (due_date and due_date < now):
+            overdue_invoices.append(invoice)
+
+    def since(rows, field, cutoff):
+        total = 0.0
+        for row in rows:
+            when = _area6_dt(row.get(field) or row.get("created_at") or row.get("updated_at"))
+            if when and when >= cutoff:
+                total += _area6_num(row.get("total") or row.get("amount") or row.get("amount_paid") or row.get("paid_amount"), 0)
+        return round(total, 2)
+
+    total_unpaid = sum(_area6_invoice_value(i) for i in invoices if _area6_status(i) not in {"paid", "void", "cancelled"})
+    total_overdue = sum(_area6_invoice_value(i) for i in overdue_invoices)
+    total_draft = sum(_area6_invoice_value(i) for i in draft_invoices)
+    total_ready_to_invoice = sum(_area6_job_ready_value(j) for j in completed_jobs_not_invoiced)
+    paid_this_week = since(paid_invoices, "paid_at", week_start)
+    paid_this_month = since(paid_invoices, "paid_at", month_start)
+    invoiced_this_week = since(invoices, "created_at", week_start)
+    invoiced_this_month = since(invoices, "created_at", month_start)
+
+    return {
+        "success": True,
+        "money_desk": {
+            "completed_jobs_not_invoiced": completed_jobs_not_invoiced,
+            "draft_invoices": draft_invoices,
+            "sent_invoices": sent_invoices,
+            "overdue_invoices": overdue_invoices,
+            "paid_invoices": paid_invoices,
+            "partially_paid_invoices": partial_invoices,
+            "metrics": {
+                "completed_jobs_not_invoiced": len(completed_jobs_not_invoiced),
+                "draft_invoices": len(draft_invoices),
+                "sent_invoices": len(sent_invoices),
+                "overdue_invoices": len(overdue_invoices),
+                "paid_invoices": len(paid_invoices),
+                "partially_paid_invoices": len(partial_invoices),
+                "total_unpaid": round(total_unpaid, 2),
+                "total_overdue": round(total_overdue, 2),
+                "total_draft": round(total_draft, 2),
+                "total_ready_to_invoice": round(total_ready_to_invoice, 2),
+                "paid_this_week": paid_this_week,
+                "paid_this_month": paid_this_month,
+                "invoiced_this_week": invoiced_this_week,
+                "invoiced_this_month": invoiced_this_month,
+            },
+        },
+    }
+
+@api_router.post("/money-desk/invoices/{invoice_id}/prepare-reminder")
+async def prepare_money_desk_invoice_reminder(invoice_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    clauses = [{"id": str(invoice_id)}]
+    if ObjectId.is_valid(str(invoice_id)):
+        clauses.insert(0, {"_id": ObjectId(str(invoice_id))})
+    invoice = await db.invoices.find_one({"business_id": str(business_id), "$or": clauses})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    customer = invoice.get("customer_name") or invoice.get("client_name") or "there"
+    invoice_number = invoice.get("invoice_number") or "your invoice"
+    amount_due = _area6_invoice_value(invoice)
+    due = invoice.get("due_date")
+    message = (
+        f"Hi {customer}, just a friendly reminder that {invoice_number} "
+        f"for ${amount_due:,.2f} is still showing as unpaid"
+        + (f" and was due on {str(due)[:10]}" if due else "")
+        + ". Please let us know if you need the invoice link resent. Thanks."
+    )
+
+    now = datetime.now(timezone.utc)
+    reminder = {
+        "business_id": str(business_id),
+        "invoice_id": str(invoice.get("_id") or invoice.get("id")),
+        "customer_name": customer,
+        "customer_email": invoice.get("customer_email") or invoice.get("email") or "",
+        "customer_phone": invoice.get("customer_phone") or invoice.get("phone") or "",
+        "invoice_number": invoice_number,
+        "amount_due": amount_due,
+        "message": message,
+        "status": "draft",
+        "type": "invoice_reminder",
+        "created_at": now,
+        "updated_at": now,
+        "created_by": current_user.get("email") or current_user.get("id"),
+    }
+
+    inserted = await db.business_activity.insert_one(reminder)
+    reminder["_id"] = inserted.inserted_id
+    return {"success": True, "reminder": safe_doc(reminder), "message": message}
+
+
 # CORS_HARD_FIX_20260412
 
 
