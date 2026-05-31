@@ -13518,6 +13518,432 @@ async def add_customer_note(client_id: str, payload: dict = Body(default={}), cu
     return {"success": True, "customer": await _area7_build_customer_record(saved, business_id)}
 
 
+
+
+# CHURVOX_AREA8_WORKER_CREW_OPERATIONS_20260531
+# Worker / crew operations: owner crew desk + worker-safe job actions.
+AREA8_WORKER_ROLES = {"worker", "employee", "field_worker", "crew", "staff"}
+AREA8_OWNER_ROLES = {"owner", "employer", "admin", "manager", "office_admin", "platform_owner"}
+
+def _area8_role(current_user: dict) -> str:
+    return str((current_user or {}).get("role") or "").lower().replace(" ", "_")
+
+def _area8_doc_id(doc: dict) -> str:
+    return str((doc or {}).get("_id") or (doc or {}).get("id") or "")
+
+def _area8_text(value) -> str:
+    return str(value or "").strip()
+
+def _area8_num(value, fallback=0.0):
+    try:
+        if value is None or value == "":
+            return float(fallback)
+        return float(str(value).replace("$", "").replace(",", "").strip())
+    except Exception:
+        return float(fallback or 0)
+
+def _area8_job_query(job_id: str, business_id: str) -> dict:
+    clauses = [{"id": str(job_id)}]
+    if ObjectId.is_valid(str(job_id)):
+        clauses.insert(0, {"_id": ObjectId(str(job_id))})
+    return {"business_id": str(business_id), "$or": clauses}
+
+def _area8_worker_query(worker_id: str, business_id: str) -> dict:
+    clauses = [{"id": str(worker_id)}]
+    if ObjectId.is_valid(str(worker_id)):
+        clauses.insert(0, {"_id": ObjectId(str(worker_id))})
+    return {"business_id": str(business_id), "$or": clauses}
+
+def _area8_job_status(job: dict) -> str:
+    return str(job.get("status") or job.get("job_status") or job.get("workflow_status") or "").lower().replace(" ", "_")
+
+def _area8_is_completed(job: dict) -> bool:
+    s = _area8_job_status(job)
+    return s in {"completed", "complete", "done"} or bool(job.get("completed") or job.get("completed_at") or job.get("worker_completed_at"))
+
+def _area8_worker_identity(current_user: dict) -> dict:
+    return {
+        "id": str(current_user.get("id") or current_user.get("_id") or ""),
+        "email": _area8_text(current_user.get("email")).lower(),
+        "name": _area8_text(current_user.get("name") or current_user.get("full_name") or current_user.get("display_name")),
+    }
+
+def _area8_assigned_to_current_worker(job: dict, current_user: dict) -> bool:
+    ident = _area8_worker_identity(current_user)
+    assigned_ids = {
+        _area8_text(job.get("assigned_worker_id")),
+        _area8_text(job.get("worker_id")),
+        _area8_text(job.get("assigned_to")),
+    }
+    assigned_names = {
+        _area8_text(job.get("assigned_worker_name")).lower(),
+        _area8_text(job.get("worker_name")).lower(),
+    }
+    assigned_emails = {
+        _area8_text(job.get("assigned_worker_email")).lower(),
+        _area8_text(job.get("worker_email")).lower(),
+    }
+    return bool(
+        (ident["id"] and ident["id"] in assigned_ids)
+        or (ident["name"] and ident["name"].lower() in assigned_names)
+        or (ident["email"] and ident["email"] in assigned_emails)
+    )
+
+def _area8_owner_or_assigned(job: dict, current_user: dict):
+    role = _area8_role(current_user)
+    if role in AREA8_OWNER_ROLES:
+        return
+    if role in AREA8_WORKER_ROLES and _area8_assigned_to_current_worker(job, current_user):
+        return
+    raise HTTPException(status_code=403, detail="You can only update jobs assigned to you.")
+
+def _area8_worker_safe_job(job: dict) -> dict:
+    safe = safe_doc(job)
+    for key in [
+        "price", "job_price", "fixed_price", "hourly_rate", "amount", "total",
+        "subtotal", "gst_amount", "invoice_id", "draft_invoice_id", "invoice_number",
+        "myob_invoice_id", "myob_invoice_number", "owner_notes", "internal_admin_notes",
+        "billing_notes", "pricing_type"
+    ]:
+        safe.pop(key, None)
+    return safe
+
+def _area8_worker_name(worker: dict) -> str:
+    return _area8_text(worker.get("name") or worker.get("full_name") or worker.get("display_name") or worker.get("email") or "Worker")
+
+async def _area8_workers_for_business(business_id: str) -> list:
+    workers = []
+    seen = set()
+
+    async for worker in db.business_users.find({"business_id": str(business_id)}).limit(500):
+        wid = _area8_doc_id(worker)
+        if wid in seen:
+            continue
+        seen.add(wid)
+        workers.append(safe_doc(worker))
+
+    async for user in db.users.find({"business_id": str(business_id), "role": {"$in": list(AREA8_WORKER_ROLES | AREA8_OWNER_ROLES)}}).limit(500):
+        uid = _area8_doc_id(user)
+        if uid in seen:
+            continue
+        seen.add(uid)
+        workers.append(safe_doc(user))
+
+    return workers
+
+def _area8_worker_job_match(job: dict, worker: dict) -> bool:
+    wid = _area8_doc_id(worker)
+    name = _area8_worker_name(worker).lower()
+    email = _area8_text(worker.get("email")).lower()
+    return bool(
+        (wid and wid in {_area8_text(job.get("assigned_worker_id")), _area8_text(job.get("worker_id")), _area8_text(job.get("assigned_to"))})
+        or (name and name in {_area8_text(job.get("assigned_worker_name")).lower(), _area8_text(job.get("worker_name")).lower()})
+        or (email and email in {_area8_text(job.get("assigned_worker_email")).lower(), _area8_text(job.get("worker_email")).lower()})
+    )
+
+def _area8_worker_summary(worker: dict, jobs: list) -> dict:
+    assigned = [j for j in jobs if _area8_worker_job_match(j, worker)]
+    active = [j for j in assigned if _area8_job_status(j) in {"in_progress", "started", "paused"}]
+    today = datetime.now(timezone.utc).date().isoformat()
+    today_jobs = [j for j in assigned if str(j.get("scheduled_date") or j.get("date") or "")[:10] == today]
+    completed = [j for j in assigned if _area8_is_completed(j)]
+    minutes = sum(int(_area8_num(j.get("time_spent_minutes") or j.get("total_minutes") or j.get("worked_minutes"), 0)) for j in assigned)
+
+    return {
+        "assigned_count": len(assigned),
+        "active_count": len(active),
+        "today_count": len(today_jobs),
+        "completed_count": len(completed),
+        "tracked_minutes": minutes,
+        "tracked_hours": round(minutes / 60, 2),
+        "status": "on_job" if active else ("busy_today" if today_jobs else "available"),
+    }
+
+def _area8_worker_conflicts(jobs: list, worker_id: str, scheduled_date: str, exclude_job_id: str = "") -> list:
+    if not worker_id or not scheduled_date:
+        return []
+    target_day = str(scheduled_date)[:10]
+    conflicts = []
+    for job in jobs:
+        jid = _area8_doc_id(job)
+        if exclude_job_id and jid == exclude_job_id:
+            continue
+        if str(job.get("assigned_worker_id") or job.get("worker_id") or "") != str(worker_id):
+            continue
+        if str(job.get("scheduled_date") or job.get("date") or "")[:10] == target_day and _area8_job_status(job) not in {"completed", "cancelled", "canceled", "void"}:
+            conflicts.append(safe_doc(job))
+    return conflicts
+
+@api_router.get("/crew-ops")
+async def get_crew_operations(current_user: dict = Depends(get_current_user)):
+    role = _area8_role(current_user)
+    if role not in AREA8_OWNER_ROLES:
+        raise HTTPException(status_code=403, detail="Crew operations is owner/admin only.")
+
+    business_id = await get_user_business_id(current_user)
+    workers = await _area8_workers_for_business(business_id)
+    jobs = [safe_doc(j) async for j in db.jobs.find({"business_id": str(business_id)}).sort("scheduled_date", 1).limit(1000)]
+
+    worker_cards = []
+    for worker in workers:
+        worker_cards.append({
+            **safe_doc(worker),
+            "id": _area8_doc_id(worker),
+            "display_name": _area8_worker_name(worker),
+            "summary": _area8_worker_summary(worker, jobs),
+        })
+
+    unassigned = [
+        j for j in jobs
+        if not (j.get("assigned_worker_id") or j.get("worker_id") or j.get("assigned_worker_name"))
+        and _area8_job_status(j) not in {"completed", "cancelled", "canceled", "void"}
+    ]
+    active = [j for j in jobs if _area8_job_status(j) in {"in_progress", "started", "paused"}]
+    completed_review = [j for j in jobs if _area8_is_completed(j) and not (j.get("owner_approved") or str(j.get("owner_review_status") or "").lower() == "approved")]
+    issues = [j for j in jobs if _area8_job_status(j) in {"blocked", "issue", "cannot_complete"} or job.get("cannot_complete_reason")]
+
+    payroll_minutes = sum(int(_area8_num(j.get("time_spent_minutes") or j.get("total_minutes") or j.get("worked_minutes"), 0)) for j in jobs)
+
+    return {
+        "success": True,
+        "crew_ops": {
+            "workers": worker_cards,
+            "jobs": jobs,
+            "unassigned_jobs": unassigned,
+            "active_jobs": active,
+            "completed_needing_review": completed_review,
+            "issue_jobs": issues,
+            "metrics": {
+                "workers": len(worker_cards),
+                "available_workers": len([w for w in worker_cards if w.get("summary", {}).get("status") == "available"]),
+                "active_jobs": len(active),
+                "unassigned_jobs": len(unassigned),
+                "completed_needing_review": len(completed_review),
+                "issue_jobs": len(issues),
+                "payroll_hours": round(payroll_minutes / 60, 2),
+            },
+        },
+    }
+
+@api_router.post("/crew-ops/jobs/{job_id}/assign-worker")
+async def crew_ops_assign_worker(job_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    role = _area8_role(current_user)
+    if role not in AREA8_OWNER_ROLES:
+        raise HTTPException(status_code=403, detail="Only owner/admin can assign workers.")
+
+    business_id = await get_user_business_id(current_user)
+    job = await db.jobs.find_one(_area8_job_query(job_id, business_id))
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    worker_id = _area8_text((payload or {}).get("worker_id") or (payload or {}).get("assigned_worker_id"))
+    worker_name = _area8_text((payload or {}).get("worker_name") or (payload or {}).get("assigned_worker_name"))
+    if not worker_id and not worker_name:
+        raise HTTPException(status_code=400, detail="Worker is required")
+
+    worker = None
+    if worker_id:
+        worker = await db.business_users.find_one(_area8_worker_query(worker_id, business_id)) or await db.users.find_one(_area8_worker_query(worker_id, business_id))
+    if worker:
+        worker_name = _area8_worker_name(worker)
+
+    all_jobs = [safe_doc(j) async for j in db.jobs.find({"business_id": str(business_id)}).limit(1000)]
+    conflicts = _area8_worker_conflicts(all_jobs, worker_id, job.get("scheduled_date") or job.get("date") or "", exclude_job_id=_area8_doc_id(job))
+
+    now = datetime.now(timezone.utc)
+    update = {
+        "assigned_worker_id": worker_id,
+        "worker_id": worker_id,
+        "assigned_worker_name": worker_name,
+        "worker_name": worker_name,
+        "status": "assigned" if _area8_job_status(job) in {"", "new", "quoted", "open"} else job.get("status", "assigned"),
+        "updated_at": now,
+    }
+    await db.jobs.update_one({"_id": job["_id"], "business_id": str(business_id)}, {"$set": update})
+    saved = await db.jobs.find_one({"_id": job["_id"]})
+    return {"success": True, "job": safe_doc(saved), "conflicts": conflicts, "has_conflict": bool(conflicts)}
+
+@api_router.get("/worker/ops")
+async def get_worker_operations(current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    role = _area8_role(current_user)
+    if role not in AREA8_WORKER_ROLES and role not in AREA8_OWNER_ROLES:
+        raise HTTPException(status_code=403, detail="Worker access required.")
+
+    all_jobs = [j async for j in db.jobs.find({"business_id": str(business_id)}).sort("scheduled_date", 1).limit(1000)]
+    if role in AREA8_WORKER_ROLES:
+        jobs = [j for j in all_jobs if _area8_assigned_to_current_worker(j, current_user)]
+    else:
+        jobs = all_jobs
+
+    safe_jobs = [_area8_worker_safe_job(j) for j in jobs]
+    today = datetime.now(timezone.utc).date().isoformat()
+    today_jobs = [j for j in safe_jobs if str(j.get("scheduled_date") or j.get("date") or "")[:10] == today]
+    upcoming = [j for j in safe_jobs if str(j.get("scheduled_date") or j.get("date") or "")[:10] > today]
+    active = [j for j in safe_jobs if _area8_job_status(j) in {"in_progress", "started", "paused"}]
+    completed = [j for j in safe_jobs if _area8_is_completed(j)]
+    issue_jobs = [j for j in safe_jobs if _area8_job_status(j) in {"blocked", "issue", "cannot_complete"} or j.get("cannot_complete_reason")]
+
+    return {
+        "success": True,
+        "worker_ops": {
+            "today_jobs": today_jobs,
+            "upcoming_jobs": upcoming[:80],
+            "active_jobs": active,
+            "completed_jobs": completed[:80],
+            "issue_jobs": issue_jobs,
+            "all_jobs": safe_jobs,
+            "metrics": {
+                "today": len(today_jobs),
+                "upcoming": len(upcoming),
+                "active": len(active),
+                "completed": len(completed),
+                "issues": len(issue_jobs),
+            },
+        },
+    }
+
+async def _area8_update_worker_job(job_id: str, current_user: dict, update: dict) -> dict:
+    business_id = await get_user_business_id(current_user)
+    job = await db.jobs.find_one(_area8_job_query(job_id, business_id))
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    _area8_owner_or_assigned(job, current_user)
+
+    update["updated_at"] = datetime.now(timezone.utc)
+    await db.jobs.update_one({"_id": job["_id"], "business_id": str(business_id)}, {"$set": update})
+    saved = await db.jobs.find_one({"_id": job["_id"]})
+    return _area8_worker_safe_job(saved) if _area8_role(current_user) in AREA8_WORKER_ROLES else safe_doc(saved)
+
+@api_router.post("/worker/jobs/{job_id}/start-work")
+async def worker_start_job(job_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    now = datetime.now(timezone.utc)
+    location = (payload or {}).get("location") if isinstance((payload or {}).get("location"), dict) else {}
+    update = {
+        "status": "in_progress",
+        "job_status": "in_progress",
+        "started_at": now,
+        "worker_started_at": now,
+        "start_location": {
+            "lat": location.get("lat"),
+            "lng": location.get("lng"),
+            "accuracy": location.get("accuracy"),
+            "captured_at": now,
+        } if location else {},
+    }
+    return {"success": True, "job": await _area8_update_worker_job(job_id, current_user, update)}
+
+@api_router.post("/worker/jobs/{job_id}/pause-work")
+async def worker_pause_job(job_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    now = datetime.now(timezone.utc)
+    update = {
+        "status": "paused",
+        "job_status": "paused",
+        "paused_at": now,
+        "pause_reason": _area8_text((payload or {}).get("reason") or "Paused by worker"),
+    }
+    return {"success": True, "job": await _area8_update_worker_job(job_id, current_user, update)}
+
+@api_router.post("/worker/jobs/{job_id}/resume-work")
+async def worker_resume_job(job_id: str, current_user: dict = Depends(get_current_user)):
+    now = datetime.now(timezone.utc)
+    update = {
+        "status": "in_progress",
+        "job_status": "in_progress",
+        "resumed_at": now,
+    }
+    return {"success": True, "job": await _area8_update_worker_job(job_id, current_user, update)}
+
+@api_router.post("/worker/jobs/{job_id}/complete-work")
+async def worker_complete_job(job_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    now = datetime.now(timezone.utc)
+    update = {
+        "status": "completed",
+        "job_status": "completed",
+        "completed": True,
+        "completed_at": now,
+        "worker_completed_at": now,
+        "completion_notes": _area8_text((payload or {}).get("completion_notes") or (payload or {}).get("notes")),
+        "worker_completion_notes": _area8_text((payload or {}).get("completion_notes") or (payload or {}).get("notes")),
+        "materials_used": (payload or {}).get("materials_used") if isinstance((payload or {}).get("materials_used"), list) else [],
+        "owner_review_status": "needs_review",
+        "work_review_status": "needs_review",
+    }
+    return {"success": True, "job": await _area8_update_worker_job(job_id, current_user, update)}
+
+@api_router.post("/worker/jobs/{job_id}/report-issue")
+async def worker_report_issue(job_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    reason = _area8_text((payload or {}).get("reason") or (payload or {}).get("cannot_complete_reason"))
+    if not reason:
+        raise HTTPException(status_code=400, detail="Issue reason is required")
+    update = {
+        "status": "cannot_complete",
+        "job_status": "cannot_complete",
+        "cannot_complete_reason": reason,
+        "worker_issue_reported_at": datetime.now(timezone.utc),
+        "owner_review_status": "needs_review",
+    }
+    return {"success": True, "job": await _area8_update_worker_job(job_id, current_user, update)}
+
+@api_router.post("/worker/jobs/{job_id}/materials")
+async def worker_add_materials(job_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    job = await db.jobs.find_one(_area8_job_query(job_id, business_id))
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    _area8_owner_or_assigned(job, current_user)
+
+    materials = job.get("materials_used") if isinstance(job.get("materials_used"), list) else []
+    incoming = (payload or {}).get("materials")
+    if isinstance(incoming, list):
+        for item in incoming:
+            if isinstance(item, dict):
+                materials.append({
+                    "name": _area8_text(item.get("name") or item.get("description")),
+                    "quantity": _area8_text(item.get("quantity") or item.get("qty")),
+                    "note": _area8_text(item.get("note")),
+                    "added_at": datetime.now(timezone.utc),
+                })
+    else:
+        name = _area8_text((payload or {}).get("name") or (payload or {}).get("description"))
+        if name:
+            materials.append({
+                "name": name,
+                "quantity": _area8_text((payload or {}).get("quantity") or (payload or {}).get("qty")),
+                "note": _area8_text((payload or {}).get("note")),
+                "added_at": datetime.now(timezone.utc),
+            })
+
+    await db.jobs.update_one({"_id": job["_id"], "business_id": str(business_id)}, {"$set": {"materials_used": materials, "updated_at": datetime.now(timezone.utc)}})
+    saved = await db.jobs.find_one({"_id": job["_id"]})
+    return {"success": True, "job": _area8_worker_safe_job(saved) if _area8_role(current_user) in AREA8_WORKER_ROLES else safe_doc(saved)}
+
+@api_router.post("/worker/jobs/{job_id}/photo-note")
+async def worker_add_photo_note(job_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    job = await db.jobs.find_one(_area8_job_query(job_id, business_id))
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    _area8_owner_or_assigned(job, current_user)
+
+    photo = _area8_text((payload or {}).get("photo_base64") or (payload or {}).get("url"))
+    if photo and len(photo) > 900000:
+        raise HTTPException(status_code=413, detail="Photo is too large.")
+    note = _area8_text((payload or {}).get("note") or "Worker photo")
+    photos = job.get("photos") if isinstance(job.get("photos"), list) else []
+    photos.append({
+        "url": photo,
+        "note": note,
+        "uploaded_at": datetime.now(timezone.utc),
+        "uploaded_by": current_user.get("email") or current_user.get("id"),
+        "source": "worker_ops",
+    })
+
+    await db.jobs.update_one({"_id": job["_id"], "business_id": str(business_id)}, {"$set": {"photos": photos, "photo_count": len(photos), "updated_at": datetime.now(timezone.utc)}})
+    saved = await db.jobs.find_one({"_id": job["_id"]})
+    return {"success": True, "job": _area8_worker_safe_job(saved) if _area8_role(current_user) in AREA8_WORKER_ROLES else safe_doc(saved)}
+
+
 # CORS_HARD_FIX_20260412
 
 

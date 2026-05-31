@@ -1,0 +1,191 @@
+.cv-worker-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.cv-worker-metrics article {
+  border: 1px solid #d8e3f3;
+  border-radius: 22px;
+  background: #fff;
+  padding: 16px;
+  box-shadow: 0 18px 40px rgba(13, 27, 52, 0.08);
+}
+
+.cv-worker-metrics article.issue {
+  background: #fff1f2;
+  border-color: #fecdd3;
+}
+
+.cv-worker-metrics span {
+  display: block;
+  color: #5b6c87;
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cv-worker-metrics b {
+  display: block;
+  margin-top: 7px;
+  color: #0d1b34;
+  font-size: 1.7rem;
+}
+
+.cv-worker-list {
+  display: grid;
+  gap: 16px;
+}
+
+.cv-worker-card {
+  border: 1px solid #d8e3f3;
+  border-radius: 26px;
+  background: #fff;
+  box-shadow: 0 18px 40px rgba(13, 27, 52, 0.08);
+  padding: 18px;
+}
+
+.cv-worker-card header {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.cv-worker-card small {
+  color: #1d4ed8;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cv-worker-card h3 {
+  margin: 4px 0;
+  color: #0d1b34;
+  font-size: 1.25rem;
+}
+
+.cv-worker-card p {
+  margin: 0;
+  color: #5b6c87;
+  font-weight: 750;
+}
+
+.cv-worker-card header a {
+  height: max-content;
+  border-radius: 999px;
+  background: #eef4ff;
+  color: #1d4ed8;
+  padding: 9px 12px;
+  text-decoration: none;
+  font-weight: 950;
+}
+
+.cv-worker-details {
+  margin-top: 14px;
+  border-radius: 18px;
+  background: #f8fbff;
+  padding: 13px;
+}
+
+.cv-worker-details p + p {
+  margin-top: 8px;
+}
+
+.cv-worker-details .issue {
+  color: #b91c1c;
+}
+
+.cv-worker-card textarea,
+.cv-worker-material input {
+  width: 100%;
+  margin-top: 12px;
+  border: 1px solid #d8e3f3;
+  border-radius: 15px;
+  background: #f6faff;
+  color: #0d1b34;
+  padding: 12px;
+  outline: 0;
+}
+
+.cv-worker-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 12px;
+}
+
+.cv-worker-actions button,
+.cv-worker-material button {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 13px;
+  background: #0d1b34;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 950;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cv-worker-actions button.complete {
+  background: #16a34a;
+}
+
+.cv-worker-actions button.issue {
+  background: #dc2626;
+}
+
+.cv-worker-material {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 9px;
+  align-items: center;
+}
+
+.cv-worker-history {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.cv-worker-history a {
+  display: block;
+  border: 1px solid #e6eef9;
+  border-radius: 16px;
+  background: #f8fbff;
+  color: #0d1b34;
+  text-decoration: none;
+  font-weight: 850;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.cv-worker-note,
+.cv-worker-empty {
+  margin-top: 18px;
+  border-radius: 18px;
+  background: #f8fbff;
+  color: #5b6c87;
+  padding: 16px;
+  font-weight: 850;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+@media (max-width: 820px) {
+  .cv-worker-metrics,
+  .cv-worker-history,
+  .cv-worker-material {
+    grid-template-columns: 1fr;
+  }
+
+  .cv-worker-card header {
+    flex-direction: column;
+  }
+}

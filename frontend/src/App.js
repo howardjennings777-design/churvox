@@ -26,6 +26,8 @@ import PlansPage from "./pages/PlansPage";
 import PipelinePage from "./pages/PipelinePage";
 import MoneyDeskPage from "./pages/MoneyDeskPage";
 import CustomerRecordsPage from "./pages/CustomerRecordsPage";
+import CrewOperationsPage from "./pages/CrewOperationsPage";
+import WorkerOperationsPage from "./pages/WorkerOperationsPage";
 import BusinessSettingsPage from "./pages/BusinessSettingsPage";
 import WorkerJobsPage from "./pages/worker/WorkerJobsPage";
 import WorkerJobDetailPage from "./pages/worker/WorkerJobDetailPage";
@@ -250,11 +252,13 @@ function App() {
             <Route path="/contact" element={<PrivateRoute><ConceptCFrame area="settings"><ContactPage /></ConceptCFrame></PrivateRoute>} />
             <Route path="/plans" element={<OwnerRoute><ConceptCFrame area="plans"><PlansPage /></ConceptCFrame></OwnerRoute>} />
             <Route path="/team" element={<TeamRoute><ConceptCPage area="team" /></TeamRoute>} />
+            <Route path="/crew-ops" element={<BusinessRoute><ConceptCFrame area="team"><CrewOperationsPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/notifications" element={<BusinessRoute><ConceptCPage area="notifications" /></BusinessRoute>} />
             <Route path="/automation" element={<TeamRoute><Navigate to="/dashboard" replace /></TeamRoute>} />
             <Route path="/automation/runs" element={<TeamRoute><Navigate to="/dashboard" replace /></TeamRoute>} />
             <Route path="/payroll" element={<PayrollRoute><ConceptCPage area="payroll" /></PayrollRoute>} />
             <Route path="/worker/jobs" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobsPage /></ConceptCFrame></WorkerRoute>} />
+            <Route path="/worker/ops" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerOperationsPage /></ConceptCFrame></WorkerRoute>} />
             <Route path="/worker/jobs/:id" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobDetailPage /></ConceptCFrame></WorkerRoute>} />
             <Route path="/worker/settings" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerSettingsPage /></ConceptCFrame></WorkerRoute>} />
             <Route path="/privacy" element={<PrivacyPage />} />
