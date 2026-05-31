@@ -1,0 +1,20 @@
+/* CHURVOX_WORKBOARD_COMMAND_WALL_CSS_RESTORE_20260531
+   Restores missing import used by WorkBoardCommandWall.
+   Safe styling only.
+*/
+
+.churvox-workboard-command-wall,
+.workboard-command-wall {
+  min-height: 100dvh;
+  width: 100%;
+  background:
+    radial-gradient(circle at 15% 0%, rgba(20, 216, 244, 0.12), transparent 34%),
+    radial-gradient(circle at 85% 12%, rgba(147, 51, 234, 0.14), transparent 34%),
+    #020817;
+  color: #f8fbff;
+}
+
+.churvox-workboard-command-wall *,
+.workboard-command-wall * {
+  box-sizing: border-box;
+}
