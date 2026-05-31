@@ -13700,7 +13700,7 @@ async def get_crew_operations(current_user: dict = Depends(get_current_user)):
     ]
     active = [j for j in jobs if _area8_job_status(j) in {"in_progress", "started", "paused"}]
     completed_review = [j for j in jobs if _area8_is_completed(j) and not (j.get("owner_approved") or str(j.get("owner_review_status") or "").lower() == "approved")]
-    issues = [j for j in jobs if _area8_job_status(j) in {"blocked", "issue", "cannot_complete"} or job.get("cannot_complete_reason")]
+    issues = [j for j in jobs if _area8_job_status(j) in {"blocked", "issue", "cannot_complete"} or j.get("cannot_complete_reason")]
 
     payroll_minutes = sum(int(_area8_num(j.get("time_spent_minutes") or j.get("total_minutes") or j.get("worked_minutes"), 0)) for j in jobs)
 
