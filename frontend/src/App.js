@@ -54,6 +54,7 @@ import ConceptCFrame from "./concept-c/ConceptCFrame";
 import TradePresetsPage from "./pages/TradePresetsPage";
 import MessageApprovalQueuePage from "./pages/MessageApprovalQueuePage";
 import DispatchBoardPage from "./pages/DispatchBoardPage";
+import IntegrationsWorkspacePage from "./pages/IntegrationsWorkspacePage";
 import OfflineSyncPage from "./pages/OfflineSyncPage";
 import TopTierOperatorToolsPage from "./pages/TopTierOperatorToolsPage";
 import LaunchReadinessPage from "./pages/LaunchReadinessPage";
@@ -230,6 +231,7 @@ function App() {
             <Route path="/jobs/:id" element={<BusinessRoute><ConceptCFrame area="jobs"><JobDetailPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/jobs/:id/edit" element={<BusinessRoute><ConceptCFrame area="jobs"><JobFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/dispatch" element={<BusinessRoute><ConceptCFrame area="dispatch"><DispatchBoardPage /></ConceptCFrame></BusinessRoute>} />
+            <Route path="/integrations" element={<BusinessRoute><ConceptCFrame area="integrations"><IntegrationsWorkspacePage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/pipeline" element={<BusinessRoute><ConceptCFrame area="dashboard"><PipelinePage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/calendar" element={<Navigate to="/dispatch" replace />} />
             <Route path="/clients" element={<BusinessRoute><ConceptCFrame area="clients"><CustomerRecordsPage /></ConceptCFrame></BusinessRoute>} />

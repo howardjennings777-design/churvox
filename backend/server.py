@@ -14190,6 +14190,203 @@ async def dispatch_reschedule_job(job_id: str, payload: dict = Body(default={}),
     return {"success": True, "job": safe_doc(saved), "conflicts": conflicts, "has_conflict": bool(conflicts)}
 
 
+
+
+# CHURVOX_AREA10_INTEGRATIONS_WORKSPACE_20260531
+# Integrations workspace: MYOB, SMS, email and sync visibility.
+def _area10_text(value) -> str:
+    return str(value or "").strip()
+
+def _area10_bool(value) -> bool:
+    if isinstance(value, bool):
+        return value
+    return str(value or "").lower() in {"1", "true", "yes", "on", "connected"}
+
+def _area10_doc_id(doc: dict) -> str:
+    return str((doc or {}).get("_id") or (doc or {}).get("id") or "")
+
+def _area10_num(value, fallback=0.0):
+    try:
+        if value is None or value == "":
+            return float(fallback)
+        return float(str(value).replace("$", "").replace(",", "").strip())
+    except Exception:
+        return float(fallback or 0)
+
+async def _area10_get_accounting_settings(business_id: str) -> dict:
+    doc = await db.accounting_settings.find_one({"business_id": str(business_id)}) or {}
+    if not doc:
+        doc = await db.business_settings.find_one({"business_id": str(business_id)}) or {}
+    return safe_doc(doc) if doc else {}
+
+async def _area10_get_sms_balance(business_id: str) -> dict:
+    balance = 0
+    try:
+        row = await db.sms_balances.find_one({"business_id": str(business_id)}) or await db.sms_credits.find_one({"business_id": str(business_id)})
+        if row:
+            balance = int(_area10_num(row.get("balance") or row.get("credits") or row.get("sms_credits"), 0))
+    except Exception:
+        balance = 0
+
+    try:
+        sent_count = await db.sms_history.count_documents({"business_id": str(business_id)})
+    except Exception:
+        sent_count = 0
+
+    return {"credits": balance, "sent_count": sent_count, "enabled": balance > 0}
+
+async def _area10_invoice_sync_rows(business_id: str) -> list:
+    invoices = [safe_doc(i) async for i in db.invoices.find({"business_id": str(business_id)}).sort("updated_at", -1).limit(200)]
+    rows = []
+    for inv in invoices:
+        sync_status = inv.get("myob_sync_status") or inv.get("sync_status") or "not_synced"
+        rows.append({
+            "id": _area10_doc_id(inv),
+            "invoice_number": inv.get("invoice_number") or "Invoice",
+            "customer_name": inv.get("customer_name") or inv.get("client_name") or "",
+            "status": inv.get("status") or "draft",
+            "total": _area10_num(inv.get("total") or inv.get("amount"), 0),
+            "myob_sync_status": sync_status,
+            "myob_payment_status": inv.get("myob_payment_status") or "",
+            "myob_error": inv.get("myob_error") or inv.get("sync_error") or "",
+            "myob_invoice_number": inv.get("myob_invoice_number") or "",
+            "updated_at": inv.get("updated_at") or inv.get("created_at"),
+        })
+    return rows
+
+@api_router.get("/integrations/workspace")
+async def get_integrations_workspace(current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    accounting = await _area10_get_accounting_settings(business_id)
+    sms = await _area10_get_sms_balance(business_id)
+    invoice_rows = await _area10_invoice_sync_rows(business_id)
+
+    myob_mode = accounting.get("invoice_mode") or accounting.get("sync_mode") or ("myob_sync" if accounting.get("myob_connected") else "churvox_only")
+    myob_connected = bool(accounting.get("myob_connected") or accounting.get("access_token") or accounting.get("myob_company_file_id"))
+    failed_syncs = [row for row in invoice_rows if str(row.get("myob_sync_status") or "").lower() == "failed" or row.get("myob_error")]
+    pending_syncs = [row for row in invoice_rows if str(row.get("myob_sync_status") or "").lower() in {"pending", "queued", "syncing"}]
+
+    email_status = {
+        "configured": bool(POSTMARK_API_KEY or RESEND_API_KEY or SMTP_PASSWORD),
+        "provider": "Postmark" if POSTMARK_API_KEY else ("Resend" if RESEND_API_KEY else ("SMTP" if SMTP_PASSWORD else "Not configured")),
+        "safe_message": "Email sending is configured." if (POSTMARK_API_KEY or RESEND_API_KEY or SMTP_PASSWORD) else "Email provider is not configured in this environment.",
+    }
+
+    return {
+        "success": True,
+        "integrations": {
+            "myob": {
+                "connected": myob_connected,
+                "mode": myob_mode,
+                "company_file_id": accounting.get("myob_company_file_id") or accounting.get("company_file_id") or "",
+                "company_file_name": accounting.get("myob_company_file_name") or accounting.get("company_file_name") or "",
+                "last_sync_at": accounting.get("myob_last_sync_at") or accounting.get("last_sync_at") or "",
+                "sync_errors": len(failed_syncs),
+                "pending_syncs": len(pending_syncs),
+                "settings": accounting,
+                "explain": {
+                    "churvox_only": "Invoices stay in Churvox only. Nothing is sent to MYOB.",
+                    "myob_sync": "Approved/sent invoices can sync to MYOB when MYOB is connected and the plan allows it.",
+                    "myob_external": "MYOB remains the accounting source of truth. Churvox tracks references and payment status.",
+                },
+            },
+            "sms": sms,
+            "email": email_status,
+            "future": [
+                {"name": "Xero", "status": "future", "note": "Planned later. MYOB remains the first accounting integration."},
+                {"name": "Fleet / GPS", "status": "future", "note": "Use job start proof now; full fleet tracking is not launch scope."},
+                {"name": "Bank payments", "status": "future", "note": "Payment links and manual paid tracking are supported first."},
+            ],
+            "invoice_sync_rows": invoice_rows,
+            "metrics": {
+                "invoice_rows": len(invoice_rows),
+                "failed_syncs": len(failed_syncs),
+                "pending_syncs": len(pending_syncs),
+                "sms_credits": sms.get("credits", 0),
+                "email_configured": email_status["configured"],
+                "myob_connected": myob_connected,
+            },
+        },
+    }
+
+@api_router.patch("/integrations/myob/settings")
+async def patch_integrations_myob_settings(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    allowed_modes = {"churvox_only", "myob_sync", "myob_external"}
+    mode = _area10_text((payload or {}).get("mode") or (payload or {}).get("invoice_mode") or (payload or {}).get("sync_mode") or "churvox_only")
+    if mode not in allowed_modes:
+        raise HTTPException(status_code=400, detail="Invalid MYOB sync mode")
+
+    update = {
+        "business_id": str(business_id),
+        "invoice_mode": mode,
+        "sync_mode": mode,
+        "myob_company_file_id": _area10_text((payload or {}).get("company_file_id") or (payload or {}).get("myob_company_file_id")),
+        "myob_company_file_name": _area10_text((payload or {}).get("company_file_name") or (payload or {}).get("myob_company_file_name")),
+        "myob_connected": _area10_bool((payload or {}).get("myob_connected")),
+        "updated_at": datetime.now(timezone.utc),
+    }
+
+    await db.accounting_settings.update_one(
+        {"business_id": str(business_id)},
+        {"$set": update, "$setOnInsert": {"created_at": datetime.now(timezone.utc)}},
+        upsert=True,
+    )
+    return {"success": True, "settings": await _area10_get_accounting_settings(business_id)}
+
+@api_router.post("/integrations/myob/disconnect")
+async def disconnect_integrations_myob(current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    await db.accounting_settings.update_one(
+        {"business_id": str(business_id)},
+        {"$set": {
+            "myob_connected": False,
+            "access_token": "",
+            "refresh_token": "",
+            "invoice_mode": "churvox_only",
+            "sync_mode": "churvox_only",
+            "updated_at": datetime.now(timezone.utc),
+        }},
+        upsert=True,
+    )
+    return {"success": True, "message": "MYOB disconnected for Churvox. Existing invoice records were not deleted."}
+
+@api_router.post("/integrations/myob/invoices/{invoice_id}/retry")
+async def retry_integrations_myob_invoice(invoice_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    clauses = [{"id": str(invoice_id)}]
+    if ObjectId.is_valid(str(invoice_id)):
+        clauses.insert(0, {"_id": ObjectId(str(invoice_id))})
+
+    invoice = await db.invoices.find_one({"business_id": str(business_id), "$or": clauses})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    accounting = await _area10_get_accounting_settings(business_id)
+    if not accounting.get("myob_connected"):
+        await db.invoices.update_one(
+            {"_id": invoice["_id"], "business_id": str(business_id)},
+            {"$set": {
+                "myob_sync_status": "failed",
+                "myob_error": "MYOB is not connected.",
+                "updated_at": datetime.now(timezone.utc),
+            }}
+        )
+        return {"success": False, "message": "MYOB is not connected. Connect MYOB before retrying sync."}
+
+    await db.invoices.update_one(
+        {"_id": invoice["_id"], "business_id": str(business_id)},
+        {"$set": {
+            "myob_sync_status": "queued",
+            "myob_error": "",
+            "myob_retry_requested_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+        }}
+    )
+    saved = await db.invoices.find_one({"_id": invoice["_id"]})
+    return {"success": True, "invoice": safe_doc(saved), "message": "MYOB sync retry queued."}
+
+
 # CORS_HARD_FIX_20260412
 
 
