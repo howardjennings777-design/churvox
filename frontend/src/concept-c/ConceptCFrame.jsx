@@ -19,8 +19,9 @@ export default function ConceptCFrame({ area = "jobs", children }) {
   const active =
     area === "clients" ? "people" :
     area === "invoices" ? "finance" :
+    area === "plans" ? "plans" :
     area === "quotes" || area === "worker" ? "jobs" :
-    area === "plans" || area === "settings" ? "more" :
+    area === "settings" ? "more" :
     area;
 
   const links = [
@@ -30,6 +31,7 @@ export default function ConceptCFrame({ area = "jobs", children }) {
     ["people", "Clients", "/clients"],
     ["messages", "Messages", "/sms"],
     ["finance", "Money", "/invoices"],
+    ["plans", "Plans", "/plans"],
     ["more", "More", "/settings"],
   ];
 
