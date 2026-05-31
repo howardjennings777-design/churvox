@@ -1,116 +1,136 @@
 <analysis>**original_problem_statement:** 
-The user requested a complete frontend rebuild of the live Churvox app into a premium, modern, uncluttered tradie business platform. Requirements included adding a consistent recurring theme (ice-blue background, deep navy text, electric blue actions, glass premium cards), creating a shared design system ( and premium components), and integrating clear AI Business Assistant sections across major pages (Smart Hub, Jobs, Clients, Quotes, Invoices, Automation, Reports/Payroll). Strict constraints were placed to NOT break backend APIs, auth, routing, role guards, or existing logic, and to test the build thoroughly. 
+The user requested a massive, production-grade overhaul of an existing web application consisting of 14 specific phases. The main product promise is: Work comes in → Churvox organises it → crew do the job → proof comes back → AI prepares admin → owner approves → invoice goes out → money gets tracked.
+Strict constraints from the user: 
+- Must work on  branch ONLY.
+- Do NOT touch old  branch,  files,  files, or unused themes.
+- Do NOT build fake UI or placeholder buttons. Every action must update real records.
+- Missing API keys (like Stripe) must be handled safely with clear messaging rather than breaking the app.
+- Provide a detailed testing report at the end.
 
-PRODUCT REQUIREMENTS:
-- Refactor all routed frontend pages to use the new premium theme.
-- Add Review first/Approval-first AI assistant boxes seamlessly onto core platform pages.
-- Cleanup clutter and update Layout/sidebar for both desktop and mobile.
-- Provide a final report detailing changed files and build results.
-- Commit and push to main for Render auto-deploy.
-
-**User's preferred language**: English
-*(Note to next agent: ALWAYS respond in English)*
+**User's preferred language**: English (Next agent INSTRUCTED to respond in English)
 
 **what currently exists?** 
-The entire frontend has been successfully upgraded to the new premium design system. A new  file and a  component library were created and implemented. Major pages (Smart Hub, Auth, Jobs, Clients, Quotes, Invoices, Settings, Payroll, Automation, Plans, etc.) have been restyled and injected with the requested AI Assistant UI panels. The React build passes successfully, and auth/routing functionality remains intact.
+The project is on the  branch (tracking ). It's a React + FastAPI + MongoDB stack. The app routes are successfully wired in  to point to the current working components (e.g.,  uses ,  uses ,  uses ). The agent verified that there are no Stripe keys in the backend  file, meaning any payment integrations must gracefully fallback as requested by the user. 
 
 **Last working item**: 
-    - Last item agent was working: Taking final screenshots across all upgraded routes (, , , , etc.) to verify the UI rendering, specifically checking the mobile header and sidebar visibility fixes. 
-    - Status: USER VERIFICATION PENDING
-    - Agent Testing Done: Y
-    - Which testing method agent to use? Screenshot tool (completed by previous agent).
-    - User Testing Done: N
+- **Last item agent was working:** Phase 1: Pricing / Plans overhaul. The agent just overwrote  and created its stylesheet  to update the public pricing page with the new customer-facing plan names (Start, Crew, Operator, Command) and add-ons (Growth Pack, MYOB).
+- **Status:** IN PROGRESS
+- **Agent Testing Done:** N
+- **Which testing method agent to use?** screenshot tool (to visually verify the frontend changes to the pricing page).
+- **User Testing Done:** N
 
-**All Pending/In progress Issue list**: 
-  Issue 1: Provide Final Report & Handle Git Deployment
-     - Attempted fixes: The previous agent finished the code updates and screenshot tests but stopped before generating the requested Final Report and addressing the git deployment request.
-     - Next debug checklist: 
-       - Generate the final summary report for the user detailing the files changed, routes upgraded, and AI surfaces added.
-       - IMPORTANT: The user requested to commit and push to main. As per system rules, the agent CANNOT execute git write actions. You must instruct the user to use the Save to Github feature in the chat input to trigger their Render deployment.
-     - Why fix this issue and what will be achieved with the fix? Completes the explicit acceptance criteria of the user's prompt.
-     - Status: NOT STARTED
-     - Is recurring issue? N
-     - Should Test frontend/backend/both after fix? NA
-     - Blocked on other issue: None
+**All Pending/In progress Issue list**:
+Issue 1: Test and verify the newly written  (Phase 1)
+- **Attempted fixes:** Agent just wrote the code, hasn't started the server to check for syntax errors or visual layout.
+- **Next debug checklist:** Verify the React component in  compiles and renders correctly at  via browser screenshot. 
+- **Why fix this issue and what will be achieved with the fix?** Ensures Phase 1's public pricing is accurately represented before moving to the logged-in billing page.
+- **Status:** TESTING PENDING
+- **Is recurring issue?** N
+- **Should Test frontend/backend/both after fix?** frontend (screenshot tool)
 
-**In progress Task List**: 
-  None currently in progress. All code modifications are finished.
+**In progress Task List**:
+Task 1: Phase 1: Pricing / Plans Overhaul
+- **Where to resume:** Review  and . Ensure it clearly displays the 4 plans (Start - 9, Crew - 9, Operator - 49, Command - 99), Add-ons (Growth pack 9, MYOB), plan comparisons, and CTA buttons. Ensure the backend plan mapping (solo->start, team->crew, pro->operator, enterprise->command) is respected.
+- **What will be achieved with this?** A modern, visually striking pricing page matching the new Command Floor direction.
+- **Status:** IN PROGRESS
+- **Should Test frontend/backend/both after fix?** frontend
+- **Blocked on something:** Nothing.
 
-**Upcoming and Future Tasks**:
-  No outstanding feature tasks. The system requires handover to the user with the final report.
+**Upcoming and Future Tasks**
+*(Note: These must be built incrementally with REAL wiring. Do not build fake UI.)*
+- **P1: Phase 2: Logged-in /plans billing page.** Update  with new names, upgrade/downgrade flows, and safe Stripe ID fallback messaging.
+- **P1: Phase 3: Business setup / onboarding / settings.** Allow owners to save business info, logo, GST, banks, MYOB status, etc. Update backend endpoints to securely scope to .
+- **P1: Phase 4: Business-grade invoices.** Build comprehensive invoice generation with real fields (taxes, discounts, partial payments, statuses).
+- **P2: Phase 5: Quote → Job → Invoice → Paid pipeline.** Connect the workflow across models. Show blockers (e.g., job completed but no invoice).
+- **P2: Phase 6: Money Desk.** Real dashboard showing sent/overdue/paid invoices.
+- **P2: Phase 7: Customer records upgrade.** Detailed client CRM profiles.
+- **P3: Phase 8: Worker / crew operations.** Mobile app workflows for workers.
+- **P3: Phase 9: Dispatch board / calendar.** Visual assignment of jobs.
+- **P3: Phase 10: Integrations workspace.** Real MYOB sync controls.
+- **P3: Phase 11: Automation workspace.** Trigger-based rule templates.
+- **P4: Phase 12: AI Operator real actions.** AI drafts real payloads that the owner can approve.
+- **P4: Phase 13: Reports / export / trust / security.** 
+- **P4: Phase 14: Churvox HQ / platform admin.** Super-admin view.
+
+*(CRITICAL: A detailed final testing report of all 14 areas is required at the very end. Look at the user's PRD message for the exact report format).*
 
 **Completed work in this session**
-- Phase 1: Created Premium Design System () and 15 components (PremiumCard, PremiumHero, PremiumAIBox, etc.) in .
-- Phase 2: Refactored , , and  for the new theme.
-- Phase 3: Upgraded Authentication flows (, , , ).
-- Phase 4: Upgraded core platform pages with AI Assistants (, , , , ).
-- Phase 5: Refactored admin, team, and settings pages (, , , , , , , ).
-- Phase 6: Refactored worker views ().
-- Backend DB Fix: Ran a script () to fix an auth mapping bug ( vs ) in the MongoDB  collection.
-- Frontend Build: Ran  and verified successful compilation without breaking routing or logic.
+- Verified Git branch constraints and correctly switched to .
+- Verified  routing to confirm the app matches the user's base requirements.
+- Checked  for Stripe IDs and reviewed backend logic for MYOB add-ons.
+- Created  and rewrote .
 
 **Earlier issues found/mentioned but not fixed**
-None.
+Issue 1: Stripe Price IDs are missing from .
+- **Debug checklist:** Check backend  and .
+- **Why to solve this issue and what will be achieved with this?** The user specifically stated *not* to require new Stripe IDs and to prepare code for new IDs later, meaning the UI checkout flow must fail gracefully or show a contact support message if IDs are missing, rather than crashing the app.
+- **Should Test frontend/backend/both after fix:** frontend
+- **Is recurring issue?** N
 
 **Known issue recurrence from previous fork**
-- Issue recurrence in previous fork: None
-- Recurrence count: 0
-- Status: NA
+- NA
 
 **Code Architecture**
-- Root Structure:  (React),  (FastAPI), MongoDB
-- New Frontend Directory Added:  containing the shared premium design components.
+-  (Main routing)
+-  (Public facing UI pages)
+-  (App core pages like )
+-  (Newest Command Floor UI paradigm files)
+-  (FastAPI backend)
 
 **Key Technical Concepts**
-React Hooks, Tailwind CSS (with custom ), React Router DOM, craco (Create React App Configuration Override), FastAPI, MongoDB.
+React frontend, FastAPI backend, MongoDB, Role-based auth (OwnerRoute, BusinessRoute, WorkerRoute), Tailwind/Custom CSS.
 
 **key DB schema**
-  - users: {{id, email, password_hash, role, name}}
+- : Includes fields like  (solo, team, pro, enterprise mapped to start, crew, operator, command respectively).
+- : Needs to be updated/added in Phase 3.
 
 **changes in tech stack**
-  - No core stack changes. Introduced a dedicated CSS architecture () alongside Tailwind to enforce a specific visual theme. Added a bridge in  to map legacy  classes to the new premium theme.
+- None.
 
-**All files of reference** 
-  -  (Core visual stylesheet for the redesign)
-  -  (Reusable UI components enforcing the tradie SaaS look)
-  -  (Updated layout with hidden mobile sidebar and new header)
-  -  (All heavily modified pages)
-  -  (Created by agent to store valid owner login)
+**All files of reference**
+-  (Created/Overwritten - handles the new Pricing UI).
+-  (Created - handles custom styling for pricing).
 
-**Areas that need refactoring**: 
-  - The  contains bridge styles mapping old  class names to new ones. Down the line, the old class names could be manually stripped from JSX files in favor of direct Tailwind or premium component usage to reduce bloat.
+**Areas that need refactoring**
+- None currently, but strictly IGNORE any files labeled backup, operatorOS, Fresh, or any unused themes.
 
 **key api endpoints**
-  - All existing  endpoints were preserved untouched as per user's strict instructions.
+- None modified yet.
 
-**Critical Info for New Agent** 
-  - **Git Operations:** The user requested you to commit and push to  so Render auto-deploy starts. **CRITICAL RULE**: You are forbidden from performing write actions related to git. You MUST inform the user to use the Save to Github feature in their UI.
-  - **Credentials:** Valid login credentials established in this run are saved in  ( / ). The DB structure was adjusted to use  instead of  to match the FastAPI route expectations.
+**Critical Info for New Agent**
+1. **Branch Strictness:** You MUST work on . Do not stray to other branches.
+2. **NO FAKE UI:** The user was extremely explicit. Do not make placeholder buttons. Everything you wire must hit a real backend endpoint or save to a real DB record.
+3. **Internal vs External Naming:** Customers see Start, Crew, Operator, Command. Internally and in DB, they remain solo, team, pro, enterprise. Map these correctly in the UI.
 
-**documents and test reports created in this job** 
-  - /app/memory/test_credentials.md
+**documents and test reports created in this job**
+- None yet.
 
-**Last 10 User Messages and any pending HUMAN messages** 
- - User: Start the task now (Status: COMPLETED implementation, pending Final Report generation)
- - User: Continuation task request - Complete frontend rebuild with specific themes, AI panels, and testing. (Status: COMPLETED implementation)
+**Last 10 User Messages and any pending HUMAN messages**
+1. *(Latest)* User provided the massive 14-phase PRD. Instructed to work in exact order, no fake UI, handle missing keys gracefully, and provide a huge report at the end. -> *Agent started Phase 1*
+2. User confirmed the branch to use is  from . -> *Completed*
+3. User told agent the previous branch was a broken backup. Instructed to M	frontend/src/pages/marketing/ExecutivePricingPage.jsx
+branch 'emergent-current-main' set up to track 'origin/main'.
+Your branch is up to date with 'origin/main'. and verify route bindings again. -> *Completed*
+4. User said Start the task now. -> *Completed*
 
 **Project Health Check:**
-Healthy. The frontend builds successfully without fatal errors, and screenshots confirm successful rendering of all major routes.
+Broken: Currently mid-write on the Frontend .
 
-**3rd Party Integrations** 
-  - Stripe (Payments) — requires User API Key
-  - MYOB (Integrations) — requires User API/OAuth keys
+**3rd Party Integrations**
+- Stripe (Payments) — Requires User API Key (Keys missing in .env currently; UI must handle gracefully).
+- MYOB — Requires User API Key/OAuth (Integration specs planned for later phases).
 
 **Testing status**
-  - Testing agent used after significant changes: NO (Screenshot tool used manually instead to verify visual changes).
-  - Troubleshoot agent used after agent stuck in loop: NO
-  - Test files created: None. Test credentials saved in .
-  - Known regressions: None identified. Build passes.
+- Testing agent used after significant changes: NO
+- Troubleshoot agent used after agent stuck in loop: NO
+- Test files created: []
+- Known regressions: []
 
 **Credentials to test flow:**
-Check . 
-Owner:  | Pass: 
+Check  if authentication is needed for  or dashboard testing.
 
 **What agent forgot to execute**
-- The agent successfully implemented the code but stopped abruptly without providing the explicit **Final report** requested in the user's prompt (detailing files changed, routes upgraded, and AI surfaces added). 
-- The agent did not address the user's instruction to . (It must formally explain that the user needs to use the UI's Save to Github button for deployment).</analysis>
+Nothing was forgotten; the agent simply ran out of context/turns while implementing the very first phase (Pricing Page).
+
+<TESTING METHOD>
+Use screenshot tool to verify the frontend UI changes on .</analysis>
