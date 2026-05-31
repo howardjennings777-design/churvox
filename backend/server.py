@@ -12742,6 +12742,354 @@ async def void_business_grade_invoice(invoice_id: str, payload: dict = Body(defa
     return {"success": True, "invoice": _area4_public_response(saved)}
 
 
+
+
+# CHURVOX_AREA5_QUOTE_JOB_INVOICE_PAID_PIPELINE_20260531
+# Connected Quote → Job → Invoice → Paid workflow.
+def _area5_object_query(record_id: str, business_id: str) -> dict:
+    clauses = [{"id": str(record_id)}]
+    if ObjectId.is_valid(str(record_id)):
+        clauses.insert(0, {"_id": ObjectId(str(record_id))})
+    return {"business_id": str(business_id), "$or": clauses}
+
+def _area5_id(doc: dict) -> str:
+    if not doc:
+        return ""
+    return str(doc.get("_id") or doc.get("id") or "")
+
+def _area5_money(value, fallback=0.0):
+    try:
+        if value is None or value == "":
+            return float(fallback)
+        return float(str(value).replace("$", "").replace(",", "").strip())
+    except Exception:
+        return float(fallback or 0)
+
+def _area5_status(doc: dict) -> str:
+    return str((doc or {}).get("status") or "").lower().strip()
+
+def _area5_completed_job(job: dict) -> bool:
+    status = str(job.get("status") or job.get("job_status") or job.get("workflow_status") or "").lower()
+    return status in {"completed", "complete", "done"} or bool(job.get("completed") or job.get("completed_at") or job.get("worker_completed_at"))
+
+def _area5_invoice_linked(job: dict) -> bool:
+    return bool(job.get("invoice_id") or job.get("draft_invoice_id") or job.get("invoiced"))
+
+async def _area5_quote_to_job_payload(quote: dict, payload: dict, business_id: str, current_user: dict) -> dict:
+    now = datetime.now(timezone.utc)
+    scheduled_raw = payload.get("scheduled_date") or payload.get("date")
+    if scheduled_raw:
+        try:
+            scheduled_date = datetime.fromisoformat(str(scheduled_raw).replace("Z", "+00:00"))
+        except Exception:
+            scheduled_date = now + timedelta(days=1)
+    else:
+        scheduled_date = now + timedelta(days=1)
+
+    title = (
+        payload.get("title")
+        or quote.get("title")
+        or quote.get("job_title")
+        or quote.get("job_description")
+        or quote.get("description")
+        or "Quoted work"
+    )
+
+    customer_name = (
+        quote.get("customer_name")
+        or quote.get("client_name")
+        or quote.get("name")
+        or payload.get("customer_name")
+        or "Customer"
+    )
+
+    address = (
+        payload.get("address")
+        or quote.get("address")
+        or quote.get("site_address")
+        or quote.get("billing_address")
+        or ""
+    )
+
+    price = _area5_money(
+        payload.get("price")
+        or quote.get("price")
+        or quote.get("total")
+        or quote.get("amount")
+        or quote.get("subtotal"),
+        0,
+    )
+
+    return {
+        "business_id": str(business_id),
+        "owner_id": str(current_user.get("id") or current_user.get("_id") or ""),
+        "quote_id": _area5_id(quote),
+        "linked_quote_id": _area5_id(quote),
+        "client_id": quote.get("client_id") or payload.get("client_id"),
+        "customer_name": customer_name,
+        "client_name": customer_name,
+        "title": str(title)[:220],
+        "job_name": str(title)[:220],
+        "job_type": payload.get("job_type") or quote.get("job_type") or "other",
+        "service_type": payload.get("service_type") or quote.get("job_type") or quote.get("service_type") or "Service work",
+        "description": quote.get("job_description") or quote.get("description") or quote.get("notes") or "",
+        "address": address,
+        "site_address": address,
+        "scheduled_date": scheduled_date,
+        "scheduled_time": payload.get("scheduled_time") or quote.get("scheduled_time") or "",
+        "estimated_duration": int(_area5_money(payload.get("estimated_duration") or quote.get("estimated_duration"), 60)),
+        "price": price,
+        "job_price": price,
+        "pricing_type": quote.get("pricing_type") or payload.get("pricing_type") or "fixed",
+        "hourly_rate": _area5_money(quote.get("hourly_rate") or payload.get("hourly_rate"), 0),
+        "extras": quote.get("extras") if isinstance(quote.get("extras"), list) else [],
+        "notes": quote.get("notes") or "",
+        "status": "assigned" if payload.get("assigned_worker_id") else "quoted",
+        "assigned_worker_id": payload.get("assigned_worker_id") or "",
+        "assigned_worker_name": payload.get("assigned_worker_name") or "",
+        "source": "quote_conversion",
+        "created_at": now,
+        "updated_at": now,
+    }
+
+@api_router.get("/pipeline")
+async def get_quote_job_invoice_pipeline(current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+
+    quotes = [safe_doc(q) async for q in db.quotes.find({"business_id": str(business_id)}).sort("updated_at", -1).limit(500)]
+    jobs = [safe_doc(j) async for j in db.jobs.find({"business_id": str(business_id)}).sort("updated_at", -1).limit(500)]
+    invoices = [safe_doc(i) async for i in db.invoices.find({"business_id": str(business_id)}).sort("updated_at", -1).limit(500)]
+
+    jobs_by_quote = {}
+    for job in jobs:
+        qid = str(job.get("quote_id") or job.get("linked_quote_id") or "")
+        if qid:
+            jobs_by_quote[qid] = job
+
+    accepted_quotes_no_job = []
+    for quote in quotes:
+        qid = str(quote.get("id") or quote.get("_id") or "")
+        status = _area5_status(quote)
+        if status in {"accepted", "approved"} and not (quote.get("job_id") or quote.get("converted_job_id") or jobs_by_quote.get(qid)):
+            accepted_quotes_no_job.append(quote)
+
+    completed_jobs_no_invoice = []
+    approved_jobs_no_invoice = []
+    for job in jobs:
+        if _area5_completed_job(job) and not _area5_invoice_linked(job):
+            completed_jobs_no_invoice.append(job)
+        if (job.get("owner_approved") or str(job.get("owner_review_status") or "").lower() == "approved") and not _area5_invoice_linked(job):
+            approved_jobs_no_invoice.append(job)
+
+    draft_invoices = [i for i in invoices if _area5_status(i) in {"draft", ""}]
+    sent_invoices = [i for i in invoices if _area5_status(i) in {"sent", "approved"}]
+    paid_invoices = [i for i in invoices if _area5_status(i) == "paid"]
+
+    overdue_invoices = []
+    for invoice in invoices:
+        status = _area5_status(invoice)
+        due = invoice.get("due_date")
+        is_overdue = status == "overdue"
+        if due and status not in {"paid", "void", "cancelled"}:
+            try:
+                is_overdue = datetime.fromisoformat(str(due).replace("Z", "+00:00")) < now
+            except Exception:
+                pass
+        if is_overdue:
+            overdue_invoices.append(invoice)
+
+    unpaid_total = sum(_area5_money(i.get("amount_due") or i.get("balance_due") or i.get("total"), 0) for i in invoices if _area5_status(i) not in {"paid", "void", "cancelled"})
+    overdue_total = sum(_area5_money(i.get("amount_due") or i.get("balance_due") or i.get("total"), 0) for i in overdue_invoices)
+    ready_to_invoice_total = sum(_area5_money(j.get("price") or j.get("job_price") or j.get("total") or j.get("amount"), 0) for j in completed_jobs_no_invoice)
+
+    return {
+        "success": True,
+        "pipeline": {
+            "accepted_quotes_no_job": accepted_quotes_no_job,
+            "completed_jobs_no_invoice": completed_jobs_no_invoice,
+            "approved_jobs_no_invoice": approved_jobs_no_invoice,
+            "draft_invoices": draft_invoices,
+            "sent_invoices": sent_invoices,
+            "overdue_invoices": overdue_invoices,
+            "paid_invoices": paid_invoices,
+            "metrics": {
+                "accepted_quotes_no_job": len(accepted_quotes_no_job),
+                "completed_jobs_no_invoice": len(completed_jobs_no_invoice),
+                "approved_jobs_no_invoice": len(approved_jobs_no_invoice),
+                "draft_invoices": len(draft_invoices),
+                "sent_invoices": len(sent_invoices),
+                "overdue_invoices": len(overdue_invoices),
+                "paid_invoices": len(paid_invoices),
+                "unpaid_total": round(unpaid_total, 2),
+                "overdue_total": round(overdue_total, 2),
+                "ready_to_invoice_total": round(ready_to_invoice_total, 2),
+            },
+        },
+    }
+
+@api_router.post("/quotes/{quote_id}/accept")
+async def owner_accept_quote(quote_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    quote = await db.quotes.find_one(_area5_object_query(quote_id, business_id))
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+    now = datetime.now(timezone.utc)
+    await db.quotes.update_one({"_id": quote["_id"], "business_id": str(business_id)}, {"$set": {"status": "accepted", "accepted_at": now, "updated_at": now}})
+    saved = await db.quotes.find_one({"_id": quote["_id"]})
+    return {"success": True, "quote": safe_doc(saved)}
+
+@api_router.post("/quotes/{quote_id}/decline")
+async def owner_decline_quote(quote_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    quote = await db.quotes.find_one(_area5_object_query(quote_id, business_id))
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+    now = datetime.now(timezone.utc)
+    await db.quotes.update_one({"_id": quote["_id"], "business_id": str(business_id)}, {"$set": {"status": "declined", "declined_at": now, "updated_at": now}})
+    saved = await db.quotes.find_one({"_id": quote["_id"]})
+    return {"success": True, "quote": safe_doc(saved)}
+
+@api_router.post("/quotes/{quote_id}/convert-to-job")
+async def convert_quote_to_job(quote_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    quote = await db.quotes.find_one(_area5_object_query(quote_id, business_id))
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    existing_job_id = quote.get("converted_job_id") or quote.get("job_id")
+    if existing_job_id:
+        existing = await db.jobs.find_one(_area5_object_query(str(existing_job_id), business_id))
+        if existing:
+            return {"success": True, "job": safe_doc(existing), "message": "Quote is already linked to a job."}
+
+    job_doc = await _area5_quote_to_job_payload(quote, payload or {}, business_id, current_user)
+    inserted = await db.jobs.insert_one(job_doc)
+    now = datetime.now(timezone.utc)
+    await db.quotes.update_one(
+        {"_id": quote["_id"], "business_id": str(business_id)},
+        {"$set": {
+            "status": "converted",
+            "job_id": str(inserted.inserted_id),
+            "converted_job_id": str(inserted.inserted_id),
+            "converted_at": now,
+            "updated_at": now,
+        }}
+    )
+    saved = await db.jobs.find_one({"_id": inserted.inserted_id})
+    return {"success": True, "job": safe_doc(saved), "job_id": str(inserted.inserted_id)}
+
+@api_router.post("/jobs/{job_id}/approve-completion")
+async def approve_job_completion_for_pipeline(job_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    job = await db.jobs.find_one(_area5_object_query(job_id, business_id))
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    now = datetime.now(timezone.utc)
+    await db.jobs.update_one(
+        {"_id": job["_id"], "business_id": str(business_id)},
+        {"$set": {
+            "status": "completed",
+            "job_status": "completed",
+            "workflow_status": "completed",
+            "completed": True,
+            "owner_approved": True,
+            "owner_review_status": "approved",
+            "work_review_status": "approved",
+            "approved_at": now,
+            "updated_at": now,
+        }}
+    )
+    saved = await db.jobs.find_one({"_id": job["_id"]})
+    return {"success": True, "job": safe_doc(saved)}
+
+@api_router.post("/jobs/{job_id}/create-invoice-draft")
+async def create_invoice_draft_from_job_pipeline(job_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    job = await db.jobs.find_one(_area5_object_query(job_id, business_id))
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    existing_invoice_id = job.get("invoice_id") or job.get("draft_invoice_id")
+    if existing_invoice_id:
+        existing = await db.invoices.find_one(_area5_object_query(str(existing_invoice_id), business_id))
+        if existing:
+            return {"success": True, "invoice": _area4_public_response(existing) if "_area4_public_response" in globals() else safe_doc(existing), "message": "Job already has an invoice."}
+
+    price = _area5_money(job.get("price") or job.get("job_price") or job.get("fixed_price") or job.get("amount") or job.get("total"), 0)
+    description = job.get("ai_invoice_description") or job.get("invoice_description_draft") or job.get("description") or job.get("title") or "Service work completed"
+    invoice_payload = {
+        "job_id": _area5_id(job),
+        "linked_job_id": _area5_id(job),
+        "quote_id": job.get("quote_id") or job.get("linked_quote_id") or "",
+        "linked_quote_id": job.get("linked_quote_id") or job.get("quote_id") or "",
+        "client_id": job.get("client_id"),
+        "customer_name": job.get("customer_name") or job.get("client_name") or "Customer",
+        "customer_email": job.get("customer_email") or job.get("email") or "",
+        "customer_phone": job.get("customer_phone") or job.get("phone") or "",
+        "address": job.get("address") or job.get("site_address") or "",
+        "site_address": job.get("site_address") or job.get("address") or "",
+        "description": payload.get("description") or description,
+        "line_items": [{
+            "description": payload.get("description") or description,
+            "quantity": 1,
+            "unit_price": price,
+            "amount": price,
+        }],
+        "subtotal": price,
+        "status": "draft",
+        "source": "job_to_invoice_pipeline",
+    }
+
+    invoice_doc = await _area4_prepare_invoice_doc(invoice_payload, current_user) if "_area4_prepare_invoice_doc" in globals() else {
+        **invoice_payload,
+        "business_id": str(business_id),
+        "status": "draft",
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
+        "public_token": secrets.token_urlsafe(24),
+        "total": price,
+        "amount_due": price,
+    }
+    inserted = await db.invoices.insert_one(invoice_doc)
+    now = datetime.now(timezone.utc)
+    await db.jobs.update_one(
+        {"_id": job["_id"], "business_id": str(business_id)},
+        {"$set": {
+            "draft_invoice_id": str(inserted.inserted_id),
+            "invoice_id": str(inserted.inserted_id),
+            "invoiced": True,
+            "updated_at": now,
+        }}
+    )
+    saved = await db.invoices.find_one({"_id": inserted.inserted_id})
+    return {"success": True, "invoice": _area4_public_response(saved) if "_area4_public_response" in globals() else safe_doc(saved), "invoice_id": str(inserted.inserted_id)}
+
+@api_router.post("/invoices/{invoice_id}/mark-paid-pipeline")
+async def mark_invoice_paid_pipeline(invoice_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    invoice = await db.invoices.find_one(_area5_object_query(invoice_id, business_id))
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    now = datetime.now(timezone.utc)
+    total = _area5_money(invoice.get("total"), 0)
+    await db.invoices.update_one(
+        {"_id": invoice["_id"], "business_id": str(business_id)},
+        {"$set": {
+            "status": "paid",
+            "amount_paid": total,
+            "paid_amount": total,
+            "amount_due": 0,
+            "balance_due": 0,
+            "remaining_balance": 0,
+            "paid_at": now,
+            "updated_at": now,
+        }}
+    )
+    saved = await db.invoices.find_one({"_id": invoice["_id"]})
+    return {"success": True, "invoice": _area4_public_response(saved) if "_area4_public_response" in globals() else safe_doc(saved)}
+
+
 # CORS_HARD_FIX_20260412
 
 
