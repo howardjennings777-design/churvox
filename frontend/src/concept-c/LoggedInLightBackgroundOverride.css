@@ -1,4 +1,4 @@
-/* CHURVOX_REMOVE_GREY_CANVAS_20260601 */
+/* CHURVOX_CREAM_CANVAS_REMOVE_DARK_BACKDROP_20260601 */
 
 html,
 body,
@@ -30,6 +30,14 @@ main.fixed.inset-0 > div > section {
   padding: clamp(20px, 2.4vw, 34px) !important;
 }
 
+main.fixed.inset-0 > div > section > section {
+  gap: 18px !important;
+}
+
+main.fixed.inset-0 > div > section > section + section {
+  margin-top: 18px !important;
+}
+
 main.fixed.inset-0 > div > section > header {
   margin-bottom: 18px !important;
   background: transparent !important;
@@ -39,73 +47,41 @@ main.fixed.inset-0 > div > section > header {
   padding-right: 2px !important;
 }
 
-main.fixed.inset-0 > div > section > header div,
-main.fixed.inset-0 > div > section > header span,
-main.fixed.inset-0 > div > section > header strong {
+main.fixed.inset-0 > div > section > header,
+main.fixed.inset-0 > div > section > header * {
   color: #10141f !important;
   text-shadow: none !important;
 }
 
-main.fixed.inset-0 > div > section > section {
-  gap: 18px !important;
-}
-
-main.fixed.inset-0 > div > section > section + section {
-  margin-top: 18px !important;
-}
-
-main.fixed.inset-0 > div > section > section > div,
-main.fixed.inset-0 > div > section article,
-main.fixed.inset-0 > div > section .bg-slate-950,
-main.fixed.inset-0 > div > section .bg-slate-900,
 main.fixed.inset-0 > div > section .bg-white,
 main.fixed.inset-0 > div > section .bg-slate-50,
-main.fixed.inset-0 > div > section .bg-slate-100 {
-  background:
-    radial-gradient(circle at 92% 0%, rgba(46, 180, 255, 0.15), transparent 230px),
-    linear-gradient(145deg, rgba(20, 54, 88, 0.96), rgba(12, 33, 57, 0.95)) !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 16px 38px rgba(12, 33, 57, 0.16) !important;
+main.fixed.inset-0 > div > section .bg-slate-100,
+main.fixed.inset-0 > div > section .bg-blue-50,
+main.fixed.inset-0 > div > section .bg-amber-50,
+main.fixed.inset-0 > div > section .bg-emerald-50,
+main.fixed.inset-0 > div > section article {
+  background: rgba(255,255,255,0.82) !important;
+  border-color: rgba(16,20,31,0.10) !important;
+  box-shadow: 0 14px 38px rgba(15,23,42,0.055) !important;
 }
 
-main.fixed.inset-0 > div > section h1,
-main.fixed.inset-0 > div > section h2,
-main.fixed.inset-0 > div > section h3,
-main.fixed.inset-0 > div > section strong,
-main.fixed.inset-0 > div > section .text-slate-950,
-main.fixed.inset-0 > div > section .text-slate-900,
-main.fixed.inset-0 > div > section .text-slate-800 {
-  color: #f8fbff !important;
-}
-
-main.fixed.inset-0 > div > section > header h1,
-main.fixed.inset-0 > div > section > header h2,
-main.fixed.inset-0 > div > section > header strong,
-main.fixed.inset-0 > div > section > header .text-slate-950,
-main.fixed.inset-0 > div > section > header .text-slate-900 {
+main.fixed.inset-0 > div > section .bg-white,
+main.fixed.inset-0 > div > section .bg-white *,
+main.fixed.inset-0 > div > section .bg-slate-50,
+main.fixed.inset-0 > div > section .bg-slate-50 *,
+main.fixed.inset-0 > div > section .bg-slate-100,
+main.fixed.inset-0 > div > section .bg-slate-100 *,
+main.fixed.inset-0 > div > section article,
+main.fixed.inset-0 > div > section article * {
   color: #10141f !important;
-}
-
-main.fixed.inset-0 > div > section p,
-main.fixed.inset-0 > div > section div,
-main.fixed.inset-0 > div > section span,
-main.fixed.inset-0 > div > section .text-slate-600,
-main.fixed.inset-0 > div > section .text-slate-500,
-main.fixed.inset-0 > div > section .text-slate-400 {
-  color: rgba(235, 246, 255, 0.84) !important;
-}
-
-main.fixed.inset-0 > div > section > header p,
-main.fixed.inset-0 > div > section > header div,
-main.fixed.inset-0 > div > section > header span {
-  color: #596170 !important;
+  text-shadow: none !important;
 }
 
 main.fixed.inset-0 h1 {
-  font-size: clamp(2rem, 4.1vw, 3.75rem) !important;
+  font-size: clamp(2rem,4.1vw,3.75rem) !important;
   line-height: 0.95 !important;
 }
 
 main.fixed.inset-0 h2 {
-  font-size: clamp(1.4rem, 2.2vw, 2.1rem) !important;
+  font-size: clamp(1.4rem,2.2vw,2.1rem) !important;
 }
