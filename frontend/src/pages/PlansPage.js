@@ -160,10 +160,58 @@ export default function PlansPage() {
     <main className="cv-plans" data-version="CHURVOX_PLANS_FIRST_SETUP_REDIRECT_20260601" data-audit-markers={CHURVOX_AUDIT_MARKERS}>
       <div className="cv-plans-shell">
         <header className="cv-plans-top"><ChurvoxLogo size="lg" /><span>{status.label}</span></header>
-        <section className="cv-plans-hero"><div><p className="cv-kicker">Plans & billing</p><h1>Choose how much admin Churvox should run for you.</h1><p>{isFirstSetup() ? "Choose your trial plan first. Then Churvox will take you straight into business setup so your first client, job, quote and invoice make sense." : "Start with core workflow, move into crew control, or choose Operator where Churvox prepares the daily admin and the owner approves."}</p></div><div className="cv-status-pill">{currencyInfo?.currency ? `Billed in ${currencyInfo.currency}` : status.label}</div></section>
+        <section className="cv-plans-hero"><div><p className="cv-kicker">Plans & billing</p><h1>Start, Crew, Operator or Command — pick how much admin Churvox handles.</h1><p>{isFirstSetup() ? "Choose your trial plan first. Then Churvox will take you straight into business setup so your first client, job, quote and invoice make sense." : "Start gets you organised. Crew runs the team. Operator prepares the admin for approval. Command unlocks the full command centre with payroll, MYOB and advanced roles."}</p></div><div className="cv-status-pill">{currencyInfo?.currency ? `Billed in ${currencyInfo.currency}` : status.label}</div></section>
         {isFirstSetup() ? <div className="cv-notice"><b>First setup path</b><span>Step 1: choose a plan. Step 2: business setup. Step 3: add your first client.</span></div> : null}
         {notice && <div className={`cv-notice ${notice.type === "warning" ? "warn" : ""}`}><b>{notice.title}</b><span>{notice.text}</span></div>}
-        <section className="cv-grid">{displayPlans.map((plan) => { const featured = plan.key === "pro"; const current = currentPlan === plan.key && !isTrialExpired; return <article key={plan.key} className={`cv-card ${featured ? "featured" : ""} ${current ? "current" : ""}`}><span>{plan.tag}</span><h2>{plan.name}</h2><div className="cv-price"><b>{plan.price}</b><small>{plan.period}</small></div><p>{plan.blurb}</p><ul>{plan.limits.map((item) => <li key={item}>{item}</li>)}</ul><button type="button" onClick={() => handleSelectPlan(plan.key)} disabled={isDisabled(plan)} data-testid={`plan-btn-${plan.key}`}>{buttonLabel(plan)}</button></article>; })}</section>
+        <section className="cv-grid">{displayPlans.map((plan) => {
+          const featured = plan.key === "pro";
+          const current = currentPlan === plan.key && !isTrialExpired;
+          const teamText = plan.teamLimit === 1 ? "Owner only" : typeof plan.teamLimit === "number" ? `Up to ${plan.teamLimit} active team members` : String(plan.teamLimit || "");
+          return (
+            <article key={plan.key} className={`cv-card cv-tier-card ${featured ? "featured" : ""} ${current ? "current" : ""}`}>
+              <div className="cv-tier-topline">
+                <span>{plan.tag}</span>
+                {current ? <em>Current</em> : null}
+              </div>
+
+              <h2>{plan.name}</h2>
+
+              <div className="cv-price">
+                <b>{plan.price}</b>
+                <small>{plan.period}</small>
+              </div>
+
+              <p className="cv-tier-blurb">{plan.blurb}</p>
+
+              <div className="cv-tier-cap-row">
+                <strong>{plan.clientLimit} active clients</strong>
+                <strong>{teamText}</strong>
+              </div>
+
+              <div className="cv-tier-section">
+                <h3>Included in {plan.name}</h3>
+                <ul>
+                  {(plan.includes || plan.limits || []).map((item) => <li key={item}>{item}</li>)}
+                </ul>
+              </div>
+
+              {(plan.notIncluded || []).length ? (
+                <div className="cv-tier-section cv-tier-locked">
+                  <h3>Not on {plan.name}</h3>
+                  <ul>
+                    {plan.notIncluded.map((item) => <li key={item}>{item}</li>)}
+                  </ul>
+                </div>
+              ) : null}
+
+              <p className="cv-tier-best">{plan.bestFor}</p>
+
+              <button type="button" onClick={() => handleSelectPlan(plan.key)} disabled={isDisabled(plan)} data-testid={`plan-btn-${plan.key}`}>
+                {buttonLabel(plan)}
+              </button>
+            </article>
+          );
+        })}</section>
         <section className="cv-user-blocks"><div><small>Command Growth Pack</small><b>+50 active team members</b><span>Add more crew, jobs and AI Operator capacity as your business grows. Built for Command customers who need more capacity without changing the whole plan.</span></div><article><small>Growth Pack</small><strong>$99<em> /month + GST</em></strong><p>Each block adds 50 more active team members.</p><button className="cv-user-block-buy" type="button" onClick={handleBuyGrowthPack} disabled={Boolean(busyPlan || busyAddon || busySms)} data-testid="buy-command-growth-pack">{busyAddon === "command_growth_pack" ? "Opening checkout…" : "Buy Growth Pack"}</button></article><ul>{userBlocks.map((item) => <li key={item}>{item}</li>)}</ul></section>
         <section className="cv-myob-addon"><div><small>MYOB add-on</small><b>MYOB sync for Operator</b><span>Operator can add MYOB for $39/month + GST. Command includes MYOB by default.</span></div><button type="button" onClick={handleBuyMyobAddon} disabled={Boolean(busyPlan || busyAddon || busySms || currentPlan === "enterprise")} data-testid="buy-myob-addon">{currentPlan === "enterprise" ? "Included in Command" : busyAddon === "myob_addon" ? "Opening checkout…" : "Add MYOB — $39/month"}</button></section>
         <section className="cv-sms-pricing"><div><b>SMS credit blocks</b><span>SMS is separate so you only buy what you use. Customer reminders and follow-ups stay approval-first.</span></div><div className="cv-sms-grid">{smsBlocks.map((pack) => <article key={pack.key}><small>{pack.credits} credits</small><strong>{pack.price}<em> + GST</em></strong><span>{pack.note}</span><button type="button" onClick={() => handleBuySmsPack(pack)} disabled={Boolean(busyPlan || busyAddon || busySms)} data-testid={smsTestIds[pack.key] || `buy-${pack.key}`}>{busySms === pack.key ? "Opening checkout…" : "Buy credits"}</button></article>)}</div></section>

@@ -173,8 +173,14 @@ export const APP_PLANS = CHURVOX_PLANS.map((plan) => ({
   price: plan.price,
   period: plan.period,
   tag: plan.tag,
+  summary: plan.summary,
   blurb: plan.blurb,
+  bestFor: plan.bestFor,
+  clientLimit: plan.clientLimit,
+  teamLimit: plan.teamLimit,
   limits: plan.limits,
+  includes: plan.includes,
+  notIncluded: plan.notIncluded,
   featured: plan.featured,
 }));
 

@@ -414,3 +414,118 @@
   .cv-plans-hero h1 { font-size: clamp(38px, 13vw, 62px); }
   .cv-card { min-height: auto; }
 }
+
+/* CHURVOX_VISIBLE_TIER_REFLECTION_20260602 */
+.cv-tier-card {
+  gap: 12px;
+}
+
+.cv-tier-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cv-tier-topline > span {
+  width: fit-content;
+}
+
+.cv-tier-topline em {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: rgba(22, 219, 120, 0.16);
+  color: #047244;
+  padding: 5px 9px;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cv-card.featured .cv-tier-topline em {
+  background: #16db78;
+  color: #03150d;
+}
+
+.cv-tier-blurb {
+  min-height: 58px;
+}
+
+.cv-tier-cap-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 7px;
+  margin: 4px 0 6px;
+}
+
+.cv-tier-cap-row strong {
+  display: block;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: rgba(15, 23, 42, 0.045);
+  padding: 9px 10px;
+  color: inherit;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.cv-card.featured .cv-tier-cap-row strong {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.cv-tier-section {
+  border-top: 1px solid rgba(15, 23, 42, 0.10);
+  padding-top: 12px;
+}
+
+.cv-card.featured .cv-tier-section {
+  border-top-color: rgba(255, 255, 255, 0.14);
+}
+
+.cv-tier-section h3 {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cv-tier-section li {
+  position: relative;
+  padding-left: 18px;
+}
+
+.cv-tier-section li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #0b9b57;
+  font-weight: 950;
+}
+
+.cv-card.featured .cv-tier-section li::before {
+  color: #16db78;
+}
+
+.cv-tier-locked li::before {
+  content: "–";
+  color: #b45b5b;
+}
+
+.cv-card.featured .cv-tier-locked li::before {
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.cv-tier-best {
+  margin-top: auto;
+  color: inherit;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.35;
+  opacity: 0.78;
+}
+
