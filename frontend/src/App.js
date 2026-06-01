@@ -55,6 +55,7 @@ import ConceptCFrame from "./concept-c/ConceptCFrame";
 import CommandDeskHomePage from "./pages/CommandDeskHomePage";
 import JobsCommandPage from "./pages/JobsCommandPage";
 import QuotesCommandPage from "./pages/QuotesCommandPage";
+import InvoicesCommandPage from "./pages/InvoicesCommandPage";
 import TradePresetsPage from "./pages/TradePresetsPage";
 import MessageApprovalQueuePage from "./pages/MessageApprovalQueuePage";
 import DispatchBoardPage from "./pages/DispatchBoardPage";
@@ -269,7 +270,7 @@ function App() {
             <Route path="/quotes/:id/edit" element={<BusinessRoute><ConceptCFrame area="quotes"><QuoteFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/money-desk" element={<BusinessRoute><ConceptCFrame area="invoices"><MoneyDeskPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/money" element={<BusinessRoute><ConceptCFrame area="invoices"><MoneyDeskPage /></ConceptCFrame></BusinessRoute>} />
-            <Route path="/invoices" element={<BusinessRoute><ConceptCPage area="invoices" /></BusinessRoute>} />
+            <Route path="/invoices" element={<BusinessRoute><InvoicesCommandPage /></BusinessRoute>} />
             <Route path="/invoices/new" element={<BusinessRoute><ConceptCFrame area="invoices"><InvoiceFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/invoices/:id" element={<BusinessRoute><ConceptCFrame area="invoices"><InvoiceDetailPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/sms" element={<BusinessRoute><Navigate to="/dashboard" replace /></BusinessRoute>} />
