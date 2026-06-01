@@ -72,14 +72,30 @@ body:has(aside) main.fixed.inset-0 .text-emerald-700 {
   color: #67e8f9 !important;
 }
 
-body:has(aside) main.fixed.inset-0 .bg-white:not(aside .bg-white),
-body:has(aside) main.fixed.inset-0 .bg-slate-50,
-body:has(aside) main.fixed.inset-0 .bg-slate-100,
-body:has(aside) main.fixed.inset-0 .bg-blue-50,
-body:has(aside) main.fixed.inset-0 .bg-amber-50,
-body:has(aside) main.fixed.inset-0 .bg-emerald-50 {
-  background: rgba(255, 255, 255, .065) !important;
-  border-color: rgba(148, 163, 184, .18) !important;
+body:has(aside) main.fixed.inset-0 > div > section .bg-white,
+body:has(aside) main.fixed.inset-0 > div > section .bg-slate-50,
+body:has(aside) main.fixed.inset-0 > div > section .bg-slate-100,
+body:has(aside) main.fixed.inset-0 > div > section .bg-blue-50,
+body:has(aside) main.fixed.inset-0 > div > section .bg-amber-50,
+body:has(aside) main.fixed.inset-0 > div > section .bg-emerald-50,
+body:has(aside) main.fixed.inset-0 [role="dialog"] .bg-white,
+body:has(aside) main.fixed.inset-0 [role="dialog"] .bg-slate-50,
+body:has(aside) main.fixed.inset-0 [role="dialog"] .bg-slate-100,
+body:has(aside) main.fixed.inset-0 [role="dialog"] .bg-blue-50,
+body:has(aside) main.fixed.inset-0 [role="dialog"] .bg-amber-50,
+body:has(aside) main.fixed.inset-0 [role="dialog"] .bg-emerald-50 {
+  background: rgba(255, 255, 255, .075) !important;
+  border-color: rgba(148, 163, 184, .20) !important;
+}
+
+body:has(aside) main.fixed.inset-0 > div > section .bg-white[class*="rounded"],
+body:has(aside) main.fixed.inset-0 > div > section .bg-slate-50[class*="rounded"],
+body:has(aside) main.fixed.inset-0 > div > section .bg-blue-50[class*="rounded"],
+body:has(aside) main.fixed.inset-0 > div > section .bg-amber-50[class*="rounded"],
+body:has(aside) main.fixed.inset-0 > div > section .bg-emerald-50[class*="rounded"] {
+  background: linear-gradient(135deg, rgba(22, 39, 68, .92), rgba(30, 58, 100, .62)) !important;
+  border-color: rgba(103, 232, 249, .18) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 12px 32px rgba(0, 0, 0, .13) !important;
 }
 
 body:has(aside) main.fixed.inset-0 .border-slate-200,
@@ -140,7 +156,17 @@ body:has(aside) main.fixed.inset-0 th {
 }
 
 body:has(aside) main.fixed.inset-0 .rounded-full {
-  border-color: rgba(103, 232, 249, .22) !important;
+  border-color: rgba(103, 232, 249, .24) !important;
+  background: rgba(103, 232, 249, .10) !important;
+  color: #67e8f9 !important;
+}
+
+body:has(aside) main.fixed.inset-0 span.rounded-full,
+body:has(aside) main.fixed.inset-0 .inline-flex.rounded-full {
+  background: rgba(103, 232, 249, .12) !important;
+  color: #67e8f9 !important;
+  border-color: rgba(103, 232, 249, .28) !important;
+  box-shadow: none !important;
 }
 
 body:has(aside) main.fixed.inset-0 .fixed.inset-0[role="dialog"],
