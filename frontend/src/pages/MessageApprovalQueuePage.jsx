@@ -11,7 +11,6 @@ import "./MessageApprovalQueuePage.css";
 function queryParam(name) {
   try { return new URLSearchParams(window.location.search).get(name) || ""; } catch { return ""; }
 }
-
 function arr(value) {
   if (Array.isArray(value)) return value;
   if (Array.isArray(value?.data)) return value.data;
@@ -31,10 +30,11 @@ function pickList(response, keys = []) {
   }
   return arr(data);
 }
-function idOf(item) { return item?.id || item?._id || item?.uuid || item?.job_id || item?.invoice_id || item?.quote_id || ""; }
+function oid(value) { if (!value) return ""; if (typeof value === "object" && value.$oid) return String(value.$oid); return String(value); }
+function idOf(item) { return oid(item?.id || item?._id || item?.uuid || item?.job_id || item?.invoice_id || item?.quote_id || ""); }
 function sameId(a, b) { return String(a || "") && String(a || "") === String(b || ""); }
 function recordTitle(item, fallback) { return item?.title || item?.job_name || item?.customer_name || item?.client_name || item?.name || item?.summary || fallback; }
-function clientIdOf(item) { return item?.client_id || item?.customer_id || item?.clientId || item?.customerId || ""; }
+function clientIdOf(item) { return oid(item?.client_id || item?.customer_id || item?.clientId || item?.customerId || ""); }
 function clientEmailFor(item, clients = []) {
   const direct = item?.customer_email || item?.client_email || item?.email || item?.contact_email || "";
   if (direct) return direct;
@@ -98,7 +98,7 @@ function endpointFor(item) {
 }
 
 export default function MessageApprovalQueuePage() {
-  const api = useApi();
+  const { get, patch } = useApi();
   const linkedJobId = queryParam("job_id");
   const [state, setState] = useState({ loading: true, error: "", jobs: [], invoices: [], quotes: [], clients: [], linkedJob: null });
   const [localStatus, setLocalStatus] = useState({});
@@ -110,8 +110,8 @@ export default function MessageApprovalQueuePage() {
   useEffect(() => {
     let alive = true;
     async function load() {
-      const requests = [api.get("/jobs"), api.get("/invoices"), api.get("/quotes"), api.get("/clients")];
-      if (linkedJobId) requests.push(api.get(`/jobs/${encodeURIComponent(linkedJobId)}`));
+      const requests = [get("/jobs"), get("/invoices"), get("/quotes"), get("/clients")];
+      if (linkedJobId) requests.push(get(`/jobs/${encodeURIComponent(linkedJobId)}`));
       const [jobsRes, invoicesRes, quotesRes, clientsRes, linkedJobRes] = await Promise.allSettled(requests);
       if (!alive) return;
       const jobsOk = jobsRes.status === "fulfilled" && jobsRes.value?.success;
@@ -127,7 +127,7 @@ export default function MessageApprovalQueuePage() {
     }
     load();
     return () => { alive = false; };
-  }, [api, linkedJobId]);
+  }, [get, linkedJobId]);
 
   const messages = useMemo(() => {
     const completedJobs = state.jobs.filter((job) => messageStillNeedsApproval(job) && (pickDraft(job) || isComplete(job)));
@@ -151,10 +151,10 @@ export default function MessageApprovalQueuePage() {
   function updateDraft(item, field, value) { setDraftEdits((prev) => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), [field]: value } })); }
   function saveHistory(next) { setSentHistory(next); saveLocalHistory(next); }
 
-  async function patchSourceMessageStatus(item, patch) {
+  async function patchSourceMessageStatus(item, nextPatch) {
     const endpoint = endpointFor(item);
     if (!endpoint) return;
-    try { await api.patch(endpoint, patch); } catch {}
+    try { await patch(endpoint, nextPatch); } catch {}
   }
 
   async function markMessage(item, status) {
