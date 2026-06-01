@@ -1,14 +1,59 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { createPortal } from "react-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
-import { PremiumButton, PremiumCard, PremiumHero, PremiumPage } from "../components/premium";
-import { Building2, FileText, Plus, RefreshCw, Save, Search, UserRound } from "lucide-react";
 import { toast } from "sonner";
-import "./CustomerRecordsPage.css";
 
-// CHURVOX_CUSTOMER_RECORDS_NO_MISSING_ROUTE_20260601
-// The old customer records page called /api/customer-records, which is not live.
-// This page now builds the customer workspace from stable endpoints: /clients, /jobs, /quotes and /invoices.
+// CHURVOX_CLIENT_WORKBENCH_COMMAND_20260601
+// Full Command Desk client workspace. Backend untouched.
+
+const navGroups = [
+  { title: "Command", items: [["Command Board", "/dashboard", "CB"], ["AI Operator", "/ai-operator", "AI"], ["Approvals", "/ai-operator/approvals", "OK"], ["Notifications", "/notifications", "NT"]] },
+  { title: "Work", items: [["Jobs", "/jobs", "JB"], ["Dispatch", "/dispatch", "DP"], ["Clients", "/clients", "CL"], ["Quotes", "/quotes", "QT"], ["Invoices", "/invoices", "IV"], ["Money Desk", "/money-desk", "$"]] },
+  { title: "Crew & Admin", items: [["Team", "/team", "TM"], ["Crew Ops", "/crew-ops", "CO"], ["Payroll", "/payroll", "PR"], ["Reports", "/reports", "RP"]] },
+  { title: "System", items: [["Setup", "/onboarding", "SU"], ["Trade Presets", "/trade-presets", "TP"], ["Automation", "/automation", "AU"], ["Integrations", "/integrations", "IN"], ["Operator Tools", "/operator-tools", "OT"], ["Plans", "/plans", "PL"], ["Billing", "/billing-confidence", "BI"], ["Settings", "/settings", "ST"], ["Support", "/support", "?"]] },
+];
+
+function isActivePath(pathname, href) {
+  if (href === "/dashboard") return pathname === "/dashboard" || pathname === "/overview";
+  if (href === "/dispatch") return pathname === "/dispatch" || pathname === "/dispatch-board";
+  if (href === "/money-desk") return pathname === "/money-desk" || pathname === "/money";
+  if (href === "/clients") return pathname === "/clients" || pathname.startsWith("/clients/");
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function Sidebar() {
+  const { pathname } = useLocation();
+  return (
+    <aside className="hidden w-[292px] shrink-0 overflow-y-auto border-r border-slate-800 bg-[#0f1722] p-4 text-white lg:block">
+      <div className="mb-6 flex items-center gap-3 px-1">
+        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-cyan-500 text-lg font-black text-slate-950">C</div>
+        <div>
+          <div className="text-sm font-black tracking-[-0.03em]">CHURVOX</div>
+          <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Command Desk</div>
+        </div>
+      </div>
+      <div className="space-y-5">
+        {navGroups.map((group) => (
+          <section key={group.title}>
+            <div className="mb-2 px-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{group.title}</div>
+            <nav className="space-y-1">
+              {group.items.map(([label, href, icon]) => {
+                const active = isActivePath(pathname, href);
+                return (
+                  <Link key={href} to={href} className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-black ${active ? "bg-white text-slate-950" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
+                    <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-xl text-[10px] font-black ${active ? "bg-slate-950 text-white" : "bg-white/10 text-cyan-200"}`}>{icon}</span>
+                    <span className="truncate">{label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </section>
+        ))}
+      </div>
+    </aside>
+  );
+}
 
 function arr(value) {
   if (Array.isArray(value)) return value;
@@ -68,7 +113,7 @@ function matchesCustomer(record, customer) {
 
 function isPaid(invoice) {
   const status = String(invoice?.status || invoice?.payment_status || "").toLowerCase();
-  return status.includes("paid") || Number(invoice?.amount_due || 0) <= 0 && Number(invoice?.amount_paid || 0) > 0;
+  return status.includes("paid") || (Number(invoice?.amount_due || 0) <= 0 && Number(invoice?.amount_paid || 0) > 0);
 }
 
 function enrichCustomer(customer, jobs, quotes, invoices) {
@@ -133,7 +178,96 @@ const editableFields = [
   ["customer_message_draft", "Customer message draft"],
 ];
 
-export default function CustomerRecordsPage() {
+function CustomerSlip({ selected, draft, updateDraft, saveCustomer, busy, siteDraft, setSiteDraft, addSite, noteDraft, setNoteDraft, addNote, onClose }) {
+  if (!selected) return null;
+  const summary = selected?.summary || {};
+  return (
+    <div className="fixed inset-0 z-[2147483647] bg-slate-950/65 p-3 backdrop-blur-sm md:p-7" role="dialog" aria-modal="true">
+      <div className="ml-auto flex h-full max-w-[780px] flex-col overflow-hidden rounded-[34px] border border-slate-200 bg-white shadow-[0_35px_120px_rgba(15,23,42,0.40)]">
+        <header className="relative overflow-hidden border-b border-slate-800 bg-slate-950 p-6 text-white md:p-7">
+          <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-cyan-500/20 blur-3xl" />
+          <div className="relative flex items-start justify-between gap-4">
+            <div>
+              <div className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Client Work Slip</div>
+              <h2 className="mt-4 text-3xl font-black leading-[0.95] tracking-[-0.07em] md:text-5xl">{customerName(selected)}</h2>
+              <p className="mt-4 text-sm font-semibold leading-6 text-slate-300">{selected.email || "No email"} · {selected.phone || "No phone"}</p>
+            </div>
+            <button type="button" onClick={onClose} className="rounded-2xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-black text-white hover:bg-white/15">Close</button>
+          </div>
+        </header>
+
+        <main className="min-h-0 flex-1 overflow-y-auto bg-[#f4f6f8] p-5 md:p-6">
+          {arr(summary.missing_fields).length ? (
+            <section className="mb-4 rounded-[26px] border border-amber-200 bg-amber-50 p-5 shadow-sm">
+              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">Needs attention</div>
+              <p className="mt-2 text-sm font-bold leading-6 text-amber-950">Missing: {summary.missing_fields.join(", ")}. Fix these before relying on customer messages or invoices.</p>
+            </section>
+          ) : null}
+
+          <section className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4"><span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Jobs</span><b className="mt-1 block text-2xl font-black text-slate-950">{summary.jobs_count || 0}</b></div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4"><span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Invoices</span><b className="mt-1 block text-2xl font-black text-slate-950">{summary.invoices_count || 0}</b></div>
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><span className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Unpaid</span><b className="mt-1 block text-2xl font-black text-emerald-950">{money(summary.unpaid_balance)}</b></div>
+          </section>
+
+          <section className="mt-4 rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div><div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Editable client details</div><p className="mt-1 text-sm font-bold text-slate-500">Update the important contact and site information.</p></div>
+              <button type="button" onClick={saveCustomer} disabled={busy === "save"} className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700 disabled:opacity-60">Save client</button>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {editableFields.map(([key, label]) => (
+                <label key={key} className={["access_notes", "site_instructions", "internal_notes", "customer_message_draft"].includes(key) ? "md:col-span-2" : ""}>
+                  <span className="mb-1 block text-[11px] font-black uppercase tracking-[0.14em] text-slate-500">{label}</span>
+                  {["access_notes", "site_instructions", "internal_notes", "customer_message_draft"].includes(key) ? (
+                    <textarea className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-300" rows={3} value={draft?.[key] || ""} onChange={(e) => updateDraft(key, e.target.value)} />
+                  ) : (
+                    <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-300" value={draft?.[key] || ""} onChange={(e) => updateDraft(key, e.target.value)} />
+                  )}
+                </label>
+              ))}
+            </div>
+          </section>
+
+          <section className="mt-4 grid gap-4 lg:grid-cols-2">
+            <div className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Site addresses</div>
+              <div className="mt-4 space-y-3">
+                {arr(selected.site_addresses).length ? arr(selected.site_addresses).map((site, index) => (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4" key={index}>
+                    <b className="block text-sm font-black text-slate-950">{site.label || `Site ${index + 1}`}</b>
+                    <span className="mt-1 block text-sm font-bold text-slate-600">{site.address}</span>
+                    {site.access_notes ? <em className="mt-2 block text-xs font-bold text-slate-500">{site.access_notes}</em> : null}
+                  </div>
+                )) : <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm font-bold text-slate-500">No extra site addresses yet.</div>}
+              </div>
+              <div className="mt-4 grid gap-2">
+                {["label", "address", "contact", "phone", "access_notes"].map((key) => (
+                  <input key={key} className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-300" value={siteDraft[key] || ""} onChange={(e) => setSiteDraft((current) => ({ ...current, [key]: e.target.value }))} placeholder={key.replace("_", " ")} />
+                ))}
+                <button type="button" onClick={addSite} disabled={busy === "site"} className="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white hover:bg-slate-800 disabled:opacity-60">Add site</button>
+              </div>
+            </div>
+
+            <div className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Quick internal note</div>
+              <textarea className="mt-4 w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-300" value={noteDraft} onChange={(e) => setNoteDraft(e.target.value)} rows={7} placeholder="Add note about access, customer preference, billing issue, dog on site..." />
+              <button type="button" onClick={addNote} disabled={busy === "note"} className="mt-3 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white hover:bg-slate-800 disabled:opacity-60">Save note</button>
+            </div>
+          </section>
+        </main>
+
+        <footer className="flex flex-wrap gap-3 border-t border-slate-200 bg-white p-5">
+          <Link to={`/jobs/new?client_id=${idOf(selected)}`} className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Create job</Link>
+          <Link to={`/quotes/new?client_id=${idOf(selected)}`} className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-800 hover:bg-slate-50">Create quote</Link>
+          <Link to={`/invoices/new?client_id=${idOf(selected)}`} className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-800 hover:bg-slate-50">Create invoice</Link>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+function CustomerRecordsContent() {
   const api = useApi();
   const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
@@ -145,10 +279,10 @@ export default function CustomerRecordsPage() {
   const [busy, setBusy] = useState("");
   const [siteDraft, setSiteDraft] = useState({ label: "", address: "", contact: "", phone: "", access_notes: "" });
   const [noteDraft, setNoteDraft] = useState("");
+  const [slipOpen, setSlipOpen] = useState(false);
 
   async function loadCustomers() {
     setLoading(true);
-
     const [clientsRes, jobsRes, quotesRes, invoicesRes] = await Promise.all([
       api.get("/clients"),
       api.get("/jobs"),
@@ -162,10 +296,8 @@ export default function CustomerRecordsPage() {
       const quotes = quotesRes.success ? pickList(quotesRes, ["quotes", "items", "results"]) : [];
       const invoices = invoicesRes.success ? pickList(invoicesRes, ["invoices", "items", "results"]) : [];
       const next = clients.map((client) => enrichCustomer(client, jobs, quotes, invoices));
-
       setCustomers(next);
       setTotals(buildTotals(next));
-
       if (!selectedId && next[0]) {
         setSelectedId(idOf(next[0]));
         setDraft(next[0]);
@@ -176,29 +308,16 @@ export default function CustomerRecordsPage() {
     } else {
       toast.error(clientsRes.error || "Could not load customer records");
     }
-
     setLoading(false);
   }
 
   useEffect(() => { loadCustomers(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selected = useMemo(() => customers.find((x) => idOf(x) === selectedId) || draft, [customers, selectedId, draft]);
-
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return customers;
-    return customers.filter((customer) => {
-      const haystack = [
-        customerName(customer),
-        customer.email,
-        customer.phone,
-        customer.billing_address,
-        customer.address,
-        customer.customer_type,
-        arr(customer.tags).join(" "),
-      ].join(" ").toLowerCase();
-      return haystack.includes(q);
-    });
+    return customers.filter((customer) => [customerName(customer), customer.email, customer.phone, customer.billing_address, customer.address, customer.customer_type, arr(customer.tags).join(" ")].join(" ").toLowerCase().includes(q));
   }, [customers, search]);
 
   function pick(customer) {
@@ -206,6 +325,7 @@ export default function CustomerRecordsPage() {
     setDraft({ ...customer });
     setSiteDraft({ label: "", address: "", contact: "", phone: "", access_notes: "" });
     setNoteDraft("");
+    setSlipOpen(true);
   }
 
   function updateDraft(key, value) {
@@ -215,12 +335,7 @@ export default function CustomerRecordsPage() {
   async function saveCustomer() {
     if (!draft) return;
     setBusy("save");
-    const payload = {
-      ...draft,
-      client_name: draft.name || draft.client_name,
-      contact_name: draft.contact_name || draft.name,
-      address: draft.billing_address || draft.address,
-    };
+    const payload = { ...draft, client_name: draft.name || draft.client_name, contact_name: draft.contact_name || draft.name, address: draft.billing_address || draft.address };
     const res = await api.patch(`/clients/${idOf(draft)}`, payload);
     setBusy("");
     if (res.success) {
@@ -265,164 +380,90 @@ export default function CustomerRecordsPage() {
     }
   }
 
-  const summary = selected?.summary || {};
-
   return (
-    <PremiumPage maxWidth={1240}>
-      <PremiumHero
-        eyebrow="Customer records"
-        title="Every customer, site, job, quote and invoice in one place."
-        subtitle="Keep contact details, site notes, access instructions, payment history and job proof tidy before the owner approves work."
-        icon={<UserRound className="h-6 w-6" />}
-        actions={
-          <div className="cv-crm-hero-actions">
-            <PremiumButton variant="secondary" onClick={loadCustomers} disabled={loading || Boolean(busy)}><RefreshCw size={16} className="mr-2" /> Refresh</PremiumButton>
-            <PremiumButton onClick={() => navigate("/clients/new")}><Plus size={16} className="mr-2" /> Add customer</PremiumButton>
-          </div>
-        }
-      />
+    <main className="fixed inset-0 z-[2147483000] overflow-y-auto bg-[#eef1f4] text-slate-950">
+      <div className="flex min-h-screen">
+        <Sidebar />
+        <section className="min-w-0 flex-1 p-4 pb-28 md:p-6 md:pb-28 xl:p-8 xl:pb-28">
+          <header className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Client Workbench</div>
+              <div className="text-sm font-bold text-slate-500">Customer details, sites, notes, jobs, quotes and invoices in one command view.</div>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <button type="button" onClick={loadCustomers} disabled={loading || Boolean(busy)} className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50 disabled:opacity-60">Refresh</button>
+              <button type="button" onClick={() => navigate("/clients/new")} className="rounded-2xl bg-amber-500 px-4 py-2 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400">Add client</button>
+            </div>
+          </header>
 
-      <section className="cv-crm-metrics">
-        <article><span>Customers</span><b>{totals.customers || 0}</b><small>saved records</small></article>
-        <article className="warn"><span>Missing info</span><b>{totals.missing_info || 0}</b><small>need cleanup</small></article>
-        <article><span>Jobs</span><b>{totals.jobs || 0}</b><small>customer history</small></article>
-        <article><span>Quotes</span><b>{totals.quotes || 0}</b><small>quote history</small></article>
-        <article><span>Invoices</span><b>{totals.invoices || 0}</b><small>invoice history</small></article>
-        <article className="money"><span>Unpaid</span><b>{money(totals.unpaid_balance)}</b><small>customer balances</small></article>
-      </section>
-
-      <section className="cv-crm-shell">
-        <aside className="cv-crm-list">
-          <div className="cv-crm-search">
-            <Search size={16} />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search customers, email, phone, address..." />
-          </div>
-
-          {loading ? <div className="cv-crm-empty">Loading customers…</div> : null}
-
-          {!loading && filtered.length ? filtered.map((customer) => (
-            <button
-              key={idOf(customer)}
-              type="button"
-              className={idOf(customer) === idOf(selected) ? "active" : ""}
-              onClick={() => pick(customer)}
-            >
-              <b>{customerName(customer)}</b>
-              <span>{customer.email || customer.phone || customer.billing_address || "Missing contact info"}</span>
-              <em>{customer.summary?.is_missing_info ? "Needs info" : money(customer.summary?.unpaid_balance)}</em>
-            </button>
-          )) : null}
-
-          {!loading && !filtered.length ? <div className="cv-crm-empty">No customers found.</div> : null}
-        </aside>
-
-        <main className="cv-crm-detail">
-          {!selected ? (
-            <PremiumCard><div className="cv-crm-empty">Select a customer to view the full record.</div></PremiumCard>
-          ) : (
-            <>
-              <PremiumCard>
-                <header className="cv-crm-profile-head">
-                  <div>
-                    <p>Customer profile</p>
-                    <h2>{customerName(selected)}</h2>
-                    <span>{selected.email || "No email"} · {selected.phone || "No phone"}</span>
-                  </div>
-                  <div className="cv-crm-profile-actions">
-                    <Link to={`/jobs/new?client_id=${idOf(selected)}`}>Create job</Link>
-                    <Link to={`/quotes/new?client_id=${idOf(selected)}`}>Create quote</Link>
-                    <Link to={`/invoices/new?client_id=${idOf(selected)}`}>Create invoice</Link>
-                  </div>
-                </header>
-
-                {arr(summary.missing_fields).length ? (
-                  <div className="cv-crm-warning">
-                    Missing: {summary.missing_fields.join(", ")}. Fix these before relying on customer messages or invoices.
-                  </div>
-                ) : null}
-
-                <section className="cv-crm-mini-metrics">
-                  <div><span>Jobs</span><b>{summary.jobs_count || 0}</b></div>
-                  <div><span>Quotes</span><b>{summary.quotes_count || 0}</b></div>
-                  <div><span>Invoices</span><b>{summary.invoices_count || 0}</b></div>
-                  <div><span>Unpaid</span><b>{money(summary.unpaid_balance)}</b></div>
-                  <div><span>Paid total</span><b>{money(summary.paid_total)}</b></div>
-                  <div><span>Photos</span><b>{summary.photos_count || 0}</b></div>
-                </section>
-              </PremiumCard>
-
-              <PremiumCard title="Editable customer details" icon={<Save className="h-5 w-5" />}>
-                <div className="cv-crm-form">
-                  {editableFields.map(([key, label]) => (
-                    <label key={key} className={["access_notes", "site_instructions", "internal_notes", "customer_message_draft"].includes(key) ? "wide" : ""}>
-                      <span>{label}</span>
-                      {["access_notes", "site_instructions", "internal_notes", "customer_message_draft"].includes(key) ? (
-                        <textarea rows={3} value={draft?.[key] || ""} onChange={(e) => updateDraft(key, e.target.value)} />
-                      ) : (
-                        <input value={draft?.[key] || ""} onChange={(e) => updateDraft(key, e.target.value)} />
-                      )}
-                    </label>
-                  ))}
+          <section className="grid gap-5 xl:grid-cols-[1fr_430px]">
+            <div className="overflow-hidden rounded-[30px] border border-slate-900 bg-slate-950 shadow-[0_26px_80px_rgba(15,23,42,0.20)]">
+              <div className="relative p-6 md:p-8">
+                <div className="absolute right-0 top-0 h-56 w-56 rounded-full bg-cyan-500/10 blur-3xl" />
+                <div className="absolute bottom-0 left-1/3 h-56 w-56 rounded-full bg-amber-500/10 blur-3xl" />
+                <div className="relative">
+                  <span className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Clients command</span>
+                  <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">Know the customer before the job starts.</h1>
+                  <p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Churvox keeps client contact details, site access, job history, quote history and unpaid balances ready for owner decisions.</p>
                 </div>
+              </div>
+            </div>
 
-                <div className="cv-crm-save-row">
-                  <PremiumButton onClick={saveCustomer} disabled={busy === "save"}><Save size={16} className="mr-2" /> Save customer</PremiumButton>
-                </div>
-              </PremiumCard>
+            <aside className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
+              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">What needs attention</div>
+              <h2 className="mt-2 text-2xl font-black tracking-[-0.055em] text-slate-950">Client health</h2>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4"><div className="text-2xl font-black text-amber-800">{totals.missing_info || 0}</div><div className="text-xs font-black uppercase tracking-[0.14em] text-amber-700">Missing info</div></div>
+                <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4"><div className="text-2xl font-black text-blue-800">{totals.customers || 0}</div><div className="text-xs font-black uppercase tracking-[0.14em] text-blue-700">Saved clients</div></div>
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><div className="text-2xl font-black text-emerald-800">{money(totals.unpaid_balance)}</div><div className="text-xs font-black uppercase tracking-[0.14em] text-emerald-700">Unpaid balance</div></div>
+              </div>
+            </aside>
+          </section>
 
-              <section className="cv-crm-two">
-                <PremiumCard title="Site addresses" icon={<Building2 className="h-5 w-5" />}>
-                  {arr(selected.site_addresses).length ? arr(selected.site_addresses).map((site, index) => (
-                    <div className="cv-crm-site" key={index}>
-                      <b>{site.label || `Site ${index + 1}`}</b>
-                      <span>{site.address}</span>
-                      <small>{site.contact || ""} {site.phone ? `· ${site.phone}` : ""}</small>
-                      {site.access_notes ? <em>{site.access_notes}</em> : null}
+          <section className="mt-5 grid gap-4 md:grid-cols-4">
+            <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Clients</span><b className="mt-3 block text-3xl font-black tracking-[-0.06em] text-slate-950">{totals.customers || 0}</b></div>
+            <div className="rounded-[22px] border border-blue-200 bg-blue-50 p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><span className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">Jobs</span><b className="mt-3 block text-3xl font-black tracking-[-0.06em] text-blue-950">{totals.jobs || 0}</b></div>
+            <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Quotes</span><b className="mt-3 block text-3xl font-black tracking-[-0.06em] text-slate-950">{totals.quotes || 0}</b></div>
+            <div className="rounded-[22px] border border-emerald-200 bg-emerald-50 p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><span className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Invoices</span><b className="mt-3 block text-3xl font-black tracking-[-0.06em] text-emerald-950">{totals.invoices || 0}</b></div>
+          </section>
+
+          <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
+            <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+              <div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600">Client list</div><h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-slate-950">Open clients</h2></div>
+              {loading ? <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">Loading…</span> : null}
+            </div>
+            <div className="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search clients, email, phone, address..." className="w-full bg-transparent text-sm font-bold text-slate-800 outline-none placeholder:text-slate-400" />
+            </div>
+            <div className="grid gap-4 xl:grid-cols-2">
+              {!loading && filtered.length ? filtered.map((customer) => (
+                <button key={idOf(customer) || customerName(customer)} type="button" onClick={() => pick(customer)} className="rounded-[22px] border border-slate-200 bg-white p-4 text-left shadow-[0_14px_38px_rgba(15,23,42,0.055)] transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_24px_70px_rgba(15,23,42,0.10)]">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{customer.summary?.is_missing_info ? "Needs info" : "Client ready"}</span>
+                      <h3 className="mt-1 text-lg font-black tracking-[-0.04em] text-slate-950">{customerName(customer)}</h3>
                     </div>
-                  )) : <div className="cv-crm-empty">No extra site addresses yet.</div>}
-
-                  <div className="cv-crm-site-form">
-                    {["label", "address", "contact", "phone", "access_notes"].map((key) => (
-                      <input
-                        key={key}
-                        value={siteDraft[key] || ""}
-                        onChange={(e) => setSiteDraft((current) => ({ ...current, [key]: e.target.value }))}
-                        placeholder={key.replace("_", " ")}
-                      />
-                    ))}
-                    <button type="button" onClick={addSite} disabled={busy === "site"}>Add site</button>
+                    <span className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${customer.summary?.is_missing_info ? "border-amber-200 bg-amber-50 text-amber-800" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>{customer.summary?.is_missing_info ? "Fix" : "OK"}</span>
                   </div>
-                </PremiumCard>
+                  <div className="mt-3 space-y-1 text-sm font-bold text-slate-600">
+                    <div>{customer.email || customer.phone || "No contact saved"}</div>
+                    <div className="text-slate-400">{customer.billing_address || customer.address || "No address saved"}</div>
+                    <div className="text-slate-500">Jobs {customer.summary?.jobs_count || 0} · Quotes {customer.summary?.quotes_count || 0} · Unpaid {money(customer.summary?.unpaid_balance)}</div>
+                  </div>
+                </button>
+              )) : null}
+              {!loading && !filtered.length ? <div className="rounded-[22px] border border-dashed border-slate-300 bg-slate-50 p-6 text-sm font-bold text-slate-500">No clients found.</div> : null}
+            </div>
+          </section>
+        </section>
+      </div>
 
-                <PremiumCard title="Quick internal note" icon={<FileText className="h-5 w-5" />}>
-                  <textarea value={noteDraft} onChange={(e) => setNoteDraft(e.target.value)} rows={5} placeholder="Add note about access, customer preference, billing issue, dog on site..." />
-                  <button type="button" onClick={addNote} disabled={busy === "note"}>Save note</button>
-                </PremiumCard>
-              </section>
-
-              <section className="cv-crm-history">
-                <PremiumCard title="Job history">
-                  {arr(selected.jobs).length ? arr(selected.jobs).slice(0, 8).map((job) => (
-                    <Link key={idOf(job)} to={`/jobs/${idOf(job)}`}><b>{job.title || job.job_name || "Job"}</b><span>{job.status || "open"} · {job.address || ""}</span></Link>
-                  )) : <div className="cv-crm-empty">No jobs yet.</div>}
-                </PremiumCard>
-
-                <PremiumCard title="Quote history">
-                  {arr(selected.quotes).length ? arr(selected.quotes).slice(0, 8).map((quote) => (
-                    <Link key={idOf(quote)} to={`/quotes/${idOf(quote)}`}><b>{quote.quote_number || quote.title || "Quote"}</b><span>{quote.status || "open"} · {money(quote.total || quote.amount)}</span></Link>
-                  )) : <div className="cv-crm-empty">No quotes yet.</div>}
-                </PremiumCard>
-
-                <PremiumCard title="Invoice history">
-                  {arr(selected.invoices).length ? arr(selected.invoices).slice(0, 8).map((invoice) => (
-                    <Link key={idOf(invoice)} to={`/invoices/${idOf(invoice)}`}><b>{invoice.invoice_number || "Invoice"}</b><span>{invoice.status || "open"} · {money(invoice.amount_due || invoice.total)}</span></Link>
-                  )) : <div className="cv-crm-empty">No invoices yet.</div>}
-                </PremiumCard>
-              </section>
-            </>
-          )}
-        </main>
-      </section>
-    </PremiumPage>
+      <CustomerSlip selected={slipOpen ? selected : null} draft={draft} updateDraft={updateDraft} saveCustomer={saveCustomer} busy={busy} siteDraft={siteDraft} setSiteDraft={setSiteDraft} addSite={addSite} noteDraft={noteDraft} setNoteDraft={setNoteDraft} addNote={addNote} onClose={() => setSlipOpen(false)} />
+    </main>
   );
+}
+
+export default function CustomerRecordsPage() {
+  if (typeof document === "undefined") return <CustomerRecordsContent />;
+  return createPortal(<CustomerRecordsContent />, document.body);
 }
