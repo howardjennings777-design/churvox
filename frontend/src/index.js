@@ -42,6 +42,7 @@ import './concept-c/churvoxCommandFloorControlCopyPatch';
 import './concept-c/churvoxSidebarLabelRuntimeFix';
 import './concept-c/churvoxCrewMapNavPatch';
 import './concept-c/churvoxFourteenDayTrialPlansPatch';
+import './concept-c/churvoxAssignWorkerDropdownPatch';
 import './workhorseLiveCheck';
 import './renderDeployMarker';
 import './deploy/guidedOperatorFloorDeployMarker';
