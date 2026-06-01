@@ -75,6 +75,7 @@ import PolishChecklistPage from "./pages/PolishChecklistPage";
 import DemoModePage from "./pages/DemoModePage";
 import NotificationsWorkspacePage from "./pages/NotificationsWorkspacePage";
 import BillingConfidencePage from "./pages/BillingConfidencePage";
+import { OnboardingCommandPage, TradePresetsCommandPage, OperatorToolsCommandPage, BillingCommandPage, CrewOpsCommandPage, LaunchCommandPage, WorkerCommandPage } from "./pages/CommandRestPages";
 
 const Spinner = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -210,8 +211,8 @@ function App() {
           <Toaster position="top-right" richColors />
           <FloatingBottomNav />
           <Routes>
-            <Route path="/operator-tools" element={<BusinessRoute><ConceptCFrame area="launch"><TopTierOperatorToolsPage /></ConceptCFrame></BusinessRoute>} />
-            <Route path="/launch-control" element={<BusinessRoute><LaunchReadinessPage /></BusinessRoute>} />
+            <Route path="/operator-tools" element={<BusinessRoute><OperatorToolsCommandPage /></BusinessRoute>} />
+            <Route path="/launch-control" element={<BusinessRoute><LaunchCommandPage /></BusinessRoute>} />
             <Route path="/sales-polish" element={<BusinessRoute><ConceptCFrame area="launch"><LaunchSalesPolishPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/integration-proof" element={<BusinessRoute><ConceptCFrame area="integrations"><IntegrationProofPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/launch-ops" element={<BusinessRoute><ConceptCFrame area="launch"><LaunchOpsPage /></ConceptCFrame></BusinessRoute>} />
@@ -223,7 +224,7 @@ function App() {
             <Route path="/offline-sync" element={<PrivateRoute><OfflineSyncPage /></PrivateRoute>} />
             <Route path="/dispatch-board" element={<BusinessRoute><DispatchBoardPage /></BusinessRoute>} />
             <Route path="/message-approvals" element={<BusinessRoute><MessageApprovalQueuePage /></BusinessRoute>} />
-            <Route path="/trade-presets" element={<BusinessRoute><TradePresetsPage /></BusinessRoute>} />
+            <Route path="/trade-presets" element={<BusinessRoute><TradePresetsCommandPage /></BusinessRoute>} />
             <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
@@ -251,7 +252,7 @@ function App() {
             <Route path="/admin/qa-auditor" element={<QaAuditorRoute><QAAuditorPage /></QaAuditorRoute>} />
             <Route path="/dashboard" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><ConceptCFrame area="dashboard"><CommandDeskHomePage /></ConceptCFrame></ErrorBoundary></BusinessRoute>} />
             <Route path="/overview" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><ConceptCFrame area="dashboard"><CommandDeskHomePage /></ConceptCFrame></ErrorBoundary></BusinessRoute>} />
-            <Route path="/onboarding" element={<BusinessRoute><ConceptCFrame area="onboarding"><OnboardingPage /></ConceptCFrame></BusinessRoute>} />
+            <Route path="/onboarding" element={<BusinessRoute><OnboardingCommandPage /></BusinessRoute>} />
             <Route path="/jobs" element={<BusinessRoute><ErrorBoundary fallbackHref="/dashboard" fallbackLabel="Back to Command Board"><JobsCommandPage /></ErrorBoundary></BusinessRoute>} />
             <Route path="/jobs/new" element={<BusinessRoute><ConceptCFrame area="jobs"><JobFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/jobs/:id" element={<BusinessRoute><ConceptCFrame area="jobs"><JobDetailPage /></ConceptCFrame></BusinessRoute>} />
@@ -281,16 +282,16 @@ function App() {
             <Route path="/support" element={<PrivateRoute><ConceptCFrame area="support"><ContactPage /></ConceptCFrame></PrivateRoute>} />
             <Route path="/trust" element={<PrivateRoute><ConceptCFrame area="support"><ContactPage /></ConceptCFrame></PrivateRoute>} />
             <Route path="/plans" element={<OwnerRoute><ConceptCFrame area="plans"><PlansPage /></ConceptCFrame></OwnerRoute>} />
-            <Route path="/billing-confidence" element={<OwnerRoute><ConceptCFrame area="billing"><BillingConfidencePage /></ConceptCFrame></OwnerRoute>} />
+            <Route path="/billing-confidence" element={<OwnerRoute><BillingCommandPage /></OwnerRoute>} />
             <Route path="/team" element={<TeamRoute><TeamCommandPage /></TeamRoute>} />
-            <Route path="/crew-ops" element={<BusinessRoute><ConceptCFrame area="team"><CrewOperationsPage /></ConceptCFrame></BusinessRoute>} />
+            <Route path="/crew-ops" element={<BusinessRoute><CrewOpsCommandPage /></BusinessRoute>} />
             <Route path="/notifications" element={<BusinessRoute><ConceptCFrame area="notifications"><NotificationsWorkspacePage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/automation/runs" element={<TeamRoute><Navigate to="/dashboard" replace /></TeamRoute>} />
             <Route path="/payroll" element={<PayrollRoute><PayrollCommandPage /></PayrollRoute>} />
             <Route path="/worker/jobs" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobsPage /></ConceptCFrame></WorkerRoute>} />
-            <Route path="/worker/ops" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerOperationsPage /></ConceptCFrame></WorkerRoute>} />
+            <Route path="/worker/ops" element={<WorkerRoute><WorkerCommandPage /></WorkerRoute>} />
             <Route path="/worker/jobs/:id" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobDetailPage /></ConceptCFrame></WorkerRoute>} />
-            <Route path="/worker/settings" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerSettingsPage /></ConceptCFrame></WorkerRoute>} />
+            <Route path="/worker/settings" element={<WorkerRoute><WorkerCommandPage /></WorkerRoute>} />
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
