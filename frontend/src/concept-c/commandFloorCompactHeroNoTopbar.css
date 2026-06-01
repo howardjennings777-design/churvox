@@ -1,3 +1,5 @@
+@import "./CommandCentrePurpleUpgrade.css";
+
 /* CHURVOX_RESTORE_PREVIOUS_DARK_COMMAND_FLOOR_20260601
    Restores the previous dark cockpit-style Command Floor after the cream desk polish was rejected.
    CSS-only. No API, auth, route, billing, or backend logic touched.
