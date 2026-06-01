@@ -158,7 +158,7 @@ function WorkSlip({ active, onClose }) {
           <p className="relative mt-5 max-w-xl text-sm font-semibold leading-6 text-slate-300">{active.summary}</p>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto bg-[#f4f6f8] p-5 md:p-6">
+        <main className="min-h-0 flex-1 overflow-y-auto bg-[#f5f7f1] p-5 md:p-6">
           <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
             <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Prepared by Churvox</div>
             <p className="mt-3 text-lg font-black tracking-[-0.035em] text-slate-950">The admin is prepared. The owner still makes the call.</p>
@@ -236,7 +236,7 @@ function CommandDeskCleanContent() {
   const [activeSlip, setActiveSlip] = React.useState(null);
 
   return (
-    <main className="fixed inset-0 z-[2147483000] overflow-y-auto bg-[#eef1f4] text-slate-950">
+    <main className="fixed inset-0 z-[2147483000] overflow-y-auto bg-[#f5f7f1] text-slate-950">
       <div className="flex min-h-screen">
         <Sidebar />
 
