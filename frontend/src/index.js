@@ -37,6 +37,7 @@ import './concept-c/churvoxInvoiceJobContextPatch';
 import './concept-c/churvoxMoneyDeskLinkedJobFilterPatch';
 import './concept-c/churvoxWorkSlipDispatchPatch';
 import './concept-c/churvoxCommandFloorControlCopyPatch';
+import './concept-c/churvoxSidebarLabelRuntimeFix';
 import './workhorseLiveCheck';
 import './renderDeployMarker';
 import './deploy/guidedOperatorFloorDeployMarker';
