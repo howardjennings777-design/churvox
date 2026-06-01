@@ -1,6 +1,7 @@
-/* CHURVOX_PLANS_FULL_SCREEN_SCROLL_FIX_20260531
-   Fix /plans being squeezed inside the old ConceptCFrame side rails while keeping scroll working.
-   CSS only: billing, trial, Stripe, SMS and route logic untouched.
+/* CHURVOX_PLANS_THEME_CANVAS_FIX_20260601
+   Keep /plans inside the Churvox Command Desk theme.
+   Cream canvas, no full-page dark poster background, scrolling still works.
+   Billing, trial, Stripe, SMS and route logic untouched.
 */
 
 html:has(.cv-plans),
@@ -10,28 +11,31 @@ body:has(.cv-plans),
   height: auto !important;
   overflow-x: hidden !important;
   overflow-y: auto !important;
-  background: #020817 !important;
+  background: #f5f7f1 !important;
 }
 
 body:has(.cv-plans) .cv-plans {
   position: relative !important;
   inset: auto !important;
   z-index: 120 !important;
-  width: 100vw !important;
+  width: 100% !important;
   max-width: none !important;
   min-height: 100dvh !important;
   height: auto !important;
   overflow: visible !important;
-  padding: 14px 18px 112px !important;
+  padding: clamp(18px, 2.2vw, 32px) clamp(14px, 2vw, 28px) 112px !important;
   touch-action: pan-y !important;
+  background: #f5f7f1 !important;
 }
 
 body:has(.cv-plans) .cv-plans-shell {
-  width: min(1480px, 100%) !important;
+  width: 100% !important;
   max-width: none !important;
-  margin: 0 auto !important;
-  gap: 14px !important;
+  margin: 0 !important;
+  gap: 18px !important;
   padding-bottom: 24px !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 body:has(.cv-plans) .cv-plans-top {
@@ -41,28 +45,29 @@ body:has(.cv-plans) .cv-plans-top {
 }
 
 body:has(.cv-plans) .cv-plans-hero {
-  min-height: 190px !important;
-  border-radius: 28px !important;
+  min-height: 150px !important;
+  border-radius: 26px !important;
   padding: clamp(22px, 3vw, 34px) !important;
   align-items: center !important;
 }
 
 body:has(.cv-plans) .cv-plans-hero h1 {
   max-width: 980px !important;
-  font-size: clamp(42px, 5.2vw, 74px) !important;
-  line-height: .86 !important;
+  font-size: clamp(34px, 4.7vw, 62px) !important;
+  line-height: .92 !important;
 }
 
 body:has(.cv-plans) .cv-plans-hero p {
   max-width: 760px !important;
   margin-top: 12px !important;
   font-size: 14px !important;
-  line-height: 1.38 !important;
+  line-height: 1.42 !important;
 }
 
 body:has(.cv-plans) .cv-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  gap: 12px !important;
+  gap: 16px !important;
+  background: transparent !important;
 }
 
 body:has(.cv-plans) .cv-card {
@@ -100,14 +105,17 @@ body:has(.cv-plans) .cv-card button {
   border-radius: 14px !important;
 }
 
-body:has(.cv-plans) .cv-user-blocks {
-  margin-top: 2px !important;
+body:has(.cv-plans) .cv-user-blocks,
+body:has(.cv-plans) .cv-myob-addon,
+body:has(.cv-plans) .cv-sms-pricing,
+body:has(.cv-plans) .cv-footer-row {
+  margin-top: 0 !important;
 }
 
 body:has(.cv-plans) .cv-sms-pricing {
   grid-template-columns: minmax(220px, 310px) 1fr !important;
   border-radius: 24px !important;
-  padding: 14px !important;
+  padding: 16px !important;
 }
 
 body:has(.cv-plans) .cv-sms-grid article {
@@ -139,7 +147,7 @@ body:has(.cv-plans) .cv-footer-row div {
 
 @media (max-width: 720px) {
   body:has(.cv-plans) .cv-plans {
-    padding: 10px 10px 112px !important;
+    padding: 12px 12px 112px !important;
   }
 
   body:has(.cv-plans) .cv-grid,
@@ -149,6 +157,6 @@ body:has(.cv-plans) .cv-footer-row div {
   }
 
   body:has(.cv-plans) .cv-plans-hero h1 {
-    font-size: clamp(38px, 12vw, 58px) !important;
+    font-size: clamp(34px, 11vw, 52px) !important;
   }
 }
