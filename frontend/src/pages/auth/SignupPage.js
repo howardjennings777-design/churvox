@@ -1,8 +1,12 @@
+// CHURVOX_SIGNUP_FIRST_SETUP_FLOW_20260601
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { ChurvoxLogo } from "../../components/ChurvoxLogo";
+import { saveBusinessSettings } from "../../lib/businessSettings";
 import "./AuthPublicCommand.css";
+
+const FIRST_SETUP_KEY = "churvox_first_setup_pending";
 
 export default function SignupPage() {
   const navigate = useNavigate();
@@ -26,16 +30,25 @@ export default function SignupPage() {
         password: formData.password,
         business_name: formData.business_name || null,
       });
-      if (result?.token) navigate("/plans");
+      if (result?.token) {
+        try {
+          localStorage.setItem(FIRST_SETUP_KEY, "true");
+          saveBusinessSettings({
+            business_name: formData.business_name || "",
+            email: formData.email || "",
+          });
+        } catch {}
+        navigate("/plans?first_setup=1");
+      }
       else setError("Registration failed. Please try again.");
     } catch (err) {
-      setError(err?.response?.data?.detail || "Registration failed. Please try again.");
+      setError(err?.response?.data?.detail || err?.message || "Registration failed. Please try again.");
     }
     setLoading(false);
   };
 
   return (
-    <main className="wh-auth">
+    <main className="wh-auth" data-version="CHURVOX_SIGNUP_FIRST_SETUP_FLOW_20260601">
       <header className="wh-auth-nav">
         <Link to="/"><ChurvoxLogo /></Link>
         <nav className="wh-auth-links">
@@ -51,7 +64,7 @@ export default function SignupPage() {
           <p className="wh-auth-kicker">Start the command system</p>
           <h2>Turn the business into prepared owner decisions.</h2>
           <p>
-            Create the account, choose a plan, then Churvox starts organising jobs, workers, quotes, invoices and money follow-ups into approval-first admin.
+            Create the account, choose a plan, then Churvox takes you straight into business setup so invoices, quotes, jobs and customer messages make sense from day one.
           </p>
         </aside>
 
