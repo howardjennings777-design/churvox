@@ -16,8 +16,6 @@ const NAV_ITEMS = [
 ];
 
 const COMMAND_PATHS = [
-  "/dashboard",
-  "/overview",
   "/onboarding",
   "/jobs",
   "/dispatch",
@@ -58,7 +56,10 @@ function isActive(pathname, href) {
 
 export default function FloatingBottomNav() {
   const { pathname } = useLocation();
-  const visible = isCommandPath(pathname);
+
+  // Dashboard now has its own premium side navigation. Keep the floating dock off it.
+  const dashboardHome = pathname === "/dashboard" || pathname === "/overview";
+  const visible = !dashboardHome && isCommandPath(pathname);
 
   useEffect(() => {
     document.body.classList.toggle("cv-has-floating-dock", visible);
