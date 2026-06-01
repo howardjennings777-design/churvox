@@ -1,6 +1,4 @@
-/* CHURVOX_LOGGED_IN_PUBLIC_LIGHT_CANVAS_POLISH_20260601
-   Use the soft public-site background for the logged-in canvas.
-   Keep the dashboard boxes/cards in the command colours, but polish readability and spacing. */
+/* CHURVOX_REMOVE_GREY_CANVAS_20260601 */
 
 html,
 body,
@@ -8,142 +6,106 @@ body,
   background: #f5f7f1 !important;
 }
 
-/* Only the outer logged-in app canvas changes to the public light colour. */
-body:has(aside) main.fixed.inset-0,
 main.fixed.inset-0,
 .concept-c2-frame,
 .concept-c2,
 .xcf-shell,
-.xcf-workspace,
-.cc-app,
-.px-app,
-[data-app-shell],
-[data-command-shell] {
+.xcf-workspace {
   background:
-    radial-gradient(circle at 10% 8%, rgba(22, 219, 120, 0.10), transparent 340px),
-    radial-gradient(circle at 88% 5%, rgba(40, 184, 255, 0.10), transparent 380px),
+    radial-gradient(circle at 10% 8%, rgba(22, 219, 120, 0.08), transparent 340px),
+    radial-gradient(circle at 88% 5%, rgba(40, 184, 255, 0.08), transparent 380px),
     #f5f7f1 !important;
 }
 
-/* Keep the main content area transparent so the soft background shows through between cards. */
-body:has(aside) main.fixed.inset-0 > div > section,
+main.fixed.inset-0 > div > section,
+main.fixed.inset-0 > div > section > section,
 .concept-c2-frame .c2-stage,
 .concept-c2-frame .c2-real-page-stage,
-.concept-c2-frame .c2-real-page-card,
-.concept-c2-frame .c2-real-page-card main,
-.concept-c2-frame .c2-real-page-card .min-h-screen,
-.concept-c2-frame .c2-real-page-card .px-app {
+.concept-c2-frame .c2-real-page-card {
   background: transparent !important;
+  box-shadow: none !important;
 }
 
-/* Polish: more breathing room between the boxes. */
-body:has(aside) main.fixed.inset-0 > div > section {
+main.fixed.inset-0 > div > section {
   padding: clamp(20px, 2.4vw, 34px) !important;
 }
 
-body:has(aside) main.fixed.inset-0 > div > section > header {
+main.fixed.inset-0 > div > section > header {
   margin-bottom: 18px !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  padding-left: 2px !important;
+  padding-right: 2px !important;
 }
 
-body:has(aside) main.fixed.inset-0 > div > section > section {
+main.fixed.inset-0 > div > section > header div,
+main.fixed.inset-0 > div > section > header span,
+main.fixed.inset-0 > div > section > header strong {
+  color: #10141f !important;
+  text-shadow: none !important;
+}
+
+main.fixed.inset-0 > div > section > section {
   gap: 18px !important;
 }
 
-body:has(aside) main.fixed.inset-0 > div > section > section + section {
+main.fixed.inset-0 > div > section > section + section {
   margin-top: 18px !important;
 }
 
-/* Polish: lighten the command boxes just a touch, not white. */
-body:has(aside) main.fixed.inset-0 > div > section > section > div,
-body:has(aside) main.fixed.inset-0 > div > section article,
-body:has(aside) main.fixed.inset-0 > div > section .bg-slate-950,
-body:has(aside) main.fixed.inset-0 > div > section .bg-slate-900,
-body:has(aside) main.fixed.inset-0 > div > section .bg-white,
-body:has(aside) main.fixed.inset-0 > div > section .bg-slate-50,
-body:has(aside) main.fixed.inset-0 > div > section .bg-slate-100 {
+main.fixed.inset-0 > div > section > section > div,
+main.fixed.inset-0 > div > section article,
+main.fixed.inset-0 > div > section .bg-slate-950,
+main.fixed.inset-0 > div > section .bg-slate-900,
+main.fixed.inset-0 > div > section .bg-white,
+main.fixed.inset-0 > div > section .bg-slate-50,
+main.fixed.inset-0 > div > section .bg-slate-100 {
   background:
-    radial-gradient(circle at 92% 0%, rgba(46, 180, 255, 0.16), transparent 230px),
-    linear-gradient(145deg, rgba(18, 48, 78, 0.96), rgba(12, 33, 57, 0.94)) !important;
+    radial-gradient(circle at 92% 0%, rgba(46, 180, 255, 0.15), transparent 230px),
+    linear-gradient(145deg, rgba(20, 54, 88, 0.96), rgba(12, 33, 57, 0.95)) !important;
   border-color: rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 18px 45px rgba(12, 33, 57, 0.18) !important;
+  box-shadow: 0 16px 38px rgba(12, 33, 57, 0.16) !important;
 }
 
-/* Keep top header lighter so the page doesn't feel boxed in. */
-body:has(aside) main.fixed.inset-0 > div > section > header {
-  background: rgba(255, 255, 255, 0.78) !important;
-  border-color: rgba(16, 20, 31, 0.10) !important;
-  box-shadow: 0 14px 38px rgba(15, 23, 42, 0.055) !important;
+main.fixed.inset-0 > div > section h1,
+main.fixed.inset-0 > div > section h2,
+main.fixed.inset-0 > div > section h3,
+main.fixed.inset-0 > div > section strong,
+main.fixed.inset-0 > div > section .text-slate-950,
+main.fixed.inset-0 > div > section .text-slate-900,
+main.fixed.inset-0 > div > section .text-slate-800 {
+  color: #f8fbff !important;
 }
 
-body:has(aside) main.fixed.inset-0 > div > section > header h1,
-body:has(aside) main.fixed.inset-0 > div > section > header h2,
-body:has(aside) main.fixed.inset-0 > div > section > header div {
+main.fixed.inset-0 > div > section > header h1,
+main.fixed.inset-0 > div > section > header h2,
+main.fixed.inset-0 > div > section > header strong,
+main.fixed.inset-0 > div > section > header .text-slate-950,
+main.fixed.inset-0 > div > section > header .text-slate-900 {
   color: #10141f !important;
 }
 
-/* Readability: make text clearer on the blue command cards. */
-body:has(aside) main.fixed.inset-0 > div > section article h1,
-body:has(aside) main.fixed.inset-0 > div > section article h2,
-body:has(aside) main.fixed.inset-0 > div > section article h3,
-body:has(aside) main.fixed.inset-0 > div > section article strong,
-body:has(aside) main.fixed.inset-0 > div > section > section h1,
-body:has(aside) main.fixed.inset-0 > div > section > section h2,
-body:has(aside) main.fixed.inset-0 > div > section > section h3,
-body:has(aside) main.fixed.inset-0 > div > section > section strong,
-body:has(aside) main.fixed.inset-0 > div > section .text-slate-950,
-body:has(aside) main.fixed.inset-0 > div > section .text-slate-900,
-body:has(aside) main.fixed.inset-0 > div > section .text-slate-800 {
-  color: #f8fbff !important;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.10) !important;
+main.fixed.inset-0 > div > section p,
+main.fixed.inset-0 > div > section div,
+main.fixed.inset-0 > div > section span,
+main.fixed.inset-0 > div > section .text-slate-600,
+main.fixed.inset-0 > div > section .text-slate-500,
+main.fixed.inset-0 > div > section .text-slate-400 {
+  color: rgba(235, 246, 255, 0.84) !important;
 }
 
-body:has(aside) main.fixed.inset-0 > div > section article p,
-body:has(aside) main.fixed.inset-0 > div > section article div,
-body:has(aside) main.fixed.inset-0 > div > section article span,
-body:has(aside) main.fixed.inset-0 > div > section > section p,
-body:has(aside) main.fixed.inset-0 > div > section > section .text-slate-600,
-body:has(aside) main.fixed.inset-0 > div > section > section .text-slate-500,
-body:has(aside) main.fixed.inset-0 > div > section > section .text-slate-400 {
-  color: rgba(235, 246, 255, 0.82) !important;
+main.fixed.inset-0 > div > section > header p,
+main.fixed.inset-0 > div > section > header div,
+main.fixed.inset-0 > div > section > header span {
+  color: #596170 !important;
 }
 
-body:has(aside) main.fixed.inset-0 > div > section .uppercase,
-body:has(aside) main.fixed.inset-0 > div > section .text-blue-600,
-body:has(aside) main.fixed.inset-0 > div > section .text-amber-600,
-body:has(aside) main.fixed.inset-0 > div > section .text-emerald-700 {
-  color: #7ff5d4 !important;
-}
-
-/* Hero title: slightly smaller so it breathes. */
-body:has(aside) main.fixed.inset-0 h1 {
+main.fixed.inset-0 h1 {
   font-size: clamp(2rem, 4.1vw, 3.75rem) !important;
   line-height: 0.95 !important;
 }
 
-body:has(aside) main.fixed.inset-0 h2 {
+main.fixed.inset-0 h2 {
   font-size: clamp(1.4rem, 2.2vw, 2.1rem) !important;
-}
-
-/* Buttons stay punchy. */
-body:has(aside) main.fixed.inset-0 button,
-body:has(aside) main.fixed.inset-0 a[class*="rounded"] {
-  border-color: rgba(255, 255, 255, 0.14) !important;
-}
-
-body:has(aside) main.fixed.inset-0 button[class*="bg-blue"],
-body:has(aside) main.fixed.inset-0 a[class*="bg-blue"],
-body:has(aside) main.fixed.inset-0 button[class*="bg-amber"],
-body:has(aside) main.fixed.inset-0 a[class*="bg-amber"] {
-  background: linear-gradient(135deg, #bbf7d0, #67e8f9) !important;
-  color: #07111f !important;
-  box-shadow: 0 16px 36px rgba(34, 211, 238, 0.20) !important;
-}
-
-@media (max-width: 900px) {
-  body:has(aside) main.fixed.inset-0 {
-    background:
-      radial-gradient(circle at 10% 8%, rgba(22, 219, 120, 0.10), transparent 340px),
-      radial-gradient(circle at 88% 5%, rgba(40, 184, 255, 0.10), transparent 380px),
-      #f5f7f1 !important;
-  }
 }
