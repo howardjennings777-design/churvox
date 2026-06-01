@@ -116,6 +116,47 @@ function injectStyle() {
       padding: 10px 16px !important;
       border-radius: 14px !important;
     }
+
+    /* Keep the dashboard focused: show only the next few prepared forms, not a huge wall. */
+    main.fixed.inset-0 > div.flex.min-h-screen > section > section.grid:first-of-type aside div.mt-5.space-y-3 > button:nth-of-type(n+5),
+    main.fixed.inset-0 > div.flex.min-h-screen > section > section:nth-of-type(3) > div.mt-5.grid > button:nth-of-type(n+5) {
+      display: none !important;
+    }
+
+    main.fixed.inset-0 > div.flex.min-h-screen > section > section:nth-of-type(3) {
+      padding: 18px !important;
+      border-radius: 24px !important;
+      max-height: 520px !important;
+      overflow: hidden !important;
+    }
+
+    main.fixed.inset-0 > div.flex.min-h-screen > section > section:nth-of-type(3) h2 {
+      font-size: clamp(24px, 3vw, 34px) !important;
+      line-height: 1 !important;
+      margin: 0 !important;
+    }
+
+    main.fixed.inset-0 > div.flex.min-h-screen > section > section:nth-of-type(3) > div.mt-5.grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 12px !important;
+    }
+
+    main.fixed.inset-0 > div.flex.min-h-screen > section > section:nth-of-type(3) > div.mt-5.grid > button {
+      padding: 14px !important;
+      border-radius: 18px !important;
+      min-height: 118px !important;
+    }
+
+    main.fixed.inset-0 > div.flex.min-h-screen > section > section:nth-of-type(3) > div.mt-5.grid > button p {
+      display: none !important;
+    }
+
+    main.fixed.inset-0 > div.flex.min-h-screen > section > section:nth-of-type(3) > div.mt-5.grid > button > div.mt-4 {
+      margin-top: 10px !important;
+      padding: 8px 12px !important;
+      border-radius: 12px !important;
+      font-size: 12px !important;
+    }
   `;
   document.head.appendChild(style);
 }
