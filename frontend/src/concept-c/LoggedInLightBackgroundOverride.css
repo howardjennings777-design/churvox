@@ -1,5 +1,6 @@
-/* CHURVOX_LOGGED_IN_PUBLIC_LIGHT_BACKGROUND_20260601
-   Final override: logged-in app canvas uses the same soft public-site background (#f5f7f1). */
+/* CHURVOX_LOGGED_IN_PUBLIC_LIGHT_BACKGROUND_FORCE_20260601
+   Final override: logged-in app canvas uses the same soft public-site background (#f5f7f1).
+   This file is imported last from index.js so it beats the older dark command-room theme. */
 
 html,
 body,
@@ -7,7 +8,9 @@ body,
   background: #f5f7f1 !important;
 }
 
-/* Main logged-in command frame background */
+/* Force the actual logged-in portal shell. The older theme targeted this exact selector. */
+body:has(aside) main.fixed.inset-0,
+main.fixed.inset-0,
 .concept-c2-frame,
 .concept-c2,
 .xcf-shell,
@@ -20,25 +23,43 @@ body,
     radial-gradient(circle at 10% 8%, rgba(22, 219, 120, 0.10), transparent 340px),
     radial-gradient(circle at 88% 5%, rgba(40, 184, 255, 0.10), transparent 380px),
     #f5f7f1 !important;
+  color: #10141f !important;
 }
 
-/* Real page area inside the logged-in shell */
+/* Logged-in content area */
+body:has(aside) main.fixed.inset-0 > div > section,
+body:has(aside) main.fixed.inset-0 > div > section > header,
+body:has(aside) main.fixed.inset-0 > div > section > section,
+body:has(aside) main.fixed.inset-0 > div > section article,
+body:has(aside) main.fixed.inset-0 > div > section aside:not(:first-child),
+body:has(aside) main.fixed.inset-0 [role="dialog"] > div,
 .concept-c2-frame .c2-stage,
 .concept-c2-frame .c2-real-page-stage,
 .concept-c2-frame .c2-real-page-card,
 .concept-c2-frame .c2-real-page-card main,
 .concept-c2-frame .c2-real-page-card section,
 .concept-c2-frame .c2-real-page-card article,
-.concept-c2-frame .c2-real-page-card .bg-slate-50,
-.concept-c2-frame .c2-real-page-card .bg-gray-50,
 .concept-c2-frame .c2-real-page-card .min-h-screen,
 .concept-c2-frame .c2-real-page-card .px-app {
   background: #f5f7f1 !important;
   color: #10141f !important;
 }
 
-/* Cards stay white on the soft background */
+/* Cards stay white/light on the soft background */
+body:has(aside) main.fixed.inset-0 > div > section .bg-white,
+body:has(aside) main.fixed.inset-0 > div > section .bg-slate-50,
+body:has(aside) main.fixed.inset-0 > div > section .bg-slate-100,
+body:has(aside) main.fixed.inset-0 > div > section .bg-blue-50,
+body:has(aside) main.fixed.inset-0 > div > section .bg-amber-50,
+body:has(aside) main.fixed.inset-0 > div > section .bg-emerald-50,
+body:has(aside) main.fixed.inset-0 > div > section .bg-white[class*="rounded"],
+body:has(aside) main.fixed.inset-0 > div > section .bg-slate-50[class*="rounded"],
+body:has(aside) main.fixed.inset-0 > div > section .bg-blue-50[class*="rounded"],
+body:has(aside) main.fixed.inset-0 > div > section .bg-amber-50[class*="rounded"],
+body:has(aside) main.fixed.inset-0 > div > section .bg-emerald-50[class*="rounded"],
 .concept-c2-frame .c2-real-page-card .bg-white,
+.concept-c2-frame .c2-real-page-card .bg-slate-50,
+.concept-c2-frame .c2-real-page-card .bg-gray-50,
 .concept-c2-frame .c2-real-page-card [class*="card"],
 .concept-c2-frame .c2-real-page-card [class*="Card"],
 .concept-c2-frame .c2-real-page-card .premium-card,
@@ -53,13 +74,21 @@ body,
 .concept-c2-frame .cv-trust-card,
 .concept-c2-frame .cv-ticket,
 .concept-c2-frame .cv-report-record {
-  background: rgba(255,255,255,0.82) !important;
+  background: rgba(255, 255, 255, 0.86) !important;
   border-color: rgba(16, 20, 31, 0.10) !important;
   color: #10141f !important;
   box-shadow: 0 14px 38px rgba(15, 23, 42, 0.055) !important;
 }
 
 /* Text back to readable dark on light pages */
+body:has(aside) main.fixed.inset-0 h1,
+body:has(aside) main.fixed.inset-0 h2,
+body:has(aside) main.fixed.inset-0 h3,
+body:has(aside) main.fixed.inset-0 h4,
+body:has(aside) main.fixed.inset-0 strong,
+body:has(aside) main.fixed.inset-0 .text-slate-950,
+body:has(aside) main.fixed.inset-0 .text-slate-900,
+body:has(aside) main.fixed.inset-0 .text-slate-800,
 .concept-c2-frame .c2-real-page-card h1,
 .concept-c2-frame .c2-real-page-card h2,
 .concept-c2-frame .c2-real-page-card h3,
@@ -73,6 +102,11 @@ body,
   color: #10141f !important;
 }
 
+body:has(aside) main.fixed.inset-0 p,
+body:has(aside) main.fixed.inset-0 .text-slate-700,
+body:has(aside) main.fixed.inset-0 .text-slate-600,
+body:has(aside) main.fixed.inset-0 .text-slate-500,
+body:has(aside) main.fixed.inset-0 .text-slate-400,
 .concept-c2-frame .c2-real-page-card p,
 .concept-c2-frame .c2-real-page-card li,
 .concept-c2-frame .c2-real-page-card label,
@@ -84,7 +118,17 @@ body,
   color: #596170 !important;
 }
 
+body:has(aside) main.fixed.inset-0 [class*="uppercase"],
+body:has(aside) main.fixed.inset-0 .text-blue-600,
+body:has(aside) main.fixed.inset-0 .text-amber-600,
+body:has(aside) main.fixed.inset-0 .text-emerald-700 {
+  color: #087543 !important;
+}
+
 /* Inputs on light background */
+body:has(aside) main.fixed.inset-0 input,
+body:has(aside) main.fixed.inset-0 textarea,
+body:has(aside) main.fixed.inset-0 select,
 .concept-c2-frame .c2-real-page-card input,
 .concept-c2-frame .c2-real-page-card select,
 .concept-c2-frame .c2-real-page-card textarea,
@@ -95,6 +139,7 @@ body,
 }
 
 /* Keep only the nav/sidebar command chrome dark, not the whole page. */
+body:has(aside) main.fixed.inset-0 aside,
 .concept-c2-frame .c2-topbar,
 .concept-c2-frame .c2-spine,
 .concept-c2-frame .c2-dock,
@@ -103,4 +148,14 @@ body,
 .c2-dock-full {
   background: linear-gradient(135deg, rgba(4, 15, 24, .96), rgba(9, 30, 45, .96)) !important;
   color: #f6fbfc !important;
+}
+
+/* Mobile override from old dark theme also needs to lose. */
+@media (max-width: 900px) {
+  body:has(aside) main.fixed.inset-0 {
+    background:
+      radial-gradient(circle at 10% 8%, rgba(22, 219, 120, 0.10), transparent 340px),
+      radial-gradient(circle at 88% 5%, rgba(40, 184, 255, 0.10), transparent 380px),
+      #f5f7f1 !important;
+  }
 }
