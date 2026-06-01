@@ -6,6 +6,7 @@ import { detectCountryHint } from "../lib/country";
 import { ChurvoxLogo } from "../components/ChurvoxLogo";
 import "./PlansCommand.css";
 import "./PlansUserBlocks.css";
+import "./PlansCommandRoomTheme.css";
 
 const CHURVOX_AUDIT_MARKERS = "handleBuySmsPack handleBuyMyobAddon DemoModePage NotificationsWorkspacePage BillingConfidencePage LaunchSalesPolishPage IntegrationProofPage BackupRecoveryPage PolishChecklistPage buy-sms_100 buy-sms_500 buy-sms_1000";
 const FIRST_SETUP_KEY = "churvox_first_setup_pending";
