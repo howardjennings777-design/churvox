@@ -50,12 +50,12 @@ import PricingPage from "./pages/marketing/ExecutivePricingPage";
 import FeaturesPage from "./pages/marketing/ExecutiveFeaturesPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import FloatingBottomNav from "./components/FloatingBottomNav";
-import ConceptCPage from "./concept-c/ConceptCPageExact";
 import ConceptCFrame from "./concept-c/ConceptCFrame";
 import CommandDeskHomePage from "./pages/CommandDeskHomePage";
 import JobsCommandPage from "./pages/JobsCommandPage";
 import QuotesCommandPage from "./pages/QuotesCommandPage";
 import InvoicesCommandPage from "./pages/InvoicesCommandPage";
+import TeamCommandPage from "./pages/TeamCommandPage";
 import TradePresetsPage from "./pages/TradePresetsPage";
 import MessageApprovalQueuePage from "./pages/MessageApprovalQueuePage";
 import DispatchBoardPage from "./pages/DispatchBoardPage";
@@ -281,11 +281,11 @@ function App() {
             <Route path="/trust" element={<PrivateRoute><ConceptCFrame area="support"><ContactPage /></ConceptCFrame></PrivateRoute>} />
             <Route path="/plans" element={<OwnerRoute><ConceptCFrame area="plans"><PlansPage /></ConceptCFrame></OwnerRoute>} />
             <Route path="/billing-confidence" element={<OwnerRoute><ConceptCFrame area="billing"><BillingConfidencePage /></ConceptCFrame></OwnerRoute>} />
-            <Route path="/team" element={<TeamRoute><ConceptCPage area="team" /></TeamRoute>} />
+            <Route path="/team" element={<TeamRoute><TeamCommandPage /></TeamRoute>} />
             <Route path="/crew-ops" element={<BusinessRoute><ConceptCFrame area="team"><CrewOperationsPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/notifications" element={<BusinessRoute><ConceptCFrame area="notifications"><NotificationsWorkspacePage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/automation/runs" element={<TeamRoute><Navigate to="/dashboard" replace /></TeamRoute>} />
-            <Route path="/payroll" element={<PayrollRoute><ConceptCPage area="payroll" /></PayrollRoute>} />
+            <Route path="/payroll" element={<PayrollRoute><Navigate to="/team" replace /></PayrollRoute>} />
             <Route path="/worker/jobs" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobsPage /></ConceptCFrame></WorkerRoute>} />
             <Route path="/worker/ops" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerOperationsPage /></ConceptCFrame></WorkerRoute>} />
             <Route path="/worker/jobs/:id" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobDetailPage /></ConceptCFrame></WorkerRoute>} />
