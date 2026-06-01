@@ -77,10 +77,47 @@ main.fixed.inset-0 > div > section .bg-slate-900 * {
   text-shadow: none !important;
 }
 
-/* AI Operator was folded into Command Board. Hide old sidebar links/cards everywhere. */
+/* Launch sidebar cleanup: keep only the routes a new trade owner needs on day one.
+   Full pages still exist, but unfinished/unclear tools stay out of the main menu. */
 main.fixed.inset-0 aside a[href="/ai-operator"],
+main.fixed.inset-0 aside a[href="/ai-operator/approvals"],
+main.fixed.inset-0 aside a[href="/notifications"],
+main.fixed.inset-0 aside a[href="/money-desk"],
+main.fixed.inset-0 aside a[href="/crew-ops"],
+main.fixed.inset-0 aside a[href="/payroll"],
+main.fixed.inset-0 aside a[href="/reports"],
+main.fixed.inset-0 aside a[href="/onboarding"],
+main.fixed.inset-0 aside a[href="/trade-presets"],
+main.fixed.inset-0 aside a[href="/automation"],
+main.fixed.inset-0 aside a[href="/integrations"],
+main.fixed.inset-0 aside a[href="/operator-tools"],
+main.fixed.inset-0 aside a[href="/billing-confidence"],
 .plans-command-shell aside a[href="/ai-operator"],
-.concept-c2-frame aside a[href="/ai-operator"] {
+.plans-command-shell aside a[href="/ai-operator/approvals"],
+.plans-command-shell aside a[href="/notifications"],
+.plans-command-shell aside a[href="/money-desk"],
+.plans-command-shell aside a[href="/crew-ops"],
+.plans-command-shell aside a[href="/payroll"],
+.plans-command-shell aside a[href="/reports"],
+.plans-command-shell aside a[href="/onboarding"],
+.plans-command-shell aside a[href="/trade-presets"],
+.plans-command-shell aside a[href="/automation"],
+.plans-command-shell aside a[href="/integrations"],
+.plans-command-shell aside a[href="/operator-tools"],
+.plans-command-shell aside a[href="/billing-confidence"],
+.concept-c2-frame aside a[href="/ai-operator"],
+.concept-c2-frame aside a[href="/ai-operator/approvals"],
+.concept-c2-frame aside a[href="/notifications"],
+.concept-c2-frame aside a[href="/money-desk"],
+.concept-c2-frame aside a[href="/crew-ops"],
+.concept-c2-frame aside a[href="/payroll"],
+.concept-c2-frame aside a[href="/reports"],
+.concept-c2-frame aside a[href="/onboarding"],
+.concept-c2-frame aside a[href="/trade-presets"],
+.concept-c2-frame aside a[href="/automation"],
+.concept-c2-frame aside a[href="/integrations"],
+.concept-c2-frame aside a[href="/operator-tools"],
+.concept-c2-frame aside a[href="/billing-confidence"] {
   display: none !important;
 }
 
