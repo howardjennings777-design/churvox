@@ -45,6 +45,7 @@ import './renderDeployMarker';
 import './deploy/guidedOperatorFloorDeployMarker';
 import './deploy/commandFloorTestingDeployMarker';
 import './deploy/commandFloorRuntimeMarkers';
+import './concept-c/LoggedInLightBackgroundOverride.css';
 
 // CHURVOX_DISABLE_STALE_SERVICE_WORKER_20260529
 // Do not register the PWA service worker while launch UI is changing quickly.
