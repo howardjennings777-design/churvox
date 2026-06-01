@@ -84,6 +84,38 @@ function injectStyle() {
       letter-spacing: 0 !important;
       opacity: 1 !important;
     }
+
+    /* Dashboard hero was stretching to match the tall queue beside it. Keep it compact. */
+    main.fixed.inset-0 > div.flex.min-h-screen > section > section.grid:first-of-type {
+      align-items: start !important;
+    }
+
+    main.fixed.inset-0 > div.flex.min-h-screen > section > section.grid:first-of-type > div:first-child {
+      align-self: start !important;
+      min-height: 0 !important;
+      height: auto !important;
+      max-height: none !important;
+      padding: 22px !important;
+      border-radius: 24px !important;
+    }
+
+    main.fixed.inset-0 > div.flex.min-h-screen > section > section.grid:first-of-type > div:first-child h1 {
+      margin-top: 14px !important;
+      font-size: clamp(30px, 4vw, 52px) !important;
+      line-height: .96 !important;
+      max-width: 760px !important;
+    }
+
+    main.fixed.inset-0 > div.flex.min-h-screen > section > section.grid:first-of-type > div:first-child p {
+      margin-top: 14px !important;
+      max-width: 680px !important;
+    }
+
+    main.fixed.inset-0 > div.flex.min-h-screen > section > section.grid:first-of-type > div:first-child button {
+      margin-top: 18px !important;
+      padding: 10px 16px !important;
+      border-radius: 14px !important;
+    }
   `;
   document.head.appendChild(style);
 }
