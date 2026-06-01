@@ -1,54 +1,33 @@
 import React from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
+import { toast } from "sonner";
+import { useApi } from "../hooks/useApi";
+import { useAuth } from "../context/AuthContext";
+
+const SUPPORT_EMAIL = "hello@churvox.com";
 
 const navGroups = [
-  { title: "Command", items: [["Command Board", "/dashboard", "CB"], ["AI Operator", "/ai-operator", "AI"], ["Approvals", "/ai-operator/approvals", "OK"], ["Notifications", "/notifications", "NT"]] },
-  { title: "Work", items: [["Jobs", "/jobs", "JB"], ["Dispatch", "/dispatch", "DP"], ["Clients", "/clients", "CL"], ["Quotes", "/quotes", "QT"], ["Invoices", "/invoices", "IV"], ["Money Desk", "/money-desk", "$"]] },
-  { title: "Crew & Admin", items: [["Team", "/team", "TM"], ["Crew Ops", "/crew-ops", "CO"], ["Payroll", "/payroll", "PR"], ["Reports", "/reports", "RP"]] },
-  { title: "System", items: [["Setup", "/onboarding", "SU"], ["Trade Presets", "/trade-presets", "TP"], ["Automation", "/automation", "AU"], ["Integrations", "/integrations", "IN"], ["Operator Tools", "/operator-tools", "OT"], ["Plans", "/plans", "PL"], ["Billing", "/billing-confidence", "BI"], ["Settings", "/settings", "ST"], ["Support", "/support", "?"]] },
+  { title: "Command", items: [["Command Board", "/dashboard", "CB"]] },
+  { title: "Work", items: [["Jobs", "/jobs", "JB"], ["Dispatch", "/dispatch", "DP"], ["Crew Map", "/crew-map", "MP"], ["Clients", "/clients", "CL"], ["Quotes", "/quotes", "QT"], ["Invoices", "/invoices", "IV"]] },
+  { title: "Admin", items: [["Team", "/team", "TM"], ["Plans", "/plans", "PL"], ["Settings", "/settings", "ST"], ["Support", "/support", "?"]] },
 ];
 
-const supportCards = [
-  { key: "email", title: "Support inbox", status: "ready", type: "help", href: "mailto:hello@churvox.com?subject=Churvox%20support%20request", summary: "For setup, billing, import, account and product help. Main support email: hello@churvox.com." },
-  { key: "setup", title: "Setup checklist", status: "next", type: "launch", href: "/onboarding", summary: "Finish business profile, first client, first job, first worker and first invoice." },
-  { key: "billing", title: "Plans and billing", status: "owner", type: "account", href: "/plans", summary: "Plan access, trial status and billing confidence live in owner-only areas." },
-  { key: "guardrails", title: "AI approval guardrails", status: "protected", type: "ai", href: "/ai-operator", summary: "AI prepares admin work, but owner approval is required before messages, payroll, pricing, deletes, charges or accounting changes." },
-  { key: "data", title: "Data control", status: "protected", type: "trust", href: "/reports", summary: "Reports, export, privacy, terms and account deletion links stay easy to find." },
-  { key: "launch", title: "Launch readiness", status: "ready", type: "ops", href: "/launch-control", summary: "Use launch tools, backup recovery and polish checks when preparing for release." },
-];
-
-const usefulLinks = [
-  ["Command Board", "/dashboard"],
-  ["Setup checklist", "/onboarding"],
-  ["Demo mode", "/demo-mode"],
-  ["Notifications", "/notifications"],
-  ["Billing confidence", "/billing-confidence"],
-  ["Privacy", "/privacy"],
-  ["Terms", "/terms"],
-  ["Account deletion", "/account-deletion"],
-  ["Integration proof", "/integration-proof"],
-  ["Launch ops", "/launch-ops"],
-  ["Backup recovery", "/backup-recovery"],
-  ["Polish checklist", "/polish-checklist"],
+const supportAreas = [
+  ["Setup help", "I need help getting the app set up"],
+  ["Bug / something broken", "Something is not working properly"],
+  ["Billing / plan", "I need help with billing, trial or plans"],
+  ["Import / data", "I need help with clients, CSV or MYOB data"],
+  ["Worker / jobs", "I need help with workers, jobs, dispatch or timesheets"],
+  ["Other", "Something else"],
 ];
 
 function isActivePath(pathname, href) {
   if (href === "/dashboard") return pathname === "/dashboard" || pathname === "/overview";
   if (href === "/dispatch") return pathname === "/dispatch" || pathname === "/dispatch-board";
-  if (href === "/money-desk") return pathname === "/money-desk" || pathname === "/money";
+  if (href === "/crew-map") return pathname === "/crew-map" || pathname === "/dispatch/map";
   if (href === "/support") return pathname === "/support" || pathname === "/contact" || pathname === "/trust";
   return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-function pretty(value) {
-  return String(value || "").replaceAll("_", " ").replace(/\b\w/g, (m) => m.toUpperCase());
-}
-
-function statusStyle(status) {
-  if (["ready", "protected"].includes(status)) return "border-emerald-200 bg-emerald-50 text-emerald-800";
-  if (["next", "owner"].includes(status)) return "border-amber-200 bg-amber-50 text-amber-800";
-  return "border-blue-200 bg-blue-50 text-blue-800";
 }
 
 function Sidebar() {
@@ -76,66 +55,147 @@ function Sidebar() {
   );
 }
 
-function SupportCard({ item, onOpen }) {
-  const external = item.href.startsWith("mailto:");
-  const ButtonTag = external ? "a" : Link;
-  const buttonProps = external ? { href: item.href } : { to: item.href };
-  return (
-    <article className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_70px_rgba(15,23,42,0.10)]">
-      <div className="flex items-start justify-between gap-3">
-        <div><span className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{pretty(item.type)}</span><h3 className="mt-1 text-lg font-black tracking-[-0.04em] text-slate-950">{item.title}</h3></div>
-        <span className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${statusStyle(item.status)}`}>{pretty(item.status)}</span>
-      </div>
-      <p className="mt-3 text-sm font-bold leading-6 text-slate-600">{item.summary}</p>
-      <div className="mt-4 flex flex-wrap gap-3">
-        <button type="button" onClick={() => onOpen(item)} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Open slip</button>
-        <ButtonTag {...buttonProps} className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Open</ButtonTag>
-      </div>
-    </article>
-  );
-}
-
-function SupportSlip({ item, onClose }) {
-  if (!item) return null;
-  const external = item.href.startsWith("mailto:");
-  const ButtonTag = external ? "a" : Link;
-  const buttonProps = external ? { href: item.href } : { to: item.href };
-  return (
-    <div className="fixed inset-0 z-[2147483647] bg-slate-950/65 p-3 backdrop-blur-sm md:p-7" role="dialog" aria-modal="true">
-      <div className="ml-auto flex h-full max-w-[700px] flex-col overflow-hidden rounded-[34px] border border-slate-200 bg-white shadow-[0_35px_120px_rgba(15,23,42,0.40)]">
-        <header className="relative overflow-hidden border-b border-slate-800 bg-slate-950 p-6 text-white md:p-7">
-          <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-blue-500/20 blur-3xl" />
-          <div className="relative flex items-start justify-between gap-4"><div><div className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Support Work Slip</div><h2 className="mt-4 text-3xl font-black leading-[0.95] tracking-[-0.07em] md:text-5xl">{item.title}</h2></div><button type="button" onClick={onClose} className="rounded-2xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-black text-white hover:bg-white/15">Close</button></div>
-          <p className="relative mt-5 max-w-xl text-sm font-semibold leading-6 text-slate-300">{pretty(item.type)} · {pretty(item.status)}</p>
-        </header>
-        <main className="min-h-0 flex-1 overflow-y-auto bg-[#f4f6f8] p-5 md:p-6">
-          <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm"><div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">What this helps with</div><p className="mt-3 text-lg font-black tracking-[-0.035em] text-slate-950">{item.summary}</p><div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-bold leading-6 text-blue-950">Support stays simple: open the right place, check the record, then approve or ask for help.</div></section>
-          <section className="mt-4 rounded-[26px] border border-emerald-200 bg-emerald-50 p-5 shadow-sm"><div className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">Owner-safe rule</div><p className="mt-2 text-sm font-bold leading-6 text-emerald-950">Churvox prepares the admin. Owners still approve important actions before anything sends, changes, charges or syncs.</p></section>
-        </main>
-        <footer className="flex flex-wrap gap-3 border-t border-slate-200 bg-white p-5"><ButtonTag {...buttonProps} className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Open now</ButtonTag><button type="button" onClick={onClose} className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-800 hover:bg-slate-50">Back to support</button></footer>
-      </div>
-    </div>
-  );
+function encodeMailto(form, user, ticketId) {
+  const subject = `[${ticketId}] Churvox support - ${form.subject || form.area}`;
+  const body = [
+    `Ticket: ${ticketId}`,
+    `Area: ${form.area}`,
+    `Priority: ${form.priority}`,
+    `Name: ${form.name || user?.name || ""}`,
+    `Reply email: ${form.email || user?.email || ""}`,
+    `Current page: ${form.page || (typeof window !== "undefined" ? window.location.href : "")}`,
+    "",
+    "Message:",
+    form.message,
+  ].join("\n");
+  return `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 function SupportCommandContent() {
-  const [activeSlip, setActiveSlip] = React.useState(null);
+  const { post } = useApi();
+  const { user } = useAuth();
+  const [sending, setSending] = React.useState(false);
+  const [sentTickets, setSentTickets] = React.useState(() => {
+    try { return JSON.parse(localStorage.getItem("churvox_support_tickets") || "[]"); } catch { return []; }
+  });
+  const [form, setForm] = React.useState({
+    area: "Bug / something broken",
+    priority: "Normal",
+    name: user?.name || "",
+    email: user?.email || "",
+    subject: "",
+    message: "",
+    page: typeof window !== "undefined" ? window.location.href : "",
+  });
+
+  React.useEffect(() => {
+    setForm((prev) => ({ ...prev, name: prev.name || user?.name || "", email: prev.email || user?.email || "" }));
+  }, [user?.name, user?.email]);
+
+  const update = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
+
+  const saveTicket = (ticket) => {
+    const next = [ticket, ...sentTickets].slice(0, 8);
+    setSentTickets(next);
+    try { localStorage.setItem("churvox_support_tickets", JSON.stringify(next)); } catch {}
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const email = String(form.email || user?.email || "").trim();
+    const message = String(form.message || "").trim();
+    if (!email) return toast.error("Add your reply email first");
+    if (message.length < 8) return toast.error("Tell support what happened first");
+
+    setSending(true);
+    const ticketId = `SUP-${Date.now().toString().slice(-8)}`;
+    const payload = { ...form, email, ticket_id: ticketId, created_at: new Date().toISOString() };
+
+    let sentByBackend = false;
+    try {
+      const res = await post("/support/messages", payload);
+      sentByBackend = Boolean(res?.success);
+    } catch {
+      sentByBackend = false;
+    }
+
+    const ticket = { id: ticketId, area: form.area, subject: form.subject || form.area, priority: form.priority, created_at: new Date().toISOString(), status: sentByBackend ? "Sent" : "Email draft opened" };
+    saveTicket(ticket);
+
+    if (sentByBackend) {
+      toast.success("Support message sent");
+      setForm((prev) => ({ ...prev, subject: "", message: "" }));
+    } else {
+      window.location.href = encodeMailto(form, user, ticketId);
+      toast.success("Support email opened — send it from your email app");
+    }
+    setSending(false);
+  };
+
   return (
-    <main className="fixed inset-0 z-[2147483000] overflow-y-auto bg-[#eef1f4] text-slate-950">
-      <div className="flex min-h-screen"><Sidebar />
-        <section className="min-w-0 flex-1 p-4 pb-28 md:p-6 md:pb-28 xl:p-8 xl:pb-28">
-          <header className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Support Command</div><div className="text-sm font-bold text-slate-500">Help, trust, billing, data control and launch support.</div></div><div className="flex flex-wrap gap-3"><Link to="/dashboard" className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Command Board</Link><a href="mailto:hello@churvox.com?subject=Churvox%20support%20request" className="rounded-2xl bg-amber-500 px-4 py-2 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400">Email support</a></div></header>
+    <main className="fixed inset-0 z-[2147483000] overflow-y-auto bg-[#f5f7f1] text-slate-950">
+      <div className="flex min-h-screen">
+        <Sidebar />
+        <section className="min-w-0 flex-1 p-4 pb-28 md:p-6 xl:p-8">
+          <header className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-cyan-300/20 bg-[#143658] px-5 py-4 text-white shadow-[0_16px_38px_rgba(12,33,57,0.16)]">
+            <div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200">Support</div><div className="text-sm font-bold text-slate-100">Send a real support message, include the page, and keep a ticket record.</div></div>
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="rounded-2xl bg-cyan-300 px-4 py-2 text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200">{SUPPORT_EMAIL}</a>
+          </header>
 
-          <section className="grid gap-5 xl:grid-cols-[1fr_430px]"><div className="overflow-hidden rounded-[30px] border border-slate-900 bg-slate-950 shadow-[0_26px_80px_rgba(15,23,42,0.20)]"><div className="relative p-6 md:p-8"><div className="absolute right-0 top-0 h-56 w-56 rounded-full bg-blue-500/10 blur-3xl" /><div className="relative"><span className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Support Command</span><h1 className="mt-5 max-w-3xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">Get unstuck without digging around.</h1><p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Support links, trust controls, billing help and launch tools stay in one clean command workspace.</p></div></div></div><div className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Support health</div><h2 className="mt-2 text-2xl font-black tracking-[-0.055em] text-slate-950">What needs attention</h2><div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-1"><div className="rounded-2xl border border-amber-200 bg-amber-50 p-4"><div className="text-2xl font-black text-amber-800">Setup</div><div className="text-xs font-black uppercase tracking-[0.14em] text-amber-700">First place to check</div></div><div className="rounded-2xl border border-blue-200 bg-blue-50 p-4"><div className="text-2xl font-black text-blue-800">Help</div><div className="text-xs font-black uppercase tracking-[0.14em] text-blue-700">Email support</div></div><div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><div className="text-2xl font-black text-emerald-800">Trust</div><div className="text-xs font-black uppercase tracking-[0.14em] text-emerald-700">Guardrails clear</div></div></div></div></section>
+          <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_390px]">
+            <form onSubmit={handleSubmit} className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)] md:p-6">
+              <div className="rounded-[26px] border border-slate-900 bg-slate-950 p-6 text-white">
+                <span className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Support request</span>
+                <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[0.92] tracking-[-0.075em] md:text-6xl">Tell us what needs fixing.</h1>
+                <p className="mt-4 max-w-2xl text-sm font-semibold leading-6 text-slate-300">Use this for bugs, billing, setup, imports, workers, jobs, MYOB, or anything blocking launch.</p>
+              </div>
 
-          <section className="mt-5 grid gap-4 md:grid-cols-4"><div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Support email</div><div className="mt-3 truncate text-2xl font-black tracking-[-0.06em]">hello@churvox.com</div></div><div className="rounded-[22px] border border-blue-200 bg-blue-50 p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">Help areas</div><div className="mt-3 text-3xl font-black tracking-[-0.06em] text-blue-900">6</div></div><div className="rounded-[22px] border border-amber-200 bg-amber-50 p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-700">Owner controls</div><div className="mt-3 text-3xl font-black tracking-[-0.06em] text-amber-900">On</div></div><div className="rounded-[22px] border border-emerald-200 bg-emerald-50 p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">AI guardrails</div><div className="mt-3 text-3xl font-black tracking-[-0.06em] text-emerald-900">Clear</div></div></section>
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
+                <label className="block"><span className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">Help area</span><select value={form.area} onChange={(e) => update("area", e.target.value)} className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-black text-slate-900 outline-none focus:border-blue-300">{supportAreas.map(([label]) => <option key={label}>{label}</option>)}</select></label>
+                <label className="block"><span className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">Priority</span><select value={form.priority} onChange={(e) => update("priority", e.target.value)} className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-black text-slate-900 outline-none focus:border-blue-300"><option>Normal</option><option>High</option><option>Launch blocker</option></select></label>
+                <label className="block"><span className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">Your name</span><input value={form.name} onChange={(e) => update("name", e.target.value)} placeholder="Your name" className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-300" /></label>
+                <label className="block"><span className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">Reply email</span><input value={form.email} onChange={(e) => update("email", e.target.value)} type="email" placeholder="you@email.com" className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-300" /></label>
+              </div>
 
-          <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600">Support list</div><h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-slate-950">Open support areas</h2></div><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-slate-600">Simple help</span></div><div className="grid gap-4 xl:grid-cols-2">{supportCards.map((item) => <SupportCard key={item.key} item={item} onOpen={setActiveSlip} />)}</div></section>
+              <label className="mt-4 block"><span className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">Subject</span><input value={form.subject} onChange={(e) => update("subject", e.target.value)} placeholder="Example: Worker cannot finish a job" className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-300" /></label>
+              <label className="mt-4 block"><span className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">Message</span><textarea value={form.message} onChange={(e) => update("message", e.target.value)} rows={8} placeholder="Tell support what happened, what page you were on, and what you expected." className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold leading-6 text-slate-900 outline-none focus:border-blue-300" /></label>
+              <label className="mt-4 block"><span className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">Page / screen</span><input value={form.page} onChange={(e) => update("page", e.target.value)} className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-300" /></label>
 
-          <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Useful links</div><h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-slate-950">Quick links</h2><div className="mt-5 flex flex-wrap gap-3">{usefulLinks.map(([label, href]) => <Link key={href} to={href} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-800 hover:bg-slate-50">{label}</Link>)}</div></section>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <button type="submit" disabled={sending} className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700 disabled:opacity-60">{sending ? "Sending…" : "Send support request"}</button>
+                <button type="button" onClick={() => { update("page", typeof window !== "undefined" ? window.location.href : ""); toast.success("Current page added"); }} className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-800 hover:bg-slate-50">Add current page</button>
+              </div>
+            </form>
+
+            <aside className="space-y-5">
+              <section className="rounded-[32px] border border-slate-900 bg-[#143658] p-5 text-white shadow-[0_20px_60px_rgba(12,33,57,0.20)]">
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200">Support promise</div>
+                <h2 className="mt-2 text-3xl font-black tracking-[-0.06em]">One place to ask for help.</h2>
+                <p className="mt-3 text-sm font-semibold leading-6 text-slate-200">Send bugs, billing issues, setup questions, import problems and launch blockers from here.</p>
+              </section>
+
+              <section className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Recent requests</div>
+                <h2 className="mt-2 text-2xl font-black tracking-[-0.055em] text-slate-950">Your ticket record</h2>
+                <div className="mt-4 space-y-3">
+                  {sentTickets.length ? sentTickets.map((ticket) => <div key={ticket.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="text-sm font-black text-slate-950">{ticket.subject}</div><div className="mt-1 text-xs font-bold text-slate-500">{ticket.id} · {ticket.priority} · {ticket.status}</div></div>) : <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-500">No support requests sent from this device yet.</div>}
+                </div>
+              </section>
+
+              <section className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Quick links</div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Link to="/dashboard" className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-800 hover:bg-slate-50">Command Board</Link>
+                  <Link to="/plans" className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-800 hover:bg-slate-50">Plans</Link>
+                  <Link to="/settings" className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-800 hover:bg-slate-50">Settings</Link>
+                  <Link to="/privacy-policy" className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-800 hover:bg-slate-50">Privacy</Link>
+                  <Link to="/terms-of-service" className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-800 hover:bg-slate-50">Terms</Link>
+                </div>
+              </section>
+            </aside>
+          </section>
         </section>
       </div>
-      <SupportSlip item={activeSlip} onClose={() => setActiveSlip(null)} />
     </main>
   );
 }
