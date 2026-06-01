@@ -1,0 +1,106 @@
+/* CHURVOX_LOGGED_IN_PUBLIC_LIGHT_BACKGROUND_20260601
+   Final override: logged-in app canvas uses the same soft public-site background (#f5f7f1). */
+
+html,
+body,
+#root {
+  background: #f5f7f1 !important;
+}
+
+/* Main logged-in command frame background */
+.concept-c2-frame,
+.concept-c2,
+.xcf-shell,
+.xcf-workspace,
+.cc-app,
+.px-app,
+[data-app-shell],
+[data-command-shell] {
+  background:
+    radial-gradient(circle at 10% 8%, rgba(22, 219, 120, 0.10), transparent 340px),
+    radial-gradient(circle at 88% 5%, rgba(40, 184, 255, 0.10), transparent 380px),
+    #f5f7f1 !important;
+}
+
+/* Real page area inside the logged-in shell */
+.concept-c2-frame .c2-stage,
+.concept-c2-frame .c2-real-page-stage,
+.concept-c2-frame .c2-real-page-card,
+.concept-c2-frame .c2-real-page-card main,
+.concept-c2-frame .c2-real-page-card section,
+.concept-c2-frame .c2-real-page-card article,
+.concept-c2-frame .c2-real-page-card .bg-slate-50,
+.concept-c2-frame .c2-real-page-card .bg-gray-50,
+.concept-c2-frame .c2-real-page-card .min-h-screen,
+.concept-c2-frame .c2-real-page-card .px-app {
+  background: #f5f7f1 !important;
+  color: #10141f !important;
+}
+
+/* Cards stay white on the soft background */
+.concept-c2-frame .c2-real-page-card .bg-white,
+.concept-c2-frame .c2-real-page-card [class*="card"],
+.concept-c2-frame .c2-real-page-card [class*="Card"],
+.concept-c2-frame .c2-real-page-card .premium-card,
+.concept-c2-frame .cv-demo-card,
+.concept-c2-frame .cv-notify-item,
+.concept-c2-frame .cv-billing-summary article,
+.concept-c2-frame .cv-proof-metrics article,
+.concept-c2-frame .cv-ops-metrics article,
+.concept-c2-frame .cv-backup-counts article,
+.concept-c2-frame .cv-polish-row,
+.concept-c2-frame .cv-onboard-step,
+.concept-c2-frame .cv-trust-card,
+.concept-c2-frame .cv-ticket,
+.concept-c2-frame .cv-report-record {
+  background: rgba(255,255,255,0.82) !important;
+  border-color: rgba(16, 20, 31, 0.10) !important;
+  color: #10141f !important;
+  box-shadow: 0 14px 38px rgba(15, 23, 42, 0.055) !important;
+}
+
+/* Text back to readable dark on light pages */
+.concept-c2-frame .c2-real-page-card h1,
+.concept-c2-frame .c2-real-page-card h2,
+.concept-c2-frame .c2-real-page-card h3,
+.concept-c2-frame .c2-real-page-card h4,
+.concept-c2-frame .c2-real-page-card b,
+.concept-c2-frame .c2-real-page-card strong,
+.concept-c2-frame .c2-real-page-card .text-slate-950,
+.concept-c2-frame .c2-real-page-card .text-slate-900,
+.concept-c2-frame .c2-real-page-card .text-gray-900,
+.concept-c2-frame .c2-real-page-card .text-black {
+  color: #10141f !important;
+}
+
+.concept-c2-frame .c2-real-page-card p,
+.concept-c2-frame .c2-real-page-card li,
+.concept-c2-frame .c2-real-page-card label,
+.concept-c2-frame .c2-real-page-card span,
+.concept-c2-frame .c2-real-page-card .text-slate-600,
+.concept-c2-frame .c2-real-page-card .text-slate-500,
+.concept-c2-frame .c2-real-page-card .text-gray-600,
+.concept-c2-frame .c2-real-page-card .text-gray-500 {
+  color: #596170 !important;
+}
+
+/* Inputs on light background */
+.concept-c2-frame .c2-real-page-card input,
+.concept-c2-frame .c2-real-page-card select,
+.concept-c2-frame .c2-real-page-card textarea,
+.concept-c2-frame .c2-real-page-card .px-input {
+  background: #ffffff !important;
+  border-color: rgba(16, 20, 31, 0.14) !important;
+  color: #10141f !important;
+}
+
+/* Keep only the nav/sidebar command chrome dark, not the whole page. */
+.concept-c2-frame .c2-topbar,
+.concept-c2-frame .c2-spine,
+.concept-c2-frame .c2-dock,
+.xcf-bottom-nav,
+.xcf-bottom-nav-full,
+.c2-dock-full {
+  background: linear-gradient(135deg, rgba(4, 15, 24, .96), rgba(9, 30, 45, .96)) !important;
+  color: #f6fbfc !important;
+}
