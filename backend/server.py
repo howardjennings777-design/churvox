@@ -14078,7 +14078,7 @@ async def final_approve_send_action(action_id: str, payload: dict = Body(default
                 "source": "approved_command_board_slip",
                 "created_at": _final_now(),
                 "updated_at": _final_now(),
-            }})
+            })
 
     await db.ai_operator_actions.update_one({"_id": action["_id"]}, {"$set": {
         "status": "completed",
