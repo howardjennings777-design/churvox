@@ -1,3 +1,3 @@
-import Page from './CommandDeskRealPage'
+import Page from './CommandDeskSafePage'
 
 export default Page
