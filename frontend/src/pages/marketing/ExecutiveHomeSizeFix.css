@@ -1,0 +1,37 @@
+/* CHURVOX_PUBLIC_HOME_SIZE_FIX_20260601
+   The first homepage hero was too large on laptop screens.
+   This keeps the full-screen feel but makes the copy readable and balanced. */
+
+.cvx-hero-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(330px, .58fr) !important;
+  gap: clamp(22px, 3.4vw, 50px) !important;
+}
+
+.cvx-hero-copy {
+  gap: 14px !important;
+}
+
+.cvx-hero-copy h1 {
+  max-width: 860px !important;
+  font-size: clamp(48px, 6.4vw, 104px) !important;
+  line-height: .92 !important;
+  letter-spacing: -.07em !important;
+}
+
+.cvx-lead {
+  max-width: 740px !important;
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+}
+
+.cvx-preview-head b {
+  font-size: clamp(30px, 3.1vw, 48px) !important;
+  line-height: .94 !important;
+}
+
+@media (max-width: 640px) {
+  .cvx-hero-copy h1 {
+    font-size: clamp(40px, 12vw, 56px) !important;
+    line-height: .94 !important;
+  }
+}
