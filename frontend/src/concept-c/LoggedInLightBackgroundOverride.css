@@ -35,16 +35,14 @@ main.fixed.inset-0 > div > section > section + section {
 
 main.fixed.inset-0 > div > section > header {
   margin-bottom: 18px !important;
-  background: transparent !important;
-  border-color: transparent !important;
-  box-shadow: none !important;
-  padding-left: 2px !important;
-  padding-right: 2px !important;
+  background: #143658 !important;
+  border-color: rgba(255,255,255,0.12) !important;
+  box-shadow: 0 16px 38px rgba(12,33,57,0.16) !important;
 }
 
 main.fixed.inset-0 > div > section > header,
 main.fixed.inset-0 > div > section > header * {
-  color: #10141f !important;
+  color: #f8fbff !important;
   text-shadow: none !important;
 }
 
@@ -54,7 +52,9 @@ main.fixed.inset-0 > div > section .bg-slate-50,
 main.fixed.inset-0 > div > section .bg-slate-100,
 main.fixed.inset-0 > div > section .bg-blue-50,
 main.fixed.inset-0 > div > section .bg-amber-50,
-main.fixed.inset-0 > div > section .bg-emerald-50 {
+main.fixed.inset-0 > div > section .bg-emerald-50,
+main.fixed.inset-0 > div > section .bg-slate-950,
+main.fixed.inset-0 > div > section .bg-slate-900 {
   background: #143658 !important;
   border-color: rgba(255,255,255,0.12) !important;
   box-shadow: 0 16px 38px rgba(12,33,57,0.16) !important;
@@ -68,7 +68,11 @@ main.fixed.inset-0 > div > section .bg-white *,
 main.fixed.inset-0 > div > section .bg-slate-50,
 main.fixed.inset-0 > div > section .bg-slate-50 *,
 main.fixed.inset-0 > div > section .bg-slate-100,
-main.fixed.inset-0 > div > section .bg-slate-100 * {
+main.fixed.inset-0 > div > section .bg-slate-100 *,
+main.fixed.inset-0 > div > section .bg-slate-950,
+main.fixed.inset-0 > div > section .bg-slate-950 *,
+main.fixed.inset-0 > div > section .bg-slate-900,
+main.fixed.inset-0 > div > section .bg-slate-900 * {
   color: #f8fbff !important;
   text-shadow: none !important;
 }
