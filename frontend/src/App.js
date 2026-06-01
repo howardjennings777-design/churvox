@@ -67,6 +67,7 @@ import LaunchOpsPage from "./pages/LaunchOpsPage";
 import BackupRecoveryPage from "./pages/BackupRecoveryPage";
 import PolishChecklistPage from "./pages/PolishChecklistPage";
 import DemoModePage from "./pages/DemoModePage";
+import PlansCommandPage from "./pages/PlansCommandPage";
 import { OnboardingCommandPage, TradePresetsCommandPage, OperatorToolsCommandPage, BillingCommandPage, CrewOpsCommandPage, LaunchCommandPage, WorkerCommandPage } from "./pages/CommandRestPages";
 
 const Spinner = () => (
@@ -273,7 +274,7 @@ function App() {
             <Route path="/contact" element={<Navigate to="/support" replace />} />
             <Route path="/support" element={<PrivateRoute><SupportCommandPage /></PrivateRoute>} />
             <Route path="/trust" element={<Navigate to="/support" replace />} />
-            <Route path="/plans" element={<OwnerRoute><ConceptCFrame area="plans"><PlansPage /></ConceptCFrame></OwnerRoute>} />
+            <Route path="/plans" element={<OwnerRoute><PlansCommandPage /></OwnerRoute>} />
             <Route path="/billing-confidence" element={<OwnerRoute><BillingCommandPage /></OwnerRoute>} />
             <Route path="/team" element={<TeamRoute><TeamCommandPage /></TeamRoute>} />
             <Route path="/crew-ops" element={<BusinessRoute><CrewOpsCommandPage /></BusinessRoute>} />
