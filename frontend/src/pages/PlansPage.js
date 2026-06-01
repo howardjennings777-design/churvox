@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
 import { detectCountryHint } from "../lib/country";
 import { ChurvoxLogo } from "../components/ChurvoxLogo";
+import { APP_PLANS as displayPlans, COMMAND_GROWTH_PACK, SMS_PACKS as smsBlocks, nicePlanName } from "../config/churvoxPlans";
 import "./PlansCommand.css";
 import "./PlansUserBlocks.css";
 import "./PlansCommandRoomTheme.css";
@@ -11,21 +12,8 @@ import "./PlansCommandRoomTheme.css";
 const CHURVOX_AUDIT_MARKERS = "handleBuySmsPack handleBuyMyobAddon DemoModePage NotificationsWorkspacePage BillingConfidencePage LaunchSalesPolishPage IntegrationProofPage BackupRecoveryPage PolishChecklistPage buy-sms_100 buy-sms_500 buy-sms_1000";
 const FIRST_SETUP_KEY = "churvox_first_setup_pending";
 
-const displayPlans = [
-  { key: "solo", name: "Start", price: "$39", period: "/month + GST", tag: "Owner-operator", blurb: "For a solo trade owner who wants the basics tidy without the admin mess.", limits: ["Jobs, clients, quotes and invoices", "Simple Command Floor view", "Ready-to-bill work surfaced", "Basic owner workflow", "No MYOB sync"] },
-  { key: "team", name: "Crew", price: "$89", period: "/month + GST", tag: "Small team", blurb: "For a growing crew that needs field work, clients and money in one place.", limits: ["Everything in Start", "Team and worker workflow", "Live crew visibility", "Job proof and notes", "More jobs and client capacity"] },
-  { key: "pro", name: "Operator", price: "$149", period: "/month + GST", tag: "Most popular", blurb: "For owners who want Churvox to prepare the admin so they only approve what matters.", limits: ["Everything in Crew", "AI Operator Actions", "Draft invoice and quote follow-ups", "Urgent action queue", "MYOB add-on available"] },
-  { key: "enterprise", name: "Command", price: "$299", period: "/month + GST", tag: "Full command", blurb: "For larger operators that want roles, payroll workspace and accounting sync included.", limits: ["Everything in Operator", "MYOB sync included", "Payroll workspace", "Advanced roles and permissions", "Up to 50 active team members"] },
-];
-const userBlocks = ["Command includes up to 50 active team members", "Each Growth Pack adds 50 more active team members", "Extra job capacity, AI Operator Actions and automation runs", "Extra admin and payroll capacity as the crew grows", "Inactive or old staff records should not count as billable"];
+const userBlocks = COMMAND_GROWTH_PACK.includes;
 const smsTestIds = { sms_100: "buy-sms_100", sms_500: "buy-sms_500", sms_1000: "buy-sms_1000" };
-const smsBlocks = [
-  { key: "sms_100", credits: "100", price: "$10", note: "Light reminders and small follow-up runs." },
-  { key: "sms_500", credits: "500", price: "$45", note: "Best for active crews using reminders regularly." },
-  { key: "sms_1000", credits: "1,000", price: "$80", note: "Lowest cost per credit for busy operators." },
-];
-const cap = (s) => s ? String(s).charAt(0).toUpperCase() + String(s).slice(1) : "";
-const nicePlanName = (key) => displayPlans.find((p) => p.key === key)?.name || cap(key);
 const getPayload = (res) => { if (!res) return null; if (res.success === false) return res; if (res.data !== undefined) return res.data; return res; };
 const isFirstSetup = () => { try { return new URLSearchParams(window.location.search).get("first_setup") === "1" || localStorage.getItem(FIRST_SETUP_KEY) === "true"; } catch { return false; } };
 
