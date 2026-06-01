@@ -52,6 +52,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import FloatingBottomNav from "./components/FloatingBottomNav";
 import ConceptCPage from "./concept-c/ConceptCPageExact";
 import ConceptCFrame from "./concept-c/ConceptCFrame";
+import CommandDeskHomePage from "./pages/CommandDeskHomePage";
 import TradePresetsPage from "./pages/TradePresetsPage";
 import MessageApprovalQueuePage from "./pages/MessageApprovalQueuePage";
 import DispatchBoardPage from "./pages/DispatchBoardPage";
@@ -244,8 +245,8 @@ function App() {
             <Route path="/admin/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
             <Route path="/owner/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
             <Route path="/admin/qa-auditor" element={<QaAuditorRoute><QAAuditorPage /></QaAuditorRoute>} />
-            <Route path="/dashboard" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><ConceptCPage area="dashboard" /></ErrorBoundary></BusinessRoute>} />
-            <Route path="/overview" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><ConceptCPage area="dashboard" /></ErrorBoundary></BusinessRoute>} />
+            <Route path="/dashboard" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><ConceptCFrame area="dashboard"><CommandDeskHomePage /></ConceptCFrame></ErrorBoundary></BusinessRoute>} />
+            <Route path="/overview" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><ConceptCFrame area="dashboard"><CommandDeskHomePage /></ConceptCFrame></ErrorBoundary></BusinessRoute>} />
             <Route path="/onboarding" element={<BusinessRoute><ConceptCFrame area="onboarding"><OnboardingPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/jobs" element={<BusinessRoute><ConceptCPage area="jobs" /></BusinessRoute>} />
             <Route path="/jobs/new" element={<BusinessRoute><ConceptCFrame area="jobs"><JobFormPage /></ConceptCFrame></BusinessRoute>} />
