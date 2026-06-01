@@ -51,6 +51,7 @@ import InvoicesCommandPage from "./pages/InvoicesCommandPage";
 import TeamCommandPage from "./pages/TeamCommandPage";
 import AutomationCommandPage from "./pages/AutomationCommandPage";
 import DispatchCommandPage from "./pages/DispatchCommandPage";
+import WorkerMapCommandPage from "./pages/WorkerMapCommandPage";
 import IntegrationsCommandPage from "./pages/IntegrationsCommandPage";
 import MoneyDeskCommandPage from "./pages/MoneyDeskCommandPage";
 import NotificationsCommandPage from "./pages/NotificationsCommandPage";
@@ -215,6 +216,8 @@ function App() {
             <Route path="/public/proof/:token" element={<PublicProofPackPage />} />
             <Route path="/offline-sync" element={<PrivateRoute><OfflineSyncPage /></PrivateRoute>} />
             <Route path="/dispatch-board" element={<Navigate to="/dispatch" replace />} />
+            <Route path="/dispatch/map" element={<BusinessRoute><WorkerMapCommandPage /></BusinessRoute>} />
+            <Route path="/crew-map" element={<BusinessRoute><WorkerMapCommandPage /></BusinessRoute>} />
             <Route path="/message-approvals" element={<BusinessRoute><MessageApprovalQueuePage /></BusinessRoute>} />
             <Route path="/trade-presets" element={<BusinessRoute><TradePresetsCommandPage /></BusinessRoute>} />
             <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
