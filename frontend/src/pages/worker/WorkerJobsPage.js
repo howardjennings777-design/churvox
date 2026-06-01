@@ -2,16 +2,99 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useApi } from "@/hooks/useApi";
 import { useAuth } from "@/context/AuthContext";
-import { Briefcase, Clock3, MapPin, Play, ChevronRight, LogOut, Settings, CalendarClock, CheckCircle2, Timer, RefreshCw, AlertTriangle } from "lucide-react";
+import { Briefcase, Clock3, MapPin, Play, ChevronRight, LogOut, Settings, CalendarClock, CheckCircle2, Timer, RefreshCw, AlertTriangle, Hand } from "lucide-react";
 import { ChurvoxLogo } from "@/components/ChurvoxLogo";
 import { PremiumStatusBadge, PremiumButton, PremiumCard } from "@/components/premium";
 import WorkerBottomNav from "@/components/worker/WorkerBottomNav";
 import WorkerContactOfficePanel from "@/components/worker/WorkerContactOfficePanel";
 
+// CHURVOX_WORKER_ASSIGNED_JOBS_ONLY_20260601
+// Worker jobs are loaded from stable /jobs, then client-side scoped as a safety net.
+// If the backend already returns only the worker's jobs, this preserves that.
+// If /jobs accidentally returns wider business jobs, workers only see records assigned to them.
+
 const canStart = (status) => ["assigned", "acknowledged", "paused"].includes(String(status || "").toLowerCase());
+const canAcknowledge = (status) => String(status || "").toLowerCase() === "assigned";
 const reviewStatus = (job) => String(job?.work_review_status || job?.review_status || job?.owner_review_status || "").trim().toLowerCase();
 const isSentBackJob = (job) => reviewStatus(job) === "sent_back" || job?.worker_action_required === true;
 const sendBackNote = (job) => String(job?.send_back_note || job?.owner_note || job?.worker_note || "").trim();
+
+function arr(value) {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray(value?.data)) return value.data;
+  if (Array.isArray(value?.jobs)) return value.jobs;
+  if (Array.isArray(value?.items)) return value.items;
+  if (Array.isArray(value?.results)) return value.results;
+  return [];
+}
+
+function oid(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "object" && value.$oid) return String(value.$oid);
+  return String(value);
+}
+
+function idOf(value) {
+  return oid(value?.id || value?._id || value?.uuid || value?.job_id);
+}
+
+function lower(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function userKeys(user) {
+  return [
+    user?.id,
+    user?._id,
+    user?.uuid,
+    user?.worker_id,
+    user?.team_member_id,
+    user?.email,
+    user?.name,
+    user?.full_name,
+    user?.display_name,
+  ].map((v) => lower(oid(v))).filter(Boolean);
+}
+
+function assignmentKeys(job) {
+  return [
+    job?.assigned_worker_id,
+    job?.worker_id,
+    job?.assigned_to,
+    job?.assignedWorkerId,
+    job?.worker?.id,
+    job?.worker?._id,
+    job?.assigned_worker?.id,
+    job?.assigned_worker?._id,
+    job?.assigned_worker_email,
+    job?.worker_email,
+    job?.assigned_to_email,
+    job?.assigned_worker_name,
+    job?.worker_name,
+    job?.assigned_to_name,
+  ].map((v) => lower(oid(v))).filter(Boolean);
+}
+
+function hasAssignment(job) {
+  return assignmentKeys(job).length > 0;
+}
+
+function assignedToMe(job, user) {
+  const mine = userKeys(user);
+  const assigned = assignmentKeys(job);
+  if (!mine.length || !assigned.length) return false;
+  return assigned.some((key) => mine.includes(key));
+}
+
+function scopeJobsForWorker(rawJobs, user) {
+  const list = arr(rawJobs);
+  const scoped = list.filter((job) => assignedToMe(job, user));
+  const hasAssignedRecords = list.some(hasAssignment);
+  if (scoped.length) return scoped;
+  if (hasAssignedRecords) return [];
+  return list;
+}
 
 // CHURVOX_WORKER_MOBILE_FLOW_PANEL_20260527
 function WorkerDayFlowPanel({ stats, nextJob, onContactOffice }) {
@@ -35,10 +118,9 @@ function WorkerDayFlowPanel({ stats, nextJob, onContactOffice }) {
   );
 }
 
-
 export default function WorkerJobsPage() {
   const { user, logout } = useAuth();
-  const { get, patch } = useApi();
+  const { get, patch, post } = useApi();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -51,19 +133,21 @@ export default function WorkerJobsPage() {
     setError("");
     const res = await get("/jobs");
     if (res.success) {
-      setJobs(Array.isArray(res.data) ? res.data : []);
+      const loaded = arr(res.data);
+      setJobs(scopeJobsForWorker(loaded, user));
       setLastSynced(new Date());
+    } else {
+      setError("Could not load your jobs. Please refresh.");
     }
-    else setError("Could not load your jobs. Please refresh.");
     setLoading(false);
-  }, [get]);
+  }, [get, user]);
 
   useEffect(() => { fetchJobs(); }, [fetchJobs]);
 
   const today = new Date().toISOString().slice(0, 10);
   const stats = useMemo(() => {
     const total = jobs.length;
-    const dueToday = jobs.filter((j) => String(j?.scheduled_date || "").slice(0, 10) === today).length;
+    const dueToday = jobs.filter((j) => String(j?.scheduled_date || j?.date || "").slice(0, 10) === today).length;
     const inProgress = jobs.filter((j) => String(j?.status || "").toLowerCase() === "in_progress").length;
     const completed = jobs.filter((j) => String(j?.status || "").toLowerCase() === "completed").length;
     const needsFixing = jobs.filter(isSentBackJob).length;
@@ -72,15 +156,23 @@ export default function WorkerJobsPage() {
 
   const nextJob = useMemo(() => jobs.find(isSentBackJob) || jobs.find((j) => String(j?.status || "").toLowerCase() !== "completed"), [jobs]);
 
+  const handleAcknowledge = async (jobId) => {
+    setStartingId(jobId);
+    let res = await post(`/jobs/${encodeURIComponent(jobId)}/acknowledge`, {});
+    if (!res?.success) res = await patch(`/jobs/${encodeURIComponent(jobId)}`, { status: "acknowledged", acknowledged_at: new Date().toISOString() });
+    await fetchJobs();
+    setStartingId("");
+  };
+
   const handleQuickStart = async (jobId) => {
     setStartingId(jobId);
-    await patch(`/jobs/${jobId}`, { status: "in_progress" });
+    await patch(`/jobs/${encodeURIComponent(jobId)}`, { status: "in_progress", started_at: new Date().toISOString() });
     await fetchJobs();
     setStartingId("");
   };
 
   return (
-    <div className="px-app min-h-screen pb-28" data-marker="CHURVOX_WORKER_MOBILE_FLOW_PANEL_20260527">
+    <div className="px-app min-h-screen pb-28" data-marker="CHURVOX_WORKER_ASSIGNED_JOBS_ONLY_20260601">
       <header className="px-mobile-header">
         <ChurvoxLogo size="sm" />
         <div className="flex items-center gap-2">
@@ -94,7 +186,7 @@ export default function WorkerJobsPage() {
         <div className="px-hero" style={{ padding: "20px" }}>
           <span className="px-hero__eyebrow"><Briefcase className="h-3 w-3" /> Today&apos;s Work</span>
           <h1 className="px-hero__title" style={{ fontSize: "24px" }}>Hey {user?.name?.split(" ")[0] || "team"}</h1>
-          <p className="px-hero__sub">Your field schedule, actions, and status updates — ready for the day.</p>
+          <p className="px-hero__sub">Only jobs assigned to you appear here. Open a job to add notes/photos and complete the work slip.</p>
         </div>
 
         <WorkerDayFlowPanel stats={stats} nextJob={nextJob} onContactOffice={() => setShowContactOffice(true)} />
@@ -134,7 +226,7 @@ export default function WorkerJobsPage() {
                   <p className="font-bold text-[var(--cx-text)] truncate">{nextJob.title || "Untitled Job"}</p>
                   <PremiumStatusBadge status={nextJob.status} />
                 </div>
-                <Link to={`/worker/jobs/${nextJob.id || nextJob._id}`}><ChevronRight className="h-5 w-5 text-[var(--cx-muted-2)]" /></Link>
+                <Link to={`/worker/jobs/${idOf(nextJob)}`}><ChevronRight className="h-5 w-5 text-[var(--cx-muted-2)]" /></Link>
               </div>
               {isSentBackJob(nextJob) ? <p className="text-xs font-semibold text-orange-700">Owner sent this back from Work Review.</p> : null}
               {nextJob.address ? <p className="text-xs text-[var(--cx-muted)] flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{nextJob.address}</p> : null}
@@ -149,7 +241,7 @@ export default function WorkerJobsPage() {
           <div className="px-empty">
             <div className="px-empty__icon"><Briefcase className="h-6 w-6" /></div>
             <h3 className="px-empty__title">Waiting for dispatch</h3>
-            <p className="px-empty__sub">No jobs are assigned yet. Refresh your jobs page or contact the office if something looks wrong.</p>
+            <p className="px-empty__sub">No jobs are assigned to you yet. Refresh your jobs page or contact the office if something looks wrong.</p>
             <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-sm">
               <PremiumButton onClick={fetchJobs} iconLeft={<RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />}>Refresh jobs</PremiumButton>
               <PremiumButton variant="secondary" className="w-full" onClick={() => setShowContactOffice(true)}>Contact office</PremiumButton>
@@ -158,7 +250,7 @@ export default function WorkerJobsPage() {
         ) : null}
 
         {!loading && !error ? jobs.map((job) => {
-          const id = job.id || job._id;
+          const id = idOf(job);
           const status = String(job.status || "assigned").toLowerCase();
           const sentBack = isSentBackJob(job);
           const note = sendBackNote(job);
@@ -182,7 +274,7 @@ export default function WorkerJobsPage() {
                 {job.scheduled_date ? <p className="text-xs text-[var(--cx-muted)] flex items-center gap-1"><CalendarClock className="h-3.5 w-3.5" />{String(job.scheduled_date).slice(0, 10)} {job.scheduled_time ? `• ${job.scheduled_time}` : ""}</p> : null}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <Link to={`/worker/jobs/${id}`}><PremiumButton className="w-full" variant={sentBack ? "primary" : "secondary"} iconLeft={<Briefcase className="h-4 w-4" />}>{sentBack ? "Fix job" : "View job"}</PremiumButton></Link>
-                  {canStart(status) ? <PremiumButton className="w-full" onClick={() => handleQuickStart(id)} disabled={startingId === id} iconLeft={<Play className="h-4 w-4" />}>{startingId === id ? "Starting..." : "Start job"}</PremiumButton> : <PremiumButton className="w-full" variant="secondary" disabled iconLeft={status === "completed" ? <CheckCircle2 className="h-4 w-4" /> : <Timer className="h-4 w-4" />}>{status === "completed" ? "Completed" : "In progress"}</PremiumButton>}
+                  {canAcknowledge(status) ? <PremiumButton className="w-full" onClick={() => handleAcknowledge(id)} disabled={startingId === id} iconLeft={<Hand className="h-4 w-4" />}>{startingId === id ? "Saving..." : "Acknowledge"}</PremiumButton> : canStart(status) ? <PremiumButton className="w-full" onClick={() => handleQuickStart(id)} disabled={startingId === id} iconLeft={<Play className="h-4 w-4" />}>{startingId === id ? "Starting..." : "Start job"}</PremiumButton> : <PremiumButton className="w-full" variant="secondary" disabled iconLeft={status === "completed" ? <CheckCircle2 className="h-4 w-4" /> : <Timer className="h-4 w-4" />}>{status === "completed" ? "Completed" : "In progress"}</PremiumButton>}
                   {job.address ? <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`} target="_blank" rel="noreferrer"><PremiumButton className="w-full" variant="secondary" iconLeft={<MapPin className="h-4 w-4" />}>Directions</PremiumButton></a> : <PremiumButton className="w-full" variant="secondary" disabled iconLeft={<Clock3 className="h-4 w-4" />}>No address</PremiumButton>}
                 </div>
               </div>
