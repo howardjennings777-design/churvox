@@ -8,7 +8,8 @@ const navGroups = [
     items: [
       ["Command Board", "/dashboard", "CB"],
       ["AI Operator", "/ai-operator", "AI"],
-            ["Notifications", "/notifications", "NT"],
+      ["Approvals", "/ai-operator/approvals", "OK"],
+      ["Notifications", "/notifications", "NT"],
     ],
   },
   {

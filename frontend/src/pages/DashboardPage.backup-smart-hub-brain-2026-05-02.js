@@ -131,7 +131,7 @@ function DashboardSmartHub() {
       {modal === "newquote" && <button className="rounded bg-blue-600 px-3 py-2 text-white" onClick={() => navigate("/quotes/new")}>Open New Quote</button>}
       {modal === "newinvoice" && <button className="rounded bg-blue-600 px-3 py-2 text-white" onClick={() => navigate("/invoices/new")}>Open New Invoice</button>}
       {modal === "client" && <button className="rounded bg-blue-600 px-3 py-2 text-white" onClick={() => navigate("/clients/new")}>Open Add Client</button>}
-      {modal === "dispatch" && <button className="rounded bg-blue-600 px-3 py-2 text-white" onClick={() => navigate("/dispatch")}>Open Dispatch</button>}
+      {modal === "dispatch" && <button className="rounded bg-blue-600 px-3 py-2 text-white" onClick={() => navigate("/dispatch")}>Open Dispatch Board</button>}
       {modal === "assign" && <button className="rounded bg-blue-600 px-3 py-2 text-white" onClick={() => navigate("/dispatch")}>Assign Worker</button>}
       {modal === "quoteFollowup" && <button className="rounded bg-blue-600 px-3 py-2 text-white" onClick={() => navigate("/quotes")}>Quote Follow-up</button>}
       {(modal === "invoice" || modal === "reminder") && <button className="rounded bg-blue-600 px-3 py-2 text-white" onClick={() => navigate("/invoices")}>Invoice Reminder</button>}

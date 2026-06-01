@@ -16,7 +16,7 @@ const core = [
 const advanced = [
   ["MYOB Sync", "Operator can add MYOB. Command includes it by default for invoice and payment sync workflows."],
   ["Payroll Workspace", "Command gives payroll/admin users a focused place for approved hours, worker summaries and payroll handoff."],
-  ["Automation", "Rules and AI-prepared actions reduce repeated admin without losing approval control."],
+  ["Automation Engine", "Rules and AI-prepared actions reduce repeated admin without losing approval control."],
   ["Roles + Permissions", "Owner, Manager, Worker, Office Admin and Payroll access stay separated so each person sees what they need."],
 ];
 
