@@ -1,3 +1,2 @@
-import Page from './CommandDeskSafePage'
-
-export default Page
+import Page from './CommandDeskQueuePage';
+export default Page;
