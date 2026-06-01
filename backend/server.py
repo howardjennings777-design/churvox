@@ -12921,6 +12921,7 @@ async def ai_operator_update_slip_direct(action_id: str, payload: dict = Body(de
 
     action_type = found.get("action_type") or found.get("type")
     merged = {**(found.get("payload") or {}), **(payload or {})}
+    merged.setdefault("business_id", str(business_id))
     missing = _ai_slip_missing(action_type, merged)
 
     await db.ai_operator_actions.update_one(
@@ -13007,62 +13008,365 @@ def _ai_slip_make_pdf_bytes(title, lines):
     pdf += f"trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n".encode()
     return pdf
 
-def _ai_slip_build_pdf_attachment(action_type, payload):
+def _ai_slip_build_pdf_attachment(action_type, payload, branding=None):
+    return _churvox_real_invoice_attachment(action_type, payload or {}, branding or {})
+
+
+# CHURVOX_REAL_INVOICE_PDF_TEMPLATE_START
+def _churvox_pdf_txt(value, fallback=""):
+    try:
+        return _ai_slip_text(value, fallback)
+    except Exception:
+        return str(value or fallback or "").strip()
+
+def _churvox_pdf_money(value):
+    raw = _churvox_pdf_txt(value)
+    if not raw:
+        return ""
+    if raw.startswith("$"):
+        return raw
+    try:
+        amount = _ai_slip_money(raw)
+        return f"${amount:,.2f}" if amount else raw
+    except Exception:
+        return raw
+
+async def _churvox_invoice_branding(business_id=None):
+    business_id = _churvox_pdf_txt(business_id)
+    settings = {}
+    if business_id:
+        try:
+            settings = await db.business_document_settings.find_one({"business_id": business_id}) or {}
+        except Exception:
+            settings = {}
+
+    return {
+        "business_name": _churvox_pdf_txt(settings.get("business_name"), "Churvox"),
+        "trading_name": _churvox_pdf_txt(settings.get("trading_name") or settings.get("business_name"), "Churvox"),
+        "logo_base64": _churvox_pdf_txt(settings.get("logo_base64")),
+        "logo_url": _churvox_pdf_txt(settings.get("logo_url")),
+        "business_address": _churvox_pdf_txt(settings.get("business_address")),
+        "phone": _churvox_pdf_txt(settings.get("phone")),
+        "email": _churvox_pdf_txt(settings.get("email"), "hello@churvox.com"),
+        "website": _churvox_pdf_txt(settings.get("website"), "www.churvox.com"),
+        "gst_number": _churvox_pdf_txt(settings.get("gst_number")),
+        "nzbn": _churvox_pdf_txt(settings.get("nzbn")),
+        "bank_account_name": _churvox_pdf_txt(settings.get("bank_account_name")),
+        "bank_account_number": _churvox_pdf_txt(settings.get("bank_account_number")),
+        "payment_url": _churvox_pdf_txt(settings.get("payment_url")),
+        "payment_instructions": _churvox_pdf_txt(settings.get("payment_instructions"), "Please use the invoice number as the payment reference."),
+        "invoice_footer": _churvox_pdf_txt(settings.get("invoice_footer"), "Thanks for choosing us. We appreciate your business."),
+    }
+
+def _churvox_invoice_payment_url(payload, branding):
+    url = _churvox_pdf_txt(
+        (payload or {}).get("payment_url")
+        or (payload or {}).get("payment_link")
+        or (payload or {}).get("pay_now_url")
+        or (payload or {}).get("invoice_url")
+        or (payload or {}).get("public_url")
+        or (branding or {}).get("payment_url")
+    )
+    if not url:
+        return ""
+
+    replacements = {
+        "invoice_number": _churvox_pdf_txt((payload or {}).get("invoice_number")),
+        "quote_number": _churvox_pdf_txt((payload or {}).get("quote_number")),
+        "customer_email": _churvox_pdf_txt((payload or {}).get("customer_email")),
+        "amount": _churvox_pdf_money((payload or {}).get("total") or (payload or {}).get("amount_due") or (payload or {}).get("quote_amount")),
+    }
+    for key, value in replacements.items():
+        url = url.replace("{" + key + "}", value)
+    return url
+
+def _churvox_font(size=28, bold=False):
+    from PIL import ImageFont
+    paths = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf" if bold else "/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf",
+    ]
+    for path in paths:
+        try:
+            return ImageFont.truetype(path, size)
+        except Exception:
+            pass
+    return ImageFont.load_default()
+
+def _churvox_wrap(draw, text, font, width):
+    text = _churvox_pdf_txt(text)
+    if not text:
+        return []
+    words = text.split()
+    lines = []
+    line = ""
+    for word in words:
+        test = f"{line} {word}".strip()
+        try:
+            box = draw.textbbox((0, 0), test, font=font)
+            test_width = box[2] - box[0]
+        except Exception:
+            test_width = len(test) * 10
+        if test_width <= width or not line:
+            line = test
+        else:
+            lines.append(line)
+            line = word
+    if line:
+        lines.append(line)
+    return lines
+
+def _churvox_draw_wrap(draw, x, y, text, font, fill, width, line_height):
+    for line in _churvox_wrap(draw, text, font, width):
+        draw.text((x, y), line, font=font, fill=fill)
+        y += line_height
+    return y
+
+def _churvox_load_logo(branding):
+    try:
+        import base64
+        import io
+        import urllib.request
+        from PIL import Image
+
+        raw = _churvox_pdf_txt((branding or {}).get("logo_base64"))
+        url = _churvox_pdf_txt((branding or {}).get("logo_url"))
+        data = None
+
+        if raw:
+            if raw.startswith("data:image") and "," in raw:
+                raw = raw.split(",", 1)[1]
+            data = base64.b64decode(raw)
+        elif url.startswith("http"):
+            with urllib.request.urlopen(url, timeout=10) as resp:
+                data = resp.read()
+
+        if not data:
+            return None
+
+        img = Image.open(io.BytesIO(data)).convert("RGBA")
+        img.thumbnail((290, 130))
+        return img
+    except Exception:
+        return None
+
+def _churvox_real_invoice_pdf_bytes(action_type, payload, branding):
+    import io
+    from PIL import Image, ImageDraw
+
+    payload = payload or {}
+    branding = branding or {}
+
+    W, H = 1240, 1754
+    navy = (15, 23, 42)
+    panel = (20, 50, 88)
+    cyan = (6, 182, 212)
+    green = (22, 163, 74)
+    bg = (245, 247, 241)
+    white = (255, 255, 255)
+    text = (15, 23, 42)
+    muted = (100, 116, 139)
+    line = (226, 232, 240)
+    amber = (245, 158, 11)
+
+    img = Image.new("RGB", (W, H), bg)
+    draw = ImageDraw.Draw(img)
+
+    f10 = _churvox_font(20, True)
+    f12 = _churvox_font(24, False)
+    f12b = _churvox_font(24, True)
+    f14 = _churvox_font(28, False)
+    f14b = _churvox_font(28, True)
+    f18b = _churvox_font(36, True)
+    f24b = _churvox_font(48, True)
+    f34b = _churvox_font(68, True)
+
+    is_quote = action_type == "quote_follow_up"
+    doc_label = "QUOTE" if is_quote else "INVOICE"
+
+    invoice_no = _churvox_pdf_txt(payload.get("invoice_number"))
+    quote_no = _churvox_pdf_txt(payload.get("quote_number"))
+    doc_no = quote_no if is_quote else invoice_no
+    if not doc_no:
+        doc_no = _churvox_pdf_txt(payload.get("invoice_id") or payload.get("quote_id"), "DRAFT")[-8:].upper()
+
+    business = _churvox_pdf_txt(branding.get("trading_name") or branding.get("business_name"), "Churvox")
+    business_address = _churvox_pdf_txt(branding.get("business_address"))
+    business_phone = _churvox_pdf_txt(branding.get("phone"))
+    business_email = _churvox_pdf_txt(branding.get("email"), "hello@churvox.com")
+    website = _churvox_pdf_txt(branding.get("website"))
+    gst = _churvox_pdf_txt(branding.get("gst_number"))
+
+    customer = _churvox_pdf_txt(payload.get("customer_name") or payload.get("client_name"), "Customer")
+    customer_email = _churvox_pdf_txt(payload.get("customer_email"))
+    customer_phone = _churvox_pdf_txt(payload.get("client_phone"))
+    customer_address = _churvox_pdf_txt(payload.get("client_address") or payload.get("job_address"))
+
+    job_title = _churvox_pdf_txt(payload.get("job_title"), "Work completed")
+    description = _churvox_pdf_txt(
+        payload.get("description")
+        or payload.get("invoice_description")
+        or payload.get("worker_note")
+        or payload.get("message")
+        or job_title,
+        "Work completed"
+    )
+
+    subtotal = _churvox_pdf_money(payload.get("subtotal") or payload.get("price") or payload.get("amount_due") or payload.get("total") or payload.get("quote_amount"))
+    total = _churvox_pdf_money(payload.get("total") or payload.get("amount_due") or payload.get("quote_amount") or payload.get("subtotal") or payload.get("price"))
+    due_date = _churvox_pdf_txt(payload.get("due_date"))
+    pay_url = _churvox_invoice_payment_url(payload, branding)
+    bank_name = _churvox_pdf_txt(branding.get("bank_account_name"))
+    bank_number = _churvox_pdf_txt(branding.get("bank_account_number"))
+    payment_instructions = _churvox_pdf_txt(branding.get("payment_instructions"))
+    footer = _churvox_pdf_txt(branding.get("invoice_footer"), "Thank you for your business.")
+
+    # Header
+    draw.rounded_rectangle((55, 45, W - 55, 315), radius=38, fill=navy)
+    draw.text((92, 86), doc_label, font=f10, fill=(125, 211, 252))
+    draw.text((92, 126), f"{doc_label} {doc_no}", font=f34b, fill=white)
+    draw.text((92, 235), business, font=f14b, fill=(226, 232, 240))
+
+    logo = _churvox_load_logo(branding)
+    if logo:
+        box = Image.new("RGBA", (320, 140), (255, 255, 255, 0))
+        box.alpha_composite(logo, ((320 - logo.width) // 2, (140 - logo.height) // 2))
+        img.paste(box.convert("RGB"), (W - 420, 90))
+    else:
+        draw.rounded_rectangle((W - 415, 92, W - 90, 205), radius=26, fill=white)
+        draw.text((W - 380, 127), business[:24], font=f18b, fill=navy)
+
+    # Bill to/from cards
+    y = 365
+    draw.rounded_rectangle((55, y, 590, y + 260), radius=30, fill=white, outline=line, width=2)
+    draw.text((90, y + 35), "BILL TO", font=f10, fill=muted)
+    draw.text((90, y + 76), customer, font=f18b, fill=text)
+    yy = y + 128
+    for item in [customer_email, customer_phone, customer_address]:
+        if item:
+            yy = _churvox_draw_wrap(draw, 90, yy, item, f12, muted, 440, 31)
+
+    draw.rounded_rectangle((650, y, W - 55, y + 260), radius=30, fill=white, outline=line, width=2)
+    draw.text((685, y + 35), "FROM", font=f10, fill=muted)
+    draw.text((685, y + 76), business, font=f18b, fill=text)
+    yy = y + 128
+    for item in [business_email, business_phone, business_address, website, f"GST {gst}" if gst else ""]:
+        if item:
+            yy = _churvox_draw_wrap(draw, 685, yy, item, f12, muted, 440, 31)
+
+    # Invoice table
+    y = 690
+    draw.rounded_rectangle((55, y, W - 55, y + 510), radius=30, fill=white, outline=line, width=2)
+    draw.rounded_rectangle((90, y + 38, W - 90, y + 95), radius=18, fill=(241, 245, 249))
+    draw.text((120, y + 55), "DESCRIPTION", font=f10, fill=muted)
+    draw.text((W - 325, y + 55), "AMOUNT", font=f10, fill=muted)
+
+    draw.text((120, y + 132), job_title, font=f18b, fill=text)
+    _churvox_draw_wrap(draw, 120, y + 182, description, f12, muted, 720, 32)
+    draw.text((W - 325, y + 132), subtotal or total or "To confirm", font=f18b, fill=text)
+
+    draw.line((90, y + 360, W - 90, y + 360), fill=line, width=2)
+    draw.text((W - 450, y + 395), "TOTAL", font=f14b, fill=muted)
+    draw.text((W - 325, y + 382), total or subtotal or "To confirm", font=f24b, fill=navy)
+
+    if due_date:
+        draw.text((120, y + 400), f"Due date: {due_date}", font=f12b, fill=muted)
+
+    # Payment box
+    y = 1260
+    draw.rounded_rectangle((55, y, W - 55, y + 340), radius=30, fill=panel)
+    draw.text((90, y + 42), "PAYMENT", font=f10, fill=(125, 211, 252))
+    draw.text((90, y + 84), "How to pay", font=f24b, fill=white)
+
+    py = y + 158
+    if pay_url:
+        draw.rounded_rectangle((90, py - 15, 430, py + 64), radius=22, fill=green)
+        draw.text((126, py + 5), "Pay online", font=f18b, fill=white)
+        py += 96
+        py = _churvox_draw_wrap(draw, 90, py, pay_url, f12, (203, 213, 225), 980, 30)
+
+    if bank_name or bank_number:
+        bank = "Bank transfer"
+        if bank_name:
+            bank += f" · {bank_name}"
+        if bank_number:
+            bank += f" · {bank_number}"
+        py = _churvox_draw_wrap(draw, 90, py + 16, bank, f12b, (226, 232, 240), 980, 30)
+
+    if payment_instructions:
+        _churvox_draw_wrap(draw, 90, py + 16, payment_instructions, f12, (203, 213, 225), 980, 30)
+
+    # Footer
+    draw.text((65, H - 90), footer, font=f12b, fill=muted)
+    draw.text((65, H - 55), "Prepared and sent by Churvox.", font=f10, fill=(148, 163, 184))
+
+    buf = io.BytesIO()
+    img.save(buf, format="PDF", resolution=150.0)
+    return buf.getvalue()
+
+def _churvox_real_invoice_attachment(action_type, payload, branding):
     import base64
     import re
 
     payload = payload or {}
-    action_type = _ai_slip_pdf_text(action_type)
+    branding = branding or {}
 
     if action_type not in {"send_invoice", "invoice_reminder", "quote_follow_up"}:
         return None
 
-    customer = _ai_slip_pdf_text(payload.get("customer_name") or payload.get("client_name"), "Customer")
-    customer_email = _ai_slip_pdf_text(payload.get("customer_email"))
-    invoice_number = _ai_slip_pdf_text(payload.get("invoice_number"))
-    quote_number = _ai_slip_pdf_text(payload.get("quote_number"))
-    amount = _ai_slip_pdf_text(payload.get("total") or payload.get("amount_due") or payload.get("quote_amount") or payload.get("subtotal") or payload.get("price"))
-    due_date = _ai_slip_pdf_text(payload.get("due_date"))
-    description = _ai_slip_pdf_text(payload.get("description") or payload.get("invoice_description") or payload.get("job_title"))
-    message = _ai_slip_pdf_text(payload.get("message"))
-
     if action_type == "quote_follow_up":
-        number = quote_number or "Quote"
-        title = f"Quote {number}"
+        number = _churvox_pdf_txt(payload.get("quote_number") or payload.get("quote_id"), "quote")
         filename = f"quote-{number}.pdf"
-        heading = "Quote"
     else:
-        number = invoice_number or "Invoice"
-        title = f"Invoice {number}"
+        number = _churvox_pdf_txt(payload.get("invoice_number") or payload.get("invoice_id"), "invoice")
         filename = f"invoice-{number}.pdf"
-        heading = "Invoice"
 
     filename = re.sub(r"[^A-Za-z0-9_.-]+", "-", filename).strip("-") or "churvox-document.pdf"
 
-    lines = [
-        "Churvox",
-        "",
-        f"{heading}: {number}",
-        f"Customer: {customer}",
-        f"Customer email: {customer_email}" if customer_email else "",
-        f"Amount: {amount}" if amount else "",
-        f"Due date: {due_date}" if due_date else "",
-        "",
-        "Description:",
-        description or "No description entered.",
-        "",
-        "Message:",
-        message or "No message entered.",
-        "",
-        "Prepared and sent from Churvox.",
-    ]
-
-    pdf_bytes = _ai_slip_make_pdf_bytes(title, lines)
+    pdf = _churvox_real_invoice_pdf_bytes(action_type, payload, branding)
     return {
         "Name": filename,
-        "Content": base64.b64encode(pdf_bytes).decode("ascii"),
+        "Content": base64.b64encode(pdf).decode("ascii"),
         "ContentType": "application/pdf",
     }
+
+def _churvox_real_email_html(action_type, payload, branding):
+    customer = _churvox_pdf_txt((payload or {}).get("customer_name") or (payload or {}).get("client_name"), "there")
+    business = _churvox_pdf_txt((branding or {}).get("trading_name") or (branding or {}).get("business_name"), "Churvox")
+    logo_url = _churvox_pdf_txt((branding or {}).get("logo_url"))
+    message = _churvox_pdf_txt((payload or {}).get("message"))
+    amount = _churvox_pdf_txt((payload or {}).get("total") or (payload or {}).get("amount_due") or (payload or {}).get("quote_amount"))
+    pay_url = _churvox_invoice_payment_url(payload, branding)
+
+    if not message:
+        if action_type == "quote_follow_up":
+            message = f"Hi {customer}, just checking in on your quote."
+        elif action_type == "invoice_reminder":
+            message = f"Hi {customer}, friendly reminder your invoice is still open."
+        else:
+            message = f"Hi {customer}, your invoice is ready."
+
+    safe = message.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br/>")
+    logo = f'<img src="{logo_url}" alt="{business}" style="max-height:70px;max-width:220px;object-fit:contain;" />' if logo_url else f'<div style="font-size:24px;font-weight:900;color:#0f1722;">{business}</div>'
+    button = f'<a href="{pay_url}" style="display:inline-block;background:#16a34a;color:#fff;text-decoration:none;font-weight:900;border-radius:14px;padding:14px 22px;margin-top:18px;">Pay online</a>' if pay_url and action_type in {"send_invoice", "invoice_reminder"} else ""
+
+    return f"""
+    <div style="background:#f5f7f1;margin:0;padding:28px;font-family:Arial,Helvetica,sans-serif;color:#0f1722;">
+      <div style="max-width:680px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:28px;overflow:hidden;">
+        <div style="padding:28px;border-bottom:1px solid #e2e8f0;">{logo}</div>
+        <div style="padding:30px;">
+          <div style="font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:900;color:#06b6d4;">Churvox document</div>
+          <h1 style="font-size:34px;line-height:1;margin:12px 0 16px;font-weight:900;color:#0f1722;">{amount or "Document ready"}</h1>
+          <div style="font-size:16px;line-height:1.6;font-weight:700;color:#334155;">{safe}</div>
+          {button}
+          <p style="margin-top:24px;font-size:13px;line-height:1.5;color:#64748b;">A full PDF copy is attached.</p>
+        </div>
+        <div style="padding:18px 30px;background:#0f1722;color:#cbd5e1;font-size:12px;font-weight:700;">Sent by {business} using Churvox.</div>
+      </div>
+    </div>
+    """
+# CHURVOX_REAL_INVOICE_PDF_TEMPLATE_END
+
 
 async def _ai_slip_send_customer_email(action_type, payload):
     import os
@@ -13121,7 +13425,7 @@ async def _ai_slip_send_customer_email(action_type, payload):
     if link:
         body = f"{body}\n\nView here: {link}"
 
-    html_body = "<br/>".join(body.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").splitlines())
+    html_body = _churvox_real_email_html(action_type, payload, branding)
 
     postmark_payload = {
         "From": from_email,
@@ -13132,7 +13436,7 @@ async def _ai_slip_send_customer_email(action_type, payload):
         "MessageStream": "outbound",
     }
 
-    attachment = _ai_slip_build_pdf_attachment(action_type, payload)
+    attachment = _churvox_real_invoice_attachment(action_type, payload, branding)
     if attachment:
         postmark_payload["Attachments"] = [attachment]
 
