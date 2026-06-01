@@ -1,0 +1,37 @@
+body:has(aside) main.fixed.inset-0 > div > section .bg-white,
+body:has(aside) main.fixed.inset-0 > div > section .bg-slate-50,
+body:has(aside) main.fixed.inset-0 > div > section .bg-slate-100,
+body:has(aside) main.fixed.inset-0 > div > section .bg-blue-50,
+body:has(aside) main.fixed.inset-0 > div > section .bg-amber-50,
+body:has(aside) main.fixed.inset-0 > div > section .bg-orange-50,
+body:has(aside) main.fixed.inset-0 > div > section .bg-red-50,
+body:has(aside) main.fixed.inset-0 > div > section .bg-emerald-50 {
+  background: linear-gradient(135deg, rgba(22,39,68,.94), rgba(30,58,100,.64)) !important;
+  border-color: rgba(103,232,249,.22) !important;
+  color: #eaf4ff !important;
+}
+
+body:has(aside) main.fixed.inset-0 .text-slate-950,
+body:has(aside) main.fixed.inset-0 .text-slate-900,
+body:has(aside) main.fixed.inset-0 .text-slate-800 {
+  color: #f8fbff !important;
+}
+
+body:has(aside) main.fixed.inset-0 .text-slate-700,
+body:has(aside) main.fixed.inset-0 .text-slate-600,
+body:has(aside) main.fixed.inset-0 .text-slate-500,
+body:has(aside) main.fixed.inset-0 .text-slate-400 {
+  color: #b8c7da !important;
+}
+
+body:has(aside) main.fixed.inset-0 span.rounded-full,
+body:has(aside) main.fixed.inset-0 .inline-flex.rounded-full {
+  background: rgba(103,232,249,.12) !important;
+  border-color: rgba(103,232,249,.28) !important;
+  color: #67e8f9 !important;
+}
+
+body:has(aside) main.fixed.inset-0 aside .bg-white {
+  background: #67e8f9 !important;
+  color: #07111f !important;
+}
