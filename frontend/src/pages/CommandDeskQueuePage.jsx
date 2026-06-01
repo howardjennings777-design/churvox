@@ -227,6 +227,7 @@ function SlipModal({ item, onClose, onChanged }) {
   const { patch, post } = useApi();
   const [form, setForm] = React.useState(item.form);
   const [busy, setBusy] = React.useState(false);
+  const [report, setReport] = React.useState(null);
   const missing = required(item.type).filter((key) => !has(form[key]));
   const ready = missing.length === 0;
 
@@ -314,6 +315,7 @@ export default function CommandDeskQueuePage() {
   const [items, setItems] = React.useState([]);
   const [open, setOpen] = React.useState(null);
   const [busy, setBusy] = React.useState(false);
+  const [report, setReport] = React.useState(null);
 
   const load = React.useCallback(async () => {
     const res = await get("/ai/operator/slips");
@@ -330,11 +332,12 @@ export default function CommandDeskQueuePage() {
 
     if (res?.success) {
       const returned = Array.isArray(res?.data?.actions) ? res.data.actions : Array.isArray(res?.data?.data) ? res.data.data : [];
+      setReport(res?.data?.report || null);
       if (returned.length) {
         setItems(returned.map(normalize));
         toast.success(`Rebuilt ${returned.length} slip${returned.length === 1 ? "" : "s"}`);
       } else {
-        toast.warning("Rebuild ran but found no jobs, quotes or invoices for this business.");
+        toast.warning("Rebuild ran but created 0 slips. Check the report on screen.");
         await load();
       }
     } else {
@@ -376,6 +379,18 @@ export default function CommandDeskQueuePage() {
               </div>
             </aside>
           </section>
+
+          {report && (
+            <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5">
+              <h2 className="text-2xl font-black">Rebuild report</h2>
+              <div className="mt-4 grid gap-3 md:grid-cols-4">
+                <div className="rounded-2xl bg-slate-50 p-4"><div className="text-3xl font-black">{report.jobs_found ?? 0}</div><div className="text-xs font-black text-slate-500">jobs found</div><div className="mt-1 text-[10px] font-black text-blue-600">{report.jobs_scope_mode}</div></div>
+                <div className="rounded-2xl bg-slate-50 p-4"><div className="text-3xl font-black">{report.quotes_found ?? 0}</div><div className="text-xs font-black text-slate-500">quotes found</div><div className="mt-1 text-[10px] font-black text-blue-600">{report.quotes_scope_mode}</div></div>
+                <div className="rounded-2xl bg-slate-50 p-4"><div className="text-3xl font-black">{report.invoices_found ?? 0}</div><div className="text-xs font-black text-slate-500">invoices found</div><div className="mt-1 text-[10px] font-black text-blue-600">{report.invoices_scope_mode}</div></div>
+                <div className="rounded-2xl bg-slate-50 p-4"><div className="text-3xl font-black">{report.slips_created ?? 0}</div><div className="text-xs font-black text-slate-500">slips created</div></div>
+              </div>
+            </section>
+          )}
 
           <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5">
             <h2 className="text-3xl font-black tracking-[-.06em]">Prepared slips</h2>

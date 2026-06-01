@@ -73,6 +73,46 @@ def serialize(x):
     return out
 
 
+
+def is_owner_rescue_allowed(current_user):
+    role = txt((current_user or {}).get("role")).lower()
+    return role in {"owner", "employer", "admin", "manager", "office_admin", "office admin", "business_owner", "platform_owner"}
+
+async def find_records_with_rescue(db, collection_name, business_id, current_user=None, limit=500):
+    coll = getattr(db, collection_name)
+
+    # Normal safe search first.
+    normal_query = scoped_query(business_id, current_user)
+    rows = await coll.find(normal_query).sort("updated_at", -1).to_list(length=limit)
+    if rows:
+        return rows, "scoped"
+
+    # Second pass: old records that have no business owner field at all.
+    no_scope_query = {
+        "$and": [
+            {"$or": [
+                {"business_id": {"$exists": False}},
+                {"business_id": None},
+                {"business_id": ""},
+                {"owner_id": {"$exists": False}},
+                {"owner_id": None},
+                {"owner_id": ""},
+            ]},
+        ]
+    }
+    rows = await coll.find(no_scope_query).sort("updated_at", -1).to_list(length=limit)
+    if rows:
+        return rows, "missing_business_scope"
+
+    # Last-resort owner/admin rescue.
+    # This is what makes Churvox SEE existing launch/test data if old records were saved under the wrong scope.
+    if is_owner_rescue_allowed(current_user):
+        rows = await coll.find({}).sort("updated_at", -1).to_list(length=limit)
+        if rows:
+            return rows, "owner_rescue_all_records"
+
+    return [], "none"
+
 def scoped_query(business_id, current_user=None):
     values = []
     for v in [
@@ -398,7 +438,7 @@ def register(module):
 
         actions = []
 
-        jobs = await db.jobs.find(scoped_query(business_id, current_user)).to_list(length=500)
+        jobs, jobs_scope_mode = await find_records_with_rescue(db, "jobs", business_id, current_user, 500)
         for job in jobs:
             jid = job_id(job)
             if not jid:
@@ -448,7 +488,7 @@ def register(module):
                         ["Client pulled", "Job pulled", "Price checked", "Description prepared", "Proof/photos checked"],
                     ))
 
-        quotes = await db.quotes.find(scoped_query(business_id, current_user)).to_list(length=500)
+        quotes, quotes_scope_mode = await find_records_with_rescue(db, "quotes", business_id, current_user, 500)
         for quote in quotes:
             if status(quote.get("status")) in {"accepted", "declined", "cancelled", "canceled", "paid"}:
                 continue
@@ -479,7 +519,7 @@ def register(module):
                 ["Quote pulled", "Client pulled", "Customer email checked", "Amount checked", "Message drafted"],
             ))
 
-        invoices = await db.invoices.find(scoped_query(business_id, current_user)).to_list(length=500)
+        invoices, invoices_scope_mode = await find_records_with_rescue(db, "invoices", business_id, current_user, 500)
         for inv in invoices:
             iid = invoice_id(inv)
             st = status(inv.get("status"))
@@ -534,6 +574,23 @@ def register(module):
                     ["Invoice pulled", "Client pulled", "Status/due date checked", "Customer email checked", "Reminder drafted"],
                 ))
 
+        try:
+            report = {
+                "jobs_found": len(jobs),
+                "quotes_found": len(quotes),
+                "invoices_found": len(invoices),
+                "jobs_scope_mode": locals().get("jobs_scope_mode", "unknown"),
+                "quotes_scope_mode": locals().get("quotes_scope_mode", "unknown"),
+                "invoices_scope_mode": locals().get("invoices_scope_mode", "unknown"),
+                "slips_created": len(actions),
+            }
+            await db.ai_operator_rebuild_reports.insert_one({
+                "business_id": str(business_id),
+                "report": report,
+                "created_at": now(),
+            })
+        except Exception:
+            pass
         return actions
 
     async def list_strong_slips(business_id):
@@ -564,14 +621,26 @@ def register(module):
         guard(current_user)
         business_id = await get_user_business_id(current_user)
         actions = await rebuild_slips_for_business(business_id, current_user)
-        return {"success": True, "created": len(actions), "actions": [serialize(a) for a in actions]}
+        report = await db.ai_operator_rebuild_reports.find_one({"business_id": str(business_id)}, sort=[("created_at", -1)])
+        return {
+            "success": True,
+            "created": len(actions),
+            "report": serialize((report or {}).get("report") or {}),
+            "actions": [serialize(a) for a in actions],
+        }
 
     @router.post("/ai/operator/scan-strong")
     async def scan_strong(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
         guard(current_user)
         business_id = await get_user_business_id(current_user)
         actions = await rebuild_slips_for_business(business_id, current_user)
-        return {"success": True, "created": len(actions), "actions": [serialize(a) for a in actions]}
+        report = await db.ai_operator_rebuild_reports.find_one({"business_id": str(business_id)}, sort=[("created_at", -1)])
+        return {
+            "success": True,
+            "created": len(actions),
+            "report": serialize((report or {}).get("report") or {}),
+            "actions": [serialize(a) for a in actions],
+        }
 
     @router.get("/ai/operator/slips")
     async def slips(current_user: dict = Depends(get_current_user)):
