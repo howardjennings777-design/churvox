@@ -92,7 +92,7 @@ function WorkerJobCard({ job, onStart, onPause, onResume, onComplete, onIssue, o
 }
 
 export default function WorkerOperationsPage() {
-  const api = useApi();
+  const { get, patch } = useApi();
   const { user } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -100,11 +100,11 @@ export default function WorkerOperationsPage() {
 
   const loadOps = useCallback(async () => {
     setLoading(true);
-    const res = await api.get("/jobs");
+    const res = await get("/jobs");
     if (res.success) setJobs(scopeJobs(res.data, user));
     else toast.error(res.error || "Could not load worker jobs");
     setLoading(false);
-  }, [api, user]);
+  }, [get, user]);
 
   useEffect(() => { loadOps(); }, [loadOps]);
 
@@ -142,22 +142,22 @@ export default function WorkerOperationsPage() {
   }
 
   function start(job) {
-    run("start", () => api.patch(`/jobs/${encodeURIComponent(idOf(job))}`, { status: "in_progress", started_at: new Date().toISOString() }));
+    run("start", () => patch(`/jobs/${encodeURIComponent(idOf(job))}`, { status: "in_progress", started_at: new Date().toISOString() }));
   }
 
   function pause(job) {
     const reason = window.prompt("Pause reason?", "Paused by worker");
     if (reason === null) return;
-    run("pause", () => api.patch(`/jobs/${encodeURIComponent(idOf(job))}`, { status: "paused", pause_reason: reason, paused_at: new Date().toISOString() }));
+    run("pause", () => patch(`/jobs/${encodeURIComponent(idOf(job))}`, { status: "paused", pause_reason: reason, paused_at: new Date().toISOString() }));
   }
 
   function resume(job) {
-    run("resume", () => api.patch(`/jobs/${encodeURIComponent(idOf(job))}`, { status: "in_progress", resumed_at: new Date().toISOString() }));
+    run("resume", () => patch(`/jobs/${encodeURIComponent(idOf(job))}`, { status: "in_progress", resumed_at: new Date().toISOString() }));
   }
 
   function complete(job, note) {
     const now = new Date().toISOString();
-    run("complete", () => api.patch(`/jobs/${encodeURIComponent(idOf(job))}`, {
+    run("complete", () => patch(`/jobs/${encodeURIComponent(idOf(job))}`, {
       status: "completed",
       completed: true,
       completed_at: now,
@@ -172,13 +172,13 @@ export default function WorkerOperationsPage() {
   function issue(job, reason) {
     const finalReason = reason || window.prompt("Why can’t this job be completed?");
     if (!finalReason) return toast.error("Issue reason is required");
-    run("issue", () => api.patch(`/jobs/${encodeURIComponent(idOf(job))}`, { status: "issue", cannot_complete_reason: finalReason, issue_reported_at: new Date().toISOString() }));
+    run("issue", () => patch(`/jobs/${encodeURIComponent(idOf(job))}`, { status: "issue", cannot_complete_reason: finalReason, issue_reported_at: new Date().toISOString() }));
   }
 
   function material(job, text) {
     if (!text.trim()) return toast.error("Add a material first");
     const existing = Array.isArray(job.materials) ? job.materials : [];
-    run("material", () => api.patch(`/jobs/${encodeURIComponent(idOf(job))}`, { materials: [...existing, { name: text, added_at: new Date().toISOString() }] }));
+    run("material", () => patch(`/jobs/${encodeURIComponent(idOf(job))}`, { materials: [...existing, { name: text, added_at: new Date().toISOString() }] }));
   }
 
   return (
