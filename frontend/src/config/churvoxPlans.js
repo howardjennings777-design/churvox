@@ -238,3 +238,24 @@ export function isOperatorOrAbove(key) {
 export function isCommand(key) {
   return String(key || "").toLowerCase() === "enterprise";
 }
+
+
+export const PLAN_RANKS = {
+  none: 0,
+  solo: 1,
+  team: 2,
+  pro: 3,
+  enterprise: 4,
+};
+
+export function planRank(key) {
+  return PLAN_RANKS[String(key || "none").toLowerCase()] || 0;
+}
+
+export function hasPlanAtLeast(currentPlan, requiredPlan) {
+  return planRank(currentPlan) >= planRank(requiredPlan);
+}
+
+export function requiredPlanLabel(requiredPlan) {
+  return nicePlanName(requiredPlan) || "a higher plan";
+}

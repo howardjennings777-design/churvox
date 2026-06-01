@@ -69,6 +69,7 @@ import PolishChecklistPage from "./pages/PolishChecklistPage";
 import DemoModePage from "./pages/DemoModePage";
 import PlansCommandPage from "./pages/PlansCommandPage";
 import { OnboardingCommandPage, TradePresetsCommandPage, OperatorToolsCommandPage, BillingCommandPage, CrewOpsCommandPage, LaunchCommandPage, WorkerCommandPage } from "./pages/CommandRestPages";
+import { hasPlanAtLeast, nicePlanName, requiredPlanLabel } from "./config/churvoxPlans";
 
 const Spinner = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -149,6 +150,58 @@ function ReportsRoute({ children }) {
   return <AppPage>{children}</AppPage>;
 }
 
+function UpgradeRequiredPage({ requiredPlan = "pro", feature = "This feature" }) {
+  const { user, normalizedRole } = useAuth();
+  const currentPlan = (user?.plan || "none").toLowerCase();
+  const requiredName = requiredPlanLabel(requiredPlan);
+  const currentName = nicePlanName(currentPlan) || "No plan";
+
+  return (
+    <main className="min-h-screen bg-[#f5f7f1] p-4 text-slate-950 md:p-8">
+      <section className="mx-auto grid min-h-[72vh] max-w-4xl place-items-center">
+        <div className="w-full rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.10)] md:p-9">
+          <div className="mb-4 inline-flex rounded-full bg-cyan-50 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-cyan-700">
+            Plan locked
+          </div>
+          <h1 className="mb-3 text-4xl font-black tracking-[-0.06em] md:text-6xl">
+            {feature} needs {requiredName}.
+          </h1>
+          <p className="mb-6 max-w-2xl text-base font-bold leading-7 text-slate-600">
+            Your current plan is {currentName}. This keeps Start, Crew, Operator and Command matched to the pricing page, so customers only see the tools included in their tier.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            {normalizedRole === "owner" || normalizedRole === "manager" ? (
+              <Link to="/plans" className="rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white no-underline">
+                View plans
+              </Link>
+            ) : null}
+            <Link to="/dashboard" className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900 no-underline">
+              Back to Smart Hub
+            </Link>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function PlanTierRoute({ children, requiredPlan = "pro", feature = "This feature" }) {
+  const { user, loading, isWorker, isPayroll, hasAppAccess } = useAuth();
+  if (loading) return <Spinner />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (isWorker) return <Navigate to="/worker/jobs" replace />;
+  if (!hasAppAccess) return <Navigate to="/plans" replace />;
+  if (isPayroll && requiredPlan !== "enterprise") return <Navigate to="/payroll" replace />;
+
+  const currentPlan = (user?.plan || "none").toLowerCase();
+  if (!hasPlanAtLeast(currentPlan, requiredPlan)) {
+    return <UpgradeRequiredPage requiredPlan={requiredPlan} feature={feature} />;
+  }
+
+  return <AppPage>{children}</AppPage>;
+}
+
+
 function QaAuditorRoute({ children }) {
   const { user, loading, normalizedRole, isPayroll, isWorker } = useAuth();
   if (loading) return <Spinner />;
@@ -204,7 +257,7 @@ function App() {
           <Toaster position="top-right" richColors />
           <FloatingBottomNav />
           <Routes>
-            <Route path="/operator-tools" element={<BusinessRoute><OperatorToolsCommandPage /></BusinessRoute>} />
+            <Route path="/operator-tools" element={<PlanTierRoute requiredPlan="pro" feature="Operator Tools"><OperatorToolsCommandPage /></PlanTierRoute>} />
             <Route path="/launch-control" element={<BusinessRoute><LaunchCommandPage /></BusinessRoute>} />
             <Route path="/sales-polish" element={<BusinessRoute><ConceptCFrame area="launch"><LaunchSalesPolishPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/integration-proof" element={<BusinessRoute><ConceptCFrame area="integrations"><IntegrationProofPage /></ConceptCFrame></BusinessRoute>} />
@@ -218,7 +271,7 @@ function App() {
             <Route path="/dispatch-board" element={<Navigate to="/dispatch" replace />} />
             <Route path="/dispatch/map" element={<BusinessRoute><WorkerMapCommandPage /></BusinessRoute>} />
             <Route path="/crew-map" element={<BusinessRoute><WorkerMapCommandPage /></BusinessRoute>} />
-            <Route path="/message-approvals" element={<BusinessRoute><MessageApprovalQueuePage /></BusinessRoute>} />
+            <Route path="/message-approvals" element={<PlanTierRoute requiredPlan="pro" feature="AI approval queue"><MessageApprovalQueuePage /></PlanTierRoute>} />
             <Route path="/trade-presets" element={<BusinessRoute><TradePresetsCommandPage /></BusinessRoute>} />
             <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
@@ -254,7 +307,7 @@ function App() {
             <Route path="/jobs/:id/edit" element={<BusinessRoute><ConceptCFrame area="jobs"><JobFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/dispatch" element={<BusinessRoute><DispatchCommandPage /></BusinessRoute>} />
             <Route path="/integrations" element={<BusinessRoute><IntegrationsCommandPage /></BusinessRoute>} />
-            <Route path="/automation" element={<BusinessRoute><AutomationCommandPage /></BusinessRoute>} />
+            <Route path="/automation" element={<PlanTierRoute requiredPlan="pro" feature="Automation"><AutomationCommandPage /></PlanTierRoute>} />
             <Route path="/pipeline" element={<BusinessRoute><ConceptCFrame area="dashboard"><PipelinePage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/calendar" element={<Navigate to="/dispatch" replace />} />
             <Route path="/clients" element={<BusinessRoute><ConceptCFrame area="clients"><CustomerRecordsPage /></ConceptCFrame></BusinessRoute>} />
@@ -278,11 +331,11 @@ function App() {
             <Route path="/trust" element={<Navigate to="/support" replace />} />
             <Route path="/plans" element={<OwnerRoute><PlansCommandPage /></OwnerRoute>} />
             <Route path="/billing-confidence" element={<OwnerRoute><BillingCommandPage /></OwnerRoute>} />
-            <Route path="/team" element={<TeamRoute><TeamCommandPage /></TeamRoute>} />
-            <Route path="/crew-ops" element={<BusinessRoute><CrewOpsCommandPage /></BusinessRoute>} />
+            <Route path="/team" element={<PlanTierRoute requiredPlan="team" feature="Team workspace"><TeamCommandPage /></PlanTierRoute>} />
+            <Route path="/crew-ops" element={<PlanTierRoute requiredPlan="team" feature="Crew Ops"><CrewOpsCommandPage /></PlanTierRoute>} />
             <Route path="/notifications" element={<BusinessRoute><NotificationsCommandPage /></BusinessRoute>} />
             <Route path="/automation/runs" element={<TeamRoute><Navigate to="/dashboard" replace /></TeamRoute>} />
-            <Route path="/payroll" element={<PayrollRoute><PayrollCommandPage /></PayrollRoute>} />
+            <Route path="/payroll" element={<PlanTierRoute requiredPlan="enterprise" feature="Payroll workspace"><PayrollCommandPage /></PlanTierRoute>} />
             <Route path="/worker/jobs" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobsPage /></ConceptCFrame></WorkerRoute>} />
             <Route path="/worker/ops" element={<WorkerRoute><WorkerCommandPage /></WorkerRoute>} />
             <Route path="/worker/jobs/:id" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobDetailPage /></ConceptCFrame></WorkerRoute>} />
