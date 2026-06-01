@@ -53,6 +53,7 @@ import FloatingBottomNav from "./components/FloatingBottomNav";
 import ConceptCPage from "./concept-c/ConceptCPageExact";
 import ConceptCFrame from "./concept-c/ConceptCFrame";
 import CommandDeskHomePage from "./pages/CommandDeskHomePage";
+import JobsCommandPage from "./pages/JobsCommandPage";
 import TradePresetsPage from "./pages/TradePresetsPage";
 import MessageApprovalQueuePage from "./pages/MessageApprovalQueuePage";
 import DispatchBoardPage from "./pages/DispatchBoardPage";
@@ -248,7 +249,7 @@ function App() {
             <Route path="/dashboard" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><ConceptCFrame area="dashboard"><CommandDeskHomePage /></ConceptCFrame></ErrorBoundary></BusinessRoute>} />
             <Route path="/overview" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><ConceptCFrame area="dashboard"><CommandDeskHomePage /></ConceptCFrame></ErrorBoundary></BusinessRoute>} />
             <Route path="/onboarding" element={<BusinessRoute><ConceptCFrame area="onboarding"><OnboardingPage /></ConceptCFrame></BusinessRoute>} />
-            <Route path="/jobs" element={<BusinessRoute><ConceptCPage area="jobs" /></BusinessRoute>} />
+            <Route path="/jobs" element={<BusinessRoute><ErrorBoundary fallbackHref="/dashboard" fallbackLabel="Back to Command Board"><JobsCommandPage /></ErrorBoundary></BusinessRoute>} />
             <Route path="/jobs/new" element={<BusinessRoute><ConceptCFrame area="jobs"><JobFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/jobs/:id" element={<BusinessRoute><ConceptCFrame area="jobs"><JobDetailPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/jobs/:id/edit" element={<BusinessRoute><ConceptCFrame area="jobs"><JobFormPage /></ConceptCFrame></BusinessRoute>} />
@@ -286,7 +287,7 @@ function App() {
             <Route path="/worker/jobs" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobsPage /></ConceptCFrame></WorkerRoute>} />
             <Route path="/worker/ops" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerOperationsPage /></ConceptCFrame></WorkerRoute>} />
             <Route path="/worker/jobs/:id" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobDetailPage /></ConceptCFrame></WorkerRoute>} />
-            <Route path="/worker/settings" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerSettingsPage /></ConceptCFrame></WorkerRoute>} />
+            <Route path="/worker/settings" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerSettingsPage /></WorkerRoute>} />
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
