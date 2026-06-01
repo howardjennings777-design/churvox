@@ -12,6 +12,7 @@ for module_name, fn_name in [
     ("real_operator_autoregister", "_install_real_operator_routes"),
     ("live_operator_autoregister", "_install_live_operator_routes"),
     ("deep_slips_autoregister", "_install_deep_slips_routes"),
+    ("deep_slip_list_autoregister", "_install_safe_deep_slip_list"),
 ]:
     try:
         mod = __import__(module_name, fromlist=["install"])
