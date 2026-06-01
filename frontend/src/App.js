@@ -56,6 +56,7 @@ import JobsCommandPage from "./pages/JobsCommandPage";
 import QuotesCommandPage from "./pages/QuotesCommandPage";
 import InvoicesCommandPage from "./pages/InvoicesCommandPage";
 import TeamCommandPage from "./pages/TeamCommandPage";
+import PayrollCommandPage from "./pages/PayrollCommandPage";
 import TradePresetsPage from "./pages/TradePresetsPage";
 import MessageApprovalQueuePage from "./pages/MessageApprovalQueuePage";
 import DispatchBoardPage from "./pages/DispatchBoardPage";
@@ -285,7 +286,7 @@ function App() {
             <Route path="/crew-ops" element={<BusinessRoute><ConceptCFrame area="team"><CrewOperationsPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/notifications" element={<BusinessRoute><ConceptCFrame area="notifications"><NotificationsWorkspacePage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/automation/runs" element={<TeamRoute><Navigate to="/dashboard" replace /></TeamRoute>} />
-            <Route path="/payroll" element={<PayrollRoute><Navigate to="/team" replace /></PayrollRoute>} />
+            <Route path="/payroll" element={<PayrollRoute><PayrollCommandPage /></PayrollRoute>} />
             <Route path="/worker/jobs" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobsPage /></ConceptCFrame></WorkerRoute>} />
             <Route path="/worker/ops" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerOperationsPage /></ConceptCFrame></WorkerRoute>} />
             <Route path="/worker/jobs/:id" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobDetailPage /></ConceptCFrame></WorkerRoute>} />
