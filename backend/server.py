@@ -12438,6 +12438,562 @@ async def churvox_direct_launch_polish_checklist(current_user: dict = Depends(ge
     return await get_launch_polish_checklist(current_user)
 
 
+
+# CHURVOX_DIRECT_AI_SLIPS_START
+# One real AI approval-slip system. Directly registered in server.py.
+# No sitecustomize/import-hook route tricks.
+
+AI_SLIP_DONE_STATUSES = {"completed", "approved", "executed", "rejected", "dismissed", "cancelled", "canceled"}
+AI_SLIP_OWNER_ROLES = {"owner", "employer", "admin", "manager", "office_admin", "office admin", "business_owner", "platform_owner"}
+
+def _ai_slip_text(value, fallback=""):
+    return str(value or fallback or "").strip()
+
+def _ai_slip_status(value):
+    return _ai_slip_text(value).lower().replace(" ", "_").replace("-", "_")
+
+def _ai_slip_money(value):
+    try:
+        if isinstance(value, str):
+            value = value.replace("$", "").replace(",", "").replace("NZD", "").strip()
+        return float(value or 0)
+    except Exception:
+        return 0.0
+
+def _ai_slip_money_text(value):
+    amount = _ai_slip_money(value)
+    return f"${amount:,.2f}" if amount else ""
+
+def _ai_slip_id(doc):
+    if not doc:
+        return ""
+    return str(doc.get("_id") or doc.get("id") or doc.get("job_id") or doc.get("quote_id") or doc.get("invoice_id") or "")
+
+def _ai_slip_safe_doc(doc):
+    if not isinstance(doc, dict):
+        return doc
+    out = {}
+    for k, v in doc.items():
+        if k == "_id":
+            out["id"] = str(v)
+        elif hasattr(v, "isoformat"):
+            out[k] = v.isoformat()
+        elif isinstance(v, ObjectId):
+            out[k] = str(v)
+        elif isinstance(v, dict):
+            out[k] = _ai_slip_safe_doc(v)
+        elif isinstance(v, list):
+            out[k] = [_ai_slip_safe_doc(x) if isinstance(x, dict) else (str(x) if isinstance(x, ObjectId) else x) for x in v]
+        else:
+            out[k] = v
+    return out
+
+def _ai_slip_safe_docs(rows):
+    return [_ai_slip_safe_doc(r) for r in rows]
+
+def _ai_slip_now():
+    return datetime.now(timezone.utc)
+
+def _ai_slip_role_ok(current_user):
+    role = _ai_slip_text((current_user or {}).get("role")).lower()
+    email = _ai_slip_text((current_user or {}).get("email")).lower()
+    return role in AI_SLIP_OWNER_ROLES or email == "hello@churvox.com" or current_user.get("is_platform_owner") is True or current_user.get("is_admin") is True
+
+def _ai_slip_require_owner(current_user):
+    if not _ai_slip_role_ok(current_user):
+        raise HTTPException(status_code=403, detail="Owner approval required")
+
+def _ai_slip_oid_query(record_id):
+    rid = str(record_id or "").strip()
+    ors = [
+        {"id": rid},
+        {"job_id": rid},
+        {"quote_id": rid},
+        {"invoice_id": rid},
+        {"client_id": rid},
+    ]
+    try:
+        if ObjectId.is_valid(rid):
+            ors.insert(0, {"_id": ObjectId(rid)})
+    except Exception:
+        pass
+    return {"$or": ors}
+
+async def _ai_slip_business_id(current_user):
+    try:
+        bid = await get_user_business_id(current_user)
+        if bid:
+            return str(bid)
+    except Exception:
+        pass
+    return str(
+        (current_user or {}).get("business_id")
+        or (current_user or {}).get("businessId")
+        or (current_user or {}).get("id")
+        or (current_user or {}).get("_id")
+        or (current_user or {}).get("user_id")
+        or ""
+    )
+
+def _ai_slip_scope_query(business_id, current_user):
+    vals = []
+    for raw in [
+        business_id,
+        (current_user or {}).get("business_id"),
+        (current_user or {}).get("businessId"),
+        (current_user or {}).get("id"),
+        (current_user or {}).get("_id"),
+        (current_user or {}).get("user_id"),
+        (current_user or {}).get("owner_id"),
+    ]:
+        if raw is None or str(raw).strip() == "":
+            continue
+        vals.append(str(raw))
+        try:
+            if ObjectId.is_valid(str(raw)):
+                vals.append(ObjectId(str(raw)))
+        except Exception:
+            pass
+
+    dedup = []
+    for v in vals:
+        if v not in dedup:
+            dedup.append(v)
+
+    ors = []
+    for key in ["business_id", "businessId", "owner_id", "ownerId", "user_id", "created_by", "created_by_user_id", "employer_id", "account_id"]:
+        for v in dedup:
+            ors.append({key: v})
+
+    email = _ai_slip_text((current_user or {}).get("email")).lower()
+    if email:
+        ors += [{"owner_email": email}, {"created_by_email": email}]
+
+    return {"$or": ors} if ors else {"business_id": str(business_id)}
+
+async def _ai_slip_find_many(collection_name, business_id, current_user, limit=500):
+    coll = getattr(db, collection_name)
+    attempts = []
+
+    attempts.append(("scoped", _ai_slip_scope_query(business_id, current_user)))
+    attempts.append(("missing_scope", {
+        "$or": [
+            {"business_id": {"$exists": False}},
+            {"business_id": None},
+            {"business_id": ""},
+            {"owner_id": {"$exists": False}},
+            {"owner_id": None},
+            {"owner_id": ""},
+        ]
+    }))
+
+    if _ai_slip_role_ok(current_user):
+        attempts.append(("owner_rescue_all", {}))
+
+    for mode, query in attempts:
+        try:
+            rows = await coll.find(query).sort("updated_at", -1).to_list(length=limit)
+        except Exception:
+            rows = []
+        if rows:
+            return rows, mode
+
+    return [], "none"
+
+async def _ai_slip_find_client(business_id, current_user, client_id=None, name=None, email=None):
+    bases = []
+    if client_id:
+        bases.append(_ai_slip_oid_query(client_id))
+    if name:
+        bases.append({"$or": [{"name": name}, {"client_name": name}, {"customer_name": name}]})
+    if email:
+        bases.append({"$or": [{"email": email}, {"customer_email": email}, {"client_email": email}]})
+
+    scope = _ai_slip_scope_query(business_id, current_user)
+    for base in bases:
+        try:
+            found = await db.clients.find_one({"$and": [scope, base]})
+            if found:
+                return found
+        except Exception:
+            pass
+        if _ai_slip_role_ok(current_user):
+            try:
+                found = await db.clients.find_one(base)
+                if found:
+                    return found
+            except Exception:
+                pass
+    return {}
+
+def _ai_slip_required(action_type):
+    if action_type == "assign_worker":
+        return ["job_id", "job_title", "client_name", "job_address", "worker_id"]
+    if action_type == "create_invoice_draft":
+        return ["job_id", "job_title", "client_name", "subtotal", "description"]
+    if action_type == "send_invoice":
+        return ["invoice_id", "invoice_number", "customer_name", "customer_email", "total"]
+    if action_type == "invoice_reminder":
+        return ["invoice_id", "invoice_number", "customer_name", "customer_email", "amount_due", "message"]
+    if action_type == "quote_follow_up":
+        return ["quote_id", "quote_number", "customer_name", "customer_email", "message"]
+    if action_type == "job_review":
+        return ["job_id", "job_title", "client_name", "worker_name"]
+    return ["action_type"]
+
+def _ai_slip_missing(action_type, payload):
+    return [k for k in _ai_slip_required(action_type) if not _ai_slip_text((payload or {}).get(k))]
+
+async def _ai_slip_insert(business_id, action_type, related_type, related_id, title, summary, payload, checks):
+    missing = _ai_slip_missing(action_type, payload)
+    doc = {
+        "business_id": str(business_id),
+        "action_type": action_type,
+        "type": action_type,
+        "related_type": related_type,
+        "related_entity_id": str(related_id or ""),
+        "related_id": str(related_id or ""),
+        "title": title,
+        "summary": summary,
+        "payload": payload,
+        "draft_payload": payload,
+        "checks": checks,
+        "missing": missing,
+        "ready": len(missing) == 0,
+        "group": "ready" if not missing else "needs_details",
+        "status": "ready",
+        "source": "direct_server_ai_slips_v1",
+        "created_at": _ai_slip_now(),
+        "updated_at": _ai_slip_now(),
+    }
+    result = await db.ai_operator_actions.insert_one(doc)
+    doc["_id"] = result.inserted_id
+    return doc
+
+async def _ai_slip_workers(business_id, current_user):
+    workers = []
+    seen = set()
+    for collection_name in ["business_users", "users"]:
+        rows, _mode = await _ai_slip_find_many(collection_name, business_id, current_user, 500)
+        for user in rows:
+            role = _ai_slip_text(user.get("role")).lower()
+            if role not in {"worker", "manager", "office_admin", "office admin"}:
+                continue
+            wid = str(user.get("_id") or user.get("id") or user.get("user_id") or user.get("email") or "")
+            if not wid or wid in seen:
+                continue
+            seen.add(wid)
+            workers.append({
+                "id": wid,
+                "name": _ai_slip_text(user.get("name") or user.get("full_name") or user.get("email"), "Worker"),
+                "email": _ai_slip_text(user.get("email")),
+                "region": _ai_slip_text(user.get("region") or user.get("area")),
+                "reason": "available worker",
+            })
+    return workers
+
+async def _ai_slip_job_payload(business_id, current_user, job):
+    client = await _ai_slip_find_client(
+        business_id,
+        current_user,
+        client_id=job.get("client_id"),
+        name=job.get("client_name") or job.get("customer_name"),
+        email=job.get("client_email") or job.get("customer_email"),
+    )
+    jid = str(job.get("_id") or job.get("id") or job.get("job_id") or "")
+    client_name = _ai_slip_text(client.get("name") or client.get("client_name") or job.get("client_name") or job.get("customer_name"), "Client not set")
+    title = _ai_slip_text(job.get("title") or job.get("job_title") or job.get("service_type"), "Job")
+    amount = _ai_slip_money(job.get("fixed_price") or job.get("price") or job.get("amount") or job.get("subtotal") or job.get("total"))
+    description = _ai_slip_text(
+        job.get("invoice_description_draft")
+        or job.get("ai_invoice_description")
+        or job.get("completion_notes")
+        or job.get("worker_notes")
+        or job.get("notes")
+        or f"{title} completed for {client_name}."
+    )
+    return {
+        "job_id": jid,
+        "job_title": title,
+        "client_id": _ai_slip_text(job.get("client_id")),
+        "client_name": client_name,
+        "customer_name": client_name,
+        "customer_email": _ai_slip_text(client.get("email") or job.get("client_email") or job.get("customer_email")),
+        "client_phone": _ai_slip_text(client.get("phone") or client.get("mobile") or job.get("client_phone")),
+        "client_address": _ai_slip_text(client.get("address") or client.get("billing_address")),
+        "job_address": _ai_slip_text(job.get("address") or job.get("job_address") or client.get("address")),
+        "worker_id": _ai_slip_text(job.get("assigned_worker_id") or job.get("worker_id")),
+        "worker_name": _ai_slip_text(job.get("assigned_worker_name") or job.get("worker_name")),
+        "subtotal": amount if amount else "",
+        "price": _ai_slip_money_text(amount),
+        "description": description,
+        "message": f"{title} for {client_name} is ready for review.",
+        "proof_summary": "Proof/photo check available from job record.",
+    }
+
+async def _ai_slip_rebuild(business_id, current_user):
+    # Clear all old weak AI slip queue records for this owner/admin so duplicates stop.
+    clear_query = {
+        "status": {"$nin": list(AI_SLIP_DONE_STATUSES)},
+        "$or": [
+            {"business_id": str(business_id)},
+            {"source": {"$exists": False}},
+            {"source": {"$regex": "operator|slip|deep|strong|legacy|direct_server_ai_slips", "$options": "i"}},
+        ],
+    }
+    await db.ai_operator_actions.delete_many(clear_query)
+
+    jobs, jobs_mode = await _ai_slip_find_many("jobs", business_id, current_user)
+    quotes, quotes_mode = await _ai_slip_find_many("quotes", business_id, current_user)
+    invoices, invoices_mode = await _ai_slip_find_many("invoices", business_id, current_user)
+
+    actions = []
+    workers = await _ai_slip_workers(business_id, current_user)
+
+    for job in jobs:
+        jid = str(job.get("_id") or job.get("id") or job.get("job_id") or "")
+        if not jid:
+            continue
+        st = _ai_slip_status(job.get("status") or job.get("job_status") or job.get("workflow_status"))
+        p = await _ai_slip_job_payload(business_id, current_user, job)
+        assigned = _ai_slip_text(job.get("assigned_worker_id") or job.get("worker_id") or job.get("assigned_worker_name") or job.get("worker_name"))
+
+        if st in {"completed", "done", "complete"} or job.get("completed_at") or job.get("completed") is True:
+            actions.append(await _ai_slip_insert(
+                business_id, "job_review", "job", jid,
+                f"Review completed job: {p['job_title']}",
+                f"{p['client_name']} · {p['job_title']} · {p.get('price') or 'No price'}",
+                p,
+                ["Client pulled", "Job pulled", "Completion checked", "Owner approval required"],
+            ))
+            actions.append(await _ai_slip_insert(
+                business_id, "create_invoice_draft", "job", jid,
+                f"Create invoice for {p['client_name']}",
+                f"{p['client_name']} · {p['job_title']} · {p.get('price') or 'Missing price'}",
+                p,
+                ["Client pulled", "Job pulled", "Invoice description prepared", "Owner approval required"],
+            ))
+        elif not assigned:
+            rec = workers[0] if workers else {}
+            p2 = {
+                **p,
+                "available_workers": workers,
+                "worker_id": _ai_slip_text(rec.get("id")),
+                "recommended_worker_name": _ai_slip_text(rec.get("name"), "No worker available"),
+                "conflict_check": _ai_slip_text(rec.get("reason"), "No worker found"),
+                "message": f"You have been assigned {p['job_title']} for {p['client_name']}.",
+            }
+            actions.append(await _ai_slip_insert(
+                business_id, "assign_worker", "job", jid,
+                f"Assign worker for {p['job_title']}",
+                f"{p['client_name']} · {p['job_title']} · {p.get('job_address') or 'No address'}",
+                p2,
+                ["Client pulled", "Job pulled", "Worker options checked", "Owner can change worker"],
+            ))
+
+    for quote in quotes:
+        qid = str(quote.get("_id") or quote.get("id") or quote.get("quote_id") or "")
+        if not qid or _ai_slip_status(quote.get("status")) in {"accepted", "declined", "cancelled", "canceled", "paid"}:
+            continue
+        client = await _ai_slip_find_client(
+            business_id,
+            current_user,
+            client_id=quote.get("client_id"),
+            name=quote.get("client_name") or quote.get("customer_name"),
+            email=quote.get("customer_email") or quote.get("client_email"),
+        )
+        cname = _ai_slip_text(client.get("name") or quote.get("client_name") or quote.get("customer_name"), "Client")
+        qno = _ai_slip_text(quote.get("quote_number") or quote.get("number"), f"Quote {qid[-6:]}")
+        amount = _ai_slip_money_text(quote.get("total") or quote.get("amount") or quote.get("subtotal"))
+        email = _ai_slip_text(client.get("email") or quote.get("customer_email") or quote.get("client_email"))
+        payload = {
+            "quote_id": qid,
+            "quote_number": qno,
+            "customer_name": cname,
+            "client_name": cname,
+            "customer_email": email,
+            "client_phone": _ai_slip_text(client.get("phone") or client.get("mobile")),
+            "quote_amount": amount,
+            "message": f"Hi {cname}, just checking in on {qno}{f' for {amount}' if amount else ''}. Happy to answer any questions.",
+        }
+        actions.append(await _ai_slip_insert(
+            business_id, "quote_follow_up", "quote", qid,
+            f"Follow up quote with {cname}",
+            f"{qno} · {cname} · {amount or 'No amount'} · {email or 'Missing email'}",
+            payload,
+            ["Quote pulled", "Client pulled", "Message drafted", "Owner approval required"],
+        ))
+
+    for inv in invoices:
+        iid = str(inv.get("_id") or inv.get("id") or inv.get("invoice_id") or "")
+        if not iid or _ai_slip_status(inv.get("status")) in {"paid", "void", "cancelled", "canceled"}:
+            continue
+        client = await _ai_slip_find_client(
+            business_id,
+            current_user,
+            client_id=inv.get("client_id"),
+            name=inv.get("client_name") or inv.get("customer_name"),
+            email=inv.get("customer_email") or inv.get("client_email"),
+        )
+        cname = _ai_slip_text(inv.get("customer_name") or inv.get("client_name") or client.get("name"), "Client")
+        ino = _ai_slip_text(inv.get("invoice_number") or inv.get("number"), f"Invoice {iid[-6:]}")
+        total = _ai_slip_money_text(inv.get("total") or inv.get("amount") or inv.get("subtotal"))
+        email = _ai_slip_text(inv.get("customer_email") or inv.get("client_email") or client.get("email"))
+        payload = {
+            "invoice_id": iid,
+            "invoice_number": ino,
+            "customer_name": cname,
+            "client_name": cname,
+            "customer_email": email,
+            "total": total,
+            "amount_due": total,
+            "message": f"Hi {cname}, your invoice {ino}{f' for {total}' if total else ''} is ready.",
+        }
+        actions.append(await _ai_slip_insert(
+            business_id, "send_invoice", "invoice", iid,
+            f"Email invoice {ino} to {cname}",
+            f"{ino} · {cname} · {total or 'No total'} · {email or 'Missing email'}",
+            payload,
+            ["Invoice pulled", "Client pulled", "Message drafted", "Owner approval required"],
+        ))
+
+    report = {
+        "jobs_found": len(jobs),
+        "quotes_found": len(quotes),
+        "invoices_found": len(invoices),
+        "jobs_scope_mode": jobs_mode,
+        "quotes_scope_mode": quotes_mode,
+        "invoices_scope_mode": invoices_mode,
+        "slips_created": len(actions),
+    }
+    await db.ai_operator_rebuild_reports.insert_one({
+        "business_id": str(business_id),
+        "report": report,
+        "created_at": _ai_slip_now(),
+    })
+    return actions, report
+
+async def _ai_slip_list_or_rebuild(business_id, current_user):
+    rows = await db.ai_operator_actions.find({
+        "business_id": str(business_id),
+        "source": "direct_server_ai_slips_v1",
+        "status": {"$nin": list(AI_SLIP_DONE_STATUSES)},
+    }).sort("updated_at", -1).to_list(length=100)
+
+    if rows:
+        report = await db.ai_operator_rebuild_reports.find_one({"business_id": str(business_id)}, sort=[("created_at", -1)])
+        return rows, (report or {}).get("report") or {}
+
+    return await _ai_slip_rebuild(business_id, current_user)
+
+@api_router.get("/ai/operator/slips")
+async def ai_operator_slips_direct(current_user: dict = Depends(get_current_user)):
+    _ai_slip_require_owner(current_user)
+    business_id = await _ai_slip_business_id(current_user)
+    rows, report = await _ai_slip_list_or_rebuild(business_id, current_user)
+    return {
+        "success": True,
+        "data": _ai_slip_safe_docs(rows),
+        "actions": _ai_slip_safe_docs(rows),
+        "report": _ai_slip_safe_doc(report),
+    }
+
+@api_router.post("/ai/operator/rebuild-slips")
+async def ai_operator_rebuild_slips_direct(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    _ai_slip_require_owner(current_user)
+    business_id = await _ai_slip_business_id(current_user)
+    rows, report = await _ai_slip_rebuild(business_id, current_user)
+    return {
+        "success": True,
+        "created": len(rows),
+        "data": _ai_slip_safe_docs(rows),
+        "actions": _ai_slip_safe_docs(rows),
+        "report": _ai_slip_safe_doc(report),
+    }
+
+@api_router.patch("/ai/operator/slips/{action_id}")
+async def ai_operator_update_slip_direct(action_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    _ai_slip_require_owner(current_user)
+    business_id = await _ai_slip_business_id(current_user)
+    found = await db.ai_operator_actions.find_one({"business_id": str(business_id), **_ai_slip_oid_query(action_id)})
+    if not found:
+        raise HTTPException(status_code=404, detail="Slip not found")
+
+    action_type = found.get("action_type") or found.get("type")
+    merged = {**(found.get("payload") or {}), **(payload or {})}
+    missing = _ai_slip_missing(action_type, merged)
+
+    await db.ai_operator_actions.update_one(
+        {"_id": found["_id"]},
+        {"$set": {
+            "payload": merged,
+            "draft_payload": merged,
+            "missing": missing,
+            "ready": len(missing) == 0,
+            "group": "ready" if not missing else "needs_details",
+            "updated_at": _ai_slip_now(),
+        }},
+    )
+    updated = await db.ai_operator_actions.find_one({"_id": found["_id"]})
+    return {"success": True, "data": _ai_slip_safe_doc(updated), "action": _ai_slip_safe_doc(updated)}
+
+@api_router.post("/ai/operator/actions/{action_id}/execute")
+async def ai_operator_execute_slip_direct(action_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    _ai_slip_require_owner(current_user)
+    business_id = await _ai_slip_business_id(current_user)
+    found = await db.ai_operator_actions.find_one({"business_id": str(business_id), **_ai_slip_oid_query(action_id)})
+    if not found:
+        raise HTTPException(status_code=404, detail="Slip not found")
+
+    action_type = found.get("action_type") or found.get("type")
+    merged = {**(found.get("payload") or {}), **(payload or {})}
+    missing = _ai_slip_missing(action_type, merged)
+    if missing:
+        return {"success": False, "error": "Missing: " + ", ".join(missing), "missing": missing}
+
+    if action_type == "assign_worker":
+        jid = merged.get("job_id") or found.get("related_entity_id")
+        worker_id = merged.get("worker_id")
+        worker_name = merged.get("recommended_worker_name") or merged.get("worker_name") or "Assigned worker"
+        if jid and worker_id:
+            await db.jobs.update_one(_ai_slip_oid_query(jid), {"$set": {
+                "assigned_worker_id": str(worker_id),
+                "worker_id": str(worker_id),
+                "assigned_worker_name": worker_name,
+                "status": "assigned",
+                "updated_at": _ai_slip_now(),
+            }})
+
+    elif action_type == "create_invoice_draft":
+        jid = merged.get("job_id") or found.get("related_entity_id")
+        existing = await db.invoices.find_one({"business_id": str(business_id), "job_id": str(jid)})
+        if not existing:
+            await db.invoices.insert_one({
+                "business_id": str(business_id),
+                "job_id": str(jid),
+                "client_id": merged.get("client_id"),
+                "client_name": merged.get("client_name"),
+                "customer_name": merged.get("customer_name") or merged.get("client_name"),
+                "customer_email": merged.get("customer_email"),
+                "description": merged.get("description"),
+                "subtotal": _ai_slip_money(merged.get("subtotal") or merged.get("price")),
+                "total": _ai_slip_money(merged.get("subtotal") or merged.get("price")),
+                "status": "draft",
+                "source": "ai_operator_approved_slip",
+                "created_at": _ai_slip_now(),
+                "updated_at": _ai_slip_now(),
+            })
+
+    await db.ai_operator_actions.update_one({"_id": found["_id"]}, {"$set": {
+        "status": "completed",
+        "completed_at": _ai_slip_now(),
+        "executed_by": _ai_slip_text(current_user.get("email")),
+        "updated_at": _ai_slip_now(),
+    }})
+    return {"success": True, "message": "Approved and executed"}
+# CHURVOX_DIRECT_AI_SLIPS_END
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")
