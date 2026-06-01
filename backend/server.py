@@ -259,7 +259,7 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, UploadFile, Query, Body
-from app.plan_rules import normalize_plan, get_plan_features, can_use_feature, get_max_clients
+from app.plan_rules import normalize_plan, get_plan_features, can_use_feature, get_max_clients, has_plan_access, get_plan_display_name, get_included_users
 from owner_bootstrap import ensure_owner_account
 from fastapi.responses import RedirectResponse, HTMLResponse, FileResponse
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -536,25 +536,31 @@ class PlanType(str, Enum):
 
 PLAN_LIMITS = {
     "solo": {
-        "price": 30, "max_workers": 0, "max_clients": 20,
+        "price": 39, "max_workers": 0, "max_clients": 20,
         "sms": False, "myob": False, "team": False,
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
+        "public_name": "Start",
     },
     "team": {
-        "price": 70, "max_workers": 5, "max_clients": 30,
+        "price": 89, "max_workers": 5, "max_clients": 30,
         "sms": True, "myob": False, "team": True,
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
+        "public_name": "Crew",
     },
     "pro": {
-        "price": 110, "max_workers": 20, "max_clients": 35,
-        "sms": True, "myob": True, "team": True,
+        "price": 149, "max_workers": 15, "max_clients": 40,
+        "sms": True, "myob": False, "myob_addon_available": True, "team": True,
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
+        "ai_operator": True, "automation": True,
+        "public_name": "Operator",
     },
     "enterprise": {
-        "price": 240, "max_workers": 50, "max_clients": 50,
+        "price": 299, "max_workers": 50, "max_clients": 50,
         "sms": True, "myob": True, "team": True,
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
-        "extra_blocks": True,
+        "ai_operator": True, "automation": True, "payroll_workspace": True,
+        "extra_blocks": True, "extra_user_block_size": 50, "extra_user_block_price": 99,
+        "public_name": "Command",
     },
 }
 
