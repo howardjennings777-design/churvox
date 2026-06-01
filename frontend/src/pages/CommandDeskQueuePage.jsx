@@ -260,16 +260,28 @@ function SlipModal({ item, onClose, onChanged }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[2147483647] overflow-y-auto bg-[#f5f7f1] p-4">
-      <div className="mx-auto max-w-6xl">
-        <header className="rounded-[28px] bg-[#0f1722] p-6 text-white">
+    <div
+      className="fixed inset-0 z-[2147483647] flex items-center justify-center bg-slate-950/65 p-3 backdrop-blur-sm sm:p-6"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="relative flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-[32px] border border-white/40 bg-[#f5f7f1] shadow-2xl">
+        <header className="relative rounded-t-[32px] bg-[#0f1722] p-5 pr-16 text-white sm:p-6 sm:pr-20">
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-2xl border border-white/15 bg-white/10 text-lg font-black text-white hover:bg-white/20"
+            aria-label="Close slip"
+          >
+            ×
+          </button>
           <div className="text-[10px] font-black uppercase tracking-[.2em] text-cyan-200">{ready ? "Ready to approve" : "Needs details"}</div>
-          <h1 className="mt-2 text-4xl font-black tracking-[-.06em]">{typeLabel(item.type)}</h1>
+          <h1 className="mt-2 text-3xl font-black tracking-[-.06em] sm:text-4xl">{typeLabel(item.type)}</h1>
           <p className="mt-2 text-sm font-bold text-slate-300">{item.summary}</p>
         </header>
 
-        <main className="mt-4 grid gap-4 xl:grid-cols-[1fr_340px]">
-          <section className="space-y-4">
+        <main className="grid flex-1 gap-4 overflow-y-auto p-4 xl:grid-cols-[1fr_340px]">
+          <section className="space-y-4 pb-2">
             <div className={`rounded-[24px] border p-5 ${ready ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
               <h2 className="text-2xl font-black">{ready ? "Looks ready — check then approve" : "Do not approve yet"}</h2>
               <p className="mt-2 text-sm font-bold text-slate-700">
@@ -299,7 +311,7 @@ function SlipModal({ item, onClose, onChanged }) {
               <p className="mt-3 text-sm font-bold leading-6 text-slate-200">{outcome(item.type)}</p>
               {!ready && <button onClick={save} disabled={busy} className="mt-5 w-full rounded-2xl bg-amber-400 px-5 py-3 text-sm font-black text-slate-950 disabled:opacity-40">{busy ? "Saving…" : "Save details"}</button>}
               <button onClick={approve} disabled={busy || !ready} className="mt-3 w-full rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-slate-950 disabled:opacity-40">{busy ? "Approving…" : approveText(item.type)}</button>
-              <button onClick={onClose} className="mt-3 w-full rounded-2xl border border-white/15 px-5 py-3 text-sm font-black">Close</button>
+              <button onClick={onClose} className="mt-3 w-full rounded-2xl border border-white/15 px-5 py-3 text-sm font-black hover:bg-white/10">Close slip</button>
             </div>
           </aside>
         </main>
