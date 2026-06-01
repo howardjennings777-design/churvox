@@ -1,4 +1,4 @@
-// CHURVOX_SIDEBAR_LABEL_CSS_FIX_20260601
+// CHURVOX_SIDEBAR_LABEL_CSS_FIX_20260601_V2
 // CSS-only visual label cleanup. No data, backend, auth, route, payment, or form changes.
 
 function injectSidebarLabelCssFix() {
@@ -36,6 +36,9 @@ function injectSidebarLabelCssFix() {
     nav a[href='/settings'] span.truncate{
       color:transparent!important;
       position:relative!important;
+      display:inline-block!important;
+      min-width:118px!important;
+      min-height:18px!important;
     }
 
     aside a[href='/notifications'] span.truncate::after,
@@ -64,11 +67,31 @@ function injectSidebarLabelCssFix() {
     nav a[href='/plans'] span.truncate::after,
     aside a[href='/settings'] span.truncate::after,
     nav a[href='/settings'] span.truncate::after{
-      color:currentColor!important;
+      color:#cbd5e1!important;
       position:absolute!important;
       left:0!important;
       top:0!important;
       white-space:nowrap!important;
+      font-size:14px!important;
+      line-height:18px!important;
+      font-weight:900!important;
+      letter-spacing:0!important;
+    }
+
+    aside a.bg-white[href='/notifications'] span.truncate::after,
+    aside a.bg-white[href='/dispatch'] span.truncate::after,
+    aside a.bg-white[href='/dispatch-board'] span.truncate::after,
+    aside a.bg-white[href='/clients'] span.truncate::after,
+    aside a.bg-white[href='/quotes'] span.truncate::after,
+    aside a.bg-white[href='/invoices'] span.truncate::after,
+    aside a.bg-white[href='/money-desk'] span.truncate::after,
+    aside a.bg-white[href='/money'] span.truncate::after,
+    aside a.bg-white[href='/reports'] span.truncate::after,
+    aside a.bg-white[href='/automation'] span.truncate::after,
+    aside a.bg-white[href='/integrations'] span.truncate::after,
+    aside a.bg-white[href='/plans'] span.truncate::after,
+    aside a.bg-white[href='/settings'] span.truncate::after{
+      color:#0f172a!important;
     }
 
     aside a[href='/notifications'] span.truncate::after,
