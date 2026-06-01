@@ -40,6 +40,8 @@ import './concept-c/churvoxMoneyDeskLinkedJobFilterPatch';
 import './concept-c/churvoxWorkSlipDispatchPatch';
 import './concept-c/churvoxCommandFloorControlCopyPatch';
 import './concept-c/churvoxSidebarLabelRuntimeFix';
+import './concept-c/churvoxCrewMapNavPatch';
+import './concept-c/churvoxFourteenDayTrialPlansPatch';
 import './workhorseLiveCheck';
 import './renderDeployMarker';
 import './deploy/guidedOperatorFloorDeployMarker';
