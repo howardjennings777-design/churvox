@@ -93,10 +93,10 @@ function typeLabel(type) {
 
 function approveText(type) {
   if (type === "assign_worker") return "Approve assignment";
-  if (type === "create_invoice_draft" || type.includes("invoice_draft")) return "Create draft invoice";
-  if (type === "send_invoice") return "Email invoice";
-  if (type === "invoice_reminder") return "Send reminder";
-  if (type.includes("quote")) return "Send follow-up";
+  if (type === "create_invoice_draft" || type.includes("invoice_draft")) return "Approve + create draft";
+  if (type === "send_invoice") return "Approve + send invoice";
+  if (type === "invoice_reminder") return "Approve + send reminder";
+  if (type.includes("quote")) return "Approve + send follow-up";
   if (type.includes("job_review")) return "Approve review";
   return "Approve";
 }
@@ -104,9 +104,9 @@ function approveText(type) {
 function outcome(type) {
   if (type === "assign_worker") return "Assigns the selected worker to the job and logs the decision.";
   if (type === "create_invoice_draft" || type.includes("invoice_draft")) return "Creates a draft invoice only. It does not email the customer.";
-  if (type === "send_invoice") return "Emails the invoice link to the customer.";
-  if (type === "invoice_reminder") return "Emails the payment reminder to the customer.";
-  if (type.includes("quote")) return "Emails the quote follow-up to the customer.";
+  if (type === "send_invoice") return "Approves the slip and emails the invoice to the customer.";
+  if (type === "invoice_reminder") return "Approves the slip and emails the payment reminder to the customer.";
+  if (type.includes("quote")) return "Approves the slip and emails the quote follow-up to the customer.";
   if (type.includes("job_review")) return "Approves the job review and moves time toward payroll review.";
   return "Approval blocked until this slip has a known action.";
 }

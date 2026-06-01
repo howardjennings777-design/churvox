@@ -12937,6 +12937,106 @@ async def ai_operator_update_slip_direct(action_id: str, payload: dict = Body(de
     updated = await db.ai_operator_actions.find_one({"_id": found["_id"]})
     return {"success": True, "data": _ai_slip_safe_doc(updated), "action": _ai_slip_safe_doc(updated)}
 
+
+async def _ai_slip_send_customer_email(action_type, payload):
+    import os
+    import json
+    import asyncio
+    import urllib.request
+    import urllib.error
+
+    to_email = _ai_slip_text((payload or {}).get("customer_email"))
+    if not to_email:
+        return False, "Customer email is missing"
+
+    token = (
+        os.environ.get("POSTMARK_SERVER_TOKEN")
+        or os.environ.get("POSTMARK_API_TOKEN")
+        or os.environ.get("POSTMARK_TOKEN")
+    )
+    if not token:
+        return False, "Postmark token is missing on the backend"
+
+    from_email = (
+        os.environ.get("POSTMARK_FROM_EMAIL")
+        or os.environ.get("EMAIL_FROM")
+        or os.environ.get("FROM_EMAIL")
+        or "hello@churvox.com"
+    )
+
+    customer = _ai_slip_text(payload.get("customer_name") or payload.get("client_name"), "there")
+    invoice_number = _ai_slip_text(payload.get("invoice_number"))
+    quote_number = _ai_slip_text(payload.get("quote_number"))
+    total = _ai_slip_text(payload.get("total") or payload.get("amount_due") or payload.get("quote_amount"))
+    message = _ai_slip_text(payload.get("message"))
+
+    if action_type == "send_invoice":
+        subject = f"Invoice {invoice_number or ''} from Churvox".strip()
+        default_message = f"Hi {customer}, your invoice {invoice_number}{f' for {total}' if total else ''} is ready."
+    elif action_type == "invoice_reminder":
+        subject = f"Payment reminder {invoice_number or ''}".strip()
+        default_message = f"Hi {customer}, friendly reminder invoice {invoice_number}{f' for {total}' if total else ''} is still open."
+    elif action_type == "quote_follow_up":
+        subject = f"Following up on {quote_number or 'your quote'}"
+        default_message = f"Hi {customer}, just checking in on {quote_number or 'your quote'}{f' for {total}' if total else ''}."
+    else:
+        subject = "Message from Churvox"
+        default_message = f"Hi {customer}, Churvox has prepared this message."
+
+    body = message or default_message
+
+    link = _ai_slip_text(
+        payload.get("public_url")
+        or payload.get("invoice_url")
+        or payload.get("payment_url")
+        or payload.get("quote_url")
+        or payload.get("document_url")
+    )
+    if link:
+        body = f"{body}\n\nView here: {link}"
+
+    html_body = "<br/>".join(body.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").splitlines())
+
+    postmark_payload = {
+        "From": from_email,
+        "To": to_email,
+        "Subject": subject,
+        "TextBody": body,
+        "HtmlBody": html_body,
+        "MessageStream": "outbound",
+    }
+
+    def _send():
+        req = urllib.request.Request(
+            "https://api.postmarkapp.com/email",
+            data=json.dumps(postmark_payload).encode("utf-8"),
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "X-Postmark-Server-Token": token,
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                raw = resp.read().decode("utf-8")
+                data = json.loads(raw or "{}")
+                return True, data
+        except urllib.error.HTTPError as e:
+            try:
+                err = e.read().decode("utf-8")
+            except Exception:
+                err = str(e)
+            return False, err
+        except Exception as e:
+            return False, str(e)
+
+    ok, result = await asyncio.to_thread(_send)
+    if not ok:
+        return False, f"Email send failed: {result}"
+
+    return True, result
+
 @api_router.post("/ai/operator/actions/{action_id}/execute")
 async def ai_operator_execute_slip_direct(action_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
     _ai_slip_require_owner(current_user)
@@ -12983,6 +13083,22 @@ async def ai_operator_execute_slip_direct(action_id: str, payload: dict = Body(d
                 "created_at": _ai_slip_now(),
                 "updated_at": _ai_slip_now(),
             })
+
+
+    elif action_type in {"send_invoice", "invoice_reminder", "quote_follow_up"}:
+        sent_ok, send_result = await _ai_slip_send_customer_email(action_type, merged)
+        if not sent_ok:
+            return {"success": False, "error": send_result}
+
+        await db.ai_operator_actions.update_one(
+            {"_id": found["_id"]},
+            {"$set": {
+                "email_sent": True,
+                "email_sent_at": _ai_slip_now(),
+                "email_send_result": _ai_slip_safe_doc(send_result) if isinstance(send_result, dict) else str(send_result),
+                "updated_at": _ai_slip_now(),
+            }},
+        )
 
     await db.ai_operator_actions.update_one({"_id": found["_id"]}, {"$set": {
         "status": "completed",
