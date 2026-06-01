@@ -1,0 +1,400 @@
+/* CHURVOX_PURPLE_COMMAND_CENTRE_STAGE_1
+   Frontend-only visual upgrade for the real Concept C owner shell.
+   No backend, auth, routing, billing, MYOB, SMS or data logic changes. */
+
+:root {
+  --cvx-command-bg: #070914;
+  --cvx-command-bg-2: #0c1024;
+  --cvx-command-panel: rgba(255, 255, 255, 0.065);
+  --cvx-command-panel-strong: rgba(255, 255, 255, 0.105);
+  --cvx-command-line: rgba(255, 255, 255, 0.12);
+  --cvx-command-line-soft: rgba(255, 255, 255, 0.075);
+  --cvx-command-text: #ffffff;
+  --cvx-command-muted: #a8b3c7;
+  --cvx-command-soft: #d6dded;
+  --cvx-command-purple: #7c3aed;
+  --cvx-command-purple-2: #6d28d9;
+  --cvx-command-blue: #3b82f6;
+  --cvx-command-green: #10b981;
+  --cvx-command-amber: #f59e0b;
+  --cvx-command-red: #ef4444;
+  --cvx-command-shadow: 0 28px 80px rgba(0, 0, 0, 0.34);
+}
+
+body:has(.concept-c2-frame),
+body:has(.concept-c-page),
+body:has(.c2-frame),
+body:has(.xcf-shell) {
+  background: var(--cvx-command-bg) !important;
+}
+
+.concept-c2-frame,
+.concept-c-page,
+.xcf-shell,
+.xcf-workspace {
+  min-height: 100dvh !important;
+  background:
+    radial-gradient(circle at -8% -12%, rgba(124, 58, 237, 0.36), transparent 34%),
+    radial-gradient(circle at 108% 18%, rgba(59, 130, 246, 0.22), transparent 34%),
+    radial-gradient(circle at 50% 118%, rgba(109, 40, 217, 0.22), transparent 38%),
+    linear-gradient(135deg, #070914 0%, #0c1024 48%, #050711 100%) !important;
+  color: var(--cvx-command-text) !important;
+}
+
+.concept-c2-frame *,
+.concept-c-page *,
+.xcf-shell *,
+.xcf-workspace * {
+  scrollbar-color: rgba(167, 139, 250, 0.55) transparent;
+}
+
+/* Main shell panels */
+.concept-c2-frame .c2-frame,
+.concept-c2-frame .c2-topbar,
+.concept-c2-frame .c2-spine,
+.concept-c2-frame .c2-ai,
+.concept-c2-frame .c2-stage,
+.concept-c2-frame .c2-real-page-stage,
+.concept-c2-frame .c2-real-page-card,
+.concept-c-page .xcf-card,
+.concept-c-page .xcf-panel,
+.concept-c-page .xcf-stage,
+.xcf-shell .xcf-card,
+.xcf-shell .xcf-panel,
+.xcf-shell .xcf-stage,
+.xcf-workspace .xcf-card,
+.xcf-workspace .xcf-panel,
+.xcf-workspace .xcf-stage {
+  border-color: var(--cvx-command-line) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,0.082), rgba(255,255,255,0.045)) !important;
+  box-shadow: var(--cvx-command-shadow) !important;
+  color: var(--cvx-command-text) !important;
+  backdrop-filter: blur(22px) saturate(145%) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(145%) !important;
+}
+
+.concept-c2-frame .c2-spine,
+.concept-c2-frame .c2-ai,
+.concept-c2-frame .c2-real-page-card,
+.concept-c-page .xcf-card,
+.concept-c-page .xcf-panel,
+.xcf-shell .xcf-card,
+.xcf-shell .xcf-panel {
+  border-radius: 28px !important;
+}
+
+/* Strong command hero feeling */
+.concept-c2-frame .c2-spine,
+.concept-c-page .xcf-hero,
+.xcf-shell .xcf-hero,
+.xcf-workspace .xcf-hero {
+  position: relative !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 82% 0%, rgba(124,58,237,.58), transparent 46%),
+    linear-gradient(135deg, rgba(13, 18, 41, 0.98), rgba(8, 11, 25, 0.96)) !important;
+}
+
+.concept-c2-frame .c2-spine::after,
+.concept-c-page .xcf-hero::after,
+.xcf-shell .xcf-hero::after,
+.xcf-workspace .xcf-hero::after {
+  content: "";
+  position: absolute;
+  right: -8rem;
+  top: -10rem;
+  width: 26rem;
+  height: 26rem;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(124,58,237,.56), transparent 64%);
+  pointer-events: none;
+  filter: blur(8px);
+}
+
+/* Typography */
+.concept-c2-frame h1,
+.concept-c2-frame h2,
+.concept-c2-frame h3,
+.concept-c2-frame h4,
+.concept-c2-frame strong,
+.concept-c2-frame b,
+.concept-c-page h1,
+.concept-c-page h2,
+.concept-c-page h3,
+.concept-c-page h4,
+.concept-c-page strong,
+.concept-c-page b,
+.xcf-shell h1,
+.xcf-shell h2,
+.xcf-shell h3,
+.xcf-shell h4,
+.xcf-shell strong,
+.xcf-shell b,
+.xcf-workspace h1,
+.xcf-workspace h2,
+.xcf-workspace h3,
+.xcf-workspace h4,
+.xcf-workspace strong,
+.xcf-workspace b {
+  color: var(--cvx-command-text) !important;
+  letter-spacing: -0.035em !important;
+}
+
+.concept-c2-frame p,
+.concept-c2-frame span,
+.concept-c2-frame li,
+.concept-c2-frame label,
+.concept-c-page p,
+.concept-c-page span,
+.concept-c-page li,
+.concept-c-page label,
+.xcf-shell p,
+.xcf-shell span,
+.xcf-shell li,
+.xcf-shell label,
+.xcf-workspace p,
+.xcf-workspace span,
+.xcf-workspace li,
+.xcf-workspace label {
+  color: var(--cvx-command-muted) !important;
+}
+
+.concept-c2-frame .text-white,
+.concept-c2-frame .text-slate-50,
+.concept-c-page .text-white,
+.xcf-shell .text-white,
+.xcf-workspace .text-white {
+  color: #fff !important;
+}
+
+/* Inner cards, grids, rows and old light blocks */
+.concept-c2-frame .c2-real-page-card .bg-white,
+.concept-c2-frame .c2-real-page-card .bg-slate-50,
+.concept-c2-frame .c2-real-page-card .bg-gray-50,
+.concept-c2-frame .c2-real-page-card article,
+.concept-c2-frame .c2-real-page-card section,
+.concept-c2-frame .c2-real-page-card [class*="card"],
+.concept-c2-frame .c2-real-page-card [class*="Card"],
+.concept-c-page .bg-white,
+.concept-c-page .bg-slate-50,
+.concept-c-page .bg-gray-50,
+.concept-c-page article,
+.concept-c-page section,
+.concept-c-page [class*="card"],
+.concept-c-page [class*="Card"],
+.xcf-shell .bg-white,
+.xcf-shell .bg-slate-50,
+.xcf-shell .bg-gray-50,
+.xcf-shell article,
+.xcf-shell section,
+.xcf-shell [class*="card"],
+.xcf-shell [class*="Card"],
+.xcf-workspace .bg-white,
+.xcf-workspace .bg-slate-50,
+.xcf-workspace .bg-gray-50,
+.xcf-workspace article,
+.xcf-workspace section,
+.xcf-workspace [class*="card"],
+.xcf-workspace [class*="Card"] {
+  background: linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.042)) !important;
+  border-color: var(--cvx-command-line-soft) !important;
+  color: var(--cvx-command-text) !important;
+  box-shadow: 0 18px 54px rgba(0,0,0,.22) !important;
+}
+
+/* Buttons and primary actions */
+.concept-c2-frame button,
+.concept-c2-frame a[role="button"],
+.concept-c-page button,
+.concept-c-page a[role="button"],
+.xcf-shell button,
+.xcf-shell a[role="button"],
+.xcf-workspace button,
+.xcf-workspace a[role="button"] {
+  border-color: rgba(167, 139, 250, 0.22) !important;
+}
+
+.concept-c2-frame button:not([disabled]):not(.ghost),
+.concept-c-page button:not([disabled]):not(.ghost),
+.xcf-shell button:not([disabled]):not(.ghost),
+.xcf-workspace button:not([disabled]):not(.ghost) {
+  box-shadow: 0 14px 34px rgba(109, 40, 217, .18);
+}
+
+.concept-c2-frame .bg-blue-600,
+.concept-c2-frame .bg-indigo-600,
+.concept-c2-frame .bg-violet-600,
+.concept-c2-frame .bg-purple-600,
+.concept-c-page .bg-blue-600,
+.concept-c-page .bg-indigo-600,
+.concept-c-page .bg-violet-600,
+.concept-c-page .bg-purple-600,
+.xcf-shell .bg-blue-600,
+.xcf-shell .bg-indigo-600,
+.xcf-shell .bg-violet-600,
+.xcf-shell .bg-purple-600,
+.xcf-workspace .bg-blue-600,
+.xcf-workspace .bg-indigo-600,
+.xcf-workspace .bg-violet-600,
+.xcf-workspace .bg-purple-600 {
+  background: linear-gradient(135deg, var(--cvx-command-purple), var(--cvx-command-purple-2)) !important;
+  color: #fff !important;
+  box-shadow: 0 18px 42px rgba(109, 40, 217, .28) !important;
+}
+
+/* Inputs and fields */
+.concept-c2-frame input,
+.concept-c2-frame textarea,
+.concept-c2-frame select,
+.concept-c-page input,
+.concept-c-page textarea,
+.concept-c-page select,
+.xcf-shell input,
+.xcf-shell textarea,
+.xcf-shell select,
+.xcf-workspace input,
+.xcf-workspace textarea,
+.xcf-workspace select {
+  background: rgba(0,0,0,.24) !important;
+  border-color: var(--cvx-command-line) !important;
+  color: #fff !important;
+}
+
+.concept-c2-frame input::placeholder,
+.concept-c2-frame textarea::placeholder,
+.concept-c-page input::placeholder,
+.concept-c-page textarea::placeholder,
+.xcf-shell input::placeholder,
+.xcf-shell textarea::placeholder,
+.xcf-workspace input::placeholder,
+.xcf-workspace textarea::placeholder {
+  color: rgba(203, 213, 225, .55) !important;
+}
+
+/* Status colours: keep recognition clear */
+.concept-c2-frame .text-green-700,
+.concept-c2-frame .text-emerald-700,
+.concept-c-page .text-green-700,
+.concept-c-page .text-emerald-700,
+.xcf-shell .text-green-700,
+.xcf-shell .text-emerald-700,
+.xcf-workspace .text-green-700,
+.xcf-workspace .text-emerald-700 {
+  color: #86efac !important;
+}
+
+.concept-c2-frame .text-amber-700,
+.concept-c2-frame .text-orange-700,
+.concept-c-page .text-amber-700,
+.concept-c-page .text-orange-700,
+.xcf-shell .text-amber-700,
+.xcf-shell .text-orange-700,
+.xcf-workspace .text-amber-700,
+.xcf-workspace .text-orange-700 {
+  color: #fde68a !important;
+}
+
+.concept-c2-frame .text-red-700,
+.concept-c2-frame .text-rose-700,
+.concept-c-page .text-red-700,
+.concept-c-page .text-rose-700,
+.xcf-shell .text-red-700,
+.xcf-shell .text-rose-700,
+.xcf-workspace .text-red-700,
+.xcf-workspace .text-rose-700 {
+  color: #fca5a5 !important;
+}
+
+/* Bottom nav / dock: visible, premium, easy to tap */
+.concept-c2-frame .c2-dock,
+.concept-c2-frame .c2-dock-full,
+.xcf-shell .xcf-bottom-nav,
+.xcf-shell .xcf-bottom-nav-full,
+.xcf10-dock-launch-final {
+  background: rgba(7, 9, 20, .92) !important;
+  border: 1px solid rgba(167, 139, 250, .24) !important;
+  box-shadow: 0 22px 80px rgba(0,0,0,.44), inset 0 1px 0 rgba(255,255,255,.08) !important;
+  backdrop-filter: blur(22px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(150%) !important;
+}
+
+.concept-c2-frame .c2-dock a,
+.concept-c2-frame .c2-dock-full a,
+.xcf-shell .xcf-bottom-nav a,
+.xcf-shell .xcf-bottom-nav-full a,
+.xcf10-dock-launch-final a {
+  background: rgba(255,255,255,.07) !important;
+  border-color: rgba(255,255,255,.10) !important;
+  color: rgba(255,255,255,.88) !important;
+}
+
+.concept-c2-frame .c2-dock a.active,
+.concept-c2-frame .c2-dock-full a.active,
+.xcf-shell .xcf-bottom-nav a.active,
+.xcf-shell .xcf-bottom-nav-full a.active,
+.xcf10-dock-launch-final a.active,
+.concept-c2-frame .c2-dock a:hover,
+.concept-c2-frame .c2-dock-full a:hover,
+.xcf-shell .xcf-bottom-nav a:hover,
+.xcf-shell .xcf-bottom-nav-full a:hover,
+.xcf10-dock-launch-final a:hover {
+  background: linear-gradient(135deg, var(--cvx-command-purple), var(--cvx-command-purple-2)) !important;
+  color: #fff !important;
+  border-color: rgba(221, 214, 254, .36) !important;
+  box-shadow: 0 14px 36px rgba(109,40,217,.25) !important;
+}
+
+/* Smart Hub wow block helper if existing dashboard uses these containers */
+.cvx-command-wow,
+.command-floor-wow,
+.ai-operator-wow,
+.operator-proof-panel {
+  background:
+    radial-gradient(circle at 80% 0%, rgba(124,58,237,.45), transparent 46%),
+    linear-gradient(135deg, rgba(255,255,255,.09), rgba(255,255,255,.04)) !important;
+  border: 1px solid var(--cvx-command-line) !important;
+  border-radius: 30px !important;
+  box-shadow: var(--cvx-command-shadow) !important;
+  color: #fff !important;
+}
+
+/* Mobile: keep it clean and tappable */
+@media (max-width: 760px) {
+  .concept-c2-frame,
+  .concept-c-page,
+  .xcf-shell,
+  .xcf-workspace {
+    background:
+      radial-gradient(circle at 20% -10%, rgba(124,58,237,.30), transparent 36%),
+      linear-gradient(180deg, #070914, #0b1020) !important;
+  }
+
+  .concept-c2-frame .c2-spine,
+  .concept-c2-frame .c2-ai,
+  .concept-c2-frame .c2-real-page-card,
+  .concept-c-page .xcf-card,
+  .concept-c-page .xcf-panel,
+  .xcf-shell .xcf-card,
+  .xcf-shell .xcf-panel {
+    border-radius: 22px !important;
+  }
+
+  .concept-c2-frame h1,
+  .concept-c-page h1,
+  .xcf-shell h1,
+  .xcf-workspace h1 {
+    font-size: clamp(1.75rem, 8vw, 2.35rem) !important;
+    line-height: .98 !important;
+  }
+
+  .concept-c2-frame button,
+  .concept-c-page button,
+  .xcf-shell button,
+  .xcf-workspace button,
+  .concept-c2-frame a,
+  .concept-c-page a,
+  .xcf-shell a,
+  .xcf-workspace a {
+    min-height: 42px;
+  }
+}
