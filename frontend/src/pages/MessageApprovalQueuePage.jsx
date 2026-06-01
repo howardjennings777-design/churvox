@@ -1,12 +1,12 @@
-// CHURVOX_MESSAGE_APPROVAL_STABLE_WIRING_20260601
+// CHURVOX_MESSAGE_APPROVAL_SOURCE_RECORD_SYNC_20260601
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
 import "./MessageApprovalQueuePage.css";
 
-// Message approvals are approval-first. This page now uses stable live records only:
-// /jobs, /invoices, /quotes and /clients. It does not call missing placeholder routes
-// like /ai-operator/actions, /ai/audit-log or /message-approvals/send.
+// Message approvals are approval-first. This page uses stable live records only:
+// /jobs, /invoices, /quotes and /clients. It does not call missing placeholder routes.
+// Approving now also patches the source record so the flow stays connected after refresh.
 
 function queryParam(name) {
   try { return new URLSearchParams(window.location.search).get(name) || ""; } catch { return ""; }
@@ -23,7 +23,6 @@ function arr(value) {
   if (Array.isArray(value?.results)) return value.results;
   return [];
 }
-
 function pickList(response, keys = []) {
   const data = response?.data ?? response;
   for (const key of keys) {
@@ -32,7 +31,6 @@ function pickList(response, keys = []) {
   }
   return arr(data);
 }
-
 function idOf(item) { return item?.id || item?._id || item?.uuid || item?.job_id || item?.invoice_id || item?.quote_id || ""; }
 function sameId(a, b) { return String(a || "") && String(a || "") === String(b || ""); }
 function recordTitle(item, fallback) { return item?.title || item?.job_name || item?.customer_name || item?.client_name || item?.name || item?.summary || fallback; }
@@ -46,24 +44,24 @@ function clientEmailFor(item, clients = []) {
   return client?.email || client?.customer_email || client?.client_email || client?.contact_email || "";
 }
 function statusOf(item) { return String(item?.status || item?.job_status || item?.payment_status || "").toLowerCase(); }
+function messageStatusOf(item) { return String(item?.message_approval_status || item?.customer_message_status || "").toLowerCase(); }
+function messageStillNeedsApproval(item) {
+  const s = messageStatusOf(item);
+  return !["approved", "approved_external_email_opened", "dismissed", "sent", "message_sent"].some((done) => s.includes(done));
+}
 function isComplete(item) { return statusOf(item).includes("complete") || statusOf(item).includes("done"); }
 function isUnpaid(invoice) { return !statusOf(invoice).includes("paid") && Number(invoice?.amount_due || invoice?.balance_due || invoice?.total || invoice?.amount || 0) > 0; }
 function money(value) {
   const n = Number(value || 0);
   return Number.isFinite(n) ? n.toLocaleString("en-NZ", { style: "currency", currency: "NZD" }) : "$0.00";
 }
-
 function draftSubject(type, item) {
   const name = recordTitle(item, "your service");
   if (type === "invoice") return `Invoice update for ${name}`;
   if (type === "quote") return `Quote update for ${name}`;
   return `Job update for ${name}`;
 }
-
-function pickDraft(item) {
-  return item?.customer_message_draft || item?.draft_message || item?.last_message_draft || item?.generated_message || item?.message || "";
-}
-
+function pickDraft(item) { return item?.customer_message_draft || item?.draft_message || item?.last_message_draft || item?.generated_message || item?.message || ""; }
 function draftBody(type, item) {
   const existing = pickDraft(item);
   if (existing) return existing;
@@ -71,7 +69,6 @@ function draftBody(type, item) {
   if (type === "quote") return `Hi ${recordTitle(item, "there")},\n\nJust checking in on your quote. Let us know if you would like to go ahead or need anything changed.\n\nThanks.`;
   return item?.completion_notes || item?.notes || item?.description || `Hi ${recordTitle(item, "there")},\n\nHere is a quick update on your job. Please let us know if you have any questions.\n\nThanks.`;
 }
-
 function draftFromRecord(type, item, clients) {
   const id = idOf(item);
   if (!id && !pickDraft(item)) return null;
@@ -88,18 +85,16 @@ function draftFromRecord(type, item, clients) {
     state: item?.message_approval_status || item?.owner_review_status || "Draft",
   };
 }
-
-function readLocalHistory() {
-  try { return JSON.parse(localStorage.getItem("churvox_message_approval_history") || "[]"); } catch { return []; }
-}
-function saveLocalHistory(items) {
-  try { localStorage.setItem("churvox_message_approval_history", JSON.stringify(items.slice(0, 30))); } catch {}
-}
-function mailtoUrl({ to_email, subject, message }) {
-  return `mailto:${encodeURIComponent(to_email || "")}?subject=${encodeURIComponent(subject || "Customer update from Churvox")}&body=${encodeURIComponent(message || "")}`;
-}
-function initialDraftEdits(messages) {
-  return Object.fromEntries(messages.map((item) => [item.id, { message: item.message || "", subject: item.subject || "", to_email: item.to_email || "" }]));
+function readLocalHistory() { try { return JSON.parse(localStorage.getItem("churvox_message_approval_history") || "[]"); } catch { return []; } }
+function saveLocalHistory(items) { try { localStorage.setItem("churvox_message_approval_history", JSON.stringify(items.slice(0, 30))); } catch {} }
+function mailtoUrl({ to_email, subject, message }) { return `mailto:${encodeURIComponent(to_email || "")}?subject=${encodeURIComponent(subject || "Customer update from Churvox")}&body=${encodeURIComponent(message || "")}`; }
+function initialDraftEdits(messages) { return Object.fromEntries(messages.map((item) => [item.id, { message: item.message || "", subject: item.subject || "", to_email: item.to_email || "" }])); }
+function endpointFor(item) {
+  if (!item?.record_id) return "";
+  if (item.type === "job") return `/jobs/${encodeURIComponent(item.record_id)}`;
+  if (item.type === "invoice") return `/invoices/${encodeURIComponent(item.record_id)}`;
+  if (item.type === "quote") return `/quotes/${encodeURIComponent(item.record_id)}`;
+  return "";
 }
 
 export default function MessageApprovalQueuePage() {
@@ -135,15 +130,15 @@ export default function MessageApprovalQueuePage() {
   }, [api, linkedJobId]);
 
   const messages = useMemo(() => {
-    const completedJobs = state.jobs.filter((job) => pickDraft(job) || isComplete(job));
-    const invoiceDrafts = state.invoices.filter((invoice) => pickDraft(invoice) || isUnpaid(invoice));
-    const quoteDrafts = state.quotes.filter((quote) => pickDraft(quote) || !statusOf(quote).includes("accepted"));
+    const completedJobs = state.jobs.filter((job) => messageStillNeedsApproval(job) && (pickDraft(job) || isComplete(job)));
+    const invoiceDrafts = state.invoices.filter((invoice) => messageStillNeedsApproval(invoice) && (pickDraft(invoice) || isUnpaid(invoice)));
+    const quoteDrafts = state.quotes.filter((quote) => messageStillNeedsApproval(quote) && (pickDraft(quote) || !statusOf(quote).includes("accepted")));
     const recordDrafts = [
       ...completedJobs.map((item) => draftFromRecord("job", item, state.clients)),
       ...invoiceDrafts.map((item) => draftFromRecord("invoice", item, state.clients)),
       ...quoteDrafts.map((item) => draftFromRecord("quote", item, state.clients)),
     ].filter(Boolean);
-    const linkedJobMessage = linkedJobId && state.linkedJob ? [draftFromRecord("job", state.linkedJob, state.clients)].filter(Boolean) : [];
+    const linkedJobMessage = linkedJobId && state.linkedJob && messageStillNeedsApproval(state.linkedJob) ? [draftFromRecord("job", state.linkedJob, state.clients)].filter(Boolean) : [];
     const all = [...linkedJobMessage, ...recordDrafts];
     if (!linkedJobId) return all.slice(0, 100);
     const linkedFirst = all.filter((item) => sameId(item.record_id, linkedJobId) || String(item.href || "").includes(`/jobs/${linkedJobId}`));
@@ -153,18 +148,21 @@ export default function MessageApprovalQueuePage() {
 
   useEffect(() => { setDraftEdits((prev) => ({ ...initialDraftEdits(messages), ...prev })); }, [messages]);
 
-  function updateDraft(item, field, value) {
-    setDraftEdits((prev) => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), [field]: value } }));
-  }
+  function updateDraft(item, field, value) { setDraftEdits((prev) => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), [field]: value } })); }
+  function saveHistory(next) { setSentHistory(next); saveLocalHistory(next); }
 
-  function saveHistory(next) {
-    setSentHistory(next);
-    saveLocalHistory(next);
+  async function patchSourceMessageStatus(item, patch) {
+    const endpoint = endpointFor(item);
+    if (!endpoint) return;
+    try { await api.patch(endpoint, patch); } catch {}
   }
 
   async function markMessage(item, status) {
     setLocalStatus((prev) => ({ ...prev, [item.id]: status }));
-    setNotice(status === "dismissed" ? "Message draft dismissed from this device queue." : "Message saved for later on this device. Nothing was sent.");
+    const now = new Date().toISOString();
+    if (status === "dismissed") await patchSourceMessageStatus(item, { message_approval_status: "dismissed", message_dismissed_at: now });
+    if (status === "later") await patchSourceMessageStatus(item, { message_approval_status: "saved_for_later", message_saved_for_later_at: now });
+    setNotice(status === "dismissed" ? "Message draft dismissed and saved on the source record." : "Message saved for later on the source record. Nothing was sent.");
   }
 
   async function approveAndSend(item) {
@@ -180,11 +178,21 @@ export default function MessageApprovalQueuePage() {
     if (!payload.to_email) { setNotice("Add the customer email before approving, or add it to the linked client record."); return; }
     setBusyId(item.id);
     try {
-      const historyItem = { ...item, ...payload, status: "approved_external_email_opened", approved_at: new Date().toISOString() };
+      const approvedAt = new Date().toISOString();
+      const historyItem = { ...item, ...payload, status: "approved_external_email_opened", approved_at: approvedAt };
+      await patchSourceMessageStatus(item, {
+        message_approval_status: "approved_external_email_opened",
+        customer_message_draft: payload.message,
+        last_message_subject: payload.subject,
+        last_message_to: payload.to_email,
+        last_customer_message_opened_at: approvedAt,
+        message_approved_at: approvedAt,
+        message_send_method: "external_email_client",
+      });
       saveHistory([historyItem, ...sentHistory].slice(0, 30));
       setLocalStatus((prev) => ({ ...prev, [item.id]: "approved" }));
       window.location.href = mailtoUrl(payload);
-      setNotice("Approved. Your email app opened with the checked message. Send from there when ready.");
+      setNotice("Approved, saved on the source record, and your email app opened. Send from there when ready.");
     } catch (err) {
       setLocalStatus((prev) => ({ ...prev, [item.id]: "failed" }));
       setNotice(err?.message || "Could not open email app. Nothing was sent.");
@@ -193,14 +201,14 @@ export default function MessageApprovalQueuePage() {
     }
   }
 
-  const visibleMessages = messages.filter((item) => localStatus[item.id] !== "dismissed");
+  const visibleMessages = messages.filter((item) => localStatus[item.id] !== "dismissed" && localStatus[item.id] !== "approved");
   const linkedJobTitle = recordTitle(state.linkedJob || {}, linkedJobId ? `Job ${linkedJobId}` : "Linked job");
 
-  return <main className="cmq-shell" data-version="CHURVOX_MESSAGE_APPROVAL_STABLE_WIRING_20260601">
-    <section className="cmq-hero"><div><p>MESSAGE APPROVAL QUEUE</p><h1>Customer messages stay approval-first.</h1><span>Churvox prepares message drafts from real jobs, invoices, quotes and clients. Nothing sends silently.</span></div><aside><small>Status</small><b>{state.loading ? "Loading" : `${visibleMessages.length} drafts`}</b><em>{state.error || "Owner approval required"}</em></aside></section>
+  return <main className="cmq-shell" data-version="CHURVOX_MESSAGE_APPROVAL_SOURCE_RECORD_SYNC_20260601">
+    <section className="cmq-hero"><div><p>MESSAGE APPROVAL QUEUE</p><h1>Customer messages stay approval-first.</h1><span>Churvox prepares message drafts from real jobs, invoices, quotes and clients. Approvals now save back to the source record.</span></div><aside><small>Status</small><b>{state.loading ? "Loading" : `${visibleMessages.length} drafts`}</b><em>{state.error || "Owner approval required"}</em></aside></section>
     {linkedJobId ? <section className="cmq-linked-job-panel"><div><small>Opened from Work Slip</small><h2>{linkedJobTitle}</h2><p>{state.linkedJob ? draftBody("job", state.linkedJob) : "Linked job context is loading or unavailable. The queue is still approval-first."}</p></div><Link to={`/jobs/${linkedJobId}`}>Open linked job</Link></section> : null}
     {notice ? <section className="cmq-notice">{notice}</section> : null}
-    <section className="cmq-list">{visibleMessages.length ? visibleMessages.map((item, index) => { const status = localStatus[item.id] || item.state || "Draft"; const isLinked = linkedJobId && (sameId(item.record_id, linkedJobId) || String(item.href || "").includes(`/jobs/${linkedJobId}`)); const edit = draftEdits[item.id] || { message: item.message || "", subject: item.subject || "", to_email: item.to_email || "" }; const isBusy = busyId === item.id; const approved = status === "approved"; return <article className={`cmq-card ${approved ? "approved" : ""} ${isLinked ? "linked" : ""}`} key={item.id || index}><small>{isLinked ? "linked work slip · " : ""}{item.type || "draft"} · {status}</small><h2>{item.title || "Prepared message"}</h2><label className="cmq-field"><span>To email</span><input disabled={approved || isBusy} value={edit.to_email || ""} onChange={(e) => updateDraft(item, "to_email", e.target.value)} placeholder="customer@email.com" /></label><label className="cmq-field"><span>Subject</span><input disabled={approved || isBusy} value={edit.subject || ""} onChange={(e) => updateDraft(item, "subject", e.target.value)} placeholder="Customer update" /></label><label className="cmq-field"><span>Editable message</span><textarea disabled={approved || isBusy} value={edit.message || ""} onChange={(e) => updateDraft(item, "message", e.target.value)} placeholder="Review and edit before sending" /></label><div className="cmq-actions-row"><button type="button" disabled={isBusy || approved} onClick={() => approveAndSend(item)}>{isBusy ? "Opening..." : approved ? "Approved" : "Approve & open email"}</button><button type="button" disabled={isBusy || approved} onClick={() => markMessage(item, "later")}>Save for later</button><button type="button" disabled={isBusy || approved} onClick={() => markMessage(item, "dismissed")}>Dismiss</button></div><Link to={item.href || "/dashboard"}>Open source record</Link><span>{approved ? "Approved. Email opened externally; Churvox did not silently send." : edit.to_email ? "Email filled from record/client. Review/edit here, then approve." : "Add email here or save it on the linked client before approving."}</span></article>; }) : <article className="cmq-card"><small>Clear</small><h2>No message drafts waiting</h2><p>When completed jobs, unpaid invoices, open quotes or saved drafts exist, they will appear here.</p></article>}</section>
+    <section className="cmq-list">{visibleMessages.length ? visibleMessages.map((item, index) => { const status = localStatus[item.id] || item.state || "Draft"; const isLinked = linkedJobId && (sameId(item.record_id, linkedJobId) || String(item.href || "").includes(`/jobs/${linkedJobId}`)); const edit = draftEdits[item.id] || { message: item.message || "", subject: item.subject || "", to_email: item.to_email || "" }; const isBusy = busyId === item.id; const approved = status === "approved"; return <article className={`cmq-card ${approved ? "approved" : ""} ${isLinked ? "linked" : ""}`} key={item.id || index}><small>{isLinked ? "linked work slip · " : ""}{item.type || "draft"} · {status}</small><h2>{item.title || "Prepared message"}</h2><label className="cmq-field"><span>To email</span><input disabled={approved || isBusy} value={edit.to_email || ""} onChange={(e) => updateDraft(item, "to_email", e.target.value)} placeholder="customer@email.com" /></label><label className="cmq-field"><span>Subject</span><input disabled={approved || isBusy} value={edit.subject || ""} onChange={(e) => updateDraft(item, "subject", e.target.value)} placeholder="Customer update" /></label><label className="cmq-field"><span>Editable message</span><textarea disabled={approved || isBusy} value={edit.message || ""} onChange={(e) => updateDraft(item, "message", e.target.value)} placeholder="Review and edit before sending" /></label><div className="cmq-actions-row"><button type="button" disabled={isBusy || approved} onClick={() => approveAndSend(item)}>{isBusy ? "Opening..." : approved ? "Approved" : "Approve & open email"}</button><button type="button" disabled={isBusy || approved} onClick={() => markMessage(item, "later")}>Save for later</button><button type="button" disabled={isBusy || approved} onClick={() => markMessage(item, "dismissed")}>Dismiss</button></div><Link to={item.href || "/dashboard"}>Open source record</Link><span>{approved ? "Approved. Email opened externally; Churvox did not silently send." : edit.to_email ? "Email filled from record/client. Review/edit here, then approve." : "Add email here or save it on the linked client before approving."}</span></article>; }) : <article className="cmq-card"><small>Clear</small><h2>No message drafts waiting</h2><p>When completed jobs, unpaid invoices, open quotes or saved drafts need approval, they will appear here.</p></article>}</section>
     {sentHistory.length ? <section className="cmq-history"><h2>Recent approved messages on this device</h2>{sentHistory.map((item, index) => <article key={`${item.id || index}-${item.approved_at || index}`}><b>{item.subject || item.title}</b><span>{item.to_email || "No email"} · {item.status || "approved"}</span><em>{item.approved_at || item.sent_at || "recent"}</em></article>)}</section> : null}
   </main>;
 }
