@@ -228,7 +228,7 @@ function Sidebar() {
 
       <div className="mt-6 rounded-[24px] border border-white/10 bg-white/5 p-4">
         <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">AI Operator</div>
-        <p className="mt-3 text-sm font-bold leading-6 text-slate-300">Smart Hub is the board. Work Slips are where decisions happen.</p>
+        <p className="mt-3 text-sm font-bold leading-6 text-slate-300">Command Board shows the business. Work Slips are where decisions happen.</p>
       </div>
     </aside>
   );
@@ -245,7 +245,7 @@ function CommandDeskContent() {
         <section className="min-w-0 flex-1 p-4 md:p-6 xl:p-8">
           <header className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
             <div>
-              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Smart Hub</div>
+              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Command Board</div>
               <div className="text-sm font-bold text-slate-500">What needs attention, what Churvox prepared, what to approve next.</div>
             </div>
             <div className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-emerald-700">AI Operator Live</div>
