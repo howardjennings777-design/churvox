@@ -21,7 +21,8 @@ function arr(value) {
   if (Array.isArray(value?.results)) return value.results;
   return [];
 }
-function idOf(value) { return String(value?.id || value?._id || value?.worker_id || value?.user_id || ""); }
+function oid(value) { if (!value) return ""; if (typeof value === "object" && value.$oid) return String(value.$oid); return String(value); }
+function idOf(value) { return oid(value?.id || value?._id || value?.worker_id || value?.user_id || ""); }
 function workerName(worker) { return worker?.name || worker?.display_name || worker?.full_name || worker?.email || "Worker"; }
 function titleOf(job) { return job?.title || job?.job_name || job?.customer_name || job?.client_name || "Job"; }
 function clientOf(job) { return job?.client_name || job?.customer_name || job?.name || "No client"; }
@@ -47,11 +48,15 @@ function collectPhotos(job) {
   }));
   return out;
 }
+function reviewed(job) {
+  const state = reviewStatusOf(job);
+  return Boolean(job?.reviewed || job?.owner_approved || job?.work_approved || ["approved", "reviewed", "accepted", "invoiced"].includes(state));
+}
 
 export default function JobDetailPageStable() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const api = useApi();
+  const { get, patch } = useApi();
   const { user, isWorker } = useAuth();
   const [job, setJob] = useState(null);
   const [workers, setWorkers] = useState([]);
@@ -67,20 +72,20 @@ export default function JobDetailPageStable() {
 
   const loadJob = useCallback(async () => {
     setLoading(true);
-    const [jobRes, workersRes] = await Promise.all([api.get(`/jobs/${encodeURIComponent(id)}`), api.get("/team/workers")]);
+    const [jobRes, workersRes] = await Promise.all([get(`/jobs/${encodeURIComponent(id)}`), get("/team/workers")]);
     if (jobRes?.success) {
       const nextJob = asRecord(jobRes);
       setJob(nextJob);
       setOwnerNotes(nextJob?.notes || nextJob?.internal_notes || "");
       setWorkerNotes(nextJob?.worker_notes || nextJob?.latest_worker_note || "");
-      setSelectedWorker(nextJob?.assigned_worker_id || nextJob?.worker_id || "");
+      setSelectedWorker(oid(nextJob?.assigned_worker_id || nextJob?.worker_id || ""));
     } else {
       setJob(null);
       toast.error(jobRes?.error || "Could not load job");
     }
     setWorkers(workersRes?.success ? arr(workersRes.data) : []);
     setLoading(false);
-  }, [api, id]);
+  }, [get, id]);
 
   useEffect(() => { loadJob(); }, [loadJob]);
 
@@ -88,11 +93,16 @@ export default function JobDetailPageStable() {
   const status = statusOf(job || {});
   const reviewStatus = reviewStatusOf(job || {});
   const price = jobPrice(job || {});
+  const desc = invoiceDescription(job || {}, workerNotes);
   const selectedWorkerRecord = workers.find((worker) => idOf(worker) === String(selectedWorker));
+  const isCompleted = ["completed", "complete", "done"].includes(status);
+  const isReviewed = reviewed(job || {});
+  const hasInvoice = Boolean(job?.invoice_id || job?.draft_invoice_id);
+  const readyForInvoice = isCompleted && isReviewed && !hasInvoice;
 
   async function patchJob(payload, success = "Job updated") {
     setBusy(success);
-    const res = await api.patch(`/jobs/${encodeURIComponent(id)}`, { ...payload, updated_at: new Date().toISOString() });
+    const res = await patch(`/jobs/${encodeURIComponent(id)}`, { ...payload, updated_at: new Date().toISOString() });
     setBusy("");
     if (res?.success) {
       toast.success(success);
@@ -102,40 +112,116 @@ export default function JobDetailPageStable() {
     toast.error(res?.error || "Could not update job");
     return false;
   }
+
   async function assignWorker() {
     if (!selectedWorker) return toast.error("Choose a worker first");
     const worker = selectedWorkerRecord;
-    return patchJob({ assigned_worker_id: selectedWorker, worker_id: selectedWorker, assigned_worker_name: worker ? workerName(worker) : job?.assigned_worker_name, worker_name: worker ? workerName(worker) : job?.worker_name, status: status === "completed" ? status : "assigned", assigned_at: new Date().toISOString() }, "Worker assigned");
+    return patchJob({
+      assigned_worker_id: selectedWorker,
+      worker_id: selectedWorker,
+      assigned_worker_name: worker ? workerName(worker) : job?.assigned_worker_name,
+      worker_name: worker ? workerName(worker) : job?.worker_name,
+      status: status === "completed" ? status : "assigned",
+      assigned_at: new Date().toISOString(),
+    }, "Worker assigned");
   }
+
   async function workerAction(nextStatus) {
     const now = new Date().toISOString();
-    let patch = { status: nextStatus };
-    if (nextStatus === "acknowledged") patch = { ...patch, accepted_at: now };
-    if (nextStatus === "in_progress") patch = { ...patch, started_at: job?.started_at || now };
-    if (nextStatus === "paused") patch = { ...patch, paused_at: now };
+    let nextPatch = { status: nextStatus };
+    if (nextStatus === "acknowledged") nextPatch = { ...nextPatch, accepted_at: now, acknowledged_at: now };
+    if (nextStatus === "in_progress") nextPatch = { ...nextPatch, started_at: job?.started_at || now };
+    if (nextStatus === "paused") nextPatch = { ...nextPatch, paused_at: now };
     if (nextStatus === "completed") {
-      const desc = invoiceDescription(job || {}, workerNotes);
-      patch = { ...patch, completed_at: now, worker_notes: workerNotes, completion_notes: workerNotes || job?.completion_notes || desc, latest_worker_note: workerNotes || job?.latest_worker_note || "Completed by worker", work_review_status: "pending_review", owner_review_status: "pending_review", worker_action_required: false, ai_invoice_description: desc, invoice_description_draft: desc, customer_message_draft: customerDraft({ ...(job || {}), completion_notes: workerNotes || desc }) };
+      const nextDesc = invoiceDescription(job || {}, workerNotes);
+      nextPatch = {
+        ...nextPatch,
+        completed: true,
+        completed_at: now,
+        worker_notes: workerNotes,
+        completion_notes: workerNotes || job?.completion_notes || nextDesc,
+        latest_worker_note: workerNotes || job?.latest_worker_note || "Completed by worker",
+        work_review_status: "ready_for_review",
+        owner_review_status: "ready_for_review",
+        review_status: "ready_for_review",
+        worker_action_required: false,
+        ai_invoice_description: nextDesc,
+        invoice_description_draft: nextDesc,
+        customer_message_draft: customerDraft({ ...(job || {}), completion_notes: workerNotes || nextDesc }),
+      };
     }
-    return patchJob(patch, nextStatus === "completed" ? "Job completed for owner review" : "Job updated");
+    return patchJob(nextPatch, nextStatus === "completed" ? "Job completed for owner review" : "Job updated");
   }
+
   async function approveWork() {
-    const desc = invoiceDescription(job || {}, workerNotes);
-    return patchJob({ work_review_status: "approved", owner_review_status: "approved", owner_approved: true, work_approved: true, approved_at: new Date().toISOString(), approved_by: user?.email || user?.name || "owner", worker_action_required: false, ai_invoice_description: desc, invoice_description_draft: desc, customer_message_draft: customerDraft({ ...(job || {}), completion_notes: desc }) }, "Work approved");
+    const now = new Date().toISOString();
+    const nextDesc = invoiceDescription(job || {}, workerNotes);
+    return patchJob({
+      reviewed: true,
+      owner_approved: true,
+      work_approved: true,
+      job_approved: true,
+      work_review_status: "approved",
+      owner_review_status: "approved",
+      review_status: "approved",
+      approval_status: "approved",
+      approved_at: now,
+      reviewed_at: now,
+      approved_by: user?.email || user?.name || "owner",
+      worker_action_required: false,
+      ai_invoice_description: nextDesc,
+      invoice_description_draft: nextDesc,
+      customer_message_draft: customerDraft({ ...(job || {}), completion_notes: nextDesc }),
+      message_approval_status: job?.message_approval_status || "draft_ready",
+    }, "Work approved");
   }
+
   async function sendBack() {
     const note = reviewNote.trim();
     if (!note) return toast.error("Add a note for the worker before sending back");
-    return patchJob({ work_review_status: "sent_back", owner_review_status: "sent_back", send_back_note: note, owner_note: note, worker_action_required: true, sent_back_at: new Date().toISOString() }, "Sent back to worker");
+    const existingNotes = String(job?.notes || "");
+    const reviewLine = `Owner sent work back: ${note}`;
+    return patchJob({
+      status: "assigned",
+      reviewed: false,
+      owner_approved: false,
+      work_approved: false,
+      job_approved: false,
+      work_review_status: "sent_back",
+      owner_review_status: "sent_back",
+      review_status: "sent_back",
+      send_back_note: note,
+      owner_note: note,
+      worker_note: note,
+      worker_action_required: true,
+      sent_back_at: new Date().toISOString(),
+      notes: existingNotes ? `${existingNotes}\n\n${reviewLine}` : reviewLine,
+    }, "Sent back to worker");
   }
+
   async function prepareMessage() {
     const message = customerDraft(job || {});
-    const ok = await patchJob({ customer_message_draft: message, last_message_subject: `Job update for ${titleOf(job || {})}` }, "Customer message draft prepared");
+    const ok = await patchJob({
+      customer_message_draft: message,
+      last_message_subject: `Job update for ${titleOf(job || {})}`,
+      message_approval_status: "draft_ready",
+    }, "Customer message draft prepared");
     if (ok) navigate(`/message-approvals?job_id=${encodeURIComponent(id)}`);
   }
+
   async function approveAndInvoice() {
-    const ok = reviewStatus === "approved" || job?.owner_approved || await approveWork();
-    if (ok) navigate(`/invoices/new?job_id=${encodeURIComponent(id)}`);
+    let ok = isReviewed;
+    if (!ok) ok = await approveWork();
+    if (!ok) return;
+    const nextDesc = invoiceDescription(job || {}, workerNotes);
+    await patch(`/jobs/${encodeURIComponent(id)}`, {
+      invoice_description_draft: nextDesc,
+      ai_invoice_description: nextDesc,
+      invoice_ready_at: new Date().toISOString(),
+      invoice_source_status: "owner_approved",
+      updated_at: new Date().toISOString(),
+    });
+    navigate(`/invoices/new?job_id=${encodeURIComponent(id)}`);
   }
 
   if (loading) return <Layout><PremiumPage maxWidth={980}><PremiumCard><div className="p-8 text-center font-bold text-slate-300">Loading job…</div></PremiumCard></PremiumPage></Layout>;
@@ -143,7 +229,7 @@ export default function JobDetailPageStable() {
 
   return <Layout><PremiumPage maxWidth={1160}>
     <button type="button" onClick={() => navigate("/jobs")} className="mb-3 inline-flex items-center gap-2 text-sm font-black text-slate-300 hover:text-white"><ArrowLeft size={16} /> Back to jobs</button>
-    <PremiumHero eyebrow="Job detail" title={titleOf(job)} subtitle="Worker completes the job, owner reviews it, then invoice and customer message flow from the same job record." icon={<ClipboardList className="h-6 w-6" />} actions={isOwnerView ? <div className="flex flex-wrap gap-2"><PremiumButton variant="secondary" onClick={() => navigate(`/jobs/${id}/edit`)}>Edit job</PremiumButton>{job?.invoice_id ? <PremiumButton variant="secondary" onClick={() => navigate(`/invoices/${job.invoice_id}`)}>View invoice</PremiumButton> : null}</div> : null} />
+    <PremiumHero eyebrow="Job detail" title={titleOf(job)} subtitle="Worker completes the job, owner reviews it, then invoice and customer message flow from the same job record." icon={<ClipboardList className="h-6 w-6" />} actions={isOwnerView ? <div className="flex flex-wrap gap-2"><PremiumButton variant="secondary" onClick={() => navigate(`/jobs/${id}/edit`)}>Edit job</PremiumButton>{hasInvoice ? <PremiumButton variant="secondary" onClick={() => navigate(`/invoices/${job.invoice_id || job.draft_invoice_id}`)}>View invoice</PremiumButton> : null}</div> : null} />
 
     <section className="mb-5 grid gap-3 md:grid-cols-5">
       <article className="rounded-3xl border border-slate-700 bg-slate-950/50 p-4"><span className="text-xs font-black uppercase tracking-[0.16em] text-cyan-300">Status</span><b className="mt-2 block text-2xl text-white">{pretty(status)}</b></article>
@@ -154,6 +240,7 @@ export default function JobDetailPageStable() {
     </section>
 
     {reviewStatus === "sent_back" || job?.worker_action_required ? <PremiumCard><div className="rounded-3xl border border-amber-300/30 bg-amber-400/10 p-4"><b className="text-amber-100">Sent back to worker</b><p className="mt-2 whitespace-pre-wrap text-sm font-semibold text-amber-50/80">{job.send_back_note || job.owner_note || "Worker needs to update this job before owner approval."}</p></div></PremiumCard> : null}
+    {isOwnerView && readyForInvoice ? <PremiumCard><div className="rounded-3xl border border-lime-300/30 bg-lime-400/10 p-4"><b className="text-lime-100">Ready for invoice draft</b><p className="mt-2 text-sm font-semibold text-lime-50/80">This work has been approved. Churvox has a draft invoice description ready from the worker notes and job details.</p></div></PremiumCard> : null}
 
     <section className="grid gap-5 xl:grid-cols-[1fr_380px]">
       <div className="grid gap-5">
@@ -164,8 +251,8 @@ export default function JobDetailPageStable() {
       <aside className="grid content-start gap-5">
         {isOwnerView ? <PremiumCard title="Assign worker" icon={<UserCircle2 className="h-5 w-5" />}><select className="w-full rounded-2xl border border-slate-700 bg-slate-950/60 p-3 font-bold text-white" value={selectedWorker} onChange={(e) => setSelectedWorker(e.target.value)}><option value="">Choose worker</option>{workers.map((worker) => <option key={idOf(worker)} value={idOf(worker)}>{workerName(worker)}</option>)}</select><div className="mt-3"><PremiumButton onClick={assignWorker} disabled={Boolean(busy)}>Assign worker</PremiumButton></div></PremiumCard> : null}
         {!isOwnerView ? <PremiumCard title="Worker actions" icon={<Clock className="h-5 w-5" />}><div className="grid gap-2"><PremiumButton variant="secondary" onClick={() => workerAction("acknowledged")} disabled={Boolean(busy)}>Accept job</PremiumButton><PremiumButton onClick={() => workerAction("in_progress")} disabled={Boolean(busy)} iconLeft={<Play className="h-4 w-4" />}>Start job</PremiumButton><PremiumButton variant="secondary" onClick={() => workerAction("paused")} disabled={Boolean(busy)}>Pause</PremiumButton><PremiumButton variant="secondary" onClick={() => workerAction("in_progress")} disabled={Boolean(busy)} iconLeft={<RotateCcw className="h-4 w-4" />}>Resume</PremiumButton><PremiumButton onClick={() => workerAction("completed")} disabled={Boolean(busy)} iconLeft={<CheckCircle2 className="h-4 w-4" />}>Complete for owner review</PremiumButton></div></PremiumCard> : null}
-        {isOwnerView ? <PremiumCard title="Owner review" icon={<CheckCircle2 className="h-5 w-5" />}><p className="text-sm font-semibold text-slate-300">Approve completed work, create the invoice draft, or prepare a customer message.</p><div className="mt-3 grid gap-2"><PremiumButton onClick={approveWork} disabled={Boolean(busy) || status !== "completed"} iconLeft={<CheckCircle2 className="h-4 w-4" />}>Approve work</PremiumButton><PremiumButton onClick={approveAndInvoice} disabled={Boolean(busy) || status !== "completed"} iconLeft={<FileText className="h-4 w-4" />}>Approve & create invoice</PremiumButton><PremiumButton variant="secondary" onClick={prepareMessage} disabled={Boolean(busy)} iconLeft={<MessageSquareText className="h-4 w-4" />}>Prepare customer message</PremiumButton></div><div className="mt-4 rounded-2xl border border-slate-700 bg-slate-950/60 p-3"><textarea className="min-h-[90px] w-full rounded-xl border border-slate-700 bg-slate-900/80 p-3 text-sm font-semibold text-white" value={reviewNote} onChange={(e) => setReviewNote(e.target.value)} placeholder="Reason if sending back to worker" /><button type="button" onClick={sendBack} disabled={Boolean(busy)} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-300/30 bg-amber-400/10 px-4 py-3 text-sm font-black text-amber-100"><Send className="h-4 w-4" /> Send back to worker</button></div></PremiumCard> : null}
-        {job.invoice_id ? <PremiumCard title="Invoice linked"><Link className="font-black text-cyan-300" to={`/invoices/${job.invoice_id}`}>Open linked invoice</Link></PremiumCard> : null}
+        {isOwnerView ? <PremiumCard title="Owner review" icon={<CheckCircle2 className="h-5 w-5" />}><p className="text-sm font-semibold text-slate-300">Approve completed work, create the invoice draft, or prepare a customer message.</p><div className="mt-3 grid gap-2"><PremiumButton onClick={approveWork} disabled={Boolean(busy) || !isCompleted} iconLeft={<CheckCircle2 className="h-4 w-4" />}>Approve work</PremiumButton><PremiumButton onClick={approveAndInvoice} disabled={Boolean(busy) || !isCompleted} iconLeft={<FileText className="h-4 w-4" />}>Approve & create invoice</PremiumButton><PremiumButton variant="secondary" onClick={prepareMessage} disabled={Boolean(busy)} iconLeft={<MessageSquareText className="h-4 w-4" />}>Prepare customer message</PremiumButton></div><div className="mt-4 rounded-2xl border border-slate-700 bg-slate-950/60 p-3"><textarea className="min-h-[90px] w-full rounded-xl border border-slate-700 bg-slate-900/80 p-3 text-sm font-semibold text-white" value={reviewNote} onChange={(e) => setReviewNote(e.target.value)} placeholder="Reason if sending back to worker" /><button type="button" onClick={sendBack} disabled={Boolean(busy)} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-300/30 bg-amber-400/10 px-4 py-3 text-sm font-black text-amber-100"><Send className="h-4 w-4" /> Send back to worker</button></div></PremiumCard> : null}
+        {hasInvoice ? <PremiumCard title="Invoice linked"><Link className="font-black text-cyan-300" to={`/invoices/${job.invoice_id || job.draft_invoice_id}`}>Open linked invoice</Link></PremiumCard> : null}
       </aside>
     </section>
   </PremiumPage></Layout>;
