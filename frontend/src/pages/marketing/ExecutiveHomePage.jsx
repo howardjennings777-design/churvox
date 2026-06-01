@@ -4,9 +4,9 @@ import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 import "./ExecutiveHomeProper.css";
 
 const slips = [
-  ["Invoice ready", "Completed job, proof and wording prepared."],
-  ["Quote follow-up", "Customer nudge is drafted for approval."],
-  ["Assign worker", "Open job needs crew. Best match suggested."],
+  ["Invoice ready", "Completed job, proof photos and invoice wording prepared."],
+  ["Quote follow-up", "Customer message drafted and ready for approval."],
+  ["Assign worker", "Best available crew member suggested with reason."],
 ];
 
 const proof = ["No-card trial", "Approval-first AI", "Built for mobile crews", "MYOB-ready on Command"];
@@ -15,9 +15,9 @@ const featureCards = [
   ["Jobs", "Create, assign and review field work without losing the admin trail."],
   ["Clients", "Keep customer details, job history, quotes and invoices connected."],
   ["Invoices", "Prepare draft invoices from completed work, notes, photos and pricing."],
-  ["Quotes", "See quiet quotes and approve follow-up messages before they send."],
+  ["Quotes", "See quiet quotes and approve follow-up messages before they go cold."],
   ["Crew", "Give workers a simple job view while owners keep the full picture."],
-  ["AI Operator", "Churvox lines up the next admin action. You stay in control."],
+  ["AI Operator", "Churvox prepares the next admin action. You stay in control."],
 ];
 
 export function Nav() {
@@ -41,7 +41,7 @@ export function Nav() {
 export function Footer() {
   return (
     <footer className="cvx-footer">
-      <div><b>Churvox</b><span>Churvox does the admin. You approve.</span></div>
+      <div><b>Churvox</b><span>Churvox prepares the admin. You approve.</span></div>
       <nav><Link to="/pricing">Pricing</Link><Link to="/privacy-policy">Privacy</Link><Link to="/terms-of-service">Terms</Link><Link to="/login">Log in</Link></nav>
     </footer>
   );
@@ -49,14 +49,14 @@ export function Footer() {
 
 export default function ExecutiveHomePage() {
   return (
-    <main className="cvp-home cvx-public" data-version="CHURVOX_PUBLIC_FULLSCREEN_HERO_20260601">
+    <main className="cvp-home cvx-public" data-version="CHURVOX_PUBLIC_FULLSCREEN_TIGHT_20260601">
       <section className="cvx-full-hero">
         <Nav />
         <div className="cvx-hero-grid">
           <section className="cvx-hero-copy">
             <p className="cvx-pill">Built for trade and service owners</p>
-            <h1>Stop chasing admin after the job is done.</h1>
-            <p className="cvx-lead">Churvox keeps jobs, clients, crew, quotes, invoices and proof in one place. AI prepares the next admin action, then you approve it.</p>
+            <h1>Churvox does the admin. You approve.</h1>
+            <p className="cvx-lead">Keep jobs, clients, crew, quotes, invoices and proof of work in one place. The AI Operator prepares the next admin action so you are not chasing it after hours.</p>
             <div className="cvx-actions">
               <Link to="/signup" className="cvx-primary">Start free</Link>
               <Link to="/pricing" className="cvx-secondary">See pricing</Link>
@@ -68,7 +68,7 @@ export default function ExecutiveHomePage() {
             <div className="cvx-preview-head">
               <small>AI Operator</small>
               <b>Ready for approval</b>
-              <span>3 actions prepared from today’s work</span>
+              <span>Three actions prepared from today’s work.</span>
             </div>
             <div className="cvx-slip-stack">
               {slips.map(([title, copy]) => (
@@ -88,13 +88,13 @@ export default function ExecutiveHomePage() {
       <section className="cvx-screen cvx-problem-screen">
         <div className="cvx-screen-copy">
           <p className="cvx-pill">The gap Churvox fixes</p>
-          <h2>Most job apps track the work. Churvox helps finish the admin after it.</h2>
+          <h2>Most job apps track the work. Churvox finishes the admin after it.</h2>
         </div>
         <div className="cvx-problem-grid">
-          <span>Invoices forgotten after busy days</span>
-          <span>Photos buried in messages</span>
-          <span>Quotes go quiet</span>
-          <span>Owners chase every next step</span>
+          <span>Invoices get forgotten after busy days.</span>
+          <span>Photos and notes end up buried in messages.</span>
+          <span>Quotes go quiet because nobody has time to chase them.</span>
+          <span>Owners are left guessing the next admin step.</span>
         </div>
       </section>
 
@@ -111,22 +111,22 @@ export default function ExecutiveHomePage() {
       <section id="inside" className="cvx-screen cvx-inside-screen">
         <div>
           <p className="cvx-pill dark">Inside the app</p>
-          <h2>The public site feels simple. The logged-in app becomes your dark Command Room.</h2>
-          <span>Jobs, invoices, dispatch, money, crew and AI-prepared actions stay focused when it is time to run the business.</span>
+          <h2>The public site stays simple. The logged-in app becomes your Command Desk.</h2>
+          <span>Jobs, invoices, dispatch, money, crew workload and AI-prepared actions stay focused when it is time to run the business.</span>
         </div>
         <div className="cvx-mini-command">
-          <b>Command Room</b>
+          <b>Command Desk</b>
           <span>Invoice ready</span>
           <span>Quote follow-up ready</span>
-          <span>Worker assignment gap</span>
-          <span>Payment chase prepared</span>
+          <span>Worker assignment prepared</span>
+          <span>Payment follow-up drafted</span>
         </div>
       </section>
 
       <section className="cvx-final-cta">
         <div>
           <p className="cvx-pill">Simple promise</p>
-          <h2>Churvox does the admin. You approve.</h2>
+          <h2>Churvox prepares the admin. You stay in control.</h2>
           <span>Start with jobs and clients. Grow into AI Operator actions, crew workflow, invoices, quotes, payroll workspace and MYOB sync when ready.</span>
         </div>
         <Link to="/signup" className="cvx-primary">Start free</Link>
