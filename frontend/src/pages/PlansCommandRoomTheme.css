@@ -1,0 +1,173 @@
+/* CHURVOX_PLANS_COMMAND_ROOM_THEME_20260601
+   Plans page visual override only. Billing/trial/checkout logic stays in PlansPage.js.
+*/
+
+.cv-plans {
+  color: #eaf4ff !important;
+  background:
+    radial-gradient(circle at 10% 8%, rgba(34, 211, 238, .18), transparent 28%),
+    radial-gradient(circle at 88% 12%, rgba(59, 130, 246, .20), transparent 32%),
+    radial-gradient(circle at 55% 92%, rgba(34, 197, 94, .10), transparent 32%),
+    linear-gradient(135deg, #07111f 0%, #0f172a 48%, #111827 100%) !important;
+}
+
+.cv-plans::before {
+  opacity: .5 !important;
+  background-image:
+    linear-gradient(rgba(103, 232, 249, .045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(103, 232, 249, .045) 1px, transparent 1px) !important;
+}
+
+.cv-plans-top,
+.cv-plans-hero,
+.cv-card,
+.cv-user-blocks,
+.cv-sms-pricing,
+.cv-myob-addon,
+.cv-footer-row div,
+.cv-notice {
+  border-color: rgba(103, 232, 249, .20) !important;
+  background: rgba(15, 23, 42, .74) !important;
+  box-shadow: 0 22px 70px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.07) !important;
+  backdrop-filter: blur(18px) saturate(145%) !important;
+}
+
+.cv-plans-top {
+  background: rgba(7, 17, 31, .92) !important;
+}
+
+.cv-plans-top span,
+.cv-status-pill,
+.cv-notice {
+  color: #67e8f9 !important;
+  background: rgba(103, 232, 249, .10) !important;
+  border-color: rgba(103, 232, 249, .25) !important;
+}
+
+.cv-plans-hero {
+  min-height: 260px !important;
+  background:
+    radial-gradient(circle at 82% 18%, rgba(34, 211, 238, .18), transparent 34%),
+    radial-gradient(circle at 8% 88%, rgba(34, 197, 94, .10), transparent 34%),
+    rgba(15, 23, 42, .76) !important;
+}
+
+.cv-kicker,
+.cv-card span,
+.cv-user-blocks small,
+.cv-myob-addon small,
+.cv-sms-grid small {
+  color: #67e8f9 !important;
+}
+
+.cv-plans-hero h1 {
+  max-width: 900px !important;
+  color: #f8fbff !important;
+  font-size: clamp(42px, 5.4vw, 78px) !important;
+  letter-spacing: -.075em !important;
+}
+
+.cv-plans-hero p,
+.cv-card p,
+.cv-card li,
+.cv-user-blocks span,
+.cv-user-blocks p,
+.cv-user-blocks li,
+.cv-myob-addon span,
+.cv-sms-pricing span,
+.cv-footer-row div {
+  color: #b8c7da !important;
+}
+
+.cv-card {
+  min-height: 485px !important;
+  background:
+    radial-gradient(circle at 82% 10%, rgba(34, 211, 238, .10), transparent 32%),
+    linear-gradient(135deg, rgba(22,39,68,.94), rgba(30,58,100,.62)) !important;
+}
+
+.cv-card.featured {
+  border-color: rgba(103, 232, 249, .46) !important;
+  background:
+    radial-gradient(circle at 84% 8%, rgba(34, 211, 238, .20), transparent 32%),
+    radial-gradient(circle at 18% 92%, rgba(34, 197, 94, .12), transparent 30%),
+    linear-gradient(135deg, rgba(12, 31, 63, .98), rgba(14, 48, 72, .90)) !important;
+  box-shadow: 0 30px 100px rgba(34, 211, 238, .16), inset 0 1px 0 rgba(255,255,255,.10) !important;
+}
+
+.cv-card.featured::before {
+  color: #07111f !important;
+  background: linear-gradient(135deg, #67e8f9, #22c55e) !important;
+  box-shadow: 0 18px 44px rgba(34, 211, 238, .24) !important;
+}
+
+.cv-card.current {
+  outline: 3px solid rgba(34, 197, 94, .16) !important;
+  border-color: rgba(34, 197, 94, .42) !important;
+}
+
+.cv-card h2,
+.cv-card .cv-price b,
+.cv-user-blocks b,
+.cv-user-blocks strong,
+.cv-myob-addon b,
+.cv-sms-pricing b,
+.cv-sms-grid strong,
+.cv-footer-row b {
+  color: #f8fbff !important;
+}
+
+.cv-card li::before,
+.cv-user-blocks li::before {
+  background: linear-gradient(135deg, #67e8f9, #22c55e) !important;
+  box-shadow: 0 0 0 5px rgba(103,232,249,.10) !important;
+}
+
+.cv-card button,
+.cv-card.featured button,
+.cv-user-block-buy,
+.cv-myob-addon button,
+.cv-sms-grid button {
+  color: #07111f !important;
+  background: linear-gradient(135deg, #67e8f9, #22c55e) !important;
+  box-shadow: 0 18px 44px rgba(34, 211, 238, .22) !important;
+}
+
+.cv-card:not(.featured) button {
+  color: #eaf4ff !important;
+  background: rgba(255,255,255,.075) !important;
+  border: 1px solid rgba(103,232,249,.20) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.07) !important;
+}
+
+.cv-card button:disabled,
+.cv-myob-addon button:disabled,
+.cv-sms-grid button:disabled,
+.cv-user-block-buy:disabled {
+  opacity: .55 !important;
+  filter: grayscale(.2) !important;
+}
+
+.cv-user-blocks > div,
+.cv-user-blocks > article,
+.cv-user-blocks > ul,
+.cv-sms-pricing > div:first-child,
+.cv-sms-grid article {
+  border-color: rgba(103,232,249,.18) !important;
+  background: rgba(255,255,255,.065) !important;
+}
+
+.cv-notice.warn {
+  color: #fde68a !important;
+  border-color: rgba(253, 230, 138, .30) !important;
+  background: rgba(253, 230, 138, .10) !important;
+}
+
+@media (max-width: 760px) {
+  .cv-plans-hero h1 {
+    font-size: clamp(36px, 12vw, 58px) !important;
+  }
+  .cv-card {
+    min-height: auto !important;
+  }
+}
