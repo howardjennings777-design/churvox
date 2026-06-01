@@ -3,21 +3,29 @@ import { Link } from "react-router-dom";
 import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 import "./ExecutiveHomeProper.css";
 
-const slips = [
-  ["Invoice ready", "Completed job, proof photos and invoice wording prepared."],
-  ["Quote follow-up", "Customer message drafted and ready for approval."],
-  ["Assign worker", "Best available crew member suggested with reason."],
+const approvals = [
+  ["Invoice draft", "Completed job, proof photos and wording prepared."],
+  ["Quote follow-up", "Customer chase message written for review."],
+  ["Crew match", "Best available worker suggested before dispatch."],
+  ["Payment reminder", "Polite reminder drafted before money goes stale."],
 ];
 
-const proof = ["No-card trial", "Approval-first AI", "Built for mobile crews", "MYOB-ready on Command"];
+const proof = ["No-card trial", "Owner approves first", "Mobile crew workflow", "MYOB ready"];
 
-const featureCards = [
-  ["Jobs", "Create, assign and review field work without losing the admin trail."],
+const workflow = [
+  ["Jobs", "Create, assign and track work without losing the admin trail."],
   ["Clients", "Keep customer details, job history, quotes and invoices connected."],
-  ["Invoices", "Prepare draft invoices from completed work, notes, photos and pricing."],
-  ["Quotes", "See quiet quotes and approve follow-up messages before they go cold."],
-  ["Crew", "Give workers a simple job view while owners keep the full picture."],
-  ["AI Operator", "Churvox prepares the next admin action. You stay in control."],
+  ["Quotes", "Prepare quotes and follow-ups before the lead goes cold."],
+  ["Invoices", "Turn completed jobs into draft invoices ready to approve."],
+  ["Crew", "Give workers a simple job view while owners keep control."],
+  ["Payroll", "Review approved time and payroll handoff without hunting."],
+];
+
+const problems = [
+  "Finished jobs still need invoices.",
+  "Photos and notes get buried.",
+  "Quotes go quiet.",
+  "Owners forget the next step.",
 ];
 
 export function Nav() {
@@ -25,7 +33,7 @@ export function Nav() {
     <nav className="cvx-nav">
       <Link to="/" className="cvx-brand">
         <ChurvoxLogo variant="mark" size="lg" className="cvx-brand-logo" />
-        <span><b>Churvox</b><small>AI admin for trade owners</small></span>
+        <span><b>Churvox</b><small>AI admin command centre</small></span>
       </Link>
       <div className="cvx-links">
         <a href="/#inside">Inside</a>
@@ -41,22 +49,25 @@ export function Nav() {
 export function Footer() {
   return (
     <footer className="cvx-footer">
-      <div><b>Churvox</b><span>Churvox prepares the admin. You approve.</span></div>
-      <nav><Link to="/pricing">Pricing</Link><Link to="/privacy-policy">Privacy</Link><Link to="/terms-of-service">Terms</Link><Link to="/login">Log in</Link></nav>
+      <div><b>Churvox</b><span>AI admin command centre for trade and service owners.</span></div>
+      <nav><Link to="/pricing">Pricing</Link><Link to="/features">Features</Link><Link to="/privacy-policy">Privacy</Link><Link to="/terms-of-service">Terms</Link><Link to="/login">Log in</Link></nav>
     </footer>
   );
 }
 
 export default function ExecutiveHomePage() {
   return (
-    <main className="cvp-home cvx-public" data-version="CHURVOX_PUBLIC_FULLSCREEN_TIGHT_20260601">
+    <main className="cvp-home cvx-public" data-version="CHURVOX_PUBLIC_FULL_SCREEN_REDO_20260601">
       <section className="cvx-full-hero">
         <Nav />
         <div className="cvx-hero-grid">
           <section className="cvx-hero-copy">
             <p className="cvx-pill">Built for trade and service owners</p>
-            <h1>Churvox does the admin. You approve.</h1>
-            <p className="cvx-lead">Keep jobs, clients, crew, quotes, invoices and proof of work in one place. The AI Operator prepares the next admin action so you are not chasing it after hours.</p>
+            <h1>Run the job. Churvox handles the admin.</h1>
+            <p className="cvx-lead">
+              Jobs, clients, crew, quotes, invoices and proof of work stay connected.
+              Churvox prepares the next admin action so you can review it, approve it and move on.
+            </p>
             <div className="cvx-actions">
               <Link to="/signup" className="cvx-primary">Start free</Link>
               <Link to="/pricing" className="cvx-secondary">See pricing</Link>
@@ -64,69 +75,72 @@ export default function ExecutiveHomePage() {
             <div className="cvx-proof-row">{proof.map((item) => <span key={item}>{item}</span>)}</div>
           </section>
 
-          <aside className="cvx-command-preview" aria-label="Churvox command preview">
+          <aside className="cvx-command-preview" aria-label="Churvox AI Operator preview">
             <div className="cvx-preview-head">
               <small>AI Operator</small>
-              <b>Ready for approval</b>
-              <span>Three actions prepared from today’s work.</span>
+              <b>Admin ready to approve.</b>
+              <span>Prepared from today’s jobs, notes, photos and customer activity.</span>
             </div>
             <div className="cvx-slip-stack">
-              {slips.map(([title, copy]) => (
+              {approvals.map(([title, copy]) => (
                 <article key={title}>
                   <div><small>{title}</small><strong>{copy}</strong></div>
                   <button type="button">Approve</button>
                 </article>
               ))}
             </div>
-            <div className="cvx-preview-strip">
-              <span>Jobs</span><span>Invoices</span><span>Quotes</span><span>Crew</span>
-            </div>
           </aside>
         </div>
       </section>
 
-      <section className="cvx-screen cvx-problem-screen">
-        <div className="cvx-screen-copy">
-          <p className="cvx-pill">The gap Churvox fixes</p>
-          <h2>Most job apps track the work. Churvox finishes the admin after it.</h2>
-        </div>
-        <div className="cvx-problem-grid">
-          <span>Invoices get forgotten after busy days.</span>
-          <span>Photos and notes end up buried in messages.</span>
-          <span>Quotes go quiet because nobody has time to chase them.</span>
-          <span>Owners are left guessing the next admin step.</span>
-        </div>
-      </section>
-
-      <section id="features" className="cvx-screen cvx-feature-screen">
-        <div className="cvx-screen-copy">
-          <p className="cvx-pill">What you get</p>
-          <h2>Everything the owner needs to keep the day moving.</h2>
-        </div>
-        <div className="cvx-service-grid">
-          {featureCards.map(([title, copy]) => <article key={title}><b>{title}</b><span>{copy}</span></article>)}
+      <section className="cvx-band cvx-problem-band">
+        <div className="cvx-band-inner">
+          <div className="cvx-section-copy">
+            <p className="cvx-pill">The real problem</p>
+            <h2>Most apps track the work. The admin still lands on you.</h2>
+            <span>Churvox is built for the mess after the job: invoices, proof, follow-ups, dispatch decisions, payroll review and customer updates.</span>
+          </div>
+          <div className="cvx-problem-row">
+            {problems.map((item) => <span key={item}>{item}</span>)}
+          </div>
         </div>
       </section>
 
-      <section id="inside" className="cvx-screen cvx-inside-screen">
-        <div>
-          <p className="cvx-pill dark">Inside the app</p>
-          <h2>The public site stays simple. The logged-in app becomes your Command Desk.</h2>
-          <span>Jobs, invoices, dispatch, money, crew workload and AI-prepared actions stay focused when it is time to run the business.</span>
+      <section id="features" className="cvx-band">
+        <div className="cvx-band-inner">
+          <div className="cvx-section-copy cvx-wide-copy">
+            <p className="cvx-pill">What Churvox connects</p>
+            <h2>One clean workflow from job to approval.</h2>
+            <span>Everything is kept simple: work comes in, crew go out, proof comes back, Churvox prepares the admin, and the owner approves the next move.</span>
+          </div>
+          <div className="cvx-service-grid">
+            {workflow.map(([title, copy]) => <article key={title}><b>{title}</b><span>{copy}</span></article>)}
+          </div>
         </div>
-        <div className="cvx-mini-command">
-          <b>Command Desk</b>
-          <span>Invoice ready</span>
-          <span>Quote follow-up ready</span>
-          <span>Worker assignment prepared</span>
-          <span>Payment follow-up drafted</span>
+      </section>
+
+      <section id="inside" className="cvx-command-band">
+        <div className="cvx-command-inner">
+          <div>
+            <p className="cvx-pill dark">Inside the app</p>
+            <h2>The logged-in app becomes your Command Desk.</h2>
+            <span>Smart Hub shows what needs attention, what Churvox prepared and what button to press next. No giant website boxes. No confusing admin maze.</span>
+          </div>
+          <div className="cvx-mini-command">
+            <b>Today’s owner queue</b>
+            <span>Draft invoices ready</span>
+            <span>Quote follow-ups prepared</span>
+            <span>Worker assignment suggestions</span>
+            <span>Payroll and time review</span>
+            <span>MYOB sync when ready</span>
+          </div>
         </div>
       </section>
 
       <section className="cvx-final-cta">
         <div>
           <p className="cvx-pill">Simple promise</p>
-          <h2>Churvox prepares the admin. You stay in control.</h2>
+          <h2>Churvox prepares it. You approve it.</h2>
           <span>Start with jobs and clients. Grow into AI Operator actions, crew workflow, invoices, quotes, payroll workspace and MYOB sync when ready.</span>
         </div>
         <Link to="/signup" className="cvx-primary">Start free</Link>
