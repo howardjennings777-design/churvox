@@ -233,7 +233,7 @@ function App() {
             <Route path="/owner/login" element={<Navigate to="/login" replace />} />
             <Route path="/proof-to-paid" element={<BusinessRoute><Navigate to="/dashboard" replace /></BusinessRoute>} />
             <Route path="/ai-operator" element={<BusinessRoute><ConceptCFrame area="dashboard"><AIOperatorActionsPage /></ConceptCFrame></BusinessRoute>} />
-            <Route path="/ai-operator/approvals" element={<BusinessRoute><Navigate to="/dashboard" replace /></BusinessRoute>} />
+            <Route path="/ai-operator/approvals" element={<BusinessRoute><ConceptCFrame area="dashboard"><AIOperatorActionsPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/ai-operator/settings" element={<BusinessRoute><Navigate to="/settings" replace /></BusinessRoute>} />
             <Route path="/admin" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
             <Route path="/churvox-hq" element={<PlatformAdminRoute><ChurvoxHQPage /></PlatformAdminRoute>} />
