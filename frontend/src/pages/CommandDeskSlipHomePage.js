@@ -1,45 +1,48 @@
 import React from "react";
 import { createPortal } from "react-dom";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 const navGroups = [
   {
     title: "Command",
     items: [
-      ["Command Board", "/dashboard", "⌘"],
+      ["Command Board", "/dashboard", "CB"],
       ["AI Operator", "/ai-operator", "AI"],
-      ["Approvals", "/ai-operator/approvals", "✓"],
-      ["Notifications", "/notifications", "!"],
+      ["Approvals", "/ai-operator/approvals", "OK"],
+      ["Notifications", "/notifications", "NT"],
     ],
   },
   {
     title: "Work",
     items: [
-      ["Jobs", "/jobs", "▦"],
-      ["Dispatch Board", "/dispatch", "⇄"],
-      ["Clients", "/clients", "●"],
-      ["Quotes", "/quotes", "✎"],
-      ["Invoices", "/invoices", "$"],
+      ["Jobs", "/jobs", "JB"],
+      ["Dispatch", "/dispatch", "DP"],
+      ["Clients", "/clients", "CL"],
+      ["Quotes", "/quotes", "QT"],
+      ["Invoices", "/invoices", "IV"],
       ["Money Desk", "/money-desk", "$"],
     ],
   },
   {
-    title: "Crew & Ops",
+    title: "Crew & Admin",
     items: [
-      ["Team", "/team", "👥"],
-      ["Crew Ops", "/crew-ops", "◆"],
-      ["Payroll", "/payroll", "◧"],
-      ["Reports", "/reports", "▤"],
+      ["Team", "/team", "TM"],
+      ["Crew Ops", "/crew-ops", "CO"],
+      ["Payroll", "/payroll", "PR"],
+      ["Reports", "/reports", "RP"],
     ],
   },
   {
-    title: "Growth & System",
+    title: "System",
     items: [
-      ["Automation", "/automation", "⚙"],
-      ["Integrations", "/integrations", "↔"],
-      ["Operator Tools", "/operator-tools", "+"],
-      ["Plans", "/plans", "◇"],
-      ["Settings", "/settings", "⚙"],
+      ["Setup", "/onboarding", "SU"],
+      ["Trade Presets", "/trade-presets", "TP"],
+      ["Automation", "/automation", "AU"],
+      ["Integrations", "/integrations", "IN"],
+      ["Operator Tools", "/operator-tools", "OT"],
+      ["Plans", "/plans", "PL"],
+      ["Billing", "/billing-confidence", "BI"],
+      ["Settings", "/settings", "ST"],
       ["Support", "/support", "?"],
     ],
   },
@@ -93,6 +96,14 @@ const jobs = [
   ["1:30", "Quote visit", "Needs worker"],
   ["3:00", "Hedge trim", "Ready"],
 ];
+
+function isActivePath(pathname, href) {
+  if (href === "/dashboard") return pathname === "/dashboard" || pathname === "/overview";
+  if (href === "/money-desk") return pathname === "/money-desk" || pathname === "/money";
+  if (href === "/dispatch") return pathname === "/dispatch" || pathname === "/dispatch-board";
+  if (href === "/invoices") return pathname === "/invoices" || pathname.startsWith("/invoices/");
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 function Stat({ item }) {
   const colour = {
@@ -153,7 +164,7 @@ function WorkSlip({ active, onClose }) {
           <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
             <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Prepared by Churvox</div>
             <p className="mt-3 text-lg font-black tracking-[-0.035em] text-slate-950">The admin is prepared. The owner still makes the call.</p>
-            <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-bold leading-6 text-blue-950">This is the Churvox power moment: review the prepared action, check the evidence, then approve.</div>
+            <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-bold leading-6 text-blue-950">Review the prepared action, check the evidence, then approve when it looks right.</div>
           </section>
 
           <section className="mt-4 rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
@@ -184,6 +195,8 @@ function WorkSlip({ active, onClose }) {
 }
 
 function Sidebar() {
+  const { pathname } = useLocation();
+
   return (
     <aside className="hidden w-[292px] shrink-0 overflow-y-auto border-r border-slate-800 bg-[#0f1722] p-4 text-white lg:block">
       <div className="mb-6 flex items-center gap-3 px-1">
@@ -199,12 +212,15 @@ function Sidebar() {
           <section key={group.title}>
             <div className="mb-2 px-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{group.title}</div>
             <nav className="space-y-1">
-              {group.items.map(([label, href, icon]) => (
-                <Link key={href} to={href} className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-black ${href === "/dashboard" ? "bg-white text-slate-950" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
-                  <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-xl text-[11px] font-black ${href === "/dashboard" ? "bg-slate-950 text-white" : "bg-white/10 text-cyan-200"}`}>{icon}</span>
-                  <span className="truncate">{label}</span>
-                </Link>
-              ))}
+              {group.items.map(([label, href, icon]) => {
+                const active = isActivePath(pathname, href);
+                return (
+                  <Link key={href} to={href} className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-black ${active ? "bg-white text-slate-950" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
+                    <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-xl text-[10px] font-black ${active ? "bg-slate-950 text-white" : "bg-white/10 text-cyan-200"}`}>{icon}</span>
+                    <span className="truncate">{label}</span>
+                  </Link>
+                );
+              })}
             </nav>
           </section>
         ))}
