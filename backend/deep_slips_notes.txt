@@ -1,1 +1,0 @@
-Deep slip notes: AI approval slips should pull client, job, worker, quote and invoice context so owner approvals are clear.

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -7,14 +6,14 @@ import { useApi } from "../hooks/useApi";
 const nav = [
   ["Command Board", "/dashboard", "CB"],
   ["Jobs", "/jobs", "JB"],
-  ["Dispatch", "/dispatch", "DP"],
+  ["Dispatch Board", "/dispatch", "DP"],
   ["Crew Map", "/crew-map", "MP"],
-  ["Clients", "/clients", "CL"],
-  ["Quotes", "/quotes", "QT"],
-  ["Invoices", "/invoices", "IV"],
+  ["Client Workbench", "/clients", "CL"],
+  ["Quote Press", "/quotes", "QT"],
+  ["Invoice Forge", "/invoices", "IV"],
   ["Team", "/team", "TM"],
-  ["Plans", "/plans", "PL"],
-  ["Settings", "/settings", "ST"],
+  ["Plan Command", "/plans", "PL"],
+  ["Control Settings", "/settings", "ST"],
   ["Support", "/support", "?"],
 ];
 
@@ -92,16 +91,6 @@ function typeLabel(type) {
   return "Prepared slip";
 }
 
-function outcome(type) {
-  if (type === "assign_worker") return "Assigns the selected worker to the job and logs the decision.";
-  if (type === "create_invoice_draft" || type.includes("invoice_draft")) return "Creates a draft invoice only. It does not email the customer.";
-  if (type === "send_invoice") return "Emails the invoice link to the customer.";
-  if (type === "invoice_reminder") return "Emails the payment reminder to the customer.";
-  if (type.includes("quote")) return "Emails the quote follow-up to the customer.";
-  if (type.includes("job_review")) return "Approves the job review and moves time toward payroll review.";
-  return "Approval blocked until this slip has a known action.";
-}
-
 function approveText(type) {
   if (type === "assign_worker") return "Approve assignment";
   if (type === "create_invoice_draft" || type.includes("invoice_draft")) return "Create draft invoice";
@@ -110,6 +99,16 @@ function approveText(type) {
   if (type.includes("quote")) return "Send follow-up";
   if (type.includes("job_review")) return "Approve review";
   return "Approve";
+}
+
+function outcome(type) {
+  if (type === "assign_worker") return "Assigns the selected worker to the job and logs the decision.";
+  if (type === "create_invoice_draft" || type.includes("invoice_draft")) return "Creates a draft invoice only. It does not email the customer.";
+  if (type === "send_invoice") return "Emails the invoice link to the customer.";
+  if (type === "invoice_reminder") return "Emails the payment reminder to the customer.";
+  if (type.includes("quote")) return "Emails the quote follow-up to the customer.";
+  if (type.includes("job_review")) return "Approves the job review and moves time toward payroll review.";
+  return "Approval blocked until this slip has a known action.";
 }
 
 function required(type) {
@@ -227,7 +226,6 @@ function SlipModal({ item, onClose, onChanged }) {
   const { patch, post } = useApi();
   const [form, setForm] = React.useState(item.form);
   const [busy, setBusy] = React.useState(false);
-  const [report, setReport] = React.useState(null);
   const missing = required(item.type).filter((key) => !has(form[key]));
   const ready = missing.length === 0;
 
@@ -313,14 +311,15 @@ function SlipModal({ item, onClose, onChanged }) {
 export default function CommandDeskQueuePage() {
   const { get, post } = useApi();
   const [items, setItems] = React.useState([]);
+  const [report, setReport] = React.useState(null);
   const [open, setOpen] = React.useState(null);
   const [busy, setBusy] = React.useState(false);
-  const [report, setReport] = React.useState(null);
 
   const load = React.useCallback(async () => {
     const res = await get("/ai/operator/slips");
     const rows = Array.isArray(res?.data?.data) ? res.data.data : Array.isArray(res?.data?.actions) ? res.data.actions : [];
     setItems(rows.map(normalize));
+    setReport(res?.data?.report || null);
   }, [get]);
 
   React.useEffect(() => { load(); }, [load]);
@@ -329,20 +328,13 @@ export default function CommandDeskQueuePage() {
     setBusy(true);
     const res = await post("/ai/operator/rebuild-slips", {});
     setBusy(false);
-
     if (res?.success) {
-      const returned = Array.isArray(res?.data?.actions) ? res.data.actions : Array.isArray(res?.data?.data) ? res.data.data : [];
+      const rows = Array.isArray(res?.data?.actions) ? res.data.actions : [];
+      setItems(rows.map(normalize));
       setReport(res?.data?.report || null);
-      if (returned.length) {
-        setItems(returned.map(normalize));
-        toast.success(`Rebuilt ${returned.length} slip${returned.length === 1 ? "" : "s"}`);
-      } else {
-        toast.warning("Rebuild ran but created 0 slips. Check the report on screen.");
-        await load();
-      }
+      toast.success(`Rebuilt ${rows.length} slip${rows.length === 1 ? "" : "s"}`);
     } else {
-      toast.error(res?.error || "Could not rebuild slips. Backend route may not be loaded.");
-      await load();
+      toast.error(res?.error || "Could not rebuild slips");
     }
   };
 
@@ -356,9 +348,9 @@ export default function CommandDeskQueuePage() {
         <section className="min-w-0 flex-1 p-5 lg:p-8">
           <header className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-slate-200 bg-white px-5 py-4">
             <div>
-              <div className="text-[10px] font-black uppercase tracking-[.2em] text-slate-500">Command Board · strong slips</div>
+              <div className="text-[10px] font-black uppercase tracking-[.2em] text-slate-500">Command Board · clean strong slips</div>
               <h1 className="text-3xl font-black tracking-[-.05em]">Real slips only.</h1>
-              <p className="text-sm font-bold text-slate-500">Clear old weak slips, rebuild from real jobs, clients, quotes and invoices, then approve only when ready.</p>
+              <p className="text-sm font-bold text-slate-500">One slip system. Old weak AI actions are cleared, then rebuilt from real jobs, clients, quotes and invoices.</p>
             </div>
             <button onClick={rebuild} disabled={busy} className="rounded-full bg-emerald-500 px-5 py-3 text-xs font-black uppercase tracking-[.14em] text-white disabled:opacity-60">
               {busy ? "Rebuilding…" : "Clear old slips + rebuild"}
@@ -371,6 +363,7 @@ export default function CommandDeskQueuePage() {
               <h1 className="mt-4 max-w-3xl text-4xl font-black leading-[.95] tracking-[-.07em] lg:text-5xl">Churvox prepares. You check. Then approve.</h1>
               <p className="mt-4 max-w-2xl text-sm font-bold leading-6 text-slate-300">A slip must show the client, record, amount, worker or message needed before it can run.</p>
             </div>
+
             <aside className="rounded-[28px] border border-slate-200 bg-white p-5">
               <h2 className="text-2xl font-black">Queue</h2>
               <div className="mt-4 grid grid-cols-2 gap-3">
@@ -382,11 +375,11 @@ export default function CommandDeskQueuePage() {
 
           {report && (
             <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5">
-              <h2 className="text-2xl font-black">Rebuild report</h2>
+              <h2 className="text-2xl font-black">What Churvox can see</h2>
               <div className="mt-4 grid gap-3 md:grid-cols-4">
-                <div className="rounded-2xl bg-slate-50 p-4"><div className="text-3xl font-black">{report.jobs_found ?? 0}</div><div className="text-xs font-black text-slate-500">jobs found</div><div className="mt-1 text-[10px] font-black text-blue-600">{report.jobs_scope_mode}</div></div>
-                <div className="rounded-2xl bg-slate-50 p-4"><div className="text-3xl font-black">{report.quotes_found ?? 0}</div><div className="text-xs font-black text-slate-500">quotes found</div><div className="mt-1 text-[10px] font-black text-blue-600">{report.quotes_scope_mode}</div></div>
-                <div className="rounded-2xl bg-slate-50 p-4"><div className="text-3xl font-black">{report.invoices_found ?? 0}</div><div className="text-xs font-black text-slate-500">invoices found</div><div className="mt-1 text-[10px] font-black text-blue-600">{report.invoices_scope_mode}</div></div>
+                <div className="rounded-2xl bg-slate-50 p-4"><div className="text-3xl font-black">{report.jobs_found ?? 0}</div><div className="text-xs font-black text-slate-500">jobs</div><div className="mt-1 text-[10px] font-black text-blue-600">{report.jobs_scope_mode}</div></div>
+                <div className="rounded-2xl bg-slate-50 p-4"><div className="text-3xl font-black">{report.quotes_found ?? 0}</div><div className="text-xs font-black text-slate-500">quotes</div><div className="mt-1 text-[10px] font-black text-blue-600">{report.quotes_scope_mode}</div></div>
+                <div className="rounded-2xl bg-slate-50 p-4"><div className="text-3xl font-black">{report.invoices_found ?? 0}</div><div className="text-xs font-black text-slate-500">invoices</div><div className="mt-1 text-[10px] font-black text-blue-600">{report.invoices_scope_mode}</div></div>
                 <div className="rounded-2xl bg-slate-50 p-4"><div className="text-3xl font-black">{report.slips_created ?? 0}</div><div className="text-xs font-black text-slate-500">slips created</div></div>
               </div>
             </section>
@@ -410,7 +403,7 @@ export default function CommandDeskQueuePage() {
             </div>
             {!items.length && (
               <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm font-black text-amber-900">
-                No slips yet. Click “Clear old slips + rebuild”. If it still says 0, Churvox did not find jobs, quotes or invoices under this login/business.
+                No slips yet. Click rebuild. The “What Churvox can see” box will show whether jobs, quotes or invoices exist.
               </div>
             )}
           </section>

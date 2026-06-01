@@ -1,6 +1,5 @@
-
 import importlib
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 
 try:
     from bson import ObjectId
@@ -9,147 +8,140 @@ except Exception:
 
 _PATCHED = False
 _ORIGINAL_IMPORT_MODULE = importlib.import_module
-OWNER_ROLES = {"owner", "employer", "admin", "manager", "office_admin", "office admin", "business_owner", "platform_owner"}
+
+OWNER_ROLES = {
+    "owner", "employer", "admin", "manager",
+    "office_admin", "office admin", "business_owner", "platform_owner"
+}
+
+DONE_STATUSES = {"completed", "approved", "executed", "rejected", "dismissed", "cancelled", "canceled"}
+
 
 def now():
     return datetime.now(timezone.utc)
 
-def sid(v):
-    if v is None:
+
+def sid(value):
+    if value is None:
         return ""
-    if ObjectId is not None and isinstance(v, ObjectId):
-        return str(v)
-    return str(v or "")
+    if ObjectId is not None and isinstance(value, ObjectId):
+        return str(value)
+    if isinstance(value, dict) and value.get("$oid"):
+        return str(value["$oid"])
+    return str(value or "")
 
-def txt(v, fallback=""):
-    return str(v or fallback or "").strip()
 
-def status(v):
-    return txt(v).lower().replace(" ", "_").replace("-", "_")
+def txt(value, fallback=""):
+    return str(value or fallback or "").strip()
 
-def money(v):
+
+def norm(value):
+    return txt(value).lower().replace(" ", "_").replace("-", "_")
+
+
+def money(value):
     try:
-        if isinstance(v, str):
-            v = v.replace("$", "").replace(",", "").replace("NZD", "").strip()
-        return float(v or 0)
+        if isinstance(value, str):
+            value = value.replace("$", "").replace(",", "").replace("NZD", "").strip()
+        return float(value or 0)
     except Exception:
         return 0.0
 
-def fmt_money(v):
-    amount = money(v)
+
+def fmt_money(value):
+    amount = money(value)
     return f"${amount:,.2f}" if amount else ""
 
-def parse_dt(v):
-    if isinstance(v, datetime):
-        return v if v.tzinfo else v.replace(tzinfo=timezone.utc)
-    if not v:
+
+def parse_dt(value):
+    if isinstance(value, datetime):
+        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    if not value:
         return None
     try:
-        return datetime.fromisoformat(str(v).replace("Z", "+00:00"))
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
     except Exception:
         return None
 
-def fmt_date(v):
-    d = parse_dt(v)
-    return d.strftime("%d %b %Y") if d else txt(v)
 
-def serialize(x):
-    if isinstance(x, list):
-        return [serialize(i) for i in x]
-    if not isinstance(x, dict):
-        return x
-    out = dict(x)
+def fmt_date(value):
+    dt = parse_dt(value)
+    return dt.strftime("%d %b %Y") if dt else txt(value)
+
+
+def serial(value):
+    if isinstance(value, list):
+        return [serial(v) for v in value]
+    if not isinstance(value, dict):
+        return value
+    out = dict(value)
     if "_id" in out:
         out["id"] = sid(out.pop("_id"))
-    for k, v in list(out.items()):
-        if ObjectId is not None and isinstance(v, ObjectId):
-            out[k] = str(v)
-        elif isinstance(v, datetime):
-            out[k] = v.isoformat()
-        elif isinstance(v, dict):
-            out[k] = serialize(v)
-        elif isinstance(v, list):
-            out[k] = [serialize(i) for i in v]
+    for key, item in list(out.items()):
+        if ObjectId is not None and isinstance(item, ObjectId):
+            out[key] = str(item)
+        elif isinstance(item, datetime):
+            out[key] = item.isoformat()
+        elif isinstance(item, dict):
+            out[key] = serial(item)
+        elif isinstance(item, list):
+            out[key] = [serial(x) for x in item]
     return out
 
 
-
-def is_owner_rescue_allowed(current_user):
-    role = txt((current_user or {}).get("role")).lower()
-    return role in {"owner", "employer", "admin", "manager", "office_admin", "office admin", "business_owner", "platform_owner"}
-
-async def find_records_with_rescue(db, collection_name, business_id, current_user=None, limit=500):
-    coll = getattr(db, collection_name)
-
-    # Normal safe search first.
-    normal_query = scoped_query(business_id, current_user)
-    rows = await coll.find(normal_query).sort("updated_at", -1).to_list(length=limit)
-    if rows:
-        return rows, "scoped"
-
-    # Second pass: old records that have no business owner field at all.
-    no_scope_query = {
-        "$and": [
-            {"$or": [
-                {"business_id": {"$exists": False}},
-                {"business_id": None},
-                {"business_id": ""},
-                {"owner_id": {"$exists": False}},
-                {"owner_id": None},
-                {"owner_id": ""},
-            ]},
+def oid_query(record_id):
+    clauses = []
+    if record_id:
+        clauses += [
+            {"id": str(record_id)},
+            {"job_id": str(record_id)},
+            {"quote_id": str(record_id)},
+            {"invoice_id": str(record_id)},
+            {"client_id": str(record_id)},
         ]
-    }
-    rows = await coll.find(no_scope_query).sort("updated_at", -1).to_list(length=limit)
-    if rows:
-        return rows, "missing_business_scope"
+        if ObjectId is not None:
+            try:
+                if ObjectId.is_valid(str(record_id)):
+                    clauses.append({"_id": ObjectId(str(record_id))})
+            except Exception:
+                pass
+    return {"$or": clauses} if clauses else {}
 
-    # Last-resort owner/admin rescue.
-    # This is what makes Churvox SEE existing launch/test data if old records were saved under the wrong scope.
-    if is_owner_rescue_allowed(current_user):
-        rows = await coll.find({}).sort("updated_at", -1).to_list(length=limit)
-        if rows:
-            return rows, "owner_rescue_all_records"
 
-    return [], "none"
-
-def scoped_query(business_id, current_user=None):
-    values = []
-    for v in [
+def user_values(business_id, current_user):
+    vals = []
+    for raw in [
         business_id,
-        str(business_id),
+        (current_user or {}).get("business_id"),
         (current_user or {}).get("id"),
         (current_user or {}).get("_id"),
         (current_user or {}).get("user_id"),
-        (current_user or {}).get("business_id"),
+        (current_user or {}).get("owner_id"),
     ]:
-        if v is not None and str(v).strip():
-            values.append(str(v))
+        if raw is not None and str(raw).strip():
+            vals.append(str(raw))
             if ObjectId is not None:
                 try:
-                    if ObjectId.is_valid(str(v)):
-                        values.append(ObjectId(str(v)))
+                    if ObjectId.is_valid(str(raw)):
+                        vals.append(ObjectId(str(raw)))
                 except Exception:
                     pass
+    dedup = []
+    for v in vals:
+        if v not in dedup:
+            dedup.append(v)
+    return dedup
 
-    seen = []
-    for v in values:
-        if v not in seen:
-            seen.append(v)
 
+def scope_query(business_id, current_user):
+    vals = user_values(business_id, current_user)
     clauses = []
     for key in [
-        "business_id",
-        "businessId",
-        "owner_id",
-        "ownerId",
-        "user_id",
-        "created_by",
-        "created_by_user_id",
-        "employer_id",
-        "account_id",
+        "business_id", "businessId", "owner_id", "ownerId",
+        "user_id", "created_by", "created_by_user_id",
+        "employer_id", "account_id"
     ]:
-        for v in seen:
+        for v in vals:
             clauses.append({key: v})
 
     email = txt((current_user or {}).get("email")).lower()
@@ -160,52 +152,28 @@ def scoped_query(business_id, current_user=None):
             {"email": email},
         ]
 
-    return {"$or": clauses} if clauses else {"business_id": str(business_id)}
+    return {"$or": clauses} if clauses else {}
 
 
-def record_query(record_id, business_id):
-    clauses = [{"id": str(record_id)}]
-    if ObjectId is not None:
-        try:
-            if ObjectId.is_valid(str(record_id)):
-                clauses.append({"_id": ObjectId(str(record_id))})
-        except Exception:
-            pass
+def can_rescue(current_user):
+    return txt((current_user or {}).get("role")).lower() in OWNER_ROLES
 
-    scope = [
-        {"business_id": str(business_id)},
-        {"businessId": str(business_id)},
-        {"owner_id": str(business_id)},
-        {"ownerId": str(business_id)},
-        {"user_id": str(business_id)},
-        {"created_by": str(business_id)},
-        {"created_by_user_id": str(business_id)},
-        {"employer_id": str(business_id)},
-        {"account_id": str(business_id)},
-    ]
-    return {"$and": [{"$or": scope}, {"$or": clauses}]}
-
-def obj_query(record_id):
-    clauses = [{"id": str(record_id)}]
-    if ObjectId is not None:
-        try:
-            if ObjectId.is_valid(str(record_id)):
-                clauses.append({"_id": ObjectId(str(record_id))})
-        except Exception:
-            pass
-    return {"$or": clauses}
 
 def job_id(job):
     return sid(job.get("_id") or job.get("id") or job.get("job_id"))
 
+
 def quote_id(quote):
     return sid(quote.get("_id") or quote.get("id") or quote.get("quote_id"))
 
-def invoice_id(inv):
-    return sid(inv.get("_id") or inv.get("id") or inv.get("invoice_id"))
+
+def invoice_id(invoice):
+    return sid(invoice.get("_id") or invoice.get("id") or invoice.get("invoice_id"))
+
 
 def job_title(job):
     return txt(job.get("title") or job.get("job_title") or job.get("service_type"), "Job")
+
 
 def install():
     global _PATCHED
@@ -213,18 +181,19 @@ def install():
         return
     _PATCHED = True
 
-    def patched(name, package=None):
+    def patched_import_module(name, package=None):
         module = _ORIGINAL_IMPORT_MODULE(name, package)
         if name in {"server", "backend.server"}:
             register(module)
         return module
 
-    importlib.import_module = patched
+    importlib.import_module = patched_import_module
+
 
 def register(module):
-    if getattr(module, "_STRONG_SLIPS_REGISTERED", False):
+    if getattr(module, "_CHURVOX_STRONG_SLIPS_V3", False):
         return module
-    if any(not hasattr(module, n) for n in ["app", "db", "get_current_user", "get_user_business_id", "APIRouter"]):
+    if any(not hasattr(module, name) for name in ["app", "db", "get_current_user", "get_user_business_id", "APIRouter"]):
         return module
 
     from fastapi import Depends, Body, HTTPException
@@ -239,49 +208,108 @@ def register(module):
         if role not in OWNER_ROLES:
             raise HTTPException(status_code=403, detail="Owner approval required")
 
-    async def find_client(business_id, client_id=None, client_name=None):
+    async def find_many(collection_name, business_id, current_user, limit=500):
+        coll = getattr(db, collection_name)
+        queries = []
+
+        scoped = scope_query(business_id, current_user)
+        if scoped:
+            queries.append(("scoped", scoped))
+
+        queries.append(("missing_scope", {
+            "$or": [
+                {"business_id": {"$exists": False}},
+                {"business_id": None},
+                {"business_id": ""},
+                {"owner_id": {"$exists": False}},
+                {"owner_id": None},
+                {"owner_id": ""},
+            ]
+        }))
+
+        if can_rescue(current_user):
+            queries.append(("owner_rescue_all", {}))
+
+        for mode, query in queries:
+            try:
+                rows = await coll.find(query).sort("updated_at", -1).to_list(length=limit)
+            except Exception:
+                rows = []
+            if rows:
+                return rows, mode
+
+        return [], "none"
+
+    async def find_client(business_id, current_user, client_id=None, client_name=None, email=None):
+        queries = []
         if client_id:
-            found = await db.clients.find_one(record_query(client_id, business_id))
-            if found:
-                return found
+            q = oid_query(client_id)
+            if q:
+                queries.append(q)
         if client_name:
-            found = await db.clients.find_one({
-                "business_id": str(business_id),
-                "$or": [
-                    {"name": client_name},
-                    {"client_name": client_name},
-                    {"customer_name": client_name},
-                ],
-            })
-            if found:
-                return found
+            queries.append({"$or": [
+                {"name": client_name},
+                {"client_name": client_name},
+                {"customer_name": client_name},
+            ]})
+        if email:
+            queries.append({"$or": [
+                {"email": email},
+                {"customer_email": email},
+                {"client_email": email},
+            ]})
+
+        scope = scope_query(business_id, current_user)
+        for base in queries:
+            for final in ([{"$and": [scope, base]}] if scope else []):
+                try:
+                    found = await db.clients.find_one(final)
+                    if found:
+                        return found
+                except Exception:
+                    pass
+            if can_rescue(current_user):
+                try:
+                    found = await db.clients.find_one(base)
+                    if found:
+                        return found
+                except Exception:
+                    pass
         return {}
 
-    async def client_history(business_id, client_id=None, client_name=None):
+    async def client_history(business_id, current_user, client_id=None, client_name=None):
         ors = []
         if client_id:
             ors.append({"client_id": str(client_id)})
         if client_name:
             ors += [{"client_name": client_name}, {"customer_name": client_name}]
         if not ors:
-            return "No previous client history found yet."
+            return "No previous client history found."
 
-        base = {"business_id": str(business_id), "$or": ors}
-        jobs = await db.jobs.find(base).sort("updated_at", -1).to_list(length=10)
-        invoices = await db.invoices.find(base).sort("updated_at", -1).to_list(length=10)
-        quotes = await db.quotes.find(base).sort("updated_at", -1).to_list(length=10)
-        open_invoices = [i for i in invoices if status(i.get("status")) not in {"paid", "void", "cancelled", "canceled"}]
+        scope = scope_query(business_id, current_user)
+        query = {"$and": [scope, {"$or": ors}]} if scope else {"$or": ors}
+
+        try:
+            jobs = await db.jobs.find(query).sort("updated_at", -1).to_list(length=10)
+        except Exception:
+            jobs = []
+        try:
+            invoices = await db.invoices.find(query).sort("updated_at", -1).to_list(length=10)
+        except Exception:
+            invoices = []
+        try:
+            quotes = await db.quotes.find(query).sort("updated_at", -1).to_list(length=10)
+        except Exception:
+            quotes = []
 
         parts = []
         if jobs:
-            parts.append(f"{len(jobs)} recent job{'s' if len(jobs) != 1 else ''}; last job: {job_title(jobs[0])}")
+            parts.append(f"{len(jobs)} recent jobs; last job: {job_title(jobs[0])}")
         if invoices:
-            parts.append(f"{len(invoices)} invoice{'s' if len(invoices) != 1 else ''}; last total: {fmt_money(invoices[0].get('total') or invoices[0].get('amount')) or 'not recorded'}")
-        if open_invoices:
-            parts.append(f"{len(open_invoices)} open/unpaid invoice{'s' if len(open_invoices) != 1 else ''}")
+            parts.append(f"{len(invoices)} invoices; last total: {fmt_money(invoices[0].get('total') or invoices[0].get('amount')) or 'not recorded'}")
         if quotes:
-            parts.append(f"{len(quotes)} quote{'s' if len(quotes) != 1 else ''} on record")
-        return "; ".join(parts) or "No previous client history found yet."
+            parts.append(f"{len(quotes)} quotes on record")
+        return "; ".join(parts) or "No previous client history found."
 
     async def proof_count(business_id, job):
         count = 0
@@ -292,7 +320,7 @@ def register(module):
         if jid:
             for collection in ["job_photos", "photos", "proof_photos"]:
                 try:
-                    count += await getattr(db, collection).count_documents({"business_id": str(business_id), "job_id": jid})
+                    count += await getattr(db, collection).count_documents({"job_id": jid})
                 except Exception:
                     pass
         return count
@@ -313,45 +341,33 @@ def register(module):
             "net_minutes": net,
         }
 
-    async def worker_choices(business_id, job):
+    async def worker_choices(business_id, current_user, job):
         rows = []
         for collection in ["business_users", "users"]:
             try:
-                rows += await getattr(db, collection).find({
-                    "business_id": str(business_id),
-                    "role": {"$in": ["worker", "manager", "office_admin", "office admin"]},
-                }).to_list(length=300)
+                found, _mode = await find_many(collection, business_id, current_user, 300)
+                rows.extend(found)
             except Exception:
                 pass
 
-        seen, workers = set(), []
-        job_region = txt(job.get("region") or job.get("area") or job.get("suburb")).lower()
+        seen = set()
+        workers = []
         for worker in rows:
+            role = txt(worker.get("role")).lower()
+            if role not in {"worker", "manager", "office_admin", "office admin"}:
+                continue
             wid = sid(worker.get("_id") or worker.get("id") or worker.get("user_id") or worker.get("email"))
             if not wid or wid in seen:
                 continue
             seen.add(wid)
-            active = await db.jobs.count_documents({
-                "business_id": str(business_id),
-                "status": {"$in": ["assigned", "acknowledged", "in_progress", "started", "paused"]},
-                "$or": [{"worker_id": wid}, {"assigned_worker_id": wid}],
-            })
-            region = txt(worker.get("region") or worker.get("area"))
-            reason = "no active jobs" if active == 0 else f"{active} active job{'s' if active != 1 else ''}"
-            score = 100 - (active * 12)
-            if job_region and region and job_region == region.lower():
-                score += 25
-                reason += f"; same area: {region}"
             workers.append({
                 "id": wid,
                 "name": txt(worker.get("name") or worker.get("full_name") or worker.get("email"), "Worker"),
                 "email": txt(worker.get("email")),
-                "region": region,
-                "active_jobs": active,
-                "reason": reason,
-                "score": score,
+                "region": txt(worker.get("region") or worker.get("area")),
+                "reason": "available worker",
             })
-        return sorted(workers, key=lambda x: x.get("score", 0), reverse=True)
+        return workers
 
     def required_for(action_type):
         if action_type == "assign_worker":
@@ -389,28 +405,35 @@ def register(module):
             "ready": len(missing) == 0,
             "status": "ready",
             "group": "ready" if not missing else "needs_details",
-            "source": "strong_slip_rebuild_v1",
+            "source": "strong_slip_rebuild_v3_clean",
             "created_at": now(),
             "updated_at": now(),
         }
-        inserted = await db.ai_operator_actions.insert_one(doc)
-        doc["_id"] = inserted.inserted_id
+        result = await db.ai_operator_actions.insert_one(doc)
+        doc["_id"] = result.inserted_id
         return doc
 
-    async def build_job_context(business_id, job):
+    async def build_job_context(business_id, current_user, job):
         client_id = txt(job.get("client_id"))
-        client = await find_client(business_id, client_id, job.get("client_name") or job.get("customer_name"))
+        client = await find_client(
+            business_id,
+            current_user,
+            client_id=client_id,
+            client_name=job.get("client_name") or job.get("customer_name"),
+            email=job.get("client_email") or job.get("customer_email"),
+        )
         client_name = txt(client.get("name") or client.get("client_name") or job.get("client_name") or job.get("customer_name"), "Client not set")
         price = money(job.get("fixed_price") or job.get("price") or job.get("amount") or job.get("subtotal") or job.get("total"))
         notes = txt(job.get("worker_notes") or job.get("completion_notes") or job.get("notes"))
         photos = await proof_count(business_id, job)
+
         ctx = {
             "job_id": job_id(job),
             "job_title": job_title(job),
             "client_id": client_id,
             "client_name": client_name,
             "customer_name": client_name,
-            "customer_email": txt(client.get("email") or client.get("customer_email") or job.get("client_email") or job.get("customer_email")),
+            "customer_email": txt(client.get("email") or job.get("client_email") or job.get("customer_email")),
             "client_phone": txt(client.get("phone") or client.get("mobile") or job.get("client_phone")),
             "client_address": txt(client.get("address") or client.get("billing_address")),
             "job_address": txt(job.get("address") or job.get("job_address") or client.get("address")),
@@ -423,32 +446,45 @@ def register(module):
             "worker_note": notes,
             "description": txt(job.get("invoice_description_draft") or notes or f"Service completed for {client_name} - {job_title(job)}."),
             "proof_summary": f"{photos} photo{'s' if photos != 1 else ''} attached" if photos else "No proof photos found",
-            "client_history": await client_history(business_id, client_id, client_name),
+            "client_history": await client_history(business_id, current_user, client_id, client_name),
         }
         ctx.update(time_context(job))
         return ctx
 
-    async def rebuild_slips_for_business(business_id, current_user=None):
-        # Clear broken/old non-completed slips so duplicates and placeholder IDs stop showing.
-        await db.ai_operator_actions.delete_many({
-            "business_id": str(business_id),
-            "source": "strong_slip_rebuild_v1",
-            "status": {"$nin": ["completed", "approved", "executed"]},
-        })
+    async def clear_old_actions(business_id, current_user):
+        if can_rescue(current_user):
+            await db.ai_operator_actions.delete_many({
+                "status": {"$nin": list(DONE_STATUSES)},
+                "$or": [
+                    {"source": {"$exists": False}},
+                    {"source": {"$regex": "slip|operator|legacy|deep|strong", "$options": "i"}},
+                    {"business_id": str(business_id)},
+                ],
+            })
+        else:
+            await db.ai_operator_actions.delete_many({
+                "business_id": str(business_id),
+                "status": {"$nin": list(DONE_STATUSES)},
+            })
 
+    async def rebuild(business_id, current_user):
+        await clear_old_actions(business_id, current_user)
         actions = []
 
-        jobs, jobs_scope_mode = await find_records_with_rescue(db, "jobs", business_id, current_user, 500)
+        jobs, jobs_mode = await find_many("jobs", business_id, current_user, 500)
+        quotes, quotes_mode = await find_many("quotes", business_id, current_user, 500)
+        invoices, invoices_mode = await find_many("invoices", business_id, current_user, 500)
+
         for job in jobs:
             jid = job_id(job)
             if not jid:
                 continue
-            st = status(job.get("status"))
-            ctx = await build_job_context(business_id, job)
+            st = norm(job.get("status"))
+            ctx = await build_job_context(business_id, current_user, job)
             assigned = txt(job.get("assigned_worker_id") or job.get("worker_id") or job.get("assigned_worker_name") or job.get("worker_name"))
 
             if st not in {"completed", "done", "cancelled", "canceled"} and not assigned:
-                workers = await worker_choices(business_id, job)
+                workers = await worker_choices(business_id, current_user, job)
                 rec = workers[0] if workers else {}
                 payload = {
                     **ctx,
@@ -459,7 +495,10 @@ def register(module):
                     "message": f"You have been assigned {ctx['job_title']} for {ctx['client_name']}. Address: {ctx.get('job_address') or 'check job details'}. Please review the notes before starting.",
                 }
                 actions.append(await insert_action(
-                    business_id, "assign_worker", "job", jid,
+                    business_id,
+                    "assign_worker",
+                    "job",
+                    jid,
                     f"Assign worker for {ctx['job_title']}",
                     f"{ctx['client_name']} · {ctx['job_title']} · {ctx.get('job_address') or 'No address'}",
                     payload,
@@ -468,32 +507,38 @@ def register(module):
 
             if st in {"completed", "done"}:
                 actions.append(await insert_action(
-                    business_id, "job_review", "job", jid,
+                    business_id,
+                    "job_review",
+                    "job",
+                    jid,
                     f"Review completed job: {ctx['job_title']}",
-                    f"{ctx['worker_name'] or 'Worker'} completed {ctx['job_title']} for {ctx['client_name']}. Time: {ctx.get('time_worked')}. Proof: {ctx.get('proof_summary')}.",
+                    f"{ctx.get('worker_name') or 'Worker'} completed {ctx['job_title']} for {ctx['client_name']}. Time: {ctx.get('time_worked')}. Proof: {ctx.get('proof_summary')}.",
                     {**ctx, "timesheet_status": "pending_review"},
-                    ["Client pulled", "Job pulled", "Worker note checked", "Time checked", "Proof/photos checked"],
+                    ["Client pulled", "Job pulled", "Worker notes checked", "Time checked", "Proof/photos checked"],
                 ))
 
-                existing = await db.invoices.find_one({
-                    "business_id": str(business_id),
-                    "$or": [{"job_id": jid}, {"source_job_id": jid}, {"linked_job_id": jid}],
-                })
-                if not existing:
-                    actions.append(await insert_action(
-                        business_id, "create_invoice_draft", "job", jid,
-                        f"Create invoice for {ctx['client_name']}",
-                        f"{ctx['client_name']} · {ctx['job_title']} · Amount: {ctx.get('price') or 'missing'}",
-                        ctx,
-                        ["Client pulled", "Job pulled", "Price checked", "Description prepared", "Proof/photos checked"],
-                    ))
+                actions.append(await insert_action(
+                    business_id,
+                    "create_invoice_draft",
+                    "job",
+                    jid,
+                    f"Create invoice for {ctx['client_name']}",
+                    f"{ctx['client_name']} · {ctx['job_title']} · Amount: {ctx.get('price') or 'missing'}",
+                    ctx,
+                    ["Client pulled", "Job pulled", "Price checked", "Description prepared", "Proof/photos checked"],
+                ))
 
-        quotes, quotes_scope_mode = await find_records_with_rescue(db, "quotes", business_id, current_user, 500)
         for quote in quotes:
-            if status(quote.get("status")) in {"accepted", "declined", "cancelled", "canceled", "paid"}:
+            if norm(quote.get("status")) in {"accepted", "declined", "cancelled", "canceled", "paid"}:
                 continue
             qid = quote_id(quote)
-            client = await find_client(business_id, quote.get("client_id"), quote.get("client_name") or quote.get("customer_name"))
+            client = await find_client(
+                business_id,
+                current_user,
+                client_id=quote.get("client_id"),
+                client_name=quote.get("client_name") or quote.get("customer_name"),
+                email=quote.get("customer_email") or quote.get("client_email"),
+            )
             cname = txt(client.get("name") or quote.get("client_name") or quote.get("customer_name"), "Client")
             amount = fmt_money(quote.get("total") or quote.get("amount") or quote.get("subtotal"))
             qno = txt(quote.get("quote_number") or quote.get("number"), f"Quote {qid[-6:]}" if qid else "Quote")
@@ -508,28 +553,38 @@ def register(module):
                 "client_address": txt(client.get("address") or client.get("billing_address")),
                 "quote_amount": amount,
                 "last_sent": fmt_date(quote.get("sent_at") or quote.get("created_at")),
-                "client_history": await client_history(business_id, quote.get("client_id"), cname),
+                "client_history": await client_history(business_id, current_user, quote.get("client_id"), cname),
                 "message": f"Hi {cname}, just checking in on {qno}{f' for {amount}' if amount else ''}. Happy to answer any questions or adjust the details if needed.",
             }
             actions.append(await insert_action(
-                business_id, "quote_follow_up", "quote", qid,
+                business_id,
+                "quote_follow_up",
+                "quote",
+                qid,
                 f"Follow up quote with {cname}",
                 f"{qno} · {cname} · {amount or 'No amount'} · {email or 'Customer email missing'}",
                 payload,
                 ["Quote pulled", "Client pulled", "Customer email checked", "Amount checked", "Message drafted"],
             ))
 
-        invoices, invoices_scope_mode = await find_records_with_rescue(db, "invoices", business_id, current_user, 500)
         for inv in invoices:
             iid = invoice_id(inv)
-            st = status(inv.get("status"))
+            st = norm(inv.get("status"))
             if st in {"paid", "void", "cancelled", "canceled"}:
                 continue
-            client = await find_client(business_id, inv.get("client_id"), inv.get("client_name") or inv.get("customer_name"))
+
+            client = await find_client(
+                business_id,
+                current_user,
+                client_id=inv.get("client_id"),
+                client_name=inv.get("client_name") or inv.get("customer_name"),
+                email=inv.get("customer_email") or inv.get("client_email"),
+            )
             cname = txt(inv.get("customer_name") or inv.get("client_name") or client.get("name"), "Client")
             email = txt(inv.get("customer_email") or inv.get("client_email") or client.get("email"))
             total = fmt_money(inv.get("total") or inv.get("amount") or inv.get("subtotal"))
             number = txt(inv.get("invoice_number") or inv.get("number"), f"Invoice {iid[-6:]}" if iid else "Invoice")
+
             common = {
                 "invoice_id": iid,
                 "invoice_number": number,
@@ -541,16 +596,19 @@ def register(module):
                 "total": total,
                 "amount_due": total,
                 "due_date": fmt_date(inv.get("due_date")),
-                "client_history": await client_history(business_id, inv.get("client_id"), cname),
+                "client_history": await client_history(business_id, current_user, inv.get("client_id"), cname),
             }
 
-            if st in {"draft", "created", "ready"}:
+            if st in {"draft", "created", "ready", ""}:
                 payload = {
                     **common,
                     "message": f"Hi {cname}, your invoice {number}{f' for {total}' if total else ''} is ready. You can view it through the link below.",
                 }
                 actions.append(await insert_action(
-                    business_id, "send_invoice", "invoice", iid,
+                    business_id,
+                    "send_invoice",
+                    "invoice",
+                    iid,
                     f"Email invoice {number} to {cname}",
                     f"{number} · {cname} · {total or 'No total'} · {email or 'Customer email missing'}",
                     payload,
@@ -558,104 +616,59 @@ def register(module):
                 ))
 
             due = parse_dt(inv.get("due_date"))
-            overdue = st in {"overdue", "unpaid"} or (due and due < now() and st not in {"paid", "void", "cancelled", "canceled"})
+            overdue = st in {"overdue", "unpaid"} or (due and due < now())
             if overdue:
-                days = (now() - due).days if due else ""
                 payload = {
                     **common,
-                    "days_overdue": f"{days} days" if isinstance(days, int) else "Overdue",
+                    "days_overdue": f"{(now() - due).days} days" if due else "Overdue",
                     "message": f"Hi {cname}, friendly reminder {number}{f' for {total}' if total else ''} is still open. Please let us know if you need another copy or have any questions.",
                 }
                 actions.append(await insert_action(
-                    business_id, "invoice_reminder", "invoice", iid,
+                    business_id,
+                    "invoice_reminder",
+                    "invoice",
+                    iid,
                     f"Send payment reminder to {cname}",
                     f"{number} · {cname} · {total or 'No total'} · {email or 'Customer email missing'}",
                     payload,
-                    ["Invoice pulled", "Client pulled", "Status/due date checked", "Customer email checked", "Reminder drafted"],
+                    ["Invoice pulled", "Client pulled", "Due date checked", "Customer email checked", "Reminder drafted"],
                 ))
 
-        try:
-            report = {
-                "jobs_found": len(jobs),
-                "quotes_found": len(quotes),
-                "invoices_found": len(invoices),
-                "jobs_scope_mode": locals().get("jobs_scope_mode", "unknown"),
-                "quotes_scope_mode": locals().get("quotes_scope_mode", "unknown"),
-                "invoices_scope_mode": locals().get("invoices_scope_mode", "unknown"),
-                "slips_created": len(actions),
-            }
-            await db.ai_operator_rebuild_reports.insert_one({
-                "business_id": str(business_id),
-                "report": report,
-                "created_at": now(),
-            })
-        except Exception:
-            pass
-        return actions
+        report = {
+            "jobs_found": len(jobs),
+            "quotes_found": len(quotes),
+            "invoices_found": len(invoices),
+            "jobs_scope_mode": jobs_mode,
+            "quotes_scope_mode": quotes_mode,
+            "invoices_scope_mode": invoices_mode,
+            "slips_created": len(actions),
+        }
+        await db.ai_operator_rebuild_reports.insert_one({
+            "business_id": str(business_id),
+            "report": report,
+            "created_at": now(),
+        })
+        return actions, report
 
-    async def list_strong_slips(business_id):
+    async def list_slips(business_id, current_user):
         rows = await db.ai_operator_actions.find({
             "business_id": str(business_id),
-            "source": "strong_slip_rebuild_v1",
-            "status": {"$nin": ["completed", "approved", "executed", "rejected", "dismissed", "cancelled", "canceled"]},
+            "source": "strong_slip_rebuild_v3_clean",
+            "status": {"$nin": list(DONE_STATUSES)},
         }).sort("updated_at", -1).to_list(length=100)
 
-        if rows:
-            return rows
+        if not rows:
+            rows, _report = await rebuild(business_id, current_user)
+        return rows
 
-        fallback = await db.ai_operator_actions.find({
+    async def update_action_payload(action_id, business_id, payload):
+        found = await db.ai_operator_actions.find_one({
             "business_id": str(business_id),
-            "status": {"$nin": ["completed", "approved", "executed", "rejected", "dismissed", "cancelled", "canceled"]},
-        }).sort("updated_at", -1).to_list(length=100)
-
-        for row in fallback:
-            row.setdefault("source", "legacy_ai_action_visible_fallback")
-            row.setdefault("checks", ["Legacy AI slip found", "Needs details before approval", "Owner approval required"])
-            row.setdefault("missing", ["real linked record details"])
-            row.setdefault("ready", False)
-
-        return fallback
-
-    @router.post("/ai/operator/rebuild-slips")
-    async def rebuild_slips(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
-        guard(current_user)
-        business_id = await get_user_business_id(current_user)
-        actions = await rebuild_slips_for_business(business_id, current_user)
-        report = await db.ai_operator_rebuild_reports.find_one({"business_id": str(business_id)}, sort=[("created_at", -1)])
-        return {
-            "success": True,
-            "created": len(actions),
-            "report": serialize((report or {}).get("report") or {}),
-            "actions": [serialize(a) for a in actions],
-        }
-
-    @router.post("/ai/operator/scan-strong")
-    async def scan_strong(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
-        guard(current_user)
-        business_id = await get_user_business_id(current_user)
-        actions = await rebuild_slips_for_business(business_id, current_user)
-        report = await db.ai_operator_rebuild_reports.find_one({"business_id": str(business_id)}, sort=[("created_at", -1)])
-        return {
-            "success": True,
-            "created": len(actions),
-            "report": serialize((report or {}).get("report") or {}),
-            "actions": [serialize(a) for a in actions],
-        }
-
-    @router.get("/ai/operator/slips")
-    async def slips(current_user: dict = Depends(get_current_user)):
-        guard(current_user)
-        business_id = await get_user_business_id(current_user)
-        rows = await list_strong_slips(business_id)
-        return {"success": True, "data": [serialize(r) for r in rows], "actions": [serialize(r) for r in rows]}
-
-    @router.patch("/ai/operator/slips/{action_id}")
-    async def update_slip(action_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
-        guard(current_user)
-        business_id = await get_user_business_id(current_user)
-        found = await db.ai_operator_actions.find_one({"business_id": str(business_id), **obj_query(action_id)})
+            **oid_query(action_id),
+        })
         if not found:
             raise HTTPException(status_code=404, detail="Slip not found")
+
         action_type = found.get("action_type") or found.get("type")
         merged = {**(found.get("payload") or {}), **(payload or {})}
         missing = missing_for(action_type, merged)
@@ -670,9 +683,111 @@ def register(module):
                 "updated_at": now(),
             }},
         )
-        updated = await db.ai_operator_actions.find_one({"_id": found["_id"]})
-        return {"success": True, "data": serialize(updated), "action": serialize(updated)}
+        return await db.ai_operator_actions.find_one({"_id": found["_id"]})
+
+    @router.get("/ai/operator/slips")
+    async def slips(current_user: dict = Depends(get_current_user)):
+        guard(current_user)
+        business_id = await get_user_business_id(current_user)
+        rows = await list_slips(business_id, current_user)
+        report = await db.ai_operator_rebuild_reports.find_one({"business_id": str(business_id)}, sort=[("created_at", -1)])
+        return {
+            "success": True,
+            "data": [serial(r) for r in rows],
+            "actions": [serial(r) for r in rows],
+            "report": serial((report or {}).get("report") or {}),
+        }
+
+    @router.post("/ai/operator/rebuild-slips")
+    async def rebuild_slips(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+        guard(current_user)
+        business_id = await get_user_business_id(current_user)
+        actions, report = await rebuild(business_id, current_user)
+        return {
+            "success": True,
+            "created": len(actions),
+            "report": serial(report),
+            "actions": [serial(a) for a in actions],
+        }
+
+    @router.post("/ai/operator/scan-strong")
+    async def scan_strong(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+        guard(current_user)
+        business_id = await get_user_business_id(current_user)
+        actions, report = await rebuild(business_id, current_user)
+        return {
+            "success": True,
+            "created": len(actions),
+            "report": serial(report),
+            "actions": [serial(a) for a in actions],
+        }
+
+    @router.patch("/ai/operator/slips/{action_id}")
+    async def update_slip(action_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+        guard(current_user)
+        business_id = await get_user_business_id(current_user)
+        updated = await update_action_payload(action_id, business_id, payload)
+        return {"success": True, "data": serial(updated), "action": serial(updated)}
+
+    @router.post("/ai/operator/actions/{action_id}/execute")
+    async def execute_action(action_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+        guard(current_user)
+        business_id = await get_user_business_id(current_user)
+        action = await update_action_payload(action_id, business_id, payload or {})
+        action_type = action.get("action_type") or action.get("type")
+        merged = action.get("payload") or {}
+        missing = missing_for(action_type, merged)
+        if missing:
+            return {"success": False, "error": "Missing: " + ", ".join(missing), "missing": missing}
+
+        if action_type == "assign_worker":
+            jid = merged.get("job_id") or action.get("related_entity_id")
+            worker_id = merged.get("worker_id")
+            if jid and worker_id:
+                worker_name = merged.get("recommended_worker_name") or merged.get("worker_name") or "Assigned worker"
+                await db.jobs.update_one(
+                    oid_query(jid),
+                    {"$set": {
+                        "assigned_worker_id": str(worker_id),
+                        "worker_id": str(worker_id),
+                        "assigned_worker_name": worker_name,
+                        "status": "assigned",
+                        "updated_at": now(),
+                    }},
+                )
+
+        elif action_type == "create_invoice_draft":
+            jid = merged.get("job_id") or action.get("related_entity_id")
+            existing = await db.invoices.find_one({"business_id": str(business_id), "job_id": str(jid)})
+            if not existing:
+                await db.invoices.insert_one({
+                    "business_id": str(business_id),
+                    "job_id": str(jid),
+                    "client_id": merged.get("client_id"),
+                    "client_name": merged.get("client_name") or merged.get("customer_name"),
+                    "customer_name": merged.get("customer_name") or merged.get("client_name"),
+                    "customer_email": merged.get("customer_email"),
+                    "description": merged.get("description"),
+                    "subtotal": money(merged.get("subtotal") or merged.get("price")),
+                    "total": money(merged.get("subtotal") or merged.get("price")),
+                    "status": "draft",
+                    "source": "ai_operator_approved_slip",
+                    "created_at": now(),
+                    "updated_at": now(),
+                })
+
+        await db.ai_operator_actions.update_one(
+            {"_id": action["_id"]},
+            {"$set": {
+                "status": "completed",
+                "completed_at": now(),
+                "executed_by": txt((current_user or {}).get("email")),
+                "updated_at": now(),
+            }},
+        )
+
+        return {"success": True, "message": "Approved and executed"}
 
     module.app.include_router(router)
-    setattr(module, "_STRONG_SLIPS_REGISTERED", True)
+    setattr(module, "_CHURVOX_STRONG_SLIPS_V3", True)
     return module
