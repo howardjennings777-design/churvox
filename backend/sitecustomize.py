@@ -6,8 +6,7 @@ is importing. Keep Body available through builtins so deploys do not crash if a 
 forgets to import it explicitly.
 
 This file intentionally lives inside backend/ so backend-only deploy filters notice it.
-It also loads the AI Command Hub and Proof Pack route auto-registration hooks without
-editing the huge server.py directly.
+It also loads route auto-registration hooks without editing the huge server.py directly.
 """
 
 try:
@@ -38,4 +37,14 @@ try:
     _install_proof_pack_routes()
 except Exception:
     # Never block app startup from Proof Pack route registration shim.
+    pass
+
+try:
+    try:
+        from real_operator_autoregister import install as _install_real_operator_routes
+    except Exception:
+        from backend.real_operator_autoregister import install as _install_real_operator_routes
+    _install_real_operator_routes()
+except Exception:
+    # Never block app startup from real operator route registration shim.
     pass
