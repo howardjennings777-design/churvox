@@ -4,25 +4,30 @@ import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 import "./ExecutiveHomeProper.css";
 
 const lanes = [
-  ["Work ready", "5", "Proof and prices checked"],
-  ["Money ready", "$2.4k", "Invoices lined up"],
+  ["Work ready", "12", "Jobs lined up with proof"],
+  ["Money ready", "$4.8k", "Invoices ready to approve"],
   ["Crew gaps", "2", "Jobs need a worker"],
-  ["Fix first", "3", "Only blockers shown"],
+  ["Follow-ups", "5", "Quotes and payments to chase"],
 ];
 
 const stages = [
-  ["Job lands", "Jobs, photos, notes and timing are captured in one place."],
-  ["AI lines it up", "Churvox prepares the invoice, message, next step and missing details."],
-  ["Owner approves", "You open the Work Slip, check it, change it and approve."],
+  ["Jobs come in", "Add the job, client, worker, notes, photos and price in one clean place."],
+  ["Churvox lines it up", "AI prepares the admin: invoice wording, follow-up messages, reminders and next actions."],
+  ["You approve", "Nothing important sends or changes without the owner checking it first."],
 ];
 
-const proof = ["Nothing sends itself", "Invoices wait for approval", "Built for trade teams", "Mobile-first command floor"];
+const proof = [
+  "No auto-sending without approval",
+  "Built for trade and service teams",
+  "Jobs, invoices, quotes and crew in one place",
+  "Mobile-first for owners and workers",
+];
 
 const cards = [
-  ["Work Slips", "Every finished job becomes a clear approval card."],
-  ["Money desk", "Invoices, balances and follow-ups sit where the owner can act."],
-  ["Crew view", "See work gaps and dispatch decisions without digging through pages."],
-  ["Proof first", "Photos, notes and job details stay attached to the work."],
+  ["AI Operator", "Churvox spots what needs doing and prepares the next action for approval."],
+  ["Work Slips", "Every important job, invoice, quote or reminder opens as a clear decision card."],
+  ["Money Desk", "See work ready to invoice, unpaid invoices and follow-ups before cash gets forgotten."],
+  ["Crew Control", "Assign work, check gaps, review photos and keep the day moving without digging."],
 ];
 
 export function Nav() {
@@ -50,7 +55,7 @@ export function Footer() {
     <footer className="cvp-footer">
       <div>
         <b>Churvox</b>
-        <span>Jobs done. Admin lined up. You approve.</span>
+        <span>Churvox does the admin. You approve.</span>
       </div>
       <nav>
         <Link to="/features">How it works</Link>
@@ -64,20 +69,22 @@ export function Footer() {
 
 export default function ExecutiveHomePage() {
   return (
-    <main className="cvp-home" data-version="CHURVOX_PUBLIC_HOME_FINAL_LOGO_20260531">
+    <main className="cvp-home" data-version="CHURVOX_PUBLIC_HOME_SELLER_20260601">
       <div className="cvp-shell">
         <Nav />
 
         <section className="cvp-hero">
           <div className="cvp-panel cvp-hero-copy">
-            <p className="cvp-kicker">AI command floor for trade businesses</p>
+            <p className="cvp-kicker">AI command centre for trade businesses</p>
             <h1>
-              Jobs done.
-              <span>Admin lined up.</span>
-              You say go.
+              Churvox does the admin.
+              <span>You approve.</span>
             </h1>
             <p>
-              Churvox turns job proof, pricing, invoice drafts and customer updates into one clear Work Slip. The admin is prepared, but the owner stays in control.
+              Churvox helps trade and service owners stop chasing paperwork. Jobs, quotes, invoices, worker updates, photos, reminders and customer follow-ups are lined up in one simple command desk.
+            </p>
+            <p>
+              The AI Operator prepares the next move. You stay in control and approve before anything important is sent, changed or charged.
             </p>
             <div className="cvp-actions">
               <Link to="/signup" className="cvp-btn cvp-btn-primary">Start free</Link>
@@ -88,11 +95,11 @@ export default function ExecutiveHomePage() {
             </div>
           </div>
 
-          <aside className="cvp-panel cvp-demo" aria-label="Churvox command floor preview">
+          <aside className="cvp-panel cvp-demo" aria-label="Churvox command desk preview">
             <div className="cvp-demo-head">
-              <small>Command floor</small>
-              <b>Today is lined up.</b>
-              <span>Churvox prepares the work lanes. You approve the next move.</span>
+              <small>Owner command desk</small>
+              <b>Today is already sorted.</b>
+              <span>See what needs attention, what Churvox prepared, and the button to press next.</span>
             </div>
             <div className="cvp-demo-lanes">
               {lanes.map(([title, value, note]) => (
@@ -106,13 +113,13 @@ export default function ExecutiveHomePage() {
             <div className="cvp-work-slip">
               <div>
                 <small>Work Slip ready</small>
-                <b>Greenlane lawn service</b>
-                <span>Proof checked · invoice ready · message waiting</span>
+                <b>Invoice ready from completed job</b>
+                <span>Photos checked · price ready · customer message drafted</span>
               </div>
               <button type="button">Approve</button>
             </div>
             <div className="cvp-mini-dock">
-              <span>Work</span><span>Money</span><span>Crew</span><span>Plans</span>
+              <span>Jobs</span><span>Money</span><span>Crew</span><span>AI</span>
             </div>
           </aside>
         </section>
@@ -129,8 +136,8 @@ export default function ExecutiveHomePage() {
 
         <section className="cvp-strip">
           <div>
-            <p className="cvp-kicker">The point</p>
-            <h2>Less chasing. Faster invoices. Clear control.</h2>
+            <p className="cvp-kicker">Why owners will care</p>
+            <h2>Less admin. Faster money. Clearer days.</h2>
           </div>
           <div className="cvp-mini-grid">
             {cards.map(([title, copy]) => (
@@ -144,8 +151,8 @@ export default function ExecutiveHomePage() {
         </section>
 
         <section className="cvp-final">
-          <p className="cvp-kicker">Ready?</p>
-          <h2>Let Churvox line up the next move.</h2>
+          <p className="cvp-kicker">Built for busy trade owners</p>
+          <h2>Run the business from one command desk.</h2>
           <Link to="/signup" className="cvp-btn cvp-btn-primary">Start free</Link>
         </section>
 
