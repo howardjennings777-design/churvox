@@ -252,16 +252,19 @@ function SlipModal({ item, onClose, onChanged }) {
     }
 
     setBusy(true);
-    const res = await post(`/ai/operator/actions/${item.id}/execute`, form);
+    const res = await post(`/ai/operator/actions/${item.id}/approve-send-final`, form);
     setBusy(false);
 
-    if (res?.success) {
+    const appOk = res?.success && res?.data?.success !== false;
+
+    if (appOk) {
       toast.success(res?.data?.message || (isSendSlip ? "Approved + sent with PDF" : "Approved"));
       onClose();
       await onChanged();
-    } else {
-      toast.error(res?.error || res?.data?.error || (isSendSlip ? "Could not send" : "Could not approve"));
+      return;
     }
+
+    toast.error(res?.data?.error || res?.error || (isSendSlip ? "Could not send" : "Could not approve"));
   };
 
   return (
