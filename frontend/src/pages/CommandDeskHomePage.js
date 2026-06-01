@@ -1,3 +1,3 @@
-import CommandDeskSlipHomePage from "./CommandDeskSlipHomePage";
+import CommandDeskCleanHomePage from "./CommandDeskCleanHomePage";
 
-export default CommandDeskSlipHomePage;
+export default CommandDeskCleanHomePage;
