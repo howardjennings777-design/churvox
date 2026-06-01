@@ -259,9 +259,9 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, UploadFile, Query, Body
-from app.plan_rules import normalize_plan, get_plan_features, can_use_feature, get_max_clients, has_plan_access, get_plan_display_name, get_included_users
+from app.plan_rules import normalize_plan, get_plan_features, can_use_feature, get_max_clients, has_plan_access, get_plan_display_name, get_included_users, has_plan_access, get_plan_display_name, get_included_users
 from owner_bootstrap import ensure_owner_account
-from fastapi.responses import RedirectResponse, HTMLResponse, FileResponse
+from fastapi.responses import RedirectResponse, HTMLResponse, FileResponse, JSONResponse
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
 
@@ -941,6 +941,175 @@ async def require_employer(request: Request) -> dict:
     if user.get("role") not in ("employer", "admin"):
         raise HTTPException(status_code=403, detail="Only employers can perform this action")
     return user
+
+
+# CHURVOX_BACKEND_PLAN_ACCESS_GUARD_20260602
+# Central API guard so Start/Crew/Operator/Command are enforced server-side too.
+# This protects major feature areas even if someone bypasses frontend buttons/routes.
+
+def _plan_locked_response(feature: str, required_plan: str, current_plan: str, detail: str = None):
+    required_name = get_plan_display_name(required_plan)
+    current_name = get_plan_display_name(current_plan)
+    return JSONResponse(
+        status_code=403,
+        content={
+            "success": False,
+            "upgrade_required": True,
+            "feature": feature,
+            "required_plan": required_plan,
+            "required_plan_name": required_name,
+            "current_plan": current_plan,
+            "current_plan_name": current_name,
+            "detail": detail or f"{feature} needs the {required_name} plan.",
+        },
+    )
+
+
+async def _get_effective_business_plan(current_user: dict):
+    plan = normalize_plan((current_user or {}).get("plan"))
+    if plan:
+        return plan
+
+    business_id = str((current_user or {}).get("business_id") or (current_user or {}).get("id") or "")
+    if not business_id:
+        return None
+
+    owner_query = [
+        {"business_id": business_id, "role": {"$in": ["owner", "employer", "admin"]}},
+        {"id": business_id},
+        {"user_id": business_id},
+    ]
+
+    try:
+        owner_query.insert(0, {"_id": ObjectId(business_id)})
+    except Exception:
+        pass
+
+    owner = await db.users.find_one({"$or": owner_query})
+    if owner and normalize_plan(owner.get("plan")):
+        return normalize_plan(owner.get("plan"))
+
+    business = await db.businesses.find_one({"$or": [{"business_id": business_id}, {"id": business_id}]})
+    if business and normalize_plan(business.get("plan")):
+        return normalize_plan(business.get("plan"))
+
+    return None
+
+
+def _is_targeted_plan_guard_path(path: str, method: str):
+    p = (path or "").rstrip("/") or path
+    if not p.startswith("/api/"):
+        return False
+
+    if p in {"/api/clients"} and method == "POST":
+        return True
+    if p.startswith("/api/clients/") and method == "POST" and "import" in p:
+        return True
+
+    if p.startswith("/api/team") and method in {"POST", "PUT", "PATCH", "DELETE"}:
+        return True
+
+    if p.startswith("/api/payroll"):
+        return True
+
+    if p.startswith("/api/automation") or p.startswith("/api/operator") or p.startswith("/api/ai-operator") or p.startswith("/api/message-approvals"):
+        return True
+
+    if "/myob" in p:
+        return True
+
+    return False
+
+
+@app.middleware("http")
+async def churvox_backend_plan_access_guard(request: Request, call_next):
+    path = request.url.path or ""
+    method = request.method.upper()
+
+    if not _is_targeted_plan_guard_path(path, method):
+        return await call_next(request)
+
+    try:
+        current_user = await get_current_user(request)
+    except HTTPException as exc:
+        return JSONResponse(status_code=exc.status_code, content={"success": False, "detail": exc.detail})
+    except Exception:
+        return JSONResponse(status_code=401, content={"success": False, "detail": "Not authenticated"})
+
+    current_plan = await _get_effective_business_plan(current_user)
+    business_id = str(current_user.get("business_id") or current_user.get("id") or "")
+
+    # Team write access starts at Crew.
+    if path.startswith("/api/team") and method in {"POST", "PUT", "PATCH", "DELETE"}:
+        if not has_plan_access(current_plan, "team"):
+            return _plan_locked_response("Team workspace", "team", current_plan)
+
+        # Keep team size aligned with included users for non-Command plans.
+        # Command can grow later with Growth Packs.
+        if method == "POST" and current_plan != "enterprise" and business_id:
+            max_users = get_included_users(current_plan)
+            active_team_count = await db.users.count_documents({
+                "business_id": business_id,
+                "role": {"$in": ["worker", "manager", "office_admin", "payroll"]},
+                "deleted": {"$ne": True},
+                "archived": {"$ne": True},
+                "disabled": {"$ne": True},
+            })
+            if active_team_count >= max_users:
+                return _plan_locked_response(
+                    "Team member limit",
+                    "enterprise",
+                    current_plan,
+                    f"Your current plan includes up to {max_users} active team member records. Upgrade to Command or add capacity before inviting more."
+                )
+
+    # Client creation respects plan cap.
+    if (path.rstrip("/") == "/api/clients") and method == "POST":
+        max_clients = get_max_clients(current_plan)
+        if business_id:
+            active_client_count = await db.clients.count_documents({
+                "business_id": business_id,
+                "deleted": {"$ne": True},
+                "archived": {"$ne": True},
+            })
+            if active_client_count >= max_clients:
+                return _plan_locked_response(
+                    "Client limit",
+                    "enterprise" if current_plan == "pro" else "team",
+                    current_plan,
+                    f"Your current plan allows up to {max_clients} active clients."
+                )
+
+    # Client CSV import is Operator and above.
+    if path.startswith("/api/clients/") and method == "POST" and "import" in path:
+        if not can_use_feature(current_plan, "csv_client_import"):
+            return _plan_locked_response("Client CSV import", "pro", current_plan)
+
+    # AI Operator / automation starts at Operator.
+    if path.startswith("/api/automation") or path.startswith("/api/operator") or path.startswith("/api/ai-operator") or path.startswith("/api/message-approvals"):
+        if not has_plan_access(current_plan, "pro"):
+            return _plan_locked_response("AI Operator and automation", "pro", current_plan)
+
+    # Payroll workspace is Command only.
+    if path.startswith("/api/payroll"):
+        if not can_use_feature(current_plan, "payroll_workspace"):
+            return _plan_locked_response("Payroll workspace", "enterprise", current_plan)
+
+    # MYOB is Command included, or Operator with MYOB add-on enabled.
+    if "/myob" in path:
+        plan_user = dict(current_user)
+        plan_user["plan"] = current_plan
+        allowed = await _myob_plan_allowed_for_business(plan_user, business_id)
+        if not allowed:
+            return _plan_locked_response(
+                "MYOB sync",
+                "enterprise",
+                current_plan,
+                "MYOB is included in Command. Operator can use MYOB with the MYOB add-on."
+            )
+
+    return await call_next(request)
+
 
 def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
     response.set_cookie(key="access_token", value=access_token, httponly=True, secure=True, samesite="none", max_age=86400, path="/")
