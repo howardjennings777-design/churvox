@@ -1,6 +1,6 @@
-/* CHURVOX_LOGGED_IN_PUBLIC_LIGHT_CANVAS_ONLY_20260601
-   Use the soft public-site background for the logged-in canvas only.
-   Leave the actual dashboard boxes/cards/panels in their original colours. */
+/* CHURVOX_LOGGED_IN_PUBLIC_LIGHT_CANVAS_POLISH_20260601
+   Use the soft public-site background for the logged-in canvas.
+   Keep the dashboard boxes/cards in the command colours, but polish readability and spacing. */
 
 html,
 body,
@@ -36,7 +36,108 @@ body:has(aside) main.fixed.inset-0 > div > section,
   background: transparent !important;
 }
 
-/* Do NOT touch boxes/cards/panels. Their original colours come from the existing app theme. */
+/* Polish: more breathing room between the boxes. */
+body:has(aside) main.fixed.inset-0 > div > section {
+  padding: clamp(20px, 2.4vw, 34px) !important;
+}
+
+body:has(aside) main.fixed.inset-0 > div > section > header {
+  margin-bottom: 18px !important;
+}
+
+body:has(aside) main.fixed.inset-0 > div > section > section {
+  gap: 18px !important;
+}
+
+body:has(aside) main.fixed.inset-0 > div > section > section + section {
+  margin-top: 18px !important;
+}
+
+/* Polish: lighten the command boxes just a touch, not white. */
+body:has(aside) main.fixed.inset-0 > div > section > section > div,
+body:has(aside) main.fixed.inset-0 > div > section article,
+body:has(aside) main.fixed.inset-0 > div > section .bg-slate-950,
+body:has(aside) main.fixed.inset-0 > div > section .bg-slate-900,
+body:has(aside) main.fixed.inset-0 > div > section .bg-white,
+body:has(aside) main.fixed.inset-0 > div > section .bg-slate-50,
+body:has(aside) main.fixed.inset-0 > div > section .bg-slate-100 {
+  background:
+    radial-gradient(circle at 92% 0%, rgba(46, 180, 255, 0.16), transparent 230px),
+    linear-gradient(145deg, rgba(18, 48, 78, 0.96), rgba(12, 33, 57, 0.94)) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 18px 45px rgba(12, 33, 57, 0.18) !important;
+}
+
+/* Keep top header lighter so the page doesn't feel boxed in. */
+body:has(aside) main.fixed.inset-0 > div > section > header {
+  background: rgba(255, 255, 255, 0.78) !important;
+  border-color: rgba(16, 20, 31, 0.10) !important;
+  box-shadow: 0 14px 38px rgba(15, 23, 42, 0.055) !important;
+}
+
+body:has(aside) main.fixed.inset-0 > div > section > header h1,
+body:has(aside) main.fixed.inset-0 > div > section > header h2,
+body:has(aside) main.fixed.inset-0 > div > section > header div {
+  color: #10141f !important;
+}
+
+/* Readability: make text clearer on the blue command cards. */
+body:has(aside) main.fixed.inset-0 > div > section article h1,
+body:has(aside) main.fixed.inset-0 > div > section article h2,
+body:has(aside) main.fixed.inset-0 > div > section article h3,
+body:has(aside) main.fixed.inset-0 > div > section article strong,
+body:has(aside) main.fixed.inset-0 > div > section > section h1,
+body:has(aside) main.fixed.inset-0 > div > section > section h2,
+body:has(aside) main.fixed.inset-0 > div > section > section h3,
+body:has(aside) main.fixed.inset-0 > div > section > section strong,
+body:has(aside) main.fixed.inset-0 > div > section .text-slate-950,
+body:has(aside) main.fixed.inset-0 > div > section .text-slate-900,
+body:has(aside) main.fixed.inset-0 > div > section .text-slate-800 {
+  color: #f8fbff !important;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.10) !important;
+}
+
+body:has(aside) main.fixed.inset-0 > div > section article p,
+body:has(aside) main.fixed.inset-0 > div > section article div,
+body:has(aside) main.fixed.inset-0 > div > section article span,
+body:has(aside) main.fixed.inset-0 > div > section > section p,
+body:has(aside) main.fixed.inset-0 > div > section > section .text-slate-600,
+body:has(aside) main.fixed.inset-0 > div > section > section .text-slate-500,
+body:has(aside) main.fixed.inset-0 > div > section > section .text-slate-400 {
+  color: rgba(235, 246, 255, 0.82) !important;
+}
+
+body:has(aside) main.fixed.inset-0 > div > section .uppercase,
+body:has(aside) main.fixed.inset-0 > div > section .text-blue-600,
+body:has(aside) main.fixed.inset-0 > div > section .text-amber-600,
+body:has(aside) main.fixed.inset-0 > div > section .text-emerald-700 {
+  color: #7ff5d4 !important;
+}
+
+/* Hero title: slightly smaller so it breathes. */
+body:has(aside) main.fixed.inset-0 h1 {
+  font-size: clamp(2rem, 4.1vw, 3.75rem) !important;
+  line-height: 0.95 !important;
+}
+
+body:has(aside) main.fixed.inset-0 h2 {
+  font-size: clamp(1.4rem, 2.2vw, 2.1rem) !important;
+}
+
+/* Buttons stay punchy. */
+body:has(aside) main.fixed.inset-0 button,
+body:has(aside) main.fixed.inset-0 a[class*="rounded"] {
+  border-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+body:has(aside) main.fixed.inset-0 button[class*="bg-blue"],
+body:has(aside) main.fixed.inset-0 a[class*="bg-blue"],
+body:has(aside) main.fixed.inset-0 button[class*="bg-amber"],
+body:has(aside) main.fixed.inset-0 a[class*="bg-amber"] {
+  background: linear-gradient(135deg, #bbf7d0, #67e8f9) !important;
+  color: #07111f !important;
+  box-shadow: 0 16px 36px rgba(34, 211, 238, 0.20) !important;
+}
 
 @media (max-width: 900px) {
   body:has(aside) main.fixed.inset-0 {
