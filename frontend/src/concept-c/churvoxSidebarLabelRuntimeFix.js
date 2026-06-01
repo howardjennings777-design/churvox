@@ -1,10 +1,14 @@
-// CHURVOX_SIDEBAR_LABEL_RUNTIME_FIX_20260601
+// CHURVOX_SIDEBAR_LABEL_RUNTIME_FIX_20260601_V2
 // Safe visual-only fix. Does not touch backend, auth, data, forms, payments, or routes.
+// Purpose: force old sidebar copy to clean Command Desk labels even if an older component renders it.
+
+const CV_SIDEBAR_LABEL_FIX_VERSION = "20260601-v2";
 
 const cleanLabelsByPath = {
   "/dashboard": "Command Board",
   "/overview": "Command Board",
   "/ai-operator": "AI Operator",
+  "/ai-operator/approvals": "AI Operator",
   "/notifications": "Notifications",
 
   "/jobs": "Jobs",
@@ -47,61 +51,110 @@ const oldTextFixes = {
   "Control Settings": "Settings",
 };
 
-function cvPathFromLink(link) {
+function cvPathFromHref(href) {
   try {
-    return new URL(link.getAttribute("href") || "", window.location.origin).pathname;
+    return new URL(href || "", window.location.origin).pathname.replace(/\/$/, "") || "/";
   } catch {
     return "";
   }
+}
+
+function cvTextLooksLikeIcon(txt) {
+  return /^[A-Z?$]{1,3}$/.test(String(txt || "").trim());
 }
 
 function cvSetLinkLabel(link, label) {
   if (!link || !label) return;
 
   const spans = Array.from(link.querySelectorAll("span"));
-  const labelSpan =
-    spans.find((span) => {
-      const txt = (span.textContent || "").trim();
-      return txt.length > 3 && !/^[A-Z?$]{1,3}$/.test(txt);
-    }) || spans[spans.length - 1];
+  const textSpans = spans.filter((span) => !cvTextLooksLikeIcon(span.textContent));
+  const target = textSpans[textSpans.length - 1] || spans[spans.length - 1];
 
-  if (labelSpan && (labelSpan.textContent || "").trim() !== label) {
-    labelSpan.textContent = label;
+  if (target) {
+    if ((target.textContent || "").trim() !== label) target.textContent = label;
     return;
   }
 
-  if (!spans.length && (link.textContent || "").trim() !== label) {
-    link.textContent = label;
+  const nodes = Array.from(link.childNodes).filter((node) => node.nodeType === Node.TEXT_NODE);
+  const textNode = nodes.find((node) => (node.nodeValue || "").trim().length > 2);
+  if (textNode) {
+    if ((textNode.nodeValue || "").trim() !== label) textNode.nodeValue = label;
+    return;
   }
+
+  if ((link.textContent || "").trim() !== label) link.textContent = label;
+}
+
+function cvFixTextNodes(root) {
+  if (!root || typeof NodeFilter === "undefined") return;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+
+  nodes.forEach((node) => {
+    let value = node.nodeValue || "";
+    let next = value;
+    Object.entries(oldTextFixes).forEach(([oldText, cleanText]) => {
+      if (next.includes(oldText)) next = next.split(oldText).join(cleanText);
+    });
+    if (next !== value) node.nodeValue = next;
+  });
+}
+
+function cvFixLinks(root) {
+  if (!root) return;
+  const links = Array.from(root.querySelectorAll("a[href]"));
+
+  links.forEach((link) => {
+    const path = cvPathFromHref(link.getAttribute("href"));
+
+    // Approvals is a duplicate alias. Keep route available, but don't show it as a second sidebar item.
+    if (path === "/ai-operator/approvals") {
+      const maybeSidebar = link.closest("aside, nav, .xcf-sidebar, [data-sidebar]");
+      if (maybeSidebar) {
+        link.style.display = "none";
+        link.setAttribute("aria-hidden", "true");
+      }
+      return;
+    }
+
+    const label = cleanLabelsByPath[path];
+    if (label) cvSetLinkLabel(link, label);
+  });
+}
+
+function cvAddCssGuard() {
+  if (document.getElementById("cv-sidebar-label-runtime-fix-style")) return;
+  const style = document.createElement("style");
+  style.id = "cv-sidebar-label-runtime-fix-style";
+  style.textContent = `
+    aside a[href='/ai-operator/approvals'],
+    nav a[href='/ai-operator/approvals'],
+    .xcf-sidebar a[href='/ai-operator/approvals'],
+    [data-sidebar] a[href='/ai-operator/approvals']{
+      display:none!important;
+    }
+  `;
+  document.head.appendChild(style);
 }
 
 function cvFixSidebarLabels() {
-  const sidebars = Array.from(document.querySelectorAll("aside, .xcf-sidebar, [data-sidebar], nav"));
+  cvAddCssGuard();
 
-  sidebars.forEach((sidebar) => {
-    Array.from(sidebar.querySelectorAll("a[href]")).forEach((link) => {
-      const path = cvPathFromLink(link);
+  const roots = [
+    ...Array.from(document.querySelectorAll("aside")),
+    ...Array.from(document.querySelectorAll("nav")),
+    ...Array.from(document.querySelectorAll(".xcf-sidebar")),
+    ...Array.from(document.querySelectorAll("[data-sidebar]")),
+    document.body,
+  ].filter(Boolean);
 
-      // Approvals is just a duplicate alias of AI Operator now.
-      if (path === "/ai-operator/approvals") {
-        link.style.display = "none";
-        link.setAttribute("aria-hidden", "true");
-        return;
-      }
-
-      const label = cleanLabelsByPath[path];
-      if (label) cvSetLinkLabel(link, label);
-    });
-
-    const walker = document.createTreeWalker(sidebar, NodeFilter.SHOW_TEXT);
-    const nodes = [];
-    while (walker.nextNode()) nodes.push(walker.currentNode);
-
-    nodes.forEach((node) => {
-      const clean = oldTextFixes[(node.nodeValue || "").trim()];
-      if (clean) node.nodeValue = clean;
-    });
+  roots.forEach((root) => {
+    cvFixLinks(root);
+    cvFixTextNodes(root);
   });
+
+  document.documentElement.dataset.churvoxSidebarLabelFix = CV_SIDEBAR_LABEL_FIX_VERSION;
 }
 
 function cvRunSidebarFix() {
@@ -113,15 +166,21 @@ function cvRunSidebarFix() {
 }
 
 if (typeof window !== "undefined" && typeof document !== "undefined") {
+  window.__CHURVOX_SIDEBAR_LABEL_FIX_VERSION__ = CV_SIDEBAR_LABEL_FIX_VERSION;
+
   window.addEventListener("DOMContentLoaded", cvRunSidebarFix);
   window.addEventListener("load", cvRunSidebarFix);
   window.addEventListener("popstate", cvRunSidebarFix);
+  window.addEventListener("hashchange", cvRunSidebarFix);
 
-  setTimeout(cvRunSidebarFix, 50);
-  setTimeout(cvRunSidebarFix, 300);
-  setTimeout(cvRunSidebarFix, 1000);
+  [0, 50, 150, 300, 600, 1000, 1600, 2400, 4000].forEach((ms) => setTimeout(cvRunSidebarFix, ms));
 
-  setInterval(cvRunSidebarFix, 1200);
+  let count = 0;
+  const timer = setInterval(() => {
+    cvRunSidebarFix();
+    count += 1;
+    if (count > 180) clearInterval(timer);
+  }, 500);
 
   const observer = new MutationObserver(cvRunSidebarFix);
   observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
