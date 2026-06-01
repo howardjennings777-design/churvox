@@ -1,21 +1,28 @@
-/* CHURVOX_PLANS_COMMAND_ROOM_THEME_20260601
+/* CHURVOX_PLANS_COMMAND_ROOM_THEME_20260601_V2
    Plans page visual override only. Billing/trial/checkout logic stays in PlansPage.js.
+   Goal: match Jobs / AI Operator / Command Room app theme.
 */
 
 .cv-plans {
+  min-height: 100vh !important;
   color: #eaf4ff !important;
+  padding: 14px 18px 138px !important;
   background:
-    radial-gradient(circle at 10% 8%, rgba(34, 211, 238, .18), transparent 28%),
-    radial-gradient(circle at 88% 12%, rgba(59, 130, 246, .20), transparent 32%),
-    radial-gradient(circle at 55% 92%, rgba(34, 197, 94, .10), transparent 32%),
+    radial-gradient(circle at 12% 8%, rgba(34, 211, 238, .16), transparent 30%),
+    radial-gradient(circle at 86% 12%, rgba(59, 130, 246, .18), transparent 34%),
     linear-gradient(135deg, #07111f 0%, #0f172a 48%, #111827 100%) !important;
 }
 
 .cv-plans::before {
-  opacity: .5 !important;
+  opacity: .38 !important;
   background-image:
-    linear-gradient(rgba(103, 232, 249, .045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(103, 232, 249, .045) 1px, transparent 1px) !important;
+    linear-gradient(rgba(103, 232, 249, .04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(103, 232, 249, .04) 1px, transparent 1px) !important;
+}
+
+.cv-plans-shell {
+  width: min(1180px, 100%) !important;
+  gap: 14px !important;
 }
 
 .cv-plans-top,
@@ -26,13 +33,16 @@
 .cv-myob-addon,
 .cv-footer-row div,
 .cv-notice {
-  border-color: rgba(103, 232, 249, .20) !important;
+  border: 1px solid rgba(103, 232, 249, .18) !important;
   background: rgba(15, 23, 42, .74) !important;
-  box-shadow: 0 22px 70px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.07) !important;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, .22), inset 0 1px 0 rgba(255,255,255,.06) !important;
   backdrop-filter: blur(18px) saturate(145%) !important;
 }
 
 .cv-plans-top {
+  min-height: 56px !important;
+  border-radius: 20px !important;
+  padding: 9px 12px !important;
   background: rgba(7, 17, 31, .92) !important;
 }
 
@@ -41,15 +51,19 @@
 .cv-notice {
   color: #67e8f9 !important;
   background: rgba(103, 232, 249, .10) !important;
-  border-color: rgba(103, 232, 249, .25) !important;
+  border-color: rgba(103, 232, 249, .24) !important;
 }
 
 .cv-plans-hero {
-  min-height: 260px !important;
+  min-height: 190px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  border-radius: 26px !important;
+  padding: clamp(22px, 3vw, 36px) !important;
   background:
-    radial-gradient(circle at 82% 18%, rgba(34, 211, 238, .18), transparent 34%),
-    radial-gradient(circle at 8% 88%, rgba(34, 197, 94, .10), transparent 34%),
-    rgba(15, 23, 42, .76) !important;
+    radial-gradient(circle at 84% 14%, rgba(34, 211, 238, .14), transparent 34%),
+    linear-gradient(135deg, rgba(13, 37, 77, .92), rgba(15, 23, 42, .82)) !important;
 }
 
 .cv-kicker,
@@ -61,10 +75,12 @@
 }
 
 .cv-plans-hero h1 {
-  max-width: 900px !important;
+  max-width: 850px !important;
   color: #f8fbff !important;
-  font-size: clamp(42px, 5.4vw, 78px) !important;
+  font-size: clamp(36px, 4.8vw, 66px) !important;
+  line-height: .9 !important;
   letter-spacing: -.075em !important;
+  text-shadow: none !important;
 }
 
 .cv-plans-hero p,
@@ -79,18 +95,30 @@
   color: #b8c7da !important;
 }
 
+.cv-grid {
+  grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)) !important;
+  gap: 12px !important;
+}
+
 .cv-card {
-  min-height: 485px !important;
+  min-height: 420px !important;
+  gap: 10px !important;
+  border-radius: 22px !important;
+  padding: 18px !important;
   background:
     radial-gradient(circle at 82% 10%, rgba(34, 211, 238, .10), transparent 32%),
     linear-gradient(135deg, rgba(22,39,68,.94), rgba(30,58,100,.62)) !important;
 }
 
+.cv-card::after {
+  background: linear-gradient(90deg, transparent, rgba(103,232,249,.60), rgba(34,197,94,.50), transparent) !important;
+}
+
 .cv-card.featured {
-  border-color: rgba(103, 232, 249, .46) !important;
+  border-color: rgba(103, 232, 249, .44) !important;
   background:
-    radial-gradient(circle at 84% 8%, rgba(34, 211, 238, .20), transparent 32%),
-    radial-gradient(circle at 18% 92%, rgba(34, 197, 94, .12), transparent 30%),
+    radial-gradient(circle at 84% 8%, rgba(34, 211, 238, .18), transparent 32%),
+    radial-gradient(circle at 16% 92%, rgba(34, 197, 94, .12), transparent 30%),
     linear-gradient(135deg, rgba(12, 31, 63, .98), rgba(14, 48, 72, .90)) !important;
   box-shadow: 0 30px 100px rgba(34, 211, 238, .16), inset 0 1px 0 rgba(255,255,255,.10) !important;
 }
@@ -98,7 +126,7 @@
 .cv-card.featured::before {
   color: #07111f !important;
   background: linear-gradient(135deg, #67e8f9, #22c55e) !important;
-  box-shadow: 0 18px 44px rgba(34, 211, 238, .24) !important;
+  box-shadow: 0 18px 44px rgba(34, 211, 238, .22) !important;
 }
 
 .cv-card.current {
@@ -117,6 +145,30 @@
   color: #f8fbff !important;
 }
 
+.cv-card h2 {
+  font-size: 24px !important;
+}
+
+.cv-price b {
+  font-size: 42px !important;
+}
+
+.cv-price small,
+.cv-user-blocks strong em,
+.cv-sms-grid strong em {
+  color: #8ea3b8 !important;
+}
+
+.cv-card p {
+  min-height: 48px !important;
+  font-size: 13px !important;
+}
+
+.cv-card li {
+  font-size: 12.5px !important;
+  line-height: 1.34 !important;
+}
+
 .cv-card li::before,
 .cv-user-blocks li::before {
   background: linear-gradient(135deg, #67e8f9, #22c55e) !important;
@@ -128,6 +180,8 @@
 .cv-user-block-buy,
 .cv-myob-addon button,
 .cv-sms-grid button {
+  min-height: 42px !important;
+  border-radius: 14px !important;
   color: #07111f !important;
   background: linear-gradient(135deg, #67e8f9, #22c55e) !important;
   box-shadow: 0 18px 44px rgba(34, 211, 238, .22) !important;
@@ -148,6 +202,15 @@
   filter: grayscale(.2) !important;
 }
 
+.cv-user-blocks,
+.cv-sms-pricing,
+.cv-myob-addon {
+  border-radius: 24px !important;
+  background:
+    radial-gradient(circle at 88% 8%, rgba(34, 211, 238, .10), transparent 30%),
+    rgba(15, 23, 42, .74) !important;
+}
+
 .cv-user-blocks > div,
 .cv-user-blocks > article,
 .cv-user-blocks > ul,
@@ -163,9 +226,20 @@
   background: rgba(253, 230, 138, .10) !important;
 }
 
+.cv-footer-row {
+  margin-bottom: 16px !important;
+}
+
 @media (max-width: 760px) {
+  .cv-plans {
+    padding: 10px 10px 138px !important;
+  }
+  .cv-plans-hero {
+    grid-template-columns: 1fr !important;
+    min-height: auto !important;
+  }
   .cv-plans-hero h1 {
-    font-size: clamp(36px, 12vw, 58px) !important;
+    font-size: clamp(34px, 11vw, 54px) !important;
   }
   .cv-card {
     min-height: auto !important;
