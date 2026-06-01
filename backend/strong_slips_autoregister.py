@@ -72,6 +72,57 @@ def serialize(x):
             out[k] = [serialize(i) for i in v]
     return out
 
+
+def scoped_query(business_id, current_user=None):
+    values = []
+    for v in [
+        business_id,
+        str(business_id),
+        (current_user or {}).get("id"),
+        (current_user or {}).get("_id"),
+        (current_user or {}).get("user_id"),
+        (current_user or {}).get("business_id"),
+    ]:
+        if v is not None and str(v).strip():
+            values.append(str(v))
+            if ObjectId is not None:
+                try:
+                    if ObjectId.is_valid(str(v)):
+                        values.append(ObjectId(str(v)))
+                except Exception:
+                    pass
+
+    seen = []
+    for v in values:
+        if v not in seen:
+            seen.append(v)
+
+    clauses = []
+    for key in [
+        "business_id",
+        "businessId",
+        "owner_id",
+        "ownerId",
+        "user_id",
+        "created_by",
+        "created_by_user_id",
+        "employer_id",
+        "account_id",
+    ]:
+        for v in seen:
+            clauses.append({key: v})
+
+    email = txt((current_user or {}).get("email")).lower()
+    if email:
+        clauses += [
+            {"owner_email": email},
+            {"created_by_email": email},
+            {"email": email},
+        ]
+
+    return {"$or": clauses} if clauses else {"business_id": str(business_id)}
+
+
 def record_query(record_id, business_id):
     clauses = [{"id": str(record_id)}]
     if ObjectId is not None:
@@ -80,7 +131,19 @@ def record_query(record_id, business_id):
                 clauses.append({"_id": ObjectId(str(record_id))})
         except Exception:
             pass
-    return {"business_id": str(business_id), "$or": clauses}
+
+    scope = [
+        {"business_id": str(business_id)},
+        {"businessId": str(business_id)},
+        {"owner_id": str(business_id)},
+        {"ownerId": str(business_id)},
+        {"user_id": str(business_id)},
+        {"created_by": str(business_id)},
+        {"created_by_user_id": str(business_id)},
+        {"employer_id": str(business_id)},
+        {"account_id": str(business_id)},
+    ]
+    return {"$and": [{"$or": scope}, {"$or": clauses}]}
 
 def obj_query(record_id):
     clauses = [{"id": str(record_id)}]
@@ -325,16 +388,17 @@ def register(module):
         ctx.update(time_context(job))
         return ctx
 
-    async def rebuild_slips_for_business(business_id):
+    async def rebuild_slips_for_business(business_id, current_user=None):
         # Clear broken/old non-completed slips so duplicates and placeholder IDs stop showing.
         await db.ai_operator_actions.delete_many({
             "business_id": str(business_id),
+            "source": "strong_slip_rebuild_v1",
             "status": {"$nin": ["completed", "approved", "executed"]},
         })
 
         actions = []
 
-        jobs = await db.jobs.find({"business_id": str(business_id)}).to_list(length=500)
+        jobs = await db.jobs.find(scoped_query(business_id, current_user)).to_list(length=500)
         for job in jobs:
             jid = job_id(job)
             if not jid:
@@ -384,7 +448,7 @@ def register(module):
                         ["Client pulled", "Job pulled", "Price checked", "Description prepared", "Proof/photos checked"],
                     ))
 
-        quotes = await db.quotes.find({"business_id": str(business_id)}).to_list(length=500)
+        quotes = await db.quotes.find(scoped_query(business_id, current_user)).to_list(length=500)
         for quote in quotes:
             if status(quote.get("status")) in {"accepted", "declined", "cancelled", "canceled", "paid"}:
                 continue
@@ -415,7 +479,7 @@ def register(module):
                 ["Quote pulled", "Client pulled", "Customer email checked", "Amount checked", "Message drafted"],
             ))
 
-        invoices = await db.invoices.find({"business_id": str(business_id)}).to_list(length=500)
+        invoices = await db.invoices.find(scoped_query(business_id, current_user)).to_list(length=500)
         for inv in invoices:
             iid = invoice_id(inv)
             st = status(inv.get("status"))
@@ -478,20 +542,35 @@ def register(module):
             "source": "strong_slip_rebuild_v1",
             "status": {"$nin": ["completed", "approved", "executed", "rejected", "dismissed", "cancelled", "canceled"]},
         }).sort("updated_at", -1).to_list(length=100)
-        return rows
+
+        if rows:
+            return rows
+
+        fallback = await db.ai_operator_actions.find({
+            "business_id": str(business_id),
+            "status": {"$nin": ["completed", "approved", "executed", "rejected", "dismissed", "cancelled", "canceled"]},
+        }).sort("updated_at", -1).to_list(length=100)
+
+        for row in fallback:
+            row.setdefault("source", "legacy_ai_action_visible_fallback")
+            row.setdefault("checks", ["Legacy AI slip found", "Needs details before approval", "Owner approval required"])
+            row.setdefault("missing", ["real linked record details"])
+            row.setdefault("ready", False)
+
+        return fallback
 
     @router.post("/ai/operator/rebuild-slips")
     async def rebuild_slips(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
         guard(current_user)
         business_id = await get_user_business_id(current_user)
-        actions = await rebuild_slips_for_business(business_id)
+        actions = await rebuild_slips_for_business(business_id, current_user)
         return {"success": True, "created": len(actions), "actions": [serialize(a) for a in actions]}
 
     @router.post("/ai/operator/scan-strong")
     async def scan_strong(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
         guard(current_user)
         business_id = await get_user_business_id(current_user)
-        actions = await rebuild_slips_for_business(business_id)
+        actions = await rebuild_slips_for_business(business_id, current_user)
         return {"success": True, "created": len(actions), "actions": [serialize(a) for a in actions]}
 
     @router.get("/ai/operator/slips")

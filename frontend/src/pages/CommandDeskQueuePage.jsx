@@ -327,11 +327,19 @@ export default function CommandDeskQueuePage() {
     setBusy(true);
     const res = await post("/ai/operator/rebuild-slips", {});
     setBusy(false);
+
     if (res?.success) {
-      toast.success("Old slips cleared and rebuilt");
-      await load();
+      const returned = Array.isArray(res?.data?.actions) ? res.data.actions : Array.isArray(res?.data?.data) ? res.data.data : [];
+      if (returned.length) {
+        setItems(returned.map(normalize));
+        toast.success(`Rebuilt ${returned.length} slip${returned.length === 1 ? "" : "s"}`);
+      } else {
+        toast.warning("Rebuild ran but found no jobs, quotes or invoices for this business.");
+        await load();
+      }
     } else {
-      toast.error(res?.error || "Could not rebuild slips");
+      toast.error(res?.error || "Could not rebuild slips. Backend route may not be loaded.");
+      await load();
     }
   };
 
@@ -387,7 +395,7 @@ export default function CommandDeskQueuePage() {
             </div>
             {!items.length && (
               <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm font-black text-amber-900">
-                No slips yet. Click “Clear old slips + rebuild”. If still empty, create or update a real job, quote or invoice first.
+                No slips yet. Click “Clear old slips + rebuild”. If it still says 0, Churvox did not find jobs, quotes or invoices under this login/business.
               </div>
             )}
           </section>
