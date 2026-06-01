@@ -16,7 +16,6 @@ try:
     if not hasattr(builtins, "Body"):
         builtins.Body = Body
 except Exception:
-    # Never block app startup from this compatibility shim.
     pass
 
 try:
@@ -26,7 +25,6 @@ try:
         from backend.ai_command_autoregister import install as _install_ai_command_hub
     _install_ai_command_hub()
 except Exception:
-    # Never block app startup from AI Command Hub registration shim.
     pass
 
 try:
@@ -36,7 +34,6 @@ try:
         from backend.proof_pack_autoregister import install as _install_proof_pack_routes
     _install_proof_pack_routes()
 except Exception:
-    # Never block app startup from Proof Pack route registration shim.
     pass
 
 try:
@@ -46,5 +43,13 @@ try:
         from backend.real_operator_autoregister import install as _install_real_operator_routes
     _install_real_operator_routes()
 except Exception:
-    # Never block app startup from real operator route registration shim.
+    pass
+
+try:
+    try:
+        from live_operator_autoregister import install as _install_live_operator_routes
+    except Exception:
+        from backend.live_operator_autoregister import install as _install_live_operator_routes
+    _install_live_operator_routes()
+except Exception:
     pass
