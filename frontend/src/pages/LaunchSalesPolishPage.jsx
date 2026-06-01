@@ -1,67 +1,62 @@
 import React from "react";
 
-const approvals = [
-  {
-    label: "Invoice ready",
-    text: "Completed job, proof photos and invoice wording prepared.",
-  },
-  {
-    label: "Quote follow-up",
-    text: "Customer message drafted and ready for approval.",
-  },
-  {
-    label: "Assign worker",
-    text: "Best available crew member suggested with reason.",
-  },
-];
-
-const problems = [
-  "Invoices get forgotten after busy days.",
-  "Photos and notes end up buried in messages.",
-  "Quotes go quiet because nobody has time to chase them.",
-  "Owners are left guessing the next admin step.",
+const actions = [
+  "Draft invoice prepared",
+  "Quote follow-up written",
+  "Best worker suggested",
+  "Proof photos linked",
 ];
 
 const features = [
+  ["Jobs", "Create, assign and track jobs from one clean workspace."],
+  ["Clients", "Keep customer details, job history, quotes and invoices together."],
+  ["Quotes", "Build quotes fast and chase them before they go cold."],
+  ["Invoices", "Turn completed work into draft invoices ready to approve."],
+  ["Crew", "Give workers a simple job view without exposing owner-only details."],
+  ["Payroll", "Review hours, approved time and payroll handoff in one place."],
+];
+
+const plans = [
   {
-    title: "Jobs",
-    text: "Create, assign and review field work without losing the admin trail.",
+    name: "Start",
+    price: "$39",
+    line: "For solo operators getting organised.",
+    items: ["Jobs", "Clients", "Quotes", "Invoices", "Basic AI help"],
   },
   {
-    title: "Client Workbench",
-    text: "Keep customer details, job history, quotes and invoices connected.",
+    name: "Crew",
+    price: "$89",
+    line: "For small teams with workers in the field.",
+    items: ["Team workflow", "Worker job view", "Photo proof", "More clients", "Crew-ready admin"],
   },
   {
-    title: "Invoice Forge",
-    text: "Prepare draft invoices from completed jobs, notes, photos and pricing.",
+    name: "Operator",
+    price: "$149",
+    line: "The main Churvox plan. AI prepares the admin.",
+    items: ["AI Operator Actions", "Approval queue", "Smart Hub", "Automation support", "MYOB add-on available"],
+    popular: true,
   },
   {
-    title: "Quote Press",
-    text: "Create quotes and prepare follow-up messages before they go cold.",
-  },
-  {
-    title: "Crew",
-    text: "Give workers a simple job view while owners keep the full picture.",
-  },
-  {
-    title: "AI Operator",
-    text: "Churvox prepares the next admin action. You stay in control.",
+    name: "Command",
+    price: "$299",
+    line: "For bigger crews needing command-level control.",
+    items: ["MYOB included", "Payroll workspace", "Advanced roles", "Higher limits", "Priority support"],
   },
 ];
 
 export default function ChurvoxPublicSite() {
   return (
-    <main className="cv-public-site">
+    <main className="public-page">
       <style>{`
         :root {
-          --cv-ink: #111827;
-          --cv-muted: #5f6675;
-          --cv-soft: #f4f6f3;
-          --cv-line: rgba(17, 24, 39, 0.1);
-          --cv-green: #10d46f;
-          --cv-blue: #35b8ff;
-          --cv-dark: #081324;
-          --cv-dark-2: #0d1b32;
+          --ink: #10141f;
+          --muted: #596170;
+          --line: rgba(16, 20, 31, 0.10);
+          --soft: #f5f7f1;
+          --green: #16db78;
+          --blue: #28b8ff;
+          --navy: #081324;
+          --navy2: #0c1b33;
         }
 
         * {
@@ -70,631 +65,790 @@ export default function ChurvoxPublicSite() {
 
         body {
           margin: 0;
-          background: var(--cv-soft);
+          background: var(--soft);
         }
 
-        .cv-public-site {
+        .public-page {
           width: 100vw;
-          min-height: 100vh;
           margin-left: calc(50% - 50vw);
           margin-right: calc(50% - 50vw);
           overflow-x: hidden;
           background:
-            radial-gradient(circle at 12% 12%, rgba(16, 212, 111, 0.12), transparent 24rem),
-            radial-gradient(circle at 88% 12%, rgba(53, 184, 255, 0.12), transparent 26rem),
-            #f5f7f2;
-          color: var(--cv-ink);
+            radial-gradient(circle at 12% 10%, rgba(22, 219, 120, 0.12), transparent 360px),
+            radial-gradient(circle at 88% 8%, rgba(40, 184, 255, 0.10), transparent 380px),
+            var(--soft);
+          color: var(--ink);
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
 
-        .cv-wrap {
-          width: min(100% - 40px, 1240px);
+        .wrap {
+          width: min(100% - 36px, 1320px);
           margin: 0 auto;
         }
 
-        .cv-nav {
+        .nav {
           position: sticky;
           top: 0;
-          z-index: 20;
-          padding: 18px 0 10px;
+          z-index: 30;
+          padding: 14px 0;
+          background: rgba(245, 247, 241, 0.82);
           backdrop-filter: blur(18px);
+          border-bottom: 1px solid rgba(16, 20, 31, 0.06);
         }
 
-        .cv-nav-inner {
-          width: min(100% - 40px, 1240px);
-          margin: 0 auto;
-          min-height: 54px;
+        .nav-inner {
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 18px;
-          border: 1px solid var(--cv-line);
-          background: rgba(255, 255, 255, 0.72);
-          border-radius: 999px;
-          padding: 9px 12px 9px 16px;
-          box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
         }
 
-        .cv-brand {
+        .brand {
           display: flex;
           align-items: center;
           gap: 10px;
+          color: var(--ink);
           text-decoration: none;
-          color: var(--cv-ink);
-          min-width: fit-content;
         }
 
-        .cv-mark {
+        .logo {
           width: 34px;
           height: 34px;
-          border-radius: 999px;
+          border-radius: 12px;
           display: grid;
           place-items: center;
-          color: white;
-          font-weight: 900;
-          background: linear-gradient(135deg, var(--cv-blue), var(--cv-green));
-          box-shadow: 0 10px 25px rgba(16, 212, 111, 0.24);
+          color: #04140c;
+          font-weight: 950;
+          background: linear-gradient(135deg, var(--blue), var(--green));
         }
 
-        .cv-brand strong {
+        .brand strong {
           display: block;
           font-size: 16px;
-          line-height: 1;
+          letter-spacing: -0.03em;
         }
 
-        .cv-brand span {
+        .brand span {
           display: block;
+          margin-top: 2px;
           font-size: 11px;
-          color: var(--cv-muted);
-          margin-top: 3px;
+          color: var(--muted);
+          font-weight: 750;
         }
 
-        .cv-links {
+        .links {
           display: flex;
           align-items: center;
-          justify-content: flex-end;
-          gap: 18px;
+          gap: 20px;
           font-size: 13px;
-          font-weight: 700;
+          font-weight: 850;
         }
 
-        .cv-links a {
-          color: var(--cv-ink);
+        .links a {
+          color: var(--ink);
           text-decoration: none;
         }
 
-        .cv-pill-button {
+        .btn {
           display: inline-flex;
           align-items: center;
           justify-content: center;
           min-height: 42px;
           padding: 0 18px;
           border-radius: 999px;
-          border: 0;
-          background: var(--cv-green);
-          color: #062014 !important;
-          font-size: 13px;
-          font-weight: 900;
+          border: 1px solid transparent;
+          background: var(--green);
+          color: #03150d !important;
           text-decoration: none;
-          box-shadow: 0 16px 35px rgba(16, 212, 111, 0.24);
+          font-size: 13px;
+          font-weight: 950;
+          white-space: nowrap;
+          box-shadow: 0 16px 34px rgba(22, 219, 120, 0.22);
         }
 
-        .cv-hero {
-          min-height: calc(100svh - 86px);
+        .btn.dark {
+          background: var(--ink);
+          color: white !important;
+          box-shadow: none;
+        }
+
+        .btn.ghost {
+          background: white;
+          color: var(--ink) !important;
+          border-color: var(--line);
+          box-shadow: none;
+        }
+
+        .hero {
+          min-height: calc(100svh - 71px);
           display: grid;
           align-items: center;
-          padding: 28px 0 56px;
+          padding: 52px 0 68px;
         }
 
-        .cv-hero-grid {
+        .hero-grid {
           display: grid;
-          grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.85fr);
-          gap: 34px;
-          align-items: stretch;
+          grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.72fr);
+          gap: 46px;
+          align-items: center;
         }
 
-        .cv-copy,
-        .cv-operator-card,
-        .cv-panel {
-          border: 1px solid var(--cv-line);
-          border-radius: 34px;
-          background: rgba(255, 255, 255, 0.78);
-          box-shadow: 0 26px 80px rgba(15, 23, 42, 0.08);
-        }
-
-        .cv-copy {
-          padding: clamp(32px, 5vw, 70px);
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          min-height: 560px;
-        }
-
-        .cv-eyebrow {
+        .eyebrow {
           width: fit-content;
-          margin: 0 0 20px;
-          padding: 8px 12px;
+          margin: 0 0 18px;
+          padding: 7px 11px;
           border-radius: 999px;
-          background: rgba(16, 212, 111, 0.12);
-          color: #087944;
+          background: rgba(22, 219, 120, 0.13);
+          color: #087543;
           font-size: 11px;
           font-weight: 950;
           letter-spacing: 0.12em;
           text-transform: uppercase;
         }
 
-        .cv-copy h1 {
-          margin: 0;
-          max-width: 790px;
-          font-size: clamp(58px, 8.5vw, 112px);
-          letter-spacing: -0.085em;
-          line-height: 0.9;
+        h1,
+        h2,
+        h3,
+        p {
+          margin-top: 0;
         }
 
-        .cv-copy h1 span {
+        .hero h1 {
+          max-width: 980px;
+          margin-bottom: 22px;
+          font-size: clamp(62px, 9vw, 134px);
+          line-height: 0.86;
+          letter-spacing: -0.09em;
+        }
+
+        .hero h1 span {
           display: block;
         }
 
-        .cv-copy p {
-          max-width: 680px;
-          margin: 24px 0 0;
-          color: #303847;
-          font-size: clamp(16px, 1.35vw, 20px);
-          line-height: 1.55;
-          font-weight: 650;
+        .lead {
+          max-width: 780px;
+          margin-bottom: 28px;
+          color: #2f3746;
+          font-size: clamp(17px, 1.55vw, 22px);
+          line-height: 1.45;
+          font-weight: 680;
         }
 
-        .cv-actions {
+        .hero-actions {
           display: flex;
           flex-wrap: wrap;
           gap: 12px;
           align-items: center;
-          margin-top: 28px;
+          margin-bottom: 26px;
         }
 
-        .cv-secondary-button {
-          display: inline-flex;
-          min-height: 42px;
-          align-items: center;
-          justify-content: center;
-          padding: 0 18px;
-          border-radius: 999px;
-          border: 1px solid var(--cv-line);
-          background: rgba(255,255,255,0.75);
-          color: var(--cv-ink);
-          text-decoration: none;
-          font-size: 13px;
-          font-weight: 900;
-        }
-
-        .cv-proof-row {
+        .proof {
           display: flex;
           flex-wrap: wrap;
-          gap: 10px 18px;
-          margin-top: 24px;
-          color: #596171;
-          font-size: 12px;
-          font-weight: 800;
-        }
-
-        .cv-operator-card {
-          min-height: 560px;
-          padding: 24px;
-          background:
-            linear-gradient(145deg, rgba(8, 19, 36, 0.94), rgba(13, 27, 50, 0.98)),
-            radial-gradient(circle at 80% 10%, rgba(53,184,255,0.24), transparent 18rem);
-          color: white;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-        }
-
-        .cv-screen {
-          border: 1px solid rgba(255,255,255,0.12);
-          border-radius: 28px;
-          background: rgba(255,255,255,0.07);
-          padding: 22px;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
-        }
-
-        .cv-screen small {
-          display: block;
-          color: var(--cv-blue);
-          font-weight: 950;
-          letter-spacing: 0.11em;
-          text-transform: uppercase;
-          margin-bottom: 8px;
-        }
-
-        .cv-screen h2 {
-          margin: 0;
-          max-width: 360px;
-          font-size: clamp(42px, 5vw, 70px);
-          line-height: 0.9;
-          letter-spacing: -0.065em;
-        }
-
-        .cv-screen p {
-          margin: 12px 0 22px;
-          color: rgba(255,255,255,0.72);
-          font-weight: 800;
-        }
-
-        .cv-approval-list {
-          display: grid;
           gap: 10px;
         }
 
-        .cv-approval-row {
-          display: grid;
-          grid-template-columns: 1fr auto;
-          gap: 12px;
-          align-items: center;
-          border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 18px;
-          background: rgba(255,255,255,0.06);
-          padding: 13px 14px;
+        .proof span {
+          padding: 9px 11px;
+          border: 1px solid var(--line);
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.62);
+          color: #515969;
+          font-size: 12px;
+          font-weight: 850;
         }
 
-        .cv-approval-row strong {
-          display: block;
-          color: var(--cv-blue);
-          font-size: 11px;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          margin-bottom: 5px;
-        }
-
-        .cv-approval-row span {
-          display: block;
+        .operator {
           color: white;
-          font-size: 13px;
-          font-weight: 850;
-          line-height: 1.3;
+          border-radius: 30px;
+          padding: 22px;
+          background:
+            radial-gradient(circle at 85% 10%, rgba(40, 184, 255, 0.30), transparent 260px),
+            linear-gradient(145deg, var(--navy), var(--navy2));
+          box-shadow: 0 28px 80px rgba(8, 19, 36, 0.24);
         }
 
-        .cv-approve {
-          border: 0;
-          border-radius: 999px;
-          padding: 10px 13px;
-          background: var(--cv-green);
-          color: #062014;
-          font-size: 12px;
+        .operator-top {
+          padding: 14px 4px 18px;
+        }
+
+        .operator small {
+          display: block;
+          margin-bottom: 8px;
+          color: var(--blue);
+          font-size: 11px;
           font-weight: 950;
+          letter-spacing: 0.11em;
+          text-transform: uppercase;
         }
 
-        .cv-tags {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          margin-top: 14px;
-        }
-
-        .cv-tags span {
-          border-radius: 999px;
-          background: rgba(255,255,255,0.09);
-          color: rgba(255,255,255,0.88);
-          padding: 8px 10px;
-          font-size: 12px;
-          font-weight: 850;
-        }
-
-        .cv-section {
-          padding: 42px 0;
-        }
-
-        .cv-panel {
-          padding: clamp(28px, 4vw, 54px);
-        }
-
-        .cv-split {
-          display: grid;
-          grid-template-columns: minmax(0, 0.85fr) minmax(340px, 1fr);
-          gap: 26px;
-          align-items: start;
-        }
-
-        .cv-section h2 {
-          margin: 0;
-          max-width: 720px;
-          font-size: clamp(42px, 6vw, 82px);
+        .operator h2 {
+          margin-bottom: 8px;
+          font-size: clamp(38px, 4.5vw, 62px);
           line-height: 0.9;
           letter-spacing: -0.07em;
         }
 
-        .cv-section p {
-          margin: 14px 0 0;
-          color: var(--cv-muted);
-          font-size: 16px;
-          line-height: 1.55;
-          font-weight: 650;
+        .operator p {
+          margin: 0;
+          color: rgba(255, 255, 255, 0.70);
+          font-size: 14px;
+          font-weight: 750;
         }
 
-        .cv-problem-grid,
-        .cv-feature-grid {
+        .action-list {
           display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 8px;
+        }
+
+        .action-row {
+          display: grid;
+          grid-template-columns: 1fr auto;
           gap: 12px;
+          align-items: center;
+          min-height: 50px;
+          padding: 11px 12px;
+          border-radius: 16px;
+          background: rgba(255, 255, 255, 0.075);
+          border: 1px solid rgba(255, 255, 255, 0.10);
+          font-size: 13px;
+          font-weight: 850;
         }
 
-        .cv-mini-card,
-        .cv-feature-card {
-          min-height: 0;
-          border: 1px solid var(--cv-line);
-          border-radius: 20px;
-          background: rgba(255,255,255,0.68);
-          padding: 18px;
+        .approve {
+          border: 0;
+          border-radius: 999px;
+          padding: 8px 11px;
+          background: var(--green);
+          color: #04140c;
+          font-size: 12px;
+          font-weight: 950;
         }
 
-        .cv-mini-card {
-          font-size: 15px;
-          line-height: 1.35;
-          font-weight: 900;
+        .section {
+          padding: 72px 0;
+          border-top: 1px solid rgba(16, 20, 31, 0.07);
         }
 
-        .cv-feature-card strong {
+        .section-head {
+          display: grid;
+          grid-template-columns: minmax(0, 0.95fr) minmax(320px, 0.8fr);
+          gap: 40px;
+          align-items: end;
+          margin-bottom: 30px;
+        }
+
+        .section h2 {
+          margin-bottom: 0;
+          font-size: clamp(42px, 6.6vw, 92px);
+          line-height: 0.9;
+          letter-spacing: -0.075em;
+        }
+
+        .section-text {
+          margin-bottom: 0;
+          color: var(--muted);
+          font-size: 17px;
+          line-height: 1.5;
+          font-weight: 680;
+        }
+
+        .strip {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          border: 1px solid var(--line);
+          border-radius: 24px;
+          overflow: hidden;
+          background: rgba(255, 255, 255, 0.64);
+        }
+
+        .strip div {
+          min-height: 112px;
+          padding: 20px;
+          border-right: 1px solid var(--line);
+        }
+
+        .strip div:last-child {
+          border-right: 0;
+        }
+
+        .strip strong {
           display: block;
           margin-bottom: 8px;
-          font-size: 18px;
-          letter-spacing: -0.025em;
+          font-size: 15px;
+          letter-spacing: -0.02em;
         }
 
-        .cv-feature-card span {
+        .strip span {
           display: block;
-          color: var(--cv-muted);
-          font-size: 14px;
-          line-height: 1.45;
+          color: var(--muted);
+          font-size: 13px;
+          line-height: 1.4;
           font-weight: 650;
         }
 
-        .cv-command-panel {
-          min-height: 52vh;
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) minmax(320px, 0.8fr);
-          gap: 32px;
-          align-items: center;
-          border-radius: 34px;
-          padding: clamp(32px, 5vw, 68px);
+        .dark-band {
+          padding: 82px 0;
           color: white;
           background:
-            linear-gradient(135deg, rgba(8,19,36,0.96), rgba(13,27,50,0.98)),
-            radial-gradient(circle at 85% 10%, rgba(53,184,255,0.26), transparent 22rem);
-          box-shadow: 0 30px 90px rgba(8, 19, 36, 0.22);
+            radial-gradient(circle at 78% 18%, rgba(40, 184, 255, 0.18), transparent 420px),
+            linear-gradient(145deg, var(--navy), var(--navy2));
         }
 
-        .cv-command-panel h2 {
-          color: white;
+        .dark-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(360px, 0.8fr);
+          gap: 44px;
+          align-items: center;
         }
 
-        .cv-command-panel p {
-          max-width: 700px;
-          color: rgba(255,255,255,0.76);
+        .dark-band h2 {
+          max-width: 900px;
+          margin-bottom: 18px;
+          font-size: clamp(46px, 7.4vw, 104px);
+          line-height: 0.88;
+          letter-spacing: -0.08em;
         }
 
-        .cv-command-list {
+        .dark-band p {
+          max-width: 760px;
+          margin-bottom: 0;
+          color: rgba(255, 255, 255, 0.74);
+          font-size: 17px;
+          line-height: 1.5;
+          font-weight: 680;
+        }
+
+        .command-list {
           display: grid;
           gap: 10px;
         }
 
-        .cv-command-list div {
-          border: 1px solid rgba(255,255,255,0.12);
-          border-radius: 16px;
-          background: rgba(255,255,255,0.07);
-          padding: 14px 16px;
-          color: white;
+        .command-list div {
+          min-height: 48px;
+          display: flex;
+          align-items: center;
+          padding: 0 16px;
+          border-radius: 14px;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.10);
           font-size: 14px;
           font-weight: 900;
         }
 
-        .cv-final {
+        .pricing {
           display: grid;
-          grid-template-columns: 1fr auto;
-          gap: 24px;
-          align-items: center;
-          margin-bottom: 34px;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 14px;
         }
 
-        .cv-final h2 {
-          max-width: 860px;
+        .plan {
+          position: relative;
+          min-height: 360px;
+          display: flex;
+          flex-direction: column;
+          padding: 22px;
+          border-radius: 24px;
+          background: rgba(255, 255, 255, 0.72);
+          border: 1px solid var(--line);
         }
 
-        .cv-footer {
-          padding: 24px 0 40px;
-          color: #7a8190;
+        .plan.popular {
+          background: #10141f;
+          color: white;
+          border-color: #10141f;
+          box-shadow: 0 22px 55px rgba(16, 20, 31, 0.20);
+        }
+
+        .tag {
+          position: absolute;
+          top: 18px;
+          right: 18px;
+          border-radius: 999px;
+          padding: 7px 9px;
+          background: var(--green);
+          color: #04140c;
+          font-size: 10px;
+          font-weight: 950;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        .plan h3 {
+          margin-bottom: 10px;
+          font-size: 26px;
+          letter-spacing: -0.045em;
+        }
+
+        .price {
+          display: flex;
+          align-items: baseline;
+          gap: 6px;
+          margin-bottom: 12px;
+        }
+
+        .price strong {
+          font-size: 48px;
+          line-height: 1;
+          letter-spacing: -0.075em;
+        }
+
+        .price span {
+          color: var(--muted);
           font-size: 13px;
+          font-weight: 800;
+        }
+
+        .plan.popular .price span,
+        .plan.popular .plan-line,
+        .plan.popular li {
+          color: rgba(255, 255, 255, 0.72);
+        }
+
+        .plan-line {
+          min-height: 44px;
+          color: var(--muted);
+          font-size: 14px;
+          line-height: 1.35;
           font-weight: 700;
         }
 
-        @media (max-width: 900px) {
-          .cv-links a:not(.cv-pill-button) {
+        .plan ul {
+          list-style: none;
+          padding: 0;
+          margin: 18px 0 22px;
+          display: grid;
+          gap: 9px;
+        }
+
+        .plan li {
+          color: #4f5767;
+          font-size: 13px;
+          line-height: 1.35;
+          font-weight: 750;
+        }
+
+        .plan li:before {
+          content: "✓";
+          margin-right: 8px;
+          color: #0b9b57;
+          font-weight: 950;
+        }
+
+        .plan.popular li:before {
+          color: var(--green);
+        }
+
+        .plan .btn {
+          margin-top: auto;
+          width: 100%;
+        }
+
+        .note-row {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 12px;
+          margin-top: 14px;
+        }
+
+        .note-row div {
+          padding: 16px;
+          border-radius: 18px;
+          border: 1px solid var(--line);
+          background: rgba(255, 255, 255, 0.58);
+          color: var(--muted);
+          font-size: 13px;
+          line-height: 1.4;
+          font-weight: 720;
+        }
+
+        .final {
+          padding: 78px 0 64px;
+        }
+
+        .final-inner {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 28px;
+          align-items: center;
+        }
+
+        .final h2 {
+          max-width: 860px;
+          margin-bottom: 12px;
+          font-size: clamp(42px, 6vw, 82px);
+          line-height: 0.9;
+          letter-spacing: -0.075em;
+        }
+
+        .final p {
+          max-width: 750px;
+          margin-bottom: 0;
+          color: var(--muted);
+          font-size: 17px;
+          line-height: 1.5;
+          font-weight: 680;
+        }
+
+        .footer {
+          padding: 24px 0 40px;
+          border-top: 1px solid rgba(16, 20, 31, 0.07);
+          color: #737b8a;
+          font-size: 13px;
+          font-weight: 750;
+        }
+
+        @media (max-width: 1050px) {
+          .hero-grid,
+          .section-head,
+          .dark-grid,
+          .final-inner {
+            grid-template-columns: 1fr;
+          }
+
+          .pricing {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+
+          .strip {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+
+          .strip div:nth-child(2) {
+            border-right: 0;
+          }
+
+          .strip div:nth-child(1),
+          .strip div:nth-child(2) {
+            border-bottom: 1px solid var(--line);
+          }
+        }
+
+        @media (max-width: 720px) {
+          .wrap {
+            width: min(100% - 24px, 1320px);
+          }
+
+          .links a:not(.btn) {
             display: none;
           }
 
-          .cv-hero-grid,
-          .cv-split,
-          .cv-command-panel,
-          .cv-final {
-            grid-template-columns: 1fr;
-          }
-
-          .cv-copy,
-          .cv-operator-card {
+          .hero {
             min-height: auto;
+            padding: 42px 0 54px;
           }
 
-          .cv-copy h1 {
-            font-size: clamp(48px, 16vw, 74px);
+          .hero h1 {
+            font-size: clamp(52px, 17vw, 78px);
           }
 
-          .cv-problem-grid,
-          .cv-feature-grid {
+          .operator {
+            border-radius: 24px;
+          }
+
+          .section,
+          .dark-band,
+          .final {
+            padding: 54px 0;
+          }
+
+          .pricing,
+          .strip,
+          .note-row {
             grid-template-columns: 1fr;
           }
 
-          .cv-wrap,
-          .cv-nav-inner {
-            width: min(100% - 24px, 1240px);
+          .strip div {
+            border-right: 0;
+            border-bottom: 1px solid var(--line);
+          }
+
+          .strip div:last-child {
+            border-bottom: 0;
           }
         }
       `}</style>
 
-      <header className="cv-nav">
-        <div className="cv-nav-inner">
-          <a className="cv-brand" href="/">
-            <div className="cv-mark">C</div>
+      <header className="nav">
+        <div className="wrap nav-inner">
+          <a className="brand" href="/">
+            <div className="logo">C</div>
             <div>
               <strong>Churvox</strong>
-              <span>AI admin for trade owners</span>
+              <span>AI admin command centre</span>
             </div>
           </a>
 
-          <nav className="cv-links">
-            <a href="#inside">Inside</a>
+          <nav className="links">
             <a href="#features">Features</a>
-            <a href="/plans">Plan</a>
-            <a href="#command">Command</a>
+            <a href="#inside">Inside</a>
+            <a href="#pricing">Pricing</a>
             <a href="/login">Log in</a>
-            <a className="cv-pill-button" href="/plans">Start free</a>
+            <a className="btn" href="/plans">Start free</a>
           </nav>
         </div>
       </header>
 
-      <section className="cv-hero">
-        <div className="cv-wrap cv-hero-grid">
-          <div className="cv-copy">
-            <div className="cv-eyebrow">Built for trade and service owners</div>
+      <section className="hero">
+        <div className="wrap hero-grid">
+          <div>
+            <div className="eyebrow">Built for trade and service owners</div>
             <h1>
-              <span>Churvox does</span>
+              <span>Run the job.</span>
+              <span>Churvox runs</span>
               <span>the admin.</span>
-              <span>You approve.</span>
             </h1>
-            <p>
-              Keep jobs, clients, crew, quotes, invoices and proof of work in one place.
-              The AI Operator prepares the next admin action so you are not chasing it after hours.
+            <p className="lead">
+              Churvox keeps jobs, clients, crew, quotes, invoices and proof of work together.
+              The AI Operator prepares the next action. You check it, approve it and move on.
             </p>
 
-            <div className="cv-actions">
-              <a className="cv-pill-button" href="/plans">Start free</a>
-              <a className="cv-secondary-button" href="/plans">See pricing</a>
+            <div className="hero-actions">
+              <a className="btn" href="/plans">Start free</a>
+              <a className="btn ghost" href="#pricing">See pricing</a>
             </div>
 
-            <div className="cv-proof-row">
-              <span>No card trial</span>
+            <div className="proof">
+              <span>No-card trial</span>
               <span>Approval-first AI</span>
-              <span>Built for mobile crews</span>
-              <span>MYOB ready on higher plans</span>
+              <span>Mobile crew workflow</span>
+              <span>MYOB ready</span>
             </div>
           </div>
 
-          <aside className="cv-operator-card" aria-label="AI Operator approval preview">
-            <div className="cv-screen">
+          <aside className="operator">
+            <div className="operator-top">
               <small>AI Operator</small>
-              <h2>Ready for approval</h2>
-              <p>Three actions prepared from today’s work.</p>
+              <h2>Admin ready to approve.</h2>
+              <p>Prepared from today’s jobs, notes, photos and customer activity.</p>
+            </div>
 
-              <div className="cv-approval-list">
-                {approvals.map((item) => (
-                  <div className="cv-approval-row" key={item.label}>
-                    <div>
-                      <strong>{item.label}</strong>
-                      <span>{item.text}</span>
-                    </div>
-                    <button className="cv-approve" type="button">Approve</button>
-                  </div>
-                ))}
-              </div>
-
-              <div className="cv-tags">
-                <span>Jobs</span>
-                <span>Invoice Forge</span>
-                <span>Quote Press</span>
-                <span>Crew</span>
-              </div>
+            <div className="action-list">
+              {actions.map((item) => (
+                <div className="action-row" key={item}>
+                  <span>{item}</span>
+                  <button className="approve" type="button">Approve</button>
+                </div>
+              ))}
             </div>
           </aside>
         </div>
       </section>
 
-      <section className="cv-section" id="features">
-        <div className="cv-wrap cv-panel cv-split">
-          <div>
-            <div className="cv-eyebrow">The gap Churvox fixes</div>
-            <h2>Most job apps track work. Churvox helps finish the admin after it.</h2>
-            <p>
-              Owners should not need to remember every invoice, chase every quote,
-              hunt for photos or work out who should do the next job.
+      <section className="section" id="features">
+        <div className="wrap">
+          <div className="section-head">
+            <h2>Less chasing. Less guessing. Less admin after hours.</h2>
+            <p className="section-text">
+              Most job apps stop at tracking work. Churvox helps turn finished work into the next admin step:
+              invoice, quote follow-up, worker assignment, proof, payroll review or customer update.
             </p>
           </div>
 
-          <div className="cv-problem-grid">
-            {problems.map((item) => (
-              <div className="cv-mini-card" key={item}>{item}</div>
-            ))}
+          <div className="strip">
+            <div><strong>Finish the job</strong><span>Track work, photos, notes and time from one place.</span></div>
+            <div><strong>Prepare the admin</strong><span>Churvox drafts the next step instead of leaving it in your head.</span></div>
+            <div><strong>Approve the action</strong><span>You stay in control before anything important goes out.</span></div>
+            <div><strong>Keep moving</strong><span>Your business has a clear command desk for the day.</span></div>
           </div>
         </div>
       </section>
 
-      <section className="cv-section">
-        <div className="cv-wrap cv-panel cv-split">
+      <section className="dark-band" id="inside">
+        <div className="wrap dark-grid">
           <div>
-            <div className="cv-eyebrow">What you get</div>
-            <h2>Everything the owner needs to keep the day moving.</h2>
+            <div className="eyebrow">Inside Churvox</div>
+            <h2>Your logged-in app becomes the Command Desk.</h2>
             <p>
-              Churvox keeps the workflow simple: jobs in, crew assigned,
-              proof captured, admin prepared, owner approves.
+              Smart Hub shows what needs attention, what Churvox prepared,
+              and what button to press next. No messy public-page boxes. No confusing workflow.
             </p>
           </div>
 
-          <div className="cv-feature-grid">
-            {features.map((feature) => (
-              <div className="cv-feature-card" key={feature.title}>
-                <strong>{feature.title}</strong>
-                <span>{feature.text}</span>
+          <div className="command-list">
+            <div>Today’s urgent actions</div>
+            <div>Draft invoices ready</div>
+            <div>Quote follow-ups prepared</div>
+            <div>Worker assignment suggestions</div>
+            <div>Payroll and time review</div>
+            <div>MYOB sync when ready</div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="wrap">
+          <div className="section-head">
+            <h2>Built around the real trade workflow.</h2>
+            <p className="section-text">
+              Jobs come in, crew go out, proof comes back, admin gets prepared,
+              and the owner approves the next move.
+            </p>
+          </div>
+
+          <div className="strip">
+            {features.map(([title, text]) => (
+              <div key={title}>
+                <strong>{title}</strong>
+                <span>{text}</span>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="cv-section" id="inside">
-        <div className="cv-wrap cv-command-panel">
-          <div>
-            <div className="cv-eyebrow">Inside the app</div>
-            <h2>The public site stays simple. The logged-in app becomes your Command Room.</h2>
-            <p>
-              Jobs, invoices, dispatch, money, crew workload and AI-prepared actions stay focused
-              when it is time to run the business.
+      <section className="section" id="pricing">
+        <div className="wrap">
+          <div className="section-head">
+            <h2>Simple pricing that grows with the crew.</h2>
+            <p className="section-text">
+              Start small, then move into AI Operator actions, MYOB, payroll workspace and higher limits
+              as the business grows. Prices exclude GST.
             </p>
           </div>
 
-          <div className="cv-command-list">
-            <div>Command Room</div>
-            <div>Invoice ready</div>
-            <div>Quote follow-up ready</div>
-            <div>Worker assignment prepared</div>
-            <div>Payment chase drafted</div>
+          <div className="pricing">
+            {plans.map((plan) => (
+              <article className={`plan ${plan.popular ? "popular" : ""}`} key={plan.name}>
+                {plan.popular && <div className="tag">Most popular</div>}
+                <h3>{plan.name}</h3>
+                <div className="price">
+                  <strong>{plan.price}</strong>
+                  <span>/ month + GST</span>
+                </div>
+                <p className="plan-line">{plan.line}</p>
+                <ul>
+                  {plan.items.map((item) => <li key={item}>{item}</li>)}
+                </ul>
+                <a className={`btn ${plan.popular ? "" : "ghost"}`} href="/plans">Choose {plan.name}</a>
+              </article>
+            ))}
+          </div>
+
+          <div className="note-row">
+            <div><strong>Command Growth Pack:</strong> $99/month + GST per extra 50 active team members.</div>
+            <div><strong>MYOB:</strong> available on Operator as a $39/month add-on and included with Command.</div>
+            <div><strong>SMS:</strong> sold separately as credit packs so owners only buy what they need.</div>
           </div>
         </div>
       </section>
 
-      <section className="cv-section" id="command">
-        <div className="cv-wrap cv-panel cv-final">
+      <section className="final">
+        <div className="wrap final-inner">
           <div>
-            <div className="cv-eyebrow">Simple promise</div>
-            <h2>Churvox prepares the admin. You stay in control.</h2>
+            <h2>Churvox prepares it. You approve it.</h2>
             <p>
-              Start with jobs and clients. Grow into AI Operator actions, crew workflow,
-              invoices, quotes, payroll workspace and MYOB sync when ready.
+              A cleaner way to run jobs, crew and admin without building your day around paperwork.
             </p>
           </div>
-
-          <a className="cv-pill-button" href="/plans">Start free</a>
+          <a className="btn dark" href="/plans">Start free</a>
         </div>
       </section>
 
-      <footer className="cv-wrap cv-footer">
-        <strong>Churvox</strong>
-        <span> — The AI admin command centre for trade and service owners.</span>
+      <footer className="footer">
+        <div className="wrap">
+          <strong>Churvox</strong> — AI admin command centre for trade and service owners.
+        </div>
       </footer>
     </main>
   );
