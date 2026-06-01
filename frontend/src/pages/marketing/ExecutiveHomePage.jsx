@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 import "./ExecutiveHomeProper.css";
+import "./ExecutiveHomeSizeFix.css";
 
 const approvals = [
   ["Invoice draft", "Completed job, proof photos and wording prepared."],
@@ -75,9 +76,9 @@ export default function ExecutiveHomePage() {
             <div className="cvx-proof-row">{proof.map((item) => <span key={item}>{item}</span>)}</div>
           </section>
 
-          <aside className="cvx-command-preview" aria-label="Churvox AI Operator preview">
+          <aside className="cvx-command-preview" aria-label="Churvox admin approval preview">
             <div className="cvx-preview-head">
-              <small>AI Operator</small>
+              <small>Prepared by Churvox</small>
               <b>Admin ready to approve.</b>
               <span>Prepared from today’s jobs, notes, photos and customer activity.</span>
             </div>
@@ -141,7 +142,7 @@ export default function ExecutiveHomePage() {
         <div>
           <p className="cvx-pill">Simple promise</p>
           <h2>Churvox prepares it. You approve it.</h2>
-          <span>Start with jobs and clients. Grow into AI Operator actions, crew workflow, invoices, quotes, payroll workspace and MYOB sync when ready.</span>
+          <span>Start with jobs and clients. Grow into prepared owner actions, crew workflow, invoices, quotes, payroll workspace and MYOB sync when ready.</span>
         </div>
         <Link to="/signup" className="cvx-primary">Start free</Link>
       </section>
