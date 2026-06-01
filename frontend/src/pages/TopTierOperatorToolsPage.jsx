@@ -133,7 +133,7 @@ export default function TopTierOperatorToolsPage() {
       const audit = [
         ...jobs.slice(0, 4).map((job) => ({ ...job, action: "Job in Command Floor" })),
         ...invoices.slice(0, 4).map((invoice) => ({ ...invoice, action: "Invoice in Money Desk" })),
-        ...quotes.slice(0, 3).map((quote) => ({ ...quote, action: "Quote in Quote Press" })),
+        ...quotes.slice(0, 3).map((quote) => ({ ...quote, action: "Quote in Quotes" })),
       ];
 
       setState({
@@ -227,7 +227,7 @@ export default function TopTierOperatorToolsPage() {
       <section className="tt-grid">
         <article className="tt-card"><small>Jobs</small><h2>{state.jobs.length}</h2><p>Live jobs feeding Command Floor and Dispatch.</p></article>
         <article className="tt-card"><small>Invoices</small><h2>{state.invoices.length}</h2><p>Money Desk records available for follow-up and review.</p></article>
-        <article className="tt-card"><small>Quotes</small><h2>{state.quotes.length}</h2><p>Quote Press records available for sales flow review.</p></article>
+        <article className="tt-card"><small>Quotes</small><h2>{state.quotes.length}</h2><p>Quotes records available for sales flow review.</p></article>
         <article className="tt-card"><small>Dispatch board</small><h2>{laneCount}</h2><p>Jobs available to schedule, assign or review.</p></article>
       </section>
     </main>

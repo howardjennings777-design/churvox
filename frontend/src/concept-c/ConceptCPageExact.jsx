@@ -600,7 +600,7 @@ function Dashboard({ m, loading, onPick }) {
     { key: "crew", tone: "blue", icon: "👥", label: "Assign Workers", value: m.workerActions.length, title: "Assign Crew", body: "Unassigned work needs a crew decision. Review availability, conflicts and the suggested next move.", button: "Assign Crew", group: workerLane, items: m.workerActions },
     { key: "messages", tone: "purple", icon: "💬", label: "Customer Updates", value: m.messageActions.length, title: "Review Drafts", body: "Customer follow-ups are drafted, but nothing sends until you approve it.", button: "Review Drafts", group: messageLane, items: m.messageActions },
     { key: "issues", tone: "orange", icon: "🛡", label: "Fix Issues", value: m.issues.length, title: "Clear Blockers", body: "Missing prices, customer details and admin blockers are grouped so work does not stall.", button: "Clear Blockers", group: issueLane, items: m.issues },
-    { key: "dispatch", tone: "slate", icon: "▣", label: "Dispatch Control", value: (m.dispatchWatch || m.live).length, title: "Dispatch Board", body: "Live jobs and unassigned work with full visibility.", button: "Dispatch Board", group: dispatchLane, items: m.dispatchWatch || m.live },
+    { key: "dispatch", tone: "slate", icon: "▣", label: "Dispatch Control", value: (m.dispatchWatch || m.live).length, title: "Dispatch", body: "Live jobs and unassigned work with full visibility.", button: "Dispatch", group: dispatchLane, items: m.dispatchWatch || m.live },
   ];
 
   const previewItem = (item, index) => (
