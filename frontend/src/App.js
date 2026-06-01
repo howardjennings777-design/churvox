@@ -54,6 +54,7 @@ import ConceptCPage from "./concept-c/ConceptCPageExact";
 import ConceptCFrame from "./concept-c/ConceptCFrame";
 import CommandDeskHomePage from "./pages/CommandDeskHomePage";
 import JobsCommandPage from "./pages/JobsCommandPage";
+import QuotesCommandPage from "./pages/QuotesCommandPage";
 import TradePresetsPage from "./pages/TradePresetsPage";
 import MessageApprovalQueuePage from "./pages/MessageApprovalQueuePage";
 import DispatchBoardPage from "./pages/DispatchBoardPage";
@@ -262,7 +263,7 @@ function App() {
             <Route path="/clients/new" element={<BusinessRoute><ConceptCFrame area="clients"><ClientFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/clients/:id" element={<BusinessRoute><ConceptCFrame area="clients"><ClientDetailPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/clients/:id/edit" element={<BusinessRoute><ConceptCFrame area="clients"><ClientFormPage /></ConceptCFrame></BusinessRoute>} />
-            <Route path="/quotes" element={<BusinessRoute><ConceptCPage area="quotes" /></BusinessRoute>} />
+            <Route path="/quotes" element={<BusinessRoute><QuotesCommandPage /></BusinessRoute>} />
             <Route path="/quotes/new" element={<BusinessRoute><ConceptCFrame area="quotes"><QuoteFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/quotes/:id" element={<BusinessRoute><ConceptCFrame area="quotes"><QuoteDetailPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/quotes/:id/edit" element={<BusinessRoute><ConceptCFrame area="quotes"><QuoteFormPage /></ConceptCFrame></BusinessRoute>} />
