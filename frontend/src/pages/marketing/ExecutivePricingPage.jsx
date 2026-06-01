@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Nav, Footer } from "./ExecutiveHomePage";
+import { Nav } from "./ExecutiveHomePage";
 import "./ExecutiveHomePage.css";
 import "./ExecutiveMarketingPolish.css";
 
@@ -99,7 +99,7 @@ const quickNotes = [
 
 export default function ExecutivePricingPage() {
   return (
-    <main className="cvx-home cvx-public-page cxp-page" data-version="CHURVOX_PRICING_SINGLE_SECTION_20260601">
+    <main className="cvx-home cvx-public-page cxp-page" data-version="CHURVOX_PRICING_NO_FOOTER_20260601">
       <style>{`
         .cxp-page {
           min-height: 100vh;
@@ -382,7 +382,7 @@ export default function ExecutivePricingPage() {
         }
 
         .cxp-final {
-          padding: 0 0 70px;
+          padding: 0 0 22px;
         }
 
         .cxp-final-box {
@@ -525,8 +525,6 @@ export default function ExecutivePricingPage() {
           <Link to="/signup" className="cxp-btn primary">Start free</Link>
         </div>
       </section>
-
-      <Footer />
     </main>
   );
 }
