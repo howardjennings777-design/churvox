@@ -1,105 +1,16 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Nav } from "./ExecutiveHomePage";
+import { MARKETING_PLANS, QUICK_PRICING_NOTES } from "../../config/churvoxPlans";
 import "./ExecutiveHomePage.css";
 import "./ExecutiveMarketingPolish.css";
 
-const plans = [
-  {
-    key: "start",
-    name: "Start",
-    price: "$39",
-    tag: "Owner-operator",
-    summary: "For one owner who wants jobs, clients, quotes and invoices under control.",
-    bestFor: "Best for solo trade and service owners.",
-    includes: [
-      "Jobs, clients, quotes and invoices",
-      "Basic Smart Hub",
-      "Owner job control",
-      "Simple invoice and quote workflow",
-      "Mobile-friendly app access",
-    ],
-    notIncluded: [
-      "Worker accounts",
-      "AI Operator approval queue",
-      "MYOB sync",
-      "Payroll workspace",
-    ],
-  },
-  {
-    key: "crew",
-    name: "Crew",
-    price: "$89",
-    tag: "Small team",
-    summary: "For a growing crew that needs worker jobs, assignments and proof from the field.",
-    bestFor: "Best for owners with workers on jobs.",
-    includes: [
-      "Everything in Start",
-      "Worker accounts and job view",
-      "Crew assignments",
-      "Job notes and photo proof",
-      "More client and job capacity",
-    ],
-    notIncluded: [
-      "AI Operator approval queue",
-      "MYOB sync",
-      "Payroll workspace",
-      "Advanced office/payroll roles",
-    ],
-  },
-  {
-    key: "operator",
-    name: "Operator",
-    price: "$149",
-    tag: "Most popular",
-    summary: "The main Churvox plan. AI prepares daily admin actions and the owner approves.",
-    bestFor: "Best for busy owners who want Churvox preparing the admin.",
-    includes: [
-      "Everything in Crew",
-      "AI Operator Actions",
-      "Approval queue",
-      "AI-prepared invoices and follow-ups",
-      "Automation support",
-      "MYOB add-on available for $39/month + GST",
-    ],
-    notIncluded: [
-      "MYOB included by default",
-      "Payroll workspace",
-      "Command Growth Packs",
-    ],
-    featured: true,
-  },
-  {
-    key: "command",
-    name: "Command",
-    price: "$299",
-    tag: "Full command",
-    summary: "For larger operators needing MYOB included, payroll workspace and advanced roles.",
-    bestFor: "Best for bigger teams and admin-heavy businesses.",
-    includes: [
-      "Everything in Operator",
-      "MYOB included",
-      "Payroll workspace",
-      "Advanced roles and permissions",
-      "Priority support",
-      "Up to 50 active team members",
-      "Growth packs available at $99/month + GST",
-    ],
-    notIncluded: [
-      "SMS credits are separate credit packs",
-    ],
-  },
-];
-
-const quickNotes = [
-  "Prices exclude GST.",
-  "SMS credits are bought separately when needed.",
-  "Command Growth Pack adds 50 more active team members.",
-];
+const plans = MARKETING_PLANS;
+const quickNotes = QUICK_PRICING_NOTES;
 
 export default function ExecutivePricingPage() {
   return (
-    <main className="cvx-home cvx-public-page cxp-page" data-version="CHURVOX_PRICING_NO_FOOTER_20260601">
+    <main className="cvx-home cvx-public-page cxp-page" data-version="CHURVOX_PRICING_LOCKED_TIERS_20260602">
       <style>{`
         .cxp-page {
           min-height: 100vh;
@@ -198,7 +109,7 @@ export default function ExecutivePricingPage() {
 
         .cxp-plan {
           position: relative;
-          min-height: 510px;
+          min-height: 560px;
           display: flex;
           flex-direction: column;
           padding: 20px;
@@ -464,14 +375,14 @@ export default function ExecutivePricingPage() {
             <p className="cxp-eyebrow">Simple Churvox pricing</p>
             <h1>Choose the plan that matches how much admin you want handled.</h1>
             <p>
-              Each plan below shows what it includes and what is not included. Start with core job control, add crew workflow, then move into AI Operator, MYOB and payroll when you need it.
+              Start with core job control, add crew workflow, then move into Operator where Churvox prepares invoices, follow-ups, reminders and job actions for approval.
             </p>
           </div>
 
           <aside className="cxp-pick-card">
             <strong>Best pick for most trade owners</strong>
             <span>
-              Operator is the main Churvox plan. It gives you AI-prepared admin actions and an approval queue while keeping you in control.
+              Operator is the main Churvox plan. Churvox prepares the admin. You approve the action.
             </span>
           </aside>
         </div>
@@ -520,7 +431,7 @@ export default function ExecutivePricingPage() {
         <div className="cxp-wrap cxp-final-box">
           <div>
             <h2>Churvox prepares the admin. You approve the action.</h2>
-            <p>Pick the plan that fits now, then grow into stronger AI Operator and command features when the business needs them.</p>
+            <p>Pick the plan that fits now, then grow into stronger AI Operator, MYOB, payroll and command features when the business needs them.</p>
           </div>
           <Link to="/signup" className="cxp-btn primary">Start free</Link>
         </div>
