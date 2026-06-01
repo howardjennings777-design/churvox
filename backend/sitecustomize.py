@@ -1,55 +1,24 @@
-"""Startup compatibility shims for Render.
-
-Render imports backend/server.py directly with uvicorn. Some recently added routes use
-FastAPI Body in function defaults, and Python evaluates those defaults while the module
-is importing. Keep Body available through builtins so deploys do not crash if a route
-forgets to import it explicitly.
-
-This file intentionally lives inside backend/ so backend-only deploy filters notice it.
-It also loads route auto-registration hooks without editing the huge server.py directly.
-"""
-
 try:
     import builtins
     from fastapi import Body
-
     if not hasattr(builtins, "Body"):
         builtins.Body = Body
 except Exception:
     pass
 
-try:
+for module_name, fn_name in [
+    ("ai_command_autoregister", "_install_ai_command_hub"),
+    ("proof_pack_autoregister", "_install_proof_pack_routes"),
+    ("real_operator_autoregister", "_install_real_operator_routes"),
+    ("live_operator_autoregister", "_install_live_operator_routes"),
+    ("deep_slips_autoregister", "_install_deep_slips_routes"),
+]:
     try:
-        from ai_command_autoregister import install as _install_ai_command_hub
+        mod = __import__(module_name, fromlist=["install"])
+        mod.install()
     except Exception:
-        from backend.ai_command_autoregister import install as _install_ai_command_hub
-    _install_ai_command_hub()
-except Exception:
-    pass
-
-try:
-    try:
-        from proof_pack_autoregister import install as _install_proof_pack_routes
-    except Exception:
-        from backend.proof_pack_autoregister import install as _install_proof_pack_routes
-    _install_proof_pack_routes()
-except Exception:
-    pass
-
-try:
-    try:
-        from real_operator_autoregister import install as _install_real_operator_routes
-    except Exception:
-        from backend.real_operator_autoregister import install as _install_real_operator_routes
-    _install_real_operator_routes()
-except Exception:
-    pass
-
-try:
-    try:
-        from live_operator_autoregister import install as _install_live_operator_routes
-    except Exception:
-        from backend.live_operator_autoregister import install as _install_live_operator_routes
-    _install_live_operator_routes()
-except Exception:
-    pass
+        try:
+            mod = __import__(f"backend.{module_name}", fromlist=["install"])
+            mod.install()
+        except Exception:
+            pass
