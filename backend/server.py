@@ -13540,7 +13540,13 @@ async def ai_operator_execute_slip_direct(action_id: str, payload: dict = Body(d
         "executed_by": _ai_slip_text(current_user.get("email")),
         "updated_at": _ai_slip_now(),
     }})
-    return {"success": True, "message": "Approved and executed"}
+    if action_type in {"send_invoice", "invoice_reminder", "quote_follow_up"}:
+        return {"success": True, "message": "Approved + sent with PDF", "email_sent": True, "completed": True}
+    if action_type == "create_invoice_draft":
+        return {"success": True, "message": "Approved + draft invoice created", "completed": True}
+    if action_type == "assign_worker":
+        return {"success": True, "message": "Approved + worker assigned", "completed": True}
+    return {"success": True, "message": "Approved", "completed": True}
 # CHURVOX_DIRECT_AI_SLIPS_END
 
 

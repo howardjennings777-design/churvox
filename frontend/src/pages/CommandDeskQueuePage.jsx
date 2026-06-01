@@ -243,19 +243,24 @@ function SlipModal({ item, onClose, onChanged }) {
   };
 
   const approve = async () => {
+    const sendTypes = new Set(["send_invoice", "invoice_reminder", "quote_follow_up"]);
+    const isSendSlip = sendTypes.has(item.type) || item.type.includes("quote");
+
     if (!ready) {
       toast.error(`Missing: ${missing.map((key) => labels[key] || key).join(", ")}`);
       return;
     }
+
     setBusy(true);
     const res = await post(`/ai/operator/actions/${item.id}/execute`, form);
     setBusy(false);
+
     if (res?.success) {
-      toast.success("Approved — Churvox executed it");
-      onChanged();
+      toast.success(res?.data?.message || (isSendSlip ? "Approved + sent with PDF" : "Approved"));
       onClose();
+      await onChanged();
     } else {
-      toast.error(res?.error || "Could not approve");
+      toast.error(res?.error || res?.data?.error || (isSendSlip ? "Could not send" : "Could not approve"));
     }
   };
 
@@ -310,7 +315,7 @@ function SlipModal({ item, onClose, onChanged }) {
               <div className="text-[10px] font-black uppercase tracking-[.18em] text-cyan-200">When you approve</div>
               <p className="mt-3 text-sm font-bold leading-6 text-slate-200">{outcome(item.type)}</p>
               {!ready && <button onClick={save} disabled={busy} className="mt-5 w-full rounded-2xl bg-amber-400 px-5 py-3 text-sm font-black text-slate-950 disabled:opacity-40">{busy ? "Saving…" : "Save details"}</button>}
-              <button onClick={approve} disabled={busy || !ready} className="mt-3 w-full rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-slate-950 disabled:opacity-40">{busy ? "Approving…" : approveText(item.type)}</button>
+              <button onClick={approve} disabled={busy || !ready} className="mt-3 w-full rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-slate-950 disabled:opacity-40">{busy ? (["send_invoice", "invoice_reminder", "quote_follow_up"].includes(item.type) || item.type.includes("quote") ? "Approving + sending…" : "Approving…") : approveText(item.type)}</button>
               <button onClick={onClose} className="mt-3 w-full rounded-2xl border border-white/15 px-5 py-3 text-sm font-black hover:bg-white/10">Close slip</button>
             </div>
           </aside>
