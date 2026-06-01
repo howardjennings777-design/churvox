@@ -387,7 +387,7 @@ function CustomerRecordsContent() {
         <section className="min-w-0 flex-1 p-4 pb-28 md:p-6 md:pb-28 xl:p-8 xl:pb-28">
           <header className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
             <div>
-              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Clients</div>
+              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Client Workbench</div>
               <div className="text-sm font-bold text-slate-500">Customer details, sites, notes, jobs, quotes and invoices in one command view.</div>
             </div>
             <div className="flex flex-wrap gap-3">
