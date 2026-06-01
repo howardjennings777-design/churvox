@@ -8,7 +8,7 @@ const essentials = [
   ["Work Slips", "Full-screen owner review flow where Churvox prepares the admin and owner approves.", "/dashboard"],
   ["Proof Packs", "Customer-ready proof pages from completed work.", "/operator-tools"],
   ["Message Approvals", "Prepared customer messages stay approval-first and logged.", "/message-approvals"],
-  ["Dispatch Board", "Jobs grouped by lane so crew gaps are easier to see.", "/dispatch-board"],
+  ["Dispatch", "Jobs grouped by lane so crew gaps are easier to see.", "/dispatch-board"],
   ["Offline Sync", "Worker notes can queue on device and sync back later.", "/offline-sync"],
   ["Trade Presets", "Trade-specific job wording and invoice wording starter flows.", "/trade-presets"],
   ["Public Documents", "Invoices, quotes and proof packs have customer-ready print/copy actions.", "/invoices"],

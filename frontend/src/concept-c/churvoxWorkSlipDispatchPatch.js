@@ -31,8 +31,8 @@ function cvWsdEnsureSlipButton() {
     if (!jobId) { cvWsdActionLog("Open a job Work Slip before opening Dispatch.", "error"); return; }
     button.disabled = true;
     button.textContent = "Opening dispatch...";
-    await cvWsdAudit("dispatch_from_work_slip", jobId, "Owner opened Dispatch Board from Work Slip action bar.");
-    cvWsdActionLog("Opening Dispatch Board for this Work Slip.");
+    await cvWsdAudit("dispatch_from_work_slip", jobId, "Owner opened Dispatch from Work Slip action bar.");
+    cvWsdActionLog("Opening Dispatch for this Work Slip.");
     window.location.href = `/dispatch-board?job_id=${encodeURIComponent(jobId)}`;
   });
   const moneyButton = actions.querySelector("[data-cv-ws-money-desk]");
