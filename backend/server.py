@@ -14098,6 +14098,75 @@ async def final_approve_send_action(action_id: str, payload: dict = Body(default
 # CHURVOX_FINAL_APPROVE_SEND_END
 
 
+
+# CHURVOX_DOCUMENT_BRANDING_ROUTES_START
+@api_router.get("/business/invoice-branding")
+async def churvox_get_invoice_branding_final(current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    settings = await db.business_document_settings.find_one({"business_id": str(business_id)}) or {}
+
+    defaults = {
+        "business_id": str(business_id),
+        "business_name": settings.get("business_name") or current_user.get("business_name") or current_user.get("company_name") or "Churvox",
+        "trading_name": settings.get("trading_name") or settings.get("business_name") or current_user.get("business_name") or "Churvox",
+        "logo_base64": settings.get("logo_base64") or "",
+        "logo_url": settings.get("logo_url") or "",
+        "business_address": settings.get("business_address") or "",
+        "phone": settings.get("phone") or "",
+        "email": settings.get("email") or current_user.get("email") or "hello@churvox.com",
+        "website": settings.get("website") or "www.churvox.com",
+        "gst_number": settings.get("gst_number") or "",
+        "nzbn": settings.get("nzbn") or "",
+        "bank_account_name": settings.get("bank_account_name") or "",
+        "bank_account_number": settings.get("bank_account_number") or "",
+        "payment_url": settings.get("payment_url") or "",
+        "payment_instructions": settings.get("payment_instructions") or "Please use the invoice number as the payment reference.",
+        "invoice_footer": settings.get("invoice_footer") or "Thanks for choosing us. We appreciate your business.",
+    }
+
+    return {"success": True, "settings": make_json_safe(defaults)}
+
+
+@api_router.patch("/business/invoice-branding")
+async def churvox_save_invoice_branding_final(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+
+    allowed = {
+        "business_name",
+        "trading_name",
+        "logo_base64",
+        "logo_url",
+        "business_address",
+        "phone",
+        "email",
+        "website",
+        "gst_number",
+        "nzbn",
+        "bank_account_name",
+        "bank_account_number",
+        "payment_url",
+        "payment_instructions",
+        "invoice_footer",
+        "primary_color",
+        "accent_color",
+    }
+
+    cleaned = {key: payload.get(key) for key in allowed if key in (payload or {})}
+    cleaned["business_id"] = str(business_id)
+    cleaned["updated_at"] = datetime.now(timezone.utc)
+
+    existing = await db.business_document_settings.find_one({"business_id": str(business_id)})
+    if existing:
+        await db.business_document_settings.update_one({"_id": existing["_id"]}, {"$set": cleaned})
+    else:
+        cleaned["created_at"] = datetime.now(timezone.utc)
+        await db.business_document_settings.insert_one(cleaned)
+
+    saved = await db.business_document_settings.find_one({"business_id": str(business_id)}) or {}
+    return {"success": True, "settings": make_json_safe(saved)}
+# CHURVOX_DOCUMENT_BRANDING_ROUTES_END
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")
@@ -18973,3 +19042,42 @@ async def public_client_portal_approve(token: str):
     next_status = "paid" if pack.get("status") == "paid" else "client_approved"
     await db.job_proof_packs.update_one({"_id": pack["_id"]}, {"$set": {"status": next_status, "client_approved_at": now, "updated_at": now}})
     return {"success": True}
+
+
+# CHURVOX_ROUTE_DEDUPE_START
+# Server hygiene: remove exact duplicate method/path routes after all app routes are registered.
+# Keeps the LAST route because later code is the newer patched/final logic.
+try:
+    from fastapi.routing import APIRoute
+
+    _seen_route_keys = set()
+    _cleaned_routes_reversed = []
+    _removed_duplicate_routes = []
+
+    for _route in reversed(list(app.router.routes)):
+        if isinstance(_route, APIRoute):
+            _methods = tuple(sorted(m for m in (_route.methods or set()) if m not in {"HEAD", "OPTIONS"}))
+            _keys = tuple((method, _route.path) for method in _methods)
+
+            if any(key in _seen_route_keys for key in _keys):
+                _removed_duplicate_routes.append({
+                    "path": _route.path,
+                    "methods": list(_methods),
+                    "name": getattr(_route, "name", ""),
+                })
+                continue
+
+            for key in _keys:
+                _seen_route_keys.add(key)
+
+        _cleaned_routes_reversed.append(_route)
+
+    app.router.routes = list(reversed(_cleaned_routes_reversed))
+    app.state.churvox_removed_duplicate_routes = _removed_duplicate_routes
+except Exception as _route_dedupe_error:
+    try:
+        app.state.churvox_route_dedupe_error = str(_route_dedupe_error)
+    except Exception:
+        pass
+# CHURVOX_ROUTE_DEDUPE_END
+
