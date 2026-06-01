@@ -23,3 +23,13 @@ for module_name, fn_name in [
             mod.install()
         except Exception:
             pass
+
+# CHURVOX_STRONG_SLIPS_AUTOREGISTER
+try:
+    try:
+        from strong_slips_autoregister import install as _install_strong_slips
+    except Exception:
+        from backend.strong_slips_autoregister import install as _install_strong_slips
+    _install_strong_slips()
+except Exception:
+    pass
