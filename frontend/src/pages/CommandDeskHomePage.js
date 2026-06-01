@@ -1,3 +1,3 @@
-import CommandDeskCleanHomePage from "./CommandDeskCleanHomePage";
+import Page from './CommandDeskRealPage'
 
-export default CommandDeskCleanHomePage;
+export default Page
