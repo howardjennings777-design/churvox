@@ -1,13 +1,34 @@
-// CHURVOX_SIDEBAR_LABEL_CSS_FIX_20260601_V2
-// CSS-only visual label cleanup. No data, backend, auth, route, payment, or form changes.
+// CHURVOX_SIDEBAR_LABEL_CSS_FIX_20260601_V3
+// CSS/runtime visual label cleanup. No backend, auth, route, payment, or form changes.
+
+function addCrewMapToSidebar(sidebar) {
+  if (!sidebar || sidebar.dataset.crewMapPatched === "true") return;
+  const dispatchLink = sidebar.querySelector('a[href="/dispatch"]');
+  if (!dispatchLink || sidebar.querySelector('a[href="/crew-map"]')) return;
+
+  const crewMapLink = dispatchLink.cloneNode(true);
+  crewMapLink.setAttribute("href", "/crew-map");
+  crewMapLink.classList.remove("bg-white", "text-slate-950");
+  crewMapLink.classList.add("text-slate-300");
+
+  const parts = crewMapLink.querySelectorAll("span");
+  if (parts[0]) parts[0].textContent = "MP";
+  if (parts[1]) parts[1].textContent = "Crew Map";
+
+  dispatchLink.insertAdjacentElement("afterend", crewMapLink);
+  sidebar.dataset.crewMapPatched = "true";
+}
 
 function injectSidebarLabelCssFix() {
   if (typeof document === "undefined") return;
+  document.querySelectorAll("aside").forEach(addCrewMapToSidebar);
   if (document.getElementById("churvox-sidebar-label-css-fix")) return;
 
   const style = document.createElement("style");
   style.id = "churvox-sidebar-label-css-fix";
   style.textContent = `
+    aside a[href='/crew-map'] span.truncate,
+    nav a[href='/crew-map'] span.truncate,
     aside a[href='/notifications'] span.truncate,
     nav a[href='/notifications'] span.truncate,
     aside a[href='/dispatch'] span.truncate,
@@ -41,6 +62,8 @@ function injectSidebarLabelCssFix() {
       min-height:18px!important;
     }
 
+    aside a[href='/crew-map'] span.truncate::after,
+    nav a[href='/crew-map'] span.truncate::after,
     aside a[href='/notifications'] span.truncate::after,
     nav a[href='/notifications'] span.truncate::after,
     aside a[href='/dispatch'] span.truncate::after,
@@ -78,6 +101,7 @@ function injectSidebarLabelCssFix() {
       letter-spacing:0!important;
     }
 
+    aside a.bg-white[href='/crew-map'] span.truncate::after,
     aside a.bg-white[href='/notifications'] span.truncate::after,
     aside a.bg-white[href='/dispatch'] span.truncate::after,
     aside a.bg-white[href='/dispatch-board'] span.truncate::after,
@@ -94,6 +118,8 @@ function injectSidebarLabelCssFix() {
       color:#0f172a!important;
     }
 
+    aside a[href='/crew-map'] span.truncate::after,
+    nav a[href='/crew-map'] span.truncate::after{content:'Crew Map';}
     aside a[href='/notifications'] span.truncate::after,
     nav a[href='/notifications'] span.truncate::after{content:'Notifications';}
     aside a[href='/dispatch'] span.truncate::after,
@@ -128,6 +154,8 @@ if (typeof window !== "undefined") {
   injectSidebarLabelCssFix();
   window.addEventListener("DOMContentLoaded", injectSidebarLabelCssFix);
   window.addEventListener("load", injectSidebarLabelCssFix);
+  const observer = new MutationObserver(injectSidebarLabelCssFix);
+  observer.observe(document.documentElement, { childList: true, subtree: true });
 }
 
 export default null;
