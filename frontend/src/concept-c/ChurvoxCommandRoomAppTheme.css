@@ -1,0 +1,155 @@
+/* CHURVOX_COMMAND_ROOM_APP_THEME_20260601
+   App-wide visual colour pass only.
+   Scope: logged-in command pages with a sidebar. No backend, route, auth, data, forms or payment logic changes.
+*/
+
+body:has(aside) main.fixed.inset-0 {
+  color: #eaf4ff !important;
+  background:
+    radial-gradient(circle at 14% 8%, rgba(34, 211, 238, .18), transparent 28%),
+    radial-gradient(circle at 88% 14%, rgba(59, 130, 246, .24), transparent 32%),
+    linear-gradient(135deg, #07111f 0%, #0f172a 46%, #111827 100%) !important;
+}
+
+body:has(aside) main.fixed.inset-0 aside {
+  background: rgba(7, 17, 31, .94) !important;
+  border-color: rgba(148, 163, 184, .18) !important;
+  box-shadow: 18px 0 60px rgba(0, 0, 0, .18) !important;
+}
+
+body:has(aside) main.fixed.inset-0 > div > section > header,
+body:has(aside) main.fixed.inset-0 > div > section > section,
+body:has(aside) main.fixed.inset-0 > div > section article,
+body:has(aside) main.fixed.inset-0 > div > section aside:not(:first-child),
+body:has(aside) main.fixed.inset-0 [role="dialog"] > div {
+  border-color: rgba(148, 163, 184, .20) !important;
+  background: rgba(15, 23, 42, .72) !important;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, .20) !important;
+  backdrop-filter: blur(18px) saturate(145%) !important;
+}
+
+body:has(aside) main.fixed.inset-0 > div > section > section:first-of-type > div:first-child,
+body:has(aside) main.fixed.inset-0 .bg-slate-950,
+body:has(aside) main.fixed.inset-0 .bg-slate-900 {
+  background:
+    radial-gradient(circle at 78% 12%, rgba(34, 211, 238, .18), transparent 32%),
+    linear-gradient(135deg, #0b1628 0%, #172554 52%, #0f172a 100%) !important;
+  border-color: rgba(103, 232, 249, .18) !important;
+}
+
+body:has(aside) main.fixed.inset-0 h1,
+body:has(aside) main.fixed.inset-0 h2,
+body:has(aside) main.fixed.inset-0 h3,
+body:has(aside) main.fixed.inset-0 h4,
+body:has(aside) main.fixed.inset-0 strong,
+body:has(aside) main.fixed.inset-0 .text-slate-950,
+body:has(aside) main.fixed.inset-0 .text-slate-900,
+body:has(aside) main.fixed.inset-0 .text-slate-800 {
+  color: #f8fbff !important;
+}
+
+body:has(aside) main.fixed.inset-0 p,
+body:has(aside) main.fixed.inset-0 span,
+body:has(aside) main.fixed.inset-0 div,
+body:has(aside) main.fixed.inset-0 .text-slate-700,
+body:has(aside) main.fixed.inset-0 .text-slate-600,
+body:has(aside) main.fixed.inset-0 .text-slate-500,
+body:has(aside) main.fixed.inset-0 .text-slate-400 {
+  color: inherit;
+}
+
+body:has(aside) main.fixed.inset-0 p,
+body:has(aside) main.fixed.inset-0 .text-slate-600,
+body:has(aside) main.fixed.inset-0 .text-slate-500,
+body:has(aside) main.fixed.inset-0 .text-slate-400 {
+  color: #b8c7da !important;
+}
+
+body:has(aside) main.fixed.inset-0 [class*="uppercase"],
+body:has(aside) main.fixed.inset-0 .text-blue-600,
+body:has(aside) main.fixed.inset-0 .text-amber-600,
+body:has(aside) main.fixed.inset-0 .text-emerald-700 {
+  color: #67e8f9 !important;
+}
+
+body:has(aside) main.fixed.inset-0 .bg-white:not(aside .bg-white),
+body:has(aside) main.fixed.inset-0 .bg-slate-50,
+body:has(aside) main.fixed.inset-0 .bg-slate-100,
+body:has(aside) main.fixed.inset-0 .bg-blue-50,
+body:has(aside) main.fixed.inset-0 .bg-amber-50,
+body:has(aside) main.fixed.inset-0 .bg-emerald-50 {
+  background: rgba(255, 255, 255, .065) !important;
+  border-color: rgba(148, 163, 184, .18) !important;
+}
+
+body:has(aside) main.fixed.inset-0 .border-slate-200,
+body:has(aside) main.fixed.inset-0 .border-slate-300,
+body:has(aside) main.fixed.inset-0 .border-blue-200,
+body:has(aside) main.fixed.inset-0 .border-amber-200,
+body:has(aside) main.fixed.inset-0 .border-emerald-200 {
+  border-color: rgba(148, 163, 184, .20) !important;
+}
+
+body:has(aside) main.fixed.inset-0 a:not(aside a),
+body:has(aside) main.fixed.inset-0 button:not(aside button) {
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease !important;
+}
+
+body:has(aside) main.fixed.inset-0 a:not(aside a):hover,
+body:has(aside) main.fixed.inset-0 button:not(aside button):hover {
+  transform: translateY(-1px);
+}
+
+body:has(aside) main.fixed.inset-0 .bg-blue-600,
+body:has(aside) main.fixed.inset-0 .bg-blue-700,
+body:has(aside) main.fixed.inset-0 button[class*="bg-blue"],
+body:has(aside) main.fixed.inset-0 a[class*="bg-blue"] {
+  color: #07111f !important;
+  background: linear-gradient(135deg, #67e8f9, #22c55e) !important;
+  box-shadow: 0 18px 44px rgba(34, 211, 238, .22) !important;
+}
+
+body:has(aside) main.fixed.inset-0 .bg-amber-500,
+body:has(aside) main.fixed.inset-0 button[class*="bg-amber"],
+body:has(aside) main.fixed.inset-0 a[class*="bg-amber"] {
+  color: #07111f !important;
+  background: linear-gradient(135deg, #bbf7d0, #67e8f9) !important;
+  box-shadow: 0 18px 44px rgba(34, 197, 94, .20) !important;
+}
+
+body:has(aside) main.fixed.inset-0 input,
+body:has(aside) main.fixed.inset-0 textarea,
+body:has(aside) main.fixed.inset-0 select {
+  color: #f8fbff !important;
+  background: rgba(2, 8, 23, .42) !important;
+  border-color: rgba(148, 163, 184, .24) !important;
+}
+
+body:has(aside) main.fixed.inset-0 input::placeholder,
+body:has(aside) main.fixed.inset-0 textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+body:has(aside) main.fixed.inset-0 table,
+body:has(aside) main.fixed.inset-0 thead,
+body:has(aside) main.fixed.inset-0 tbody,
+body:has(aside) main.fixed.inset-0 tr,
+body:has(aside) main.fixed.inset-0 td,
+body:has(aside) main.fixed.inset-0 th {
+  border-color: rgba(148, 163, 184, .16) !important;
+}
+
+body:has(aside) main.fixed.inset-0 .rounded-full {
+  border-color: rgba(103, 232, 249, .22) !important;
+}
+
+body:has(aside) main.fixed.inset-0 .fixed.inset-0[role="dialog"],
+body:has(aside) main.fixed.inset-0 [role="dialog"].fixed.inset-0 {
+  background: rgba(2, 8, 23, .72) !important;
+}
+
+@media (max-width: 900px) {
+  body:has(aside) main.fixed.inset-0 {
+    background: linear-gradient(180deg, #07111f 0%, #0f172a 100%) !important;
+  }
+}
