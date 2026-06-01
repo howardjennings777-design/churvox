@@ -12938,6 +12938,132 @@ async def ai_operator_update_slip_direct(action_id: str, payload: dict = Body(de
     return {"success": True, "data": _ai_slip_safe_doc(updated), "action": _ai_slip_safe_doc(updated)}
 
 
+
+def _ai_slip_pdf_text(value, fallback=""):
+    try:
+        return _ai_slip_text(value, fallback)
+    except Exception:
+        return str(value or fallback or "").strip()
+
+def _ai_slip_pdf_escape(value):
+    text = _ai_slip_pdf_text(value)
+    return (
+        text.replace("\\", "\\\\")
+        .replace("(", "\\(")
+        .replace(")", "\\)")
+        .replace("\r", " ")
+        .replace("\n", " ")
+    )
+
+def _ai_slip_make_pdf_bytes(title, lines):
+    import textwrap
+
+    safe_lines = []
+    for line in lines:
+        raw = _ai_slip_pdf_text(line)
+        if not raw:
+            continue
+        wrapped = textwrap.wrap(raw, width=82) or [raw]
+        safe_lines.extend(wrapped)
+
+    ops = [
+        "BT",
+        "/F1 22 Tf",
+        "50 760 Td",
+        f"({_ai_slip_pdf_escape(title)}) Tj",
+        "/F1 11 Tf",
+    ]
+
+    y_lines = 0
+    for line in safe_lines:
+        y_lines += 1
+        if y_lines > 34:
+            break
+        ops.append("0 -20 Td")
+        ops.append(f"({_ai_slip_pdf_escape(line)}) Tj")
+
+    ops.append("ET")
+    stream = "\n".join(ops).encode("latin-1", "replace")
+
+    objects = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
+        b"<< /Length " + str(len(stream)).encode() + b" >>\nstream\n" + stream + b"\nendstream",
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    ]
+
+    pdf = b"%PDF-1.4\n"
+    offsets = [0]
+    for i, obj in enumerate(objects, start=1):
+        offsets.append(len(pdf))
+        pdf += f"{i} 0 obj\n".encode() + obj + b"\nendobj\n"
+
+    xref = len(pdf)
+    pdf += f"xref\n0 {len(objects) + 1}\n".encode()
+    pdf += b"0000000000 65535 f \n"
+    for off in offsets[1:]:
+        pdf += f"{off:010d} 00000 n \n".encode()
+    pdf += f"trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n".encode()
+    return pdf
+
+def _ai_slip_build_pdf_attachment(action_type, payload):
+    import base64
+    import re
+
+    payload = payload or {}
+    action_type = _ai_slip_pdf_text(action_type)
+
+    if action_type not in {"send_invoice", "invoice_reminder", "quote_follow_up"}:
+        return None
+
+    customer = _ai_slip_pdf_text(payload.get("customer_name") or payload.get("client_name"), "Customer")
+    customer_email = _ai_slip_pdf_text(payload.get("customer_email"))
+    invoice_number = _ai_slip_pdf_text(payload.get("invoice_number"))
+    quote_number = _ai_slip_pdf_text(payload.get("quote_number"))
+    amount = _ai_slip_pdf_text(payload.get("total") or payload.get("amount_due") or payload.get("quote_amount") or payload.get("subtotal") or payload.get("price"))
+    due_date = _ai_slip_pdf_text(payload.get("due_date"))
+    description = _ai_slip_pdf_text(payload.get("description") or payload.get("invoice_description") or payload.get("job_title"))
+    message = _ai_slip_pdf_text(payload.get("message"))
+
+    if action_type == "quote_follow_up":
+        number = quote_number or "Quote"
+        title = f"Quote {number}"
+        filename = f"quote-{number}.pdf"
+        heading = "Quote"
+    else:
+        number = invoice_number or "Invoice"
+        title = f"Invoice {number}"
+        filename = f"invoice-{number}.pdf"
+        heading = "Invoice"
+
+    filename = re.sub(r"[^A-Za-z0-9_.-]+", "-", filename).strip("-") or "churvox-document.pdf"
+
+    lines = [
+        "Churvox",
+        "",
+        f"{heading}: {number}",
+        f"Customer: {customer}",
+        f"Customer email: {customer_email}" if customer_email else "",
+        f"Amount: {amount}" if amount else "",
+        f"Due date: {due_date}" if due_date else "",
+        "",
+        "Description:",
+        description or "No description entered.",
+        "",
+        "Message:",
+        message or "No message entered.",
+        "",
+        "Prepared and sent from Churvox.",
+    ]
+
+    pdf_bytes = _ai_slip_make_pdf_bytes(title, lines)
+    return {
+        "Name": filename,
+        "Content": base64.b64encode(pdf_bytes).decode("ascii"),
+        "ContentType": "application/pdf",
+    }
+
 async def _ai_slip_send_customer_email(action_type, payload):
     import os
     import json
@@ -13005,6 +13131,10 @@ async def _ai_slip_send_customer_email(action_type, payload):
         "HtmlBody": html_body,
         "MessageStream": "outbound",
     }
+
+    attachment = _ai_slip_build_pdf_attachment(action_type, payload)
+    if attachment:
+        postmark_payload["Attachments"] = [attachment]
 
     def _send():
         req = urllib.request.Request(
