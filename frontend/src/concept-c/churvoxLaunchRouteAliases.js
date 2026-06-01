@@ -1,12 +1,26 @@
-// CHURVOX_LAUNCH_ROUTE_ALIASES_20260528
-// Gives the final nav language simple URL aliases.
+// CHURVOX_LAUNCH_ROUTE_ALIASES_20260601
+// Keeps advanced/unclear launch URLs folded into the simple core owner flow.
+// Pages are not deleted; this just keeps the navigation experience clean.
 
 const aliases = {
   "/command": "/dashboard",
   "/command-floor": "/dashboard",
+  "/ai-operator": "/dashboard",
+  "/ai-operator/approvals": "/dashboard",
+  "/message-approvals": "/dashboard",
+  "/notifications": "/dashboard",
   "/money": "/invoices",
+  "/money-desk": "/invoices",
   "/crew": "/team",
-  "/tools": "/operator-tools",
+  "/crew-ops": "/team",
+  "/reports": "/dashboard",
+  "/automation": "/settings",
+  "/automation/runs": "/settings",
+  "/integrations": "/settings",
+  "/operator-tools": "/settings",
+  "/trade-presets": "/settings",
+  "/tools": "/settings",
+  "/billing-confidence": "/plans",
 };
 
 if (typeof window !== "undefined") {
