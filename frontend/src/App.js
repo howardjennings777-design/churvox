@@ -49,7 +49,6 @@ import JobsCommandPage from "./pages/JobsCommandPage";
 import QuotesCommandPage from "./pages/QuotesCommandPage";
 import InvoicesCommandPage from "./pages/InvoicesCommandPage";
 import TeamCommandPage from "./pages/TeamCommandPage";
-import AIOperatorCommandPage from "./pages/AIOperatorCommandPage";
 import AutomationCommandPage from "./pages/AutomationCommandPage";
 import DispatchCommandPage from "./pages/DispatchCommandPage";
 import IntegrationsCommandPage from "./pages/IntegrationsCommandPage";
@@ -231,9 +230,9 @@ function App() {
             <Route path="/owner" element={<Navigate to="/admin" replace />} />
             <Route path="/owner/login" element={<Navigate to="/login" replace />} />
             <Route path="/proof-to-paid" element={<BusinessRoute><Navigate to="/dashboard" replace /></BusinessRoute>} />
-            <Route path="/ai-operator" element={<BusinessRoute><AIOperatorCommandPage /></BusinessRoute>} />
-            <Route path="/ai-operator/approvals" element={<Navigate to="/ai-operator" replace />} />
-            <Route path="/ai-operator/settings" element={<BusinessRoute><Navigate to="/settings" replace /></BusinessRoute>} />
+            <Route path="/ai-operator" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/ai-operator/approvals" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/ai-operator/settings" element={<Navigate to="/settings" replace />} />
             <Route path="/admin" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
             <Route path="/churvox-hq" element={<PlatformAdminRoute><ChurvoxHQPage /></PlatformAdminRoute>} />
             <Route path="/admin/hq" element={<PlatformAdminRoute><ChurvoxHQPage /></PlatformAdminRoute>} />
