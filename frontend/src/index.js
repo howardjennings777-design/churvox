@@ -4,9 +4,6 @@ import App from './App';
 import './index.css';
 import './styles/churvoxFullPageModals.css';
 import './concept-c/LoggedInLightBackgroundOverride.css';
-import './styles/churvoxReadabilityForce.css';
-import './styles/churvoxLaunchForceRuntime';
-import './styles/churvoxJobsAndNavForce.css';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

@@ -86,7 +86,7 @@ function typeLabel(type) {
   if (type === "invoice_reminder") return "Payment reminder";
   if (type.includes("quote")) return "Quote follow-up";
   if (type.includes("job_review")) return "Job review";
-  return "Prepared action";
+  return "Prepared slip";
 }
 
 function approveText(type) {
@@ -102,11 +102,11 @@ function approveText(type) {
 function outcome(type) {
   if (type === "assign_worker") return "Assigns the selected worker to the job and logs the decision.";
   if (type === "create_invoice_draft" || type.includes("invoice_draft")) return "Creates a draft invoice only. It does not email the customer.";
-  if (type === "send_invoice") return "Approves the action and emails the invoice to the customer.";
-  if (type === "invoice_reminder") return "Approves the action and emails the payment reminder to the customer.";
-  if (type.includes("quote")) return "Approves the action and emails the quote follow-up to the customer.";
+  if (type === "send_invoice") return "Approves the slip and emails the invoice to the customer.";
+  if (type === "invoice_reminder") return "Approves the slip and emails the payment reminder to the customer.";
+  if (type.includes("quote")) return "Approves the slip and emails the quote follow-up to the customer.";
   if (type.includes("job_review")) return "Approves the job review and moves time toward payroll review.";
-  return "Approval blocked until this action has a known action.";
+  return "Approval blocked until this slip has a known action.";
 }
 
 function required(type) {
@@ -224,7 +224,7 @@ function Field({ name, form, setForm }) {
   );
 }
 
-function ActionModal({ item, onClose, onChanged }) {
+function SlipModal({ item, onClose, onChanged }) {
   const { patch, post } = useApi();
   const [form, setForm] = React.useState(item.form);
   const [busy, setBusy] = React.useState(false);
@@ -236,17 +236,17 @@ function ActionModal({ item, onClose, onChanged }) {
     const res = await patch(`/ai/operator/slips/${item.id}`, form);
     setBusy(false);
     if (res?.success) {
-      toast.success("Action saved");
+      toast.success("Slip saved");
       onChanged();
       onClose();
     } else {
-      toast.error(res?.error || "Could not save action");
+      toast.error(res?.error || "Could not save slip");
     }
   };
 
   const approve = async () => {
     const sendTypes = new Set(["send_invoice", "invoice_reminder", "quote_follow_up"]);
-    const isSendAction = sendTypes.has(item.type) || item.type.includes("quote");
+    const isSendSlip = sendTypes.has(item.type) || item.type.includes("quote");
 
     if (!ready) {
       toast.error(`Missing: ${missing.map((key) => labels[key] || key).join(", ")}`);
@@ -261,7 +261,7 @@ function ActionModal({ item, onClose, onChanged }) {
     const shouldClose = appOk && res?.data?.close !== false;
 
     if (appOk) {
-      toast.success(res?.data?.message || (isSendAction ? "Approved + sent with branded PDF" : "Approved"));
+      toast.success(res?.data?.message || (isSendSlip ? "Approved + sent with branded PDF" : "Approved"));
       if (shouldClose) {
         onClose();
         await onChanged();
@@ -269,7 +269,7 @@ function ActionModal({ item, onClose, onChanged }) {
       return;
     }
 
-    toast.error(res?.data?.error || res?.error || (isSendAction ? "Could not send" : "Could not approve"));
+    toast.error(res?.data?.error || res?.error || (isSendSlip ? "Could not send" : "Could not approve"));
   };
 
   return (
@@ -284,7 +284,7 @@ function ActionModal({ item, onClose, onChanged }) {
             type="button"
             onClick={onClose}
             className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-2xl border border-white/15 bg-white/10 text-lg font-black text-white hover:bg-white/20"
-            aria-label="Close action"
+            aria-label="Close slip"
           >
             ×
           </button>
@@ -310,8 +310,8 @@ function ActionModal({ item, onClose, onChanged }) {
             </div>
 
             <div className="rounded-[24px] border border-slate-200 bg-white p-5">
-              <h2 className="text-xl font-black">Details Churvox pulled</h2>
-              <p className="mt-1 text-sm font-bold text-slate-500">Check the details below. Fill anything missing before approval.</p>
+              <h2 className="text-xl font-black">Everything Churvox pulled</h2>
+              <p className="mt-1 text-sm font-bold text-slate-500">Fill missing fields here or fix the original client/job/quote/invoice record and rebuild.</p>
               <div className="mt-4 grid gap-3 md:grid-cols-2">
                 {fieldKeys(form, missing).map((key) => <Field key={key} name={key} form={form} setForm={setForm} />)}
               </div>
@@ -343,7 +343,7 @@ function ActionModal({ item, onClose, onChanged }) {
               <p className="mt-3 text-sm font-bold leading-6 text-slate-200">{outcome(item.type)}</p>
               {!ready && <button onClick={save} disabled={busy} className="mt-5 w-full rounded-2xl bg-amber-400 px-5 py-3 text-sm font-black text-slate-950 disabled:opacity-40">{busy ? "Saving…" : "Save details"}</button>}
               <button onClick={approve} disabled={busy || !ready} className="mt-3 w-full rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-slate-950 disabled:opacity-40">{busy ? (["send_invoice", "invoice_reminder", "quote_follow_up"].includes(item.type) || item.type.includes("quote") ? "Approving + sending…" : "Approving…") : approveText(item.type)}</button>
-              <button onClick={onClose} className="mt-3 w-full rounded-2xl border border-white/15 px-5 py-3 text-sm font-black hover:bg-white/10">Close action</button>
+              <button onClick={onClose} className="mt-3 w-full rounded-2xl border border-white/15 px-5 py-3 text-sm font-black hover:bg-white/10">Close slip</button>
             </div>
           </aside>
         </main>
@@ -372,16 +372,16 @@ export default function CommandDeskQueuePage() {
 
   const rebuild = async () => {
     setBusy(true);
-    const res = await post("/ai/operator/rebuild-actions", {});
+    const res = await post("/ai/operator/rebuild-slips", {});
     setBusy(false);
     if (res?.success) {
       const rows = Array.isArray(res?.data?.actions) ? res.data.actions : [];
       setItems(rows.map(normalize));
       setReport(res?.data?.report || null);
       setSummary(res?.data?.summary || null);
-      toast.success(`Rebuilt ${rows.length} action${rows.length === 1 ? "" : "s"}`);
+      toast.success(`Rebuilt ${rows.length} slip${rows.length === 1 ? "" : "s"}`);
     } else {
-      toast.error(res?.error || "Could not rebuild actions");
+      toast.error(res?.error || "Could not rebuild slips");
     }
   };
 
@@ -414,29 +414,29 @@ export default function CommandDeskQueuePage() {
         <section className="min-w-0 flex-1 p-5 lg:p-8">
           <header className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-slate-200 bg-white px-5 py-4">
             <div>
-              <div className="text-[10px] font-black uppercase tracking-[.2em] text-slate-500">Command Board · AI-prepared actions</div>
-              <h1 className="text-3xl font-black tracking-[-.05em]">Command Board</h1>
-              <p className="text-sm font-bold text-slate-500">Churvox checks your jobs, clients, quotes and invoices, then prepares the next actions for you to review.</p>
+              <div className="text-[10px] font-black uppercase tracking-[.2em] text-slate-500">Command Board · clean strong slips</div>
+              <h1 className="text-3xl font-black tracking-[-.05em]">Real slips only.</h1>
+              <p className="text-sm font-bold text-slate-500">One slip system. Old weak AI actions are cleared, then rebuilt from real jobs, clients, quotes and invoices.</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <button onClick={repairCompletedJobs} disabled={busy} className="rounded-full border border-slate-300 bg-white px-5 py-3 text-xs font-black uppercase tracking-[.14em] text-slate-900 disabled:opacity-60">
-                {busy ? "Checking…" : "Review completed jobs"}
+                {busy ? "Checking…" : "Check completed jobs"}
               </button>
               <button onClick={rebuild} disabled={busy} className="rounded-full bg-emerald-500 px-5 py-3 text-xs font-black uppercase tracking-[.14em] text-white disabled:opacity-60">
-                {busy ? "Rebuilding…" : "Rebuild actions"}
+                {busy ? "Rebuilding…" : "Clear old slips + rebuild"}
               </button>
             </div>
           </header>
 
           <section className="grid gap-5 xl:grid-cols-[1fr_420px]">
             <div className="rounded-[28px] bg-slate-950 p-6 text-white">
-              <span className="rounded-full bg-cyan-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[.2em] text-cyan-200">AI-prepared actions</span>
-              <h1 className="mt-4 max-w-3xl text-4xl font-black leading-[.95] tracking-[-.07em] lg:text-5xl">Churvox finds the next move. You approve it.</h1>
-              <p className="mt-4 max-w-2xl text-sm font-bold leading-6 text-slate-300">Every action shows the client, job, amount, worker or message before it runs.</p>
+              <span className="rounded-full bg-cyan-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[.2em] text-cyan-200">No guessing approvals</span>
+              <h1 className="mt-4 max-w-3xl text-4xl font-black leading-[.95] tracking-[-.07em] lg:text-5xl">Churvox prepares. You check. Then approve.</h1>
+              <p className="mt-4 max-w-2xl text-sm font-bold leading-6 text-slate-300">A slip must show the client, record, amount, worker or message needed before it can run.</p>
             </div>
 
             <aside className="rounded-[28px] border border-slate-200 bg-white p-5">
-              <h2 className="text-2xl font-black">Action queue</h2>
+              <h2 className="text-2xl font-black">Queue</h2>
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <div className="rounded-2xl bg-emerald-50 p-4"><div className="text-3xl font-black text-emerald-700">{ready.length}</div><div className="text-xs font-black">ready</div></div>
                 <div className="rounded-2xl bg-amber-50 p-4"><div className="text-3xl font-black text-amber-700">{needs.length}</div><div className="text-xs font-black">needs details</div></div>
@@ -454,24 +454,24 @@ export default function CommandDeskQueuePage() {
                   <div key={item} className="rounded-2xl bg-white p-3 text-sm font-black text-slate-800">{item}</div>
                 ))}
               </div>
-              {summary.needs_attention ? <div className="mt-3 rounded-2xl bg-amber-100 p-3 text-sm font-black text-amber-900">{summary.needs_attention} action{summary.needs_attention === 1 ? "" : "s"} need details before approval.</div> : null}
+              {summary.needs_attention ? <div className="mt-3 rounded-2xl bg-amber-100 p-3 text-sm font-black text-amber-900">{summary.needs_attention} slip{summary.needs_attention === 1 ? "" : "s"} need details before approval.</div> : null}
             </section>
           )}
 
           {report && (
             <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5">
-              <h2 className="text-2xl font-black">Business records checked</h2>
+              <h2 className="text-2xl font-black">What Churvox can see</h2>
               <div className="mt-4 grid gap-3 md:grid-cols-4">
                 <div className="rounded-2xl bg-slate-50 p-4"><div className="text-3xl font-black">{report.jobs_found ?? 0}</div><div className="text-xs font-black text-slate-500">jobs</div><div className="mt-1 text-[10px] font-black text-blue-600">{report.jobs_scope_mode}</div></div>
                 <div className="rounded-2xl bg-slate-50 p-4"><div className="text-3xl font-black">{report.quotes_found ?? 0}</div><div className="text-xs font-black text-slate-500">quotes</div><div className="mt-1 text-[10px] font-black text-blue-600">{report.quotes_scope_mode}</div></div>
                 <div className="rounded-2xl bg-slate-50 p-4"><div className="text-3xl font-black">{report.invoices_found ?? 0}</div><div className="text-xs font-black text-slate-500">invoices</div><div className="mt-1 text-[10px] font-black text-blue-600">{report.invoices_scope_mode}</div></div>
-                <div className="rounded-2xl bg-slate-50 p-4"><div className="text-3xl font-black">{report.actions_created ?? 0}</div><div className="text-xs font-black text-slate-500">actions created</div></div>
+                <div className="rounded-2xl bg-slate-50 p-4"><div className="text-3xl font-black">{report.slips_created ?? 0}</div><div className="text-xs font-black text-slate-500">slips created</div></div>
               </div>
             </section>
           )}
 
           <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5">
-            <h2 className="text-3xl font-black tracking-[-.06em]">Prepared actions</h2>
+            <h2 className="text-3xl font-black tracking-[-.06em]">Prepared slips</h2>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               {items.slice(0, 12).map((item) => (
                 <button key={item.id || item.title} onClick={() => setOpen(item)} className={`rounded-[22px] border p-4 text-left hover:border-blue-300 ${item.ready ? "bg-white" : "border-amber-200 bg-amber-50"}`}>
@@ -486,19 +486,19 @@ export default function CommandDeskQueuePage() {
                   {item.reason ? <p className="mt-2 text-xs font-bold leading-5 text-slate-500">{item.reason}</p> : null}
                   {item.reason ? <p className="mt-2 text-xs font-bold leading-5 text-slate-500">{item.reason}</p> : null}
                   {item.reason ? <p className="mt-2 text-xs font-bold leading-5 text-slate-500">{item.reason}</p> : null}
-                  <div className="mt-3 inline-flex rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white">Open action</div>
+                  <div className="mt-3 inline-flex rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white">Open slip</div>
                 </button>
               ))}
             </div>
             {!items.length && (
               <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm font-black text-amber-900">
-                No actions yet. Click rebuild. The “Business records checked” box will show whether jobs, quotes or invoices exist.
+                No slips yet. Click rebuild. The “What Churvox can see” box will show whether jobs, quotes or invoices exist.
               </div>
             )}
           </section>
         </section>
       </div>
-      {open && <ActionModal item={open} onClose={() => setOpen(null)} onChanged={load} />}
+      {open && <SlipModal item={open} onClose={() => setOpen(null)} onChanged={load} />}
     </main>
   );
 }
