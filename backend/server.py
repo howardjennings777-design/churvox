@@ -18055,6 +18055,376 @@ async def stage9_convert_quote_to_invoice(quote_id: str, payload: dict = Body(de
 
 
 
+
+# CHURVOX_STAGE10_SUPPORT_ROLES_START
+# Real support tickets + role safety audit.
+
+STAGE10_SUPPORT_EMAIL = "hello@churvox.com"
+STAGE10_OWNER_ROLES = {"owner", "employer", "admin", "manager", "office_admin", "office admin", "business_owner", "platform_owner"}
+STAGE10_SUPPORT_ALLOWED_ROLES = STAGE10_OWNER_ROLES | {"worker", "payroll"}
+
+STAGE10_ROLE_MATRIX = {
+    "owner": {
+        "label": "Owner",
+        "nav": ["dashboard", "jobs", "crew_map", "clients", "quotes", "invoices", "team", "settings", "support"],
+        "can_manage_team": True,
+        "can_send_documents": True,
+        "can_view_money": True,
+        "can_view_settings": True,
+        "can_view_payroll": True,
+        "can_view_assigned_jobs_only": False,
+    },
+    "manager": {
+        "label": "Manager",
+        "nav": ["dashboard", "jobs", "crew_map", "clients", "quotes", "invoices", "team", "settings", "support"],
+        "can_manage_team": True,
+        "can_send_documents": True,
+        "can_view_money": True,
+        "can_view_settings": True,
+        "can_view_payroll": False,
+        "can_view_assigned_jobs_only": False,
+    },
+    "office_admin": {
+        "label": "Office Admin",
+        "nav": ["dashboard", "jobs", "crew_map", "clients", "quotes", "invoices", "settings", "support"],
+        "can_manage_team": False,
+        "can_send_documents": True,
+        "can_view_money": True,
+        "can_view_settings": True,
+        "can_view_payroll": False,
+        "can_view_assigned_jobs_only": False,
+    },
+    "worker": {
+        "label": "Worker",
+        "nav": ["worker_jobs", "support"],
+        "can_manage_team": False,
+        "can_send_documents": False,
+        "can_view_money": False,
+        "can_view_settings": False,
+        "can_view_payroll": False,
+        "can_view_assigned_jobs_only": True,
+    },
+    "payroll": {
+        "label": "Payroll",
+        "nav": ["payroll", "support"],
+        "can_manage_team": False,
+        "can_send_documents": False,
+        "can_view_money": False,
+        "can_view_settings": False,
+        "can_view_payroll": True,
+        "can_view_assigned_jobs_only": False,
+    },
+}
+
+def _s10_txt(value, fallback=""):
+    return str(value or fallback or "").strip()
+
+def _s10_norm_role(value):
+    role = _s10_txt(value).lower().replace(" ", "_").replace("-", "_")
+    if role in {"employer", "admin", "business_owner", "platform_owner"}:
+        return "owner"
+    if role == "office admin":
+        return "office_admin"
+    return role or "worker"
+
+def _s10_now():
+    return datetime.now(timezone.utc)
+
+def _s10_safe(value):
+    if isinstance(value, list):
+        return [_s10_safe(v) for v in value]
+    if isinstance(value, dict):
+        out = {}
+        for k, v in value.items():
+            out["id" if k == "_id" else k] = _s10_safe(v)
+        return out
+    try:
+        if isinstance(value, ObjectId):
+            return str(value)
+    except Exception:
+        pass
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    return value
+
+def _s10_user_role(user):
+    return _s10_norm_role((user or {}).get("role"))
+
+def _s10_is_platform(user):
+    email = _s10_txt((user or {}).get("email")).lower()
+    return email == STAGE10_SUPPORT_EMAIL or (user or {}).get("is_admin") is True or (user or {}).get("is_platform_owner") is True
+
+def _s10_ownerish(user):
+    return _s10_user_role(user) in {"owner", "manager", "office_admin"} or _s10_is_platform(user)
+
+def _s10_support_allowed(user):
+    return _s10_user_role(user) in {"owner", "manager", "office_admin", "worker", "payroll"} or _s10_is_platform(user)
+
+async def _s10_business_id(current_user):
+    try:
+        bid = await get_user_business_id(current_user)
+        if bid:
+            return str(bid)
+    except Exception:
+        pass
+    return _s10_txt(
+        (current_user or {}).get("business_id")
+        or (current_user or {}).get("businessId")
+        or (current_user or {}).get("id")
+        or (current_user or {}).get("_id")
+        or (current_user or {}).get("user_id")
+    )
+
+def _s10_user_id(current_user):
+    return _s10_txt(
+        (current_user or {}).get("id")
+        or (current_user or {}).get("_id")
+        or (current_user or {}).get("user_id")
+        or (current_user or {}).get("email")
+    )
+
+def _s10_ticket_query(ticket_id):
+    tid = _s10_txt(ticket_id)
+    ors = [{"ticket_id": tid}, {"id": tid}]
+    try:
+        if ObjectId.is_valid(tid):
+            ors.insert(0, {"_id": ObjectId(tid)})
+    except Exception:
+        pass
+    return {"$or": ors}
+
+def _s10_scope_query(business_id, current_user):
+    values = []
+    for raw in [
+        business_id,
+        (current_user or {}).get("business_id"),
+        (current_user or {}).get("businessId"),
+        (current_user or {}).get("id"),
+        (current_user or {}).get("_id"),
+        (current_user or {}).get("user_id"),
+        (current_user or {}).get("owner_id"),
+    ]:
+        if raw is None or str(raw).strip() == "":
+            continue
+        values.append(str(raw))
+        try:
+            if ObjectId.is_valid(str(raw)):
+                values.append(ObjectId(str(raw)))
+        except Exception:
+            pass
+
+    dedup = []
+    for value in values:
+        if value not in dedup:
+            dedup.append(value)
+
+    ors = []
+    for key in ["business_id", "businessId", "owner_id", "ownerId", "user_id", "created_by", "created_by_user_id"]:
+        for value in dedup:
+            ors.append({key: value})
+
+    return {"$or": ors} if ors else {"business_id": str(business_id)}
+
+async def _s10_send_support_email(ticket):
+    import os
+    import json
+    import asyncio
+    import urllib.request
+    import urllib.error
+
+    token = os.environ.get("POSTMARK_SERVER_TOKEN") or os.environ.get("POSTMARK_API_TOKEN") or os.environ.get("POSTMARK_TOKEN")
+    if not token:
+        return False, "Postmark token missing"
+
+    to_email = os.environ.get("SUPPORT_TO_EMAIL") or STAGE10_SUPPORT_EMAIL
+    from_email = os.environ.get("POSTMARK_FROM_EMAIL") or os.environ.get("EMAIL_FROM") or STAGE10_SUPPORT_EMAIL
+
+    subject = f"[{ticket.get('ticket_id')}] Churvox support - {ticket.get('subject') or ticket.get('area')}"
+    text = "\n".join([
+        f"Ticket: {ticket.get('ticket_id')}",
+        f"Business: {ticket.get('business_id')}",
+        f"User: {ticket.get('name')} <{ticket.get('email')}>",
+        f"Role: {ticket.get('role')}",
+        f"Area: {ticket.get('area')}",
+        f"Priority: {ticket.get('priority')}",
+        f"Page: {ticket.get('page')}",
+        "",
+        "Message:",
+        ticket.get("message") or "",
+    ])
+
+    html = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br/>")
+
+    payload = {
+        "From": from_email,
+        "To": to_email,
+        "Subject": subject,
+        "TextBody": text,
+        "HtmlBody": f"<div style='font-family:Arial,sans-serif;line-height:1.5'>{html}</div>",
+        "MessageStream": "outbound",
+    }
+
+    def _send():
+        req = urllib.request.Request(
+            "https://api.postmarkapp.com/email",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "X-Postmark-Server-Token": token,
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                raw = resp.read().decode("utf-8")
+                return True, json.loads(raw or "{}")
+        except urllib.error.HTTPError as e:
+            try:
+                err = e.read().decode("utf-8")
+            except Exception:
+                err = str(e)
+            return False, err
+        except Exception as e:
+            return False, str(e)
+
+    return await asyncio.to_thread(_send)
+
+@api_router.post("/support/messages")
+async def stage10_create_support_message(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    if not _s10_support_allowed(current_user):
+        raise HTTPException(status_code=403, detail="Support access required")
+
+    business_id = await _s10_business_id(current_user)
+    role = _s10_user_role(current_user)
+    email = _s10_txt((payload or {}).get("email") or (current_user or {}).get("email"))
+    message = _s10_txt((payload or {}).get("message"))
+
+    if not email:
+        return {"success": False, "error": "Reply email is required"}
+    if len(message) < 8:
+        return {"success": False, "error": "Message is too short"}
+
+    ticket_id = _s10_txt((payload or {}).get("ticket_id")) or f"SUP-{int(datetime.now(timezone.utc).timestamp())}"
+
+    ticket = {
+        "ticket_id": ticket_id,
+        "business_id": str(business_id),
+        "user_id": _s10_user_id(current_user),
+        "role": role,
+        "name": _s10_txt((payload or {}).get("name") or (current_user or {}).get("name") or (current_user or {}).get("full_name")),
+        "email": email,
+        "area": _s10_txt((payload or {}).get("area"), "Support"),
+        "priority": _s10_txt((payload or {}).get("priority"), "Normal"),
+        "subject": _s10_txt((payload or {}).get("subject") or (payload or {}).get("area"), "Support request"),
+        "message": message,
+        "page": _s10_txt((payload or {}).get("page")),
+        "status": "open",
+        "source": "stage10_support_page",
+        "created_at": _s10_now(),
+        "updated_at": _s10_now(),
+    }
+
+    result = await db.support_messages.insert_one(ticket)
+    ticket["_id"] = result.inserted_id
+
+    email_ok, email_result = await _s10_send_support_email(ticket)
+    await db.support_messages.update_one({"_id": result.inserted_id}, {"$set": {
+        "email_sent": bool(email_ok),
+        "email_result": _s10_safe(email_result),
+        "updated_at": _s10_now(),
+    }})
+
+    saved = await db.support_messages.find_one({"_id": result.inserted_id}) or ticket
+    return {
+        "success": True,
+        "message": "Support request saved" + (" and emailed" if email_ok else ""),
+        "ticket": _s10_safe(saved),
+        "email_sent": bool(email_ok),
+        "email_warning": None if email_ok else _s10_txt(email_result),
+    }
+
+@api_router.get("/support/messages")
+async def stage10_list_support_messages(current_user: dict = Depends(get_current_user)):
+    if not _s10_support_allowed(current_user):
+        raise HTTPException(status_code=403, detail="Support access required")
+
+    business_id = await _s10_business_id(current_user)
+    role = _s10_user_role(current_user)
+
+    if _s10_ownerish(current_user):
+        query = _s10_scope_query(business_id, current_user)
+    else:
+        query = {"$or": [{"user_id": _s10_user_id(current_user)}, {"email": _s10_txt((current_user or {}).get("email"))}]}
+
+    rows = await db.support_messages.find(query).sort("created_at", -1).to_list(length=100)
+    return {"success": True, "data": _s10_safe(rows), "tickets": _s10_safe(rows)}
+
+@api_router.patch("/support/messages/{ticket_id}")
+async def stage10_update_support_message(ticket_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    if not _s10_ownerish(current_user):
+        raise HTTPException(status_code=403, detail="Owner/admin access required")
+
+    allowed = {"status", "admin_note", "priority"}
+    update = {key: (payload or {}).get(key) for key in allowed if key in (payload or {})}
+    update["updated_at"] = _s10_now()
+    update["updated_by"] = _s10_txt((current_user or {}).get("email"))
+
+    await db.support_messages.update_one(_s10_ticket_query(ticket_id), {"$set": update})
+    saved = await db.support_messages.find_one(_s10_ticket_query(ticket_id))
+    return {"success": True, "ticket": _s10_safe(saved)}
+
+@api_router.get("/roles/access-matrix")
+async def stage10_role_access_matrix(current_user: dict = Depends(get_current_user)):
+    if not _s10_support_allowed(current_user):
+        raise HTTPException(status_code=403, detail="Access required")
+
+    role = _s10_user_role(current_user)
+    matrix = STAGE10_ROLE_MATRIX.get(role, STAGE10_ROLE_MATRIX["worker"])
+    return {
+        "success": True,
+        "role": role,
+        "current": matrix,
+        "matrix": STAGE10_ROLE_MATRIX if _s10_ownerish(current_user) else {role: matrix},
+    }
+
+@api_router.get("/roles/audit")
+async def stage10_role_audit(current_user: dict = Depends(get_current_user)):
+    if not _s10_ownerish(current_user):
+        raise HTTPException(status_code=403, detail="Owner/admin access required")
+
+    business_id = await _s10_business_id(current_user)
+    users = []
+    for collection in ["business_users", "users"]:
+        try:
+            rows = await getattr(db, collection).find(_s10_scope_query(business_id, current_user)).to_list(length=500)
+            users.extend(rows)
+        except Exception:
+            pass
+
+    seen = set()
+    audit = []
+    for user in users:
+        uid = _s10_txt(user.get("_id") or user.get("id") or user.get("user_id") or user.get("email"))
+        if not uid or uid in seen:
+            continue
+        seen.add(uid)
+        role = _s10_norm_role(user.get("role"))
+        matrix = STAGE10_ROLE_MATRIX.get(role, STAGE10_ROLE_MATRIX["worker"])
+        audit.append({
+            "user_id": uid,
+            "name": _s10_txt(user.get("name") or user.get("full_name") or user.get("email")),
+            "email": _s10_txt(user.get("email")),
+            "role": role,
+            "nav": matrix.get("nav", []),
+            "flags": matrix,
+        })
+
+    return {"success": True, "users_checked": len(audit), "audit": _s10_safe(audit)}
+# CHURVOX_STAGE10_SUPPORT_ROLES_END
+
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")
