@@ -388,6 +388,7 @@ function SettingsCommandContent() {
   const [lastSaved, setLastSaved] = useState("");
   const [backendHealth, setBackendHealth] = useState(null);
   const [backendHealth, setBackendHealth] = useState(null);
+  const [backendHealth, setBackendHealth] = useState(null);
 
   useEffect(() => {
     let alive = true;
