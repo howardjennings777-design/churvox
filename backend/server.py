@@ -17515,6 +17515,543 @@ async def stage8_prepare_client_actions(client_id: str, payload: dict = Body(def
 
 
 
+
+# CHURVOX_STAGE9_QUOTES_LOGIC_START
+# Quote logic:
+# send quote, follow up, accept/decline, convert to job, convert to invoice, prepare Command Board slip.
+
+STAGE9_ALLOWED_ROLES = {"owner", "employer", "admin", "manager", "office_admin", "office admin", "business_owner", "platform_owner"}
+
+def _s9_txt(value, fallback=""):
+    return str(value or fallback or "").strip()
+
+def _s9_norm(value):
+    return _s9_txt(value).lower().replace(" ", "_").replace("-", "_")
+
+def _s9_now():
+    return datetime.now(timezone.utc)
+
+def _s9_num(value):
+    try:
+        if isinstance(value, str):
+            value = value.replace("$", "").replace(",", "").replace("NZD", "").strip()
+        return float(value or 0)
+    except Exception:
+        return 0.0
+
+def _s9_money(value):
+    raw = _s9_txt(value)
+    if raw.startswith("$"):
+        return raw
+    amount = _s9_num(raw)
+    return f"${amount:,.2f}" if amount else raw
+
+def _s9_safe(value):
+    if isinstance(value, list):
+        return [_s9_safe(v) for v in value]
+    if isinstance(value, dict):
+        out = {}
+        for k, v in value.items():
+            out["id" if k == "_id" else k] = _s9_safe(v)
+        return out
+    try:
+        if isinstance(value, ObjectId):
+            return str(value)
+    except Exception:
+        pass
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    return value
+
+def _s9_role_ok(user):
+    role = _s9_txt((user or {}).get("role")).lower()
+    email = _s9_txt((user or {}).get("email")).lower()
+    return (
+        role in STAGE9_ALLOWED_ROLES
+        or email == "hello@churvox.com"
+        or (user or {}).get("is_admin") is True
+        or (user or {}).get("is_platform_owner") is True
+    )
+
+async def _s9_business_id(current_user):
+    try:
+        bid = await get_user_business_id(current_user)
+        if bid:
+            return str(bid)
+    except Exception:
+        pass
+    return _s9_txt(
+        (current_user or {}).get("business_id")
+        or (current_user or {}).get("businessId")
+        or (current_user or {}).get("id")
+        or (current_user or {}).get("_id")
+        or (current_user or {}).get("user_id")
+    )
+
+def _s9_oid_query(record_id):
+    rid = _s9_txt(record_id)
+    ors = [
+        {"id": rid},
+        {"quote_id": rid},
+        {"client_id": rid},
+        {"related_id": rid},
+        {"related_entity_id": rid},
+    ]
+    try:
+        if ObjectId.is_valid(rid):
+            ors.insert(0, {"_id": ObjectId(rid)})
+    except Exception:
+        pass
+    return {"$or": ors}
+
+def _s9_scope_query(business_id, current_user=None):
+    values = []
+    for raw in [
+        business_id,
+        (current_user or {}).get("business_id"),
+        (current_user or {}).get("businessId"),
+        (current_user or {}).get("id"),
+        (current_user or {}).get("_id"),
+        (current_user or {}).get("user_id"),
+        (current_user or {}).get("owner_id"),
+    ]:
+        if raw is None or str(raw).strip() == "":
+            continue
+        values.append(str(raw))
+        try:
+            if ObjectId.is_valid(str(raw)):
+                values.append(ObjectId(str(raw)))
+        except Exception:
+            pass
+
+    dedup = []
+    for value in values:
+        if value not in dedup:
+            dedup.append(value)
+
+    ors = []
+    for key in ["business_id", "businessId", "owner_id", "ownerId", "user_id", "created_by", "created_by_user_id", "employer_id", "account_id"]:
+        for value in dedup:
+            ors.append({key: value})
+
+    return {"$or": ors} if ors else {"business_id": str(business_id)}
+
+def _s9_id(doc, *keys):
+    for key in keys:
+        value = (doc or {}).get(key)
+        if value:
+            return str(value)
+    return str((doc or {}).get("_id") or (doc or {}).get("id") or "")
+
+async def _s9_find_quote(business_id, current_user, quote_id):
+    scoped = {"$and": [_s9_scope_query(business_id, current_user), _s9_oid_query(quote_id)]}
+    try:
+        found = await db.quotes.find_one(scoped)
+        if found:
+            return found
+    except Exception:
+        pass
+
+    if _s9_role_ok(current_user):
+        try:
+            return await db.quotes.find_one(_s9_oid_query(quote_id)) or {}
+        except Exception:
+            return {}
+    return {}
+
+async def _s9_find_client(business_id, current_user, record):
+    record = record or {}
+    client_id = _s9_txt(record.get("client_id"))
+    name = _s9_txt(record.get("client_name") or record.get("customer_name"))
+    email = _s9_txt(record.get("customer_email") or record.get("client_email") or record.get("email"))
+
+    bases = []
+    if client_id:
+        bases.append(_s9_oid_query(client_id))
+    if name:
+        bases.append({"$or": [{"name": name}, {"client_name": name}, {"customer_name": name}]})
+    if email:
+        bases.append({"$or": [{"email": email}, {"client_email": email}, {"customer_email": email}]})
+
+    scope = _s9_scope_query(business_id, current_user)
+    for base in bases:
+        try:
+            found = await db.clients.find_one({"$and": [scope, base]})
+            if found:
+                return found
+        except Exception:
+            pass
+        if _s9_role_ok(current_user):
+            try:
+                found = await db.clients.find_one(base)
+                if found:
+                    return found
+            except Exception:
+                pass
+    return {}
+
+async def _s9_settings(business_id, current_user):
+    try:
+        if "_stage3_branding" in globals():
+            return await _stage3_branding(business_id, current_user)
+    except Exception:
+        pass
+    try:
+        return await db.business_document_settings.find_one({"business_id": str(business_id)}) or {}
+    except Exception:
+        return {}
+
+def _s9_quote_number(quote, settings=None):
+    qid = _s9_id(quote, "quote_id")
+    existing = _s9_txt(quote.get("quote_number") or quote.get("number"))
+    if existing:
+        return existing
+    prefix = _s9_txt((settings or {}).get("quote_prefix"), "QT")
+    return f"{prefix}-{qid[-6:].upper()}"
+
+def _s9_customer_name(quote, client):
+    return _s9_txt(
+        quote.get("customer_name")
+        or quote.get("client_name")
+        or client.get("name")
+        or client.get("client_name")
+        or client.get("customer_name"),
+        "Customer"
+    )
+
+def _s9_customer_email(quote, client):
+    return _s9_txt(
+        quote.get("customer_email")
+        or quote.get("client_email")
+        or client.get("email")
+        or client.get("client_email")
+        or client.get("customer_email")
+    )
+
+def _s9_quote_amount(quote):
+    return quote.get("total") or quote.get("amount") or quote.get("subtotal") or quote.get("quote_amount") or 0
+
+async def _s9_quote_payload(quote, business_id, current_user, override=None, mode="send"):
+    override = override or {}
+    settings = await _s9_settings(business_id, current_user)
+    client = await _s9_find_client(business_id, current_user, quote)
+
+    quote_id = _s9_id(quote, "quote_id")
+    quote_no = _s9_quote_number(quote, settings)
+    customer = _s9_customer_name(quote, client)
+    email = _s9_txt(override.get("customer_email") or _s9_customer_email(quote, client))
+    amount = _s9_money(_s9_quote_amount(quote))
+
+    description = _s9_txt(
+        override.get("description")
+        or quote.get("description")
+        or quote.get("notes")
+        or quote.get("scope")
+        or quote.get("work_description")
+        or "Quote prepared."
+    )
+
+    if mode == "follow_up":
+        default_message = f"Hi {customer}, just checking in on {quote_no}{f' for {amount}' if amount else ''}. Happy to answer any questions or adjust the details if needed."
+    else:
+        default_message = f"Hi {customer}, your quote {quote_no}{f' for {amount}' if amount else ''} is ready to review."
+
+    return {
+        "business_id": str(business_id),
+        "quote_id": quote_id,
+        "quote_number": quote_no,
+        "client_id": _s9_txt(quote.get("client_id") or client.get("_id")),
+        "client_name": customer,
+        "customer_name": customer,
+        "customer_email": email,
+        "client_phone": _s9_txt(client.get("phone") or client.get("mobile") or quote.get("client_phone")),
+        "client_address": _s9_txt(client.get("billing_address") or client.get("address") or quote.get("address")),
+        "quote_amount": amount,
+        "total": amount,
+        "description": description,
+        "message": _s9_txt(override.get("message"), default_message),
+        "public_url": _s9_txt(quote.get("public_url") or quote.get("quote_url") or override.get("public_url")),
+    }
+
+def _s9_missing_quote_send(payload):
+    missing = []
+    for key in ["quote_id", "quote_number", "customer_name", "customer_email", "message"]:
+        if not _s9_txt((payload or {}).get(key)):
+            missing.append(key)
+    return missing
+
+async def _s9_send_quote_email(payload):
+    sender = globals().get("_stage3_send_customer_email") or globals().get("_ai_slip_send_customer_email")
+    if not sender:
+        return False, "Email/PDF sender is not loaded on backend"
+    # Sender treats quote_follow_up as quote PDF mode.
+    return await sender("quote_follow_up", payload)
+
+async def _s9_prepare_quote_followup_slip(business_id, current_user, quote, payload, reason):
+    quote_id = _s9_id(quote, "quote_id")
+    missing = _s9_missing_quote_send(payload)
+
+    await db.ai_operator_actions.delete_many({
+        "business_id": str(business_id),
+        "action_type": "quote_follow_up",
+        "related_entity_id": str(quote_id),
+        "status": {"$nin": ["completed", "approved", "executed", "rejected", "dismissed", "cancelled", "canceled"]},
+    })
+
+    doc = {
+        "business_id": str(business_id),
+        "action_type": "quote_follow_up",
+        "type": "quote_follow_up",
+        "related_type": "quote",
+        "related_entity_id": str(quote_id),
+        "related_id": str(quote_id),
+        "title": f"Follow up quote with {payload.get('customer_name') or 'customer'}",
+        "summary": f"{payload.get('quote_number')} · {payload.get('customer_name')} · {payload.get('quote_amount') or 'No amount'}",
+        "reason": reason,
+        "ai_reason": reason,
+        "confidence": 84 if not missing else 45,
+        "what_will_happen": "Churvox will email the customer a quote follow-up message with a branded quote PDF attached.",
+        "source_records": [{"type": "quote", "id": str(quote_id)}],
+        "payload": payload,
+        "draft_payload": payload,
+        "checks": ["Quote checked", "Client email checked", "Message drafted", "Owner approval required"],
+        "missing": missing,
+        "ready": len(missing) == 0,
+        "group": "ready" if not missing else "needs_details",
+        "status": "ready",
+        "source": "stage9_quotes_logic",
+        "created_at": _s9_now(),
+        "updated_at": _s9_now(),
+    }
+
+    result = await db.ai_operator_actions.insert_one(doc)
+    doc["_id"] = result.inserted_id
+    return doc
+
+@api_router.post("/quotes/{quote_id}/send")
+async def stage9_send_quote(quote_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    if not _s9_role_ok(current_user):
+        raise HTTPException(status_code=403, detail="Owner/admin access required")
+
+    business_id = await _s9_business_id(current_user)
+    quote = await _s9_find_quote(business_id, current_user, quote_id)
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    send_payload = await _s9_quote_payload(quote, business_id, current_user, payload or {}, mode="send")
+    missing = _s9_missing_quote_send(send_payload)
+    if missing:
+        return {"success": False, "error": "Missing before sending quote: " + ", ".join(missing), "missing": missing}
+
+    ok, result = await _s9_send_quote_email(send_payload)
+    if not ok:
+        return {"success": False, "error": result}
+
+    await db.quotes.update_one({"_id": quote["_id"]}, {"$set": {
+        "quote_number": send_payload["quote_number"],
+        "status": "sent",
+        "last_sent_at": _s9_now(),
+        "last_sent_to": send_payload["customer_email"],
+        "updated_at": _s9_now(),
+    }})
+
+    return {"success": True, "message": "Quote sent with branded PDF", "email_sent": True, "quote": _s9_safe(send_payload)}
+
+@api_router.post("/quotes/{quote_id}/follow-up")
+async def stage9_follow_up_quote(quote_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    if not _s9_role_ok(current_user):
+        raise HTTPException(status_code=403, detail="Owner/admin access required")
+
+    business_id = await _s9_business_id(current_user)
+    quote = await _s9_find_quote(business_id, current_user, quote_id)
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    send_payload = await _s9_quote_payload(quote, business_id, current_user, payload or {}, mode="follow_up")
+    missing = _s9_missing_quote_send(send_payload)
+    if missing:
+        return {"success": False, "error": "Missing before follow-up: " + ", ".join(missing), "missing": missing}
+
+    ok, result = await _s9_send_quote_email(send_payload)
+    if not ok:
+        return {"success": False, "error": result}
+
+    await db.quotes.update_one({"_id": quote["_id"]}, {"$set": {
+        "status": quote.get("status") or "sent",
+        "last_follow_up_at": _s9_now(),
+        "last_follow_up_to": send_payload["customer_email"],
+        "updated_at": _s9_now(),
+    }})
+
+    return {"success": True, "message": "Quote follow-up sent with branded PDF", "email_sent": True, "quote": _s9_safe(send_payload)}
+
+@api_router.post("/quotes/{quote_id}/prepare-follow-up")
+@api_router.post("/ai/quotes/{quote_id}/prepare-follow-up")
+async def stage9_prepare_quote_follow_up(quote_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    if not _s9_role_ok(current_user):
+        raise HTTPException(status_code=403, detail="Owner/admin access required")
+
+    business_id = await _s9_business_id(current_user)
+    quote = await _s9_find_quote(business_id, current_user, quote_id)
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    slip_payload = await _s9_quote_payload(quote, business_id, current_user, payload or {}, mode="follow_up")
+    slip = await _s9_prepare_quote_followup_slip(
+        business_id,
+        current_user,
+        quote,
+        slip_payload,
+        "I found this quote is still open, so I prepared a follow-up message for owner approval.",
+    )
+
+    return {"success": True, "message": "Quote follow-up slip prepared", "action": _s9_safe(slip)}
+
+@api_router.post("/quotes/{quote_id}/accept")
+async def stage9_accept_quote(quote_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = await _s9_business_id(current_user)
+    quote = await _s9_find_quote(business_id, current_user, quote_id)
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    accepted_at = _s9_now()
+    await db.quotes.update_one({"_id": quote["_id"]}, {"$set": {
+        "status": "accepted",
+        "accepted": True,
+        "accepted_at": accepted_at,
+        "accepted_by": _s9_txt((payload or {}).get("accepted_by") or (current_user or {}).get("email") or "customer"),
+        "acceptance_note": _s9_txt((payload or {}).get("note")),
+        "updated_at": accepted_at,
+    }})
+
+    return {"success": True, "message": "Quote accepted", "quote_id": _s9_id(quote, "quote_id")}
+
+@api_router.post("/quotes/{quote_id}/decline")
+async def stage9_decline_quote(quote_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = await _s9_business_id(current_user)
+    quote = await _s9_find_quote(business_id, current_user, quote_id)
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    declined_at = _s9_now()
+    await db.quotes.update_one({"_id": quote["_id"]}, {"$set": {
+        "status": "declined",
+        "declined": True,
+        "declined_at": declined_at,
+        "declined_by": _s9_txt((payload or {}).get("declined_by") or (current_user or {}).get("email") or "customer"),
+        "decline_reason": _s9_txt((payload or {}).get("reason") or (payload or {}).get("note")),
+        "updated_at": declined_at,
+    }})
+
+    return {"success": True, "message": "Quote declined", "quote_id": _s9_id(quote, "quote_id")}
+
+@api_router.post("/quotes/{quote_id}/convert-to-job")
+async def stage9_convert_quote_to_job(quote_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    if not _s9_role_ok(current_user):
+        raise HTTPException(status_code=403, detail="Owner/admin access required")
+
+    business_id = await _s9_business_id(current_user)
+    quote = await _s9_find_quote(business_id, current_user, quote_id)
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    client = await _s9_find_client(business_id, current_user, quote)
+    quote_no = _s9_quote_number(quote, await _s9_settings(business_id, current_user))
+    customer = _s9_customer_name(quote, client)
+
+    existing = await db.jobs.find_one({"business_id": str(business_id), "quote_id": _s9_id(quote, "quote_id")})
+    if existing:
+        return {"success": True, "message": "Job already exists for this quote", "job": _s9_safe(existing)}
+
+    job = {
+        "business_id": str(business_id),
+        "quote_id": _s9_id(quote, "quote_id"),
+        "quote_number": quote_no,
+        "client_id": _s9_txt(quote.get("client_id") or client.get("_id")),
+        "client_name": customer,
+        "customer_name": customer,
+        "customer_email": _s9_customer_email(quote, client),
+        "title": _s9_txt((payload or {}).get("title") or quote.get("title") or quote.get("job_title") or quote.get("service_type"), f"Job from {quote_no}"),
+        "description": _s9_txt((payload or {}).get("description") or quote.get("description") or quote.get("notes") or "Converted from accepted quote."),
+        "address": _s9_txt((payload or {}).get("address") or quote.get("address") or client.get("address")),
+        "price": _s9_num(_s9_quote_amount(quote)),
+        "total": _s9_num(_s9_quote_amount(quote)),
+        "status": "assigned" if (payload or {}).get("worker_id") else "new",
+        "assigned_worker_id": _s9_txt((payload or {}).get("worker_id")),
+        "assigned_worker_name": _s9_txt((payload or {}).get("worker_name")),
+        "source": "stage9_quote_conversion",
+        "created_at": _s9_now(),
+        "updated_at": _s9_now(),
+    }
+
+    result = await db.jobs.insert_one(job)
+    job["_id"] = result.inserted_id
+
+    await db.quotes.update_one({"_id": quote["_id"]}, {"$set": {
+        "status": "converted",
+        "converted_to_job_id": str(result.inserted_id),
+        "converted_at": _s9_now(),
+        "updated_at": _s9_now(),
+    }})
+
+    return {"success": True, "message": "Quote converted to job", "job": _s9_safe(job)}
+
+@api_router.post("/quotes/{quote_id}/convert-to-invoice")
+async def stage9_convert_quote_to_invoice(quote_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    if not _s9_role_ok(current_user):
+        raise HTTPException(status_code=403, detail="Owner/admin access required")
+
+    business_id = await _s9_business_id(current_user)
+    quote = await _s9_find_quote(business_id, current_user, quote_id)
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    settings = await _s9_settings(business_id, current_user)
+    client = await _s9_find_client(business_id, current_user, quote)
+    quote_no = _s9_quote_number(quote, settings)
+    customer = _s9_customer_name(quote, client)
+
+    existing = await db.invoices.find_one({"business_id": str(business_id), "quote_id": _s9_id(quote, "quote_id")})
+    if existing:
+        return {"success": True, "message": "Invoice already exists for this quote", "invoice": _s9_safe(existing)}
+
+    short = _s9_id(quote, "quote_id")[-6:].upper()
+    invoice_no = f"{_s9_txt(settings.get('invoice_prefix'), 'INV')}-{short}"
+
+    total = _s9_num(_s9_quote_amount(quote))
+    invoice = {
+        "business_id": str(business_id),
+        "quote_id": _s9_id(quote, "quote_id"),
+        "quote_number": quote_no,
+        "invoice_number": invoice_no,
+        "client_id": _s9_txt(quote.get("client_id") or client.get("_id")),
+        "client_name": customer,
+        "customer_name": customer,
+        "customer_email": _s9_customer_email(quote, client),
+        "description": _s9_txt((payload or {}).get("description") or quote.get("description") or quote.get("notes") or f"Invoice created from quote {quote_no}."),
+        "subtotal": total,
+        "total": total,
+        "amount_due": total,
+        "status": "draft",
+        "source": "stage9_quote_conversion",
+        "created_at": _s9_now(),
+        "updated_at": _s9_now(),
+    }
+
+    result = await db.invoices.insert_one(invoice)
+    invoice["_id"] = result.inserted_id
+
+    await db.quotes.update_one({"_id": quote["_id"]}, {"$set": {
+        "converted_to_invoice_id": str(result.inserted_id),
+        "converted_to_invoice_at": _s9_now(),
+        "updated_at": _s9_now(),
+    }})
+
+    return {"success": True, "message": "Quote converted to draft invoice", "invoice": _s9_safe(invoice)}
+# CHURVOX_STAGE9_QUOTES_LOGIC_END
+
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")
