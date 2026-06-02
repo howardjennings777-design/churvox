@@ -235,7 +235,7 @@ function LogoPreview({ settings }) {
 
 function SettingsSlip({ settings, completion, onClose }) {
   const missing = completion?.missing_fields || [];
-  const invoiceReady = !!(settings.business_name && (settings.logo_base64 || settings.logo_url) && (settings.payment_url || settings.bank_account_number));
+  const invoiceReady = backendHealth?.pdf_ready ?? !!(settings.business_name && (settings.logo_base64 || settings.logo_url) && (settings.payment_url || settings.bank_account_number));
   return (
     <div className="fixed inset-0 z-[2147483647] flex items-center justify-center bg-slate-950/65 p-3 backdrop-blur-sm" role="dialog" aria-modal="true">
       <div className="max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-[34px] border border-white/40 bg-white shadow-[0_35px_120px_rgba(15,23,42,0.40)]">
@@ -387,8 +387,6 @@ function SettingsCommandContent() {
   const [activeSlip, setActiveSlip] = useState(false);
   const [lastSaved, setLastSaved] = useState("");
   const [backendHealth, setBackendHealth] = useState(null);
-  const [backendHealth, setBackendHealth] = useState(null);
-  const [backendHealth, setBackendHealth] = useState(null);
 
   useEffect(() => {
     let alive = true;
@@ -427,8 +425,8 @@ function SettingsCommandContent() {
   const missingCount = completion?.missing_fields?.length || 0;
 
   const invoiceReady = !!(settings.business_name && (settings.logo_base64 || settings.logo_url) && (settings.payment_url || settings.bank_account_number));
-  const paymentReady = !!(settings.payment_url || settings.bank_account_number);
-  const logoReady = !!(settings.logo_base64 || settings.logo_url);
+  const paymentReady = backendHealth?.payment_ready ?? !!(settings.payment_url || settings.bank_account_number);
+  const logoReady = backendHealth?.logo_ready ?? !!(settings.logo_base64 || settings.logo_url);
 
   const updateField = (key, value) => setSettings((current) => ({ ...current, [key]: value }));
 
