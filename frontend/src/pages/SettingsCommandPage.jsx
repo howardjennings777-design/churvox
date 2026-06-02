@@ -138,6 +138,44 @@ function mergeSettings(user, backendSettings = {}) {
   };
 }
 
+
+async function uploadLogoFile(file) {
+  const token = getToken();
+  const base = API_BASE || "";
+  const form = new FormData();
+  form.append("file", file);
+
+  const res = await fetch(`${base}/api/business/logo-upload`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    credentials: "include",
+    body: form,
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data?.success === false) {
+    throw new Error(data?.detail || data?.error || "Logo upload failed");
+  }
+  return data;
+}
+
+async function removeUploadedLogo() {
+  const token = getToken();
+  const base = API_BASE || "";
+  const res = await fetch(`${base}/api/business/logo-upload`, {
+    method: "DELETE",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    credentials: "include",
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data?.success === false) {
+    throw new Error(data?.detail || data?.error || "Logo remove failed");
+  }
+  return data;
+}
+
+
 function getToken() {
   return localStorage.getItem("token") || localStorage.getItem("authToken") || localStorage.getItem("access_token") || "";
 }
@@ -216,31 +254,85 @@ function SettingsSlip({ settings, completion, onClose }) {
 
 function Field({ field, settings, updateField, setNotice }) {
   const [key, label, kind] = field;
+  const [uploading, setUploading] = useState(false);
 
   if (kind === "file") {
-    const logo = settings[key];
+    const logo = settings[key] || settings.logo_url;
+
+    async function handleLogoChange(e) {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      if (!file.type?.startsWith("image/")) {
+        setNotice("Please choose a PNG, JPG or WebP image.");
+        return;
+      }
+
+      if (file.size > 2 * 1024 * 1024) {
+        setNotice("Logo is too large. Use an image under 2MB.");
+        return;
+      }
+
+      setUploading(true);
+      setNotice("");
+
+      try {
+        const data = await uploadLogoFile(file);
+        const uploaded = data?.logo_base64 || data?.settings?.logo_base64 || "";
+        updateField("logo_base64", uploaded);
+        updateField("logo_url", "");
+        setNotice("Logo uploaded and saved. It will now be used on invoice PDFs and emails.");
+        toast.success("Logo uploaded");
+      } catch (err) {
+        setNotice(`Logo upload failed: ${err?.message || "try again"}`);
+        toast.error("Logo upload failed");
+      } finally {
+        setUploading(false);
+      }
+    }
+
+    async function handleRemoveLogo() {
+      setUploading(true);
+      setNotice("");
+
+      try {
+        await removeUploadedLogo();
+        updateField("logo_base64", "");
+        updateField("logo_url", "");
+        setNotice("Logo removed.");
+        toast.success("Logo removed");
+      } catch (err) {
+        setNotice(`Could not remove logo: ${err?.message || "try again"}`);
+        toast.error("Could not remove logo");
+      } finally {
+        setUploading(false);
+      }
+    }
+
     return (
       <label className="block">
         <span className="mb-1 block text-[11px] font-black uppercase tracking-[0.14em] text-slate-500">{label}</span>
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-          {logo ? <img src={logo} alt="Logo preview" className="mb-3 max-h-24 rounded-xl bg-white object-contain p-2" /> : <div className="mb-3 rounded-xl border border-dashed border-slate-300 bg-white p-4 text-xs font-bold text-slate-500">No logo uploaded yet.</div>}
+          {logo ? (
+            <img src={logo} alt="Business logo preview" className="mb-3 max-h-28 rounded-xl bg-white object-contain p-2" />
+          ) : (
+            <div className="mb-3 rounded-xl border border-dashed border-slate-300 bg-white p-4 text-xs font-bold text-slate-500">No logo uploaded yet.</div>
+          )}
+
           <input
             type="file"
-            accept="image/*"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              if (file.size > 700000) {
-                setNotice("Logo is too large. Use a PNG or JPG under 700KB.");
-                return;
-              }
-              const reader = new FileReader();
-              reader.onload = () => updateField(key, reader.result);
-              reader.readAsDataURL(file);
-            }}
-            className="w-full rounded-xl border border-slate-200 bg-white p-2 text-xs font-bold text-slate-700"
+            accept="image/png,image/jpeg,image/webp,image/svg+xml,image/*"
+            onChange={handleLogoChange}
+            disabled={uploading}
+            className="w-full rounded-xl border border-slate-200 bg-white p-2 text-xs font-bold text-slate-700 disabled:opacity-60"
           />
-          {logo ? <button type="button" onClick={() => updateField(key, "")} className="mt-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-700">Remove logo</button> : null}
+
+          <div className="mt-2 flex flex-wrap gap-2">
+            {uploading ? <span className="rounded-xl bg-blue-50 px-3 py-2 text-xs font-black text-blue-700">Uploading…</span> : null}
+            {logo ? <button type="button" onClick={handleRemoveLogo} disabled={uploading} className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-700 disabled:opacity-60">Remove logo</button> : null}
+          </div>
+
+          <p className="mt-2 text-[11px] font-bold text-slate-500">Best: PNG or JPG under 2MB. This logo is saved to Churvox and used on invoice PDFs/emails.</p>
         </div>
       </label>
     );

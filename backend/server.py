@@ -1,3 +1,4 @@
+from fastapi import File, UploadFile
 import os
 import json
 import urllib.request
@@ -14165,6 +14166,91 @@ async def churvox_save_invoice_branding_final(payload: dict = Body(default={}), 
     saved = await db.business_document_settings.find_one({"business_id": str(business_id)}) or {}
     return {"success": True, "settings": make_json_safe(saved)}
 # CHURVOX_DOCUMENT_BRANDING_ROUTES_END
+
+
+# CHURVOX_LOGO_UPLOAD_START
+def _churvox_logo_safe(value):
+    if isinstance(value, list):
+        return [_churvox_logo_safe(v) for v in value]
+    if isinstance(value, dict):
+        out = {}
+        for k, v in value.items():
+            if k == "_id":
+                out["id"] = str(v)
+            else:
+                out[k] = _churvox_logo_safe(v)
+        return out
+    try:
+        if isinstance(value, ObjectId):
+            return str(value)
+    except Exception:
+        pass
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    return value
+
+@api_router.post("/business/logo-upload")
+async def churvox_upload_business_logo(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    import base64
+
+    business_id = await get_user_business_id(current_user)
+
+    content_type = (file.content_type or "").lower()
+    if not content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Please upload an image file.")
+
+    raw = await file.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="Logo file is empty.")
+
+    max_size = 2 * 1024 * 1024
+    if len(raw) > max_size:
+        raise HTTPException(status_code=400, detail="Logo is too large. Please use an image under 2MB.")
+
+    logo_base64 = f"data:{content_type};base64,{base64.b64encode(raw).decode('ascii')}"
+
+    update = {
+        "business_id": str(business_id),
+        "logo_base64": logo_base64,
+        "logo_url": "",
+        "updated_at": datetime.now(timezone.utc),
+    }
+
+    existing = await db.business_document_settings.find_one({"business_id": str(business_id)})
+    if existing:
+        await db.business_document_settings.update_one({"_id": existing["_id"]}, {"$set": update})
+    else:
+        update["created_at"] = datetime.now(timezone.utc)
+        await db.business_document_settings.insert_one(update)
+
+    saved = await db.business_document_settings.find_one({"business_id": str(business_id)}) or {}
+    return {
+        "success": True,
+        "logo_base64": logo_base64,
+        "settings": _churvox_logo_safe(saved),
+    }
+
+@api_router.delete("/business/logo-upload")
+async def churvox_remove_business_logo(current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    existing = await db.business_document_settings.find_one({"business_id": str(business_id)})
+
+    update = {
+        "logo_base64": "",
+        "logo_url": "",
+        "updated_at": datetime.now(timezone.utc),
+    }
+
+    if existing:
+        await db.business_document_settings.update_one({"_id": existing["_id"]}, {"$set": update})
+    else:
+        update["business_id"] = str(business_id)
+        update["created_at"] = datetime.now(timezone.utc)
+        await db.business_document_settings.insert_one(update)
+
+    saved = await db.business_document_settings.find_one({"business_id": str(business_id)}) or {}
+    return {"success": True, "settings": _churvox_logo_safe(saved)}
+# CHURVOX_LOGO_UPLOAD_END
 
 
 app.include_router(api_router)
