@@ -386,6 +386,7 @@ function SettingsCommandContent() {
   const [loading, setLoading] = useState(true);
   const [activeSlip, setActiveSlip] = useState(false);
   const [lastSaved, setLastSaved] = useState("");
+  const [backendHealth, setBackendHealth] = useState(null);
 
   useEffect(() => {
     let alive = true;
@@ -403,6 +404,7 @@ function SettingsCommandContent() {
         });
 
         const data = await res.json().catch(() => ({}));
+        setBackendHealth(data?.health || null);
         const backendSettings = data?.settings || data?.data || {};
         if (alive) setSettings(mergeSettings(user, backendSettings));
       } catch (err) {
@@ -456,7 +458,7 @@ function SettingsCommandContent() {
       setLastSaved(new Date().toLocaleTimeString());
       window.dispatchEvent(new Event("churvox-business-settings-updated"));
       toast.success("Settings saved for invoices, PDFs and emails");
-      setNotice("Settings saved. Churvox will use these details on invoice PDFs, quote PDFs, emails and approval slips.");
+      setNotice("Settings saved. Churvox will use these details on invoice PDFs, quote PDFs, payment links, emails and approval slips.");
     } catch (err) {
       toast.error("Settings saved locally, but backend branding save failed");
       setNotice(`Saved locally, but backend branding save failed: ${err?.message || "check API"}`);

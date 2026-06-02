@@ -13940,6 +13940,592 @@ async def stage1_final_approve_send_action(action_id: str, payload: dict = Body(
 
 
 
+
+# CHURVOX_STAGE3_SETTINGS_LOGIC_START
+# Settings source-of-truth for invoice/quote PDFs, emails, payment links and AI slips.
+
+def _stage3_txt(value, fallback=""):
+    return str(value or fallback or "").strip()
+
+def _stage3_now():
+    return datetime.now(timezone.utc)
+
+def _stage3_safe(value):
+    if isinstance(value, list):
+        return [_stage3_safe(v) for v in value]
+    if isinstance(value, dict):
+        out = {}
+        for k, v in value.items():
+            out["id" if k == "_id" else k] = _stage3_safe(v)
+        return out
+    try:
+        if isinstance(value, ObjectId):
+            return str(value)
+    except Exception:
+        pass
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    return value
+
+def _stage3_num(value):
+    try:
+        if isinstance(value, str):
+            value = value.replace("$", "").replace(",", "").replace("NZD", "").strip()
+        return float(value or 0)
+    except Exception:
+        return 0.0
+
+def _stage3_money(value):
+    raw = _stage3_txt(value)
+    if raw.startswith("$"):
+        return raw
+    amount = _stage3_num(raw)
+    return f"${amount:,.2f}" if amount else raw
+
+async def _stage3_business_id(current_user):
+    try:
+        bid = await get_user_business_id(current_user)
+        if bid:
+            return str(bid)
+    except Exception:
+        pass
+    return _stage3_txt(
+        (current_user or {}).get("business_id")
+        or (current_user or {}).get("businessId")
+        or (current_user or {}).get("id")
+        or (current_user or {}).get("_id")
+        or (current_user or {}).get("user_id")
+    )
+
+async def _stage3_branding(business_id, current_user=None):
+    business_id = _stage3_txt(business_id)
+    settings = {}
+    if business_id:
+        try:
+            settings = await db.business_document_settings.find_one({"business_id": str(business_id)}) or {}
+        except Exception:
+            settings = {}
+
+    user = current_user or {}
+    business_name = _stage3_txt(
+        settings.get("trading_name")
+        or settings.get("business_name")
+        or user.get("business_name")
+        or user.get("company_name")
+        or "Churvox"
+    )
+
+    return {
+        "business_id": str(business_id),
+        "business_name": business_name,
+        "trading_name": _stage3_txt(settings.get("trading_name") or business_name),
+        "logo_base64": _stage3_txt(settings.get("logo_base64")),
+        "logo_url": _stage3_txt(settings.get("logo_url")),
+        "business_address": _stage3_txt(settings.get("business_address")),
+        "phone": _stage3_txt(settings.get("phone")),
+        "email": _stage3_txt(settings.get("email") or user.get("email") or "hello@churvox.com"),
+        "website": _stage3_txt(settings.get("website") or "www.churvox.com"),
+        "gst_number": _stage3_txt(settings.get("gst_number")),
+        "nzbn": _stage3_txt(settings.get("nzbn")),
+        "bank_account_name": _stage3_txt(settings.get("bank_account_name")),
+        "bank_account_number": _stage3_txt(settings.get("bank_account_number")),
+        "payment_url": _stage3_txt(settings.get("payment_url")),
+        "payment_instructions": _stage3_txt(settings.get("payment_instructions") or "Please use the invoice number as the payment reference."),
+        "invoice_footer": _stage3_txt(settings.get("invoice_footer") or "Thanks for choosing us. We appreciate your business."),
+        "invoice_prefix": _stage3_txt(settings.get("invoice_prefix") or "INV"),
+        "quote_prefix": _stage3_txt(settings.get("quote_prefix") or "QT"),
+        "default_gst_rate": settings.get("default_gst_rate", 15),
+        "default_invoice_due_days": settings.get("default_invoice_due_days", 7),
+        "default_quote_expiry_days": settings.get("default_quote_expiry_days", 14),
+        "trade_industry_type": _stage3_txt(settings.get("trade_industry_type")),
+        "default_customer_message_tone": _stage3_txt(settings.get("default_customer_message_tone") or "Friendly, clear and professional."),
+    }
+
+def _stage3_payment_url(payload, branding):
+    url = _stage3_txt(
+        (payload or {}).get("payment_url")
+        or (payload or {}).get("payment_link")
+        or (payload or {}).get("pay_now_url")
+        or (payload or {}).get("invoice_url")
+        or (payload or {}).get("public_url")
+        or (branding or {}).get("payment_url")
+    )
+    if not url:
+        return ""
+
+    replacements = {
+        "invoice_number": _stage3_txt((payload or {}).get("invoice_number")),
+        "quote_number": _stage3_txt((payload or {}).get("quote_number")),
+        "customer_email": _stage3_txt((payload or {}).get("customer_email")),
+        "amount": _stage3_money((payload or {}).get("total") or (payload or {}).get("amount_due") or (payload or {}).get("quote_amount")),
+    }
+    for key, value in replacements.items():
+        url = url.replace("{" + key + "}", value)
+    return url
+
+def _stage3_font(size, bold=False):
+    from PIL import ImageFont
+    paths = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf" if bold else "/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf",
+    ]
+    for path in paths:
+        try:
+            return ImageFont.truetype(path, size)
+        except Exception:
+            pass
+    return ImageFont.load_default()
+
+def _stage3_wrap(draw, text, font, width):
+    text = _stage3_txt(text)
+    if not text:
+        return []
+    words = text.split()
+    lines = []
+    line = ""
+    for word in words:
+        test = f"{line} {word}".strip()
+        try:
+            box = draw.textbbox((0, 0), test, font=font)
+            test_width = box[2] - box[0]
+        except Exception:
+            test_width = len(test) * 10
+        if test_width <= width or not line:
+            line = test
+        else:
+            lines.append(line)
+            line = word
+    if line:
+        lines.append(line)
+    return lines
+
+def _stage3_draw_wrap(draw, x, y, text, font, fill, width, line_height, max_lines=999):
+    count = 0
+    for line in _stage3_wrap(draw, text, font, width):
+        if count >= max_lines:
+            draw.text((x, y), "...", font=font, fill=fill)
+            return y + line_height
+        draw.text((x, y), line, font=font, fill=fill)
+        y += line_height
+        count += 1
+    return y
+
+def _stage3_load_logo(branding):
+    try:
+        import base64
+        import io
+        import urllib.request
+        from PIL import Image
+
+        raw = _stage3_txt((branding or {}).get("logo_base64"))
+        url = _stage3_txt((branding or {}).get("logo_url"))
+        data = None
+
+        if raw:
+            if raw.startswith("data:image") and "," in raw:
+                raw = raw.split(",", 1)[1]
+            data = base64.b64decode(raw)
+        elif url.startswith("http"):
+            with urllib.request.urlopen(url, timeout=10) as resp:
+                data = resp.read()
+
+        if not data:
+            return None
+
+        logo = Image.open(io.BytesIO(data)).convert("RGBA")
+        logo.thumbnail((290, 130))
+        return logo
+    except Exception:
+        return None
+
+def _stage3_pdf_bytes(action_type, payload, branding):
+    import io
+    from PIL import Image, ImageDraw
+
+    payload = payload or {}
+    branding = branding or {}
+
+    W, H = 1240, 1754
+    navy = (15, 23, 42)
+    panel = (20, 50, 88)
+    bg = (245, 247, 241)
+    white = (255, 255, 255)
+    text = (15, 23, 42)
+    muted = (100, 116, 139)
+    line = (226, 232, 240)
+    green = (22, 163, 74)
+
+    img = Image.new("RGB", (W, H), bg)
+    draw = ImageDraw.Draw(img)
+
+    f10 = _stage3_font(20, True)
+    f12 = _stage3_font(24, False)
+    f12b = _stage3_font(24, True)
+    f18b = _stage3_font(36, True)
+    f24b = _stage3_font(48, True)
+    f34b = _stage3_font(68, True)
+
+    is_quote = action_type == "quote_follow_up"
+    doc_label = "QUOTE" if is_quote else "INVOICE"
+
+    doc_no = _stage3_txt(payload.get("quote_number") if is_quote else payload.get("invoice_number"))
+    if not doc_no:
+        doc_no = _stage3_txt(payload.get("quote_id") if is_quote else payload.get("invoice_id"), "DRAFT")[-8:].upper()
+
+    business = _stage3_txt(branding.get("trading_name") or branding.get("business_name"), "Churvox")
+    customer = _stage3_txt(payload.get("customer_name") or payload.get("client_name"), "Customer")
+    customer_email = _stage3_txt(payload.get("customer_email"))
+    customer_phone = _stage3_txt(payload.get("client_phone"))
+    customer_address = _stage3_txt(payload.get("client_address") or payload.get("billing_address") or payload.get("job_address"))
+
+    job_title = _stage3_txt(payload.get("job_title") or payload.get("service_type"), "Work completed")
+    description = _stage3_txt(
+        payload.get("description")
+        or payload.get("invoice_description")
+        or payload.get("worker_note")
+        or payload.get("message")
+        or job_title
+    )
+
+    total = _stage3_money(payload.get("total") or payload.get("amount_due") or payload.get("quote_amount") or payload.get("subtotal") or payload.get("price"))
+    due_date = _stage3_txt(payload.get("due_date"))
+    pay_url = _stage3_payment_url(payload, branding)
+
+    # Header
+    draw.rounded_rectangle((55, 45, W - 55, 315), radius=38, fill=navy)
+    draw.text((92, 86), doc_label, font=f10, fill=(125, 211, 252))
+    draw.text((92, 126), f"{doc_label} {doc_no}", font=f34b, fill=white)
+    draw.text((92, 235), business, font=f12b, fill=(226, 232, 240))
+
+    logo = _stage3_load_logo(branding)
+    if logo:
+        holder = Image.new("RGBA", (320, 140), (255, 255, 255, 0))
+        holder.alpha_composite(logo, ((320 - logo.width) // 2, (140 - logo.height) // 2))
+        img.paste(holder.convert("RGB"), (W - 420, 90))
+    else:
+        draw.rounded_rectangle((W - 415, 92, W - 90, 205), radius=26, fill=white)
+        draw.text((W - 380, 127), business[:24], font=f18b, fill=navy)
+
+    # Bill / from cards
+    y = 365
+    draw.rounded_rectangle((55, y, 590, y + 260), radius=30, fill=white, outline=line, width=2)
+    draw.text((90, y + 35), "BILL TO", font=f10, fill=muted)
+    draw.text((90, y + 76), customer, font=f18b, fill=text)
+    yy = y + 128
+    for item in [customer_email, customer_phone, customer_address]:
+        if item:
+            yy = _stage3_draw_wrap(draw, 90, yy, item, f12, muted, 440, 31, max_lines=3)
+
+    draw.rounded_rectangle((650, y, W - 55, y + 260), radius=30, fill=white, outline=line, width=2)
+    draw.text((685, y + 35), "FROM", font=f10, fill=muted)
+    draw.text((685, y + 76), business, font=f18b, fill=text)
+    yy = y + 128
+    for item in [
+        branding.get("email"),
+        branding.get("phone"),
+        branding.get("business_address"),
+        branding.get("website"),
+        f"GST {branding.get('gst_number')}" if branding.get("gst_number") else "",
+    ]:
+        if item:
+            yy = _stage3_draw_wrap(draw, 685, yy, item, f12, muted, 440, 31, max_lines=2)
+
+    # Line item
+    y = 690
+    draw.rounded_rectangle((55, y, W - 55, y + 510), radius=30, fill=white, outline=line, width=2)
+    draw.rounded_rectangle((90, y + 38, W - 90, y + 95), radius=18, fill=(241, 245, 249))
+    draw.text((120, y + 55), "DESCRIPTION", font=f10, fill=muted)
+    draw.text((W - 325, y + 55), "AMOUNT", font=f10, fill=muted)
+
+    draw.text((120, y + 132), job_title, font=f18b, fill=text)
+    _stage3_draw_wrap(draw, 120, y + 182, description, f12, muted, 720, 32, max_lines=5)
+    draw.text((W - 325, y + 132), total or "To confirm", font=f18b, fill=text)
+
+    draw.line((90, y + 360, W - 90, y + 360), fill=line, width=2)
+    draw.text((W - 450, y + 395), "TOTAL", font=f12b, fill=muted)
+    draw.text((W - 325, y + 382), total or "To confirm", font=f24b, fill=navy)
+
+    if due_date:
+        draw.text((120, y + 400), f"Due date: {due_date}", font=f12b, fill=muted)
+
+    # Payment
+    y = 1260
+    draw.rounded_rectangle((55, y, W - 55, y + 340), radius=30, fill=panel)
+    draw.text((90, y + 42), "PAYMENT", font=f10, fill=(125, 211, 252))
+    draw.text((90, y + 84), "How to pay", font=f24b, fill=white)
+
+    py = y + 158
+    if pay_url:
+        draw.rounded_rectangle((90, py - 15, 430, py + 64), radius=22, fill=green)
+        draw.text((126, py + 5), "Pay online", font=f18b, fill=white)
+        py += 96
+        py = _stage3_draw_wrap(draw, 90, py, pay_url, f12, (203, 213, 225), 980, 30, max_lines=2)
+
+    bank = ""
+    if branding.get("bank_account_name") or branding.get("bank_account_number"):
+        bank = "Bank transfer"
+        if branding.get("bank_account_name"):
+            bank += f" · {branding.get('bank_account_name')}"
+        if branding.get("bank_account_number"):
+            bank += f" · {branding.get('bank_account_number')}"
+    if bank:
+        py = _stage3_draw_wrap(draw, 90, py + 16, bank, f12b, (226, 232, 240), 980, 30, max_lines=2)
+    if branding.get("payment_instructions"):
+        _stage3_draw_wrap(draw, 90, py + 16, branding.get("payment_instructions"), f12, (203, 213, 225), 980, 30, max_lines=3)
+
+    draw.text((65, H - 90), branding.get("invoice_footer") or "Thank you.", font=f12b, fill=muted)
+    draw.text((65, H - 55), "Prepared and sent by Churvox.", font=f10, fill=(148, 163, 184))
+
+    buf = io.BytesIO()
+    img.save(buf, format="PDF", resolution=150.0)
+    return buf.getvalue()
+
+async def _stage3_send_customer_email(action_type, payload):
+    import os
+    import json
+    import base64
+    import asyncio
+    import urllib.request
+    import urllib.error
+
+    payload = dict(payload or {})
+    business_id = _stage3_txt(payload.get("business_id"))
+    branding = await _stage3_branding(business_id, None)
+
+    # One-off payload values can override stored settings.
+    for key in [
+        "business_name", "trading_name", "logo_base64", "logo_url", "business_address",
+        "phone", "email", "website", "gst_number", "bank_account_name",
+        "bank_account_number", "payment_url", "payment_instructions", "invoice_footer",
+    ]:
+        if _stage3_txt(payload.get(key)):
+            branding[key] = payload.get(key)
+
+    to_email = _stage3_txt(payload.get("customer_email"))
+    if not to_email:
+        return False, "Customer email is missing"
+
+    token = os.environ.get("POSTMARK_SERVER_TOKEN") or os.environ.get("POSTMARK_API_TOKEN") or os.environ.get("POSTMARK_TOKEN")
+    if not token:
+        return False, "Postmark token is missing on the backend"
+
+    business = _stage3_txt(branding.get("trading_name") or branding.get("business_name"), "Churvox")
+    from_email = os.environ.get("POSTMARK_FROM_EMAIL") or os.environ.get("EMAIL_FROM") or branding.get("email") or "hello@churvox.com"
+
+    customer = _stage3_txt(payload.get("customer_name") or payload.get("client_name"), "there")
+    invoice_no = _stage3_txt(payload.get("invoice_number"))
+    quote_no = _stage3_txt(payload.get("quote_number"))
+    amount = _stage3_money(payload.get("total") or payload.get("amount_due") or payload.get("quote_amount") or payload.get("subtotal") or payload.get("price"))
+    pay_url = _stage3_payment_url(payload, branding)
+
+    if action_type == "quote_follow_up":
+        subject = f"Following up on {quote_no or 'your quote'}"
+        body = _stage3_txt(payload.get("message"), f"Hi {customer}, just checking in on {quote_no or 'your quote'}{f' for {amount}' if amount else ''}.")
+        filename = f"quote-{quote_no or _stage3_txt(payload.get('quote_id'), 'quote')}.pdf"
+    elif action_type == "invoice_reminder":
+        subject = f"Payment reminder {invoice_no or ''}".strip()
+        body = _stage3_txt(payload.get("message"), f"Hi {customer}, friendly reminder invoice {invoice_no}{f' for {amount}' if amount else ''} is still open.")
+        filename = f"invoice-{invoice_no or _stage3_txt(payload.get('invoice_id'), 'invoice')}.pdf"
+    else:
+        subject = f"Invoice {invoice_no or ''} from {business}".strip()
+        body = _stage3_txt(payload.get("message"), f"Hi {customer}, your invoice {invoice_no}{f' for {amount}' if amount else ''} is ready.")
+        filename = f"invoice-{invoice_no or _stage3_txt(payload.get('invoice_id'), 'invoice')}.pdf"
+
+    if pay_url and action_type in {"send_invoice", "invoice_reminder"}:
+        body = f"{body}\n\nPay online: {pay_url}"
+
+    safe = body.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br/>")
+    logo_url = _stage3_txt(branding.get("logo_url"))
+    logo_html = f'<img src="{logo_url}" alt="{business}" style="max-height:70px;max-width:220px;object-fit:contain;" />' if logo_url else f'<div style="font-size:24px;font-weight:900;color:#0f1722;">{business}</div>'
+    button = f'<a href="{pay_url}" style="display:inline-block;background:#16a34a;color:#fff;text-decoration:none;font-weight:900;border-radius:14px;padding:14px 22px;margin-top:18px;">Pay online</a>' if pay_url and action_type in {"send_invoice", "invoice_reminder"} else ""
+
+    html_body = f"""
+    <div style="background:#f5f7f1;margin:0;padding:28px;font-family:Arial,Helvetica,sans-serif;color:#0f1722;">
+      <div style="max-width:680px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:28px;overflow:hidden;">
+        <div style="padding:28px;border-bottom:1px solid #e2e8f0;">{logo_html}</div>
+        <div style="padding:30px;">
+          <div style="font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:900;color:#06b6d4;">Churvox document</div>
+          <h1 style="font-size:34px;line-height:1;margin:12px 0 16px;font-weight:900;color:#0f1722;">{amount or "Document ready"}</h1>
+          <div style="font-size:16px;line-height:1.6;font-weight:700;color:#334155;">{safe}</div>
+          {button}
+          <p style="margin-top:24px;font-size:13px;line-height:1.5;color:#64748b;">A full PDF copy is attached.</p>
+        </div>
+        <div style="padding:18px 30px;background:#0f1722;color:#cbd5e1;font-size:12px;font-weight:700;">Sent by {business} using Churvox.</div>
+      </div>
+    </div>
+    """
+
+    filename = "".join(ch if ch.isalnum() or ch in ".-_" else "-" for ch in filename).strip("-") or "churvox-document.pdf"
+    pdf = _stage3_pdf_bytes(action_type, payload, branding)
+
+    postmark_payload = {
+        "From": from_email,
+        "To": to_email,
+        "Subject": subject,
+        "TextBody": body,
+        "HtmlBody": html_body,
+        "MessageStream": "outbound",
+        "Attachments": [{
+            "Name": filename,
+            "Content": base64.b64encode(pdf).decode("ascii"),
+            "ContentType": "application/pdf",
+        }],
+    }
+
+    def _send():
+        req = urllib.request.Request(
+            "https://api.postmarkapp.com/email",
+            data=json.dumps(postmark_payload).encode("utf-8"),
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "X-Postmark-Server-Token": token,
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=25) as resp:
+                raw = resp.read().decode("utf-8")
+                return True, json.loads(raw or "{}")
+        except urllib.error.HTTPError as e:
+            try:
+                err = e.read().decode("utf-8")
+            except Exception:
+                err = str(e)
+            return False, err
+        except Exception as e:
+            return False, str(e)
+
+    ok, result = await asyncio.to_thread(_send)
+    if not ok:
+        return False, f"Email send failed: {result}"
+    return True, result
+
+# Override the older email sender safely. Final approve/send route calls this global at runtime.
+_ai_slip_send_customer_email = _stage3_send_customer_email
+
+@api_router.get("/business/invoice-branding")
+async def stage3_get_invoice_branding(current_user: dict = Depends(get_current_user)):
+    business_id = await _stage3_business_id(current_user)
+    branding = await _stage3_branding(business_id, current_user)
+
+    health = {
+        "business_ready": bool(branding.get("business_name")),
+        "logo_ready": bool(branding.get("logo_base64") or branding.get("logo_url")),
+        "payment_ready": bool(branding.get("payment_url") or branding.get("bank_account_number")),
+        "pdf_ready": bool(branding.get("business_name") and (branding.get("payment_url") or branding.get("bank_account_number"))),
+    }
+
+    return {"success": True, "settings": _stage3_safe(branding), "health": health}
+
+@api_router.patch("/business/invoice-branding")
+async def stage3_save_invoice_branding(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    business_id = await _stage3_business_id(current_user)
+
+    allowed = {
+        "business_name", "trading_name", "logo_base64", "logo_url", "business_address",
+        "phone", "email", "website", "gst_number", "nzbn",
+        "bank_account_name", "bank_account_number", "payment_url", "payment_instructions",
+        "invoice_footer", "invoice_prefix", "quote_prefix", "default_gst_rate",
+        "default_invoice_due_days", "default_quote_expiry_days", "trade_industry_type",
+        "default_customer_message_tone",
+    }
+
+    clean = {key: (payload or {}).get(key) for key in allowed if key in (payload or {})}
+    clean["business_id"] = str(business_id)
+    clean["updated_at"] = _stage3_now()
+
+    existing = await db.business_document_settings.find_one({"business_id": str(business_id)})
+    if existing:
+        await db.business_document_settings.update_one({"_id": existing["_id"]}, {"$set": clean})
+    else:
+        clean["created_at"] = _stage3_now()
+        await db.business_document_settings.insert_one(clean)
+
+    saved = await db.business_document_settings.find_one({"business_id": str(business_id)}) or {}
+    return {"success": True, "settings": _stage3_safe(saved)}
+
+@api_router.post("/business/logo-upload")
+async def stage3_upload_logo(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    import base64
+
+    business_id = await _stage3_business_id(current_user)
+
+    content_type = (file.content_type or "").lower()
+    if not content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Please upload an image file.")
+
+    raw = await file.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="Logo file is empty.")
+
+    if len(raw) > 2 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Logo is too large. Please use an image under 2MB.")
+
+    logo_base64 = f"data:{content_type};base64,{base64.b64encode(raw).decode('ascii')}"
+    update = {
+        "business_id": str(business_id),
+        "logo_base64": logo_base64,
+        "logo_url": "",
+        "updated_at": _stage3_now(),
+    }
+
+    existing = await db.business_document_settings.find_one({"business_id": str(business_id)})
+    if existing:
+        await db.business_document_settings.update_one({"_id": existing["_id"]}, {"$set": update})
+    else:
+        update["created_at"] = _stage3_now()
+        await db.business_document_settings.insert_one(update)
+
+    saved = await db.business_document_settings.find_one({"business_id": str(business_id)}) or {}
+    return {"success": True, "logo_base64": logo_base64, "settings": _stage3_safe(saved)}
+
+@api_router.delete("/business/logo-upload")
+async def stage3_remove_logo(current_user: dict = Depends(get_current_user)):
+    business_id = await _stage3_business_id(current_user)
+    existing = await db.business_document_settings.find_one({"business_id": str(business_id)})
+    update = {"logo_base64": "", "logo_url": "", "updated_at": _stage3_now()}
+
+    if existing:
+        await db.business_document_settings.update_one({"_id": existing["_id"]}, {"$set": update})
+    else:
+        update["business_id"] = str(business_id)
+        update["created_at"] = _stage3_now()
+        await db.business_document_settings.insert_one(update)
+
+    saved = await db.business_document_settings.find_one({"business_id": str(business_id)}) or {}
+    return {"success": True, "settings": _stage3_safe(saved)}
+
+@api_router.get("/business/settings-health")
+async def stage3_settings_health(current_user: dict = Depends(get_current_user)):
+    business_id = await _stage3_business_id(current_user)
+    branding = await _stage3_branding(business_id, current_user)
+
+    missing = []
+    if not branding.get("business_name"):
+        missing.append("business_name")
+    if not (branding.get("logo_base64") or branding.get("logo_url")):
+        missing.append("logo")
+    if not (branding.get("payment_url") or branding.get("bank_account_number")):
+        missing.append("payment_details")
+    if not branding.get("email"):
+        missing.append("email")
+
+    return {
+        "success": True,
+        "health": {
+            "ready": len(missing) == 0,
+            "missing": missing,
+            "business_ready": bool(branding.get("business_name")),
+            "logo_ready": bool(branding.get("logo_base64") or branding.get("logo_url")),
+            "payment_ready": bool(branding.get("payment_url") or branding.get("bank_account_number")),
+            "pdf_ready": len(missing) == 0,
+        },
+    }
+# CHURVOX_STAGE3_SETTINGS_LOGIC_END
+
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")
@@ -18853,4 +19439,32 @@ except Exception as _route_dedupe_error:
     except Exception:
         pass
 # CHURVOX_ROUTE_DEDUPE_END
+
+
+# CHURVOX_STAGE3_ROUTE_DEDUPE_START
+try:
+    from fastapi.routing import APIRoute
+    _seen = set()
+    _clean_rev = []
+    _removed = []
+
+    for _route in reversed(list(app.router.routes)):
+        if isinstance(_route, APIRoute):
+            _methods = tuple(sorted(m for m in (_route.methods or set()) if m not in {"HEAD", "OPTIONS"}))
+            _keys = tuple((method, _route.path) for method in _methods)
+            if any(key in _seen for key in _keys):
+                _removed.append({"path": _route.path, "methods": list(_methods), "name": getattr(_route, "name", "")})
+                continue
+            for key in _keys:
+                _seen.add(key)
+        _clean_rev.append(_route)
+
+    app.router.routes = list(reversed(_clean_rev))
+    app.state.churvox_stage3_removed_duplicate_routes = _removed
+except Exception as _err:
+    try:
+        app.state.churvox_stage3_route_dedupe_error = str(_err)
+    except Exception:
+        pass
+# CHURVOX_STAGE3_ROUTE_DEDUPE_END
 
