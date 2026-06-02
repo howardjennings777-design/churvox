@@ -1,0 +1,174 @@
+/* CHURVOX JOBS + NAV FORCE
+   Fix mixed themes, blank buttons, ugly wording areas, and unreadable job cards.
+*/
+
+/* Left sidebar: clean and readable */
+aside {
+  color: #ffffff !important;
+}
+
+aside a,
+aside button,
+aside span,
+aside div {
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+aside a {
+  color: #eaf2ff !important;
+}
+
+aside a[href="/dashboard"],
+aside a[href="/jobs"],
+aside a[href="/dispatch"],
+aside a[href="/crew-map"],
+aside a[href="/clients"],
+aside a[href="/quotes"],
+aside a[href="/invoices"],
+aside a[href="/team"],
+aside a[href="/settings"],
+aside a[href="/support"] {
+  font-weight: 900 !important;
+}
+
+/* Hide confusing launch nav items */
+aside a[href="/plans"],
+aside a[href="/payroll"],
+aside a[href="/reports"],
+aside a[href="/automation"],
+aside a[href="/integrations"],
+aside a[href="/money-desk"],
+aside a[href="/operator-tools"],
+aside a[href="/billing-confidence"],
+aside a[href="/notifications"] {
+  display: none !important;
+}
+
+/* Make sidebar section labels less noisy */
+aside [class*="uppercase"] {
+  color: #cbd5e1 !important;
+}
+
+/* Jobs page cards */
+main article,
+main section,
+main aside {
+  text-shadow: none !important;
+}
+
+main article[class*="bg-[#143658]"],
+main article[class*="bg-[#0f1722]"],
+main article[class*="bg-slate-950"],
+main article[class*="bg-slate-900"],
+main div[class*="bg-[#143658]"],
+main div[class*="bg-[#0f1722]"],
+main div[class*="bg-slate-950"],
+main div[class*="bg-slate-900"] {
+  color: #ffffff !important;
+}
+
+main article[class*="bg-[#143658]"] *,
+main article[class*="bg-[#0f1722]"] *,
+main article[class*="bg-slate-950"] *,
+main article[class*="bg-slate-900"] *,
+main div[class*="bg-[#143658]"] *,
+main div[class*="bg-[#0f1722]"] *,
+main div[class*="bg-slate-950"] *,
+main div[class*="bg-slate-900"] * {
+  opacity: 1 !important;
+}
+
+/* Force text inside dark job cards readable */
+main article[class*="bg-[#143658]"] :is(h1,h2,h3,h4,p,span,div,strong,small),
+main article[class*="bg-[#0f1722]"] :is(h1,h2,h3,h4,p,span,div,strong,small),
+main article[class*="bg-slate-950"] :is(h1,h2,h3,h4,p,span,div,strong,small),
+main article[class*="bg-slate-900"] :is(h1,h2,h3,h4,p,span,div,strong,small) {
+  color: #ffffff !important;
+}
+
+/* Light stats cards must use dark readable text */
+main [class*="bg-white"],
+main [class*="bg-slate-50"],
+main [class*="bg-amber-50"],
+main [class*="bg-red-50"],
+main [class*="bg-blue-50"],
+main [class*="bg-emerald-50"] {
+  color: #0f172a !important;
+}
+
+main [class*="bg-white"] *,
+main [class*="bg-slate-50"] *,
+main [class*="bg-amber-50"] *,
+main [class*="bg-red-50"] *,
+main [class*="bg-blue-50"] *,
+main [class*="bg-emerald-50"] * {
+  color: #0f172a !important;
+  opacity: 1 !important;
+}
+
+/* Buttons: no more blank white pills */
+main button,
+main a {
+  min-height: 34px;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+main button:not(:empty),
+main a:not(:empty) {
+  color: inherit;
+}
+
+main button[class*="bg-white"],
+main a[class*="bg-white"],
+main button[class*="border"],
+main a[class*="border"] {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+main button[class*="bg-blue"],
+main a[class*="bg-blue"],
+main button[class*="bg-slate-950"],
+main a[class*="bg-slate-950"],
+main button[class*="bg-[#143658]"],
+main a[class*="bg-[#143658]"] {
+  color: #ffffff !important;
+}
+
+main button[class*="bg-cyan"],
+main a[class*="bg-cyan"],
+main button[class*="bg-amber"],
+main a[class*="bg-amber"] {
+  color: #0f172a !important;
+}
+
+/* Prevent bottom buttons being hidden */
+main {
+  padding-bottom: 150px !important;
+}
+
+/* Laptop view: stop giant dark blocks feeling messy */
+@media (max-width: 1280px) {
+  main h1 {
+    font-size: clamp(2rem, 4.2vw, 3.8rem) !important;
+    line-height: 1 !important;
+  }
+
+  main h2 {
+    font-size: clamp(1.25rem, 2.4vw, 2rem) !important;
+  }
+
+  main .text-\[10px\],
+  main .text-xs {
+    font-size: 0.78rem !important;
+    line-height: 1.1rem !important;
+  }
+
+  main .text-sm {
+    font-size: 0.92rem !important;
+    line-height: 1.35rem !important;
+  }
+}

@@ -45,7 +45,7 @@ function jobTitle(job) {
 }
 
 function clientName(job) {
-  return job?.client_name || job?.customer_name || job?.client?.name || "No client saved";
+  return job?.client_name || job?.customer_name || job?.client?.name || "No client linked";
 }
 
 function workerName(job) {
@@ -116,12 +116,12 @@ function JobCard({ job, onOpen }) {
       </div>
       <div className="mt-3 space-y-1 text-sm font-bold text-slate-600">
         <div>{clientName(job)}</div>
-        <div className="text-slate-400">{job?.address || job?.site_address || "No address saved"}</div>
+        <div className="text-slate-400">{job?.address || job?.site_address || "No address"}</div>
         <div className="text-slate-500">Worker: {workerName(job)}</div>
       </div>
       <div className="mt-4 flex flex-wrap gap-3">
-        <button type="button" onClick={() => onOpen(job)} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Open slip</button>
-        {id && !id.startsWith("sample-") ? <Link to={`/jobs/${id}`} className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Job record</Link> : <Link to="/jobs/new" className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Create real job</Link>}
+        <button type="button" onClick={() => onOpen(job)} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Review action</button>
+        {id && !id.startsWith("sample-") ? <Link to={`/jobs/${id}`} className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Open job</Link> : <Link to="/jobs/new" className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Create real job</Link>}
       </div>
     </article>
   );
@@ -143,11 +143,11 @@ function JobSlip({ job, onClose }) {
             </div>
             <button type="button" onClick={onClose} className="rounded-2xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-black text-white hover:bg-white/15">Close</button>
           </div>
-          <p className="relative mt-5 max-w-xl text-sm font-semibold leading-6 text-slate-300">{clientName(job)} · {job?.address || job?.site_address || "No address saved"}</p>
+          <p className="relative mt-5 max-w-xl text-sm font-semibold leading-6 text-slate-300">{clientName(job)} · {job?.address || job?.site_address || "No address"}</p>
         </header>
         <main className="min-h-0 flex-1 overflow-y-auto bg-[#f4f6f8] p-5 md:p-6">
           <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">What needs attention</div>
+            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Needs attention</div>
             <p className="mt-3 text-lg font-black tracking-[-0.035em] text-slate-950">Status: {prettyStatus(status)}</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Scheduled</div><div className="mt-1 text-sm font-black text-slate-950">{scheduleLabel(job)}</div></div>
@@ -209,7 +209,7 @@ function JobsCommandContent() {
         <Sidebar />
         <section className="min-w-0 flex-1 p-4 md:p-6 xl:p-8">
           <header className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
-            <div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Jobs Command</div><div className="text-sm font-bold text-slate-500">See what needs assigning, what is moving, and what needs review.</div></div>
+            <div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Jobs</div><div className="text-sm font-bold text-slate-500">See jobs that need a worker, jobs in progress, and completed jobs ready for review.</div></div>
             <div className="flex flex-wrap gap-3"><Link to="/dispatch" className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Dispatch</Link><Link to="/jobs/new" className="rounded-2xl bg-amber-500 px-4 py-2 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400">Create job</Link></div>
           </header>
 
@@ -218,15 +218,15 @@ function JobsCommandContent() {
               <div className="relative p-6 md:p-8">
                 <div className="absolute right-0 top-0 h-56 w-56 rounded-full bg-blue-500/10 blur-3xl" />
                 <div className="relative">
-                  <span className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Jobs Command</span>
-                  <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">Every job needs a clear next move.</h1>
-                  <p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Unassigned jobs go to dispatch. Active jobs stay visible. Completed jobs move toward review and invoice. No job should feel lost.</p>
+                  <span className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Jobs</span>
+                  <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">Jobs need clear next steps.</h1>
+                  <p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Unassigned jobs need a worker. Active jobs stay visible. Completed jobs move to review and invoicing.</p>
                 </div>
               </div>
             </div>
             <div className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
               <div className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Job health</div>
-              <h2 className="mt-2 text-2xl font-black tracking-[-0.055em] text-slate-950">What needs attention</h2>
+              <h2 className="mt-2 text-2xl font-black tracking-[-0.055em] text-slate-950">Needs attention</h2>
               <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
                 <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4"><div className="text-2xl font-black text-orange-800">{counts.unassigned}</div><div className="text-xs font-black uppercase tracking-[0.14em] text-orange-700">Need worker</div></div>
                 <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4"><div className="text-2xl font-black text-blue-800">{counts.active}</div><div className="text-xs font-black uppercase tracking-[0.14em] text-blue-700">Assigned or active</div></div>
@@ -237,13 +237,13 @@ function JobsCommandContent() {
 
           <section className="mt-5 grid gap-4 md:grid-cols-4">
             <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Total jobs</div><div className="mt-3 text-3xl font-black tracking-[-0.06em]">{counts.total}</div></div>
-            <div className="rounded-[22px] border border-orange-200 bg-orange-50 p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-700">Needs dispatch</div><div className="mt-3 text-3xl font-black tracking-[-0.06em] text-orange-900">{counts.unassigned}</div></div>
-            <div className="rounded-[22px] border border-blue-200 bg-blue-50 p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">In motion</div><div className="mt-3 text-3xl font-black tracking-[-0.06em] text-blue-900">{counts.active}</div></div>
-            <div className="rounded-[22px] border border-emerald-200 bg-emerald-50 p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Ready to review</div><div className="mt-3 text-3xl font-black tracking-[-0.06em] text-emerald-900">{counts.completed}</div></div>
+            <div className="rounded-[22px] border border-orange-200 bg-orange-50 p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-700">Needs worker</div><div className="mt-3 text-3xl font-black tracking-[-0.06em] text-orange-900">{counts.unassigned}</div></div>
+            <div className="rounded-[22px] border border-blue-200 bg-blue-50 p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">Assigned / active</div><div className="mt-3 text-3xl font-black tracking-[-0.06em] text-blue-900">{counts.active}</div></div>
+            <div className="rounded-[22px] border border-emerald-200 bg-emerald-50 p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Completed / review</div><div className="mt-3 text-3xl font-black tracking-[-0.06em] text-emerald-900">{counts.completed}</div></div>
           </section>
 
           <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
-            <div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600">Job list</div><h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-slate-950">Open jobs</h2></div>{loading && <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">Loading…</span>}{error && <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700">Showing sample layout</span>}</div>
+            <div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600">Jobs</div><h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-slate-950">Jobs</h2></div>{loading && <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">Loading…</span>}{error && <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700">Showing sample layout</span>}</div>
             <div className="grid gap-4 xl:grid-cols-2">
               {list.map((job) => <JobCard key={jobId(job) || jobTitle(job)} job={job} onOpen={setActiveJob} />)}
             </div>
