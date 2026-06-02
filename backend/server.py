@@ -14168,6 +14168,7 @@ async def churvox_save_invoice_branding_final(payload: dict = Body(default={}), 
 # CHURVOX_DOCUMENT_BRANDING_ROUTES_END
 
 
+
 # CHURVOX_LOGO_UPLOAD_START
 def _churvox_logo_safe(value):
     if isinstance(value, list):
