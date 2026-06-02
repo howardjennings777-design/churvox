@@ -365,13 +365,6 @@ export default function CommandDeskQueuePage() {
     const rows = Array.isArray(res?.data?.data) ? res.data.data : Array.isArray(res?.data?.actions) ? res.data.actions : [];
     setItems(rows.map(normalize));
     setReport(res?.data?.report || null);
-      setSummary(res?.data?.summary || null);
-    setSummary(res?.data?.summary || null);
-      setSummary(res?.data?.summary || null);
-    setSummary(res?.data?.summary || null);
-      setSummary(res?.data?.summary || null);
-    setSummary(res?.data?.summary || null);
-      setSummary(res?.data?.summary || null);
     setSummary(res?.data?.summary || null);
   }, [get]);
 
@@ -385,9 +378,29 @@ export default function CommandDeskQueuePage() {
       const rows = Array.isArray(res?.data?.actions) ? res.data.actions : [];
       setItems(rows.map(normalize));
       setReport(res?.data?.report || null);
+      setSummary(res?.data?.summary || null);
       toast.success(`Rebuilt ${rows.length} slip${rows.length === 1 ? "" : "s"}`);
     } else {
       toast.error(res?.error || "Could not rebuild slips");
+    }
+  };
+
+  const repairCompletedJobs = async () => {
+    setBusy(true);
+    try {
+      const res = await post("/ai/operator/repair-completed-jobs", {});
+      const ok = res?.success && res?.data?.success !== false;
+
+      if (ok) {
+        toast.success(res?.data?.message || res?.message || "Completed jobs checked");
+        await load();
+      } else {
+        toast.error(res?.data?.error || res?.error || "Could not check completed jobs");
+      }
+    } catch (err) {
+      toast.error(err?.message || "Could not check completed jobs");
+    } finally {
+      setBusy(false);
     }
   };
 
