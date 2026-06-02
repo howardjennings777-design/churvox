@@ -16316,6 +16316,638 @@ async def stage6_approve_send_polished(action_id: str, payload: dict = Body(defa
 
 
 
+
+# CHURVOX_STAGE7_CREW_MAP_TIMESHEETS_START
+# Crew Map + timesheets:
+# Only active workers show on map. Start/pause/resume/finish writes timesheet state.
+
+STAGE7_ALLOWED_ROLES = {"owner", "employer", "admin", "manager", "office_admin", "office admin", "business_owner", "platform_owner", "worker", "payroll"}
+
+def _s7_txt(value, fallback=""):
+    return str(value or fallback or "").strip()
+
+def _s7_norm(value):
+    return _s7_txt(value).lower().replace(" ", "_").replace("-", "_")
+
+def _s7_now():
+    return datetime.now(timezone.utc)
+
+def _s7_num(value):
+    try:
+        if isinstance(value, str):
+            value = value.replace("$", "").replace(",", "").replace("NZD", "").strip()
+        return float(value or 0)
+    except Exception:
+        return 0.0
+
+def _s7_safe(value):
+    if isinstance(value, list):
+        return [_s7_safe(v) for v in value]
+    if isinstance(value, dict):
+        out = {}
+        for k, v in value.items():
+            out["id" if k == "_id" else k] = _s7_safe(v)
+        return out
+    try:
+        if isinstance(value, ObjectId):
+            return str(value)
+    except Exception:
+        pass
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    return value
+
+def _s7_parse_dt(value):
+    if hasattr(value, "isoformat"):
+        return value if getattr(value, "tzinfo", None) else value.replace(tzinfo=timezone.utc)
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+def _s7_role_ok(user):
+    role = _s7_txt((user or {}).get("role")).lower()
+    email = _s7_txt((user or {}).get("email")).lower()
+    return (
+        role in STAGE7_ALLOWED_ROLES
+        or email == "hello@churvox.com"
+        or (user or {}).get("is_admin") is True
+        or (user or {}).get("is_platform_owner") is True
+    )
+
+def _s7_is_worker(user):
+    return _s7_txt((user or {}).get("role")).lower() == "worker"
+
+def _s7_is_ownerish(user):
+    role = _s7_txt((user or {}).get("role")).lower()
+    email = _s7_txt((user or {}).get("email")).lower()
+    return (
+        role in {"owner", "employer", "admin", "manager", "office_admin", "office admin", "business_owner", "platform_owner", "payroll"}
+        or email == "hello@churvox.com"
+        or (user or {}).get("is_admin") is True
+        or (user or {}).get("is_platform_owner") is True
+    )
+
+async def _s7_business_id(current_user):
+    try:
+        bid = await get_user_business_id(current_user)
+        if bid:
+            return str(bid)
+    except Exception:
+        pass
+    return _s7_txt(
+        (current_user or {}).get("business_id")
+        or (current_user or {}).get("businessId")
+        or (current_user or {}).get("id")
+        or (current_user or {}).get("_id")
+        or (current_user or {}).get("user_id")
+    )
+
+def _s7_user_id(current_user):
+    return _s7_txt(
+        (current_user or {}).get("id")
+        or (current_user or {}).get("_id")
+        or (current_user or {}).get("user_id")
+        or (current_user or {}).get("email")
+    )
+
+def _s7_user_name(current_user):
+    return _s7_txt(
+        (current_user or {}).get("name")
+        or (current_user or {}).get("full_name")
+        or (current_user or {}).get("email"),
+        "Worker"
+    )
+
+def _s7_oid_query(record_id):
+    rid = _s7_txt(record_id)
+    ors = [
+        {"id": rid},
+        {"job_id": rid},
+        {"timesheet_id": rid},
+        {"worker_id": rid},
+        {"related_id": rid},
+        {"related_entity_id": rid},
+    ]
+    try:
+        if ObjectId.is_valid(rid):
+            ors.insert(0, {"_id": ObjectId(rid)})
+    except Exception:
+        pass
+    return {"$or": ors}
+
+def _s7_scope_query(business_id, current_user):
+    values = []
+    for raw in [
+        business_id,
+        (current_user or {}).get("business_id"),
+        (current_user or {}).get("businessId"),
+        (current_user or {}).get("id"),
+        (current_user or {}).get("_id"),
+        (current_user or {}).get("user_id"),
+        (current_user or {}).get("owner_id"),
+    ]:
+        if raw is None or str(raw).strip() == "":
+            continue
+        values.append(str(raw))
+        try:
+            if ObjectId.is_valid(str(raw)):
+                values.append(ObjectId(str(raw)))
+        except Exception:
+            pass
+
+    dedup = []
+    for value in values:
+        if value not in dedup:
+            dedup.append(value)
+
+    ors = []
+    for key in ["business_id", "businessId", "owner_id", "ownerId", "user_id", "created_by", "created_by_user_id", "employer_id", "account_id"]:
+        for value in dedup:
+            ors.append({key: value})
+
+    return {"$or": ors} if ors else {"business_id": str(business_id)}
+
+async def _s7_find_job(business_id, current_user, job_id):
+    scoped = {"$and": [_s7_scope_query(business_id, current_user), _s7_oid_query(job_id)]}
+    try:
+        job = await db.jobs.find_one(scoped)
+        if job:
+            return job
+    except Exception:
+        pass
+
+    if _s7_is_ownerish(current_user):
+        try:
+            return await db.jobs.find_one(_s7_oid_query(job_id))
+        except Exception:
+            return None
+    return None
+
+def _s7_job_id(job):
+    return str((job or {}).get("_id") or (job or {}).get("id") or (job or {}).get("job_id") or "")
+
+def _s7_job_title(job):
+    return _s7_txt(
+        (job or {}).get("service_type")
+        or (job or {}).get("job_type")
+        or (job or {}).get("title")
+        or (job or {}).get("job_title")
+        or (job or {}).get("job_name"),
+        "Job"
+    )
+
+def _s7_lat(payload, *keys):
+    for key in keys:
+        value = (payload or {}).get(key)
+        if value is not None and str(value).strip() != "":
+            return _s7_num(value)
+    loc = (payload or {}).get("location") or {}
+    for key in keys:
+        value = loc.get(key)
+        if value is not None and str(value).strip() != "":
+            return _s7_num(value)
+    return None
+
+def _s7_lng(payload, *keys):
+    return _s7_lat(payload, *keys)
+
+def _s7_minutes_between(start, end):
+    start_dt = _s7_parse_dt(start)
+    end_dt = _s7_parse_dt(end)
+    if not start_dt or not end_dt:
+        return 0
+    return max(0, int((end_dt - start_dt).total_seconds() // 60))
+
+async def _s7_active_timesheet_for_job(business_id, job_id, worker_id=None):
+    query = {
+        "business_id": str(business_id),
+        "job_id": str(job_id),
+        "status": {"$in": ["active", "paused"]},
+    }
+    if worker_id:
+        query["worker_id"] = str(worker_id)
+    return await db.timesheets.find_one(query, sort=[("started_at", -1)])
+
+async def _s7_start_job_flow(job_id, payload, current_user):
+    if not _s7_role_ok(current_user):
+        raise HTTPException(status_code=403, detail="Not allowed to start jobs")
+
+    business_id = await _s7_business_id(current_user)
+    job = await _s7_find_job(business_id, current_user, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    current_user_id = _s7_user_id(current_user)
+    assigned_worker_id = _s7_txt(job.get("assigned_worker_id") or job.get("worker_id"))
+    assigned_worker_name = _s7_txt(job.get("assigned_worker_name") or job.get("worker_name"))
+
+    if _s7_is_worker(current_user) and assigned_worker_id and assigned_worker_id not in {current_user_id, _s7_txt(current_user.get("email"))}:
+        raise HTTPException(status_code=403, detail="This job is assigned to another worker")
+
+    worker_id = assigned_worker_id or current_user_id
+    worker_name = assigned_worker_name or _s7_user_name(current_user)
+
+    existing = await _s7_active_timesheet_for_job(business_id, _s7_job_id(job), worker_id)
+    now = _s7_now()
+
+    lat = _s7_lat(payload, "lat", "latitude", "start_lat")
+    lng = _s7_lng(payload, "lng", "lon", "longitude", "start_lng")
+    accuracy = _s7_num((payload or {}).get("accuracy") or ((payload or {}).get("location") or {}).get("accuracy"))
+
+    location_status = "not_captured"
+    if lat is not None and lng is not None:
+        location_status = "captured"
+
+    if existing:
+        await db.timesheets.update_one({"_id": existing["_id"]}, {"$set": {
+            "status": "active",
+            "last_seen_at": now,
+            "last_lat": lat if lat is not None else existing.get("last_lat"),
+            "last_lng": lng if lng is not None else existing.get("last_lng"),
+            "last_accuracy": accuracy or existing.get("last_accuracy"),
+            "location_status": location_status if location_status == "captured" else existing.get("location_status", "not_captured"),
+            "updated_at": now,
+        }})
+        timesheet = await db.timesheets.find_one({"_id": existing["_id"]})
+    else:
+        timesheet_doc = {
+            "business_id": str(business_id),
+            "job_id": _s7_job_id(job),
+            "job_title": _s7_job_title(job),
+            "client_id": _s7_txt(job.get("client_id")),
+            "client_name": _s7_txt(job.get("client_name") or job.get("customer_name")),
+            "worker_id": str(worker_id),
+            "worker_name": worker_name,
+            "date": now.date().isoformat(),
+            "started_at": now,
+            "last_seen_at": now,
+            "last_lat": lat,
+            "last_lng": lng,
+            "last_accuracy": accuracy,
+            "start_lat": lat,
+            "start_lng": lng,
+            "start_accuracy": accuracy,
+            "location_status": location_status,
+            "paused_minutes": 0,
+            "total_minutes": 0,
+            "net_minutes": 0,
+            "hours": 0,
+            "pause_events": [],
+            "resume_events": [],
+            "status": "active",
+            "source": "stage7_active_job_tracking",
+            "created_at": now,
+            "updated_at": now,
+        }
+        result = await db.timesheets.insert_one(timesheet_doc)
+        timesheet_doc["_id"] = result.inserted_id
+        timesheet = timesheet_doc
+
+    await db.jobs.update_one({"_id": job["_id"]}, {"$set": {
+        "status": "in_progress",
+        "started_at": job.get("started_at") or now,
+        "timer_started_at": job.get("timer_started_at") or now,
+        "assigned_worker_id": str(worker_id),
+        "worker_id": str(worker_id),
+        "assigned_worker_name": worker_name,
+        "worker_name": worker_name,
+        "active_timesheet_id": str(timesheet.get("_id")),
+        "active_worker_lat": lat,
+        "active_worker_lng": lng,
+        "active_worker_last_seen_at": now,
+        "active_location_status": location_status,
+        "updated_at": now,
+    }})
+
+    return {
+        "success": True,
+        "message": "Job started. Worker is now visible on Crew Map.",
+        "job_id": _s7_job_id(job),
+        "timesheet": _s7_safe(timesheet),
+    }
+
+async def _s7_pause_job_flow(job_id, payload, current_user):
+    if not _s7_role_ok(current_user):
+        raise HTTPException(status_code=403, detail="Not allowed to pause jobs")
+
+    business_id = await _s7_business_id(current_user)
+    job = await _s7_find_job(business_id, current_user, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    worker_id = _s7_txt(job.get("assigned_worker_id") or job.get("worker_id") or _s7_user_id(current_user))
+    timesheet = await _s7_active_timesheet_for_job(business_id, _s7_job_id(job), worker_id)
+
+    if not timesheet:
+        return {"success": False, "error": "No active timesheet found for this job"}
+
+    now = _s7_now()
+    pause_event = {"paused_at": now, "reason": _s7_txt((payload or {}).get("reason") or (payload or {}).get("note"))}
+
+    await db.timesheets.update_one({"_id": timesheet["_id"]}, {
+        "$set": {"status": "paused", "paused_at": now, "updated_at": now, "last_seen_at": now},
+        "$push": {"pause_events": pause_event},
+    })
+
+    await db.jobs.update_one({"_id": job["_id"]}, {"$set": {
+        "status": "paused",
+        "paused_at": now,
+        "updated_at": now,
+    }})
+
+    updated = await db.timesheets.find_one({"_id": timesheet["_id"]})
+    return {"success": True, "message": "Job paused.", "timesheet": _s7_safe(updated)}
+
+async def _s7_resume_job_flow(job_id, payload, current_user):
+    if not _s7_role_ok(current_user):
+        raise HTTPException(status_code=403, detail="Not allowed to resume jobs")
+
+    business_id = await _s7_business_id(current_user)
+    job = await _s7_find_job(business_id, current_user, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    worker_id = _s7_txt(job.get("assigned_worker_id") or job.get("worker_id") or _s7_user_id(current_user))
+    timesheet = await _s7_active_timesheet_for_job(business_id, _s7_job_id(job), worker_id)
+
+    if not timesheet:
+        return {"success": False, "error": "No paused timesheet found for this job"}
+
+    now = _s7_now()
+    paused_at = _s7_parse_dt(timesheet.get("paused_at"))
+    existing_paused = int(_s7_num(timesheet.get("paused_minutes")))
+    added = _s7_minutes_between(paused_at, now) if paused_at else 0
+    total_paused = existing_paused + added
+
+    resume_event = {"resumed_at": now, "pause_minutes_added": added}
+
+    await db.timesheets.update_one({"_id": timesheet["_id"]}, {
+        "$set": {
+            "status": "active",
+            "paused_at": None,
+            "paused_minutes": total_paused,
+            "updated_at": now,
+            "last_seen_at": now,
+        },
+        "$push": {"resume_events": resume_event},
+    })
+
+    await db.jobs.update_one({"_id": job["_id"]}, {"$set": {
+        "status": "in_progress",
+        "resumed_at": now,
+        "paused_minutes": total_paused,
+        "updated_at": now,
+    }})
+
+    updated = await db.timesheets.find_one({"_id": timesheet["_id"]})
+    return {"success": True, "message": "Job resumed.", "timesheet": _s7_safe(updated)}
+
+async def _s7_finish_job_flow(job_id, payload, current_user):
+    if not _s7_role_ok(current_user):
+        raise HTTPException(status_code=403, detail="Not allowed to finish jobs")
+
+    business_id = await _s7_business_id(current_user)
+    job = await _s7_find_job(business_id, current_user, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    worker_id = _s7_txt(job.get("assigned_worker_id") or job.get("worker_id") or _s7_user_id(current_user))
+    timesheet = await _s7_active_timesheet_for_job(business_id, _s7_job_id(job), worker_id)
+
+    now = _s7_now()
+    lat = _s7_lat(payload, "lat", "latitude", "finish_lat")
+    lng = _s7_lng(payload, "lng", "lon", "longitude", "finish_lng")
+
+    if timesheet:
+        paused_minutes = int(_s7_num(timesheet.get("paused_minutes")))
+        if timesheet.get("status") == "paused" and timesheet.get("paused_at"):
+            paused_minutes += _s7_minutes_between(timesheet.get("paused_at"), now)
+
+        total_minutes = _s7_minutes_between(timesheet.get("started_at"), now)
+        net_minutes = max(0, total_minutes - paused_minutes)
+
+        await db.timesheets.update_one({"_id": timesheet["_id"]}, {"$set": {
+            "status": "pending_review",
+            "completed_at": now,
+            "finished_at": now,
+            "finish_lat": lat,
+            "finish_lng": lng,
+            "last_lat": lat if lat is not None else timesheet.get("last_lat"),
+            "last_lng": lng if lng is not None else timesheet.get("last_lng"),
+            "last_seen_at": now,
+            "paused_minutes": paused_minutes,
+            "total_minutes": total_minutes,
+            "net_minutes": net_minutes,
+            "hours": round(net_minutes / 60, 2) if net_minutes else 0,
+            "completion_notes": _s7_txt((payload or {}).get("notes") or (payload or {}).get("completion_notes") or (payload or {}).get("worker_notes")),
+            "updated_at": now,
+        }})
+        updated_timesheet = await db.timesheets.find_one({"_id": timesheet["_id"]})
+    else:
+        updated_timesheet = None
+
+    # Use Stage 5 completion flow if loaded so invoice/review slips are prepared too.
+    if "_s5_complete_job_flow" in globals():
+        result = await _s5_complete_job_flow(job_id, payload or {}, current_user)
+        if updated_timesheet:
+            result["timesheet"] = _s7_safe(updated_timesheet)
+        result["message"] = "Job finished. Worker removed from Crew Map and approval slips prepared."
+        return result
+
+    await db.jobs.update_one({"_id": job["_id"]}, {"$set": {
+        "status": "completed",
+        "completed": True,
+        "completed_at": now,
+        "finished_at": now,
+        "active_timesheet_id": None,
+        "active_worker_lat": None,
+        "active_worker_lng": None,
+        "active_worker_last_seen_at": None,
+        "updated_at": now,
+    }})
+
+    return {"success": True, "message": "Job finished. Worker removed from Crew Map.", "timesheet": _s7_safe(updated_timesheet)}
+
+async def _s7_update_location_flow(job_id, payload, current_user):
+    if not _s7_role_ok(current_user):
+        raise HTTPException(status_code=403, detail="Not allowed to update location")
+
+    business_id = await _s7_business_id(current_user)
+    job = await _s7_find_job(business_id, current_user, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    worker_id = _s7_txt(job.get("assigned_worker_id") or job.get("worker_id") or _s7_user_id(current_user))
+    timesheet = await _s7_active_timesheet_for_job(business_id, _s7_job_id(job), worker_id)
+    if not timesheet:
+        return {"success": False, "error": "Worker is not active on this job"}
+
+    now = _s7_now()
+    lat = _s7_lat(payload, "lat", "latitude")
+    lng = _s7_lng(payload, "lng", "lon", "longitude")
+    accuracy = _s7_num((payload or {}).get("accuracy") or ((payload or {}).get("location") or {}).get("accuracy"))
+
+    if lat is None or lng is None:
+        return {"success": False, "error": "Missing location"}
+
+    await db.timesheets.update_one({"_id": timesheet["_id"]}, {"$set": {
+        "last_lat": lat,
+        "last_lng": lng,
+        "last_accuracy": accuracy,
+        "last_seen_at": now,
+        "location_status": "captured",
+        "updated_at": now,
+    }})
+
+    await db.jobs.update_one({"_id": job["_id"]}, {"$set": {
+        "active_worker_lat": lat,
+        "active_worker_lng": lng,
+        "active_worker_last_seen_at": now,
+        "active_location_status": "captured",
+        "updated_at": now,
+    }})
+
+    updated = await db.timesheets.find_one({"_id": timesheet["_id"]})
+    return {"success": True, "message": "Location updated.", "timesheet": _s7_safe(updated)}
+
+@api_router.post("/jobs/{job_id}/start")
+@api_router.post("/worker/jobs/{job_id}/start")
+@api_router.post("/time/jobs/{job_id}/start")
+async def stage7_start_job(job_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    return await _s7_start_job_flow(job_id, payload or {}, current_user)
+
+@api_router.post("/jobs/{job_id}/pause")
+@api_router.post("/worker/jobs/{job_id}/pause")
+@api_router.post("/time/jobs/{job_id}/pause")
+async def stage7_pause_job(job_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    return await _s7_pause_job_flow(job_id, payload or {}, current_user)
+
+@api_router.post("/jobs/{job_id}/resume")
+@api_router.post("/worker/jobs/{job_id}/resume")
+@api_router.post("/time/jobs/{job_id}/resume")
+async def stage7_resume_job(job_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    return await _s7_resume_job_flow(job_id, payload or {}, current_user)
+
+@api_router.post("/jobs/{job_id}/finish-active")
+@api_router.post("/worker/jobs/{job_id}/finish-active")
+@api_router.post("/time/jobs/{job_id}/finish")
+async def stage7_finish_active_job(job_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    return await _s7_finish_job_flow(job_id, payload or {}, current_user)
+
+@api_router.post("/jobs/{job_id}/location")
+@api_router.post("/worker/jobs/{job_id}/location")
+@api_router.post("/time/jobs/{job_id}/location")
+async def stage7_update_job_location(job_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    return await _s7_update_location_flow(job_id, payload or {}, current_user)
+
+@api_router.get("/crew-map/active")
+@api_router.get("/worker-map/active")
+@api_router.get("/dispatch/active-workers")
+async def stage7_active_crew_map(current_user: dict = Depends(get_current_user)):
+    if not _s7_role_ok(current_user):
+        raise HTTPException(status_code=403, detail="Not allowed")
+
+    business_id = await _s7_business_id(current_user)
+    query = {
+        "$and": [
+            _s7_scope_query(business_id, current_user),
+            {"status": {"$in": ["active", "paused"]}},
+        ]
+    }
+
+    if _s7_is_worker(current_user):
+        query["$and"].append({"worker_id": _s7_user_id(current_user)})
+
+    rows = await db.timesheets.find(query).sort("last_seen_at", -1).to_list(length=250)
+
+    active = []
+    for row in rows:
+        job = await _s7_find_job(business_id, current_user, row.get("job_id"))
+        active.append({
+            "timesheet_id": str(row.get("_id")),
+            "job_id": _s7_txt(row.get("job_id")),
+            "job_title": _s7_txt(row.get("job_title") or _s7_job_title(job)),
+            "client_name": _s7_txt(row.get("client_name") or (job or {}).get("client_name") or (job or {}).get("customer_name")),
+            "worker_id": _s7_txt(row.get("worker_id")),
+            "worker_name": _s7_txt(row.get("worker_name"), "Worker"),
+            "status": row.get("status"),
+            "started_at": row.get("started_at"),
+            "paused_at": row.get("paused_at"),
+            "last_seen_at": row.get("last_seen_at"),
+            "lat": row.get("last_lat") if row.get("last_lat") is not None else row.get("start_lat"),
+            "lng": row.get("last_lng") if row.get("last_lng") is not None else row.get("start_lng"),
+            "accuracy": row.get("last_accuracy") or row.get("start_accuracy"),
+            "location_status": row.get("location_status", "not_captured"),
+            "net_minutes_so_far": max(0, _s7_minutes_between(row.get("started_at"), _s7_now()) - int(_s7_num(row.get("paused_minutes")))),
+            "job_address": _s7_txt((job or {}).get("job_address") or (job or {}).get("address") or (job or {}).get("site_address")),
+        })
+
+    return {
+        "success": True,
+        "active_workers": _s7_safe(active),
+        "data": _s7_safe(active),
+        "count": len(active),
+    }
+
+@api_router.get("/timesheets/summary")
+@api_router.get("/time/timesheets/summary")
+async def stage7_timesheet_summary(current_user: dict = Depends(get_current_user)):
+    if not _s7_role_ok(current_user):
+        raise HTTPException(status_code=403, detail="Not allowed")
+
+    business_id = await _s7_business_id(current_user)
+    query = {"$and": [_s7_scope_query(business_id, current_user)]}
+
+    if _s7_is_worker(current_user):
+        query["$and"].append({"worker_id": _s7_user_id(current_user)})
+
+    rows = await db.timesheets.find(query).sort("date", -1).to_list(length=1000)
+
+    by_day = {}
+    by_week = {}
+    for row in rows:
+        date = _s7_txt(row.get("date"))
+        if not date and row.get("started_at"):
+            try:
+                date = row.get("started_at").date().isoformat()
+            except Exception:
+                date = ""
+        if not date:
+            continue
+
+        minutes = int(_s7_num(row.get("net_minutes") or row.get("total_minutes")))
+        hours = round(minutes / 60, 2)
+
+        by_day.setdefault(date, {"date": date, "minutes": 0, "hours": 0, "jobs": 0})
+        by_day[date]["minutes"] += minutes
+        by_day[date]["hours"] = round(by_day[date]["minutes"] / 60, 2)
+        by_day[date]["jobs"] += 1
+
+        try:
+            dt = datetime.fromisoformat(date)
+            year, week, _ = dt.isocalendar()
+            wk = f"{year}-W{week:02d}"
+        except Exception:
+            wk = "unknown"
+
+        by_week.setdefault(wk, {"week": wk, "minutes": 0, "hours": 0, "jobs": 0})
+        by_week[wk]["minutes"] += minutes
+        by_week[wk]["hours"] = round(by_week[wk]["minutes"] / 60, 2)
+        by_week[wk]["jobs"] += 1
+
+    return {
+        "success": True,
+        "daily": list(by_day.values())[:60],
+        "weekly": list(by_week.values())[:26],
+        "records": _s7_safe(rows[:250]),
+    }
+# CHURVOX_STAGE7_CREW_MAP_TIMESHEETS_END
+
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")
