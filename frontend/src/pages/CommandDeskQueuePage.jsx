@@ -233,7 +233,7 @@ function ActionModal({ item, onClose, onChanged }) {
 
   const save = async () => {
     setBusy(true);
-    const res = await patch(`/ai/operator/actions/${item.id}`, form);
+    const res = await patch(`/ai/operator/slips/${item.id}`, form);
     setBusy(false);
     if (res?.success) {
       toast.success("Action saved");
@@ -352,7 +352,7 @@ function ActionModal({ item, onClose, onChanged }) {
   );
 }
 
-export default function CommandDeskAction queuePage() {
+export default function CommandDeskQueuePage() {
   const { get, post } = useApi();
   const [items, setItems] = React.useState([]);
   const [report, setReport] = React.useState(null);
@@ -361,7 +361,7 @@ export default function CommandDeskAction queuePage() {
   const [busy, setBusy] = React.useState(false);
 
   const load = React.useCallback(async () => {
-    const res = await get("/ai/operator/actions");
+    const res = await get("/ai/operator/slips");
     const rows = Array.isArray(res?.data?.data) ? res.data.data : Array.isArray(res?.data?.actions) ? res.data.actions : [];
     setItems(rows.map(normalize));
     setReport(res?.data?.report || null);
