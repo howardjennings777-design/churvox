@@ -257,22 +257,22 @@ function App() {
           <Toaster position="top-right" richColors />
           <FloatingBottomNav />
           <Routes>
-            <Route path="/operator-tools" element={<PlanTierRoute requiredPlan="pro" feature="Operator Tools"><OperatorToolsCommandPage /></PlanTierRoute>} />
-            <Route path="/launch-control" element={<BusinessRoute><LaunchCommandPage /></BusinessRoute>} />
-            <Route path="/sales-polish" element={<BusinessRoute><ConceptCFrame area="launch"><LaunchSalesPolishPage /></ConceptCFrame></BusinessRoute>} />
-            <Route path="/integration-proof" element={<BusinessRoute><ConceptCFrame area="integrations"><IntegrationProofPage /></ConceptCFrame></BusinessRoute>} />
-            <Route path="/launch-ops" element={<BusinessRoute><ConceptCFrame area="launch"><LaunchOpsPage /></ConceptCFrame></BusinessRoute>} />
-            <Route path="/backup-recovery" element={<BusinessRoute><ConceptCFrame area="launch"><BackupRecoveryPage /></ConceptCFrame></BusinessRoute>} />
-            <Route path="/polish-checklist" element={<BusinessRoute><ConceptCFrame area="launch"><PolishChecklistPage /></ConceptCFrame></BusinessRoute>} />
-            <Route path="/demo-mode" element={<BusinessRoute><ConceptCFrame area="demo"><DemoModePage /></ConceptCFrame></BusinessRoute>} />
-            <Route path="/sample-mode" element={<Navigate to="/demo-mode" replace />} />
+            <Route path="/operator-tools" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/launch-control" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/sales-polish" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/integration-proof" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/launch-ops" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/backup-recovery" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/polish-checklist" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/demo-mode" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/sample-mode" element={<Navigate to="/dashboard" replace />} />
             <Route path="/public/proof/:token" element={<PublicProofPackPage />} />
             <Route path="/offline-sync" element={<PrivateRoute><OfflineSyncPage /></PrivateRoute>} />
             <Route path="/dispatch-board" element={<Navigate to="/dispatch" replace />} />
             <Route path="/dispatch/map" element={<BusinessRoute><WorkerMapCommandPage /></BusinessRoute>} />
             <Route path="/crew-map" element={<BusinessRoute><WorkerMapCommandPage /></BusinessRoute>} />
-            <Route path="/message-approvals" element={<PlanTierRoute requiredPlan="pro" feature="AI approval queue"><MessageApprovalQueuePage /></PlanTierRoute>} />
-            <Route path="/trade-presets" element={<BusinessRoute><TradePresetsCommandPage /></BusinessRoute>} />
+            <Route path="/message-approvals" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/trade-presets" element={<Navigate to="/settings" replace />} />
             <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
@@ -305,10 +305,10 @@ function App() {
             <Route path="/jobs/new" element={<BusinessRoute><ConceptCFrame area="jobs"><JobFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/jobs/:id" element={<BusinessRoute><ConceptCFrame area="jobs"><JobDetailPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/jobs/:id/edit" element={<BusinessRoute><ConceptCFrame area="jobs"><JobFormPage /></ConceptCFrame></BusinessRoute>} />
-            <Route path="/dispatch" element={<BusinessRoute><DispatchCommandPage /></BusinessRoute>} />
-            <Route path="/integrations" element={<BusinessRoute><IntegrationsCommandPage /></BusinessRoute>} />
-            <Route path="/automation" element={<PlanTierRoute requiredPlan="pro" feature="Automation"><AutomationCommandPage /></PlanTierRoute>} />
-            <Route path="/pipeline" element={<BusinessRoute><ConceptCFrame area="dashboard"><PipelinePage /></ConceptCFrame></BusinessRoute>} />
+            <Route path="/dispatch" element={<Navigate to="/crew-map" replace />} />
+            <Route path="/integrations" element={<Navigate to="/settings" replace />} />
+            <Route path="/automation" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/pipeline" element={<Navigate to="/dashboard" replace />} />
             <Route path="/calendar" element={<Navigate to="/dispatch" replace />} />
             <Route path="/clients" element={<BusinessRoute><ConceptCFrame area="clients"><CustomerRecordsPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/clients/new" element={<BusinessRoute><ConceptCFrame area="clients"><ClientFormPage /></ConceptCFrame></BusinessRoute>} />
@@ -318,8 +318,8 @@ function App() {
             <Route path="/quotes/new" element={<BusinessRoute><ConceptCFrame area="quotes"><QuoteFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/quotes/:id" element={<BusinessRoute><ConceptCFrame area="quotes"><QuoteDetailPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/quotes/:id/edit" element={<BusinessRoute><ConceptCFrame area="quotes"><QuoteFormPage /></ConceptCFrame></BusinessRoute>} />
-            <Route path="/money-desk" element={<BusinessRoute><MoneyDeskCommandPage /></BusinessRoute>} />
-            <Route path="/money" element={<Navigate to="/money-desk" replace />} />
+            <Route path="/money-desk" element={<Navigate to="/invoices" replace />} />
+            <Route path="/money" element={<Navigate to="/invoices" replace />} />
             <Route path="/invoices" element={<BusinessRoute><InvoicesCommandPage /></BusinessRoute>} />
             <Route path="/invoices/new" element={<BusinessRoute><ConceptCFrame area="invoices"><InvoiceFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/invoices/:id" element={<BusinessRoute><ConceptCFrame area="invoices"><InvoiceDetailPage /></ConceptCFrame></BusinessRoute>} />
@@ -330,11 +330,11 @@ function App() {
             <Route path="/support" element={<PrivateRoute><SupportCommandPage /></PrivateRoute>} />
             <Route path="/trust" element={<Navigate to="/support" replace />} />
             <Route path="/plans" element={<OwnerRoute><PlansCommandPage /></OwnerRoute>} />
-            <Route path="/billing-confidence" element={<OwnerRoute><BillingCommandPage /></OwnerRoute>} />
+            <Route path="/billing-confidence" element={<Navigate to="/plans" replace />} />
             <Route path="/team" element={<PlanTierRoute requiredPlan="team" feature="Team workspace"><TeamCommandPage /></PlanTierRoute>} />
-            <Route path="/crew-ops" element={<PlanTierRoute requiredPlan="team" feature="Crew Ops"><CrewOpsCommandPage /></PlanTierRoute>} />
-            <Route path="/notifications" element={<BusinessRoute><NotificationsCommandPage /></BusinessRoute>} />
-            <Route path="/automation/runs" element={<TeamRoute><Navigate to="/dashboard" replace /></TeamRoute>} />
+            <Route path="/crew-ops" element={<Navigate to="/crew-map" replace />} />
+            <Route path="/notifications" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/automation/runs" element={<Navigate to="/dashboard" replace />} />
             <Route path="/payroll" element={<PlanTierRoute requiredPlan="enterprise" feature="Payroll workspace"><PayrollCommandPage /></PlanTierRoute>} />
             <Route path="/worker/jobs" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobsPage /></ConceptCFrame></WorkerRoute>} />
             <Route path="/worker/ops" element={<WorkerRoute><WorkerCommandPage /></WorkerRoute>} />

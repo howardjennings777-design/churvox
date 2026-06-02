@@ -4,16 +4,15 @@ import { InstallPrompt } from "./InstallPrompt";
 import { ChurvoxLogo } from "./ChurvoxLogo";
 
 const nav = [
-  ["/dashboard", "Command"],
+  ["/dashboard", "Command Board"],
   ["/jobs", "Jobs"],
+  ["/crew-map", "Crew Map"],
   ["/clients", "Clients"],
   ["/quotes", "Quotes"],
   ["/invoices", "Invoices"],
   ["/team", "Team"],
-  ["/payroll", "Payroll"],
-  ["/automation", "Automation"],
-  ["/reports", "Reports"],
   ["/settings", "Settings"],
+  ["/support", "Support"],
 ];
 
 export default function Layout({ children }) {
@@ -24,7 +23,7 @@ export default function Layout({ children }) {
           <ChurvoxLogo />
           <span>
             <b>Churvox</b>
-            <small>Workhorse Command</small>
+            <small>Command Desk</small>
           </span>
         </NavLink>
 

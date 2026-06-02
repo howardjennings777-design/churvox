@@ -7,8 +7,25 @@ import { businessSettingsCompletion, loadBusinessSettings, saveBusinessSettings 
 import API_BASE from "../lib/apiBase";
 
 const navGroups = [
-  { title: "Main", items: [["Command Board", "/dashboard", "CB"], ["Jobs", "/jobs", "JB"], ["Crew Map", "/crew-map", "MP"], ["Clients", "/clients", "CL"], ["Quotes", "/quotes", "QT"], ["Invoices", "/invoices", "IV"], ["Team", "/team", "TM"]] },
-  { title: "Account", items: [["Plans", "/plans", "PL"], ["Settings", "/settings", "ST"], ["Support", "/support", "?"]] },
+  {
+    title: "Main",
+    items: [
+      ["Command Board", "/dashboard", "CB"],
+      ["Jobs", "/jobs", "JB"],
+      ["Crew Map", "/crew-map", "MP"],
+      ["Clients", "/clients", "CL"],
+      ["Quotes", "/quotes", "QT"],
+      ["Invoices", "/invoices", "IV"],
+      ["Team", "/team", "TM"],
+    ],
+  },
+  {
+    title: "Account",
+    items: [
+      ["Settings", "/settings", "ST"],
+      ["Support", "/support", "?"],
+    ],
+  },
 ];
 
 const defaults = {

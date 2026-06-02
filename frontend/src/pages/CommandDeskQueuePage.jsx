@@ -6,14 +6,12 @@ import { useApi } from "../hooks/useApi";
 const nav = [
   ["Command Board", "/dashboard", "CB"],
   ["Jobs", "/jobs", "JB"],
-  ["Dispatch Board", "/dispatch", "DP"],
   ["Crew Map", "/crew-map", "MP"],
-  ["Client Workbench", "/clients", "CL"],
-  ["Quote Press", "/quotes", "QT"],
-  ["Invoice Forge", "/invoices", "IV"],
+  ["Clients", "/clients", "CL"],
+  ["Quotes", "/quotes", "QT"],
+  ["Invoices", "/invoices", "IV"],
   ["Team", "/team", "TM"],
-  ["Plan Command", "/plans", "PL"],
-  ["Control Settings", "/settings", "ST"],
+  ["Settings", "/settings", "ST"],
   ["Support", "/support", "?"],
 ];
 
