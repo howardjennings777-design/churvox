@@ -14532,6 +14532,777 @@ async def stage3_settings_health(current_user: dict = Depends(get_current_user))
 
 
 
+
+# CHURVOX_STAGE4_AI_DECISION_ENGINE_START
+# Real Command Board AI Decision Engine.
+# Scans jobs, clients, workers, quotes and invoices, then prepares owner-approval slips.
+
+STAGE4_DONE_STATUSES = {"completed", "approved", "executed", "rejected", "dismissed", "cancelled", "canceled"}
+STAGE4_OWNER_ROLES = {"owner", "employer", "admin", "manager", "office_admin", "office admin", "business_owner", "platform_owner"}
+
+def _s4_txt(value, fallback=""):
+    return str(value or fallback or "").strip()
+
+def _s4_norm(value):
+    return _s4_txt(value).lower().replace(" ", "_").replace("-", "_")
+
+def _s4_now():
+    return datetime.now(timezone.utc)
+
+def _s4_num(value):
+    try:
+        if isinstance(value, str):
+            value = value.replace("$", "").replace(",", "").replace("NZD", "").strip()
+        return float(value or 0)
+    except Exception:
+        return 0.0
+
+def _s4_money(value):
+    raw = _s4_txt(value)
+    if raw.startswith("$"):
+        return raw
+    amount = _s4_num(raw)
+    return f"${amount:,.2f}" if amount else ""
+
+def _s4_safe(value):
+    if isinstance(value, list):
+        return [_s4_safe(v) for v in value]
+    if isinstance(value, dict):
+        out = {}
+        for k, v in value.items():
+            out["id" if k == "_id" else k] = _s4_safe(v)
+        return out
+    try:
+        if isinstance(value, ObjectId):
+            return str(value)
+    except Exception:
+        pass
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    return value
+
+def _s4_role_ok(user):
+    role = _s4_txt((user or {}).get("role")).lower()
+    email = _s4_txt((user or {}).get("email")).lower()
+    return (
+        role in STAGE4_OWNER_ROLES
+        or email == "hello@churvox.com"
+        or (user or {}).get("is_admin") is True
+        or (user or {}).get("is_platform_owner") is True
+    )
+
+async def _s4_business_id(current_user):
+    try:
+        bid = await get_user_business_id(current_user)
+        if bid:
+            return str(bid)
+    except Exception:
+        pass
+    return _s4_txt(
+        (current_user or {}).get("business_id")
+        or (current_user or {}).get("businessId")
+        or (current_user or {}).get("id")
+        or (current_user or {}).get("_id")
+        or (current_user or {}).get("user_id")
+    )
+
+def _s4_scope_query(business_id, current_user):
+    values = []
+    for raw in [
+        business_id,
+        (current_user or {}).get("business_id"),
+        (current_user or {}).get("businessId"),
+        (current_user or {}).get("id"),
+        (current_user or {}).get("_id"),
+        (current_user or {}).get("user_id"),
+        (current_user or {}).get("owner_id"),
+    ]:
+        if raw is None or str(raw).strip() == "":
+            continue
+        values.append(str(raw))
+        try:
+            if ObjectId.is_valid(str(raw)):
+                values.append(ObjectId(str(raw)))
+        except Exception:
+            pass
+
+    dedup = []
+    for value in values:
+        if value not in dedup:
+            dedup.append(value)
+
+    ors = []
+    for key in ["business_id", "businessId", "owner_id", "ownerId", "user_id", "created_by", "created_by_user_id", "employer_id", "account_id"]:
+        for value in dedup:
+            ors.append({key: value})
+
+    email = _s4_txt((current_user or {}).get("email")).lower()
+    if email:
+        ors += [{"owner_email": email}, {"created_by_email": email}]
+
+    return {"$or": ors} if ors else {"business_id": str(business_id)}
+
+def _s4_oid_query(record_id):
+    rid = _s4_txt(record_id)
+    ors = [
+        {"id": rid},
+        {"job_id": rid},
+        {"quote_id": rid},
+        {"invoice_id": rid},
+        {"client_id": rid},
+        {"action_id": rid},
+        {"related_id": rid},
+        {"related_entity_id": rid},
+    ]
+    try:
+        if ObjectId.is_valid(rid):
+            ors.insert(0, {"_id": ObjectId(rid)})
+    except Exception:
+        pass
+    return {"$or": ors}
+
+def _s4_id(doc, *keys):
+    for key in keys:
+        value = (doc or {}).get(key)
+        if value:
+            return str(value)
+    return str((doc or {}).get("_id") or (doc or {}).get("id") or "")
+
+async def _s4_find_many(collection_name, business_id, current_user, limit=500):
+    coll = getattr(db, collection_name)
+    attempts = [("scoped", _s4_scope_query(business_id, current_user))]
+
+    attempts.append(("missing_scope", {
+        "$or": [
+            {"business_id": {"$exists": False}},
+            {"business_id": None},
+            {"business_id": ""},
+            {"owner_id": {"$exists": False}},
+            {"owner_id": None},
+            {"owner_id": ""},
+        ]
+    }))
+
+    if _s4_role_ok(current_user):
+        attempts.append(("owner_rescue_all", {}))
+
+    for mode, query in attempts:
+        try:
+            rows = await coll.find(query).sort("updated_at", -1).to_list(length=limit)
+        except Exception:
+            rows = []
+        if rows:
+            return rows, mode
+
+    return [], "none"
+
+async def _s4_find_client(business_id, current_user, client_id=None, name=None, email=None):
+    bases = []
+    if client_id:
+        bases.append(_s4_oid_query(client_id))
+    if name:
+        bases.append({"$or": [{"name": name}, {"client_name": name}, {"customer_name": name}]})
+    if email:
+        bases.append({"$or": [{"email": email}, {"customer_email": email}, {"client_email": email}]})
+
+    scope = _s4_scope_query(business_id, current_user)
+    for base in bases:
+        try:
+            found = await db.clients.find_one({"$and": [scope, base]})
+            if found:
+                return found
+        except Exception:
+            pass
+        if _s4_role_ok(current_user):
+            try:
+                found = await db.clients.find_one(base)
+                if found:
+                    return found
+            except Exception:
+                pass
+    return {}
+
+def _s4_job_title(job):
+    return _s4_txt(
+        (job or {}).get("service_type")
+        or (job or {}).get("job_type")
+        or (job or {}).get("title")
+        or (job or {}).get("job_title")
+        or (job or {}).get("job_name"),
+        "Job"
+    )
+
+def _s4_job_id(job):
+    return _s4_id(job, "job_id")
+
+def _s4_quote_id(quote):
+    return _s4_id(quote, "quote_id")
+
+def _s4_invoice_id(invoice):
+    return _s4_id(invoice, "invoice_id")
+
+def _s4_invoice_description(job, client=None, settings=None):
+    client = client or {}
+    settings = settings or {}
+
+    client_name = _s4_txt(
+        client.get("name")
+        or client.get("client_name")
+        or (job or {}).get("client_name")
+        or (job or {}).get("customer_name"),
+        "the customer"
+    )
+    title = _s4_job_title(job)
+    address = _s4_txt((job or {}).get("job_address") or (job or {}).get("address") or (job or {}).get("site_address") or client.get("address"))
+    notes = _s4_txt(
+        (job or {}).get("ai_invoice_description")
+        or (job or {}).get("invoice_description_draft")
+        or (job or {}).get("completion_notes")
+        or (job or {}).get("worker_notes")
+        or (job or {}).get("worker_note")
+        or (job or {}).get("notes")
+        or (job or {}).get("description")
+    )
+    industry = _s4_txt((settings or {}).get("trade_industry_type"), "service")
+
+    parts = [f"{title} completed for {client_name}."]
+    if address:
+        parts.append(f"Work location: {address}.")
+    if notes:
+        parts.append(f"Job notes: {notes}.")
+    parts.append(f"Invoice prepared from the completed {industry} job record.")
+    return "\n".join(parts)
+
+def _s4_required(action_type):
+    if action_type == "assign_worker":
+        return ["job_id", "job_title", "client_name", "job_address", "worker_id"]
+    if action_type == "job_review":
+        return ["job_id", "job_title", "client_name"]
+    if action_type == "create_invoice_draft":
+        return ["job_id", "job_title", "client_name", "description"]
+    if action_type == "send_invoice":
+        return ["invoice_id", "invoice_number", "customer_name", "customer_email", "total"]
+    if action_type == "invoice_reminder":
+        return ["invoice_id", "invoice_number", "customer_name", "customer_email", "amount_due", "message"]
+    if action_type == "quote_follow_up":
+        return ["quote_id", "quote_number", "customer_name", "customer_email", "message"]
+    return []
+
+def _s4_missing(action_type, payload):
+    return [key for key in _s4_required(action_type) if not _s4_txt((payload or {}).get(key))]
+
+def _s4_action_outcome(action_type):
+    if action_type == "assign_worker":
+        return "Churvox will assign the selected worker to this job and update the job status."
+    if action_type == "job_review":
+        return "Churvox will mark this job review as approved so the admin can move forward."
+    if action_type == "create_invoice_draft":
+        return "Churvox will create a draft invoice from this completed job. It will not email the customer yet."
+    if action_type == "send_invoice":
+        return "Churvox will email the invoice to the customer with a branded PDF attached."
+    if action_type == "invoice_reminder":
+        return "Churvox will email a payment reminder with the invoice PDF attached."
+    if action_type == "quote_follow_up":
+        return "Churvox will email the customer a quote follow-up message."
+    return "Churvox will complete this prepared action."
+
+async def _s4_settings(business_id, current_user):
+    try:
+        if "_stage3_branding" in globals():
+            return await _stage3_branding(business_id, current_user)
+    except Exception:
+        pass
+    try:
+        return await db.business_document_settings.find_one({"business_id": str(business_id)}) or {}
+    except Exception:
+        return {}
+
+async def _s4_worker_candidates(business_id, current_user, job, jobs):
+    users = []
+    for collection in ["business_users", "users"]:
+        try:
+            rows, _mode = await _s4_find_many(collection, business_id, current_user, 500)
+            users.extend(rows)
+        except Exception:
+            pass
+
+    active_worker_ids = set()
+    scheduled_worker_ids = set()
+    job_start = _s4_txt((job or {}).get("scheduled_at") or (job or {}).get("scheduled_date") or (job or {}).get("start_time"))
+
+    for other in jobs:
+        oid = _s4_job_id(other)
+        if oid == _s4_job_id(job):
+            continue
+        st = _s4_norm(other.get("status") or other.get("job_status"))
+        wid = _s4_txt(other.get("assigned_worker_id") or other.get("worker_id"))
+        if not wid:
+            continue
+        if st in {"active", "started", "in_progress", "paused"}:
+            active_worker_ids.add(wid)
+        other_start = _s4_txt(other.get("scheduled_at") or other.get("scheduled_date") or other.get("start_time"))
+        if job_start and other_start and job_start == other_start:
+            scheduled_worker_ids.add(wid)
+
+    job_region = _s4_txt(job.get("region") or job.get("area") or job.get("service_area")).lower()
+    seen = set()
+    candidates = []
+
+    for user in users:
+        role = _s4_txt(user.get("role")).lower()
+        if role not in {"worker", "manager", "office_admin", "office admin"}:
+            continue
+
+        wid = _s4_txt(user.get("_id") or user.get("id") or user.get("user_id") or user.get("email"))
+        if not wid or wid in seen:
+            continue
+        seen.add(wid)
+
+        score = 50
+        reasons = []
+
+        worker_region = _s4_txt(user.get("region") or user.get("area") or user.get("service_area")).lower()
+        if job_region and worker_region and job_region == worker_region:
+            score += 20
+            reasons.append("same area/region")
+        elif job_region and not worker_region:
+            score += 4
+            reasons.append("area not set but worker available")
+        else:
+            reasons.append("available worker")
+
+        if wid in active_worker_ids:
+            score -= 45
+            reasons.append("currently active on another job")
+        else:
+            score += 18
+            reasons.append("not on an active job")
+
+        if wid in scheduled_worker_ids:
+            score -= 30
+            reasons.append("possible schedule conflict")
+        else:
+            score += 12
+            reasons.append("no matching-time conflict found")
+
+        if _s4_txt(user.get("status")).lower() in {"inactive", "disabled", "archived"}:
+            score -= 100
+            reasons.append("worker inactive")
+
+        candidates.append({
+            "id": wid,
+            "name": _s4_txt(user.get("name") or user.get("full_name") or user.get("email"), "Worker"),
+            "email": _s4_txt(user.get("email")),
+            "region": _s4_txt(user.get("region") or user.get("area")),
+            "score": score,
+            "reason": ", ".join(reasons),
+            "has_conflict": wid in active_worker_ids or wid in scheduled_worker_ids,
+        })
+
+    candidates.sort(key=lambda item: item.get("score", 0), reverse=True)
+    return candidates[:10]
+
+async def _s4_insert_action(business_id, action_type, related_type, related_id, title, summary, payload, reason, confidence, source_records, checks):
+    payload = payload or {}
+    missing = _s4_missing(action_type, payload)
+    doc = {
+        "business_id": str(business_id),
+        "action_type": action_type,
+        "type": action_type,
+        "related_type": related_type,
+        "related_entity_id": str(related_id or ""),
+        "related_id": str(related_id or ""),
+        "title": title,
+        "summary": summary,
+        "reason": reason,
+        "ai_reason": reason,
+        "confidence": confidence,
+        "what_will_happen": _s4_action_outcome(action_type),
+        "source_records": source_records or [],
+        "payload": payload,
+        "draft_payload": payload,
+        "checks": checks or [],
+        "missing": missing,
+        "ready": len(missing) == 0,
+        "group": "ready" if not missing else "needs_details",
+        "status": "ready",
+        "source": "stage4_ai_decision_engine",
+        "created_at": _s4_now(),
+        "updated_at": _s4_now(),
+    }
+    result = await db.ai_operator_actions.insert_one(doc)
+    doc["_id"] = result.inserted_id
+    return doc
+
+async def _s4_clear_old_queue(business_id):
+    await db.ai_operator_actions.delete_many({
+        "business_id": str(business_id),
+        "status": {"$nin": list(STAGE4_DONE_STATUSES)},
+        "$or": [
+            {"source": {"$exists": False}},
+            {"source": {"$regex": "operator|slip|deep|strong|direct|stage4|decision", "$options": "i"}},
+            {"source": "stage4_ai_decision_engine"},
+        ],
+    })
+
+async def _s4_build_job_payload(business_id, current_user, job, settings):
+    client = await _s4_find_client(
+        business_id,
+        current_user,
+        client_id=job.get("client_id"),
+        name=job.get("client_name") or job.get("customer_name"),
+        email=job.get("client_email") or job.get("customer_email"),
+    )
+
+    client_name = _s4_txt(client.get("name") or client.get("client_name") or job.get("client_name") or job.get("customer_name"), "Client not set")
+    amount = _s4_num(job.get("fixed_price") or job.get("price") or job.get("job_price") or job.get("total") or job.get("amount") or job.get("subtotal"))
+
+    photos = 0
+    for key in ["photos", "photo_urls", "proof_photos", "attachments"]:
+        if isinstance(job.get(key), list):
+            photos += len(job.get(key))
+
+    return {
+        "job_id": _s4_job_id(job),
+        "job_title": _s4_job_title(job),
+        "client_id": _s4_txt(job.get("client_id")),
+        "client_name": client_name,
+        "customer_name": client_name,
+        "customer_email": _s4_txt(client.get("email") or job.get("customer_email") or job.get("client_email")),
+        "client_phone": _s4_txt(client.get("phone") or client.get("mobile") or job.get("client_phone")),
+        "client_address": _s4_txt(client.get("billing_address") or client.get("address")),
+        "job_address": _s4_txt(job.get("job_address") or job.get("address") or job.get("site_address") or client.get("address")),
+        "worker_id": _s4_txt(job.get("assigned_worker_id") or job.get("worker_id")),
+        "worker_name": _s4_txt(job.get("assigned_worker_name") or job.get("worker_name")),
+        "subtotal": amount if amount else "",
+        "price": _s4_money(amount),
+        "total": _s4_money(amount),
+        "description": _s4_invoice_description(job, client, settings),
+        "worker_note": _s4_txt(job.get("worker_notes") or job.get("worker_note") or job.get("completion_notes") or job.get("notes")),
+        "proof_summary": f"{photos} photo/proof item{'s' if photos != 1 else ''} attached" if photos else "No proof photos found",
+        "message": f"Hi {client_name}, your invoice for {_s4_job_title(job)} is ready.",
+    }
+
+async def _s4_rebuild(business_id, current_user):
+    await _s4_clear_old_queue(business_id)
+
+    settings = await _s4_settings(business_id, current_user)
+    jobs, jobs_mode = await _s4_find_many("jobs", business_id, current_user, 500)
+    quotes, quotes_mode = await _s4_find_many("quotes", business_id, current_user, 500)
+    invoices, invoices_mode = await _s4_find_many("invoices", business_id, current_user, 500)
+
+    actions = []
+    stats = {
+        "jobs_found": len(jobs),
+        "quotes_found": len(quotes),
+        "invoices_found": len(invoices),
+        "jobs_scope_mode": jobs_mode,
+        "quotes_scope_mode": quotes_mode,
+        "invoices_scope_mode": invoices_mode,
+        "worker_suggestions": 0,
+        "job_reviews": 0,
+        "invoice_drafts": 0,
+        "invoice_sends": 0,
+        "invoice_reminders": 0,
+        "quote_followups": 0,
+        "missing_info": 0,
+    }
+
+    # Existing invoice lookup by job.
+    invoiced_job_ids = set()
+    for inv in invoices:
+        if inv.get("job_id"):
+            invoiced_job_ids.add(str(inv.get("job_id")))
+
+    for job in jobs:
+        jid = _s4_job_id(job)
+        if not jid:
+            continue
+
+        status = _s4_norm(job.get("status") or job.get("job_status") or job.get("workflow_status"))
+        payload = await _s4_build_job_payload(business_id, current_user, job, settings)
+        assigned = _s4_txt(job.get("assigned_worker_id") or job.get("worker_id") or job.get("assigned_worker_name") or job.get("worker_name"))
+
+        source_records = [{"type": "job", "id": jid}]
+        if payload.get("client_id"):
+            source_records.append({"type": "client", "id": payload.get("client_id")})
+
+        is_done = status in {"completed", "done", "complete"} or job.get("completed_at") or job.get("completed") is True
+        is_cancelled = status in {"cancelled", "canceled", "archived"}
+
+        if not is_done and not is_cancelled and not assigned:
+            candidates = await _s4_worker_candidates(business_id, current_user, job, jobs)
+            rec = candidates[0] if candidates else {}
+            payload2 = {
+                **payload,
+                "available_workers": candidates,
+                "worker_id": _s4_txt(rec.get("id")),
+                "recommended_worker_name": _s4_txt(rec.get("name"), "No worker available"),
+                "conflict_check": _s4_txt(rec.get("reason"), "No worker available yet"),
+                "message": f"You have been assigned {payload['job_title']} for {payload['client_name']}. Address: {payload.get('job_address') or 'check job details'}.",
+            }
+            reason = f"I found an unassigned job. I suggest {payload2['recommended_worker_name']} because {payload2.get('conflict_check') or 'they appear available'}."
+            actions.append(await _s4_insert_action(
+                business_id,
+                "assign_worker",
+                "job",
+                jid,
+                f"Assign worker for {payload['job_title']}",
+                f"{payload['client_name']} · {payload['job_title']} · {payload.get('job_address') or 'No address'}",
+                payload2,
+                reason,
+                82 if candidates else 35,
+                source_records,
+                ["Job checked", "Client checked", "Worker availability checked", "Schedule conflict checked", "Owner can change worker before approving"],
+            ))
+            stats["worker_suggestions"] += 1
+
+        if is_done:
+            actions.append(await _s4_insert_action(
+                business_id,
+                "job_review",
+                "job",
+                jid,
+                f"Review completed job: {payload['job_title']}",
+                f"{payload['client_name']} · {payload['proof_summary']} · {payload.get('price') or 'No price'}",
+                payload,
+                "I found a completed job. I prepared the review using the client, job notes, proof/photos and pricing.",
+                88,
+                source_records,
+                ["Completion checked", "Client checked", "Worker notes checked", "Proof/photos checked", "Owner approval required"],
+            ))
+            stats["job_reviews"] += 1
+
+            if jid not in invoiced_job_ids:
+                actions.append(await _s4_insert_action(
+                    business_id,
+                    "create_invoice_draft",
+                    "job",
+                    jid,
+                    f"Create invoice for {payload['client_name']}",
+                    f"{payload['client_name']} · {payload['job_title']} · {payload.get('price') or 'Price missing'}",
+                    payload,
+                    "I found a completed job that does not appear to have an invoice yet. I wrote the invoice description from the job details.",
+                    86,
+                    source_records,
+                    ["Completed job checked", "Invoice duplicate checked", "Client details pulled", "AI invoice description prepared"],
+                ))
+                stats["invoice_drafts"] += 1
+
+    for invoice in invoices:
+        iid = _s4_invoice_id(invoice)
+        if not iid:
+            continue
+
+        status = _s4_norm(invoice.get("status") or invoice.get("payment_status"))
+        if status in {"paid", "void", "cancelled", "canceled"}:
+            continue
+
+        client = await _s4_find_client(
+            business_id,
+            current_user,
+            client_id=invoice.get("client_id"),
+            name=invoice.get("client_name") or invoice.get("customer_name"),
+            email=invoice.get("customer_email") or invoice.get("client_email"),
+        )
+
+        customer = _s4_txt(invoice.get("customer_name") or invoice.get("client_name") or client.get("name"), "Client")
+        total = _s4_money(invoice.get("total") or invoice.get("amount_due") or invoice.get("amount") or invoice.get("subtotal"))
+        invoice_no = _s4_txt(invoice.get("invoice_number") or invoice.get("number"), f"INV-{iid[-6:].upper()}")
+
+        payload = {
+            "invoice_id": iid,
+            "invoice_number": invoice_no,
+            "customer_name": customer,
+            "client_name": customer,
+            "customer_email": _s4_txt(invoice.get("customer_email") or invoice.get("client_email") or client.get("email")),
+            "client_phone": _s4_txt(client.get("phone") or client.get("mobile")),
+            "client_address": _s4_txt(client.get("billing_address") or client.get("address")),
+            "total": total,
+            "amount_due": total,
+            "due_date": _s4_txt(invoice.get("due_date")),
+            "description": _s4_txt(invoice.get("description") or invoice.get("notes") or invoice.get("line_description") or "Service work completed"),
+            "payment_url": _s4_txt(invoice.get("payment_url") or invoice.get("payment_link") or settings.get("payment_url")),
+            "message": f"Hi {customer}, your invoice {invoice_no}{f' for {total}' if total else ''} is ready.",
+        }
+
+        source_records = [{"type": "invoice", "id": iid}]
+        if invoice.get("client_id"):
+            source_records.append({"type": "client", "id": str(invoice.get("client_id"))})
+
+        if status in {"draft", "created", "ready", ""}:
+            actions.append(await _s4_insert_action(
+                business_id,
+                "send_invoice",
+                "invoice",
+                iid,
+                f"Send invoice {invoice_no} to {customer}",
+                f"{invoice_no} · {customer} · {total or 'No total'} · {payload.get('customer_email') or 'Email missing'}",
+                payload,
+                "I found a draft/ready invoice. I prepared the customer email and will attach the branded PDF after approval.",
+                84,
+                source_records,
+                ["Invoice checked", "Client email checked", "PDF branding checked", "Payment details checked", "Owner approval required"],
+            ))
+            stats["invoice_sends"] += 1
+
+        is_overdue = status in {"overdue", "unpaid"}
+        if is_overdue:
+            payload2 = {
+                **payload,
+                "message": f"Hi {customer}, friendly reminder invoice {invoice_no}{f' for {total}' if total else ''} is still open. Please let us know if you need another copy or have any questions.",
+            }
+            actions.append(await _s4_insert_action(
+                business_id,
+                "invoice_reminder",
+                "invoice",
+                iid,
+                f"Send payment reminder to {customer}",
+                f"{invoice_no} · {customer} · {total or 'No total'} · {payload2.get('customer_email') or 'Email missing'}",
+                payload2,
+                "I found an unpaid or overdue invoice. I prepared a friendly reminder with the invoice PDF attached.",
+                86,
+                source_records,
+                ["Unpaid invoice checked", "Client email checked", "Reminder drafted", "PDF attachment ready"],
+            ))
+            stats["invoice_reminders"] += 1
+
+    for quote in quotes:
+        qid = _s4_quote_id(quote)
+        if not qid:
+            continue
+
+        status = _s4_norm(quote.get("status"))
+        if status in {"accepted", "declined", "cancelled", "canceled", "paid", "converted"}:
+            continue
+
+        client = await _s4_find_client(
+            business_id,
+            current_user,
+            client_id=quote.get("client_id"),
+            name=quote.get("client_name") or quote.get("customer_name"),
+            email=quote.get("customer_email") or quote.get("client_email"),
+        )
+
+        customer = _s4_txt(client.get("name") or quote.get("client_name") or quote.get("customer_name"), "Client")
+        quote_no = _s4_txt(quote.get("quote_number") or quote.get("number"), f"QT-{qid[-6:].upper()}")
+        amount = _s4_money(quote.get("total") or quote.get("amount") or quote.get("subtotal"))
+
+        payload = {
+            "quote_id": qid,
+            "quote_number": quote_no,
+            "customer_name": customer,
+            "client_name": customer,
+            "customer_email": _s4_txt(client.get("email") or quote.get("customer_email") or quote.get("client_email")),
+            "client_phone": _s4_txt(client.get("phone") or client.get("mobile")),
+            "quote_amount": amount,
+            "description": _s4_txt(quote.get("description") or quote.get("notes") or "Quote prepared"),
+            "message": f"Hi {customer}, just checking in on {quote_no}{f' for {amount}' if amount else ''}. Happy to answer any questions or adjust the details if needed.",
+        }
+
+        source_records = [{"type": "quote", "id": qid}]
+        if quote.get("client_id"):
+            source_records.append({"type": "client", "id": str(quote.get("client_id"))})
+
+        actions.append(await _s4_insert_action(
+            business_id,
+            "quote_follow_up",
+            "quote",
+            qid,
+            f"Follow up quote with {customer}",
+            f"{quote_no} · {customer} · {amount or 'No amount'} · {payload.get('customer_email') or 'Email missing'}",
+            payload,
+            "I found an open quote that has not been accepted yet. I prepared a follow-up message for approval.",
+            78,
+            source_records,
+            ["Quote checked", "Client checked", "Message drafted", "Owner approval required"],
+        ))
+        stats["quote_followups"] += 1
+
+    stats["slips_created"] = len(actions)
+    stats["ready"] = len([a for a in actions if a.get("ready")])
+    stats["needs_details"] = len([a for a in actions if not a.get("ready")])
+    stats["missing_info"] = stats["needs_details"]
+
+    summary = {
+        "headline": "I checked the business and prepared the next actions.",
+        "items": [
+            f"{stats['worker_suggestions']} job assignment suggestion{'s' if stats['worker_suggestions'] != 1 else ''}",
+            f"{stats['invoice_drafts']} completed job invoice draft{'s' if stats['invoice_drafts'] != 1 else ''}",
+            f"{stats['invoice_sends']} invoice send approval{'s' if stats['invoice_sends'] != 1 else ''}",
+            f"{stats['invoice_reminders']} payment reminder{'s' if stats['invoice_reminders'] != 1 else ''}",
+            f"{stats['quote_followups']} quote follow-up{'s' if stats['quote_followups'] != 1 else ''}",
+        ],
+        "needs_attention": stats["needs_details"],
+    }
+
+    await db.ai_operator_rebuild_reports.insert_one({
+        "business_id": str(business_id),
+        "source": "stage4_ai_decision_engine",
+        "report": stats,
+        "summary": summary,
+        "created_at": _s4_now(),
+    })
+
+    return actions, stats, summary
+
+async def _s4_list_or_rebuild(business_id, current_user):
+    rows = await db.ai_operator_actions.find({
+        "business_id": str(business_id),
+        "source": "stage4_ai_decision_engine",
+        "status": {"$nin": list(STAGE4_DONE_STATUSES)},
+    }).sort("updated_at", -1).to_list(length=150)
+
+    report = await db.ai_operator_rebuild_reports.find_one(
+        {"business_id": str(business_id), "source": "stage4_ai_decision_engine"},
+        sort=[("created_at", -1)]
+    )
+
+    if rows:
+        return rows, (report or {}).get("report") or {}, (report or {}).get("summary") or {}
+
+    return await _s4_rebuild(business_id, current_user)
+
+@api_router.get("/ai/operator/slips")
+async def stage4_ai_operator_slips(current_user: dict = Depends(get_current_user)):
+    if not _s4_role_ok(current_user):
+        raise HTTPException(status_code=403, detail="Owner approval required")
+    business_id = await _s4_business_id(current_user)
+    rows, report, summary = await _s4_list_or_rebuild(business_id, current_user)
+    return {
+        "success": True,
+        "data": _s4_safe(rows),
+        "actions": _s4_safe(rows),
+        "report": _s4_safe(report),
+        "summary": _s4_safe(summary),
+    }
+
+@api_router.post("/ai/operator/rebuild-slips")
+async def stage4_rebuild_slips(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    if not _s4_role_ok(current_user):
+        raise HTTPException(status_code=403, detail="Owner approval required")
+    business_id = await _s4_business_id(current_user)
+    rows, report, summary = await _s4_rebuild(business_id, current_user)
+    return {
+        "success": True,
+        "created": len(rows),
+        "data": _s4_safe(rows),
+        "actions": _s4_safe(rows),
+        "report": _s4_safe(report),
+        "summary": _s4_safe(summary),
+    }
+
+@api_router.get("/ai/operator/decision-summary")
+async def stage4_decision_summary(current_user: dict = Depends(get_current_user)):
+    if not _s4_role_ok(current_user):
+        raise HTTPException(status_code=403, detail="Owner approval required")
+    business_id = await _s4_business_id(current_user)
+    _rows, report, summary = await _s4_list_or_rebuild(business_id, current_user)
+    return {"success": True, "report": _s4_safe(report), "summary": _s4_safe(summary)}
+# CHURVOX_STAGE4_AI_DECISION_ENGINE_END
+
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")

@@ -142,6 +142,10 @@ function normalize(action) {
     missing,
     title: action.title || typeLabel(type),
     summary: action.summary || "Prepared from connected Churvox records.",
+    reason: action.reason || action.ai_reason || action.explanation || "",
+    confidence: action.confidence || "",
+    what_will_happen: action.what_will_happen || "",
+    source_records: action.source_records || [],
     checks: action.checks || ["Client record checked", "Related record checked", "Owner approval required"],
     form,
   };
@@ -295,6 +299,13 @@ function SlipModal({ item, onClose, onChanged }) {
               </p>
             </div>
 
+            <div className="rounded-[24px] border border-blue-200 bg-blue-50 p-5">
+              <h2 className="text-xl font-black text-blue-950">Why Churvox suggests this</h2>
+              <p className="mt-2 text-sm font-bold leading-6 text-blue-900">{item.reason || "Churvox found this action from your business records."}</p>
+              {item.confidence ? <div className="mt-3 inline-flex rounded-full bg-white px-3 py-1 text-xs font-black text-blue-700">Confidence {item.confidence}%</div> : null}
+              {item.what_will_happen ? <div className="mt-3 rounded-2xl bg-white p-3 text-sm font-black text-slate-800">When approved: {item.what_will_happen}</div> : null}
+            </div>
+
             <div className="rounded-[24px] border border-slate-200 bg-white p-5">
               <h2 className="text-xl font-black">Everything Churvox pulled</h2>
               <p className="mt-1 text-sm font-bold text-slate-500">Fill missing fields here or fix the original client/job/quote/invoice record and rebuild.</p>
@@ -308,6 +319,18 @@ function SlipModal({ item, onClose, onChanged }) {
               <div className="mt-3 grid gap-2 md:grid-cols-2">
                 {item.checks.map((check) => <div key={check} className="rounded-xl bg-slate-50 px-3 py-2 text-sm font-bold">✓ {check}</div>)}
               </div>
+              {item.source_records?.length ? (
+                <div className="mt-4 rounded-2xl bg-slate-50 p-3">
+                  <div className="text-[10px] font-black uppercase tracking-[.16em] text-slate-500">Source records</div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {item.source_records.map((record, index) => (
+                      <span key={`${record.type || "record"}-${record.id || index}`} className="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-700">
+                        {record.type || "record"} · {String(record.id || "").slice(-8)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
           </section>
 
@@ -330,6 +353,7 @@ export default function CommandDeskQueuePage() {
   const { get, post } = useApi();
   const [items, setItems] = React.useState([]);
   const [report, setReport] = React.useState(null);
+  const [summary, setSummary] = React.useState(null);
   const [open, setOpen] = React.useState(null);
   const [busy, setBusy] = React.useState(false);
 
@@ -338,6 +362,8 @@ export default function CommandDeskQueuePage() {
     const rows = Array.isArray(res?.data?.data) ? res.data.data : Array.isArray(res?.data?.actions) ? res.data.actions : [];
     setItems(rows.map(normalize));
     setReport(res?.data?.report || null);
+      setSummary(res?.data?.summary || null);
+    setSummary(res?.data?.summary || null);
   }, [get]);
 
   React.useEffect(() => { load(); }, [load]);
@@ -391,6 +417,20 @@ export default function CommandDeskQueuePage() {
             </aside>
           </section>
 
+          {summary && (
+            <section className="mt-5 rounded-[28px] border border-blue-200 bg-blue-50 p-5">
+              <div className="text-[10px] font-black uppercase tracking-[.2em] text-blue-700">AI decision engine</div>
+              <h2 className="mt-2 text-3xl font-black tracking-[-.06em] text-blue-950">Today Churvox found</h2>
+              <p className="mt-2 text-sm font-bold text-blue-900">{summary.headline || "I checked the business and prepared the next actions."}</p>
+              <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-5">
+                {(summary.items || []).map((item) => (
+                  <div key={item} className="rounded-2xl bg-white p-3 text-sm font-black text-slate-800">{item}</div>
+                ))}
+              </div>
+              {summary.needs_attention ? <div className="mt-3 rounded-2xl bg-amber-100 p-3 text-sm font-black text-amber-900">{summary.needs_attention} slip{summary.needs_attention === 1 ? "" : "s"} need details before approval.</div> : null}
+            </section>
+          )}
+
           {report && (
             <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5">
               <h2 className="text-2xl font-black">What Churvox can see</h2>
@@ -415,6 +455,7 @@ export default function CommandDeskQueuePage() {
                   <p className="mt-2 text-sm font-bold text-slate-600">
                     {item.ready ? item.summary : `Missing: ${item.missing.map((key) => labels[key] || key).join(", ")}`}
                   </p>
+                  {item.reason ? <p className="mt-2 text-xs font-bold leading-5 text-slate-500">{item.reason}</p> : null}
                   <div className="mt-3 inline-flex rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white">Open slip</div>
                 </button>
               ))}
