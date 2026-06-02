@@ -13735,20 +13735,23 @@ async def churvox_remove_business_logo(current_user: dict = Depends(get_current_
 
 
 
+
+
+
 # CHURVOX_FINAL_APPROVE_SEND_START
-# Clean final approve/send route.
-# This route deliberately stays small and uses the already-working Churvox PDF/email sender.
+# Stage 1 stable approve/send endpoint.
+# Small, safe, and uses the already-working email/PDF sender.
 
 FINAL_APPROVE_SEND_TYPES = {"send_invoice", "invoice_reminder", "quote_follow_up"}
 FINAL_OWNER_ROLES = {"owner", "employer", "admin", "manager", "office_admin", "office admin", "business_owner", "platform_owner"}
 
-def _final_clean_txt(value, fallback=""):
+def _stage1_txt(value, fallback=""):
     return str(value or fallback or "").strip()
 
-def _final_clean_now():
+def _stage1_now():
     return datetime.now(timezone.utc)
 
-def _final_clean_num(value):
+def _stage1_num(value):
     try:
         if isinstance(value, str):
             value = value.replace("$", "").replace(",", "").replace("NZD", "").strip()
@@ -13756,9 +13759,23 @@ def _final_clean_num(value):
     except Exception:
         return 0.0
 
-def _final_clean_role_ok(user):
-    role = _final_clean_txt((user or {}).get("role")).lower()
-    email = _final_clean_txt((user or {}).get("email")).lower()
+def _stage1_safe(value):
+    if isinstance(value, list):
+        return [_stage1_safe(v) for v in value]
+    if isinstance(value, dict):
+        return {k: _stage1_safe(v) for k, v in value.items()}
+    try:
+        if isinstance(value, ObjectId):
+            return str(value)
+    except Exception:
+        pass
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    return value
+
+def _stage1_role_ok(user):
+    role = _stage1_txt((user or {}).get("role")).lower()
+    email = _stage1_txt((user or {}).get("email")).lower()
     return (
         role in FINAL_OWNER_ROLES
         or email == "hello@churvox.com"
@@ -13766,8 +13783,8 @@ def _final_clean_role_ok(user):
         or (user or {}).get("is_platform_owner") is True
     )
 
-def _final_clean_oid_query(record_id):
-    rid = _final_clean_txt(record_id)
+def _stage1_oid_query(record_id):
+    rid = _stage1_txt(record_id)
     ors = [
         {"id": rid},
         {"action_id": rid},
@@ -13784,10 +13801,10 @@ def _final_clean_oid_query(record_id):
         pass
     return {"$or": ors}
 
-def _final_clean_action_type(action):
-    return _final_clean_txt((action or {}).get("action_type") or (action or {}).get("type")).replace("-", "_").lower()
+def _stage1_action_type(action):
+    return _stage1_txt((action or {}).get("action_type") or (action or {}).get("type")).replace("-", "_").lower()
 
-def _final_clean_required(action_type):
+def _stage1_required(action_type):
     if action_type == "assign_worker":
         return ["job_id", "worker_id"]
     if action_type == "create_invoice_draft":
@@ -13802,17 +13819,17 @@ def _final_clean_required(action_type):
         return ["quote_id", "customer_email", "message"]
     return []
 
-def _final_clean_missing(action_type, payload):
-    return [key for key in _final_clean_required(action_type) if not _final_clean_txt((payload or {}).get(key))]
+def _stage1_missing(action_type, payload):
+    return [key for key in _stage1_required(action_type) if not _stage1_txt((payload or {}).get(key))]
 
-async def _final_clean_business_id(current_user):
+async def _stage1_business_id(current_user):
     try:
         bid = await get_user_business_id(current_user)
         if bid:
             return str(bid)
     except Exception:
         pass
-    return _final_clean_txt(
+    return _stage1_txt(
         (current_user or {}).get("business_id")
         or (current_user or {}).get("businessId")
         or (current_user or {}).get("id")
@@ -13820,32 +13837,18 @@ async def _final_clean_business_id(current_user):
         or (current_user or {}).get("user_id")
     )
 
-def _final_clean_safe(value):
-    if isinstance(value, list):
-        return [_final_clean_safe(v) for v in value]
-    if isinstance(value, dict):
-        return {k: _final_clean_safe(v) for k, v in value.items()}
-    try:
-        if isinstance(value, ObjectId):
-            return str(value)
-    except Exception:
-        pass
-    if hasattr(value, "isoformat"):
-        return value.isoformat()
-    return value
-
 @api_router.post("/ai/operator/actions/{action_id}/approve-send-final")
-async def final_approve_send_action_clean(action_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
-    if not _final_clean_role_ok(current_user):
+async def stage1_final_approve_send_action(action_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    if not _stage1_role_ok(current_user):
         raise HTTPException(status_code=403, detail="Owner approval required")
 
-    business_id = await _final_clean_business_id(current_user)
+    business_id = await _stage1_business_id(current_user)
 
-    action = await db.ai_operator_actions.find_one(_final_clean_oid_query(action_id))
+    action = await db.ai_operator_actions.find_one(_stage1_oid_query(action_id))
     if not action:
         raise HTTPException(status_code=404, detail="Slip not found")
 
-    action_type = _final_clean_action_type(action)
+    action_type = _stage1_action_type(action)
     merged = {**(action.get("payload") or {}), **(action.get("draft_payload") or {}), **(payload or {})}
     merged.setdefault("business_id", str(business_id))
 
@@ -13856,7 +13859,7 @@ async def final_approve_send_action_clean(action_id: str, payload: dict = Body(d
     if action_type in {"assign_worker", "create_invoice_draft", "job_review"}:
         merged.setdefault("job_id", action.get("related_entity_id") or action.get("related_id"))
 
-    missing = _final_clean_missing(action_type, merged)
+    missing = _stage1_missing(action_type, merged)
     if missing:
         return {"success": False, "error": "Missing: " + ", ".join(missing), "missing": missing, "close": False}
 
@@ -13874,21 +13877,21 @@ async def final_approve_send_action_clean(action_id: str, payload: dict = Body(d
         email_sent = True
         await db.ai_operator_actions.update_one({"_id": action["_id"]}, {"$set": {
             "email_sent": True,
-            "email_sent_at": _final_clean_now(),
-            "email_send_result": _final_clean_safe(send_result),
-            "updated_at": _final_clean_now(),
+            "email_sent_at": _stage1_now(),
+            "email_send_result": _stage1_safe(send_result),
+            "updated_at": _stage1_now(),
         }})
 
     elif action_type == "assign_worker":
         jid = merged.get("job_id") or action.get("related_entity_id")
         worker_id = merged.get("worker_id")
         if jid and worker_id:
-            await db.jobs.update_one(_final_clean_oid_query(jid), {"$set": {
+            await db.jobs.update_one(_stage1_oid_query(jid), {"$set": {
                 "assigned_worker_id": str(worker_id),
                 "worker_id": str(worker_id),
                 "assigned_worker_name": merged.get("recommended_worker_name") or merged.get("worker_name") or "Assigned worker",
                 "status": "assigned",
-                "updated_at": _final_clean_now(),
+                "updated_at": _stage1_now(),
             }})
 
     elif action_type == "create_invoice_draft":
@@ -13910,20 +13913,20 @@ async def final_approve_send_action_clean(action_id: str, payload: dict = Body(d
                 "customer_name": merged.get("customer_name") or merged.get("client_name"),
                 "customer_email": merged.get("customer_email"),
                 "description": description,
-                "subtotal": _final_clean_num(merged.get("subtotal") or merged.get("price")),
-                "total": _final_clean_num(merged.get("total") or merged.get("subtotal") or merged.get("price")),
+                "subtotal": _stage1_num(merged.get("subtotal") or merged.get("price")),
+                "total": _stage1_num(merged.get("total") or merged.get("subtotal") or merged.get("price")),
                 "status": "draft",
                 "source": "approved_command_board_slip",
-                "created_at": _final_clean_now(),
-                "updated_at": _final_clean_now(),
+                "created_at": _stage1_now(),
+                "updated_at": _stage1_now(),
             })
 
     await db.ai_operator_actions.update_one({"_id": action["_id"]}, {"$set": {
         "status": "completed",
-        "completed_at": _final_clean_now(),
-        "executed_by": _final_clean_txt(current_user.get("email")),
+        "completed_at": _stage1_now(),
+        "executed_by": _stage1_txt(current_user.get("email")),
         "final_approved": True,
-        "updated_at": _final_clean_now(),
+        "updated_at": _stage1_now(),
     }})
 
     if email_sent:
