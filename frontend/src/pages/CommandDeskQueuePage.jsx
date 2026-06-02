@@ -366,6 +366,8 @@ export default function CommandDeskQueuePage() {
     setSummary(res?.data?.summary || null);
       setSummary(res?.data?.summary || null);
     setSummary(res?.data?.summary || null);
+      setSummary(res?.data?.summary || null);
+    setSummary(res?.data?.summary || null);
   }, [get]);
 
   React.useEffect(() => { load(); }, [load]);
@@ -457,6 +459,7 @@ export default function CommandDeskQueuePage() {
                   <p className="mt-2 text-sm font-bold text-slate-600">
                     {item.ready ? item.summary : `Missing: ${item.missing.map((key) => labels[key] || key).join(", ")}`}
                   </p>
+                  {item.reason ? <p className="mt-2 text-xs font-bold leading-5 text-slate-500">{item.reason}</p> : null}
                   {item.reason ? <p className="mt-2 text-xs font-bold leading-5 text-slate-500">{item.reason}</p> : null}
                   {item.reason ? <p className="mt-2 text-xs font-bold leading-5 text-slate-500">{item.reason}</p> : null}
                   <div className="mt-3 inline-flex rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white">Open slip</div>
