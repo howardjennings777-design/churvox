@@ -387,6 +387,7 @@ function SettingsCommandContent() {
   const [activeSlip, setActiveSlip] = useState(false);
   const [lastSaved, setLastSaved] = useState("");
   const [backendHealth, setBackendHealth] = useState(null);
+  const [backendHealth, setBackendHealth] = useState(null);
 
   useEffect(() => {
     let alive = true;
