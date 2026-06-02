@@ -70,6 +70,7 @@ import DemoModePage from "./pages/DemoModePage";
 import PlansCommandPage from "./pages/PlansCommandPage";
 import { OnboardingCommandPage, TradePresetsCommandPage, OperatorToolsCommandPage, BillingCommandPage, CrewOpsCommandPage, LaunchCommandPage, WorkerCommandPage } from "./pages/CommandRestPages";
 import { hasPlanAtLeast, nicePlanName, requiredPlanLabel } from "./config/churvoxPlans";
+import ClientWorkbenchCommandPage from "./pages/ClientWorkbenchCommandPage";
 
 const Spinner = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -310,6 +311,7 @@ function App() {
             <Route path="/automation" element={<Navigate to="/dashboard" replace />} />
             <Route path="/pipeline" element={<Navigate to="/dashboard" replace />} />
             <Route path="/calendar" element={<Navigate to="/dispatch" replace />} />
+            <Route path="/clients/:clientId/workbench" element={<BusinessRoute><ClientWorkbenchCommandPage /></BusinessRoute>} />
             <Route path="/clients" element={<BusinessRoute><ConceptCFrame area="clients"><CustomerRecordsPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/clients/new" element={<BusinessRoute><ConceptCFrame area="clients"><ClientFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/clients/:id" element={<BusinessRoute><ConceptCFrame area="clients"><ClientDetailPage /></ConceptCFrame></BusinessRoute>} />

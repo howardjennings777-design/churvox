@@ -16948,6 +16948,573 @@ async def stage7_timesheet_summary(current_user: dict = Depends(get_current_user
 
 
 
+
+# CHURVOX_STAGE8_CLIENT_WORKBENCH_START
+# Client Workbench:
+# client -> jobs + quotes + invoices + unpaid totals + AI summary + suggested actions.
+
+STAGE8_ALLOWED_ROLES = {"owner", "employer", "admin", "manager", "office_admin", "office admin", "business_owner", "platform_owner"}
+
+def _s8_txt(value, fallback=""):
+    return str(value or fallback or "").strip()
+
+def _s8_norm(value):
+    return _s8_txt(value).lower().replace(" ", "_").replace("-", "_")
+
+def _s8_now():
+    return datetime.now(timezone.utc)
+
+def _s8_num(value):
+    try:
+        if isinstance(value, str):
+            value = value.replace("$", "").replace(",", "").replace("NZD", "").strip()
+        return float(value or 0)
+    except Exception:
+        return 0.0
+
+def _s8_money(value):
+    amount = _s8_num(value)
+    return f"${amount:,.2f}" if amount else "$0.00"
+
+def _s8_safe(value):
+    if isinstance(value, list):
+        return [_s8_safe(v) for v in value]
+    if isinstance(value, dict):
+        out = {}
+        for k, v in value.items():
+            out["id" if k == "_id" else k] = _s8_safe(v)
+        return out
+    try:
+        if isinstance(value, ObjectId):
+            return str(value)
+    except Exception:
+        pass
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    return value
+
+def _s8_role_ok(user):
+    role = _s8_txt((user or {}).get("role")).lower()
+    email = _s8_txt((user or {}).get("email")).lower()
+    return (
+        role in STAGE8_ALLOWED_ROLES
+        or email == "hello@churvox.com"
+        or (user or {}).get("is_admin") is True
+        or (user or {}).get("is_platform_owner") is True
+    )
+
+async def _s8_business_id(current_user):
+    try:
+        bid = await get_user_business_id(current_user)
+        if bid:
+            return str(bid)
+    except Exception:
+        pass
+    return _s8_txt(
+        (current_user or {}).get("business_id")
+        or (current_user or {}).get("businessId")
+        or (current_user or {}).get("id")
+        or (current_user or {}).get("_id")
+        or (current_user or {}).get("user_id")
+    )
+
+def _s8_oid_query(record_id):
+    rid = _s8_txt(record_id)
+    ors = [
+        {"id": rid},
+        {"client_id": rid},
+        {"customer_id": rid},
+        {"related_id": rid},
+        {"related_entity_id": rid},
+    ]
+    try:
+        if ObjectId.is_valid(rid):
+            ors.insert(0, {"_id": ObjectId(rid)})
+    except Exception:
+        pass
+    return {"$or": ors}
+
+def _s8_scope_query(business_id, current_user):
+    values = []
+    for raw in [
+        business_id,
+        (current_user or {}).get("business_id"),
+        (current_user or {}).get("businessId"),
+        (current_user or {}).get("id"),
+        (current_user or {}).get("_id"),
+        (current_user or {}).get("user_id"),
+        (current_user or {}).get("owner_id"),
+    ]:
+        if raw is None or str(raw).strip() == "":
+            continue
+        values.append(str(raw))
+        try:
+            if ObjectId.is_valid(str(raw)):
+                values.append(ObjectId(str(raw)))
+        except Exception:
+            pass
+
+    dedup = []
+    for value in values:
+        if value not in dedup:
+            dedup.append(value)
+
+    ors = []
+    for key in ["business_id", "businessId", "owner_id", "ownerId", "user_id", "created_by", "created_by_user_id", "employer_id", "account_id"]:
+        for value in dedup:
+            ors.append({key: value})
+
+    return {"$or": ors} if ors else {"business_id": str(business_id)}
+
+def _s8_id(doc, *keys):
+    for key in keys:
+        value = (doc or {}).get(key)
+        if value:
+            return str(value)
+    return str((doc or {}).get("_id") or (doc or {}).get("id") or "")
+
+def _s8_client_name(client):
+    return _s8_txt(
+        (client or {}).get("name")
+        or (client or {}).get("client_name")
+        or (client or {}).get("customer_name")
+        or (client or {}).get("company_name"),
+        "Client"
+    )
+
+def _s8_client_email(client):
+    return _s8_txt(
+        (client or {}).get("email")
+        or (client or {}).get("client_email")
+        or (client or {}).get("customer_email")
+    )
+
+def _s8_client_phone(client):
+    return _s8_txt(
+        (client or {}).get("phone")
+        or (client or {}).get("mobile")
+        or (client or {}).get("client_phone")
+        or (client or {}).get("customer_phone")
+    )
+
+def _s8_client_address(client):
+    return _s8_txt(
+        (client or {}).get("billing_address")
+        or (client or {}).get("site_address")
+        or (client or {}).get("address")
+        or (client or {}).get("street_address")
+    )
+
+async def _s8_find_client(business_id, current_user, client_id):
+    scoped = {"$and": [_s8_scope_query(business_id, current_user), _s8_oid_query(client_id)]}
+    try:
+        client = await db.clients.find_one(scoped)
+        if client:
+            return client
+    except Exception:
+        pass
+
+    if _s8_role_ok(current_user):
+        try:
+            return await db.clients.find_one(_s8_oid_query(client_id)) or {}
+        except Exception:
+            return {}
+    return {}
+
+def _s8_client_match_query(client):
+    cid = _s8_id(client, "client_id")
+    name = _s8_client_name(client)
+    email = _s8_client_email(client)
+
+    ors = []
+    for field in ["client_id", "customer_id"]:
+        if cid:
+            ors.append({field: cid})
+            try:
+                if ObjectId.is_valid(cid):
+                    ors.append({field: ObjectId(cid)})
+            except Exception:
+                pass
+
+    if name and name != "Client":
+        ors += [
+            {"client_name": name},
+            {"customer_name": name},
+            {"name": name},
+        ]
+
+    if email:
+        ors += [
+            {"customer_email": email},
+            {"client_email": email},
+            {"email": email},
+        ]
+
+    return {"$or": ors} if ors else {"client_id": cid}
+
+async def _s8_find_related(collection_name, business_id, current_user, client):
+    coll = getattr(db, collection_name)
+    query = {"$and": [_s8_scope_query(business_id, current_user), _s8_client_match_query(client)]}
+    try:
+        rows = await coll.find(query).sort("updated_at", -1).to_list(length=300)
+        if rows:
+            return rows
+    except Exception:
+        pass
+
+    if _s8_role_ok(current_user):
+        try:
+            rows = await coll.find(_s8_client_match_query(client)).sort("updated_at", -1).to_list(length=300)
+            return rows
+        except Exception:
+            return []
+    return []
+
+def _s8_job_title(job):
+    return _s8_txt(
+        (job or {}).get("service_type")
+        or (job or {}).get("job_type")
+        or (job or {}).get("title")
+        or (job or {}).get("job_title")
+        or (job or {}).get("job_name"),
+        "Job"
+    )
+
+def _s8_record_total(record):
+    return _s8_num(
+        (record or {}).get("amount_due")
+        or (record or {}).get("balance_due")
+        or (record or {}).get("total")
+        or (record or {}).get("amount")
+        or (record or {}).get("subtotal")
+    )
+
+def _s8_invoice_status(inv):
+    return _s8_norm((inv or {}).get("status") or (inv or {}).get("payment_status"))
+
+def _s8_quote_status(quote):
+    return _s8_norm((quote or {}).get("status"))
+
+def _s8_job_status(job):
+    return _s8_norm((job or {}).get("status") or (job or {}).get("job_status"))
+
+def _s8_photo_count(jobs):
+    count = 0
+    for job in jobs:
+        for key in ["photos", "photo_urls", "proof_photos", "attachments"]:
+            if isinstance(job.get(key), list):
+                count += len(job.get(key))
+    return count
+
+def _s8_completed_uninvoiced_jobs(jobs, invoices):
+    invoiced_job_ids = set(_s8_txt(inv.get("job_id")) for inv in invoices if inv.get("job_id"))
+    out = []
+    for job in jobs:
+        jid = _s8_id(job, "job_id")
+        status = _s8_job_status(job)
+        is_done = status in {"completed", "done", "complete"} or job.get("completed") is True or bool(job.get("completed_at"))
+        if is_done and jid and jid not in invoiced_job_ids:
+            out.append(job)
+    return out
+
+def _s8_ai_summary(client, jobs, quotes, invoices):
+    client_name = _s8_client_name(client)
+    unpaid = [inv for inv in invoices if _s8_invoice_status(inv) in {"unpaid", "overdue", "sent", "draft", ""}]
+    overdue = [inv for inv in invoices if _s8_invoice_status(inv) == "overdue"]
+    open_quotes = [q for q in quotes if _s8_quote_status(q) not in {"accepted", "declined", "cancelled", "canceled", "converted"}]
+    open_jobs = [j for j in jobs if _s8_job_status(j) not in {"completed", "done", "complete", "cancelled", "canceled"}]
+    completed_jobs = [j for j in jobs if _s8_job_status(j) in {"completed", "done", "complete"} or j.get("completed") is True or j.get("completed_at")]
+    completed_no_invoice = _s8_completed_uninvoiced_jobs(jobs, invoices)
+
+    unpaid_total = sum(_s8_record_total(inv) for inv in unpaid)
+
+    lines = []
+    lines.append(f"{client_name} has {len(open_jobs)} open job{'s' if len(open_jobs) != 1 else ''}, {len(completed_jobs)} completed job{'s' if len(completed_jobs) != 1 else ''}, {len(open_quotes)} open quote{'s' if len(open_quotes) != 1 else ''}, and {len(unpaid)} unpaid invoice{'s' if len(unpaid) != 1 else ''}.")
+    if unpaid_total:
+        lines.append(f"Unpaid amount showing: {_s8_money(unpaid_total)}.")
+    if completed_no_invoice:
+        lines.append(f"{len(completed_no_invoice)} completed job{'s' if len(completed_no_invoice) != 1 else ''} may need invoicing.")
+    if overdue:
+        lines.append(f"{len(overdue)} invoice{'s are' if len(overdue) != 1 else ' is'} overdue and should be followed up.")
+    if open_quotes:
+        lines.append("There are open quotes that may need a follow-up.")
+    if not _s8_client_email(client):
+        lines.append("Client email is missing, so Churvox cannot send quotes/invoices until it is added.")
+
+    return " ".join(lines)
+
+def _s8_suggested_actions(client, jobs, quotes, invoices):
+    actions = []
+
+    if not _s8_client_email(client):
+        actions.append({
+            "type": "missing_email",
+            "title": "Add client email",
+            "reason": "Invoices, quote follow-ups and reminders need a client email before Churvox can send them.",
+            "button": "Add email",
+            "ready": False,
+        })
+
+    completed_no_invoice = _s8_completed_uninvoiced_jobs(jobs, invoices)
+    if completed_no_invoice:
+        job = completed_no_invoice[0]
+        actions.append({
+            "type": "create_invoice_draft",
+            "title": f"Create invoice from { _s8_job_title(job) }",
+            "reason": "This completed job does not appear to have an invoice yet.",
+            "button": "Prepare invoice slip",
+            "ready": True,
+            "job_id": _s8_id(job, "job_id"),
+        })
+
+    overdue = [inv for inv in invoices if _s8_invoice_status(inv) == "overdue"]
+    if overdue:
+        inv = overdue[0]
+        actions.append({
+            "type": "invoice_reminder",
+            "title": f"Send reminder for { _s8_txt(inv.get('invoice_number') or inv.get('number'), 'invoice') }",
+            "reason": "This invoice is overdue. Churvox can prepare a friendly reminder with the PDF attached.",
+            "button": "Prepare reminder slip",
+            "ready": bool(_s8_client_email(client)),
+            "invoice_id": _s8_id(inv, "invoice_id"),
+        })
+
+    open_quotes = [q for q in quotes if _s8_quote_status(q) not in {"accepted", "declined", "cancelled", "canceled", "converted"}]
+    if open_quotes:
+        quote = open_quotes[0]
+        actions.append({
+            "type": "quote_follow_up",
+            "title": f"Follow up { _s8_txt(quote.get('quote_number') or quote.get('number'), 'quote') }",
+            "reason": "This quote is still open. Churvox can prepare a follow-up message.",
+            "button": "Prepare follow-up slip",
+            "ready": bool(_s8_client_email(client)),
+            "quote_id": _s8_id(quote, "quote_id"),
+        })
+
+    actions.append({
+        "type": "create_job",
+        "title": "Create new job",
+        "reason": "Start a new job already linked to this client.",
+        "button": "Create job",
+        "ready": True,
+    })
+
+    return actions
+
+async def _s8_client_workbench_payload(business_id, current_user, client_id):
+    client = await _s8_find_client(business_id, current_user, client_id)
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    jobs = await _s8_find_related("jobs", business_id, current_user, client)
+    quotes = await _s8_find_related("quotes", business_id, current_user, client)
+    invoices = await _s8_find_related("invoices", business_id, current_user, client)
+
+    unpaid_invoices = [inv for inv in invoices if _s8_invoice_status(inv) in {"unpaid", "overdue", "sent", "draft", ""}]
+    overdue_invoices = [inv for inv in invoices if _s8_invoice_status(inv) == "overdue"]
+    open_quotes = [q for q in quotes if _s8_quote_status(q) not in {"accepted", "declined", "cancelled", "canceled", "converted"}]
+    open_jobs = [j for j in jobs if _s8_job_status(j) not in {"completed", "done", "complete", "cancelled", "canceled"}]
+    completed_jobs = [j for j in jobs if _s8_job_status(j) in {"completed", "done", "complete"} or j.get("completed") is True or j.get("completed_at")]
+
+    unpaid_total = sum(_s8_record_total(inv) for inv in unpaid_invoices)
+    completed_no_invoice = _s8_completed_uninvoiced_jobs(jobs, invoices)
+
+    stats = {
+        "jobs_total": len(jobs),
+        "open_jobs": len(open_jobs),
+        "completed_jobs": len(completed_jobs),
+        "quotes_total": len(quotes),
+        "open_quotes": len(open_quotes),
+        "invoices_total": len(invoices),
+        "unpaid_invoices": len(unpaid_invoices),
+        "overdue_invoices": len(overdue_invoices),
+        "unpaid_total": unpaid_total,
+        "unpaid_total_display": _s8_money(unpaid_total),
+        "completed_jobs_needing_invoice": len(completed_no_invoice),
+        "proof_photos": _s8_photo_count(jobs),
+    }
+
+    return {
+        "client": client,
+        "stats": stats,
+        "summary": _s8_ai_summary(client, jobs, quotes, invoices),
+        "suggested_actions": _s8_suggested_actions(client, jobs, quotes, invoices),
+        "jobs": jobs[:80],
+        "quotes": quotes[:80],
+        "invoices": invoices[:80],
+        "recent_activity": sorted(
+            [{"type": "job", "title": _s8_job_title(j), "status": _s8_job_status(j), "updated_at": j.get("updated_at") or j.get("created_at"), "record": j} for j in jobs[:30]]
+            + [{"type": "quote", "title": _s8_txt(q.get("quote_number") or q.get("number"), "Quote"), "status": _s8_quote_status(q), "updated_at": q.get("updated_at") or q.get("created_at"), "record": q} for q in quotes[:30]]
+            + [{"type": "invoice", "title": _s8_txt(i.get("invoice_number") or i.get("number"), "Invoice"), "status": _s8_invoice_status(i), "updated_at": i.get("updated_at") or i.get("created_at"), "record": i} for i in invoices[:30]],
+            key=lambda x: str(x.get("updated_at") or ""),
+            reverse=True,
+        )[:40],
+    }
+
+async def _s8_insert_client_slip(business_id, action_type, related_type, related_id, title, summary, payload, reason):
+    missing = []
+    if action_type in {"invoice_reminder", "quote_follow_up", "send_invoice"} and not _s8_txt(payload.get("customer_email")):
+        missing.append("customer_email")
+    if action_type == "create_invoice_draft" and not _s8_txt(payload.get("description")):
+        missing.append("description")
+
+    await db.ai_operator_actions.delete_many({
+        "business_id": str(business_id),
+        "action_type": action_type,
+        "related_entity_id": str(related_id),
+        "status": {"$nin": ["completed", "approved", "executed", "rejected", "dismissed", "cancelled", "canceled"]},
+    })
+
+    doc = {
+        "business_id": str(business_id),
+        "action_type": action_type,
+        "type": action_type,
+        "related_type": related_type,
+        "related_entity_id": str(related_id),
+        "related_id": str(related_id),
+        "title": title,
+        "summary": summary,
+        "reason": reason,
+        "ai_reason": reason,
+        "confidence": 84 if not missing else 45,
+        "what_will_happen": "Churvox will prepare this client action for owner approval.",
+        "source_records": [{"type": related_type, "id": str(related_id)}],
+        "payload": payload,
+        "draft_payload": payload,
+        "checks": ["Client checked", "Related records checked", "Owner approval required"],
+        "missing": missing,
+        "ready": len(missing) == 0,
+        "group": "ready" if not missing else "needs_details",
+        "status": "ready",
+        "source": "stage8_client_workbench",
+        "created_at": _s8_now(),
+        "updated_at": _s8_now(),
+    }
+
+    result = await db.ai_operator_actions.insert_one(doc)
+    doc["_id"] = result.inserted_id
+    return doc
+
+@api_router.get("/clients/{client_id}/workbench")
+@api_router.get("/client-workbench/{client_id}")
+async def stage8_client_workbench(client_id: str, current_user: dict = Depends(get_current_user)):
+    if not _s8_role_ok(current_user):
+        raise HTTPException(status_code=403, detail="Owner/admin access required")
+
+    business_id = await _s8_business_id(current_user)
+    data = await _s8_client_workbench_payload(business_id, current_user, client_id)
+    return {"success": True, "data": _s8_safe(data)}
+
+@api_router.post("/clients/{client_id}/prepare-actions")
+@api_router.post("/client-workbench/{client_id}/prepare-actions")
+async def stage8_prepare_client_actions(client_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    if not _s8_role_ok(current_user):
+        raise HTTPException(status_code=403, detail="Owner/admin access required")
+
+    business_id = await _s8_business_id(current_user)
+    data = await _s8_client_workbench_payload(business_id, current_user, client_id)
+    client = data["client"]
+    client_name = _s8_client_name(client)
+    client_email = _s8_client_email(client)
+
+    created = []
+
+    # Completed job needing invoice.
+    completed_no_invoice = _s8_completed_uninvoiced_jobs(data["jobs"], data["invoices"])
+    if completed_no_invoice:
+        job = completed_no_invoice[0]
+        jid = _s8_id(job, "job_id")
+        description = f"{_s8_job_title(job)} completed for {client_name}."
+        if _s8_txt(job.get("address") or job.get("job_address") or job.get("site_address")):
+            description += f" Work location: {_s8_txt(job.get('address') or job.get('job_address') or job.get('site_address'))}."
+        if _s8_txt(job.get("completion_notes") or job.get("worker_notes") or job.get("notes")):
+            description += f" Job notes: {_s8_txt(job.get('completion_notes') or job.get('worker_notes') or job.get('notes'))}."
+
+        created.append(await _s8_insert_client_slip(
+            business_id,
+            "create_invoice_draft",
+            "job",
+            jid,
+            f"Create invoice for {client_name}",
+            f"{client_name} · {_s8_job_title(job)}",
+            {
+                "job_id": jid,
+                "client_id": _s8_id(client, "client_id"),
+                "client_name": client_name,
+                "customer_name": client_name,
+                "customer_email": client_email,
+                "description": description,
+                "job_title": _s8_job_title(job),
+                "total": _s8_money(_s8_record_total(job)),
+                "price": _s8_money(_s8_record_total(job)),
+            },
+            "I found a completed job for this client that appears to need an invoice.",
+        ))
+
+    # Overdue invoice reminder.
+    overdue = [inv for inv in data["invoices"] if _s8_invoice_status(inv) == "overdue"]
+    if overdue:
+        inv = overdue[0]
+        iid = _s8_id(inv, "invoice_id")
+        inv_no = _s8_txt(inv.get("invoice_number") or inv.get("number"), f"INV-{iid[-6:].upper()}")
+        amount = _s8_money(_s8_record_total(inv))
+        created.append(await _s8_insert_client_slip(
+            business_id,
+            "invoice_reminder",
+            "invoice",
+            iid,
+            f"Send payment reminder to {client_name}",
+            f"{inv_no} · {amount}",
+            {
+                "invoice_id": iid,
+                "invoice_number": inv_no,
+                "customer_name": client_name,
+                "client_name": client_name,
+                "customer_email": client_email,
+                "amount_due": amount,
+                "total": amount,
+                "message": f"Hi {client_name}, friendly reminder invoice {inv_no} for {amount} is still open. Please let us know if you need another copy or have any questions.",
+            },
+            "I found an overdue invoice for this client and prepared a reminder.",
+        ))
+
+    # Open quote follow-up.
+    open_quotes = [q for q in data["quotes"] if _s8_quote_status(q) not in {"accepted", "declined", "cancelled", "canceled", "converted"}]
+    if open_quotes:
+        quote = open_quotes[0]
+        qid = _s8_id(quote, "quote_id")
+        quote_no = _s8_txt(quote.get("quote_number") or quote.get("number"), f"QT-{qid[-6:].upper()}")
+        amount = _s8_money(_s8_record_total(quote))
+        created.append(await _s8_insert_client_slip(
+            business_id,
+            "quote_follow_up",
+            "quote",
+            qid,
+            f"Follow up quote with {client_name}",
+            f"{quote_no} · {amount}",
+            {
+                "quote_id": qid,
+                "quote_number": quote_no,
+                "customer_name": client_name,
+                "client_name": client_name,
+                "customer_email": client_email,
+                "quote_amount": amount,
+                "total": amount,
+                "message": f"Hi {client_name}, just checking in on {quote_no} for {amount}. Happy to answer any questions or adjust the details if needed.",
+            },
+            "I found an open quote for this client and prepared a follow-up.",
+        ))
+
+    return {
+        "success": True,
+        "message": f"Prepared {len(created)} client action slip{'s' if len(created) != 1 else ''}.",
+        "created": len(created),
+        "actions": _s8_safe(created),
+    }
+# CHURVOX_STAGE8_CLIENT_WORKBENCH_END
+
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")
