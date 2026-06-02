@@ -15312,6 +15312,500 @@ async def stage4_decision_summary(current_user: dict = Depends(get_current_user)
 
 
 
+
+# CHURVOX_STAGE5_JOB_COMPLETION_FLOW_START
+# Job completion flow:
+# completed job -> timesheet -> job review slip -> invoice draft slip.
+
+STAGE5_DONE_STATUSES = {"completed", "approved", "executed", "rejected", "dismissed", "cancelled", "canceled"}
+STAGE5_ALLOWED_ROLES = {"owner", "employer", "admin", "manager", "office_admin", "office admin", "business_owner", "platform_owner", "worker"}
+
+def _s5_txt(value, fallback=""):
+    return str(value or fallback or "").strip()
+
+def _s5_norm(value):
+    return _s5_txt(value).lower().replace(" ", "_").replace("-", "_")
+
+def _s5_now():
+    return datetime.now(timezone.utc)
+
+def _s5_num(value):
+    try:
+        if isinstance(value, str):
+            value = value.replace("$", "").replace(",", "").replace("NZD", "").strip()
+        return float(value or 0)
+    except Exception:
+        return 0.0
+
+def _s5_money(value):
+    raw = _s5_txt(value)
+    if raw.startswith("$"):
+        return raw
+    amount = _s5_num(raw)
+    return f"${amount:,.2f}" if amount else ""
+
+def _s5_safe(value):
+    if isinstance(value, list):
+        return [_s5_safe(v) for v in value]
+    if isinstance(value, dict):
+        out = {}
+        for k, v in value.items():
+            out["id" if k == "_id" else k] = _s5_safe(v)
+        return out
+    try:
+        if isinstance(value, ObjectId):
+            return str(value)
+    except Exception:
+        pass
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    return value
+
+def _s5_parse_dt(value):
+    if hasattr(value, "isoformat"):
+        return value if getattr(value, "tzinfo", None) else value.replace(tzinfo=timezone.utc)
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+def _s5_record_query(record_id):
+    rid = _s5_txt(record_id)
+    ors = [{"id": rid}, {"job_id": rid}, {"related_id": rid}, {"related_entity_id": rid}]
+    try:
+        if ObjectId.is_valid(rid):
+            ors.insert(0, {"_id": ObjectId(rid)})
+    except Exception:
+        pass
+    return {"$or": ors}
+
+async def _s5_business_id(current_user):
+    try:
+        bid = await get_user_business_id(current_user)
+        if bid:
+            return str(bid)
+    except Exception:
+        pass
+    return _s5_txt(
+        (current_user or {}).get("business_id")
+        or (current_user or {}).get("businessId")
+        or (current_user or {}).get("id")
+        or (current_user or {}).get("_id")
+        or (current_user or {}).get("user_id")
+    )
+
+def _s5_role_ok(current_user):
+    role = _s5_txt((current_user or {}).get("role")).lower()
+    email = _s5_txt((current_user or {}).get("email")).lower()
+    return (
+        role in STAGE5_ALLOWED_ROLES
+        or email == "hello@churvox.com"
+        or (current_user or {}).get("is_admin") is True
+        or (current_user or {}).get("is_platform_owner") is True
+    )
+
+def _s5_scope_query(business_id, current_user):
+    values = []
+    for raw in [
+        business_id,
+        (current_user or {}).get("business_id"),
+        (current_user or {}).get("businessId"),
+        (current_user or {}).get("id"),
+        (current_user or {}).get("_id"),
+        (current_user or {}).get("user_id"),
+        (current_user or {}).get("owner_id"),
+    ]:
+        if raw is None or str(raw).strip() == "":
+            continue
+        values.append(str(raw))
+        try:
+            if ObjectId.is_valid(str(raw)):
+                values.append(ObjectId(str(raw)))
+        except Exception:
+            pass
+
+    dedup = []
+    for value in values:
+        if value not in dedup:
+            dedup.append(value)
+
+    ors = []
+    for key in ["business_id", "businessId", "owner_id", "ownerId", "user_id", "created_by", "created_by_user_id", "employer_id", "account_id"]:
+        for value in dedup:
+            ors.append({key: value})
+
+    return {"$or": ors} if ors else {"business_id": str(business_id)}
+
+def _s5_job_id(job):
+    return str((job or {}).get("_id") or (job or {}).get("id") or (job or {}).get("job_id") or "")
+
+def _s5_job_title(job):
+    return _s5_txt(
+        (job or {}).get("service_type")
+        or (job or {}).get("job_type")
+        or (job or {}).get("title")
+        or (job or {}).get("job_title")
+        or (job or {}).get("job_name"),
+        "Job"
+    )
+
+async def _s5_find_job(business_id, current_user, job_id):
+    scoped = {"$and": [_s5_scope_query(business_id, current_user), _s5_record_query(job_id)]}
+    try:
+        job = await db.jobs.find_one(scoped)
+        if job:
+            return job
+    except Exception:
+        pass
+
+    if _s5_txt((current_user or {}).get("email")).lower() == "hello@churvox.com" or (current_user or {}).get("is_admin") is True:
+        try:
+            return await db.jobs.find_one(_s5_record_query(job_id))
+        except Exception:
+            return None
+    return None
+
+async def _s5_find_client(business_id, current_user, job):
+    client_id = _s5_txt((job or {}).get("client_id"))
+    client_name = _s5_txt((job or {}).get("client_name") or (job or {}).get("customer_name"))
+    email = _s5_txt((job or {}).get("client_email") or (job or {}).get("customer_email"))
+
+    bases = []
+    if client_id:
+        bases.append(_s5_record_query(client_id))
+    if client_name:
+        bases.append({"$or": [{"name": client_name}, {"client_name": client_name}, {"customer_name": client_name}]})
+    if email:
+        bases.append({"$or": [{"email": email}, {"client_email": email}, {"customer_email": email}]})
+
+    scope = _s5_scope_query(business_id, current_user)
+    for base in bases:
+        try:
+            found = await db.clients.find_one({"$and": [scope, base]})
+            if found:
+                return found
+        except Exception:
+            pass
+    return {}
+
+def _s5_invoice_description(job, client=None):
+    client = client or {}
+    client_name = _s5_txt(
+        client.get("name")
+        or client.get("client_name")
+        or (job or {}).get("client_name")
+        or (job or {}).get("customer_name"),
+        "the customer"
+    )
+    title = _s5_job_title(job)
+    address = _s5_txt((job or {}).get("job_address") or (job or {}).get("address") or (job or {}).get("site_address") or client.get("address"))
+    notes = _s5_txt(
+        (job or {}).get("completion_notes")
+        or (job or {}).get("worker_notes")
+        or (job or {}).get("worker_note")
+        or (job or {}).get("notes")
+        or (job or {}).get("description")
+    )
+
+    parts = [f"{title} completed for {client_name}."]
+    if address:
+        parts.append(f"Work location: {address}.")
+    if notes:
+        parts.append(f"Job notes: {notes}.")
+    parts.append("Invoice prepared from the completed job record.")
+    return "\n".join(parts)
+
+def _s5_time_context(job, completed_at=None):
+    start = (
+        (job or {}).get("started_at")
+        or (job or {}).get("start_time")
+        or (job or {}).get("timer_started_at")
+        or (job or {}).get("work_started_at")
+    )
+    end = completed_at or (job or {}).get("completed_at") or (job or {}).get("finished_at") or (job or {}).get("finish_time")
+    paused = int(_s5_num((job or {}).get("paused_minutes") or (job or {}).get("pause_minutes") or (job or {}).get("total_paused_minutes") or 0))
+
+    start_dt = _s5_parse_dt(start)
+    end_dt = _s5_parse_dt(end)
+
+    total_minutes = 0
+    if start_dt and end_dt:
+        total_minutes = max(0, int((end_dt - start_dt).total_seconds() // 60))
+
+    net_minutes = max(0, total_minutes - paused)
+
+    return {
+        "started_at": start_dt,
+        "completed_at": end_dt,
+        "paused_minutes": paused,
+        "total_minutes": total_minutes,
+        "net_minutes": net_minutes,
+        "hours": round(net_minutes / 60, 2) if net_minutes else 0,
+    }
+
+async def _s5_upsert_timesheet(business_id, job, current_user, completed_at):
+    jid = _s5_job_id(job)
+    worker_id = _s5_txt(
+        (job or {}).get("assigned_worker_id")
+        or (job or {}).get("worker_id")
+        or (current_user or {}).get("id")
+        or (current_user or {}).get("_id")
+        or (current_user or {}).get("user_id")
+    )
+    worker_name = _s5_txt(
+        (job or {}).get("assigned_worker_name")
+        or (job or {}).get("worker_name")
+        or (current_user or {}).get("name")
+        or (current_user or {}).get("full_name")
+        or (current_user or {}).get("email"),
+        "Worker"
+    )
+
+    time_data = _s5_time_context(job, completed_at)
+    completed_dt = time_data.get("completed_at") or _s5_now()
+    work_date = completed_dt.date().isoformat()
+
+    doc = {
+        "business_id": str(business_id),
+        "job_id": str(jid),
+        "job_title": _s5_job_title(job),
+        "client_id": _s5_txt((job or {}).get("client_id")),
+        "client_name": _s5_txt((job or {}).get("client_name") or (job or {}).get("customer_name")),
+        "worker_id": str(worker_id),
+        "worker_name": worker_name,
+        "date": work_date,
+        "started_at": time_data.get("started_at"),
+        "completed_at": completed_dt,
+        "paused_minutes": time_data.get("paused_minutes", 0),
+        "total_minutes": time_data.get("total_minutes", 0),
+        "net_minutes": time_data.get("net_minutes", 0),
+        "hours": time_data.get("hours", 0),
+        "status": "pending_review",
+        "source": "stage5_job_completion_flow",
+        "updated_at": _s5_now(),
+    }
+
+    existing = await db.timesheets.find_one({"business_id": str(business_id), "job_id": str(jid), "worker_id": str(worker_id)})
+    if existing:
+        await db.timesheets.update_one({"_id": existing["_id"]}, {"$set": doc})
+        doc["_id"] = existing["_id"]
+    else:
+        doc["created_at"] = _s5_now()
+        result = await db.timesheets.insert_one(doc)
+        doc["_id"] = result.inserted_id
+
+    return doc
+
+async def _s5_invoice_exists(business_id, job_id):
+    try:
+        found = await db.invoices.find_one({"business_id": str(business_id), "job_id": str(job_id)})
+        return bool(found)
+    except Exception:
+        return False
+
+def _s5_required(action_type):
+    if action_type == "job_review":
+        return ["job_id", "job_title", "client_name"]
+    if action_type == "create_invoice_draft":
+        return ["job_id", "job_title", "client_name", "description"]
+    return []
+
+def _s5_missing(action_type, payload):
+    return [key for key in _s5_required(action_type) if not _s5_txt((payload or {}).get(key))]
+
+async def _s5_insert_action(business_id, action_type, related_id, title, summary, payload, reason, checks):
+    await db.ai_operator_actions.delete_many({
+        "business_id": str(business_id),
+        "related_entity_id": str(related_id),
+        "action_type": action_type,
+        "status": {"$nin": list(STAGE5_DONE_STATUSES)},
+    })
+
+    missing = _s5_missing(action_type, payload)
+    doc = {
+        "business_id": str(business_id),
+        "action_type": action_type,
+        "type": action_type,
+        "related_type": "job",
+        "related_entity_id": str(related_id),
+        "related_id": str(related_id),
+        "title": title,
+        "summary": summary,
+        "reason": reason,
+        "ai_reason": reason,
+        "confidence": 90 if not missing else 55,
+        "what_will_happen": "Churvox will prepare the admin from the completed job when the owner approves.",
+        "source_records": [{"type": "job", "id": str(related_id)}],
+        "payload": payload,
+        "draft_payload": payload,
+        "checks": checks,
+        "missing": missing,
+        "ready": len(missing) == 0,
+        "group": "ready" if not missing else "needs_details",
+        "status": "ready",
+        "source": "stage5_job_completion_flow",
+        "created_at": _s5_now(),
+        "updated_at": _s5_now(),
+    }
+    result = await db.ai_operator_actions.insert_one(doc)
+    doc["_id"] = result.inserted_id
+    return doc
+
+async def _s5_prepare_completion_slips(business_id, current_user, job, timesheet=None):
+    jid = _s5_job_id(job)
+    client = await _s5_find_client(business_id, current_user, job)
+    client_name = _s5_txt(client.get("name") or client.get("client_name") or job.get("client_name") or job.get("customer_name"), "Client not set")
+    amount = _s5_num(job.get("fixed_price") or job.get("price") or job.get("job_price") or job.get("total") or job.get("amount") or job.get("subtotal"))
+
+    photos = 0
+    for key in ["photos", "photo_urls", "proof_photos", "attachments"]:
+        if isinstance(job.get(key), list):
+            photos += len(job.get(key))
+
+    description = _s5_invoice_description(job, client)
+
+    payload = {
+        "job_id": jid,
+        "job_title": _s5_job_title(job),
+        "client_id": _s5_txt(job.get("client_id")),
+        "client_name": client_name,
+        "customer_name": client_name,
+        "customer_email": _s5_txt(client.get("email") or job.get("customer_email") or job.get("client_email")),
+        "client_phone": _s5_txt(client.get("phone") or client.get("mobile") or job.get("client_phone")),
+        "client_address": _s5_txt(client.get("billing_address") or client.get("address")),
+        "job_address": _s5_txt(job.get("job_address") or job.get("address") or job.get("site_address") or client.get("address")),
+        "worker_id": _s5_txt(job.get("assigned_worker_id") or job.get("worker_id")),
+        "worker_name": _s5_txt(job.get("assigned_worker_name") or job.get("worker_name")),
+        "subtotal": amount if amount else "",
+        "price": _s5_money(amount),
+        "total": _s5_money(amount),
+        "description": description,
+        "worker_note": _s5_txt(job.get("completion_notes") or job.get("worker_notes") or job.get("worker_note") or job.get("notes")),
+        "proof_summary": f"{photos} photo/proof item{'s' if photos != 1 else ''} attached" if photos else "No proof photos found",
+        "timesheet_id": str((timesheet or {}).get("_id") or ""),
+        "time_worked": f"{(timesheet or {}).get('hours', 0)} hours" if timesheet else "Not recorded",
+        "message": f"Hi {client_name}, your invoice for {_s5_job_title(job)} is ready.",
+    }
+
+    actions = []
+
+    actions.append(await _s5_insert_action(
+        business_id,
+        "job_review",
+        jid,
+        f"Review completed job: {payload['job_title']}",
+        f"{client_name} · {payload['proof_summary']} · Time: {payload.get('time_worked')}",
+        payload,
+        "I found this job was completed. I prepared the completion review using job notes, proof/photos and the timesheet.",
+        ["Completion saved", "Timesheet prepared", "Client checked", "Worker notes checked", "Proof/photos checked"],
+    ))
+
+    if not await _s5_invoice_exists(business_id, jid):
+        actions.append(await _s5_insert_action(
+            business_id,
+            "create_invoice_draft",
+            jid,
+            f"Create invoice for {client_name}",
+            f"{client_name} · {payload['job_title']} · {payload.get('price') or 'Price missing'}",
+            payload,
+            "I found this completed job does not have an invoice yet. I prepared an invoice draft with a job description.",
+            ["Completed job checked", "Duplicate invoice checked", "AI invoice description prepared", "Owner approval required"],
+        ))
+
+    return actions
+
+async def _s5_complete_job_flow(job_id, payload, current_user):
+    if not _s5_role_ok(current_user):
+        raise HTTPException(status_code=403, detail="Not allowed to complete jobs")
+
+    business_id = await _s5_business_id(current_user)
+    job = await _s5_find_job(business_id, current_user, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    completed_at = _s5_now()
+    notes = _s5_txt((payload or {}).get("notes") or (payload or {}).get("completion_notes") or (payload or {}).get("worker_notes"))
+
+    update = {
+        "status": "completed",
+        "completed": True,
+        "completed_at": completed_at,
+        "finished_at": completed_at,
+        "updated_at": completed_at,
+        "ai_invoice_description": _s5_invoice_description(job, await _s5_find_client(business_id, current_user, job)),
+    }
+
+    if notes:
+        update["completion_notes"] = notes
+        update["worker_notes"] = notes
+
+    if (payload or {}).get("photos"):
+        update["photos"] = (payload or {}).get("photos")
+
+    await db.jobs.update_one({"_id": job["_id"]}, {"$set": update})
+    updated_job = await db.jobs.find_one({"_id": job["_id"]}) or {**job, **update}
+
+    timesheet = await _s5_upsert_timesheet(business_id, updated_job, current_user, completed_at)
+    actions = await _s5_prepare_completion_slips(business_id, current_user, updated_job, timesheet)
+
+    return {
+        "success": True,
+        "message": "Job completed. Timesheet and owner approval slips prepared.",
+        "job": _s5_safe(updated_job),
+        "timesheet": _s5_safe(timesheet),
+        "actions": _s5_safe(actions),
+    }
+
+@api_router.post("/jobs/{job_id}/complete")
+@api_router.post("/jobs/{job_id}/finish")
+@api_router.post("/worker/jobs/{job_id}/complete")
+@api_router.post("/ai/jobs/{job_id}/complete-and-prepare")
+async def stage5_complete_job(job_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    return await _s5_complete_job_flow(job_id, payload or {}, current_user)
+
+@api_router.post("/ai/operator/repair-completed-jobs")
+async def stage5_repair_completed_jobs(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    if not _s5_role_ok(current_user):
+        raise HTTPException(status_code=403, detail="Owner approval required")
+
+    business_id = await _s5_business_id(current_user)
+    scope = _s5_scope_query(business_id, current_user)
+
+    query = {
+        "$and": [
+            scope,
+            {"$or": [
+                {"status": {"$in": ["completed", "done", "complete"]}},
+                {"completed": True},
+                {"completed_at": {"$exists": True, "$ne": None}},
+            ]},
+        ]
+    }
+
+    jobs = await db.jobs.find(query).sort("updated_at", -1).to_list(length=250)
+    prepared = []
+    timesheets = []
+
+    for job in jobs:
+        completed_at = job.get("completed_at") or job.get("finished_at") or _s5_now()
+        timesheet = await _s5_upsert_timesheet(business_id, job, current_user, completed_at)
+        actions = await _s5_prepare_completion_slips(business_id, current_user, job, timesheet)
+        prepared.extend(actions)
+        timesheets.append(timesheet)
+
+    return {
+        "success": True,
+        "message": f"Checked {len(jobs)} completed jobs and prepared {len(prepared)} slips.",
+        "jobs_checked": len(jobs),
+        "timesheets": len(timesheets),
+        "actions": _s5_safe(prepared),
+    }
+# CHURVOX_STAGE5_JOB_COMPLETION_FLOW_END
+
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")

@@ -402,9 +402,14 @@ export default function CommandDeskQueuePage() {
               <h1 className="text-3xl font-black tracking-[-.05em]">Real slips only.</h1>
               <p className="text-sm font-bold text-slate-500">One slip system. Old weak AI actions are cleared, then rebuilt from real jobs, clients, quotes and invoices.</p>
             </div>
-            <button onClick={rebuild} disabled={busy} className="rounded-full bg-emerald-500 px-5 py-3 text-xs font-black uppercase tracking-[.14em] text-white disabled:opacity-60">
-              {busy ? "Rebuilding…" : "Clear old slips + rebuild"}
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={repairCompletedJobs} disabled={busy} className="rounded-full border border-slate-300 bg-white px-5 py-3 text-xs font-black uppercase tracking-[.14em] text-slate-900 disabled:opacity-60">
+                {busy ? "Checking…" : "Check completed jobs"}
+              </button>
+              <button onClick={rebuild} disabled={busy} className="rounded-full bg-emerald-500 px-5 py-3 text-xs font-black uppercase tracking-[.14em] text-white disabled:opacity-60">
+                {busy ? "Rebuilding…" : "Clear old slips + rebuild"}
+              </button>
+            </div>
           </header>
 
           <section className="grid gap-5 xl:grid-cols-[1fr_420px]">
