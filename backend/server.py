@@ -12693,6 +12693,39 @@ async def _ai_slip_workers(business_id, current_user):
             })
     return workers
 
+
+def _churvox_ai_invoice_description_from_job(job, client=None):
+    job = job or {}
+    client = client or {}
+
+    def pick(*values, fallback=""):
+        for value in values:
+            text = str(value or "").strip()
+            if text:
+                return " ".join(text.split())
+        return fallback
+
+    client_name = pick(client.get("name"), client.get("client_name"), job.get("client_name"), job.get("customer_name"), fallback="the customer")
+    title = pick(job.get("service_type"), job.get("job_type"), job.get("title"), job.get("job_title"), job.get("job_name"), fallback="service work")
+    address = pick(job.get("job_address"), job.get("address"), job.get("site_address"), client.get("site_address"), client.get("address"))
+    notes = pick(
+        job.get("ai_invoice_description"),
+        job.get("invoice_description_draft"),
+        job.get("completion_notes"),
+        job.get("worker_notes"),
+        job.get("worker_note"),
+        job.get("notes"),
+        job.get("description"),
+    )
+
+    pieces = [f"{title} completed for {client_name}."]
+    if address:
+        pieces.append(f"Work location: {address}.")
+    if notes:
+        pieces.append(f"Job notes: {notes}.")
+    pieces.append("Invoice prepared from the completed job record.")
+    return "\\n".join(pieces)
+
 async def _ai_slip_job_payload(business_id, current_user, job):
     client = await _ai_slip_find_client(
         business_id,
@@ -12705,14 +12738,7 @@ async def _ai_slip_job_payload(business_id, current_user, job):
     client_name = _ai_slip_text(client.get("name") or client.get("client_name") or job.get("client_name") or job.get("customer_name"), "Client not set")
     title = _ai_slip_text(job.get("title") or job.get("job_title") or job.get("service_type"), "Job")
     amount = _ai_slip_money(job.get("fixed_price") or job.get("price") or job.get("amount") or job.get("subtotal") or job.get("total"))
-    description = _ai_slip_text(
-        job.get("invoice_description_draft")
-        or job.get("ai_invoice_description")
-        or job.get("completion_notes")
-        or job.get("worker_notes")
-        or job.get("notes")
-        or f"{title} completed for {client_name}."
-    )
+    description = _churvox_ai_invoice_description_from_job(job, client)
     return {
         "job_id": jid,
         "job_title": title,
@@ -13510,7 +13536,7 @@ async def ai_operator_execute_slip_direct(action_id: str, payload: dict = Body(d
                 "client_name": merged.get("client_name"),
                 "customer_name": merged.get("customer_name") or merged.get("client_name"),
                 "customer_email": merged.get("customer_email"),
-                "description": merged.get("description"),
+                "description": merged.get("description") or merged.get("invoice_description") or merged.get("job_title") or "Service work completed",
                 "subtotal": _ai_slip_money(merged.get("subtotal") or merged.get("price")),
                 "total": _ai_slip_money(merged.get("subtotal") or merged.get("price")),
                 "status": "draft",
@@ -13823,182 +13849,6 @@ def _final_invoice_pdf(action_type, payload, branding):
 
     job_title = _final_txt(payload.get("job_title"), "Work completed")
     description = _final_txt(payload.get("description") or payload.get("invoice_description") or payload.get("worker_note") or payload.get("message") or job_title)
-    total = _final_money(payload.get("total") or payload.get("amount_due") or payload.get("quote_amount") or payload.get("subtotal") or payload.get("price"))
-    due_date = _final_txt(payload.get("due_date"))
-    pay_url = _final_payment_url(payload, branding)
-
-    draw.rounded_rectangle((55, 45, width - 55, 315), radius=38, fill=navy)
-    draw.text((92, 86), doc_label, font=f10, fill=(125, 211, 252))
-    draw.text((92, 126), f"{doc_label} {doc_no}", font=f34b, fill=white)
-    draw.text((92, 235), business, font=f12b, fill=(226, 232, 240))
-
-    logo = _final_load_logo(branding)
-    if logo:
-        box = Image.new("RGBA", (320, 140), (255, 255, 255, 0))
-        box.alpha_composite(logo, ((320 - logo.width) // 2, (140 - logo.height) // 2))
-        img.paste(box.convert("RGB"), (width - 420, 90))
-    else:
-        draw.rounded_rectangle((width - 415, 92, width - 90, 205), radius=26, fill=white)
-        draw.text((width - 380, 127), business[:24], font=f18b, fill=navy)
-
-    y = 365
-    draw.rounded_rectangle((55, y, 590, y + 260), radius=30, fill=white, outline=line, width=2)
-    draw.text((90, y + 35), "BILL TO", font=f10, fill=muted)
-    draw.text((90, y + 76), customer, font=f18b, fill=text)
-    yy = y + 128
-    for item in [customer_email, customer_phone, customer_address]:
-        if item:
-            yy = _final_draw_wrap(draw, 90, yy, item, f12, muted, 440, 31)
-
-    draw.rounded_rectangle((650, y, width - 55, y + 260), radius=30, fill=white, outline=line, width=2)
-    draw.text((685, y + 35), "FROM", font=f10, fill=muted)
-    draw.text((685, y + 76), business, font=f18b, fill=text)
-    yy = y + 128
-    for item in [branding.get("email"), branding.get("phone"), branding.get("business_address"), branding.get("website"), f"GST {branding.get('gst_number')}" if branding.get("gst_number") else ""]:
-        if item:
-            yy = _final_draw_wrap(draw, 685, yy, item, f12, muted, 440, 31)
-
-    y = 690
-    draw.rounded_rectangle((55, y, width - 55, y + 510), radius=30, fill=white, outline=line, width=2)
-    draw.rounded_rectangle((90, y + 38, width - 90, y + 95), radius=18, fill=(241, 245, 249))
-    draw.text((120, y + 55), "DESCRIPTION", font=f10, fill=muted)
-    draw.text((width - 325, y + 55), "AMOUNT", font=f10, fill=muted)
-    draw.text((120, y + 132), job_title, font=f18b, fill=text)
-    _final_draw_wrap(draw, 120, y + 182, description, f12, muted, 720, 32)
-    draw.text((width - 325, y + 132), total or "To confirm", font=f18b, fill=text)
-    draw.line((90, y + 360, width - 90, y + 360), fill=line, width=2)
-    draw.text((width - 450, y + 395), "TOTAL", font=f12b, fill=muted)
-    draw.text((width - 325, y + 382), total or "To confirm", font=f24b, fill=navy)
-    if due_date:
-        draw.text((120, y + 400), f"Due date: {due_date}", font=f12b, fill=muted)
-
-    y = 1260
-    draw.rounded_rectangle((55, y, width - 55, y + 340), radius=30, fill=panel)
-    draw.text((90, y + 42), "PAYMENT", font=f10, fill=(125, 211, 252))
-    draw.text((90, y + 84), "How to pay", font=f24b, fill=white)
-
-    py = y + 158
-    if pay_url:
-        draw.rounded_rectangle((90, py - 15, 430, py + 64), radius=22, fill=green)
-        draw.text((126, py + 5), "Pay online", font=f18b, fill=white)
-        py += 96
-        py = _final_draw_wrap(draw, 90, py, pay_url, f12, (203, 213, 225), 980, 30)
-
-    bank = ""
-    if branding.get("bank_account_name") or branding.get("bank_account_number"):
-        bank = "Bank transfer"
-        if branding.get("bank_account_name"):
-            bank += f" · {branding.get('bank_account_name')}"
-        if branding.get("bank_account_number"):
-            bank += f" · {branding.get('bank_account_number')}"
-    if bank:
-        py = _final_draw_wrap(draw, 90, py + 16, bank, f12b, (226, 232, 240), 980, 30)
-    if branding.get("payment_instructions"):
-        _final_draw_wrap(draw, 90, py + 16, branding.get("payment_instructions"), f12, (203, 213, 225), 980, 30)
-
-    draw.text((65, height - 90), branding.get("invoice_footer") or "Thank you.", font=f12b, fill=muted)
-    draw.text((65, height - 55), "Prepared and sent by Churvox.", font=f10, fill=(148, 163, 184))
-
-    buf = io.BytesIO()
-    img.save(buf, format="PDF", resolution=150.0)
-    return buf.getvalue()
-
-async def _final_send_email(action_type, payload, current_user):
-    import os
-    import json
-    import base64
-    import asyncio
-    import urllib.request
-    import urllib.error
-
-    business_id = await _final_business_id(current_user)
-    payload = dict(payload or {})
-    payload.setdefault("business_id", business_id)
-
-    branding = await _final_branding(business_id, current_user)
-
-    to_email = _final_txt(payload.get("customer_email"))
-    if not to_email:
-        return False, "Customer email is missing"
-
-    token = os.environ.get("POSTMARK_SERVER_TOKEN") or os.environ.get("POSTMARK_API_TOKEN") or os.environ.get("POSTMARK_TOKEN")
-    if not token:
-        return False, "Postmark token is missing on the backend"
-
-    from_email = os.environ.get("POSTMARK_FROM_EMAIL") or os.environ.get("EMAIL_FROM") or branding.get("email") or "hello@churvox.com"
-
-    customer = _final_txt(payload.get("customer_name") or payload.get("client_name"), "there")
-    business = _final_txt(branding.get("business_name"), "Churvox")
-    amount = _final_money(payload.get("total") or payload.get("amount_due") or payload.get("quote_amount") or payload.get("subtotal") or payload.get("price"))
-    invoice_no = _final_txt(payload.get("invoice_number"))
-    quote_no = _final_txt(payload.get("quote_number"))
-    pay_url = _final_payment_url(payload, branding)
-
-    if action_type == "quote_follow_up":
-        subject = f"Following up on {quote_no or 'your quote'}"
-        body = _final_txt(payload.get("message"), f"Hi {customer}, just checking in on {quote_no or 'your quote'}{f' for {amount}' if amount else ''}.")
-        filename = f"quote-{quote_no or _final_txt(payload.get('quote_id'), 'quote')}.pdf"
-    elif action_type == "invoice_reminder":
-        subject = f"Payment reminder {invoice_no or ''}".strip()
-        body = _final_txt(payload.get("message"), f"Hi {customer}, friendly reminder invoice {invoice_no}{f' for {amount}' if amount else ''} is still open.")
-        filename = f"invoice-{invoice_no or _final_txt(payload.get('invoice_id'), 'invoice')}.pdf"
-    else:
-        subject = f"Invoice {invoice_no or ''} from {business}".strip()
-        body = _final_txt(payload.get("message"), f"Hi {customer}, your invoice {invoice_no}{f' for {amount}' if amount else ''} is ready.")
-        filename = f"invoice-{invoice_no or _final_txt(payload.get('invoice_id'), 'invoice')}.pdf"
-
-    if pay_url and action_type in {"send_invoice", "invoice_reminder"}:
-        body = f"{body}\n\nPay online: {pay_url}"
-
-    safe_body = body.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br/>")
-    logo_url = _final_txt(branding.get("logo_url"))
-    logo = f'<img src="{logo_url}" alt="{business}" style="max-height:70px;max-width:220px;object-fit:contain;" />' if logo_url else f'<div style="font-size:24px;font-weight:900;color:#0f1722;">{business}</div>'
-    button = f'<a href="{pay_url}" style="display:inline-block;background:#16a34a;color:#fff;text-decoration:none;font-weight:900;border-radius:14px;padding:14px 22px;margin-top:18px;">Pay online</a>' if pay_url and action_type in {"send_invoice", "invoice_reminder"} else ""
-
-    html_body = f"""
-    <div style="background:#f5f7f1;margin:0;padding:28px;font-family:Arial,Helvetica,sans-serif;color:#0f1722;">
-      <div style="max-width:680px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:28px;overflow:hidden;">
-        <div style="padding:28px;border-bottom:1px solid #e2e8f0;">{logo}</div>
-        <div style="padding:30px;">
-          <div style="font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:900;color:#06b6d4;">Churvox document</div>
-          <h1 style="font-size:34px;line-height:1;margin:12px 0 16px;font-weight:900;color:#0f1722;">{amount or "Document ready"}</h1>
-          <div style="font-size:16px;line-height:1.6;font-weight:700;color:#334155;">{safe_body}</div>
-          {button}
-          <p style="margin-top:24px;font-size:13px;line-height:1.5;color:#64748b;">A full PDF copy is attached.</p>
-        </div>
-        <div style="padding:18px 30px;background:#0f1722;color:#cbd5e1;font-size:12px;font-weight:700;">Sent by {business} using Churvox.</div>
-      </div>
-    </div>
-    """
-
-    filename = "".join(ch if ch.isalnum() or ch in ".-_" else "-" for ch in filename).strip("-") or "churvox-document.pdf"
-    pdf_bytes = _final_invoice_pdf(action_type, payload, branding)
-
-    postmark_payload = {
-        "From": from_email,
-        "To": to_email,
-        "Subject": subject,
-        "TextBody": body,
-        "HtmlBody": html_body,
-        "MessageStream": "outbound",
-        "Attachments": [{
-            "Name": filename,
-            "Content": base64.b64encode(pdf_bytes).decode("ascii"),
-            "ContentType": "application/pdf",
-        }],
-    }
-
-    def _send():
-        req = urllib.request.Request(
-            "https://api.postmarkapp.com/email",
-            data=json.dumps(postmark_payload).encode("utf-8"),
-            headers={
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-                "X-Postmark-Server-Token": token,
-            },
-            method="POST",
-        )
         try:
             with urllib.request.urlopen(req, timeout=25) as resp:
                 raw = resp.read().decode("utf-8")
@@ -14072,7 +13922,7 @@ async def final_approve_send_action(action_id: str, payload: dict = Body(default
                 "client_name": merged.get("client_name"),
                 "customer_name": merged.get("customer_name") or merged.get("client_name"),
                 "customer_email": merged.get("customer_email"),
-                "description": merged.get("description"),
+                "description": merged.get("description") or merged.get("invoice_description") or merged.get("job_title") or "Service work completed",
                 "subtotal": _final_num(merged.get("subtotal") or merged.get("price")),
                 "total": _final_num(merged.get("total") or merged.get("subtotal") or merged.get("price")),
                 "status": "draft",

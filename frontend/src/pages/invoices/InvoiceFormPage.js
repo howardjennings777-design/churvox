@@ -30,6 +30,80 @@ function readQuote(payload) { const data = payload?.data ?? payload; return data
 function buildInvoiceNumber(settings) { return `${settings?.invoice_prefix || "INV"}-${Date.now().toString().slice(-6)}`; }
 function quoteTotal(quote) { return n(quote?.price || quote?.total || quote?.amount || quote?.subtotal || 0); }
 function quoteDescription(quote) { return quote?.job_description || quote?.description || quote?.notes || quote?.customer_name || "Quoted service work"; }
+
+function cleanText(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function firstText(...values) {
+  return cleanText(values.find((value) => cleanText(value)) || "");
+}
+
+function buildAiInvoiceDescription(job = {}, client = {}, settings = {}) {
+  const clientDisplay = firstText(
+    client.name,
+    client.client_name,
+    client.customer_name,
+    job.client_name,
+    job.customer_name,
+    "the customer"
+  );
+
+  const service = firstText(
+    job.service_type,
+    job.job_type,
+    job.title,
+    job.job_title,
+    job.job_name,
+    "service work"
+  );
+
+  const address = firstText(
+    job.address,
+    job.job_address,
+    job.site_address,
+    client.site_address,
+    client.address
+  );
+
+  const notes = firstText(
+    job.ai_invoice_description,
+    job.invoice_description_draft,
+    job.completion_notes,
+    job.worker_notes,
+    job.worker_note,
+    job.notes,
+    job.description
+  );
+
+  const proof = Array.isArray(job.photos || job.photo_urls || job.proof_photos)
+    ? `Photos/proof recorded: ${(job.photos || job.photo_urls || job.proof_photos).length}.`
+    : "";
+
+  const industry = firstText(settings.trade_industry_type, "service");
+
+  const parts = [];
+  parts.push(`${service} completed for ${clientDisplay}.`);
+  if (address) parts.push(`Work location: ${address}.`);
+  if (notes) parts.push(`Job notes: ${notes}.`);
+  if (proof) parts.push(proof);
+  parts.push(`Invoice prepared from the completed ${industry} job record.`);
+
+  return parts.filter(Boolean).join("\\n");
+}
+
+function buildAiLineDescription(job = {}, fallback = "Service work completed") {
+  return firstText(
+    job.ai_invoice_line,
+    job.service_type,
+    job.job_type,
+    job.title,
+    job.job_title,
+    job.job_name,
+    fallback
+  );
+}
+
 function quoteLineItems(quote) {
   const lines = Array.isArray(quote?.line_items) ? quote.line_items : [];
   if (lines.length) return lines.map((line) => ({
@@ -197,19 +271,25 @@ export default function InvoiceFormPage() {
     if (client) applyClientRecord(client, false);
   }
   function applyJobRecord(job, setJobId = true) {
-    const price = n(job.price || job.job_price || job.fixed_price || job.total || job.amount || 0);
-    const desc = job.ai_invoice_description || job.invoice_description_draft || job.description || job.notes || job.title || job.job_name || "Service work completed";
+    const relatedClient = clients.find((x) => clientId(x) === String(job.client_id || ""));
+    const price = n(job.price || job.job_price || job.fixed_price || job.total || job.amount || job.subtotal || 0);
+    const aiDescription = buildAiInvoiceDescription(job, relatedClient, settings);
+    const lineDesc = buildAiLineDescription(job, "Service work completed");
     setFormData((current) => ({
       ...current,
       job_id: setJobId ? jobId(job) : current.job_id,
       client_id: job.client_id || current.client_id,
-      customer_name: job.customer_name || job.client_name || current.customer_name,
-      customer_email: job.customer_email || job.client_email || current.customer_email,
-      address: job.address || job.site_address || current.address,
-      site_address: job.site_address || job.address || current.site_address,
-      description: desc,
-      line_items: [emptyLine(desc, price)],
+      customer_name: job.customer_name || job.client_name || clientName(relatedClient) || current.customer_name,
+      customer_email: job.customer_email || job.client_email || relatedClient?.email || relatedClient?.customer_email || current.customer_email,
+      customer_phone: job.customer_phone || job.client_phone || relatedClient?.phone || relatedClient?.mobile || current.customer_phone,
+      billing_address: relatedClient?.billing_address || relatedClient?.address || current.billing_address,
+      address: job.address || job.job_address || job.site_address || relatedClient?.address || current.address,
+      site_address: job.site_address || job.job_address || job.address || relatedClient?.site_address || relatedClient?.address || current.site_address,
+      description: aiDescription,
+      notes: current.notes || aiDescription,
+      line_items: [emptyLine(lineDesc, price)],
     }));
+    toast.success("AI added the job description to the invoice");
   }
   function applyJobId(selectedId) {
     update("job_id", selectedId);
@@ -232,6 +312,31 @@ export default function InvoiceFormPage() {
       line_items: quoteLineItems(quote),
     }));
   }
+
+
+  function aiFillDescriptionFromLinkedJob() {
+    const job = jobs.find((x) => jobId(x) === String(formData.job_id || ""));
+    if (!job) {
+      toast.error("Select a linked job first");
+      return;
+    }
+    const relatedClient = clients.find((x) => clientId(x) === String(formData.client_id || job.client_id || ""));
+    const aiDescription = buildAiInvoiceDescription(job, relatedClient, settings);
+    const lineDesc = buildAiLineDescription(job, "Service work completed");
+    const price = n(job.price || job.job_price || job.fixed_price || job.total || job.amount || job.subtotal || formData.line_items?.[0]?.unit_price || 0);
+
+    setFormData((current) => ({
+      ...current,
+      description: aiDescription,
+      notes: current.notes || aiDescription,
+      line_items: current.line_items?.length
+        ? current.line_items.map((line, index) => index === 0 ? { ...line, description: lineDesc, unit_price: line.unit_price || price, amount: line.amount || price } : line)
+        : [emptyLine(lineDesc, price)],
+    }));
+
+    toast.success("AI refreshed the invoice job description");
+  }
+
 
   const subtotal = useMemo(() => formData.line_items.reduce((sum, line) => sum + n(line.amount), 0), [formData.line_items]);
   const discount = n(formData.discount_amount);
@@ -322,7 +427,7 @@ export default function InvoiceFormPage() {
       <PremiumCard title="Business defaults"><div className="rounded-2xl border border-lime-300/20 bg-lime-300/10 p-3 text-sm font-bold text-lime-100">{settings.business_name || "No business name yet"} · Prefix {settings.invoice_prefix || "INV"} · GST {settings.default_gst_rate || 15}% · Due in {settings.default_invoice_due_days || 7} days</div></PremiumCard>
       <PremiumCard title="Customer and linked work"><div className="grid grid-cols-1 gap-4 md:grid-cols-2"><label className="space-y-2"><span className={labelClass}>Saved client</span><select value={formData.client_id} onChange={(e) => applyClient(e.target.value)} className={inputClass}><option value="">Select client</option>{clients.map((client) => <option key={clientId(client)} value={clientId(client)}>{clientName(client)}</option>)}</select></label><label className="space-y-2"><span className={labelClass}>Linked job</span><select value={formData.job_id} onChange={(e) => applyJobId(e.target.value)} className={inputClass}><option value="">No linked job</option>{jobs.map((job) => <option key={jobId(job)} value={jobId(job)}>{jobTitle(job)} — {job.status || "open"}</option>)}</select></label>{[["customer_name", "Customer name *"], ["customer_email", "Customer email"], ["customer_phone", "Customer phone"], ["billing_address", "Billing address"], ["site_address", "Site / job address"], ["quote_id", "Linked quote ID"]].map(([key, label]) => <label className="space-y-2" key={key}><span className={labelClass}>{label}</span><input value={formData[key] || ""} onChange={(e) => update(key, e.target.value)} className={inputClass} /></label>)}</div></PremiumCard>
       <PremiumCard title="Invoice lines"><div className="space-y-3">{formData.line_items.map((line, index) => <div key={index} className="grid grid-cols-12 gap-3 items-end rounded-2xl border border-slate-700 bg-slate-950/50 p-3"><label className="col-span-12 space-y-1 md:col-span-5"><span className="text-xs font-black text-slate-300">Description</span><input value={line.description} onChange={(e) => updateLine(index, "description", e.target.value)} className={inputClass} /></label><label className="col-span-4 space-y-1 md:col-span-2"><span className="text-xs font-black text-slate-300">Qty</span><input type="number" step="0.01" value={line.quantity} onChange={(e) => updateLine(index, "quantity", e.target.value)} className={inputClass} /></label><label className="col-span-4 space-y-1 md:col-span-2"><span className="text-xs font-black text-slate-300">Unit price</span><input type="number" step="0.01" value={line.unit_price} onChange={(e) => updateLine(index, "unit_price", e.target.value)} className={inputClass} /></label><label className="col-span-4 space-y-1 md:col-span-2"><span className="text-xs font-black text-slate-300">Line total</span><input type="number" step="0.01" value={line.amount} onChange={(e) => updateLine(index, "amount", e.target.value)} className={inputClass} /></label><button type="button" onClick={() => removeLine(index)} className="col-span-12 rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-red-200 md:col-span-1"><Trash2 size={16} /></button></div>)}<button type="button" onClick={addLine} className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-black text-slate-950"><Plus size={16} /> Add line item</button></div></PremiumCard>
-      <PremiumCard title="Terms, tax and payment"><div className="grid grid-cols-1 gap-4 md:grid-cols-3">{[["invoice_number", "Invoice number"], ["due_date", "Due date", "date"], ["gst_rate", "GST rate %", "number"], ["discount_amount", "Discount", "number"], ["deposit_amount", "Deposit / already paid", "number"], ["amount_paid", "Other amount paid", "number"], ["payment_link", "Payment link"], ["payment_terms", "Payment terms"]].map(([key, label, type = "text"]) => <label className="space-y-2" key={key}><span className={labelClass}>{label}</span><input type={type} value={formData[key] || ""} onChange={(e) => update(key, e.target.value)} className={inputClass} /></label>)}<label className="space-y-2 md:col-span-3"><span className={labelClass}>Customer description / public notes</span><textarea value={formData.description} onChange={(e) => update("description", e.target.value)} rows={3} className={inputClass} /></label><label className="space-y-2 md:col-span-3"><span className={labelClass}>Internal notes</span><textarea value={formData.internal_notes} onChange={(e) => update("internal_notes", e.target.value)} rows={2} className={inputClass} /></label></div></PremiumCard>
+      <PremiumCard title="Terms, tax and payment"><div className="grid grid-cols-1 gap-4 md:grid-cols-3">{[["invoice_number", "Invoice number"], ["due_date", "Due date", "date"], ["gst_rate", "GST rate %", "number"], ["discount_amount", "Discount", "number"], ["deposit_amount", "Deposit / already paid", "number"], ["amount_paid", "Other amount paid", "number"], ["payment_link", "Payment link"], ["payment_terms", "Payment terms"]].map(([key, label, type = "text"]) => <label className="space-y-2" key={key}><span className={labelClass}>{label}</span><input type={type} value={formData[key] || ""} onChange={(e) => update(key, e.target.value)} className={inputClass} /></label>)}<div className="md:col-span-3 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><div className="text-xs font-black uppercase tracking-[0.14em] text-cyan-200">AI invoice wording</div><p className="mt-1 text-sm font-bold text-slate-200">Pulls job title, address, client, worker notes, completion notes and proof summary into a clear invoice description.</p></div><button type="button" onClick={aiFillDescriptionFromLinkedJob} className="rounded-full bg-cyan-300 px-4 py-2 text-sm font-black text-slate-950">AI add job description</button></div></div><label className="space-y-2 md:col-span-3"><span className={labelClass}>Customer description / public notes</span><textarea value={formData.description} onChange={(e) => update("description", e.target.value)} rows={5} className={inputClass} /></label><label className="space-y-2 md:col-span-3"><span className={labelClass}>Internal notes</span><textarea value={formData.internal_notes} onChange={(e) => update("internal_notes", e.target.value)} rows={2} className={inputClass} /></label></div></PremiumCard>
       <PremiumCard title="Invoice preview"><div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-5"><div><span className="block text-slate-300">Subtotal</span><b className="text-white">{money(subtotal)}</b></div><div><span className="block text-slate-300">Discount</span><b className="text-white">{money(discount)}</b></div><div><span className="block text-slate-300">GST</span><b className="text-white">{money(gstAmount)}</b></div><div><span className="block text-slate-300">Total</span><b className="text-cyan-300">{money(total)}</b></div><div><span className="block text-slate-300">Amount due</span><b className="text-lime-300">{money(due)}</b></div></div></PremiumCard>
       <div className="flex justify-end gap-3"><button type="button" onClick={() => navigate("/invoices")} className="rounded-full border border-slate-600 px-5 py-3 font-black text-slate-100">Cancel</button><PremiumButton type="submit" disabled={saving} iconLeft={saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}>{saving ? "Saving…" : isEdit ? "Update invoice" : "Create invoice"}</PremiumButton></div>
     </form>}
