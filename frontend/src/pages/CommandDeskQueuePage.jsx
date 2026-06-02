@@ -258,11 +258,14 @@ function SlipModal({ item, onClose, onChanged }) {
     setBusy(false);
 
     const appOk = res?.success && res?.data?.success !== false;
+    const shouldClose = appOk && res?.data?.close !== false;
 
     if (appOk) {
-      toast.success(res?.data?.message || (isSendSlip ? "Approved + sent with PDF" : "Approved"));
-      onClose();
-      await onChanged();
+      toast.success(res?.data?.message || (isSendSlip ? "Approved + sent with branded PDF" : "Approved"));
+      if (shouldClose) {
+        onClose();
+        await onChanged();
+      }
       return;
     }
 

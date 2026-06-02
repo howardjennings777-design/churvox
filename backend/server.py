@@ -15806,6 +15806,516 @@ async def stage5_repair_completed_jobs(payload: dict = Body(default={}), current
 
 
 
+
+# CHURVOX_STAGE6_APPROVE_SEND_POLISH_START
+# Final polished approve/send route.
+# Hydrates slips from real invoice/quote/client/job records before sending PDFs.
+
+STAGE6_SEND_TYPES = {"send_invoice", "invoice_reminder", "quote_follow_up"}
+STAGE6_OWNER_ROLES = {"owner", "employer", "admin", "manager", "office_admin", "office admin", "business_owner", "platform_owner"}
+
+def _s6_txt(value, fallback=""):
+    return str(value or fallback or "").strip()
+
+def _s6_norm(value):
+    return _s6_txt(value).lower().replace(" ", "_").replace("-", "_")
+
+def _s6_now():
+    return datetime.now(timezone.utc)
+
+def _s6_num(value):
+    try:
+        if isinstance(value, str):
+            value = value.replace("$", "").replace(",", "").replace("NZD", "").strip()
+        return float(value or 0)
+    except Exception:
+        return 0.0
+
+def _s6_money(value):
+    raw = _s6_txt(value)
+    if raw.startswith("$"):
+        return raw
+    amount = _s6_num(raw)
+    return f"${amount:,.2f}" if amount else raw
+
+def _s6_safe(value):
+    if isinstance(value, list):
+        return [_s6_safe(v) for v in value]
+    if isinstance(value, dict):
+        out = {}
+        for k, v in value.items():
+            out["id" if k == "_id" else k] = _s6_safe(v)
+        return out
+    try:
+        if isinstance(value, ObjectId):
+            return str(value)
+    except Exception:
+        pass
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    return value
+
+def _s6_role_ok(user):
+    role = _s6_txt((user or {}).get("role")).lower()
+    email = _s6_txt((user or {}).get("email")).lower()
+    return (
+        role in STAGE6_OWNER_ROLES
+        or email == "hello@churvox.com"
+        or (user or {}).get("is_admin") is True
+        or (user or {}).get("is_platform_owner") is True
+    )
+
+async def _s6_business_id(current_user):
+    try:
+        bid = await get_user_business_id(current_user)
+        if bid:
+            return str(bid)
+    except Exception:
+        pass
+    return _s6_txt(
+        (current_user or {}).get("business_id")
+        or (current_user or {}).get("businessId")
+        or (current_user or {}).get("id")
+        or (current_user or {}).get("_id")
+        or (current_user or {}).get("user_id")
+    )
+
+def _s6_oid_query(record_id):
+    rid = _s6_txt(record_id)
+    ors = [
+        {"id": rid},
+        {"action_id": rid},
+        {"related_id": rid},
+        {"related_entity_id": rid},
+        {"job_id": rid},
+        {"invoice_id": rid},
+        {"quote_id": rid},
+        {"client_id": rid},
+    ]
+    try:
+        if ObjectId.is_valid(rid):
+            ors.insert(0, {"_id": ObjectId(rid)})
+    except Exception:
+        pass
+    return {"$or": ors}
+
+def _s6_scope_query(business_id, current_user):
+    values = []
+    for raw in [
+        business_id,
+        (current_user or {}).get("business_id"),
+        (current_user or {}).get("businessId"),
+        (current_user or {}).get("id"),
+        (current_user or {}).get("_id"),
+        (current_user or {}).get("user_id"),
+        (current_user or {}).get("owner_id"),
+    ]:
+        if raw is None or str(raw).strip() == "":
+            continue
+        values.append(str(raw))
+        try:
+            if ObjectId.is_valid(str(raw)):
+                values.append(ObjectId(str(raw)))
+        except Exception:
+            pass
+
+    dedup = []
+    for value in values:
+        if value not in dedup:
+            dedup.append(value)
+
+    ors = []
+    for key in ["business_id", "businessId", "owner_id", "ownerId", "user_id", "created_by", "created_by_user_id", "employer_id", "account_id"]:
+        for value in dedup:
+            ors.append({key: value})
+
+    return {"$or": ors} if ors else {"business_id": str(business_id)}
+
+async def _s6_find_one(collection_name, business_id, current_user, record_id):
+    if not record_id:
+        return {}
+    coll = getattr(db, collection_name)
+    scoped = {"$and": [_s6_scope_query(business_id, current_user), _s6_oid_query(record_id)]}
+    try:
+        found = await coll.find_one(scoped)
+        if found:
+            return found
+    except Exception:
+        pass
+
+    if _s6_role_ok(current_user):
+        try:
+            return await coll.find_one(_s6_oid_query(record_id)) or {}
+        except Exception:
+            return {}
+    return {}
+
+async def _s6_find_client_for_record(business_id, current_user, record):
+    record = record or {}
+    client_id = _s6_txt(record.get("client_id"))
+    name = _s6_txt(record.get("client_name") or record.get("customer_name"))
+    email = _s6_txt(record.get("customer_email") or record.get("client_email") or record.get("email"))
+
+    bases = []
+    if client_id:
+        bases.append(_s6_oid_query(client_id))
+    if name:
+        bases.append({"$or": [{"name": name}, {"client_name": name}, {"customer_name": name}]})
+    if email:
+        bases.append({"$or": [{"email": email}, {"customer_email": email}, {"client_email": email}]})
+
+    scope = _s6_scope_query(business_id, current_user)
+    for base in bases:
+        try:
+            found = await db.clients.find_one({"$and": [scope, base]})
+            if found:
+                return found
+        except Exception:
+            pass
+        if _s6_role_ok(current_user):
+            try:
+                found = await db.clients.find_one(base)
+                if found:
+                    return found
+            except Exception:
+                pass
+    return {}
+
+async def _s6_settings(business_id, current_user):
+    try:
+        if "_stage3_branding" in globals():
+            return await _stage3_branding(business_id, current_user)
+    except Exception:
+        pass
+    try:
+        return await db.business_document_settings.find_one({"business_id": str(business_id)}) or {}
+    except Exception:
+        return {}
+
+def _s6_doc_number(prefix, doc, field, fallback_id):
+    existing = _s6_txt(doc.get(field) or doc.get("number"))
+    if existing:
+        return existing
+    short = _s6_txt(fallback_id or doc.get("_id") or doc.get("id"), "000001")[-6:].upper()
+    return f"{prefix}-{short}"
+
+def _s6_job_title(job):
+    return _s6_txt(
+        (job or {}).get("service_type")
+        or (job or {}).get("job_type")
+        or (job or {}).get("title")
+        or (job or {}).get("job_title")
+        or (job or {}).get("job_name"),
+        "Service work"
+    )
+
+def _s6_description_from_job(job, client=None):
+    job = job or {}
+    client = client or {}
+    client_name = _s6_txt(client.get("name") or client.get("client_name") or job.get("client_name") or job.get("customer_name"), "the customer")
+    title = _s6_job_title(job)
+    address = _s6_txt(job.get("job_address") or job.get("address") or job.get("site_address") or client.get("address"))
+    notes = _s6_txt(job.get("ai_invoice_description") or job.get("invoice_description_draft") or job.get("completion_notes") or job.get("worker_notes") or job.get("worker_note") or job.get("notes") or job.get("description"))
+
+    parts = [f"{title} completed for {client_name}."]
+    if address:
+        parts.append(f"Work location: {address}.")
+    if notes:
+        parts.append(f"Job notes: {notes}.")
+    parts.append("Invoice prepared from the completed job record.")
+    return "\n".join(parts)
+
+async def _s6_hydrate_invoice_payload(action_type, merged, action, business_id, current_user):
+    invoice_id = _s6_txt(merged.get("invoice_id") or action.get("related_entity_id") or action.get("related_id"))
+    invoice = await _s6_find_one("invoices", business_id, current_user, invoice_id)
+    settings = await _s6_settings(business_id, current_user)
+
+    if not invoice:
+        return merged
+
+    client = await _s6_find_client_for_record(business_id, current_user, invoice)
+
+    job = {}
+    job_id = _s6_txt(invoice.get("job_id") or merged.get("job_id"))
+    if job_id:
+        job = await _s6_find_one("jobs", business_id, current_user, job_id)
+
+    invoice_no = _s6_doc_number(_s6_txt(settings.get("invoice_prefix"), "INV"), invoice, "invoice_number", invoice_id)
+
+    customer = _s6_txt(
+        invoice.get("customer_name")
+        or invoice.get("client_name")
+        or client.get("name")
+        or client.get("client_name")
+        or merged.get("customer_name")
+        or merged.get("client_name"),
+        "Customer"
+    )
+
+    description = _s6_txt(
+        merged.get("description")
+        or invoice.get("description")
+        or invoice.get("notes")
+        or invoice.get("line_description")
+    )
+    if not description and job:
+        description = _s6_description_from_job(job, client)
+
+    total_value = (
+        invoice.get("total")
+        or invoice.get("amount_due")
+        or invoice.get("balance_due")
+        or invoice.get("amount")
+        or invoice.get("subtotal")
+        or merged.get("total")
+        or merged.get("amount_due")
+        or merged.get("subtotal")
+        or merged.get("price")
+    )
+
+    hydrated = {
+        **merged,
+        "business_id": str(business_id),
+        "invoice_id": invoice_id,
+        "invoice_number": invoice_no,
+        "job_id": _s6_txt(job_id or merged.get("job_id")),
+        "job_title": _s6_txt(merged.get("job_title") or _s6_job_title(job) if job else merged.get("job_title")),
+        "client_id": _s6_txt(invoice.get("client_id") or client.get("_id") or merged.get("client_id")),
+        "customer_name": customer,
+        "client_name": customer,
+        "customer_email": _s6_txt(invoice.get("customer_email") or invoice.get("client_email") or client.get("email") or merged.get("customer_email")),
+        "client_phone": _s6_txt(client.get("phone") or client.get("mobile") or merged.get("client_phone")),
+        "client_address": _s6_txt(client.get("billing_address") or client.get("address") or merged.get("client_address")),
+        "job_address": _s6_txt(job.get("job_address") or job.get("address") or job.get("site_address") or merged.get("job_address")),
+        "description": description or "Service work completed.",
+        "subtotal": _s6_money(invoice.get("subtotal") or total_value),
+        "total": _s6_money(total_value),
+        "amount_due": _s6_money(invoice.get("amount_due") or invoice.get("balance_due") or total_value),
+        "due_date": _s6_txt(invoice.get("due_date") or merged.get("due_date")),
+        "payment_url": _s6_txt(invoice.get("payment_url") or invoice.get("payment_link") or merged.get("payment_url") or settings.get("payment_url")),
+    }
+
+    if action_type == "invoice_reminder":
+        hydrated["message"] = _s6_txt(
+            merged.get("message"),
+            f"Hi {customer}, friendly reminder invoice {invoice_no}{f' for {hydrated.get('amount_due')}' if hydrated.get('amount_due') else ''} is still open. Please let us know if you need another copy or have any questions."
+        )
+    else:
+        hydrated["message"] = _s6_txt(
+            merged.get("message"),
+            f"Hi {customer}, your invoice {invoice_no}{f' for {hydrated.get('total')}' if hydrated.get('total') else ''} is ready."
+        )
+
+    return hydrated
+
+async def _s6_hydrate_quote_payload(merged, action, business_id, current_user):
+    quote_id = _s6_txt(merged.get("quote_id") or action.get("related_entity_id") or action.get("related_id"))
+    quote = await _s6_find_one("quotes", business_id, current_user, quote_id)
+    settings = await _s6_settings(business_id, current_user)
+
+    if not quote:
+        return merged
+
+    client = await _s6_find_client_for_record(business_id, current_user, quote)
+    quote_no = _s6_doc_number(_s6_txt(settings.get("quote_prefix"), "QT"), quote, "quote_number", quote_id)
+
+    customer = _s6_txt(
+        quote.get("customer_name")
+        or quote.get("client_name")
+        or client.get("name")
+        or client.get("client_name")
+        or merged.get("customer_name")
+        or merged.get("client_name"),
+        "Customer"
+    )
+
+    amount = quote.get("total") or quote.get("amount") or quote.get("subtotal") or merged.get("quote_amount") or merged.get("total")
+
+    hydrated = {
+        **merged,
+        "business_id": str(business_id),
+        "quote_id": quote_id,
+        "quote_number": quote_no,
+        "client_id": _s6_txt(quote.get("client_id") or client.get("_id") or merged.get("client_id")),
+        "customer_name": customer,
+        "client_name": customer,
+        "customer_email": _s6_txt(quote.get("customer_email") or quote.get("client_email") or client.get("email") or merged.get("customer_email")),
+        "client_phone": _s6_txt(client.get("phone") or client.get("mobile") or merged.get("client_phone")),
+        "description": _s6_txt(quote.get("description") or quote.get("notes") or merged.get("description") or "Quote prepared."),
+        "quote_amount": _s6_money(amount),
+        "total": _s6_money(amount),
+        "message": _s6_txt(
+            merged.get("message"),
+            f"Hi {customer}, just checking in on {quote_no}{f' for {_s6_money(amount)}' if _s6_money(amount) else ''}. Happy to answer any questions or adjust the details if needed."
+        ),
+    }
+
+    return hydrated
+
+def _s6_required(action_type):
+    if action_type == "send_invoice":
+        return ["invoice_id", "invoice_number", "customer_name", "customer_email", "total", "description"]
+    if action_type == "invoice_reminder":
+        return ["invoice_id", "invoice_number", "customer_name", "customer_email", "amount_due", "message"]
+    if action_type == "quote_follow_up":
+        return ["quote_id", "quote_number", "customer_name", "customer_email", "message"]
+    if action_type == "assign_worker":
+        return ["job_id", "worker_id"]
+    if action_type == "create_invoice_draft":
+        return ["job_id", "client_name", "description"]
+    if action_type == "job_review":
+        return ["job_id", "client_name"]
+    return []
+
+def _s6_missing(action_type, payload):
+    return [key for key in _s6_required(action_type) if not _s6_txt((payload or {}).get(key))]
+
+async def _s6_send(action_type, payload):
+    sender = globals().get("_stage3_send_customer_email") or globals().get("_ai_slip_send_customer_email")
+    if not sender:
+        return False, "Email/PDF sender is not loaded on backend"
+    return await sender(action_type, payload)
+
+async def _s6_create_invoice_draft(merged, action, business_id, current_user):
+    job_id = _s6_txt(merged.get("job_id") or action.get("related_entity_id") or action.get("related_id"))
+    if not job_id:
+        return False, "Missing job_id"
+
+    existing = await db.invoices.find_one({"business_id": str(business_id), "job_id": str(job_id)})
+    if existing:
+        return True, existing
+
+    job = await _s6_find_one("jobs", business_id, current_user, job_id)
+    client = await _s6_find_client_for_record(business_id, current_user, job or merged)
+    settings = await _s6_settings(business_id, current_user)
+
+    description = _s6_txt(merged.get("description"))
+    if not description and job:
+        description = _s6_description_from_job(job, client)
+
+    total = _s6_num(merged.get("total") or merged.get("subtotal") or merged.get("price") or (job or {}).get("price") or (job or {}).get("fixed_price") or 0)
+
+    doc = {
+        "business_id": str(business_id),
+        "job_id": str(job_id),
+        "client_id": _s6_txt(merged.get("client_id") or (job or {}).get("client_id") or client.get("_id")),
+        "client_name": _s6_txt(merged.get("client_name") or (job or {}).get("client_name") or client.get("name")),
+        "customer_name": _s6_txt(merged.get("customer_name") or merged.get("client_name") or (job or {}).get("client_name") or client.get("name")),
+        "customer_email": _s6_txt(merged.get("customer_email") or (job or {}).get("customer_email") or client.get("email")),
+        "invoice_number": f"{_s6_txt(settings.get('invoice_prefix'), 'INV')}-{str(job_id)[-6:].upper()}",
+        "description": description or "Service work completed.",
+        "subtotal": total,
+        "total": total,
+        "amount_due": total,
+        "status": "draft",
+        "source": "stage6_approved_command_board_slip",
+        "created_at": _s6_now(),
+        "updated_at": _s6_now(),
+    }
+
+    result = await db.invoices.insert_one(doc)
+    doc["_id"] = result.inserted_id
+    return True, doc
+
+@api_router.post("/ai/operator/actions/{action_id}/approve-send-final")
+async def stage6_approve_send_polished(action_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    if not _s6_role_ok(current_user):
+        raise HTTPException(status_code=403, detail="Owner approval required")
+
+    business_id = await _s6_business_id(current_user)
+
+    action = await db.ai_operator_actions.find_one(_s6_oid_query(action_id))
+    if not action:
+        raise HTTPException(status_code=404, detail="Slip not found")
+
+    action_type = _s6_norm(action.get("action_type") or action.get("type"))
+    merged = {**(action.get("payload") or {}), **(action.get("draft_payload") or {}), **(payload or {})}
+    merged.setdefault("business_id", str(business_id))
+
+    if action_type in {"send_invoice", "invoice_reminder"}:
+        merged = await _s6_hydrate_invoice_payload(action_type, merged, action, business_id, current_user)
+    elif action_type == "quote_follow_up":
+        merged = await _s6_hydrate_quote_payload(merged, action, business_id, current_user)
+
+    missing = _s6_missing(action_type, merged)
+    if missing:
+        await db.ai_operator_actions.update_one({"_id": action["_id"]}, {"$set": {
+            "payload": merged,
+            "draft_payload": merged,
+            "missing": missing,
+            "ready": False,
+            "group": "needs_details",
+            "updated_at": _s6_now(),
+        }})
+        return {
+            "success": False,
+            "error": "Missing before approval: " + ", ".join(missing),
+            "missing": missing,
+            "close": False,
+        }
+
+    email_sent = False
+    created_invoice = None
+
+    if action_type in STAGE6_SEND_TYPES:
+        ok, send_result = await _s6_send(action_type, merged)
+        if not ok:
+            return {"success": False, "error": send_result, "close": False}
+
+        email_sent = True
+        await db.ai_operator_actions.update_one({"_id": action["_id"]}, {"$set": {
+            "email_sent": True,
+            "email_sent_at": _s6_now(),
+            "email_send_result": _s6_safe(send_result),
+            "payload": merged,
+            "draft_payload": merged,
+            "updated_at": _s6_now(),
+        }})
+
+        if action_type in {"send_invoice", "invoice_reminder"} and merged.get("invoice_id"):
+            await db.invoices.update_one(_s6_oid_query(merged.get("invoice_id")), {"$set": {
+                "last_sent_at": _s6_now(),
+                "last_sent_to": merged.get("customer_email"),
+                "status": "sent" if action_type == "send_invoice" else "unpaid",
+                "updated_at": _s6_now(),
+            }})
+
+    elif action_type == "create_invoice_draft":
+        ok, created_invoice = await _s6_create_invoice_draft(merged, action, business_id, current_user)
+        if not ok:
+            return {"success": False, "error": created_invoice, "close": False}
+
+    elif action_type == "assign_worker":
+        job_id = _s6_txt(merged.get("job_id") or action.get("related_entity_id") or action.get("related_id"))
+        worker_id = _s6_txt(merged.get("worker_id"))
+        if job_id and worker_id:
+            await db.jobs.update_one(_s6_oid_query(job_id), {"$set": {
+                "assigned_worker_id": worker_id,
+                "worker_id": worker_id,
+                "assigned_worker_name": merged.get("recommended_worker_name") or merged.get("worker_name") or "Assigned worker",
+                "status": "assigned",
+                "updated_at": _s6_now(),
+            }})
+
+    await db.ai_operator_actions.update_one({"_id": action["_id"]}, {"$set": {
+        "status": "completed",
+        "completed_at": _s6_now(),
+        "executed_by": _s6_txt(current_user.get("email")),
+        "final_approved": True,
+        "updated_at": _s6_now(),
+    }})
+
+    if email_sent:
+        return {"success": True, "message": "Approved + sent with branded PDF", "completed": True, "email_sent": True, "close": True}
+    if action_type == "create_invoice_draft":
+        return {"success": True, "message": "Approved + draft invoice created", "completed": True, "invoice": _s6_safe(created_invoice), "close": True}
+    if action_type == "assign_worker":
+        return {"success": True, "message": "Approved + worker assigned", "completed": True, "close": True}
+    return {"success": True, "message": "Approved", "completed": True, "close": True}
+# CHURVOX_STAGE6_APPROVE_SEND_POLISH_END
+
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")
