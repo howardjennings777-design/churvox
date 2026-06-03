@@ -727,6 +727,8 @@ function SlipModal({ item, onClose, onChanged }) {
       </section>
     </div>
   );
+}
+
 export default function CommandDeskQueuePage() {
   const { get, post } = useApi();
   const [items, setItems] = React.useState([]);
