@@ -1,5 +1,15 @@
-/* CHURVOX SLIP THEME DISABLED SAFETY PATCH
-   The previous global [role="dialog"] overrides affected the live site layout.
-   Keep this file as a no-op so App.js imports do not break, but no global styling is applied.
-   Rebuild slip styling later inside each slip component instead of using broad global CSS.
+/* CHURVOX SAFE COMMAND THEME PATCHES
+   Keep this file narrow. Do not use broad dialog overrides here.
 */
+
+/* Active command sidebar pills should be cyan, not white. */
+aside .bg-white.text-slate-950 {
+  background: #67e8f9 !important;
+  color: #0f172a !important;
+  box-shadow: 0 10px 30px rgba(103, 232, 249, 0.18) !important;
+}
+
+aside .bg-white.text-slate-950 span {
+  background: rgba(15, 23, 42, 0.92) !important;
+  color: #ffffff !important;
+}
