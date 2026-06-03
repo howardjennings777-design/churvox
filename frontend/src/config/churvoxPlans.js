@@ -234,3 +234,11 @@ export const PLAN_RANKS = {
 export function planRank(key) {
   return PLAN_RANKS[String(key || "none").toLowerCase()] || 0;
 }
+
+export function hasPlanAtLeast(currentPlan, requiredPlan) {
+  return planRank(currentPlan) >= planRank(requiredPlan);
+}
+
+export function requiredPlanLabel(requiredPlan) {
+  return nicePlanName(requiredPlan) || "a higher plan";
+}
