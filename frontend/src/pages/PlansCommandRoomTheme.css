@@ -227,7 +227,9 @@
 }
 
 /* Launch hardening: the Plans hero had an old title leaking into the live page.
-   Keep only the first real title and force the description to stay small. */
+   Keep one hero title only, even if an old cached bundle renders two h1 tags. */
+.cv-plans-hero h1 + h1,
+.cv-plans-hero h1:nth-of-type(n+2),
 .cv-plans-hero--single-title > div > h1:not(:first-of-type),
 .cv-plans-hero--single-title > div > h2,
 .cv-plans-hero--single-title > div > .cv-legacy-title,
