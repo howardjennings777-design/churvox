@@ -132,52 +132,180 @@ function QuoteCard({ quote, onOpen }) {
 
 function QuoteSlip({ quote, onClose }) {
   if (!quote) return null;
+
   const id = idOf(quote);
   const status = statusOf(quote);
+  const amount = quoteAmount(quote);
+  const customer = clientName(quote);
+  const title = quoteTitle(quote);
+  const email = quote?.customer_email || quote?.client_email || quote?.email || quote?.client?.email || "";
+  const phone = quote?.customer_phone || quote?.client_phone || quote?.phone || quote?.client?.phone || "";
+  const address = quote?.job_address || quote?.site_address || quote?.address || quote?.client_address || quote?.client?.address || "";
+  const description = quote?.description || quote?.scope || quote?.notes || "No description saved for this quote yet.";
+
+  const needsAttention =
+    status === "accepted"
+      ? "This quote is accepted. It can move into job or invoice flow."
+      : status === "sent"
+        ? "This quote has been sent. Watch for reply or prepare a follow-up."
+        : status === "follow_up"
+          ? "This quote may need a polite customer nudge."
+          : "Review the quote details before sending it to the customer.";
+
+  const rows = [
+    ["Quote", quote?.quote_number || id || "Not saved"],
+    ["Client", customer],
+    ["Email", email || "Not found"],
+    ["Phone", phone || "Not found"],
+    ["Address / site", address || "Not found"],
+    ["Status", prettyStatus(status)],
+    ["Value", money(amount)],
+    ["Created", quote?.created_at || "Not found"],
+    ["Description", description],
+  ];
+
   return (
-    <div className="fixed inset-0 z-[2147483647] h-[100dvh] w-screen overflow-hidden bg-[#f5f7f1] text-slate-950" role="dialog" aria-modal="true">
-      <div className="flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#f5f7f1]">
-        <header className="relative overflow-hidden border-b border-slate-800 bg-slate-950 p-6 text-white md:p-7">
-          <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-blue-500/20 blur-3xl" />
-          <div className="relative flex items-start justify-between gap-4">
-            <div>
-              <div className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">FULL SCREEN QUOTE SLIP</div>
-              <h2 className="mt-4 text-3xl font-black leading-[0.95] tracking-[-0.07em] md:text-5xl">{quoteTitle(quote)}</h2>
+    <div className="fixed inset-0 z-[2147483647] h-[100dvh] w-screen overflow-hidden bg-[#0f1722] text-slate-950" role="dialog" aria-modal="true">
+      <section className="flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#0f1722]">
+        <header className="shrink-0 border-b border-white/10 bg-[#0f1722] px-5 py-5 text-white md:px-9 md:py-7">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-200">
+                Full screen quote slip
+              </div>
+
+              <h1 className="mt-3 text-4xl font-black leading-[0.9] tracking-[-0.075em] text-white md:text-6xl">
+                {title}
+              </h1>
+
+              <p className="mt-3 max-w-5xl text-sm font-bold leading-6 text-slate-300">
+                {customer} · {money(amount)}. Review the quote, customer, price, status, notes and linked details before opening the record.
+              </p>
             </div>
-            <button type="button" onClick={onClose} className="rounded-2xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-black text-white hover:bg-white/15">Close</button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="shrink-0 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/20"
+            >
+              Close
+            </button>
           </div>
-          <p className="relative mt-5 max-w-xl text-sm font-semibold leading-6 text-slate-300">{clientName(quote)} · {money(quoteAmount(quote))}</p>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto bg-[#f4f6f8] p-5 md:p-6">
-          <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">What needs attention</div>
-            <p className="mt-3 text-lg font-black tracking-[-0.035em] text-slate-950">Status: {prettyStatus(status)}</p>
-            <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-bold leading-6 text-blue-950">{status === "accepted" ? "This quote is accepted. It can move into job or invoice flow." : status === "sent" ? "This quote has been sent. Watch for reply or prepare a follow-up." : status === "follow_up" ? "This quote may need a polite customer nudge." : "Review the quote details before sending it to the customer."}</div>
-          </section>
-          <section className="mt-4 rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Quote details</div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Client</div><div className="mt-1 text-sm font-black text-slate-950">{clientName(quote)}</div></div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Value</div><div className="mt-1 text-sm font-black text-slate-950">{money(quoteAmount(quote))}</div></div>
-            </div>
-            <p className="mt-4 text-sm font-bold leading-6 text-slate-600">{quote?.description || quote?.scope || quote?.notes || "No description saved for this quote yet."}</p>
-          </section>
-        
+        <main className="min-h-0 flex-1 overflow-y-auto bg-[#f5f7f1] p-4 md:p-7">
+          <div className="grid min-h-full w-full gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
+            <div className="space-y-5">
+              <section className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
+                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-amber-600">
+                  What needs attention
+                </div>
+
+                <h2 className="mt-3 text-3xl font-black tracking-[-0.06em] text-slate-950">
+                  {status === "draft" ? "Review draft before sending." : prettyStatus(status)}
+                </h2>
+
+                <p className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-black leading-6 text-blue-950">
+                  {needsAttention}
+                </p>
+              </section>
+
+              <section className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
+                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">
+                  Quote details
+                </div>
+
+                <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {rows.map(([label, value]) => (
+                    <div key={label} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+                        {label}
+                      </div>
+                      <div className="mt-2 whitespace-pre-wrap break-words text-sm font-black leading-6 text-slate-950">
+                        {String(value || "Not found")}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
               <CommandSlipEverything
                 record={quote}
                 context="QuoteSlip"
               />
-</main>
+            </div>
 
-        <footer className="flex flex-wrap gap-3 border-t border-slate-200 bg-white p-5">
-          {id && !id.startsWith("sample-") ? <Link to={`/quotes/${id}`} className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Open quote record</Link> : <Link to="/quotes/new" className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Create real quote</Link>}
-          <Link to="/quotes/new" className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-800 hover:bg-slate-50">New quote</Link>
-        </footer>
-      </div>
+            <aside className="rounded-[30px] border border-white/10 bg-[#0f1722] p-5 text-white shadow-[0_18px_55px_rgba(15,23,42,0.18)] xl:sticky xl:top-0 xl:h-fit">
+              <div className="text-[11px] font-black uppercase tracking-[0.18em] text-cyan-200">
+                Quote actions
+              </div>
+
+              <h2 className="mt-2 text-3xl font-black tracking-[-0.05em] text-white">
+                Review first.
+              </h2>
+
+              <div className="mt-5 rounded-2xl bg-white/10 p-4">
+                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Status</div>
+                <div className="mt-2 text-sm font-black text-white">{prettyStatus(status)}</div>
+              </div>
+
+              <div className="mt-3 rounded-2xl bg-white/10 p-4">
+                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Quote value</div>
+                <div className="mt-2 text-sm font-black text-white">{money(amount)}</div>
+              </div>
+
+              <div className="mt-3 rounded-2xl bg-white/10 p-4">
+                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Customer</div>
+                <div className="mt-2 text-sm font-black text-white">{customer}</div>
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-amber-300/20 bg-amber-300/10 p-4">
+                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-200">Owner rule</div>
+                <p className="mt-2 text-xs font-black leading-5 text-amber-50">
+                  Do not send the quote, convert it, change pricing, or message the customer without owner approval.
+                </p>
+              </div>
+
+              <div className="mt-5 grid gap-3">
+                {id && !id.startsWith("sample-") ? (
+                  <Link
+                    to={`/quotes/${id}`}
+                    className="rounded-2xl bg-cyan-300 px-5 py-3 text-center text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200"
+                  >
+                    Open quote record
+                  </Link>
+                ) : (
+                  <Link
+                    to="/quotes/new"
+                    className="rounded-2xl bg-cyan-300 px-5 py-3 text-center text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200"
+                  >
+                    Create real quote
+                  </Link>
+                )}
+
+                <Link
+                  to="/quotes/new"
+                  className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-center text-sm font-black text-white hover:bg-white/15"
+                >
+                  New quote
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/15"
+                >
+                  Back to quotes
+                </button>
+              </div>
+            </aside>
+          </div>
+        </main>
+      </section>
     </div>
   );
 }
+
 
 function QuotesCommandContent() {
   const { get } = useApi();
