@@ -1,0 +1,248 @@
+/* CHURVOX_GLOBAL_INDUSTRIAL_COMMAND_OVERRIDE_20260604
+   Loaded from index.js after the main app CSS so it wins over old page colours.
+*/
+
+:root {
+  --cvi-bg: #05070b;
+  --cvi-panel: #111827;
+  --cvi-panel-2: #0b1220;
+  --cvi-text: #f8fafc;
+  --cvi-muted: rgba(226, 232, 240, .82);
+  --cvi-border: rgba(250, 204, 21, .22);
+  --cvi-amber: #facc15;
+  --cvi-orange: #fb923c;
+  --cvi-cyan: #22d3ee;
+  --cvi-action: linear-gradient(135deg, #facc15, #fb923c 52%, #22d3ee);
+  --cvi-panel-bg: linear-gradient(135deg, rgba(17,24,39,.96), rgba(11,18,32,.91));
+  --cvi-page-bg:
+    radial-gradient(circle at 8% 0%, rgba(250,204,21,.16), transparent 28%),
+    radial-gradient(circle at 90% 6%, rgba(34,211,238,.18), transparent 30%),
+    linear-gradient(135deg, #111827 0%, #0b1220 48%, #05070b 100%);
+}
+
+/* Main command shells rendered by createPortal */
+main.fixed.inset-0.z-\[2147483000\],
+main.fixed.inset-0.z-\[2147483600\],
+main.fixed.inset-0,
+.concept-c2-frame,
+.xcf-real-page,
+.xcf-workspace,
+.xcf-shell.xcf-real-page {
+  color: var(--cvi-text) !important;
+  background: var(--cvi-page-bg) !important;
+}
+
+main.fixed.inset-0 > .flex > aside {
+  display: none !important;
+}
+
+main.fixed.inset-0 > .flex > section,
+main.fixed.inset-0 section.min-w-0,
+main.fixed.inset-0 section.h-full,
+main.fixed.inset-0 .bg-\[\#eef1f4\],
+main.fixed.inset-0 .bg-\[\#f5f7f1\],
+main.fixed.inset-0 .bg-\[\#f4f6f8\],
+main.fixed.inset-0 .bg-white,
+main.fixed.inset-0 .bg-slate-50,
+.concept-c2-frame .bg-white,
+.concept-c2-frame .bg-slate-50,
+.concept-c2-frame .bg-\[\#f5f7f1\] {
+  background: transparent !important;
+  color: var(--cvi-text) !important;
+}
+
+/* Every old page card/stat/list colour family becomes graphite industrial. */
+main.fixed.inset-0 section.rounded-\[30px\],
+main.fixed.inset-0 section.rounded-\[28px\],
+main.fixed.inset-0 article.rounded-\[22px\],
+main.fixed.inset-0 div.rounded-\[30px\],
+main.fixed.inset-0 div.rounded-\[28px\],
+main.fixed.inset-0 div.rounded-\[22px\],
+main.fixed.inset-0 div.rounded-2xl,
+main.fixed.inset-0 aside.rounded-\[30px\],
+main.fixed.inset-0 .bg-blue-50,
+main.fixed.inset-0 .bg-blue-100,
+main.fixed.inset-0 .bg-blue-200,
+main.fixed.inset-0 .bg-blue-600,
+main.fixed.inset-0 .bg-blue-700,
+main.fixed.inset-0 .bg-blue-900,
+main.fixed.inset-0 .bg-blue-950,
+main.fixed.inset-0 .bg-cyan-50,
+main.fixed.inset-0 .bg-cyan-100,
+main.fixed.inset-0 .bg-cyan-950,
+main.fixed.inset-0 .bg-emerald-50,
+main.fixed.inset-0 .bg-emerald-100,
+main.fixed.inset-0 .bg-emerald-200,
+main.fixed.inset-0 .bg-emerald-950,
+main.fixed.inset-0 .bg-amber-50,
+main.fixed.inset-0 .bg-amber-100,
+main.fixed.inset-0 .bg-amber-200,
+main.fixed.inset-0 .bg-amber-950,
+main.fixed.inset-0 .bg-red-50,
+main.fixed.inset-0 .bg-red-100,
+main.fixed.inset-0 .bg-red-950,
+main.fixed.inset-0 .bg-rose-50,
+main.fixed.inset-0 .bg-rose-100,
+main.fixed.inset-0 .bg-rose-950,
+main.fixed.inset-0 .bg-violet-50,
+main.fixed.inset-0 .bg-violet-100,
+main.fixed.inset-0 .bg-violet-950,
+main.fixed.inset-0 .bg-slate-950,
+main.fixed.inset-0 .bg-\[\#0f1722\],
+.concept-c2-frame .c2-real-page-card,
+.concept-c2-frame section.rounded-\[30px\],
+.concept-c2-frame section.rounded-\[28px\],
+.concept-c2-frame div.rounded-2xl,
+.concept-c2-frame div.rounded-\[30px\],
+.concept-c2-frame div.rounded-\[28px\],
+.concept-c2-frame article.rounded-\[22px\] {
+  border-color: var(--cvi-border) !important;
+  background: var(--cvi-panel-bg) !important;
+  color: var(--cvi-text) !important;
+  box-shadow: 0 22px 70px rgba(2,6,23,.34), inset 0 1px 0 rgba(255,255,255,.06) !important;
+}
+
+/* Text */
+main.fixed.inset-0 h1,
+main.fixed.inset-0 h2,
+main.fixed.inset-0 h3,
+main.fixed.inset-0 h4,
+main.fixed.inset-0 strong,
+main.fixed.inset-0 b,
+main.fixed.inset-0 .text-slate-950,
+main.fixed.inset-0 .text-slate-900,
+main.fixed.inset-0 .text-blue-950,
+main.fixed.inset-0 .text-blue-900,
+main.fixed.inset-0 .text-blue-800,
+main.fixed.inset-0 .text-emerald-900,
+main.fixed.inset-0 .text-emerald-800,
+main.fixed.inset-0 .text-amber-950,
+main.fixed.inset-0 .text-amber-900,
+main.fixed.inset-0 .text-amber-800,
+main.fixed.inset-0 .text-red-800,
+.concept-c2-frame h1,
+.concept-c2-frame h2,
+.concept-c2-frame h3,
+.concept-c2-frame strong,
+.concept-c2-frame b,
+.concept-c2-frame .text-slate-950,
+.concept-c2-frame .text-slate-900 {
+  color: #ffffff !important;
+}
+
+main.fixed.inset-0 p,
+main.fixed.inset-0 li,
+main.fixed.inset-0 .text-slate-800,
+main.fixed.inset-0 .text-slate-700,
+main.fixed.inset-0 .text-slate-600,
+main.fixed.inset-0 .text-slate-500,
+main.fixed.inset-0 .text-slate-400,
+main.fixed.inset-0 .text-slate-300,
+main.fixed.inset-0 .text-slate-200,
+.concept-c2-frame p,
+.concept-c2-frame li,
+.concept-c2-frame .text-slate-700,
+.concept-c2-frame .text-slate-600,
+.concept-c2-frame .text-slate-500,
+.concept-c2-frame .text-slate-400 {
+  color: var(--cvi-muted) !important;
+}
+
+main.fixed.inset-0 .text-blue-700,
+main.fixed.inset-0 .text-blue-600,
+main.fixed.inset-0 .text-cyan-200,
+main.fixed.inset-0 .text-emerald-700,
+main.fixed.inset-0 .text-amber-700,
+main.fixed.inset-0 .text-amber-600,
+main.fixed.inset-0 .text-red-700,
+main.fixed.inset-0 .text-\[10px\],
+main.fixed.inset-0 .text-\[11px\],
+.concept-c2-frame .text-blue-600,
+.concept-c2-frame .text-amber-600,
+.concept-c2-frame .text-\[10px\],
+.concept-c2-frame .text-\[11px\] {
+  color: var(--cvi-amber) !important;
+}
+
+/* Borders and form controls */
+main.fixed.inset-0 .border-slate-900,
+main.fixed.inset-0 .border-slate-800,
+main.fixed.inset-0 .border-slate-300,
+main.fixed.inset-0 .border-slate-200,
+main.fixed.inset-0 .border-blue-200,
+main.fixed.inset-0 .border-amber-100,
+main.fixed.inset-0 .border-amber-200,
+main.fixed.inset-0 .border-emerald-200,
+main.fixed.inset-0 .border-red-200,
+main.fixed.inset-0 .border-white\/10,
+main.fixed.inset-0 .border-white\/15,
+.concept-c2-frame .border-slate-300,
+.concept-c2-frame .border-slate-200,
+.concept-c2-frame .border-white\/10,
+.concept-c2-frame .border-white\/15 {
+  border-color: var(--cvi-border) !important;
+}
+
+main.fixed.inset-0 input,
+main.fixed.inset-0 textarea,
+main.fixed.inset-0 select,
+.concept-c2-frame input,
+.concept-c2-frame textarea,
+.concept-c2-frame select {
+  background: rgba(2,6,23,.52) !important;
+  border-color: rgba(250,204,21,.24) !important;
+  color: var(--cvi-text) !important;
+}
+
+main.fixed.inset-0 input::placeholder,
+main.fixed.inset-0 textarea::placeholder,
+.concept-c2-frame input::placeholder,
+.concept-c2-frame textarea::placeholder {
+  color: rgba(226,232,240,.55) !important;
+}
+
+/* Buttons */
+main.fixed.inset-0 .bg-cyan-300,
+main.fixed.inset-0 .bg-cyan-400,
+main.fixed.inset-0 .bg-cyan-500,
+main.fixed.inset-0 .bg-amber-500,
+main.fixed.inset-0 button.bg-cyan-300,
+main.fixed.inset-0 a.bg-cyan-300,
+.concept-c2-frame .bg-cyan-300,
+.concept-c2-frame .bg-cyan-400,
+.concept-c2-frame .bg-cyan-500,
+.concept-c2-frame .bg-amber-500 {
+  background: var(--cvi-action) !important;
+  color: #020617 !important;
+  border-color: rgba(250,204,21,.45) !important;
+  box-shadow: 0 14px 38px rgba(251,146,60,.24) !important;
+}
+
+/* Fit portal pages beside the new industrial sidebar */
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 {
+  left: 286px !important;
+  width: calc(100vw - 286px) !important;
+  max-width: calc(100vw - 286px) !important;
+}
+
+body:has(.cv-industrial-sidebar) .concept-c2-frame,
+body:has(.cv-industrial-sidebar) .xcf-real-page,
+body:has(.cv-industrial-sidebar) .xcf-workspace,
+body:has(.cv-industrial-sidebar) .xcf-shell.xcf-real-page {
+  margin-left: 286px !important;
+  width: calc(100vw - 286px) !important;
+  max-width: calc(100vw - 286px) !important;
+}
+
+@media (max-width: 1023px) {
+  body:has(.cv-industrial-sidebar) main.fixed.inset-0,
+  body:has(.cv-industrial-sidebar) .concept-c2-frame,
+  body:has(.cv-industrial-sidebar) .xcf-real-page,
+  body:has(.cv-industrial-sidebar) .xcf-workspace,
+  body:has(.cv-industrial-sidebar) .xcf-shell.xcf-real-page {
+    left: 0 !important;
+    margin-left: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+  }
+}
