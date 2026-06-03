@@ -144,7 +144,7 @@ function MoneyCard({ record, onOpen }) {
         <div className="text-slate-500">Amount: {money(valueOf(record))}</div>
       </div>
       <div className="mt-4 flex flex-wrap gap-3">
-        <button type="button" onClick={() => onOpen(record)} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Open slip</button>
+        <button type="button" onClick={() => onOpen(record)} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Review slip</button>
         <Link to={linkFor(record)} className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Open record</Link>
       </div>
     </article>

@@ -118,7 +118,7 @@ function WorkerCard({ worker, onOpen }) {
         <div className="text-slate-500">Region: {worker?.region || worker?.area || "Not set"} · Jobs: {jobCount(worker)}</div>
       </div>
       <div className="mt-4 flex flex-wrap gap-3">
-        <button type="button" onClick={() => onOpen(worker)} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Open slip</button>
+        <button type="button" onClick={() => onOpen(worker)} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Review slip</button>
         <Link to="/dispatch" className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Dispatch</Link>
       </div>
     </article>

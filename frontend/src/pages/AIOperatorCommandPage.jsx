@@ -132,7 +132,7 @@ function ActionCard({ action, onOpen, onApprove, onReject, busy }) {
       </div>
       <p className={`mt-3 text-sm font-bold leading-6 ${mutedText}`}>{summaryOf(action)}</p>
       <div className="mt-4 flex flex-wrap gap-3">
-        <button type="button" onClick={() => onOpen(action)} className="rounded-xl border border-cyan-300/20 bg-white/5 px-4 py-2 text-sm font-black text-cyan-100 hover:bg-white/10">Open slip</button>
+        <button type="button" onClick={() => onOpen(action)} className="rounded-xl border border-cyan-300/20 bg-white/5 px-4 py-2 text-sm font-black text-cyan-100 hover:bg-white/10">Review slip</button>
         <Link to={linkFor(action)} className="rounded-xl border border-cyan-300/20 bg-white/5 px-4 py-2 text-sm font-black text-cyan-100 hover:bg-white/10">Open record</Link>
         {!id.startsWith("sample-") ? <button type="button" disabled={busy === `approve-${id}`} onClick={() => onApprove(action)} className="rounded-xl bg-gradient-to-r from-cyan-300 to-emerald-300 px-4 py-2 text-sm font-black text-slate-950 shadow-lg shadow-cyan-500/20 disabled:opacity-60">Approve</button> : null}
         {!id.startsWith("sample-") ? <button type="button" disabled={busy === `reject-${id}`} onClick={() => onReject(action)} className="rounded-xl border border-red-300/25 bg-red-500/10 px-4 py-2 text-sm font-black text-red-100 disabled:opacity-60">Reject</button> : null}

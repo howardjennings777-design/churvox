@@ -86,7 +86,7 @@ function typeLabel(type) {
   if (type === "invoice_reminder") return "Payment reminder";
   if (type.includes("quote")) return "Quote follow-up";
   if (type.includes("job_review")) return "Job review";
-  return "Prepared slip";
+  return "Prepared action";
 }
 
 function approveText(type) {
@@ -278,13 +278,13 @@ function SlipModal({ item, onClose, onChanged }) {
       role="dialog"
       aria-modal="true"
     >
-      <div className="relative flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-[32px] border border-white/40 bg-[#f5f7f1] shadow-2xl">
+      <div className="relative flex  w-full  flex-col overflow-hidden  border border-white/40 bg-[#f5f7f1] shadow-2xl h-screen w-screen max-h-screen max-w-none rounded-none">
         <header className="relative rounded-t-[32px] bg-[#0f1722] p-5 pr-16 text-white sm:p-6 sm:pr-20">
           <button
             type="button"
             onClick={onClose}
             className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-2xl border border-white/15 bg-white/10 text-lg font-black text-white hover:bg-white/20"
-            aria-label="Close slip"
+            aria-label="Close"
           >
             ×
           </button>
@@ -343,7 +343,7 @@ function SlipModal({ item, onClose, onChanged }) {
               <p className="mt-3 text-sm font-bold leading-6 text-slate-200">{outcome(item.type)}</p>
               {!ready && <button onClick={save} disabled={busy} className="mt-5 w-full rounded-2xl bg-amber-400 px-5 py-3 text-sm font-black text-slate-950 disabled:opacity-40">{busy ? "Saving…" : "Save details"}</button>}
               <button onClick={approve} disabled={busy || !ready} className="mt-3 w-full rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-slate-950 disabled:opacity-40">{busy ? (["send_invoice", "invoice_reminder", "quote_follow_up"].includes(item.type) || item.type.includes("quote") ? "Approving + sending…" : "Approving…") : approveText(item.type)}</button>
-              <button onClick={onClose} className="mt-3 w-full rounded-2xl border border-white/15 px-5 py-3 text-sm font-black hover:bg-white/10">Close slip</button>
+              <button onClick={onClose} className="mt-3 w-full rounded-2xl border border-white/15 px-5 py-3 text-sm font-black hover:bg-white/10">Close</button>
             </div>
           </aside>
         </main>
@@ -471,7 +471,7 @@ export default function CommandDeskQueuePage() {
           )}
 
           <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5">
-            <h2 className="text-3xl font-black tracking-[-.06em]">Prepared slips</h2>
+            <h2 className="text-3xl font-black tracking-[-.06em]">Prepared actions</h2>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               {items.slice(0, 12).map((item) => (
                 <button key={item.id || item.title} onClick={() => setOpen(item)} className={`rounded-[22px] border p-4 text-left hover:border-blue-300 ${item.ready ? "bg-white" : "border-amber-200 bg-amber-50"}`}>
@@ -486,7 +486,7 @@ export default function CommandDeskQueuePage() {
                   {item.reason ? <p className="mt-2 text-xs font-bold leading-5 text-slate-500">{item.reason}</p> : null}
                   {item.reason ? <p className="mt-2 text-xs font-bold leading-5 text-slate-500">{item.reason}</p> : null}
                   {item.reason ? <p className="mt-2 text-xs font-bold leading-5 text-slate-500">{item.reason}</p> : null}
-                  <div className="mt-3 inline-flex rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white">Open slip</div>
+                  <div className="mt-3 inline-flex rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white">Review slip</div>
                 </button>
               ))}
             </div>

@@ -5,6 +5,7 @@ import './index.css';
 import './styles/churvoxFullPageModals.css';
 import './concept-c/LoggedInLightBackgroundOverride.css';
 import './runtime/churvoxClearOldCache';
+import './runtime/churvoxSlipOnlyMode';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

@@ -122,8 +122,8 @@ function QuoteCard({ quote, onOpen }) {
         <div className="text-slate-500">Value: {money(quoteAmount(quote))}</div>
       </div>
       <div className="mt-4 flex flex-wrap gap-3">
-        <button type="button" onClick={() => onOpen(quote)} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Open slip</button>
-        {id && !id.startsWith("sample-") ? <Link to={`/quotes/${id}`} className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Quote record</Link> : <Link to="/quotes/new" className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Create real quote</Link>}
+        <button type="button" onClick={() => onOpen(quote)} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Review slip</button>
+        {id && !id.startsWith("sample-") ? <Link to={`/quotes/${id}`} className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700" style={{ display: 'none' }}><span style={{ display: "none" }}>Quote record</span></Link> : <Link to="/quotes/new" className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Create real quote</Link>}
       </div>
     </article>
   );

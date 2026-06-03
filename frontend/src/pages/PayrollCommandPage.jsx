@@ -139,7 +139,7 @@ function PayrollCard({ worker, onOpen }) {
         <div className="rounded-2xl bg-slate-50 p-3"><span className="block text-[10px] uppercase tracking-[0.14em] text-slate-400">Gross</span><b>{money(grossPay(worker))}</b></div>
       </div>
       <div className="mt-4 flex flex-wrap gap-3">
-        <button type="button" onClick={() => onOpen(worker)} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Open slip</button>
+        <button type="button" onClick={() => onOpen(worker)} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Review slip</button>
         <Link to="/reports" className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Reports</Link>
       </div>
     </article>

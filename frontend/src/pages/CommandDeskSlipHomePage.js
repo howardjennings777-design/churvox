@@ -134,7 +134,7 @@ function Approval({ item, onOpen }) {
       <p className="mt-3 text-sm font-semibold leading-6 text-slate-600">{item.summary}</p>
       <div className="mt-4 flex gap-3">
         <button type="button" onClick={() => onOpen(item)} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Details</button>
-        <button type="button" onClick={() => onOpen(item)} className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Open slip</button>
+        <button type="button" onClick={() => onOpen(item)} className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Review slip</button>
       </div>
     </article>
   );
