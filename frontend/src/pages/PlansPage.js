@@ -133,14 +133,14 @@ export default function PlansPage() {
   };
   const handleBuyGrowthPack = async () => {
     if (busyPlan || busyAddon || busySms) return;
-    if (isNewUser) return toast.error("Choose a Churvox plan before adding a Growth Pack.");
+    if (isNewUser) return toast.error("Choose Command before adding a Growth Pack.");
     try { setBusyAddon("command_growth_pack"); await openCheckout({ checkout_type: "growth_pack", addon_type: "command_growth_pack", quantity: 1, success_path: "/plans?checkout=success&addon=command_growth_pack", cancel_path: "/plans?checkout=cancelled&addon=command_growth_pack" }); }
     catch (err) { toast.error(err?.response?.data?.detail || err?.data?.detail || err?.message || "Failed to open Growth Pack checkout"); }
     finally { setBusyAddon(""); }
   };
   const handleBuyMyobAddon = async () => {
     if (busyPlan || busyAddon || busySms) return;
-    if (isNewUser) return toast.error("Choose a Churvox plan before adding MYOB.");
+    if (isNewUser) return toast.error("Choose Operator or Command before adding MYOB.");
     if (currentPlan === "enterprise") return toast.success("MYOB is already included in Command.");
     try { setBusyAddon("myob_addon"); await openCheckout({ checkout_type: "myob_addon", addon_type: "myob_addon", quantity: 1, success_path: "/plans?checkout=success&addon=myob_addon", cancel_path: "/plans?checkout=cancelled&addon=myob_addon" }); }
     catch (err) { toast.error(err?.response?.data?.detail || err?.data?.detail || err?.message || "Failed to open MYOB checkout"); }
@@ -156,7 +156,7 @@ export default function PlansPage() {
     <main className="cv-plans" data-version="CHURVOX_PLANS_FIRST_SETUP_REDIRECT_20260601" data-audit-markers={CHURVOX_AUDIT_MARKERS}>
       <div className="cv-plans-shell">
         <header className="cv-plans-top"><ChurvoxLogo size="lg" /><span>{status.label}</span></header>
-        <section className="cv-plans-hero"><div><p className="cv-kicker">Plans & billing</p><h1>Start, Crew, Operator or Command — pick how much admin Churvox handles.</h1><p>{isFirstSetup() ? "Choose your trial plan first. Then Churvox will take you straight into business setup so your first client, job, quote and invoice make sense." : "Start gets you organised. Crew runs the team. Operator prepares the admin for approval. Command unlocks the full command centre with payroll, MYOB and advanced roles."}</p></div><div className="cv-status-pill">{currencyInfo?.currency ? `Billed in ${currencyInfo.currency}` : status.label}</div></section>
+        <section className="cv-plans-hero"><div><p className="cv-kicker">Plans & billing</p><h1>Choose how much admin Churvox handles.</h1><p>{isFirstSetup() ? "Choose your trial plan first. Then Churvox will take you straight into business setup so your first client, job, quote and invoice make sense." : "Start keeps the basics tidy. Crew adds workers. Operator prepares the admin for approval. Command unlocks MYOB, payroll, advanced roles and higher limits."}</p></div><div className="cv-status-pill">{currencyInfo?.currency ? `Billed in ${currencyInfo.currency}` : status.label}</div></section>
         {isFirstSetup() ? <div className="cv-notice"><b>First setup path</b><span>Step 1: choose a plan. Step 2: business setup. Step 3: add your first client.</span></div> : null}
         {notice && <div className={`cv-notice ${notice.type === "warning" ? "warn" : ""}`}><b>{notice.title}</b><span>{notice.text}</span></div>}
         <section className="cv-grid">{displayPlans.map((plan) => {
@@ -193,7 +193,7 @@ export default function PlansPage() {
 
               {(plan.notIncluded || []).length ? (
                 <div className="cv-tier-section cv-tier-locked">
-                  <h3>Not on {plan.name}</h3>
+                  <h3>Upgrade for</h3>
                   <ul>
                     {plan.notIncluded.map((item) => <li key={item}>{item}</li>)}
                   </ul>
