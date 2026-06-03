@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
+import "../styles/dashboard-sidebar-label-fix.css";
 
 const navGroups = [
   { title: "Command", items: [["Command Board", "/dashboard", "CB"], ["AI Operator", "/ai-operator", "AI"], ["Notifications", "/notifications", "NT"]] },
@@ -188,7 +189,7 @@ function Sidebar() {
                 return (
                   <Link key={href} to={href} className={`flex min-h-[34px] items-center gap-2.5 rounded-2xl px-2.5 py-2 text-xs font-black ${active ? "bg-cyan-300 text-slate-950" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
                     <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-xl text-[8px] font-black ${active ? "bg-slate-950 text-white" : "bg-white/10 text-cyan-200"}`}>{icon}</span>
-                    <span className="truncate">{name}</span>
+                    <strong className="min-w-0 flex-1 whitespace-nowrap text-left text-xs font-black leading-none">{name}</strong>
                   </Link>
                 );
               })}
