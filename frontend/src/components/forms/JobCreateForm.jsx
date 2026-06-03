@@ -23,13 +23,21 @@ function arr(value) {
   if (Array.isArray(value?.results)) return value.results;
   return [];
 }
+function normalizeId(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
+  if (typeof value === "object") return normalizeId(value.$oid || value.oid || value.id || value._id || "");
+  const text = String(value || "");
+  return text === "[object Object]" ? "" : text;
+}
 function recordId(payload) {
   const data = payload?.data ?? payload;
   const item = data?.job || data?.item || data?.record || data;
-  return String(data?.id || data?._id || item?.id || item?._id || "");
+  return normalizeId(data?.id || data?._id || item?.id || item?._id || "");
 }
-function clientId(client) { return String(client?.id || client?._id || client?.client_id || ""); }
-function workerId(worker) { return String(worker?.id || worker?._id || worker?.worker_id || ""); }
+function clientId(client) { return normalizeId(client?.id || client?._id || client?.client_id || ""); }
+function workerId(worker) { return normalizeId(worker?.id || worker?._id || worker?.worker_id || ""); }
 function clientName(client) { return client?.name || client?.client_name || client?.customer_name || client?.contact_name || "Client"; }
 function workerName(worker) { return worker?.name || worker?.display_name || worker?.full_name || worker?.email || "Worker"; }
 function money(value) { const n = Number(value || 0); return Number.isFinite(n) ? n : 0; }
@@ -150,10 +158,32 @@ export default function JobCreateForm({ onSuccess, onCancel, submitLabel = "Crea
 
   return <form onSubmit={handleSubmit} className="min-h-full flex flex-col" data-version="CHURVOX_JOB_FROM_CLIENT_STABLE_PREFILL_20260601">
     <div className="space-y-4 pb-28">
-      <section className={section}><p className="text-sm font-black text-white">Job details</p>{clientFromQuery ? <p className="rounded-2xl border border-lime-300/20 bg-lime-300/10 p-3 text-xs font-bold text-lime-100">Opened from a client record. Customer details will prefill once the client loads.</p> : null}<div><Label>Job title *</Label><Input required className="w-full rounded-xl" value={form.title} onChange={(e)=>setForm((p)=>({...p,title:e.target.value}))}/></div><div><Label>Notes / description</Label><Textarea rows={3} className="w-full rounded-xl" value={form.notes} onChange={(e)=>setForm((p)=>({...p,notes:e.target.value}))}/></div></section>
-      <section className={section}><p className="text-sm font-black text-white">Client & location</p><div><Label>Client</Label><select className={fieldClass} value={form.client_id} onChange={(e)=>pickClient(e.target.value)}><option value="">Select client</option>{clients.map((c)=><option key={clientId(c)} value={clientId(c)}>{clientName(c)}</option>)}</select></div><div className="grid gap-3 md:grid-cols-2"><div><Label>Customer email</Label><Input className="w-full rounded-xl" value={form.customer_email} onChange={(e)=>setForm((p)=>({...p,customer_email:e.target.value}))}/></div><div><Label>Customer phone</Label><Input className="w-full rounded-xl" value={form.customer_phone} onChange={(e)=>setForm((p)=>({...p,customer_phone:e.target.value}))}/></div></div><div><Label>Address</Label><Input className="w-full rounded-xl" value={form.address} onChange={(e)=>setForm((p)=>({...p,address:e.target.value}))}/></div><div className="grid md:grid-cols-2 gap-3"><div><Label>Country</Label><select className={fieldClass} value={form.country} onChange={(e)=>setForm((p)=>({...p,country:e.target.value,region:"",assigned_worker_id:"",assigned_worker_name:""}))}>{COUNTRY_OPTIONS.map((c)=><option key={c} value={c}>{c}</option>)}</select></div><div><Label>Region / State</Label><select className={fieldClass} value={form.region} onChange={(e)=>setForm((p)=>({...p,region:e.target.value,assigned_worker_id:"",assigned_worker_name:""}))}><option value="">Select region/state</option>{(REGION_OPTIONS[form.country]||[]).map((r)=><option key={r} value={r}>{r}</option>)}</select></div></div></section>
-      <section className={section}><p className="text-sm font-black text-white">Schedule & assignment</p><div><Label>Scheduled date</Label><Input type="datetime-local" className="w-full rounded-xl" value={form.scheduled_date} onChange={(e)=>setForm((p)=>({...p,scheduled_date:e.target.value}))}/></div><div><Label>Assigned worker</Label><select className={fieldClass} value={form.assigned_worker_id} onChange={(e)=>pickWorker(e.target.value)}><option value="">Select worker</option>{filteredWorkers.map((w)=><option key={workerId(w)} value={workerId(w)}>{workerName(w)}</option>)}</select></div></section>
-      {!isWorker ? <section className={section}><p className="text-sm font-black text-white">Pricing / invoice source</p><div><Label>Pricing type</Label><select className={fieldClass} value={form.pricing_type} onChange={(e)=>setForm((p)=>({...p,pricing_type:e.target.value}))}><option value="fixed">Fixed price</option><option value="hourly">Hourly</option><option value="fixed_extras">Fixed + extras</option><option value="hourly_extras">Hourly + extras</option></select></div>{["fixed","fixed_extras"].includes(form.pricing_type)?<div><Label>Fixed price</Label><Input type="number" step="0.01" className="w-full rounded-xl" value={form.fixed_price} onChange={(e)=>setForm((p)=>({...p,fixed_price:e.target.value}))}/></div>:<div><Label>Hourly rate</Label><Input type="number" step="0.01" className="w-full rounded-xl" value={form.hourly_rate} onChange={(e)=>setForm((p)=>({...p,hourly_rate:e.target.value}))}/></div>}</section> : null}
+      <section className={section}>
+        <p className="text-sm font-black text-white">Job details</p>
+        {clientFromQuery ? <p className="rounded-2xl border border-lime-300/20 bg-lime-300/10 p-3 text-xs font-bold text-lime-100">Opened from a client record. Customer details will prefill once the client loads.</p> : null}
+        <div><Label htmlFor="job-title">Job title *</Label><Input id="job-title" required className="w-full rounded-xl" value={form.title} onChange={(e)=>setForm((p)=>({...p,title:e.target.value}))} data-testid="job-title-input" /></div>
+        <div><Label htmlFor="job-notes">Notes / description</Label><Textarea id="job-notes" rows={3} className="w-full rounded-xl" value={form.notes} onChange={(e)=>setForm((p)=>({...p,notes:e.target.value}))} data-testid="job-notes-input" /></div>
+      </section>
+
+      <section className={section}>
+        <p className="text-sm font-black text-white">Client & location</p>
+        <div><Label htmlFor="job-client">Client</Label><select id="job-client" className={fieldClass} value={form.client_id} onChange={(e)=>pickClient(e.target.value)} data-testid="job-client-select"><option value="">Select client</option>{clients.map((c)=><option key={clientId(c)} value={clientId(c)}>{clientName(c)}</option>)}</select></div>
+        <div className="grid gap-3 md:grid-cols-2"><div><Label htmlFor="job-customer-email">Customer email</Label><Input id="job-customer-email" className="w-full rounded-xl" value={form.customer_email} onChange={(e)=>setForm((p)=>({...p,customer_email:e.target.value}))} data-testid="job-customer-email-input" /></div><div><Label htmlFor="job-customer-phone">Customer phone</Label><Input id="job-customer-phone" className="w-full rounded-xl" value={form.customer_phone} onChange={(e)=>setForm((p)=>({...p,customer_phone:e.target.value}))} data-testid="job-customer-phone-input" /></div></div>
+        <div><Label htmlFor="job-address">Address</Label><Input id="job-address" className="w-full rounded-xl" value={form.address} onChange={(e)=>setForm((p)=>({...p,address:e.target.value}))} data-testid="job-address-input" /></div>
+        <div className="grid md:grid-cols-2 gap-3"><div><Label htmlFor="job-country">Country</Label><select id="job-country" className={fieldClass} value={form.country} onChange={(e)=>setForm((p)=>({...p,country:e.target.value,region:"",assigned_worker_id:"",assigned_worker_name:""}))} data-testid="job-country-select">{COUNTRY_OPTIONS.map((c)=><option key={c} value={c}>{c}</option>)}</select></div><div><Label htmlFor="job-region">Region / State</Label><select id="job-region" className={fieldClass} value={form.region} onChange={(e)=>setForm((p)=>({...p,region:e.target.value,assigned_worker_id:"",assigned_worker_name:""}))} data-testid="job-region-select"><option value="">Select region/state</option>{(REGION_OPTIONS[form.country]||[]).map((r)=><option key={r} value={r}>{r}</option>)}</select></div></div>
+      </section>
+
+      <section className={section}>
+        <p className="text-sm font-black text-white">Schedule & assignment</p>
+        <div><Label htmlFor="job-scheduled-date">Scheduled date</Label><Input id="job-scheduled-date" type="datetime-local" className="w-full rounded-xl" value={form.scheduled_date} onChange={(e)=>setForm((p)=>({...p,scheduled_date:e.target.value}))} data-testid="job-scheduled-date-input" /></div>
+        <div><Label htmlFor="job-assigned-worker">Assigned worker</Label><select id="job-assigned-worker" className={fieldClass} value={form.assigned_worker_id} onChange={(e)=>pickWorker(e.target.value)} data-testid="job-worker-select"><option value="">Select worker</option>{filteredWorkers.map((w)=><option key={workerId(w)} value={workerId(w)}>{workerName(w)}</option>)}</select></div>
+      </section>
+
+      {!isWorker ? <section className={section}>
+        <p className="text-sm font-black text-white">Pricing / invoice source</p>
+        <div><Label htmlFor="job-pricing-type">Pricing type</Label><select id="job-pricing-type" className={fieldClass} value={form.pricing_type} onChange={(e)=>setForm((p)=>({...p,pricing_type:e.target.value}))} data-testid="job-pricing-type-select"><option value="fixed">Fixed price</option><option value="hourly">Hourly</option><option value="fixed_extras">Fixed + extras</option><option value="hourly_extras">Hourly + extras</option></select></div>
+        {["fixed","fixed_extras"].includes(form.pricing_type)?<div><Label htmlFor="job-fixed-price">Fixed price</Label><Input id="job-fixed-price" type="number" step="0.01" className="w-full rounded-xl" value={form.fixed_price} onChange={(e)=>setForm((p)=>({...p,fixed_price:e.target.value}))} data-testid="job-fixed-price-input" /></div>:<div><Label htmlFor="job-hourly-rate">Hourly rate</Label><Input id="job-hourly-rate" type="number" step="0.01" className="w-full rounded-xl" value={form.hourly_rate} onChange={(e)=>setForm((p)=>({...p,hourly_rate:e.target.value}))} data-testid="job-hourly-rate-input" /></div>}
+      </section> : null}
     </div>
     <div className="sticky bottom-0 mt-auto border-t border-slate-700 bg-slate-950/95 backdrop-blur px-1 py-3 flex items-center justify-between gap-3">
       <PremiumButton type="button" variant="secondary" onClick={onCancel}>Cancel</PremiumButton>
