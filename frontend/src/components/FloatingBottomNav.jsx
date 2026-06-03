@@ -20,7 +20,6 @@ const INDUSTRIAL_GROUPS = [
     title: "Command",
     items: [
       ["Command Board", "/dashboard", "CB"],
-      ["AI Operator", "/ai-operator", "AI"],
       ["Notifications", "/notifications", "NT"],
     ],
   },
@@ -56,7 +55,6 @@ const INDUSTRIAL_GROUPS = [
 const COMMAND_PATHS = [
   "/dashboard",
   "/overview",
-  "/ai-operator",
   "/notifications",
   "/jobs",
   "/dispatch",
@@ -79,7 +77,6 @@ function isCommandPath(pathname) {
 
 function isActive(pathname, href) {
   if (href === "/dashboard") return pathname === "/dashboard" || pathname === "/overview";
-  if (href === "/ai-operator") return pathname === "/ai-operator" || pathname.startsWith("/ai-operator/");
   if (href === "/dispatch") return pathname === "/dispatch" || pathname === "/dispatch-board";
   if (href === "/crew-map") return pathname === "/crew-map";
   if (href === "/invoices") return pathname === "/invoices" || pathname.startsWith("/invoices/");
@@ -101,7 +98,7 @@ function IndustrialSidebar({ pathname }) {
       </div>
 
       <div className="cv-industrial-status">
-        <span>AI Operator</span>
+        <span>Command Desk</span>
         <b>Owner approval live</b>
       </div>
 
