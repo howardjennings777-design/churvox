@@ -64,6 +64,51 @@ function amountDue(invoice) {
   return Number(raw || 0);
 }
 
+
+function invoiceBlob(invoice) {
+  try {
+    return JSON.stringify(invoice || {});
+  } catch {
+    return `${invoice?.invoice_number || ""} ${invoice?.client_name || ""} ${invoice?.customer_name || ""} ${invoice?.description || ""}`;
+  }
+}
+
+function isLaunchAuditInvoice(invoice) {
+  const blob = invoiceBlob(invoice);
+  return [
+    /PW E2E/i,
+    /PW Invoice/i,
+    /Playwright/i,
+    /Deep Audit/i,
+    /test reflect/i,
+    /Test Client/i,
+    /TEST Phase/i,
+    /pw-e2e-/i,
+    /audit@example\.com/i,
+    /workflow audit/i,
+    /2026\d{8,}/i,
+  ].some((pattern) => pattern.test(blob));
+}
+
+function cleanInvoiceNumber(invoice) {
+  const number = invoice?.invoice_number || invoice?.number || "";
+  if (!number || /2026\d{8,}/i.test(String(number))) return "Invoice";
+  return String(number).replace(/\s+2026\d{8,}/gi, "").trim();
+}
+
+function cleanInvoiceClient(invoice) {
+  const name = clientName(invoice);
+  if (/PW E2E|PW Client|PW Invoice|Playwright|Deep Audit|TEST Phase|Test Client/i.test(name)) return "Client";
+  return String(name || "No client linked").replace(/\s+2026\d{8,}/gi, "").trim() || "No client linked";
+}
+
+function cleanInvoiceDescription(invoice) {
+  const description = invoice?.description || invoice?.notes || "";
+  if (!description || /No description/i.test(description)) return "No description added yet";
+  if (/PW E2E|Playwright|workflow audit|Deep Audit|test reflect/i.test(description)) return "Invoice prepared from completed work.";
+  return String(description).replace(/\s+2026\d{8,}/gi, "").trim();
+}
+
 function statusOf(invoice) {
   return String(invoice?.status || invoice?.payment_status || "draft").toLowerCase().replaceAll(" ", "_");
 }
@@ -123,13 +168,13 @@ function InvoiceCard({ invoice, onOpen }) {
     <article className="rounded-[22px] border border-white/10 bg-white/[0.035] p-4 text-white shadow-[0_14px_38px_rgba(15,23,42,0.12)] transition hover:-translate-y-0.5 hover:border-cyan-300/40 hover:bg-white/[0.06]">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/70">{invoice?.invoice_number || invoice?.created_at || "Invoice"}</span>
-          <h3 className="mt-1 text-lg font-black tracking-[-0.04em] text-white">{clientName(invoice)}</h3>
+          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/70">{cleanInvoiceNumber(invoice)}</span>
+          <h3 className="mt-1 text-lg font-black tracking-[-0.04em] text-white">{cleanInvoiceClient(invoice)}</h3>
         </div>
         <span className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${statusStyle(status, invoice)}`}>{prettyStatus(status, invoice)}</span>
       </div>
       <div className="mt-3 space-y-1 text-sm font-bold text-slate-200">
-        <div>{invoice?.description || invoice?.notes || "No description added yet"}</div>
+        <div>{cleanInvoiceDescription(invoice)}</div>
         <div className="text-slate-300/80">Draft total: {money(invoiceTotal(invoice))}</div>
         <div className="text-slate-300/80">Amount due: {money(amountDue(invoice))}</div>
       </div>
@@ -201,7 +246,7 @@ function InvoiceSlip({ invoice, onClose }) {
                 </h2>
 
                 <p className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-black leading-6 text-blue-950">
-                  Review draft invoices, send ready invoices, chase overdue money, and track what has been paid.
+                  Review drafts, send ready invoices, follow up overdue money, and track what has been paid.
                 </p>
               </section>
 
@@ -324,7 +369,8 @@ function InvoicesCommandContent() {
     return () => { alive = false; };
   }, [get]);
 
-  const list = invoices.length ? invoices : sampleInvoices;
+  const visibleInvoices = invoices.filter((invoice) => !isLaunchAuditInvoice(invoice));
+  const list = visibleInvoices.length ? visibleInvoices : sampleInvoices;
   const counts = React.useMemo(() => {
     const total = list.length;
     const draft = list.filter((invoice) => ["draft", "new", "pending"].includes(statusOf(invoice))).length;
@@ -346,8 +392,8 @@ function InvoicesCommandContent() {
                 <div className="absolute right-0 top-0 h-56 w-56 rounded-full bg-cyan-500/10 blur-3xl" />
                 <div className="relative">
                   <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-200">Invoices</span>
-                  <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">Turn completed work into paid invoices.</h1>
-                  <p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Review draft invoices, send ready invoices, chase overdue money, and track what has been paid.</p>
+                  <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">Turn completed work into money ready to collect.</h1>
+                  <p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Review drafts, send ready invoices, follow up overdue money, and track what has been paid.</p>
                   <div className="mt-5 flex flex-wrap gap-3">
                     <Link to="/money-desk" className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/15">Open money desk</Link>
                     <Link to="/invoices/new" className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200">Create invoice</Link>
@@ -376,7 +422,7 @@ function InvoicesCommandContent() {
           <section className="mt-5 rounded-[28px] border border-slate-900 bg-slate-950 p-5 text-white shadow-[0_18px_55px_rgba(15,23,42,0.16)]">
             <div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200">Invoice list</div><h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-white">Open invoices</h2></div>{loading && <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-slate-200">Loading…</span>}{error && <span className="rounded-full bg-amber-300/15 px-3 py-1 text-xs font-black text-amber-100">Showing sample layout</span>}</div>
             <div className="grid gap-4 xl:grid-cols-2">
-              {list.map((invoice) => <InvoiceCard key={idOf(invoice) || invoiceTitle(invoice)} invoice={invoice} onOpen={setActiveInvoice} />)}
+              {list.map((invoice) => <InvoiceCard key={idOf(invoice) || cleanInvoiceNumber(invoice)} invoice={invoice} onOpen={setActiveInvoice} />)}
             </div>
           </section>
         </section>
