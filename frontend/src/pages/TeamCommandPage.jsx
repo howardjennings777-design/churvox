@@ -69,6 +69,46 @@ function regionText(worker) {
   return region ? `Region: ${region} · Jobs assigned: ${jobCount(worker)}` : `Region not set · Jobs assigned: ${jobCount(worker)}`;
 }
 
+
+function workerBlob(worker) {
+  try {
+    return JSON.stringify(worker || {});
+  } catch {
+    return `${worker?.name || ""} ${worker?.email || ""} ${worker?.phone || ""}`;
+  }
+}
+
+function isLaunchAuditWorker(worker) {
+  const blob = workerBlob(worker);
+  return [
+    /PW Worker/i,
+    /PW E2E/i,
+    /Playwright/i,
+    /TEST Phase/i,
+    /Deep Audit/i,
+    /worker-2026/i,
+    /pw-worker-/i,
+    /example\.com/i,
+    /2026\d{8,}/i,
+  ].some((pattern) => pattern.test(blob));
+}
+
+function cleanWorkerName(worker) {
+  const name = workerName(worker);
+  if (/PW Worker|PW E2E|Playwright|TEST Phase|Deep Audit/i.test(name)) return "Team member";
+  return String(name || "Team member").replace(/\s+2026\d{8,}/gi, "").trim() || "Team member";
+}
+
+function cleanWorkerEmail(worker) {
+  const email = worker?.email || "";
+  if (/pw-worker-|worker-2026|example\.com/i.test(String(email))) return "No email saved";
+  return email || "No email saved";
+}
+
+function cleanRegionText(worker) {
+  return regionText(worker).replace("Jobs assigned:", "Jobs assigned:").replace(/\s+2026\d{8,}/gi, "");
+}
+
 function statusLabel(status) {
   if (["invited", "pending"].includes(status)) return "Invited";
   if (["active", "available", "online"].includes(status)) return "Active";
@@ -123,18 +163,18 @@ function WorkerCard({ worker, onOpen }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <span className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/70">{pretty(workerRole(worker))}</span>
-          <h3 className="mt-1 text-lg font-black tracking-[-0.04em] text-white">{workerName(worker)}</h3>
+          <h3 className="mt-1 text-lg font-black tracking-[-0.04em] text-white">{cleanWorkerName(worker)}</h3>
         </div>
         <span className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${statusStyle(status)}`}>{statusLabel(status)}</span>
       </div>
       <div className="mt-3 space-y-1 text-sm font-bold text-slate-200">
-        <div>{worker?.email || "No email saved"}</div>
+        <div>{cleanWorkerEmail(worker)}</div>
         <div className="text-slate-300/80">{worker?.phone || worker?.mobile || "No phone saved"}</div>
-        <div className="text-slate-300/80">{regionText(worker)}</div>
+        <div className="text-slate-300/80">{cleanRegionText(worker)}</div>
       </div>
       <div className="mt-4 flex flex-wrap gap-3">
         <button type="button" onClick={() => onOpen(worker)} className="rounded-xl border border-cyan-300/40 bg-cyan-300/10 px-4 py-2 text-sm font-black text-cyan-100 hover:bg-cyan-300/20">Review member</button>
-        <Link to="/dispatch" className="rounded-xl bg-cyan-300 px-4 py-2 text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200">Assign work</Link>
+        <Link to="/dispatch" className="rounded-xl bg-cyan-300 px-4 py-2 text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200">Assign job</Link>
       </div>
     </article>
   );
@@ -151,7 +191,7 @@ function WorkerSlip({ worker, onClose }) {
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-200">Team member review</div>
-              <h2 className="mt-3 text-4xl font-black leading-[0.9] tracking-[-0.075em] text-white md:text-6xl">{workerName(worker)}</h2>
+              <h2 className="mt-3 text-4xl font-black leading-[0.9] tracking-[-0.075em] text-white md:text-6xl">{cleanWorkerName(worker)}</h2>
               <p className="mt-3 max-w-5xl text-sm font-bold leading-6 text-slate-300">{pretty(workerRole(worker))} · {worker?.region || worker?.area || "Region not set"}</p>
             </div>
             <button type="button" onClick={onClose} className="shrink-0 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/20">Close</button>
@@ -199,8 +239,8 @@ function WorkerSlip({ worker, onClose }) {
               <div className="mt-5 rounded-2xl bg-white/10 p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Status</div><div className="mt-2 text-sm font-black text-white">{statusLabel(status)}</div></div>
               <div className="mt-3 rounded-2xl bg-white/10 p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Jobs assigned</div><div className="mt-2 text-sm font-black text-white">{jobCount(worker)}</div></div>
               <div className="mt-5 grid gap-3">
-                <Link to="/dispatch" className="rounded-2xl bg-cyan-300 px-5 py-3 text-center text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200">Assign work</Link>
-                <Link to="/crew-ops" className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-center text-sm font-black text-white hover:bg-white/15">Open crew ops</Link>
+                <Link to="/dispatch" className="rounded-2xl bg-cyan-300 px-5 py-3 text-center text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200">Assign job</Link>
+                <Link to="/crew-ops" className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-center text-sm font-black text-white hover:bg-white/15">Add team member</Link>
                 <button type="button" onClick={onClose} className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/15">Back to team</button>
               </div>
             </aside>
@@ -253,7 +293,8 @@ function TeamCommandContent() {
     return () => { alive = false; };
   }, [get]);
 
-  const list = workers.length ? workers : sampleWorkers;
+  const visibleWorkers = workers.filter((worker) => !isLaunchAuditWorker(worker));
+  const list = visibleWorkers.length ? visibleWorkers : sampleWorkers;
   const counts = React.useMemo(() => {
     const total = list.length;
     const active = list.filter((worker) => ["active", "available", "online", "busy", "assigned", "working"].includes(statusOf(worker))).length;
@@ -278,7 +319,7 @@ function TeamCommandContent() {
                   <p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-slate-300 md:text-base">See who is available, who is busy, and who needs to be invited or assigned before work starts.</p>
                   <div className="mt-5 flex flex-wrap gap-3">
                     <Link to="/dispatch" className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/15">Assign jobs</Link>
-                    <Link to="/crew-ops" className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200">Open crew ops</Link>
+                    <Link to="/team/new" className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200">Add team member</Link>
                   </div>
                 </div>
               </div>
@@ -304,7 +345,7 @@ function TeamCommandContent() {
           <section className="mt-5 rounded-[28px] border border-slate-900 bg-slate-950 p-5 text-white shadow-[0_18px_55px_rgba(15,23,42,0.16)]">
             <div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200">Crew list</div><h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-white">Team members</h2></div>{loading && <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-slate-200">Loading…</span>}{error && <span className="rounded-full bg-amber-300/15 px-3 py-1 text-xs font-black text-amber-100">Showing sample layout</span>}</div>
             <div className="grid gap-4 xl:grid-cols-2">
-              {list.map((worker) => <WorkerCard key={idOf(worker) || workerName(worker)} worker={worker} onOpen={setActiveWorker} />)}
+              {list.map((worker) => <WorkerCard key={idOf(worker) || cleanWorkerName(worker)} worker={worker} onOpen={setActiveWorker} />)}
             </div>
           </section>
         </section>
