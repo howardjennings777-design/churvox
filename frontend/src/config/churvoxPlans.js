@@ -158,7 +158,7 @@ export const CHURVOX_PLANS = [
       "Owner, Manager, Worker, Office Admin and Payroll roles",
       "Advanced automations",
       "Higher AI Operator Action limits",
-      "Payroll, job, invoice and team reports"
+      "Payroll, job, invoice and team reports",
       "Priority support",
     ],
     notIncluded: [
