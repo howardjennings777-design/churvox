@@ -857,7 +857,7 @@ export default function CommandDeskQueuePage() {
         <section className="min-w-0 flex-1 p-5 lg:p-8">
           <header className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-slate-200 bg-white px-5 py-4">
             <div>
-              <div className="text-[10px] font-black uppercase tracking-[.2em] text-slate-500">Command Board · approval slips</div>
+              <div className="text-[10px] font-black uppercase tracking-[.2em] text-emerald-600">FULL SCREEN SLIPS LIVE · forced clean page</div>
               <h1 className="text-3xl font-black tracking-[-.05em]">AI Operator slips</h1>
               <p className="text-sm font-bold text-slate-500">
                 Full-screen slips. Check the details, edit inside the slip, then approve.
