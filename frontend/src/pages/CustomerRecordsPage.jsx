@@ -9,8 +9,8 @@ import { toast } from "sonner";
 
 const navGroups = [
   { title: "Command", items: [["Command Board", "/dashboard", "CB"], ["AI Operator", "/ai-operator", "AI"], ["Approvals", "/ai-operator/approvals", "OK"], ["Notifications", "/notifications", "NT"]] },
-  { title: "Work", items: [["Jobs", "/jobs", "JB"], ["Dispatch", "/dispatch", "DP"], ["Clients", "/clients", "CL"], ["Quotes", "/quotes", "QT"], ["Invoices", "/invoices", "IV"], ["Money Desk", "/money-desk", "$"]] },
-  { title: "Crew & Admin", items: [["Team", "/team", "TM"], ["Crew Ops", "/crew-ops", "CO"], ["Payroll", "/payroll", "PR"], ["Reports", "/reports", "RP"]] },
+  { title: "Work", items: [["Jobs", "/jobs", "JB"], ["Assign Jobs", "/dispatch", "DP"], ["Clients", "/clients", "CL"], ["Quotes", "/quotes", "QT"], ["Invoices", "/invoices", "IV"], ["Money Desk", "/money-desk", "$"]] },
+  { title: "Crew & Admin", items: [["Team", "/team", "TM"], ["Crew Map", "/crew-map", "MP"], ["Payroll", "/payroll", "PR"], ["Reports", "/reports", "RP"]] },
   { title: "System", items: [["Setup", "/onboarding", "SU"], ["Trade Presets", "/trade-presets", "TP"], ["Automation", "/automation", "AU"], ["Integrations", "/integrations", "IN"], ["Operator Tools", "/operator-tools", "OT"], ["Plans", "/plans", "PL"], ["Billing", "/billing-confidence", "BI"], ["Settings", "/settings", "ST"], ["Support", "/support", "?"]] },
 ];
 
@@ -41,7 +41,7 @@ function Sidebar() {
               {group.items.map(([label, href, icon]) => {
                 const active = isActivePath(pathname, href);
                 return (
-                  <Link key={href} to={href} className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-black ${active ? "bg-white text-slate-950" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
+                  <Link key={href} to={href} className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-black ${active ? "bg-cyan-300 text-slate-950 shadow-lg shadow-cyan-300/20" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
                     <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-xl text-[10px] font-black ${active ? "bg-slate-950 text-white" : "bg-white/10 text-cyan-200"}`}>{icon}</span>
                     <span className="truncate">{label}</span>
                   </Link>
@@ -100,6 +100,49 @@ function customerPhone(customer) {
 
 function customerAddress(customer) {
   return customer?.billing_address || customer?.address || customer?.site_address || customer?.customer_address || "";
+}
+
+
+function recordBlob(value) {
+  try {
+    return JSON.stringify(value || {});
+  } catch {
+    return `${value?.name || ""} ${value?.client_name || ""} ${value?.customer_name || ""} ${value?.email || ""} ${value?.address || ""}`;
+  }
+}
+
+function isLaunchAuditCustomer(customer) {
+  const blob = recordBlob(customer);
+  return [
+    /PW E2E/i,
+    /PW Client/i,
+    /Playwright/i,
+    /Deep Audit/i,
+    /test reflect/i,
+    /Test Client/i,
+    /TEST Phase/i,
+    /pw-e2e-/i,
+    /audit@example\.com/i,
+    /client-2026/i,
+    /2026\d{8,}/i,
+  ].some((pattern) => pattern.test(blob));
+}
+
+function cleanClientName(customer) {
+  const name = customerName(customer);
+  if (/PW E2E|PW Client|Playwright|Deep Audit|TEST Phase|Test Client/i.test(name)) return "Client";
+  return String(name || "Client").replace(/\s+2026\d{8,}/gi, "").trim() || "Client";
+}
+
+function cleanClientAddress(customer) {
+  const address = customer.billing_address || customer.address || "";
+  return String(address || "No address saved").replace(/\s+2026\d{8,}/gi, "").trim() || "No address saved";
+}
+
+function cleanClientEmail(customer) {
+  const email = customer.email || customer.phone || "";
+  if (/pw-e2e-|audit@example\.com|example\.com/i.test(String(email))) return customer.phone || "No contact saved";
+  return email || "No contact saved";
 }
 
 function matchesCustomer(record, customer) {
@@ -205,7 +248,7 @@ function CustomerSlip({ selected, draft, updateDraft, saveCustomer, busy, siteDr
           ) : null}
 
           <section className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-slate-200 bg-white p-4"><span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Jobs</span><b className="mt-1 block text-2xl font-black text-slate-950">{summary.jobs_count || 0}</b></div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4"><span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-300">Jobs</span><b className="mt-1 block text-2xl font-black text-slate-950">{summary.jobs_count || 0}</b></div>
             <div className="rounded-2xl border border-slate-200 bg-white p-4"><span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Invoices</span><b className="mt-1 block text-2xl font-black text-slate-950">{summary.invoices_count || 0}</b></div>
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><span className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Unpaid</span><b className="mt-1 block text-2xl font-black text-emerald-950">{money(summary.unpaid_balance)}</b></div>
           </section>
@@ -236,7 +279,7 @@ function CustomerSlip({ selected, draft, updateDraft, saveCustomer, busy, siteDr
                 {arr(selected.site_addresses).length ? arr(selected.site_addresses).map((site, index) => (
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4" key={index}>
                     <b className="block text-sm font-black text-slate-950">{site.label || `Site ${index + 1}`}</b>
-                    <span className="mt-1 block text-sm font-bold text-slate-600">{site.address}</span>
+                    <span className="mt-1 block text-sm font-bold text-slate-300">{site.address}</span>
                     {site.access_notes ? <em className="mt-2 block text-xs font-bold text-slate-500">{site.access_notes}</em> : null}
                   </div>
                 )) : <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm font-bold text-slate-500">No extra site addresses yet.</div>}
@@ -314,11 +357,13 @@ function CustomerRecordsContent() {
   useEffect(() => { loadCustomers(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selected = useMemo(() => customers.find((x) => idOf(x) === selectedId) || draft, [customers, selectedId, draft]);
+  const visibleCustomers = useMemo(() => customers.filter((customer) => !isLaunchAuditCustomer(customer)), [customers]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return customers;
-    return customers.filter((customer) => [customerName(customer), customer.email, customer.phone, customer.billing_address, customer.address, customer.customer_type, arr(customer.tags).join(" ")].join(" ").toLowerCase().includes(q));
-  }, [customers, search]);
+    if (!q) return visibleCustomers;
+    return visibleCustomers.filter((customer) => [customerName(customer), customer.email, customer.phone, customer.billing_address, customer.address, customer.customer_type, arr(customer.tags).join(" ")].join(" ").toLowerCase().includes(q));
+  }, [visibleCustomers, search]);
 
   function pick(customer) {
     setSelectedId(idOf(customer));
@@ -388,7 +433,7 @@ function CustomerRecordsContent() {
           <header className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
             <div>
               <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Client Workbench</div>
-              <div className="text-sm font-bold text-slate-500">Customer details, sites, notes, jobs, quotes and invoices in one command view.</div>
+              <div className="text-sm font-bold text-slate-500">Client details, site notes, jobs, quotes and invoices in one command view.</div>
             </div>
             <div className="flex flex-wrap gap-3">
               <button type="button" onClick={loadCustomers} disabled={loading || Boolean(busy)} className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50 disabled:opacity-60">Refresh</button>
@@ -403,8 +448,8 @@ function CustomerRecordsContent() {
                 <div className="absolute bottom-0 left-1/3 h-56 w-56 rounded-full bg-amber-500/10 blur-3xl" />
                 <div className="relative">
                   <span className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Clients command</span>
-                  <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">Know the customer before the job starts.</h1>
-                  <p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Churvox keeps client contact details, site access, job history, quote history and unpaid balances ready for owner decisions.</p>
+                  <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">Know every client before the job starts.</h1>
+                  <p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Churvox keeps contact details, site access, job history, quote history and unpaid balances ready before work starts.</p>
                 </div>
               </div>
             </div>
@@ -429,26 +474,26 @@ function CustomerRecordsContent() {
 
           <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
             <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
-              <div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600">Client list</div><h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-slate-950">Open clients</h2></div>
-              {loading ? <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">Loading…</span> : null}
+              <div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200">Client records</div><h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-white">Saved clients</h2></div>
+              {loading ? <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-300">Loading…</span> : null}
             </div>
             <div className="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search clients, email, phone, address..." className="w-full bg-transparent text-sm font-bold text-slate-800 outline-none placeholder:text-slate-400" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by client, email, phone or address..." className="w-full bg-transparent text-sm font-bold text-slate-800 outline-none placeholder:text-slate-400" />
             </div>
             <div className="grid gap-4 xl:grid-cols-2">
               {!loading && filtered.length ? filtered.map((customer) => (
-                <button key={idOf(customer) || customerName(customer)} type="button" onClick={() => pick(customer)} className="rounded-[22px] border border-slate-200 bg-white p-4 text-left shadow-[0_14px_38px_rgba(15,23,42,0.055)] transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_24px_70px_rgba(15,23,42,0.10)]">
+                <button key={idOf(customer) || customerName(customer)} type="button" onClick={() => pick(customer)} className="rounded-[22px] border border-white/10 bg-white/[0.035] p-4 text-left text-white shadow-[0_14px_38px_rgba(15,23,42,0.055)] transition hover:-translate-y-0.5 hover:border-cyan-300/35 hover:bg-white/[0.06] hover:shadow-[0_24px_70px_rgba(15,23,42,0.10)]">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <span className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{customer.summary?.is_missing_info ? "Needs info" : "Client ready"}</span>
-                      <h3 className="mt-1 text-lg font-black tracking-[-0.04em] text-slate-950">{customerName(customer)}</h3>
+                      <h3 className="mt-1 text-lg font-black tracking-[-0.04em] text-white">{cleanClientName(customer)}</h3>
                     </div>
                     <span className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${customer.summary?.is_missing_info ? "border-amber-200 bg-amber-50 text-amber-800" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>{customer.summary?.is_missing_info ? "Fix" : "OK"}</span>
                   </div>
-                  <div className="mt-3 space-y-1 text-sm font-bold text-slate-600">
-                    <div>{customer.email || customer.phone || "No contact saved"}</div>
-                    <div className="text-slate-400">{customer.billing_address || customer.address || "No address saved"}</div>
-                    <div className="text-slate-500">Jobs {customer.summary?.jobs_count || 0} · Quotes {customer.summary?.quotes_count || 0} · Unpaid {money(customer.summary?.unpaid_balance)}</div>
+                  <div className="mt-3 space-y-1 text-sm font-bold text-slate-300">
+                    <div>{cleanClientEmail(customer)}</div>
+                    <div className="text-slate-300/80">{cleanClientAddress(customer)}</div>
+                    <div className="text-slate-300">Jobs {customer.summary?.jobs_count || 0} · Quotes {customer.summary?.quotes_count || 0} · Unpaid {money(customer.summary?.unpaid_balance)}</div>
                   </div>
                 </button>
               )) : null}
