@@ -50,7 +50,7 @@ const labels = {
   end_time: "End time",
   worker_name: "Worker",
   assigned_worker_name: "Assigned worker",
-  recommended_worker_name: "AI recommended worker",
+  recommended_worker_name: "Recommended worker",
   conflict_check: "Conflict check",
   worker_region: "Worker region",
   worker_email: "Worker email",
@@ -147,7 +147,7 @@ function dateText(value) {
 }
 
 function labelFor(key) {
-  return labels[key] || key.replaceAll("_", " ");
+  return labels[key] || String(key || "").replaceAll("_", " ");
 }
 
 function getId(action) {
@@ -164,35 +164,33 @@ function getPayload(action) {
 
 function typeLabel(type) {
   const value = String(type || "").toLowerCase();
-  if (value === "assign_worker" || value.includes("assign")) return "Assign worker";
+  if (value.includes("assign") || value.includes("worker")) return "Job assignment";
   if (value.includes("invoice_draft") || value.includes("create_invoice")) return "Draft invoice";
   if (value.includes("send_invoice")) return "Send invoice";
-  if (value.includes("invoice") || value.includes("payment")) return "Invoice / payment";
+  if (value.includes("invoice") || value.includes("payment") || value.includes("reminder")) return "Invoice follow-up";
   if (value.includes("quote")) return "Quote follow-up";
-  if (value.includes("job")) return "Job review";
+  if (value.includes("job")) return "Job action";
   return "Prepared action";
 }
 
 function approveText(type) {
   const value = String(type || "").toLowerCase();
   if (value.includes("assign") || value.includes("worker")) return "Approve assignment";
-  if (value.includes("invoice_draft") || value.includes("create_invoice")) return "Approve + create draft";
-  if (value.includes("send_invoice")) return "Approve + send invoice";
-  if (value.includes("reminder") || value.includes("payment")) return "Approve + send reminder";
-  if (value.includes("quote")) return "Approve + send follow-up";
-  if (value.includes("job")) return "Approve job action";
-  return "Approve";
+  if (value.includes("invoice_draft") || value.includes("create_invoice")) return "Approve draft";
+  if (value.includes("send_invoice")) return "Approve sending";
+  if (value.includes("reminder") || value.includes("payment")) return "Approve reminder";
+  if (value.includes("quote")) return "Approve follow-up";
+  return "Approve action";
 }
 
 function outcome(type) {
   const value = String(type || "").toLowerCase();
-  if (value.includes("assign") || value.includes("worker")) return "Assigns the selected worker to the job and logs the decision.";
-  if (value.includes("invoice_draft") || value.includes("create_invoice")) return "Creates a draft invoice. It does not email the customer until approved separately.";
-  if (value.includes("send_invoice")) return "Emails the invoice to the customer.";
-  if (value.includes("reminder") || value.includes("payment")) return "Sends the payment reminder to the customer.";
-  if (value.includes("quote")) return "Sends the quote follow-up to the customer.";
-  if (value.includes("job")) return "Approves the job review action.";
-  return "Runs the approved AI Operator action.";
+  if (value.includes("assign") || value.includes("worker")) return "Assigns the selected worker to the job and records the decision.";
+  if (value.includes("invoice_draft") || value.includes("create_invoice")) return "Creates a draft invoice for owner review.";
+  if (value.includes("send_invoice")) return "Sends the invoice to the customer.";
+  if (value.includes("reminder") || value.includes("payment")) return "Sends the approved payment reminder.";
+  if (value.includes("quote")) return "Sends the approved quote follow-up.";
+  return "Runs the approved action.";
 }
 
 function requiredFields(type) {
@@ -252,8 +250,9 @@ function normalize(action) {
     type,
     ready: missing.length === 0,
     missing,
-    title: action.title || typeLabel(type),
-    summary: action.summary || "Prepared from connected Churvox records.",
+    title: actionTitle(action, form, type),
+    meta: actionMeta(form, type),
+    summary: actionSummary(action, form, type),
     reason: action.reason || action.ai_reason || action.explanation || "",
     confidence: action.confidence || "",
     what_will_happen: action.what_will_happen || "",
@@ -261,6 +260,50 @@ function normalize(action) {
     checks: action.checks || ["Related record checked", "Owner approval required"],
     form,
   };
+}
+
+function actionTitle(action, form, type) {
+  const fallback = action.title || "Prepared action";
+  const client = first(form.client_name, form.customer_name, form.name);
+  const invoice = first(form.invoice_number, form.invoice_id);
+  const quote = first(form.quote_number, form.quote_id);
+
+  if (String(type).includes("assign")) return "Assign job";
+  if (String(type).includes("send_invoice")) return "Send invoice";
+  if (String(type).includes("invoice")) return invoice ? `Review invoice ${invoice}` : "Review invoice";
+  if (String(type).includes("quote")) return client ? "Follow up quote" : "Review quote follow-up";
+  if (String(type).includes("job")) return "Review job action";
+  return fallback;
+}
+
+function actionMeta(form, type) {
+  const client = first(form.client_name, form.customer_name, form.name, "No client saved");
+  const invoice = first(form.invoice_number, form.invoice_id);
+  const quote = first(form.quote_number, form.quote_id);
+  const amount = money(first(form.total, form.amount_due, form.amount, form.subtotal, form.price, form.quote_amount));
+  const pieces = [];
+
+  if (client) pieces.push(client);
+  if (invoice && String(type).includes("invoice")) pieces.push(invoice);
+  if (quote && String(type).includes("quote")) pieces.push(quote);
+  if (amount) pieces.push(amount);
+
+  return pieces.join(" · ");
+}
+
+function actionSummary(action, form, type) {
+  if (!action.ready && Array.isArray(action.missing) && action.missing.length) {
+    return `Needs details before approval: ${action.missing.map(labelFor).join(", ")}.`;
+  }
+
+  const value = String(type || "").toLowerCase();
+  if (value.includes("assign") || value.includes("worker")) return "Churvox prepared a worker assignment for owner approval.";
+  if (value.includes("send_invoice")) return "Invoice is ready. Review the customer email and PDF before sending.";
+  if (value.includes("invoice")) return "Churvox prepared the next invoice step for owner approval.";
+  if (value.includes("quote")) return "This quote has not been accepted yet. Churvox prepared a follow-up message for approval.";
+  if (value.includes("reminder") || value.includes("payment")) return "Churvox prepared a payment reminder for owner approval.";
+
+  return action.summary || "Churvox prepared this action from your business records.";
 }
 
 function relevantKeys(form = {}, type = "", missing = []) {
@@ -280,31 +323,13 @@ function relevantKeys(form = {}, type = "", missing = []) {
   let specific = [];
 
   if (value.includes("assign") || value.includes("worker")) {
-    specific = [
-      "worker_id", "worker_name", "recommended_worker_name", "assigned_worker_name",
-      "conflict_check", "worker_region", "worker_email", "worker_phone",
-      "job_id", "job_title", "job_address", "scheduled_time", "scheduled_at",
-    ];
+    specific = ["worker_id", "worker_name", "recommended_worker_name", "assigned_worker_name", "conflict_check", "worker_region", "worker_email", "worker_phone", "job_id", "job_title", "job_address", "scheduled_time", "scheduled_at"];
   } else if (value.includes("invoice") || value.includes("payment") || value.includes("reminder")) {
-    specific = [
-      "invoice_id", "invoice_number", "invoice_status", "subtotal", "gst", "tax",
-      "gst_rate", "total", "amount", "amount_due", "price", "due_date", "days_overdue",
-      "payment_url", "payment_link", "online_payment_url", "bank_details", "payment_instructions",
-      "description", "invoice_description", "message", "email_subject", "email_body",
-      "job_id", "job_title", "job_address",
-    ];
+    specific = ["invoice_id", "invoice_number", "invoice_status", "subtotal", "gst", "tax", "gst_rate", "total", "amount", "amount_due", "price", "due_date", "days_overdue", "payment_url", "payment_link", "online_payment_url", "bank_details", "payment_instructions", "description", "invoice_description", "message", "email_subject", "email_body", "job_id", "job_title", "job_address"];
   } else if (value.includes("quote")) {
-    specific = [
-      "quote_id", "quote_number", "quote_status", "quote_amount", "total", "price",
-      "description", "quote_description", "message", "email_subject", "email_body",
-      "client_name", "customer_name", "customer_email", "job_title", "job_address",
-    ];
+    specific = ["quote_id", "quote_number", "quote_status", "quote_amount", "total", "price", "description", "quote_description", "message", "email_subject", "email_body", "client_name", "customer_name", "customer_email", "job_title", "job_address"];
   } else if (value.includes("job")) {
-    specific = [
-      "job_id", "job_title", "job_name", "service_type", "job_status", "status",
-      "job_address", "scheduled_time", "scheduled_at", "worker_name", "worker_id",
-      "time_worked", "proof_summary", "photo_count", "completion_note", "worker_note",
-    ];
+    specific = ["job_id", "job_title", "job_name", "service_type", "job_status", "status", "job_address", "scheduled_time", "scheduled_at", "worker_name", "worker_id", "time_worked", "proof_summary", "photo_count", "completion_note", "worker_note"];
   }
 
   const existing = Object.keys(form || {}).filter((key) => !hiddenEditFields.has(key) && typeof form[key] !== "object");
@@ -517,10 +542,6 @@ function SlipModal({ item, onClose, onChanged }) {
   const preparedMessage = first(form.message, form.email_body, form.sms_message, form.follow_up_message, form.description);
   const dueDate = first(form.due_date, form.payment_due_date);
 
-  const allRows = Object.entries(form || {})
-    .filter(([key, value]) => key && !["business_id", "related_id", "related_entity_id"].includes(key) && has(value))
-    .sort(([a], [b]) => a.localeCompare(b));
-
   async function saveOnly() {
     setBusy(true);
     setMessage("");
@@ -579,19 +600,19 @@ function SlipModal({ item, onClose, onChanged }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[2147483647] h-[100dvh] w-screen overflow-hidden bg-[#f5f7f1] text-slate-950" role="dialog" aria-modal="true">
-      <section className="flex h-[100dvh] w-screen flex-col overflow-hidden">
-        <header className="shrink-0 border-b border-slate-800 bg-[#0f1722] px-4 py-4 text-white md:px-8 md:py-6">
+    <div className="fixed inset-0 z-[2147483647] h-[100dvh] w-screen overflow-hidden bg-[#0f1722] text-slate-950" role="dialog" aria-modal="true">
+      <section className="flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#0f1722]">
+        <header className="shrink-0 border-b border-white/10 bg-[#0f1722] px-5 py-5 text-white md:px-9 md:py-7">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <div className="text-[11px] font-black uppercase tracking-[0.2em] text-cyan-200">
-                {typeLabel(type)} · full screen approval slip
+              <div className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-200">
+                Approval slip
               </div>
-              <h1 className="mt-2 text-3xl font-black leading-none tracking-[-0.06em] md:text-5xl">
+              <h1 className="mt-3 text-4xl font-black leading-[0.9] tracking-[-0.075em] text-white md:text-6xl">
                 {item.title || typeLabel(type)}
               </h1>
               <p className="mt-3 max-w-5xl text-sm font-bold leading-6 text-slate-300">
-                Full approval sheet. Check the record, edit what is wrong, then approve.
+                Review the details, edit anything wrong, then approve when it looks right.
               </p>
             </div>
 
@@ -605,15 +626,15 @@ function SlipModal({ item, onClose, onChanged }) {
           </div>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto">
-          <div className="grid min-h-full w-full xl:grid-cols-[minmax(0,1fr)_430px]">
-            <div className="space-y-5 p-4 md:p-6 xl:p-8">
+        <main className="min-h-0 flex-1 overflow-y-auto bg-[#f5f7f1] p-4 md:p-7">
+          <div className="grid min-h-full w-full gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
+            <div className="space-y-5">
               <section className={`rounded-[28px] border p-5 ${ready ? "border-emerald-200 bg-emerald-50" : "border-amber-300 bg-amber-50"}`}>
                 <div className={`text-[11px] font-black uppercase tracking-[0.18em] ${ready ? "text-emerald-700" : "text-amber-700"}`}>
                   {ready ? "Ready to approve" : "Needs details"}
                 </div>
                 <h2 className="mt-2 text-3xl font-black tracking-[-0.05em]">
-                  {ready ? "Required details are filled." : "Do not approve yet."}
+                  {ready ? "Required details are filled." : "Fill the missing details before approval."}
                 </h2>
 
                 {!ready ? (
@@ -627,7 +648,7 @@ function SlipModal({ item, onClose, onChanged }) {
                 ) : null}
               </section>
 
-              <Section title="Main approval details" note="The most important things the owner needs to see first.">
+              <Section title="Main details" note="Check who this affects, what will happen, and whether the money/status is right.">
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                   <InfoCard label="Client / customer" value={clientName} warn={!clientName} />
                   <InfoCard label="Email" value={clientEmail} warn={(type.includes("send") || type.includes("quote") || type.includes("invoice")) && !clientEmail} />
@@ -640,20 +661,20 @@ function SlipModal({ item, onClose, onChanged }) {
                   <InfoCard label="Invoice" value={invoiceNumber} />
                   <InfoCard label="Quote" value={quoteNumber} />
                   <InfoCard label="Status" value={first(form.status, form.job_status, form.invoice_status, form.quote_status)} />
-                  <InfoCard label="Action type" value={typeLabel(type)} />
+                  <InfoCard label="Action" value={typeLabel(type)} />
                 </div>
               </Section>
 
-              <Section title="What Churvox will do" note="Clear explanation before anything runs.">
+              <Section title="What Churvox will do" note="Nothing is sent or changed until you approve.">
                 <div className="grid gap-3 md:grid-cols-2">
                   <InfoCard label="Summary" value={item.summary || "Churvox prepared this from connected records."} />
                   <InfoCard label="When approved" value={item.what_will_happen || outcome(type)} />
                   <InfoCard label="Reason" value={item.reason || "Churvox found this action from your business records."} />
-                  <InfoCard label="Prepared message / wording" value={preparedMessage} warn={(type.includes("send") || type.includes("quote") || type.includes("reminder")) && !preparedMessage} />
+                  <InfoCard label="Prepared wording" value={preparedMessage} warn={(type.includes("send") || type.includes("quote") || type.includes("reminder")) && !preparedMessage} />
                 </div>
               </Section>
 
-              <Section title="Edit slip before approval" note="Fix missing or wrong information here. Saved values are used when approved.">
+              <Section title="Edit before approval" note="Fix missing or wrong information here. Saved values are used when approved.">
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {editableKeys.map((key) => (
                     <Field key={key} name={key} form={form} setForm={setForm} />
@@ -662,7 +683,7 @@ function SlipModal({ item, onClose, onChanged }) {
               </Section>
 
               {Array.isArray(form.available_workers) && form.available_workers.length ? (
-                <Section title="Available worker options" note="Worker choices Churvox found for this assignment slip.">
+                <Section title="Worker options" note="Worker choices Churvox found for this assignment.">
                   <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                     {form.available_workers.map((worker, index) => (
                       <div key={worker.id || worker.email || worker.name || index} className="rounded-2xl border border-slate-200 bg-white p-4">
@@ -684,104 +705,60 @@ function SlipModal({ item, onClose, onChanged }) {
                 <LineItems form={form} />
               </Section>
 
-              <Section title="All details Churvox found" note="Raw fallback view so nothing useful is hidden.">
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                  {allRows.map(([key, value]) => (
-                    <div key={key} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
-                        {labelFor(key)}
-                      </div>
-                      <div className="mt-2 whitespace-pre-wrap break-words text-sm font-black leading-6 text-slate-950">
-                        {key.includes("date") || key.includes("_at") ? dateText(value) : clean(value)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Section>
+              <CommandSlipEverything record={{ ...item, form }} context="Approval slip" />
             </div>
 
-            <aside className="border-t border-slate-800 bg-[#0f1722] p-4 text-white md:p-6 xl:border-l xl:border-t-0">
-              <section className="xl:sticky xl:top-6">
-                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-cyan-200">Owner approval</div>
-                <h2 className="mt-2 text-3xl font-black tracking-[-0.05em]">Check, edit, approve.</h2>
+            <aside className="rounded-[30px] border border-white/10 bg-[#0f1722] p-5 text-white shadow-[0_18px_55px_rgba(15,23,42,0.18)] xl:sticky xl:top-0 xl:h-fit">
+              <div className="text-[11px] font-black uppercase tracking-[0.18em] text-cyan-200">Owner approval</div>
+              <h2 className="mt-2 text-3xl font-black tracking-[-0.05em] text-white">Review first.</h2>
 
-                <div className="mt-5 rounded-2xl bg-white/10 p-4">
-                  <div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Required status</div>
-                  <div className="mt-2 text-sm font-black">
-                    {ready ? "Ready" : `Missing ${missing.length} field${missing.length === 1 ? "" : "s"}`}
-                  </div>
+              <div className="mt-5 rounded-2xl bg-white/10 p-4">
+                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Status</div>
+                <div className="mt-2 text-sm font-black text-white">{ready ? "Ready" : `Missing ${missing.length} field${missing.length === 1 ? "" : "s"}`}</div>
+              </div>
+
+              {message ? (
+                <div className="mt-4 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4 text-sm font-black text-cyan-100">
+                  {message}
                 </div>
+              ) : null}
 
-                {Array.isArray(item.checks) && item.checks.length ? (
-                  <div className="mt-4 rounded-2xl bg-white/10 p-4">
-                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Checks</div>
-                    <ul className="mt-3 space-y-2 text-sm font-bold text-white">
-                      {item.checks.map((check, index) => <li key={index}>✓ {check}</li>)}
-                    </ul>
+              <div className="mt-5 grid gap-3">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={saveOnly}
+                  className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-black text-white hover:bg-white/15 disabled:opacity-60"
+                >
+                  {busy ? "Saving…" : "Save changes"}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={busy || !ready}
+                  onClick={approveNow}
+                  className="rounded-2xl bg-cyan-300 px-4 py-3 text-sm font-black text-slate-950 hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {busy ? "Running…" : approveText(type)}
+                </button>
+
+                {!ready ? (
+                  <div className="rounded-2xl bg-amber-400/15 p-3 text-xs font-black leading-5 text-amber-100">
+                    Fill the missing fields before approval unlocks.
                   </div>
                 ) : null}
 
-                {Array.isArray(item.source_records) && item.source_records.length ? (
-                  <div className="mt-4 rounded-2xl bg-white/10 p-4">
-                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Linked records</div>
-                    <div className="mt-3 space-y-2 text-xs font-bold text-slate-200">
-                      {item.source_records.map((record, index) => (
-                        <div key={index} className="rounded-xl bg-white/10 p-2">
-                          {typeof record === "string" ? record : JSON.stringify(record)}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
-                {message ? (
-                  <div className="mt-4 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4 text-sm font-black text-cyan-100">
-                    {message}
-                  </div>
-                ) : null}
-
-                <div className="mt-5 grid gap-3">
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={saveOnly}
-                    className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-black text-white hover:bg-white/15 disabled:opacity-60"
-                  >
-                    {busy ? "Saving…" : "Save slip changes"}
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={busy || !ready}
-                    onClick={approveNow}
-                    className="rounded-2xl bg-cyan-300 px-4 py-3 text-sm font-black text-slate-950 hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {busy ? "Running…" : approveText(type)}
-                  </button>
-
-                  {!ready ? (
-                    <div className="rounded-2xl bg-amber-400/15 p-3 text-xs font-black leading-5 text-amber-100">
-                      Fill the missing fields before approval unlocks.
-                    </div>
-                  ) : null}
-
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="rounded-2xl border border-white/15 px-4 py-3 text-sm font-black text-white hover:bg-white/10"
-                  >
-                    Close slip
-                  </button>
-                </div>
-              </section>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="rounded-2xl border border-white/15 px-4 py-3 text-sm font-black text-white hover:bg-white/10"
+                >
+                  Back to queue
+                </button>
+              </div>
             </aside>
           </div>
-        
-              <CommandSlipEverything
-                record={item}
-                context="SlipModal"
-              />
-</main>
+        </main>
       </section>
     </div>
   );
@@ -823,9 +800,9 @@ export default function CommandDeskQueuePage() {
         setItems(rows.map(normalize));
         setReport(res?.data?.report || null);
         setSummary(res?.data?.summary || null);
-        toast.success(`Rebuilt ${rows.length} slip${rows.length === 1 ? "" : "s"}`);
+        toast.success(`Refreshed ${rows.length} action${rows.length === 1 ? "" : "s"}`);
       } else {
-        toast.error(res?.error || "Could not rebuild slips");
+        toast.error(res?.error || "Could not refresh approval queue");
       }
     } finally {
       setBusy(false);
@@ -854,6 +831,7 @@ export default function CommandDeskQueuePage() {
 
   const ready = items.filter((item) => item.ready);
   const needs = items.filter((item) => !item.ready);
+  const visibleSummaryItems = Array.isArray(summary?.items) ? summary.items : [];
 
   return (
     <main className="fixed inset-0 z-[2147483000] overflow-y-auto bg-[#f5f7f1] text-slate-950">
@@ -861,120 +839,119 @@ export default function CommandDeskQueuePage() {
         <Sidebar />
 
         <section className="min-w-0 flex-1 p-5 lg:p-8">
-          <header className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-slate-200 bg-white px-5 py-4">
-            <div>
-              <div className="text-[10px] font-black uppercase tracking-[.2em] text-emerald-600">FULL SCREEN SLIPS LIVE · forced clean page</div>
-              <h1 className="text-3xl font-black tracking-[-.05em]">FULL SCREEN FULLSCREEN SLIPS LIVE</h1>
-              <p className="text-sm font-bold text-slate-500">
-                FULL SCREEN SLIPS LIVE. Old small work slip deleted. Check, edit, approve.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={repairCompletedJobs}
-                disabled={busy}
-                className="rounded-full border border-slate-300 bg-white px-5 py-3 text-xs font-black uppercase tracking-[.14em] text-slate-900 disabled:opacity-60"
-              >
-                {busy ? "Checking…" : "Check completed jobs"}
-              </button>
-
-              <button
-                type="button"
-                onClick={rebuild}
-                disabled={busy}
-                className="rounded-full bg-emerald-500 px-5 py-3 text-xs font-black uppercase tracking-[.14em] text-white disabled:opacity-60"
-              >
-                {busy ? "Rebuilding…" : "Clear old slips + rebuild"}
-              </button>
-            </div>
-          </header>
-
           <section className="grid gap-5 xl:grid-cols-[1fr_420px]">
-            <div className="rounded-[28px] bg-slate-950 p-6 text-white">
-              <span className="rounded-full bg-cyan-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[.2em] text-cyan-200">
-                No skinny popups
+            <div className="rounded-[30px] bg-[#0f1722] p-6 text-white shadow-[0_26px_80px_rgba(15,23,42,0.20)] md:p-8">
+              <span className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[.2em] text-cyan-200">
+                Command Board
               </span>
-              <h1 className="mt-4 max-w-3xl text-4xl font-black leading-[.95] tracking-[-.07em] lg:text-5xl">
-                Churvox prepares. You open the full slip. Then approve.
+              <h1 className="mt-4 max-w-4xl text-4xl font-black leading-[.95] tracking-[-.07em] lg:text-6xl">
+                Today’s admin is ready to review.
               </h1>
-              <p className="mt-4 max-w-2xl text-sm font-bold leading-6 text-slate-300">
-                Each slip opens full screen with main details, edit fields, worker options, line items and all raw record data.
+              <p className="mt-4 max-w-3xl text-sm font-bold leading-6 text-slate-300 md:text-base">
+                Check prepared invoices, quote follow-ups, job actions and reminders before anything is sent or changed.
               </p>
+
+              <div className="mt-5 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={repairCompletedJobs}
+                  disabled={busy}
+                  className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-xs font-black uppercase tracking-[.14em] text-white hover:bg-white/15 disabled:opacity-60"
+                >
+                  {busy ? "Checking…" : "Check completed jobs"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={rebuild}
+                  disabled={busy}
+                  className="rounded-2xl bg-cyan-300 px-5 py-3 text-xs font-black uppercase tracking-[.14em] text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200 disabled:opacity-60"
+                >
+                  {busy ? "Refreshing…" : "Refresh approval queue"}
+                </button>
+              </div>
             </div>
 
-            <aside className="rounded-[28px] border border-slate-200 bg-white p-5">
-              <h2 className="text-2xl font-black">Queue</h2>
-              <div className="mt-4 grid grid-cols-2 gap-3">
+            <aside className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
+              <div className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Approval queue</div>
+              <h2 className="mt-2 text-3xl font-black tracking-[-.06em]">Review next</h2>
+              <p className="mt-2 text-sm font-bold leading-6 text-slate-600">Churvox has prepared the admin that needs your approval.</p>
+
+              <div className="mt-5 grid grid-cols-2 gap-3">
                 <div className="rounded-2xl bg-emerald-50 p-4">
                   <div className="text-3xl font-black text-emerald-700">{ready.length}</div>
-                  <div className="text-xs font-black">ready</div>
+                  <div className="text-xs font-black uppercase tracking-[.14em] text-emerald-800">ready</div>
                 </div>
                 <div className="rounded-2xl bg-amber-50 p-4">
                   <div className="text-3xl font-black text-amber-700">{needs.length}</div>
-                  <div className="text-xs font-black">needs details</div>
+                  <div className="text-xs font-black uppercase tracking-[.14em] text-amber-800">need details</div>
                 </div>
               </div>
             </aside>
           </section>
 
           {summary ? (
-            <section className="mt-5 rounded-[28px] border border-blue-200 bg-blue-50 p-5">
-              <div className="text-[10px] font-black uppercase tracking-[.2em] text-blue-700">AI decision engine</div>
-              <h2 className="mt-2 text-3xl font-black tracking-[-.06em] text-blue-950">Today Churvox found</h2>
-              <p className="mt-2 text-sm font-bold text-blue-900">
-                {summary.headline || "I checked the business and prepared the next actions."}
+            <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
+              <div className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Today’s review</div>
+              <h2 className="mt-2 text-3xl font-black tracking-[-.06em] text-slate-950">What needs approval</h2>
+              <p className="mt-2 text-sm font-bold text-slate-600">
+                {summary.headline || "Churvox checked your business records and prepared the next admin actions."}
               </p>
 
-              <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-5">
-                {(summary.items || []).map((summaryItem) => (
-                  <div key={summaryItem} className="rounded-2xl bg-white p-3 text-sm font-black text-slate-800">
-                    {summaryItem}
-                  </div>
-                ))}
-              </div>
+              {visibleSummaryItems.length ? (
+                <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-5">
+                  {visibleSummaryItems.map((summaryItem) => (
+                    <div key={summaryItem} className="rounded-2xl bg-slate-50 p-3 text-sm font-black text-slate-800">
+                      {summaryItem}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
 
               {summary.needs_attention ? (
                 <div className="mt-3 rounded-2xl bg-amber-100 p-3 text-sm font-black text-amber-900">
-                  {summary.needs_attention} slip{summary.needs_attention === 1 ? "" : "s"} need details before approval.
+                  {summary.needs_attention} action{summary.needs_attention === 1 ? "" : "s"} need details before approval.
                 </div>
               ) : null}
             </section>
           ) : null}
 
           {report ? (
-            <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5">
-              <h2 className="text-2xl font-black">What Churvox can see</h2>
+            <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
+              <div className="text-[10px] font-black uppercase tracking-[.2em] text-slate-500">Records checked</div>
+              <h2 className="mt-2 text-2xl font-black tracking-[-.05em]">Churvox reviewed these records</h2>
               <div className="mt-4 grid gap-3 md:grid-cols-4">
                 <div className="rounded-2xl bg-slate-50 p-4">
                   <div className="text-3xl font-black">{report.jobs_found ?? 0}</div>
-                  <div className="text-xs font-black text-slate-500">jobs</div>
-                  <div className="mt-1 text-[10px] font-black text-blue-600">{report.jobs_scope_mode}</div>
+                  <div className="text-xs font-black uppercase tracking-[.14em] text-slate-500">jobs</div>
                 </div>
 
                 <div className="rounded-2xl bg-slate-50 p-4">
                   <div className="text-3xl font-black">{report.quotes_found ?? 0}</div>
-                  <div className="text-xs font-black text-slate-500">quotes</div>
-                  <div className="mt-1 text-[10px] font-black text-blue-600">{report.quotes_scope_mode}</div>
+                  <div className="text-xs font-black uppercase tracking-[.14em] text-slate-500">quotes</div>
                 </div>
 
                 <div className="rounded-2xl bg-slate-50 p-4">
                   <div className="text-3xl font-black">{report.invoices_found ?? 0}</div>
-                  <div className="text-xs font-black text-slate-500">invoices</div>
-                  <div className="mt-1 text-[10px] font-black text-blue-600">{report.invoices_scope_mode}</div>
+                  <div className="text-xs font-black uppercase tracking-[.14em] text-slate-500">invoices</div>
                 </div>
 
                 <div className="rounded-2xl bg-slate-50 p-4">
                   <div className="text-3xl font-black">{report.slips_created ?? 0}</div>
-                  <div className="text-xs font-black text-slate-500">slips created</div>
+                  <div className="text-xs font-black uppercase tracking-[.14em] text-slate-500">actions prepared</div>
                 </div>
               </div>
             </section>
           ) : null}
 
-          <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5">
-            <h2 className="text-3xl font-black tracking-[-.06em]">Prepared actions</h2>
+          <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Approval queue</div>
+                <h2 className="mt-2 text-3xl font-black tracking-[-.06em]">Prepared actions</h2>
+              </div>
+              <div className="text-sm font-bold text-slate-500">Review each action before approving.</div>
+            </div>
 
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               {items.slice(0, 24).map((item) => (
@@ -982,7 +959,7 @@ export default function CommandDeskQueuePage() {
                   key={item.id || item.title}
                   type="button"
                   onClick={() => setOpen(item)}
-                  className={`rounded-[22px] border p-4 text-left hover:border-blue-300 ${
+                  className={`rounded-[22px] border p-4 text-left transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-[0_20px_55px_rgba(15,23,42,0.10)] ${
                     item.ready ? "bg-white" : "border-amber-200 bg-amber-50"
                   }`}
                 >
@@ -990,16 +967,18 @@ export default function CommandDeskQueuePage() {
                     {item.ready ? "Ready" : "Needs details"} · {typeLabel(item.type)}
                   </div>
 
-                  <div className="mt-2 text-lg font-black">{item.title}</div>
+                  <div className="mt-2 text-lg font-black text-slate-950">{item.title}</div>
 
-                  <p className="mt-2 text-sm font-bold text-slate-600">
+                  {item.meta ? <div className="mt-1 text-sm font-black text-slate-500">{item.meta}</div> : null}
+
+                  <p className="mt-2 text-sm font-bold leading-6 text-slate-600">
                     {item.ready ? item.summary : `Missing: ${item.missing.map(labelFor).join(", ")}`}
                   </p>
 
                   {item.reason ? <p className="mt-2 text-xs font-bold leading-5 text-slate-500">{item.reason}</p> : null}
 
                   <div className="mt-3 inline-flex rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white">
-                    Open full-screen slip
+                    Review & approve
                   </div>
                 </button>
               ))}
@@ -1007,7 +986,7 @@ export default function CommandDeskQueuePage() {
 
             {!items.length ? (
               <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm font-black text-amber-900">
-                No slips yet. Click rebuild. The “What Churvox can see” box will show whether jobs, quotes or invoices exist.
+                No prepared actions yet. Refresh the approval queue to check completed jobs, invoices and quote follow-ups.
               </div>
             ) : null}
           </section>
