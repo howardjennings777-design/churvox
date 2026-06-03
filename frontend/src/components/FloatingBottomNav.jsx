@@ -5,28 +5,59 @@ import "./IndustrialCommandSidebar.css";
 
 const NAV_ITEMS = [
   ["Command Board", "/dashboard", "⌘"],
-  ["Setup", "/onboarding", "✓"],
   ["Jobs", "/jobs", "▦"],
   ["Assign Jobs", "/dispatch", "⇄"],
   ["Clients", "/clients", "●"],
   ["Quotes", "/quotes", "✎"],
   ["Invoices", "/invoices", "$"],
   ["Team", "/team", "👥"],
-  ["Operator Tools", "/operator-tools", "+"],
+  ["Plans", "/plans", "PL"],
+  ["Settings", "/settings", "ST"],
 ];
 
 const INDUSTRIAL_GROUPS = [
-  { title: "Command", items: [["Command Board", "/dashboard", "CB"], ["AI Operator", "/ai-operator", "AI"], ["Approvals", "/ai-operator/approvals", "OK"], ["Notifications", "/notifications", "NT"]] },
-  { title: "Work", items: [["Jobs", "/jobs", "JB"], ["Assign Jobs", "/dispatch", "AS"], ["Crew Map", "/crew-map", "MP"], ["Clients", "/clients", "CL"], ["Quotes", "/quotes", "QT"], ["Invoices", "/invoices", "IV"], ["Money Desk", "/money-desk", "$" ]] },
-  { title: "Crew & Admin", items: [["Team", "/team", "TM"], ["Crew Ops", "/crew-ops", "CO"], ["Payroll", "/payroll", "PR"], ["Reports", "/reports", "RP"]] },
-  { title: "System", items: [["Setup", "/onboarding", "SU"], ["Trade Presets", "/trade-presets", "TP"], ["Automation", "/automation", "AU"], ["Integrations", "/integrations", "IN"], ["Operator Tools", "/operator-tools", "OT"], ["Plans", "/plans", "PL"], ["Billing", "/billing-confidence", "BI"], ["Settings", "/settings", "ST"], ["Support", "/support", "?"]] },
+  {
+    title: "Command",
+    items: [
+      ["Command Board", "/dashboard", "CB"],
+      ["AI Operator", "/ai-operator", "AI"],
+      ["Notifications", "/notifications", "NT"],
+    ],
+  },
+  {
+    title: "Work",
+    items: [
+      ["Jobs", "/jobs", "JB"],
+      ["Assign Jobs", "/dispatch", "AS"],
+      ["Crew Map", "/crew-map", "MP"],
+      ["Clients", "/clients", "CL"],
+      ["Quotes", "/quotes", "QT"],
+      ["Invoices", "/invoices", "IV"],
+    ],
+  },
+  {
+    title: "Crew & Admin",
+    items: [
+      ["Team", "/team", "TM"],
+      ["Payroll", "/payroll", "PR"],
+      ["Reports", "/reports", "RP"],
+    ],
+  },
+  {
+    title: "System",
+    items: [
+      ["Plans", "/plans", "PL"],
+      ["Settings", "/settings", "ST"],
+      ["Support", "/support", "?"],
+    ],
+  },
 ];
 
 const COMMAND_PATHS = [
   "/dashboard",
   "/overview",
   "/ai-operator",
-  "/onboarding",
+  "/notifications",
   "/jobs",
   "/dispatch",
   "/dispatch-board",
@@ -35,21 +66,11 @@ const COMMAND_PATHS = [
   "/quotes",
   "/invoices",
   "/team",
-  "/automation",
-  "/integrations",
-  "/reports",
-  "/notifications",
-  "/settings",
-  "/operator-tools",
-  "/plans",
-  "/billing-confidence",
-  "/support",
   "/payroll",
-  "/money-desk",
-  "/money",
-  "/pipeline",
-  "/crew-ops",
-  "/trade-presets",
+  "/reports",
+  "/plans",
+  "/settings",
+  "/support",
 ];
 
 function isCommandPath(pathname) {
@@ -58,14 +79,12 @@ function isCommandPath(pathname) {
 
 function isActive(pathname, href) {
   if (href === "/dashboard") return pathname === "/dashboard" || pathname === "/overview";
+  if (href === "/ai-operator") return pathname === "/ai-operator" || pathname.startsWith("/ai-operator/");
   if (href === "/dispatch") return pathname === "/dispatch" || pathname === "/dispatch-board";
   if (href === "/crew-map") return pathname === "/crew-map";
   if (href === "/invoices") return pathname === "/invoices" || pathname.startsWith("/invoices/");
-  if (href === "/money-desk") return pathname === "/money-desk" || pathname === "/money";
   if (href === "/team") return pathname === "/team" || pathname.startsWith("/team/");
-  if (href === "/crew-ops") return pathname === "/crew-ops";
   if (href === "/plans") return pathname === "/plans";
-  if (href === "/billing-confidence") return pathname === "/billing-confidence";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
