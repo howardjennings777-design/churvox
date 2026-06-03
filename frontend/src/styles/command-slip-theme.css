@@ -1,4 +1,4 @@
-/* CHURVOX COMMAND DESK SLIP THEME — hard override */
+/* CHURVOX COMMAND DESK SLIP THEME — safe layout version */
 
 :root {
   --cvx-bg: #0f1722;
@@ -12,7 +12,7 @@
   --cvx-amber: #f59e0b;
 }
 
-/* Full screen every slip */
+/* Full screen modal shell */
 body [role="dialog"] {
   position: fixed !important;
   inset: 0 !important;
@@ -28,13 +28,9 @@ body [role="dialog"] {
   backdrop-filter: none !important;
 }
 
-/* Kill old drawer sizing */
+/* Only fix the first/root wrapper, not every inside max-w element */
 body [role="dialog"] > div,
-body [role="dialog"] > section,
-body [role="dialog"] div[class*="ml-auto"],
-body [role="dialog"] div[class*="max-w-"],
-body [role="dialog"] div[class*="rounded-[34px]"],
-body [role="dialog"] div[class*="shadow-[0_35px_120px"] {
+body [role="dialog"] > section {
   width: 100vw !important;
   max-width: none !important;
   height: 100dvh !important;
@@ -43,31 +39,48 @@ body [role="dialog"] div[class*="shadow-[0_35px_120px"] {
   border-radius: 0 !important;
   border: 0 !important;
   box-shadow: none !important;
-}
-
-/* Main slip frame */
-body [role="dialog"] > div,
-body [role="dialog"] > section {
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
   background: var(--cvx-bg) !important;
 }
 
-/* Header: same premium dark command style */
+/* Kill old skinny drawer only when it is the direct modal panel */
+body [role="dialog"] > div[class*="ml-auto"],
+body [role="dialog"] > div[class*="max-w-"],
+body [role="dialog"] > div[class*="rounded-[34px]"] {
+  width: 100vw !important;
+  max-width: none !important;
+  height: 100dvh !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+
+/* Header */
 body [role="dialog"] header {
   flex-shrink: 0 !important;
-  min-height: 168px !important;
+  min-height: 150px !important;
   border-radius: 0 !important;
   border-bottom: 1px solid rgba(255,255,255,0.08) !important;
   background:
     radial-gradient(circle at top right, rgba(103,232,249,0.16), transparent 28rem),
     linear-gradient(135deg, #0f1722 0%, #111827 55%, #0b1120 100%) !important;
   color: #ffffff !important;
-  padding: 26px 32px !important;
+  padding: 24px 32px !important;
 }
 
-/* Header badge */
+/* Header title/text */
+body [role="dialog"] header h1,
+body [role="dialog"] header h2 {
+  color: #ffffff !important;
+  letter-spacing: -0.06em !important;
+}
+
+body [role="dialog"] header p {
+  color: #cbd5e1 !important;
+}
+
+/* Header badges */
 body [role="dialog"] header div[class*="uppercase"],
 body [role="dialog"] header span[class*="uppercase"] {
   color: var(--cvx-cyan) !important;
@@ -75,82 +88,70 @@ body [role="dialog"] header span[class*="uppercase"] {
   background: rgba(103,232,249,0.08) !important;
 }
 
-/* Header title */
-body [role="dialog"] header h1,
-body [role="dialog"] header h2 {
-  color: #ffffff !important;
-  letter-spacing: -0.065em !important;
-}
-
-/* Main workspace: not washed out */
+/* Main workspace */
 body [role="dialog"] main {
   flex: 1 1 auto !important;
   min-height: 0 !important;
   overflow-y: auto !important;
+  overflow-x: hidden !important;
   background:
     radial-gradient(circle at 85% 15%, rgba(37,99,235,0.08), transparent 24rem),
     var(--cvx-workspace) !important;
   color: var(--cvx-ink) !important;
-  padding: 24px 32px !important;
+  padding: 24px !important;
 }
 
-/* Make content read like one command workspace */
-body [role="dialog"] main > div,
-body [role="dialog"] main > section {
+/* First grid inside modal: stop clipping / weird narrow side */
+body [role="dialog"] main > div {
+  width: 100% !important;
   max-width: 1480px !important;
   margin-left: auto !important;
   margin-right: auto !important;
+  gap: 24px !important;
 }
 
-/* Panels/cards */
+/* Keep side action panel clean and readable */
+body [role="dialog"] aside {
+  border-radius: 30px !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  background:
+    radial-gradient(circle at top right, rgba(103,232,249,0.12), transparent 20rem),
+    #0f1722 !important;
+  color: #ffffff !important;
+  min-width: 320px !important;
+}
+
+body [role="dialog"] aside h1,
+body [role="dialog"] aside h2,
+body [role="dialog"] aside h3,
+body [role="dialog"] aside p,
+body [role="dialog"] aside div {
+  color: inherit;
+}
+
+/* Cards and panels */
 body [role="dialog"] main section,
 body [role="dialog"] main article,
-body [role="dialog"] main div[class*="rounded-[30px]"],
-body [role="dialog"] main div[class*="rounded-[28px]"],
-body [role="dialog"] main div[class*="rounded-[26px]"] {
+.churvox-slip-everything {
   border: 1px solid var(--cvx-line) !important;
   background: var(--cvx-card) !important;
   box-shadow: 0 14px 38px rgba(15, 23, 42, 0.055) !important;
 }
 
-/* Small detail cards: stronger borders, less invisible */
+/* Small detail cards */
 body [role="dialog"] main div[class*="rounded-2xl"] {
   border-color: #d8ded7 !important;
 }
 
-/* Section labels */
-body [role="dialog"] main div[class*="uppercase"],
-body [role="dialog"] main span[class*="uppercase"] {
-  letter-spacing: 0.16em !important;
-}
-
-/* Everything Churvox found panel */
+/* Everything panel */
 .churvox-slip-everything {
   margin-top: 22px !important;
-  background: #ffffff !important;
-  border: 1px solid var(--cvx-line) !important;
+  border-radius: 30px !important;
   box-shadow: 0 18px 55px rgba(15, 23, 42, 0.08) !important;
 }
 
-/* Owner checklist should look intentional */
-.churvox-slip-everything div[class*="bg-blue-50"] {
-  border-color: #bfdbfe !important;
-  background: #eff6ff !important;
-}
-
-.churvox-slip-everything div[class*="bg-amber-50"] {
-  border-color: #fde68a !important;
-  background: #fffbeb !important;
-}
-
-/* Footer/action strip */
-body [role="dialog"] footer,
-body [role="dialog"] aside {
-  background:
-    radial-gradient(circle at top right, rgba(103,232,249,0.12), transparent 20rem),
-    #0f1722 !important;
-  color: #ffffff !important;
-  border-color: rgba(255,255,255,0.08) !important;
+.churvox-slip-everything h2 {
+  color: #0f172a !important;
 }
 
 /* Buttons */
@@ -173,24 +174,12 @@ body [role="dialog"] button[class*="bg-amber"] {
 }
 
 body [role="dialog"] header button,
-body [role="dialog"] footer button,
-body [role="dialog"] footer a,
 body [role="dialog"] aside button,
 body [role="dialog"] aside a {
   border: 1px solid rgba(255,255,255,0.16) !important;
 }
 
-/* Fix giant pale empty feel */
-body [role="dialog"] main p {
-  color: #475569;
-}
-
-body [role="dialog"] main h2,
-body [role="dialog"] main h3 {
-  color: #0f172a;
-}
-
-/* Desktop: make full-screen slips feel like command workspace */
+/* Desktop */
 @media (min-width: 1024px) {
   body [role="dialog"] main {
     padding: 30px 42px !important;
@@ -199,16 +188,23 @@ body [role="dialog"] main h3 {
   body [role="dialog"] header {
     padding: 30px 42px !important;
   }
+}
 
-  body [role="dialog"] main .churvox-slip-everything {
-    border-radius: 30px !important;
+/* Mobile/tablet */
+@media (max-width: 1023px) {
+  body [role="dialog"] main > div {
+    display: block !important;
+  }
+
+  body [role="dialog"] aside {
+    margin-top: 24px !important;
+    min-width: 0 !important;
   }
 }
 
-/* Mobile: still full screen but not cramped */
 @media (max-width: 767px) {
   body [role="dialog"] header {
-    min-height: 136px !important;
+    min-height: 128px !important;
     padding: 18px !important;
   }
 
@@ -222,11 +218,7 @@ body [role="dialog"] main h3 {
   }
 
   body [role="dialog"] h2 {
-    font-size: 1.6rem !important;
+    font-size: 1.55rem !important;
     line-height: 1 !important;
-  }
-
-  .churvox-slip-everything {
-    border-radius: 24px !important;
   }
 }
