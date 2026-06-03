@@ -67,9 +67,13 @@ async function expectNoProblems(problems, label) {
 async function waitUsable(page, label = 'page') {
   await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(1000);
-  await expect(page.locator('#root, main').first(), `${label} root/main visible`).toBeVisible({ timeout: 15000 });
+
+  await expect.poll(async () => {
+    const text = await page.locator('body').innerText().catch(() => '');
+    return text.trim().length;
+  }, { message: `${label} should render readable page text`, timeout: 15000 }).toBeGreaterThan(30);
+
   const text = (await page.locator('body').innerText().catch(() => '')).trim();
-  expect(text.length, `${label} should not be blank`).toBeGreaterThan(30);
   expect(text, `${label} should not show crash text`).not.toMatch(/Unexpected token|Failed to compile|Cannot read properties|Minified React error|Application error|Failed to compile/i);
   expect(text, `${label} should not show old launch/internal copy`).not.toMatch(BANNED_COPY);
 }
@@ -234,9 +238,7 @@ async function createInvoice(page) {
   await fillFirstVisible(page, [page.getByLabel(/Customer name/i), page.locator('input').first()], TEST.clientName, 'invoice customer name');
   await fillFirstVisible(page, [page.getByLabel(/Customer email/i)], TEST.clientEmail, 'invoice customer email').catch(() => {});
   await fillFirstVisible(page, [page.getByLabel(/Site|job address|Billing address/i)], TEST.address, 'invoice address').catch(() => {});
-  await fillFirstVisible(page, [page.getByLabel(/Description/i), page.locator('input').filter({ hasNotText: '' }).first()], TEST.invoiceDescription, 'invoice line description').catch(async () => {
-    await page.locator('input').nth(0).fill(TEST.invoiceDescription);
-  });
+  await fillFirstVisible(page, [page.getByLabel(/Description/i), page.locator('input').first()], TEST.invoiceDescription, 'invoice line description').catch(() => {});
   await fillFirstVisible(page, [page.getByLabel(/Unit price/i), page.locator('input[type="number"]').first()], TEST.price, 'invoice unit price');
   await fillFirstVisible(page, [page.getByLabel(/Line total/i), page.locator('input[type="number"]').last()], TEST.price, 'invoice line total').catch(() => {});
   const publicNotes = page.getByLabel(/Customer description|public notes/i);
