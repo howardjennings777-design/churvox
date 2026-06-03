@@ -222,3 +222,68 @@ body [role="dialog"] aside a {
     line-height: 1 !important;
   }
 }
+
+/* FIX: stop right action panel from becoming a whitewashed box */
+body [role="dialog"] main aside,
+body [role="dialog"] main aside section {
+  background:
+    radial-gradient(circle at top right, rgba(103,232,249,0.12), transparent 20rem),
+    #0f1722 !important;
+  color: #ffffff !important;
+  border-color: rgba(255,255,255,0.10) !important;
+  box-shadow: none !important;
+}
+
+/* Undo the broad white panel rule inside the action sidebar */
+body [role="dialog"] main aside section,
+body [role="dialog"] main aside article {
+  background:
+    radial-gradient(circle at top right, rgba(103,232,249,0.12), transparent 20rem),
+    #0f1722 !important;
+  color: #ffffff !important;
+}
+
+/* Keep sidebar cards dark glass, not white */
+body [role="dialog"] main aside div[class*="rounded-2xl"],
+body [role="dialog"] main aside div[class*="rounded-"] {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.14) !important;
+  color: #ffffff !important;
+}
+
+/* Make all text inside the action panel readable */
+body [role="dialog"] main aside *,
+body [role="dialog"] main aside h1,
+body [role="dialog"] main aside h2,
+body [role="dialog"] main aside h3,
+body [role="dialog"] main aside p,
+body [role="dialog"] main aside div,
+body [role="dialog"] main aside span {
+  color: inherit;
+}
+
+/* Keep action labels cyan/amber where needed */
+body [role="dialog"] main aside div[class*="text-cyan"],
+body [role="dialog"] main aside span[class*="text-cyan"] {
+  color: #a5f3fc !important;
+}
+
+body [role="dialog"] main aside div[class*="text-amber"],
+body [role="dialog"] main aside span[class*="text-amber"],
+body [role="dialog"] main aside p[class*="text-amber"] {
+  color: #fef3c7 !important;
+}
+
+/* Make the sidebar action column fit the theme instead of looking like a blank card */
+body [role="dialog"] main aside {
+  padding: 22px !important;
+  border-radius: 30px !important;
+  min-height: auto !important;
+}
+
+/* Prevent oversized blank dark/white empty blocks on the right */
+body [role="dialog"] main aside .xl\:sticky,
+body [role="dialog"] main aside section[class*="sticky"] {
+  height: auto !important;
+  min-height: 0 !important;
+}
