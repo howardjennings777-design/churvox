@@ -9,10 +9,24 @@ import { toast } from "sonner";
 
 const FIRST_SETUP_KEY = "churvox_first_setup_pending";
 
+function normalizeId(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
+  if (typeof value === "object") {
+    if (value.$oid) return String(value.$oid);
+    if (value.oid) return String(value.oid);
+    if (value.id) return normalizeId(value.id);
+    if (value._id) return normalizeId(value._id);
+  }
+  const text = String(value || "");
+  return text === "[object Object]" ? "" : text;
+}
+
 function recordId(payload) {
   const data = payload?.data ?? payload;
   const item = data?.client || data?.customer || data?.item || data?.record || data;
-  return String(data?.id || data?._id || item?.id || item?._id || "");
+  return normalizeId(data?.id || data?._id || data?.client_id || data?.customer_id || item?.id || item?._id || item?.client_id || item?.customer_id || "");
 }
 function readClient(payload) {
   const data = payload?.data ?? payload;
@@ -85,14 +99,14 @@ export default function ClientFormPageFirstSetup() {
     const res = isEdit ? await api.patch(`/clients/${encodeURIComponent(id)}`, payload) : await api.post("/clients", payload);
     setSaving(false);
     if (!res.success) return toast.error(res.error || "Could not save client");
-    const nextId = recordId(res) || id;
+    const nextId = recordId(res) || normalizeId(id);
     toast.success(isEdit ? "Client updated" : firstSetup ? "First client created" : "Client created");
     if (firstSetup && nextId) {
       try { localStorage.setItem(FIRST_SETUP_KEY, "job"); } catch {}
       navigate(`/jobs/new?client_id=${encodeURIComponent(nextId)}&first_setup=1`);
       return;
     }
-    navigate(nextId ? `/clients/${nextId}` : "/clients");
+    navigate(nextId ? `/clients/${encodeURIComponent(nextId)}` : "/clients");
   }
 
   return <Layout><PremiumPage maxWidth={860}>
