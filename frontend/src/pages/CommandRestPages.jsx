@@ -227,58 +227,6 @@ function WorkSlip({ item, onClose }) {
       </section>
     </div>
   );
-}) {
-  if (!item) return null;
-
-  return (
-    <div className="fixed inset-0 z-[2147483647] bg-slate-950/65 p-3 backdrop-blur-sm md:p-7" role="dialog" aria-modal="true">
-      <div className="ml-auto flex h-full max-w-[720px] flex-col overflow-hidden rounded-[34px] border border-slate-200 bg-white shadow-[0_35px_120px_rgba(15,23,42,0.40)]">
-        <header className="relative overflow-hidden border-b border-slate-800 bg-slate-950 p-6 text-white md:p-7">
-          <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-blue-500/20 blur-3xl" />
-          <div className="relative flex items-start justify-between gap-4">
-            <div>
-              <div className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">
-                Command Work Slip
-              </div>
-              <h2 className="mt-4 text-3xl font-black leading-[0.95] tracking-[-0.07em] md:text-5xl">{item.title}</h2>
-            </div>
-            <button type="button" onClick={onClose} className="rounded-2xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-black text-white hover:bg-white/15">
-              Close
-            </button>
-          </div>
-          <p className="relative mt-5 max-w-xl text-sm font-semibold leading-6 text-slate-300">{item.summary}</p>
-        </header>
-
-        <main className="min-h-0 flex-1 overflow-y-auto bg-[#f4f6f8] p-5 md:p-6">
-          <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">What needs attention</div>
-            <p className="mt-3 text-lg font-black tracking-[-0.035em] text-slate-950">{item.detail}</p>
-            <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-bold leading-6 text-blue-950">
-              Keep the user in context. Open the related page only when they choose the action button.
-            </div>
-          </section>
-
-          <section className="mt-4 rounded-[26px] border border-amber-200 bg-amber-50 p-5 shadow-sm">
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">Churvox rule</div>
-            <p className="mt-2 text-sm font-bold leading-6 text-amber-950">
-              Churvox prepares the admin. Owners approve important actions before anything sends, changes, charges, deletes, syncs or affects payroll.
-            </p>
-          </section>
-        </main>
-
-        <footer className="flex flex-wrap gap-3 border-t border-slate-200 bg-white p-5">
-          <Link to={item.href || "/dashboard"} className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">
-            Open place
-          </Link>
-          <button type="button" onClick={onClose} className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-800 hover:bg-slate-50">
-            Back
-          </button>
-        </footer>
-      </div>
-    </div>
-  );
-}
-
 function CommandPage({ config }) {
   const [active, setActive] = React.useState(null);
 
