@@ -158,6 +158,8 @@ export default function PlansPage() {
     toast.info("SMS credit packs are coming soon.");
   };
 
+  const planHighlights = (plan) => (plan.includes || plan.limits || []).slice(0, plan.key === "enterprise" ? 6 : 5);
+
   if (loading) {
     return <main className="cv-plans"><div className="cv-plans-shell"><section className="cv-plans-hero"><p>Loading plans…</p></section></div></main>;
   }
@@ -179,48 +181,43 @@ export default function PlansPage() {
         {isFirstSetup() ? <div className="cv-notice"><b>First setup path</b><span>Step 1: choose a plan. Step 2: business setup. Step 3: add your first client.</span></div> : null}
         {notice && <div className={`cv-notice ${notice.type === "warning" ? "warn" : ""}`}><b>{notice.title}</b><span>{notice.text}</span></div>}
 
-        <section className="cv-grid">{displayPlans.map((plan) => {
+        <section className="cv-grid cv-plan-grid-clean">{displayPlans.map((plan) => {
           const featured = plan.key === "pro";
           const current = currentPlan === plan.key && !isTrialExpired;
           const teamText = plan.teamLimit === 1 ? "Owner only" : typeof plan.teamLimit === "number" ? `Up to ${plan.teamLimit} active team members` : String(plan.teamLimit || "");
           return (
-            <article key={plan.key} className={`cv-card cv-tier-card ${featured ? "featured" : ""} ${current ? "current" : ""}`}>
+            <article key={plan.key} className={`cv-card cv-tier-card cv-tier-card--clean ${featured ? "featured" : ""} ${current ? "current" : ""}`}>
               <div className="cv-tier-topline">
                 <span>{plan.tag}</span>
                 {current ? <em>Current</em> : null}
               </div>
 
-              <h2>{plan.name}</h2>
-
-              <div className="cv-price">
-                <b>{plan.price}</b>
-                <small>{plan.period}</small>
+              <div className="cv-tier-head">
+                <h2>{plan.name}</h2>
+                <div className="cv-price">
+                  <b>{plan.price}</b>
+                  <small>{plan.period}</small>
+                </div>
               </div>
 
               <p className="cv-tier-blurb">{plan.blurb}</p>
+
+              <div className="cv-tier-best cv-tier-best--prominent">
+                <span>Best for</span>
+                <strong>{String(plan.bestFor || "").replace(/^Best for\s*/i, "")}</strong>
+              </div>
 
               <div className="cv-tier-cap-row">
                 <strong>{plan.clientLimit} active clients</strong>
                 <strong>{teamText}</strong>
               </div>
 
-              <div className="cv-tier-section">
-                <h3>Included in {plan.name}</h3>
+              <div className="cv-tier-section cv-tier-section--clean">
+                <h3>Key inclusions</h3>
                 <ul>
-                  {(plan.includes || plan.limits || []).map((item) => <li key={item}>{item}</li>)}
+                  {planHighlights(plan).map((item) => <li key={item}>{item}</li>)}
                 </ul>
               </div>
-
-              {(plan.notIncluded || []).length ? (
-                <div className="cv-tier-section cv-tier-locked">
-                  <h3>Upgrade for</h3>
-                  <ul>
-                    {plan.notIncluded.map((item) => <li key={item}>{item}</li>)}
-                  </ul>
-                </div>
-              ) : null}
-
-              <p className="cv-tier-best">{plan.bestFor}</p>
 
               <button type="button" onClick={() => handleSelectPlan(plan.key)} disabled={isDisabled(plan)} data-testid={`plan-btn-${plan.key}`}>
                 {buttonLabel(plan)}
