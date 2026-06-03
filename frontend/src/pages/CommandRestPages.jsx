@@ -133,15 +133,11 @@ function WorkSlip({ item, onClose }) {
                 {item.title || "Work slip"}
               </h1>
               <p className="mt-3 max-w-5xl text-sm font-bold leading-6 text-slate-300">
-                This is the new full-screen slip. Check the details, review what needs attention, then open the related page only if needed.
+                New full-screen slip is live. Check the details first, then open the related page only if needed.
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="shrink-0 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/20"
-            >
+            <button type="button" onClick={onClose} className="shrink-0 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/20">
               Close
             </button>
           </div>
@@ -151,9 +147,7 @@ function WorkSlip({ item, onClose }) {
           <div className="grid min-h-full w-full xl:grid-cols-[minmax(0,1fr)_390px]">
             <div className="space-y-5 p-4 md:p-6 xl:p-8">
               <section className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
-                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-amber-600">
-                  What needs attention
-                </div>
+                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-amber-600">What needs attention</div>
                 <h2 className="mt-3 text-3xl font-black tracking-[-0.06em] text-slate-950">
                   {item.detail || item.summary || "Review this prepared action."}
                 </h2>
@@ -163,27 +157,19 @@ function WorkSlip({ item, onClose }) {
               </section>
 
               <section className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
-                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">
-                  Slip details
-                </div>
+                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">Slip details</div>
                 <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {rows.map(([label, value]) => (
                     <div key={label} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
-                        {label}
-                      </div>
-                      <div className="mt-2 whitespace-pre-wrap break-words text-sm font-black leading-6 text-slate-950">
-                        {String(value)}
-                      </div>
+                      <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">{label}</div>
+                      <div className="mt-2 whitespace-pre-wrap break-words text-sm font-black leading-6 text-slate-950">{String(value)}</div>
                     </div>
                   ))}
                 </div>
               </section>
 
               <section className="rounded-[30px] border border-amber-200 bg-amber-50 p-5">
-                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-amber-700">
-                  Owner rule
-                </div>
+                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-amber-700">Owner rule</div>
                 <p className="mt-3 text-sm font-black leading-6 text-amber-950">
                   Do not auto-send, auto-charge, auto-delete, auto-sync accounting, or affect payroll from a slip without owner approval.
                 </p>
@@ -192,31 +178,15 @@ function WorkSlip({ item, onClose }) {
 
             <aside className="border-t border-slate-800 bg-[#0f1722] p-4 text-white md:p-6 xl:border-l xl:border-t-0">
               <section className="xl:sticky xl:top-6">
-                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-cyan-200">
-                  Slip actions
-                </div>
-                <h2 className="mt-2 text-3xl font-black tracking-[-0.05em]">
-                  Review first.
-                </h2>
-
-                <div className="mt-5 rounded-2xl bg-white/10 p-4">
-                  <div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Status</div>
-                  <div className="mt-2 text-sm font-black">{item.badge || "Review"}</div>
-                </div>
+                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-cyan-200">Slip actions</div>
+                <h2 className="mt-2 text-3xl font-black tracking-[-0.05em]">Review first.</h2>
 
                 <div className="mt-5 grid gap-3">
-                  <Link
-                    to={item.href || "/dashboard"}
-                    className="rounded-2xl bg-cyan-300 px-5 py-3 text-center text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200"
-                  >
+                  <Link to={item.href || "/dashboard"} className="rounded-2xl bg-cyan-300 px-5 py-3 text-center text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200">
                     Open related page
                   </Link>
 
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/15"
-                  >
+                  <button type="button" onClick={onClose} className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/15">
                     Back to command board
                   </button>
                 </div>
@@ -228,6 +198,7 @@ function WorkSlip({ item, onClose }) {
     </div>
   );
 }
+
 
 function CommandPage({ config }) {
   const [active, setActive] = React.useState(null);
