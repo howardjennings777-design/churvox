@@ -1,0 +1,4 @@
+/* Remove the duplicate dashboard middle strip: Today's review / What needs approval */
+body.cv-industrial-shell main[data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > section > section:nth-of-type(2):has(> .text-blue-600) {
+  display: none !important;
+}
