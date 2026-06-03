@@ -1,5 +1,20 @@
 /* CHURVOX_INDUSTRIAL_GLOBAL_SIDEBAR_20260604 */
 
+:root {
+  --cv-industrial-ink: #05070b;
+  --cv-industrial-panel: #111827;
+  --cv-industrial-panel-2: #0b1220;
+  --cv-industrial-line: rgba(148, 163, 184, .24);
+  --cv-industrial-text: #f8fafc;
+  --cv-industrial-muted: #94a3b8;
+  --cv-industrial-amber: #facc15;
+  --cv-industrial-orange: #fb923c;
+  --cv-industrial-cyan: #22d3ee;
+  --cv-industrial-blue: #38bdf8;
+  --cv-industrial-gradient: linear-gradient(135deg, #facc15, #fb923c 52%, #22d3ee);
+  --cv-industrial-dark-gradient: linear-gradient(180deg, #111827 0%, #0b1220 48%, #05070b 100%);
+}
+
 .cv-industrial-sidebar {
   position: fixed !important;
   left: 0 !important;
@@ -10,9 +25,9 @@
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
-  color: #f8fafc !important;
-  background: linear-gradient(180deg, #111827 0%, #0b1220 48%, #05070b 100%) !important;
-  border-right: 1px solid rgba(148, 163, 184, .24) !important;
+  color: var(--cv-industrial-text) !important;
+  background: var(--cv-industrial-dark-gradient) !important;
+  border-right: 1px solid var(--cv-industrial-line) !important;
   box-shadow: 18px 0 70px rgba(2, 6, 23, .42) !important;
 }
 
@@ -20,7 +35,7 @@
   position: absolute;
   inset: 0 auto 0 0;
   width: 5px;
-  background: linear-gradient(180deg, #f97316, #facc15 34%, #22d3ee 72%, #38bdf8);
+  background: linear-gradient(180deg, var(--cv-industrial-orange), var(--cv-industrial-amber) 34%, var(--cv-industrial-cyan) 72%, var(--cv-industrial-blue));
 }
 
 .cv-industrial-brand {
@@ -39,7 +54,7 @@
   place-items: center;
   border-radius: 14px;
   color: #020617;
-  background: linear-gradient(135deg, #facc15, #fb923c 45%, #22d3ee);
+  background: var(--cv-industrial-gradient);
   font-size: 20px;
   font-weight: 1000;
 }
@@ -55,7 +70,7 @@
 .cv-industrial-brand span {
   display: block;
   margin-top: 2px;
-  color: #94a3b8;
+  color: var(--cv-industrial-muted);
   font-size: 10px;
   font-weight: 950;
   letter-spacing: .18em;
@@ -72,7 +87,7 @@
 
 .cv-industrial-status span {
   display: block;
-  color: #facc15;
+  color: var(--cv-industrial-amber);
   font-size: 10px;
   font-weight: 1000;
   letter-spacing: .16em;
@@ -152,7 +167,7 @@
 .cv-industrial-group a.active {
   color: #020617;
   border-color: rgba(250,204,21,.55);
-  background: linear-gradient(135deg, #facc15, #fb923c 52%, #22d3ee);
+  background: var(--cv-industrial-gradient);
 }
 
 .cv-industrial-group a:hover i,
@@ -161,10 +176,18 @@
   background: rgba(2,6,23,.86);
 }
 
+body.cv-industrial-shell {
+  background: #05070b !important;
+}
+
 body.cv-industrial-shell main.fixed.inset-0 {
   left: 286px !important;
   width: calc(100vw - 286px) !important;
   max-width: calc(100vw - 286px) !important;
+  background:
+    radial-gradient(circle at 16% 0%, rgba(250,204,21,.12), transparent 26%),
+    radial-gradient(circle at 94% 0%, rgba(34,211,238,.16), transparent 30%),
+    linear-gradient(135deg, #111827 0%, #0b1220 48%, #05070b 100%) !important;
 }
 
 body.cv-industrial-shell .concept-c2-frame,
@@ -174,6 +197,80 @@ body.cv-industrial-shell .xcf-shell.xcf-real-page {
   margin-left: 286px !important;
   width: calc(100vw - 286px) !important;
   max-width: calc(100vw - 286px) !important;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(250,204,21,.12), transparent 26%),
+    radial-gradient(circle at 95% 0%, rgba(34,211,238,.16), transparent 30%),
+    linear-gradient(135deg, #111827 0%, #0b1220 48%, #05070b 100%) !important;
+}
+
+body.cv-industrial-shell .plans-command-content,
+body.cv-industrial-shell .cv-plans,
+body.cv-industrial-shell .cv-plans-shell,
+body.cv-industrial-shell .c2-stage,
+body.cv-industrial-shell .c2-real-page-card {
+  background: transparent !important;
+}
+
+body.cv-industrial-shell .cv-plans-hero,
+body.cv-industrial-shell .cv-card,
+body.cv-industrial-shell .cv-user-blocks,
+body.cv-industrial-shell .cv-myob-addon,
+body.cv-industrial-shell .cv-sms-pricing,
+body.cv-industrial-shell .cv-notice,
+body.cv-industrial-shell .c2-real-page-card,
+body.cv-industrial-shell .xcf-real-hero-main,
+body.cv-industrial-shell .xcf-real-command-card,
+body.cv-industrial-shell .xcf-real-stats article,
+body.cv-industrial-shell .xcf-real-list,
+body.cv-industrial-shell .xcf-workspace-list,
+body.cv-industrial-shell section.rounded-\[30px\],
+body.cv-industrial-shell section.rounded-\[28px\],
+body.cv-industrial-shell aside.rounded-\[30px\],
+body.cv-industrial-shell div.rounded-\[30px\] {
+  border-color: rgba(250,204,21,.20) !important;
+  background: linear-gradient(135deg, rgba(17,24,39,.94), rgba(11,18,32,.88)) !important;
+  color: #f8fafc !important;
+  box-shadow: 0 20px 70px rgba(2,6,23,.28), inset 0 1px 0 rgba(255,255,255,.06) !important;
+}
+
+body.cv-industrial-shell h1,
+body.cv-industrial-shell h2,
+body.cv-industrial-shell h3,
+body.cv-industrial-shell b,
+body.cv-industrial-shell strong {
+  color: #ffffff;
+}
+
+body.cv-industrial-shell p,
+body.cv-industrial-shell span,
+body.cv-industrial-shell li {
+  color: inherit;
+}
+
+body.cv-industrial-shell .cv-kicker,
+body.cv-industrial-shell .text-blue-600,
+body.cv-industrial-shell .text-cyan-200,
+body.cv-industrial-shell .xcf-real-hero-main p,
+body.cv-industrial-shell .c2-real-page-card p:first-child {
+  color: var(--cv-industrial-amber) !important;
+}
+
+body.cv-industrial-shell button.bg-cyan-300,
+body.cv-industrial-shell a.bg-cyan-300,
+body.cv-industrial-shell .cv-card button,
+body.cv-industrial-shell .xcf-real-primary {
+  background: var(--cv-industrial-gradient) !important;
+  color: #020617 !important;
+  border-color: rgba(250,204,21,.45) !important;
+  box-shadow: 0 14px 38px rgba(251,146,60,.22) !important;
+}
+
+body.cv-industrial-shell input,
+body.cv-industrial-shell textarea,
+body.cv-industrial-shell select {
+  background: rgba(2,6,23,.48) !important;
+  border-color: rgba(250,204,21,.22) !important;
+  color: #f8fafc !important;
 }
 
 body.cv-industrial-shell main.fixed.inset-0 > .flex > aside,
