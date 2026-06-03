@@ -18,3 +18,73 @@ aside .bg-white.text-slate-950 span {
 .mt-3.rounded-2xl.bg-amber-100.p-3.text-sm.font-black.text-amber-900 {
   display: none !important;
 }
+
+/* Dashboard portal shell: keep the fixed sidebar, but restore the tighter Command Desk proportions. */
+[data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > aside {
+  width: 230px !important;
+  padding: 14px !important;
+}
+
+[data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > aside > div:first-child {
+  margin-bottom: 18px !important;
+  gap: 10px !important;
+}
+
+[data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > aside > div:first-child > div:first-child {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 13px !important;
+  font-size: 13px !important;
+}
+
+[data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > aside > div:first-child .text-sm {
+  font-size: 11px !important;
+  line-height: 1.05 !important;
+  letter-spacing: 0.03em !important;
+}
+
+[data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > aside > div:first-child .text-\[10px\] {
+  font-size: 8px !important;
+  letter-spacing: 0.16em !important;
+}
+
+[data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > aside nav {
+  display: grid !important;
+  gap: 4px !important;
+}
+
+[data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > aside nav a {
+  min-height: 38px !important;
+  padding: 8px 10px !important;
+  border-radius: 14px !important;
+  gap: 10px !important;
+  font-size: 12px !important;
+  line-height: 1 !important;
+}
+
+[data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > aside nav a span {
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 10px !important;
+  font-size: 8px !important;
+}
+
+[data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > section {
+  padding: 28px !important;
+}
+
+[data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > section > section:first-child {
+  grid-template-columns: minmax(0, 1fr) 300px !important;
+}
+
+@media (max-width: 1279px) {
+  [data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > section > section:first-child {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  [data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > section {
+    padding: 16px !important;
+  }
+}
