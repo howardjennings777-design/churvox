@@ -10,7 +10,7 @@ const core = [
   ["Assign Workers", "Unassigned jobs and crew gaps are pulled forward so dispatch decisions are easy to make."],
   ["Approve Messages", "Quote follow-ups, customer updates and invoice reminders are drafted first, then the owner approves before anything sends."],
   ["Fix Issues", "Missing price, missing customer details, overdue money and blocked admin are separated into a clear issue lane."],
-  ["Work Slips", "Tap any lane or row to open the full approval slip with details, notes, evidence, message draft and next-step buttons."],
+  ["Full Review", "Tap any lane or row to open the full approval view with details, notes, evidence, message draft and next-step buttons."],
 ];
 
 const advanced = [
@@ -20,11 +20,11 @@ const advanced = [
   ["Roles + Permissions", "Owner, Manager, Worker, Office Admin and Payroll access stay separated so each person sees what they need."],
 ];
 
-const flow = ["Work comes in", "Churvox prepares admin", "Owner opens Work Slip", "Owner approves", "Next step moves"];
+const flow = ["Work comes in", "Churvox prepares admin", "Owner reviews", "Owner approves", "Next step moves"];
 
 export default function ExecutiveFeaturesPage() {
   return (
-    <main className="cvx-home cvx-public-page cvx-features-page" data-version="CHURVOX_WOW_FEATURES_20260527">
+    <main className="cvx-home cvx-public-page cvx-features-page" data-version="CHURVOX_WOW_FEATURES_20260603">
       <Nav />
 
       <section className="cvx-public-hero">
