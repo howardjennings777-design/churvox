@@ -63,7 +63,7 @@ function statusOf(job) {
 
 function prettyStatus(status) {
   const value = String(status || "unassigned").toLowerCase();
-  if (value === "unassigned" || value === "new" || value === "pending") return "Needs assignment";
+  if (value === "unassigned" || value === "new" || value === "pending") return "Needs assigning";
   if (value === "in_progress" || value === "started" || value === "active") return "In progress";
   if (value === "complete" || value === "done") return "Completed";
   return String(status || "unassigned").replaceAll("_", " ").replace(/\b\w/g, (m) => m.toUpperCase());
@@ -101,7 +101,7 @@ function Sidebar() {
               {group.items.map(([label, href, icon]) => {
                 const active = isActivePath(pathname, href);
                 return (
-                  <Link key={href} to={href} className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-black ${active ? "bg-white text-slate-950" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
+                  <Link key={href} to={href} className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-black ${active ? "bg-cyan-300 text-slate-950 shadow-lg shadow-cyan-300/20" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
                     <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-xl text-[10px] font-black ${active ? "bg-slate-950 text-white" : "bg-white/10 text-cyan-200"}`}>{icon}</span>
                     <span className="truncate">{label}</span>
                   </Link>
@@ -198,15 +198,15 @@ function JobSlip({ job, onClose }) {
 
 function StatCard({ label, value, tone }) {
   const styles = {
-    dark: "border-white/10 bg-white/[0.045] text-white",
-    amber: "border-amber-300/35 bg-amber-300/12 text-amber-100",
-    cyan: "border-cyan-300/35 bg-cyan-300/12 text-cyan-100",
-    green: "border-emerald-300/35 bg-emerald-300/12 text-emerald-100",
+    dark: "border-slate-800 bg-[#0f1722] text-white",
+    amber: "border-amber-400/35 bg-[#2b2115] text-amber-100",
+    cyan: "border-cyan-400/30 bg-[#102a3a] text-cyan-100",
+    green: "border-emerald-400/30 bg-[#102d27] text-emerald-100",
   };
 
   return (
-    <div className={`rounded-[22px] border p-4 shadow-[0_14px_38px_rgba(15,23,42,0.11)] ${styles[tone] || styles.dark}`}>
-      <div className="text-[10px] font-black uppercase tracking-[0.16em] opacity-75">{label}</div>
+    <div className={`rounded-[22px] border p-4 shadow-[0_14px_38px_rgba(15,23,42,0.14)] ${styles[tone] || styles.dark}`}>
+      <div className="text-[10px] font-black uppercase tracking-[0.16em] opacity-80">{label}</div>
       <div className="mt-3 text-3xl font-black tracking-[-0.06em]">{value}</div>
     </div>
   );
@@ -258,8 +258,8 @@ function JobsCommandContent() {
                 <div className="absolute right-0 top-0 h-56 w-56 rounded-full bg-blue-500/10 blur-3xl" />
                 <div className="relative">
                   <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-200">Jobs</span>
-                  <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">Every job needs a clear next move.</h1>
-                  <p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Assign new jobs, keep active work visible, and move completed jobs toward review and invoice. No job should feel lost.</p>
+                  <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">Keep every job moving.</h1>
+                  <p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-slate-300 md:text-base">See what needs assigning, what is in progress, and what is ready for review or invoice.</p>
                   <div className="mt-5 flex flex-wrap gap-3"><Link to="/dispatch" className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/15">Open dispatch</Link><Link to="/jobs/new" className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200">Create job</Link></div>
                 </div>
               </div>
@@ -268,18 +268,18 @@ function JobsCommandContent() {
               <div className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200">Job health</div>
               <h2 className="mt-2 text-2xl font-black tracking-[-0.055em] text-white">What needs attention</h2>
               <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                <StatCard label="Need assignment" value={counts.unassigned} tone="amber" />
-                <StatCard label="Assigned or active" value={counts.active} tone="cyan" />
-                <StatCard label="Ready to review" value={counts.completed} tone="green" />
+                <StatCard label="Needs assigning" value={counts.unassigned} tone="amber" />
+                <StatCard label="In progress" value={counts.active} tone="cyan" />
+                <StatCard label="Ready for invoice" value={counts.completed} tone="green" />
               </div>
             </div>
           </section>
 
           <section className="mt-5 grid gap-4 md:grid-cols-4">
             <StatCard label="Total jobs" value={counts.total} tone="dark" />
-            <StatCard label="Needs assignment" value={counts.unassigned} tone="amber" />
+            <StatCard label="Needs assigning" value={counts.unassigned} tone="amber" />
             <StatCard label="In progress" value={counts.active} tone="cyan" />
-            <StatCard label="Ready to review" value={counts.completed} tone="green" />
+            <StatCard label="Ready for invoice" value={counts.completed} tone="green" />
           </section>
 
           <section className="mt-5 rounded-[28px] border border-slate-900 bg-slate-950 p-5 text-white shadow-[0_18px_55px_rgba(15,23,42,0.16)]">
