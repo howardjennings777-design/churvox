@@ -1,90 +1,56 @@
-/* CHURVOX SAFE COMMAND THEME PATCHES
-   Keep this file narrow. Do not use broad dialog overrides here.
-*/
+/* CHURVOX SAFE COMMAND THEME PATCHES */
 
 /* Active command sidebar pills should be cyan, not white. */
-aside .bg-white.text-slate-950 {
+aside .bg-white.text-slate-950,
+aside .bg-cyan-300.text-slate-950 {
   background: #67e8f9 !important;
   color: #0f172a !important;
   box-shadow: 0 10px 30px rgba(103, 232, 249, 0.18) !important;
 }
 
-aside .bg-white.text-slate-950 span {
+aside .bg-white.text-slate-950 > span:first-child,
+aside .bg-cyan-300.text-slate-950 > span:first-child {
   background: rgba(15, 23, 42, 0.92) !important;
   color: #ffffff !important;
 }
 
-/* Remove the yellow needs-details strip from the Command Board review summary. */
+/* Remove the old yellow needs-details strip from the Command Board review summary. */
 .mt-3.rounded-2xl.bg-amber-100.p-3.text-sm.font-black.text-amber-900 {
   display: none !important;
 }
 
-/* Dashboard portal shell: keep the fixed sidebar, but restore the tighter Command Desk proportions. */
-[data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > aside {
-  width: 230px !important;
-  padding: 14px !important;
+/* Keep command page sidebars visually consistent when moving between pages. */
+main.fixed.inset-0 > .flex > aside {
+  width: 292px !important;
+  min-width: 292px !important;
+  border-right: 1px solid rgb(30 41 59) !important;
+  background: #0f1722 !important;
 }
 
-[data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > aside > div:first-child {
-  margin-bottom: 18px !important;
-  gap: 10px !important;
+main.fixed.inset-0 > .flex > aside nav a {
+  min-height: 44px !important;
+  gap: 12px !important;
+  border-radius: 16px !important;
+  padding: 10px 12px !important;
+  font-size: 14px !important;
+  line-height: 1.25rem !important;
 }
 
-[data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > aside > div:first-child > div:first-child {
-  width: 36px !important;
-  height: 36px !important;
-  border-radius: 13px !important;
-  font-size: 13px !important;
+main.fixed.inset-0 > .flex > aside nav a > span:first-child {
+  width: 28px !important;
+  min-width: 28px !important;
+  height: 28px !important;
+  border-radius: 12px !important;
+  font-size: 10px !important;
 }
 
-[data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > aside > div:first-child .text-sm {
-  font-size: 11px !important;
-  line-height: 1.05 !important;
-  letter-spacing: 0.03em !important;
-}
-
-[data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > aside > div:first-child .text-\[10px\] {
-  font-size: 8px !important;
-  letter-spacing: 0.16em !important;
-}
-
-[data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > aside nav {
-  display: grid !important;
-  gap: 4px !important;
-}
-
-[data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > aside nav a {
-  min-height: 38px !important;
-  padding: 8px 10px !important;
-  border-radius: 14px !important;
-  gap: 10px !important;
-  font-size: 12px !important;
-  line-height: 1 !important;
-}
-
-[data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > aside nav a span {
-  width: 24px !important;
-  height: 24px !important;
-  border-radius: 10px !important;
-  font-size: 8px !important;
-}
-
-[data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > section {
-  padding: 28px !important;
-}
-
-[data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > section > section:first-child {
-  grid-template-columns: minmax(0, 1fr) 300px !important;
-}
-
-@media (max-width: 1279px) {
-  [data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > section > section:first-child {
-    grid-template-columns: 1fr !important;
-  }
-}
-
-@media (max-width: 1023px) {
-  [data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604"] > .flex > section {
-    padding: 16px !important;
-  }
+main.fixed.inset-0 > .flex > aside nav a > span:last-child,
+main.fixed.inset-0 > .flex > aside nav a > strong {
+  display: block !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  font-size: 14px !important;
+  line-height: 1.25rem !important;
 }
