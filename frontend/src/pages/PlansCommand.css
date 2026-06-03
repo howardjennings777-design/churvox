@@ -529,3 +529,63 @@
   opacity: 0.78;
 }
 
+/* CHURVOX_PLAN_CARD_CLEANUP_20260604 */
+.cv-plan-grid-clean {
+  align-items: stretch;
+}
+
+.cv-tier-card--clean {
+  min-height: 500px !important;
+  grid-template-rows: auto auto auto auto auto 1fr auto !important;
+  gap: 12px !important;
+}
+
+.cv-tier-head {
+  display: grid;
+  gap: 8px;
+}
+
+.cv-tier-card--clean .cv-tier-blurb {
+  min-height: 54px !important;
+  font-size: 13px !important;
+  line-height: 1.42 !important;
+}
+
+.cv-tier-best--prominent {
+  margin: 0 !important;
+  opacity: 1 !important;
+  border-radius: 16px;
+  border: 1px solid rgba(103, 232, 249, 0.16);
+  background: rgba(255, 255, 255, 0.055);
+  padding: 10px 11px;
+}
+
+.cv-tier-best--prominent span {
+  display: block;
+  margin-bottom: 4px;
+  color: #7ff5d4 !important;
+  font-size: 10px !important;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.cv-tier-best--prominent strong {
+  display: block;
+  color: rgba(248, 251, 255, 0.94);
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+
+.cv-tier-section--clean {
+  border-top-color: rgba(103, 232, 249, 0.16) !important;
+}
+
+.cv-tier-section--clean ul {
+  gap: 8px !important;
+}
+
+.cv-tier-section--clean li {
+  font-size: 12.5px !important;
+  line-height: 1.32 !important;
+}
