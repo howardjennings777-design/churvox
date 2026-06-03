@@ -2,10 +2,13 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="%PUBLIC_URL%/churvox-mark.svg?v=4" />
-    <link rel="icon" type="image/x-icon" href="%PUBLIC_URL%/favicon.ico?v=4" />
-    <link rel="icon" type="image/png" sizes="192x192" href="%PUBLIC_URL%/icon-192x192.png?v=4" />
-    <link rel="icon" type="image/png" sizes="512x512" href="%PUBLIC_URL%/icon-512x512.png?v=4" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <link rel="icon" type="image/svg+xml" href="%PUBLIC_URL%/churvox-mark.svg?v=6" />
+    <link rel="icon" type="image/x-icon" href="%PUBLIC_URL%/favicon.ico?v=6" />
+    <link rel="icon" type="image/png" sizes="192x192" href="%PUBLIC_URL%/icon-192x192.png?v=6" />
+    <link rel="icon" type="image/png" sizes="512x512" href="%PUBLIC_URL%/icon-512x512.png?v=6" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#06111A" />
     <meta name="description" content="Churvox — AI Operator Front Desk for trade & service businesses. Jobs, quotes, invoices and crew. Churvox runs the admin. You stay in control." />
@@ -13,8 +16,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Churvox" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/apple-touch-icon.png?v=4" />
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json?v=4" />
+    <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/apple-touch-icon.png?v=6" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json?v=6" />
     <title>Churvox — AI Operator Front Desk</title>
     <style>
       html, body { background-color: #06111A; color: #F6FBFC; }
@@ -28,22 +31,38 @@
     </style>
 
 <script>
-/* CHURVOX_CURRENT_CACHE_GUARD_20260529 */
+/* CHURVOX_FORCE_CACHE_CLEAR_20260603_SAFE_ROLLBACK */
 (function () {
   try {
-    var key = "churvox_current_cache_guard_20260529";
-    if (!localStorage.getItem(key)) {
-      localStorage.setItem(key, "1");
-      if ("serviceWorker" in navigator) {
+    var key = "churvox_force_cache_clear_20260603_safe_rollback_v3";
+    var current = localStorage.getItem(key);
+    var clearing = [];
+
+    if ("serviceWorker" in navigator) {
+      clearing.push(
         navigator.serviceWorker.getRegistrations().then(function (regs) {
-          regs.forEach(function (reg) { reg.unregister(); });
-        });
-      }
-      if ("caches" in window) {
+          return Promise.all(regs.map(function (reg) { return reg.unregister(); }));
+        }).catch(function () {})
+      );
+    }
+
+    if ("caches" in window) {
+      clearing.push(
         caches.keys().then(function (keys) {
-          keys.forEach(function (k) { caches.delete(k); });
-        });
-      }
+          return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+        }).catch(function () {})
+      );
+    }
+
+    if (current !== "done") {
+      localStorage.setItem(key, "done");
+      Promise.all(clearing).then(function () {
+        var url = new URL(window.location.href);
+        if (url.searchParams.get("cvfresh") !== "20260603") {
+          url.searchParams.set("cvfresh", "20260603");
+          window.location.replace(url.toString());
+        }
+      });
     }
   } catch (e) {}
 })();
