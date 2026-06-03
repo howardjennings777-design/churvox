@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+<!-- CHURVOX FULLSCREEN SLIPS DEPLOY MARKER 2026-06-03 -->
     <meta name="churvox-build-cache-reset" content="1780459578" />
     <meta charset="utf-8" />
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
@@ -73,6 +74,25 @@
 <script id="churvox-force-clear-old-cache">
 (function () {
   try {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        regs.forEach(function (reg) { reg.unregister(); });
+      });
+    }
+    if (window.caches) {
+      caches.keys().then(function (keys) {
+        keys.forEach(function (key) { caches.delete(key); });
+      });
+    }
+  } catch (e) {}
+})();
+</script>
+
+
+<script id="churvox-hard-cache-kill">
+(function () {
+  try {
+    localStorage.setItem("churvox_build_marker", "fullscreen-slips-live-2026-06-03");
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.getRegistrations().then(function (regs) {
         regs.forEach(function (reg) { reg.unregister(); });
