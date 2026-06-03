@@ -2,6 +2,7 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
+import CommandSlipEverything from "../components/CommandSlipEverything";
 
 const navGroups = [
   { title: "Command", items: [["Command Board", "/dashboard", "CB"], ["AI Operator", "/ai-operator", "AI"], ["Approvals", "/ai-operator/approvals", "OK"], ["Notifications", "/notifications", "NT"]] },
@@ -270,7 +271,12 @@ function InvoiceSlip({ invoice, onClose }) {
               </section>
             </aside>
           </div>
-        </main>
+        
+              <CommandSlipEverything
+                record={invoice}
+                context="InvoiceSlip"
+              />
+</main>
       </section>
     </div>
   );

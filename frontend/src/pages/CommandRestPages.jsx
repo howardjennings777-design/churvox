@@ -1,6 +1,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
+import CommandSlipEverything from "../components/CommandSlipEverything";
 
 const navGroups = [
   {
@@ -193,7 +194,12 @@ function WorkSlip({ item, onClose }) {
               </section>
             </aside>
           </div>
-        </main>
+        
+              <CommandSlipEverything
+                record={item}
+                context="WorkSlip"
+              />
+</main>
       </section>
     </div>
   );

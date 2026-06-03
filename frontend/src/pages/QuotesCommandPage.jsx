@@ -2,6 +2,7 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
+import CommandSlipEverything from "../components/CommandSlipEverything";
 
 const navGroups = [
   { title: "Command", items: [["Command Board", "/dashboard", "CB"], ["AI Operator", "/ai-operator", "AI"], ["Approvals", "/ai-operator/approvals", "OK"], ["Notifications", "/notifications", "NT"]] },
@@ -162,7 +163,12 @@ function QuoteSlip({ quote, onClose }) {
             </div>
             <p className="mt-4 text-sm font-bold leading-6 text-slate-600">{quote?.description || quote?.scope || quote?.notes || "No description saved for this quote yet."}</p>
           </section>
-        </main>
+        
+              <CommandSlipEverything
+                record={quote}
+                context="QuoteSlip"
+              />
+</main>
 
         <footer className="flex flex-wrap gap-3 border-t border-slate-200 bg-white p-5">
           {id && !id.startsWith("sample-") ? <Link to={`/quotes/${id}`} className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Open quote record</Link> : <Link to="/quotes/new" className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Create real quote</Link>}

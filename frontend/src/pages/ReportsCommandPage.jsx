@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
+import CommandSlipEverything from "../components/CommandSlipEverything";
 
 const navGroups = [
   { title: "Command", items: [["Command Board", "/dashboard", "CB"], ["AI Operator", "/ai-operator", "AI"], ["Approvals", "/ai-operator/approvals", "OK"], ["Notifications", "/notifications", "NT"]] },
@@ -140,7 +141,13 @@ function ReportSlip({ item, onClose, metrics, onExport }) {
         <main className="min-h-0 flex-1 overflow-y-auto bg-[#f4f6f8] p-5 md:p-6">
           <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm"><div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">What this shows</div><p className="mt-3 text-lg font-black tracking-[-0.035em] text-slate-950">{item.summary}</p><div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-bold leading-6 text-blue-950">Reports are for review and handoff. They do not make tax, legal, accounting or payroll compliance decisions.</div></section>
           <section className="mt-4 grid gap-3 sm:grid-cols-2"><div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Paid value</div><div className="mt-1 text-sm font-black text-slate-950">{money(metrics.paidValue)}</div></div><div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Outstanding</div><div className="mt-1 text-sm font-black text-slate-950">{money(metrics.outstanding)}</div></div><div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Jobs</div><div className="mt-1 text-sm font-black text-slate-950">{metrics.jobs}</div></div><div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Clients</div><div className="mt-1 text-sm font-black text-slate-950">{metrics.clients}</div></div></section>
-        </main>
+        
+              <CommandSlipEverything
+                record={item}
+                context="ReportSlip"
+                extra={{ metrics: metrics }}
+              />
+</main>
         <footer className="flex flex-wrap gap-3 border-t border-slate-200 bg-white p-5"><button type="button" onClick={onExport} className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Download summary</button><Link to={item.href} className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-800 hover:bg-slate-50">Open place</Link></footer>
       </div>
     </div>

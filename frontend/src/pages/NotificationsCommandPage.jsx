@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
+import CommandSlipEverything from "../components/CommandSlipEverything";
 
 const navGroups = [
   { title: "Command", items: [["Command Board", "/dashboard", "CB"], ["AI Operator", "/ai-operator", "AI"], ["Approvals", "/ai-operator/approvals", "OK"], ["Notifications", "/notifications", "NT"]] },
@@ -161,7 +162,12 @@ function NotificationSlip({ item, onClose, onRead, busy }) {
             <p className="mt-3 text-lg font-black tracking-[-0.035em] text-slate-950">{messageOf(item)}</p>
             <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-bold leading-6 text-blue-950">Open the related place, review the work, then mark this notification read when it is handled.</div>
           </section>
-        </main>
+        
+              <CommandSlipEverything
+                record={item}
+                context="NotificationSlip"
+              />
+</main>
 
         <footer className="flex flex-wrap gap-3 border-t border-slate-200 bg-white p-5">
           <Link to={linkFor(item)} className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Open place</Link>

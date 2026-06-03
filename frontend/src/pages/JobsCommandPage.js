@@ -2,6 +2,7 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
+import CommandSlipEverything from "../components/CommandSlipEverything";
 
 const navGroups = [
   { title: "Command", items: [["Command Board", "/dashboard", "CB"], ["AI Operator", "/ai-operator", "AI"], ["Approvals", "/ai-operator/approvals", "OK"], ["Notifications", "/notifications", "NT"]] },
@@ -158,7 +159,12 @@ function JobSlip({ job, onClose }) {
             <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">Next best action</div>
             <p className="mt-2 text-sm font-bold leading-6 text-amber-950">{status === "unassigned" ? "Assign this job from Dispatch or open the job record." : status === "completed" ? "Review the completed work and create the invoice if ready." : "Open the job record to update details, notes, worker, timing, or status."}</p>
           </section>
-        </main>
+        
+              <CommandSlipEverything
+                record={job}
+                context="JobSlip"
+              />
+</main>
         <footer className="flex flex-wrap gap-3 border-t border-slate-200 bg-white p-5">
           {id && !id.startsWith("sample-") ? <Link to={`/jobs/${id}`} className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Open job record</Link> : <Link to="/jobs/new" className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Create real job</Link>}
           <Link to="/dispatch" className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-800 hover:bg-slate-50">Open dispatch</Link>

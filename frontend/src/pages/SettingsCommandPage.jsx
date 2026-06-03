@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
 import { businessSettingsCompletion, loadBusinessSettings, saveBusinessSettings } from "../lib/businessSettings";
 import API_BASE from "../lib/apiBase";
+import CommandSlipEverything from "../components/CommandSlipEverything";
 
 const navGroups = [
   {
@@ -260,7 +261,12 @@ function SettingsSlip({ settings, completion, onClose }) {
               )) : <span className="text-sm font-bold text-emerald-700">No core fields missing.</span>}
             </div>
           </div>
-        </main>
+        
+              <CommandSlipEverything
+                record={settings}
+                context="SettingsSlip"
+              />
+</main>
         <footer className="flex justify-end gap-3 border-t border-slate-200 bg-white p-5">
           <button type="button" onClick={onClose} className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white">Back to settings</button>
         </footer>

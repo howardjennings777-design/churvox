@@ -2,6 +2,7 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
+import CommandSlipEverything from "../components/CommandSlipEverything";
 
 const navGroups = [
   { title: "Command", items: [["Command Board", "/dashboard", "CB"], ["AI Operator", "/ai-operator", "AI"], ["Approvals", "/ai-operator/approvals", "OK"], ["Notifications", "/notifications", "NT"]] },
@@ -177,7 +178,12 @@ function PayrollSlip({ worker, onClose }) {
             <div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Rate</div><div className="mt-1 text-sm font-black text-slate-950">{payRate(worker) ? money(payRate(worker)) : "Not set"}</div></div>
             <div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Gross estimate</div><div className="mt-1 text-sm font-black text-slate-950">{money(grossPay(worker))}</div></div>
           </section>
-        </main>
+        
+              <CommandSlipEverything
+                record={worker}
+                context="PayrollSlip"
+              />
+</main>
 
         <footer className="flex flex-wrap gap-3 border-t border-slate-200 bg-white p-5">
           <Link to="/reports" className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Open reports</Link>

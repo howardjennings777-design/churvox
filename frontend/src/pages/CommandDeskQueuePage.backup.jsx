@@ -2,6 +2,7 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
+import CommandSlipEverything from "../components/CommandSlipEverything";
 
 const nav = [
   ["Command Board", "/dashboard", "CB"],
@@ -834,7 +835,12 @@ function SlipModal({ item, onClose, onChanged }) {
               </section>
             </aside>
           </div>
-        </main>
+        
+              <CommandSlipEverything
+                record={item}
+                context="SlipModal"
+              />
+</main>
       </section>
     </div>
   );

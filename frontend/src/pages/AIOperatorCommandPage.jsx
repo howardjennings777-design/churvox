@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
+import CommandSlipEverything from "../components/CommandSlipEverything";
 
 const navGroups = [
   { title: "Command", items: [["Command Board", "/dashboard", "CB"], ["AI Operator", "/ai-operator", "AI"], ["Notifications", "/notifications", "NT"]] },
@@ -157,7 +158,12 @@ function OperatorSlip({ action, onClose, onApprove, onReject, busy }) {
           <section className={`${panel} p-5`}><div className={`text-[10px] font-black uppercase tracking-[0.18em] ${kickerText}`}>Prepared by Churvox</div><p className="mt-3 text-lg font-black tracking-[-0.035em] text-white">{summaryOf(action)}</p><div className="mt-4 rounded-2xl border border-cyan-300/15 bg-cyan-300/10 p-4 text-sm font-bold leading-6 text-cyan-100">Approval-first: Churvox prepares the admin, and the owner checks the action before it runs.</div></section>
           <section className={`${panel} mt-4 p-5`}><div className={`text-[10px] font-black uppercase tracking-[0.18em] ${kickerText}`}>Prepared payload</div><pre className="mt-4 max-h-[280px] overflow-auto rounded-2xl border border-cyan-300/15 bg-slate-950 p-4 text-xs font-bold leading-6 text-slate-100">{JSON.stringify(payload, null, 2)}</pre></section>
           <section className="mt-4 rounded-[26px] border border-amber-300/25 bg-amber-400/10 p-5 shadow-sm"><div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-200">Guardrail</div><p className="mt-2 text-sm font-bold leading-6 text-amber-100">Sensitive customer, payroll, pricing and finance actions should always be reviewed by the owner first.</p></section>
-        </main>
+        
+              <CommandSlipEverything
+                record={action}
+                context="OperatorSlip"
+              />
+</main>
         <footer className="flex flex-wrap gap-3 border-t border-cyan-300/15 bg-slate-950 p-5">
           <Link to={linkFor(action)} className="rounded-2xl border border-cyan-300/20 bg-white/5 px-5 py-3 text-sm font-black text-cyan-100 hover:bg-white/10">Open record</Link>
           {!id.startsWith("sample-") ? <button type="button" disabled={busy === `approve-${id}`} onClick={() => onApprove(action)} className="rounded-2xl bg-gradient-to-r from-cyan-300 to-emerald-300 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-cyan-500/20 disabled:opacity-60">Approve action</button> : null}
