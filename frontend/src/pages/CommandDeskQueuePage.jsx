@@ -557,17 +557,30 @@ function SlipModal({ item, onClose, onChanged }) {
 
   if (!item) return null;
 
+  const type = String(item?.type || form?.action_type || "").toLowerCase();
+  const requiredKeys = required(type);
+  const missing = requiredKeys.filter((key) => !has(form?.[key]));
+  const ready = missing.length === 0;
   const title = slipTitleFor(item, form);
   const tone = slipTone(item, form);
   const approveLabel = slipActionLabel(item, form);
-  const missing = Array.isArray(item.missing) ? item.missing : [];
-  const ready = missing.length === 0;
-  const total = slipFirst(form.total, form.amount_due, form.amount, form.price, form.subtotal);
+  const editableKeys = relevantSlipKeys(form, item, missing);
+
+  const total = slipFirst(form.total, form.amount_due, form.amount, form.price, form.subtotal, form.quote_amount);
   const clientName = slipFirst(form.client_name, form.customer_name, form.name);
   const clientEmail = slipFirst(form.client_email, form.customer_email, form.email);
   const clientPhone = slipFirst(form.client_phone, form.customer_phone, form.phone);
+  const jobTitle = slipFirst(form.job_title, form.job_name, form.service_type);
   const jobAddress = slipFirst(form.job_address, form.address, form.site_address, form.client_address);
-  const description = slipFirst(form.description, form.invoice_description, form.quote_description, form.job_description, form.message);
+  const workerName = slipFirst(form.worker_name, form.assigned_worker_name, form.recommended_worker_name, form.worker_id);
+  const invoiceNumber = slipFirst(form.invoice_number, form.invoice_id);
+  const quoteNumber = slipFirst(form.quote_number, form.quote_id);
+  const dueDate = slipFirst(form.due_date, form.payment_due_date);
+  const preparedMessage = slipFirst(form.message, form.email_body, form.sms_message, form.follow_up_message, form.description);
+
+  const allRows = Object.entries(form || {})
+    .filter(([key, value]) => key && !["business_id", "related_id", "related_entity_id"].includes(key) && slipDisplayValue(value))
+    .sort(([a], [b]) => a.localeCompare(b));
 
   async function saveOnly() {
     setBusy(true);
@@ -577,9 +590,11 @@ function SlipModal({ item, onClose, onChanged }) {
       if (res?.success === false || res?.data?.success === false) {
         throw new Error(res?.error || res?.data?.error || "Could not save slip");
       }
-      setMessage("Saved. Churvox will use these details when approved.");
+      toast.success("Slip saved");
+      setMessage("Saved. These edited slip details will be used when approved.");
       if (onChanged) await onChanged();
     } catch (err) {
+      toast.error(err?.message || "Could not save slip");
       setMessage(err?.message || "Could not save slip");
     } finally {
       setBusy(false);
@@ -587,6 +602,13 @@ function SlipModal({ item, onClose, onChanged }) {
   }
 
   async function approveNow() {
+    if (!ready) {
+      const names = missing.map((key) => labels?.[key] || key.replaceAll("_", " ")).join(", ");
+      toast.error(`Missing: ${names}`);
+      setMessage(`Missing before approval: ${names}`);
+      return;
+    }
+
     setBusy(true);
     setMessage("");
     try {
@@ -600,157 +622,156 @@ function SlipModal({ item, onClose, onChanged }) {
         throw new Error(runRes?.error || runRes?.data?.error || "Approval failed");
       }
 
-      setMessage("Approved. Churvox has run the action.");
+      toast.success(runRes?.data?.message || "Approved");
       if (onChanged) await onChanged();
       onClose();
     } catch (err) {
-      setMessage(err?.message || "Approval failed. Check the missing details and try again.");
+      toast.error(err?.message || "Approval failed");
+      setMessage(err?.message || "Approval failed. Check the details and try again.");
     } finally {
       setBusy(false);
     }
   }
 
-  const editableKeys = relevantSlipKeys(form, item, missing);
-
   return (
-    <div className="fixed inset-0 z-[2147483647] bg-slate-950/80 p-0 backdrop-blur-sm">
-      <section className="flex h-screen w-screen flex-col overflow-hidden bg-[#f5f7f1] text-slate-950">
-        <header className="shrink-0 border-b border-slate-800 bg-[#0f1722] p-4 text-white md:p-6">
-          <div className="flex flex-wrap items-start justify-between gap-4">
+    <div
+      className="fixed inset-0 z-[2147483647] h-[100dvh] w-screen overflow-hidden bg-[#f5f7f1] text-slate-950"
+      role="dialog"
+      aria-modal="true"
+    >
+      <section className="flex h-[100dvh] w-screen flex-col overflow-hidden">
+        <header className="shrink-0 border-b border-slate-800 bg-[#0f1722] px-4 py-4 text-white md:px-8 md:py-6">
+          <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <div className="text-[11px] font-black uppercase tracking-[0.18em] text-cyan-200">{tone} slip</div>
-              <h2 className="mt-2 text-3xl font-black leading-tight tracking-[-0.055em] md:text-5xl">
+              <div className="text-[11px] font-black uppercase tracking-[0.2em] text-cyan-200">
+                {tone} approval slip · full screen
+              </div>
+              <h1 className="mt-2 text-3xl font-black leading-none tracking-[-0.06em] md:text-5xl">
                 {title}
-              </h2>
-              <p className="mt-2 max-w-4xl text-sm font-bold leading-6 text-slate-300">
-                Everything Churvox found is inside this slip. Check it, edit anything missing, then approve.
+              </h1>
+              <p className="mt-3 max-w-5xl text-sm font-bold leading-6 text-slate-300">
+                Everything relevant is here. Check the record, edit anything wrong, save if needed, then approve.
               </p>
             </div>
 
             <button
               type="button"
               onClick={onClose}
-              className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/15"
+              className="shrink-0 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/20"
             >
               Close
             </button>
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
-          <div className="mx-auto grid max-w-[1500px] gap-5 xl:grid-cols-[minmax(0,1fr)_390px]">
-            <div className="space-y-5">
-              {!ready ? (
-                <section className="rounded-[28px] border border-amber-300 bg-amber-50 p-5 text-amber-950">
-                  <div className="text-[11px] font-black uppercase tracking-[0.18em] text-amber-700">Needs checking</div>
-                  <h3 className="mt-2 text-2xl font-black tracking-[-0.04em]">Missing info before approval</h3>
-                  <div className="mt-3 flex flex-wrap gap-2">
+        <main className="min-h-0 flex-1 overflow-y-auto">
+          <div className="grid min-h-full w-full gap-0 xl:grid-cols-[minmax(0,1fr)_430px]">
+            <div className="space-y-5 p-4 md:p-6 xl:p-8">
+              <section className={`rounded-[28px] border p-5 ${ready ? "border-emerald-200 bg-emerald-50" : "border-amber-300 bg-amber-50"}`}>
+                <div className={`text-[11px] font-black uppercase tracking-[0.18em] ${ready ? "text-emerald-700" : "text-amber-700"}`}>
+                  {ready ? "Ready to approve" : "Needs details"}
+                </div>
+                <h2 className="mt-2 text-3xl font-black tracking-[-0.05em]">
+                  {ready ? "Required details are filled." : "Do not approve yet."}
+                </h2>
+                {!ready ? (
+                  <div className="mt-4 flex flex-wrap gap-2">
                     {missing.map((key) => (
-                      <span key={key} className="rounded-full border border-amber-300 bg-white px-3 py-1 text-xs font-black text-amber-800">
-                        {labels?.[key] || key.replaceAll("_", " ")}
+                      <span key={key} className="rounded-full border border-amber-300 bg-white px-3 py-1 text-xs font-black text-amber-900">
+                        Missing {labels?.[key] || key.replaceAll("_", " ")}
                       </span>
                     ))}
                   </div>
-                </section>
-              ) : (
-                <section className="rounded-[28px] border border-emerald-200 bg-emerald-50 p-5 text-emerald-950">
-                  <div className="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-700">Ready</div>
-                  <h3 className="mt-2 text-2xl font-black tracking-[-0.04em]">This slip has the required details.</h3>
-                </section>
-              )}
+                ) : null}
+              </section>
 
-              <SlipSection title="Decision summary" note="The basic details the owner should see first.">
+              <SlipSection title="Main approval details" note="The most important things the owner needs to see first.">
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                  <SlipInfoCard label="Client" value={clientName} warn={!clientName} />
-                  <SlipInfoCard label="Email" value={clientEmail} warn={!clientEmail && String(item.type || "").includes("send")} />
+                  <SlipInfoCard label="Client / customer" value={clientName} warn={!clientName} />
+                  <SlipInfoCard label="Email" value={clientEmail} warn={(type.includes("send") || type.includes("quote") || type.includes("invoice")) && !clientEmail} />
                   <SlipInfoCard label="Phone" value={clientPhone} />
-                  <SlipInfoCard label="Total / amount" value={slipMoney(total)} warn={String(item.type || "").includes("invoice") && !total} />
-                </div>
-
-                <div className="mt-3 grid gap-3 md:grid-cols-2">
-                  <SlipInfoCard label="Address / site" value={jobAddress} />
-                  <SlipInfoCard label="Description / message" value={description} warn={!description} />
-                </div>
-              </SlipSection>
-
-              <SlipSection title="Client details" note="Contact and customer information pulled into the slip.">
-                <SlipKeyValues
-                  form={form}
-                  rows={[
-                    "client_name", "customer_name", "client_email", "customer_email", "email",
-                    "client_phone", "customer_phone", "phone", "client_address", "customer_address",
-                    "site_access", "gate_code", "client_notes", "customer_notes", "unpaid_balance",
-                  ]}
-                />
-              </SlipSection>
-
-              <SlipSection title="Job details" note="The related job, site, notes and work context.">
-                <SlipKeyValues
-                  form={form}
-                  rows={[
-                    "job_id", "job_title", "job_name", "service_type", "job_status", "status",
-                    "job_address", "address", "site_address", "scheduled_at", "schedule_date",
-                    "start_time", "end_time", "assigned_worker_name", "worker_name", "worker_id",
-                    "job_notes", "worker_note", "completion_note", "photo_count", "proof_photos",
-                  ]}
-                />
-              </SlipSection>
-
-              <SlipSection title="Invoice / quote details" note="Amounts, line items, descriptions and payment details.">
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                  <SlipInfoCard label="Invoice number" value={slipFirst(form.invoice_number, form.invoice_id)} />
-                  <SlipInfoCard label="Quote number" value={slipFirst(form.quote_number, form.quote_id)} />
-                  <SlipInfoCard label="Status" value={slipFirst(form.invoice_status, form.quote_status, form.status)} />
-                  <SlipInfoCard label="Subtotal" value={slipMoney(form.subtotal)} />
-                  <SlipInfoCard label="GST" value={slipMoney(form.gst, form.tax)} />
-                  <SlipInfoCard label="Total" value={slipMoney(total)} />
-                  <SlipInfoCard label="Due date" value={slipDate(form.due_date)} />
-                  <SlipInfoCard label="Payment link" value={slipFirst(form.payment_url, form.payment_link, form.online_payment_url)} />
-                  <SlipInfoCard label="Bank details" value={slipFirst(form.bank_details, form.payment_instructions)} />
-                </div>
-
-                <div className="mt-4">
-                  <SlipLineItems form={form} />
+                  <SlipInfoCard label="Amount" value={slipMoney(total)} warn={(type.includes("invoice") || type.includes("quote")) && !total} />
+                  <SlipInfoCard label="Job" value={jobTitle} />
+                  <SlipInfoCard label="Address / site" value={jobAddress} warn={(type.includes("job") || type.includes("assign")) && !jobAddress} />
+                  <SlipInfoCard label="Worker" value={workerName} warn={(type.includes("assign") || type.includes("worker")) && !workerName} />
+                  <SlipInfoCard label="Due date" value={slipDate(dueDate)} />
+                  <SlipInfoCard label="Invoice" value={invoiceNumber} />
+                  <SlipInfoCard label="Quote" value={quoteNumber} />
+                  <SlipInfoCard label="Status" value={slipFirst(form.status, form.job_status, form.invoice_status, form.quote_status)} />
+                  <SlipInfoCard label="Action type" value={typeLabel(type)} />
                 </div>
               </SlipSection>
 
-              <SlipSection title="Message Churvox prepared" note="This is the wording/customer message that will be used when approved.">
-                <div className="grid gap-3">
-                  <SlipInfoCard label="Message" value={slipFirst(form.message, form.email_body, form.sms_message, form.follow_up_message)} warn={!slipFirst(form.message, form.email_body, form.sms_message, form.follow_up_message) && String(item.type || "").includes("send")} />
-                  <SlipInfoCard label="Subject" value={slipFirst(form.subject, form.email_subject)} />
-                  <SlipInfoCard label="Description" value={slipFirst(form.description, form.invoice_description, form.quote_description)} />
-                </div>
-              </SlipSection>
-
-              <SlipSection title="Editable slip fields" note="Edit inside the slip. These saved values are what Churvox uses when you approve.">
+              <SlipSection title="What Churvox is about to do" note="Clear explanation before anything runs.">
                 <div className="grid gap-3 md:grid-cols-2">
+                  <SlipInfoCard label="Summary" value={item.summary || "Churvox prepared this from connected records."} />
+                  <SlipInfoCard label="When approved" value={item.what_will_happen || outcome(type)} />
+                  <SlipInfoCard label="Reason" value={item.reason || "Churvox found this action from your business records."} />
+                  <SlipInfoCard label="Prepared message / wording" value={preparedMessage} warn={(type.includes("send") || type.includes("quote") || type.includes("reminder")) && !preparedMessage} />
+                </div>
+              </SlipSection>
+
+              <SlipSection title="Edit slip before approval" note="Fix missing or wrong information here. These values are saved and used when approved.">
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {editableKeys.map((key) => (
                     <Field key={key} name={key} form={form} setForm={setForm} />
                   ))}
                 </div>
               </SlipSection>
 
-              <SlipSection title="All details Churvox found" note="Fallback view so nothing important is hidden.">
-                <SlipRawDetails form={form} />
+              {Array.isArray(form.available_workers) && form.available_workers.length ? (
+                <SlipSection title="Available worker options" note="Worker choices Churvox found for this assignment slip.">
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    {form.available_workers.map((worker, index) => (
+                      <div key={worker.id || worker.email || worker.name || index} className="rounded-2xl border border-slate-200 bg-white p-4">
+                        <div className="text-lg font-black">{worker.name || worker.email || `Worker ${index + 1}`}</div>
+                        <div className="mt-2 space-y-1 text-sm font-bold text-slate-600">
+                          {worker.email ? <div>Email: {worker.email}</div> : null}
+                          {worker.phone ? <div>Phone: {worker.phone}</div> : null}
+                          {worker.region ? <div>Region: {worker.region}</div> : null}
+                          {worker.reason ? <div>Reason: {worker.reason}</div> : null}
+                          {worker.conflict ? <div className="text-amber-700">Conflict: {worker.conflict}</div> : null}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </SlipSection>
+              ) : null}
+
+              <SlipSection title="Invoice / quote line items" note="Line items, descriptions and amounts Churvox found.">
+                <SlipLineItems form={form} />
+              </SlipSection>
+
+              <SlipSection title="All details Churvox found" note="Full fallback view so nothing useful is hidden.">
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {allRows.map(([key, value]) => (
+                    <div key={key} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+                        {labels?.[key] || key.replaceAll("_", " ")}
+                      </div>
+                      <div className="mt-2 whitespace-pre-wrap break-words text-sm font-black leading-6 text-slate-950">
+                        {key.includes("date") || key.includes("_at") ? slipDate(value) : slipDisplayValue(value)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </SlipSection>
             </div>
 
-            
-              <SlipFullDetails form={form} />
-
-              <aside className="space-y-5">
-              <section className="sticky top-4 rounded-[32px] border border-slate-900 bg-[#0f1722] p-5 text-white shadow-[0_18px_48px_rgba(15,23,42,0.22)]">
+            <aside className="border-t border-slate-800 bg-[#0f1722] p-4 text-white md:p-6 xl:border-l xl:border-t-0">
+              <section className="xl:sticky xl:top-6">
                 <div className="text-[11px] font-black uppercase tracking-[0.18em] text-cyan-200">Owner approval</div>
-                <h3 className="mt-2 text-3xl font-black tracking-[-0.05em]">Check then approve</h3>
+                <h2 className="mt-2 text-3xl font-black tracking-[-0.05em]">Check, edit, approve.</h2>
 
-                <div className="mt-4 space-y-3 text-sm font-bold leading-6 text-slate-300">
-                  <p>{item.summary || "Churvox prepared this from connected records."}</p>
-                  {item.reason ? <p><span className="text-white">Reason:</span> {item.reason}</p> : null}
-                  {item.what_will_happen ? <p><span className="text-white">When approved:</span> {item.what_will_happen}</p> : null}
+                <div className="mt-5 rounded-2xl bg-white/10 p-4">
+                  <div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Required status</div>
+                  <div className="mt-2 text-sm font-black">
+                    {ready ? "Ready" : `Missing ${missing.length} field${missing.length === 1 ? "" : "s"}`}
+                  </div>
                 </div>
 
                 {Array.isArray(item.checks) && item.checks.length ? (
-                  <div className="mt-5 rounded-2xl bg-white/10 p-4">
+                  <div className="mt-4 rounded-2xl bg-white/10 p-4">
                     <div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Checks</div>
                     <ul className="mt-3 space-y-2 text-sm font-bold text-white">
                       {item.checks.map((check, index) => <li key={index}>✓ {check}</li>)}
@@ -801,15 +822,24 @@ function SlipModal({ item, onClose, onChanged }) {
                       Fill the missing fields before approval unlocks.
                     </div>
                   ) : null}
+
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="rounded-2xl border border-white/15 px-4 py-3 text-sm font-black text-white hover:bg-white/10"
+                  >
+                    Close slip
+                  </button>
                 </div>
               </section>
             </aside>
           </div>
-        </div>
+        </main>
       </section>
     </div>
   );
 }
+
 
 export default function CommandDeskQueuePage() {
   const { get, post } = useApi();
