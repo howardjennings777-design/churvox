@@ -2,7 +2,11 @@
    Applies the new industrial graphite / amber / cyan look across command pages.
 */
 
-body.cv-industrial-shell main.fixed.inset-0 {
+body.cv-industrial-shell main.fixed.inset-0,
+body.cv-industrial-shell .concept-c2-frame,
+body.cv-industrial-shell .xcf-real-page,
+body.cv-industrial-shell .xcf-workspace,
+body.cv-industrial-shell .xcf-shell.xcf-real-page {
   color: #f8fafc !important;
   background:
     radial-gradient(circle at 8% 0%, rgba(250, 204, 21, .16), transparent 28%),
@@ -26,6 +30,8 @@ body.cv-industrial-shell main.fixed.inset-0 > .flex > aside {
 }
 
 body.cv-industrial-shell .bg-\[\#f5f7f1\],
+body.cv-industrial-shell .bg-\[\#eef1f4\],
+body.cv-industrial-shell .bg-\[\#f4f6f8\],
 body.cv-industrial-shell .bg-white,
 body.cv-industrial-shell .bg-slate-50 {
   background: transparent !important;
@@ -49,11 +55,33 @@ body.cv-industrial-shell aside.rounded-\[30px\] {
     inset 0 1px 0 rgba(255, 255, 255, .06) !important;
 }
 
+body.cv-industrial-shell .bg-blue-50,
+body.cv-industrial-shell .bg-blue-100,
+body.cv-industrial-shell .bg-blue-200,
+body.cv-industrial-shell .bg-blue-600,
+body.cv-industrial-shell .bg-blue-700,
+body.cv-industrial-shell .bg-blue-900,
 body.cv-industrial-shell .bg-blue-950,
+body.cv-industrial-shell .bg-cyan-50,
+body.cv-industrial-shell .bg-cyan-100,
+body.cv-industrial-shell .bg-cyan-200,
 body.cv-industrial-shell .bg-cyan-950,
+body.cv-industrial-shell .bg-emerald-50,
+body.cv-industrial-shell .bg-emerald-100,
+body.cv-industrial-shell .bg-emerald-200,
 body.cv-industrial-shell .bg-emerald-950,
+body.cv-industrial-shell .bg-amber-50,
+body.cv-industrial-shell .bg-amber-100,
+body.cv-industrial-shell .bg-amber-200,
 body.cv-industrial-shell .bg-amber-950,
+body.cv-industrial-shell .bg-rose-50,
+body.cv-industrial-shell .bg-rose-100,
 body.cv-industrial-shell .bg-rose-950,
+body.cv-industrial-shell .bg-red-50,
+body.cv-industrial-shell .bg-red-100,
+body.cv-industrial-shell .bg-red-950,
+body.cv-industrial-shell .bg-violet-50,
+body.cv-industrial-shell .bg-violet-100,
 body.cv-industrial-shell .bg-violet-950,
 body.cv-industrial-shell .bg-\[\#102a3a\],
 body.cv-industrial-shell .bg-\[\#102d27\],
@@ -73,23 +101,37 @@ body.cv-industrial-shell b,
 body.cv-industrial-shell .text-slate-950,
 body.cv-industrial-shell .text-slate-900,
 body.cv-industrial-shell .text-blue-950,
+body.cv-industrial-shell .text-blue-900,
+body.cv-industrial-shell .text-blue-800,
+body.cv-industrial-shell .text-emerald-900,
+body.cv-industrial-shell .text-emerald-800,
+body.cv-industrial-shell .text-amber-950,
+body.cv-industrial-shell .text-amber-900,
+body.cv-industrial-shell .text-amber-800,
+body.cv-industrial-shell .text-red-800,
 body.cv-industrial-shell .text-white {
   color: #ffffff !important;
 }
 
 body.cv-industrial-shell p,
 body.cv-industrial-shell li,
+body.cv-industrial-shell .text-slate-800,
+body.cv-industrial-shell .text-slate-700,
 body.cv-industrial-shell .text-slate-600,
 body.cv-industrial-shell .text-slate-500,
 body.cv-industrial-shell .text-slate-400,
 body.cv-industrial-shell .text-slate-300,
 body.cv-industrial-shell .text-slate-200 {
-  color: rgba(226, 232, 240, .82) !important;
+  color: rgba(226, 232, 240, .84) !important;
 }
 
 body.cv-industrial-shell .text-cyan-200,
+body.cv-industrial-shell .text-blue-700,
 body.cv-industrial-shell .text-blue-600,
+body.cv-industrial-shell .text-emerald-700,
+body.cv-industrial-shell .text-amber-700,
 body.cv-industrial-shell .text-amber-600,
+body.cv-industrial-shell .text-red-700,
 body.cv-industrial-shell .text-\[10px\],
 body.cv-industrial-shell .text-\[11px\] {
   color: #facc15 !important;
@@ -108,7 +150,8 @@ body.cv-industrial-shell button.bg-cyan-300,
 body.cv-industrial-shell a.bg-cyan-300,
 body.cv-industrial-shell .bg-cyan-300,
 body.cv-industrial-shell .bg-cyan-400,
-body.cv-industrial-shell .bg-cyan-500 {
+body.cv-industrial-shell .bg-cyan-500,
+body.cv-industrial-shell .bg-amber-500 {
   background: linear-gradient(135deg, #facc15, #fb923c 52%, #22d3ee) !important;
   color: #020617 !important;
   box-shadow: 0 14px 38px rgba(251, 146, 60, .24) !important;
@@ -116,7 +159,13 @@ body.cv-industrial-shell .bg-cyan-500 {
 
 body.cv-industrial-shell .border-slate-900,
 body.cv-industrial-shell .border-slate-800,
+body.cv-industrial-shell .border-slate-300,
 body.cv-industrial-shell .border-slate-200,
+body.cv-industrial-shell .border-blue-200,
+body.cv-industrial-shell .border-amber-100,
+body.cv-industrial-shell .border-amber-200,
+body.cv-industrial-shell .border-emerald-200,
+body.cv-industrial-shell .border-red-200,
 body.cv-industrial-shell .border-white\/10,
 body.cv-industrial-shell .border-white\/15 {
   border-color: rgba(250, 204, 21, .20) !important;
@@ -137,7 +186,8 @@ body.cv-industrial-shell textarea::placeholder {
 
 body.cv-industrial-shell .shadow-\[0_26px_80px_rgba\(15\,23\,42\,0\.20\)\],
 body.cv-industrial-shell .shadow-\[0_18px_55px_rgba\(15\,23\,42\,0\.16\)\],
-body.cv-industrial-shell .shadow-\[0_14px_38px_rgba\(15\,23\,42\,0\.12\)\] {
+body.cv-industrial-shell .shadow-\[0_14px_38px_rgba\(15\,23\,42\,0\.12\)\],
+body.cv-industrial-shell .shadow-\[0_14px_38px_rgba\(15\,23\,42\,0\.055\)\] {
   box-shadow: 0 22px 70px rgba(2, 6, 23, .34), inset 0 1px 0 rgba(255, 255, 255, .06) !important;
 }
 
