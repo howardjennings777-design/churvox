@@ -59,6 +59,56 @@ function quoteAmount(quote) {
   return quote?.total || quote?.amount || quote?.subtotal || quote?.price || 0;
 }
 
+
+function quoteBlob(quote) {
+  try {
+    return JSON.stringify(quote || {});
+  } catch {
+    return `${quote?.title || ""} ${quote?.client_name || ""} ${quote?.customer_name || ""} ${quote?.description || ""}`;
+  }
+}
+
+function isLaunchAuditQuote(quote) {
+  const blob = quoteBlob(quote);
+  return [
+    /PW E2E/i,
+    /PW E2E Client/i,
+    /Playwright/i,
+    /Deep Audit/i,
+    /test reflect/i,
+    /Test Client/i,
+    /TEST Phase/i,
+    /pw-e2e-/i,
+    /audit@example\.com/i,
+    /2026\d{8,}/i,
+  ].some((pattern) => pattern.test(blob));
+}
+
+function cleanQuoteTitle(quote) {
+  const title = quoteTitle(quote);
+  if (/PW E2E|PW Client|Playwright|Deep Audit|TEST Phase|Test Client/i.test(title)) return "Quote";
+  if (/Untitled quote/i.test(title)) return "Draft quote";
+  return String(title || "Quote").replace(/\s+2026\d{8,}/gi, "").trim() || "Quote";
+}
+
+function cleanQuoteClient(quote) {
+  const name = clientName(quote);
+  if (/PW E2E|PW Client|Playwright|Deep Audit|TEST Phase|Test Client/i.test(name)) return "Client";
+  return String(name || "No client linked").replace(/\s+2026\d{8,}/gi, "").trim() || "No client linked";
+}
+
+function cleanQuoteMeta(quote) {
+  const number = quote?.quote_number || "";
+  if (number && !/2026\d{8,}/i.test(String(number))) return number;
+  return "Quote";
+}
+
+function cleanQuoteDescription(quote) {
+  const description = quote?.description || quote?.scope || "";
+  if (!description || /No description/i.test(description)) return "No description added yet";
+  return String(description).replace(/\s+2026\d{8,}/gi, "").trim();
+}
+
 function statusOf(quote) {
   return String(quote?.status || quote?.quote_status || "draft").toLowerCase().replaceAll(" ", "_");
 }
@@ -115,14 +165,14 @@ function QuoteCard({ quote, onOpen }) {
     <article className="rounded-[22px] border border-white/10 bg-white/[0.035] p-4 text-white shadow-[0_14px_38px_rgba(15,23,42,0.12)] transition hover:-translate-y-0.5 hover:border-cyan-300/40 hover:bg-white/[0.06]">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/70">{quote?.quote_number || quote?.created_at || "Quote"}</span>
-          <h3 className="mt-1 text-lg font-black tracking-[-0.04em] text-white">{quoteTitle(quote)}</h3>
+          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/70">{cleanQuoteMeta(quote)}</span>
+          <h3 className="mt-1 text-lg font-black tracking-[-0.04em] text-white">{cleanQuoteTitle(quote)}</h3>
         </div>
         <span className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${statusStyle(status)}`}>{prettyStatus(status)}</span>
       </div>
       <div className="mt-3 space-y-1 text-sm font-bold text-slate-200">
-        <div>{clientName(quote)}</div>
-        <div className="text-slate-300/80">{quote?.description || quote?.scope || "No description added yet"}</div>
+        <div>{cleanQuoteClient(quote)}</div>
+        <div className="text-slate-300/80">{cleanQuoteDescription(quote)}</div>
         <div className="text-slate-300/80">Quote value: {money(quoteAmount(quote))}</div>
       </div>
       <div className="mt-4 flex flex-wrap gap-3">
@@ -351,7 +401,8 @@ function QuotesCommandContent() {
     return () => { alive = false; };
   }, [get]);
 
-  const list = quotes.length ? quotes : sampleQuotes;
+  const visibleQuotes = quotes.filter((quote) => !isLaunchAuditQuote(quote));
+  const list = visibleQuotes.length ? visibleQuotes : sampleQuotes;
   const counts = React.useMemo(() => {
     const total = list.length;
     const draft = list.filter((quote) => ["draft", "new"].includes(statusOf(quote))).length;
@@ -372,8 +423,8 @@ function QuotesCommandContent() {
                 <div className="absolute right-0 top-0 h-56 w-56 rounded-full bg-cyan-500/10 blur-3xl" />
                 <div className="relative">
                   <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-200">Quotes</span>
-                  <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">Turn quotes into booked work.</h1>
-                  <p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Review draft quotes, follow up sent quotes, and move accepted quotes into jobs.</p>
+                  <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">Turn approved quotes into booked work.</h1>
+                  <p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Review drafts, follow up sent quotes, and move approved quotes into jobs.</p>
                   <div className="mt-5 flex flex-wrap gap-3">
                     <Link to="/clients" className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/15">View clients</Link>
                     <Link to="/quotes/new" className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200">Create quote</Link>
@@ -402,7 +453,7 @@ function QuotesCommandContent() {
           <section className="mt-5 rounded-[28px] border border-slate-900 bg-slate-950 p-5 text-white shadow-[0_18px_55px_rgba(15,23,42,0.16)]">
             <div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200">Quote list</div><h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-white">Open quotes</h2></div>{loading && <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-slate-200">Loading…</span>}{error && <span className="rounded-full bg-amber-300/15 px-3 py-1 text-xs font-black text-amber-100">Showing sample layout</span>}</div>
             <div className="grid gap-4 xl:grid-cols-2">
-              {list.map((quote) => <QuoteCard key={idOf(quote) || quoteTitle(quote)} quote={quote} onOpen={setActiveQuote} />)}
+              {list.map((quote) => <QuoteCard key={idOf(quote) || cleanQuoteTitle(quote)} quote={quote} onOpen={setActiveQuote} />)}
             </div>
           </section>
         </section>
