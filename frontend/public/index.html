@@ -69,6 +69,24 @@
 })();
 </script>
 
+
+<script id="churvox-force-clear-old-cache">
+(function () {
+  try {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        regs.forEach(function (reg) { reg.unregister(); });
+      });
+    }
+    if (window.caches) {
+      caches.keys().then(function (keys) {
+        keys.forEach(function (key) { caches.delete(key); });
+      });
+    }
+  } catch (e) {}
+})();
+</script>
+
 </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

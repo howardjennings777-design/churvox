@@ -858,9 +858,9 @@ export default function CommandDeskQueuePage() {
           <header className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-slate-200 bg-white px-5 py-4">
             <div>
               <div className="text-[10px] font-black uppercase tracking-[.2em] text-emerald-600">FULL SCREEN SLIPS LIVE · forced clean page</div>
-              <h1 className="text-3xl font-black tracking-[-.05em]">AI Operator slips</h1>
+              <h1 className="text-3xl font-black tracking-[-.05em]">FULL SCREEN AI Operator slips</h1>
               <p className="text-sm font-bold text-slate-500">
-                Full-screen slips. Check the details, edit inside the slip, then approve.
+                FULL SCREEN SLIPS LIVE. Old small work slip deleted. Check, edit, approve.
               </p>
             </div>
 
