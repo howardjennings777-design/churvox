@@ -5,7 +5,7 @@ import API_BASE from "../lib/apiBase";
 
 const navGroups = [
   { title: "Command", items: [["Command Board", "/dashboard", "CB"], ["AI Operator", "/ai-operator", "AI"], ["Approvals", "/ai-operator/approvals", "OK"], ["Notifications", "/notifications", "NT"]] },
-  { title: "Work", items: [["Jobs", "/jobs", "JB"], ["Dispatch", "/dispatch", "DP"], ["Clients", "/clients", "CL"], ["Quotes", "/quotes", "QT"], ["Invoices", "/invoices", "IV"], ["Money Desk", "/money-desk", "$"]] },
+  { title: "Work", items: [["Jobs", "/jobs", "JB"], ["Assign Jobs", "/dispatch", "DP"], ["Clients", "/clients", "CL"], ["Quotes", "/quotes", "QT"], ["Invoices", "/invoices", "IV"], ["Money Desk", "/money-desk", "$"]] },
   { title: "Crew & Admin", items: [["Team", "/team", "TM"], ["Crew Map", "/crew-map", "MP"], ["Payroll", "/payroll", "PR"], ["Reports", "/reports", "RP"]] },
   { title: "System", items: [["Plans", "/plans", "PL"], ["Settings", "/settings", "ST"], ["Support", "/support", "?"]] },
 ];
@@ -70,7 +70,7 @@ function Sidebar() {
               {group.items.map(([label, href, icon]) => {
                 const active = isActivePath(pathname, href);
                 return (
-                  <Link key={href} to={href} className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-black ${active ? "bg-white text-slate-950" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
+                  <Link key={href} to={href} className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-black ${active ? "bg-cyan-300 text-slate-950 shadow-lg shadow-cyan-300/20" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
                     <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-xl text-[10px] font-black ${active ? "bg-slate-950 text-white" : "bg-white/10 text-cyan-200"}`}>{icon}</span>
                     <span className="truncate">{label}</span>
                   </Link>
@@ -86,15 +86,15 @@ function Sidebar() {
 
 function StatCard({ label, value, tone }) {
   const styles = {
-    dark: "border-white/10 bg-white/[0.045] text-white",
-    cyan: "border-cyan-300/35 bg-cyan-300/12 text-cyan-100",
-    amber: "border-amber-300/35 bg-amber-300/12 text-amber-100",
-    green: "border-emerald-300/35 bg-emerald-300/12 text-emerald-100",
+    dark: "border-slate-800 bg-[#0f1722] text-white",
+    cyan: "border-cyan-400/30 bg-[#102a3a] text-cyan-100",
+    amber: "border-amber-400/35 bg-[#2b2115] text-amber-100",
+    green: "border-emerald-400/30 bg-[#102d27] text-emerald-100",
   };
 
   return (
-    <div className={`rounded-[22px] border p-4 shadow-[0_14px_38px_rgba(15,23,42,0.11)] ${styles[tone] || styles.dark}`}>
-      <div className="text-[10px] font-black uppercase tracking-[0.16em] opacity-75">{label}</div>
+    <div className={`rounded-[22px] border p-4 shadow-[0_14px_38px_rgba(15,23,42,0.14)] ${styles[tone] || styles.dark}`}>
+      <div className="text-[10px] font-black uppercase tracking-[0.16em] opacity-80">{label}</div>
       <div className="mt-3 text-3xl font-black tracking-[-0.06em]">{value}</div>
     </div>
   );
