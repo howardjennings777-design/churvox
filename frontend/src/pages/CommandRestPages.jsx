@@ -227,6 +227,8 @@ function WorkSlip({ item, onClose }) {
       </section>
     </div>
   );
+}
+
 function CommandPage({ config }) {
   const [active, setActive] = React.useState(null);
 
