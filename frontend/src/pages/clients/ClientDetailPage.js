@@ -21,9 +21,17 @@ function arr(value) {
   return [];
 }
 function readClient(payload) { const data = payload?.data ?? payload; return data?.client || data?.customer || data?.item || data?.record || data || {}; }
-function idOf(value) { return String(value?.id || value?._id || value?.client_id || value?.customer_id || ""); }
+function normalizeId(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
+  if (typeof value === "object") return normalizeId(value.$oid || value.oid || value.id || value._id || "");
+  const text = String(value || "");
+  return text === "[object Object]" ? "" : text;
+}
+function idOf(value) { return normalizeId(value?.id || value?._id || value?.client_id || value?.customer_id || ""); }
 function clientName(client) { return client?.name || client?.client_name || client?.customer_name || client?.contact_name || "Client"; }
-function recordClientId(record) { return String(record?.client_id || record?.customer_id || record?.clientId || record?.customerId || ""); }
+function recordClientId(record) { return normalizeId(record?.client_id || record?.customer_id || record?.clientId || record?.customerId || ""); }
 function recordClientName(record) { return String(record?.client_name || record?.customer_name || record?.name || "").toLowerCase(); }
 function sameClient(record, client) {
   const cid = idOf(client);
@@ -59,7 +67,7 @@ function buildMemory(client, jobs, quotes, invoices) {
 export default function ClientDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const api = useApi();
+  const { get, del } = useApi();
   const [client, setClient] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [quotes, setQuotes] = useState([]);
@@ -68,27 +76,30 @@ export default function ClientDetailPage() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [clientRes, jobsRes, quotesRes, invoicesRes] = await Promise.all([
-      api.get(`/clients/${encodeURIComponent(id)}`),
-      api.get("/jobs"),
-      api.get("/quotes"),
-      api.get("/invoices"),
-    ]);
-    if (clientRes.success) {
-      const nextClient = readClient(clientRes);
-      setClient(nextClient);
-      const allJobs = jobsRes.success ? arr(jobsRes.data) : [];
-      const allQuotes = quotesRes.success ? arr(quotesRes.data) : [];
-      const allInvoices = invoicesRes.success ? arr(invoicesRes.data) : [];
-      setJobs(allJobs.filter((job) => sameClient(job, nextClient)));
-      setQuotes(allQuotes.filter((quote) => sameClient(quote, nextClient)));
-      setInvoices(allInvoices.filter((invoice) => sameClient(invoice, nextClient)));
-    } else {
-      toast.error(clientRes.error || "Client not found");
-      navigate("/clients");
+    try {
+      const [clientRes, jobsRes, quotesRes, invoicesRes] = await Promise.all([
+        get(`/clients/${encodeURIComponent(id)}`),
+        get("/jobs"),
+        get("/quotes"),
+        get("/invoices"),
+      ]);
+      if (clientRes.success) {
+        const nextClient = readClient(clientRes);
+        setClient(nextClient);
+        const allJobs = jobsRes.success ? arr(jobsRes.data) : [];
+        const allQuotes = quotesRes.success ? arr(quotesRes.data) : [];
+        const allInvoices = invoicesRes.success ? arr(invoicesRes.data) : [];
+        setJobs(allJobs.filter((job) => sameClient(job, nextClient)));
+        setQuotes(allQuotes.filter((quote) => sameClient(quote, nextClient)));
+        setInvoices(allInvoices.filter((invoice) => sameClient(invoice, nextClient)));
+      } else {
+        toast.error(clientRes.error || "Client not found");
+        navigate("/clients");
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }, [api, id, navigate]);
+  }, [get, id, navigate]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -108,7 +119,7 @@ export default function ClientDetailPage() {
       confirmLabel: "Delete",
     });
     if (!confirmed) return;
-    const res = await api.del(`/clients/${encodeURIComponent(id)}`);
+    const res = await del(`/clients/${encodeURIComponent(id)}`);
     if (res.success) {
       toast.success("Client deleted");
       navigate("/clients");
@@ -130,7 +141,7 @@ export default function ClientDetailPage() {
         </button>
 
         <PremiumHero
-          eyebrow="FULL SCREEN CLIENT SLIP"
+          eyebrow="CLIENT RECORD"
           title={name}
           subtitle={client.email || client.phone || "Client profile"}
           icon={<UserCircle2 className="h-6 w-6" />}
@@ -167,7 +178,7 @@ export default function ClientDetailPage() {
             </PremiumCard>
 
             <PremiumCard title={`Job history (${jobs.length})`} icon={<Briefcase className="h-5 w-5" />} data-testid="client-job-history">
-              {jobs.length === 0 ? <PremiumEmptyState icon={<FileText className="h-10 w-10" />} title="No jobs yet" subtitle="Jobs you create for this client will appear here." /> : <div className="space-y-2">{jobs.map((job) => { const statusInfo = JOB_STATUS_MAP[job.status]; const jid = job.id || job._id; return <Link key={jid} to={`/jobs/${jid}`} data-testid={`client-job-${jid}`} className="block bg-slate-950/50 border border-slate-700 rounded-xl p-4 hover:border-cyan-300/50 transition-all"><div className="flex items-center justify-between gap-3"><div className="min-w-0"><p className="text-white font-semibold truncate">{jobTitle(job)}</p><div className="flex items-center gap-3 mt-1 text-xs text-slate-300 flex-wrap"><span className="flex items-center gap-1"><Clock size={11} /> {dateValue(job.scheduled_date)}</span>{Number(job.price || job.fixed_price || 0) > 0 ? <span className="text-lime-300 font-semibold flex items-center gap-0.5"><DollarSign size={11} />{money(job.price || job.fixed_price)}</span> : null}</div></div><span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase text-white flex-shrink-0 ${statusInfo?.color || "bg-slate-500"}`}>{statusInfo?.label || job.status}</span></div></Link>; })}</div>}
+              {jobs.length === 0 ? <PremiumEmptyState icon={<FileText className="h-10 w-10" />} title="No jobs yet" subtitle="Jobs you create for this client will appear here." /> : <div className="space-y-2">{jobs.map((job) => { const statusInfo = JOB_STATUS_MAP[job.status]; const jid = normalizeId(job.id || job._id); return <Link key={jid} to={`/jobs/${jid}`} data-testid={`client-job-${jid}`} className="block bg-slate-950/50 border border-slate-700 rounded-xl p-4 hover:border-cyan-300/50 transition-all"><div className="flex items-center justify-between gap-3"><div className="min-w-0"><p className="text-white font-semibold truncate">{jobTitle(job)}</p><div className="flex items-center gap-3 mt-1 text-xs text-slate-300 flex-wrap"><span className="flex items-center gap-1"><Clock size={11} /> {dateValue(job.scheduled_date)}</span>{Number(job.price || job.fixed_price || 0) > 0 ? <span className="text-lime-300 font-semibold flex items-center gap-0.5"><DollarSign size={11} />{money(job.price || job.fixed_price)}</span> : null}</div></div><span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase text-white flex-shrink-0 ${statusInfo?.color || "bg-slate-500"}`}>{statusInfo?.label || job.status}</span></div></Link>; })}</div>}
             </PremiumCard>
           </div>
 
@@ -181,11 +192,11 @@ export default function ClientDetailPage() {
             </PremiumCard>
 
             <PremiumCard title={`Quotes (${quotes.length})`} icon={<FileSignature className="h-5 w-5" />}>
-              {quotes.length ? <div className="grid gap-2">{quotes.slice(0, 8).map((quote) => { const qid = quote.id || quote._id; return <Link key={qid} to={`/quotes/${qid}`} className="rounded-2xl border border-slate-700 bg-slate-950/50 p-3 text-sm no-underline"><b className="block text-white">{quoteTitle(quote)}</b><span className="text-slate-300">{statusOf(quote)} · {money(totalOf(quote))}</span></Link>; })}</div> : <p className="text-sm font-semibold text-slate-300">No quotes yet.</p>}
+              {quotes.length ? <div className="grid gap-2">{quotes.slice(0, 8).map((quote) => { const qid = normalizeId(quote.id || quote._id); return <Link key={qid} to={`/quotes/${qid}`} className="rounded-2xl border border-slate-700 bg-slate-950/50 p-3 text-sm no-underline"><b className="block text-white">{quoteTitle(quote)}</b><span className="text-slate-300">{statusOf(quote)} · {money(totalOf(quote))}</span></Link>; })}</div> : <p className="text-sm font-semibold text-slate-300">No quotes yet.</p>}
             </PremiumCard>
 
             <PremiumCard title={`Invoices (${invoices.length})`} icon={<Receipt className="h-5 w-5" />}>
-              {invoices.length ? <div className="grid gap-2">{invoices.slice(0, 8).map((invoice) => { const iid = invoice.id || invoice._id; return <Link key={iid} to={`/invoices/${iid}`} className="rounded-2xl border border-slate-700 bg-slate-950/50 p-3 text-sm no-underline"><b className="block text-white">{invoiceTitle(invoice)}</b><span className="text-slate-300">{statusOf(invoice)} · {money(totalOf(invoice))}</span></Link>; })}</div> : <p className="text-sm font-semibold text-slate-300">No invoices yet.</p>}
+              {invoices.length ? <div className="grid gap-2">{invoices.slice(0, 8).map((invoice) => { const iid = normalizeId(invoice.id || invoice._id); return <Link key={iid} to={`/invoices/${iid}`} className="rounded-2xl border border-slate-700 bg-slate-950/50 p-3 text-sm no-underline"><b className="block text-white">{invoiceTitle(invoice)}</b><span className="text-slate-300">{statusOf(invoice)} · {money(totalOf(invoice))}</span></Link>; })}</div> : <p className="text-sm font-semibold text-slate-300">No invoices yet.</p>}
             </PremiumCard>
           </aside>
         </section>
