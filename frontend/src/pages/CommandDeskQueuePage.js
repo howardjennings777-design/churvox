@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
@@ -292,7 +293,7 @@ function Modal({ item, onClose, onChanged }) {
   );
 }
 
-export default function CommandDeskQueuePage() {
+function CommandDeskQueueContent() {
   const { get, post } = useApi();
   const [items, setItems] = React.useState([]);
   const [report, setReport] = React.useState(null);
@@ -344,10 +345,10 @@ export default function CommandDeskQueuePage() {
   const needs = items.length - ready;
 
   return (
-    <main className="fixed inset-0 z-[2147483000] overflow-hidden bg-[#f5f7f1] text-slate-950">
+    <main className="fixed inset-0 z-[2147483600] overflow-hidden bg-[#f5f7f1] text-slate-950" data-version="DASHBOARD_PORTAL_LOCKED_SIDEBAR_20260604">
       <div className="flex h-full min-h-0">
         <Sidebar />
-        <section className="h-full min-w-0 flex-1 overflow-y-auto p-5 lg:p-8">
+        <section className="h-full min-w-0 flex-1 overflow-y-auto overscroll-contain p-5 lg:p-8">
           <section className="grid gap-5 xl:grid-cols-[1fr_360px]">
             <div className="rounded-[30px] bg-[#0f1722] p-6 text-white shadow-[0_26px_80px_rgba(15,23,42,.20)] md:p-8">
               <span className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[.2em] text-cyan-200">Command Board</span>
@@ -411,4 +412,20 @@ export default function CommandDeskQueuePage() {
       {open ? <Modal item={open} onClose={() => setOpen(null)} onChanged={load} /> : null}
     </main>
   );
+}
+
+export default function CommandDeskQueuePage() {
+  React.useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, []);
+
+  if (typeof document === "undefined") return <CommandDeskQueueContent />;
+  return createPortal(<CommandDeskQueueContent />, document.body);
 }
