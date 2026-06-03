@@ -141,48 +141,141 @@ function InvoiceCard({ invoice, onOpen }) {
 
 function InvoiceSlip({ invoice, onClose }) {
   if (!invoice) return null;
+
   const id = idOf(invoice);
   const status = statusOf(invoice);
   const paid = isPaid(invoice);
+
+  const rows = [
+    ["Invoice", invoiceTitle(invoice)],
+    ["Client", clientName(invoice)],
+    ["Status", paid ? "Paid" : prettyStatus(status)],
+    ["Total", money(invoiceTotal(invoice))],
+    ["Due", money(amountDue(invoice))],
+    ["Description", invoice?.description || invoice?.notes || "No description saved"],
+    ["Created", invoice?.created_at],
+    ["Invoice ID", id],
+  ].filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== "");
+
   return (
-    <div className="fixed inset-0 z-[2147483647] bg-slate-950/65 p-3 backdrop-blur-sm md:p-7" role="dialog" aria-modal="true">
-      <div className="ml-auto flex h-full max-w-[680px] flex-col overflow-hidden rounded-[34px] border border-slate-200 bg-white shadow-[0_35px_120px_rgba(15,23,42,0.40)]">
-        <header className="relative overflow-hidden border-b border-slate-800 bg-slate-950 p-6 text-white md:p-7">
-          <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-blue-500/20 blur-3xl" />
-          <div className="relative flex items-start justify-between gap-4">
-            <div>
-              <div className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Invoice Work Slip</div>
-              <h2 className="mt-4 text-3xl font-black leading-[0.95] tracking-[-0.07em] md:text-5xl">{invoiceTitle(invoice)}</h2>
+    <div className="fixed inset-0 z-[2147483647] h-[100dvh] w-screen overflow-hidden bg-[#f5f7f1] text-slate-950" role="dialog" aria-modal="true">
+      <section className="flex h-[100dvh] w-screen flex-col overflow-hidden">
+        <header className="shrink-0 border-b border-slate-800 bg-[#0f1722] px-4 py-4 text-white md:px-8 md:py-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="text-[11px] font-black uppercase tracking-[0.22em] text-cyan-200">
+                FULL SCREEN INVOICE SLIP
+              </div>
+
+              <h1 className="mt-2 text-3xl font-black leading-none tracking-[-0.06em] md:text-5xl">
+                {invoiceTitle(invoice)}
+              </h1>
+
+              <p className="mt-3 max-w-5xl text-sm font-bold leading-6 text-slate-300">
+                {clientName(invoice)} · {money(invoiceTotal(invoice))}. Review the invoice, payment status, amount due and notes without leaving the page.
+              </p>
             </div>
-            <button type="button" onClick={onClose} className="rounded-2xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-black text-white hover:bg-white/15">Close</button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="shrink-0 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/20"
+            >
+              Close
+            </button>
           </div>
-          <p className="relative mt-5 max-w-xl text-sm font-semibold leading-6 text-slate-300">{clientName(invoice)} · {money(invoiceTotal(invoice))}</p>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto bg-[#f4f6f8] p-5 md:p-6">
-          <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">What needs attention</div>
-            <p className="mt-3 text-lg font-black tracking-[-0.035em] text-slate-950">Status: {paid ? "Paid" : prettyStatus(status)}</p>
-            <div className={`mt-4 rounded-2xl border p-4 text-sm font-bold leading-6 ${paid ? "border-emerald-100 bg-emerald-50 text-emerald-950" : status === "overdue" ? "border-red-100 bg-red-50 text-red-950" : "border-blue-100 bg-blue-50 text-blue-950"}`}>{paid ? "This invoice is paid. Keep it as the money record." : status === "overdue" ? "This invoice needs a payment reminder or follow-up." : status === "draft" ? "Review the draft invoice before sending it." : "Watch payment status and follow up if needed."}</div>
-          </section>
-          <section className="mt-4 rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Invoice details</div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Total</div><div className="mt-1 text-sm font-black text-slate-950">{money(invoiceTotal(invoice))}</div></div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Due</div><div className="mt-1 text-sm font-black text-slate-950">{money(amountDue(invoice))}</div></div>
-            </div>
-            <p className="mt-4 text-sm font-bold leading-6 text-slate-600">{invoice?.description || invoice?.notes || "No description saved for this invoice yet."}</p>
-          </section>
-        </main>
+        <main className="min-h-0 flex-1 overflow-y-auto">
+          <div className="grid min-h-full w-full xl:grid-cols-[minmax(0,1fr)_390px]">
+            <div className="space-y-5 p-4 md:p-6 xl:p-8">
+              <section className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
+                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-amber-600">
+                  What needs attention
+                </div>
 
-        <footer className="flex flex-wrap gap-3 border-t border-slate-200 bg-white p-5">
-          {id && !id.startsWith("sample-") ? <Link to={`/invoices/${id}`} className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Open invoice record</Link> : <Link to="/invoices/new" className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Create real invoice</Link>}
-          <Link to="/money-desk" className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-800 hover:bg-slate-50">Open money desk</Link>
-        </footer>
-      </div>
+                <h2 className="mt-3 text-3xl font-black tracking-[-0.06em] text-slate-950">
+                  {paid ? "This invoice is paid." : status === "overdue" ? "This invoice needs follow-up." : status === "draft" ? "Review the draft before sending." : "Watch payment status and follow up if needed."}
+                </h2>
+
+                <p className="mt-4 max-w-4xl text-sm font-bold leading-6 text-slate-600">
+                  Completed work should turn into paid money. Use this slip to check the invoice details before opening the record.
+                </p>
+              </section>
+
+              <section className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
+                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">
+                  Invoice details
+                </div>
+
+                <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {rows.map(([label, value]) => (
+                    <div key={label} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">{label}</div>
+                      <div className="mt-2 whitespace-pre-wrap break-words text-sm font-black leading-6 text-slate-950">{String(value)}</div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="rounded-[30px] border border-amber-200 bg-amber-50 p-5">
+                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-amber-700">
+                  Owner rule
+                </div>
+                <p className="mt-3 text-sm font-black leading-6 text-amber-950">
+                  Do not send reminders, mark paid, sync accounting, or change invoice status without owner approval.
+                </p>
+              </section>
+            </div>
+
+            <aside className="border-t border-slate-800 bg-[#0f1722] p-4 text-white md:p-6 xl:border-l xl:border-t-0">
+              <section className="xl:sticky xl:top-6">
+                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-cyan-200">
+                  Invoice actions
+                </div>
+
+                <h2 className="mt-2 text-3xl font-black tracking-[-0.05em]">
+                  Review first.
+                </h2>
+
+                <div className="mt-5 rounded-2xl bg-white/10 p-4">
+                  <div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Status</div>
+                  <div className="mt-2 text-sm font-black">{paid ? "Paid" : prettyStatus(status)}</div>
+                </div>
+
+                <div className="mt-5 rounded-2xl bg-white/10 p-4">
+                  <div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Amount due</div>
+                  <div className="mt-2 text-sm font-black">{money(amountDue(invoice))}</div>
+                </div>
+
+                <div className="mt-5 grid gap-3">
+                  {id && !id.startsWith("sample-") ? (
+                    <Link to={`/invoices/${id}`} className="rounded-2xl bg-cyan-300 px-5 py-3 text-center text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200">
+                      Open invoice record
+                    </Link>
+                  ) : (
+                    <Link to="/invoices/new" className="rounded-2xl bg-cyan-300 px-5 py-3 text-center text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200">
+                      Create real invoice
+                    </Link>
+                  )}
+
+                  <Link to="/money-desk" className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-center text-sm font-black text-white hover:bg-white/15">
+                    Open money desk
+                  </Link>
+
+                  <button type="button" onClick={onClose} className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/15">
+                    Back to invoices
+                  </button>
+                </div>
+              </section>
+            </aside>
+          </div>
+        </main>
+      </section>
     </div>
   );
 }
+
 
 function InvoicesCommandContent() {
   const { get } = useApi();
