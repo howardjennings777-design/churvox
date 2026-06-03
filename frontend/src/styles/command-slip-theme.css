@@ -1,18 +1,18 @@
-/* CHURVOX ONE SLIP THEME — Command Desk */
+/* CHURVOX COMMAND DESK SLIP THEME — hard override */
 
 :root {
-  --churvox-bg: #f5f7f1;
-  --churvox-ink: #0f172a;
-  --churvox-dark: #0f1722;
-  --churvox-card: #ffffff;
-  --churvox-line: #dfe5dd;
-  --churvox-muted: #64748b;
-  --churvox-cyan: #67e8f9;
-  --churvox-blue: #2563eb;
-  --churvox-amber: #f59e0b;
+  --cvx-bg: #0f1722;
+  --cvx-workspace: #f5f7f1;
+  --cvx-card: #ffffff;
+  --cvx-ink: #0f172a;
+  --cvx-muted: #64748b;
+  --cvx-line: #dfe5dd;
+  --cvx-cyan: #67e8f9;
+  --cvx-blue: #2563eb;
+  --cvx-amber: #f59e0b;
 }
 
-/* Make every slip/modal full screen and the same base */
+/* Full screen every slip */
 body [role="dialog"] {
   position: fixed !important;
   inset: 0 !important;
@@ -23,12 +23,12 @@ body [role="dialog"] {
   margin: 0 !important;
   padding: 0 !important;
   overflow: hidden !important;
-  background: var(--churvox-bg) !important;
-  color: var(--churvox-ink) !important;
+  background: var(--cvx-bg) !important;
+  color: var(--cvx-ink) !important;
   backdrop-filter: none !important;
 }
 
-/* Kill every old right-side drawer */
+/* Kill old drawer sizing */
 body [role="dialog"] > div,
 body [role="dialog"] > section,
 body [role="dialog"] div[class*="ml-auto"],
@@ -45,123 +45,170 @@ body [role="dialog"] div[class*="shadow-[0_35px_120px"] {
   box-shadow: none !important;
 }
 
-/* Same slip frame everywhere */
+/* Main slip frame */
 body [role="dialog"] > div,
 body [role="dialog"] > section {
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
-  background: var(--churvox-bg) !important;
+  background: var(--cvx-bg) !important;
 }
 
-/* Same dark Command Desk header */
+/* Header: same premium dark command style */
 body [role="dialog"] header {
   flex-shrink: 0 !important;
+  min-height: 168px !important;
   border-radius: 0 !important;
-  border-bottom: 1px solid #1f2937 !important;
-  background: var(--churvox-dark) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+  background:
+    radial-gradient(circle at top right, rgba(103,232,249,0.16), transparent 28rem),
+    linear-gradient(135deg, #0f1722 0%, #111827 55%, #0b1120 100%) !important;
   color: #ffffff !important;
-  padding: 24px !important;
+  padding: 26px 32px !important;
 }
 
-@media (min-width: 768px) {
-  body [role="dialog"] header {
-    padding: 28px 36px !important;
-  }
-}
-
-/* Header labels */
+/* Header badge */
 body [role="dialog"] header div[class*="uppercase"],
 body [role="dialog"] header span[class*="uppercase"] {
-  color: var(--churvox-cyan) !important;
-  border-color: rgba(103, 232, 249, 0.28) !important;
-  background: rgba(103, 232, 249, 0.08) !important;
+  color: var(--cvx-cyan) !important;
+  border-color: rgba(103,232,249,0.28) !important;
+  background: rgba(103,232,249,0.08) !important;
 }
 
-/* Big headings consistent */
-body [role="dialog"] h1,
-body [role="dialog"] h2 {
-  letter-spacing: -0.06em !important;
+/* Header title */
+body [role="dialog"] header h1,
+body [role="dialog"] header h2 {
+  color: #ffffff !important;
+  letter-spacing: -0.065em !important;
 }
 
-/* Same workspace */
+/* Main workspace: not washed out */
 body [role="dialog"] main {
   flex: 1 1 auto !important;
   min-height: 0 !important;
   overflow-y: auto !important;
-  background: var(--churvox-bg) !important;
-  color: var(--churvox-ink) !important;
-  padding: 20px !important;
+  background:
+    radial-gradient(circle at 85% 15%, rgba(37,99,235,0.08), transparent 24rem),
+    var(--cvx-workspace) !important;
+  color: var(--cvx-ink) !important;
+  padding: 24px 32px !important;
 }
 
-@media (min-width: 768px) {
-  body [role="dialog"] main {
-    padding: 28px !important;
-  }
+/* Make content read like one command workspace */
+body [role="dialog"] main > div,
+body [role="dialog"] main > section {
+  max-width: 1480px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
 
-/* Same cards */
-body [role="dialog"] section[class*="rounded"],
-body [role="dialog"] article[class*="rounded"],
-body [role="dialog"] div[class*="rounded-[26px]"],
-body [role="dialog"] div[class*="rounded-[30px]"],
-body [role="dialog"] div[class*="rounded-2xl"] {
-  border-color: var(--churvox-line);
-}
-
-/* Main white information panels */
+/* Panels/cards */
 body [role="dialog"] main section,
-body [role="dialog"] main article {
-  background-color: var(--churvox-card);
+body [role="dialog"] main article,
+body [role="dialog"] main div[class*="rounded-[30px]"],
+body [role="dialog"] main div[class*="rounded-[28px]"],
+body [role="dialog"] main div[class*="rounded-[26px]"] {
+  border: 1px solid var(--cvx-line) !important;
+  background: var(--cvx-card) !important;
+  box-shadow: 0 14px 38px rgba(15, 23, 42, 0.055) !important;
 }
 
-/* Footer/action area same as header */
-body [role="dialog"] footer {
-  flex-shrink: 0 !important;
-  border-top: 1px solid #1f2937 !important;
-  background: var(--churvox-dark) !important;
+/* Small detail cards: stronger borders, less invisible */
+body [role="dialog"] main div[class*="rounded-2xl"] {
+  border-color: #d8ded7 !important;
+}
+
+/* Section labels */
+body [role="dialog"] main div[class*="uppercase"],
+body [role="dialog"] main span[class*="uppercase"] {
+  letter-spacing: 0.16em !important;
+}
+
+/* Everything Churvox found panel */
+.churvox-slip-everything {
+  margin-top: 22px !important;
+  background: #ffffff !important;
+  border: 1px solid var(--cvx-line) !important;
+  box-shadow: 0 18px 55px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Owner checklist should look intentional */
+.churvox-slip-everything div[class*="bg-blue-50"] {
+  border-color: #bfdbfe !important;
+  background: #eff6ff !important;
+}
+
+.churvox-slip-everything div[class*="bg-amber-50"] {
+  border-color: #fde68a !important;
+  background: #fffbeb !important;
+}
+
+/* Footer/action strip */
+body [role="dialog"] footer,
+body [role="dialog"] aside {
+  background:
+    radial-gradient(circle at top right, rgba(103,232,249,0.12), transparent 20rem),
+    #0f1722 !important;
   color: #ffffff !important;
-  padding: 20px 24px !important;
+  border-color: rgba(255,255,255,0.08) !important;
 }
 
-/* Same button shape everywhere */
+/* Buttons */
 body [role="dialog"] button,
 body [role="dialog"] a {
   border-radius: 18px !important;
+  font-weight: 900 !important;
 }
 
-/* Primary action buttons */
 body [role="dialog"] a[class*="bg-blue"],
 body [role="dialog"] button[class*="bg-blue"],
 body [role="dialog"] a[class*="bg-cyan"],
 body [role="dialog"] button[class*="bg-cyan"],
 body [role="dialog"] a[class*="bg-amber"],
 body [role="dialog"] button[class*="bg-amber"] {
-  background: var(--churvox-cyan) !important;
+  background: var(--cvx-cyan) !important;
   color: #0f172a !important;
   border-color: transparent !important;
-  box-shadow: 0 14px 40px rgba(103, 232, 249, 0.18) !important;
+  box-shadow: 0 14px 40px rgba(103,232,249,0.18) !important;
 }
 
-/* Secondary buttons in dark areas */
 body [role="dialog"] header button,
 body [role="dialog"] footer button,
-body [role="dialog"] footer a:not([class*="bg-cyan"]):not([class*="bg-blue"]):not([class*="bg-amber"]) {
+body [role="dialog"] footer a,
+body [role="dialog"] aside button,
+body [role="dialog"] aside a {
   border: 1px solid rgba(255,255,255,0.16) !important;
-  background: rgba(255,255,255,0.08) !important;
-  color: #ffffff !important;
 }
 
-/* Everything panel marker */
-.churvox-slip-everything {
-  background: #ffffff !important;
-  border: 1px solid var(--churvox-line) !important;
-  box-shadow: 0 14px 38px rgba(15, 23, 42, 0.055) !important;
+/* Fix giant pale empty feel */
+body [role="dialog"] main p {
+  color: #475569;
 }
 
-/* Mobile: no skinny/tall weird boxes */
+body [role="dialog"] main h2,
+body [role="dialog"] main h3 {
+  color: #0f172a;
+}
+
+/* Desktop: make full-screen slips feel like command workspace */
+@media (min-width: 1024px) {
+  body [role="dialog"] main {
+    padding: 30px 42px !important;
+  }
+
+  body [role="dialog"] header {
+    padding: 30px 42px !important;
+  }
+
+  body [role="dialog"] main .churvox-slip-everything {
+    border-radius: 30px !important;
+  }
+}
+
+/* Mobile: still full screen but not cramped */
 @media (max-width: 767px) {
   body [role="dialog"] header {
+    min-height: 136px !important;
     padding: 18px !important;
   }
 
@@ -175,7 +222,11 @@ body [role="dialog"] footer a:not([class*="bg-cyan"]):not([class*="bg-blue"]):no
   }
 
   body [role="dialog"] h2 {
-    font-size: 1.55rem !important;
+    font-size: 1.6rem !important;
     line-height: 1 !important;
+  }
+
+  .churvox-slip-everything {
+    border-radius: 24px !important;
   }
 }
