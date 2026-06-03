@@ -6,7 +6,7 @@ import CommandSlipEverything from "../components/CommandSlipEverything";
 
 const navGroups = [
   { title: "Command", items: [["Command Board", "/dashboard", "CB"], ["AI Operator", "/ai-operator", "AI"], ["Approvals", "/ai-operator/approvals", "OK"], ["Notifications", "/notifications", "NT"]] },
-  { title: "Work", items: [["Jobs", "/jobs", "JB"], ["Dispatch", "/dispatch", "DP"], ["Clients", "/clients", "CL"], ["Quotes", "/quotes", "QT"], ["Invoices", "/invoices", "IV"], ["Money Desk", "/money-desk", "$"]] },
+  { title: "Work", items: [["Jobs", "/jobs", "JB"], ["Assign Jobs", "/dispatch", "DP"], ["Clients", "/clients", "CL"], ["Quotes", "/quotes", "QT"], ["Invoices", "/invoices", "IV"], ["Money Desk", "/money-desk", "$"]] },
   { title: "Crew & Admin", items: [["Team", "/team", "TM"], ["Crew Ops", "/crew-ops", "CO"], ["Payroll", "/payroll", "PR"], ["Reports", "/reports", "RP"]] },
   { title: "System", items: [["Setup", "/onboarding", "SU"], ["Trade Presets", "/trade-presets", "TP"], ["Automation", "/automation", "AU"], ["Integrations", "/integrations", "IN"], ["Operator Tools", "/operator-tools", "OT"], ["Plans", "/plans", "PL"], ["Billing", "/billing-confidence", "BI"], ["Settings", "/settings", "ST"], ["Support", "/support", "?"]] },
 ];
@@ -52,7 +52,7 @@ function quoteTitle(quote) {
 }
 
 function clientName(quote) {
-  return quote?.client_name || quote?.customer_name || quote?.client?.name || "No client saved";
+  return quote?.client_name || quote?.customer_name || quote?.client?.name || "No client linked";
 }
 
 function quoteAmount(quote) {
@@ -64,15 +64,18 @@ function statusOf(quote) {
 }
 
 function prettyStatus(status) {
+  const value = String(status || "draft").toLowerCase();
+  if (["accepted", "approved", "won"].includes(value)) return "Ready to book";
+  if (value === "follow_up") return "Follow up";
   return String(status || "draft").replaceAll("_", " ").replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
 function statusStyle(status) {
-  if (["accepted", "approved", "won"].includes(status)) return "border-emerald-200 bg-emerald-50 text-emerald-800";
-  if (["sent", "emailed", "issued"].includes(status)) return "border-blue-200 bg-blue-50 text-blue-800";
-  if (["follow_up", "overdue", "pending"].includes(status)) return "border-amber-200 bg-amber-50 text-amber-800";
-  if (["declined", "lost", "rejected"].includes(status)) return "border-red-200 bg-red-50 text-red-800";
-  return "border-slate-200 bg-slate-100 text-slate-700";
+  if (["accepted", "approved", "won"].includes(status)) return "border-emerald-300/40 bg-emerald-400/15 text-emerald-100";
+  if (["sent", "emailed", "issued"].includes(status)) return "border-cyan-300/40 bg-cyan-300/15 text-cyan-100";
+  if (["follow_up", "overdue", "pending"].includes(status)) return "border-amber-300/50 bg-amber-300/18 text-amber-100";
+  if (["declined", "lost", "rejected"].includes(status)) return "border-red-300/40 bg-red-400/15 text-red-100";
+  return "border-slate-300/30 bg-white/10 text-slate-100";
 }
 
 function Sidebar() {
@@ -91,7 +94,7 @@ function Sidebar() {
               {group.items.map(([label, href, icon]) => {
                 const active = isActivePath(pathname, href);
                 return (
-                  <Link key={href} to={href} className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-black ${active ? "bg-white text-slate-950" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
+                  <Link key={href} to={href} className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-black ${active ? "bg-cyan-300 text-slate-950 shadow-lg shadow-cyan-300/20" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
                     <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-xl text-[10px] font-black ${active ? "bg-slate-950 text-white" : "bg-white/10 text-cyan-200"}`}>{icon}</span>
                     <span className="truncate">{label}</span>
                   </Link>
@@ -109,22 +112,22 @@ function QuoteCard({ quote, onOpen }) {
   const status = statusOf(quote);
   const id = idOf(quote);
   return (
-    <article className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_70px_rgba(15,23,42,0.10)]">
+    <article className="rounded-[22px] border border-white/10 bg-white/[0.035] p-4 text-white shadow-[0_14px_38px_rgba(15,23,42,0.12)] transition hover:-translate-y-0.5 hover:border-cyan-300/40 hover:bg-white/[0.06]">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{quote?.quote_number || quote?.created_at || "Quote"}</span>
-          <h3 className="mt-1 text-lg font-black tracking-[-0.04em] text-slate-950">{quoteTitle(quote)}</h3>
+          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/70">{quote?.quote_number || quote?.created_at || "Quote"}</span>
+          <h3 className="mt-1 text-lg font-black tracking-[-0.04em] text-white">{quoteTitle(quote)}</h3>
         </div>
         <span className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${statusStyle(status)}`}>{prettyStatus(status)}</span>
       </div>
-      <div className="mt-3 space-y-1 text-sm font-bold text-slate-600">
+      <div className="mt-3 space-y-1 text-sm font-bold text-slate-200">
         <div>{clientName(quote)}</div>
-        <div className="text-slate-400">{quote?.description || quote?.scope || "No quote description saved"}</div>
-        <div className="text-slate-500">Value: {money(quoteAmount(quote))}</div>
+        <div className="text-slate-300/80">{quote?.description || quote?.scope || "No description added yet"}</div>
+        <div className="text-slate-300/80">Quote value: {money(quoteAmount(quote))}</div>
       </div>
       <div className="mt-4 flex flex-wrap gap-3">
-        <button type="button" onClick={() => onOpen(quote)} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Review slip</button>
-        {id && !id.startsWith("sample-") ? <Link to={`/quotes/${id}`} className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700" style={{ display: 'none' }}><span style={{ display: "none" }}>Review slip</span></Link> : <Link to="/quotes/new" className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Create real quote</Link>}
+        <button type="button" onClick={() => onOpen(quote)} className="rounded-xl border border-cyan-300/40 bg-cyan-300/10 px-4 py-2 text-sm font-black text-cyan-100 hover:bg-cyan-300/20">Review quote</button>
+        {id && !id.startsWith("sample-") ? <Link to={`/quotes/${id}`} className="hidden rounded-xl bg-cyan-300 px-4 py-2 text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200"><span className="hidden">Review quote</span></Link> : <Link to="/quotes/new" className="rounded-xl bg-cyan-300 px-4 py-2 text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200">Create quote</Link>}
       </div>
     </article>
   );
@@ -145,11 +148,11 @@ function QuoteSlip({ quote, onClose }) {
 
   const needsAttention =
     status === "accepted"
-      ? "This quote is accepted. It can move into job or invoice flow."
+      ? "This quote is ready to move into a job or invoice flow."
       : status === "sent"
-        ? "This quote has been sent. Watch for reply or prepare a follow-up."
+        ? "This quote has been sent. Check the customer status and prepare a follow-up if needed."
         : status === "follow_up"
-          ? "This quote may need a polite customer nudge."
+          ? "This quote may need a polite customer follow-up."
           : "Review the quote details before sending it to the customer.";
 
   const rows = [
@@ -159,7 +162,7 @@ function QuoteSlip({ quote, onClose }) {
     ["Phone", phone || "Not found"],
     ["Address / site", address || "Not found"],
     ["Status", prettyStatus(status)],
-    ["Value", money(amount)],
+    ["Quote value", money(amount)],
     ["Created", quote?.created_at || "Not found"],
     ["Description", description],
   ];
@@ -171,7 +174,7 @@ function QuoteSlip({ quote, onClose }) {
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-200">
-                Full screen quote slip
+                Quote review
               </div>
 
               <h1 className="mt-3 text-4xl font-black leading-[0.9] tracking-[-0.075em] text-white md:text-6xl">
@@ -179,7 +182,7 @@ function QuoteSlip({ quote, onClose }) {
               </h1>
 
               <p className="mt-3 max-w-5xl text-sm font-bold leading-6 text-slate-300">
-                {customer} · {money(amount)}. Review the quote, customer, price, status, notes and linked details before opening the record.
+                {customer} · {money(amount)}. Review the quote, customer, value, status, notes and linked details before opening the record.
               </p>
             </div>
 
@@ -231,7 +234,7 @@ function QuoteSlip({ quote, onClose }) {
 
               <CommandSlipEverything
                 record={quote}
-                context="QuoteSlip"
+                context="Quote review"
               />
             </div>
 
@@ -279,7 +282,7 @@ function QuoteSlip({ quote, onClose }) {
                     to="/quotes/new"
                     className="rounded-2xl bg-cyan-300 px-5 py-3 text-center text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200"
                   >
-                    Create real quote
+                    Create quote
                   </Link>
                 )}
 
@@ -306,6 +309,21 @@ function QuoteSlip({ quote, onClose }) {
   );
 }
 
+function StatCard({ label, value, tone }) {
+  const styles = {
+    dark: "border-slate-800 bg-[#0f1722] text-white",
+    amber: "border-amber-400/35 bg-[#2b2115] text-amber-100",
+    cyan: "border-cyan-400/30 bg-[#102a3a] text-cyan-100",
+    green: "border-emerald-400/30 bg-[#102d27] text-emerald-100",
+  };
+
+  return (
+    <div className={`rounded-[22px] border p-4 shadow-[0_14px_38px_rgba(15,23,42,0.14)] ${styles[tone] || styles.dark}`}>
+      <div className="text-[10px] font-black uppercase tracking-[0.16em] opacity-80">{label}</div>
+      <div className="mt-3 text-3xl font-black tracking-[-0.06em]">{value}</div>
+    </div>
+  );
+}
 
 function QuotesCommandContent() {
   const { get } = useApi();
@@ -344,46 +362,45 @@ function QuotesCommandContent() {
   }, [list]);
 
   return (
-    <main className="fixed inset-0 z-[2147483000] overflow-y-auto bg-[#eef1f4] text-slate-950">
+    <main className="fixed inset-0 z-[2147483000] overflow-y-auto bg-[#f5f7f1] text-slate-950">
       <div className="flex min-h-screen">
         <Sidebar />
         <section className="min-w-0 flex-1 p-4 pb-28 md:p-6 md:pb-28 xl:p-8 xl:pb-28">
-          <header className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
-            <div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Quotes Command</div><div className="text-sm font-bold text-slate-500">See draft quotes, sent quotes, accepted quotes and follow-up work.</div></div>
-            <div className="flex flex-wrap gap-3"><Link to="/clients" className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Clients</Link><Link to="/quotes/new" className="rounded-2xl bg-amber-500 px-4 py-2 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400">Create quote</Link></div>
-          </header>
-
           <section className="grid gap-5 xl:grid-cols-[1fr_430px]">
             <div className="overflow-hidden rounded-[30px] border border-slate-900 bg-slate-950 shadow-[0_26px_80px_rgba(15,23,42,0.20)]">
               <div className="relative p-6 md:p-8">
-                <div className="absolute right-0 top-0 h-56 w-56 rounded-full bg-blue-500/10 blur-3xl" />
+                <div className="absolute right-0 top-0 h-56 w-56 rounded-full bg-cyan-500/10 blur-3xl" />
                 <div className="relative">
-                  <span className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Quotes Command</span>
-                  <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">Quotes should turn into work, not sit forgotten.</h1>
-                  <p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Churvox keeps quote records visible so the owner can review drafts, chase sent quotes and move accepted quotes forward.</p>
+                  <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-200">Quotes</span>
+                  <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">Turn quotes into booked work.</h1>
+                  <p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Review draft quotes, follow up sent quotes, and move accepted quotes into jobs.</p>
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    <Link to="/clients" className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/15">View clients</Link>
+                    <Link to="/quotes/new" className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200">Create quote</Link>
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
-              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Quote health</div>
-              <h2 className="mt-2 text-2xl font-black tracking-[-0.055em] text-slate-950">What needs attention</h2>
+            <div className="rounded-[30px] border border-slate-900 bg-slate-950 p-5 text-white shadow-[0_18px_55px_rgba(15,23,42,0.16)]">
+              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200">Quote health</div>
+              <h2 className="mt-2 text-2xl font-black tracking-[-0.055em] text-white">What needs attention</h2>
               <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="text-2xl font-black text-slate-900">{counts.draft}</div><div className="text-xs font-black uppercase tracking-[0.14em] text-slate-600">Drafts to review</div></div>
-                <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4"><div className="text-2xl font-black text-blue-800">{counts.sent}</div><div className="text-xs font-black uppercase tracking-[0.14em] text-blue-700">Sent quotes</div></div>
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><div className="text-2xl font-black text-emerald-800">{counts.accepted}</div><div className="text-xs font-black uppercase tracking-[0.14em] text-emerald-700">Accepted</div></div>
+                <StatCard label="Drafts to review" value={counts.draft} tone="amber" />
+                <StatCard label="Sent quotes" value={counts.sent} tone="cyan" />
+                <StatCard label="Ready to book" value={counts.accepted} tone="green" />
               </div>
             </div>
           </section>
 
           <section className="mt-5 grid gap-4 md:grid-cols-4">
-            <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Total quotes</div><div className="mt-3 text-3xl font-black tracking-[-0.06em]">{counts.total}</div></div>
-            <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Drafts</div><div className="mt-3 text-3xl font-black tracking-[-0.06em] text-slate-950">{counts.draft}</div></div>
-            <div className="rounded-[22px] border border-blue-200 bg-blue-50 p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">Sent</div><div className="mt-3 text-3xl font-black tracking-[-0.06em] text-blue-900">{counts.sent}</div></div>
-            <div className="rounded-[22px] border border-emerald-200 bg-emerald-50 p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Value</div><div className="mt-3 text-3xl font-black tracking-[-0.06em] text-emerald-900">{money(counts.value)}</div></div>
+            <StatCard label="Total quotes" value={counts.total} tone="dark" />
+            <StatCard label="Drafts" value={counts.draft} tone="amber" />
+            <StatCard label="Sent" value={counts.sent} tone="cyan" />
+            <StatCard label="Quote value" value={money(counts.value)} tone="green" />
           </section>
 
-          <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
-            <div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600">Quote list</div><h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-slate-950">Open quotes</h2></div>{loading && <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">Loading…</span>}{error && <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700">Showing sample layout</span>}</div>
+          <section className="mt-5 rounded-[28px] border border-slate-900 bg-slate-950 p-5 text-white shadow-[0_18px_55px_rgba(15,23,42,0.16)]">
+            <div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200">Quote list</div><h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-white">Open quotes</h2></div>{loading && <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-slate-200">Loading…</span>}{error && <span className="rounded-full bg-amber-300/15 px-3 py-1 text-xs font-black text-amber-100">Showing sample layout</span>}</div>
             <div className="grid gap-4 xl:grid-cols-2">
               {list.map((quote) => <QuoteCard key={idOf(quote) || quoteTitle(quote)} quote={quote} onOpen={setActiveQuote} />)}
             </div>
