@@ -4,6 +4,7 @@ import App from './App';
 import './index.css';
 import './styles/churvoxFullPageModals.css';
 import './concept-c/LoggedInLightBackgroundOverride.css';
+import './runtime/churvoxClearOldCache';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
