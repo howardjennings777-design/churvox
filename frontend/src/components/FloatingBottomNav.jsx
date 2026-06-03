@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "./FloatingBottomNav.css";
 import "./IndustrialCommandSidebar.css";
+import "./DashboardStripClean.css";
 
 const NAV_ITEMS = [
   ["Command Board", "/dashboard", "⌘"],
