@@ -93,8 +93,22 @@ function PlansCommandContent() {
           padding: clamp(22px, 3vw, 34px) !important;
         }
         .plans-command-shell .cv-plans-hero h1 {
-          font-size: clamp(34px, 4.5vw, 62px) !important;
+          font-size: 0 !important;
           line-height: .92 !important;
+        }
+        .plans-command-shell .cv-plans-hero h1::after {
+          content: "Choose how much admin Churvox handles.";
+          display: block;
+          font-size: clamp(34px, 4.5vw, 62px) !important;
+        }
+        .plans-command-shell .cv-plans-hero p:not(.cv-kicker) {
+          font-size: 0 !important;
+        }
+        .plans-command-shell .cv-plans-hero p:not(.cv-kicker)::after {
+          content: "Start simple, add crew when you need it, or let Operator prepare the admin for approval. Command unlocks MYOB, payroll workspace and higher limits.";
+          display: block;
+          font-size: clamp(14px, 1.4vw, 17px) !important;
+          line-height: 1.55 !important;
         }
         .plans-command-shell .cv-grid {
           gap: 16px !important;
@@ -110,12 +124,47 @@ function PlansCommandContent() {
         .plans-command-shell .cv-sms-pricing {
           border-radius: 24px !important;
         }
-        .plans-command-shell .cv-sms-pricing button[disabled] {
+        .plans-command-shell .cv-tier-card button {
+          font-size: 0 !important;
+        }
+        .plans-command-shell .cv-tier-card:nth-child(1) button::after { content: "Start trial"; }
+        .plans-command-shell .cv-tier-card:nth-child(2) button::after { content: "Choose Crew"; }
+        .plans-command-shell .cv-tier-card:nth-child(3) button::after { content: "Choose Operator"; }
+        .plans-command-shell .cv-tier-card:nth-child(4) button::after { content: "Choose Command"; }
+        .plans-command-shell .cv-tier-card.current button::after { content: "Current plan" !important; }
+        .plans-command-shell .cv-tier-card button::after {
+          font-size: 15px !important;
+          font-weight: 900 !important;
+        }
+        .plans-command-shell .cv-user-block-buy {
+          font-size: 0 !important;
+        }
+        .plans-command-shell .cv-user-block-buy::after {
+          content: "Add Growth Pack";
+          font-size: 15px !important;
+          font-weight: 900 !important;
+        }
+        .plans-command-shell .cv-sms-pricing button {
+          pointer-events: none !important;
           cursor: not-allowed !important;
           opacity: .72 !important;
           background: rgba(148,163,184,.28) !important;
-          color: #e2e8f0 !important;
+          color: transparent !important;
           box-shadow: none !important;
+          font-size: 0 !important;
+        }
+        .plans-command-shell .cv-sms-pricing button::after {
+          content: "Coming soon";
+          color: #e2e8f0 !important;
+          font-size: 15px !important;
+          font-weight: 900 !important;
+        }
+        .plans-command-shell .cv-footer-row div:first-child b {
+          font-size: 0 !important;
+        }
+        .plans-command-shell .cv-footer-row div:first-child b::after {
+          content: "Churvox prepares the admin";
+          font-size: 16px !important;
         }
         @media (max-width: 1024px) {
           .plans-command-shell {
