@@ -16,12 +16,20 @@ function arr(value) {
   if (Array.isArray(value?.results)) return value.results;
   return [];
 }
+function normalizeId(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
+  if (typeof value === "object") return normalizeId(value.$oid || value.oid || value.id || value._id || "");
+  const text = String(value || "");
+  return text === "[object Object]" ? "" : text;
+}
 function recordId(payload) {
   const data = payload?.data ?? payload;
   const item = data?.quote || data?.item || data?.record || data;
-  return String(data?.id || data?._id || item?.id || item?._id || "");
+  return normalizeId(data?.id || data?._id || item?.id || item?._id || "");
 }
-function clientId(client) { return String(client?.id || client?._id || client?.client_id || ""); }
+function clientId(client) { return normalizeId(client?.id || client?._id || client?.client_id || ""); }
 function clientName(client) { return client?.name || client?.client_name || client?.customer_name || client?.contact_name || "Client"; }
 function money(value) { const n = Number(String(value ?? "").replace(/[^0-9.-]/g, "")); return Number.isFinite(n) ? n : 0; }
 function lineTotal(line) { return (money(line.qty) || 1) * money(line.rate); }
@@ -164,18 +172,18 @@ export default function QuoteCreateForm({ onSuccess, onCancel, submitLabel = "Cr
         <div><p className="text-sm font-black text-white">Quote details</p><p className="text-xs font-semibold text-slate-300">Uses your business setup and can prefill directly from a client record.</p></div>
         <div className="rounded-2xl border border-lime-300/20 bg-lime-300/10 p-3 text-xs font-bold text-lime-100">Business defaults: {settings.business_name || "No business name yet"} · Prefix {settings.quote_prefix || "QUO"} · Expires in {settings.default_quote_expiry_days || 14} days</div>
         {clientFromQuery ? <div className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-3 text-xs font-bold text-cyan-100">Opened from a client record. Customer details will prefill once the client loads.</div> : null}
-        <div><Label>Client</Label><select className={fieldClass} value={form.client_id} onChange={(e)=>pickClient(e.target.value)}><option value="">Select client</option>{clients.map((c)=><option key={clientId(c)} value={clientId(c)}>{clientName(c)}</option>)}</select></div>
-        <div><Label>Customer Name *</Label><Input className="rounded-xl" required value={form.customer_name} onChange={(e)=>change("customer_name", e.target.value)} /></div>
-        <div className="grid gap-3 md:grid-cols-2"><div><Label>Customer Email</Label><Input className="rounded-xl" type="email" value={form.customer_email} onChange={(e)=>change("customer_email", e.target.value)} /></div><div><Label>Customer Phone</Label><Input className="rounded-xl" value={form.customer_phone} onChange={(e)=>change("customer_phone", e.target.value)} /></div></div>
-        <div><Label>Address *</Label><Input className="rounded-xl" required value={form.address} onChange={(e)=>change("address", e.target.value)} /></div>
-        <div><Label>Job Description *</Label><Textarea className="rounded-xl" required value={form.job_description} onChange={(e)=>change("job_description", e.target.value)} /></div>
+        <div><Label htmlFor="quote-client">Client</Label><select id="quote-client" className={fieldClass} value={form.client_id} onChange={(e)=>pickClient(e.target.value)} data-testid="quote-client-select"><option value="">Select client</option>{clients.map((c)=><option key={clientId(c)} value={clientId(c)}>{clientName(c)}</option>)}</select></div>
+        <div><Label htmlFor="quote-customer-name">Customer Name *</Label><Input id="quote-customer-name" className="rounded-xl" required value={form.customer_name} onChange={(e)=>change("customer_name", e.target.value)} data-testid="quote-customer-name-input" /></div>
+        <div className="grid gap-3 md:grid-cols-2"><div><Label htmlFor="quote-customer-email">Customer Email</Label><Input id="quote-customer-email" className="rounded-xl" type="email" value={form.customer_email} onChange={(e)=>change("customer_email", e.target.value)} data-testid="quote-customer-email-input" /></div><div><Label htmlFor="quote-customer-phone">Customer Phone</Label><Input id="quote-customer-phone" className="rounded-xl" value={form.customer_phone} onChange={(e)=>change("customer_phone", e.target.value)} data-testid="quote-customer-phone-input" /></div></div>
+        <div><Label htmlFor="quote-address">Address *</Label><Input id="quote-address" className="rounded-xl" required value={form.address} onChange={(e)=>change("address", e.target.value)} data-testid="quote-address-input" /></div>
+        <div><Label htmlFor="quote-job-description">Job Description *</Label><Textarea id="quote-job-description" className="rounded-xl" required value={form.job_description} onChange={(e)=>change("job_description", e.target.value)} data-testid="quote-job-description-input" /></div>
       </section>
       <section className={section}>
         <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-black text-white">Quote line items</p><p className="text-xs font-semibold text-slate-300">Break the quote into simple, customer-readable rows.</p></div><button type="button" className="px-button-secondary" onClick={addLine}>Add line</button></div>
-        {lines.map((line, index)=><div key={index} className="grid grid-cols-1 md:grid-cols-[1fr_90px_120px_90px] gap-2 items-end"><div><Label>Description</Label><Input value={line.description} onChange={(e)=>updateLine(index,"description",e.target.value)} /></div><div><Label>Qty</Label><Input type="number" step="0.1" value={line.qty} onChange={(e)=>updateLine(index,"qty",e.target.value)} /></div><div><Label>Rate</Label><Input type="number" step="0.01" value={line.rate} onChange={(e)=>updateLine(index,"rate",e.target.value)} /></div><button type="button" className="px-button-secondary" onClick={()=>removeLine(index)}>Remove</button></div>)}
-        <div><Label>Total quote price</Label><Input className="rounded-xl" type="number" step="0.01" value={form.price} onChange={(e)=>change("price", e.target.value)} /></div>
-        <div><Label>Valid until</Label><Input className="rounded-xl" type="date" value={form.valid_until} onChange={(e)=>change("valid_until", e.target.value)} /></div>
-        <div><Label>Notes</Label><Textarea className="rounded-xl" value={form.notes} onChange={(e)=>change("notes", e.target.value)} /></div>
+        {lines.map((line, index)=><div key={index} className="grid grid-cols-1 md:grid-cols-[1fr_90px_120px_90px] gap-2 items-end"><div><Label htmlFor={`quote-line-description-${index}`}>Description</Label><Input id={`quote-line-description-${index}`} value={line.description} onChange={(e)=>updateLine(index,"description",e.target.value)} data-testid={`quote-line-description-${index}`} /></div><div><Label htmlFor={`quote-line-qty-${index}`}>Qty</Label><Input id={`quote-line-qty-${index}`} type="number" step="0.1" value={line.qty} onChange={(e)=>updateLine(index,"qty",e.target.value)} data-testid={`quote-line-qty-${index}`} /></div><div><Label htmlFor={`quote-line-rate-${index}`}>Rate</Label><Input id={`quote-line-rate-${index}`} type="number" step="0.01" value={line.rate} onChange={(e)=>updateLine(index,"rate",e.target.value)} data-testid={`quote-line-rate-${index}`} /></div><button type="button" className="px-button-secondary" onClick={()=>removeLine(index)}>Remove</button></div>)}
+        <div><Label htmlFor="quote-total-price">Total quote price</Label><Input id="quote-total-price" className="rounded-xl" type="number" step="0.01" value={form.price} onChange={(e)=>change("price", e.target.value)} data-testid="quote-total-price-input" /></div>
+        <div><Label htmlFor="quote-valid-until">Valid until</Label><Input id="quote-valid-until" className="rounded-xl" type="date" value={form.valid_until} onChange={(e)=>change("valid_until", e.target.value)} data-testid="quote-valid-until-input" /></div>
+        <div><Label htmlFor="quote-notes">Notes</Label><Textarea id="quote-notes" className="rounded-xl" value={form.notes} onChange={(e)=>change("notes", e.target.value)} data-testid="quote-notes-input" /></div>
         <div className="rounded-2xl border border-slate-700 bg-slate-900/70 p-3 text-sm text-slate-200"><div className="flex justify-between text-white text-base"><span>Quote total</span><b>${previewTotal.toFixed(2)}</b></div></div>
       </section>
     </div>
