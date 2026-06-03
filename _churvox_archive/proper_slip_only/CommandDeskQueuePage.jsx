@@ -418,50 +418,6 @@ function SlipRawDetails({ form }) {
 // CHURVOX_FULL_RECORD_SLIP_HELPERS_END
 
 
-
-// CHURVOX_SLIP_FULL_DETAILS_HELPERS_START
-function slipDisplayValue(value) {
-  if (value === undefined || value === null) return "";
-  if (typeof value === "string") return value.trim();
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  if (Array.isArray(value)) return value.length ? JSON.stringify(value, null, 2) : "";
-  if (typeof value === "object") return Object.keys(value).length ? JSON.stringify(value, null, 2) : "";
-  return String(value);
-}
-
-function SlipFullDetails({ form }) {
-  const skip = new Set(["available_workers"]);
-  const rows = Object.entries(form || {})
-    .filter(([key, value]) => !skip.has(key) && slipDisplayValue(value))
-    .sort(([a], [b]) => a.localeCompare(b));
-
-  if (!rows.length) return null;
-
-  return (
-    <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
-      <div className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">All slip details</div>
-      <h3 className="mt-2 text-2xl font-black tracking-[-0.04em] text-slate-950">Everything Churvox found</h3>
-      <p className="mt-2 text-sm font-bold text-slate-600">
-        Client, job, quote, invoice, worker, payment and message details available on this slip.
-      </p>
-
-      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {rows.map(([key, value]) => (
-          <div key={key} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
-              {labels?.[key] || key.replaceAll("_", " ")}
-            </div>
-            <div className="mt-2 whitespace-pre-wrap break-words text-sm font-black leading-6 text-slate-950">
-              {slipDisplayValue(value)}
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-// CHURVOX_SLIP_FULL_DETAILS_HELPERS_END
-
 function SlipModal({ item, onClose, onChanged }) {
   const { patch, post } = useApi();
   const [form, setForm] = React.useState({ ...(item?.form || {}) });
@@ -653,10 +609,7 @@ function SlipModal({ item, onClose, onChanged }) {
               </SlipSection>
             </div>
 
-            
-              <SlipFullDetails form={form} />
-
-              <aside className="space-y-5">
+            <aside className="space-y-5">
               <section className="sticky top-4 rounded-[32px] border border-slate-900 bg-[#0f1722] p-5 text-white shadow-[0_18px_48px_rgba(15,23,42,0.22)]">
                 <div className="text-[11px] font-black uppercase tracking-[0.18em] text-cyan-200">Owner approval</div>
                 <h3 className="mt-2 text-3xl font-black tracking-[-0.05em]">Check then approve</h3>

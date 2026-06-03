@@ -184,7 +184,7 @@ function Approval({ item, onOpen }) {
     <article className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)] transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_24px_70px_rgba(15,23,42,0.10)]">
       <div className="flex items-start justify-between gap-4"><div><span className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-600">{item.badge}</span><h3 className="mt-1 text-lg font-black tracking-[-0.04em] text-slate-950">{item.title}</h3></div><span className="rounded-full bg-slate-950 px-2.5 py-1 text-[10px] font-black text-white">FORM</span></div>
       <p className="mt-3 text-sm font-semibold leading-6 text-slate-600">{item.summary}</p>
-      <div className="mt-4 flex gap-3"><button type="button" onClick={() => onOpen(item)} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Review</button><button type="button" onClick={() => onOpen(item)} className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Open prepared form</button></div>
+      <div className="mt-4 flex gap-3"><button type="button" onClick={() => onOpen(item)} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Review</button><button type="button" onClick={() => onOpen(item)} className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Review slip</button></div>
     </article>
   );
 }

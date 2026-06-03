@@ -1,45 +1,37 @@
-/*
-  Churvox slip-only workflow.
-  Removes old record buttons from normal screens and keeps slips full screen.
-  No global theme changes.
-*/
-
-function cvText(el) {
+function cvSlipText(el) {
   return String(el?.textContent || "").replace(/\s+/g, " ").trim();
 }
 
-function cvIsRecordAction(el) {
-  const text = cvText(el).toLowerCase();
+function cvIsBadRecordButton(el) {
+  const text = cvSlipText(el).toLowerCase();
   const href = el?.getAttribute?.("href") || "";
 
   if (["invoice record", "quote record", "job record"].includes(text)) return true;
   if (/^\/invoices\/[^/]+$/.test(href) && !text.includes("back")) return true;
   if (/^\/quotes\/[^/]+$/.test(href) && !text.includes("back")) return true;
-
   return false;
 }
 
-function cvApplySlipOnly() {
+function cvApplySlipOnlyMode() {
   document.querySelectorAll("a, button").forEach((el) => {
-    const text = cvText(el);
+    const text = cvSlipText(el);
 
-    if (text === "Open slip") {
+    if (text === "Open slip" || text === "Open prepared form") {
       el.textContent = "Review slip";
     }
 
-    if (cvIsRecordAction(el)) {
+    if (cvIsBadRecordButton(el)) {
       el.remove();
     }
   });
 
-  const dialog = Array.from(document.querySelectorAll("div, section"))
-    .find((el) => {
-      const t = cvText(el);
-      return t.includes("Everything Churvox found is inside this slip") || t.includes("Owner approval");
-    });
+  const maybeSlip = Array.from(document.querySelectorAll("div, section")).find((el) => {
+    const t = cvSlipText(el);
+    return t.includes("Everything Churvox found") || t.includes("All slip details") || t.includes("Owner approval");
+  });
 
-  if (dialog) {
-    const overlay = dialog.closest(".fixed") || dialog.parentElement;
+  if (maybeSlip) {
+    const overlay = maybeSlip.closest(".fixed") || maybeSlip.parentElement;
     if (overlay) {
       overlay.style.position = "fixed";
       overlay.style.inset = "0";
@@ -51,28 +43,24 @@ function cvApplySlipOnly() {
   }
 }
 
-let cvSlipScheduled = false;
-function cvScheduleSlipOnly() {
-  if (cvSlipScheduled) return;
-  cvSlipScheduled = true;
+let cvScheduled = false;
+function cvScheduleSlipOnlyMode() {
+  if (cvScheduled) return;
+  cvScheduled = true;
   requestAnimationFrame(() => {
     try {
-      cvApplySlipOnly();
+      cvApplySlipOnlyMode();
     } finally {
-      cvSlipScheduled = false;
+      cvScheduled = false;
     }
   });
 }
 
 if (typeof window !== "undefined") {
-  cvScheduleSlipOnly();
-  window.addEventListener("load", cvScheduleSlipOnly);
-  document.addEventListener("click", () => setTimeout(cvScheduleSlipOnly, 80), true);
-  setTimeout(cvScheduleSlipOnly, 300);
-  setTimeout(cvScheduleSlipOnly, 900);
-
-  new MutationObserver(cvScheduleSlipOnly).observe(document.documentElement, {
-    childList: true,
-    subtree: true,
-  });
+  cvScheduleSlipOnlyMode();
+  window.addEventListener("load", cvScheduleSlipOnlyMode);
+  document.addEventListener("click", () => setTimeout(cvScheduleSlipOnlyMode, 80), true);
+  setTimeout(cvScheduleSlipOnlyMode, 300);
+  setTimeout(cvScheduleSlipOnlyMode, 900);
+  new MutationObserver(cvScheduleSlipOnlyMode).observe(document.documentElement, { childList: true, subtree: true });
 }
