@@ -150,7 +150,14 @@ export default function PlansPage() {
     toast.info("SMS credit packs are coming soon.");
   };
 
-  if (loading) return <main className="cv-plans"><div className="cv-plans-shell"><section className="cv-plans-hero"><p>Loading plans…</p></section></div></main>;
+  if (loading) return <main className="cv-plans"><div className="cv-plans-shell"><section className="cv-plans-hero">
+          <div>
+            <p className="cv-kicker">Plans & billing</p>
+            <h1>Pick the Churvox plan that fits your business.</h1>
+            <p>{isFirstSetup() ? "Choose your trial plan first. Then Churvox will take you into business setup so your first client, job, quote and invoice make sense." : "Start keeps the basics tidy. Crew adds workers. Operator prepares admin for approval. Command adds MYOB, payroll, advanced roles and higher limits."}</p>
+          </div>
+          <div className="cv-status-pill">{currencyInfo?.currency ? `Billed in ${currencyInfo.currency}` : status.label}</div>
+        </section></div></main>;
 
   return (
     <main className="cv-plans" data-version="CHURVOX_PLANS_FIRST_SETUP_REDIRECT_20260601" data-audit-markers={CHURVOX_AUDIT_MARKERS}>
