@@ -109,6 +109,46 @@ function cleanRegionText(worker) {
   return regionText(worker).replace("Jobs assigned:", "Jobs assigned:").replace(/\s+2026\d{8,}/gi, "");
 }
 
+
+function workerBlob(worker) {
+  try {
+    return JSON.stringify(worker || {});
+  } catch {
+    return `${worker?.name || ""} ${worker?.email || ""} ${worker?.phone || ""}`;
+  }
+}
+
+function isLaunchAuditWorker(worker) {
+  const blob = workerBlob(worker);
+  return [
+    /PW Worker/i,
+    /PW E2E/i,
+    /Playwright/i,
+    /TEST Phase/i,
+    /Deep Audit/i,
+    /worker-2026/i,
+    /pw-worker-/i,
+    /example\.com/i,
+    /2026\d{8,}/i,
+  ].some((pattern) => pattern.test(blob));
+}
+
+function cleanWorkerName(worker) {
+  const name = workerName(worker);
+  if (/PW Worker|PW E2E|Playwright|TEST Phase|Deep Audit/i.test(name)) return "Team member";
+  return String(name || "Team member").replace(/\s+2026\d{8,}/gi, "").trim() || "Team member";
+}
+
+function cleanWorkerEmail(worker) {
+  const email = worker?.email || "";
+  if (/pw-worker-|worker-2026|example\.com/i.test(String(email))) return "No email saved";
+  return email || "No email saved";
+}
+
+function cleanRegionText(worker) {
+  return regionText(worker).replace("Jobs assigned:", "Jobs assigned:").replace(/\s+2026\d{8,}/gi, "");
+}
+
 function statusLabel(status) {
   if (["invited", "pending"].includes(status)) return "Invited";
   if (["active", "available", "online"].includes(status)) return "Active";
