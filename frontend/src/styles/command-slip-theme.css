@@ -13,3 +13,8 @@ aside .bg-white.text-slate-950 span {
   background: rgba(15, 23, 42, 0.92) !important;
   color: #ffffff !important;
 }
+
+/* Remove the yellow needs-details strip from the Command Board review summary. */
+.mt-3.rounded-2xl.bg-amber-100.p-3.text-sm.font-black.text-amber-900 {
+  display: none !important;
+}
