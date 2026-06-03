@@ -117,10 +117,49 @@ function PlansCommandContent() {
           gap: 16px !important;
           background: transparent !important;
         }
+        .plans-command-shell .cv-plan-grid-clean,
+        .plans-command-shell .cv-grid.cv-plan-grid-clean {
+          grid-template-columns: repeat(2, minmax(280px, 1fr)) !important;
+          gap: 18px !important;
+        }
         .plans-command-shell .cv-card {
           border-radius: 24px !important;
           min-height: 390px !important;
           padding: 18px !important;
+        }
+        .plans-command-shell .cv-tier-card--clean {
+          min-height: 420px !important;
+          padding: 22px !important;
+          gap: 14px !important;
+        }
+        .plans-command-shell .cv-tier-head {
+          display: grid !important;
+          grid-template-columns: 1fr auto !important;
+          align-items: end !important;
+          gap: 18px !important;
+        }
+        .plans-command-shell .cv-tier-card--clean h2 {
+          font-size: clamp(30px, 3vw, 42px) !important;
+        }
+        .plans-command-shell .cv-tier-card--clean .cv-price b {
+          font-size: clamp(40px, 4vw, 58px) !important;
+        }
+        .plans-command-shell .cv-tier-card--clean .cv-tier-blurb {
+          min-height: 0 !important;
+          max-width: 520px !important;
+          font-size: 14.5px !important;
+          line-height: 1.45 !important;
+        }
+        .plans-command-shell .cv-tier-card--clean .cv-tier-cap-row {
+          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        }
+        .plans-command-shell .cv-tier-card--clean .cv-tier-best--prominent strong,
+        .plans-command-shell .cv-tier-card--clean .cv-tier-section--clean li {
+          font-size: 13.5px !important;
+        }
+        .plans-command-shell .cv-tier-card--clean .cv-tier-section--clean ul {
+          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          gap: 9px 16px !important;
         }
         .plans-command-shell .cv-user-blocks,
         .plans-command-shell .cv-myob-addon,
@@ -172,6 +211,15 @@ function PlansCommandContent() {
         @media (max-width: 1024px) {
           .plans-command-shell {
             overflow-y: auto !important;
+          }
+        }
+        @media (max-width: 980px) {
+          .plans-command-shell .cv-plan-grid-clean,
+          .plans-command-shell .cv-grid.cv-plan-grid-clean,
+          .plans-command-shell .cv-tier-card--clean .cv-tier-head,
+          .plans-command-shell .cv-tier-card--clean .cv-tier-cap-row,
+          .plans-command-shell .cv-tier-card--clean .cv-tier-section--clean ul {
+            grid-template-columns: 1fr !important;
           }
         }
       `}</style>
