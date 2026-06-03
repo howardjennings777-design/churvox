@@ -20,30 +20,25 @@ export const CHURVOX_PLANS = [
     featured: false,
     clientLimit: 20,
     teamLimit: 1,
-    summary: "For solo owners who want the basics handled.",
-    blurb: "For solo trade owners who need jobs, clients, quotes and invoices in one simple place.",
-    bestFor: "Best for solo trade and service owners.",
+    summary: "For solo owners who need the basics in one place.",
+    blurb: "Jobs, clients, quotes and invoices for a one-person trade business.",
+    bestFor: "Best for owner-operators starting clean.",
     limits: [
       "Up to 20 active clients",
-      "Jobs, clients, quotes and invoices in one place",
-      "Job photos and time tracking",
-      "Simple Command Board overview",
       "Owner-only access",
-      "Basic admin suggestions",
-      "MYOB not included",
-      "Payroll not included",
+      "Jobs, clients, quotes and invoices",
+      "No worker accounts",
     ],
     includes: [
       "Up to 20 active clients",
-      "Create, schedule and complete jobs",
-      "Quotes and draft invoices",
+      "Jobs, clients, quotes and invoices",
       "Job photos and time tracking",
-      "Simple Command Board overview",
-      "Installable mobile/PWA access",
+      "Simple Command Board",
+      "Mobile/PWA access",
     ],
     notIncluded: [
       "Worker accounts",
-      "Full AI Operator approval queue",
+      "AI Operator approval queue",
       "MYOB sync",
       "Payroll workspace",
     ],
@@ -58,32 +53,27 @@ export const CHURVOX_PLANS = [
     clientLimit: 30,
     teamLimit: "Small crew",
     summary: "For owners who need workers organised.",
-    blurb: "For small crews that need job assignment, worker updates, photos, notes and team visibility.",
-    bestFor: "Best for businesses with workers on jobs.",
+    blurb: "Assign jobs, see worker updates and keep crew work visible.",
+    bestFor: "Best when workers are out doing jobs.",
     limits: [
       "Up to 30 active clients",
-      "Everything in Start",
-      "Add workers and assign jobs",
-      "Worker app and job view",
-      "Job assignment and worker workflow",
-      "Worker photo upload",
-      "Basic schedule conflict warnings",
-      "MYOB not included",
+      "Worker accounts",
+      "Job assignment",
+      "No MYOB sync",
     ],
     includes: [
       "Everything in Start",
       "Worker accounts and job views",
       "Assign jobs to workers",
-      "Worker job status updates",
+      "Worker status updates",
       "Worker photo upload",
       "Team notes and job notes",
-      "Team-focused Smart Hub overview",
     ],
     notIncluded: [
-      "Full AI Operator approval queue",
+      "AI Operator approval queue",
       "MYOB sync",
-      "Full payroll workspace",
-      "Advanced office/payroll roles",
+      "Payroll workspace",
+      "Advanced office roles",
     ],
   },
   {
@@ -96,33 +86,27 @@ export const CHURVOX_PLANS = [
     clientLimit: 40,
     teamLimit: "Growing crew",
     summary: "For owners who want Churvox preparing admin.",
-    blurb: "For busy owners who want invoices, reminders, follow-ups and job actions prepared before approval.",
-    bestFor: "Best for owners who want Churvox preparing the admin.",
+    blurb: "Churvox prepares invoices, reminders, quote follow-ups and job actions for approval.",
+    bestFor: "Best when admin is slowing the owner down.",
     limits: [
       "Up to 40 active clients",
-      "Everything in Crew",
       "AI Operator Actions",
       "Owner approval queue",
-      "AI-prepared invoice descriptions",
-      "Quote follow-up drafts",
-      "Invoice reminder drafts",
       "MYOB add-on available",
     ],
     includes: [
       "Everything in Crew",
       "AI Operator Actions",
       "Owner approval queue",
-      "AI-prepared invoice descriptions",
+      "Invoice description drafts",
       "Quote follow-up drafts",
       "Invoice reminder drafts",
-      "Urgent job and admin alerts",
       "Worker assignment suggestions",
-      "Practical automations",
-      "MYOB add-on available for $39/month + GST",
+      "MYOB add-on available",
     ],
     notIncluded: [
       "MYOB included by default",
-      "Full payroll workspace",
+      "Payroll workspace",
       "Command Growth Packs",
       "Priority support",
     ],
@@ -137,17 +121,13 @@ export const CHURVOX_PLANS = [
     clientLimit: 50,
     teamLimit: 50,
     summary: "For larger teams that need full control.",
-    blurb: "For larger operators that need MYOB, payroll, advanced roles, reports and higher limits.",
-    bestFor: "Best for bigger teams, office admin and payroll-heavy businesses.",
+    blurb: "MYOB, payroll, advanced roles, reports and higher capacity in one command centre.",
+    bestFor: "Best for admin-heavy teams with office or payroll staff.",
     limits: [
       "Up to 50 active clients",
       "Up to 50 active team members",
-      "Everything in Operator",
       "MYOB included",
       "Payroll workspace",
-      "Advanced roles and permissions",
-      "Higher AI Operator capacity",
-      "Priority support",
     ],
     includes: [
       "Everything in Operator",
@@ -155,14 +135,12 @@ export const CHURVOX_PLANS = [
       "Up to 50 active team members",
       "MYOB included",
       "Payroll workspace",
-      "Owner, Manager, Worker, Office Admin and Payroll roles",
-      "Advanced automations",
-      "Higher AI Operator Action limits",
-      "Payroll, job, invoice and team reports",
+      "Advanced roles",
+      "Reports and exports",
       "Priority support",
     ],
     notIncluded: [
-      "SMS credits are separate credit packs",
+      "SMS credits are separate",
     ],
   },
 ];
@@ -198,10 +176,10 @@ export const MARKETING_PLANS = CHURVOX_PLANS.map((plan) => ({
 
 export const QUICK_PRICING_NOTES = [
   "Prices exclude GST.",
-  "SMS credits are bought separately when needed.",
+  "SMS credits are separate and coming soon.",
   "Operator can add MYOB for $39/month + GST.",
   "Command includes MYOB by default.",
-  "Command Growth Pack adds 50 more active team members.",
+  "Command Growth Pack adds 50 active team members.",
 ];
 
 export const COMMAND_GROWTH_PACK = {
@@ -210,13 +188,13 @@ export const COMMAND_GROWTH_PACK = {
   price: "$99",
   period: "/month + GST",
   headline: "+50 active team members",
-  description: "Add more crew, more jobs and more AI Operator capacity as your business grows.",
+  description: "Add more crew, jobs and AI Operator capacity as the business grows.",
   includes: [
-    "Command includes up to 50 active team members",
+    "Command includes 50 active team members",
     "Each Growth Pack adds 50 more active team members",
-    "Extra job capacity, AI Operator Actions and automation runs",
-    "Extra admin and payroll capacity as the crew grows",
-    "Inactive or old staff records should not count as billable",
+    "Extra job and AI Operator capacity",
+    "Extra admin and payroll capacity",
+    "Inactive staff do not count as billable",
   ],
 };
 
@@ -245,7 +223,6 @@ export function isCommand(key) {
   return String(key || "").toLowerCase() === "enterprise";
 }
 
-
 export const PLAN_RANKS = {
   none: 0,
   solo: 1,
@@ -256,12 +233,4 @@ export const PLAN_RANKS = {
 
 export function planRank(key) {
   return PLAN_RANKS[String(key || "none").toLowerCase()] || 0;
-}
-
-export function hasPlanAtLeast(currentPlan, requiredPlan) {
-  return planRank(currentPlan) >= planRank(requiredPlan);
-}
-
-export function requiredPlanLabel(requiredPlan) {
-  return nicePlanName(requiredPlan) || "a higher plan";
 }
