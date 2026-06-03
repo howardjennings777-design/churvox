@@ -168,8 +168,8 @@ export default function WorkerMapCommandPage() {
             <aside className="rounded-[30px] border border-slate-900 bg-slate-950 p-5 text-white shadow-[0_18px_55px_rgba(15,23,42,0.16)]">
               <div className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200">Tracking rule</div>
               <h2 className="mt-2 text-2xl font-black tracking-[-0.055em] text-white">Active jobs only.</h2>
-              <div className="mt-4 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-sm font-black leading-6 text-amber-50">
-                This is active-job tracking only, not full-day fleet tracking.
+              <div className="mt-4 rounded-2xl border border-cyan-300/20 bg-white/[0.06] p-4 text-sm font-black leading-6 text-slate-200">
+                Churvox only shows a worker while a job is active. It does not track workers all day.
               </div>
               <div className="mt-4 space-y-3 text-sm font-bold leading-6 text-slate-300">
                 <p>Start Job makes the worker visible here.</p>
@@ -178,7 +178,7 @@ export default function WorkerMapCommandPage() {
             </aside>
           </section>
 
-          {notice ? <div className="mt-5 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm font-black text-amber-900">{notice}</div> : null}
+          {notice ? <div className="mt-5 rounded-2xl border border-cyan-300/20 bg-slate-950 p-4 text-sm font-black text-cyan-100">{notice}</div> : null}
 
           <section className="mt-5 grid gap-4 md:grid-cols-4">
             <StatCard label="Working now" value={active.length} tone="dark" />
@@ -237,7 +237,7 @@ export default function WorkerMapCommandPage() {
                         Open location
                       </a>
                     ) : (
-                      <div className="mt-4 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-3 text-sm font-bold text-amber-100">
+                      <div className="mt-4 rounded-2xl border border-cyan-300/20 bg-white/[0.06] p-3 text-sm font-bold text-slate-200">
                         Worker is active, but GPS has not been captured yet.
                       </div>
                     )}
@@ -273,7 +273,7 @@ export default function WorkerMapCommandPage() {
                   <p>Workers appear here after they start a job.</p>
                   <p>Pause and resume stay on the same timesheet.</p>
                   <p>Finish Job removes the worker from the active map and creates daily/weekly hours.</p>
-                  <p className="rounded-2xl border border-amber-300/30 bg-amber-300/10 p-3 text-amber-50">This is active-job tracking only, not full-day fleet tracking.</p>
+                  <p className="rounded-2xl border border-cyan-300/20 bg-white/[0.06] p-3 text-slate-200">Churvox only shows a worker while a job is active. It does not track workers all day.</p>
                 </div>
               </div>
             </aside>
