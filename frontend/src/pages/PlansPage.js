@@ -9,11 +9,11 @@ import "./PlansCommand.css";
 import "./PlansUserBlocks.css";
 import "./PlansCommandRoomTheme.css";
 
-const CHURVOX_AUDIT_MARKERS = "handleBuySmsPack handleBuyMyobAddon DemoModePage NotificationsWorkspacePage BillingConfidencePage LaunchSalesPolishPage IntegrationProofPage BackupRecoveryPage PolishChecklistPage buy-sms_100 buy-sms_500 buy-sms_1000";
+const CHURVOX_AUDIT_MARKERS = "handleBuyMyobAddon DemoModePage NotificationsWorkspacePage BillingConfidencePage LaunchSalesPolishPage IntegrationProofPage BackupRecoveryPage PolishChecklistPage sms-coming-soon_100 sms-coming-soon_500 sms-coming-soon_1000";
 const FIRST_SETUP_KEY = "churvox_first_setup_pending";
 
 const userBlocks = COMMAND_GROWTH_PACK.includes;
-const smsTestIds = { sms_100: "buy-sms_100", sms_500: "buy-sms_500", sms_1000: "buy-sms_1000" };
+const smsTestIds = { sms_100: "sms-coming-soon_100", sms_500: "sms-coming-soon_500", sms_1000: "sms-coming-soon_1000" };
 const getPayload = (res) => { if (!res) return null; if (res.success === false) return res; if (res.data !== undefined) return res.data; return res; };
 const isFirstSetup = () => { try { return new URLSearchParams(window.location.search).get("first_setup") === "1" || localStorage.getItem(FIRST_SETUP_KEY) === "true"; } catch { return false; } };
 
@@ -146,12 +146,8 @@ export default function PlansPage() {
     catch (err) { toast.error(err?.response?.data?.detail || err?.data?.detail || err?.message || "Failed to open MYOB checkout"); }
     finally { setBusyAddon(""); }
   };
-  const handleBuySmsPack = async (pack) => {
-    if (!pack || busyPlan || busyAddon || busySms) return;
-    if (isNewUser) return toast.error("Choose a Churvox plan before buying SMS credits.");
-    try { setBusySms(pack.key); await openCheckout({ checkout_type: "sms", sms_pack: pack.key, quantity: 1, success_path: `/plans?checkout=success&sms_pack=${encodeURIComponent(pack.key)}`, cancel_path: `/plans?checkout=cancelled&sms_pack=${encodeURIComponent(pack.key)}` }); }
-    catch (err) { toast.error(err?.response?.data?.detail || err?.data?.detail || err?.message || "Failed to open SMS checkout"); }
-    finally { setBusySms(""); }
+  const handleBuySmsPack = async () => {
+    toast.info("SMS credit packs are coming soon.");
   };
 
   if (loading) return <main className="cv-plans"><div className="cv-plans-shell"><section className="cv-plans-hero"><p>Loading plans…</p></section></div></main>;
@@ -214,7 +210,7 @@ export default function PlansPage() {
         })}</section>
         <section className="cv-user-blocks"><div><small>Command Growth Pack</small><b>+50 active team members</b><span>Add more crew, jobs and AI Operator capacity as your business grows. Built for Command customers who need more capacity without changing the whole plan.</span></div><article><small>Growth Pack</small><strong>$99<em> /month + GST</em></strong><p>Each block adds 50 more active team members.</p><button className="cv-user-block-buy" type="button" onClick={handleBuyGrowthPack} disabled={Boolean(busyPlan || busyAddon || busySms)} data-testid="buy-command-growth-pack">{busyAddon === "command_growth_pack" ? "Opening checkout…" : "Buy Growth Pack"}</button></article><ul>{userBlocks.map((item) => <li key={item}>{item}</li>)}</ul></section>
         <section className="cv-myob-addon"><div><small>MYOB add-on</small><b>MYOB sync for Operator</b><span>Operator can add MYOB for $39/month + GST. Command includes MYOB by default.</span></div><button type="button" onClick={handleBuyMyobAddon} disabled={Boolean(busyPlan || busyAddon || busySms || currentPlan === "enterprise")} data-testid="buy-myob-addon">{currentPlan === "enterprise" ? "Included in Command" : busyAddon === "myob_addon" ? "Opening checkout…" : "Add MYOB — $39/month"}</button></section>
-        <section className="cv-sms-pricing"><div><b>SMS credit blocks</b><span>SMS is separate so you only buy what you use. Customer reminders and follow-ups stay approval-first.</span></div><div className="cv-sms-grid">{smsBlocks.map((pack) => <article key={pack.key}><small>{pack.credits} credits</small><strong>{pack.price}<em> + GST</em></strong><span>{pack.note}</span><button type="button" onClick={() => handleBuySmsPack(pack)} disabled={Boolean(busyPlan || busyAddon || busySms)} data-testid={smsTestIds[pack.key] || `buy-${pack.key}`}>{busySms === pack.key ? "Opening checkout…" : "Buy credits"}</button></article>)}</div></section>
+        <section className="cv-sms-pricing"><div><b>SMS credit blocks</b><span>SMS reminders and follow-ups are coming soon. They stay approval-first and are not active during launch testing.</span></div><div className="cv-sms-grid">{smsBlocks.map((pack) => <article key={pack.key}><small>{pack.credits} credits</small><strong>{pack.price}<em> + GST</em></strong><span>{pack.note}</span><button type="button" onClick={() => handleBuySmsPack(pack)} disabled={true} data-testid={smsTestIds[pack.key] || `sms-coming-soon-${pack.key}`}>Coming soon</button></article>)}</div></section>
         <section className="cv-footer-row"><div><b>Churvox does the admin</b><span>AI prepares daily actions for owner approval.</span></div><div><b>Command scales</b><span>Growth Pack adds 50 active team members for $99/month + GST.</span></div><div><b>MYOB ready</b><span>Operator add-on available. Included in Command.</span></div></section>
       </div>
     </main>
