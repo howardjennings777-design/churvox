@@ -277,16 +277,17 @@ function actionTitle(action, form, type) {
 }
 
 function actionMeta(form, type) {
-  const client = first(form.client_name, form.customer_name, form.name, "No client saved");
+  const client = first(form.client_name, form.customer_name, form.name);
   const invoice = first(form.invoice_number, form.invoice_id);
   const quote = first(form.quote_number, form.quote_id);
   const amount = money(first(form.total, form.amount_due, form.amount, form.subtotal, form.price, form.quote_amount));
   const pieces = [];
 
   if (client) pieces.push(client);
-  if (invoice && String(type).includes("invoice")) pieces.push(invoice);
-  if (quote && String(type).includes("quote")) pieces.push(quote);
   if (amount) pieces.push(amount);
+
+  if (!client && invoice && String(type).includes("invoice")) pieces.push(`Invoice ${invoice}`);
+  if (!client && quote && String(type).includes("quote")) pieces.push(`Quote ${quote}`);
 
   return pieces.join(" · ");
 }
@@ -304,6 +305,38 @@ function actionSummary(action, form, type) {
   if (value.includes("reminder") || value.includes("payment")) return "Churvox prepared a payment reminder for owner approval.";
 
   return action.summary || "Churvox prepared this action from your business records.";
+}
+
+
+function actionBlob(item) {
+  try {
+    return JSON.stringify(item || {});
+  } catch {
+    return `${item?.title || ""} ${item?.meta || ""} ${item?.summary || ""} ${item?.reason || ""}`;
+  }
+}
+
+function isLaunchAuditAction(item) {
+  const blob = actionBlob(item);
+  return [
+    /PW E2E/i,
+    /Playwright/i,
+    /Deep Audit/i,
+    /test reflect/i,
+    /Test Client/i,
+    /TEST Phase/i,
+    /pw-e2e-/i,
+    /audit@example\.com/i,
+    /QT-ADB/i,
+  ].some((pattern) => pattern.test(blob));
+}
+
+function safeHeadline(value) {
+  const text = clean(value);
+  if (!text || /^I checked\b/i.test(text)) {
+    return "Churvox checked your business and prepared the next admin actions.";
+  }
+  return text;
 }
 
 function relevantKeys(form = {}, type = "", missing = []) {
@@ -829,8 +862,9 @@ export default function CommandDeskQueuePage() {
     }
   }
 
-  const ready = items.filter((item) => item.ready);
-  const needs = items.filter((item) => !item.ready);
+  const visibleItems = items.filter((item) => !isLaunchAuditAction(item));
+  const ready = visibleItems.filter((item) => item.ready);
+  const needs = visibleItems.filter((item) => !item.ready);
   const visibleSummaryItems = Array.isArray(summary?.items) ? summary.items : [];
 
   return (
@@ -895,7 +929,7 @@ export default function CommandDeskQueuePage() {
               <div className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Today’s review</div>
               <h2 className="mt-2 text-3xl font-black tracking-[-.06em] text-slate-950">What needs approval</h2>
               <p className="mt-2 text-sm font-bold text-slate-600">
-                {summary.headline || "Churvox checked your business records and prepared the next admin actions."}
+                {safeHeadline(summary.headline)}
               </p>
 
               {visibleSummaryItems.length ? (
@@ -954,7 +988,7 @@ export default function CommandDeskQueuePage() {
             </div>
 
             <div className="mt-5 grid gap-4 md:grid-cols-2">
-              {items.slice(0, 24).map((item) => (
+              {visibleItems.slice(0, 24).map((item) => (
                 <button
                   key={item.id || item.title}
                   type="button"
@@ -974,8 +1008,6 @@ export default function CommandDeskQueuePage() {
                   <p className="mt-2 text-sm font-bold leading-6 text-slate-600">
                     {item.ready ? item.summary : `Missing: ${item.missing.map(labelFor).join(", ")}`}
                   </p>
-
-                  {item.reason ? <p className="mt-2 text-xs font-bold leading-5 text-slate-500">{item.reason}</p> : null}
 
                   <div className="mt-3 inline-flex rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white">
                     Review & approve
