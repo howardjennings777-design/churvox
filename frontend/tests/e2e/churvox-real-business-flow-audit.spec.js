@@ -233,19 +233,52 @@ async function createQuote(page) {
 async function createInvoice(page) {
   await page.goto('/invoices/new');
   await waitUsable(page, 'new invoice');
+
+  await page.waitForSelector('[data-testid="stable-invoice-form"]', { state: 'visible', timeout: 25000 });
+  await page.waitForTimeout(1200);
+
   await selectOptionIfPossible(page, /Saved client|Client/i, TEST.clientName);
   await selectOptionIfPossible(page, /Linked job/i, TEST.jobTitle);
-  await fillFirstVisible(page, [page.getByLabel(/Customer name/i), page.locator('input').first()], TEST.clientName, 'invoice customer name');
-  await fillFirstVisible(page, [page.getByLabel(/Customer email/i)], TEST.clientEmail, 'invoice customer email').catch(() => {});
-  await fillFirstVisible(page, [page.getByLabel(/Site|job address|Billing address/i)], TEST.address, 'invoice address').catch(() => {});
-  await fillFirstVisible(page, [page.getByLabel(/Description/i), page.locator('input').first()], TEST.invoiceDescription, 'invoice line description').catch(() => {});
-  await fillFirstVisible(page, [page.getByLabel(/Unit price/i), page.locator('input[type="number"]').first()], TEST.price, 'invoice unit price');
-  await fillFirstVisible(page, [page.getByLabel(/Line total/i), page.locator('input[type="number"]').last()], TEST.price, 'invoice line total').catch(() => {});
-  const publicNotes = page.getByLabel(/Customer description|public notes/i);
-  if (await publicNotes.count()) await publicNotes.fill(`Invoice prepared by Playwright workflow audit ${runStamp}`);
+
+  await fillFirstVisible(page, [
+    page.getByTestId('invoice-customer-name-input'),
+    page.getByLabel(/Customer name/i),
+    page.locator('[data-testid="stable-invoice-form"] input').first()
+  ], TEST.clientName, 'invoice customer name');
+
+  await fillFirstVisible(page, [
+    page.getByTestId('invoice-customer-email-input'),
+    page.getByLabel(/Customer email/i)
+  ], TEST.clientEmail, 'invoice customer email').catch(() => {});
+
+  await fillFirstVisible(page, [
+    page.getByTestId('invoice-site-address-input'),
+    page.getByLabel(/Site|job address|Billing address/i)
+  ], TEST.address, 'invoice address').catch(() => {});
+
+  await fillFirstVisible(page, [
+    page.getByTestId('invoice-line-description-0'),
+    page.getByLabel(/^Description$/i)
+  ], TEST.invoiceDescription, 'invoice line description').catch(() => {});
+
+  await fillFirstVisible(page, [
+    page.getByTestId('invoice-line-unit-price-0'),
+    page.getByLabel(/Unit price/i)
+  ], TEST.price, 'invoice unit price');
+
+  await fillFirstVisible(page, [
+    page.getByTestId('invoice-line-total-0'),
+    page.getByLabel(/Line total/i)
+  ], TEST.price, 'invoice line total').catch(() => {});
+
+  const publicNotes = page.getByTestId('invoice-public-notes-input');
+  if (await publicNotes.count()) {
+    await publicNotes.fill(`Invoice prepared by Playwright workflow audit ${runStamp}`);
+  }
+
   await clickFirstVisible(page, [page.getByRole('button', { name: /Create invoice/i })], 'create invoice');
-  await page.waitForTimeout(2000);
-  await expect(page.locator('body')).toContainText(/Invoice created|Invoice|Amount due|Review invoice|Edit invoice/i, { timeout: 15000 });
+  await page.waitForTimeout(2500);
+  await expect(page.locator('body')).toContainText(/Invoice created|Invoice|Amount due|Review invoice|Edit invoice/i, { timeout: 20000 });
 }
 
 async function saveSettings(page) {
