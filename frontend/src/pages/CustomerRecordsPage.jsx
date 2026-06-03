@@ -182,13 +182,13 @@ function CustomerSlip({ selected, draft, updateDraft, saveCustomer, busy, siteDr
   if (!selected) return null;
   const summary = selected?.summary || {};
   return (
-    <div className="fixed inset-0 z-[2147483647] bg-slate-950/65 p-3 backdrop-blur-sm md:p-7" role="dialog" aria-modal="true">
-      <div className="ml-auto flex h-full max-w-[780px] flex-col overflow-hidden rounded-[34px] border border-slate-200 bg-white shadow-[0_35px_120px_rgba(15,23,42,0.40)]">
+    <div className="fixed inset-0 z-[2147483647] h-[100dvh] w-screen overflow-hidden bg-[#f5f7f1] text-slate-950" role="dialog" aria-modal="true">
+      <div className="flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#f5f7f1]">
         <header className="relative overflow-hidden border-b border-slate-800 bg-slate-950 p-6 text-white md:p-7">
           <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-cyan-500/20 blur-3xl" />
           <div className="relative flex items-start justify-between gap-4">
             <div>
-              <div className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Client Work Slip</div>
+              <div className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">FULL SCREEN CLIENT SLIP</div>
               <h2 className="mt-4 text-3xl font-black leading-[0.95] tracking-[-0.07em] md:text-5xl">{customerName(selected)}</h2>
               <p className="mt-4 text-sm font-semibold leading-6 text-slate-300">{selected.email || "No email"} · {selected.phone || "No phone"}</p>
             </div>

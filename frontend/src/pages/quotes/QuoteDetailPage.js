@@ -146,7 +146,7 @@ export default function QuoteDetailPage() {
         </button>
 
         <PremiumHero
-          eyebrow="Quote Work Slip"
+          eyebrow="FULL SCREEN QUOTE SLIP"
           title={safeText(quote.quote_number, "Quote")}
           subtitle={`${safeText(quote.customer_name, "Customer")} • ${pricingLabel} • ${formatCurrency(amountOf(quote))}`}
           icon={<FileSignature className="h-6 w-6" />}

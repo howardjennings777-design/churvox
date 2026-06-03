@@ -130,7 +130,7 @@ export default function ClientDetailPage() {
         </button>
 
         <PremiumHero
-          eyebrow="Client Work Slip"
+          eyebrow="FULL SCREEN CLIENT SLIP"
           title={name}
           subtitle={client.email || client.phone || "Client profile"}
           icon={<UserCircle2 className="h-6 w-6" />}

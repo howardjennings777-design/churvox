@@ -144,7 +144,7 @@ export default function InvoiceDetailPage() {
 
   return <Layout><PremiumPage maxWidth={1080}>
     <button onClick={() => navigate("/invoices")} className="mb-3 flex items-center gap-2 text-sm font-black text-slate-300 hover:text-white"><ArrowLeft size={16} /> Back to invoices</button>
-    <PremiumHero eyebrow="Invoice Work Slip" title={invoice.invoice_number || "Invoice"} subtitle={`${invoice.customer_name || "Customer"} • ${money(invoice.total)} • due ${date(invoice.due_date)}`} icon={<Receipt className="h-6 w-6" />} actions={<span className={`rounded-full border px-3 py-1 text-xs font-black uppercase ${statusClass(status)}`}>{status.replace("_", " ")}</span>} />
+    <PremiumHero eyebrow="FULL SCREEN INVOICE SLIP" title={invoice.invoice_number || "Invoice"} subtitle={`${invoice.customer_name || "Customer"} • ${money(invoice.total)} • due ${date(invoice.due_date)}`} icon={<Receipt className="h-6 w-6" />} actions={<span className={`rounded-full border px-3 py-1 text-xs font-black uppercase ${statusClass(status)}`}>{status.replace("_", " ")}</span>} />
 
     <section className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
       <PremiumCard>
