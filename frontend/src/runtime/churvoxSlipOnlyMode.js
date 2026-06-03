@@ -1,111 +1,78 @@
 /*
-  CHURVOX SLIP ONLY MODE
-  Normal workflow should be:
-  list/card -> Review slip -> full screen slip popup -> approve/send/mark action.
-  No old Invoice record / Quote record / Work Slip page buttons.
+  Churvox slip-only workflow.
+  Removes old record buttons from normal screens and keeps slips full screen.
+  No global theme changes.
 */
 
-function textOf(el) {
+function cvText(el) {
   return String(el?.textContent || "").replace(/\s+/g, " ").trim();
 }
 
-function looksLikeRecordButton(el) {
-  const text = textOf(el).toLowerCase();
+function cvIsRecordAction(el) {
+  const text = cvText(el).toLowerCase();
   const href = el?.getAttribute?.("href") || "";
 
-  if (text === "invoice record") return true;
-  if (text === "quote record") return true;
-  if (text === "job record") return true;
-
-  // Hide direct detail buttons from list cards, but leave back links alone.
+  if (["invoice record", "quote record", "job record"].includes(text)) return true;
   if (/^\/invoices\/[^/]+$/.test(href) && !text.includes("back")) return true;
   if (/^\/quotes\/[^/]+$/.test(href) && !text.includes("back")) return true;
 
   return false;
 }
 
-function restyleSlipModal() {
-  const modalTextMarkers = [
-    "When approved",
-    "When you approve",
-    "Details Churvox pulled",
-    "Everything Churvox pulled",
-    "Approve + send",
-    "Approve action",
-    "Approve review",
-  ];
-
-  const nodes = Array.from(document.querySelectorAll("div, section, article"));
-  const modal = nodes.find((node) => {
-    const text = textOf(node);
-    if (!text || text.length < 80) return false;
-    return modalTextMarkers.some((m) => text.includes(m));
-  });
-
-  if (!modal) return;
-
-  const fixedParent = modal.closest(".fixed") || modal.closest("[role='dialog']") || modal.parentElement;
-  if (fixedParent) {
-    fixedParent.style.position = "fixed";
-    fixedParent.style.inset = "0";
-    fixedParent.style.zIndex = "2147483647";
-    fixedParent.style.width = "100vw";
-    fixedParent.style.height = "100vh";
-    fixedParent.style.maxWidth = "100vw";
-    fixedParent.style.maxHeight = "100vh";
-    fixedParent.style.padding = "0";
-    fixedParent.style.background = "rgba(15,23,42,0.78)";
-  }
-
-  modal.style.width = "100vw";
-  modal.style.height = "100vh";
-  modal.style.maxWidth = "100vw";
-  modal.style.maxHeight = "100vh";
-  modal.style.borderRadius = "0";
-  modal.style.overflow = "auto";
-}
-
-function applySlipOnlyMode() {
-  // Rename open slip everywhere.
-  Array.from(document.querySelectorAll("a, button")).forEach((el) => {
-    const text = textOf(el);
+function cvApplySlipOnly() {
+  document.querySelectorAll("a, button").forEach((el) => {
+    const text = cvText(el);
 
     if (text === "Open slip") {
       el.textContent = "Review slip";
     }
 
-    if (looksLikeRecordButton(el)) {
+    if (cvIsRecordAction(el)) {
       el.remove();
     }
   });
 
-  restyleSlipModal();
+  const dialog = Array.from(document.querySelectorAll("div, section"))
+    .find((el) => {
+      const t = cvText(el);
+      return t.includes("Everything Churvox found is inside this slip") || t.includes("Owner approval");
+    });
+
+  if (dialog) {
+    const overlay = dialog.closest(".fixed") || dialog.parentElement;
+    if (overlay) {
+      overlay.style.position = "fixed";
+      overlay.style.inset = "0";
+      overlay.style.zIndex = "2147483647";
+      overlay.style.width = "100vw";
+      overlay.style.height = "100vh";
+      overlay.style.padding = "0";
+    }
+  }
 }
 
-let scheduled = false;
-
-function scheduleApply() {
-  if (scheduled) return;
-  scheduled = true;
-
-  window.requestAnimationFrame(() => {
+let cvSlipScheduled = false;
+function cvScheduleSlipOnly() {
+  if (cvSlipScheduled) return;
+  cvSlipScheduled = true;
+  requestAnimationFrame(() => {
     try {
-      applySlipOnlyMode();
+      cvApplySlipOnly();
     } finally {
-      scheduled = false;
+      cvSlipScheduled = false;
     }
   });
 }
 
 if (typeof window !== "undefined") {
-  scheduleApply();
-  window.addEventListener("load", scheduleApply);
-  document.addEventListener("click", () => setTimeout(scheduleApply, 80), true);
+  cvScheduleSlipOnly();
+  window.addEventListener("load", cvScheduleSlipOnly);
+  document.addEventListener("click", () => setTimeout(cvScheduleSlipOnly, 80), true);
+  setTimeout(cvScheduleSlipOnly, 300);
+  setTimeout(cvScheduleSlipOnly, 900);
 
-  setTimeout(scheduleApply, 250);
-  setTimeout(scheduleApply, 750);
-  setTimeout(scheduleApply, 1500);
-
-  const observer = new MutationObserver(scheduleApply);
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  new MutationObserver(cvScheduleSlipOnly).observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+  });
 }
