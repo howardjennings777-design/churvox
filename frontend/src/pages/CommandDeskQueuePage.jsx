@@ -165,6 +165,88 @@ function fieldKeys(form, missing = []) {
   return out;
 }
 
+
+// CHURVOX_RELEVANT_SLIP_FIELDS_START
+function relevantSlipKeys(form = {}, item = {}, missing = []) {
+  const type = String(item?.type || form?.action_type || "").toLowerCase();
+
+  const common = [
+    "client_name", "customer_name", "customer_email", "client_email", "email",
+    "client_phone", "customer_phone", "phone",
+    "client_address", "customer_address", "job_address", "address", "site_address",
+    "job_id", "job_title", "job_name", "service_type", "job_status", "status",
+    "scheduled_time", "scheduled_at", "schedule_date", "start_time", "end_time",
+    "description", "invoice_description", "quote_description",
+    "message", "subject", "email_subject", "email_body", "sms_message", "follow_up_message",
+    "notes", "client_notes", "customer_notes", "job_notes", "worker_note", "completion_note",
+  ];
+
+  let typeSpecific = [];
+
+  if (type.includes("assign") || type.includes("worker")) {
+    typeSpecific = [
+      "worker_id", "worker_name", "recommended_worker_name", "assigned_worker_name",
+      "conflict_check", "worker_region", "worker_email", "worker_phone",
+      "job_id", "job_title", "job_address", "scheduled_time", "scheduled_at",
+    ];
+  } else if (type.includes("invoice")) {
+    typeSpecific = [
+      "invoice_id", "invoice_number", "invoice_status",
+      "subtotal", "gst", "tax", "total", "amount_due", "price", "due_date",
+      "payment_url", "payment_link", "online_payment_url", "bank_details", "payment_instructions",
+      "description", "invoice_description", "message", "email_subject", "email_body",
+      "job_id", "job_title", "job_address",
+    ];
+  } else if (type.includes("quote")) {
+    typeSpecific = [
+      "quote_id", "quote_number", "quote_status", "quote_amount", "total", "price",
+      "description", "quote_description", "message", "email_subject", "email_body",
+      "client_name", "customer_name", "customer_email", "job_title", "job_address",
+    ];
+  } else if (type.includes("payment")) {
+    typeSpecific = [
+      "invoice_id", "invoice_number", "amount_due", "days_overdue", "due_date",
+      "customer_name", "customer_email", "message", "email_subject", "email_body",
+    ];
+  } else if (type.includes("job")) {
+    typeSpecific = [
+      "job_id", "job_title", "job_name", "service_type", "job_status", "status",
+      "job_address", "scheduled_time", "scheduled_at", "worker_name", "worker_id",
+      "time_worked", "proof_summary", "photo_count", "completion_note", "worker_note",
+    ];
+  }
+
+  const existing = Object.keys(form || {}).filter((key) => {
+    if (!key || hidden.has(key)) return false;
+    const value = form[key];
+    return typeof value !== "object" || Array.isArray(value);
+  });
+
+  const ordered = [
+    ...missing,
+    ...typeSpecific,
+    ...common,
+    ...fieldOrder,
+    ...existing,
+  ];
+
+  const seen = new Set();
+
+  return ordered.filter((key) => {
+    if (!key || seen.has(key) || hidden.has(key)) return false;
+    seen.add(key);
+
+    const important =
+      missing.includes(key) ||
+      typeSpecific.includes(key) ||
+      common.includes(key);
+
+    return important || has(form?.[key]);
+  });
+}
+// CHURVOX_RELEVANT_SLIP_FIELDS_END
+
+
 function Sidebar() {
   const { pathname } = useLocation();
   return (
@@ -430,7 +512,7 @@ function slipDisplayValue(value) {
 }
 
 function SlipFullDetails({ form }) {
-  const skip = new Set(["available_workers"]);
+  const skip = new Set([]);
   const rows = Object.entries(form || {})
     .filter(([key, value]) => !skip.has(key) && slipDisplayValue(value))
     .sort(([a], [b]) => a.localeCompare(b));
@@ -528,7 +610,7 @@ function SlipModal({ item, onClose, onChanged }) {
     }
   }
 
-  const editableKeys = fieldKeys(form, missing);
+  const editableKeys = relevantSlipKeys(form, item, missing);
 
   return (
     <div className="fixed inset-0 z-[2147483647] bg-slate-950/80 p-0 backdrop-blur-sm">
