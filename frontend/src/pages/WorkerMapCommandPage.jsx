@@ -151,7 +151,7 @@ export default function WorkerMapCommandPage() {
                     See who is working right now.
                   </h1>
                   <p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-slate-300 md:text-base">
-                    Crew appear on the map only after they start a job. When they finish, Churvox removes them and saves the timesheet.
+                    Workers appear only while a job is active. When the job is finished, Churvox removes them from the map and saves the timesheet.
                   </p>
                   <div className="mt-5 flex flex-wrap gap-3">
                     <button onClick={load} disabled={loading} className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200 disabled:opacity-60">
@@ -169,11 +169,11 @@ export default function WorkerMapCommandPage() {
               <div className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200">Tracking rule</div>
               <h2 className="mt-2 text-2xl font-black tracking-[-0.055em] text-white">Active jobs only.</h2>
               <div className="mt-4 rounded-2xl border border-cyan-300/20 bg-white/[0.06] p-4 text-sm font-black leading-6 text-slate-200">
-                Churvox only shows a worker while a job is active. It does not track workers all day.
+                Churvox shows workers only while they are clocked into an active job. It does not track staff all day.
               </div>
               <div className="mt-4 space-y-3 text-sm font-bold leading-6 text-slate-300">
-                <p>Start Job makes the worker visible here.</p>
-                <p>Finish Job removes the worker from the map and saves daily hours.</p>
+                <p>Starting a job makes the worker visible here.</p>
+                <p>Finishing a job removes the worker from the map and saves daily hours.</p>
               </div>
             </aside>
           </section>
@@ -268,12 +268,12 @@ export default function WorkerMapCommandPage() {
 
               <div className="rounded-[32px] border border-slate-900 bg-slate-950 p-5 text-white shadow-[0_18px_55px_rgba(15,23,42,0.16)]">
                 <div className="text-[10px] font-black uppercase tracking-[.18em] text-cyan-200">How this works</div>
-                <h2 className="mt-1 text-2xl font-black text-white">Respectful job tracking</h2>
+                <h2 className="mt-1 text-2xl font-black text-white">Job-only tracking</h2>
                 <div className="mt-4 space-y-3 text-sm font-bold leading-6 text-slate-300">
                   <p>Workers appear here after they start a job.</p>
                   <p>Pause and resume stay on the same timesheet.</p>
-                  <p>Finish Job removes the worker from the active map and creates daily/weekly hours.</p>
-                  <p className="rounded-2xl border border-cyan-300/20 bg-white/[0.06] p-3 text-slate-200">Churvox only shows a worker while a job is active. It does not track workers all day.</p>
+                  <p>Finishing a job removes the worker from the active map and saves daily and weekly hours.</p>
+                  <p className="rounded-2xl border border-cyan-300/20 bg-white/[0.06] p-3 text-slate-200">Churvox shows workers only while they are clocked into an active job. It does not track staff all day.</p>
                 </div>
               </div>
             </aside>
