@@ -88,27 +88,30 @@ function PlansCommandContent() {
           backdrop-filter: none !important;
         }
         .plans-command-shell .cv-plans-hero {
-          min-height: 150px !important;
+          min-height: 128px !important;
           border-radius: 26px !important;
           padding: clamp(22px, 3vw, 34px) !important;
         }
         .plans-command-shell .cv-plans-hero h1 {
-          font-size: 0 !important;
+          max-width: 780px !important;
+          font-size: clamp(34px, 4.3vw, 58px) !important;
           line-height: .92 !important;
+          letter-spacing: -.07em !important;
         }
         .plans-command-shell .cv-plans-hero h1::after {
-          content: "Choose how much admin Churvox handles.";
-          display: block;
-          font-size: clamp(34px, 4.5vw, 62px) !important;
+          content: none !important;
+          display: none !important;
         }
         .plans-command-shell .cv-plans-hero p:not(.cv-kicker) {
-          font-size: 0 !important;
+          max-width: 860px !important;
+          margin-top: 16px !important;
+          font-size: clamp(14px, 1.2vw, 16px) !important;
+          line-height: 1.5 !important;
+          font-weight: 800 !important;
         }
         .plans-command-shell .cv-plans-hero p:not(.cv-kicker)::after {
-          content: "Start simple, add crew when you need it, or let Operator prepare the admin for approval. Command unlocks MYOB, payroll workspace and higher limits.";
-          display: block;
-          font-size: clamp(14px, 1.4vw, 17px) !important;
-          line-height: 1.55 !important;
+          content: none !important;
+          display: none !important;
         }
         .plans-command-shell .cv-grid {
           gap: 16px !important;
