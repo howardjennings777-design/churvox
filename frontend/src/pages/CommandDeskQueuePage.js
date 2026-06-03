@@ -4,16 +4,11 @@ import { Link, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
 
-const nav = [
-  ["Command Board", "/dashboard", "CB"],
-  ["Jobs", "/jobs", "JB"],
-  ["Crew Map", "/crew-map", "MP"],
-  ["Clients", "/clients", "CL"],
-  ["Quotes", "/quotes", "QT"],
-  ["Invoices", "/invoices", "IV"],
-  ["Team", "/team", "TM"],
-  ["Settings", "/settings", "ST"],
-  ["Support", "/support", "?"],
+const navGroups = [
+  { title: "Command", items: [["Command Board", "/dashboard", "CB"], ["AI Operator", "/ai-operator", "AI"], ["Notifications", "/notifications", "NT"]] },
+  { title: "Work", items: [["Jobs", "/jobs", "JB"], ["Assign Jobs", "/dispatch", "DP"], ["Crew Map", "/crew-map", "MP"], ["Clients", "/clients", "CL"], ["Quotes", "/quotes", "QT"], ["Invoices", "/invoices", "IV"], ["Money Desk", "/money-desk", "$" ]] },
+  { title: "Crew & Admin", items: [["Team", "/team", "TM"], ["Payroll", "/payroll", "PR"], ["Reports", "/reports", "RP"]] },
+  { title: "System", items: [["Plans", "/plans", "PL"], ["Billing", "/billing-confidence", "BI"], ["Settings", "/settings", "ST"], ["Support", "/support", "?"]] },
 ];
 
 const fieldLabels = {
@@ -39,6 +34,13 @@ const lanes = [
   { key: "payment", title: "Payment reminders", text: "Overdue and payment chase approvals.", panel: "bg-rose-950 border-rose-300/30", card: "bg-rose-900/40 border-rose-300/20", pill: "bg-rose-300 text-rose-950" },
   { key: "job", title: "Job actions", text: "Job review and next-step approvals.", panel: "bg-blue-950 border-blue-300/30", card: "bg-blue-900/40 border-blue-300/20", pill: "bg-blue-300 text-blue-950" },
 ];
+
+function isActivePath(pathname, href) {
+  if (href === "/dashboard") return pathname === "/dashboard" || pathname === "/overview";
+  if (href === "/dispatch") return pathname === "/dispatch" || pathname === "/dispatch-board";
+  if (href === "/money-desk") return pathname === "/money-desk" || pathname === "/money";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 function has(value) {
   if (value === undefined || value === null) return false;
@@ -168,22 +170,32 @@ function dedupe(items) {
 function Sidebar() {
   const { pathname } = useLocation();
   return (
-    <aside className="hidden h-full w-[292px] shrink-0 overflow-y-auto bg-[#0f1722] p-4 text-white lg:block">
-      <div className="mb-6 flex items-center gap-3">
-        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-cyan-400 font-black text-slate-950">C</div>
+    <aside className="hidden h-full w-[252px] shrink-0 overflow-y-auto bg-[#0f1722] p-4 text-white lg:block">
+      <div className="mb-5 flex items-center gap-3">
+        <div className="grid h-9 w-9 place-items-center rounded-2xl bg-cyan-400 text-sm font-black text-slate-950">C</div>
         <div>
-          <div className="text-sm font-black">CHURVOX</div>
-          <div className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Command Desk</div>
+          <div className="text-xs font-black tracking-[0.03em]">CHURVOX</div>
+          <div className="text-[8px] font-black uppercase tracking-[.18em] text-slate-400">Command Desk</div>
         </div>
       </div>
-      <nav className="space-y-1">
-        {nav.map(([name, href, icon]) => (
-          <Link key={href} to={href} className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-black ${pathname === href ? "bg-cyan-300 text-slate-950" : "text-slate-300 hover:bg-white/10"}`}>
-            <span className="grid h-7 w-7 place-items-center rounded-xl bg-white/10 text-[10px]">{icon}</span>
-            {name}
-          </Link>
+      <div className="space-y-4">
+        {navGroups.map((group) => (
+          <section key={group.title}>
+            <div className="mb-2 px-2 text-[9px] font-black uppercase tracking-[.18em] text-slate-500">{group.title}</div>
+            <nav className="grid gap-1">
+              {group.items.map(([name, href, icon]) => {
+                const active = isActivePath(pathname, href);
+                return (
+                  <Link key={href} to={href} className={`flex min-h-[34px] items-center gap-2.5 rounded-2xl px-2.5 py-2 text-xs font-black ${active ? "bg-cyan-300 text-slate-950" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
+                    <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-xl text-[8px] font-black ${active ? "bg-slate-950 text-white" : "bg-white/10 text-cyan-200"}`}>{icon}</span>
+                    <span className="truncate">{name}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </section>
         ))}
-      </nav>
+      </div>
     </aside>
   );
 }
