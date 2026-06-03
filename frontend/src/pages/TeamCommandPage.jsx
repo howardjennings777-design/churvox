@@ -6,14 +6,14 @@ import CommandSlipEverything from "../components/CommandSlipEverything";
 
 const navGroups = [
   { title: "Command", items: [["Command Board", "/dashboard", "CB"], ["AI Operator", "/ai-operator", "AI"], ["Approvals", "/ai-operator/approvals", "OK"], ["Notifications", "/notifications", "NT"]] },
-  { title: "Work", items: [["Jobs", "/jobs", "JB"], ["Dispatch", "/dispatch", "DP"], ["Clients", "/clients", "CL"], ["Quotes", "/quotes", "QT"], ["Invoices", "/invoices", "IV"], ["Money Desk", "/money-desk", "$"]] },
+  { title: "Work", items: [["Jobs", "/jobs", "JB"], ["Assign Jobs", "/dispatch", "DP"], ["Clients", "/clients", "CL"], ["Quotes", "/quotes", "QT"], ["Invoices", "/invoices", "IV"], ["Money Desk", "/money-desk", "$"]] },
   { title: "Crew & Admin", items: [["Team", "/team", "TM"], ["Crew Ops", "/crew-ops", "CO"], ["Payroll", "/payroll", "PR"], ["Reports", "/reports", "RP"]] },
   { title: "System", items: [["Setup", "/onboarding", "SU"], ["Trade Presets", "/trade-presets", "TP"], ["Automation", "/automation", "AU"], ["Integrations", "/integrations", "IN"], ["Operator Tools", "/operator-tools", "OT"], ["Plans", "/plans", "PL"], ["Billing", "/billing-confidence", "BI"], ["Settings", "/settings", "ST"], ["Support", "/support", "?"]] },
 ];
 
 const sampleWorkers = [
   { id: "sample-w1", name: "Mike", email: "mike@example.com", role: "worker", status: "active", region: "North", phone: "021 000 000", skills: ["Lawn care", "Hedges"], assigned_jobs_count: 3 },
-  { id: "sample-w2", name: "Tane", email: "tane@example.com", role: "manager", status: "active", region: "South", phone: "021 111 111", skills: ["Dispatch", "Garden tidy"], assigned_jobs_count: 5 },
+  { id: "sample-w2", name: "Tane", email: "tane@example.com", role: "manager", status: "active", region: "South", phone: "021 111 111", skills: ["Assigning work", "Garden tidy"], assigned_jobs_count: 5 },
   { id: "sample-w3", name: "Jo", email: "jo@example.com", role: "worker", status: "available", region: "Central", phone: "021 222 222", skills: ["Cleanup", "Photos"], assigned_jobs_count: 1 },
   { id: "sample-w4", name: "Payroll Admin", email: "payroll@example.com", role: "payroll", status: "limited", region: "Office", phone: "", skills: ["Timesheets", "Payroll"], assigned_jobs_count: 0 },
 ];
@@ -64,12 +64,26 @@ function jobCount(worker) {
   return Number(worker?.assigned_jobs_count || worker?.jobs_count || worker?.open_jobs || worker?.active_jobs || 0);
 }
 
+function regionText(worker) {
+  const region = worker?.region || worker?.area;
+  return region ? `Region: ${region} · Jobs assigned: ${jobCount(worker)}` : `Region not set · Jobs assigned: ${jobCount(worker)}`;
+}
+
+function statusLabel(status) {
+  if (["invited", "pending"].includes(status)) return "Invited";
+  if (["active", "available", "online"].includes(status)) return "Active";
+  if (["busy", "assigned", "working"].includes(status)) return "Busy";
+  if (["limited"].includes(status)) return "Limited";
+  if (["inactive", "disabled", "removed"].includes(status)) return "Inactive";
+  return pretty(status);
+}
+
 function statusStyle(status) {
-  if (["active", "available", "online"].includes(status)) return "border-emerald-200 bg-emerald-50 text-emerald-800";
-  if (["busy", "assigned", "working"].includes(status)) return "border-blue-200 bg-blue-50 text-blue-800";
-  if (["invited", "pending"].includes(status)) return "border-amber-200 bg-amber-50 text-amber-800";
-  if (["inactive", "disabled", "removed"].includes(status)) return "border-red-200 bg-red-50 text-red-800";
-  return "border-slate-200 bg-slate-100 text-slate-700";
+  if (["active", "available", "online"].includes(status)) return "border-emerald-300/40 bg-emerald-400/15 text-emerald-100";
+  if (["busy", "assigned", "working"].includes(status)) return "border-cyan-300/40 bg-cyan-300/15 text-cyan-100";
+  if (["invited", "pending"].includes(status)) return "border-amber-300/50 bg-amber-300/18 text-amber-100";
+  if (["inactive", "disabled", "removed"].includes(status)) return "border-red-300/40 bg-red-400/15 text-red-100";
+  return "border-slate-300/30 bg-white/10 text-slate-100";
 }
 
 function Sidebar() {
@@ -88,7 +102,7 @@ function Sidebar() {
               {group.items.map(([label, href, icon]) => {
                 const active = isActivePath(pathname, href);
                 return (
-                  <Link key={href} to={href} className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-black ${active ? "bg-white text-slate-950" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
+                  <Link key={href} to={href} className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-black ${active ? "bg-cyan-300 text-slate-950 shadow-lg shadow-cyan-300/20" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
                     <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-xl text-[10px] font-black ${active ? "bg-slate-950 text-white" : "bg-white/10 text-cyan-200"}`}>{icon}</span>
                     <span className="truncate">{label}</span>
                   </Link>
@@ -105,22 +119,22 @@ function Sidebar() {
 function WorkerCard({ worker, onOpen }) {
   const status = statusOf(worker);
   return (
-    <article className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_70px_rgba(15,23,42,0.10)]">
+    <article className="rounded-[22px] border border-white/10 bg-white/[0.035] p-4 text-white shadow-[0_14px_38px_rgba(15,23,42,0.12)] transition hover:-translate-y-0.5 hover:border-cyan-300/40 hover:bg-white/[0.06]">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{pretty(workerRole(worker))}</span>
-          <h3 className="mt-1 text-lg font-black tracking-[-0.04em] text-slate-950">{workerName(worker)}</h3>
+          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/70">{pretty(workerRole(worker))}</span>
+          <h3 className="mt-1 text-lg font-black tracking-[-0.04em] text-white">{workerName(worker)}</h3>
         </div>
-        <span className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${statusStyle(status)}`}>{pretty(status)}</span>
+        <span className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${statusStyle(status)}`}>{statusLabel(status)}</span>
       </div>
-      <div className="mt-3 space-y-1 text-sm font-bold text-slate-600">
+      <div className="mt-3 space-y-1 text-sm font-bold text-slate-200">
         <div>{worker?.email || "No email saved"}</div>
-        <div className="text-slate-400">{worker?.phone || worker?.mobile || "No phone saved"}</div>
-        <div className="text-slate-500">Region: {worker?.region || worker?.area || "Not set"} · Jobs: {jobCount(worker)}</div>
+        <div className="text-slate-300/80">{worker?.phone || worker?.mobile || "No phone saved"}</div>
+        <div className="text-slate-300/80">{regionText(worker)}</div>
       </div>
       <div className="mt-4 flex flex-wrap gap-3">
-        <button type="button" onClick={() => onOpen(worker)} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Review slip</button>
-        <Link to="/dispatch" className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Dispatch</Link>
+        <button type="button" onClick={() => onOpen(worker)} className="rounded-xl border border-cyan-300/40 bg-cyan-300/10 px-4 py-2 text-sm font-black text-cyan-100 hover:bg-cyan-300/20">Review member</button>
+        <Link to="/dispatch" className="rounded-xl bg-cyan-300 px-4 py-2 text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200">Assign work</Link>
       </div>
     </article>
   );
@@ -131,53 +145,84 @@ function WorkerSlip({ worker, onClose }) {
   const status = statusOf(worker);
   const skills = arr(worker?.skills || worker?.trade_skills || worker?.tags);
   return (
-    <div className="fixed inset-0 z-[2147483647] h-[100dvh] w-screen overflow-hidden bg-[#f5f7f1] text-slate-950" role="dialog" aria-modal="true">
-      <div className="flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#f5f7f1]">
-        <header className="relative overflow-hidden border-b border-slate-800 bg-slate-950 p-6 text-white md:p-7">
-          <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-blue-500/20 blur-3xl" />
-          <div className="relative flex items-start justify-between gap-4">
-            <div>
-              <div className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Crew Work Slip</div>
-              <h2 className="mt-4 text-3xl font-black leading-[0.95] tracking-[-0.07em] md:text-5xl">{workerName(worker)}</h2>
+    <div className="fixed inset-0 z-[2147483647] h-[100dvh] w-screen overflow-hidden bg-[#0f1722] text-slate-950" role="dialog" aria-modal="true">
+      <section className="flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#0f1722]">
+        <header className="shrink-0 border-b border-white/10 bg-[#0f1722] px-5 py-5 text-white md:px-9 md:py-7">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-200">Team member review</div>
+              <h2 className="mt-3 text-4xl font-black leading-[0.9] tracking-[-0.075em] text-white md:text-6xl">{workerName(worker)}</h2>
+              <p className="mt-3 max-w-5xl text-sm font-bold leading-6 text-slate-300">{pretty(workerRole(worker))} · {worker?.region || worker?.area || "Region not set"}</p>
             </div>
-            <button type="button" onClick={onClose} className="rounded-2xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-black text-white hover:bg-white/15">Close</button>
+            <button type="button" onClick={onClose} className="shrink-0 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/20">Close</button>
           </div>
-          <p className="relative mt-5 max-w-xl text-sm font-semibold leading-6 text-slate-300">{pretty(workerRole(worker))} · {worker?.region || worker?.area || "Region not set"}</p>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto bg-[#f4f6f8] p-5 md:p-6">
-          <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">What needs attention</div>
-            <p className="mt-3 text-lg font-black tracking-[-0.035em] text-slate-950">Status: {pretty(status)}</p>
-            <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-bold leading-6 text-blue-950">Check availability, role, region and workload before assigning more jobs.</div>
-          </section>
+        <main className="min-h-0 flex-1 overflow-y-auto bg-[#f5f7f1] p-4 md:p-7">
+          <div className="grid min-h-full w-full gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
+            <div className="space-y-5">
+              <section className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
+                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-amber-600">What needs attention</div>
+                <h2 className="mt-3 text-3xl font-black tracking-[-0.06em] text-slate-950">{statusLabel(status)}</h2>
+                <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-black leading-6 text-blue-950">Check availability, role, region and workload before assigning more jobs.</div>
+              </section>
 
-          <section className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Email</div><div className="mt-1 text-sm font-black text-slate-950">{worker?.email || "No email saved"}</div></div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Phone</div><div className="mt-1 text-sm font-black text-slate-950">{worker?.phone || worker?.mobile || "No phone saved"}</div></div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Role</div><div className="mt-1 text-sm font-black text-slate-950">{pretty(workerRole(worker))}</div></div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Open jobs</div><div className="mt-1 text-sm font-black text-slate-950">{jobCount(worker)}</div></div>
-          </section>
+              <section className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
+                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">Member details</div>
+                <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Email</div><div className="mt-1 text-sm font-black text-slate-950">{worker?.email || "No email saved"}</div></div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Phone</div><div className="mt-1 text-sm font-black text-slate-950">{worker?.phone || worker?.mobile || "No phone saved"}</div></div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Role</div><div className="mt-1 text-sm font-black text-slate-950">{pretty(workerRole(worker))}</div></div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Jobs assigned</div><div className="mt-1 text-sm font-black text-slate-950">{jobCount(worker)}</div></div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Region</div><div className="mt-1 text-sm font-black text-slate-950">{worker?.region || worker?.area || "Region not set"}</div></div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Status</div><div className="mt-1 text-sm font-black text-slate-950">{statusLabel(status)}</div></div>
+                </div>
+              </section>
 
-          <section className="mt-4 rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Skills / notes</div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {skills.length ? skills.map((skill) => <span key={String(skill)} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-black text-slate-700">{String(skill)}</span>) : <span className="text-sm font-bold text-slate-500">No skills saved yet.</span>}
-            </div>
-            {worker?.notes || worker?.internal_notes ? <p className="mt-4 text-sm font-bold leading-6 text-slate-600">{worker.notes || worker.internal_notes}</p> : null}
-          </section>
-        
+              <section className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
+                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">Skills / notes</div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {skills.length ? skills.map((skill) => <span key={String(skill)} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-black text-slate-700">{String(skill)}</span>) : <span className="text-sm font-bold text-slate-500">No skills saved yet.</span>}
+                </div>
+                {worker?.notes || worker?.internal_notes ? <p className="mt-4 text-sm font-bold leading-6 text-slate-600">{worker.notes || worker.internal_notes}</p> : null}
+              </section>
+
               <CommandSlipEverything
                 record={worker}
-                context="WorkerSlip"
+                context="Team member review"
               />
-</main>
+            </div>
 
-        <footer className="flex flex-wrap gap-3 border-t border-slate-200 bg-white p-5">
-          <Link to="/dispatch" className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Open dispatch</Link>
-          <Link to="/crew-ops" className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-800 hover:bg-slate-50">Crew ops</Link>
-        </footer>
-      </div>
+            <aside className="rounded-[30px] border border-white/10 bg-[#0f1722] p-5 text-white shadow-[0_18px_55px_rgba(15,23,42,0.18)] xl:sticky xl:top-0 xl:h-fit">
+              <div className="text-[11px] font-black uppercase tracking-[0.18em] text-cyan-200">Member actions</div>
+              <h2 className="mt-2 text-3xl font-black tracking-[-0.05em] text-white">Review first.</h2>
+              <div className="mt-5 rounded-2xl bg-white/10 p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Status</div><div className="mt-2 text-sm font-black text-white">{statusLabel(status)}</div></div>
+              <div className="mt-3 rounded-2xl bg-white/10 p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Jobs assigned</div><div className="mt-2 text-sm font-black text-white">{jobCount(worker)}</div></div>
+              <div className="mt-5 grid gap-3">
+                <Link to="/dispatch" className="rounded-2xl bg-cyan-300 px-5 py-3 text-center text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200">Assign work</Link>
+                <Link to="/crew-ops" className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-center text-sm font-black text-white hover:bg-white/15">Open crew ops</Link>
+                <button type="button" onClick={onClose} className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/15">Back to team</button>
+              </div>
+            </aside>
+          </div>
+        </main>
+      </section>
+    </div>
+  );
+}
+
+function StatCard({ label, value, tone }) {
+  const styles = {
+    dark: "border-slate-800 bg-[#0f1722] text-white",
+    amber: "border-amber-400/35 bg-[#2b2115] text-amber-100",
+    cyan: "border-cyan-400/30 bg-[#102a3a] text-cyan-100",
+    green: "border-emerald-400/30 bg-[#102d27] text-emerald-100",
+  };
+
+  return (
+    <div className={`rounded-[22px] border p-4 shadow-[0_14px_38px_rgba(15,23,42,0.14)] ${styles[tone] || styles.dark}`}>
+      <div className="text-[10px] font-black uppercase tracking-[0.16em] opacity-80">{label}</div>
+      <div className="mt-3 text-3xl font-black tracking-[-0.06em]">{value}</div>
     </div>
   );
 }
@@ -219,46 +264,45 @@ function TeamCommandContent() {
   }, [list]);
 
   return (
-    <main className="fixed inset-0 z-[2147483000] overflow-y-auto bg-[#eef1f4] text-slate-950">
+    <main className="fixed inset-0 z-[2147483000] overflow-y-auto bg-[#f5f7f1] text-slate-950">
       <div className="flex min-h-screen">
         <Sidebar />
         <section className="min-w-0 flex-1 p-4 pb-28 md:p-6 md:pb-28 xl:p-8 xl:pb-28">
-          <header className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
-            <div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Team Command</div><div className="text-sm font-bold text-slate-500">Crew, roles, workload, availability and dispatch decisions.</div></div>
-            <div className="flex flex-wrap gap-3"><Link to="/dispatch" className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Dispatch</Link><Link to="/crew-ops" className="rounded-2xl bg-amber-500 px-4 py-2 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400">Crew ops</Link></div>
-          </header>
-
           <section className="grid gap-5 xl:grid-cols-[1fr_430px]">
             <div className="overflow-hidden rounded-[30px] border border-slate-900 bg-slate-950 shadow-[0_26px_80px_rgba(15,23,42,0.20)]">
               <div className="relative p-6 md:p-8">
-                <div className="absolute right-0 top-0 h-56 w-56 rounded-full bg-blue-500/10 blur-3xl" />
+                <div className="absolute right-0 top-0 h-56 w-56 rounded-full bg-cyan-500/10 blur-3xl" />
                 <div className="relative">
-                  <span className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Team Command</span>
-                  <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">Put the right worker on the right job.</h1>
-                  <p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Churvox keeps crew roles, workload and dispatch context visible before the owner approves assignment decisions.</p>
+                  <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-200">Team</span>
+                  <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">Keep your crew organised and ready for work.</h1>
+                  <p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-slate-300 md:text-base">See who is available, who is busy, and who needs to be invited or assigned before work starts.</p>
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    <Link to="/dispatch" className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/15">Assign jobs</Link>
+                    <Link to="/crew-ops" className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200">Open crew ops</Link>
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
-              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Crew health</div>
-              <h2 className="mt-2 text-2xl font-black tracking-[-0.055em] text-slate-950">What needs attention</h2>
+            <div className="rounded-[30px] border border-slate-900 bg-slate-950 p-5 text-white shadow-[0_18px_55px_rgba(15,23,42,0.16)]">
+              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200">Crew health</div>
+              <h2 className="mt-2 text-2xl font-black tracking-[-0.055em] text-white">What needs attention</h2>
               <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><div className="text-2xl font-black text-emerald-800">{counts.available}</div><div className="text-xs font-black uppercase tracking-[0.14em] text-emerald-700">Available</div></div>
-                <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4"><div className="text-2xl font-black text-blue-800">{counts.active}</div><div className="text-xs font-black uppercase tracking-[0.14em] text-blue-700">Active crew</div></div>
-                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4"><div className="text-2xl font-black text-amber-800">{counts.busy}</div><div className="text-xs font-black uppercase tracking-[0.14em] text-amber-700">Heavy workload</div></div>
+                <StatCard label="Available crew" value={counts.available} tone="green" />
+                <StatCard label="Working now" value={counts.active} tone="cyan" />
+                <StatCard label="High workload" value={counts.busy} tone="amber" />
               </div>
             </div>
           </section>
 
           <section className="mt-5 grid gap-4 md:grid-cols-4">
-            <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Team members</div><div className="mt-3 text-3xl font-black tracking-[-0.06em]">{counts.total}</div></div>
-            <div className="rounded-[22px] border border-emerald-200 bg-emerald-50 p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Available</div><div className="mt-3 text-3xl font-black tracking-[-0.06em] text-emerald-900">{counts.available}</div></div>
-            <div className="rounded-[22px] border border-amber-200 bg-amber-50 p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-700">Busy</div><div className="mt-3 text-3xl font-black tracking-[-0.06em] text-amber-900">{counts.busy}</div></div>
-            <div className="rounded-[22px] border border-blue-200 bg-blue-50 p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">Invites</div><div className="mt-3 text-3xl font-black tracking-[-0.06em] text-blue-900">{counts.invited}</div></div>
+            <StatCard label="Team members" value={counts.total} tone="dark" />
+            <StatCard label="Available crew" value={counts.available} tone="green" />
+            <StatCard label="Busy now" value={counts.busy} tone="amber" />
+            <StatCard label="Pending invites" value={counts.invited} tone="cyan" />
           </section>
 
-          <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
-            <div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600">Crew list</div><h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-slate-950">Open team members</h2></div>{loading && <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">Loading…</span>}{error && <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700">Showing sample layout</span>}</div>
+          <section className="mt-5 rounded-[28px] border border-slate-900 bg-slate-950 p-5 text-white shadow-[0_18px_55px_rgba(15,23,42,0.16)]">
+            <div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200">Crew list</div><h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-white">Team members</h2></div>{loading && <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-slate-200">Loading…</span>}{error && <span className="rounded-full bg-amber-300/15 px-3 py-1 text-xs font-black text-amber-100">Showing sample layout</span>}</div>
             <div className="grid gap-4 xl:grid-cols-2">
               {list.map((worker) => <WorkerCard key={idOf(worker) || workerName(worker)} worker={worker} onOpen={setActiveWorker} />)}
             </div>
