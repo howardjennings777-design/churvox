@@ -11,6 +11,8 @@ import {
 } from "./industrialCommandTheme";
 
 const configs = {
+  command: { endpoint: null, title: "Churvox does the admin. You approve.", kicker: "Command Board", subtitle: "Your owner command centre for urgent work, AI-prepared actions, approvals and daily business control.", create: "/jobs/new", createLabel: "Create job", detail: (x) => x.href || "/dashboard", samples: [{ title: "Review today’s work", status: "ready", href: "/jobs" }, { title: "Check invoices", status: "approval ready", href: "/invoices" }, { title: "Assign open jobs", status: "needs action", href: "/crew-map" }] },
+  notifications: { endpoint: "/notifications", title: "Notifications that need action.", kicker: "Notifications", subtitle: "See job updates, approvals, alerts and owner actions without leaving the Command Desk.", create: "/dashboard", createLabel: "Command Board", detail: (x) => x.href || x.url || "/dashboard", samples: [{ title: "Worker completed a job", status: "new", href: "/jobs" }, { title: "Invoice ready for review", status: "approval", href: "/invoices" }, { title: "Job needs assigning", status: "attention", href: "/crew-map" }] },
   jobs: { endpoint: "/jobs", title: "Keep every job moving.", kicker: "Jobs", subtitle: "See what needs assigning, what is in progress, and what is ready for review or invoice.", create: "/jobs/new", createLabel: "Create job", detail: (x) => `/jobs/${idOf(x)}`, samples: [{ title: "Rental lawn service", client_name: "Green Street Rentals", status: "in_progress" }, { title: "Hedge trim", client_name: "Sarah Williams", status: "assigned" }] },
   clients: { endpoint: "/clients", title: "Clients, jobs and history together.", kicker: "Clients", subtitle: "Keep customer details, addresses and job history in one simple command view.", create: "/clients/new", createLabel: "Add client", detail: (x) => `/clients/${idOf(x)}`, samples: [{ name: "Green Street Rentals", email: "owner@example.com", status: "ready" }, { name: "Sarah Williams", email: "sarah@example.com", status: "ready" }] },
   quotes: { endpoint: "/quotes", title: "Quotes ready to win.", kicker: "Quotes", subtitle: "Track draft quotes, sent quotes and follow-ups in one command view.", create: "/quotes/new", createLabel: "Create quote", detail: (x) => `/quotes/${idOf(x)}`, samples: [{ title: "Rental tidy quote", client_name: "ECB Property Maintenance", status: "draft" }] },
@@ -26,7 +28,7 @@ const configs = {
 function listFrom(res) {
   const data = res?.data ?? res;
   if (Array.isArray(data)) return data;
-  for (const key of ["jobs", "quotes", "invoices", "clients", "customers", "workers", "team", "items", "results", "data"]) if (Array.isArray(data?.[key])) return data[key];
+  for (const key of ["notifications", "alerts", "actions", "jobs", "quotes", "invoices", "clients", "customers", "workers", "team", "items", "results", "data"]) if (Array.isArray(data?.[key])) return data[key];
   return [];
 }
 
@@ -36,7 +38,7 @@ function idOf(item) {
 }
 
 function titleOf(item) {
-  return item?.title || item?.job_title || item?.quote_number || item?.invoice_number || item?.name || item?.full_name || item?.client_name || item?.customer_name || "Open record";
+  return item?.title || item?.message || item?.body || item?.job_title || item?.quote_number || item?.invoice_number || item?.name || item?.full_name || item?.client_name || item?.customer_name || "Open record";
 }
 
 function metaOf(item) {
@@ -44,7 +46,7 @@ function metaOf(item) {
 }
 
 function statusOf(item) {
-  return String(item?.status || item?.job_status || item?.quote_status || item?.invoice_status || "ready").replaceAll("_", " ");
+  return String(item?.status || item?.type || item?.job_status || item?.quote_status || item?.invoice_status || "ready").replaceAll("_", " ");
 }
 
 function Stat({ label, value }) {
@@ -73,7 +75,7 @@ export default function IndustrialSimplePage({ kind }) {
   }, [config.endpoint, get]);
 
   const open = items.length;
-  const ready = items.filter((item) => /ready|sent|active|assigned|progress/i.test(statusOf(item))).length;
+  const ready = items.filter((item) => /ready|sent|active|assigned|progress|approval/i.test(statusOf(item))).length;
   const needs = Math.max(open - ready, 0);
 
   return (
