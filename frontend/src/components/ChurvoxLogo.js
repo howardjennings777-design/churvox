@@ -1,8 +1,8 @@
 import React from "react";
 
 /**
- * Orange CHURVOX logo — this is the correct generated orange CHURVOX mark,
- * not the wrong COMMAND logo. Shared by sidebar, auth, headers and brand spots.
+ * Churvox final logo — C-lane mark + clean wordmark.
+ * Pure inline SVG so it works in navs, invoices, auth, plans, and app shells.
  */
 const SIZE_MAP = {
   sm: "h-7",
@@ -12,33 +12,37 @@ const SIZE_MAP = {
   hero: "h-14 sm:h-16 lg:h-20",
 };
 
-function MarkDefs({ id = "cvxOrangeLogo" }) {
+function MarkDefs({ id = "cvxLogo" }) {
   return (
     <defs>
-      <linearGradient id={`${id}-orange`} x1="9" y1="10" x2="119" y2="119" gradientUnits="userSpaceOnUse">
-        <stop stopColor="#ffb15f" />
-        <stop offset="0.42" stopColor="#ff7a1a" />
-        <stop offset="1" stopColor="#f97316" />
+      <linearGradient id={`${id}-lane`} x1="18" y1="104" x2="112" y2="20" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#77FFC1" />
+        <stop offset="0.42" stopColor="#14D8F4" />
+        <stop offset="0.72" stopColor="#245CFF" />
+        <stop offset="1" stopColor="#A855F7" />
       </linearGradient>
-      <linearGradient id={`${id}-word`} x1="146" y1="40" x2="510" y2="96" gradientUnits="userSpaceOnUse">
-        <stop stopColor="#fff7ed" />
-        <stop offset="0.58" stopColor="#ffedd5" />
-        <stop offset="1" stopColor="#ff7a1a" />
+      <linearGradient id={`${id}-word`} x1="0" y1="16" x2="420" y2="78" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#F8FBFF" />
+        <stop offset="0.72" stopColor="#F8FBFF" />
+        <stop offset="1" stopColor="#62E8F5" />
       </linearGradient>
-      <filter id={`${id}-shadow`} x="-30%" y="-30%" width="160%" height="170%">
-        <feDropShadow dx="0" dy="12" stdDeviation="12" floodColor="#000000" floodOpacity="0.28" />
+      <filter id={`${id}-glow`} x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="2.4" result="blur" />
+        <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.06 0 0 0 0 0.62 0 0 0 0 1 0 0 0 .42 0" />
+        <feBlend in="SourceGraphic" />
       </filter>
     </defs>
   );
 }
 
-function ChurvoxMark({ id = "cvxOrangeLogo" }) {
+function ChurvoxMark({ id = "cvxLogo" }) {
   return (
-    <g filter={`url(#${id}-shadow)`}>
-      <rect x="7" y="7" width="114" height="114" rx="31" fill={`url(#${id}-orange)`} />
-      <path d="M91 31H49c-23 0-41 17-41 38s18 38 41 38h43l-12 20H49c-35 0-62-26-62-58s27-58 62-58h55L91 31Z" fill="#05070a" transform="translate(13 0)" />
-      <path d="M48 55h58L93 75H35l13-20Z" fill="#fff7ed" />
-      <path d="M40 82h42L70 101H28l12-19Z" fill="#fff7ed" opacity="0.92" />
+    <g filter={`url(#${id}-glow)`}>
+      <path d="M95 25H49c-24 0-43 18-43 40h19c0-12 10-22 24-22h46l17-9-17-9Z" fill={`url(#${id}-lane)`} />
+      <path d="M103 51H50c-15 0-27 11-27 25s12 25 27 25h54L89 84H51c-5 0-9-4-9-8s4-8 9-8h52l17-8.5L103 51Z" fill={`url(#${id}-lane)`} />
+      <path d="M10 68h20" stroke={`url(#${id}-lane)`} strokeWidth="10" strokeLinecap="round" />
+      <circle cx="32" cy="68" r="12" fill="#06152C" stroke={`url(#${id}-lane)`} strokeWidth="6" />
+      <path d="M66 55 73 67l13 7-13 7-7 13-7-13-13-7 13-7 7-12Z" fill="#62E8F5" />
     </g>
   );
 }
@@ -51,8 +55,8 @@ export function ChurvoxLogo({
   tone = "auto",
 }) {
   const heightCls = SIZE_MAP[size] || SIZE_MAP.md;
-  const id = `cvxOrangeLogo-${variant}-${size}`;
-  const wordFill = tone === "dark" ? "#111827" : tone === "light" ? "#fff7ed" : `url(#${id}-word)`;
+  const id = `cvxLogo-${variant}-${size}`;
+  const wordFill = tone === "dark" ? "#06152C" : tone === "light" ? "#F8FBFF" : `url(#${id}-word)`;
 
   if (variant === "mark") {
     return (
@@ -73,7 +77,7 @@ export function ChurvoxLogo({
 
   return (
     <svg
-      viewBox="0 0 560 128"
+      viewBox="0 0 520 128"
       role="img"
       aria-label="Churvox"
       className={`${heightCls} w-auto block ${className}`.trim()}
@@ -84,15 +88,15 @@ export function ChurvoxLogo({
       <MarkDefs id={id} />
       <ChurvoxMark id={id} />
       <text
-        x="148"
+        x="146"
         y="82"
         fontFamily="Outfit, Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
-        fontWeight="950"
-        fontSize="62"
+        fontWeight="850"
+        fontSize="60"
         fill={wordFill}
-        letterSpacing="-3.2"
+        letterSpacing="-2.6"
       >
-        CHURVOX
+        Churvox
       </text>
     </svg>
   );
