@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 188 180" role="img" aria-label="CHURVOX">
+  <defs>
+    <linearGradient id="orange" x1="18" y1="24" x2="178" y2="166" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffb15f"/>
+      <stop offset="0.38" stop-color="#ff7900"/>
+      <stop offset="1" stop-color="#f05a00"/>
+    </linearGradient>
+    <linearGradient id="dark" x1="36" y1="48" x2="158" y2="138" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2a3038"/>
+      <stop offset="1" stop-color="#070b10"/>
+    </linearGradient>
+  </defs>
+  <rect width="188" height="180" rx="38" fill="#fff7ed"/>
+  <path d="M122 18H54L18 52v76l36 34h68l24-24h-58l-18 18-36-34V58l36-34h58l18 18 24-24h-48Z" fill="url(#orange)"/>
+  <path d="M53 54h31v25H53V54Zm47 0h31v25h-31V54ZM53 101h31v25H53v-25Zm47 0h31v25h-31v-25Z" fill="url(#dark)"/>
+  <path d="M84 79h16v22H84V79Zm-31 0h31v22H53V79Zm47 0h31v22h-31V79Z" fill="#f8fafc"/>
+  <path d="M78 72h28l16 18-16 18H78L62 90l16-18Z" fill="#ff7900"/>
+</svg>
