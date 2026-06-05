@@ -7,6 +7,7 @@ import './concept-c/LoggedInLightBackgroundOverride.css';
 import './industrial-command-global.css';
 import './public-industrial-theme.css';
 import './background-only-force.css';
+import './command-force-dark-boxes.css';
 import './runtime/churvoxClearOldCache';
 import './runtime/churvoxSlipOnlyMode';
 
