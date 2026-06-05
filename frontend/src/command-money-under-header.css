@@ -1,2 +1,25 @@
-/* Disabled: old CSS grid hack was stacking Command cards on top of each other.
-   Money Snapshot is now placed under the header directly in IndustrialSimplePage.jsx. */
+/* Old money layout override disabled. */
+
+.cv-command-prepared-slips {
+  position: fixed;
+  top: 90px;
+  right: 20px;
+  width: min(480px, calc(100vw - 40px));
+  max-height: calc(100vh - 120px);
+  overflow: auto;
+  z-index: 9999;
+  pointer-events: auto;
+}
+
+.cv-command-prepared-slips .cv-command-tile {
+  min-height: 0;
+}
+
+@media (max-width: 900px) {
+  .cv-command-prepared-slips {
+    top: 76px;
+    left: 10px;
+    right: 10px;
+    width: auto;
+  }
+}
