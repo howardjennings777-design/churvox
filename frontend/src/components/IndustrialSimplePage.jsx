@@ -116,7 +116,7 @@ function SimpleLine({ title, meta, status }) {
   );
 }
 
-function CommandTile({ label, title, count, text, color, to, actionLabel = "Open", items = [], children }) {
+function CommandTile({ label, title, count, text, color, to, actionLabel = "Open", items = [], children, className = "" }) {
   const body = (
     <>
       <SecurityTape color={color} />
@@ -135,9 +135,9 @@ function CommandTile({ label, title, count, text, color, to, actionLabel = "Open
       </div>
     </>
   );
-  const className = "cv-command-tile relative min-h-[220px] overflow-hidden rounded-[28px] border border-white/10 p-4 pl-7 text-white no-underline";
-  if (!to) return <div data-cv-command-tile="true" className={className} style={tileStyle}>{body}</div>;
-  return <Link data-cv-command-tile="true" to={to} className={`${className} transition hover:-translate-y-0.5 hover:border-white/20`} style={tileStyle}>{body}</Link>;
+  const baseClass = `cv-command-tile relative min-h-[220px] overflow-hidden rounded-[28px] border border-white/10 p-4 pl-7 text-white no-underline ${className}`;
+  if (!to) return <div data-cv-command-tile="true" className={baseClass} style={tileStyle}>{body}</div>;
+  return <Link data-cv-command-tile="true" to={to} className={`${baseClass} transition hover:-translate-y-0.5 hover:border-white/20`} style={tileStyle}>{body}</Link>;
 }
 
 function RecordBox({ item, config, index }) {
@@ -174,9 +174,9 @@ function makeCommandData({ jobs, invoices, quotes, workers, aiActions }) {
   return { todayJobs, activeJobs, unassignedJobs, completedReadyInvoice, draftInvoices, readyInvoices, overdueInvoices, paidInvoices, outstanding, overdueTotal, followQuotes, availableWorkers, activePersonJob, prepared };
 }
 
-function MoneySnapshotTile({ data }) {
+function MoneySnapshotTile({ data, className = "" }) {
   return (
-    <CommandTile label="Cash flow" title="Money snapshot" count={asMoney(data.outstanding)} text={`${asMoney(data.overdueTotal)} overdue. ${data.paidInvoices.length} paid invoice${data.paidInvoices.length === 1 ? "" : "s"} found.`} color="#f43f5e" to="/money-desk" actionLabel="Open money desk">
+    <CommandTile label="Cash flow" title="Money snapshot" count={asMoney(data.outstanding)} text={`${asMoney(data.overdueTotal)} overdue. ${data.paidInvoices.length} paid invoice${data.paidInvoices.length === 1 ? "" : "s"} found.`} color="#f43f5e" to="/money-desk" actionLabel="Open money desk" className={className}>
       <div className="grid gap-2 sm:grid-cols-3"><SimpleLine title={asMoney(data.outstanding)} meta="Outstanding" status="unpaid" /><SimpleLine title={asMoney(data.overdueTotal)} meta="Overdue" status="chase" /><SimpleLine title={String(data.paidInvoices.length)} meta="Paid invoices" status="paid" /></div>
     </CommandTile>
   );
@@ -190,21 +190,20 @@ function CommandLayout({ config, items, dashboard, loading, open, ready, needs }
     <main className={industrialPageShell} data-industrial-simple-page="command" data-command-canvas>
       <section className={`${industrialContentLane} space-y-5`}>
         <section className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,.75fr)]">
-          <div data-cv-command-tile="true" className="cv-command-tile relative h-fit overflow-hidden rounded-[30px] border border-white/10 p-5 pl-8 text-white md:p-6 md:pl-9" style={tileStyle}>
-            <SecurityTape color="#fb923c" />
-            <span className={industrialChip}>{config.kicker}</span>
-            <h1 className="mt-4 max-w-4xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">{config.title}</h1>
-            <p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-slate-300 md:text-base">{config.subtitle}</p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link to="/ai-operator" className={`rounded-2xl px-5 py-3 text-sm font-black ${industrialAction}`}>Review AI actions</Link>
-              <Link to="/jobs/new" className={`rounded-2xl px-5 py-3 text-sm font-black ${industrialGhost}`}>Create job</Link>
+          <div className="grid gap-5">
+            <div data-cv-command-tile="true" className="cv-command-tile relative h-fit overflow-hidden rounded-[30px] border border-white/10 p-5 pl-8 text-white md:p-6 md:pl-9" style={tileStyle}>
+              <SecurityTape color="#fb923c" />
+              <span className={industrialChip}>{config.kicker}</span>
+              <h1 className="mt-4 max-w-4xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">{config.title}</h1>
+              <p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-slate-300 md:text-base">{config.subtitle}</p>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <Link to="/ai-operator" className={`rounded-2xl px-5 py-3 text-sm font-black ${industrialAction}`}>Review AI actions</Link>
+                <Link to="/jobs/new" className={`rounded-2xl px-5 py-3 text-sm font-black ${industrialGhost}`}>Create job</Link>
+              </div>
             </div>
+            <MoneySnapshotTile data={data} className="min-h-[170px]" />
           </div>
-          <CommandTile label="AI Priority" title="What needs approval" count={data.prepared.length || needs} text="AI has grouped the admin that needs owner attention. Check these first." color="#22d3ee" to="/ai-operator" actionLabel="Open approvals" items={data.prepared.slice(0, 3)} />
-        </section>
-
-        <section className="grid gap-5 xl:grid-cols-1">
-          <MoneySnapshotTile data={data} />
+          <CommandTile label="AI Priority" title="What needs approval" count={data.prepared.length || needs} text="AI has grouped the admin that needs owner attention. Check these first." color="#22d3ee" to="/ai-operator" actionLabel="Open approvals" items={data.prepared.slice(0, 3)} className="xl:min-h-full" />
         </section>
 
         <section className="grid gap-5 xl:grid-cols-3">
