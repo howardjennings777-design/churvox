@@ -1,30 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Churvox">
   <defs>
-    <linearGradient id="lane" x1="18" y1="104" x2="112" y2="20" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#77FFC1"/>
-      <stop offset="0.42" stop-color="#14D8F4"/>
-      <stop offset="0.72" stop-color="#245CFF"/>
-      <stop offset="1" stop-color="#A855F7"/>
+    <linearGradient id="orange" x1="9" y1="9" x2="119" y2="119" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffb15f"/>
+      <stop offset="0.42" stop-color="#ff7a1a"/>
+      <stop offset="1" stop-color="#f97316"/>
     </linearGradient>
-    <linearGradient id="bg" x1="8" y1="8" x2="120" y2="120" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#06152C"/>
-      <stop offset="0.52" stop-color="#020817"/>
-      <stop offset="1" stop-color="#071D3D"/>
-    </linearGradient>
-    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="2.4" result="blur"/>
-      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.06 0 0 0 0 0.62 0 0 0 0 1 0 0 0 .46 0"/>
-      <feBlend in="SourceGraphic"/>
+    <filter id="shadow" x="-25%" y="-25%" width="150%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#000000" flood-opacity="0.28"/>
     </filter>
   </defs>
-  <rect x="5" y="5" width="118" height="118" rx="31" fill="url(#bg)"/>
-  <rect x="6.5" y="6.5" width="115" height="115" rx="29.5" fill="none" stroke="#62E8F5" stroke-opacity=".24"/>
-  <g filter="url(#glow)">
-    <path d="M95 25H49c-24 0-43 18-43 40h19c0-12 10-22 24-22h46l17-9-17-9Z" fill="url(#lane)"/>
-    <path d="M103 51H50c-15 0-27 11-27 25s12 25 27 25h54L89 84H51c-5 0-9-4-9-8s4-8 9-8h52l17-8.5L103 51Z" fill="url(#lane)"/>
-    <path d="M10 68h20" stroke="url(#lane)" stroke-width="10" stroke-linecap="round"/>
-    <circle cx="32" cy="68" r="12" fill="#06152C" stroke="url(#lane)" stroke-width="6"/>
-    <path d="M66 55 73 67l13 7-13 7-7 13-7-13-13-7 13-7 7-12Z" fill="#62E8F5"/>
-  </g>
+  <rect x="7" y="7" width="114" height="114" rx="31" fill="url(#orange)" filter="url(#shadow)"/>
+  <path d="M104 31H62c-23 0-41 17-41 38s18 38 41 38h43l-12 20H62C27 127 0 101 0 69S27 11 62 11h55l-13 20Z" fill="#05070a"/>
+  <path d="M48 55h58L93 75H35l13-20Z" fill="#fff7ed"/>
+  <path d="M40 82h42L70 101H28l12-19Z" fill="#fff7ed" opacity=".92"/>
 </svg>
