@@ -8,6 +8,7 @@ import './industrial-command-global.css';
 import './public-industrial-theme.css';
 import './runtime/churvoxClearOldCache';
 import './runtime/churvoxSlipOnlyMode';
+import './styles/loggedInVisibleSurfacesLight.css';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
