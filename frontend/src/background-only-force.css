@@ -51,36 +51,61 @@ body:has(.cv-industrial-sidebar) main.fixed.inset-0 section.flex-1 {
 
 /* FINAL COMMAND DASHBOARD POLISH */
 main[data-industrial-simple-page="command"] > section {
-  gap: 1rem !important;
-  padding-top: 1rem !important;
+  gap: .85rem !important;
+  padding-top: .85rem !important;
 }
 
 main[data-industrial-simple-page="command"] section.grid {
-  gap: 1rem !important;
+  gap: .9rem !important;
 }
 
-main[data-industrial-simple-page="command"] section.grid:first-child > div:first-child {
-  min-height: auto !important;
-  padding-top: 1.35rem !important;
-  padding-bottom: 1.35rem !important;
+main[data-industrial-simple-page="command"] > section > section:first-child {
+  align-items: start !important;
 }
 
-main[data-industrial-simple-page="command"] section.grid:first-child > div:first-child h1 {
-  font-size: clamp(2.35rem, 4.2vw, 4.25rem) !important;
+main[data-industrial-simple-page="command"] > section > section:first-child > div:first-child {
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: 225px !important;
+  align-self: start !important;
+  padding-top: 1rem !important;
+  padding-bottom: 1rem !important;
+}
+
+main[data-industrial-simple-page="command"] > section > section:first-child > div:first-child h1 {
+  font-size: clamp(2rem, 3.45vw, 3.45rem) !important;
   line-height: .9 !important;
-  margin-top: 1rem !important;
+  margin-top: .72rem !important;
+  max-width: 42rem !important;
 }
 
-main[data-industrial-simple-page="command"] section.grid:first-child > div:first-child p {
+main[data-industrial-simple-page="command"] > section > section:first-child > div:first-child p {
+  margin-top: .65rem !important;
+  max-width: 42rem !important;
+  line-height: 1.35 !important;
+}
+
+main[data-industrial-simple-page="command"] > section > section:first-child > div:first-child > div:last-child {
   margin-top: .8rem !important;
-  max-width: 46rem !important;
+}
+
+main[data-industrial-simple-page="command"] > section > section:first-child > a,
+main[data-industrial-simple-page="command"] > section > section:first-child > div:nth-child(2) {
+  max-height: 245px !important;
+  min-height: 225px !important;
+  overflow: hidden !important;
+}
+
+main[data-industrial-simple-page="command"] > section > section:first-child > a [class*="rounded-"],
+main[data-industrial-simple-page="command"] > section > section:first-child > div:nth-child(2) [class*="rounded-"] {
+  padding: .55rem .7rem !important;
 }
 
 main[data-industrial-simple-page="command"] section.grid:first-child > div:first-child a.rounded-2xl,
 main[data-industrial-simple-page="command"] section.grid:first-child > div:first-child button.rounded-2xl {
-  min-height: 42px !important;
-  height: 42px !important;
-  padding: 0 1rem !important;
+  min-height: 38px !important;
+  height: 38px !important;
+  padding: 0 .95rem !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -94,16 +119,16 @@ main[data-industrial-simple-page="command"] a[class*="rounded-"]:not(.rounded-fu
 main[data-industrial-simple-page="command"] button[class*="rounded-"]:not(.rounded-full) {
   position: relative !important;
   overflow: hidden !important;
-  border-radius: 26px !important;
+  border-radius: 24px !important;
   border: 1px solid rgba(255, 255, 255, .12) !important;
   background: linear-gradient(135deg, #111827, #070d16) !important;
   color: #ffffff !important;
-  box-shadow: 0 16px 42px rgba(2, 6, 23, .24), inset 0 1px 0 rgba(255, 255, 255, .05) !important;
+  box-shadow: 0 14px 36px rgba(2, 6, 23, .22), inset 0 1px 0 rgba(255, 255, 255, .05) !important;
 }
 
 main[data-industrial-simple-page="command"] a[class*="rounded-"]:not(.rounded-full):not(.rounded-2xl),
 main[data-industrial-simple-page="command"] button[class*="rounded-"]:not(.rounded-full):not(.rounded-2xl) {
-  min-height: 205px !important;
+  min-height: 190px !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: flex-start !important;
@@ -117,7 +142,7 @@ main[data-industrial-simple-page="command"] div[class*="rounded-"]:not(.rounded-
 main[data-industrial-simple-page="command"] aside[class*="rounded-"]:not(.rounded-full),
 main[data-industrial-simple-page="command"] a[class*="rounded-"]:not(.rounded-full):not(.rounded-2xl),
 main[data-industrial-simple-page="command"] button[class*="rounded-"]:not(.rounded-full):not(.rounded-2xl) {
-  padding-left: max(1.65rem, 30px) !important;
+  padding-left: max(1.55rem, 28px) !important;
 }
 
 main[data-industrial-simple-page="command"] section[class*="rounded-"]:not(.rounded-full)::before,
@@ -129,18 +154,18 @@ main[data-industrial-simple-page="command"] button[class*="rounded-"]:not(.round
   position: absolute !important;
   left: 0 !important;
   top: 0 !important;
-  width: 10px !important;
+  width: 9px !important;
   height: 100% !important;
-  border-radius: 26px 0 0 26px !important;
+  border-radius: 24px 0 0 24px !important;
   background: repeating-linear-gradient(135deg, #fb923c 0 10px, rgba(255,255,255,.35) 10px 15px, #fb923c 15px 25px) !important;
-  box-shadow: 0 0 18px rgba(251,146,60,.45) !important;
+  box-shadow: 0 0 16px rgba(251,146,60,.42) !important;
 }
 
 main[data-industrial-simple-page="command"] a:nth-child(2n)::before,
 main[data-industrial-simple-page="command"] button:nth-child(2n)::before,
 main[data-industrial-simple-page="command"] div[class*="rounded-"]:nth-child(2n)::before {
   background: repeating-linear-gradient(135deg, #34d399 0 10px, rgba(255,255,255,.35) 10px 15px, #34d399 15px 25px) !important;
-  box-shadow: 0 0 18px rgba(52,211,153,.45) !important;
+  box-shadow: 0 0 16px rgba(52,211,153,.42) !important;
 }
 
 main[data-industrial-simple-page="command"] a:nth-child(3n)::before,
@@ -148,7 +173,7 @@ main[data-industrial-simple-page="command"] button:nth-child(3n)::before,
 main[data-industrial-simple-page="command"] aside[class*="rounded-"]::before,
 main[data-industrial-simple-page="command"] div[class*="rounded-"]:nth-child(3n)::before {
   background: repeating-linear-gradient(135deg, #22d3ee 0 10px, rgba(255,255,255,.35) 10px 15px, #22d3ee 15px 25px) !important;
-  box-shadow: 0 0 18px rgba(34,211,238,.45) !important;
+  box-shadow: 0 0 16px rgba(34,211,238,.42) !important;
 }
 
 main[data-industrial-simple-page="command"] h1,
