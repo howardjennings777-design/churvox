@@ -2,6 +2,7 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import "./conceptC.css";
 import "./conceptCFrameHybrid.css";
+import "./recordFullscreen.css";
 
 const FRAME = {
   dashboard: ["COMMAND FLOOR", "Command.", "Approve prepared work, open records and keep the business moving.", "Back to command", "/dashboard"],
