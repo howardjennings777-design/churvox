@@ -25,6 +25,22 @@ const configs = {
   crewMap: { endpoint: "/jobs", title: "Crew map and active work.", kicker: "Crew Map", subtitle: "See active jobs and where the next assignment needs attention.", create: "/jobs/new", createLabel: "Create job", detail: (x) => `/jobs/${idOf(x)}`, samples: [{ title: "Active job tracking", client_name: "Site work", status: "active" }] },
 };
 
+const tapeColors = ["#facc15", "#fb923c", "#22d3ee", "#34d399", "#a78bfa", "#f43f5e"];
+const tapeFor = (index = 0) => tapeColors[Math.abs(index) % tapeColors.length];
+
+function SecurityTape({ color = "#facc15" }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="absolute left-0 top-0 h-full w-2 rounded-l-[28px]"
+      style={{
+        background: `repeating-linear-gradient(135deg, ${color} 0 10px, rgba(255,255,255,.28) 10px 15px, ${color} 15px 25px)`,
+        boxShadow: `0 0 22px ${color}66`,
+      }}
+    />
+  );
+}
+
 function listFrom(res) {
   const data = res?.data ?? res;
   if (Array.isArray(data)) return data;
@@ -49,35 +65,57 @@ function statusOf(item) {
   return String(item?.status || item?.type || item?.job_status || item?.quote_status || item?.invoice_status || "ready").replaceAll("_", " ");
 }
 
-function Stat({ label, value }) {
+function Stat({ label, value, color }) {
   return (
-    <div className={`rounded-[22px] ${industrialPanel} p-4`}>
+    <div className="relative overflow-hidden rounded-[26px] border border-white/10 bg-[#0f1722] p-4 pl-6 text-white shadow-[0_18px_50px_rgba(2,6,23,.30)]">
+      <SecurityTape color={color} />
       <div className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-300">{label}</div>
-      <div className="mt-3 text-3xl font-black tracking-[-0.06em] text-white">{value}</div>
+      <div className="mt-2 text-3xl font-black tracking-[-0.06em] text-white">{value}</div>
     </div>
   );
 }
 
 function RecordBox({ item, config, index }) {
+  const color = tapeFor(index + 3);
   return (
     <Link
       key={idOf(item) || index}
       to={config.detail(item)}
-      className={`block rounded-[24px] ${industrialPanel} p-5 no-underline transition hover:-translate-y-0.5 hover:shadow-[0_26px_80px_rgba(2,6,23,.38)]`}
+      className="relative block min-h-[118px] overflow-hidden rounded-[30px] border border-white/10 bg-[#0f1722] p-5 pl-7 text-white no-underline shadow-[0_20px_60px_rgba(2,6,23,.32)] transition hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_26px_80px_rgba(2,6,23,.38)]"
     >
+      <SecurityTape color={color} />
       <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">{statusOf(item)}</div>
-      <h3 className="mt-3 text-2xl font-black tracking-[-0.05em] text-white">{titleOf(item)}</h3>
+      <h3 className="mt-2 text-2xl font-black tracking-[-0.05em] text-white">{titleOf(item)}</h3>
       <p className="mt-2 text-sm font-bold leading-6 text-slate-300">{metaOf(item) || "Open the record for full details."}</p>
     </Link>
   );
 }
 
+function OblongCommandBox({ to, label, title, text, color, children }) {
+  const content = (
+    <>
+      <SecurityTape color={color} />
+      <div className="min-w-0">
+        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">{label}</div>
+        <h2 className="mt-2 text-2xl font-black tracking-[-0.055em] text-white">{title}</h2>
+        {text ? <p className="mt-2 text-sm font-bold leading-6 text-slate-300">{text}</p> : null}
+        {children}
+      </div>
+    </>
+  );
+
+  const className = "relative min-h-[128px] overflow-hidden rounded-[30px] border border-white/10 bg-[#0f1722] p-5 pl-7 text-white shadow-[0_20px_60px_rgba(2,6,23,.32)]";
+  if (!to) return <div className={className}>{content}</div>;
+  return <Link to={to} className={`${className} no-underline transition hover:-translate-y-0.5 hover:border-white/20`}>{content}</Link>;
+}
+
 function CommandLayout({ config, items, loading, open, ready, needs }) {
   return (
     <main className={industrialPageShell} data-industrial-simple-page="command" data-command-canvas>
-      <section className={`${industrialContentLane} space-y-6`}>
-        <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_330px]">
-          <div className={`rounded-[32px] ${industrialPanel} p-6 md:p-8`}>
+      <section className={`${industrialContentLane} space-y-5`}>
+        <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_330px]">
+          <div className="relative overflow-hidden rounded-[34px] border border-white/10 bg-[#0f1722] p-6 pl-8 text-white shadow-[0_24px_76px_rgba(2,6,23,.34)] md:p-8 md:pl-10">
+            <SecurityTape color="#fb923c" />
             <span className={industrialChip}>{config.kicker}</span>
             <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">{config.title}</h1>
             <p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-slate-300 md:text-base">{config.subtitle}</p>
@@ -87,44 +125,31 @@ function CommandLayout({ config, items, loading, open, ready, needs }) {
             </div>
           </div>
 
-          <aside className={`rounded-[32px] ${industrialPanel} p-5`}>
+          <aside className="relative overflow-hidden rounded-[34px] border border-white/10 bg-[#0f1722] p-5 pl-7 text-white shadow-[0_24px_76px_rgba(2,6,23,.34)]">
+            <SecurityTape color="#22d3ee" />
             <div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">Health</div>
             <div className="mt-5 grid gap-3">
-              <Stat label="Open" value={open} />
-              <Stat label="Ready" value={ready} />
-              <Stat label="Needs review" value={needs} />
+              <Stat label="Open" value={open} color="#facc15" />
+              <Stat label="Ready" value={ready} color="#34d399" />
+              <Stat label="Needs review" value={needs} color="#fb923c" />
             </div>
           </aside>
         </section>
 
         <section className="grid gap-5 md:grid-cols-3">
-          <Link to="/jobs" className={`rounded-[26px] ${industrialPanel} p-5 no-underline`}>
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">Work</div>
-            <h2 className="mt-2 text-2xl font-black tracking-[-0.055em] text-white">Review today’s work</h2>
-            <p className="mt-2 text-sm font-bold leading-6 text-slate-300">Jobs, site notes and work needing owner attention.</p>
-          </Link>
-          <Link to="/invoices" className={`rounded-[26px] ${industrialPanel} p-5 no-underline`}>
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">Money</div>
-            <h2 className="mt-2 text-2xl font-black tracking-[-0.055em] text-white">Check invoices</h2>
-            <p className="mt-2 text-sm font-bold leading-6 text-slate-300">Drafts, sent invoices and payment follow-ups.</p>
-          </Link>
-          <Link to="/crew-map" className={`rounded-[26px] ${industrialPanel} p-5 no-underline`}>
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">Crew</div>
-            <h2 className="mt-2 text-2xl font-black tracking-[-0.055em] text-white">Assign open jobs</h2>
-            <p className="mt-2 text-sm font-bold leading-6 text-slate-300">See what needs dispatch and who can handle it.</p>
-          </Link>
+          <OblongCommandBox to="/jobs" label="Work" title="Review today’s work" text="Jobs, site notes and work needing owner attention." color="#facc15" />
+          <OblongCommandBox to="/invoices" label="Money" title="Check invoices" text="Drafts, sent invoices and payment follow-ups." color="#34d399" />
+          <OblongCommandBox to="/crew-map" label="Crew" title="Assign open jobs" text="See what needs dispatch and who can handle it." color="#22d3ee" />
         </section>
 
         <section className="space-y-5">
-          <div className={`rounded-[26px] ${industrialPanel} p-5`}>
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <div>
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">Records</div>
-                <h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-white">Open Command Board</h2>
-              </div>
+          <OblongCommandBox label="Records" title="Open Command Board" color="#a78bfa">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-slate-300">{open} open</span>
+              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-slate-300">{ready} ready</span>
               {loading && <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-slate-300">Loading…</span>}
             </div>
-          </div>
+          </OblongCommandBox>
 
           <div className="grid gap-5 xl:grid-cols-2">
             {items.map((item, index) => <RecordBox key={idOf(item) || index} item={item} config={config} index={index} />)}
@@ -174,7 +199,7 @@ export default function IndustrialSimplePage({ kind }) {
             <p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-slate-300 md:text-base">{config.subtitle}</p>
             <div className="mt-5 flex flex-wrap gap-3"><Link to={config.create} className={`rounded-2xl px-5 py-3 text-sm font-black ${industrialAction}`}>{config.createLabel}</Link><Link to="/dashboard" className={`rounded-2xl px-5 py-3 text-sm font-black ${industrialGhost}`}>Command Board</Link></div>
           </div>
-          <div className={`rounded-[30px] ${industrialPanel} p-5`}><div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">Health</div><div className="mt-5 grid gap-3"><Stat label="Open" value={open} /><Stat label="Ready" value={ready} /><Stat label="Needs review" value={needs} /></div></div>
+          <div className={`rounded-[30px] ${industrialPanel} p-5`}><div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">Health</div><div className="mt-5 grid gap-3"><Stat label="Open" value={open} color="#facc15" /><Stat label="Ready" value={ready} color="#34d399" /><Stat label="Needs review" value={needs} color="#fb923c" /></div></div>
         </section>
         <section className={`mt-5 rounded-[28px] ${industrialPanel} p-5`}>
           <div className="mb-5 flex items-end justify-between gap-4"><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">Records</div><h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-white">Open {config.kicker}</h2></div>{loading && <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-slate-300">Loading…</span>}</div>
