@@ -1,0 +1,143 @@
+/* CHURVOX_LOGGED_IN_VISIBLE_SURFACES_LIGHT_20260605
+   Logged-in app only.
+   This changes the visible page surfaces that were covering the off-white background.
+   Public/marketing pages are not targeted. */
+
+:root {
+  --chv-page: #f7f3ea;
+  --chv-surface: #fffaf0;
+  --chv-surface-strong: #ffffff;
+  --chv-border: rgba(15, 23, 42, 0.10);
+  --chv-text: #0f172a;
+  --chv-muted: #475569;
+}
+
+html,
+body,
+#root,
+main.fixed.inset-0,
+main.fixed.inset-0 > .flex,
+main.fixed.inset-0 > .flex > section,
+main.fixed.inset-0 section.min-w-0,
+main.fixed.inset-0 section.h-full,
+.concept-c2-frame,
+.concept-c2-frame .c2-frame,
+.concept-c2-frame .c2-stage,
+.concept-c2-frame .c2-real-page-stage,
+.concept-c2-frame .c2-real-page-card,
+.xcf-real-page,
+.xcf-workspace,
+.xcf-shell.xcf-real-page {
+  background: var(--chv-page) !important;
+  background-color: var(--chv-page) !important;
+  background-image: none !important;
+}
+
+/* The big visible logged-in panels/cards that were still dark. */
+main.fixed.inset-0 > .flex > section section.rounded-\[30px\],
+main.fixed.inset-0 > .flex > section section.rounded-\[28px\],
+main.fixed.inset-0 > .flex > section div.rounded-\[30px\],
+main.fixed.inset-0 > .flex > section div.rounded-\[28px\],
+main.fixed.inset-0 > .flex > section div.rounded-2xl,
+main.fixed.inset-0 > .flex > section article.rounded-\[22px\],
+main.fixed.inset-0 > .flex > section aside.rounded-\[30px\],
+main.fixed.inset-0 .bg-\[\#0f1722\],
+main.fixed.inset-0 .bg-slate-950,
+main.fixed.inset-0 .bg-slate-900,
+main.fixed.inset-0 .bg-blue-950,
+main.fixed.inset-0 .bg-cyan-950,
+main.fixed.inset-0 .bg-emerald-950,
+main.fixed.inset-0 .bg-amber-950,
+main.fixed.inset-0 .bg-red-950,
+main.fixed.inset-0 .bg-rose-950,
+main.fixed.inset-0 .bg-violet-950,
+.concept-c2-frame .c2-real-page-card,
+.concept-c2-frame section.rounded-\[30px\],
+.concept-c2-frame section.rounded-\[28px\],
+.concept-c2-frame div.rounded-\[30px\],
+.concept-c2-frame div.rounded-\[28px\],
+.concept-c2-frame div.rounded-2xl,
+.concept-c2-frame article.rounded-\[22px\] {
+  background: var(--chv-surface) !important;
+  background-color: var(--chv-surface) !important;
+  background-image: none !important;
+  border-color: var(--chv-border) !important;
+  color: var(--chv-text) !important;
+  box-shadow: 0 14px 38px rgba(15, 23, 42, 0.055) !important;
+}
+
+main.fixed.inset-0 h1,
+main.fixed.inset-0 h2,
+main.fixed.inset-0 h3,
+main.fixed.inset-0 h4,
+main.fixed.inset-0 strong,
+main.fixed.inset-0 b,
+main.fixed.inset-0 .text-white,
+main.fixed.inset-0 .text-slate-50,
+main.fixed.inset-0 .text-slate-950,
+main.fixed.inset-0 .text-slate-900,
+main.fixed.inset-0 .text-blue-950,
+main.fixed.inset-0 .text-blue-900,
+main.fixed.inset-0 .text-emerald-900,
+main.fixed.inset-0 .text-amber-950,
+main.fixed.inset-0 .text-red-800,
+.concept-c2-frame h1,
+.concept-c2-frame h2,
+.concept-c2-frame h3,
+.concept-c2-frame h4,
+.concept-c2-frame strong,
+.concept-c2-frame b,
+.concept-c2-frame .text-white,
+.concept-c2-frame .text-slate-50,
+.concept-c2-frame .text-slate-950,
+.concept-c2-frame .text-slate-900 {
+  color: var(--chv-text) !important;
+  text-shadow: none !important;
+}
+
+main.fixed.inset-0 p,
+main.fixed.inset-0 li,
+main.fixed.inset-0 small,
+main.fixed.inset-0 .text-slate-800,
+main.fixed.inset-0 .text-slate-700,
+main.fixed.inset-0 .text-slate-600,
+main.fixed.inset-0 .text-slate-500,
+main.fixed.inset-0 .text-slate-400,
+main.fixed.inset-0 .text-slate-300,
+main.fixed.inset-0 .text-slate-200,
+.concept-c2-frame p,
+.concept-c2-frame li,
+.concept-c2-frame small,
+.concept-c2-frame .text-slate-700,
+.concept-c2-frame .text-slate-600,
+.concept-c2-frame .text-slate-500,
+.concept-c2-frame .text-slate-400,
+.concept-c2-frame .text-slate-300 {
+  color: var(--chv-muted) !important;
+  text-shadow: none !important;
+}
+
+/* Keep action buttons readable. */
+main.fixed.inset-0 button.bg-cyan-300,
+main.fixed.inset-0 a.bg-cyan-300,
+main.fixed.inset-0 .bg-cyan-300,
+main.fixed.inset-0 .bg-blue-600,
+.concept-c2-frame button.bg-cyan-300,
+.concept-c2-frame a.bg-cyan-300,
+.concept-c2-frame .bg-cyan-300,
+.concept-c2-frame .bg-blue-600 {
+  background: linear-gradient(135deg, #facc15, #fb923c 52%, #22d3ee) !important;
+  color: #020617 !important;
+  border-color: rgba(250, 204, 21, 0.45) !important;
+}
+
+main.fixed.inset-0 input,
+main.fixed.inset-0 textarea,
+main.fixed.inset-0 select,
+.concept-c2-frame input,
+.concept-c2-frame textarea,
+.concept-c2-frame select {
+  background: #ffffff !important;
+  border-color: rgba(15, 23, 42, 0.14) !important;
+  color: var(--chv-text) !important;
+}
