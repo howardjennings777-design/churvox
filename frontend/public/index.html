@@ -3,112 +3,36 @@
   <head>
 <!-- CHURVOX_INVOICE_FULLSCREEN_DEPLOY_MARKER -->
 <!-- CHURVOX FULLSCREEN SLIPS DEPLOY MARKER 2026-06-03 -->
-    <meta name="churvox-build-cache-reset" content="1780459578" />
+    <meta name="churvox-build-cache-reset" content="orange-churvox-logo-20260605" />
     <meta charset="utf-8" />
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    <link rel="icon" type="image/svg+xml" href="%PUBLIC_URL%/churvox-mark.svg?v=6" />
-    <link rel="icon" type="image/x-icon" href="%PUBLIC_URL%/favicon.ico?v=6" />
-    <link rel="icon" type="image/png" sizes="192x192" href="%PUBLIC_URL%/icon-192x192.png?v=6" />
-    <link rel="icon" type="image/png" sizes="512x512" href="%PUBLIC_URL%/icon-512x512.png?v=6" />
+    <link rel="icon" type="image/svg+xml" href="%PUBLIC_URL%/favicon.svg?v=orange-churvox-20260605" />
+    <link rel="icon" type="image/svg+xml" href="%PUBLIC_URL%/churvox-mark.svg?v=orange-churvox-20260605" />
+    <link rel="icon" type="image/x-icon" href="%PUBLIC_URL%/favicon.ico?v=orange-churvox-20260605" />
+    <link rel="icon" type="image/png" sizes="192x192" href="%PUBLIC_URL%/icon-192x192.png?v=orange-churvox-20260605" />
+    <link rel="icon" type="image/png" sizes="512x512" href="%PUBLIC_URL%/icon-512x512.png?v=orange-churvox-20260605" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#06111A" />
-    <meta name="description" content="Churvox — AI Operator Front Desk for trade & service businesses. Jobs, quotes, invoices and crew. Churvox runs the admin. You stay in control." />
+    <meta name="theme-color" content="#f97316" />
+    <meta name="description" content="Churvox — AI Operator Command Desk for trade & service businesses. Jobs, quotes, invoices and crew. Churvox runs the admin. You stay in control." />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Churvox" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/apple-touch-icon.png?v=6" />
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json?v=6" />
-    <title>Churvox — AI Operator Front Desk</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/apple-touch-icon.png?v=orange-churvox-20260605" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json?v=orange-churvox-20260605" />
+    <title>Churvox — AI Operator Command Desk</title>
     <style>
-      html, body { background-color: #06111A; color: #F6FBFC; }
-      html { color-scheme: dark; }
+      html, body { background-color: #f7f3ea; color: #111827; }
+      html { color-scheme: light; }
       body {
         margin: 0;
         min-height: 100vh;
-        background-color: #06111A;
+        background-color: #f7f3ea;
       }
       #root { min-height: 100vh; }
     </style>
-
-<script>
-/* CHURVOX_FORCE_CACHE_CLEAR_20260603_SAFE_ROLLBACK */
-(function () {
-  try {
-    var key = "churvox_force_cache_clear_20260603_safe_rollback_v3";
-    var current = localStorage.getItem(key);
-    var clearing = [];
-
-    if ("serviceWorker" in navigator) {
-      clearing.push(
-        navigator.serviceWorker.getRegistrations().then(function (regs) {
-          return Promise.all(regs.map(function (reg) { return reg.unregister(); }));
-        }).catch(function () {})
-      );
-    }
-
-    if ("caches" in window) {
-      clearing.push(
-        caches.keys().then(function (keys) {
-          return Promise.all(keys.map(function (k) { return caches.delete(k); }));
-        }).catch(function () {})
-      );
-    }
-
-    if (current !== "done") {
-      localStorage.setItem(key, "done");
-      Promise.all(clearing).then(function () {
-        var url = new URL(window.location.href);
-        if (url.searchParams.get("cvfresh") !== "20260603") {
-          url.searchParams.set("cvfresh", "20260603");
-          window.location.replace(url.toString());
-        }
-      });
-    }
-  } catch (e) {}
-})();
-</script>
-
-
-<script id="churvox-force-clear-old-cache">
-(function () {
-  try {
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function (regs) {
-        regs.forEach(function (reg) { reg.unregister(); });
-      });
-    }
-    if (window.caches) {
-      caches.keys().then(function (keys) {
-        keys.forEach(function (key) { caches.delete(key); });
-      });
-    }
-  } catch (e) {}
-})();
-</script>
-
-
-<script id="churvox-hard-cache-kill">
-(function () {
-  try {
-    localStorage.setItem("churvox_build_marker", "fullscreen-slips-live-2026-06-03");
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function (regs) {
-        regs.forEach(function (reg) { reg.unregister(); });
-      });
-    }
-    if (window.caches) {
-      caches.keys().then(function (keys) {
-        keys.forEach(function (key) { caches.delete(key); });
-      });
-    }
-  } catch (e) {}
-})();
-</script>
-
-<script src="/clear-old-cache.js?v=invoice-fullscreen"></script>
 </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
