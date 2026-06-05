@@ -1,33 +1,59 @@
-/* Money snapshot directly under Command header. */
+/* Money snapshot goes in the blank space directly under the Command header. */
 main[data-industrial-simple-page="command"] > section {
-  display: flex !important;
-  flex-direction: column !important;
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   gap: .9rem !important;
 }
 
 main[data-industrial-simple-page="command"] > section > section:first-child {
   order: 1 !important;
+  grid-column: 1 / -1 !important;
+}
+
+main[data-industrial-simple-page="command"] > section > section:not(:first-child) {
+  display: contents !important;
+}
+
+main[data-industrial-simple-page="command"] > section > section:not(:first-child) > * {
+  order: 20 !important;
 }
 
 main[data-industrial-simple-page="command"] a[href="/money-desk"] {
   order: 2 !important;
-  width: 100% !important;
+  grid-column: 1 / -1 !important;
   min-height: 170px !important;
 }
 
-main[data-industrial-simple-page="command"] > section > section:nth-child(2) {
+main[data-industrial-simple-page="command"] a[href="/jobs"]:first-of-type {
   order: 3 !important;
 }
 
-main[data-industrial-simple-page="command"] > section > section:nth-child(3) {
+main[data-industrial-simple-page="command"] a[href="/invoices"] {
   order: 4 !important;
 }
 
-main[data-industrial-simple-page="command"] > section > section:nth-child(4) {
+main[data-industrial-simple-page="command"] a[href="/crew-map"] {
   order: 5 !important;
 }
 
-main[data-industrial-simple-page="command"] > section > section:nth-child(4) {
-  display: flex !important;
-  flex-direction: column !important;
+main[data-industrial-simple-page="command"] a[href="/team"] {
+  order: 7 !important;
+}
+
+main[data-industrial-simple-page="command"] a[href="/quotes"] {
+  order: 8 !important;
+}
+
+main[data-industrial-simple-page="command"] a[href="/invoices/new"] {
+  order: 9 !important;
+}
+
+@media (max-width: 1100px) {
+  main[data-industrial-simple-page="command"] > section {
+    grid-template-columns: 1fr !important;
+  }
+
+  main[data-industrial-simple-page="command"] a[href="/money-desk"] {
+    grid-column: auto !important;
+  }
 }
