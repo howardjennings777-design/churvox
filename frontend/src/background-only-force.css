@@ -1,5 +1,5 @@
 /* CHURVOX_BACKGROUND_ONLY_20260605
-   Canvas/background only. Do not change cards, panels, buttons, borders, or text. */
+   Background/canvas only. Do not change cards, panels, buttons, borders, or text. */
 
 :root {
   --churvox-canvas-off-white: #f7f3ea;
@@ -11,12 +11,20 @@ body,
   background-color: var(--churvox-canvas-off-white) !important;
 }
 
+/* App-level page canvas wrappers only */
 main.fixed.inset-0,
 main.fixed.inset-0.z-\[2147483000\],
 main.fixed.inset-0.z-\[2147483600\],
 main.fixed.inset-0 > .flex,
 main.fixed.inset-0 > .flex > section,
+main.fixed.inset-0 > section,
 main.fixed.inset-0 section.min-w-0,
+main.fixed.inset-0 section.flex-1,
+main.fixed.inset-0 [class*="min-w-0"][class*="flex-1"],
+main.fixed.inset-0 [class*="p-5"][class*="lg:p-8"],
+main.fixed.inset-0 [class*="md:p-6"],
+main.fixed.inset-0 [class*="xl:p-8"],
+main.fixed.inset-0 [data-industrial-simple-page],
 main.fixed.inset-0 [data-command-canvas],
 .concept-c2-frame,
 .xcf-real-page,
@@ -26,10 +34,21 @@ main.fixed.inset-0 [data-command-canvas],
   background-image: none !important;
 }
 
-body:has(.cv-industrial-sidebar),
+/* Keep rounded cards/panels dark exactly as designed */
+main.fixed.inset-0 [class*="rounded"],
+.concept-c2-frame [class*="rounded"],
+.xcf-real-page [class*="rounded"],
+.xcf-workspace [class*="rounded"] {
+  background-color: revert-layer;
+}
+
+/* Specific visible command canvas lane, but not the cards inside it */
 body:has(.cv-industrial-sidebar) main.fixed.inset-0,
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 > .flex,
-body:has(.cv-industrial-sidebar) main.fixed.inset-0 > .flex > section {
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 > .flex > section,
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 > section,
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 section.min-w-0,
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 section.flex-1 {
   background-color: var(--churvox-canvas-off-white) !important;
   background-image: none !important;
 }
