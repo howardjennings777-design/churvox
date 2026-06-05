@@ -1,0 +1,74 @@
+/* CHURVOX COMMAND FORCE DARK BOXES 2026-06-05
+   Final override: Command dashboard boxes must be dark, not pale. */
+
+main[data-industrial-simple-page="command"] > section > section > a,
+main[data-industrial-simple-page="command"] > section > section > div,
+main[data-industrial-simple-page="command"] > section > section > aside,
+main[data-industrial-simple-page="command"] [data-cv-command-tile],
+main[data-industrial-simple-page="command"] .relative.overflow-hidden.rounded-\[28px\],
+main[data-industrial-simple-page="command"] .relative.overflow-hidden.rounded-\[30px\],
+main[data-industrial-simple-page="command"] .relative.overflow-hidden.rounded-\[34px\] {
+  background: linear-gradient(135deg, #111827 0%, #0b1220 48%, #070d16 100%) !important;
+  background-color: #0f1722 !important;
+  color: #ffffff !important;
+  border-color: rgba(255,255,255,.14) !important;
+  box-shadow: 0 16px 44px rgba(2,6,23,.30), inset 0 1px 0 rgba(255,255,255,.06) !important;
+}
+
+main[data-industrial-simple-page="command"] > section > section > a *,
+main[data-industrial-simple-page="command"] > section > section > div *,
+main[data-industrial-simple-page="command"] > section > section > aside * {
+  color: inherit;
+}
+
+main[data-industrial-simple-page="command"] > section > section > a h1,
+main[data-industrial-simple-page="command"] > section > section > a h2,
+main[data-industrial-simple-page="command"] > section > section > a h3,
+main[data-industrial-simple-page="command"] > section > section > div h1,
+main[data-industrial-simple-page="command"] > section > section > div h2,
+main[data-industrial-simple-page="command"] > section > section > div h3,
+main[data-industrial-simple-page="command"] > section > section > aside h1,
+main[data-industrial-simple-page="command"] > section > section > aside h2,
+main[data-industrial-simple-page="command"] > section > section > aside h3 {
+  color: #ffffff !important;
+}
+
+main[data-industrial-simple-page="command"] > section > section > a p,
+main[data-industrial-simple-page="command"] > section > section > div p,
+main[data-industrial-simple-page="command"] > section > section > aside p {
+  color: rgba(226,232,240,.88) !important;
+}
+
+main[data-industrial-simple-page="command"] > section > section > a::before,
+main[data-industrial-simple-page="command"] > section > section > div::before,
+main[data-industrial-simple-page="command"] > section > section > aside::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 9px !important;
+  height: 100% !important;
+  border-radius: 24px 0 0 24px !important;
+  background: repeating-linear-gradient(135deg, #fb923c 0 10px, rgba(255,255,255,.35) 10px 15px, #fb923c 15px 25px) !important;
+  box-shadow: 0 0 16px rgba(251,146,60,.42) !important;
+}
+
+main[data-industrial-simple-page="command"] > section > section > a:nth-child(2n)::before,
+main[data-industrial-simple-page="command"] > section > section > div:nth-child(2n)::before,
+main[data-industrial-simple-page="command"] > section > section > aside:nth-child(2n)::before {
+  background: repeating-linear-gradient(135deg, #34d399 0 10px, rgba(255,255,255,.35) 10px 15px, #34d399 15px 25px) !important;
+  box-shadow: 0 0 16px rgba(52,211,153,.42) !important;
+}
+
+main[data-industrial-simple-page="command"] > section > section > a:nth-child(3n)::before,
+main[data-industrial-simple-page="command"] > section > section > div:nth-child(3n)::before,
+main[data-industrial-simple-page="command"] > section > section > aside:nth-child(3n)::before {
+  background: repeating-linear-gradient(135deg, #22d3ee 0 10px, rgba(255,255,255,.35) 10px 15px, #22d3ee 15px 25px) !important;
+  box-shadow: 0 0 16px rgba(34,211,238,.42) !important;
+}
+
+/* Keep the page canvas off-white around the dark tiles. */
+main[data-industrial-simple-page="command"],
+main[data-industrial-simple-page="command"] > section {
+  background: #f7f3ea !important;
+}
