@@ -67,11 +67,32 @@ const LINKS = [
   ["tools", "Tools", "/operator-tools"],
 ];
 
+function isRecordPath(pathname) {
+  return /^\/(jobs|clients|quotes|invoices)\/(new|[^/]+|[^/]+\/edit)$/.test(pathname || "");
+}
+
 export default function ConceptCFrame({ area = "jobs", children }) {
   const { pathname } = useLocation();
   const page = FRAME[area] || FRAME.jobs;
   const pathActive = LINKS.find(([key, _label, to]) => pathname === to || (to !== "/dashboard" && pathname.startsWith(`${to}/`)))?.[0];
   const active = pathActive || AREA_ACTIVE[area] || "command";
+
+  if (isRecordPath(pathname)) {
+    return (
+      <main className="concept-c2 c2-record-fullscreen" data-churvox-record-workspace="true" data-version="CHURVOX_RECORD_FULLSCREEN_20260605">
+        <header className="c2-record-fullscreen-topbar">
+          <Link className="c2-brand" to="/dashboard">
+            <span>C</span>
+            <b>CHURVOX</b>
+          </Link>
+          <Link className="c2-record-back" to={page[4]}>{page[3]}</Link>
+        </header>
+        <section className="c2-record-fullscreen-stage">
+          {children}
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="concept-c2 concept-c2-frame" data-version="CHURVOX_FULL_COMMAND_NAV_20260601">
