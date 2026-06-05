@@ -70,6 +70,12 @@ export default function AIOperatorSlipBoard({ initialData = {}, needs = 0 }) {
     setData({ jobs: read(j), invoices: read(i), quotes: read(q), workers: read(w) });
   }
 
+  React.useEffect(() => {
+    refresh();
+    const timer = window.setInterval(refresh, 60000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   async function approve(slip) {
     const id = idOf(slip.record);
     if (!id) return toast.error("No record ID found");
