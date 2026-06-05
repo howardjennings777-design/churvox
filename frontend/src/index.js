@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import RecordWorkspacePopupBridge from './components/RecordWorkspacePopupBridge';
+import RecordWorkspacePopupBridgeV2 from './components/RecordWorkspacePopupBridgeV2';
 import './index.css';
 import './styles/churvoxFullPageModals.css';
 import './components/recordWorkspacePopup.css';
@@ -26,6 +26,6 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <App />
-    <RecordWorkspacePopupBridge />
+    <RecordWorkspacePopupBridgeV2 />
   </React.StrictMode>
 );
