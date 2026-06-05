@@ -1,4 +1,4 @@
-export const industrialPageShell = "fixed inset-0 z-[2147483000] overflow-y-auto bg-[radial-gradient(circle_at_8%_0%,rgba(250,204,21,.16),transparent_28%),radial-gradient(circle_at_90%_6%,rgba(34,211,238,.18),transparent_30%),linear-gradient(135deg,#111827_0%,#0b1220_48%,#05070b_100%)] text-slate-50";
+export const industrialPageShell = "fixed inset-0 z-[2147483000] overflow-y-auto bg-[#f7f3ea] text-slate-50";
 
 export const industrialContentLane = "min-w-0 flex-1 p-4 pb-28 md:p-6 md:pb-28 xl:p-8 xl:pb-28";
 
