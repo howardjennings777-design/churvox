@@ -1,9 +1,10 @@
 /* CHURVOX_GLOBAL_INDUSTRIAL_COMMAND_OVERRIDE_20260604
    Loaded from index.js after the main app CSS so it wins over old page colours.
-*/
+   Page canvas is off-white. Cards, panels, buttons and forms remain industrial.
+ */
 
 :root {
-  --cvi-bg: #05070b;
+  --cvi-bg: #f7f3ea;
   --cvi-panel: #111827;
   --cvi-panel-2: #0b1220;
   --cvi-text: #f8fafc;
@@ -14,10 +15,7 @@
   --cvi-cyan: #22d3ee;
   --cvi-action: linear-gradient(135deg, #facc15, #fb923c 52%, #22d3ee);
   --cvi-panel-bg: linear-gradient(135deg, rgba(17,24,39,.96), rgba(11,18,32,.91));
-  --cvi-page-bg:
-    radial-gradient(circle at 8% 0%, rgba(250,204,21,.16), transparent 28%),
-    radial-gradient(circle at 90% 6%, rgba(34,211,238,.18), transparent 30%),
-    linear-gradient(135deg, #111827 0%, #0b1220 48%, #05070b 100%);
+  --cvi-page-bg: #f7f3ea;
 }
 
 /* Main command shells rendered by createPortal */
@@ -30,6 +28,8 @@ main.fixed.inset-0,
 .xcf-shell.xcf-real-page {
   color: var(--cvi-text) !important;
   background: var(--cvi-page-bg) !important;
+  background-color: var(--cvi-page-bg) !important;
+  background-image: none !important;
 }
 
 main.fixed.inset-0 > .flex > aside {
