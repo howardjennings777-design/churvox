@@ -1,0 +1,247 @@
+/* CHURVOX_PUBLIC_INDUSTRIAL_THEME_RESTORE
+   Restores public/marketing pages to the dark industrial background.
+   Scoped to public marketing classes only. */
+
+:root {
+  --cvpub-bg: #05070b;
+  --cvpub-panel: rgba(17, 24, 39, .92);
+  --cvpub-panel-2: rgba(11, 18, 32, .94);
+  --cvpub-text: #f8fafc;
+  --cvpub-muted: rgba(226, 232, 240, .78);
+  --cvpub-border: rgba(250, 204, 21, .24);
+  --cvpub-amber: #facc15;
+  --cvpub-orange: #fb923c;
+  --cvpub-cyan: #22d3ee;
+  --cvpub-action: linear-gradient(135deg, #facc15, #fb923c 52%, #22d3ee);
+  --cvpub-page:
+    radial-gradient(circle at 8% 0%, rgba(250,204,21,.18), transparent 28%),
+    radial-gradient(circle at 90% 5%, rgba(34,211,238,.18), transparent 30%),
+    repeating-linear-gradient(135deg, rgba(255,255,255,.022) 0 1px, transparent 1px 12px),
+    linear-gradient(135deg, #151a21 0%, #0b1220 52%, #05070b 100%);
+  --cvpub-card:
+    linear-gradient(135deg, rgba(31,41,55,.92), rgba(10,16,27,.94)),
+    radial-gradient(circle at 0% 0%, rgba(250,204,21,.12), transparent 34%),
+    radial-gradient(circle at 100% 0%, rgba(34,211,238,.10), transparent 32%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.026) 0 1px, transparent 1px 14px);
+}
+
+html:has(.cvx-public),
+html:has(.cvx-public-page),
+body:has(.cvx-public),
+body:has(.cvx-public-page),
+#root:has(.cvx-public),
+#root:has(.cvx-public-page) {
+  background: var(--cvpub-bg) !important;
+}
+
+.cvx-public,
+.cvx-public-page,
+.cxp-page,
+.cvx-home {
+  color: var(--cvpub-text) !important;
+  background: var(--cvpub-page) !important;
+}
+
+.cvx-full-hero,
+.cxp-page,
+.cvx-features-page {
+  background: transparent !important;
+}
+
+.cvx-nav {
+  border-color: rgba(250,204,21,.26) !important;
+  background:
+    linear-gradient(135deg, rgba(17,24,39,.88), rgba(11,18,32,.82)),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 1px, transparent 1px 12px) !important;
+  box-shadow: 0 18px 60px rgba(2,6,23,.34), inset 0 1px 0 rgba(255,255,255,.08) !important;
+  backdrop-filter: blur(18px) saturate(160%) !important;
+}
+
+.cvx-brand,
+.cvx-brand b,
+.cvx-links a,
+.cvx-footer b,
+.cvx-footer a {
+  color: #ffffff !important;
+}
+
+.cvx-brand small,
+.cvx-footer span,
+.cvx-lead,
+.cvx-section-copy span,
+.cvx-command-inner span,
+.cvx-final-cta span,
+.cxp-hero p,
+.cxp-pick-card span,
+.cxp-summary,
+.cxp-plan li,
+.cxp-best,
+.cxp-note,
+.cvx-feature-grid-wide article span,
+.cvx-addon-section span,
+.cvx-addon-grid article span,
+.cvx-public-hero span,
+.cvx-flow-strip h2 + span {
+  color: var(--cvpub-muted) !important;
+}
+
+.cvx-hero-copy h1,
+.cvx-section-copy h2,
+.cvx-command-inner h2,
+.cvx-final-cta h2,
+.cxp-hero h1,
+.cxp-plan h2,
+.cxp-final h2,
+.cvx-public-hero h1,
+.cvx-flow-strip h2,
+.cvx-feature-grid-wide article h2,
+.cvx-addon-section h2,
+.cvx-addon-grid article b {
+  color: #ffffff !important;
+}
+
+.cvx-pill,
+.cxp-eyebrow,
+.cvx-eyebrow {
+  border-color: rgba(250,204,21,.34) !important;
+  background: rgba(250,204,21,.12) !important;
+  color: var(--cvpub-amber) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+
+.cvx-primary,
+.cvx-start,
+.cxp-btn.primary,
+.cvx-btn-primary,
+.cvx-slip-stack button {
+  color: #020617 !important;
+  background: var(--cvpub-action) !important;
+  border-color: rgba(250,204,21,.45) !important;
+  box-shadow: 0 16px 42px rgba(251,146,60,.30), inset 0 1px 0 rgba(255,255,255,.42) !important;
+}
+
+.cvx-secondary,
+.cvx-btn-secondary,
+.cxp-btn,
+.cvx-links a:not(.cvx-start) {
+  border: 1px solid rgba(250,204,21,.22) !important;
+  background: rgba(255,255,255,.075) !important;
+  color: #f8fafc !important;
+}
+
+.cvx-command-preview,
+.cvx-command-band,
+.cvx-final-cta,
+.cxp-pick-card,
+.cxp-plan,
+.cxp-final-box,
+.cxp-note,
+.cvx-problem-row span,
+.cvx-service-grid article,
+.cvx-mini-command b,
+.cvx-mini-command span,
+.cvx-public-hero,
+.cvx-flow-strip,
+.cvx-feature-grid-wide article,
+.cvx-addon-section,
+.cvx-addon-grid article {
+  position: relative !important;
+  overflow: hidden !important;
+  border: 1px solid var(--cvpub-border) !important;
+  background: var(--cvpub-card) !important;
+  color: var(--cvpub-text) !important;
+  box-shadow: 0 24px 80px rgba(2,6,23,.38), inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+
+.cvx-command-preview::after,
+.cvx-command-band::after,
+.cvx-final-cta::after,
+.cxp-pick-card::after,
+.cxp-plan::after,
+.cxp-final-box::after,
+.cvx-public-hero::after,
+.cvx-flow-strip::after,
+.cvx-feature-grid-wide article::after,
+.cvx-addon-section::after {
+  content: "";
+  position: absolute;
+  right: 22px;
+  top: 18px;
+  width: 74px;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #facc15, #fb923c, #22d3ee);
+  opacity: .72;
+  box-shadow: 0 0 22px rgba(34,211,238,.35);
+}
+
+.cvx-command-preview::before,
+.cvx-command-band::before,
+.cvx-final-cta::before,
+.cxp-plan::before,
+.cvx-public-hero::before,
+.cvx-flow-strip::before,
+.cvx-feature-grid-wide article::before,
+.cvx-addon-section::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 6px;
+  background:
+    repeating-linear-gradient(135deg, rgba(2,6,23,.76) 0 8px, transparent 8px 16px),
+    linear-gradient(180deg, #facc15, #fb923c 48%, #22d3ee);
+  opacity: .86;
+}
+
+.cvx-slip-stack article,
+.cxp-plan.is-featured,
+.cvx-mini-command b,
+.cvx-mini-command span,
+.cvx-addon-grid article {
+  border-color: rgba(250,204,21,.24) !important;
+  background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.035)) !important;
+}
+
+.cvx-preview-head small,
+.cvx-slip-stack small,
+.cvx-mini-command b,
+.cxp-plan small,
+.cvx-addon-grid article small {
+  color: var(--cvpub-amber) !important;
+}
+
+.cvx-service-grid b,
+.cvx-problem-row span,
+.cxp-pick-card strong,
+.cxp-plan strong,
+.cxp-plan h3,
+.cxp-price strong,
+.cvx-slip-stack strong {
+  color: #ffffff !important;
+}
+
+.cvx-band,
+.cxp-plans,
+.cxp-final {
+  border-top-color: rgba(250,204,21,.16) !important;
+}
+
+.cvx-footer {
+  border-top: 1px solid rgba(250,204,21,.16) !important;
+  color: var(--cvpub-text) !important;
+}
+
+@media (max-width: 720px) {
+  .cvx-nav {
+    border-radius: 24px !important;
+  }
+
+  .cvx-command-preview,
+  .cvx-command-band,
+  .cvx-final-cta,
+  .cvx-public-hero,
+  .cvx-flow-strip,
+  .cvx-addon-section {
+    border-radius: 24px !important;
+  }
+}
