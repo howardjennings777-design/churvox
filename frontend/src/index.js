@@ -8,6 +8,7 @@ import './industrial-command-global.css';
 import './public-industrial-theme.css';
 import './background-only-force.css';
 import './command-force-dark-boxes.css';
+import './command-money-under-header.css';
 import './runtime/churvoxClearOldCache';
 import './runtime/churvoxSlipOnlyMode';
 
