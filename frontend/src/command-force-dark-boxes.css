@@ -5,14 +5,57 @@ main[data-industrial-simple-page="command"] > section > section > a,
 main[data-industrial-simple-page="command"] > section > section > div,
 main[data-industrial-simple-page="command"] > section > section > aside,
 main[data-industrial-simple-page="command"] [data-cv-command-tile],
+main[data-industrial-simple-page="command"] .cv-command-tile,
 main[data-industrial-simple-page="command"] .relative.overflow-hidden.rounded-\[28px\],
 main[data-industrial-simple-page="command"] .relative.overflow-hidden.rounded-\[30px\],
 main[data-industrial-simple-page="command"] .relative.overflow-hidden.rounded-\[34px\] {
+  position: relative !important;
+  isolation: isolate !important;
   background: linear-gradient(135deg, #111827 0%, #0b1220 48%, #070d16 100%) !important;
   background-color: #0f1722 !important;
   color: #ffffff !important;
   border-color: rgba(255,255,255,.14) !important;
   box-shadow: 0 16px 44px rgba(2,6,23,.30), inset 0 1px 0 rgba(255,255,255,.06) !important;
+}
+
+/* This is the hard fix: paint a dark layer INSIDE the tile so pale parent/utility styles cannot show through. */
+main[data-industrial-simple-page="command"] [data-cv-command-tile]::after,
+main[data-industrial-simple-page="command"] .cv-command-tile::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+  border-radius: inherit !important;
+  background: linear-gradient(135deg, #111827 0%, #0b1220 48%, #070d16 100%) !important;
+  pointer-events: none !important;
+}
+
+main[data-industrial-simple-page="command"] [data-cv-command-tile] > *,
+main[data-industrial-simple-page="command"] .cv-command-tile > * {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+main[data-industrial-simple-page="command"] [data-cv-command-tile] > span[aria-hidden="true"],
+main[data-industrial-simple-page="command"] .cv-command-tile > span[aria-hidden="true"] {
+  z-index: 4 !important;
+}
+
+main[data-industrial-simple-page="command"] [data-cv-command-tile]::before,
+main[data-industrial-simple-page="command"] .cv-command-tile::before,
+main[data-industrial-simple-page="command"] > section > section > a::before,
+main[data-industrial-simple-page="command"] > section > section > div::before,
+main[data-industrial-simple-page="command"] > section > section > aside::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 9px !important;
+  height: 100% !important;
+  z-index: 3 !important;
+  border-radius: 24px 0 0 24px !important;
+  background: repeating-linear-gradient(135deg, #fb923c 0 10px, rgba(255,255,255,.35) 10px 15px, #fb923c 15px 25px) !important;
+  box-shadow: 0 0 16px rgba(251,146,60,.42) !important;
 }
 
 main[data-industrial-simple-page="command"] > section > section > a *,
@@ -29,28 +72,22 @@ main[data-industrial-simple-page="command"] > section > section > div h2,
 main[data-industrial-simple-page="command"] > section > section > div h3,
 main[data-industrial-simple-page="command"] > section > section > aside h1,
 main[data-industrial-simple-page="command"] > section > section > aside h2,
-main[data-industrial-simple-page="command"] > section > section > aside h3 {
+main[data-industrial-simple-page="command"] > section > section > aside h3,
+main[data-industrial-simple-page="command"] [data-cv-command-tile] h1,
+main[data-industrial-simple-page="command"] [data-cv-command-tile] h2,
+main[data-industrial-simple-page="command"] [data-cv-command-tile] h3,
+main[data-industrial-simple-page="command"] .cv-command-tile h1,
+main[data-industrial-simple-page="command"] .cv-command-tile h2,
+main[data-industrial-simple-page="command"] .cv-command-tile h3 {
   color: #ffffff !important;
 }
 
 main[data-industrial-simple-page="command"] > section > section > a p,
 main[data-industrial-simple-page="command"] > section > section > div p,
-main[data-industrial-simple-page="command"] > section > section > aside p {
+main[data-industrial-simple-page="command"] > section > section > aside p,
+main[data-industrial-simple-page="command"] [data-cv-command-tile] p,
+main[data-industrial-simple-page="command"] .cv-command-tile p {
   color: rgba(226,232,240,.88) !important;
-}
-
-main[data-industrial-simple-page="command"] > section > section > a::before,
-main[data-industrial-simple-page="command"] > section > section > div::before,
-main[data-industrial-simple-page="command"] > section > section > aside::before {
-  content: "" !important;
-  position: absolute !important;
-  left: 0 !important;
-  top: 0 !important;
-  width: 9px !important;
-  height: 100% !important;
-  border-radius: 24px 0 0 24px !important;
-  background: repeating-linear-gradient(135deg, #fb923c 0 10px, rgba(255,255,255,.35) 10px 15px, #fb923c 15px 25px) !important;
-  box-shadow: 0 0 16px rgba(251,146,60,.42) !important;
 }
 
 main[data-industrial-simple-page="command"] > section > section > a:nth-child(2n)::before,
