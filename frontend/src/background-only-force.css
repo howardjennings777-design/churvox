@@ -1,7 +1,4 @@
-@import "./command-oblong-stripes.css";
-
-/* CHURVOX_BACKGROUND_ONLY_20260605
-   Background/canvas only. Do not change cards, panels, buttons, borders, or text. */
+/* CHURVOX_BACKGROUND_PLUS_COMMAND_TILES_20260605 */
 
 :root {
   --churvox-canvas-off-white: #f7f3ea;
@@ -13,7 +10,6 @@ body,
   background-color: var(--churvox-canvas-off-white) !important;
 }
 
-/* App-level page canvas wrappers only */
 main.fixed.inset-0,
 main.fixed.inset-0.z-\[2147483000\],
 main.fixed.inset-0.z-\[2147483600\],
@@ -36,7 +32,6 @@ main.fixed.inset-0 [data-command-canvas],
   background-image: none !important;
 }
 
-/* Keep rounded cards/panels dark exactly as designed */
 main.fixed.inset-0 [class*="rounded"],
 .concept-c2-frame [class*="rounded"],
 .xcf-real-page [class*="rounded"],
@@ -44,7 +39,6 @@ main.fixed.inset-0 [class*="rounded"],
   background-color: revert-layer;
 }
 
-/* Specific visible command canvas lane, but not the cards inside it */
 body:has(.cv-industrial-sidebar) main.fixed.inset-0,
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 > .flex,
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 > .flex > section,
@@ -53,4 +47,107 @@ body:has(.cv-industrial-sidebar) main.fixed.inset-0 section.min-w-0,
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 section.flex-1 {
   background-color: var(--churvox-canvas-off-white) !important;
   background-image: none !important;
+}
+
+/* FINAL COMMAND TILE OVERRIDE - loaded after the background reset */
+main[data-industrial-simple-page="command"] section[class*="rounded-"]:not(.rounded-full),
+main[data-industrial-simple-page="command"] div[class*="rounded-"]:not(.rounded-full),
+main[data-industrial-simple-page="command"] aside[class*="rounded-"]:not(.rounded-full),
+main[data-industrial-simple-page="command"] a[class*="rounded-"]:not(.rounded-full),
+main[data-industrial-simple-page="command"] button[class*="rounded-"]:not(.rounded-full) {
+  position: relative !important;
+  overflow: hidden !important;
+  border-radius: 30px !important;
+  border: 1px solid rgba(255, 255, 255, .12) !important;
+  background: linear-gradient(135deg, #111827, #070d16) !important;
+  color: #ffffff !important;
+  box-shadow: 0 20px 60px rgba(2, 6, 23, .30), inset 0 1px 0 rgba(255, 255, 255, .05) !important;
+}
+
+main[data-industrial-simple-page="command"] a[class*="rounded-"]:not(.rounded-full),
+main[data-industrial-simple-page="command"] button[class*="rounded-"]:not(.rounded-full) {
+  min-height: 165px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  text-align: left !important;
+}
+
+main[data-industrial-simple-page="command"] section[class*="rounded-"]:not(.rounded-full),
+main[data-industrial-simple-page="command"] div[class*="rounded-"]:not(.rounded-full),
+main[data-industrial-simple-page="command"] aside[class*="rounded-"]:not(.rounded-full),
+main[data-industrial-simple-page="command"] a[class*="rounded-"]:not(.rounded-full),
+main[data-industrial-simple-page="command"] button[class*="rounded-"]:not(.rounded-full) {
+  padding-left: max(1.9rem, 34px) !important;
+}
+
+main[data-industrial-simple-page="command"] section[class*="rounded-"]:not(.rounded-full)::before,
+main[data-industrial-simple-page="command"] div[class*="rounded-"]:not(.rounded-full)::before,
+main[data-industrial-simple-page="command"] aside[class*="rounded-"]:not(.rounded-full)::before,
+main[data-industrial-simple-page="command"] a[class*="rounded-"]:not(.rounded-full)::before,
+main[data-industrial-simple-page="command"] button[class*="rounded-"]:not(.rounded-full)::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 10px !important;
+  height: 100% !important;
+  border-radius: 30px 0 0 30px !important;
+  background: repeating-linear-gradient(135deg, #fb923c 0 10px, rgba(255,255,255,.35) 10px 15px, #fb923c 15px 25px) !important;
+  box-shadow: 0 0 22px rgba(251,146,60,.45) !important;
+}
+
+main[data-industrial-simple-page="command"] a:nth-child(2n)::before,
+main[data-industrial-simple-page="command"] button:nth-child(2n)::before,
+main[data-industrial-simple-page="command"] div[class*="rounded-"]:nth-child(2n)::before {
+  background: repeating-linear-gradient(135deg, #34d399 0 10px, rgba(255,255,255,.35) 10px 15px, #34d399 15px 25px) !important;
+  box-shadow: 0 0 22px rgba(52,211,153,.45) !important;
+}
+
+main[data-industrial-simple-page="command"] a:nth-child(3n)::before,
+main[data-industrial-simple-page="command"] button:nth-child(3n)::before,
+main[data-industrial-simple-page="command"] aside[class*="rounded-"]::before,
+main[data-industrial-simple-page="command"] div[class*="rounded-"]:nth-child(3n)::before {
+  background: repeating-linear-gradient(135deg, #22d3ee 0 10px, rgba(255,255,255,.35) 10px 15px, #22d3ee 15px 25px) !important;
+  box-shadow: 0 0 22px rgba(34,211,238,.45) !important;
+}
+
+main[data-industrial-simple-page="command"] h1,
+main[data-industrial-simple-page="command"] h2,
+main[data-industrial-simple-page="command"] h3,
+main[data-industrial-simple-page="command"] strong,
+main[data-industrial-simple-page="command"] b,
+main[data-industrial-simple-page="command"] .text-slate-950,
+main[data-industrial-simple-page="command"] .text-slate-900,
+main[data-industrial-simple-page="command"] .text-slate-800 {
+  color: #ffffff !important;
+}
+
+main[data-industrial-simple-page="command"] p,
+main[data-industrial-simple-page="command"] li,
+main[data-industrial-simple-page="command"] .text-slate-700,
+main[data-industrial-simple-page="command"] .text-slate-600,
+main[data-industrial-simple-page="command"] .text-slate-500,
+main[data-industrial-simple-page="command"] .text-slate-400,
+main[data-industrial-simple-page="command"] .text-slate-300 {
+  color: rgba(226, 232, 240, .86) !important;
+}
+
+main[data-industrial-simple-page="command"] .text-blue-600,
+main[data-industrial-simple-page="command"] .text-amber-700,
+main[data-industrial-simple-page="command"] .text-amber-800,
+main[data-industrial-simple-page="command"] .text-emerald-700,
+main[data-industrial-simple-page="command"] .text-emerald-800,
+main[data-industrial-simple-page="command"] .text-\[10px\],
+main[data-industrial-simple-page="command"] .text-\[11px\] {
+  color: #facc15 !important;
+}
+
+main[data-industrial-simple-page="command"] .rounded-full,
+main[data-industrial-simple-page="command"] a.rounded-2xl,
+main[data-industrial-simple-page="command"] button.rounded-2xl {
+  min-height: auto !important;
+  padding-left: 1rem !important;
 }
