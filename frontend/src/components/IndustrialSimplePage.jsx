@@ -50,7 +50,89 @@ function statusOf(item) {
 }
 
 function Stat({ label, value }) {
-  return <div className={`rounded-[22px] ${industrialPanel} p-4`}><div className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-300">{label}</div><div className="mt-3 text-3xl font-black tracking-[-0.06em] text-white">{value}</div></div>;
+  return (
+    <div className={`rounded-[22px] ${industrialPanel} p-4`}>
+      <div className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-300">{label}</div>
+      <div className="mt-3 text-3xl font-black tracking-[-0.06em] text-white">{value}</div>
+    </div>
+  );
+}
+
+function RecordBox({ item, config, index }) {
+  return (
+    <Link
+      key={idOf(item) || index}
+      to={config.detail(item)}
+      className={`block rounded-[24px] ${industrialPanel} p-5 no-underline transition hover:-translate-y-0.5 hover:shadow-[0_26px_80px_rgba(2,6,23,.38)]`}
+    >
+      <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">{statusOf(item)}</div>
+      <h3 className="mt-3 text-2xl font-black tracking-[-0.05em] text-white">{titleOf(item)}</h3>
+      <p className="mt-2 text-sm font-bold leading-6 text-slate-300">{metaOf(item) || "Open the record for full details."}</p>
+    </Link>
+  );
+}
+
+function CommandLayout({ config, items, loading, open, ready, needs }) {
+  return (
+    <main className={industrialPageShell} data-industrial-simple-page="command" data-command-canvas>
+      <section className={`${industrialContentLane} space-y-6`}>
+        <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_330px]">
+          <div className={`rounded-[32px] ${industrialPanel} p-6 md:p-8`}>
+            <span className={industrialChip}>{config.kicker}</span>
+            <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">{config.title}</h1>
+            <p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-slate-300 md:text-base">{config.subtitle}</p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link to={config.create} className={`rounded-2xl px-5 py-3 text-sm font-black ${industrialAction}`}>{config.createLabel}</Link>
+              <Link to="/dashboard" className={`rounded-2xl px-5 py-3 text-sm font-black ${industrialGhost}`}>Command Board</Link>
+            </div>
+          </div>
+
+          <aside className={`rounded-[32px] ${industrialPanel} p-5`}>
+            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">Health</div>
+            <div className="mt-5 grid gap-3">
+              <Stat label="Open" value={open} />
+              <Stat label="Ready" value={ready} />
+              <Stat label="Needs review" value={needs} />
+            </div>
+          </aside>
+        </section>
+
+        <section className="grid gap-5 md:grid-cols-3">
+          <Link to="/jobs" className={`rounded-[26px] ${industrialPanel} p-5 no-underline`}>
+            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">Work</div>
+            <h2 className="mt-2 text-2xl font-black tracking-[-0.055em] text-white">Review today’s work</h2>
+            <p className="mt-2 text-sm font-bold leading-6 text-slate-300">Jobs, site notes and work needing owner attention.</p>
+          </Link>
+          <Link to="/invoices" className={`rounded-[26px] ${industrialPanel} p-5 no-underline`}>
+            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">Money</div>
+            <h2 className="mt-2 text-2xl font-black tracking-[-0.055em] text-white">Check invoices</h2>
+            <p className="mt-2 text-sm font-bold leading-6 text-slate-300">Drafts, sent invoices and payment follow-ups.</p>
+          </Link>
+          <Link to="/crew-map" className={`rounded-[26px] ${industrialPanel} p-5 no-underline`}>
+            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">Crew</div>
+            <h2 className="mt-2 text-2xl font-black tracking-[-0.055em] text-white">Assign open jobs</h2>
+            <p className="mt-2 text-sm font-bold leading-6 text-slate-300">See what needs dispatch and who can handle it.</p>
+          </Link>
+        </section>
+
+        <section className="space-y-5">
+          <div className={`rounded-[26px] ${industrialPanel} p-5`}>
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">Records</div>
+                <h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-white">Open Command Board</h2>
+              </div>
+              {loading && <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-slate-300">Loading…</span>}
+            </div>
+          </div>
+
+          <div className="grid gap-5 xl:grid-cols-2">
+            {items.map((item, index) => <RecordBox key={idOf(item) || index} item={item} config={config} index={index} />)}
+          </div>
+        </section>
+      </section>
+    </main>
+  );
 }
 
 export default function IndustrialSimplePage({ kind }) {
@@ -78,8 +160,12 @@ export default function IndustrialSimplePage({ kind }) {
   const ready = items.filter((item) => /ready|sent|active|assigned|progress|approval/i.test(statusOf(item))).length;
   const needs = Math.max(open - ready, 0);
 
+  if (kind === "command") {
+    return <CommandLayout config={config} items={items} loading={loading} open={open} ready={ready} needs={needs} />;
+  }
+
   return (
-    <main className={industrialPageShell} data-industrial-simple-page={kind}>
+    <main className={industrialPageShell} data-industrial-simple-page={kind} data-command-canvas>
       <section className={industrialContentLane}>
         <section className="grid gap-5 xl:grid-cols-[1fr_390px]">
           <div className={`rounded-[30px] ${industrialPanel} p-6 md:p-8`}>
@@ -93,7 +179,7 @@ export default function IndustrialSimplePage({ kind }) {
         <section className={`mt-5 rounded-[28px] ${industrialPanel} p-5`}>
           <div className="mb-5 flex items-end justify-between gap-4"><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">Records</div><h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-white">Open {config.kicker}</h2></div>{loading && <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-slate-300">Loading…</span>}</div>
           <div className="grid gap-4 xl:grid-cols-2">
-            {items.map((item, index) => <Link key={idOf(item) || index} to={config.detail(item)} className={`block rounded-[22px] ${industrialPanel} p-4 no-underline`}><div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">{statusOf(item)}</div><h3 className="mt-2 text-xl font-black tracking-[-0.045em] text-white">{titleOf(item)}</h3><p className="mt-2 text-sm font-bold text-slate-300">{metaOf(item) || "Open the record for full details."}</p></Link>)}
+            {items.map((item, index) => <RecordBox key={idOf(item) || index} item={item} config={config} index={index} />)}
           </div>
         </section>
       </section>
