@@ -1,0 +1,28 @@
+/* Make the mounted AI prepared slips visible above the fixed Command shell. */
+.cv-command-prepared-slips {
+  position: fixed !important;
+  top: 92px !important;
+  right: 22px !important;
+  width: min(480px, calc(100vw - 44px)) !important;
+  max-height: calc(100vh - 120px) !important;
+  overflow: auto !important;
+  z-index: 2147483300 !important;
+  pointer-events: auto !important;
+}
+
+.cv-command-prepared-slips .cv-command-tile {
+  min-height: 0 !important;
+  max-height: calc(100vh - 130px) !important;
+}
+
+.cv-command-prepared-slips article {
+  pointer-events: auto !important;
+}
+
+@media (max-width: 900px) {
+  .cv-command-prepared-slips {
+    inset: 76px 10px 10px 10px !important;
+    width: auto !important;
+    max-height: none !important;
+  }
+}
