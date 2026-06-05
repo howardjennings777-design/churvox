@@ -1,6 +1,17 @@
-/* CHURVOX COMMAND OBLONG STRIPES 2026-06-05
-   Final visual pass for the visible /dashboard Command Board. */
+/* CHURVOX COMMAND STANDING INFO TILES 2026-06-05
+   Keep dark industrial boxes, make them taller/upright, and show useful info inside. */
 
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 {
+  --cv-card-black: #0f1722;
+  --cv-card-black-2: #070d16;
+  --cv-tape-orange: #fb923c;
+  --cv-tape-yellow: #facc15;
+  --cv-tape-cyan: #22d3ee;
+  --cv-tape-green: #34d399;
+  --cv-tape-purple: #a78bfa;
+}
+
+/* Main visible command cards */
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 [class*="rounded-"][class*="bg-white"],
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 [class*="rounded-"][class*="bg-slate-50"],
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 [class*="rounded-"][class*="bg-amber-50"],
@@ -10,57 +21,75 @@ body:has(.cv-industrial-sidebar) main.fixed.inset-0 a[class*="rounded-"][class*=
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 section[class*="rounded-"] {
   position: relative !important;
   overflow: hidden !important;
-  border-radius: 28px !important;
+  border-radius: 30px !important;
   border: 1px solid rgba(255,255,255,.12) !important;
-  background: linear-gradient(135deg, #111827, #070d16) !important;
+  background: linear-gradient(135deg, var(--cv-card-black), var(--cv-card-black-2)) !important;
   color: #ffffff !important;
   box-shadow: 0 20px 60px rgba(2,6,23,.30), inset 0 1px 0 rgba(255,255,255,.05) !important;
 }
 
-body:has(.cv-industrial-sidebar) main.fixed.inset-0 [class*="rounded-"][class*="bg-white"]:not(button),
-body:has(.cv-industrial-sidebar) main.fixed.inset-0 [class*="rounded-"][class*="bg-slate-50"]:not(button),
-body:has(.cv-industrial-sidebar) main.fixed.inset-0 [class*="rounded-"][class*="bg-amber-50"]:not(button),
-body:has(.cv-industrial-sidebar) main.fixed.inset-0 [class*="rounded-"][class*="bg-emerald-50"]:not(button),
-body:has(.cv-industrial-sidebar) main.fixed.inset-0 a[class*="rounded-"][class*="no-underline"],
-body:has(.cv-industrial-sidebar) main.fixed.inset-0 a[class*="rounded-"][class*="block"],
-body:has(.cv-industrial-sidebar) main.fixed.inset-0 section[class*="rounded-"] {
-  padding-left: max(1.75rem, 30px) !important;
+/* Standing/upright tile feel: enough height to read without tapping */
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 a[class*="rounded-"],
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 button[class*="rounded-"] {
+  min-height: 158px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+  gap: .65rem !important;
+  text-align: left !important;
 }
 
-body:has(.cv-industrial-sidebar) main.fixed.inset-0 [class*="rounded-"][class*="bg-white"]:not(button)::before,
-body:has(.cv-industrial-sidebar) main.fixed.inset-0 [class*="rounded-"][class*="bg-slate-50"]:not(button)::before,
-body:has(.cv-industrial-sidebar) main.fixed.inset-0 [class*="rounded-"][class*="bg-amber-50"]:not(button)::before,
-body:has(.cv-industrial-sidebar) main.fixed.inset-0 [class*="rounded-"][class*="bg-emerald-50"]:not(button)::before,
-body:has(.cv-industrial-sidebar) main.fixed.inset-0 a[class*="rounded-"][class*="no-underline"]::before,
-body:has(.cv-industrial-sidebar) main.fixed.inset-0 a[class*="rounded-"][class*="block"]::before,
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 section[class*="rounded-"] {
+  min-height: 132px !important;
+}
+
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 aside[class*="rounded-"] {
+  min-height: 100% !important;
+}
+
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 [class*="rounded-"]:not(.rounded-full):not(button),
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 a[class*="rounded-"],
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 section[class*="rounded-"] {
+  padding-left: max(1.9rem, 34px) !important;
+}
+
+/* Coloured tape down one side */
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 [class*="rounded-"]:not(.rounded-full):not(button)::before,
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 a[class*="rounded-"]::before,
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 section[class*="rounded-"]::before {
   content: "" !important;
   position: absolute !important;
   left: 0 !important;
   top: 0 !important;
-  width: 9px !important;
+  width: 10px !important;
   height: 100% !important;
-  border-radius: 28px 0 0 28px !important;
-  background: repeating-linear-gradient(135deg, #fb923c 0 10px, rgba(255,255,255,.35) 10px 15px, #fb923c 15px 25px) !important;
+  border-radius: 30px 0 0 30px !important;
+  background: repeating-linear-gradient(135deg, var(--cv-tape-orange) 0 10px, rgba(255,255,255,.35) 10px 15px, var(--cv-tape-orange) 15px 25px) !important;
   box-shadow: 0 0 22px rgba(251,146,60,.45) !important;
 }
 
-body:has(.cv-industrial-sidebar) main.fixed.inset-0 a[class*="rounded-"]:nth-child(2n)::before,
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 a:nth-child(2n)::before,
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 button:nth-child(2n)::before,
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 div[class*="rounded-"]:nth-child(2n)::before {
-  background: repeating-linear-gradient(135deg, #34d399 0 10px, rgba(255,255,255,.35) 10px 15px, #34d399 15px 25px) !important;
+  background: repeating-linear-gradient(135deg, var(--cv-tape-green) 0 10px, rgba(255,255,255,.35) 10px 15px, var(--cv-tape-green) 15px 25px) !important;
   box-shadow: 0 0 22px rgba(52,211,153,.45) !important;
 }
 
-body:has(.cv-industrial-sidebar) main.fixed.inset-0 a[class*="rounded-"]:nth-child(3n)::before,
-body:has(.cv-industrial-sidebar) main.fixed.inset-0 div[class*="rounded-"]:nth-child(3n)::before,
-body:has(.cv-industrial-sidebar) main.fixed.inset-0 aside[class*="rounded-"]::before {
-  background: repeating-linear-gradient(135deg, #22d3ee 0 10px, rgba(255,255,255,.35) 10px 15px, #22d3ee 15px 25px) !important;
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 a:nth-child(3n)::before,
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 button:nth-child(3n)::before,
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 aside[class*="rounded-"]::before,
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 div[class*="rounded-"]:nth-child(3n)::before {
+  background: repeating-linear-gradient(135deg, var(--cv-tape-cyan) 0 10px, rgba(255,255,255,.35) 10px 15px, var(--cv-tape-cyan) 15px 25px) !important;
   box-shadow: 0 0 22px rgba(34,211,238,.45) !important;
 }
 
+/* Text must be readable inside the boxes */
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 h1,
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 h2,
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 h3,
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 strong,
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 b,
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 .text-slate-950,
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 .text-slate-900,
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 .text-slate-800 {
@@ -68,12 +97,13 @@ body:has(.cv-industrial-sidebar) main.fixed.inset-0 .text-slate-800 {
 }
 
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 p,
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 li,
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 .text-slate-700,
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 .text-slate-600,
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 .text-slate-500,
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 .text-slate-400,
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 .text-slate-300 {
-  color: rgba(226,232,240,.82) !important;
+  color: rgba(226,232,240,.86) !important;
 }
 
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 .text-blue-600,
@@ -84,4 +114,26 @@ body:has(.cv-industrial-sidebar) main.fixed.inset-0 .text-emerald-800,
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 .text-\[10px\],
 body:has(.cv-industrial-sidebar) main.fixed.inset-0 .text-\[11px\] {
   color: #facc15 !important;
+}
+
+/* Make the three action boxes read like dashboard tiles, not mystery buttons */
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 section.grid a[class*="rounded-"] h2,
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 section.grid a[class*="rounded-"] h3,
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 section.grid button[class*="rounded-"] div[class*="text-lg"] {
+  font-size: clamp(1.25rem, 2vw, 1.75rem) !important;
+  line-height: 1.05 !important;
+}
+
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 section.grid a[class*="rounded-"] p,
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 section.grid button[class*="rounded-"] p {
+  display: block !important;
+  max-width: 34rem !important;
+  line-height: 1.45 !important;
+}
+
+/* Keep actual small pill buttons small */
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 .rounded-full,
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 a.rounded-2xl,
+body:has(.cv-industrial-sidebar) main.fixed.inset-0 button.rounded-2xl {
+  min-height: auto !important;
 }
