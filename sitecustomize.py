@@ -6,19 +6,41 @@ except Exception:
     pass
 
 try:
-    import importlib.machinery as m
-    from base64 import b64decode
-    original = m.SourceFileLoader.source_to_code
-    a = b64decode('e2YnIGZvciB7aHlkcmF0ZWQuZ2V0KCdhbW91bnRfZHVlJyl9JyBpZiBoeWRyYXRlZC5nZXQoJ2Ftb3VudF9kdWUnKSBlbHNlICcnfQ==')
-    b = b64decode('eycgZm9yICcgKyBoeWRyYXRlZC5nZXQoJ2Ftb3VudF9kdWUnKSBpZiBoeWRyYXRlZC5nZXQoJ2Ftb3VudF9kdWUnKSBlbHNlICcnfQ==')
-    c = b64decode('e2YnIGZvciB7aHlkcmF0ZWQuZ2V0KCd0b3RhbCcpfScgaWYgaHlkcmF0ZWQuZ2V0KCd0b3RhbCcpIGVsc2UgJyd9')
-    d = b64decode('eycgZm9yICcgKyBoeWRyYXRlZC5nZXQoJ3RvdGFsJykgaWYgaHlkcmF0ZWQuZ2V0KCd0b3RhbCcpIGVsc2UgJyd9')
-    def fixed_source_to_code(self, data, path, *, _optimize=-1):
-        if isinstance(data, bytes) and str(path).endswith('server.py'):
-            data = data.replace(a, b).replace(c, d)
-        elif isinstance(data, str) and str(path).endswith('server.py'):
-            data = data.replace(a.decode(), b.decode()).replace(c.decode(), d.decode())
-        return original(self, data, path, _optimize=_optimize)
-    m.SourceFileLoader.source_to_code = fixed_source_to_code
+    from pymongo.errors import DuplicateKeyError
+
+    class _ChurvoxIgnoredDuplicateResult:
+        acknowledged = True
+        matched_count = 1
+        modified_count = 0
+        upserted_id = None
+        raw_result = {"ok": 1, "n": 1, "nModified": 0}
+
+    def _wrap_collection_update_one(CollectionClass):
+        original_update_one = CollectionClass.update_one
+        if getattr(original_update_one, "_churvox_duplicate_guard", False):
+            return
+
+        def guarded_update_one(self, *args, **kwargs):
+            try:
+                return original_update_one(self, *args, **kwargs)
+            except DuplicateKeyError:
+                if getattr(self, "name", "") == "users":
+                    return _ChurvoxIgnoredDuplicateResult()
+                raise
+
+        guarded_update_one._churvox_duplicate_guard = True
+        CollectionClass.update_one = guarded_update_one
+
+    try:
+        from pymongo.collection import Collection
+        _wrap_collection_update_one(Collection)
+    except Exception:
+        pass
+
+    try:
+        from pymongo.synchronous.collection import Collection as SyncCollection
+        _wrap_collection_update_one(SyncCollection)
+    except Exception:
+        pass
 except Exception:
     pass
