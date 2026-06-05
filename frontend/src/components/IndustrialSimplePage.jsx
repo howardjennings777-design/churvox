@@ -174,6 +174,14 @@ function makeCommandData({ jobs, invoices, quotes, workers, aiActions }) {
   return { todayJobs, activeJobs, unassignedJobs, completedReadyInvoice, draftInvoices, readyInvoices, overdueInvoices, paidInvoices, outstanding, overdueTotal, followQuotes, availableWorkers, activePersonJob, prepared };
 }
 
+function MoneySnapshotTile({ data }) {
+  return (
+    <CommandTile label="Cash flow" title="Money snapshot" count={asMoney(data.outstanding)} text={`${asMoney(data.overdueTotal)} overdue. ${data.paidInvoices.length} paid invoice${data.paidInvoices.length === 1 ? "" : "s"} found.`} color="#f43f5e" to="/money-desk" actionLabel="Open money desk">
+      <div className="grid gap-2 sm:grid-cols-3"><SimpleLine title={asMoney(data.outstanding)} meta="Outstanding" status="unpaid" /><SimpleLine title={asMoney(data.overdueTotal)} meta="Overdue" status="chase" /><SimpleLine title={String(data.paidInvoices.length)} meta="Paid invoices" status="paid" /></div>
+    </CommandTile>
+  );
+}
+
 function CommandLayout({ config, items, dashboard, loading, open, ready, needs }) {
   const data = makeCommandData(dashboard);
   const person = data.activePersonJob;
@@ -194,6 +202,11 @@ function CommandLayout({ config, items, dashboard, loading, open, ready, needs }
           </div>
           <CommandTile label="AI Priority" title="What needs approval" count={data.prepared.length || needs} text="AI has grouped the admin that needs owner attention. Check these first." color="#22d3ee" to="/ai-operator" actionLabel="Open approvals" items={data.prepared.slice(0, 3)} />
         </section>
+
+        <section className="grid gap-5 xl:grid-cols-1">
+          <MoneySnapshotTile data={data} />
+        </section>
+
         <section className="grid gap-5 xl:grid-cols-3">
           <CommandTile label="Today’s jobs" title="Jobs happening today" count={data.todayJobs.length || open} text="Scheduled, started, finished, or stuck today." color="#facc15" to="/jobs" actionLabel="Open jobs" items={(data.todayJobs.length ? data.todayJobs : items).slice(0, 3).map((job) => ({ title: titleOf(job), meta: `${workerName(job)}${metaOf(job) ? ` · ${metaOf(job)}` : ""}`, status: statusOf(job) }))} />
           <CommandTile label="Invoices" title="Money waiting" count={data.readyInvoices.length + data.draftInvoices.length + data.overdueInvoices.length} text={`${data.readyInvoices.length} ready, ${data.draftInvoices.length} draft, ${data.overdueInvoices.length} overdue.`} color="#34d399" to="/invoices" actionLabel="Open invoices" items={[...data.overdueInvoices, ...data.readyInvoices, ...data.draftInvoices].slice(0, 3).map((invoice) => ({ title: titleOf(invoice), meta: asMoney(invoiceAmount(invoice)), status: statusOf(invoice) }))} />
@@ -204,11 +217,8 @@ function CommandLayout({ config, items, dashboard, loading, open, ready, needs }
           <CommandTile label="Crew" title="Capacity check" count={data.availableWorkers.length} text={`${data.activeJobs.length} active. ${data.availableWorkers.length} available or not marked busy.`} color="#22d3ee" to="/team" actionLabel="Open team" items={data.availableWorkers.slice(0, 3).map((worker) => ({ title: titleOf(worker), meta: first(worker?.role, worker?.email, worker?.phone, "Crew member"), status: statusOf(worker) }))} />
           <CommandTile label="Quotes" title="Follow-ups to win" count={data.followQuotes.length} text="Quotes that may need a follow-up before they go cold." color="#facc15" to="/quotes" actionLabel="Open quotes" items={data.followQuotes.slice(0, 3).map((quote) => ({ title: titleOf(quote), meta: metaOf(quote) || first(quote?.customer_name, quote?.client_name, "Customer follow-up"), status: statusOf(quote) }))} />
         </section>
-        <section className="grid gap-5 xl:grid-cols-2">
+        <section className="grid gap-5 xl:grid-cols-1">
           <CommandTile label="Ready for invoice" title="Completed work not billed" count={data.completedReadyInvoice.length} text="Completed jobs Churvox found that look ready to turn into draft invoices." color="#34d399" to="/invoices/new" actionLabel="Create invoice" items={data.completedReadyInvoice.slice(0, 3).map((job) => ({ title: titleOf(job), meta: `${workerName(job)}${metaOf(job) ? ` · ${metaOf(job)}` : ""}`, status: "draft invoice needed" }))} />
-          <CommandTile label="Cash flow" title="Money snapshot" count={asMoney(data.outstanding)} text={`${asMoney(data.overdueTotal)} overdue. ${data.paidInvoices.length} paid invoice${data.paidInvoices.length === 1 ? "" : "s"} found.`} color="#f43f5e" to="/money-desk" actionLabel="Open money desk">
-            <div className="grid gap-2 sm:grid-cols-3"><SimpleLine title={asMoney(data.outstanding)} meta="Outstanding" status="unpaid" /><SimpleLine title={asMoney(data.overdueTotal)} meta="Overdue" status="chase" /><SimpleLine title={String(data.paidInvoices.length)} meta="Paid invoices" status="paid" /></div>
-          </CommandTile>
         </section>
       </section>
     </main>
