@@ -5,6 +5,7 @@ import './index.css';
 import './styles/churvoxFullPageModals.css';
 import './concept-c/LoggedInLightBackgroundOverride.css';
 import './industrial-command-global.css';
+import './public-industrial-theme.css';
 import './runtime/churvoxClearOldCache';
 import './runtime/churvoxSlipOnlyMode';
 
