@@ -135,14 +135,14 @@ function CommandTile({ label, title, count, text, color, to, actionLabel = "Open
       </div>
     </>
   );
-  const className = "relative min-h-[220px] overflow-hidden rounded-[28px] border border-white/10 p-4 pl-7 text-white no-underline";
-  if (!to) return <div className={className} style={tileStyle}>{body}</div>;
-  return <Link to={to} className={`${className} transition hover:-translate-y-0.5 hover:border-white/20`} style={tileStyle}>{body}</Link>;
+  const className = "cv-command-tile relative min-h-[220px] overflow-hidden rounded-[28px] border border-white/10 p-4 pl-7 text-white no-underline";
+  if (!to) return <div data-cv-command-tile="true" className={className} style={tileStyle}>{body}</div>;
+  return <Link data-cv-command-tile="true" to={to} className={`${className} transition hover:-translate-y-0.5 hover:border-white/20`} style={tileStyle}>{body}</Link>;
 }
 
 function RecordBox({ item, config, index }) {
   return (
-    <Link to={config.detail(item)} className="relative block min-h-[132px] overflow-hidden rounded-[28px] border border-white/10 p-4 pl-7 text-white no-underline" style={tileStyle}>
+    <Link data-cv-command-tile="true" to={config.detail(item)} className="cv-command-tile relative block min-h-[132px] overflow-hidden rounded-[28px] border border-white/10 p-4 pl-7 text-white no-underline" style={tileStyle}>
       <SecurityTape color={tapeFor(index + 3)} />
       <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">{statusOf(item)}</div>
       <h3 className="mt-2 text-xl font-black tracking-[-0.05em] text-white">{titleOf(item)}</h3>
@@ -182,7 +182,7 @@ function CommandLayout({ config, items, dashboard, loading, open, ready, needs }
     <main className={industrialPageShell} data-industrial-simple-page="command" data-command-canvas>
       <section className={`${industrialContentLane} space-y-5`}>
         <section className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,.75fr)]">
-          <div className="relative h-fit overflow-hidden rounded-[30px] border border-white/10 p-5 pl-8 text-white md:p-6 md:pl-9" style={tileStyle}>
+          <div data-cv-command-tile="true" className="cv-command-tile relative h-fit overflow-hidden rounded-[30px] border border-white/10 p-5 pl-8 text-white md:p-6 md:pl-9" style={tileStyle}>
             <SecurityTape color="#fb923c" />
             <span className={industrialChip}>{config.kicker}</span>
             <h1 className="mt-4 max-w-4xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">{config.title}</h1>
