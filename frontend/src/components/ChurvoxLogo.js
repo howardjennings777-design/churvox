@@ -1,8 +1,8 @@
 import React from "react";
 
 /**
- * Churvox final logo — C-lane mark + clean wordmark.
- * Pure inline SVG so it works in navs, invoices, auth, plans, and app shells.
+ * New CHURVOX orange industrial logo.
+ * No COMMAND wording. Works across sidebar, auth, headers and app branding.
  */
 const SIZE_MAP = {
   sm: "h-7",
@@ -12,37 +12,32 @@ const SIZE_MAP = {
   hero: "h-14 sm:h-16 lg:h-20",
 };
 
-function MarkDefs({ id = "cvxLogo" }) {
+function LogoDefs({ id = "cvxNew" }) {
   return (
     <defs>
-      <linearGradient id={`${id}-lane`} x1="18" y1="104" x2="112" y2="20" gradientUnits="userSpaceOnUse">
-        <stop stopColor="#77FFC1" />
-        <stop offset="0.42" stopColor="#14D8F4" />
-        <stop offset="0.72" stopColor="#245CFF" />
-        <stop offset="1" stopColor="#A855F7" />
+      <linearGradient id={`${id}-orange`} x1="18" y1="24" x2="178" y2="166" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#ffb15f" />
+        <stop offset="0.38" stopColor="#ff7900" />
+        <stop offset="1" stopColor="#f05a00" />
       </linearGradient>
-      <linearGradient id={`${id}-word`} x1="0" y1="16" x2="420" y2="78" gradientUnits="userSpaceOnUse">
-        <stop stopColor="#F8FBFF" />
-        <stop offset="0.72" stopColor="#F8FBFF" />
-        <stop offset="1" stopColor="#62E8F5" />
+      <linearGradient id={`${id}-dark`} x1="36" y1="48" x2="158" y2="138" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#2a3038" />
+        <stop offset="1" stopColor="#070b10" />
       </linearGradient>
-      <filter id={`${id}-glow`} x="-30%" y="-30%" width="160%" height="160%">
-        <feGaussianBlur stdDeviation="2.4" result="blur" />
-        <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.06 0 0 0 0 0.62 0 0 0 0 1 0 0 0 .42 0" />
-        <feBlend in="SourceGraphic" />
+      <filter id={`${id}-shadow`} x="-20%" y="-20%" width="140%" height="150%">
+        <feDropShadow dx="0" dy="12" stdDeviation="10" floodColor="#020617" floodOpacity="0.22" />
       </filter>
     </defs>
   );
 }
 
-function ChurvoxMark({ id = "cvxLogo" }) {
+function ChurvoxMark({ id = "cvxNew" }) {
   return (
-    <g filter={`url(#${id}-glow)`}>
-      <path d="M95 25H49c-24 0-43 18-43 40h19c0-12 10-22 24-22h46l17-9-17-9Z" fill={`url(#${id}-lane)`} />
-      <path d="M103 51H50c-15 0-27 11-27 25s12 25 27 25h54L89 84H51c-5 0-9-4-9-8s4-8 9-8h52l17-8.5L103 51Z" fill={`url(#${id}-lane)`} />
-      <path d="M10 68h20" stroke={`url(#${id}-lane)`} strokeWidth="10" strokeLinecap="round" />
-      <circle cx="32" cy="68" r="12" fill="#06152C" stroke={`url(#${id}-lane)`} strokeWidth="6" />
-      <path d="M66 55 73 67l13 7-13 7-7 13-7-13-13-7 13-7 7-12Z" fill="#62E8F5" />
+    <g filter={`url(#${id}-shadow)`}>
+      <path d="M122 18H54L18 52v76l36 34h68l24-24h-58l-18 18-36-34V58l36-34h58l18 18 24-24h-48Z" fill={`url(#${id}-orange)`} />
+      <path d="M53 54h31v25H53V54Zm47 0h31v25h-31V54ZM53 101h31v25H53v-25Zm47 0h31v25h-31v-25Z" fill={`url(#${id}-dark)`} />
+      <path d="M84 79h16v22H84V79Zm-31 0h31v22H53V79Zm47 0h31v22h-31V79Z" fill="#f8fafc" />
+      <path d="M78 72h28l16 18-16 18H78L62 90l16-18Z" fill="#ff7900" />
     </g>
   );
 }
@@ -55,49 +50,24 @@ export function ChurvoxLogo({
   tone = "auto",
 }) {
   const heightCls = SIZE_MAP[size] || SIZE_MAP.md;
-  const id = `cvxLogo-${variant}-${size}`;
-  const wordFill = tone === "dark" ? "#06152C" : tone === "light" ? "#F8FBFF" : `url(#${id}-word)`;
+  const id = `cvxNew-${variant}-${size}`;
+  const wordFill = tone === "light" ? "#f8fafc" : "#111820";
 
   if (variant === "mark") {
     return (
-      <svg
-        viewBox="0 0 128 128"
-        role="img"
-        aria-label="Churvox"
-        className={`${heightCls} w-auto block ${className}`.trim()}
-        data-testid={dataTestId}
-        data-logo-size={size}
-        data-logo-variant="mark"
-      >
-        <MarkDefs id={id} />
+      <svg viewBox="0 0 188 180" role="img" aria-label="CHURVOX" className={`${heightCls} w-auto block ${className}`.trim()} data-testid={dataTestId} data-logo-size={size} data-logo-variant="mark">
+        <LogoDefs id={id} />
         <ChurvoxMark id={id} />
       </svg>
     );
   }
 
   return (
-    <svg
-      viewBox="0 0 520 128"
-      role="img"
-      aria-label="Churvox"
-      className={`${heightCls} w-auto block ${className}`.trim()}
-      data-testid={dataTestId}
-      data-logo-size={size}
-      data-logo-variant="wordmark"
-    >
-      <MarkDefs id={id} />
+    <svg viewBox="0 0 980 180" role="img" aria-label="CHURVOX" className={`${heightCls} w-auto block ${className}`.trim()} data-testid={dataTestId} data-logo-size={size} data-logo-variant="wordmark">
+      <LogoDefs id={id} />
       <ChurvoxMark id={id} />
-      <text
-        x="146"
-        y="82"
-        fontFamily="Outfit, Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
-        fontWeight="850"
-        fontSize="60"
-        fill={wordFill}
-        letterSpacing="-2.6"
-      >
-        Churvox
-      </text>
+      <text x="250" y="113" fontFamily="Outfit, Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" fontWeight="950" fontSize="78" fill={wordFill} letterSpacing="-3.5">CHURVOX</text>
+      <path d="M914 55h32l-61 71h-32l61-71Z" fill="#ff7900" />
     </svg>
   );
 }
