@@ -15,31 +15,23 @@ try:
         upserted_id = None
         raw_result = {"ok": 1, "n": 1, "nModified": 0}
 
-    def _wrap_collection_update_one(CollectionClass):
-        original_update_one = CollectionClass.update_one
-        if getattr(original_update_one, "_churvox_duplicate_guard", False):
-            return
+    def _should_ignore(exc):
+        text = str(exc).lower()
+        return "duplicate key" in text and "email_1" in text
 
-        def guarded_update_one(self, *args, **kwargs):
+    try:
+        from motor.motor_asyncio import AsyncIOMotorCollection
+        _old_motor_update_one = AsyncIOMotorCollection.update_one
+
+        async def _safe_motor_update_one(self, *args, **kwargs):
             try:
-                return original_update_one(self, *args, **kwargs)
-            except DuplicateKeyError:
-                if getattr(self, "name", "") == "users":
+                return await _old_motor_update_one(self, *args, **kwargs)
+            except DuplicateKeyError as exc:
+                if _should_ignore(exc):
                     return _ChurvoxIgnoredDuplicateResult()
                 raise
 
-        guarded_update_one._churvox_duplicate_guard = True
-        CollectionClass.update_one = guarded_update_one
-
-    try:
-        from pymongo.collection import Collection
-        _wrap_collection_update_one(Collection)
-    except Exception:
-        pass
-
-    try:
-        from pymongo.synchronous.collection import Collection as SyncCollection
-        _wrap_collection_update_one(SyncCollection)
+        AsyncIOMotorCollection.update_one = _safe_motor_update_one
     except Exception:
         pass
 except Exception:
