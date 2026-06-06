@@ -9,7 +9,8 @@ on:
       - 'frontend/playwright.config.js'
       - '.github/workflows/churvox-full-launch-audit.yml'
 
-# Audit trigger: run full Churvox launch audit after Render recovery.
+permissions:
+  contents: write
 
 jobs:
   audit:
@@ -36,10 +37,49 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run public and app launch audit
+        id: run_audit
         env:
           PLAYWRIGHT_BASE_URL: https://www.churvox.com
           CI: true
-        run: npx playwright test tests/e2e/churvox-big-launch-audit.spec.js --project=chromium --project=mobile-chrome
+        run: |
+          set +e
+          npx playwright test tests/e2e/churvox-big-launch-audit.spec.js --project=chromium --project=mobile-chrome 2>&1 | tee ../churvox-audit-output.txt
+          status=${PIPESTATUS[0]}
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Save readable audit result into repo
+        if: always()
+        run: |
+          mkdir -p ../audit-results
+          {
+            echo "# Churvox Full Launch Audit"
+            echo ""
+            echo "- Site: https://www.churvox.com"
+            echo "- Commit: $GITHUB_SHA"
+            echo "- Run: $GITHUB_RUN_ID"
+            echo "- Status code: ${{ steps.run_audit.outputs.status }}"
+            echo "- Time: $(date -u)"
+            echo ""
+            echo "## Output"
+            echo '```txt'
+            tail -n 240 ../churvox-audit-output.txt || true
+            echo '```'
+          } > ../audit-results/churvox-full-launch-audit-latest.md
+
+      - name: Commit readable audit result
+        if: always()
+        run: |
+          cd ..
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add audit-results/churvox-full-launch-audit-latest.md
+          if git diff --cached --quiet; then
+            echo "No audit result changes to commit"
+          else
+            git commit -m "Save Churvox full launch audit result"
+            git push
+          fi
 
       - name: Upload Playwright report
         if: always()
@@ -56,3 +96,10 @@ jobs:
           name: churvox-full-launch-audit-results
           path: frontend/test-results
           if-no-files-found: ignore
+
+      - name: Fail job if audit failed
+        if: always()
+        run: |
+          if [ "${{ steps.run_audit.outputs.status }}" != "0" ]; then
+            exit 1
+          fi
