@@ -2,6 +2,8 @@ name: Churvox Full Launch Audit
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
   push:
     branches: [main]
     paths:
@@ -66,20 +68,6 @@ jobs:
             tail -n 240 ../churvox-audit-output.txt || true
             echo '```'
           } > ../audit-results/churvox-full-launch-audit-latest.md
-
-      - name: Commit readable audit result
-        if: always()
-        run: |
-          cd ..
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add audit-results/churvox-full-launch-audit-latest.md
-          if git diff --cached --quiet; then
-            echo "No audit result changes to commit"
-          else
-            git commit -m "Save Churvox full launch audit result"
-            git push
-          fi
 
       - name: Upload Playwright report
         if: always()
