@@ -1,0 +1,56 @@
+name: Churvox Full Launch Audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/tests/e2e/**'
+      - 'frontend/playwright.config.js'
+      - '.github/workflows/churvox-full-launch-audit.yml'
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run public and app launch audit
+        env:
+          PLAYWRIGHT_BASE_URL: https://www.churvox.com
+          CI: true
+        run: npx playwright test tests/e2e/churvox-big-launch-audit.spec.js --project=chromium --project=mobile-chrome
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-full-launch-audit-report
+          path: frontend/playwright-report
+          if-no-files-found: ignore
+
+      - name: Upload Playwright test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-full-launch-audit-results
+          path: frontend/test-results
+          if-no-files-found: ignore
