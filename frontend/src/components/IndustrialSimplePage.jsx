@@ -149,65 +149,117 @@ function SimpleLine({ title, meta, status }) {
   );
 }
 
+function FullscreenSlipModal({ mode, onClose, onApprove, approved, label, title, text, color, items, editText, to, actionLabel }) {
+  if (!mode) return null;
+  const detailItems = items.length ? items : [{ title: "No record is blocking this area", meta: "Churvox will show the client, job, invoice, quote, amount, worker and reason here when there is live work.", status: "checked" }];
+  const isEdit = mode === "edit";
+
+  return (
+    <div className="fixed inset-0 z-[9999] overflow-y-auto bg-slate-950/92 p-3 text-white backdrop-blur-xl md:p-6" role="dialog" aria-modal="true">
+      <div className="mx-auto flex min-h-[calc(100vh-24px)] max-w-6xl flex-col rounded-[34px] border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 shadow-2xl md:min-h-[calc(100vh-48px)]">
+        <div className="flex items-start justify-between gap-4 border-b border-white/10 p-5 md:p-7">
+          <div>
+            <div className="inline-flex rounded-full bg-amber-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-200">Full screen slip</div>
+            <div className="mt-3 text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200">{label}</div>
+            <h2 className="mt-2 text-4xl font-black leading-[0.95] tracking-[-0.07em] text-white md:text-6xl">{title}</h2>
+            <p className="mt-4 max-w-3xl text-sm font-bold leading-6 text-slate-300 md:text-base">{text || "Churvox checked this area and prepared the next owner action."}</p>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-slate-950">Close</button>
+        </div>
+
+        <div className="grid flex-1 gap-5 p-5 md:grid-cols-[1.1fr_.9fr] md:p-7">
+          <section className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5">
+            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">Churvox prepared this</div>
+            {isEdit ? (
+              <>
+                <textarea className="mt-4 min-h-[320px] w-full rounded-3xl border border-white/10 bg-slate-950/70 p-4 text-sm font-bold leading-6 text-white outline-none" defaultValue={editText} />
+                <p className="mt-3 text-xs font-bold leading-5 text-slate-300">Edit the prepared wording/details here. The full record page is only for changing the whole job, client, invoice or quote.</p>
+              </>
+            ) : (
+              <div className="mt-4 grid gap-3">
+                {detailItems.slice(0, 6).map((item, index) => (
+                  <div key={`${item.title || index}-modal-detail`} className="rounded-3xl border border-white/10 bg-slate-950/55 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-lg font-black text-white">{item.title}</div>
+                        <div className="mt-1 text-sm font-bold leading-6 text-slate-300">{item.meta || "No extra detail saved yet."}</div>
+                      </div>
+                      <div className="shrink-0 rounded-full bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-amber-300">{item.status || "prepared"}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <aside className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5">
+            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200">Owner decision</div>
+            <p className="mt-3 text-sm font-bold leading-6 text-slate-300">Review what Churvox prepared. Approve it, edit it, or jump to the full page only when you need to change the full record.</p>
+            {approved ? <div className="mt-4 rounded-3xl border border-emerald-300/25 bg-emerald-300/10 p-4 text-sm font-black text-emerald-100">Approved. Churvox has recorded this slip approval.</div> : null}
+            <div className="mt-5 grid gap-3">
+              <button type="button" onClick={onApprove} className="rounded-2xl bg-emerald-300 px-5 py-4 text-sm font-black text-slate-950">Approve slip</button>
+              <button type="button" onClick={() => {}} className="hidden" aria-hidden="true">noop</button>
+              {to ? <Link to={to} onClick={onClose} className="rounded-2xl bg-white px-5 py-4 text-center text-sm font-black text-slate-950 no-underline">{actionLabel}</Link> : null}
+              <button type="button" onClick={onClose} className="rounded-2xl bg-white/10 px-5 py-4 text-sm font-black text-white ring-1 ring-white/10">Back to Command</button>
+            </div>
+            <div className="mt-5 rounded-3xl border border-white/10 p-4">
+              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">Why this matters</div>
+              <p className="mt-2 text-sm font-bold leading-6 text-slate-300">The Command page stays clean. The slip opens full screen for the actual decision, so the owner does not get thrown around the app.</p>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CommandTile({ label, title, count, text, color, to, actionLabel = "Open page", items = [], children, className = "" }) {
   const visibleItems = items.filter(Boolean);
-  const [expanded, setExpanded] = React.useState(false);
-  const [editing, setEditing] = React.useState(false);
+  const [modalMode, setModalMode] = React.useState(null);
   const [approved, setApproved] = React.useState(false);
   const editText = visibleItems.length
     ? visibleItems.map((item) => `${item.title}${item.meta ? ` - ${item.meta}` : ""}`).join("\n")
     : `${title}\n${text || "Churvox checked this area and prepared the next action."}`;
 
   return (
-    <div data-cv-command-tile="true" className={`cv-command-tile relative min-h-[220px] overflow-hidden rounded-[28px] border border-white/10 p-4 pl-7 text-white no-underline ${className}`} style={tileStyle}>
-      <SecurityTape color={color} />
-      <div className="flex min-h-full flex-col gap-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">{label}</div>
-            <h2 className="mt-1 text-[1.35rem] font-black leading-[1.05] tracking-[-0.05em] text-white md:text-2xl">{title}</h2>
-          </div>
-          {count !== undefined ? <div className="shrink-0 rounded-2xl bg-emerald-400/15 px-3 py-1.5 text-2xl font-black text-white ring-1 ring-emerald-300/25">{approved ? "✓" : count}</div> : null}
-        </div>
-        {text ? <p className="text-xs font-bold leading-5 text-slate-300 md:text-sm">{text}</p> : null}
-        {visibleItems.length ? <div className="grid gap-2">{visibleItems.slice(0, 3).map((item, index) => <SimpleLine key={`${item.title || item}-${index}`} {...item} />)}</div> : null}
-        {children}
-
-        {expanded ? (
-          <div className="rounded-3xl border border-cyan-300/20 bg-cyan-300/10 p-4 text-sm font-bold leading-6 text-slate-100">
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200">Prepared details</div>
-            <p className="mt-2 text-slate-200">{text || "Churvox checked this area and prepared the next owner action."}</p>
-            <div className="mt-3 grid gap-2">
-              {(visibleItems.length ? visibleItems : [{ title: "No record is blocking this area", meta: "Churvox will show the client, job, invoice, quote, amount, worker and reason here when there is live work.", status: "checked" }]).slice(0, 4).map((item, index) => (
-                <div key={`${item.title || index}-detail`} className="rounded-2xl border border-white/10 bg-slate-950/45 p-3">
-                  <div className="font-black text-white">{item.title}</div>
-                  <div className="mt-1 text-xs text-slate-300">{item.meta || "No extra detail saved yet."}</div>
-                  <div className="mt-2 text-[10px] font-black uppercase tracking-[0.14em] text-amber-300">{item.status || "prepared"}</div>
-                </div>
-              ))}
+    <>
+      <div data-cv-command-tile="true" className={`cv-command-tile relative min-h-[220px] overflow-hidden rounded-[28px] border border-white/10 p-4 pl-7 text-white no-underline ${className}`} style={tileStyle}>
+        <SecurityTape color={color} />
+        <div className="flex min-h-full flex-col gap-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">{label}</div>
+              <h2 className="mt-1 text-[1.35rem] font-black leading-[1.05] tracking-[-0.05em] text-white md:text-2xl">{title}</h2>
             </div>
+            {count !== undefined ? <div className="shrink-0 rounded-2xl bg-emerald-400/15 px-3 py-1.5 text-2xl font-black text-white ring-1 ring-emerald-300/25">{approved ? "✓" : count}</div> : null}
           </div>
-        ) : null}
-
-        {editing ? (
-          <div className="rounded-3xl border border-amber-300/25 bg-amber-300/10 p-4">
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-200">Edit inside slip</div>
-            <textarea className="mt-3 min-h-[120px] w-full rounded-2xl border border-white/10 bg-slate-950/70 p-3 text-sm font-bold text-white outline-none" defaultValue={editText} />
-            <div className="mt-3 text-xs font-bold text-slate-300">This keeps the owner in the slip. Full record pages are only for adding or changing the full job, invoice, quote or client.</div>
-            <button type="button" onClick={() => setEditing(false)} className="mt-3 rounded-2xl bg-white px-4 py-2 text-xs font-black text-slate-950">Save slip edit</button>
+          {text ? <p className="text-xs font-bold leading-5 text-slate-300 md:text-sm">{text}</p> : null}
+          {visibleItems.length ? <div className="grid gap-2">{visibleItems.slice(0, 3).map((item, index) => <SimpleLine key={`${item.title || item}-${index}`} {...item} />)}</div> : null}
+          {children}
+          {approved ? <div className="rounded-2xl border border-emerald-300/25 bg-emerald-300/10 p-3 text-xs font-black text-emerald-100">Approved. Open the slip again to review or edit.</div> : null}
+          <div className="mt-auto flex flex-wrap gap-2 pt-2">
+            <button type="button" onClick={() => { setApproved(true); setModalMode("details"); }} className="rounded-xl bg-emerald-300 px-3 py-2 text-xs font-black text-slate-950">Approve</button>
+            <button type="button" onClick={() => setModalMode("edit")} className="rounded-xl bg-white/10 px-3 py-2 text-xs font-black text-white ring-1 ring-white/10">Edit</button>
+            <button type="button" onClick={() => setModalMode("details")} className="rounded-xl bg-white/10 px-3 py-2 text-xs font-black text-white ring-1 ring-white/10">View details</button>
+            {to ? <Link to={to} className="rounded-xl bg-white px-3 py-2 text-xs font-black text-slate-950 no-underline">{actionLabel}</Link> : null}
           </div>
-        ) : null}
-
-        {approved ? <div className="rounded-2xl border border-emerald-300/25 bg-emerald-300/10 p-3 text-xs font-black text-emerald-100">Approved in this slip. Churvox would now run the prepared action or keep it queued for the real backend action.</div> : null}
-
-        <div className="mt-auto flex flex-wrap gap-2 pt-2">
-          <button type="button" onClick={() => setApproved(true)} className="rounded-xl bg-emerald-300 px-3 py-2 text-xs font-black text-slate-950">Approve</button>
-          <button type="button" onClick={() => setEditing((value) => !value)} className="rounded-xl bg-white/10 px-3 py-2 text-xs font-black text-white ring-1 ring-white/10">{editing ? "Close edit" : "Edit"}</button>
-          <button type="button" onClick={() => setExpanded((value) => !value)} className="rounded-xl bg-white/10 px-3 py-2 text-xs font-black text-white ring-1 ring-white/10">{expanded ? "Hide details" : "View details"}</button>
-          {to ? <Link to={to} className="rounded-xl bg-white px-3 py-2 text-xs font-black text-slate-950 no-underline">{actionLabel}</Link> : null}
         </div>
       </div>
-    </div>
+      <FullscreenSlipModal
+        mode={modalMode}
+        onClose={() => setModalMode(null)}
+        onApprove={() => setApproved(true)}
+        approved={approved}
+        label={label}
+        title={title}
+        text={text}
+        color={color}
+        items={visibleItems}
+        editText={editText}
+        to={to}
+        actionLabel={actionLabel}
+      />
+    </>
   );
 }
 
