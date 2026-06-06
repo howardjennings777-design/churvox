@@ -6,6 +6,8 @@ import { formatApiErrorDetail } from "../lib/utils";
 
 import API_BASE from "../lib/apiBase";
 
+const API_TIMEOUT_MS = 15000;
+
 export function useApi() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -28,6 +30,7 @@ export function useApi() {
             ...options.headers,
           },
           withCredentials: true,
+          timeout: options.timeout || API_TIMEOUT_MS,
           ...options,
         };
         if (data) {
@@ -36,9 +39,12 @@ export function useApi() {
         const response = await axios(config);
         return { success: true, data: response.data };
       } catch (err) {
-        const errorMessage = formatApiErrorDetail(err.response?.data?.detail) || err.message;
+        const isTimeout = err?.code === "ECONNABORTED" || /timeout/i.test(err?.message || "");
+        const errorMessage = isTimeout
+          ? "The server took too long to respond. Please refresh and try again."
+          : formatApiErrorDetail(err.response?.data?.detail) || err.message;
         setError(errorMessage);
-        return { success: false, error: errorMessage };
+        return { success: false, error: errorMessage, timeout: isTimeout };
       } finally {
         setLoading(false);
       }
