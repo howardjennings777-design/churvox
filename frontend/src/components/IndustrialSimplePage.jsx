@@ -33,6 +33,39 @@ const tileStyle = {
 };
 const tapeFor = (index = 0) => tapeColors[Math.abs(index) % tapeColors.length];
 
+const aiCheckedDefaults = {
+  approvals: [
+    { title: "Daily admin check complete", meta: "AI checked jobs, invoices, quotes and crew capacity.", status: "ready" },
+    { title: "No urgent owner approval found", meta: "Nothing is blocked right now. Add work or review records when ready.", status: "clear" },
+    { title: "Next best action", meta: "Create a job, add an invoice, or invite crew so Churvox has live work to prepare.", status: "next" },
+  ],
+  invoices: [
+    { title: "Invoice queue checked", meta: "No ready, draft, or overdue invoices found right now.", status: "clear" },
+    { title: "Create invoice from job", meta: "When a job is completed, Churvox will prepare the draft invoice here.", status: "prepared" },
+    { title: "Payment follow-ups", meta: "Overdue invoice reminders stay approval-first before sending.", status: "owner approval" },
+  ],
+  person: [
+    { title: "No active worker on a job", meta: "Assign a worker when the next job is ready to go.", status: "checked" },
+    { title: "Crew status checked", meta: "Churvox will show who is on-site or assigned when jobs are live.", status: "ready" },
+  ],
+  jobs: [
+    { title: "No blocked jobs found", meta: "Jobs needing assignment, invoice, or owner check will appear here.", status: "clear" },
+    { title: "Create or assign work", meta: "Add a job and Churvox will prepare the next admin action.", status: "next" },
+  ],
+  crew: [
+    { title: "Crew capacity checked", meta: "No busy crew issues found. Invite or assign workers to build capacity data.", status: "ready" },
+    { title: "Worker availability", meta: "Churvox will flag overloaded or unassigned work here.", status: "watching" },
+  ],
+  quotes: [
+    { title: "Quote follow-ups checked", meta: "No quote follow-up is waiting right now.", status: "clear" },
+    { title: "Win more work", meta: "Create a quote and Churvox will prepare follow-up reminders.", status: "next" },
+  ],
+  completed: [
+    { title: "Completed work checked", meta: "No completed jobs are waiting for invoice right now.", status: "clear" },
+    { title: "Ready when jobs finish", meta: "Completed jobs will appear here for draft invoice review.", status: "watching" },
+  ],
+};
+
 function SecurityTape({ color = "#fb923c" }) {
   return (
     <span
@@ -117,6 +150,7 @@ function SimpleLine({ title, meta, status }) {
 }
 
 function CommandTile({ label, title, count, text, color, to, actionLabel = "Open", items = [], children, className = "" }) {
+  const visibleItems = items.filter(Boolean);
   const body = (
     <>
       <SecurityTape color={color} />
@@ -129,7 +163,7 @@ function CommandTile({ label, title, count, text, color, to, actionLabel = "Open
           {count !== undefined ? <div className="shrink-0 rounded-2xl bg-emerald-400/15 px-3 py-1.5 text-2xl font-black text-white ring-1 ring-emerald-300/25">{count}</div> : null}
         </div>
         {text ? <p className="text-xs font-bold leading-5 text-slate-300 md:text-sm">{text}</p> : null}
-        {items.length ? <div className="grid gap-2">{items.slice(0, 3).map((item, index) => <SimpleLine key={`${item.title || item}-${index}`} {...item} />)}</div> : null}
+        {visibleItems.length ? <div className="grid gap-2">{visibleItems.slice(0, 3).map((item, index) => <SimpleLine key={`${item.title || item}-${index}`} {...item} />)}</div> : null}
         {children}
         {to ? <div className="mt-auto inline-flex w-fit rounded-xl bg-white px-3 py-2 text-xs font-black text-slate-950">{actionLabel}</div> : null}
       </div>
@@ -175,9 +209,10 @@ function makeCommandData({ jobs, invoices, quotes, workers, aiActions }) {
 }
 
 function MoneySnapshotTile({ data, className = "" }) {
+  const hasMoney = data.outstanding > 0 || data.overdueTotal > 0 || data.paidInvoices.length > 0;
   return (
-    <CommandTile label="Cash flow" title="Money snapshot" count={asMoney(data.outstanding)} text={`${asMoney(data.overdueTotal)} overdue. ${data.paidInvoices.length} paid invoice${data.paidInvoices.length === 1 ? "" : "s"} found.`} color="#f43f5e" to="/money-desk" actionLabel="Open money desk" className={className}>
-      <div className="grid gap-2 sm:grid-cols-3"><SimpleLine title={asMoney(data.outstanding)} meta="Outstanding" status="unpaid" /><SimpleLine title={asMoney(data.overdueTotal)} meta="Overdue" status="chase" /><SimpleLine title={String(data.paidInvoices.length)} meta="Paid invoices" status="paid" /></div>
+    <CommandTile label="Cash flow" title="Money snapshot" count={hasMoney ? asMoney(data.outstanding) : "OK"} text={hasMoney ? `${asMoney(data.overdueTotal)} overdue. ${data.paidInvoices.length} paid invoice${data.paidInvoices.length === 1 ? "" : "s"} found.` : "AI checked cash flow. No unpaid or overdue invoice total is showing right now."} color="#f43f5e" to="/money-desk" actionLabel="Open money desk" className={className}>
+      <div className="grid gap-2 sm:grid-cols-3"><SimpleLine title={asMoney(data.outstanding)} meta="Outstanding" status={hasMoney ? "unpaid" : "clear"} /><SimpleLine title={asMoney(data.overdueTotal)} meta="Overdue" status={data.overdueTotal > 0 ? "chase" : "clear"} /><SimpleLine title={String(data.paidInvoices.length)} meta="Paid invoices" status="paid" /></div>
     </CommandTile>
   );
 }
@@ -185,7 +220,16 @@ function MoneySnapshotTile({ data, className = "" }) {
 function CommandLayout({ config, items, dashboard, loading, open, ready, needs }) {
   const data = makeCommandData(dashboard);
   const person = data.activePersonJob;
+  const jobList = data.todayJobs.length ? data.todayJobs : items;
+  const invoiceRealItems = [...data.overdueInvoices, ...data.readyInvoices, ...data.draftInvoices].slice(0, 3).map((invoice) => ({ title: titleOf(invoice), meta: asMoney(invoiceAmount(invoice)), status: statusOf(invoice) }));
   const personItems = person ? [{ title: workerName(person), meta: `${titleOf(person)}${metaOf(person) ? ` · ${metaOf(person)}` : ""}`, status: statusOf(person) }] : data.unassignedJobs.slice(0, 2).map((job) => ({ title: "No person assigned", meta: titleOf(job), status: "assign now" }));
+  const jobActionItems = [...data.unassignedJobs.map((job) => ({ title: `Assign: ${titleOf(job)}`, meta: metaOf(job) || "No worker assigned", status: statusOf(job) })), ...data.completedReadyInvoice.map((job) => ({ title: `Invoice: ${titleOf(job)}`, meta: metaOf(job) || "Completed work", status: "ready to invoice" }))].slice(0, 3);
+  const crewItems = data.availableWorkers.slice(0, 3).map((worker) => ({ title: titleOf(worker), meta: first(worker?.role, worker?.email, worker?.phone, "Crew member"), status: statusOf(worker) }));
+  const quoteItems = data.followQuotes.slice(0, 3).map((quote) => ({ title: titleOf(quote), meta: metaOf(quote) || first(quote?.customer_name, quote?.client_name, "Customer follow-up"), status: statusOf(quote) }));
+  const completedItems = data.completedReadyInvoice.slice(0, 3).map((job) => ({ title: titleOf(job), meta: `${workerName(job)}${metaOf(job) ? ` · ${metaOf(job)}` : ""}`, status: "draft invoice needed" }));
+  const approvalItems = data.prepared.length ? data.prepared.slice(0, 3) : aiCheckedDefaults.approvals;
+  const invoiceCount = data.readyInvoices.length + data.draftInvoices.length + data.overdueInvoices.length;
+  const actionCount = data.unassignedJobs.length + data.completedReadyInvoice.length;
   return (
     <main className={industrialPageShell} data-industrial-simple-page="command" data-command-canvas>
       <section className={`${industrialContentLane} space-y-5`}>
@@ -203,21 +247,21 @@ function CommandLayout({ config, items, dashboard, loading, open, ready, needs }
             </div>
             <MoneySnapshotTile data={data} className="min-h-[170px]" />
           </div>
-          <CommandTile label="AI Priority" title="What needs approval" count={data.prepared.length || needs} text="AI has grouped the admin that needs owner attention. Check these first." color="#22d3ee" to="/ai-operator" actionLabel="Open approvals" items={data.prepared.slice(0, 3)} className="xl:min-h-full" />
+          <CommandTile label="AI Priority" title="What needs approval" count={data.prepared.length || "OK"} text={data.prepared.length ? "AI has grouped the admin that needs owner attention. Check these first." : "AI checked jobs, invoices, quotes and crew. No urgent approval is waiting right now."} color="#22d3ee" to="/ai-operator" actionLabel="Open approvals" items={approvalItems} className="xl:min-h-full" />
         </section>
 
         <section className="grid gap-5 xl:grid-cols-3">
-          <CommandTile label="Today’s jobs" title="Jobs happening today" count={data.todayJobs.length || open} text="Scheduled, started, finished, or stuck today." color="#facc15" to="/jobs" actionLabel="Open jobs" items={(data.todayJobs.length ? data.todayJobs : items).slice(0, 3).map((job) => ({ title: titleOf(job), meta: `${workerName(job)}${metaOf(job) ? ` · ${metaOf(job)}` : ""}`, status: statusOf(job) }))} />
-          <CommandTile label="Invoices" title="Money waiting" count={data.readyInvoices.length + data.draftInvoices.length + data.overdueInvoices.length} text={`${data.readyInvoices.length} ready, ${data.draftInvoices.length} draft, ${data.overdueInvoices.length} overdue.`} color="#34d399" to="/invoices" actionLabel="Open invoices" items={[...data.overdueInvoices, ...data.readyInvoices, ...data.draftInvoices].slice(0, 3).map((invoice) => ({ title: titleOf(invoice), meta: asMoney(invoiceAmount(invoice)), status: statusOf(invoice) }))} />
-          <CommandTile label="Person on job" title="Who is working now" count={person ? 1 : data.unassignedJobs.length} text={person ? "A worker is currently assigned or on a live job." : "No current person found on a job. Assign these next."} color="#a78bfa" to="/crew-map" actionLabel="Open crew" items={personItems} />
+          <CommandTile label="Today’s jobs" title="Jobs happening today" count={data.todayJobs.length || open || "OK"} text={data.todayJobs.length ? "Scheduled, started, finished, or stuck today." : "AI checked today’s jobs. These are the next job actions to review."} color="#facc15" to="/jobs" actionLabel="Open jobs" items={jobList.slice(0, 3).map((job) => ({ title: titleOf(job), meta: `${workerName(job)}${metaOf(job) ? ` · ${metaOf(job)}` : ""}`, status: statusOf(job) }))} />
+          <CommandTile label="Invoices" title="Money waiting" count={invoiceCount || "OK"} text={invoiceCount ? `${data.readyInvoices.length} ready, ${data.draftInvoices.length} draft, ${data.overdueInvoices.length} overdue.` : "AI checked invoices. No money is waiting for owner action right now."} color="#34d399" to="/invoices" actionLabel="Open invoices" items={invoiceRealItems.length ? invoiceRealItems : aiCheckedDefaults.invoices} />
+          <CommandTile label="Person on job" title="Who is working now" count={person ? 1 : data.unassignedJobs.length || "OK"} text={person ? "A worker is currently assigned or on a live job." : "AI checked active jobs. No current person is marked on-site right now."} color="#a78bfa" to="/crew-map" actionLabel="Open crew" items={personItems.length ? personItems : aiCheckedDefaults.person} />
         </section>
         <section className="grid gap-5 xl:grid-cols-3">
-          <CommandTile label="Jobs needing action" title="Fix these jobs" count={data.unassignedJobs.length + data.completedReadyInvoice.length} text="Jobs that need an assignment, invoice, or owner check." color="#fb923c" to="/jobs" actionLabel="Open job list" items={[...data.unassignedJobs.map((job) => ({ title: `Assign: ${titleOf(job)}`, meta: metaOf(job) || "No worker assigned", status: statusOf(job) })), ...data.completedReadyInvoice.map((job) => ({ title: `Invoice: ${titleOf(job)}`, meta: metaOf(job) || "Completed work", status: "ready to invoice" }))].slice(0, 3)} />
-          <CommandTile label="Crew" title="Capacity check" count={data.availableWorkers.length} text={`${data.activeJobs.length} active. ${data.availableWorkers.length} available or not marked busy.`} color="#22d3ee" to="/team" actionLabel="Open team" items={data.availableWorkers.slice(0, 3).map((worker) => ({ title: titleOf(worker), meta: first(worker?.role, worker?.email, worker?.phone, "Crew member"), status: statusOf(worker) }))} />
-          <CommandTile label="Quotes" title="Follow-ups to win" count={data.followQuotes.length} text="Quotes that may need a follow-up before they go cold." color="#facc15" to="/quotes" actionLabel="Open quotes" items={data.followQuotes.slice(0, 3).map((quote) => ({ title: titleOf(quote), meta: metaOf(quote) || first(quote?.customer_name, quote?.client_name, "Customer follow-up"), status: statusOf(quote) }))} />
+          <CommandTile label="Jobs needing action" title="Fix these jobs" count={actionCount || "OK"} text={actionCount ? "Jobs that need an assignment, invoice, or owner check." : "AI checked for blocked jobs. No job is currently waiting on assignment or invoice action."} color="#fb923c" to="/jobs" actionLabel="Open job list" items={jobActionItems.length ? jobActionItems : aiCheckedDefaults.jobs} />
+          <CommandTile label="Crew" title="Capacity check" count={data.availableWorkers.length || "OK"} text={data.availableWorkers.length ? `${data.activeJobs.length} active. ${data.availableWorkers.length} available or not marked busy.` : "AI checked crew capacity. Add workers or assign jobs to build live availability."} color="#22d3ee" to="/team" actionLabel="Open team" items={crewItems.length ? crewItems : aiCheckedDefaults.crew} />
+          <CommandTile label="Quotes" title="Follow-ups to win" count={data.followQuotes.length || "OK"} text={data.followQuotes.length ? "Quotes that may need a follow-up before they go cold." : "AI checked quotes. No follow-up is waiting right now."} color="#facc15" to="/quotes" actionLabel="Open quotes" items={quoteItems.length ? quoteItems : aiCheckedDefaults.quotes} />
         </section>
         <section className="grid gap-5 xl:grid-cols-1">
-          <CommandTile label="Ready for invoice" title="Completed work not billed" count={data.completedReadyInvoice.length} text="Completed jobs Churvox found that look ready to turn into draft invoices." color="#34d399" to="/invoices/new" actionLabel="Create invoice" items={data.completedReadyInvoice.slice(0, 3).map((job) => ({ title: titleOf(job), meta: `${workerName(job)}${metaOf(job) ? ` · ${metaOf(job)}` : ""}`, status: "draft invoice needed" }))} />
+          <CommandTile label="Ready for invoice" title="Completed work not billed" count={data.completedReadyInvoice.length || "OK"} text={data.completedReadyInvoice.length ? "Completed jobs Churvox found that look ready to turn into draft invoices." : "AI checked completed work. Nothing is waiting to invoice right now."} color="#34d399" to="/invoices/new" actionLabel="Create invoice" items={completedItems.length ? completedItems : aiCheckedDefaults.completed} />
         </section>
       </section>
     </main>
