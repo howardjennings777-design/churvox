@@ -211,12 +211,15 @@ for _path in [
     '/api/smarthub/slips',
     '/api/ai/slips',
     '/api/ai/actions',
+    '/api/ai/operator/slips',
+    '/api/ai/operator/actions',
     '/api/ai-operator/slips',
     '/api/ai-operator/actions',
     '/api/operator/slips',
     '/api/operator/actions',
     '/api/approval-queue',
     '/api/operator/approval-queue',
+    '/api/ai/operator/approval-queue',
     '/api/ai-operator/approval-queue',
 ]:
     async def _handler(request, _p=_path):
@@ -244,6 +247,7 @@ async def command_summary(request):
 
 @app.post('/api/slips/{slip_id}/approve')
 @app.post('/api/command/slips/{slip_id}/approve')
+@app.post('/api/ai/operator/slips/{slip_id}/approve')
 @app.post('/api/ai-operator/slips/{slip_id}/approve')
 @app.post('/api/operator/slips/{slip_id}/approve')
 async def approve_slip(slip_id: str):
