@@ -5,6 +5,7 @@ import { normalizeRole, isBusinessRole, isOwner, isWorkerRole, isPayrollRole } f
 
 axios.defaults.withCredentials = true;
 
+const AUTH_TIMEOUT_MS = 12000;
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
@@ -22,6 +23,7 @@ export function AuthProvider({ children }) {
       const response = await axios.get(`${API_BASE}/api/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
+        timeout: AUTH_TIMEOUT_MS,
       });
       setUser({ ...response.data, token });
     } catch {
@@ -55,7 +57,7 @@ export function AuthProvider({ children }) {
     const response = await axios.post(
       `${API_BASE}/api/auth/login`,
       { email, password },
-      { withCredentials: true }
+      { withCredentials: true, timeout: AUTH_TIMEOUT_MS }
     );
 
     const token =
@@ -92,7 +94,7 @@ export function AuthProvider({ children }) {
     const response = await axios.post(
       `${API_BASE}/api/auth/register`,
       userData,
-      { withCredentials: true }
+      { withCredentials: true, timeout: AUTH_TIMEOUT_MS }
     );
 
     const token =
@@ -122,6 +124,7 @@ export function AuthProvider({ children }) {
         {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
           withCredentials: true,
+          timeout: AUTH_TIMEOUT_MS,
         }
       );
     } catch {}
@@ -134,7 +137,7 @@ export function AuthProvider({ children }) {
 
   const forgotPassword = useCallback(async (email) => {
     try {
-      const response = await axios.post(`${API_BASE}/api/auth/forgot-password`, { email });
+      const response = await axios.post(`${API_BASE}/api/auth/forgot-password`, { email }, { timeout: AUTH_TIMEOUT_MS });
       return {
         success: true,
         email_sent: response.data.email_sent !== false,
@@ -152,7 +155,7 @@ export function AuthProvider({ children }) {
       await axios.post(`${API_BASE}/api/auth/reset-password`, {
         token,
         new_password: newPassword,
-      });
+      }, { timeout: AUTH_TIMEOUT_MS });
       return { success: true };
     } catch (err) {
       return {
