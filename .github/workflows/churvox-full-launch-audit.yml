@@ -9,6 +9,8 @@ on:
       - 'frontend/playwright.config.js'
       - '.github/workflows/churvox-full-launch-audit.yml'
 
+# Audit trigger: run full Churvox launch audit after Render recovery.
+
 jobs:
   audit:
     runs-on: ubuntu-latest
