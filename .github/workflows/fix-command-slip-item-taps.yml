@@ -1,0 +1,65 @@
+name: Fix Command Slip Item Taps
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-command-slip-item-taps.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch IndustrialSimplePage item taps
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('frontend/src/components/IndustrialSimplePage.jsx')
+          s = p.read_text()
+          old_simple = '''function SimpleLine({ title, meta, status }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/8 p-3">
+      <div className="truncate text-sm font-black leading-5 text-white">{title}</div>
+      {meta ? <div className="mt-1 line-clamp-2 text-xs font-bold leading-5 text-slate-300">{meta}</div> : null}
+      {status ? <div className="mt-2 inline-flex rounded-full bg-white/10 px-2 py-1 text-[10px] font-black uppercase tracking-[.12em] text-amber-300">{status}</div> : null}
+    </div>
+  );
+}'''
+          new_simple = '''function SimpleLine({ title, meta, status, onOpen }) {
+  const body = (
+    <>
+      <div className="truncate text-sm font-black leading-5 text-white">{title}</div>
+      {meta ? <div className="mt-1 line-clamp-2 text-xs font-bold leading-5 text-slate-300">{meta}</div> : null}
+      {status ? <div className="mt-2 inline-flex rounded-full bg-white/10 px-2 py-1 text-[10px] font-black uppercase tracking-[.12em] text-amber-300">{status}</div> : null}
+    </>
+  );
+  const classes = "w-full rounded-2xl border border-white/10 bg-white/8 p-3 text-left transition hover:border-cyan-300/40 hover:bg-white/12 active:scale-[0.99]";
+  if (onOpen) return <button type="button" onClick={onOpen} className={classes}>{body}</button>;
+  return <div className={classes}>{body}</div>;
+}'''
+          if old_simple not in s:
+              raise SystemExit('SimpleLine block not found')
+          s = s.replace(old_simple, new_simple)
+          old_map = '''{visibleItems.length ? <div className="grid gap-2">{visibleItems.slice(0, 3).map((item, index) => <SimpleLine key={`${item.title || item}-${index}`} {...item} />)}</div> : null}'''
+          new_map = '''{visibleItems.length ? <div className="grid gap-2">{visibleItems.slice(0, 3).map((item, index) => <SimpleLine key={`${item.title || item}-${index}`} {...item} onOpen={() => setModalMode("details")} />)}</div> : null}'''
+          if old_map not in s:
+              raise SystemExit('visibleItems map not found')
+          s = s.replace(old_map, new_map)
+          p.write_text(s)
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add frontend/src/components/IndustrialSimplePage.jsx
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "Make command slip items open fullscreen slip"
+            git push
+          fi
