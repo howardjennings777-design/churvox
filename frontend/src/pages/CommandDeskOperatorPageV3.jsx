@@ -69,8 +69,8 @@ function Slip({ slip, onClose }) {
         <header>
           <div>
             <small>COMMAND / {slip.title}</small>
-            <h1>{slip.formTitle}</h1>
-            <p>{slip.card}</p>
+            <h1>{slip.title}</h1>
+            <p>{slip.formTitle} — {slip.card}</p>
           </div>
           <button onClick={onClose}>Close</button>
         </header>
@@ -78,8 +78,7 @@ function Slip({ slip, onClose }) {
         <main>
           <section className="cxFormPanel">
             <div className="cxFormTop">
-              <span>{slip.title}</span>
-              <b>{slip.formTitle}</b>
+              <span>{slip.formTitle}</span>
             </div>
             <div className="cxFields">
               {slip.fields.map((field) => <Field key={field[0]} field={field} form={form} setForm={setForm} />)}
@@ -107,7 +106,7 @@ function Style() {
     .cxWrap{max-width:1380px;margin:0 auto;padding:24px 28px 120px}
     .cxHero{background:#0b1018;color:#ffffff;border-radius:34px;padding:34px;box-shadow:0 24px 70px rgba(2,6,23,.24)}
     .cxPill{display:inline-flex;border-radius:999px;padding:8px 14px;background:#fff7ed;color:#7c2d12;font-size:11px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}
-    .cxHero h1{margin:18px 0 12px;font-size:clamp(42px,5.4vw,72px);line-height:.92;letter-spacing:-.055em;color:#ffffff}
+    .cxHero h1{margin:18px 0 12px;font-size:clamp(42px,5.4vw,72px);line-height:.92;letter-spacing:-.055em;color:#ffffff;user-select:none}
     .cxHero p{color:#f8fafc;font-weight:900;max-width:820px}
     .cxBoxes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-top:20px}
     .cxBox{background:#0b1018;color:#ffffff;border:1px solid rgba(255,255,255,.14);border-left:8px solid #f97316;border-radius:28px;padding:22px;text-align:left;min-height:210px;display:grid;gap:12px;cursor:pointer;box-shadow:0 22px 62px rgba(2,6,23,.24)}
@@ -118,31 +117,29 @@ function Style() {
     .cxOverlay{position:fixed;inset:0;z-index:2147483647;background:rgba(2,6,23,.90);padding:16px 22px 16px 286px;display:flex}
     .cxSlip{width:100%;background:#f7efe3;border-radius:34px;overflow:hidden;display:grid;grid-template-rows:auto 1fr;box-shadow:0 38px 120px rgba(2,6,23,.50)}
     .cxSlip header{background:#0b1018;color:#ffffff;border-left:8px solid #f97316;padding:20px 28px;display:flex;justify-content:space-between;gap:16px}
-    .cxSlip header small{color:#fed7aa;font-weight:1000;letter-spacing:.14em}
-    .cxSlip header h1{font-size:clamp(34px,4.2vw,58px);line-height:.95;margin:8px 0;color:#ffffff;letter-spacing:-.045em;max-width:980px;overflow-wrap:anywhere}
-    .cxSlip header p{font-weight:900;color:#f8fafc;max-width:940px}
+    .cxSlip header small{color:#fed7aa;font-weight:1000;letter-spacing:.14em;user-select:none}
+    .cxSlip header h1{font-size:clamp(30px,3.4vw,48px);line-height:.98;margin:8px 0;color:#ffffff;letter-spacing:-.035em;max-width:980px;overflow-wrap:anywhere;user-select:none}
+    .cxSlip header p{font-weight:900;color:#f8fafc;max-width:940px;margin:0}
     .cxSlip header button{height:max-content;border:0;border-radius:15px;padding:12px 18px;font-weight:1000;background:#ffffff;color:#111827}
     .cxSlip main{min-height:0;display:grid;grid-template-columns:minmax(0,1fr)340px;gap:16px;padding:16px;overflow:auto}
     .cxFormPanel,.cxControls{background:#fffaf0;border:1px solid rgba(15,23,42,.20);border-radius:26px;padding:20px;box-shadow:0 14px 38px rgba(15,23,42,.12);color:#111827}
-    .cxFormTop{display:grid;gap:6px;margin-bottom:16px}
-    .cxFormTop span{color:#7c2d12;text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:1000}
-    .cxFormTop b{font-size:30px;line-height:.95;letter-spacing:-.035em;color:#111827}
+    .cxFormTop{display:flex;align-items:center;margin-bottom:16px;min-height:0}
+    .cxFormTop span{display:inline-flex;background:#111827;color:#fbbf24;border-radius:999px;padding:7px 12px;text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:1000;user-select:none}
     .cxFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
     .cxField.wide{grid-column:1/-1}
-    .cxField span{display:block;color:#431407;text-transform:uppercase;letter-spacing:.11em;font-size:12px;font-weight:1000;margin-bottom:7px}
+    .cxField span{display:block;color:#431407;text-transform:uppercase;letter-spacing:.11em;font-size:12px;font-weight:1000;margin-bottom:7px;user-select:none}
     .cxField input,.cxField textarea,.cxField select{width:100%;border:2px solid rgba(15,23,42,.28);border-radius:16px;padding:13px 15px;font-size:16px;font-weight:900;background:#ffffff!important;color:#0f172a!important;-webkit-text-fill-color:#0f172a!important;outline:none;box-shadow:0 1px 0 rgba(15,23,42,.08)}
     .cxField input:focus,.cxField textarea:focus,.cxField select:focus{border-color:#f97316;box-shadow:0 0 0 4px rgba(249,115,22,.18)}
     .cxField textarea{min-height:120px;resize:vertical}
     .cxField option{background:#ffffff;color:#0f172a}
     .cxControls{align-self:start;position:sticky;top:0;display:grid;gap:10px}
-    .cxControls h2{font-size:30px;line-height:.95;margin:0;color:#111827}
+    .cxControls h2{font-size:30px;line-height:.95;margin:0;color:#111827;user-select:none}
     .cxControls p{background:#14532d;color:#ffffff;border-radius:16px;padding:12px 14px;font-weight:1000;line-height:1.45}
     .cxControls button{width:100%;border:0;border-radius:16px;padding:14px;font-weight:1000;font-size:16px;letter-spacing:0;cursor:pointer;color:#111827!important}
     .cxControls .save{background:#ffedd5;color:#7c2d12!important;border:2px solid #fed7aa}
     .cxControls .approve{background:#16a34a;color:#052e16!important;border:2px solid #15803d}
     .cxControls .decline{background:#fecaca;color:#7f1d1d!important;border:2px solid #fca5a5}
     .cxControls .dark{background:#111827;color:#ffffff!important}
-    ::selection{background:#f97316;color:#111827}
     @media(max-width:1200px){.cxOverlay{padding:12px}.cxSlip main,.cxBoxes{grid-template-columns:1fr}.cxControls{position:static}}
   `}</style>;
 }
