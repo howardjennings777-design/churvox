@@ -88,3 +88,46 @@ body.cv-industrial-shell .cv-launch-clean-white-card {
 body.cv-industrial-shell .cv-launch-clean-white-card * {
   color: inherit !important;
 }
+
+/* Command Board cleanup: short cards, clear slip-first actions, no fake clutter. */
+body.cv-industrial-shell main[data-industrial-simple-page="command"] {
+  background: #f7f3ea !important;
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] [data-cv-command-tile="true"] {
+  min-height: 0 !important;
+  border-color: rgba(250, 204, 21, 0.18) !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-command-tile {
+  box-shadow: 0 18px 52px rgba(2, 6, 23, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-command-tile p {
+  margin-bottom: 0 !important;
+}
+
+/* On dashboard cards, approval/edit belongs inside the full-screen slip. */
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-command-tile .mt-auto > button:nth-of-type(1),
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-command-tile .mt-auto > button:nth-of-type(2) {
+  display: none !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-command-tile .mt-auto {
+  padding-top: 10px !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-command-tile .mt-auto > button,
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-command-tile .mt-auto > a {
+  min-height: 42px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+@media (min-width: 1280px) {
+  body.cv-industrial-shell main[data-industrial-simple-page="command"] .xl\:grid-cols-3 [data-cv-command-tile="true"] {
+    min-height: 190px !important;
+  }
+}
