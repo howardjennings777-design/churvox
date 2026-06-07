@@ -1,1 +1,1 @@
-trigger render deploy after duplicate owner startup guard
+trigger render deploy
