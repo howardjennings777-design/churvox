@@ -46,17 +46,9 @@ function isDone(job) {
   return status.includes("complete") || status.includes("done") || job?.completed === true || Boolean(job?.completed_at);
 }
 
-function isPaid(invoice) {
-  return statusOf(invoice).includes("paid");
-}
-
-function isDraft(invoice) {
-  return statusOf(invoice).includes("draft");
-}
-
-function isSent(item) {
-  return statusOf(item).includes("sent");
-}
+function isPaid(invoice) { return statusOf(invoice).includes("paid"); }
+function isDraft(invoice) { return statusOf(invoice).includes("draft"); }
+function isSent(item) { return statusOf(item).includes("sent"); }
 
 function isOverdue(invoice) {
   if (isPaid(invoice)) return false;
@@ -72,17 +64,9 @@ function isUnassigned(job) {
   return !first(job?.assigned_worker_id, job?.worker_id, job?.assigned_to, job?.assigned_worker_name, job?.worker_name);
 }
 
-function titleOf(job) {
-  return first(job?.title, job?.job_title, job?.service_type, job?.job_type, "Untitled job");
-}
-
-function clientOf(item) {
-  return first(item?.client_name, item?.customer_name, item?.client?.name, item?.name, "No client saved");
-}
-
-function workerName(worker) {
-  return first(worker?.name, worker?.full_name, worker?.display_name, worker?.email, "Unnamed worker");
-}
+function titleOf(job) { return first(job?.title, job?.job_title, job?.service_type, job?.job_type, "Untitled job"); }
+function clientOf(item) { return first(item?.client_name, item?.customer_name, item?.client?.name, item?.name, "No client saved"); }
+function workerName(worker) { return first(worker?.name, worker?.full_name, worker?.display_name, worker?.email, "Unnamed worker"); }
 
 function isFieldWorker(worker) {
   const role = String(first(worker?.role, worker?.account_type, "worker")).toLowerCase();
@@ -225,8 +209,8 @@ export default function CommandDeskOperatorPage() {
       if (action.type === "assign_job") res = await post(`/jobs/${form.job_id}/assign`, { worker_id: form.worker_id });
       if (action.type === "draft_invoice") res = await post("/invoices", { job_id: form.job_id, client_id: form.client_id || undefined, customer_name: form.customer_name || form.client_name, customer_email: form.customer_email || undefined, subtotal: numberValue(form.subtotal), description: form.description });
       if (action.type === "send_invoice") res = await post(`/invoices/${form.invoice_id}/send`, {});
-      if (action.type === "invoice_follow_up") res = await patch(`/invoices/${form.invoice_id}`, { last_follow_up_at: new Date().toISOString(), follow_up_message: form.message });
-      if (action.type === "quote_follow_up") res = await patch(`/quotes/${form.quote_id}`, { last_follow_up_at: new Date().toISOString(), follow_up_message: form.message });
+      if (action.type === "invoice_follow_up") res = await patch(`/invoices/${form.invoice_id}`, { notes: `Follow-up reviewed ${new Date().toLocaleDateString()}: ${form.message || "Reminder reviewed"}` });
+      if (action.type === "quote_follow_up") res = await patch(`/quotes/${form.quote_id}`, { notes: `Follow-up reviewed ${new Date().toLocaleDateString()}: ${form.message || "Reminder reviewed"}` });
       if (action.type === "quote_convert") res = await post(`/quotes/${form.quote_id}/convert`, {});
       if (!res?.success) throw new Error(res?.error || "Approval failed");
       toast.success("Approved and applied");
