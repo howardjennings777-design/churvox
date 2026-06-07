@@ -271,9 +271,9 @@ function App() {
             <Route path="/sample-mode" element={<Navigate to="/dashboard" replace />} />
             <Route path="/public/proof/:token" element={<PublicProofPackPage />} />
             <Route path="/offline-sync" element={<PrivateRoute><OfflineSyncPage /></PrivateRoute>} />
-            <Route path="/dispatch-board" element={<Navigate to="/dispatch" replace />} />
+            <Route path="/dispatch-board" element={<Navigate to="/crew-map" replace />} />
             <Route path="/dispatch/map" element={<BusinessRoute><WorkerMapCommandPage /></BusinessRoute>} />
-            <Route path="/crew-map" element={<BusinessRoute><WorkerMapCommandPage /></BusinessRoute>} />
+            <Route path="/crew-map" element={<BusinessRoute><DispatchCommandPage /></BusinessRoute>} />
             <Route path="/message-approvals" element={<Navigate to="/dashboard" replace />} />
             <Route path="/trade-presets" element={<Navigate to="/settings" replace />} />
             <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
