@@ -22,9 +22,7 @@ import QuoteFormPage from "./pages/quotes/QuoteFormPage";
 import QuoteDetailPage from "./pages/quotes/QuoteDetailPage";
 import InvoiceFormPage from "./pages/invoices/InvoiceFormPage";
 import InvoiceDetailPage from "./pages/invoices/InvoiceDetailPage";
-import PlansPage from "./pages/PlansPage";
 import ChurvoxHQPage from "./pages/ChurvoxHQPage";
-import PipelinePage from "./pages/PipelinePage";
 import CustomerRecordsPage from "./pages/CustomerRecordsPage";
 import WorkerJobsPage from "./pages/worker/WorkerJobsPage";
 import WorkerJobDetailPage from "./pages/worker/WorkerJobDetailPage";
@@ -45,32 +43,20 @@ import FeaturesPage from "./pages/marketing/ExecutiveFeaturesPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import FloatingBottomNav from "./components/FloatingBottomNav";
 import ConceptCFrame from "./concept-c/ConceptCFrame";
-import CommandDeskHomePage from "./pages/CommandDeskHomePage";
 import CommandDeskQueuePage from "./pages/CommandDeskQueuePage";
 import JobsCommandPage from "./pages/JobsCommandPage";
 import QuotesCommandPage from "./pages/QuotesCommandPage";
 import InvoicesCommandPage from "./pages/InvoicesCommandPage";
 import TeamCommandPage from "./pages/TeamCommandPage";
-import AutomationCommandPage from "./pages/AutomationCommandPage";
 import DispatchCommandPage from "./pages/DispatchCommandPage";
 import WorkerMapCommandPage from "./pages/WorkerMapCommandPage";
-import IntegrationsCommandPage from "./pages/IntegrationsCommandPage";
-import MoneyDeskCommandPage from "./pages/MoneyDeskCommandPage";
-import NotificationsCommandPage from "./pages/NotificationsCommandPage";
 import ReportsCommandPage from "./pages/ReportsCommandPage";
 import SettingsCommandPage from "./pages/SettingsCommandPage";
 import SupportCommandPage from "./pages/SupportCommandPage";
 import PayrollCommandPage from "./pages/PayrollCommandPage";
-import MessageApprovalQueuePage from "./pages/MessageApprovalQueuePage";
 import OfflineSyncPage from "./pages/OfflineSyncPage";
-import LaunchSalesPolishPage from "./pages/LaunchSalesPolishPage";
-import IntegrationProofPage from "./pages/IntegrationProofPage";
-import LaunchOpsPage from "./pages/LaunchOpsPage";
-import BackupRecoveryPage from "./pages/BackupRecoveryPage";
-import PolishChecklistPage from "./pages/PolishChecklistPage";
-import DemoModePage from "./pages/DemoModePage";
 import PlansCommandPage from "./pages/PlansCommandPage";
-import { OnboardingCommandPage, TradePresetsCommandPage, OperatorToolsCommandPage, BillingCommandPage, CrewOpsCommandPage, LaunchCommandPage, WorkerCommandPage } from "./pages/CommandRestPages";
+import { OnboardingCommandPage, WorkerCommandPage } from "./pages/CommandRestPages";
 import { hasPlanAtLeast, nicePlanName, requiredPlanLabel } from "./config/churvoxPlans";
 import ClientWorkbenchCommandPage from "./pages/ClientWorkbenchCommandPage";
 
@@ -118,30 +104,11 @@ function OwnerRoute({ children }) {
   return <AppPage>{children}</AppPage>;
 }
 
-function TeamRoute({ children }) {
-  const { user, loading, isWorker, isPayroll, hasAppAccess, normalizedRole } = useAuth();
-  if (loading) return <Spinner />;
-  if (!user) return <Navigate to="/login" replace />;
-  if (isWorker) return <Navigate to="/worker/jobs" replace />;
-  if (isPayroll) return <Navigate to="/payroll" replace />;
-  if (!hasAppAccess) return <Navigate to="/plans" replace />;
-  if (normalizedRole !== "owner" && normalizedRole !== "manager") return <Navigate to="/dashboard" replace />;
-  return <AppPage>{children}</AppPage>;
-}
-
 function WorkerRoute({ children }) {
   const { user, loading, isWorker } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
   if (!isWorker) return <Navigate to="/dashboard" replace />;
-  return <AppPage>{children}</AppPage>;
-}
-
-function PayrollRoute({ children }) {
-  const { user, loading, normalizedRole } = useAuth();
-  if (loading) return <Spinner />;
-  if (!user) return <Navigate to="/login" replace />;
-  if (normalizedRole !== "owner" && normalizedRole !== "manager" && normalizedRole !== "payroll") return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
   return <AppPage>{children}</AppPage>;
 }
 
@@ -174,18 +141,26 @@ function UpgradeRequiredPage({ requiredPlan = "pro", feature = "This feature" })
           </p>
           <div className="flex flex-wrap gap-3">
             {normalizedRole === "owner" || normalizedRole === "manager" ? (
-              <Link to="/plans" className="rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white no-underline">
-                View plans
-              </Link>
+              <NavigateButton to="/plans">View plans</NavigateButton>
             ) : null}
-            <Link to="/dashboard" className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900 no-underline">
-              Back to Smart Hub
-            </Link>
+            <NavigateButton to="/dashboard" subtle>Back to Smart Hub</NavigateButton>
           </div>
         </div>
       </section>
     </main>
   );
+}
+
+function NavigateButton({ to, children, subtle = false }) {
+  return (
+    <NavigateLink to={to} className={subtle ? "rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900 no-underline" : "rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white no-underline"}>
+      {children}
+    </NavigateLink>
+  );
+}
+
+function NavigateLink({ to, className, children }) {
+  return <a href={to} className={className}>{children}</a>;
 }
 
 function PlanTierRoute({ children, requiredPlan = "pro", feature = "This feature" }) {
@@ -203,7 +178,6 @@ function PlanTierRoute({ children, requiredPlan = "pro", feature = "This feature
 
   return <AppPage>{children}</AppPage>;
 }
-
 
 function QaAuditorRoute({ children }) {
   const { user, loading, normalizedRole, isPayroll, isWorker } = useAuth();
