@@ -131,3 +131,74 @@ body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-command
     min-height: 190px !important;
   }
 }
+
+/* Command Board pass two: remove duplicate routes and make slips the main action. */
+body.cv-industrial-shell main[data-industrial-simple-page="command"] a[href="/ai-operator"] {
+  display: none !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] [data-cv-command-tile="true"]:first-child h1 {
+  max-width: 980px !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] [data-cv-command-tile="true"]:first-child p {
+  max-width: 760px !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-command-tile .mt-auto > button:nth-of-type(3) {
+  background: linear-gradient(135deg, #facc15, #fb923c) !important;
+  color: #020617 !important;
+  border: 0 !important;
+  box-shadow: 0 12px 24px rgba(251, 146, 60, 0.22) !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-command-tile .mt-auto > a:not([href="/ai-operator"]) {
+  background: rgba(255, 255, 255, 0.10) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-command-tile .mt-auto > a:not([href="/ai-operator"]):hover,
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-command-tile .mt-auto > button:hover {
+  transform: translateY(-1px) !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-command-tile button[type="button"] {
+  cursor: pointer !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-command-tile button[type="button"]:focus-visible,
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-command-tile a:focus-visible {
+  outline: 3px solid rgba(34, 211, 238, 0.65) !important;
+  outline-offset: 3px !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-command-tile [class*="line-clamp"] {
+  display: -webkit-box !important;
+  -webkit-line-clamp: 1 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-command-tile .truncate {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+@media (max-width: 767px) {
+  body.cv-industrial-shell main[data-industrial-simple-page="command"] [data-cv-command-tile="true"] {
+    border-radius: 24px !important;
+    padding: 16px 16px 16px 26px !important;
+  }
+
+  body.cv-industrial-shell main[data-industrial-simple-page="command"] [data-cv-command-tile="true"]:first-child h1 {
+    font-size: 2.35rem !important;
+    line-height: 0.95 !important;
+  }
+
+  body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-command-tile .mt-auto > button,
+  body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-command-tile .mt-auto > a {
+    flex: 1 1 145px !important;
+  }
+}
