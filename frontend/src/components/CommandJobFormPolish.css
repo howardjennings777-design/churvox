@@ -1,0 +1,163 @@
+/* CHURVOX_JOB_FORM_POLISH_20260607
+   Small safe visual pass only. No form logic changes. */
+
+body.cv-industrial-shell .wh-app-main .px-page {
+  width: min(100%, 980px) !important;
+  max-width: 980px !important;
+  margin: 0 auto !important;
+  padding: 24px 18px 120px !important;
+}
+
+body.cv-industrial-shell .wh-app-main .px-hero {
+  position: relative !important;
+  overflow: hidden !important;
+  margin: 0 0 18px !important;
+  border: 1px solid rgba(250, 204, 21, .18) !important;
+  border-radius: 34px !important;
+  background: linear-gradient(135deg, #111827, #070d16) !important;
+  color: #ffffff !important;
+  padding: 28px !important;
+  box-shadow: 0 22px 62px rgba(2, 6, 23, .22), inset 0 1px 0 rgba(255,255,255,.06) !important;
+}
+
+body.cv-industrial-shell .wh-app-main .px-hero::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 8px;
+  height: 100%;
+  background: linear-gradient(180deg, #fb923c, #facc15, #22d3ee);
+}
+
+body.cv-industrial-shell .wh-app-main .px-hero__eyebrow {
+  display: inline-flex !important;
+  border: 1px solid rgba(250, 204, 21, .3) !important;
+  border-radius: 999px !important;
+  background: rgba(250, 204, 21, .1) !important;
+  color: #fde68a !important;
+  padding: 8px 13px !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .22em !important;
+  text-transform: uppercase !important;
+}
+
+body.cv-industrial-shell .wh-app-main .px-hero__title {
+  margin-top: 18px !important;
+  color: #ffffff !important;
+  font-size: clamp(42px, 6vw, 70px) !important;
+  line-height: .9 !important;
+  letter-spacing: -.08em !important;
+  font-weight: 1000 !important;
+}
+
+body.cv-industrial-shell .wh-app-main .px-hero__sub {
+  max-width: 760px !important;
+  margin-top: 14px !important;
+  color: #cbd5e1 !important;
+  font-size: 15px !important;
+  line-height: 1.7 !important;
+  font-weight: 800 !important;
+}
+
+body.cv-industrial-shell .wh-app-main .px-stat__icon {
+  background: linear-gradient(135deg, #facc15, #fb923c 55%, #22d3ee) !important;
+  color: #020617 !important;
+}
+
+body.cv-industrial-shell .wh-app-main .px-card {
+  border: 1px solid rgba(15, 23, 42, .10) !important;
+  border-radius: 32px !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, .08) !important;
+}
+
+body.cv-industrial-shell .wh-app-main .px-card__head {
+  padding: 20px 22px 0 !important;
+}
+
+body.cv-industrial-shell .wh-app-main .px-card__title {
+  color: #0f172a !important;
+  font-size: 24px !important;
+  font-weight: 1000 !important;
+  letter-spacing: -.05em !important;
+}
+
+body.cv-industrial-shell .wh-app-main .px-card__body {
+  padding: 22px !important;
+}
+
+body.cv-industrial-shell .wh-app-main .px-card__body form {
+  display: grid !important;
+  gap: 18px !important;
+}
+
+body.cv-industrial-shell .wh-app-main .px-card__body form > div:not(:last-child) {
+  border: 1px solid rgba(15, 23, 42, .10) !important;
+  border-radius: 22px !important;
+  background: #f8fafc !important;
+  padding: 16px !important;
+}
+
+body.cv-industrial-shell .wh-app-main .px-card__body label,
+body.cv-industrial-shell .wh-app-main .px-card__body .font-semibold {
+  color: #0f172a !important;
+  font-weight: 900 !important;
+}
+
+body.cv-industrial-shell .wh-app-main .px-card__body input,
+body.cv-industrial-shell .wh-app-main .px-card__body textarea,
+body.cv-industrial-shell .wh-app-main .px-card__body select {
+  min-height: 46px !important;
+  border: 1px solid rgba(15, 23, 42, .16) !important;
+  border-radius: 16px !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  font-weight: 800 !important;
+}
+
+body.cv-industrial-shell .wh-app-main .px-card__body form > div:last-child {
+  position: sticky !important;
+  bottom: 16px !important;
+  z-index: 20 !important;
+  margin-top: 8px !important;
+  border: 1px solid rgba(15, 23, 42, .10) !important;
+  border-radius: 26px !important;
+  background: rgba(255, 255, 255, .96) !important;
+  padding: 14px !important;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, .16) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+body.cv-industrial-shell .wh-app-main .px-card__body form > div:last-child button,
+body.cv-industrial-shell .wh-app-main .px-card__body form > div:last-child a {
+  min-height: 48px !important;
+  border-radius: 18px !important;
+  font-weight: 1000 !important;
+}
+
+body.cv-industrial-shell .wh-app-main .px-card__body form > div:last-child button[type="submit"],
+body.cv-industrial-shell .wh-app-main .px-card__body form > div:last-child .px-button,
+body.cv-industrial-shell .wh-app-main .px-card__body form > div:last-child .premium-button {
+  background: linear-gradient(135deg, #facc15, #fb923c 55%, #22d3ee) !important;
+  color: #020617 !important;
+  border-color: transparent !important;
+  box-shadow: 0 12px 28px rgba(251, 146, 60, .22) !important;
+}
+
+@media (max-width: 1023px) {
+  body.cv-industrial-shell .wh-app-main .px-page {
+    padding: 16px 12px 120px !important;
+  }
+
+  body.cv-industrial-shell .wh-app-main .px-hero {
+    padding: 22px !important;
+    border-radius: 28px !important;
+  }
+
+  body.cv-industrial-shell .wh-app-main .px-card__body {
+    padding: 16px !important;
+  }
+}
