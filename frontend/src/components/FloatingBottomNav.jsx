@@ -14,8 +14,9 @@ import "./CommandRecordWideCardFix.css";
 import "./TeamProfileSlipPolish.css";
 import "./TeamProfileSlipFinalFix.css";
 import "./TeamProfileSlipPositionFix.css";
+import "./TeamProfileSlipTextFix.css";
 
-const BUILD_MARKER = "Build team-slip-position";
+const BUILD_MARKER = "Build team-slip-text";
 
 const NAV_ITEMS = [
   ["Command", "/dashboard", "CM"],
