@@ -72,7 +72,7 @@ function makeActions({ jobs, invoices, quotes, workers }) {
   });
 
   invoices.filter((invoice) => statusOf(invoice).includes("draft")).slice(0, 6).forEach((invoice) => {
-    actions.push({ id: `send-invoice-${idOf(invoice)}`, box: "invoices", type: "send_invoice", title: "Send draft invoice", summary: "Draft invoice is ready to send after review.", ready: Boolean(idOf(invoice)), form: { invoice_id: idOf(invoice), client_name: clientOf(invoice), customer_email: first(invoice.customer_email, invoice.client_email, invoice.email) } });
+    actions.push({ id: `send-invoice-${idOf(invoice)}`, box: "invoices", type: "send_invoice", title: "Mark invoice sent", summary: "Draft invoice is ready to mark sent after review.", ready: Boolean(idOf(invoice)), form: { invoice_id: idOf(invoice), client_name: clientOf(invoice), customer_email: first(invoice.customer_email, invoice.client_email, invoice.email) } });
   });
 
   invoices.filter(isOverdue).slice(0, 6).forEach((invoice) => {
@@ -84,7 +84,7 @@ function makeActions({ jobs, invoices, quotes, workers }) {
   });
 
   quotes.filter((quote) => statusOf(quote).includes("accept") && !quote.converted_job_id).slice(0, 6).forEach((quote) => {
-    actions.push({ id: `convert-quote-${idOf(quote)}`, box: "quotes", type: "quote_convert", title: "Convert quote to job", summary: "Accepted quote can become a job.", ready: Boolean(idOf(quote)), form: { quote_id: idOf(quote), client_name: clientOf(quote) } });
+    actions.push({ id: `convert-quote-${idOf(quote)}`, box: "quotes", type: "quote_convert", title: "Create job from quote", summary: "Accepted quote can become a job.", ready: Boolean(idOf(quote)), form: { quote_id: idOf(quote), quote_title: titleOf(quote), client_id: first(quote.client_id, quote.customer_id), client_name: clientOf(quote), address: first(quote.address, quote.site_address, "Address to confirm"), price: first(quote.total, quote.price, quote.amount, quote.subtotal, 0), notes: first(quote.notes, quote.description, "Created from Command Board quote slip") } });
   });
 
   return actions;
@@ -139,10 +139,15 @@ export default function CommandDeskOperatorPage() {
       let res = { success: true };
       if (action.type === "assign_job") res = await post(`/jobs/${form.job_id}/assign`, { worker_id: form.worker_id });
       if (action.type === "draft_invoice") res = await post("/invoices", { job_id: form.job_id, client_id: form.client_id || undefined, customer_name: form.customer_name || form.client_name, customer_email: form.customer_email || undefined, subtotal: numberValue(form.subtotal), description: form.description });
-      if (action.type === "send_invoice") res = await post(`/invoices/${form.invoice_id}/send`, {});
+      if (action.type === "send_invoice") res = await patch(`/invoices/${form.invoice_id}`, { status: "sent" });
       if (action.type === "invoice_follow_up") res = await patch(`/invoices/${form.invoice_id}`, { notes: `Follow-up reviewed ${new Date().toLocaleDateString()}: ${form.message || "Reminder reviewed"}` });
       if (action.type === "quote_follow_up") res = await patch(`/quotes/${form.quote_id}`, { notes: `Follow-up reviewed ${new Date().toLocaleDateString()}: ${form.message || "Reminder reviewed"}` });
-      if (action.type === "quote_convert") res = await post(`/quotes/${form.quote_id}/convert`, {});
+      if (action.type === "quote_convert") {
+        const scheduledDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+        const jobRes = await post("/jobs", { title: form.quote_title || `Job for ${form.client_name || "client"}`, job_type: "other", client_id: form.client_id || undefined, customer_name: form.client_name || "Customer", address: form.address || "Address to confirm", scheduled_date: scheduledDate, estimated_duration: 60, price: numberValue(form.price), pricing_type: "fixed", notes: form.notes || "Created from Command Board quote slip" });
+        if (jobRes?.success === false) throw new Error(jobRes?.error || "Job creation failed");
+        res = await patch(`/quotes/${form.quote_id}`, { status: "accepted", notes: `Job created from quote on ${new Date().toLocaleDateString()}. ${form.notes || ""}`.trim() });
+      }
       if (!res?.success) throw new Error(res?.error || "Approval failed");
       toast.success("Approved and applied");
       setOpen(null);
