@@ -1,0 +1,103 @@
+/* CHURVOX_TEAM_PROFILE_SLIP_FINAL_FIX_20260607
+   Hardens the Team profile modal interior so it is readable and not half old/half new. */
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] {
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] > div {
+  background: #f7f3ea !important;
+  border: 1px solid rgba(15, 23, 42, .14) !important;
+  box-shadow: 0 32px 90px rgba(2, 6, 23, .45) !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] header {
+  background: linear-gradient(135deg, #111827, #070d16) !important;
+  color: #ffffff !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] header h2,
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] header p {
+  color: #ffffff !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] header p {
+  color: #cbd5e1 !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] header button {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] > div > div {
+  background: #f7f3ea !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] section,
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] aside {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(15, 23, 42, .12) !important;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, .08) !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] section *,
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] aside * {
+  color: inherit !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] section > div:first-child,
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] aside > div:first-child {
+  color: #0e7490 !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] section .grid > div,
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] section .rounded-2xl {
+  background: #f8fafc !important;
+  border: 1px solid rgba(15, 23, 42, .12) !important;
+  color: #0f172a !important;
+  box-shadow: none !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] section .grid > div > div:first-child,
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] section .rounded-2xl > div:first-child {
+  color: #c2410c !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] section .grid > div > div:last-child,
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] section .rounded-2xl > div:last-child {
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] aside p {
+  color: #475569 !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] aside button,
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] aside a {
+  border-radius: 18px !important;
+  font-weight: 1000 !important;
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] aside button:first-of-type {
+  background: #fca5a5 !important;
+  color: #450a0a !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] aside a[href="/jobs-board"] {
+  background: #0f172a !important;
+  color: #ffffff !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] aside a[href="/dispatch-board"] {
+  background: linear-gradient(135deg, #22d3ee, #facc15) !important;
+  color: #020617 !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] aside button:last-child {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(15, 23, 42, .12) !important;
+}
