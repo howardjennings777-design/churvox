@@ -1,4 +1,4 @@
-// CHURVOX_INVOICE_BACKLINKS_STABLE_FLOW_20260601
+// CHURVOX_INVOICE_FROM_JOB_FLOW_20260607
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Layout from "../../components/Layout";
@@ -30,38 +30,47 @@ function invoiceIdOf(result) {
   const invoice = data?.invoice || data?.item || data?.record || data;
   return normalizeId(data?.id || data?._id || invoice?.id || invoice?._id || "");
 }
-function n(value) { const num = Number(value || 0); return Number.isFinite(num) ? num : 0; }
+function n(value) { const num = Number(String(value || 0).replace(/[^0-9.-]/g, "")); return Number.isFinite(num) ? num : 0; }
 function money(value) { return n(value).toLocaleString("en-NZ", { style: "currency", currency: "NZD" }); }
 function clientId(client) { return normalizeId(client?.id || client?._id || client?.client_id || ""); }
 function jobId(job) { return normalizeId(job?.id || job?._id || job?.job_id || ""); }
 function clientName(client) { return client?.client_name || client?.name || client?.customer_name || client?.contact_name || "Unnamed client"; }
-function jobTitle(job) { return job?.title || job?.job_name || job?.customer_name || job?.client_name || "Job"; }
+function jobTitle(job) { return job?.title || job?.job_name || job?.job_title || job?.customer_name || job?.client_name || "Job"; }
 function emptyLine(desc = "", price = "") { return { description: desc, quantity: 1, unit_price: price, amount: n(price) }; }
 function readInvoice(payload) { const data = payload?.data ?? payload; return data?.invoice || data?.item || data?.record || data || {}; }
 function readQuote(payload) { const data = payload?.data ?? payload; return data?.quote || data?.item || data?.record || data || {}; }
+function readJob(payload) { const data = payload?.data ?? payload; return data?.job || data?.item || data?.record || data || {}; }
 function buildInvoiceNumber(settings) { return `${settings?.invoice_prefix || "INV"}-${Date.now().toString().slice(-6)}`; }
 function quoteTotal(quote) { return n(quote?.price || quote?.total || quote?.amount || quote?.subtotal || 0); }
 function quoteDescription(quote) { return quote?.job_description || quote?.description || quote?.notes || quote?.customer_name || "Quoted service work"; }
 function cleanText(value) { return String(value || "").replace(/\s+/g, " ").trim(); }
 function firstText(...values) { return cleanText(values.find((value) => cleanText(value)) || ""); }
-
+function timeHours(job = {}) { return n(job.total_time_seconds) > 0 ? n(job.total_time_seconds) / 3600 : 0; }
+function jobInvoiceAmount(job = {}) {
+  const fixed = n(job.price || job.job_price || job.fixed_price || job.total || job.amount || job.subtotal || 0);
+  if (fixed > 0) return Math.round(fixed * 100) / 100;
+  const hourly = n(job.hourly_rate || job.rate || 0);
+  const hours = timeHours(job);
+  if (hourly > 0 && hours > 0) return Math.round(hourly * hours * 100) / 100;
+  return 0;
+}
 function buildAiInvoiceDescription(job = {}, client = {}, settings = {}) {
   const clientDisplay = firstText(client.name, client.client_name, client.customer_name, job.client_name, job.customer_name, "the customer");
-  const service = firstText(job.service_type, job.job_type, job.title, job.job_title, job.job_name, "service work");
+  const service = firstText(job.ai_invoice_line, job.service_type, job.job_type, job.title, job.job_title, job.job_name, "service work");
   const address = firstText(job.address, job.job_address, job.site_address, client.site_address, client.address);
   const notes = firstText(job.ai_invoice_description, job.invoice_description_draft, job.completion_notes, job.worker_notes, job.worker_note, job.notes, job.description);
-  const proof = Array.isArray(job.photos || job.photo_urls || job.proof_photos) ? `Photos/proof recorded: ${(job.photos || job.photo_urls || job.proof_photos).length}.` : "";
+  const proofCount = Array.isArray(job.photos || job.photo_urls || job.proof_photos) ? (job.photos || job.photo_urls || job.proof_photos).length : 0;
   const industry = firstText(settings.trade_industry_type, "service");
-  const parts = [];
-  parts.push(`${service} completed for ${clientDisplay}.`);
+  const parts = [`${service} completed for ${clientDisplay}.`];
   if (address) parts.push(`Work location: ${address}.`);
   if (notes) parts.push(`Job notes: ${notes}.`);
-  if (proof) parts.push(proof);
+  if (proofCount) parts.push(`Photos/proof recorded: ${proofCount}.`);
+  if (timeHours(job) > 0) parts.push(`Logged time: ${Math.round(timeHours(job) * 100) / 100} hours.`);
   parts.push(`Invoice prepared from the completed ${industry} job record.`);
   return parts.filter(Boolean).join("\n");
 }
 function buildAiLineDescription(job = {}, fallback = "Service work completed") {
-  return firstText(job.ai_invoice_line, job.service_type, job.job_type, job.title, job.job_title, job.job_name, fallback);
+  return firstText(job.ai_invoice_line, job.invoice_line_description, job.service_type, job.job_type, job.title, job.job_title, job.job_name, fallback);
 }
 function quoteLineItems(quote) {
   const lines = Array.isArray(quote?.line_items) ? quote.line_items : [];
@@ -88,6 +97,7 @@ export default function InvoiceFormPage() {
   const [settings, setSettings] = useState(() => loadBusinessSettings());
   const [clients, setClients] = useState([]);
   const [jobs, setJobs] = useState([]);
+  const [sourceJob, setSourceJob] = useState(null);
   const [loadingData, setLoadingData] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState(() => {
@@ -138,17 +148,21 @@ export default function InvoiceFormPage() {
     let mounted = true;
     async function load() {
       setLoadingData(true);
-      const [clientRes, jobRes, invoiceRes, quoteRes] = await Promise.all([
+      const [clientRes, jobsRes, exactJobRes, invoiceRes, quoteRes] = await Promise.all([
         get("/clients"),
         get("/jobs"),
+        !isEdit && jobFromQuery ? get(`/jobs/${encodeURIComponent(jobFromQuery)}`) : Promise.resolve(null),
         isEdit ? get(`/invoices/${encodeURIComponent(id)}`) : Promise.resolve(null),
         !isEdit && quoteFromQuery ? get(`/quotes/${encodeURIComponent(quoteFromQuery)}`) : Promise.resolve(null),
       ]);
       if (!mounted) return;
       const nextClients = clientRes?.success ? arr(clientRes.data) : [];
-      const nextJobs = jobRes?.success ? arr(jobRes.data) : [];
+      const listedJobs = jobsRes?.success ? arr(jobsRes.data) : [];
+      const exactJob = exactJobRes?.success ? readJob(exactJobRes) : null;
+      const nextJobs = exactJob && jobId(exactJob) && !listedJobs.some((job) => jobId(job) === jobId(exactJob)) ? [exactJob, ...listedJobs] : listedJobs;
       setClients(nextClients);
       setJobs(nextJobs);
+      setSourceJob(exactJob || null);
 
       if (invoiceRes?.success) {
         const invoice = readInvoice(invoiceRes);
@@ -185,8 +199,9 @@ export default function InvoiceFormPage() {
         }
         if (quoteRes?.success) applyQuoteRecord(readQuote(quoteRes), false);
         if (jobFromQuery) {
-          const job = nextJobs.find((x) => jobId(x) === String(jobFromQuery));
-          if (job) applyJobRecord(job, false, nextClients);
+          const job = exactJob || nextJobs.find((x) => jobId(x) === String(jobFromQuery));
+          if (job) applyJobRecord(job, false, nextClients, true);
+          else toast.error("Could not load the linked job for this invoice");
         }
       }
       setLoadingData(false);
@@ -229,14 +244,15 @@ export default function InvoiceFormPage() {
     const client = clients.find((x) => clientId(x) === String(selectedId));
     if (client) applyClientRecord(client, false);
   }
-  function applyJobRecord(job, setJobId = true, clientList = clients) {
+  function applyJobRecord(job, setJobId = true, clientList = clients, forceDescription = false) {
     const relatedClient = clientList.find((x) => clientId(x) === String(normalizeId(job.client_id || "")));
-    const price = n(job.price || job.job_price || job.fixed_price || job.total || job.amount || job.subtotal || 0);
+    const price = jobInvoiceAmount(job);
     const aiDescription = buildAiInvoiceDescription(job, relatedClient, settings);
     const lineDesc = buildAiLineDescription(job, "Service work completed");
+    setSourceJob(job);
     setFormData((current) => ({
       ...current,
-      job_id: setJobId ? jobId(job) : current.job_id,
+      job_id: setJobId ? jobId(job) : current.job_id || jobId(job),
       client_id: normalizeId(job.client_id) || current.client_id,
       customer_name: job.customer_name || job.client_name || clientName(relatedClient) || current.customer_name,
       customer_email: job.customer_email || job.client_email || relatedClient?.email || relatedClient?.customer_email || current.customer_email,
@@ -244,16 +260,17 @@ export default function InvoiceFormPage() {
       billing_address: relatedClient?.billing_address || relatedClient?.address || current.billing_address,
       address: job.address || job.job_address || job.site_address || relatedClient?.address || current.address,
       site_address: job.site_address || job.job_address || job.address || relatedClient?.site_address || relatedClient?.address || current.site_address,
-      description: current.description || aiDescription,
+      description: forceDescription ? aiDescription : (current.description || aiDescription),
       notes: current.notes || aiDescription,
+      internal_notes: current.internal_notes || `Invoice prepared from job ${jobId(job) || current.job_id}`,
       line_items: [emptyLine(lineDesc, price)],
     }));
-    toast.success("AI added the job description to the invoice");
+    toast.success("Job details added to invoice");
   }
   function applyJobId(selectedId) {
     update("job_id", selectedId);
     const job = jobs.find((x) => jobId(x) === String(selectedId));
-    if (job) applyJobRecord(job, false);
+    if (job) applyJobRecord(job, false, clients, true);
   }
   function applyQuoteRecord(quote, setQuoteId = true) {
     const desc = quoteDescription(quote);
@@ -273,12 +290,12 @@ export default function InvoiceFormPage() {
   }
 
   function aiFillDescriptionFromLinkedJob() {
-    const job = jobs.find((x) => jobId(x) === String(formData.job_id || ""));
+    const job = sourceJob || jobs.find((x) => jobId(x) === String(formData.job_id || ""));
     if (!job) return toast.error("Select a linked job first");
     const relatedClient = clients.find((x) => clientId(x) === String(formData.client_id || job.client_id || ""));
     const aiDescription = buildAiInvoiceDescription(job, relatedClient, settings);
     const lineDesc = buildAiLineDescription(job, "Service work completed");
-    const price = n(job.price || job.job_price || job.fixed_price || job.total || job.amount || job.subtotal || formData.line_items?.[0]?.unit_price || 0);
+    const price = jobInvoiceAmount(job) || n(formData.line_items?.[0]?.unit_price || 0);
     setFormData((current) => ({
       ...current,
       description: aiDescription,
@@ -287,7 +304,7 @@ export default function InvoiceFormPage() {
         ? current.line_items.map((line, index) => index === 0 ? { ...line, description: lineDesc, unit_price: line.unit_price || price, amount: line.amount || price } : line)
         : [emptyLine(lineDesc, price)],
     }));
-    toast.success("AI refreshed the invoice job description");
+    toast.success("Invoice description refreshed from linked job");
   }
 
   const subtotal = useMemo(() => formData.line_items.reduce((sum, line) => sum + n(line.amount), 0), [formData.line_items]);
@@ -301,9 +318,11 @@ export default function InvoiceFormPage() {
   async function linkInvoiceBack(createdId, payload) {
     if (!createdId) return;
     const linkedAt = new Date().toISOString();
+    const linkedJobId = payload.job_id || payload.linked_job_id;
+    const linkedQuoteId = payload.quote_id || payload.linked_quote_id;
     const updates = [];
-    if (payload.linked_job_id) updates.push(patch(`/jobs/${encodeURIComponent(payload.linked_job_id)}`, { invoice_id: createdId, linked_invoice_id: createdId, invoice_status: payload.status || "draft", invoice_total: payload.total, invoice_amount_due: payload.amount_due, invoiced_at: linkedAt }));
-    if (payload.linked_quote_id) updates.push(patch(`/quotes/${encodeURIComponent(payload.linked_quote_id)}`, { invoice_id: createdId, linked_invoice_id: createdId, invoice_status: payload.status || "draft", invoice_total: payload.total, invoiced_at: linkedAt }));
+    if (linkedJobId) updates.push(patch(`/jobs/${encodeURIComponent(linkedJobId)}`, { invoice_id: createdId, linked_invoice_id: createdId, invoice_status: payload.status || "draft", invoice_total: payload.total, invoice_amount_due: payload.amount_due, invoiced_at: linkedAt, invoice_source_status: "draft_created" }));
+    if (linkedQuoteId) updates.push(patch(`/quotes/${encodeURIComponent(linkedQuoteId)}`, { invoice_id: createdId, linked_invoice_id: createdId, invoice_status: payload.status || "draft", invoice_total: payload.total, invoiced_at: linkedAt }));
     if (updates.length) await Promise.allSettled(updates);
   }
 
@@ -314,6 +333,9 @@ export default function InvoiceFormPage() {
     setSaving(true);
     const payload = {
       ...formData,
+      client_id: formData.client_id || null,
+      job_id: formData.job_id || null,
+      quote_id: formData.quote_id || null,
       client_name: formData.customer_name,
       customer_name: formData.customer_name,
       linked_quote_id: formData.quote_id || null,
@@ -344,8 +366,8 @@ export default function InvoiceFormPage() {
       const createdId = invoiceIdOf(res) || id;
       await linkInvoiceBack(createdId, payload);
       setSaving(false);
-      toast.success(isEdit ? "Invoice updated" : "Invoice created and linked back");
-      navigate(createdId ? `/invoices/${encodeURIComponent(createdId)}` : "/invoices");
+      toast.success(isEdit ? "Invoice updated" : "Invoice created and linked to job");
+      navigate(createdId ? `/invoices/${encodeURIComponent(createdId)}` : "/invoices-board");
     } else {
       setSaving(false);
       toast.error(res.error || "Could not save invoice");
@@ -354,11 +376,14 @@ export default function InvoiceFormPage() {
 
   const inputClass = "w-full rounded-xl border border-slate-700 bg-slate-900/70 p-3 text-white";
   const labelClass = "text-sm font-black text-slate-200";
+  const heroEyebrow = isEdit ? "Edit invoice" : jobFromQuery ? "Invoice from job" : quoteFromQuery ? "Invoice from quote" : "New invoice";
+  const heroTitle = isEdit ? "Edit invoice" : jobFromQuery ? "Create invoice from completed job" : quoteFromQuery ? "Create invoice from accepted quote" : "Create an invoice ready to send";
 
   return <Layout><PremiumPage maxWidth={1080}>
-    <button type="button" onClick={() => navigate("/invoices")} className="mb-3 inline-flex items-center gap-2 text-sm font-black text-slate-300 hover:text-white"><ArrowLeft size={16} /> Back to invoices</button>
-    <PremiumHero eyebrow={isEdit ? "Edit invoice" : quoteFromQuery ? "Invoice from quote" : "First invoice"} title={isEdit ? "Edit invoice" : quoteFromQuery ? "Create invoice from accepted quote" : "Create an invoice ready to send"} subtitle="Invoices can now pull from clients, jobs, quotes, business defaults — and link back to the source record after save." icon={<Receipt className="h-6 w-6" />} />
-    {loadingData ? <PremiumCard><div className="p-8 text-center font-bold text-slate-300">Loading invoice workspace…</div></PremiumCard> : <form onSubmit={save} className="space-y-6" data-testid="stable-invoice-form" data-version="CHURVOX_INVOICE_BACKLINKS_STABLE_FLOW_20260601">
+    <button type="button" onClick={() => navigate("/invoices-board")} className="mb-3 inline-flex items-center gap-2 text-sm font-black text-slate-300 hover:text-white"><ArrowLeft size={16} /> Back to Invoices board</button>
+    <PremiumHero eyebrow={heroEyebrow} title={heroTitle} subtitle="Invoices pull from clients, jobs, quotes and business defaults, then link back to the source record after save." icon={<Receipt className="h-6 w-6" />} />
+    {loadingData ? <PremiumCard><div className="p-8 text-center font-bold text-slate-300">Loading invoice workspace…</div></PremiumCard> : <form onSubmit={save} className="space-y-6" data-testid="stable-invoice-form" data-version="CHURVOX_INVOICE_FROM_JOB_FLOW_20260607">
+      {jobFromQuery ? <PremiumCard title="Job invoice source"><div className="rounded-2xl border border-lime-300/20 bg-lime-300/10 p-4 text-sm font-bold text-lime-100">This invoice was opened from a job. Churvox has pulled the customer, site address, invoice description, amount and job link where available.</div></PremiumCard> : null}
       <PremiumCard title="Business defaults"><div className="rounded-2xl border border-lime-300/20 bg-lime-300/10 p-3 text-sm font-bold text-lime-100">{settings.business_name || "No business name yet"} · Prefix {settings.invoice_prefix || "INV"} · GST {settings.default_gst_rate || 15}% · Due in {settings.default_invoice_due_days || 7} days</div></PremiumCard>
       <PremiumCard title="Customer and linked work">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -384,13 +409,13 @@ export default function InvoiceFormPage() {
       <PremiumCard title="Terms, tax and payment">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {[["invoice_number", "Invoice number"], ["due_date", "Due date", "date"], ["gst_rate", "GST rate %", "number"], ["discount_amount", "Discount", "number"], ["deposit_amount", "Deposit / already paid", "number"], ["amount_paid", "Other amount paid", "number"], ["payment_link", "Payment link"], ["payment_terms", "Payment terms"]].map(([key, label, type = "text"]) => <label className="space-y-2" key={key} htmlFor={`invoice-${key}`}><span className={labelClass}>{label}</span><input id={`invoice-${key}`} type={type} value={formData[key] || ""} onChange={(e) => update(key, e.target.value)} className={inputClass} data-testid={`invoice-${key}-input`} /></label>)}
-          <div className="md:col-span-3 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><div className="text-xs font-black uppercase tracking-[0.14em] text-cyan-200">AI invoice wording</div><p className="mt-1 text-sm font-bold text-slate-200">Pulls job title, address, client, worker notes, completion notes and proof summary into a clear invoice description.</p></div><button type="button" onClick={aiFillDescriptionFromLinkedJob} className="rounded-full bg-cyan-300 px-4 py-2 text-sm font-black text-slate-950">AI add job description</button></div></div>
+          <div className="md:col-span-3 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><div className="text-xs font-black uppercase tracking-[0.14em] text-cyan-200">AI invoice wording</div><p className="mt-1 text-sm font-bold text-slate-200">Pulls job title, address, client, worker notes, completion notes, logged time and proof summary into a clear invoice description.</p></div><button type="button" onClick={aiFillDescriptionFromLinkedJob} className="rounded-full bg-cyan-300 px-4 py-2 text-sm font-black text-slate-950">AI add job description</button></div></div>
           <label className="space-y-2 md:col-span-3" htmlFor="invoice-public-notes"><span className={labelClass}>Customer description / public notes</span><textarea id="invoice-public-notes" value={formData.description} onChange={(e) => update("description", e.target.value)} rows={5} className={inputClass} data-testid="invoice-public-notes-input" /></label>
           <label className="space-y-2 md:col-span-3" htmlFor="invoice-internal-notes"><span className={labelClass}>Internal notes</span><textarea id="invoice-internal-notes" value={formData.internal_notes} onChange={(e) => update("internal_notes", e.target.value)} rows={2} className={inputClass} data-testid="invoice-internal-notes-input" /></label>
         </div>
       </PremiumCard>
       <PremiumCard title="Invoice preview"><div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-5"><div><span className="block text-slate-300">Subtotal</span><b className="text-white">{money(subtotal)}</b></div><div><span className="block text-slate-300">Discount</span><b className="text-white">{money(discount)}</b></div><div><span className="block text-slate-300">GST</span><b className="text-white">{money(gstAmount)}</b></div><div><span className="block text-slate-300">Total</span><b className="text-cyan-300">{money(total)}</b></div><div><span className="block text-slate-300">Amount due</span><b className="text-lime-300">{money(due)}</b></div></div></PremiumCard>
-      <div className="flex justify-end gap-3"><button type="button" onClick={() => navigate("/invoices")} className="rounded-full border border-slate-600 px-5 py-3 font-black text-slate-100">Cancel</button><PremiumButton type="submit" disabled={saving} iconLeft={saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}>{saving ? "Saving…" : isEdit ? "Update invoice" : "Create invoice"}</PremiumButton></div>
+      <div className="flex justify-end gap-3"><button type="button" onClick={() => navigate("/invoices-board")} className="rounded-full border border-slate-600 px-5 py-3 font-black text-slate-100">Cancel</button><PremiumButton type="submit" disabled={saving} iconLeft={saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}>{saving ? "Saving…" : isEdit ? "Update invoice" : "Create invoice"}</PremiumButton></div>
     </form>}
   </PremiumPage></Layout>;
 }
