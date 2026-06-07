@@ -1,0 +1,42 @@
+/* CHURVOX_COMMAND_BOARD_CARD_SLIP_LOCK_20260608
+   Protects the Command Board contract:
+   separate cards/boxes -> review slip -> approve/edit/close.
+   This must not be flattened into a record form workspace. */
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"][data-command-canvas] {
+  background: #f7f3ea !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-board-dark-card {
+  background: linear-gradient(135deg, #111827, #070d16) !important;
+  color: #ffffff !important;
+  border-color: rgba(255,255,255,.10) !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-board-dark-card h1,
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-board-dark-card h2,
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-board-dark-card h3,
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-board-dark-card strong,
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-board-dark-card b {
+  color: #ffffff !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-board-dark-card p,
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-board-dark-card span:not(.bg-amber-300):not(.bg-emerald-300) {
+  color: #cbd5e1 !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-board-dark-card button,
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-board-dark-card a {
+  pointer-events: auto !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] [role="dialog"] {
+  pointer-events: auto !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] [role="dialog"] section,
+body.cv-industrial-shell main[data-industrial-simple-page="command"] [role="dialog"] main,
+body.cv-industrial-shell main[data-industrial-simple-page="command"] [role="dialog"] aside {
+  color: #0f172a !important;
+}
