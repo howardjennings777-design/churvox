@@ -7,11 +7,11 @@ import "./IndustrialCommandPages.css";
 import "./DashboardStripClean.css";
 import "./ChurvoxLaunchCleanup.css";
 
-const BUILD_MARKER = "Build 75a5250+";
+const BUILD_MARKER = "Build jobs-board";
 
 const NAV_ITEMS = [
   ["Command", "/dashboard", "CM"],
-  ["Jobs", "/jobs", "JB"],
+  ["Jobs", "/jobs-board", "JB"],
   ["Dispatch", "/crew-map", "DP"],
   ["Clients", "/clients", "CL"],
   ["Quotes", "/quotes", "QT"],
@@ -23,12 +23,12 @@ const NAV_ITEMS = [
 
 const INDUSTRIAL_GROUPS = [
   { title: "Command", items: [["Command Board", "/dashboard", "CM"]] },
-  { title: "Work", items: [["Jobs", "/jobs", "JB"], ["Crew Dispatch", "/crew-map", "DP"], ["Clients", "/clients", "CL"], ["Quotes", "/quotes", "QT"], ["Invoices", "/invoices", "IV"]] },
+  { title: "Work", items: [["Jobs", "/jobs-board", "JB"], ["Crew Dispatch", "/crew-map", "DP"], ["Clients", "/clients", "CL"], ["Quotes", "/quotes", "QT"], ["Invoices", "/invoices", "IV"]] },
   { title: "Crew & Admin", items: [["Team", "/team", "TM"], ["Payroll", "/payroll", "PR"], ["Reports", "/reports", "RP"]] },
   { title: "System", items: [["Plans", "/plans", "PL"], ["Settings", "/settings", "ST"], ["Support", "/support", "?"]] },
 ];
 
-const COMMAND_PATHS = ["/dashboard", "/overview", "/jobs", "/dispatch", "/dispatch-board", "/crew-map", "/clients", "/quotes", "/invoices", "/team", "/payroll", "/reports", "/plans", "/settings", "/support"];
+const COMMAND_PATHS = ["/dashboard", "/overview", "/jobs-board", "/jobs", "/dispatch", "/dispatch-board", "/crew-map", "/clients", "/quotes", "/invoices", "/team", "/payroll", "/reports", "/plans", "/settings", "/support"];
 
 function isCommandPath(pathname) {
   return COMMAND_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
@@ -36,6 +36,7 @@ function isCommandPath(pathname) {
 
 function isActive(pathname, href) {
   if (href === "/dashboard") return pathname === "/dashboard" || pathname === "/overview";
+  if (href === "/jobs-board") return pathname === "/jobs-board" || pathname === "/jobs" || pathname.startsWith("/jobs/");
   if (href === "/crew-map") return pathname === "/crew-map" || pathname === "/dispatch" || pathname === "/dispatch-board";
   if (href === "/invoices") return pathname === "/invoices" || pathname.startsWith("/invoices/");
   if (href === "/team") return pathname === "/team" || pathname.startsWith("/team/");
