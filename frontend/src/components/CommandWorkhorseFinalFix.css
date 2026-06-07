@@ -92,11 +92,6 @@ body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260
   margin-top: 8px !important;
 }
 
-body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] main > section.space-y-5 > section:first-child .md\:grid-cols-3,
-body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] main > section.space-y-5 > section:first-child [class*="md:grid-cols-3"] {
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-}
-
 body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] main section .grid.gap-3 {
   gap: 9px !important;
 }
