@@ -21,8 +21,9 @@ import "./CommandBoardAIFeel.css";
 import "./CommandBoardLayoutPolish.css";
 import "./CommandBoardSlipFinal.css";
 import "./IndustrialThemeEverywhereLock.css";
+import "./CommandSummarySlipProof.css";
 
-const BUILD_MARKER = "Build industrial-theme-lock";
+const BUILD_MARKER = "Build command-summary-proof";
 
 const NAV_ITEMS = [
   ["Command", "/dashboard", "CM"],
