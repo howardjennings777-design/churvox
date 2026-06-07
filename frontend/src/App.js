@@ -51,7 +51,7 @@ import TeamCommandPage from "./pages/TeamCommandPage";
 import DispatchCommandPage from "./pages/DispatchCommandPage";
 import WorkerMapCommandPage from "./pages/WorkerMapCommandPage";
 import ReportsCommandPage from "./pages/ReportsCommandPage";
-import SettingsCommandPage from "./pages/SettingsCommandPage";
+import SettingsCommandPage from "./pages/SettingsCommandPageClean";
 import SupportCommandPage from "./pages/SupportCommandPage";
 import PayrollCommandPage from "./pages/PayrollCommandPage";
 import OfflineSyncPage from "./pages/OfflineSyncPage";
