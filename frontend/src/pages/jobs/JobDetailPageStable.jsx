@@ -1,4 +1,4 @@
-// CHURVOX_JOB_DETAIL_WORK_REVIEW_STABLE_20260601
+// CHURVOX_JOB_DETAIL_REAL_ACTIONS_20260607
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -21,7 +21,11 @@ function arr(value) {
   if (Array.isArray(value?.results)) return value.results;
   return [];
 }
-function oid(value) { if (!value) return ""; if (typeof value === "object" && value.$oid) return String(value.$oid); return String(value); }
+function oid(value) {
+  if (!value) return "";
+  if (typeof value === "object") return String(value.$oid || value.oid || value.id || value._id || "");
+  return String(value);
+}
 function idOf(value) { return oid(value?.id || value?._id || value?.worker_id || value?.user_id || ""); }
 function workerName(worker) { return worker?.name || worker?.display_name || worker?.full_name || worker?.email || "Worker"; }
 function titleOf(job) { return job?.title || job?.job_name || job?.customer_name || job?.client_name || "Job"; }
@@ -52,11 +56,18 @@ function reviewed(job) {
   const state = reviewStatusOf(job);
   return Boolean(job?.reviewed || job?.owner_approved || job?.work_approved || ["approved", "reviewed", "accepted", "invoiced"].includes(state));
 }
+function timeLabel(seconds) {
+  const total = Number(seconds || 0);
+  if (!Number.isFinite(total) || total <= 0) return "0 min";
+  const h = Math.floor(total / 3600);
+  const m = Math.max(1, Math.floor((total % 3600) / 60));
+  return h ? `${h}h ${m}m` : `${m} min`;
+}
 
 export default function JobDetailPageStable() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { get, patch } = useApi();
+  const { get, post, patch } = useApi();
   const { user, isWorker } = useAuth();
   const [job, setJob] = useState(null);
   const [workers, setWorkers] = useState([]);
@@ -66,6 +77,7 @@ export default function JobDetailPageStable() {
   const [ownerNotes, setOwnerNotes] = useState("");
   const [workerNotes, setWorkerNotes] = useState("");
   const [reviewNote, setReviewNote] = useState("");
+  const [selectedPhoto, setSelectedPhoto] = useState("");
 
   const role = String(user?.role || "").toLowerCase();
   const isOwnerView = (!isWorker && ["owner", "admin", "employer", "manager", "office_admin"].includes(role)) || user?.is_owner || user?.is_admin;
@@ -93,12 +105,12 @@ export default function JobDetailPageStable() {
   const status = statusOf(job || {});
   const reviewStatus = reviewStatusOf(job || {});
   const price = jobPrice(job || {});
-  const desc = invoiceDescription(job || {}, workerNotes);
   const selectedWorkerRecord = workers.find((worker) => idOf(worker) === String(selectedWorker));
-  const isCompleted = ["completed", "complete", "done"].includes(status);
+  const isCompleted = ["completed", "complete", "done"].includes(status) || job?.completed === true;
   const isReviewed = reviewed(job || {});
   const hasInvoice = Boolean(job?.invoice_id || job?.draft_invoice_id);
   const readyForInvoice = isCompleted && isReviewed && !hasInvoice;
+  const timerRunning = job?.timer_running === true;
 
   async function patchJob(payload, success = "Job updated") {
     setBusy(success);
@@ -113,44 +125,56 @@ export default function JobDetailPageStable() {
     return false;
   }
 
-  async function assignWorker() {
-    if (!selectedWorker) return toast.error("Choose a worker first");
-    const worker = selectedWorkerRecord;
-    return patchJob({
-      assigned_worker_id: selectedWorker,
-      worker_id: selectedWorker,
-      assigned_worker_name: worker ? workerName(worker) : job?.assigned_worker_name,
-      worker_name: worker ? workerName(worker) : job?.worker_name,
-      status: status === "completed" ? status : "assigned",
-      assigned_at: new Date().toISOString(),
-    }, "Worker assigned");
+  async function postJob(endpoint, payload, success) {
+    setBusy(success);
+    const res = await post(endpoint, payload || {});
+    setBusy("");
+    if (res?.success) {
+      toast.success(success);
+      await loadJob();
+      return true;
+    }
+    toast.error(res?.error || success || "Job action failed");
+    return false;
   }
 
-  async function workerAction(nextStatus) {
-    const now = new Date().toISOString();
-    let nextPatch = { status: nextStatus };
-    if (nextStatus === "acknowledged") nextPatch = { ...nextPatch, accepted_at: now, acknowledged_at: now };
-    if (nextStatus === "in_progress") nextPatch = { ...nextPatch, started_at: job?.started_at || now };
-    if (nextStatus === "paused") nextPatch = { ...nextPatch, paused_at: now };
-    if (nextStatus === "completed") {
-      const nextDesc = invoiceDescription(job || {}, workerNotes);
-      nextPatch = {
-        ...nextPatch,
-        completed: true,
-        completed_at: now,
-        worker_notes: workerNotes,
-        completion_notes: workerNotes || job?.completion_notes || nextDesc,
-        latest_worker_note: workerNotes || job?.latest_worker_note || "Completed by worker",
-        work_review_status: "ready_for_review",
-        owner_review_status: "ready_for_review",
-        review_status: "ready_for_review",
-        worker_action_required: false,
-        ai_invoice_description: nextDesc,
-        invoice_description_draft: nextDesc,
-        customer_message_draft: customerDraft({ ...(job || {}), completion_notes: workerNotes || nextDesc }),
-      };
-    }
-    return patchJob(nextPatch, nextStatus === "completed" ? "Job completed for owner review" : "Job updated");
+  async function assignWorker() {
+    if (!selectedWorker) return toast.error("Choose a worker first");
+    return postJob(`/jobs/${encodeURIComponent(id)}/assign`, { worker_id: selectedWorker }, "Worker assigned");
+  }
+
+  async function acceptJob() {
+    return postJob(`/jobs/${encodeURIComponent(id)}/acknowledge`, {}, "Job accepted");
+  }
+
+  async function startTimer() {
+    return postJob(`/jobs/${encodeURIComponent(id)}/timer/start`, {}, "Job timer started");
+  }
+
+  async function pauseTimer() {
+    return postJob(`/jobs/${encodeURIComponent(id)}/timer/pause`, {}, "Job timer paused");
+  }
+
+  async function resumeTimer() {
+    return postJob(`/jobs/${encodeURIComponent(id)}/timer/resume`, {}, "Job timer resumed");
+  }
+
+  async function completeForReview() {
+    const nextDesc = invoiceDescription(job || {}, workerNotes);
+    const done = await postJob(`/jobs/${encodeURIComponent(id)}/complete`, {}, "Job completed for owner review");
+    if (!done) return false;
+    return patchJob({
+      worker_notes: workerNotes,
+      completion_notes: workerNotes || job?.completion_notes || nextDesc,
+      latest_worker_note: workerNotes || job?.latest_worker_note || "Completed by worker",
+      work_review_status: "ready_for_review",
+      owner_review_status: "ready_for_review",
+      review_status: "ready_for_review",
+      worker_action_required: false,
+      ai_invoice_description: nextDesc,
+      invoice_description_draft: nextDesc,
+      customer_message_draft: customerDraft({ ...(job || {}), completion_notes: workerNotes || nextDesc }),
+    }, "Completion notes saved");
   }
 
   async function approveWork() {
@@ -201,12 +225,11 @@ export default function JobDetailPageStable() {
 
   async function prepareMessage() {
     const message = customerDraft(job || {});
-    const ok = await patchJob({
+    await patchJob({
       customer_message_draft: message,
       last_message_subject: `Job update for ${titleOf(job || {})}`,
       message_approval_status: "draft_ready",
     }, "Customer message draft prepared");
-    if (ok) navigate(`/message-approvals?job_id=${encodeURIComponent(id)}`);
   }
 
   async function approveAndInvoice() {
@@ -225,17 +248,18 @@ export default function JobDetailPageStable() {
   }
 
   if (loading) return <Layout><PremiumPage maxWidth={980}><PremiumCard><div className="p-8 text-center font-bold text-slate-300">Loading job…</div></PremiumCard></PremiumPage></Layout>;
-  if (!job) return <Layout><PremiumPage maxWidth={980}><PremiumCard><div className="p-8 text-center"><h2 className="text-2xl font-black text-white">Job could not load</h2><button className="mt-4 rounded-full bg-white px-5 py-3 font-black text-slate-950" onClick={() => navigate("/jobs")}>Back to jobs</button></div></PremiumCard></PremiumPage></Layout>;
+  if (!job) return <Layout><PremiumPage maxWidth={980}><PremiumCard><div className="p-8 text-center"><h2 className="text-2xl font-black text-white">Job could not load</h2><button className="mt-4 rounded-full bg-white px-5 py-3 font-black text-slate-950" onClick={() => navigate("/jobs-board")}>Back to Jobs board</button></div></PremiumCard></PremiumPage></Layout>;
 
   return <Layout><PremiumPage maxWidth={1160}>
-    <button type="button" onClick={() => navigate("/jobs")} className="mb-3 inline-flex items-center gap-2 text-sm font-black text-slate-300 hover:text-white"><ArrowLeft size={16} /> Back to jobs</button>
-    <PremiumHero eyebrow="Job detail" title={titleOf(job)} subtitle="Worker completes the job, owner reviews it, then invoice and customer message flow from the same job record." icon={<ClipboardList className="h-6 w-6" />} actions={isOwnerView ? <div className="flex flex-wrap gap-2"><PremiumButton variant="secondary" onClick={() => navigate(`/jobs/${id}/edit`)}>Edit job</PremiumButton>{hasInvoice ? <PremiumButton variant="secondary" onClick={() => navigate(`/invoices/${job.invoice_id || job.draft_invoice_id}`)}>View invoice</PremiumButton> : null}</div> : null} />
+    <button type="button" onClick={() => navigate("/jobs-board")} className="mb-3 inline-flex items-center gap-2 text-sm font-black text-slate-300 hover:text-white"><ArrowLeft size={16} /> Back to Jobs board</button>
+    <PremiumHero eyebrow="Job detail" title={titleOf(job)} subtitle="Review the job record, run real timer actions, approve work, then create the invoice draft." icon={<ClipboardList className="h-6 w-6" />} actions={isOwnerView ? <div className="flex flex-wrap gap-2"><PremiumButton variant="secondary" onClick={() => navigate(`/jobs/${id}/edit`)}>Edit job</PremiumButton>{hasInvoice ? <PremiumButton variant="secondary" onClick={() => navigate(`/invoices/${job.invoice_id || job.draft_invoice_id}`)}>View invoice</PremiumButton> : null}</div> : null} />
 
-    <section className="mb-5 grid gap-3 md:grid-cols-5">
+    <section className="mb-5 grid gap-3 md:grid-cols-6">
       <article className="rounded-3xl border border-slate-700 bg-slate-950/50 p-4"><span className="text-xs font-black uppercase tracking-[0.16em] text-cyan-300">Status</span><b className="mt-2 block text-2xl text-white">{pretty(status)}</b></article>
       <article className="rounded-3xl border border-slate-700 bg-slate-950/50 p-4"><span className="text-xs font-black uppercase tracking-[0.16em] text-lime-300">Review</span><b className="mt-2 block text-2xl text-white">{pretty(reviewStatus || "not reviewed")}</b></article>
       <article className="rounded-3xl border border-slate-700 bg-slate-950/50 p-4"><span className="text-xs font-black uppercase tracking-[0.16em] text-cyan-300">Client</span><b className="mt-2 block truncate text-xl text-white">{clientOf(job)}</b></article>
       <article className="rounded-3xl border border-slate-700 bg-slate-950/50 p-4"><span className="text-xs font-black uppercase tracking-[0.16em] text-purple-300">Worker</span><b className="mt-2 block truncate text-xl text-white">{job.assigned_worker_name || job.worker_name || "Unassigned"}</b></article>
+      <article className="rounded-3xl border border-slate-700 bg-slate-950/50 p-4"><span className="text-xs font-black uppercase tracking-[0.16em] text-orange-300">Timer</span><b className="mt-2 block text-2xl text-white">{timerRunning ? "Running" : "Stopped"}</b></article>
       {isOwnerView ? <article className="rounded-3xl border border-slate-700 bg-slate-950/50 p-4"><span className="text-xs font-black uppercase tracking-[0.16em] text-amber-300">Invoice source</span><b className="mt-2 block text-2xl text-white">{money(price)}</b></article> : null}
     </section>
 
@@ -244,16 +268,19 @@ export default function JobDetailPageStable() {
 
     <section className="grid gap-5 xl:grid-cols-[1fr_380px]">
       <div className="grid gap-5">
-        <PremiumCard title="Job record"><div className="grid gap-4 md:grid-cols-2"><div><span className="text-xs font-black uppercase text-slate-400">Client</span><p className="mt-1 font-bold text-white">{clientOf(job)}</p></div><div><span className="text-xs font-black uppercase text-slate-400">Site address</span><p className="mt-1 font-bold text-white">{job.address || job.site_address || "No address"}</p></div><div><span className="text-xs font-black uppercase text-slate-400">Scheduled</span><p className="mt-1 font-bold text-white">{dateLabel(job.scheduled_date)}</p></div><div><span className="text-xs font-black uppercase text-slate-400">Created</span><p className="mt-1 font-bold text-white">{dateLabel(job.created_at)}</p></div><div><span className="text-xs font-black uppercase text-slate-400">Started</span><p className="mt-1 font-bold text-white">{dateLabel(job.started_at)}</p></div><div><span className="text-xs font-black uppercase text-slate-400">Completed</span><p className="mt-1 font-bold text-white">{dateLabel(job.completed_at)}</p></div></div></PremiumCard>
+        <PremiumCard title="Job record"><div className="grid gap-4 md:grid-cols-2"><div><span className="text-xs font-black uppercase text-slate-400">Client</span><p className="mt-1 font-bold text-white">{clientOf(job)}</p></div><div><span className="text-xs font-black uppercase text-slate-400">Site address</span><p className="mt-1 font-bold text-white">{job.address || job.site_address || "No address"}</p></div><div><span className="text-xs font-black uppercase text-slate-400">Scheduled</span><p className="mt-1 font-bold text-white">{dateLabel(job.scheduled_date)}</p></div><div><span className="text-xs font-black uppercase text-slate-400">Created</span><p className="mt-1 font-bold text-white">{dateLabel(job.created_at)}</p></div><div><span className="text-xs font-black uppercase text-slate-400">Started</span><p className="mt-1 font-bold text-white">{dateLabel(job.started_at)}</p></div><div><span className="text-xs font-black uppercase text-slate-400">Completed</span><p className="mt-1 font-bold text-white">{dateLabel(job.completed_at)}</p></div><div><span className="text-xs font-black uppercase text-slate-400">Time logged</span><p className="mt-1 font-bold text-white">{timeLabel(job.total_time_seconds)}</p></div><div><span className="text-xs font-black uppercase text-slate-400">Pricing</span><p className="mt-1 font-bold text-white">{money(price)}</p></div></div></PremiumCard>
         <PremiumCard title={isOwnerView ? "Owner notes" : "Worker notes"} icon={<FileText className="h-5 w-5" />}>{isOwnerView ? <><textarea className="min-h-[120px] w-full rounded-2xl border border-slate-700 bg-slate-950/60 p-3 font-semibold text-white" value={ownerNotes} onChange={(e) => setOwnerNotes(e.target.value)} placeholder="Private owner/admin notes for this job" /><div className="mt-3 flex justify-end"><PremiumButton onClick={() => patchJob({ notes: ownerNotes, internal_notes: ownerNotes }, "Owner notes saved")} disabled={Boolean(busy)} iconLeft={<Save className="h-4 w-4" />}>Save owner notes</PremiumButton></div></> : <><textarea className="min-h-[140px] w-full rounded-2xl border border-slate-700 bg-slate-950/60 p-3 font-semibold text-white" value={workerNotes} onChange={(e) => setWorkerNotes(e.target.value)} placeholder="Work completed, access notes, issues, materials used..." /><div className="mt-3 flex justify-end"><PremiumButton onClick={() => patchJob({ worker_notes: workerNotes, latest_worker_note: workerNotes }, "Worker notes saved")} disabled={Boolean(busy)} iconLeft={<Save className="h-4 w-4" />}>Save worker notes</PremiumButton></div></>}</PremiumCard>
-        {photos.length ? <PremiumCard title="Worker photos"><div className="grid gap-3 md:grid-cols-3">{photos.map((url) => <a key={url} href={url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-2xl border border-slate-700"><img src={url} alt="Job upload" className="h-44 w-full object-cover" /></a>)}</div></PremiumCard> : null}
+        {photos.length ? <PremiumCard title="Worker photos"><div className="grid gap-3 md:grid-cols-3">{photos.map((url) => <button key={url} type="button" onClick={() => setSelectedPhoto(url)} className="block overflow-hidden rounded-2xl border border-slate-700 text-left"><img src={url} alt="Job upload" className="h-44 w-full object-cover" /></button>)}</div></PremiumCard> : null}
       </div>
+
       <aside className="grid content-start gap-5">
         {isOwnerView ? <PremiumCard title="Assign worker" icon={<UserCircle2 className="h-5 w-5" />}><select className="w-full rounded-2xl border border-slate-700 bg-slate-950/60 p-3 font-bold text-white" value={selectedWorker} onChange={(e) => setSelectedWorker(e.target.value)}><option value="">Choose worker</option>{workers.map((worker) => <option key={idOf(worker)} value={idOf(worker)}>{workerName(worker)}</option>)}</select><div className="mt-3"><PremiumButton onClick={assignWorker} disabled={Boolean(busy)}>Assign worker</PremiumButton></div></PremiumCard> : null}
-        {!isOwnerView ? <PremiumCard title="Worker actions" icon={<Clock className="h-5 w-5" />}><div className="grid gap-2"><PremiumButton variant="secondary" onClick={() => workerAction("acknowledged")} disabled={Boolean(busy)}>Accept job</PremiumButton><PremiumButton onClick={() => workerAction("in_progress")} disabled={Boolean(busy)} iconLeft={<Play className="h-4 w-4" />}>Start job</PremiumButton><PremiumButton variant="secondary" onClick={() => workerAction("paused")} disabled={Boolean(busy)}>Pause</PremiumButton><PremiumButton variant="secondary" onClick={() => workerAction("in_progress")} disabled={Boolean(busy)} iconLeft={<RotateCcw className="h-4 w-4" />}>Resume</PremiumButton><PremiumButton onClick={() => workerAction("completed")} disabled={Boolean(busy)} iconLeft={<CheckCircle2 className="h-4 w-4" />}>Complete for owner review</PremiumButton></div></PremiumCard> : null}
-        {isOwnerView ? <PremiumCard title="Owner review" icon={<CheckCircle2 className="h-5 w-5" />}><p className="text-sm font-semibold text-slate-300">Approve completed work, create the invoice draft, or prepare a customer message.</p><div className="mt-3 grid gap-2"><PremiumButton onClick={approveWork} disabled={Boolean(busy) || !isCompleted} iconLeft={<CheckCircle2 className="h-4 w-4" />}>Approve work</PremiumButton><PremiumButton onClick={approveAndInvoice} disabled={Boolean(busy) || !isCompleted} iconLeft={<FileText className="h-4 w-4" />}>Approve & create invoice</PremiumButton><PremiumButton variant="secondary" onClick={prepareMessage} disabled={Boolean(busy)} iconLeft={<MessageSquareText className="h-4 w-4" />}>Prepare customer message</PremiumButton></div><div className="mt-4 rounded-2xl border border-slate-700 bg-slate-950/60 p-3"><textarea className="min-h-[90px] w-full rounded-xl border border-slate-700 bg-slate-900/80 p-3 text-sm font-semibold text-white" value={reviewNote} onChange={(e) => setReviewNote(e.target.value)} placeholder="Reason if sending back to worker" /><button type="button" onClick={sendBack} disabled={Boolean(busy)} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-300/30 bg-amber-400/10 px-4 py-3 text-sm font-black text-amber-100"><Send className="h-4 w-4" /> Send back to worker</button></div></PremiumCard> : null}
+        {!isOwnerView ? <PremiumCard title="Worker actions" icon={<Clock className="h-5 w-5" />}><div className="grid gap-2"><PremiumButton variant="secondary" onClick={acceptJob} disabled={Boolean(busy)}>Accept job</PremiumButton><PremiumButton onClick={startTimer} disabled={Boolean(busy) || timerRunning || isCompleted} iconLeft={<Play className="h-4 w-4" />}>Start timer</PremiumButton><PremiumButton variant="secondary" onClick={pauseTimer} disabled={Boolean(busy) || !timerRunning || isCompleted}>Pause timer</PremiumButton><PremiumButton variant="secondary" onClick={resumeTimer} disabled={Boolean(busy) || timerRunning || isCompleted} iconLeft={<RotateCcw className="h-4 w-4" />}>Resume timer</PremiumButton><PremiumButton onClick={completeForReview} disabled={Boolean(busy) || isCompleted} iconLeft={<CheckCircle2 className="h-4 w-4" />}>Complete for owner review</PremiumButton></div></PremiumCard> : null}
+        {isOwnerView ? <PremiumCard title="Owner review" icon={<CheckCircle2 className="h-5 w-5" />}><p className="text-sm font-semibold text-slate-300">Approve completed work, create the invoice draft, or prepare a customer message draft without leaving this page.</p><div className="mt-3 grid gap-2"><PremiumButton onClick={approveWork} disabled={Boolean(busy) || !isCompleted} iconLeft={<CheckCircle2 className="h-4 w-4" />}>Approve work</PremiumButton><PremiumButton onClick={approveAndInvoice} disabled={Boolean(busy) || !isCompleted} iconLeft={<FileText className="h-4 w-4" />}>Approve & create invoice</PremiumButton><PremiumButton variant="secondary" onClick={prepareMessage} disabled={Boolean(busy)} iconLeft={<MessageSquareText className="h-4 w-4" />}>Prepare customer message</PremiumButton></div><div className="mt-4 rounded-2xl border border-slate-700 bg-slate-950/60 p-3"><textarea className="min-h-[90px] w-full rounded-xl border border-slate-700 bg-slate-900/80 p-3 text-sm font-semibold text-white" value={reviewNote} onChange={(e) => setReviewNote(e.target.value)} placeholder="Reason if sending back to worker" /><button type="button" onClick={sendBack} disabled={Boolean(busy)} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-300/30 bg-amber-400/10 px-4 py-3 text-sm font-black text-amber-100"><Send className="h-4 w-4" /> Send back to worker</button></div></PremiumCard> : null}
         {hasInvoice ? <PremiumCard title="Invoice linked"><Link className="font-black text-cyan-300" to={`/invoices/${job.invoice_id || job.draft_invoice_id}`}>Open linked invoice</Link></PremiumCard> : null}
       </aside>
     </section>
+
+    {selectedPhoto ? <div className="fixed inset-0 z-[2147483647] grid place-items-center bg-slate-950/90 p-4" role="dialog" aria-modal="true"><div className="max-h-[92vh] max-w-5xl overflow-hidden rounded-[28px] border border-white/10 bg-slate-950 shadow-2xl"><div className="flex items-center justify-between gap-3 border-b border-white/10 p-3"><b className="text-sm font-black text-white">Job photo</b><button type="button" onClick={() => setSelectedPhoto("")} className="rounded-xl bg-white px-4 py-2 text-sm font-black text-slate-950">Close</button></div><img src={selectedPhoto} alt="Job upload enlarged" className="max-h-[82vh] w-full object-contain" /></div></div> : null}
   </PremiumPage></Layout>;
 }
