@@ -1,4 +1,4 @@
-// CHURVOX_QUOTE_DETAIL_STABLE_ACTIONS_20260601
+// CHURVOX_QUOTE_DETAIL_REAL_ACTIONS_20260607
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import Layout from "../../components/Layout";
@@ -16,20 +16,24 @@ function quoteRecord(payload) {
   const data = payload?.data ?? payload;
   return data?.quote || data?.item || data?.record || data || {};
 }
-
-function quoteIdOf(value) {
-  return String(value?.id || value?._id || value?.quote_id || "");
+function normalizeId(value) {
+  if (!value) return "";
+  if (typeof value === "object") return String(value.$oid || value.oid || value.id || value._id || "");
+  const text = String(value || "");
+  return text === "[object Object]" ? "" : text;
 }
-
-function amountOf(quote) {
-  return Number(quote?.price || quote?.total || quote?.amount || 0) || 0;
-}
-
+function quoteIdOf(value) { return normalizeId(value?.id || value?._id || value?.quote_id || ""); }
+function amountOf(quote) { return Number(quote?.price || quote?.total || quote?.amount || 0) || 0; }
 function mailtoUrl(quote, biz) {
   const to = quote.customer_email || quote.client_email || "";
   const subject = `Quote ${quote.quote_number || "from Churvox"}`;
   const body = `Hi ${quote.customer_name || "there"},\n\nYour quote is ready for review.\n\nQuote: ${quote.quote_number || ""}\nTotal: ${formatCurrency(amountOf(quote))}\nValid until: ${quote.valid_until ? formatDate(quote.valid_until) : "not set"}\n\n${quote.job_description || quote.description || ""}\n\nThanks,\n${biz.business_name || "Churvox"}`;
   return `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+function createdJobId(payload) {
+  const data = payload?.data ?? payload;
+  const item = data?.job || data?.item || data?.record || data;
+  return normalizeId(data?.job_id || data?.id || data?._id || item?.id || item?._id || "");
 }
 
 export default function QuoteDetailPage() {
@@ -43,7 +47,10 @@ export default function QuoteDetailPage() {
   const fetchQuote = useCallback(async () => {
     const res = await get(`/quotes/${encodeURIComponent(id)}`);
     if (res.success) setQuote(quoteRecord(res));
-    else navigate("/quotes");
+    else {
+      toast.error(res.error || "Quote not found");
+      navigate("/quotes-board");
+    }
   }, [get, id, navigate]);
 
   useEffect(() => { fetchQuote(); }, [fetchQuote]);
@@ -52,10 +59,12 @@ export default function QuoteDetailPage() {
   const statusInfo = useMemo(() => QUOTE_STATUSES.find((s) => s.value === status), [status]);
   const pricingLabel = { fixed: "Fixed Price", hourly: "Hourly", fixed_extras: "Fixed + Extras", hourly_extras: "Hourly + Extras" }[quote?.pricing_type] || "Fixed";
   const lineItems = Array.isArray(quote?.line_items) && quote.line_items.length ? quote.line_items : [];
+  const convertedJobId = normalizeId(quote?.converted_job_id || quote?.job_id || quote?.linked_job_id || "");
+  const locked = ["accepted", "declined"].includes(status) || Boolean(convertedJobId);
 
   async function patchQuote(label, payload, message = "Quote updated") {
     setBusy(label);
-    const res = await patch(`/quotes/${encodeURIComponent(id)}`, { ...payload, updated_at: new Date().toISOString() });
+    const res = await patch(`/quotes/${encodeURIComponent(id)}`, payload);
     setBusy("");
     if (res.success) {
       toast.success(message);
@@ -70,62 +79,38 @@ export default function QuoteDetailPage() {
     if (!quote?.customer_email && !quote?.client_email) return toast.error("Add a customer email before sending this quote");
     const biz = quote.business_snapshot || loadBusinessSettings();
     window.location.href = mailtoUrl(quote, biz);
-    await patchQuote("send", { status: "sent", sent_at: new Date().toISOString(), sent_via: "external_email_client" }, "Email opened and quote marked sent");
+    await patchQuote("send", { status: "sent" }, "Email opened and quote marked sent");
   };
 
   const handleAccept = async () => {
-    await patchQuote("accept", { status: "accepted", accepted_at: new Date().toISOString() }, "Quote accepted");
+    await patchQuote("accept", { status: "accepted" }, "Quote accepted");
   };
 
   const handleDecline = async () => {
     const reason = window.prompt("Reason for declining this quote?", "Declined by owner/customer");
     if (reason === null) return;
-    await patchQuote("decline", { status: "declined", declined_at: new Date().toISOString(), declined_reason: reason }, "Quote declined");
+    await patchQuote("decline", { status: "declined", notes: quote?.notes ? `${quote.notes}\nDeclined: ${reason}` : `Declined: ${reason}` }, "Quote declined");
   };
 
   const handleConvert = async () => {
     if (!quote) return;
     setBusy("convert");
-    const jobPayload = {
-      title: quote.job_description || quote.description || quote.customer_name || "Quoted job",
-      job_name: quote.job_description || quote.description || "Quoted job",
-      client_id: quote.client_id || null,
-      client_name: quote.client_name || quote.customer_name,
-      customer_name: quote.customer_name,
-      customer_email: quote.customer_email,
-      customer_phone: quote.customer_phone,
-      address: quote.address || quote.site_address,
-      site_address: quote.site_address || quote.address,
-      notes: quote.notes || quote.job_description || quote.description || "",
-      description: quote.job_description || quote.description || "",
-      quote_id: quoteIdOf(quote) || id,
-      linked_quote_id: quoteIdOf(quote) || id,
-      status: "assigned",
-      pricing_type: quote.pricing_type || "fixed",
-      fixed_price: amountOf(quote),
-      price: amountOf(quote),
-      total: amountOf(quote),
-      line_items: quote.line_items || [],
-    };
-    const jobRes = await post("/jobs", jobPayload);
-    if (!jobRes.success) {
-      setBusy("");
-      toast.error(jobRes.error || "Could not create job from quote");
+    const res = await post(`/quotes/${encodeURIComponent(id)}/convert`, {});
+    setBusy("");
+    if (!res.success) {
+      toast.error(res.error || "Could not create job from quote");
       return;
     }
-    const created = jobRes.data?.job || jobRes.data?.item || jobRes.data || {};
-    const jobId = created.id || created._id || jobRes.data?.id || jobRes.data?._id;
-    await patch(`/quotes/${encodeURIComponent(id)}`, { status: "converted", converted_job_id: jobId, converted_at: new Date().toISOString() });
-    setBusy("");
+    const jobId = createdJobId(res);
     toast.success("Quote converted to job");
-    navigate(jobId ? `/jobs/${jobId}` : "/jobs");
+    navigate(jobId ? `/jobs/${jobId}` : "/jobs-board");
   };
 
   const handleDelete = async () => {
     const confirmed = await confirmDialog({ title: "Delete this quote?", message: "This cannot be undone.", danger: true, confirmLabel: "Delete" });
     if (!confirmed) return;
     const res = await del(`/quotes/${encodeURIComponent(id)}`);
-    if (res.success) { toast.success("Quote deleted"); navigate("/quotes"); }
+    if (res.success) { toast.success("Quote deleted"); navigate("/quotes-board"); }
     else toast.error(res.error || "Could not delete quote");
   };
 
@@ -141,12 +126,12 @@ export default function QuoteDetailPage() {
   return (
     <Layout>
       <PremiumPage maxWidth={980}>
-        <button onClick={() => navigate("/quotes")} className="mb-3 flex items-center gap-2 text-slate-300 hover:text-white text-sm font-black" data-testid="back-to-quotes">
-          <ArrowLeft size={16} /> Back to quotes
+        <button onClick={() => navigate("/quotes-board")} className="mb-3 flex items-center gap-2 text-slate-300 hover:text-white text-sm font-black" data-testid="back-to-quotes">
+          <ArrowLeft size={16} /> Back to Quotes board
         </button>
 
         <PremiumHero
-          eyebrow="FULL SCREEN QUOTE SLIP"
+          eyebrow="Quote review"
           title={safeText(quote.quote_number, "Quote")}
           subtitle={`${safeText(quote.customer_name, "Customer")} • ${pricingLabel} • ${formatCurrency(amountOf(quote))}`}
           icon={<FileSignature className="h-6 w-6" />}
@@ -164,7 +149,7 @@ export default function QuoteDetailPage() {
                 {quote.valid_until ? <div><p className="text-xs text-slate-400 mb-0.5">Valid until</p><p className="text-white">{formatDate(quote.valid_until)}</p></div> : null}
               </div>
               <div className="mt-4 pt-4 border-t border-slate-700"><p className="text-xs text-slate-400 mb-1">Description</p><p className="text-sm text-slate-200 whitespace-pre-wrap">{safeText(quote.job_description || quote.description, "No description")}</p></div>
-              {quote.notes ? <div className="mt-4 pt-4 border-t border-slate-700"><p className="text-xs text-slate-400 mb-1">Notes</p><p className="text-sm text-slate-200">{safeText(quote.notes)}</p></div> : null}
+              {quote.notes ? <div className="mt-4 pt-4 border-t border-slate-700"><p className="text-xs text-slate-400 mb-1">Notes</p><p className="text-sm text-slate-200 whitespace-pre-wrap">{safeText(quote.notes)}</p></div> : null}
               <p className="text-xs text-slate-400 mt-4 pt-4 border-t border-slate-700">Created {formatDate(quote.created_at)}</p>
             </PremiumCard>
 
@@ -175,11 +160,11 @@ export default function QuoteDetailPage() {
             <PremiumCard title="Quote actions">
               <div className="grid gap-3" data-testid="quote-actions">
                 {status === "draft" || status === "sent" ? <PremiumButton onClick={handleSend} disabled={loading || Boolean(busy)} dataTestId="send-quote-button"><Send size={16} className="mr-2" /> Open email + mark sent</PremiumButton> : null}
-                {!["accepted", "converted", "declined"].includes(status) ? <PremiumButton variant="success" onClick={handleAccept} disabled={Boolean(busy)}><CheckCircle2 size={16} className="mr-2" /> Mark accepted</PremiumButton> : null}
-                {!["declined", "converted"].includes(status) ? <PremiumButton variant="secondary" onClick={handleDecline} disabled={Boolean(busy)}><XCircle size={16} className="mr-2" /> Mark declined</PremiumButton> : null}
-                {["accepted", "sent", "draft"].includes(status) && !quote.converted_job_id ? <PremiumButton variant="success" onClick={handleConvert} disabled={Boolean(busy)} dataTestId="convert-to-job-button"><Briefcase size={16} className="mr-2" /> Convert to Job</PremiumButton> : null}
+                {!locked ? <PremiumButton variant="success" onClick={handleAccept} disabled={Boolean(busy)}><CheckCircle2 size={16} className="mr-2" /> Mark accepted</PremiumButton> : null}
+                {!locked ? <PremiumButton variant="secondary" onClick={handleDecline} disabled={Boolean(busy)}><XCircle size={16} className="mr-2" /> Mark declined</PremiumButton> : null}
+                {!convertedJobId && status !== "declined" ? <PremiumButton variant="success" onClick={handleConvert} disabled={Boolean(busy)} dataTestId="convert-to-job-button"><Briefcase size={16} className="mr-2" /> Convert to Job</PremiumButton> : null}
                 {(quote.public_quote_url || quote.public_token) ? <PremiumButton variant="secondary" onClick={copyPublicLink}><Link2 size={16} className="mr-2" /> Copy Public Link</PremiumButton> : null}
-                {quote.converted_job_id ? <Link to={`/jobs/${quote.converted_job_id}`} data-testid="view-linked-job"><PremiumButton variant="success" className="w-full"><Briefcase size={16} className="mr-2" /> View Job</PremiumButton></Link> : null}
+                {convertedJobId ? <Link to={`/jobs/${convertedJobId}`} data-testid="view-linked-job"><PremiumButton variant="success" className="w-full"><Briefcase size={16} className="mr-2" /> View Job</PremiumButton></Link> : null}
                 <Link to={`/invoices/new?quote_id=${id}`}><PremiumButton variant="secondary" className="w-full">Create invoice from quote</PremiumButton></Link>
               </div>
             </PremiumCard>
