@@ -1,0 +1,27 @@
+/* CHURVOX_TEAM_PROFILE_SLIP_POSITION_FIX_20260607
+   Move Team profile slip into the workspace beside the sidebar. */
+
+@media (min-width: 1024px) {
+  body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] {
+    left: 286px !important;
+    right: 0 !important;
+    width: auto !important;
+    padding: 24px 56px !important;
+  }
+
+  body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] > div {
+    width: min(100%, 900px) !important;
+    max-width: 900px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100vw !important;
+    padding: 12px !important;
+  }
+}
