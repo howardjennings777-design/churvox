@@ -1,4 +1,4 @@
-// CHURVOX_CLIENT_FORM_COMMAND_BOARD_ROUTES_20260608
+// CHURVOX_CLIENT_FORM_COMMAND_DESK_POLISH_20260608
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -37,6 +37,11 @@ function firstSetupActive(searchParams, isEdit) {
     return searchParams.get("first_setup") === "1" || ["true", "client", "job"].includes(localStorage.getItem(FIRST_SETUP_KEY));
   } catch { return false; }
 }
+
+const labelClass = "grid gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm";
+const labelTextClass = "text-xs font-black uppercase tracking-[.14em] text-slate-700";
+const inputClass = "h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-950 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100";
+const areaClass = "min-h-[120px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-950 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100";
 
 export default function ClientFormPageFirstSetup() {
   const navigate = useNavigate();
@@ -103,18 +108,18 @@ export default function ClientFormPageFirstSetup() {
     navigate(nextId ? `/clients/${encodeURIComponent(nextId)}` : "/clients-board");
   }
 
-  return <Layout><PremiumPage maxWidth={860}>
-    <button type="button" onClick={() => navigate(firstSetup ? "/settings-board?first_setup=1" : "/clients-board")} className="mb-3 inline-flex items-center gap-2 text-sm font-black text-slate-300 hover:text-white"><ArrowLeft size={16} /> {firstSetup ? "Back to setup" : "Back to Clients board"}</button>
-    <PremiumHero eyebrow={isEdit ? "Edit client" : firstSetup ? "Step 3 of 4" : "New client"} title={isEdit ? "Update client record" : "Add a client"} subtitle={firstSetup ? "This gives Churvox a real customer to connect your first job, quote, invoice and approval flow." : "Clients feed jobs, quotes, invoices and customer records. Add the core details once so the rest of Churvox can prefill cleanly."} icon={<UserPlus2 className="h-6 w-6" />} />
-    {firstSetup ? <div className="mb-4 rounded-3xl border border-cyan-300/20 bg-cyan-300/10 p-4 text-sm font-bold text-cyan-100">First setup path: Plan selected → Business setup → First client → First job → Command Board.</div> : null}
+  return <Layout><PremiumPage maxWidth={1120}>
+    <button type="button" onClick={() => navigate(firstSetup ? "/settings-board?first_setup=1" : "/clients-board")} className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-800 shadow-sm hover:bg-slate-50"><ArrowLeft size={16} /> {firstSetup ? "Back to setup" : "Back to Clients board"}</button>
+    <PremiumHero eyebrow={isEdit ? "Edit client" : firstSetup ? "Step 3 of 4" : "New client"} title={isEdit ? "Update client record" : "Add a client"} subtitle={firstSetup ? "This gives Churvox a real customer to connect your first job, quote, invoice and approval flow." : "Clients feed jobs, quotes, invoices and customer records. Add the core details once so Churvox can prefill cleanly."} icon={<UserPlus2 className="h-6 w-6" />} />
+    {firstSetup ? <div className="mb-4 rounded-3xl border border-cyan-300/20 bg-cyan-50 p-4 text-sm font-bold text-cyan-900">First setup path: Plan selected → Business setup → First client → First job → Command Board.</div> : null}
     <PremiumCard title="Client details" icon={<UserPlus2 className="h-5 w-5" />}>
-      {loading ? <div className="p-8 text-center font-bold text-slate-300">Loading client…</div> : <form onSubmit={submit} className="grid gap-4" data-testid="client-form-page" data-version="CHURVOX_CLIENT_FORM_COMMAND_BOARD_ROUTES_20260608">
-        <label className="grid gap-2"><span className="text-sm font-black text-slate-200">Client name *</span><input className="px-input" value={form.name} onChange={(e) => update("name", e.target.value)} required data-testid="client-name-input" /></label>
-        <div className="grid gap-4 md:grid-cols-2"><label className="grid gap-2"><span className="text-sm font-black text-slate-200">Email</span><input className="px-input" type="email" value={form.email} onChange={(e) => update("email", e.target.value)} data-testid="client-email-input" /></label><label className="grid gap-2"><span className="text-sm font-black text-slate-200">Phone</span><input className="px-input" value={form.phone} onChange={(e) => update("phone", e.target.value)} data-testid="client-phone-input" /></label></div>
-        <label className="grid gap-2"><span className="text-sm font-black text-slate-200">Site address</span><input className="px-input" value={form.address} onChange={(e) => update("address", e.target.value)} data-testid="client-address-input" /></label>
-        <label className="grid gap-2"><span className="text-sm font-black text-slate-200">Billing address</span><input className="px-input" value={form.billing_address} onChange={(e) => update("billing_address", e.target.value)} placeholder="Leave blank to use site address" /></label>
-        <label className="grid gap-2"><span className="text-sm font-black text-slate-200">Notes</span><textarea className="px-input min-h-[110px]" value={form.notes} onChange={(e) => update("notes", e.target.value)} data-testid="client-notes-input" /></label>
-        <div className="flex flex-wrap justify-end gap-3 pt-2"><button type="button" onClick={() => navigate(firstSetup ? "/dashboard" : "/clients-board")} className="rounded-full border border-slate-600 px-5 py-3 font-black text-slate-100">{firstSetup ? "Skip to Command Board" : "Cancel"}</button><PremiumButton type="submit" disabled={saving} dataTestId="save-client-button" iconLeft={<Save className="h-4 w-4" />}>{saving ? "Saving…" : isEdit ? "Update client" : firstSetup ? "Create client and first job" : "Create client"}</PremiumButton></div>
+      {loading ? <div className="p-8 text-center font-bold text-slate-700">Loading client…</div> : <form onSubmit={submit} className="grid gap-4" data-testid="client-form-page" data-version="CHURVOX_CLIENT_FORM_COMMAND_DESK_POLISH_20260608">
+        <label className={labelClass}><span className={labelTextClass}>Client name *</span><input className={inputClass} value={form.name} onChange={(e) => update("name", e.target.value)} required data-testid="client-name-input" /></label>
+        <div className="grid gap-4 md:grid-cols-2"><label className={labelClass}><span className={labelTextClass}>Email</span><input className={inputClass} type="email" value={form.email} onChange={(e) => update("email", e.target.value)} data-testid="client-email-input" /></label><label className={labelClass}><span className={labelTextClass}>Phone</span><input className={inputClass} value={form.phone} onChange={(e) => update("phone", e.target.value)} data-testid="client-phone-input" /></label></div>
+        <label className={labelClass}><span className={labelTextClass}>Site address</span><input className={inputClass} value={form.address} onChange={(e) => update("address", e.target.value)} data-testid="client-address-input" /></label>
+        <label className={labelClass}><span className={labelTextClass}>Billing address</span><input className={inputClass} value={form.billing_address} onChange={(e) => update("billing_address", e.target.value)} placeholder="Leave blank to use site address" /></label>
+        <label className={labelClass}><span className={labelTextClass}>Notes</span><textarea className={areaClass} value={form.notes} onChange={(e) => update("notes", e.target.value)} data-testid="client-notes-input" /></label>
+        <div className="sticky bottom-4 z-20 mt-2 flex flex-wrap justify-end gap-3 rounded-[26px] border border-slate-200 bg-white/95 p-4 shadow-[0_20px_60px_rgba(15,23,42,.16)] backdrop-blur"><button type="button" onClick={() => navigate(firstSetup ? "/dashboard" : "/clients-board")} className="rounded-2xl border border-slate-200 bg-white px-5 py-3 font-black text-slate-900">{firstSetup ? "Skip to Command Board" : "Cancel"}</button><PremiumButton type="submit" disabled={saving} dataTestId="save-client-button" iconLeft={<Save className="h-4 w-4" />}>{saving ? "Saving…" : isEdit ? "Update client" : firstSetup ? "Create client and first job" : "Create client"}</PremiumButton></div>
       </form>}
     </PremiumCard>
   </PremiumPage></Layout>;
