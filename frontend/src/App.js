@@ -279,9 +279,9 @@ function App() {
             <Route path="/overview" element={<Navigate to="/dashboard" replace />} />
             <Route path="/onboarding" element={<BusinessRoute><OnboardingCommandPage /></BusinessRoute>} />
             <Route path="/jobs" element={<BusinessRoute><ErrorBoundary fallbackHref="/dashboard" fallbackLabel="Back to Command Board"><JobsCommandPage /></ErrorBoundary></BusinessRoute>} />
-            <Route path="/jobs/new" element={<BusinessRoute><ConceptCFrame area="jobs"><JobFormPage /></ConceptCFrame></BusinessRoute>} />
-            <Route path="/jobs/:id" element={<BusinessRoute><ConceptCFrame area="jobs"><JobDetailPage /></ConceptCFrame></BusinessRoute>} />
-            <Route path="/jobs/:id/edit" element={<BusinessRoute><ConceptCFrame area="jobs"><JobFormPage /></ConceptCFrame></BusinessRoute>} />
+            <Route path="/jobs/new" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
+            <Route path="/jobs/:id" element={<BusinessRoute><JobDetailPage /></BusinessRoute>} />
+            <Route path="/jobs/:id/edit" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
             <Route path="/dispatch" element={<Navigate to="/crew-map" replace />} />
             <Route path="/integrations" element={<Navigate to="/settings" replace />} />
             <Route path="/automation" element={<Navigate to="/dashboard" replace />} />
