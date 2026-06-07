@@ -3,7 +3,8 @@
   <head>
 <!-- CHURVOX_INVOICE_FULLSCREEN_DEPLOY_MARKER -->
 <!-- CHURVOX FULLSCREEN SLIPS DEPLOY MARKER 2026-06-03 -->
-    <meta name="churvox-build-cache-reset" content="orange-churvox-logo-20260605" />
+<!-- CHURVOX COMMAND SLIP PORTAL FIX 2026-06-07 -->
+    <meta name="churvox-build-cache-reset" content="command-slip-fullscreen-20260607" />
     <meta charset="utf-8" />
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
@@ -32,6 +33,27 @@
         background-color: #f7f3ea;
       }
       #root { min-height: 100vh; }
+      body:has([role="dialog"][aria-modal="true"]) #root,
+      body:has([role="dialog"][aria-modal="true"]) #root *,
+      body:has([role="dialog"][aria-modal="true"]) [data-command-canvas],
+      body:has([role="dialog"][aria-modal="true"]) [data-industrial-simple-page],
+      body:has([role="dialog"][aria-modal="true"]) [data-cv-command-tile] {
+        transform: none !important;
+        filter: none !important;
+        perspective: none !important;
+        contain: none !important;
+        overflow: visible !important;
+      }
+      [role="dialog"][aria-modal="true"] {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: none !important;
+        max-height: none !important;
+        z-index: 2147483647 !important;
+        isolation: isolate !important;
+      }
     </style>
 </head>
   <body>
