@@ -1,0 +1,28 @@
+/* CHURVOX_RECORD_WIDE_CARD_FIX_20260607
+   Makes record create/edit cards wider without touching form logic. */
+
+body.cv-industrial-shell .wh-app-main .px-page,
+body.cv-industrial-shell .wh-app-main [class*="max-w-"] {
+  width: min(100%, 1180px) !important;
+  max-width: 1180px !important;
+}
+
+body.cv-industrial-shell .wh-app-main .px-hero,
+body.cv-industrial-shell .wh-app-main .px-card,
+body.cv-industrial-shell .wh-app-main .premium-card,
+body.cv-industrial-shell .wh-app-main form {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+body.cv-industrial-shell .wh-app-main .px-card__body,
+body.cv-industrial-shell .wh-app-main .premium-card > div,
+body.cv-industrial-shell .wh-app-main form {
+  width: 100% !important;
+}
+
+@media (min-width: 1180px) {
+  body.cv-industrial-shell .wh-app-main {
+    max-width: 1280px !important;
+  }
+}
