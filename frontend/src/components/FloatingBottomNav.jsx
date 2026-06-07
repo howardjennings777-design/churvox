@@ -11,8 +11,9 @@ import "./CommandRecordFinalFix.css";
 import "./CommandJobFormPolish.css";
 import "./CommandRecordMicroPolish.css";
 import "./CommandRecordWideCardFix.css";
+import "./TeamProfileSlipPolish.css";
 
-const BUILD_MARKER = "Build wide-record-card";
+const BUILD_MARKER = "Build team-profile-slip";
 
 const NAV_ITEMS = [
   ["Command", "/dashboard", "CM"],
