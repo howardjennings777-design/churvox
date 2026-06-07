@@ -1,77 +1,31 @@
 import React, { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import ChurvoxHelpWidget from "./ChurvoxHelpWidget";
 import "./FloatingBottomNav.css";
 import "./IndustrialCommandSidebar.css";
 import "./IndustrialCommandPages.css";
 import "./DashboardStripClean.css";
 
 const NAV_ITEMS = [
-  ["Command Board", "/dashboard", "⌘"],
-  ["Jobs", "/jobs", "▦"],
-  ["Assign Jobs", "/dispatch", "⇄"],
-  ["Clients", "/clients", "●"],
-  ["Quotes", "/quotes", "✎"],
-  ["Invoices", "/invoices", "$"],
-  ["Team", "/team", "👥"],
+  ["Command Board", "/dashboard", "CB"],
+  ["Jobs", "/jobs", "JB"],
+  ["Assign Jobs", "/dispatch", "AS"],
+  ["Clients", "/clients", "CL"],
+  ["Quotes", "/quotes", "QT"],
+  ["Invoices", "/invoices", "IV"],
+  ["Team", "/team", "TM"],
   ["Plans", "/plans", "PL"],
   ["Settings", "/settings", "ST"],
 ];
 
 const INDUSTRIAL_GROUPS = [
-  {
-    title: "Command",
-    items: [
-      ["Command Board", "/dashboard", "CB"],
-      ["Notifications", "/notifications", "NT"],
-    ],
-  },
-  {
-    title: "Work",
-    items: [
-      ["Jobs", "/jobs", "JB"],
-      ["Assign Jobs", "/dispatch", "AS"],
-      ["Crew Map", "/crew-map", "MP"],
-      ["Clients", "/clients", "CL"],
-      ["Quotes", "/quotes", "QT"],
-      ["Invoices", "/invoices", "IV"],
-    ],
-  },
-  {
-    title: "Crew & Admin",
-    items: [
-      ["Team", "/team", "TM"],
-      ["Payroll", "/payroll", "PR"],
-      ["Reports", "/reports", "RP"],
-    ],
-  },
-  {
-    title: "System",
-    items: [
-      ["Plans", "/plans", "PL"],
-      ["Settings", "/settings", "ST"],
-      ["Support", "/support", "?"],
-    ],
-  },
+  { title: "Command", items: [["Command Board", "/dashboard", "CB"], ["Notifications", "/notifications", "NT"]] },
+  { title: "Work", items: [["Jobs", "/jobs", "JB"], ["Assign Jobs", "/dispatch", "AS"], ["Crew Map", "/crew-map", "MP"], ["Clients", "/clients", "CL"], ["Quotes", "/quotes", "QT"], ["Invoices", "/invoices", "IV"]] },
+  { title: "Crew & Admin", items: [["Team", "/team", "TM"], ["Payroll", "/payroll", "PR"], ["Reports", "/reports", "RP"]] },
+  { title: "System", items: [["Plans", "/plans", "PL"], ["Settings", "/settings", "ST"], ["Support", "/support", "?"]] },
 ];
 
-const COMMAND_PATHS = [
-  "/dashboard",
-  "/overview",
-  "/notifications",
-  "/jobs",
-  "/dispatch",
-  "/dispatch-board",
-  "/crew-map",
-  "/clients",
-  "/quotes",
-  "/invoices",
-  "/team",
-  "/payroll",
-  "/reports",
-  "/plans",
-  "/settings",
-  "/support",
-];
+const COMMAND_PATHS = ["/dashboard", "/overview", "/notifications", "/jobs", "/dispatch", "/dispatch-board", "/crew-map", "/clients", "/quotes", "/invoices", "/team", "/payroll", "/reports", "/plans", "/settings", "/support"];
 
 function isCommandPath(pathname) {
   return COMMAND_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
@@ -89,13 +43,13 @@ function isActive(pathname, href) {
 
 function IndustrialSidebar({ pathname }) {
   return (
-    <aside className="cv-industrial-sidebar" aria-label="Churvox industrial command navigation">
+    <aside className="cv-industrial-sidebar" aria-label="Churvox command navigation">
       <div className="cv-industrial-rail" />
       <div className="cv-industrial-brand">
         <div className="cv-industrial-mark">C</div>
         <div>
           <strong>CHURVOX</strong>
-          <span>Industrial Command</span>
+          <span>Command Desk</span>
         </div>
       </div>
 
@@ -139,7 +93,7 @@ export default function FloatingBottomNav() {
     };
   }, [commandVisible]);
 
-  if (!commandVisible) return null;
+  if (!commandVisible) return <ChurvoxHelpWidget />;
 
   return (
     <>
@@ -152,6 +106,7 @@ export default function FloatingBottomNav() {
           </Link>
         ))}
       </nav>
+      <ChurvoxHelpWidget />
     </>
   );
 }
