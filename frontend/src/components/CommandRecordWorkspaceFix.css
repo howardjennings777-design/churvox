@@ -1,5 +1,5 @@
 /* Final launch hardening for old add/edit/detail record pages inside Command Desk.
-   Fixes /jobs/new and any old form page that still renders Layout/ConceptC under the industrial shell. */
+   Boards stay industrial. Add/edit/detail forms become clean off-white record workspaces. */
 
 body.cv-industrial-shell .wh-app {
   margin-left: 286px !important;
@@ -23,12 +23,27 @@ body.cv-industrial-shell .c2-topbar {
 
 body.cv-industrial-shell .wh-app-main {
   width: 100% !important;
-  max-width: 1160px !important;
+  max-width: 1120px !important;
   min-height: 100dvh !important;
   margin: 0 auto !important;
-  padding: 28px 24px 96px !important;
+  padding: 26px 24px 110px !important;
   background: #f7f3ea !important;
   color: #0f172a !important;
+}
+
+body.cv-industrial-shell .wh-app-main::before {
+  content: "Command Desk record";
+  display: inline-flex;
+  margin: 0 0 14px 0;
+  border: 1px solid rgba(251, 146, 60, .25);
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #c2410c;
+  padding: 7px 12px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .16em;
+  text-transform: uppercase;
 }
 
 body.cv-industrial-shell .wh-app-main > *,
@@ -62,10 +77,10 @@ body.cv-industrial-shell .c2-record-fullscreen-topbar {
 }
 
 body.cv-industrial-shell .c2-record-fullscreen-stage {
-  width: min(100%, 1160px) !important;
-  max-width: 1160px !important;
+  width: min(100%, 1120px) !important;
+  max-width: 1120px !important;
   margin: 0 auto !important;
-  padding: 28px 24px 96px !important;
+  padding: 26px 24px 110px !important;
   background: transparent !important;
 }
 
@@ -77,31 +92,104 @@ body.cv-industrial-shell .c2-record-fullscreen .wh-app {
 }
 
 body.cv-industrial-shell .c2-record-fullscreen .wh-app-main {
-  max-width: 1160px !important;
+  max-width: 1120px !important;
   padding: 0 !important;
   background: transparent !important;
 }
 
-body.cv-industrial-shell .wh-app input,
-body.cv-industrial-shell .wh-app textarea,
-body.cv-industrial-shell .wh-app select,
-body.cv-industrial-shell .c2-record-fullscreen input,
-body.cv-industrial-shell .c2-record-fullscreen textarea,
-body.cv-industrial-shell .c2-record-fullscreen select {
-  min-height: 44px !important;
+/* Override the global industrial dark-card rule for old full-form pages only. */
+body.cv-industrial-shell .wh-app-main section,
+body.cv-industrial-shell .wh-app-main article,
+body.cv-industrial-shell .wh-app-main div.rounded-\[30px\],
+body.cv-industrial-shell .wh-app-main div.rounded-\[28px\],
+body.cv-industrial-shell .wh-app-main div.rounded-3xl,
+body.cv-industrial-shell .wh-app-main .premium-card,
+body.cv-industrial-shell .c2-record-fullscreen-stage section,
+body.cv-industrial-shell .c2-record-fullscreen-stage article,
+body.cv-industrial-shell .c2-record-fullscreen-stage div.rounded-\[30px\],
+body.cv-industrial-shell .c2-record-fullscreen-stage div.rounded-\[28px\],
+body.cv-industrial-shell .c2-record-fullscreen-stage div.rounded-3xl,
+body.cv-industrial-shell .c2-record-fullscreen-stage .premium-card {
+  background: #ffffff !important;
+  border-color: rgba(15, 23, 42, .10) !important;
+  color: #0f172a !important;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, .08) !important;
 }
 
-body.cv-industrial-shell .wh-app label,
-body.cv-industrial-shell .c2-record-fullscreen label {
+body.cv-industrial-shell .wh-app-main h1,
+body.cv-industrial-shell .wh-app-main h2,
+body.cv-industrial-shell .wh-app-main h3,
+body.cv-industrial-shell .wh-app-main h4,
+body.cv-industrial-shell .wh-app-main b,
+body.cv-industrial-shell .wh-app-main strong,
+body.cv-industrial-shell .c2-record-fullscreen-stage h1,
+body.cv-industrial-shell .c2-record-fullscreen-stage h2,
+body.cv-industrial-shell .c2-record-fullscreen-stage h3,
+body.cv-industrial-shell .c2-record-fullscreen-stage h4,
+body.cv-industrial-shell .c2-record-fullscreen-stage b,
+body.cv-industrial-shell .c2-record-fullscreen-stage strong {
   color: #0f172a !important;
 }
 
-body.cv-industrial-shell .wh-app button,
-body.cv-industrial-shell .wh-app a,
-body.cv-industrial-shell .c2-record-fullscreen button,
-body.cv-industrial-shell .c2-record-fullscreen a {
+body.cv-industrial-shell .wh-app-main p,
+body.cv-industrial-shell .wh-app-main span,
+body.cv-industrial-shell .wh-app-main small,
+body.cv-industrial-shell .wh-app-main li,
+body.cv-industrial-shell .c2-record-fullscreen-stage p,
+body.cv-industrial-shell .c2-record-fullscreen-stage span,
+body.cv-industrial-shell .c2-record-fullscreen-stage small,
+body.cv-industrial-shell .c2-record-fullscreen-stage li {
+  color: #475569 !important;
+}
+
+body.cv-industrial-shell .wh-app-main label,
+body.cv-industrial-shell .c2-record-fullscreen-stage label {
+  color: #0f172a !important;
+  font-weight: 900 !important;
+}
+
+body.cv-industrial-shell .wh-app-main input,
+body.cv-industrial-shell .wh-app-main textarea,
+body.cv-industrial-shell .wh-app-main select,
+body.cv-industrial-shell .c2-record-fullscreen-stage input,
+body.cv-industrial-shell .c2-record-fullscreen-stage textarea,
+body.cv-industrial-shell .c2-record-fullscreen-stage select {
+  min-height: 44px !important;
+  background: #ffffff !important;
+  border-color: rgba(15, 23, 42, .16) !important;
+  color: #0f172a !important;
+  box-shadow: none !important;
+}
+
+body.cv-industrial-shell .wh-app-main input::placeholder,
+body.cv-industrial-shell .wh-app-main textarea::placeholder,
+body.cv-industrial-shell .c2-record-fullscreen-stage input::placeholder,
+body.cv-industrial-shell .c2-record-fullscreen-stage textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+body.cv-industrial-shell .wh-app-main button,
+body.cv-industrial-shell .wh-app-main a,
+body.cv-industrial-shell .c2-record-fullscreen-stage button,
+body.cv-industrial-shell .c2-record-fullscreen-stage a {
   position: relative !important;
   z-index: 2 !important;
+}
+
+body.cv-industrial-shell .wh-app-main button[type="submit"],
+body.cv-industrial-shell .c2-record-fullscreen-stage button[type="submit"],
+body.cv-industrial-shell .wh-app-main .bg-cyan-300,
+body.cv-industrial-shell .c2-record-fullscreen-stage .bg-cyan-300 {
+  background: linear-gradient(135deg, #facc15, #fb923c 55%, #22d3ee) !important;
+  color: #020617 !important;
+  border-color: rgba(251, 146, 60, .35) !important;
+  box-shadow: 0 14px 32px rgba(251, 146, 60, .20) !important;
+}
+
+body.cv-industrial-shell .wh-app-main .bg-slate-950,
+body.cv-industrial-shell .c2-record-fullscreen-stage .bg-slate-950 {
+  background: #0f172a !important;
+  color: #ffffff !important;
 }
 
 @media (max-width: 1023px) {
