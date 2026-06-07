@@ -7,8 +7,9 @@ import "./IndustrialCommandPages.css";
 import "./DashboardStripClean.css";
 import "./ChurvoxLaunchCleanup.css";
 import "./CommandRecordWorkspaceFix.css";
+import "./CommandRecordFinalFix.css";
 
-const BUILD_MARKER = "Build record-workspace";
+const BUILD_MARKER = "Build record-final-fix";
 
 const NAV_ITEMS = [
   ["Command", "/dashboard", "CM"],
