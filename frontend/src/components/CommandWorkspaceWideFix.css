@@ -1,0 +1,128 @@
+/* CHURVOX_COMMAND_WORKSPACE_WIDE_FIX_20260608
+   Command slips must feel like a wide work desk, not one long vertical form.
+   Visual/layout only. No backend or approval logic changes. */
+
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] {
+  padding: 20px 24px 20px 286px !important;
+  align-items: flex-start !important;
+}
+
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] > section {
+  width: min(1680px, calc(100vw - 320px)) !important;
+  max-width: none !important;
+  margin: 0 auto !important;
+}
+
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] header {
+  min-height: 190px !important;
+  padding: 26px 34px !important;
+}
+
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] header h1 {
+  font-size: clamp(46px, 4.8vw, 82px) !important;
+  line-height: .86 !important;
+  max-width: 1080px !important;
+}
+
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] header p {
+  max-width: 1120px !important;
+  font-size: 15px !important;
+  line-height: 1.55 !important;
+}
+
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] main {
+  grid-template-columns: minmax(0, 1fr) 340px !important;
+  gap: 18px !important;
+  padding: 18px !important;
+}
+
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] main > section {
+  min-width: 0 !important;
+  padding: 22px !important;
+}
+
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] main > aside {
+  position: sticky !important;
+  top: 18px !important;
+  align-self: start !important;
+  min-height: 520px !important;
+}
+
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] main > section > div.mt-4.grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] main label {
+  min-width: 0 !important;
+  padding: 12px !important;
+  border-radius: 18px !important;
+}
+
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] main label.md\:col-span-2,
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] main label[class*="md:col-span-2"] {
+  grid-column: span 2 / span 2 !important;
+}
+
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] input {
+  height: 42px !important;
+  padding: 8px 10px !important;
+}
+
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] textarea {
+  min-height: 72px !important;
+  max-height: 120px !important;
+  padding: 8px 10px !important;
+}
+
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] label span {
+  display: block !important;
+  min-height: 16px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] aside .mt-5.grid {
+  gap: 10px !important;
+}
+
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] aside button,
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] aside a {
+  min-height: 46px !important;
+}
+
+@media (max-width: 1280px) {
+  body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] {
+    padding: 14px !important;
+  }
+
+  body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] > section {
+    width: min(1180px, 100%) !important;
+  }
+
+  body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] main > section > div.mt-4.grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] main {
+    grid-template-columns: 1fr !important;
+  }
+
+  body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] main > section > div.mt-4.grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] main label.md\:col-span-2,
+  body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] main label[class*="md:col-span-2"] {
+    grid-column: auto !important;
+  }
+
+  body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260608"] .fixed.inset-0.z-\[2147483647\] main > aside {
+    position: static !important;
+    min-height: auto !important;
+  }
+}
