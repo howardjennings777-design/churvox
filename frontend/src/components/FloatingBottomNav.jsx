@@ -13,8 +13,9 @@ import "./CommandRecordMicroPolish.css";
 import "./CommandRecordWideCardFix.css";
 import "./TeamProfileSlipPolish.css";
 import "./TeamProfileSlipFinalFix.css";
+import "./TeamProfileSlipPositionFix.css";
 
-const BUILD_MARKER = "Build team-profile-readable";
+const BUILD_MARKER = "Build team-slip-position";
 
 const NAV_ITEMS = [
   ["Command", "/dashboard", "CM"],
