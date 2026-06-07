@@ -10,8 +10,9 @@ import "./CommandRecordWorkspaceFix.css";
 import "./CommandRecordFinalFix.css";
 import "./CommandJobFormPolish.css";
 import "./CommandRecordMicroPolish.css";
+import "./CommandRecordWideCardFix.css";
 
-const BUILD_MARKER = "Build record-micro-polish";
+const BUILD_MARKER = "Build wide-record-card";
 
 const NAV_ITEMS = [
   ["Command", "/dashboard", "CM"],
