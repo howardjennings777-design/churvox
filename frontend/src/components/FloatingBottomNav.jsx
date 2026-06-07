@@ -4,28 +4,9 @@ import ChurvoxHelpWidget from "./ChurvoxHelpWidget";
 import "./FloatingBottomNav.css";
 import "./IndustrialCommandSidebar.css";
 import "./IndustrialCommandPages.css";
-import "./DashboardStripClean.css";
 import "./ChurvoxLaunchCleanup.css";
-import "./CommandRecordWorkspaceFix.css";
-import "./CommandRecordFinalFix.css";
-import "./CommandJobFormPolish.css";
-import "./CommandRecordMicroPolish.css";
-import "./CommandRecordWideCardFix.css";
-import "./TeamProfileSlipPolish.css";
-import "./TeamProfileSlipFinalFix.css";
-import "./TeamProfileSlipPositionFix.css";
-import "./TeamProfileSlipTextFix.css";
-import "./CommandQuoteFormPolish.css";
-import "./CommandBoardCardSlipLock.css";
-import "./CommandBoardAIFeel.css";
-import "./CommandBoardLayoutPolish.css";
-import "./CommandBoardSlipFinal.css";
-import "./IndustrialThemeEverywhereLock.css";
-import "./CommandSummarySlipProof.css";
-import "./CommandWorkspaceWideFix.css";
-import "./CommandApprovalDeskIndustrialLock.css";
 
-const BUILD_MARKER = "Build command-approval-industrial";
+const BUILD_MARKER = "Build clean-command-no-old-slips";
 
 const NAV_ITEMS = [
   ["Command", "/dashboard", "CM"],
