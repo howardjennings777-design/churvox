@@ -16,7 +16,7 @@ import "./TeamProfileSlipFinalFix.css";
 import "./TeamProfileSlipPositionFix.css";
 import "./TeamProfileSlipTextFix.css";
 
-const BUILD_MARKER = "Build team-slip-text";
+const BUILD_MARKER = "Build team-slip-component-2255";
 
 const NAV_ITEMS = [
   ["Command", "/dashboard", "CM"],
