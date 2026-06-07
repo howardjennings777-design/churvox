@@ -10,7 +10,7 @@ import "./ChurvoxLaunchCleanup.css";
 const NAV_ITEMS = [
   ["Command", "/dashboard", "CM"],
   ["Jobs", "/jobs", "JB"],
-  ["Crew", "/crew-map", "CR"],
+  ["Dispatch", "/crew-map", "DP"],
   ["Clients", "/clients", "CL"],
   ["Quotes", "/quotes", "QT"],
   ["Invoices", "/invoices", "IV"],
@@ -21,7 +21,7 @@ const NAV_ITEMS = [
 
 const INDUSTRIAL_GROUPS = [
   { title: "Command", items: [["Command Board", "/dashboard", "CM"]] },
-  { title: "Work", items: [["Jobs", "/jobs", "JB"], ["Crew Map", "/crew-map", "CR"], ["Clients", "/clients", "CL"], ["Quotes", "/quotes", "QT"], ["Invoices", "/invoices", "IV"]] },
+  { title: "Work", items: [["Jobs", "/jobs", "JB"], ["Crew Dispatch", "/crew-map", "DP"], ["Clients", "/clients", "CL"], ["Quotes", "/quotes", "QT"], ["Invoices", "/invoices", "IV"]] },
   { title: "Crew & Admin", items: [["Team", "/team", "TM"], ["Payroll", "/payroll", "PR"], ["Reports", "/reports", "RP"]] },
   { title: "System", items: [["Plans", "/plans", "PL"], ["Settings", "/settings", "ST"], ["Support", "/support", "?"]] },
 ];
