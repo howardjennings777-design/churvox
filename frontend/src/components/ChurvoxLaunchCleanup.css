@@ -89,7 +89,19 @@ body.cv-industrial-shell .cv-launch-clean-white-card * {
   color: inherit !important;
 }
 
-/* Command Board cleanup: short cards, clear slip-first actions, no fake clutter. */
+/* Command Board should be clean off-white, not the old black-box canvas. */
+body.cv-industrial-shell main[data-industrial-simple-page="command-board"] {
+  background: #f7f3ea !important;
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command-board"] section,
+body.cv-industrial-shell main[data-industrial-simple-page="command-board"] article,
+body.cv-industrial-shell main[data-industrial-simple-page="command-board"] aside {
+  box-sizing: border-box !important;
+}
+
+/* Legacy Command Board cleanup: short cards, clear slip-first actions, no fake clutter. */
 body.cv-industrial-shell main[data-industrial-simple-page="command"] {
   background: #f7f3ea !important;
   color: #0f172a !important;
