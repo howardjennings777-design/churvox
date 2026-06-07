@@ -1,0 +1,2 @@
+Force Render redeploy for Team profile slip component fix.
+Latest intended TeamCommandPage commit: 07c77b2d0f6bde81bf77a3b8ec883e40628e428b
