@@ -1,4 +1,4 @@
-// CHURVOX_JOB_FROM_CLIENT_STABLE_PREFILL_20260601
+// CHURVOX_JOB_CREATE_REQUIRED_FIELDS_20260607
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -13,6 +13,24 @@ const REGION_OPTIONS = {
   "New Zealand": ["Northland", "Auckland", "Waikato", "Bay of Plenty", "Gisborne", "Hawke's Bay", "Taranaki", "Manawatu-Whanganui", "Wellington", "Tasman", "Nelson", "Marlborough", "West Coast", "Canterbury", "Otago", "Southland"],
   "Australia": ["New South Wales", "Victoria", "Queensland", "Western Australia", "South Australia", "Tasmania", "Northern Territory", "Australian Capital Territory"],
 };
+const JOB_TYPE_OPTIONS = [
+  ["other", "General service"],
+  ["lawn_mowing", "Lawn mowing"],
+  ["garden_maintenance", "Garden maintenance"],
+  ["landscaping", "Landscaping"],
+  ["cleaning", "Cleaning"],
+  ["window_cleaning", "Window cleaning"],
+  ["pressure_washing", "Pressure washing"],
+  ["handyman", "Handyman"],
+  ["plumbing", "Plumbing"],
+  ["electrical", "Electrical"],
+  ["painting", "Painting"],
+  ["carpentry", "Carpentry"],
+  ["pest_control", "Pest control"],
+  ["pool_maintenance", "Pool maintenance"],
+  ["hvac", "HVAC"],
+  ["roofing", "Roofing"],
+];
 
 function arr(value) {
   if (Array.isArray(value)) return value;
@@ -46,7 +64,7 @@ function queryValue(search, key) { try { return new URLSearchParams(search).get(
 export default function JobCreateForm({ onSuccess, onCancel, submitLabel = "Create job", isWorker = false }) {
   const location = useLocation();
   const clientFromQuery = queryValue(location.search, "client_id");
-  const workerFromQuery = queryValue(location.search, "worker_id");
+  const workerFromQuery = queryValue(location.search, "worker_id") || queryValue(location.search, "workerId");
   const { get, post, loading } = useApi();
   const [clients, setClients] = useState([]);
   const [workers, setWorkers] = useState([]);
@@ -54,6 +72,7 @@ export default function JobCreateForm({ onSuccess, onCancel, submitLabel = "Crea
   const [prefilled, setPrefilled] = useState(false);
   const [form, setForm] = useState({
     title: "",
+    job_type: "other",
     client_id: clientFromQuery,
     client_name: "",
     customer_email: "",
@@ -69,6 +88,8 @@ export default function JobCreateForm({ onSuccess, onCancel, submitLabel = "Crea
     pricing_type: "fixed",
     fixed_price: "",
     hourly_rate: "",
+    is_recurring: false,
+    recurring_frequency: "weekly",
   });
 
   useEffect(() => {
@@ -122,11 +143,16 @@ export default function JobCreateForm({ onSuccess, onCancel, submitLabel = "Crea
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.title.trim()) return toast.error("Job title is required");
+    if (!form.job_type) return toast.error("Job type is required");
+    if (!form.scheduled_date) return toast.error("Scheduled date is required");
+    if (!form.address.trim()) return toast.error("Job address is required");
     setSaving(true);
+    const fixedPrice = money(form.fixed_price);
+    const hourlyRate = money(form.hourly_rate);
     const payload = {
-      ...form,
       title: form.title.trim(),
       job_name: form.title.trim(),
+      job_type: form.job_type || "other",
       client_id: form.client_id || null,
       client_name: form.client_name,
       customer_name: form.client_name,
@@ -134,14 +160,24 @@ export default function JobCreateForm({ onSuccess, onCancel, submitLabel = "Crea
       customer_phone: form.customer_phone,
       address: form.address,
       site_address: form.address,
+      scheduled_date: form.scheduled_date,
+      estimated_duration: 60,
+      country: form.country,
+      region: form.region,
+      notes: form.notes,
+      description: form.notes,
       assigned_worker_id: form.assigned_worker_id || null,
       worker_id: form.assigned_worker_id || null,
       assigned_worker_name: form.assigned_worker_name,
       worker_name: form.assigned_worker_name,
-      fixed_price: money(form.fixed_price),
-      price: money(form.fixed_price),
-      hourly_rate: money(form.hourly_rate),
+      pricing_type: form.pricing_type,
+      fixed_price: fixedPrice,
+      price: ["fixed", "fixed_extras"].includes(form.pricing_type) ? fixedPrice : 0,
+      hourly_rate: ["hourly", "hourly_extras"].includes(form.pricing_type) ? hourlyRate : 0,
       status: form.status || "assigned",
+      is_recurring: Boolean(form.is_recurring),
+      recurrence_pattern: form.is_recurring ? form.recurring_frequency : null,
+      recurring_frequency: form.is_recurring ? form.recurring_frequency : null,
     };
     const res = await post("/jobs", payload);
     setSaving(false);
@@ -156,12 +192,13 @@ export default function JobCreateForm({ onSuccess, onCancel, submitLabel = "Crea
   const section = "rounded-2xl border border-slate-700 bg-slate-950/50 p-4 md:p-5 space-y-4 shadow-[0_8px_28px_rgba(0,0,0,0.18)]";
   const fieldClass = "w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2.5 text-white";
 
-  return <form onSubmit={handleSubmit} className="min-h-full flex flex-col" data-version="CHURVOX_JOB_FROM_CLIENT_STABLE_PREFILL_20260601">
+  return <form onSubmit={handleSubmit} className="min-h-full flex flex-col" data-version="CHURVOX_JOB_CREATE_REQUIRED_FIELDS_20260607">
     <div className="space-y-4 pb-28">
       <section className={section}>
         <p className="text-sm font-black text-white">Job details</p>
         {clientFromQuery ? <p className="rounded-2xl border border-lime-300/20 bg-lime-300/10 p-3 text-xs font-bold text-lime-100">Opened from a client record. Customer details will prefill once the client loads.</p> : null}
         <div><Label htmlFor="job-title">Job title *</Label><Input id="job-title" required className="w-full rounded-xl" value={form.title} onChange={(e)=>setForm((p)=>({...p,title:e.target.value}))} data-testid="job-title-input" /></div>
+        <div><Label htmlFor="job-type">Job type *</Label><select id="job-type" required className={fieldClass} value={form.job_type} onChange={(e)=>setForm((p)=>({...p,job_type:e.target.value}))} data-testid="job-type-select">{JOB_TYPE_OPTIONS.map(([value, label])=><option key={value} value={value}>{label}</option>)}</select></div>
         <div><Label htmlFor="job-notes">Notes / description</Label><Textarea id="job-notes" rows={3} className="w-full rounded-xl" value={form.notes} onChange={(e)=>setForm((p)=>({...p,notes:e.target.value}))} data-testid="job-notes-input" /></div>
       </section>
 
@@ -169,14 +206,15 @@ export default function JobCreateForm({ onSuccess, onCancel, submitLabel = "Crea
         <p className="text-sm font-black text-white">Client & location</p>
         <div><Label htmlFor="job-client">Client</Label><select id="job-client" className={fieldClass} value={form.client_id} onChange={(e)=>pickClient(e.target.value)} data-testid="job-client-select"><option value="">Select client</option>{clients.map((c)=><option key={clientId(c)} value={clientId(c)}>{clientName(c)}</option>)}</select></div>
         <div className="grid gap-3 md:grid-cols-2"><div><Label htmlFor="job-customer-email">Customer email</Label><Input id="job-customer-email" className="w-full rounded-xl" value={form.customer_email} onChange={(e)=>setForm((p)=>({...p,customer_email:e.target.value}))} data-testid="job-customer-email-input" /></div><div><Label htmlFor="job-customer-phone">Customer phone</Label><Input id="job-customer-phone" className="w-full rounded-xl" value={form.customer_phone} onChange={(e)=>setForm((p)=>({...p,customer_phone:e.target.value}))} data-testid="job-customer-phone-input" /></div></div>
-        <div><Label htmlFor="job-address">Address</Label><Input id="job-address" className="w-full rounded-xl" value={form.address} onChange={(e)=>setForm((p)=>({...p,address:e.target.value}))} data-testid="job-address-input" /></div>
+        <div><Label htmlFor="job-address">Address *</Label><Input id="job-address" required className="w-full rounded-xl" value={form.address} onChange={(e)=>setForm((p)=>({...p,address:e.target.value}))} data-testid="job-address-input" /></div>
         <div className="grid md:grid-cols-2 gap-3"><div><Label htmlFor="job-country">Country</Label><select id="job-country" className={fieldClass} value={form.country} onChange={(e)=>setForm((p)=>({...p,country:e.target.value,region:"",assigned_worker_id:"",assigned_worker_name:""}))} data-testid="job-country-select">{COUNTRY_OPTIONS.map((c)=><option key={c} value={c}>{c}</option>)}</select></div><div><Label htmlFor="job-region">Region / State</Label><select id="job-region" className={fieldClass} value={form.region} onChange={(e)=>setForm((p)=>({...p,region:e.target.value,assigned_worker_id:"",assigned_worker_name:""}))} data-testid="job-region-select"><option value="">Select region/state</option>{(REGION_OPTIONS[form.country]||[]).map((r)=><option key={r} value={r}>{r}</option>)}</select></div></div>
       </section>
 
       <section className={section}>
         <p className="text-sm font-black text-white">Schedule & assignment</p>
-        <div><Label htmlFor="job-scheduled-date">Scheduled date</Label><Input id="job-scheduled-date" type="datetime-local" className="w-full rounded-xl" value={form.scheduled_date} onChange={(e)=>setForm((p)=>({...p,scheduled_date:e.target.value}))} data-testid="job-scheduled-date-input" /></div>
+        <div><Label htmlFor="job-scheduled-date">Scheduled date *</Label><Input id="job-scheduled-date" required type="datetime-local" className="w-full rounded-xl" value={form.scheduled_date} onChange={(e)=>setForm((p)=>({...p,scheduled_date:e.target.value}))} data-testid="job-scheduled-date-input" /></div>
         <div><Label htmlFor="job-assigned-worker">Assigned worker</Label><select id="job-assigned-worker" className={fieldClass} value={form.assigned_worker_id} onChange={(e)=>pickWorker(e.target.value)} data-testid="job-worker-select"><option value="">Select worker</option>{filteredWorkers.map((w)=><option key={workerId(w)} value={workerId(w)}>{workerName(w)}</option>)}</select></div>
+        <div className="rounded-2xl border border-slate-700 bg-slate-900/60 p-4 space-y-3"><label className="flex items-center gap-3 text-sm font-black text-white"><input type="checkbox" checked={form.is_recurring} onChange={(e)=>setForm((p)=>({...p,is_recurring:e.target.checked}))} /> Recurring job</label>{form.is_recurring ? <select className={fieldClass} value={form.recurring_frequency} onChange={(e)=>setForm((p)=>({...p,recurring_frequency:e.target.value}))} data-testid="job-recurring-frequency"><option value="weekly">Weekly</option><option value="fortnightly">Fortnightly</option><option value="monthly">Monthly</option></select> : null}</div>
       </section>
 
       {!isWorker ? <section className={section}>
