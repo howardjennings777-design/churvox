@@ -19,12 +19,10 @@ const PRICING_TYPES = [
   { value: "fixed_extras", label: "Fixed + Extras" },
   { value: "hourly_extras", label: "Hourly + Extras" },
 ];
-
-function quoteIdOf(payload) {
-  const data = payload?.data ?? payload;
-  const item = data?.quote || data?.item || data?.record || data;
-  return String(data?.id || data?._id || item?.id || item?._id || "");
-}
+function normalizeId(value) { if (!value) return ""; if (typeof value === "object") return String(value.$oid || value.oid || value.id || value._id || ""); const text = String(value || ""); return text === "[object Object]" ? "" : text; }
+function quoteIdOf(payload) { const data = payload?.data ?? payload; const item = data?.quote || data?.item || data?.record || data; return normalizeId(data?.id || data?._id || item?.id || item?._id || ""); }
+function listFrom(value, key) { const data = value?.data ?? value; if (Array.isArray(data)) return data; if (Array.isArray(data?.[key])) return data[key]; return []; }
+function cleanNumber(value) { const num = Number(String(value || 0).replace(/[^0-9.-]/g, "")); return Number.isFinite(num) ? num : 0; }
 
 export default function QuoteFormPage() {
   const { id } = useParams();
@@ -33,80 +31,79 @@ export default function QuoteFormPage() {
   const isEditing = !!id;
 
   const [clients, setClients] = useState([]);
-  const [form, setForm] = useState({
-    client_id: "", customer_name: "", customer_email: "", address: "",
-    job_description: "", job_type: "other", price: "", pricing_type: "fixed",
-    hourly_rate: "", extras: [], notes: "", valid_until: "",
-  });
+  const [form, setForm] = useState({ client_id: "", customer_name: "", customer_email: "", address: "", job_description: "", job_type: "other", price: "", pricing_type: "fixed", hourly_rate: "", extras: [], notes: "", valid_until: "" });
 
   const fetchData = useCallback(async () => {
     const clientsRes = await get("/clients");
-    if (clientsRes.success) setClients(Array.isArray(clientsRes.data) ? clientsRes.data : clientsRes.data?.clients || []);
-
+    if (clientsRes.success) setClients(listFrom(clientsRes, "clients"));
     if (isEditing) {
       const res = await get(`/quotes/${id}`);
       if (res.success) {
         const q = res.data?.quote || res.data || {};
         setForm({
-          client_id: q.client_id || "", customer_name: q.customer_name || q.client_name || "",
-          customer_email: q.customer_email || q.client_email || "", address: q.address || q.site_address || "",
-          job_description: q.job_description || q.description || "", job_type: q.job_type || "other",
-          price: q.price || q.total || q.amount || "", pricing_type: q.pricing_type || "fixed",
-          hourly_rate: q.hourly_rate || "", extras: q.extras || [],
+          client_id: normalizeId(q.client_id || ""),
+          customer_name: q.customer_name || q.client_name || "",
+          customer_email: q.customer_email || q.client_email || "",
+          address: q.address || q.site_address || "",
+          job_description: q.job_description || q.description || "",
+          job_type: q.job_type || "other",
+          price: q.price || q.total || q.amount || "",
+          pricing_type: q.pricing_type || "fixed",
+          hourly_rate: q.hourly_rate || "",
+          extras: Array.isArray(q.extras) ? q.extras : [],
           notes: q.notes || "",
           valid_until: q.valid_until ? String(q.valid_until).split("T")[0] : "",
         });
-      } else navigate("/quotes");
+      } else {
+        toast.error(res.error || "Quote not found");
+        navigate("/quotes-board");
+      }
     }
   }, [get, id, isEditing, navigate]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleClientChange = (clientId) => {
-    const client = clients.find((c) => String(c.id || c._id) === String(clientId));
-    setForm((prev) => ({
-      ...prev, client_id: clientId,
-      customer_name: client?.name || client?.client_name || client?.customer_name || prev.customer_name,
-      customer_email: client?.email || client?.customer_email || prev.customer_email,
-      address: client?.address || client?.site_address || client?.billing_address || prev.address,
-    }));
+    const client = clients.find((c) => normalizeId(c.id || c._id) === String(clientId));
+    setForm((prev) => ({ ...prev, client_id: clientId, customer_name: client?.name || client?.client_name || client?.customer_name || prev.customer_name, customer_email: client?.email || client?.customer_email || prev.customer_email, address: client?.address || client?.site_address || client?.billing_address || prev.address }));
   };
-
   const addExtra = () => setForm((prev) => ({ ...prev, extras: [...prev.extras, { description: "", amount: "" }] }));
   const removeExtra = (i) => setForm((prev) => ({ ...prev, extras: prev.extras.filter((_, idx) => idx !== i) }));
-  const updateExtra = (i, field, val) => setForm((prev) => {
-    const extras = [...prev.extras];
-    extras[i] = { ...extras[i], [field]: val };
-    return { ...prev, extras };
-  });
+  const updateExtra = (i, field, val) => setForm((prev) => { const extras = [...prev.extras]; extras[i] = { ...extras[i], [field]: val }; return { ...prev, extras }; });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const total = parseFloat(form.price) || 0;
+    if (!form.customer_name.trim()) return toast.error("Customer name is required");
+    if (!form.address.trim()) return toast.error("Address is required");
+    if (!form.job_description.trim()) return toast.error("Job description is required");
+    const total = cleanNumber(form.price);
+    if (total <= 0) return toast.error("Quote price is required");
+    const extras = form.extras.map((ex) => ({ description: ex.description || "Extra", amount: cleanNumber(ex.amount) })).filter((ex) => ex.description || ex.amount > 0);
+    const extrasSummary = extras.length ? `\n\nExtras:\n${extras.map((ex) => `- ${ex.description}: $${Number(ex.amount || 0).toFixed(2)}`).join("\n")}` : "";
     const payload = {
-      ...form,
-      client_id: form.client_id || null,
-      client_name: form.customer_name,
       customer_name: form.customer_name,
-      site_address: form.address,
-      description: form.job_description,
+      customer_email: form.customer_email,
+      address: form.address,
+      job_description: form.job_description,
       price: total,
-      total,
-      amount: total,
-      hourly_rate: parseFloat(form.hourly_rate) || 0,
+      notes: `${form.notes || ""}${extrasSummary}`.trim(),
       valid_until: form.valid_until ? new Date(form.valid_until + "T23:59:59").toISOString() : null,
-      extras: form.extras.map((e) => ({ description: e.description, amount: parseFloat(e.amount) || 0 })).filter((e) => e.description),
     };
-    if (!payload.client_id) delete payload.client_id;
+    if (!isEditing) {
+      payload.client_id = form.client_id || null;
+      payload.job_type = form.job_type || "other";
+      payload.pricing_type = form.pricing_type || "fixed";
+      payload.hourly_rate = cleanNumber(form.hourly_rate);
+      payload.extras = extras;
+      if (!payload.client_id) delete payload.client_id;
+    }
     if (!payload.valid_until) delete payload.valid_until;
-
     const res = isEditing ? await patch(`/quotes/${id}`, payload) : await post("/quotes", payload);
     if (res.success) {
       const nextId = quoteIdOf(res) || id;
       toast.success(isEditing ? "Quote updated" : "Quote created");
-      navigate(nextId ? `/quotes/${nextId}` : "/quotes");
-    }
-    else toast.error(res.error || "Failed to save quote");
+      navigate(nextId ? `/quotes/${nextId}` : "/quotes-board");
+    } else toast.error(res.error || "Failed to save quote");
   };
 
   const showHourly = form.pricing_type === "hourly" || form.pricing_type === "hourly_extras";
@@ -114,77 +111,25 @@ export default function QuoteFormPage() {
   const showExtras = form.pricing_type === "fixed_extras" || form.pricing_type === "hourly_extras";
 
   if (!isEditing) {
-    return (
-      <Layout>
-        <PremiumPage maxWidth={820}>
-          <PremiumHero eyebrow="First quote" title="Create a quote" subtitle="Quotes pull from clients and can become job or invoice context later." />
-          <PremiumCard>
-            <QuoteCreateForm onCancel={() => navigate("/quotes")} onSuccess={(data) => { const nextId = quoteIdOf(data); navigate(nextId ? `/quotes/${nextId}` : "/quotes"); }} submitLabel="Create quote" />
-          </PremiumCard>
-        </PremiumPage>
-      </Layout>
-    );
+    return <Layout><PremiumPage maxWidth={820}><PremiumHero eyebrow="New quote" title="Create a quote" subtitle="Quotes pull from clients and can become job or invoice context later." /><PremiumCard><QuoteCreateForm onCancel={() => navigate("/quotes-board")} onSuccess={(data) => { const nextId = quoteIdOf(data); navigate(nextId ? `/quotes/${nextId}` : "/quotes-board"); }} submitLabel="Create quote" /></PremiumCard></PremiumPage></Layout>;
   }
 
-  return (
-    <Layout>
-      <PremiumPage maxWidth={820}>
-        <button onClick={() => navigate("/quotes")} className="flex items-center gap-2 text-[#5b6c87] hover:text-[#0d1b34] text-sm font-semibold" data-testid="back-to-quotes">
-          <ArrowLeft size={16} /> Back to quotes
-        </button>
-
-        <PremiumHero
-          eyebrow={isEditing ? "Edit quote" : "New quote"}
-          title={isEditing ? "Edit Quote" : "New Quote"}
-          subtitle={isEditing ? "Update pricing, description and validity." : "Create a quote to send to your customer for review."}
-          icon={<FileSignature className="h-6 w-6" />}
-        />
-
-        <PremiumCard title="Quote details" icon={<FileSignature className="h-5 w-5" />} data-testid="quote-form-page">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-[#0d1b34] font-semibold">Client</Label>
-                  <Select value={form.client_id} onValueChange={handleClientChange}>
-                    <SelectTrigger className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]" data-testid="quote-client-select"><SelectValue placeholder="Select client" /></SelectTrigger>
-                    <SelectContent className="bg-white border-[#d8e3f3] shadow-lg">{clients.map((c) => <SelectItem key={c.id || c._id} value={c.id || c._id} className="text-[#0d1b34]">{c.name || c.client_name}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-[#0d1b34] font-semibold">Job Type</Label>
-                  <Select value={form.job_type} onValueChange={(v) => setForm({ ...form, job_type: v })}>
-                    <SelectTrigger className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]" data-testid="quote-job-type"><SelectValue /></SelectTrigger>
-                    <SelectContent className="bg-white border-[#d8e3f3] max-h-60">
-                      {Object.entries(JOB_TYPES_BY_CATEGORY).map(([cat, types]) => (
-                        <SelectGroup key={cat}><SelectLabel className="text-[#7d8ba3] text-xs">{cat}</SelectLabel>
-                          {types.map((t) => <SelectItem key={t.value} value={t.value} className="text-[#0d1b34]">{t.label}</SelectItem>)}
-                        </SelectGroup>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div><Label className="text-[#0d1b34] font-semibold">Customer Name</Label><Input value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} required className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]" data-testid="quote-customer-name" /></div>
-              <div><Label className="text-[#0d1b34] font-semibold">Customer Email</Label><Input type="email" value={form.customer_email} onChange={(e) => setForm({ ...form, customer_email: e.target.value })} className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]" data-testid="quote-customer-email" /></div>
-              <div><Label className="text-[#0d1b34] font-semibold">Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} required className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]" data-testid="quote-address" /></div>
-              <div><Label className="text-[#0d1b34] font-semibold">Job Description</Label><Textarea value={form.job_description} onChange={(e) => setForm({ ...form, job_description: e.target.value })} required className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]" rows={3} data-testid="quote-description" /></div>
-
-              <div className="pt-3 border-t border-[#e6eef9]"><Label className="text-[#0d1b34] font-semibold">Pricing Type</Label><Select value={form.pricing_type} onValueChange={(v) => setForm({ ...form, pricing_type: v })}><SelectTrigger className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]" data-testid="quote-pricing-type"><SelectValue /></SelectTrigger><SelectContent className="bg-white border-[#d8e3f3] shadow-lg">{PRICING_TYPES.map((p) => <SelectItem key={p.value} value={p.value} className="text-[#0d1b34]">{p.label}</SelectItem>)}</SelectContent></Select></div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {showFixed && <div><Label className="text-[#0d1b34] font-semibold">Price ($)</Label><Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]" data-testid="quote-price" /></div>}
-                {showHourly && <div><Label className="text-[#0d1b34] font-semibold">Hourly Rate ($)</Label><Input type="number" step="0.01" value={form.hourly_rate} onChange={(e) => setForm({ ...form, hourly_rate: e.target.value })} className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]" data-testid="quote-hourly-rate" /></div>}
-                <div><Label className="text-[#0d1b34] font-semibold">Valid Until</Label><Input type="date" value={form.valid_until} onChange={(e) => setForm({ ...form, valid_until: e.target.value })} className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]" data-testid="quote-valid-until" /></div>
-              </div>
-
-              {showExtras && <div className="space-y-2 bg-[#f6faff] border border-[#d8e3f3] rounded-xl p-3"><div className="flex items-center justify-between"><Label className="text-[#0d1b34] font-semibold">Extras</Label><Button type="button" variant="outline" size="sm" onClick={addExtra} className="border-[#d8e3f3] text-[#1a2c4d] hover:bg-[#eff4ff]" data-testid="quote-add-extra"><Plus size={14} className="mr-1" /> Add Extra</Button></div>{form.extras.map((ex, i) => (<div key={i} className="flex gap-2 items-center"><Input value={ex.description} onChange={(e) => updateExtra(i, "description", e.target.value)} placeholder="Description" className="flex-1 bg-white border-[#d8e3f3] text-[#0d1b34]" data-testid={`quote-extra-desc-${i}`} /><Input type="number" step="0.01" value={ex.amount} onChange={(e) => updateExtra(i, "amount", e.target.value)} placeholder="$" className="w-24 bg-white border-[#d8e3f3] text-[#0d1b34]" data-testid={`quote-extra-amount-${i}`} /><button type="button" onClick={() => removeExtra(i)} className="text-[#dc2626] hover:text-[#dc2626]/80"><Trash2 size={14} /></button></div>))}</div>}
-
-              <div><Label className="text-[#0d1b34] font-semibold">Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]" rows={2} data-testid="quote-notes" /></div>
-              <div className="flex gap-3 pt-2 flex-wrap"><Button type="button" variant="outline" onClick={() => navigate("/quotes")} className="flex-1 min-w-[140px] border-[#d8e3f3] text-[#1a2c4d] hover:bg-[#eff4ff]">Cancel</Button><PremiumButton type="submit" disabled={loading} dataTestId="submit-quote-button" className="flex-1 min-w-[200px]"><Save className="h-4 w-4 mr-2" />{loading ? "Saving..." : isEditing ? "Update Quote" : "Create Quote"}</PremiumButton></div>
-            </form>
-        </PremiumCard>
-      </PremiumPage>
-    </Layout>
-  );
+  return <Layout><PremiumPage maxWidth={820}>
+    <button onClick={() => navigate("/quotes-board")} className="flex items-center gap-2 text-[#5b6c87] hover:text-[#0d1b34] text-sm font-semibold" data-testid="back-to-quotes"><ArrowLeft size={16} /> Back to Quotes board</button>
+    <PremiumHero eyebrow="Edit quote" title="Edit Quote" subtitle="Update customer, pricing, description and validity." icon={<FileSignature className="h-6 w-6" />} />
+    <PremiumCard title="Quote details" icon={<FileSignature className="h-5 w-5" />} data-testid="quote-form-page">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3"><div><Label className="text-[#0d1b34] font-semibold">Client</Label><Select value={form.client_id} onValueChange={handleClientChange}><SelectTrigger className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]" data-testid="quote-client-select"><SelectValue placeholder="Select client" /></SelectTrigger><SelectContent className="bg-white border-[#d8e3f3] shadow-lg">{clients.map((c) => <SelectItem key={normalizeId(c.id || c._id)} value={normalizeId(c.id || c._id)} className="text-[#0d1b34]">{c.name || c.client_name}</SelectItem>)}</SelectContent></Select></div><div><Label className="text-[#0d1b34] font-semibold">Job Type</Label><Select value={form.job_type} onValueChange={(v) => setForm({ ...form, job_type: v })} disabled={isEditing}><SelectTrigger className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]" data-testid="quote-job-type"><SelectValue /></SelectTrigger><SelectContent className="bg-white border-[#d8e3f3] max-h-60">{Object.entries(JOB_TYPES_BY_CATEGORY).map(([cat, types]) => (<SelectGroup key={cat}><SelectLabel className="text-[#7d8ba3] text-xs">{cat}</SelectLabel>{types.map((t) => <SelectItem key={t.value} value={t.value} className="text-[#0d1b34]">{t.label}</SelectItem>)}</SelectGroup>))}</SelectContent></Select></div></div>
+        <div><Label className="text-[#0d1b34] font-semibold">Customer Name</Label><Input value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} required className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]" data-testid="quote-customer-name" /></div>
+        <div><Label className="text-[#0d1b34] font-semibold">Customer Email</Label><Input type="email" value={form.customer_email} onChange={(e) => setForm({ ...form, customer_email: e.target.value })} className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]" data-testid="quote-customer-email" /></div>
+        <div><Label className="text-[#0d1b34] font-semibold">Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} required className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]" data-testid="quote-address" /></div>
+        <div><Label className="text-[#0d1b34] font-semibold">Job Description</Label><Textarea value={form.job_description} onChange={(e) => setForm({ ...form, job_description: e.target.value })} required className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]" rows={3} data-testid="quote-description" /></div>
+        <div className="pt-3 border-t border-[#e6eef9]"><Label className="text-[#0d1b34] font-semibold">Pricing Type</Label><Select value={form.pricing_type} onValueChange={(v) => setForm({ ...form, pricing_type: v })} disabled={isEditing}><SelectTrigger className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]" data-testid="quote-pricing-type"><SelectValue /></SelectTrigger><SelectContent className="bg-white border-[#d8e3f3] shadow-lg">{PRICING_TYPES.map((p) => <SelectItem key={p.value} value={p.value} className="text-[#0d1b34]">{p.label}</SelectItem>)}</SelectContent></Select>{isEditing ? <p className="mt-2 text-xs font-semibold text-[#5b6c87]">Pricing type/job type are locked on edit because the current backend quote update only supports core fields.</p> : null}</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">{showFixed && <div><Label className="text-[#0d1b34] font-semibold">Price ($)</Label><Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]" data-testid="quote-price" /></div>}{showHourly && <div><Label className="text-[#0d1b34] font-semibold">Hourly Rate ($)</Label><Input type="number" step="0.01" value={form.hourly_rate} onChange={(e) => setForm({ ...form, hourly_rate: e.target.value })} className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]" data-testid="quote-hourly-rate" /></div>}<div><Label className="text-[#0d1b34] font-semibold">Valid Until</Label><Input type="date" value={form.valid_until} onChange={(e) => setForm({ ...form, valid_until: e.target.value })} className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]" data-testid="quote-valid-until" /></div></div>
+        {showExtras && <div className="space-y-2 bg-[#f6faff] border border-[#d8e3f3] rounded-xl p-3"><div className="flex items-center justify-between"><Label className="text-[#0d1b34] font-semibold">Extras</Label><Button type="button" variant="outline" size="sm" onClick={addExtra} className="border-[#d8e3f3] text-[#1a2c4d] hover:bg-[#eff4ff]" data-testid="quote-add-extra"><Plus size={14} className="mr-1" /> Add Extra</Button></div>{form.extras.map((ex, i) => (<div key={i} className="flex gap-2 items-center"><Input value={ex.description} onChange={(e) => updateExtra(i, "description", e.target.value)} placeholder="Description" className="flex-1 bg-white border-[#d8e3f3] text-[#0d1b34]" data-testid={`quote-extra-desc-${i}`} /><Input type="number" step="0.01" value={ex.amount} onChange={(e) => updateExtra(i, "amount", e.target.value)} placeholder="$" className="w-24 bg-white border-[#d8e3f3] text-[#0d1b34]" data-testid={`quote-extra-amount-${i}`} /><button type="button" onClick={() => removeExtra(i)} className="text-[#dc2626] hover:text-[#dc2626]/80"><Trash2 size={14} /></button></div>))}</div>}
+        <div><Label className="text-[#0d1b34] font-semibold">Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]" rows={2} data-testid="quote-notes" /></div>
+        <div className="flex gap-3 pt-2 flex-wrap"><Button type="button" variant="outline" onClick={() => navigate("/quotes-board")} className="flex-1 min-w-[140px] border-[#d8e3f3] text-[#1a2c4d] hover:bg-[#eff4ff]">Cancel</Button><PremiumButton type="submit" disabled={loading} dataTestId="submit-quote-button" className="flex-1 min-w-[200px]"><Save className="h-4 w-4 mr-2" />{loading ? "Saving..." : "Update Quote"}</PremiumButton></div>
+      </form>
+    </PremiumCard>
+  </PremiumPage></Layout>;
 }
