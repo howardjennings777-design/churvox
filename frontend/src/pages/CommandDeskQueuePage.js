@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
+import "../styles/command-dashboard-laptop-fix.css";
 
 const money = (value) => {
   const num = Number(value || 0);
@@ -40,6 +41,7 @@ const invoiceAmount = (invoice) => Number(first(invoice?.total, invoice?.amount_
 
 function buildActions({ jobs, invoices, quotes, workers, aiActions }) {
   const prepared = [];
+
   aiActions.slice(0, 4).forEach((action) => prepared.push({
     id: `ai-${idOf(action) || titleOf(action)}`,
     type: "ai",
@@ -99,10 +101,10 @@ function buildActions({ jobs, invoices, quotes, workers, aiActions }) {
 
 function Tile({ label, value, text, to }) {
   return (
-    <Link to={to || "/dashboard"} className="rounded-[26px] border border-slate-200 bg-white p-5 text-slate-950 no-underline shadow-[0_14px_40px_rgba(15,23,42,.06)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_60px_rgba(15,23,42,.10)]">
+    <Link to={to || "/dashboard"} className="rounded-[22px] border border-slate-200 bg-white p-4 text-slate-950 no-underline shadow-[0_10px_28px_rgba(15,23,42,.055)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_42px_rgba(15,23,42,.09)]">
       <div className="text-[10px] font-black uppercase tracking-[.18em] text-slate-500">{label}</div>
-      <div className="mt-2 text-4xl font-black tracking-[-.07em]">{value}</div>
-      <p className="mt-3 text-sm font-bold leading-6 text-slate-600">{text}</p>
+      <div className="mt-1.5 text-3xl font-black tracking-[-.06em]">{value}</div>
+      <p className="mt-2 text-xs font-bold leading-5 text-slate-600">{text}</p>
     </Link>
   );
 }
@@ -248,55 +250,55 @@ function CommandDeskQueuePage() {
   ];
 
   return (
-    <main className="min-h-screen bg-[#f5f2ea] p-4 pb-32 text-slate-950 md:p-6 md:pb-28 xl:pl-[320px]">
-      <section className="mx-auto max-w-7xl space-y-5">
-        <header className="overflow-hidden rounded-[32px] border border-slate-900 bg-slate-950 p-6 text-white shadow-[0_30px_90px_rgba(15,23,42,.24)] md:p-8">
+    <main className="churvox-dashboard-main min-h-screen bg-[#f5f2ea] p-3 pb-24 text-slate-950 md:p-5 md:pb-20 xl:pl-[286px]">
+      <section className="mx-auto max-w-[1180px] space-y-4">
+        <header className="overflow-hidden rounded-[26px] border border-slate-900 bg-slate-950 p-5 text-white shadow-[0_22px_70px_rgba(15,23,42,.20)] md:p-6">
           <div className="inline-flex rounded-full border border-orange-300/25 bg-orange-300/10 px-4 py-2 text-[10px] font-black uppercase tracking-[.2em] text-orange-200">Command Board</div>
-          <h1 className="mt-5 max-w-5xl text-5xl font-black leading-[.9] tracking-[-.08em] md:text-7xl">Churvox does the admin. You approve.</h1>
-          <p className="mt-5 max-w-3xl text-sm font-bold leading-7 text-slate-300 md:text-base">This is the owner command centre: urgent work, cash, crew, customer requests, prepared slips and exact approval actions in one place.</p>
-          <div className="mt-6 flex flex-wrap gap-3">
+          <h1 className="mt-4 max-w-4xl text-[34px] font-black leading-[.94] tracking-[-.065em] sm:text-[42px] lg:text-[52px] xl:text-[60px]">Churvox does the admin. You approve.</h1>
+          <p className="mt-4 max-w-3xl text-sm font-bold leading-6 text-slate-300 md:text-[15px]">This is the owner command centre: urgent work, cash, crew, customer requests, prepared slips and exact approval actions in one place.</p>
+          <div className="mt-5 flex flex-wrap gap-2.5">
             <Link to="/jobs/new" className="rounded-2xl bg-orange-400 px-5 py-3 text-sm font-black text-slate-950 no-underline shadow-lg shadow-orange-400/20">Create job</Link>
             <Link to="/support" className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white no-underline">Get help</Link>
             <a href="/request-work.html" className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white no-underline">Customer request form</a>
           </div>
         </header>
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Tile label="AI actions" value={loading ? "…" : actions.length || "OK"} text="Prepared admin and dispatch decisions waiting for owner approval." to="/ai-operator" />
           <Tile label="Today" value={todayJobs.length || "OK"} text={`${activeJobs.length} active job${activeJobs.length === 1 ? "" : "s"} right now.`} to="/jobs" />
           <Tile label="Cash" value={money(outstanding)} text={`${overdueInvoices.length} overdue invoice${overdueInvoices.length === 1 ? "" : "s"} found.`} to="/invoices" />
           <Tile label="Ready to invoice" value={completedReady.length || "OK"} text="Completed jobs not billed yet appear here." to="/invoices/new" />
         </section>
 
-        <section className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,.85fr)]">
-          <div className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,.07)]">
-            <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_34px_rgba(15,23,42,.06)]">
+            <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
               <div>
                 <div className="text-[10px] font-black uppercase tracking-[.2em] text-orange-600">Owner approval queue</div>
-                <h2 className="mt-2 text-3xl font-black tracking-[-.06em] md:text-5xl">Prepared actions</h2>
+                <h2 className="mt-1.5 text-3xl font-black tracking-[-.055em] md:text-4xl">Prepared actions</h2>
               </div>
               {loading ? <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">Loading…</span> : null}
             </div>
             <div className="grid gap-3">
               {topActions.map((action) => (
-                <button key={action.id} type="button" onClick={() => setActiveAction(action)} className="rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-orange-200 hover:bg-orange-50">
+                <button key={action.id} type="button" onClick={() => setActiveAction(action)} className="rounded-[18px] border border-slate-200 bg-slate-50 p-3.5 text-left transition hover:border-orange-200 hover:bg-orange-50">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <div className="text-[10px] font-black uppercase tracking-[.16em] text-slate-500">{action.type.replaceAll("_", " ")}</div>
-                      <h3 className="mt-1 text-xl font-black tracking-[-.04em] text-slate-950">{action.title}</h3>
+                      <h3 className="mt-1 text-lg font-black tracking-[-.04em] text-slate-950">{action.title}</h3>
                     </div>
                     <span className="rounded-full bg-slate-950 px-3 py-1 text-[10px] font-black uppercase tracking-[.12em] text-white">{action.status}</span>
                   </div>
-                  <p className="mt-2 text-sm font-bold leading-6 text-slate-600">{action.meta}</p>
+                  <p className="mt-2 text-xs font-bold leading-5 text-slate-600">{action.meta}</p>
                 </button>
               ))}
             </div>
           </div>
 
           <aside className="grid gap-4">
-            <div className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,.07)]">
+            <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_34px_rgba(15,23,42,.06)]">
               <div className="text-[10px] font-black uppercase tracking-[.2em] text-cyan-700">Top player layer</div>
-              <h2 className="mt-2 text-3xl font-black tracking-[-.06em]">Growth tools now visible.</h2>
+              <h2 className="mt-1.5 text-2xl font-black tracking-[-.055em]">Growth tools now visible.</h2>
               <div className="mt-4 grid gap-3">
                 <a href="/request-work.html" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-black text-slate-900 no-underline">Customer request / booking</a>
                 <a href="/customer-portal.html" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-black text-slate-900 no-underline">Customer portal preview</a>
@@ -305,7 +307,7 @@ function CommandDeskQueuePage() {
               </div>
             </div>
 
-            <div className="rounded-[30px] border border-orange-200 bg-orange-50 p-5">
+            <div className="rounded-[24px] border border-orange-200 bg-orange-50 p-4">
               <div className="text-[10px] font-black uppercase tracking-[.2em] text-orange-700">Setup path</div>
               <ol className="mt-3 space-y-2 text-sm font-black leading-6 text-orange-950">
                 <li>1. Add business details</li>
