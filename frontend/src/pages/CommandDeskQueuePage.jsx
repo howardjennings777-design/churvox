@@ -1,20 +1,7 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
-import CommandSlipEverything from "../components/CommandSlipEverything";
-
-const nav = [
-  ["Command Board", "/dashboard", "CB"],
-  ["Jobs", "/jobs", "JB"],
-  ["Crew Map", "/crew-map", "MP"],
-  ["Clients", "/clients", "CL"],
-  ["Quotes", "/quotes", "QT"],
-  ["Invoices", "/invoices", "IV"],
-  ["Team", "/team", "TM"],
-  ["Settings", "/settings", "ST"],
-  ["Support", "/support", "?"],
-];
 
 const labels = {
   action_type: "Action type",
@@ -22,90 +9,51 @@ const labels = {
   quote_id: "Quote ID",
   invoice_id: "Invoice ID",
   client_id: "Client ID",
-  worker_id: "Worker to assign",
+  worker_id: "Worker",
   job_title: "Job",
   job_name: "Job",
-  service_type: "Service type",
+  service_type: "Service",
   status: "Status",
   job_status: "Job status",
   quote_status: "Quote status",
   invoice_status: "Invoice status",
   client_name: "Client",
   customer_name: "Customer",
-  customer_email: "Customer email",
-  client_email: "Client email",
+  customer_email: "Email",
+  client_email: "Email",
   email: "Email",
   client_phone: "Phone",
-  customer_phone: "Customer phone",
+  customer_phone: "Phone",
   phone: "Phone",
-  client_address: "Client address",
-  customer_address: "Customer address",
   job_address: "Job address",
   site_address: "Site address",
   address: "Address",
   scheduled_time: "Scheduled",
   scheduled_at: "Scheduled",
-  schedule_date: "Schedule date",
-  start_time: "Start time",
-  end_time: "End time",
   worker_name: "Worker",
   assigned_worker_name: "Assigned worker",
   recommended_worker_name: "Recommended worker",
-  conflict_check: "Conflict check",
-  worker_region: "Worker region",
-  worker_email: "Worker email",
-  worker_phone: "Worker phone",
   subtotal: "Subtotal",
   price: "Price",
   gst: "GST",
-  tax: "Tax",
-  gst_rate: "GST rate",
   total: "Total",
   amount: "Amount",
   amount_due: "Amount due",
   quote_number: "Quote number",
-  quote_amount: "Quote amount",
   invoice_number: "Invoice number",
   due_date: "Due date",
   days_overdue: "Days overdue",
-  payment_url: "Payment link",
-  payment_link: "Payment link",
-  online_payment_url: "Online payment link",
-  bank_details: "Bank details",
-  payment_instructions: "Payment instructions",
   description: "Description",
   invoice_description: "Invoice description",
   quote_description: "Quote description",
   job_description: "Job description",
   message: "Message",
-  subject: "Subject",
   email_subject: "Email subject",
   email_body: "Email body",
-  sms_message: "SMS message",
   follow_up_message: "Follow-up message",
-  client_history: "Client history",
-  client_notes: "Client notes",
-  customer_notes: "Customer notes",
-  job_notes: "Job notes",
-  worker_note: "Worker notes",
-  completion_note: "Completion note",
-  time_worked: "Time worked",
-  proof_summary: "Proof",
-  proof_photos: "Proof photos",
-  photo_count: "Photo count",
 };
 
-const hiddenEditFields = new Set([
-  "business_id",
-  "related_id",
-  "related_entity_id",
-  "source",
-  "source_records",
-  "checks",
-  "created_at",
-  "updated_at",
-  "available_workers",
-]);
+const hiddenFields = new Set(["business_id", "related_id", "related_entity_id", "source", "created_at", "updated_at", "checks", "source_records"]);
 
 function has(value) {
   if (value === undefined || value === null) return false;
@@ -124,9 +72,7 @@ function clean(value) {
 }
 
 function first(...values) {
-  for (const value of values) {
-    if (has(value)) return value;
-  }
+  for (const value of values) if (has(value)) return value;
   return "";
 }
 
@@ -138,14 +84,6 @@ function money(value) {
   return n.toLocaleString("en-NZ", { style: "currency", currency: "NZD" });
 }
 
-function dateText(value) {
-  const raw = clean(value);
-  if (!raw) return "";
-  const d = new Date(raw);
-  if (Number.isNaN(d.getTime())) return raw;
-  return d.toLocaleString("en-NZ");
-}
-
 function labelFor(key) {
   return labels[key] || String(key || "").replaceAll("_", " ");
 }
@@ -155,7 +93,7 @@ function getId(action) {
 }
 
 function getType(action) {
-  return String(action?.action_type || action?.type || "").replaceAll("-", "_").toLowerCase();
+  return String(action?.action_type || action?.type || "prepared_action").replaceAll("-", "_").toLowerCase();
 }
 
 function getPayload(action) {
@@ -178,55 +116,46 @@ function approveText(type) {
   if (value.includes("assign") || value.includes("worker")) return "Approve assignment";
   if (value.includes("invoice_draft") || value.includes("create_invoice")) return "Approve draft";
   if (value.includes("send_invoice")) return "Approve sending";
-  if (value.includes("reminder") || value.includes("payment")) return "Approve reminder";
   if (value.includes("quote")) return "Approve follow-up";
   return "Approve action";
 }
 
-function outcome(type) {
-  const value = String(type || "").toLowerCase();
-  if (value.includes("assign") || value.includes("worker")) return "Assigns the selected worker to the job and records the decision.";
-  if (value.includes("invoice_draft") || value.includes("create_invoice")) return "Creates a draft invoice for owner review.";
-  if (value.includes("send_invoice")) return "Sends the invoice to the customer.";
-  if (value.includes("reminder") || value.includes("payment")) return "Sends the approved payment reminder.";
-  if (value.includes("quote")) return "Sends the approved quote follow-up.";
-  return "Runs the approved action.";
-}
-
 function requiredFields(type) {
   const value = String(type || "").toLowerCase();
-
-  if (value.includes("assign") || value.includes("worker")) {
-    return ["job_id", "job_title", "client_name", "job_address", "worker_id"];
-  }
-
-  if (value.includes("invoice_draft") || value.includes("create_invoice")) {
-    return ["job_id", "job_title", "client_name", "subtotal", "description"];
-  }
-
-  if (value.includes("send_invoice")) {
-    return ["invoice_id", "invoice_number", "customer_name", "customer_email", "total"];
-  }
-
-  if (value.includes("invoice") || value.includes("payment") || value.includes("reminder")) {
-    return ["invoice_id", "invoice_number", "customer_name", "customer_email", "amount_due", "message"];
-  }
-
-  if (value.includes("quote")) {
-    return ["quote_id", "quote_number", "customer_name", "customer_email", "message"];
-  }
-
-  if (value.includes("job")) {
-    return ["job_id", "job_title", "client_name", "worker_name"];
-  }
-
+  if (value.includes("assign") || value.includes("worker")) return ["job_id", "job_title", "client_name", "worker_id"];
+  if (value.includes("invoice_draft") || value.includes("create_invoice")) return ["job_id", "client_name", "subtotal", "description"];
+  if (value.includes("send_invoice")) return ["invoice_id", "customer_email", "total"];
+  if (value.includes("invoice") || value.includes("payment") || value.includes("reminder")) return ["invoice_id", "customer_email", "amount_due", "message"];
+  if (value.includes("quote")) return ["quote_id", "customer_email", "message"];
+  if (value.includes("job")) return ["job_id", "job_title", "client_name"];
   return ["action_type"];
+}
+
+function actionTitle(action, form, type) {
+  const fallback = action.title || "Prepared action";
+  const client = first(form.client_name, form.customer_name, form.name);
+  const invoice = first(form.invoice_number, form.invoice_id);
+  if (String(type).includes("assign")) return "Assign job";
+  if (String(type).includes("send_invoice")) return "Send invoice";
+  if (String(type).includes("invoice")) return invoice ? `Review invoice ${invoice}` : "Review invoice";
+  if (String(type).includes("quote")) return client ? "Follow up quote" : "Review quote";
+  if (String(type).includes("job")) return "Review job action";
+  return fallback;
+}
+
+function actionSummary(action, form, type, missing) {
+  if (missing.length) return `Needs details first: ${missing.map(labelFor).join(", ")}.`;
+  const value = String(type || "").toLowerCase();
+  if (value.includes("assign") || value.includes("worker")) return "Churvox prepared a worker assignment for approval.";
+  if (value.includes("send_invoice")) return "Invoice is ready to review before sending.";
+  if (value.includes("invoice")) return "Churvox prepared the next invoice step.";
+  if (value.includes("quote")) return "Churvox prepared a quote follow-up.";
+  return action.summary || "Churvox prepared this from your business records.";
 }
 
 function normalize(action) {
   const type = getType(action);
   const raw = getPayload(action);
-
   const form = {
     ...raw,
     action_type: type,
@@ -236,311 +165,81 @@ function normalize(action) {
     client_name: first(raw.client_name, raw.customer_name),
     customer_name: first(raw.customer_name, raw.client_name),
     customer_email: first(raw.customer_email, raw.client_email, raw.email),
-    client_email: first(raw.client_email, raw.customer_email, raw.email),
     client_phone: first(raw.client_phone, raw.customer_phone, raw.phone),
     total: first(raw.total, raw.amount_due, raw.amount, raw.subtotal, raw.price, raw.quote_amount),
     amount_due: first(raw.amount_due, raw.total, raw.amount),
-    description: first(raw.description, raw.invoice_description, raw.quote_description, raw.job_description, raw.worker_note, raw.message),
+    description: first(raw.description, raw.invoice_description, raw.quote_description, raw.job_description, raw.message),
   };
-
   const missing = requiredFields(type).filter((key) => !has(form[key]));
-
+  const meta = [first(form.client_name, form.customer_name), money(first(form.total, form.amount_due, form.amount)), first(form.job_title, form.invoice_number, form.quote_number)].filter(Boolean).join(" · ");
   return {
     id: getId(action),
     type,
     ready: missing.length === 0,
     missing,
     title: actionTitle(action, form, type),
-    meta: actionMeta(form, type),
-    summary: actionSummary(action, form, type),
+    meta,
+    summary: actionSummary(action, form, type, missing),
     reason: action.reason || action.ai_reason || action.explanation || "",
-    confidence: action.confidence || "",
-    what_will_happen: action.what_will_happen || "",
-    source_records: action.source_records || [],
-    checks: action.checks || ["Related record checked", "Owner approval required"],
     form,
   };
 }
 
-function actionTitle(action, form, type) {
-  const fallback = action.title || "Prepared action";
-  const client = first(form.client_name, form.customer_name, form.name);
-  const invoice = first(form.invoice_number, form.invoice_id);
-  const quote = first(form.quote_number, form.quote_id);
-
-  if (String(type).includes("assign")) return "Assign job";
-  if (String(type).includes("send_invoice")) return "Send invoice";
-  if (String(type).includes("invoice")) return invoice ? `Review invoice ${invoice}` : "Review invoice";
-  if (String(type).includes("quote")) return client ? "Follow up quote" : "Review quote follow-up";
-  if (String(type).includes("job")) return "Review job action";
-  return fallback;
-}
-
-function actionMeta(form, type) {
-  const client = first(form.client_name, form.customer_name, form.name);
-  const invoice = first(form.invoice_number, form.invoice_id);
-  const quote = first(form.quote_number, form.quote_id);
-  const amount = money(first(form.total, form.amount_due, form.amount, form.subtotal, form.price, form.quote_amount));
-  const pieces = [];
-
-  if (client) pieces.push(client);
-  if (amount) pieces.push(amount);
-
-  if (!client && invoice && String(type).includes("invoice")) pieces.push(`Invoice ${invoice}`);
-  if (!client && quote && String(type).includes("quote")) pieces.push(`Quote ${quote}`);
-
-  return pieces.join(" · ");
-}
-
-function actionSummary(action, form, type) {
-  if (!action.ready && Array.isArray(action.missing) && action.missing.length) {
-    return `Needs details before approval: ${action.missing.map(labelFor).join(", ")}.`;
-  }
-
-  const value = String(type || "").toLowerCase();
-  if (value.includes("assign") || value.includes("worker")) return "Churvox prepared a worker assignment for owner approval.";
-  if (value.includes("send_invoice")) return "Invoice is ready. Review the customer email and PDF before sending.";
-  if (value.includes("invoice")) return "Churvox prepared the next invoice step for owner approval.";
-  if (value.includes("quote")) return "This quote has not been accepted yet. Churvox prepared a follow-up message for approval.";
-  if (value.includes("reminder") || value.includes("payment")) return "Churvox prepared a payment reminder for owner approval.";
-
-  return action.summary || "Churvox prepared this action from your business records.";
-}
-
-
-function actionBlob(item) {
-  try {
-    return JSON.stringify(item || {});
-  } catch {
-    return `${item?.title || ""} ${item?.meta || ""} ${item?.summary || ""} ${item?.reason || ""}`;
-  }
-}
-
 function isLaunchAuditAction(item) {
-  const blob = actionBlob(item);
-  return [
-    /PW E2E/i,
-    /Playwright/i,
-    /Deep Audit/i,
-    /test reflect/i,
-    /Test Client/i,
-    /TEST Phase/i,
-    /pw-e2e-/i,
-    /audit@example\.com/i,
-    /QT-ADB/i,
-  ].some((pattern) => pattern.test(blob));
+  const blob = JSON.stringify(item || {});
+  return [/PW E2E/i, /Playwright/i, /Deep Audit/i, /test reflect/i, /Test Client/i, /pw-e2e-/i, /audit@example\.com/i].some((pattern) => pattern.test(blob));
 }
 
-function safeHeadline(value) {
-  const text = clean(value);
-  if (!text || /^I checked\b/i.test(text)) {
-    return "Churvox checked your business and prepared the next admin actions.";
-  }
-  return text;
+function editableKeys(form = {}, type = "", missing = []) {
+  const value = String(type || "").toLowerCase();
+  const important = ["client_name", "customer_name", "customer_email", "phone", "job_id", "job_title", "job_address", "worker_id", "worker_name", "invoice_id", "invoice_number", "quote_id", "quote_number", "subtotal", "gst", "total", "amount_due", "description", "message", "email_subject", "email_body", "due_date", "status"];
+  const byType = value.includes("worker") || value.includes("assign") ? ["worker_id", "worker_name", "job_id", "job_title", "job_address"] : value.includes("invoice") ? ["invoice_id", "invoice_number", "customer_email", "amount_due", "total", "message", "description"] : value.includes("quote") ? ["quote_id", "quote_number", "customer_email", "message"] : [];
+  const existing = Object.keys(form).filter((key) => !hiddenFields.has(key) && typeof form[key] !== "object");
+  return [...new Set([...missing, ...byType, ...important, ...existing])].filter((key) => key && !hiddenFields.has(key));
 }
 
-function relevantKeys(form = {}, type = "", missing = []) {
-  const value = String(type || form.action_type || "").toLowerCase();
-
-  const base = [
-    "client_name", "customer_name", "customer_email", "client_email", "email",
-    "client_phone", "customer_phone", "phone",
-    "client_address", "customer_address", "job_address", "site_address", "address",
-    "job_id", "job_title", "job_name", "service_type", "job_status", "status",
-    "scheduled_time", "scheduled_at", "schedule_date", "start_time", "end_time",
-    "description", "invoice_description", "quote_description", "job_description",
-    "message", "subject", "email_subject", "email_body", "sms_message", "follow_up_message",
-    "notes", "client_notes", "customer_notes", "job_notes", "worker_note", "completion_note",
-  ];
-
-  let specific = [];
-
-  if (value.includes("assign") || value.includes("worker")) {
-    specific = ["worker_id", "worker_name", "recommended_worker_name", "assigned_worker_name", "conflict_check", "worker_region", "worker_email", "worker_phone", "job_id", "job_title", "job_address", "scheduled_time", "scheduled_at"];
-  } else if (value.includes("invoice") || value.includes("payment") || value.includes("reminder")) {
-    specific = ["invoice_id", "invoice_number", "invoice_status", "subtotal", "gst", "tax", "gst_rate", "total", "amount", "amount_due", "price", "due_date", "days_overdue", "payment_url", "payment_link", "online_payment_url", "bank_details", "payment_instructions", "description", "invoice_description", "message", "email_subject", "email_body", "job_id", "job_title", "job_address"];
-  } else if (value.includes("quote")) {
-    specific = ["quote_id", "quote_number", "quote_status", "quote_amount", "total", "price", "description", "quote_description", "message", "email_subject", "email_body", "client_name", "customer_name", "customer_email", "job_title", "job_address"];
-  } else if (value.includes("job")) {
-    specific = ["job_id", "job_title", "job_name", "service_type", "job_status", "status", "job_address", "scheduled_time", "scheduled_at", "worker_name", "worker_id", "time_worked", "proof_summary", "photo_count", "completion_note", "worker_note"];
-  }
-
-  const existing = Object.keys(form || {}).filter((key) => !hiddenEditFields.has(key) && typeof form[key] !== "object");
-  const all = [...missing, ...specific, ...base, ...existing];
-  const seen = new Set();
-
-  return all.filter((key) => {
-    if (!key || seen.has(key) || hiddenEditFields.has(key)) return false;
-    seen.add(key);
-    return missing.includes(key) || specific.includes(key) || base.includes(key) || has(form[key]);
-  });
-}
-
-function lineItems(form = {}) {
-  const possible = [form.items, form.line_items, form.lines, form.invoice_items, form.quote_items];
-
-  for (const item of possible) {
-    if (Array.isArray(item) && item.length) return item;
-  }
-
-  const description = first(form.description, form.invoice_description, form.quote_description, form.job_description, form.service_description);
-  const total = first(form.total, form.amount_due, form.amount, form.price, form.subtotal, form.quote_amount);
-
-  if (description || total) {
-    return [{ description: description || "Service work", quantity: 1, rate: total || 0, total: total || 0 }];
-  }
-
-  return [];
-}
-
-function Sidebar() {
-  const { pathname } = useLocation();
-
+function StatCard({ label, value, copy, tone = "slate" }) {
+  const toneClass = tone === "green" ? "bg-emerald-50 text-emerald-700 border-emerald-100" : tone === "amber" ? "bg-amber-50 text-amber-800 border-amber-100" : tone === "blue" ? "bg-cyan-50 text-cyan-800 border-cyan-100" : "bg-white text-slate-950 border-slate-200";
   return (
-    <aside className="hidden w-[292px] shrink-0 overflow-y-auto bg-[#0f1722] p-4 text-white lg:block">
-      <div className="mb-6 flex items-center gap-3">
-        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-cyan-400 font-black text-slate-950">C</div>
-        <div>
-          <div className="text-sm font-black">CHURVOX</div>
-          <div className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Command Desk</div>
-        </div>
-      </div>
-
-      <nav className="space-y-1">
-        {nav.map(([label, href, icon]) => {
-          const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
-
-          return (
-            <Link
-              key={href}
-              to={href}
-              className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-black ${
-                active ? "bg-cyan-300 text-slate-950" : "text-slate-300 hover:bg-white/10"
-              }`}
-            >
-              <span className="grid h-7 w-7 place-items-center rounded-xl bg-white/10 text-[10px]">{icon}</span>
-              {label}
-            </Link>
-          );
-        })}
-      </nav>
-    </aside>
+    <article className={`rounded-[24px] border p-5 shadow-[0_12px_34px_rgba(15,23,42,.055)] ${toneClass}`}>
+      <div className="text-[10px] font-black uppercase tracking-[.18em] opacity-75">{label}</div>
+      <div className="mt-2 text-4xl font-black tracking-[-.07em]">{value}</div>
+      <p className="mt-2 text-sm font-bold leading-6 opacity-80">{copy}</p>
+    </article>
   );
 }
 
-function InfoCard({ label, value, warn }) {
+function ActionCard({ item, onOpen }) {
   return (
-    <div className={`rounded-2xl border p-4 ${warn ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-white"}`}>
-      <div className={`text-[10px] font-black uppercase tracking-[0.16em] ${warn ? "text-amber-700" : "text-slate-500"}`}>
-        {label}
+    <button type="button" onClick={() => onOpen(item)} className="group rounded-[24px] border border-slate-200 bg-white p-4 text-left shadow-[0_12px_34px_rgba(15,23,42,.055)] transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_48px_rgba(15,23,42,.095)]">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[.14em] ${item.ready ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-900"}`}>{item.ready ? "Ready" : "Needs details"}</div>
+        <div className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-[.14em] text-slate-600">{typeLabel(item.type)}</div>
       </div>
-      <div className="mt-2 whitespace-pre-wrap break-words text-sm font-black leading-6 text-slate-950">
-        {clean(value) || "Not found"}
-      </div>
-    </div>
-  );
-}
-
-function Section({ title, note, children }) {
-  return (
-    <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
-      <div className="mb-4">
-        <div className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">{title}</div>
-        {note ? <p className="mt-2 text-sm font-bold leading-6 text-slate-600">{note}</p> : null}
-      </div>
-      {children}
-    </section>
+      <h3 className="mt-3 text-xl font-black tracking-[-.05em] text-slate-950">{item.title}</h3>
+      {item.meta ? <p className="mt-1 text-sm font-black text-slate-500">{item.meta}</p> : null}
+      <p className="mt-2 line-clamp-2 text-sm font-bold leading-6 text-slate-600">{item.summary}</p>
+      <div className="mt-4 inline-flex rounded-2xl bg-slate-950 px-4 py-2 text-sm font-black text-white group-hover:bg-orange-500">Review slip</div>
+    </button>
   );
 }
 
 function Field({ name, form, setForm }) {
-  const label = labelFor(name);
-
-  if (name === "worker_id" && Array.isArray(form.available_workers) && form.available_workers.length) {
-    return (
-      <label className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-        <span className="text-[10px] font-black uppercase tracking-[.14em] text-slate-500">{label}</span>
-        <select
-          value={form.worker_id || ""}
-          onChange={(event) => setForm((prev) => ({ ...prev, worker_id: event.target.value }))}
-          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold"
-        >
-          <option value="">Choose worker</option>
-          {form.available_workers.map((worker, index) => (
-            <option key={worker.id || worker.email || worker.name || index} value={worker.id || worker.email || worker.name || ""}>
-              {[worker.name, worker.email, worker.region, worker.reason].filter(Boolean).join(" · ")}
-            </option>
-          ))}
-        </select>
-      </label>
-    );
-  }
-
-  const big = [
-    "message", "description", "invoice_description", "quote_description", "job_description",
-    "email_body", "sms_message", "follow_up_message", "client_history", "conflict_check",
-    "client_notes", "customer_notes", "job_notes", "worker_note", "completion_note",
-  ].includes(name);
-
+  const value = clean(form[name]);
+  const big = ["message", "description", "invoice_description", "quote_description", "job_description", "email_body", "follow_up_message"].includes(name);
   return (
-    <label className={`rounded-2xl border p-3 ${has(form[name]) ? "border-slate-200 bg-slate-50" : "border-amber-200 bg-amber-50"}`}>
-      <span className={`text-[10px] font-black uppercase tracking-[.14em] ${has(form[name]) ? "text-slate-500" : "text-amber-700"}`}>
-        {has(form[name]) ? label : `Missing ${label}`}
-      </span>
-
-      {big ? (
-        <textarea
-          rows={5}
-          value={clean(form[name])}
-          onChange={(event) => setForm((prev) => ({ ...prev, [name]: event.target.value }))}
-          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold"
-        />
-      ) : (
-        <input
-          value={clean(form[name])}
-          onChange={(event) => setForm((prev) => ({ ...prev, [name]: event.target.value }))}
-          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold"
-        />
-      )}
+    <label className={`rounded-2xl border p-3 ${value ? "border-slate-200 bg-white" : "border-amber-200 bg-amber-50"}`}>
+      <span className={`text-[10px] font-black uppercase tracking-[.14em] ${value ? "text-slate-500" : "text-amber-700"}`}>{value ? labelFor(name) : `Missing ${labelFor(name)}`}</span>
+      {big ? <textarea rows={4} value={value} onChange={(event) => setForm((prev) => ({ ...prev, [name]: event.target.value }))} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold outline-none focus:border-orange-300" /> : <input value={value} onChange={(event) => setForm((prev) => ({ ...prev, [name]: event.target.value }))} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold outline-none focus:border-orange-300" />}
     </label>
   );
 }
 
-function LineItems({ form }) {
-  const items = lineItems(form);
-
-  if (!items.length) {
-    return <div className="rounded-2xl bg-slate-50 p-4 text-sm font-bold text-slate-500">No line items found yet.</div>;
-  }
-
+function Detail({ label, value, warn }) {
   return (
-    <div className="overflow-hidden rounded-[22px] border border-slate-200">
-      <table className="w-full border-collapse text-left text-sm">
-        <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
-          <tr>
-            <th className="p-4">Item</th>
-            <th className="p-4 text-right">Qty</th>
-            <th className="p-4 text-right">Rate</th>
-            <th className="p-4 text-right">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((line, index) => {
-            const qty = first(line.quantity, line.qty, 1);
-            const rate = first(line.rate, line.price, line.unit_price, line.total, line.amount);
-            const total = first(line.total, line.amount, Number(qty || 1) * Number(rate || 0));
-
-            return (
-              <tr key={index} className="border-t border-slate-200">
-                <td className="p-4 font-bold text-slate-950">{first(line.description, line.name, line.title, "Service work")}</td>
-                <td className="p-4 text-right font-bold text-slate-700">{qty}</td>
-                <td className="p-4 text-right font-bold text-slate-700">{money(rate)}</td>
-                <td className="p-4 text-right font-black text-slate-950">{money(total)}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+    <div className={`rounded-2xl border p-4 ${warn ? "border-amber-200 bg-amber-50" : "border-slate-200 bg-white"}`}>
+      <div className={`text-[10px] font-black uppercase tracking-[.14em] ${warn ? "text-amber-700" : "text-slate-500"}`}>{label}</div>
+      <div className="mt-2 whitespace-pre-wrap break-words text-sm font-black leading-6 text-slate-950">{clean(value) || "Not found"}</div>
     </div>
   );
 }
@@ -554,40 +253,27 @@ function SlipModal({ item, onClose, onChanged }) {
   React.useEffect(() => {
     setForm({ ...(item?.form || {}) });
     setMessage("");
-  }, [item?.id, item?.form]);
+  }, [item?.id]);
 
   if (!item) return null;
-
   const type = String(item.type || form.action_type || "").toLowerCase();
   const missing = requiredFields(type).filter((key) => !has(form[key]));
   const ready = missing.length === 0;
-  const editableKeys = relevantKeys(form, type, missing);
-
+  const keys = editableKeys(form, type, missing);
   const total = first(form.total, form.amount_due, form.amount, form.price, form.subtotal, form.quote_amount);
   const clientName = first(form.client_name, form.customer_name, form.name);
   const clientEmail = first(form.customer_email, form.client_email, form.email);
-  const clientPhone = first(form.client_phone, form.customer_phone, form.phone);
   const jobTitle = first(form.job_title, form.job_name, form.service_type);
-  const jobAddress = first(form.job_address, form.site_address, form.address, form.client_address);
   const workerName = first(form.worker_name, form.assigned_worker_name, form.recommended_worker_name, form.worker_id);
-  const invoiceNumber = first(form.invoice_number, form.invoice_id);
-  const quoteNumber = first(form.quote_number, form.quote_id);
-  const preparedMessage = first(form.message, form.email_body, form.sms_message, form.follow_up_message, form.description);
-  const dueDate = first(form.due_date, form.payment_due_date);
 
   async function saveOnly() {
     setBusy(true);
     setMessage("");
-
     try {
       const res = await patch(`/ai/operator/slips/${item.id}`, form);
-
-      if (res?.success === false || res?.data?.success === false) {
-        throw new Error(res?.error || res?.data?.error || "Could not save slip");
-      }
-
+      if (res?.success === false || res?.data?.success === false) throw new Error(res?.error || res?.data?.error || "Could not save slip");
       toast.success("Slip saved");
-      setMessage("Saved. These edited details will be used when approved.");
+      setMessage("Saved. These details will be used when approved.");
       if (onChanged) await onChanged();
     } catch (error) {
       toast.error(error?.message || "Could not save slip");
@@ -604,23 +290,13 @@ function SlipModal({ item, onClose, onChanged }) {
       setMessage(`Missing before approval: ${names}`);
       return;
     }
-
     setBusy(true);
     setMessage("");
-
     try {
       const saveRes = await patch(`/ai/operator/slips/${item.id}`, form);
-
-      if (saveRes?.success === false || saveRes?.data?.success === false) {
-        throw new Error(saveRes?.error || saveRes?.data?.error || "Could not save slip before approval");
-      }
-
+      if (saveRes?.success === false || saveRes?.data?.success === false) throw new Error(saveRes?.error || saveRes?.data?.error || "Could not save slip before approval");
       const runRes = await post(`/ai/operator/actions/${item.id}/approve-send-final`, form);
-
-      if (runRes?.success === false || runRes?.data?.success === false) {
-        throw new Error(runRes?.error || runRes?.data?.error || "Approval failed");
-      }
-
+      if (runRes?.success === false || runRes?.data?.success === false) throw new Error(runRes?.error || runRes?.data?.error || "Approval failed");
       toast.success(runRes?.data?.message || "Approved");
       if (onChanged) await onChanged();
       onClose();
@@ -633,164 +309,58 @@ function SlipModal({ item, onClose, onChanged }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[2147483647] h-[100dvh] w-screen overflow-hidden bg-[#0f1722] text-slate-950" role="dialog" aria-modal="true">
-      <section className="flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#0f1722]">
-        <header className="shrink-0 border-b border-white/10 bg-[#0f1722] px-5 py-5 text-white md:px-9 md:py-7">
+    <div className="fixed inset-0 z-[2147483647] overflow-y-auto bg-slate-950/70 p-3 text-slate-950 backdrop-blur-sm md:p-6" role="dialog" aria-modal="true">
+      <section className="mx-auto min-h-[calc(100dvh-24px)] max-w-6xl overflow-hidden rounded-[34px] border border-slate-200 bg-[#f7f3ea] shadow-2xl md:min-h-[calc(100dvh-48px)]">
+        <header className="border-b border-slate-200 bg-white p-5 md:p-7">
           <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <div className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-200">
-                Approval slip
-              </div>
-              <h1 className="mt-3 text-4xl font-black leading-[0.9] tracking-[-0.075em] text-white md:text-6xl">
-                {item.title || typeLabel(type)}
-              </h1>
-              <p className="mt-3 max-w-5xl text-sm font-bold leading-6 text-slate-300">
-                Review the details, edit anything wrong, then approve when it looks right.
-              </p>
+            <div>
+              <div className="inline-flex rounded-full bg-orange-100 px-3 py-1 text-[10px] font-black uppercase tracking-[.18em] text-orange-700">Approval slip</div>
+              <h1 className="mt-3 text-4xl font-black leading-[.95] tracking-[-.07em] text-slate-950 md:text-6xl">{item.title || typeLabel(type)}</h1>
+              <p className="mt-3 max-w-3xl text-sm font-bold leading-6 text-slate-600">Review, edit, save, then approve when it looks right.</p>
             </div>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="shrink-0 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/20"
-            >
-              Close
-            </button>
+            <button type="button" onClick={onClose} className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white">Close</button>
           </div>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto bg-[#f5f7f1] p-4 md:p-7">
-          <div className="grid min-h-full w-full gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
-            <div className="space-y-5">
-              <section className={`rounded-[28px] border p-5 ${ready ? "border-emerald-200 bg-emerald-50" : "border-amber-300 bg-amber-50"}`}>
-                <div className={`text-[11px] font-black uppercase tracking-[0.18em] ${ready ? "text-emerald-700" : "text-amber-700"}`}>
-                  {ready ? "Ready to approve" : "Needs details"}
-                </div>
-                <h2 className="mt-2 text-3xl font-black tracking-[-0.05em]">
-                  {ready ? "Required details are filled." : "Fill the missing details before approval."}
-                </h2>
+        <main className="grid gap-5 p-4 md:p-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="space-y-5">
+            <section className={`rounded-[28px] border p-5 ${ready ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
+              <div className={`text-[10px] font-black uppercase tracking-[.18em] ${ready ? "text-emerald-700" : "text-amber-700"}`}>{ready ? "Ready to approve" : "Needs details"}</div>
+              <h2 className="mt-2 text-3xl font-black tracking-[-.06em]">{ready ? "Everything needed is filled." : "Fill missing details before approval."}</h2>
+              {!ready ? <div className="mt-4 flex flex-wrap gap-2">{missing.map((key) => <span key={key} className="rounded-full border border-amber-300 bg-white px-3 py-1 text-xs font-black text-amber-900">Missing {labelFor(key)}</span>)}</div> : null}
+            </section>
 
-                {!ready ? (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {missing.map((key) => (
-                      <span key={key} className="rounded-full border border-amber-300 bg-white px-3 py-1 text-xs font-black text-amber-900">
-                        Missing {labelFor(key)}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-              </section>
-
-              <Section title="Main details" note="Check who this affects, what will happen, and whether the money/status is right.">
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                  <InfoCard label="Client / customer" value={clientName} warn={!clientName} />
-                  <InfoCard label="Email" value={clientEmail} warn={(type.includes("send") || type.includes("quote") || type.includes("invoice")) && !clientEmail} />
-                  <InfoCard label="Phone" value={clientPhone} />
-                  <InfoCard label="Amount" value={money(total)} warn={(type.includes("invoice") || type.includes("quote")) && !total} />
-                  <InfoCard label="Job" value={jobTitle} />
-                  <InfoCard label="Address / site" value={jobAddress} warn={(type.includes("job") || type.includes("assign")) && !jobAddress} />
-                  <InfoCard label="Worker" value={workerName} warn={(type.includes("assign") || type.includes("worker")) && !workerName} />
-                  <InfoCard label="Due date" value={dateText(dueDate)} />
-                  <InfoCard label="Invoice" value={invoiceNumber} />
-                  <InfoCard label="Quote" value={quoteNumber} />
-                  <InfoCard label="Status" value={first(form.status, form.job_status, form.invoice_status, form.quote_status)} />
-                  <InfoCard label="Action" value={typeLabel(type)} />
-                </div>
-              </Section>
-
-              <Section title="What Churvox will do" note="Nothing is sent or changed until you approve.">
-                <div className="grid gap-3 md:grid-cols-2">
-                  <InfoCard label="Summary" value={item.summary || "Churvox prepared this from connected records."} />
-                  <InfoCard label="When approved" value={item.what_will_happen || outcome(type)} />
-                  <InfoCard label="Reason" value={item.reason || "Churvox found this action from your business records."} />
-                  <InfoCard label="Prepared wording" value={preparedMessage} warn={(type.includes("send") || type.includes("quote") || type.includes("reminder")) && !preparedMessage} />
-                </div>
-              </Section>
-
-              <Section title="Edit before approval" note="Fix missing or wrong information here. Saved values are used when approved.">
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                  {editableKeys.map((key) => (
-                    <Field key={key} name={key} form={form} setForm={setForm} />
-                  ))}
-                </div>
-              </Section>
-
-              {Array.isArray(form.available_workers) && form.available_workers.length ? (
-                <Section title="Worker options" note="Worker choices Churvox found for this assignment.">
-                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    {form.available_workers.map((worker, index) => (
-                      <div key={worker.id || worker.email || worker.name || index} className="rounded-2xl border border-slate-200 bg-white p-4">
-                        <div className="text-lg font-black">{worker.name || worker.email || `Worker ${index + 1}`}</div>
-                        <div className="mt-2 space-y-1 text-sm font-bold text-slate-600">
-                          {worker.email ? <div>Email: {worker.email}</div> : null}
-                          {worker.phone ? <div>Phone: {worker.phone}</div> : null}
-                          {worker.region ? <div>Region: {worker.region}</div> : null}
-                          {worker.reason ? <div>Reason: {worker.reason}</div> : null}
-                          {worker.conflict ? <div className="text-amber-700">Conflict: {worker.conflict}</div> : null}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Section>
-              ) : null}
-
-              <Section title="Line items / pricing" note="Line items, descriptions and amounts Churvox found.">
-                <LineItems form={form} />
-              </Section>
-
-              <CommandSlipEverything record={{ ...item, form }} context="Approval slip" />
-            </div>
-
-            <aside className="rounded-[30px] border border-white/10 bg-[#0f1722] p-5 text-white shadow-[0_18px_55px_rgba(15,23,42,0.18)] xl:sticky xl:top-0 xl:h-fit">
-              <div className="text-[11px] font-black uppercase tracking-[0.18em] text-cyan-200">Owner approval</div>
-              <h2 className="mt-2 text-3xl font-black tracking-[-0.05em] text-white">Review first.</h2>
-
-              <div className="mt-5 rounded-2xl bg-white/10 p-4">
-                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Status</div>
-                <div className="mt-2 text-sm font-black text-white">{ready ? "Ready" : `Missing ${missing.length} field${missing.length === 1 ? "" : "s"}`}</div>
+            <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,.055)]">
+              <div className="text-[10px] font-black uppercase tracking-[.18em] text-blue-600">Main details</div>
+              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <Detail label="Client" value={clientName} warn={!clientName} />
+                <Detail label="Email" value={clientEmail} warn={(type.includes("send") || type.includes("quote") || type.includes("invoice")) && !clientEmail} />
+                <Detail label="Amount" value={money(total)} warn={(type.includes("invoice") || type.includes("quote")) && !total} />
+                <Detail label="Job" value={jobTitle} />
+                <Detail label="Worker" value={workerName} warn={(type.includes("assign") || type.includes("worker")) && !workerName} />
+                <Detail label="Action" value={typeLabel(type)} />
               </div>
+            </section>
 
-              {message ? (
-                <div className="mt-4 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4 text-sm font-black text-cyan-100">
-                  {message}
-                </div>
-              ) : null}
-
-              <div className="mt-5 grid gap-3">
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={saveOnly}
-                  className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-black text-white hover:bg-white/15 disabled:opacity-60"
-                >
-                  {busy ? "Saving…" : "Save changes"}
-                </button>
-
-                <button
-                  type="button"
-                  disabled={busy || !ready}
-                  onClick={approveNow}
-                  className="rounded-2xl bg-cyan-300 px-4 py-3 text-sm font-black text-slate-950 hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {busy ? "Running…" : approveText(type)}
-                </button>
-
-                {!ready ? (
-                  <div className="rounded-2xl bg-amber-400/15 p-3 text-xs font-black leading-5 text-amber-100">
-                    Fill the missing fields before approval unlocks.
-                  </div>
-                ) : null}
-
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="rounded-2xl border border-white/15 px-4 py-3 text-sm font-black text-white hover:bg-white/10"
-                >
-                  Back to queue
-                </button>
-              </div>
-            </aside>
+            <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,.055)]">
+              <div className="text-[10px] font-black uppercase tracking-[.18em] text-blue-600">Edit before approval</div>
+              <p className="mt-2 text-sm font-bold text-slate-600">Fix anything wrong here. Saved values are used when approved.</p>
+              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">{keys.map((key) => <Field key={key} name={key} form={form} setForm={setForm} />)}</div>
+            </section>
           </div>
+
+          <aside className="h-fit rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,.055)] xl:sticky xl:top-5">
+            <div className="text-[10px] font-black uppercase tracking-[.18em] text-orange-600">Owner action</div>
+            <h2 className="mt-2 text-3xl font-black tracking-[-.06em] text-slate-950">Review first.</h2>
+            <p className="mt-2 text-sm font-bold leading-6 text-slate-600">Nothing is sent or changed until you approve.</p>
+            <div className="mt-4 rounded-2xl bg-slate-50 p-4"><div className="text-[10px] font-black uppercase tracking-[.14em] text-slate-500">Status</div><div className="mt-2 text-sm font-black text-slate-950">{ready ? "Ready" : `Missing ${missing.length} field${missing.length === 1 ? "" : "s"}`}</div></div>
+            {message ? <div className="mt-4 rounded-2xl bg-cyan-50 p-4 text-sm font-black text-cyan-900">{message}</div> : null}
+            <div className="mt-5 grid gap-3">
+              <button type="button" disabled={busy} onClick={saveOnly} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-950 disabled:opacity-60">{busy ? "Saving…" : "Save changes"}</button>
+              <button type="button" disabled={busy || !ready} onClick={approveNow} className="rounded-2xl bg-orange-400 px-4 py-3 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Running…" : approveText(type)}</button>
+              <button type="button" onClick={onClose} className="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white">Back to Command Board</button>
+            </div>
+          </aside>
         </main>
       </section>
     </div>
@@ -807,36 +377,25 @@ export default function CommandDeskQueuePage() {
 
   const load = React.useCallback(async () => {
     const res = await get("/ai/operator/slips");
-    const rows = Array.isArray(res?.data?.data)
-      ? res.data.data
-      : Array.isArray(res?.data?.actions)
-        ? res.data.actions
-        : [];
-
+    const rows = Array.isArray(res?.data?.data) ? res.data.data : Array.isArray(res?.data?.actions) ? res.data.actions : [];
     setItems(rows.map(normalize));
     setReport(res?.data?.report || null);
     setSummary(res?.data?.summary || null);
   }, [get]);
 
-  React.useEffect(() => {
-    load();
-  }, [load]);
+  React.useEffect(() => { load(); }, [load]);
 
   async function rebuild() {
     setBusy(true);
-
     try {
       const res = await post("/ai/operator/rebuild-slips", {});
-
       if (res?.success) {
         const rows = Array.isArray(res?.data?.actions) ? res.data.actions : [];
         setItems(rows.map(normalize));
         setReport(res?.data?.report || null);
         setSummary(res?.data?.summary || null);
         toast.success(`Refreshed ${rows.length} action${rows.length === 1 ? "" : "s"}`);
-      } else {
-        toast.error(res?.error || "Could not refresh approval queue");
-      }
+      } else toast.error(res?.error || "Could not refresh approval queue");
     } finally {
       setBusy(false);
     }
@@ -844,17 +403,13 @@ export default function CommandDeskQueuePage() {
 
   async function repairCompletedJobs() {
     setBusy(true);
-
     try {
       const res = await post("/ai/operator/repair-completed-jobs", {});
       const ok = res?.success && res?.data?.success !== false;
-
       if (ok) {
         toast.success(res?.data?.message || res?.message || "Completed jobs checked");
         await load();
-      } else {
-        toast.error(res?.data?.error || res?.error || "Could not check completed jobs");
-      }
+      } else toast.error(res?.data?.error || res?.error || "Could not check completed jobs");
     } catch (error) {
       toast.error(error?.message || "Could not check completed jobs");
     } finally {
@@ -866,165 +421,58 @@ export default function CommandDeskQueuePage() {
   const ready = visibleItems.filter((item) => item.ready);
   const needs = visibleItems.filter((item) => !item.ready);
   const visibleSummaryItems = Array.isArray(summary?.items) ? summary.items : [];
+  const cash = money(report?.unpaid_invoice_total || report?.outstanding_total || report?.amount_due_total || 0);
 
   return (
-    <main className="fixed inset-0 z-[2147483000] overflow-y-auto bg-[#f5f7f1] text-slate-950">
-      <div className="flex min-h-screen">
-        <Sidebar />
-
-        <section className="min-w-0 flex-1 p-5 lg:p-8">
-          <section className="grid gap-5 xl:grid-cols-[1fr_420px]">
-            <div className="rounded-[30px] bg-[#0f1722] p-6 text-white shadow-[0_26px_80px_rgba(15,23,42,0.20)] md:p-8">
-              <span className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[.2em] text-cyan-200">
-                Command Board
-              </span>
-              <h1 className="mt-4 max-w-4xl text-4xl font-black leading-[.95] tracking-[-.07em] lg:text-6xl">
-                Today’s admin is ready to review.
-              </h1>
-              <p className="mt-4 max-w-3xl text-sm font-bold leading-6 text-slate-300 md:text-base">
-                Check prepared invoices, quote follow-ups, job actions and reminders before anything is sent or changed.
-              </p>
-
-              <div className="mt-5 flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={repairCompletedJobs}
-                  disabled={busy}
-                  className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-xs font-black uppercase tracking-[.14em] text-white hover:bg-white/15 disabled:opacity-60"
-                >
-                  {busy ? "Checking…" : "Check completed jobs"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={rebuild}
-                  disabled={busy}
-                  className="rounded-2xl bg-cyan-300 px-5 py-3 text-xs font-black uppercase tracking-[.14em] text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200 disabled:opacity-60"
-                >
-                  {busy ? "Refreshing…" : "Refresh approval queue"}
-                </button>
-              </div>
+    <main className="fixed inset-0 z-[2147483000] overflow-y-auto bg-[#f7f3ea] text-slate-950" data-industrial-simple-page="command-board" data-command-canvas>
+      <section className="mx-auto max-w-7xl p-4 pb-28 md:p-6 xl:p-8">
+        <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,.075)] md:p-8">
+            <span className="inline-flex rounded-full bg-orange-100 px-4 py-2 text-[10px] font-black uppercase tracking-[.2em] text-orange-700">Command Board</span>
+            <h1 className="mt-5 max-w-4xl text-5xl font-black leading-[.92] tracking-[-.08em] text-slate-950 md:text-7xl">Churvox does the admin. You approve.</h1>
+            <p className="mt-4 max-w-3xl text-sm font-bold leading-7 text-slate-600 md:text-base">One clean place to see what needs attention, what Churvox prepared, and what button to press next.</p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button type="button" onClick={rebuild} disabled={busy} className="rounded-2xl bg-orange-400 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-orange-500/20 disabled:opacity-60">{busy ? "Refreshing…" : "Review AI actions"}</button>
+              <button type="button" onClick={repairCompletedJobs} disabled={busy} className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-950 disabled:opacity-60">{busy ? "Checking…" : "Check completed jobs"}</button>
+              <Link to="/jobs/new" className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-950 no-underline">Create job</Link>
             </div>
+          </div>
 
-            <aside className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
-              <div className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Approval queue</div>
-              <h2 className="mt-2 text-3xl font-black tracking-[-.06em]">Review next</h2>
-              <p className="mt-2 text-sm font-bold leading-6 text-slate-600">Churvox has prepared the admin that needs your approval.</p>
-
-              <div className="mt-5 grid grid-cols-2 gap-3">
-                <div className="rounded-2xl bg-emerald-50 p-4">
-                  <div className="text-3xl font-black text-emerald-700">{ready.length}</div>
-                  <div className="text-xs font-black uppercase tracking-[.14em] text-emerald-800">ready</div>
-                </div>
-                <div className="rounded-2xl bg-amber-50 p-4">
-                  <div className="text-3xl font-black text-amber-700">{needs.length}</div>
-                  <div className="text-xs font-black uppercase tracking-[.14em] text-amber-800">need details</div>
-                </div>
-              </div>
-            </aside>
-          </section>
-
-          {summary ? (
-            <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
-              <div className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Today’s review</div>
-              <h2 className="mt-2 text-3xl font-black tracking-[-.06em] text-slate-950">What needs approval</h2>
-              <p className="mt-2 text-sm font-bold text-slate-600">
-                {safeHeadline(summary.headline)}
-              </p>
-
-              {visibleSummaryItems.length ? (
-                <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-5">
-                  {visibleSummaryItems.map((summaryItem) => (
-                    <div key={summaryItem} className="rounded-2xl bg-slate-50 p-3 text-sm font-black text-slate-800">
-                      {summaryItem}
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-
-              {summary.needs_attention ? (
-                <div className="mt-3 rounded-2xl bg-amber-100 p-3 text-sm font-black text-amber-900">
-                  {summary.needs_attention} action{summary.needs_attention === 1 ? "" : "s"} need details before approval.
-                </div>
-              ) : null}
-            </section>
-          ) : null}
-
-          {report ? (
-            <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
-              <div className="text-[10px] font-black uppercase tracking-[.2em] text-slate-500">Records checked</div>
-              <h2 className="mt-2 text-2xl font-black tracking-[-.05em]">Churvox reviewed these records</h2>
-              <div className="mt-4 grid gap-3 md:grid-cols-4">
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <div className="text-3xl font-black">{report.jobs_found ?? 0}</div>
-                  <div className="text-xs font-black uppercase tracking-[.14em] text-slate-500">jobs</div>
-                </div>
-
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <div className="text-3xl font-black">{report.quotes_found ?? 0}</div>
-                  <div className="text-xs font-black uppercase tracking-[.14em] text-slate-500">quotes</div>
-                </div>
-
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <div className="text-3xl font-black">{report.invoices_found ?? 0}</div>
-                  <div className="text-xs font-black uppercase tracking-[.14em] text-slate-500">invoices</div>
-                </div>
-
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <div className="text-3xl font-black">{report.slips_created ?? 0}</div>
-                  <div className="text-xs font-black uppercase tracking-[.14em] text-slate-500">actions prepared</div>
-                </div>
-              </div>
-            </section>
-          ) : null}
-
-          <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <div className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Approval queue</div>
-                <h2 className="mt-2 text-3xl font-black tracking-[-.06em]">Prepared actions</h2>
-              </div>
-              <div className="text-sm font-bold text-slate-500">Review each action before approving.</div>
+          <aside className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,.075)]">
+            <div className="text-[10px] font-black uppercase tracking-[.2em] text-orange-600">Next best action</div>
+            <h2 className="mt-2 text-3xl font-black tracking-[-.06em] text-slate-950">Review approvals</h2>
+            <p className="mt-2 text-sm font-bold leading-6 text-slate-600">{ready.length ? `${ready.length} action${ready.length === 1 ? "" : "s"} ready now.` : needs.length ? `${needs.length} action${needs.length === 1 ? "" : "s"} need details.` : "No urgent approval waiting."}</p>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="rounded-2xl bg-emerald-50 p-4"><div className="text-3xl font-black text-emerald-700">{ready.length}</div><div className="text-xs font-black uppercase tracking-[.14em] text-emerald-800">ready</div></div>
+              <div className="rounded-2xl bg-amber-50 p-4"><div className="text-3xl font-black text-amber-700">{needs.length}</div><div className="text-xs font-black uppercase tracking-[.14em] text-amber-800">need details</div></div>
             </div>
-
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
-              {visibleItems.slice(0, 24).map((item) => (
-                <button
-                  key={item.id || item.title}
-                  type="button"
-                  onClick={() => setOpen(item)}
-                  className={`rounded-[22px] border p-4 text-left transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-[0_20px_55px_rgba(15,23,42,0.10)] ${
-                    item.ready ? "bg-white" : "border-amber-200 bg-amber-50"
-                  }`}
-                >
-                  <div className={`text-[10px] font-black uppercase tracking-[.18em] ${item.ready ? "text-blue-600" : "text-amber-700"}`}>
-                    {item.ready ? "Ready" : "Needs details"} · {typeLabel(item.type)}
-                  </div>
-
-                  <div className="mt-2 text-lg font-black text-slate-950">{item.title}</div>
-
-                  {item.meta ? <div className="mt-1 text-sm font-black text-slate-500">{item.meta}</div> : null}
-
-                  <p className="mt-2 text-sm font-bold leading-6 text-slate-600">
-                    {item.ready ? item.summary : `Missing: ${item.missing.map(labelFor).join(", ")}`}
-                  </p>
-
-                  <div className="mt-3 inline-flex rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white">
-                    Review & approve
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            {!items.length ? (
-              <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm font-black text-amber-900">
-                No prepared actions yet. Refresh the approval queue to check completed jobs, invoices and quote follow-ups.
-              </div>
-            ) : null}
-          </section>
+          </aside>
         </section>
-      </div>
 
+        <section className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          <StatCard label="Actions" value={visibleItems.length} copy="Prepared admin slips waiting in Churvox." tone="blue" />
+          <StatCard label="Ready" value={ready.length} copy="Can be approved after review." tone="green" />
+          <StatCard label="Need details" value={needs.length} copy="Missing info before approval." tone="amber" />
+          <StatCard label="Unpaid" value={cash || "$0.00"} copy="Invoice money needing review." />
+        </section>
+
+        {summary ? (
+          <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,.055)]">
+            <div className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Today’s review</div>
+            <h2 className="mt-2 text-3xl font-black tracking-[-.06em] text-slate-950">What needs approval</h2>
+            <p className="mt-2 text-sm font-bold text-slate-600">{summary.headline || "Churvox checked your business and prepared the next admin actions."}</p>
+            {visibleSummaryItems.length ? <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-5">{visibleSummaryItems.map((summaryItem) => <div key={summaryItem} className="rounded-2xl bg-slate-50 p-3 text-sm font-black text-slate-800">{summaryItem}</div>)}</div> : null}
+          </section>
+        ) : null}
+
+        <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,.055)]">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div><div className="text-[10px] font-black uppercase tracking-[.2em] text-blue-600">Approval queue</div><h2 className="mt-2 text-3xl font-black tracking-[-.06em] text-slate-950">Prepared actions</h2></div>
+            <div className="text-sm font-bold text-slate-500">Tap a card to open its slip.</div>
+          </div>
+          {visibleItems.length ? <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">{visibleItems.slice(0, 24).map((item) => <ActionCard key={item.id || item.title} item={item} onOpen={setOpen} />)}</div> : <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm font-black text-amber-900">No prepared actions yet. Tap Review AI actions to check completed jobs, invoices and quote follow-ups.</div>}
+        </section>
+      </section>
       {open ? <SlipModal item={open} onClose={() => setOpen(null)} onChanged={load} /> : null}
     </main>
   );
