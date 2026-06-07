@@ -89,7 +89,7 @@ function BusinessRoute({ children }) {
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
   if (isWorker) return <Navigate to="/worker/jobs" replace />;
-  if (isPayroll) return <Navigate to="/payroll" replace />;
+  if (isPayroll) return <Navigate to="/payroll-board" replace />;
   if (!hasAppAccess) return <Navigate to="/plans" replace />;
   return <AppPage>{children}</AppPage>;
 }
@@ -99,7 +99,7 @@ function OwnerRoute({ children }) {
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
   if (isWorker) return <Navigate to="/worker/jobs" replace />;
-  if (isPayroll) return <Navigate to="/payroll" replace />;
+  if (isPayroll) return <Navigate to="/payroll-board" replace />;
   if (!isOwnerUser) return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
   return <AppPage>{children}</AppPage>;
 }
@@ -125,24 +125,15 @@ function UpgradeRequiredPage({ requiredPlan = "pro", feature = "This feature" })
   const currentPlan = (user?.plan || "none").toLowerCase();
   const requiredName = requiredPlanLabel(requiredPlan);
   const currentName = nicePlanName(currentPlan) || "No plan";
-
   return (
     <main className="min-h-screen bg-[#f5f7f1] p-4 text-slate-950 md:p-8">
       <section className="mx-auto grid min-h-[72vh] max-w-4xl place-items-center">
         <div className="w-full rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.10)] md:p-9">
-          <div className="mb-4 inline-flex rounded-full bg-cyan-50 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-cyan-700">
-            Plan locked
-          </div>
-          <h1 className="mb-3 text-4xl font-black tracking-[-0.06em] md:text-6xl">
-            {feature} needs {requiredName}.
-          </h1>
-          <p className="mb-6 max-w-2xl text-base font-bold leading-7 text-slate-600">
-            Your current plan is {currentName}. This keeps Start, Crew, Operator and Command matched to the pricing page, so customers only see the tools included in their tier.
-          </p>
+          <div className="mb-4 inline-flex rounded-full bg-cyan-50 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-cyan-700">Plan locked</div>
+          <h1 className="mb-3 text-4xl font-black tracking-[-0.06em] md:text-6xl">{feature} needs {requiredName}.</h1>
+          <p className="mb-6 max-w-2xl text-base font-bold leading-7 text-slate-600">Your current plan is {currentName}. This keeps Start, Crew, Operator and Command matched to the pricing page, so customers only see the tools included in their tier.</p>
           <div className="flex flex-wrap gap-3">
-            {normalizedRole === "owner" || normalizedRole === "manager" ? (
-              <NavigateButton to="/plans">View plans</NavigateButton>
-            ) : null}
+            {normalizedRole === "owner" || normalizedRole === "manager" ? <NavigateButton to="/plans">View plans</NavigateButton> : null}
             <NavigateButton to="/dashboard" subtle>Back to Smart Hub</NavigateButton>
           </div>
         </div>
@@ -152,11 +143,7 @@ function UpgradeRequiredPage({ requiredPlan = "pro", feature = "This feature" })
 }
 
 function NavigateButton({ to, children, subtle = false }) {
-  return (
-    <NavigateLink to={to} className={subtle ? "rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900 no-underline" : "rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white no-underline"}>
-      {children}
-    </NavigateLink>
-  );
+  return <NavigateLink to={to} className={subtle ? "rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900 no-underline" : "rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white no-underline"}>{children}</NavigateLink>;
 }
 
 function NavigateLink({ to, className, children }) {
@@ -169,13 +156,9 @@ function PlanTierRoute({ children, requiredPlan = "pro", feature = "This feature
   if (!user) return <Navigate to="/login" replace />;
   if (isWorker) return <Navigate to="/worker/jobs" replace />;
   if (!hasAppAccess) return <Navigate to="/plans" replace />;
-  if (isPayroll && requiredPlan !== "enterprise") return <Navigate to="/payroll" replace />;
-
+  if (isPayroll && requiredPlan !== "enterprise") return <Navigate to="/payroll-board" replace />;
   const currentPlan = (user?.plan || "none").toLowerCase();
-  if (!hasPlanAtLeast(currentPlan, requiredPlan)) {
-    return <UpgradeRequiredPage requiredPlan={requiredPlan} feature={feature} />;
-  }
-
+  if (!hasPlanAtLeast(currentPlan, requiredPlan)) return <UpgradeRequiredPage requiredPlan={requiredPlan} feature={feature} />;
   return <AppPage>{children}</AppPage>;
 }
 
@@ -212,9 +195,7 @@ function App() {
         const token = localStorage.getItem("token");
         const backendUrl = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || process.env.REACT_APP_BACKEND_URL || "").replace(/\/$/, "");
         if (sessionId && token && backendUrl) {
-          try {
-            await fetch(`${backendUrl}/api/billing/confirm-checkout`, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }, credentials: "include", body: JSON.stringify({ session_id: sessionId }) });
-          } catch (err) { console.warn("confirm-checkout failed (non-fatal):", err); }
+          try { await fetch(`${backendUrl}/api/billing/confirm-checkout`, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }, credentials: "include", body: JSON.stringify({ session_id: sessionId }) }); } catch (err) { console.warn("confirm-checkout failed (non-fatal):", err); }
         }
         if (checkout === "success") toast.success(plan ? `Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan is now active` : "Plan updated");
         else if (checkout === "cancelled") toast.info("Checkout cancelled — no changes to your plan");
@@ -245,9 +226,11 @@ function App() {
             <Route path="/sample-mode" element={<Navigate to="/dashboard" replace />} />
             <Route path="/public/proof/:token" element={<PublicProofPackPage />} />
             <Route path="/offline-sync" element={<PrivateRoute><OfflineSyncPage /></PrivateRoute>} />
-            <Route path="/dispatch-board" element={<Navigate to="/crew-map" replace />} />
+            <Route path="/dispatch-board" element={<BusinessRoute><DispatchCommandPage /></BusinessRoute>} />
             <Route path="/dispatch/map" element={<BusinessRoute><WorkerMapCommandPage /></BusinessRoute>} />
-            <Route path="/crew-map" element={<BusinessRoute><DispatchCommandPage /></BusinessRoute>} />
+            <Route path="/crew-map" element={<Navigate to="/dispatch-board" replace />} />
+            <Route path="/dispatch" element={<Navigate to="/dispatch-board" replace />} />
+            <Route path="/calendar" element={<Navigate to="/dispatch-board" replace />} />
             <Route path="/message-approvals" element={<Navigate to="/dashboard" replace />} />
             <Route path="/trade-presets" element={<Navigate to="/settings-board" replace />} />
             <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
@@ -283,11 +266,9 @@ function App() {
             <Route path="/jobs/new" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
             <Route path="/jobs/:id" element={<BusinessRoute><JobDetailPage /></BusinessRoute>} />
             <Route path="/jobs/:id/edit" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
-            <Route path="/dispatch" element={<Navigate to="/crew-map" replace />} />
             <Route path="/integrations" element={<Navigate to="/settings-board" replace />} />
             <Route path="/automation" element={<Navigate to="/dashboard" replace />} />
             <Route path="/pipeline" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/calendar" element={<Navigate to="/crew-map" replace />} />
             <Route path="/clients/:clientId/workbench" element={<BusinessRoute><ClientWorkbenchCommandPage /></BusinessRoute>} />
             <Route path="/clients-board" element={<BusinessRoute><CustomerRecordsPage /></BusinessRoute>} />
             <Route path="/clients" element={<Navigate to="/clients-board" replace />} />
@@ -318,7 +299,7 @@ function App() {
             <Route path="/billing-confidence" element={<Navigate to="/plans" replace />} />
             <Route path="/team-board" element={<PlanTierRoute requiredPlan="team" feature="Team workspace"><TeamCommandPage /></PlanTierRoute>} />
             <Route path="/team" element={<Navigate to="/team-board" replace />} />
-            <Route path="/crew-ops" element={<Navigate to="/crew-map" replace />} />
+            <Route path="/crew-ops" element={<Navigate to="/dispatch-board" replace />} />
             <Route path="/notifications" element={<Navigate to="/dashboard" replace />} />
             <Route path="/automation/runs" element={<Navigate to="/dashboard" replace />} />
             <Route path="/payroll-board" element={<PlanTierRoute requiredPlan="enterprise" feature="Payroll workspace"><PayrollCommandPage /></PlanTierRoute>} />
