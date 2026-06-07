@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Request Work · Churvox</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#f7f3ea;color:#111827;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.wrap{min-height:100dvh;display:grid;place-items:center;padding:20px}.card{width:min(920px,100%);border:1px solid #e2e8f0;border-radius:34px;background:#fff;box-shadow:0 28px 90px rgba(15,23,42,.12);overflow:hidden}.hero{background:#0f172a;color:#fff;padding:34px}.pill{display:inline-flex;border-radius:999px;background:rgba(249,115,22,.14);color:#fed7aa;padding:9px 12px;font-size:11px;font-weight:950;letter-spacing:.18em;text-transform:uppercase}h1{margin:18px 0 0;font-size:clamp(42px,8vw,76px);line-height:.88;letter-spacing:-.08em}p{font-weight:800;line-height:1.65;color:#475569}.hero p{max-width:680px;color:#cbd5e1}.grid{display:grid;gap:16px;padding:24px}@media(min-width:780px){.grid{grid-template-columns:1fr 1fr}.span{grid-column:1/-1}}label{display:grid;gap:8px;font-size:11px;font-weight:950;letter-spacing:.14em;text-transform:uppercase;color:#64748b}input,textarea,select{width:100%;border:1px solid #cbd5e1;border-radius:18px;background:#f8fafc;padding:15px;font:inherit;font-size:15px;font-weight:750;color:#111827;outline:none}textarea{min-height:140px;resize:vertical}.actions{display:flex;gap:12px;flex-wrap:wrap;padding:0 24px 24px}button,a.btn{border:0;border-radius:18px;min-height:52px;padding:0 18px;font-weight:950;text-decoration:none;display:inline-grid;place-items:center}button{background:#f97316;color:#111827;box-shadow:0 14px 34px rgba(249,115,22,.25);cursor:pointer}.btn{background:#111827;color:#fff}.fine{padding:0 24px 26px;color:#64748b;font-size:13px;font-weight:750}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <div class="hero">
+        <span class="pill">Customer request form</span>
+        <h1>Request a job.</h1>
+        <p>This public intake page lets a customer send work details, address, job type and notes. Churvox saves it where possible and opens email as backup so the owner can approve the next step.</p>
+      </div>
+      <form id="requestForm">
+        <div class="grid">
+          <label>Name<input name="name" required placeholder="Customer name" /></label>
+          <label>Phone<input name="phone" required placeholder="Best phone number" /></label>
+          <label>Email<input name="email" type="email" placeholder="Optional email" /></label>
+          <label>Job type<select name="job_type"><option>Lawn care</option><option>Cleaning</option><option>Handyman</option><option>Painting</option><option>Plumbing</option><option>Electrical</option><option>Property maintenance</option><option>Other</option></select></label>
+          <label class="span">Address<input name="address" required placeholder="Job address" /></label>
+          <label class="span">What needs doing?<textarea name="notes" required placeholder="Tell us what you need done, timing, access notes, photos to follow, etc."></textarea></label>
+        </div>
+        <div class="actions"><button type="submit">Send request</button><a class="btn" href="/">Back to Churvox</a></div>
+        <div class="fine" id="status">Owner approval rule: requests become admin slips first. Nothing is auto-booked or auto-priced.</div>
+      </form>
+    </section>
+  </main>
+  <script>
+    const form = document.getElementById('requestForm');
+    const status = document.getElementById('status');
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const data = Object.fromEntries(new FormData(form).entries());
+      data.source = 'public_request_work';
+      data.created_at = new Date().toISOString();
+      status.textContent = 'Sending request...';
+      try {
+        const res = await fetch('/api/public/work-requests', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+        if (res.ok) { status.textContent = 'Request sent. The owner will review it before approving any job.'; form.reset(); return; }
+        throw new Error('API not ready');
+      } catch (err) {
+        localStorage.setItem('churvox_last_work_request', JSON.stringify(data));
+        const subject = encodeURIComponent('New Churvox work request');
+        const body = encodeURIComponent(Object.entries(data).map(([k,v]) => `${k}: ${v}`).join('\n'));
+        window.location.href = `mailto:hello@churvox.com?subject=${subject}&body=${body}`;
+        status.textContent = 'Saved locally and opened email backup.';
+      }
+    });
+  </script>
+</body>
+</html>
