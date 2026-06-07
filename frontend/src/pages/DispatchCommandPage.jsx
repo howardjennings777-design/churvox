@@ -1,273 +1,113 @@
 import React from "react";
-import { createPortal } from "react-dom";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
+import { industrialAction, industrialChip, industrialContentLane, industrialGhost, industrialPageShell } from "../components/industrialCommandTheme";
 
-const navGroups = [
-  { title: "Command", items: [["Command Board", "/dashboard", "CB"], ["AI Operator", "/ai-operator", "AI"], ["Approvals", "/ai-operator/approvals", "OK"], ["Notifications", "/notifications", "NT"]] },
-  { title: "Work", items: [["Jobs", "/jobs", "JB"], ["Dispatch", "/dispatch", "DP"], ["Clients", "/clients", "CL"], ["Quotes", "/quotes", "QT"], ["Invoices", "/invoices", "IV"], ["Money Desk", "/money-desk", "$"]] },
-  { title: "Crew & Admin", items: [["Team", "/team", "TM"], ["Crew Ops", "/crew-ops", "CO"], ["Payroll", "/payroll", "PR"], ["Reports", "/reports", "RP"]] },
-  { title: "System", items: [["Setup", "/onboarding", "SU"], ["Trade Presets", "/trade-presets", "TP"], ["Automation", "/automation", "AU"], ["Integrations", "/integrations", "IN"], ["Operator Tools", "/operator-tools", "OT"], ["Plans", "/plans", "PL"], ["Billing", "/billing-confidence", "BI"], ["Settings", "/settings", "ST"], ["Support", "/support", "?"]] },
-];
+const tileStyle = {
+  background: "linear-gradient(135deg, #111827, #070d16)",
+  color: "#ffffff",
+  boxShadow: "0 18px 46px rgba(2,6,23,.26), inset 0 1px 0 rgba(255,255,255,.06)",
+};
 
-const sampleJobs = [
-  { id: "sample-d1", title: "Lawn service", client_name: "Green Street Rentals", address: "12 Green St", status: "unassigned", scheduled_time: "8:30", region: "North", assigned_worker_name: "" },
-  { id: "sample-d2", title: "Rental cleanup", client_name: "ECB Property Maintenance", address: "44 Main Rd", status: "assigned", scheduled_time: "10:00", region: "Central", assigned_worker_name: "Mike" },
-  { id: "sample-d3", title: "Quote visit", client_name: "Sarah Williams", address: "9 Hill Lane", status: "needs_worker", scheduled_time: "1:30", region: "South", assigned_worker_name: "" },
-  { id: "sample-d4", title: "Hedge trim", client_name: "Wilson Family", address: "7 King St", status: "in_progress", scheduled_time: "3:00", region: "North", assigned_worker_name: "Tane" },
-];
-
-const sampleWorkers = [
-  { id: "sample-w1", name: "Mike", region: "Central", status: "available", assigned_jobs_count: 2, skills: ["Cleanup", "Photos"] },
-  { id: "sample-w2", name: "Tane", region: "North", status: "busy", assigned_jobs_count: 4, skills: ["Lawn care", "Hedges"] },
-  { id: "sample-w3", name: "Jo", region: "South", status: "available", assigned_jobs_count: 1, skills: ["Quotes", "Garden tidy"] },
-];
-
-function isActivePath(pathname, href) {
-  if (href === "/dashboard") return pathname === "/dashboard" || pathname === "/overview";
-  if (href === "/dispatch") return pathname === "/dispatch" || pathname === "/dispatch-board";
-  if (href === "/money-desk") return pathname === "/money-desk" || pathname === "/money";
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-function arr(value) {
-  const data = value?.data ?? value;
+function first(...values) { return values.find((value) => value !== undefined && value !== null && String(value).trim() !== "") || ""; }
+function listFrom(res, keys) {
+  const data = res?.data ?? res;
   if (Array.isArray(data)) return data;
-  if (Array.isArray(data?.jobs)) return data.jobs;
-  if (Array.isArray(data?.workers)) return data.workers;
-  if (Array.isArray(data?.items)) return data.items;
-  if (Array.isArray(data?.results)) return data.results;
-  if (Array.isArray(data?.data)) return data.data;
+  for (const key of keys) if (Array.isArray(data?.[key])) return data[key];
   return [];
 }
-
-function idOf(record) {
-  const raw = record?.id || record?._id || record?.job_id || record?.worker_id || record?.user_id || "";
-  if (typeof raw === "object" && raw?.$oid) return raw.$oid;
-  return String(raw || "");
-}
-
-function jobTitle(job) {
-  return job?.title || job?.job_title || job?.service_type || job?.description || "Untitled job";
-}
-
-function clientName(job) {
-  return job?.client_name || job?.customer_name || job?.client?.name || "No client saved";
-}
-
-function workerName(worker) {
-  return worker?.name || worker?.full_name || worker?.display_name || worker?.email || "Unnamed worker";
-}
-
-function statusOf(record) {
-  return String(record?.status || record?.availability || "unassigned").toLowerCase().replaceAll(" ", "_");
-}
-
-function pretty(value) {
-  return String(value || "").replaceAll("_", " ").replace(/\b\w/g, (m) => m.toUpperCase());
-}
-
-function isUnassigned(job) {
-  const status = statusOf(job);
-  return !job?.assigned_worker_id && !job?.assigned_worker_name && ["unassigned", "needs_worker", "new", "draft", "scheduled"].includes(status);
-}
-
-function workerLoad(worker) {
-  return Number(worker?.assigned_jobs_count || worker?.jobs_count || worker?.open_jobs || worker?.active_jobs || 0);
-}
-
-function statusStyle(status) {
-  if (["completed", "ready", "available"].includes(status)) return "border-emerald-200 bg-emerald-50 text-emerald-800";
-  if (["assigned", "in_progress", "busy", "working"].includes(status)) return "border-blue-200 bg-blue-50 text-blue-800";
-  if (["unassigned", "needs_worker", "pending"].includes(status)) return "border-amber-200 bg-amber-50 text-amber-800";
-  if (["cancelled", "blocked", "overdue"].includes(status)) return "border-red-200 bg-red-50 text-red-800";
-  return "border-slate-200 bg-slate-100 text-slate-700";
-}
-
-function Sidebar() {
-  const { pathname } = useLocation();
-  return (
-    <aside className="hidden w-[292px] shrink-0 overflow-y-auto border-r border-slate-800 bg-[#0f1722] p-4 text-white lg:block">
-      <div className="mb-6 flex items-center gap-3 px-1">
-        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-cyan-500 text-lg font-black text-slate-950">C</div>
-        <div><div className="text-sm font-black tracking-[-0.03em]">CHURVOX</div><div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Command Desk</div></div>
-      </div>
-      <div className="space-y-5">
-        {navGroups.map((group) => (
-          <section key={group.title}>
-            <div className="mb-2 px-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{group.title}</div>
-            <nav className="space-y-1">
-              {group.items.map(([label, href, icon]) => {
-                const active = isActivePath(pathname, href);
-                return (
-                  <Link key={href} to={href} className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-black ${active ? "bg-white text-slate-950" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
-                    <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-xl text-[10px] font-black ${active ? "bg-slate-950 text-white" : "bg-white/10 text-cyan-200"}`}>{icon}</span>
-                    <span className="truncate">{label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-          </section>
-        ))}
-      </div>
-    </aside>
-  );
-}
-
+function idOf(item) { const raw = item?.id || item?._id || item?.job_id || item?.worker_id || item?.user_id || ""; return typeof raw === "object" && raw?.$oid ? raw.$oid : String(raw || ""); }
+function jobTitle(job) { return first(job?.title, job?.job_title, job?.job_name, job?.service_type, "Untitled job"); }
+function clientName(job) { return first(job?.client_name, job?.customer_name, job?.client?.name, "No client saved"); }
+function workerName(worker) { return first(worker?.name, worker?.full_name, worker?.display_name, worker?.email, "Unnamed worker"); }
+function assignedWorker(job) { return first(job?.assigned_worker_name, job?.worker_name, job?.assignee_name, job?.assigned_to_name, job?.assignedWorkerName, "Unassigned"); }
+function statusOf(item) { return String(first(item?.status, item?.job_status, item?.availability, "ready")).replaceAll("_", " "); }
+function rawStatus(item) { return statusOf(item).toLowerCase(); }
+function isDone(job) { const s = rawStatus(job); return s.includes("complete") || s.includes("finished") || s.includes("done"); }
+function isActiveJob(job) { const s = rawStatus(job); return s.includes("progress") || s.includes("start") || s.includes("active") || s.includes("timer"); }
+function isUnassigned(job) { const worker = assignedWorker(job); const s = rawStatus(job); return worker === "Unassigned" && !isDone(job) && !s.includes("cancel"); }
+function isFieldWorker(worker) { const role = String(first(worker?.role, worker?.account_type, "worker")).toLowerCase(); return role.includes("worker") || role.includes("field") || role.includes("manager"); }
+function workerLoad(worker) { return Number(first(worker?.assigned_jobs_count, worker?.jobs_count, worker?.open_jobs, worker?.active_jobs, 0)) || 0; }
+function scheduleKey(job) { return first(job?.scheduled_at, job?.scheduled_date, job?.date, job?.start_time, job?.scheduled_time, "unscheduled"); }
+function formatDate(value) { if (!value) return "Not set"; const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString(undefined, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }); }
 function recommendWorker(job, workers) {
-  const region = String(job?.region || job?.area || "").toLowerCase();
-  const sorted = [...workers].sort((a, b) => {
-    const aRegion = String(a?.region || a?.area || "").toLowerCase() === region ? -2 : 0;
-    const bRegion = String(b?.region || b?.area || "").toLowerCase() === region ? -2 : 0;
+  const region = String(first(job?.region, job?.area, job?.suburb, "")).toLowerCase();
+  const field = workers.filter(isFieldWorker);
+  const sorted = [...field].sort((a, b) => {
+    const aRegion = String(first(a?.region, a?.area, a?.suburb, "")).toLowerCase() === region ? -2 : 0;
+    const bRegion = String(first(b?.region, b?.area, b?.suburb, "")).toLowerCase() === region ? -2 : 0;
     return (aRegion + workerLoad(a)) - (bRegion + workerLoad(b));
   });
   return sorted[0] || null;
 }
-
-function DispatchCard({ job, workers, onOpen }) {
-  const status = statusOf(job);
-  const best = recommendWorker(job, workers);
-  const id = idOf(job);
-  return (
-    <article className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_70px_rgba(15,23,42,0.10)]">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{job?.scheduled_time || job?.scheduled_date || "No time set"}</span>
-          <h3 className="mt-1 text-lg font-black tracking-[-0.04em] text-slate-950">{jobTitle(job)}</h3>
-        </div>
-        <span className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${statusStyle(status)}`}>{pretty(status)}</span>
-      </div>
-      <div className="mt-3 space-y-1 text-sm font-bold text-slate-600">
-        <div>{clientName(job)}</div>
-        <div className="text-slate-400">{job?.address || job?.job_address || "No address saved"}</div>
-        <div className="text-slate-500">Assigned: {job?.assigned_worker_name || "Not assigned"}</div>
-        {isUnassigned(job) && best ? <div className="rounded-2xl border border-blue-100 bg-blue-50 px-3 py-2 text-blue-900">AI pick: {workerName(best)} · {best?.region || "region not set"}</div> : null}
-      </div>
-      <div className="mt-4 flex flex-wrap gap-3">
-        <button type="button" onClick={() => onOpen({ job, worker: best })} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Review slip</button>
-        {id && !id.startsWith("sample-") ? <Link to={`/jobs/${id}`} className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700" style={{ display: 'none' }}>Review slip</Link> : <Link to="/jobs" className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Open jobs</Link>}
-      </div>
-    </article>
-  );
+function conflictCount(jobs) {
+  const seen = new Map();
+  jobs.forEach((job) => {
+    const worker = assignedWorker(job);
+    if (worker === "Unassigned" || isDone(job)) return;
+    const key = `${worker}::${scheduleKey(job)}`;
+    seen.set(key, (seen.get(key) || 0) + 1);
+  });
+  return [...seen.values()].filter((count) => count > 1).length;
 }
+function statusClass(job) {
+  const s = rawStatus(job);
+  if (isDone(job)) return "bg-emerald-300 text-slate-950";
+  if (s.includes("progress") || s.includes("start") || s.includes("active")) return "bg-cyan-300 text-slate-950";
+  if (s.includes("pause")) return "bg-amber-300 text-slate-950";
+  if (s.includes("cancel")) return "bg-red-300 text-slate-950";
+  if (isUnassigned(job)) return "bg-orange-300 text-slate-950";
+  return "bg-slate-200 text-slate-950";
+}
+function Tape({ color = "#22d3ee" }) { return <span aria-hidden="true" className="absolute left-0 top-0 h-full w-2.5 rounded-l-[26px]" style={{ background: `linear-gradient(180deg, ${color}, #facc15)`, boxShadow: `0 0 18px ${color}66` }} />; }
+function Metric({ label, value, text, color }) { return <article className="relative overflow-hidden rounded-[28px] border border-white/10 p-5 pl-7 text-white" style={tileStyle}><Tape color={color} /><div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">{label}</div><div className="mt-3 text-4xl font-black tracking-[-0.07em] text-white">{value}</div><p className="mt-2 text-sm font-bold leading-6 text-slate-300">{text}</p></article>; }
+function Detail({ label, value }) { return <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4"><div className="text-[10px] font-black uppercase tracking-[.16em] text-amber-300">{label}</div><div className="mt-2 text-sm font-black leading-6 text-white">{String(value || "Not saved")}</div></div>; }
 
-function DispatchSlip({ active, onClose }) {
-  if (!active?.job) return null;
-  const { job, worker } = active;
-  const id = idOf(job);
+function DispatchSlip({ item, onClose, approved, onApprove }) {
+  if (!item?.job) return null;
+  const { job, worker } = item;
+  const jobId = idOf(job);
   return (
-    <div className="fixed inset-0 z-[2147483647] h-[100dvh] w-screen overflow-hidden bg-[#f5f7f1] text-slate-950" role="dialog" aria-modal="true">
-      <div className="flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#f5f7f1]">
-        <header className="relative overflow-hidden border-b border-slate-800 bg-slate-950 p-6 text-white md:p-7">
-          <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-blue-500/20 blur-3xl" />
-          <div className="relative flex items-start justify-between gap-4">
-            <div>
-              <div className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Dispatch Work Slip</div>
-              <h2 className="mt-4 text-3xl font-black leading-[0.95] tracking-[-0.07em] md:text-5xl">{jobTitle(job)}</h2>
-            </div>
-            <button type="button" onClick={onClose} className="rounded-2xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-black text-white hover:bg-white/15">Close</button>
-          </div>
-          <p className="relative mt-5 max-w-xl text-sm font-semibold leading-6 text-slate-300">{clientName(job)} · {job?.address || job?.job_address || "No address"}</p>
-        </header>
-
-        <main className="min-h-0 flex-1 overflow-y-auto bg-[#f4f6f8] p-5 md:p-6">
-          <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">AI dispatch check</div>
-            <p className="mt-3 text-lg font-black tracking-[-0.035em] text-slate-950">Recommended: {worker ? workerName(worker) : "No worker match yet"}</p>
-            <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-bold leading-6 text-blue-950">Review worker workload, region and schedule before assigning. This slip does not auto-assign without owner approval.</div>
-          </section>
-          <section className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Job region</div><div className="mt-1 text-sm font-black text-slate-950">{job?.region || job?.area || "Not set"}</div></div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Worker load</div><div className="mt-1 text-sm font-black text-slate-950">{worker ? `${workerLoad(worker)} open jobs` : "No worker"}</div></div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Current assignment</div><div className="mt-1 text-sm font-black text-slate-950">{job?.assigned_worker_name || "Unassigned"}</div></div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Scheduled</div><div className="mt-1 text-sm font-black text-slate-950">{job?.scheduled_time || job?.scheduled_date || "Not set"}</div></div>
-          </section>
-        </main>
-
-        <footer className="flex flex-wrap gap-3 border-t border-slate-200 bg-white p-5">
-          {id && !id.startsWith("sample-") ? <Link to={`/jobs/${id}`} className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Open job record</Link> : <Link to="/jobs" className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Open jobs</Link>}
-          <Link to="/team" className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-800 hover:bg-slate-50">Open team</Link>
-        </footer>
+    <div className="fixed inset-0 z-[2147483600] overflow-y-auto bg-slate-950/92 p-3 text-white backdrop-blur-xl md:p-6" role="dialog" aria-modal="true">
+      <div className="mx-auto flex min-h-[calc(100vh-24px)] max-w-6xl flex-col overflow-hidden rounded-[34px] border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 shadow-2xl md:min-h-[calc(100vh-48px)]">
+        <header className="flex items-start justify-between gap-4 border-b border-white/10 p-5 md:p-7"><div><div className="inline-flex rounded-full bg-amber-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-200">Crew Dispatch slip</div><h2 className="mt-3 text-4xl font-black leading-[0.95] tracking-[-0.07em] text-white md:text-6xl">{jobTitle(job)}</h2><p className="mt-4 max-w-3xl text-sm font-bold leading-6 text-slate-300 md:text-base">{clientName(job)} · {assignedWorker(job)} · {statusOf(job)}</p></div><button type="button" onClick={onClose} className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-slate-950">Close</button></header>
+        <div className="grid flex-1 gap-5 p-5 md:grid-cols-[1.15fr_.85fr] md:p-7">
+          <section className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5"><div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">Dispatch review</div><div className="mt-4 grid gap-3 md:grid-cols-2"><Detail label="Client" value={clientName(job)} /><Detail label="Status" value={statusOf(job)} /><Detail label="Current worker" value={assignedWorker(job)} /><Detail label="Recommended worker" value={worker ? workerName(worker) : "No match yet"} /><Detail label="Scheduled" value={formatDate(scheduleKey(job))} /><Detail label="Address" value={first(job?.address, job?.site_address, job?.job_address, "Not saved")} /></div></section>
+          <aside className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5"><div className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200">Owner action</div><p className="mt-3 text-sm font-bold leading-6 text-slate-300">Review workload, area and schedule before assigning. This page does not auto-assign or live-track crew.</p>{approved ? <div className="mt-4 rounded-3xl border border-emerald-300/25 bg-emerald-300/10 p-4 text-sm font-black text-emerald-100">Approved. This dispatch slip is marked reviewed.</div> : null}<div className="mt-5 grid gap-3"><button type="button" onClick={onApprove} className="rounded-2xl bg-emerald-300 px-5 py-4 text-sm font-black text-slate-950">Approve slip</button>{jobId ? <Link to={`/jobs/${jobId}`} onClick={onClose} className="rounded-2xl bg-white px-5 py-4 text-center text-sm font-black text-slate-950 no-underline">Open full job page</Link> : null}<button type="button" onClick={onClose} className="rounded-2xl bg-white/10 px-5 py-4 text-sm font-black text-white ring-1 ring-white/10">Back to Crew Dispatch</button></div></aside>
+        </div>
       </div>
     </div>
   );
 }
+function JobRow({ job, workers, onOpen }) {
+  const worker = isUnassigned(job) ? recommendWorker(job, workers) : null;
+  const tape = isUnassigned(job) ? "#fb923c" : isActiveJob(job) ? "#22d3ee" : isDone(job) ? "#34d399" : "#facc15";
+  return <button type="button" onClick={() => onOpen({ job, worker })} className="relative w-full overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.06] p-4 pl-7 text-left text-white transition hover:border-cyan-300/40 hover:bg-white/[0.09] active:scale-[0.99]"><Tape color={tape} /><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h3 className="truncate text-xl font-black tracking-[-0.05em] text-white">{jobTitle(job)}</h3><p className="mt-1 line-clamp-1 text-sm font-bold leading-6 text-slate-300">{clientName(job)} · {assignedWorker(job)} · {first(job?.address, job?.site_address, job?.job_address, "No address saved")}</p>{worker ? <p className="mt-2 text-xs font-black text-cyan-200">Suggested: {workerName(worker)} · {first(worker?.region, worker?.area, "area not set")}</p> : null}</div><span className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${statusClass(job)}`}>{statusOf(job)}</span></div></button>;
+}
+function WorkerRow({ worker }) { const busy = workerLoad(worker) > 0 || rawStatus(worker).includes("busy"); return <div className="relative overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.06] p-4 pl-7 text-white"><Tape color={busy ? "#facc15" : "#34d399"} /><div className="text-lg font-black tracking-[-0.04em] text-white">{workerName(worker)}</div><div className="mt-1 text-sm font-bold text-slate-300">{first(worker?.region, worker?.area, "No area set")} · {busy ? `${workerLoad(worker)} open jobs` : "available"}</div></div>; }
 
-function DispatchCommandContent() {
+export default function DispatchCommandPage() {
   const { get } = useApi();
   const [jobs, setJobs] = React.useState([]);
   const [workers, setWorkers] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState("");
   const [activeSlip, setActiveSlip] = React.useState(null);
-
-  React.useEffect(() => {
-    let alive = true;
-    async function loadDispatch() {
-      setLoading(true);
-      const [jobsRes, workersRes] = await Promise.all([get("/jobs"), get("/team/workers")]);
-      if (!alive) return;
-      if (jobsRes?.success) setJobs(arr(jobsRes)); else { setJobs([]); setError(jobsRes?.error || "Could not load dispatch jobs"); }
-      if (workersRes?.success) setWorkers(arr(workersRes)); else setWorkers([]);
-      setLoading(false);
-    }
-    loadDispatch();
-    return () => { alive = false; };
-  }, [get]);
-
-  const jobList = jobs.length ? jobs : sampleJobs;
-  const workerList = workers.length ? workers : sampleWorkers;
-  const counts = React.useMemo(() => {
-    const total = jobList.length;
-    const unassigned = jobList.filter(isUnassigned).length;
-    const assigned = jobList.filter((job) => job?.assigned_worker_id || job?.assigned_worker_name || statusOf(job) === "assigned").length;
-    const inProgress = jobList.filter((job) => ["in_progress", "started", "working"].includes(statusOf(job))).length;
-    const available = workerList.filter((worker) => ["active", "available", "online"].includes(statusOf(worker)) && workerLoad(worker) <= 3).length;
-    return { total, unassigned, assigned, inProgress, available };
-  }, [jobList, workerList]);
-
+  const [approved, setApproved] = React.useState({});
+  React.useEffect(() => { let alive = true; async function load() { try { setLoading(true); const [jobRes, workerRes] = await Promise.allSettled([get("/jobs"), get("/team/workers")]); if (!alive) return; setJobs(jobRes.status === "fulfilled" ? listFrom(jobRes.value, ["jobs", "items", "results", "data"]) : []); setWorkers(workerRes.status === "fulfilled" ? listFrom(workerRes.value, ["workers", "team", "users", "items", "results", "data"]) : []); } finally { if (alive) setLoading(false); } } load(); return () => { alive = false; }; }, [get]);
+  const activeJobs = jobs.filter(isActiveJob);
+  const unassignedJobs = jobs.filter(isUnassigned);
+  const fieldWorkers = workers.filter(isFieldWorker);
+  const conflicts = conflictCount(jobs);
+  const slipId = activeSlip?.job ? idOf(activeSlip.job) || jobTitle(activeSlip.job) : "current";
+  const mainJobs = [...unassignedJobs, ...activeJobs, ...jobs.filter((job) => !isUnassigned(job) && !isActiveJob(job) && !isDone(job))].slice(0, 16);
   return (
-    <main className="fixed inset-0 z-[2147483000] overflow-y-auto bg-[#eef1f4] text-slate-950">
-      <div className="flex min-h-screen">
-        <Sidebar />
-        <section className="min-w-0 flex-1 p-4 pb-28 md:p-6 md:pb-28 xl:p-8 xl:pb-28">
-          <header className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
-            <div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Dispatch Command</div><div className="text-sm font-bold text-slate-500">Unassigned jobs, worker matches, schedule risk and dispatch approvals.</div></div>
-            <div className="flex flex-wrap gap-3"><Link to="/jobs" className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Jobs</Link><Link to="/team" className="rounded-2xl bg-amber-500 px-4 py-2 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400">Team</Link></div>
-          </header>
-
-          <section className="grid gap-5 xl:grid-cols-[1fr_430px]">
-            <div className="overflow-hidden rounded-[30px] border border-slate-900 bg-slate-950 shadow-[0_26px_80px_rgba(15,23,42,0.20)]">
-              <div className="relative p-6 md:p-8">
-                <div className="absolute right-0 top-0 h-56 w-56 rounded-full bg-blue-500/10 blur-3xl" />
-                <div className="relative"><span className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Dispatch Command</span><h1 className="mt-5 max-w-3xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">Assign the right job to the right worker.</h1><p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Churvox surfaces unassigned jobs, recommends crew by workload and region, then keeps the owner in control before assignment.</p></div>
-              </div>
-            </div>
-            <div className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
-              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Dispatch health</div><h2 className="mt-2 text-2xl font-black tracking-[-0.055em] text-slate-950">What needs attention</h2>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-1"><div className="rounded-2xl border border-amber-200 bg-amber-50 p-4"><div className="text-2xl font-black text-amber-800">{counts.unassigned}</div><div className="text-xs font-black uppercase tracking-[0.14em] text-amber-700">Need assignment</div></div><div className="rounded-2xl border border-blue-200 bg-blue-50 p-4"><div className="text-2xl font-black text-blue-800">{counts.inProgress}</div><div className="text-xs font-black uppercase tracking-[0.14em] text-blue-700">In progress</div></div><div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><div className="text-2xl font-black text-emerald-800">{counts.available}</div><div className="text-xs font-black uppercase tracking-[0.14em] text-emerald-700">Available crew</div></div></div>
-            </div>
-          </section>
-
-          <section className="mt-5 grid gap-4 md:grid-cols-4">
-            <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Jobs</div><div className="mt-3 text-3xl font-black tracking-[-0.06em]">{counts.total}</div></div>
-            <div className="rounded-[22px] border border-amber-200 bg-amber-50 p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-700">Unassigned</div><div className="mt-3 text-3xl font-black tracking-[-0.06em] text-amber-900">{counts.unassigned}</div></div>
-            <div className="rounded-[22px] border border-blue-200 bg-blue-50 p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">Assigned</div><div className="mt-3 text-3xl font-black tracking-[-0.06em] text-blue-900">{counts.assigned}</div></div>
-            <div className="rounded-[22px] border border-emerald-200 bg-emerald-50 p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Crew ready</div><div className="mt-3 text-3xl font-black tracking-[-0.06em] text-emerald-900">{counts.available}</div></div>
-          </section>
-
-          <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
-            <div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600">Dispatch queue</div><h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-slate-950">Jobs to place</h2></div>{loading && <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">Loading…</span>}{error && <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700">Showing sample layout</span>}</div>
-            <div className="grid gap-4 xl:grid-cols-2">{jobList.map((job) => <DispatchCard key={idOf(job) || jobTitle(job)} job={job} workers={workerList} onOpen={setActiveSlip} />)}</div>
-          </section>
-        </section>
-      </div>
-      <DispatchSlip active={activeSlip} onClose={() => setActiveSlip(null)} />
+    <main className={industrialPageShell} data-industrial-simple-page="crew-dispatch" data-command-canvas>
+      <section className={`${industrialContentLane} space-y-5`}>
+        <section className="relative overflow-hidden rounded-[30px] border border-white/10 p-5 pl-8 text-white md:p-7 md:pl-9" style={tileStyle}><Tape color="#22d3ee" /><span className={industrialChip}>Crew Dispatch</span><h1 className="mt-4 max-w-4xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">Dispatch jobs, crew and assignments without live tracking.</h1><p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-slate-300 md:text-base">See active jobs, unassigned work, crew capacity and schedule warnings. Tap a job to review the dispatch slip first.</p><div className="mt-5 flex flex-wrap gap-3"><Link to="/jobs/new" className={`rounded-2xl px-5 py-3 text-sm font-black ${industrialAction}`}>Create job</Link><Link to="/team" className={`rounded-2xl px-5 py-3 text-sm font-black ${industrialGhost}`}>Team</Link><Link to="/dashboard" className={`rounded-2xl px-5 py-3 text-sm font-black ${industrialGhost}`}>Command Board</Link></div></section>
+        <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4"><Metric label="Active jobs" value={loading ? "…" : activeJobs.length} text="Jobs started or in progress." color="#22d3ee" /><Metric label="Unassigned" value={loading ? "…" : unassignedJobs.length} text="Jobs needing a worker." color="#fb923c" /><Metric label="Field crew" value={loading ? "…" : fieldWorkers.length} text="People available for dispatch view." color="#34d399" /><Metric label="Conflicts" value={loading ? "…" : conflicts} text="Possible same-time worker clashes." color="#f43f5e" /></section>
+        <section className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,.9fr)]"><section className="rounded-[30px] border border-white/10 p-5 text-white md:p-6" style={tileStyle}><div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">Dispatch queue</div><h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-white">Tap a job to review assignment</h2></div><span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-slate-300">{loading ? "Loading…" : `${mainJobs.length} showing`}</span></div>{mainJobs.length ? <div className="grid gap-3">{mainJobs.map((job, index) => <JobRow key={idOf(job) || `${jobTitle(job)}-${index}`} job={job} workers={workers} onOpen={setActiveSlip} />)}</div> : <div className="rounded-[26px] border border-white/10 bg-white/[0.06] p-5"><h3 className="text-2xl font-black tracking-[-0.05em] text-white">No dispatch work showing.</h3><p className="mt-2 text-sm font-bold leading-6 text-slate-300">Create or schedule jobs and they will appear here for dispatch review.</p></div>}</section><aside className="rounded-[30px] border border-white/10 p-5 text-white md:p-6" style={tileStyle}><div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">Crew status</div><h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-white">Field crew</h2><div className="mt-5 grid gap-3">{fieldWorkers.length ? fieldWorkers.slice(0, 10).map((worker, index) => <WorkerRow key={idOf(worker) || `${workerName(worker)}-${index}`} worker={worker} />) : <div className="rounded-[22px] border border-white/10 bg-white/[0.06] p-4 text-sm font-bold text-slate-300">No field crew showing yet.</div>}</div></aside></section>
+      </section>
+      <DispatchSlip item={activeSlip} approved={Boolean(approved[slipId])} onClose={() => setActiveSlip(null)} onApprove={() => setApproved((prev) => ({ ...prev, [slipId]: true }))} />
     </main>
   );
-}
-
-export default function DispatchCommandPage() {
-  if (typeof document === "undefined") return <DispatchCommandContent />;
-  return createPortal(<DispatchCommandContent />, document.body);
 }
