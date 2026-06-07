@@ -10,14 +10,14 @@ body.cv-industrial-shell main[data-industrial-simple-page="command"] .fixed.inse
   align-items: flex-start !important;
   justify-content: center !important;
   overflow-y: auto !important;
-  padding: 28px !important;
+  padding: 28px 28px 28px 286px !important;
   background: rgba(2, 6, 23, .88) !important;
   backdrop-filter: blur(18px) !important;
 }
 
 body.cv-industrial-shell main[data-industrial-simple-page="command"] .fixed.inset-0.z-\[2147483647\] > section {
-  width: min(100%, 980px) !important;
-  max-width: 980px !important;
+  width: min(100%, 920px) !important;
+  max-width: 920px !important;
   margin: 0 auto !important;
   overflow: hidden !important;
   border-radius: 34px !important;
@@ -75,7 +75,7 @@ body.cv-industrial-shell main[data-industrial-simple-page="command"] .fixed.inse
 
 body.cv-industrial-shell main[data-industrial-simple-page="command"] .fixed.inset-0.z-\[2147483647\] main {
   display: grid !important;
-  grid-template-columns: minmax(0, 1fr) 320px !important;
+  grid-template-columns: minmax(0, 1fr) 300px !important;
   gap: 18px !important;
   padding: 22px !important;
   background: #f7f3ea !important;
@@ -107,12 +107,36 @@ body.cv-industrial-shell main[data-industrial-simple-page="command"] .fixed.inse
   color: #c2410c !important;
 }
 
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .fixed.inset-0.z-\[2147483647\] main label,
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .fixed.inset-0.z-\[2147483647\] main .rounded-2xl.border.border-slate-200.bg-slate-50 {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(15, 23, 42, .14) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, .05) !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .fixed.inset-0.z-\[2147483647\] main label span {
+  color: #c2410c !important;
+  font-weight: 1000 !important;
+}
+
 body.cv-industrial-shell main[data-industrial-simple-page="command"] .fixed.inset-0.z-\[2147483647\] main input,
 body.cv-industrial-shell main[data-industrial-simple-page="command"] .fixed.inset-0.z-\[2147483647\] main textarea {
   background: #ffffff !important;
   color: #0f172a !important;
   border: 1px solid rgba(15, 23, 42, .14) !important;
   border-radius: 14px !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .fixed.inset-0.z-\[2147483647\] main input:disabled,
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .fixed.inset-0.z-\[2147483647\] main textarea:disabled {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  opacity: 1 !important;
 }
 
 body.cv-industrial-shell main[data-industrial-simple-page="command"] .fixed.inset-0.z-\[2147483647\] aside button,
@@ -137,6 +161,12 @@ body.cv-industrial-shell main[data-industrial-simple-page="command"] .fixed.inse
 body.cv-industrial-shell main[data-industrial-simple-page="command"] .fixed.inset-0.z-\[2147483647\] aside button:last-child {
   background: #0f172a !important;
   color: #ffffff !important;
+}
+
+@media (max-width: 1100px) {
+  body.cv-industrial-shell main[data-industrial-simple-page="command"] .fixed.inset-0.z-\[2147483647\] {
+    padding: 18px !important;
+  }
 }
 
 @media (max-width: 900px) {
