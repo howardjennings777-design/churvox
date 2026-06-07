@@ -6,7 +6,29 @@ import "./IndustrialCommandSidebar.css";
 import "./IndustrialCommandPages.css";
 import "./ChurvoxLaunchCleanup.css";
 
-const BUILD_MARKER = "Build clean-command-no-old-slips";
+const BUILD_MARKER = "Build clean-command-sidebar-clear";
+
+const COMMAND_SHELL_STYLE = `
+  @media (min-width: 1201px) {
+    body.cv-industrial-shell .cxRoot,
+    body.cv-industrial-shell .ch4Root {
+      padding-left: 270px !important;
+    }
+    body.cv-industrial-shell .cxWrap,
+    body.cv-industrial-shell .ch4Wrap {
+      max-width: 1520px !important;
+      margin: 0 auto !important;
+      padding-left: 24px !important;
+      padding-right: 24px !important;
+    }
+  }
+  @media (max-width: 1200px) {
+    body.cv-industrial-shell .cxRoot,
+    body.cv-industrial-shell .ch4Root {
+      padding-left: 0 !important;
+    }
+  }
+`;
 
 const NAV_ITEMS = [
   ["Command", "/dashboard", "CM"],
@@ -94,5 +116,5 @@ export default function FloatingBottomNav() {
     };
   }, [commandVisible]);
   if (!commandVisible) return <ChurvoxHelpWidget />;
-  return <><IndustrialSidebar pathname={pathname} /><nav className="cv-clean-command-nav" aria-label="Churvox mobile command navigation">{NAV_ITEMS.map(([label, href, icon]) => <Link key={href} to={href} className={isActive(pathname, href) ? "active" : ""}><i aria-hidden="true">{icon}</i><span>{label}</span></Link>)}</nav><ChurvoxHelpWidget /></>;
+  return <><style>{COMMAND_SHELL_STYLE}</style><IndustrialSidebar pathname={pathname} /><nav className="cv-clean-command-nav" aria-label="Churvox mobile command navigation">{NAV_ITEMS.map(([label, href, icon]) => <Link key={href} to={href} className={isActive(pathname, href) ? "active" : ""}><i aria-hidden="true">{icon}</i><span>{label}</span></Link>)}</nav><ChurvoxHelpWidget /></>;
 }
