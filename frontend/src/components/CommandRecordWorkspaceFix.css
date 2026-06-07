@@ -1,0 +1,120 @@
+/* Final launch hardening for old add/edit/detail record pages inside Command Desk.
+   Fixes /jobs/new and any old form page that still renders Layout/ConceptC under the industrial shell. */
+
+body.cv-industrial-shell .wh-app {
+  margin-left: 286px !important;
+  width: calc(100vw - 286px) !important;
+  max-width: calc(100vw - 286px) !important;
+  min-height: 100dvh !important;
+  overflow-x: hidden !important;
+  background: #f7f3ea !important;
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell .wh-app-top,
+body.cv-industrial-shell .wh-app-nav,
+body.cv-industrial-shell .c2-dock,
+body.cv-industrial-shell .c2-dock-full,
+body.cv-industrial-shell .c2-topbar {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+body.cv-industrial-shell .wh-app-main {
+  width: 100% !important;
+  max-width: 1160px !important;
+  min-height: 100dvh !important;
+  margin: 0 auto !important;
+  padding: 28px 24px 96px !important;
+  background: #f7f3ea !important;
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell .wh-app-main > *,
+body.cv-industrial-shell .c2-record-fullscreen-stage > * {
+  max-width: 100% !important;
+}
+
+body.cv-industrial-shell .wh-app .premium-page,
+body.cv-industrial-shell .wh-app [class*="PremiumPage"],
+body.cv-industrial-shell .wh-app [class*="max-w-"] {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+body.cv-industrial-shell .c2-record-fullscreen {
+  margin-left: 286px !important;
+  width: calc(100vw - 286px) !important;
+  max-width: calc(100vw - 286px) !important;
+  min-height: 100dvh !important;
+  overflow-x: hidden !important;
+  background: #f7f3ea !important;
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell .c2-record-fullscreen-topbar {
+  left: 0 !important;
+  right: 0 !important;
+  background: rgba(247, 243, 234, .96) !important;
+  border-bottom: 1px solid rgba(15, 23, 42, .12) !important;
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell .c2-record-fullscreen-stage {
+  width: min(100%, 1160px) !important;
+  max-width: 1160px !important;
+  margin: 0 auto !important;
+  padding: 28px 24px 96px !important;
+  background: transparent !important;
+}
+
+body.cv-industrial-shell .c2-record-fullscreen .wh-app {
+  margin-left: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  background: transparent !important;
+}
+
+body.cv-industrial-shell .c2-record-fullscreen .wh-app-main {
+  max-width: 1160px !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+body.cv-industrial-shell .wh-app input,
+body.cv-industrial-shell .wh-app textarea,
+body.cv-industrial-shell .wh-app select,
+body.cv-industrial-shell .c2-record-fullscreen input,
+body.cv-industrial-shell .c2-record-fullscreen textarea,
+body.cv-industrial-shell .c2-record-fullscreen select {
+  min-height: 44px !important;
+}
+
+body.cv-industrial-shell .wh-app label,
+body.cv-industrial-shell .c2-record-fullscreen label {
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell .wh-app button,
+body.cv-industrial-shell .wh-app a,
+body.cv-industrial-shell .c2-record-fullscreen button,
+body.cv-industrial-shell .c2-record-fullscreen a {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+@media (max-width: 1023px) {
+  body.cv-industrial-shell .wh-app,
+  body.cv-industrial-shell .c2-record-fullscreen {
+    margin-left: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+  }
+
+  body.cv-industrial-shell .wh-app-main,
+  body.cv-industrial-shell .c2-record-fullscreen-stage {
+    padding: 16px 12px 120px !important;
+    max-width: 100% !important;
+  }
+}
