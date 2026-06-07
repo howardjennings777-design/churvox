@@ -19,8 +19,9 @@ import "./CommandQuoteFormPolish.css";
 import "./CommandBoardCardSlipLock.css";
 import "./CommandBoardAIFeel.css";
 import "./CommandBoardLayoutPolish.css";
+import "./CommandBoardSlipFinal.css";
 
-const BUILD_MARKER = "Build command-layout-polish";
+const BUILD_MARKER = "Build command-slip-final";
 
 const NAV_ITEMS = [
   ["Command", "/dashboard", "CM"],
