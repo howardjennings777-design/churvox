@@ -16,8 +16,9 @@ import "./TeamProfileSlipFinalFix.css";
 import "./TeamProfileSlipPositionFix.css";
 import "./TeamProfileSlipTextFix.css";
 import "./CommandQuoteFormPolish.css";
+import "./CommandBoardCardSlipLock.css";
 
-const BUILD_MARKER = "Build quote-form-polish";
+const BUILD_MARKER = "Build command-card-slip-lock";
 
 const NAV_ITEMS = [
   ["Command", "/dashboard", "CM"],
