@@ -66,7 +66,11 @@ function isDone(job) {
 
 function isActive(job) {
   const status = rawStatus(job);
-  return status.includes("progress") || status.includes("start") || status.includes("active") || status.includes("timer");
+  return status.includes("progress") || status.includes("start") || status.includes("active") || status.includes("timer") || job?.timer_running === true;
+}
+
+function isTimerRunning(job) {
+  return job?.timer_running === true;
 }
 
 function isUnassigned(job) {
@@ -78,6 +82,14 @@ function formatDate(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return String(value);
   return date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+}
+
+function formatDuration(seconds) {
+  const total = Number(seconds || 0);
+  if (!Number.isFinite(total) || total <= 0) return "0 min";
+  const hours = Math.floor(total / 3600);
+  const mins = Math.max(1, Math.floor((total % 3600) / 60));
+  return hours ? `${hours}h ${mins}m` : `${mins} min`;
 }
 
 function money(value) {
@@ -93,7 +105,7 @@ function numberValue(value) {
 function statusClass(job) {
   const key = rawStatus(job);
   if (key.includes("complete")) return statusTone.completed;
-  if (key.includes("progress") || key.includes("start")) return statusTone.in_progress;
+  if (key.includes("progress") || key.includes("start") || job?.timer_running) return statusTone.in_progress;
   if (key.includes("pause")) return statusTone.paused;
   if (key.includes("assign")) return statusTone.assigned;
   if (key.includes("cancel")) return statusTone.cancelled;
@@ -105,6 +117,8 @@ function detailsFor(job) {
     Client: clientOf(job),
     Worker: workerOf(job),
     Status: statusOf(job),
+    Timer: isTimerRunning(job) ? "Running" : "Stopped",
+    "Time logged": formatDuration(job?.total_time_seconds),
     Address: first(job?.address, job?.site_address, job?.street_address, "Not saved"),
     Scheduled: formatDate(first(job?.scheduled_at, job?.scheduled_date, job?.date, job?.start_time, job?.job_date)),
     Pricing: money(first(job?.price, job?.total, job?.amount, job?.fixed_price, 0)),
@@ -162,12 +176,58 @@ function JobSlip({ job, workers, hasInvoice, busy, onClose, onRefresh, api }) {
     }
   }
 
-  const canStart = jobId && !isDone(job) && !isActive(job) && !rawStatus(job).includes("cancel");
-  const canComplete = jobId && !isDone(job) && !rawStatus(job).includes("cancel");
+  const cancelled = rawStatus(job).includes("cancel");
+  const timerRunning = isTimerRunning(job);
+  const canStartTimer = jobId && !isDone(job) && !timerRunning && !cancelled;
+  const canPauseTimer = jobId && !isDone(job) && timerRunning && !cancelled;
+  const canResumeTimer = jobId && !isDone(job) && !timerRunning && (rawStatus(job).includes("progress") || rawStatus(job).includes("pause") || Number(job?.total_time_seconds || 0) > 0) && !cancelled;
+  const canComplete = jobId && !isDone(job) && !cancelled;
   const canInvoice = jobId && isDone(job) && !hasInvoice;
   const hasWorkerChoice = workers.length > 0;
 
-  return <div className="fixed inset-0 z-[2147483600] overflow-y-auto bg-slate-950/92 p-3 text-white backdrop-blur-xl md:p-6" role="dialog" aria-modal="true"><div className="mx-auto flex min-h-[calc(100vh-24px)] max-w-6xl flex-col overflow-hidden rounded-[34px] border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 shadow-2xl md:min-h-[calc(100vh-48px)]"><header className="flex items-start justify-between gap-4 border-b border-white/10 p-5 md:p-7"><div><div className="inline-flex rounded-full bg-amber-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-200">Job slip</div><h2 className="mt-3 text-4xl font-black leading-[0.95] tracking-[-0.07em] text-white md:text-6xl">{titleOf(job)}</h2><p className="mt-4 max-w-3xl text-sm font-bold leading-6 text-slate-300 md:text-base">{clientOf(job)} · {workerOf(job)} · {statusOf(job)}</p></div><button type="button" onClick={onClose} className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-slate-950">Close</button></header><div className="grid flex-1 gap-5 p-5 md:grid-cols-[1.15fr_.85fr] md:p-7"><section className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5"><div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">Review this exact job</div><div className="mt-4 grid gap-3 md:grid-cols-2">{Object.entries(details).map(([label, value]) => <DetailRow key={label} label={label} value={value} />)}</div><div className="mt-5 grid gap-3 md:grid-cols-2"><Field label="Job notes" value={form.notes} onChange={(value) => setForm((prev) => ({ ...prev, notes: value }))} />{hasWorkerChoice ? <Field label="Assign worker"><select value={form.worker_id || ""} onChange={(event) => setForm((prev) => ({ ...prev, worker_id: event.target.value }))} className="rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm font-bold text-white outline-none focus:border-amber-300"><option value="">Choose worker</option>{workers.map((worker) => <option key={idOf(worker)} value={idOf(worker)}>{first(worker?.name, worker?.email, "Unnamed worker")}</option>)}</select></Field> : <DetailRow label="Team" value="Add workers in Team before assigning" />}<Field label="Invoice amount" value={form.subtotal} onChange={(value) => setForm((prev) => ({ ...prev, subtotal: value }))} /><Field label="Invoice description" value={form.description} onChange={(value) => setForm((prev) => ({ ...prev, description: value }))} /></div></section><aside className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5"><div className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200">Real job actions</div><p className="mt-3 text-sm font-bold leading-6 text-slate-300">These buttons call the real job endpoints. No fake approval. No customer money action happens until you press it.</p><div className="mt-5 grid gap-3"><button type="button" disabled={busy || !jobId} onClick={() => run("Job notes saved", () => api.patch(`/jobs/${jobId}`, { notes: form.notes }))} className="rounded-2xl bg-white/10 px-5 py-4 text-sm font-black text-white ring-1 ring-white/10 disabled:opacity-50">Save notes</button><button type="button" disabled={busy || !jobId || !form.worker_id} onClick={() => run("Worker assigned", () => api.post(`/jobs/${jobId}/assign`, { worker_id: form.worker_id }))} className="rounded-2xl bg-cyan-300 px-5 py-4 text-sm font-black text-slate-950 disabled:opacity-50">Assign worker</button><button type="button" disabled={busy || !canStart} onClick={() => run("Job started", () => api.post(`/jobs/${jobId}/start`, {}))} className="rounded-2xl bg-amber-300 px-5 py-4 text-sm font-black text-slate-950 disabled:opacity-50">Start job</button><button type="button" disabled={busy || !canComplete} onClick={() => run("Job completed", () => api.post(`/jobs/${jobId}/complete`, {}))} className="rounded-2xl bg-emerald-300 px-5 py-4 text-sm font-black text-slate-950 disabled:opacity-50">Complete job</button><button type="button" disabled={busy || !canInvoice || !numberValue(form.subtotal)} onClick={() => run("Draft invoice created", () => api.post("/invoices", { job_id: jobId, customer_name: clientOf(job), customer_email: first(job?.customer_email, job?.client_email, job?.email), address: first(job?.address, job?.site_address, ""), description: form.description || `${titleOf(job)} completed`, subtotal: numberValue(form.subtotal) }))} className="rounded-2xl bg-orange-400 px-5 py-4 text-sm font-black text-slate-950 disabled:opacity-50">Create draft invoice</button>{hasInvoice ? <div className="rounded-2xl border border-emerald-300/25 bg-emerald-300/10 p-4 text-sm font-black text-emerald-100">This job already has an invoice linked.</div> : null}{jobId ? <Link to={`/jobs/${jobId}`} onClick={onClose} className="rounded-2xl bg-white px-5 py-4 text-center text-sm font-black text-slate-950 no-underline">Open full job page</Link> : null}<button type="button" onClick={onClose} className="rounded-2xl bg-white/10 px-5 py-4 text-sm font-black text-white ring-1 ring-white/10">Back to jobs</button></div></aside></div></div></div>;
+  return <div className="fixed inset-0 z-[2147483600] overflow-y-auto bg-slate-950/92 p-3 text-white backdrop-blur-xl md:p-6" role="dialog" aria-modal="true">
+    <div className="mx-auto flex min-h-[calc(100vh-24px)] max-w-6xl flex-col overflow-hidden rounded-[34px] border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 shadow-2xl md:min-h-[calc(100vh-48px)]">
+      <header className="flex items-start justify-between gap-4 border-b border-white/10 p-5 md:p-7">
+        <div>
+          <div className="inline-flex rounded-full bg-amber-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-200">Job action slip</div>
+          <h2 className="mt-3 text-4xl font-black leading-[0.95] tracking-[-0.07em] text-white md:text-6xl">{titleOf(job)}</h2>
+          <p className="mt-4 max-w-3xl text-sm font-bold leading-6 text-slate-300 md:text-base">{clientOf(job)} · {workerOf(job)} · {statusOf(job)}</p>
+        </div>
+        <button type="button" onClick={onClose} className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-slate-950">Close</button>
+      </header>
+
+      <div className="grid flex-1 gap-5 p-5 md:grid-cols-[1.15fr_.85fr] md:p-7">
+        <section className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5">
+          <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">Review this exact job</div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">{Object.entries(details).map(([label, value]) => <DetailRow key={label} label={label} value={value} />)}</div>
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            <Field label="Job notes" value={form.notes} onChange={(value) => setForm((prev) => ({ ...prev, notes: value }))} />
+            {hasWorkerChoice ? <Field label="Assign worker"><select value={form.worker_id || ""} onChange={(event) => setForm((prev) => ({ ...prev, worker_id: event.target.value }))} className="rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm font-bold text-white outline-none focus:border-amber-300"><option value="">Choose worker</option>{workers.map((worker) => <option key={idOf(worker)} value={idOf(worker)}>{first(worker?.name, worker?.email, "Unnamed worker")}</option>)}</select></Field> : <DetailRow label="Team" value="Add workers in Team before assigning" />}
+            <Field label="Invoice amount" value={form.subtotal} onChange={(value) => setForm((prev) => ({ ...prev, subtotal: value }))} />
+            <Field label="Invoice description" value={form.description} onChange={(value) => setForm((prev) => ({ ...prev, description: value }))} />
+          </div>
+        </section>
+
+        <aside className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5">
+          <div className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200">Real job actions</div>
+          <p className="mt-3 text-sm font-bold leading-6 text-slate-300">These buttons call real job, timer and invoice endpoints. Start/Pause/Resume now uses the timer system, not a fake status-only action.</p>
+          <div className="mt-5 grid gap-3">
+            <button type="button" disabled={busy || !jobId} onClick={() => run("Job notes saved", () => api.patch(`/jobs/${jobId}`, { notes: form.notes }))} className="rounded-2xl bg-white/10 px-5 py-4 text-sm font-black text-white ring-1 ring-white/10 disabled:opacity-50">Save notes</button>
+            <button type="button" disabled={busy || !jobId || !form.worker_id} onClick={() => run("Worker assigned", () => api.post(`/jobs/${jobId}/assign`, { worker_id: form.worker_id }))} className="rounded-2xl bg-cyan-300 px-5 py-4 text-sm font-black text-slate-950 disabled:opacity-50">Assign worker</button>
+            <button type="button" disabled={busy || !canStartTimer} onClick={() => run("Job timer started", () => api.post(`/jobs/${jobId}/timer/start`, {}))} className="rounded-2xl bg-amber-300 px-5 py-4 text-sm font-black text-slate-950 disabled:opacity-50">Start timer</button>
+            <button type="button" disabled={busy || !canPauseTimer} onClick={() => run("Job timer paused", () => api.post(`/jobs/${jobId}/timer/pause`, {}))} className="rounded-2xl bg-orange-300 px-5 py-4 text-sm font-black text-slate-950 disabled:opacity-50">Pause timer</button>
+            <button type="button" disabled={busy || !canResumeTimer} onClick={() => run("Job timer resumed", () => api.post(`/jobs/${jobId}/timer/resume`, {}))} className="rounded-2xl bg-cyan-200 px-5 py-4 text-sm font-black text-slate-950 disabled:opacity-50">Resume timer</button>
+            <button type="button" disabled={busy || !canComplete} onClick={() => run("Job completed", () => api.post(`/jobs/${jobId}/complete`, {}))} className="rounded-2xl bg-emerald-300 px-5 py-4 text-sm font-black text-slate-950 disabled:opacity-50">Complete job</button>
+            <button type="button" disabled={busy || !canInvoice || !numberValue(form.subtotal)} onClick={() => run("Draft invoice created", () => api.post("/invoices", { job_id: jobId, customer_name: clientOf(job), customer_email: first(job?.customer_email, job?.client_email, job?.email), address: first(job?.address, job?.site_address, ""), description: form.description || `${titleOf(job)} completed`, subtotal: numberValue(form.subtotal) }))} className="rounded-2xl bg-orange-400 px-5 py-4 text-sm font-black text-slate-950 disabled:opacity-50">Create draft invoice</button>
+            {hasInvoice ? <div className="rounded-2xl border border-emerald-300/25 bg-emerald-300/10 p-4 text-sm font-black text-emerald-100">This job already has an invoice linked.</div> : null}
+            {jobId ? <Link to={`/jobs/${jobId}/edit`} onClick={onClose} className="rounded-2xl border border-white/15 bg-white/10 px-5 py-4 text-center text-sm font-black text-white no-underline">Edit job record</Link> : null}
+            {jobId ? <Link to={`/jobs/${jobId}`} onClick={onClose} className="rounded-2xl bg-white px-5 py-4 text-center text-sm font-black text-slate-950 no-underline">Open full job page</Link> : null}
+            <button type="button" onClick={onClose} className="rounded-2xl bg-white/10 px-5 py-4 text-sm font-black text-white ring-1 ring-white/10">Back to jobs</button>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>;
 }
 
 function JobRow({ job, onOpen }) {
@@ -210,5 +270,38 @@ export default function JobsCommandPage() {
   const unassignedJobs = jobs.filter(isUnassigned);
   const completedJobs = jobs.filter(isDone);
 
-  return <main className={industrialPageShell} data-industrial-simple-page="jobs" data-command-canvas><section className={`${industrialContentLane} space-y-5`}><section className="relative overflow-hidden rounded-[30px] border border-white/10 p-5 pl-8 text-white md:p-7 md:pl-9" style={tileStyle}><SecurityTape color="#fb923c" /><span className={industrialChip}>Jobs</span><h1 className="mt-4 max-w-4xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">Jobs that need doing, assigning, or invoicing.</h1><p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Tap a job to open a real action slip. Assign, start, complete, save notes, or create a draft invoice from the slip.</p><div className="mt-5 flex flex-wrap gap-3"><Link to="/jobs/new" className={`rounded-2xl px-5 py-3 text-sm font-black ${industrialAction}`}>Create job</Link><button type="button" onClick={load} className={`rounded-2xl px-5 py-3 text-sm font-black ${industrialGhost}`}>Refresh jobs</button><Link to="/dashboard" className={`rounded-2xl px-5 py-3 text-sm font-black ${industrialGhost}`}>Command Board</Link></div></section><section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4"><MetricCard label="Open" value={openJobs.length} text="Jobs still moving through the business." color="#facc15" /><MetricCard label="Active" value={activeJobs.length} text="Jobs currently started or in progress." color="#22d3ee" /><MetricCard label="Unassigned" value={unassignedJobs.length} text="Jobs needing a worker assigned." color="#fb923c" /><MetricCard label="Completed" value={completedJobs.length} text="Finished jobs ready for review or invoice." color="#34d399" /></section><section className="rounded-[30px] border border-white/10 p-5 text-white md:p-6" style={tileStyle}><div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">Job list</div><h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-white">Tap a job to review it</h2></div>{loading ? <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-slate-300">Loading…</span> : <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-slate-300">{jobs.length} jobs</span>}</div>{jobs.length ? <div className="grid gap-3">{jobs.map((job, index) => <JobRow key={idOf(job) || `${titleOf(job)}-${index}`} job={job} onOpen={setSelectedJob} />)}</div> : <div className="rounded-[26px] border border-white/10 bg-white/[0.06] p-5"><h3 className="text-2xl font-black tracking-[-0.05em] text-white">No jobs showing yet.</h3><p className="mt-2 text-sm font-bold leading-6 text-slate-300">Create the first job and Churvox will start showing assignment, timer, invoice and approval slips here.</p><Link to="/jobs/new" className={`mt-4 inline-flex rounded-2xl px-5 py-3 text-sm font-black no-underline ${industrialAction}`}>Create job</Link></div>}</section></section><JobSlip job={selectedJob} workers={workers} hasInvoice={selectedJob ? hasInvoiceForJob(selectedJob, invoices) : false} busy={busy} onClose={() => setSelectedJob(null)} onRefresh={refreshFromSlip} api={api} /></main>;
+  return <main className={industrialPageShell} data-industrial-simple-page="jobs" data-command-canvas>
+    <section className={`${industrialContentLane} space-y-5`}>
+      <section className="relative overflow-hidden rounded-[30px] border border-white/10 p-5 pl-8 text-white md:p-7 md:pl-9" style={tileStyle}>
+        <SecurityTape color="#fb923c" />
+        <span className={industrialChip}>Jobs</span>
+        <h1 className="mt-4 max-w-4xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">Jobs that need doing, assigning, or invoicing.</h1>
+        <p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Tap a job to open a real action slip. Assign, start, pause, resume, complete, save notes, or create a draft invoice from the slip.</p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <Link to="/jobs/new" className={`rounded-2xl px-5 py-3 text-sm font-black ${industrialAction}`}>Create job</Link>
+          <button type="button" onClick={load} className={`rounded-2xl px-5 py-3 text-sm font-black ${industrialGhost}`}>Refresh jobs</button>
+          <Link to="/dashboard" className={`rounded-2xl px-5 py-3 text-sm font-black ${industrialGhost}`}>Command Board</Link>
+        </div>
+      </section>
+
+      <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard label="Open" value={openJobs.length} text="Jobs still moving through the business." color="#facc15" />
+        <MetricCard label="Active" value={activeJobs.length} text="Jobs currently started or in progress." color="#22d3ee" />
+        <MetricCard label="Unassigned" value={unassignedJobs.length} text="Jobs needing a worker assigned." color="#fb923c" />
+        <MetricCard label="Completed" value={completedJobs.length} text="Finished jobs ready for review or invoice." color="#34d399" />
+      </section>
+
+      <section className="rounded-[30px] border border-white/10 p-5 text-white md:p-6" style={tileStyle}>
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">Job list</div>
+            <h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-white">Tap a job to review it</h2>
+          </div>
+          {loading ? <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-slate-300">Loading…</span> : <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-slate-300">{jobs.length} jobs</span>}
+        </div>
+        {jobs.length ? <div className="grid gap-3">{jobs.map((job, index) => <JobRow key={idOf(job) || `${titleOf(job)}-${index}`} job={job} onOpen={setSelectedJob} />)}</div> : <div className="rounded-[26px] border border-white/10 bg-white/[0.06] p-5"><h3 className="text-2xl font-black tracking-[-0.05em] text-white">No jobs showing yet.</h3><p className="mt-2 text-sm font-bold leading-6 text-slate-300">Create the first job and Churvox will start showing assignment, timer, invoice and approval slips here.</p><Link to="/jobs/new" className={`mt-4 inline-flex rounded-2xl px-5 py-3 text-sm font-black no-underline ${industrialAction}`}>Create job</Link></div>}
+      </section>
+    </section>
+    <JobSlip job={selectedJob} workers={workers} hasInvoice={selectedJob ? hasInvoiceForJob(selectedJob, invoices) : false} busy={busy} onClose={() => setSelectedJob(null)} onRefresh={refreshFromSlip} api={api} />
+  </main>;
 }
