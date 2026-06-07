@@ -6,8 +6,9 @@ import "./IndustrialCommandSidebar.css";
 import "./IndustrialCommandPages.css";
 import "./DashboardStripClean.css";
 import "./ChurvoxLaunchCleanup.css";
+import "./CommandRecordWorkspaceFix.css";
 
-const BUILD_MARKER = "Build dispatch-board";
+const BUILD_MARKER = "Build record-workspace";
 
 const NAV_ITEMS = [
   ["Command", "/dashboard", "CM"],
@@ -61,12 +62,10 @@ function IndustrialSidebar({ pathname }) {
           <span>Command Desk</span>
         </div>
       </div>
-
       <div className="cv-industrial-status">
         <span>AI Operator</span>
         <b>Prepared admin. You approve.</b>
       </div>
-
       <div className="cv-industrial-navwrap">
         {INDUSTRIAL_GROUPS.map((group) => (
           <section key={group.title} className="cv-industrial-group">
@@ -74,12 +73,7 @@ function IndustrialSidebar({ pathname }) {
             <nav>
               {group.items.map(([label, href, icon]) => {
                 const active = isActive(pathname, href);
-                return (
-                  <Link key={href} to={href} className={active ? "active" : ""}>
-                    <i>{icon}</i>
-                    <span>{label}</span>
-                  </Link>
-                );
+                return <Link key={href} to={href} className={active ? "active" : ""}><i>{icon}</i><span>{label}</span></Link>;
               })}
             </nav>
           </section>
@@ -93,7 +87,6 @@ function IndustrialSidebar({ pathname }) {
 export default function FloatingBottomNav() {
   const { pathname } = useLocation();
   const commandVisible = isCommandPath(pathname);
-
   useEffect(() => {
     document.body.classList.toggle("cv-has-floating-dock", commandVisible);
     document.body.classList.toggle("cv-industrial-shell", commandVisible);
@@ -102,21 +95,6 @@ export default function FloatingBottomNav() {
       document.body.classList.remove("cv-industrial-shell");
     };
   }, [commandVisible]);
-
   if (!commandVisible) return <ChurvoxHelpWidget />;
-
-  return (
-    <>
-      <IndustrialSidebar pathname={pathname} />
-      <nav className="cv-clean-command-nav" aria-label="Churvox mobile command navigation">
-        {NAV_ITEMS.map(([label, href, icon]) => (
-          <Link key={href} to={href} className={isActive(pathname, href) ? "active" : ""}>
-            <i aria-hidden="true">{icon}</i>
-            <span>{label}</span>
-          </Link>
-        ))}
-      </nav>
-      <ChurvoxHelpWidget />
-    </>
-  );
+  return <><IndustrialSidebar pathname={pathname} /><nav className="cv-clean-command-nav" aria-label="Churvox mobile command navigation">{NAV_ITEMS.map(([label, href, icon]) => <Link key={href} to={href} className={isActive(pathname, href) ? "active" : ""}><i aria-hidden="true">{icon}</i><span>{label}</span></Link>)}</nav><ChurvoxHelpWidget /></>;
 }
