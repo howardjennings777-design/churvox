@@ -7,9 +7,9 @@ import "./IndustrialCommandPages.css";
 import "./DashboardStripClean.css";
 
 const NAV_ITEMS = [
-  ["Command Board", "/dashboard", "CB"],
+  ["Command", "/dashboard", "CM"],
   ["Jobs", "/jobs", "JB"],
-  ["Assign Jobs", "/dispatch", "AS"],
+  ["Crew", "/crew-map", "CR"],
   ["Clients", "/clients", "CL"],
   ["Quotes", "/quotes", "QT"],
   ["Invoices", "/invoices", "IV"],
@@ -19,13 +19,13 @@ const NAV_ITEMS = [
 ];
 
 const INDUSTRIAL_GROUPS = [
-  { title: "Command", items: [["Command Board", "/dashboard", "CB"], ["Notifications", "/notifications", "NT"]] },
-  { title: "Work", items: [["Jobs", "/jobs", "JB"], ["Assign Jobs", "/dispatch", "AS"], ["Crew Map", "/crew-map", "MP"], ["Clients", "/clients", "CL"], ["Quotes", "/quotes", "QT"], ["Invoices", "/invoices", "IV"]] },
+  { title: "Command", items: [["Command Board", "/dashboard", "CM"]] },
+  { title: "Work", items: [["Jobs", "/jobs", "JB"], ["Crew Map", "/crew-map", "CR"], ["Clients", "/clients", "CL"], ["Quotes", "/quotes", "QT"], ["Invoices", "/invoices", "IV"]] },
   { title: "Crew & Admin", items: [["Team", "/team", "TM"], ["Payroll", "/payroll", "PR"], ["Reports", "/reports", "RP"]] },
   { title: "System", items: [["Plans", "/plans", "PL"], ["Settings", "/settings", "ST"], ["Support", "/support", "?"]] },
 ];
 
-const COMMAND_PATHS = ["/dashboard", "/overview", "/notifications", "/jobs", "/dispatch", "/dispatch-board", "/crew-map", "/clients", "/quotes", "/invoices", "/team", "/payroll", "/reports", "/plans", "/settings", "/support"];
+const COMMAND_PATHS = ["/dashboard", "/overview", "/jobs", "/dispatch", "/dispatch-board", "/crew-map", "/clients", "/quotes", "/invoices", "/team", "/payroll", "/reports", "/plans", "/settings", "/support"];
 
 function isCommandPath(pathname) {
   return COMMAND_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
@@ -33,8 +33,7 @@ function isCommandPath(pathname) {
 
 function isActive(pathname, href) {
   if (href === "/dashboard") return pathname === "/dashboard" || pathname === "/overview";
-  if (href === "/dispatch") return pathname === "/dispatch" || pathname === "/dispatch-board";
-  if (href === "/crew-map") return pathname === "/crew-map";
+  if (href === "/crew-map") return pathname === "/crew-map" || pathname === "/dispatch" || pathname === "/dispatch-board";
   if (href === "/invoices") return pathname === "/invoices" || pathname.startsWith("/invoices/");
   if (href === "/team") return pathname === "/team" || pathname.startsWith("/team/");
   if (href === "/plans") return pathname === "/plans";
@@ -54,8 +53,8 @@ function IndustrialSidebar({ pathname }) {
       </div>
 
       <div className="cv-industrial-status">
-        <span>Command Desk</span>
-        <b>Owner approval live</b>
+        <span>AI Operator</span>
+        <b>Prepared admin. You approve.</b>
       </div>
 
       <div className="cv-industrial-navwrap">
