@@ -43,7 +43,7 @@ import FeaturesPage from "./pages/marketing/ExecutiveFeaturesPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import FloatingBottomNav from "./components/FloatingBottomNav";
 import ConceptCFrame from "./concept-c/ConceptCFrame";
-import CommandDeskQueuePage from "./pages/CommandDeskQueuePage";
+import CommandDeskOperatorPage from "./pages/CommandDeskOperatorPage";
 import JobsCommandPage from "./pages/JobsCommandPage";
 import QuotesCommandPage from "./pages/QuotesCommandPage";
 import InvoicesCommandPage from "./pages/InvoicesCommandPage";
@@ -246,8 +246,8 @@ function App() {
             <Route path="/owner" element={<Navigate to="/admin" replace />} />
             <Route path="/owner/login" element={<Navigate to="/login" replace />} />
             <Route path="/proof-to-paid" element={<BusinessRoute><Navigate to="/dashboard" replace /></BusinessRoute>} />
-            <Route path="/ai-operator" element={<BusinessRoute><ErrorBoundary fallbackHref="/dashboard" fallbackLabel="Back to Command Board"><CommandDeskQueuePage /></ErrorBoundary></BusinessRoute>} />
-            <Route path="/ai-operator/approvals" element={<BusinessRoute><ErrorBoundary fallbackHref="/dashboard" fallbackLabel="Back to Command Board"><CommandDeskQueuePage /></ErrorBoundary></BusinessRoute>} />
+            <Route path="/ai-operator" element={<BusinessRoute><ErrorBoundary fallbackHref="/dashboard" fallbackLabel="Back to Command Board"><CommandDeskOperatorPage /></ErrorBoundary></BusinessRoute>} />
+            <Route path="/ai-operator/approvals" element={<BusinessRoute><ErrorBoundary fallbackHref="/dashboard" fallbackLabel="Back to Command Board"><CommandDeskOperatorPage /></ErrorBoundary></BusinessRoute>} />
             <Route path="/ai-operator/settings" element={<Navigate to="/settings-board" replace />} />
             <Route path="/admin" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
             <Route path="/churvox-hq" element={<PlatformAdminRoute><ChurvoxHQPage /></PlatformAdminRoute>} />
@@ -258,7 +258,7 @@ function App() {
             <Route path="/admin/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
             <Route path="/owner/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
             <Route path="/admin/qa-auditor" element={<QaAuditorRoute><QAAuditorPage /></QaAuditorRoute>} />
-            <Route path="/dashboard" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><CommandDeskQueuePage /></ErrorBoundary></BusinessRoute>} />
+            <Route path="/dashboard" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><CommandDeskOperatorPage /></ErrorBoundary></BusinessRoute>} />
             <Route path="/overview" element={<Navigate to="/dashboard" replace />} />
             <Route path="/onboarding" element={<BusinessRoute><OnboardingCommandPage /></BusinessRoute>} />
             <Route path="/jobs-board" element={<BusinessRoute><ErrorBoundary fallbackHref="/dashboard" fallbackLabel="Back to Command Board"><JobsCommandPage /></ErrorBoundary></BusinessRoute>} />
