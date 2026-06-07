@@ -1,0 +1,144 @@
+/* CHURVOX_COMMAND_BOARD_AI_FEEL_20260608
+   Makes Command Board feel like AI has prepared the admin work.
+   Does not change logic. Does not remove separate boxes or slips. */
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(251, 146, 60, .14), transparent 26%),
+    radial-gradient(circle at 88% 8%, rgba(34, 211, 238, .13), transparent 30%),
+    #f7f3ea !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] > section::before {
+  content: "AI Operator brief · Churvox has checked jobs, invoices, quotes and crew, then prepared approval slips for you.";
+  display: flex;
+  width: fit-content;
+  max-width: min(100%, 920px);
+  margin: 0 0 14px 0;
+  border: 1px solid rgba(251, 146, 60, .26);
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #9a3412;
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 1000;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-board-dark-card {
+  position: relative !important;
+  overflow: hidden !important;
+  background:
+    linear-gradient(135deg, rgba(17,24,39,.98), rgba(7,13,22,.98)) !important;
+  box-shadow: 0 24px 68px rgba(2,6,23,.26), inset 0 1px 0 rgba(255,255,255,.06) !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-board-dark-card::after {
+  content: "AI prepared";
+  position: absolute;
+  right: 16px;
+  top: 14px;
+  border: 1px solid rgba(34, 211, 238, .22);
+  border-radius: 999px;
+  background: rgba(34, 211, 238, .10);
+  color: #a5f3fc;
+  padding: 7px 10px;
+  font-size: 9px;
+  font-weight: 1000;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-board-dark-card button:not([disabled]) {
+  cursor: pointer !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-board-dark-card button.rounded-\[22px\] {
+  border-color: rgba(34, 211, 238, .22) !important;
+  background: linear-gradient(135deg, rgba(34, 211, 238, .10), rgba(251, 146, 60, .08)) !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-board-dark-card button.rounded-\[22px\]::before {
+  content: "Prepared by Churvox";
+  display: inline-flex;
+  margin-bottom: 10px;
+  border-radius: 999px;
+  background: rgba(250, 204, 21, .12);
+  color: #fde68a;
+  padding: 6px 9px;
+  font-size: 9px;
+  font-weight: 1000;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-board-dark-card button.rounded-\[22px\] .inline-flex {
+  background: linear-gradient(135deg, #facc15, #fb923c 65%, #22d3ee) !important;
+  color: #020617 !important;
+  box-shadow: 0 12px 30px rgba(251,146,60,.22) !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] a[href*="-board"]:not(.active)::after,
+body.cv-industrial-shell main[data-industrial-simple-page="command"] a[href="/jobs/new"]::after {
+  content: "";
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] [role="dialog"] > section,
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .fixed.inset-0 > section {
+  border: 1px solid rgba(15,23,42,.14) !important;
+  box-shadow: 0 34px 110px rgba(2,6,23,.45) !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] [role="dialog"] header,
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .fixed.inset-0 header {
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] [role="dialog"] header::before,
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .fixed.inset-0 header::before {
+  content: "AI has prepared this admin. Review, edit, then approve.";
+  display: inline-flex;
+  margin: 0 0 12px 0;
+  border-radius: 999px;
+  background: #ecfeff;
+  color: #0e7490;
+  padding: 8px 11px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] [role="dialog"] main section::before,
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .fixed.inset-0 main section::before {
+  content: "Editable prepared fields";
+  display: inline-flex;
+  margin-bottom: 12px;
+  color: #2563eb;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] [role="dialog"] aside::before,
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .fixed.inset-0 aside::before {
+  content: "Owner approval controls";
+  display: inline-flex;
+  margin-bottom: 10px;
+  color: #c2410c;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 700px) {
+  body.cv-industrial-shell main[data-industrial-simple-page="command"] > section::before {
+    border-radius: 18px;
+    line-height: 1.5;
+  }
+}
