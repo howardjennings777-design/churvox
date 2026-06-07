@@ -8,16 +8,16 @@ const quickHelp = [
   ["Broken button or page", "Tell us exactly what page and button failed so it can be fixed fast."],
   ["Invoices or quotes", "Drafts, approvals, customer links, follow-ups and payment issues."],
   ["Team or worker app", "Invites, worker jobs, job photos and field workflow."],
-  ["Billing or plan", "Start, Crew, Operator, Command, MYOB and Growth Pack questions."],
-  ["MYOB / integrations", "Accounting sync questions and staged integration help."],
+  ["Billing or plan", "Start, Crew, Operator, Command, Xero and Growth Pack questions."],
+  ["Xero / integrations", "Accounting sync questions and staged Xero integration help."],
 ];
 
 const supportCards = [
   ["Launch setup path", "Add business details, create a client, create a job, create an invoice, then invite crew.", "/settings"],
   ["Jobs and crew", "Use Jobs and Crew Map for work that needs assigning, starting, finishing or invoicing.", "/jobs"],
   ["Invoices and quotes", "Use approval-first slips before sending invoices, quote follow-ups or customer messages.", "/invoices"],
+  ["Xero direction", "Xero is the visible accounting direction for launch polish.", "/settings"],
   ["Plans", "Check Start, Crew, Operator, Command and Growth Pack access.", "/plans"],
-  ["Legal", "Privacy, terms and account deletion information.", "/privacy"],
   ["Command Board", "Return to the owner command centre.", "/dashboard"],
 ];
 
@@ -71,7 +71,7 @@ export default function SupportCommandPage() {
         <DarkCard className="p-6 pl-9 md:p-8 md:pl-10">
           <div className="inline-flex rounded-full border border-amber-300/30 bg-amber-300/10 px-4 py-2 text-[10px] font-black uppercase tracking-[.22em] text-amber-300">Support</div>
           <h1 className="mt-5 max-w-4xl text-5xl font-black leading-[.9] tracking-[-.08em] text-white md:text-7xl">Get unstuck fast.</h1>
-          <p className="mt-5 max-w-3xl text-sm font-bold leading-7 text-slate-300 md:text-base">Support is built around launch, setup and real work. Keep the owner moving without sending them through old random help pages.</p>
+          <p className="mt-5 max-w-3xl text-sm font-bold leading-7 text-slate-300 md:text-base">Support is built around launch, setup and real work. Xero is the visible accounting direction while we keep the launch app clean and focused.</p>
           <div className="mt-6 flex flex-wrap gap-3">
             <a href="mailto:hello@churvox.com" className="rounded-2xl bg-[linear-gradient(135deg,#facc15,#fb923c_55%,#22d3ee)] px-5 py-3 text-sm font-black text-slate-950 no-underline shadow-lg shadow-orange-500/20">Email hello@churvox.com</a>
             <Link to="/dashboard" className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white no-underline hover:bg-white/15">Back to Command</Link>
