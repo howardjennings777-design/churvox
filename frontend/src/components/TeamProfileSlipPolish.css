@@ -1,0 +1,100 @@
+/* CHURVOX_TEAM_PROFILE_SLIP_POLISH_20260607
+   Makes tapped Team people open like a proper staff/profile slip, without changing logic. */
+
+main[data-industrial-simple-page="team"] > div[role="dialog"] > div {
+  background: #f7f3ea !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(15, 23, 42, .12) !important;
+}
+
+main[data-industrial-simple-page="team"] > div[role="dialog"] header {
+  position: relative !important;
+  overflow: hidden !important;
+  background: linear-gradient(135deg, #111827, #070d16) !important;
+  color: #ffffff !important;
+  border-bottom: 0 !important;
+}
+
+main[data-industrial-simple-page="team"] > div[role="dialog"] header::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 9px;
+  height: 100%;
+  background: linear-gradient(180deg, #22d3ee, #facc15, #fb923c);
+}
+
+main[data-industrial-simple-page="team"] > div[role="dialog"] header .inline-flex {
+  font-size: 0 !important;
+  background: rgba(34, 211, 238, .12) !important;
+  border: 1px solid rgba(34, 211, 238, .25) !important;
+  color: #a5f3fc !important;
+}
+
+main[data-industrial-simple-page="team"] > div[role="dialog"] header .inline-flex::after {
+  content: "Team profile";
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .18em !important;
+  text-transform: uppercase !important;
+}
+
+main[data-industrial-simple-page="team"] > div[role="dialog"] header h2 {
+  color: #ffffff !important;
+}
+
+main[data-industrial-simple-page="team"] > div[role="dialog"] header p {
+  color: #cbd5e1 !important;
+}
+
+main[data-industrial-simple-page="team"] > div[role="dialog"] header button {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+main[data-industrial-simple-page="team"] > div[role="dialog"] > div > div {
+  background: #f7f3ea !important;
+}
+
+main[data-industrial-simple-page="team"] > div[role="dialog"] section,
+main[data-industrial-simple-page="team"] > div[role="dialog"] aside {
+  background: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, .10) !important;
+  color: #0f172a !important;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, .08) !important;
+}
+
+main[data-industrial-simple-page="team"] > div[role="dialog"] section > div:first-child,
+main[data-industrial-simple-page="team"] > div[role="dialog"] aside > div:first-child {
+  color: #0e7490 !important;
+}
+
+main[data-industrial-simple-page="team"] > div[role="dialog"] section .rounded-2xl {
+  background: #f8fafc !important;
+  border: 1px solid rgba(15, 23, 42, .10) !important;
+  color: #0f172a !important;
+}
+
+main[data-industrial-simple-page="team"] > div[role="dialog"] section .rounded-2xl div:first-child {
+  color: #c2410c !important;
+}
+
+main[data-industrial-simple-page="team"] > div[role="dialog"] section .rounded-2xl div:last-child {
+  color: #0f172a !important;
+}
+
+main[data-industrial-simple-page="team"] > div[role="dialog"] aside p {
+  color: #475569 !important;
+}
+
+main[data-industrial-simple-page="team"] > div[role="dialog"] aside a,
+main[data-industrial-simple-page="team"] > div[role="dialog"] aside button {
+  border-radius: 18px !important;
+  font-weight: 1000 !important;
+}
+
+main[data-industrial-simple-page="team"] > div[role="dialog"] aside a[href="/dispatch-board"] {
+  background: linear-gradient(135deg, #22d3ee, #facc15) !important;
+  color: #020617 !important;
+}
