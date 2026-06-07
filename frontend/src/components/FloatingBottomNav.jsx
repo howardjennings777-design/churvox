@@ -17,8 +17,9 @@ import "./TeamProfileSlipPositionFix.css";
 import "./TeamProfileSlipTextFix.css";
 import "./CommandQuoteFormPolish.css";
 import "./CommandBoardCardSlipLock.css";
+import "./CommandBoardAIFeel.css";
 
-const BUILD_MARKER = "Build command-card-slip-lock";
+const BUILD_MARKER = "Build command-ai-feel";
 
 const NAV_ITEMS = [
   ["Command", "/dashboard", "CM"],
