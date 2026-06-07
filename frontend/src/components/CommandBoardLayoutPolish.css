@@ -1,0 +1,67 @@
+/* CHURVOX_COMMAND_BOARD_LAYOUT_POLISH_20260608
+   Cleans the Command Board after AI reasoning was added.
+   Keeps separate boxes and approval slips. */
+
+/* Stop every dark card from wearing a fake badge. The top brief already explains AI work. */
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-board-dark-card::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* Make work boxes breathe instead of squeezing four long boxes across desktop. */
+@media (min-width: 1280px) {
+  body.cv-industrial-shell main[data-industrial-simple-page="command"] section.mt-5.grid.gap-5.md\:grid-cols-2.xl\:grid-cols-4:has(.cv-board-dark-card button.rounded-\[22px\]),
+  body.cv-industrial-shell main[data-industrial-simple-page="command"] section.mt-5.grid.gap-5.md\:grid-cols-2.xl\:grid-cols-4:last-of-type {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Keep metric boxes compact, but remove the noisy badges there too. */
+body.cv-industrial-shell main[data-industrial-simple-page="command"] section.mt-5.grid.gap-5.md\:grid-cols-2.xl\:grid-cols-4 .cv-board-dark-card {
+  min-height: auto !important;
+}
+
+/* Work boxes look more like prepared admin folders. */
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-board-dark-card.flex.min-h-\[340px\] {
+  min-height: 300px !important;
+  padding: 26px 24px 22px 34px !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-board-dark-card.flex.min-h-\[340px\] h2 {
+  max-width: 90% !important;
+  line-height: .98 !important;
+}
+
+/* No duplicate "prepared" badges inside empty action states. */
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-board-dark-card button.rounded-\[22px\]::before {
+  display: none !important;
+  content: none !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-board-dark-card button.rounded-\[22px\] {
+  border-color: rgba(34, 211, 238, .20) !important;
+  background: linear-gradient(135deg, rgba(34, 211, 238, .09), rgba(251, 146, 60, .07)) !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-board-dark-card button.rounded-\[22px\]:hover {
+  border-color: rgba(250, 204, 21, .34) !important;
+  background: linear-gradient(135deg, rgba(34, 211, 238, .14), rgba(251, 146, 60, .10)) !important;
+}
+
+/* Give the slip header room and keep the AI context readable. */
+body.cv-industrial-shell main[data-industrial-simple-page="command"] [role="dialog"] header::before,
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .fixed.inset-0 header::before {
+  display: none !important;
+  content: none !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="command"] [role="dialog"] header,
+body.cv-industrial-shell main[data-industrial-simple-page="command"] .fixed.inset-0 header {
+  padding-top: 28px !important;
+}
+
+@media (max-width: 1279px) {
+  body.cv-industrial-shell main[data-industrial-simple-page="command"] .cv-board-dark-card.flex.min-h-\[340px\] {
+    min-height: 260px !important;
+  }
+}
