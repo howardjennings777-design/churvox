@@ -278,7 +278,8 @@ function App() {
             <Route path="/dashboard" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><CommandDeskQueuePage /></ErrorBoundary></BusinessRoute>} />
             <Route path="/overview" element={<Navigate to="/dashboard" replace />} />
             <Route path="/onboarding" element={<BusinessRoute><OnboardingCommandPage /></BusinessRoute>} />
-            <Route path="/jobs" element={<BusinessRoute><ErrorBoundary fallbackHref="/dashboard" fallbackLabel="Back to Command Board"><JobsCommandPage /></ErrorBoundary></BusinessRoute>} />
+            <Route path="/jobs-board" element={<BusinessRoute><ErrorBoundary fallbackHref="/dashboard" fallbackLabel="Back to Command Board"><JobsCommandPage /></ErrorBoundary></BusinessRoute>} />
+            <Route path="/jobs" element={<Navigate to="/jobs-board" replace />} />
             <Route path="/jobs/new" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
             <Route path="/jobs/:id" element={<BusinessRoute><JobDetailPage /></BusinessRoute>} />
             <Route path="/jobs/:id/edit" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
