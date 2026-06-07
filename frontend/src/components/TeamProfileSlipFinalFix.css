@@ -1,8 +1,22 @@
 /* CHURVOX_TEAM_PROFILE_SLIP_FINAL_FIX_20260607
-   Hardens the Team profile modal interior so it is readable and not half old/half new. */
+   Hardens the Team profile modal interior so it is readable and sits in the main workspace. */
 
 body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] {
   color: #0f172a !important;
+}
+
+@media (min-width: 1024px) {
+  body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] {
+    padding-left: 310px !important;
+    padding-right: 28px !important;
+  }
+
+  body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] > div {
+    width: min(100%, 1040px) !important;
+    max-width: 1040px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
 }
 
 body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] > div {
@@ -100,4 +114,10 @@ body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"
   background: #e2e8f0 !important;
   color: #0f172a !important;
   border: 1px solid rgba(15, 23, 42, .12) !important;
+}
+
+@media (max-width: 1023px) {
+  body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] {
+    padding: 12px !important;
+  }
 }
