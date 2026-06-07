@@ -126,3 +126,125 @@ body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_AREA_WORKSPACES_20260
     min-height: auto !important;
   }
 }
+
+/* Active final workhorse layout */
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] {
+  padding: 14px 18px 14px 286px !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: center !important;
+}
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] > section {
+  width: min(1680px, calc(100vw - 320px)) !important;
+  max-width: none !important;
+  height: calc(100vh - 28px) !important;
+  max-height: calc(100vh - 28px) !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  overflow: hidden !important;
+  margin: 0 auto !important;
+}
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] header {
+  min-height: 128px !important;
+  padding: 20px 26px !important;
+}
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] header h1 {
+  font-size: clamp(38px, 4vw, 68px) !important;
+  line-height: .86 !important;
+  margin-top: 10px !important;
+}
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] header p {
+  margin-top: 8px !important;
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+}
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] main {
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  grid-template-columns: minmax(0, 1fr) 350px !important;
+  gap: 14px !important;
+  padding: 14px !important;
+}
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] main > section {
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  padding-right: 6px !important;
+}
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] main > aside {
+  position: sticky !important;
+  top: 0 !important;
+  align-self: start !important;
+  height: fit-content !important;
+  max-height: calc(100vh - 184px) !important;
+  overflow-y: auto !important;
+  padding: 18px !important;
+  border: 2px solid rgba(15, 23, 42, .12) !important;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, .14) !important;
+}
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] main > section.space-y-5 {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  align-content: start !important;
+}
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] main > section.space-y-5 > section:first-child {
+  grid-column: 1 / -1 !important;
+}
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] main > section.space-y-5 > section {
+  margin: 0 !important;
+  padding: 15px !important;
+  border-radius: 22px !important;
+}
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] main section [class*="xl:grid-cols-4"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] label {
+  padding: 9px !important;
+  border-radius: 14px !important;
+}
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] label span {
+  font-size: 9px !important;
+  line-height: 1.1 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] input {
+  height: 34px !important;
+  padding: 6px 8px !important;
+  font-size: 12px !important;
+}
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] textarea {
+  min-height: 52px !important;
+  max-height: 82px !important;
+  padding: 6px 8px !important;
+  font-size: 12px !important;
+}
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] aside h2 {
+  font-size: 32px !important;
+  line-height: .94 !important;
+}
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] aside .mt-5.grid {
+  gap: 8px !important;
+}
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] aside button,
+body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] aside a {
+  min-height: 42px !important;
+  padding: 10px 12px !important;
+  border-radius: 15px !important;
+  font-size: 13px !important;
+}
+@media (max-width: 1280px) {
+  body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] { padding: 10px !important; }
+  body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] > section { width: 100% !important; }
+}
+@media (max-width: 900px) {
+  body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] { overflow-y: auto !important; }
+  body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] > section { height: auto !important; max-height: none !important; }
+  body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] main,
+  body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] main > section.space-y-5 { display: block !important; overflow: visible !important; }
+  body.cv-industrial-shell main[data-marker="CHURVOX_COMMAND_WORKHORSE_FINAL_20260608"] .fixed.inset-0.z-\[2147483647\] main > aside { position: static !important; max-height: none !important; }
+}
