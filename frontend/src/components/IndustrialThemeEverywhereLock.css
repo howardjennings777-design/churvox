@@ -1,0 +1,167 @@
+/* CHURVOX_INDUSTRIAL_THEME_EVERYWHERE_LOCK_20260608
+   Visual theme guard only. No logic, no endpoints, no CSV/import removal.
+   Keeps the logged-in app in the industrial Command Desk direction before logic work resumes. */
+
+:root {
+  --cv-paper: #f7f3ea;
+  --cv-paper-soft: #fbf8f1;
+  --cv-ink: #0f172a;
+  --cv-graphite: #111827;
+  --cv-graphite-deep: #070d16;
+  --cv-line: rgba(15, 23, 42, .12);
+  --cv-orange: #fb923c;
+  --cv-yellow: #facc15;
+  --cv-cyan: #22d3ee;
+  --cv-green: #34d399;
+}
+
+body.cv-industrial-shell {
+  background: var(--cv-paper) !important;
+}
+
+body.cv-industrial-shell main[data-command-canvas],
+body.cv-industrial-shell main[data-industrial-simple-page],
+body.cv-industrial-shell .wh-app-main,
+body.cv-industrial-shell .c2-record-fullscreen-stage {
+  background:
+    radial-gradient(circle at 14% 0%, rgba(251, 146, 60, .10), transparent 30%),
+    radial-gradient(circle at 90% 4%, rgba(34, 211, 238, .10), transparent 32%),
+    var(--cv-paper) !important;
+  color: var(--cv-ink) !important;
+}
+
+body.cv-industrial-shell main[data-command-canvas] > section,
+body.cv-industrial-shell main[data-industrial-simple-page] > section,
+body.cv-industrial-shell .wh-app-main > section,
+body.cv-industrial-shell .c2-record-fullscreen-stage > section {
+  color: var(--cv-ink) !important;
+}
+
+body.cv-industrial-shell .cv-board-dark-card,
+body.cv-industrial-shell [style*="linear-gradient(135deg, #111827"],
+body.cv-industrial-shell [style*="linear-gradient(135deg, rgb(17, 24, 39"],
+body.cv-industrial-shell .rounded-\[30px\].border.border-white\/10.text-white,
+body.cv-industrial-shell .rounded-\[28px\].border.border-white\/10.text-white,
+body.cv-industrial-shell .rounded-\[26px\].border.border-white\/10.text-white {
+  background: linear-gradient(135deg, var(--cv-graphite), var(--cv-graphite-deep)) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, .10) !important;
+  box-shadow: 0 22px 62px rgba(2, 6, 23, .24), inset 0 1px 0 rgba(255,255,255,.06) !important;
+}
+
+body.cv-industrial-shell .cv-board-dark-card h1,
+body.cv-industrial-shell .cv-board-dark-card h2,
+body.cv-industrial-shell .cv-board-dark-card h3,
+body.cv-industrial-shell .cv-board-dark-card h4,
+body.cv-industrial-shell .rounded-\[30px\].border.border-white\/10.text-white h1,
+body.cv-industrial-shell .rounded-\[30px\].border.border-white\/10.text-white h2,
+body.cv-industrial-shell .rounded-\[30px\].border.border-white\/10.text-white h3,
+body.cv-industrial-shell .rounded-\[28px\].border.border-white\/10.text-white h1,
+body.cv-industrial-shell .rounded-\[28px\].border.border-white\/10.text-white h2,
+body.cv-industrial-shell .rounded-\[28px\].border.border-white\/10.text-white h3 {
+  color: #ffffff !important;
+}
+
+body.cv-industrial-shell .cv-board-dark-card p,
+body.cv-industrial-shell .rounded-\[30px\].border.border-white\/10.text-white p,
+body.cv-industrial-shell .rounded-\[28px\].border.border-white\/10.text-white p {
+  color: #cbd5e1 !important;
+}
+
+body.cv-industrial-shell input,
+body.cv-industrial-shell textarea,
+body.cv-industrial-shell select,
+body.cv-industrial-shell button[role="combobox"] {
+  border-radius: 16px !important;
+  border-color: rgba(15, 23, 42, .14) !important;
+  color: var(--cv-ink) !important;
+  background: #ffffff !important;
+  font-weight: 800 !important;
+}
+
+body.cv-industrial-shell textarea {
+  min-height: 96px;
+}
+
+body.cv-industrial-shell label,
+body.cv-industrial-shell .form-label,
+body.cv-industrial-shell .field-label {
+  color: var(--cv-ink) !important;
+  font-weight: 900 !important;
+}
+
+body.cv-industrial-shell .bg-white,
+body.cv-industrial-shell .bg-slate-50,
+body.cv-industrial-shell .rounded-3xl.border.border-slate-200,
+body.cv-industrial-shell .rounded-\[28px\].border.border-slate-200,
+body.cv-industrial-shell .rounded-\[26px\].border.border-slate-200,
+body.cv-industrial-shell .rounded-2xl.border.border-slate-200 {
+  border-color: var(--cv-line) !important;
+}
+
+body.cv-industrial-shell a,
+body.cv-industrial-shell button {
+  pointer-events: auto !important;
+}
+
+body.cv-industrial-shell button[type="submit"],
+body.cv-industrial-shell .cv-primary-action,
+body.cv-industrial-shell .px-button-primary {
+  background: linear-gradient(135deg, var(--cv-yellow), var(--cv-orange) 58%, var(--cv-cyan)) !important;
+  color: #020617 !important;
+  border: 0 !important;
+  font-weight: 1000 !important;
+}
+
+body.cv-industrial-shell .cv-secondary-action,
+body.cv-industrial-shell .px-button-secondary,
+body.cv-industrial-shell a[href*="-board"].rounded-2xl,
+body.cv-industrial-shell a[href*="/dashboard"].rounded-2xl {
+  border-color: rgba(15, 23, 42, .14) !important;
+  font-weight: 1000 !important;
+}
+
+body.cv-industrial-shell [role="dialog"] {
+  pointer-events: auto !important;
+}
+
+body.cv-industrial-shell [role="dialog"] input,
+body.cv-industrial-shell [role="dialog"] textarea,
+body.cv-industrial-shell [role="dialog"] select {
+  background: #ffffff !important;
+  color: var(--cv-ink) !important;
+  -webkit-text-fill-color: var(--cv-ink) !important;
+  opacity: 1 !important;
+}
+
+body.cv-industrial-shell [role="dialog"] input:disabled,
+body.cv-industrial-shell [role="dialog"] textarea:disabled,
+body.cv-industrial-shell [role="dialog"] select:disabled {
+  background: #f8fafc !important;
+  color: var(--cv-ink) !important;
+  -webkit-text-fill-color: var(--cv-ink) !important;
+  opacity: 1 !important;
+}
+
+body.cv-industrial-shell [data-testid*="csv"],
+body.cv-industrial-shell [data-testid*="import"],
+body.cv-industrial-shell button[aria-label*="CSV"],
+body.cv-industrial-shell button[aria-label*="Import"],
+body.cv-industrial-shell a[aria-label*="CSV"],
+body.cv-industrial-shell a[aria-label*="Import"] {
+  display: revert !important;
+  visibility: visible !important;
+}
+
+body.cv-industrial-shell .cv-industrial-build-marker::before {
+  content: "theme locked · ";
+}
+
+@media (max-width: 900px) {
+  body.cv-industrial-shell main[data-command-canvas],
+  body.cv-industrial-shell main[data-industrial-simple-page],
+  body.cv-industrial-shell .wh-app-main,
+  body.cv-industrial-shell .c2-record-fullscreen-stage {
+    background: var(--cv-paper) !important;
+  }
+}
