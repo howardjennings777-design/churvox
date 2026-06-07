@@ -14,6 +14,10 @@ const COMMAND_SHELL_STYLE = `
     body.cv-industrial-shell .ch4Root {
       padding-left: 270px !important;
     }
+    body.cv-industrial-shell .scRoot {
+      padding-left: 310px !important;
+      padding-right: 24px !important;
+    }
     body.cv-industrial-shell .cxWrap,
     body.cv-industrial-shell .ch4Wrap {
       max-width: 1520px !important;
@@ -24,9 +28,29 @@ const COMMAND_SHELL_STYLE = `
   }
   @media (max-width: 1200px) {
     body.cv-industrial-shell .cxRoot,
-    body.cv-industrial-shell .ch4Root {
+    body.cv-industrial-shell .ch4Root,
+    body.cv-industrial-shell .scRoot {
       padding-left: 0 !important;
     }
+  }
+
+  body.cv-industrial-shell .cv-industrial-group p {
+    background: transparent !important;
+    color: #94a3b8 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  body.cv-industrial-shell .cv-industrial-group a.active,
+  body.cv-industrial-shell .cv-industrial-group a:hover {
+    background: linear-gradient(135deg, #facc15, #fb923c) !important;
+    color: #020617 !important;
+    border-color: rgba(251, 146, 60, .65) !important;
+  }
+
+  body.cv-industrial-shell .cv-industrial-rail,
+  body.cv-industrial-shell .cv-industrial-mark {
+    background: linear-gradient(135deg, #facc15, #fb923c) !important;
   }
 `;
 
