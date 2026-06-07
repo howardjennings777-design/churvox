@@ -1,0 +1,89 @@
+/* CHURVOX_QUOTE_FORM_POLISH_20260608
+   Safe visual polish for quote create/edit forms only. No quote logic changes. */
+
+body.cv-industrial-shell .wh-app-main [data-testid="quote-form-page"],
+body.cv-industrial-shell .c2-record-fullscreen-stage [data-testid="quote-form-page"] {
+  width: 100% !important;
+  max-width: 1120px !important;
+}
+
+body.cv-industrial-shell .wh-app-main [data-testid="quote-form-page"] form,
+body.cv-industrial-shell .c2-record-fullscreen-stage [data-testid="quote-form-page"] form {
+  display: grid !important;
+  gap: 16px !important;
+  width: 100% !important;
+}
+
+body.cv-industrial-shell .wh-app-main [data-testid="quote-form-page"] form > div:not(:last-child),
+body.cv-industrial-shell .c2-record-fullscreen-stage [data-testid="quote-form-page"] form > div:not(:last-child) {
+  border: 1px solid rgba(15, 23, 42, .10) !important;
+  border-radius: 22px !important;
+  background: #ffffff !important;
+  padding: 16px !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, .05) !important;
+}
+
+body.cv-industrial-shell .wh-app-main [data-testid="quote-form-page"] label,
+body.cv-industrial-shell .c2-record-fullscreen-stage [data-testid="quote-form-page"] label {
+  color: #0f172a !important;
+  font-weight: 1000 !important;
+}
+
+body.cv-industrial-shell .wh-app-main [data-testid="quote-form-page"] input,
+body.cv-industrial-shell .wh-app-main [data-testid="quote-form-page"] textarea,
+body.cv-industrial-shell .wh-app-main [data-testid="quote-form-page"] button[role="combobox"],
+body.cv-industrial-shell .c2-record-fullscreen-stage [data-testid="quote-form-page"] input,
+body.cv-industrial-shell .c2-record-fullscreen-stage [data-testid="quote-form-page"] textarea,
+body.cv-industrial-shell .c2-record-fullscreen-stage [data-testid="quote-form-page"] button[role="combobox"] {
+  min-height: 46px !important;
+  border: 1px solid rgba(15, 23, 42, .16) !important;
+  border-radius: 16px !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  font-weight: 800 !important;
+  box-shadow: none !important;
+}
+
+body.cv-industrial-shell .wh-app-main [data-testid="quote-form-page"] textarea,
+body.cv-industrial-shell .c2-record-fullscreen-stage [data-testid="quote-form-page"] textarea {
+  min-height: 110px !important;
+}
+
+body.cv-industrial-shell .wh-app-main [data-testid="quote-form-page"] form > div:last-child,
+body.cv-industrial-shell .c2-record-fullscreen-stage [data-testid="quote-form-page"] form > div:last-child {
+  position: sticky !important;
+  bottom: 16px !important;
+  z-index: 20 !important;
+  margin-top: 8px !important;
+  border: 1px solid rgba(15, 23, 42, .10) !important;
+  border-radius: 26px !important;
+  background: rgba(255,255,255,.96) !important;
+  padding: 14px !important;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, .16) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+body.cv-industrial-shell .wh-app-main [data-testid="quote-form-page"] form > div:last-child button,
+body.cv-industrial-shell .c2-record-fullscreen-stage [data-testid="quote-form-page"] form > div:last-child button {
+  min-height: 48px !important;
+  border-radius: 18px !important;
+  font-weight: 1000 !important;
+}
+
+body.cv-industrial-shell .wh-app-main [data-testid="quote-form-page"] form > div:last-child button[type="submit"],
+body.cv-industrial-shell .c2-record-fullscreen-stage [data-testid="quote-form-page"] form > div:last-child button[type="submit"] {
+  background: linear-gradient(135deg, #facc15, #fb923c 55%, #22d3ee) !important;
+  color: #020617 !important;
+}
+
+body.cv-industrial-shell .wh-app-main .px-page:has([data-testid="quote-form-page"]),
+body.cv-industrial-shell .c2-record-fullscreen-stage .px-page:has([data-testid="quote-form-page"]) {
+  width: min(100%, 1120px) !important;
+  max-width: 1120px !important;
+}
+
+body.cv-industrial-shell .wh-app-main .px-card:has([data-testid="quote-form-page"]),
+body.cv-industrial-shell .c2-record-fullscreen-stage .px-card:has([data-testid="quote-form-page"]) {
+  width: 100% !important;
+  max-width: 100% !important;
+}
