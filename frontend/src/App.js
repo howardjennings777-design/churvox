@@ -249,7 +249,7 @@ function App() {
             <Route path="/dispatch/map" element={<BusinessRoute><WorkerMapCommandPage /></BusinessRoute>} />
             <Route path="/crew-map" element={<BusinessRoute><DispatchCommandPage /></BusinessRoute>} />
             <Route path="/message-approvals" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/trade-presets" element={<Navigate to="/settings" replace />} />
+            <Route path="/trade-presets" element={<Navigate to="/settings-board" replace />} />
             <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
@@ -265,7 +265,7 @@ function App() {
             <Route path="/proof-to-paid" element={<BusinessRoute><Navigate to="/dashboard" replace /></BusinessRoute>} />
             <Route path="/ai-operator" element={<BusinessRoute><ErrorBoundary fallbackHref="/dashboard" fallbackLabel="Back to Command Board"><CommandDeskQueuePage /></ErrorBoundary></BusinessRoute>} />
             <Route path="/ai-operator/approvals" element={<BusinessRoute><ErrorBoundary fallbackHref="/dashboard" fallbackLabel="Back to Command Board"><CommandDeskQueuePage /></ErrorBoundary></BusinessRoute>} />
-            <Route path="/ai-operator/settings" element={<Navigate to="/settings" replace />} />
+            <Route path="/ai-operator/settings" element={<Navigate to="/settings-board" replace />} />
             <Route path="/admin" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
             <Route path="/churvox-hq" element={<PlatformAdminRoute><ChurvoxHQPage /></PlatformAdminRoute>} />
             <Route path="/admin/hq" element={<PlatformAdminRoute><ChurvoxHQPage /></PlatformAdminRoute>} />
@@ -284,37 +284,45 @@ function App() {
             <Route path="/jobs/:id" element={<BusinessRoute><JobDetailPage /></BusinessRoute>} />
             <Route path="/jobs/:id/edit" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
             <Route path="/dispatch" element={<Navigate to="/crew-map" replace />} />
-            <Route path="/integrations" element={<Navigate to="/settings" replace />} />
+            <Route path="/integrations" element={<Navigate to="/settings-board" replace />} />
             <Route path="/automation" element={<Navigate to="/dashboard" replace />} />
             <Route path="/pipeline" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/calendar" element={<Navigate to="/dispatch" replace />} />
+            <Route path="/calendar" element={<Navigate to="/crew-map" replace />} />
             <Route path="/clients/:clientId/workbench" element={<BusinessRoute><ClientWorkbenchCommandPage /></BusinessRoute>} />
-            <Route path="/clients" element={<BusinessRoute><ConceptCFrame area="clients"><CustomerRecordsPage /></ConceptCFrame></BusinessRoute>} />
+            <Route path="/clients-board" element={<BusinessRoute><CustomerRecordsPage /></BusinessRoute>} />
+            <Route path="/clients" element={<Navigate to="/clients-board" replace />} />
             <Route path="/clients/new" element={<BusinessRoute><ConceptCFrame area="clients"><ClientFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/clients/:id" element={<BusinessRoute><ConceptCFrame area="clients"><ClientDetailPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/clients/:id/edit" element={<BusinessRoute><ConceptCFrame area="clients"><ClientFormPage /></ConceptCFrame></BusinessRoute>} />
-            <Route path="/quotes" element={<BusinessRoute><QuotesCommandPage /></BusinessRoute>} />
+            <Route path="/quotes-board" element={<BusinessRoute><QuotesCommandPage /></BusinessRoute>} />
+            <Route path="/quotes" element={<Navigate to="/quotes-board" replace />} />
             <Route path="/quotes/new" element={<BusinessRoute><ConceptCFrame area="quotes"><QuoteFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/quotes/:id" element={<BusinessRoute><ConceptCFrame area="quotes"><QuoteDetailPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/quotes/:id/edit" element={<BusinessRoute><ConceptCFrame area="quotes"><QuoteFormPage /></ConceptCFrame></BusinessRoute>} />
-            <Route path="/money-desk" element={<Navigate to="/invoices" replace />} />
-            <Route path="/money" element={<Navigate to="/invoices" replace />} />
-            <Route path="/invoices" element={<BusinessRoute><InvoicesCommandPage /></BusinessRoute>} />
+            <Route path="/money-desk" element={<Navigate to="/invoices-board" replace />} />
+            <Route path="/money" element={<Navigate to="/invoices-board" replace />} />
+            <Route path="/invoices-board" element={<BusinessRoute><InvoicesCommandPage /></BusinessRoute>} />
+            <Route path="/invoices" element={<Navigate to="/invoices-board" replace />} />
             <Route path="/invoices/new" element={<BusinessRoute><ConceptCFrame area="invoices"><InvoiceFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/invoices/:id" element={<BusinessRoute><ConceptCFrame area="invoices"><InvoiceDetailPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/sms" element={<BusinessRoute><Navigate to="/dashboard" replace /></BusinessRoute>} />
-            <Route path="/reports" element={<ReportsRoute><ReportsCommandPage /></ReportsRoute>} />
-            <Route path="/settings" element={<BusinessRoute><SettingsCommandPage /></BusinessRoute>} />
-            <Route path="/contact" element={<Navigate to="/support" replace />} />
-            <Route path="/support" element={<PrivateRoute><SupportCommandPage /></PrivateRoute>} />
-            <Route path="/trust" element={<Navigate to="/support" replace />} />
+            <Route path="/reports-board" element={<ReportsRoute><ReportsCommandPage /></ReportsRoute>} />
+            <Route path="/reports" element={<Navigate to="/reports-board" replace />} />
+            <Route path="/settings-board" element={<BusinessRoute><SettingsCommandPage /></BusinessRoute>} />
+            <Route path="/settings" element={<Navigate to="/settings-board" replace />} />
+            <Route path="/contact" element={<Navigate to="/support-board" replace />} />
+            <Route path="/support-board" element={<PrivateRoute><SupportCommandPage /></PrivateRoute>} />
+            <Route path="/support" element={<Navigate to="/support-board" replace />} />
+            <Route path="/trust" element={<Navigate to="/support-board" replace />} />
             <Route path="/plans" element={<OwnerRoute><PlansCommandPage /></OwnerRoute>} />
             <Route path="/billing-confidence" element={<Navigate to="/plans" replace />} />
-            <Route path="/team" element={<PlanTierRoute requiredPlan="team" feature="Team workspace"><TeamCommandPage /></PlanTierRoute>} />
+            <Route path="/team-board" element={<PlanTierRoute requiredPlan="team" feature="Team workspace"><TeamCommandPage /></PlanTierRoute>} />
+            <Route path="/team" element={<Navigate to="/team-board" replace />} />
             <Route path="/crew-ops" element={<Navigate to="/crew-map" replace />} />
             <Route path="/notifications" element={<Navigate to="/dashboard" replace />} />
             <Route path="/automation/runs" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/payroll" element={<PlanTierRoute requiredPlan="enterprise" feature="Payroll workspace"><PayrollCommandPage /></PlanTierRoute>} />
+            <Route path="/payroll-board" element={<PlanTierRoute requiredPlan="enterprise" feature="Payroll workspace"><PayrollCommandPage /></PlanTierRoute>} />
+            <Route path="/payroll" element={<Navigate to="/payroll-board" replace />} />
             <Route path="/worker/jobs" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobsPage /></ConceptCFrame></WorkerRoute>} />
             <Route path="/worker/ops" element={<WorkerRoute><WorkerCommandPage /></WorkerRoute>} />
             <Route path="/worker/jobs/:id" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobDetailPage /></ConceptCFrame></WorkerRoute>} />
