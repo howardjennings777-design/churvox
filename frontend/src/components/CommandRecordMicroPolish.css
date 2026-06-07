@@ -1,0 +1,25 @@
+/* CHURVOX_RECORD_MICRO_POLISH_20260607
+   Tiny final record form polish only. */
+
+body.cv-industrial-shell .wh-app-main,
+body.cv-industrial-shell .c2-record-fullscreen-stage {
+  max-width: 1220px !important;
+}
+
+body.cv-industrial-shell .wh-app-main::before {
+  content: "Record workspace" !important;
+  letter-spacing: .14em !important;
+}
+
+body.cv-industrial-shell .wh-app-main .px-page {
+  width: min(100%, 1080px) !important;
+  max-width: 1080px !important;
+}
+
+body.cv-industrial-shell .wh-app-main .px-hero {
+  max-width: 100% !important;
+}
+
+body.cv-industrial-shell .wh-app-main .px-card {
+  max-width: 100% !important;
+}
