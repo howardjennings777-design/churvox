@@ -56,6 +56,7 @@ import SupportCommandPage from "./pages/SupportCommandPage";
 import PayrollCommandPage from "./pages/PayrollCommandPage";
 import OfflineSyncPage from "./pages/OfflineSyncPage";
 import PlansCommandPage from "./pages/PlansCommandPage";
+import BillingReturnPage from "./pages/BillingReturnPage";
 import { OnboardingCommandPage, WorkerCommandPage } from "./pages/CommandRestPages";
 import { hasPlanAtLeast, nicePlanName, requiredPlanLabel } from "./config/churvoxPlans";
 import ClientWorkbenchCommandPage from "./pages/ClientWorkbenchCommandPage";
@@ -296,6 +297,9 @@ function App() {
             <Route path="/support" element={<Navigate to="/support-board" replace />} />
             <Route path="/trust" element={<Navigate to="/support-board" replace />} />
             <Route path="/plans" element={<OwnerRoute><PlansCommandPage /></OwnerRoute>} />
+            <Route path="/billing" element={<OwnerRoute><BillingReturnPage /></OwnerRoute>} />
+            <Route path="/billing/success" element={<OwnerRoute><BillingReturnPage /></OwnerRoute>} />
+            <Route path="/billing/cancel" element={<OwnerRoute><BillingReturnPage cancelled /></OwnerRoute>} />
             <Route path="/billing-confidence" element={<Navigate to="/plans" replace />} />
             <Route path="/team-board" element={<PlanTierRoute requiredPlan="team" feature="Team workspace"><TeamCommandPage /></PlanTierRoute>} />
             <Route path="/team" element={<Navigate to="/team-board" replace />} />
