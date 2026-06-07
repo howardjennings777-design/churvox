@@ -1,0 +1,61 @@
+/* Force Command Board back to the approved off-white workspace layout.
+   This file is imported last so old global industrial shell rules cannot repaint it dark. */
+
+body.cv-industrial-shell main.cv-command-board-offwhite.fixed.inset-0[data-industrial-simple-page="command"] {
+  background: #f7f3ea !important;
+  background-image: none !important;
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell main.cv-command-board-offwhite.fixed.inset-0[data-industrial-simple-page="command"] > section {
+  background: transparent !important;
+}
+
+body.cv-industrial-shell main.cv-command-board-offwhite.fixed.inset-0[data-industrial-simple-page="command"] .cv-board-dark-card,
+body.cv-industrial-shell main.cv-command-board-offwhite.fixed.inset-0[data-industrial-simple-page="command"] section.cv-board-dark-card,
+body.cv-industrial-shell main.cv-command-board-offwhite.fixed.inset-0[data-industrial-simple-page="command"] article.cv-board-dark-card,
+body.cv-industrial-shell main.cv-command-board-offwhite.fixed.inset-0[data-industrial-simple-page="command"] button.cv-board-dark-card {
+  background: linear-gradient(135deg, #111827, #070d16) !important;
+  background-image: linear-gradient(135deg, #111827, #070d16) !important;
+  color: #ffffff !important;
+  border-color: rgba(250, 204, 21, 0.18) !important;
+  box-shadow: 0 22px 62px rgba(2, 6, 23, 0.24), inset 0 1px 0 rgba(255,255,255,0.06) !important;
+}
+
+body.cv-industrial-shell main.cv-command-board-offwhite.fixed.inset-0[data-industrial-simple-page="command"] .cv-board-dark-card h1,
+body.cv-industrial-shell main.cv-command-board-offwhite.fixed.inset-0[data-industrial-simple-page="command"] .cv-board-dark-card h2,
+body.cv-industrial-shell main.cv-command-board-offwhite.fixed.inset-0[data-industrial-simple-page="command"] .cv-board-dark-card h3,
+body.cv-industrial-shell main.cv-command-board-offwhite.fixed.inset-0[data-industrial-simple-page="command"] .cv-board-dark-card strong,
+body.cv-industrial-shell main.cv-command-board-offwhite.fixed.inset-0[data-industrial-simple-page="command"] .cv-board-dark-card b {
+  color: #ffffff !important;
+}
+
+body.cv-industrial-shell main.cv-command-board-offwhite.fixed.inset-0[data-industrial-simple-page="command"] .cv-board-dark-card p {
+  color: #cbd5e1 !important;
+}
+
+body.cv-industrial-shell main.cv-command-board-offwhite.fixed.inset-0[data-industrial-simple-page="command"] .cv-board-light-card,
+body.cv-industrial-shell main.cv-command-board-offwhite.fixed.inset-0[data-industrial-simple-page="command"] section.cv-board-light-card,
+body.cv-industrial-shell main.cv-command-board-offwhite.fixed.inset-0[data-industrial-simple-page="command"] div.cv-board-light-card {
+  background: #ffffff !important;
+  background-image: none !important;
+  color: #0f172a !important;
+  border-color: #e5e7eb !important;
+  box-shadow: 0 18px 46px rgba(15, 23, 42, 0.08) !important;
+}
+
+body.cv-industrial-shell main.cv-command-board-offwhite.fixed.inset-0[data-industrial-simple-page="command"] .cv-board-light-card h1,
+body.cv-industrial-shell main.cv-command-board-offwhite.fixed.inset-0[data-industrial-simple-page="command"] .cv-board-light-card h2,
+body.cv-industrial-shell main.cv-command-board-offwhite.fixed.inset-0[data-industrial-simple-page="command"] .cv-board-light-card h3 {
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell main.cv-command-board-offwhite.fixed.inset-0[data-industrial-simple-page="command"] .cv-board-light-card p,
+body.cv-industrial-shell main.cv-command-board-offwhite.fixed.inset-0[data-industrial-simple-page="command"] .cv-board-light-card div,
+body.cv-industrial-shell main.cv-command-board-offwhite.fixed.inset-0[data-industrial-simple-page="command"] .cv-board-light-card span {
+  color: inherit;
+}
+
+body.cv-industrial-shell main.cv-command-board-offwhite.fixed.inset-0[data-industrial-simple-page="command"] .cv-board-light-card a {
+  color: #0f172a !important;
+}
