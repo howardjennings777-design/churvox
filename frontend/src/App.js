@@ -193,12 +193,7 @@ function App() {
         const sessionId = params.get("session_id") || "";
         const plan = (params.get("plan") || "").toLowerCase();
         if (!checkout && !sessionId) return;
-        const token = localStorage.getItem("token");
-        const backendUrl = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || process.env.REACT_APP_BACKEND_URL || "").replace(/\/$/, "");
-        if (sessionId && token && backendUrl) {
-          try { await fetch(`${backendUrl}/api/billing/confirm-checkout`, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }, credentials: "include", body: JSON.stringify({ session_id: sessionId }) }); } catch (err) { console.warn("confirm-checkout failed (non-fatal):", err); }
-        }
-        if (checkout === "success") toast.success(plan ? `Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan is now active` : "Plan updated");
+        if (checkout === "success") toast.success(plan ? `Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan is being activated` : "Checkout finished — refreshing plan status");
         else if (checkout === "cancelled") toast.info("Checkout cancelled — no changes to your plan");
         window.dispatchEvent(new Event("churvox-auth-refresh"));
         const cleaned = new URL(window.location.href);
@@ -217,6 +212,8 @@ function App() {
           <FloatingBottomNav />
           <Routes>
             <Route path="/operator-tools" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/command-board" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/smart-hub" element={<Navigate to="/dashboard" replace />} />
             <Route path="/launch-control" element={<Navigate to="/dashboard" replace />} />
             <Route path="/sales-polish" element={<Navigate to="/dashboard" replace />} />
             <Route path="/integration-proof" element={<Navigate to="/dashboard" replace />} />
@@ -231,6 +228,7 @@ function App() {
             <Route path="/dispatch/map" element={<BusinessRoute><WorkerMapCommandPage /></BusinessRoute>} />
             <Route path="/crew-map" element={<Navigate to="/dispatch-board" replace />} />
             <Route path="/dispatch" element={<Navigate to="/dispatch-board" replace />} />
+            <Route path="/schedule" element={<Navigate to="/dispatch-board" replace />} />
             <Route path="/calendar" element={<Navigate to="/dispatch-board" replace />} />
             <Route path="/message-approvals" element={<Navigate to="/dashboard" replace />} />
             <Route path="/trade-presets" element={<Navigate to="/settings-board" replace />} />
@@ -264,12 +262,18 @@ function App() {
             <Route path="/onboarding" element={<BusinessRoute><OnboardingCommandPage /></BusinessRoute>} />
             <Route path="/jobs-board" element={<BusinessRoute><ErrorBoundary fallbackHref="/dashboard" fallbackLabel="Back to Command Board"><JobsCommandPage /></ErrorBoundary></BusinessRoute>} />
             <Route path="/jobs" element={<Navigate to="/jobs-board" replace />} />
+            <Route path="/job-board" element={<Navigate to="/jobs-board" replace />} />
+            <Route path="/job-records" element={<Navigate to="/jobs-board" replace />} />
             <Route path="/jobs/new" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
             <Route path="/jobs/:id" element={<BusinessRoute><JobDetailPage /></BusinessRoute>} />
             <Route path="/jobs/:id/edit" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
             <Route path="/integrations" element={<Navigate to="/settings-board" replace />} />
+            <Route path="/xero" element={<Navigate to="/settings-board" replace />} />
+            <Route path="/myob" element={<Navigate to="/settings-board" replace />} />
             <Route path="/automation" element={<Navigate to="/dashboard" replace />} />
             <Route path="/pipeline" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/customer-records" element={<Navigate to="/clients-board" replace />} />
+            <Route path="/customers" element={<Navigate to="/clients-board" replace />} />
             <Route path="/clients/:clientId/workbench" element={<BusinessRoute><ClientWorkbenchCommandPage /></BusinessRoute>} />
             <Route path="/clients-board" element={<BusinessRoute><CustomerRecordsPage /></BusinessRoute>} />
             <Route path="/clients" element={<Navigate to="/clients-board" replace />} />
@@ -277,12 +281,14 @@ function App() {
             <Route path="/clients/:id" element={<BusinessRoute><ConceptCFrame area="clients"><ClientDetailPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/clients/:id/edit" element={<BusinessRoute><ConceptCFrame area="clients"><ClientFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/quotes-board" element={<BusinessRoute><QuotesCommandPage /></BusinessRoute>} />
+            <Route path="/quote-board" element={<Navigate to="/quotes-board" replace />} />
             <Route path="/quotes" element={<Navigate to="/quotes-board" replace />} />
             <Route path="/quotes/new" element={<BusinessRoute><ConceptCFrame area="quotes"><QuoteFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/quotes/:id" element={<BusinessRoute><ConceptCFrame area="quotes"><QuoteDetailPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/quotes/:id/edit" element={<BusinessRoute><ConceptCFrame area="quotes"><QuoteFormPage /></ConceptCFrame></BusinessRoute>} />
             <Route path="/money-desk" element={<Navigate to="/invoices-board" replace />} />
             <Route path="/money" element={<Navigate to="/invoices-board" replace />} />
+            <Route path="/invoice-board" element={<Navigate to="/invoices-board" replace />} />
             <Route path="/invoices-board" element={<BusinessRoute><InvoicesCommandPage /></BusinessRoute>} />
             <Route path="/invoices" element={<Navigate to="/invoices-board" replace />} />
             <Route path="/invoices/new" element={<BusinessRoute><ConceptCFrame area="invoices"><InvoiceFormPage /></ConceptCFrame></BusinessRoute>} />
@@ -290,9 +296,12 @@ function App() {
             <Route path="/sms" element={<BusinessRoute><Navigate to="/dashboard" replace /></BusinessRoute>} />
             <Route path="/reports-board" element={<ReportsRoute><ReportsCommandPage /></ReportsRoute>} />
             <Route path="/reports" element={<Navigate to="/reports-board" replace />} />
+            <Route path="/reporting" element={<Navigate to="/reports-board" replace />} />
             <Route path="/settings-board" element={<BusinessRoute><SettingsCommandPage /></BusinessRoute>} />
             <Route path="/settings" element={<Navigate to="/settings-board" replace />} />
+            <Route path="/business-settings" element={<Navigate to="/settings-board" replace />} />
             <Route path="/contact" element={<Navigate to="/support-board" replace />} />
+            <Route path="/help" element={<Navigate to="/support-board" replace />} />
             <Route path="/support-board" element={<PrivateRoute><SupportCommandPage /></PrivateRoute>} />
             <Route path="/support" element={<Navigate to="/support-board" replace />} />
             <Route path="/trust" element={<Navigate to="/support-board" replace />} />
@@ -303,11 +312,16 @@ function App() {
             <Route path="/billing-confidence" element={<Navigate to="/plans" replace />} />
             <Route path="/team-board" element={<PlanTierRoute requiredPlan="team" feature="Team workspace"><TeamCommandPage /></PlanTierRoute>} />
             <Route path="/team" element={<Navigate to="/team-board" replace />} />
+            <Route path="/staff" element={<Navigate to="/team-board" replace />} />
+            <Route path="/crew" element={<Navigate to="/team-board" replace />} />
             <Route path="/crew-ops" element={<Navigate to="/dispatch-board" replace />} />
             <Route path="/notifications" element={<Navigate to="/dashboard" replace />} />
             <Route path="/automation/runs" element={<Navigate to="/dashboard" replace />} />
             <Route path="/payroll-board" element={<PlanTierRoute requiredPlan="enterprise" feature="Payroll workspace"><PayrollCommandPage /></PlanTierRoute>} />
             <Route path="/payroll" element={<Navigate to="/payroll-board" replace />} />
+            <Route path="/worker" element={<Navigate to="/worker/jobs" replace />} />
+            <Route path="/worker/today" element={<Navigate to="/worker/jobs" replace />} />
+            <Route path="/worker/help" element={<Navigate to="/worker/settings#help" replace />} />
             <Route path="/worker/jobs" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobsPage /></ConceptCFrame></WorkerRoute>} />
             <Route path="/worker/ops" element={<WorkerRoute><WorkerCommandPage /></WorkerRoute>} />
             <Route path="/worker/jobs/:id" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobDetailPage /></ConceptCFrame></WorkerRoute>} />
