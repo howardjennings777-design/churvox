@@ -1,1 +1,4 @@
-trigger render deploy
+force render deploy after fullscreen slip css fix
+latest frontend commits:
+- exact tapped item opens as slip
+- slip forced above whole app layout
