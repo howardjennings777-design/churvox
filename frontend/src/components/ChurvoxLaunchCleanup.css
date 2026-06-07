@@ -1,0 +1,90 @@
+/* Churvox launch cleanup pass: one shell, readable pages, no test UI. */
+
+/* Desktop: sidebar only. Bottom mobile dock is hidden on desktop. */
+@media (min-width: 1024px) {
+  body.cv-has-floating-dock {
+    padding-bottom: 0 !important;
+  }
+
+  .cv-clean-command-nav {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  .xcf-command-10,
+  .concept-c2-frame .c2-frame {
+    padding-bottom: 0 !important;
+  }
+}
+
+/* Mobile/tablet: keep bottom dock, hide sidebar. */
+@media (max-width: 1023px) {
+  body.cv-has-floating-dock {
+    padding-bottom: 104px !important;
+  }
+}
+
+/* Remove old internal/test deployment badge from the sidebar. */
+.cv-industrial-sidebar::after {
+  content: none !important;
+  display: none !important;
+}
+
+.cv-industrial-navwrap {
+  padding-bottom: 18px !important;
+}
+
+/* Plans page launch readability. */
+body.cv-industrial-shell .cv-launch-plans-page {
+  background: #f7f3ea !important;
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell .cv-launch-plan-card {
+  background: linear-gradient(135deg, #111827, #070d16) !important;
+  color: #f8fafc !important;
+  border-color: rgba(250, 204, 21, 0.2) !important;
+  box-shadow: 0 22px 62px rgba(2, 6, 23, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+body.cv-industrial-shell .cv-launch-plan-card * {
+  color: inherit !important;
+}
+
+body.cv-industrial-shell .cv-launch-plan-card h2,
+body.cv-industrial-shell .cv-launch-plan-card .cv-launch-plan-price,
+body.cv-industrial-shell .cv-launch-plan-card .cv-launch-plan-feature {
+  color: #ffffff !important;
+}
+
+body.cv-industrial-shell .cv-launch-plan-card .cv-launch-plan-muted {
+  color: rgba(226, 232, 240, 0.78) !important;
+}
+
+body.cv-industrial-shell .cv-launch-plan-card .cv-launch-plan-badge {
+  color: #facc15 !important;
+  background: rgba(250, 204, 21, 0.1) !important;
+  border: 1px solid rgba(250, 204, 21, 0.28) !important;
+}
+
+body.cv-industrial-shell .cv-launch-plan-card.cv-launch-plan-featured {
+  border-color: rgba(251, 146, 60, 0.65) !important;
+  box-shadow: 0 28px 80px rgba(251, 146, 60, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+body.cv-industrial-shell .cv-launch-plan-card .cv-launch-plan-cta {
+  background: linear-gradient(135deg, #facc15, #fb923c 55%, #22d3ee) !important;
+  color: #020617 !important;
+  border-color: transparent !important;
+}
+
+body.cv-industrial-shell .cv-launch-clean-white-card {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+}
+
+body.cv-industrial-shell .cv-launch-clean-white-card * {
+  color: inherit !important;
+}
