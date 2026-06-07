@@ -1,4 +1,4 @@
-// CHURVOX_QUOTE_FROM_CLIENT_STABLE_PREFILL_20260601
+// CHURVOX_QUOTE_CREATE_EXTRAS_SAVE_20260607
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -8,27 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { addDaysIso, loadBusinessSettings } from "@/lib/businessSettings";
 
-function arr(value) {
-  if (Array.isArray(value)) return value;
-  if (Array.isArray(value?.data)) return value.data;
-  if (Array.isArray(value?.clients)) return value.clients;
-  if (Array.isArray(value?.items)) return value.items;
-  if (Array.isArray(value?.results)) return value.results;
-  return [];
-}
-function normalizeId(value) {
-  if (!value) return "";
-  if (typeof value === "string") return value;
-  if (typeof value === "number") return String(value);
-  if (typeof value === "object") return normalizeId(value.$oid || value.oid || value.id || value._id || "");
-  const text = String(value || "");
-  return text === "[object Object]" ? "" : text;
-}
-function recordId(payload) {
-  const data = payload?.data ?? payload;
-  const item = data?.quote || data?.item || data?.record || data;
-  return normalizeId(data?.id || data?._id || item?.id || item?._id || "");
-}
+function arr(value) { if (Array.isArray(value)) return value; if (Array.isArray(value?.data)) return value.data; if (Array.isArray(value?.clients)) return value.clients; if (Array.isArray(value?.items)) return value.items; if (Array.isArray(value?.results)) return value.results; return []; }
+function normalizeId(value) { if (!value) return ""; if (typeof value === "string") return value; if (typeof value === "number") return String(value); if (typeof value === "object") return normalizeId(value.$oid || value.oid || value.id || value._id || ""); const text = String(value || ""); return text === "[object Object]" ? "" : text; }
+function recordId(payload) { const data = payload?.data ?? payload; const item = data?.quote || data?.item || data?.record || data; return normalizeId(data?.id || data?._id || item?.id || item?._id || ""); }
 function clientId(client) { return normalizeId(client?.id || client?._id || client?.client_id || ""); }
 function clientName(client) { return client?.name || client?.client_name || client?.customer_name || client?.contact_name || "Client"; }
 function money(value) { const n = Number(String(value ?? "").replace(/[^0-9.-]/g, "")); return Number.isFinite(n) ? n : 0; }
@@ -48,21 +30,7 @@ export default function QuoteCreateForm({ onSuccess, onCancel, submitLabel = "Cr
   const [lines, setLines] = useState(() => [{ description: firstService(loadBusinessSettings()), qty: "1", rate: "" }]);
   const [form, setForm] = useState(() => {
     const s = loadBusinessSettings();
-    return {
-      client_id: clientFromQuery,
-      customer_name: "",
-      customer_email: "",
-      customer_phone: "",
-      address: "",
-      job_description: firstService(s),
-      job_type: s.trade_industry_type || "general_service",
-      price: "",
-      pricing_type: "fixed",
-      notes: validNote(s),
-      valid_until: addDaysIso(s.default_quote_expiry_days || 14),
-      status: "draft",
-      quote_prefix: s.quote_prefix || "QUO",
-    };
+    return { client_id: clientFromQuery, customer_name: "", customer_email: "", customer_phone: "", address: "", job_description: firstService(s), job_type: "other", price: "", pricing_type: "fixed", notes: validNote(s), valid_until: addDaysIso(s.default_quote_expiry_days || 14) };
   });
 
   useEffect(() => {
@@ -71,13 +39,7 @@ export default function QuoteCreateForm({ onSuccess, onCancel, submitLabel = "Cr
     const onSettings = (event) => {
       const next = event?.detail || loadBusinessSettings();
       setSettings(next);
-      setForm((current) => ({
-        ...current,
-        job_type: current.job_type || next.trade_industry_type || "general_service",
-        notes: current.notes || validNote(next),
-        valid_until: current.valid_until || addDaysIso(next.default_quote_expiry_days || 14),
-        quote_prefix: next.quote_prefix || "QUO",
-      }));
+      setForm((current) => ({ ...current, notes: current.notes || validNote(next), valid_until: current.valid_until || addDaysIso(next.default_quote_expiry_days || 14) }));
     };
     window.addEventListener("churvox-business-settings-updated", onSettings);
     return () => { alive = false; window.removeEventListener("churvox-business-settings-updated", onSettings); };
@@ -106,15 +68,7 @@ export default function QuoteCreateForm({ onSuccess, onCancel, submitLabel = "Cr
 
   function pickClient(selectedId) {
     const client = clients.find((c) => clientId(c) === String(selectedId));
-    setForm((p) => ({
-      ...p,
-      client_id: selectedId,
-      customer_name: client ? clientName(client) : p.customer_name,
-      customer_email: client?.email || client?.customer_email || client?.client_email || p.customer_email,
-      customer_phone: client?.phone || client?.mobile || client?.customer_phone || p.customer_phone,
-      address: client?.address || client?.site_address || client?.billing_address || p.address,
-      job_description: p.job_description || firstService(settings),
-    }));
+    setForm((p) => ({ ...p, client_id: selectedId, customer_name: client ? clientName(client) : p.customer_name, customer_email: client?.email || client?.customer_email || client?.client_email || p.customer_email, customer_phone: client?.phone || client?.mobile || client?.customer_phone || p.customer_phone, address: client?.address || client?.site_address || client?.billing_address || p.address, job_description: p.job_description || firstService(settings) }));
   }
 
   async function submit(e) {
@@ -124,35 +78,20 @@ export default function QuoteCreateForm({ onSuccess, onCancel, submitLabel = "Cr
     if (!form.job_description.trim()) return toast.error("Job description is required");
     if (previewTotal <= 0) return toast.error("Add a quote price or line item rate");
     setSaving(true);
-    const cleanLines = lines.map((line) => ({
-      description: line.description,
-      quantity: money(line.qty) || 1,
-      qty: money(line.qty) || 1,
-      rate: money(line.rate),
-      unit_price: money(line.rate),
-      amount: lineTotal(line),
-    })).filter((line) => line.description || line.amount > 0);
+    const cleanLines = lines.map((line) => ({ description: line.description, quantity: money(line.qty) || 1, qty: money(line.qty) || 1, rate: money(line.rate), unit_price: money(line.rate), amount: lineTotal(line) })).filter((line) => line.description || line.amount > 0);
+    const lineSummary = cleanLines.length ? `\n\nQuote items:\n${cleanLines.map((line) => `- ${line.description || "Item"}: ${line.quantity} × $${line.rate} = $${Number(line.amount || 0).toFixed(2)}`).join("\n")}` : "";
     const payload = {
-      ...form,
       client_id: form.client_id || null,
-      client_name: form.customer_name,
       customer_name: form.customer_name,
       customer_email: form.customer_email,
-      customer_phone: form.customer_phone,
       address: form.address,
-      site_address: form.address,
-      description: form.job_description,
+      job_description: form.job_description,
+      job_type: form.job_type || "other",
       price: previewTotal,
-      total: previewTotal,
-      amount: previewTotal,
-      line_items: cleanLines,
-      status: form.status || "draft",
-      quote_prefix: settings.quote_prefix || form.quote_prefix || "QUO",
-      business_snapshot: settings,
-      business_name: settings.business_name || "",
-      business_email: settings.email || "",
-      business_phone: settings.phone || "",
-      business_address: settings.business_address || "",
+      pricing_type: form.pricing_type || "fixed",
+      hourly_rate: 0,
+      extras: cleanLines,
+      notes: `${form.notes || ""}${lineSummary}`.trim(),
       valid_until: form.valid_until ? new Date(`${form.valid_until}T23:59:59`).toISOString() : null,
     };
     const res = await post("/quotes", payload);
@@ -166,11 +105,11 @@ export default function QuoteCreateForm({ onSuccess, onCancel, submitLabel = "Cr
   const section = "rounded-2xl border border-slate-700 bg-slate-950/50 p-4 md:p-5 space-y-4 shadow-[0_8px_28px_rgba(0,0,0,0.18)]";
   const fieldClass = "w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2.5 text-white";
 
-  return <form onSubmit={submit} className="min-h-full flex flex-col" data-version="CHURVOX_QUOTE_FROM_CLIENT_STABLE_PREFILL_20260601">
+  return <form onSubmit={submit} className="min-h-full flex flex-col" data-version="CHURVOX_QUOTE_CREATE_EXTRAS_SAVE_20260607">
     <div className="space-y-4 pb-28">
       <section className={section}>
         <div><p className="text-sm font-black text-white">Quote details</p><p className="text-xs font-semibold text-slate-300">Uses your business setup and can prefill directly from a client record.</p></div>
-        <div className="rounded-2xl border border-lime-300/20 bg-lime-300/10 p-3 text-xs font-bold text-lime-100">Business defaults: {settings.business_name || "No business name yet"} · Prefix {settings.quote_prefix || "QUO"} · Expires in {settings.default_quote_expiry_days || 14} days</div>
+        <div className="rounded-2xl border border-lime-300/20 bg-lime-300/10 p-3 text-xs font-bold text-lime-100">Business defaults: {settings.business_name || "No business name yet"} · Expires in {settings.default_quote_expiry_days || 14} days</div>
         {clientFromQuery ? <div className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-3 text-xs font-bold text-cyan-100">Opened from a client record. Customer details will prefill once the client loads.</div> : null}
         <div><Label htmlFor="quote-client">Client</Label><select id="quote-client" className={fieldClass} value={form.client_id} onChange={(e)=>pickClient(e.target.value)} data-testid="quote-client-select"><option value="">Select client</option>{clients.map((c)=><option key={clientId(c)} value={clientId(c)}>{clientName(c)}</option>)}</select></div>
         <div><Label htmlFor="quote-customer-name">Customer Name *</Label><Input id="quote-customer-name" className="rounded-xl" required value={form.customer_name} onChange={(e)=>change("customer_name", e.target.value)} data-testid="quote-customer-name-input" /></div>
@@ -179,7 +118,7 @@ export default function QuoteCreateForm({ onSuccess, onCancel, submitLabel = "Cr
         <div><Label htmlFor="quote-job-description">Job Description *</Label><Textarea id="quote-job-description" className="rounded-xl" required value={form.job_description} onChange={(e)=>change("job_description", e.target.value)} data-testid="quote-job-description-input" /></div>
       </section>
       <section className={section}>
-        <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-black text-white">Quote line items</p><p className="text-xs font-semibold text-slate-300">Break the quote into simple, customer-readable rows.</p></div><button type="button" className="px-button-secondary" onClick={addLine}>Add line</button></div>
+        <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-black text-white">Quote line items</p><p className="text-xs font-semibold text-slate-300">Saved into quote extras so they remain available for job/invoice context.</p></div><button type="button" className="px-button-secondary" onClick={addLine}>Add line</button></div>
         {lines.map((line, index)=><div key={index} className="grid grid-cols-1 md:grid-cols-[1fr_90px_120px_90px] gap-2 items-end"><div><Label htmlFor={`quote-line-description-${index}`}>Description</Label><Input id={`quote-line-description-${index}`} value={line.description} onChange={(e)=>updateLine(index,"description",e.target.value)} data-testid={`quote-line-description-${index}`} /></div><div><Label htmlFor={`quote-line-qty-${index}`}>Qty</Label><Input id={`quote-line-qty-${index}`} type="number" step="0.1" value={line.qty} onChange={(e)=>updateLine(index,"qty",e.target.value)} data-testid={`quote-line-qty-${index}`} /></div><div><Label htmlFor={`quote-line-rate-${index}`}>Rate</Label><Input id={`quote-line-rate-${index}`} type="number" step="0.01" value={line.rate} onChange={(e)=>updateLine(index,"rate",e.target.value)} data-testid={`quote-line-rate-${index}`} /></div><button type="button" className="px-button-secondary" onClick={()=>removeLine(index)}>Remove</button></div>)}
         <div><Label htmlFor="quote-total-price">Total quote price</Label><Input id="quote-total-price" className="rounded-xl" type="number" step="0.01" value={form.price} onChange={(e)=>change("price", e.target.value)} data-testid="quote-total-price-input" /></div>
         <div><Label htmlFor="quote-valid-until">Valid until</Label><Input id="quote-valid-until" className="rounded-xl" type="date" value={form.valid_until} onChange={(e)=>change("valid_until", e.target.value)} data-testid="quote-valid-until-input" /></div>
