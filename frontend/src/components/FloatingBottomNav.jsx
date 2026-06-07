@@ -23,8 +23,9 @@ import "./CommandBoardSlipFinal.css";
 import "./IndustrialThemeEverywhereLock.css";
 import "./CommandSummarySlipProof.css";
 import "./CommandWorkspaceWideFix.css";
+import "./CommandApprovalDeskIndustrialLock.css";
 
-const BUILD_MARKER = "Build command-wide-slip";
+const BUILD_MARKER = "Build command-approval-industrial";
 
 const NAV_ITEMS = [
   ["Command", "/dashboard", "CM"],
