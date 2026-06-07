@@ -7,6 +7,133 @@
   box-sizing: border-box;
 }
 
+/*
+  The industrial shell has broad global rules that turn .bg-white/.bg-slate-50
+  transparent and force most text white. That looks washed out on the Command
+  Board because this dashboard intentionally uses an off-white workspace.
+  Keep this override scoped only to the Command Board so other pages are safe.
+*/
+body.cv-industrial-shell .churvox-dashboard-main {
+  background: #f5f2ea !important;
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell .churvox-dashboard-main .bg-white {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell .churvox-dashboard-main .bg-slate-50 {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell .churvox-dashboard-main .bg-orange-50 {
+  background: #fff7ed !important;
+  color: #431407 !important;
+}
+
+body.cv-industrial-shell .churvox-dashboard-main .bg-slate-950 {
+  background: #0f172a !important;
+  color: #ffffff !important;
+}
+
+body.cv-industrial-shell .churvox-dashboard-main .bg-orange-400 {
+  background: #fb923c !important;
+  color: #111827 !important;
+}
+
+body.cv-industrial-shell .churvox-dashboard-main .border-slate-200 {
+  border-color: #e2e8f0 !important;
+}
+
+body.cv-industrial-shell .churvox-dashboard-main .border-orange-200 {
+  border-color: #fed7aa !important;
+}
+
+body.cv-industrial-shell .churvox-dashboard-main .text-slate-950,
+body.cv-industrial-shell .churvox-dashboard-main .text-slate-900,
+body.cv-industrial-shell .churvox-dashboard-main .text-slate-800 {
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell .churvox-dashboard-main .text-slate-700,
+body.cv-industrial-shell .churvox-dashboard-main .text-slate-600 {
+  color: #475569 !important;
+}
+
+body.cv-industrial-shell .churvox-dashboard-main .text-slate-500 {
+  color: #64748b !important;
+}
+
+body.cv-industrial-shell .churvox-dashboard-main .text-orange-600,
+body.cv-industrial-shell .churvox-dashboard-main .text-orange-700 {
+  color: #ea580c !important;
+}
+
+body.cv-industrial-shell .churvox-dashboard-main .text-cyan-700 {
+  color: #0e7490 !important;
+}
+
+body.cv-industrial-shell .churvox-dashboard-main .text-orange-950 {
+  color: #431407 !important;
+}
+
+body.cv-industrial-shell .churvox-dashboard-main .bg-white h1,
+body.cv-industrial-shell .churvox-dashboard-main .bg-white h2,
+body.cv-industrial-shell .churvox-dashboard-main .bg-white h3,
+body.cv-industrial-shell .churvox-dashboard-main .bg-white h4,
+body.cv-industrial-shell .churvox-dashboard-main .bg-white b,
+body.cv-industrial-shell .churvox-dashboard-main .bg-white strong,
+body.cv-industrial-shell .churvox-dashboard-main .bg-slate-50 h1,
+body.cv-industrial-shell .churvox-dashboard-main .bg-slate-50 h2,
+body.cv-industrial-shell .churvox-dashboard-main .bg-slate-50 h3,
+body.cv-industrial-shell .churvox-dashboard-main .bg-slate-50 h4,
+body.cv-industrial-shell .churvox-dashboard-main .bg-slate-50 b,
+body.cv-industrial-shell .churvox-dashboard-main .bg-slate-50 strong,
+body.cv-industrial-shell .churvox-dashboard-main .bg-orange-50 h1,
+body.cv-industrial-shell .churvox-dashboard-main .bg-orange-50 h2,
+body.cv-industrial-shell .churvox-dashboard-main .bg-orange-50 h3,
+body.cv-industrial-shell .churvox-dashboard-main .bg-orange-50 h4,
+body.cv-industrial-shell .churvox-dashboard-main .bg-orange-50 b,
+body.cv-industrial-shell .churvox-dashboard-main .bg-orange-50 strong {
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell .churvox-dashboard-main .bg-white p,
+body.cv-industrial-shell .churvox-dashboard-main .bg-white li,
+body.cv-industrial-shell .churvox-dashboard-main .bg-slate-50 p,
+body.cv-industrial-shell .churvox-dashboard-main .bg-slate-50 li {
+  color: #475569 !important;
+}
+
+body.cv-industrial-shell .churvox-dashboard-main .bg-slate-950 h1,
+body.cv-industrial-shell .churvox-dashboard-main .bg-slate-950 h2,
+body.cv-industrial-shell .churvox-dashboard-main .bg-slate-950 h3,
+body.cv-industrial-shell .churvox-dashboard-main .bg-slate-950 h4,
+body.cv-industrial-shell .churvox-dashboard-main .bg-slate-950 b,
+body.cv-industrial-shell .churvox-dashboard-main .bg-slate-950 strong,
+body.cv-industrial-shell .churvox-dashboard-main .bg-slate-950 .text-white {
+  color: #ffffff !important;
+}
+
+body.cv-industrial-shell .churvox-dashboard-main .bg-slate-950 p,
+body.cv-industrial-shell .churvox-dashboard-main .bg-slate-950 .text-slate-300,
+body.cv-industrial-shell .churvox-dashboard-main .bg-slate-950 .text-slate-400 {
+  color: #cbd5e1 !important;
+}
+
+body.cv-industrial-shell .churvox-dashboard-main a,
+body.cv-industrial-shell .churvox-dashboard-main button {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+body.cv-industrial-shell .churvox-dashboard-main .shadow-\[0_10px_28px_rgba\(15\,23\,42\,\.055\)\],
+body.cv-industrial-shell .churvox-dashboard-main .shadow-\[0_12px_34px_rgba\(15\,23\,42\,\.06\)\] {
+  box-shadow: 0 14px 36px rgba(15, 23, 42, .08) !important;
+}
+
 @media (min-width: 1024px) {
   body.cv-has-floating-dock {
     padding-bottom: 0 !important;
