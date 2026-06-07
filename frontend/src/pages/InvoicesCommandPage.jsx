@@ -6,43 +6,121 @@ import { industrialAction, industrialChip, industrialContentLane, industrialGhos
 
 const tileStyle = { background: "linear-gradient(135deg, #111827, #070d16)", color: "#ffffff", boxShadow: "0 18px 46px rgba(2,6,23,.26), inset 0 1px 0 rgba(255,255,255,.06)" };
 const first = (...values) => values.find((value) => value !== undefined && value !== null && String(value).trim() !== "") || "";
-const idOf = (item) => String(item?.id || item?._id || item?.invoice_id || "");
+const normalizeId = (value) => {
+  if (!value) return "";
+  if (typeof value === "object") return String(value.$oid || value.oid || value.id || value._id || "");
+  const text = String(value || "");
+  return text === "[object Object]" ? "" : text;
+};
+const idOf = (item) => normalizeId(item?.id || item?._id || item?.invoice_id || "");
+const linkedJobId = (item) => normalizeId(item?.job_id || item?.linked_job_id || "");
+const linkedQuoteId = (item) => normalizeId(item?.quote_id || item?.linked_quote_id || "");
 const rawStatus = (item) => String(first(item?.status, item?.invoice_status, "draft")).toLowerCase();
 const statusOf = (item) => String(first(item?.status, item?.invoice_status, "draft")).replaceAll("_", " ");
 const titleOf = (item) => first(item?.title, item?.invoice_title, item?.invoice_number, item?.number, item?.job_title, "Untitled invoice");
 const clientOf = (item) => first(item?.client_name, item?.customer_name, item?.client?.name, item?.customer?.name, "No client saved");
-const amountOf = (item) => Number(first(item?.total, item?.amount_due, item?.balance_due, item?.amount, item?.subtotal, item?.invoice_total, 0)) || 0;
-const isPaid = (item) => rawStatus(item).includes("paid");
-const isDraft = (item) => rawStatus(item).includes("draft");
-const isSent = (item) => { const s = rawStatus(item); return s.includes("sent") || s.includes("viewed") || s.includes("unpaid"); };
+const amountOf = (item) => Number(first(item?.amount_due, item?.balance_due, item?.total, item?.amount, item?.subtotal, item?.invoice_total, 0)) || 0;
+const totalOf = (item) => Number(first(item?.total, item?.amount, item?.subtotal, item?.invoice_total, 0)) || 0;
+const isPaid = (item) => rawStatus(item) === "paid";
+const isDraft = (item) => rawStatus(item) === "draft";
+const isSent = (item) => rawStatus(item) === "sent";
+const isCancelled = (item) => rawStatus(item) === "cancelled";
 
 function listFrom(res) { const data = res?.data ?? res; if (Array.isArray(data)) return data; for (const key of ["invoices", "items", "results", "data"]) if (Array.isArray(data?.[key])) return data[key]; return []; }
 function numberValue(value) { const num = Number(String(value || 0).replace(/[^0-9.-]/g, "")); return Number.isFinite(num) ? num : 0; }
 function money(value) { const num = Number(value || 0); return Number.isFinite(num) && num > 0 ? num.toLocaleString("en-NZ", { style: "currency", currency: "NZD" }) : "$0.00"; }
 function formatDate(value) { if (!value) return "Not set"; const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }); }
-function isOverdue(item) { if (isPaid(item)) return false; if (rawStatus(item).includes("overdue") || Number(item?.days_overdue || 0) > 0) return true; const due = first(item?.due_date, item?.date_due, item?.payment_due); if (!due) return false; const date = new Date(due); return !Number.isNaN(date.getTime()) && date.getTime() < Date.now(); }
-function statusClass(item) { if (isPaid(item)) return "bg-emerald-300 text-slate-950"; if (isOverdue(item)) return "bg-red-300 text-slate-950"; if (isSent(item)) return "bg-cyan-300 text-slate-950"; if (isDraft(item)) return "bg-amber-300 text-slate-950"; return "bg-white/10 text-white ring-1 ring-white/10"; }
-function detailsFor(item) { return { Client: clientOf(item), Status: statusOf(item), Amount: money(amountOf(item)), Due: formatDate(first(item?.due_date, item?.date_due, item?.payment_due, item?.expiry_date)), Created: formatDate(first(item?.created_at, item?.date, item?.invoice_date)), Job: first(item?.job_title, item?.job_name, item?.job_id, "Not linked"), Notes: first(item?.notes, item?.description, item?.invoice_notes, "No notes saved") }; }
+function isOverdue(item) { if (isPaid(item) || isCancelled(item)) return false; if (rawStatus(item) === "overdue" || Number(item?.days_overdue || 0) > 0) return true; const due = first(item?.due_date, item?.date_due, item?.payment_due); if (!due) return false; const date = new Date(due); return !Number.isNaN(date.getTime()) && date.getTime() < Date.now(); }
+function statusClass(item) { if (isPaid(item)) return "bg-emerald-300 text-slate-950"; if (isCancelled(item)) return "bg-red-300 text-slate-950"; if (isOverdue(item)) return "bg-red-300 text-slate-950"; if (isSent(item)) return "bg-cyan-300 text-slate-950"; if (isDraft(item)) return "bg-amber-300 text-slate-950"; return "bg-white/10 text-white ring-1 ring-white/10"; }
+function detailsFor(item) { return { Client: clientOf(item), Status: statusOf(item), "Amount due": money(amountOf(item)), Total: money(totalOf(item)), Due: formatDate(first(item?.due_date, item?.date_due, item?.payment_due, item?.expiry_date)), Created: formatDate(first(item?.created_at, item?.date, item?.invoice_date)), "Linked job": linkedJobId(item) || "Not linked", Notes: first(item?.notes, item?.description, item?.invoice_notes, "No notes saved") }; }
 function SecurityTape({ color = "#34d399" }) { return <span aria-hidden="true" className="absolute left-0 top-0 h-full w-2.5 rounded-l-[26px]" style={{ background: `repeating-linear-gradient(135deg, ${color} 0 10px, rgba(255,255,255,.30) 10px 15px, ${color} 15px 25px)`, boxShadow: `0 0 18px ${color}66` }} />; }
 function MetricCard({ label, value, text, color }) { return <article className="relative overflow-hidden rounded-[28px] border border-white/10 p-5 pl-7 text-white" style={tileStyle}><SecurityTape color={color} /><div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">{label}</div><div className="mt-3 text-4xl font-black tracking-[-0.07em] text-white">{value}</div><p className="mt-2 text-sm font-bold leading-6 text-slate-300">{text}</p></article>; }
-function DetailRow({ label, value }) { return <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4"><div className="text-[10px] font-black uppercase tracking-[.16em] text-amber-300">{label}</div><div className="mt-2 text-sm font-black leading-6 text-white">{String(value || "Not saved")}</div></div>; }
+function DetailRow({ label, value }) { return <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4"><div className="text-[10px] font-black uppercase tracking-[.16em] text-amber-300">{label}</div><div className="mt-2 break-words text-sm font-black leading-6 text-white">{String(value || "Not saved")}</div></div>; }
 function Field({ label, value, onChange }) { return <label className="grid gap-2 rounded-2xl border border-white/10 bg-slate-950/45 p-4"><span className="text-[10px] font-black uppercase tracking-[.16em] text-amber-300">{label}</span><input value={value || ""} onChange={(event) => onChange(event.target.value)} className="rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm font-bold text-white outline-none focus:border-amber-300" /></label>; }
+function TextArea({ label, value, onChange }) { return <label className="grid gap-2 rounded-2xl border border-white/10 bg-slate-950/45 p-4"><span className="text-[10px] font-black uppercase tracking-[.16em] text-amber-300">{label}</span><textarea value={value || ""} onChange={(event) => onChange(event.target.value)} rows={4} className="rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm font-bold text-white outline-none focus:border-amber-300" /></label>; }
 
 function InvoiceSlip({ invoice, busy, onClose, onRefresh, api }) {
   const [form, setForm] = React.useState({ notes: "", subtotal: "", follow_up: "" });
   const details = React.useMemo(() => detailsFor(invoice || {}), [invoice]);
-  React.useEffect(() => { if (!invoice) return; setForm({ notes: first(invoice?.notes, invoice?.description, ""), subtotal: first(invoice?.subtotal, invoice?.amount, invoice?.total, ""), follow_up: `Hi ${clientOf(invoice)}, just a friendly reminder about your outstanding invoice ${first(invoice?.invoice_number, invoice?.number, "")}.` }); }, [invoice]);
+  React.useEffect(() => {
+    if (!invoice) return;
+    setForm({
+      notes: first(invoice?.notes, invoice?.description, ""),
+      subtotal: first(invoice?.subtotal, invoice?.amount, invoice?.total, ""),
+      follow_up: `Hi ${clientOf(invoice)}, just a friendly reminder about invoice ${first(invoice?.invoice_number, invoice?.number, "")} for ${money(amountOf(invoice))}.`,
+    });
+  }, [invoice]);
   if (!invoice) return null;
   const invoiceId = idOf(invoice);
+  const jobId = linkedJobId(invoice);
+  const quoteId = linkedQuoteId(invoice);
+  const locked = isPaid(invoice) || isCancelled(invoice);
 
-  async function run(label, fn) {
-    try { const res = await fn(); if (res?.success === false) throw new Error(res?.error || `${label} failed`); toast.success(label); await onRefresh(); onClose(); } catch (error) { toast.error(error?.message || `${label} failed`); }
+  async function syncSource(nextStatus, extra = {}) {
+    const total = totalOf(invoice) || numberValue(form.subtotal);
+    const common = {
+      invoice_id: invoiceId,
+      linked_invoice_id: invoiceId,
+      invoice_status: nextStatus,
+      invoice_total: total,
+      invoice_amount_due: nextStatus === "paid" ? 0 : amountOf(invoice),
+      invoice_synced_at: new Date().toISOString(),
+      ...extra,
+    };
+    const calls = [];
+    if (jobId) calls.push(api.patch(`/jobs/${jobId}`, common));
+    if (quoteId) calls.push(api.patch(`/quotes/${quoteId}`, common));
+    if (calls.length) await Promise.allSettled(calls);
   }
 
-  return <div className="fixed inset-0 z-[2147483600] overflow-y-auto bg-slate-950/92 p-3 text-white backdrop-blur-xl md:p-6" role="dialog" aria-modal="true"><div className="mx-auto flex min-h-[calc(100vh-24px)] max-w-6xl flex-col overflow-hidden rounded-[34px] border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 shadow-2xl md:min-h-[calc(100vh-48px)]"><header className="flex items-start justify-between gap-4 border-b border-white/10 p-5 md:p-7"><div><div className="inline-flex rounded-full bg-amber-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-200">Invoice slip</div><h2 className="mt-3 text-4xl font-black leading-[0.95] tracking-[-0.07em] text-white md:text-6xl">{titleOf(invoice)}</h2><p className="mt-4 max-w-3xl text-sm font-bold leading-6 text-slate-300 md:text-base">{clientOf(invoice)} · {money(amountOf(invoice))} · {statusOf(invoice)}</p></div><button type="button" onClick={onClose} className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-slate-950">Close</button></header><div className="grid flex-1 gap-5 p-5 md:grid-cols-[1.15fr_.85fr] md:p-7"><section className="space-y-5"><section className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5"><div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">Review this exact invoice</div><div className="mt-4 grid gap-3 md:grid-cols-2">{Object.entries(details).map(([label, value]) => <DetailRow key={label} label={label} value={value} />)}</div></section><section className="grid gap-3 md:grid-cols-2"><Field label="Invoice notes" value={form.notes} onChange={(value) => setForm((p) => ({ ...p, notes: value }))} /><Field label="Subtotal" value={form.subtotal} onChange={(value) => setForm((p) => ({ ...p, subtotal: value }))} /><Field label="Follow-up wording" value={form.follow_up} onChange={(value) => setForm((p) => ({ ...p, follow_up: value }))} /></section></section><aside className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5"><div className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200">Real invoice actions</div><p className="mt-3 text-sm font-bold leading-6 text-slate-300">These actions use the backend-supported invoice update endpoint. Owner reviews first, then approves.</p><div className="mt-5 grid gap-3"><button type="button" disabled={busy || !invoiceId} onClick={() => run("Invoice saved", () => api.patch(`/invoices/${invoiceId}`, { notes: form.notes || null, subtotal: numberValue(form.subtotal) }))} className="rounded-2xl bg-emerald-300 px-5 py-4 text-sm font-black text-slate-950 disabled:opacity-50">Save invoice notes/amount</button><button type="button" disabled={busy || !invoiceId || !isDraft(invoice)} onClick={() => run("Invoice marked sent", () => api.patch(`/invoices/${invoiceId}`, { status: "sent" }))} className="rounded-2xl bg-cyan-300 px-5 py-4 text-sm font-black text-slate-950 disabled:opacity-50">Mark sent</button><button type="button" disabled={busy || !invoiceId || isPaid(invoice)} onClick={() => run("Invoice marked paid", () => api.patch(`/invoices/${invoiceId}`, { status: "paid" }))} className="rounded-2xl bg-emerald-400 px-5 py-4 text-sm font-black text-slate-950 disabled:opacity-50">Mark paid</button><button type="button" disabled={busy || !invoiceId || isPaid(invoice)} onClick={() => run("Follow-up reviewed", () => api.patch(`/invoices/${invoiceId}`, { notes: `Follow-up reviewed ${new Date().toLocaleDateString()}: ${form.follow_up}` }))} className="rounded-2xl bg-amber-300 px-5 py-4 text-sm font-black text-slate-950 disabled:opacity-50">Mark follow-up reviewed</button>{invoiceId ? <Link to={`/invoices/${invoiceId}`} onClick={onClose} className="rounded-2xl bg-white px-5 py-4 text-center text-sm font-black text-slate-950 no-underline">Open full invoice page</Link> : null}<button type="button" onClick={onClose} className="rounded-2xl bg-white/10 px-5 py-4 text-sm font-black text-white ring-1 ring-white/10">Back to invoices</button></div></aside></div></div></div>;
+  async function run(label, nextStatus, patchBody = {}) {
+    try {
+      const res = await api.patch(`/invoices/${invoiceId}`, patchBody);
+      if (res?.success === false) throw new Error(res?.error || `${label} failed`);
+      if (nextStatus) await syncSource(nextStatus);
+      toast.success(label);
+      await onRefresh();
+      onClose();
+    } catch (error) {
+      toast.error(error?.message || `${label} failed`);
+    }
+  }
+
+  return <div className="fixed inset-0 z-[2147483600] overflow-y-auto bg-slate-950/92 p-3 text-white backdrop-blur-xl md:p-6" role="dialog" aria-modal="true">
+    <div className="mx-auto flex min-h-[calc(100vh-24px)] max-w-6xl flex-col overflow-hidden rounded-[34px] border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 shadow-2xl md:min-h-[calc(100vh-48px)]">
+      <header className="flex items-start justify-between gap-4 border-b border-white/10 p-5 md:p-7">
+        <div>
+          <div className="inline-flex rounded-full bg-amber-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-200">Invoice action slip</div>
+          <h2 className="mt-3 text-4xl font-black leading-[0.95] tracking-[-0.07em] text-white md:text-6xl">{titleOf(invoice)}</h2>
+          <p className="mt-4 max-w-3xl text-sm font-bold leading-6 text-slate-300 md:text-base">{clientOf(invoice)} · {money(amountOf(invoice))} due · {statusOf(invoice)}</p>
+        </div>
+        <button type="button" onClick={onClose} className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-slate-950">Close</button>
+      </header>
+      <div className="grid flex-1 gap-5 p-5 md:grid-cols-[1.15fr_.85fr] md:p-7">
+        <section className="space-y-5">
+          <section className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5"><div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">Review this exact invoice</div><div className="mt-4 grid gap-3 md:grid-cols-2">{Object.entries(details).map(([label, value]) => <DetailRow key={label} label={label} value={value} />)}</div></section>
+          <section className="grid gap-3 md:grid-cols-2"><TextArea label="Invoice notes" value={form.notes} onChange={(value) => setForm((p) => ({ ...p, notes: value }))} /><div className="grid gap-3"><Field label="Subtotal" value={form.subtotal} onChange={(value) => setForm((p) => ({ ...p, subtotal: value }))} /><TextArea label="Follow-up wording" value={form.follow_up} onChange={(value) => setForm((p) => ({ ...p, follow_up: value }))} /></div></section>
+        </section>
+        <aside className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5">
+          <div className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200">Real invoice actions</div>
+          <p className="mt-3 text-sm font-bold leading-6 text-slate-300">Actions use supported invoice states only: draft, sent, paid, overdue, cancelled. Linked jobs and quotes are updated where available.</p>
+          <div className="mt-5 grid gap-3">
+            <button type="button" disabled={busy || !invoiceId || locked} onClick={() => run("Invoice saved", null, { notes: form.notes || null, subtotal: numberValue(form.subtotal) })} className="rounded-2xl bg-emerald-300 px-5 py-4 text-sm font-black text-slate-950 disabled:opacity-50">Save notes/amount</button>
+            <button type="button" disabled={busy || !invoiceId || locked || isSent(invoice)} onClick={() => run("Invoice marked sent", "sent", { status: "sent", notes: form.notes || invoice?.notes || null })} className="rounded-2xl bg-cyan-300 px-5 py-4 text-sm font-black text-slate-950 disabled:opacity-50">Mark sent</button>
+            <button type="button" disabled={busy || !invoiceId || locked} onClick={() => run("Invoice marked paid", "paid", { status: "paid", notes: form.notes || invoice?.notes || null })} className="rounded-2xl bg-emerald-400 px-5 py-4 text-sm font-black text-slate-950 disabled:opacity-50">Mark paid</button>
+            <button type="button" disabled={busy || !invoiceId || locked} onClick={() => run("Follow-up note saved", null, { notes: `${form.notes ? `${form.notes}\n\n` : ""}Follow-up prepared ${new Date().toLocaleDateString("en-NZ")}: ${form.follow_up}` })} className="rounded-2xl bg-amber-300 px-5 py-4 text-sm font-black text-slate-950 disabled:opacity-50">Save follow-up note</button>
+            <button type="button" disabled={busy || !invoiceId || locked} onClick={() => { if (window.confirm("Cancel this invoice?")) run("Invoice cancelled", "cancelled", { status: "cancelled", notes: `${form.notes ? `${form.notes}\n\n` : ""}Cancelled by owner ${new Date().toLocaleDateString("en-NZ")}` }); }} className="rounded-2xl bg-red-300 px-5 py-4 text-sm font-black text-red-950 disabled:opacity-50">Cancel invoice</button>
+            {invoiceId ? <Link to={`/invoices/${invoiceId}`} onClick={onClose} className="rounded-2xl bg-white px-5 py-4 text-center text-sm font-black text-slate-950 no-underline">Open full invoice page</Link> : null}
+            {jobId ? <Link to={`/jobs/${jobId}`} onClick={onClose} className="rounded-2xl border border-white/15 bg-white/10 px-5 py-4 text-center text-sm font-black text-white no-underline">Open linked job</Link> : null}
+            <button type="button" onClick={onClose} className="rounded-2xl bg-white/10 px-5 py-4 text-sm font-black text-white ring-1 ring-white/10">Back to invoices</button>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>;
 }
 
-function InvoiceRow({ invoice, onOpen }) { const tape = isPaid(invoice) ? "#34d399" : isOverdue(invoice) ? "#f43f5e" : isSent(invoice) ? "#22d3ee" : "#facc15"; return <button type="button" onClick={() => onOpen(invoice)} className="relative w-full overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.06] p-4 pl-7 text-left text-white transition hover:border-cyan-300/40 hover:bg-white/[0.09] active:scale-[0.99]"><SecurityTape color={tape} /><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h3 className="truncate text-xl font-black tracking-[-0.05em] text-white">{titleOf(invoice)}</h3><p className="mt-1 line-clamp-1 text-sm font-bold leading-6 text-slate-300">{clientOf(invoice)} · {money(amountOf(invoice))} · due {formatDate(first(invoice?.due_date, invoice?.date_due, invoice?.payment_due))}</p></div><span className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${statusClass(invoice)}`}>{statusOf(invoice)}</span></div></button>; }
+function InvoiceRow({ invoice, onOpen }) { const tape = isPaid(invoice) ? "#34d399" : isCancelled(invoice) || isOverdue(invoice) ? "#f43f5e" : isSent(invoice) ? "#22d3ee" : "#facc15"; return <button type="button" onClick={() => onOpen(invoice)} className="relative w-full overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.06] p-4 pl-7 text-left text-white transition hover:border-cyan-300/40 hover:bg-white/[0.09] active:scale-[0.99]"><SecurityTape color={tape} /><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h3 className="truncate text-xl font-black tracking-[-0.05em] text-white">{titleOf(invoice)}</h3><p className="mt-1 line-clamp-1 text-sm font-bold leading-6 text-slate-300">{clientOf(invoice)} · {money(amountOf(invoice))} due · {formatDate(first(invoice?.due_date, invoice?.date_due, invoice?.payment_due))}</p></div><span className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${statusClass(invoice)}`}>{statusOf(invoice)}</span></div></button>; }
 
 export default function InvoicesCommandPage() {
   const api = useApi();
@@ -59,8 +137,21 @@ export default function InvoicesCommandPage() {
   const draftInvoices = invoices.filter(isDraft);
   const overdueInvoices = invoices.filter(isOverdue);
   const paidInvoices = invoices.filter(isPaid);
-  const unpaidInvoices = invoices.filter((invoice) => !isPaid(invoice));
+  const unpaidInvoices = invoices.filter((invoice) => !isPaid(invoice) && !isCancelled(invoice));
   const unpaidTotal = unpaidInvoices.reduce((sum, invoice) => sum + amountOf(invoice), 0);
 
-  return <main className={industrialPageShell} data-industrial-simple-page="invoices" data-command-canvas><section className={`${industrialContentLane} space-y-5`}><section className="relative overflow-hidden rounded-[30px] border border-white/10 p-5 pl-8 text-white md:p-7 md:pl-9" style={tileStyle}><SecurityTape color="#34d399" /><span className={industrialChip}>Invoices</span><h1 className="mt-4 max-w-4xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">Invoices ready to send, follow up, or mark paid.</h1><p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Tap an invoice to open a real action slip. Save notes, mark sent, mark paid, or review follow-ups.</p><div className="mt-5 flex flex-wrap gap-3"><Link to="/invoices/new" className={`rounded-2xl px-5 py-3 text-sm font-black ${industrialAction}`}>Create invoice</Link><button type="button" onClick={load} className={`rounded-2xl px-5 py-3 text-sm font-black ${industrialGhost}`}>Refresh invoices</button><Link to="/dashboard" className={`rounded-2xl px-5 py-3 text-sm font-black ${industrialGhost}`}>Command Board</Link></div></section><section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4"><MetricCard label="Drafts" value={draftInvoices.length} text="Invoices waiting for owner review." color="#facc15" /><MetricCard label="Unpaid" value={money(unpaidTotal)} text="Total invoice value not marked paid." color="#22d3ee" /><MetricCard label="Overdue" value={overdueInvoices.length} text="Invoices that may need follow-up." color="#f43f5e" /><MetricCard label="Paid" value={paidInvoices.length} text="Invoices marked paid." color="#34d399" /></section><section className="rounded-[30px] border border-white/10 p-5 text-white md:p-6" style={tileStyle}><div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">Invoice list</div><h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-white">Tap an invoice to review it</h2></div>{loading ? <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-slate-300">Loading…</span> : <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-slate-300">{invoices.length} invoices</span>}</div>{invoices.length ? <div className="grid gap-3">{invoices.map((invoice, index) => <InvoiceRow key={idOf(invoice) || `${titleOf(invoice)}-${index}`} invoice={invoice} onOpen={setSelectedInvoice} />)}</div> : <div className="rounded-[26px] border border-white/10 bg-white/[0.06] p-5"><h3 className="text-2xl font-black tracking-[-0.05em] text-white">No invoices showing yet.</h3><p className="mt-2 text-sm font-bold leading-6 text-slate-300">Create the first invoice and Churvox will keep invoice review and payment follow-up work here.</p><Link to="/invoices/new" className={`mt-4 inline-flex rounded-2xl px-5 py-3 text-sm font-black no-underline ${industrialAction}`}>Create invoice</Link></div>}</section></section><InvoiceSlip invoice={selectedInvoice} busy={busy} onClose={() => setSelectedInvoice(null)} onRefresh={refreshFromSlip} api={api} /></main>;
+  return <main className={industrialPageShell} data-industrial-simple-page="invoices" data-command-canvas>
+    <section className={`${industrialContentLane} space-y-5`}>
+      <section className="relative overflow-hidden rounded-[30px] border border-white/10 p-5 pl-8 text-white md:p-7 md:pl-9" style={tileStyle}>
+        <SecurityTape color="#34d399" />
+        <span className={industrialChip}>Invoices</span>
+        <h1 className="mt-4 max-w-4xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">Invoices ready to send, follow up, or mark paid.</h1>
+        <p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Tap an invoice to open a real action slip. Save notes, mark sent, mark paid, cancel, or open the full invoice record.</p>
+        <div className="mt-5 flex flex-wrap gap-3"><Link to="/invoices/new" className={`rounded-2xl px-5 py-3 text-sm font-black ${industrialAction}`}>Create invoice</Link><button type="button" onClick={load} className={`rounded-2xl px-5 py-3 text-sm font-black ${industrialGhost}`}>Refresh invoices</button><Link to="/dashboard" className={`rounded-2xl px-5 py-3 text-sm font-black ${industrialGhost}`}>Command Board</Link></div>
+      </section>
+      <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4"><MetricCard label="Drafts" value={draftInvoices.length} text="Invoices waiting for owner review." color="#facc15" /><MetricCard label="Unpaid" value={money(unpaidTotal)} text="Total invoice value not marked paid." color="#22d3ee" /><MetricCard label="Overdue" value={overdueInvoices.length} text="Invoices that need follow-up." color="#f43f5e" /><MetricCard label="Paid" value={paidInvoices.length} text="Invoices marked paid." color="#34d399" /></section>
+      <section className="rounded-[30px] border border-white/10 p-5 text-white md:p-6" style={tileStyle}><div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">Invoice list</div><h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-white">Tap an invoice to review it</h2></div>{loading ? <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-slate-300">Loading…</span> : <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-slate-300">{invoices.length} invoices</span>}</div>{invoices.length ? <div className="grid gap-3">{invoices.map((invoice, index) => <InvoiceRow key={idOf(invoice) || `${titleOf(invoice)}-${index}`} invoice={invoice} onOpen={setSelectedInvoice} />)}</div> : <div className="rounded-[26px] border border-white/10 bg-white/[0.06] p-5"><h3 className="text-2xl font-black tracking-[-0.05em] text-white">No invoices showing yet.</h3><p className="mt-2 text-sm font-bold leading-6 text-slate-300">Create one from a completed job or start a manual invoice.</p><Link to="/invoices/new" className={`mt-4 inline-flex rounded-2xl px-5 py-3 text-sm font-black no-underline ${industrialAction}`}>Create invoice</Link></div>}</section>
+    </section>
+    <InvoiceSlip invoice={selectedInvoice} busy={busy} onClose={() => setSelectedInvoice(null)} onRefresh={refreshFromSlip} api={api} />
+  </main>;
 }
