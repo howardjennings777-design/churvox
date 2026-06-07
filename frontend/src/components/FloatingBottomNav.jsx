@@ -18,8 +18,9 @@ import "./TeamProfileSlipTextFix.css";
 import "./CommandQuoteFormPolish.css";
 import "./CommandBoardCardSlipLock.css";
 import "./CommandBoardAIFeel.css";
+import "./CommandBoardLayoutPolish.css";
 
-const BUILD_MARKER = "Build command-ai-feel";
+const BUILD_MARKER = "Build command-layout-polish";
 
 const NAV_ITEMS = [
   ["Command", "/dashboard", "CM"],
