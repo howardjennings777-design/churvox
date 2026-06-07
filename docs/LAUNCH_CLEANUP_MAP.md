@@ -8,6 +8,12 @@ Churvox is one app with one owner experience: the Command Desk.
 
 The app must feel like a serious trade/service business command centre, not a collection of old test pages.
 
+## Accounting launch rule
+
+Xero is the visible accounting direction for launch polish.
+
+Do not show MYOB in customer-facing launch pages for now. Keep any existing backend or old integration code untouched unless it is safely refactored later.
+
 ## Live navigation to keep
 
 - `/dashboard` — Command Board. Owner sees urgent work, AI-prepared slips, jobs, invoices, quotes and crew actions.
