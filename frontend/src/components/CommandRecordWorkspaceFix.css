@@ -97,7 +97,6 @@ body.cv-industrial-shell .c2-record-fullscreen .wh-app-main {
   background: transparent !important;
 }
 
-/* Override the global industrial dark-card rule for old full-form pages only. */
 body.cv-industrial-shell .wh-app-main section,
 body.cv-industrial-shell .wh-app-main article,
 body.cv-industrial-shell .wh-app-main div.rounded-\[30px\],
@@ -190,6 +189,77 @@ body.cv-industrial-shell .wh-app-main .bg-slate-950,
 body.cv-industrial-shell .c2-record-fullscreen-stage .bg-slate-950 {
   background: #0f172a !important;
   color: #ffffff !important;
+}
+
+/* Strong last-pass cleanup for the job create form and similar legacy forms. */
+body.cv-industrial-shell .wh-app-main form,
+body.cv-industrial-shell .c2-record-fullscreen-stage form {
+  background: transparent !important;
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell .wh-app-main form > div,
+body.cv-industrial-shell .c2-record-fullscreen-stage form > div {
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell .wh-app-main .space-y-6 > div,
+body.cv-industrial-shell .wh-app-main .space-y-5 > div,
+body.cv-industrial-shell .wh-app-main .space-y-4 > div,
+body.cv-industrial-shell .c2-record-fullscreen-stage .space-y-6 > div,
+body.cv-industrial-shell .c2-record-fullscreen-stage .space-y-5 > div,
+body.cv-industrial-shell .c2-record-fullscreen-stage .space-y-4 > div {
+  background: #ffffff !important;
+  border-color: rgba(15, 23, 42, .10) !important;
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell .wh-app-main .border,
+body.cv-industrial-shell .c2-record-fullscreen-stage .border {
+  border-color: rgba(15, 23, 42, .12) !important;
+}
+
+body.cv-industrial-shell .wh-app-main .bg-\[\#0f172a\],
+body.cv-industrial-shell .wh-app-main .bg-\[\#111827\],
+body.cv-industrial-shell .wh-app-main .bg-slate-900,
+body.cv-industrial-shell .wh-app-main .bg-slate-800,
+body.cv-industrial-shell .c2-record-fullscreen-stage .bg-\[\#0f172a\],
+body.cv-industrial-shell .c2-record-fullscreen-stage .bg-\[\#111827\],
+body.cv-industrial-shell .c2-record-fullscreen-stage .bg-slate-900,
+body.cv-industrial-shell .c2-record-fullscreen-stage .bg-slate-800 {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell .wh-app-main .text-white,
+body.cv-industrial-shell .wh-app-main .text-slate-100,
+body.cv-industrial-shell .wh-app-main .text-slate-200,
+body.cv-industrial-shell .c2-record-fullscreen-stage .text-white,
+body.cv-industrial-shell .c2-record-fullscreen-stage .text-slate-100,
+body.cv-industrial-shell .c2-record-fullscreen-stage .text-slate-200 {
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell .wh-app-main .text-slate-300,
+body.cv-industrial-shell .wh-app-main .text-slate-400,
+body.cv-industrial-shell .c2-record-fullscreen-stage .text-slate-300,
+body.cv-industrial-shell .c2-record-fullscreen-stage .text-slate-400 {
+  color: #475569 !important;
+}
+
+body.cv-industrial-shell .wh-app-main form button,
+body.cv-industrial-shell .c2-record-fullscreen-stage form button {
+  min-height: 46px !important;
+  border-radius: 16px !important;
+}
+
+body.cv-industrial-shell .wh-app-main form button[type="submit"],
+body.cv-industrial-shell .c2-record-fullscreen-stage form button[type="submit"] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: linear-gradient(135deg, #facc15, #fb923c 55%, #22d3ee) !important;
+  color: #020617 !important;
 }
 
 @media (max-width: 1023px) {
