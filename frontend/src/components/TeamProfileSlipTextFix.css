@@ -1,0 +1,51 @@
+/* CHURVOX_TEAM_PROFILE_SLIP_TEXT_FIX_20260607
+   Final text readability fix for Team profile slip detail boxes. */
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] section {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] section .grid > div,
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] section div.rounded-2xl {
+  background: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, .14) !important;
+  color: #0f172a !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, .06) !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] section .grid > div *,
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] section div.rounded-2xl * {
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] section .grid > div > div:first-child,
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] section div.rounded-2xl > div:first-child {
+  color: #c2410c !important;
+  font-weight: 1000 !important;
+  letter-spacing: .14em !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] section .grid > div > div:last-child,
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] section div.rounded-2xl > div:last-child {
+  color: #0f172a !important;
+  font-weight: 1000 !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] aside {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] aside p,
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] aside div {
+  color: #334155 !important;
+  opacity: 1 !important;
+}
+
+body.cv-industrial-shell main[data-industrial-simple-page="team"] [role="dialog"] aside > div:first-child {
+  color: #0e7490 !important;
+  font-weight: 1000 !important;
+}
