@@ -20,8 +20,9 @@ import "./CommandBoardCardSlipLock.css";
 import "./CommandBoardAIFeel.css";
 import "./CommandBoardLayoutPolish.css";
 import "./CommandBoardSlipFinal.css";
+import "./IndustrialThemeEverywhereLock.css";
 
-const BUILD_MARKER = "Build command-slip-final";
+const BUILD_MARKER = "Build industrial-theme-lock";
 
 const NAV_ITEMS = [
   ["Command", "/dashboard", "CM"],
