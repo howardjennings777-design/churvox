@@ -5,6 +5,7 @@ import "./FloatingBottomNav.css";
 import "./IndustrialCommandSidebar.css";
 import "./IndustrialCommandPages.css";
 import "./DashboardStripClean.css";
+import "./ChurvoxLaunchCleanup.css";
 
 const NAV_ITEMS = [
   ["Command", "/dashboard", "CM"],
