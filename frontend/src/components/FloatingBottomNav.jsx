@@ -8,8 +8,9 @@ import "./DashboardStripClean.css";
 import "./ChurvoxLaunchCleanup.css";
 import "./CommandRecordWorkspaceFix.css";
 import "./CommandRecordFinalFix.css";
+import "./CommandJobFormPolish.css";
 
-const BUILD_MARKER = "Build record-final-fix";
+const BUILD_MARKER = "Build job-form-polish";
 
 const NAV_ITEMS = [
   ["Command", "/dashboard", "CM"],
