@@ -22,8 +22,9 @@ import "./CommandBoardLayoutPolish.css";
 import "./CommandBoardSlipFinal.css";
 import "./IndustrialThemeEverywhereLock.css";
 import "./CommandSummarySlipProof.css";
+import "./CommandWorkspaceWideFix.css";
 
-const BUILD_MARKER = "Build command-summary-proof";
+const BUILD_MARKER = "Build command-wide-slip";
 
 const NAV_ITEMS = [
   ["Command", "/dashboard", "CM"],
