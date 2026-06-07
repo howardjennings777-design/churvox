@@ -2,15 +2,103 @@ import React from "react";
 import { toast } from "sonner";
 
 const CARDS = [
-  { id: "profile", title: "Business profile", desc: "Name, email, phone, address and GST.", fields: [["businessName", "Business name"], ["tradingName", "Trading name"], ["email", "Email"], ["phone", "Phone"], ["address", "Address", "textarea"], ["gst", "GST number"]] },
-  { id: "branding", title: "Branding", desc: "Logo note, invoice prefix, quote prefix and customer wording.", fields: [["invoicePrefix", "Invoice prefix"], ["quotePrefix", "Quote prefix"], ["website", "Website"], ["brandNote", "Brand note", "textarea"], ["customerTone", "Customer message tone", "textarea"]] },
-  { id: "accounting", title: "Accounting", desc: "Approval-first accounting direction and sync notes.", fields: [["status", "Status", "select", ["Staged", "Testing", "Ready later", "Hidden"]], ["invoiceRule", "Invoice rule", "textarea"], ["paymentRule", "Payment rule", "textarea"], ["ownerNote", "Owner note", "textarea"]] },
-  { id: "plans", title: "Plan and billing", desc: "Plan access and owner billing notes.", fields: [["plan", "Plan", "select", ["Start", "Crew", "Operator", "Command"]], ["growth", "Growth pack", "select", ["Not needed", "Review", "Needed", "Active"]], ["note", "Billing note", "textarea"]] },
-  { id: "team", title: "Team access", desc: "Roles, invites and worker access rules.", fields: [["inviteStatus", "Invite status", "select", ["Ready", "Needs test", "Missing workers"]], ["roleStatus", "Role status", "select", ["Clean", "Needs review", "Locked"]], ["workerRule", "Worker rule", "textarea"], ["teamNote", "Team note", "textarea"]] },
-  { id: "support", title: "Legal and support", desc: "Customer help links and support notes.", fields: [["helpStatus", "Help status", "select", ["Ready", "Needs review", "Hidden"]], ["policyStatus", "Policy links", "select", ["Ready", "Needs review", "Hidden"]], ["supportNote", "Support note", "textarea"]] }
+  {
+    id: "profile",
+    title: "Business profile",
+    desc: "Real business details used on quotes, invoices and customer messages.",
+    button: "Open business profile slip",
+    fields: [
+      ["businessName", "Business name"],
+      ["tradingName", "Trading name"],
+      ["ownerEmail", "Customer email"],
+      ["phone", "Phone"],
+      ["website", "Website"],
+      ["businessAddress", "Business address", "textarea"],
+      ["gstNumber", "GST number"],
+      ["nzbn", "NZBN"],
+      ["bankName", "Bank account name"],
+      ["bankNumber", "Bank account number"]
+    ]
+  },
+  {
+    id: "branding",
+    title: "Branding",
+    desc: "Customer-facing document defaults for quotes, invoices and emails.",
+    button: "Open branding slip",
+    fields: [
+      ["invoicePrefix", "Invoice prefix"],
+      ["quotePrefix", "Quote prefix"],
+      ["logoStatus", "Logo status", "select", ["Logo added", "Needs logo", "Use Churvox logo for now", "Review later"]],
+      ["brandTone", "Customer tone", "select", ["Friendly and professional", "Short and direct", "Premium", "Casual tradie"]],
+      ["workingHours", "Working hours", "textarea"],
+      ["customerMessage", "Default customer message", "textarea"],
+      ["documentFooter", "Invoice / quote footer", "textarea"]
+    ]
+  },
+  {
+    id: "accounting",
+    title: "Xero accounting",
+    desc: "Approval-first accounting setup. Churvox prepares it, owner approves it.",
+    button: "Open Xero slip",
+    fields: [
+      ["xeroStatus", "Xero status", "select", ["Visible but staged", "Testing", "Waiting approval", "Hidden from launch"]],
+      ["syncDirection", "Sync direction", "select", ["Approval-first sync", "Draft invoices only", "Payments review only", "No sync yet"]],
+      ["invoiceRule", "Invoice sync rule", "textarea"],
+      ["paymentRule", "Payment sync rule", "textarea"],
+      ["ownerApprovalRule", "Owner approval rule", "textarea"],
+      ["accountingNote", "Accounting note", "textarea"]
+    ]
+  },
+  {
+    id: "plans",
+    title: "Plan and billing",
+    desc: "Owner-only plan, billing, Operator and Command Growth Pack access.",
+    button: "Open billing slip",
+    fields: [
+      ["currentPlan", "Current plan", "select", ["Start", "Crew", "Operator", "Command"]],
+      ["billingStatus", "Billing status", "select", ["Trial", "Active", "Needs checkout", "Needs owner review"]],
+      ["growthPack", "Command Growth Pack", "select", ["Not needed", "Review later", "Needed soon", "Active"]],
+      ["myobXeroAddon", "Accounting add-on", "select", ["Not enabled", "Xero staged", "MYOB staged", "Included in Command"]],
+      ["billingAction", "Prepared billing action", "textarea"],
+      ["ownerBillingNote", "Owner billing note", "textarea"]
+    ]
+  },
+  {
+    id: "team",
+    title: "Team access",
+    desc: "Roles, invites, worker access and payroll-safe permissions.",
+    button: "Open team access slip",
+    fields: [
+      ["inviteStatus", "Invite status", "select", ["Ready", "Needs test", "Workers missing", "Invite email missing"]],
+      ["roleModel", "Role model", "select", ["Owner / Manager / Worker / Office Admin / Payroll", "Needs cleanup", "Owner only", "Worker only"]],
+      ["workerVisibility", "Worker visibility rule", "textarea"],
+      ["payrollAccess", "Payroll access rule", "textarea"],
+      ["inviteMessage", "Worker invite message", "textarea"],
+      ["teamNote", "Team note", "textarea"]
+    ]
+  },
+  {
+    id: "legal",
+    title: "Legal and support",
+    desc: "Privacy, terms, account deletion, help links and support readiness.",
+    button: "Open legal support slip",
+    fields: [
+      ["privacyStatus", "Privacy policy", "select", ["Live", "Needs review", "Hidden", "Broken"]],
+      ["termsStatus", "Terms", "select", ["Live", "Needs review", "Hidden", "Broken"]],
+      ["deletionStatus", "Account deletion", "select", ["Live", "Needs review", "Hidden", "Broken"]],
+      ["supportEmail", "Support email"],
+      ["supportStatus", "Support status", "select", ["Ready", "Email only", "Needs setup", "Hidden"]],
+      ["helpNote", "Help / support note", "textarea"],
+      ["legalNote", "Legal review note", "textarea"]
+    ]
+  }
 ];
 
 function blank(card) {
+  const saved = localStorage.getItem(`churvox_settings_slip_${card.id}`);
+  if (saved) {
+    try { return JSON.parse(saved); } catch { localStorage.removeItem(`churvox_settings_slip_${card.id}`); }
+  }
   const form = {};
   card.fields.forEach(([key, label, type, options]) => { form[key] = type === "select" ? options[0] : ""; });
   return form;
@@ -18,20 +106,24 @@ function blank(card) {
 
 function Field({ field, form, setForm }) {
   const [key, label, type, options = []] = field;
-  return <label className={type === "textarea" ? "scField wide" : "scField"}><span>{label}</span>{type === "textarea" ? <textarea value={form[key] || ""} onChange={(e) => setForm({ ...form, [key]: e.target.value })} /> : type === "select" ? <select value={form[key] || options[0]} onChange={(e) => setForm({ ...form, [key]: e.target.value })}>{options.map((x) => <option key={x}>{x}</option>)}</select> : <input value={form[key] || ""} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />}</label>;
+  const update = (value) => setForm({ ...form, [key]: value });
+  return <label className={type === "textarea" ? "scField wide" : "scField"}><span>{label}</span>{type === "textarea" ? <textarea value={form[key] || ""} onChange={(e) => update(e.target.value)} /> : type === "select" ? <select value={form[key] || options[0]} onChange={(e) => update(e.target.value)}>{options.map((x) => <option key={x} value={x}>{x}</option>)}</select> : <input value={form[key] || ""} onChange={(e) => update(e.target.value)} />}</label>;
 }
 
 function Slip({ card, close, markDone }) {
   const [form, setForm] = React.useState(blank(card));
-  const [message, setMessage] = React.useState("Ready to save this settings slip.");
-  React.useEffect(() => { setForm(blank(card)); setMessage("Ready to save this settings slip."); }, [card.id]);
-  return <div className="scOverlay"><section className="scSlip"><header><div><small>SETTINGS / {card.title}</small><h1>{card.title}</h1><p>{card.desc}</p></div><button onClick={close}>Close</button></header><main><section className="scForm"><b>{card.title} form</b><div className="scFields">{card.fields.map((field) => <Field key={field[0]} field={field} form={form} setForm={setForm} />)}</div></section><aside><h2>Owner controls</h2><p>{message}</p><button className="save" onClick={() => { setMessage("Saved in this slip."); toast.success("Saved in this slip"); }}>Save slip</button><button className="approve" onClick={() => { markDone(card.id); setMessage("Marked reviewed."); toast.success("Marked reviewed"); }}>Mark reviewed</button><button className="dark" onClick={close}>Back to settings</button></aside></main></section></div>;
+  const [message, setMessage] = React.useState("Ready to edit this specific settings slip.");
+  React.useEffect(() => { setForm(blank(card)); setMessage("Ready to edit this specific settings slip."); }, [card.id]);
+  const save = () => { localStorage.setItem(`churvox_settings_slip_${card.id}`, JSON.stringify(form)); setMessage(`${card.title} slip saved.`); toast.success(`${card.title} slip saved`); };
+  const approve = () => { localStorage.setItem(`churvox_settings_slip_${card.id}`, JSON.stringify(form)); markDone(card.id); setMessage(`${card.title} reviewed and approved.`); toast.success(`${card.title} reviewed`); };
+  return <div className="scOverlay"><section className="scSlip"><header><div><small>SETTINGS SLIP / {card.title}</small><h1>{card.title}</h1><p>{card.desc}</p></div><button onClick={close}>Close</button></header><main><section className="scForm"><div className="scFormHead"><span>Specific working form</span><b>{card.title}</b></div><div className="scFields">{card.fields.map((field) => <Field key={field[0]} field={field} form={form} setForm={setForm} />)}</div></section><aside><h2>Owner controls</h2><p>{message}</p><button className="save" onClick={save}>Save slip</button><button className="approve" onClick={approve}>Approve / mark reviewed</button><button className="decline" onClick={() => { setMessage("Left for later."); toast.success("Left for later"); }}>Leave for later</button><button className="dark" onClick={close}>Back to settings</button></aside></main></section></div>;
 }
 
-function Style() { return <style>{`.scRoot,.scRoot *{box-sizing:border-box}.scRoot{position:relative;min-height:100vh;background:#f6f1e7;color:#111827;font-family:Inter,system-ui;padding:24px}.scWrap{max-width:1240px;margin:0 auto}.scHero,.scCard{background:#0b1018;color:white;border-radius:30px;box-shadow:0 18px 46px rgba(2,6,23,.24)}.scHero{padding:34px}.scHero span{display:inline-flex;border-radius:999px;background:#fff7ed;color:#7c2d12;padding:8px 14px;font-size:11px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}.scHero h1{margin:16px 0 8px;font-size:clamp(42px,6vw,76px);line-height:.9;letter-spacing:-.07em}.scHero p{max-width:760px;color:#f8fafc;font-weight:900}.scGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:18px}.scCard{border-left:8px solid #f97316;padding:22px;text-align:left;min-height:190px;display:grid;gap:12px;cursor:pointer}.scCard b{font-size:30px;line-height:.95}.scCard p{color:#e5e7eb;font-weight:900}.scCard em{font-style:normal;justify-self:start;background:#fbbf24;color:#111827;border-radius:14px;padding:10px 14px;font-weight:1000}.scOverlay{position:fixed;inset:0;z-index:2147483647;background:rgba(2,6,23,.9);padding:16px 22px 16px 286px;display:flex}.scSlip{width:100%;background:#f7efe3;border-radius:34px;overflow:hidden;display:grid;grid-template-rows:auto 1fr}.scSlip header{background:#0b1018;color:white;border-left:8px solid #f97316;padding:24px 30px;display:flex;justify-content:space-between}.scSlip header small{color:#fed7aa;font-weight:1000;letter-spacing:.14em}.scSlip header h1{font-size:clamp(40px,5vw,70px);line-height:.9;margin:8px 0}.scSlip header p{color:#f8fafc;font-weight:900}.scSlip header button{height:max-content;border:0;border-radius:15px;padding:12px 18px;font-weight:1000}.scSlip main{display:grid;grid-template-columns:minmax(0,1fr)320px;gap:16px;padding:16px;overflow:auto}.scForm,aside{background:#fffaf0;border:1px solid rgba(15,23,42,.16);border-radius:26px;padding:20px;box-shadow:0 14px 38px rgba(15,23,42,.1)}.scForm>b{display:block;color:#111827;font-size:34px;line-height:.95;margin-bottom:18px}.scFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.scField.wide{grid-column:1/-1}.scField span{display:block;color:#431407;text-transform:uppercase;letter-spacing:.12em;font-size:12px;font-weight:1000;margin-bottom:7px}.scField input,.scField textarea,.scField select{width:100%;border:2px solid rgba(15,23,42,.28);border-radius:16px;padding:13px 15px;font-size:16px;font-weight:900;background:white;color:#0f172a}.scField textarea{min-height:120px}aside{align-self:start;display:grid;gap:10px}aside h2{font-size:30px;margin:0}aside p{background:#14532d;color:white;border-radius:16px;padding:12px 14px;font-weight:1000}.save{background:#ffedd5;color:#7c2d12;border:2px solid #fed7aa}.approve{background:#16a34a;color:#052e16}.dark{background:#111827;color:white}aside button{border:0;border-radius:16px;padding:14px;font-weight:1000;font-size:16px}@media(max-width:1200px){.scOverlay{padding:12px}.scGrid,.scSlip main,.scFields{grid-template-columns:1fr}}`}</style>; }
+function Style() { return <style>{`.scRoot,.scRoot *{box-sizing:border-box}.scRoot{position:relative;min-height:100vh;background:#f6f1e7;color:#111827;font-family:Inter,system-ui;padding:24px}.scWrap{max-width:1240px;margin:0 auto}.scHero,.scCard{background:#0b1018;color:white;border-radius:30px;box-shadow:0 18px 46px rgba(2,6,23,.24)}.scHero{padding:34px}.scHero span{display:inline-flex;border-radius:999px;background:#fff7ed;color:#7c2d12;padding:8px 14px;font-size:11px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}.scHero h1{margin:16px 0 8px;font-size:clamp(42px,6vw,76px);line-height:.9;letter-spacing:-.07em;color:white}.scHero p{max-width:760px;color:#f8fafc;font-weight:900}.scGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:18px}.scCard{border:1px solid rgba(255,255,255,.12);border-left:8px solid #f97316;padding:22px;text-align:left;min-height:205px;display:grid;gap:12px;cursor:pointer}.scCard b{font-size:30px;line-height:.95;color:white}.scCard p{color:#e5e7eb;font-weight:900;line-height:1.45}.scCard em{font-style:normal;justify-self:start;background:#fbbf24;color:#111827;border-radius:14px;padding:10px 14px;font-weight:1000}.scOverlay{position:fixed;inset:0;z-index:2147483647;background:rgba(2,6,23,.9);padding:16px 22px 16px 286px;display:flex}.scSlip{width:100%;background:#f7efe3;border-radius:34px;overflow:hidden;display:grid;grid-template-rows:auto 1fr;box-shadow:0 38px 120px rgba(2,6,23,.5)}.scSlip header{background:#0b1018;color:white;border-left:8px solid #f97316;padding:24px 30px;display:flex;justify-content:space-between;gap:18px}.scSlip header small{color:#fed7aa;font-weight:1000;letter-spacing:.14em}.scSlip header h1{font-size:clamp(40px,5vw,70px);line-height:.9;margin:8px 0;color:white}.scSlip header p{color:#f8fafc;font-weight:900;max-width:900px}.scSlip header button{height:max-content;border:0;border-radius:15px;padding:12px 18px;font-weight:1000;background:white;color:#111827}.scSlip main{display:grid;grid-template-columns:minmax(0,1fr)320px;gap:16px;padding:16px;overflow:auto}.scForm,aside{background:#fffaf0!important;color:#111827!important;border:1px solid rgba(15,23,42,.16);border-radius:26px;padding:20px;box-shadow:0 14px 38px rgba(15,23,42,.1)}.scFormHead{display:grid;gap:6px;margin-bottom:18px}.scFormHead span{color:#9a3412;font-size:11px;font-weight:1000;letter-spacing:.15em;text-transform:uppercase}.scFormHead b{display:block;color:#111827!important;font-size:34px;line-height:.95}.scFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.scField.wide{grid-column:1/-1}.scField span{display:block;color:#431407!important;text-transform:uppercase;letter-spacing:.12em;font-size:12px;font-weight:1000;margin-bottom:7px}.scField input,.scField textarea,.scField select{width:100%;border:2px solid rgba(15,23,42,.28)!important;border-radius:16px;padding:13px 15px;font-size:16px;font-weight:900;background:white!important;color:#0f172a!important;-webkit-text-fill-color:#0f172a!important}.scField textarea{min-height:120px;resize:vertical}.scField option{background:white;color:#0f172a}aside{align-self:start;display:grid;gap:10px;position:sticky;top:0}aside h2{font-size:30px;line-height:.95;margin:0;color:#111827!important}aside p{background:#14532d!important;color:white!important;border-radius:16px;padding:12px 14px;font-weight:1000;line-height:1.45}.save{background:#ffedd5!important;color:#7c2d12!important;border:2px solid #fed7aa!important}.approve{background:#16a34a!important;color:#052e16!important;border:2px solid #15803d!important}.decline{background:#fee2e2!important;color:#7f1d1d!important;border:2px solid #fecaca!important}.dark{background:#111827!important;color:white!important}aside button{border:0;border-radius:16px;padding:14px;font-weight:1000;font-size:16px;cursor:pointer}@media(max-width:1200px){.scOverlay{padding:12px}.scGrid,.scSlip main,.scFields{grid-template-columns:1fr}aside{position:static}}`}</style>; }
 
 export default function SettingsCommandPageClean() {
   const [open, setOpen] = React.useState(null);
-  const [done, setDone] = React.useState({});
-  return <main className="scRoot"><Style /><section className="scWrap"><article className="scHero"><span>Settings</span><h1>Set the business up once. Keep it clean.</h1><p>Each settings card opens its own specific working slip. No generic review panel.</p></article><section className="scGrid">{CARDS.map((card) => <button key={card.id} className="scCard" onClick={() => setOpen(card)}><b>{card.title}</b><p>{card.desc}</p><em>{done[card.id] ? "Reviewed" : "Review slip"}</em></button>)}</section></section>{open ? <Slip card={open} close={() => setOpen(null)} markDone={(id) => setDone((old) => ({ ...old, [id]: true }))} /> : null}</main>;
+  const [done, setDone] = React.useState(() => { try { return JSON.parse(localStorage.getItem("churvox_settings_clean_done") || "{}"); } catch { return {}; } });
+  const markDone = (id) => { const next = { ...done, [id]: true }; setDone(next); localStorage.setItem("churvox_settings_clean_done", JSON.stringify(next)); };
+  return <main className="scRoot"><Style /><section className="scWrap"><article className="scHero"><span>Settings</span><h1>Set the business up once. Keep it clean.</h1><p>Each settings card opens its own proper working slip with fields made for that area.</p></article><section className="scGrid">{CARDS.map((card) => <button key={card.id} className="scCard" onClick={() => setOpen(card)}><b>{card.title}</b><p>{card.desc}</p><em>{done[card.id] ? "Reviewed" : card.button}</em></button>)}</section></section>{open ? <Slip card={open} close={() => setOpen(null)} markDone={markDone} /> : null}</main>;
 }
