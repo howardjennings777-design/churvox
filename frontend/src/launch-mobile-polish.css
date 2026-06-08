@@ -17,17 +17,15 @@
 
   .concept-c2,
   .concept-c2-frame,
-  .xcf10 {
+  .xcf10,
+  .c2-shell,
+  .c2-content,
+  .xcf10-shell,
+  .xcf10-content {
     min-width: 0 !important;
+    max-width: 100vw !important;
     overflow-x: hidden !important;
   }
 
   .c2-topbar,
-  .xcf10-topbar {
-    padding-left: 14px !important;
-    padding-right: 14px !important;
-  }
-
-  .c2-shell,
-  .c2-content,
-  .xcf
+  .
