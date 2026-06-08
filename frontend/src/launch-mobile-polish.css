@@ -1,0 +1,26 @@
+/* Safe Churvox mobile polish file.
+   Keep this file valid because it is imported by the frontend bundle. */
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+@media (max-width: 900px) {
+  .c2-topbar,
+  .xcf10-topbar {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  .c2-shell,
+  .xcf10-shell,
+  .cxRoot,
+  .ch4Root {
+    max-width: 100vw !important;
+    overflow-x: hidden !important
