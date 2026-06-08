@@ -10,4 +10,7 @@ export const PLAN_KEYS = {
 };
 
 export const COUNTRY_OPTIONS = [
-  { code: "NZ", label: "New Zealand", currency: "NZD", symbol: "
+  {
+    code: "NZ",
+    label: "New Zealand",
+    currency: "NZD",
