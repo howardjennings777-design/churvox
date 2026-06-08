@@ -3,48 +3,622 @@ import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
 import EmployerFieldActivityBoard from "../components/EmployerFieldActivityBoard";
 
+const INVOICE_DELIVERY_OPTIONS = [
+  "Churvox internal",
+  "Xero",
+  "Draft only",
+  "Manual external",
+  "MYOB staged/later (inactive)",
+];
+
 const PAGES = {
-  jobs: { title: "Jobs", singular: "job", eyebrow: "Job workbench", promise: "Pick a real job from the side, edit it here, then save, invoice, or prepare the next action from this page.", button: "Save job", endpoint: "/jobs", fields: [["title", "Job title"], ["client_name", "Client"], ["address", "Job address"], ["scheduled_date", "Schedule/date"], ["assigned_worker_name", "Worker", "worker"], ["status", "Job status", "select", ["assigned", "in_progress", "completed", "needs_review", "cancelled"]], ["pricing_type", "Pricing type", "select", ["Fixed price", "Hourly", "Fixed + extras", "Hourly + extras"]], ["price", "Price / rate"], ["recurring", "Recurring", "select", ["No", "Weekly", "Fortnightly", "Monthly", "Custom"]], ["photos_required", "Photos required", "select", ["Not required", "After photo", "Before and after"]], ["gps_required", "GPS/site check", "select", ["Not required", "Start check", "Completion check", "Start and completion"]], ["customer_note", "Customer-visible note", "textarea"], ["notes", "Worker instructions", "textarea"], ["owner_note", "Owner-only note", "textarea"]] },
-  dispatch: { title: "Crew dispatch", singular: "job", eyebrow: "Dispatch workbench", promise: "Pick a real job, select a worker, set the schedule and prepare the worker note without opening another page.", button: "Assign / save dispatch", endpoint: "/jobs", fields: [["job_id", "Existing job ID"], ["job_title", "Job title"], ["client_site", "Client / site"], ["worker_name", "Worker", "worker"], ["worker_id", "Worker ID"], ["backup_worker", "Backup worker", "worker"], ["scheduled_time", "Scheduled date/time"], ["assignment_status", "Assignment status", "select", ["Assign now", "Offer to worker", "Hold", "Needs schedule check"]], ["worker_ack_required", "Worker acknowledgement", "select", ["Required", "Not required", "Ask worker to confirm"]], ["access_instructions", "Access/site notes", "textarea"], ["customer_arrival_note", "Customer-visible arrival note", "textarea"], ["dispatch_note", "Worker dispatch note", "textarea"]] },
-  clients: { title: "Clients", singular: "client", eyebrow: "Client workbench", promise: "Pick a real client from the side, edit their contact and billing details here, then save on this page.", button: "Save client", endpoint: "/clients", fields: [["name", "Client name"], ["client_type", "Client type", "select", ["Residential", "Commercial", "Property manager", "Landlord", "Other"]], ["phone", "Phone"], ["email", "Email"], ["preferred_contact", "Preferred contact", "select", ["Phone", "Email", "SMS later", "No preference"]], ["service_address", "Service address"], ["billing_address", "Billing address"], ["billing_contact", "Billing contact"], ["billing_email", "Billing email"], ["status", "Client status", "select", ["Active", "Needs details", "Do not contact", "Archived"]], ["next_action", "Next action", "select", ["Create job", "Create quote", "Fix details", "Follow up", "No action"]], ["notes", "Client notes", "textarea"]] },
-  quotes: { title: "Quotes", singular: "quote", eyebrow: "Quote workbench", promise: "Pick a real quote from the side, edit scope/value/message here, then save, follow up, or prepare conversion.", button: "Save quote", endpoint: "/quotes", fields: [["customer_name", "Client"], ["title", "Quote title"], ["total", "Quote value"], ["valid_until", "Valid until"], ["follow_up_date", "Follow-up date"], ["deposit_required", "Deposit required", "select", ["No", "Yes", "Needs owner check"]], ["convert_to_job", "Convert to job", "select", ["No", "Yes after approval", "Needs owner check"]], ["status", "Quote status", "select", ["draft", "sent", "accepted", "declined", "expired"]], ["scope", "Scope of work", "textarea"], ["exclusions", "Exclusions / assumptions", "textarea"], ["message", "Customer follow-up message", "textarea"]] },
-  invoices: { title: "Invoices", singular: "invoice", eyebrow: "Invoice workbench", promise: "Pick a real invoice from the side, edit amount/due date/wording here, then save or prepare sending.", button: "Save invoice", endpoint: "/invoices", fields: [["customer_name", "Client"], ["job_reference", "Job / invoice reference"], ["invoice_type", "Invoice type", "select", ["Job invoice", "Deposit invoice", "Extras", "Time-based", "Adjustment"]], ["send_mode", "Send mode", "select", ["Draft only", "Send after approval", "Internal only", "Prepare reminder only"]], ["subtotal", "Amount"], ["gst_status", "GST status", "select", ["GST included", "GST excluded", "No GST", "Needs check"]], ["payment_link_status", "Payment link", "select", ["Not included", "Included", "Coming soon", "Needs setup"]], ["due_date", "Due date"], ["status", "Invoice status", "select", ["draft", "sent", "paid", "overdue", "cancelled"]], ["description", "Invoice wording", "textarea"], ["follow_up", "Payment follow-up wording", "textarea"]] },
-  team: { title: "Team", singular: "worker", eyebrow: "Team workbench", promise: "Pick a real team member from the side, edit role/invite/payroll access notes here.", button: "Save worker", endpoint: "/team/workers", altEndpoints: ["/workers", "/team"], fields: [["name", "Worker name"], ["email", "Email"], ["phone", "Phone"], ["role", "Role", "select", ["worker", "manager", "office_admin", "payroll"]], ["employment_status", "Access status", "select", ["Active", "Invited", "Paused", "Archived"]], ["invite_status", "Invite status", "select", ["Ready to invite", "Invite sent", "Needs email", "Paused"]], ["payroll_access", "Payroll access", "select", ["No payroll access", "Payroll user", "Owner only review"]], ["access_note", "Access / role note", "textarea"], ["invite_message", "Invite message", "textarea"]] },
-  payroll: { title: "Payroll/time", singular: "time record", eyebrow: "Payroll workbench", promise: "Pick job time from the side, review hours, adjustments and payroll notes here.", button: "Save payroll review", endpoint: "/jobs", fields: [["job_id", "Job ID"], ["worker_name", "Worker", "worker"], ["pay_period", "Pay period"], ["pay_type", "Pay type", "select", ["Hourly", "Fixed", "Manual adjustment", "Unpaid review"]], ["reviewed_hours", "Reviewed hours"], ["pause_time", "Pause time"], ["adjustment_amount", "Adjustment time/amount"], ["adjustment_reason", "Adjustment reason", "textarea"], ["approval_status", "Approval status", "select", ["Needs review", "Approved by owner", "Approved by payroll", "Hold", "Exported"]], ["pay_status", "Payroll status", "select", ["Ready", "Needs review", "Hold", "Exported"]], ["payroll_note", "Payroll note", "textarea"], ["export_note", "Export / handoff note", "textarea"]] }
+  jobs: {
+    title: "Jobs",
+    singular: "job",
+    eyebrow: "Job workbench",
+    promise: "Pick a real job from the side, edit it here, then save, invoice, or prepare the next action from this page.",
+    button: "Save job",
+    endpoint: "/jobs",
+    fields: [
+      ["title", "Job title"],
+      ["client_name", "Client"],
+      ["address", "Job address"],
+      ["scheduled_date", "Schedule/date"],
+      ["assigned_worker_name", "Worker", "worker"],
+      ["status", "Job status", "select", ["assigned", "in_progress", "completed", "needs_review", "cancelled"]],
+      ["pricing_type", "Pricing type", "select", ["Fixed price", "Hourly", "Fixed + extras", "Hourly + extras"]],
+      ["price", "Price / rate"],
+      ["recurring", "Recurring", "select", ["No", "Weekly", "Fortnightly", "Monthly", "Custom"]],
+      ["photos_required", "Photos required", "select", ["Not required", "After photo", "Before and after"]],
+      ["gps_required", "GPS/site check", "select", ["Not required", "Start check", "Completion check", "Start and completion"]],
+      ["customer_note", "Customer-visible note", "textarea"],
+      ["notes", "Worker instructions", "textarea"],
+      ["owner_note", "Owner-only note", "textarea"],
+    ],
+  },
+  dispatch: {
+    title: "Crew dispatch",
+    singular: "job",
+    eyebrow: "Dispatch workbench",
+    promise: "Pick a real job, select a worker, set the schedule and prepare the worker note without opening another page.",
+    button: "Assign / save dispatch",
+    endpoint: "/jobs",
+    fields: [
+      ["job_id", "Existing job ID"],
+      ["job_title", "Job title"],
+      ["client_site", "Client / site"],
+      ["worker_name", "Worker", "worker"],
+      ["worker_id", "Worker ID"],
+      ["backup_worker", "Backup worker", "worker"],
+      ["scheduled_time", "Scheduled date/time"],
+      ["assignment_status", "Assignment status", "select", ["Assign now", "Offer to worker", "Hold", "Needs schedule check"]],
+      ["worker_ack_required", "Worker acknowledgement", "select", ["Required", "Not required", "Ask worker to confirm"]],
+      ["access_instructions", "Access/site notes", "textarea"],
+      ["customer_arrival_note", "Customer-visible arrival note", "textarea"],
+      ["dispatch_note", "Worker dispatch note", "textarea"],
+    ],
+  },
+  clients: {
+    title: "Clients",
+    singular: "client",
+    eyebrow: "Client workbench",
+    promise: "Pick a real client from the side, edit their contact and billing details here, then save on this page.",
+    button: "Save client",
+    endpoint: "/clients",
+    fields: [
+      ["name", "Client name"],
+      ["client_type", "Client type", "select", ["Residential", "Commercial", "Property manager", "Landlord", "Other"]],
+      ["phone", "Phone"],
+      ["email", "Email"],
+      ["preferred_contact", "Preferred contact", "select", ["Phone", "Email", "SMS later", "No preference"]],
+      ["service_address", "Service address"],
+      ["billing_address", "Billing address"],
+      ["billing_contact", "Billing contact"],
+      ["billing_email", "Billing email"],
+      ["status", "Client status", "select", ["Active", "Needs details", "Do not contact", "Archived"]],
+      ["next_action", "Next action", "select", ["Create job", "Create quote", "Fix details", "Follow up", "No action"]],
+      ["notes", "Client notes", "textarea"],
+    ],
+  },
+  quotes: {
+    title: "Quotes",
+    singular: "quote",
+    eyebrow: "Quote workbench",
+    promise: "Pick a real quote from the side, edit scope/value/message here, then save, follow up, or prepare conversion.",
+    button: "Save quote",
+    endpoint: "/quotes",
+    fields: [
+      ["customer_name", "Client"],
+      ["title", "Quote title"],
+      ["total", "Quote value"],
+      ["valid_until", "Valid until"],
+      ["follow_up_date", "Follow-up date"],
+      ["deposit_required", "Deposit required", "select", ["No", "Yes", "Needs owner check"]],
+      ["convert_to_job", "Convert to job", "select", ["No", "Yes after approval", "Needs owner check"]],
+      ["status", "Quote status", "select", ["draft", "sent", "accepted", "declined", "expired"]],
+      ["scope", "Scope of work", "textarea"],
+      ["exclusions", "Exclusions / assumptions", "textarea"],
+      ["message", "Customer follow-up message", "textarea"],
+    ],
+  },
+  invoices: {
+    title: "Invoices",
+    singular: "invoice",
+    eyebrow: "Invoice workbench",
+    promise: "Pick a real invoice from the side, choose exactly who handles delivery, then save or approve it without silent sending.",
+    button: "Save invoice",
+    endpoint: "/invoices",
+    fields: [
+      ["customer_name", "Client"],
+      ["job_reference", "Job / invoice reference"],
+      ["invoice_type", "Invoice type", "select", ["Job invoice", "Deposit invoice", "Extras", "Time-based", "Adjustment"]],
+      ["deliveryMethod", "Invoice delivery method", "select", INVOICE_DELIVERY_OPTIONS],
+      ["subtotal", "Amount"],
+      ["gst_status", "GST status", "select", ["GST included", "GST excluded", "No GST", "Needs check"]],
+      ["payment_link_status", "Payment link", "select", ["Not included", "Included", "Coming soon", "Needs setup"]],
+      ["due_date", "Due date"],
+      ["status", "Invoice status", "select", ["draft", "draft_approved", "approved_for_xero", "sent", "paid", "overdue", "externally_handled", "cancelled"]],
+      ["description", "Invoice wording", "textarea"],
+      ["follow_up", "Payment follow-up wording", "textarea"],
+    ],
+  },
+  team: {
+    title: "Team",
+    singular: "worker",
+    eyebrow: "Team workbench",
+    promise: "Pick a real team member from the side, edit role/invite/payroll access notes here.",
+    button: "Save worker",
+    endpoint: "/team/workers",
+    altEndpoints: ["/workers", "/team"],
+    fields: [
+      ["name", "Worker name"],
+      ["email", "Email"],
+      ["phone", "Phone"],
+      ["role", "Role", "select", ["worker", "manager", "office_admin", "payroll"]],
+      ["employment_status", "Access status", "select", ["Active", "Invited", "Paused", "Archived"]],
+      ["invite_status", "Invite status", "select", ["Ready to invite", "Invite sent", "Needs email", "Paused"]],
+      ["payroll_access", "Payroll access", "select", ["No payroll access", "Payroll user", "Owner only review"]],
+      ["access_note", "Access / role note", "textarea"],
+      ["invite_message", "Invite message", "textarea"],
+    ],
+  },
+  payroll: {
+    title: "Payroll/time",
+    singular: "time record",
+    eyebrow: "Payroll workbench",
+    promise: "Pick job time from the side, review hours, adjustments and payroll notes here.",
+    button: "Save payroll review",
+    endpoint: "/jobs",
+    fields: [
+      ["job_id", "Job ID"],
+      ["worker_name", "Worker", "worker"],
+      ["pay_period", "Pay period"],
+      ["pay_type", "Pay type", "select", ["Hourly", "Fixed", "Manual adjustment", "Unpaid review"]],
+      ["reviewed_hours", "Reviewed hours"],
+      ["pause_time", "Pause time"],
+      ["adjustment_amount", "Adjustment time/amount"],
+      ["adjustment_reason", "Adjustment reason", "textarea"],
+      ["approval_status", "Approval status", "select", ["Needs review", "Approved by owner", "Approved by payroll", "Hold", "Exported"]],
+      ["pay_status", "Payroll status", "select", ["Ready", "Needs review", "Hold", "Exported"]],
+      ["payroll_note", "Payroll note", "textarea"],
+      ["export_note", "Export / handoff note", "textarea"],
+    ],
+  },
 };
 
-const aliases = { title: ["title", "job_title", "job_name", "name", "service_type"], job_title: ["title", "job_title", "job_name", "name", "service_type"], name: ["name", "client_name", "customer_name", "worker_name", "full_name"], client_name: ["client_name", "customer_name", "client.name", "customer.name"], customer_name: ["customer_name", "client_name", "client.name", "customer.name"], client_site: ["client_name", "customer_name", "address", "site", "job_address"], address: ["address", "job_address", "service_address", "business_address"], service_address: ["service_address", "address", "job_address", "site_address"], billing_address: ["billing_address", "address"], scheduled_date: ["scheduled_date", "scheduled_at", "date", "start_time"], scheduled_time: ["scheduled_time", "scheduled_date", "scheduled_at", "date", "start_time"], assigned_worker_name: ["assigned_worker_name", "worker_name", "assignee_name", "worker.name", "assigned_to"], worker_name: ["worker_name", "assigned_worker_name", "name", "worker.name"], worker_id: ["worker_id", "assigned_worker_id", "worker.id", "worker._id"], phone: ["phone", "mobile", "customer_phone"], email: ["email", "customer_email"], billing_contact: ["billing_contact", "accounts_contact", "contact_name"], billing_email: ["billing_email", "accounts_email", "email"], notes: ["notes", "note", "description", "internal_note", "worker_instructions"], owner_note: ["owner_note", "internal_note", "admin_note"], price: ["price", "job_price", "amount", "total"], total: ["total", "amount", "quote_total", "grand_total"], subtotal: ["subtotal", "amount", "total", "invoice_total", "grand_total"], due_date: ["due_date", "invoice_due_date", "due"], valid_until: ["valid_until", "expiry_date", "quote_expiry"], status: ["status", "job_status", "invoice_status", "quote_status"], scope: ["scope", "scope_of_work", "description"], description: ["description", "invoice_description", "notes"], message: ["message", "customer_message", "follow_up_message"], job_reference: ["job_reference", "job_id", "job.title", "job_title"], job_id: ["job_id", "id", "_id"], role: ["role", "user_role"], invite_status: ["invite_status", "invitation_status", "status"], reviewed_hours: ["reviewed_hours", "total_hours", "hours", "net_hours"], pause_time: ["pause_time", "paused_time", "total_paused_time"], pay_status: ["pay_status", "payroll_status", "status"], payroll_note: ["payroll_note", "note", "notes"], access_note: ["access_note", "note", "notes"], invite_message: ["invite_message", "message"], dispatch_note: ["dispatch_note", "worker_note", "notes"], access_instructions: ["access_instructions", "site_notes", "access_notes"] };
-function get(obj, path) { return String(path).split(".").reduce((o, k) => o?.[k], obj); }
-function first(...values) { return values.find((v) => v !== undefined && v !== null && String(v).trim() !== "") || ""; }
-function valueFor(item, key) { for (const k of aliases[key] || [key]) { const v = get(item, k); if (v !== undefined && v !== null && String(v).trim() !== "") return typeof v === "object" ? first(v.name, v.title, v.email, v.id, v._id) : v; } return ""; }
-function listFrom(res) { const d = res?.data ?? res; if (Array.isArray(d)) return d; for (const k of ["data", "items", "results", "jobs", "clients", "quotes", "invoices", "workers", "team", "users"]) if (Array.isArray(d?.[k])) return d[k]; return []; }
-function idOf(item) { const raw = item?.id || item?._id || item?.job_id || item?.client_id || item?.invoice_id || item?.quote_id || item?.worker_id || ""; return typeof raw === "object" && raw?.$oid ? raw.$oid : String(raw || ""); }
-function titleOf(type, item) { if (["jobs", "dispatch", "payroll"].includes(type)) return first(valueFor(item, "title"), valueFor(item, "job_title"), "Untitled job"); if (type === "clients") return first(valueFor(item, "name"), "Unnamed client"); if (type === "team") return workerLabel(item); if (type === "quotes") return first(valueFor(item, "title"), valueFor(item, "customer_name"), "Untitled quote"); if (type === "invoices") return first(valueFor(item, "job_reference"), valueFor(item, "customer_name"), "Untitled invoice"); return first(item?.name, item?.title, "Record"); }
-function subOf(type, item) { return first(valueFor(item, "client_name"), valueFor(item, "customer_name"), valueFor(item, "email"), valueFor(item, "status"), valueFor(item, "address"), idOf(item)); }
-function workerLabel(worker) { return first(worker?.name, worker?.full_name, worker?.worker_name, worker?.email, worker?.phone, idOf(worker), "Unnamed worker"); }
-function blankForm(page) { return Object.fromEntries(page.fields.map(([key, label, type, options]) => [key, type === "select" ? options[0] : ""])); }
-function formFromItem(page, item) { const out = blankForm(page); page.fields.forEach(([key, label, type, options]) => { const val = valueFor(item, key); out[key] = val || (type === "select" ? options[0] : ""); }); return out; }
-function searchableText(type, item) { return `${titleOf(type, item)} ${subOf(type, item)} ${Object.values(item || {}).join(" ")}`.toLowerCase(); }
+const aliases = {
+  title: ["title", "job_title", "job_name", "name", "service_type"],
+  job_title: ["title", "job_title", "job_name", "name", "service_type"],
+  name: ["name", "client_name", "customer_name", "worker_name", "full_name"],
+  client_name: ["client_name", "customer_name", "client.name", "customer.name"],
+  customer_name: ["customer_name", "client_name", "client.name", "customer.name"],
+  client_site: ["client_name", "customer_name", "address", "site", "job_address"],
+  address: ["address", "job_address", "service_address", "business_address"],
+  service_address: ["service_address", "address", "job_address", "site_address"],
+  billing_address: ["billing_address", "address"],
+  scheduled_date: ["scheduled_date", "scheduled_at", "date", "start_time"],
+  scheduled_time: ["scheduled_time", "scheduled_date", "scheduled_at", "date", "start_time"],
+  assigned_worker_name: ["assigned_worker_name", "worker_name", "assignee_name", "worker.name", "assigned_to"],
+  worker_name: ["worker_name", "assigned_worker_name", "name", "worker.name"],
+  worker_id: ["worker_id", "assigned_worker_id", "worker.id", "worker._id"],
+  phone: ["phone", "mobile", "customer_phone"],
+  email: ["email", "customer_email"],
+  billing_contact: ["billing_contact", "accounts_contact", "contact_name"],
+  billing_email: ["billing_email", "accounts_email", "email"],
+  notes: ["notes", "note", "description", "internal_note", "worker_instructions"],
+  owner_note: ["owner_note", "internal_note", "admin_note"],
+  price: ["price", "job_price", "amount", "total"],
+  total: ["total", "amount", "quote_total", "grand_total"],
+  subtotal: ["subtotal", "amount", "total", "invoice_total", "grand_total"],
+  due_date: ["due_date", "invoice_due_date", "due"],
+  valid_until: ["valid_until", "expiry_date", "quote_expiry"],
+  status: ["status", "job_status", "invoice_status", "quote_status"],
+  scope: ["scope", "scope_of_work", "description"],
+  description: ["description", "invoice_description", "notes"],
+  message: ["message", "customer_message", "follow_up_message"],
+  job_reference: ["job_reference", "job_id", "job.title", "job_title"],
+  job_id: ["job_id", "id", "_id"],
+  deliveryMethod: ["deliveryMethod", "delivery_method", "invoice_delivery_method", "send_mode", "delivery_source"],
+  role: ["role", "user_role"],
+  invite_status: ["invite_status", "invitation_status", "status"],
+  reviewed_hours: ["reviewed_hours", "total_hours", "hours", "net_hours"],
+  pause_time: ["pause_time", "paused_time", "total_paused_time"],
+  pay_status: ["pay_status", "payroll_status", "status"],
+  payroll_note: ["payroll_note", "note", "notes"],
+  access_note: ["access_note", "note", "notes"],
+  invite_message: ["invite_message", "message"],
+  dispatch_note: ["dispatch_note", "worker_note", "notes"],
+  access_instructions: ["access_instructions", "site_notes", "access_notes"],
+};
 
-function Field({ field, form, setForm, workers = [] }) { const [key, label, type, options = []] = field; const value = form[key] || ""; const update = (next) => setForm((old) => ({ ...old, [key]: next })); if (type === "worker") return <label className="dwField"><span>{label}</span><select value={value} onChange={(e) => { const picked = workers.find((w) => workerLabel(w) === e.target.value); setForm((old) => ({ ...old, [key]: e.target.value, worker_id: picked ? idOf(picked) : old.worker_id })); }}><option value="">Choose worker</option>{workers.map((worker, index) => <option key={idOf(worker) || index} value={workerLabel(worker)}>{workerLabel(worker)}</option>)}</select></label>; return <label className={type === "textarea" ? "dwField wide" : "dwField"}><span>{label}</span>{type === "textarea" ? <textarea value={value} onChange={(e) => update(e.target.value)} /> : type === "select" ? <select value={value || options[0]} onChange={(e) => update(e.target.value)}>{options.map((item) => <option key={item} value={item}>{item}</option>)}</select> : <input value={value} onChange={(e) => update(e.target.value)} />}</label>; }
-function RecordList({ type, page, records, selectedId, loading, error, onSelect, onRefresh, onOpenFull }) { return <section className="dwRecords"><div className="dwRecordsTop"><div><small>Quick list</small><h2>{page.title}</h2></div><button onClick={onRefresh}>Refresh</button></div><button className="dwFullButton" type="button" onClick={onOpenFull}>View full {page.singular} list</button>{loading ? <p className="dwEmpty">Loading records…</p> : error ? <p className="dwEmpty">Could not load records. You can still use the form.</p> : records.length ? <div className="dwRecordRows">{records.slice(0, 8).map((item, index) => { const id = idOf(item) || `record-${index}`; return <button key={id} type="button" onClick={() => onSelect(item)} className={selectedId === id ? "active" : ""}><b>{titleOf(type, item)}</b><span>{subOf(type, item)}</span></button>; })}</div> : <p className="dwEmpty">No records yet. Create the first one in the form.</p>}</section>; }
-function FullListPanel({ type, page, records, selectedId, search, setSearch, onClose, onSelect }) { const query = search.trim().toLowerCase(); const filtered = query ? records.filter((item) => searchableText(type, item).includes(query)) : records; return <div className="dwFullOverlay"><section className="dwFullPanel"><header><div><small>Full {page.singular} list</small><h2>{page.title}</h2><p>Search, pick one record, and it loads into the form on this same page.</p></div><button type="button" onClick={onClose}>Close</button></header><div className="dwFullSearch"><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={`Search ${page.title.toLowerCase()}...`} autoFocus /><span>{filtered.length} shown</span></div><div className="dwFullRows">{filtered.length ? filtered.map((item, index) => { const id = idOf(item) || `full-${index}`; return <button key={id} type="button" onClick={() => onSelect(item)} className={selectedId === id ? "active" : ""}><b>{titleOf(type, item)}</b><span>{subOf(type, item)}</span><em>{id}</em></button>; }) : <p className="dwFullEmpty">No matching records.</p>}</div></section></div>; }
+function get(obj, path) {
+  return String(path).split(".").reduce((o, k) => o?.[k], obj);
+}
 
-function Style() { return <style>{`.dwRoot,.dwRoot *{box-sizing:border-box;color-scheme:light;opacity:1;text-shadow:none}.dwRoot{min-height:100vh;background:#f6f1e7;color:#111827;font-family:Inter,system-ui}.dwWrap{max-width:1540px;margin:0 auto;padding:24px 28px 120px}.dwHero,.dwRecords,.dwForm,.dwControls,.dwActivity{box-shadow:0 18px 46px rgba(2,6,23,.14)}.dwHero{background:#0b1018;color:#fff;border-left:8px solid #f97316;border-radius:34px;padding:30px;user-select:none}.dwHeroTag{display:inline-flex;border-radius:999px;background:#fff7ed;color:#7c2d12!important;-webkit-text-fill-color:#7c2d12!important;padding:8px 14px;font-size:11px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase;pointer-events:none}.dwHero h1{margin:16px 0 8px;font-size:clamp(42px,5.5vw,76px);line-height:.9;letter-spacing:-.07em;color:#fff}.dwHero p{max-width:880px;color:#f8fafc;font-weight:900}.dwGrid{display:grid;grid-template-columns:330px minmax(0,1fr)320px;gap:18px;margin-top:18px}.dwRecords,.dwForm,.dwControls,.dwActivity{background:#fffaf0!important;color:#111827!important;border:1px solid rgba(15,23,42,.18);border-radius:30px;padding:18px}.dwRecordsTop,.dwActivityHead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.dwRecordsTop small,.dwFormHead small,.dwFullPanel small,.dwActivityHead small{display:inline-flex;border-radius:999px;background:#111827;color:#fbbf24!important;-webkit-text-fill-color:#fbbf24!important;padding:8px 12px;font-size:10px;font-weight:1000;letter-spacing:.13em;text-transform:uppercase;user-select:none}.dwRecordsTop h2,.dwActivityHead h2{margin:10px 0 0;color:#111827!important;font-size:28px;line-height:.95}.dwActivityHead p{margin:8px 0 0;color:#475569;font-size:13px;font-weight:900;line-height:1.45}.dwActivityHead button,.dwRecordsTop button,.dwFullButton{border:0;border-radius:14px;background:#ffedd5;color:#7c2d12;font-weight:1000;padding:10px 12px;cursor:pointer}.dwFullButton{width:100%;margin-top:14px;background:#111827;color:#fff}.dwRecordRows{display:grid;gap:10px;margin-top:16px;max-height:520px;overflow:auto;padding-right:4px}.dwRecordRows button,.dwFullRows button{text-align:left;border:2px solid rgba(15,23,42,.14);border-radius:18px;background:#fff;color:#111827;padding:13px;cursor:pointer}.dwRecordRows button.active,.dwFullRows button.active{border-color:#f97316;background:#fff7ed}.dwRecordRows b,.dwFullRows b{display:block;color:#111827!important;-webkit-text-fill-color:#111827!important;font-size:15px;line-height:1.2}.dwRecordRows span,.dwFullRows span{display:block;margin-top:5px;color:#475569!important;-webkit-text-fill-color:#475569!important;font-size:12px;font-weight:900}.dwFullRows em{display:block;margin-top:6px;color:#9a3412!important;-webkit-text-fill-color:#9a3412!important;font-size:10px;font-style:normal;font-weight:1000}.dwEmpty{margin-top:16px;border-radius:18px;background:#111827;color:#fff!important;-webkit-text-fill-color:#fff!important;padding:14px;font-weight:1000}.dwFullEmpty{grid-column:1/-1;border-radius:22px;background:#fff!important;color:#111827!important;-webkit-text-fill-color:#111827!important;border:2px solid #475569;padding:24px;font-size:22px;font-weight:1000}.dwFormHead{display:flex;justify-content:flex-start;gap:16px;align-items:center;margin-bottom:18px}.dwFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.dwField.wide{grid-column:1/-1}.dwField span{display:block;color:#431407!important;-webkit-text-fill-color:#431407!important;text-transform:uppercase;letter-spacing:.11em;font-size:12px;font-weight:1000;margin-bottom:7px;user-select:none}.dwField input,.dwField textarea,.dwField select,.dwFullSearch input{width:100%;border:2px solid #475569!important;border-radius:16px;padding:13px 15px;font-size:16px;font-weight:900;background:#fff!important;color:#020617!important;-webkit-text-fill-color:#020617!important;outline:none;box-shadow:0 1px 0 rgba(15,23,42,.12)!important}.dwField textarea{min-height:120px;resize:vertical}.dwField input:focus,.dwField textarea:focus,.dwField select:focus,.dwFullSearch input:focus{border-color:#f97316!important;box-shadow:0 0 0 4px rgba(249,115,22,.16)!important}.dwSide{display:grid;gap:18px;align-content:start}.dwControls{display:grid;gap:10px;position:sticky;top:18px}.dwControls h2{font-size:30px;line-height:.95;margin:0;color:#111827!important;user-select:none}.dwControls p{background:#14532d!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-radius:16px;padding:12px 14px;font-weight:1000;line-height:1.45}.dwControls button{border:0;border-radius:16px;padding:14px;font-size:16px;font-weight:1000;cursor:pointer}.dwSave{background:#ffedd5!important;color:#7c2d12!important;border:2px solid #fed7aa!important}.dwApprove{background:#16a34a!important;color:#052e16!important;border:2px solid #15803d!important}.dwClear{background:#111827!important;color:#fff!important}.dwActivity{margin-top:18px}.dwActivityRows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}.dwActivityItem{border-radius:22px;background:#111827;color:white;border-left:7px solid #f97316;padding:16px}.dwActivityItem.blue{border-left-color:#38bdf8}.dwActivityItem.green{border-left-color:#22c55e}.dwActivityItem.amber{border-left-color:#f59e0b}.dwActivityItem.red{border-left-color:#ef4444}.dwActivityItem.purple{border-left-color:#a78bfa}.dwActivityItem.orange{border-left-color:#f97316}.dwActivityItem b{display:block;color:#fbbf24;text-transform:uppercase;letter-spacing:.13em;font-size:10px}.dwActivityItem strong{display:block;margin-top:7px;color:#fff;font-size:15px;line-height:1.35}.dwActivityItem span{display:block;margin-top:7px;color:#cbd5e1;font-size:12px;font-weight:900}.dwFullOverlay{position:fixed;inset:0;z-index:2147483647;background:rgba(2,6,23,.88);padding:18px 24px 18px 286px;display:flex}.dwFullPanel{width:100%;background:#f7efe3;border-radius:34px;overflow:hidden;display:grid;grid-template-rows:auto auto 1fr;box-shadow:0 38px 120px rgba(2,6,23,.55)}.dwFullPanel header{background:#0b1018;color:white;border-left:8px solid #f97316;padding:24px 30px;display:flex;justify-content:space-between;gap:16px}.dwFullPanel h2{margin:12px 0 6px;font-size:clamp(40px,5vw,70px);line-height:.9;letter-spacing:-.06em;color:#fff!important;-webkit-text-fill-color:#fff!important}.dwFullPanel p{margin:0;color:#e5e7eb!important;-webkit-text-fill-color:#e5e7eb!important;font-weight:900}.dwFullPanel header button{height:max-content;border:0;border-radius:15px;background:#fff;color:#111827;padding:12px 18px;font-weight:1000}.dwFullSearch{display:grid;grid-template-columns:1fr auto;gap:12px;padding:18px;background:#fffaf0;border-bottom:1px solid rgba(15,23,42,.12)}.dwFullSearch span{align-self:center;border-radius:999px;background:#111827;color:#fff!important;-webkit-text-fill-color:#fff!important;padding:10px 14px;font-weight:1000}.dwFullRows{overflow:auto;padding:18px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.dwFullRows button{min-height:112px}@media(max-width:1200px){.dwGrid,.dwFullRows,.dwActivityRows{grid-template-columns:1fr}.dwControls{position:static}.dwFields{grid-template-columns:1fr}.dwWrap{padding:16px 16px 110px}.dwRecordRows{max-height:none}.dwFullOverlay{padding:12px}.dwFullSearch{grid-template-columns:1fr}.dwFullPanel header{display:grid}}`}</style>; }
+function first(...values) {
+  return values.find((v) => v !== undefined && v !== null && String(v).trim() !== "") || "";
+}
+
+function valueFor(item, key) {
+  for (const k of aliases[key] || [key]) {
+    const v = get(item, k);
+    if (v !== undefined && v !== null && String(v).trim() !== "") {
+      return typeof v === "object" ? first(v.name, v.title, v.email, v.id, v._id) : v;
+    }
+  }
+  return "";
+}
+
+function listFrom(res) {
+  const d = res?.data ?? res;
+  if (Array.isArray(d)) return d;
+  for (const k of ["data", "items", "results", "jobs", "clients", "quotes", "invoices", "workers", "team", "users"]) {
+    if (Array.isArray(d?.[k])) return d[k];
+  }
+  return [];
+}
+
+function idOf(item) {
+  const raw = item?.id || item?._id || item?.job_id || item?.client_id || item?.invoice_id || item?.quote_id || item?.worker_id || "";
+  return typeof raw === "object" && raw?.$oid ? raw.$oid : String(raw || "");
+}
+
+function titleOf(type, item) {
+  if (["jobs", "dispatch", "payroll"].includes(type)) return first(valueFor(item, "title"), valueFor(item, "job_title"), "Untitled job");
+  if (type === "clients") return first(valueFor(item, "name"), "Unnamed client");
+  if (type === "team") return workerLabel(item);
+  if (type === "quotes") return first(valueFor(item, "title"), valueFor(item, "customer_name"), "Untitled quote");
+  if (type === "invoices") return first(valueFor(item, "job_reference"), valueFor(item, "customer_name"), "Untitled invoice");
+  return first(item?.name, item?.title, "Record");
+}
+
+function subOf(type, item) {
+  return first(valueFor(item, "client_name"), valueFor(item, "customer_name"), valueFor(item, "email"), valueFor(item, "status"), valueFor(item, "address"), idOf(item));
+}
+
+function workerLabel(worker) {
+  return first(worker?.name, worker?.full_name, worker?.worker_name, worker?.email, worker?.phone, idOf(worker), "Unnamed worker");
+}
+
+function blankForm(page) {
+  return Object.fromEntries(page.fields.map(([key, label, type, options]) => [key, type === "select" ? options[0] : ""]));
+}
+
+function formFromItem(page, item) {
+  const out = blankForm(page);
+  page.fields.forEach(([key, label, type, options]) => {
+    const val = valueFor(item, key);
+    out[key] = val || (type === "select" ? options[0] : "");
+  });
+  return out;
+}
+
+function searchableText(type, item) {
+  return `${titleOf(type, item)} ${subOf(type, item)} ${Object.values(item || {}).map((v) => String(v || "")).join(" ")}`.toLowerCase();
+}
+
+function deliveryDetails(method) {
+  const key = String(method || "").toLowerCase();
+  if (key.includes("xero")) {
+    return {
+      title: "Xero staged",
+      detail: "Owner approves it here, then it is staged for Xero. If Xero is not connected it waits. Churvox does not fake-sync or email the customer.",
+    };
+  }
+  if (key.includes("myob")) {
+    return {
+      title: "MYOB later only",
+      detail: "Marked as staged for MYOB later. Nothing is sent, synced, or described as active MYOB delivery.",
+    };
+  }
+  if (key.includes("draft")) {
+    return {
+      title: "Draft only",
+      detail: "Approved as a draft only. Nothing is emailed, sent, or synced.",
+    };
+  }
+  if (key.includes("manual") || key.includes("external")) {
+    return {
+      title: "Manual external",
+      detail: "Marked as handled outside Churvox. Churvox sends nothing and stages nothing.",
+    };
+  }
+  return {
+    title: "Churvox internal",
+    detail: "Churvox handles the invoice delivery path only after owner approval. No silent customer email.",
+  };
+}
+
+function Field({ field, form, setForm, workers = [] }) {
+  const [key, label, type, options = []] = field;
+  const value = form[key] || "";
+  const update = (next) => setForm((old) => ({ ...old, [key]: next }));
+
+  if (type === "worker") {
+    return (
+      <label className="dwField">
+        <span>{label}</span>
+        <select
+          value={value}
+          onChange={(e) => {
+            const picked = workers.find((w) => workerLabel(w) === e.target.value);
+            setForm((old) => ({ ...old, [key]: e.target.value, worker_id: picked ? idOf(picked) : old.worker_id }));
+          }}
+        >
+          <option value="">Choose worker</option>
+          {workers.map((worker, index) => <option key={idOf(worker) || index} value={workerLabel(worker)}>{workerLabel(worker)}</option>)}
+        </select>
+      </label>
+    );
+  }
+
+  return (
+    <label className={type === "textarea" ? "dwField wide" : "dwField"}>
+      <span>{label}</span>
+      {type === "textarea" ? (
+        <textarea value={value} onChange={(e) => update(e.target.value)} />
+      ) : type === "select" ? (
+        <select value={value || options[0]} onChange={(e) => update(e.target.value)}>
+          {options.map((item) => <option key={item} value={item}>{item}</option>)}
+        </select>
+      ) : (
+        <input value={value} onChange={(e) => update(e.target.value)} />
+      )}
+    </label>
+  );
+}
+
+function RecordList({ type, page, records, selectedId, loading, error, onSelect, onRefresh, onOpenFull }) {
+  return (
+    <section className="dwRecords">
+      <div className="dwRecordsTop">
+        <div><small>Quick list</small><h2>{page.title}</h2></div>
+        <button onClick={onRefresh}>Refresh</button>
+      </div>
+      <button className="dwFullButton" type="button" onClick={onOpenFull}>View full {page.singular} list</button>
+      {loading ? <p className="dwEmpty">Loading records…</p> : error ? <p className="dwEmpty">Could not load records. You can still use the form.</p> : records.length ? (
+        <div className="dwRecordRows">
+          {records.slice(0, 8).map((item, index) => {
+            const id = idOf(item) || `record-${index}`;
+            return <button key={id} type="button" onClick={() => onSelect(item)} className={selectedId === id ? "active" : ""}><b>{titleOf(type, item)}</b><span>{subOf(type, item)}</span></button>;
+          })}
+        </div>
+      ) : <p className="dwEmpty">No records yet. Create the first one in the form.</p>}
+    </section>
+  );
+}
+
+function FullListPanel({ type, page, records, selectedId, search, setSearch, onClose, onSelect }) {
+  const query = search.trim().toLowerCase();
+  const filtered = query ? records.filter((item) => searchableText(type, item).includes(query)) : records;
+  return (
+    <div className="dwFullOverlay">
+      <section className="dwFullPanel">
+        <header>
+          <div><small>Full {page.singular} list</small><h2>{page.title}</h2><p>Search, pick one record, and it loads into the form on this same page.</p></div>
+          <button type="button" onClick={onClose}>Close</button>
+        </header>
+        <div className="dwFullSearch"><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={`Search ${page.title.toLowerCase()}...`} autoFocus /><span>{filtered.length} shown</span></div>
+        <div className="dwFullRows">
+          {filtered.length ? filtered.map((item, index) => {
+            const id = idOf(item) || `full-${index}`;
+            return <button key={id} type="button" onClick={() => onSelect(item)} className={selectedId === id ? "active" : ""}><b>{titleOf(type, item)}</b><span>{subOf(type, item)}</span><em>{id}</em></button>;
+          }) : <p className="dwFullEmpty">No matching records.</p>}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function InvoiceDeliverySummary({ form }) {
+  const details = deliveryDetails(form.deliveryMethod);
+  return (
+    <section className="dwDeliverySummary">
+      <b>{details.title}</b>
+      <span>{details.detail}</span>
+    </section>
+  );
+}
+
+function Style() {
+  return <style>{`
+    .dwRoot,.dwRoot *{box-sizing:border-box;color-scheme:light;opacity:1;text-shadow:none}
+    .dwRoot{min-height:100vh;background:#f6f1e7;color:#111827;font-family:Inter,system-ui}
+    .dwWrap{max-width:1540px;margin:0 auto;padding:24px 28px 120px}
+    .dwHero,.dwRecords,.dwForm,.dwControls,.dwActivity{box-shadow:0 18px 46px rgba(2,6,23,.14)}
+    .dwHero{background:#0b1018;color:#fff;border-left:8px solid #f97316;border-radius:34px;padding:30px;user-select:none}
+    .dwHeroTag{display:inline-flex;border-radius:999px;background:#fff7ed;color:#7c2d12!important;-webkit-text-fill-color:#7c2d12!important;padding:8px 14px;font-size:11px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase;pointer-events:none}
+    .dwHero h1{margin:16px 0 8px;font-size:clamp(42px,5.5vw,76px);line-height:.9;letter-spacing:-.07em;color:#fff}
+    .dwHero p{max-width:880px;color:#f8fafc;font-weight:900}
+    .dwGrid{display:grid;grid-template-columns:330px minmax(0,1fr)320px;gap:18px;margin-top:18px}
+    .dwRecords,.dwForm,.dwControls,.dwActivity{background:#fffaf0!important;color:#111827!important;border:1px solid rgba(15,23,42,.18);border-radius:30px;padding:18px}
+    .dwRecordsTop,.dwActivityHead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+    .dwRecordsTop small,.dwFormHead small,.dwFullPanel small,.dwActivityHead small{display:inline-flex;border-radius:999px;background:#111827;color:#fbbf24!important;-webkit-text-fill-color:#fbbf24!important;padding:8px 12px;font-size:10px;font-weight:1000;letter-spacing:.13em;text-transform:uppercase;user-select:none}
+    .dwRecordsTop h2,.dwActivityHead h2{margin:10px 0 0;color:#111827!important;font-size:28px;line-height:.95}
+    .dwActivityHead p{margin:8px 0 0;color:#475569;font-size:13px;font-weight:900;line-height:1.45}
+    .dwActivityHead button,.dwRecordsTop button,.dwFullButton{border:0;border-radius:14px;background:#ffedd5;color:#7c2d12;font-weight:1000;padding:10px 12px;cursor:pointer}
+    .dwFullButton{width:100%;margin-top:14px;background:#111827;color:#fff}
+    .dwRecordRows{display:grid;gap:10px;margin-top:16px;max-height:520px;overflow:auto;padding-right:4px}
+    .dwRecordRows button,.dwFullRows button{text-align:left;border:2px solid rgba(15,23,42,.14);border-radius:18px;background:#fff;color:#111827;padding:13px;cursor:pointer}
+    .dwRecordRows button.active,.dwFullRows button.active{border-color:#f97316;background:#fff7ed}
+    .dwRecordRows b,.dwFullRows b{display:block;color:#111827!important;-webkit-text-fill-color:#111827!important;font-size:15px;line-height:1.2}
+    .dwRecordRows span,.dwFullRows span{display:block;margin-top:5px;color:#475569!important;-webkit-text-fill-color:#475569!important;font-size:12px;font-weight:900}
+    .dwFullRows em{display:block;margin-top:6px;color:#9a3412!important;-webkit-text-fill-color:#9a3412!important;font-size:10px;font-style:normal;font-weight:1000}
+    .dwEmpty{margin-top:16px;border-radius:18px;background:#111827;color:#fff!important;-webkit-text-fill-color:#fff!important;padding:14px;font-weight:1000}
+    .dwFullEmpty{grid-column:1/-1;border-radius:22px;background:#fff!important;color:#111827!important;-webkit-text-fill-color:#111827!important;border:2px solid #475569;padding:24px;font-size:22px;font-weight:1000}
+    .dwFormHead{display:flex;justify-content:flex-start;gap:16px;align-items:center;margin-bottom:18px}
+    .dwFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .dwField.wide{grid-column:1/-1}
+    .dwField span{display:block;color:#431407!important;-webkit-text-fill-color:#431407!important;text-transform:uppercase;letter-spacing:.11em;font-size:12px;font-weight:1000;margin-bottom:7px;user-select:none}
+    .dwRoot .dwField input,.dwRoot .dwField textarea,.dwRoot .dwField select,.dwRoot .dwFullSearch input{width:100%;border:2px solid #c9a46d!important;border-radius:16px;padding:13px 15px;font-size:16px;font-weight:900;background:#fffdf7!important;background-color:#fffdf7!important;background-image:linear-gradient(#fffdf7,#fffdf7)!important;color:#020617!important;-webkit-text-fill-color:#020617!important;caret-color:#020617!important;outline:none;opacity:1!important;filter:none!important;box-shadow:0 1px 0 rgba(15,23,42,.10), inset 0 0 0 9999px #fffdf7!important;mix-blend-mode:normal!important}
+    .dwRoot .dwField select{appearance:none!important;-webkit-appearance:none!important;-moz-appearance:none!important;padding-right:44px;cursor:pointer}
+    .dwRoot .dwField textarea{min-height:120px;resize:vertical}
+    .dwRoot .dwField input:focus,.dwRoot .dwField textarea:focus,.dwRoot .dwField select:focus,.dwRoot .dwFullSearch input:focus{border-color:#f97316!important;background:#fff!important;background-color:#fff!important;background-image:linear-gradient(#fff,#fff)!important;box-shadow:0 0 0 4px rgba(249,115,22,.16), inset 0 0 0 9999px #fff!important}
+    .dwRoot .dwField option{background:#fff!important;color:#020617!important;-webkit-text-fill-color:#020617!important}
+    .dwRoot .dwField input:-webkit-autofill,.dwRoot .dwField textarea:-webkit-autofill,.dwRoot .dwField select:-webkit-autofill{-webkit-box-shadow:0 0 0 1000px #fffdf7 inset!important;-webkit-text-fill-color:#020617!important}
+    .dwDeliverySummary{grid-column:1/-1;background:#0b1018;color:#fff;border-left:7px solid #f97316;border-radius:22px;padding:16px;margin-bottom:14px;display:grid;gap:6px}
+    .dwDeliverySummary b{color:#fbbf24;text-transform:uppercase;letter-spacing:.13em;font-size:11px;font-weight:1000}
+    .dwDeliverySummary span{color:#f8fafc;font-weight:900;line-height:1.45}
+    .dwSide{display:grid;gap:18px;align-content:start}
+    .dwControls{display:grid;gap:10px;position:sticky;top:18px}
+    .dwControls h2{font-size:30px;line-height:.95;margin:0;color:#111827!important;user-select:none}
+    .dwControls p{background:#14532d!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-radius:16px;padding:12px 14px;font-weight:1000;line-height:1.45}
+    .dwControls button{border:0;border-radius:16px;padding:14px;font-size:16px;font-weight:1000;cursor:pointer}
+    .dwSave{background:#ffedd5!important;color:#7c2d12!important;border:2px solid #fed7aa!important}
+    .dwApprove{background:#16a34a!important;color:#052e16!important;border:2px solid #15803d!important}
+    .dwClear{background:#111827!important;color:#fff!important}
+    .dwActivity{margin-top:18px}
+    .dwActivityRows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}
+    .dwActivityItem{border-radius:22px;background:#111827;color:white;border-left:7px solid #f97316;padding:16px}
+    .dwActivityItem.blue{border-left-color:#38bdf8}.dwActivityItem.green{border-left-color:#22c55e}.dwActivityItem.amber{border-left-color:#f59e0b}.dwActivityItem.red{border-left-color:#ef4444}.dwActivityItem.purple{border-left-color:#a78bfa}.dwActivityItem.orange{border-left-color:#f97316}
+    .dwActivityItem b{display:block;color:#fbbf24;text-transform:uppercase;letter-spacing:.13em;font-size:10px}
+    .dwActivityItem strong{display:block;margin-top:7px;color:#fff;font-size:15px;line-height:1.35}
+    .dwActivityItem span{display:block;margin-top:7px;color:#cbd5e1;font-size:12px;font-weight:900}
+    .dwFullOverlay{position:fixed;inset:0;z-index:2147483647;background:rgba(2,6,23,.88);padding:18px 24px 18px 286px;display:flex}
+    .dwFullPanel{width:100%;background:#f7efe3;border-radius:34px;overflow:hidden;display:grid;grid-template-rows:auto auto 1fr;box-shadow:0 38px 120px rgba(2,6,23,.55)}
+    .dwFullPanel header{background:#0b1018;color:white;border-left:8px solid #f97316;padding:24px 30px;display:flex;justify-content:space-between;gap:16px}
+    .dwFullPanel h2{margin:12px 0 6px;font-size:clamp(40px,5vw,70px);line-height:.9;letter-spacing:-.06em;color:#fff!important;-webkit-text-fill-color:#fff!important}
+    .dwFullPanel p{margin:0;color:#e5e7eb!important;-webkit-text-fill-color:#e5e7eb!important;font-weight:900}
+    .dwFullPanel header button{height:max-content;border:0;border-radius:15px;background:#fff;color:#111827;padding:12px 18px;font-weight:1000}
+    .dwFullSearch{display:grid;grid-template-columns:1fr auto;gap:12px;padding:18px;background:#fffaf0;border-bottom:1px solid rgba(15,23,42,.12)}
+    .dwFullSearch span{align-self:center;border-radius:999px;background:#111827;color:#fff!important;-webkit-text-fill-color:#fff!important;padding:10px 14px;font-weight:1000}
+    .dwFullRows{overflow:auto;padding:18px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+    .dwFullRows button{min-height:112px}
+    @media(max-width:1200px){.dwGrid,.dwFullRows,.dwActivityRows{grid-template-columns:1fr}.dwControls{position:static}.dwFields{grid-template-columns:1fr}.dwWrap{padding:16px 16px 110px}.dwRecordRows{max-height:none}.dwFullOverlay{padding:12px}.dwFullSearch{grid-template-columns:1fr}.dwFullPanel header{display:grid}}
+  `}</style>;
+}
 
 export default function DirectWorkbenchPage({ type }) {
-  const api = useApi(); const page = PAGES[type] || PAGES.jobs;
-  const [form, setForm] = React.useState(() => blankForm(page)); const [message, setMessage] = React.useState("Pick a real record on the side, or create a new one here.");
-  const [records, setRecords] = React.useState([]); const [recordsLoading, setRecordsLoading] = React.useState(false); const [recordsError, setRecordsError] = React.useState("");
-  const [selectedId, setSelectedId] = React.useState(""); const [fullListOpen, setFullListOpen] = React.useState(false); const [search, setSearch] = React.useState(""); const [workers, setWorkers] = React.useState([]);
-  async function loadRecords() { setRecordsLoading(true); setRecordsError(""); for (const ep of [page.endpoint, ...(page.altEndpoints || [])]) { try { const res = await api.get(ep); const list = listFrom(res); if (res?.success && Array.isArray(list)) { setRecords(list); setRecordsLoading(false); return; } } catch {} } setRecords([]); setRecordsError("Could not load records"); setRecordsLoading(false); }
-  async function loadWorkers() { for (const ep of ["/team/workers", "/workers", "/team"]) { try { const res = await api.get(ep); const list = listFrom(res); if (res?.success && list.length) { setWorkers(list); return; } } catch {} } if (type === "team" && records.length) setWorkers(records); }
-  React.useEffect(() => { setForm(blankForm(page)); setSelectedId(""); setMessage("Pick a real record on the side, or create a new one here."); setFullListOpen(false); setSearch(""); loadRecords(); loadWorkers(); }, [type]);
-  React.useEffect(() => { if (type === "team" && records.length && !workers.length) setWorkers(records); }, [type, records, workers.length]);
-  function selectRecord(item) { const id = idOf(item); setSelectedId(id); setForm(formFromItem(page, item)); setMessage(`${titleOf(type, item)} loaded into the form.`); setFullListOpen(false); }
-  async function save() { try { localStorage.setItem(`churvox_direct_workbench_${type}`, JSON.stringify(form)); setMessage(`${page.title} draft saved on this page.`); toast.success(`${page.title} saved locally`); } catch { toast.error("Could not save draft"); } }
-  async function approve() { try { let res = { success: true }; const targetId = selectedId || form.job_id; if (type === "dispatch" && targetId) res = await api.post(`/jobs/${encodeURIComponent(targetId)}/assign`, { worker_name: form.worker_name, worker_id: form.worker_id, dispatch_note: form.dispatch_note, scheduled_time: form.scheduled_time, access_instructions: form.access_instructions, worker_ack_required: form.worker_ack_required }); else if (type === "payroll" && targetId) res = await api.patch(`/jobs/${encodeURIComponent(targetId)}`, { reviewed_hours: form.reviewed_hours, pause_time: form.pause_time, payroll_note: form.payroll_note, pay_status: form.pay_status, approval_status: form.approval_status, payroll_reviewed: true }); else if (["jobs", "clients", "quotes", "invoices", "team"].includes(type)) { if (selectedId) res = await api.patch(`${page.endpoint}/${encodeURIComponent(selectedId)}`, form); else res = await api.post(page.endpoint, form); } if (res?.success === false) throw new Error(res?.error || "Save failed"); setMessage(selectedId ? `${page.title} updated from this page.` : `${page.title} created from this page.`); toast.success(selectedId ? `${page.title} updated` : `${page.title} created`); loadRecords(); loadWorkers(); } catch (error) { toast.error(error?.message || "Could not save this work"); } }
-  function clear() { setForm(blankForm(page)); setSelectedId(""); setMessage("Cleared. Ready for a new item."); }
+  const api = useApi();
+  const page = PAGES[type] || PAGES.jobs;
+  const [form, setForm] = React.useState(() => blankForm(page));
+  const [message, setMessage] = React.useState("Pick a real record on the side, or create a new one here.");
+  const [records, setRecords] = React.useState([]);
+  const [recordsLoading, setRecordsLoading] = React.useState(false);
+  const [recordsError, setRecordsError] = React.useState("");
+  const [selectedId, setSelectedId] = React.useState("");
+  const [fullListOpen, setFullListOpen] = React.useState(false);
+  const [search, setSearch] = React.useState("");
+  const [workers, setWorkers] = React.useState([]);
+
+  async function loadRecords() {
+    setRecordsLoading(true);
+    setRecordsError("");
+    for (const ep of [page.endpoint, ...(page.altEndpoints || [])]) {
+      try {
+        const res = await api.get(ep);
+        const list = listFrom(res);
+        if (Array.isArray(list) && res?.success !== false) {
+          setRecords(list);
+          setRecordsLoading(false);
+          return;
+        }
+      } catch {}
+    }
+    setRecords([]);
+    setRecordsError("Could not load records");
+    setRecordsLoading(false);
+  }
+
+  async function loadWorkers() {
+    for (const ep of ["/team/workers", "/workers", "/team"]) {
+      try {
+        const res = await api.get(ep);
+        const list = listFrom(res);
+        if (res?.success !== false && list.length) {
+          setWorkers(list);
+          return;
+        }
+      } catch {}
+    }
+    if (type === "team" && records.length) setWorkers(records);
+  }
+
+  React.useEffect(() => {
+    setForm(blankForm(page));
+    setSelectedId("");
+    setMessage("Pick a real record on the side, or create a new one here.");
+    setFullListOpen(false);
+    setSearch("");
+    loadRecords();
+    loadWorkers();
+  }, [type]);
+
+  React.useEffect(() => {
+    if (type === "team" && records.length && !workers.length) setWorkers(records);
+  }, [type, records, workers.length]);
+
+  function selectRecord(item) {
+    const id = idOf(item);
+    setSelectedId(id);
+    setForm(formFromItem(page, item));
+    setMessage(`${titleOf(type, item)} loaded into the form.`);
+    setFullListOpen(false);
+  }
+
+  async function save() {
+    try {
+      localStorage.setItem(`churvox_direct_workbench_${type}`, JSON.stringify(form));
+      setMessage(`${page.title} draft saved on this page.`);
+      toast.success(`${page.title} saved locally`);
+    } catch {
+      toast.error("Could not save draft");
+    }
+  }
+
+  async function approve() {
+    try {
+      let res = { success: true };
+      const targetId = selectedId || form.job_id;
+      if (type === "dispatch" && targetId) {
+        res = await api.post(`/jobs/${encodeURIComponent(targetId)}/assign`, {
+          worker_name: form.worker_name,
+          worker_id: form.worker_id,
+          dispatch_note: form.dispatch_note,
+          scheduled_time: form.scheduled_time,
+          access_instructions: form.access_instructions,
+          worker_ack_required: form.worker_ack_required,
+        });
+      } else if (type === "payroll" && targetId) {
+        res = await api.patch(`/jobs/${encodeURIComponent(targetId)}`, {
+          reviewed_hours: form.reviewed_hours,
+          pause_time: form.pause_time,
+          payroll_note: form.payroll_note,
+          pay_status: form.pay_status,
+          approval_status: form.approval_status,
+          payroll_reviewed: true,
+        });
+      } else if (["jobs", "clients", "quotes", "invoices", "team"].includes(type)) {
+        if (selectedId) res = await api.patch(`${page.endpoint}/${encodeURIComponent(selectedId)}`, form);
+        else res = await api.post(page.endpoint, form);
+      }
+      if (res?.success === false) throw new Error(res?.error || "Save failed");
+      setMessage(selectedId ? `${page.title} updated from this page.` : `${page.title} created from this page.`);
+      toast.success(selectedId ? `${page.title} updated` : `${page.title} created`);
+      loadRecords();
+      loadWorkers();
+    } catch (error) {
+      toast.error(error?.message || "Could not save this work");
+    }
+  }
+
+  function clear() {
+    setForm(blankForm(page));
+    setSelectedId("");
+    setMessage("Cleared. Ready for a new item.");
+  }
+
   const showActivity = ["jobs", "dispatch", "payroll"].includes(type);
-  return <main className="dwRoot" data-direct-workbench={type}><Style /><section className="dwWrap"><article className="dwHero"><div className="dwHeroTag">{page.eyebrow}</div><h1>{page.title}</h1><p>{page.promise}</p></article><section className="dwGrid"><RecordList type={type} page={page} records={records} selectedId={selectedId} loading={recordsLoading} error={recordsError} onSelect={selectRecord} onRefresh={() => { loadRecords(); loadWorkers(); }} onOpenFull={() => setFullListOpen(true)} /><section className="dwForm"><div className="dwFormHead"><small>{page.title} direct form</small></div><div className="dwFields">{page.fields.map((field) => <Field key={field[0]} field={field} form={form} setForm={setForm} workers={workers} />)}</div></section><aside className="dwSide"><section className="dwControls"><h2>Owner controls</h2><p>{message}</p><button className="dwSave" onClick={save}>Save edit</button><button className="dwApprove" onClick={approve}>{page.button}</button><button className="dwClear" onClick={clear}>Clear / new item</button></section></aside></section>{showActivity ? <EmployerFieldActivityBoard fallbackRecords={records} /> : null}</section>{fullListOpen ? <FullListPanel type={type} page={page} records={records} selectedId={selectedId} search={search} setSearch={setSearch} onClose={() => setFullListOpen(false)} onSelect={selectRecord} /> : null}</main>;
+
+  return (
+    <main className="dwRoot" data-direct-workbench={type}>
+      <Style />
+      <section className="dwWrap">
+        <article className="dwHero">
+          <div className="dwHeroTag">{page.eyebrow}</div>
+          <h1>{page.title}</h1>
+          <p>{page.promise}</p>
+        </article>
+        <section className="dwGrid">
+          <RecordList type={type} page={page} records={records} selectedId={selectedId} loading={recordsLoading} error={recordsError} onSelect={selectRecord} onRefresh={() => { loadRecords(); loadWorkers(); }} onOpenFull={() => setFullListOpen(true)} />
+          <section className="dwForm">
+            <div className="dwFormHead"><small>{page.title} direct form</small></div>
+            {type === "invoices" ? <InvoiceDeliverySummary form={form} /> : null}
+            <div className="dwFields">{page.fields.map((field) => <Field key={field[0]} field={field} form={form} setForm={setForm} workers={workers} />)}</div>
+          </section>
+          <aside className="dwSide">
+            <section className="dwControls">
+              <h2>Owner controls</h2>
+              <p>{message}</p>
+              <button className="dwSave" onClick={save}>Save edit</button>
+              <button className="dwApprove" onClick={approve}>{page.button}</button>
+              <button className="dwClear" onClick={clear}>Clear / new item</button>
+            </section>
+          </aside>
+        </section>
+        {showActivity ? <EmployerFieldActivityBoard /> : null}
+      </section>
+      {fullListOpen ? <FullListPanel type={type} page={page} records={records} selectedId={selectedId} search={search} setSearch={setSearch} onClose={() => setFullListOpen(false)} onSelect={selectRecord} /> : null}
+    </main>
+  );
 }
