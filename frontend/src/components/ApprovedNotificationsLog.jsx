@@ -26,6 +26,10 @@ function statusKind(status = "", error = "") {
   return "prepared";
 }
 
+const strongText = { color: "#111827", opacity: 1, WebkitTextFillColor: "#111827" };
+const bodyText = { color: "#334155", opacity: 1, WebkitTextFillColor: "#334155", fontWeight: 900 };
+const emptyBox = { background: "#111827", color: "#ffffff", WebkitTextFillColor: "#ffffff", borderRadius: 18, padding: 16, fontWeight: 1000, opacity: 1 };
+
 export default function ApprovedNotificationsLog({ compact = false }) {
   const api = useApi();
   const [items, setItems] = React.useState([]);
@@ -68,8 +72,8 @@ export default function ApprovedNotificationsLog({ compact = false }) {
       <div className="cnHead">
         <div>
           <span>Comms log</span>
-          <h2>Approved messages</h2>
-          <p>Emails and SMS are listed here after owner approval, including sent, prepared, disabled, or failed messages.</p>
+          <h2 style={strongText}>Approved messages</h2>
+          <p style={bodyText}>Owner-approved customer messages are listed here after Churvox prepares or sends them.</p>
         </div>
         <button type="button" onClick={load}>{loading ? "Loading..." : "Refresh log"}</button>
       </div>
@@ -90,17 +94,17 @@ export default function ApprovedNotificationsLog({ compact = false }) {
           <article key={first(item.id, item._id, index)} className={`cnItem ${statusKind(item.status, item.error)}`}>
             <div>
               <b>{String(first(item.channel, "message")).toUpperCase()} · {first(item.status, "prepared")}</b>
-              <strong>{first(item.subject, item.title, "Approved message")}</strong>
-              <p>{first(item.body, item.detail, "No message body saved")}</p>
+              <strong style={strongText}>{first(item.subject, item.title, "Approved message")}</strong>
+              <p style={bodyText}>{first(item.body, item.detail, "No message body saved")}</p>
               {item.error ? <em>{item.error}</em> : null}
             </div>
             <aside>
-              <span>{first(item.to, "No recipient")}</span>
-              <small>{first(item.record_type, "record")} · {first(item.record_id, "no ID")}</small>
-              <small>{dateText(first(item.created_at, item.createdAt))}</small>
+              <span style={strongText}>{first(item.to, "No recipient")}</span>
+              <small style={bodyText}>{first(item.record_type, "record")} · {first(item.record_id, "no ID")}</small>
+              <small style={bodyText}>{dateText(first(item.created_at, item.createdAt))}</small>
             </aside>
           </article>
-        )) : <div className="cnEmpty">No approved messages yet. Once a Command approval sends or prepares an email/SMS, it will show here.</div>}
+        )) : <div className="cnEmpty" style={emptyBox}>No approved messages yet. Approved message activity will show here.</div>}
       </div>
     </section>
   );
