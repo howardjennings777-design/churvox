@@ -24,6 +24,33 @@ logger = logging.getLogger(__name__)
 _LAUNCH_ROUTES_WIRED = False
 
 
+def _route_key(route):
+    return (getattr(route, "path", ""), tuple(sorted(getattr(route, "methods", []) or [])))
+
+
+def _install_late_route_guard(app, router):
+    if app is None or router is None or getattr(app, "churvox_late_route_guard_installed", False):
+        return
+
+    @app.on_event("startup")
+    async def churvox_copy_late_api_routes():
+        try:
+            existing = {_route_key(route) for route in getattr(app.router, "routes", [])}
+            added = 0
+            for route in getattr(router, "routes", []):
+                key = _route_key(route)
+                if key[0] and key not in existing:
+                    app.router.routes.append(route)
+                    existing.add(key)
+                    added += 1
+            if added:
+                logger.info("Churvox late API route guard added %s routes", added)
+        except Exception as exc:
+            logger.warning("Churvox late API route guard failed: %s", exc)
+
+    app.churvox_late_route_guard_installed = True
+
+
 def _wire_launch_routes_once():
     global _LAUNCH_ROUTES_WIRED
     if _LAUNCH_ROUTES_WIRED:
@@ -33,6 +60,7 @@ def _wire_launch_routes_once():
         frame = inspect.currentframe()
         caller_globals = (frame.f_back.f_back.f_globals if frame and frame.f_back and frame.f_back.f_back else {})
         router = caller_globals.get("api_router")
+        app = caller_globals.get("app")
         if router is None:
             return
         try:
@@ -54,6 +82,7 @@ def _wire_launch_routes_once():
         churvox_isolation_routes.install(router)
         churvox_billing_addon_fix.install(router)
         churvox_plan_consistency.install(router)
+        _install_late_route_guard(app, router)
         _LAUNCH_ROUTES_WIRED = True
     except Exception as exc:
         logger.warning("Launch routes not wired yet: %s", exc)
