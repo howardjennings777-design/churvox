@@ -1,5 +1,5 @@
-import DirectWorkbenchPage from "./DirectWorkbenchPage";
+import SafeRecordsWorkbenchPage from "./SafeRecordsWorkbenchPage";
 
 export default function CustomerRecordsPage() {
-  return <DirectWorkbenchPage type="clients" />;
+  return <SafeRecordsWorkbenchPage type="clients" />;
 }
