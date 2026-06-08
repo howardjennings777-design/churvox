@@ -1,5 +1,5 @@
-import DirectWorkbenchPage from "./DirectWorkbenchPage";
+import SafeRecordsWorkbenchPage from "./SafeRecordsWorkbenchPage";
 
 export default function QuotesCommandPage() {
-  return <DirectWorkbenchPage type="quotes" />;
+  return <SafeRecordsWorkbenchPage type="quotes" />;
 }
