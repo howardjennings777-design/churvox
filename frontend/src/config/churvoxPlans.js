@@ -10,10 +10,74 @@ export const PLAN_KEYS = {
   COMMAND: "enterprise",
 };
 
+export const COUNTRY_OPTIONS = [
+  { code: "NZ", label: "New Zealand", currency: "NZD", symbol: "NZ$", tax: "+ GST" },
+  { code: "AU", label: "Australia", currency: "AUD", symbol: "A$", tax: "+ GST" },
+  { code: "US", label: "United States", currency: "USD", symbol: "US$", tax: "plus applicable tax" },
+  { code: "UK", label: "United Kingdom", currency: "GBP", symbol: "£", tax: "+ VAT" },
+];
+
+export const COUNTRY_PRICING = {
+  NZ: { solo: 39, team: 89, pro: 149, enterprise: 299, xero_addon: 39, command_growth_pack: 99, sms_100: 10, sms_500: 45, sms_1000: 80 },
+  AU: { solo: 39, team: 89, pro: 149, enterprise: 299, xero_addon: 39, command_growth_pack: 99, sms_100: 10, sms_500: 45, sms_1000: 80 },
+  US: { solo: 29, team: 69, pro: 119, enterprise: 239, xero_addon: 29, command_growth_pack: 79, sms_100: 8, sms_500: 35, sms_1000: 65 },
+  UK: { solo: 29, team: 69, pro: 119, enterprise: 239, xero_addon: 29, command_growth_pack: 79, sms_100: 8, sms_500: 35, sms_1000: 65 },
+};
+
+export function normaliseCountry(value) {
+  const code = String(value || "NZ").trim().toUpperCase();
+  return COUNTRY_OPTIONS.some((item) => item.code === code) ? code : "NZ";
+}
+
+export function getCountryMeta(country) {
+  return COUNTRY_OPTIONS.find((item) => item.code === normaliseCountry(country)) || COUNTRY_OPTIONS[0];
+}
+
+export function formatCountryPrice(country, amount) {
+  const meta = getCountryMeta(country);
+  return `${meta.symbol}${amount}`;
+}
+
+export function countryPeriod(country) {
+  return `/month ${getCountryMeta(country).tax}`;
+}
+
+export function pricePlanForCountry(plan, country) {
+  const code = normaliseCountry(country);
+  const amount = COUNTRY_PRICING[code]?.[plan.key] ?? COUNTRY_PRICING.NZ[plan.key];
+  return { ...plan, price: formatCountryPrice(code, amount), period: countryPeriod(code), amount, country: code };
+}
+
+export function addonPriceForCountry(addon, country) {
+  const code = normaliseCountry(country);
+  const amount = COUNTRY_PRICING[code]?.[addon.key] ?? COUNTRY_PRICING.NZ[addon.key];
+  return { ...addon, price: formatCountryPrice(code, amount), period: countryPeriod(code), amount, country: code };
+}
+
+export function pricingNotesForCountry(country) {
+  const meta = getCountryMeta(country);
+  if (meta.code === "US") {
+    return [
+      "Prices are shown in USD before applicable sales tax.",
+      "SMS credits are separate and coming soon.",
+      `Operator and Command can add Xero for ${formatCountryPrice(meta.code, COUNTRY_PRICING[meta.code].xero_addon)}/month ${meta.tax}.\`,
+      "Command includes up to 50 active team members.",
+      "Command Growth Pack adds 50 active team members.",
+    ];
+  }
+  return [
+    `Prices are shown in ${meta.currency} ${meta.tax}.`,
+    "SMS credits are separate and coming soon.",
+    `Operator and Command can add Xero for ${formatCountryPrice(meta.code, COUNTRY_PRICING[meta.code].xero_addon)}/month ${meta.tax}.\`,
+    "Command includes up to 50 active team members.",
+    "Command Growth Pack adds 50 active team members.",
+  ];
+}
+
 export const XERO_ADDON = {
   key: "xero_addon",
   name: "Xero add-on",
-  price: "$39",
+  price: "NZ$39",
   period: "/month + GST",
   headline: "Approval-first Xero sync",
   description: "Add Xero sync to Operator or Command. Churvox prepares the accounting action and the owner approves before anything syncs.",
@@ -29,7 +93,7 @@ export const CHURVOX_PLANS = [
   {
     key: "solo",
     name: "Start",
-    price: "$39",
+    price: "NZ$39",
     period: "/month + GST",
     tag: "Owner plan",
     featured: false,
@@ -45,7 +109,7 @@ export const CHURVOX_PLANS = [
   {
     key: "team",
     name: "Crew",
-    price: "$89",
+    price: "NZ$89",
     period: "/month + GST",
     tag: "Small crew",
     featured: false,
@@ -61,7 +125,7 @@ export const CHURVOX_PLANS = [
   {
     key: "pro",
     name: "Operator",
-    price: "$149",
+    price: "NZ$149",
     period: "/month + GST",
     tag: "Most popular",
     featured: true,
@@ -77,7 +141,7 @@ export const CHURVOX_PLANS = [
   {
     key: "enterprise",
     name: "Command",
-    price: "$299",
+    price: "NZ$299",
     period: "/month + GST",
     tag: "Full command",
     featured: false,
@@ -95,18 +159,12 @@ export const CHURVOX_PLANS = [
 export const APP_PLANS = CHURVOX_PLANS.map((plan) => ({ ...plan }));
 export const MARKETING_PLANS = CHURVOX_PLANS.map((plan) => ({ ...plan }));
 
-export const QUICK_PRICING_NOTES = [
-  "Prices exclude GST.",
-  "SMS credits are separate and coming soon.",
-  "Operator and Command can add Xero for $39/month + GST.",
-  "Command includes up to 50 active team members.",
-  "Command Growth Pack adds 50 active team members.",
-];
+export const QUICK_PRICING_NOTES = pricingNotesForCountry("NZ");
 
 export const COMMAND_GROWTH_PACK = {
   key: "command_growth_pack",
   name: "Command Growth Pack",
-  price: "$99",
+  price: "NZ$99",
   period: "/month + GST",
   headline: "+50 active team members",
   description: "Add more crew, jobs and AI Operator capacity as the business grows.",
@@ -122,9 +180,9 @@ export const COMMAND_GROWTH_PACK = {
 export const BILLING_ADDONS = [XERO_ADDON, COMMAND_GROWTH_PACK];
 
 export const SMS_PACKS = [
-  { key: "sms_100", credits: "100", price: "$10", note: "Light reminders and small follow-up runs." },
-  { key: "sms_500", credits: "500", price: "$45", note: "Best for active crews using reminders regularly." },
-  { key: "sms_1000", credits: "1,000", price: "$80", note: "Lowest cost per credit for busy operators." },
+  { key: "sms_100", credits: "100", price: "NZ$10", note: "Light reminders and small follow-up runs." },
+  { key: "sms_500", credits: "500", price: "NZ$45", note: "Best for active crews using reminders regularly." },
+  { key: "sms_1000", credits: "1,000", price: "NZ$80", note: "Lowest cost per credit for busy operators." },
 ];
 
 export function nicePlanName(key) {
