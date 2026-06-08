@@ -1,5 +1,5 @@
-import DirectWorkbenchPage from "./DirectWorkbenchPage";
+import RecurringJobsWorkbenchPage from "./RecurringJobsWorkbenchPage";
 
 export default function JobsCommandPage() {
-  return <DirectWorkbenchPage type="jobs" />;
+  return <RecurringJobsWorkbenchPage />;
 }
