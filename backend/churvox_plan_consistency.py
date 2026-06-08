@@ -141,11 +141,11 @@ def _patch_globals():
     async def set_business_plan_from_checkout(user_id: str, plan: str, stripe_customer_id: str = None, stripe_subscription_id: str = None, country: str = "NZ"):
         db = getattr(app, "db", None)
         if db is None:
-            return
+            return None
         user_obj_id = _obj(user_id)
         user_doc = await db.users.find_one({"_id": user_obj_id}) if user_obj_id else None
         if not user_doc:
-            return
+            return None
         normal = _normal_plan(plan)
         code = _country(country or user_doc.get("country") or user_doc.get("business_country") or "NZ")
         meta = _meta_for(normal, code)
@@ -155,6 +155,7 @@ def _patch_globals():
         update = {"plan": normal, "plan_name": meta["name"], "plan_price": meta["price"], "plan_price_label": meta["price_label"], "country": code, "business_country": code, "billing_country": code, "stripe_customer_id": stripe_customer_id, "stripe_subscription_id": stripe_subscription_id, "updated_at": datetime.now(timezone.utc)}
         await db.users.update_one({"_id": business_id}, {"$set": update})
         await db.users.update_many({"business_id": business_id, "role": {"$in": ["worker", "manager", "office_admin", "payroll"]}}, {"$set": {"plan": normal, "plan_name": meta["name"], "country": code, "business_country": code}})
+        return {"plan": normal, "plan_name": meta["name"], "country": code, "plan_price": meta["price"], "plan_price_label": meta["price_label"]}
 
     app.get_stripe_price_id = get_stripe_price_id
     app.set_business_plan_from_checkout = set_business_plan_from_checkout
@@ -165,6 +166,7 @@ def install(router):
         return
     _patch_globals()
     _remove_post(router, "/billing/create-checkout-session")
+    _remove_post(router, "/billing/confirm-checkout")
     _remove_get(router, "/billing/subscription-status")
     _remove_get(router, "/billing/plan-metadata")
 
@@ -217,8 +219,47 @@ def install(router):
             args["customer_email"] = user.get("email")
         try:
             session = stripe.checkout.Session.create(**args)
+            await db.billing_plan_sessions.update_one({"stripe_session_id": session.id}, {"$setOnInsert": {"business_id": business_id, "owner_user_id": str(user.get("id")), "plan": plan, "country": country, "stripe_session_id": session.id, "status": "created", "created_at": datetime.now(timezone.utc)}}, upsert=True)
             return {"success": True, "url": session.url, "checkout_url": session.url, "session_id": session.id, "plan": plan, "plan_name": meta["name"], "country": country}
         except Exception as exc:
             return {"success": False, "error": f"Stripe checkout failed: {exc}"}
+
+    @router.post("/billing/confirm-checkout")
+    async def confirm_checkout(payload: dict, request):
+        app = _server()
+        db = getattr(app, "db", None)
+        stripe = getattr(app, "stripe", None)
+        if db is None or stripe is None:
+            return {"success": False, "error": "Billing route not ready"}
+        try:
+            user = await _user(request)
+        except Exception:
+            return {"success": False, "error": "Not authenticated"}
+        session_id = _clean(payload.get("session_id"))
+        if not session_id:
+            return {"success": False, "error": "Missing Stripe session id"}
+        existing = await db.billing_plan_sessions.find_one({"stripe_session_id": session_id})
+        if existing and existing.get("status") == "confirmed":
+            return {"success": True, "message": "Plan already activated", "plan": existing.get("plan"), "country": existing.get("country"), "already_confirmed": True}
+        stripe_secret = os.environ.get("STRIPE_SECRET_KEY", "").strip()
+        if not stripe_secret:
+            return {"success": False, "error": "Missing STRIPE_SECRET_KEY in Render."}
+        stripe.api_key = stripe_secret
+        try:
+            session = stripe.checkout.Session.retrieve(session_id)
+        except Exception as exc:
+            return {"success": False, "error": f"Could not verify Stripe session: {exc}"}
+        if getattr(session, "payment_status", None) not in ["paid", "no_payment_required"]:
+            return {"success": False, "error": "Stripe checkout is not paid yet"}
+        meta = getattr(session, "metadata", {}) or {}
+        plan = _normal_plan(meta.get("plan") or payload.get("plan"))
+        country = _country(meta.get("country") or payload.get("country") or "NZ")
+        owner_user_id = meta.get("user_id") or user.get("id")
+        apply_plan = getattr(app, "set_business_plan_from_checkout", None)
+        if not apply_plan:
+            return {"success": False, "error": "Plan save helper not ready"}
+        saved = await apply_plan(owner_user_id, plan, getattr(session, "customer", None), getattr(session, "subscription", None), country)
+        await db.billing_plan_sessions.update_one({"stripe_session_id": session_id}, {"$set": {"business_id": str(user.get("business_id") or user.get("id")), "owner_user_id": str(owner_user_id), "plan": plan, "country": country, "status": "confirmed", "stripe_subscription_id": getattr(session, "subscription", None), "stripe_customer_id": getattr(session, "customer", None), "confirmed_at": datetime.now(timezone.utc)}}, upsert=True)
+        return {"success": True, "message": "Plan activated", "plan": plan, "country": country, "saved": saved or {}}
 
     router.churvox_plan_consistency_installed = True
