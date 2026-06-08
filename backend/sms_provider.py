@@ -36,12 +36,14 @@ def _wire_launch_routes_once():
         if router is None:
             return
         try:
-            from backend import churvox_launch_routes, churvox_team_roles
+            from backend import churvox_launch_routes, churvox_team_roles, churvox_recurring_routes
         except Exception:
             import churvox_launch_routes
             import churvox_team_roles
+            import churvox_recurring_routes
         churvox_launch_routes.install(router)
         churvox_team_roles.install(router)
+        churvox_recurring_routes.install(router)
         _LAUNCH_ROUTES_WIRED = True
     except Exception as exc:
         logger.warning("Launch routes not wired yet: %s", exc)
@@ -109,11 +111,9 @@ def _valid_source(source: str) -> str:
 class DisabledSMSProvider(SMSProvider):
     def __init__(self, reason: str = "SMS is not enabled"):
         self.reason = reason
-
     async def send(self, to: str, body: str, source: str = "Churvox") -> SMSResult:
         logger.warning("[SMS DISABLED] blocked send to=%s reason=%s", to, self.reason)
         return SMSResult(success=False, status="DISABLED", error=self.reason, provider="disabled", cost=0.0)
-
     async def check_balance(self) -> Optional[float]:
         return None
 
