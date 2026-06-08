@@ -2,15 +2,224 @@ import React from "react";
 import { toast } from "sonner";
 
 const SLIPS = [
-  { key: "approvals", title: "Approvals", card: "Approve, edit, or decline prepared owner decisions.", formTitle: "Approval decision form", fields: [["approvalType", "Approval type", "select", ["General", "Invoice", "Job", "Quote", "Client", "Payroll"]], ["linkedRecord", "Linked record"], ["preparedAction", "Prepared action", "textarea"], ["ownerChanges", "Owner changes", "textarea"], ["decisionNote", "Decision note", "textarea"]] },
-  { key: "crew", title: "Crew dispatch", card: "Assign the right worker to the right job.", formTitle: "Crew assignment form", fields: [["jobName", "Job to assign"], ["site", "Client / site"], ["recommendedWorker", "Recommended worker"], ["backupWorker", "Backup worker"], ["schedule", "Scheduled date/time"], ["workerInstructions", "Worker instructions", "textarea"], ["dispatchNote", "Dispatch note", "textarea"]] },
-  { key: "money", title: "Money", card: "Prepare invoice work and payment follow-ups.", formTitle: "Invoice and payment form", fields: [["moneyAction", "Money action", "select", ["Draft invoice", "Approve invoice", "Payment follow-up", "Mark reviewed"]], ["client", "Client"], ["invoiceRef", "Job / invoice reference"], ["amount", "Amount"], ["dueDate", "Due date"], ["customerMessage", "Customer wording", "textarea"], ["internalNote", "Internal money note", "textarea"]] },
-  { key: "jobs", title: "Jobs needing info", card: "Fill missing job details before work moves forward.", formTitle: "Job details form", fields: [["jobTitle", "Job title"], ["client", "Client"], ["address", "Job address"], ["schedule", "Schedule/date"], ["pricingType", "Pricing type", "select", ["Fixed price", "Hourly", "Fixed + extras", "Hourly + extras"]], ["price", "Price / rate"], ["workerInstructions", "Worker instructions", "textarea"], ["missingInfoNote", "Missing info note", "textarea"]] },
-  { key: "quotes", title: "Quotes", card: "Follow up quotes or convert accepted quotes to jobs.", formTitle: "Quote action form", fields: [["quoteAction", "Quote action", "select", ["Follow up quote", "Convert accepted quote", "Revise quote", "Archive quote"]], ["client", "Client"], ["quoteRef", "Quote title / number"], ["quoteValue", "Quote value"], ["validUntil", "Valid until"], ["scope", "Scope of work", "textarea"], ["message", "Customer follow-up message", "textarea"]] },
-  { key: "clients", title: "Clients", card: "Clean client details so reminders and invoices work.", formTitle: "Client record form", fields: [["clientName", "Client name"], ["phone", "Phone"], ["email", "Email"], ["address", "Address"], ["billingContact", "Billing contact"], ["clientStatus", "Client status", "select", ["Active", "Needs details", "Do not contact", "Archived"]], ["clientNote", "Client note", "textarea"]] },
-  { key: "workers", title: "Worker updates", card: "Review field notes, job proof, and completion updates.", formTitle: "Worker update review form", fields: [["worker", "Worker"], ["job", "Job"], ["completionStatus", "Completion status", "select", ["Completed", "Needs review", "Photos missing", "Client issue", "Rejected"]], ["proofStatus", "Photo / proof status", "select", ["Photos attached", "No photos", "Needs owner review", "Not required"]], ["workerNote", "Worker note", "textarea"], ["ownerReview", "Owner review note", "textarea"]] },
-  { key: "payroll", title: "Payroll/time", card: "Review job time before payroll handoff.", formTitle: "Payroll time review form", fields: [["worker", "Worker"], ["payPeriod", "Pay period"], ["timeSource", "Job / time source"], ["reviewedHours", "Reviewed hours"], ["pauseTime", "Pause time"], ["payStatus", "Payroll status", "select", ["Ready", "Needs review", "Hold", "Exported"]], ["payrollNote", "Payroll note", "textarea"], ["exportNote", "Export / handoff note", "textarea"]] },
-  { key: "setup", title: "Setup blockers", card: "Finish missing setup items from inside Command.", formTitle: "Setup blocker form", fields: [["setupArea", "Setup area", "select", ["Business profile", "Branding", "Team", "Plans/billing", "Legal links", "Accounting", "Notifications"]], ["missingThing", "What is missing"], ["preparedTask", "Prepared setup task"], ["requiredValue", "Required value"], ["setupStatus", "Setup status", "select", ["Not started", "Needs owner input", "Ready to save", "Done"]], ["ownerNote", "Owner setup note", "textarea"]] }
+  {
+    key: "approvals",
+    title: "Approvals",
+    card: "Master queue for owner decisions prepared by Churvox.",
+    formTitle: "Approval decision",
+    found: "Churvox found work that should not happen without owner approval.",
+    prepared: "A clear decision with the linked record, owner changes and approval note.",
+    why: "This keeps the AI Operator approval-first and stops silent changes.",
+    risk: "High-risk actions must show source, record and outcome before approval.",
+    after: "The prepared action is accepted, declined, or sent back for editing.",
+    approveLabel: "Approve decision",
+    fields: [
+      ["approvalSource", "Approval source", "select", ["Money", "Crew", "Quote", "Job", "Client", "Worker update", "Payroll", "Setup"]],
+      ["linkedRecord", "Linked record"],
+      ["riskLevel", "Risk level", "select", ["Normal", "Important", "Urgent", "High risk"]],
+      ["dueStatus", "Due / urgency"],
+      ["preparedAction", "Prepared action", "textarea"],
+      ["ownerChanges", "Owner changes before approval", "textarea"],
+      ["decisionNote", "Decision note", "textarea"]
+    ]
+  },
+  {
+    key: "crew",
+    title: "Crew dispatch",
+    card: "Approve the recommended worker, schedule and dispatch note.",
+    formTitle: "Crew assignment",
+    found: "A job needs a worker, schedule, or clearer dispatch instructions.",
+    prepared: "A recommended worker, backup option and message for the field crew.",
+    why: "The owner should see why a worker is recommended before assigning the job.",
+    risk: "Check workload, travel area and schedule conflict before approval.",
+    after: "The worker is assigned and the dispatch note is ready for notification.",
+    approveLabel: "Approve assignment",
+    fields: [
+      ["jobName", "Job to assign"],
+      ["clientSite", "Client / site"],
+      ["jobAddress", "Job address"],
+      ["recommendedWorker", "Recommended worker"],
+      ["matchReason", "Why this worker", "textarea"],
+      ["workerWorkload", "Worker workload today"],
+      ["backupWorker", "Backup worker"],
+      ["schedule", "Scheduled date/time"],
+      ["conflictWarning", "Conflict / warning", "textarea"],
+      ["dispatchNote", "Worker dispatch note", "textarea"]
+    ]
+  },
+  {
+    key: "money",
+    title: "Money",
+    card: "Approve invoice drafts, payment follow-ups and money reviews.",
+    formTitle: "Money action",
+    found: "A money item needs owner approval before sending, following up, or marking reviewed.",
+    prepared: "The amount, due date, customer wording and accounting status are ready to review.",
+    why: "Money actions should be checked before customers see them or records change.",
+    risk: "Watch for missing amount, missing customer email, GST issues or accounting sync status.",
+    after: "The invoice, reminder or money note is approved for the next step.",
+    approveLabel: "Approve money action",
+    fields: [
+      ["moneyAction", "Money action", "select", ["Draft invoice", "Approve invoice", "Payment follow-up", "Mark paid reviewed", "Accounting review"]],
+      ["client", "Client"],
+      ["invoiceRef", "Invoice / job reference"],
+      ["amount", "Amount"],
+      ["gstStatus", "GST status", "select", ["GST included", "GST excluded", "No GST", "Needs check"]],
+      ["dueDate", "Due date"],
+      ["contactWarning", "Contact / amount warning"],
+      ["accountingStatus", "Accounting status", "select", ["Not synced", "Xero staged", "MYOB staged", "Ready later", "Needs review"]],
+      ["customerMessage", "Customer wording", "textarea"],
+      ["internalNote", "Internal money note", "textarea"]
+    ]
+  },
+  {
+    key: "jobs",
+    title: "Jobs needing info",
+    card: "Fix the job blocker before dispatch, reminders or invoices move.",
+    formTitle: "Job blocker fix",
+    found: "A job is missing information or has a blocker that stops the next step.",
+    prepared: "The missing fields, pricing, worker notes and owner-only note are ready to review.",
+    why: "Clean job details feed dispatch, reminders, invoices, payroll and worker instructions.",
+    risk: "Do not show owner-only pricing or internal notes to workers.",
+    after: "The job becomes ready for scheduling, assignment or invoice preparation.",
+    approveLabel: "Save job fix",
+    fields: [
+      ["jobTitle", "Job title"],
+      ["client", "Client"],
+      ["clientContact", "Client phone / email"],
+      ["address", "Job address"],
+      ["jobType", "Job type / trade"],
+      ["priority", "Priority", "select", ["Normal", "High", "Urgent"]],
+      ["schedule", "Schedule/date"],
+      ["repeatType", "Recurring", "select", ["One-off", "Weekly", "Fortnightly", "Monthly", "Custom"]],
+      ["assignedWorker", "Assigned worker"],
+      ["pricingType", "Pricing type", "select", ["Fixed price", "Hourly", "Fixed + extras", "Hourly + extras", "Needs price"]],
+      ["price", "Price / rate"],
+      ["missingChecklist", "Missing info checklist", "textarea"],
+      ["workerInstructions", "Worker-visible instructions", "textarea"],
+      ["ownerOnlyNote", "Owner-only note", "textarea"]
+    ]
+  },
+  {
+    key: "quotes",
+    title: "Quotes",
+    card: "Approve quote follow-ups, revisions or quote-to-job actions.",
+    formTitle: "Quote action",
+    found: "A quote needs follow-up, revision, expiry review or conversion to a job.",
+    prepared: "The quote value, scope, assumptions and customer message are ready to approve.",
+    why: "Quotes should not sit untouched when they can become work or need a clear response.",
+    risk: "Check scope, exclusions, expiry and client contact before sending anything.",
+    after: "The quote action is saved, followed up, revised or ready to convert into a job.",
+    approveLabel: "Approve quote action",
+    fields: [
+      ["quoteAction", "Quote action", "select", ["Follow up quote", "Convert accepted quote", "Revise quote", "Archive quote"]],
+      ["client", "Client"],
+      ["quoteRef", "Quote title / number"],
+      ["quoteStatus", "Quote status", "select", ["Draft", "Sent", "Accepted", "Declined", "Expired"]],
+      ["quoteValue", "Quote value"],
+      ["gstStatus", "GST status", "select", ["GST included", "GST excluded", "No GST", "Needs check"]],
+      ["validUntil", "Valid until"],
+      ["contactWarning", "Client contact warning"],
+      ["scope", "Scope of work", "textarea"],
+      ["exclusions", "Exclusions / assumptions", "textarea"],
+      ["message", "Customer follow-up message", "textarea"]
+    ]
+  },
+  {
+    key: "clients",
+    title: "Clients",
+    card: "Approve client contact fixes and next customer action.",
+    formTitle: "Client record fix",
+    found: "A client record needs details before jobs, quotes, invoices or reminders work properly.",
+    prepared: "Contact details, site notes, billing contact and next action are ready to review.",
+    why: "Clean client data stops failed reminders, invoice issues and wrong job details.",
+    risk: "Missing phone/email can block reminders and follow-ups.",
+    after: "The client record is ready for job, quote, invoice and reminder workflows.",
+    approveLabel: "Save client fix",
+    fields: [
+      ["clientName", "Client name"],
+      ["phone", "Phone"],
+      ["email", "Email"],
+      ["preferredContact", "Preferred contact", "select", ["Phone", "Email", "SMS later", "No preference"]],
+      ["address", "Main address"],
+      ["billingContact", "Billing contact"],
+      ["clientStatus", "Client status", "select", ["Active", "Needs details", "Do not contact", "Archived"]],
+      ["reminderStatus", "Reminder status", "select", ["Ready", "Missing contact", "Coming soon", "Do not remind"]],
+      ["siteNotes", "Property / access notes", "textarea"],
+      ["lastJobNextAction", "Last job / next action", "textarea"],
+      ["clientNote", "Client note", "textarea"]
+    ]
+  },
+  {
+    key: "workers",
+    title: "Worker updates",
+    card: "Accept field updates, proof, notes and completion issues.",
+    formTitle: "Worker update review",
+    found: "A field update needs owner review before invoice, payroll or follow-up work continues.",
+    prepared: "Worker note, proof status, timing and owner review note are ready to accept or reject.",
+    why: "Worker updates are the bridge between job completion, invoice preparation and payroll review.",
+    risk: "Check missing photos, client issues, time issues and site verification before accepting.",
+    after: "The update is accepted and can feed invoice preparation or payroll review.",
+    approveLabel: "Accept worker update",
+    fields: [
+      ["worker", "Worker"],
+      ["job", "Job"],
+      ["completionStatus", "Completion status", "select", ["Completed", "Needs review", "Photos missing", "Client issue", "Rejected"]],
+      ["proofStatus", "Photo / proof status", "select", ["Photos attached", "No photos", "Needs owner review", "Not required"]],
+      ["timeStarted", "Started time"],
+      ["timeCompleted", "Completed time"],
+      ["siteCheck", "Owner-side site check", "select", ["Not checked", "On site", "Near site", "Away from site", "GPS missing"]],
+      ["issueFlag", "Issue flag", "select", ["None", "Client issue", "Pricing issue", "Photo missing", "Time issue", "Needs call"]],
+      ["workerNote", "Worker note", "textarea"],
+      ["ownerReview", "Owner review note", "textarea"]
+    ]
+  },
+  {
+    key: "payroll",
+    title: "Payroll/time",
+    card: "Approve reviewed time before payroll handoff.",
+    formTitle: "Payroll time review",
+    found: "A worker time record needs review before payroll export or handoff.",
+    prepared: "Reviewed hours, pause time, hold reason and export note are ready for payroll approval.",
+    why: "Payroll needs clean time records separate from normal job admin.",
+    risk: "Hold anything with missing start/finish, strange pause time or disputed hours.",
+    after: "The time is marked ready, held for review, or prepared for export/handoff.",
+    approveLabel: "Approve time review",
+    fields: [
+      ["worker", "Worker"],
+      ["payPeriod", "Pay period"],
+      ["jobSource", "Job / time source"],
+      ["startTime", "Start time"],
+      ["finishTime", "Finish time"],
+      ["totalTime", "Total time"],
+      ["pauseTime", "Pause time"],
+      ["reviewedHours", "Reviewed hours"],
+      ["payStatus", "Payroll status", "select", ["Ready", "Needs review", "Hold", "Exported"]],
+      ["holdReason", "Hold reason", "textarea"],
+      ["payrollNote", "Payroll note", "textarea"],
+      ["exportNote", "Export / handoff note", "textarea"]
+    ]
+  },
+  {
+    key: "setup",
+    title: "Setup blockers",
+    card: "Approve setup fixes that unblock launch or customer use.",
+    formTitle: "Setup blocker fix",
+    found: "A setup item is missing or unfinished and may block launch readiness.",
+    prepared: "The missing item, required value, prepared fix and owner note are ready to review.",
+    why: "Setup blockers should be clear, not hidden inside random settings pages.",
+    risk: "Some setup items can block signups, billing, support, legal links or customer trust.",
+    after: "The setup item is saved as fixed, left for later, or ignored for now.",
+    approveLabel: "Save setup fix",
+    fields: [
+      ["setupArea", "Setup area", "select", ["Business profile", "Branding", "Team", "Plans/billing", "Legal links", "Accounting", "Notifications", "PWA install"]],
+      ["missingThing", "What is missing"],
+      ["launchImpact", "Why it blocks launch", "textarea"],
+      ["preparedTask", "Prepared setup task"],
+      ["requiredValue", "Required value"],
+      ["setupStatus", "Setup status", "select", ["Not started", "Needs owner input", "Ready to save", "Done", "Ignore for now"]],
+      ["ownerNote", "Owner setup note", "textarea"]
+    ]
+  }
 ];
 
 function makeForm(slip) {
@@ -23,17 +232,18 @@ function makeForm(slip) {
 
 function Field({ field, form, setForm }) {
   const [key, label, type, options = []] = field;
+  const update = (value) => setForm({ ...form, [key]: value });
   return (
     <label className={type === "textarea" ? "cxField wide" : "cxField"}>
       <span>{label}</span>
       {type === "textarea" ? (
-        <textarea value={form[key] || ""} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />
+        <textarea value={form[key] || ""} onChange={(e) => update(e.target.value)} />
       ) : type === "select" ? (
-        <select value={form[key] || options[0]} onChange={(e) => setForm({ ...form, [key]: e.target.value })}>
+        <select value={form[key] || options[0]} onChange={(e) => update(e.target.value)}>
           {options.map((o) => <option key={o} value={o}>{o}</option>)}
         </select>
       ) : (
-        <input value={form[key] || ""} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />
+        <input value={form[key] || ""} onChange={(e) => update(e.target.value)} />
       )}
     </label>
   );
@@ -45,18 +255,22 @@ function CommandBox({ slip, onOpen }) {
       <b>{slip.title}</b>
       <strong>{slip.formTitle}</strong>
       <p>{slip.card}</p>
-      <em>Open specific form</em>
+      <em>Open prepared action</em>
     </button>
   );
 }
 
+function ContextCard({ label, children, tone = "dark" }) {
+  return <div className={`cxContextCard ${tone}`}><b>{label}</b><span>{children}</span></div>;
+}
+
 function Slip({ slip, onClose }) {
   const [form, setForm] = React.useState(makeForm(slip));
-  const [msg, setMsg] = React.useState("Ready to edit and approve inside this slip.");
+  const [msg, setMsg] = React.useState("Ready to edit and approve inside this Command slip.");
 
   React.useEffect(() => {
     setForm(makeForm(slip));
-    setMsg("Ready to edit and approve inside this slip.");
+    setMsg("Ready to edit and approve inside this Command slip.");
   }, [slip.key]);
 
   const save = () => { setMsg("Edits saved in this slip."); toast.success("Edits saved in this slip"); };
@@ -80,6 +294,13 @@ function Slip({ slip, onClose }) {
             <div className="cxFormTop">
               <span>{slip.formTitle}</span>
             </div>
+            <div className="cxContextGrid">
+              <ContextCard label="AI found">{slip.found}</ContextCard>
+              <ContextCard label="AI prepared">{slip.prepared}</ContextCard>
+              <ContextCard label="Why it matters">{slip.why}</ContextCard>
+              <ContextCard label="Risk / warning" tone="warn">{slip.risk}</ContextCard>
+              <ContextCard label="After approval" tone="ok">{slip.after}</ContextCard>
+            </div>
             <div className="cxFields">
               {slip.fields.map((field) => <Field key={field[0]} field={field} form={form} setForm={setForm} />)}
             </div>
@@ -89,7 +310,7 @@ function Slip({ slip, onClose }) {
             <h2>Owner controls</h2>
             <p>{msg}</p>
             <button className="save" onClick={save}>Save edit</button>
-            <button className="approve" onClick={approve}>Approve from slip</button>
+            <button className="approve" onClick={approve}>{slip.approveLabel}</button>
             <button className="decline" onClick={decline}>Decline</button>
             <button className="dark" onClick={onClose}>Back to Command</button>
           </aside>
@@ -109,7 +330,7 @@ function Style() {
     .cxHero h1{margin:18px 0 12px;font-size:clamp(42px,5.4vw,72px);line-height:.92;letter-spacing:-.055em;color:#ffffff;user-select:none}
     .cxHero p{color:#f8fafc;font-weight:900;max-width:820px}
     .cxBoxes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-top:20px}
-    .cxBox{background:#0b1018;color:#ffffff;border:1px solid rgba(255,255,255,.14);border-left:8px solid #f97316;border-radius:28px;padding:22px;text-align:left;min-height:210px;display:grid;gap:12px;cursor:pointer;box-shadow:0 22px 62px rgba(2,6,23,.24)}
+    .cxBox{background:#0b1018;color:#ffffff;border:1px solid rgba(255,255,255,.14);border-left:8px solid #f97316;border-radius:28px;padding:22px;text-align:left;min-height:224px;display:grid;gap:12px;cursor:pointer;box-shadow:0 22px 62px rgba(2,6,23,.24)}
     .cxBox b{font-size:28px;line-height:.95;color:#ffffff}
     .cxBox strong{color:#fbbf24;text-transform:uppercase;font-size:11px;letter-spacing:.12em;font-weight:1000}
     .cxBox p{color:#f1f5f9;font-weight:900;line-height:1.45;margin:0}
@@ -123,14 +344,20 @@ function Style() {
     .cxSlip header button{height:max-content;border:0;border-radius:15px;padding:12px 18px;font-weight:1000;background:#ffffff;color:#111827}
     .cxSlip main{min-height:0;display:grid;grid-template-columns:minmax(0,1fr)340px;gap:16px;padding:16px;overflow:auto}
     .cxFormPanel,.cxControls{background:#fffaf0;border:1px solid rgba(15,23,42,.20);border-radius:26px;padding:20px;box-shadow:0 14px 38px rgba(15,23,42,.12);color:#111827}
-    .cxFormTop{display:flex;align-items:center;margin-bottom:16px;min-height:0}
+    .cxFormTop{display:flex;align-items:center;margin-bottom:14px;min-height:0}
     .cxFormTop span{display:inline-flex;background:#111827;color:#fbbf24;border-radius:999px;padding:7px 12px;text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:1000;user-select:none}
+    .cxContextGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:16px}
+    .cxContextCard{border-radius:18px;background:#111827;color:#ffffff;padding:13px 14px;border-left:5px solid #f97316}
+    .cxContextCard.warn{background:#451a03;border-left-color:#f59e0b}
+    .cxContextCard.ok{background:#052e16;border-left-color:#22c55e;grid-column:1/-1}
+    .cxContextCard b{display:block;color:#fbbf24;text-transform:uppercase;letter-spacing:.12em;font-size:10px;font-weight:1000;margin-bottom:6px}
+    .cxContextCard span{display:block;color:#f8fafc;font-size:13px;font-weight:900;line-height:1.42}
     .cxFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
     .cxField.wide{grid-column:1/-1}
     .cxField span{display:block;color:#431407;text-transform:uppercase;letter-spacing:.11em;font-size:12px;font-weight:1000;margin-bottom:7px;user-select:none}
     .cxField input,.cxField textarea,.cxField select{width:100%;border:2px solid rgba(15,23,42,.28);border-radius:16px;padding:13px 15px;font-size:16px;font-weight:900;background:#ffffff!important;color:#0f172a!important;-webkit-text-fill-color:#0f172a!important;outline:none;box-shadow:0 1px 0 rgba(15,23,42,.08)}
     .cxField input:focus,.cxField textarea:focus,.cxField select:focus{border-color:#f97316;box-shadow:0 0 0 4px rgba(249,115,22,.18)}
-    .cxField textarea{min-height:120px;resize:vertical}
+    .cxField textarea{min-height:116px;resize:vertical}
     .cxField option{background:#ffffff;color:#0f172a}
     .cxControls{align-self:start;position:sticky;top:0;display:grid;gap:10px}
     .cxControls h2{font-size:30px;line-height:.95;margin:0;color:#111827;user-select:none}
@@ -140,7 +367,7 @@ function Style() {
     .cxControls .approve{background:#16a34a;color:#052e16!important;border:2px solid #15803d}
     .cxControls .decline{background:#fecaca;color:#7f1d1d!important;border:2px solid #fca5a5}
     .cxControls .dark{background:#111827;color:#ffffff!important}
-    @media(max-width:1200px){.cxOverlay{padding:12px}.cxSlip main,.cxBoxes{grid-template-columns:1fr}.cxControls{position:static}}
+    @media(max-width:1200px){.cxOverlay{padding:12px}.cxSlip main,.cxBoxes,.cxContextGrid{grid-template-columns:1fr}.cxControls{position:static}}
   `}</style>;
 }
 
@@ -153,7 +380,7 @@ export default function CommandDeskOperatorPageV3() {
         <article className="cxHero">
           <span className="cxPill">AI approval desk</span>
           <h1>Churvox did the admin. You approve.</h1>
-          <p>Each box opens its own specific working form. The form is the slip. No generic left-side explanation panel.</p>
+          <p>Each Command box opens a prepared action slip: what Churvox found, what it prepared, why it matters, the risk, and what happens after approval.</p>
         </article>
         <section className="cxBoxes">
           {SLIPS.map((slip) => <CommandBox key={slip.key} slip={slip} onOpen={setOpen} />)}
