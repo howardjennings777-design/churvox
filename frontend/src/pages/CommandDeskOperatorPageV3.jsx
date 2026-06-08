@@ -1,6 +1,61 @@
 import React from "react";
 import { toast } from "sonner";
 
+const INVOICE_DELIVERY_OPTIONS = [
+  "Churvox internal",
+  "Xero",
+  "Draft only",
+  "Manual external",
+  "MYOB staged/later (inactive)"
+];
+
+function deliveryDetails(method) {
+  const key = String(method || "").toLowerCase();
+  if (key.includes("xero")) {
+    return {
+      handle: "Xero handles it after owner approval and connection.",
+      email: "Churvox does not email this invoice.",
+      xero: "Invoice is staged for Xero sync. If Xero is not connected, it waits for connection.",
+      draft: "Not draft-only.",
+      sent: "Nothing is sent to the customer from Churvox."
+    };
+  }
+  if (key.includes("myob")) {
+    return {
+      handle: "MYOB is staged for later only.",
+      email: "Churvox does not email this invoice.",
+      xero: "Not staged for Xero.",
+      draft: "Approved as a staged MYOB-later item.",
+      sent: "Nothing is sent. No active MYOB wording or fake sync."
+    };
+  }
+  if (key.includes("draft")) {
+    return {
+      handle: "Owner approves the draft only.",
+      email: "Churvox does not email this invoice.",
+      xero: "Not staged for Xero.",
+      draft: "Draft is approved and kept for later.",
+      sent: "Nothing is sent or synced."
+    };
+  }
+  if (key.includes("manual") || key.includes("external")) {
+    return {
+      handle: "Owner marks this as handled outside Churvox.",
+      email: "Churvox does not email this invoice.",
+      xero: "Not staged for Xero.",
+      draft: "Not draft-only.",
+      sent: "Nothing is sent by Churvox."
+    };
+  }
+  return {
+    handle: "Churvox handles the invoice send path after owner approval.",
+    email: "Churvox may email the customer only after approval.",
+    xero: "Not staged for Xero.",
+    draft: "Not draft-only.",
+    sent: "Handled by Churvox internal invoice delivery."
+  };
+}
+
 const SLIPS = [
   {
     key: "approvals",
@@ -50,23 +105,25 @@ const SLIPS = [
   {
     key: "money",
     title: "Money",
-    card: "Approve invoice drafts, payment follow-ups and money reviews.",
+    card: "Approve invoice drafts, delivery method, Xero staging and money reviews.",
     formTitle: "Money action",
-    found: "A money item needs owner approval before sending, following up, or marking reviewed.",
-    prepared: "The amount, due date, customer wording and accounting status are ready to review.",
-    why: "Money actions should be checked before customers see them or records change.",
-    risk: "Watch for missing amount, missing customer email, GST issues or accounting sync status.",
-    after: "The invoice, reminder or money note is approved for the next step.",
+    found: "A money item needs owner approval before sending, following up, staging for Xero, or marking reviewed.",
+    prepared: "The amount, due date, customer wording, delivery method and accounting status are ready to review.",
+    why: "Money actions should be checked before customers see them, Xero is staged, or records change.",
+    risk: "Check the selected delivery method. No silent customer email, no fake Xero sync, and no active MYOB wording.",
+    after: "The invoice is handled exactly by the selected delivery method.",
     approveLabel: "Approve money action",
     fields: [
       ["moneyAction", "Money action", "select", ["Draft invoice", "Approve invoice", "Payment follow-up", "Mark paid reviewed", "Accounting review"]],
+      ["deliveryMethod", "Invoice delivery method", "select", INVOICE_DELIVERY_OPTIONS],
       ["client", "Client"],
+      ["clientEmail", "Client email"],
       ["invoiceRef", "Invoice / job reference"],
       ["amount", "Amount"],
       ["gstStatus", "GST status", "select", ["GST included", "GST excluded", "No GST", "Needs check"]],
       ["dueDate", "Due date"],
       ["contactWarning", "Contact / amount warning"],
-      ["accountingStatus", "Accounting status", "select", ["Not synced", "Xero staged", "MYOB staged", "Ready later", "Needs review"]],
+      ["accountingStatus", "Accounting status", "select", ["Not synced", "Xero staged", "Waiting for Xero connection", "Draft only - nothing sent", "Manual external - nothing sent", "MYOB later - inactive", "Needs review"]],
       ["customerMessage", "Customer wording", "textarea"],
       ["internalNote", "Internal money note", "textarea"]
     ]
@@ -264,6 +321,25 @@ function ContextCard({ label, children, tone = "dark" }) {
   return <div className={`cxContextCard ${tone}`}><b>{label}</b><span>{children}</span></div>;
 }
 
+function MoneyDeliverySummary({ form }) {
+  const details = deliveryDetails(form.deliveryMethod);
+  return (
+    <section className="cxDeliverySummary">
+      <div>
+        <small>Invoice delivery</small>
+        <strong>{form.deliveryMethod || "Churvox internal"}</strong>
+      </div>
+      <ul>
+        <li><b>Who handles it:</b> {details.handle}</li>
+        <li><b>Email:</b> {details.email}</li>
+        <li><b>Xero:</b> {details.xero}</li>
+        <li><b>Draft:</b> {details.draft}</li>
+        <li><b>Send/sync result:</b> {details.sent}</li>
+      </ul>
+    </section>
+  );
+}
+
 function Slip({ slip, onClose }) {
   const [form, setForm] = React.useState(makeForm(slip));
   const [msg, setMsg] = React.useState("Ready to edit and approve inside this Command slip.");
@@ -274,7 +350,11 @@ function Slip({ slip, onClose }) {
   }, [slip.key]);
 
   const save = () => { setMsg("Edits saved in this slip."); toast.success("Edits saved in this slip"); };
-  const approve = () => { setMsg(`${slip.title} approved from this slip.`); toast.success(`${slip.title} approved from this slip`); };
+  const approve = () => {
+    const delivery = slip.key === "money" ? ` Delivery: ${form.deliveryMethod || "Churvox internal"}.` : "";
+    setMsg(`${slip.title} approved from this slip.${delivery}`);
+    toast.success(`${slip.title} approved from this slip`);
+  };
   const decline = () => { toast.success(`${slip.title} declined`); onClose(); };
 
   return (
@@ -294,6 +374,7 @@ function Slip({ slip, onClose }) {
             <div className="cxFormTop">
               <span>{slip.formTitle}</span>
             </div>
+            {slip.key === "money" ? <MoneyDeliverySummary form={form} /> : null}
             <div className="cxContextGrid">
               <ContextCard label="AI found">{slip.found}</ContextCard>
               <ContextCard label="AI prepared">{slip.prepared}</ContextCard>
@@ -309,6 +390,13 @@ function Slip({ slip, onClose }) {
           <aside className="cxControls">
             <h2>Owner controls</h2>
             <p>{msg}</p>
+            {slip.key === "money" ? (
+              <div className="cxMiniDelivery">
+                <b>Selected delivery</b>
+                <span>{form.deliveryMethod || "Churvox internal"}</span>
+                <em>{deliveryDetails(form.deliveryMethod).sent}</em>
+              </div>
+            ) : null}
             <button className="save" onClick={save}>Save edit</button>
             <button className="approve" onClick={approve}>{slip.approveLabel}</button>
             <button className="decline" onClick={decline}>Decline</button>
@@ -346,6 +434,16 @@ function Style() {
     .cxFormPanel,.cxControls{background:#fffaf0;border:1px solid rgba(15,23,42,.20);border-radius:26px;padding:20px;box-shadow:0 14px 38px rgba(15,23,42,.12);color:#111827}
     .cxFormTop{display:flex;align-items:center;margin-bottom:14px;min-height:0}
     .cxFormTop span{display:inline-flex;background:#111827;color:#fbbf24;border-radius:999px;padding:7px 12px;text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:1000;user-select:none}
+    .cxDeliverySummary{background:#0b1018;border-left:6px solid #f97316;border-radius:24px;padding:18px;margin:0 0 16px;color:#ffffff;display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px;align-items:start}
+    .cxDeliverySummary small{display:block;color:#fed7aa;text-transform:uppercase;letter-spacing:.13em;font-weight:1000;font-size:10px;margin-bottom:6px}
+    .cxDeliverySummary strong{display:block;color:#ffffff;font-size:24px;line-height:1;font-weight:1000}
+    .cxDeliverySummary ul{margin:0;padding:0;display:grid;gap:7px;list-style:none}
+    .cxDeliverySummary li{color:#f8fafc;font-weight:900;line-height:1.35}
+    .cxDeliverySummary li b{color:#fbbf24}
+    .cxMiniDelivery{background:#0b1018;color:#ffffff;border-radius:18px;border-left:5px solid #f97316;padding:13px 14px;display:grid;gap:5px}
+    .cxMiniDelivery b{color:#fbbf24;text-transform:uppercase;letter-spacing:.12em;font-size:10px}
+    .cxMiniDelivery span{color:#ffffff;font-weight:1000}
+    .cxMiniDelivery em{color:#f8fafc;font-style:normal;font-weight:900;line-height:1.35}
     .cxContextGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:16px}
     .cxContextCard{border-radius:18px;background:#111827;color:#ffffff;padding:13px 14px;border-left:5px solid #f97316}
     .cxContextCard.warn{background:#451a03;border-left-color:#f59e0b}
@@ -369,7 +467,7 @@ function Style() {
     .cxControls .approve{background:#16a34a;color:#052e16!important;border:2px solid #15803d}
     .cxControls .decline{background:#fecaca;color:#7f1d1d!important;border:2px solid #fca5a5}
     .cxControls .dark{background:#111827;color:#ffffff!important}
-    @media(max-width:1200px){.cxOverlay{padding:12px}.cxSlip main,.cxBoxes,.cxContextGrid{grid-template-columns:1fr}.cxControls{position:static}}
+    @media(max-width:1200px){.cxOverlay{padding:12px}.cxSlip main,.cxBoxes,.cxContextGrid,.cxDeliverySummary{grid-template-columns:1fr}.cxControls{position:static}}
   `}</style>;
 }
 
