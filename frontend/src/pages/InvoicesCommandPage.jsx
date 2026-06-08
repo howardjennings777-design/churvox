@@ -1,5 +1,5 @@
-import DirectWorkbenchPage from "./DirectWorkbenchPage";
+import InvoiceDeliveryWorkbenchPage from "./InvoiceDeliveryWorkbenchPage";
 
 export default function InvoicesCommandPage() {
-  return <DirectWorkbenchPage type="invoices" />;
+  return <InvoiceDeliveryWorkbenchPage />;
 }
