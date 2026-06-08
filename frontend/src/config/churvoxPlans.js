@@ -14,3 +14,8 @@ export const COUNTRY_OPTIONS = [
     code: "NZ",
     label: "New Zealand",
     currency: "NZD",
+    symbol: "NZD",
+    tax: "+ GST",
+  },
+  {
+    code: "AU",
