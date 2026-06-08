@@ -8,6 +8,11 @@ import API_BASE from "../lib/apiBase";
 
 const API_TIMEOUT_MS = 15000;
 
+function backendErrorMessage(data) {
+  if (!data) return "Request failed";
+  return data.error || data.detail || data.message || "Request failed";
+}
+
 export function useApi() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -37,14 +42,20 @@ export function useApi() {
           config.data = data;
         }
         const response = await axios(config);
-        return { success: true, data: response.data };
+        const body = response.data;
+        if (body && body.success === false) {
+          const msg = backendErrorMessage(body);
+          setError(msg);
+          return { success: false, error: msg, data: body };
+        }
+        return { success: true, data: body };
       } catch (err) {
         const isTimeout = err?.code === "ECONNABORTED" || /timeout/i.test(err?.message || "");
         const errorMessage = isTimeout
           ? "The server took too long to respond. Please refresh and try again."
-          : formatApiErrorDetail(err.response?.data?.detail) || err.message;
+          : formatApiErrorDetail(err.response?.data?.detail) || err.response?.data?.error || err.response?.data?.message || err.message;
         setError(errorMessage);
-        return { success: false, error: errorMessage, timeout: isTimeout };
+        return { success: false, error: errorMessage, timeout: isTimeout, data: err.response?.data };
       } finally {
         setLoading(false);
       }
