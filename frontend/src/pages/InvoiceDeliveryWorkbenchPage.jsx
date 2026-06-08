@@ -129,14 +129,23 @@ export default function InvoiceDeliveryWorkbenchPage() {
 
   async function loadInvoices() {
     setLoading(true);
-    const res = await api.get("/invoices");
-    if (res?.success === false) {
-      setRecords([]);
-      setMessage("Could not load invoices. You can still prepare a new invoice.");
-    } else {
-      setRecords(pickList(res));
+    try {
+      const safe = await api.get("/logic/business-records/invoices", { timeout: 15000 });
+      if (safe?.success === false || safe?.data?.success === false) throw new Error("Safe invoice route failed");
+      const safeList = safe?.data?.items || safe?.items || [];
+      setRecords(Array.isArray(safeList) ? safeList : []);
+    } catch {
+      const fallback = await api.get("/invoices");
+      if (fallback?.success === false) {
+        setRecords([]);
+        setMessage("Could not load invoices. You can still prepare a new invoice.");
+      } else {
+        setRecords(pickList(fallback));
+        setMessage("Loaded invoices through fallback route. Repair business records if anything is missing.");
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   React.useEffect(() => { loadInvoices(); }, []);
