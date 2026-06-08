@@ -61,28 +61,107 @@ def _safe_doc(doc):
     return out
 
 
+async def _current_user(request):
+    server = _server_module()
+    get_current_user = getattr(server, "get_current_user", None)
+    if get_current_user is None:
+        raise Exception("Auth not ready")
+    return await get_current_user(request)
+
+
+def _business_id(user):
+    return str(user.get("business_id") or user.get("id") or user.get("_id"))
+
+
+def _business_profile_payload(payload):
+    allowed = [
+        "businessName", "tradingName", "ownerEmail", "phone", "website",
+        "businessAddress", "gstNumber", "nzbn", "bankName", "bankNumber",
+        "invoicePrefix", "quotePrefix", "workingHours", "customerMessage",
+        "documentFooter", "brandTone", "logoStatus"
+    ]
+    return {key: _clean(payload.get(key)) for key in allowed if key in payload}
+
+
 def install(router):
-    if getattr(router, "churvox_launch_invoice_route_installed", False):
+    if getattr(router, "churvox_launch_logic_routes_installed", False):
         return
+
+    @router.get("/logic/business-profile")
+    async def churvox_get_business_profile(request):
+        server = _server_module()
+        db = getattr(server, "db", None)
+        if db is None:
+            return {"success": False, "error": "Database not ready"}
+        try:
+            user = await _current_user(request)
+        except Exception:
+            return {"success": False, "error": "Not authenticated"}
+
+        business_id = _business_id(user)
+        profile = await db.business_profiles.find_one({"business_id": business_id}) or {}
+        data = _safe_doc(profile) or {}
+        if not data.get("businessName"):
+            data["businessName"] = user.get("business_name") or user.get("company_name") or ""
+        if not data.get("ownerEmail"):
+            data["ownerEmail"] = user.get("email") or ""
+        return {"success": True, "profile": data}
+
+    @router.post("/logic/business-profile")
+    async def churvox_save_business_profile(payload: dict, request):
+        server = _server_module()
+        db = getattr(server, "db", None)
+        if db is None:
+            return {"success": False, "error": "Database not ready"}
+        try:
+            user = await _current_user(request)
+        except Exception:
+            return {"success": False, "error": "Not authenticated"}
+
+        business_id = _business_id(user)
+        now = datetime.now(timezone.utc)
+        clean = _business_profile_payload(payload)
+        clean["business_id"] = business_id
+        clean["updated_at"] = now
+        clean["updated_by"] = str(user.get("id"))
+        existing = await db.business_profiles.find_one({"business_id": business_id})
+        if existing:
+            await db.business_profiles.update_one({"business_id": business_id}, {"$set": clean})
+        else:
+            clean["created_at"] = now
+            await db.business_profiles.insert_one(clean)
+
+        user_updates = {}
+        if clean.get("businessName"):
+            user_updates["business_name"] = clean["businessName"]
+        if clean.get("ownerEmail"):
+            user_updates["support_email"] = clean["ownerEmail"]
+        if clean.get("gstNumber"):
+            user_updates["gst_number"] = clean["gstNumber"]
+        if clean.get("businessAddress"):
+            user_updates["business_address"] = clean["businessAddress"]
+        if user_updates:
+            biz_oid = _obj_or_none(business_id)
+            if biz_oid:
+                await db.users.update_one({"_id": biz_oid}, {"$set": user_updates})
+            await db.users.update_many({"business_id": business_id}, {"$set": user_updates})
+
+        profile = await db.business_profiles.find_one({"business_id": business_id})
+        return {"success": True, "message": "Business profile saved", "profile": _safe_doc(profile)}
 
     @router.post("/logic/invoice-approval")
     async def churvox_invoice_delivery_approval(payload: dict, request):
         server = _server_module()
-        if not server:
-            return {"success": False, "error": "Server module not ready"}
-
         db = getattr(server, "db", None)
-        get_current_user = getattr(server, "get_current_user", None)
-        if db is None or get_current_user is None:
+        if db is None:
             return {"success": False, "error": "Invoice approval route not ready"}
-
         try:
-            user = await get_current_user(request)
+            user = await _current_user(request)
         except Exception:
             return {"success": False, "error": "Not authenticated"}
 
         now = datetime.now(timezone.utc)
-        business_id = str(user.get("business_id") or user.get("id") or user.get("_id"))
+        business_id = _business_id(user)
         biz_oid = _obj_or_none(business_id)
         invoice_id = _clean(payload.get("invoice_id") or payload.get("id"))
         method = _delivery_method(payload.get("deliveryMethod") or payload.get("invoice_delivery_method") or payload.get("send_mode"))
@@ -160,4 +239,4 @@ def install(router):
         final_doc = await db.invoices.find_one({"_id": oid})
         return {"success": True, "message": message, "invoice": _safe_doc(final_doc), **response_extra}
 
-    router.churvox_launch_invoice_route_installed = True
+    router.churvox_launch_logic_routes_installed = True
