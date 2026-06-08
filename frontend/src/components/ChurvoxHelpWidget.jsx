@@ -11,12 +11,11 @@ const HELP_TYPES = [
   "Invoices or quotes",
   "Team or worker app",
   "Billing or plan",
+  "Before I sign up",
 ];
 
-function shouldShow(pathname) {
-  if (!pathname) return true;
-  const hidden = ["/login", "/signup", "/reset-password", "/forgot-password"];
-  return !hidden.some((path) => pathname.startsWith(path));
+function shouldShow() {
+  return true;
 }
 
 function saveLocalTicket(ticket) {
@@ -37,6 +36,8 @@ export default function ChurvoxHelpWidget() {
   const [sending, setSending] = React.useState(false);
   const [type, setType] = React.useState(HELP_TYPES[0]);
   const [message, setMessage] = React.useState("");
+  const [name, setName] = React.useState("");
+  const [email, setEmail] = React.useState("");
   const [phone, setPhone] = React.useState("");
 
   if (!shouldShow(pathname)) return null;
@@ -44,36 +45,48 @@ export default function ChurvoxHelpWidget() {
   const submit = async (event) => {
     event.preventDefault();
     const cleanMessage = message.trim();
+    const cleanEmail = email.trim();
+    const cleanPhone = phone.trim();
     if (!cleanMessage) {
       toast.error("Add a short message first");
       return;
     }
+    if (!cleanEmail && !cleanPhone) {
+      toast.error("Add an email or phone so we can reply");
+      return;
+    }
 
     const ticket = {
+      help_type: type,
       type,
       message: cleanMessage,
-      phone: phone.trim(),
+      name: name.trim(),
+      email: cleanEmail,
+      phone: cleanPhone,
       page: pathname,
+      page_url: typeof window !== "undefined" ? window.location.href : pathname,
       created_at: new Date().toISOString(),
-      source: "churvox_help_widget",
+      source: "churvox_help_widget_public",
     };
 
     setSending(true);
-    const res = await post("/support/tickets", ticket, { timeout: 8000 });
+    const res = await post("/support/contact", ticket, { timeout: 12000 });
     setSending(false);
 
     saveLocalTicket({ ...ticket, server_saved: Boolean(res?.success) });
 
     if (res?.success) {
-      toast.success("Help request saved. We’ll help you get sorted.");
+      toast.success("Message sent. We’ll help you get sorted.");
     } else {
       const subject = encodeURIComponent(`Churvox help: ${type}`);
-      const body = encodeURIComponent(`Page: ${pathname}\nPhone: ${ticket.phone || "Not supplied"}\n\n${cleanMessage}`);
+      const body = encodeURIComponent(`Name: ${ticket.name || "Not supplied"}\nEmail: ${ticket.email || "Not supplied"}\nPhone: ${ticket.phone || "Not supplied"}\nPage: ${ticket.page_url || pathname}\n\n${cleanMessage}`);
       window.location.href = `mailto:hello@churvox.com?subject=${subject}&body=${body}`;
-      toast.success("Help request saved locally and opened email as backup.");
+      toast.success("Opened email as backup. Please send it from your email app.");
     }
 
     setMessage("");
+    setName("");
+    setEmail("");
     setPhone("");
     setOpen(false);
   };
@@ -110,7 +123,17 @@ export default function ChurvoxHelpWidget() {
               </label>
 
               <label>
-                Phone / best contact optional
+                Name optional
+                <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Your name" />
+              </label>
+
+              <label>
+                Email
+                <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="So we can reply" />
+              </label>
+
+              <label>
+                Phone optional
                 <input value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="Optional" />
               </label>
 
@@ -122,7 +145,7 @@ export default function ChurvoxHelpWidget() {
 
             <div className="cv-help-strip">
               <span>Email backup: hello@churvox.com</span>
-              <span>No 24/7 promise — setup help first.</span>
+              <span>Visitors can message before logging in.</span>
             </div>
           </section>
         </div>
