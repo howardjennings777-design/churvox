@@ -36,14 +36,16 @@ def _wire_launch_routes_once():
         if router is None:
             return
         try:
-            from backend import churvox_launch_routes, churvox_team_roles, churvox_recurring_routes, churvox_isolation_routes, churvox_billing_addon_fix, churvox_plan_consistency
+            from backend import churvox_create_record_key_fix, churvox_launch_routes, churvox_team_roles, churvox_recurring_routes, churvox_isolation_routes, churvox_billing_addon_fix, churvox_plan_consistency
         except Exception:
+            import churvox_create_record_key_fix
             import churvox_launch_routes
             import churvox_team_roles
             import churvox_recurring_routes
             import churvox_isolation_routes
             import churvox_billing_addon_fix
             import churvox_plan_consistency
+        churvox_create_record_key_fix.install(router)
         churvox_launch_routes.install(router)
         churvox_team_roles.install(router)
         churvox_recurring_routes.install(router)
