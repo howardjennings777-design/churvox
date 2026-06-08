@@ -22,4 +22,12 @@
     overflow-x: hidden !important;
   }
 
-  .c2-topbar
+  .c2-topbar,
+  .xcf10-topbar {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  .c2-shell,
+  .c2-content,
+  .xcf
