@@ -20,6 +20,8 @@ const SLIPS = [
     fields: [
       ["approvalSource", "Approval source", "select", ["Money", "Crew", "Quote", "Job", "Client", "Worker update", "Payroll", "Setup"]],
       ["linkedRecord", "Linked record name"],
+      ["affectedPerson", "Affected client / worker"],
+      ["approvalStatus", "Approval status", "select", ["Needs approval", "Approved", "Declined", "Needs edit", "Hold"]],
       ["riskLevel", "Risk level", "select", ["Normal", "Important", "Urgent", "High risk"]],
       ["dueStatus", "Due / urgency"],
       ["preparedAction", "Prepared action", "textarea"],
@@ -46,12 +48,16 @@ const SLIPS = [
       ["jobName", "Job to assign"],
       ["clientSite", "Client / site"],
       ["jobAddress", "Job address"],
+      ["accessInstructions", "Access instructions / site notes", "textarea"],
       ["workerId", "Worker ID"],
       ["recommendedWorker", "Recommended worker"],
       ["matchReason", "Why this worker", "textarea"],
       ["workerWorkload", "Worker workload today"],
       ["backupWorker", "Backup worker"],
       ["schedule", "Scheduled date/time"],
+      ["assignmentStatus", "Assignment after approval", "select", ["Assign now", "Offer to worker", "Hold", "Needs schedule check"]],
+      ["workerAckRequired", "Worker acknowledgement", "select", ["Required", "Not required", "Ask worker to confirm"]],
+      ["customerArrivalNote", "Customer-visible arrival note", "textarea"],
       ["conflictWarning", "Conflict / warning", "textarea"],
       ["dispatchNote", "Worker dispatch note", "textarea"]
     ]
@@ -73,6 +79,9 @@ const SLIPS = [
     approveLabel: "Approve money action",
     fields: [
       ["moneyAction", "Money action", "select", ["Draft invoice", "Approve invoice", "Payment follow-up", "Mark paid reviewed", "Accounting review"]],
+      ["sendMode", "Send mode", "select", ["Draft only", "Send after approval", "Internal only", "Prepare reminder only"]],
+      ["invoiceType", "Invoice type", "select", ["Job invoice", "Deposit invoice", "Extras", "Time-based", "Adjustment"]],
+      ["paymentLinkStatus", "Payment link", "select", ["Not included", "Included", "Coming soon", "Needs setup"]],
       ["clientId", "Client ID"],
       ["client", "Client"],
       ["clientEmail", "Client email"],
@@ -111,6 +120,9 @@ const SLIPS = [
       ["address", "Job address"],
       ["jobType", "Job type / trade"],
       ["priority", "Priority", "select", ["Normal", "High", "Urgent"]],
+      ["jobStatusAfterApproval", "Status after approval", "select", ["Ready to schedule", "Ready to dispatch", "Ready to invoice", "Hold", "Needs owner review"]],
+      ["invoiceReadiness", "Invoice readiness", "select", ["No", "Yes after completion", "Ready now", "Needs price", "Needs worker update"]],
+      ["customerReminderAllowed", "Customer reminder", "select", ["No", "Yes later", "Coming soon", "Do not remind"]],
       ["schedule", "Schedule/date"],
       ["repeatType", "Recurring", "select", ["One-off", "Weekly", "Fortnightly", "Monthly", "Custom"]],
       ["assignedWorker", "Assigned worker"],
@@ -147,6 +159,11 @@ const SLIPS = [
       ["quoteRef", "Quote title / number"],
       ["quoteStatus", "Quote status", "select", ["Draft", "Sent", "Accepted", "Declined", "Expired"]],
       ["quoteValue", "Quote value"],
+      ["depositRequired", "Deposit required", "select", ["No", "Yes", "Needs owner check"]],
+      ["followUpDate", "Follow-up date"],
+      ["conversionJobTitle", "Conversion job title"],
+      ["conversionStartDate", "Preferred start date"],
+      ["conversionWorker", "Preferred worker"],
       ["gstStatus", "GST status", "select", ["GST included", "GST excluded", "No GST", "Needs check"]],
       ["validUntil", "Valid until"],
       ["expiryWarning", "Expiry warning"],
@@ -174,6 +191,9 @@ const SLIPS = [
     approveLabel: "Save client fix",
     fields: [
       ["clientName", "Client name"],
+      ["clientType", "Client type", "select", ["Residential", "Commercial", "Property manager", "Landlord", "Other"]],
+      ["nextAction", "Next action", "select", ["Create job", "Create quote", "Fix details", "Follow up", "No action"]],
+      ["defaultInvoiceRecipient", "Invoice recipient", "select", ["Client", "Billing contact", "Property manager", "Other"]],
       ["duplicateWarning", "Duplicate client warning"],
       ["phone", "Phone"],
       ["email", "Email"],
@@ -212,6 +232,9 @@ const SLIPS = [
       ["worker", "Worker"],
       ["job", "Job"],
       ["completionStatus", "Completion status", "select", ["Completed", "Needs review", "Photos missing", "Client issue", "Rejected"]],
+      ["ownerCompletionDecision", "Accept completion", "select", ["Yes", "Needs follow-up", "Reject", "Hold"]],
+      ["customerIssueNote", "Customer issue note", "textarea"],
+      ["materialsExtras", "Materials / extras used", "textarea"],
       ["photoCount", "Photo count"],
       ["proofStatus", "Photo / proof status", "select", ["Photos attached", "No photos", "Needs owner review", "Not required"]],
       ["timeStarted", "Started time"],
@@ -248,6 +271,10 @@ const SLIPS = [
       ["worker", "Worker"],
       ["payPeriod", "Pay period"],
       ["jobSource", "Job / time source"],
+      ["payType", "Pay type", "select", ["Hourly", "Fixed", "Manual adjustment", "Unpaid review"]],
+      ["approvalStatus", "Approval status", "select", ["Needs review", "Approved by owner", "Approved by payroll", "Hold", "Exported"]],
+      ["adjustmentAmount", "Adjustment time/amount"],
+      ["adjustmentReason", "Adjustment reason", "textarea"],
       ["startTime", "Start time"],
       ["finishTime", "Finish time"],
       ["totalTime", "Total time"],
@@ -281,6 +308,9 @@ const SLIPS = [
       ["targetArea", "Target page / area"],
       ["setupArea", "Setup area", "select", ["Business profile", "Branding", "Team", "Plans/billing", "Legal links", "Accounting", "Notifications", "PWA install"]],
       ["missingThing", "What is missing"],
+      ["launchRequired", "Launch required", "select", ["Yes", "No", "Recommended", "Later"]],
+      ["customerImpact", "Customer-visible impact", "select", ["None", "Low", "High", "Blocks customer trust"]],
+      ["fixType", "Fix type", "select", ["Owner input", "App setting", "Developer fix", "External service", "Ignore for now"]],
       ["severity", "Blocker severity", "select", ["Low", "Medium", "High", "Launch blocker"]],
       ["ownerInputRequired", "Owner input required", "select", ["Yes", "No", "Maybe"]],
       ["launchImpact", "Why it blocks launch", "textarea"],
@@ -468,7 +498,7 @@ function Style() {
   `}</style>;
 }
 
-export default function CommandDeskOperatorPageV3() {
+export default function CommandDeskOperatorPageV4() {
   const [open, setOpen] = React.useState(null);
   return (
     <main className="cxRoot">
