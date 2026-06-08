@@ -16,11 +16,13 @@ function normalise(res) {
   return Array.isArray(data.notifications) ? data.notifications : Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : [];
 }
 
-function tone(status = "") {
-  const text = String(status).toLowerCase();
-  if (text.includes("sent")) return "sent";
+function statusKind(status = "", error = "") {
+  const text = String(status || "").toLowerCase();
+  const problem = String(error || "").trim();
+  if (problem || text.includes("failed") || text.includes("error") || text === "not_sent" || text.includes("not_sent")) return "failed";
   if (text.includes("prepared")) return "prepared";
-  if (text.includes("failed") || text.includes("not_sent") || text.includes("error")) return "failed";
+  if (["sent", "delivered", "queued", "success"].includes(text)) return "sent";
+  if (text.includes("sent") && !text.includes("not_sent")) return "sent";
   return "prepared";
 }
 
@@ -45,19 +47,20 @@ export default function ApprovedNotificationsLog({ compact = false }) {
   React.useEffect(() => { load(); }, [load]);
 
   const visible = items.filter((item) => {
+    const kind = statusKind(item.status, item.error);
     if (filter === "all") return true;
     if (filter === "email") return String(item.channel).toLowerCase() === "email";
     if (filter === "sms") return String(item.channel).toLowerCase() === "sms";
-    if (filter === "sent") return String(item.status).toLowerCase().includes("sent") && !String(item.status).toLowerCase().includes("not_sent");
-    if (filter === "needs") return !String(item.status).toLowerCase().includes("sent") || String(item.error || "").trim();
+    if (filter === "sent") return kind === "sent";
+    if (filter === "needs") return kind === "failed";
     return true;
   });
 
   const stats = {
     total: items.length,
-    sent: items.filter((item) => tone(item.status) === "sent").length,
-    prepared: items.filter((item) => tone(item.status) === "prepared").length,
-    failed: items.filter((item) => tone(item.status) === "failed").length,
+    sent: items.filter((item) => statusKind(item.status, item.error) === "sent").length,
+    prepared: items.filter((item) => statusKind(item.status, item.error) === "prepared").length,
+    failed: items.filter((item) => statusKind(item.status, item.error) === "failed").length,
   };
 
   return (
@@ -84,7 +87,7 @@ export default function ApprovedNotificationsLog({ compact = false }) {
 
       <div className="cnRows">
         {visible.length ? visible.slice(0, compact ? 5 : 40).map((item, index) => (
-          <article key={first(item.id, item._id, index)} className={`cnItem ${tone(item.status)}`}>
+          <article key={first(item.id, item._id, index)} className={`cnItem ${statusKind(item.status, item.error)}`}>
             <div>
               <b>{String(first(item.channel, "message")).toUpperCase()} · {first(item.status, "prepared")}</b>
               <strong>{first(item.subject, item.title, "Approved message")}</strong>
