@@ -16,6 +16,25 @@ function blankForm(page) {
   return Object.fromEntries(page.fields.map(([key, label, type, options]) => [key, type === "select" ? options[0] : ""]));
 }
 
+function forceReadableWorkbench() {
+  const root = document.querySelector("[data-direct-workbench]");
+  if (!root) return;
+  root.querySelectorAll("input, textarea, select").forEach((el) => {
+    el.style.setProperty("background", "#ffffff", "important");
+    el.style.setProperty("background-color", "#ffffff", "important");
+    el.style.setProperty("color", "#020617", "important");
+    el.style.setProperty("-webkit-text-fill-color", "#020617", "important");
+    el.style.setProperty("border", "2px solid #475569", "important");
+    el.style.setProperty("box-shadow", "0 1px 0 rgba(15,23,42,.12)", "important");
+    el.style.setProperty("opacity", "1", "important");
+  });
+  root.querySelectorAll(".dwField span, .dwFormHead small, .dwFormHead h2, .dwControls h2, .dwQueue h2").forEach((el) => {
+    el.style.setProperty("color", "#020617", "important");
+    el.style.setProperty("-webkit-text-fill-color", "#020617", "important");
+    el.style.setProperty("opacity", "1", "important");
+  });
+}
+
 function Field({ field, form, setForm }) {
   const [key, label, type, options = []] = field;
   const value = form[key] || "";
@@ -24,7 +43,7 @@ function Field({ field, form, setForm }) {
 }
 
 function Style() {
-  return <style>{`.dwRoot,.dwRoot *{box-sizing:border-box;color-scheme:light;opacity:1;text-shadow:none}.dwRoot{min-height:100vh;background:#f6f1e7;color:#111827;font-family:Inter,system-ui}.dwWrap{max-width:1480px;margin:0 auto;padding:24px 28px 120px}.dwHero,.dwQueue,.dwForm,.dwControls{box-shadow:0 18px 46px rgba(2,6,23,.14)}.dwHero{background:#0b1018;color:#ffffff;border-left:8px solid #f97316;border-radius:34px;padding:30px}.dwHero span{display:inline-flex;border-radius:999px;background:#fff7ed;color:#7c2d12;padding:8px 14px;font-size:11px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}.dwHero h1{margin:16px 0 8px;font-size:clamp(42px,5.5vw,76px);line-height:.9;letter-spacing:-.07em;color:#ffffff}.dwHero p{max-width:820px;color:#f8fafc;font-weight:900}.dwGrid{display:grid;grid-template-columns:minmax(0,1fr)340px;gap:18px;margin-top:18px}.dwForm,.dwControls,.dwQueue{background:#fffaf0!important;color:#111827!important;border:1px solid rgba(15,23,42,.18);border-radius:30px;padding:22px}.dwFormHead{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:18px}.dwFormHead small{display:block;color:#7c2d12!important;font-size:11px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}.dwFormHead h2{margin:6px 0 0;color:#111827!important;font-size:34px;line-height:.95;letter-spacing:-.05em}.dwFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.dwField.wide{grid-column:1/-1}.dwField span{display:block;color:#431407!important;text-transform:uppercase;letter-spacing:.11em;font-size:12px;font-weight:1000;margin-bottom:7px}.dwField input,.dwField textarea,.dwField select{width:100%;border:2px solid rgba(15,23,42,.35)!important;border-radius:16px;padding:13px 15px;font-size:16px;font-weight:900;background:#ffffff!important;color:#0f172a!important;-webkit-text-fill-color:#0f172a!important;outline:none;box-shadow:0 1px 0 rgba(15,23,42,.08)}.dwField input::placeholder,.dwField textarea::placeholder{color:#475569!important;-webkit-text-fill-color:#475569!important}.dwField textarea{min-height:120px;resize:vertical}.dwField select option{background:#ffffff!important;color:#0f172a!important}.dwField input:focus,.dwField textarea:focus,.dwField select:focus{border-color:#f97316!important;box-shadow:0 0 0 4px rgba(249,115,22,.16)}.dwSide{display:grid;gap:18px;align-content:start}.dwControls{display:grid;gap:10px;position:sticky;top:18px}.dwControls h2,.dwQueue h2{font-size:30px;line-height:.95;margin:0;color:#111827!important}.dwControls p{background:#14532d!important;color:#ffffff!important;border-radius:16px;padding:12px 14px;font-weight:1000;line-height:1.45}.dwControls button{border:0;border-radius:16px;padding:14px;font-size:16px;font-weight:1000;cursor:pointer}.dwSave{background:#ffedd5!important;color:#7c2d12!important;border:2px solid #fed7aa!important}.dwApprove{background:#16a34a!important;color:#052e16!important;border:2px solid #15803d!important}.dwClear{background:#111827!important;color:#ffffff!important}.dwQueue ul{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:10px}.dwQueue li{border-radius:16px;background:#111827!important;color:#ffffff!important;padding:13px 14px;font-size:14px;font-weight:1000}.dwQueue li:before{content:'•';color:#fbbf24;margin-right:8px}@media(max-width:1200px){.dwGrid{grid-template-columns:1fr}.dwControls{position:static}.dwFields{grid-template-columns:1fr}.dwWrap{padding:16px 16px 110px}}`}</style>;
+  return <style>{`.dwRoot,.dwRoot *{box-sizing:border-box;color-scheme:light;opacity:1;text-shadow:none}.dwRoot{min-height:100vh;background:#f6f1e7;color:#111827;font-family:Inter,system-ui}.dwWrap{max-width:1480px;margin:0 auto;padding:24px 28px 120px}.dwHero,.dwQueue,.dwForm,.dwControls{box-shadow:0 18px 46px rgba(2,6,23,.14)}.dwHero{background:#0b1018;color:#ffffff;border-left:8px solid #f97316;border-radius:34px;padding:30px}.dwHero span{display:inline-flex;border-radius:999px;background:#fff7ed;color:#7c2d12;padding:8px 14px;font-size:11px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}.dwHero h1{margin:16px 0 8px;font-size:clamp(42px,5.5vw,76px);line-height:.9;letter-spacing:-.07em;color:#ffffff}.dwHero p{max-width:820px;color:#f8fafc;font-weight:900}.dwGrid{display:grid;grid-template-columns:minmax(0,1fr)340px;gap:18px;margin-top:18px}.dwForm,.dwControls,.dwQueue{background:#fffaf0!important;color:#111827!important;border:1px solid rgba(15,23,42,.18);border-radius:30px;padding:22px}.dwFormHead{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:18px}.dwFormHead small{display:block;color:#7c2d12!important;font-size:11px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}.dwFormHead h2{margin:6px 0 0;color:#111827!important;font-size:34px;line-height:.95;letter-spacing:-.05em}.dwFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.dwField.wide{grid-column:1/-1}.dwField span{display:block;color:#431407!important;text-transform:uppercase;letter-spacing:.11em;font-size:12px;font-weight:1000;margin-bottom:7px}.dwField input,.dwField textarea,.dwField select{width:100%;border:2px solid #475569!important;border-radius:16px;padding:13px 15px;font-size:16px;font-weight:900;background:#ffffff!important;color:#020617!important;-webkit-text-fill-color:#020617!important;outline:none;box-shadow:0 1px 0 rgba(15,23,42,.12)!important;opacity:1!important}.dwField input::placeholder,.dwField textarea::placeholder{color:#475569!important;-webkit-text-fill-color:#475569!important}.dwField textarea{min-height:120px;resize:vertical}.dwField select option{background:#ffffff!important;color:#020617!important}.dwField input:focus,.dwField textarea:focus,.dwField select:focus{border-color:#f97316!important;box-shadow:0 0 0 4px rgba(249,115,22,.16)!important}.dwSide{display:grid;gap:18px;align-content:start}.dwControls{display:grid;gap:10px;position:sticky;top:18px}.dwControls h2,.dwQueue h2{font-size:30px;line-height:.95;margin:0;color:#111827!important}.dwControls p{background:#14532d!important;color:#ffffff!important;border-radius:16px;padding:12px 14px;font-weight:1000;line-height:1.45}.dwControls button{border:0;border-radius:16px;padding:14px;font-size:16px;font-weight:1000;cursor:pointer}.dwSave{background:#ffedd5!important;color:#7c2d12!important;border:2px solid #fed7aa!important}.dwApprove{background:#16a34a!important;color:#052e16!important;border:2px solid #15803d!important}.dwClear{background:#111827!important;color:#ffffff!important}.dwQueue ul{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:10px}.dwQueue li{border-radius:16px;background:#111827!important;color:#ffffff!important;padding:13px 14px;font-size:14px;font-weight:1000}.dwQueue li:before{content:'•';color:#fbbf24;margin-right:8px}@media(max-width:1200px){.dwGrid{grid-template-columns:1fr}.dwControls{position:static}.dwFields{grid-template-columns:1fr}.dwWrap{padding:16px 16px 110px}}`}</style>;
 }
 
 export default function DirectWorkbenchPage({ type }) {
@@ -37,6 +56,13 @@ export default function DirectWorkbenchPage({ type }) {
     setForm(blankForm(page));
     setMessage("Ready to work here. No extra tap needed.");
   }, [type]);
+
+  React.useEffect(() => {
+    forceReadableWorkbench();
+    const t1 = window.setTimeout(forceReadableWorkbench, 100);
+    const t2 = window.setTimeout(forceReadableWorkbench, 500);
+    return () => { window.clearTimeout(t1); window.clearTimeout(t2); };
+  }, [type, form]);
 
   async function save() {
     try {
