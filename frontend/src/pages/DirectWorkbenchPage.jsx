@@ -12,9 +12,7 @@ const PAGES = {
   payroll: { title: "Payroll/time", eyebrow: "Payroll workbench", promise: "Review time, pause time and payroll notes without mixing it with job admin.", button: "Save payroll review", endpoint: "/jobs", fields: [["job_id", "Job ID"], ["worker_name", "Worker"], ["pay_period", "Pay period"], ["reviewed_hours", "Reviewed hours"], ["pause_time", "Pause time"], ["pay_status", "Payroll status", "select", ["Ready", "Needs review", "Hold", "Exported"]], ["payroll_note", "Payroll note", "textarea"], ["export_note", "Export / handoff note", "textarea"]], queue: ["Timesheets", "Completed job time", "Needs review", "Ready for export"] }
 };
 
-function blankForm(page) {
-  return Object.fromEntries(page.fields.map(([key, label, type, options]) => [key, type === "select" ? options[0] : ""]));
-}
+function blankForm(page) { return Object.fromEntries(page.fields.map(([key, label, type, options]) => [key, type === "select" ? options[0] : ""])); }
 
 function forceReadableWorkbench() {
   const root = document.querySelector("[data-direct-workbench]");
@@ -25,13 +23,11 @@ function forceReadableWorkbench() {
     el.style.setProperty("color", "#020617", "important");
     el.style.setProperty("-webkit-text-fill-color", "#020617", "important");
     el.style.setProperty("border", "2px solid #475569", "important");
-    el.style.setProperty("box-shadow", "0 1px 0 rgba(15,23,42,.12)", "important");
     el.style.setProperty("opacity", "1", "important");
   });
-  root.querySelectorAll(".dwField span, .dwFormHead small, .dwFormHead h2, .dwControls h2, .dwQueue h2").forEach((el) => {
-    el.style.setProperty("color", "#020617", "important");
-    el.style.setProperty("-webkit-text-fill-color", "#020617", "important");
-    el.style.setProperty("opacity", "1", "important");
+  root.querySelectorAll(".dwHeroTag,.dwHero h1,.dwHero p,.dwFormHead small,.dwControls h2,.dwQueue h2").forEach((el) => {
+    el.style.setProperty("user-select", "none", "important");
+    el.style.setProperty("-webkit-user-select", "none", "important");
   });
 }
 
@@ -43,7 +39,7 @@ function Field({ field, form, setForm }) {
 }
 
 function Style() {
-  return <style>{`.dwRoot,.dwRoot *{box-sizing:border-box;color-scheme:light;opacity:1;text-shadow:none}.dwRoot{min-height:100vh;background:#f6f1e7;color:#111827;font-family:Inter,system-ui}.dwWrap{max-width:1480px;margin:0 auto;padding:24px 28px 120px}.dwHero,.dwQueue,.dwForm,.dwControls{box-shadow:0 18px 46px rgba(2,6,23,.14)}.dwHero{background:#0b1018;color:#ffffff;border-left:8px solid #f97316;border-radius:34px;padding:30px}.dwHero span{display:inline-flex;border-radius:999px;background:#fff7ed;color:#7c2d12;padding:8px 14px;font-size:11px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}.dwHero h1{margin:16px 0 8px;font-size:clamp(42px,5.5vw,76px);line-height:.9;letter-spacing:-.07em;color:#ffffff}.dwHero p{max-width:820px;color:#f8fafc;font-weight:900}.dwGrid{display:grid;grid-template-columns:minmax(0,1fr)340px;gap:18px;margin-top:18px}.dwForm,.dwControls,.dwQueue{background:#fffaf0!important;color:#111827!important;border:1px solid rgba(15,23,42,.18);border-radius:30px;padding:22px}.dwFormHead{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:18px}.dwFormHead small{display:block;color:#7c2d12!important;font-size:11px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}.dwFormHead h2{margin:6px 0 0;color:#111827!important;font-size:34px;line-height:.95;letter-spacing:-.05em}.dwFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.dwField.wide{grid-column:1/-1}.dwField span{display:block;color:#431407!important;text-transform:uppercase;letter-spacing:.11em;font-size:12px;font-weight:1000;margin-bottom:7px}.dwField input,.dwField textarea,.dwField select{width:100%;border:2px solid #475569!important;border-radius:16px;padding:13px 15px;font-size:16px;font-weight:900;background:#ffffff!important;color:#020617!important;-webkit-text-fill-color:#020617!important;outline:none;box-shadow:0 1px 0 rgba(15,23,42,.12)!important;opacity:1!important}.dwField input::placeholder,.dwField textarea::placeholder{color:#475569!important;-webkit-text-fill-color:#475569!important}.dwField textarea{min-height:120px;resize:vertical}.dwField select option{background:#ffffff!important;color:#020617!important}.dwField input:focus,.dwField textarea:focus,.dwField select:focus{border-color:#f97316!important;box-shadow:0 0 0 4px rgba(249,115,22,.16)!important}.dwSide{display:grid;gap:18px;align-content:start}.dwControls{display:grid;gap:10px;position:sticky;top:18px}.dwControls h2,.dwQueue h2{font-size:30px;line-height:.95;margin:0;color:#111827!important}.dwControls p{background:#14532d!important;color:#ffffff!important;border-radius:16px;padding:12px 14px;font-weight:1000;line-height:1.45}.dwControls button{border:0;border-radius:16px;padding:14px;font-size:16px;font-weight:1000;cursor:pointer}.dwSave{background:#ffedd5!important;color:#7c2d12!important;border:2px solid #fed7aa!important}.dwApprove{background:#16a34a!important;color:#052e16!important;border:2px solid #15803d!important}.dwClear{background:#111827!important;color:#ffffff!important}.dwQueue ul{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:10px}.dwQueue li{border-radius:16px;background:#111827!important;color:#ffffff!important;padding:13px 14px;font-size:14px;font-weight:1000}.dwQueue li:before{content:'•';color:#fbbf24;margin-right:8px}@media(max-width:1200px){.dwGrid{grid-template-columns:1fr}.dwControls{position:static}.dwFields{grid-template-columns:1fr}.dwWrap{padding:16px 16px 110px}}`}</style>;
+  return <style>{`.dwRoot,.dwRoot *{box-sizing:border-box;color-scheme:light;opacity:1;text-shadow:none}.dwRoot{min-height:100vh;background:#f6f1e7;color:#111827;font-family:Inter,system-ui}.dwWrap{max-width:1480px;margin:0 auto;padding:24px 28px 120px}.dwHero,.dwQueue,.dwForm,.dwControls{box-shadow:0 18px 46px rgba(2,6,23,.14)}.dwHero{background:#0b1018;color:#ffffff;border-left:8px solid #f97316;border-radius:34px;padding:30px;user-select:none;-webkit-user-select:none}.dwHeroTag{display:inline-flex;border-radius:999px;background:#fff7ed;color:#7c2d12!important;-webkit-text-fill-color:#7c2d12!important;padding:8px 14px;font-size:11px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase;user-select:none;-webkit-user-select:none;pointer-events:none}.dwHero h1{margin:16px 0 8px;font-size:clamp(42px,5.5vw,76px);line-height:.9;letter-spacing:-.07em;color:#ffffff;user-select:none;-webkit-user-select:none}.dwHero p{max-width:820px;color:#f8fafc;font-weight:900;user-select:none;-webkit-user-select:none}.dwGrid{display:grid;grid-template-columns:minmax(0,1fr)340px;gap:18px;margin-top:18px}.dwForm,.dwControls,.dwQueue{background:#fffaf0!important;color:#111827!important;border:1px solid rgba(15,23,42,.18);border-radius:30px;padding:22px}.dwFormHead{display:flex;justify-content:flex-start;gap:16px;align-items:center;margin-bottom:18px;user-select:none;-webkit-user-select:none}.dwFormHead small{display:inline-flex;border-radius:999px;background:#111827;color:#fbbf24!important;-webkit-text-fill-color:#fbbf24!important;padding:8px 12px;font-size:11px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase;user-select:none;-webkit-user-select:none}.dwFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.dwField.wide{grid-column:1/-1}.dwField span{display:block;color:#431407!important;text-transform:uppercase;letter-spacing:.11em;font-size:12px;font-weight:1000;margin-bottom:7px;user-select:none;-webkit-user-select:none}.dwField input,.dwField textarea,.dwField select{width:100%;border:2px solid #475569!important;border-radius:16px;padding:13px 15px;font-size:16px;font-weight:900;background:#ffffff!important;color:#020617!important;-webkit-text-fill-color:#020617!important;outline:none;box-shadow:0 1px 0 rgba(15,23,42,.12)!important;opacity:1!important;user-select:text!important;-webkit-user-select:text!important}.dwField textarea{min-height:120px;resize:vertical}.dwField select option{background:#ffffff!important;color:#020617!important}.dwField input:focus,.dwField textarea:focus,.dwField select:focus{border-color:#f97316!important;box-shadow:0 0 0 4px rgba(249,115,22,.16)!important}.dwSide{display:grid;gap:18px;align-content:start}.dwControls{display:grid;gap:10px;position:sticky;top:18px}.dwControls h2,.dwQueue h2{font-size:30px;line-height:.95;margin:0;color:#111827!important;user-select:none;-webkit-user-select:none}.dwControls p{background:#14532d!important;color:#ffffff!important;border-radius:16px;padding:12px 14px;font-weight:1000;line-height:1.45}.dwControls button{border:0;border-radius:16px;padding:14px;font-size:16px;font-weight:1000;cursor:pointer}.dwSave{background:#ffedd5!important;color:#7c2d12!important;border:2px solid #fed7aa!important}.dwApprove{background:#16a34a!important;color:#052e16!important;border:2px solid #15803d!important}.dwClear{background:#111827!important;color:#ffffff!important}.dwQueue ul{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:10px}.dwQueue li{border-radius:16px;background:#111827!important;color:#ffffff!important;padding:13px 14px;font-size:14px;font-weight:1000}.dwQueue li:before{content:'•';color:#fbbf24;margin-right:8px}@media(max-width:1200px){.dwGrid{grid-template-columns:1fr}.dwControls{position:static}.dwFields{grid-template-columns:1fr}.dwWrap{padding:16px 16px 110px}}`}</style>;
 }
 
 export default function DirectWorkbenchPage({ type }) {
@@ -52,47 +48,12 @@ export default function DirectWorkbenchPage({ type }) {
   const [form, setForm] = React.useState(() => blankForm(page));
   const [message, setMessage] = React.useState("Ready to work here. No extra tap needed.");
 
-  React.useEffect(() => {
-    setForm(blankForm(page));
-    setMessage("Ready to work here. No extra tap needed.");
-  }, [type]);
+  React.useEffect(() => { setForm(blankForm(page)); setMessage("Ready to work here. No extra tap needed."); }, [type]);
+  React.useEffect(() => { forceReadableWorkbench(); const t1 = window.setTimeout(forceReadableWorkbench, 100); const t2 = window.setTimeout(forceReadableWorkbench, 500); return () => { window.clearTimeout(t1); window.clearTimeout(t2); }; }, [type, form]);
 
-  React.useEffect(() => {
-    forceReadableWorkbench();
-    const t1 = window.setTimeout(forceReadableWorkbench, 100);
-    const t2 = window.setTimeout(forceReadableWorkbench, 500);
-    return () => { window.clearTimeout(t1); window.clearTimeout(t2); };
-  }, [type, form]);
+  async function save() { try { localStorage.setItem(`churvox_direct_workbench_${type}`, JSON.stringify(form)); setMessage(`${page.title} draft saved on this page.`); toast.success(`${page.title} saved`); } catch { toast.error("Could not save draft"); } }
+  async function approve() { try { let res = { success: true }; if (type === "dispatch" && form.job_id) res = await api.post(`/jobs/${encodeURIComponent(form.job_id)}/assign`, { worker_name: form.worker_name, worker_id: form.worker_id, dispatch_note: form.dispatch_note, scheduled_time: form.scheduled_time }); else if (type === "payroll" && form.job_id) res = await api.patch(`/jobs/${encodeURIComponent(form.job_id)}`, { reviewed_hours: form.reviewed_hours, pause_time: form.pause_time, payroll_note: form.payroll_note, payroll_reviewed: true }); else if (["jobs", "clients", "quotes", "invoices", "team"].includes(type)) res = await api.post(page.endpoint, form); if (res?.success === false) throw new Error(res?.error || "Save failed"); localStorage.setItem(`churvox_direct_workbench_${type}`, JSON.stringify(form)); setMessage(`${page.title} approved from this page.`); toast.success(`${page.title} approved`); } catch (error) { toast.error(error?.message || "Could not approve this work"); } }
+  function clear() { setForm(blankForm(page)); setMessage("Cleared. Ready for the next item."); }
 
-  async function save() {
-    try {
-      localStorage.setItem(`churvox_direct_workbench_${type}`, JSON.stringify(form));
-      setMessage(`${page.title} draft saved on this page.`);
-      toast.success(`${page.title} saved`);
-    } catch {
-      toast.error("Could not save draft");
-    }
-  }
-
-  async function approve() {
-    try {
-      let res = { success: true };
-      if (type === "dispatch" && form.job_id) res = await api.post(`/jobs/${encodeURIComponent(form.job_id)}/assign`, { worker_name: form.worker_name, worker_id: form.worker_id, dispatch_note: form.dispatch_note, scheduled_time: form.scheduled_time });
-      else if (type === "payroll" && form.job_id) res = await api.patch(`/jobs/${encodeURIComponent(form.job_id)}`, { reviewed_hours: form.reviewed_hours, pause_time: form.pause_time, payroll_note: form.payroll_note, payroll_reviewed: true });
-      else if (["jobs", "clients", "quotes", "invoices", "team"].includes(type)) res = await api.post(page.endpoint, form);
-      if (res?.success === false) throw new Error(res?.error || "Save failed");
-      localStorage.setItem(`churvox_direct_workbench_${type}`, JSON.stringify(form));
-      setMessage(`${page.title} approved from this page.`);
-      toast.success(`${page.title} approved`);
-    } catch (error) {
-      toast.error(error?.message || "Could not approve this work");
-    }
-  }
-
-  function clear() {
-    setForm(blankForm(page));
-    setMessage("Cleared. Ready for the next item.");
-  }
-
-  return <main className="dwRoot" data-direct-workbench={type}><Style /><section className="dwWrap"><article className="dwHero"><span>{page.eyebrow}</span><h1>{page.title}</h1><p>{page.promise}</p></article><section className="dwGrid"><section className="dwForm"><div className="dwFormHead"><div><small>Direct working form</small><h2>{page.title} editor</h2></div></div><div className="dwFields">{page.fields.map((field) => <Field key={field[0]} field={field} form={form} setForm={setForm} />)}</div></section><aside className="dwSide"><section className="dwControls"><h2>Owner controls</h2><p>{message}</p><button className="dwSave" onClick={save}>Save edit</button><button className="dwApprove" onClick={approve}>{page.button}</button><button className="dwClear" onClick={clear}>Clear / next item</button></section><section className="dwQueue"><h2>On this page</h2><ul>{page.queue.map((item) => <li key={item}>{item}</li>)}</ul></section></aside></section></section></main>;
+  return <main className="dwRoot" data-direct-workbench={type}><Style /><section className="dwWrap"><article className="dwHero"><div className="dwHeroTag">{page.eyebrow}</div><h1>{page.title}</h1><p>{page.promise}</p></article><section className="dwGrid"><section className="dwForm"><div className="dwFormHead"><small>{page.title} direct form</small></div><div className="dwFields">{page.fields.map((field) => <Field key={field[0]} field={field} form={form} setForm={setForm} />)}</div></section><aside className="dwSide"><section className="dwControls"><h2>Owner controls</h2><p>{message}</p><button className="dwSave" onClick={save}>Save edit</button><button className="dwApprove" onClick={approve}>{page.button}</button><button className="dwClear" onClick={clear}>Clear / next item</button></section><section className="dwQueue"><h2>On this page</h2><ul>{page.queue.map((item) => <li key={item}>{item}</li>)}</ul></section></aside></section></section></main>;
 }
