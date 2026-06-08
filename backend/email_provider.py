@@ -22,10 +22,72 @@ import html as _html
 # ------------------------------------------------------------------
 POSTMARK_SERVER_TOKEN = os.getenv("POSTMARK_SERVER_TOKEN", "").strip()
 POSTMARK_FROM_EMAIL = os.getenv("POSTMARK_FROM_EMAIL", "").strip()
+_SUPPORT_ROUTE_REGISTERED = False
+
+
+def _maybe_register_support_route():
+    """Register /api/support/contact when server.py calls get_email_provider()."""
+    global _SUPPORT_ROUTE_REGISTERED
+    if _SUPPORT_ROUTE_REGISTERED:
+        return
+
+    try:
+        import inspect
+        from datetime import datetime, timezone
+
+        frame = inspect.currentframe()
+        caller_globals = (frame.f_back.f_back.f_globals if frame and frame.f_back and frame.f_back.f_back else {})
+        router = caller_globals.get("api_router")
+        if router is None or not hasattr(router, "post"):
+            return
+
+        @router.post("/support/contact")
+        async def churvox_support_contact(payload: dict):
+            help_type = str(payload.get("help_type") or "Support request").strip()
+            message = str(payload.get("message") or "").strip()
+            user_email = str(payload.get("user_email") or "").strip()
+            user_name = str(payload.get("user_name") or "").strip()
+            business_name = str(payload.get("business_name") or "").strip()
+            page_url = str(payload.get("page_url") or "").strip()
+
+            if not message:
+                return {"success": False, "error": "Message is required"}
+
+            submitted = datetime.now(timezone.utc).isoformat()
+            subject = f"Churvox support: {help_type}"
+            text_body = (
+                f"Help type: {help_type}\n"
+                f"From: {user_name or 'Unknown user'} <{user_email or 'no email supplied'}>\n"
+                f"Business: {business_name or 'Not supplied'}\n"
+                f"Page: {page_url or 'Not supplied'}\n"
+                f"Submitted: {submitted}\n\n"
+                f"Message:\n{message}\n"
+            )
+            html_body = _wrap(
+                "<h2 style='margin:0 0 12px 0;'>Churvox support request</h2>"
+                f"<p><strong>Help type:</strong> {_html.escape(help_type)}</p>"
+                f"<p><strong>From:</strong> {_html.escape(user_name or 'Unknown user')} &lt;{_html.escape(user_email or 'no email supplied')}&gt;</p>"
+                f"<p><strong>Business:</strong> {_html.escape(business_name or 'Not supplied')}</p>"
+                f"<p><strong>Page:</strong> {_html.escape(page_url or 'Not supplied')}</p>"
+                f"<p><strong>Submitted:</strong> {_html.escape(submitted)}</p>"
+                f"<hr style='border:none;border-top:1px solid #e2e8f0;margin:20px 0;' />"
+                f"<pre style='white-space:pre-wrap;font-family:system-ui;font-size:14px;line-height:1.5'>{_html.escape(message)}</pre>"
+            )
+
+            try:
+                await send_email("hello@churvox.com", subject, html_body, text_body)
+                return {"success": True, "message": "Support message sent"}
+            except Exception as exc:
+                return {"success": False, "error": f"Support email failed: {exc}"}
+
+        _SUPPORT_ROUTE_REGISTERED = True
+    except Exception:
+        return
 
 
 def get_email_provider() -> str:
-    """Return 'postmark' if configured, else 'none'."""
+    """Return 'postmark' if configured, else 'none'. Also wires support email route in server.py."""
+    _maybe_register_support_route()
     if POSTMARK_SERVER_TOKEN and POSTMARK_FROM_EMAIL:
         return "postmark"
     return "none"
