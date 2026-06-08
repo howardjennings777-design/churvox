@@ -355,10 +355,12 @@ function Style() {
     .cxFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
     .cxField.wide{grid-column:1/-1}
     .cxField span{display:block;color:#431407;text-transform:uppercase;letter-spacing:.11em;font-size:12px;font-weight:1000;margin-bottom:7px;user-select:none}
-    .cxField input,.cxField textarea,.cxField select{width:100%;border:2px solid rgba(15,23,42,.28);border-radius:16px;padding:13px 15px;font-size:16px;font-weight:900;background:#ffffff!important;color:#0f172a!important;-webkit-text-fill-color:#0f172a!important;outline:none;box-shadow:0 1px 0 rgba(15,23,42,.08)}
-    .cxField input:focus,.cxField textarea:focus,.cxField select:focus{border-color:#f97316;box-shadow:0 0 0 4px rgba(249,115,22,.18)}
+    .cxField input,.cxField textarea,.cxField select{width:100%;border:2px solid #d6b98f;border-radius:16px;padding:13px 15px;font-size:16px;font-weight:900;background:#fffdf7!important;background-color:#fffdf7!important;background-image:linear-gradient(#fffdf7,#fffdf7)!important;color:#0f172a!important;-webkit-text-fill-color:#0f172a!important;caret-color:#0f172a;opacity:1!important;outline:none;box-shadow:0 2px 0 rgba(15,23,42,.06), inset 0 0 0 9999px rgba(255,253,247,1)!important;filter:none!important}
+    .cxField input:focus,.cxField textarea:focus,.cxField select:focus{border-color:#f97316;background:#ffffff!important;background-color:#ffffff!important;background-image:linear-gradient(#ffffff,#ffffff)!important;box-shadow:0 0 0 4px rgba(249,115,22,.18), inset 0 0 0 9999px rgba(255,255,255,1)!important}
     .cxField textarea{min-height:116px;resize:vertical}
     .cxField option{background:#ffffff;color:#0f172a}
+    .cxField input::placeholder,.cxField textarea::placeholder{color:#7c2d12!important;opacity:.65!important;-webkit-text-fill-color:#7c2d12!important}
+    .cxField input:-webkit-autofill,.cxField textarea:-webkit-autofill,.cxField select:-webkit-autofill{-webkit-box-shadow:0 0 0 1000px #fffdf7 inset!important;-webkit-text-fill-color:#0f172a!important}
     .cxControls{align-self:start;position:sticky;top:0;display:grid;gap:10px}
     .cxControls h2{font-size:30px;line-height:.95;margin:0;color:#111827;user-select:none}
     .cxControls p{background:#14532d;color:#ffffff;border-radius:16px;padding:12px 14px;font-weight:1000;line-height:1.45}
