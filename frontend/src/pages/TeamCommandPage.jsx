@@ -1,5 +1,5 @@
-import DirectWorkbenchPage from "./DirectWorkbenchPage";
+import TeamRolesWorkbenchPage from "./TeamRolesWorkbenchPage";
 
 export default function TeamCommandPage() {
-  return <DirectWorkbenchPage type="team" />;
+  return <TeamRolesWorkbenchPage />;
 }
