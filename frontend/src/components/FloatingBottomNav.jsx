@@ -6,7 +6,7 @@ import "./IndustrialCommandSidebar.css";
 import "./IndustrialCommandPages.css";
 import "./ChurvoxLaunchCleanup.css";
 
-const BUILD_MARKER = "Build clean-command-sidebar-clear";
+const BUILD_MARKER = "Build direct-workbench-sidebar-clear";
 
 const COMMAND_SHELL_STYLE = `
   @media (min-width: 1201px) {
@@ -14,12 +14,14 @@ const COMMAND_SHELL_STYLE = `
     body.cv-industrial-shell .ch4Root {
       padding-left: 270px !important;
     }
-    body.cv-industrial-shell .scRoot {
+    body.cv-industrial-shell .scRoot,
+    body.cv-industrial-shell .dwRoot {
       padding-left: 310px !important;
       padding-right: 24px !important;
     }
     body.cv-industrial-shell .cxWrap,
-    body.cv-industrial-shell .ch4Wrap {
+    body.cv-industrial-shell .ch4Wrap,
+    body.cv-industrial-shell .dwWrap {
       max-width: 1520px !important;
       margin: 0 auto !important;
       padding-left: 24px !important;
@@ -29,7 +31,8 @@ const COMMAND_SHELL_STYLE = `
   @media (max-width: 1200px) {
     body.cv-industrial-shell .cxRoot,
     body.cv-industrial-shell .ch4Root,
-    body.cv-industrial-shell .scRoot {
+    body.cv-industrial-shell .scRoot,
+    body.cv-industrial-shell .dwRoot {
       padding-left: 0 !important;
     }
   }
