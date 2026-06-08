@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import os
 import secrets
 import sys
 
@@ -83,9 +84,166 @@ def _business_profile_payload(payload):
     return {key: _clean(payload.get(key)) for key in allowed if key in payload}
 
 
+def _plan_rank(plan):
+    return {"solo": 1, "team": 2, "pro": 3, "enterprise": 4}.get(_clean(plan).lower(), 0)
+
+
+def _addon_config(addon):
+    key = _clean(addon).lower()
+    if key in ["xero", "xero_addon", "xero_sync"]:
+        return {
+            "key": "xero_addon",
+            "name": "Xero add-on",
+            "requires_plan": "pro",
+            "price_envs": ["STRIPE_PRICE_XERO_ADDON", "STRIPE_PRICE_XERO", "STRIPE_XERO_ADDON_PRICE_ID"],
+            "active_field": "xero_addon_active",
+            "subscription_field": "stripe_xero_addon_subscription_id",
+        }
+    if key in ["command_growth_pack", "growth_pack", "command_growth"]:
+        return {
+            "key": "command_growth_pack",
+            "name": "Command Growth Pack",
+            "requires_plan": "enterprise",
+            "price_envs": ["STRIPE_PRICE_COMMAND_GROWTH_PACK", "STRIPE_PRICE_GROWTH_PACK", "STRIPE_COMMAND_GROWTH_PACK_PRICE_ID"],
+            "active_field": "command_growth_pack_active",
+            "subscription_field": "stripe_command_growth_pack_subscription_id",
+        }
+    return None
+
+
+def _first_env(names):
+    for name in names:
+        value = os.environ.get(name, "").strip()
+        if value:
+            return value, name
+    return "", names[0] if names else ""
+
+
+async def _owner_doc(db, user):
+    business_id = _business_id(user)
+    biz_oid = _obj_or_none(business_id)
+    owner = await db.users.find_one({"_id": biz_oid}) if biz_oid else None
+    if not owner:
+        owner = await db.users.find_one({"_id": _obj_or_none(user.get("id"))})
+    return owner or {}
+
+
 def install(router):
     if getattr(router, "churvox_launch_logic_routes_installed", False):
         return
+
+    @router.get("/billing/addons")
+    async def churvox_billing_addons(request):
+        server = _server_module()
+        db = getattr(server, "db", None)
+        if db is None:
+            return {"success": False, "error": "Database not ready"}
+        try:
+            user = await _current_user(request)
+        except Exception:
+            return {"success": False, "error": "Not authenticated"}
+        owner = await _owner_doc(db, user)
+        return {
+            "success": True,
+            "data": {
+                "xero_addon_active": bool(owner.get("xero_addon_active")),
+                "command_growth_pack_active": bool(owner.get("command_growth_pack_active") or owner.get("extra_user_blocks", 0) > 0),
+                "extra_user_blocks": int(owner.get("extra_user_blocks", 0) or 0),
+                "max_extra_team_members": int(owner.get("extra_user_blocks", 0) or 0) * 50,
+            },
+        }
+
+    @router.post("/billing/create-addon-checkout-session")
+    async def churvox_create_addon_checkout(payload: dict, request):
+        server = _server_module()
+        db = getattr(server, "db", None)
+        stripe = getattr(server, "stripe", None)
+        frontend = _clean(getattr(server, "FRONTEND_URL", "")) or "https://www.churvox.com"
+        if db is None or stripe is None:
+            return {"success": False, "error": "Billing route not ready"}
+        try:
+            user = await _current_user(request)
+        except Exception:
+            return {"success": False, "error": "Not authenticated"}
+
+        cfg = _addon_config(payload.get("addon") or payload.get("addonKey") or payload.get("key"))
+        if not cfg:
+            return {"success": False, "error": "Unknown add-on"}
+
+        owner = await _owner_doc(db, user)
+        plan = _clean(owner.get("plan") or user.get("plan") or "solo").lower()
+        if _plan_rank(plan) < _plan_rank(cfg["requires_plan"]):
+            need = "Operator or Command" if cfg["requires_plan"] == "pro" else "Command"
+            return {"success": False, "error": f"{cfg['name']} needs {need}."}
+
+        stripe_secret = os.environ.get("STRIPE_SECRET_KEY", "").strip()
+        if not stripe_secret:
+            return {"success": False, "error": "Missing STRIPE_SECRET_KEY in Render."}
+        stripe.api_key = stripe_secret
+
+        price_id, env_name = _first_env(cfg["price_envs"])
+        if not price_id:
+            return {"success": False, "error": f"Missing Stripe price env for {cfg['name']}. Add {env_name} in Render."}
+
+        business_id = _business_id(user)
+        owner_id = str(owner.get("_id") or user.get("id"))
+        customer_id = owner.get("stripe_customer_id")
+        session_args = {
+            "mode": "subscription",
+            "line_items": [{"price": price_id, "quantity": 1}],
+            "success_url": f"{frontend.rstrip('/')}/plans?addon_success=1&addon={cfg['key']}&session_id={{CHECKOUT_SESSION_ID}}",
+            "cancel_url": f"{frontend.rstrip('/')}/plans?addon_cancelled=1&addon={cfg['key']}",
+            "metadata": {"purpose": "addon_subscription", "addon": cfg["key"], "business_id": business_id, "owner_user_id": owner_id},
+            "subscription_data": {"metadata": {"purpose": "addon_subscription", "addon": cfg["key"], "business_id": business_id, "owner_user_id": owner_id}},
+        }
+        if customer_id:
+            session_args["customer"] = customer_id
+        else:
+            session_args["customer_email"] = owner.get("email") or user.get("email")
+
+        try:
+            session = stripe.checkout.Session.create(**session_args)
+            await db.billing_addon_sessions.insert_one({"business_id": business_id, "owner_user_id": owner_id, "addon": cfg["key"], "stripe_session_id": session.id, "status": "created", "created_at": datetime.now(timezone.utc)})
+            return {"success": True, "url": session.url, "checkout_url": session.url, "session_id": session.id}
+        except Exception as exc:
+            return {"success": False, "error": f"Stripe add-on checkout failed: {exc}"}
+
+    @router.post("/billing/confirm-addon-checkout")
+    async def churvox_confirm_addon_checkout(payload: dict, request):
+        server = _server_module()
+        db = getattr(server, "db", None)
+        stripe = getattr(server, "stripe", None)
+        if db is None or stripe is None:
+            return {"success": False, "error": "Billing route not ready"}
+        try:
+            user = await _current_user(request)
+        except Exception:
+            return {"success": False, "error": "Not authenticated"}
+        session_id = _clean(payload.get("session_id"))
+        if not session_id:
+            return {"success": False, "error": "Missing Stripe session id"}
+        stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "").strip()
+        try:
+            session = stripe.checkout.Session.retrieve(session_id)
+        except Exception as exc:
+            return {"success": False, "error": f"Could not verify Stripe session: {exc}"}
+        if getattr(session, "payment_status", None) not in ["paid", "no_payment_required"]:
+            return {"success": False, "error": "Stripe checkout is not paid yet"}
+        addon_key = (getattr(session, "metadata", {}) or {}).get("addon") or payload.get("addon")
+        cfg = _addon_config(addon_key)
+        if not cfg:
+            return {"success": False, "error": "Unknown add-on from Stripe session"}
+
+        business_id = _business_id(user)
+        biz_oid = _obj_or_none(business_id)
+        update = {cfg["active_field"]: True, cfg["subscription_field"]: getattr(session, "subscription", None), "updated_at": datetime.now(timezone.utc)}
+        if cfg["key"] == "command_growth_pack":
+            update["command_growth_pack_active"] = True
+            await db.users.update_one({"_id": biz_oid}, {"$set": update, "$inc": {"extra_user_blocks": 1}})
+        else:
+            await db.users.update_one({"_id": biz_oid}, {"$set": update})
+        await db.billing_addon_sessions.update_one({"stripe_session_id": session_id}, {"$set": {"status": "confirmed", "confirmed_at": datetime.now(timezone.utc), "addon": cfg["key"]}}, upsert=True)
+        return {"success": True, "message": f"{cfg['name']} activated", "addon": cfg["key"]}
 
     @router.get("/logic/business-profile")
     async def churvox_get_business_profile(request):
