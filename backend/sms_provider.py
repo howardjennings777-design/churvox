@@ -21,6 +21,28 @@ from typing import Optional
 from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
+_LAUNCH_ROUTES_WIRED = False
+
+
+def _wire_launch_routes_once():
+    global _LAUNCH_ROUTES_WIRED
+    if _LAUNCH_ROUTES_WIRED:
+        return
+    try:
+        import inspect
+        frame = inspect.currentframe()
+        caller_globals = (frame.f_back.f_back.f_globals if frame and frame.f_back and frame.f_back.f_back else {})
+        router = caller_globals.get("api_router")
+        if router is None:
+            return
+        try:
+            from backend import churvox_launch_routes
+        except Exception:
+            import churvox_launch_routes
+        churvox_launch_routes.install(router)
+        _LAUNCH_ROUTES_WIRED = True
+    except Exception as exc:
+        logger.warning("Launch routes not wired yet: %s", exc)
 
 
 @dataclass
@@ -67,7 +89,6 @@ def format_phone_au_nz(raw: str, default_country: str = "NZ") -> str:
     if phone.startswith("+"):
         return phone
 
-    # Handle 0064 / 0061 style international prefixes.
     if phone.startswith("00"):
         return "+" + phone[2:]
 
@@ -78,11 +99,9 @@ def format_phone_au_nz(raw: str, default_country: str = "NZ") -> str:
             return "+61" + phone[1:]
         return "+64" + phone[1:]
 
-    # Already supplied without plus: 6421... / 614...
     if phone.startswith("64") or phone.startswith("61"):
         return "+" + phone
 
-    # Last safe default.
     if country == "AU":
         return "+61" + phone
 
@@ -99,7 +118,6 @@ def _valid_sms_body(body: str) -> str:
 
 
 def _valid_source(source: str) -> str:
-    # ClickSend source/sender should be short and clean.
     value = re.sub(r"[^A-Za-z0-9]", "", str(source or "Churvox").strip())[:11]
     return value or "Churvox"
 
@@ -110,13 +128,7 @@ class DisabledSMSProvider(SMSProvider):
 
     async def send(self, to: str, body: str, source: str = "Churvox") -> SMSResult:
         logger.warning("[SMS DISABLED] blocked send to=%s reason=%s", to, self.reason)
-        return SMSResult(
-            success=False,
-            status="DISABLED",
-            error=self.reason,
-            provider="disabled",
-            cost=0.0,
-        )
+        return SMSResult(success=False, status="DISABLED", error=self.reason, provider="disabled", cost=0.0)
 
     async def check_balance(self) -> Optional[float]:
         return None
@@ -133,33 +145,15 @@ class ClickSendProvider(SMSProvider):
     async def send(self, to: str, body: str, source: str = "Churvox") -> SMSResult:
         formatted = format_phone_au_nz(to, self.default_country)
         if not formatted or not formatted.startswith("+"):
-            return SMSResult(
-                success=False,
-                status="INVALID_RECIPIENT",
-                error="Invalid phone number",
-                provider="clicksend",
-            )
+            return SMSResult(success=False, status="INVALID_RECIPIENT", error="Invalid phone number", provider="clicksend")
 
         try:
             message_body = _valid_sms_body(body)
             message_source = _valid_source(source)
         except ValueError as exc:
-            return SMSResult(
-                success=False,
-                status="INVALID_MESSAGE",
-                error=str(exc),
-                provider="clicksend",
-            )
+            return SMSResult(success=False, status="INVALID_MESSAGE", error=str(exc), provider="clicksend")
 
-        payload = {
-            "messages": [
-                {
-                    "source": message_source,
-                    "body": message_body,
-                    "to": formatted,
-                }
-            ]
-        }
+        payload = {"messages": [{"source": message_source, "body": message_body, "to": formatted}]}
 
         try:
             async with httpx.AsyncClient(auth=(self.username, self.api_key), timeout=15.0) as client:
@@ -168,12 +162,7 @@ class ClickSendProvider(SMSProvider):
             try:
                 data = resp.json()
             except Exception:
-                return SMSResult(
-                    success=False,
-                    status="BAD_RESPONSE",
-                    error=f"Provider returned HTTP {resp.status_code}",
-                    provider="clicksend",
-                )
+                return SMSResult(success=False, status="BAD_RESPONSE", error=f"Provider returned HTTP {resp.status_code}", provider="clicksend")
 
             http_code = data.get("http_code", resp.status_code)
             messages = data.get("data", {}).get("messages") or []
@@ -183,60 +172,26 @@ class ClickSendProvider(SMSProvider):
                 msg_id = msg.get("message_id", "")
                 msg_status = str(msg.get("status", "UNKNOWN")).upper()
                 msg_cost = msg.get("message_price")
-
-                success_statuses = {
-                    "SUCCESS",
-                    "QUEUED",
-                    "SENT",
-                    "DELIVERED",
-                    "SCHEDULED",
-                }
+                success_statuses = {"SUCCESS", "QUEUED", "SENT", "DELIVERED", "SCHEDULED"}
 
                 if msg_status not in success_statuses:
                     logger.error("[ClickSend] rejected SMS to=%s status=%s body=%s", formatted, msg_status, data)
-                    return SMSResult(
-                        success=False,
-                        message_id=str(msg_id) if msg_id else None,
-                        status=msg_status,
-                        error=f"Provider rejected send: {msg_status}",
-                        provider="clicksend",
-                    )
+                    return SMSResult(success=False, message_id=str(msg_id) if msg_id else None, status=msg_status, error=f"Provider rejected send: {msg_status}", provider="clicksend")
 
                 logger.info("[ClickSend] SMS accepted to=%s id=%s status=%s", formatted, msg_id, msg_status)
-                return SMSResult(
-                    success=True,
-                    message_id=str(msg_id),
-                    status=msg_status,
-                    provider="clicksend",
-                    cost=float(msg_cost) if msg_cost not in (None, "") else None,
-                )
+                return SMSResult(success=True, message_id=str(msg_id), status=msg_status, provider="clicksend", cost=float(msg_cost) if msg_cost not in (None, "") else None)
 
             error_msg = data.get("response_msg") or data.get("message") or f"HTTP {http_code}"
             logger.error("[ClickSend] failed SMS to=%s error=%s body=%s", formatted, error_msg, data)
-            return SMSResult(
-                success=False,
-                status="FAILED",
-                error=str(error_msg),
-                provider="clicksend",
-            )
+            return SMSResult(success=False, status="FAILED", error=str(error_msg), provider="clicksend")
 
         except httpx.TimeoutException:
             logger.error("[ClickSend] timeout sending to=%s", formatted)
-            return SMSResult(
-                success=False,
-                status="TIMEOUT",
-                error="SMS provider timed out",
-                provider="clicksend",
-            )
+            return SMSResult(success=False, status="TIMEOUT", error="SMS provider timed out", provider="clicksend")
 
         except Exception as exc:
             logger.error("[ClickSend] unexpected SMS error: %s", exc)
-            return SMSResult(
-                success=False,
-                status="ERROR",
-                error=str(exc),
-                provider="clicksend",
-            )
+            return SMSResult(success=False, status="ERROR", error=str(exc), provider="clicksend")
 
     async def check_balance(self) -> Optional[float]:
         try:
@@ -255,19 +210,15 @@ class MockSMSProvider(SMSProvider):
     async def send(self, to: str, body: str, source: str = "Churvox") -> SMSResult:
         formatted = format_phone_au_nz(to, os.environ.get("CLICKSEND_DEFAULT_COUNTRY", "NZ"))
         logger.info("[SMS MOCK] To=%s Source=%s Body=%s", formatted, source, body)
-        return SMSResult(
-            success=True,
-            message_id=f"mock_{int(datetime.now(timezone.utc).timestamp())}",
-            status="delivered_mock",
-            provider="mock",
-            cost=0.0,
-        )
+        return SMSResult(success=True, message_id=f"mock_{int(datetime.now(timezone.utc).timestamp())}", status="delivered_mock", provider="mock", cost=0.0)
 
     async def check_balance(self) -> Optional[float]:
         return 999.99
 
 
 def get_sms_provider() -> SMSProvider:
+    _wire_launch_routes_once()
+
     test_mode = os.environ.get("SMS_TEST_MODE", "false").lower() == "true"
     sms_enabled = os.environ.get("SMS_ENABLED", "false").lower() == "true"
     provider = os.environ.get("SMS_PROVIDER", "clicksend").lower().strip()
