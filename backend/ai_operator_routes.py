@@ -1,3 +1,4 @@
+import html
 import logging
 from datetime import datetime, timezone
 
@@ -61,6 +62,43 @@ def _job_type(value):
     return str(value or "other").strip().lower().replace(" ", "_") or "other"
 
 
+def _notify_mode(action, form):
+    return str(action.get("notifyMode") or action.get("notify_mode") or form.get("notifyMode") or "Internal only")
+
+
+def _wants_customer_email(action, form):
+    mode = _notify_mode(action, form).lower()
+    return "customer" in mode and ("email" in mode or "notify" in mode)
+
+
+def _wants_worker_email(action, form):
+    mode = _notify_mode(action, form).lower()
+    return "worker" in mode and ("email" in mode or "notify" in mode)
+
+
+def _wants_sms(action, form):
+    text = " ".join(str(x or "") for x in [
+        action.get("notifyMode"), action.get("notify_mode"), form.get("notifyMode"),
+        form.get("preferredContact"), form.get("reminderStatus"), form.get("customerReminderAllowed"),
+    ]).lower()
+    return "sms" in text or "text" in text
+
+
+def _email_html(title, body):
+    safe_title = html.escape(str(title or "Churvox update"))
+    safe_body = html.escape(str(body or "")).replace("\n", "<br />")
+    return f"""
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f6f1e7;padding:24px;color:#111827;">
+      <div style="max-width:620px;margin:0 auto;background:#fffaf0;border:1px solid #ead4b6;border-radius:18px;padding:28px;">
+        <div style="font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#9a3412;">Churvox</div>
+        <h1 style="font-size:24px;line-height:1.1;margin:12px 0;color:#0b1018;">{safe_title}</h1>
+        <p style="font-size:15px;line-height:1.55;color:#334155;">{safe_body}</p>
+        <p style="font-size:12px;color:#64748b;margin-top:22px;">This message was prepared by Churvox and sent only after owner approval.</p>
+      </div>
+    </div>
+    """
+
+
 async def _activity(db, business_id, event_type, title, detail, record_type=None, record_id=None, worker_id=None, worker_name=None, status="new", source="ai_operator"):
     doc = {
         "business_id": str(business_id),
@@ -80,11 +118,66 @@ async def _activity(db, business_id, event_type, title, detail, record_type=None
     return doc
 
 
+async def _notification(db, business_id, channel, to, subject, body, record_type=None, record_id=None, status="prepared", provider="internal", error=None):
+    doc = {
+        "business_id": str(business_id),
+        "contractor_id": ObjectId(str(business_id)),
+        "channel": channel,
+        "to": to,
+        "subject": subject,
+        "body": body,
+        "record_type": record_type,
+        "record_id": str(record_id) if record_id else None,
+        "status": status,
+        "provider": provider,
+        "error": error,
+        "approval_required": True,
+        "created_at": datetime.now(timezone.utc),
+    }
+    await db.approved_notifications.insert_one(doc)
+    return _safe_doc(doc)
+
+
+async def _send_email_if_requested(db, business_id, action, form, to_email, subject, body, record_type=None, record_id=None):
+    if not to_email:
+        return await _notification(db, business_id, "email", None, subject, body, record_type, record_id, status="not_sent", provider="postmark", error="Missing recipient email")
+    try:
+        try:
+            from backend.email_provider import send_email
+        except Exception:
+            from email_provider import send_email
+        result = await send_email(to_email, subject, _email_html(subject, body), body)
+        return await _notification(db, business_id, "email", to_email, subject, body, record_type, record_id, status="sent", provider="postmark", error=None)
+    except Exception as exc:
+        logger.warning("Approval email not sent: %s", exc)
+        return await _notification(db, business_id, "email", to_email, subject, body, record_type, record_id, status="not_sent", provider="postmark", error=str(exc))
+
+
+async def _send_sms_if_requested(db, business_id, action, form, phone, body, record_type=None, record_id=None):
+    if not _wants_sms(action, form):
+        return None
+    if not phone:
+        return await _notification(db, business_id, "sms", None, "SMS prepared", body, record_type, record_id, status="not_sent", provider="clicksend", error="Missing phone number")
+    try:
+        try:
+            from backend.sms_provider import get_sms_provider
+        except Exception:
+            from sms_provider import get_sms_provider
+        provider = get_sms_provider()
+        result = await provider.send(phone, body, source="Churvox")
+        status = "sent" if getattr(result, "success", False) else "prepared_not_sent"
+        return await _notification(db, business_id, "sms", phone, "SMS prepared", body, record_type, record_id, status=status, provider=getattr(result, "provider", "clicksend"), error=getattr(result, "error", None))
+    except Exception as exc:
+        logger.warning("Approval SMS not sent: %s", exc)
+        return await _notification(db, business_id, "sms", phone, "SMS prepared", body, record_type, record_id, status="prepared_not_sent", provider="clicksend", error=str(exc))
+
+
 async def _execute(db, business_id, user, action):
     form = action.get("form") or {}
     action_key = action.get("actionKey") or action.get("action_key")
     record_id = action.get("recordId") or action.get("record_id") or form.get("recordId") or form.get("jobId") or form.get("clientId") or form.get("quoteId") or form.get("invoiceId")
     biz_obj = ObjectId(str(business_id))
+    notifications = []
 
     if action_key in ("approve_prepared_action", "fix_setup_blocker"):
         setup_key = form.get("setupKey") or record_id or action.get("slipKey") or "setup_item"
@@ -94,7 +187,7 @@ async def _execute(db, business_id, user, action):
             upsert=True,
         )
         await _activity(db, business_id, "setup_approved", "Setup approved", form.get("missingThing") or "Setup item approved", "setup_item", setup_key)
-        return {"success": True, "message": "Setup/prepared action saved", "local_safe": True}
+        return {"success": True, "message": "Setup/prepared action saved", "notifications": notifications, "local_safe": True}
 
     if not record_id:
         raise HTTPException(status_code=400, detail="Linked record ID is required before approval")
@@ -123,8 +216,11 @@ async def _execute(db, business_id, user, action):
         )
         if result.matched_count == 0:
             raise HTTPException(status_code=404, detail="Job not found")
-        await _activity(db, business_id, "worker_assigned", "Worker assigned", f"{worker.get('name') or worker.get('email')} assigned to job", "job", record_id, worker_oid, worker.get("name") or worker.get("email"))
-        return {"success": True, "message": "Worker assigned"}
+        worker_name = worker.get("name") or worker.get("full_name") or worker.get("email")
+        await _activity(db, business_id, "worker_assigned", "Worker assigned", f"{worker_name} assigned to job", "job", record_id, worker_oid, worker_name)
+        if _wants_worker_email(action, form):
+            notifications.append(await _send_email_if_requested(db, business_id, action, form, worker.get("email"), "New Churvox job assignment", form.get("dispatchNote") or f"You have been assigned to {form.get('jobName') or 'a job'}.", "job", record_id))
+        return {"success": True, "message": "Worker assigned", "notifications": notifications}
 
     if action_key == "fix_job_blocker":
         update = {
@@ -148,7 +244,7 @@ async def _execute(db, business_id, user, action):
         if result.matched_count == 0:
             raise HTTPException(status_code=404, detail="Job not found")
         await _activity(db, business_id, "job_fixed", "Job details approved", form.get("jobTitle") or "Job blocker fixed", "job", record_id)
-        return {"success": True, "message": "Job details updated"}
+        return {"success": True, "message": "Job details updated", "notifications": notifications}
 
     if action_key == "fix_client_record":
         update = {
@@ -168,7 +264,9 @@ async def _execute(db, business_id, user, action):
         if result.matched_count == 0:
             raise HTTPException(status_code=404, detail="Client not found")
         await _activity(db, business_id, "client_fixed", "Client record approved", form.get("clientName") or "Client record updated", "client", record_id)
-        return {"success": True, "message": "Client updated"}
+        if _wants_sms(action, form):
+            notifications.append(await _send_sms_if_requested(db, business_id, action, form, form.get("phone"), form.get("lastJobNextAction") or "Churvox customer update prepared.", "client", record_id))
+        return {"success": True, "message": "Client updated", "notifications": notifications}
 
     if action_key == "approve_quote_action":
         wants_convert = "convert" in str(form.get("quoteAction", "")).lower() or "yes" in str(form.get("convertToJob", "")).lower()
@@ -177,7 +275,7 @@ async def _execute(db, business_id, user, action):
             if not quote:
                 raise HTTPException(status_code=404, detail="Quote not found")
             if quote.get("converted_job_id"):
-                return {"success": True, "message": "Quote already converted", "job_id": quote.get("converted_job_id")}
+                return {"success": True, "message": "Quote already converted", "job_id": quote.get("converted_job_id"), "notifications": notifications}
             job_doc = {
                 "title": form.get("conversionJobTitle") or quote.get("job_description") or quote.get("title") or "Job from quote",
                 "job_type": quote.get("job_type", "other"),
@@ -200,16 +298,20 @@ async def _execute(db, business_id, user, action):
             inserted = await db.jobs.insert_one(job_doc)
             await db.quotes.update_one({"_id": oid}, {"$set": {"status": "accepted", "converted_job_id": str(inserted.inserted_id), "updated_at": datetime.now(timezone.utc)}})
             await _activity(db, business_id, "quote_converted", "Quote converted to job", job_doc["title"], "quote", record_id)
-            return {"success": True, "message": "Quote converted to job", "job_id": str(inserted.inserted_id)}
-        if str(form.get("quoteStatus", "")).lower() == "sent":
+            return {"success": True, "message": "Quote converted to job", "job_id": str(inserted.inserted_id), "notifications": notifications}
+        quote_body = form.get("message") or f"Your quote {form.get('quoteRef') or ''} has been updated."
+        if str(form.get("quoteStatus", "")).lower() == "sent" or _wants_customer_email(action, form):
             await db.quotes.update_one({"_id": oid, "contractor_id": biz_obj}, {"$set": {"status": "sent", "sent_at": datetime.now(timezone.utc)}})
             await _activity(db, business_id, "quote_sent", "Quote marked sent", form.get("quoteRef") or "Quote sent", "quote", record_id)
-            return {"success": True, "message": "Quote marked sent"}
+            if _wants_customer_email(action, form):
+                notifications.append(await _send_email_if_requested(db, business_id, action, form, form.get("clientEmail"), "Your Churvox quote", quote_body, "quote", record_id))
+            notifications.append(await _send_sms_if_requested(db, business_id, action, form, form.get("clientPhone"), quote_body, "quote", record_id))
+            return {"success": True, "message": "Quote marked sent", "notifications": notifications}
         update = {"customer_name": form.get("client"), "customer_email": form.get("clientEmail"), "price": _money(form.get("quoteValue")), "notes": "\n\n".join([x for x in [form.get("scope"), form.get("exclusions"), form.get("message")] if x]) or None, "updated_at": datetime.now(timezone.utc)}
         update = {k: v for k, v in update.items() if v is not None}
         await db.quotes.update_one({"_id": oid, "contractor_id": biz_obj}, {"$set": update})
         await _activity(db, business_id, "quote_updated", "Quote action approved", form.get("quoteRef") or "Quote updated", "quote", record_id)
-        return {"success": True, "message": "Quote updated"}
+        return {"success": True, "message": "Quote updated", "notifications": notifications}
 
     if action_key == "approve_money_action":
         money_action = str(form.get("moneyAction", "")).lower()
@@ -217,16 +319,20 @@ async def _execute(db, business_id, user, action):
         if "paid" in money_action:
             await db.invoices.update_one({"_id": oid, "contractor_id": biz_obj}, {"$set": {"status": "paid", "paid_at": datetime.now(timezone.utc)}})
             await _activity(db, business_id, "invoice_paid", "Invoice marked paid", form.get("invoiceRef") or "Invoice paid", "invoice", record_id)
-            return {"success": True, "message": "Invoice marked paid"}
+            return {"success": True, "message": "Invoice marked paid", "notifications": notifications}
+        invoice_body = form.get("customerMessage") or f"Your invoice {form.get('invoiceRef') or ''} is ready. Amount: {form.get('amount') or 'see invoice'}."
         if "send" in send_mode or "approve" in money_action:
             await db.invoices.update_one({"_id": oid, "contractor_id": biz_obj}, {"$set": {"status": "sent", "sent_at": datetime.now(timezone.utc)}})
             await _activity(db, business_id, "invoice_sent", "Invoice marked sent", form.get("invoiceRef") or "Invoice sent", "invoice", record_id)
-            return {"success": True, "message": "Invoice marked sent"}
+            if _wants_customer_email(action, form):
+                notifications.append(await _send_email_if_requested(db, business_id, action, form, form.get("clientEmail"), "Your Churvox invoice", invoice_body, "invoice", record_id))
+            notifications.append(await _send_sms_if_requested(db, business_id, action, form, form.get("clientPhone"), invoice_body, "invoice", record_id))
+            return {"success": True, "message": "Invoice marked sent", "notifications": notifications}
         update = {"customer_name": form.get("client"), "customer_email": form.get("clientEmail"), "subtotal": _money(form.get("amount")), "description": form.get("customerMessage"), "notes": form.get("internalNote"), "updated_at": datetime.now(timezone.utc)}
         update = {k: v for k, v in update.items() if v is not None}
         await db.invoices.update_one({"_id": oid, "contractor_id": biz_obj}, {"$set": update})
         await _activity(db, business_id, "invoice_updated", "Money action approved", form.get("invoiceRef") or "Invoice updated", "invoice", record_id)
-        return {"success": True, "message": "Invoice updated"}
+        return {"success": True, "message": "Invoice updated", "notifications": notifications}
 
     if action_key == "accept_worker_update":
         job_id = form.get("jobId") or record_id
@@ -236,7 +342,7 @@ async def _execute(db, business_id, user, action):
             update.update({"status": "completed", "completed": True, "completed_at": datetime.now(timezone.utc), "timer_running": False})
         await db.jobs.update_one({"_id": job_oid, "contractor_id": biz_obj}, {"$set": {k: v for k, v in update.items() if v is not None}})
         await _activity(db, business_id, "worker_update_accepted", "Worker update accepted", form.get("job") or "Worker update reviewed", "job", job_id, form.get("workerId"), form.get("worker"))
-        return {"success": True, "message": "Worker update accepted"}
+        return {"success": True, "message": "Worker update accepted", "notifications": notifications}
 
     if action_key == "approve_time_review":
         job_id = form.get("jobId") or record_id
@@ -247,9 +353,9 @@ async def _execute(db, business_id, user, action):
             update["total_time_seconds"] = max(0, int(hours * 3600))
         await db.jobs.update_one({"_id": job_oid, "contractor_id": biz_obj}, {"$set": {k: v for k, v in update.items() if v is not None}})
         await _activity(db, business_id, "payroll_time_approved", "Payroll time approved", form.get("worker") or "Time reviewed", "job", job_id, form.get("workerId"), form.get("worker"))
-        return {"success": True, "message": "Payroll time approved"}
+        return {"success": True, "message": "Payroll time approved", "notifications": notifications}
 
-    return {"success": True, "message": "Action stored only; no executor matched", "stored_only": True}
+    return {"success": True, "message": "Action stored only; no executor matched", "stored_only": True, "notifications": notifications}
 
 
 def install(app, db, get_current_user, require_employer=None):
@@ -261,8 +367,7 @@ def install(app, db, get_current_user, require_employer=None):
     @router.get("/ai/actions")
     async def list_ai_actions(current_user: dict = Depends(get_current_user)):
         business_id = current_user.get("business_id") or current_user.get("id")
-        query = {"business_id": str(business_id)}
-        items = await db.ai_approval_actions.find(query).sort("created_at", -1).to_list(100)
+        items = await db.ai_approval_actions.find({"business_id": str(business_id)}).sort("created_at", -1).to_list(100)
         return {"success": True, "actions": [_safe_doc(x) for x in items]}
 
     @router.post("/ai/actions")
@@ -327,6 +432,12 @@ def install(app, db, get_current_user, require_employer=None):
             payload.get("source") or "manual",
         )
         return {"success": True, "event": _safe_doc(event)}
+
+    @router.get("/approved-notifications")
+    async def list_approved_notifications(current_user: dict = Depends(get_current_user)):
+        business_id = current_user.get("business_id") or current_user.get("id")
+        items = await db.approved_notifications.find({"business_id": str(business_id)}).sort("created_at", -1).to_list(100)
+        return {"success": True, "notifications": [_safe_doc(x) for x in items]}
 
     app.include_router(router)
     app.state.ai_operator_routes_installed = True
