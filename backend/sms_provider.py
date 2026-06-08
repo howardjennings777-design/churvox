@@ -36,14 +36,16 @@ def _wire_launch_routes_once():
         if router is None:
             return
         try:
-            from backend import churvox_launch_routes, churvox_team_roles, churvox_recurring_routes
+            from backend import churvox_launch_routes, churvox_team_roles, churvox_recurring_routes, churvox_isolation_routes
         except Exception:
             import churvox_launch_routes
             import churvox_team_roles
             import churvox_recurring_routes
+            import churvox_isolation_routes
         churvox_launch_routes.install(router)
         churvox_team_roles.install(router)
         churvox_recurring_routes.install(router)
+        churvox_isolation_routes.install(router)
         _LAUNCH_ROUTES_WIRED = True
     except Exception as exc:
         logger.warning("Launch routes not wired yet: %s", exc)
