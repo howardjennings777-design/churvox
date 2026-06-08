@@ -1,7 +1,3 @@
-// CHURVOX_LOCKED_PLAN_TIERS_20260609
-// Backend billing keys stay as: solo, team, pro, enterprise.
-// Customer-facing plan names are: Start, Crew, Operator, Command.
-
 export const PLAN_KEYS = {
   START: "solo",
   CREW: "team",
@@ -10,12 +6,11 @@ export const PLAN_KEYS = {
 };
 
 export const COUNTRY_OPTIONS = [
-  {
-    code: "NZ",
-    label: "New Zealand",
-    currency: "NZD",
-    symbol: "NZD",
-    tax: "+ GST",
-  },
-  {
-    code: "AU",
+  { code: "NZ", label: "New Zealand", currency: "NZD", symbol: "NZD", tax: "+ GST" },
+  { code: "AU", label: "Australia", currency: "AUD", symbol: "AUD", tax: "+ GST" },
+  { code: "US", label: "United States", currency: "USD", symbol: "USD", tax: "" },
+  { code: "UK", label: "United Kingdom", currency: "GBP", symbol: "GBP", tax: "+ VAT" },
+];
+
+export const PLAN_PRICING = {
+  solo: { name: "Start", monthly
