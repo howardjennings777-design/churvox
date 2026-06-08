@@ -12,6 +12,12 @@ function roleName(value) {
   return Object.fromEntries(ROLES)[value] || "Worker";
 }
 
+function Style() {
+  return <style>{`
+    .teamRoleRoot,.teamRoleRoot *{box-sizing:border-box;color-scheme:light}.teamRoleRoot{min-height:100vh;background:#f6f1e7;color:#111827;font-family:Inter,system-ui;padding:24px 24px 120px;overflow-x:hidden}.teamRoleWrap{max-width:1240px;margin:0 auto}.teamRoleHero{background:#0b1018;color:#fff;border-left:8px solid #f97316;border-radius:34px;padding:34px;box-shadow:0 24px 70px rgba(2,6,23,.24);overflow:hidden}.teamRoleHero small,.teamRolePanel small{display:inline-flex;border-radius:999px;background:#fff7ed;color:#7c2d12;padding:8px 14px;font-size:11px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}.teamRoleHero h1{max-width:980px;margin:16px 0 8px;font-size:clamp(42px,5.2vw,68px);line-height:.9;letter-spacing:-.07em;color:#fff}.teamRoleHero p{max-width:880px;color:#f8fafc;font-weight:900;line-height:1.5}.teamRoleGrid{display:grid;grid-template-columns:minmax(0,1fr)360px;gap:18px;margin-top:18px}.teamRolePanel{background:#fffaf0;border:1px solid rgba(15,23,42,.16);border-radius:30px;padding:22px;box-shadow:0 18px 46px rgba(2,6,23,.12);min-width:0}.teamRolePanel h2{margin:0 0 16px;font-size:34px;line-height:.95;letter-spacing:-.05em;color:#111827}.teamRoleFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.teamRoleField span{display:block;color:#431407;text-transform:uppercase;letter-spacing:.11em;font-size:12px;font-weight:1000;margin-bottom:7px}.teamRoleField input,.teamRoleField select{width:100%;border:2px solid #c9a46d!important;border-radius:16px;padding:13px 15px;font-size:16px;font-weight:900;background:#fffdf7!important;color:#020617!important;-webkit-text-fill-color:#020617!important;outline:none!important;box-shadow:inset 0 0 0 9999px #fffdf7!important}.teamRoleField input:focus,.teamRoleField select:focus{border-color:#f97316!important;background:#fff!important;box-shadow:0 0 0 4px rgba(249,115,22,.16),inset 0 0 0 9999px #fff!important}.teamRoleActions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}.teamRoleActions button{border:0;border-radius:16px;padding:14px 18px;font-size:16px;font-weight:1000;cursor:pointer}.teamRoleSave{background:#16a34a;color:#052e16}.teamRoleClear{background:#0b1018;color:#fff}.teamRoleMessage{margin-top:16px;background:#14532d!important;color:#fff!important;border-radius:16px;padding:14px;font-weight:1000;line-height:1.45}.teamRoleList{display:grid;gap:10px}.teamRoleMember{background:#0b1018;color:#fff;border-left:6px solid #f97316;border-radius:18px;padding:14px}.teamRoleMember b{display:block;color:#fff}.teamRoleMember span{display:block;margin-top:6px;color:#fbbf24;font-size:12px;font-weight:1000;letter-spacing:.08em;text-transform:uppercase}.teamRoleMember small{display:block;margin-top:6px;color:#cbd5e1;font-size:12px;font-weight:900}.teamRoleEmpty{border-radius:18px;background:#111827;color:#fff;padding:14px;font-weight:1000;line-height:1.45}@media(min-width:1180px){.teamRoleRoot{padding-left:320px}.teamRoleWrap{max-width:calc(100vw - 370px);margin:0}}@media(max-width:1000px){.teamRoleRoot{padding:16px 16px 110px}.teamRoleGrid,.teamRoleFields{grid-template-columns:1fr}.teamRoleHero{padding:24px}.teamRoleHero h1{font-size:clamp(36px,12vw,56px)}}
+  `}</style>;
+}
+
 export default function TeamRolesWorkbenchPage() {
   const api = useApi();
   const [form, setForm] = React.useState({ name: "", email: "", phone: "", role: "worker" });
@@ -51,34 +57,5 @@ export default function TeamRolesWorkbenchPage() {
     }
   }
 
-  return (
-    <main style={{ minHeight: "100vh", background: "#f6f1e7", padding: 24, color: "#111827", fontFamily: "Inter, system-ui" }}>
-      <section style={{ maxWidth: 1280, margin: "0 auto" }}>
-        <article style={{ background: "#0b1018", color: "white", borderLeft: "8px solid #f97316", borderRadius: 34, padding: 30 }}>
-          <small style={{ color: "#fbbf24", fontWeight: 900, letterSpacing: ".14em", textTransform: "uppercase" }}>Team roles</small>
-          <h1 style={{ fontSize: 64, lineHeight: .9, margin: "18px 0 10px", letterSpacing: "-.07em" }}>Invite the right person into the right role.</h1>
-          <p style={{ color: "#f8fafc", fontWeight: 800 }}>Launch roles: Manager, Worker, Office Admin, and Payroll. Owner remains the account owner.</p>
-        </article>
-
-        <section style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 380px", gap: 18, marginTop: 18 }}>
-          <section style={{ background: "#fffaf0", borderRadius: 30, padding: 22 }}>
-            <h2>Add team member</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-              <input placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-              <input placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-              <input placeholder="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-              <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>{ROLES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
-            </div>
-            <button disabled={busy} onClick={saveMember} style={{ marginTop: 16, border: 0, borderRadius: 16, padding: "14px 18px", fontWeight: 900, background: "#16a34a", color: "#052e16" }}>{busy ? "Saving..." : `Save ${roleName(form.role)}`}</button>
-            <p style={{ marginTop: 16, background: "#14532d", color: "white", borderRadius: 16, padding: 14, fontWeight: 900 }}>{message}</p>
-          </section>
-
-          <aside style={{ background: "#fffaf0", borderRadius: 30, padding: 22 }}>
-            <h2>{members.length} team members</h2>
-            {members.map((member) => <article key={member.id || member.email} style={{ background: "#0b1018", color: "white", borderLeft: "6px solid #f97316", borderRadius: 18, padding: 14, marginTop: 10 }}><b>{member.name || member.email}</b><br /><span>{roleName(member.role)} · {member.status || "active"}</span><br /><small>{member.email}</small></article>)}
-          </aside>
-        </section>
-      </section>
-    </main>
-  );
+  return <main className="teamRoleRoot"><Style /><section className="teamRoleWrap"><article className="teamRoleHero"><small>Team roles</small><h1>Invite the right person into the right role.</h1><p>Launch roles: Manager, Worker, Office Admin and Payroll. Owner remains the account owner.</p></article><section className="teamRoleGrid"><section className="teamRolePanel"><small>New invite</small><h2>Add team member</h2><div className="teamRoleFields"><label className="teamRoleField"><span>Name</span><input placeholder="Full name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label><label className="teamRoleField"><span>Email</span><input placeholder="Email address" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></label><label className="teamRoleField"><span>Phone</span><input placeholder="Phone number" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></label><label className="teamRoleField"><span>Role</span><select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>{ROLES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label></div><div className="teamRoleActions"><button className="teamRoleSave" disabled={busy} onClick={saveMember}>{busy ? "Saving..." : `Invite ${roleName(form.role)}`}</button><button className="teamRoleClear" disabled={busy} onClick={() => setForm({ name: "", email: "", phone: "", role: "worker" })}>Clear</button></div><p className="teamRoleMessage">{message}</p></section><aside className="teamRolePanel"><small>Current team</small><h2>{members.length} team members</h2><div className="teamRoleList">{members.length ? members.map((member) => <article className="teamRoleMember" key={member.id || member.email}><b>{member.name || member.email}</b><span>{roleName(member.role)} · {member.status || "active"}</span><small>{member.email}</small></article>) : <p className="teamRoleEmpty">No team members loaded yet.</p>}</div></aside></section></section></main>;
 }
