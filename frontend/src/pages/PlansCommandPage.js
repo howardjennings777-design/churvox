@@ -23,19 +23,43 @@ export default function PlansCommandPage() {
   const currentPlan = String(status?.plan || user?.plan || "solo").toLowerCase();
   const currentPlanData = getPlan(currentPlan);
 
-  React.useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    if (params.get("canceled") || params.get("cancelled") || params.get("addon_cancelled")) toast.info("Checkout cancelled — no changes made");
-    if (params.get("success") || params.get("checkout") === "success") toast.success("Checkout finished. Refreshing your plan status.");
-  }, [location.search]);
-
   const refreshPlan = React.useCallback(async () => {
     const [sub, add] = await Promise.allSettled([get("/billing/subscription-status"), get("/billing/addons")]);
     if (sub.status === "fulfilled" && sub.value?.success) setStatus(sub.value.data || {});
     if (add.status === "fulfilled" && add.value?.success) setAddons(add.value.data || add.value);
     await checkAuth?.();
   }, [get, checkAuth]);
+
   React.useEffect(() => { refreshPlan(); }, [refreshPlan]);
+
+  React.useEffect(() => {
+    let alive = true;
+    async function handleReturn() {
+      const params = new URLSearchParams(location.search);
+      const addon = params.get("addon") || "";
+      const sessionId = params.get("session_id") || "";
+      if (params.get("canceled") || params.get("cancelled") || params.get("addon_cancelled")) toast.info("Checkout cancelled — no changes made");
+      if (!addon || !sessionId) {
+        if (params.get("success") || params.get("checkout") === "success") toast.success("Checkout finished. Refreshing your plan status.");
+        return;
+      }
+      setBusy("confirm-addon");
+      const res = await post("/billing/confirm-addon-checkout", { addon, session_id: sessionId }, { timeout: 25000 });
+      if (!alive) return;
+      setBusy("");
+      if (res?.success) {
+        toast.success(res?.data?.message || res?.message || "Add-on activated");
+        await refreshPlan();
+        const clean = new URL(window.location.href);
+        ["addon", "session_id", "addon_success"].forEach((key) => clean.searchParams.delete(key));
+        window.history.replaceState({}, document.title, clean.toString());
+      } else {
+        toast.error(res?.error || "Could not confirm add-on checkout");
+      }
+    }
+    handleReturn();
+    return () => { alive = false; };
+  }, [location.search, post, refreshPlan]);
 
   async function choosePlan(planKey) {
     if (!planKey) return;
@@ -63,6 +87,7 @@ export default function PlansCommandPage() {
 
   return <main className="cv-launch-plans-page min-h-screen bg-[#f7f3ea] p-4 text-slate-950 md:p-6 xl:pl-[320px]" data-command-canvas><section className="mx-auto max-w-7xl space-y-5"><FirstSetupGuide mode="full" force />
     <DarkCard className="p-6 pl-9 md:p-8 md:pl-10"><div className="inline-flex rounded-full border border-amber-300/30 bg-amber-300/10 px-4 py-2 text-[10px] font-black uppercase tracking-[.22em] text-amber-300">Plans</div><h1 className="mt-5 max-w-4xl text-5xl font-black leading-[.9] tracking-[-.08em] text-white md:text-7xl">Churvox does the admin. You approve.</h1><p className="mt-5 max-w-3xl text-sm font-bold leading-7 text-slate-300 md:text-base">Pick a plan, then add Xero or Command Growth Packs when your business needs them. MYOB is hidden for now.</p><div className="mt-6 flex flex-wrap gap-3"><Link to="/dashboard" className="rounded-2xl bg-[linear-gradient(135deg,#facc15,#fb923c_55%,#22d3ee)] px-5 py-3 text-sm font-black text-slate-950 no-underline">Command Board</Link><button type="button" onClick={refreshPlan} className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white">Refresh plan status</button></div></DarkCard>
+    {busy === "confirm-addon" ? <section className="rounded-[24px] border border-cyan-200 bg-cyan-50 p-4 text-sm font-black text-cyan-950">Confirming add-on checkout with Stripe…</section> : null}
     <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">{reviewedAccess.map(([label, value], i) => <DarkCard key={label} color={["#22d3ee", "#34d399", "#facc15", "#fb923c"][i]}><div className="text-[10px] font-black uppercase tracking-[.2em] text-amber-300">{label}</div><div className="mt-3 text-2xl font-black tracking-[-.05em] text-white">{value}</div></DarkCard>)}</section>
     <section className="grid gap-5 xl:grid-cols-4">{CHURVOX_PLANS.map((plan) => { const current = plan.key === currentPlan; return <article key={plan.key} className={`relative overflow-hidden rounded-[30px] border border-slate-800 bg-[#0b1018] p-5 pl-7 text-white shadow-[0_22px_62px_rgba(2,6,23,.22)] ${plan.featured ? "ring-2 ring-orange-400" : ""}`}><span className="absolute left-0 top-0 h-full w-2.5" style={{ background: plan.featured ? "#fb923c" : colors[plan.key] }} />{plan.featured ? <div className="absolute right-4 top-4 rounded-full bg-orange-400 px-3 py-1 text-[10px] font-black uppercase tracking-[.16em] text-slate-950">Recommended</div> : null}<div className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[.16em] text-amber-200">{current ? "Current" : plan.tag}</div><h2 className="mt-4 text-3xl font-black tracking-[-.06em]">{plan.name}</h2><div className="mt-3"><span className="text-5xl font-black tracking-[-.08em]">{plan.price}</span><span className="pb-2 text-sm font-black text-slate-300">{plan.period}</span></div><p className="mt-4 text-sm font-bold leading-6 text-slate-300">{plan.summary}</p><ul className="mt-5 grid gap-3">{plan.includes.slice(0, 7).map((feature) => <li key={feature} className="flex gap-3 text-sm font-black leading-6"><span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-emerald-300 text-[10px] text-slate-950">✓</span><span>{feature}</span></li>)}</ul><button type="button" disabled={busy === plan.key || current} onClick={() => choosePlan(plan.key)} className="mt-6 inline-flex w-full justify-center rounded-2xl bg-orange-300 px-5 py-4 text-sm font-black text-slate-950 disabled:opacity-50">{busy === plan.key ? "Opening checkout…" : current ? "Current plan" : `Choose ${plan.name}`}</button></article>; })}</section>
     <section className="grid gap-5 xl:grid-cols-2"><DarkCard color="#22d3ee"><div className="text-[10px] font-black uppercase tracking-[.2em] text-amber-300">Accounting add-on</div><h2 className="mt-2 text-3xl font-black tracking-[-.05em] text-white">{XERO_ADDON.name}</h2><div className="mt-2 text-2xl font-black text-cyan-200">{XERO_ADDON.price}{XERO_ADDON.period}</div><p className="mt-3 text-sm font-bold leading-6 text-slate-300">{XERO_ADDON.description}</p><div className="mt-3 rounded-2xl bg-white/10 p-3 text-sm font-black text-white">Status: {addons?.xero_addon_active ? "Active" : "Not active"}</div><button disabled={!canBuyXero || busy === XERO_ADDON.key || addons?.xero_addon_active} onClick={() => buyAddon(XERO_ADDON.key)} className="mt-4 rounded-2xl bg-cyan-300 px-5 py-4 text-sm font-black text-slate-950 disabled:opacity-50">{addons?.xero_addon_active ? "Xero active" : canBuyXero ? "Add Xero" : "Needs Operator or Command"}</button></DarkCard>
