@@ -54,3 +54,52 @@ main.fixed.inset-0 > .flex > aside nav a > strong {
   font-size: 14px !important;
   line-height: 1.25rem !important;
 }
+
+/* Shared records pages: Clients, Quotes, Invoices. Keep them clear of the fixed sidebar. */
+@media (min-width: 1180px) {
+  .srRoot,
+  .ivRoot {
+    padding-left: 320px !important;
+    overflow-x: hidden !important;
+  }
+
+  .srWrap,
+  .ivWrap {
+    width: 100% !important;
+    max-width: calc(100vw - 370px) !important;
+    margin: 0 !important;
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+
+  .srHero h1,
+  .ivHero h1 {
+    max-width: 980px !important;
+    font-size: clamp(42px, 5.2vw, 68px) !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .srGrid,
+  .ivGrid {
+    grid-template-columns: 280px minmax(0, 1fr) 300px !important;
+    align-items: start !important;
+  }
+
+  .srPanel,
+  .ivPanel {
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 1179px) {
+  .srRoot,
+  .ivRoot {
+    padding-left: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  .srGrid,
+  .ivGrid {
+    grid-template-columns: 1fr !important;
+  }
+}
