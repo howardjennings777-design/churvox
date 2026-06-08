@@ -1,6 +1,8 @@
 /* CHURVOX_LAUNCH_MOBILE_POLISH_20260601 */
 @media (max-width: 860px) {
-  html, body, #root {
+  html,
+  body,
+  #root {
     min-width: 0;
     overflow-x: hidden;
   }
@@ -20,7 +22,4 @@
     overflow-x: hidden !important;
   }
 
-  .c2-topbar,
-  .xcf10-topbar {
-    padding-left: 14px !important;
-    padding-right: 14px !
+  .c2-topbar
