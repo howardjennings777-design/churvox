@@ -297,7 +297,23 @@ main.fixed.inset-0 > .flex > aside nav a > strong {
 .pyHero .cxPill,
 .rpHero .cxPill,
 [class*="Hero"] .cxPill,
-[class*="Hero"] [class*="Pill"] {
+[class*="Hero"] [class*="Pill"],
+[class*="Hero"] > .bg-white,
+[class*="Hero"] .bg-white.text-slate-950,
+[class*="Hero"] .bg-white.text-slate-900,
+[class*="Hero"] .bg-white.text-slate-800,
+[class*="Hero"] .bg-white.text-orange-900,
+[class*="Hero"] .bg-white.text-amber-900,
+.ivHero > span:first-child,
+.srHero > span:first-child,
+.plHero > span:first-child,
+.stHero > span:first-child,
+.jbHero > span:first-child,
+.clHero > span:first-child,
+.qtHero > span:first-child,
+.tmHero > span:first-child,
+.pyHero > span:first-child,
+.rpHero > span:first-child {
   width: auto !important;
   min-width: 0 !important;
   max-width: max-content !important;
@@ -305,12 +321,14 @@ main.fixed.inset-0 > .flex > aside nav a > strong {
   border-radius: 16px !important;
   background: rgba(255, 255, 255, 0.07) !important;
   color: #fed7aa !important;
+  -webkit-text-fill-color: #fed7aa !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
   box-shadow: none !important;
   backdrop-filter: blur(6px) !important;
   font-size: 10px !important;
   line-height: 1.1 !important;
   letter-spacing: 0.13em !important;
+  text-transform: uppercase !important;
 }
 
 .cxHero .cxPill:empty,
