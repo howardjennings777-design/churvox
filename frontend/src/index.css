@@ -1175,3 +1175,21 @@ body:has(.cxRoot) [class*="SlipsWidget"] {
 .cxOverlay {
   z-index: 2147483647 !important;
 }
+
+/* CHURVOX_HIDE_OLD_AI_QUEUE_ON_COMMAND_20260609
+   The clean Command page uses .cxRoot/.cxWrap.
+   Hide any extra old queue/widget children that are being injected over it.
+*/
+.cxRoot > :not(style):not(.cxWrap):not(.cxOverlay) {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+/* Extra safety for the old floating queue panel on Command only */
+body:has(.cxRoot) [class*="queue"]:not(.cxWrap):not(.cxBoxes):not(.cxBox):not(.cxOverlay):not(.cxSlip),
+body:has(.cxRoot) [class*="Queue"]:not(.cxWrap):not(.cxBoxes):not(.cxBox):not(.cxOverlay):not(.cxSlip),
+body:has(.cxRoot) [class*="approval"]:not(.cxWrap):not(.cxBoxes):not(.cxBox):not(.cxOverlay):not(.cxSlip),
+body:has(.cxRoot) [class*="Approval"]:not(.cxWrap):not(.cxBoxes):not(.cxBox):not(.cxOverlay):not(.cxSlip) {
+  display: none !important;
+  pointer-events: none !important;
+}
