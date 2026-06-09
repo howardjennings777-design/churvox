@@ -1194,17 +1194,317 @@ body:has(.cxRoot) [class*="Approval"]:not(.cxWrap):not(.cxBoxes):not(.cxBox):not
   pointer-events: none !important;
 }
 
+/* CHURVOX HIDDEN TEXT CONTRAST FIX
+   Fixes light/off-white cards where text exists but only shows when highlighted. */
 
-/* CHURVOX SAFE FORM READABILITY ONLY
-   Do not force all page/card text. Only prevents invisible typing in fields. */
+.cxRoot,
+.ch4Root {
+  color: #1f2933;
+}
+
+.cxRoot :where(
+  [class*="card"],
+  [class*="Card"],
+  [class*="panel"],
+  [class*="Panel"],
+  [class*="box"],
+  [class*="Box"],
+  [class*="list"],
+  [class*="List"],
+  [class*="record"],
+  [class*="Record"],
+  [class*="empty"],
+  [class*="Empty"],
+  [class*="safe"],
+  [class*="Safe"],
+  [class*="slip"],
+  [class*="Slip"],
+  [class*="sheet"],
+  [class*="Sheet"],
+  [class*="modal"],
+  [class*="Modal"]
+):not([class*="sidebar"]):not([class*="Sidebar"]):not([class*="nav"]):not([class*="Nav"]):not([class*="hero"]):not([class*="Hero"]),
+.ch4Root :where(
+  [class*="card"],
+  [class*="Card"],
+  [class*="panel"],
+  [class*="Panel"],
+  [class*="box"],
+  [class*="Box"],
+  [class*="list"],
+  [class*="List"],
+  [class*="record"],
+  [class*="Record"],
+  [class*="empty"],
+  [class*="Empty"],
+  [class*="safe"],
+  [class*="Safe"],
+  [class*="slip"],
+  [class*="Slip"],
+  [class*="sheet"],
+  [class*="Sheet"],
+  [class*="modal"],
+  [class*="Modal"]
+):not([class*="sidebar"]):not([class*="Sidebar"]):not([class*="nav"]):not([class*="Nav"]):not([class*="hero"]):not([class*="Hero"]) {
+  color: #1f2933;
+  -webkit-text-fill-color: currentColor;
+}
+
+.cxRoot :where(h1,h2,h3,h4,h5,h6,p,span,small,label,strong,em,li,td,th),
+.ch4Root :where(h1,h2,h3,h4,h5,h6,p,span,small,label,strong,em,li,td,th) {
+  -webkit-text-fill-color: currentColor;
+}
+
 .cxRoot :where(input, textarea, select),
 .ch4Root :where(input, textarea, select) {
-  opacity: 1;
-  -webkit-text-fill-color: currentColor;
+  color: #1f2933;
+  -webkit-text-fill-color: #1f2933;
+  caret-color: #1f2933;
 }
 
 .cxRoot :where(input::placeholder, textarea::placeholder),
 .ch4Root :where(input::placeholder, textarea::placeholder) {
-  opacity: 0.75;
+  color: #6b7280;
+  -webkit-text-fill-color: #6b7280;
+  opacity: 1;
+}
+
+
+/* CHURVOX HARD READABILITY FIX - settings/forms/cards
+   Fixes text that only appears when highlighted on light Command Desk pages. */
+
+:root {
+  --churvox-readable-dark: #111827;
+  --churvox-readable-muted: #374151;
+  --churvox-readable-soft: #4b5563;
+  --churvox-readable-light: #f9fafb;
+}
+
+/* Main white/off-white workspace text */
+main,
+section,
+article,
+form,
+fieldset,
+[class*="settings"],
+[class*="Settings"],
+[class*="board"],
+[class*="Board"],
+[class*="profile"],
+[class*="Profile"],
+[class*="form"],
+[class*="Form"],
+[class*="panel"],
+[class*="Panel"],
+[class*="card"],
+[class*="Card"],
+[class*="sheet"],
+[class*="Sheet"],
+[class*="slip"],
+[class*="Slip"] {
+  text-shadow: none !important;
+}
+
+/* Light surfaces must use dark readable text */
+main :where(
+  .cxRoot,
+  .ch4Root,
+  [class*="settings"],
+  [class*="Settings"],
+  [class*="board"],
+  [class*="Board"],
+  [class*="profile"],
+  [class*="Profile"],
+  [class*="form"],
+  [class*="Form"]
+) :where(h1,h2,h3,h4,h5,h6,p,span,small,label,strong,em,li,td,th,div) {
+  opacity: 1 !important;
+}
+
+/* Labels, headings and helper text on light cards */
+main :where(label, small, p, span, h1, h2, h3, h4, h5, h6) {
+  opacity: 1 !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+main :where(label) {
+  color: var(--churvox-readable-dark) !important;
+  -webkit-text-fill-color: var(--churvox-readable-dark) !important;
+}
+
+main :where(p, small, span) {
+  color: var(--churvox-readable-muted) !important;
+  -webkit-text-fill-color: var(--churvox-readable-muted) !important;
+}
+
+main :where(h1, h2, h3, h4, h5, h6, strong) {
+  color: var(--churvox-readable-dark) !important;
+  -webkit-text-fill-color: var(--churvox-readable-dark) !important;
+}
+
+/* Inputs and textareas */
+main :where(input, textarea, select) {
+  color: var(--churvox-readable-dark) !important;
+  -webkit-text-fill-color: var(--churvox-readable-dark) !important;
+  caret-color: var(--churvox-readable-dark) !important;
+  opacity: 1 !important;
+}
+
+main :where(input::placeholder, textarea::placeholder) {
+  color: #6b7280 !important;
+  -webkit-text-fill-color: #6b7280 !important;
+  opacity: 1 !important;
+}
+
+/* Disabled-looking text was becoming invisible */
+main :where([disabled], [aria-disabled="true"], .disabled, [class*="disabled"], [class*="Disabled"]) {
+  opacity: 0.75 !important;
+}
+
+/* Keep dark information/status cards readable with light text */
+main :where(
+  [class*="dark"],
+  [class*="Dark"],
+  [class*="black"],
+  [class*="Black"],
+  [class*="status"],
+  [class*="Status"],
+  [class*="billing"],
+  [class*="Billing"],
+  [class*="sync"],
+  [class*="Sync"],
+  [class*="xero"],
+  [class*="Xero"]
+) {
+  opacity: 1 !important;
+}
+
+main :where(
+  [class*="dark"],
+  [class*="Dark"],
+  [class*="black"],
+  [class*="Black"]
+) :where(h1,h2,h3,h4,h5,h6,p,span,small,label,strong,em,li,td,th,div) {
+  color: var(--churvox-readable-light) !important;
+  -webkit-text-fill-color: var(--churvox-readable-light) !important;
+  opacity: 1 !important;
+}
+
+/* Selection should not be the only way text is visible */
+::selection {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background: #1d4ed8 !important;
+}
+
+
+/* CHURVOX PLANS DARK CARD READABILITY FIX
+   Fixes dark pricing / billing cards after the light-card contrast patch. */
+
+main :where(
+  [class*="plan"],
+  [class*="Plan"],
+  [class*="pricing"],
+  [class*="Pricing"],
+  [class*="price"],
+  [class*="Price"],
+  [class*="billing"],
+  [class*="Billing"]
+) {
+  color: #f9fafb !important;
+  -webkit-text-fill-color: currentColor !important;
+  opacity: 1 !important;
+}
+
+main :where(
+  [class*="plan"],
+  [class*="Plan"],
+  [class*="pricing"],
+  [class*="Pricing"],
+  [class*="price"],
+  [class*="Price"],
+  [class*="billing"],
+  [class*="Billing"]
+) :where(h1,h2,h3,h4,h5,h6,p,span,small,label,strong,em,li,div,button) {
+  color: #f9fafb !important;
+  -webkit-text-fill-color: #f9fafb !important;
+  opacity: 1 !important;
+}
+
+main :where(
+  [class*="plan"],
+  [class*="Plan"],
+  [class*="pricing"],
+  [class*="Pricing"],
+  [class*="price"],
+  [class*="Price"],
+  [class*="billing"],
+  [class*="Billing"]
+) :where(input, select, textarea) {
+  color: #f9fafb !important;
+  -webkit-text-fill-color: #f9fafb !important;
+  caret-color: #f9fafb !important;
+  background-color: rgba(15, 23, 42, 0.72) !important;
+  opacity: 1 !important;
+}
+
+main :where(
+  [class*="plan"],
+  [class*="Plan"],
+  [class*="pricing"],
+  [class*="Pricing"],
+  [class*="price"],
+  [class*="Price"],
+  [class*="billing"],
+  [class*="Billing"]
+) :where(option) {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  background: #ffffff !important;
+}
+
+main :where(
+  [class*="plan"],
+  [class*="Plan"],
+  [class*="pricing"],
+  [class*="Pricing"],
+  [class*="price"],
+  [class*="Price"],
+  [class*="billing"],
+  [class*="Billing"]
+) :where([class*="muted"], [class*="Muted"], [class*="sub"], [class*="Sub"], [class*="desc"], [class*="Desc"]) {
+  color: #d1d5db !important;
+  -webkit-text-fill-color: #d1d5db !important;
+  opacity: 1 !important;
+}
+
+/* Keep yellow section labels strong */
+main :where(
+  [class*="plan"],
+  [class*="Plan"],
+  [class*="pricing"],
+  [class*="Pricing"],
+  [class*="price"],
+  [class*="Price"],
+  [class*="billing"],
+  [class*="Billing"]
+) :where([class*="label"], [class*="Label"], [class*="eyebrow"], [class*="Eyebrow"], small) {
+  opacity: 1 !important;
+}
+
+/* Disabled buttons on dark cards should still be readable */
+main :where(
+  [class*="plan"],
+  [class*="Plan"],
+  [class*="pricing"],
+  [class*="Pricing"],
+  [class*="price"],
+  [class*="Price"],
+  [class*="billing"],
+  [class*="Billing"]
+) :where(button:disabled, [aria-disabled="true"]) {
+  color: #e5e7eb !important;
+  -webkit-text-fill-color: #e5e7eb !important;
+  opacity: 0.75 !important;
 }
 
