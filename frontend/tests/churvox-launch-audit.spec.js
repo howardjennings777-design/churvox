@@ -179,6 +179,12 @@ test.describe('Churvox responsive audit', () => {
 test.describe('Churvox plans pricing audit', () => {
   test('country selector changes visible plan and add-on pricing', async ({ page }) => {
     const problems = await attachWatchers(page);
+
+    if (TEST_EMAIL && TEST_PASSWORD) {
+      const loggedIn = await tryLogin(page);
+      expect(loggedIn, 'Test login should work before checking Plans pricing').toBeTruthy();
+    }
+
     await gotoAndSettle(page, '/plans');
     await assertNoCrashOrBlank(page, '/plans');
 
@@ -258,6 +264,11 @@ test.describe('Churvox authenticated app audit', () => {
 
 test.describe('Churvox visual safety audit', () => {
   test('important text is visible and not whitewashed on plans', async ({ page }) => {
+    if (TEST_EMAIL && TEST_PASSWORD) {
+      const loggedIn = await tryLogin(page);
+      expect(loggedIn, 'Test login should work before checking Plans visibility').toBeTruthy();
+    }
+
     await gotoAndSettle(page, '/plans');
 
     const visibleTexts = [
