@@ -1,0 +1,6 @@
+select option,
+select optgroup {
+  color: #111827 !important;
+  background: #ffffff !important;
+  opacity: 1 !important;
+}
