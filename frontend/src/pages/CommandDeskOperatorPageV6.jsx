@@ -13,6 +13,12 @@ const INVOICE_DELIVERY_OPTIONS = [
 ];
 
 const CARD_META = {
+  approvals: {
+    status: "Owner queue",
+    summary: "One master place for the yes, edit, or decline decisions Churvox prepared.",
+    button: "Open queue",
+    tone: "hot",
+  },
   money: {
     status: "Needs approval",
     summary: "Invoice drafts, overdue follow-ups, delivery choices and accounting checks.",
@@ -43,6 +49,18 @@ const CARD_META = {
     button: "Check clients",
     tone: "ready",
   },
+  workers: {
+    status: "Field review",
+    summary: "Worker notes, proof photos, time issues and completion checks before invoicing.",
+    button: "Review updates",
+    tone: "ready",
+  },
+  payroll: {
+    status: "Time check",
+    summary: "Reviewed hours, pause time, holds and payroll handoff decisions.",
+    button: "Review time",
+    tone: "ready",
+  },
   setup: {
     status: "Setup required",
     summary: "Billing, Xero, legal, branding, team and trust items that can block launch.",
@@ -52,13 +70,38 @@ const CARD_META = {
 };
 
 const COMMAND_STATS = [
-  ["Today", "AI lanes ready", "Open a box, review the slip, approve."],
-  ["Waiting on you", "Owner decisions", "Nothing risky happens silently."],
-  ["Main blockers", "Money + dispatch", "Cashflow and crew get checked first."],
-  ["Rule", "Approve-first", "Churvox prepares. Owner controls."],
+  ["Today", "AI lanes ready", "Review the slips, then approve."],
+  ["Waiting", "Owner decisions", "No risky silent changes."],
+  ["Focus", "Money + dispatch", "Cashflow and crew first."],
+  ["Rule", "Approve-first", "Churvox prepares. You control."],
 ];
 
 const SLIPS = [
+  {
+    key: "approvals",
+    title: "Approvals",
+    card: "Master queue for owner decisions prepared by Churvox.",
+    formTitle: "Approval decision",
+    actionKey: "master_approval_decision",
+    recordType: "approval",
+    recordLabel: "Approval item",
+    notifyOptions: ["Internal only", "Notify owner", "No notification"],
+    found: "Churvox found work that should not happen without owner approval.",
+    prepared: "A clear decision with the linked record, owner changes and approval note.",
+    why: "This keeps the AI Operator approval-first and stops silent changes.",
+    risk: "High-risk actions must show source, record and outcome before approval.",
+    after: "The prepared action is accepted, declined, or sent back for editing.",
+    approveLabel: "Approve decision",
+    fields: [
+      ["approvalSource", "Approval source", "select", ["Money", "Crew", "Quote", "Job", "Client", "Worker update", "Payroll", "Setup"]],
+      ["linkedRecord", "Linked record"],
+      ["riskLevel", "Risk level", "select", ["Normal", "Important", "Urgent", "High risk"]],
+      ["dueStatus", "Due / urgency"],
+      ["preparedAction", "Prepared action", "textarea"],
+      ["ownerChanges", "Owner changes before approval", "textarea"],
+      ["decisionNote", "Decision note", "textarea"],
+    ],
+  },
   {
     key: "money",
     title: "Money",
@@ -198,6 +241,63 @@ const SLIPS = [
       ["serviceAddress", "Service address"],
       ["siteNotes", "Property / access notes", "textarea"],
       ["clientNote", "Client note", "textarea"],
+    ],
+  },
+  {
+    key: "workers",
+    title: "Worker updates",
+    card: "Field notes, proof, timing and completion issues.",
+    formTitle: "Worker update review",
+    actionKey: "review_worker_update",
+    recordType: "worker_update",
+    recordLabel: "Worker update",
+    notifyOptions: ["Internal only", "Notify owner", "Notify worker"],
+    found: "A field update needs owner review before invoice, payroll or follow-up work continues.",
+    prepared: "Worker note, proof status, timing and owner review note are ready to accept or reject.",
+    why: "Worker updates connect job completion, invoice preparation and payroll review.",
+    risk: "Check missing photos, client issues, time issues and site verification before accepting.",
+    after: "The update is accepted and can feed invoice preparation or payroll review.",
+    approveLabel: "Accept worker update",
+    fields: [
+      ["worker", "Worker"],
+      ["job", "Job"],
+      ["completionStatus", "Completion status", "select", ["Completed", "Needs review", "Photos missing", "Client issue", "Rejected"]],
+      ["proofStatus", "Photo / proof status", "select", ["Photos attached", "No photos", "Needs owner review", "Not required"]],
+      ["timeStarted", "Started time"],
+      ["timeCompleted", "Completed time"],
+      ["siteCheck", "Owner-side site check", "select", ["Not checked", "On site", "Near site", "Away from site", "GPS missing"]],
+      ["issueFlag", "Issue flag", "select", ["None", "Client issue", "Pricing issue", "Photo missing", "Time issue", "Needs call"]],
+      ["workerNote", "Worker note", "textarea"],
+      ["ownerReview", "Owner review note", "textarea"],
+    ],
+  },
+  {
+    key: "payroll",
+    title: "Payroll/time",
+    card: "Reviewed hours, pause time, holds and payroll handoff.",
+    formTitle: "Payroll time review",
+    actionKey: "approve_payroll_time",
+    recordType: "timesheet",
+    recordLabel: "Time record",
+    notifyOptions: ["Internal only", "Notify payroll", "Notify owner"],
+    found: "A worker time record needs review before payroll export or handoff.",
+    prepared: "Reviewed hours, pause time, hold reason and export note are ready for payroll approval.",
+    why: "Payroll needs clean time records separate from normal job admin.",
+    risk: "Hold anything with missing start/finish, strange pause time or disputed hours.",
+    after: "The time is marked ready, held for review, or prepared for export/handoff.",
+    approveLabel: "Approve time review",
+    fields: [
+      ["worker", "Worker"],
+      ["payPeriod", "Pay period"],
+      ["jobSource", "Job / time source"],
+      ["startTime", "Start time"],
+      ["finishTime", "Finish time"],
+      ["totalTime", "Total time"],
+      ["pauseTime", "Pause time"],
+      ["reviewedHours", "Reviewed hours"],
+      ["payStatus", "Payroll status", "select", ["Ready", "Needs review", "Hold", "Exported"]],
+      ["holdReason", "Hold reason", "textarea"],
+      ["payrollNote", "Payroll note", "textarea"],
     ],
   },
   {
@@ -362,13 +462,14 @@ function UrgentCard({ onOpen }) {
   return (
     <section className="cxUrgent">
       <div>
-        <span>Most urgent right now</span>
-        <h2>Start with money and crew dispatch.</h2>
-        <p>Those are the areas most likely to block cashflow, customer updates, worker assignment, or the next job step.</p>
+        <span>Today’s focus</span>
+        <h2>Start with money, crew, and approvals.</h2>
+        <p>Those are the actions most likely to block cashflow, customer updates, worker assignment, or the next job step.</p>
       </div>
       <div className="cxUrgentActions">
         <button onClick={() => onOpen(SLIP_BY_KEY.money)}>Review money</button>
         <button onClick={() => onOpen(SLIP_BY_KEY.crew)}>Assign crew</button>
+        <button onClick={() => onOpen(SLIP_BY_KEY.approvals)}>Approvals</button>
       </div>
     </section>
   );
@@ -517,10 +618,10 @@ function Queue({ actions, backendReady, reload }) {
 
 function Style() {
   return <style>{`
-.cxRoot,.cxRoot *{box-sizing:border-box;color-scheme:light;text-shadow:none}.cxRoot{position:relative;z-index:1;min-height:100svh;width:100%;max-width:100vw;overflow-x:hidden;background:#f6f1e7;color:#111827;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:14px 14px 112px}.cxWrap{width:min(1260px,100%);margin:0 auto}.cxHero,.cxQueue{background:#0b1018;color:#fff;border-radius:28px;padding:22px;border-left:8px solid #f97316;box-shadow:0 18px 52px rgba(2,6,23,.22)}.cxTopLine{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px}.cxBrand{display:flex;align-items:center;gap:10px;color:#fff;font-size:14px;font-weight:1000;letter-spacing:.18em;text-transform:uppercase}.cxBrandMark{display:grid;place-items:center;width:38px;height:38px;border-radius:13px;background:linear-gradient(135deg,#f97316,#fbbf24);color:#111827;font-size:18px;font-weight:1000;letter-spacing:-.06em}.cxPill,.cxQueue span{display:inline-flex;border-radius:999px;padding:8px 12px;background:#fff7ed;color:#7c2d12;font-size:10px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}.cxHero h1{margin:0 0 10px;font-size:clamp(42px,9vw,82px);line-height:.88;letter-spacing:-.065em;color:#fff;max-width:930px}.cxHero p,.cxQueue p{margin:0;color:#f8fafc;font-weight:900;line-height:1.55;max-width:890px}.cxStats{display:grid;grid-template-columns:1fr;gap:10px;margin-top:18px}.cxStat{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:13px}.cxStat small{display:block;color:#fed7aa;text-transform:uppercase;letter-spacing:.12em;font-size:10px;font-weight:1000;margin-bottom:5px}.cxStat b{display:block;color:#fff;font-size:19px;line-height:1.05}.cxStat span{display:block;color:#e2e8f0;font-size:12px;font-weight:800;line-height:1.35;margin-top:5px}.cxUrgent{display:grid;gap:16px;margin-top:14px;background:#fffaf0;border:1px solid rgba(15,23,42,.14);border-left:8px solid #f97316;border-radius:24px;padding:18px;box-shadow:0 18px 52px rgba(2,6,23,.16)}.cxUrgent span{display:inline-flex;margin-bottom:8px;border-radius:999px;background:#111827;color:#fbbf24;padding:7px 11px;text-transform:uppercase;letter-spacing:.12em;font-size:10px;font-weight:1000}.cxUrgent h2{font-size:clamp(28px,7vw,40px);line-height:.96;letter-spacing:-.04em;margin:0 0 8px;color:#111827}.cxUrgent p{margin:0;color:#334155;font-weight:900;max-width:790px;line-height:1.45}.cxUrgentActions{display:flex;gap:10px;flex-wrap:wrap}.cxUrgentActions button{border:0;border-radius:16px;background:#111827;color:#fff;padding:14px 16px;font-weight:1000;cursor:pointer;min-width:140px}.cxUrgentActions button:first-child{background:#f97316;color:#111827}.cxBoxes{display:grid;grid-template-columns:1fr;gap:14px;margin-top:14px}.cxBox{width:100%;background:#0b1018;color:#fff;border:1px solid rgba(255,255,255,.14);border-left:8px solid #f97316;border-radius:24px;padding:18px;text-align:left;min-height:0;display:grid;gap:10px;cursor:pointer;box-shadow:0 16px 44px rgba(2,6,23,.20)}.cxBox.warn{border-left-color:#f59e0b}.cxBox.hot{border-left-color:#fb923c}.cxStatusLine{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.cxStatus{display:inline-flex;border-radius:999px;padding:7px 10px;background:#064e3b;color:#d1fae5;text-transform:uppercase;letter-spacing:.11em;font-size:10px;font-weight:1000}.cxStatus.warn{background:#451a03;color:#fed7aa}.cxStatus.hot{background:#7c2d12;color:#ffedd5}.cxSlipType{color:#fed7aa;text-transform:uppercase;font-size:10px;letter-spacing:.12em;font-weight:1000}.cxBox b{font-size:clamp(26px,6vw,36px);line-height:.95;color:#fff;letter-spacing:-.04em}.cxBox p{color:#f1f5f9;font-weight:900;line-height:1.4;margin:0}.cxBox em{font-style:normal;justify-self:start;border-radius:999px;background:linear-gradient(135deg,#facc15,#fb923c 55%,#22d3ee);color:#111827;padding:10px 14px;font-weight:1000}.cxQueue{margin-top:14px}.cxQueue h2{margin:10px 0 8px;color:#fff;font-size:clamp(26px,6vw,42px);line-height:.95}.cxQueueRows{display:grid;grid-template-columns:1fr;gap:10px;margin-top:14px}.cxQueueRows article{background:#fffaf0;color:#111827;border-radius:18px;padding:14px;border-left:5px solid #f97316}.cxQueueRows b,.cxQueueRows strong{display:block}.cxQueueRows strong{color:#15803d;text-transform:uppercase;font-size:11px;margin-top:5px}.cxQueueRows p{color:#475569;font-size:12px;margin:6px 0 0}.cxQueue button{margin-top:14px;border:0;border-radius:14px;background:#ffedd5;color:#7c2d12;padding:12px 14px;font-weight:1000}.cxEmpty{background:#111827;border-radius:18px;padding:14px}.cxOverlay{position:fixed;inset:0;z-index:2147483647;background:rgba(2,6,23,.88);padding:10px;display:flex;align-items:stretch;overflow:hidden}.cxSlip{width:100%;max-width:1180px;margin:auto;background:#f7efe3;border-radius:24px;overflow:hidden;display:grid;grid-template-rows:auto 1fr;box-shadow:0 32px 110px rgba(2,6,23,.55);max-height:calc(100svh - 20px)}.cxSlip header{background:#0b1018;color:#fff;border-left:8px solid #f97316;padding:18px;display:grid;grid-template-columns:1fr;gap:12px}.cxSlip header small{color:#fed7aa;font-weight:1000;letter-spacing:.14em}.cxSlip header h1{font-size:clamp(30px,9vw,54px);line-height:.94;margin:8px 0;color:#fff;letter-spacing:-.045em}.cxSlip header p{font-weight:900;color:#f8fafc;margin:0}.cxSlip header button{justify-self:start;border:0;border-radius:15px;padding:12px 18px;font-weight:1000;background:#fff;color:#111827}.cxSlip main{min-height:0;display:grid;grid-template-columns:1fr;gap:12px;padding:12px;overflow:auto}.cxFormPanel,.cxControls{background:#fffaf0;border:1px solid rgba(15,23,42,.20);border-radius:22px;padding:16px;box-shadow:0 10px 28px rgba(15,23,42,.10);color:#111827}.cxFormTop{display:flex;align-items:center;margin-bottom:10px}.cxFormTop span{display:inline-flex;background:#111827;color:#fbbf24;border-radius:999px;padding:7px 12px;text-transform:uppercase;letter-spacing:.12em;font-size:10px;font-weight:1000}.cxLogicStrip{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}.cxLogicStrip i{font-style:normal;border-radius:999px;background:#fff7ed;color:#7c2d12;border:1px solid #fed7aa;padding:7px 10px;font-size:10px;font-weight:1000;letter-spacing:.06em;text-transform:uppercase}.cxDeliverySummary,.cxMiniDelivery{background:#0b1018;color:#fff;border-left:7px solid #f97316;border-radius:20px;padding:14px;margin-bottom:14px;display:grid;gap:7px}.cxMiniDelivery{border-left-width:5px;margin:0}.cxDeliverySummary b,.cxMiniDelivery b{color:#fbbf24;text-transform:uppercase;letter-spacing:.12em;font-size:10px}.cxDeliverySummary span,.cxMiniDelivery span,.cxMiniDelivery em{color:#f8fafc;font-style:normal;font-weight:900;line-height:1.4}.cxContextGrid{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:14px}.cxContextCard{border-radius:16px;background:#111827;color:#fff;padding:12px;border-left:5px solid #f97316}.cxContextCard.warn{background:#451a03;border-left-color:#f59e0b}.cxContextCard.ok{background:#052e16;border-left-color:#22c55e}.cxContextCard b{display:block;color:#fbbf24;text-transform:uppercase;letter-spacing:.12em;font-size:10px;font-weight:1000;margin-bottom:6px}.cxContextCard span{display:block;color:#f8fafc;font-size:13px;font-weight:900;line-height:1.42}.cxSectionLabel{margin:14px 0 8px;color:#431407;text-transform:uppercase;letter-spacing:.13em;font-size:11px;font-weight:1000}.cxFields{display:grid;grid-template-columns:1fr;gap:12px}.cxField span{display:block;color:#431407;text-transform:uppercase;letter-spacing:.10em;font-size:11px;font-weight:1000;margin-bottom:7px}.cxField input,.cxField textarea,.cxField select{width:100%;border:2px solid #d6b98f;border-radius:16px;padding:13px 15px;font-size:16px;font-weight:900;background:#fffdf7!important;color:#0f172a!important;-webkit-text-fill-color:#0f172a!important;outline:none;box-shadow:inset 0 0 0 9999px #fffdf7!important}.cxField textarea{min-height:104px;resize:vertical}.cxControls{display:grid;gap:10px}.cxControls h2{font-size:clamp(26px,7vw,34px);line-height:.95;margin:0;color:#111827}.cxControls p{background:#14532d;color:#fff;border-radius:16px;padding:12px 14px;font-weight:1000;line-height:1.45;margin:0}.cxControls button{width:100%;border:0;border-radius:16px;padding:14px;font-weight:1000;font-size:16px;cursor:pointer}.cxControls .save{background:#ffedd5;color:#7c2d12;border:2px solid #fed7aa}.cxControls .approve{background:#16a34a;color:#052e16;border:2px solid #15803d}.cxControls .decline{background:#fecaca;color:#7f1d1d;border:2px solid #fca5a5}.cxControls .dark{background:#111827;color:#fff}
+.cxRoot,.cxRoot *{box-sizing:border-box;color-scheme:light;text-shadow:none}.cxRoot{position:relative;z-index:1;min-height:100svh;width:100%;max-width:100vw;overflow-x:hidden;background:#f6f1e7;color:#111827;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:14px 14px 112px}.cxWrap{width:min(1260px,100%);margin:0 auto}.cxHero,.cxQueue{background:#0b1018;color:#fff;border-radius:28px;padding:18px 22px;border-left:8px solid #f97316;box-shadow:0 18px 52px rgba(2,6,23,.22)}.cxHero{position:relative;overflow:hidden;isolation:isolate;background:radial-gradient(circle at 82% -28%,rgba(249,115,22,.55),transparent 34%),radial-gradient(circle at 15% 115%,rgba(34,211,238,.20),transparent 30%),linear-gradient(135deg,#0b1018 0%,#111827 54%,#070b12 100%)}.cxHero:before{content:"";position:absolute;inset:0;z-index:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.055) 0 1px,transparent 1px 56px),repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 46px),linear-gradient(120deg,transparent 0 46%,rgba(251,191,36,.13) 46% 47%,transparent 47% 100%);opacity:.72}.cxHero:after{content:"";position:absolute;right:-80px;top:-80px;width:250px;height:250px;border:36px solid rgba(249,115,22,.18);border-radius:999px;z-index:0}.cxHero>*{position:relative;z-index:1}.cxTopLine{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px}.cxBrand{display:flex;align-items:center;gap:10px;color:#fff;font-size:13px;font-weight:1000;letter-spacing:.18em;text-transform:uppercase}.cxBrandMark{display:grid;place-items:center;width:34px;height:34px;border-radius:12px;background:linear-gradient(135deg,#f97316,#fbbf24);color:#111827;font-size:16px;font-weight:1000;letter-spacing:-.06em}.cxPill,.cxQueue span{display:inline-flex;border-radius:999px;padding:7px 11px;background:#fff7ed;color:#7c2d12;font-size:10px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}.cxHero h1{margin:0 0 8px;font-size:clamp(34px,6.8vw,60px);line-height:.9;letter-spacing:-.06em;color:#fff;max-width:820px}.cxHero p,.cxQueue p{margin:0;color:#f8fafc;font-weight:900;line-height:1.42;max-width:890px}.cxStats{display:grid;grid-template-columns:1fr;gap:9px;margin-top:14px}.cxStat{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:11px}.cxStat small{display:block;color:#fed7aa;text-transform:uppercase;letter-spacing:.12em;font-size:9px;font-weight:1000;margin-bottom:4px}.cxStat b{display:block;color:#fff;font-size:17px;line-height:1.05}.cxStat span{display:block;color:#e2e8f0;font-size:11px;font-weight:800;line-height:1.3;margin-top:4px}.cxUrgent{display:grid;gap:16px;margin-top:14px;background:#fffaf0;border:1px solid rgba(15,23,42,.14);border-left:8px solid #f97316;border-radius:24px;padding:18px;box-shadow:0 18px 52px rgba(2,6,23,.16)}.cxUrgent span{display:inline-flex;margin-bottom:8px;border-radius:999px;background:#111827;color:#fbbf24;padding:7px 11px;text-transform:uppercase;letter-spacing:.12em;font-size:10px;font-weight:1000}.cxUrgent h2{font-size:clamp(28px,7vw,40px);line-height:.96;letter-spacing:-.04em;margin:0 0 8px;color:#111827}.cxUrgent p{margin:0;color:#334155;font-weight:900;max-width:790px;line-height:1.45}.cxUrgentActions{display:flex;gap:10px;flex-wrap:wrap}.cxUrgentActions button{border:0;border-radius:16px;background:#111827;color:#fff;padding:14px 16px;font-weight:1000;cursor:pointer;min-width:128px}.cxUrgentActions button:first-child{background:#f97316;color:#111827}.cxBoxes{display:grid;grid-template-columns:1fr;gap:14px;margin-top:14px}.cxBox{width:100%;background:#0b1018;color:#fff;border:1px solid rgba(255,255,255,.14);border-left:8px solid #f97316;border-radius:24px;padding:18px;text-align:left;min-height:0;display:grid;gap:10px;cursor:pointer;box-shadow:0 16px 44px rgba(2,6,23,.20)}.cxBox.warn{border-left-color:#f59e0b}.cxBox.hot{border-left-color:#fb923c}.cxStatusLine{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.cxStatus{display:inline-flex;border-radius:999px;padding:7px 10px;background:#064e3b;color:#d1fae5;text-transform:uppercase;letter-spacing:.11em;font-size:10px;font-weight:1000}.cxStatus.warn{background:#451a03;color:#fed7aa}.cxStatus.hot{background:#7c2d12;color:#ffedd5}.cxSlipType{color:#fed7aa;text-transform:uppercase;font-size:10px;letter-spacing:.12em;font-weight:1000}.cxBox b{font-size:clamp(26px,6vw,36px);line-height:.95;color:#fff;letter-spacing:-.04em}.cxBox p{color:#f1f5f9;font-weight:900;line-height:1.4;margin:0}.cxBox em{font-style:normal;justify-self:start;border-radius:999px;background:linear-gradient(135deg,#facc15,#fb923c 55%,#22d3ee);color:#111827;padding:10px 14px;font-weight:1000}.cxQueue{margin-top:14px}.cxQueue h2{margin:10px 0 8px;color:#fff;font-size:clamp(26px,6vw,42px);line-height:.95}.cxQueueRows{display:grid;grid-template-columns:1fr;gap:10px;margin-top:14px}.cxQueueRows article{background:#fffaf0;color:#111827;border-radius:18px;padding:14px;border-left:5px solid #f97316}.cxQueueRows b,.cxQueueRows strong{display:block}.cxQueueRows strong{color:#15803d;text-transform:uppercase;font-size:11px;margin-top:5px}.cxQueueRows p{color:#475569;font-size:12px;margin:6px 0 0}.cxQueue button{margin-top:14px;border:0;border-radius:14px;background:#ffedd5;color:#7c2d12;padding:12px 14px;font-weight:1000}.cxEmpty{background:#111827;border-radius:18px;padding:14px}.cxOverlay{position:fixed;inset:0;z-index:2147483647;background:rgba(2,6,23,.88);padding:10px;display:flex;align-items:stretch;overflow:hidden}.cxSlip{width:100%;max-width:1180px;margin:auto;background:#f7efe3;border-radius:24px;overflow:hidden;display:grid;grid-template-rows:auto 1fr;box-shadow:0 32px 110px rgba(2,6,23,.55);max-height:calc(100svh - 20px)}.cxSlip header{background:#0b1018;color:#fff;border-left:8px solid #f97316;padding:18px;display:grid;grid-template-columns:1fr;gap:12px}.cxSlip header small{color:#fed7aa;font-weight:1000;letter-spacing:.14em}.cxSlip header h1{font-size:clamp(30px,9vw,54px);line-height:.94;margin:8px 0;color:#fff;letter-spacing:-.045em}.cxSlip header p{font-weight:900;color:#f8fafc;margin:0}.cxSlip header button{justify-self:start;border:0;border-radius:15px;padding:12px 18px;font-weight:1000;background:#fff;color:#111827}.cxSlip main{min-height:0;display:grid;grid-template-columns:1fr;gap:12px;padding:12px;overflow:auto}.cxFormPanel,.cxControls{background:#fffaf0;border:1px solid rgba(15,23,42,.20);border-radius:22px;padding:16px;box-shadow:0 10px 28px rgba(15,23,42,.10);color:#111827}.cxFormTop{display:flex;align-items:center;margin-bottom:10px}.cxFormTop span{display:inline-flex;background:#111827;color:#fbbf24;border-radius:999px;padding:7px 12px;text-transform:uppercase;letter-spacing:.12em;font-size:10px;font-weight:1000}.cxLogicStrip{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}.cxLogicStrip i{font-style:normal;border-radius:999px;background:#fff7ed;color:#7c2d12;border:1px solid #fed7aa;padding:7px 10px;font-size:10px;font-weight:1000;letter-spacing:.06em;text-transform:uppercase}.cxDeliverySummary,.cxMiniDelivery{background:#0b1018;color:#fff;border-left:7px solid #f97316;border-radius:20px;padding:14px;margin-bottom:14px;display:grid;gap:7px}.cxMiniDelivery{border-left-width:5px;margin:0}.cxDeliverySummary b,.cxMiniDelivery b{color:#fbbf24;text-transform:uppercase;letter-spacing:.12em;font-size:10px}.cxDeliverySummary span,.cxMiniDelivery span,.cxMiniDelivery em{color:#f8fafc;font-style:normal;font-weight:900;line-height:1.4}.cxContextGrid{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:14px}.cxContextCard{border-radius:16px;background:#111827;color:#fff;padding:12px;border-left:5px solid #f97316}.cxContextCard.warn{background:#451a03;border-left-color:#f59e0b}.cxContextCard.ok{background:#052e16;border-left-color:#22c55e}.cxContextCard b{display:block;color:#fbbf24;text-transform:uppercase;letter-spacing:.12em;font-size:10px;font-weight:1000;margin-bottom:6px}.cxContextCard span{display:block;color:#f8fafc;font-size:13px;font-weight:900;line-height:1.42}.cxSectionLabel{margin:14px 0 8px;color:#431407;text-transform:uppercase;letter-spacing:.13em;font-size:11px;font-weight:1000}.cxFields{display:grid;grid-template-columns:1fr;gap:12px}.cxField span{display:block;color:#431407;text-transform:uppercase;letter-spacing:.10em;font-size:11px;font-weight:1000;margin-bottom:7px}.cxField input,.cxField textarea,.cxField select{width:100%;border:2px solid #d6b98f;border-radius:16px;padding:13px 15px;font-size:16px;font-weight:900;background:#fffdf7!important;color:#0f172a!important;-webkit-text-fill-color:#0f172a!important;outline:none;box-shadow:inset 0 0 0 9999px #fffdf7!important}.cxField textarea{min-height:104px;resize:vertical}.cxControls{display:grid;gap:10px}.cxControls h2{font-size:clamp(26px,7vw,34px);line-height:.95;margin:0;color:#111827}.cxControls p{background:#14532d;color:#fff;border-radius:16px;padding:12px 14px;font-weight:1000;line-height:1.45;margin:0}.cxControls button{width:100%;border:0;border-radius:16px;padding:14px;font-weight:1000;font-size:16px;cursor:pointer}.cxControls .save{background:#ffedd5;color:#7c2d12;border:2px solid #fed7aa}.cxControls .approve{background:#16a34a;color:#052e16;border:2px solid #15803d}.cxControls .decline{background:#fecaca;color:#7f1d1d;border:2px solid #fca5a5}.cxControls .dark{background:#111827;color:#fff}
 @media (min-width:700px){.cxRoot{padding:20px 20px 120px}.cxStats{grid-template-columns:repeat(2,minmax(0,1fr))}.cxBoxes{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.cxFields,.cxContextGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.cxField.wide,.cxContextCard.ok{grid-column:1/-1}.cxQueueRows{grid-template-columns:repeat(2,minmax(0,1fr))}.cxSlip header{grid-template-columns:1fr auto}.cxSlip header button{justify-self:end}.cxSlip main{padding:16px;gap:16px}.cxUrgent{grid-template-columns:minmax(0,1fr)auto;align-items:center}.cxUrgentActions{justify-content:flex-end}}
-@media (min-width:1024px){.cxRoot{padding:24px 24px 130px 310px}.cxStats{grid-template-columns:repeat(4,minmax(0,1fr))}.cxBoxes{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}.cxQueueRows{grid-template-columns:repeat(4,minmax(0,1fr))}.cxSlip main{grid-template-columns:minmax(0,1fr)330px}.cxControls{position:sticky;top:0;align-self:start}.cxOverlay{padding:18px 18px 18px 306px}.cxHero,.cxQueue{border-radius:34px;padding:30px}.cxBox{border-radius:28px;padding:22px;min-height:210px}.cxUrgent{border-radius:28px;padding:22px 24px}}
-@media (max-width:420px){.cxRoot{padding:10px 10px 104px}.cxHero,.cxQueue{border-radius:24px;padding:18px}.cxTopLine{align-items:flex-start;flex-direction:column}.cxBox{border-radius:22px;padding:16px}.cxSlip{border-radius:20px}.cxSlip header,.cxFormPanel,.cxControls{padding:14px}}
+@media (min-width:1024px){.cxRoot{padding:24px 24px 130px 310px}.cxStats{grid-template-columns:repeat(4,minmax(0,1fr))}.cxBoxes{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}.cxQueueRows{grid-template-columns:repeat(4,minmax(0,1fr))}.cxSlip main{grid-template-columns:minmax(0,1fr)330px}.cxControls{position:sticky;top:0;align-self:start}.cxOverlay{padding:18px 18px 18px 306px}.cxHero,.cxQueue{border-radius:34px;padding:22px 26px}.cxBox{border-radius:28px;padding:20px;min-height:198px}.cxUrgent{border-radius:28px;padding:20px 24px}}
+@media (max-width:420px){.cxRoot{padding:10px 10px 104px}.cxHero,.cxQueue{border-radius:24px;padding:16px}.cxTopLine{align-items:flex-start;flex-direction:column}.cxBox{border-radius:22px;padding:16px}.cxSlip{border-radius:20px}.cxSlip header,.cxFormPanel,.cxControls{padding:14px}}
 `}</style>;
 }
 
