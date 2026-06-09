@@ -435,3 +435,7 @@ export function getAddonPricingForCountry(addonOrKey, countryCode) {
   return addonPriceForCountry(addonOrKey, countryCode);
 }
 
+export const COMMAND_GROWTH_PACK = GROWTH_PACK;
+export const COMMAND_GROWTH_PACK_ADDON = GROWTH_PACK;
+export const GROWTH_PACK_ADDON = GROWTH_PACK;
+
