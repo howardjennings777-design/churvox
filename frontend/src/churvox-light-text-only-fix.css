@@ -1,1 +1,92 @@
-.xeroConnectionPanel,.xeroStatusCard,.xeroWarning,.xeroRulesBox,.xeroSafetyNote,.cxRoot .cxCard,.cxRoot .cxPanel,.cxRoot .cxSheet,.cxRoot .cxForm,.ch4Root .cxCard,.ch4Root .cxPanel,.ch4Root .cxSheet,.ch4Root .cxForm{color:#111827!important;opacity:1!important}.xeroConnectionPanel *,.xeroStatusCard *,.xeroWarning,.xeroRulesBox,.xeroSafetyNote{color:#111827!important;opacity:1!important}
+/* CHURVOX LIGHT SURFACE TEXT FIX
+   Only targets light/off-white panels so dark pricing/command cards are left alone. */
+
+:root {
+  --cv-light-text: #111827;
+  --cv-light-muted: #374151;
+  --cv-light-soft: #4b5563;
+}
+
+/* Known light panels/cards/forms */
+.xeroConnectionPanel,
+.xeroStatusCard,
+.xeroWarning,
+.xeroRulesBox,
+.xeroSafetyNote,
+.cxRoot .cxCard,
+.cxRoot .cxPanel,
+.cxRoot .cxSheet,
+.cxRoot .cxForm,
+.cxRoot .cxModal,
+.cxRoot .cxDrawer,
+.ch4Root .cxCard,
+.ch4Root .cxPanel,
+.ch4Root .cxSheet,
+.ch4Root .cxForm,
+.ch4Root .cxModal,
+.ch4Root .cxDrawer,
+[class*="light"] [class*="card"],
+[class*="Light"] [class*="card"],
+[class*="settings"] [class*="card"],
+[class*="Settings"] [class*="card"],
+[class*="profile"] [class*="card"],
+[class*="Profile"] [class*="card"],
+[class*="form"] [class*="card"],
+[class*="Form"] [class*="card"] {
+  color: var(--cv-light-text) !important;
+  -webkit-text-fill-color: var(--cv-light-text) !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+/* Text inside those light panels */
+.xeroConnectionPanel :where(h1,h2,h3,h4,h5,h6,p,span,small,label,strong,em,li,div),
+.xeroStatusCard :where(h1,h2,h3,h4,h5,h6,p,span,small,label,strong,em,li,div),
+.xeroWarning :where(h1,h2,h3,h4,h5,h6,p,span,small,label,strong,em,li,div),
+.xeroRulesBox :where(h1,h2,h3,h4,h5,h6,p,span,small,label,strong,em,li,div),
+.xeroSafetyNote :where(h1,h2,h3,h4,h5,h6,p,span,small,label,strong,em,li,div),
+.cxRoot :where(.cxCard,.cxPanel,.cxSheet,.cxForm,.cxModal,.cxDrawer) :where(h1,h2,h3,h4,h5,h6,p,span,small,label,strong,em,li,div),
+.ch4Root :where(.cxCard,.cxPanel,.cxSheet,.cxForm,.cxModal,.cxDrawer) :where(h1,h2,h3,h4,h5,h6,p,span,small,label,strong,em,li,div) {
+  color: var(--cv-light-text) !important;
+  -webkit-text-fill-color: var(--cv-light-text) !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+/* Helper/sub text on light panels */
+.xeroConnectionPanel :where(small,p,span),
+.cxRoot :where(.cxCard,.cxPanel,.cxSheet,.cxForm,.cxModal,.cxDrawer) :where(small,p,span),
+.ch4Root :where(.cxCard,.cxPanel,.cxSheet,.cxForm,.cxModal,.cxDrawer) :where(small,p,span) {
+  color: var(--cv-light-muted) !important;
+  -webkit-text-fill-color: var(--cv-light-muted) !important;
+  opacity: 1 !important;
+}
+
+/* Inputs on light panels */
+.xeroConnectionPanel :where(input,textarea,select,option),
+.cxRoot :where(.cxCard,.cxPanel,.cxSheet,.cxForm,.cxModal,.cxDrawer) :where(input,textarea,select,option),
+.ch4Root :where(.cxCard,.cxPanel,.cxSheet,.cxForm,.cxModal,.cxDrawer) :where(input,textarea,select,option) {
+  color: var(--cv-light-text) !important;
+  -webkit-text-fill-color: var(--cv-light-text) !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+/* Placeholder text */
+.xeroConnectionPanel :where(input::placeholder,textarea::placeholder),
+.cxRoot :where(.cxCard,.cxPanel,.cxSheet,.cxForm,.cxModal,.cxDrawer) :where(input::placeholder,textarea::placeholder),
+.ch4Root :where(.cxCard,.cxPanel,.cxSheet,.cxForm,.cxModal,.cxDrawer) :where(input::placeholder,textarea::placeholder) {
+  color: #6b7280 !important;
+  -webkit-text-fill-color: #6b7280 !important;
+  opacity: 1 !important;
+}
+
+/* Native dropdown menu rows */
+select option,
+select optgroup,
+option {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  background: #ffffff !important;
+  opacity: 1 !important;
+}
