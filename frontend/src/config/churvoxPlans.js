@@ -548,3 +548,9 @@ export default {
   pricingNotes,
   formatPlanPrice
 };
+
+export const MARKETING_PLANS = CHURVOX_PLANS.map((plan) => pricePlanForCountry(plan, DEFAULT_COUNTRY));
+export const MARKETING_PLAN_LIST = MARKETING_PLANS;
+export const MARKETING_PLAN_KEYS = PLAN_ORDER;
+export const MARKETING_PLAN_NAMES = PLAN_NAMES;
+
