@@ -11,7 +11,7 @@ const SMS_PACKS = {
 function getBackendBase() {
   const envBase =
     (typeof process !== "undefined" && process.env && process.env.REACT_APP_BACKEND_URL) ||
-    (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) ||
+    (typeof import.meta !== "undefined" && process.env && process.env.VITE_BACKEND_URL) ||
     "";
   return String(envBase || "https://grassley-backend.onrender.com").replace(/\/$/, "");
 }

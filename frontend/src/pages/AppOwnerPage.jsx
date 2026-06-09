@@ -22,8 +22,8 @@ import {
 
 const API_BASE = (
   (typeof import.meta !== "undefined" &&
-    import.meta.env &&
-    (import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL)) ||
+    process.env &&
+    (process.env.VITE_BACKEND_URL || process.env.VITE_API_URL)) ||
   (typeof process !== "undefined" &&
     process.env &&
     (process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_URL)) ||

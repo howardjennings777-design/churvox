@@ -1194,17 +1194,3 @@ body:has(.cxRoot) [class*="Approval"]:not(.cxWrap):not(.cxBoxes):not(.cxBox):not
   pointer-events: none !important;
 }
 
-
-/* CHURVOX SAFE FORM READABILITY ONLY
-   Do not force all page/card text. Only prevents invisible typing in fields. */
-.cxRoot :where(input, textarea, select),
-.ch4Root :where(input, textarea, select) {
-  opacity: 1;
-  -webkit-text-fill-color: currentColor;
-}
-
-.cxRoot :where(input::placeholder, textarea::placeholder),
-.ch4Root :where(input::placeholder, textarea::placeholder) {
-  opacity: 0.75;
-}
-
