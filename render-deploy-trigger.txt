@@ -1,11 +1,9 @@
 Churvox Render deploy trigger
 
-Triggered at: 2026-05-30 NZT
-Change: fix frontend CSS/JS MIME serving
+Triggered at: 2026-06-09 NZT
+Change: force frontend redeploy after global header and page pill updates
 
 Frontend:
-- adds custom static server with correct Content-Type for CSS and JS
-- disables stale index.html caching
-- prevents missing /static assets from falling back to index.html
-- keeps SPA route fallback for app routes
-- backend untouched
+- applies latest Plans and Support header source fixes
+- applies shared industrial chip style
+- keeps backend untouched
