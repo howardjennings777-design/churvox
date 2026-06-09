@@ -1150,3 +1150,28 @@ body,
     padding-bottom: 108px !important;
   }
 }
+
+/* CHURVOX_COMMAND_FLOATING_SLIPS_HIDE_20260609
+   Hide the old floating AI Operator Slips widget on the clean Command page only.
+   Keep the actual Command cards and modals working.
+*/
+body:has(.cxRoot) [class*="operator-slips"],
+body:has(.cxRoot) [class*="OperatorSlips"],
+body:has(.cxRoot) [class*="ai-operator"],
+body:has(.cxRoot) [class*="AiOperator"],
+body:has(.cxRoot) [class*="approval-queue"],
+body:has(.cxRoot) [class*="ApprovalQueue"],
+body:has(.cxRoot) [class*="slips-widget"],
+body:has(.cxRoot) [class*="SlipsWidget"] {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+/* Keep Command cards above normal page bits, but under real modals */
+.cxRoot {
+  z-index: 2147483000 !important;
+}
+
+.cxOverlay {
+  z-index: 2147483647 !important;
+}
