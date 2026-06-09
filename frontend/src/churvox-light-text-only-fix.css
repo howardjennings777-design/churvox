@@ -1,4 +1,4 @@
-/* Light-area readability only. */
+/* Light-area readability only. Keeps dark cards and pricing alone. */
 .xeroConnectionPanel,
 .xeroStatusCard,
 .xeroWarning,
@@ -13,8 +13,4 @@
 .ch4Root .cxSheet,
 .ch4Root .cxForm {
   color: #111827 !important;
-  opacity: 1 !important;
-}
-
-.xeroConnectionPanel h1,
-.xeroConnectionPanel h
+  opacity: 1 !
