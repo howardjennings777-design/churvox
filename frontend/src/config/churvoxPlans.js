@@ -384,3 +384,54 @@ export function planForCountry(planOrKey, countryCode) {
   return pricePlanForCountry(planOrKey, countryCode);
 }
 
+export function addonPriceForCountry(addonOrKey, countryCode) {
+  const key = typeof addonOrKey === "string"
+    ? addonOrKey
+    : String(addonOrKey?.key || addonOrKey?.code || addonOrKey?.name || "");
+
+  const lower = key.toLowerCase();
+  const country = getCountryMeta(countryCode);
+
+  let addon = addonOrKey && typeof addonOrKey === "object" ? addonOrKey : null;
+
+  if (!addon) {
+    if (lower.includes("growth")) {
+      addon = GROWTH_PACK;
+    } else if (lower.includes("xero")) {
+      addon = XERO_ADDON;
+    } else {
+      addon = {
+        name: key || "Add-on",
+        price: 0,
+        monthly: 0,
+        description: ""
+      };
+    }
+  }
+
+  const monthly = Number(addon.monthly || addon.price || 0);
+  const tax = country.taxLabel ? " " + country.taxLabel : "";
+  const priceLabel = country.symbol + monthly + "/month" + tax;
+
+  return {
+    ...addon,
+    price: monthly,
+    monthly,
+    currency: country.currency,
+    symbol: country.symbol,
+    taxLabel: country.taxLabel || "",
+    countryCode: country.code,
+    countryLabel: country.label,
+    priceLabel,
+    formattedPrice: priceLabel
+  };
+}
+
+export function getAddonPriceForCountry(addonOrKey, countryCode) {
+  return addonPriceForCountry(addonOrKey, countryCode);
+}
+
+export function getAddonPricingForCountry(addonOrKey, countryCode) {
+  return addonPriceForCountry(addonOrKey, countryCode);
+}
+
