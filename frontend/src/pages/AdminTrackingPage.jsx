@@ -121,7 +121,12 @@ function Bar({ label, value, max }) {
         <span className="text-white">{value}</span>
       </div>
       <div className="h-3 overflow-hidden rounded-full bg-white/10">
-</div>
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-emerald-300 via-cyan-300 to-blue-500"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -257,7 +262,12 @@ export default function AdminTrackingPage() {
                     <div className="text-xs font-black uppercase tracking-wide text-slate-500">{label}</div>
                     <div className="mt-2 text-3xl font-black tracking-[-0.06em]">{value}</div>
                     <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
-</div>
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-emerald-300 via-cyan-300 to-blue-500"
+                        style={{ width: `${Math.max(3, Math.round((Number(value || 0) / maxFunnel) * 100))}%` }}
+                      />
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
