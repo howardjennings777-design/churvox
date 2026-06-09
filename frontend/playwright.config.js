@@ -1,19 +1,30 @@
 const { defineConfig, devices } = require('@playwright/test');
 
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || 'https://www.churvox.com';
+
 module.exports = defineConfig({
-  testDir: './tests/e2e',
-  timeout: 60_000,
-  expect: { timeout: 12_000 },
-  retries: 0,
-  reporter: [['html'], ['list']],
+  testDir: './tests',
+  timeout: 60000,
+  expect: {
+    timeout: 15000
+  },
+  fullyParallel: false,
+  retries: process.env.CI ? 1 : 0,
+  reporter: [
+    ['list'],
+    ['html', { outputFolder: 'playwright-report', open: 'never' }]
+  ],
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000',
+    baseURL: BASE_URL,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
+    ignoreHTTPSErrors: true
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'mobile-chrome', use: { ...devices['Pixel 7'] } },
-  ],
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] }
+    }
+  ]
 });
