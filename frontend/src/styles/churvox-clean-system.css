@@ -244,3 +244,33 @@ main [class*="Profile"] select {
   -webkit-text-fill-color: #111827 !important;
 }
 
+
+/* FINAL DROPDOWN BOX FIX
+   Make the closed select box white everywhere so selected text is readable.
+   Opened option list stays black on white too.
+*/
+select,
+main select,
+form select,
+[class*="support"] select,
+[class*="Support"] select,
+[class*="command"] select,
+[class*="Command"] select,
+[class*="panel"] select,
+[class*="Panel"] select,
+[class*="card"] select,
+[class*="Card"] select {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  opacity: 1 !important;
+}
+
+select option,
+select optgroup {
+  background: #ffffff !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}
