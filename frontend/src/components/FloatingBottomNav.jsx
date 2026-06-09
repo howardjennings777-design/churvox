@@ -1,31 +1,35 @@
 import React, { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import ChurvoxHelpWidget from "./ChurvoxHelpWidget";
-import "./IndustrialCommandSidebar.css";
-import "./IndustrialCommandPages.css";
-
-const COMMAND_SHELL_STYLE = "";
 
 const NAV_ITEMS = [
-  ["Command", "/dashboard", "CM"],
-  ["Jobs", "/jobs-board", "JB"],
-  ["Dispatch", "/dispatch-board", "DP"],
-  ["Clients", "/clients-board", "CL"],
-  ["Quotes", "/quotes-board", "QT"],
-  ["Invoices", "/invoices-board", "IV"],
-  ["Team", "/team-board", "TM"],
-  ["Plans", "/plans", "PL"],
-  ["Settings", "/settings-board", "ST"],
+  ["Command Board", "/dashboard", "CM", "Command"],
+  ["Jobs", "/jobs-board", "JB", "Work"],
+  ["Crew Dispatch", "/dispatch-board", "DP", "Work"],
+  ["Clients", "/clients-board", "CL", "Work"],
+  ["Quotes", "/quotes-board", "QT", "Work"],
+  ["Invoices", "/invoices-board", "IV", "Work"],
+  ["Team", "/team-board", "TM", "Crew & Admin"],
+  ["Payroll", "/payroll-board", "PR", "Crew & Admin"],
+  ["Reports", "/reports-board", "RP", "Crew & Admin"],
+  ["Plans", "/plans", "PL", "System"],
+  ["Settings", "/settings-board", "ST", "System"],
+  ["Support", "/support-board", "?", "System"],
 ];
 
-const INDUSTRIAL_GROUPS = [
-  { title: "Command", items: [["Command Board", "/dashboard", "CM"]] },
-  { title: "Work", items: [["Jobs", "/jobs-board", "JB"], ["Crew Dispatch", "/dispatch-board", "DP"], ["Clients", "/clients-board", "CL"], ["Quotes", "/quotes-board", "QT"], ["Invoices", "/invoices-board", "IV"]] },
-  { title: "Crew & Admin", items: [["Team", "/team-board", "TM"], ["Payroll", "/payroll-board", "PR"], ["Reports", "/reports-board", "RP"]] },
-  { title: "System", items: [["Plans", "/plans", "PL"], ["Settings", "/settings-board", "ST"], ["Support", "/support-board", "?"]] },
+const COMMAND_PATHS = [
+  "/dashboard", "/overview",
+  "/jobs-board", "/jobs",
+  "/dispatch-board", "/dispatch", "/crew-map",
+  "/clients-board", "/clients",
+  "/quotes-board", "/quotes",
+  "/invoices-board", "/invoices",
+  "/team-board", "/team",
+  "/payroll-board", "/payroll",
+  "/reports-board", "/reports",
+  "/plans",
+  "/settings-board", "/settings",
+  "/support-board", "/support",
 ];
-
-const COMMAND_PATHS = ["/dashboard", "/overview", "/jobs-board", "/jobs", "/dispatch-board", "/dispatch", "/crew-map", "/clients-board", "/clients", "/quotes-board", "/quotes", "/invoices-board", "/invoices", "/team-board", "/team", "/payroll-board", "/payroll", "/reports-board", "/reports", "/plans", "/settings-board", "/settings", "/support-board", "/support"];
 
 function isCommandPath(pathname) {
   return COMMAND_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
@@ -47,29 +51,48 @@ function isActive(pathname, href) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function IndustrialSidebar({ pathname }) {
+function groupItems() {
+  return NAV_ITEMS.reduce((groups, item) => {
+    const group = item[3];
+    if (!groups[group]) groups[group] = [];
+    groups[group].push(item);
+    return groups;
+  }, {});
+}
+
+function FreshSidebar({ pathname }) {
+  const groups = groupItems();
+
   return (
-    <aside className="cv-industrial-sidebar" aria-label="Churvox command navigation">
-      <div className="cv-industrial-rail" />
-      <div className="cv-industrial-brand">
-        <div className="cv-industrial-mark">C</div>
+    <aside className="cvxSide" aria-label="Churvox command navigation">
+      <div className="cvxRail" />
+
+      <div className="cvxBrand">
+        <div className="cvxLogo">C</div>
         <div>
           <strong>CHURVOX</strong>
           <span>Command Desk</span>
         </div>
       </div>
-      <div className="cv-industrial-status">
+
+      <div className="cvxStatus">
         <span>AI Operator</span>
         <b>Prepared admin. You approve.</b>
       </div>
-      <div className="cv-industrial-navwrap">
-        {INDUSTRIAL_GROUPS.map((group) => (
-          <section key={group.title} className="cv-industrial-group">
-            <p>{group.title}</p>
+
+      <div className="cvxScroll">
+        {Object.entries(groups).map(([title, items]) => (
+          <section key={title} className="cvxGroup">
+            <p>{title}</p>
             <nav>
-              {group.items.map(([label, href, icon]) => {
+              {items.map(([label, href, icon]) => {
                 const active = isActive(pathname, href);
-                return <Link key={href} to={href} className={active ? "active" : ""}><i>{icon}</i><span>{label}</span></Link>;
+                return (
+                  <Link key={href} to={href} className={active ? "cvxActive" : ""}>
+                    <i aria-hidden="true">{icon}</i>
+                    <span>{label}</span>
+                  </Link>
+                );
               })}
             </nav>
           </section>
@@ -79,17 +102,39 @@ function IndustrialSidebar({ pathname }) {
   );
 }
 
+function FreshMobileNav({ pathname }) {
+  return (
+    <nav className="cvxMobileNav" aria-label="Churvox mobile command navigation">
+      {NAV_ITEMS.map(([label, href, icon]) => (
+        <Link key={href} to={href} className={isActive(pathname, href) ? "cvxActive" : ""}>
+          <i aria-hidden="true">{icon}</i>
+          <span>{label}</span>
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
 export default function FloatingBottomNav() {
   const { pathname } = useLocation();
   const commandVisible = isCommandPath(pathname);
+
   useEffect(() => {
-    document.body.classList.toggle("cv-has-floating-dock", commandVisible);
+    document.body.classList.toggle("cvx-command-shell", commandVisible);
     document.body.classList.toggle("cv-industrial-shell", commandVisible);
+
     return () => {
-      document.body.classList.remove("cv-has-floating-dock");
+      document.body.classList.remove("cvx-command-shell");
       document.body.classList.remove("cv-industrial-shell");
     };
   }, [commandVisible]);
-  if (!commandVisible) return <ChurvoxHelpWidget />;
-  return <><style>{COMMAND_SHELL_STYLE}</style><IndustrialSidebar pathname={pathname} /><nav className="cv-clean-command-nav" aria-label="Churvox mobile command navigation">{NAV_ITEMS.map(([label, href, icon]) => <Link key={href} to={href} className={isActive(pathname, href) ? "active" : ""}><i aria-hidden="true">{icon}</i><span>{label}</span></Link>)}</nav><ChurvoxHelpWidget /></>;
+
+  if (!commandVisible) return null;
+
+  return (
+    <>
+      <FreshSidebar pathname={pathname} />
+      <FreshMobileNav pathname={pathname} />
+    </>
+  );
 }
