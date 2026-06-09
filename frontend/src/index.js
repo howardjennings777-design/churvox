@@ -17,5 +17,6 @@ import './runtime/churvoxSlipOnlyMode';
 import './styles/jobs-board-clean-polish.css';
 import './churvox-readable-final.css';
 import './churvox-light-text-only-fix.css';
+import './select-option-readable.css';
 
 //
