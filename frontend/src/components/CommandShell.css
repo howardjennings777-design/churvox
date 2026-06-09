@@ -1,0 +1,264 @@
+/* CHURVOX_ONE_TRUE_COMMAND_SHELL_20260610
+   One app shell. Pages now live inside this instead of each page fighting the sidebar. */
+
+:root {
+  --cvx-shell-side: 232px;
+  --cvx-shell-bg: #f4efe6;
+  --cvx-shell-ink: #111827;
+  --cvx-shell-dark: #0b111a;
+  --cvx-shell-dark-2: #111827;
+  --cvx-shell-muted: #9ca3af;
+  --cvx-shell-orange: #f97316;
+  --cvx-shell-amber: #fbbf24;
+}
+
+.cvxShell {
+  min-height: 100vh !important;
+  background: var(--cvx-shell-bg) !important;
+  color: var(--cvx-shell-ink) !important;
+}
+
+.cvxShellSide {
+  position: fixed !important;
+  inset: 0 auto 0 0 !important;
+  z-index: 1000 !important;
+  width: var(--cvx-shell-side) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  background: linear-gradient(180deg, #101722 0%, #0b111a 52%, #05070b 100%) !important;
+  border-right: 1px solid rgba(255,255,255,.10) !important;
+  box-shadow: 8px 0 30px rgba(0,0,0,.22) !important;
+}
+
+.cvxShellSide,
+.cvxShellSide * {
+  box-sizing: border-box !important;
+  text-shadow: none !important;
+  opacity: 1 !important;
+}
+
+.cvxShellBrand {
+  min-height: 78px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 16px 14px 14px 16px !important;
+  border-left: 5px solid var(--cvx-shell-orange) !important;
+  border-bottom: 1px solid rgba(255,255,255,.10) !important;
+  background: #0f172a !important;
+}
+
+.cvxShellLogo {
+  width: 36px !important;
+  height: 36px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 10px !important;
+  background: var(--cvx-shell-orange) !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  font-size: 18px !important;
+  font-weight: 1000 !important;
+}
+
+.cvxShellBrand strong {
+  display: block !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  font-size: 13px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .04em !important;
+}
+
+.cvxShellBrand span {
+  display: block !important;
+  margin-top: 2px !important;
+  color: var(--cvx-shell-muted) !important;
+  -webkit-text-fill-color: var(--cvx-shell-muted) !important;
+  font-size: 9px !important;
+  font-weight: 900 !important;
+  letter-spacing: .16em !important;
+  text-transform: uppercase !important;
+}
+
+.cvxShellNav {
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  padding: 14px 10px 24px 12px !important;
+}
+
+.cvxShellGroup {
+  margin-top: 16px !important;
+}
+
+.cvxShellGroup:first-child {
+  margin-top: 0 !important;
+}
+
+.cvxShellGroup p {
+  margin: 0 0 7px 6px !important;
+  color: var(--cvx-shell-muted) !important;
+  -webkit-text-fill-color: var(--cvx-shell-muted) !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  font-size: 9px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .18em !important;
+  text-transform: uppercase !important;
+}
+
+.cvxShellGroup nav {
+  display: grid !important;
+  gap: 4px !important;
+}
+
+.cvxShellGroup a {
+  min-height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  border-radius: 10px !important;
+  padding: 6px 8px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: #d1d5db !important;
+  -webkit-text-fill-color: #d1d5db !important;
+  text-decoration: none !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+}
+
+.cvxShellGroup a i {
+  width: 24px !important;
+  min-width: 24px !important;
+  height: 24px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 8px !important;
+  background: #1f2937 !important;
+  color: var(--cvx-shell-amber) !important;
+  -webkit-text-fill-color: var(--cvx-shell-amber) !important;
+  font-size: 8px !important;
+  font-style: normal !important;
+  font-weight: 1000 !important;
+}
+
+.cvxShellGroup a span {
+  color: inherit !important;
+  -webkit-text-fill-color: inherit !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.cvxShellGroup a:hover,
+.cvxShellGroup a.active {
+  background: var(--cvx-shell-orange) !important;
+  border-color: var(--cvx-shell-orange) !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}
+
+.cvxShellGroup a:hover i,
+.cvxShellGroup a.active i {
+  background: #111827 !important;
+  color: var(--cvx-shell-amber) !important;
+  -webkit-text-fill-color: var(--cvx-shell-amber) !important;
+}
+
+.cvxShellGroup a:hover span,
+.cvxShellGroup a.active span {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}
+
+.cvxShellMain {
+  min-height: 100vh !important;
+  margin-left: var(--cvx-shell-side) !important;
+  background: var(--cvx-shell-bg) !important;
+  padding: 18px 18px 80px !important;
+  box-sizing: border-box !important;
+}
+
+.cvxShellCanvas {
+  width: 100% !important;
+  max-width: 1220px !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+}
+
+/* This is the important bit: any page root must stop acting like a full app. */
+.cvxShellCanvas > main,
+.cvxShellCanvas main.fixed.inset-0,
+.cvxShellCanvas .cxRoot,
+.cvxShellCanvas .ch4Root,
+.cvxShellCanvas .scRoot,
+.cvxShellCanvas .dwRoot,
+.cvxShellCanvas .concept-c2-frame,
+.cvxShellCanvas .xcf-real-page,
+.cvxShellCanvas .xcf-workspace,
+.cvxShellCanvas .xcf-shell.xcf-real-page {
+  position: relative !important;
+  inset: auto !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: auto !important;
+  box-sizing: border-box !important;
+}
+
+.cvxShellCanvas main > section,
+.cvxShellCanvas .cxWrap,
+.cvxShellCanvas .ch4Wrap,
+.cvxShellCanvas .dwWrap {
+  max-width: 100% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.cvxShellMobileNav {
+  display: none !important;
+}
+
+@media (max-width: 1023px) {
+  .cvxShellSide {
+    display: none !important;
+  }
+
+  .cvxShellMain {
+    margin-left: 0 !important;
+    padding: 14px 12px 92px !important;
+  }
+
+  .cvxShellMobileNav {
+    position: fixed !important;
+    left: 10px !important;
+    right: 10px !important;
+    bottom: 10px !important;
+    z-index: 1000 !important;
+    display: flex !important;
+    gap: 6px !important;
+    padding: 8px !important;
+    border-radius: 18px !important;
+    background: #0b111a !important;
+    border: 1px solid rgba(255,255,255,.12) !important;
+    overflow-x: auto !important;
+  }
+
+  .cvxShellMobileNav a {
+    min-width: 72px !important;
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+    text-decoration: none !important;
+    font-size: 10px !important;
+    font-weight: 900 !important;
+  }
+}
