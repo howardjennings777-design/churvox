@@ -1,3 +1,4 @@
+/* Light-area readability only. */
 .xeroConnectionPanel,
 .xeroStatusCard,
 .xeroWarning,
@@ -12,23 +13,8 @@
 .ch4Root .cxSheet,
 .ch4Root .cxForm {
   color: #111827 !important;
+  opacity: 1 !important;
 }
 
 .xeroConnectionPanel h1,
-.xeroConnectionPanel h2,
-.xeroConnectionPanel h3,
-.xeroConnectionPanel p,
-.xeroConnectionPanel span,
-.xeroConnectionPanel small,
-.xeroConnectionPanel label,
-.xeroConnectionPanel strong,
-.xeroStatusCard h1,
-.xeroStatusCard h2,
-.xeroStatusCard h3,
-.xeroStatusCard p,
-.xeroStatusCard span,
-.xeroStatusCard small,
-.xeroStatusCard label,
-.xeroStatusCard strong,
-.xeroWarning,
-.xeroRulesBox
+.xeroConnectionPanel h
