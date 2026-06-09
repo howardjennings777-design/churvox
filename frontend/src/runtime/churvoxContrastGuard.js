@@ -9,6 +9,72 @@
     'li', 'td', 'th', 'button', 'a', 'div'
   ].join(',');
 
+  function forceColor(element, color) {
+    if (!element || !element.style) return;
+    element.style.setProperty('color', color, 'important');
+    element.style.setProperty('-webkit-text-fill-color', color, 'important');
+    element.style.setProperty('opacity', '1', 'important');
+    element.style.setProperty('text-shadow', 'none', 'important');
+    element.style.setProperty('mix-blend-mode', 'normal', 'important');
+  }
+
+  function forceCommandAndShell() {
+    if (!document.body) return;
+
+    const light = '#f9fafb';
+    const soft = '#e5e7eb';
+    const dark = '#111827';
+    const amber = '#fbbf24';
+
+    document.querySelectorAll(
+      '.cv-industrial-sidebar, .cv-industrial-sidebar *, .cv-clean-command-nav, .cv-clean-command-nav *'
+    ).forEach((el) => forceColor(el, light));
+
+    document.querySelectorAll(
+      '.cv-industrial-group p'
+    ).forEach((el) => forceColor(el, '#cbd5e1'));
+
+    document.querySelectorAll(
+      '.cv-industrial-group a.active, .cv-industrial-group a.active *, .cv-industrial-group a:hover, .cv-industrial-group a:hover *, .cv-clean-command-nav a.active, .cv-clean-command-nav a.active *'
+    ).forEach((el) => forceColor(el, '#020617'));
+
+    document.querySelectorAll(
+      '.cv-industrial-mark, .cv-industrial-mark *, .cxBrandMark, .cxBrandMark *'
+    ).forEach((el) => forceColor(el, dark));
+
+    document.querySelectorAll(
+      '.cxHero, .cxHero *, .cxStat, .cxStat *, .cxBox, .cxBox *, .cxContextCard, .cxContextCard *, .cxDeliverySummary, .cxDeliverySummary *, .cxMiniDelivery, .cxMiniDelivery *'
+    ).forEach((el) => forceColor(el, light));
+
+    document.querySelectorAll(
+      '.cxHero p, .cxHero span, .cxStat span, .cxBox p, .cxContextCard span, .cxDeliverySummary li, .cxMiniDelivery em'
+    ).forEach((el) => forceColor(el, soft));
+
+    document.querySelectorAll(
+      '.cxStat small, .cxStatus, .cxStatus *, .cxSlipType, .cxContextCard b, .cxDeliverySummary small, .cxDeliverySummary li b, .cxMiniDelivery b'
+    ).forEach((el) => forceColor(el, amber));
+
+    document.querySelectorAll(
+      '.cxPill, .cxPill *, .cxBox em, .cxBox em *'
+    ).forEach((el) => forceColor(el, dark));
+
+    document.querySelectorAll(
+      '.cxUrgent, .cxUrgent *, .cxFormPanel, .cxFormPanel *, .cxControls, .cxControls *, .cxField, .cxField *'
+    ).forEach((el) => forceColor(el, dark));
+
+    document.querySelectorAll(
+      '.cxUrgent span, .cxUrgent span *'
+    ).forEach((el) => forceColor(el, amber));
+
+    document.querySelectorAll(
+      '.cxUrgentActions button, .cxUrgentActions button *, .cxControls p, .cxControls p *, .cxControls .dark, .cxControls .dark *'
+    ).forEach((el) => forceColor(el, light));
+
+    document.querySelectorAll(
+      '.cxField input, .cxField textarea, .cxField select, input, textarea, select, option'
+    ).forEach((el) => forceColor(el, '#0f172a'));
+  }
+
   function parseRgb(value) {
     if (!value || value === 'transparent') return null;
     const match = value.match(/rgba?\(([^)]+)\)/i);
@@ -82,9 +148,7 @@
   }
 
   function setReadableColor(element, color) {
-    element.style.setProperty('color', color, 'important');
-    element.style.setProperty('-webkit-text-fill-color', color, 'important');
-    element.style.setProperty('opacity', '1', 'important');
+    forceColor(element, color);
   }
 
   function fixTextElement(element) {
@@ -123,6 +187,7 @@
 
     document.querySelectorAll(TEXT_SELECTOR).forEach(fixTextElement);
     document.querySelectorAll('input, textarea, select').forEach(fixFormElement);
+    forceCommandAndShell();
   }
 
   let queued = false;
@@ -176,4 +241,5 @@
   setTimeout(scheduleContrastGuard, 400);
   setTimeout(scheduleContrastGuard, 1200);
   setTimeout(scheduleContrastGuard, 2500);
+  window.setInterval(scheduleContrastGuard, 1000);
 })();
