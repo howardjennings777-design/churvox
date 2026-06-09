@@ -282,3 +282,35 @@ main.fixed.inset-0 > .flex > aside nav a > strong {
 [class*="Hero"] p {
   color: #f8fafc !important;
 }
+
+/* Header status pill: avoid blank white placeholder look. */
+.cxHero .cxPill,
+.ch4Hero .cxPill,
+.srHero .cxPill,
+.ivHero .cxPill,
+.plHero .cxPill,
+.stHero .cxPill,
+.jbHero .cxPill,
+.clHero .cxPill,
+.qtHero .cxPill,
+.tmHero .cxPill,
+.pyHero .cxPill,
+.rpHero .cxPill,
+[class*="Hero"] .cxPill,
+[class*="Hero"] [class*="Pill"] {
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: max-content !important;
+  background: rgba(7, 11, 18, 0.74) !important;
+  color: #fed7aa !important;
+  border: 1px solid rgba(249, 115, 22, 0.42) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 12px 32px rgba(2, 6, 23, 0.22) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.cxHero .cxPill:empty,
+.ch4Hero .cxPill:empty,
+[class*="Hero"] .cxPill:empty,
+[class*="Hero"] [class*="Pill"]:empty {
+  display: none !important;
+}
