@@ -156,3 +156,129 @@ main.fixed.inset-0 > .flex > aside nav a > strong {
   color: #111827 !important;
   border: 0 !important;
 }
+
+/* Global Churvox header design: bring the Command industrial header to main app pages. */
+.cxHero,
+.ch4Hero,
+.srHero,
+.ivHero,
+.plHero,
+.stHero,
+.jbHero,
+.clHero,
+.qtHero,
+.tmHero,
+.pyHero,
+.rpHero,
+[class*="Hero"]:not(.cxSlip header):not(.cxUrgent) {
+  position: relative !important;
+  overflow: hidden !important;
+  isolation: isolate !important;
+  background:
+    radial-gradient(circle at 86% -24%, rgba(249, 115, 22, 0.52), transparent 34%),
+    radial-gradient(circle at 14% 116%, rgba(34, 211, 238, 0.18), transparent 30%),
+    linear-gradient(135deg, #0b1018 0%, #111827 56%, #070b12 100%) !important;
+  border-left: 8px solid #f97316 !important;
+  border-radius: 30px !important;
+  box-shadow: 0 18px 52px rgba(2, 6, 23, 0.22) !important;
+  color: #ffffff !important;
+}
+
+.cxHero::before,
+.ch4Hero::before,
+.srHero::before,
+.ivHero::before,
+.plHero::before,
+.stHero::before,
+.jbHero::before,
+.clHero::before,
+.qtHero::before,
+.tmHero::before,
+.pyHero::before,
+.rpHero::before,
+[class*="Hero"]:not(.cxSlip header):not(.cxUrgent)::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0 1px, transparent 1px 56px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 46px),
+    linear-gradient(120deg, transparent 0 46%, rgba(251, 191, 36, 0.13) 46% 47%, transparent 47% 100%) !important;
+  opacity: 0.72 !important;
+}
+
+.cxHero::after,
+.ch4Hero::after,
+.srHero::after,
+.ivHero::after,
+.plHero::after,
+.stHero::after,
+.jbHero::after,
+.clHero::after,
+.qtHero::after,
+.tmHero::after,
+.pyHero::after,
+.rpHero::after,
+[class*="Hero"]:not(.cxSlip header):not(.cxUrgent)::after {
+  content: "" !important;
+  position: absolute !important;
+  right: -80px !important;
+  top: -80px !important;
+  width: 250px !important;
+  height: 250px !important;
+  border: 36px solid rgba(249, 115, 22, 0.18) !important;
+  border-radius: 999px !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+}
+
+.cxHero > *,
+.ch4Hero > *,
+.srHero > *,
+.ivHero > *,
+.plHero > *,
+.stHero > *,
+.jbHero > *,
+.clHero > *,
+.qtHero > *,
+.tmHero > *,
+.pyHero > *,
+.rpHero > *,
+[class*="Hero"]:not(.cxSlip header):not(.cxUrgent) > * {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.cxHero h1,
+.ch4Hero h1,
+.srHero h1,
+.ivHero h1,
+.plHero h1,
+.stHero h1,
+.jbHero h1,
+.clHero h1,
+.qtHero h1,
+.tmHero h1,
+.pyHero h1,
+.rpHero h1,
+[class*="Hero"] h1 {
+  color: #ffffff !important;
+}
+
+.cxHero p,
+.ch4Hero p,
+.srHero p,
+.ivHero p,
+.plHero p,
+.stHero p,
+.jbHero p,
+.clHero p,
+.qtHero p,
+.tmHero p,
+.pyHero p,
+.rpHero p,
+[class*="Hero"] p {
+  color: #f8fafc !important;
+}
