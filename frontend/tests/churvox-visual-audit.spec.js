@@ -107,8 +107,19 @@ async function login(page) {
 
   const submit = page.locator('button[type="submit"], button:has-text("Login"), button:has-text("Sign in"), button:has-text("Log in")').first();
 
+  // The floating help button can cover Sign in during screenshots, so hide it for the audit only.
+  await page.locator('.cv-help-fab, [class*="help-fab"], [class*="HelpFab"], button[aria-label*="help" i]').evaluateAll((nodes) => {
+    nodes.forEach((node) => {
+      node.style.pointerEvents = 'none';
+      node.style.display = 'none';
+      node.style.opacity = '0';
+    });
+  }).catch(() => {});
+
   if (await submit.count()) {
-    await submit.click();
+    await submit.click({ force: true, timeout: 5000 }).catch(async () => {
+      await password.press('Enter');
+    });
   } else {
     await password.press('Enter');
   }
