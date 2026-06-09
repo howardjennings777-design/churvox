@@ -69,3 +69,41 @@
     min-height: 68px;
   }
 }
+
+/* CHURVOX_SETUP_GUIDE_NOT_MAIN_WORKSPACE_20260609
+   Setup guide should feel like a support/onboarding tool, not the daily work desk.
+   This keeps it compact wherever it appears inside the framed workspace.
+*/
+.c2-real-page-card:has([class*="setup"]),
+.c2-real-page-card:has([class*="Setup"]),
+.c2-real-page-card:has([class*="onboarding"]),
+.c2-real-page-card:has([class*="Onboarding"]) {
+  max-width: 980px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.c2-real-page-card:has([class*="setup"]) h1,
+.c2-real-page-card:has([class*="Setup"]) h1,
+.c2-real-page-card:has([class*="onboarding"]) h1,
+.c2-real-page-card:has([class*="Onboarding"]) h1 {
+  font-size: clamp(30px, 4vw, 54px) !important;
+  line-height: 1 !important;
+}
+
+.c2-real-page-card:has([class*="setup"]) [class*="hero"],
+.c2-real-page-card:has([class*="Setup"]) [class*="hero"],
+.c2-real-page-card:has([class*="onboarding"]) [class*="hero"],
+.c2-real-page-card:has([class*="Onboarding"]) [class*="hero"] {
+  min-height: auto !important;
+  padding: 22px !important;
+}
+
+/* On the clean Command desk, hide any old setup/onboarding takeover widgets. */
+body:has(.cxRoot) [class*="setup-guide"],
+body:has(.cxRoot) [class*="SetupGuide"],
+body:has(.cxRoot) [class*="onboarding-guide"],
+body:has(.cxRoot) [class*="OnboardingGuide"] {
+  display: none !important;
+  pointer-events: none !important;
+}
