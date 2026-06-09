@@ -19,6 +19,7 @@ import './styles/clients-board-clean-polish.css';
 import './styles/quotes-board-clean-polish.css';
 import './styles/churvox-clean-system.css';
 import './runtime/churvoxContrastGuard';
+import './styles/sidebar-final-authority.css';
 
 // CHURVOX_JOBS_BOARD_ROUTE_CLASS_20260609
 if (typeof window !== 'undefined' && !window.__CHURVOX_JOBS_BOARD_ROUTE_CLASS__) {

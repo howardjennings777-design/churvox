@@ -1,0 +1,285 @@
+/* CHURVOX_SIDEBAR_FINAL_AUTHORITY_20260610
+   Loaded last from index.js. This beats old global command CSS. */
+
+:root {
+  --cv-final-sidebar-width: 248px;
+}
+
+@media (min-width: 1024px) {
+  body.cv-industrial-shell .cv-industrial-sidebar {
+    display: flex !important;
+    width: var(--cv-final-sidebar-width) !important;
+    min-width: var(--cv-final-sidebar-width) !important;
+    max-width: var(--cv-final-sidebar-width) !important;
+  }
+
+  body.cv-industrial-shell .cxRoot,
+  body.cv-industrial-shell .ch4Root,
+  body.cv-industrial-shell .scRoot,
+  body.cv-industrial-shell .dwRoot {
+    padding-left: var(--cv-final-sidebar-width) !important;
+  }
+
+  body.cv-industrial-shell main.fixed.inset-0 {
+    left: var(--cv-final-sidebar-width) !important;
+    width: calc(100vw - var(--cv-final-sidebar-width)) !important;
+    max-width: calc(100vw - var(--cv-final-sidebar-width)) !important;
+  }
+
+  body.cv-industrial-shell .concept-c2-frame,
+  body.cv-industrial-shell .xcf-real-page,
+  body.cv-industrial-shell .xcf-workspace,
+  body.cv-industrial-shell .xcf-shell.xcf-real-page {
+    margin-left: var(--cv-final-sidebar-width) !important;
+    width: calc(100vw - var(--cv-final-sidebar-width)) !important;
+    max-width: calc(100vw - var(--cv-final-sidebar-width)) !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  body.cv-industrial-shell .cv-industrial-sidebar {
+    display: none !important;
+  }
+
+  body.cv-industrial-shell .cxRoot,
+  body.cv-industrial-shell .ch4Root,
+  body.cv-industrial-shell .scRoot,
+  body.cv-industrial-shell .dwRoot,
+  body.cv-industrial-shell main.fixed.inset-0,
+  body.cv-industrial-shell .concept-c2-frame,
+  body.cv-industrial-shell .xcf-real-page,
+  body.cv-industrial-shell .xcf-workspace,
+  body.cv-industrial-shell .xcf-shell.xcf-real-page {
+    left: 0 !important;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+  }
+}
+
+/* Sidebar frame */
+body.cv-industrial-shell .cv-industrial-sidebar {
+  position: fixed !important;
+  left: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  z-index: 2147483500 !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  background: linear-gradient(180deg, #101722 0%, #0b1018 52%, #05070b 100%) !important;
+  border-right: 1px solid rgba(148, 163, 184, .16) !important;
+  box-shadow: 14px 0 54px rgba(2, 6, 23, .34) !important;
+}
+
+body.cv-industrial-shell .cv-industrial-sidebar,
+body.cv-industrial-shell .cv-industrial-sidebar * {
+  box-sizing: border-box !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+  mix-blend-mode: normal !important;
+}
+
+body.cv-industrial-shell .cv-industrial-sidebar::after {
+  content: none !important;
+  display: none !important;
+}
+
+body.cv-industrial-shell .cv-industrial-rail {
+  position: absolute !important;
+  inset: 0 auto 0 0 !important;
+  width: 4px !important;
+  background: linear-gradient(180deg, #fb923c, #facc15 45%, #fb923c) !important;
+}
+
+/* Brand */
+body.cv-industrial-shell .cv-industrial-brand {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 15px 14px 12px 18px !important;
+  border-bottom: 1px solid rgba(148, 163, 184, .14) !important;
+}
+
+body.cv-industrial-shell .cv-industrial-mark {
+  width: 38px !important;
+  min-width: 38px !important;
+  height: 38px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, #facc15, #fb923c) !important;
+  color: #020617 !important;
+  -webkit-text-fill-color: #020617 !important;
+  font-size: 18px !important;
+  font-weight: 1000 !important;
+}
+
+body.cv-industrial-shell .cv-industrial-brand strong {
+  display: block !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  font-size: 13px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .02em !important;
+}
+
+body.cv-industrial-shell .cv-industrial-brand span {
+  display: block !important;
+  margin-top: 2px !important;
+  color: #cbd5e1 !important;
+  -webkit-text-fill-color: #cbd5e1 !important;
+  font-size: 9px !important;
+  font-weight: 950 !important;
+  letter-spacing: .16em !important;
+  text-transform: uppercase !important;
+}
+
+/* AI status */
+body.cv-industrial-shell .cv-industrial-status {
+  margin: 11px 12px 8px 17px !important;
+  padding: 10px 11px !important;
+  border-radius: 15px !important;
+  background: rgba(255, 255, 255, .045) !important;
+  border: 1px solid rgba(250, 204, 21, .18) !important;
+}
+
+body.cv-industrial-shell .cv-industrial-status span {
+  display: block !important;
+  color: #facc15 !important;
+  -webkit-text-fill-color: #facc15 !important;
+  font-size: 9px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .16em !important;
+  text-transform: uppercase !important;
+}
+
+body.cv-industrial-shell .cv-industrial-status b {
+  display: block !important;
+  margin-top: 4px !important;
+  color: #f8fafc !important;
+  -webkit-text-fill-color: #f8fafc !important;
+  font-size: 11px !important;
+  line-height: 1.25 !important;
+}
+
+/* Scroll area */
+body.cv-industrial-shell .cv-industrial-navwrap {
+  min-height: 0 !important;
+  flex: 1 !important;
+  overflow-y: auto !important;
+  padding: 8px 10px 28px 17px !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(251, 146, 60, .55) rgba(15, 23, 42, .28) !important;
+}
+
+body.cv-industrial-shell .cv-industrial-navwrap::-webkit-scrollbar {
+  width: 6px !important;
+}
+
+body.cv-industrial-shell .cv-industrial-navwrap::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, .28) !important;
+  border-radius: 999px !important;
+}
+
+body.cv-industrial-shell .cv-industrial-navwrap::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #facc15, #fb923c) !important;
+  border-radius: 999px !important;
+}
+
+/* Groups */
+body.cv-industrial-shell .cv-industrial-group {
+  margin-top: 12px !important;
+}
+
+body.cv-industrial-shell .cv-industrial-group:first-child {
+  margin-top: 0 !important;
+}
+
+body.cv-industrial-shell .cv-industrial-group p {
+  margin: 0 0 6px !important;
+  padding-left: 6px !important;
+  background: transparent !important;
+  color: #94a3b8 !important;
+  -webkit-text-fill-color: #94a3b8 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  font-size: 9px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .17em !important;
+  text-transform: uppercase !important;
+}
+
+body.cv-industrial-shell .cv-industrial-group nav {
+  display: grid !important;
+  gap: 4px !important;
+}
+
+/* Links */
+body.cv-industrial-shell .cv-industrial-group a {
+  min-height: 37px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  border-radius: 12px !important;
+  padding: 6px 8px !important;
+  border: 1px solid rgba(148, 163, 184, .09) !important;
+  background: rgba(255, 255, 255, .035) !important;
+  text-decoration: none !important;
+  color: #e5e7eb !important;
+  -webkit-text-fill-color: #e5e7eb !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+}
+
+body.cv-industrial-shell .cv-industrial-group a i {
+  width: 25px !important;
+  min-width: 25px !important;
+  height: 25px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 9px !important;
+  background: rgba(250, 204, 21, .10) !important;
+  color: #facc15 !important;
+  -webkit-text-fill-color: #facc15 !important;
+  font-size: 9px !important;
+  font-style: normal !important;
+  font-weight: 1000 !important;
+}
+
+body.cv-industrial-shell .cv-industrial-group a span {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  color: inherit !important;
+  -webkit-text-fill-color: inherit !important;
+}
+
+/* Active / hover */
+body.cv-industrial-shell .cv-industrial-group a:hover,
+body.cv-industrial-shell .cv-industrial-group a.active {
+  background: linear-gradient(135deg, #facc15, #fb923c) !important;
+  border-color: rgba(251, 146, 60, .65) !important;
+  color: #020617 !important;
+  -webkit-text-fill-color: #020617 !important;
+  box-shadow: 0 10px 26px rgba(251, 146, 60, .22) !important;
+}
+
+body.cv-industrial-shell .cv-industrial-group a:hover span,
+body.cv-industrial-shell .cv-industrial-group a.active span {
+  color: #020617 !important;
+  -webkit-text-fill-color: #020617 !important;
+}
+
+body.cv-industrial-shell .cv-industrial-group a:hover i,
+body.cv-industrial-shell .cv-industrial-group a.active i {
+  background: rgba(2, 6, 23, .78) !important;
+  color: #fbbf24 !important;
+  -webkit-text-fill-color: #fbbf24 !important;
+}
+
+body.cv-industrial-shell .cv-industrial-build-marker {
+  display: none !important;
+}
