@@ -267,3 +267,39 @@ export function planHasAccess(currentPlan, requiredPlan) {
   return isPlanAtLeast(currentPlan, requiredPlan);
 }
 
+export function normalizeCountry(countryCode) {
+  const code = String(countryCode || "NZ").trim().toUpperCase();
+  const aliases = {
+    NZ: "NZ",
+    NZL: "NZ",
+    "NEW ZEALAND": "NZ",
+    AU: "AU",
+    AUS: "AU",
+    AUSTRALIA: "AU",
+    US: "US",
+    USA: "US",
+    "UNITED STATES": "US",
+    UK: "UK",
+    GB: "UK",
+    GBR: "UK",
+    "UNITED KINGDOM": "UK"
+  };
+  return aliases[code] || "NZ";
+}
+
+export function normaliseCountry(countryCode) {
+  return normalizeCountry(countryCode);
+}
+
+export function getCountrySymbol(countryCode) {
+  return getCountryConfig(normalizeCountry(countryCode)).symbol;
+}
+
+export function getCountryCurrency(countryCode) {
+  return getCountryConfig(normalizeCountry(countryCode)).currency;
+}
+
+export function getCountryTaxLabel(countryCode) {
+  return getCountryConfig(normalizeCountry(countryCode)).taxLabel || "";
+}
+
