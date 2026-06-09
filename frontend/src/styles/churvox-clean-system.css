@@ -274,3 +274,29 @@ select optgroup {
   color: #111827 !important;
   -webkit-text-fill-color: #111827 !important;
 }
+
+/* COMPACT SUPPORT HEADER */
+body.cv-industrial-shell main:has(select) > section:first-child,
+body.cv-industrial-shell main:has(textarea) > section:first-child {
+  min-height: 260px !important;
+  padding-top: 42px !important;
+  padding-bottom: 42px !important;
+}
+
+body.cv-industrial-shell main:has(select) > section:first-child h1,
+body.cv-industrial-shell main:has(textarea) > section:first-child h1 {
+  font-size: clamp(34px, 4vw, 56px) !important;
+  line-height: 1 !important;
+  margin-bottom: 10px !important;
+}
+
+body.cv-industrial-shell main:has(select) > section:first-child p,
+body.cv-industrial-shell main:has(textarea) > section:first-child p {
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+}
+
+body.cv-industrial-shell main:has(select) > section:first-child + section,
+body.cv-industrial-shell main:has(textarea) > section:first-child + section {
+  margin-top: 18px !important;
+}
