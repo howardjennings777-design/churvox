@@ -82,10 +82,10 @@ function Style() {
     .ivRoot{min-height:100vh;background:#f6f1e7;color:#111827;font-family:Inter,system-ui}
     .ivWrap{max-width:1540px;margin:0 auto;padding:24px 28px 120px}
     .ivHero{background:#0b1018;color:#fff;border-left:8px solid #f97316;border-radius:34px;padding:30px;box-shadow:0 24px 70px rgba(2,6,23,.22)}
-    .ivHeroTag{position:relative;display:inline-flex;align-items:center;gap:14px;overflow:hidden;border-radius:999px;background:linear-gradient(90deg,#07101a 0%,#07101a 58%,rgba(249,115,22,.36) 100%);border:1px solid rgba(249,115,22,.28);padding:7px 18px 7px 0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);isolation:isolate;min-height:42px}
-    .ivHeroTag i{display:block;width:52px;height:52px;border-radius:999px;background:#f97316;margin-left:-25px;flex:0 0 52px;box-shadow:0 0 26px rgba(249,115,22,.45)}
-    .ivHeroTag strong{position:relative;z-index:2;color:#fed7aa!important;-webkit-text-fill-color:#fed7aa!important;font-size:11px;font-weight:1000;letter-spacing:.18em;text-transform:uppercase;white-space:nowrap;line-height:1}
-    .ivHeroTag:after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 0 34%,rgba(255,255,255,.08) 34% 49%,transparent 49% 100%);z-index:1;pointer-events:none}
+    .ivHeroTag{position:relative;display:inline-flex;align-items:center;gap:10px;overflow:hidden;border-radius:999px;background:linear-gradient(90deg,#07101a 0%,#07101a 58%,rgba(249,115,22,.34) 100%);border:1px solid rgba(249,115,22,.26);padding:5px 16px 5px 0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);isolation:isolate;min-height:34px}
+    .ivHeroTag i{display:block;width:44px;height:44px;border-radius:999px;background:#f97316;margin-left:-31px;flex:0 0 44px;box-shadow:0 0 20px rgba(249,115,22,.36)}
+    .ivHeroTag strong{position:relative;z-index:2;color:#fed7aa!important;-webkit-text-fill-color:#fed7aa!important;font-size:10px;font-weight:1000;letter-spacing:.18em;text-transform:uppercase;white-space:nowrap;line-height:1}
+    .ivHeroTag:after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 0 34%,rgba(255,255,255,.07) 34% 49%,transparent 49% 100%);z-index:1;pointer-events:none}
     .ivPanel small{display:inline-flex;border-radius:999px;background:#111827;color:#fbbf24!important;-webkit-text-fill-color:#fbbf24!important;padding:8px 12px;font-size:10px;font-weight:1000;letter-spacing:.13em;text-transform:uppercase}
     .ivHero h1{margin:16px 0 8px;font-size:clamp(42px,5.5vw,76px);line-height:.9;letter-spacing:-.07em;color:#fff}
     .ivHero p{max-width:920px;color:#f8fafc;font-weight:900;line-height:1.5}
