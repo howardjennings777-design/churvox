@@ -107,3 +107,12 @@ body:has(.cxRoot) [class*="OnboardingGuide"] {
   display: none !important;
   pointer-events: none !important;
 }
+
+/* CHURVOX_HIDE_FORCED_SETUP_GUIDE_ON_PLANS_20260609
+   PlansCommandPage had FirstSetupGuide forced as the first child. Hide that one only,
+   so the real billing/plans cards become the top of the Plans page.
+*/
+.cv-launch-plans-page > section > :first-child:not(article) {
+  display: none !important;
+  pointer-events: none !important;
+}
