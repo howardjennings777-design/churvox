@@ -287,3 +287,146 @@ body.cv-industrial-shell .plans-command-shell > .flex > aside { display: none !i
   body.cv-industrial-shell .xcf-workspace,
   body.cv-industrial-shell .xcf-shell.xcf-real-page { margin-left: 0 !important; width: 100vw !important; max-width: 100vw !important; }
 }
+
+/* CHURVOX_SIDEBAR_FINAL_POLISH_20260610
+   Cleaner command sidebar: slimmer, less chunky, smoother scroll. */
+
+@media (min-width: 1024px) {
+  .cv-industrial-sidebar {
+    width: 248px !important;
+    box-shadow: 14px 0 54px rgba(2, 6, 23, .34) !important;
+  }
+
+  body.cv-industrial-shell main.fixed.inset-0 {
+    left: 248px !important;
+    width: calc(100vw - 248px) !important;
+    max-width: calc(100vw - 248px) !important;
+  }
+
+  body.cv-industrial-shell .concept-c2-frame,
+  body.cv-industrial-shell .xcf-real-page,
+  body.cv-industrial-shell .xcf-workspace,
+  body.cv-industrial-shell .xcf-shell.xcf-real-page {
+    margin-left: 248px !important;
+    width: calc(100vw - 248px) !important;
+    max-width: calc(100vw - 248px) !important;
+  }
+
+  body.cv-industrial-shell .cxRoot,
+  body.cv-industrial-shell .ch4Root {
+    padding-left: 248px !important;
+  }
+
+  body.cv-industrial-shell .scRoot,
+  body.cv-industrial-shell .dwRoot {
+    padding-left: 272px !important;
+  }
+}
+
+.cv-industrial-rail {
+  width: 4px !important;
+}
+
+.cv-industrial-brand {
+  padding: 15px 14px 12px 18px !important;
+  gap: 10px !important;
+}
+
+.cv-industrial-mark {
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 12px !important;
+  font-size: 18px !important;
+}
+
+.cv-industrial-brand strong {
+  font-size: 13px !important;
+  letter-spacing: .02em !important;
+}
+
+.cv-industrial-brand span {
+  font-size: 9px !important;
+  letter-spacing: .16em !important;
+}
+
+.cv-industrial-status {
+  margin: 11px 12px 8px 17px !important;
+  padding: 10px 11px !important;
+  border-radius: 15px !important;
+}
+
+.cv-industrial-status span {
+  font-size: 9px !important;
+}
+
+.cv-industrial-status b {
+  font-size: 11px !important;
+  line-height: 1.25 !important;
+}
+
+.cv-industrial-navwrap {
+  padding: 8px 10px 28px 17px !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(250, 204, 21, .42) rgba(15, 23, 42, .28) !important;
+}
+
+.cv-industrial-navwrap::-webkit-scrollbar {
+  width: 6px !important;
+}
+
+.cv-industrial-navwrap::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, .28) !important;
+  border-radius: 999px !important;
+}
+
+.cv-industrial-navwrap::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #facc15, #fb923c) !important;
+  border-radius: 999px !important;
+}
+
+.cv-industrial-group {
+  margin-top: 12px !important;
+}
+
+.cv-industrial-group p {
+  margin-bottom: 6px !important;
+  padding-left: 6px !important;
+  font-size: 9px !important;
+  letter-spacing: .17em !important;
+}
+
+.cv-industrial-group nav {
+  gap: 4px !important;
+}
+
+.cv-industrial-group a {
+  min-height: 37px !important;
+  border-radius: 12px !important;
+  padding: 6px 8px !important;
+  gap: 9px !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+}
+
+.cv-industrial-group a i {
+  width: 25px !important;
+  min-width: 25px !important;
+  height: 25px !important;
+  border-radius: 9px !important;
+  font-size: 9px !important;
+}
+
+.cv-industrial-group a.active {
+  box-shadow: 0 10px 26px rgba(251, 146, 60, .22) !important;
+}
+
+.cv-industrial-group a.active i,
+.cv-industrial-group a:hover i {
+  background: rgba(2, 6, 23, .74) !important;
+  color: #fbbf24 !important;
+  -webkit-text-fill-color: #fbbf24 !important;
+}
+
+.cv-industrial-build-marker {
+  display: none !important;
+}

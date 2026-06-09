@@ -164,7 +164,6 @@ function IndustrialSidebar({ pathname }) {
             </nav>
           </section>
         ))}
-        <div className="cv-industrial-build-marker" title="Temporary live build proof">{BUILD_MARKER}</div>
       </div>
     </aside>
   );
