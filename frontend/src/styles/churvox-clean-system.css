@@ -40,7 +40,105 @@ main h5,
 main h6,
 main button,
 main a {
-  opacity: 1;
+  opacity: 1 !important;
+}
+
+/* Dark sidebar / app shell text */
+aside,
+aside *,
+[class*="sidebar"],
+[class*="Sidebar"],
+[class*="sideBar"],
+[class*="SideBar"],
+[class*="navRail"],
+[class*="NavRail"] {
+  color: var(--cv-dark-text) !important;
+  -webkit-text-fill-color: var(--cv-dark-text) !important;
+  opacity: 1 !important;
+}
+
+/* Command dashboard dark page sections */
+main[data-industrial-simple-page="command"] h1,
+main[data-industrial-simple-page="command"] h2,
+main[data-industrial-simple-page="command"] h3,
+main[data-industrial-simple-page="command"] h4,
+main[data-industrial-simple-page="command"] h5,
+main[data-industrial-simple-page="command"] h6,
+main[data-industrial-simple-page="command"] strong,
+main[data-industrial-simple-page="command"] button,
+main[data-industrial-simple-page="command"] a {
+  color: var(--cv-dark-text) !important;
+  -webkit-text-fill-color: var(--cv-dark-text) !important;
+  opacity: 1 !important;
+}
+
+main[data-industrial-simple-page="command"] p,
+main[data-industrial-simple-page="command"] span,
+main[data-industrial-simple-page="command"] small,
+main[data-industrial-simple-page="command"] label,
+main[data-industrial-simple-page="command"] li {
+  color: #e5e7eb !important;
+  -webkit-text-fill-color: #e5e7eb !important;
+  opacity: 1 !important;
+}
+
+main[data-industrial-simple-page="command"] [class*="tile"],
+main[data-industrial-simple-page="command"] [class*="Tile"],
+main[data-industrial-simple-page="command"] [class*="card"],
+main[data-industrial-simple-page="command"] [class*="Card"],
+main[data-industrial-simple-page="command"] [class*="panel"],
+main[data-industrial-simple-page="command"] [class*="Panel"],
+main[data-industrial-simple-page="command"] [class*="hero"],
+main[data-industrial-simple-page="command"] [class*="Hero"],
+main[data-industrial-simple-page="command"] [data-cv-command-tile] {
+  color: var(--cv-dark-text) !important;
+  -webkit-text-fill-color: var(--cv-dark-text) !important;
+  opacity: 1 !important;
+}
+
+main[data-industrial-simple-page="command"] [class*="tile"] *,
+main[data-industrial-simple-page="command"] [class*="Tile"] *,
+main[data-industrial-simple-page="command"] [class*="card"] *,
+main[data-industrial-simple-page="command"] [class*="Card"] *,
+main[data-industrial-simple-page="command"] [class*="panel"] *,
+main[data-industrial-simple-page="command"] [class*="Panel"] *,
+main[data-industrial-simple-page="command"] [class*="hero"] *,
+main[data-industrial-simple-page="command"] [class*="Hero"] *,
+main[data-industrial-simple-page="command"] [data-cv-command-tile] * {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+  opacity: 1 !important;
+}
+
+/* Dark plan / billing / status cards */
+main [class*="billing"],
+main [class*="Billing"],
+main [class*="pricing"],
+main [class*="Pricing"],
+main [class*="plan"],
+main [class*="Plan"],
+main [class*="status"],
+main [class*="Status"],
+main [class*="dark"],
+main [class*="Dark"] {
+  color: var(--cv-dark-text) !important;
+  -webkit-text-fill-color: var(--cv-dark-text) !important;
+  opacity: 1 !important;
+}
+
+main [class*="billing"] *,
+main [class*="Billing"] *,
+main [class*="pricing"] *,
+main [class*="Pricing"] *,
+main [class*="plan"] *,
+main [class*="Plan"] *,
+main [class*="status"] *,
+main [class*="Status"] *,
+main [class*="dark"] *,
+main [class*="Dark"] * {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+  opacity: 1 !important;
 }
 
 /* Form readability */
@@ -65,6 +163,27 @@ select optgroup {
   color: var(--cv-text) !important;
   -webkit-text-fill-color: var(--cv-text) !important;
   background: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Light panels/forms must stay dark text */
+main form,
+main fieldset,
+main textarea,
+main input,
+main select,
+main [class*="profile"],
+main [class*="Profile"],
+main [class*="form"],
+main [class*="Form"],
+main [class*="field"],
+main [class*="Field"],
+main [class*="note"],
+main [class*="Note"],
+main [class*="instruction"],
+main [class*="Instruction"] {
+  color: var(--cv-text) !important;
+  -webkit-text-fill-color: var(--cv-text) !important;
   opacity: 1 !important;
 }
 
