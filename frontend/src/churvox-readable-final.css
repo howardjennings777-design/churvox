@@ -1,0 +1,250 @@
+/* CHURVOX READABLE FINAL 2026-06-09
+   Last-loaded, scoped contrast repair for Command Desk pages only.
+   Fixes dark text on dark panels and pale text on light panels without broad page-wide overrides. */
+
+:root {
+  --cv-readable-dark: #0f172a;
+  --cv-readable-muted: #334155;
+  --cv-readable-light: #f8fafc;
+  --cv-readable-light-soft: #e2e8f0;
+}
+
+/* Light surfaces: settings/profile/forms/white cards must use dark readable text. */
+main[data-command-canvas] :where(
+  .bg-white,
+  .bg-slate-50,
+  .bg-slate-100,
+  [class*="bg-[#fff"],
+  [class*="bg-[#f7"],
+  [class*="bg-[#f5"]
+) {
+  color: var(--cv-readable-dark) !important;
+  -webkit-text-fill-color: var(--cv-readable-dark) !important;
+  opacity: 1 !important;
+}
+
+main[data-command-canvas] :where(
+  .bg-white,
+  .bg-slate-50,
+  .bg-slate-100,
+  [class*="bg-[#fff"],
+  [class*="bg-[#f7"],
+  [class*="bg-[#f5"]
+) :where(h1,h2,h3,h4,h5,h6,strong,b,label) {
+  color: var(--cv-readable-dark) !important;
+  -webkit-text-fill-color: var(--cv-readable-dark) !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+main[data-command-canvas] :where(
+  .bg-white,
+  .bg-slate-50,
+  .bg-slate-100,
+  [class*="bg-[#fff"],
+  [class*="bg-[#f7"],
+  [class*="bg-[#f5"]
+) :where(p,span,small,em,li,td,th,div) {
+  color: var(--cv-readable-muted) !important;
+  -webkit-text-fill-color: var(--cv-readable-muted) !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+/* Dark surfaces: graphite/black cards, pricing cards and heroes must use light text. */
+main[data-command-canvas] :where(
+  .plansHero,
+  .supportHero,
+  .settingsHero,
+  .cxHero,
+  .ch4Hero,
+  .srHero,
+  .ivHero,
+  .plHero,
+  .stHero,
+  .jbHero,
+  .clHero,
+  .qtHero,
+  .tmHero,
+  .pyHero,
+  .rpHero,
+  .dwHero,
+  .dbHero,
+  .dsHero,
+  .jdHero,
+  .qbHero,
+  .ibHero,
+  .cbHero,
+  .tbHero,
+  [class$="Hero"],
+  [class*="Hero "],
+  [class*="page-hero"],
+  [class*="PageHero"],
+  .bg-slate-950,
+  .bg-slate-900,
+  .bg-slate-800,
+  [class*="bg-[#0"],
+  [class*="bg-[#111"],
+  [class*="bg-[#1"],
+  [class*="bg-[linear-gradient"]
+) {
+  color: var(--cv-readable-light) !important;
+  -webkit-text-fill-color: var(--cv-readable-light) !important;
+  opacity: 1 !important;
+}
+
+main[data-command-canvas] :where(
+  .plansHero,
+  .supportHero,
+  .settingsHero,
+  .cxHero,
+  .ch4Hero,
+  .srHero,
+  .ivHero,
+  .plHero,
+  .stHero,
+  .jbHero,
+  .clHero,
+  .qtHero,
+  .tmHero,
+  .pyHero,
+  .rpHero,
+  .dwHero,
+  .dbHero,
+  .dsHero,
+  .jdHero,
+  .qbHero,
+  .ibHero,
+  .cbHero,
+  .tbHero,
+  [class$="Hero"],
+  [class*="Hero "],
+  [class*="page-hero"],
+  [class*="PageHero"],
+  .bg-slate-950,
+  .bg-slate-900,
+  .bg-slate-800,
+  [class*="bg-[#0"],
+  [class*="bg-[#111"],
+  [class*="bg-[#1"],
+  [class*="bg-[linear-gradient"]
+) :where(h1,h2,h3,h4,h5,h6,strong,b,label) {
+  color: var(--cv-readable-light) !important;
+  -webkit-text-fill-color: var(--cv-readable-light) !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+main[data-command-canvas] :where(
+  .plansHero,
+  .supportHero,
+  .settingsHero,
+  .cxHero,
+  .ch4Hero,
+  .srHero,
+  .ivHero,
+  .plHero,
+  .stHero,
+  .jbHero,
+  .clHero,
+  .qtHero,
+  .tmHero,
+  .pyHero,
+  .rpHero,
+  .dwHero,
+  .dbHero,
+  .dsHero,
+  .jdHero,
+  .qbHero,
+  .ibHero,
+  .cbHero,
+  .tbHero,
+  [class$="Hero"],
+  [class*="Hero "],
+  [class*="page-hero"],
+  [class*="PageHero"],
+  .bg-slate-950,
+  .bg-slate-900,
+  .bg-slate-800,
+  [class*="bg-[#0"],
+  [class*="bg-[#111"],
+  [class*="bg-[#1"],
+  [class*="bg-[linear-gradient"]
+) :where(p,span,small,em,li,td,th,div) {
+  color: var(--cv-readable-light-soft) !important;
+  -webkit-text-fill-color: var(--cv-readable-light-soft) !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+/* Inputs/selects follow the surface they sit on. */
+main[data-command-canvas] :where(input, textarea, select) {
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+main[data-command-canvas] :where(.bg-white,.bg-slate-50,.bg-slate-100,[class*="bg-[#fff"],[class*="bg-[#f7"],[class*="bg-[#f5"]) :where(input, textarea, select) {
+  color: var(--cv-readable-dark) !important;
+  -webkit-text-fill-color: var(--cv-readable-dark) !important;
+  caret-color: var(--cv-readable-dark) !important;
+}
+
+main[data-command-canvas] :where(.bg-slate-950,.bg-slate-900,.bg-slate-800,[class*="bg-[#0"],[class*="bg-[#111"],[class*="bg-[#1"],[class*="bg-[linear-gradient"]) :where(input, textarea, select) {
+  color: var(--cv-readable-light) !important;
+  -webkit-text-fill-color: var(--cv-readable-light) !important;
+  caret-color: var(--cv-readable-light) !important;
+}
+
+main[data-command-canvas] :where(option) {
+  color: var(--cv-readable-dark) !important;
+  -webkit-text-fill-color: var(--cv-readable-dark) !important;
+  background: #ffffff !important;
+}
+
+/* Bright action buttons/badges need dark text even when inside dark cards. */
+main[data-command-canvas] :where(
+  .bg-orange-300,
+  .bg-orange-400,
+  .bg-amber-300,
+  .bg-amber-400,
+  .bg-cyan-300,
+  .bg-cyan-400,
+  .bg-emerald-300,
+  .bg-emerald-400,
+  [class*="bg-orange-3"],
+  [class*="bg-orange-4"],
+  [class*="bg-amber-3"],
+  [class*="bg-amber-4"],
+  [class*="bg-cyan-3"],
+  [class*="bg-cyan-4"],
+  [class*="bg-emerald-3"],
+  [class*="bg-emerald-4"]
+),
+main[data-command-canvas] :where(
+  .bg-orange-300,
+  .bg-orange-400,
+  .bg-amber-300,
+  .bg-amber-400,
+  .bg-cyan-300,
+  .bg-cyan-400,
+  .bg-emerald-300,
+  .bg-emerald-400,
+  [class*="bg-orange-3"],
+  [class*="bg-orange-4"],
+  [class*="bg-amber-3"],
+  [class*="bg-amber-4"],
+  [class*="bg-cyan-3"],
+  [class*="bg-cyan-4"],
+  [class*="bg-emerald-3"],
+  [class*="bg-emerald-4"]
+) :where(span,strong,b,small) {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  opacity: 1 !important;
+}
+
+main[data-command-canvas] ::selection {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background: #2563eb !important;
+}
