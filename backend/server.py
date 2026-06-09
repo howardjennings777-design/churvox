@@ -303,6 +303,83 @@ PLAN_PRICE_IDS = {
     "enterprise": STRIPE_PRICE_ENTERPRISE,
 }
 
+PLAN_ENV_BY_KEY = {
+    "solo": "START",
+    "team": "CREW",
+    "pro": "OPERATOR",
+    "enterprise": "COMMAND",
+}
+
+SUPPORTED_BILLING_COUNTRIES = {"NZ", "AU", "US", "UK"}
+
+def normalize_billing_country(country: str | None) -> str:
+    code = (country or "NZ").strip().upper()
+    aliases = {
+        "NZ": "NZ", "NZL": "NZ", "NEW ZEALAND": "NZ",
+        "AU": "AU", "AUS": "AU", "AUSTRALIA": "AU",
+        "US": "US", "USA": "US", "UNITED STATES": "US",
+        "UK": "UK", "GB": "UK", "GBR": "UK", "UNITED KINGDOM": "UK",
+    }
+    code = aliases.get(code, code)
+    return code if code in SUPPORTED_BILLING_COUNTRIES else "NZ"
+
+def get_country_plan_price_id(plan: str, country: str | None = "NZ") -> str:
+    plan = (plan or "solo").lower().strip()
+    country_code = normalize_billing_country(country)
+    env_plan = PLAN_ENV_BY_KEY.get(plan)
+
+    if env_plan:
+        country_env = f"STRIPE_PRICE_{env_plan}_{country_code}"
+        country_price = os.environ.get(country_env, "").strip()
+        if country_price:
+            return country_price
+
+    # Safe fallback to existing base Stripe envs so old checkout still works.
+    price_id = PLAN_PRICE_IDS.get(plan, "")
+    if price_id:
+        return price_id
+
+    raise HTTPException(
+        status_code=400,
+        detail=f"Missing Stripe price ID for plan {plan} in {country_code}. Add {country_env if env_plan else 'the matching Stripe env var'}."
+    )
+
+def get_country_addon_price_id(addon: str, country: str | None = "NZ") -> str:
+    addon_key = (addon or "").lower().strip()
+    country_code = normalize_billing_country(country)
+
+    addon_envs = {
+        "xero_addon": "XERO_ADDON",
+        "xero": "XERO_ADDON",
+        "command_growth_pack": "COMMAND_GROWTH_PACK",
+        "growth_pack": "COMMAND_GROWTH_PACK",
+        "growth": "COMMAND_GROWTH_PACK",
+    }
+
+    env_key = addon_envs.get(addon_key)
+    if not env_key:
+        raise HTTPException(status_code=400, detail=f"Unknown add-on: {addon}")
+
+    country_env = f"STRIPE_PRICE_{env_key}_{country_code}"
+    country_price = os.environ.get(country_env, "").strip()
+    if country_price:
+        return country_price
+
+    # Fallbacks for existing/simple env names.
+    fallback_envs = [
+        f"STRIPE_PRICE_{env_key}",
+        f"STRIPE_{env_key}_PRICE",
+    ]
+    for env_name in fallback_envs:
+        fallback_price = os.environ.get(env_name, "").strip()
+        if fallback_price:
+            return fallback_price
+
+    raise HTTPException(
+        status_code=400,
+        detail=f"Missing Stripe price ID for add-on {addon_key} in {country_code}. Add {country_env}."
+    )
+
 # Create the main app
 app = FastAPI(title="Churvox API")
 
@@ -562,6 +639,7 @@ class PlanUpdate(BaseModel):
 
 class CreateCheckoutSessionRequest(BaseModel):
     plan: PlanType
+    country: Optional[str] = "NZ"
 
 class GSTUpdate(BaseModel):
     gst_rate: float
@@ -697,18 +775,8 @@ def build_user_response(user_doc: dict, user_id: str, token: str = None) -> dict
     return resp
 
 
-def get_stripe_price_id(plan: str) -> str:
-    plan = (plan or "solo").lower()
-    price_map = {
-        "solo": STRIPE_PRICE_SOLO,
-        "team": STRIPE_PRICE_TEAM,
-        "pro": STRIPE_PRICE_PRO,
-        "enterprise": STRIPE_PRICE_ENTERPRISE,
-    }
-    price_id = price_map.get(plan, "")
-    if not price_id:
-        raise HTTPException(status_code=400, detail=f"Missing Stripe price ID for plan: {plan}")
-    return price_id
+def get_stripe_price_id(plan: str, country: str | None = "NZ") -> str:
+    return get_country_plan_price_id(plan, country)
 
 async def set_business_plan_from_checkout(user_id: str, plan: str, stripe_customer_id: str = None, stripe_subscription_id: str = None):
     user_obj_id = ObjectId(user_id)
@@ -2469,18 +2537,20 @@ async def create_checkout_session(payload: CreateCheckoutSessionRequest, request
         raise HTTPException(status_code=500, detail="Stripe secret key not configured")
 
     plan_value = payload.plan.value if hasattr(payload.plan, "value") else str(payload.plan)
-    price_id = get_stripe_price_id(plan_value)
+    country_code = normalize_billing_country(payload.country)
+    price_id = get_stripe_price_id(plan_value, country_code)
 
     session = stripe.checkout.Session.create(
         mode="subscription",
         line_items=[{"price": price_id, "quantity": 1}],
-        success_url=f"{FRONTEND_URL}/billing/success?session_id={{CHECKOUT_SESSION_ID}}",
+        success_url=f"{FRONTEND_URL}/billing/success?session_id={{CHECKOUT_SESSION_ID}}&plan={plan_value}&country={country_code}",
         cancel_url=f"{FRONTEND_URL}/billing/cancel",
         customer_email=user["email"],
         metadata={
             "user_id": user["id"],
             "business_id": user["business_id"],
             "plan": plan_value,
+            "country": country_code,
         },
     )
     return {"url": session.url}
@@ -2647,11 +2717,12 @@ async def stripe_sms_webhook(request: Request):
 
 @api_router.post("/stripe/create-checkout-session")
 async def create_checkout_session(payload: dict, request: Request, user=Depends(get_current_user)):
-    plan_type = (payload.get("plan_type") or "").lower().strip()
-    price_id = PLAN_PRICE_IDS.get(plan_type)
+    plan_type = (payload.get("plan_type") or payload.get("plan") or "").lower().strip()
+    country_code = normalize_billing_country(payload.get("country") or payload.get("billing_country") or "NZ")
+    price_id = get_stripe_price_id(plan_type, country_code)
 
     if not price_id:
-        raise HTTPException(status_code=400, detail="Missing Stripe price ID for this plan")
+        raise HTTPException(status_code=400, detail="Missing Stripe price ID for this plan and country")
 
     frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000").rstrip("/")
     customer_email = user.get("email")
@@ -2665,13 +2736,15 @@ async def create_checkout_session(payload: dict, request: Request, user=Depends(
                 "price": price_id,
                 "quantity": 1,
             }],
-            success_url=f"{frontend_url}/billing?success=1",
+            success_url=f"{frontend_url}/billing?success=1&session_id={CHECKOUT_SESSION_ID}&plan={plan_type}&country={country_code}",
             cancel_url=f"{frontend_url}/plans?canceled=1",
             customer_email=customer_email,
             metadata={
                 "business_id": business_id,
                 "user_id": str(user.get("id")),
                 "plan_type": plan_type,
+                "plan": plan_type,
+                "country": country_code,
                 "purchase_type": "plan_upgrade",
             },
         )
@@ -2679,6 +2752,79 @@ async def create_checkout_session(payload: dict, request: Request, user=Depends(
     except Exception as e:
         logger.error(f"Stripe checkout session error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Stripe checkout error: {str(e)}")
+
+
+@api_router.post("/billing/create-addon-checkout-session")
+async def create_addon_checkout_session(payload: dict, request: Request):
+    user = await require_employer(request)
+
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=500, detail="Stripe secret key not configured")
+
+    addon_key = (payload.get("addon") or payload.get("addon_key") or "").lower().strip()
+    country_code = normalize_billing_country(payload.get("country") or payload.get("billing_country") or "NZ")
+    price_id = get_country_addon_price_id(addon_key, country_code)
+
+    frontend_url = os.environ.get("FRONTEND_URL", FRONTEND_URL).rstrip("/")
+    session = stripe.checkout.Session.create(
+        mode="subscription",
+        line_items=[{"price": price_id, "quantity": 1}],
+        success_url=f"{frontend_url}/plans?addon_success=1&addon={addon_key}&session_id={{CHECKOUT_SESSION_ID}}&country={country_code}",
+        cancel_url=f"{frontend_url}/plans?addon_cancelled=1&addon={addon_key}&country={country_code}",
+        customer_email=user["email"],
+        metadata={
+            "user_id": user["id"],
+            "business_id": user["business_id"],
+            "addon": addon_key,
+            "country": country_code,
+            "purchase_type": "addon",
+        },
+    )
+    return {"url": session.url, "checkout_url": session.url}
+
+
+@api_router.post("/billing/confirm-addon-checkout")
+async def confirm_addon_checkout(payload: dict, request: Request):
+    user = await require_employer(request)
+    addon_key = (payload.get("addon") or "").lower().strip()
+    session_id = payload.get("session_id")
+
+    if not session_id:
+        raise HTTPException(status_code=400, detail="Missing session_id")
+
+    # Keep this simple and safe: Stripe webhook can also update later.
+    update = {}
+    if addon_key in ("xero", "xero_addon"):
+        update["xero_addon_active"] = True
+    elif addon_key in ("growth", "growth_pack", "command_growth_pack"):
+        update["extra_user_blocks"] = 1
+    else:
+        raise HTTPException(status_code=400, detail="Unknown add-on")
+
+    update["last_addon_checkout_session_id"] = session_id
+    update["updated_at"] = datetime.now(timezone.utc)
+
+    await db.users.update_one(
+        {"_id": ObjectId(user["business_id"])},
+        {"$set": update}
+    )
+
+    return {"success": True, "message": "Add-on activated", "addon": addon_key}
+
+
+@api_router.get("/billing/addons")
+async def billing_addons(request: Request):
+    user = await get_current_user(request)
+    owner = await db.users.find_one({"_id": ObjectId(user["business_id"])})
+    if not owner:
+        owner = await db.users.find_one({"_id": ObjectId(user["id"])})
+
+    return {
+        "success": True,
+        "xero_addon_active": bool(owner.get("xero_addon_active")) if owner else False,
+        "extra_user_blocks": int(owner.get("extra_user_blocks", 0) or 0) if owner else 0,
+        "max_extra_team_members": int(owner.get("extra_user_blocks", 0) or 0) * 50 if owner else 0,
+    }
 
 
 # =========================
