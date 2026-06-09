@@ -1,0 +1,85 @@
+/* CHURVOX CLEAN SYSTEM
+   One clean readability layer.
+   This replaces the random quick-fix CSS imports.
+   It does not change backend, layout logic, or routes.
+*/
+
+:root {
+  --cv-bg: #f4efe7;
+  --cv-panel: #fffaf2;
+  --cv-text: #111827;
+  --cv-muted: #374151;
+  --cv-soft: #4b5563;
+  --cv-dark: #0f172a;
+  --cv-dark-text: #f9fafb;
+  --cv-orange: #f59e0b;
+}
+
+html,
+body,
+#root {
+  color: var(--cv-text);
+  background: var(--cv-bg);
+}
+
+/* Stop invisible/faded text from old theme leftovers */
+main label,
+main small,
+main p,
+main span,
+main strong,
+main em,
+main li,
+main td,
+main th,
+main h1,
+main h2,
+main h3,
+main h4,
+main h5,
+main h6,
+main button,
+main a {
+  opacity: 1;
+}
+
+/* Form readability */
+input,
+textarea,
+select {
+  color: var(--cv-text) !important;
+  -webkit-text-fill-color: var(--cv-text) !important;
+  opacity: 1 !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--cv-soft) !important;
+  -webkit-text-fill-color: var(--cv-soft) !important;
+  opacity: 1 !important;
+}
+
+/* Browser dropdown option panels */
+select option,
+select optgroup {
+  color: var(--cv-text) !important;
+  -webkit-text-fill-color: var(--cv-text) !important;
+  background: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Disabled controls visible but still clearly disabled */
+button:disabled,
+[aria-disabled="true"],
+.disabled,
+[class*="disabled"],
+[class*="Disabled"] {
+  opacity: 0.65 !important;
+}
+
+/* Text selection should never be the only way to see text */
+::selection {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background: #2563eb !important;
+}

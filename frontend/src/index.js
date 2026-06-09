@@ -15,9 +15,8 @@ import './command-money-under-header.css';
 import './runtime/churvoxClearOldCache';
 import './runtime/churvoxSlipOnlyMode';
 import './styles/jobs-board-clean-polish.css';
-import './churvox-readable-final.css';
-import './churvox-light-text-only-fix.css';
-import './select-option-readable.css';
+import './styles/churvox-clean-system.css';
+import './runtime/churvoxContrastGuard';
 
 // CHURVOX_JOBS_BOARD_ROUTE_CLASS_20260609
 if (typeof window !== 'undefined' && !window.__CHURVOX_JOBS_BOARD_ROUTE_CLASS__) {
@@ -92,6 +91,4 @@ root.render(
   </React.StrictMode>
 );
 
-import './light-panel-readable-patch.css';
 
-import './churvox-command-desk-final.css';
