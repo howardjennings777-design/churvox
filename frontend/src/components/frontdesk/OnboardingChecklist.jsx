@@ -182,17 +182,7 @@ export default function OnboardingChecklist() {
           marginBottom: 14,
         }}
       >
-        <div
-          style={{
-            height: "100%",
-            width: `${pct}%`,
-            background: "var(--cx-accent)",
-            transition: "width 280ms ease",
-          }}
-        />
-      </div>
-
-      <ol
+<ol
         style={{
           listStyle: "none",
           margin: 0,

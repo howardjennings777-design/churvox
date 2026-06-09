@@ -131,7 +131,7 @@ export default function EmployerFieldActivityBoard({ fallbackRecords = [] }) {
         <div>
           <small>Employer field activity</small>
           <h2>What the crew has done</h2>
-          <p>{source === "backend" ? "Showing backend activity events from approved actions and field updates." : "Showing fallback activity from job records until backend events are available."}</p>
+          <p>{source === "backend" ? "Showing backend activity events from approved actions and field updates." : ""}</p>
         </div>
         <button type="button" onClick={load}>{loading ? "Loading..." : "Refresh activity"}</button>
       </div>
@@ -140,7 +140,7 @@ export default function EmployerFieldActivityBoard({ fallbackRecords = [] }) {
           {shown.map((event, index) => <article key={`${event.type}-${event.index}-${index}`} className={`dwActivityItem ${event.tone || toneFor(event.type, event.detail)}`}><b>{event.type}</b><strong>{event.detail}</strong><span>{dateText(event.time)} · {event.worker}</span></article>)}
         </div>
       ) : (
-        <div className="dwEmpty">No worker field activity yet. When workers start, finish, upload photos or send notes, the employer board will show it here.</div>
+        <div className="dwEmpty">No worker field activity yet. Worker starts, finishes, photos and notes will show here.</div>
       )}
     </section>
   );

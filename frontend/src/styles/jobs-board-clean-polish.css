@@ -1,5 +1,4 @@
 /* CHURVOX_JOBS_BOARD_CLEAN_POLISH_20260609 */
-/* Scoped only while the browser is on /jobs-board or /jobs. */
 
 body.cv-route-jobs-board {
   background: #f4efe6 !important;
@@ -11,16 +10,16 @@ body.cv-route-jobs-board [role="main"] {
   padding-bottom: 8rem !important;
 }
 
-/* Give the Jobs workspace breathing room and stop the bottom area feeling cut off. */
-body.cv-route-jobs-board .churvox-page,
-body.cv-route-jobs-board .command-page,
-body.cv-route-jobs-board .workbench-page,
-body.cv-route-jobs-board [class*="Workbench"],
-body.cv-route-jobs-board [class*="workbench"] {
-  scroll-padding-bottom: 140px !important;
+/* Hide any remaining fallback/build helper text if an old component still renders it. */
+body.cv-route-jobs-board .cv-hide-helper-text {
+  display: none !important;
 }
 
-/* Clean cards/panels on the Jobs board only. */
+/* Make the employer activity area clean and readable. */
+body.cv-route-jobs-board * {
+  box-sizing: border-box;
+}
+
 body.cv-route-jobs-board article,
 body.cv-route-jobs-board section,
 body.cv-route-jobs-board .card,
@@ -31,16 +30,14 @@ body.cv-route-jobs-board [class*="Panel"] {
   border-radius: 24px !important;
 }
 
-/* Form fields: easier to read, less cramped, more premium. */
 body.cv-route-jobs-board input,
 body.cv-route-jobs-board select,
 body.cv-route-jobs-board textarea {
   min-height: 46px !important;
   border-radius: 14px !important;
   border-color: rgba(126, 74, 43, 0.38) !important;
-  background: rgba(255, 253, 248, 0.92) !important;
+  background: rgba(255, 253, 248, 0.95) !important;
   color: #231b16 !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.75) !important;
 }
 
 body.cv-route-jobs-board textarea {
@@ -48,59 +45,39 @@ body.cv-route-jobs-board textarea {
   resize: vertical !important;
 }
 
-body.cv-route-jobs-board label,
-body.cv-route-jobs-board [class*="label"],
-body.cv-route-jobs-board [class*="Label"] {
-  letter-spacing: 0.08em !important;
-}
-
-/* Keep buttons clean and tappable. */
 body.cv-route-jobs-board button,
 body.cv-route-jobs-board a[role="button"] {
   min-height: 44px !important;
   border-radius: 14px !important;
 }
 
-/* Stop the green action box feeling cramped. */
-body.cv-route-jobs-board button:has-text,
-body.cv-route-jobs-board [class*="action"],
-body.cv-route-jobs-board [class*="Action"] {
-  gap: 0.65rem !important;
+/* Stop black activity pill/message running off the screen. */
+body.cv-route-jobs-board p,
+body.cv-route-jobs-board div,
+body.cv-route-jobs-board span {
+  overflow-wrap: anywhere;
 }
 
-/* Better spacing on the lower Employer Field Activity area. */
 body.cv-route-jobs-board [class*="activity"],
-body.cv-route-jobs-board [class*="Activity"],
-body.cv-route-jobs-board [class*="field"],
-body.cv-route-jobs-board [class*="Field"] {
-  scroll-margin-bottom: 120px !important;
+body.cv-route-jobs-board [class*="Activity"] {
+  max-width: 100% !important;
+  overflow-x: hidden !important;
 }
 
-/* Help bubble should not cover the lower content. */
+body.cv-route-jobs-board [class*="activity"] *,
+body.cv-route-jobs-board [class*="Activity"] * {
+  max-width: 100% !important;
+  white-space: normal !important;
+}
+
+/* Help bubble should not cover lower activity content. */
 body.cv-route-jobs-board [class*="help"],
 body.cv-route-jobs-board [class*="Help"],
 body.cv-route-jobs-board a[href*="support"],
 body.cv-route-jobs-board button[aria-label*="help" i] {
-  z-index: 25 !important;
+  z-index: 20 !important;
 }
 
-body.cv-route-jobs-board .fixed,
-body.cv-route-jobs-board [style*="position: fixed"] {
-  max-width: min(260px, calc(100vw - 32px)) !important;
-}
-
-/* Desktop: make the page feel centred instead of floating in dead space. */
-@media (min-width: 900px) {
-  body.cv-route-jobs-board main > * {
-    max-width: 1220px;
-  }
-
-  body.cv-route-jobs-board textarea {
-    min-height: 100px !important;
-  }
-}
-
-/* Mobile/tablet: stack cleaner, prevent squeezed columns. */
 @media (max-width: 899px) {
   body.cv-route-jobs-board main,
   body.cv-route-jobs-board [role="main"] {
@@ -112,9 +89,5 @@ body.cv-route-jobs-board [style*="position: fixed"] {
   body.cv-route-jobs-board textarea,
   body.cv-route-jobs-board button {
     width: 100% !important;
-  }
-
-  body.cv-route-jobs-board textarea {
-    min-height: 86px !important;
   }
 }
