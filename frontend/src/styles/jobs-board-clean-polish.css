@@ -91,3 +91,146 @@ body.cv-route-jobs-board button[aria-label*="help" i] {
     width: 100% !important;
   }
 }
+
+/* CHURVOX_JOBS_BOARD_TIGHT_LAYOUT_20260610
+   Jobs page only: tighter form, less dead space, cleaner activity panel. */
+body.cv-route-jobs-board main {
+  padding-top: 18px !important;
+  padding-left: max(18px, env(safe-area-inset-left)) !important;
+  padding-right: 18px !important;
+}
+
+body.cv-route-jobs-board main > section,
+body.cv-route-jobs-board [role="main"] > section {
+  max-width: 1220px !important;
+  margin-inline: auto !important;
+}
+
+body.cv-route-jobs-board main section {
+  gap: 14px !important;
+}
+
+body.cv-route-jobs-board article,
+body.cv-route-jobs-board section,
+body.cv-route-jobs-board aside,
+body.cv-route-jobs-board form,
+body.cv-route-jobs-board [class*="panel"],
+body.cv-route-jobs-board [class*="Panel"],
+body.cv-route-jobs-board [class*="card"],
+body.cv-route-jobs-board [class*="Card"] {
+  box-shadow: 0 14px 38px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Make the workbench cards less huge. */
+body.cv-route-jobs-board aside,
+body.cv-route-jobs-board form,
+body.cv-route-jobs-board section {
+  padding-top: 16px !important;
+  padding-bottom: 16px !important;
+}
+
+/* Compact inputs and notes so the page does not run too tall. */
+body.cv-route-jobs-board input,
+body.cv-route-jobs-board select {
+  min-height: 40px !important;
+  height: 40px !important;
+  padding: 9px 12px !important;
+  font-size: 14px !important;
+  border-radius: 12px !important;
+}
+
+body.cv-route-jobs-board textarea {
+  min-height: 58px !important;
+  height: 58px !important;
+  padding: 10px 12px !important;
+  font-size: 14px !important;
+  border-radius: 12px !important;
+}
+
+/* Labels should be smaller and sharper. */
+body.cv-route-jobs-board label,
+body.cv-route-jobs-board small,
+body.cv-route-jobs-board [class*="label"],
+body.cv-route-jobs-board [class*="Label"] {
+  font-size: 10px !important;
+  line-height: 1.15 !important;
+  letter-spacing: 0.12em !important;
+  margin-bottom: 5px !important;
+}
+
+/* Keep headings clear but not oversized. */
+body.cv-route-jobs-board h1 {
+  font-size: clamp(34px, 4vw, 56px) !important;
+  line-height: 0.95 !important;
+}
+
+body.cv-route-jobs-board h2 {
+  font-size: clamp(22px, 2vw, 30px) !important;
+  line-height: 1.05 !important;
+  margin-bottom: 10px !important;
+}
+
+body.cv-route-jobs-board h3 {
+  font-size: 18px !important;
+  line-height: 1.1 !important;
+}
+
+/* Employer field activity: make it look like a proper compact status card. */
+body.cv-route-jobs-board [class*="activity"],
+body.cv-route-jobs-board [class*="Activity"] {
+  margin-top: 12px !important;
+  padding: 14px 16px !important;
+  border-radius: 22px !important;
+  background: #fffaf0 !important;
+  border: 1px solid rgba(126, 74, 43, 0.18) !important;
+}
+
+body.cv-route-jobs-board [class*="activity"] h2,
+body.cv-route-jobs-board [class*="Activity"] h2,
+body.cv-route-jobs-board [class*="activity"] h3,
+body.cv-route-jobs-board [class*="Activity"] h3 {
+  margin-top: 0 !important;
+  margin-bottom: 8px !important;
+}
+
+/* The dark "no worker activity" status bar should be shorter and cleaner. */
+body.cv-route-jobs-board [class*="activity"] p,
+body.cv-route-jobs-board [class*="Activity"] p,
+body.cv-route-jobs-board [class*="activity"] div,
+body.cv-route-jobs-board [class*="Activity"] div {
+  line-height: 1.3 !important;
+}
+
+/* Reduce giant blank areas inside job list / selected job panels. */
+body.cv-route-jobs-board aside:empty,
+body.cv-route-jobs-board section:empty {
+  min-height: 0 !important;
+}
+
+body.cv-route-jobs-board button {
+  min-height: 40px !important;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
+
+/* Desktop: let the main content breathe without huge columns. */
+@media (min-width: 1000px) {
+  body.cv-route-jobs-board main > section > section,
+  body.cv-route-jobs-board [role="main"] > section > section {
+    grid-template-columns: minmax(230px, 300px) minmax(420px, 1fr) minmax(240px, 300px) !important;
+    align-items: start !important;
+  }
+}
+
+/* Mobile/tablet: single clean column. */
+@media (max-width: 999px) {
+  body.cv-route-jobs-board main > section > section,
+  body.cv-route-jobs-board [role="main"] > section > section {
+    grid-template-columns: 1fr !important;
+  }
+
+  body.cv-route-jobs-board textarea {
+    min-height: 72px !important;
+    height: 72px !important;
+  }
+}
