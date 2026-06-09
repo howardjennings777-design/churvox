@@ -120,7 +120,6 @@ export const CHURVOX_PLANS = [
 ];
 
 export const PLANS = CHURVOX_PLANS;
-
 export const PLAN_ORDER = ["solo", "team", "pro", "enterprise"];
 
 export const PLAN_LIMITS = {
@@ -158,6 +157,7 @@ export const PLAN_NAMES = {
 };
 
 export const PLAN_DISPLAY_NAMES = PLAN_NAMES;
+
 export const PLAN_PRICES = {
   solo: 39,
   team: 89,
@@ -209,18 +209,96 @@ export function isPlanAtLeast(currentPlan, requiredPlan) {
   return planRank(currentPlan) >= planRank(requiredPlan);
 }
 
+export function hasPlanAtLeast(currentPlan, requiredPlan) {
+  return isPlanAtLeast(currentPlan, requiredPlan);
+}
+
+export function hasRequiredPlan(currentPlan, requiredPlan) {
+  return isPlanAtLeast(currentPlan, requiredPlan);
+}
+
+export function planHasAccess(currentPlan, requiredPlan) {
+  return isPlanAtLeast(currentPlan, requiredPlan);
+}
+
 export function canUsePlanFeature(currentPlan, requiredPlan) {
   return isPlanAtLeast(currentPlan, requiredPlan);
 }
 
+export function normalizeCountry(countryCode) {
+  const code = String(countryCode || "NZ").trim().toUpperCase();
+  const aliases = {
+    NZ: "NZ",
+    NZL: "NZ",
+    "NEW ZEALAND": "NZ",
+    AU: "AU",
+    AUS: "AU",
+    AUSTRALIA: "AU",
+    US: "US",
+    USA: "US",
+    "UNITED STATES": "US",
+    UK: "UK",
+    GB: "UK",
+    GBR: "UK",
+    "UNITED KINGDOM": "UK"
+  };
+  return aliases[code] || "NZ";
+}
+
+export function normaliseCountry(countryCode) {
+  return normalizeCountry(countryCode);
+}
+
 export function getCountryConfig(countryCode) {
-  const code = String(countryCode || "NZ").toUpperCase();
+  const code = normalizeCountry(countryCode);
   return COUNTRY_OPTIONS.find((country) => country.code === code) || COUNTRY_OPTIONS[0];
+}
+
+export function getCountryMeta(countryCode) {
+  return getCountryConfig(countryCode);
+}
+
+export function countryMeta(countryCode) {
+  return getCountryMeta(countryCode);
+}
+
+export function getCountryLabel(countryCode) {
+  return getCountryMeta(countryCode).label;
+}
+
+export function getCountrySymbol(countryCode) {
+  return getCountryMeta(countryCode).symbol;
+}
+
+export function getCountryCurrency(countryCode) {
+  return getCountryMeta(countryCode).currency;
+}
+
+export function getCountryTaxLabel(countryCode) {
+  return getCountryMeta(countryCode).taxLabel || "";
+}
+
+export function getCurrencySymbol(countryCode) {
+  return getCountrySymbol(countryCode);
+}
+
+export function getCurrencyCode(countryCode) {
+  return getCountryCurrency(countryCode);
+}
+
+export function formatCurrency(amount, countryCode) {
+  const country = getCountryMeta(countryCode);
+  const value = Number(amount || 0);
+  return country.symbol + value.toFixed(value % 1 === 0 ? 0 : 2);
+}
+
+export function formatMoney(amount, countryCode) {
+  return formatCurrency(amount, countryCode);
 }
 
 export function formatPlanPrice(planKey, countryCode) {
   const plan = getPlanConfig(planKey);
-  const country = getCountryConfig(countryCode);
+  const country = getCountryMeta(countryCode);
   const tax = country.taxLabel ? " " + country.taxLabel : "";
   return country.symbol + plan.monthly + "/month" + tax;
 }
@@ -250,111 +328,22 @@ export default {
   planPrice,
   planRank,
   isPlanAtLeast,
+  hasPlanAtLeast,
+  hasRequiredPlan,
+  planHasAccess,
   canUsePlanFeature,
+  normalizeCountry,
+  normaliseCountry,
   getCountryConfig,
+  getCountryMeta,
+  countryMeta,
+  getCountryLabel,
+  getCountrySymbol,
+  getCountryCurrency,
+  getCountryTaxLabel,
+  getCurrencySymbol,
+  getCurrencyCode,
+  formatCurrency,
+  formatMoney,
   formatPlanPrice
 };
-
-export function hasPlanAtLeast(currentPlan, requiredPlan) {
-  return isPlanAtLeast(currentPlan, requiredPlan);
-}
-
-export function hasRequiredPlan(currentPlan, requiredPlan) {
-  return isPlanAtLeast(currentPlan, requiredPlan);
-}
-
-export function planHasAccess(currentPlan, requiredPlan) {
-  return isPlanAtLeast(currentPlan, requiredPlan);
-}
-
-export function normalizeCountry(countryCode) {
-  const code = String(countryCode || "NZ").trim().toUpperCase();
-  const aliases = {
-    NZ: "NZ",
-    NZL: "NZ",
-    "NEW ZEALAND": "NZ",
-    AU: "AU",
-    AUS: "AU",
-    AUSTRALIA: "AU",
-    US: "US",
-    USA: "US",
-    "UNITED STATES": "US",
-    UK: "UK",
-    GB: "UK",
-    GBR: "UK",
-    "UNITED KINGDOM": "UK"
-  };
-  return aliases[code] || "NZ";
-}
-
-export function normaliseCountry(countryCode) {
-  return normalizeCountry(countryCode);
-}
-
-export function getCountrySymbol(countryCode) {
-  return getCountryConfig(normalizeCountry(countryCode)).symbol;
-}
-
-export function getCountryCurrency(countryCode) {
-  return getCountryConfig(normalizeCountry(countryCode)).currency;
-}
-
-export function getCountryTaxLabel(countryCode) {
-  return getCountryConfig(normalizeCountry(countryCode)).taxLabel || "";
-}
-
-// Extra compatibility exports for older Churvox pages.
-export function getCountryMeta(countryCode) {
-  return getCountryConfig(normalizeCountry(countryCode));
-}
-
-export function countryMeta(countryCode) {
-  return getCountryMeta(countryCode);
-}
-
-export function getCountryLabel(countryCode) {
-  return getCountryMeta(countryCode).label;
-}
-
-export function getCurrencySymbol(countryCode) {
-  return getCountryMeta(countryCode).symbol;
-}
-
-export function getCurrencyCode(countryCode) {
-  return getCountryMeta(countryCode).currency;
-}
-
-export function formatCurrency(amount, countryCode) {
-  const country = getCountryMeta(countryCode);
-  const value = Number(amount || 0);
-  return country.symbol + value.toFixed(value % 1 === 0 ? 0 : 2);
-}
-
-export function formatMoney(amount, countryCode) {
-  return formatCurrency(amount, countryCode);
-}
-
-
-export const APP_PLANS = null;
-
-export const COMMAND_GROWTH_PACK = null;
-
-export const MARKETING_PLANS = null;
-
-export const QUICK_PRICING_NOTES = null;
-
-export const SMS_PACKS = null;
-
-export const addonPriceForCountry = null;
-
-export function getPlan(...args) {
-  const first = args[0];
-  if (String("getPlan").toLowerCase().includes("country")) return getCountryMeta(first);
-  if (String("getPlan").toLowerCase().includes("price")) return getPlanPrice(first);
-  if (String("getPlan").toLowerCase().includes("plan")) return getPlanName(first);
-  return first || "";
-}
-
-export const pricePlanForCountry = null;
-
-export const pricingNotesForCountry = null;
