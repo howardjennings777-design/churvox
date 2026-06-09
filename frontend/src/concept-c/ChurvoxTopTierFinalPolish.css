@@ -69,3 +69,92 @@
     min-height: 68px;
   }
 }
+
+/* CHURVOX_XERO_SETTINGS_OVERFLOW_FIX_20260609
+   Stop Xero/accounting settings cards and safety banners overflowing sideways.
+*/
+[class*="xero"],
+[class*="Xero"],
+[class*="sync"],
+[class*="Sync"],
+[class*="accounting"],
+[class*="Accounting"] {
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+[class*="xero"] *,
+[class*="Xero"] *,
+[class*="sync"] *,
+[class*="Sync"] *,
+[class*="accounting"] *,
+[class*="Accounting"] * {
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+}
+
+[class*="xero"] section,
+[class*="Xero"] section,
+[class*="sync"] section,
+[class*="Sync"] section,
+[class*="accounting"] section,
+[class*="Accounting"] section,
+[class*="xero"] article,
+[class*="Xero"] article,
+[class*="sync"] article,
+[class*="Sync"] article,
+[class*="accounting"] article,
+[class*="Accounting"] article,
+[class*="xero"] .card,
+[class*="Xero"] .card,
+[class*="sync"] .card,
+[class*="Sync"] .card {
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  overflow-wrap: anywhere !important;
+}
+
+[class*="xero"] p,
+[class*="Xero"] p,
+[class*="sync"] p,
+[class*="Sync"] p,
+[class*="accounting"] p,
+[class*="Accounting"] p,
+[class*="xero"] span,
+[class*="Xero"] span,
+[class*="sync"] span,
+[class*="Sync"] span,
+[class*="accounting"] span,
+[class*="Accounting"] span,
+[class*="xero"] strong,
+[class*="Xero"] strong,
+[class*="sync"] strong,
+[class*="Sync"] strong {
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+}
+
+[class*="xero"] button,
+[class*="Xero"] button,
+[class*="sync"] button,
+[class*="Sync"] button,
+[class*="accounting"] button,
+[class*="Accounting"] button {
+  max-width: 100% !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+@media (max-width: 900px) {
+  [class*="xero"],
+  [class*="Xero"],
+  [class*="sync"],
+  [class*="Sync"],
+  [class*="accounting"],
+  [class*="Accounting"] {
+    width: 100% !important;
+  }
+}
