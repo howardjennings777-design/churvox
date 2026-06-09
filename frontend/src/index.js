@@ -6,4 +6,4 @@ import AIOperatorSlipBoard from './components/AIOperatorSlipBoard';
 import './index.css';
 import './styles/churvoxFullPageModals.css';
 import './components/recordWorkspacePopup.css';
-import './concept-c/LoggedIn
+import './concept-c/LoggedInLightBackgroundOverride.css';
