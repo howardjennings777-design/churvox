@@ -117,20 +117,31 @@ async function login(page) {
   }).catch(() => {});
 
   if (await submit.count()) {
-    await submit.click({ force: true, timeout: 5000 }).catch(async () => {
-      await password.press('Enter');
-    });
+    // Try every safe submit method because the visual audit has extra screenshot overlays.
+    await password.press('Enter').catch(() => {});
+    await page.waitForTimeout(500);
+
+    await submit.evaluate((button) => button.click()).catch(() => {});
+    await page.waitForTimeout(500);
+
+    await submit.click({ force: true, timeout: 5000 }).catch(() => {});
   } else {
     await password.press('Enter');
   }
 
-  await page.waitForLoadState('networkidle', { timeout: 12000 }).catch(() => {});
-  await page.waitForTimeout(1400);
+  await page.waitForLoadState('networkidle', { timeout: 18000 }).catch(() => {});
+  await page.waitForTimeout(2500);
 
   await gotoPage(page, '/dashboard');
 
   const body = await page.locator('body').innerText().catch(() => '');
   const stillOnLogin = /sign in to the command floor|forgot password|owner approval access/i.test(body) || page.url().includes('/login');
+
+  if (stillOnLogin) {
+    console.log('VISUAL AUDIT LOGIN DEBUG URL:', page.url());
+    console.log('VISUAL AUDIT LOGIN DEBUG BODY:', body.slice(0, 500));
+  }
+
   return !stillOnLogin;
 }
 
