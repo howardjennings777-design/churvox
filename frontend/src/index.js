@@ -14,6 +14,54 @@ import './command-force-dark-boxes.css';
 import './command-money-under-header.css';
 import './runtime/churvoxClearOldCache';
 import './runtime/churvoxSlipOnlyMode';
+import './styles/jobs-board-clean-polish.css';
+
+// CHURVOX_JOBS_BOARD_ROUTE_CLASS_20260609
+if (typeof window !== 'undefined' && !window.__CHURVOX_JOBS_BOARD_ROUTE_CLASS__) {
+  window.__CHURVOX_JOBS_BOARD_ROUTE_CLASS__ = true;
+
+  const syncJobsBoardClass = () => {
+    const path = window.location.pathname || '';
+    const onJobsBoard = path === '/jobs' || path === '/jobs-board' || path.startsWith('/jobs/');
+    document.body.classList.toggle('cv-route-jobs-board', onJobsBoard);
+
+    if (onJobsBoard) {
+      document.querySelectorAll('body *').forEach((node) => {
+        if (node.children && node.children.length) return;
+        const text = (node.textContent || '').trim();
+        if (/^BUILD\s+DIRECT-WORKBENCH/i.test(text)) {
+          node.style.display = 'none';
+          node.setAttribute('aria-hidden', 'true');
+        }
+      });
+    }
+  };
+
+  const originalPushState = window.history.pushState;
+  const originalReplaceState = window.history.replaceState;
+
+  window.history.pushState = function pushStatePatched(...args) {
+    const result = originalPushState.apply(this, args);
+    setTimeout(syncJobsBoardClass, 0);
+    return result;
+  };
+
+  window.history.replaceState = function replaceStatePatched(...args) {
+    const result = originalReplaceState.apply(this, args);
+    setTimeout(syncJobsBoardClass, 0);
+    return result;
+  };
+
+  window.addEventListener('popstate', syncJobsBoardClass);
+  window.addEventListener('load', syncJobsBoardClass);
+  document.addEventListener('click', () => setTimeout(syncJobsBoardClass, 80), true);
+
+  const observer = new MutationObserver(() => syncJobsBoardClass());
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+
+  syncJobsBoardClass();
+}
+
 
 function CommandPreparedSlips() {
   const [show, setShow] = React.useState(() => window.location.pathname === '/dashboard');
