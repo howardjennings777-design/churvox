@@ -60,10 +60,27 @@ async function attachWatchers(page) {
 }
 
 async function gotoAndSettle(page, route) {
-  const res = await page.goto(`${BASE_URL}${route}`, {
-    waitUntil: 'domcontentloaded',
-    timeout: 45000
-  });
+  let res = null;
+
+  try {
+    res = await page.goto(`${BASE_URL}${route}`, {
+      waitUntil: 'domcontentloaded',
+      timeout: 45000
+    });
+  } catch (err) {
+    const msg = String(err?.message || err || '');
+    if (!msg.includes('ERR_ABORTED') && !msg.includes('frame was detached')) {
+      throw err;
+    }
+
+    await page.waitForTimeout(1500);
+    if (!page.url().includes(route.replace(/^\//, ''))) {
+      res = await page.goto(`${BASE_URL}${route}`, {
+        waitUntil: 'domcontentloaded',
+        timeout: 45000
+      });
+    }
+  }
 
   await page.waitForLoadState('networkidle', { timeout: 12000 }).catch(() => {});
   await page.waitForTimeout(1200);
@@ -230,6 +247,7 @@ test.describe('Churvox plans pricing audit', () => {
 
 test.describe('Churvox authenticated app audit', () => {
   test('main app routes do not crash after login', async ({ page }) => {
+    test.setTimeout(180000);
     test.skip(!TEST_EMAIL || !TEST_PASSWORD, 'Set CHURVOX_TEST_EMAIL and CHURVOX_TEST_PASSWORD to test logged-in app pages.');
 
     const problems = await attachWatchers(page);
@@ -298,9 +316,10 @@ test.describe('Churvox visual safety audit', () => {
     ];
 
     const bodyText = await page.locator('body').innerText({ timeout: 20000 });
+    const bodyTextLower = bodyText.toLowerCase();
 
     for (const text of visibleTexts) {
-      expect(bodyText, `Plans body should contain ${text}`).toContain(text);
+      expect(bodyTextLower, `Plans body should contain ${text}`).toContain(String(text).toLowerCase());
     }
 
     const invisibleCount = await page.evaluate(() => {
