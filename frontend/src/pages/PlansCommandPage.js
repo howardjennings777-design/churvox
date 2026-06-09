@@ -10,8 +10,6 @@ import {
   COUNTRY_OPTIONS,
   normaliseCountry,
   getCountryMeta,
-  pricePlanForCountry,
-  addonPriceForCountry,
   pricingNotesForCountry,
   getPlan,
   hasPlanAtLeast,
@@ -23,6 +21,27 @@ const colors = {
   team: "#34d399",
   pro: "#fb923c",
   enterprise: "#a78bfa"
+};
+
+const LOCAL_PLAN_PRICES = {
+  NZ: { solo: 39, team: 89, pro: 149, enterprise: 299 },
+  AU: { solo: 35, team: 79, pro: 129, enterprise: 249 },
+  US: { solo: 25, team: 55, pro: 95, enterprise: 189 },
+  UK: { solo: 19, team: 45, pro: 75, enterprise: 149 }
+};
+
+const LOCAL_ADDON_PRICES = {
+  NZ: { xero_addon: 39, command_growth_pack: 99 },
+  AU: { xero_addon: 35, command_growth_pack: 79 },
+  US: { xero_addon: 25, command_growth_pack: 59 },
+  UK: { xero_addon: 19, command_growth_pack: 45 }
+};
+
+const COUNTRY_SYMBOLS = {
+  NZ: "NZ$",
+  AU: "A$",
+  US: "US$",
+  UK: "£"
 };
 
 function checkoutUrl(res) {
@@ -52,6 +71,56 @@ function trialText(user) {
     : `${days} day${days === 1 ? "" : "s"} left · ends ${formatDate(user.trial_ends_at)}`;
 }
 
+function localSymbol(countryCode) {
+  const code = normaliseCountry(countryCode);
+  return COUNTRY_SYMBOLS[code] || "NZ$";
+}
+
+function localPlan(plan, countryCode) {
+  const code = normaliseCountry(countryCode);
+  const country = getCountryMeta(code);
+  const amount = LOCAL_PLAN_PRICES[code]?.[plan.key] ?? plan.monthly ?? plan.price ?? 0;
+  const symbol = localSymbol(code);
+  const taxLabel = country.taxLabel || "";
+  return {
+    ...plan,
+    countryCode: code,
+    countryLabel: country.label,
+    currency: country.currency,
+    symbol,
+    taxLabel,
+    price: amount,
+    monthly: amount,
+    period: "month",
+    interval: "month",
+    priceLabel: `${symbol}${amount}/month${taxLabel ? ` ${taxLabel}` : ""}`,
+    formattedPrice: `${symbol}${amount}/month${taxLabel ? ` ${taxLabel}` : ""}`
+  };
+}
+
+function localAddon(addon, countryCode) {
+  const code = normaliseCountry(countryCode);
+  const country = getCountryMeta(code);
+  const key = addon.key || addon.code || "";
+  const amount = LOCAL_ADDON_PRICES[code]?.[key] ?? addon.monthly ?? addon.price ?? 0;
+  const symbol = localSymbol(code);
+  const taxLabel = country.taxLabel || "";
+  return {
+    ...addon,
+    countryCode: code,
+    countryLabel: country.label,
+    currency: country.currency,
+    symbol,
+    taxLabel,
+    price: amount,
+    monthly: amount,
+    period: "month",
+    interval: "month",
+    priceLabel: `${symbol}${amount}/month${taxLabel ? ` ${taxLabel}` : ""}`,
+    formattedPrice: `${symbol}${amount}/month${taxLabel ? ` ${taxLabel}` : ""}`
+  };
+}
+
 function displayPrice(item) {
   const amount = Number(item?.monthly || item?.price || 0);
   return `${item?.symbol || "NZ$"}${amount}`;
@@ -79,17 +148,17 @@ export default function PlansCommandPage() {
 
   const initialCountry = normaliseCountry(
     localStorage.getItem("churvox_billing_country") ||
-    user?.billing_country ||
-    user?.business_country ||
-    user?.country ||
-    "NZ"
+      user?.billing_country ||
+      user?.business_country ||
+      user?.country ||
+      "NZ"
   );
   const [country, setCountry] = React.useState(initialCountry);
 
   const countryMeta = getCountryMeta(country);
-  const countryPlans = CHURVOX_PLANS.map((plan) => pricePlanForCountry(plan, country));
-  const pricedXero = addonPriceForCountry(XERO_ADDON, country);
-  const pricedGrowth = addonPriceForCountry(COMMAND_GROWTH_PACK, country);
+  const countryPlans = CHURVOX_PLANS.map((plan) => localPlan(plan, country));
+  const pricedXero = localAddon(XERO_ADDON, country);
+  const pricedGrowth = localAddon(COMMAND_GROWTH_PACK, country);
   const notes = pricingNotesForCountry(country);
   const currentPlan = String(status?.plan || user?.plan || "solo").toLowerCase();
   const currentPlanData = getPlan(currentPlan);
@@ -140,7 +209,7 @@ export default function PlansCommandPage() {
       return;
     }
 
-    toast.error(res?.error || "Could not open Stripe Checkout. Check country price IDs and try again.");
+    toast.error(res?.error || "Could not open Stripe Checkout. Add matching Stripe Price IDs for this country.");
   }
 
   async function buyAddon(addonKey) {
@@ -154,7 +223,7 @@ export default function PlansCommandPage() {
       return;
     }
 
-    toast.error(res?.error || "Could not open add-on checkout. Check country add-on price IDs.");
+    toast.error(res?.error || "Could not open add-on checkout. Add matching country add-on Price IDs.");
   }
 
   const canBuyXero = hasPlanAtLeast(currentPlan, "pro");
@@ -172,7 +241,7 @@ export default function PlansCommandPage() {
         <DarkCard className="p-6 pl-9 md:p-8 md:pl-10">
           <div className="inline-flex rounded-full border border-amber-300/30 bg-amber-300/10 px-4 py-2 text-[10px] font-black uppercase tracking-[.22em] text-amber-300">Plans</div>
           <h1 className="mt-5 max-w-4xl text-5xl font-black leading-[.9] tracking-[-.08em] text-white md:text-7xl">Churvox does the admin. You approve.</h1>
-          <p className="mt-5 max-w-3xl text-sm font-bold leading-7 text-slate-300 md:text-base">Pick your billing country first, then choose the plan. The pricing cards now show the selected country clearly.</p>
+          <p className="mt-5 max-w-3xl text-sm font-bold leading-7 text-slate-300 md:text-base">Pick your billing country first. Churvox now shows fixed local prices based on conversion-style rounded pricing.</p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link to="/dashboard" className="rounded-2xl bg-[linear-gradient(135deg,#facc15,#fb923c_55%,#22d3ee)] px-5 py-3 text-sm font-black text-slate-950 no-underline">Command Board</Link>
             <button type="button" onClick={refreshPlan} className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white">Refresh plan status</button>
@@ -196,7 +265,7 @@ export default function PlansCommandPage() {
               ))}
             </select>
             <p className="rounded-2xl bg-white/10 px-4 py-3 text-sm font-black leading-6 text-white">
-              Showing {countryMeta.currency} prices. Stripe checkout will use the selected country when country price IDs are configured.
+              Showing {countryMeta.currency} fixed local pricing. Stripe needs matching country Price IDs so checkout charges the same local amount.
             </p>
           </div>
         </section>
