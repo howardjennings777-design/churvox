@@ -1,7 +1,7 @@
 (function churvoxContrastGuard() {
   if (typeof window === 'undefined') return;
-  if (window.__CHURVOX_CONTRAST_GUARD_V3__) return;
-  window.__CHURVOX_CONTRAST_GUARD_V3__ = true;
+  if (window.__CHURVOX_CONTRAST_GUARD_V4__) return;
+  window.__CHURVOX_CONTRAST_GUARD_V4__ = true;
 
   const TEXT_SELECTOR = 'h1,h2,h3,h4,h5,h6,p,span,small,label,strong,em,li,td,th,button,a,b,div';
   const FORM_SELECTOR = 'input,textarea,select,option';
@@ -10,6 +10,18 @@
     if (!el || !el.style) return;
     el.style.setProperty('color', color, 'important');
     el.style.setProperty('-webkit-text-fill-color', color, 'important');
+    el.style.setProperty('opacity', '1', 'important');
+    el.style.setProperty('text-shadow', 'none', 'important');
+    el.style.setProperty('mix-blend-mode', 'normal', 'important');
+  }
+
+  function forceSelectBox(el) {
+    if (!el || !el.style) return;
+    el.style.setProperty('background', '#ffffff', 'important');
+    el.style.setProperty('background-color', '#ffffff', 'important');
+    el.style.setProperty('background-image', 'none', 'important');
+    el.style.setProperty('color', '#111827', 'important');
+    el.style.setProperty('-webkit-text-fill-color', '#111827', 'important');
     el.style.setProperty('opacity', '1', 'important');
     el.style.setProperty('text-shadow', 'none', 'important');
     el.style.setProperty('mix-blend-mode', 'normal', 'important');
@@ -167,7 +179,15 @@
   function fixForms() {
     document.querySelectorAll(FORM_SELECTOR).forEach((el) => {
       if (skip(el)) return;
-      forceColor(el, '#0f172a');
+      if (el.tagName && String(el.tagName).toLowerCase() === 'select') {
+        forceSelectBox(el);
+        return;
+      }
+      if (el.tagName && String(el.tagName).toLowerCase() === 'option') {
+        forceSelectBox(el);
+        return;
+      }
+      forceColor(el, '#f9fafb');
     });
   }
 
