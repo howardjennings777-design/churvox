@@ -82,9 +82,10 @@ function Style() {
     .ivRoot{min-height:100vh;background:#f6f1e7;color:#111827;font-family:Inter,system-ui}
     .ivWrap{max-width:1540px;margin:0 auto;padding:24px 28px 120px}
     .ivHero{background:#0b1018;color:#fff;border-left:8px solid #f97316;border-radius:34px;padding:30px;box-shadow:0 24px 70px rgba(2,6,23,.22)}
-    .ivHero small{position:relative;display:inline-flex;align-items:center;overflow:hidden;border-radius:999px;background:linear-gradient(90deg,#07101a 0%,#07101a 58%,rgba(249,115,22,.36) 100%);color:#f97316!important;-webkit-text-fill-color:#f97316!important;border:1px solid rgba(249,115,22,.28);padding:10px 18px 10px 62px;font-size:11px;font-weight:1000;letter-spacing:.18em;text-transform:uppercase;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);isolation:isolate}
-    .ivHero small:before{content:"";position:absolute;left:-18px;top:50%;width:46px;height:46px;border-radius:999px;background:#f97316;transform:translateY(-50%);box-shadow:0 0 26px rgba(249,115,22,.45);z-index:0}
+    .ivHero small{position:relative;display:inline-flex;align-items:center;overflow:hidden;border-radius:999px;background:linear-gradient(90deg,#07101a 0%,#07101a 58%,rgba(249,115,22,.36) 100%);color:#f97316!important;-webkit-text-fill-color:#f97316!important;border:1px solid rgba(249,115,22,.28);padding:10px 18px 10px 54px;font-size:11px;font-weight:1000;letter-spacing:.18em;text-transform:uppercase;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);isolation:isolate}
+    .ivHero small:before{content:"";position:absolute;left:-28px;top:50%;width:58px;height:58px;border-radius:999px;background:#f97316;transform:translateY(-50%);box-shadow:0 0 26px rgba(249,115,22,.45);z-index:0}
     .ivHero small:after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 0 34%,rgba(255,255,255,.08) 34% 49%,transparent 49% 100%);z-index:0;pointer-events:none}
+    .ivHero small{z-index:1}
     .ivPanel small{display:inline-flex;border-radius:999px;background:#111827;color:#fbbf24!important;-webkit-text-fill-color:#fbbf24!important;padding:8px 12px;font-size:10px;font-weight:1000;letter-spacing:.13em;text-transform:uppercase}
     .ivHero h1{margin:16px 0 8px;font-size:clamp(42px,5.5vw,76px);line-height:.9;letter-spacing:-.07em;color:#fff}
     .ivHero p{max-width:920px;color:#f8fafc;font-weight:900;line-height:1.5}
