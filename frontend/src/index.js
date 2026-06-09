@@ -2,7 +2,6 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import RecordWorkspacePopupBridgeV2 from './components/RecordWorkspacePopupBridgeV2';
-import AIOperatorSlipBoard from './components/AIOperatorSlipBoard';
 import './index.css';
 import './styles/churvoxFullPageModals.css';
 import './components/recordWorkspacePopup.css';
@@ -64,15 +63,6 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_JOBS_BOARD_ROUTE_CLASS__)
   syncJobsBoardClass();
 }
 
-function CommandPreparedSlips() {
-  const [show, setShow] = React.useState(() => window.location.pathname === '/dashboard');
-  React.useEffect(() => {
-    const timer = window.setInterval(() => setShow(window.location.pathname === '/dashboard'), 800);
-    return () => window.clearInterval(timer);
-  }, []);
-  if (!show) return null;
-  return <div className="cv-command-prepared-slips"><AIOperatorSlipBoard /></div>;
-}
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -86,7 +76,6 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <App />
-    <CommandPreparedSlips />
     <RecordWorkspacePopupBridgeV2 />
   </React.StrictMode>
 );
