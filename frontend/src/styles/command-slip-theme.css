@@ -170,7 +170,29 @@ main.fixed.inset-0 > .flex > aside nav a > strong {
 .tmHero,
 .pyHero,
 .rpHero,
-[class*="Hero"]:not(.cxSlip header):not(.cxUrgent) {
+.dwHero,
+.dbHero,
+.dsHero,
+.jdHero,
+.qbHero,
+.ibHero,
+.cbHero,
+.tbHero,
+.settingsHero,
+.plansHero,
+.teamHero,
+.payrollHero,
+.reportsHero,
+.supportHero,
+.commandHero,
+.dashboardHero,
+.pageHero,
+.appHero,
+[class$="Hero"],
+[class*="Hero "],
+[class*="hero-header"],
+[class*="page-hero"],
+[class*="PageHero"] {
   position: relative !important;
   overflow: hidden !important;
   isolation: isolate !important;
@@ -196,7 +218,29 @@ main.fixed.inset-0 > .flex > aside nav a > strong {
 .tmHero::before,
 .pyHero::before,
 .rpHero::before,
-[class*="Hero"]:not(.cxSlip header):not(.cxUrgent)::before {
+.dwHero::before,
+.dbHero::before,
+.dsHero::before,
+.jdHero::before,
+.qbHero::before,
+.ibHero::before,
+.cbHero::before,
+.tbHero::before,
+.settingsHero::before,
+.plansHero::before,
+.teamHero::before,
+.payrollHero::before,
+.reportsHero::before,
+.supportHero::before,
+.commandHero::before,
+.dashboardHero::before,
+.pageHero::before,
+.appHero::before,
+[class$="Hero"]::before,
+[class*="Hero "]::before,
+[class*="hero-header"]::before,
+[class*="page-hero"]::before,
+[class*="PageHero"]::before {
   content: "" !important;
   position: absolute !important;
   inset: 0 !important;
@@ -221,7 +265,29 @@ main.fixed.inset-0 > .flex > aside nav a > strong {
 .tmHero::after,
 .pyHero::after,
 .rpHero::after,
-[class*="Hero"]:not(.cxSlip header):not(.cxUrgent)::after {
+.dwHero::after,
+.dbHero::after,
+.dsHero::after,
+.jdHero::after,
+.qbHero::after,
+.ibHero::after,
+.cbHero::after,
+.tbHero::after,
+.settingsHero::after,
+.plansHero::after,
+.teamHero::after,
+.payrollHero::after,
+.reportsHero::after,
+.supportHero::after,
+.commandHero::after,
+.dashboardHero::after,
+.pageHero::after,
+.appHero::after,
+[class$="Hero"]::after,
+[class*="Hero "]::after,
+[class*="hero-header"]::after,
+[class*="page-hero"]::after,
+[class*="PageHero"]::after {
   content: "" !important;
   position: absolute !important;
   right: -80px !important;
@@ -246,7 +312,29 @@ main.fixed.inset-0 > .flex > aside nav a > strong {
 .tmHero > *,
 .pyHero > *,
 .rpHero > *,
-[class*="Hero"]:not(.cxSlip header):not(.cxUrgent) > * {
+.dwHero > *,
+.dbHero > *,
+.dsHero > *,
+.jdHero > *,
+.qbHero > *,
+.ibHero > *,
+.cbHero > *,
+.tbHero > *,
+.settingsHero > *,
+.plansHero > *,
+.teamHero > *,
+.payrollHero > *,
+.reportsHero > *,
+.supportHero > *,
+.commandHero > *,
+.dashboardHero > *,
+.pageHero > *,
+.appHero > *,
+[class$="Hero"] > *,
+[class*="Hero "] > *,
+[class*="hero-header"] > *,
+[class*="page-hero"] > *,
+[class*="PageHero"] > * {
   position: relative !important;
   z-index: 1 !important;
 }
@@ -263,7 +351,29 @@ main.fixed.inset-0 > .flex > aside nav a > strong {
 .tmHero h1,
 .pyHero h1,
 .rpHero h1,
-[class*="Hero"] h1 {
+.dwHero h1,
+.dbHero h1,
+.dsHero h1,
+.jdHero h1,
+.qbHero h1,
+.ibHero h1,
+.cbHero h1,
+.tbHero h1,
+.settingsHero h1,
+.plansHero h1,
+.teamHero h1,
+.payrollHero h1,
+.reportsHero h1,
+.supportHero h1,
+.commandHero h1,
+.dashboardHero h1,
+.pageHero h1,
+.appHero h1,
+[class$="Hero"] h1,
+[class*="Hero "] h1,
+[class*="hero-header"] h1,
+[class*="page-hero"] h1,
+[class*="PageHero"] h1 {
   color: #ffffff !important;
 }
 
@@ -279,11 +389,33 @@ main.fixed.inset-0 > .flex > aside nav a > strong {
 .tmHero p,
 .pyHero p,
 .rpHero p,
-[class*="Hero"] p {
+.dwHero p,
+.dbHero p,
+.dsHero p,
+.jdHero p,
+.qbHero p,
+.ibHero p,
+.cbHero p,
+.tbHero p,
+.settingsHero p,
+.plansHero p,
+.teamHero p,
+.payrollHero p,
+.reportsHero p,
+.supportHero p,
+.commandHero p,
+.dashboardHero p,
+.pageHero p,
+.appHero p,
+[class$="Hero"] p,
+[class*="Hero "] p,
+[class*="hero-header"] p,
+[class*="page-hero"] p,
+[class*="PageHero"] p {
   color: #f8fafc !important;
 }
 
-/* Header status pill: match the subtle glass stat cards, not a separate black button. */
+/* Header status/page label pills should use the same dark industrial badge style. */
 .cxHero .cxPill,
 .ch4Hero .cxPill,
 .srHero .cxPill,
@@ -296,34 +428,17 @@ main.fixed.inset-0 > .flex > aside nav a > strong {
 .tmHero .cxPill,
 .pyHero .cxPill,
 .rpHero .cxPill,
-[class*="Hero"] .cxPill,
-[class*="Hero"] [class*="Pill"],
-[class*="Hero"] > .bg-white,
-[class*="Hero"] .bg-white.text-slate-950,
-[class*="Hero"] .bg-white.text-slate-900,
-[class*="Hero"] .bg-white.text-slate-800,
-[class*="Hero"] .bg-white.text-orange-900,
-[class*="Hero"] .bg-white.text-amber-900,
-.ivRoot .ivHero.ivHero small,
-.srRoot .srHero.srHero small,
-.plRoot .plHero.plHero small,
-.stRoot .stHero.stHero small,
-.jbRoot .jbHero.jbHero small,
-.clRoot .clHero.clHero small,
-.qtRoot .qtHero.qtHero small,
-.tmRoot .tmHero.tmHero small,
-.pyRoot .pyHero.pyHero small,
-.rpRoot .rpHero.rpHero small,
-.ivHero > span:first-child,
-.srHero > span:first-child,
-.plHero > span:first-child,
-.stHero > span:first-child,
-.jbHero > span:first-child,
-.clHero > span:first-child,
-.qtHero > span:first-child,
-.tmHero > span:first-child,
-.pyHero > span:first-child,
-.rpHero > span:first-child {
+[class$="Hero"] .cxPill,
+[class*="Hero "] .cxPill,
+[class$="Hero"] [class*="Pill"],
+[class*="Hero "] [class*="Pill"],
+[class$="Hero"] > .bg-white,
+[class*="Hero "] > .bg-white,
+[class$="Hero"] small,
+[class*="Hero "] small,
+[class*="hero-header"] small,
+[class*="page-hero"] small,
+[class*="PageHero"] small {
   width: auto !important;
   min-width: 0 !important;
   max-width: max-content !important;
@@ -343,7 +458,9 @@ main.fixed.inset-0 > .flex > aside nav a > strong {
 
 .cxHero .cxPill:empty,
 .ch4Hero .cxPill:empty,
-[class*="Hero"] .cxPill:empty,
-[class*="Hero"] [class*="Pill"]:empty {
+[class$="Hero"] .cxPill:empty,
+[class*="Hero "] .cxPill:empty,
+[class$="Hero"] [class*="Pill"]:empty,
+[class*="Hero "] [class*="Pill"]:empty {
   display: none !important;
 }
