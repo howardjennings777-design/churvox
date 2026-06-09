@@ -55,6 +55,45 @@ const COMMAND_SHELL_STYLE = `
   body.cv-industrial-shell .cv-industrial-mark {
     background: linear-gradient(135deg, #facc15, #fb923c) !important;
   }
+
+  /* HARD SIDEBAR TEXT FIX - sidebar component owns its own styles */
+  body.cv-industrial-shell .cv-industrial-sidebar,
+  body.cv-industrial-shell .cv-industrial-sidebar *,
+  body.cv-industrial-shell .cv-clean-command-nav,
+  body.cv-industrial-shell .cv-clean-command-nav * {
+    color: #f8fafc !important;
+    -webkit-text-fill-color: #f8fafc !important;
+    opacity: 1 !important;
+    text-shadow: none !important;
+    mix-blend-mode: normal !important;
+  }
+
+  body.cv-industrial-shell .cv-industrial-group p {
+    color: #94a3b8 !important;
+    -webkit-text-fill-color: #94a3b8 !important;
+  }
+
+  body.cv-industrial-shell .cv-industrial-group a i,
+  body.cv-industrial-shell .cv-clean-command-nav a i {
+    color: #facc15 !important;
+    -webkit-text-fill-color: #facc15 !important;
+  }
+
+  body.cv-industrial-shell .cv-industrial-group a.active,
+  body.cv-industrial-shell .cv-industrial-group a.active *,
+  body.cv-industrial-shell .cv-industrial-group a:hover,
+  body.cv-industrial-shell .cv-industrial-group a:hover *,
+  body.cv-industrial-shell .cv-clean-command-nav a.active,
+  body.cv-industrial-shell .cv-clean-command-nav a.active * {
+    color: #020617 !important;
+    -webkit-text-fill-color: #020617 !important;
+  }
+
+  body.cv-industrial-shell .cv-industrial-mark {
+    color: #020617 !important;
+    -webkit-text-fill-color: #020617 !important;
+  }
+
 `;
 
 const NAV_ITEMS = [

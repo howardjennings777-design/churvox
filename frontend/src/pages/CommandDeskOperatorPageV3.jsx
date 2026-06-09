@@ -578,6 +578,98 @@ function Style() {
     .cxControls .approve{background:#16a34a;color:#052e16!important;border:2px solid #15803d}
     .cxControls .decline{background:#fecaca;color:#7f1d1d!important;border:2px solid #fca5a5}
     .cxControls .dark{background:#111827;color:#ffffff!important}
+
+    /* HARD COMMAND TEXT FIX - inline component wins over old theme files */
+    .cxHero,.cxHero *,
+    .cxStat,.cxStat *,
+    .cxBox,.cxBox *,
+    .cxContextCard,.cxContextCard *,
+    .cxDeliverySummary,.cxDeliverySummary *,
+    .cxMiniDelivery,.cxMiniDelivery * {
+      color:#f9fafb!important;
+      -webkit-text-fill-color:#f9fafb!important;
+      opacity:1!important;
+      text-shadow:none!important;
+      mix-blend-mode:normal!important;
+    }
+
+    .cxHero .cxBrandMark,
+    .cxHero .cxBrandMark *,
+    .cxBox em,
+    .cxBox em * {
+      color:#111827!important;
+      -webkit-text-fill-color:#111827!important;
+    }
+
+    .cxPill,
+    .cxPill * {
+      color:#7c2d12!important;
+      -webkit-text-fill-color:#7c2d12!important;
+    }
+
+    .cxStatus,
+    .cxStatus *,
+    .cxSlipType,
+    .cxContextCard b,
+    .cxDeliverySummary small,
+    .cxDeliverySummary li b,
+    .cxMiniDelivery b {
+      color:#fbbf24!important;
+      -webkit-text-fill-color:#fbbf24!important;
+    }
+
+    .cxUrgent,
+    .cxUrgent *,
+    .cxFormPanel,
+    .cxFormPanel *,
+    .cxControls,
+    .cxControls * {
+      color:#111827!important;
+      -webkit-text-fill-color:#111827!important;
+      opacity:1!important;
+    }
+
+    .cxUrgent span,
+    .cxUrgent span * {
+      color:#fbbf24!important;
+      -webkit-text-fill-color:#fbbf24!important;
+    }
+
+    .cxUrgentActions button,
+    .cxUrgentActions button *,
+    .cxControls p,
+    .cxControls p *,
+    .cxControls .dark,
+    .cxControls .dark * {
+      color:#ffffff!important;
+      -webkit-text-fill-color:#ffffff!important;
+    }
+
+    .cxUrgentActions button:first-child,
+    .cxUrgentActions button:first-child *,
+    .cxControls .save,
+    .cxControls .save *,
+    .cxControls .approve,
+    .cxControls .approve *,
+    .cxControls .decline,
+    .cxControls .decline * {
+      color:#111827!important;
+      -webkit-text-fill-color:#111827!important;
+    }
+
+    .cxField span {
+      color:#431407!important;
+      -webkit-text-fill-color:#431407!important;
+    }
+
+    .cxField input,
+    .cxField textarea,
+    .cxField select,
+    .cxField option {
+      color:#0f172a!important;
+      -webkit-text-fill-color:#0f172a!important;
+    }
+
     @media(max-width:1200px){.cxOverlay{padding:12px}.cxSlip main,.cxBoxes,.cxContextGrid,.cxDeliverySummary,.cxStats{grid-template-columns:1fr}.cxControls{position:static}.cxUrgent{display:grid}.cxUrgentActions{justify-content:stretch}.cxUrgentActions button{flex:1}}
     @media(max-width:720px){.cxWrap{padding:16px 14px 110px}.cxHero{padding:22px;border-radius:26px}.cxTopLine{align-items:flex-start;flex-direction:column}.cxHero h1{font-size:42px}.cxUrgent{padding:18px;border-radius:22px}.cxUrgent h2{font-size:28px}.cxBox{min-height:190px}.cxFields{grid-template-columns:1fr}.cxOverlay{padding:8px}.cxSlip{border-radius:22px}.cxSlip header{padding:16px;display:grid}.cxSlip main{padding:10px}}
   `}</style>;
