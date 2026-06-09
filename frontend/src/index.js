@@ -16,6 +16,7 @@ import './runtime/churvoxSlipOnlyMode';
 import './styles/jobs-board-clean-polish.css';
 import './styles/dispatch-board-clean-polish.css';
 import './styles/clients-board-clean-polish.css';
+import './styles/quotes-board-clean-polish.css';
 import './styles/churvox-clean-system.css';
 import './runtime/churvoxContrastGuard';
 
@@ -26,9 +27,11 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_JOBS_BOARD_ROUTE_CLASS__)
   const syncJobsBoardClass = () => {
     const path = window.location.pathname || '';
     const onJobsBoard = path === '/jobs' || path === '/jobs-board' || path.startsWith('/jobs/');
+    const onQuotesBoard = path === '/quotes-board' || path === '/quotes' || path.startsWith('/quotes/');
     const onClientsBoard = path === '/clients-board' || path === '/clients' || path.startsWith('/clients/');
     const onDispatchBoard = path === '/dispatch-board' || path === '/dispatch' || path.startsWith('/dispatch/');
     document.body.classList.toggle('cv-route-jobs-board', onJobsBoard);
+    document.body.classList.toggle('cv-route-quotes-board', onQuotesBoard);
     document.body.classList.toggle('cv-route-clients-board', onClientsBoard);
     document.body.classList.toggle('cv-route-dispatch-board', onDispatchBoard);
 

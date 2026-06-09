@@ -1,0 +1,152 @@
+/* CHURVOX_QUOTES_BOARD_CLEAN_POLISH_20260610
+   Quotes page only: tighter form, cleaner controls, less wasted space. */
+
+body.cv-route-quotes-board {
+  background: #f4efe6 !important;
+}
+
+body.cv-route-quotes-board main,
+body.cv-route-quotes-board [role="main"] {
+  overflow-x: hidden !important;
+  padding-top: 18px !important;
+  padding-left: 18px !important;
+  padding-right: 18px !important;
+  padding-bottom: 8rem !important;
+}
+
+body.cv-route-quotes-board main > section,
+body.cv-route-quotes-board [role="main"] > section {
+  max-width: 1220px !important;
+  margin-inline: auto !important;
+}
+
+body.cv-route-quotes-board * {
+  box-sizing: border-box !important;
+}
+
+body.cv-route-quotes-board main section {
+  gap: 14px !important;
+}
+
+body.cv-route-quotes-board article,
+body.cv-route-quotes-board section,
+body.cv-route-quotes-board aside,
+body.cv-route-quotes-board form,
+body.cv-route-quotes-board [class*="panel"],
+body.cv-route-quotes-board [class*="Panel"],
+body.cv-route-quotes-board [class*="card"],
+body.cv-route-quotes-board [class*="Card"] {
+  border-radius: 24px !important;
+  box-shadow: 0 14px 38px rgba(15, 23, 42, 0.08) !important;
+}
+
+body.cv-route-quotes-board aside,
+body.cv-route-quotes-board form,
+body.cv-route-quotes-board section {
+  padding-top: 16px !important;
+  padding-bottom: 16px !important;
+}
+
+body.cv-route-quotes-board input,
+body.cv-route-quotes-board select {
+  min-height: 40px !important;
+  height: 40px !important;
+  padding: 9px 12px !important;
+  font-size: 14px !important;
+  border-radius: 12px !important;
+  border-color: rgba(126, 74, 43, 0.38) !important;
+  background: rgba(255, 253, 248, 0.95) !important;
+  color: #231b16 !important;
+  -webkit-text-fill-color: #231b16 !important;
+}
+
+body.cv-route-quotes-board textarea {
+  min-height: 72px !important;
+  height: 72px !important;
+  padding: 10px 12px !important;
+  font-size: 14px !important;
+  border-radius: 12px !important;
+  border-color: rgba(126, 74, 43, 0.38) !important;
+  background: rgba(255, 253, 248, 0.95) !important;
+  color: #231b16 !important;
+  -webkit-text-fill-color: #231b16 !important;
+}
+
+body.cv-route-quotes-board label,
+body.cv-route-quotes-board small,
+body.cv-route-quotes-board [class*="label"],
+body.cv-route-quotes-board [class*="Label"] {
+  font-size: 10px !important;
+  line-height: 1.15 !important;
+  letter-spacing: 0.12em !important;
+  margin-bottom: 5px !important;
+}
+
+body.cv-route-quotes-board h1 {
+  font-size: clamp(34px, 4vw, 56px) !important;
+  line-height: 0.95 !important;
+}
+
+body.cv-route-quotes-board h2 {
+  font-size: clamp(22px, 2vw, 30px) !important;
+  line-height: 1.05 !important;
+  margin-bottom: 10px !important;
+}
+
+body.cv-route-quotes-board h3 {
+  font-size: 18px !important;
+  line-height: 1.1 !important;
+}
+
+body.cv-route-quotes-board button {
+  min-height: 40px !important;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+  border-radius: 14px !important;
+}
+
+/* Keep owner controls tighter and aligned. */
+body.cv-route-quotes-board aside:last-child,
+body.cv-route-quotes-board [class*="owner"],
+body.cv-route-quotes-board [class*="Owner"] {
+  align-self: start !important;
+}
+
+/* Make safe list compact instead of a giant empty block. */
+body.cv-route-quotes-board aside:first-child {
+  min-height: 0 !important;
+}
+
+/* Desktop: match Jobs/Crew/Clients layout. */
+@media (min-width: 1000px) {
+  body.cv-route-quotes-board main > section > section,
+  body.cv-route-quotes-board [role="main"] > section > section {
+    grid-template-columns: minmax(220px, 280px) minmax(440px, 1fr) minmax(240px, 280px) !important;
+    align-items: start !important;
+  }
+}
+
+/* Mobile/tablet: clean single column. */
+@media (max-width: 999px) {
+  body.cv-route-quotes-board main,
+  body.cv-route-quotes-board [role="main"] {
+    padding-inline: 14px !important;
+  }
+
+  body.cv-route-quotes-board main > section > section,
+  body.cv-route-quotes-board [role="main"] > section > section {
+    grid-template-columns: 1fr !important;
+  }
+
+  body.cv-route-quotes-board input,
+  body.cv-route-quotes-board select,
+  body.cv-route-quotes-board textarea,
+  body.cv-route-quotes-board button {
+    width: 100% !important;
+  }
+
+  body.cv-route-quotes-board textarea {
+    min-height: 86px !important;
+    height: 86px !important;
+  }
+}
