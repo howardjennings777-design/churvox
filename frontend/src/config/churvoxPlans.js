@@ -254,3 +254,15 @@ export function canUsePlanFeature(currentPlan, requiredPlan) {
   return isPlanAtLeast(currentPlan, requiredPlan);
 }
 
+export function nicePlanName(planKey) {
+  return getPlanName(planKey);
+}
+
+export function planLabel(planKey) {
+  return getPlanName(planKey);
+}
+
+export function planPrice(planKey) {
+  return getPlanPrice(planKey);
+}
+
