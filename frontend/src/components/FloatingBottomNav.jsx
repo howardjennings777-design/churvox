@@ -51,7 +51,7 @@ function isActive(pathname, href) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function groupItems() {
+function groupedItems() {
   return NAV_ITEMS.reduce((groups, item) => {
     const group = item[3];
     if (!groups[group]) groups[group] = [];
@@ -60,8 +60,8 @@ function groupItems() {
   }, {});
 }
 
-function FreshSidebar({ pathname }) {
-  const groups = groupItems();
+function ChurvoxSidebar({ pathname }) {
+  const groups = groupedItems();
 
   return (
     <aside className="cvxSide" aria-label="Churvox command navigation">
@@ -85,15 +85,12 @@ function FreshSidebar({ pathname }) {
           <section key={title} className="cvxGroup">
             <p>{title}</p>
             <nav>
-              {items.map(([label, href, icon]) => {
-                const active = isActive(pathname, href);
-                return (
-                  <Link key={href} to={href} className={active ? "cvxActive" : ""}>
-                    <i aria-hidden="true">{icon}</i>
-                    <span>{label}</span>
-                  </Link>
-                );
-              })}
+              {items.map(([label, href, icon]) => (
+                <Link key={href} to={href} className={isActive(pathname, href) ? "cvxActive" : ""}>
+                  <i aria-hidden="true">{icon}</i>
+                  <span>{label}</span>
+                </Link>
+              ))}
             </nav>
           </section>
         ))}
@@ -102,7 +99,7 @@ function FreshSidebar({ pathname }) {
   );
 }
 
-function FreshMobileNav({ pathname }) {
+function ChurvoxMobileNav({ pathname }) {
   return (
     <nav className="cvxMobileNav" aria-label="Churvox mobile command navigation">
       {NAV_ITEMS.map(([label, href, icon]) => (
@@ -121,7 +118,9 @@ export default function FloatingBottomNav() {
 
   useEffect(() => {
     document.body.classList.toggle("cvx-command-shell", commandVisible);
-    document.body.classList.toggle("cv-industrial-shell", commandVisible);
+
+    // Kill the old sidebar shell class so old CSS cannot control the sidebar/content.
+    document.body.classList.remove("cv-industrial-shell");
 
     return () => {
       document.body.classList.remove("cvx-command-shell");
@@ -133,8 +132,8 @@ export default function FloatingBottomNav() {
 
   return (
     <>
-      <FreshSidebar pathname={pathname} />
-      <FreshMobileNav pathname={pathname} />
+      <ChurvoxSidebar pathname={pathname} />
+      <ChurvoxMobileNav pathname={pathname} />
     </>
   );
 }

@@ -1,19 +1,15 @@
-/* CHURVOX_FRESH_SIDEBAR_REBUILD_20260610
-   New sidebar system with new class names.
-   Old cv-industrial-sidebar / cv-clean-command-nav styles cannot touch this. */
+/* CHURVOX_ONLY_SIDEBAR_SYSTEM_20260610
+   This is now the only sidebar CSS system.
+   Uses cvx* class names only. */
 
 :root {
   --cvx-side-w: 248px;
-  --cvx-ink: #05070b;
-  --cvx-panel: #0b1018;
-  --cvx-panel-2: #111827;
   --cvx-text: #f8fafc;
   --cvx-muted: #94a3b8;
   --cvx-amber: #facc15;
   --cvx-orange: #fb923c;
 }
 
-/* Desktop content canvas */
 @media (min-width: 1024px) {
   body.cvx-command-shell .cvxSide {
     display: flex !important;
@@ -58,7 +54,6 @@
   }
 }
 
-/* Mobile/tablet */
 @media (max-width: 1023px) {
   body.cvx-command-shell .cvxSide {
     display: none !important;
@@ -82,7 +77,6 @@
   }
 }
 
-/* Fresh sidebar */
 .cvxSide {
   position: fixed !important;
   left: 0 !important;
@@ -198,20 +192,6 @@
   scrollbar-color: rgba(251, 146, 60, .55) rgba(15, 23, 42, .28) !important;
 }
 
-.cvxScroll::-webkit-scrollbar {
-  width: 6px !important;
-}
-
-.cvxScroll::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, .28) !important;
-  border-radius: 999px !important;
-}
-
-.cvxScroll::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, var(--cvx-amber), var(--cvx-orange)) !important;
-  border-radius: 999px !important;
-}
-
 .cvxGroup {
   margin-top: 12px !important;
 }
@@ -301,7 +281,6 @@
   -webkit-text-fill-color: #fbbf24 !important;
 }
 
-/* Fresh mobile nav */
 .cvxMobileNav {
   position: fixed !important;
   left: 12px !important;
@@ -354,19 +333,6 @@
   background: linear-gradient(135deg, var(--cvx-amber), var(--cvx-orange)) !important;
   color: #020617 !important;
   -webkit-text-fill-color: #020617 !important;
-}
-
-.cvxMobileNav a.cvxActive span,
-.cvxMobileNav a:hover span {
-  color: #020617 !important;
-  -webkit-text-fill-color: #020617 !important;
-}
-
-.cvxMobileNav a.cvxActive i,
-.cvxMobileNav a:hover i {
-  background: rgba(2, 6, 23, .78) !important;
-  color: #fbbf24 !important;
-  -webkit-text-fill-color: #fbbf24 !important;
 }
 
 @media (max-width: 1023px) {
