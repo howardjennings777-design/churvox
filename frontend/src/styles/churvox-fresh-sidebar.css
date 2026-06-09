@@ -1,34 +1,19 @@
-/* CHURVOX_ONLY_SIDEBAR_SYSTEM_20260610
-   This is now the only sidebar CSS system.
-   Uses cvx* class names only. */
+/* CHURVOX_ONLY_VISIBLE_SIDEBAR_20260610 */
 
 :root {
-  --cvx-side-w: 248px;
+  --cvx-side-w: 224px;
+  --cvx-bg: #0b111a;
+  --cvx-bg-2: #111827;
+  --cvx-line: rgba(255,255,255,.10);
   --cvx-text: #f8fafc;
-  --cvx-muted: #94a3b8;
-  --cvx-amber: #facc15;
-  --cvx-orange: #fb923c;
+  --cvx-muted: #9ca3af;
+  --cvx-orange: #f97316;
 }
 
 @media (min-width: 1024px) {
-  body.cvx-command-shell .cvxSide {
-    display: flex !important;
-  }
+  body.cvx-command-shell .cvxSide { display: flex !important; }
 
-  body.cvx-command-shell main {
-    margin-left: var(--cvx-side-w) !important;
-    width: calc(100vw - var(--cvx-side-w)) !important;
-    max-width: calc(100vw - var(--cvx-side-w)) !important;
-    box-sizing: border-box !important;
-  }
-
-  body.cvx-command-shell main.fixed.inset-0 {
-    margin-left: 0 !important;
-    left: var(--cvx-side-w) !important;
-    width: calc(100vw - var(--cvx-side-w)) !important;
-    max-width: calc(100vw - var(--cvx-side-w)) !important;
-  }
-
+  body.cvx-command-shell main,
   body.cvx-command-shell .cxRoot,
   body.cvx-command-shell .ch4Root,
   body.cvx-command-shell .scRoot,
@@ -44,23 +29,16 @@
     box-sizing: border-box !important;
   }
 
-  body.cvx-command-shell .cxWrap,
-  body.cvx-command-shell .ch4Wrap,
-  body.cvx-command-shell .dwWrap,
-  body.cvx-command-shell main > section {
-    max-width: 1220px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
+  body.cvx-command-shell main.fixed.inset-0 {
+    margin-left: 0 !important;
+    left: var(--cvx-side-w) !important;
   }
 }
 
 @media (max-width: 1023px) {
-  body.cvx-command-shell .cvxSide {
-    display: none !important;
-  }
+  body.cvx-command-shell .cvxSide { display: none !important; }
 
   body.cvx-command-shell main,
-  body.cvx-command-shell main.fixed.inset-0,
   body.cvx-command-shell .cxRoot,
   body.cvx-command-shell .ch4Root,
   body.cvx-command-shell .scRoot,
@@ -79,61 +57,50 @@
 
 .cvxSide {
   position: fixed !important;
-  left: 0 !important;
-  top: 0 !important;
-  bottom: 0 !important;
-  z-index: 2147483500 !important;
+  inset: 0 auto 0 0 !important;
   width: var(--cvx-side-w) !important;
   min-width: var(--cvx-side-w) !important;
   max-width: var(--cvx-side-w) !important;
+  z-index: 2147483500 !important;
   display: none !important;
   flex-direction: column !important;
-  overflow: hidden !important;
-  background: linear-gradient(180deg, #101722 0%, #0b1018 52%, #05070b 100%) !important;
-  border-right: 1px solid rgba(148, 163, 184, .16) !important;
-  box-shadow: 14px 0 54px rgba(2, 6, 23, .34) !important;
+  background: var(--cvx-bg) !important;
+  border-right: 1px solid var(--cvx-line) !important;
+  box-shadow: 8px 0 30px rgba(0,0,0,.28) !important;
   color: var(--cvx-text) !important;
   -webkit-text-fill-color: var(--cvx-text) !important;
+  overflow: hidden !important;
 }
 
-.cvxSide,
-.cvxSide * {
+.cvxSide, .cvxSide * {
   box-sizing: border-box !important;
-  opacity: 1 !important;
   text-shadow: none !important;
+  opacity: 1 !important;
   mix-blend-mode: normal !important;
 }
 
-.cvxRail {
-  position: absolute !important;
-  left: 0 !important;
-  top: 0 !important;
-  bottom: 0 !important;
-  width: 4px !important;
-  background: linear-gradient(180deg, var(--cvx-orange), var(--cvx-amber) 45%, var(--cvx-orange)) !important;
-}
-
 .cvxBrand {
-  position: relative !important;
+  min-height: 78px !important;
   display: flex !important;
   align-items: center !important;
   gap: 10px !important;
-  padding: 15px 14px 12px 18px !important;
-  border-bottom: 1px solid rgba(148, 163, 184, .14) !important;
+  padding: 16px 14px 14px 16px !important;
+  border-left: 5px solid var(--cvx-orange) !important;
+  border-bottom: 1px solid var(--cvx-line) !important;
+  background: #0f172a !important;
 }
 
 .cvxLogo {
-  width: 38px !important;
-  min-width: 38px !important;
-  height: 38px !important;
+  width: 36px !important;
+  height: 36px !important;
   display: grid !important;
   place-items: center !important;
-  border-radius: 12px !important;
-  background: linear-gradient(135deg, var(--cvx-amber), var(--cvx-orange)) !important;
-  color: #020617 !important;
-  -webkit-text-fill-color: #020617 !important;
-  font-size: 18px !important;
+  border-radius: 10px !important;
+  background: var(--cvx-orange) !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
   font-weight: 1000 !important;
+  font-size: 18px !important;
 }
 
 .cvxBrand strong {
@@ -142,75 +109,38 @@
   -webkit-text-fill-color: #fff !important;
   font-size: 13px !important;
   font-weight: 1000 !important;
-  letter-spacing: .02em !important;
+  letter-spacing: .04em !important;
 }
 
 .cvxBrand span {
   display: block !important;
   margin-top: 2px !important;
-  color: #cbd5e1 !important;
-  -webkit-text-fill-color: #cbd5e1 !important;
+  color: var(--cvx-muted) !important;
+  -webkit-text-fill-color: var(--cvx-muted) !important;
   font-size: 9px !important;
-  font-weight: 950 !important;
+  font-weight: 900 !important;
   letter-spacing: .16em !important;
   text-transform: uppercase !important;
-}
-
-.cvxStatus {
-  margin: 11px 12px 8px 17px !important;
-  padding: 10px 11px !important;
-  border-radius: 15px !important;
-  background: rgba(255, 255, 255, .045) !important;
-  border: 1px solid rgba(250, 204, 21, .18) !important;
-}
-
-.cvxStatus span {
-  display: block !important;
-  color: var(--cvx-amber) !important;
-  -webkit-text-fill-color: var(--cvx-amber) !important;
-  font-size: 9px !important;
-  font-weight: 1000 !important;
-  letter-spacing: .16em !important;
-  text-transform: uppercase !important;
-}
-
-.cvxStatus b {
-  display: block !important;
-  margin-top: 4px !important;
-  color: var(--cvx-text) !important;
-  -webkit-text-fill-color: var(--cvx-text) !important;
-  font-size: 11px !important;
-  line-height: 1.25 !important;
 }
 
 .cvxScroll {
-  min-height: 0 !important;
   flex: 1 !important;
+  min-height: 0 !important;
   overflow-y: auto !important;
-  padding: 8px 10px 28px 17px !important;
-  scrollbar-width: thin !important;
-  scrollbar-color: rgba(251, 146, 60, .55) rgba(15, 23, 42, .28) !important;
+  padding: 14px 10px 24px 12px !important;
 }
 
-.cvxGroup {
-  margin-top: 12px !important;
-}
-
-.cvxGroup:first-child {
-  margin-top: 0 !important;
-}
+.cvxGroup { margin-top: 16px !important; }
+.cvxGroup:first-child { margin-top: 0 !important; }
 
 .cvxGroup p {
-  margin: 0 0 6px !important;
-  padding-left: 6px !important;
+  margin: 0 0 7px 6px !important;
   color: var(--cvx-muted) !important;
   -webkit-text-fill-color: var(--cvx-muted) !important;
   background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
   font-size: 9px !important;
   font-weight: 1000 !important;
-  letter-spacing: .17em !important;
+  letter-spacing: .18em !important;
   text-transform: uppercase !important;
 }
 
@@ -220,129 +150,91 @@
 }
 
 .cvxGroup a {
-  min-height: 37px !important;
+  min-height: 36px !important;
   display: flex !important;
   align-items: center !important;
   gap: 9px !important;
-  border-radius: 12px !important;
+  border-radius: 10px !important;
   padding: 6px 8px !important;
-  border: 1px solid rgba(148, 163, 184, .09) !important;
-  background: rgba(255, 255, 255, .035) !important;
-  color: #e5e7eb !important;
-  -webkit-text-fill-color: #e5e7eb !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: #d1d5db !important;
+  -webkit-text-fill-color: #d1d5db !important;
   text-decoration: none !important;
   font-size: 12px !important;
-  font-weight: 950 !important;
+  font-weight: 850 !important;
 }
 
 .cvxGroup a i {
-  width: 25px !important;
-  min-width: 25px !important;
-  height: 25px !important;
+  width: 24px !important;
+  min-width: 24px !important;
+  height: 24px !important;
   display: grid !important;
   place-items: center !important;
-  border-radius: 9px !important;
-  background: rgba(250, 204, 21, .10) !important;
-  color: var(--cvx-amber) !important;
-  -webkit-text-fill-color: var(--cvx-amber) !important;
-  font-size: 9px !important;
+  border-radius: 8px !important;
+  background: #1f2937 !important;
+  color: #fbbf24 !important;
+  -webkit-text-fill-color: #fbbf24 !important;
+  font-size: 8px !important;
   font-style: normal !important;
   font-weight: 1000 !important;
 }
 
 .cvxGroup a span {
-  min-width: 0 !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
   color: inherit !important;
   -webkit-text-fill-color: inherit !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 
 .cvxGroup a:hover,
 .cvxGroup a.cvxActive {
-  background: linear-gradient(135deg, var(--cvx-amber), var(--cvx-orange)) !important;
-  border-color: rgba(251, 146, 60, .65) !important;
-  color: #020617 !important;
-  -webkit-text-fill-color: #020617 !important;
-  box-shadow: 0 10px 26px rgba(251, 146, 60, .22) !important;
-}
-
-.cvxGroup a:hover span,
-.cvxGroup a.cvxActive span {
-  color: #020617 !important;
-  -webkit-text-fill-color: #020617 !important;
+  background: #f97316 !important;
+  border-color: #f97316 !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
 }
 
 .cvxGroup a:hover i,
 .cvxGroup a.cvxActive i {
-  background: rgba(2, 6, 23, .78) !important;
+  background: #111827 !important;
   color: #fbbf24 !important;
   -webkit-text-fill-color: #fbbf24 !important;
 }
 
+.cvxGroup a:hover span,
+.cvxGroup a.cvxActive span {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}
+
 .cvxMobileNav {
-  position: fixed !important;
-  left: 12px !important;
-  right: 12px !important;
-  bottom: 12px !important;
-  z-index: 2147483400 !important;
   display: none !important;
-  gap: 6px !important;
-  padding: 8px !important;
-  border-radius: 22px !important;
-  background: rgba(5, 7, 11, .94) !important;
-  border: 1px solid rgba(250, 204, 21, .20) !important;
-  box-shadow: 0 18px 60px rgba(2, 6, 23, .38) !important;
-  overflow-x: auto !important;
-}
-
-.cvxMobileNav a {
-  min-width: 72px !important;
-  min-height: 46px !important;
-  display: grid !important;
-  place-items: center !important;
-  gap: 2px !important;
-  border-radius: 16px !important;
-  padding: 6px 8px !important;
-  color: var(--cvx-text) !important;
-  -webkit-text-fill-color: var(--cvx-text) !important;
-  text-decoration: none !important;
-  font-size: 10px !important;
-  font-weight: 950 !important;
-  border: 1px solid rgba(148, 163, 184, .10) !important;
-  background: rgba(255, 255, 255, .04) !important;
-}
-
-.cvxMobileNav a i {
-  width: 22px !important;
-  height: 22px !important;
-  display: grid !important;
-  place-items: center !important;
-  border-radius: 8px !important;
-  background: rgba(250, 204, 21, .10) !important;
-  color: var(--cvx-amber) !important;
-  -webkit-text-fill-color: var(--cvx-amber) !important;
-  font-style: normal !important;
-  font-size: 8px !important;
-  font-weight: 1000 !important;
-}
-
-.cvxMobileNav a.cvxActive,
-.cvxMobileNav a:hover {
-  background: linear-gradient(135deg, var(--cvx-amber), var(--cvx-orange)) !important;
-  color: #020617 !important;
-  -webkit-text-fill-color: #020617 !important;
 }
 
 @media (max-width: 1023px) {
   body.cvx-command-shell .cvxMobileNav {
+    position: fixed !important;
+    left: 12px !important;
+    right: 12px !important;
+    bottom: 12px !important;
+    z-index: 2147483400 !important;
     display: flex !important;
+    gap: 6px !important;
+    padding: 8px !important;
+    border-radius: 18px !important;
+    background: #0b111a !important;
+    border: 1px solid var(--cvx-line) !important;
+    overflow-x: auto !important;
   }
-}
 
-@media (min-width: 1024px) {
-  body.cvx-command-shell .cvxMobileNav {
-    display: none !important;
+  .cvxMobileNav a {
+    min-width: 72px !important;
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+    text-decoration: none !important;
+    font-size: 10px !important;
+    font-weight: 900 !important;
   }
 }

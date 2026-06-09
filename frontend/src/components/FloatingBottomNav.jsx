@@ -65,19 +65,12 @@ function ChurvoxSidebar({ pathname }) {
 
   return (
     <aside className="cvxSide" aria-label="Churvox command navigation">
-      <div className="cvxRail" />
-
       <div className="cvxBrand">
         <div className="cvxLogo">C</div>
         <div>
           <strong>CHURVOX</strong>
           <span>Command Desk</span>
         </div>
-      </div>
-
-      <div className="cvxStatus">
-        <span>AI Operator</span>
-        <b>Prepared admin. You approve.</b>
       </div>
 
       <div className="cvxScroll">
