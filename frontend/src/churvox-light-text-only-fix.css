@@ -1,3 +1,6 @@
+/* CHURVOX LIGHT PANEL TEXT ONLY FIX
+   Keeps the change narrow: readable text on light panels/cards/forms only. */
+
 .cxRoot :where(.cxCard,.cxPanel,.cxSheet,.cxSlip,.cxForm,.cxList,.cxRecord,.cxEmpty,.cxSafe,.chCard,.chPanel,.chSheet,.chSlip,.chForm,.chList,.chRecord,.chEmpty,.chSafe),
 .ch4Root :where(.cxCard,.cxPanel,.cxSheet,.cxSlip,.cxForm,.cxList,.cxRecord,.cxEmpty,.cxSafe,.chCard,.chPanel,.chSheet,.chSlip,.chForm,.chList,.chRecord,.chEmpty,.chSafe),
-.cv-settings-board :where(.card,.panel,.sheet,.box,.form,.field,.section),
+.cv-settings
