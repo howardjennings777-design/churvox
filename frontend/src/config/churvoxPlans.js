@@ -303,3 +303,58 @@ export function getCountryTaxLabel(countryCode) {
   return getCountryConfig(normalizeCountry(countryCode)).taxLabel || "";
 }
 
+// Extra compatibility exports for older Churvox pages.
+export function getCountryMeta(countryCode) {
+  return getCountryConfig(normalizeCountry(countryCode));
+}
+
+export function countryMeta(countryCode) {
+  return getCountryMeta(countryCode);
+}
+
+export function getCountryLabel(countryCode) {
+  return getCountryMeta(countryCode).label;
+}
+
+export function getCurrencySymbol(countryCode) {
+  return getCountryMeta(countryCode).symbol;
+}
+
+export function getCurrencyCode(countryCode) {
+  return getCountryMeta(countryCode).currency;
+}
+
+export function formatCurrency(amount, countryCode) {
+  const country = getCountryMeta(countryCode);
+  const value = Number(amount || 0);
+  return country.symbol + value.toFixed(value % 1 === 0 ? 0 : 2);
+}
+
+export function formatMoney(amount, countryCode) {
+  return formatCurrency(amount, countryCode);
+}
+
+
+export const APP_PLANS = null;
+
+export const COMMAND_GROWTH_PACK = null;
+
+export const MARKETING_PLANS = null;
+
+export const QUICK_PRICING_NOTES = null;
+
+export const SMS_PACKS = null;
+
+export const addonPriceForCountry = null;
+
+export function getPlan(...args) {
+  const first = args[0];
+  if (String("getPlan").toLowerCase().includes("country")) return getCountryMeta(first);
+  if (String("getPlan").toLowerCase().includes("price")) return getPlanPrice(first);
+  if (String("getPlan").toLowerCase().includes("plan")) return getPlanName(first);
+  return first || "";
+}
+
+export const pricePlanForCountry = null;
+
+export const pricingNotesForCountry = null;
