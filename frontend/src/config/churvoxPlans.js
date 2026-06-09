@@ -554,3 +554,12 @@ export const MARKETING_PLAN_LIST = MARKETING_PLANS;
 export const MARKETING_PLAN_KEYS = PLAN_ORDER;
 export const MARKETING_PLAN_NAMES = PLAN_NAMES;
 
+export const QUICK_PRICING_NOTES = [
+  "14-day free trial. No card required.",
+  "Prices are monthly and shown for your selected country.",
+  "SMS credits and Command Growth Packs can be added when needed."
+];
+
+export const QUICK_PLAN_NOTES = QUICK_PRICING_NOTES;
+export const QUICK_BILLING_NOTES = QUICK_PRICING_NOTES;
+
