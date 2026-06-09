@@ -1,97 +1,75 @@
 (function churvoxContrastGuard() {
   if (typeof window === 'undefined') return;
-  if (window.__CHURVOX_CONTRAST_GUARD__) return;
-  window.__CHURVOX_CONTRAST_GUARD__ = true;
+  if (window.__CHURVOX_CONTRAST_GUARD_V3__) return;
+  window.__CHURVOX_CONTRAST_GUARD_V3__ = true;
 
-  const TEXT_SELECTOR = [
-    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-    'p', 'span', 'small', 'label', 'strong', 'em',
-    'li', 'td', 'th', 'button', 'a', 'div'
-  ].join(',');
+  const TEXT_SELECTOR = 'h1,h2,h3,h4,h5,h6,p,span,small,label,strong,em,li,td,th,button,a,b,div';
+  const FORM_SELECTOR = 'input,textarea,select,option';
 
-  function forceColor(element, color) {
-    if (!element || !element.style) return;
-    element.style.setProperty('color', color, 'important');
-    element.style.setProperty('-webkit-text-fill-color', color, 'important');
-    element.style.setProperty('opacity', '1', 'important');
-    element.style.setProperty('text-shadow', 'none', 'important');
-    element.style.setProperty('mix-blend-mode', 'normal', 'important');
-  }
-
-  function forceCommandAndShell() {
-    if (!document.body) return;
-
-    const light = '#f9fafb';
-    const soft = '#e5e7eb';
-    const dark = '#111827';
-    const amber = '#fbbf24';
-
-    document.querySelectorAll(
-      '.cv-industrial-sidebar, .cv-industrial-sidebar *, .cv-clean-command-nav, .cv-clean-command-nav *'
-    ).forEach((el) => forceColor(el, light));
-
-    document.querySelectorAll(
-      '.cv-industrial-group p'
-    ).forEach((el) => forceColor(el, '#cbd5e1'));
-
-    document.querySelectorAll(
-      '.cv-industrial-group a.active, .cv-industrial-group a.active *, .cv-industrial-group a:hover, .cv-industrial-group a:hover *, .cv-clean-command-nav a.active, .cv-clean-command-nav a.active *'
-    ).forEach((el) => forceColor(el, '#020617'));
-
-    document.querySelectorAll(
-      '.cv-industrial-mark, .cv-industrial-mark *, .cxBrandMark, .cxBrandMark *'
-    ).forEach((el) => forceColor(el, dark));
-
-    document.querySelectorAll(
-      '.cxHero, .cxHero *, .cxStat, .cxStat *, .cxBox, .cxBox *, .cxContextCard, .cxContextCard *, .cxDeliverySummary, .cxDeliverySummary *, .cxMiniDelivery, .cxMiniDelivery *'
-    ).forEach((el) => forceColor(el, light));
-
-    document.querySelectorAll(
-      '.cxHero p, .cxHero span, .cxStat span, .cxBox p, .cxContextCard span, .cxDeliverySummary li, .cxMiniDelivery em'
-    ).forEach((el) => forceColor(el, soft));
-
-    document.querySelectorAll(
-      '.cxStat small, .cxStatus, .cxStatus *, .cxSlipType, .cxContextCard b, .cxDeliverySummary small, .cxDeliverySummary li b, .cxMiniDelivery b'
-    ).forEach((el) => forceColor(el, amber));
-
-    document.querySelectorAll(
-      '.cxPill, .cxPill *, .cxBox em, .cxBox em *'
-    ).forEach((el) => forceColor(el, dark));
-
-    document.querySelectorAll(
-      '.cxUrgent, .cxUrgent *, .cxFormPanel, .cxFormPanel *, .cxControls, .cxControls *, .cxField, .cxField *'
-    ).forEach((el) => forceColor(el, dark));
-
-    document.querySelectorAll(
-      '.cxUrgent span, .cxUrgent span *'
-    ).forEach((el) => forceColor(el, amber));
-
-    document.querySelectorAll(
-      '.cxUrgentActions button, .cxUrgentActions button *, .cxControls p, .cxControls p *, .cxControls .dark, .cxControls .dark *'
-    ).forEach((el) => forceColor(el, light));
-
-    document.querySelectorAll(
-      '.cxField input, .cxField textarea, .cxField select, input, textarea, select, option'
-    ).forEach((el) => forceColor(el, '#0f172a'));
+  function forceColor(el, color) {
+    if (!el || !el.style) return;
+    el.style.setProperty('color', color, 'important');
+    el.style.setProperty('-webkit-text-fill-color', color, 'important');
+    el.style.setProperty('opacity', '1', 'important');
+    el.style.setProperty('text-shadow', 'none', 'important');
+    el.style.setProperty('mix-blend-mode', 'normal', 'important');
   }
 
   function parseRgb(value) {
     if (!value || value === 'transparent') return null;
-    const match = value.match(/rgba?\(([^)]+)\)/i);
+    const match = String(value).match(/rgba?\(([^)]+)\)/i);
     if (!match) return null;
 
     const parts = match[1].split(',').map((part) => Number.parseFloat(part.trim()));
     if (parts.length < 3) return null;
 
     const alpha = parts.length >= 4 ? parts[3] : 1;
-    if (!Number.isFinite(alpha) || alpha <= 0.05) return null;
+    if (!Number.isFinite(alpha) || alpha <= 0.08) return null;
 
-    return {
-      r: parts[0],
-      g: parts[1],
-      b: parts[2],
-      a: alpha
-    };
+    return { r: parts[0], g: parts[1], b: parts[2], a: alpha };
+  }
+
+  function parseHex(value) {
+    const hex = String(value).replace('#', '').trim();
+
+    if (hex.length === 3) {
+      return {
+        r: parseInt(hex[0] + hex[0], 16),
+        g: parseInt(hex[1] + hex[1], 16),
+        b: parseInt(hex[2] + hex[2], 16),
+        a: 1
+      };
+    }
+
+    if (hex.length === 6) {
+      return {
+        r: parseInt(hex.slice(0, 2), 16),
+        g: parseInt(hex.slice(2, 4), 16),
+        b: parseInt(hex.slice(4, 6), 16),
+        a: 1
+      };
+    }
+
+    return null;
+  }
+
+  function colorsFromBackgroundImage(value) {
+    const text = String(value || '');
+    if (!text || text === 'none') return [];
+
+    const out = [];
+
+    (text.match(/rgba?\([^)]+\)/gi) || []).forEach((item) => {
+      const rgb = parseRgb(item);
+      if (rgb) out.push(rgb);
+    });
+
+    (text.match(/#[0-9a-f]{3,6}\b/gi) || []).forEach((item) => {
+      const rgb = parseHex(item);
+      if (rgb) out.push(rgb);
+    });
+
+    return out;
   }
 
   function luminance(rgb) {
@@ -111,135 +89,133 @@
     return (light + 0.05) / (dark + 0.05);
   }
 
-  function effectiveBackground(element) {
-    let node = element;
+  function effectiveBackground(el) {
+    let node = el;
 
     while (node && node !== document.documentElement) {
       const style = window.getComputedStyle(node);
+
+      const imageColors = colorsFromBackgroundImage(style.backgroundImage);
+      if (imageColors.length) {
+        const darkest = imageColors.slice().sort((a, b) => luminance(a) - luminance(b))[0];
+        if (luminance(darkest) < 0.42) return darkest;
+      }
+
       const bg = parseRgb(style.backgroundColor);
       if (bg) return bg;
+
       node = node.parentElement;
     }
 
     return { r: 244, g: 239, b: 231, a: 1 };
   }
 
-  function hasDirectText(element) {
-    if (!element || !element.childNodes) return false;
+  function hasText(el) {
+    if (!el || !el.childNodes) return false;
 
-    for (const node of element.childNodes) {
-      if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
-        return true;
-      }
+    for (const node of el.childNodes) {
+      if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) return true;
     }
 
     return false;
   }
 
-  function shouldSkip(element) {
-    if (!element || !element.matches) return true;
-    if (element.closest('script, style, svg, canvas, img, video')) return true;
-    if (element.closest('[data-no-contrast-guard="true"]')) return true;
+  function skip(el) {
+    if (!el || !el.matches) return true;
+    if (el.closest('script,style,svg,canvas,img,video')) return true;
 
-    const style = window.getComputedStyle(element);
-    if (style.display === 'none' || style.visibility === 'hidden') return true;
-
-    return false;
+    const style = window.getComputedStyle(el);
+    return style.display === 'none' || style.visibility === 'hidden';
   }
 
-  function setReadableColor(element, color) {
-    forceColor(element, color);
+  function fixText(el) {
+    if (skip(el) || !hasText(el)) return;
+
+    const style = window.getComputedStyle(el);
+    const fg = parseRgb(style.color) || { r: 17, g: 24, b: 39, a: 1 };
+    const bg = effectiveBackground(el);
+    const ratio = contrastRatio(fg, bg);
+    const opacity = Number.parseFloat(style.opacity || '1');
+    const bgIsLight = luminance(bg) > 0.48;
+
+    if (ratio < 4.5 || opacity < 0.75) {
+      forceColor(el, bgIsLight ? '#111827' : '#f9fafb');
+    }
   }
 
-  function fixTextElement(element) {
-    if (shouldSkip(element)) return;
-    if (!hasDirectText(element)) return;
+  function forceKnownShell() {
+    const light = '#f9fafb';
+    const soft = '#e5e7eb';
+    const dark = '#111827';
+    const amber = '#fbbf24';
 
-    const style = window.getComputedStyle(element);
-    const foreground = parseRgb(style.color);
-    const background = effectiveBackground(element);
+    document.querySelectorAll('.cv-industrial-sidebar,.cv-industrial-sidebar *,.cv-clean-command-nav,.cv-clean-command-nav *').forEach((el) => forceColor(el, light));
+    document.querySelectorAll('.cv-industrial-group p').forEach((el) => forceColor(el, '#cbd5e1'));
+    document.querySelectorAll('.cv-industrial-group a.active,.cv-industrial-group a.active *,.cv-industrial-group a:hover,.cv-industrial-group a:hover *,.cv-clean-command-nav a.active,.cv-clean-command-nav a.active *').forEach((el) => forceColor(el, '#020617'));
+    document.querySelectorAll('.cv-industrial-mark,.cv-industrial-mark *,.cxBrandMark,.cxBrandMark *').forEach((el) => forceColor(el, dark));
 
-    if (!foreground || !background) return;
+    document.querySelectorAll('.cxHero,.cxHero *,.cxStat,.cxStat *,.cxBox,.cxBox *,.cxContextCard,.cxContextCard *,.cxDeliverySummary,.cxDeliverySummary *,.cxMiniDelivery,.cxMiniDelivery *').forEach((el) => forceColor(el, light));
+    document.querySelectorAll('.cxHero p,.cxHero span,.cxStat span,.cxBox p,.cxContextCard span,.cxDeliverySummary li,.cxMiniDelivery em').forEach((el) => forceColor(el, soft));
+    document.querySelectorAll('.cxStat small,.cxStatus,.cxStatus *,.cxSlipType,.cxContextCard b,.cxDeliverySummary small,.cxDeliverySummary li b,.cxMiniDelivery b').forEach((el) => forceColor(el, amber));
+    document.querySelectorAll('.cxPill,.cxPill *,.cxBox em,.cxBox em *').forEach((el) => forceColor(el, dark));
 
-    const currentContrast = contrastRatio(foreground, background);
-    const currentOpacity = Number.parseFloat(style.opacity || '1');
-
-    if (currentContrast >= 4.5 && currentOpacity >= 0.55) return;
-
-    const backgroundIsLight = luminance(background) > 0.48;
-    setReadableColor(element, backgroundIsLight ? '#111827' : '#f9fafb');
+    document.querySelectorAll('.cxUrgent,.cxUrgent *,.cxFormPanel,.cxFormPanel *,.cxControls,.cxControls *,.cxField,.cxField *').forEach((el) => forceColor(el, dark));
+    document.querySelectorAll('.cxUrgent span,.cxUrgent span *').forEach((el) => forceColor(el, amber));
+    document.querySelectorAll('.cxUrgentActions button,.cxUrgentActions button *,.cxControls p,.cxControls p *,.cxControls .dark,.cxControls .dark *').forEach((el) => forceColor(el, light));
   }
 
-  function fixFormElement(element) {
-    if (shouldSkip(element)) return;
-
-    const background = effectiveBackground(element);
-    const backgroundIsLight = luminance(background) > 0.48;
-    const color = backgroundIsLight ? '#111827' : '#f9fafb';
-
-    element.style.setProperty('color', color, 'important');
-    element.style.setProperty('-webkit-text-fill-color', color, 'important');
-    element.style.setProperty('opacity', '1', 'important');
+  function fixForms() {
+    document.querySelectorAll(FORM_SELECTOR).forEach((el) => {
+      if (skip(el)) return;
+      forceColor(el, '#0f172a');
+    });
   }
 
-  function runContrastGuard() {
+  function run() {
     if (!document.body) return;
-
-    document.querySelectorAll(TEXT_SELECTOR).forEach(fixTextElement);
-    document.querySelectorAll('input, textarea, select').forEach(fixFormElement);
-    forceCommandAndShell();
+    document.querySelectorAll(TEXT_SELECTOR).forEach(fixText);
+    forceKnownShell();
+    fixForms();
   }
 
   let queued = false;
 
-  function scheduleContrastGuard() {
+  function schedule() {
     if (queued) return;
 
     queued = true;
     window.requestAnimationFrame(() => {
       queued = false;
-      runContrastGuard();
+      run();
     });
   }
 
-  function patchHistoryMethod(name) {
+  ['pushState', 'replaceState'].forEach((name) => {
     const original = window.history[name];
     if (typeof original !== 'function') return;
 
     window.history[name] = function patchedHistoryMethod() {
       const result = original.apply(this, arguments);
-      setTimeout(scheduleContrastGuard, 80);
+      setTimeout(schedule, 80);
       return result;
     };
-  }
+  });
 
-  patchHistoryMethod('pushState');
-  patchHistoryMethod('replaceState');
+  window.addEventListener('load', schedule);
+  window.addEventListener('popstate', schedule);
+  window.addEventListener('resize', schedule);
+  document.addEventListener('click', () => setTimeout(schedule, 80), true);
+  document.addEventListener('input', schedule, true);
 
-  window.addEventListener('load', scheduleContrastGuard);
-  window.addEventListener('popstate', scheduleContrastGuard);
-  window.addEventListener('resize', scheduleContrastGuard);
-  document.addEventListener('click', () => setTimeout(scheduleContrastGuard, 80), true);
-  document.addEventListener('input', scheduleContrastGuard, true);
+  const observer = new MutationObserver(schedule);
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: ['class', 'style']
+  });
 
-  const startObserver = () => {
-    if (!document.documentElement) return;
-
-    const observer = new MutationObserver(scheduleContrastGuard);
-    observer.observe(document.documentElement, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-      attributes: true,
-      attributeFilter: ['class', 'style']
-    });
-  };
-
-  startObserver();
-
-  setTimeout(scheduleContrastGuard, 50);
-  setTimeout(scheduleContrastGuard, 400);
-  setTimeout(scheduleContrastGuard, 1200);
-  setTimeout(scheduleContrastGuard, 2500);
-  window.setInterval(scheduleContrastGuard, 1000);
+  [30, 120, 400, 900, 1800, 3000].forEach((ms) => setTimeout(schedule, ms));
+  window.setInterval(schedule, 1000);
 })();
