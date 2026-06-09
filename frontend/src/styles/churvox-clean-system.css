@@ -202,3 +202,45 @@ button:disabled,
   -webkit-text-fill-color: #ffffff !important;
   background: #2563eb !important;
 }
+
+/* FINAL SELECT VALUE FIX
+   The opened dropdown options are already readable.
+   This fixes the selected/closed value when the select sits on a dark panel. */
+
+main [class*="support"] select,
+main [class*="Support"] select,
+main [class*="command"] select,
+main [class*="Command"] select,
+main [class*="dark"] select,
+main [class*="Dark"] select,
+main [class*="panel"] select,
+main [class*="Panel"] select,
+main [class*="card"] select,
+main [class*="Card"] select {
+  color: #f9fafb !important;
+  -webkit-text-fill-color: #f9fafb !important;
+  opacity: 1 !important;
+}
+
+/* Keep the actual dropdown list options black on white. */
+main select option,
+main select optgroup {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  background: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Light form areas must stay dark text. */
+.cxField select,
+.cxFormPanel select,
+main [class*="field"] select,
+main [class*="Field"] select,
+main [class*="form"] select,
+main [class*="Form"] select,
+main [class*="profile"] select,
+main [class*="Profile"] select {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}
+
