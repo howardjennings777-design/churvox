@@ -254,3 +254,16 @@ export default {
   getCountryConfig,
   formatPlanPrice
 };
+
+export function hasPlanAtLeast(currentPlan, requiredPlan) {
+  return isPlanAtLeast(currentPlan, requiredPlan);
+}
+
+export function hasRequiredPlan(currentPlan, requiredPlan) {
+  return isPlanAtLeast(currentPlan, requiredPlan);
+}
+
+export function planHasAccess(currentPlan, requiredPlan) {
+  return isPlanAtLeast(currentPlan, requiredPlan);
+}
+
