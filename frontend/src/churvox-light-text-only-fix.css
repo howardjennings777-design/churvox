@@ -1,5 +1,4 @@
-/* CHURVOX LIGHT PANEL TEXT ONLY FIX
-   Scope: light work cards/forms only. No backend, layout, or route changes. */
+/* CHURVOX LIGHT TEXT FIX */
 
 .cxRoot .cxCard,
 .cxRoot .cxPanel,
@@ -17,4 +16,7 @@
 .ch4Root .cxForm,
 .ch4Root .cxList,
 .ch4Root .cxRecord,
-.ch4Root .
+.ch4Root .cxEmpty,
+.ch4Root .cxSafe,
+.xeroConnectionPanel,
+.xeroStatus
