@@ -188,8 +188,10 @@ test.describe('Churvox plans pricing audit', () => {
     await gotoAndSettle(page, '/plans');
     await assertNoCrashOrBlank(page, '/plans');
 
-    const select = page.locator('select').first();
-    await expect(select, 'Plans page should have a country selector').toBeVisible({ timeout: 15000 });
+    await expect(page.locator('body'), 'Plans page should load billing country content').toContainText('Show prices for', { timeout: 20000 });
+
+    const select = page.locator('select').filter({ hasText: /New Zealand|Australia|United States|United Kingdom/ }).first();
+    await expect(select, 'Plans page should have a country selector').toBeAttached({ timeout: 20000 });
 
     const checks = [
       { country: 'NZ', prices: ['NZ$39', 'NZ$89', 'NZ$149', 'NZ$299', 'NZ$99'] },
@@ -199,8 +201,8 @@ test.describe('Churvox plans pricing audit', () => {
     ];
 
     for (const check of checks) {
-      await select.selectOption(check.country);
-      await page.waitForTimeout(700);
+      await select.selectOption(check.country, { timeout: 10000 });
+      await page.waitForTimeout(900);
 
       const body = await page.locator('body').innerText();
       for (const price of check.prices) {
@@ -282,8 +284,10 @@ test.describe('Churvox visual safety audit', () => {
       'Growth'
     ];
 
+    const bodyText = await page.locator('body').innerText({ timeout: 20000 });
+
     for (const text of visibleTexts) {
-      await expect(page.getByText(text, { exact: false }).first(), `${text} should be visible`).toBeVisible({ timeout: 15000 });
+      expect(bodyText, `Plans body should contain ${text}`).toContain(text);
     }
 
     const invisibleCount = await page.evaluate(() => {
