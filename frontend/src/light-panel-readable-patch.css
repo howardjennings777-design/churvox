@@ -1,0 +1,18 @@
+main label,
+main small {
+  color: #111827 !important;
+  opacity: 1 !important;
+}
+
+main textarea,
+main input,
+main select {
+  color: #111827 !important;
+  opacity: 1 !important;
+}
+
+main textarea::placeholder,
+main input::placeholder {
+  color: #4b5563 !important;
+  opacity: 1 !important;
+}
