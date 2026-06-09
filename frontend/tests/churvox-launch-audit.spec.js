@@ -129,8 +129,21 @@ async function tryLogin(page) {
   await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
   await page.waitForTimeout(1500);
 
+  await page.waitForTimeout(1500);
+
+  // Confirm the auth cookie/session actually works by opening a protected page.
+  await gotoAndSettle(page, '/dashboard');
+
   const body = await page.locator('body').innerText().catch(() => '');
-  return !/invalid|incorrect|failed|error/i.test(body);
+  const stillOnLogin =
+    /sign in to the command floor/i.test(body) ||
+    /forgot password/i.test(body) ||
+    /owner approval access/i.test(body) ||
+    page.url().includes('/login');
+
+  const loginError = /invalid|incorrect|failed|error/i.test(body);
+
+  return !stillOnLogin && !loginError;
 }
 
 test.describe('Churvox public launch audit', () => {
