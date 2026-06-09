@@ -91,3 +91,7 @@ root.render(
     <RecordWorkspacePopupBridgeV2 />
   </React.StrictMode>
 );
+
+import './light-panel-readable-patch.css';
+
+import './churvox-command-desk-final.css';

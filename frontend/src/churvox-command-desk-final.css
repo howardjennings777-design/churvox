@@ -1,0 +1,199 @@
+/* CHURVOX COMMAND DESK FINAL
+   One final site-wide readability layer.
+   This is loaded last so old theme junk cannot hide text.
+   Backend, routes, layout and logic are untouched.
+*/
+
+/* Base app text */
+html,
+body,
+#root {
+  color: #111827;
+}
+
+/* Inputs, textareas, selects */
+input,
+textarea,
+select {
+  color: #111827 !important;
+  background-color: rgba(255, 255, 255, 0.92);
+  opacity: 1 !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #4b5563 !important;
+  opacity: 1 !important;
+}
+
+/* Native dropdown option panel */
+select option,
+select optgroup {
+  color: #111827 !important;
+  background: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Light workspaces/cards/forms */
+main,
+main section,
+main article,
+main form,
+main fieldset,
+main label,
+main p,
+main small,
+main span,
+main li,
+main td,
+main th {
+  opacity: 1 !important;
+}
+
+/* Common light card/panel names */
+main [class*="card"],
+main [class*="Card"],
+main [class*="panel"],
+main [class*="Panel"],
+main [class*="sheet"],
+main [class*="Sheet"],
+main [class*="form"],
+main [class*="Form"],
+main [class*="profile"],
+main [class*="Profile"],
+main [class*="field"],
+main [class*="Field"],
+main [class*="activity"],
+main [class*="Activity"],
+main [class*="instruction"],
+main [class*="Instruction"],
+main [class*="note"],
+main [class*="Note"],
+main [class*="empty"],
+main [class*="Empty"] {
+  opacity: 1 !important;
+}
+
+/* Text inside light workspaces */
+main [class*="card"] label,
+main [class*="Card"] label,
+main [class*="panel"] label,
+main [class*="Panel"] label,
+main [class*="sheet"] label,
+main [class*="Sheet"] label,
+main [class*="form"] label,
+main [class*="Form"] label,
+main [class*="profile"] label,
+main [class*="Profile"] label,
+main [class*="field"] label,
+main [class*="Field"] label,
+main [class*="activity"] label,
+main [class*="Activity"] label,
+main [class*="instruction"] label,
+main [class*="Instruction"] label,
+main [class*="note"] label,
+main [class*="Note"] label,
+main [class*="empty"] label,
+main [class*="Empty"] label {
+  color: #111827 !important;
+}
+
+main [class*="card"] p,
+main [class*="Card"] p,
+main [class*="panel"] p,
+main [class*="Panel"] p,
+main [class*="sheet"] p,
+main [class*="Sheet"] p,
+main [class*="form"] p,
+main [class*="Form"] p,
+main [class*="profile"] p,
+main [class*="Profile"] p,
+main [class*="field"] p,
+main [class*="Field"] p,
+main [class*="activity"] p,
+main [class*="Activity"] p,
+main [class*="instruction"] p,
+main [class*="Instruction"] p,
+main [class*="note"] p,
+main [class*="Note"] p,
+main [class*="empty"] p,
+main [class*="Empty"] p,
+main [class*="card"] small,
+main [class*="Card"] small,
+main [class*="panel"] small,
+main [class*="Panel"] small,
+main [class*="sheet"] small,
+main [class*="Sheet"] small,
+main [class*="form"] small,
+main [class*="Form"] small,
+main [class*="profile"] small,
+main [class*="Profile"] small,
+main [class*="field"] small,
+main [class*="Field"] small,
+main [class*="activity"] small,
+main [class*="Activity"] small,
+main [class*="instruction"] small,
+main [class*="Instruction"] small,
+main [class*="note"] small,
+main [class*="Note"] small,
+main [class*="empty"] small,
+main [class*="Empty"] small {
+  color: #374151 !important;
+}
+
+/* Dark cards/bars/buttons stay light text */
+main [class*="dark"],
+main [class*="Dark"],
+main [class*="black"],
+main [class*="Black"],
+main [class*="billing"],
+main [class*="Billing"],
+main [class*="pricing"],
+main [class*="Pricing"],
+main [class*="plan"],
+main [class*="Plan"],
+main [class*="status"],
+main [class*="Status"] {
+  opacity: 1 !important;
+}
+
+main [class*="dark"],
+main [class*="Dark"],
+main [class*="black"],
+main [class*="Black"],
+main [class*="billing"],
+main [class*="Billing"],
+main [class*="pricing"],
+main [class*="Pricing"],
+main [class*="plan"],
+main [class*="Plan"],
+main [class*="status"],
+main [class*="Status"],
+main [class*="dark"] *,
+main [class*="Dark"] *,
+main [class*="black"] *,
+main [class*="Black"] *,
+main [class*="billing"] *,
+main [class*="Billing"] *,
+main [class*="pricing"] *,
+main [class*="Pricing"] *,
+main [class*="plan"] *,
+main [class*="Plan"] *,
+main [class*="status"] *,
+main [class*="Status"] * {
+  color: #f9fafb !important;
+}
+
+/* Keep yellow labels readable */
+main [class*="eyebrow"],
+main [class*="Eyebrow"],
+main [class*="label"],
+main [class*="Label"] {
+  opacity: 1 !important;
+}
+
+/* Disabled buttons visible, not invisible */
+button:disabled,
+[aria-disabled="true"] {
+  opacity: 0.7 !important;
+}
