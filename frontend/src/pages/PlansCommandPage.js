@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "../context/AuthContext";
+import { industrialChip } from "../components/industrialCommandTheme";
 import {
   CHURVOX_PLANS,
   COMMAND_GROWTH_PACK,
@@ -238,15 +239,19 @@ export default function PlansCommandPage() {
   return (
     <main className="cv-launch-plans-page min-h-screen bg-[#f7f3ea] p-4 text-slate-950 md:p-6 xl:pl-[320px]" data-command-canvas>
       <section className="mx-auto max-w-7xl space-y-5">
-        <DarkCard className="p-6 pl-9 md:p-8 md:pl-10">
-          <div className="inline-flex rounded-full border border-amber-300/30 bg-amber-300/10 px-4 py-2 text-[10px] font-black uppercase tracking-[.22em] text-amber-300">Plans</div>
-          <h1 className="mt-5 max-w-4xl text-5xl font-black leading-[.9] tracking-[-.08em] text-white md:text-7xl">Churvox does the admin. You approve.</h1>
-          <p className="mt-5 max-w-3xl text-sm font-bold leading-7 text-slate-300 md:text-base">Pick your billing country first. Churvox now shows fixed local prices based on conversion-style rounded pricing.</p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link to="/dashboard" className="rounded-2xl bg-[linear-gradient(135deg,#facc15,#fb923c_55%,#22d3ee)] px-5 py-3 text-sm font-black text-slate-950 no-underline">Command Board</Link>
-            <button type="button" onClick={refreshPlan} className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white">Refresh plan status</button>
+        <section className="plansHero relative isolate overflow-hidden rounded-[34px] border-l-8 border-orange-500 bg-[radial-gradient(circle_at_86%_-24%,rgba(249,115,22,.52),transparent_34%),radial-gradient(circle_at_14%_116%,rgba(34,211,238,.18),transparent_30%),linear-gradient(135deg,#0b1018_0%,#111827_56%,#070b12_100%)] p-6 pl-9 text-white shadow-[0_24px_70px_rgba(2,6,23,.24)] md:p-8 md:pl-10">
+          <div className="pointer-events-none absolute inset-0 z-0 bg-[repeating-linear-gradient(90deg,rgba(255,255,255,.055)_0_1px,transparent_1px_56px),repeating-linear-gradient(0deg,rgba(255,255,255,.035)_0_1px,transparent_1px_46px),linear-gradient(120deg,transparent_0_46%,rgba(251,191,36,.13)_46%_47%,transparent_47%_100%)] opacity-70" />
+          <div className="pointer-events-none absolute -right-20 -top-20 z-0 h-[250px] w-[250px] rounded-full border-[36px] border-orange-500/20" />
+          <div className="relative z-10">
+            <span className={industrialChip}>Plans</span>
+            <h1 className="mt-5 max-w-4xl text-5xl font-black leading-[.9] tracking-[-.08em] text-white md:text-7xl">Churvox does the admin. You approve.</h1>
+            <p className="mt-5 max-w-3xl text-sm font-bold leading-7 text-slate-100 md:text-base">Pick your billing country first. Churvox now shows fixed local prices based on conversion-style rounded pricing.</p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link to="/dashboard" className="rounded-2xl bg-[linear-gradient(135deg,#facc15,#fb923c_55%,#22d3ee)] px-5 py-3 text-sm font-black text-slate-950 no-underline">Command Board</Link>
+              <button type="button" onClick={refreshPlan} className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white">Refresh plan status</button>
+            </div>
           </div>
-        </DarkCard>
+        </section>
 
         <section className="rounded-[30px] border-2 border-orange-200 bg-[#111827] p-5 text-white shadow-[0_18px_50px_rgba(15,23,42,.10)] md:p-6">
           <div className="text-[10px] font-black uppercase tracking-[.2em] text-orange-300">Billing country</div>
