@@ -347,3 +347,40 @@ export default {
   formatMoney,
   formatPlanPrice
 };
+
+export function pricePlanForCountry(planOrKey, countryCode) {
+  const plan = typeof planOrKey === "object" && planOrKey !== null
+    ? planOrKey
+    : getPlanConfig(planOrKey);
+
+  const country = getCountryMeta(countryCode);
+  const monthly = Number(plan.monthly || plan.price || 0);
+  const tax = country.taxLabel ? " " + country.taxLabel : "";
+  const priceLabel = country.symbol + monthly + "/month" + tax;
+
+  return {
+    ...plan,
+    price: monthly,
+    monthly,
+    currency: country.currency,
+    symbol: country.symbol,
+    taxLabel: country.taxLabel || "",
+    countryCode: country.code,
+    countryLabel: country.label,
+    priceLabel,
+    formattedPrice: priceLabel
+  };
+}
+
+export function getPlanPriceForCountry(planOrKey, countryCode) {
+  return pricePlanForCountry(planOrKey, countryCode);
+}
+
+export function getPlanPricingForCountry(planOrKey, countryCode) {
+  return pricePlanForCountry(planOrKey, countryCode);
+}
+
+export function planForCountry(planOrKey, countryCode) {
+  return pricePlanForCountry(planOrKey, countryCode);
+}
+
