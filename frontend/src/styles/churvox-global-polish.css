@@ -1,6 +1,6 @@
 /* CHURVOX GLOBAL POLISH
    Loaded after the main command-slip theme so it wins over older page styles.
-   Keep this frontend-only: headers, hero panels, and small uppercase pills. */
+   Keep this frontend-only: page headers and the top header pill only. */
 
 :root {
   --chx-ink: #070b12;
@@ -11,7 +11,7 @@
   --chx-cyan: #22d3ee;
 }
 
-/* Force the main app command pages to share the same hero/header design. */
+/* One shared list of Churvox page headers. */
 [data-command-canvas] .plansHero,
 [data-command-canvas] .supportHero,
 [data-command-canvas] .cxHero,
@@ -184,17 +184,20 @@
   color: #f8fafc !important;
 }
 
-/* App-wide pill unification for command pages.
-   This catches old amber chips, white pills, and header status labels without touching normal inputs. */
-[data-command-canvas] :where(span, div, small):not([role="button"]):not([class*="absolute left"]):not([class*="w-2"])[class*="uppercase"][class*="tracking"],
-[data-command-canvas] :where(span, div, small):not([role="button"]):not([class*="absolute left"]):not([class*="w-2"])[class*="font-black"][class*="tracking"],
-.cv-launch-plans-page :where(span, div, small):not([role="button"]):not([class*="absolute left"]):not([class*="w-2"])[class*="uppercase"][class*="tracking"],
-.cv-launch-plans-page :where(span, div, small):not([role="button"]):not([class*="absolute left"]):not([class*="w-2"])[class*="font-black"][class*="tracking"] {
+/* HEADER PILLS ONLY.
+   These selectors intentionally target the first small uppercase badge inside page headers.
+   They do not target the little labels inside cards/lists. */
+[data-command-canvas] :where(.plansHero,.supportHero,.cxHero,.ch4Hero,.srHero,.ivHero,.plHero,.stHero,.jbHero,.clHero,.qtHero,.tmHero,.pyHero,.rpHero,.dwHero,.dbHero,.dsHero,.jdHero,.qbHero,.ibHero,.cbHero,.tbHero,[class$="Hero"],[class*="Hero "],[class*="page-hero"],[class*="PageHero"]) > :where(span,small,div)[class*="tracking"]:first-child,
+[data-command-canvas] :where(.plansHero,.supportHero,.cxHero,.ch4Hero,.srHero,.ivHero,.plHero,.stHero,.jbHero,.clHero,.qtHero,.tmHero,.pyHero,.rpHero,.dwHero,.dbHero,.dsHero,.jdHero,.qbHero,.ibHero,.cbHero,.tbHero,[class$="Hero"],[class*="Hero "],[class*="page-hero"],[class*="PageHero"]) > :where(div,section):not([class*="absolute"]) > :where(span,small,div)[class*="tracking"]:first-child,
+[data-command-canvas] :where(.plansHero,.supportHero,.cxHero,.ch4Hero,.srHero,.ivHero,.plHero,.stHero,.jbHero,.clHero,.qtHero,.tmHero,.pyHero,.rpHero,.dwHero,.dbHero,.dsHero,.jdHero,.qbHero,.ibHero,.cbHero,.tbHero,[class$="Hero"],[class*="Hero "],[class*="page-hero"],[class*="PageHero"]) :where(.cxPill,.ivHeroTag,[class*="Pill"]),
+.cv-launch-plans-page > section > section:first-child > :where(span,small,div)[class*="tracking"]:first-child,
+.cv-launch-plans-page > section > section:first-child > :where(div,section):not([class*="absolute"]) > :where(span,small,div)[class*="tracking"]:first-child {
   display: inline-flex !important;
   width: auto !important;
   min-width: 0 !important;
   max-width: max-content !important;
   align-items: center !important;
+  justify-content: center !important;
   gap: 6px !important;
   border-radius: 16px !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
@@ -211,17 +214,13 @@
   backdrop-filter: blur(6px) !important;
 }
 
-/* Stop page card labels from showing as yellow/white pills after older local styles. */
-[data-command-canvas] :where(span, div, small)[class*="bg-amber"],
-[data-command-canvas] :where(span, div, small)[class*="bg-white/10"],
-[data-command-canvas] :where(span, div, small)[class*="bg-white"],
-.cv-launch-plans-page :where(span, div, small)[class*="bg-amber"],
-.cv-launch-plans-page :where(span, div, small)[class*="bg-white/10"],
-.cv-launch-plans-page :where(span, div, small)[class*="bg-white"] {
-  box-shadow: none !important;
+[data-command-canvas] :where(.plansHero,.supportHero,.cxHero,.ch4Hero,.srHero,.ivHero,.plHero,.stHero,.jbHero,.clHero,.qtHero,.tmHero,.pyHero,.rpHero,.dwHero,.dbHero,.dsHero,.jdHero,.qbHero,.ibHero,.cbHero,.tbHero,[class$="Hero"],[class*="Hero "],[class*="page-hero"],[class*="PageHero"]) :where(.cxPill,.ivHeroTag,[class*="Pill"]) *,
+.cv-launch-plans-page > section > section:first-child :where(span,small,div)[class*="tracking"]:first-child * {
+  color: var(--chx-amber) !important;
+  -webkit-text-fill-color: var(--chx-amber) !important;
 }
 
-/* Keep real action buttons looking like buttons, not label pills. */
+/* Keep real action buttons and nav links as buttons. */
 [data-command-canvas] button[class*="tracking"],
 .cv-launch-plans-page button[class*="tracking"],
 [data-command-canvas] a[class*="tracking"],
