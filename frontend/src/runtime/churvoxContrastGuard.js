@@ -161,9 +161,6 @@
     const dark = '#111827';
     const amber = '#fbbf24';
 
-    document.querySelectorAll('.cv-industrial-sidebar,.cv-industrial-sidebar *,.cv-clean-command-nav,.cv-clean-command-nav *').forEach((el) => forceColor(el, light));
-    document.querySelectorAll('.cv-industrial-group p').forEach((el) => forceColor(el, '#cbd5e1'));
-    document.querySelectorAll('.cv-industrial-group a.active,.cv-industrial-group a.active *,.cv-industrial-group a:hover,.cv-industrial-group a:hover *,.cv-clean-command-nav a.active,.cv-clean-command-nav a.active *').forEach((el) => forceColor(el, '#020617'));
     document.querySelectorAll('.cv-industrial-mark,.cv-industrial-mark *,.cxBrandMark,.cxBrandMark *').forEach((el) => forceColor(el, dark));
 
     document.querySelectorAll('.cxHero,.cxHero *,.cxStat,.cxStat *,.cxBox,.cxBox *,.cxContextCard,.cxContextCard *,.cxDeliverySummary,.cxDeliverySummary *,.cxMiniDelivery,.cxMiniDelivery *').forEach((el) => forceColor(el, light));
