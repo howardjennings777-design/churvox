@@ -9,6 +9,72 @@ const INVOICE_DELIVERY_OPTIONS = [
   "MYOB staged/later (inactive)"
 ];
 
+const CARD_META = {
+  approvals: {
+    status: "Owner approval",
+    summary: "Everything Churvox prepared that needs a final yes, edit, or decline.",
+    button: "Review approvals",
+    tone: "hot"
+  },
+  money: {
+    status: "Needs approval",
+    summary: "Invoice drafts, overdue follow-ups, delivery choices and accounting checks.",
+    button: "Review money",
+    tone: "hot"
+  },
+  crew: {
+    status: "Dispatch ready",
+    summary: "Worker recommendations, schedule checks, conflicts and field notes.",
+    button: "Assign crew",
+    tone: "ready"
+  },
+  jobs: {
+    status: "Missing info",
+    summary: "Jobs missing price, notes, client details, schedule or assignment before they move.",
+    button: "Fix jobs",
+    tone: "warn"
+  },
+  quotes: {
+    status: "Follow-up ready",
+    summary: "Quote follow-ups, revisions and quote-to-job actions prepared for review.",
+    button: "Review quotes",
+    tone: "ready"
+  },
+  clients: {
+    status: "Data cleanup",
+    summary: "Client contact fixes, site notes, billing contacts and next customer action.",
+    button: "Check clients",
+    tone: "ready"
+  },
+  workers: {
+    status: "Field review",
+    summary: "Worker notes, proof, completion issues and time evidence waiting for owner review.",
+    button: "Review updates",
+    tone: "ready"
+  },
+  payroll: {
+    status: "Time review",
+    summary: "Reviewed time, holds, export notes and payroll handoff decisions.",
+    button: "Review time",
+    tone: "ready"
+  },
+  setup: {
+    status: "Setup required",
+    summary: "Billing, Xero, legal, branding, team and trust items that can block launch.",
+    button: "Finish setup",
+    tone: "warn"
+  }
+};
+
+const COMMAND_STATS = [
+  ["Today", "AI lanes ready", "Open a box, review the slip, approve."],
+  ["Waiting on you", "Owner decisions", "Nothing risky happens silently."],
+  ["Main blockers", "Money + dispatch", "Cashflow and crew get checked first."],
+  ["Rule", "Approve-first", "Churvox prepares. Owner controls."],
+];
+
+const MAIN_COMMAND_KEYS = ["money", "crew", "jobs", "quotes", "clients", "setup"];
+
 function deliveryDetails(method) {
   const key = String(method || "").toLowerCase();
   if (key.includes("xero")) {
@@ -279,6 +345,9 @@ const SLIPS = [
   }
 ];
 
+const SLIP_BY_KEY = Object.fromEntries(SLIPS.map((slip) => [slip.key, slip]));
+const MAIN_SLIPS = MAIN_COMMAND_KEYS.map((key) => SLIP_BY_KEY[key]).filter(Boolean);
+
 function makeForm(slip) {
   const out = {};
   slip.fields.forEach(([key, label, type, options]) => {
@@ -307,12 +376,16 @@ function Field({ field, form, setForm }) {
 }
 
 function CommandBox({ slip, onOpen }) {
+  const meta = CARD_META[slip.key] || {};
   return (
-    <button className="cxBox" onClick={() => onOpen(slip)}>
+    <button className={`cxBox ${meta.tone || "ready"}`} onClick={() => onOpen(slip)}>
+      <span className="cxStatusLine">
+        <span className={`cxStatus ${meta.tone || "ready"}`}>{meta.status || "Ready"}</span>
+        <span className="cxSlipType">{slip.formTitle}</span>
+      </span>
       <b>{slip.title}</b>
-      <strong>{slip.formTitle}</strong>
-      <p>{slip.card}</p>
-      <em>Open prepared action</em>
+      <p>{meta.summary || slip.card}</p>
+      <em>{meta.button || "Open prepared action"}</em>
     </button>
   );
 }
@@ -336,6 +409,22 @@ function MoneyDeliverySummary({ form }) {
         <li><b>Draft:</b> {details.draft}</li>
         <li><b>Send/sync result:</b> {details.sent}</li>
       </ul>
+    </section>
+  );
+}
+
+function UrgentCard({ onOpen }) {
+  return (
+    <section className="cxUrgent">
+      <div>
+        <span>Most urgent right now</span>
+        <h2>Start with money and crew dispatch.</h2>
+        <p>Those are the areas most likely to block cashflow, customer updates, worker assignment, or the next job step.</p>
+      </div>
+      <div className="cxUrgentActions">
+        <button onClick={() => onOpen(SLIP_BY_KEY.money)}>Review money</button>
+        <button onClick={() => onOpen(SLIP_BY_KEY.crew)}>Assign crew</button>
+      </div>
     </section>
   );
 }
@@ -412,17 +501,39 @@ function Style() {
   return <style>{`
     .cxRoot,.cxRoot *{box-sizing:border-box;color-scheme:light;opacity:1;text-shadow:none}
     .cxRoot{position:fixed;inset:0;z-index:2147483000;background:#f6f1e7;overflow:auto;font-family:Inter,system-ui;color:#111827}
-    .cxWrap{max-width:1380px;margin:0 auto;padding:24px 28px 120px}
-    .cxHero{background:#0b1018;color:#ffffff;border-radius:34px;padding:34px;box-shadow:0 24px 70px rgba(2,6,23,.24)}
-    .cxPill{display:inline-flex;border-radius:999px;padding:8px 14px;background:#fff7ed;color:#7c2d12;font-size:11px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}
-    .cxHero h1{margin:18px 0 12px;font-size:clamp(42px,5.4vw,72px);line-height:.92;letter-spacing:-.055em;color:#ffffff;user-select:none}
-    .cxHero p{color:#f8fafc;font-weight:900;max-width:820px}
+    .cxWrap{max-width:1440px;margin:0 auto;padding:24px 30px 120px}
+    .cxHero{background:#0b1018;color:#ffffff;border-radius:34px;padding:30px 34px 34px;box-shadow:0 24px 70px rgba(2,6,23,.24);border-left:8px solid #f97316}
+    .cxTopLine{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:22px}
+    .cxBrand{display:flex;align-items:center;gap:12px;color:#ffffff;font-size:15px;font-weight:1000;letter-spacing:.18em;text-transform:uppercase;user-select:none}
+    .cxBrandMark{display:grid;place-items:center;width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#f97316,#fbbf24);color:#111827;font-size:20px;font-weight:1000;letter-spacing:-.06em}
+    .cxPill{display:inline-flex;border-radius:999px;padding:8px 14px;background:#fff7ed;color:#7c2d12;font-size:11px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}
+    .cxHero h1{margin:0 0 12px;font-size:clamp(44px,5.6vw,78px);line-height:.92;letter-spacing:-.06em;color:#ffffff;user-select:none;max-width:920px}
+    .cxHero p{color:#f8fafc;font-weight:900;max-width:900px;margin:0;line-height:1.45}
+    .cxStats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:22px}
+    .cxStat{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:14px 15px;display:grid;gap:5px}
+    .cxStat small{color:#fed7aa;text-transform:uppercase;letter-spacing:.12em;font-size:10px;font-weight:1000}
+    .cxStat b{color:#ffffff;font-size:20px;line-height:1.05}
+    .cxStat span{color:#e2e8f0;font-size:12px;font-weight:800;line-height:1.35}
+    .cxUrgent{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:20px;background:#fffaf0;border:1px solid rgba(15,23,42,.14);border-left:8px solid #f97316;border-radius:28px;padding:22px 24px;box-shadow:0 18px 52px rgba(2,6,23,.16)}
+    .cxUrgent span{display:inline-flex;margin-bottom:8px;border-radius:999px;background:#111827;color:#fbbf24;padding:7px 11px;text-transform:uppercase;letter-spacing:.12em;font-size:10px;font-weight:1000}
+    .cxUrgent h2{font-size:32px;line-height:.96;letter-spacing:-.04em;margin:0 0 8px;color:#111827}
+    .cxUrgent p{margin:0;color:#334155;font-weight:900;max-width:790px;line-height:1.45}
+    .cxUrgentActions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .cxUrgentActions button{border:0;border-radius:16px;background:#111827;color:#ffffff;padding:14px 16px;font-weight:1000;cursor:pointer;min-width:150px}
+    .cxUrgentActions button:first-child{background:#f97316;color:#111827}
     .cxBoxes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-top:20px}
-    .cxBox{background:#0b1018;color:#ffffff;border:1px solid rgba(255,255,255,.14);border-left:8px solid #f97316;border-radius:28px;padding:22px;text-align:left;min-height:224px;display:grid;gap:12px;cursor:pointer;box-shadow:0 22px 62px rgba(2,6,23,.24)}
-    .cxBox b{font-size:28px;line-height:.95;color:#ffffff}
-    .cxBox strong{color:#fbbf24;text-transform:uppercase;font-size:11px;letter-spacing:.12em;font-weight:1000}
-    .cxBox p{color:#f1f5f9;font-weight:900;line-height:1.45;margin:0}
-    .cxBox em{font-style:normal;justify-self:start;border-radius:14px;background:#fbbf24;color:#111827;padding:10px 14px;font-weight:1000}
+    .cxBox{background:#0b1018;color:#ffffff;border:1px solid rgba(255,255,255,.14);border-left:8px solid #f97316;border-radius:28px;padding:21px;text-align:left;min-height:214px;display:grid;gap:12px;cursor:pointer;box-shadow:0 22px 62px rgba(2,6,23,.24);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+    .cxBox:hover{transform:translateY(-3px);box-shadow:0 26px 72px rgba(2,6,23,.30);border-color:rgba(251,191,36,.36)}
+    .cxBox.warn{border-left-color:#f59e0b}
+    .cxBox.hot{border-left-color:#fb923c}
+    .cxStatusLine{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .cxStatus{display:inline-flex;border-radius:999px;padding:7px 10px;background:#064e3b;color:#d1fae5;text-transform:uppercase;letter-spacing:.11em;font-size:10px;font-weight:1000}
+    .cxStatus.warn{background:#451a03;color:#fed7aa}
+    .cxStatus.hot{background:#7c2d12;color:#ffedd5}
+    .cxSlipType{color:#fed7aa;text-transform:uppercase;font-size:10px;letter-spacing:.12em;font-weight:1000}
+    .cxBox b{font-size:30px;line-height:.95;color:#ffffff;letter-spacing:-.04em}
+    .cxBox p{color:#f1f5f9;font-weight:900;line-height:1.42;margin:0}
+    .cxBox em{font-style:normal;justify-self:start;border-radius:15px;background:linear-gradient(135deg,#f97316,#fbbf24,#22d3ee);color:#111827;padding:11px 15px;font-weight:1000}
     .cxOverlay{position:fixed;inset:0;z-index:2147483647;background:rgba(2,6,23,.90);padding:16px 22px 16px 286px;display:flex}
     .cxSlip{width:100%;background:#f7efe3;border-radius:34px;overflow:hidden;display:grid;grid-template-rows:auto 1fr;box-shadow:0 38px 120px rgba(2,6,23,.50)}
     .cxSlip header{background:#0b1018;color:#ffffff;border-left:8px solid #f97316;padding:20px 28px;display:flex;justify-content:space-between;gap:16px}
@@ -467,7 +578,8 @@ function Style() {
     .cxControls .approve{background:#16a34a;color:#052e16!important;border:2px solid #15803d}
     .cxControls .decline{background:#fecaca;color:#7f1d1d!important;border:2px solid #fca5a5}
     .cxControls .dark{background:#111827;color:#ffffff!important}
-    @media(max-width:1200px){.cxOverlay{padding:12px}.cxSlip main,.cxBoxes,.cxContextGrid,.cxDeliverySummary{grid-template-columns:1fr}.cxControls{position:static}}
+    @media(max-width:1200px){.cxOverlay{padding:12px}.cxSlip main,.cxBoxes,.cxContextGrid,.cxDeliverySummary,.cxStats{grid-template-columns:1fr}.cxControls{position:static}.cxUrgent{display:grid}.cxUrgentActions{justify-content:stretch}.cxUrgentActions button{flex:1}}
+    @media(max-width:720px){.cxWrap{padding:16px 14px 110px}.cxHero{padding:22px;border-radius:26px}.cxTopLine{align-items:flex-start;flex-direction:column}.cxHero h1{font-size:42px}.cxUrgent{padding:18px;border-radius:22px}.cxUrgent h2{font-size:28px}.cxBox{min-height:190px}.cxFields{grid-template-columns:1fr}.cxOverlay{padding:8px}.cxSlip{border-radius:22px}.cxSlip header{padding:16px;display:grid}.cxSlip main{padding:10px}}
   `}</style>;
 }
 
@@ -478,12 +590,25 @@ export default function CommandDeskOperatorPageV3() {
       <Style />
       <section className="cxWrap">
         <article className="cxHero">
-          <span className="cxPill">AI approval desk</span>
+          <div className="cxTopLine">
+            <div className="cxBrand"><span className="cxBrandMark">C</span> CHURVOX</div>
+            <span className="cxPill">AI Operator approval desk</span>
+          </div>
           <h1>Churvox did the admin. You approve.</h1>
-          <p>Each Command box opens a prepared action slip: what Churvox found, what it prepared, why it matters, the risk, and what happens after approval.</p>
+          <p>AI Operator prepares the work that needs attention. You open one focused slip, see what Churvox found, edit anything, then approve or decline.</p>
+          <div className="cxStats">
+            {COMMAND_STATS.map(([label, value, sub]) => (
+              <div className="cxStat" key={label}>
+                <small>{label}</small>
+                <b>{value}</b>
+                <span>{sub}</span>
+              </div>
+            ))}
+          </div>
         </article>
+        <UrgentCard onOpen={setOpen} />
         <section className="cxBoxes">
-          {SLIPS.map((slip) => <CommandBox key={slip.key} slip={slip} onOpen={setOpen} />)}
+          {MAIN_SLIPS.map((slip) => <CommandBox key={slip.key} slip={slip} onOpen={setOpen} />)}
         </section>
       </section>
       {open ? <Slip slip={open} onClose={() => setOpen(null)} /> : null}
