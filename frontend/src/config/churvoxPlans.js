@@ -1,6 +1,6 @@
-// Churvox locked pricing config.
-// Keep backend plan keys as solo, team, pro, enterprise.
-// Customer-facing names are Start, Crew, Operator, Command.
+// Churvox pricing config.
+// Backend plan keys stay: solo, team, pro, enterprise.
+// Public plan names: Start, Crew, Operator, Command.
 
 export const PLAN_KEYS = {
   START: "solo",
@@ -21,34 +21,10 @@ export const PLAN_ALIASES = {
 };
 
 export const COUNTRY_OPTIONS = [
-  {
-    code: "NZ",
-    label: "New Zealand",
-    currency: "NZD",
-    symbol: "NZ$",
-    taxLabel: "+ GST"
-  },
-  {
-    code: "AU",
-    label: "Australia",
-    currency: "AUD",
-    symbol: "A$",
-    taxLabel: "+ GST"
-  },
-  {
-    code: "US",
-    label: "United States",
-    currency: "USD",
-    symbol: "US$",
-    taxLabel: ""
-  },
-  {
-    code: "UK",
-    label: "United Kingdom",
-    currency: "GBP",
-    symbol: "GBP",
-    taxLabel: "+ VAT"
-  }
+  { code: "NZ", label: "New Zealand", currency: "NZD", symbol: "NZ$", taxLabel: "+ GST" },
+  { code: "AU", label: "Australia", currency: "AUD", symbol: "A$", taxLabel: "+ GST" },
+  { code: "US", label: "United States", currency: "USD", symbol: "US$", taxLabel: "" },
+  { code: "UK", label: "United Kingdom", currency: "GBP", symbol: "GBP", taxLabel: "+ VAT" }
 ];
 
 export const PLAN_PRICING = {
@@ -145,29 +121,19 @@ export const CHURVOX_PLANS = [
 
 export const PLANS = CHURVOX_PLANS;
 
+export const PLAN_ORDER = ["solo", "team", "pro", "enterprise"];
+
+export const PLAN_LIMITS = {
+  solo: { clients: 20, teamMembers: 1 },
+  team: { clients: 30, teamMembers: 10 },
+  pro: { clients: 40, teamMembers: 25 },
+  enterprise: { clients: 50, teamMembers: 50 }
+};
+
 export const COMMAND_ADDONS = [
   "SMS credits can be added when needed.",
   "Command Growth Packs can be added as your team grows."
 ];
-
-export const PLAN_LIMITS = {
-  solo: {
-    clients: 20,
-    teamMembers: 1
-  },
-  team: {
-    clients: 30,
-    teamMembers: 10
-  },
-  pro: {
-    clients: 40,
-    teamMembers: 25
-  },
-  enterprise: {
-    clients: 50,
-    teamMembers: 50
-  }
-};
 
 export const GROWTH_PACK = {
   name: "Command Growth Pack",
@@ -184,6 +150,21 @@ export const XERO_ADDON = {
   description: "Optional Xero support for Operator. Included with Command."
 };
 
+export const PLAN_NAMES = {
+  solo: "Start",
+  team: "Crew",
+  pro: "Operator",
+  enterprise: "Command"
+};
+
+export const PLAN_DISPLAY_NAMES = PLAN_NAMES;
+export const PLAN_PRICES = {
+  solo: 39,
+  team: 89,
+  pro: 149,
+  enterprise: 299
+};
+
 export function normalizePlanKey(planKey) {
   const key = String(planKey || "solo").toLowerCase();
   return PLAN_ALIASES[key] || "solo";
@@ -198,8 +179,38 @@ export function getPlanName(planKey) {
   return getPlanConfig(planKey).name;
 }
 
+export function nicePlanName(planKey) {
+  return getPlanName(planKey);
+}
+
+export function requiredPlanLabel(planKey) {
+  return getPlanName(planKey);
+}
+
+export function planLabel(planKey) {
+  return getPlanName(planKey);
+}
+
 export function getPlanPrice(planKey) {
   return getPlanConfig(planKey).monthly;
+}
+
+export function planPrice(planKey) {
+  return getPlanPrice(planKey);
+}
+
+export function planRank(planKey) {
+  const key = normalizePlanKey(planKey);
+  const index = PLAN_ORDER.indexOf(key);
+  return index === -1 ? 0 : index;
+}
+
+export function isPlanAtLeast(currentPlan, requiredPlan) {
+  return planRank(currentPlan) >= planRank(requiredPlan);
+}
+
+export function canUsePlanFeature(currentPlan, requiredPlan) {
+  return isPlanAtLeast(currentPlan, requiredPlan);
 }
 
 export function getCountryConfig(countryCode) {
@@ -221,48 +232,25 @@ export default {
   PLAN_PRICING,
   CHURVOX_PLANS,
   PLANS,
-  COMMAND_ADDONS,
+  PLAN_ORDER,
   PLAN_LIMITS,
+  COMMAND_ADDONS,
   GROWTH_PACK,
   XERO_ADDON,
+  PLAN_NAMES,
+  PLAN_DISPLAY_NAMES,
+  PLAN_PRICES,
   normalizePlanKey,
   getPlanConfig,
   getPlanName,
+  nicePlanName,
+  requiredPlanLabel,
+  planLabel,
   getPlanPrice,
+  planPrice,
+  planRank,
+  isPlanAtLeast,
+  canUsePlanFeature,
   getCountryConfig,
   formatPlanPrice
 };
-
-// Backward-compatible exports used by older Churvox pages.
-export const PLAN_ORDER = ["solo", "team", "pro", "enterprise"];
-
-export function planRank(planKey) {
-  const key = normalizePlanKey(planKey);
-  const index = PLAN_ORDER.indexOf(key);
-  return index === -1 ? 0 : index;
-}
-
-export function requiredPlanLabel(planKey) {
-  return getPlanName(planKey);
-}
-
-export function isPlanAtLeast(currentPlan, requiredPlan) {
-  return planRank(currentPlan) >= planRank(requiredPlan);
-}
-
-export function canUsePlanFeature(currentPlan, requiredPlan) {
-  return isPlanAtLeast(currentPlan, requiredPlan);
-}
-
-export function nicePlanName(planKey) {
-  return getPlanName(planKey);
-}
-
-export function planLabel(planKey) {
-  return getPlanName(planKey);
-}
-
-export function planPrice(planKey) {
-  return getPlanPrice(planKey);
-}
-
