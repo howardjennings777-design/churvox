@@ -1,0 +1,230 @@
+/* CHURVOX GLOBAL POLISH
+   Loaded after the main command-slip theme so it wins over older page styles.
+   Keep this frontend-only: headers, hero panels, and small uppercase pills. */
+
+:root {
+  --chx-ink: #070b12;
+  --chx-graphite: #0b1018;
+  --chx-panel: #111827;
+  --chx-orange: #f97316;
+  --chx-amber: #fed7aa;
+  --chx-cyan: #22d3ee;
+}
+
+/* Force the main app command pages to share the same hero/header design. */
+[data-command-canvas] .plansHero,
+[data-command-canvas] .supportHero,
+[data-command-canvas] .cxHero,
+[data-command-canvas] .ch4Hero,
+[data-command-canvas] .srHero,
+[data-command-canvas] .ivHero,
+[data-command-canvas] .plHero,
+[data-command-canvas] .stHero,
+[data-command-canvas] .jbHero,
+[data-command-canvas] .clHero,
+[data-command-canvas] .qtHero,
+[data-command-canvas] .tmHero,
+[data-command-canvas] .pyHero,
+[data-command-canvas] .rpHero,
+[data-command-canvas] .dwHero,
+[data-command-canvas] .dbHero,
+[data-command-canvas] .dsHero,
+[data-command-canvas] .jdHero,
+[data-command-canvas] .qbHero,
+[data-command-canvas] .ibHero,
+[data-command-canvas] .cbHero,
+[data-command-canvas] .tbHero,
+[data-command-canvas] [class$="Hero"],
+[data-command-canvas] [class*="Hero "],
+[data-command-canvas] [class*="page-hero"],
+[data-command-canvas] [class*="PageHero"],
+.cv-launch-plans-page > section > section:first-child {
+  position: relative !important;
+  overflow: hidden !important;
+  isolation: isolate !important;
+  background:
+    radial-gradient(circle at 86% -24%, rgba(249, 115, 22, 0.52), transparent 34%),
+    radial-gradient(circle at 14% 116%, rgba(34, 211, 238, 0.18), transparent 30%),
+    linear-gradient(135deg, var(--chx-graphite) 0%, var(--chx-panel) 56%, var(--chx-ink) 100%) !important;
+  border-left: 8px solid var(--chx-orange) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 34px !important;
+  color: #ffffff !important;
+  box-shadow: 0 24px 70px rgba(2, 6, 23, 0.24) !important;
+}
+
+[data-command-canvas] .plansHero::before,
+[data-command-canvas] .supportHero::before,
+[data-command-canvas] .cxHero::before,
+[data-command-canvas] .ch4Hero::before,
+[data-command-canvas] .srHero::before,
+[data-command-canvas] .ivHero::before,
+[data-command-canvas] .plHero::before,
+[data-command-canvas] .stHero::before,
+[data-command-canvas] .jbHero::before,
+[data-command-canvas] .clHero::before,
+[data-command-canvas] .qtHero::before,
+[data-command-canvas] .tmHero::before,
+[data-command-canvas] .pyHero::before,
+[data-command-canvas] .rpHero::before,
+[data-command-canvas] .dwHero::before,
+[data-command-canvas] .dbHero::before,
+[data-command-canvas] .dsHero::before,
+[data-command-canvas] .jdHero::before,
+[data-command-canvas] .qbHero::before,
+[data-command-canvas] .ibHero::before,
+[data-command-canvas] .cbHero::before,
+[data-command-canvas] .tbHero::before,
+[data-command-canvas] [class$="Hero"]::before,
+[data-command-canvas] [class*="Hero "]::before,
+[data-command-canvas] [class*="page-hero"]::before,
+[data-command-canvas] [class*="PageHero"]::before,
+.cv-launch-plans-page > section > section:first-child::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0 1px, transparent 1px 56px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 46px),
+    linear-gradient(120deg, transparent 0 46%, rgba(251, 191, 36, 0.13) 46% 47%, transparent 47% 100%) !important;
+  opacity: 0.72 !important;
+}
+
+[data-command-canvas] .plansHero::after,
+[data-command-canvas] .supportHero::after,
+[data-command-canvas] .cxHero::after,
+[data-command-canvas] .ch4Hero::after,
+[data-command-canvas] .srHero::after,
+[data-command-canvas] .ivHero::after,
+[data-command-canvas] .plHero::after,
+[data-command-canvas] .stHero::after,
+[data-command-canvas] .jbHero::after,
+[data-command-canvas] .clHero::after,
+[data-command-canvas] .qtHero::after,
+[data-command-canvas] .tmHero::after,
+[data-command-canvas] .pyHero::after,
+[data-command-canvas] .rpHero::after,
+[data-command-canvas] .dwHero::after,
+[data-command-canvas] .dbHero::after,
+[data-command-canvas] .dsHero::after,
+[data-command-canvas] .jdHero::after,
+[data-command-canvas] .qbHero::after,
+[data-command-canvas] .ibHero::after,
+[data-command-canvas] .cbHero::after,
+[data-command-canvas] .tbHero::after,
+[data-command-canvas] [class$="Hero"]::after,
+[data-command-canvas] [class*="Hero "]::after,
+[data-command-canvas] [class*="page-hero"]::after,
+[data-command-canvas] [class*="PageHero"]::after,
+.cv-launch-plans-page > section > section:first-child::after {
+  content: "" !important;
+  position: absolute !important;
+  right: -80px !important;
+  top: -80px !important;
+  z-index: 0 !important;
+  width: 250px !important;
+  height: 250px !important;
+  border: 36px solid rgba(249, 115, 22, 0.18) !important;
+  border-radius: 999px !important;
+  pointer-events: none !important;
+}
+
+[data-command-canvas] .plansHero > *,
+[data-command-canvas] .supportHero > *,
+[data-command-canvas] .cxHero > *,
+[data-command-canvas] .ch4Hero > *,
+[data-command-canvas] .srHero > *,
+[data-command-canvas] .ivHero > *,
+[data-command-canvas] .plHero > *,
+[data-command-canvas] .stHero > *,
+[data-command-canvas] .jbHero > *,
+[data-command-canvas] .clHero > *,
+[data-command-canvas] .qtHero > *,
+[data-command-canvas] .tmHero > *,
+[data-command-canvas] .pyHero > *,
+[data-command-canvas] .rpHero > *,
+[data-command-canvas] .dwHero > *,
+[data-command-canvas] .dbHero > *,
+[data-command-canvas] .dsHero > *,
+[data-command-canvas] .jdHero > *,
+[data-command-canvas] .qbHero > *,
+[data-command-canvas] .ibHero > *,
+[data-command-canvas] .cbHero > *,
+[data-command-canvas] .tbHero > *,
+[data-command-canvas] [class$="Hero"] > *,
+[data-command-canvas] [class*="Hero "] > *,
+[data-command-canvas] [class*="page-hero"] > *,
+[data-command-canvas] [class*="PageHero"] > *,
+.cv-launch-plans-page > section > section:first-child > * {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+[data-command-canvas] .plansHero h1,
+[data-command-canvas] .supportHero h1,
+[data-command-canvas] [class$="Hero"] h1,
+[data-command-canvas] [class*="Hero "] h1,
+[data-command-canvas] [class*="page-hero"] h1,
+[data-command-canvas] [class*="PageHero"] h1,
+.cv-launch-plans-page > section > section:first-child h1 {
+  color: #ffffff !important;
+}
+
+[data-command-canvas] .plansHero p,
+[data-command-canvas] .supportHero p,
+[data-command-canvas] [class$="Hero"] p,
+[data-command-canvas] [class*="Hero "] p,
+[data-command-canvas] [class*="page-hero"] p,
+[data-command-canvas] [class*="PageHero"] p,
+.cv-launch-plans-page > section > section:first-child p {
+  color: #f8fafc !important;
+}
+
+/* App-wide pill unification for command pages.
+   This catches old amber chips, white pills, and header status labels without touching normal inputs. */
+[data-command-canvas] :where(span, div, small):not([role="button"]):not([class*="absolute left"]):not([class*="w-2"])[class*="uppercase"][class*="tracking"],
+[data-command-canvas] :where(span, div, small):not([role="button"]):not([class*="absolute left"]):not([class*="w-2"])[class*="font-black"][class*="tracking"],
+.cv-launch-plans-page :where(span, div, small):not([role="button"]):not([class*="absolute left"]):not([class*="w-2"])[class*="uppercase"][class*="tracking"],
+.cv-launch-plans-page :where(span, div, small):not([role="button"]):not([class*="absolute left"]):not([class*="w-2"])[class*="font-black"][class*="tracking"] {
+  display: inline-flex !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: max-content !important;
+  align-items: center !important;
+  gap: 6px !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.07) !important;
+  color: var(--chx-amber) !important;
+  -webkit-text-fill-color: var(--chx-amber) !important;
+  padding: 8px 12px !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  line-height: 1.1 !important;
+  letter-spacing: 0.13em !important;
+  text-transform: uppercase !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(6px) !important;
+}
+
+/* Stop page card labels from showing as yellow/white pills after older local styles. */
+[data-command-canvas] :where(span, div, small)[class*="bg-amber"],
+[data-command-canvas] :where(span, div, small)[class*="bg-white/10"],
+[data-command-canvas] :where(span, div, small)[class*="bg-white"],
+.cv-launch-plans-page :where(span, div, small)[class*="bg-amber"],
+.cv-launch-plans-page :where(span, div, small)[class*="bg-white/10"],
+.cv-launch-plans-page :where(span, div, small)[class*="bg-white"] {
+  box-shadow: none !important;
+}
+
+/* Keep real action buttons looking like buttons, not label pills. */
+[data-command-canvas] button[class*="tracking"],
+.cv-launch-plans-page button[class*="tracking"],
+[data-command-canvas] a[class*="tracking"],
+.cv-launch-plans-page a[class*="tracking"] {
+  -webkit-text-fill-color: currentColor !important;
+}
