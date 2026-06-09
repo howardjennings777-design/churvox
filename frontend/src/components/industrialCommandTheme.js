@@ -8,4 +8,4 @@ export const industrialAction = "bg-[linear-gradient(135deg,#facc15,#fb923c_52%,
 
 export const industrialGhost = "border border-amber-300/25 bg-white/10 text-slate-50 hover:bg-white/15";
 
-export const industrialChip = "inline-flex rounded-full border border-amber-300/30 bg-amber-300/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300";
+export const industrialChip = "inline-flex rounded-[16px] border border-white/10 bg-white/10 px-4 py-2 text-[10px] font-black uppercase leading-none tracking-[0.18em] text-amber-200 shadow-none backdrop-blur";
