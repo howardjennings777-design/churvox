@@ -1193,3 +1193,79 @@ body:has(.cxRoot) [class*="Approval"]:not(.cxWrap):not(.cxBoxes):not(.cxBox):not
   display: none !important;
   pointer-events: none !important;
 }
+
+/* CHURVOX HIDDEN TEXT CONTRAST FIX
+   Fixes light/off-white cards where text exists but only shows when highlighted. */
+
+.cxRoot,
+.ch4Root {
+  color: #1f2933;
+}
+
+.cxRoot :where(
+  [class*="card"],
+  [class*="Card"],
+  [class*="panel"],
+  [class*="Panel"],
+  [class*="box"],
+  [class*="Box"],
+  [class*="list"],
+  [class*="List"],
+  [class*="record"],
+  [class*="Record"],
+  [class*="empty"],
+  [class*="Empty"],
+  [class*="safe"],
+  [class*="Safe"],
+  [class*="slip"],
+  [class*="Slip"],
+  [class*="sheet"],
+  [class*="Sheet"],
+  [class*="modal"],
+  [class*="Modal"]
+):not([class*="sidebar"]):not([class*="Sidebar"]):not([class*="nav"]):not([class*="Nav"]):not([class*="hero"]):not([class*="Hero"]),
+.ch4Root :where(
+  [class*="card"],
+  [class*="Card"],
+  [class*="panel"],
+  [class*="Panel"],
+  [class*="box"],
+  [class*="Box"],
+  [class*="list"],
+  [class*="List"],
+  [class*="record"],
+  [class*="Record"],
+  [class*="empty"],
+  [class*="Empty"],
+  [class*="safe"],
+  [class*="Safe"],
+  [class*="slip"],
+  [class*="Slip"],
+  [class*="sheet"],
+  [class*="Sheet"],
+  [class*="modal"],
+  [class*="Modal"]
+):not([class*="sidebar"]):not([class*="Sidebar"]):not([class*="nav"]):not([class*="Nav"]):not([class*="hero"]):not([class*="Hero"]) {
+  color: #1f2933;
+  -webkit-text-fill-color: currentColor;
+}
+
+.cxRoot :where(h1,h2,h3,h4,h5,h6,p,span,small,label,strong,em,li,td,th),
+.ch4Root :where(h1,h2,h3,h4,h5,h6,p,span,small,label,strong,em,li,td,th) {
+  -webkit-text-fill-color: currentColor;
+}
+
+.cxRoot :where(input, textarea, select),
+.ch4Root :where(input, textarea, select) {
+  color: #1f2933;
+  -webkit-text-fill-color: #1f2933;
+  caret-color: #1f2933;
+}
+
+.cxRoot :where(input::placeholder, textarea::placeholder),
+.ch4Root :where(input::placeholder, textarea::placeholder) {
+  color: #6b7280;
+  -webkit-text-fill-color: #6b7280;
+  opacity: 1;
+}
+
