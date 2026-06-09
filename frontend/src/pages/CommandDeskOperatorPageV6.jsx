@@ -653,8 +653,8 @@ export default function CommandDeskOperatorPageV6() {
             <div className="cxBrand"><span className="cxBrandMark">C</span> CHURVOX</div>
             <span className="cxPill">AI Operator approval desk</span>
           </div>
-          <h1>Churvox did the admin. You approve.</h1>
-          <p>AI Operator prepares the work that needs attention. You open one focused slip, see what Churvox found, edit anything, then approve or decline.</p>
+          <h1>Churvox prepared the admin. You approve.</h1>
+          <p>Review the work Churvox prepared, edit anything, then approve or decline.</p>
           <div className="cxStats">
             {COMMAND_STATS.map(([label, value, sub]) => (
               <div className="cxStat" key={label}>
@@ -665,7 +665,6 @@ export default function CommandDeskOperatorPageV6() {
             ))}
           </div>
         </article>
-        <UrgentCard onOpen={setOpen} />
         <section className="cxBoxes">
           {SLIPS.map((slip) => <CommandBox key={slip.key} slip={slip} onOpen={setOpen} />)}
         </section>

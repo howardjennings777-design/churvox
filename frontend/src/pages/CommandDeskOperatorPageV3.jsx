@@ -514,7 +514,7 @@ function Style() {
     .cxStat small{color:#fed7aa;text-transform:uppercase;letter-spacing:.12em;font-size:10px;font-weight:1000}
     .cxStat b{color:#ffffff;font-size:20px;line-height:1.05}
     .cxStat span{color:#e2e8f0;font-size:12px;font-weight:800;line-height:1.35}
-    .cxUrgent{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:20px;background:#fffaf0;border:1px solid rgba(15,23,42,.14);border-left:8px solid #f97316;border-radius:28px;padding:22px 24px;box-shadow:0 18px 52px rgba(2,6,23,.16)}
+    .cxUrgent{display:none!important;align-items:center;justify-content:space-between;gap:18px;margin-top:20px;background:#fffaf0;border:1px solid rgba(15,23,42,.14);border-left:8px solid #f97316;border-radius:28px;padding:22px 24px;box-shadow:0 18px 52px rgba(2,6,23,.16)}
     .cxUrgent span{display:inline-flex;margin-bottom:8px;border-radius:999px;background:#111827;color:#fbbf24;padding:7px 11px;text-transform:uppercase;letter-spacing:.12em;font-size:10px;font-weight:1000}
     .cxUrgent h2{font-size:32px;line-height:.96;letter-spacing:-.04em;margin:0 0 8px;color:#111827}
     .cxUrgent p{margin:0;color:#334155;font-weight:900;max-width:790px;line-height:1.45}
@@ -670,6 +670,9 @@ function Style() {
       -webkit-text-fill-color:#0f172a!important;
     }
 
+    /* FINAL REMOVE COMMAND FOCUS STRIP */
+    .cxUrgent{display:none!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important;border:0!important;box-shadow:none!important}
+
     @media(max-width:1200px){.cxOverlay{padding:12px}.cxSlip main,.cxBoxes,.cxContextGrid,.cxDeliverySummary,.cxStats{grid-template-columns:1fr}.cxControls{position:static}.cxUrgent{display:grid}.cxUrgentActions{justify-content:stretch}.cxUrgentActions button{flex:1}}
     @media(max-width:720px){.cxWrap{padding:16px 14px 110px}.cxHero{padding:22px;border-radius:26px}.cxTopLine{align-items:flex-start;flex-direction:column}.cxHero h1{font-size:42px}.cxUrgent{padding:18px;border-radius:22px}.cxUrgent h2{font-size:28px}.cxBox{min-height:190px}.cxFields{grid-template-columns:1fr}.cxOverlay{padding:8px}.cxSlip{border-radius:22px}.cxSlip header{padding:16px;display:grid}.cxSlip main{padding:10px}}
   `}</style>;
@@ -686,8 +689,8 @@ export default function CommandDeskOperatorPageV3() {
             <div className="cxBrand"><span className="cxBrandMark">C</span> CHURVOX</div>
             <span className="cxPill">AI Operator approval desk</span>
           </div>
-          <h1>Churvox did the admin. You approve.</h1>
-          <p>AI Operator prepares the work that needs attention. You open one focused slip, see what Churvox found, edit anything, then approve or decline.</p>
+          <h1>Churvox prepared the admin. You approve.</h1>
+          <p>Review the work Churvox prepared, edit anything, then approve or decline.</p>
           <div className="cxStats">
             {COMMAND_STATS.map(([label, value, sub]) => (
               <div className="cxStat" key={label}>
@@ -698,7 +701,6 @@ export default function CommandDeskOperatorPageV3() {
             ))}
           </div>
         </article>
-        <UrgentCard onOpen={setOpen} />
         <section className="cxBoxes">
           {MAIN_SLIPS.map((slip) => <CommandBox key={slip.key} slip={slip} onOpen={setOpen} />)}
         </section>

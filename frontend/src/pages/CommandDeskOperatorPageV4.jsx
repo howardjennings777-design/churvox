@@ -494,6 +494,9 @@ function Style() {
     .cxControls .approve{background:#16a34a;color:#052e16!important;border:2px solid #15803d}
     .cxControls .decline{background:#fecaca;color:#7f1d1d!important;border:2px solid #fca5a5}
     .cxControls .dark{background:#111827;color:#ffffff!important}
+    /* FINAL REMOVE COMMAND FOCUS STRIP */
+    .cxUrgent{display:none!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important;border:0!important;box-shadow:none!important}
+
     @media(max-width:1200px){.cxOverlay{padding:12px}.cxSlip main,.cxBoxes,.cxContextGrid{grid-template-columns:1fr}.cxControls{position:static}}
   `}</style>;
 }
@@ -506,7 +509,7 @@ export default function CommandDeskOperatorPageV4() {
       <section className="cxWrap">
         <article className="cxHero">
           <span className="cxPill">AI approval desk</span>
-          <h1>Churvox did the admin. You approve.</h1>
+          <h1>Churvox prepared the admin. You approve.</h1>
           <p>Each Command box opens a prepared action slip with action key, linked record, notify mode, audit note and owner approval controls ready for later logic.</p>
         </article>
         <section className="cxBoxes">
