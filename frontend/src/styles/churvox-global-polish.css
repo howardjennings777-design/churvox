@@ -38,7 +38,9 @@
 [data-command-canvas] [class*="Hero "],
 [data-command-canvas] [class*="page-hero"],
 [data-command-canvas] [class*="PageHero"],
-.cv-launch-plans-page > section > section:first-child {
+.cv-launch-plans-page > section > section:first-child,
+.rpRoot .rpHero,
+.dwRoot .dwHero {
   position: relative !important;
   overflow: hidden !important;
   isolation: isolate !important;
@@ -81,7 +83,9 @@
 [data-command-canvas] [class*="Hero "]::before,
 [data-command-canvas] [class*="page-hero"]::before,
 [data-command-canvas] [class*="PageHero"]::before,
-.cv-launch-plans-page > section > section:first-child::before {
+.cv-launch-plans-page > section > section:first-child::before,
+.rpRoot .rpHero::before,
+.dwRoot .dwHero::before {
   content: "" !important;
   position: absolute !important;
   inset: 0 !important;
@@ -120,7 +124,9 @@
 [data-command-canvas] [class*="Hero "]::after,
 [data-command-canvas] [class*="page-hero"]::after,
 [data-command-canvas] [class*="PageHero"]::after,
-.cv-launch-plans-page > section > section:first-child::after {
+.cv-launch-plans-page > section > section:first-child::after,
+.rpRoot .rpHero::after,
+.dwRoot .dwHero::after {
   content: "" !important;
   position: absolute !important;
   right: -80px !important;
@@ -159,7 +165,9 @@
 [data-command-canvas] [class*="Hero "] > *,
 [data-command-canvas] [class*="page-hero"] > *,
 [data-command-canvas] [class*="PageHero"] > *,
-.cv-launch-plans-page > section > section:first-child > * {
+.cv-launch-plans-page > section > section:first-child > *,
+.rpRoot .rpHero > *,
+.dwRoot .dwHero > * {
   position: relative !important;
   z-index: 1 !important;
 }
@@ -170,7 +178,9 @@
 [data-command-canvas] [class*="Hero "] h1,
 [data-command-canvas] [class*="page-hero"] h1,
 [data-command-canvas] [class*="PageHero"] h1,
-.cv-launch-plans-page > section > section:first-child h1 {
+.cv-launch-plans-page > section > section:first-child h1,
+.rpRoot .rpHero h1,
+.dwRoot .dwHero h1 {
   color: #ffffff !important;
 }
 
@@ -180,18 +190,21 @@
 [data-command-canvas] [class*="Hero "] p,
 [data-command-canvas] [class*="page-hero"] p,
 [data-command-canvas] [class*="PageHero"] p,
-.cv-launch-plans-page > section > section:first-child p {
+.cv-launch-plans-page > section > section:first-child p,
+.rpRoot .rpHero p,
+.dwRoot .dwHero p {
   color: #f8fafc !important;
 }
 
-/* HEADER PILLS ONLY.
-   These selectors intentionally target the first small uppercase badge inside page headers.
-   They do not target the little labels inside cards/lists. */
-[data-command-canvas] :where(.plansHero,.supportHero,.cxHero,.ch4Hero,.srHero,.ivHero,.plHero,.stHero,.jbHero,.clHero,.qtHero,.tmHero,.pyHero,.rpHero,.dwHero,.dbHero,.dsHero,.jdHero,.qbHero,.ibHero,.cbHero,.tbHero,[class$="Hero"],[class*="Hero "],[class*="page-hero"],[class*="PageHero"]) > :where(span,small,div)[class*="tracking"]:first-child,
-[data-command-canvas] :where(.plansHero,.supportHero,.cxHero,.ch4Hero,.srHero,.ivHero,.plHero,.stHero,.jbHero,.clHero,.qtHero,.tmHero,.pyHero,.rpHero,.dwHero,.dbHero,.dsHero,.jdHero,.qbHero,.ibHero,.cbHero,.tbHero,[class$="Hero"],[class*="Hero "],[class*="page-hero"],[class*="PageHero"]) > :where(div,section):not([class*="absolute"]) > :where(span,small,div)[class*="tracking"]:first-child,
-[data-command-canvas] :where(.plansHero,.supportHero,.cxHero,.ch4Hero,.srHero,.ivHero,.plHero,.stHero,.jbHero,.clHero,.qtHero,.tmHero,.pyHero,.rpHero,.dwHero,.dbHero,.dsHero,.jdHero,.qbHero,.ibHero,.cbHero,.tbHero,[class$="Hero"],[class*="Hero "],[class*="page-hero"],[class*="PageHero"]) :where(.cxPill,.ivHeroTag,[class*="Pill"]),
-.cv-launch-plans-page > section > section:first-child > :where(span,small,div)[class*="tracking"]:first-child,
-.cv-launch-plans-page > section > section:first-child > :where(div,section):not([class*="absolute"]) > :where(span,small,div)[class*="tracking"]:first-child {
+/* DIRECT HEADER PILL OVERRIDES.
+   These are the actual stubborn page-header badge classes from Support, Plans, Reports, Payroll/Direct pages. */
+.supportHero > div > span:first-child,
+.plansHero > div > span:first-child,
+.rpRoot .rpHero > span:first-child,
+.dwRoot .dwHero .dwHeroTag,
+[data-command-canvas] .ivHero .ivHeroTag,
+[data-command-canvas] :where(.cxHero,.ch4Hero,.srHero,.plHero,.stHero,.jbHero,.clHero,.qtHero,.tmHero,.pyHero,.dbHero,.dsHero,.jdHero,.qbHero,.ibHero,.cbHero,.tbHero) > :where(span,small,div)[class*="tracking"]:first-child,
+.cv-launch-plans-page > section > section:first-child > div > span:first-child {
   display: inline-flex !important;
   width: auto !important;
   min-width: 0 !important;
@@ -214,16 +227,11 @@
   backdrop-filter: blur(6px) !important;
 }
 
-[data-command-canvas] :where(.plansHero,.supportHero,.cxHero,.ch4Hero,.srHero,.ivHero,.plHero,.stHero,.jbHero,.clHero,.qtHero,.tmHero,.pyHero,.rpHero,.dwHero,.dbHero,.dsHero,.jdHero,.qbHero,.ibHero,.cbHero,.tbHero,[class$="Hero"],[class*="Hero "],[class*="page-hero"],[class*="PageHero"]) :where(.cxPill,.ivHeroTag,[class*="Pill"]) *,
-.cv-launch-plans-page > section > section:first-child :where(span,small,div)[class*="tracking"]:first-child * {
+.supportHero > div > span:first-child *,
+.plansHero > div > span:first-child *,
+.rpRoot .rpHero > span:first-child *,
+.dwRoot .dwHero .dwHeroTag *,
+[data-command-canvas] .ivHero .ivHeroTag * {
   color: var(--chx-amber) !important;
   -webkit-text-fill-color: var(--chx-amber) !important;
-}
-
-/* Keep real action buttons and nav links as buttons. */
-[data-command-canvas] button[class*="tracking"],
-.cv-launch-plans-page button[class*="tracking"],
-[data-command-canvas] a[class*="tracking"],
-.cv-launch-plans-page a[class*="tracking"] {
-  -webkit-text-fill-color: currentColor !important;
 }
