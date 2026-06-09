@@ -439,3 +439,20 @@ export const COMMAND_GROWTH_PACK = GROWTH_PACK;
 export const COMMAND_GROWTH_PACK_ADDON = GROWTH_PACK;
 export const GROWTH_PACK_ADDON = GROWTH_PACK;
 
+export function pricingNotesForCountry(countryCode) {
+  const country = getCountryMeta(countryCode);
+  return [
+    "Prices are monthly and shown in " + country.currency + ".",
+    country.taxLabel ? "Tax shown as " + country.taxLabel + " where applicable." : "Local taxes may apply where applicable.",
+    "SMS credits and Growth Packs can be added when needed."
+  ];
+}
+
+export function getPricingNotesForCountry(countryCode) {
+  return pricingNotesForCountry(countryCode);
+}
+
+export function pricingNotes(countryCode) {
+  return pricingNotesForCountry(countryCode);
+}
+
