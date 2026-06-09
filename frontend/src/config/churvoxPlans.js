@@ -232,3 +232,25 @@ export default {
   getCountryConfig,
   formatPlanPrice
 };
+
+// Backward-compatible exports used by older Churvox pages.
+export const PLAN_ORDER = ["solo", "team", "pro", "enterprise"];
+
+export function planRank(planKey) {
+  const key = normalizePlanKey(planKey);
+  const index = PLAN_ORDER.indexOf(key);
+  return index === -1 ? 0 : index;
+}
+
+export function requiredPlanLabel(planKey) {
+  return getPlanName(planKey);
+}
+
+export function isPlanAtLeast(currentPlan, requiredPlan) {
+  return planRank(currentPlan) >= planRank(requiredPlan);
+}
+
+export function canUsePlanFeature(currentPlan, requiredPlan) {
+  return isPlanAtLeast(currentPlan, requiredPlan);
+}
+
