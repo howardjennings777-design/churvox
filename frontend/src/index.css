@@ -1397,3 +1397,114 @@ main :where(
   background: #1d4ed8 !important;
 }
 
+
+/* CHURVOX PLANS DARK CARD READABILITY FIX
+   Fixes dark pricing / billing cards after the light-card contrast patch. */
+
+main :where(
+  [class*="plan"],
+  [class*="Plan"],
+  [class*="pricing"],
+  [class*="Pricing"],
+  [class*="price"],
+  [class*="Price"],
+  [class*="billing"],
+  [class*="Billing"]
+) {
+  color: #f9fafb !important;
+  -webkit-text-fill-color: currentColor !important;
+  opacity: 1 !important;
+}
+
+main :where(
+  [class*="plan"],
+  [class*="Plan"],
+  [class*="pricing"],
+  [class*="Pricing"],
+  [class*="price"],
+  [class*="Price"],
+  [class*="billing"],
+  [class*="Billing"]
+) :where(h1,h2,h3,h4,h5,h6,p,span,small,label,strong,em,li,div,button) {
+  color: #f9fafb !important;
+  -webkit-text-fill-color: #f9fafb !important;
+  opacity: 1 !important;
+}
+
+main :where(
+  [class*="plan"],
+  [class*="Plan"],
+  [class*="pricing"],
+  [class*="Pricing"],
+  [class*="price"],
+  [class*="Price"],
+  [class*="billing"],
+  [class*="Billing"]
+) :where(input, select, textarea) {
+  color: #f9fafb !important;
+  -webkit-text-fill-color: #f9fafb !important;
+  caret-color: #f9fafb !important;
+  background-color: rgba(15, 23, 42, 0.72) !important;
+  opacity: 1 !important;
+}
+
+main :where(
+  [class*="plan"],
+  [class*="Plan"],
+  [class*="pricing"],
+  [class*="Pricing"],
+  [class*="price"],
+  [class*="Price"],
+  [class*="billing"],
+  [class*="Billing"]
+) :where(option) {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  background: #ffffff !important;
+}
+
+main :where(
+  [class*="plan"],
+  [class*="Plan"],
+  [class*="pricing"],
+  [class*="Pricing"],
+  [class*="price"],
+  [class*="Price"],
+  [class*="billing"],
+  [class*="Billing"]
+) :where([class*="muted"], [class*="Muted"], [class*="sub"], [class*="Sub"], [class*="desc"], [class*="Desc"]) {
+  color: #d1d5db !important;
+  -webkit-text-fill-color: #d1d5db !important;
+  opacity: 1 !important;
+}
+
+/* Keep yellow section labels strong */
+main :where(
+  [class*="plan"],
+  [class*="Plan"],
+  [class*="pricing"],
+  [class*="Pricing"],
+  [class*="price"],
+  [class*="Price"],
+  [class*="billing"],
+  [class*="Billing"]
+) :where([class*="label"], [class*="Label"], [class*="eyebrow"], [class*="Eyebrow"], small) {
+  opacity: 1 !important;
+}
+
+/* Disabled buttons on dark cards should still be readable */
+main :where(
+  [class*="plan"],
+  [class*="Plan"],
+  [class*="pricing"],
+  [class*="Pricing"],
+  [class*="price"],
+  [class*="Price"],
+  [class*="billing"],
+  [class*="Billing"]
+) :where(button:disabled, [aria-disabled="true"]) {
+  color: #e5e7eb !important;
+  -webkit-text-fill-color: #e5e7eb !important;
+  opacity: 0.75 !important;
+}
+
