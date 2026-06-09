@@ -14,4 +14,4 @@ const publicPages = [
 ];
 
 const appPages = [
- 
+  ['
