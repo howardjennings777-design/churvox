@@ -96,7 +96,8 @@ async function login(page) {
   if (await submit.count()) await submit.click();
   else await password.press('Enter');
 
-  await settle(page);
+  await page.waitForLoadState('networkidle', { timeout: 18000 }).catch(() => {});
+  await page.waitForTimeout(2500);
   await gotoPage(page, '/dashboard');
 
   const body = await page.locator('body').innerText().catch(() => '');
@@ -166,7 +167,7 @@ async function screenshotPageAndActions(page, viewportName, pageName, route) {
 test.describe('Churvox visual audit for pages and slips', () => {
   test.setTimeout(420000);
 
-  test('screenshots public pages, app pages and common slips', async ({ page }) => {
+  test('screenshots public pages, app pages and common slips', async ({ page, browser }) => {
     const browserErrors = [];
 
     page.on('pageerror', (err) => browserErrors.push(err.message));
@@ -183,12 +184,24 @@ test.describe('Churvox visual audit for pages and slips', () => {
         await screenshotPageAndActions(page, viewportName, pageName, route);
       }
 
-      const loggedIn = await login(page);
+      // Use a fresh page for logged-in app screenshots so public-page clicks do not leave
+      // the browser in a messy login/signup state.
+      const appPage = await browser.newPage({ viewport });
+      appPage.on('pageerror', (err) => browserErrors.push(err.message));
+      appPage.on('console', (msg) => {
+        const text = msg.text() || '';
+        const ignored = ['favicon', 'Failed to load resource', '401', '403', '404', '422'].some((part) => text.includes(part));
+        if (msg.type() === 'error' && !ignored) browserErrors.push(text);
+      });
+
+      const loggedIn = await login(appPage);
       expect(loggedIn, 'Visual audit login should work').toBeTruthy();
 
       for (const [pageName, route] of appPages) {
-        await screenshotPageAndActions(page, viewportName, pageName, route);
+        await screenshotPageAndActions(appPage, viewportName, pageName, route);
       }
+
+      await appPage.close();
     }
 
     expect(browserErrors, 'Visual audit should not find serious browser errors').toEqual([]);
