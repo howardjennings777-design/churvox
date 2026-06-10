@@ -96,7 +96,6 @@ function buildRecords() {
       meta: `${item.group || "Box"} · ${item.status || "Pending"} · ${item.info || ""}`,
       page: "command",
     })),
-
     ...list("commandInbox").map((item) => ({
       id: item.id,
       area: "Command",
@@ -104,7 +103,6 @@ function buildRecords() {
       meta: `Inbox · ${item.info || "Sent to Command"}`,
       page: "command",
     })),
-
     ...list("jobs").map((job) => ({
       id: job.id,
       area: "Jobs",
@@ -112,7 +110,6 @@ function buildRecords() {
       meta: `${job.client || "Client"} · ${job.status || "Status"} · ${job.price || ""}`,
       page: "jobs",
     })),
-
     ...list("dispatch").map((item) => ({
       id: item.id,
       area: "Dispatch",
@@ -120,7 +117,6 @@ function buildRecords() {
       meta: `${item.client || "Client"} · ${item.status || "Status"} · ${item.worker || ""}`,
       page: "dispatch",
     })),
-
     ...list("clients").map((client) => ({
       id: client.id,
       area: "Clients",
@@ -128,7 +124,6 @@ function buildRecords() {
       meta: `${client.status || "Status"} · ${client.email || ""} · ${client.billingEmail || "billing missing"}`,
       page: "clients",
     })),
-
     ...list("quotes").map((quote) => ({
       id: quote.id,
       area: "Quotes",
@@ -136,7 +131,6 @@ function buildRecords() {
       meta: `${quote.client || "Client"} · ${quote.title || ""} · ${quote.status || "Status"} · ${money(quote.amount)}`,
       page: "quotes",
     })),
-
     ...list("invoices").map((invoice) => ({
       id: invoice.id,
       area: "Invoices",
@@ -144,7 +138,6 @@ function buildRecords() {
       meta: `${invoice.client || "Client"} · ${invoice.job || ""} · ${invoice.status || "Status"} · ${money(invoice.amount)}`,
       page: "invoices",
     })),
-
     ...list("team").map((member) => ({
       id: member.id,
       area: "Team",
@@ -152,7 +145,6 @@ function buildRecords() {
       meta: `${member.role || "Role"} · ${member.status || "Status"} · ${member.currentJob || ""}`,
       page: "team",
     })),
-
     ...list("payroll").map((person) => ({
       id: person.id,
       area: "Payroll",
@@ -160,7 +152,6 @@ function buildRecords() {
       meta: `${person.status || "Status"} · ${person.ordinaryHours || 0} hrs · ${person.role || ""}`,
       page: "payroll",
     })),
-
     ...list("support").map((ticket) => ({
       id: ticket.id,
       area: "Support",
@@ -168,7 +159,6 @@ function buildRecords() {
       meta: `${ticket.id || "Ticket"} · ${ticket.status || "Status"} · ${ticket.priority || ""}`,
       page: "support",
     })),
-
     { id: "", area: "Settings", title: "GST and business setup", meta: "Business name · region · email · accounting · automation", page: "settings" },
     { id: "", area: "Plans", title: "Operator and Command plans", meta: "Start · Crew · Operator · Command · Growth Pack", page: "plans" },
     { id: "", area: "Reports", title: "Live reports", meta: "Revenue · jobs · risks · payroll · invoices", page: "reports" },
@@ -176,11 +166,17 @@ function buildRecords() {
 }
 
 export default function FreshSearch({ onNavigate }) {
+  const editableRef = React.useRef(null);
   const [query, setQuery] = React.useState("");
   const [records, setRecords] = React.useState(buildRecords);
 
   function refresh() {
     setRecords(buildRecords());
+  }
+
+  function clearSearch() {
+    setQuery("");
+    if (editableRef.current) editableRef.current.textContent = "";
   }
 
   React.useEffect(() => {
@@ -211,43 +207,44 @@ export default function FreshSearch({ onNavigate }) {
 
     if (item.id) setFreshFocus(item.page, item.id);
     onNavigate?.(item.page);
-    setQuery("");
+    clearSearch();
+  }
+
+  function onInput(event) {
+    setQuery(event.currentTarget.textContent || "");
   }
 
   function onKeyDown(event) {
-    if (event.key === "Enter" && results[0]) {
+    if (event.key === "Enter") {
       event.preventDefault();
-      open(results[0]);
+      if (results[0]) open(results[0]);
     }
 
     if (event.key === "Escape") {
-      setQuery("");
+      event.preventDefault();
+      clearSearch();
     }
   }
 
   return (
     <div className="freshSearchWrap">
-      <label className="freshSearch freshSearchVisible">
+      <div className="freshSearch freshSearchEditableShell">
         <span>Search</span>
 
-        <div className="freshSearchInputSlot">
-          <em className={query ? "hasValue" : ""} aria-hidden="true">
-            {query || "Try Birchville, INV-1007, Matiu..."}
-          </em>
-
-          <input
-            className="freshSearchInput"
-            value={query}
-            onFocus={refresh}
-            onKeyDown={onKeyDown}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder=""
-            aria-label="Search Churvox fresh preview"
-            autoComplete="off"
-            spellCheck="false"
-          />
-        </div>
-      </label>
+        <div
+          ref={editableRef}
+          className="freshSearchEditable"
+          role="textbox"
+          tabIndex={0}
+          contentEditable
+          suppressContentEditableWarning
+          data-placeholder="Try Birchville, INV-1007, Matiu..."
+          onFocus={refresh}
+          onInput={onInput}
+          onKeyDown={onKeyDown}
+          aria-label="Search Churvox fresh preview"
+        />
+      </div>
 
       {results.length > 0 && (
         <div className="freshSearchResults">

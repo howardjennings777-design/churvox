@@ -1,0 +1,88 @@
+/* Replace native search input with a visible editable text box */
+
+.freshSearchEditableShell,
+.freshTopbar .freshSearchEditableShell,
+.freshSearchWrap .freshSearchEditableShell {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-height: 48px !important;
+  padding: 7px 11px !important;
+  border: 2px solid rgba(15, 23, 42, .24) !important;
+  border-radius: 16px !important;
+  background: #ffffff !important;
+  opacity: 1 !important;
+}
+
+.freshSearchEditableShell span {
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+  font-size: 11px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase !important;
+}
+
+.freshSearchEditable,
+.freshTopbar .freshSearchEditable,
+.freshApp .freshSearchEditable {
+  display: block !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  min-height: 26px !important;
+  max-height: 52px !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+  outline: 0 !important;
+  background: #ffffff !important;
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  caret-color: #101827 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  font-size: 16px !important;
+  font-weight: 950 !important;
+  line-height: 26px !important;
+  text-shadow: none !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
+
+.freshSearchEditable:empty::before {
+  content: attr(data-placeholder) !important;
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  opacity: 1 !important;
+  pointer-events: none !important;
+}
+
+.freshSearchEditable:focus {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  background: #ffffff !important;
+  caret-color: #101827 !important;
+  outline: 0 !important;
+}
+
+.freshSearchEditable * {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  background: transparent !important;
+}
+
+@media (max-width: 950px) {
+  .freshSearchEditableShell,
+  .freshTopbar .freshSearchEditableShell,
+  .freshSearchWrap .freshSearchEditableShell {
+    grid-template-columns: 1fr !important;
+    gap: 3px !important;
+  }
+
+  .freshSearchEditable {
+    min-height: 30px !important;
+    line-height: 30px !important;
+    font-size: 16px !important;
+  }
+}

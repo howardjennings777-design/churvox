@@ -33,6 +33,7 @@ import "./freshRiskScan.css";
 import "./freshSearchReallyFinal.css";
 import "./freshSearchTypingFix.css";
 import "./freshSearchVisibleText.css";
+import "./freshSearchEditableFinal.css";
 
 import FreshShell from "./FreshShell";
 import FreshCommand from "./FreshCommand";
