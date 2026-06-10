@@ -5,55 +5,75 @@
   width: 100% !important;
   max-width: none !important;
   min-height: 100dvh !important;
+  margin: 0 !important;
 }
 
 .lbStage {
   width: 100% !important;
   max-width: none !important;
-  min-height: calc(100dvh - 48px) !important;
-  gap: clamp(12px, 1.3vw, 18px) !important;
+  min-height: calc(100dvh - 34px) !important;
+  gap: 14px !important;
 }
 
 .lbTop {
   width: 100% !important;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 380px) !important;
-  gap: clamp(12px, 1.3vw, 18px) !important;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 330px) !important;
+  gap: 14px !important;
 }
 
 .lbHero {
-  min-height: clamp(138px, 17dvh, 184px) !important;
-  padding: clamp(20px, 2.1vw, 28px) !important;
+  min-height: clamp(122px, 14dvh, 156px) !important;
+  padding: clamp(18px, 1.7vw, 24px) !important;
+  border-radius: 28px !important;
 }
 
 .lbHero h1 {
-  font-size: clamp(42px, 4.9vw, 72px) !important;
+  font-size: clamp(40px, 4.3vw, 64px) !important;
+}
+
+.lbHero p {
+  max-width: none !important;
 }
 
 .lbStats {
   min-height: 100% !important;
-  padding: 12px !important;
+  padding: 10px !important;
   gap: 8px !important;
+  border-radius: 24px !important;
 }
 
 .lbStat {
   min-height: 0 !important;
-  padding: 12px 14px !important;
+  padding: 10px 12px !important;
+}
+
+.lbStat b {
+  font-size: clamp(22px, 2vw, 30px) !important;
 }
 
 .lbBody {
   width: 100% !important;
   max-width: none !important;
-  grid-template-columns: minmax(270px, 340px) minmax(520px, 1fr) minmax(270px, 330px) !important;
-  gap: clamp(12px, 1.3vw, 18px) !important;
+  grid-template-columns: minmax(255px, 315px) minmax(0, 1fr) minmax(255px, 315px) !important;
+  gap: 14px !important;
   align-items: stretch !important;
   flex: 1 1 auto !important;
-  min-height: 0 !important;
+  min-height: calc(100dvh - 230px) !important;
 }
 
 .lbPanel,
 .lbRail {
   min-height: 0 !important;
   height: 100% !important;
+  border-radius: 24px !important;
+  padding: 14px !important;
+}
+
+.lbPanel h2,
+.lbRail h2 {
+  margin-top: 10px !important;
+  margin-bottom: 12px !important;
+  font-size: clamp(24px, 2.2vw, 32px) !important;
 }
 
 .lbEditor {
@@ -70,7 +90,7 @@
 .lbList {
   max-height: none !important;
   min-height: 0 !important;
-  height: calc(100dvh - 420px) !important;
+  height: calc(100dvh - 350px) !important;
 }
 
 .lbRail {
@@ -81,6 +101,12 @@
 
 .lbActions {
   flex: 0 0 auto !important;
+  gap: 8px !important;
+}
+
+.lbActions button {
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
 }
 
 .lbMiniQueue {
@@ -93,28 +119,52 @@
   margin-top: auto !important;
 }
 
+.lbFields {
+  gap: 12px !important;
+}
+
 .lbField textarea {
-  min-height: clamp(96px, 12dvh, 150px) !important;
+  min-height: clamp(84px, 10dvh, 128px) !important;
 }
 
 @media (min-width: 1181px) {
   .cvxAppMain:has(.lbRoot) {
-    padding-top: 18px !important;
-    padding-bottom: 34px !important;
+    width: calc(100vw - var(--cvx-side)) !important;
+    max-width: calc(100vw - var(--cvx-side)) !important;
+    margin-left: var(--cvx-side) !important;
+    padding: 14px 18px 22px !important;
+    overflow-x: hidden !important;
+  }
+
+  .cvxAppMain:has(.lbRoot) > .lbRoot,
+  .cvxAppMain:has(.lbRoot) .lbRoot,
+  .cvxAppMain:has(.lbRoot) .lbStage {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
   }
 
   .lbStage {
-    min-height: calc(100dvh - 70px) !important;
+    min-height: calc(100dvh - 36px) !important;
   }
 
   .lbBody {
-    min-height: calc(100dvh - 300px) !important;
+    min-height: calc(100dvh - 216px) !important;
   }
 }
 
 @media (min-width: 1440px) {
+  .cvxAppMain:has(.lbRoot) {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+
+  .lbTop {
+    grid-template-columns: minmax(0, 1fr) minmax(290px, 360px) !important;
+  }
+
   .lbBody {
-    grid-template-columns: minmax(300px, 380px) minmax(620px, 1fr) minmax(300px, 360px) !important;
+    grid-template-columns: minmax(285px, 350px) minmax(0, 1fr) minmax(285px, 350px) !important;
   }
 }
 
@@ -147,6 +197,6 @@
   .lbHero,
   .lbPanel,
   .lbRail {
-    border-radius: 22px !important;
+    border-radius: 20px !important;
   }
 }
