@@ -163,6 +163,7 @@ const pages = new Set([
   "onboarding",
   "qa",
   "flags",
+  "feedback",
   "imports",
   "exports",
   "security",
@@ -263,6 +264,7 @@ export default function FreshApp() {
   if (page === "onboarding") content = <FreshOnboarding onNavigate={goToPage} />;
   if (page === "qa") content = <FreshQa onNavigate={goToPage} />;
   if (page === "flags") content = <FreshFlags onNavigate={goToPage} />;
+  if (page === "feedback") content = <FreshFeedback onNavigate={goToPage} />;
   if (page === "imports") content = <FreshImports onNavigate={goToPage} />;
   if (page === "exports") content = <FreshExports onNavigate={goToPage} />;
   if (page === "security") content = <FreshSecurity onNavigate={goToPage} />;
