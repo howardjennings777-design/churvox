@@ -1,0 +1,108 @@
+/* Final Routes page contrast lock */
+
+.freshRoutesPage,
+.freshRoutesPage * {
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+.freshRoutesPage h1,
+.freshRoutesPage h2,
+.freshRoutesPage h3,
+.freshRoutesPage b,
+.freshRoutesPage strong,
+.freshRoutesPage .freshRoutesHead h2,
+.freshRoutesPage .freshRoutesList > button b {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+}
+
+.freshRoutesPage p,
+.freshRoutesPage small,
+.freshRoutesPage .freshRoutesHead p,
+.freshRoutesPage .freshRoutesList > button span,
+.freshRoutesPage .freshRoutesList > button small {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+}
+
+.freshRoutesPage label span,
+.freshRoutesPage .freshRoutesHead > div > span {
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+}
+
+.freshRoutesPage input,
+.freshRoutesPage select,
+.freshRoutesPage textarea,
+.freshRoutesPage option {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  background: #ffffff !important;
+  opacity: 1 !important;
+  caret-color: #101827 !important;
+}
+
+.freshRoutesHero h1 {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.freshRoutesHero p {
+  color: #e5e7eb !important;
+  -webkit-text-fill-color: #e5e7eb !important;
+}
+
+.freshRoutesHero > div > span {
+  color: #fed7aa !important;
+  -webkit-text-fill-color: #fed7aa !important;
+}
+
+.freshRoutesStats b {
+  color: #fbbf24 !important;
+  -webkit-text-fill-color: #fbbf24 !important;
+}
+
+.freshRoutesStats small {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.freshRoutesList header b {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.freshRoutesList header span {
+  color: #fed7aa !important;
+  -webkit-text-fill-color: #fed7aa !important;
+}
+
+.freshRoutesList i {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.freshRoutesPage button {
+  opacity: 1 !important;
+}
+
+.freshRoutesPage button:not(.freshRoutesReset) {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.freshRoutesPage .freshRoutesList header button,
+.freshRoutesPage .freshRoutesHeadActions button:first-child,
+.freshRoutesPage .freshRoutesHeadActions button:nth-child(2),
+.freshRoutesPage .freshRoutesActions button:first-child,
+.freshRoutesPage .freshRoutesActions button:nth-child(2),
+.freshRoutesPage .freshRoutesActions button:nth-child(3) {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}
+
+.freshRoutesPage .freshRoutesReset {
+  color: #334155 !important;
+  -webkit-text-fill-color: #334155 !important;
+}

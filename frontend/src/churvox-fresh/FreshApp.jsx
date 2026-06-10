@@ -41,6 +41,7 @@ import "./freshPhotos.css";
 import "./freshExtras.css";
 import "./freshMessages.css";
 import "./freshRoutes.css";
+import "./freshRoutesContrastFix.css";
 
 import FreshShell from "./FreshShell";
 import FreshCommand from "./FreshCommand";
