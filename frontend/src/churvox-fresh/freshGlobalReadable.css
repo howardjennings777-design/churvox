@@ -1,0 +1,264 @@
+/*
+  Fresh app global readability lock.
+  Loaded last. Keeps normal page/card/form text dark,
+  then restores white text inside dark hero/header panels.
+*/
+
+/* Base readable page text */
+.freshPageMount,
+.freshPageMount * {
+  opacity: 1 !important;
+  text-shadow: none !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
+
+.freshPageMount :where(
+  h1,h2,h3,h4,h5,h6,
+  b,strong,
+  label,
+  th,
+  dt,
+  legend
+) {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+}
+
+.freshPageMount :where(
+  p,span,small,em,li,td,dd,
+  article,
+  section
+) {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+}
+
+.freshPageMount :where(input,textarea,select,option) {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  background: #ffffff !important;
+  caret-color: #101827 !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+.freshPageMount :where(input,textarea)::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  opacity: 1 !important;
+}
+
+/* Form labels / orange labels */
+.freshPageMount :where(
+  label > span,
+  .freshField span,
+  .freshSettingsCard span,
+  .freshDataControls header span
+) {
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+}
+
+/* Light cards */
+.freshPageMount :where(
+  article,
+  section,
+  .freshCard,
+  [class*="Detail"],
+  [class*="Form"],
+  [class*="Cards"] section,
+  [class*="Notes"] div
+) :where(h2,h3,b,strong) {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+}
+
+.freshPageMount :where(
+  article,
+  section,
+  .freshCard,
+  [class*="Detail"],
+  [class*="Form"],
+  [class*="Cards"] section,
+  [class*="Notes"] div
+) :where(p,span,small) {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+}
+
+/* Dark hero panels across every fresh page */
+.freshPageMount :where(
+  .freshHero,
+  [class*="Hero"]
+) {
+  color: #ffffff !important;
+  -webkit-text-fill-color: initial !important;
+}
+
+.freshPageMount :where(
+  .freshHero,
+  [class*="Hero"]
+) :where(h1,h2,h3,b,strong) {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.freshPageMount :where(
+  .freshHero,
+  [class*="Hero"]
+) :where(p,small) {
+  color: #e5e7eb !important;
+  -webkit-text-fill-color: #e5e7eb !important;
+}
+
+.freshPageMount :where(
+  .freshHero,
+  [class*="Hero"]
+) > div > span,
+.freshPageMount :where(
+  .freshHero,
+  [class*="Hero"]
+) :where(.freshHeroBadge) {
+  color: #fed7aa !important;
+  -webkit-text-fill-color: #fed7aa !important;
+}
+
+/* Hero stats */
+.freshPageMount :where(
+  [class*="Stats"]
+) b {
+  color: #fbbf24 !important;
+  -webkit-text-fill-color: #fbbf24 !important;
+}
+
+.freshPageMount :where(
+  [class*="Stats"]
+) small {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Dark list headers / mini app headers */
+.freshPageMount :where(
+  aside header,
+  [class*="List"] header,
+  .freshWorkerPhone header,
+  .freshPortalList header,
+  .freshAutomationList header,
+  .freshPhotosList header,
+  .freshExtrasList header,
+  .freshMessagesList header,
+  .freshRoutesList header
+) :where(b,strong,h2,h3) {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.freshPageMount :where(
+  aside header,
+  [class*="List"] header,
+  .freshWorkerPhone header,
+  .freshPortalList header,
+  .freshAutomationList header,
+  .freshPhotosList header,
+  .freshExtrasList header,
+  .freshMessagesList header,
+  .freshRoutesList header
+) :where(span,small,p) {
+  color: #fed7aa !important;
+  -webkit-text-fill-color: #fed7aa !important;
+}
+
+/* Orange pill labels inside detail headers */
+.freshPageMount :where(
+  [class*="Head"] > div > span,
+  [class*="Cards"] section > span,
+  [class*="Conversation"] span,
+  [class*="Form"] label span
+) {
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+}
+
+/* Buttons */
+.freshPageMount button {
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+.freshPageMount button :where(span,b,strong,small),
+.freshPageMount button {
+  -webkit-text-fill-color: currentColor !important;
+}
+
+/* Dark buttons */
+.freshPageMount :where(
+  .freshDark,
+  button.freshDark,
+  [class*="HeadActions"] button:first-child,
+  [class*="Actions"] button:last-child
+) {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Orange/yellow action buttons */
+.freshPageMount :where(
+  .freshPrimary,
+  button.freshPrimary,
+  .freshOrange,
+  button.freshOrange,
+  [class*="List"] header button
+) {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}
+
+/* White/ghost buttons */
+.freshPageMount :where(
+  .freshGhost,
+  button.freshGhost,
+  [class*="Reset"]
+) {
+  color: #334155 !important;
+  -webkit-text-fill-color: #334155 !important;
+}
+
+/* Search editable box still needs to stay visible */
+.freshSearchEditable,
+.freshSearchEditable * {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+}
+
+.freshSearchEditable:empty::before {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+}
+
+/* Sidebar/topbar readable too, but keep their intended colours */
+.freshSide,
+.freshSide * {
+  opacity: 1 !important;
+}
+
+.freshSide :where(strong,span,p,small,i) {
+  -webkit-text-fill-color: currentColor !important;
+}
+
+.freshTopbar,
+.freshTopbar * {
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+.freshTopbar > div:first-child span {
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+}
+
+.freshTopbar > div:first-child strong {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+}
