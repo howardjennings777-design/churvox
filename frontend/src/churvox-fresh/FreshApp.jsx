@@ -21,6 +21,7 @@ import "./freshMobileNav.css";
 import "./freshPolish.css";
 import "./freshTopbar.css";
 import "./freshQuickCreate.css";
+import "./freshButtonContrast.css";
 
 import FreshShell from "./FreshShell";
 import FreshCommand from "./FreshCommand";
