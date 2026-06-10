@@ -1,0 +1,338 @@
+.freshPaymentsPage {
+  display: grid;
+  gap: 16px;
+}
+
+.freshPaymentsHero {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 22px;
+  border-radius: 30px;
+  background: #111827;
+  box-shadow: 0 24px 70px rgba(2,6,23,.18);
+}
+
+.freshPaymentsHero span,
+.freshPaymentsHead > div > span,
+.freshPaymentsCards span,
+.freshPaymentsForm label span {
+  display: inline-flex;
+  border-radius: 999px;
+  background: rgba(249,115,22,.16);
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+  padding: 8px 11px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.freshPaymentsHero h1 {
+  margin: 13px 0 8px;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  font-size: 46px;
+  line-height: .9;
+  letter-spacing: -.07em;
+}
+
+.freshPaymentsHero p {
+  margin: 0;
+  max-width: 760px;
+  color: #e5e7eb;
+  -webkit-text-fill-color: #e5e7eb;
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.freshPaymentsStats {
+  min-width: 380px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.freshPaymentsStats div {
+  border-radius: 20px;
+  background: rgba(255,255,255,.08);
+  padding: 14px;
+}
+
+.freshPaymentsStats b {
+  display: block;
+  color: #fbbf24;
+  -webkit-text-fill-color: #fbbf24;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.freshPaymentsStats small {
+  display: block;
+  margin-top: 5px;
+  color: #f9fafb;
+  -webkit-text-fill-color: #f9fafb;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.freshPaymentsLayout {
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr);
+  gap: 16px;
+}
+
+.freshPaymentsList,
+.freshPaymentsDetail {
+  border: 1px solid rgba(15,23,42,.12);
+  border-radius: 30px;
+  background: #fffaf0;
+  box-shadow: 0 18px 48px rgba(2,6,23,.10);
+}
+
+.freshPaymentsList {
+  display: grid;
+  gap: 9px;
+  align-content: start;
+  padding: 14px;
+}
+
+.freshPaymentsList header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 22px;
+  background: #111827;
+}
+
+.freshPaymentsList header b {
+  display: block;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+}
+
+.freshPaymentsList header span {
+  display: block;
+  margin-top: 3px;
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.freshPaymentsList header button,
+.freshPaymentsHeadActions button,
+.freshPaymentsActions button,
+.freshPaymentsReset {
+  border: 0;
+  border-radius: 15px;
+  min-height: 42px;
+  padding: 0 13px;
+  font-size: 12px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshPaymentsList header button,
+.freshPaymentsActions button:first-child {
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+.freshPaymentsList > button:not(.freshPaymentsReset) {
+  border: 1px solid rgba(15,23,42,.10);
+  border-radius: 20px;
+  background: #ffffff;
+  padding: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.freshPaymentsList > button.active {
+  background: #ffedd5;
+  border-color: rgba(249,115,22,.36);
+}
+
+.freshPaymentsList > button b,
+.freshPaymentsHead h2,
+.freshPaymentsCards b {
+  display: block;
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+}
+
+.freshPaymentsList > button span,
+.freshPaymentsList > button small,
+.freshPaymentsHead p,
+.freshPaymentsCards p {
+  display: block;
+  margin-top: 4px;
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+  font-weight: 850;
+}
+
+.freshPaymentsReset {
+  background: #ffffff;
+  color: #334155;
+  -webkit-text-fill-color: #334155;
+  border: 1px solid rgba(15,23,42,.12);
+}
+
+.freshPaymentsDetail {
+  padding: 18px;
+}
+
+.freshPaymentsHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  border-bottom: 1px solid rgba(15,23,42,.10);
+  padding-bottom: 14px;
+}
+
+.freshPaymentsHead > div > span,
+.freshPaymentsCards span,
+.freshPaymentsForm label span {
+  background: #fff7ed;
+  color: #9a3412;
+  -webkit-text-fill-color: #9a3412;
+}
+
+.freshPaymentsHead h2 {
+  margin: 11px 0 6px;
+  font-size: 34px;
+  line-height: .95;
+  letter-spacing: -.055em;
+}
+
+.freshPaymentsHeadActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.freshPaymentsHeadActions button:first-child {
+  background: #111827;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+}
+
+.freshPaymentsHeadActions button:nth-child(2),
+.freshPaymentsHeadActions button:nth-child(3) {
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+.freshPaymentsCards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.freshPaymentsCards section {
+  border: 1px solid rgba(15,23,42,.10);
+  border-radius: 24px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.freshPaymentsCards b {
+  margin-top: 10px;
+  font-size: 19px;
+  line-height: 1.1;
+}
+
+.freshPaymentsCards p {
+  line-height: 1.4;
+}
+
+.freshPaymentsForm {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.freshPaymentsForm label {
+  display: grid;
+  gap: 6px;
+}
+
+.freshPaymentsForm label.wide {
+  grid-column: 1 / -1;
+}
+
+.freshPaymentsForm input,
+.freshPaymentsForm select,
+.freshPaymentsForm textarea {
+  width: 100%;
+  border: 1px solid rgba(15,23,42,.14);
+  border-radius: 16px;
+  background: #ffffff;
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+  padding: 12px 13px;
+  font-size: 14px;
+  font-weight: 900;
+  outline: 0;
+}
+
+.freshPaymentsForm textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.freshPaymentsActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.freshPaymentsActions button {
+  background: #111827;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+}
+
+.freshPaymentsActions button:first-child,
+.freshPaymentsActions button:nth-child(2),
+.freshPaymentsActions button:nth-child(3) {
+  background: #fbbf24;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+@media (max-width: 1050px) {
+  .freshPaymentsHero,
+  .freshPaymentsHead {
+    display: grid;
+  }
+
+  .freshPaymentsStats,
+  .freshPaymentsLayout,
+  .freshPaymentsCards,
+  .freshPaymentsForm {
+    grid-template-columns: 1fr;
+  }
+
+  .freshPaymentsStats {
+    min-width: 0;
+  }
+
+  .freshPaymentsHeadActions,
+  .freshPaymentsActions {
+    display: grid;
+  }
+}
