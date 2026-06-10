@@ -69,6 +69,7 @@ const groups = [
       ["automation", "AU", "Automation"],
       ["plans", "PL", "Plans"],
       ["billing", "BL", "Billing"],
+      ["aiusage", "AI", "AI Usage"],
       ["templates", "TP", "Templates"],
       ["support", "SP", "Support"],
     ],
@@ -121,6 +122,7 @@ const labels = {
   automation: "Automation",
   plans: "Plans",
   billing: "Billing",
+  aiusage: "AI Usage",
   templates: "Templates",
   support: "Support",
 };
@@ -167,6 +169,7 @@ const extraMobile = [
   ["automation", "AU", "Automation"],
   ["plans", "PL", "Plans"],
   ["billing", "BL", "Billing"],
+  ["aiusage", "AI", "AI Usage"],
   ["templates", "TP", "Templates"],
   ["support", "SP", "Support"],
 ];

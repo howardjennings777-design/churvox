@@ -67,6 +67,7 @@ import "./freshAudit.css";
 import "./freshSetup.css";
 import "./freshRoles.css";
 import "./freshBilling.css";
+import "./freshAiUsage.css";
 import "./freshTemplates.css";
 import "./freshGps.css";
 import "./freshXero.css";
@@ -95,6 +96,7 @@ import FreshAudit from "./FreshAudit";
 import FreshSetup from "./FreshSetup";
 import FreshRoles from "./FreshRoles";
 import FreshBilling from "./FreshBilling";
+import FreshAiUsage from "./FreshAiUsage";
 import FreshTemplates from "./FreshTemplates";
 import FreshGps from "./FreshGps";
 import FreshXero from "./FreshXero";
@@ -145,6 +147,7 @@ const pages = new Set([
   "setup",
   "roles",
   "billing",
+  "aiusage",
   "templates",
   "gps",
   "xero",
@@ -237,6 +240,7 @@ export default function FreshApp() {
   if (page === "setup") content = <FreshSetup onNavigate={goToPage} />;
   if (page === "roles") content = <FreshRoles onNavigate={goToPage} />;
   if (page === "billing") content = <FreshBilling onNavigate={goToPage} />;
+  if (page === "aiusage") content = <FreshAiUsage onNavigate={goToPage} />;
   if (page === "templates") content = <FreshTemplates onNavigate={goToPage} />;
   if (page === "gps") content = <FreshGps onNavigate={goToPage} />;
   if (page === "xero") content = <FreshXero onNavigate={goToPage} />;
