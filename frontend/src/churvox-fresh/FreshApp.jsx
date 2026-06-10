@@ -10,6 +10,7 @@ import FreshJobs from "./FreshJobs";
 import FreshQuotes from "./FreshQuotes";
 import FreshSimple from "./FreshSimple";
 import FreshTeam from "./FreshTeam";
+import FreshPayroll from "./FreshPayroll";
 
 export default function FreshApp() {
   const [page, setPage] = React.useState("command");
@@ -23,6 +24,8 @@ export default function FreshApp() {
   if (page === "jobs") content = <FreshJobs />;
 
   if (page === "team") content = <FreshTeam />;
+
+  if (page === "payroll") content = <FreshPayroll />;
 
   return (
     <FreshShell active={page} onChange={setPage}>
