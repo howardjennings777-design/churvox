@@ -42,6 +42,92 @@ function groups() {
   }, {});
 }
 
+
+function ShellPageNormalizer() {
+  return (
+    <style>{`
+      /* CHURVOX_FORCE_CHILD_PAGES_INTO_SHELL_20260610
+         Loaded AFTER each page renders, so it beats page-level <style> tags
+         and inline page layouts. */
+
+      .cvxShell .cvxShellCanvas > main,
+      .cvxShell .cvxShellCanvas main[style],
+      .cvxShell .cvxShellCanvas main[class],
+      .cvxShell .cvxShellCanvas .cxRoot,
+      .cvxShell .cvxShellCanvas .ch4Root,
+      .cvxShell .cvxShellCanvas .scRoot,
+      .cvxShell .cvxShellCanvas .dwRoot,
+      .cvxShell .cvxShellCanvas .concept-c2-frame,
+      .cvxShell .cvxShellCanvas .xcf-real-page,
+      .cvxShell .cvxShellCanvas .xcf-workspace,
+      .cvxShell .cvxShellCanvas .xcf-shell.xcf-real-page {
+        position: relative !important;
+        inset: auto !important;
+        left: auto !important;
+        right: auto !important;
+        top: auto !important;
+        bottom: auto !important;
+        z-index: auto !important;
+        min-height: auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
+        overflow: visible !important;
+        box-sizing: border-box !important;
+        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+      }
+
+      .cvxShell .cvxShellCanvas main > section,
+      .cvxShell .cvxShellCanvas main > div,
+      .cvxShell .cvxShellCanvas .cxWrap,
+      .cvxShell .cvxShellCanvas .ch4Wrap,
+      .cvxShell .cvxShellCanvas .dwWrap,
+      .cvxShell .cvxShellCanvas .scWrap,
+      .cvxShell .cvxShellCanvas .concept-c2-frame > *,
+      .cvxShell .cvxShellCanvas .xcf-workspace > * {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        box-sizing: border-box !important;
+      }
+
+      .cvxShell .cvxShellCanvas .cxRoot {
+        padding: 0 !important;
+      }
+
+      .cvxShell .cvxShellCanvas .cxOverlay {
+        padding-left: 18px !important;
+      }
+
+      @media (min-width: 1024px) {
+        .cvxShell .cvxShellCanvas .cxRoot {
+          padding: 0 !important;
+        }
+
+        .cvxShell .cvxShellCanvas .cxOverlay {
+          padding: 18px !important;
+        }
+      }
+
+      @media (max-width: 1180px) {
+        .cvxShell .cvxShellCanvas main section[style],
+        .cvxShell .cvxShellCanvas main div[style] {
+          max-width: 100% !important;
+        }
+      }
+
+      @media (max-width: 900px) {
+        .cvxShell .cvxShellCanvas main section[style] {
+          grid-template-columns: 1fr !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 export default function CommandShell({ children }) {
   const { pathname } = useLocation();
   const grouped = groups();
@@ -75,7 +161,7 @@ export default function CommandShell({ children }) {
       </aside>
 
       <main className="cvxShellMain">
-        <div className="cvxShellCanvas">{children}</div>
+        <div className="cvxShellCanvas">{children}<ShellPageNormalizer /></div>
       </main>
 
       <nav className="cvxShellMobileNav" aria-label="Churvox mobile navigation">

@@ -262,3 +262,19 @@
     font-weight: 900 !important;
   }
 }
+
+
+/* CHURVOX_COMMAND_SHELL_CANVAS_LOCK_20260610 */
+.cvxShellMain {
+  min-width: 0 !important;
+  overflow-x: hidden !important;
+}
+
+.cvxShellCanvas {
+  min-width: 0 !important;
+  overflow-x: visible !important;
+}
+
+.cvxShellCanvas > * {
+  min-width: 0 !important;
+}
