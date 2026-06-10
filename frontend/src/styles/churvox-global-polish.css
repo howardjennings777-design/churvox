@@ -235,3 +235,118 @@
   color: var(--chx-amber) !important;
   -webkit-text-fill-color: var(--chx-amber) !important;
 }
+
+/* RESPONSIVE SCREEN FIT GUARDRAILS
+   Keeps each app page using the available viewport instead of looking like a phone layout on desktop. */
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+[data-command-canvas],
+[data-command-canvas] * {
+  box-sizing: border-box;
+}
+
+[data-command-canvas] {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  overflow-x: hidden !important;
+}
+
+[data-command-canvas] :where(
+  .cxRoot,.ch4Root,.srRoot,.ivRoot,.plRoot,.stRoot,.jbRoot,.clRoot,.qtRoot,.tmRoot,.pyRoot,.rpRoot,.dwRoot,.dbRoot,.dsRoot,.jobsClean,
+  [class$="Root"],[class*="Root "]
+) {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  overflow-x: hidden !important;
+}
+
+[data-command-canvas] :where(
+  .cxWrap,.ch4Wrap,.srWrap,.ivWrap,.plWrap,.stWrap,.jbWrap,.clWrap,.qtWrap,.tmWrap,.pyWrap,.rpWrap,.dwWrap,.dbWrap,.dsWrap,.jobsCleanWrap,
+  [class$="Wrap"],[class*="Wrap "]
+) {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+[data-command-canvas] :where(.ch4Hero,.jobsHero,.cxHero,.srHero,.ivHero,.plHero,.stHero,.jbHero,.clHero,.qtHero,.tmHero,.pyHero,.rpHero,.dwHero,.dbHero,.dsHero,[class$="Hero"],[class*="Hero "]) {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+[data-command-canvas] :where(.ch4Panel,.jobsPanel,.srPanel,.ivPanel,.plPanel,.stPanel,.jbPanel,.clPanel,.qtPanel,.tmPanel,.pyPanel,.rpPanel,.dwPanel,.dbPanel,.dsPanel,[class$="Panel"],[class*="Panel "]) {
+  min-width: 0 !important;
+}
+
+[data-command-canvas] :where(input, select, textarea) {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+@media (min-width: 1024px) {
+  [data-command-canvas] :where(
+    .ch4Grid,.jobsGrid,.srGrid,.ivGrid,.plGrid,.stGrid,.jbGrid,.clGrid,.qtGrid,.tmGrid,.pyGrid,.rpGrid,.dwGrid,.dbGrid,.dsGrid,
+    [class$="Grid"],[class*="Grid "]
+  ) {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+  }
+
+  [data-command-canvas] .ch4Grid,
+  [data-command-canvas] .jbGrid {
+    display: grid !important;
+    grid-template-columns: minmax(220px, 320px) minmax(520px, 1fr) !important;
+    gap: 22px !important;
+    align-items: start !important;
+  }
+
+  [data-command-canvas] .jobsGrid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+  }
+
+  [data-command-canvas] :where(.ch4Form,.ch4DirectForm,.jobsDirectForm,form) {
+    width: 100% !important;
+    max-width: none !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  [data-command-canvas] .ch4Grid,
+  [data-command-canvas] .jbGrid {
+    grid-template-columns: minmax(240px, 350px) minmax(620px, 1fr) !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  [data-command-canvas] :where(
+    .ch4Grid,.jobsGrid,.srGrid,.ivGrid,.plGrid,.stGrid,.jbGrid,.clGrid,.qtGrid,.tmGrid,.pyGrid,.rpGrid,.dwGrid,.dbGrid,.dsGrid,
+    [class$="Grid"],[class*="Grid "]
+  ) {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    width: 100% !important;
+    max-width: none !important;
+    gap: 14px !important;
+  }
+
+  [data-command-canvas] :where(.ch4Hero,.jobsHero,.cxHero,.srHero,.ivHero,.plHero,.stHero,.jbHero,.clHero,.qtHero,.tmHero,.pyHero,.rpHero,.dwHero,.dbHero,.dsHero,[class$="Hero"],[class*="Hero "]) {
+    border-radius: 22px !important;
+    padding: 18px !important;
+  }
+}
