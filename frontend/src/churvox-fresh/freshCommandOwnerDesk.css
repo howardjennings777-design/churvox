@@ -762,3 +762,76 @@ body.freshCommandOwnerMode .freshCommandFocusRow button:not(:first-child) span{
     font-size:22px !important;
   }
 }
+
+/* Command action lock additions */
+body.freshCommandOwnerMode .freshCommandActionType{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+  margin-top:12px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:16px;
+  background:#081427;
+  padding:10px 12px;
+}
+
+body.freshCommandOwnerMode .freshCommandActionType b{
+  color:#fbbf24 !important;
+  -webkit-text-fill-color:#fbbf24 !important;
+  font-size:12px;
+  font-weight:1000;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+body.freshCommandOwnerMode .freshCommandActionType span{
+  color:#ffffff !important;
+  -webkit-text-fill-color:#ffffff !important;
+  font-size:13px;
+  font-weight:950;
+  text-transform:capitalize;
+}
+
+body.freshCommandOwnerMode .freshCommandSnoozeOptions{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-top:16px;
+}
+
+body.freshCommandOwnerMode .freshCommandSnoozeOptions button{
+  min-height:54px;
+  border-radius:18px;
+  background:#f97316 !important;
+  color:#111827 !important;
+  -webkit-text-fill-color:#111827 !important;
+  font-weight:1000;
+}
+
+body.freshCommandOwnerMode .freshCommandDone button{
+  min-height:auto;
+  padding:12px;
+  text-align:left;
+}
+
+body.freshCommandOwnerMode .freshCommandDone button span{
+  max-width:65%;
+  text-align:right;
+  white-space:normal;
+}
+
+@media(max-width:1050px){
+  body.freshCommandOwnerMode .freshCommandSnoozeOptions{
+    grid-template-columns:1fr;
+  }
+
+  body.freshCommandOwnerMode .freshCommandDone button{
+    display:grid;
+  }
+
+  body.freshCommandOwnerMode .freshCommandDone button span{
+    max-width:none;
+    text-align:left;
+  }
+}

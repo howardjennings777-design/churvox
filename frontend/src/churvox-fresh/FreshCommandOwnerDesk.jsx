@@ -5,21 +5,23 @@ const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
 const starterSlips = [
   {
     id: "starter-money-1",
-    group: "AI Invoice Checker",
+    group: "Invoice",
+    actionType: "approve_invoice_extra",
     title: "Invoice ready for approval",
     info: "Belmont Customer · $145 · possible $45 extra",
     urgency: "High",
     found: "Job was completed with photos. Worker note says extra hedge trim was completed.",
     prepared: "Invoice draft prepared with a possible extra line: Hedge trim — $45 + GST.",
     why: "This may be unbilled work. Owner should approve before sending.",
-    owner: "Approve, edit, open invoice, or ignore.",
+    owner: "Approve extra, edit invoice, open invoice, or ignore.",
     area: "Money",
     page: "invoicecheck",
     createdAt: "Today",
   },
   {
     id: "starter-day-1",
-    group: "AI Plan My Day",
+    group: "Today",
+    actionType: "approve_day_plan",
     title: "Today’s plan is ready",
     info: "5 jobs · 1 quote · 2 worker briefs",
     urgency: "High",
@@ -33,7 +35,8 @@ const starterSlips = [
   },
   {
     id: "starter-money-2",
-    group: "AI Cashflow Coach",
+    group: "Cashflow",
+    actionType: "send_payment_reminder",
     title: "$255 overdue needs chasing",
     info: "3 invoices · friendly reminders ready",
     urgency: "High",
@@ -47,7 +50,8 @@ const starterSlips = [
   },
   {
     id: "starter-customer-1",
-    group: "AI Recurring Saver",
+    group: "Customers",
+    actionType: "send_rebooking_message",
     title: "Regular customer may be slipping",
     info: "Wainuiomata Customer · 5 weeks since last visit",
     urgency: "Medium",
@@ -61,7 +65,8 @@ const starterSlips = [
   },
   {
     id: "starter-setup-1",
-    group: "AI Setup Assistant",
+    group: "Setup",
+    actionType: "fix_setup_step",
     title: "Invoice settings need checking",
     info: "GST · invoice details · send flow",
     urgency: "Medium",
@@ -75,27 +80,8 @@ const starterSlips = [
   },
 ];
 
-function safeReadSlips() {
-  try {
-    const saved = window.localStorage.getItem(COMMAND_INBOX_KEY);
-    const parsed = saved ? JSON.parse(saved) : [];
-    return Array.isArray(parsed) && parsed.length ? parsed : starterSlips;
-  } catch {
-    return starterSlips;
-  }
-}
-
-function safeSaveSlips(slips) {
-  try {
-    window.localStorage.setItem(COMMAND_INBOX_KEY, JSON.stringify(slips.slice(0, 160)));
-    window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "command-owner-desk" } }));
-  } catch {
-    // Preview keeps working without storage.
-  }
-}
-
 function getArea(slip) {
-  const raw = `${slip.area || ""} ${slip.group || ""} ${slip.title || ""} ${slip.page || ""}`.toLowerCase();
+  const raw = `${slip.area || ""} ${slip.group || ""} ${slip.title || ""} ${slip.page || ""} ${slip.actionType || ""}`.toLowerCase();
 
   if (raw.includes("setup") || raw.includes("first run") || raw.includes("launch")) return "Setup";
   if (raw.includes("invoice") || raw.includes("cash") || raw.includes("payment") || raw.includes("price") || raw.includes("profit") || raw.includes("quote")) return "Money";
@@ -104,8 +90,111 @@ function getArea(slip) {
   return "Needs approval";
 }
 
-function getStatus(slip) {
-  return slip.status || "open";
+function inferActionType(slip) {
+  const raw = `${slip.actionType || ""} ${slip.group || ""} ${slip.title || ""} ${slip.page || ""}`.toLowerCase();
+
+  if (raw.includes("invoice") && raw.includes("extra")) return "approve_invoice_extra";
+  if (raw.includes("invoice")) return "review_invoice";
+  if (raw.includes("payment") || raw.includes("overdue") || raw.includes("cash")) return "send_payment_reminder";
+  if (raw.includes("quote") && raw.includes("follow")) return "send_quote_followup";
+  if (raw.includes("quote")) return "approve_quote";
+  if (raw.includes("plan") || raw.includes("route")) return "approve_day_plan";
+  if (raw.includes("worker") || raw.includes("brief")) return "send_worker_brief";
+  if (raw.includes("setup")) return "fix_setup_step";
+  if (raw.includes("recurring") || raw.includes("rebook")) return "send_rebooking_message";
+  if (raw.includes("review")) return "send_review_request";
+  if (raw.includes("message")) return "send_customer_message";
+  if (raw.includes("missing")) return "fix_missing_info";
+  return "owner_review";
+}
+
+function approveLabel(actionType) {
+  const labels = {
+    approve_invoice_extra: "Approve extra",
+    review_invoice: "Approve invoice",
+    send_payment_reminder: "Send reminder",
+    send_quote_followup: "Send follow-up",
+    approve_quote: "Approve quote",
+    approve_day_plan: "Approve plan",
+    send_worker_brief: "Send brief",
+    fix_setup_step: "Mark setup fixed",
+    send_rebooking_message: "Send rebook",
+    send_review_request: "Send review ask",
+    send_customer_message: "Send message",
+    fix_missing_info: "Mark fixed",
+    owner_review: "Approve",
+  };
+  return labels[actionType] || "Approve";
+}
+
+function approvalResult(actionType) {
+  const results = {
+    approve_invoice_extra: "Owner approved the invoice extra for review/send.",
+    review_invoice: "Owner approved the invoice for next action.",
+    send_payment_reminder: "Owner approved the payment reminder.",
+    send_quote_followup: "Owner approved the quote follow-up.",
+    approve_quote: "Owner approved the quote action.",
+    approve_day_plan: "Owner approved today’s plan.",
+    send_worker_brief: "Owner approved the worker brief.",
+    fix_setup_step: "Owner marked the setup step as handled.",
+    send_rebooking_message: "Owner approved the rebooking message.",
+    send_review_request: "Owner approved the review request.",
+    send_customer_message: "Owner approved the customer message.",
+    fix_missing_info: "Owner marked missing info as handled.",
+    owner_review: "Owner approved this prepared action.",
+  };
+  return results[actionType] || "Owner approved this prepared action.";
+}
+
+function isImportant(slip) {
+  const raw = `${slip.urgency || ""} ${slip.title || ""} ${slip.group || ""} ${slip.actionType || ""}`.toLowerCase();
+  return raw.includes("high") || raw.includes("overdue") || raw.includes("complaint") || raw.includes("blocked") || raw.includes("unacknowledged");
+}
+
+function normalizeSlip(slip, index = 0) {
+  const actionType = inferActionType(slip || {});
+  const areaGroup = getArea({ ...slip, actionType });
+  return {
+    id: slip.id || `command-slip-${Date.now()}-${index}`,
+    group: slip.group || "Churvox",
+    actionType,
+    title: slip.title || "Prepared action",
+    info: slip.info || slip.urgency || "Ready for owner review",
+    urgency: slip.urgency || (isImportant(slip) ? "High" : "Medium"),
+    found: slip.found || "Churvox found something that needs owner review.",
+    prepared: slip.prepared || "Churvox prepared the next action.",
+    why: slip.why || slip.owner || "This keeps admin moving while the owner stays in control.",
+    owner: slip.owner || "Approve, edit, snooze, ignore, or open.",
+    area: slip.area || areaGroup,
+    areaGroup,
+    page: slip.page || "smart",
+    createdAt: slip.createdAt || "Today",
+    status: slip.status || "open",
+    approvedAt: slip.approvedAt || null,
+    approvedResult: slip.approvedResult || null,
+    snoozeUntil: slip.snoozeUntil || null,
+    editedAt: slip.editedAt || null,
+  };
+}
+
+function safeReadSlips() {
+  try {
+    const saved = window.localStorage.getItem(COMMAND_INBOX_KEY);
+    const parsed = saved ? JSON.parse(saved) : [];
+    const base = Array.isArray(parsed) && parsed.length ? parsed : starterSlips;
+    return base.map(normalizeSlip);
+  } catch {
+    return starterSlips.map(normalizeSlip);
+  }
+}
+
+function safeSaveSlips(slips) {
+  try {
+    window.localStorage.setItem(COMMAND_INBOX_KEY, JSON.stringify(slips.slice(0, 180)));
+    window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "command-action-lock" } }));
+  } catch {
+    // Preview keeps working without storage.
+  }
 }
 
 function urgencyRank(urgency) {
@@ -113,6 +202,15 @@ function urgencyRank(urgency) {
   if (urgency === "Medium") return 2;
   if (urgency === "Low") return 3;
   return 4;
+}
+
+function snoozeDate(label) {
+  const date = new Date();
+  if (label === "Tomorrow") date.setDate(date.getDate() + 1);
+  if (label === "3 days") date.setDate(date.getDate() + 3);
+  if (label === "Next week") date.setDate(date.getDate() + 7);
+  if (label === "Later today") date.setHours(date.getHours() + 4);
+  return date.toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" });
 }
 
 export default function FreshCommandOwnerDesk({ onNavigate }) {
@@ -126,6 +224,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
   const [activeGroup, setActiveGroup] = React.useState("Needs approval");
   const [editing, setEditing] = React.useState(null);
   const [editText, setEditText] = React.useState("");
+  const [snoozing, setSnoozing] = React.useState(null);
 
   React.useEffect(() => {
     const refresh = () => setSlips(safeReadSlips());
@@ -138,14 +237,12 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
   }, []);
 
   const enriched = React.useMemo(() => {
-    return slips
-      .map((slip) => ({ ...slip, areaGroup: getArea(slip), status: getStatus(slip) }))
-      .sort((a, b) => urgencyRank(a.urgency) - urgencyRank(b.urgency));
+    return slips.map(normalizeSlip).sort((a, b) => urgencyRank(a.urgency) - urgencyRank(b.urgency));
   }, [slips]);
 
   const openSlips = enriched.filter((slip) => slip.status === "open" || slip.status === "edited");
   const doneSlips = enriched.filter((slip) => slip.status !== "open" && slip.status !== "edited");
-  const important = openSlips.filter((slip) => slip.urgency === "High");
+  const important = openSlips.filter(isImportant);
   const money = openSlips.filter((slip) => slip.areaGroup === "Money");
   const today = openSlips.filter((slip) => slip.areaGroup === "Today");
   const setup = openSlips.filter((slip) => slip.areaGroup === "Setup");
@@ -156,15 +253,27 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
     : openSlips.filter((slip) => slip.areaGroup === activeGroup);
 
   function updateSlip(id, patch) {
-    const next = slips.map((slip) => slip.id === id ? { ...slip, ...patch } : slip);
+    const next = slips.map((slip, index) => {
+      const normal = normalizeSlip(slip, index);
+      return normal.id === id ? { ...normal, ...patch } : normal;
+    });
     setSlips(next);
     safeSaveSlips(next);
   }
 
   function clearDemo() {
-    setSlips(starterSlips);
-    safeSaveSlips(starterSlips);
+    const next = starterSlips.map(normalizeSlip);
+    setSlips(next);
+    safeSaveSlips(next);
     setActiveGroup("Needs approval");
+  }
+
+  function approveSlip(slip) {
+    updateSlip(slip.id, {
+      status: "approved",
+      approvedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      approvedResult: approvalResult(slip.actionType),
+    });
   }
 
   function startEdit(slip) {
@@ -174,9 +283,22 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
 
   function saveEdit() {
     if (!editing) return;
-    updateSlip(editing.id, { prepared: editText, status: "edited" });
+    updateSlip(editing.id, {
+      prepared: editText,
+      status: "edited",
+      editedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    });
     setEditing(null);
     setEditText("");
+  }
+
+  function snoozeSlip(label) {
+    if (!snoozing) return;
+    updateSlip(snoozing.id, {
+      status: "snoozed",
+      snoozeUntil: snoozeDate(label),
+    });
+    setSnoozing(null);
   }
 
   return (
@@ -254,35 +376,40 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
 
       <div className="freshCommandSlipList">
         {visible.length ? visible.map((slip) => (
-          <article key={slip.id} className={`freshCommandSlip ${slip.urgency === "High" ? "high" : ""}`}>
+          <article key={slip.id} className={`freshCommandSlip ${isImportant(slip) ? "high" : ""}`}>
             <header>
               <div>
                 <span>{slip.areaGroup}</span>
-                <h2>{slip.title || "Prepared action"}</h2>
-                <small>{slip.group || "AI Operator"} · {slip.info || slip.urgency || "Ready"}</small>
+                <h2>{slip.title}</h2>
+                <small>{slip.group} · {slip.info}</small>
               </div>
-              <strong>{slip.urgency || "Medium"}</strong>
+              <strong>{slip.urgency}</strong>
             </header>
 
             <div className="freshCommandSlipBody">
               <section>
                 <b>Churvox found</b>
-                <p>{slip.found || "Churvox found an item that needs owner review."}</p>
+                <p>{slip.found}</p>
               </section>
               <section>
                 <b>Churvox prepared</b>
-                <p>{slip.prepared || "A prepared action is ready for owner approval."}</p>
+                <p>{slip.prepared}</p>
               </section>
               <section>
                 <b>Why it matters</b>
-                <p>{slip.why || slip.owner || "This keeps admin moving while the owner stays in control."}</p>
+                <p>{slip.why}</p>
               </section>
             </div>
 
+            <div className="freshCommandActionType">
+              <b>Action type:</b>
+              <span>{slip.actionType.replaceAll("_", " ")}</span>
+            </div>
+
             <div className="freshCommandSlipControls">
-              <button type="button" onClick={() => updateSlip(slip.id, { status: "approved" })}>Approve</button>
+              <button type="button" onClick={() => approveSlip(slip)}>{approveLabel(slip.actionType)}</button>
               <button type="button" onClick={() => startEdit(slip)}>Edit</button>
-              <button type="button" onClick={() => updateSlip(slip.id, { status: "snoozed" })}>Snooze</button>
+              <button type="button" onClick={() => setSnoozing(slip)}>Snooze</button>
               <button type="button" onClick={() => updateSlip(slip.id, { status: "ignored" })}>Ignore</button>
               <button type="button" onClick={() => onNavigate?.(slip.page || "smart")}>Open</button>
             </div>
@@ -300,10 +427,14 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
         <details className="freshCommandDone">
           <summary>Completed / ignored / snoozed slips ({doneSlips.length})</summary>
           <div>
-            {doneSlips.slice(0, 12).map((slip) => (
-              <button type="button" key={slip.id} onClick={() => updateSlip(slip.id, { status: "open" })}>
+            {doneSlips.slice(0, 16).map((slip) => (
+              <button type="button" key={slip.id} onClick={() => updateSlip(slip.id, { status: "open", snoozeUntil: null })}>
                 <b>{slip.title}</b>
-                <span>{slip.status} · restore</span>
+                <span>
+                  {slip.status}
+                  {slip.approvedResult ? ` · ${slip.approvedResult}` : ""}
+                  {slip.snoozeUntil ? ` · until ${slip.snoozeUntil}` : ""}
+                </span>
               </button>
             ))}
           </div>
@@ -324,6 +455,28 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
             <div>
               <button type="button" onClick={saveEdit}>Save edit</button>
               <button type="button" onClick={() => setEditing(null)}>Cancel</button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {snoozing && (
+        <div className="freshCommandEditOverlay" role="dialog" aria-modal="true">
+          <section>
+            <header>
+              <span>Snooze action</span>
+              <h2>{snoozing.title}</h2>
+              <p>Choose when Churvox should bring this back.</p>
+            </header>
+
+            <div className="freshCommandSnoozeOptions">
+              {["Later today", "Tomorrow", "3 days", "Next week"].map((label) => (
+                <button type="button" key={label} onClick={() => snoozeSlip(label)}>{label}</button>
+              ))}
+            </div>
+
+            <div>
+              <button type="button" onClick={() => setSnoozing(null)}>Cancel</button>
             </div>
           </section>
         </div>
