@@ -1,4 +1,5 @@
 import React from "react";
+import FreshQuickCreate from "./FreshQuickCreate";
 
 const groups = [
   { title: "Home", items: [["command", "CM", "Command"]] },
@@ -43,6 +44,13 @@ const extraMobile = [
 
 export default function FreshShell({ active, onChange, children }) {
   const [moreOpen, setMoreOpen] = React.useState(false);
+  const [quickType, setQuickType] = React.useState(null);
+
+  function go(key) {
+    setMoreOpen(false);
+    setQuickType(null);
+    onChange(key);
+  }
 
   function handleMobile(key) {
     if (key === "more") {
@@ -50,8 +58,7 @@ export default function FreshShell({ active, onChange, children }) {
       return;
     }
 
-    setMoreOpen(false);
-    onChange(key);
+    go(key);
   }
 
   return (
@@ -74,7 +81,7 @@ export default function FreshShell({ active, onChange, children }) {
                   key={key}
                   type="button"
                   className={active === key ? "active" : ""}
-                  onClick={() => onChange(key)}
+                  onClick={() => go(key)}
                 >
                   <i>{mark}</i>
                   <span>{label}</span>
@@ -98,10 +105,10 @@ export default function FreshShell({ active, onChange, children }) {
           </label>
 
           <div className="freshTopActions">
-            <button type="button" onClick={() => onChange("command")}>Command</button>
-            <button type="button" onClick={() => onChange("jobs")}>New job</button>
-            <button type="button" onClick={() => onChange("quotes")}>New quote</button>
-            <button type="button" onClick={() => onChange("clients")}>Add client</button>
+            <button type="button" onClick={() => go("command")}>Command</button>
+            <button type="button" onClick={() => setQuickType("job")}>New job</button>
+            <button type="button" onClick={() => setQuickType("quote")}>New quote</button>
+            <button type="button" onClick={() => setQuickType("client")}>Add client</button>
           </div>
         </div>
 
@@ -137,6 +144,14 @@ export default function FreshShell({ active, onChange, children }) {
           </button>
         ))}
       </nav>
+
+      {quickType && (
+        <FreshQuickCreate
+          type={quickType}
+          onClose={() => setQuickType(null)}
+          onNavigate={go}
+        />
+      )}
     </div>
   );
 }

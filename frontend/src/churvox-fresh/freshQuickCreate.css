@@ -1,0 +1,30 @@
+.freshQuickModal {
+  width: min(780px, 100%);
+  max-height: calc(100vh - 36px);
+  overflow: auto;
+  border-radius: 30px;
+  background: #fffaf0;
+  box-shadow: 0 30px 90px rgba(0,0,0,.42);
+}
+
+.freshQuickBody {
+  padding: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.freshQuickBody .freshField {
+  margin: 0;
+}
+
+@media (max-width: 950px) {
+  .freshQuickModal {
+    width: 100%;
+    max-height: calc(100vh - 20px);
+    border-radius: 24px 24px 18px 18px;
+  }
+
+  .freshQuickBody {
+    padding: 14px;
+  }
+}

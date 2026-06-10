@@ -4,6 +4,7 @@ import "./freshCommandBoxes.css";
 import "./freshMobileNav.css";
 import "./freshPolish.css";
 import "./freshTopbar.css";
+import "./freshQuickCreate.css";
 
 import FreshShell from "./FreshShell";
 import FreshCommand from "./FreshCommand";
