@@ -39,6 +39,7 @@ import "./freshClientPortal.css";
 import "./freshAutomation.css";
 import "./freshPhotos.css";
 import "./freshExtras.css";
+import "./freshMessages.css";
 
 import FreshShell from "./FreshShell";
 import FreshCommand from "./FreshCommand";
@@ -53,6 +54,7 @@ import FreshReports from "./FreshReports";
 import FreshSettings from "./FreshSettings";
 import FreshPlans from "./FreshPlans";
 import FreshSupport from "./FreshSupport";
+import FreshMessages from "./FreshMessages";
 import FreshExtras from "./FreshExtras";
 import FreshPhotos from "./FreshPhotos";
 import FreshAutomation from "./FreshAutomation";
@@ -74,6 +76,7 @@ const pages = new Set([
   "settings",
   "plans",
   "support",
+  "messages",
   "extras",
   "photos",
   "automation",
@@ -126,6 +129,7 @@ export default function FreshApp() {
   if (page === "settings") content = <FreshSettings onNavigate={goToPage} />;
   if (page === "plans") content = <FreshPlans onNavigate={goToPage} />;
   if (page === "support") content = <FreshSupport onNavigate={goToPage} />;
+  if (page === "messages") content = <FreshMessages onNavigate={goToPage} />;
   if (page === "extras") content = <FreshExtras onNavigate={goToPage} />;
   if (page === "photos") content = <FreshPhotos onNavigate={goToPage} />;
   if (page === "automation") content = <FreshAutomation onNavigate={goToPage} />;

@@ -19,6 +19,7 @@ const groups = [
       ["quotes", "QT", "Quotes"],
       ["invoices", "IV", "Invoices"],
       ["portal", "PT", "Portal"],
+      ["messages", "MS", "Messages"],
     ],
   },
   {
@@ -59,6 +60,7 @@ const labels = {
   automation: "Automation",
   plans: "Plans",
   support: "Support",
+  messages: "Messages",
 };
 
 const mobileItems = [
@@ -75,6 +77,7 @@ const extraMobile = [
   ["quotes", "QT", "Quotes"],
   ["invoices", "IV", "Invoices"],
   ["portal", "PT", "Portal"],
+      ["messages", "MS", "Messages"],
   ["team", "TM", "Team"],
   ["worker", "WK", "Worker"],
   ["payroll", "PR", "Payroll"],
