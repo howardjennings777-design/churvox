@@ -21,6 +21,8 @@ const groups = [
       ["invoices", "IV", "Invoices"],
       ["portal", "PT", "Portal"],
       ["messages", "MS", "Messages"],
+  ["followups", "FU", "Follow-ups"],
+      ["followups", "FU", "Follow-ups"],
     ],
   },
   {
@@ -66,6 +68,7 @@ const labels = {
   invoices: "Invoices",
   portal: "Client Portal",
   messages: "Messages",
+  followups: "Follow-ups",
   team: "Team",
   availability: "Availability",
   worker: "Worker",
