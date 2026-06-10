@@ -1,0 +1,80 @@
+/* Final search contrast lock — loaded last */
+
+.freshApp .freshTopbar .freshSearchWrap,
+.freshApp .freshTopbar .freshSearch,
+.freshApp .freshSearchWrap,
+.freshApp .freshSearch {
+  opacity: 1 !important;
+  color: #101827 !important;
+  -webkit-text-fill-color: initial !important;
+}
+
+.freshApp .freshTopbar .freshSearch {
+  background: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, .18) !important;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.7) !important;
+}
+
+.freshApp .freshTopbar .freshSearch span,
+.freshApp .freshSearchWrap .freshSearch span,
+.freshApp label.freshSearch span {
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+  opacity: 1 !important;
+}
+
+.freshApp .freshTopbar .freshSearch input,
+.freshApp .freshSearchWrap .freshSearch input,
+.freshApp label.freshSearch input {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  background: #ffffff !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+  caret-color: #101827 !important;
+}
+
+.freshApp .freshTopbar .freshSearch input::placeholder,
+.freshApp .freshSearchWrap .freshSearch input::placeholder,
+.freshApp label.freshSearch input::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  opacity: 1 !important;
+}
+
+.freshApp .freshTopbar .freshSearch input:focus,
+.freshApp .freshSearchWrap .freshSearch input:focus,
+.freshApp label.freshSearch input:focus {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  background: #ffffff !important;
+  outline: 0 !important;
+}
+
+.freshApp .freshSearchResults {
+  background: #fffaf0 !important;
+  border: 1px solid rgba(15, 23, 42, .18) !important;
+}
+
+.freshApp .freshSearchResults button,
+.freshApp .freshSearchResults .freshNoResults {
+  background: #ffffff !important;
+  color: #101827 !important;
+  -webkit-text-fill-color: initial !important;
+}
+
+.freshApp .freshSearchResults button strong,
+.freshApp .freshSearchResults .freshNoResults strong {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+}
+
+.freshApp .freshSearchResults button span,
+.freshApp .freshSearchResults .freshNoResults span {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+}
+
+.freshApp .freshSearchResults button:hover {
+  background: #fff7ed !important;
+}
