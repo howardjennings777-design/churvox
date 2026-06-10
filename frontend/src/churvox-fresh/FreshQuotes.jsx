@@ -1,159 +1,266 @@
 import React from "react";
 
-const quotes = [
+const QUOTE_STORAGE_KEY = "churvox:fresh-quotes:v1";
+
+const seedQuotes = [
   {
-    id: 1,
-    number: "QT-2041",
+    id: "QT-2041",
     client: "Birchville Rentals",
-    job: "Driveway clean",
+    title: "Driveway clean",
     status: "Sent",
-    amount: "$240.00",
+    amount: 240,
     age: "Sent 6 days ago",
-    risk: "Follow-up should go to Command before sending.",
-    notes: "Driveway clean, moss treatment and rinse down. Tenant access needs confirmation.",
-    lines: ["Driveway clean · $190", "Moss treatment · $35", "GST included · $15"],
+    followUp: "Follow-up ready for Command",
+    note: "Customer has not replied. Churvox should prepare a polite follow-up, but owner approves first.",
+    lines: ["Driveway clean · $190", "Water blasting setup · $35", "Green waste handling · $15"],
   },
   {
-    id: 2,
-    number: "QT-2042",
+    id: "QT-2042",
     client: "Aroha Property Care",
-    job: "Monthly hedge package",
+    title: "Monthly grounds care",
     status: "Draft",
-    amount: "$320.00",
-    age: "Not sent",
-    risk: "Needs owner review before sending.",
-    notes: "Monthly hedge trimming, green waste removal and tidy finish.",
-    lines: ["Hedge trim · $245", "Green waste · $45", "GST included · $30"],
+    amount: 420,
+    age: "Draft today",
+    followUp: "Not sent yet",
+    note: "Draft quote needs owner check before sending.",
+    lines: ["Fortnightly lawn care · $240", "Hedge tidy allowance · $120", "Waste allowance · $60"],
   },
   {
-    id: 3,
-    number: "QT-2038",
+    id: "QT-2038",
     client: "Lower Hutt Medical Centre",
-    job: "Seasonal garden reset",
+    title: "Entry hedge tidy",
     status: "Accepted",
-    amount: "$690.00",
-    age: "Accepted today",
-    risk: "Ready to convert into a job.",
-    notes: "Seasonal reset with garden tidy, weed control and green waste.",
-    lines: ["Garden reset · $520", "Weed control · $80", "Green waste · $90"],
+    amount: 180,
+    age: "Accepted yesterday",
+    followUp: "Ready to convert to job",
+    note: "Accepted quote can be converted into a scheduled job.",
+    lines: ["Entry hedge trim · $120", "Green waste removal · $60"],
   },
 ];
 
+const filters = ["All", "Draft", "Sent", "Accepted", "Declined"];
+
+function money(value) {
+  return `$${Number(value || 0).toFixed(2)}`;
+}
+
+function loadQuotes() {
+  try {
+    if (typeof window === "undefined") return seedQuotes;
+
+    const saved = window.localStorage.getItem(QUOTE_STORAGE_KEY);
+    if (!saved) return seedQuotes;
+
+    const parsed = JSON.parse(saved);
+    return Array.isArray(parsed) ? parsed : seedQuotes;
+  } catch {
+    return seedQuotes;
+  }
+}
+
 export default function FreshQuotes({ onNavigate }) {
-  const [selectedId, setSelectedId] = React.useState(1);
+  const [quotes, setQuotes] = React.useState(loadQuotes);
+  const [selectedId, setSelectedId] = React.useState(quotes[0]?.id || "");
+  const [filter, setFilter] = React.useState("All");
+
   const selected = quotes.find((quote) => quote.id === selectedId) || quotes[0];
+  const visibleQuotes = filter === "All" ? quotes : quotes.filter((quote) => quote.status === filter);
+  const sentTotal = quotes.filter((quote) => quote.status === "Sent").reduce((sum, quote) => sum + quote.amount, 0);
+  const acceptedTotal = quotes.filter((quote) => quote.status === "Accepted").reduce((sum, quote) => sum + quote.amount, 0);
+
+  React.useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(QUOTE_STORAGE_KEY, JSON.stringify(quotes));
+      }
+    } catch {
+      // Fresh preview keeps working without local storage.
+    }
+  }, [quotes]);
+
+  function updateSelectedQuote(patch) {
+    if (!selected) return;
+
+    setQuotes((current) =>
+      current.map((quote) =>
+        quote.id === selected.id
+          ? { ...quote, ...patch }
+          : quote
+      )
+    );
+  }
+
+  function resetQuotes() {
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(QUOTE_STORAGE_KEY);
+      }
+    } catch {
+      // Ignore preview storage errors.
+    }
+
+    setQuotes(seedQuotes);
+    setSelectedId(seedQuotes[0].id);
+    setFilter("All");
+  }
+
+  function convertToJob() {
+    updateSelectedQuote({
+      status: "Accepted",
+      followUp: "Converted / ready for job scheduling",
+      age: "Accepted now",
+    });
+
+    onNavigate?.("jobs");
+  }
 
   return (
     <section>
       <header className="freshHero">
         <span>Churvox fresh · Quotes</span>
         <h1>Quotes</h1>
-        <p>Quote desk. Draft, send, follow up, and convert accepted work into jobs without losing owner control.</p>
+        <p>Draft quotes, send them, follow up missing replies and convert accepted work into jobs.</p>
       </header>
+
+      <section className="freshCommandPulse">
+        <aside className="freshCard">
+          <h2>{money(sentTotal)}</h2>
+          <p>Sent quote value</p>
+        </aside>
+        <aside className="freshCard">
+          <h2>{money(acceptedTotal)}</h2>
+          <p>Accepted value</p>
+        </aside>
+        <aside className="freshCard">
+          <h2>{quotes.filter((quote) => quote.status === "Sent").length}</h2>
+          <p>Need follow-up watch</p>
+        </aside>
+      </section>
+
+      <section className="freshCommandFilterBar">
+        {filters.map((item) => (
+          <button
+            type="button"
+            key={item}
+            className={filter === item ? "active" : ""}
+            onClick={() => setFilter(item)}
+          >
+            <span>{item}</span>
+            <b>{item === "All" ? quotes.length : quotes.filter((quote) => quote.status === item).length}</b>
+          </button>
+        ))}
+      </section>
 
       <section className="freshGrid">
         <aside className="freshCard">
           <h2>Quote list</h2>
-          <p>Drafts, sent quotes, follow-ups and accepted work.</p>
 
-          {quotes.map((quote) => (
+          {visibleQuotes.map((quote) => (
             <button
               type="button"
+              className={`freshItem ${selected?.id === quote.id ? "active" : ""} ${quote.status === "Sent" ? "need" : ""}`}
               key={quote.id}
-              className={`freshItem ${quote.status === "Draft" || quote.status === "Sent" ? "need" : ""} ${selected.id === quote.id ? "active" : ""}`}
-              style={{ width: "100%", textAlign: "left", cursor: "pointer" }}
               onClick={() => setSelectedId(quote.id)}
             >
-              <b>{quote.number} · {quote.amount}</b>
-              <span>{quote.client} · {quote.status}</span>
+              <b>{quote.id}</b>
+              <span>{quote.client} · {quote.status} · {money(quote.amount)}</span>
             </button>
           ))}
+
+          {visibleQuotes.length === 0 && (
+            <div className="freshItem">
+              <b>No quotes</b>
+              <span>Change filter or reset preview quotes.</span>
+            </div>
+          )}
         </aside>
 
         <section className="freshCard">
-          <h2>{selected.number}</h2>
+          <h2>{selected?.title || "Select quote"}</h2>
 
-          <div className="freshTabs">
-            <span className="active">Review</span>
-            <span>Lines</span>
-            <span>Customer</span>
-            <span>Follow-up</span>
-          </div>
+          {selected && (
+            <>
+              <div className="freshMiniGrid">
+                <div>
+                  <span>Quote</span>
+                  <b>{selected.id}</b>
+                </div>
+                <div>
+                  <span>Status</span>
+                  <b>{selected.status}</b>
+                </div>
+                <div>
+                  <span>Client</span>
+                  <b>{selected.client}</b>
+                </div>
+                <div>
+                  <span>Amount</span>
+                  <b>{money(selected.amount)}</b>
+                </div>
+              </div>
 
-          <label className="freshField">
-            <span>Client</span>
-            <input value={selected.client} readOnly />
-          </label>
+              <div className={`freshQuoteStatus ${selected.status.toLowerCase()}`}>
+                <b>{selected.age}</b>
+                <span>{selected.followUp}</span>
+              </div>
 
-          <label className="freshField">
-            <span>Work</span>
-            <input value={selected.job} readOnly />
-          </label>
+              <div className="freshQuoteLines">
+                {selected.lines.map((line) => (
+                  <div key={line}>
+                    <span>{line}</span>
+                  </div>
+                ))}
+              </div>
 
-          <label className="freshField">
-            <span>Status</span>
-            <input value={selected.status} readOnly />
-          </label>
+              <label className="freshField">
+                <span>Quote title</span>
+                <input
+                  value={selected.title}
+                  onChange={(event) => updateSelectedQuote({ title: event.target.value })}
+                />
+              </label>
 
-          <label className="freshField">
-            <span>Total</span>
-            <input value={selected.amount} readOnly />
-          </label>
+              <label className="freshField">
+                <span>Quote amount</span>
+                <input
+                  value={selected.amount}
+                  onChange={(event) => updateSelectedQuote({ amount: Number(event.target.value.replace(/[^0-9.]/g, "")) || 0 })}
+                />
+              </label>
 
-          <label className="freshField">
-            <span>Age</span>
-            <input value={selected.age} readOnly />
-          </label>
-
-          <label className="freshField">
-            <span>Quote notes</span>
-            <textarea value={selected.notes} readOnly />
-          </label>
+              <label className="freshField">
+                <span>Owner quote note</span>
+                <textarea
+                  value={selected.note}
+                  onChange={(event) => updateSelectedQuote({ note: event.target.value })}
+                />
+              </label>
+            </>
+          )}
         </section>
 
         <aside className="freshCard">
           <h2>Owner actions</h2>
-          <p>Quotes should move work forward, but follow-ups still need owner approval.</p>
-
-          <div className={`freshItem ${selected.status === "Accepted" ? "" : "need"}`}>
-            <b>Command check</b>
-            <span>{selected.risk}</span>
-          </div>
 
           <div className="freshActions">
-            <button className="freshPrimary">Save quote</button>
-            <button className="freshOrange">Send quote</button>
-            <button className="freshDark" onClick={() => onNavigate?.("jobs")}>Convert to job</button>
-            <button className="freshGhost" onClick={() => onNavigate?.("command")}>Send follow-up to Command</button>
-          </div>
-
-          <div className="freshItem">
-            <b>Status flow</b>
-            <span>Draft → Sent → Viewed → Accepted → Job</span>
-          </div>
-        </aside>
-      </section>
-
-      <section className="freshGrid two" style={{ marginTop: 14 }}>
-        <section className="freshCard">
-          <h2>Quote lines</h2>
-          {selected.lines.map((line) => (
-            <div className="freshItem" key={line}>
-              <b>{line}</b>
-              <span>Prepared for owner review</span>
-            </div>
-          ))}
-        </section>
-
-        <aside className="freshCard">
-          <h2>Quote rules</h2>
-          <div className="freshItem need">
-            <b>Follow-ups go to Command</b>
-            <span>No automatic chasing without owner approval.</span>
-          </div>
-          <div className="freshItem">
-            <b>Accepted quotes become jobs</b>
-            <span>Owner can convert the quote into scheduled work.</span>
+            <button className="freshPrimary" onClick={() => updateSelectedQuote({ status: "Sent", age: "Sent now", followUp: "Follow-up watch started" })}>
+              Send quote
+            </button>
+            <button className="freshDark" onClick={() => updateSelectedQuote({ status: "Accepted", age: "Accepted now", followUp: "Ready to convert to job" })}>
+              Mark accepted
+            </button>
+            <button className="freshOrange" onClick={convertToJob}>
+              Convert to job
+            </button>
+            <button className="freshGhost" onClick={() => updateSelectedQuote({ status: "Declined", age: "Declined today", followUp: "No follow-up needed" })}>
+              Mark declined
+            </button>
+            <button className="freshGhost" onClick={() => onNavigate?.("command")}>
+              Send follow-up to Command
+            </button>
+            <button className="freshGhost" onClick={resetQuotes}>
+              Reset quotes
+            </button>
           </div>
         </aside>
       </section>
