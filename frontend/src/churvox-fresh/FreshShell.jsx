@@ -4,21 +4,16 @@ import FreshSearch from "./FreshSearch";
 import FreshTopStatus from "./FreshTopStatus";
 
 const groups = [
-  {
-    title: "Home",
-    items: [["command", "CM", "Command"]],
-  },
+  { title: "Home", items: [["command", "CM", "Command"]] },
   {
     title: "Work",
     items: [
       ["jobs", "JB", "Jobs"],
-      ["recurring", "RC", "Recurring"],
       ["leads", "LD", "Leads"],
+      ["recurring", "RC", "Recurring"],
       ["dispatch", "DP", "Dispatch"],
       ["routes", "RT", "Routes"],
-      ["leads", "LD", "Leads"],
-  ["recurring", "RC", "Recurring"],
-  ["photos", "PH", "Photos"],
+      ["photos", "PH", "Photos"],
       ["extras", "EX", "Extras"],
       ["clients", "CL", "Clients"],
       ["quotes", "QT", "Quotes"],
@@ -32,9 +27,9 @@ const groups = [
     items: [
       ["team", "TM", "Team"],
       ["availability", "AV", "Availability"],
-      ["availability", "AV", "Availability"],
-  ["worker", "WK", "Worker"],
+      ["worker", "WK", "Worker"],
       ["payroll", "PR", "Payroll"],
+      ["time", "TL", "Time logs"],
       ["reports", "RP", "Reports"],
       ["assets", "AS", "Assets"],
       ["services", "SV", "Services"],
@@ -44,8 +39,7 @@ const groups = [
     title: "System",
     items: [
       ["integrations", "IN", "Integrations"],
-      ["services", "SV", "Services"],
-  ["settings", "ST", "Settings"],
+      ["settings", "ST", "Settings"],
       ["automation", "AU", "Automation"],
       ["plans", "PL", "Plans"],
       ["support", "SP", "Support"],
@@ -56,8 +50,8 @@ const groups = [
 const labels = {
   command: "Command",
   jobs: "Jobs",
-  recurring: "Recurring",
   leads: "Leads",
+  recurring: "Recurring",
   dispatch: "Dispatch",
   routes: "Routes",
   photos: "Photos",
@@ -71,6 +65,7 @@ const labels = {
   availability: "Availability",
   worker: "Worker",
   payroll: "Payroll",
+  time: "Time logs",
   reports: "Reports",
   assets: "Assets",
   services: "Services",
@@ -86,11 +81,13 @@ const mobileItems = [
   ["jobs", "JB", "Jobs"],
   ["dispatch", "DP", "Dispatch"],
   ["routes", "RT", "Routes"],
-  ["assets", "AS", "Assets"],
+  ["time", "TL", "Time"],
   ["more", "••", "More"],
 ];
 
 const extraMobile = [
+  ["leads", "LD", "Leads"],
+  ["recurring", "RC", "Recurring"],
   ["photos", "PH", "Photos"],
   ["extras", "EX", "Extras"],
   ["clients", "CL", "Clients"],
@@ -99,9 +96,12 @@ const extraMobile = [
   ["portal", "PT", "Portal"],
   ["messages", "MS", "Messages"],
   ["team", "TM", "Team"],
+  ["availability", "AV", "Availability"],
   ["worker", "WK", "Worker"],
   ["payroll", "PR", "Payroll"],
   ["reports", "RP", "Reports"],
+  ["assets", "AS", "Assets"],
+  ["services", "SV", "Services"],
   ["integrations", "IN", "Integrations"],
   ["settings", "ST", "Settings"],
   ["automation", "AU", "Automation"],
@@ -144,7 +144,6 @@ export default function FreshShell({ active, onChange, children }) {
           {groups.map((group) => (
             <section className="freshNavGroup" key={group.title}>
               <p>{group.title}</p>
-
               {group.items.map(([key, mark, label]) => (
                 <button
                   key={key}
@@ -169,7 +168,6 @@ export default function FreshShell({ active, onChange, children }) {
           </div>
 
           <FreshTopStatus onNavigate={go} />
-
           <FreshSearch onNavigate={go} />
 
           <div className="freshTopActions">
