@@ -1,0 +1,7 @@
+.freshField input:placeholder-shown {
+  border-color: rgba(249,115,22,.35);
+}
+
+.freshClientWarn {
+  border-left: 7px solid #f97316;
+}
