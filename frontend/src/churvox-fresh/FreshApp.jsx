@@ -43,6 +43,7 @@ import "./freshJobsLive.css";
 import "./freshLaunch.css";
 import "./freshLaunchChecklist.css";
 import "./freshLaunchPack.css";
+import "./freshDemoMode.css";
 import "./freshLeads.css";
 import "./freshMessages.css";
 import "./freshMini.css";
@@ -78,6 +79,7 @@ import "./freshServices.css";
 import "./freshSettingsLive.css";
 import "./freshSetup.css";
 import "./freshSmartHub.css";
+import "./freshAiOperatorStudio.css";
 import "./freshSubcontractors.css";
 import "./freshTeamLive.css";
 import "./freshTemplates.css";
@@ -128,6 +130,7 @@ import FreshInvoices from "./FreshInvoices";
 import FreshJobs from "./FreshJobs";
 import FreshLaunch from "./FreshLaunch";
 import FreshLaunchPack from "./FreshLaunchPack";
+import FreshDemoMode from "./FreshDemoMode";
 import FreshLeads from "./FreshLeads";
 import FreshMessages from "./FreshMessages";
 import FreshOnboarding from "./FreshOnboarding";
@@ -151,6 +154,7 @@ import FreshServices from "./FreshServices";
 import FreshSettings from "./FreshSettings";
 import FreshSetup from "./FreshSetup";
 import FreshSmartHub from "./FreshSmartHub";
+import FreshAiOperatorStudio from "./FreshAiOperatorStudio";
 import FreshSubcontractors from "./FreshSubcontractors";
 import FreshSupport from "./FreshSupport";
 import FreshTeam from "./FreshTeam";
@@ -163,6 +167,7 @@ import FreshXero from "./FreshXero";
 
 const pages = new Set([
   "smart",
+  "aioperator",
   "command",
   "jobs",
   "recurring",
@@ -182,6 +187,7 @@ const pages = new Set([
   "setup",
   "launch",
   "launchpack",
+  "demo",
   "onboarding",
   "qa",
   "flags",
@@ -276,6 +282,7 @@ export default function FreshApp() {
 
   let content = <FreshSimple page={page} />;
   if (page === "smart") content = <FreshSmartHub onNavigate={goToPage} />;
+  if (page === "aioperator") content = <FreshAiOperatorStudio onNavigate={goToPage} />;
   if (page === "command") content = <FreshCommand onNavigate={goToPage} />;
   if (page === "jobs") content = <FreshJobs onNavigate={goToPage} />;
   if (page === "recurring") content = <FreshRecurring onNavigate={goToPage} />;
@@ -295,6 +302,7 @@ export default function FreshApp() {
   if (page === "setup") content = <FreshSetup onNavigate={goToPage} />;
   if (page === "launch") content = <FreshLaunch onNavigate={goToPage} />;
   if (page === "launchpack") content = <FreshLaunchPack onNavigate={goToPage} />;
+  if (page === "demo") content = <FreshDemoMode onNavigate={goToPage} />;
   if (page === "onboarding") content = <FreshOnboarding onNavigate={goToPage} />;
   if (page === "qa") content = <FreshQa onNavigate={goToPage} />;
   if (page === "flags") content = <FreshFlags onNavigate={goToPage} />;
