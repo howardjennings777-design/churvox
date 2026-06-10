@@ -68,6 +68,7 @@ import "./freshSetup.css";
 import "./freshRoles.css";
 import "./freshBilling.css";
 import "./freshTemplates.css";
+import "./freshGps.css";
 import "./freshGlobalReadable.css";
 import "./freshNuclearReadable.css";
 
@@ -94,6 +95,7 @@ import FreshSetup from "./FreshSetup";
 import FreshRoles from "./FreshRoles";
 import FreshBilling from "./FreshBilling";
 import FreshTemplates from "./FreshTemplates";
+import FreshGps from "./FreshGps";
 import FreshQuality from "./FreshQuality";
 import FreshReviews from "./FreshReviews";
 import FreshAreas from "./FreshAreas";
@@ -142,6 +144,7 @@ const pages = new Set([
   "roles",
   "billing",
   "templates",
+  "gps",
   "team",
   "availability",
   "payroll",
@@ -232,6 +235,7 @@ export default function FreshApp() {
   if (page === "roles") content = <FreshRoles onNavigate={goToPage} />;
   if (page === "billing") content = <FreshBilling onNavigate={goToPage} />;
   if (page === "templates") content = <FreshTemplates onNavigate={goToPage} />;
+  if (page === "gps") content = <FreshGps onNavigate={goToPage} />;
   if (page === "team") content = <FreshTeam onNavigate={goToPage} />;
   if (page === "availability") content = <FreshAvailability onNavigate={goToPage} />;
   if (page === "payroll") content = <FreshPayroll onNavigate={goToPage} />;
