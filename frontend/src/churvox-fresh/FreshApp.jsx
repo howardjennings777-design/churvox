@@ -2,6 +2,7 @@ import React from "react";
 import "./fresh.css";
 import "./freshCommandBoxes.css";
 import "./freshMobileNav.css";
+import "./freshPolish.css";
 
 import FreshShell from "./FreshShell";
 import FreshCommand from "./FreshCommand";

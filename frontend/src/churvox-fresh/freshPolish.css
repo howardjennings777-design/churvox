@@ -1,0 +1,128 @@
+.freshMain {
+  scroll-behavior: smooth;
+}
+
+.freshCard,
+.freshCommandBox,
+.freshItem,
+.freshSlipModal {
+  animation: freshFadeUp .18s ease both;
+}
+
+@keyframes freshFadeUp {
+  from {
+    opacity: .65;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+button.freshItem {
+  font-family: inherit;
+}
+
+.freshItem {
+  transition: border-color .15s ease, background .15s ease, transform .15s ease;
+}
+
+button.freshItem:hover {
+  transform: translateY(-1px);
+  border-color: rgba(249,115,22,.45);
+}
+
+.freshField textarea {
+  min-height: 112px;
+  resize: vertical;
+}
+
+.freshCard {
+  position: relative;
+  overflow: hidden;
+}
+
+.freshCard::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, #f97316, transparent);
+  opacity: .45;
+}
+
+.freshTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.freshActions button {
+  min-height: 44px;
+}
+
+.freshHero {
+  position: relative;
+  overflow: hidden;
+}
+
+.freshHero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .55;
+  background:
+    linear-gradient(120deg, transparent 0 52%, rgba(251,191,36,.14) 52% 53%, transparent 53%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 1px, transparent 1px 58px);
+}
+
+.freshHero > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 950px) {
+  .freshMain {
+    padding: 10px 10px 104px;
+  }
+
+  .freshHero {
+    min-height: auto;
+    border-radius: 22px;
+    padding: 18px;
+    margin-bottom: 10px;
+  }
+
+  .freshHero h1 {
+    margin-top: 12px;
+    font-size: 40px;
+    letter-spacing: -.06em;
+  }
+
+  .freshHero p {
+    font-size: 13px;
+  }
+
+  .freshCard {
+    border-radius: 20px;
+    padding: 14px;
+  }
+
+  .freshCard h2 {
+    font-size: 26px;
+  }
+
+  .freshField input,
+  .freshField textarea,
+  .freshField select {
+    font-size: 16px;
+  }
+
+  .freshGrid,
+  .freshGrid.two {
+    gap: 10px;
+  }
+}
