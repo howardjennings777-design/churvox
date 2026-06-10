@@ -1,0 +1,127 @@
+/* Absolute final contrast layer for fresh app cards/forms */
+
+.freshMain .freshCard,
+.freshMain .freshCard section,
+.freshMain .freshCard article,
+.freshMain .freshCard div {
+  color: #101827 !important;
+  -webkit-text-fill-color: initial !important;
+}
+
+.freshMain .freshCard h1,
+.freshMain .freshCard h2,
+.freshMain .freshCard h3,
+.freshMain .freshCard h4,
+.freshMain .freshCard b,
+.freshMain .freshCard strong {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  opacity: 1 !important;
+}
+
+.freshMain .freshCard p,
+.freshMain .freshCard span,
+.freshMain .freshCard small,
+.freshMain .freshCard em,
+.freshMain .freshCard label {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  opacity: 1 !important;
+}
+
+.freshMain .freshCard .freshField span,
+.freshMain .freshCard label span,
+.freshMain .freshField span {
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+  opacity: 1 !important;
+}
+
+.freshMain .freshCard input,
+.freshMain .freshCard textarea,
+.freshMain .freshCard select,
+.freshMain .freshCard option,
+.freshMain .freshField input,
+.freshMain .freshField textarea,
+.freshMain .freshField select,
+.freshMain .freshField option {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  background: #ffffff !important;
+  border-color: rgba(15, 23, 42, .16) !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+.freshMain .freshCard input::placeholder,
+.freshMain .freshCard textarea::placeholder,
+.freshMain .freshField input::placeholder,
+.freshMain .freshField textarea::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  opacity: 1 !important;
+}
+
+.freshMain .freshSettingsChecks b,
+.freshMain .freshSettingsSecurity b,
+.freshMain .freshCheck b {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+}
+
+.freshMain .freshSettingsChecks span,
+.freshMain .freshSettingsSecurity span,
+.freshMain .freshCheck span {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+}
+
+/* Put button colours back after forcing card text */
+.freshMain button.freshPrimary,
+.freshMain .freshPrimary {
+  background: #f97316 !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}
+
+.freshMain button.freshOrange,
+.freshMain .freshOrange {
+  background: #fbbf24 !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}
+
+.freshMain button.freshDark,
+.freshMain .freshDark {
+  background: #111827 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.freshMain button.freshGhost,
+.freshMain .freshGhost,
+.freshMain button.freshClose,
+.freshMain .freshClose {
+  background: #ffffff !important;
+  color: #334155 !important;
+  -webkit-text-fill-color: #334155 !important;
+}
+
+/* Keep hero dark section text correct */
+.freshHero h1,
+.freshSlipHead h2 {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.freshHero p,
+.freshSlipHead p {
+  color: #e5e7eb !important;
+  -webkit-text-fill-color: #e5e7eb !important;
+}
+
+.freshHero span,
+.freshSlipHead span {
+  color: #fed7aa !important;
+  -webkit-text-fill-color: #fed7aa !important;
+}
