@@ -1,42 +1,60 @@
 import React from "react";
 
-const slips = [
+const commandBoxes = [
   {
-    title: "Invoice ready to approve",
-    area: "Money desk · Aroha Property Care",
+    group: "Money",
+    title: "Invoice ready",
+    info: "Aroha Property Care · $85 draft",
     found: "Completed lawn service has price, notes and GST ready.",
-    why: "Approve it before anything is sent to the customer.",
+    prepared: "Draft invoice is prepared for owner review.",
+    action: "Approve invoice or edit before sending.",
   },
   {
-    title: "Quote needs follow-up",
-    area: "Quotes · Birchville Rentals",
-    found: "Sent quote has had no response for 6 days.",
-    why: "A polite follow-up can recover work without you digging around.",
+    group: "Quotes",
+    title: "Follow-up needed",
+    info: "Birchville Rentals · 6 days no reply",
+    found: "Quote was sent but has not been accepted or declined.",
+    prepared: "Follow-up message is prepared, not sent.",
+    action: "Approve, edit or ignore follow-up.",
   },
   {
-    title: "Client missing billing email",
-    area: "Clients · Birchville Rentals",
-    found: "Service details exist but billing email is blank.",
-    why: "Invoices and reminders should not run with missing billing details.",
+    group: "Clients",
+    title: "Billing detail missing",
+    info: "Birchville Rentals · billing email blank",
+    found: "Client has a service contact but no billing email.",
+    prepared: "Client record is flagged before invoice automation runs.",
+    action: "Open client and complete billing details.",
   },
   {
-    title: "Worker has not acknowledged",
-    area: "Dispatch · Today",
-    found: "A job is assigned but the worker has not acknowledged it yet.",
-    why: "You should confirm before the route starts.",
+    group: "Jobs",
+    title: "Job needs access",
+    info: "Driveway clean · tenant access not confirmed",
+    found: "Job is requested but access details are not safe yet.",
+    prepared: "Command has marked it as blocked before dispatch.",
+    action: "Confirm access or move job.",
+  },
+  {
+    group: "Team",
+    title: "Worker not acknowledged",
+    info: "Today route · one assigned job not accepted",
+    found: "A worker has not acknowledged an assigned job.",
+    prepared: "Owner warning is ready before the route starts.",
+    action: "Contact worker or reassign.",
+  },
+  {
+    group: "Setup",
+    title: "Automation paused",
+    info: "1 client missing billing setup",
+    found: "Automation should not run until the record is clean.",
+    prepared: "Churvox is holding the risky action back.",
+    action: "Fix setup, then approve automation.",
   },
 ];
 
-const today = [
-  ["10:00", "Lawn service", "Aroha Property Care", "Assigned"],
-  ["1:30", "Garden tidy", "Lower Hutt Medical Centre", "In progress"],
-  ["Awaiting", "Driveway clean", "Birchville Rentals", "Needs access"],
-];
-
-const money = [
-  ["Draft invoice", "Aroha Property Care", "$85"],
-  ["Approved invoice", "Lower Hutt Medical Centre", "$420"],
-  ["Overdue", "Birchville Rentals", "$190"],
+const pulse = [
+  ["4", "approval boxes"],
+  ["3", "today actions"],
+  ["$695", "money watched"],
 ];
 
 export default function FreshCommand() {
@@ -45,59 +63,41 @@ export default function FreshCommand() {
       <header className="freshHero">
         <span>Churvox fresh · Command</span>
         <h1>Command</h1>
-        <p>Your owner control room: approvals, today's work, money, client issues and worker issues in one place.</p>
+        <p>Owner control room. Boxes show the problem fast, then open into a slip with AI found, AI prepared, why, and owner action.</p>
       </header>
 
+      <section className="freshGrid" style={{ marginBottom: 14 }}>
+        {pulse.map(([value, label]) => (
+          <aside className="freshCard" key={label}>
+            <h2>{value}</h2>
+            <p>{label}</p>
+          </aside>
+        ))}
+      </section>
+
       <section className="freshGrid">
-        <aside className="freshCard">
-          <h2>Today control</h2>
-          <p>What needs the owner before the day gets messy.</p>
-          {today.map(([time, job, client, status]) => (
-            <div className={`freshItem ${status.includes("Needs") ? "need" : ""}`} key={`${job}-${client}`}>
-              <b>{time} · {job}</b>
-              <span>{client} · {status}</span>
+        {commandBoxes.map((box) => (
+          <details className="freshSlip" key={box.title}>
+            <summary>
+              <b>{box.title}</b>
+              <span>{box.group} · {box.info}</span>
+            </summary>
+            <p><b>AI found:</b> {box.found}</p>
+            <p><b>AI prepared:</b> {box.prepared}</p>
+            <p><b>Owner action:</b> {box.action}</p>
+            <div className="freshActions">
+              <button className="freshPrimary">Approve</button>
+              <button className="freshDark">Save edit</button>
+              <button className="freshGhost">Decline</button>
             </div>
-          ))}
-        </aside>
-
-        <section className="freshCard">
-          <h2>Approval queue</h2>
-          <p>Churvox does the admin. You approve.</p>
-          {slips.map((slip) => (
-            <details className="freshSlip" key={slip.title}>
-              <summary>{slip.title}</summary>
-              <p><b>{slip.area}</b></p>
-              <p><b>AI found:</b> {slip.found}</p>
-              <p><b>Why:</b> {slip.why}</p>
-              <div className="freshActions">
-                <button className="freshPrimary">Approve</button>
-                <button className="freshDark">Save edit</button>
-                <button className="freshGhost">Decline</button>
-              </div>
-            </details>
-          ))}
-        </section>
-
-        <aside className="freshCard">
-          <h2>Money watch</h2>
-          <p>Money items that should not be hidden in invoices.</p>
-          {money.map(([status, client, value]) => (
-            <div className={`freshItem ${status === "Overdue" ? "need" : ""}`} key={`${status}-${client}`}>
-              <b>{status}</b>
-              <span>{client} · {value}</span>
-            </div>
-          ))}
-          <div className="freshActions">
-            <button className="freshOrange">Review money</button>
-            <button className="freshDark">Open invoices</button>
-          </div>
-        </aside>
+          </details>
+        ))}
       </section>
 
       <section className="freshGrid two" style={{ marginTop: 14 }}>
         <section className="freshCard">
-          <h2>Owner shortcuts</h2>
-          <p>Fast actions from Command without turning it into a messy dashboard.</p>
+          <h2>Quick owner moves</h2>
+          <p>Command gives control without turning into a messy dashboard.</p>
           <div className="freshActions">
             <button className="freshPrimary">Create job</button>
             <button className="freshOrange">Create quote</button>
@@ -105,9 +105,9 @@ export default function FreshCommand() {
           </div>
         </section>
         <aside className="freshCard">
-          <h2>Setup warnings</h2>
-          <div className="freshItem need"><b>Billing email missing</b><span>1 client needs billing details before automation.</span></div>
-          <div className="freshItem need"><b>Worker acknowledgement</b><span>1 assigned job has not been accepted.</span></div>
+          <h2>How Command should feel</h2>
+          <div className="freshItem need"><b>Small box first</b><span>Just enough info to understand the problem.</span></div>
+          <div className="freshItem"><b>Full slip second</b><span>Open it only when the owner wants detail.</span></div>
         </aside>
       </section>
     </section>
