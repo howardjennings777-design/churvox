@@ -20,7 +20,7 @@ export default function FreshApp() {
   const [page, setPage] = React.useState("command");
 
   let content = <FreshSimple page={page} />;
-  if (page === "command") content = <FreshCommand />;
+  if (page === "command") content = <FreshCommand onNavigate={setPage} />;
   if (page === "clients") content = <FreshClients />;
   if (page === "dispatch") content = <FreshDispatch />;
   if (page === "invoices") content = <FreshInvoices />;

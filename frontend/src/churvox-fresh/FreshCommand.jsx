@@ -11,6 +11,7 @@ const commandBoxes = [
     why: "The customer should not receive anything until the owner approves the money.",
     owner: "Approve invoice, save an edit, or decline the draft.",
     area: "Invoices",
+    page: "invoices",
   },
   {
     group: "Quotes",
@@ -22,6 +23,7 @@ const commandBoxes = [
     why: "A follow-up can recover the job without you digging through old quotes.",
     owner: "Approve follow-up, edit wording, or ignore for now.",
     area: "Quotes",
+    page: "quotes",
   },
   {
     group: "Clients",
@@ -33,6 +35,7 @@ const commandBoxes = [
     why: "Invoices and reminders should not run with missing billing details.",
     owner: "Open client and complete billing details.",
     area: "Clients",
+    page: "clients",
   },
   {
     group: "Jobs",
@@ -44,6 +47,7 @@ const commandBoxes = [
     why: "Sending a worker without access wastes time and looks unprofessional.",
     owner: "Confirm access, move the job, or send message to client.",
     area: "Jobs",
+    page: "jobs",
   },
   {
     group: "Team",
@@ -55,6 +59,7 @@ const commandBoxes = [
     why: "You need to know the job is accepted before relying on the route.",
     owner: "Message worker, reassign, or leave as watched.",
     area: "Dispatch",
+    page: "dispatch",
   },
   {
     group: "Setup",
@@ -66,6 +71,7 @@ const commandBoxes = [
     why: "Bad setup should never trigger customer-facing automation.",
     owner: "Fix setup, then approve automation.",
     area: "Settings",
+    page: "settings",
   },
 ];
 
@@ -75,8 +81,14 @@ const pulse = [
   ["$695", "Money watched"],
 ];
 
-export default function FreshCommand() {
+export default function FreshCommand({ onNavigate }) {
   const [selected, setSelected] = React.useState(null);
+
+  function openArea() {
+    if (!selected) return;
+    if (onNavigate && selected.page) onNavigate(selected.page);
+    setSelected(null);
+  }
 
   return (
     <section>
@@ -111,9 +123,9 @@ export default function FreshCommand() {
           <h2>Quick owner moves</h2>
           <p>Command stays clean. It only shows decisions, risk and admin ready for approval.</p>
           <div className="freshActions">
-            <button className="freshPrimary">Create job</button>
-            <button className="freshOrange">Create quote</button>
-            <button className="freshDark">Add client</button>
+            <button className="freshPrimary" onClick={() => onNavigate?.("jobs")}>Create job</button>
+            <button className="freshOrange" onClick={() => onNavigate?.("quotes")}>Create quote</button>
+            <button className="freshDark" onClick={() => onNavigate?.("clients")}>Add client</button>
           </div>
         </section>
 
@@ -164,7 +176,7 @@ export default function FreshCommand() {
                 <button className="freshPrimary">Approve</button>
                 <button className="freshDark">Save edit</button>
                 <button className="freshGhost">Decline</button>
-                <button className="freshOrange">Open {selected.area}</button>
+                <button className="freshOrange" onClick={openArea}>Open {selected.area}</button>
               </div>
 
               <button type="button" className="freshClose" onClick={() => setSelected(null)}>
