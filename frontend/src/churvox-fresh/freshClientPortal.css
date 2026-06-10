@@ -1,0 +1,290 @@
+.freshPortalPage {
+  display: grid;
+  gap: 16px;
+}
+
+.freshPortalHero {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 22px;
+  border-radius: 30px;
+  background: #111827;
+  box-shadow: 0 24px 70px rgba(2, 6, 23, .18);
+}
+
+.freshPortalHero span {
+  display: inline-flex;
+  border-radius: 999px;
+  background: rgba(249, 115, 22, .16);
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+  padding: 8px 11px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.freshPortalHero h1 {
+  margin: 13px 0 8px;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  font-size: 46px;
+  line-height: .9;
+  letter-spacing: -.07em;
+}
+
+.freshPortalHero p {
+  margin: 0;
+  max-width: 720px;
+  color: #e5e7eb;
+  -webkit-text-fill-color: #e5e7eb;
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.freshPortalStats {
+  min-width: 360px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.freshPortalStats div {
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .08);
+  padding: 14px;
+}
+
+.freshPortalStats b {
+  display: block;
+  color: #fbbf24;
+  -webkit-text-fill-color: #fbbf24;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.freshPortalStats small {
+  display: block;
+  margin-top: 5px;
+  color: #f9fafb;
+  -webkit-text-fill-color: #f9fafb;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.freshPortalLayout {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 16px;
+}
+
+.freshPortalList,
+.freshPortalDetail {
+  border: 1px solid rgba(15, 23, 42, .12);
+  border-radius: 30px;
+  background: #fffaf0;
+  box-shadow: 0 18px 48px rgba(2, 6, 23, .10);
+}
+
+.freshPortalList {
+  display: grid;
+  gap: 9px;
+  align-content: start;
+  padding: 14px;
+}
+
+.freshPortalList header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 22px;
+  background: #111827;
+}
+
+.freshPortalList header b {
+  display: block;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+}
+
+.freshPortalList header span {
+  display: block;
+  margin-top: 3px;
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.freshPortalList header button,
+.freshPortalCardHead button,
+.freshPortalActions button {
+  border: 0;
+  border-radius: 15px;
+  min-height: 42px;
+  padding: 0 13px;
+  font-size: 12px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshPortalList header button {
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+.freshPortalList > button {
+  border: 1px solid rgba(15, 23, 42, .10);
+  border-radius: 20px;
+  background: #ffffff;
+  padding: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.freshPortalList > button.active {
+  background: #ffedd5;
+  border-color: rgba(249, 115, 22, .36);
+}
+
+.freshPortalList > button b,
+.freshPortalCards h3,
+.freshPortalCards b,
+.freshPortalCardHead h2 {
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+}
+
+.freshPortalList > button span,
+.freshPortalList > button small,
+.freshPortalCards p,
+.freshPortalCards small,
+.freshPortalCardHead p {
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+  font-weight: 850;
+}
+
+.freshPortalList > button b,
+.freshPortalList > button span,
+.freshPortalList > button small {
+  display: block;
+  margin-top: 4px;
+}
+
+.freshPortalDetail {
+  padding: 18px;
+}
+
+.freshPortalCardHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  border-bottom: 1px solid rgba(15, 23, 42, .10);
+  padding-bottom: 14px;
+}
+
+.freshPortalCardHead > div > span,
+.freshPortalCards section > span {
+  display: inline-flex;
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #9a3412;
+  -webkit-text-fill-color: #9a3412;
+  padding: 7px 10px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.freshPortalCardHead h2 {
+  margin: 11px 0 6px;
+  font-size: 34px;
+  line-height: .95;
+  letter-spacing: -.055em;
+}
+
+.freshPortalCardHead button {
+  background: #111827;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+}
+
+.freshPortalCards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.freshPortalCards section {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  border: 1px solid rgba(15, 23, 42, .10);
+  border-radius: 24px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.freshPortalCards h3 {
+  margin: 3px 0 0;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: -.045em;
+}
+
+.freshPortalCards p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.freshPortalCards b {
+  font-size: 30px;
+  line-height: 1;
+}
+
+.freshPortalActions {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.freshPortalActions button {
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+.freshPortalActions button:nth-child(2) {
+  background: #111827;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+}
+
+@media (max-width: 1050px) {
+  .freshPortalHero,
+  .freshPortalCardHead {
+    display: grid;
+  }
+
+  .freshPortalStats,
+  .freshPortalLayout,
+  .freshPortalCards {
+    grid-template-columns: 1fr;
+  }
+
+  .freshPortalStats {
+    min-width: 0;
+  }
+}
