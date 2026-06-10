@@ -1,0 +1,368 @@
+.freshQaPage {
+  display: grid;
+  gap: 16px;
+}
+
+.freshQaHero {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 22px;
+  border-radius: 30px;
+  background: #111827;
+  box-shadow: 0 24px 70px rgba(2,6,23,.18);
+}
+
+.freshQaHero span,
+.freshQaHead > div > span,
+.freshQaCards span,
+.freshQaForm label span {
+  display: inline-flex;
+  border-radius: 999px;
+  background: rgba(249,115,22,.16);
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+  padding: 8px 11px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.freshQaHero h1 {
+  margin: 13px 0 8px;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  font-size: 46px;
+  line-height: .9;
+  letter-spacing: -.07em;
+}
+
+.freshQaHero p {
+  margin: 0;
+  max-width: 760px;
+  color: #e5e7eb;
+  -webkit-text-fill-color: #e5e7eb;
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.freshQaStats {
+  min-width: 380px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.freshQaStats div {
+  border-radius: 20px;
+  background: rgba(255,255,255,.08);
+  padding: 14px;
+}
+
+.freshQaStats b {
+  display: block;
+  color: #fbbf24;
+  -webkit-text-fill-color: #fbbf24;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.freshQaStats small {
+  display: block;
+  margin-top: 5px;
+  color: #f9fafb;
+  -webkit-text-fill-color: #f9fafb;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.freshQaMeter {
+  display: grid;
+  gap: 10px;
+  border-radius: 24px;
+  background: #111827;
+  padding: 16px;
+}
+
+.freshQaMeter div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.freshQaMeter span,
+.freshQaMeter b {
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  font-weight: 1000;
+}
+
+.freshQaMeter i {
+  display: block;
+  height: 12px;
+  border-radius: 999px;
+  background: #f97316;
+}
+
+.freshQaLayout {
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr);
+  gap: 16px;
+}
+
+.freshQaList,
+.freshQaDetail {
+  border: 1px solid rgba(15,23,42,.12);
+  border-radius: 30px;
+  background: #fffaf0;
+  box-shadow: 0 18px 48px rgba(2,6,23,.10);
+}
+
+.freshQaList {
+  display: grid;
+  gap: 9px;
+  align-content: start;
+  padding: 14px;
+}
+
+.freshQaList header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 22px;
+  background: #111827;
+}
+
+.freshQaList header b {
+  display: block;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+}
+
+.freshQaList header span {
+  display: block;
+  margin-top: 3px;
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.freshQaList header button,
+.freshQaHeadActions button,
+.freshQaActions button,
+.freshQaReset {
+  border: 0;
+  border-radius: 15px;
+  min-height: 42px;
+  padding: 0 13px;
+  font-size: 12px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshQaList header button,
+.freshQaActions button:first-child {
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+.freshQaList > button:not(.freshQaReset) {
+  border: 1px solid rgba(15,23,42,.10);
+  border-radius: 20px;
+  background: #ffffff;
+  padding: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.freshQaList > button.active {
+  background: #ffedd5;
+  border-color: rgba(249,115,22,.36);
+}
+
+.freshQaList > button b,
+.freshQaHead h2,
+.freshQaCards b {
+  display: block;
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+}
+
+.freshQaList > button span,
+.freshQaList > button small,
+.freshQaHead p,
+.freshQaCards p {
+  display: block;
+  margin-top: 4px;
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+  font-weight: 850;
+}
+
+.freshQaReset {
+  background: #ffffff;
+  color: #334155;
+  -webkit-text-fill-color: #334155;
+  border: 1px solid rgba(15,23,42,.12);
+}
+
+.freshQaDetail {
+  padding: 18px;
+}
+
+.freshQaHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  border-bottom: 1px solid rgba(15,23,42,.10);
+  padding-bottom: 14px;
+}
+
+.freshQaHead > div > span,
+.freshQaCards span,
+.freshQaForm label span {
+  background: #fff7ed;
+  color: #9a3412;
+  -webkit-text-fill-color: #9a3412;
+}
+
+.freshQaHead h2 {
+  margin: 11px 0 6px;
+  font-size: 34px;
+  line-height: .95;
+  letter-spacing: -.055em;
+}
+
+.freshQaHeadActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.freshQaHeadActions button:first-child {
+  background: #111827;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+}
+
+.freshQaHeadActions button:nth-child(2),
+.freshQaHeadActions button:nth-child(3) {
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+.freshQaCards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.freshQaCards section {
+  border: 1px solid rgba(15,23,42,.10);
+  border-radius: 24px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.freshQaCards b {
+  margin-top: 10px;
+  font-size: 19px;
+  line-height: 1.1;
+}
+
+.freshQaCards p {
+  line-height: 1.4;
+}
+
+.freshQaForm {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.freshQaForm label {
+  display: grid;
+  gap: 6px;
+}
+
+.freshQaForm label.wide {
+  grid-column: 1 / -1;
+}
+
+.freshQaForm input,
+.freshQaForm select,
+.freshQaForm textarea {
+  width: 100%;
+  border: 1px solid rgba(15,23,42,.14);
+  border-radius: 16px;
+  background: #ffffff;
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+  padding: 12px 13px;
+  font-size: 14px;
+  font-weight: 900;
+  outline: 0;
+}
+
+.freshQaForm textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.freshQaActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.freshQaActions button {
+  background: #111827;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+}
+
+.freshQaActions button:first-child,
+.freshQaActions button:nth-child(2),
+.freshQaActions button:nth-child(3) {
+  background: #fbbf24;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+@media (max-width: 1050px) {
+  .freshQaHero,
+  .freshQaHead {
+    display: grid;
+  }
+
+  .freshQaStats,
+  .freshQaLayout,
+  .freshQaCards,
+  .freshQaForm {
+    grid-template-columns: 1fr;
+  }
+
+  .freshQaStats {
+    min-width: 0;
+  }
+
+  .freshQaHeadActions,
+  .freshQaActions,
+  .freshQaMeter div {
+    display: grid;
+  }
+}
