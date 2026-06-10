@@ -13,6 +13,7 @@ const groups = [
     items: [
       ["jobs", "JB", "Jobs"],
       ["dispatch", "DP", "Dispatch"],
+      ["routes", "RT", "Routes"],
       ["photos", "PH", "Photos"],
       ["extras", "EX", "Extras"],
       ["clients", "CL", "Clients"],
@@ -46,6 +47,7 @@ const labels = {
   command: "Command",
   jobs: "Jobs",
   dispatch: "Dispatch",
+  routes: "Routes",
   photos: "Photos",
   extras: "Extras",
   clients: "Clients",
@@ -67,6 +69,7 @@ const mobileItems = [
   ["command", "CM", "Command"],
   ["jobs", "JB", "Jobs"],
   ["dispatch", "DP", "Dispatch"],
+  ["routes", "RT", "Routes"],
   ["photos", "PH", "Photos"],
   ["extras", "EX", "Extras"],
   ["more", "••", "More"],
