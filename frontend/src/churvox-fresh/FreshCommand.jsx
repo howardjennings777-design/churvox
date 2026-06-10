@@ -1,5 +1,7 @@
 import React from "react";
 
+const commandFilters = ["Pending", "Approved", "Edited", "Declined", "All"];
+
 const seedBoxes = [
   {
     id: "invoice-ready",
@@ -148,6 +150,7 @@ export default function FreshCommand({ onNavigate }) {
   const [boxes, setBoxes] = React.useState(loadCommandBoxes);
   const [selectedId, setSelectedId] = React.useState(null);
   const [activity, setActivity] = React.useState(loadCommandActivity);
+  const [filter, setFilter] = React.useState("Pending");
 
   const selected = boxes.find((box) => box.id === selectedId);
 
@@ -174,6 +177,10 @@ export default function FreshCommand({ onNavigate }) {
   const pendingCount = boxes.filter((box) => box.status === "Pending").length;
   const doneCount = boxes.filter((box) => box.status !== "Pending").length;
   const moneyWatched = "$695";
+  const visibleBoxes =
+    filter === "All"
+      ? boxes
+      : boxes.filter((box) => box.status === filter);
 
   function updateSelected(status) {
     if (!selected) return;
@@ -246,8 +253,21 @@ export default function FreshCommand({ onNavigate }) {
         </aside>
       </section>
 
+      <section className="freshCommandFilterBar">
+        {commandFilters.map((item) => (
+          <button
+            type="button"
+            key={item}
+            className={filter === item ? "active" : ""}
+            onClick={() => setFilter(item)}
+          >
+            {item}
+          </button>
+        ))}
+      </section>
+
       <section className="freshCommandBoard">
-        {boxes.map((box) => (
+        {visibleBoxes.map((box) => (
           <button
             type="button"
             className={`freshCommandBox ${box.status !== "Pending" ? "isDone" : ""}`}
@@ -260,6 +280,13 @@ export default function FreshCommand({ onNavigate }) {
             <small>{box.status === "Pending" ? box.urgency : box.status}</small>
           </button>
         ))}
+
+        {visibleBoxes.length === 0 && (
+          <aside className="freshCommandEmpty">
+            <b>No {filter.toLowerCase()} boxes</b>
+            <span>Change filter or reset Command boxes.</span>
+          </aside>
+        )}
       </section>
 
       <section className="freshGrid two" style={{ marginTop: 14 }}>
