@@ -1,0 +1,42 @@
+.freshContractsPage{display:grid;gap:16px}
+.freshContractsHero{display:flex;justify-content:space-between;gap:18px;padding:22px;border-radius:30px;background:#111827;box-shadow:0 24px 70px rgba(2,6,23,.18)}
+.freshContractsHero span,.freshContractsHead>div>span,.freshContractsCards span,.freshContractsForm label span{display:inline-flex;border-radius:999px;background:rgba(249,115,22,.16);color:#fed7aa;-webkit-text-fill-color:#fed7aa;padding:8px 11px;font-size:10px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}
+.freshContractsHero h1{margin:13px 0 8px;color:#fff;-webkit-text-fill-color:#fff;font-size:46px;line-height:.9;letter-spacing:-.07em}
+.freshContractsHero p{margin:0;max-width:760px;color:#e5e7eb;-webkit-text-fill-color:#e5e7eb;font-size:15px;font-weight:850;line-height:1.45}
+.freshContractsStats{min-width:380px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.freshContractsStats div{border-radius:20px;background:rgba(255,255,255,.08);padding:14px}
+.freshContractsStats b{display:block;color:#fbbf24;-webkit-text-fill-color:#fbbf24;font-size:30px;line-height:1}
+.freshContractsStats small{display:block;margin-top:5px;color:#f9fafb;-webkit-text-fill-color:#f9fafb;font-size:11px;font-weight:950;letter-spacing:.08em;text-transform:uppercase}
+.freshContractsLayout{display:grid;grid-template-columns:330px minmax(0,1fr);gap:16px}
+.freshContractsList,.freshContractsDetail{border:1px solid rgba(15,23,42,.12);border-radius:30px;background:#fffaf0;box-shadow:0 18px 48px rgba(2,6,23,.10)}
+.freshContractsList{display:grid;gap:9px;align-content:start;padding:14px}
+.freshContractsList header{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:14px;border-radius:22px;background:#111827}
+.freshContractsList header b{display:block;color:#fff;-webkit-text-fill-color:#fff}
+.freshContractsList header span{display:block;margin-top:3px;color:#fed7aa;-webkit-text-fill-color:#fed7aa;font-size:12px;font-weight:900}
+.freshContractsList header button,.freshContractsHeadActions button,.freshContractsActions button,.freshContractsReset{border:0;border-radius:15px;min-height:42px;padding:0 13px;font-size:12px;font-weight:1000;cursor:pointer}
+.freshContractsList header button,.freshContractsActions button:first-child{background:#f97316;color:#111827;-webkit-text-fill-color:#111827}
+.freshContractsList>button:not(.freshContractsReset){border:1px solid rgba(15,23,42,.10);border-radius:20px;background:#fff;padding:13px;text-align:left;cursor:pointer}
+.freshContractsList>button.active{background:#ffedd5;border-color:rgba(249,115,22,.36)}
+.freshContractsList>button b,.freshContractsHead h2,.freshContractsCards b{display:block;color:#101827;-webkit-text-fill-color:#101827}
+.freshContractsList>button span,.freshContractsList>button small,.freshContractsHead p,.freshContractsCards p{display:block;margin-top:4px;color:#475569;-webkit-text-fill-color:#475569;font-weight:850}
+.freshContractsReset{background:#fff;color:#334155;-webkit-text-fill-color:#334155;border:1px solid rgba(15,23,42,.12)}
+.freshContractsDetail{padding:18px}
+.freshContractsHead{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;border-bottom:1px solid rgba(15,23,42,.10);padding-bottom:14px}
+.freshContractsHead>div>span,.freshContractsCards span,.freshContractsForm label span{background:#fff7ed;color:#9a3412;-webkit-text-fill-color:#9a3412}
+.freshContractsHead h2{margin:11px 0 6px;font-size:34px;line-height:.95;letter-spacing:-.055em}
+.freshContractsHeadActions{display:flex;flex-wrap:wrap;gap:8px}
+.freshContractsHeadActions button:first-child{background:#111827;color:#fff;-webkit-text-fill-color:#fff}
+.freshContractsHeadActions button:nth-child(2),.freshContractsHeadActions button:nth-child(3){background:#f97316;color:#111827;-webkit-text-fill-color:#111827}
+.freshContractsCards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}
+.freshContractsCards section{border:1px solid rgba(15,23,42,.10);border-radius:24px;background:#fff;padding:16px}
+.freshContractsCards b{margin-top:10px;font-size:19px;line-height:1.1}
+.freshContractsCards p{line-height:1.4}
+.freshContractsForm{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}
+.freshContractsForm label{display:grid;gap:6px}
+.freshContractsForm label.wide{grid-column:1/-1}
+.freshContractsForm input,.freshContractsForm select,.freshContractsForm textarea{width:100%;border:1px solid rgba(15,23,42,.14);border-radius:16px;background:#fff;color:#101827;-webkit-text-fill-color:#101827;padding:12px 13px;font-size:14px;font-weight:900;outline:0}
+.freshContractsForm textarea{min-height:110px;resize:vertical}
+.freshContractsActions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.freshContractsActions button{background:#111827;color:#fff;-webkit-text-fill-color:#fff}
+.freshContractsActions button:first-child,.freshContractsActions button:nth-child(2),.freshContractsActions button:nth-child(3){background:#fbbf24;color:#111827;-webkit-text-fill-color:#111827}
+@media (max-width:1050px){.freshContractsHero,.freshContractsHead{display:grid}.freshContractsStats,.freshContractsLayout,.freshContractsCards,.freshContractsForm{grid-template-columns:1fr}.freshContractsStats{min-width:0}.freshContractsHeadActions,.freshContractsActions{display:grid}}
