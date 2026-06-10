@@ -1,6 +1,7 @@
 import React from "react";
 
 const JOB_STORAGE_KEY = "churvox:fresh-jobs:v1";
+const INVOICE_STORAGE_KEY = "churvox:fresh-invoices:v1";
 
 const seedJobs = [
   {
@@ -42,6 +43,39 @@ const seedJobs = [
 ];
 
 const filters = ["All", "Ready", "In progress", "Blocked", "Completed"];
+
+function numberFrom(value) {
+  return Number(String(value || "").replace(/[^0-9.]/g, "")) || 0;
+}
+
+function readInvoices() {
+  try {
+    if (typeof window === "undefined") return [];
+
+    const saved = window.localStorage.getItem(INVOICE_STORAGE_KEY);
+    if (!saved) return [];
+
+    const parsed = JSON.parse(saved);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeInvoices(invoices) {
+  try {
+    if (typeof window === "undefined") return;
+
+    window.localStorage.setItem(INVOICE_STORAGE_KEY, JSON.stringify(invoices));
+    window.dispatchEvent(
+      new CustomEvent("churvox:fresh-data-updated", {
+        detail: { type: "invoice" },
+      })
+    );
+  } catch {
+    // Fresh preview keeps working without local storage.
+  }
+}
 
 function loadJobs() {
   try {
@@ -99,6 +133,38 @@ export default function FreshJobs({ onNavigate }) {
     setJobs(seedJobs);
     setSelectedId(seedJobs[0].id);
     setFilter("All");
+  }
+
+  function createInvoiceDraft() {
+    if (!selected) return;
+
+    const amount = numberFrom(selected.price);
+    const invoice = {
+      id: `INV-${Date.now().toString().slice(-5)}`,
+      client: selected.client,
+      job: selected.title,
+      status: "Draft",
+      amount,
+      gst: Number((amount * 0.15).toFixed(2)),
+      due: "Due in 7 days",
+      sync: "Not synced yet",
+      note: `Created from job: ${selected.title}. Owner must approve before sending.`,
+      lines: [
+        `${selected.title} · ${selected.price || "$0"}`,
+        `Worker · ${selected.worker || "Unassigned"}`,
+        `Notes · ${selected.notes || "No notes"}`,
+      ],
+    };
+
+    const currentInvoices = readInvoices();
+    writeInvoices([invoice, ...currentInvoices]);
+
+    updateSelectedJob({
+      status: "Completed",
+      risk: "Invoice draft created",
+    });
+
+    onNavigate?.("invoices");
   }
 
   return (
@@ -231,7 +297,7 @@ export default function FreshJobs({ onNavigate }) {
             <button className="freshDark" onClick={() => updateSelectedJob({ status: "Completed", risk: "Ready for invoice draft" })}>
               Complete job
             </button>
-            <button className="freshPrimary" onClick={() => onNavigate?.("invoices")}>
+            <button className="freshPrimary" onClick={createInvoiceDraft}>
               Create invoice draft
             </button>
             <button className="freshGhost" onClick={() => onNavigate?.("command")}>
