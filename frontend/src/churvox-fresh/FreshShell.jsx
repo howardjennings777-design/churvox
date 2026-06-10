@@ -12,10 +12,12 @@ const groups = [
     title: "Work",
     items: [
       ["jobs", "JB", "Jobs"],
+      ["recurring", "RC", "Recurring"],
       ["leads", "LD", "Leads"],
       ["dispatch", "DP", "Dispatch"],
       ["routes", "RT", "Routes"],
       ["leads", "LD", "Leads"],
+  ["recurring", "RC", "Recurring"],
   ["photos", "PH", "Photos"],
       ["extras", "EX", "Extras"],
       ["clients", "CL", "Clients"],
@@ -52,6 +54,7 @@ const groups = [
 const labels = {
   command: "Command",
   jobs: "Jobs",
+  recurring: "Recurring",
   leads: "Leads",
   dispatch: "Dispatch",
   routes: "Routes",

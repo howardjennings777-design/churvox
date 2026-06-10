@@ -46,6 +46,7 @@ import "./freshIntegrations.css";
 import "./freshAssets.css";
 import "./freshServices.css";
 import "./freshLeads.css";
+import "./freshRecurring.css";
 import "./freshGlobalReadable.css";
 import "./freshNuclearReadable.css";
 
@@ -62,6 +63,7 @@ import FreshReports from "./FreshReports";
 import FreshSettings from "./FreshSettings";
 import FreshPlans from "./FreshPlans";
 import FreshSupport from "./FreshSupport";
+import FreshRecurring from "./FreshRecurring";
 import FreshLeads from "./FreshLeads";
 import FreshServices from "./FreshServices";
 import FreshAssets from "./FreshAssets";
@@ -80,6 +82,7 @@ import { forceFreshReadable, installFreshReadableRuntime } from "./freshForceRea
 const pages = new Set([
   "command",
   "jobs",
+  "recurring",
   "leads",
   "dispatch",
   "routes",
@@ -148,6 +151,7 @@ export default function FreshApp() {
   let content = <FreshSimple page={page} />;
   if (page === "command") content = <FreshCommand onNavigate={goToPage} />;
   if (page === "jobs") content = <FreshJobs onNavigate={goToPage} />;
+  if (page === "recurring") content = <FreshRecurring onNavigate={goToPage} />;
   if (page === "leads") content = <FreshLeads onNavigate={goToPage} />;
   if (page === "dispatch") content = <FreshDispatch onNavigate={goToPage} />;
   if (page === "routes") content = <FreshRoutes onNavigate={goToPage} />;
