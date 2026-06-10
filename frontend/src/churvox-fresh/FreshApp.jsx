@@ -36,6 +36,7 @@ import "./freshSearchVisibleText.css";
 import "./freshSearchEditableFinal.css";
 import "./freshWorker.css";
 import "./freshClientPortal.css";
+import "./freshAutomation.css";
 
 import FreshShell from "./FreshShell";
 import FreshCommand from "./FreshCommand";
@@ -50,6 +51,7 @@ import FreshReports from "./FreshReports";
 import FreshSettings from "./FreshSettings";
 import FreshPlans from "./FreshPlans";
 import FreshSupport from "./FreshSupport";
+import FreshAutomation from "./FreshAutomation";
 import FreshClientPortal from "./FreshClientPortal";
 import FreshWorker from "./FreshWorker";
 import FreshSimple from "./FreshSimple";
@@ -68,6 +70,7 @@ const pages = new Set([
   "settings",
   "plans",
   "support",
+  "automation",
   "portal",
   "worker",
 ]);
@@ -117,6 +120,7 @@ export default function FreshApp() {
   if (page === "settings") content = <FreshSettings onNavigate={goToPage} />;
   if (page === "plans") content = <FreshPlans onNavigate={goToPage} />;
   if (page === "support") content = <FreshSupport onNavigate={goToPage} />;
+  if (page === "automation") content = <FreshAutomation onNavigate={goToPage} />;
   if (page === "portal") content = <FreshClientPortal onNavigate={goToPage} />;
   if (page === "worker") content = <FreshWorker onNavigate={goToPage} />;
 

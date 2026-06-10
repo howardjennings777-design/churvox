@@ -7,7 +7,7 @@ const groups = [
   { title: "Home", items: [["command", "CM", "Command"]] },
   { title: "Work", items: [["jobs", "JB", "Jobs"], ["dispatch", "DP", "Dispatch"], ["clients", "CL", "Clients"], ["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["portal", "PT", "Portal"]] },
   { title: "Business", items: [["team", "TM", "Team"], ["worker", "WK", "Worker"], ["payroll", "PR", "Payroll"], ["reports", "RP", "Reports"]] },
-  { title: "System", items: [["settings", "ST", "Settings"], ["plans", "PL", "Plans"], ["support", "SP", "Support"]] },
+  { title: "System", items: [["settings", "ST", "Settings"], ["automation", "AU", "Automation"], ["plans", "PL", "Plans"], ["support", "SP", "Support"]] },
 ];
 
 const labels = {
@@ -23,6 +23,7 @@ const labels = {
   settings: "Settings",
   plans: "Plans",
   support: "Support",
+  automation: "Automation",
   portal: "Client Portal",
   worker: "Worker",
 };
@@ -43,6 +44,7 @@ const extraMobile = [
   ["payroll", "PR", "Payroll"],
   ["reports", "RP", "Reports"],
   ["settings", "ST", "Settings"],
+  ["automation", "AU", "Automation"],
   ["portal", "PT", "Portal"],
   ["plans", "PL", "Plans"],
   ["support", "SP", "Support"],
