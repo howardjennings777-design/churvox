@@ -11,6 +11,7 @@ const groups = [
       ["jobs", "JB", "Jobs"],
       ["leads", "LD", "Leads"],
       ["recurring", "RC", "Recurring"],
+      ["recurringsaver", "RS", "Recurring Saver"],
       ["dispatch", "DP", "Dispatch"],
       ["planday", "PD", "Plan My Day"],
       ["routes", "RT", "Routes"],
@@ -27,6 +28,7 @@ const groups = [
       ["clients", "CL", "Clients"],
       ["customermemory", "CM", "Customer Memory"],
       ["quotes", "QT", "Quotes"],
+      ["quoteai", "AQ", "AI Quote"],
       ["invoices", "IV", "Invoices"],
       ["portal", "PT", "Portal"],
       ["customerportal", "CR", "Portal Requests"],
@@ -114,6 +116,7 @@ const labels = {
   jobs: "Jobs",
   leads: "Leads",
   recurring: "Recurring",
+  recurringsaver: "Recurring Saver",
   dispatch: "Dispatch",
   planday: "Plan My Day",
   routes: "Routes",
@@ -127,6 +130,7 @@ const labels = {
   clients: "Clients",
   customermemory: "Customer Memory",
   quotes: "Quotes",
+  quoteai: "AI Quote",
   invoices: "Invoices",
   invoicecheck: "Invoice Checker",
   payments: "Payments",
@@ -197,6 +201,8 @@ const mobileItems = [
 ];
 
 const extraMobile = [
+  ["recurringsaver", "RS", "Recurring Saver"],
+  ["quoteai", "AQ", "AI Quote"],
   ["helpdesk", "HD", "Help Desk"],
   ["trustcenter", "TC", "Trust Center"],
   ["firstrun", "FR", "First Run"],

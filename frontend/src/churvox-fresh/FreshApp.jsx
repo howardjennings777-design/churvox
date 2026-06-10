@@ -60,7 +60,9 @@ import "./freshQa.css";
 import "./freshQuality.css";
 import "./freshQuickCreate.css";
 import "./freshQuotesLive.css";
+import "./freshAiQuoteBuilder.css";
 import "./freshRecurring.css";
+import "./freshRecurringSaver.css";
 import "./freshReportsLive.css";
 import "./freshReviews.css";
 import "./freshRiskScan.css";
@@ -157,7 +159,9 @@ import FreshProfit from "./FreshProfit";
 import FreshQa from "./FreshQa";
 import FreshQuality from "./FreshQuality";
 import FreshQuotes from "./FreshQuotes";
+import FreshAiQuoteBuilder from "./FreshAiQuoteBuilder";
 import FreshRecurring from "./FreshRecurring";
+import FreshRecurringSaver from "./FreshRecurringSaver";
 import FreshReports from "./FreshReports";
 import FreshReviews from "./FreshReviews";
 import FreshRoadmap from "./FreshRoadmap";
@@ -205,12 +209,14 @@ const pages = new Set([
   "command",
   "jobs",
   "recurring",
+  "recurringsaver",
   "leads",
   "dispatch",
   "routes",
   "areas",
   "clients",
   "quotes",
+  "quoteai",
   "invoices",
   "payments",
   "creditnotes",
@@ -332,6 +338,7 @@ export default function FreshApp() {
   if (page === "command") content = <FreshCommand onNavigate={goToPage} />;
   if (page === "jobs") content = <FreshJobs onNavigate={goToPage} />;
   if (page === "recurring") content = <FreshRecurring onNavigate={goToPage} />;
+  if (page === "recurringsaver") content = <FreshRecurringSaver onNavigate={goToPage} />;
   if (page === "leads") content = <FreshLeads onNavigate={goToPage} />;
   if (page === "dispatch") content = <FreshDispatch onNavigate={goToPage} />;
   if (page === "planday") content = <FreshPlanMyDay onNavigate={goToPage} />;
@@ -340,6 +347,7 @@ export default function FreshApp() {
   if (page === "clients") content = <FreshClients onNavigate={goToPage} />;
   if (page === "customermemory") content = <FreshCustomerMemory onNavigate={goToPage} />;
   if (page === "quotes") content = <FreshQuotes onNavigate={goToPage} />;
+  if (page === "quoteai") content = <FreshAiQuoteBuilder onNavigate={goToPage} />;
   if (page === "invoices") content = <FreshInvoices onNavigate={goToPage} />;
   if (page === "invoicecheck") content = <FreshInvoiceChecker onNavigate={goToPage} />;
   if (page === "payments") content = <FreshPayments onNavigate={goToPage} />;
