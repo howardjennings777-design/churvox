@@ -1,5 +1,6 @@
 import React from "react";
 import "./fresh.css";
+import "./freshCommandBoxes.css";
 import FreshShell from "./FreshShell";
 import FreshCommand from "./FreshCommand";
 import FreshClients from "./FreshClients";
