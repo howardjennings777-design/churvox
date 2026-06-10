@@ -10,6 +10,7 @@ import "./freshTeamLive.css";
 import "./freshPayrollLive.css";
 import "./freshReportsLive.css";
 import "./freshSettingsLive.css";
+import "./freshPlansLive.css";
 import "./freshContrastFix.css";
 import "./freshCommandBoxes.css";
 import "./freshCommandLive.css";

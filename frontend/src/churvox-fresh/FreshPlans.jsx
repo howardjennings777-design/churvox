@@ -1,178 +1,239 @@
 import React from "react";
 
+const PLAN_STORAGE_KEY = "churvox:fresh-plan:v1";
+const GROWTH_STORAGE_KEY = "churvox:fresh-growth-packs:v1";
+
 const plans = [
   {
     id: "start",
     name: "Start",
-    price: "$39",
-    tag: "For one-person operators",
+    price: 39,
+    tag: "Starter",
     best: false,
+    summary: "For a small operator getting jobs, clients and basic invoicing organised.",
     features: [
       "Jobs, clients, quotes and invoices",
-      "Basic Command boxes",
-      "14-day free trial",
-      "No card required",
+      "Command preview boxes",
+      "Basic team setup",
+      "14-day free trial, no card",
     ],
   },
   {
     id: "crew",
     name: "Crew",
-    price: "$89",
-    tag: "For small teams",
+    price: 89,
+    tag: "Growing team",
     best: false,
+    summary: "For a business with workers, daily dispatch and more client admin.",
     features: [
-      "Team and worker access",
+      "Everything in Start",
       "Dispatch board",
-      "More jobs and clients",
-      "Basic payroll workspace",
+      "Team and worker setup",
+      "More job and client capacity",
     ],
   },
   {
     id: "operator",
     name: "Operator",
-    price: "$149",
+    price: 149,
     tag: "Most Popular",
     best: true,
+    summary: "Where Churvox starts doing the admin and you approve the work.",
     features: [
       "AI Operator Actions",
       "Command approval desk",
-      "Quotes, invoices and follow-ups",
-      "Churvox does the admin. You approve.",
+      "Quote follow-up watch",
+      "Invoice and job admin prepared for approval",
+      "MYOB optional add-on later",
     ],
   },
   {
     id: "command",
     name: "Command",
-    price: "$299",
-    tag: "For growing businesses",
+    price: 299,
+    tag: "Full control",
     best: false,
+    summary: "For the bigger business that wants payroll workspace, MYOB included and advanced control.",
     features: [
-      "Advanced Command",
+      "Everything in Operator",
       "MYOB included",
       "Payroll workspace",
+      "Advanced roles",
+      "Priority support",
       "Up to 50 active team members",
     ],
   },
 ];
 
-const growth = [
-  ["Command Growth Pack", "$99 / month + GST"],
-  ["Adds", "50 more active team members"],
-  ["Includes", "Extra job, AI action, automation and payroll capacity"],
-  ["Billing rule", "Inactive/old staff do not count as billable active team members"],
-];
+function loadPlan() {
+  try {
+    if (typeof window === "undefined") return "operator";
+    return window.localStorage.getItem(PLAN_STORAGE_KEY) || "operator";
+  } catch {
+    return "operator";
+  }
+}
+
+function loadGrowthPacks() {
+  try {
+    if (typeof window === "undefined") return 0;
+    return Number(window.localStorage.getItem(GROWTH_STORAGE_KEY) || 0);
+  } catch {
+    return 0;
+  }
+}
+
+function money(value) {
+  return `$${Number(value || 0).toFixed(0)}`;
+}
 
 export default function FreshPlans({ onNavigate }) {
-  const [selected, setSelected] = React.useState("operator");
-  const plan = plans.find((item) => item.id === selected) || plans[2];
+  const [currentPlan, setCurrentPlan] = React.useState(loadPlan);
+  const [selectedPlan, setSelectedPlan] = React.useState(loadPlan);
+  const [growthPacks, setGrowthPacks] = React.useState(loadGrowthPacks);
+
+  const selected = plans.find((plan) => plan.id === selectedPlan) || plans[2];
+  const commandSelected = selected.id === "command";
+  const growthTotal = commandSelected ? growthPacks * 99 : 0;
+  const monthlyTotal = selected.price + growthTotal;
+
+  React.useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(PLAN_STORAGE_KEY, currentPlan);
+      }
+    } catch {
+      // Fresh preview keeps working without local storage.
+    }
+  }, [currentPlan]);
+
+  React.useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(GROWTH_STORAGE_KEY, String(growthPacks));
+      }
+    } catch {
+      // Fresh preview keeps working without local storage.
+    }
+  }, [growthPacks]);
+
+  function choosePlan(planId) {
+    setSelectedPlan(planId);
+    if (planId !== "command") setGrowthPacks(0);
+  }
+
+  function makeCurrent() {
+    setCurrentPlan(selected.id);
+  }
 
   return (
     <section>
       <header className="freshHero">
         <span>Churvox fresh · Plans</span>
         <h1>Plans</h1>
-        <p>Simple pricing built around Command. Churvox does the admin. You approve.</p>
+        <p>Locked Churvox pricing. 14-day free trial, no card. Churvox does the admin. You approve.</p>
       </header>
 
-      <section className="freshGrid">
+      <section className="freshPlanNotice">
+        <b>Pricing rule</b>
+        <span>No done-for-you setup add-on is shown. Prices are monthly + GST.</span>
+      </section>
+
+      <section className="freshCommandPulse">
         <aside className="freshCard">
-          <h2>Choose plan</h2>
-          <p>14-day free trial. No card required.</p>
-
-          {plans.map((item) => (
-            <button
-              type="button"
-              key={item.id}
-              className={`freshItem ${item.best ? "need" : ""} ${selected === item.id ? "active" : ""}`}
-              style={{ width: "100%", textAlign: "left", cursor: "pointer" }}
-              onClick={() => setSelected(item.id)}
-            >
-              <b>{item.name} · {item.price}</b>
-              <span>{item.tag} · + GST</span>
-            </button>
-          ))}
+          <h2>{selected.name}</h2>
+          <p>Selected plan</p>
         </aside>
-
-        <section className="freshCard">
-          <h2>{plan.name}</h2>
-
-          <div className="freshTabs">
-            <span className="active">Plan</span>
-            <span>Limits</span>
-            <span>Billing</span>
-            <span>Upgrade</span>
-          </div>
-
-          <label className="freshField">
-            <span>Monthly price</span>
-            <input value={`${plan.price} / month + GST`} readOnly />
-          </label>
-
-          <label className="freshField">
-            <span>Position</span>
-            <input value={plan.tag} readOnly />
-          </label>
-
-          <label className="freshField">
-            <span>Trial</span>
-            <input value="14-day free trial · no card required" readOnly />
-          </label>
-
-          <label className="freshField">
-            <span>Main promise</span>
-            <textarea value="Churvox does the admin. You approve." readOnly />
-          </label>
-
-          {plan.features.map((feature) => (
-            <div className="freshItem" key={feature}>
-              <b>{feature}</b>
-              <span>Included in {plan.name}</span>
-            </div>
-          ))}
-        </section>
-
         <aside className="freshCard">
-          <h2>Owner actions</h2>
-          <p>Plans should feel clear, not confusing.</p>
-
-          <div className="freshActions">
-            <button className="freshPrimary">Start trial</button>
-            <button className="freshOrange">Choose {plan.name}</button>
-            <button className="freshDark">Compare plans</button>
-            <button className="freshGhost" onClick={() => onNavigate?.("support")}>Ask support</button>
-          </div>
-
-          <div className="freshItem need">
-            <b>Recommended</b>
-            <span>Operator is the main plan where AI runs the admin.</span>
-          </div>
+          <h2>{money(monthlyTotal)}</h2>
+          <p>Monthly + GST</p>
         </aside>
+        <aside className="freshCard">
+          <h2>{currentPlan}</h2>
+          <p>Current preview plan</p>
+        </aside>
+      </section>
+
+      <section className="freshPlansGrid">
+        {plans.map((plan) => (
+          <button
+            type="button"
+            key={plan.id}
+            className={`freshPlanCard ${selectedPlan === plan.id ? "active" : ""} ${plan.best ? "best" : ""}`}
+            onClick={() => choosePlan(plan.id)}
+          >
+            <span>{plan.tag}</span>
+            <strong>{plan.name}</strong>
+            <em>{money(plan.price)} / month + GST</em>
+            <p>{plan.summary}</p>
+            <small>{currentPlan === plan.id ? "Current preview plan" : "Select plan"}</small>
+          </button>
+        ))}
       </section>
 
       <section className="freshGrid two" style={{ marginTop: 14 }}>
         <section className="freshCard">
-          <h2>Command Growth Pack</h2>
-          {growth.map(([name, detail]) => (
-            <div className="freshItem" key={name}>
-              <b>{name}</b>
-              <span>{detail}</span>
+          <h2>{selected.name} details</h2>
+
+          <div className="freshPlanPrice">
+            <span>Monthly price</span>
+            <b>{money(selected.price)} + GST</b>
+          </div>
+
+          {commandSelected && (
+            <div className="freshGrowthPack">
+              <div>
+                <b>Command Growth Pack</b>
+                <span>$99/month + GST · adds 50 active team members plus more job, AI action and admin capacity.</span>
+              </div>
+
+              <div className="freshGrowthControls">
+                <button onClick={() => setGrowthPacks((count) => Math.max(0, count - 1))}>−</button>
+                <strong>{growthPacks}</strong>
+                <button onClick={() => setGrowthPacks((count) => count + 1)}>+</button>
+              </div>
             </div>
-          ))}
+          )}
+
+          <div className="freshPlanFeatures">
+            {selected.features.map((feature) => (
+              <div key={feature}>
+                <b>✓</b>
+                <span>{feature}</span>
+              </div>
+            ))}
+          </div>
         </section>
 
         <aside className="freshCard">
-          <h2>Pricing rules</h2>
-          <div className="freshItem">
-            <b>All prices + GST</b>
-            <span>Keep this clear across the site.</span>
+          <h2>Owner actions</h2>
+
+          <div className="freshActions">
+            <button className="freshPrimary" onClick={makeCurrent}>
+              Set as current plan
+            </button>
+            <button className="freshOrange" onClick={() => setSelectedPlan("operator")}>
+              Recommend Operator
+            </button>
+            <button className="freshDark" onClick={() => setSelectedPlan("command")}>
+              View Command
+            </button>
+            <button className="freshGhost" onClick={() => onNavigate?.("support")}>
+              Ask support
+            </button>
+            <button className="freshGhost" onClick={() => onNavigate?.("settings")}>
+              Open billing settings
+            </button>
           </div>
+
           <div className="freshItem">
-            <b>No done-for-you add-on</b>
-            <span>Do not advertise that for now.</span>
+            <b>Best default</b>
+            <span>Operator is the main recommended plan because AI runs the admin and the owner approves.</span>
           </div>
+
           <div className="freshItem need">
-            <b>Command includes MYOB</b>
-            <span>Operator can have sync as an add-on later.</span>
+            <b>Command scale</b>
+            <span>Command includes up to 50 active team members. Inactive old staff should not count as billable.</span>
           </div>
         </aside>
       </section>
