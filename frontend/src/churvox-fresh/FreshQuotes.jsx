@@ -1,6 +1,7 @@
 import React from "react";
 
 const QUOTE_STORAGE_KEY = "churvox:fresh-quotes:v1";
+const JOB_STORAGE_KEY = "churvox:fresh-jobs:v1";
 
 const seedQuotes = [
   {
@@ -42,6 +43,35 @@ const filters = ["All", "Draft", "Sent", "Accepted", "Declined"];
 
 function money(value) {
   return `$${Number(value || 0).toFixed(2)}`;
+}
+
+function readJobs() {
+  try {
+    if (typeof window === "undefined") return [];
+
+    const saved = window.localStorage.getItem(JOB_STORAGE_KEY);
+    if (!saved) return [];
+
+    const parsed = JSON.parse(saved);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeJobs(jobs) {
+  try {
+    if (typeof window === "undefined") return;
+
+    window.localStorage.setItem(JOB_STORAGE_KEY, JSON.stringify(jobs));
+    window.dispatchEvent(
+      new CustomEvent("churvox:fresh-data-updated", {
+        detail: { type: "job" },
+      })
+    );
+  } catch {
+    // Fresh preview keeps working without local storage.
+  }
 }
 
 function loadQuotes() {
@@ -105,10 +135,28 @@ export default function FreshQuotes({ onNavigate }) {
   }
 
   function convertToJob() {
+    if (!selected) return;
+
+    const job = {
+      id: `job-${Date.now()}`,
+      title: selected.title || "Converted quote job",
+      client: selected.client || "New client",
+      address: "Confirm service address",
+      status: "Ready",
+      worker: "Unassigned",
+      scheduled: "Not scheduled",
+      price: `$${Number(selected.amount || 0).toFixed(0)} quote`,
+      notes: `Converted from quote ${selected.id}. ${selected.note || ""}`,
+      risk: "Converted from accepted quote. Schedule and assign worker.",
+    };
+
+    const currentJobs = readJobs();
+    writeJobs([job, ...currentJobs]);
+
     updateSelectedQuote({
       status: "Accepted",
-      followUp: "Converted / ready for job scheduling",
-      age: "Accepted now",
+      followUp: "Converted into job",
+      age: "Accepted and converted now",
     });
 
     onNavigate?.("jobs");
