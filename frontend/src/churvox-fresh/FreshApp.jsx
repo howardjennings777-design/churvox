@@ -51,6 +51,7 @@ import "./freshAvailability.css";
 import "./freshTimeLogs.css";
 import "./freshExpenses.css";
 import "./freshDocuments.css";
+import "./freshProfit.css";
 import "./freshGlobalReadable.css";
 import "./freshNuclearReadable.css";
 
@@ -67,6 +68,7 @@ import FreshReports from "./FreshReports";
 import FreshSettings from "./FreshSettings";
 import FreshPlans from "./FreshPlans";
 import FreshSupport from "./FreshSupport";
+import FreshProfit from "./FreshProfit";
 import FreshDocuments from "./FreshDocuments";
 import FreshExpenses from "./FreshExpenses";
 import FreshTimeLogs from "./FreshTimeLogs";
@@ -102,6 +104,7 @@ const pages = new Set([
   "payroll",
   "time",
   "reports",
+  "profit",
   "expenses",
   "assets",
   "services",
@@ -175,6 +178,7 @@ export default function FreshApp() {
   if (page === "payroll") content = <FreshPayroll onNavigate={goToPage} />;
   if (page === "time") content = <FreshTimeLogs onNavigate={goToPage} />;
   if (page === "reports") content = <FreshReports onNavigate={goToPage} />;
+  if (page === "profit") content = <FreshProfit onNavigate={goToPage} />;
   if (page === "expenses") content = <FreshExpenses onNavigate={goToPage} />;
   if (page === "assets") content = <FreshAssets onNavigate={goToPage} />;
   if (page === "services") content = <FreshServices onNavigate={goToPage} />;
