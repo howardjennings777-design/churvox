@@ -4,10 +4,7 @@ import FreshSearch from "./FreshSearch";
 import FreshTopStatus from "./FreshTopStatus";
 
 const groups = [
-  {
-    title: "Home",
-    items: [["command", "CM", "Command"]],
-  },
+  { title: "Home", items: [["command", "CM", "Command"]] },
   {
     title: "Work",
     items: [
@@ -17,6 +14,7 @@ const groups = [
       ["dispatch", "DP", "Dispatch"],
       ["routes", "RT", "Routes"],
       ["photos", "PH", "Photos"],
+      ["documents", "DC", "Documents"],
       ["extras", "EX", "Extras"],
       ["clients", "CL", "Clients"],
       ["quotes", "QT", "Quotes"],
@@ -35,8 +33,7 @@ const groups = [
       ["time", "TL", "Time logs"],
       ["reports", "RP", "Reports"],
       ["expenses", "EP", "Expenses"],
-      ["expenses", "EP", "Expenses"],
-  ["assets", "AS", "Assets"],
+      ["assets", "AS", "Assets"],
       ["services", "SV", "Services"],
     ],
   },
@@ -60,6 +57,7 @@ const labels = {
   dispatch: "Dispatch",
   routes: "Routes",
   photos: "Photos",
+  documents: "Documents",
   extras: "Extras",
   clients: "Clients",
   quotes: "Quotes",
@@ -95,6 +93,7 @@ const extraMobile = [
   ["leads", "LD", "Leads"],
   ["recurring", "RC", "Recurring"],
   ["photos", "PH", "Photos"],
+  ["documents", "DC", "Documents"],
   ["extras", "EX", "Extras"],
   ["clients", "CL", "Clients"],
   ["quotes", "QT", "Quotes"],
@@ -106,6 +105,7 @@ const extraMobile = [
   ["worker", "WK", "Worker"],
   ["payroll", "PR", "Payroll"],
   ["reports", "RP", "Reports"],
+  ["expenses", "EP", "Expenses"],
   ["assets", "AS", "Assets"],
   ["services", "SV", "Services"],
   ["integrations", "IN", "Integrations"],
@@ -117,7 +117,6 @@ const extraMobile = [
 
 function uniqueItems(items) {
   const seen = new Set();
-
   return items.filter(([key]) => {
     if (seen.has(key)) return false;
     seen.add(key);
@@ -127,16 +126,14 @@ function uniqueItems(items) {
 
 function cleanGroups(sourceGroups) {
   const seen = new Set();
-
-  return sourceGroups.map((group) => {
-    const items = group.items.filter(([key]) => {
+  return sourceGroups.map((group) => ({
+    ...group,
+    items: group.items.filter(([key]) => {
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
-    });
-
-    return { ...group, items };
-  });
+    }),
+  }));
 }
 
 export default function FreshShell({ active, onChange, children }) {
@@ -162,7 +159,6 @@ export default function FreshShell({ active, onChange, children }) {
       setMoreOpen((value) => !value);
       return;
     }
-
     go(key);
   }
 
@@ -181,7 +177,6 @@ export default function FreshShell({ active, onChange, children }) {
           {safeGroups.map((group) => (
             <section className="freshNavGroup" key={group.title}>
               <p>{group.title}</p>
-
               {group.items.map(([key, mark, label]) => (
                 <button
                   key={key}
