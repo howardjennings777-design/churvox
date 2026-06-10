@@ -1,0 +1,113 @@
+/* Route-level force for the clean V2 frontend.
+   This is intentionally outside the component CSS so old shell/layout CSS cannot win. */
+
+@media (min-width: 1024px) {
+  body.cv-route-clients-board .cvxAppMain {
+    width: calc(100vw - var(--cvx-side)) !important;
+    max-width: calc(100vw - var(--cvx-side)) !important;
+    margin-left: var(--cvx-side) !important;
+    padding: 8px 10px 14px !important;
+    overflow-x: hidden !important;
+  }
+
+  body.cv-route-clients-board .cvxAppMain > main,
+  body.cv-route-clients-board .cvxAppMain > section,
+  body.cv-route-clients-board .cvxAppMain > div,
+  body.cv-route-clients-board .v2Root,
+  body.cv-route-clients-board .v2Shell {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  body.cv-route-clients-board .v2Root,
+  body.cv-route-clients-board .v2Shell {
+    min-height: calc(100dvh - 22px) !important;
+  }
+
+  body.cv-route-clients-board .v2Shell {
+    gap: 10px !important;
+  }
+
+  body.cv-route-clients-board .v2Topbar {
+    grid-template-columns: minmax(0, 1fr) minmax(255px, 325px) !important;
+    gap: 10px !important;
+  }
+
+  body.cv-route-clients-board .v2Hero {
+    min-height: 118px !important;
+    border-radius: 22px !important;
+    padding: 16px 18px !important;
+  }
+
+  body.cv-route-clients-board .v2Hero h1 {
+    margin-top: 9px !important;
+    font-size: clamp(38px, 3.8vw, 58px) !important;
+  }
+
+  body.cv-route-clients-board .v2Stats {
+    gap: 7px !important;
+  }
+
+  body.cv-route-clients-board .v2Stat {
+    border-radius: 18px !important;
+    padding: 9px 12px !important;
+  }
+
+  body.cv-route-clients-board .v2Workspace {
+    min-height: calc(100dvh - 158px) !important;
+    grid-template-columns: minmax(255px, 315px) minmax(0, 1fr) minmax(265px, 325px) !important;
+    gap: 10px !important;
+  }
+
+  body.cv-route-clients-board .v2Pane,
+  body.cv-route-clients-board .v2ActionRail {
+    height: 100% !important;
+    min-height: 0 !important;
+    border-radius: 20px !important;
+    padding: 12px !important;
+  }
+
+  body.cv-route-clients-board .v2List {
+    height: calc(100dvh - 320px) !important;
+    min-height: 0 !important;
+  }
+
+  body.cv-route-clients-board .v2IdentityCard {
+    border-radius: 18px !important;
+    padding: 12px !important;
+  }
+
+  body.cv-route-clients-board .v2FormGrid {
+    gap: 9px !important;
+  }
+
+  body.cv-route-clients-board .v2Search input,
+  body.cv-route-clients-board .v2Field input,
+  body.cv-route-clients-board .v2Field textarea,
+  body.cv-route-clients-board .v2Field select {
+    color: #020617 !important;
+    -webkit-text-fill-color: #020617 !important;
+    background: #fffdf7 !important;
+    box-shadow: inset 0 0 0 9999px #fffdf7 !important;
+  }
+
+  body.cv-route-clients-board .v2ListItem b,
+  body.cv-route-clients-board .v2ListItem span,
+  body.cv-route-clients-board .v2MiniCard b,
+  body.cv-route-clients-board .v2MiniCard span,
+  body.cv-route-clients-board .v2Field span,
+  body.cv-route-clients-board .v2Pane h2,
+  body.cv-route-clients-board .v2ActionRail h2,
+  body.cv-route-clients-board .v2HistoryCard h3,
+  body.cv-route-clients-board .v2HistoryCard li {
+    -webkit-text-fill-color: currentColor !important;
+    text-shadow: none !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  body.cv-route-clients-board .cvxAppMain {
+    padding: 10px 10px 92px !important;
+  }
+}
