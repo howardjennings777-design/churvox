@@ -4,54 +4,83 @@ import FreshSearch from "./FreshSearch";
 import FreshTopStatus from "./FreshTopStatus";
 
 const groups = [
-  { title: "Home", items: [["command", "CM", "Command"]] },
-  { title: "Work", items: [["jobs", "JB", "Jobs"], ["dispatch", "DP", "Dispatch"], ["photos", "PH", "Photos"], ["extras", "EX", "Extras"], ["clients", "CL", "Clients"], ["photos", "PH", "Photos"],
-  ["extras", "EX", "Extras"],
-  ["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["portal", "PT", "Portal"]] },
-  { title: "Business", items: [["team", "TM", "Team"], ["worker", "WK", "Worker"], ["payroll", "PR", "Payroll"], ["reports", "RP", "Reports"]] },
-  { title: "System", items: [["settings", "ST", "Settings"], ["automation", "AU", "Automation"], ["plans", "PL", "Plans"], ["support", "SP", "Support"]] },
+  {
+    title: "Home",
+    items: [["command", "CM", "Command"]],
+  },
+  {
+    title: "Work",
+    items: [
+      ["jobs", "JB", "Jobs"],
+      ["dispatch", "DP", "Dispatch"],
+      ["photos", "PH", "Photos"],
+      ["extras", "EX", "Extras"],
+      ["clients", "CL", "Clients"],
+      ["quotes", "QT", "Quotes"],
+      ["invoices", "IV", "Invoices"],
+      ["portal", "PT", "Portal"],
+    ],
+  },
+  {
+    title: "Business",
+    items: [
+      ["team", "TM", "Team"],
+      ["worker", "WK", "Worker"],
+      ["payroll", "PR", "Payroll"],
+      ["reports", "RP", "Reports"],
+    ],
+  },
+  {
+    title: "System",
+    items: [
+      ["settings", "ST", "Settings"],
+      ["automation", "AU", "Automation"],
+      ["plans", "PL", "Plans"],
+      ["support", "SP", "Support"],
+    ],
+  },
 ];
 
 const labels = {
   command: "Command",
   jobs: "Jobs",
   dispatch: "Dispatch",
+  photos: "Photos",
+  extras: "Extras",
   clients: "Clients",
   quotes: "Quotes",
   invoices: "Invoices",
+  portal: "Client Portal",
   team: "Team",
+  worker: "Worker",
   payroll: "Payroll",
   reports: "Reports",
   settings: "Settings",
+  automation: "Automation",
   plans: "Plans",
   support: "Support",
-  extras: "Extras",
-  photos: "Photos",
-  automation: "Automation",
-  portal: "Client Portal",
-  worker: "Worker",
 };
 
 const mobileItems = [
   ["command", "CM", "Command"],
   ["jobs", "JB", "Jobs"],
   ["dispatch", "DP", "Dispatch"],
-  ["clients", "CL", "Clients"],
-  ["invoices", "IV", "Invoices"],
+  ["photos", "PH", "Photos"],
+  ["extras", "EX", "Extras"],
   ["more", "••", "More"],
 ];
 
 const extraMobile = [
-  ["photos", "PH", "Photos"],
-  ["extras", "EX", "Extras"],
+  ["clients", "CL", "Clients"],
   ["quotes", "QT", "Quotes"],
+  ["invoices", "IV", "Invoices"],
+  ["portal", "PT", "Portal"],
   ["team", "TM", "Team"],
   ["worker", "WK", "Worker"],
   ["payroll", "PR", "Payroll"],
   ["reports", "RP", "Reports"],
   ["settings", "ST", "Settings"],
   ["automation", "AU", "Automation"],
-  ["portal", "PT", "Portal"],
   ["plans", "PL", "Plans"],
   ["support", "SP", "Support"],
 ];
@@ -61,6 +90,7 @@ export default function FreshShell({ active, onChange, children }) {
   const [quickType, setQuickType] = React.useState(null);
 
   function go(key) {
+    if (key === "more") return;
     setMoreOpen(false);
     setQuickType(null);
     onChange(key);
@@ -90,6 +120,7 @@ export default function FreshShell({ active, onChange, children }) {
           {groups.map((group) => (
             <section className="freshNavGroup" key={group.title}>
               <p>{group.title}</p>
+
               {group.items.map(([key, mark, label]) => (
                 <button
                   key={key}
