@@ -1,5 +1,7 @@
 import React from "react";
 import FreshQuickCreate from "./FreshQuickCreate";
+import FreshSearch from "./FreshSearch";
+import FreshTopStatus from "./FreshTopStatus";
 
 const groups = [
   { title: "Home", items: [["command", "CM", "Command"]] },
@@ -99,10 +101,9 @@ export default function FreshShell({ active, onChange, children }) {
             <strong>{labels[active] || "Command"}</strong>
           </div>
 
-          <label className="freshSearch">
-            <span>Search</span>
-            <input placeholder="Find job, client, quote, invoice..." />
-          </label>
+          <FreshTopStatus onNavigate={go} />
+
+          <FreshSearch onNavigate={go} />
 
           <div className="freshTopActions">
             <button type="button" onClick={() => go("command")}>Command</button>
