@@ -38,6 +38,7 @@ const groups = [
     title: "Business",
     items: [
       ["team", "TM", "Team"],
+      ["subcontractors", "SC", "Subcontractors"],
       ["availability", "AV", "Availability"],
       ["worker", "WK", "Worker"],
       ["payroll", "PR", "Payroll"],
@@ -110,6 +111,7 @@ const labels = {
   reviews: "Reviews",
   quality: "Quality",
   team: "Team",
+  subcontractors: "Subcontractors",
   availability: "Availability",
   worker: "Worker",
   payroll: "Payroll",
@@ -170,6 +172,7 @@ const extraMobile = [
   ["customerportal", "CR", "Portal Requests"],
   ["messages", "MS", "Messages"],
   ["team", "TM", "Team"],
+  ["subcontractors", "SC", "Subcontractors"],
   ["availability", "AV", "Availability"],
   ["worker", "WK", "Worker"],
   ["payroll", "PR", "Payroll"],

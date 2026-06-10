@@ -78,6 +78,7 @@ import "./freshBilling.css";
 import "./freshAiUsage.css";
 import "./freshTemplates.css";
 import "./freshIndustries.css";
+import "./freshSubcontractors.css";
 import "./freshGps.css";
 import "./freshXero.css";
 import "./freshGlobalReadable.css";
@@ -131,6 +132,7 @@ import FreshRecurring from "./FreshRecurring";
 import FreshLeads from "./FreshLeads";
 import FreshServices from "./FreshServices";
 import FreshIndustries from "./FreshIndustries";
+import FreshSubcontractors from "./FreshSubcontractors";
 import FreshAssets from "./FreshAssets";
 import FreshIntegrations from "./FreshIntegrations";
 import FreshRoutes from "./FreshRoutes";
@@ -179,6 +181,7 @@ const pages = new Set([
   "gps",
   "xero",
   "team",
+  "subcontractors",
   "availability",
   "payroll",
   "time",
@@ -282,6 +285,7 @@ export default function FreshApp() {
   if (page === "gps") content = <FreshGps onNavigate={goToPage} />;
   if (page === "xero") content = <FreshXero onNavigate={goToPage} />;
   if (page === "team") content = <FreshTeam onNavigate={goToPage} />;
+  if (page === "subcontractors") content = <FreshSubcontractors onNavigate={goToPage} />;
   if (page === "availability") content = <FreshAvailability onNavigate={goToPage} />;
   if (page === "payroll") content = <FreshPayroll onNavigate={goToPage} />;
   if (page === "time") content = <FreshTimeLogs onNavigate={goToPage} />;
