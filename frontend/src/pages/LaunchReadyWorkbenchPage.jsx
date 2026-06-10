@@ -6,43 +6,45 @@ const ACTION_BACKUP_KEY = "churvox_ai_approval_actions_backup_v4";
 
 const CONFIG = {
   jobs: {
-    badge: "Job command workbench",
-    title: "Jobs",
+    badge: "Jobs",
+    title: "Job workbench",
     singular: "job",
     endpoint: "/jobs",
     safe: "/logic/business-records/jobs",
     localKey: "churvox_launch_jobs",
-    hero: "A job should move in one clean path: capture the work, assign the worker, set the money, then prepare dispatch or invoice.",
+    hero: "Create, assign, price and move work without leaving the page.",
     required: ["title", "client_name"],
     nextLabel: "Prepare invoice draft",
-    columns: ["Needs info", "Ready to move", "Recent field activity"],
+    readyLabel: "Ready to dispatch",
+    attentionLabel: "Need details",
     fields: [
       ["title", "Job title"],
       ["client_name", "Client"],
       ["address", "Job address"],
       ["scheduled_date", "Schedule / date"],
       ["assigned_worker", "Worker"],
-      ["status", "Job status", "select", ["Assigned", "Acknowledged", "In Progress", "Completed", "Needs info"]],
-      ["pricing_type", "Pricing type", "select", ["Fixed price", "Hourly", "Fixed + extras", "Hourly + extras", "Needs price"]],
+      ["status", "Status", "select", ["Assigned", "Acknowledged", "In Progress", "Completed", "Needs info"]],
+      ["pricing_type", "Pricing", "select", ["Fixed price", "Hourly", "Fixed + extras", "Hourly + extras", "Needs price"]],
       ["price", "Price / rate"],
       ["recurring", "Recurring", "select", ["No", "Weekly", "Fortnightly", "Monthly", "Custom"]],
-      ["photos_required", "Photos required", "select", ["Not required", "Required", "Before and after"]],
+      ["photos_required", "Photos", "select", ["Not required", "Required", "Before and after"]],
       ["site_check", "GPS / site check", "select", ["Not required", "Required", "Needs review"]],
-      ["worker_note", "Worker-visible note", "textarea"],
-      ["owner_note", "Owner-only note", "textarea"],
+      ["worker_note", "Worker note", "textarea"],
+      ["owner_note", "Owner note", "textarea"],
     ],
   },
   clients: {
-    badge: "Client command records",
-    title: "Clients",
+    badge: "Clients",
+    title: "Client records",
     singular: "client",
     endpoint: "/clients",
     safe: "/logic/business-records/clients",
     localKey: "churvox_launch_clients",
-    hero: "A client record should be usable everywhere: jobs, quotes, invoices, reminders, notes and billing contacts.",
+    hero: "Keep contact, site and billing details clean so jobs and invoices do not break later.",
     required: ["name"],
     nextLabel: "Create first job",
-    columns: ["Needs contact", "Ready for work", "Recent client activity"],
+    readyLabel: "Ready for work",
+    attentionLabel: "Missing contact",
     fields: [
       ["name", "Client name"],
       ["phone", "Phone"],
@@ -55,20 +57,21 @@ const CONFIG = {
     ],
   },
   quotes: {
-    badge: "Quote command workbench",
-    title: "Quotes",
+    badge: "Quotes",
+    title: "Quote pipeline",
     singular: "quote",
     endpoint: "/quotes",
     safe: "/logic/business-records/quotes",
     localKey: "churvox_launch_quotes",
-    hero: "A quote should show the customer, scope, value, status and the next action without hunting around the app.",
+    hero: "Draft, follow up and convert accepted quotes into real jobs.",
     required: ["customer_name", "title"],
     nextLabel: "Convert to job",
-    columns: ["Needs follow-up", "Ready to convert", "Quote activity"],
+    readyLabel: "Accepted / ready",
+    attentionLabel: "Needs follow-up",
     fields: [
       ["customer_name", "Client"],
       ["title", "Quote title"],
-      ["status", "Quote status", "select", ["Draft", "Sent", "Accepted", "Declined", "Expired"]],
+      ["status", "Status", "select", ["Draft", "Sent", "Accepted", "Declined", "Expired"]],
       ["total", "Quote value"],
       ["valid_until", "Valid until"],
       ["scope", "Scope of work", "textarea"],
@@ -77,22 +80,23 @@ const CONFIG = {
     ],
   },
   invoices: {
-    badge: "Invoice command workbench",
-    title: "Invoices",
+    badge: "Invoices",
+    title: "Money desk",
     singular: "invoice",
     endpoint: "/invoices",
     safe: "/logic/business-records/invoices",
     localKey: "churvox_launch_invoices",
-    hero: "An invoice should be reviewed before anything is sent, synced, followed up or marked as handled.",
+    hero: "Review draft invoices before anything is sent, synced, chased or marked handled.",
     required: ["customer_name", "subtotal"],
     nextLabel: "Approve delivery",
-    columns: ["Needs approval", "Ready to send", "Money activity"],
+    readyLabel: "Ready to send",
+    attentionLabel: "Needs approval",
     fields: [
       ["customer_name", "Client"],
       ["customer_email", "Client email"],
       ["job_reference", "Job / invoice reference"],
       ["invoice_type", "Invoice type", "select", ["Job invoice", "Deposit invoice", "Extras", "Time-based", "Adjustment"]],
-      ["deliveryMethod", "Delivery method", "select", ["Draft only", "Churvox internal", "Xero", "Manual external", "MYOB staged/later (inactive)"]],
+      ["deliveryMethod", "Delivery", "select", ["Draft only", "Churvox internal", "Xero", "Manual external", "MYOB staged/later (inactive)"]],
       ["subtotal", "Amount"],
       ["gst_rate", "GST rate"],
       ["due_date", "Due date"],
@@ -101,16 +105,17 @@ const CONFIG = {
     ],
   },
   team: {
-    badge: "Team command roles",
-    title: "Team",
+    badge: "Team",
+    title: "People and roles",
     singular: "team member",
     endpoint: "/logic/team-members",
     safe: "/logic/team-members",
     localKey: "churvox_launch_team",
-    hero: "Team should be simple: invite the person, choose their role, and keep worker, manager, office and payroll access clear.",
+    hero: "Invite workers, managers, office admin and payroll with clear role access.",
     required: ["name", "email"],
     nextLabel: "Prepare onboarding task",
-    columns: ["Needs invite", "Ready to work", "Team activity"],
+    readyLabel: "Ready to work",
+    attentionLabel: "Needs invite",
     fields: [
       ["name", "Full name"],
       ["email", "Email"],
@@ -223,47 +228,25 @@ function buildCommandPayload(area, page, form, selectedId, reason = "Prepared fr
 
 function backupAction(action) {
   const items = readJson(ACTION_BACKUP_KEY);
-  const next = [{ ...action, id: action.id || `local_action_${Date.now()}`, backup: true, updated_at: new Date().toISOString() }, ...items];
-  writeJson(ACTION_BACKUP_KEY, next);
+  writeJson(ACTION_BACKUP_KEY, [{ ...action, id: action.id || `local_action_${Date.now()}`, backup: true, updated_at: new Date().toISOString() }, ...items]);
 }
 
 function Field({ field, form, setForm }) {
   const [key, label, type, options = []] = field;
   const update = (value) => setForm((old) => ({ ...old, [key]: value }));
   return (
-    <label className={type === "textarea" ? "lrField wide" : "lrField"}>
+    <label className={type === "textarea" ? "lbField wide" : "lbField"}>
       <span>{label}</span>
-      {type === "textarea" ? (
-        <textarea value={form[key] || ""} onChange={(event) => update(event.target.value)} />
-      ) : type === "select" ? (
-        <select value={form[key] || options[0]} onChange={(event) => update(event.target.value)}>
-          {options.map((option) => <option key={option} value={option}>{option}</option>)}
-        </select>
-      ) : (
-        <input value={form[key] || ""} onChange={(event) => update(event.target.value)} />
-      )}
+      {type === "textarea" ? <textarea value={form[key] || ""} onChange={(event) => update(event.target.value)} /> : type === "select" ? (
+        <select value={form[key] || options[0]} onChange={(event) => update(event.target.value)}>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select>
+      ) : <input value={form[key] || ""} onChange={(event) => update(event.target.value)} />}
     </label>
-  );
-}
-
-function FlowStep({ number, title, text }) {
-  return <div className="lrStep"><b>{number}</b><span>{title}</span><p>{text}</p></div>;
-}
-
-function OpsCard({ item, area, onPick }) {
-  return (
-    <button type="button" className={needsAttention(area, item) ? "lrOpsItem warn" : "lrOpsItem"} onClick={() => onPick(item)}>
-      <b>{titleOf(area, item)}</b>
-      <span>{statusOf(area, item)}</span>
-      <p>{subOf(area, item)}</p>
-      {item?._local ? <em>Local backup</em> : null}
-    </button>
   );
 }
 
 function Style() {
   return <style>{`
-    .lrRoot,.lrRoot *{box-sizing:border-box;color-scheme:light}.lrRoot{width:100%;min-height:100vh;color:#111827;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.lrWrap{width:100%;max-width:none;margin:0}.lrHero{position:relative;overflow:hidden;isolation:isolate;width:100%;background:radial-gradient(circle at 86% -24%,rgba(249,115,22,.52),transparent 34%),radial-gradient(circle at 14% 116%,rgba(34,211,238,.18),transparent 30%),linear-gradient(135deg,#0b1018 0%,#111827 56%,#070b12 100%);border-left:8px solid #f97316;border-radius:34px;color:#fff;padding:26px 30px;box-shadow:0 24px 70px rgba(2,6,23,.24)}.lrHero:before{content:"";position:absolute;inset:0;z-index:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.055) 0 1px,transparent 1px 56px),repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 46px),linear-gradient(120deg,transparent 0 46%,rgba(251,191,36,.13) 46% 47%,transparent 47% 100%);opacity:.72}.lrHero>*{position:relative;z-index:1}.lrHero small,.lrPanel small,.lrControls small,.lrOps small{display:inline-flex;width:max-content;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#fed7aa;-webkit-text-fill-color:#fed7aa;padding:8px 12px;font-size:10px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}.lrPanel small,.lrControls small,.lrOps small{background:#111827;border:0;color:#fbbf24;-webkit-text-fill-color:#fbbf24}.lrHero h1{margin:14px 0 8px;font-size:clamp(42px,5.1vw,74px);line-height:.9;letter-spacing:-.07em;color:#fff}.lrHero p{max-width:960px;margin:0;color:#f8fafc;font-weight:900;line-height:1.45}.lrStats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}.lrStat{border-radius:18px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);padding:12px}.lrStat b{display:block;color:#fff;font-size:18px;line-height:1}.lrStat span{display:block;color:#e2e8f0;font-size:12px;font-weight:850;margin-top:5px}.lrFlow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:18px}.lrStep{background:#0b1018;border:1px solid rgba(255,255,255,.10);border-left:6px solid #f97316;border-radius:20px;color:#fff;padding:13px}.lrStep b{display:grid;place-items:center;width:28px;height:28px;border-radius:10px;background:#f97316;color:#111827;font-weight:1000}.lrStep span{display:block;margin-top:8px;color:#fff;font-weight:1000;letter-spacing:-.02em}.lrStep p{margin:5px 0 0;color:#e2e8f0;font-size:12px;font-weight:850;line-height:1.35}.lrGrid{display:grid;grid-template-columns:minmax(270px,340px) minmax(0,1fr) minmax(250px,320px);gap:18px;margin-top:18px;align-items:start}.lrPanel,.lrControls,.lrOps{min-width:0;background:#fffaf0;border:1px solid rgba(15,23,42,.16);border-radius:28px;padding:18px;box-shadow:0 18px 46px rgba(2,6,23,.12)}.lrPanel h2,.lrControls h2,.lrOps h2{margin:12px 0 14px;color:#111827;font-size:clamp(26px,3vw,36px);line-height:.95;letter-spacing:-.05em}.lrRows{display:grid;gap:10px;max-height:620px;overflow:auto;padding-right:4px}.lrRows button{text-align:left;border:2px solid rgba(15,23,42,.14);border-radius:18px;background:#fff;color:#111827;padding:13px;cursor:pointer}.lrRows button.active{border-color:#f97316;background:#fff7ed}.lrRows b{display:block;color:#111827;font-size:16px;line-height:1.15}.lrRows span{display:block;margin-top:6px;color:#475569;font-size:12px;font-weight:900;line-height:1.35}.lrLocal{display:inline-flex!important;margin-top:8px!important;color:#7c2d12!important;background:#ffedd5;border-radius:999px;padding:5px 8px;text-transform:uppercase;letter-spacing:.08em}.lrEmpty{background:#111827!important;color:#fff!important;border-radius:18px;padding:14px;font-weight:1000;line-height:1.45}.lrFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.lrField.wide{grid-column:1/-1}.lrField span{display:block;color:#431407;text-transform:uppercase;letter-spacing:.11em;font-size:12px;font-weight:1000;margin-bottom:7px}.lrField input,.lrField textarea,.lrField select{width:100%;min-width:0;border:2px solid #c9a46d!important;border-radius:16px;padding:13px 15px;font-size:16px;font-weight:900;background:#fffdf7!important;color:#020617!important;-webkit-text-fill-color:#020617!important;outline:none!important;box-shadow:0 1px 0 rgba(15,23,42,.10),inset 0 0 0 9999px #fffdf7!important}.lrField textarea{min-height:118px;resize:vertical}.lrField input:focus,.lrField textarea:focus,.lrField select:focus{border-color:#f97316!important;box-shadow:0 0 0 4px rgba(249,115,22,.16),inset 0 0 0 9999px #fff!important}.lrActions{display:grid;gap:10px}.lrActions button{width:100%;border:0;border-radius:16px;padding:14px 16px;font-size:15px;font-weight:1000;cursor:pointer}.lrSave{background:#16a34a;color:#052e16}.lrNext{background:linear-gradient(135deg,#facc15,#fb923c 55%,#22d3ee);color:#111827}.lrCommand{background:#111827;color:#fff}.lrClear{background:#ffedd5;color:#7c2d12;border:2px solid #fed7aa!important}.lrMessage{margin:0;background:#14532d;color:#fff;border-radius:16px;padding:13px 14px;font-weight:1000;line-height:1.45}.lrMessage.warn{background:#451a03}.lrHint{margin:0;color:#475569;font-weight:900;line-height:1.45}.lrSelected{display:grid;gap:8px;margin-top:10px;border-radius:18px;background:#0b1018;color:#fff;padding:13px;border-left:6px solid #f97316}.lrSelected b{color:#fff}.lrSelected span{color:#fbbf24;font-size:12px;font-weight:1000;text-transform:uppercase;letter-spacing:.08em}.lrSelected p{margin:0;color:#e2e8f0;font-weight:900;font-size:13px;line-height:1.35}.lrOps{margin-top:18px}.lrOpsHead{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}.lrOpsHead p{margin:0;color:#475569;font-weight:900;line-height:1.45}.lrOpsGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:14px}.lrLane{display:grid;gap:10px;align-content:start;background:#fffdf7;border:1px solid rgba(15,23,42,.12);border-radius:22px;padding:12px}.lrLane h3{margin:0;color:#111827;font-size:17px;line-height:1;font-weight:1000;letter-spacing:-.03em}.lrOpsItem{width:100%;text-align:left;border:1px solid rgba(15,23,42,.14);border-left:6px solid #16a34a;border-radius:18px;background:#fff;color:#111827;padding:13px;cursor:pointer}.lrOpsItem.warn{border-left-color:#f97316;background:#fff7ed}.lrOpsItem b{display:block;color:#111827;font-size:15px;line-height:1.2}.lrOpsItem span{display:inline-flex;margin-top:7px;border-radius:999px;background:#111827;color:#fbbf24;padding:6px 9px;font-size:10px;font-weight:1000;text-transform:uppercase;letter-spacing:.08em}.lrOpsItem p{margin:8px 0 0;color:#475569;font-size:12px;font-weight:900;line-height:1.35}.lrOpsItem em{display:inline-flex;margin-top:8px;font-style:normal;background:#ffedd5;color:#7c2d12;border-radius:999px;padding:5px 8px;font-size:10px;font-weight:1000;text-transform:uppercase}.lrOpsEmpty{margin:0;background:#111827;color:#fff;border-radius:16px;padding:13px;font-weight:900;line-height:1.35}@media(max-width:1180px){.lrGrid,.lrFlow,.lrOpsGrid{grid-template-columns:1fr}.lrRows{max-height:none}.lrControls{position:static}.lrStats{grid-template-columns:1fr}.lrFields{grid-template-columns:1fr}.lrHero{border-radius:24px;padding:22px}.lrPanel,.lrControls,.lrOps{border-radius:22px}}
+    .lbRoot,.lbRoot *{box-sizing:border-box;color-scheme:light}.lbRoot{width:100%;min-height:100dvh;color:#111827;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.lbStage{width:100%;min-height:calc(100dvh - 48px);display:flex;flex-direction:column;gap:18px}.lbTop{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,440px);gap:18px;align-items:stretch}.lbHero,.lbStats,.lbPanel,.lbRail{border:1px solid rgba(15,23,42,.12);box-shadow:0 18px 50px rgba(2,6,23,.10)}.lbHero{position:relative;overflow:hidden;isolation:isolate;min-height:190px;border-left:8px solid #f97316;border-radius:34px;background:radial-gradient(circle at 92% -20%,rgba(249,115,22,.55),transparent 34%),linear-gradient(135deg,#0b1018 0%,#121a27 58%,#070b12 100%);color:#fff;padding:28px}.lbHero:before{content:"";position:absolute;inset:0;z-index:0;background:linear-gradient(120deg,transparent 0 52%,rgba(251,191,36,.12) 52% 53%,transparent 53%),repeating-linear-gradient(90deg,rgba(255,255,255,.05) 0 1px,transparent 1px 58px);opacity:.7}.lbHero>*{position:relative;z-index:1}.lbBadge,.lbPanel small,.lbRail small{display:inline-flex;width:max-content;border-radius:999px;background:#111827;color:#fbbf24;-webkit-text-fill-color:#fbbf24;padding:8px 12px;font-size:10px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}.lbBadge{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#fed7aa;-webkit-text-fill-color:#fed7aa}.lbHero h1{margin:16px 0 8px;color:#fff;font-size:clamp(44px,5.8vw,82px);line-height:.86;letter-spacing:-.075em}.lbHero p{max-width:900px;margin:0;color:#f8fafc;font-weight:900;line-height:1.45}.lbStats{display:grid;grid-template-columns:1fr;border-radius:30px;background:#fffaf0;padding:16px;gap:10px}.lbStat{display:flex;align-items:center;justify-content:space-between;gap:14px;border-radius:20px;background:#fff;border:1px solid rgba(15,23,42,.10);padding:15px}.lbStat b{font-size:30px;line-height:1;letter-spacing:-.05em;color:#111827}.lbStat span{color:#475569;font-size:12px;font-weight:1000;text-transform:uppercase;letter-spacing:.08em;text-align:right}.lbBody{display:grid;grid-template-columns:minmax(280px,350px) minmax(0,1fr) minmax(280px,330px);gap:18px;align-items:start;flex:1;min-height:0}.lbPanel,.lbRail{border-radius:30px;background:#fffaf0;padding:18px;min-width:0}.lbPanel h2,.lbRail h2{margin:12px 0 14px;color:#111827;font-size:clamp(26px,2.6vw,38px);line-height:.92;letter-spacing:-.055em}.lbSearch{display:grid;gap:10px;margin:0 0 14px}.lbSearch input{width:100%;border:2px solid #e7cfad;border-radius:16px;padding:13px 14px;background:#fff!important;color:#020617!important;-webkit-text-fill-color:#020617!important;font-weight:900;outline:none}.lbChips{display:flex;flex-wrap:wrap;gap:8px}.lbChips button{border:1px solid rgba(15,23,42,.12);border-radius:999px;background:#fff;color:#334155;padding:9px 11px;font-size:12px;font-weight:1000;cursor:pointer}.lbChips button.active{background:#111827;color:#fff}.lbList{display:grid;gap:10px;max-height:calc(100dvh - 420px);min-height:320px;overflow:auto;padding-right:4px}.lbItem{width:100%;text-align:left;border:1px solid rgba(15,23,42,.12);border-left:6px solid #16a34a;border-radius:18px;background:#fff;color:#111827;padding:13px;cursor:pointer}.lbItem.active{border-left-color:#f97316;background:#fff7ed}.lbItem.warn{border-left-color:#f97316}.lbItem b{display:block;color:#111827;font-size:15px;line-height:1.2}.lbItem span{display:block;margin-top:7px;color:#475569;font-size:12px;font-weight:900;line-height:1.35}.lbItem em{display:inline-flex;margin-top:8px;font-style:normal;background:#ffedd5;color:#7c2d12;border-radius:999px;padding:5px 8px;font-size:10px;font-weight:1000;text-transform:uppercase}.lbEmpty{margin:0;border-radius:18px;background:#111827;color:#fff;padding:14px;font-weight:950;line-height:1.4}.lbEditor{min-height:560px}.lbFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.lbField.wide{grid-column:1/-1}.lbField span{display:block;color:#431407;text-transform:uppercase;letter-spacing:.11em;font-size:11px;font-weight:1000;margin-bottom:7px}.lbField input,.lbField textarea,.lbField select{width:100%;min-width:0;border:2px solid #c9a46d!important;border-radius:16px;padding:13px 15px;font-size:15px;font-weight:900;background:#fffdf7!important;color:#020617!important;-webkit-text-fill-color:#020617!important;outline:none!important;box-shadow:inset 0 0 0 9999px #fffdf7!important}.lbField textarea{min-height:112px;resize:vertical}.lbField input:focus,.lbField textarea:focus,.lbField select:focus{border-color:#f97316!important;box-shadow:0 0 0 4px rgba(249,115,22,.15),inset 0 0 0 9999px #fff!important}.lbMessage{margin:0 0 12px;background:#14532d;color:#fff;border-radius:18px;padding:13px 14px;font-weight:1000;line-height:1.45}.lbMessage.warn{background:#451a03}.lbActions{display:grid;gap:10px}.lbActions button{width:100%;border:0;border-radius:16px;padding:14px 16px;font-size:15px;font-weight:1000;cursor:pointer}.lbSave{background:#16a34a;color:#052e16}.lbNext{background:linear-gradient(135deg,#facc15,#fb923c 55%,#22d3ee);color:#111827}.lbCommand{background:#111827;color:#fff}.lbClear{background:#ffedd5;color:#7c2d12;border:2px solid #fed7aa!important}.lbFocus{display:grid;gap:10px;margin-top:14px;border-radius:20px;background:#0b1018;color:#fff;padding:14px;border-left:6px solid #f97316}.lbFocus b{color:#fff}.lbFocus span{color:#fbbf24;font-size:12px;font-weight:1000;text-transform:uppercase;letter-spacing:.08em}.lbFocus p{margin:0;color:#e2e8f0;font-weight:900;font-size:13px;line-height:1.35}.lbMiniQueue{display:grid;gap:9px;margin-top:14px}.lbMiniQueue h3{margin:0;color:#111827;font-size:15px;font-weight:1000;letter-spacing:-.02em}.lbMiniQueue button{width:100%;text-align:left;border:1px solid rgba(15,23,42,.12);border-radius:16px;background:#fff;color:#111827;padding:11px;cursor:pointer}.lbMiniQueue b{display:block;font-size:13px}.lbMiniQueue span{display:block;margin-top:5px;color:#64748b;font-size:11px;font-weight:900}.lbHint{margin:12px 0 0;color:#64748b;font-size:12px;font-weight:900;line-height:1.4}@media(max-width:1180px){.lbTop,.lbBody{grid-template-columns:1fr}.lbHero{min-height:auto}.lbStats{grid-template-columns:repeat(3,minmax(0,1fr))}.lbList{max-height:none}.lbEditor{min-height:auto}}@media(max-width:720px){.lbStage{gap:12px}.lbHero,.lbPanel,.lbRail{border-radius:22px;padding:16px}.lbHero h1{font-size:clamp(40px,13vw,58px)}.lbStats{grid-template-columns:1fr}.lbFields{grid-template-columns:1fr}.lbStat b{font-size:24px}}
   `}</style>;
 }
 
@@ -276,11 +259,22 @@ export default function LaunchReadyWorkbenchPage({ area = "jobs" }) {
   const [selectedRecord, setSelectedRecord] = React.useState(null);
   const [message, setMessage] = React.useState(`Loading ${page.title.toLowerCase()}...`);
   const [busy, setBusy] = React.useState(false);
+  const [query, setQuery] = React.useState("");
+  const [filter, setFilter] = React.useState("all");
 
   const localRecords = React.useMemo(() => readJson(page.localKey), [page.localKey, records.length]);
-  const attentionRecords = React.useMemo(() => records.filter((item) => needsAttention(area, item)).slice(0, 8), [records, area]);
-  const readyRecords = React.useMemo(() => records.filter((item) => !needsAttention(area, item)).slice(0, 8), [records, area]);
-  const activityRecords = React.useMemo(() => [...records].slice(0, 8), [records]);
+  const attentionRecords = React.useMemo(() => records.filter((item) => needsAttention(area, item)), [records, area]);
+  const readyRecords = React.useMemo(() => records.filter((item) => !needsAttention(area, item)), [records, area]);
+  const filteredRecords = React.useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return records.filter((item) => {
+      if (filter === "attention" && !needsAttention(area, item)) return false;
+      if (filter === "ready" && needsAttention(area, item)) return false;
+      if (filter === "local" && !item?._local) return false;
+      if (!q) return true;
+      return `${titleOf(area, item)} ${subOf(area, item)} ${statusOf(area, item)}`.toLowerCase().includes(q);
+    });
+  }, [records, query, filter, area]);
 
   async function load() {
     setBusy(true);
@@ -290,17 +284,17 @@ export default function LaunchReadyWorkbenchPage({ area = "jobs" }) {
       if (safe?.success === false || safe?.data?.success === false) throw new Error(safe?.error || safe?.data?.error || "Safe route failed");
       const list = listFrom(safe, area);
       setRecords([...list, ...local]);
-      setMessage(list.length ? `${page.title} loaded. Pick one to edit, or create a new ${page.singular}.` : `No ${page.title.toLowerCase()} found yet. Create the first one here.`);
+      setMessage(list.length ? `${page.badge} loaded. Pick one from the list or create a new ${page.singular}.` : `No ${page.badge.toLowerCase()} found yet. Create the first one here.`);
     } catch {
       try {
         const fallback = await api.get(page.endpoint, { timeout: 15000 });
         if (fallback?.success === false || fallback?.data?.success === false) throw new Error(fallback?.error || fallback?.data?.error || "Fallback route failed");
         const list = listFrom(fallback, area);
         setRecords([...list, ...local]);
-        setMessage(`${page.title} loaded through fallback route. This page still works if safe records are catching up.`);
+        setMessage(`${page.badge} loaded through fallback route.`);
       } catch {
         setRecords(local);
-        setMessage(local.length ? `Backend unavailable. Showing locally saved ${page.title.toLowerCase()}.` : `Backend unavailable. You can still save locally and prepare Command actions.`);
+        setMessage(local.length ? `Backend unavailable. Showing locally saved ${page.badge.toLowerCase()}.` : `Backend unavailable. You can still save locally and prepare Command actions.`);
       }
     } finally {
       setBusy(false);
@@ -311,6 +305,8 @@ export default function LaunchReadyWorkbenchPage({ area = "jobs" }) {
     setForm(blank(page));
     setSelectedId("");
     setSelectedRecord(null);
+    setQuery("");
+    setFilter("all");
     load();
   }, [area]);
 
@@ -319,7 +315,7 @@ export default function LaunchReadyWorkbenchPage({ area = "jobs" }) {
     setSelectedId(id);
     setSelectedRecord(item);
     setForm(formFrom(page, item));
-    setMessage(`${titleOf(area, item)} loaded in the editor. Make changes here, then save or prepare the next action.`);
+    setMessage(`${titleOf(area, item)} loaded. Edit it, save it, or run the next action.`);
   }
 
   function clearForm() {
@@ -357,18 +353,16 @@ export default function LaunchReadyWorkbenchPage({ area = "jobs" }) {
     setBusy(true);
     try {
       const shouldPatch = selectedId && !String(selectedId).startsWith("local_") && !selectedRecord?._local;
-      const res = shouldPatch
-        ? await api.patch(`${page.endpoint}/${encodeURIComponent(selectedId)}`, form, { timeout: 25000 })
-        : await api.post(page.endpoint, form, { timeout: 25000 });
+      const res = shouldPatch ? await api.patch(`${page.endpoint}/${encodeURIComponent(selectedId)}`, form, { timeout: 25000 }) : await api.post(page.endpoint, form, { timeout: 25000 });
       if (res?.success === false || res?.data?.success === false) throw new Error(res?.error || res?.data?.error || "Save failed");
       toast.success(`${page.singular} saved`);
-      setMessage(`${page.singular} saved. The page has reloaded so you can keep working.`);
+      setMessage(`${page.singular} saved.`);
       await load();
       return res?.data?.item || res?.data?.record || res?.data?.data || form;
     } catch (error) {
       const record = saveLocal();
       toast.error("Backend save failed — saved locally");
-      setMessage(`${error?.message || "Backend save failed"}. Saved locally so you can keep working tomorrow.`);
+      setMessage(`${error?.message || "Backend save failed"}. Saved locally so you can keep working.`);
       return record;
     } finally {
       setBusy(false);
@@ -420,7 +414,7 @@ export default function LaunchReadyWorkbenchPage({ area = "jobs" }) {
         const res = await api.post("/logic/invoice-approval", payload, { timeout: 25000 });
         if (res?.success === false || res?.data?.success === false) throw new Error(res?.error || res?.data?.error || "Invoice approval failed");
         toast.success("Invoice delivery approved");
-        setMessage(res?.data?.message || "Invoice delivery approved. No silent customer email or fake sync wording used.");
+        setMessage(res?.data?.message || "Invoice delivery approved.");
       } else {
         await prepareCommand("Onboarding task prepared for owner review");
       }
@@ -432,98 +426,82 @@ export default function LaunchReadyWorkbenchPage({ area = "jobs" }) {
   }
 
   const selectedTitle = selectedRecord ? titleOf(area, selectedRecord) : titleOf(area, form);
-  const count = records.length;
+  const hotList = attentionRecords.length ? attentionRecords.slice(0, 4) : readyRecords.slice(0, 4);
 
   return (
-    <main className="lrRoot">
+    <main className="lbRoot">
       <Style />
-      <section className="lrWrap">
-        <article className="lrHero">
-          <small>{page.badge}</small>
-          <h1>{page.title}</h1>
-          <p>{page.hero}</p>
-          <div className="lrStats">
-            <div className="lrStat"><b>{count}</b><span>Loaded records</span></div>
-            <div className="lrStat"><b>{attentionRecords.length}</b><span>Need attention</span></div>
-            <div className="lrStat"><b>{localRecords.length}</b><span>Local backups</span></div>
-          </div>
-        </article>
+      <section className="lbStage">
+        <header className="lbTop">
+          <section className="lbHero">
+            <span className="lbBadge">{page.badge}</span>
+            <h1>{page.title}</h1>
+            <p>{page.hero}</p>
+          </section>
+          <aside className="lbStats">
+            <div className="lbStat"><b>{records.length}</b><span>Total records</span></div>
+            <div className="lbStat"><b>{attentionRecords.length}</b><span>{page.attentionLabel}</span></div>
+            <div className="lbStat"><b>{localRecords.length}</b><span>Local backups</span></div>
+          </aside>
+        </header>
 
-        <section className="lrFlow" aria-label="Workbench flow">
-          <FlowStep number="1" title="Capture" text="Create or pick the record from the left list." />
-          <FlowStep number="2" title="Clean" text="Fill the fields that drive jobs, invoices and follow-ups." />
-          <FlowStep number="3" title="Act" text="Save, convert, approve or prepare the next step." />
-          <FlowStep number="4" title="Command" text="Risky decisions go to the owner approval queue." />
-        </section>
-
-        <section className="lrGrid">
-          <aside className="lrPanel">
-            <small>{page.title} list</small>
-            <h2>{busy ? "Working..." : `${count} records`}</h2>
-            <div className="lrRows">
-              {records.length ? records.slice(0, 80).map((item) => {
+        <section className="lbBody">
+          <aside className="lbPanel">
+            <small>{page.badge} list</small>
+            <h2>{busy ? "Working..." : "Find record"}</h2>
+            <div className="lbSearch">
+              <input placeholder={`Search ${page.badge.toLowerCase()}...`} value={query} onChange={(event) => setQuery(event.target.value)} />
+              <div className="lbChips">
+                <button type="button" className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>All</button>
+                <button type="button" className={filter === "attention" ? "active" : ""} onClick={() => setFilter("attention")}>Needs</button>
+                <button type="button" className={filter === "ready" ? "active" : ""} onClick={() => setFilter("ready")}>Ready</button>
+                <button type="button" className={filter === "local" ? "active" : ""} onClick={() => setFilter("local")}>Local</button>
+              </div>
+            </div>
+            <div className="lbList">
+              {filteredRecords.length ? filteredRecords.slice(0, 90).map((item) => {
                 const id = idOf(item) || `${titleOf(area, item)}-${subOf(area, item)}`;
                 return (
-                  <button type="button" key={id} className={idOf(item) === selectedId ? "active" : ""} onClick={() => pick(item)}>
+                  <button type="button" key={id} className={`lbItem ${idOf(item) === selectedId ? "active" : ""} ${needsAttention(area, item) ? "warn" : ""}`} onClick={() => pick(item)}>
                     <b>{titleOf(area, item)}</b>
                     <span>{subOf(area, item)}</span>
-                    {item?._local ? <span className="lrLocal">Local backup</span> : null}
+                    {item?._local ? <em>Local backup</em> : null}
                   </button>
                 );
-              }) : <p className="lrEmpty">No records yet. Create the first {page.singular} in the form.</p>}
+              }) : <p className="lbEmpty">No matching records. Create a new {page.singular} in the editor.</p>}
             </div>
           </aside>
 
-          <section className="lrPanel">
-            <small>{selectedId ? "Edit record" : "New record"}</small>
+          <section className="lbPanel lbEditor">
+            <small>{selectedId ? "Editing" : "New record"}</small>
             <h2>{selectedId ? selectedTitle : `New ${page.singular}`}</h2>
-            <div className="lrFields">
+            <div className="lbFields">
               {page.fields.map((field) => <Field key={field[0]} field={field} form={form} setForm={setForm} />)}
             </div>
           </section>
 
-          <aside className="lrControls">
-            <small>Owner controls</small>
-            <h2>Next action</h2>
-            <p className={message.includes("failed") || message.includes("unavailable") || message.includes("required") ? "lrMessage warn" : "lrMessage"}>{message}</p>
-            <div className="lrActions">
-              <button type="button" className="lrSave" disabled={busy} onClick={save}>{busy ? "Saving..." : `Save ${page.singular}`}</button>
-              <button type="button" className="lrNext" disabled={busy} onClick={nextAction}>{page.nextLabel}</button>
-              <button type="button" className="lrCommand" disabled={busy} onClick={() => prepareCommand("Prepared for owner approval from workbench")}>Send to Command queue</button>
-              <button type="button" className="lrClear" disabled={busy} onClick={clearForm}>Clear / new</button>
-              <button type="button" className="lrClear" disabled={busy} onClick={load}>Refresh</button>
+          <aside className="lbRail">
+            <small>Owner actions</small>
+            <h2>Next move</h2>
+            <p className={message.includes("failed") || message.includes("unavailable") || message.includes("required") ? "lbMessage warn" : "lbMessage"}>{message}</p>
+            <div className="lbActions">
+              <button type="button" className="lbSave" disabled={busy} onClick={save}>{busy ? "Saving..." : `Save ${page.singular}`}</button>
+              <button type="button" className="lbNext" disabled={busy} onClick={nextAction}>{page.nextLabel}</button>
+              <button type="button" className="lbCommand" disabled={busy} onClick={() => prepareCommand("Prepared for owner approval from workbench")}>Send to Command queue</button>
+              <button type="button" className="lbClear" disabled={busy} onClick={clearForm}>New / clear</button>
+              <button type="button" className="lbClear" disabled={busy} onClick={load}>Refresh</button>
             </div>
-            <div className="lrSelected">
-              <b>{selectedId ? "Selected record" : "Current form"}</b>
+            <div className="lbFocus">
+              <b>{selectedId ? "Selected" : "Current"}</b>
               <span>{selectedTitle}</span>
-              <p>Pick a record, edit it, save it, then prepare the next business action from here.</p>
+              <p>This page is for doing the work. Command is only for approvals.</p>
             </div>
-            <p className="lrHint">If the backend is down, Churvox keeps a local backup so testing can continue.</p>
+            <div className="lbMiniQueue">
+              <h3>{attentionRecords.length ? page.attentionLabel : page.readyLabel}</h3>
+              {hotList.length ? hotList.map((item) => <button type="button" key={`hot-${idOf(item) || titleOf(area, item)}`} onClick={() => pick(item)}><b>{titleOf(area, item)}</b><span>{statusOf(area, item)}</span></button>) : <p className="lbHint">No urgent records loaded.</p>}
+            </div>
+            <p className="lbHint">Desktop uses the full screen. Tablet and phone stack into the same order.</p>
           </aside>
-        </section>
-
-        <section className="lrOps">
-          <div className="lrOpsHead">
-            <div>
-              <small>Operations board</small>
-              <h2>{area === "jobs" ? "What needs to move next" : `${page.title} workflow`}</h2>
-              <p>This replaces the messy activity dump with three useful lanes: what needs attention, what is ready, and what changed recently.</p>
-            </div>
-          </div>
-          <div className="lrOpsGrid">
-            <section className="lrLane">
-              <h3>{page.columns[0]}</h3>
-              {attentionRecords.length ? attentionRecords.map((item) => <OpsCard key={`a-${idOf(item) || titleOf(area, item)}`} item={item} area={area} onPick={pick} />) : <p className="lrOpsEmpty">Nothing urgent here.</p>}
-            </section>
-            <section className="lrLane">
-              <h3>{page.columns[1]}</h3>
-              {readyRecords.length ? readyRecords.map((item) => <OpsCard key={`r-${idOf(item) || titleOf(area, item)}`} item={item} area={area} onPick={pick} />) : <p className="lrOpsEmpty">Create or clean records to fill this lane.</p>}
-            </section>
-            <section className="lrLane">
-              <h3>{page.columns[2]}</h3>
-              {activityRecords.length ? activityRecords.map((item) => <OpsCard key={`x-${idOf(item) || titleOf(area, item)}`} item={item} area={area} onPick={pick} />) : <p className="lrOpsEmpty">No recent activity loaded yet.</p>}
-            </section>
-          </div>
         </section>
       </section>
     </main>
