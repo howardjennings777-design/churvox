@@ -1,0 +1,73 @@
+/* Final form/input contrast lock — loaded after every fresh CSS file */
+
+.freshApp input,
+.freshApp textarea,
+.freshApp select,
+.freshApp option {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  background: #ffffff !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+  caret-color: #0f172a !important;
+}
+
+.freshApp input *,
+.freshApp textarea *,
+.freshApp select * {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+.freshApp input::placeholder,
+.freshApp textarea::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  opacity: 1 !important;
+}
+
+.freshApp input:focus,
+.freshApp textarea:focus,
+.freshApp select:focus {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  background: #ffffff !important;
+  border-color: rgba(249,115,22,.65) !important;
+  outline: 3px solid rgba(249,115,22,.18) !important;
+}
+
+.freshApp input[readonly],
+.freshApp textarea[readonly],
+.freshApp input:disabled,
+.freshApp textarea:disabled,
+.freshApp select:disabled {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  background: #ffffff !important;
+  opacity: 1 !important;
+}
+
+.freshApp input:-webkit-autofill,
+.freshApp textarea:-webkit-autofill,
+.freshApp select:-webkit-autofill {
+  -webkit-text-fill-color: #0f172a !important;
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+  transition: background-color 9999s ease-in-out 0s !important;
+}
+
+.freshApp label,
+.freshApp .freshField,
+.freshApp .freshField span {
+  opacity: 1 !important;
+}
+
+.freshApp .freshField span {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}
+
+.freshApp ::selection {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}

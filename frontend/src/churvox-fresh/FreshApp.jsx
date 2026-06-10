@@ -22,6 +22,7 @@ import "./freshPolish.css";
 import "./freshTopbar.css";
 import "./freshQuickCreate.css";
 import "./freshButtonContrast.css";
+import "./freshFormContrast.css";
 
 import FreshShell from "./FreshShell";
 import FreshCommand from "./FreshCommand";
