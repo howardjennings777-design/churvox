@@ -10,3 +10,19 @@
   color: #475569 !important;
   -webkit-text-fill-color: #475569 !important;
 }
+
+.freshSearchWrap {
+  z-index: 7000;
+}
+
+.freshSearch input {
+  pointer-events: auto !important;
+}
+
+.freshSearchResults {
+  pointer-events: auto !important;
+}
+
+.freshSearchResults button {
+  pointer-events: auto !important;
+}

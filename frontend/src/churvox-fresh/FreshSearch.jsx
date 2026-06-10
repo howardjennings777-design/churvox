@@ -14,6 +14,54 @@ const keys = {
   support: "churvox:fresh-support:v1",
 };
 
+const fallback = {
+  commandBoxes: [
+    { id: "invoice-ready", title: "Invoice ready", group: "Money", status: "Pending", info: "Aroha Property Care · $85 draft" },
+    { id: "quote-follow-up", title: "Follow-up needed", group: "Quotes", status: "Pending", info: "Birchville Rentals · 6 days no reply" },
+    { id: "job-access", title: "Job needs access", group: "Jobs", status: "Pending", info: "Driveway clean · tenant access not confirmed" },
+  ],
+  commandInbox: [],
+  jobs: [
+    { id: "job-1001", title: "Lawn service", client: "Aroha Property Care", status: "Ready", price: "$85 fixed" },
+    { id: "job-1002", title: "Garden tidy", client: "Lower Hutt Medical Centre", status: "In progress", price: "$140 fixed" },
+    { id: "job-1003", title: "Driveway clean", client: "Birchville Rentals", status: "Blocked", price: "$240 quote" },
+  ],
+  dispatch: [
+    { id: "dispatch-1", job: "Lawn service", client: "Aroha Property Care", status: "Ready", worker: "Matiu Rangi" },
+    { id: "dispatch-2", job: "Garden tidy", client: "Lower Hutt Medical Centre", status: "On site", worker: "Ana Williams" },
+    { id: "dispatch-3", job: "Driveway clean", client: "Birchville Rentals", status: "Blocked", worker: "Unassigned" },
+  ],
+  clients: [
+    { id: "client-1", name: "Aroha Property Care", status: "Active", email: "office@arohaproperty.co.nz", billingEmail: "accounts@arohaproperty.co.nz" },
+    { id: "client-2", name: "Birchville Rentals", status: "Needs setup", email: "manager@birchvillerentals.co.nz", billingEmail: "" },
+    { id: "client-3", name: "Lower Hutt Medical Centre", status: "Active", email: "admin@lhmedical.co.nz", billingEmail: "accounts@lhmedical.co.nz" },
+  ],
+  quotes: [
+    { id: "QT-2041", client: "Birchville Rentals", title: "Driveway clean", status: "Sent", amount: 240 },
+    { id: "QT-2042", client: "Aroha Property Care", title: "Monthly grounds care", status: "Draft", amount: 420 },
+    { id: "QT-2038", client: "Lower Hutt Medical Centre", title: "Entry hedge tidy", status: "Accepted", amount: 180 },
+  ],
+  invoices: [
+    { id: "INV-1007", client: "Aroha Property Care", job: "Lawn service", status: "Draft", amount: 85 },
+    { id: "INV-1002", client: "Birchville Rentals", job: "Driveway clean", status: "Overdue", amount: 190 },
+    { id: "INV-1004", client: "Lower Hutt Medical Centre", job: "Garden tidy", status: "Sent", amount: 140 },
+  ],
+  team: [
+    { id: "team-1", name: "Matiu Rangi", role: "Worker", status: "Active", currentJob: "Lawn service" },
+    { id: "team-2", name: "Ana Williams", role: "Lead worker", status: "Active", currentJob: "Garden tidy" },
+    { id: "team-3", name: "Tama Smith", role: "Worker", status: "Invite sent", currentJob: "Not assigned" },
+  ],
+  payroll: [
+    { id: "pay-1", name: "Matiu Rangi", role: "Worker", status: "Ready", ordinaryHours: 31.5 },
+    { id: "pay-2", name: "Ana Williams", role: "Lead worker", status: "Needs review", ordinaryHours: 36 },
+    { id: "pay-3", name: "Tama Smith", role: "Worker", status: "Draft", ordinaryHours: 8 },
+  ],
+  support: [
+    { id: "SUP-001", title: "Finish onboarding setup", status: "Open", priority: "High" },
+    { id: "SUP-002", title: "Check invoice sending flow", status: "Watching", priority: "Medium" },
+  ],
+};
+
 function readList(key) {
   try {
     if (typeof window === "undefined") return [];
@@ -26,24 +74,22 @@ function readList(key) {
   }
 }
 
+function mergeWithFallback(saved, defaults) {
+  const seen = new Set(saved.map((item) => item.id).filter(Boolean));
+  return [...saved, ...defaults.filter((item) => !seen.has(item.id))];
+}
+
+function list(name) {
+  return mergeWithFallback(readList(keys[name]), fallback[name] || []);
+}
+
 function money(value) {
   return `$${Number(value || 0).toFixed(0)}`;
 }
 
 function buildRecords() {
-  const commandBoxes = readList(keys.commandBoxes);
-  const commandInbox = readList(keys.commandInbox);
-  const jobs = readList(keys.jobs);
-  const dispatch = readList(keys.dispatch);
-  const clients = readList(keys.clients);
-  const quotes = readList(keys.quotes);
-  const invoices = readList(keys.invoices);
-  const team = readList(keys.team);
-  const payroll = readList(keys.payroll);
-  const support = readList(keys.support);
-
   return [
-    ...commandBoxes.map((item) => ({
+    ...list("commandBoxes").map((item) => ({
       id: item.id,
       area: "Command",
       title: item.title || "Command item",
@@ -51,7 +97,7 @@ function buildRecords() {
       page: "command",
     })),
 
-    ...commandInbox.map((item) => ({
+    ...list("commandInbox").map((item) => ({
       id: item.id,
       area: "Command",
       title: item.title || "Inbox issue",
@@ -59,7 +105,7 @@ function buildRecords() {
       page: "command",
     })),
 
-    ...jobs.map((job) => ({
+    ...list("jobs").map((job) => ({
       id: job.id,
       area: "Jobs",
       title: job.title || "Job",
@@ -67,7 +113,7 @@ function buildRecords() {
       page: "jobs",
     })),
 
-    ...dispatch.map((item) => ({
+    ...list("dispatch").map((item) => ({
       id: item.id,
       area: "Dispatch",
       title: item.job || "Dispatch job",
@@ -75,7 +121,7 @@ function buildRecords() {
       page: "dispatch",
     })),
 
-    ...clients.map((client) => ({
+    ...list("clients").map((client) => ({
       id: client.id,
       area: "Clients",
       title: client.name || "Client",
@@ -83,7 +129,7 @@ function buildRecords() {
       page: "clients",
     })),
 
-    ...quotes.map((quote) => ({
+    ...list("quotes").map((quote) => ({
       id: quote.id,
       area: "Quotes",
       title: quote.id || "Quote",
@@ -91,7 +137,7 @@ function buildRecords() {
       page: "quotes",
     })),
 
-    ...invoices.map((invoice) => ({
+    ...list("invoices").map((invoice) => ({
       id: invoice.id,
       area: "Invoices",
       title: invoice.id || "Invoice",
@@ -99,7 +145,7 @@ function buildRecords() {
       page: "invoices",
     })),
 
-    ...team.map((member) => ({
+    ...list("team").map((member) => ({
       id: member.id,
       area: "Team",
       title: member.name || "Team member",
@@ -107,7 +153,7 @@ function buildRecords() {
       page: "team",
     })),
 
-    ...payroll.map((person) => ({
+    ...list("payroll").map((person) => ({
       id: person.id,
       area: "Payroll",
       title: person.name || "Payroll record",
@@ -115,7 +161,7 @@ function buildRecords() {
       page: "payroll",
     })),
 
-    ...support.map((ticket) => ({
+    ...list("support").map((ticket) => ({
       id: ticket.id,
       area: "Support",
       title: ticket.title || "Support item",
@@ -123,27 +169,9 @@ function buildRecords() {
       page: "support",
     })),
 
-    {
-      id: "",
-      area: "Settings",
-      title: "GST and business setup",
-      meta: "Business name · region · email · accounting · automation",
-      page: "settings",
-    },
-    {
-      id: "",
-      area: "Plans",
-      title: "Operator and Command plans",
-      meta: "Start · Crew · Operator · Command · Growth Pack",
-      page: "plans",
-    },
-    {
-      id: "",
-      area: "Reports",
-      title: "Live reports",
-      meta: "Revenue · jobs · risks · payroll · invoices",
-      page: "reports",
-    },
+    { id: "", area: "Settings", title: "GST and business setup", meta: "Business name · region · email · accounting · automation", page: "settings" },
+    { id: "", area: "Plans", title: "Operator and Command plans", meta: "Start · Crew · Operator · Command · Growth Pack", page: "plans" },
+    { id: "", area: "Reports", title: "Live reports", meta: "Revenue · jobs · risks · payroll · invoices", page: "reports" },
   ];
 }
 
@@ -151,11 +179,11 @@ export default function FreshSearch({ onNavigate }) {
   const [query, setQuery] = React.useState("");
   const [records, setRecords] = React.useState(buildRecords);
 
-  React.useEffect(() => {
-    function refresh() {
-      setRecords(buildRecords());
-    }
+  function refresh() {
+    setRecords(buildRecords());
+  }
 
+  React.useEffect(() => {
     window.addEventListener("churvox:fresh-data-updated", refresh);
     window.addEventListener("storage", refresh);
 
@@ -175,13 +203,26 @@ export default function FreshSearch({ onNavigate }) {
         .filter((item) =>
           `${item.area} ${item.title} ${item.meta}`.toLowerCase().includes(clean)
         )
-        .slice(0, 9)
+        .slice(0, 10)
     : [];
 
   function open(item) {
+    if (!item) return;
+
     if (item.id) setFreshFocus(item.page, item.id);
     onNavigate?.(item.page);
     setQuery("");
+  }
+
+  function onKeyDown(event) {
+    if (event.key === "Enter" && results[0]) {
+      event.preventDefault();
+      open(results[0]);
+    }
+
+    if (event.key === "Escape") {
+      setQuery("");
+    }
   }
 
   return (
@@ -190,15 +231,25 @@ export default function FreshSearch({ onNavigate }) {
         <span>Search</span>
         <input
           value={query}
+          onFocus={refresh}
+          onKeyDown={onKeyDown}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Find job, client, quote, invoice..."
+          placeholder="Try Birchville, INV-1007, Matiu..."
+          aria-label="Search Churvox fresh preview"
         />
       </label>
 
       {results.length > 0 && (
         <div className="freshSearchResults">
           {results.map((item, index) => (
-            <button type="button" key={`${item.area}-${item.title}-${index}`} onClick={() => open(item)}>
+            <button
+              type="button"
+              key={`${item.area}-${item.title}-${item.id || index}`}
+              onMouseDown={(event) => {
+                event.preventDefault();
+                open(item);
+              }}
+            >
               <strong>{item.title}</strong>
               <span>{item.area} · {item.meta}</span>
             </button>
@@ -210,7 +261,7 @@ export default function FreshSearch({ onNavigate }) {
         <div className="freshSearchResults">
           <div className="freshNoResults">
             <strong>No result yet</strong>
-            <span>Try job, invoice, quote, client, payroll, Command or support.</span>
+            <span>Try Birchville, INV-1007, Matiu, quote, payroll, Command or support.</span>
           </div>
         </div>
       )}
