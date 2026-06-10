@@ -18,6 +18,7 @@ import './styles/dispatch-board-clean-polish.css';
 import './styles/clients-board-clean-polish.css';
 import './styles/quotes-board-clean-polish.css';
 import './styles/churvox-clean-system.css';
+import './styles/launch-workbench-fit.css';
 import './runtime/churvoxContrastGuard';
 
 // CHURVOX_JOBS_BOARD_ROUTE_CLASS_20260609
@@ -88,5 +89,3 @@ root.render(
     <RecordWorkspacePopupBridgeV2 />
   </React.StrictMode>
 );
-
-
