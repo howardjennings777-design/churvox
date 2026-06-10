@@ -66,6 +66,7 @@ import "./freshAlerts.css";
 import "./freshAudit.css";
 import "./freshSetup.css";
 import "./freshImports.css";
+import "./freshExports.css";
 import "./freshRoles.css";
 import "./freshBilling.css";
 import "./freshAiUsage.css";
@@ -96,6 +97,7 @@ import FreshAlerts from "./FreshAlerts";
 import FreshAudit from "./FreshAudit";
 import FreshSetup from "./FreshSetup";
 import FreshImports from "./FreshImports";
+import FreshExports from "./FreshExports";
 import FreshRoles from "./FreshRoles";
 import FreshBilling from "./FreshBilling";
 import FreshAiUsage from "./FreshAiUsage";
@@ -148,6 +150,7 @@ const pages = new Set([
   "audit",
   "setup",
   "imports",
+  "exports",
   "roles",
   "billing",
   "aiusage",
@@ -242,6 +245,7 @@ export default function FreshApp() {
   if (page === "audit") content = <FreshAudit onNavigate={goToPage} />;
   if (page === "setup") content = <FreshSetup onNavigate={goToPage} />;
   if (page === "imports") content = <FreshImports onNavigate={goToPage} />;
+  if (page === "exports") content = <FreshExports onNavigate={goToPage} />;
   if (page === "roles") content = <FreshRoles onNavigate={goToPage} />;
   if (page === "billing") content = <FreshBilling onNavigate={goToPage} />;
   if (page === "aiusage") content = <FreshAiUsage onNavigate={goToPage} />;
