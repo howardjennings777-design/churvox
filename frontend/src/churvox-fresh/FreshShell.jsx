@@ -25,6 +25,7 @@ const groups = [
       ["variations", "VR", "Variations"],
       ["warranties", "WA", "Warranties"],
       ["clients", "CL", "Clients"],
+      ["customermemory", "CM", "Customer Memory"],
       ["quotes", "QT", "Quotes"],
       ["invoices", "IV", "Invoices"],
       ["portal", "PT", "Portal"],
@@ -53,6 +54,7 @@ const groups = [
       ["time", "TL", "Time logs"],
       ["gps", "GP", "GPS"],
       ["reports", "RP", "Reports"],
+      ["businesshealth", "BH", "Business Health"],
       ["expenses", "EP", "Expenses"],
   ["profit", "PF", "Profit"],
       ["payments", "PY", "Payments"],
@@ -117,6 +119,7 @@ const labels = {
   extras: "Extras",
   variations: "Variations",
   clients: "Clients",
+  customermemory: "Customer Memory",
   quotes: "Quotes",
   invoices: "Invoices",
   invoicecheck: "Invoice Checker",
@@ -140,6 +143,7 @@ const labels = {
   time: "Time logs",
   gps: "GPS",
   reports: "Reports",
+  businesshealth: "Business Health",
   profit: "Profit",
   expenses: "Expenses",
   assets: "Assets",
@@ -183,6 +187,8 @@ const mobileItems = [
 ];
 
 const extraMobile = [
+  ["businesshealth", "BH", "Business Health"],
+  ["customermemory", "CM", "Customer Memory"],
   ["missinginfo", "MI", "Missing Info"],
   ["workerbrief", "WB", "Worker Brief"],
   ["planday", "PD", "Plan My Day"],

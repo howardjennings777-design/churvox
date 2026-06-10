@@ -96,6 +96,8 @@ import "./freshWarranties.css";
 import "./freshWorker.css";
 import "./freshWorkerBrief.css";
 import "./freshMissingInfo.css";
+import "./freshCustomerMemory.css";
+import "./freshBusinessHealth.css";
 import "./freshXero.css";
 import "./freshGlobalReadable.css";
 import "./freshNuclearReadable.css";
@@ -175,6 +177,8 @@ import FreshWarranties from "./FreshWarranties";
 import FreshWorker from "./FreshWorker";
 import FreshWorkerBrief from "./FreshWorkerBrief";
 import FreshMissingInfo from "./FreshMissingInfo";
+import FreshCustomerMemory from "./FreshCustomerMemory";
+import FreshBusinessHealth from "./FreshBusinessHealth";
 import FreshXero from "./FreshXero";
 
 const pages = new Set([
@@ -253,6 +257,8 @@ const pages = new Set([
   "worker",
   "workerbrief",
   "missinginfo",
+  "customermemory",
+  "businesshealth",
 ]);
 
 function readPageFromHash() {
@@ -312,6 +318,7 @@ export default function FreshApp() {
   if (page === "routes") content = <FreshRoutes onNavigate={goToPage} />;
   if (page === "areas") content = <FreshAreas onNavigate={goToPage} />;
   if (page === "clients") content = <FreshClients onNavigate={goToPage} />;
+  if (page === "customermemory") content = <FreshCustomerMemory onNavigate={goToPage} />;
   if (page === "quotes") content = <FreshQuotes onNavigate={goToPage} />;
   if (page === "invoices") content = <FreshInvoices onNavigate={goToPage} />;
   if (page === "invoicecheck") content = <FreshInvoiceChecker onNavigate={goToPage} />;
@@ -345,6 +352,7 @@ export default function FreshApp() {
   if (page === "payroll") content = <FreshPayroll onNavigate={goToPage} />;
   if (page === "time") content = <FreshTimeLogs onNavigate={goToPage} />;
   if (page === "reports") content = <FreshReports onNavigate={goToPage} />;
+  if (page === "businesshealth") content = <FreshBusinessHealth onNavigate={goToPage} />;
   if (page === "profit") content = <FreshProfit onNavigate={goToPage} />;
   if (page === "expenses") content = <FreshExpenses onNavigate={goToPage} />;
   if (page === "assets") content = <FreshAssets onNavigate={goToPage} />;
