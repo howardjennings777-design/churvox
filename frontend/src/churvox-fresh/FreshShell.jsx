@@ -101,6 +101,7 @@ const groups = [
       ["roadmap", "RM", "Roadmap"],
       ["onboarding", "OB", "Onboarding"],
       ["firstrun", "FR", "First Run"],
+      ["setupassistant", "SA", "Setup AI"],
       ["imports", "IM", "Imports"],
       ["exports", "EX", "Exports"],
       ["security", "SC", "Security"],
@@ -202,6 +203,7 @@ const labels = {
   roadmap: "Roadmap",
   onboarding: "Onboarding",
   firstrun: "First Run",
+  setupassistant: "Setup AI",
   imports: "Imports",
   exports: "Exports",
   security: "Security",
@@ -226,6 +228,7 @@ const mobileItems = [
 ];
 
 const extraMobile = [
+      ["setupassistant", "SA", "Setup AI"],
   ["reviewbooster", "RB", "Review Booster"],
   ["materialsai", "MA", "Materials AI"],
   ["workerperformance", "WP", "Worker Watch"],

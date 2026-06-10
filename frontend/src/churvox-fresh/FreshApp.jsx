@@ -210,6 +210,7 @@ import FreshCashflowCoach from "./FreshCashflowCoach";
 import FreshAskChurvox from "./FreshAskChurvox";
 import FreshGlobalActions from "./FreshGlobalActions";
 import FreshFirstRunWizard from "./FreshFirstRunWizard";
+import FreshSetupAssistant from "./FreshSetupAssistant";
 import FreshLaunchControl from "./FreshLaunchControl";
 import FreshTrustCenter from "./FreshTrustCenter";
 import FreshHelpDesk from "./FreshHelpDesk";
@@ -252,6 +253,7 @@ const pages = new Set([
   "demo",
   "onboarding",
   "firstrun",
+  "setupassistant",
   "qa",
   "flags",
   "feedback",
@@ -397,6 +399,7 @@ export default function FreshApp() {
   if (page === "demo") content = <FreshDemoMode onNavigate={goToPage} />;
   if (page === "onboarding") content = <FreshOnboarding onNavigate={goToPage} />;
   if (page === "firstrun") content = <FreshFirstRunWizard onNavigate={goToPage} />;
+  if (page === "setupassistant") content = <FreshSetupAssistant onNavigate={goToPage} />;
   if (page === "qa") content = <FreshQa onNavigate={goToPage} />;
   if (page === "flags") content = <FreshFlags onNavigate={goToPage} />;
   if (page === "feedback") content = <FreshFeedback onNavigate={goToPage} />;
