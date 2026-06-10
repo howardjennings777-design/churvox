@@ -7,6 +7,21 @@ const groups = [
   { title: "System", items: [["settings", "ST", "Settings"], ["plans", "PL", "Plans"], ["support", "SP", "Support"]] },
 ];
 
+const labels = {
+  command: "Command",
+  jobs: "Jobs",
+  dispatch: "Dispatch",
+  clients: "Clients",
+  quotes: "Quotes",
+  invoices: "Invoices",
+  team: "Team",
+  payroll: "Payroll",
+  reports: "Reports",
+  settings: "Settings",
+  plans: "Plans",
+  support: "Support",
+};
+
 const mobileItems = [
   ["command", "CM", "Command"],
   ["jobs", "JB", "Jobs"],
@@ -14,6 +29,16 @@ const mobileItems = [
   ["clients", "CL", "Clients"],
   ["invoices", "IV", "Invoices"],
   ["more", "••", "More"],
+];
+
+const extraMobile = [
+  ["quotes", "QT", "Quotes"],
+  ["team", "TM", "Team"],
+  ["payroll", "PR", "Payroll"],
+  ["reports", "RP", "Reports"],
+  ["settings", "ST", "Settings"],
+  ["plans", "PL", "Plans"],
+  ["support", "SP", "Support"],
 ];
 
 export default function FreshShell({ active, onChange, children }) {
@@ -24,19 +49,10 @@ export default function FreshShell({ active, onChange, children }) {
       setMoreOpen((value) => !value);
       return;
     }
+
     setMoreOpen(false);
     onChange(key);
   }
-
-  const extraMobile = [
-    ["quotes", "QT", "Quotes"],
-    ["team", "TM", "Team"],
-    ["payroll", "PR", "Payroll"],
-    ["reports", "RP", "Reports"],
-    ["settings", "ST", "Settings"],
-    ["plans", "PL", "Plans"],
-    ["support", "SP", "Support"],
-  ];
 
   return (
     <div className="freshApp">
@@ -69,7 +85,28 @@ export default function FreshShell({ active, onChange, children }) {
         </nav>
       </aside>
 
-      <main className="freshMain">{children}</main>
+      <main className="freshMain">
+        <div className="freshTopbar">
+          <div>
+            <span>Current area</span>
+            <strong>{labels[active] || "Command"}</strong>
+          </div>
+
+          <label className="freshSearch">
+            <span>Search</span>
+            <input placeholder="Find job, client, quote, invoice..." />
+          </label>
+
+          <div className="freshTopActions">
+            <button type="button" onClick={() => onChange("command")}>Command</button>
+            <button type="button" onClick={() => onChange("jobs")}>New job</button>
+            <button type="button" onClick={() => onChange("quotes")}>New quote</button>
+            <button type="button" onClick={() => onChange("clients")}>Add client</button>
+          </div>
+        </div>
+
+        {children}
+      </main>
 
       {moreOpen && (
         <div className="freshMobileMore">

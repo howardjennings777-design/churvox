@@ -3,6 +3,7 @@ import "./fresh.css";
 import "./freshCommandBoxes.css";
 import "./freshMobileNav.css";
 import "./freshPolish.css";
+import "./freshTopbar.css";
 
 import FreshShell from "./FreshShell";
 import FreshCommand from "./FreshCommand";
