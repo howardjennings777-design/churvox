@@ -4,7 +4,10 @@ import FreshSearch from "./FreshSearch";
 import FreshTopStatus from "./FreshTopStatus";
 
 const groups = [
-  { title: "Home", items: [["command", "CM", "Command"]] },
+  {
+    title: "Home",
+    items: [["command", "CM", "Command"]],
+  },
   {
     title: "Work",
     items: [
@@ -109,9 +112,40 @@ const extraMobile = [
   ["support", "SP", "Support"],
 ];
 
+function uniqueItems(items) {
+  const seen = new Set();
+
+  return items.filter(([key]) => {
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function cleanGroups(sourceGroups) {
+  const seen = new Set();
+
+  return sourceGroups.map((group) => {
+    const items = group.items.filter(([key]) => {
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    return { ...group, items };
+  });
+}
+
 export default function FreshShell({ active, onChange, children }) {
   const [moreOpen, setMoreOpen] = React.useState(false);
   const [quickType, setQuickType] = React.useState(null);
+
+  const safeGroups = React.useMemo(() => cleanGroups(groups), []);
+  const safeMobileItems = React.useMemo(() => uniqueItems(mobileItems), []);
+  const safeExtraMobile = React.useMemo(() => {
+    const mainKeys = new Set(safeMobileItems.map(([key]) => key));
+    return uniqueItems(extraMobile).filter(([key]) => !mainKeys.has(key));
+  }, [safeMobileItems]);
 
   function go(key) {
     if (key === "more") return;
@@ -141,9 +175,10 @@ export default function FreshShell({ active, onChange, children }) {
         </div>
 
         <nav className="freshNav">
-          {groups.map((group) => (
+          {safeGroups.map((group) => (
             <section className="freshNavGroup" key={group.title}>
               <p>{group.title}</p>
+
               {group.items.map(([key, mark, label]) => (
                 <button
                   key={key}
@@ -183,7 +218,7 @@ export default function FreshShell({ active, onChange, children }) {
 
       {moreOpen && (
         <div className="freshMobileMore">
-          {extraMobile.map(([key, mark, label]) => (
+          {safeExtraMobile.map(([key, mark, label]) => (
             <button
               key={key}
               type="button"
@@ -198,7 +233,7 @@ export default function FreshShell({ active, onChange, children }) {
       )}
 
       <nav className="freshMobileNav" aria-label="Mobile navigation">
-        {mobileItems.map(([key, mark, label]) => (
+        {safeMobileItems.map(([key, mark, label]) => (
           <button
             key={key}
             type="button"
