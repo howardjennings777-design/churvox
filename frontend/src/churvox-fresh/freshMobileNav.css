@@ -1,0 +1,94 @@
+.freshMobileNav,
+.freshMobileMore {
+  display: none;
+}
+
+@media (max-width: 950px) {
+  .freshMain {
+    padding-bottom: 96px;
+  }
+
+  .freshMobileNav {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    z-index: 4000;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 6px;
+    padding: 8px;
+    border-radius: 20px;
+    background: #0b111a;
+    border: 1px solid rgba(255,255,255,.12);
+    box-shadow: 0 18px 42px rgba(15,23,42,.32);
+  }
+
+  .freshMobileNav button,
+  .freshMobileMore button {
+    min-height: 52px;
+    border: 0;
+    border-radius: 14px;
+    background: transparent;
+    color: #e5e7eb;
+    font-size: 10px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .freshMobileNav button.active,
+  .freshMobileMore button.active {
+    background: #f97316;
+    color: #111827;
+  }
+
+  .freshMobileNav i,
+  .freshMobileMore i {
+    display: block;
+    font-style: normal;
+    font-size: 11px;
+    font-weight: 1000;
+    margin-bottom: 3px;
+    color: #fbbf24;
+  }
+
+  .freshMobileNav button.active i,
+  .freshMobileMore button.active i {
+    color: #111827;
+  }
+
+  .freshMobileMore {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 82px;
+    z-index: 3999;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding: 10px;
+    border-radius: 20px;
+    background: #111827;
+    border: 1px solid rgba(255,255,255,.12);
+    box-shadow: 0 18px 42px rgba(15,23,42,.34);
+  }
+
+  .freshMobileMore button {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 9px;
+    padding: 10px;
+    text-align: left;
+  }
+
+  .freshMobileMore i {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: #1f2937;
+    margin: 0;
+  }
+}
