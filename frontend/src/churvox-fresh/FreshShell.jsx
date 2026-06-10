@@ -66,6 +66,7 @@ const groups = [
       ["roles", "RL", "Roles"],
       ["automation", "AU", "Automation"],
       ["plans", "PL", "Plans"],
+      ["billing", "BL", "Billing"],
       ["support", "SP", "Support"],
     ],
   },
@@ -114,6 +115,7 @@ const labels = {
   roles: "Roles",
   automation: "Automation",
   plans: "Plans",
+  billing: "Billing",
   support: "Support",
 };
 
@@ -156,6 +158,7 @@ const extraMobile = [
   ["roles", "RL", "Roles"],
   ["automation", "AU", "Automation"],
   ["plans", "PL", "Plans"],
+  ["billing", "BL", "Billing"],
   ["support", "SP", "Support"],
 ];
 
