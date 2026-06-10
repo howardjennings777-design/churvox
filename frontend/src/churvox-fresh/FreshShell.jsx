@@ -31,7 +31,9 @@ const groups = [
     title: "Business",
     items: [
       ["team", "TM", "Team"],
-      ["worker", "WK", "Worker"],
+      ["availability", "AV", "Availability"],
+      ["availability", "AV", "Availability"],
+  ["worker", "WK", "Worker"],
       ["payroll", "PR", "Payroll"],
       ["reports", "RP", "Reports"],
       ["assets", "AS", "Assets"],
@@ -66,6 +68,7 @@ const labels = {
   portal: "Client Portal",
   messages: "Messages",
   team: "Team",
+  availability: "Availability",
   worker: "Worker",
   payroll: "Payroll",
   reports: "Reports",
