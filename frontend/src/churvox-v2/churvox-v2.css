@@ -21,23 +21,47 @@
 
 .v2Root {
   width: 100%;
-  min-height: calc(100dvh - 52px);
+  max-width: none;
+  min-height: calc(100dvh - 28px);
   color: var(--v2-ink);
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
+.v2Root :where(input, textarea, select, option, label, span, p, b, strong, h1, h2, h3, h4, li, button) {
+  text-shadow: none !important;
+}
+
+.v2Root :where(input, textarea, select, option) {
+  color: #020617 !important;
+  -webkit-text-fill-color: #020617 !important;
+  caret-color: #f97316 !important;
+}
+
+.v2Root :where(input::placeholder, textarea::placeholder) {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  opacity: 1 !important;
+}
+
+.v2Root ::selection {
+  background: rgba(249, 115, 22, 0.24);
+  color: #020617;
+  -webkit-text-fill-color: #020617;
+}
+
 .v2Shell {
   width: 100%;
-  min-height: calc(100dvh - 52px);
+  max-width: none;
+  min-height: calc(100dvh - 28px);
   display: grid;
   grid-template-rows: auto 1fr;
-  gap: 16px;
+  gap: 14px;
 }
 
 .v2Topbar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+  gap: 14px;
   align-items: stretch;
 }
 
@@ -45,15 +69,15 @@
   position: relative;
   overflow: hidden;
   isolation: isolate;
-  min-height: 150px;
-  border-radius: 28px;
+  min-height: 136px;
+  border-radius: 26px;
   border-left: 7px solid var(--v2-orange);
   background:
     radial-gradient(circle at 92% -22%, rgba(249, 115, 22, 0.58), transparent 34%),
     linear-gradient(135deg, #0a1018 0%, #111827 58%, #070b12 100%);
   box-shadow: 0 18px 45px rgba(2, 6, 23, 0.14);
   color: white;
-  padding: 22px 24px;
+  padding: 20px 22px;
 }
 
 .v2Hero::before {
@@ -94,25 +118,27 @@
 }
 
 .v2Hero h1 {
-  margin: 14px 0 8px;
+  margin: 12px 0 7px;
   color: white;
-  font-size: clamp(40px, 4.4vw, 70px);
+  -webkit-text-fill-color: white;
+  font-size: clamp(40px, 4.2vw, 66px);
   line-height: 0.88;
   letter-spacing: -0.075em;
 }
 
 .v2Hero p {
-  max-width: 950px;
+  max-width: none;
   margin: 0;
   color: #f8fafc;
+  -webkit-text-fill-color: #f8fafc;
   font-weight: 850;
   line-height: 1.45;
 }
 
 .v2Stats {
-  min-width: min(380px, 34vw);
+  min-width: 0;
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .v2Stat {
@@ -122,21 +148,23 @@
   justify-content: space-between;
   gap: 18px;
   border: 1px solid var(--v2-line);
-  border-radius: 22px;
+  border-radius: 20px;
   background: rgba(255, 250, 240, 0.88);
   box-shadow: 0 14px 34px rgba(2, 6, 23, 0.08);
-  padding: 14px 16px;
+  padding: 12px 14px;
 }
 
 .v2Stat b {
   color: var(--v2-ink);
-  font-size: 28px;
+  -webkit-text-fill-color: var(--v2-ink);
+  font-size: 27px;
   line-height: 1;
   letter-spacing: -0.06em;
 }
 
 .v2Stat span {
   color: #475569;
+  -webkit-text-fill-color: #475569;
   font-size: 11px;
   font-weight: 1000;
   letter-spacing: 0.11em;
@@ -145,10 +173,10 @@
 }
 
 .v2Workspace {
-  min-height: calc(100dvh - 238px);
+  min-height: calc(100dvh - 206px);
   display: grid;
-  grid-template-columns: minmax(270px, 340px) minmax(0, 1fr) minmax(286px, 350px);
-  gap: 16px;
+  grid-template-columns: minmax(255px, 320px) minmax(0, 1fr) minmax(270px, 335px);
+  gap: 14px;
   align-items: stretch;
 }
 
@@ -156,10 +184,10 @@
 .v2ActionRail {
   min-width: 0;
   border: 1px solid var(--v2-line);
-  border-radius: 28px;
+  border-radius: 24px;
   background: rgba(255, 250, 240, 0.9);
   box-shadow: 0 18px 45px rgba(2, 6, 23, 0.10);
-  padding: 16px;
+  padding: 14px;
 }
 
 .v2PaneHeader {
@@ -167,14 +195,15 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .v2Pane h2,
 .v2ActionRail h2 {
   margin: 8px 0 4px;
   color: var(--v2-ink);
-  font-size: clamp(25px, 2.2vw, 34px);
+  -webkit-text-fill-color: var(--v2-ink);
+  font-size: clamp(24px, 2vw, 32px);
   line-height: 0.95;
   letter-spacing: -0.055em;
 }
@@ -183,6 +212,7 @@
 .v2ActionRail p {
   margin: 0;
   color: var(--v2-muted);
+  -webkit-text-fill-color: var(--v2-muted);
   font-size: 13px;
   font-weight: 800;
   line-height: 1.4;
@@ -196,8 +226,8 @@
 
 .v2Search {
   display: grid;
-  gap: 10px;
-  margin-bottom: 14px;
+  gap: 9px;
+  margin-bottom: 12px;
 }
 
 .v2Search input,
@@ -207,7 +237,7 @@
   width: 100%;
   min-width: 0;
   border: 2px solid #d7bd93 !important;
-  border-radius: 16px;
+  border-radius: 15px;
   background: var(--v2-white) !important;
   color: #020617 !important;
   -webkit-text-fill-color: #020617 !important;
@@ -238,6 +268,7 @@
   border-radius: 999px;
   background: #fff;
   color: #334155;
+  -webkit-text-fill-color: #334155;
   cursor: pointer;
   padding: 8px 10px;
   font-size: 12px;
@@ -247,14 +278,15 @@
 .v2FilterRow button.active {
   background: var(--v2-panel);
   color: white;
+  -webkit-text-fill-color: white;
 }
 
 .v2List {
-  height: calc(100dvh - 430px);
-  min-height: 330px;
+  height: calc(100dvh - 390px);
+  min-height: 320px;
   display: grid;
   align-content: start;
-  gap: 10px;
+  gap: 9px;
   overflow: auto;
   padding-right: 4px;
 }
@@ -264,10 +296,10 @@
   text-align: left;
   border: 1px solid var(--v2-line);
   border-left: 6px solid var(--v2-good);
-  border-radius: 18px;
+  border-radius: 17px;
   background: white;
   cursor: pointer;
-  padding: 13px;
+  padding: 12px;
 }
 
 .v2ListItem.needs {
@@ -283,6 +315,7 @@
 .v2MiniCard b {
   display: block;
   color: var(--v2-ink);
+  -webkit-text-fill-color: var(--v2-ink);
   font-size: 14px;
   line-height: 1.2;
 }
@@ -292,6 +325,7 @@
   display: block;
   margin-top: 6px;
   color: var(--v2-muted);
+  -webkit-text-fill-color: var(--v2-muted);
   font-size: 12px;
   font-weight: 850;
   line-height: 1.35;
@@ -300,7 +334,7 @@
 .v2Detail {
   display: grid;
   grid-template-rows: auto auto 1fr;
-  gap: 14px;
+  gap: 12px;
 }
 
 .v2IdentityCard {
@@ -308,20 +342,21 @@
   grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 14px;
   align-items: center;
-  border-radius: 24px;
+  border-radius: 22px;
   background: linear-gradient(135deg, #111827, #0b111a);
   color: white;
-  padding: 16px;
+  padding: 14px;
 }
 
 .v2Avatar {
-  width: 56px;
-  height: 56px;
+  width: 52px;
+  height: 52px;
   display: grid;
   place-items: center;
-  border-radius: 18px;
+  border-radius: 17px;
   background: linear-gradient(135deg, var(--v2-orange), var(--v2-amber));
   color: #111827;
+  -webkit-text-fill-color: #111827;
   font-size: 20px;
   font-weight: 1000;
 }
@@ -329,7 +364,8 @@
 .v2IdentityCard h2 {
   margin: 0;
   color: white;
-  font-size: clamp(28px, 3.1vw, 46px);
+  -webkit-text-fill-color: white;
+  font-size: clamp(27px, 2.8vw, 44px);
   line-height: 0.95;
   letter-spacing: -0.06em;
 }
@@ -337,12 +373,14 @@
 .v2IdentityCard p {
   margin-top: 5px;
   color: #cbd5e1;
+  -webkit-text-fill-color: #cbd5e1;
 }
 
 .v2StatusBadge {
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
   color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
   padding: 9px 11px;
   font-size: 11px;
   font-weight: 1000;
@@ -361,6 +399,7 @@
   border-radius: 999px;
   background: #fff;
   color: #334155;
+  -webkit-text-fill-color: #334155;
   cursor: pointer;
   padding: 9px 12px;
   font-weight: 1000;
@@ -369,12 +408,13 @@
 .v2Tabs button.active {
   background: var(--v2-panel);
   color: white;
+  -webkit-text-fill-color: white;
 }
 
 .v2FormGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 11px;
 }
 
 .v2Field.wide {
@@ -385,6 +425,7 @@
   display: block;
   margin-bottom: 7px;
   color: #431407;
+  -webkit-text-fill-color: #431407;
   font-size: 11px;
   font-weight: 1000;
   letter-spacing: 0.12em;
@@ -392,7 +433,7 @@
 }
 
 .v2Field textarea {
-  min-height: 106px;
+  min-height: 104px;
   resize: vertical;
 }
 
@@ -413,6 +454,7 @@
 .v2HistoryCard h3 {
   margin: 0 0 10px;
   color: var(--v2-ink);
+  -webkit-text-fill-color: var(--v2-ink);
   font-size: 17px;
   letter-spacing: -0.035em;
 }
@@ -427,6 +469,7 @@
 
 .v2HistoryCard li {
   color: #475569;
+  -webkit-text-fill-color: #475569;
   font-size: 12px;
   font-weight: 850;
   line-height: 1.35;
@@ -435,12 +478,12 @@
 .v2ActionRail {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 11px;
 }
 
 .v2ActionStack {
   display: grid;
-  gap: 9px;
+  gap: 8px;
 }
 
 .v2PrimaryBtn,
@@ -448,9 +491,9 @@
 .v2DarkBtn {
   width: 100%;
   border: 0;
-  border-radius: 16px;
+  border-radius: 15px;
   cursor: pointer;
-  padding: 13px 14px;
+  padding: 12px 14px;
   font-size: 14px;
   font-weight: 1000;
 }
@@ -458,33 +501,38 @@
 .v2PrimaryBtn {
   background: var(--v2-good);
   color: #052e16;
+  -webkit-text-fill-color: #052e16;
 }
 
 .v2SecondaryBtn {
   background: linear-gradient(135deg, #facc15, #fb923c 55%, #22d3ee);
   color: #111827;
+  -webkit-text-fill-color: #111827;
 }
 
 .v2DarkBtn {
   background: var(--v2-panel);
   color: white;
+  -webkit-text-fill-color: white;
 }
 
 .v2ActionNote {
   border-left: 6px solid var(--v2-orange);
-  border-radius: 20px;
+  border-radius: 18px;
   background: var(--v2-panel);
   color: white;
-  padding: 14px;
+  padding: 13px;
 }
 
 .v2ActionNote b {
   color: white;
+  -webkit-text-fill-color: white;
 }
 
 .v2ActionNote p {
   margin-top: 7px;
   color: #e2e8f0;
+  -webkit-text-fill-color: #e2e8f0;
 }
 
 .v2MiniQueue {
@@ -500,6 +548,30 @@
   cursor: pointer;
   padding: 11px;
   text-align: left;
+}
+
+@media (min-width: 1024px) {
+  .cvxAppMain:has(.v2Root) {
+    width: calc(100vw - var(--cvx-side)) !important;
+    max-width: calc(100vw - var(--cvx-side)) !important;
+    margin-left: var(--cvx-side) !important;
+    padding: 12px 16px 20px !important;
+  }
+
+  .cvxAppMain:has(.v2Root) > * {
+    width: 100% !important;
+    max-width: none !important;
+  }
+}
+
+@media (min-width: 1420px) {
+  .v2Topbar {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+  }
+
+  .v2Workspace {
+    grid-template-columns: minmax(285px, 350px) minmax(0, 1fr) minmax(300px, 360px);
+  }
 }
 
 @media (max-width: 1180px) {
@@ -528,7 +600,7 @@
   .v2Hero,
   .v2Pane,
   .v2ActionRail {
-    border-radius: 22px;
+    border-radius: 20px;
     padding: 14px;
   }
 
