@@ -443,3 +443,31 @@ body,
   margin-left: 0 !important;
   margin-right: 0 !important;
 }
+
+/* CHURVOX_KILL_ALL_INNER_PAGE_SIDEBARS_20260610
+   One sidebar only: .cvxSide.
+   Any page-level aside inside the main canvas is removed. */
+.cvxMain aside:not(.cxControls) {
+  display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  overflow: hidden !important;
+}
+
+/* When old pages used 3-column layouts with an aside, collapse them to content only. */
+.cvxMain section[style*="grid-template-columns"],
+.cvxMain div[style*="grid-template-columns"] {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+/* Keep the real app sidebar untouched. */
+.cvxSide {
+  display: block !important;
+  visibility: visible !important;
+  width: var(--cvx-side) !important;
+}
