@@ -1,6 +1,8 @@
 import React from "react";
 
 const CLIENT_STORAGE_KEY = "churvox:fresh-clients:v1";
+const JOB_STORAGE_KEY = "churvox:fresh-jobs:v1";
+const QUOTE_STORAGE_KEY = "churvox:fresh-quotes:v1";
 
 const seedClients = [
   {
@@ -45,6 +47,35 @@ const seedClients = [
 ];
 
 const filters = ["All", "Active", "Needs setup", "Paused"];
+
+function readFreshList(key) {
+  try {
+    if (typeof window === "undefined") return [];
+
+    const saved = window.localStorage.getItem(key);
+    if (!saved) return [];
+
+    const parsed = JSON.parse(saved);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeFreshList(key, list, type) {
+  try {
+    if (typeof window === "undefined") return;
+
+    window.localStorage.setItem(key, JSON.stringify(list));
+    window.dispatchEvent(
+      new CustomEvent("churvox:fresh-data-updated", {
+        detail: { type },
+      })
+    );
+  } catch {
+    // Fresh preview keeps working without local storage.
+  }
+}
 
 function loadClients() {
   try {
@@ -113,6 +144,45 @@ export default function FreshClients({ onNavigate }) {
         ? selected.notes
         : `${selected.notes}\n\nOwner note: billing email still needs checking.`,
     });
+  }
+
+  function createJobForClient() {
+    if (!selected) return;
+
+    const job = {
+      id: `job-${Date.now()}`,
+      title: "New service job",
+      client: selected.name,
+      address: selected.address || "Confirm service address",
+      status: "Ready",
+      worker: "Unassigned",
+      scheduled: "Not scheduled",
+      price: "$0 draft",
+      notes: `Created from client record. Client phone: ${selected.phone || "missing"}.`,
+      risk: selected.billingEmail ? "Client setup clean" : "Billing detail missing",
+    };
+
+    writeFreshList(JOB_STORAGE_KEY, [job, ...readFreshList(JOB_STORAGE_KEY)], "job");
+    onNavigate?.("jobs");
+  }
+
+  function createQuoteForClient() {
+    if (!selected) return;
+
+    const quote = {
+      id: `QT-${Date.now().toString().slice(-5)}`,
+      client: selected.name,
+      title: "New quote",
+      status: "Draft",
+      amount: 0,
+      age: "Created now",
+      followUp: "Not sent yet",
+      note: `Created from client record. Confirm scope and pricing before sending.`,
+      lines: ["New quote line · $0"],
+    };
+
+    writeFreshList(QUOTE_STORAGE_KEY, [quote, ...readFreshList(QUOTE_STORAGE_KEY)], "quote");
+    onNavigate?.("quotes");
   }
 
   return (
@@ -265,10 +335,10 @@ export default function FreshClients({ onNavigate }) {
             <button className="freshPrimary" onClick={markClean}>
               Mark setup clean
             </button>
-            <button className="freshOrange" onClick={() => onNavigate?.("jobs")}>
+            <button className="freshOrange" onClick={createJobForClient}>
               Create job
             </button>
-            <button className="freshDark" onClick={() => onNavigate?.("quotes")}>
+            <button className="freshDark" onClick={createQuoteForClient}>
               Create quote
             </button>
             <button className="freshGhost" onClick={() => onNavigate?.("command")}>
