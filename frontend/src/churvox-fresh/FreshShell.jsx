@@ -59,6 +59,7 @@ const groups = [
     items: [
       ["integrations", "IN", "Integrations"],
       ["settings", "ST", "Settings"],
+      ["approvals", "AP", "Approvals"],
       ["automation", "AU", "Automation"],
       ["plans", "PL", "Plans"],
       ["support", "SP", "Support"],
@@ -102,6 +103,7 @@ const labels = {
   services: "Services",
   integrations: "Integrations",
   settings: "Settings",
+  approvals: "Approvals",
   automation: "Automation",
   plans: "Plans",
   support: "Support",
@@ -139,6 +141,7 @@ const extraMobile = [
   ["services", "SV", "Services"],
   ["integrations", "IN", "Integrations"],
   ["settings", "ST", "Settings"],
+  ["approvals", "AP", "Approvals"],
   ["automation", "AU", "Automation"],
   ["plans", "PL", "Plans"],
   ["support", "SP", "Support"],
