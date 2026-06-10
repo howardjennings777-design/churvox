@@ -163,6 +163,9 @@ import FreshPhotoProof from "./FreshPhotoProof";
 import FreshPlans from "./FreshPlans";
 import FreshProfit from "./FreshProfit";
 import FreshProfitGuard from "./FreshProfitGuard";
+import FreshPriceLearner from "./FreshPriceLearner";
+import FreshPaymentPromise from "./FreshPaymentPromise";
+import FreshUpsellFinder from "./FreshUpsellFinder";
 import FreshQa from "./FreshQa";
 import FreshQuality from "./FreshQuality";
 import FreshReworkResolver from "./FreshReworkResolver";
@@ -270,6 +273,7 @@ const pages = new Set([
   "reports",
   "profit",
   "profitguard",
+  "pricelearner",
   "expenses",
   "assets",
   "inventory",
@@ -300,8 +304,10 @@ const pages = new Set([
   "workerbrief",
   "missinginfo",
   "customermemory",
+  "upsellfinder",
   "businesshealth",
   "cashflowai",
+  "paymentpromise",
 ]);
 
 function readPageFromHash() {
@@ -367,6 +373,7 @@ export default function FreshApp() {
   if (page === "areas") content = <FreshAreas onNavigate={goToPage} />;
   if (page === "clients") content = <FreshClients onNavigate={goToPage} />;
   if (page === "customermemory") content = <FreshCustomerMemory onNavigate={goToPage} />;
+  if (page === "upsellfinder") content = <FreshUpsellFinder onNavigate={goToPage} />;
   if (page === "quotes") content = <FreshQuotes onNavigate={goToPage} />;
   if (page === "quoteai") content = <FreshAiQuoteBuilder onNavigate={goToPage} />;
   if (page === "invoices") content = <FreshInvoices onNavigate={goToPage} />;
@@ -406,8 +413,10 @@ export default function FreshApp() {
   if (page === "reports") content = <FreshReports onNavigate={goToPage} />;
   if (page === "businesshealth") content = <FreshBusinessHealth onNavigate={goToPage} />;
   if (page === "cashflowai") content = <FreshCashflowCoach onNavigate={goToPage} />;
+  if (page === "paymentpromise") content = <FreshPaymentPromise onNavigate={goToPage} />;
   if (page === "profit") content = <FreshProfit onNavigate={goToPage} />;
   if (page === "profitguard") content = <FreshProfitGuard onNavigate={goToPage} />;
+  if (page === "pricelearner") content = <FreshPriceLearner onNavigate={goToPage} />;
   if (page === "expenses") content = <FreshExpenses onNavigate={goToPage} />;
   if (page === "assets") content = <FreshAssets onNavigate={goToPage} />;
   if (page === "inventory") content = <FreshInventory onNavigate={goToPage} />;
