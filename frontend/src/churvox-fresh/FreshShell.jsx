@@ -35,6 +35,7 @@ const groups = [
       ["quality", "QC", "Quality"],
       ["reviews", "RV", "Reviews"],
       ["followups", "FU", "Follow-ups"],
+      ["cancellations", "CA", "Cancellations"],
     ],
   },
   {
@@ -113,6 +114,7 @@ const labels = {
   customerportal: "Portal Requests",
   messages: "Messages",
   followups: "Follow-ups",
+  cancellations: "Cancellations",
   reviews: "Reviews",
   quality: "Quality",
   warranties: "Warranties",
@@ -175,6 +177,7 @@ const extraMobile = [
   ["warranties", "WA", "Warranties"],
   ["clients", "CL", "Clients"],
   ["quotes", "QT", "Quotes"],
+  ["cancellations", "CA", "Cancellations"],
   ["invoices", "IV", "Invoices"],
   ["creditnotes", "CN", "Credit Notes"],
   ["portal", "PT", "Portal"],
