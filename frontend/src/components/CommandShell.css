@@ -163,9 +163,78 @@ body,
 .cvxAppMain > section,
 .cvxAppMain > div {
   width: 100%;
-  max-width: 1320px;
+  max-width: none;
   margin-left: 0;
-  margin-right: auto;
+  margin-right: 0;
+}
+
+/* Desktop must feel like a desktop app, not a phone/tablet view. */
+@media (min-width: 1024px) {
+  .cvxAppSidebar {
+    display: block !important;
+  }
+
+  .cvxAppMobileNav {
+    display: none !important;
+  }
+
+  .cvxAppMain {
+    width: calc(100vw - var(--cvx-side));
+    max-width: calc(100vw - var(--cvx-side));
+  }
+
+  .cvxAppMain :where(
+    .jobsCleanWrap,
+    .cxWrap,
+    .ch4Wrap,
+    .srWrap,
+    .ivWrap,
+    .plWrap,
+    .stWrap,
+    .jbWrap,
+    .clWrap,
+    .qtWrap,
+    .tmWrap,
+    .pyWrap,
+    .rpWrap,
+    .dwWrap,
+    .dbWrap,
+    .dsWrap,
+    .plansWrap,
+    .supportWrap,
+    [class$="Wrap"],
+    [class*="Wrap "]
+  ) {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .cvxAppMain :where(
+    .jobsGrid,
+    .srGrid,
+    .ivGrid,
+    .plGrid,
+    .stGrid,
+    .jbGrid,
+    .clGrid,
+    .qtGrid,
+    .tmGrid,
+    .pyGrid,
+    .rpGrid,
+    .dwGrid,
+    .dbGrid,
+    .dsGrid,
+    [class$="Grid"],
+    [class*="Grid "]
+  ) {
+    align-items: start;
+  }
+
+  .cvxAppMain .jobsGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
 }
 
 /* Shared page polish: this makes the cleaned shell apply to all command pages, not just Jobs. */
@@ -235,6 +304,8 @@ body,
   }
 
   .cvxAppMain {
+    width: 100%;
+    max-width: none;
     margin-left: 0;
     padding: 14px 12px 92px;
   }
