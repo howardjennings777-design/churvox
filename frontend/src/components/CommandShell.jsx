@@ -17,6 +17,36 @@ const NAV_ITEMS = [
   ["Support", "/support-board", "?", "System"],
 ];
 
+const ROOT_SELECTORS = [
+  ":scope > main",
+  ".cxRoot",
+  ".ch4Root",
+  ".scRoot",
+  ".dwRoot",
+  ".rpRoot",
+  ".slRoot",
+  ".srRoot",
+  ".teamRoleRoot",
+  ".ivRoot",
+  ".concept-c2-frame",
+  ".xcf-real-page",
+  ".xcf-workspace",
+  ".xcf-shell.xcf-real-page",
+].join(",");
+
+const WRAP_SELECTORS = [
+  ".cxWrap",
+  ".ch4Wrap",
+  ".scWrap",
+  ".dwWrap",
+  ".rpWrap",
+  ".slWrap",
+  ".srWrap",
+  ".teamRoleWrap",
+  ".ivWrap",
+  "main > section",
+].join(",");
+
 function isActive(pathname, href) {
   if (href === "/dashboard") return pathname === "/dashboard" || pathname === "/overview";
   if (href === "/jobs-board") return pathname === "/jobs-board" || pathname === "/jobs" || pathname.startsWith("/jobs/");
@@ -42,98 +72,93 @@ function groups() {
   }, {});
 }
 
+function setImportant(el, key, value) {
+  try {
+    el.style.setProperty(key, value, "important");
+  } catch {}
+}
 
-function ShellPageNormalizer() {
-  return (
-    <style>{`
-      /* CHURVOX_FORCE_CHILD_PAGES_INTO_SHELL_20260610
-         Loaded AFTER each page renders, so it beats page-level <style> tags
-         and inline page layouts. */
+function normaliseChildPages(canvas) {
+  if (!canvas) return;
 
-      .cvxShell .cvxShellCanvas > main,
-      .cvxShell .cvxShellCanvas main[style],
-      .cvxShell .cvxShellCanvas main[class],
-      .cvxShell .cvxShellCanvas .cxRoot,
-      .cvxShell .cvxShellCanvas .ch4Root,
-      .cvxShell .cvxShellCanvas .scRoot,
-      .cvxShell .cvxShellCanvas .dwRoot,
-      .cvxShell .cvxShellCanvas .concept-c2-frame,
-      .cvxShell .cvxShellCanvas .xcf-real-page,
-      .cvxShell .cvxShellCanvas .xcf-workspace,
-      .cvxShell .cvxShellCanvas .xcf-shell.xcf-real-page {
-        position: relative !important;
-        inset: auto !important;
-        left: auto !important;
-        right: auto !important;
-        top: auto !important;
-        bottom: auto !important;
-        z-index: auto !important;
-        min-height: auto !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        background: transparent !important;
-        overflow: visible !important;
-        box-sizing: border-box !important;
-        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
-      }
+  canvas.querySelectorAll(ROOT_SELECTORS).forEach((el) => {
+    el.classList.add("cvxChildRoot");
+    setImportant(el, "position", "relative");
+    setImportant(el, "inset", "auto");
+    setImportant(el, "left", "auto");
+    setImportant(el, "right", "auto");
+    setImportant(el, "top", "auto");
+    setImportant(el, "bottom", "auto");
+    setImportant(el, "z-index", "auto");
+    setImportant(el, "width", "100%");
+    setImportant(el, "max-width", "100%");
+    setImportant(el, "min-height", "auto");
+    setImportant(el, "margin", "0");
+    setImportant(el, "padding", "0");
+    setImportant(el, "background", "transparent");
+    setImportant(el, "overflow", "visible");
+    setImportant(el, "box-sizing", "border-box");
+  });
 
-      .cvxShell .cvxShellCanvas main > section,
-      .cvxShell .cvxShellCanvas main > div,
-      .cvxShell .cvxShellCanvas .cxWrap,
-      .cvxShell .cvxShellCanvas .ch4Wrap,
-      .cvxShell .cvxShellCanvas .dwWrap,
-      .cvxShell .cvxShellCanvas .scWrap,
-      .cvxShell .cvxShellCanvas .concept-c2-frame > *,
-      .cvxShell .cvxShellCanvas .xcf-workspace > * {
-        width: 100% !important;
-        max-width: 100% !important;
-        margin-left: auto !important;
-        margin-right: auto !important;
-        box-sizing: border-box !important;
-      }
+  canvas.querySelectorAll(WRAP_SELECTORS).forEach((el) => {
+    el.classList.add("cvxChildWrap");
+    setImportant(el, "width", "100%");
+    setImportant(el, "max-width", "100%");
+    setImportant(el, "margin-left", "auto");
+    setImportant(el, "margin-right", "auto");
+    setImportant(el, "box-sizing", "border-box");
+  });
 
-      .cvxShell .cvxShellCanvas .cxRoot {
-        padding: 0 !important;
-      }
+  canvas.querySelectorAll("[style]").forEach((el) => {
+    const style = el.getAttribute("style") || "";
 
-      .cvxShell .cvxShellCanvas .cxOverlay {
-        padding-left: 18px !important;
-      }
+    if (/min-height:\s*100vh|min-height:\s*100svh/i.test(style)) {
+      setImportant(el, "min-height", "auto");
+    }
 
-      @media (min-width: 1024px) {
-        .cvxShell .cvxShellCanvas .cxRoot {
-          padding: 0 !important;
-        }
+    if (/max-width:\s*1440|max-width:\s*1480|max-width:\s*1380|max-width:\s*1260/i.test(style)) {
+      setImportant(el, "max-width", "100%");
+      setImportant(el, "width", "100%");
+    }
 
-        .cvxShell .cvxShellCanvas .cxOverlay {
-          padding: 18px !important;
-        }
-      }
-
-      @media (max-width: 1180px) {
-        .cvxShell .cvxShellCanvas main section[style],
-        .cvxShell .cvxShellCanvas main div[style] {
-          max-width: 100% !important;
-        }
-      }
-
-      @media (max-width: 900px) {
-        .cvxShell .cvxShellCanvas main section[style] {
-          grid-template-columns: 1fr !important;
-        }
-      }
-    `}</style>
-  );
+    if (/grid-template-columns/i.test(style)) {
+      el.classList.add("cvxChildGrid");
+      setImportant(el, "grid-template-columns", "repeat(auto-fit, minmax(min(280px, 100%), 1fr))");
+      setImportant(el, "gap", "18px");
+      setImportant(el, "align-items", "start");
+    }
+  });
 }
 
 export default function CommandShell({ children }) {
   const { pathname } = useLocation();
   const grouped = groups();
+  const canvasRef = React.useRef(null);
+
+  React.useLayoutEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
+
+    const run = () => normaliseChildPages(canvas);
+    run();
+
+    const timer = window.setTimeout(run, 50);
+    const observer = new MutationObserver(run);
+    observer.observe(canvas, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["style", "class"],
+    });
+
+    return () => {
+      window.clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [pathname, children]);
 
   return (
-    <div className="cvxShell">
+    <div className="cvxShell" data-command-shell="true">
       <aside className="cvxShellSide" aria-label="Churvox navigation">
         <div className="cvxShellBrand">
           <div className="cvxShellLogo">C</div>
@@ -161,7 +186,9 @@ export default function CommandShell({ children }) {
       </aside>
 
       <main className="cvxShellMain">
-        <div className="cvxShellCanvas">{children}<ShellPageNormalizer /></div>
+        <div ref={canvasRef} className="cvxShellCanvas">
+          {children}
+        </div>
       </main>
 
       <nav className="cvxShellMobileNav" aria-label="Churvox mobile navigation">

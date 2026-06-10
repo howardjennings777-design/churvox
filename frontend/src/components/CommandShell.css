@@ -1,15 +1,18 @@
-/* CHURVOX_ONE_TRUE_COMMAND_SHELL_20260610
-   One app shell. Pages now live inside this instead of each page fighting the sidebar. */
+/* CHURVOX_ONE_TRUE_COMMAND_SHELL_20260610 */
 
 :root {
   --cvx-shell-side: 232px;
   --cvx-shell-bg: #f4efe6;
   --cvx-shell-ink: #111827;
   --cvx-shell-dark: #0b111a;
-  --cvx-shell-dark-2: #111827;
   --cvx-shell-muted: #9ca3af;
   --cvx-shell-orange: #f97316;
   --cvx-shell-amber: #fbbf24;
+}
+
+.cvxShell,
+.cvxShell * {
+  box-sizing: border-box;
 }
 
 .cvxShell {
@@ -29,13 +32,6 @@
   background: linear-gradient(180deg, #101722 0%, #0b111a 52%, #05070b 100%) !important;
   border-right: 1px solid rgba(255,255,255,.10) !important;
   box-shadow: 8px 0 30px rgba(0,0,0,.22) !important;
-}
-
-.cvxShellSide,
-.cvxShellSide * {
-  box-sizing: border-box !important;
-  text-shadow: none !important;
-  opacity: 1 !important;
 }
 
 .cvxShellBrand {
@@ -177,51 +173,52 @@
 
 .cvxShellMain {
   min-height: 100vh !important;
+  min-width: 0 !important;
   margin-left: var(--cvx-shell-side) !important;
   background: var(--cvx-shell-bg) !important;
   padding: 18px 18px 80px !important;
-  box-sizing: border-box !important;
+  overflow-x: hidden !important;
 }
 
 .cvxShellCanvas {
   width: 100% !important;
   max-width: 1220px !important;
+  min-width: 0 !important;
   margin: 0 auto !important;
-  box-sizing: border-box !important;
+  overflow: visible !important;
 }
 
-/* This is the important bit: any page root must stop acting like a full app. */
-.cvxShellCanvas > main,
-.cvxShellCanvas main.fixed.inset-0,
-.cvxShellCanvas .cxRoot,
-.cvxShellCanvas .ch4Root,
-.cvxShellCanvas .scRoot,
-.cvxShellCanvas .dwRoot,
-.cvxShellCanvas .concept-c2-frame,
-.cvxShellCanvas .xcf-real-page,
-.cvxShellCanvas .xcf-workspace,
-.cvxShellCanvas .xcf-shell.xcf-real-page {
+.cvxShellCanvas > * {
+  min-width: 0 !important;
+}
+
+.cvxChildRoot {
   position: relative !important;
   inset: auto !important;
   left: auto !important;
   right: auto !important;
   top: auto !important;
   bottom: auto !important;
-  margin-left: 0 !important;
-  padding-left: 0 !important;
   width: 100% !important;
   max-width: 100% !important;
   min-height: auto !important;
-  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  overflow: visible !important;
 }
 
-.cvxShellCanvas main > section,
-.cvxShellCanvas .cxWrap,
-.cvxShellCanvas .ch4Wrap,
-.cvxShellCanvas .dwWrap {
+.cvxChildWrap {
+  width: 100% !important;
   max-width: 100% !important;
   margin-left: auto !important;
   margin-right: auto !important;
+}
+
+.cvxChildGrid {
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)) !important;
+  gap: 18px !important;
+  align-items: start !important;
 }
 
 .cvxShellMobileNav {
@@ -261,20 +258,4 @@
     font-size: 10px !important;
     font-weight: 900 !important;
   }
-}
-
-
-/* CHURVOX_COMMAND_SHELL_CANVAS_LOCK_20260610 */
-.cvxShellMain {
-  min-width: 0 !important;
-  overflow-x: hidden !important;
-}
-
-.cvxShellCanvas {
-  min-width: 0 !important;
-  overflow-x: visible !important;
-}
-
-.cvxShellCanvas > * {
-  min-width: 0 !important;
 }
