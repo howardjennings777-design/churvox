@@ -1,0 +1,42 @@
+.freshWarrantiesPage{display:grid;gap:16px}
+.freshWarrantiesHero{display:flex;justify-content:space-between;gap:18px;padding:22px;border-radius:30px;background:#111827;box-shadow:0 24px 70px rgba(2,6,23,.18)}
+.freshWarrantiesHero span,.freshWarrantiesHead>div>span,.freshWarrantiesCards span,.freshWarrantiesForm label span{display:inline-flex;border-radius:999px;background:rgba(249,115,22,.16);color:#fed7aa;-webkit-text-fill-color:#fed7aa;padding:8px 11px;font-size:10px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}
+.freshWarrantiesHero h1{margin:13px 0 8px;color:#fff;-webkit-text-fill-color:#fff;font-size:46px;line-height:.9;letter-spacing:-.07em}
+.freshWarrantiesHero p{margin:0;max-width:760px;color:#e5e7eb;-webkit-text-fill-color:#e5e7eb;font-size:15px;font-weight:850;line-height:1.45}
+.freshWarrantiesStats{min-width:380px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.freshWarrantiesStats div{border-radius:20px;background:rgba(255,255,255,.08);padding:14px}
+.freshWarrantiesStats b{display:block;color:#fbbf24;-webkit-text-fill-color:#fbbf24;font-size:30px;line-height:1}
+.freshWarrantiesStats small{display:block;margin-top:5px;color:#f9fafb;-webkit-text-fill-color:#f9fafb;font-size:11px;font-weight:950;letter-spacing:.08em;text-transform:uppercase}
+.freshWarrantiesLayout{display:grid;grid-template-columns:330px minmax(0,1fr);gap:16px}
+.freshWarrantiesList,.freshWarrantiesDetail{border:1px solid rgba(15,23,42,.12);border-radius:30px;background:#fffaf0;box-shadow:0 18px 48px rgba(2,6,23,.10)}
+.freshWarrantiesList{display:grid;gap:9px;align-content:start;padding:14px}
+.freshWarrantiesList header{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:14px;border-radius:22px;background:#111827}
+.freshWarrantiesList header b{display:block;color:#fff;-webkit-text-fill-color:#fff}
+.freshWarrantiesList header span{display:block;margin-top:3px;color:#fed7aa;-webkit-text-fill-color:#fed7aa;font-size:12px;font-weight:900}
+.freshWarrantiesList header button,.freshWarrantiesHeadActions button,.freshWarrantiesActions button,.freshWarrantiesReset{border:0;border-radius:15px;min-height:42px;padding:0 13px;font-size:12px;font-weight:1000;cursor:pointer}
+.freshWarrantiesList header button,.freshWarrantiesActions button:first-child{background:#f97316;color:#111827;-webkit-text-fill-color:#111827}
+.freshWarrantiesList>button:not(.freshWarrantiesReset){border:1px solid rgba(15,23,42,.10);border-radius:20px;background:#fff;padding:13px;text-align:left;cursor:pointer}
+.freshWarrantiesList>button.active{background:#ffedd5;border-color:rgba(249,115,22,.36)}
+.freshWarrantiesList>button b,.freshWarrantiesHead h2,.freshWarrantiesCards b{display:block;color:#101827;-webkit-text-fill-color:#101827}
+.freshWarrantiesList>button span,.freshWarrantiesList>button small,.freshWarrantiesHead p,.freshWarrantiesCards p{display:block;margin-top:4px;color:#475569;-webkit-text-fill-color:#475569;font-weight:850}
+.freshWarrantiesReset{background:#fff;color:#334155;-webkit-text-fill-color:#334155;border:1px solid rgba(15,23,42,.12)}
+.freshWarrantiesDetail{padding:18px}
+.freshWarrantiesHead{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;border-bottom:1px solid rgba(15,23,42,.10);padding-bottom:14px}
+.freshWarrantiesHead>div>span,.freshWarrantiesCards span,.freshWarrantiesForm label span{background:#fff7ed;color:#9a3412;-webkit-text-fill-color:#9a3412}
+.freshWarrantiesHead h2{margin:11px 0 6px;font-size:34px;line-height:.95;letter-spacing:-.055em}
+.freshWarrantiesHeadActions{display:flex;flex-wrap:wrap;gap:8px}
+.freshWarrantiesHeadActions button:first-child{background:#111827;color:#fff;-webkit-text-fill-color:#fff}
+.freshWarrantiesHeadActions button:nth-child(2),.freshWarrantiesHeadActions button:nth-child(3){background:#f97316;color:#111827;-webkit-text-fill-color:#111827}
+.freshWarrantiesCards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}
+.freshWarrantiesCards section{border:1px solid rgba(15,23,42,.10);border-radius:24px;background:#fff;padding:16px}
+.freshWarrantiesCards b{margin-top:10px;font-size:19px;line-height:1.1}
+.freshWarrantiesCards p{line-height:1.4}
+.freshWarrantiesForm{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}
+.freshWarrantiesForm label{display:grid;gap:6px}
+.freshWarrantiesForm label.wide{grid-column:1/-1}
+.freshWarrantiesForm input,.freshWarrantiesForm select,.freshWarrantiesForm textarea{width:100%;border:1px solid rgba(15,23,42,.14);border-radius:16px;background:#fff;color:#101827;-webkit-text-fill-color:#101827;padding:12px 13px;font-size:14px;font-weight:900;outline:0}
+.freshWarrantiesForm textarea{min-height:110px;resize:vertical}
+.freshWarrantiesActions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.freshWarrantiesActions button{background:#111827;color:#fff;-webkit-text-fill-color:#fff}
+.freshWarrantiesActions button:first-child,.freshWarrantiesActions button:nth-child(2),.freshWarrantiesActions button:nth-child(3){background:#fbbf24;color:#111827;-webkit-text-fill-color:#111827}
+@media (max-width:1050px){.freshWarrantiesHero,.freshWarrantiesHead{display:grid}.freshWarrantiesStats,.freshWarrantiesLayout,.freshWarrantiesCards,.freshWarrantiesForm{grid-template-columns:1fr}.freshWarrantiesStats{min-width:0}.freshWarrantiesHeadActions,.freshWarrantiesActions{display:grid}}
