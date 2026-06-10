@@ -31,6 +31,7 @@ import "./freshUltimateContrast.css";
 import "./freshSearchContrastFinal.css";
 import "./freshRiskScan.css";
 import "./freshSearchReallyFinal.css";
+import "./freshSearchTypingFix.css";
 
 import FreshShell from "./FreshShell";
 import FreshCommand from "./FreshCommand";

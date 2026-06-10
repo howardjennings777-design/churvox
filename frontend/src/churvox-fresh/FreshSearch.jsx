@@ -230,12 +230,19 @@ export default function FreshSearch({ onNavigate }) {
       <label className="freshSearch">
         <span>Search</span>
         <input
+          className="freshSearchInput"
           value={query}
           onFocus={refresh}
           onKeyDown={onKeyDown}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Try Birchville, INV-1007, Matiu..."
           aria-label="Search Churvox fresh preview"
+          style={{
+            color: "#101827",
+            WebkitTextFillColor: "#101827",
+            backgroundColor: "#ffffff",
+            caretColor: "#101827",
+          }}
         />
       </label>
 

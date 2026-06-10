@@ -1,0 +1,45 @@
+/* Final typed-search visibility fix */
+
+.freshSearchInput,
+.freshTopbar .freshSearchInput,
+.freshSearchWrap .freshSearchInput,
+.freshApp input.freshSearchInput {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  background-color: #ffffff !important;
+  caret-color: #101827 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  text-shadow: none !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+
+.freshSearchInput:focus,
+.freshTopbar .freshSearchInput:focus,
+.freshSearchWrap .freshSearchInput:focus,
+.freshApp input.freshSearchInput:focus {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  background-color: #ffffff !important;
+  caret-color: #101827 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+
+.freshSearchInput::placeholder,
+.freshTopbar .freshSearchInput::placeholder,
+.freshSearchWrap .freshSearchInput::placeholder,
+.freshApp input.freshSearchInput::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  opacity: 1 !important;
+}
+
+.freshSearchInput::selection {
+  background: #fed7aa !important;
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+}
