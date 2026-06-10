@@ -1,0 +1,66 @@
+.freshSettingsChecks {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.freshCheck {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid rgba(15,23,42,.12);
+  border-left: 7px solid #16a34a;
+  border-radius: 16px;
+  background: white;
+  padding: 12px;
+}
+
+.freshCheck.need {
+  border-left-color: #f97316;
+  background: #fff7ed;
+}
+
+.freshCheck b {
+  color: #101827;
+  font-size: 13px;
+  font-weight: 1000;
+}
+
+.freshCheck span {
+  color: #475569;
+  font-size: 12px;
+  font-weight: 900;
+  text-align: right;
+}
+
+.freshSettingsSecurity {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.freshSettingsSecurity div {
+  border: 1px solid rgba(15,23,42,.12);
+  border-left: 7px solid #111827;
+  border-radius: 16px;
+  background: white;
+  padding: 12px;
+}
+
+.freshSettingsSecurity span {
+  display: block;
+  color: #9a3412;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.freshSettingsSecurity b {
+  display: block;
+  margin-top: 6px;
+  color: #101827;
+  font-size: 13px;
+  font-weight: 1000;
+  line-height: 1.35;
+}
