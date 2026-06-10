@@ -26,6 +26,7 @@ import "./freshFormContrast.css";
 import "./freshDataControls.css";
 import "./freshCommandFlow.css";
 import "./freshTopStatus.css";
+import "./freshLaunchChecklist.css";
 
 import FreshShell from "./FreshShell";
 import FreshCommand from "./FreshCommand";

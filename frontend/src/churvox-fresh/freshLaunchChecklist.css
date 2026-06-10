@@ -1,0 +1,178 @@
+.freshLaunchChecklist {
+  display: block;
+  margin: 0 0 16px;
+  padding: 18px;
+  border: 1px solid rgba(15,23,42,.14);
+  border-left: 9px solid #16a34a;
+  border-radius: 28px;
+  background: #f0fdf4;
+  box-shadow: 0 22px 60px rgba(2,6,23,.10);
+}
+
+.freshLaunchChecklist header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.freshLaunchChecklist header span {
+  display: inline-flex;
+  border-radius: 999px;
+  background: #052e16;
+  color: #bbf7d0;
+  -webkit-text-fill-color: #bbf7d0;
+  padding: 8px 11px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.freshLaunchChecklist header h2 {
+  margin: 12px 0 6px;
+  color: #052e16;
+  -webkit-text-fill-color: #052e16;
+  font-size: 42px;
+  line-height: .9;
+  letter-spacing: -.065em;
+}
+
+.freshLaunchChecklist header p {
+  margin: 0;
+  max-width: 720px;
+  color: #166534;
+  -webkit-text-fill-color: #166534;
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.freshLaunchChecklist header button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 16px;
+  background: #052e16;
+  color: white;
+  -webkit-text-fill-color: white;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshLaunchProgress {
+  height: 13px;
+  border-radius: 999px;
+  background: rgba(5,46,22,.14);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.freshLaunchProgress i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: #16a34a;
+  transition: width .18s ease;
+}
+
+.freshLaunchGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.freshLaunchGrid article {
+  display: grid;
+  grid-template-columns: 38px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid rgba(15,23,42,.12);
+  border-radius: 18px;
+  background: white;
+  padding: 12px;
+}
+
+.freshLaunchGrid article.done {
+  background: #dcfce7;
+  border-color: rgba(22,163,74,.28);
+}
+
+.freshCheckToggle {
+  width: 38px;
+  height: 38px;
+  border: 2px solid rgba(22,163,74,.45);
+  border-radius: 13px;
+  background: white;
+  color: #052e16;
+  -webkit-text-fill-color: #052e16;
+  font-size: 20px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshLaunchGrid b {
+  display: block;
+  color: #052e16;
+  -webkit-text-fill-color: #052e16;
+  font-size: 14px;
+  font-weight: 1000;
+}
+
+.freshLaunchGrid span {
+  display: block;
+  margin-top: 4px;
+  color: #166534;
+  -webkit-text-fill-color: #166534;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.freshOpenArea {
+  min-height: 36px;
+  border: 0;
+  border-radius: 13px;
+  background: #111827;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+@media (max-width: 1100px) {
+  .freshLaunchGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .freshLaunchChecklist header {
+    display: grid;
+  }
+
+  .freshLaunchChecklist header h2 {
+    font-size: 34px;
+  }
+
+  .freshLaunchChecklist header button {
+    width: 100%;
+  }
+
+  .freshLaunchGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .freshLaunchGrid article {
+    grid-template-columns: 38px 1fr;
+  }
+
+  .freshOpenArea {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}

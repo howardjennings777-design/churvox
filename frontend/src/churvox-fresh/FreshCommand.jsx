@@ -1,5 +1,6 @@
 import React from "react";
 import FreshCommandFlow from "./FreshCommandFlow";
+import FreshLaunchChecklist from "./FreshLaunchChecklist";
 
 const commandFilters = ["Pending", "Approved", "Edited", "Declined", "All"];
 
@@ -264,6 +265,8 @@ export default function FreshCommand({ onNavigate }) {
 
 
       <FreshCommandFlow onNavigate={onNavigate} />
+
+      <FreshLaunchChecklist onNavigate={onNavigate} />
 
       <section className="freshCommandFilterBar">
         {commandFilters.map((item) => (
