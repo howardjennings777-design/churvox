@@ -1,0 +1,11 @@
+.freshActivityItem {
+  border-left: 6px solid #f97316;
+}
+
+.freshActivityItem b {
+  color: #101827;
+}
+
+.freshActivityItem span {
+  color: #64748b;
+}

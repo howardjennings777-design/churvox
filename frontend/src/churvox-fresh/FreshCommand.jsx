@@ -82,6 +82,7 @@ const seedBoxes = [
 ];
 
 const COMMAND_STORAGE_KEY = "churvox:fresh-command-boxes:v1";
+const COMMAND_ACTIVITY_KEY = "churvox:fresh-command-activity:v1";
 
 function withState(box) {
   return {
@@ -118,9 +119,35 @@ function loadCommandBoxes() {
   }
 }
 
+function loadCommandActivity() {
+  try {
+    if (typeof window === "undefined") return [];
+
+    const saved = window.localStorage.getItem(COMMAND_ACTIVITY_KEY);
+    if (!saved) return [];
+
+    const parsed = JSON.parse(saved);
+    return Array.isArray(parsed) ? parsed.slice(0, 8) : [];
+  } catch {
+    return [];
+  }
+}
+
+function makeActivity(box, status) {
+  return {
+    id: `${box.id}-${Date.now()}`,
+    status,
+    title: box.title,
+    group: box.group,
+    info: box.info,
+    time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+  };
+}
+
 export default function FreshCommand({ onNavigate }) {
   const [boxes, setBoxes] = React.useState(loadCommandBoxes);
   const [selectedId, setSelectedId] = React.useState(null);
+  const [activity, setActivity] = React.useState(loadCommandActivity);
 
   const selected = boxes.find((box) => box.id === selectedId);
 
@@ -133,6 +160,16 @@ export default function FreshCommand({ onNavigate }) {
       // Fresh preview can still run without local storage.
     }
   }, [boxes]);
+
+  React.useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(COMMAND_ACTIVITY_KEY, JSON.stringify(activity));
+      }
+    } catch {
+      // Fresh preview can still run without local storage.
+    }
+  }, [activity]);
 
   const pendingCount = boxes.filter((box) => box.status === "Pending").length;
   const doneCount = boxes.filter((box) => box.status !== "Pending").length;
@@ -149,6 +186,7 @@ export default function FreshCommand({ onNavigate }) {
       )
     );
 
+    setActivity((current) => [makeActivity(selected, status), ...current].slice(0, 8));
     setSelectedId(null);
   }
 
@@ -174,12 +212,14 @@ export default function FreshCommand({ onNavigate }) {
     try {
       if (typeof window !== "undefined") {
         window.localStorage.removeItem(COMMAND_STORAGE_KEY);
+        window.localStorage.removeItem(COMMAND_ACTIVITY_KEY);
       }
     } catch {
       // Ignore storage reset errors in preview.
     }
 
     setBoxes(seedBoxes.map(withState));
+    setActivity([]);
     setSelectedId(null);
   }
 
@@ -234,15 +274,22 @@ export default function FreshCommand({ onNavigate }) {
         </section>
 
         <aside className="freshCard">
-          <h2>Preview controls</h2>
-          <div className="freshItem">
-            <b>Live boxes</b>
-            <span>Approve, decline and edit now change the Command box state.</span>
-          </div>
-          <div className="freshItem">
-            <b>Refresh safe</b>
-            <span>Command decisions stay saved while testing until you reset them.</span>
-          </div>
+          <h2>Owner activity</h2>
+
+          {activity.length === 0 && (
+            <div className="freshItem">
+              <b>No decisions yet</b>
+              <span>Approve, decline or edit a Command slip to create activity.</span>
+            </div>
+          )}
+
+          {activity.map((item) => (
+            <div className="freshItem freshActivityItem" key={item.id}>
+              <b>{item.status} · {item.title}</b>
+              <span>{item.group} · {item.info} · {item.time}</span>
+            </div>
+          ))}
+
           <div className="freshActions">
             <button className="freshGhost" onClick={resetCommand}>Reset Command boxes</button>
           </div>
