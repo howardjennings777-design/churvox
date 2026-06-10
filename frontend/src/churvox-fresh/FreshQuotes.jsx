@@ -1,4 +1,5 @@
 import React from "react";
+import { readFreshFocus } from "./freshFocus";
 
 const QUOTE_STORAGE_KEY = "churvox:fresh-quotes:v1";
 const JOB_STORAGE_KEY = "churvox:fresh-jobs:v1";
@@ -90,7 +91,7 @@ function loadQuotes() {
 
 export default function FreshQuotes({ onNavigate }) {
   const [quotes, setQuotes] = React.useState(loadQuotes);
-  const [selectedId, setSelectedId] = React.useState(quotes[0]?.id || "");
+  const [selectedId, setSelectedId] = React.useState(() => readFreshFocus("quotes", quotes[0]?.id || ""));
   const [filter, setFilter] = React.useState("All");
 
   const selected = quotes.find((quote) => quote.id === selectedId) || quotes[0];

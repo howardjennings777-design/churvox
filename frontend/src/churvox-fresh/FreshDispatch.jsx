@@ -1,4 +1,5 @@
 import React from "react";
+import { readFreshFocus } from "./freshFocus";
 
 const DISPATCH_STORAGE_KEY = "churvox:fresh-dispatch:v1";
 
@@ -67,7 +68,7 @@ function loadDispatch() {
 
 export default function FreshDispatch({ onNavigate }) {
   const [items, setItems] = React.useState(loadDispatch);
-  const [selectedId, setSelectedId] = React.useState(items[0]?.id || "");
+  const [selectedId, setSelectedId] = React.useState(() => readFreshFocus("dispatch", items[0]?.id || ""));
 
   const selected = items.find((item) => item.id === selectedId) || items[0];
 

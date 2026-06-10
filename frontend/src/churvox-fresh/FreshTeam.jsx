@@ -1,4 +1,5 @@
 import React from "react";
+import { readFreshFocus } from "./freshFocus";
 
 const TEAM_STORAGE_KEY = "churvox:fresh-team:v1";
 
@@ -71,7 +72,7 @@ function loadTeam() {
 
 export default function FreshTeam({ onNavigate }) {
   const [team, setTeam] = React.useState(loadTeam);
-  const [selectedId, setSelectedId] = React.useState(team[0]?.id || "");
+  const [selectedId, setSelectedId] = React.useState(() => readFreshFocus("team", team[0]?.id || ""));
   const [filter, setFilter] = React.useState("All");
 
   const selected = team.find((member) => member.id === selectedId) || team[0];

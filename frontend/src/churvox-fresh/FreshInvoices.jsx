@@ -1,4 +1,5 @@
 import React from "react";
+import { readFreshFocus } from "./freshFocus";
 
 const INVOICE_STORAGE_KEY = "churvox:fresh-invoices:v1";
 
@@ -63,7 +64,7 @@ function loadInvoices() {
 
 export default function FreshInvoices({ onNavigate }) {
   const [invoices, setInvoices] = React.useState(loadInvoices);
-  const [selectedId, setSelectedId] = React.useState(invoices[0]?.id || "");
+  const [selectedId, setSelectedId] = React.useState(() => readFreshFocus("invoices", invoices[0]?.id || ""));
   const [filter, setFilter] = React.useState("All");
 
   const selected = invoices.find((invoice) => invoice.id === selectedId) || invoices[0];

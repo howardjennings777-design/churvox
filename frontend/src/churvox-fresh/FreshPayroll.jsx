@@ -1,4 +1,5 @@
 import React from "react";
+import { readFreshFocus } from "./freshFocus";
 
 const PAYROLL_STORAGE_KEY = "churvox:fresh-payroll:v1";
 const PAYROLL_PERIOD_KEY = "churvox:fresh-payroll-period:v1";
@@ -76,7 +77,7 @@ function loadPeriod() {
 export default function FreshPayroll({ onNavigate }) {
   const [people, setPeople] = React.useState(loadPayroll);
   const [period, setPeriod] = React.useState(loadPeriod);
-  const [selectedId, setSelectedId] = React.useState(people[0]?.id || "");
+  const [selectedId, setSelectedId] = React.useState(() => readFreshFocus("payroll", people[0]?.id || ""));
   const [filter, setFilter] = React.useState("All");
 
   const selected = people.find((person) => person.id === selectedId) || people[0];

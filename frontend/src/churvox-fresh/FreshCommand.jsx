@@ -1,6 +1,7 @@
 import React from "react";
 import FreshCommandFlow from "./FreshCommandFlow";
 import FreshLaunchChecklist from "./FreshLaunchChecklist";
+import { readFreshFocus } from "./freshFocus";
 
 const commandFilters = ["Pending", "Approved", "Edited", "Declined", "All"];
 
@@ -150,7 +151,7 @@ function makeActivity(box, status) {
 
 export default function FreshCommand({ onNavigate }) {
   const [boxes, setBoxes] = React.useState(loadCommandBoxes);
-  const [selectedId, setSelectedId] = React.useState(null);
+  const [selectedId, setSelectedId] = React.useState(() => readFreshFocus("command", null));
   const [activity, setActivity] = React.useState(loadCommandActivity);
   const [filter, setFilter] = React.useState("Pending");
 

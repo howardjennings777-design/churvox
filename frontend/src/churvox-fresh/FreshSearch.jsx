@@ -1,4 +1,5 @@
 import React from "react";
+import { setFreshFocus } from "./freshFocus";
 
 const keys = {
   commandBoxes: "churvox:fresh-command-boxes:v1",
@@ -43,6 +44,7 @@ function buildRecords() {
 
   return [
     ...commandBoxes.map((item) => ({
+      id: item.id,
       area: "Command",
       title: item.title || "Command item",
       meta: `${item.group || "Box"} · ${item.status || "Pending"} · ${item.info || ""}`,
@@ -50,6 +52,7 @@ function buildRecords() {
     })),
 
     ...commandInbox.map((item) => ({
+      id: item.id,
       area: "Command",
       title: item.title || "Inbox issue",
       meta: `Inbox · ${item.info || "Sent to Command"}`,
@@ -57,6 +60,7 @@ function buildRecords() {
     })),
 
     ...jobs.map((job) => ({
+      id: job.id,
       area: "Jobs",
       title: job.title || "Job",
       meta: `${job.client || "Client"} · ${job.status || "Status"} · ${job.price || ""}`,
@@ -64,6 +68,7 @@ function buildRecords() {
     })),
 
     ...dispatch.map((item) => ({
+      id: item.id,
       area: "Dispatch",
       title: item.job || "Dispatch job",
       meta: `${item.client || "Client"} · ${item.status || "Status"} · ${item.worker || ""}`,
@@ -71,6 +76,7 @@ function buildRecords() {
     })),
 
     ...clients.map((client) => ({
+      id: client.id,
       area: "Clients",
       title: client.name || "Client",
       meta: `${client.status || "Status"} · ${client.email || ""} · ${client.billingEmail || "billing missing"}`,
@@ -78,20 +84,23 @@ function buildRecords() {
     })),
 
     ...quotes.map((quote) => ({
+      id: quote.id,
       area: "Quotes",
       title: quote.id || "Quote",
-      meta: `${quote.client || "Client"} · ${quote.status || "Status"} · ${money(quote.amount)}`,
+      meta: `${quote.client || "Client"} · ${quote.title || ""} · ${quote.status || "Status"} · ${money(quote.amount)}`,
       page: "quotes",
     })),
 
     ...invoices.map((invoice) => ({
+      id: invoice.id,
       area: "Invoices",
       title: invoice.id || "Invoice",
-      meta: `${invoice.client || "Client"} · ${invoice.status || "Status"} · ${money(invoice.amount)}`,
+      meta: `${invoice.client || "Client"} · ${invoice.job || ""} · ${invoice.status || "Status"} · ${money(invoice.amount)}`,
       page: "invoices",
     })),
 
     ...team.map((member) => ({
+      id: member.id,
       area: "Team",
       title: member.name || "Team member",
       meta: `${member.role || "Role"} · ${member.status || "Status"} · ${member.currentJob || ""}`,
@@ -99,6 +108,7 @@ function buildRecords() {
     })),
 
     ...payroll.map((person) => ({
+      id: person.id,
       area: "Payroll",
       title: person.name || "Payroll record",
       meta: `${person.status || "Status"} · ${person.ordinaryHours || 0} hrs · ${person.role || ""}`,
@@ -106,6 +116,7 @@ function buildRecords() {
     })),
 
     ...support.map((ticket) => ({
+      id: ticket.id,
       area: "Support",
       title: ticket.title || "Support item",
       meta: `${ticket.id || "Ticket"} · ${ticket.status || "Status"} · ${ticket.priority || ""}`,
@@ -113,18 +124,21 @@ function buildRecords() {
     })),
 
     {
+      id: "",
       area: "Settings",
       title: "GST and business setup",
       meta: "Business name · region · email · accounting · automation",
       page: "settings",
     },
     {
+      id: "",
       area: "Plans",
       title: "Operator and Command plans",
       meta: "Start · Crew · Operator · Command · Growth Pack",
       page: "plans",
     },
     {
+      id: "",
       area: "Reports",
       title: "Live reports",
       meta: "Revenue · jobs · risks · payroll · invoices",
@@ -164,8 +178,9 @@ export default function FreshSearch({ onNavigate }) {
         .slice(0, 9)
     : [];
 
-  function open(page) {
-    onNavigate?.(page);
+  function open(item) {
+    if (item.id) setFreshFocus(item.page, item.id);
+    onNavigate?.(item.page);
     setQuery("");
   }
 
@@ -183,7 +198,7 @@ export default function FreshSearch({ onNavigate }) {
       {results.length > 0 && (
         <div className="freshSearchResults">
           {results.map((item, index) => (
-            <button type="button" key={`${item.area}-${item.title}-${index}`} onClick={() => open(item.page)}>
+            <button type="button" key={`${item.area}-${item.title}-${index}`} onClick={() => open(item)}>
               <strong>{item.title}</strong>
               <span>{item.area} · {item.meta}</span>
             </button>

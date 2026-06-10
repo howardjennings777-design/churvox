@@ -1,4 +1,5 @@
 import React from "react";
+import { readFreshFocus } from "./freshFocus";
 
 const JOB_STORAGE_KEY = "churvox:fresh-jobs:v1";
 const INVOICE_STORAGE_KEY = "churvox:fresh-invoices:v1";
@@ -93,7 +94,7 @@ function loadJobs() {
 
 export default function FreshJobs({ onNavigate }) {
   const [jobs, setJobs] = React.useState(loadJobs);
-  const [selectedId, setSelectedId] = React.useState(jobs[0]?.id || "");
+  const [selectedId, setSelectedId] = React.useState(() => readFreshFocus("jobs", jobs[0]?.id || ""));
   const [filter, setFilter] = React.useState("All");
 
   const selected = jobs.find((job) => job.id === selectedId) || jobs[0];
