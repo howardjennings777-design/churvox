@@ -184,11 +184,11 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
       <div className="freshCommandDeskHero">
         <div>
           <span>Command</span>
-          <h1>{mode === "setup" ? "Let’s get your business ready." : "Churvox has checked your business."}</h1>
+          <h1>{mode === "setup" ? "Let’s get your business ready." : "Churvox has prepared your work."}</h1>
           <p>
             {mode === "setup"
               ? "Setup mode shows what a new owner must finish before Churvox can run properly."
-              : "Daily mode shows the work AI has already prepared: money, jobs, workers, customers, risks and setup gaps."}
+              : "Daily mode shows what Churvox has already prepared: money, jobs, workers, customers, risks and setup gaps."}
           </p>
         </div>
 
@@ -202,7 +202,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
 
       <div className="freshCommandMorning">
         <div>
-          <b>{mode === "setup" ? "Setup Assistant" : "Good morning. Churvox prepared actions for approval."}</b>
+          <b>{mode === "setup" ? "Setup Assistant" : "Churvox prepared your work for approval."}</b>
           <p>
             {mode === "setup"
               ? `${setup.length || 1} setup items need checking before launch.`
@@ -266,11 +266,11 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
 
             <div className="freshCommandSlipBody">
               <section>
-                <b>AI found</b>
+                <b>Churvox found</b>
                 <p>{slip.found || "Churvox found an item that needs owner review."}</p>
               </section>
               <section>
-                <b>AI prepared</b>
+                <b>Churvox prepared</b>
                 <p>{slip.prepared || "A prepared action is ready for owner approval."}</p>
               </section>
               <section>
@@ -316,7 +316,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
             <header>
               <span>Edit prepared action</span>
               <h2>{editing.title}</h2>
-              <p>Owner can change what AI prepared before approving.</p>
+              <p>Owner can change what Churvox prepared before approving.</p>
             </header>
 
             <textarea value={editText} onChange={(event) => setEditText(event.target.value)} />

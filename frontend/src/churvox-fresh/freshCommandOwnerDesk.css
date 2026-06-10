@@ -622,3 +622,143 @@ body.freshCommandOwnerMode .freshCommandDone{
     font-size:28px;
   }
 }
+
+/* Readability lock — Command must be readable on dark screens */
+body.freshCommandOwnerMode .freshCommandMorning,
+body.freshCommandOwnerMode .freshCommandMorning *,
+body.freshCommandOwnerMode .freshCommandSlip,
+body.freshCommandOwnerMode .freshCommandSlip *,
+body.freshCommandOwnerMode .freshCommandSlipBody,
+body.freshCommandOwnerMode .freshCommandSlipBody *,
+body.freshCommandOwnerMode .freshCommandTabs,
+body.freshCommandOwnerMode .freshCommandTabs *,
+body.freshCommandOwnerMode .freshCommandFocusRow,
+body.freshCommandOwnerMode .freshCommandFocusRow *{
+  opacity:1 !important;
+  text-shadow:none !important;
+}
+
+body.freshCommandOwnerMode .freshCommandMorning{
+  background:#0b1220 !important;
+  border:2px solid rgba(251,191,36,.20) !important;
+}
+
+body.freshCommandOwnerMode .freshCommandMorning b{
+  color:#ffffff !important;
+  -webkit-text-fill-color:#ffffff !important;
+  font-size:26px !important;
+  font-weight:1000 !important;
+  letter-spacing:-.04em !important;
+}
+
+body.freshCommandOwnerMode .freshCommandMorning p{
+  color:#e5e7eb !important;
+  -webkit-text-fill-color:#e5e7eb !important;
+  font-size:15px !important;
+  font-weight:950 !important;
+}
+
+body.freshCommandOwnerMode .freshCommandSlip{
+  background:#0b1220 !important;
+  border:2px solid rgba(255,255,255,.12) !important;
+}
+
+body.freshCommandOwnerMode .freshCommandSlip.high{
+  border-color:rgba(249,115,22,.70) !important;
+}
+
+body.freshCommandOwnerMode .freshCommandSlip h2{
+  color:#ffffff !important;
+  -webkit-text-fill-color:#ffffff !important;
+  font-weight:1000 !important;
+}
+
+body.freshCommandOwnerMode .freshCommandSlip small{
+  color:#f8fafc !important;
+  -webkit-text-fill-color:#f8fafc !important;
+  font-weight:950 !important;
+}
+
+body.freshCommandOwnerMode .freshCommandSlipBody{
+  gap:12px !important;
+}
+
+body.freshCommandOwnerMode .freshCommandSlipBody section{
+  background:#111827 !important;
+  border:2px solid rgba(148,163,184,.35) !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.03) !important;
+}
+
+body.freshCommandOwnerMode .freshCommandSlipBody b{
+  display:inline-flex !important;
+  width:max-content !important;
+  max-width:100% !important;
+  border-radius:8px !important;
+  background:#f97316 !important;
+  color:#111827 !important;
+  -webkit-text-fill-color:#111827 !important;
+  padding:4px 8px !important;
+  font-size:12px !important;
+  font-weight:1000 !important;
+  letter-spacing:.06em !important;
+  text-transform:uppercase !important;
+}
+
+body.freshCommandOwnerMode .freshCommandSlipBody p{
+  color:#ffffff !important;
+  -webkit-text-fill-color:#ffffff !important;
+  font-size:15px !important;
+  font-weight:900 !important;
+  line-height:1.45 !important;
+}
+
+body.freshCommandOwnerMode .freshCommandSlipControls button{
+  color:#ffffff !important;
+  -webkit-text-fill-color:#ffffff !important;
+  background:#1f2937 !important;
+  border:1px solid rgba(255,255,255,.14) !important;
+}
+
+body.freshCommandOwnerMode .freshCommandSlipControls button:first-child{
+  color:#111827 !important;
+  -webkit-text-fill-color:#111827 !important;
+  background:#f97316 !important;
+}
+
+body.freshCommandOwnerMode .freshCommandTabs button.active{
+  background:#f97316 !important;
+}
+
+body.freshCommandOwnerMode .freshCommandTabs button.active b,
+body.freshCommandOwnerMode .freshCommandTabs button.active span{
+  color:#111827 !important;
+  -webkit-text-fill-color:#111827 !important;
+}
+
+body.freshCommandOwnerMode .freshCommandTabs button:not(.active) b,
+body.freshCommandOwnerMode .freshCommandTabs button:not(.active) span{
+  color:#ffffff !important;
+  -webkit-text-fill-color:#ffffff !important;
+}
+
+body.freshCommandOwnerMode .freshCommandFocusRow button:first-child b,
+body.freshCommandOwnerMode .freshCommandFocusRow button:first-child span{
+  color:#111827 !important;
+  -webkit-text-fill-color:#111827 !important;
+}
+
+body.freshCommandOwnerMode .freshCommandFocusRow button:not(:first-child) b,
+body.freshCommandOwnerMode .freshCommandFocusRow button:not(:first-child) span{
+  color:#ffffff !important;
+  -webkit-text-fill-color:#ffffff !important;
+}
+
+@media(max-width:1050px){
+  body.freshCommandOwnerMode .freshCommandSlipBody p{
+    font-size:14px !important;
+  }
+
+  body.freshCommandOwnerMode .freshCommandMorning b{
+    font-size:22px !important;
+  }
+}
