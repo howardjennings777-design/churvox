@@ -67,6 +67,7 @@ import FreshClientPortal from "./FreshClientPortal";
 import FreshWorker from "./FreshWorker";
 import FreshSimple from "./FreshSimple";
 import FreshFeedback from "./FreshFeedback";
+import { forceFreshReadable, installFreshReadableRuntime } from "./freshForceReadable";
 
 const pages = new Set([
   "command",
@@ -110,6 +111,16 @@ export default function FreshApp() {
     window.addEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
     return () => window.removeEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
   }, []);
+
+  React.useEffect(() => {
+    const cleanupReadable = installFreshReadableRuntime();
+    return cleanupReadable;
+  }, []);
+
+  React.useEffect(() => {
+    const frame = window.requestAnimationFrame(forceFreshReadable);
+    return () => window.cancelAnimationFrame(frame);
+  }, [page, dataVersion]);
 
   function goToPage(nextPage) {
     if (!pages.has(nextPage)) return;
