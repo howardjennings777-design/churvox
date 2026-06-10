@@ -1,8 +1,8 @@
 import React from "react";
 
 const groups = [
-  { title: "Command", items: [["command", "CM", "Command Board"]] },
-  { title: "Work", items: [["hub", "SH", "Smart Hub"], ["jobs", "JB", "Jobs"], ["dispatch", "DP", "Dispatch"], ["clients", "CL", "Clients"], ["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"]] },
+  { title: "Home", items: [["command", "CM", "Command"]] },
+  { title: "Work", items: [["jobs", "JB", "Jobs"], ["dispatch", "DP", "Dispatch"], ["clients", "CL", "Clients"], ["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"]] },
   { title: "Business", items: [["team", "TM", "Team"], ["payroll", "PR", "Payroll"], ["reports", "RP", "Reports"]] },
   { title: "System", items: [["settings", "ST", "Settings"], ["plans", "PL", "Plans"], ["support", "SP", "Support"]] },
 ];
