@@ -35,51 +35,41 @@ function buildFlow() {
     .filter((invoice) => invoice.status === "Overdue")
     .reduce((sum, invoice) => sum + Number(invoice.amount || 0), 0);
 
-  const draftInvoices = invoices.filter((invoice) => invoice.status === "Draft").length;
-  const blockedJobs = jobs.filter((job) => job.status === "Blocked").length;
-  const setupClients = clients.filter((client) => client.status === "Needs setup").length;
-  const payrollReview = payroll.filter((person) => person.status === "Needs review").length;
-
   return [
     {
-      key: "clients",
-      title: "Clients",
-      number: clients.length,
-      detail: `${setupClients} need setup`,
       page: "clients",
-      danger: setupClients > 0,
+      number: clients.length,
+      label: "Clients",
+      detail: `${clients.filter((client) => client.status === "Needs setup").length} setup gaps`,
+      risk: clients.some((client) => client.status === "Needs setup"),
     },
     {
-      key: "quotes",
-      title: "Quotes",
-      number: quotes.length,
-      detail: `${quotes.filter((quote) => quote.status === "Sent").length} waiting`,
       page: "quotes",
-      danger: false,
+      number: quotes.length,
+      label: "Quotes",
+      detail: `${quotes.filter((quote) => quote.status === "Sent").length} waiting`,
+      risk: false,
     },
     {
-      key: "jobs",
-      title: "Jobs",
-      number: jobs.length,
-      detail: `${blockedJobs} blocked`,
       page: "jobs",
-      danger: blockedJobs > 0,
+      number: jobs.length,
+      label: "Jobs",
+      detail: `${jobs.filter((job) => job.status === "Blocked").length} blocked`,
+      risk: jobs.some((job) => job.status === "Blocked"),
     },
     {
-      key: "invoices",
-      title: "Invoices",
-      number: invoices.length,
-      detail: `${draftInvoices} drafts · ${money(overdue)} overdue`,
       page: "invoices",
-      danger: overdue > 0 || draftInvoices > 0,
+      number: invoices.length,
+      label: "Invoices",
+      detail: `${money(overdue)} overdue`,
+      risk: overdue > 0 || invoices.some((invoice) => invoice.status === "Draft"),
     },
     {
-      key: "payroll",
-      title: "Payroll",
-      number: payroll.length,
-      detail: `${payrollReview} need review`,
       page: "payroll",
-      danger: payrollReview > 0,
+      number: payroll.length,
+      label: "Payroll",
+      detail: `${payroll.filter((person) => person.status === "Needs review").length} reviews`,
+      risk: payroll.some((person) => person.status === "Needs review"),
     },
   ];
 }
@@ -102,12 +92,12 @@ export default function FreshCommandFlow({ onNavigate }) {
   }, []);
 
   return (
-    <section className="freshCommandFlow">
-      <header>
+    <section className="freshFlowPanel">
+      <header className="freshFlowHeader">
         <div>
           <span>Business flow</span>
           <h2>Job → Invoice → Paid</h2>
-          <p>Command watches the whole admin chain and sends risky work back for owner approval.</p>
+          <p>Command watches the whole chain and highlights where the owner needs to approve or fix something.</p>
         </div>
 
         <button type="button" onClick={() => onNavigate?.("reports")}>
@@ -115,21 +105,20 @@ export default function FreshCommandFlow({ onNavigate }) {
         </button>
       </header>
 
-      <div className="freshFlowRail">
+      <div className="freshFlowCards">
         {flow.map((item, index) => (
-          <React.Fragment key={item.key}>
-            <button
-              type="button"
-              className={item.danger ? "danger" : ""}
-              onClick={() => onNavigate?.(item.page)}
-            >
-              <strong>{item.number}</strong>
-              <b>{item.title}</b>
-              <span>{item.detail}</span>
-            </button>
-
-            {index < flow.length - 1 && <i aria-hidden="true">→</i>}
-          </React.Fragment>
+          <button
+            type="button"
+            key={item.page}
+            className={`freshFlowCard ${item.risk ? "risk" : "safe"}`}
+            onClick={() => onNavigate?.(item.page)}
+          >
+            <i>{String(index + 1).padStart(2, "0")}</i>
+            <strong>{item.number}</strong>
+            <b>{item.label}</b>
+            <span>{item.detail}</span>
+            <em>{item.risk ? "Needs owner check" : "Looks okay"}</em>
+          </button>
         ))}
       </div>
     </section>

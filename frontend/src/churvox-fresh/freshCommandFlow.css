@@ -1,118 +1,184 @@
-.freshCommandFlow {
-  border: 1px solid rgba(15,23,42,.12);
-  border-left: 8px solid #111827;
-  border-radius: 24px;
-  background: #fffaf0;
-  box-shadow: 0 18px 48px rgba(2,6,23,.08);
-  padding: 16px;
-  margin: 0 0 14px;
+.freshFlowPanel {
+  display: block !important;
+  margin: 0 0 16px !important;
+  padding: 18px !important;
+  border-radius: 28px !important;
+  border: 1px solid rgba(15, 23, 42, .16) !important;
+  border-left: 9px solid #f97316 !important;
+  background: linear-gradient(135deg, #fffaf0 0%, #ffffff 100%) !important;
+  box-shadow: 0 22px 60px rgba(2, 6, 23, .12) !important;
 }
 
-.freshCommandFlow header {
-  display: flex;
-  justify-content: space-between;
-  gap: 14px;
-  align-items: flex-start;
-  margin-bottom: 14px;
+.freshFlowHeader {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+  gap: 16px !important;
+  margin-bottom: 16px !important;
 }
 
-.freshCommandFlow header span {
-  display: block;
-  color: #9a3412;
-  font-size: 10px;
-  font-weight: 1000;
-  letter-spacing: .13em;
-  text-transform: uppercase;
+.freshFlowHeader span {
+  display: inline-flex !important;
+  border-radius: 999px !important;
+  background: #111827 !important;
+  color: #fbbf24 !important;
+  -webkit-text-fill-color: #fbbf24 !important;
+  padding: 8px 11px !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .14em !important;
+  text-transform: uppercase !important;
 }
 
-.freshCommandFlow header h2 {
-  margin: 6px 0;
-  color: #101827;
-  font-size: 34px;
-  line-height: .95;
-  letter-spacing: -.06em;
+.freshFlowHeader h2 {
+  margin: 12px 0 6px !important;
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  font-size: 42px !important;
+  line-height: .9 !important;
+  letter-spacing: -.065em !important;
 }
 
-.freshCommandFlow header p {
-  margin: 0;
-  color: #475569;
-  font-size: 13px;
-  font-weight: 850;
+.freshFlowHeader p {
+  margin: 0 !important;
+  max-width: 680px !important;
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  font-size: 14px !important;
+  font-weight: 850 !important;
+  line-height: 1.45 !important;
 }
 
-.freshCommandFlow header button {
-  min-height: 44px;
-  border: 0;
-  border-radius: 15px;
-  background: #111827;
-  color: white;
-  padding: 0 14px;
-  font-size: 13px;
-  font-weight: 1000;
-  cursor: pointer;
+.freshFlowHeader button {
+  min-height: 44px !important;
+  border: 0 !important;
+  border-radius: 16px !important;
+  background: #111827 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  padding: 0 16px !important;
+  font-size: 13px !important;
+  font-weight: 1000 !important;
+  cursor: pointer !important;
 }
 
-.freshFlowRail {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
-  align-items: stretch;
+.freshFlowCards {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 10px !important;
 }
 
-.freshFlowRail i {
-  display: none;
+.freshFlowCard {
+  position: relative !important;
+  display: grid !important;
+  align-content: start !important;
+  min-height: 176px !important;
+  border: 1px solid rgba(15, 23, 42, .14) !important;
+  border-left: 8px solid #16a34a !important;
+  border-radius: 22px !important;
+  background: #ffffff !important;
+  padding: 14px !important;
+  text-align: left !important;
+  cursor: pointer !important;
+  box-shadow: 0 14px 34px rgba(2, 6, 23, .08) !important;
 }
 
-.freshFlowRail button {
-  border: 1px solid rgba(15,23,42,.12);
-  border-left: 7px solid #16a34a;
-  border-radius: 18px;
-  background: white;
-  padding: 14px;
-  text-align: left;
-  cursor: pointer;
+.freshFlowCard.risk {
+  border-left-color: #f97316 !important;
+  background: #fff7ed !important;
 }
 
-.freshFlowRail button.danger {
-  border-left-color: #f97316;
-  background: #fff7ed;
+.freshFlowCard i {
+  width: 34px !important;
+  height: 34px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 12px !important;
+  background: #111827 !important;
+  color: #fbbf24 !important;
+  -webkit-text-fill-color: #fbbf24 !important;
+  font-style: normal !important;
+  font-size: 12px !important;
+  font-weight: 1000 !important;
 }
 
-.freshFlowRail strong {
-  display: block;
-  color: #101827;
-  font-size: 36px;
-  line-height: .9;
-  letter-spacing: -.06em;
-  font-weight: 1000;
+.freshFlowCard strong {
+  display: block !important;
+  margin-top: 18px !important;
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  font-size: 42px !important;
+  line-height: .8 !important;
+  letter-spacing: -.065em !important;
+  font-weight: 1000 !important;
 }
 
-.freshFlowRail b {
-  display: block;
-  margin-top: 8px;
-  color: #101827;
-  font-size: 14px;
-  font-weight: 1000;
+.freshFlowCard b {
+  display: block !important;
+  margin-top: 10px !important;
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
+  font-weight: 1000 !important;
 }
 
-.freshFlowRail span {
-  display: block;
-  margin-top: 5px;
-  color: #475569;
-  font-size: 12px;
-  font-weight: 900;
+.freshFlowCard span {
+  display: block !important;
+  margin-top: 7px !important;
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
 }
 
-@media (max-width: 950px) {
-  .freshCommandFlow header {
-    display: grid;
+.freshFlowCard em {
+  display: inline-flex !important;
+  width: max-content !important;
+  max-width: 100% !important;
+  margin-top: 12px !important;
+  border-radius: 999px !important;
+  background: #ecfdf5 !important;
+  color: #166534 !important;
+  -webkit-text-fill-color: #166534 !important;
+  padding: 7px 9px !important;
+  font-style: normal !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .08em !important;
+  text-transform: uppercase !important;
+}
+
+.freshFlowCard.risk em {
+  background: #ffedd5 !important;
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+}
+
+@media (max-width: 1100px) {
+  .freshFlowCards {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .freshFlowHeader {
+    display: grid !important;
   }
 
-  .freshCommandFlow header button {
-    width: 100%;
+  .freshFlowHeader button {
+    width: 100% !important;
   }
 
-  .freshFlowRail {
-    grid-template-columns: 1fr;
+  .freshFlowHeader h2 {
+    font-size: 34px !important;
+  }
+
+  .freshFlowCards {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshFlowCard {
+    min-height: 150px !important;
   }
 }
