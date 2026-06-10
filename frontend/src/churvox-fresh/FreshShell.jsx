@@ -5,7 +5,8 @@ import FreshTopStatus from "./FreshTopStatus";
 
 const groups = [
   { title: "Home", items: [["command", "CM", "Command"]] },
-  { title: "Work", items: [["jobs", "JB", "Jobs"], ["dispatch", "DP", "Dispatch"], ["photos", "PH", "Photos"], ["clients", "CL", "Clients"], ["photos", "PH", "Photos"],
+  { title: "Work", items: [["jobs", "JB", "Jobs"], ["dispatch", "DP", "Dispatch"], ["photos", "PH", "Photos"], ["extras", "EX", "Extras"], ["clients", "CL", "Clients"], ["photos", "PH", "Photos"],
+  ["extras", "EX", "Extras"],
   ["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["portal", "PT", "Portal"]] },
   { title: "Business", items: [["team", "TM", "Team"], ["worker", "WK", "Worker"], ["payroll", "PR", "Payroll"], ["reports", "RP", "Reports"]] },
   { title: "System", items: [["settings", "ST", "Settings"], ["automation", "AU", "Automation"], ["plans", "PL", "Plans"], ["support", "SP", "Support"]] },
@@ -24,6 +25,7 @@ const labels = {
   settings: "Settings",
   plans: "Plans",
   support: "Support",
+  extras: "Extras",
   photos: "Photos",
   automation: "Automation",
   portal: "Client Portal",
@@ -41,6 +43,7 @@ const mobileItems = [
 
 const extraMobile = [
   ["photos", "PH", "Photos"],
+  ["extras", "EX", "Extras"],
   ["quotes", "QT", "Quotes"],
   ["team", "TM", "Team"],
   ["worker", "WK", "Worker"],
