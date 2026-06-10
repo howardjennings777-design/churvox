@@ -94,6 +94,8 @@ import "./freshUltimateContrast.css";
 import "./freshVariations.css";
 import "./freshWarranties.css";
 import "./freshWorker.css";
+import "./freshWorkerBrief.css";
+import "./freshMissingInfo.css";
 import "./freshXero.css";
 import "./freshGlobalReadable.css";
 import "./freshNuclearReadable.css";
@@ -171,6 +173,8 @@ import FreshTimeLogs from "./FreshTimeLogs";
 import FreshVariations from "./FreshVariations";
 import FreshWarranties from "./FreshWarranties";
 import FreshWorker from "./FreshWorker";
+import FreshWorkerBrief from "./FreshWorkerBrief";
+import FreshMissingInfo from "./FreshMissingInfo";
 import FreshXero from "./FreshXero";
 
 const pages = new Set([
@@ -247,6 +251,8 @@ const pages = new Set([
   "automation",
   "portal",
   "worker",
+  "workerbrief",
+  "missinginfo",
 ]);
 
 function readPageFromHash() {
@@ -364,6 +370,8 @@ export default function FreshApp() {
   if (page === "automation") content = <FreshAutomation onNavigate={goToPage} />;
   if (page === "portal") content = <FreshClientPortal onNavigate={goToPage} />;
   if (page === "worker") content = <FreshWorker onNavigate={goToPage} />;
+  if (page === "workerbrief") content = <FreshWorkerBrief onNavigate={goToPage} />;
+  if (page === "missinginfo") content = <FreshMissingInfo onNavigate={goToPage} />;
 
   return (
     <FreshShell active={page} onChange={goToPage}>

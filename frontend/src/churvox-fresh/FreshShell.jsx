@@ -47,6 +47,8 @@ const groups = [
       ["subcontractors", "SC", "Subcontractors"],
       ["availability", "AV", "Availability"],
       ["worker", "WK", "Worker"],
+      ["workerbrief", "WB", "Worker Brief"],
+      ["missinginfo", "MI", "Missing Info"],
       ["payroll", "PR", "Payroll"],
       ["time", "TL", "Time logs"],
       ["gps", "GP", "GPS"],
@@ -99,6 +101,7 @@ const labels = {
   smart: "Smart Hub",
   aioperator: "AI Operator",
   quickcreateai: "AI Quick Create",
+  missinginfo: "Missing Info",
   command: "Command",
   jobs: "Jobs",
   leads: "Leads",
@@ -132,6 +135,7 @@ const labels = {
   subcontractors: "Subcontractors",
   availability: "Availability",
   worker: "Worker",
+  workerbrief: "Worker Brief",
   payroll: "Payroll",
   time: "Time logs",
   gps: "GPS",
@@ -179,6 +183,8 @@ const mobileItems = [
 ];
 
 const extraMobile = [
+  ["missinginfo", "MI", "Missing Info"],
+  ["workerbrief", "WB", "Worker Brief"],
   ["planday", "PD", "Plan My Day"],
   ["followupwriter", "FW", "AI Follow-up"],
   ["invoicecheck", "IC", "Invoice Checker"],
