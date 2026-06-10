@@ -86,6 +86,7 @@ const groups = [
       ["feedback", "FB", "Feedback"],
       ["roadmap", "RM", "Roadmap"],
       ["onboarding", "OB", "Onboarding"],
+      ["firstrun", "FR", "First Run"],
       ["imports", "IM", "Imports"],
       ["exports", "EX", "Exports"],
       ["security", "SC", "Security"],
@@ -103,6 +104,7 @@ const groups = [
 const labels = {
   smart: "Smart Hub",
   askchurvox: "Ask Churvox",
+  globalactions: "Global Actions",
   aioperator: "AI Operator",
   quickcreateai: "AI Quick Create",
   missinginfo: "Missing Info",
@@ -168,6 +170,7 @@ const labels = {
   feedback: "Feedback",
   roadmap: "Roadmap",
   onboarding: "Onboarding",
+  firstrun: "First Run",
   imports: "Imports",
   exports: "Exports",
   security: "Security",
@@ -190,6 +193,8 @@ const mobileItems = [
 ];
 
 const extraMobile = [
+  ["firstrun", "FR", "First Run"],
+  ["globalactions", "GA", "Global Actions"],
   ["launchcontrol", "LC", "Launch Control"],
   ["askchurvox", "AC", "Ask Churvox"],
   ["businesshealth", "BH", "Business Health"],

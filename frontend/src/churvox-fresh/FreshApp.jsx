@@ -99,6 +99,8 @@ import "./freshMissingInfo.css";
 import "./freshCustomerMemory.css";
 import "./freshBusinessHealth.css";
 import "./freshAskChurvox.css";
+import "./freshGlobalActions.css";
+import "./freshFirstRunWizard.css";
 import "./freshLaunchControl.css";
 import "./freshXero.css";
 import "./freshGlobalReadable.css";
@@ -182,12 +184,15 @@ import FreshMissingInfo from "./FreshMissingInfo";
 import FreshCustomerMemory from "./FreshCustomerMemory";
 import FreshBusinessHealth from "./FreshBusinessHealth";
 import FreshAskChurvox from "./FreshAskChurvox";
+import FreshGlobalActions from "./FreshGlobalActions";
+import FreshFirstRunWizard from "./FreshFirstRunWizard";
 import FreshLaunchControl from "./FreshLaunchControl";
 import FreshXero from "./FreshXero";
 
 const pages = new Set([
   "smart",
   "askchurvox",
+  "globalactions",
   "aioperator",
   "invoicecheck",
   "quickcreateai",
@@ -215,6 +220,7 @@ const pages = new Set([
   "launchcontrol",
   "demo",
   "onboarding",
+  "firstrun",
   "qa",
   "flags",
   "feedback",
@@ -313,6 +319,7 @@ export default function FreshApp() {
   let content = <FreshSimple page={page} />;
   if (page === "smart") content = <FreshSmartHub onNavigate={goToPage} />;
   if (page === "askchurvox") content = <FreshAskChurvox onNavigate={goToPage} />;
+  if (page === "globalactions") content = <FreshGlobalActions onNavigate={goToPage} />;
   if (page === "aioperator") content = <FreshAiOperatorStudio onNavigate={goToPage} />;
   if (page === "quickcreateai") content = <FreshAiQuickCreate onNavigate={goToPage} />;
   if (page === "followupwriter") content = <FreshAiFollowUpWriter onNavigate={goToPage} />;
@@ -341,6 +348,7 @@ export default function FreshApp() {
   if (page === "launchcontrol") content = <FreshLaunchControl onNavigate={goToPage} />;
   if (page === "demo") content = <FreshDemoMode onNavigate={goToPage} />;
   if (page === "onboarding") content = <FreshOnboarding onNavigate={goToPage} />;
+  if (page === "firstrun") content = <FreshFirstRunWizard onNavigate={goToPage} />;
   if (page === "qa") content = <FreshQa onNavigate={goToPage} />;
   if (page === "flags") content = <FreshFlags onNavigate={goToPage} />;
   if (page === "feedback") content = <FreshFeedback onNavigate={goToPage} />;
