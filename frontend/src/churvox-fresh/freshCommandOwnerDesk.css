@@ -1,0 +1,59 @@
+.freshCommandDeskPage{display:grid;gap:16px}
+.freshCommandDeskHero{display:flex;justify-content:space-between;gap:18px;padding:22px;border-radius:30px;background:#111827;box-shadow:0 24px 70px rgba(2,6,23,.18)}
+.freshCommandDeskHero span,.freshCommandSlip header span,.freshCommandEditOverlay span{display:inline-flex;border-radius:999px;background:rgba(249,115,22,.16);color:#fed7aa;-webkit-text-fill-color:#fed7aa;padding:8px 11px;font-size:10px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}
+.freshCommandDeskHero h1{margin:13px 0 8px;color:#fff;-webkit-text-fill-color:#fff;font-size:50px;line-height:.9;letter-spacing:-.075em}
+.freshCommandDeskHero p{margin:0;max-width:840px;color:#e5e7eb;-webkit-text-fill-color:#e5e7eb;font-size:15px;font-weight:850;line-height:1.45}
+.freshCommandDeskStats{min-width:390px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.freshCommandDeskStats div{border-radius:20px;background:rgba(255,255,255,.08);padding:14px}
+.freshCommandDeskStats b{display:block;color:#fbbf24;-webkit-text-fill-color:#fbbf24;font-size:31px;line-height:1}
+.freshCommandDeskStats small{display:block;margin-top:5px;color:#f9fafb;-webkit-text-fill-color:#f9fafb;font-size:11px;font-weight:950;letter-spacing:.08em;text-transform:uppercase}
+.freshCommandMorning{display:flex;justify-content:space-between;gap:14px;align-items:center;border:1px solid rgba(15,23,42,.12);border-radius:28px;background:#fffaf0;padding:18px;box-shadow:0 18px 48px rgba(2,6,23,.10)}
+.freshCommandMorning b{display:block;color:#101827;-webkit-text-fill-color:#101827;font-size:24px;letter-spacing:-.035em}
+.freshCommandMorning p{margin:5px 0 0;color:#475569;-webkit-text-fill-color:#475569;font-weight:850}
+.freshCommandMorningActions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.freshCommandMorningActions button,.freshCommandFocusRow button,.freshCommandTabs button,.freshCommandSlipControls button,.freshCommandEmpty button,.freshCommandDone button,.freshCommandEditOverlay button{border:0;border-radius:15px;min-height:42px;padding:0 13px;font-size:12px;font-weight:1000;cursor:pointer}
+.freshCommandMorningActions button:first-child,.freshCommandFocusRow button:first-child,.freshCommandSlipControls button:first-child,.freshCommandEmpty button,.freshCommandEditOverlay button:first-child{background:#f97316;color:#111827;-webkit-text-fill-color:#111827}
+.freshCommandMorningActions button:not(:first-child),.freshCommandFocusRow button:not(:first-child),.freshCommandSlipControls button:not(:first-child),.freshCommandEditOverlay button:not(:first-child){background:#111827;color:#fff;-webkit-text-fill-color:#fff}
+.freshCommandFocusRow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.freshCommandFocusRow button{display:flex;justify-content:space-between;align-items:center;text-align:left;border:1px solid rgba(15,23,42,.12);border-radius:24px;background:#111827;padding:18px;min-height:88px}
+.freshCommandFocusRow b{color:#fff;-webkit-text-fill-color:#fff;font-size:22px;letter-spacing:-.04em}
+.freshCommandFocusRow span{color:#fed7aa;-webkit-text-fill-color:#fed7aa;font-weight:950}
+.freshCommandTabs{display:flex;flex-wrap:wrap;gap:8px;border:1px solid rgba(15,23,42,.10);border-radius:22px;background:#fffaf0;padding:10px}
+.freshCommandTabs button{display:flex;align-items:center;gap:8px;background:#fff;color:#101827;-webkit-text-fill-color:#101827;border:1px solid rgba(15,23,42,.10)}
+.freshCommandTabs button.active{background:#111827;color:#fff;-webkit-text-fill-color:#fff}
+.freshCommandTabs button.active b,.freshCommandTabs button.active span{color:#fff;-webkit-text-fill-color:#fff}
+.freshCommandTabs b{color:#101827;-webkit-text-fill-color:#101827}
+.freshCommandTabs span{display:grid;place-items:center;min-width:24px;height:24px;border-radius:999px;background:#f97316;color:#111827;-webkit-text-fill-color:#111827}
+.freshCommandSlipList{display:grid;gap:14px}
+.freshCommandSlip{border:1px solid rgba(15,23,42,.12);border-radius:30px;background:#fffaf0;padding:18px;box-shadow:0 18px 48px rgba(2,6,23,.10)}
+.freshCommandSlip.high{border-color:rgba(249,115,22,.45);box-shadow:0 24px 65px rgba(249,115,22,.13)}
+.freshCommandSlip header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.freshCommandSlip header span,.freshCommandEditOverlay span{background:#fff7ed;color:#9a3412;-webkit-text-fill-color:#9a3412}
+.freshCommandSlip h2,.freshCommandEditOverlay h2{margin:11px 0 6px;color:#101827;-webkit-text-fill-color:#101827;font-size:34px;line-height:.95;letter-spacing:-.055em}
+.freshCommandSlip small{display:block;color:#64748b;-webkit-text-fill-color:#64748b;font-weight:950}
+.freshCommandSlip header strong{display:inline-flex;border-radius:999px;background:#111827;color:#fbbf24;-webkit-text-fill-color:#fbbf24;padding:8px 11px;font-size:11px;font-weight:1000;text-transform:uppercase;letter-spacing:.08em}
+.freshCommandSlipBody{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+.freshCommandSlipBody section{border:1px solid rgba(15,23,42,.10);border-radius:20px;background:#fff;padding:14px}
+.freshCommandSlipBody b{display:block;color:#101827;-webkit-text-fill-color:#101827}
+.freshCommandSlipBody p,.freshCommandEditOverlay p{margin:5px 0 0;color:#475569;-webkit-text-fill-color:#475569;font-weight:850;line-height:1.42}
+.freshCommandSlipControls{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.freshCommandEmpty{border:1px dashed rgba(15,23,42,.24);border-radius:28px;background:#fffaf0;padding:24px;text-align:center}
+.freshCommandEmpty b{display:block;color:#101827;-webkit-text-fill-color:#101827;font-size:24px}
+.freshCommandEmpty p{color:#475569;-webkit-text-fill-color:#475569;font-weight:850}
+.freshCommandDone{border:1px solid rgba(15,23,42,.10);border-radius:24px;background:#fffaf0;padding:14px}
+.freshCommandDone summary{cursor:pointer;color:#101827;-webkit-text-fill-color:#101827;font-weight:1000}
+.freshCommandDone div{display:grid;gap:8px;margin-top:12px}
+.freshCommandDone button{display:flex;justify-content:space-between;gap:8px;align-items:center;background:#fff;color:#101827;-webkit-text-fill-color:#101827;border:1px solid rgba(15,23,42,.10)}
+.freshCommandDone b,.freshCommandDone span{color:#101827;-webkit-text-fill-color:#101827}
+.freshCommandEditOverlay{position:fixed;inset:0;z-index:200;background:rgba(2,6,23,.62);display:grid;place-items:center;padding:18px}
+.freshCommandEditOverlay section{width:min(720px,100%);border-radius:30px;background:#fffaf0;padding:18px;box-shadow:0 30px 80px rgba(2,6,23,.35)}
+.freshCommandEditOverlay textarea{width:100%;min-height:220px;margin-top:14px;border:1px solid rgba(15,23,42,.14);border-radius:20px;background:#fff;color:#101827;-webkit-text-fill-color:#101827;padding:15px;font-size:16px;font-weight:900;line-height:1.45;resize:vertical;outline:0}
+.freshCommandEditOverlay section>div{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+@media(max-width:1050px){
+  .freshCommandDeskHero,.freshCommandMorning,.freshCommandFocusRow,.freshCommandSlipBody{display:grid;grid-template-columns:1fr}
+  .freshCommandDeskStats{min-width:0;grid-template-columns:1fr}
+  .freshCommandDeskHero h1{font-size:38px}
+  .freshCommandMorningActions,.freshCommandSlipControls,.freshCommandEditOverlay section>div{display:grid;justify-content:stretch}
+  .freshCommandTabs{display:grid}
+  .freshCommandTabs button{justify-content:space-between}
+}
