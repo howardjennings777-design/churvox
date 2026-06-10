@@ -59,6 +59,7 @@ const groups = [
     title: "System",
     items: [
       ["integrations", "IN", "Integrations"],
+      ["xero", "XE", "Xero"],
       ["settings", "ST", "Settings"],
       ["approvals", "AP", "Approvals"],
       ["alerts", "AL", "Alerts"],
@@ -110,6 +111,7 @@ const labels = {
   inventory: "Inventory",
   services: "Services",
   integrations: "Integrations",
+  xero: "Xero",
   settings: "Settings",
   approvals: "Approvals",
   alerts: "Alerts",
@@ -155,6 +157,7 @@ const extraMobile = [
   ["assets", "AS", "Assets"],
   ["services", "SV", "Services"],
   ["integrations", "IN", "Integrations"],
+  ["xero", "XE", "Xero"],
   ["settings", "ST", "Settings"],
   ["approvals", "AP", "Approvals"],
   ["alerts", "AL", "Alerts"],
