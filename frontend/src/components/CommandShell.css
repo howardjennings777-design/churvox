@@ -6,6 +6,8 @@
   --cvx-orange: #f97316;
   --cvx-amber: #fbbf24;
   --cvx-muted: #9ca3af;
+  --cvx-card: #fffaf0;
+  --cvx-line: rgba(15, 23, 42, .13);
 }
 
 html,
@@ -15,9 +17,16 @@ body,
   overflow-x: hidden;
 }
 
+.cvxAppShell,
+.cvxAppShell * {
+  box-sizing: border-box;
+}
+
 .cvxAppShell {
   min-height: 100vh;
   background: var(--cvx-bg);
+  color: #111827;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .cvxAppSidebar {
@@ -142,23 +151,82 @@ body,
 .cvxAppMain {
   min-height: 100vh;
   margin-left: var(--cvx-side);
-  padding: 22px 26px 82px;
+  padding: 26px 30px 88px;
   background:
     radial-gradient(circle at 90% 0%, rgba(249,115,22,.10), transparent 32%),
     linear-gradient(180deg, #f7f1e7 0%, #efe6d8 100%);
   overflow-x: hidden;
+  color: #111827;
 }
 
 .cvxAppMain > main,
 .cvxAppMain > section,
 .cvxAppMain > div {
+  width: 100%;
   max-width: 1320px;
   margin-left: 0;
   margin-right: auto;
 }
 
+/* Shared page polish: this makes the cleaned shell apply to all command pages, not just Jobs. */
+.cvxAppMain :where(h1, h2, h3, h4, h5, h6, p, span, small, label, strong, b, li, td, th) {
+  text-shadow: none;
+}
+
+.cvxAppMain :where(h1, h2, h3, h4, h5, h6) {
+  color: #111827;
+}
+
+.cvxAppMain :where(p, span, small, label, li, td, th) {
+  color: inherit;
+}
+
+.cvxAppMain :where(input, textarea, select) {
+  min-height: 40px;
+  border: 1px solid rgba(15, 23, 42, .20);
+  border-radius: 12px;
+  background: #fffdf8;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.65);
+}
+
+.cvxAppMain :where(input::placeholder, textarea::placeholder) {
+  color: #64748b;
+  -webkit-text-fill-color: #64748b;
+}
+
+.cvxAppMain :where(button, a) {
+  touch-action: manipulation;
+}
+
+.cvxAppMain :where(table) {
+  color: #111827;
+}
+
+.cvxAppMain :where(.jobsPanel, .srPanel, .ivPanel, .clPanel, .qtPanel, .tmPanel, .pyPanel, .rpPanel, .stPanel, .supportPanel, .plansPanel, .ch4Panel, .cxPanel, [class$="Panel"], [class*="Panel "]) {
+  background-color: var(--cvx-card);
+  border-color: var(--cvx-line);
+}
+
+.cvxAppMain :where(.jobsHero, .cxHero, .ch4Hero, .srHero, .ivHero, .plHero, .stHero, .jbHero, .clHero, .qtHero, .tmHero, .pyHero, .rpHero, .dwHero, .dbHero, .dsHero, .jdHero, .qbHero, .ibHero, .cbHero, .tbHero, .plansHero, .supportHero, [class$="Hero"], [class*="Hero "]) {
+  margin-bottom: 18px;
+}
+
+.cvxAppMain :where(.jobsHero, .cxHero, .ch4Hero, .srHero, .ivHero, .plHero, .stHero, .jbHero, .clHero, .qtHero, .tmHero, .pyHero, .rpHero, .dwHero, .dbHero, .dsHero, .jdHero, .qbHero, .ibHero, .cbHero, .tbHero, .plansHero, .supportHero, [class$="Hero"], [class*="Hero "]) :where(h1, h2, h3, p, span, small, strong, b) {
+  color: #ffffff;
+  -webkit-text-fill-color: currentColor;
+}
+
 .cvxAppMobileNav {
   display: none;
+}
+
+@media (min-width: 1440px) {
+  .cvxAppMain {
+    padding-left: 38px;
+    padding-right: 38px;
+  }
 }
 
 @media (max-width: 1023px) {
@@ -169,6 +237,12 @@ body,
   .cvxAppMain {
     margin-left: 0;
     padding: 14px 12px 92px;
+  }
+
+  .cvxAppMain > main,
+  .cvxAppMain > section,
+  .cvxAppMain > div {
+    max-width: none;
   }
 
   .cvxAppMobileNav {
