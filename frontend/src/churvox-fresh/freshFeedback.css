@@ -1,0 +1,53 @@
+.freshToast {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 9000;
+  min-width: 260px;
+  max-width: min(420px, calc(100vw - 36px));
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-left: 7px solid #16a34a;
+  background: #0b111a;
+  color: white;
+  box-shadow: 0 24px 70px rgba(2,6,23,.38);
+  padding: 14px 16px;
+  animation: freshToastIn .18s ease both;
+}
+
+.freshToast strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 1000;
+  letter-spacing: -.02em;
+}
+
+.freshToast span {
+  display: block;
+  margin-top: 4px;
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+@keyframes freshToastIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 950px) {
+  .freshToast {
+    left: 12px;
+    right: 12px;
+    bottom: 94px;
+    min-width: 0;
+  }
+}

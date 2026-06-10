@@ -1,5 +1,6 @@
 import React from "react";
 import "./fresh.css";
+import "./freshFeedback.css";
 import "./freshCommandBoxes.css";
 import "./freshMobileNav.css";
 import "./freshPolish.css";
@@ -20,6 +21,7 @@ import FreshSettings from "./FreshSettings";
 import FreshPlans from "./FreshPlans";
 import FreshSupport from "./FreshSupport";
 import FreshSimple from "./FreshSimple";
+import FreshFeedback from "./FreshFeedback";
 
 const pages = new Set([
   "command",
@@ -76,8 +78,11 @@ export default function FreshApp() {
   if (page === "support") content = <FreshSupport onNavigate={goToPage} />;
 
   return (
-    <FreshShell active={page} onChange={goToPage}>
-      {content}
-    </FreshShell>
+    <>
+      <FreshShell active={page} onChange={goToPage}>
+        {content}
+      </FreshShell>
+      <FreshFeedback />
+    </>
   );
 }
