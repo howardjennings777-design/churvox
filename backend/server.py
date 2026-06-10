@@ -3694,7 +3694,7 @@ async def ensure_owner_account():
             "business_name": "Churvox"
         })
 
-app.include_router(api_router)
+# app.include_router(api_router) moved to bottom after all routes
 
 # CORS
 # Startup event
@@ -4067,4 +4067,99 @@ async def send_sms_hard_fix_v1(payload: dict, current_user: dict = Depends(get_c
             "balance": new_balance
         }
     }
+
+# =========================
+# AI OPERATOR ACTIONS
+# Safe owner approval queue used by Command desk
+# =========================
+
+def _ai_action_safe(doc):
+    if not doc:
+        return doc
+    out = {}
+    for k, v in dict(doc).items():
+        if k == "_id":
+            out["id"] = str(v)
+        elif hasattr(v, "isoformat"):
+            out[k] = v.isoformat()
+        elif isinstance(v, ObjectId):
+            out[k] = str(v)
+        else:
+            out[k] = v
+    return out
+
+@api_router.get("/ai/actions")
+async def list_ai_actions(current_user: dict = Depends(get_current_user)):
+    business_id = str(current_user.get("business_id") or current_user.get("id"))
+    cursor = db.ai_actions.find({"business_id": business_id}).sort("created_at", -1).limit(80)
+    items = []
+    async for item in cursor:
+        items.append(_ai_action_safe(item))
+    return {"success": True, "actions": items}
+
+@api_router.post("/ai/actions")
+async def create_ai_action(payload: dict = Body(default_factory=dict), current_user: dict = Depends(get_current_user)):
+    business_id = str(current_user.get("business_id") or current_user.get("id"))
+
+    payload = dict(payload or {})
+    now = datetime.now(timezone.utc)
+
+    action = {
+        "business_id": business_id,
+        "title": payload.get("title") or payload.get("actionKey") or "Command action",
+        "status": payload.get("status") or "pending",
+        "slipKey": payload.get("slipKey") or payload.get("slip_key") or "",
+        "actionKey": payload.get("actionKey") or payload.get("action_key") or "",
+        "recordType": payload.get("recordType") or payload.get("record_type") or "",
+        "recordId": payload.get("recordId") or payload.get("record_id") or "",
+        "notifyMode": payload.get("notifyMode") or payload.get("notify_mode") or "Internal only",
+        "afterApproval": payload.get("afterApproval") or payload.get("after_approval") or "",
+        "ownerAuditNote": payload.get("ownerAuditNote") or payload.get("owner_audit_note") or "",
+        "form": payload.get("form") if isinstance(payload.get("form"), dict) else {},
+        "raw": payload,
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    result = await db.ai_actions.insert_one(action)
+    action["_id"] = result.inserted_id
+    safe = _ai_action_safe(action)
+    return {"success": True, "action": safe, "data": safe}
+
+@api_router.post("/ai/actions/{action_id}/approve")
+async def approve_ai_action(action_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = str(current_user.get("business_id") or current_user.get("id"))
+    oid = ObjectId(action_id)
+    now = datetime.now(timezone.utc)
+
+    result = await db.ai_actions.update_one(
+        {"_id": oid, "business_id": business_id},
+        {"$set": {"status": "approved", "approved_at": now, "updated_at": now}},
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="AI action not found")
+
+    doc = await db.ai_actions.find_one({"_id": oid, "business_id": business_id})
+    return {"success": True, "action": _ai_action_safe(doc)}
+
+@api_router.post("/ai/actions/{action_id}/decline")
+async def decline_ai_action(action_id: str, payload: dict = Body(default_factory=dict), current_user: dict = Depends(get_current_user)):
+    business_id = str(current_user.get("business_id") or current_user.get("id"))
+    oid = ObjectId(action_id)
+    now = datetime.now(timezone.utc)
+
+    result = await db.ai_actions.update_one(
+        {"_id": oid, "business_id": business_id},
+        {"$set": {"status": "declined", "declined_at": now, "decline_note": (payload or {}).get("note", ""), "updated_at": now}},
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="AI action not found")
+
+    doc = await db.ai_actions.find_one({"_id": oid, "business_id": business_id})
+    return {"success": True, "action": _ai_action_safe(doc)}
+
+# Include router once, after every route above has been registered.
+app.include_router(api_router)
 
