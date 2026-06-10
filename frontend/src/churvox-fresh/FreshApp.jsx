@@ -6,6 +6,7 @@ import "./freshInvoicesLive.css";
 import "./freshClientsLive.css";
 import "./freshQuotesLive.css";
 import "./freshDispatchLive.css";
+import "./freshTeamLive.css";
 import "./freshContrastFix.css";
 import "./freshCommandBoxes.css";
 import "./freshCommandLive.css";
