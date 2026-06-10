@@ -90,6 +90,7 @@ const groups = [
       ["imports", "IM", "Imports"],
       ["exports", "EX", "Exports"],
       ["security", "SC", "Security"],
+      ["trustcenter", "TC", "Trust Center"],
       ["roles", "RL", "Roles"],
       ["automation", "AU", "Automation"],
       ["plans", "PL", "Plans"],
@@ -97,6 +98,7 @@ const groups = [
       ["aiusage", "AI", "AI Usage"],
       ["templates", "TP", "Templates"],
       ["support", "SP", "Support"],
+      ["helpdesk", "HD", "Help Desk"],
     ],
   },
 ];
@@ -174,6 +176,7 @@ const labels = {
   imports: "Imports",
   exports: "Exports",
   security: "Security",
+  trustcenter: "Trust Center",
   roles: "Roles",
   automation: "Automation",
   plans: "Plans",
@@ -181,6 +184,7 @@ const labels = {
   aiusage: "AI Usage",
   templates: "Templates",
   support: "Support",
+  helpdesk: "Help Desk",
 };
 
 const mobileItems = [
@@ -193,6 +197,8 @@ const mobileItems = [
 ];
 
 const extraMobile = [
+  ["helpdesk", "HD", "Help Desk"],
+  ["trustcenter", "TC", "Trust Center"],
   ["firstrun", "FR", "First Run"],
   ["globalactions", "GA", "Global Actions"],
   ["launchcontrol", "LC", "Launch Control"],

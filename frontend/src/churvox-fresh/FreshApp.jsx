@@ -76,6 +76,8 @@ import "./freshSearchReallyFinal.css";
 import "./freshSearchTypingFix.css";
 import "./freshSearchVisibleText.css";
 import "./freshSecurity.css";
+import "./freshTrustCenter.css";
+import "./freshHelpDesk.css";
 import "./freshServices.css";
 import "./freshSettingsLive.css";
 import "./freshSetup.css";
@@ -187,6 +189,8 @@ import FreshAskChurvox from "./FreshAskChurvox";
 import FreshGlobalActions from "./FreshGlobalActions";
 import FreshFirstRunWizard from "./FreshFirstRunWizard";
 import FreshLaunchControl from "./FreshLaunchControl";
+import FreshTrustCenter from "./FreshTrustCenter";
+import FreshHelpDesk from "./FreshHelpDesk";
 import FreshXero from "./FreshXero";
 
 const pages = new Set([
@@ -228,6 +232,7 @@ const pages = new Set([
   "imports",
   "exports",
   "security",
+  "trustcenter",
   "roles",
   "billing",
   "aiusage",
@@ -251,6 +256,7 @@ const pages = new Set([
   "settings",
   "plans",
   "support",
+  "helpdesk",
   "integrations",
   "messages",
   "followups",
@@ -356,6 +362,7 @@ export default function FreshApp() {
   if (page === "imports") content = <FreshImports onNavigate={goToPage} />;
   if (page === "exports") content = <FreshExports onNavigate={goToPage} />;
   if (page === "security") content = <FreshSecurity onNavigate={goToPage} />;
+  if (page === "trustcenter") content = <FreshTrustCenter onNavigate={goToPage} />;
   if (page === "roles") content = <FreshRoles onNavigate={goToPage} />;
   if (page === "billing") content = <FreshBilling onNavigate={goToPage} />;
   if (page === "aiusage") content = <FreshAiUsage onNavigate={goToPage} />;
@@ -378,6 +385,7 @@ export default function FreshApp() {
   if (page === "settings") content = <FreshSettings onNavigate={goToPage} />;
   if (page === "plans") content = <FreshPlans onNavigate={goToPage} />;
   if (page === "support") content = <FreshSupport onNavigate={goToPage} />;
+  if (page === "helpdesk") content = <FreshHelpDesk onNavigate={goToPage} />;
   if (page === "integrations") content = <FreshIntegrations onNavigate={goToPage} />;
   if (page === "messages") content = <FreshMessages onNavigate={goToPage} />;
   if (page === "followups") content = <FreshFollowUps onNavigate={goToPage} />;
