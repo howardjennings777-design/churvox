@@ -6,7 +6,7 @@ import FreshTopStatus from "./FreshTopStatus";
 const groups = [
   { title: "Home", items: [["command", "CM", "Command"]] },
   { title: "Work", items: [["jobs", "JB", "Jobs"], ["dispatch", "DP", "Dispatch"], ["clients", "CL", "Clients"], ["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"]] },
-  { title: "Business", items: [["team", "TM", "Team"], ["payroll", "PR", "Payroll"], ["reports", "RP", "Reports"]] },
+  { title: "Business", items: [["team", "TM", "Team"], ["worker", "WK", "Worker"], ["payroll", "PR", "Payroll"], ["reports", "RP", "Reports"]] },
   { title: "System", items: [["settings", "ST", "Settings"], ["plans", "PL", "Plans"], ["support", "SP", "Support"]] },
 ];
 
@@ -23,6 +23,7 @@ const labels = {
   settings: "Settings",
   plans: "Plans",
   support: "Support",
+  worker: "Worker",
 };
 
 const mobileItems = [
@@ -37,6 +38,7 @@ const mobileItems = [
 const extraMobile = [
   ["quotes", "QT", "Quotes"],
   ["team", "TM", "Team"],
+  ["worker", "WK", "Worker"],
   ["payroll", "PR", "Payroll"],
   ["reports", "RP", "Reports"],
   ["settings", "ST", "Settings"],

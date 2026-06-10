@@ -1,0 +1,312 @@
+.freshWorkerPage {
+  display: grid;
+  gap: 16px;
+}
+
+.freshWorkerHero {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: stretch;
+  padding: 22px;
+  border-radius: 30px;
+  background: #111827;
+  box-shadow: 0 24px 70px rgba(2, 6, 23, .18);
+}
+
+.freshWorkerHero span {
+  display: inline-flex;
+  border-radius: 999px;
+  background: rgba(249, 115, 22, .16);
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+  padding: 8px 11px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.freshWorkerHero h1 {
+  margin: 13px 0 8px;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  font-size: 46px;
+  line-height: .9;
+  letter-spacing: -.07em;
+}
+
+.freshWorkerHero p {
+  margin: 0;
+  max-width: 720px;
+  color: #e5e7eb;
+  -webkit-text-fill-color: #e5e7eb;
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.freshWorkerStats {
+  min-width: 260px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 12px;
+  align-content: center;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .08);
+  padding: 16px;
+}
+
+.freshWorkerStats b {
+  color: #fbbf24;
+  -webkit-text-fill-color: #fbbf24;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.freshWorkerStats small {
+  color: #f9fafb;
+  -webkit-text-fill-color: #f9fafb;
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.freshWorkerLayout {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 16px;
+}
+
+.freshWorkerPhone,
+.freshWorkerDetail {
+  border: 1px solid rgba(15, 23, 42, .12);
+  border-radius: 30px;
+  background: #fffaf0;
+  box-shadow: 0 18px 48px rgba(2, 6, 23, .10);
+}
+
+.freshWorkerPhone {
+  padding: 14px;
+  max-width: 390px;
+}
+
+.freshWorkerPhone header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 23px;
+  background: #111827;
+}
+
+.freshWorkerPhone header strong {
+  display: block;
+  color: white;
+  -webkit-text-fill-color: white;
+  font-size: 16px;
+  font-weight: 1000;
+}
+
+.freshWorkerPhone header span {
+  display: block;
+  margin-top: 3px;
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.freshWorkerPhone header button {
+  border: 0;
+  border-radius: 13px;
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshWorkerList {
+  display: grid;
+  gap: 9px;
+  margin-top: 12px;
+}
+
+.freshWorkerList button {
+  border: 1px solid rgba(15, 23, 42, .10);
+  border-radius: 21px;
+  background: #ffffff;
+  padding: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.freshWorkerList button.active {
+  background: #ffedd5;
+  border-color: rgba(249, 115, 22, .38);
+}
+
+.freshWorkerList b,
+.freshWorkerDetail b {
+  display: block;
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+  font-size: 14px;
+  font-weight: 1000;
+}
+
+.freshWorkerList span,
+.freshWorkerDetail span,
+.freshWorkerList small,
+.freshWorkerDetail p {
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+  font-weight: 850;
+}
+
+.freshWorkerList span,
+.freshWorkerList small {
+  display: block;
+  margin-top: 4px;
+}
+
+.freshWorkerDetail {
+  padding: 18px;
+}
+
+.freshWorkerDetailHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  border-bottom: 1px solid rgba(15, 23, 42, .10);
+  padding-bottom: 14px;
+}
+
+.freshWorkerDetailHead > div > span {
+  display: inline-flex;
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #9a3412;
+  -webkit-text-fill-color: #9a3412;
+  padding: 7px 10px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.freshWorkerDetailHead h2 {
+  margin: 11px 0 6px;
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+  font-size: 34px;
+  line-height: .95;
+  letter-spacing: -.055em;
+}
+
+.freshWorkerDetailHead button,
+.freshWorkerActions button,
+.freshWorkerPhotos button {
+  border: 0;
+  border-radius: 16px;
+  min-height: 44px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshWorkerDetailHead button {
+  background: #111827;
+  color: white;
+  -webkit-text-fill-color: white;
+}
+
+.freshWorkerInfoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.freshWorkerInfoGrid div,
+.freshWorkerNotes {
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, .10);
+  padding: 14px;
+}
+
+.freshWorkerNotes p {
+  margin: 8px 0 0;
+}
+
+.freshWorkerPhotos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.freshWorkerPhotos button {
+  background: #ffffff;
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+  border: 1px solid rgba(15, 23, 42, .10);
+}
+
+.freshWorkerPhotos button.done {
+  background: #dcfce7;
+  color: #14532d;
+  -webkit-text-fill-color: #14532d;
+}
+
+.freshWorkerActions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.freshWorkerActions button {
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+.freshWorkerActions button:nth-child(3) {
+  background: #fbbf24;
+}
+
+.freshWorkerActions button:nth-child(4) {
+  background: #111827;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+}
+
+@media (max-width: 980px) {
+  .freshWorkerHero,
+  .freshWorkerDetailHead {
+    display: grid;
+  }
+
+  .freshWorkerLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .freshWorkerPhone {
+    max-width: none;
+  }
+
+  .freshWorkerInfoGrid,
+  .freshWorkerActions,
+  .freshWorkerPhotos {
+    grid-template-columns: 1fr;
+  }
+}

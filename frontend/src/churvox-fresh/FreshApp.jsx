@@ -34,6 +34,7 @@ import "./freshSearchReallyFinal.css";
 import "./freshSearchTypingFix.css";
 import "./freshSearchVisibleText.css";
 import "./freshSearchEditableFinal.css";
+import "./freshWorker.css";
 
 import FreshShell from "./FreshShell";
 import FreshCommand from "./FreshCommand";
@@ -48,6 +49,7 @@ import FreshReports from "./FreshReports";
 import FreshSettings from "./FreshSettings";
 import FreshPlans from "./FreshPlans";
 import FreshSupport from "./FreshSupport";
+import FreshWorker from "./FreshWorker";
 import FreshSimple from "./FreshSimple";
 import FreshFeedback from "./FreshFeedback";
 
@@ -64,6 +66,7 @@ const pages = new Set([
   "settings",
   "plans",
   "support",
+  "worker",
 ]);
 
 function readPageFromHash() {
@@ -111,6 +114,7 @@ export default function FreshApp() {
   if (page === "settings") content = <FreshSettings onNavigate={goToPage} />;
   if (page === "plans") content = <FreshPlans onNavigate={goToPage} />;
   if (page === "support") content = <FreshSupport onNavigate={goToPage} />;
+  if (page === "worker") content = <FreshWorker onNavigate={goToPage} />;
 
   return (
     <>
