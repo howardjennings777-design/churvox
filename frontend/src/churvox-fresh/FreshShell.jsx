@@ -13,6 +13,7 @@ const groups = [
       ["recurring", "RC", "Recurring"],
       ["recurringsaver", "RS", "Recurring Saver"],
       ["dispatch", "DP", "Dispatch"],
+      ["schedulerai", "SR", "Scheduler AI"],
       ["planday", "PD", "Plan My Day"],
       ["routes", "RT", "Routes"],
   ["areas", "AR", "Areas"],
@@ -35,6 +36,7 @@ const groups = [
       ["portal", "PT", "Portal"],
       ["customerportal", "CR", "Portal Requests"],
       ["messages", "MS", "Messages"],
+      ["messagetriage", "MT", "Message Triage"],
   ["followups", "FU", "Follow-ups"],
   ["reviews", "RV", "Reviews"],
   ["quality", "QC", "Quality"],
@@ -111,6 +113,7 @@ const groups = [
 
 const labels = {
   smart: "Smart Hub",
+  morningbrief: "Morning Brief",
   askchurvox: "Ask Churvox",
   globalactions: "Global Actions",
   aioperator: "AI Operator",
@@ -122,6 +125,7 @@ const labels = {
   recurring: "Recurring",
   recurringsaver: "Recurring Saver",
   dispatch: "Dispatch",
+  schedulerai: "Scheduler AI",
   planday: "Plan My Day",
   routes: "Routes",
   areas: "Areas",
@@ -143,6 +147,7 @@ const labels = {
   portal: "Client Portal",
   customerportal: "Portal Requests",
   messages: "Messages",
+  messagetriage: "Message Triage",
   followups: "Follow-ups",
   followupwriter: "AI Follow-up",
   cancellations: "Cancellations",
@@ -209,6 +214,9 @@ const mobileItems = [
 ];
 
 const extraMobile = [
+  ["schedulerai", "SR", "Scheduler AI"],
+  ["messagetriage", "MT", "Message Triage"],
+  ["morningbrief", "MB", "Morning Brief"],
   ["reworkresolver", "RR", "Rework Resolver"],
   ["cashflowai", "CF", "Cashflow Coach"],
   ["photoproof", "PP", "Photo Proof"],

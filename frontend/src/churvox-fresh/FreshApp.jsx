@@ -87,6 +87,7 @@ import "./freshServices.css";
 import "./freshSettingsLive.css";
 import "./freshSetup.css";
 import "./freshSmartHub.css";
+import "./freshOwnerAiNext.css";
 import "./freshAiOperatorStudio.css";
 import "./freshAiQuickCreate.css";
 import "./freshAiFollowUpWriter.css";
@@ -180,6 +181,9 @@ import FreshServices from "./FreshServices";
 import FreshSettings from "./FreshSettings";
 import FreshSetup from "./FreshSetup";
 import FreshSmartHub from "./FreshSmartHub";
+import FreshMorningBrief from "./FreshMorningBrief";
+import FreshMessageTriage from "./FreshMessageTriage";
+import FreshSchedulerResolver from "./FreshSchedulerResolver";
 import FreshAiOperatorStudio from "./FreshAiOperatorStudio";
 import FreshAiQuickCreate from "./FreshAiQuickCreate";
 import FreshAiFollowUpWriter from "./FreshAiFollowUpWriter";
@@ -207,6 +211,9 @@ import FreshXero from "./FreshXero";
 
 const pages = new Set([
   "smart",
+  "morningbrief",
+  "messagetriage",
+  "schedulerai",
   "askchurvox",
   "globalactions",
   "aioperator",
@@ -342,6 +349,7 @@ export default function FreshApp() {
 
   let content = <FreshSimple page={page} />;
   if (page === "smart") content = <FreshSmartHub onNavigate={goToPage} />;
+  if (page === "morningbrief") content = <FreshMorningBrief onNavigate={goToPage} />;
   if (page === "askchurvox") content = <FreshAskChurvox onNavigate={goToPage} />;
   if (page === "globalactions") content = <FreshGlobalActions onNavigate={goToPage} />;
   if (page === "aioperator") content = <FreshAiOperatorStudio onNavigate={goToPage} />;
@@ -353,6 +361,7 @@ export default function FreshApp() {
   if (page === "recurringsaver") content = <FreshRecurringSaver onNavigate={goToPage} />;
   if (page === "leads") content = <FreshLeads onNavigate={goToPage} />;
   if (page === "dispatch") content = <FreshDispatch onNavigate={goToPage} />;
+  if (page === "schedulerai") content = <FreshSchedulerResolver onNavigate={goToPage} />;
   if (page === "planday") content = <FreshPlanMyDay onNavigate={goToPage} />;
   if (page === "routes") content = <FreshRoutes onNavigate={goToPage} />;
   if (page === "areas") content = <FreshAreas onNavigate={goToPage} />;
@@ -410,6 +419,7 @@ export default function FreshApp() {
   if (page === "helpdesk") content = <FreshHelpDesk onNavigate={goToPage} />;
   if (page === "integrations") content = <FreshIntegrations onNavigate={goToPage} />;
   if (page === "messages") content = <FreshMessages onNavigate={goToPage} />;
+  if (page === "messagetriage") content = <FreshMessageTriage onNavigate={goToPage} />;
   if (page === "followups") content = <FreshFollowUps onNavigate={goToPage} />;
   if (page === "reviews") content = <FreshReviews onNavigate={goToPage} />;
   if (page === "quality") content = <FreshQuality onNavigate={goToPage} />;
