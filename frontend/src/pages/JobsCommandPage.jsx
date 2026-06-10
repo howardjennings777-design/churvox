@@ -1,5 +1,5 @@
-import LaunchReadyWorkbenchPage from "./LaunchReadyWorkbenchPage";
+import WorkspaceV2Page from "../churvox-v2/WorkspaceV2Page";
 
 export default function JobsCommandPage() {
-  return <LaunchReadyWorkbenchPage area="jobs" />;
+  return <WorkspaceV2Page area="jobs" />;
 }
