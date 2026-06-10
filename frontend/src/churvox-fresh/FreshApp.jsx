@@ -1,6 +1,7 @@
 import React from "react";
 import "./fresh.css";
 import "./freshFeedback.css";
+import "./freshRoadmap.css";
 import "./freshJobsLive.css";
 import "./freshInvoicesLive.css";
 import "./freshClientsLive.css";
@@ -139,6 +140,7 @@ import FreshClientPortal from "./FreshClientPortal";
 import FreshWorker from "./FreshWorker";
 import FreshSimple from "./FreshSimple";
 import FreshFeedback from "./FreshFeedback";
+import FreshRoadmap from "./FreshRoadmap";
 import { forceFreshReadable, installFreshReadableRuntime } from "./freshForceReadable";
 
 const pages = new Set([
@@ -164,6 +166,7 @@ const pages = new Set([
   "qa",
   "flags",
   "feedback",
+  "roadmap",
   "imports",
   "exports",
   "security",
@@ -265,6 +268,7 @@ export default function FreshApp() {
   if (page === "qa") content = <FreshQa onNavigate={goToPage} />;
   if (page === "flags") content = <FreshFlags onNavigate={goToPage} />;
   if (page === "feedback") content = <FreshFeedback onNavigate={goToPage} />;
+  if (page === "roadmap") content = <FreshRoadmap onNavigate={goToPage} />;
   if (page === "imports") content = <FreshImports onNavigate={goToPage} />;
   if (page === "exports") content = <FreshExports onNavigate={goToPage} />;
   if (page === "security") content = <FreshSecurity onNavigate={goToPage} />;
