@@ -62,11 +62,18 @@ function readPageFromHash() {
 
 export default function FreshApp() {
   const [page, setPage] = React.useState(readPageFromHash);
+  const [dataVersion, setDataVersion] = React.useState(0);
 
   React.useEffect(() => {
     const onHashChange = () => setPage(readPageFromHash());
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
+  React.useEffect(() => {
+    const onFreshDataUpdated = () => setDataVersion((version) => version + 1);
+    window.addEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
+    return () => window.removeEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
   }, []);
 
   function goToPage(nextPage) {
@@ -97,7 +104,9 @@ export default function FreshApp() {
   return (
     <>
       <FreshShell active={page} onChange={goToPage}>
-        {content}
+        <div key={`${page}-${dataVersion}`} className="freshPageMount">
+          {content}
+        </div>
       </FreshShell>
       <FreshFeedback />
     </>
