@@ -62,6 +62,7 @@ import BillingReturnPage from "./pages/BillingReturnPage";
 import { OnboardingCommandPage, WorkerCommandPage } from "./pages/CommandRestPages";
 import { hasPlanAtLeast, nicePlanName, requiredPlanLabel } from "./config/churvoxPlans";
 import ClientWorkbenchCommandPage from "./pages/ClientWorkbenchCommandPage";
+import FreshApp from "./churvox-fresh/FreshApp";
 
 const Spinner = () => (<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-amber-400" /></div>);
 const AppPage = ({ children }) => <>{children}</>;
@@ -101,6 +102,7 @@ function App() {
     <Route path="/worker" element={<Navigate to="/worker/jobs" replace />} /><Route path="/worker/jobs" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobsPage /></ConceptCFrame></WorkerRoute>} /><Route path="/worker/ops" element={<WorkerRoute><WorkerCommandPage /></WorkerRoute>} /><Route path="/worker/jobs/:id" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobDetailPage /></ConceptCFrame></WorkerRoute>} /><Route path="/worker/settings" element={<WorkerRoute><WorkerCommandPage /></WorkerRoute>} />
     <Route path="/privacy" element={<PrivacyPage />} /><Route path="/terms" element={<TermsPage />} /><Route path="/privacy-policy" element={<PrivacyPolicyPage />} /><Route path="/terms-of-service" element={<TermsOfServicePage />} /><Route path="/account-deletion" element={<AccountDeletionPage />} /><Route path="/platform-unlock" element={<PlatformUnlock />} />
     <Route path="/" element={<HomePage />} /><Route path="/pricing" element={<PricingPage />} /><Route path="/features" element={<FeaturesPage />} /><Route path="*" element={<RoleRedirect />} />
-  </Routes></ErrorBoundary></AuthProvider></BrowserRouter>;
+    <Route path="/fresh" element={<FreshApp />} />
+</Routes></ErrorBoundary></AuthProvider></BrowserRouter>;
 }
 export default App;
