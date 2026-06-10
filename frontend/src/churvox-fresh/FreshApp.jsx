@@ -66,6 +66,7 @@ import "./freshAlerts.css";
 import "./freshAudit.css";
 import "./freshSetup.css";
 import "./freshLaunch.css";
+import "./freshOnboarding.css";
 import "./freshImports.css";
 import "./freshExports.css";
 import "./freshSecurity.css";
@@ -99,6 +100,7 @@ import FreshAlerts from "./FreshAlerts";
 import FreshAudit from "./FreshAudit";
 import FreshSetup from "./FreshSetup";
 import FreshLaunch from "./FreshLaunch";
+import FreshOnboarding from "./FreshOnboarding";
 import FreshImports from "./FreshImports";
 import FreshExports from "./FreshExports";
 import FreshSecurity from "./FreshSecurity";
@@ -154,6 +156,7 @@ const pages = new Set([
   "audit",
   "setup",
   "launch",
+  "onboarding",
   "imports",
   "exports",
   "security",
@@ -251,6 +254,7 @@ export default function FreshApp() {
   if (page === "audit") content = <FreshAudit onNavigate={goToPage} />;
   if (page === "setup") content = <FreshSetup onNavigate={goToPage} />;
   if (page === "launch") content = <FreshLaunch onNavigate={goToPage} />;
+  if (page === "onboarding") content = <FreshOnboarding onNavigate={goToPage} />;
   if (page === "imports") content = <FreshImports onNavigate={goToPage} />;
   if (page === "exports") content = <FreshExports onNavigate={goToPage} />;
   if (page === "security") content = <FreshSecurity onNavigate={goToPage} />;
