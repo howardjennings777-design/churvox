@@ -1,7 +1,7 @@
-import LaunchReadyWorkbenchPage from './LaunchReadyWorkbenchPage';
+import WorkspaceV2Page from "../churvox-v2/WorkspaceV2Page";
 
 function TeamRolesWorkbenchPage() {
-  return <LaunchReadyWorkbenchPage area="team" />;
+  return <WorkspaceV2Page area="team" />;
 }
 
 export default TeamRolesWorkbenchPage;
