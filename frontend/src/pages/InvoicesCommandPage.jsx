@@ -1,5 +1,5 @@
-import InvoiceDeliveryWorkbenchPage from "./InvoiceDeliveryWorkbenchPage";
+import LaunchReadyWorkbenchPage from "./LaunchReadyWorkbenchPage";
 
 export default function InvoicesCommandPage() {
-  return <InvoiceDeliveryWorkbenchPage />;
+  return <LaunchReadyWorkbenchPage area="invoices" />;
 }
