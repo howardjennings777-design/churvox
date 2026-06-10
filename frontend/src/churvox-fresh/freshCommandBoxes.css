@@ -1,0 +1,12 @@
+.freshGrid > .freshSlip{margin:0;min-height:138px;padding:16px 16px 14px;border-radius:22px;background:#fffaf0;border:1px solid rgba(15,23,42,.13);border-left:7px solid #f97316;box-shadow:0 16px 35px rgba(2,6,23,.10)}
+.freshGrid > .freshSlip summary{list-style:none;display:block;cursor:pointer}
+.freshGrid > .freshSlip summary::-webkit-details-marker{display:none}
+.freshGrid > .freshSlip summary b{display:block;font-size:20px;line-height:1.05;letter-spacing:-.04em;color:#101827;margin-bottom:9px}
+.freshGrid > .freshSlip summary span{display:inline-flex;max-width:100%;border-radius:999px;background:#fff7ed;border:1px solid rgba(249,115,22,.22);color:#9a3412;padding:7px 10px;font-size:11px;font-weight:1000;line-height:1.25;white-space:normal}
+.freshGrid > .freshSlip[open]{background:white;border-color:rgba(249,115,22,.38)}
+.freshGrid > .freshSlip[open] summary{border-bottom:1px solid rgba(15,23,42,.10);padding-bottom:12px;margin-bottom:12px}
+.freshGrid > .freshSlip p{font-size:13px;line-height:1.45;margin:8px 0;color:#475569;font-weight:850}
+.freshGrid > .freshSlip .freshActions{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.freshGrid > .freshCard h2{font-size:34px}
+.freshGrid > .freshCard p{font-size:14px}
+@media(max-width:950px){.freshGrid > .freshSlip .freshActions{grid-template-columns:1fr}.freshGrid > .freshSlip{min-height:120px}}
