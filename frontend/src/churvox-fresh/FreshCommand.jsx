@@ -149,6 +149,126 @@ function makeActivity(box, status) {
   };
 }
 
+function readFreshRiskList(key) {
+  try {
+    if (typeof window === "undefined") return [];
+
+    const saved = window.localStorage.getItem(key);
+    if (!saved) return [];
+
+    const parsed = JSON.parse(saved);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function money(value) {
+  return `$${Number(value || 0).toFixed(0)}`;
+}
+
+function buildRiskScanIssues() {
+  const jobs = readFreshRiskList("churvox:fresh-jobs:v1");
+  const clients = readFreshRiskList("churvox:fresh-clients:v1");
+  const quotes = readFreshRiskList("churvox:fresh-quotes:v1");
+  const invoices = readFreshRiskList("churvox:fresh-invoices:v1");
+  const payroll = readFreshRiskList("churvox:fresh-payroll:v1");
+
+  return [
+    ...jobs
+      .filter((job) => job.status === "Blocked")
+      .map((job) => ({
+        id: `scan-job-${job.id}`,
+        group: "Scan",
+        title: "Blocked job found",
+        info: `${job.client} · ${job.title}`,
+        urgency: "Owner review",
+        found: `The job "${job.title}" is blocked.`,
+        prepared: "Churvox prepared a Command review slip instead of sending it to dispatch.",
+        why: job.risk || "A blocked job can waste worker time if it is dispatched.",
+        owner: "Fix access, reschedule, reassign, or decline the job.",
+        area: "Jobs",
+        page: "jobs",
+        fromInbox: true,
+        createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      })),
+
+    ...clients
+      .filter((client) => client.status === "Needs setup" || !client.billingEmail)
+      .map((client) => ({
+        id: `scan-client-${client.id}`,
+        group: "Scan",
+        title: "Client setup gap",
+        info: `${client.name} · billing not clean`,
+        urgency: "Setup issue",
+        found: `${client.name} is missing clean billing setup.`,
+        prepared: "Churvox paused customer-facing automation for this client.",
+        why: "Invoices and reminders should not run until billing details are clean.",
+        owner: "Open the client and complete billing details.",
+        area: "Clients",
+        page: "clients",
+        fromInbox: true,
+        createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      })),
+
+    ...quotes
+      .filter((quote) => quote.status === "Sent")
+      .map((quote) => ({
+        id: `scan-quote-${quote.id}`,
+        group: "Scan",
+        title: "Quote follow-up found",
+        info: `${quote.client} · ${quote.id}`,
+        urgency: "Could recover work",
+        found: `Quote ${quote.id} is sent and waiting.`,
+        prepared: "Churvox prepared a follow-up review slip.",
+        why: "Follow-ups can recover work, but the owner should approve the message first.",
+        owner: "Approve follow-up, edit wording, or leave it watched.",
+        area: "Quotes",
+        page: "quotes",
+        fromInbox: true,
+        createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      })),
+
+    ...invoices
+      .filter((invoice) => invoice.status === "Overdue" || invoice.status === "Draft")
+      .map((invoice) => ({
+        id: `scan-invoice-${invoice.id}`,
+        group: "Scan",
+        title: invoice.status === "Overdue" ? "Overdue invoice found" : "Draft invoice ready",
+        info: `${invoice.client} · ${invoice.id} · ${money(invoice.amount)}`,
+        urgency: invoice.status === "Overdue" ? "Money risk" : "Approve today",
+        found: `Invoice ${invoice.id} is ${invoice.status.toLowerCase()}.`,
+        prepared: "Churvox prepared an invoice review slip.",
+        why: invoice.status === "Overdue"
+          ? "Overdue money should be reviewed before another reminder is sent."
+          : "Draft invoices should not be sent without owner approval.",
+        owner: "Approve, edit, mark paid, or send a follow-up.",
+        area: "Invoices",
+        page: "invoices",
+        fromInbox: true,
+        createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      })),
+
+    ...payroll
+      .filter((person) => person.status === "Needs review")
+      .map((person) => ({
+        id: `scan-payroll-${person.id}`,
+        group: "Scan",
+        title: "Payroll review found",
+        info: `${person.name} · needs review`,
+        urgency: "Owner review",
+        found: `${person.name} has payroll marked as needs review.`,
+        prepared: "Churvox prepared a payroll workspace review slip.",
+        why: "Payroll should be checked by the owner before export.",
+        owner: "Review hours, adjustment and gross pay. Do not submit tax or bank files.",
+        area: "Payroll",
+        page: "payroll",
+        fromInbox: true,
+        createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      })),
+  ];
+}
+
 export default function FreshCommand({ onNavigate }) {
   const [boxes, setBoxes] = React.useState(loadCommandBoxes);
   const [selectedId, setSelectedId] = React.useState(() => readFreshFocus("command", null));
@@ -224,6 +344,49 @@ export default function FreshCommand({ onNavigate }) {
     if (!selected) return;
     onNavigate?.(selected.page);
     setSelectedId(null);
+  }
+
+  function scanFreshRisks() {
+    const scanIssues = buildRiskScanIssues();
+
+    try {
+      if (typeof window !== "undefined") {
+        const saved = window.localStorage.getItem(COMMAND_INBOX_KEY);
+        const existing = saved ? JSON.parse(saved) : [];
+        const safeExisting = Array.isArray(existing) ? existing : [];
+        const existingIds = new Set(safeExisting.map((item) => item.id));
+
+        const newIssues = scanIssues.filter((item) => !existingIds.has(item.id));
+        const merged = [...newIssues, ...safeExisting].slice(0, 20);
+
+        window.localStorage.setItem(COMMAND_INBOX_KEY, JSON.stringify(merged));
+
+        window.dispatchEvent(
+          new CustomEvent("churvox:fresh-data-updated", {
+            detail: { type: "risk-scan" },
+          })
+        );
+      }
+    } catch {
+      // Fresh preview keeps working without local storage.
+    }
+
+    setBoxes(loadCommandBoxes());
+    setFilter("Pending");
+
+    if (scanIssues.length) {
+      setActivity((current) => [
+        {
+          id: `scan-${Date.now()}`,
+          status: "Scanned",
+          title: `${scanIssues.length} risks checked`,
+          group: "Command",
+          info: "Fresh data risk scan",
+          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        },
+        ...current,
+      ].slice(0, 8));
+    }
   }
 
   function resetCommand() {
@@ -311,6 +474,7 @@ export default function FreshCommand({ onNavigate }) {
           <h2>Quick owner moves</h2>
           <p>Command stays clean. It only shows decisions, risk and admin ready for approval.</p>
           <div className="freshActions">
+            <button className="freshPrimary" onClick={scanFreshRisks}>Scan fresh data</button>
             <button className="freshPrimary" onClick={() => onNavigate?.("jobs")}>Create job</button>
             <button className="freshOrange" onClick={() => onNavigate?.("quotes")}>Create quote</button>
             <button className="freshDark" onClick={() => onNavigate?.("clients")}>Add client</button>

@@ -29,6 +29,7 @@ import "./freshTopStatus.css";
 import "./freshLaunchChecklist.css";
 import "./freshUltimateContrast.css";
 import "./freshSearchContrastFinal.css";
+import "./freshRiskScan.css";
 
 import FreshShell from "./FreshShell";
 import FreshCommand from "./FreshCommand";
