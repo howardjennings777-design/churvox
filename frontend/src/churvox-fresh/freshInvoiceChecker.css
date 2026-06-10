@@ -1,0 +1,30 @@
+.freshInvoiceCheckPage{display:grid;gap:16px}
+.freshInvoiceCheckHero{display:flex;justify-content:space-between;gap:18px;padding:22px;border-radius:30px;background:#111827;box-shadow:0 24px 70px rgba(2,6,23,.18)}
+.freshInvoiceCheckHero span,.freshInvoiceCheckDetail header span{display:inline-flex;border-radius:999px;background:rgba(249,115,22,.16);color:#fed7aa;-webkit-text-fill-color:#fed7aa;padding:8px 11px;font-size:10px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}
+.freshInvoiceCheckHero h1{margin:13px 0 8px;color:#fff;-webkit-text-fill-color:#fff;font-size:48px;line-height:.9;letter-spacing:-.075em}
+.freshInvoiceCheckHero p{margin:0;max-width:780px;color:#e5e7eb;-webkit-text-fill-color:#e5e7eb;font-size:15px;font-weight:850;line-height:1.45}
+.freshInvoiceCheckStats{min-width:380px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.freshInvoiceCheckStats div{border-radius:20px;background:rgba(255,255,255,.08);padding:14px}
+.freshInvoiceCheckStats b{display:block;color:#fbbf24;-webkit-text-fill-color:#fbbf24;font-size:30px;line-height:1}
+.freshInvoiceCheckStats small{display:block;margin-top:5px;color:#f9fafb;-webkit-text-fill-color:#f9fafb;font-size:11px;font-weight:950;letter-spacing:.08em;text-transform:uppercase}
+.freshInvoiceCheckLayout{display:grid;grid-template-columns:320px minmax(0,1fr);gap:16px}
+.freshInvoiceCheckList,.freshInvoiceCheckDetail{border:1px solid rgba(15,23,42,.12);border-radius:30px;background:#fffaf0;padding:16px;box-shadow:0 18px 48px rgba(2,6,23,.10)}
+.freshInvoiceCheckList{display:grid;gap:9px;align-content:start}
+.freshInvoiceCheckList header{border-radius:22px;background:#111827;padding:14px}
+.freshInvoiceCheckList header b{display:block;color:#fff;-webkit-text-fill-color:#fff}
+.freshInvoiceCheckList header span{display:block;margin-top:4px;color:#fed7aa;-webkit-text-fill-color:#fed7aa;font-size:12px;font-weight:900}
+.freshInvoiceCheckList button{border:1px solid rgba(15,23,42,.10);border-radius:20px;background:#fff;padding:13px;text-align:left;cursor:pointer}
+.freshInvoiceCheckList button.active{background:#ffedd5;border-color:rgba(249,115,22,.36)}
+.freshInvoiceCheckList b,.freshInvoiceCheckCards b,.freshInvoiceCheckFinding b{display:block;color:#101827;-webkit-text-fill-color:#101827}
+.freshInvoiceCheckList span,.freshInvoiceCheckList small,.freshInvoiceCheckDetail p,.freshInvoiceCheckCards p,.freshInvoiceCheckFinding p{display:block;margin-top:4px;color:#475569;-webkit-text-fill-color:#475569;font-weight:850}
+.freshInvoiceCheckDetail header span{background:#fff7ed;color:#9a3412;-webkit-text-fill-color:#9a3412}
+.freshInvoiceCheckDetail h2{margin:11px 0 6px;color:#101827;-webkit-text-fill-color:#101827;font-size:36px;line-height:.95;letter-spacing:-.055em}
+.freshInvoiceCheckCards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+.freshInvoiceCheckCards section,.freshInvoiceCheckFinding{border:1px solid rgba(15,23,42,.10);border-radius:22px;background:#fff;padding:15px}
+.freshInvoiceCheckCards p{font-size:24px;color:#101827;-webkit-text-fill-color:#101827}
+.freshInvoiceCheckFinding{margin-top:14px}
+.freshInvoiceCheckButtons{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.freshInvoiceCheckButtons button{border:0;border-radius:15px;min-height:44px;padding:0 14px;font-size:12px;font-weight:1000;cursor:pointer}
+.freshInvoiceCheckButtons button:first-child,.freshInvoiceCheckButtons button:nth-child(2){background:#f97316;color:#111827;-webkit-text-fill-color:#111827}
+.freshInvoiceCheckButtons button:not(:first-child):not(:nth-child(2)){background:#111827;color:#fff;-webkit-text-fill-color:#fff}
+@media(max-width:1050px){.freshInvoiceCheckHero,.freshInvoiceCheckLayout,.freshInvoiceCheckCards{display:grid;grid-template-columns:1fr}.freshInvoiceCheckStats{min-width:0;grid-template-columns:1fr}.freshInvoiceCheckButtons{display:grid}}

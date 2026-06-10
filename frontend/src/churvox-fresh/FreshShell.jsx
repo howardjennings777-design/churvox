@@ -96,6 +96,7 @@ const groups = [
 const labels = {
   smart: "Smart Hub",
   aioperator: "AI Operator",
+  quickcreateai: "AI Quick Create",
   command: "Command",
   jobs: "Jobs",
   leads: "Leads",
@@ -112,6 +113,7 @@ const labels = {
   clients: "Clients",
   quotes: "Quotes",
   invoices: "Invoices",
+  invoicecheck: "Invoice Checker",
   payments: "Payments",
   creditnotes: "Credit Notes",
   portal: "Client Portal",
@@ -173,6 +175,8 @@ const mobileItems = [
 ];
 
 const extraMobile = [
+  ["invoicecheck", "IC", "Invoice Checker"],
+  ["quickcreateai", "QC", "AI Quick Create"],
   ["demo", "DM", "Demo Mode"],
   ["aioperator", "AI", "AI Operator"],
   ["launchpack", "LP", "Launch Pack"],

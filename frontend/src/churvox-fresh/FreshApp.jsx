@@ -39,6 +39,7 @@ import "./freshIndustries.css";
 import "./freshIntegrations.css";
 import "./freshInventory.css";
 import "./freshInvoicesLive.css";
+import "./freshInvoiceChecker.css";
 import "./freshJobsLive.css";
 import "./freshLaunch.css";
 import "./freshLaunchChecklist.css";
@@ -80,6 +81,7 @@ import "./freshSettingsLive.css";
 import "./freshSetup.css";
 import "./freshSmartHub.css";
 import "./freshAiOperatorStudio.css";
+import "./freshAiQuickCreate.css";
 import "./freshSubcontractors.css";
 import "./freshTeamLive.css";
 import "./freshTemplates.css";
@@ -127,6 +129,7 @@ import FreshIndustries from "./FreshIndustries";
 import FreshIntegrations from "./FreshIntegrations";
 import FreshInventory from "./FreshInventory";
 import FreshInvoices from "./FreshInvoices";
+import FreshInvoiceChecker from "./FreshInvoiceChecker";
 import FreshJobs from "./FreshJobs";
 import FreshLaunch from "./FreshLaunch";
 import FreshLaunchPack from "./FreshLaunchPack";
@@ -155,6 +158,7 @@ import FreshSettings from "./FreshSettings";
 import FreshSetup from "./FreshSetup";
 import FreshSmartHub from "./FreshSmartHub";
 import FreshAiOperatorStudio from "./FreshAiOperatorStudio";
+import FreshAiQuickCreate from "./FreshAiQuickCreate";
 import FreshSubcontractors from "./FreshSubcontractors";
 import FreshSupport from "./FreshSupport";
 import FreshTeam from "./FreshTeam";
@@ -168,6 +172,8 @@ import FreshXero from "./FreshXero";
 const pages = new Set([
   "smart",
   "aioperator",
+  "invoicecheck",
+  "quickcreateai",
   "command",
   "jobs",
   "recurring",
@@ -283,6 +289,7 @@ export default function FreshApp() {
   let content = <FreshSimple page={page} />;
   if (page === "smart") content = <FreshSmartHub onNavigate={goToPage} />;
   if (page === "aioperator") content = <FreshAiOperatorStudio onNavigate={goToPage} />;
+  if (page === "quickcreateai") content = <FreshAiQuickCreate onNavigate={goToPage} />;
   if (page === "command") content = <FreshCommand onNavigate={goToPage} />;
   if (page === "jobs") content = <FreshJobs onNavigate={goToPage} />;
   if (page === "recurring") content = <FreshRecurring onNavigate={goToPage} />;
@@ -293,6 +300,7 @@ export default function FreshApp() {
   if (page === "clients") content = <FreshClients onNavigate={goToPage} />;
   if (page === "quotes") content = <FreshQuotes onNavigate={goToPage} />;
   if (page === "invoices") content = <FreshInvoices onNavigate={goToPage} />;
+  if (page === "invoicecheck") content = <FreshInvoiceChecker onNavigate={goToPage} />;
   if (page === "payments") content = <FreshPayments onNavigate={goToPage} />;
   if (page === "creditnotes") content = <FreshCreditNotes onNavigate={goToPage} />;
   if (page === "customerportal") content = <FreshCustomerPortalRequests onNavigate={goToPage} />;
