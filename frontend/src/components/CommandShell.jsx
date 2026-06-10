@@ -29,8 +29,8 @@ export default function CommandShell({ children }) {
   const mobile = groups.flatMap((group) => group[1]).slice(0, 5);
 
   return (
-    <div className="cvxAppShell">
-      <aside className="cvxAppSidebar">
+    <div className="cvxAppShell" data-churvox-shell="command">
+      <aside className="cvxAppSidebar" aria-label="Churvox command navigation">
         <Link to="/dashboard" className="cvxAppBrand">
           <b>C</b>
           <span><strong>CHURVOX</strong><small>Command Desk</small></span>
@@ -48,8 +48,8 @@ export default function CommandShell({ children }) {
           ))}
         </nav>
       </aside>
-      <main className="cvxAppMain">{children}</main>
-      <nav className="cvxAppMobileNav">
+      <main className="cvxAppMain" data-command-canvas="true">{children}</main>
+      <nav className="cvxAppMobileNav" aria-label="Churvox mobile command navigation">
         {mobile.map(([label, href, icon]) => (
           <Link key={href} to={href} className={active(pathname, href) ? "active" : ""}>
             <i>{icon}</i><span>{label}</span>
