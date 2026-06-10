@@ -1,150 +1,241 @@
 import React from "react";
 
-const dispatchJobs = [
+const DISPATCH_STORAGE_KEY = "churvox:fresh-dispatch:v1";
+
+const seedDispatch = [
   {
-    id: 1,
-    lane: "Unconfirmed",
-    title: "Lawn service",
+    id: "dispatch-1",
+    job: "Lawn service",
     client: "Aroha Property Care",
-    worker: "Matiu",
-    time: "Today 10:00",
-    status: "Needs acknowledgement",
-    risk: "Worker has not acknowledged yet.",
-    notes: "Fortnightly service. Edge front path, mow, blow down and upload completion photos.",
-  },
-  {
-    id: 2,
-    lane: "Ready",
-    title: "Garden tidy",
-    client: "Lower Hutt Medical Centre",
-    worker: "Ana",
-    time: "Today 1:30",
+    worker: "Matiu Rangi",
     status: "Ready",
-    risk: "No issue.",
-    notes: "Back garden tidy and green waste removal. Office wants before/after photos.",
+    time: "10:00 AM",
+    address: "Naenae, Lower Hutt",
+    access: "Gate open, use side path",
+    notes: "Photos required after completion.",
   },
   {
-    id: 3,
-    lane: "On site",
-    title: "Hedge trim",
-    client: "Aroha Property Care",
-    worker: "Wiremu",
-    time: "Now",
-    status: "In progress",
-    risk: "Track time before invoicing.",
-    notes: "Trim roadside hedge and keep clippings off neighbour driveway.",
+    id: "dispatch-2",
+    job: "Garden tidy",
+    client: "Lower Hutt Medical Centre",
+    worker: "Ana Williams",
+    status: "On site",
+    time: "1:30 PM",
+    address: "Lower Hutt",
+    access: "Reception knows worker is coming",
+    notes: "Quiet work near front entry.",
   },
   {
-    id: 4,
-    lane: "Complete",
-    title: "Driveway clean",
+    id: "dispatch-3",
+    job: "Driveway clean",
     client: "Birchville Rentals",
-    worker: "Ana",
-    time: "Done",
-    status: "Completed",
-    risk: "Invoice draft can be prepared.",
-    notes: "Completed. Needs invoice draft and photo check before customer email.",
+    worker: "Unassigned",
+    status: "Blocked",
+    time: "Tomorrow 9:00 AM",
+    address: "Upper Hutt",
+    access: "Tenant access not confirmed",
+    notes: "Do not dispatch until access confirmed.",
+  },
+  {
+    id: "dispatch-4",
+    job: "Hedge trim",
+    client: "Aroha Property Care",
+    worker: "Matiu Rangi",
+    status: "Unconfirmed",
+    time: "Tomorrow 2:00 PM",
+    address: "Naenae, Lower Hutt",
+    access: "Needs worker acknowledgement",
+    notes: "Check ladder needed.",
   },
 ];
 
-const lanes = ["Unconfirmed", "Ready", "On site", "Complete"];
+const lanes = ["Unconfirmed", "Ready", "On site", "Complete", "Blocked"];
+
+function loadDispatch() {
+  try {
+    if (typeof window === "undefined") return seedDispatch;
+
+    const saved = window.localStorage.getItem(DISPATCH_STORAGE_KEY);
+    if (!saved) return seedDispatch;
+
+    const parsed = JSON.parse(saved);
+    return Array.isArray(parsed) ? parsed : seedDispatch;
+  } catch {
+    return seedDispatch;
+  }
+}
 
 export default function FreshDispatch({ onNavigate }) {
-  const [selectedId, setSelectedId] = React.useState(1);
-  const selected = dispatchJobs.find((job) => job.id === selectedId) || dispatchJobs[0];
+  const [items, setItems] = React.useState(loadDispatch);
+  const [selectedId, setSelectedId] = React.useState(items[0]?.id || "");
+
+  const selected = items.find((item) => item.id === selectedId) || items[0];
+
+  React.useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(DISPATCH_STORAGE_KEY, JSON.stringify(items));
+      }
+    } catch {
+      // Fresh preview keeps working without local storage.
+    }
+  }, [items]);
+
+  function updateSelectedDispatch(patch) {
+    if (!selected) return;
+
+    setItems((current) =>
+      current.map((item) =>
+        item.id === selected.id
+          ? { ...item, ...patch }
+          : item
+      )
+    );
+  }
+
+  function resetDispatch() {
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(DISPATCH_STORAGE_KEY);
+      }
+    } catch {
+      // Ignore preview storage errors.
+    }
+
+    setItems(seedDispatch);
+    setSelectedId(seedDispatch[0].id);
+  }
 
   return (
     <section>
       <header className="freshHero">
         <span>Churvox fresh · Dispatch</span>
         <h1>Dispatch</h1>
-        <p>Daily route control. See who has acknowledged, who is ready, who is on site, and what needs owner action.</p>
+        <p>Control the day, watch worker acknowledgement, confirm access and keep risky work out of the route.</p>
       </header>
 
-      <section className="freshGrid">
+      <section className="freshCommandPulse">
         <aside className="freshCard">
-          <h2>Today board</h2>
-          <p>Open a card to control the job without leaving Dispatch.</p>
-
-          <div style={{ display: "grid", gap: 12 }}>
-            {lanes.map((lane) => (
-              <section key={lane}>
-                <div style={{ fontSize: 11, fontWeight: 1000, letterSpacing: ".12em", textTransform: "uppercase", color: "#7c2d12", marginBottom: 6 }}>
-                  {lane}
-                </div>
-
-                {dispatchJobs.filter((job) => job.lane === lane).map((job) => (
-                  <button
-                    type="button"
-                    key={job.id}
-                    className={`freshItem ${job.status.includes("Needs") ? "need" : ""} ${selected.id === job.id ? "active" : ""}`}
-                    style={{ width: "100%", textAlign: "left", cursor: "pointer" }}
-                    onClick={() => setSelectedId(job.id)}
-                  >
-                    <b>{job.title}</b>
-                    <span>{job.client} · {job.worker}</span>
-                  </button>
-                ))}
-              </section>
-            ))}
-          </div>
+          <h2>{items.filter((item) => item.status === "Ready").length}</h2>
+          <p>Ready</p>
         </aside>
+        <aside className="freshCard">
+          <h2>{items.filter((item) => item.status === "On site").length}</h2>
+          <p>On site</p>
+        </aside>
+        <aside className="freshCard">
+          <h2>{items.filter((item) => item.status === "Blocked").length}</h2>
+          <p>Blocked</p>
+        </aside>
+      </section>
 
+      <section className="freshDispatchBoard">
+        {lanes.map((lane) => (
+          <section className={`freshDispatchLane ${lane.toLowerCase().replace(/\s+/g, "-")}`} key={lane}>
+            <header>
+              <b>{lane}</b>
+              <span>{items.filter((item) => item.status === lane).length}</span>
+            </header>
+
+            {items
+              .filter((item) => item.status === lane)
+              .map((item) => (
+                <button
+                  type="button"
+                  className={selected?.id === item.id ? "active" : ""}
+                  key={item.id}
+                  onClick={() => setSelectedId(item.id)}
+                >
+                  <strong>{item.job}</strong>
+                  <span>{item.client}</span>
+                  <small>{item.time} · {item.worker}</small>
+                </button>
+              ))}
+
+            {items.filter((item) => item.status === lane).length === 0 && (
+              <div className="freshDispatchEmpty">Nothing here</div>
+            )}
+          </section>
+        ))}
+      </section>
+
+      <section className="freshGrid two" style={{ marginTop: 14 }}>
         <section className="freshCard">
-          <h2>{selected.title}</h2>
+          <h2>{selected?.job || "Select dispatch item"}</h2>
 
-          <div className="freshTabs">
-            <span className="active">Dispatch</span>
-            <span>Worker</span>
-            <span>Notes</span>
-            <span>Photos</span>
-          </div>
+          {selected && (
+            <>
+              <div className="freshMiniGrid">
+                <div>
+                  <span>Client</span>
+                  <b>{selected.client}</b>
+                </div>
+                <div>
+                  <span>Status</span>
+                  <b>{selected.status}</b>
+                </div>
+                <div>
+                  <span>Worker</span>
+                  <b>{selected.worker}</b>
+                </div>
+                <div>
+                  <span>Time</span>
+                  <b>{selected.time}</b>
+                </div>
+              </div>
 
-          <label className="freshField">
-            <span>Client</span>
-            <input value={selected.client} readOnly />
-          </label>
+              <label className="freshField">
+                <span>Address</span>
+                <input
+                  value={selected.address}
+                  onChange={(event) => updateSelectedDispatch({ address: event.target.value })}
+                />
+              </label>
 
-          <label className="freshField">
-            <span>Worker</span>
-            <input value={selected.worker} readOnly />
-          </label>
+              <label className="freshField">
+                <span>Access instructions</span>
+                <textarea
+                  value={selected.access}
+                  onChange={(event) => updateSelectedDispatch({ access: event.target.value })}
+                />
+              </label>
 
-          <label className="freshField">
-            <span>Time</span>
-            <input value={selected.time} readOnly />
-          </label>
-
-          <label className="freshField">
-            <span>Status</span>
-            <input value={selected.status} readOnly />
-          </label>
-
-          <label className="freshField">
-            <span>Dispatch notes</span>
-            <textarea value={selected.notes} readOnly />
-          </label>
+              <label className="freshField">
+                <span>Dispatch notes</span>
+                <textarea
+                  value={selected.notes}
+                  onChange={(event) => updateSelectedDispatch({ notes: event.target.value })}
+                />
+              </label>
+            </>
+          )}
         </section>
 
         <aside className="freshCard">
           <h2>Owner actions</h2>
-          <p>Dispatch is for route control. Anything risky goes to Command.</p>
-
-          <div className={`freshItem ${selected.status.includes("Needs") ? "need" : ""}`}>
-            <b>Risk check</b>
-            <span>{selected.risk}</span>
-          </div>
 
           <div className="freshActions">
-            <button className="freshPrimary">Confirm route</button>
-            <button className="freshOrange" onClick={() => onNavigate?.("team")}>Reassign worker</button>
-            <button className="freshDark">Message worker</button>
-            <button className="freshGhost" onClick={() => onNavigate?.("command")}>Send issue to Command</button>
-          </div>
-
-          <div className="freshItem need">
-            <b>Launch rule</b>
-            <span>Assigned → Acknowledged → In Progress → Completed</span>
+            <button className="freshPrimary" onClick={() => updateSelectedDispatch({ status: "Ready" })}>
+              Confirm route
+            </button>
+            <button className="freshOrange" onClick={() => updateSelectedDispatch({ status: "On site" })}>
+              Mark on site
+            </button>
+            <button className="freshDark" onClick={() => updateSelectedDispatch({ status: "Complete" })}>
+              Mark complete
+            </button>
+            <button className="freshGhost" onClick={() => updateSelectedDispatch({ status: "Blocked" })}>
+              Block job
+            </button>
+            <button className="freshGhost" onClick={() => onNavigate?.("team")}>
+              Reassign worker
+            </button>
+            <button className="freshGhost" onClick={() => onNavigate?.("command")}>
+              Send issue to Command
+            </button>
+            <button className="freshGhost" onClick={resetDispatch}>
+              Reset dispatch
+            </button>
           </div>
         </aside>
       </section>

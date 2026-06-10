@@ -5,6 +5,7 @@ import "./freshJobsLive.css";
 import "./freshInvoicesLive.css";
 import "./freshClientsLive.css";
 import "./freshQuotesLive.css";
+import "./freshDispatchLive.css";
 import "./freshContrastFix.css";
 import "./freshCommandBoxes.css";
 import "./freshCommandLive.css";
