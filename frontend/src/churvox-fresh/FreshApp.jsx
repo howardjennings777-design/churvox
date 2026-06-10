@@ -4,6 +4,7 @@ import "./freshCommandBoxes.css";
 import FreshShell from "./FreshShell";
 import FreshCommand from "./FreshCommand";
 import FreshClients from "./FreshClients";
+import FreshDispatch from "./FreshDispatch";
 import FreshJobs from "./FreshJobs";
 import FreshSimple from "./FreshSimple";
 
@@ -13,6 +14,7 @@ export default function FreshApp() {
   let content = <FreshSimple page={page} />;
   if (page === "command") content = <FreshCommand />;
   if (page === "clients") content = <FreshClients />;
+  if (page === "dispatch") content = <FreshDispatch />;
   if (page === "jobs") content = <FreshJobs />;
 
   return (
