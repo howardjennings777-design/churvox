@@ -1,0 +1,94 @@
+/* Search typed text mirror. This avoids browser text-fill/paint issues. */
+
+.freshSearchVisible {
+  overflow: visible !important;
+}
+
+.freshSearchInputSlot {
+  position: relative !important;
+  display: block !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  height: 24px !important;
+  background: #ffffff !important;
+}
+
+.freshSearchInputSlot em {
+  position: absolute !important;
+  inset: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  pointer-events: none !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  font-style: normal !important;
+  font-size: 15px !important;
+  font-weight: 950 !important;
+  line-height: 24px !important;
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  opacity: 1 !important;
+  z-index: 1 !important;
+}
+
+.freshSearchInputSlot em.hasValue {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+}
+
+.freshSearchInputSlot input.freshSearchInput,
+.freshTopbar .freshSearchInputSlot input.freshSearchInput,
+.freshApp .freshSearchInputSlot input.freshSearchInput {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 2 !important;
+  width: 100% !important;
+  height: 24px !important;
+  border: 0 !important;
+  outline: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+
+  /* Hide native painted text, show our mirror instead */
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  caret-color: #101827 !important;
+
+  opacity: 1 !important;
+  font-size: 15px !important;
+  font-weight: 950 !important;
+  line-height: 24px !important;
+  text-shadow: none !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+}
+
+.freshSearchInputSlot input.freshSearchInput:focus {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  caret-color: #101827 !important;
+  background: transparent !important;
+}
+
+.freshSearchInputSlot input.freshSearchInput::placeholder {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  opacity: 0 !important;
+}
+
+@media (max-width: 950px) {
+  .freshSearchInputSlot,
+  .freshSearchInputSlot input.freshSearchInput {
+    height: 28px !important;
+  }
+
+  .freshSearchInputSlot em,
+  .freshSearchInputSlot input.freshSearchInput {
+    font-size: 16px !important;
+    line-height: 28px !important;
+  }
+}

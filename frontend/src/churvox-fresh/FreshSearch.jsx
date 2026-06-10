@@ -227,23 +227,26 @@ export default function FreshSearch({ onNavigate }) {
 
   return (
     <div className="freshSearchWrap">
-      <label className="freshSearch">
+      <label className="freshSearch freshSearchVisible">
         <span>Search</span>
-        <input
-          className="freshSearchInput"
-          value={query}
-          onFocus={refresh}
-          onKeyDown={onKeyDown}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Try Birchville, INV-1007, Matiu..."
-          aria-label="Search Churvox fresh preview"
-          style={{
-            color: "#101827",
-            WebkitTextFillColor: "#101827",
-            backgroundColor: "#ffffff",
-            caretColor: "#101827",
-          }}
-        />
+
+        <div className="freshSearchInputSlot">
+          <em className={query ? "hasValue" : ""} aria-hidden="true">
+            {query || "Try Birchville, INV-1007, Matiu..."}
+          </em>
+
+          <input
+            className="freshSearchInput"
+            value={query}
+            onFocus={refresh}
+            onKeyDown={onKeyDown}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder=""
+            aria-label="Search Churvox fresh preview"
+            autoComplete="off"
+            spellCheck="false"
+          />
+        </div>
       </label>
 
       {results.length > 0 && (
