@@ -5,6 +5,7 @@ import FreshShell from "./FreshShell";
 import FreshCommand from "./FreshCommand";
 import FreshClients from "./FreshClients";
 import FreshDispatch from "./FreshDispatch";
+import FreshInvoices from "./FreshInvoices";
 import FreshJobs from "./FreshJobs";
 import FreshSimple from "./FreshSimple";
 
@@ -15,6 +16,7 @@ export default function FreshApp() {
   if (page === "command") content = <FreshCommand />;
   if (page === "clients") content = <FreshClients />;
   if (page === "dispatch") content = <FreshDispatch />;
+  if (page === "invoices") content = <FreshInvoices />;
   if (page === "jobs") content = <FreshJobs />;
 
   return (
