@@ -5,7 +5,7 @@
 <!-- CHURVOX FULLSCREEN SLIPS DEPLOY MARKER 2026-06-03 -->
 <!-- CHURVOX COMMAND SLIP PORTAL FIX 2026-06-07 -->
 <!-- CHURVOX COMMAND SLIP SIDEBAR COVER FIX 2026-06-07 -->
-    <meta name="churvox-build-cache-reset" content="command-slip-sidebar-cover-20260607" />
+    <meta name="churvox-build-cache-reset" content="mime-css-fallback-20260610" />
     <meta charset="utf-8" />
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
@@ -75,6 +75,42 @@
         }
       }
     </style>
+<!-- CHURVOX_CSS_FALLBACK_LOADER_20260610 -->
+    <script>
+      (function () {
+        function addFallbackCss() {
+          if (document.getElementById("churvox-fallback-css")) return;
+          var link = document.createElement("link");
+          link.id = "churvox-fallback-css";
+          link.rel = "stylesheet";
+          link.href = "/static/css/churvox-fallback.css?v=20260610-mime-fix";
+          document.head.appendChild(link);
+        }
+
+        window.addEventListener("error", function (event) {
+          var target = event && event.target;
+          if (target && target.tagName === "LINK" && target.rel === "stylesheet") {
+            addFallbackCss();
+          }
+        }, true);
+
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker.getRegistrations()
+            .then(function (regs) {
+              return Promise.all(regs.map(function (reg) { return reg.unregister(); }));
+            })
+            .catch(function () {});
+        }
+
+        if (window.caches && caches.keys) {
+          caches.keys()
+            .then(function (keys) {
+              return Promise.all(keys.map(function (key) { return caches.delete(key); }));
+            })
+            .catch(function () {});
+        }
+      })();
+    </script>
 </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
