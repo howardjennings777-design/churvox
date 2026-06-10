@@ -1,162 +1,240 @@
 import React from "react";
 
-const invoices = [
+const INVOICE_STORAGE_KEY = "churvox:fresh-invoices:v1";
+
+const seedInvoices = [
   {
-    id: 1,
-    number: "INV-1007",
+    id: "INV-1007",
     client: "Aroha Property Care",
     job: "Lawn service",
     status: "Draft",
-    amount: "$85.00",
-    gst: "$11.09 GST",
-    due: "Not sent",
-    risk: "Needs owner approval before sending.",
-    notes: "Created from completed lawn service. Includes mow, edge and tidy.",
-    lines: ["Lawn service · $75.00", "GST · $11.09", "Rounding · -$1.09"],
-  },
-  {
-    id: 2,
-    number: "INV-1006",
-    client: "Lower Hutt Medical Centre",
-    job: "Garden tidy",
-    status: "Approved",
-    amount: "$420.00",
-    gst: "$54.78 GST",
+    amount: 85,
+    gst: 12.75,
     due: "Due in 7 days",
-    risk: "Ready to send.",
-    notes: "Back garden tidy and green waste removal.",
-    lines: ["Garden tidy · $365.22", "GST · $54.78"],
+    sync: "Not synced yet",
+    note: "Created from completed job. Owner must approve before sending.",
+    lines: ["Lawn mowing and edges · $70", "Blower tidy and photos · $15"],
   },
   {
-    id: 3,
-    number: "INV-1002",
+    id: "INV-1002",
     client: "Birchville Rentals",
     job: "Driveway clean",
     status: "Overdue",
-    amount: "$190.00",
-    gst: "$24.78 GST",
+    amount: 190,
+    gst: 28.5,
     due: "Overdue 9 days",
-    risk: "Follow-up should go to Command before sending.",
-    notes: "Overdue invoice. Owner should approve reminder wording.",
-    lines: ["Driveway clean · $165.22", "GST · $24.78"],
+    sync: "MYOB sync paused",
+    note: "Needs owner follow-up before another reminder goes out.",
+    lines: ["Driveway clean · $160", "Extra green waste handling · $30"],
+  },
+  {
+    id: "INV-1004",
+    client: "Lower Hutt Medical Centre",
+    job: "Garden tidy",
+    status: "Sent",
+    amount: 140,
+    gst: 21,
+    due: "Due tomorrow",
+    sync: "Ready to sync",
+    note: "Waiting on payment confirmation.",
+    lines: ["Garden tidy · $110", "Green waste removal · $30"],
   },
 ];
 
+const filters = ["All", "Draft", "Sent", "Overdue", "Paid"];
+
+function money(value) {
+  return `$${Number(value || 0).toFixed(2)}`;
+}
+
+function loadInvoices() {
+  try {
+    if (typeof window === "undefined") return seedInvoices;
+
+    const saved = window.localStorage.getItem(INVOICE_STORAGE_KEY);
+    if (!saved) return seedInvoices;
+
+    const parsed = JSON.parse(saved);
+    return Array.isArray(parsed) ? parsed : seedInvoices;
+  } catch {
+    return seedInvoices;
+  }
+}
+
 export default function FreshInvoices({ onNavigate }) {
-  const [selectedId, setSelectedId] = React.useState(1);
+  const [invoices, setInvoices] = React.useState(loadInvoices);
+  const [selectedId, setSelectedId] = React.useState(invoices[0]?.id || "");
+  const [filter, setFilter] = React.useState("All");
+
   const selected = invoices.find((invoice) => invoice.id === selectedId) || invoices[0];
+  const visibleInvoices = filter === "All" ? invoices : invoices.filter((invoice) => invoice.status === filter);
+  const draftTotal = invoices.filter((invoice) => invoice.status === "Draft").reduce((sum, invoice) => sum + invoice.amount, 0);
+  const overdueTotal = invoices.filter((invoice) => invoice.status === "Overdue").reduce((sum, invoice) => sum + invoice.amount, 0);
+
+  React.useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(INVOICE_STORAGE_KEY, JSON.stringify(invoices));
+      }
+    } catch {
+      // Fresh preview keeps working without local storage.
+    }
+  }, [invoices]);
+
+  function updateSelectedInvoice(patch) {
+    if (!selected) return;
+
+    setInvoices((current) =>
+      current.map((invoice) =>
+        invoice.id === selected.id
+          ? { ...invoice, ...patch }
+          : invoice
+      )
+    );
+  }
+
+  function resetInvoices() {
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(INVOICE_STORAGE_KEY);
+      }
+    } catch {
+      // Ignore preview storage errors.
+    }
+
+    setInvoices(seedInvoices);
+    setSelectedId(seedInvoices[0].id);
+    setFilter("All");
+  }
 
   return (
     <section>
       <header className="freshHero">
         <span>Churvox fresh · Invoices</span>
         <h1>Invoices</h1>
-        <p>Money desk. Review draft invoices, approve sending, mark paid, and send risky money actions back to Command.</p>
+        <p>Review draft invoices, approve sending, mark paid and send risky money issues back to Command.</p>
       </header>
+
+      <section className="freshCommandPulse">
+        <aside className="freshCard">
+          <h2>{money(draftTotal)}</h2>
+          <p>Draft money</p>
+        </aside>
+        <aside className="freshCard">
+          <h2>{money(overdueTotal)}</h2>
+          <p>Overdue money</p>
+        </aside>
+        <aside className="freshCard">
+          <h2>{invoices.length}</h2>
+          <p>Total invoices</p>
+        </aside>
+      </section>
+
+      <section className="freshCommandFilterBar">
+        {filters.map((item) => (
+          <button
+            type="button"
+            key={item}
+            className={filter === item ? "active" : ""}
+            onClick={() => setFilter(item)}
+          >
+            <span>{item}</span>
+            <b>{item === "All" ? invoices.length : invoices.filter((invoice) => invoice.status === item).length}</b>
+          </button>
+        ))}
+      </section>
 
       <section className="freshGrid">
         <aside className="freshCard">
           <h2>Invoice list</h2>
-          <p>Draft, approved, paid and overdue money.</p>
 
-          {invoices.map((invoice) => (
+          {visibleInvoices.map((invoice) => (
             <button
               type="button"
+              className={`freshItem ${selected?.id === invoice.id ? "active" : ""} ${invoice.status === "Overdue" ? "need" : ""}`}
               key={invoice.id}
-              className={`freshItem ${invoice.status === "Overdue" || invoice.status === "Draft" ? "need" : ""} ${selected.id === invoice.id ? "active" : ""}`}
-              style={{ width: "100%", textAlign: "left", cursor: "pointer" }}
               onClick={() => setSelectedId(invoice.id)}
             >
-              <b>{invoice.number} · {invoice.amount}</b>
-              <span>{invoice.client} · {invoice.status}</span>
+              <b>{invoice.id}</b>
+              <span>{invoice.client} · {invoice.status} · {money(invoice.amount)}</span>
             </button>
           ))}
+
+          {visibleInvoices.length === 0 && (
+            <div className="freshItem">
+              <b>No invoices</b>
+              <span>Change filter or reset preview invoices.</span>
+            </div>
+          )}
         </aside>
 
         <section className="freshCard">
-          <h2>{selected.number}</h2>
+          <h2>{selected?.id || "Select invoice"}</h2>
 
-          <div className="freshTabs">
-            <span className="active">Review</span>
-            <span>Lines</span>
-            <span>Customer</span>
-            <span>Sync</span>
-          </div>
+          {selected && (
+            <>
+              <div className="freshMiniGrid">
+                <div>
+                  <span>Client</span>
+                  <b>{selected.client}</b>
+                </div>
+                <div>
+                  <span>Status</span>
+                  <b>{selected.status}</b>
+                </div>
+                <div>
+                  <span>Amount</span>
+                  <b>{money(selected.amount)}</b>
+                </div>
+                <div>
+                  <span>GST</span>
+                  <b>{money(selected.gst)}</b>
+                </div>
+              </div>
 
-          <label className="freshField">
-            <span>Client</span>
-            <input value={selected.client} readOnly />
-          </label>
+              <div className={`freshInvoiceStatus ${selected.status.toLowerCase()}`}>
+                <b>{selected.due}</b>
+                <span>{selected.sync}</span>
+              </div>
 
-          <label className="freshField">
-            <span>Job</span>
-            <input value={selected.job} readOnly />
-          </label>
+              <div className="freshInvoiceLines">
+                {selected.lines.map((line) => (
+                  <div key={line}>
+                    <span>{line}</span>
+                  </div>
+                ))}
+              </div>
 
-          <label className="freshField">
-            <span>Status</span>
-            <input value={selected.status} readOnly />
-          </label>
-
-          <label className="freshField">
-            <span>Total</span>
-            <input value={`${selected.amount} · ${selected.gst}`} readOnly />
-          </label>
-
-          <label className="freshField">
-            <span>Due</span>
-            <input value={selected.due} readOnly />
-          </label>
-
-          <label className="freshField">
-            <span>Invoice notes</span>
-            <textarea value={selected.notes} readOnly />
-          </label>
+              <label className="freshField">
+                <span>Owner invoice note</span>
+                <textarea
+                  value={selected.note}
+                  onChange={(event) => updateSelectedInvoice({ note: event.target.value })}
+                />
+              </label>
+            </>
+          )}
         </section>
 
         <aside className="freshCard">
           <h2>Owner actions</h2>
-          <p>Invoices should not surprise the customer. Owner approves money before send.</p>
-
-          <div className={`freshItem ${selected.status === "Overdue" || selected.status === "Draft" ? "need" : ""}`}>
-            <b>Command check</b>
-            <span>{selected.risk}</span>
-          </div>
 
           <div className="freshActions">
-            <button className="freshPrimary">Approve invoice</button>
-            <button className="freshOrange">Send invoice</button>
-            <button className="freshDark">Mark paid</button>
-            <button className="freshGhost" onClick={() => onNavigate?.("command")}>Send issue to Command</button>
-          </div>
-
-          <div className="freshItem">
-            <b>Accounting sync</b>
-            <span>MYOB / Xero status will sit here later.</span>
-          </div>
-        </aside>
-      </section>
-
-      <section className="freshGrid two" style={{ marginTop: 14 }}>
-        <section className="freshCard">
-          <h2>Invoice lines</h2>
-          {selected.lines.map((line) => (
-            <div className="freshItem" key={line}>
-              <b>{line}</b>
-              <span>Prepared from job record</span>
-            </div>
-          ))}
-        </section>
-
-        <aside className="freshCard">
-          <h2>Money rules</h2>
-          <div className="freshItem need">
-            <b>Drafts need approval</b>
-            <span>No invoice sends without owner approval.</span>
-          </div>
-          <div className="freshItem need">
-            <b>Overdue reminders go to Command</b>
-            <span>Owner approves wording before customer contact.</span>
+            <button className="freshPrimary" onClick={() => updateSelectedInvoice({ status: "Sent", due: "Due in 7 days", sync: "Ready to sync" })}>
+              Approve and send
+            </button>
+            <button className="freshDark" onClick={() => updateSelectedInvoice({ status: "Paid", due: "Paid today", sync: "Payment ready to sync" })}>
+              Mark paid
+            </button>
+            <button className="freshOrange" onClick={() => updateSelectedInvoice({ status: "Overdue", due: "Overdue now", sync: "Reminder needs approval" })}>
+              Mark overdue
+            </button>
+            <button className="freshGhost" onClick={() => onNavigate?.("command")}>
+              Send issue to Command
+            </button>
+            <button className="freshGhost" onClick={resetInvoices}>
+              Reset invoices
+            </button>
           </div>
         </aside>
       </section>

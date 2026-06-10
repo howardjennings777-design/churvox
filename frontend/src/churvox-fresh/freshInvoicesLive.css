@@ -1,0 +1,51 @@
+.freshInvoiceStatus {
+  display: grid;
+  gap: 4px;
+  border-radius: 18px;
+  border: 1px solid rgba(15,23,42,.12);
+  border-left: 7px solid #f97316;
+  background: white;
+  padding: 14px;
+  margin: 12px 0;
+}
+
+.freshInvoiceStatus b {
+  color: #101827;
+  font-size: 16px;
+  font-weight: 1000;
+}
+
+.freshInvoiceStatus span {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.freshInvoiceStatus.paid {
+  border-left-color: #16a34a;
+  background: #f0fdf4;
+}
+
+.freshInvoiceStatus.overdue {
+  border-left-color: #dc2626;
+  background: #fff1f2;
+}
+
+.freshInvoiceLines {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.freshInvoiceLines div {
+  border: 1px solid rgba(15,23,42,.10);
+  border-radius: 15px;
+  background: #fffaf0;
+  padding: 11px 12px;
+}
+
+.freshInvoiceLines span {
+  color: #334155;
+  font-size: 13px;
+  font-weight: 900;
+}
