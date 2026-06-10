@@ -1,5 +1,5 @@
-import SafeRecordsWorkbenchPage from "./SafeRecordsWorkbenchPage";
+import ClientsV2Page from "../churvox-v2/ClientsV2Page";
 
 export default function CustomerRecordsPage() {
-  return <SafeRecordsWorkbenchPage type="clients" />;
+  return <ClientsV2Page />;
 }
