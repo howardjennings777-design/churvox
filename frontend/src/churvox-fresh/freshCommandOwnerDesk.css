@@ -469,3 +469,156 @@
     justify-content:space-between;
   }
 }
+
+/* Command cockpit polish — darker owner opening screen */
+body.freshCommandOwnerMode{
+  background:#050b14 !important;
+}
+
+body.freshCommandOwnerMode .freshPageMount{
+  background:
+    radial-gradient(circle at top right,rgba(249,115,22,.10),transparent 28%),
+    linear-gradient(180deg,#07111f,#050b14) !important;
+  border-radius:30px;
+  padding:10px;
+}
+
+body.freshCommandOwnerMode .freshCommandDeskPage{
+  background:#07111f;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:32px;
+  padding:14px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.03),0 24px 80px rgba(2,6,23,.30);
+}
+
+/* Darken the top app bar only while Command is open */
+body.freshCommandOwnerMode .freshTopbar,
+body.freshCommandOwnerMode .freshShellTopbar,
+body.freshCommandOwnerMode .freshShellHeader,
+body.freshCommandOwnerMode .freshHeader,
+body.freshCommandOwnerMode [class*="Topbar"],
+body.freshCommandOwnerMode [class*="topbar"]{
+  background:#07111f !important;
+  border-color:rgba(255,255,255,.08) !important;
+  color:#f8fafc !important;
+  -webkit-text-fill-color:#f8fafc !important;
+}
+
+body.freshCommandOwnerMode .freshCommandDeskHero{
+  min-height:190px;
+  background:
+    linear-gradient(110deg,rgba(7,17,31,.98),rgba(15,23,42,.94) 46%,rgba(154,52,18,.88)),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 1px,transparent 1px 76px);
+  border:1px solid rgba(251,191,36,.16);
+}
+
+body.freshCommandOwnerMode .freshCommandDeskHero h1{
+  max-width:760px;
+  text-shadow:0 2px 20px rgba(0,0,0,.28);
+}
+
+body.freshCommandOwnerMode .freshCommandMorning{
+  background:linear-gradient(135deg,#0b1220,#111827);
+  border-color:rgba(251,191,36,.12);
+}
+
+body.freshCommandOwnerMode .freshCommandFocusRow button{
+  background:
+    radial-gradient(circle at top right,rgba(249,115,22,.10),transparent 36%),
+    linear-gradient(135deg,#0b1220,#111827);
+}
+
+body.freshCommandOwnerMode .freshCommandFocusRow button:first-child{
+  background:linear-gradient(135deg,#f97316,#f59e0b);
+  border-color:rgba(251,191,36,.35);
+}
+
+body.freshCommandOwnerMode .freshCommandFocusRow button:first-child b,
+body.freshCommandOwnerMode .freshCommandFocusRow button:first-child span{
+  color:#111827 !important;
+  -webkit-text-fill-color:#111827 !important;
+}
+
+body.freshCommandOwnerMode .freshCommandTabs{
+  background:#0b1220;
+  border-color:rgba(255,255,255,.10);
+}
+
+body.freshCommandOwnerMode .freshCommandSlip{
+  background:
+    radial-gradient(circle at top right,rgba(249,115,22,.10),transparent 30%),
+    linear-gradient(135deg,#0b1220,#111827 54%,#172033);
+  border-color:rgba(255,255,255,.10);
+}
+
+body.freshCommandOwnerMode .freshCommandSlipBody{
+  grid-template-columns:1fr 1fr 1fr;
+  gap:12px;
+}
+
+body.freshCommandOwnerMode .freshCommandSlipBody section{
+  background:#081427;
+  border-color:rgba(255,255,255,.10);
+  min-height:96px;
+}
+
+body.freshCommandOwnerMode .freshCommandSlipBody b{
+  color:#fbbf24 !important;
+  -webkit-text-fill-color:#fbbf24 !important;
+  font-size:12px;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+body.freshCommandOwnerMode .freshCommandSlipBody p{
+  color:#e5e7eb !important;
+  -webkit-text-fill-color:#e5e7eb !important;
+  font-size:13px;
+  line-height:1.45;
+}
+
+body.freshCommandOwnerMode .freshCommandSlip h2{
+  font-size:36px;
+}
+
+body.freshCommandOwnerMode .freshCommandSlipControls button{
+  min-width:82px;
+}
+
+body.freshCommandOwnerMode .freshCommandSlipControls button:first-child{
+  box-shadow:0 10px 24px rgba(249,115,22,.20);
+}
+
+body.freshCommandOwnerMode .freshCommandEmpty{
+  background:#0b1220;
+  border-color:rgba(255,255,255,.16);
+}
+
+body.freshCommandOwnerMode .freshCommandDone{
+  background:#0b1220;
+  border-color:rgba(255,255,255,.10);
+}
+
+@media(max-width:1050px){
+  body.freshCommandOwnerMode .freshPageMount{
+    padding:6px;
+    border-radius:22px;
+  }
+
+  body.freshCommandOwnerMode .freshCommandDeskPage{
+    padding:10px;
+    border-radius:24px;
+  }
+
+  body.freshCommandOwnerMode .freshCommandDeskHero{
+    min-height:auto;
+  }
+
+  body.freshCommandOwnerMode .freshCommandSlipBody{
+    grid-template-columns:1fr;
+  }
+
+  body.freshCommandOwnerMode .freshCommandSlip h2{
+    font-size:28px;
+  }
+}

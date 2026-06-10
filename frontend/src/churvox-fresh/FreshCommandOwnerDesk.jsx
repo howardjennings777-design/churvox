@@ -116,6 +116,11 @@ function urgencyRank(urgency) {
 }
 
 export default function FreshCommandOwnerDesk({ onNavigate }) {
+  React.useEffect(() => {
+    document.body.classList.add("freshCommandOwnerMode");
+    return () => document.body.classList.remove("freshCommandOwnerMode");
+  }, []);
+
   const [mode, setMode] = React.useState("daily");
   const [slips, setSlips] = React.useState(safeReadSlips);
   const [activeGroup, setActiveGroup] = React.useState("Needs approval");
