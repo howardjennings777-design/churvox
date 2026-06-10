@@ -4161,5 +4161,133 @@ async def decline_ai_action(action_id: str, payload: dict = Body(default_factory
     return {"success": True, "action": _ai_action_safe(doc)}
 
 # Include router once, after every route above has been registered.
+# app.include_router(api_router) moved to bottom
+
+# =========================
+# FRONTEND COMPATIBILITY ENDPOINTS
+# Stops dashboard/command pages throwing 404 while full modules are built.
+# =========================
+
+@api_router.get("/field-activity")
+async def get_field_activity(current_user: dict = Depends(get_current_user)):
+    business_id = str(current_user.get("business_id") or current_user.get("id"))
+    items = []
+
+    try:
+        recent_jobs = await db.jobs.find({"business_id": business_id}).sort("updated_at", -1).limit(12).to_list(12)
+        for job in recent_jobs:
+            items.append({
+                "id": str(job.get("_id")),
+                "type": "job",
+                "title": job.get("title") or job.get("job_title") or "Job activity",
+                "status": job.get("status") or "assigned",
+                "created_at": (job.get("updated_at") or job.get("created_at") or datetime.now(timezone.utc)).isoformat()
+                    if hasattr(job.get("updated_at") or job.get("created_at") or datetime.now(timezone.utc), "isoformat")
+                    else str(job.get("updated_at") or job.get("created_at") or ""),
+            })
+    except Exception:
+        items = []
+
+    return {"success": True, "items": items, "activity": items, "data": items}
+
+
+@api_router.get("/approved-notifications")
+async def get_approved_notifications(current_user: dict = Depends(get_current_user)):
+    business_id = str(current_user.get("business_id") or current_user.get("id"))
+    items = []
+
+    try:
+        cursor = db.approved_notifications.find({"business_id": business_id}).sort("created_at", -1).limit(50)
+        async for item in cursor:
+            items.append(make_json_safe(item))
+    except Exception:
+        items = []
+
+    return {"success": True, "items": items, "notifications": items, "data": items}
+
+
+@api_router.get("/xero/status")
+@api_router.get("/integrations/xero/status")
+async def get_xero_status(current_user: dict = Depends(get_current_user)):
+    business_id = str(current_user.get("business_id") or current_user.get("id"))
+
+    settings = None
+    try:
+        settings = await db.xero_settings.find_one({"business_id": business_id})
+    except Exception:
+        settings = None
+
+    connected = bool(settings and (settings.get("access_token") or settings.get("tenant_id") or settings.get("connected")))
+    return {
+        "success": True,
+        "connected": connected,
+        "status": "connected" if connected else "not_connected",
+        "provider": "xero",
+        "message": "Xero is not connected yet" if not connected else "Xero connected",
+    }
+
+
+@api_router.get("/logic/business-profile")
+async def get_logic_business_profile(current_user: dict = Depends(get_current_user)):
+    business_id = str(current_user.get("business_id") or current_user.get("id"))
+
+    owner = None
+    try:
+        owner = await db.users.find_one({"_id": ObjectId(business_id)})
+    except Exception:
+        owner = None
+
+    if not owner:
+        try:
+            owner = await db.users.find_one({"business_id": business_id})
+        except Exception:
+            owner = None
+
+    profile = {
+        "business_id": business_id,
+        "business_name": (owner or {}).get("business_name") or (owner or {}).get("company_name") or "Churvox",
+        "owner_name": (owner or {}).get("full_name") or (owner or {}).get("name") or "",
+        "email": (owner or {}).get("email") or "",
+        "plan": (owner or {}).get("plan") or "solo",
+    }
+
+    return {"success": True, "profile": profile, "business": profile, "data": profile}
+
+
+@api_router.get("/logic/business-records/{record_type}")
+async def get_logic_business_records(record_type: str, current_user: dict = Depends(get_current_user)):
+    business_id = str(current_user.get("business_id") or current_user.get("id"))
+    record_type = (record_type or "").lower().strip()
+
+    allowed = {
+        "clients": "clients",
+        "jobs": "jobs",
+        "quotes": "quotes",
+        "invoices": "invoices",
+        "team": "users",
+        "workers": "users",
+    }
+
+    collection_name = allowed.get(record_type)
+    if not collection_name:
+        return {"success": True, "record_type": record_type, "items": [], "records": [], "data": []}
+
+    query = {"business_id": business_id}
+    if collection_name == "users" and record_type in ["team", "workers"]:
+        query = {"business_id": business_id, "role": {"$in": ["worker", "staff", "employee"]}}
+
+    items = []
+    try:
+        collection = getattr(db, collection_name)
+        cursor = collection.find(query).sort("created_at", -1).limit(100)
+        async for item in cursor:
+            items.append(make_json_safe(item))
+    except Exception:
+        items = []
+
+    return {"success": True, "record_type": record_type, "items": items, "records": items, "data": items}
+
+
+# Include router once, after every route above has been registered.
 app.include_router(api_router)
 
