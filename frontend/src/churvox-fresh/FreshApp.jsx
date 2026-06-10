@@ -1,6 +1,7 @@
 import React from "react";
 import "./fresh.css";
 import "./freshFeedback.css";
+import "./freshJobsLive.css";
 import "./freshCommandBoxes.css";
 import "./freshCommandLive.css";
 import "./freshCommandActivity.css";

@@ -1,0 +1,36 @@
+.freshMiniGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.freshMiniGrid div {
+  border: 1px solid rgba(15,23,42,.12);
+  border-radius: 16px;
+  background: white;
+  padding: 12px;
+}
+
+.freshMiniGrid span {
+  display: block;
+  color: #9a3412;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.freshMiniGrid b {
+  display: block;
+  margin-top: 5px;
+  color: #101827;
+  font-size: 15px;
+  font-weight: 1000;
+}
+
+@media (max-width: 950px) {
+  .freshMiniGrid {
+    grid-template-columns: 1fr;
+  }
+}
