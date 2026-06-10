@@ -1,7 +1,8 @@
 import React from "react";
 
-const commandBoxes = [
+const seedBoxes = [
   {
+    id: "invoice-ready",
     group: "Money",
     title: "Invoice ready",
     info: "Aroha Property Care · $85 draft",
@@ -14,6 +15,7 @@ const commandBoxes = [
     page: "invoices",
   },
   {
+    id: "quote-follow-up",
     group: "Quotes",
     title: "Follow-up needed",
     info: "Birchville Rentals · 6 days no reply",
@@ -26,6 +28,7 @@ const commandBoxes = [
     page: "quotes",
   },
   {
+    id: "client-billing",
     group: "Clients",
     title: "Billing detail missing",
     info: "Birchville Rentals · billing email blank",
@@ -38,6 +41,7 @@ const commandBoxes = [
     page: "clients",
   },
   {
+    id: "job-access",
     group: "Jobs",
     title: "Job needs access",
     info: "Driveway clean · tenant access not confirmed",
@@ -50,6 +54,7 @@ const commandBoxes = [
     page: "jobs",
   },
   {
+    id: "worker-ack",
     group: "Team",
     title: "Worker not acknowledged",
     info: "Today route · one job not accepted",
@@ -62,6 +67,7 @@ const commandBoxes = [
     page: "dispatch",
   },
   {
+    id: "setup-paused",
     group: "Setup",
     title: "Automation paused",
     info: "1 client missing billing setup",
@@ -75,19 +81,58 @@ const commandBoxes = [
   },
 ];
 
-const pulse = [
-  ["6", "Command boxes"],
-  ["3", "Need owner today"],
-  ["$695", "Money watched"],
-];
+function withState(box) {
+  return {
+    ...box,
+    status: "Pending",
+    editedInstruction: box.owner,
+  };
+}
 
 export default function FreshCommand({ onNavigate }) {
-  const [selected, setSelected] = React.useState(null);
+  const [boxes, setBoxes] = React.useState(() => seedBoxes.map(withState));
+  const [selectedId, setSelectedId] = React.useState(null);
+
+  const selected = boxes.find((box) => box.id === selectedId);
+  const pendingCount = boxes.filter((box) => box.status === "Pending").length;
+  const doneCount = boxes.filter((box) => box.status !== "Pending").length;
+  const moneyWatched = "$695";
+
+  function updateSelected(status) {
+    if (!selected) return;
+
+    setBoxes((current) =>
+      current.map((box) =>
+        box.id === selected.id
+          ? { ...box, status }
+          : box
+      )
+    );
+
+    setSelectedId(null);
+  }
+
+  function saveInstruction(value) {
+    if (!selected) return;
+
+    setBoxes((current) =>
+      current.map((box) =>
+        box.id === selected.id
+          ? { ...box, editedInstruction: value, status: "Edited" }
+          : box
+      )
+    );
+  }
 
   function openArea() {
     if (!selected) return;
-    if (onNavigate && selected.page) onNavigate(selected.page);
-    setSelected(null);
+    onNavigate?.(selected.page);
+    setSelectedId(null);
+  }
+
+  function resetCommand() {
+    setBoxes(seedBoxes.map(withState));
+    setSelectedId(null);
   }
 
   return (
@@ -95,25 +140,36 @@ export default function FreshCommand({ onNavigate }) {
       <header className="freshHero">
         <span>Churvox fresh · Command</span>
         <h1>Command</h1>
-        <p>Small boxes show what needs your decision. Open a box to review the full AI-prepared slip.</p>
+        <p>Small boxes show what needs your decision. Open a box, review the slip, then approve, edit or decline.</p>
       </header>
 
       <section className="freshCommandPulse">
-        {pulse.map(([value, label]) => (
-          <aside className="freshCard" key={label}>
-            <h2>{value}</h2>
-            <p>{label}</p>
-          </aside>
-        ))}
+        <aside className="freshCard">
+          <h2>{pendingCount}</h2>
+          <p>Pending boxes</p>
+        </aside>
+        <aside className="freshCard">
+          <h2>{doneCount}</h2>
+          <p>Handled today</p>
+        </aside>
+        <aside className="freshCard">
+          <h2>{moneyWatched}</h2>
+          <p>Money watched</p>
+        </aside>
       </section>
 
       <section className="freshCommandBoard">
-        {commandBoxes.map((box) => (
-          <button type="button" className="freshCommandBox" key={box.title} onClick={() => setSelected(box)}>
+        {boxes.map((box) => (
+          <button
+            type="button"
+            className={`freshCommandBox ${box.status !== "Pending" ? "isDone" : ""}`}
+            key={box.id}
+            onClick={() => setSelectedId(box.id)}
+          >
             <span className="freshCommandPill">{box.group}</span>
             <strong>{box.title}</strong>
             <em>{box.info}</em>
-            <small>{box.urgency}</small>
+            <small>{box.status === "Pending" ? box.urgency : box.status}</small>
           </button>
         ))}
       </section>
@@ -130,20 +186,19 @@ export default function FreshCommand({ onNavigate }) {
         </section>
 
         <aside className="freshCard">
-          <h2>Command rule</h2>
-          <div className="freshItem need">
-            <b>Box first</b>
-            <span>Quick info only, so the owner can scan fast.</span>
-          </div>
+          <h2>Preview controls</h2>
           <div className="freshItem">
-            <b>Slip second</b>
-            <span>Full details only open when the owner chooses.</span>
+            <b>Live boxes</b>
+            <span>Approve, decline and edit now change the Command box state.</span>
+          </div>
+          <div className="freshActions">
+            <button className="freshGhost" onClick={resetCommand}>Reset Command boxes</button>
           </div>
         </aside>
       </section>
 
       {selected && (
-        <div className="freshSlipOverlay" onClick={() => setSelected(null)}>
+        <div className="freshSlipOverlay" onClick={() => setSelectedId(null)}>
           <section className="freshSlipModal" onClick={(event) => event.stopPropagation()}>
             <header className="freshSlipHead">
               <span>{selected.group}</span>
@@ -152,6 +207,11 @@ export default function FreshCommand({ onNavigate }) {
             </header>
 
             <div className="freshSlipBody">
+              <div className="freshSlipRow">
+                <b>Status</b>
+                <p>{selected.status}</p>
+              </div>
+
               <div className="freshSlipRow">
                 <b>AI found</b>
                 <p>{selected.found}</p>
@@ -169,17 +229,20 @@ export default function FreshCommand({ onNavigate }) {
 
               <label className="freshField">
                 <span>Editable owner instruction</span>
-                <textarea defaultValue={selected.owner} />
+                <textarea
+                  defaultValue={selected.editedInstruction}
+                  onBlur={(event) => saveInstruction(event.target.value)}
+                />
               </label>
 
               <div className="freshSlipActions">
-                <button className="freshPrimary">Approve</button>
-                <button className="freshDark">Save edit</button>
-                <button className="freshGhost">Decline</button>
+                <button className="freshPrimary" onClick={() => updateSelected("Approved")}>Approve</button>
+                <button className="freshDark" onClick={() => updateSelected("Edited")}>Save edit</button>
+                <button className="freshGhost" onClick={() => updateSelected("Declined")}>Decline</button>
                 <button className="freshOrange" onClick={openArea}>Open {selected.area}</button>
               </div>
 
-              <button type="button" className="freshClose" onClick={() => setSelected(null)}>
+              <button type="button" className="freshClose" onClick={() => setSelectedId(null)}>
                 Close slip
               </button>
             </div>
