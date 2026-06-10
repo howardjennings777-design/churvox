@@ -200,6 +200,9 @@ import FreshVariations from "./FreshVariations";
 import FreshWarranties from "./FreshWarranties";
 import FreshWorker from "./FreshWorker";
 import FreshWorkerBrief from "./FreshWorkerBrief";
+import FreshWorkerPerformance from "./FreshWorkerPerformance";
+import FreshMaterialsReminder from "./FreshMaterialsReminder";
+import FreshReviewBooster from "./FreshReviewBooster";
 import FreshMissingInfo from "./FreshMissingInfo";
 import FreshCustomerMemory from "./FreshCustomerMemory";
 import FreshBusinessHealth from "./FreshBusinessHealth";
@@ -277,6 +280,7 @@ const pages = new Set([
   "expenses",
   "assets",
   "inventory",
+  "materialsai",
   "services",
   "industries",
   "settings",
@@ -287,6 +291,7 @@ const pages = new Set([
   "messages",
   "followups",
   "reviews",
+  "reviewbooster",
   "quality",
   "reworkresolver",
   "extras",
@@ -302,6 +307,7 @@ const pages = new Set([
   "portal",
   "worker",
   "workerbrief",
+  "workerperformance",
   "missinginfo",
   "customermemory",
   "upsellfinder",
@@ -420,6 +426,7 @@ export default function FreshApp() {
   if (page === "expenses") content = <FreshExpenses onNavigate={goToPage} />;
   if (page === "assets") content = <FreshAssets onNavigate={goToPage} />;
   if (page === "inventory") content = <FreshInventory onNavigate={goToPage} />;
+  if (page === "materialsai") content = <FreshMaterialsReminder onNavigate={goToPage} />;
   if (page === "services") content = <FreshServices onNavigate={goToPage} />;
   if (page === "industries") content = <FreshIndustries onNavigate={goToPage} />;
   if (page === "settings") content = <FreshSettings onNavigate={goToPage} />;
@@ -431,6 +438,7 @@ export default function FreshApp() {
   if (page === "messagetriage") content = <FreshMessageTriage onNavigate={goToPage} />;
   if (page === "followups") content = <FreshFollowUps onNavigate={goToPage} />;
   if (page === "reviews") content = <FreshReviews onNavigate={goToPage} />;
+  if (page === "reviewbooster") content = <FreshReviewBooster onNavigate={goToPage} />;
   if (page === "quality") content = <FreshQuality onNavigate={goToPage} />;
   if (page === "reworkresolver") content = <FreshReworkResolver onNavigate={goToPage} />;
   if (page === "extras") content = <FreshExtras onNavigate={goToPage} />;
@@ -446,6 +454,7 @@ export default function FreshApp() {
   if (page === "portal") content = <FreshClientPortal onNavigate={goToPage} />;
   if (page === "worker") content = <FreshWorker onNavigate={goToPage} />;
   if (page === "workerbrief") content = <FreshWorkerBrief onNavigate={goToPage} />;
+  if (page === "workerperformance") content = <FreshWorkerPerformance onNavigate={goToPage} />;
   if (page === "missinginfo") content = <FreshMissingInfo onNavigate={goToPage} />;
 
   return (
