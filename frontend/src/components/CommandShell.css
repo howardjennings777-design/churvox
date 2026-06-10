@@ -283,3 +283,58 @@ body,
     margin-left: 0 !important;
   }
 }
+
+/* CHURVOX_REMOVE_FALSE_SECOND_SIDEBAR_20260610
+   This removes the ugly scrollbar/gutter beside the left nav. */
+html,
+body,
+#root {
+  overflow-x: hidden !important;
+}
+
+.cvxShell {
+  width: 100% !important;
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
+}
+
+.cvxSide {
+  overflow-x: hidden !important;
+  scrollbar-width: none !important;
+}
+
+.cvxSide::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.cvxMain {
+  margin-left: var(--cvx-side) !important;
+  width: calc(100vw - var(--cvx-side)) !important;
+  max-width: calc(100vw - var(--cvx-side)) !important;
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
+  scrollbar-gutter: auto !important;
+}
+
+/* Older pages sometimes create their own scroll container.
+   Keep the content, remove the fake second rail next to sidebar. */
+.cvxMain > main,
+.cvxMain > div,
+.cvxMain [class*="Root"],
+.cvxMain [class*="Page"],
+.cvxMain [class*="Shell"],
+.cvxMain [class*="workspace"],
+.cvxMain [class*="Workspace"] {
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+  scrollbar-gutter: auto !important;
+}
+
+@media (max-width: 1023px) {
+  .cvxMain {
+    width: 100% !important;
+    max-width: 100vw !important;
+    margin-left: 0 !important;
+  }
+}
