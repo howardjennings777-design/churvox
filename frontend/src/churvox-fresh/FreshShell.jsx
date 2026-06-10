@@ -53,6 +53,7 @@ const groups = [
   ["inventory", "IV", "Inventory"],
       ["inventory", "IV", "Inventory"],
       ["services", "SV", "Services"],
+      ["industries", "IN", "Industries"],
     ],
   },
   {
@@ -120,6 +121,7 @@ const labels = {
   assets: "Assets",
   inventory: "Inventory",
   services: "Services",
+  industries: "Industries",
   integrations: "Integrations",
   xero: "Xero",
   settings: "Settings",
@@ -176,6 +178,7 @@ const extraMobile = [
   ["expenses", "EP", "Expenses"],
   ["assets", "AS", "Assets"],
   ["services", "SV", "Services"],
+  ["industries", "IN", "Industries"],
   ["integrations", "IN", "Integrations"],
   ["xero", "XE", "Xero"],
   ["settings", "ST", "Settings"],
