@@ -1,161 +1,168 @@
 import React from "react";
 import "./fresh.css";
-import "./freshFeedback.css";
-import "./freshRoadmap.css";
-import "./freshJobsLive.css";
-import "./freshInvoicesLive.css";
-import "./freshClientsLive.css";
-import "./freshQuotesLive.css";
-import "./freshDispatchLive.css";
-import "./freshTeamLive.css";
-import "./freshPayrollLive.css";
-import "./freshReportsLive.css";
-import "./freshSettingsLive.css";
-import "./freshPlansLive.css";
-import "./freshContrastFix.css";
-import "./freshCommandBoxes.css";
-import "./freshCommandLive.css";
-import "./freshCommandActivity.css";
-import "./freshCommandFilters.css";
-import "./freshCommandFilterCounts.css";
-import "./freshMobileNav.css";
-import "./freshPolish.css";
-import "./freshTopbar.css";
-import "./freshQuickCreate.css";
+import "./freshAiUsage.css";
+import "./freshAlerts.css";
+import "./freshApprovals.css";
+import "./freshAreas.css";
+import "./freshAssets.css";
+import "./freshAudit.css";
+import "./freshAutomation.css";
+import "./freshAvailability.css";
+import "./freshBilling.css";
 import "./freshButtonContrast.css";
-import "./freshFormContrast.css";
-import "./freshDataControls.css";
+import "./freshCancellations.css";
+import "./freshClientPortal.css";
+import "./freshClientsLive.css";
+import "./freshCommandActivity.css";
+import "./freshCommandBoxes.css";
+import "./freshCommandFilterCounts.css";
+import "./freshCommandFilters.css";
 import "./freshCommandFlow.css";
-import "./freshTopStatus.css";
+import "./freshCommandLive.css";
+import "./freshContracts.css";
+import "./freshContrastFix.css";
+import "./freshCreditNotes.css";
+import "./freshCustomerPortalRequests.css";
+import "./freshDataControls.css";
+import "./freshDispatchLive.css";
+import "./freshDocuments.css";
+import "./freshExpenses.css";
+import "./freshExports.css";
+import "./freshExtras.css";
+import "./freshFeedback.css";
+import "./freshFlags.css";
+import "./freshFollowUps.css";
+import "./freshFormContrast.css";
+import "./freshGps.css";
+import "./freshImports.css";
+import "./freshIndustries.css";
+import "./freshIntegrations.css";
+import "./freshInventory.css";
+import "./freshInvoicesLive.css";
+import "./freshJobsLive.css";
+import "./freshLaunch.css";
 import "./freshLaunchChecklist.css";
-import "./freshUltimateContrast.css";
-import "./freshSearchContrastFinal.css";
+import "./freshLaunchPack.css";
+import "./freshLeads.css";
+import "./freshMessages.css";
+import "./freshMini.css";
+import "./freshMobileNav.css";
+import "./freshOnboarding.css";
+import "./freshPayments.css";
+import "./freshPayrollLive.css";
+import "./freshPhotos.css";
+import "./freshPlansLive.css";
+import "./freshPolish.css";
+import "./freshProfit.css";
+import "./freshQa.css";
+import "./freshQuality.css";
+import "./freshQuickCreate.css";
+import "./freshQuotesLive.css";
+import "./freshRecurring.css";
+import "./freshReportsLive.css";
+import "./freshReviews.css";
 import "./freshRiskScan.css";
+import "./freshRoadmap.css";
+import "./freshRoles.css";
+import "./freshRoutes.css";
+import "./freshRoutesContrastFix.css";
+import "./freshSafety.css";
+import "./freshSearch.css";
+import "./freshSearchContrastFinal.css";
+import "./freshSearchEditableFinal.css";
 import "./freshSearchReallyFinal.css";
 import "./freshSearchTypingFix.css";
 import "./freshSearchVisibleText.css";
-import "./freshSearchEditableFinal.css";
-import "./freshWorker.css";
-import "./freshClientPortal.css";
-import "./freshAutomation.css";
-import "./freshPhotos.css";
-import "./freshExtras.css";
-import "./freshMessages.css";
-import "./freshRoutes.css";
-import "./freshRoutesContrastFix.css";
-import "./freshIntegrations.css";
-import "./freshAssets.css";
+import "./freshSecurity.css";
 import "./freshServices.css";
-import "./freshLeads.css";
-import "./freshRecurring.css";
-import "./freshAvailability.css";
+import "./freshSettingsLive.css";
+import "./freshSetup.css";
+import "./freshSmartHub.css";
+import "./freshSubcontractors.css";
+import "./freshTeamLive.css";
+import "./freshTemplates.css";
 import "./freshTimeLogs.css";
-import "./freshExpenses.css";
-import "./freshDocuments.css";
-import "./freshProfit.css";
+import "./freshTopStatus.css";
+import "./freshTopbar.css";
+import "./freshUltimateContrast.css";
 import "./freshVariations.css";
 import "./freshWarranties.css";
-import "./freshContracts.css";
-import "./freshCancellations.css";
-import "./freshFollowUps.css";
-import "./freshSafety.css";
-import "./freshInventory.css";
-import "./freshAreas.css";
-import "./freshReviews.css";
-import "./freshQuality.css";
-import "./freshPayments.css";
-import "./freshCreditNotes.css";
-import "./freshCustomerPortalRequests.css";
-import "./freshApprovals.css";
-import "./freshAlerts.css";
-import "./freshAudit.css";
-import "./freshSetup.css";
-import "./freshLaunch.css";
-import "./freshOnboarding.css";
-import "./freshQa.css";
-import "./freshFlags.css";
-import "./freshImports.css";
-import "./freshExports.css";
-import "./freshSecurity.css";
-import "./freshRoles.css";
-import "./freshBilling.css";
-import "./freshAiUsage.css";
-import "./freshTemplates.css";
-import "./freshIndustries.css";
-import "./freshSubcontractors.css";
-import "./freshGps.css";
+import "./freshWorker.css";
 import "./freshXero.css";
 import "./freshGlobalReadable.css";
 import "./freshNuclearReadable.css";
 
 import FreshShell from "./FreshShell";
-import FreshCommand from "./FreshCommand";
+import FreshSimple from "./FreshSimple";
+import { forceFreshReadable, installFreshReadableRuntime } from "./freshForceReadable";
+import FreshAiUsage from "./FreshAiUsage";
+import FreshAlerts from "./FreshAlerts";
+import FreshApprovals from "./FreshApprovals";
+import FreshAreas from "./FreshAreas";
+import FreshAssets from "./FreshAssets";
+import FreshAudit from "./FreshAudit";
+import FreshAutomation from "./FreshAutomation";
+import FreshAvailability from "./FreshAvailability";
+import FreshBilling from "./FreshBilling";
+import FreshCancellations from "./FreshCancellations";
+import FreshClientPortal from "./FreshClientPortal";
 import FreshClients from "./FreshClients";
-import FreshJobs from "./FreshJobs";
-import FreshDispatch from "./FreshDispatch";
-import FreshInvoices from "./FreshInvoices";
-import FreshQuotes from "./FreshQuotes";
-import FreshTeam from "./FreshTeam";
-import FreshPayroll from "./FreshPayroll";
-import FreshReports from "./FreshReports";
-import FreshSettings from "./FreshSettings";
-import FreshPlans from "./FreshPlans";
-import FreshSupport from "./FreshSupport";
-import FreshPayments from "./FreshPayments";
+import FreshCommand from "./FreshCommand";
+import FreshContracts from "./FreshContracts";
 import FreshCreditNotes from "./FreshCreditNotes";
 import FreshCustomerPortalRequests from "./FreshCustomerPortalRequests";
-import FreshApprovals from "./FreshApprovals";
-import FreshAlerts from "./FreshAlerts";
-import FreshAudit from "./FreshAudit";
-import FreshSetup from "./FreshSetup";
-import FreshLaunch from "./FreshLaunch";
-import FreshOnboarding from "./FreshOnboarding";
-import FreshQa from "./FreshQa";
-import FreshFlags from "./FreshFlags";
-import FreshImports from "./FreshImports";
-import FreshExports from "./FreshExports";
-import FreshSecurity from "./FreshSecurity";
-import FreshRoles from "./FreshRoles";
-import FreshBilling from "./FreshBilling";
-import FreshAiUsage from "./FreshAiUsage";
-import FreshTemplates from "./FreshTemplates";
-import FreshGps from "./FreshGps";
-import FreshXero from "./FreshXero";
-import FreshQuality from "./FreshQuality";
-import FreshReviews from "./FreshReviews";
-import FreshAreas from "./FreshAreas";
-import FreshInventory from "./FreshInventory";
-import FreshSafety from "./FreshSafety";
-import FreshFollowUps from "./FreshFollowUps";
-import FreshProfit from "./FreshProfit";
+import FreshDispatch from "./FreshDispatch";
 import FreshDocuments from "./FreshDocuments";
 import FreshExpenses from "./FreshExpenses";
-import FreshTimeLogs from "./FreshTimeLogs";
-import FreshAvailability from "./FreshAvailability";
-import FreshRecurring from "./FreshRecurring";
-import FreshLeads from "./FreshLeads";
-import FreshServices from "./FreshServices";
-import FreshIndustries from "./FreshIndustries";
-import FreshSubcontractors from "./FreshSubcontractors";
-import FreshAssets from "./FreshAssets";
-import FreshIntegrations from "./FreshIntegrations";
-import FreshRoutes from "./FreshRoutes";
-import FreshMessages from "./FreshMessages";
+import FreshExports from "./FreshExports";
 import FreshExtras from "./FreshExtras";
+import FreshFeedback from "./FreshFeedback";
+import FreshFlags from "./FreshFlags";
+import FreshFollowUps from "./FreshFollowUps";
+import FreshGps from "./FreshGps";
+import FreshImports from "./FreshImports";
+import FreshIndustries from "./FreshIndustries";
+import FreshIntegrations from "./FreshIntegrations";
+import FreshInventory from "./FreshInventory";
+import FreshInvoices from "./FreshInvoices";
+import FreshJobs from "./FreshJobs";
+import FreshLaunch from "./FreshLaunch";
+import FreshLaunchPack from "./FreshLaunchPack";
+import FreshLeads from "./FreshLeads";
+import FreshMessages from "./FreshMessages";
+import FreshOnboarding from "./FreshOnboarding";
+import FreshPayments from "./FreshPayments";
+import FreshPayroll from "./FreshPayroll";
+import FreshPhotos from "./FreshPhotos";
+import FreshPlans from "./FreshPlans";
+import FreshProfit from "./FreshProfit";
+import FreshQa from "./FreshQa";
+import FreshQuality from "./FreshQuality";
+import FreshQuotes from "./FreshQuotes";
+import FreshRecurring from "./FreshRecurring";
+import FreshReports from "./FreshReports";
+import FreshReviews from "./FreshReviews";
+import FreshRoadmap from "./FreshRoadmap";
+import FreshRoles from "./FreshRoles";
+import FreshRoutes from "./FreshRoutes";
+import FreshSafety from "./FreshSafety";
+import FreshSecurity from "./FreshSecurity";
+import FreshServices from "./FreshServices";
+import FreshSettings from "./FreshSettings";
+import FreshSetup from "./FreshSetup";
+import FreshSmartHub from "./FreshSmartHub";
+import FreshSubcontractors from "./FreshSubcontractors";
+import FreshSupport from "./FreshSupport";
+import FreshTeam from "./FreshTeam";
+import FreshTemplates from "./FreshTemplates";
+import FreshTimeLogs from "./FreshTimeLogs";
 import FreshVariations from "./FreshVariations";
 import FreshWarranties from "./FreshWarranties";
-import FreshContracts from "./FreshContracts";
-import FreshCancellations from "./FreshCancellations";
-import FreshPhotos from "./FreshPhotos";
-import FreshAutomation from "./FreshAutomation";
-import FreshClientPortal from "./FreshClientPortal";
 import FreshWorker from "./FreshWorker";
-import FreshSimple from "./FreshSimple";
-import FreshFeedback from "./FreshFeedback";
-import FreshRoadmap from "./FreshRoadmap";
-import { forceFreshReadable, installFreshReadableRuntime } from "./freshForceReadable";
+import FreshXero from "./FreshXero";
 
 const pages = new Set([
+  "smart",
   "command",
   "jobs",
   "recurring",
@@ -174,6 +181,7 @@ const pages = new Set([
   "audit",
   "setup",
   "launch",
+  "launchpack",
   "onboarding",
   "qa",
   "flags",
@@ -188,6 +196,8 @@ const pages = new Set([
   "templates",
   "gps",
   "xero",
+  "myob",
+  "nz",
   "team",
   "subcontractors",
   "availability",
@@ -211,10 +221,10 @@ const pages = new Set([
   "extras",
   "variations",
   "warranties",
+  "cancellations",
   "photos",
   "documents",
   "contracts",
-  "cancellations",
   "safety",
   "automation",
   "portal",
@@ -222,8 +232,9 @@ const pages = new Set([
 ]);
 
 function readPageFromHash() {
+  if (typeof window === "undefined") return "smart";
   const hash = window.location.hash.replace("#", "").trim().toLowerCase();
-  return pages.has(hash) ? hash : "command";
+  return pages.has(hash) ? hash : "smart";
 }
 
 export default function FreshApp() {
@@ -264,7 +275,7 @@ export default function FreshApp() {
   }
 
   let content = <FreshSimple page={page} />;
-
+  if (page === "smart") content = <FreshSmartHub onNavigate={goToPage} />;
   if (page === "command") content = <FreshCommand onNavigate={goToPage} />;
   if (page === "jobs") content = <FreshJobs onNavigate={goToPage} />;
   if (page === "recurring") content = <FreshRecurring onNavigate={goToPage} />;
@@ -283,6 +294,7 @@ export default function FreshApp() {
   if (page === "audit") content = <FreshAudit onNavigate={goToPage} />;
   if (page === "setup") content = <FreshSetup onNavigate={goToPage} />;
   if (page === "launch") content = <FreshLaunch onNavigate={goToPage} />;
+  if (page === "launchpack") content = <FreshLaunchPack onNavigate={goToPage} />;
   if (page === "onboarding") content = <FreshOnboarding onNavigate={goToPage} />;
   if (page === "qa") content = <FreshQa onNavigate={goToPage} />;
   if (page === "flags") content = <FreshFlags onNavigate={goToPage} />;
@@ -320,10 +332,10 @@ export default function FreshApp() {
   if (page === "extras") content = <FreshExtras onNavigate={goToPage} />;
   if (page === "variations") content = <FreshVariations onNavigate={goToPage} />;
   if (page === "warranties") content = <FreshWarranties onNavigate={goToPage} />;
+  if (page === "cancellations") content = <FreshCancellations onNavigate={goToPage} />;
   if (page === "photos") content = <FreshPhotos onNavigate={goToPage} />;
   if (page === "documents") content = <FreshDocuments onNavigate={goToPage} />;
   if (page === "contracts") content = <FreshContracts onNavigate={goToPage} />;
-  if (page === "cancellations") content = <FreshCancellations onNavigate={goToPage} />;
   if (page === "safety") content = <FreshSafety onNavigate={goToPage} />;
   if (page === "automation") content = <FreshAutomation onNavigate={goToPage} />;
   if (page === "portal") content = <FreshClientPortal onNavigate={goToPage} />;

@@ -72,6 +72,7 @@ const groups = [
       ["audit", "AT", "Activity Log"],
       ["setup", "SU", "Setup"],
       ["launch", "LN", "Launch"],
+      ["launchpack", "LP", "Launch Pack"],
       ["qa", "QA", "QA"],
       ["flags", "FG", "Flags"],
       ["feedback", "FB", "Feedback"],
@@ -92,6 +93,7 @@ const groups = [
 ];
 
 const labels = {
+  smart: "Smart Hub",
   command: "Command",
   jobs: "Jobs",
   leads: "Leads",
@@ -140,6 +142,7 @@ const labels = {
   audit: "Activity Log",
   setup: "Setup",
   launch: "Launch",
+  launchpack: "Launch Pack",
   qa: "QA",
   flags: "Flags",
   feedback: "Feedback",
@@ -167,6 +170,8 @@ const mobileItems = [
 ];
 
 const extraMobile = [
+  ["launchpack", "LP", "Launch Pack"],
+  ["smart", "SH", "Smart Hub"],
   ["leads", "LD", "Leads"],
   ["recurring", "RC", "Recurring"],
   ["photos", "PH", "Photos"],

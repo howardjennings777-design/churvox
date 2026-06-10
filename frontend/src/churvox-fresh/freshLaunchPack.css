@@ -1,0 +1,29 @@
+.freshLaunchPackPage{display:grid;gap:16px}
+.freshLaunchPackHero{display:flex;justify-content:space-between;gap:18px;padding:22px;border-radius:30px;background:#111827;box-shadow:0 24px 70px rgba(2,6,23,.18)}
+.freshLaunchPackHero span,.freshLaunchPackPanel header span{display:inline-flex;border-radius:999px;background:rgba(249,115,22,.16);color:#fed7aa;-webkit-text-fill-color:#fed7aa;padding:8px 11px;font-size:10px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}
+.freshLaunchPackHero h1{margin:13px 0 8px;color:#fff;-webkit-text-fill-color:#fff;font-size:48px;line-height:.9;letter-spacing:-.075em}
+.freshLaunchPackHero p{margin:0;max-width:760px;color:#e5e7eb;-webkit-text-fill-color:#e5e7eb;font-size:15px;font-weight:850;line-height:1.45}
+.freshLaunchPackStats{min-width:380px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.freshLaunchPackStats div{border-radius:20px;background:rgba(255,255,255,.08);padding:14px}
+.freshLaunchPackStats b{display:block;color:#fbbf24;-webkit-text-fill-color:#fbbf24;font-size:30px;line-height:1}
+.freshLaunchPackStats small{display:block;margin-top:5px;color:#f9fafb;-webkit-text-fill-color:#f9fafb;font-size:11px;font-weight:950;letter-spacing:.08em;text-transform:uppercase}
+.freshLaunchPackGrid{display:grid;grid-template-columns:1.25fr .75fr;gap:16px}
+.freshLaunchPackWide{grid-row:span 2}
+.freshLaunchPackPanel{border:1px solid rgba(15,23,42,.12);border-radius:30px;background:#fffaf0;padding:18px;box-shadow:0 18px 48px rgba(2,6,23,.10)}
+.freshLaunchPackPanel header span{background:#fff7ed;color:#9a3412;-webkit-text-fill-color:#9a3412}
+.freshLaunchPackPanel h2{margin:11px 0 6px;color:#101827;-webkit-text-fill-color:#101827;font-size:32px;line-height:.95;letter-spacing:-.055em}
+.freshLaunchPackPanel p{color:#475569;-webkit-text-fill-color:#475569;font-weight:850;line-height:1.4}
+.freshLaunchPackTemplates{display:grid;gap:10px;margin-top:14px}
+.freshLaunchPackTemplates section{display:flex;justify-content:space-between;gap:14px;border:1px solid rgba(15,23,42,.10);border-radius:22px;background:#fff;padding:14px}
+.freshLaunchPackTemplates b{display:block;color:#101827;-webkit-text-fill-color:#101827;font-size:17px}
+.freshLaunchPackTemplates section>div:last-child{display:grid;gap:8px;align-content:start;min-width:150px}
+.freshLaunchPackTemplates button,.freshLaunchPackButtons button{border:0;border-radius:15px;min-height:42px;padding:0 13px;font-size:12px;font-weight:1000;cursor:pointer}
+.freshLaunchPackTemplates button:first-child,.freshLaunchPackButtons button:first-child{background:#f97316;color:#111827;-webkit-text-fill-color:#111827}
+.freshLaunchPackTemplates button:not(:first-child),.freshLaunchPackButtons button:not(:first-child){background:#111827;color:#fff;-webkit-text-fill-color:#fff}
+.freshLaunchPackChecklist{display:grid;gap:9px;margin-top:14px}
+.freshLaunchPackChecklist label{display:grid;gap:7px;border:1px solid rgba(15,23,42,.10);border-radius:18px;background:#fff;padding:12px}
+.freshLaunchPackChecklist span{color:#101827;-webkit-text-fill-color:#101827;font-weight:1000}
+.freshLaunchPackChecklist select,.freshLaunchPackFile{width:100%;border:1px solid rgba(15,23,42,.14);border-radius:14px;background:#fff;color:#101827;-webkit-text-fill-color:#101827;padding:11px;font-weight:900}
+.freshLaunchPackPanel pre{min-height:138px;white-space:pre-wrap;border:1px solid rgba(15,23,42,.10);border-radius:18px;background:#111827;color:#f9fafb;-webkit-text-fill-color:#f9fafb;padding:14px;font-weight:850;overflow:auto}
+.freshLaunchPackButtons{display:grid;gap:8px}
+@media(max-width:1050px){.freshLaunchPackHero,.freshLaunchPackGrid,.freshLaunchPackTemplates section{display:grid}.freshLaunchPackStats{min-width:0;grid-template-columns:1fr}}
