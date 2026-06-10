@@ -1,171 +1,345 @@
 import React from "react";
 
-const workers = [
+const PAYROLL_STORAGE_KEY = "churvox:fresh-payroll:v1";
+const PAYROLL_PERIOD_KEY = "churvox:fresh-payroll-period:v1";
+
+const seedPayroll = [
   {
-    id: 1,
+    id: "pay-1",
     name: "Matiu Rangi",
     role: "Worker",
-    hours: "18.5",
-    jobs: "7 jobs",
-    gross: "$555.00",
-    rate: "$30/hr",
     status: "Ready",
-    note: "All job timers match completed jobs.",
+    ordinaryHours: 31.5,
+    extraHours: 2,
+    hourlyRate: 28,
+    adjustment: 0,
+    notes: "Normal week. Lawn route complete.",
   },
   {
-    id: 2,
+    id: "pay-2",
     name: "Ana Williams",
     role: "Lead worker",
-    hours: "24.0",
-    jobs: "9 jobs",
-    gross: "$840.00",
-    rate: "$35/hr",
-    status: "Needs check",
-    note: "One manual adjustment needs owner approval.",
+    status: "Needs review",
+    ordinaryHours: 36,
+    extraHours: 4,
+    hourlyRate: 34,
+    adjustment: 25,
+    notes: "Manual adjustment for late finish on garden tidy.",
   },
   {
-    id: 3,
-    name: "Wiremu King",
+    id: "pay-3",
+    name: "Tama Smith",
     role: "Worker",
-    hours: "12.75",
-    jobs: "4 jobs",
-    gross: "$382.50",
-    rate: "$30/hr",
-    status: "Ready",
-    note: "Photos and job completion notes are attached.",
+    status: "Draft",
+    ordinaryHours: 8,
+    extraHours: 0,
+    hourlyRate: 27,
+    adjustment: 0,
+    notes: "Invite accepted. Limited hours this period.",
   },
 ];
 
-const adjustments = [
-  ["Ana Williams", "+0.75 hr", "Manual fix for paused timer"],
-  ["Matiu Rangi", "$15", "Fuel allowance note"],
-  ["Wiremu King", "0", "No adjustment"],
-];
+const filters = ["All", "Draft", "Needs review", "Ready", "Approved"];
+
+function money(value) {
+  return `$${Number(value || 0).toFixed(2)}`;
+}
+
+function grossPay(person) {
+  const hours = Number(person.ordinaryHours || 0) + Number(person.extraHours || 0);
+  return hours * Number(person.hourlyRate || 0) + Number(person.adjustment || 0);
+}
+
+function loadPayroll() {
+  try {
+    if (typeof window === "undefined") return seedPayroll;
+
+    const saved = window.localStorage.getItem(PAYROLL_STORAGE_KEY);
+    if (!saved) return seedPayroll;
+
+    const parsed = JSON.parse(saved);
+    return Array.isArray(parsed) ? parsed : seedPayroll;
+  } catch {
+    return seedPayroll;
+  }
+}
+
+function loadPeriod() {
+  try {
+    if (typeof window === "undefined") return "Weekly · Current period";
+    return window.localStorage.getItem(PAYROLL_PERIOD_KEY) || "Weekly · Current period";
+  } catch {
+    return "Weekly · Current period";
+  }
+}
 
 export default function FreshPayroll({ onNavigate }) {
-  const [selectedId, setSelectedId] = React.useState(2);
-  const selected = workers.find((worker) => worker.id === selectedId) || workers[0];
+  const [people, setPeople] = React.useState(loadPayroll);
+  const [period, setPeriod] = React.useState(loadPeriod);
+  const [selectedId, setSelectedId] = React.useState(people[0]?.id || "");
+  const [filter, setFilter] = React.useState("All");
+
+  const selected = people.find((person) => person.id === selectedId) || people[0];
+  const visiblePeople = filter === "All" ? people : people.filter((person) => person.status === filter);
+  const totalGross = people.reduce((sum, person) => sum + grossPay(person), 0);
+  const totalHours = people.reduce((sum, person) => sum + Number(person.ordinaryHours || 0) + Number(person.extraHours || 0), 0);
+
+  React.useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(PAYROLL_STORAGE_KEY, JSON.stringify(people));
+      }
+    } catch {
+      // Fresh preview keeps working without local storage.
+    }
+  }, [people]);
+
+  React.useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(PAYROLL_PERIOD_KEY, period);
+      }
+    } catch {
+      // Fresh preview keeps working without local storage.
+    }
+  }, [period]);
+
+  function updateSelectedPerson(patch) {
+    if (!selected) return;
+
+    setPeople((current) =>
+      current.map((person) =>
+        person.id === selected.id
+          ? { ...person, ...patch }
+          : person
+      )
+    );
+  }
+
+  function resetPayroll() {
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(PAYROLL_STORAGE_KEY);
+        window.localStorage.removeItem(PAYROLL_PERIOD_KEY);
+      }
+    } catch {
+      // Ignore preview storage errors.
+    }
+
+    setPeople(seedPayroll);
+    setPeriod("Weekly · Current period");
+    setSelectedId(seedPayroll[0].id);
+    setFilter("All");
+  }
+
+  function exportCsv() {
+    const rows = [
+      ["Pay period", period],
+      [],
+      ["Name", "Role", "Status", "Ordinary hours", "Extra hours", "Hourly rate", "Adjustment", "Gross pay", "Notes"],
+      ...people.map((person) => [
+        person.name,
+        person.role,
+        person.status,
+        person.ordinaryHours,
+        person.extraHours,
+        person.hourlyRate,
+        person.adjustment,
+        grossPay(person).toFixed(2),
+        person.notes,
+      ]),
+    ];
+
+    const csv = rows
+      .map((row) =>
+        row
+          .map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`)
+          .join(",")
+      )
+      .join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = objectUrl;
+    link.download = "churvox-payroll-preview.csv";
+    link.click();
+
+    URL.revokeObjectURL(objectUrl);
+  }
 
   return (
     <section>
       <header className="freshHero">
         <span>Churvox fresh · Payroll</span>
         <h1>Payroll</h1>
-        <p>Pay period review using job timers. Export clean payroll CSV. No tax filing. No bank payout files.</p>
+        <p>Review hours, adjustments and gross pay. Churvox does not submit tax, government forms or bank payout files.</p>
       </header>
+
+      <section className="freshPayrollNotice">
+        <b>Payroll safety rule</b>
+        <span>No tax filing. No government submission. No bank payment files. Export review CSV only.</span>
+      </section>
+
+      <section className="freshCommandPulse">
+        <aside className="freshCard">
+          <h2>{money(totalGross)}</h2>
+          <p>Gross pay preview</p>
+        </aside>
+        <aside className="freshCard">
+          <h2>{totalHours.toFixed(1)}</h2>
+          <p>Total hours</p>
+        </aside>
+        <aside className="freshCard">
+          <h2>{people.filter((person) => person.status === "Needs review").length}</h2>
+          <p>Need review</p>
+        </aside>
+      </section>
+
+      <section className="freshCard freshPayrollPeriod">
+        <label className="freshField">
+          <span>Pay period</span>
+          <select value={period} onChange={(event) => setPeriod(event.target.value)}>
+            <option>Weekly · Current period</option>
+            <option>Weekly · Next period</option>
+            <option>Fortnightly · Current period</option>
+            <option>Fortnightly · Next period</option>
+            <option>Monthly · Current period</option>
+          </select>
+        </label>
+      </section>
+
+      <section className="freshCommandFilterBar">
+        {filters.map((item) => (
+          <button
+            type="button"
+            key={item}
+            className={filter === item ? "active" : ""}
+            onClick={() => setFilter(item)}
+          >
+            <span>{item}</span>
+            <b>{item === "All" ? people.length : people.filter((person) => person.status === item).length}</b>
+          </button>
+        ))}
+      </section>
 
       <section className="freshGrid">
         <aside className="freshCard">
-          <h2>Pay period</h2>
-          <p>Review hours before export.</p>
+          <h2>Pay list</h2>
 
-          <label className="freshField">
-            <span>Period</span>
-            <input value="Weekly · 03 Jun - 09 Jun" readOnly />
-          </label>
-
-          {workers.map((worker) => (
+          {visiblePeople.map((person) => (
             <button
               type="button"
-              key={worker.id}
-              className={`freshItem ${worker.status.includes("Needs") ? "need" : ""} ${selected.id === worker.id ? "active" : ""}`}
-              style={{ width: "100%", textAlign: "left", cursor: "pointer" }}
-              onClick={() => setSelectedId(worker.id)}
+              className={`freshItem ${selected?.id === person.id ? "active" : ""} ${person.status === "Needs review" ? "need" : ""}`}
+              key={person.id}
+              onClick={() => setSelectedId(person.id)}
             >
-              <b>{worker.name}</b>
-              <span>{worker.hours} hrs · {worker.gross} · {worker.status}</span>
+              <b>{person.name}</b>
+              <span>{person.status} · {(Number(person.ordinaryHours) + Number(person.extraHours)).toFixed(1)} hrs · {money(grossPay(person))}</span>
             </button>
           ))}
+
+          {visiblePeople.length === 0 && (
+            <div className="freshItem">
+              <b>No pay records</b>
+              <span>Change filter or reset preview payroll.</span>
+            </div>
+          )}
         </aside>
 
         <section className="freshCard">
-          <h2>{selected.name}</h2>
+          <h2>{selected?.name || "Select person"}</h2>
 
-          <div className="freshTabs">
-            <span className="active">Hours</span>
-            <span>Jobs</span>
-            <span>Adjustments</span>
-            <span>Export</span>
-          </div>
+          {selected && (
+            <>
+              <div className="freshMiniGrid">
+                <div>
+                  <span>Status</span>
+                  <b>{selected.status}</b>
+                </div>
+                <div>
+                  <span>Role</span>
+                  <b>{selected.role}</b>
+                </div>
+                <div>
+                  <span>Total hours</span>
+                  <b>{(Number(selected.ordinaryHours) + Number(selected.extraHours)).toFixed(1)}</b>
+                </div>
+                <div>
+                  <span>Gross pay</span>
+                  <b>{money(grossPay(selected))}</b>
+                </div>
+              </div>
 
-          <label className="freshField">
-            <span>Role</span>
-            <input value={selected.role} readOnly />
-          </label>
+              <label className="freshField">
+                <span>Ordinary hours</span>
+                <input
+                  value={selected.ordinaryHours}
+                  onChange={(event) => updateSelectedPerson({ ordinaryHours: Number(event.target.value) || 0 })}
+                />
+              </label>
 
-          <label className="freshField">
-            <span>Hourly rate</span>
-            <input value={selected.rate} readOnly />
-          </label>
+              <label className="freshField">
+                <span>Extra hours</span>
+                <input
+                  value={selected.extraHours}
+                  onChange={(event) => updateSelectedPerson({ extraHours: Number(event.target.value) || 0 })}
+                />
+              </label>
 
-          <label className="freshField">
-            <span>Total hours</span>
-            <input value={`${selected.hours} hours`} readOnly />
-          </label>
+              <label className="freshField">
+                <span>Hourly rate</span>
+                <input
+                  value={selected.hourlyRate}
+                  onChange={(event) => updateSelectedPerson({ hourlyRate: Number(event.target.value) || 0 })}
+                />
+              </label>
 
-          <label className="freshField">
-            <span>Jobs completed</span>
-            <input value={selected.jobs} readOnly />
-          </label>
+              <label className="freshField">
+                <span>Manual adjustment</span>
+                <input
+                  value={selected.adjustment}
+                  onChange={(event) => updateSelectedPerson({ adjustment: Number(event.target.value) || 0 })}
+                />
+              </label>
 
-          <label className="freshField">
-            <span>Gross pay estimate</span>
-            <input value={selected.gross} readOnly />
-          </label>
-
-          <label className="freshField">
-            <span>Payroll note</span>
-            <textarea value={selected.note} readOnly />
-          </label>
+              <label className="freshField">
+                <span>Payroll notes</span>
+                <textarea
+                  value={selected.notes}
+                  onChange={(event) => updateSelectedPerson({ notes: event.target.value })}
+                />
+              </label>
+            </>
+          )}
         </section>
 
         <aside className="freshCard">
           <h2>Owner actions</h2>
-          <p>Payroll stays safe: review hours, approve adjustments, export CSV only.</p>
-
-          <div className={`freshItem ${selected.status.includes("Needs") ? "need" : ""}`}>
-            <b>Status</b>
-            <span>{selected.status}</span>
-          </div>
 
           <div className="freshActions">
-            <button className="freshPrimary">Approve hours</button>
-            <button className="freshOrange">Add adjustment</button>
-            <button className="freshDark">Export CSV</button>
-            <button className="freshGhost" onClick={() => onNavigate?.("command")}>Send issue to Command</button>
-          </div>
-
-          <div className="freshItem need">
-            <b>Payroll rule</b>
-            <span>No tax filing. No bank payout file. CSV export only.</span>
-          </div>
-        </aside>
-      </section>
-
-      <section className="freshGrid two" style={{ marginTop: 14 }}>
-        <section className="freshCard">
-          <h2>Adjustments</h2>
-          {adjustments.map(([name, amount, reason]) => (
-            <div className={`freshItem ${amount !== "0" ? "need" : ""}`} key={`${name}-${amount}`}>
-              <b>{name} · {amount}</b>
-              <span>{reason}</span>
-            </div>
-          ))}
-        </section>
-
-        <aside className="freshCard">
-          <h2>Payroll summary</h2>
-          <div className="freshItem">
-            <b>55.25 total hours</b>
-            <span>Across 20 completed jobs</span>
-          </div>
-          <div className="freshItem">
-            <b>$1,777.50 gross estimate</b>
-            <span>Before any external payroll/tax process</span>
-          </div>
-          <div className="freshItem need">
-            <b>1 item needs owner approval</b>
-            <span>Ana has one manual timer adjustment.</span>
+            <button className="freshPrimary" onClick={() => updateSelectedPerson({ status: "Ready" })}>
+              Mark ready
+            </button>
+            <button className="freshDark" onClick={() => updateSelectedPerson({ status: "Approved" })}>
+              Approve pay
+            </button>
+            <button className="freshOrange" onClick={() => updateSelectedPerson({ status: "Needs review" })}>
+              Needs review
+            </button>
+            <button className="freshPrimary" onClick={exportCsv}>
+              Export CSV
+            </button>
+            <button className="freshGhost" onClick={() => onNavigate?.("reports")}>
+              Open reports
+            </button>
+            <button className="freshGhost" onClick={() => onNavigate?.("command")}>
+              Send issue to Command
+            </button>
+            <button className="freshGhost" onClick={resetPayroll}>
+              Reset payroll
+            </button>
           </div>
         </aside>
       </section>
