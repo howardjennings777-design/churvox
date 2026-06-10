@@ -35,7 +35,9 @@ const groups = [
   {
     title: "System",
     items: [
-      ["settings", "ST", "Settings"],
+      ["integrations", "IN", "Integrations"],
+      ["integrations", "IN", "Integrations"],
+  ["settings", "ST", "Settings"],
       ["automation", "AU", "Automation"],
       ["plans", "PL", "Plans"],
       ["support", "SP", "Support"],
@@ -62,6 +64,7 @@ const labels = {
   automation: "Automation",
   plans: "Plans",
   support: "Support",
+  integrations: "Integrations",
   messages: "Messages",
 };
 
