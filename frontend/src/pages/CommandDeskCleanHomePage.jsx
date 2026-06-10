@@ -257,11 +257,7 @@ function WorkSlip({ active, onClose }) {
               </section>
             </div>
 
-            <aside className="space-y-4">
-              <section className="rounded-[28px] border border-slate-900 bg-[#143658] p-5 text-white shadow-[0_20px_60px_rgba(12,33,57,0.20)]"><div className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200">Owner decision</div><p className="mt-3 text-sm font-semibold leading-6 text-slate-200">This is the form. Edit it here, save it here, approve it here. No second page needed.</p><button type="button" onClick={() => { save(); onClose(); }} className="mt-5 w-full rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-200">{active.primary}</button><Link to={active.href} className="mt-3 inline-flex w-full justify-center rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/15">Open full record only if needed</Link></section>
-              <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Owner note</div><textarea value={draft.ownerNote} onChange={(e) => update("ownerNote", e.target.value)} rows={6} placeholder="Add a note before approving..." className="mt-3 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold leading-6 text-slate-800 outline-none focus:border-blue-300" /></section>
-              <section className="rounded-[28px] border border-amber-200 bg-amber-50 p-5 shadow-sm"><div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">Launch rule</div><p className="mt-2 text-sm font-bold leading-6 text-amber-950">Every slip should open as a filled form: worker, job, invoice, quote, payment or completion details already suggested by Churvox.</p></section>
-            </aside>
+            
           </section>
         </main>
       </div>
@@ -271,7 +267,7 @@ function WorkSlip({ active, onClose }) {
 
 function Sidebar() {
   const { pathname } = useLocation();
-  return <aside className="hidden w-[292px] shrink-0 overflow-y-auto border-r border-slate-800 bg-[#0f1722] p-4 text-white lg:block" data-sidebar-version="clean-command-20260601"><div className="mb-6 flex items-center gap-3 px-1"><div className="grid h-11 w-11 place-items-center rounded-2xl bg-cyan-500 text-lg font-black text-slate-950">C</div><div><div className="text-sm font-black tracking-[-0.03em]">CHURVOX</div><div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Command Desk</div></div></div><div className="space-y-5">{navGroups.map((group) => <section key={group.title}><div className="mb-2 px-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{group.title}</div><nav className="space-y-1">{group.items.map(([label, href, icon]) => { const active = isActivePath(pathname, href); return <Link key={`${href}-${label}`} to={href} className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-black ${active ? "bg-white text-slate-950" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}><span className={`grid h-7 w-7 shrink-0 place-items-center rounded-xl text-[10px] font-black ${active ? "bg-slate-950 text-white" : "bg-white/10 text-cyan-200"}`}>{icon}</span><span className="truncate">{label}</span></Link>; })}</nav></section>)}</div></aside>;
+  return ;
 }
 
 function CommandDeskCleanContent() {

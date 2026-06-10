@@ -63,7 +63,7 @@ export default function PublicProofPackPage() {
       </section>
       <section className="cpp-hero">
         <div><p>CHURVOX CUSTOMER PROOF PACK</p><h1>{pack.job_title || pack.title || "Completed work"}</h1><span>{pack.customer_name || "Customer"} · Review completed work, notes, photos and invoice details.</span></div>
-        <aside><small>Status</small><b>{pack.status || "Draft"}</b><em>Prepared by Churvox</em></aside>
+        
       </section>
       <section className="cpp-grid">
         <article className="cpp-card cpp-summary"><small>Work summary</small><h2>What was completed</h2><p>{pack.ai_summary || pack.owner_message || "The work has been completed and prepared for customer review."}</p></article>

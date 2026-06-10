@@ -606,15 +606,7 @@ export default function DirectWorkbenchPage({ type }) {
             {type === "invoices" ? <InvoiceDeliverySummary form={form} /> : null}
             <div className="dwFields">{page.fields.map((field) => <Field key={field[0]} field={field} form={form} setForm={setForm} workers={workers} />)}</div>
           </section>
-          <aside className="dwSide">
-            <section className="dwControls">
-              <h2>Owner controls</h2>
-              <p>{message}</p>
-              <button className="dwSave" onClick={save}>Save edit</button>
-              <button className="dwApprove" onClick={approve}>{page.button}</button>
-              <button className="dwClear" onClick={clear}>Clear / new item</button>
-            </section>
-          </aside>
+          
         </section>
         {showActivity ? <EmployerFieldActivityBoard /> : null}
       </section>

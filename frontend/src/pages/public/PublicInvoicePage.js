@@ -107,11 +107,7 @@ export default function PublicInvoicePage() {
             {biz.gst_number ? <p>GST: {biz.gst_number}</p> : null}
             {biz.nzbn ? <p>NZBN: {biz.nzbn}</p> : null}
           </div>
-          <aside className="cpd-status">
-            <small>Status</small>
-            <b>{status.replace("_", " ")}</b>
-            <p>Due {date(invoice.due_date)}</p>
-          </aside>
+          
         </header>
 
         <section className="cpd-body">

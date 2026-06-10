@@ -68,25 +68,7 @@ function cardStyle(status) {
 function Sidebar() {
   const { pathname } = useLocation();
   return (
-    <aside className="hidden w-[292px] shrink-0 overflow-y-auto border-r border-slate-800 bg-[#0f1722] p-4 text-white lg:block">
-      <div className="mb-6 flex items-center gap-3 px-1">
-        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-cyan-500 text-lg font-black text-slate-950">C</div>
-        <div><div className="text-sm font-black tracking-[-0.03em]">CHURVOX</div><div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Command Desk</div></div>
-      </div>
-      <div className="space-y-5">
-        {navGroups.map((group) => (
-          <section key={group.title}>
-            <div className="mb-2 px-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{group.title}</div>
-            <nav className="space-y-1">
-              {group.items.map(([label, href, icon]) => {
-                const active = isActivePath(pathname, href);
-                return <Link key={href} to={href} className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-black ${active ? "bg-white text-slate-950" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}><span className={`grid h-7 w-7 shrink-0 place-items-center rounded-xl text-[10px] font-black ${active ? "bg-slate-950 text-white" : "bg-white/10 text-cyan-200"}`}>{icon}</span><span className="truncate">{label}</span></Link>;
-              })}
-            </nav>
-          </section>
-        ))}
-      </div>
-    </aside>
+    
   );
 }
 

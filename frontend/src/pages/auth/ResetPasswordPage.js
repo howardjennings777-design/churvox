@@ -80,11 +80,7 @@ export default function ResetPasswordPage() {
           )}
         </form>
 
-        <aside className="wh-auth-panel">
-          <p className="wh-auth-kicker">Secure owner flow</p>
-          <h2>Fresh password. Same command floor.</h2>
-          <p>Return to the daily operating screen where jobs, crew, invoices, risks and owner approvals stay organised.</p>
-        </aside>
+        
       </section>
     </main>
   );

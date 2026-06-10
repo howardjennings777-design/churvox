@@ -244,17 +244,7 @@ function FullscreenSlip({ item, mode, approved, onClose, onApprove, onMode }) {
             )}
           </section>
 
-          <aside className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5">
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200">Owner decision</div>
-            <p className="mt-3 text-sm font-bold leading-6 text-slate-300">This slip is for the exact item you tapped. Approve it, edit it, or open the full page only if you need to change the full record.</p>
-            {approved ? <div className="mt-4 rounded-3xl border border-emerald-300/25 bg-emerald-300/10 p-4 text-sm font-black text-emerald-100">Approved. Churvox recorded this slip decision.</div> : null}
-            <div className="mt-5 grid gap-3">
-              <button type="button" onClick={onApprove} className="rounded-2xl bg-emerald-300 px-5 py-4 text-sm font-black text-slate-950">Approve this slip</button>
-              <button type="button" onClick={() => onMode("edit")} className="rounded-2xl bg-white/10 px-5 py-4 text-sm font-black text-white ring-1 ring-white/10">Edit in slip</button>
-              {item.pagePath ? <Link to={item.pagePath} onClick={onClose} className="rounded-2xl bg-white px-5 py-4 text-center text-sm font-black text-slate-950 no-underline">Open full page</Link> : null}
-              <button type="button" onClick={onClose} className="rounded-2xl bg-white/10 px-5 py-4 text-sm font-black text-white ring-1 ring-white/10">Back to Command</button>
-            </div>
-          </aside>
+          
         </div>
       </div>
     </div>

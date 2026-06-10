@@ -645,17 +645,7 @@ function Dashboard({ m, loading, onPick }) {
           </div>
         </div>
 
-        <aside className="xcf10-next">
-          <small>NEXT OWNER DECISION</small>
-          <h2>{nextLane.title || "Approve finished work"}</h2>
-          <p>{nextLane.description || "Jobs are ready for your sign-off. Open the Work Slip, check proof, notes, photos and price, then approve the move."}</p>
-          <div>
-            <span>AI prepared</span>
-            <span>Owner approves</span>
-          </div>
-          <button type="button" onClick={() => onPick(nextLane)}>Review Now →</button>
-          <em>{totalActions} decisions waiting</em>
-        </aside>
+        
       </section>
 
       <section className="xcf10-launch-shortcuts" aria-label="Launch shortcuts">
@@ -867,12 +857,7 @@ function Workspace({ area, m, loading, onPick }) {
           </div>
         </div>
 
-        <aside className="xcf-real-command-card">
-          <small>COMMAND LINK</small>
-          <b>{title}</b>
-          <em>{subtitle}</em>
-          <strong>{rows.length} records loaded</strong>
-        </aside>
+        
       </section>
 
       <section className="xcf-real-stats">

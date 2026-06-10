@@ -271,13 +271,7 @@ export default function RecordWorkspacePopupBridge() {
                 )}
               </section>
 
-              <aside className="cv-popup-side-card">
-                <h2>Actions</h2>
-                <button type="button" onClick={() => setEditing(true)}>Edit this record</button>
-                <button type="button" onClick={saveRecord} disabled={!editing || saving}>Save changes</button>
-                <button type="button" onClick={backToList}>Open another {kindConfig.single.toLowerCase()}</button>
-                <p>All details stay in this pop-up so you do not lose your place on Command.</p>
-              </aside>
+              
             </div>
           ) : null}
         </section>

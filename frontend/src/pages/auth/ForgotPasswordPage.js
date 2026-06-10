@@ -59,11 +59,7 @@ export default function ForgotPasswordPage() {
           )}
         </form>
 
-        <aside className="wh-auth-panel">
-          <p className="wh-auth-kicker">Secure access</p>
-          <h2>Reset your password and keep moving.</h2>
-          <p>Once you are back in, the Command Floor shows the work waiting, crew movement, money desk and owner approval queue.</p>
-        </aside>
+        
       </section>
     </main>
   );

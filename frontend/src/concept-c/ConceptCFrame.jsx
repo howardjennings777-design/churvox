@@ -113,12 +113,7 @@ export default function ConceptCFrame({ area = "jobs", children }) {
       </header>
 
       <section className="c2-frame">
-        <aside className="c2-spine">
-          <p>{page[0]}</p>
-          <h1>{page[1]}</h1>
-          <span>{page[2]}</span>
-          <Link to={page[4]}>{page[3]}</Link>
-        </aside>
+        
 
         <section className="c2-stage c2-real-page-stage">
           <div className="c2-real-page-card">
@@ -126,21 +121,7 @@ export default function ConceptCFrame({ area = "jobs", children }) {
           </div>
         </section>
 
-        <aside className="c2-ai">
-          <p>AI OPERATOR</p>
-          <h2>Command page.</h2>
-          <span>Full-screen workspace. Same Churvox command system, owner approval and clear next action.</span>
-
-          <div>
-            <small>Screen</small>
-            <strong>{area}</strong>
-          </div>
-
-          <div>
-            <small>Rule</small>
-            <strong>Owner approves key actions.</strong>
-          </div>
-        </aside>
+        
       </section>
 
       <nav className="c2-dock c2-dock-full" aria-label="Churvox command navigation">

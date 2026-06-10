@@ -298,55 +298,7 @@ export default function AdminTrackingPage() {
             </div>
           </div>
 
-          <aside className="grid content-start gap-4">
-            <div className="rounded-[1.75rem] border border-cyan-300/15 bg-slate-950/65 p-5 shadow-2xl shadow-black/20">
-              <div className="mb-4 flex items-start justify-between gap-3">
-                <div>
-                  <div className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">Plan mix</div>
-                  <h2 className="mt-1 text-xl font-black tracking-[-0.03em]">Who is paying for what.</h2>
-                </div>
-                <BarChart3 className="h-5 w-5 text-cyan-300" />
-              </div>
-              <div className="grid gap-3">
-                {planRows.length ? planRows.map(([label, value]) => <Bar key={label} label={label} value={value} max={maxPlan} />) : <div className="text-sm font-bold text-slate-500">No plan data yet.</div>}
-              </div>
-            </div>
-
-            <div className="rounded-[1.75rem] border border-cyan-300/15 bg-slate-950/65 p-5 shadow-2xl shadow-black/20">
-              <div className="mb-4 flex items-start justify-between gap-3">
-                <div>
-                  <div className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">Usage health</div>
-                  <h2 className="mt-1 text-xl font-black tracking-[-0.03em]">Real work moving through Churvox.</h2>
-                </div>
-                <MousePointerClick className="h-5 w-5 text-cyan-300" />
-              </div>
-              <div className="grid gap-3">
-                <Bar label="Jobs created" value={data.jobCount} max={Math.max(1, data.jobCount, data.invoiceCount)} />
-                <Bar label="Invoices created" value={data.invoiceCount} max={Math.max(1, data.jobCount, data.invoiceCount)} />
-                <Bar label="Avg jobs / business" value={avgJobs} max={Math.max(1, Number(avgJobs), 10)} />
-              </div>
-            </div>
-
-            <div className="rounded-[1.75rem] border border-amber-300/20 bg-amber-300/10 p-5">
-              <div className="mb-3 flex items-center gap-2 text-amber-200">
-                <AlertTriangle className="h-5 w-5" />
-                <h2 className="text-lg font-black">Watch list</h2>
-              </div>
-              <div className="grid gap-3 text-sm font-semibold leading-6 text-slate-200">
-                <p>Signup to paid: <b className="text-white">{conversion}%</b>. Improve public copy or checkout if this stays low.</p>
-                <p>Active today: <b className="text-white">{activation}%</b>. If low, onboarding or trial activation needs work.</p>
-                <p>Outstanding: <b className="text-white">{money(data.outstandingBalance)}</b>. Follow invoice/payment flow closely.</p>
-              </div>
-            </div>
-
-            <div className="rounded-[1.75rem] border border-emerald-300/20 bg-emerald-300/10 p-5">
-              <div className="mb-3 flex items-center gap-2 text-emerald-200">
-                <ShieldCheck className="h-5 w-5" />
-                <h2 className="text-lg font-black">Private access</h2>
-              </div>
-              <p className="text-sm font-semibold leading-6 text-slate-200">This page is loaded through the platform admin route only. Normal business users and workers should be redirected away.</p>
-            </div>
-          </aside>
+          
         </section>
       </div>
     </main>

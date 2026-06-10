@@ -199,27 +199,7 @@ export default function ClientWorkbenchCommandPage() {
               </div>
             </div>
 
-            <aside className="space-y-5">
-              <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,.055)]">
-                <div className="text-[10px] font-black uppercase tracking-[.18em] text-slate-500">Client details</div>
-                <h2 className="mt-2 text-2xl font-black">{getName(client)}</h2>
-                <div className="mt-4 space-y-3 text-sm font-bold text-slate-600">
-                  <div>Email: {getEmail(client) || "Missing"}</div>
-                  <div>Phone: {getPhone(client) || "Missing"}</div>
-                  <div>Address: {getAddress(client) || "Missing"}</div>
-                </div>
-              </div>
-
-              <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,.055)]">
-                <div className="text-[10px] font-black uppercase tracking-[.18em] text-emerald-600">Quick actions</div>
-                <div className="mt-4 grid gap-2">
-                  <Link to={`/jobs/new?client_id=${clientId}`} className="rounded-2xl bg-slate-950 px-4 py-3 text-center text-sm font-black text-white no-underline">Create job</Link>
-                  <Link to={`/quotes/new?client_id=${clientId}`} className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-center text-sm font-black text-slate-900 no-underline">Create quote</Link>
-                  <Link to={`/invoices/new?client_id=${clientId}`} className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-center text-sm font-black text-slate-900 no-underline">Create invoice</Link>
-                  <Link to="/dashboard" className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-center text-sm font-black text-blue-900 no-underline">Open Command Board</Link>
-                </div>
-              </div>
-            </aside>
+            
           </section>
         </>
       )}

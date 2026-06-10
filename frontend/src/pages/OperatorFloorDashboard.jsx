@@ -307,10 +307,7 @@ export default function OperatorFloorDashboard() {
       </section>
 
       <section className="lof-main">
-        <aside className="lof-panel lof-trays">
-          <p className="lof-mark">Action trays</p>
-          {trays.map(([key, label, count]) => <button key={key} className={lane === key ? "active" : ""} onClick={() => { setLane(key); setSelected(null); }}><span>{label}</span><strong>{count}</strong></button>)}
-        </aside>
+        
 
         <article className="lof-panel lof-stack">
           <div className="lof-slip">
@@ -324,12 +321,7 @@ export default function OperatorFloorDashboard() {
           </div>
         </article>
 
-        <aside className="lof-panel lof-why">
-          <p className="lof-mark">Why this matters</p>
-          <h3>{current ? "Churvox picked this because…" : "No decision selected"}</h3>
-          <ul>{why.length ? why.map((line) => <li key={line}>{line}</li>) : <li>Select a work slip to see the reason.</li>}</ul>
-          <div className="lof-safe"><span>Messages approval-first</span><span>Pricing locked</span><span>Payments require approval</span><span>AI setup: {setup?.ai?.ready ? "ready" : "waiting"}</span></div>
-        </aside>
+        
       </section>
 
       <section className="lof-panel lof-groupbar">

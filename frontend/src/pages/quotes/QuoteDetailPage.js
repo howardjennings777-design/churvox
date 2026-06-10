@@ -156,19 +156,7 @@ export default function QuoteDetailPage() {
             {lineItems.length ? <PremiumCard title="Line items"><div className="grid gap-2">{lineItems.map((line, index) => <div key={index} className="grid grid-cols-[1fr_80px_100px] gap-3 rounded-2xl border border-slate-700 bg-slate-950/50 p-3 text-sm"><b className="text-white">{line.description || "Item"}</b><span className="text-right text-slate-300">{line.quantity || line.qty || 1}</span><span className="text-right font-black text-lime-300">{formatCurrency(line.amount || (Number(line.rate || line.unit_price || 0) * Number(line.quantity || line.qty || 1)))}</span></div>)}</div></PremiumCard> : null}
           </div>
 
-          <aside className="space-y-4">
-            <PremiumCard title="Quote actions">
-              <div className="grid gap-3" data-testid="quote-actions">
-                {status === "draft" || status === "sent" ? <PremiumButton onClick={handleSend} disabled={loading || Boolean(busy)} dataTestId="send-quote-button"><Send size={16} className="mr-2" /> Open email + mark sent</PremiumButton> : null}
-                {!locked ? <PremiumButton variant="success" onClick={handleAccept} disabled={Boolean(busy)}><CheckCircle2 size={16} className="mr-2" /> Mark accepted</PremiumButton> : null}
-                {!locked ? <PremiumButton variant="secondary" onClick={handleDecline} disabled={Boolean(busy)}><XCircle size={16} className="mr-2" /> Mark declined</PremiumButton> : null}
-                {!convertedJobId && status !== "declined" ? <PremiumButton variant="success" onClick={handleConvert} disabled={Boolean(busy)} dataTestId="convert-to-job-button"><Briefcase size={16} className="mr-2" /> Convert to Job</PremiumButton> : null}
-                {(quote.public_quote_url || quote.public_token) ? <PremiumButton variant="secondary" onClick={copyPublicLink}><Link2 size={16} className="mr-2" /> Copy Public Link</PremiumButton> : null}
-                {convertedJobId ? <Link to={`/jobs/${convertedJobId}`} data-testid="view-linked-job"><PremiumButton variant="success" className="w-full"><Briefcase size={16} className="mr-2" /> View Job</PremiumButton></Link> : null}
-                <Link to={`/invoices/new?quote_id=${id}`}><PremiumButton variant="secondary" className="w-full">Create invoice from quote</PremiumButton></Link>
-              </div>
-            </PremiumCard>
-          </aside>
+          
         </section>
       </PremiumPage>
     </Layout>

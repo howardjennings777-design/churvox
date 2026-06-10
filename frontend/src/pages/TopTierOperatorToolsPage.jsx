@@ -186,11 +186,7 @@ export default function TopTierOperatorToolsPage() {
           <h1>Top-tier control room</h1>
           <span>Proof packs, audit trail, client memory, dispatch lanes, trade presets and offline worker safety are connected through stable Churvox data instead of missing placeholder routes.</span>
         </div>
-        <aside>
-          <small>Status</small>
-          <b>{state.loading ? "Loading" : "Ready"}</b>
-          <em>{state.error || "Approval-first tools"}</em>
-        </aside>
+        
       </section>
 
       {notice ? <section className="tt-notice">{notice}</section> : null}

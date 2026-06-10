@@ -27,13 +27,7 @@ export default function HomePage() {
                 <div className="home-queue-row"><div><strong>Worker suggested</strong><p>Unassigned job matched to available crew.</p></div><span>Review</span></div>
                 <div className="home-queue-row"><div><strong>Quote follow-up written</strong><p>Customer has not replied. Message ready.</p></div><span>Review</span></div>
               </section>
-              <aside className="home-work-slip">
-                <div className="home-console-label">Work Slip</div>
-                <h3>Admin prepared. Owner approves.</h3>
-                <p>Churvox shows what it found, why it matters and what happens if you approve.</p>
-                <dl><div><dt>Churvox does</dt><dd>Prepare</dd></div><div><dt>Owner does</dt><dd>Approve</dd></div><div><dt>Result</dt><dd>Business moves</dd></div></dl>
-                <button type="button">Review action</button>
-              </aside>
+              
             </div>
           </div>
         </section>

@@ -427,14 +427,7 @@ function Slip({ slip, onClose }) {
             </div>
           </section>
 
-          <aside className="cxControls">
-            <h2>Owner controls</h2>
-            <p>{msg}</p>
-            <button className="save" onClick={save}>Save edit</button>
-            <button className="approve" onClick={approve}>{slip.approveLabel}</button>
-            <button className="decline" onClick={decline}>Decline</button>
-            <button className="dark" onClick={onClose}>Back to Command</button>
-          </aside>
+          
         </main>
       </section>
     </div>

@@ -72,18 +72,7 @@ export default function AutonomousOfficeLanding() {
           </div>
         </div>
 
-        <aside style={S.machine}>
-          <div style={S.machineHead}><strong>Churvox Autopilot</strong><span style={{ color: "#c9974c", fontWeight: 950 }}>LIVE OFFICE</span></div>
-          <div style={S.decision}>
-            <p style={S.kicker}>Owner decision</p>
-            <h2 style={S.decisionTitle}>Approve invoice prepared from finished work</h2>
-            <p style={{ color: "rgba(246,239,227,.68)", lineHeight: 1.5 }}>Churvox found a completed job, proof photos, notes and saved price. The invoice is ready. Review, edit or approve.</p>
-            <button style={S.approve}>Review decision slip</button>
-          </div>
-          <div style={S.feed}>
-            {moves.map(([n, title, text]) => <article key={title} style={S.feedCard}><span style={{ color: "#c9974c", fontWeight: 950 }}>{n}</span><b style={{ display: "block", marginTop: 8 }}>{title}</b><p style={{ color: "rgba(246,239,227,.56)", fontSize: 13 }}>{text}</p></article>)}
-          </div>
-        </aside>
+        
       </section>
 
       <section style={S.band}>

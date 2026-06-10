@@ -716,22 +716,7 @@ export default function ChurvoxPublicSite() {
             </div>
           </div>
 
-          <aside className="operator">
-            <div className="operator-top">
-              <small>AI Operator</small>
-              <h2>Admin ready to approve.</h2>
-              <p>Prepared from today’s jobs, notes, photos and customer activity.</p>
-            </div>
-
-            <div className="action-list">
-              {actions.map((item) => (
-                <div className="action-row" key={item}>
-                  <span>{item}</span>
-                  <button className="approve" type="button">Approve</button>
-                </div>
-              ))}
-            </div>
-          </aside>
+          
         </div>
       </section>
 

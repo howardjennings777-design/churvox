@@ -76,21 +76,7 @@ export default function ExecutiveHomePage() {
             <div className="cvx-proof-row">{proof.map((item) => <span key={item}>{item}</span>)}</div>
           </section>
 
-          <aside className="cvx-command-preview" aria-label="Churvox admin approval preview">
-            <div className="cvx-preview-head">
-              <small>Prepared by Churvox</small>
-              <b>Admin ready to approve.</b>
-              <span>Prepared from today’s jobs, notes, photos and customer activity.</span>
-            </div>
-            <div className="cvx-slip-stack">
-              {approvals.map(([title, copy]) => (
-                <article key={title}>
-                  <div><small>{title}</small><strong>{copy}</strong></div>
-                  <button type="button">Approve</button>
-                </article>
-              ))}
-            </div>
-          </aside>
+          
         </div>
       </section>
 

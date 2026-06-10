@@ -30,11 +30,7 @@ export default function LaunchReadinessPage() {
           <h1>Churvox is now shaped around one clean operating model.</h1>
           <span>Crew finishes work. Churvox prepares the admin. Owner opens a Work Slip, checks it, adjusts if needed, then approves.</span>
         </div>
-        <aside>
-          <small>Main flow</small>
-          <b>Approval-first</b>
-          <em>No customer message, proof, invoice or quote should be trusted blindly. The owner stays in control.</em>
-        </aside>
+        
       </section>
 
       <section className="clr-grid">

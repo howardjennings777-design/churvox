@@ -60,13 +60,7 @@ export default function SignupPage() {
       </header>
 
       <section className="wh-auth-wrap is-signup">
-        <aside className="wh-auth-panel">
-          <p className="wh-auth-kicker">Start the command system</p>
-          <h2>Turn the business into prepared owner decisions.</h2>
-          <p>
-            Create the account, choose a plan, then Churvox takes you straight into business setup so invoices, quotes, jobs and customer messages make sense from day one.
-          </p>
-        </aside>
+        
 
         <form className="wh-auth-form" onSubmit={handleSubmit}>
           <p className="wh-auth-kicker">Create account</p>

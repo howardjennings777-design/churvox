@@ -251,26 +251,7 @@ function relevantSlipKeys(form = {}, item = {}, missing = []) {
 function Sidebar() {
   const { pathname } = useLocation();
   return (
-    <aside className="hidden w-[292px] shrink-0 overflow-y-auto bg-[#0f1722] p-4 text-white lg:block">
-      <div className="mb-6 flex items-center gap-3">
-        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-cyan-400 font-black text-slate-950">C</div>
-        <div>
-          <div className="text-sm font-black">CHURVOX</div>
-          <div className="text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Command Desk</div>
-        </div>
-      </div>
-      <nav className="space-y-1">
-        {nav.map(([label, href, icon]) => {
-          const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
-          return (
-            <Link key={href} to={href} className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-black ${active ? "bg-cyan-300 text-slate-950" : "text-slate-300 hover:bg-white/10"}`}>
-              <span className="grid h-7 w-7 place-items-center rounded-xl bg-white/10 text-[10px]">{icon}</span>
-              {label}
-            </Link>
-          );
-        })}
-      </nav>
-    </aside>
+    
   );
 }
 
@@ -759,81 +740,7 @@ function SlipModal({ item, onClose, onChanged }) {
               </SlipSection>
             </div>
 
-            <aside className="border-t border-slate-800 bg-[#0f1722] p-4 text-white md:p-6 xl:border-l xl:border-t-0">
-              <section className="xl:sticky xl:top-6">
-                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-cyan-200">Owner approval</div>
-                <h2 className="mt-2 text-3xl font-black tracking-[-0.05em]">Check, edit, approve.</h2>
-
-                <div className="mt-5 rounded-2xl bg-white/10 p-4">
-                  <div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Required status</div>
-                  <div className="mt-2 text-sm font-black">
-                    {ready ? "Ready" : `Missing ${missing.length} field${missing.length === 1 ? "" : "s"}`}
-                  </div>
-                </div>
-
-                {Array.isArray(item.checks) && item.checks.length ? (
-                  <div className="mt-4 rounded-2xl bg-white/10 p-4">
-                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Checks</div>
-                    <ul className="mt-3 space-y-2 text-sm font-bold text-white">
-                      {item.checks.map((check, index) => <li key={index}>✓ {check}</li>)}
-                    </ul>
-                  </div>
-                ) : null}
-
-                {Array.isArray(item.source_records) && item.source_records.length ? (
-                  <div className="mt-4 rounded-2xl bg-white/10 p-4">
-                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Linked records</div>
-                    <div className="mt-3 space-y-2 text-xs font-bold text-slate-200">
-                      {item.source_records.map((record, index) => (
-                        <div key={index} className="rounded-xl bg-white/10 p-2">
-                          {typeof record === "string" ? record : JSON.stringify(record)}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
-                {message ? (
-                  <div className="mt-4 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4 text-sm font-black text-cyan-100">
-                    {message}
-                  </div>
-                ) : null}
-
-                <div className="mt-5 grid gap-3">
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={saveOnly}
-                    className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-black text-white hover:bg-white/15 disabled:opacity-60"
-                  >
-                    {busy ? "Saving…" : "Save slip changes"}
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={busy || !ready}
-                    onClick={approveNow}
-                    className="rounded-2xl bg-cyan-300 px-4 py-3 text-sm font-black text-slate-950 hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {busy ? "Running…" : approveLabel}
-                  </button>
-
-                  {!ready ? (
-                    <div className="rounded-2xl bg-amber-400/15 p-3 text-xs font-black leading-5 text-amber-100">
-                      Fill the missing fields before approval unlocks.
-                    </div>
-                  ) : null}
-
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="rounded-2xl border border-white/15 px-4 py-3 text-sm font-black text-white hover:bg-white/10"
-                  >
-                    Close slip
-                  </button>
-                </div>
-              </section>
-            </aside>
+            
           </div>
         
               <CommandSlipEverything
@@ -930,13 +837,7 @@ export default function CommandDeskQueuePage() {
               <p className="mt-4 max-w-2xl text-sm font-bold leading-6 text-slate-300">A slip must show the client, record, amount, worker or message needed before it can run.</p>
             </div>
 
-            <aside className="rounded-[28px] border border-slate-200 bg-white p-5">
-              <h2 className="text-2xl font-black">Queue</h2>
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <div className="rounded-2xl bg-emerald-50 p-4"><div className="text-3xl font-black text-emerald-700">{ready.length}</div><div className="text-xs font-black">ready</div></div>
-                <div className="rounded-2xl bg-amber-50 p-4"><div className="text-3xl font-black text-amber-700">{needs.length}</div><div className="text-xs font-black">needs details</div></div>
-              </div>
-            </aside>
+            
           </section>
 
           {summary && (

@@ -125,10 +125,7 @@ function ControlCard({ title, count, text, onClick, active }) {
 function Drawer({ drawer, onClose, children }) {
   if (!drawer) return null;
   return <div className="command-drawer-backdrop" onClick={onClose}>
-    <aside className="command-drawer" onClick={(e) => e.stopPropagation()}>
-      <div className="command-drawer-head"><div><p className="smart-command-kicker">Work inside Command</p><h2>{drawer.title}</h2>{drawer.subtitle ? <p>{drawer.subtitle}</p> : null}</div><button onClick={onClose}>Close</button></div>
-      {children}
-    </aside>
+    
   </div>;
 }
 function ActionCard({ action, onDismiss, onExecute, onOpenJobEditor }) {
@@ -333,7 +330,7 @@ export default function CommandHubRealPage() {
   ];
 
   return <Layout smartHubMode><main className="smart-command-system"><div className="command-real-shell">
-    <section className="command-hero"><div className="command-hero-brand"><ChurvoxLogo size="hero" /></div><div className="command-hero-copy"><p className="smart-command-kicker">Smart Hub</p><h1>AI Control Room</h1><p>Churvox watches the business, prepares the admin, and lets the owner approve and work from one page.</p><div className="command-hero-actions"><button className="command-btn orange" onClick={runAiPlan}>Run AI plan</button><button className="command-btn light" onClick={openAskAi}>Ask AI Operator</button><button className="command-btn dark" onClick={() => openActionDrawer("Approval Queue", "Review and execute the work Command prepared.", actions)}>Open queue</button></div></div><aside className="command-hero-score"><span>Today</span><strong>{actions.length} actions</strong><strong>{data.workers.length} workers active</strong><strong>{money(moneyWaiting)} waiting</strong></aside></section>
+    <section className="command-hero"><div className="command-hero-brand"><ChurvoxLogo size="hero" /></div><div className="command-hero-copy"><p className="smart-command-kicker">Smart Hub</p><h1>AI Control Room</h1><p>Churvox watches the business, prepares the admin, and lets the owner approve and work from one page.</p><div className="command-hero-actions"><button className="command-btn orange" onClick={runAiPlan}>Run AI plan</button><button className="command-btn light" onClick={openAskAi}>Ask AI Operator</button><button className="command-btn dark" onClick={() => openActionDrawer("Approval Queue", "Review and execute the work Command prepared.", actions)}>Open queue</button></div></div></section>
     {notice ? <section className="command-notice">{notice}</section> : null}{error ? <section className="command-error">{error}</section> : null}{loading ? <section className="command-notice">Loading Command...</section> : null}<section className="command-notice">{backendOffline ? "backend AI offline / local rules fallback" : "backend AI plan active"}</section><section className="command-notice">Auto-send is OFF. AI prepares drafts for review. · No auto-charge · No MYOB write · No payroll changes · No deletion without owner approval.</section>
 
     <section className="command-operator-card"><div><p className="smart-command-kicker">Zone 1 · AI Today Plan</p><h2>AI Operator: today’s business plan</h2><p>{best ? `Start with: ${best.title}. ${best.reason}` : "No urgent work is blocking the business right now."}</p></div><div className="command-metric-row"><Metric label="Need crew" value={groups.dispatch.length} text="dispatch pressure" /><Metric label="Follow-ups" value={groups.follow.length} text="quotes/invoices" /><Metric label="Revenue work" value={groups.revenue.length} text="pricing/invoice" /><Metric label="Proof needed" value={groups.proof.length} text="proof-to-paid" /></div><div className="command-card-actions"><button className="command-btn orange" onClick={() => openActionDrawer("Today’s Plan", "AI grouped the work that matters most first.", actions)}>Work the plan</button><button className="command-btn light" onClick={openAskAi}>Ask what to do first</button></div></section>

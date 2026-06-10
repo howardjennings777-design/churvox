@@ -88,15 +88,7 @@ export default function SupportCommandPage() {
             {status ? <div className="mt-4 rounded-2xl bg-emerald-100 p-4 text-sm font-black leading-6 text-emerald-900">{status}</div> : null}
           </section>
 
-          <aside className="grid content-start gap-4">
-            {["Setup help", "Invoices or quotes", "Billing or plan"].map((item) => (
-              <section key={item} className="rounded-[28px] border-l-8 border-orange-400 bg-slate-950 p-5 text-white shadow-xl">
-                <div className="text-[10px] font-black uppercase tracking-[.2em] text-amber-300">Help area</div>
-                <h3 className="mt-2 text-xl font-black">{item}</h3>
-                <button type="button" onClick={() => setType(item)} className="mt-4 rounded-2xl bg-cyan-300 px-4 py-3 text-sm font-black text-slate-950">Use type</button>
-              </section>
-            ))}
-          </aside>
+          
         </section>
       </section>
     </main>

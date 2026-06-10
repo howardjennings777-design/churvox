@@ -499,59 +499,7 @@ export default function TradeCommandConsole() {
           </div>
         </div>
 
-        <aside className="tcc-ai">
-          <div className="tcc-ai-live"><i /> AI OPERATOR</div>
-
-          {loading ? (
-            <p className="tcc-detail">Loading Churvox…</p>
-          ) : current ? (
-            <>
-              <div className="tcc-ai-head">
-                <span>{current.source}</span>
-                <h2>{titleFor(current)}</h2>
-              </div>
-
-              <p className="tcc-directive">Approve, edit, or skip. Churvox keeps the next admin move ready.</p>
-              <p className="tcc-detail">{detailFor(current)}</p>
-
-              <div className="tcc-facts">
-                <div><span>Result</span><strong>{resultFor(current)}</strong></div>
-                <div><span>Record</span><strong>{recordFor(current)}</strong></div>
-                <div><span>Risk</span><strong>{current.risk || "low"}</strong></div>
-              </div>
-
-              {editOpen ? (
-                <label className="tcc-editor">
-                  <span>Edit before approving</span>
-                  <textarea value={editText} onChange={(event) => setEditText(event.target.value)} />
-                </label>
-              ) : null}
-
-              <div className="tcc-ai-actions">
-                {current.rawId ? (
-                  <>
-                    <button className="primary" onClick={() => approveCurrent(current)} disabled={busy === current.rawId}>
-                      {busy === current.rawId ? "Running…" : primaryText(current)}
-                    </button>
-                    <button onClick={() => setEditOpen((v) => !v)}>Edit</button>
-                    <button onClick={() => skipCurrent(current)} disabled={busy === current.rawId}>Skip</button>
-                  </>
-                ) : (
-                  <>
-                    <button className="primary" onClick={reviewNext}>Back to AI</button>
-                    <button onClick={() => runAI(false)}>Prepare actions</button>
-                  </>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="tcc-empty">
-              <h2>Nothing waiting.</h2>
-              <p>Run AI or open a workflow lane.</p>
-              <button className="primary" onClick={() => runAI(false)}>Run AI</button>
-            </div>
-          )}
-        </aside>
+        
       </section>
 
       <section className="tcc-bottom">

@@ -76,13 +76,7 @@ export default function LoginPage() {
           </p>
         </form>
 
-        <aside className="wh-auth-panel">
-          <p className="wh-auth-kicker">Churvox AI Operator</p>
-          <h2>The admin is prepared before you arrive.</h2>
-          <p>
-            Jobs, quotes, invoices, workers, missing info and money follow-ups become clear owner decisions — not another messy dashboard wall.
-          </p>
-        </aside>
+        
       </section>
     </main>
   );

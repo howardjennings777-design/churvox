@@ -200,7 +200,7 @@ export default function InvoiceDeliveryWorkbenchPage() {
   return <main className="ivRoot"><Style /><section className="ivWrap">
     <article className="ivHero"><span className="ivHeroTag"><strong>Invoice workbench</strong></span><h1>Invoices</h1><p>Pick a real invoice or prepare a new one, choose who handles delivery, then approve it. No silent customer email, no fake Xero sync, no active MYOB wording.</p></article>
     <section className="ivGrid">
-      <aside className="ivPanel"><small>Quick list</small><div className="ivList">{loading ? <p className="ivEmpty">Loading invoices…</p> : records.length ? records.slice(0, 12).map((inv) => <button key={idOf(inv)} className={selectedId === idOf(inv) ? "active" : ""} onClick={() => selectInvoice(inv)}><b>{first(inv.invoice_number, inv.job_reference, inv.customer_name, "Untitled invoice")}</b><span>{first(inv.customer_name, inv.status, inv.invoice_delivery_method, idOf(inv))}</span></button>) : <p className="ivEmpty">No invoices yet. Create the first one in the form.</p>}</div></aside>
+      
       <section className="ivPanel"><div className="ivFormHead"><div><small>Specific working form</small><h2>Invoice delivery</h2></div></div><section className="ivSummary"><b>{sumTitle}</b><span>{sumText}</span></section><div className="ivFields">
         <Field label="Client"><input value={form.customer_name} onChange={(e) => update("customer_name", e.target.value)} /></Field>
         <Field label="Client email"><input value={form.customer_email} onChange={(e) => update("customer_email", e.target.value)} /></Field>
@@ -215,7 +215,7 @@ export default function InvoiceDeliveryWorkbenchPage() {
         <Field label="Invoice wording" wide><textarea value={form.description} onChange={(e) => update("description", e.target.value)} /></Field>
         <Field label="Internal note" wide><textarea value={form.notes} onChange={(e) => update("notes", e.target.value)} /></Field>
       </div></section>
-      <aside className="ivPanel ivControls"><h2>Owner controls</h2><p>{message}</p><button className="ivSave" onClick={saveDraftLocal} disabled={busy}>Save edit</button><button className="ivApprove" onClick={approveDelivery} disabled={busy}>{busy ? "Approving..." : "Approve invoice delivery"}</button><button className="ivClear" onClick={clear} disabled={busy}>Clear / new invoice</button></aside>
+      
     </section>
   </section></main>;
 }

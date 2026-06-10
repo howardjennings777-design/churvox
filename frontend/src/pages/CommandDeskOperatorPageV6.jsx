@@ -583,15 +583,7 @@ function Slip({ api, slip, onClose, reload }) {
             <div className="cxSectionLabel">Prepared action form</div>
             <div className="cxFields">{slip.fields.map((field) => <Field key={field[0]} field={field} form={form} setForm={setForm} />)}</div>
           </section>
-          <aside className="cxControls">
-            <h2>Owner controls</h2>
-            <p>{msg}</p>
-            {slip.key === "money" ? <div className="cxMiniDelivery"><b>Selected delivery</b><span>{form.deliveryMethod}</span><em>{deliveryDetails(form.deliveryMethod)[1]}</em></div> : null}
-            <button disabled={busy} className="save" onClick={save}>Save prepared action</button>
-            <button disabled={busy} className="approve" onClick={approve}>{busy ? "Approving..." : slip.approveLabel}</button>
-            <button disabled={busy} className="decline" onClick={decline}>Decline</button>
-            <button className="dark" onClick={onClose}>Back to Command</button>
-          </aside>
+          
         </main>
       </section>
     </div>

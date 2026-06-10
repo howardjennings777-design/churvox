@@ -64,31 +64,7 @@ function ChurvoxSidebar({ pathname }) {
   const groups = groupedItems();
 
   return (
-    <aside className="cvxSide" aria-label="Churvox command navigation">
-      <div className="cvxBrand">
-        <div className="cvxLogo">C</div>
-        <div>
-          <strong>CHURVOX</strong>
-          <span>Command Desk</span>
-        </div>
-      </div>
-
-      <div className="cvxScroll">
-        {Object.entries(groups).map(([title, items]) => (
-          <section key={title} className="cvxGroup">
-            <p>{title}</p>
-            <nav>
-              {items.map(([label, href, icon]) => (
-                <Link key={href} to={href} className={isActive(pathname, href) ? "cvxActive" : ""}>
-                  <i aria-hidden="true">{icon}</i>
-                  <span>{label}</span>
-                </Link>
-              ))}
-            </nav>
-          </section>
-        ))}
-      </div>
-    </aside>
+    
   );
 }
 

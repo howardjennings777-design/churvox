@@ -89,11 +89,7 @@ export default function TradePresetsPage() {
             Presets shape job types, invoice wording, customer messages and AI Operator suggestions for each trade.
           </span>
         </div>
-        <aside>
-          <small>Active preset</small>
-          <b>{activePreset?.name || (state.loading ? "Loading" : "Choose one")}</b>
-          <em>{state.error ? "Using built-in fallback presets" : "Saved on this device"}</em>
-        </aside>
+        
       </section>
 
       {notice ? <section className="ctp-notice">{notice}</section> : null}

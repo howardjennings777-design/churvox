@@ -547,69 +547,7 @@ export default function FlowlineCommandCentre() {
         </div>
       </section>
 
-      <aside className="flc-ai">
-        <div className="flc-ai-status"><i /> AI OPERATOR TAPE</div>
-
-        {loading ? (
-          <p className="flc-detail">Loading Churvox…</p>
-        ) : current ? (
-          <>
-            <div className="flc-ai-head">
-              <span>{current.source}</span>
-              <h2>{displayTitle(current)}</h2>
-            </div>
-
-            <p className="flc-directive">Approve it, edit it, or skip it. Churvox moves the next admin step into place.</p>
-            <p className="flc-detail">{displayDetail(current)}</p>
-
-            <div className="flc-facts">
-              <div><span>Result</span><strong>{outcomeLine(current)}</strong></div>
-              <div><span>Record</span><strong>{recordLine(current)}</strong></div>
-              <div><span>Risk</span><strong>{current.risk || "low"}</strong></div>
-            </div>
-
-            {editOpen ? (
-              <label className="flc-editor">
-                <span>Edit before approving</span>
-                <textarea value={editText} onChange={(event) => setEditText(event.target.value)} />
-              </label>
-            ) : null}
-
-            <div className="flc-ai-actions">
-              {current.rawId ? (
-                <>
-                  <button className="primary" onClick={() => approveCurrent(current)} disabled={busy === current.rawId}>
-                    {busy === current.rawId ? "Running…" : primaryLabel(current)}
-                  </button>
-                  <button onClick={() => setEditOpen((value) => !value)}>Edit</button>
-                  <button onClick={() => skipCurrent(current)} disabled={busy === current.rawId}>Skip</button>
-                </>
-              ) : (
-                <>
-                  <button className="primary" onClick={reviewNext}>Back to AI actions</button>
-                  <button onClick={() => scan(false)}>Ask AI to prepare</button>
-                </>
-              )}
-            </div>
-          </>
-        ) : (
-          <div className="flc-ai-empty">
-            <h2>Nothing waiting.</h2>
-            <p>Run AI or open another Flowline station.</p>
-            <button className="primary" onClick={() => scan(false)}>Run AI</button>
-          </div>
-        )}
-
-        <div className="flc-ai-stack">
-          <p className="flc-kicker">Prepared stack</p>
-          {grouped.length ? grouped.map((g) => (
-            <button key={g.title} onClick={() => { openStation(g.first.lane || "inbox"); setSelected(g.first); }}>
-              <strong>{g.count}</strong>
-              <span>{g.title}</span>
-            </button>
-          )) : <span>No AI stack waiting.</span>}
-        </div>
-      </aside>
+      
 
       <section className="flc-crew">
         <div className="flc-crew-head">

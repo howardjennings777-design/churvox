@@ -290,26 +290,7 @@ function SmartHubBrainPage() {
             )}
           </div>
 
-          <aside style={{ ...cardStyle, padding: 24 }}>
-            <h2 style={{ margin: 0, fontSize: 26, color: "#0f172a" }}>AI Actions</h2>
-            <p style={{ color: "#64748b", marginTop: 8 }}>Approval-first actions for daily admin.</p>
-
-            <div style={{ display: "grid", gap: 12, marginTop: 18 }}>
-              <button type="button" disabled={Boolean(working)} onClick={() => runOperatorAction("Daily check", "/ai/operator/run-daily-check")} style={buttonStyle}>
-                {working === "Daily check" ? "Running..." : "Run Daily Check"}
-              </button>
-              <button type="button" disabled={Boolean(working)} onClick={() => runOperatorAction("Today prep", "/ai/operator/prepare-today")} style={{ ...buttonStyle, background: "#0f172a" }}>
-                {working === "Today prep" ? "Preparing..." : "Prepare Today"}
-              </button>
-            </div>
-
-            <div style={{ marginTop: 22, borderTop: "1px solid #e2e8f0", paddingTop: 18 }}>
-              <h3 style={{ margin: 0, color: "#0f172a" }}>Launch safe mode</h3>
-              <p style={{ color: "#64748b", lineHeight: 1.5 }}>
-                This page was rebuilt to remove the JSX crash and keep Smart Hub usable while the deeper AI Operator wiring is finished.
-              </p>
-            </div>
-          </aside>
+          
         </section>
       </section>
     </main>

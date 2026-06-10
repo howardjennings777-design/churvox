@@ -227,21 +227,7 @@ export default function AIControlRoomCompletePage() {
               </div>
             </div>
 
-            <aside style={s.livePanel}>
-              <div style={s.liveHead}>
-                <h2 style={s.liveTitle}>LIVE CONTROL CENTRE</h2>
-                <span style={s.liveBadge}>
-                  <i style={s.liveDot} /> Live
-                </span>
-              </div>
-
-              <div style={s.liveGrid}>
-                <LiveStat icon="✓" label="Approvals" value={stats.approvals} onClick={() => openPanel({ key: "approvals" })} />
-                <LiveStat icon="♙" label="Workers active" value={stats.workers} onClick={() => openPanel({ key: "workersActive" })} />
-                <LiveStat icon="$" label="Money waiting" value={cash(stats.moneyWaiting)} orange onClick={() => openPanel({ key: "moneyWaiting" })} />
-                <LiveStat icon="☵" label="Follow-ups" value={stats.followUps} onClick={() => openPanel({ key: "followUps" })} />
-              </div>
-            </aside>
+            
           </section>
 
           <section style={s.safety}>

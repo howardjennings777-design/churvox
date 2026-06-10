@@ -379,12 +379,7 @@ export default function ExecutivePricingPage() {
             </p>
           </div>
 
-          <aside className="cxp-pick-card">
-            <strong>Best pick for most trade owners</strong>
-            <span>
-              Operator is the main Churvox plan. Churvox prepares the admin. You approve the action.
-            </span>
-          </aside>
+          
         </div>
       </section>
 

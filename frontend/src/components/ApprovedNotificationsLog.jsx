@@ -98,11 +98,7 @@ export default function ApprovedNotificationsLog({ compact = false }) {
               <p style={bodyText}>{first(item.body, item.detail, "No message body saved")}</p>
               {item.error ? <em>{item.error}</em> : null}
             </div>
-            <aside>
-              <span style={strongText}>{first(item.to, "No recipient")}</span>
-              <small style={bodyText}>{first(item.record_type, "record")} · {first(item.record_id, "no ID")}</small>
-              <small style={bodyText}>{dateText(first(item.created_at, item.createdAt))}</small>
-            </aside>
+            
           </article>
         )) : <div className="cnEmpty" style={emptyBox}>No approved messages yet. Approved message activity will show here.</div>}
       </div>

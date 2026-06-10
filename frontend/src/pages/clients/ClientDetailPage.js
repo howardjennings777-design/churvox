@@ -119,11 +119,7 @@ export default function ClientDetailPage() {
         </PremiumCard>
       </div>
 
-      <aside className="space-y-4">
-        <PremiumCard title="Create from this client"><div className="grid gap-3"><Link to={`/jobs/new?client_id=${encodeURIComponent(clientId)}`}><PremiumButton className="w-full" iconLeft={<Plus className="h-4 w-4" />}>Create job</PremiumButton></Link><Link to={`/quotes/new?client_id=${encodeURIComponent(clientId)}`}><PremiumButton variant="secondary" className="w-full" iconLeft={<FileSignature className="h-4 w-4" />}>Create quote</PremiumButton></Link><Link to={`/invoices/new?client_id=${encodeURIComponent(clientId)}`}><PremiumButton variant="secondary" className="w-full" iconLeft={<Receipt className="h-4 w-4" />}>Create invoice</PremiumButton></Link></div></PremiumCard>
-        <PremiumCard title={`Quotes (${quotes.length})`} icon={<FileSignature className="h-5 w-5" />}>{quotes.length ? <div className="grid gap-2">{quotes.slice(0, 8).map((quote) => { const qid = normalizeId(quote.id || quote._id); return <Link key={qid} to={`/quotes/${qid}`} className="rounded-2xl border border-slate-700 bg-slate-950/50 p-3 text-sm no-underline"><b className="block text-white">{titleOf(quote, "Quote")}</b><span className="text-slate-300">{statusOf(quote)} · {money(totalOf(quote))}</span></Link>; })}</div> : <p className="text-sm font-semibold text-slate-300">No quotes yet.</p>}</PremiumCard>
-        <PremiumCard title={`Invoices (${invoices.length})`} icon={<Receipt className="h-5 w-5" />}>{invoices.length ? <div className="grid gap-2">{invoices.slice(0, 8).map((invoice) => { const iid = normalizeId(invoice.id || invoice._id); return <Link key={iid} to={`/invoices/${iid}`} className="rounded-2xl border border-slate-700 bg-slate-950/50 p-3 text-sm no-underline"><b className="block text-white">{titleOf(invoice, "Invoice")}</b><span className="text-slate-300">{statusOf(invoice)} · {money(totalOf(invoice))}</span></Link>; })}</div> : <p className="text-sm font-semibold text-slate-300">No invoices yet.</p>}</PremiumCard>
-      </aside>
+      
     </section>
   </PremiumPage></Layout>;
 }

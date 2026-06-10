@@ -30,17 +30,7 @@ function FirstSetupPrompt() {
   }
 
   return (
-    <aside className="cv-first-setup-prompt" data-version="CHURVOX_COMMAND_FIRST_SETUP_PROMPT_ROUTER_20260601">
-      <p>First setup complete</p>
-      <h2>Command Floor is live.</h2>
-      <span>Your plan, business setup, first client and first job are connected. From here, Churvox turns work into owner decisions.</span>
-      <div>
-        {jobId ? <Link className="primary" to={`/jobs/${jobId}`}>Open first job Work Slip</Link> : null}
-        <Link className="success" to="/quotes/new">Create first quote</Link>
-        <Link to="/invoices/new">Create first invoice</Link>
-      </div>
-      <button type="button" onClick={closePrompt}>Got it</button>
-    </aside>
+    
   );
 }
 
