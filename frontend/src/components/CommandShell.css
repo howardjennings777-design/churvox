@@ -1,1 +1,175 @@
-/* Emergency disabled CommandShell layout so the site cannot blank. */
+/* CHURVOX_SAFE_SIDEBAR_ONLY_20260610 */
+
+:root {
+  --cvx-side: 232px;
+  --cvx-bg: #f4efe6;
+  --cvx-dark: #0b111a;
+  --cvx-card: #101722;
+  --cvx-orange: #f97316;
+  --cvx-amber: #fbbf24;
+  --cvx-muted: #9ca3af;
+}
+
+.cvxShell {
+  min-height: 100vh;
+  background: var(--cvx-bg);
+}
+
+.cvxSide {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 900;
+  width: var(--cvx-side);
+  overflow-y: auto;
+  background: linear-gradient(180deg, #101722 0%, #0b111a 55%, #05070b 100%);
+  border-right: 1px solid rgba(255,255,255,.1);
+  box-shadow: 10px 0 28px rgba(0,0,0,.18);
+}
+
+.cvxBrand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 76px;
+  padding: 16px;
+  border-left: 5px solid var(--cvx-orange);
+  border-bottom: 1px solid rgba(255,255,255,.1);
+  background: #0f172a;
+}
+
+.cvxLogo {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--cvx-orange);
+  color: #111827;
+  font-weight: 1000;
+}
+
+.cvxBrand strong {
+  display: block;
+  color: white;
+  font-size: 13px;
+  font-weight: 1000;
+  letter-spacing: .04em;
+}
+
+.cvxBrand span {
+  display: block;
+  margin-top: 2px;
+  color: var(--cvx-muted);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.cvxNav {
+  padding: 14px 10px 24px 12px;
+}
+
+.cvxNav section {
+  margin-top: 16px;
+}
+
+.cvxNav section:first-child {
+  margin-top: 0;
+}
+
+.cvxNav p {
+  margin: 0 0 7px 6px;
+  color: var(--cvx-muted);
+  font-size: 9px;
+  font-weight: 1000;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+.cvxNav a {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 4px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  color: #d1d5db;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.cvxNav a i {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #1f2937;
+  color: var(--cvx-amber);
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 1000;
+}
+
+.cvxNav a.active,
+.cvxNav a:hover {
+  background: var(--cvx-orange);
+  color: #111827;
+}
+
+.cvxNav a.active i,
+.cvxNav a:hover i {
+  background: #111827;
+  color: var(--cvx-amber);
+}
+
+.cvxMain {
+  min-height: 100vh;
+  margin-left: var(--cvx-side);
+  background: var(--cvx-bg);
+  padding: 18px;
+}
+
+.cvxMobileNav {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .cvxSide {
+    display: none;
+  }
+
+  .cvxMain {
+    margin-left: 0;
+    padding: 12px 12px 88px;
+  }
+
+  .cvxMobileNav {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    z-index: 900;
+    display: flex;
+    gap: 6px;
+    padding: 8px;
+    overflow-x: auto;
+    border-radius: 18px;
+    background: #0b111a;
+    border: 1px solid rgba(255,255,255,.12);
+  }
+
+  .cvxMobileNav a {
+    min-width: 72px;
+    color: white;
+    text-decoration: none;
+    font-size: 10px;
+    font-weight: 900;
+  }
+}
