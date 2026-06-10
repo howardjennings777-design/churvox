@@ -1,0 +1,338 @@
+.freshRolesPage {
+  display: grid;
+  gap: 16px;
+}
+
+.freshRolesHero {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 22px;
+  border-radius: 30px;
+  background: #111827;
+  box-shadow: 0 24px 70px rgba(2,6,23,.18);
+}
+
+.freshRolesHero span,
+.freshRolesHead > div > span,
+.freshRolesCards span,
+.freshRolesForm label span {
+  display: inline-flex;
+  border-radius: 999px;
+  background: rgba(249,115,22,.16);
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+  padding: 8px 11px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.freshRolesHero h1 {
+  margin: 13px 0 8px;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  font-size: 46px;
+  line-height: .9;
+  letter-spacing: -.07em;
+}
+
+.freshRolesHero p {
+  margin: 0;
+  max-width: 760px;
+  color: #e5e7eb;
+  -webkit-text-fill-color: #e5e7eb;
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.freshRolesStats {
+  min-width: 380px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.freshRolesStats div {
+  border-radius: 20px;
+  background: rgba(255,255,255,.08);
+  padding: 14px;
+}
+
+.freshRolesStats b {
+  display: block;
+  color: #fbbf24;
+  -webkit-text-fill-color: #fbbf24;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.freshRolesStats small {
+  display: block;
+  margin-top: 5px;
+  color: #f9fafb;
+  -webkit-text-fill-color: #f9fafb;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.freshRolesLayout {
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr);
+  gap: 16px;
+}
+
+.freshRolesList,
+.freshRolesDetail {
+  border: 1px solid rgba(15,23,42,.12);
+  border-radius: 30px;
+  background: #fffaf0;
+  box-shadow: 0 18px 48px rgba(2,6,23,.10);
+}
+
+.freshRolesList {
+  display: grid;
+  gap: 9px;
+  align-content: start;
+  padding: 14px;
+}
+
+.freshRolesList header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 22px;
+  background: #111827;
+}
+
+.freshRolesList header b {
+  display: block;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+}
+
+.freshRolesList header span {
+  display: block;
+  margin-top: 3px;
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.freshRolesList header button,
+.freshRolesHeadActions button,
+.freshRolesActions button,
+.freshRolesReset {
+  border: 0;
+  border-radius: 15px;
+  min-height: 42px;
+  padding: 0 13px;
+  font-size: 12px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshRolesList header button,
+.freshRolesActions button:first-child {
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+.freshRolesList > button:not(.freshRolesReset) {
+  border: 1px solid rgba(15,23,42,.10);
+  border-radius: 20px;
+  background: #ffffff;
+  padding: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.freshRolesList > button.active {
+  background: #ffedd5;
+  border-color: rgba(249,115,22,.36);
+}
+
+.freshRolesList > button b,
+.freshRolesHead h2,
+.freshRolesCards b {
+  display: block;
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+}
+
+.freshRolesList > button span,
+.freshRolesList > button small,
+.freshRolesHead p,
+.freshRolesCards p {
+  display: block;
+  margin-top: 4px;
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+  font-weight: 850;
+}
+
+.freshRolesReset {
+  background: #ffffff;
+  color: #334155;
+  -webkit-text-fill-color: #334155;
+  border: 1px solid rgba(15,23,42,.12);
+}
+
+.freshRolesDetail {
+  padding: 18px;
+}
+
+.freshRolesHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  border-bottom: 1px solid rgba(15,23,42,.10);
+  padding-bottom: 14px;
+}
+
+.freshRolesHead > div > span,
+.freshRolesCards span,
+.freshRolesForm label span {
+  background: #fff7ed;
+  color: #9a3412;
+  -webkit-text-fill-color: #9a3412;
+}
+
+.freshRolesHead h2 {
+  margin: 11px 0 6px;
+  font-size: 34px;
+  line-height: .95;
+  letter-spacing: -.055em;
+}
+
+.freshRolesHeadActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.freshRolesHeadActions button:first-child {
+  background: #111827;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+}
+
+.freshRolesHeadActions button:nth-child(2),
+.freshRolesHeadActions button:nth-child(3) {
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+.freshRolesCards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.freshRolesCards section {
+  border: 1px solid rgba(15,23,42,.10);
+  border-radius: 24px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.freshRolesCards b {
+  margin-top: 10px;
+  font-size: 19px;
+  line-height: 1.1;
+}
+
+.freshRolesCards p {
+  line-height: 1.4;
+}
+
+.freshRolesForm {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.freshRolesForm label {
+  display: grid;
+  gap: 6px;
+}
+
+.freshRolesForm label.wide {
+  grid-column: 1 / -1;
+}
+
+.freshRolesForm input,
+.freshRolesForm select,
+.freshRolesForm textarea {
+  width: 100%;
+  border: 1px solid rgba(15,23,42,.14);
+  border-radius: 16px;
+  background: #ffffff;
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+  padding: 12px 13px;
+  font-size: 14px;
+  font-weight: 900;
+  outline: 0;
+}
+
+.freshRolesForm textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.freshRolesActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.freshRolesActions button {
+  background: #111827;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+}
+
+.freshRolesActions button:first-child,
+.freshRolesActions button:nth-child(2),
+.freshRolesActions button:nth-child(3) {
+  background: #fbbf24;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+@media (max-width: 1050px) {
+  .freshRolesHero,
+  .freshRolesHead {
+    display: grid;
+  }
+
+  .freshRolesStats,
+  .freshRolesLayout,
+  .freshRolesCards,
+  .freshRolesForm {
+    grid-template-columns: 1fr;
+  }
+
+  .freshRolesStats {
+    min-width: 0;
+  }
+
+  .freshRolesHeadActions,
+  .freshRolesActions {
+    display: grid;
+  }
+}
