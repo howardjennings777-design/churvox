@@ -62,7 +62,7 @@ const growth = [
   ["Billing rule", "Inactive/old staff do not count as billable active team members"],
 ];
 
-export default function FreshPlans() {
+export default function FreshPlans({ onNavigate }) {
   const [selected, setSelected] = React.useState("operator");
   const plan = plans.find((item) => item.id === selected) || plans[2];
 
@@ -139,7 +139,7 @@ export default function FreshPlans() {
             <button className="freshPrimary">Start trial</button>
             <button className="freshOrange">Choose {plan.name}</button>
             <button className="freshDark">Compare plans</button>
-            <button className="freshGhost">Ask support</button>
+            <button className="freshGhost" onClick={() => onNavigate?.("support")}>Ask support</button>
           </div>
 
           <div className="freshItem need">

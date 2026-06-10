@@ -40,7 +40,7 @@ const roles = [
   ["Payroll", "Can only see payroll hours and payroll export."],
 ];
 
-export default function FreshTeam() {
+export default function FreshTeam({ onNavigate }) {
   const [selectedId, setSelectedId] = React.useState(1);
   const selected = members.find((member) => member.id === selectedId) || members[0];
 
@@ -120,7 +120,7 @@ export default function FreshTeam() {
             <button className="freshPrimary">Invite worker</button>
             <button className="freshOrange">Change role</button>
             <button className="freshDark">Deactivate</button>
-            <button className="freshGhost">Send issue to Command</button>
+            <button className="freshGhost" onClick={() => onNavigate?.("command")}>Send issue to Command</button>
           </div>
 
           <div className="freshItem need">

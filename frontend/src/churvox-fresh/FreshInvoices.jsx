@@ -42,7 +42,7 @@ const invoices = [
   },
 ];
 
-export default function FreshInvoices() {
+export default function FreshInvoices({ onNavigate }) {
   const [selectedId, setSelectedId] = React.useState(1);
   const selected = invoices.find((invoice) => invoice.id === selectedId) || invoices[0];
 
@@ -127,7 +127,7 @@ export default function FreshInvoices() {
             <button className="freshPrimary">Approve invoice</button>
             <button className="freshOrange">Send invoice</button>
             <button className="freshDark">Mark paid</button>
-            <button className="freshGhost">Send issue to Command</button>
+            <button className="freshGhost" onClick={() => onNavigate?.("command")}>Send issue to Command</button>
           </div>
 
           <div className="freshItem">

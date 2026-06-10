@@ -60,17 +60,17 @@ export default function FreshApp() {
 
   let content = <FreshSimple page={page} />;
   if (page === "command") content = <FreshCommand onNavigate={goToPage} />;
-  if (page === "jobs") content = <FreshJobs />;
-  if (page === "dispatch") content = <FreshDispatch />;
-  if (page === "clients") content = <FreshClients />;
-  if (page === "quotes") content = <FreshQuotes />;
-  if (page === "invoices") content = <FreshInvoices />;
-  if (page === "team") content = <FreshTeam />;
-  if (page === "payroll") content = <FreshPayroll />;
-  if (page === "reports") content = <FreshReports />;
-  if (page === "settings") content = <FreshSettings />;
-  if (page === "plans") content = <FreshPlans />;
-  if (page === "support") content = <FreshSupport />;
+  if (page === "jobs") content = <FreshJobs onNavigate={goToPage} />;
+  if (page === "dispatch") content = <FreshDispatch onNavigate={goToPage} />;
+  if (page === "clients") content = <FreshClients onNavigate={goToPage} />;
+  if (page === "quotes") content = <FreshQuotes onNavigate={goToPage} />;
+  if (page === "invoices") content = <FreshInvoices onNavigate={goToPage} />;
+  if (page === "team") content = <FreshTeam onNavigate={goToPage} />;
+  if (page === "payroll") content = <FreshPayroll onNavigate={goToPage} />;
+  if (page === "reports") content = <FreshReports onNavigate={goToPage} />;
+  if (page === "settings") content = <FreshSettings onNavigate={goToPage} />;
+  if (page === "plans") content = <FreshPlans onNavigate={goToPage} />;
+  if (page === "support") content = <FreshSupport onNavigate={goToPage} />;
 
   return (
     <FreshShell active={page} onChange={goToPage}>

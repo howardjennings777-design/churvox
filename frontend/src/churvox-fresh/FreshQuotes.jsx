@@ -39,7 +39,7 @@ const quotes = [
   },
 ];
 
-export default function FreshQuotes() {
+export default function FreshQuotes({ onNavigate }) {
   const [selectedId, setSelectedId] = React.useState(1);
   const selected = quotes.find((quote) => quote.id === selectedId) || quotes[0];
 
@@ -123,8 +123,8 @@ export default function FreshQuotes() {
           <div className="freshActions">
             <button className="freshPrimary">Save quote</button>
             <button className="freshOrange">Send quote</button>
-            <button className="freshDark">Convert to job</button>
-            <button className="freshGhost">Send follow-up to Command</button>
+            <button className="freshDark" onClick={() => onNavigate?.("jobs")}>Convert to job</button>
+            <button className="freshGhost" onClick={() => onNavigate?.("command")}>Send follow-up to Command</button>
           </div>
 
           <div className="freshItem">

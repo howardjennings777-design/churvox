@@ -39,7 +39,7 @@ const launchChecks = [
   ["Payroll", "CSV export only. No tax filing. No bank payout files."],
 ];
 
-export default function FreshSupport() {
+export default function FreshSupport({ onNavigate }) {
   const [selectedId, setSelectedId] = React.useState(1);
   const selected = helpTopics.find((item) => item.id === selectedId) || helpTopics[0];
 
@@ -111,10 +111,10 @@ export default function FreshSupport() {
           </label>
 
           <div className="freshActions">
-            <button className="freshPrimary">Open setup guide</button>
+            <button className="freshPrimary" onClick={() => onNavigate?.("settings")}>Open setup guide</button>
             <button className="freshOrange">Email support</button>
             <button className="freshDark">Report issue</button>
-            <button className="freshGhost">Send issue to Command</button>
+            <button className="freshGhost" onClick={() => onNavigate?.("command")}>Send issue to Command</button>
           </div>
 
           <div className="freshItem need">

@@ -6,7 +6,7 @@ const clients = [
   ["Lower Hutt Medical Centre", "admin@lhmedical.example", "Ready"],
 ];
 
-export default function FreshClients() {
+export default function FreshClients({ onNavigate }) {
   return (
     <section>
       <header className="freshHero">
@@ -57,8 +57,8 @@ export default function FreshClients() {
           <p>Save client, create job, create quote, or send missing details to Command.</p>
           <div className="freshActions">
             <button className="freshPrimary">Save client</button>
-            <button className="freshOrange">Create job</button>
-            <button className="freshDark">Send to Command</button>
+            <button className="freshOrange" onClick={() => onNavigate?.("jobs")}>Create job</button>
+            <button className="freshDark" onClick={() => onNavigate?.("command")}>Send to Command</button>
           </div>
         </aside>
       </section>

@@ -6,7 +6,7 @@ const jobs = [
   { id: 3, title: "Driveway clean", client: "Birchville Rentals", status: "Needs access", worker: "Unassigned", time: "Awaiting", price: "$240 quote", note: "Tenant access not confirmed. Send to Command before dispatch." },
 ];
 
-export default function FreshJobs() {
+export default function FreshJobs({ onNavigate }) {
   const [selectedId, setSelectedId] = React.useState(1);
   const selected = jobs.find((job) => job.id === selectedId) || jobs[0];
 
@@ -53,8 +53,8 @@ export default function FreshJobs() {
           <div className="freshActions">
             <button className="freshPrimary">Save job</button>
             <button className="freshOrange">Complete job</button>
-            <button className="freshDark">Create invoice draft</button>
-            <button className="freshGhost">Send issue to Command</button>
+            <button className="freshDark" onClick={() => onNavigate?.("invoices")}>Create invoice draft</button>
+            <button className="freshGhost" onClick={() => onNavigate?.("command")}>Send issue to Command</button>
           </div>
           <div className="freshItem need"><b>Status flow</b><span>Assigned → Acknowledged → In Progress → Completed</span></div>
         </aside>

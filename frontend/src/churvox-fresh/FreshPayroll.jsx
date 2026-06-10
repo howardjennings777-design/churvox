@@ -42,7 +42,7 @@ const adjustments = [
   ["Wiremu King", "0", "No adjustment"],
 ];
 
-export default function FreshPayroll() {
+export default function FreshPayroll({ onNavigate }) {
   const [selectedId, setSelectedId] = React.useState(2);
   const selected = workers.find((worker) => worker.id === selectedId) || workers[0];
 
@@ -132,7 +132,7 @@ export default function FreshPayroll() {
             <button className="freshPrimary">Approve hours</button>
             <button className="freshOrange">Add adjustment</button>
             <button className="freshDark">Export CSV</button>
-            <button className="freshGhost">Send issue to Command</button>
+            <button className="freshGhost" onClick={() => onNavigate?.("command")}>Send issue to Command</button>
           </div>
 
           <div className="freshItem need">

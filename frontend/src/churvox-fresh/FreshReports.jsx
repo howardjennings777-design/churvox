@@ -26,7 +26,7 @@ const workerRows = [
   ["Wiremu King", "12.75 hrs", "4 jobs", "Ready"],
 ];
 
-export default function FreshReports() {
+export default function FreshReports({ onNavigate }) {
   const [view, setView] = React.useState("Overview");
 
   return (
@@ -110,7 +110,7 @@ export default function FreshReports() {
           <div className="freshActions">
             <button className="freshPrimary">Export report</button>
             <button className="freshOrange">Open money issues</button>
-            <button className="freshDark">Open Command risks</button>
+            <button className="freshDark" onClick={() => onNavigate?.("command")}>Open Command risks</button>
             <button className="freshGhost">Download CSV</button>
           </div>
 

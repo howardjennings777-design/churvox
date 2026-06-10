@@ -49,7 +49,7 @@ const dispatchJobs = [
 
 const lanes = ["Unconfirmed", "Ready", "On site", "Complete"];
 
-export default function FreshDispatch() {
+export default function FreshDispatch({ onNavigate }) {
   const [selectedId, setSelectedId] = React.useState(1);
   const selected = dispatchJobs.find((job) => job.id === selectedId) || dispatchJobs[0];
 
@@ -137,9 +137,9 @@ export default function FreshDispatch() {
 
           <div className="freshActions">
             <button className="freshPrimary">Confirm route</button>
-            <button className="freshOrange">Reassign worker</button>
+            <button className="freshOrange" onClick={() => onNavigate?.("team")}>Reassign worker</button>
             <button className="freshDark">Message worker</button>
-            <button className="freshGhost">Send issue to Command</button>
+            <button className="freshGhost" onClick={() => onNavigate?.("command")}>Send issue to Command</button>
           </div>
 
           <div className="freshItem need">
