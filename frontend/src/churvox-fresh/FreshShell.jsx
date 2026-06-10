@@ -18,6 +18,7 @@ const groups = [
   ["areas", "AR", "Areas"],
       ["areas", "AR", "Areas"],
       ["photos", "PH", "Photos"],
+      ["photoproof", "PP", "Photo Proof"],
       ["documents", "DC", "Documents"],
       ["contracts", "CT", "Contracts"],
   ["safety", "SF", "Safety"],
@@ -62,6 +63,7 @@ const groups = [
       ["payments", "PY", "Payments"],
       ["creditnotes", "CN", "Credit Notes"],
       ["profit", "PF", "Profit"],
+      ["profitguard", "PG", "Profit Guard"],
       ["assets", "AS", "Assets"],
   ["inventory", "IV", "Inventory"],
       ["inventory", "IV", "Inventory"],
@@ -122,6 +124,7 @@ const labels = {
   routes: "Routes",
   areas: "Areas",
   photos: "Photos",
+  photoproof: "Photo Proof",
   documents: "Documents",
   contracts: "Contracts",
   safety: "Safety",
@@ -155,6 +158,7 @@ const labels = {
   reports: "Reports",
   businesshealth: "Business Health",
   profit: "Profit",
+  profitguard: "Profit Guard",
   expenses: "Expenses",
   assets: "Assets",
   inventory: "Inventory",
@@ -201,6 +205,8 @@ const mobileItems = [
 ];
 
 const extraMobile = [
+  ["photoproof", "PP", "Photo Proof"],
+  ["profitguard", "PG", "Profit Guard"],
   ["recurringsaver", "RS", "Recurring Saver"],
   ["quoteai", "AQ", "AI Quote"],
   ["helpdesk", "HD", "Help Desk"],

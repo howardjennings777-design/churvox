@@ -53,9 +53,11 @@ import "./freshOnboarding.css";
 import "./freshPayments.css";
 import "./freshPayrollLive.css";
 import "./freshPhotos.css";
+import "./freshPhotoProof.css";
 import "./freshPlansLive.css";
 import "./freshPolish.css";
 import "./freshProfit.css";
+import "./freshProfitGuard.css";
 import "./freshQa.css";
 import "./freshQuality.css";
 import "./freshQuickCreate.css";
@@ -154,8 +156,10 @@ import FreshOnboarding from "./FreshOnboarding";
 import FreshPayments from "./FreshPayments";
 import FreshPayroll from "./FreshPayroll";
 import FreshPhotos from "./FreshPhotos";
+import FreshPhotoProof from "./FreshPhotoProof";
 import FreshPlans from "./FreshPlans";
 import FreshProfit from "./FreshProfit";
+import FreshProfitGuard from "./FreshProfitGuard";
 import FreshQa from "./FreshQa";
 import FreshQuality from "./FreshQuality";
 import FreshQuotes from "./FreshQuotes";
@@ -254,6 +258,7 @@ const pages = new Set([
   "time",
   "reports",
   "profit",
+  "profitguard",
   "expenses",
   "assets",
   "inventory",
@@ -273,6 +278,7 @@ const pages = new Set([
   "warranties",
   "cancellations",
   "photos",
+  "photoproof",
   "documents",
   "contracts",
   "safety",
@@ -385,6 +391,7 @@ export default function FreshApp() {
   if (page === "reports") content = <FreshReports onNavigate={goToPage} />;
   if (page === "businesshealth") content = <FreshBusinessHealth onNavigate={goToPage} />;
   if (page === "profit") content = <FreshProfit onNavigate={goToPage} />;
+  if (page === "profitguard") content = <FreshProfitGuard onNavigate={goToPage} />;
   if (page === "expenses") content = <FreshExpenses onNavigate={goToPage} />;
   if (page === "assets") content = <FreshAssets onNavigate={goToPage} />;
   if (page === "inventory") content = <FreshInventory onNavigate={goToPage} />;
@@ -404,6 +411,7 @@ export default function FreshApp() {
   if (page === "warranties") content = <FreshWarranties onNavigate={goToPage} />;
   if (page === "cancellations") content = <FreshCancellations onNavigate={goToPage} />;
   if (page === "photos") content = <FreshPhotos onNavigate={goToPage} />;
+  if (page === "photoproof") content = <FreshPhotoProof onNavigate={goToPage} />;
   if (page === "documents") content = <FreshDocuments onNavigate={goToPage} />;
   if (page === "contracts") content = <FreshContracts onNavigate={goToPage} />;
   if (page === "safety") content = <FreshSafety onNavigate={goToPage} />;
