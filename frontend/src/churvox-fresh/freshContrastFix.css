@@ -1,0 +1,162 @@
+/* Fresh contrast safety layer */
+
+.freshApp,
+.freshMain {
+  color: #101827;
+}
+
+.freshMain h1,
+.freshMain h2,
+.freshMain h3,
+.freshMain h4,
+.freshMain b,
+.freshMain strong {
+  color: #101827;
+}
+
+.freshMain p,
+.freshMain span,
+.freshMain small,
+.freshMain em,
+.freshMain label {
+  color: #334155;
+}
+
+.freshHero h1,
+.freshSlipHead h2 {
+  color: #ffffff;
+}
+
+.freshHero p,
+.freshSlipHead p {
+  color: #e5e7eb;
+}
+
+.freshHero span,
+.freshSlipHead span {
+  color: #fed7aa;
+}
+
+.freshCard h2,
+.freshCard strong,
+.freshCard b,
+.freshCommandBox strong,
+.freshMiniGrid b,
+.freshInvoiceStatus b,
+.freshSearchResults strong,
+.freshNoResults strong {
+  color: #101827;
+}
+
+.freshCard p,
+.freshCard span,
+.freshItem span,
+.freshCommandBox em,
+.freshMiniGrid span,
+.freshInvoiceStatus span,
+.freshInvoiceLines span,
+.freshSearchResults span,
+.freshNoResults span {
+  color: #475569;
+}
+
+.freshItem b,
+.freshActivityItem b {
+  color: #101827;
+}
+
+.freshItem.need b {
+  color: #9a3412;
+}
+
+.freshField span,
+.freshSearch span {
+  color: #9a3412;
+}
+
+.freshField input,
+.freshField textarea,
+.freshField select,
+.freshSearch input,
+.freshQuickBody input,
+.freshQuickBody textarea {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827;
+  background: #ffffff;
+}
+
+.freshField input::placeholder,
+.freshField textarea::placeholder,
+.freshSearch input::placeholder {
+  color: #64748b;
+  opacity: 1;
+}
+
+.freshField input[readonly],
+.freshField textarea[readonly] {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827;
+  opacity: 1;
+}
+
+.freshPrimary {
+  color: #111827 !important;
+}
+
+.freshOrange {
+  color: #111827 !important;
+}
+
+.freshDark {
+  color: #ffffff !important;
+}
+
+.freshGhost,
+.freshClose {
+  color: #334155 !important;
+}
+
+.freshTopActions button,
+.freshSlipActions button,
+.freshActions button {
+  font-weight: 1000;
+}
+
+.freshTopActions button:not(:first-child) {
+  color: #ffffff !important;
+}
+
+.freshCommandPill,
+.freshCommandBox.isDone .freshCommandPill {
+  color: #fbbf24;
+}
+
+.freshCommandBox.isDone .freshCommandPill {
+  color: #bbf7d0;
+}
+
+.freshCommandBox small {
+  color: #9a3412;
+}
+
+.freshCommandBox.isDone small {
+  color: #166534;
+}
+
+.freshToast strong {
+  color: #ffffff;
+}
+
+.freshToast span {
+  color: #cbd5e1;
+}
+
+.freshSide,
+.freshSide span,
+.freshSide strong,
+.freshSide small,
+.freshMobileNav,
+.freshMobileNav span,
+.freshMobileMore span {
+  -webkit-text-fill-color: initial;
+}

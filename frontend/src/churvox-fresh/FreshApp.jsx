@@ -3,6 +3,7 @@ import "./fresh.css";
 import "./freshFeedback.css";
 import "./freshJobsLive.css";
 import "./freshInvoicesLive.css";
+import "./freshContrastFix.css";
 import "./freshCommandBoxes.css";
 import "./freshCommandLive.css";
 import "./freshCommandActivity.css";
