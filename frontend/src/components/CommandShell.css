@@ -409,3 +409,37 @@ body,
     max-width: 100% !important;
   }
 }
+
+/* CHURVOX_REMOVE_COMMAND_FAKE_LEFT_GAP_20260610
+   The previous centering made Command look like it had a second sidebar.
+   Keep one real sidebar, then let Command use the workspace from the left. */
+
+.cvxMain {
+  display: block !important;
+  justify-content: initial !important;
+  align-items: initial !important;
+  padding: 22px 26px 80px !important;
+}
+
+.cvxMain .cxRoot {
+  max-width: none !important;
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding: 0 !important;
+}
+
+.cvxMain .cxWrap {
+  width: 100% !important;
+  max-width: 1320px !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+
+.cvxMain .cxHero,
+.cvxMain .cxQueue,
+.cvxMain .cxUrgent,
+.cvxMain .cxBoxes {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
