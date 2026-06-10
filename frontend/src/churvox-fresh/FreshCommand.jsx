@@ -182,6 +182,14 @@ export default function FreshCommand({ onNavigate }) {
       ? boxes
       : boxes.filter((box) => box.status === filter);
 
+  const filterCounts = commandFilters.reduce((counts, item) => {
+    counts[item] = item === "All"
+      ? boxes.length
+      : boxes.filter((box) => box.status === item).length;
+
+    return counts;
+  }, {});
+
   function updateSelected(status) {
     if (!selected) return;
 
@@ -261,7 +269,8 @@ export default function FreshCommand({ onNavigate }) {
             className={filter === item ? "active" : ""}
             onClick={() => setFilter(item)}
           >
-            {item}
+            <span>{item}</span>
+            <b>{filterCounts[item]}</b>
           </button>
         ))}
       </section>

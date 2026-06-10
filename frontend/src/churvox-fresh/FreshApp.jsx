@@ -5,6 +5,7 @@ import "./freshCommandBoxes.css";
 import "./freshCommandLive.css";
 import "./freshCommandActivity.css";
 import "./freshCommandFilters.css";
+import "./freshCommandFilterCounts.css";
 import "./freshMobileNav.css";
 import "./freshPolish.css";
 import "./freshTopbar.css";

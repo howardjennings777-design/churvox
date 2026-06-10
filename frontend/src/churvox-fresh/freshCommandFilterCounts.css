@@ -1,0 +1,22 @@
+.freshCommandFilterBar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.freshCommandFilterBar button b {
+  min-width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 11px;
+  font-weight: 1000;
+}
+
+.freshCommandFilterBar button.active b {
+  background: #f97316;
+  color: #111827;
+}
