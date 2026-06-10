@@ -1,0 +1,230 @@
+/*
+  FINAL fresh readability override.
+  This intentionally uses strong selectors and !important
+  because older fresh page CSS also used !important.
+*/
+
+/* Base reset */
+.freshApp .freshMain .freshPageMount,
+.freshApp .freshMain .freshPageMount * {
+  opacity: 1 !important;
+  text-shadow: none !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
+
+/* Default all page text dark */
+.freshApp .freshMain .freshPageMount * {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+}
+
+/* Body/sub text softer */
+.freshApp .freshMain .freshPageMount p,
+.freshApp .freshMain .freshPageMount small,
+.freshApp .freshMain .freshPageMount li,
+.freshApp .freshMain .freshPageMount td,
+.freshApp .freshMain .freshPageMount dd {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+}
+
+/* Normal spans default grey, then labels are restored below */
+.freshApp .freshMain .freshPageMount span {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+}
+
+/* Headings and strong text */
+.freshApp .freshMain .freshPageMount h1,
+.freshApp .freshMain .freshPageMount h2,
+.freshApp .freshMain .freshPageMount h3,
+.freshApp .freshMain .freshPageMount h4,
+.freshApp .freshMain .freshPageMount h5,
+.freshApp .freshMain .freshPageMount h6,
+.freshApp .freshMain .freshPageMount b,
+.freshApp .freshMain .freshPageMount strong {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+}
+
+/* Forms */
+.freshApp .freshMain .freshPageMount input,
+.freshApp .freshMain .freshPageMount textarea,
+.freshApp .freshMain .freshPageMount select,
+.freshApp .freshMain .freshPageMount option {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  background: #ffffff !important;
+  caret-color: #101827 !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
+
+.freshApp .freshMain .freshPageMount input::placeholder,
+.freshApp .freshMain .freshPageMount textarea::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  opacity: 1 !important;
+}
+
+/* Form labels and small orange pills */
+.freshApp .freshMain .freshPageMount label > span,
+.freshApp .freshMain .freshPageMount [class*="Form"] label span,
+.freshApp .freshMain .freshPageMount [class*="Head"] > div > span,
+.freshApp .freshMain .freshPageMount [class*="Cards"] section > span,
+.freshApp .freshMain .freshPageMount [class*="Conversation"] span,
+.freshApp .freshMain .freshPageMount .freshField span {
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+}
+
+/* Dark hero/header panels */
+.freshApp .freshMain .freshPageMount [class*="Hero"],
+.freshApp .freshMain .freshPageMount [class*="Hero"] * {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.freshApp .freshMain .freshPageMount [class*="Hero"] h1,
+.freshApp .freshMain .freshPageMount [class*="Hero"] h2,
+.freshApp .freshMain .freshPageMount [class*="Hero"] h3,
+.freshApp .freshMain .freshPageMount [class*="Hero"] b,
+.freshApp .freshMain .freshPageMount [class*="Hero"] strong {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.freshApp .freshMain .freshPageMount [class*="Hero"] p,
+.freshApp .freshMain .freshPageMount [class*="Hero"] small {
+  color: #e5e7eb !important;
+  -webkit-text-fill-color: #e5e7eb !important;
+}
+
+.freshApp .freshMain .freshPageMount [class*="Hero"] span {
+  color: #fed7aa !important;
+  -webkit-text-fill-color: #fed7aa !important;
+}
+
+/* Hero/stat boxes */
+.freshApp .freshMain .freshPageMount [class*="Stats"] b {
+  color: #fbbf24 !important;
+  -webkit-text-fill-color: #fbbf24 !important;
+}
+
+.freshApp .freshMain .freshPageMount [class*="Stats"] small,
+.freshApp .freshMain .freshPageMount [class*="Stats"] span {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Dark list headers */
+.freshApp .freshMain .freshPageMount [class*="List"] header,
+.freshApp .freshMain .freshPageMount [class*="List"] header *,
+.freshApp .freshMain .freshPageMount aside header,
+.freshApp .freshMain .freshPageMount aside header * {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.freshApp .freshMain .freshPageMount [class*="List"] header span,
+.freshApp .freshMain .freshPageMount [class*="List"] header small,
+.freshApp .freshMain .freshPageMount aside header span,
+.freshApp .freshMain .freshPageMount aside header small {
+  color: #fed7aa !important;
+  -webkit-text-fill-color: #fed7aa !important;
+}
+
+/* List buttons/cards */
+.freshApp .freshMain .freshPageMount [class*="List"] > button b,
+.freshApp .freshMain .freshPageMount [class*="List"] > button strong {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+}
+
+.freshApp .freshMain .freshPageMount [class*="List"] > button span,
+.freshApp .freshMain .freshPageMount [class*="List"] > button small {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+}
+
+/* Buttons default readable */
+.freshApp .freshMain .freshPageMount button,
+.freshApp .freshMain .freshPageMount button * {
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+/* Dark action buttons */
+.freshApp .freshMain .freshPageMount button.freshDark,
+.freshApp .freshMain .freshPageMount .freshDark,
+.freshApp .freshMain .freshPageMount [class*="HeadActions"] button,
+.freshApp .freshMain .freshPageMount [class*="Footer"] button,
+.freshApp .freshMain .freshPageMount [class*="Actions"] button {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Orange/yellow buttons */
+.freshApp .freshMain .freshPageMount button.freshPrimary,
+.freshApp .freshMain .freshPageMount .freshPrimary,
+.freshApp .freshMain .freshPageMount button.freshOrange,
+.freshApp .freshMain .freshPageMount .freshOrange,
+.freshApp .freshMain .freshPageMount [class*="List"] header button,
+.freshApp .freshMain .freshPageMount [class*="Actions"] button:first-child {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}
+
+/* Reset / ghost buttons */
+.freshApp .freshMain .freshPageMount [class*="Reset"],
+.freshApp .freshMain .freshPageMount button.freshGhost,
+.freshApp .freshMain .freshPageMount .freshGhost {
+  color: #334155 !important;
+  -webkit-text-fill-color: #334155 !important;
+}
+
+/* Search editable text */
+.freshApp .freshTopbar .freshSearchEditable,
+.freshApp .freshTopbar .freshSearchEditable *,
+.freshApp .freshSearchEditable,
+.freshApp .freshSearchEditable * {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  opacity: 1 !important;
+}
+
+.freshApp .freshSearchEditable:empty::before {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+}
+
+/* Topbar */
+.freshApp .freshTopbar,
+.freshApp .freshTopbar * {
+  opacity: 1 !important;
+  text-shadow: none !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
+
+.freshApp .freshTopbar > div:first-child span {
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+}
+
+.freshApp .freshTopbar > div:first-child strong {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+}
+
+/* Sidebar */
+.freshApp .freshSide,
+.freshApp .freshSide * {
+  opacity: 1 !important;
+  text-shadow: none !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
