@@ -1,4 +1,5 @@
 import React from "react";
+import FreshDataControls from "./FreshDataControls";
 
 const SETTINGS_STORAGE_KEY = "churvox:fresh-settings:v1";
 
@@ -242,6 +243,8 @@ export default function FreshSettings({ onNavigate }) {
           </label>
         </aside>
       </section>
+      <FreshDataControls onNavigate={onNavigate} />
+
     </section>
   );
 }
