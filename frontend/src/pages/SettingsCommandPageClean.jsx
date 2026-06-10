@@ -1,5 +1,5 @@
-import SettingsCommandPageLive from "./SettingsCommandPageLive";
+import WorkspaceV2Page from "../churvox-v2/WorkspaceV2Page";
 
 export default function SettingsCommandPageClean() {
-  return <SettingsCommandPageLive />;
+  return <WorkspaceV2Page area="settings" />;
 }
