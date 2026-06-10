@@ -1,0 +1,335 @@
+.freshServicesPage {
+  display: grid;
+  gap: 16px;
+}
+
+.freshServicesHero {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 22px;
+  border-radius: 30px;
+  background: #111827;
+  box-shadow: 0 24px 70px rgba(2,6,23,.18);
+}
+
+.freshServicesHero span,
+.freshServicesHead > div > span,
+.freshServicesCards span,
+.freshServicesForm label span {
+  display: inline-flex;
+  border-radius: 999px;
+  background: rgba(249,115,22,.16);
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+  padding: 8px 11px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.freshServicesHero h1 {
+  margin: 13px 0 8px;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  font-size: 46px;
+  line-height: .9;
+  letter-spacing: -.07em;
+}
+
+.freshServicesHero p {
+  margin: 0;
+  max-width: 760px;
+  color: #e5e7eb;
+  -webkit-text-fill-color: #e5e7eb;
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.freshServicesStats {
+  min-width: 380px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.freshServicesStats div {
+  border-radius: 20px;
+  background: rgba(255,255,255,.08);
+  padding: 14px;
+}
+
+.freshServicesStats b {
+  display: block;
+  color: #fbbf24;
+  -webkit-text-fill-color: #fbbf24;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.freshServicesStats small {
+  display: block;
+  margin-top: 5px;
+  color: #f9fafb;
+  -webkit-text-fill-color: #f9fafb;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.freshServicesLayout {
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr);
+  gap: 16px;
+}
+
+.freshServicesList,
+.freshServicesDetail {
+  border: 1px solid rgba(15,23,42,.12);
+  border-radius: 30px;
+  background: #fffaf0;
+  box-shadow: 0 18px 48px rgba(2,6,23,.10);
+}
+
+.freshServicesList {
+  display: grid;
+  gap: 9px;
+  align-content: start;
+  padding: 14px;
+}
+
+.freshServicesList header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 22px;
+  background: #111827;
+}
+
+.freshServicesList header b {
+  display: block;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+}
+
+.freshServicesList header span {
+  display: block;
+  margin-top: 3px;
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.freshServicesList header button,
+.freshServicesHeadActions button,
+.freshServicesActions button,
+.freshServicesReset {
+  border: 0;
+  border-radius: 15px;
+  min-height: 42px;
+  padding: 0 13px;
+  font-size: 12px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshServicesList header button,
+.freshServicesActions button:first-child {
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+.freshServicesList > button:not(.freshServicesReset) {
+  border: 1px solid rgba(15,23,42,.10);
+  border-radius: 20px;
+  background: #ffffff;
+  padding: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.freshServicesList > button.active {
+  background: #ffedd5;
+  border-color: rgba(249,115,22,.36);
+}
+
+.freshServicesList > button b,
+.freshServicesHead h2,
+.freshServicesCards b {
+  display: block;
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+}
+
+.freshServicesList > button span,
+.freshServicesList > button small,
+.freshServicesHead p,
+.freshServicesCards p {
+  display: block;
+  margin-top: 4px;
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+  font-weight: 850;
+}
+
+.freshServicesReset {
+  background: #ffffff;
+  color: #334155;
+  -webkit-text-fill-color: #334155;
+  border: 1px solid rgba(15,23,42,.12);
+}
+
+.freshServicesDetail {
+  padding: 18px;
+}
+
+.freshServicesHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  border-bottom: 1px solid rgba(15,23,42,.10);
+  padding-bottom: 14px;
+}
+
+.freshServicesHead > div > span,
+.freshServicesCards span,
+.freshServicesForm label span {
+  background: #fff7ed;
+  color: #9a3412;
+  -webkit-text-fill-color: #9a3412;
+}
+
+.freshServicesHead h2 {
+  margin: 11px 0 6px;
+  font-size: 34px;
+  line-height: .95;
+  letter-spacing: -.055em;
+}
+
+.freshServicesHeadActions {
+  display: flex;
+  gap: 8px;
+}
+
+.freshServicesHeadActions button:first-child {
+  background: #111827;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+}
+
+.freshServicesHeadActions button:nth-child(2) {
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+.freshServicesCards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.freshServicesCards section {
+  border: 1px solid rgba(15,23,42,.10);
+  border-radius: 24px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.freshServicesCards b {
+  margin-top: 10px;
+  font-size: 19px;
+  line-height: 1.1;
+}
+
+.freshServicesCards p {
+  line-height: 1.4;
+}
+
+.freshServicesForm {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.freshServicesForm label {
+  display: grid;
+  gap: 6px;
+}
+
+.freshServicesForm label.wide {
+  grid-column: 1 / -1;
+}
+
+.freshServicesForm input,
+.freshServicesForm select,
+.freshServicesForm textarea {
+  width: 100%;
+  border: 1px solid rgba(15,23,42,.14);
+  border-radius: 16px;
+  background: #ffffff;
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+  padding: 12px 13px;
+  font-size: 14px;
+  font-weight: 900;
+  outline: 0;
+}
+
+.freshServicesForm textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.freshServicesActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.freshServicesActions button {
+  background: #111827;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+}
+
+.freshServicesActions button:first-child,
+.freshServicesActions button:nth-child(2) {
+  background: #fbbf24;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+@media (max-width: 1050px) {
+  .freshServicesHero,
+  .freshServicesHead {
+    display: grid;
+  }
+
+  .freshServicesStats,
+  .freshServicesLayout,
+  .freshServicesCards,
+  .freshServicesForm {
+    grid-template-columns: 1fr;
+  }
+
+  .freshServicesStats {
+    min-width: 0;
+  }
+
+  .freshServicesHeadActions,
+  .freshServicesActions {
+    display: grid;
+  }
+}

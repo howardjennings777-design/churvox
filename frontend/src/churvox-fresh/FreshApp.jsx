@@ -46,6 +46,7 @@ import "./freshGlobalReadable.css";
 import "./freshNuclearReadable.css";
 import "./freshIntegrations.css";
 import "./freshAssets.css";
+import "./freshServices.css";
 
 import FreshShell from "./FreshShell";
 import FreshCommand from "./FreshCommand";
@@ -60,6 +61,7 @@ import FreshReports from "./FreshReports";
 import FreshSettings from "./FreshSettings";
 import FreshPlans from "./FreshPlans";
 import FreshSupport from "./FreshSupport";
+import FreshServices from "./FreshServices";
 import FreshAssets from "./FreshAssets";
 import FreshIntegrations from "./FreshIntegrations";
 import FreshRoutes from "./FreshRoutes";
@@ -85,6 +87,7 @@ const pages = new Set([
   "payroll",
   "reports",
   "assets",
+  "services",
   "settings",
   "plans",
   "support",
@@ -151,6 +154,7 @@ export default function FreshApp() {
   if (page === "payroll") content = <FreshPayroll onNavigate={goToPage} />;
   if (page === "reports") content = <FreshReports onNavigate={goToPage} />;
   if (page === "assets") content = <FreshAssets onNavigate={goToPage} />;
+  if (page === "services") content = <FreshServices onNavigate={goToPage} />;
   if (page === "settings") content = <FreshSettings onNavigate={goToPage} />;
   if (page === "plans") content = <FreshPlans onNavigate={goToPage} />;
   if (page === "support") content = <FreshSupport onNavigate={goToPage} />;
