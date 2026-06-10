@@ -1,12 +1,202 @@
-.freshGrid > .freshSlip{margin:0;min-height:138px;padding:16px 16px 14px;border-radius:22px;background:#fffaf0;border:1px solid rgba(15,23,42,.13);border-left:7px solid #f97316;box-shadow:0 16px 35px rgba(2,6,23,.10)}
-.freshGrid > .freshSlip summary{list-style:none;display:block;cursor:pointer}
-.freshGrid > .freshSlip summary::-webkit-details-marker{display:none}
-.freshGrid > .freshSlip summary b{display:block;font-size:20px;line-height:1.05;letter-spacing:-.04em;color:#101827;margin-bottom:9px}
-.freshGrid > .freshSlip summary span{display:inline-flex;max-width:100%;border-radius:999px;background:#fff7ed;border:1px solid rgba(249,115,22,.22);color:#9a3412;padding:7px 10px;font-size:11px;font-weight:1000;line-height:1.25;white-space:normal}
-.freshGrid > .freshSlip[open]{background:white;border-color:rgba(249,115,22,.38)}
-.freshGrid > .freshSlip[open] summary{border-bottom:1px solid rgba(15,23,42,.10);padding-bottom:12px;margin-bottom:12px}
-.freshGrid > .freshSlip p{font-size:13px;line-height:1.45;margin:8px 0;color:#475569;font-weight:850}
-.freshGrid > .freshSlip .freshActions{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.freshGrid > .freshCard h2{font-size:34px}
-.freshGrid > .freshCard p{font-size:14px}
-@media(max-width:950px){.freshGrid > .freshSlip .freshActions{grid-template-columns:1fr}.freshGrid > .freshSlip{min-height:120px}}
+.freshCommandPulse {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.freshCommandBoard {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.freshCommandBox {
+  min-height: 178px;
+  border: 1px solid rgba(15,23,42,.14);
+  border-left: 8px solid #f97316;
+  border-radius: 24px;
+  background: #fffaf0;
+  box-shadow: 0 18px 45px rgba(2,6,23,.10);
+  padding: 16px;
+  text-align: left;
+  cursor: pointer;
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+
+.freshCommandBox:hover {
+  transform: translateY(-2px);
+  border-color: rgba(249,115,22,.42);
+  box-shadow: 0 22px 55px rgba(2,6,23,.14);
+}
+
+.freshCommandPill {
+  display: inline-flex;
+  width: max-content;
+  border-radius: 999px;
+  background: #111827;
+  color: #fbbf24;
+  padding: 7px 10px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.freshCommandBox strong {
+  display: block;
+  color: #101827;
+  font-size: 27px;
+  line-height: .95;
+  letter-spacing: -.055em;
+  margin-bottom: 10px;
+}
+
+.freshCommandBox em {
+  display: block;
+  color: #475569;
+  font-style: normal;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.freshCommandBox small {
+  display: inline-flex;
+  margin-top: 14px;
+  border-radius: 999px;
+  background: #fff7ed;
+  border: 1px solid rgba(249,115,22,.25);
+  color: #9a3412;
+  padding: 7px 10px;
+  font-size: 11px;
+  font-weight: 1000;
+}
+
+.freshSlipOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 6000;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(2,6,23,.68);
+}
+
+.freshSlipModal {
+  width: min(780px, 100%);
+  max-height: calc(100vh - 36px);
+  overflow: auto;
+  border-radius: 30px;
+  background: #fffaf0;
+  box-shadow: 0 30px 90px rgba(0,0,0,.42);
+}
+
+.freshSlipHead {
+  background: linear-gradient(135deg, #0b111a, #111827);
+  color: white;
+  border-left: 8px solid #f97316;
+  padding: 24px;
+}
+
+.freshSlipHead span {
+  display: inline-flex;
+  width: max-content;
+  border-radius: 999px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.14);
+  color: #fed7aa;
+  padding: 7px 10px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.freshSlipHead h2 {
+  margin: 13px 0 6px;
+  color: white;
+  font-size: 48px;
+  line-height: .9;
+  letter-spacing: -.065em;
+}
+
+.freshSlipHead p {
+  margin: 0;
+  color: #e5e7eb;
+  font-weight: 850;
+}
+
+.freshSlipBody {
+  padding: 18px;
+}
+
+.freshSlipRow {
+  border: 1px solid rgba(15,23,42,.12);
+  border-radius: 18px;
+  background: white;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+
+.freshSlipRow b {
+  display: block;
+  color: #9a3412;
+  font-size: 11px;
+  font-weight: 1000;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.freshSlipRow p {
+  margin: 0;
+  color: #334155;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.freshSlipActions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.freshSlipActions button,
+.freshClose {
+  border: 0;
+  border-radius: 15px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshClose {
+  width: 100%;
+  margin-top: 10px;
+  background: white;
+  border: 1px solid rgba(15,23,42,.13);
+  color: #334155;
+}
+
+@media (max-width: 950px) {
+  .freshCommandPulse,
+  .freshCommandBoard {
+    grid-template-columns: 1fr;
+  }
+
+  .freshCommandBox {
+    min-height: 142px;
+  }
+
+  .freshSlipActions {
+    grid-template-columns: 1fr;
+  }
+
+  .freshSlipHead h2 {
+    font-size: 38px;
+  }
+}
