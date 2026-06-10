@@ -26,6 +26,7 @@ const groups = [
       ["extras", "EX", "Extras"],
       ["variations", "VR", "Variations"],
       ["warranties", "WA", "Warranties"],
+      ["reworkresolver", "RR", "Rework Resolver"],
       ["clients", "CL", "Clients"],
       ["customermemory", "CM", "Customer Memory"],
       ["quotes", "QT", "Quotes"],
@@ -58,6 +59,7 @@ const groups = [
       ["gps", "GP", "GPS"],
       ["reports", "RP", "Reports"],
       ["businesshealth", "BH", "Business Health"],
+      ["cashflowai", "CF", "Cashflow Coach"],
       ["expenses", "EP", "Expenses"],
   ["profit", "PF", "Profit"],
       ["payments", "PY", "Payments"],
@@ -146,6 +148,7 @@ const labels = {
   cancellations: "Cancellations",
   reviews: "Reviews",
   quality: "Quality",
+  reworkresolver: "Rework Resolver",
   warranties: "Warranties",
   team: "Team",
   subcontractors: "Subcontractors",
@@ -157,6 +160,7 @@ const labels = {
   gps: "GPS",
   reports: "Reports",
   businesshealth: "Business Health",
+  cashflowai: "Cashflow Coach",
   profit: "Profit",
   profitguard: "Profit Guard",
   expenses: "Expenses",
@@ -205,6 +209,8 @@ const mobileItems = [
 ];
 
 const extraMobile = [
+  ["reworkresolver", "RR", "Rework Resolver"],
+  ["cashflowai", "CF", "Cashflow Coach"],
   ["photoproof", "PP", "Photo Proof"],
   ["profitguard", "PG", "Profit Guard"],
   ["recurringsaver", "RS", "Recurring Saver"],

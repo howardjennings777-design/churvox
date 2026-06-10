@@ -60,6 +60,7 @@ import "./freshProfit.css";
 import "./freshProfitGuard.css";
 import "./freshQa.css";
 import "./freshQuality.css";
+import "./freshReworkResolver.css";
 import "./freshQuickCreate.css";
 import "./freshQuotesLive.css";
 import "./freshAiQuoteBuilder.css";
@@ -104,6 +105,7 @@ import "./freshWorkerBrief.css";
 import "./freshMissingInfo.css";
 import "./freshCustomerMemory.css";
 import "./freshBusinessHealth.css";
+import "./freshCashflowCoach.css";
 import "./freshAskChurvox.css";
 import "./freshGlobalActions.css";
 import "./freshFirstRunWizard.css";
@@ -162,6 +164,7 @@ import FreshProfit from "./FreshProfit";
 import FreshProfitGuard from "./FreshProfitGuard";
 import FreshQa from "./FreshQa";
 import FreshQuality from "./FreshQuality";
+import FreshReworkResolver from "./FreshReworkResolver";
 import FreshQuotes from "./FreshQuotes";
 import FreshAiQuoteBuilder from "./FreshAiQuoteBuilder";
 import FreshRecurring from "./FreshRecurring";
@@ -193,6 +196,7 @@ import FreshWorkerBrief from "./FreshWorkerBrief";
 import FreshMissingInfo from "./FreshMissingInfo";
 import FreshCustomerMemory from "./FreshCustomerMemory";
 import FreshBusinessHealth from "./FreshBusinessHealth";
+import FreshCashflowCoach from "./FreshCashflowCoach";
 import FreshAskChurvox from "./FreshAskChurvox";
 import FreshGlobalActions from "./FreshGlobalActions";
 import FreshFirstRunWizard from "./FreshFirstRunWizard";
@@ -273,6 +277,7 @@ const pages = new Set([
   "followups",
   "reviews",
   "quality",
+  "reworkresolver",
   "extras",
   "variations",
   "warranties",
@@ -289,6 +294,7 @@ const pages = new Set([
   "missinginfo",
   "customermemory",
   "businesshealth",
+  "cashflowai",
 ]);
 
 function readPageFromHash() {
@@ -390,6 +396,7 @@ export default function FreshApp() {
   if (page === "time") content = <FreshTimeLogs onNavigate={goToPage} />;
   if (page === "reports") content = <FreshReports onNavigate={goToPage} />;
   if (page === "businesshealth") content = <FreshBusinessHealth onNavigate={goToPage} />;
+  if (page === "cashflowai") content = <FreshCashflowCoach onNavigate={goToPage} />;
   if (page === "profit") content = <FreshProfit onNavigate={goToPage} />;
   if (page === "profitguard") content = <FreshProfitGuard onNavigate={goToPage} />;
   if (page === "expenses") content = <FreshExpenses onNavigate={goToPage} />;
@@ -406,6 +413,7 @@ export default function FreshApp() {
   if (page === "followups") content = <FreshFollowUps onNavigate={goToPage} />;
   if (page === "reviews") content = <FreshReviews onNavigate={goToPage} />;
   if (page === "quality") content = <FreshQuality onNavigate={goToPage} />;
+  if (page === "reworkresolver") content = <FreshReworkResolver onNavigate={goToPage} />;
   if (page === "extras") content = <FreshExtras onNavigate={goToPage} />;
   if (page === "variations") content = <FreshVariations onNavigate={goToPage} />;
   if (page === "warranties") content = <FreshWarranties onNavigate={goToPage} />;

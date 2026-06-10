@@ -1,0 +1,21 @@
+.freshCashflowPage{display:grid;gap:16px}
+.freshCashflowHero{display:flex;justify-content:space-between;gap:18px;padding:22px;border-radius:30px;background:#111827;box-shadow:0 24px 70px rgba(2,6,23,.18)}
+.freshCashflowHero span,.freshCashflowCard header span{display:inline-flex;border-radius:999px;background:rgba(249,115,22,.16);color:#fed7aa;-webkit-text-fill-color:#fed7aa;padding:8px 11px;font-size:10px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}
+.freshCashflowHero h1{margin:13px 0 8px;color:#fff;-webkit-text-fill-color:#fff;font-size:48px;line-height:.9;letter-spacing:-.075em}
+.freshCashflowHero p{margin:0;max-width:780px;color:#e5e7eb;-webkit-text-fill-color:#e5e7eb;font-size:15px;font-weight:850;line-height:1.45}
+.freshCashflowStats{min-width:380px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.freshCashflowStats div{border-radius:20px;background:rgba(255,255,255,.08);padding:14px}
+.freshCashflowStats b{display:block;color:#fbbf24;-webkit-text-fill-color:#fbbf24;font-size:30px;line-height:1}
+.freshCashflowStats small{display:block;margin-top:5px;color:#f9fafb;-webkit-text-fill-color:#f9fafb;font-size:11px;font-weight:950;letter-spacing:.08em;text-transform:uppercase}
+.freshCashflowGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.freshCashflowCard{border:1px solid rgba(15,23,42,.12);border-radius:28px;background:#fffaf0;padding:18px;box-shadow:0 18px 48px rgba(2,6,23,.10)}
+.freshCashflowCard header span{background:#fff7ed;color:#9a3412;-webkit-text-fill-color:#9a3412}
+.freshCashflowCard h2{margin:11px 0 6px;color:#101827;-webkit-text-fill-color:#101827;font-size:30px;line-height:.95;letter-spacing:-.055em}
+.freshCashflowCard p{color:#475569;-webkit-text-fill-color:#475569;font-weight:850;line-height:1.42}
+.freshCashflowCard section{border:1px solid rgba(15,23,42,.10);border-radius:20px;background:#fff;padding:14px;margin-top:10px}
+.freshCashflowCard b{display:block;color:#101827;-webkit-text-fill-color:#101827}
+.freshCashflowButtons{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.freshCashflowButtons button{border:0;border-radius:15px;min-height:42px;padding:0 13px;font-size:12px;font-weight:1000;cursor:pointer}
+.freshCashflowButtons button:first-child{background:#f97316;color:#111827;-webkit-text-fill-color:#111827}
+.freshCashflowButtons button:not(:first-child){background:#111827;color:#fff;-webkit-text-fill-color:#fff}
+@media(max-width:1050px){.freshCashflowHero,.freshCashflowGrid{display:grid;grid-template-columns:1fr}.freshCashflowStats{min-width:0;grid-template-columns:1fr}.freshCashflowButtons{display:grid}}
