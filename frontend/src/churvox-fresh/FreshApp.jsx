@@ -82,6 +82,8 @@ import "./freshSetup.css";
 import "./freshSmartHub.css";
 import "./freshAiOperatorStudio.css";
 import "./freshAiQuickCreate.css";
+import "./freshAiFollowUpWriter.css";
+import "./freshPlanMyDay.css";
 import "./freshSubcontractors.css";
 import "./freshTeamLive.css";
 import "./freshTemplates.css";
@@ -159,6 +161,8 @@ import FreshSetup from "./FreshSetup";
 import FreshSmartHub from "./FreshSmartHub";
 import FreshAiOperatorStudio from "./FreshAiOperatorStudio";
 import FreshAiQuickCreate from "./FreshAiQuickCreate";
+import FreshAiFollowUpWriter from "./FreshAiFollowUpWriter";
+import FreshPlanMyDay from "./FreshPlanMyDay";
 import FreshSubcontractors from "./FreshSubcontractors";
 import FreshSupport from "./FreshSupport";
 import FreshTeam from "./FreshTeam";
@@ -174,6 +178,8 @@ const pages = new Set([
   "aioperator",
   "invoicecheck",
   "quickcreateai",
+  "followupwriter",
+  "planday",
   "command",
   "jobs",
   "recurring",
@@ -290,11 +296,13 @@ export default function FreshApp() {
   if (page === "smart") content = <FreshSmartHub onNavigate={goToPage} />;
   if (page === "aioperator") content = <FreshAiOperatorStudio onNavigate={goToPage} />;
   if (page === "quickcreateai") content = <FreshAiQuickCreate onNavigate={goToPage} />;
+  if (page === "followupwriter") content = <FreshAiFollowUpWriter onNavigate={goToPage} />;
   if (page === "command") content = <FreshCommand onNavigate={goToPage} />;
   if (page === "jobs") content = <FreshJobs onNavigate={goToPage} />;
   if (page === "recurring") content = <FreshRecurring onNavigate={goToPage} />;
   if (page === "leads") content = <FreshLeads onNavigate={goToPage} />;
   if (page === "dispatch") content = <FreshDispatch onNavigate={goToPage} />;
+  if (page === "planday") content = <FreshPlanMyDay onNavigate={goToPage} />;
   if (page === "routes") content = <FreshRoutes onNavigate={goToPage} />;
   if (page === "areas") content = <FreshAreas onNavigate={goToPage} />;
   if (page === "clients") content = <FreshClients onNavigate={goToPage} />;

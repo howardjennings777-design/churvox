@@ -12,6 +12,7 @@ const groups = [
       ["leads", "LD", "Leads"],
       ["recurring", "RC", "Recurring"],
       ["dispatch", "DP", "Dispatch"],
+      ["planday", "PD", "Plan My Day"],
       ["routes", "RT", "Routes"],
   ["areas", "AR", "Areas"],
       ["areas", "AR", "Areas"],
@@ -35,6 +36,7 @@ const groups = [
       ["quality", "QC", "Quality"],
       ["reviews", "RV", "Reviews"],
       ["followups", "FU", "Follow-ups"],
+      ["followupwriter", "FW", "AI Follow-up"],
       ["cancellations", "CA", "Cancellations"],
     ],
   },
@@ -102,6 +104,7 @@ const labels = {
   leads: "Leads",
   recurring: "Recurring",
   dispatch: "Dispatch",
+  planday: "Plan My Day",
   routes: "Routes",
   areas: "Areas",
   photos: "Photos",
@@ -120,6 +123,7 @@ const labels = {
   customerportal: "Portal Requests",
   messages: "Messages",
   followups: "Follow-ups",
+  followupwriter: "AI Follow-up",
   cancellations: "Cancellations",
   reviews: "Reviews",
   quality: "Quality",
@@ -175,6 +179,8 @@ const mobileItems = [
 ];
 
 const extraMobile = [
+  ["planday", "PD", "Plan My Day"],
+  ["followupwriter", "FW", "AI Follow-up"],
   ["invoicecheck", "IC", "Invoice Checker"],
   ["quickcreateai", "QC", "AI Quick Create"],
   ["demo", "DM", "Demo Mode"],
