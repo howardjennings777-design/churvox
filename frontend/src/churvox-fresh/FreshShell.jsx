@@ -79,6 +79,7 @@ const groups = [
       ["setup", "SU", "Setup"],
       ["launch", "LN", "Launch"],
       ["launchpack", "LP", "Launch Pack"],
+      ["launchcontrol", "LC", "Launch Control"],
       ["demo", "DM", "Demo Mode"],
       ["qa", "QA", "QA"],
       ["flags", "FG", "Flags"],
@@ -101,6 +102,7 @@ const groups = [
 
 const labels = {
   smart: "Smart Hub",
+  askchurvox: "Ask Churvox",
   aioperator: "AI Operator",
   quickcreateai: "AI Quick Create",
   missinginfo: "Missing Info",
@@ -159,6 +161,7 @@ const labels = {
   setup: "Setup",
   launch: "Launch",
   launchpack: "Launch Pack",
+  launchcontrol: "Launch Control",
   demo: "Demo Mode",
   qa: "QA",
   flags: "Flags",
@@ -187,6 +190,8 @@ const mobileItems = [
 ];
 
 const extraMobile = [
+  ["launchcontrol", "LC", "Launch Control"],
+  ["askchurvox", "AC", "Ask Churvox"],
   ["businesshealth", "BH", "Business Health"],
   ["customermemory", "CM", "Customer Memory"],
   ["missinginfo", "MI", "Missing Info"],

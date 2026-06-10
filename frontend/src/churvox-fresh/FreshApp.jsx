@@ -98,6 +98,8 @@ import "./freshWorkerBrief.css";
 import "./freshMissingInfo.css";
 import "./freshCustomerMemory.css";
 import "./freshBusinessHealth.css";
+import "./freshAskChurvox.css";
+import "./freshLaunchControl.css";
 import "./freshXero.css";
 import "./freshGlobalReadable.css";
 import "./freshNuclearReadable.css";
@@ -179,10 +181,13 @@ import FreshWorkerBrief from "./FreshWorkerBrief";
 import FreshMissingInfo from "./FreshMissingInfo";
 import FreshCustomerMemory from "./FreshCustomerMemory";
 import FreshBusinessHealth from "./FreshBusinessHealth";
+import FreshAskChurvox from "./FreshAskChurvox";
+import FreshLaunchControl from "./FreshLaunchControl";
 import FreshXero from "./FreshXero";
 
 const pages = new Set([
   "smart",
+  "askchurvox",
   "aioperator",
   "invoicecheck",
   "quickcreateai",
@@ -207,6 +212,7 @@ const pages = new Set([
   "setup",
   "launch",
   "launchpack",
+  "launchcontrol",
   "demo",
   "onboarding",
   "qa",
@@ -306,6 +312,7 @@ export default function FreshApp() {
 
   let content = <FreshSimple page={page} />;
   if (page === "smart") content = <FreshSmartHub onNavigate={goToPage} />;
+  if (page === "askchurvox") content = <FreshAskChurvox onNavigate={goToPage} />;
   if (page === "aioperator") content = <FreshAiOperatorStudio onNavigate={goToPage} />;
   if (page === "quickcreateai") content = <FreshAiQuickCreate onNavigate={goToPage} />;
   if (page === "followupwriter") content = <FreshAiFollowUpWriter onNavigate={goToPage} />;
@@ -331,6 +338,7 @@ export default function FreshApp() {
   if (page === "setup") content = <FreshSetup onNavigate={goToPage} />;
   if (page === "launch") content = <FreshLaunch onNavigate={goToPage} />;
   if (page === "launchpack") content = <FreshLaunchPack onNavigate={goToPage} />;
+  if (page === "launchcontrol") content = <FreshLaunchControl onNavigate={goToPage} />;
   if (page === "demo") content = <FreshDemoMode onNavigate={goToPage} />;
   if (page === "onboarding") content = <FreshOnboarding onNavigate={goToPage} />;
   if (page === "qa") content = <FreshQa onNavigate={goToPage} />;
