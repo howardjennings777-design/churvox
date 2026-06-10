@@ -1,0 +1,12 @@
+
+.freshSearchResults button strong,
+.freshNoResults strong {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+}
+
+.freshSearchResults button span,
+.freshNoResults span {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+}
