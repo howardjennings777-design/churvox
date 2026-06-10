@@ -42,11 +42,12 @@ import "./freshExtras.css";
 import "./freshMessages.css";
 import "./freshRoutes.css";
 import "./freshRoutesContrastFix.css";
-import "./freshGlobalReadable.css";
-import "./freshNuclearReadable.css";
 import "./freshIntegrations.css";
 import "./freshAssets.css";
 import "./freshServices.css";
+import "./freshLeads.css";
+import "./freshGlobalReadable.css";
+import "./freshNuclearReadable.css";
 
 import FreshShell from "./FreshShell";
 import FreshCommand from "./FreshCommand";
@@ -61,6 +62,7 @@ import FreshReports from "./FreshReports";
 import FreshSettings from "./FreshSettings";
 import FreshPlans from "./FreshPlans";
 import FreshSupport from "./FreshSupport";
+import FreshLeads from "./FreshLeads";
 import FreshServices from "./FreshServices";
 import FreshAssets from "./FreshAssets";
 import FreshIntegrations from "./FreshIntegrations";
@@ -78,6 +80,7 @@ import { forceFreshReadable, installFreshReadableRuntime } from "./freshForceRea
 const pages = new Set([
   "command",
   "jobs",
+  "leads",
   "dispatch",
   "routes",
   "clients",
@@ -145,6 +148,7 @@ export default function FreshApp() {
   let content = <FreshSimple page={page} />;
   if (page === "command") content = <FreshCommand onNavigate={goToPage} />;
   if (page === "jobs") content = <FreshJobs onNavigate={goToPage} />;
+  if (page === "leads") content = <FreshLeads onNavigate={goToPage} />;
   if (page === "dispatch") content = <FreshDispatch onNavigate={goToPage} />;
   if (page === "routes") content = <FreshRoutes onNavigate={goToPage} />;
   if (page === "clients") content = <FreshClients onNavigate={goToPage} />;

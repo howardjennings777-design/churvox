@@ -12,9 +12,11 @@ const groups = [
     title: "Work",
     items: [
       ["jobs", "JB", "Jobs"],
+      ["leads", "LD", "Leads"],
       ["dispatch", "DP", "Dispatch"],
       ["routes", "RT", "Routes"],
-      ["photos", "PH", "Photos"],
+      ["leads", "LD", "Leads"],
+  ["photos", "PH", "Photos"],
       ["extras", "EX", "Extras"],
       ["clients", "CL", "Clients"],
       ["quotes", "QT", "Quotes"],
@@ -50,6 +52,7 @@ const groups = [
 const labels = {
   command: "Command",
   jobs: "Jobs",
+  leads: "Leads",
   dispatch: "Dispatch",
   routes: "Routes",
   photos: "Photos",
