@@ -1,4 +1,5 @@
 import React from "react";
+import FreshCommandFlow from "./FreshCommandFlow";
 
 const commandFilters = ["Pending", "Approved", "Edited", "Declined", "All"];
 
@@ -260,6 +261,9 @@ export default function FreshCommand({ onNavigate }) {
           <p>Money watched</p>
         </aside>
       </section>
+
+
+      <FreshCommandFlow onNavigate={onNavigate} />
 
       <section className="freshCommandFilterBar">
         {commandFilters.map((item) => (
