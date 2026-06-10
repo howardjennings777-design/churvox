@@ -81,6 +81,8 @@ const seedBoxes = [
   },
 ];
 
+const COMMAND_STORAGE_KEY = "churvox:fresh-command-boxes:v1";
+
 function withState(box) {
   return {
     ...box,
@@ -89,11 +91,49 @@ function withState(box) {
   };
 }
 
+function loadCommandBoxes() {
+  const fallback = seedBoxes.map(withState);
+
+  try {
+    if (typeof window === "undefined") return fallback;
+
+    const saved = window.localStorage.getItem(COMMAND_STORAGE_KEY);
+    if (!saved) return fallback;
+
+    const parsed = JSON.parse(saved);
+    if (!Array.isArray(parsed)) return fallback;
+
+    return fallback.map((baseBox) => {
+      const savedBox = parsed.find((item) => item.id === baseBox.id);
+      if (!savedBox) return baseBox;
+
+      return {
+        ...baseBox,
+        status: savedBox.status || baseBox.status,
+        editedInstruction: savedBox.editedInstruction || baseBox.editedInstruction,
+      };
+    });
+  } catch {
+    return fallback;
+  }
+}
+
 export default function FreshCommand({ onNavigate }) {
-  const [boxes, setBoxes] = React.useState(() => seedBoxes.map(withState));
+  const [boxes, setBoxes] = React.useState(loadCommandBoxes);
   const [selectedId, setSelectedId] = React.useState(null);
 
   const selected = boxes.find((box) => box.id === selectedId);
+
+  React.useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(COMMAND_STORAGE_KEY, JSON.stringify(boxes));
+      }
+    } catch {
+      // Fresh preview can still run without local storage.
+    }
+  }, [boxes]);
+
   const pendingCount = boxes.filter((box) => box.status === "Pending").length;
   const doneCount = boxes.filter((box) => box.status !== "Pending").length;
   const moneyWatched = "$695";
@@ -131,6 +171,14 @@ export default function FreshCommand({ onNavigate }) {
   }
 
   function resetCommand() {
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(COMMAND_STORAGE_KEY);
+      }
+    } catch {
+      // Ignore storage reset errors in preview.
+    }
+
     setBoxes(seedBoxes.map(withState));
     setSelectedId(null);
   }
@@ -190,6 +238,10 @@ export default function FreshCommand({ onNavigate }) {
           <div className="freshItem">
             <b>Live boxes</b>
             <span>Approve, decline and edit now change the Command box state.</span>
+          </div>
+          <div className="freshItem">
+            <b>Refresh safe</b>
+            <span>Command decisions stay saved while testing until you reset them.</span>
           </div>
           <div className="freshActions">
             <button className="freshGhost" onClick={resetCommand}>Reset Command boxes</button>
