@@ -1,6 +1,7 @@
 import React from "react";
 
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
+const COMMAND_MODE_KEY = "churvox:fresh-command-mode:v1";
 
 const starterSlips = [
   {
@@ -177,6 +178,33 @@ function normalizeSlip(slip, index = 0) {
   };
 }
 
+
+function decideCommandMode(items) {
+  const safeItems = Array.isArray(items) ? items.map(normalizeSlip) : [];
+  const open = safeItems.filter((slip) => slip.status === "open" || slip.status === "edited");
+  const setupOpen = open.filter((slip) => getArea(slip) === "Setup").length;
+  const dailyOpen = open.filter((slip) => getArea(slip) !== "Setup").length;
+  return setupOpen > dailyOpen ? "setup" : "daily";
+}
+
+function getInitialCommandMode(items) {
+  try {
+    const saved = window.localStorage.getItem(COMMAND_MODE_KEY);
+    if (saved === "setup" || saved === "daily") return saved;
+  } catch {
+    // Preview keeps working without storage.
+  }
+  return decideCommandMode(items);
+}
+
+function shouldShowDemoTools() {
+  try {
+    return window.location.search.includes("demo") || window.localStorage.getItem("churvox:fresh-demo-mode:v1") === "on";
+  } catch {
+    return false;
+  }
+}
+
 function safeReadSlips() {
   try {
     const saved = window.localStorage.getItem(COMMAND_INBOX_KEY);
@@ -219,11 +247,19 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
     return () => document.body.classList.remove("freshCommandOwnerMode");
   }, []);
 
-  const [mode, setMode] = React.useState("daily");
   const [slips, setSlips] = React.useState(safeReadSlips);
+  const [mode, setMode] = React.useState(() => getInitialCommandMode(slips));
   const [activeGroup, setActiveGroup] = React.useState("Needs approval");
   const [editing, setEditing] = React.useState(null);
-  const [editText, setEditText] = React.useState("");
+  const [editForm, setEditForm] = React.useState({
+    title: "",
+    info: "",
+    found: "",
+    prepared: "",
+    why: "",
+    page: "",
+    actionType: "",
+  });
   const [snoozing, setSnoozing] = React.useState(null);
 
   React.useEffect(() => {
@@ -246,6 +282,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
   const money = openSlips.filter((slip) => slip.areaGroup === "Money");
   const today = openSlips.filter((slip) => slip.areaGroup === "Today");
   const setup = openSlips.filter((slip) => slip.areaGroup === "Setup");
+  const showDemoTools = shouldShowDemoTools();
 
   const groups = ["Needs approval", "Money", "Today", "Customers", "Setup"];
   const visible = activeGroup === "Needs approval"
@@ -259,6 +296,19 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
     });
     setSlips(next);
     safeSaveSlips(next);
+  }
+
+  function setOwnerMode(nextMode) {
+    setMode(nextMode);
+    try {
+      window.localStorage.setItem(COMMAND_MODE_KEY, nextMode);
+    } catch {
+      // Preview keeps working without storage.
+    }
+  }
+
+  function autoModeNow() {
+    setOwnerMode(decideCommandMode(slips));
   }
 
   function clearDemo() {
@@ -278,18 +328,40 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
 
   function startEdit(slip) {
     setEditing(slip);
-    setEditText(slip.prepared || "");
+    setEditForm({
+      title: slip.title || "",
+      info: slip.info || "",
+      found: slip.found || "",
+      prepared: slip.prepared || "",
+      why: slip.why || "",
+      page: slip.page || "",
+      actionType: slip.actionType || "owner_review",
+    });
   }
 
   function saveEdit() {
     if (!editing) return;
     updateSlip(editing.id, {
-      prepared: editText,
+      title: editForm.title || editing.title,
+      info: editForm.info || editing.info,
+      found: editForm.found || editing.found,
+      prepared: editForm.prepared || editing.prepared,
+      why: editForm.why || editing.why,
+      page: editForm.page || editing.page,
+      actionType: editForm.actionType || editing.actionType,
       status: "edited",
       editedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     });
     setEditing(null);
-    setEditText("");
+    setEditForm({
+      title: "",
+      info: "",
+      found: "",
+      prepared: "",
+      why: "",
+      page: "",
+      actionType: "",
+    });
   }
 
   function snoozeSlip(label) {
@@ -333,14 +405,21 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
         </div>
 
         <div className="freshCommandMorningActions">
-          <button type="button" onClick={() => setMode(mode === "setup" ? "daily" : "setup")}>
+          <button type="button" onClick={() => setOwnerMode(mode === "setup" ? "daily" : "setup")}>
             {mode === "setup" ? "Daily mode" : "Setup mode"}
           </button>
           <button type="button" onClick={() => onNavigate?.("planday")}>Plan my day</button>
           <button type="button" onClick={() => onNavigate?.("askchurvox")}>Ask Churvox</button>
-          <button type="button" onClick={clearDemo}>Reload sample slips</button>
+          <button type="button" onClick={autoModeNow}>Auto mode</button>
         </div>
       </div>
+
+      {showDemoTools && (
+        <details className="freshCommandDemoTools">
+          <summary>Demo tools</summary>
+          <button type="button" onClick={clearDemo}>Reload sample slips</button>
+        </details>
+      )}
 
       <div className="freshCommandFocusRow">
         <button type="button" onClick={() => setActiveGroup("Money")}>
@@ -417,7 +496,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
         )) : (
           <div className="freshCommandEmpty">
             <b>No open actions in {activeGroup}.</b>
-            <p>That is good. Open another group, reload sample slips, or ask Churvox to prepare something.</p>
+            <p>That is good. Open another group or ask Churvox to prepare something.</p>
             <button type="button" onClick={() => onNavigate?.("askchurvox")}>Ask Churvox</button>
           </div>
         )}
@@ -450,7 +529,54 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
               <p>Owner can change what Churvox prepared before approving.</p>
             </header>
 
-            <textarea value={editText} onChange={(event) => setEditText(event.target.value)} />
+            <div className="freshCommandEditGrid">
+              <label>
+                <span>Title</span>
+                <input value={editForm.title} onChange={(event) => setEditForm({ ...editForm, title: event.target.value })} />
+              </label>
+
+              <label>
+                <span>Info line</span>
+                <input value={editForm.info} onChange={(event) => setEditForm({ ...editForm, info: event.target.value })} />
+              </label>
+
+              <label>
+                <span>Action type</span>
+                <select value={editForm.actionType} onChange={(event) => setEditForm({ ...editForm, actionType: event.target.value })}>
+                  <option value="owner_review">Owner review</option>
+                  <option value="approve_invoice_extra">Approve invoice extra</option>
+                  <option value="review_invoice">Review invoice</option>
+                  <option value="send_payment_reminder">Send payment reminder</option>
+                  <option value="send_quote_followup">Send quote follow-up</option>
+                  <option value="approve_day_plan">Approve day plan</option>
+                  <option value="send_worker_brief">Send worker brief</option>
+                  <option value="fix_setup_step">Fix setup step</option>
+                  <option value="send_rebooking_message">Send rebooking message</option>
+                  <option value="send_review_request">Send review request</option>
+                  <option value="fix_missing_info">Fix missing info</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Open page</span>
+                <input value={editForm.page} onChange={(event) => setEditForm({ ...editForm, page: event.target.value })} />
+              </label>
+
+              <label className="wide">
+                <span>Churvox found</span>
+                <textarea value={editForm.found} onChange={(event) => setEditForm({ ...editForm, found: event.target.value })} />
+              </label>
+
+              <label className="wide">
+                <span>Churvox prepared</span>
+                <textarea value={editForm.prepared} onChange={(event) => setEditForm({ ...editForm, prepared: event.target.value })} />
+              </label>
+
+              <label className="wide">
+                <span>Why it matters</span>
+                <textarea value={editForm.why} onChange={(event) => setEditForm({ ...editForm, why: event.target.value })} />
+              </label>
+            </div>
 
             <div>
               <button type="button" onClick={saveEdit}>Save edit</button>
