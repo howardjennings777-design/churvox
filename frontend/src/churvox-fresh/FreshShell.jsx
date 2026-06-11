@@ -9,7 +9,6 @@ const groups = [
     title: "Start",
     items: [
       ["setupassistant", "AI", "AI Guide"],
-      ["smart", "CP", "Cockpit"],
       ["command", "CM", "Command"],
     ],
   },
@@ -39,7 +38,7 @@ const groups = [
 const labels = {
   firstrun: "First Run Guide",
   setupassistant: "AI Setup Guide",
-  smart: "Cockpit",
+  smart: "Owner Brief",
   command: "Command",
   jobs: "Jobs",
   dispatch: "Calendar",
@@ -56,7 +55,6 @@ const labels = {
 
 const mobileItems = [
   ["setupassistant", "AI", "AI Guide"],
-  ["smart", "CP", "Cockpit"],
   ["jobs", "JB", "Jobs"],
   ["command", "CM", "Command"],
   ["more", "••", "More"],
