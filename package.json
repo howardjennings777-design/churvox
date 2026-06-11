@@ -1,4 +1,10 @@
 {
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix frontend install --legacy-peer-deps && npm --prefix frontend run build",
+    "render-build": "npm --prefix frontend install --legacy-peer-deps && npm --prefix frontend run build",
+    "start": "npm --prefix frontend start"
+  },
   "dependencies": {
     "date-fns": "3.6.0"
   }
