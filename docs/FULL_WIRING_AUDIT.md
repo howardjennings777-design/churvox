@@ -1,14 +1,14 @@
 # Full Backend / Frontend Wiring Audit
 
-Generated: 2026-06-11T02:49:21Z
+Generated: 2026-06-11T02:52:32Z
 
 ## Verdict
 
-**Score:** 69%
-**Weighted pass:** 36/52
-**Weighted warn:** 13
-**Weighted fail:** 3
-**Verdict:** Partly wired. Some important launch flows still need verification/fixes.
+**Score:** 87%
+**Weighted pass:** 45/52
+**Weighted warn:** 7
+**Weighted fail:** 0
+**Verdict:** Strong wiring position. Mostly launch-polish and live testing remain.
 
 ## Check Results
 
@@ -19,25 +19,115 @@ Generated: 2026-06-11T02:49:21Z
 | Command | Frontend Command reads backend slips | **PASS** | High | Looks for /api/command/slips or COMMAND_API_BASE. | Command page should load slips from backend and only fallback to preview. |
 | Command | Send to Command bridge exists | **PASS** | High | Looks for shared frontend bridge. | Create shared bridge used by all Send to Command buttons. |
 | Command | No localStorage-only Command sends left | **WARN** | Medium | 224 localStorage Command references found. | Old preview localStorage can remain as fallback, but every Send to Command button should also call backend bridge. |
-| Signup/Auth | Signup/register backend route exists | **FAIL** | High | Looks for register/signup route. | Add or verify POST /api/auth/register or /api/auth/signup. |
+| Signup/Auth | Signup/register backend route exists | **PASS** | High | Looks for register/signup route. | Add or verify POST /api/auth/register or /api/auth/signup. |
 | Signup/Auth | Frontend signup calls backend | **PASS** | High | Looks for frontend register/signup API call. | Signup form must POST to backend, not only navigate. |
 | Emails | Email provider code/config present | **PASS** | High | Looks for Postmark/Resend/SendGrid/Nodemailer. | Wire transactional email provider for verification, welcome, forgot password and invites. |
 | Emails | Email verification flow present | **PASS** | High | Looks for verify email tokens/flags/routes. | Signup should send verification email and block/limit unverified accounts. |
 | Emails | Forgot password email flow present | **PASS** | High | Looks for forgot/reset password routes/tokens. | Forgot password should generate token, email link, and reset password safely. |
 | Emails | Team invite email flow present | **PASS** | Medium | Looks for team/worker invite email code. | Adding staff should send an invite email automatically. |
 | Security/Auth | Credentials/cookies used from frontend | **PASS** | High | Looks for credentials include/withCredentials. | Frontend API calls need credentials for secure-cookie auth. |
-| Security/Auth | Backend CORS allows credentials | **WARN** | High | Looks for CORS credentials true. | Backend CORS must allow credentials from www.churvox.com. |
-| Security/Auth | Secure cookie settings present | **WARN** | High | Looks for SameSite/Secure/httpOnly. | Production cookies should be httpOnly, secure, SameSite=None. |
+| Security/Auth | Backend CORS allows credentials | **PASS** | High | Looks for CORS credentials true. | Backend CORS must allow credentials from www.churvox.com. |
+| Security/Auth | Secure cookie settings present | **PASS** | High | Looks for SameSite/Secure/httpOnly. | Production cookies should be httpOnly, secure, SameSite=None. |
 | Billing | Stripe checkout/backend route present | **PASS** | High | Looks for Stripe backend code. | Plan checkout should be backend-created and persist selected plan after success. |
 | Billing | Frontend plans/checkout present | **PASS** | Medium | Looks for checkout/plans frontend. | Plans page should create checkout session and show current plan. |
 | Frontend buttons | Important buttons have handlers | **WARN** | High | 266 important buttons scanned; 12 suspicious. | Review suspicious buttons so no important button is visual-only. |
 | Frontend/API | Frontend API calls inventory found | **PASS** | Medium | 32 frontend API calls found. | Every API call should map to a backend route and handle loading/error states. |
-| Launch readiness | Preview/demo/localStorage usage reviewed | **WARN** | Medium | 959 preview/demo/storage references found. | Keep fallback storage only where intentional; remove fake demo data from launch-critical flows. |
+| Launch readiness | Preview/demo/localStorage usage reviewed | **WARN** | Medium | 1001 preview/demo/storage references found. | Keep fallback storage only where intentional; remove fake demo data from launch-critical flows. |
 
 ## Backend Route Inventory
 
 | Method | Path | File | Line |
 |---|---|---|---:|
+| GET | `/ai/actions` | `backend/ai_operator_routes.py` | 337 |
+| POST | `/ai/actions` | `backend/ai_operator_routes.py` | 343 |
+| POST | `/ai/actions/{action_id}/approve` | `backend/ai_operator_routes.py` | 358 |
+| POST | `/ai/actions/{action_id}/decline` | `backend/ai_operator_routes.py` | 368 |
+| GET | `/field-activity` | `backend/ai_operator_routes.py` | 376 |
+| POST | `/field-activity` | `backend/ai_operator_routes.py` | 382 |
+| GET | `/approved-notifications` | `backend/ai_operator_routes.py` | 388 |
+| GET | `/ai/actions` | `backend/ai_operator_routes.py` | 337 |
+| POST | `/ai/actions` | `backend/ai_operator_routes.py` | 343 |
+| POST | `/ai/actions/{action_id}/approve` | `backend/ai_operator_routes.py` | 358 |
+| POST | `/ai/actions/{action_id}/decline` | `backend/ai_operator_routes.py` | 368 |
+| GET | `/field-activity` | `backend/ai_operator_routes.py` | 376 |
+| POST | `/field-activity` | `backend/ai_operator_routes.py` | 382 |
+| GET | `/approved-notifications` | `backend/ai_operator_routes.py` | 388 |
+| INCLUDE | `` | `backend/ai_operator_routes.py` | 394 |
+| GET | `/billing/addons` | `backend/billing_addon_routes.py` | 47 |
+| POST | `/billing/create-addon-checkout-session` | `backend/billing_addon_routes.py` | 55 |
+| POST | `/billing/confirm-addon-checkout` | `backend/billing_addon_routes.py` | 67 |
+| GET | `/billing/addons` | `backend/billing_addon_routes.py` | 47 |
+| POST | `/billing/create-addon-checkout-session` | `backend/billing_addon_routes.py` | 55 |
+| POST | `/billing/confirm-addon-checkout` | `backend/billing_addon_routes.py` | 67 |
+| INCLUDE | `` | `backend/billing_addon_routes.py` | 82 |
+| POST | `/billing/create-addon-checkout-session` | `backend/churvox_billing_addon_fix.py` | 85 |
+| POST | `/billing/confirm-addon-checkout` | `backend/churvox_billing_addon_fix.py` | 128 |
+| POST | `/billing/create-addon-checkout-session` | `backend/churvox_billing_addon_fix.py` | 85 |
+| POST | `/billing/confirm-addon-checkout` | `backend/churvox_billing_addon_fix.py` | 128 |
+| POST | `/clients` | `backend/churvox_create_record_key_fix.py` | 82 |
+| POST | `/jobs` | `backend/churvox_create_record_key_fix.py` | 103 |
+| POST | `/quotes` | `backend/churvox_create_record_key_fix.py` | 138 |
+| POST | `/invoices` | `backend/churvox_create_record_key_fix.py` | 162 |
+| POST | `/clients` | `backend/churvox_create_record_key_fix.py` | 82 |
+| POST | `/jobs` | `backend/churvox_create_record_key_fix.py` | 103 |
+| POST | `/quotes` | `backend/churvox_create_record_key_fix.py` | 138 |
+| POST | `/invoices` | `backend/churvox_create_record_key_fix.py` | 162 |
+| GET | `/logic/business-isolation/status` | `backend/churvox_isolation_routes.py` | 68 |
+| POST | `/logic/business-isolation/repair` | `backend/churvox_isolation_routes.py` | 90 |
+| GET | `/logic/business-records/{kind}` | `backend/churvox_isolation_routes.py` | 112 |
+| GET | `/logic/business-isolation/status` | `backend/churvox_isolation_routes.py` | 68 |
+| POST | `/logic/business-isolation/repair` | `backend/churvox_isolation_routes.py` | 90 |
+| GET | `/logic/business-records/{kind}` | `backend/churvox_isolation_routes.py` | 112 |
+| GET | `/billing/addons` | `backend/churvox_launch_routes.py` | 135 |
+| POST | `/billing/create-addon-checkout-session` | `backend/churvox_launch_routes.py` | 156 |
+| POST | `/billing/confirm-addon-checkout` | `backend/churvox_launch_routes.py` | 211 |
+| GET | `/logic/business-profile` | `backend/churvox_launch_routes.py` | 248 |
+| POST | `/logic/business-profile` | `backend/churvox_launch_routes.py` | 268 |
+| POST | `/logic/invoice-approval` | `backend/churvox_launch_routes.py` | 310 |
+| GET | `/billing/addons` | `backend/churvox_launch_routes.py` | 135 |
+| POST | `/billing/create-addon-checkout-session` | `backend/churvox_launch_routes.py` | 156 |
+| POST | `/billing/confirm-addon-checkout` | `backend/churvox_launch_routes.py` | 211 |
+| GET | `/logic/business-profile` | `backend/churvox_launch_routes.py` | 248 |
+| POST | `/logic/business-profile` | `backend/churvox_launch_routes.py` | 268 |
+| POST | `/logic/invoice-approval` | `backend/churvox_launch_routes.py` | 310 |
+| GET | `/billing/plan-metadata` | `backend/churvox_plan_consistency.py` | 173 |
+| GET | `/billing/subscription-status` | `backend/churvox_plan_consistency.py` | 177 |
+| POST | `/billing/create-checkout-session` | `backend/churvox_plan_consistency.py` | 190 |
+| POST | `/billing/confirm-checkout` | `backend/churvox_plan_consistency.py` | 227 |
+| GET | `/billing/plan-metadata` | `backend/churvox_plan_consistency.py` | 173 |
+| GET | `/billing/subscription-status` | `backend/churvox_plan_consistency.py` | 177 |
+| POST | `/billing/create-checkout-session` | `backend/churvox_plan_consistency.py` | 190 |
+| POST | `/billing/confirm-checkout` | `backend/churvox_plan_consistency.py` | 227 |
+| POST | `/logic/jobs/recurring` | `backend/churvox_recurring_routes.py` | 96 |
+| POST | `/logic/jobs/{job_id}/complete-recurring` | `backend/churvox_recurring_routes.py` | 158 |
+| POST | `/logic/jobs/recurring` | `backend/churvox_recurring_routes.py` | 96 |
+| POST | `/logic/jobs/{job_id}/complete-recurring` | `backend/churvox_recurring_routes.py` | 158 |
+| GET | `/logic/team-members` | `backend/churvox_team_roles.py` | 46 |
+| POST | `/logic/team-members` | `backend/churvox_team_roles.py` | 62 |
+| GET | `/logic/team-members` | `backend/churvox_team_roles.py` | 46 |
+| POST | `/logic/team-members` | `backend/churvox_team_roles.py` | 62 |
+| GET | `/ai/operator/today-plan` | `backend/command_hub_routes.py` | 279 |
+| GET | `/api/ai/operator/today-plan` | `backend/command_hub_routes.py` | 280 |
+| GET | `/ai/operator/business-health` | `backend/command_hub_routes.py` | 287 |
+| GET | `/api/ai/operator/business-health` | `backend/command_hub_routes.py` | 288 |
+| POST | `/ai/operator/ask` | `backend/command_hub_routes.py` | 303 |
+| POST | `/api/ai/operator/ask` | `backend/command_hub_routes.py` | 304 |
+| GET | `/ai/receptionist/enquiries` | `backend/command_hub_routes.py` | 316 |
+| GET | `/api/ai/receptionist/enquiries` | `backend/command_hub_routes.py` | 317 |
+| GET | `/ai/recurring` | `backend/command_hub_routes.py` | 323 |
+| GET | `/api/ai/recurring` | `backend/command_hub_routes.py` | 324 |
+| GET | `/ai/customer-updates` | `backend/command_hub_routes.py` | 330 |
+| GET | `/api/ai/customer-updates` | `backend/command_hub_routes.py` | 331 |
+| GET | `/ai/quotes/drafts` | `backend/command_hub_routes.py` | 337 |
+| GET | `/api/ai/quotes/drafts` | `backend/command_hub_routes.py` | 338 |
+| GET | `/ai/client-memory` | `backend/command_hub_routes.py` | 344 |
+| GET | `/api/ai/client-memory` | `backend/command_hub_routes.py` | 345 |
+| POST | `/smart-hub/scan` | `backend/command_hub_routes.py` | 351 |
+| GET | `/command-hub/actions` | `backend/command_hub_routes.py` | 358 |
+| PATCH | `/jobs/{job_id}` | `backend/command_hub_routes.py` | 364 |
+| POST | `/command-hub/actions/execute` | `backend/command_hub_routes.py` | 387 |
+| POST | `/support/contact` | `backend/email_provider.py` | 70 |
+| POST | `/support/contact` | `backend/email_provider.py` | 70 |
 | USE | `/api/command` | `backend/frontend_dist/static/js/main.ac3852af.js` | 5 |
 | POST | `/slips` | `backend/routes/commandRoutes.js` | 391 |
 | GET | `/slips` | `backend/routes/commandRoutes.js` | 489 |
@@ -48,6 +138,127 @@ Generated: 2026-06-11T02:49:21Z
 | POST | `/slips/:id/ignore` | `backend/routes/commandRoutes.js` | 609 |
 | GET | `/events` | `backend/routes/commandRoutes.js` | 634 |
 | GET | `/audit` | `backend/routes/commandRoutes.js` | 655 |
+| GET | `/api/smart-hub` | `backend/server/__init__.py` | 230 |
+| GET | `/api/smarthub` | `backend/server/__init__.py` | 231 |
+| GET | `/api/command` | `backend/server/__init__.py` | 232 |
+| POST | `/api/slips/{slip_id}/approve` | `backend/server/__init__.py` | 248 |
+| POST | `/api/command/slips/{slip_id}/approve` | `backend/server/__init__.py` | 249 |
+| POST | `/api/ai/operator/slips/{slip_id}/approve` | `backend/server/__init__.py` | 250 |
+| POST | `/api/ai-operator/slips/{slip_id}/approve` | `backend/server/__init__.py` | 251 |
+| POST | `/api/operator/slips/{slip_id}/approve` | `backend/server/__init__.py` | 252 |
+| GET | `/api/smart-hub` | `backend/server/__init__.py` | 230 |
+| GET | `/api/smarthub` | `backend/server/__init__.py` | 231 |
+| GET | `/api/command` | `backend/server/__init__.py` | 232 |
+| POST | `/api/slips/{slip_id}/approve` | `backend/server/__init__.py` | 248 |
+| POST | `/api/command/slips/{slip_id}/approve` | `backend/server/__init__.py` | 249 |
+| POST | `/api/ai/operator/slips/{slip_id}/approve` | `backend/server/__init__.py` | 250 |
+| POST | `/api/ai-operator/slips/{slip_id}/approve` | `backend/server/__init__.py` | 251 |
+| POST | `/api/operator/slips/{slip_id}/approve` | `backend/server/__init__.py` | 252 |
+| POST | `/auth/register` | `backend/server.py` | 806 |
+| POST | `/auth/login` | `backend/server.py` | 840 |
+| POST | `/auth/logout` | `backend/server.py` | 886 |
+| GET | `/auth/me` | `backend/server.py` | 891 |
+| POST | `/auth/refresh` | `backend/server.py` | 896 |
+| POST | `/auth/forgot-password` | `backend/server.py` | 914 |
+| POST | `/auth/reset-password` | `backend/server.py` | 928 |
+| PATCH | `/user/plan` | `backend/server.py` | 946 |
+| GET | `/plan/limits` | `backend/server.py` | 974 |
+| GET | `/plan/all` | `backend/server.py` | 1013 |
+| PATCH | `/user/gst` | `backend/server.py` | 1017 |
+| PATCH | `/user/trade` | `backend/server.py` | 1023 |
+| POST | `/team/workers` | `backend/server.py` | 1121 |
+| GET | `/team/workers` | `backend/server.py` | 1134 |
+| DELETE | `/team/workers/{worker_id}` | `backend/server.py` | 1143 |
+| GET | `/invite/verify/{token}` | `backend/server.py` | 1159 |
+| POST | `/invite/accept` | `backend/server.py` | 1183 |
+| POST | `/team/resend-invite/{worker_id}` | `backend/server.py` | 1219 |
+| POST | `/team/import-csv` | `backend/server.py` | 1279 |
+| POST | `/email/test` | `backend/server.py` | 1372 |
+| POST | `/clients` | `backend/server.py` | 1389 |
+| GET | `/clients` | `backend/server.py` | 1415 |
+| GET | `/clients/{client_id}` | `backend/server.py` | 1425 |
+| PATCH | `/clients/{client_id}` | `backend/server.py` | 1436 |
+| DELETE | `/clients/{client_id}` | `backend/server.py` | 1452 |
+| GET | `/clients/{client_id}/jobs` | `backend/server.py` | 1464 |
+| POST | `/jobs` | `backend/server.py` | 1480 |
+| GET | `/jobs` | `backend/server.py` | 1538 |
+| GET | `/jobs/today` | `backend/server.py` | 1559 |
+| GET | `/jobs/week` | `backend/server.py` | 1573 |
+| GET | `/jobs/{job_id}` | `backend/server.py` | 1587 |
+| PATCH | `/jobs/{job_id}` | `backend/server.py` | 1598 |
+| POST | `/jobs/{job_id}/assign` | `backend/server.py` | 1618 |
+| POST | `/jobs/{job_id}/acknowledge` | `backend/server.py` | 1642 |
+| POST | `/jobs/{job_id}/start` | `backend/server.py` | 1660 |
+| POST | `/jobs/{job_id}/complete` | `backend/server.py` | 1680 |
+| DELETE | `/jobs/{job_id}` | `backend/server.py` | 1741 |
+| POST | `/jobs/{job_id}/timer/start` | `backend/server.py` | 1775 |
+| POST | `/jobs/{job_id}/time/start` | `backend/server.py` | 1778 |
+| POST | `/jobs/{job_id}/start-timer` | `backend/server.py` | 1781 |
+| POST | `/jobs/{job_id}/timer/begin` | `backend/server.py` | 1784 |
+| POST | `/time-tracking/{job_id}/start` | `backend/server.py` | 1787 |
+| POST | `/jobs/{job_id}/timer/pause` | `backend/server.py` | 1811 |
+| POST | `/jobs/{job_id}/time/pause` | `backend/server.py` | 1813 |
+| POST | `/jobs/{job_id}/pause-timer` | `backend/server.py` | 1815 |
+| POST | `/time-tracking/{job_id}/pause` | `backend/server.py` | 1817 |
+| POST | `/jobs/{job_id}/timer/resume` | `backend/server.py` | 1841 |
+| POST | `/jobs/{job_id}/time/resume` | `backend/server.py` | 1843 |
+| POST | `/jobs/{job_id}/resume-timer` | `backend/server.py` | 1845 |
+| POST | `/time-tracking/{job_id}/resume` | `backend/server.py` | 1847 |
+| PATCH | `/jobs/{job_id}/timer/adjust` | `backend/server.py` | 1869 |
+| GET | `/jobs/{job_id}/timer` | `backend/server.py` | 1884 |
+| POST | `/quotes` | `backend/server.py` | 1898 |
+| GET | `/quotes` | `backend/server.py` | 1918 |
+| GET | `/quotes/{quote_id}` | `backend/server.py` | 1928 |
+| PATCH | `/quotes/{quote_id}` | `backend/server.py` | 1938 |
+| POST | `/quotes/{quote_id}/send` | `backend/server.py` | 1954 |
+| DELETE | `/quotes/{quote_id}` | `backend/server.py` | 1965 |
+| POST | `/quotes/{quote_id}/convert` | `backend/server.py` | 1976 |
+| POST | `/invoices` | `backend/server.py` | 2030 |
+| GET | `/invoices` | `backend/server.py` | 2067 |
+| GET | `/invoices/{invoice_id}` | `backend/server.py` | 2077 |
+| PATCH | `/invoices/{invoice_id}` | `backend/server.py` | 2087 |
+| POST | `/invoices/{invoice_id}/send` | `backend/server.py` | 2110 |
+| POST | `/invoices/{invoice_id}/mark-paid` | `backend/server.py` | 2121 |
+| DELETE | `/invoices/{invoice_id}` | `backend/server.py` | 2132 |
+| GET | `/dashboard/stats` | `backend/server.py` | 2144 |
+| GET | `/sms/balance` | `backend/server.py` | 2267 |
+| GET | `/sms/provider-balance` | `backend/server.py` | 2275 |
+| POST | `/sms/buy-credits` | `backend/server.py` | 2282 |
+| POST | `/sms/send` | `backend/server.py` | 2292 |
+| POST | `/sms/test` | `backend/server.py` | 2368 |
+| GET | `/sms/history` | `backend/server.py` | 2386 |
+| GET | `/sms/packs` | `backend/server.py` | 2393 |
+| GET | `/myob/settings` | `backend/server.py` | 2399 |
+| POST | `/myob/settings` | `backend/server.py` | 2414 |
+| POST | `/myob/sync/{invoice_id}` | `backend/server.py` | 2427 |
+| GET | `/myob/status/{invoice_id}` | `backend/server.py` | 2476 |
+| POST | `/myob/webhook` | `backend/server.py` | 2490 |
+| GET | `/` | `backend/server.py` | 2526 |
+| POST | `/billing/create-checkout-session` | `backend/server.py` | 2532 |
+| POST | `/billing/webhook` | `backend/server.py` | 2558 |
+| GET | `/billing/subscription-status` | `backend/server.py` | 2615 |
+| POST | `/stripe/webhook-sms` | `backend/server.py` | 2634 |
+| POST | `/stripe/create-checkout-session` | `backend/server.py` | 2718 |
+| POST | `/billing/create-addon-checkout-session` | `backend/server.py` | 2757 |
+| POST | `/billing/confirm-addon-checkout` | `backend/server.py` | 2786 |
+| GET | `/billing/addons` | `backend/server.py` | 2815 |
+| GET | `/admin/usage-summary` | `backend/server.py` | 3001 |
+| GET | `/admin/platform-stats` | `backend/server.py` | 3127 |
+| GET | `/owner/stats` | `backend/server.py` | 3178 |
+| GET | `/admin/stats` | `backend/server.py` | 3286 |
+| GET | `/admin/drilldown/{kind}` | `backend/server.py` | 3348 |
+| GET | `/admin/platform` | `backend/server.py` | 3433 |
+| DELETE | `/auth/delete-account` | `backend/server.py` | 3577 |
+| POST | `/auth/delete-account` | `backend/server.py` | 3578 |
+| DELETE | `/auth/account-delete` | `backend/server.py` | 3579 |
+| POST | `/auth/account-delete` | `backend/server.py` | 3580 |
+| GET | `/api/health-login` | `backend/server.py` | 3817 |
+| GET | `/clients` | `backend/server.py` | 3832 |
+| GET | `/clients/{client_id}` | `backend/server.py` | 3839 |
+| POST | `/clients` | `backend/server.py` | 3850 |
+| PUT | `/clients/{client_id}` | `backend/server.py` | 3858 |
+| DELETE | `/clients/{client_id}` | `backend/server.py` | 3872 |
+| … | … | 49 more routes | |
 
 ## Frontend API Call Inventory
 
@@ -588,13 +799,10 @@ Generated: 2026-06-11T02:49:21Z
 - `frontend/src/churvox-fresh/FreshCommand.jsx:395` — localStorage
 - `frontend/src/churvox-fresh/FreshCommand.jsx:396` — localStorage
 - `frontend/src/churvox-fresh/FreshCommand.jsx:399` — preview
-- … 839 more
+- … 881 more
 
 ## What To Fix First
 
-1. **Signup/Auth — Signup/register backend route exists**: Add or verify POST /api/auth/register or /api/auth/signup.
-2. **Command — No localStorage-only Command sends left**: Old preview localStorage can remain as fallback, but every Send to Command button should also call backend bridge.
-3. **Security/Auth — Backend CORS allows credentials**: Backend CORS must allow credentials from www.churvox.com.
-4. **Security/Auth — Secure cookie settings present**: Production cookies should be httpOnly, secure, SameSite=None.
-5. **Frontend buttons — Important buttons have handlers**: Review suspicious buttons so no important button is visual-only.
-6. **Launch readiness — Preview/demo/localStorage usage reviewed**: Keep fallback storage only where intentional; remove fake demo data from launch-critical flows.
+1. **Command — No localStorage-only Command sends left**: Old preview localStorage can remain as fallback, but every Send to Command button should also call backend bridge.
+2. **Frontend buttons — Important buttons have handlers**: Review suspicious buttons so no important button is visual-only.
+3. **Launch readiness — Preview/demo/localStorage usage reviewed**: Keep fallback storage only where intentional; remove fake demo data from launch-critical flows.

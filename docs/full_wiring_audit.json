@@ -1,9 +1,9 @@
 {
-  "generated": "2026-06-11T02:49:21Z",
-  "score_percent": 69,
-  "score_pass": 36,
-  "score_warn": 13,
-  "score_fail": 3,
+  "generated": "2026-06-11T02:52:32Z",
+  "score_percent": 87,
+  "score_pass": 45,
+  "score_warn": 7,
+  "score_fail": 0,
   "score_total": 52,
   "checks": [
     {
@@ -49,7 +49,7 @@
     {
       "category": "Signup/Auth",
       "name": "Signup/register backend route exists",
-      "status": "FAIL",
+      "status": "PASS",
       "severity": "High",
       "evidence": "Looks for register/signup route.",
       "recommendation": "Add or verify POST /api/auth/register or /api/auth/signup."
@@ -105,7 +105,7 @@
     {
       "category": "Security/Auth",
       "name": "Backend CORS allows credentials",
-      "status": "WARN",
+      "status": "PASS",
       "severity": "High",
       "evidence": "Looks for CORS credentials true.",
       "recommendation": "Backend CORS must allow credentials from www.churvox.com."
@@ -113,7 +113,7 @@
     {
       "category": "Security/Auth",
       "name": "Secure cookie settings present",
-      "status": "WARN",
+      "status": "PASS",
       "severity": "High",
       "evidence": "Looks for SameSite/Secure/httpOnly.",
       "recommendation": "Production cookies should be httpOnly, secure, SameSite=None."
@@ -155,11 +155,553 @@
       "name": "Preview/demo/localStorage usage reviewed",
       "status": "WARN",
       "severity": "Medium",
-      "evidence": "959 preview/demo/storage references found.",
+      "evidence": "1001 preview/demo/storage references found.",
       "recommendation": "Keep fallback storage only where intentional; remove fake demo data from launch-critical flows."
     }
   ],
   "routes": [
+    {
+      "method": "GET",
+      "path": "/ai/actions",
+      "file": "backend/ai_operator_routes.py",
+      "line": 337
+    },
+    {
+      "method": "POST",
+      "path": "/ai/actions",
+      "file": "backend/ai_operator_routes.py",
+      "line": 343
+    },
+    {
+      "method": "POST",
+      "path": "/ai/actions/{action_id}/approve",
+      "file": "backend/ai_operator_routes.py",
+      "line": 358
+    },
+    {
+      "method": "POST",
+      "path": "/ai/actions/{action_id}/decline",
+      "file": "backend/ai_operator_routes.py",
+      "line": 368
+    },
+    {
+      "method": "GET",
+      "path": "/field-activity",
+      "file": "backend/ai_operator_routes.py",
+      "line": 376
+    },
+    {
+      "method": "POST",
+      "path": "/field-activity",
+      "file": "backend/ai_operator_routes.py",
+      "line": 382
+    },
+    {
+      "method": "GET",
+      "path": "/approved-notifications",
+      "file": "backend/ai_operator_routes.py",
+      "line": 388
+    },
+    {
+      "method": "GET",
+      "path": "/ai/actions",
+      "file": "backend/ai_operator_routes.py",
+      "line": 337
+    },
+    {
+      "method": "POST",
+      "path": "/ai/actions",
+      "file": "backend/ai_operator_routes.py",
+      "line": 343
+    },
+    {
+      "method": "POST",
+      "path": "/ai/actions/{action_id}/approve",
+      "file": "backend/ai_operator_routes.py",
+      "line": 358
+    },
+    {
+      "method": "POST",
+      "path": "/ai/actions/{action_id}/decline",
+      "file": "backend/ai_operator_routes.py",
+      "line": 368
+    },
+    {
+      "method": "GET",
+      "path": "/field-activity",
+      "file": "backend/ai_operator_routes.py",
+      "line": 376
+    },
+    {
+      "method": "POST",
+      "path": "/field-activity",
+      "file": "backend/ai_operator_routes.py",
+      "line": 382
+    },
+    {
+      "method": "GET",
+      "path": "/approved-notifications",
+      "file": "backend/ai_operator_routes.py",
+      "line": 388
+    },
+    {
+      "method": "INCLUDE",
+      "path": "",
+      "handler": "router",
+      "file": "backend/ai_operator_routes.py",
+      "line": 394
+    },
+    {
+      "method": "GET",
+      "path": "/billing/addons",
+      "file": "backend/billing_addon_routes.py",
+      "line": 47
+    },
+    {
+      "method": "POST",
+      "path": "/billing/create-addon-checkout-session",
+      "file": "backend/billing_addon_routes.py",
+      "line": 55
+    },
+    {
+      "method": "POST",
+      "path": "/billing/confirm-addon-checkout",
+      "file": "backend/billing_addon_routes.py",
+      "line": 67
+    },
+    {
+      "method": "GET",
+      "path": "/billing/addons",
+      "file": "backend/billing_addon_routes.py",
+      "line": 47
+    },
+    {
+      "method": "POST",
+      "path": "/billing/create-addon-checkout-session",
+      "file": "backend/billing_addon_routes.py",
+      "line": 55
+    },
+    {
+      "method": "POST",
+      "path": "/billing/confirm-addon-checkout",
+      "file": "backend/billing_addon_routes.py",
+      "line": 67
+    },
+    {
+      "method": "INCLUDE",
+      "path": "",
+      "handler": "router",
+      "file": "backend/billing_addon_routes.py",
+      "line": 82
+    },
+    {
+      "method": "POST",
+      "path": "/billing/create-addon-checkout-session",
+      "file": "backend/churvox_billing_addon_fix.py",
+      "line": 85
+    },
+    {
+      "method": "POST",
+      "path": "/billing/confirm-addon-checkout",
+      "file": "backend/churvox_billing_addon_fix.py",
+      "line": 128
+    },
+    {
+      "method": "POST",
+      "path": "/billing/create-addon-checkout-session",
+      "file": "backend/churvox_billing_addon_fix.py",
+      "line": 85
+    },
+    {
+      "method": "POST",
+      "path": "/billing/confirm-addon-checkout",
+      "file": "backend/churvox_billing_addon_fix.py",
+      "line": 128
+    },
+    {
+      "method": "POST",
+      "path": "/clients",
+      "file": "backend/churvox_create_record_key_fix.py",
+      "line": 82
+    },
+    {
+      "method": "POST",
+      "path": "/jobs",
+      "file": "backend/churvox_create_record_key_fix.py",
+      "line": 103
+    },
+    {
+      "method": "POST",
+      "path": "/quotes",
+      "file": "backend/churvox_create_record_key_fix.py",
+      "line": 138
+    },
+    {
+      "method": "POST",
+      "path": "/invoices",
+      "file": "backend/churvox_create_record_key_fix.py",
+      "line": 162
+    },
+    {
+      "method": "POST",
+      "path": "/clients",
+      "file": "backend/churvox_create_record_key_fix.py",
+      "line": 82
+    },
+    {
+      "method": "POST",
+      "path": "/jobs",
+      "file": "backend/churvox_create_record_key_fix.py",
+      "line": 103
+    },
+    {
+      "method": "POST",
+      "path": "/quotes",
+      "file": "backend/churvox_create_record_key_fix.py",
+      "line": 138
+    },
+    {
+      "method": "POST",
+      "path": "/invoices",
+      "file": "backend/churvox_create_record_key_fix.py",
+      "line": 162
+    },
+    {
+      "method": "GET",
+      "path": "/logic/business-isolation/status",
+      "file": "backend/churvox_isolation_routes.py",
+      "line": 68
+    },
+    {
+      "method": "POST",
+      "path": "/logic/business-isolation/repair",
+      "file": "backend/churvox_isolation_routes.py",
+      "line": 90
+    },
+    {
+      "method": "GET",
+      "path": "/logic/business-records/{kind}",
+      "file": "backend/churvox_isolation_routes.py",
+      "line": 112
+    },
+    {
+      "method": "GET",
+      "path": "/logic/business-isolation/status",
+      "file": "backend/churvox_isolation_routes.py",
+      "line": 68
+    },
+    {
+      "method": "POST",
+      "path": "/logic/business-isolation/repair",
+      "file": "backend/churvox_isolation_routes.py",
+      "line": 90
+    },
+    {
+      "method": "GET",
+      "path": "/logic/business-records/{kind}",
+      "file": "backend/churvox_isolation_routes.py",
+      "line": 112
+    },
+    {
+      "method": "GET",
+      "path": "/billing/addons",
+      "file": "backend/churvox_launch_routes.py",
+      "line": 135
+    },
+    {
+      "method": "POST",
+      "path": "/billing/create-addon-checkout-session",
+      "file": "backend/churvox_launch_routes.py",
+      "line": 156
+    },
+    {
+      "method": "POST",
+      "path": "/billing/confirm-addon-checkout",
+      "file": "backend/churvox_launch_routes.py",
+      "line": 211
+    },
+    {
+      "method": "GET",
+      "path": "/logic/business-profile",
+      "file": "backend/churvox_launch_routes.py",
+      "line": 248
+    },
+    {
+      "method": "POST",
+      "path": "/logic/business-profile",
+      "file": "backend/churvox_launch_routes.py",
+      "line": 268
+    },
+    {
+      "method": "POST",
+      "path": "/logic/invoice-approval",
+      "file": "backend/churvox_launch_routes.py",
+      "line": 310
+    },
+    {
+      "method": "GET",
+      "path": "/billing/addons",
+      "file": "backend/churvox_launch_routes.py",
+      "line": 135
+    },
+    {
+      "method": "POST",
+      "path": "/billing/create-addon-checkout-session",
+      "file": "backend/churvox_launch_routes.py",
+      "line": 156
+    },
+    {
+      "method": "POST",
+      "path": "/billing/confirm-addon-checkout",
+      "file": "backend/churvox_launch_routes.py",
+      "line": 211
+    },
+    {
+      "method": "GET",
+      "path": "/logic/business-profile",
+      "file": "backend/churvox_launch_routes.py",
+      "line": 248
+    },
+    {
+      "method": "POST",
+      "path": "/logic/business-profile",
+      "file": "backend/churvox_launch_routes.py",
+      "line": 268
+    },
+    {
+      "method": "POST",
+      "path": "/logic/invoice-approval",
+      "file": "backend/churvox_launch_routes.py",
+      "line": 310
+    },
+    {
+      "method": "GET",
+      "path": "/billing/plan-metadata",
+      "file": "backend/churvox_plan_consistency.py",
+      "line": 173
+    },
+    {
+      "method": "GET",
+      "path": "/billing/subscription-status",
+      "file": "backend/churvox_plan_consistency.py",
+      "line": 177
+    },
+    {
+      "method": "POST",
+      "path": "/billing/create-checkout-session",
+      "file": "backend/churvox_plan_consistency.py",
+      "line": 190
+    },
+    {
+      "method": "POST",
+      "path": "/billing/confirm-checkout",
+      "file": "backend/churvox_plan_consistency.py",
+      "line": 227
+    },
+    {
+      "method": "GET",
+      "path": "/billing/plan-metadata",
+      "file": "backend/churvox_plan_consistency.py",
+      "line": 173
+    },
+    {
+      "method": "GET",
+      "path": "/billing/subscription-status",
+      "file": "backend/churvox_plan_consistency.py",
+      "line": 177
+    },
+    {
+      "method": "POST",
+      "path": "/billing/create-checkout-session",
+      "file": "backend/churvox_plan_consistency.py",
+      "line": 190
+    },
+    {
+      "method": "POST",
+      "path": "/billing/confirm-checkout",
+      "file": "backend/churvox_plan_consistency.py",
+      "line": 227
+    },
+    {
+      "method": "POST",
+      "path": "/logic/jobs/recurring",
+      "file": "backend/churvox_recurring_routes.py",
+      "line": 96
+    },
+    {
+      "method": "POST",
+      "path": "/logic/jobs/{job_id}/complete-recurring",
+      "file": "backend/churvox_recurring_routes.py",
+      "line": 158
+    },
+    {
+      "method": "POST",
+      "path": "/logic/jobs/recurring",
+      "file": "backend/churvox_recurring_routes.py",
+      "line": 96
+    },
+    {
+      "method": "POST",
+      "path": "/logic/jobs/{job_id}/complete-recurring",
+      "file": "backend/churvox_recurring_routes.py",
+      "line": 158
+    },
+    {
+      "method": "GET",
+      "path": "/logic/team-members",
+      "file": "backend/churvox_team_roles.py",
+      "line": 46
+    },
+    {
+      "method": "POST",
+      "path": "/logic/team-members",
+      "file": "backend/churvox_team_roles.py",
+      "line": 62
+    },
+    {
+      "method": "GET",
+      "path": "/logic/team-members",
+      "file": "backend/churvox_team_roles.py",
+      "line": 46
+    },
+    {
+      "method": "POST",
+      "path": "/logic/team-members",
+      "file": "backend/churvox_team_roles.py",
+      "line": 62
+    },
+    {
+      "method": "GET",
+      "path": "/ai/operator/today-plan",
+      "file": "backend/command_hub_routes.py",
+      "line": 279
+    },
+    {
+      "method": "GET",
+      "path": "/api/ai/operator/today-plan",
+      "file": "backend/command_hub_routes.py",
+      "line": 280
+    },
+    {
+      "method": "GET",
+      "path": "/ai/operator/business-health",
+      "file": "backend/command_hub_routes.py",
+      "line": 287
+    },
+    {
+      "method": "GET",
+      "path": "/api/ai/operator/business-health",
+      "file": "backend/command_hub_routes.py",
+      "line": 288
+    },
+    {
+      "method": "POST",
+      "path": "/ai/operator/ask",
+      "file": "backend/command_hub_routes.py",
+      "line": 303
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/operator/ask",
+      "file": "backend/command_hub_routes.py",
+      "line": 304
+    },
+    {
+      "method": "GET",
+      "path": "/ai/receptionist/enquiries",
+      "file": "backend/command_hub_routes.py",
+      "line": 316
+    },
+    {
+      "method": "GET",
+      "path": "/api/ai/receptionist/enquiries",
+      "file": "backend/command_hub_routes.py",
+      "line": 317
+    },
+    {
+      "method": "GET",
+      "path": "/ai/recurring",
+      "file": "backend/command_hub_routes.py",
+      "line": 323
+    },
+    {
+      "method": "GET",
+      "path": "/api/ai/recurring",
+      "file": "backend/command_hub_routes.py",
+      "line": 324
+    },
+    {
+      "method": "GET",
+      "path": "/ai/customer-updates",
+      "file": "backend/command_hub_routes.py",
+      "line": 330
+    },
+    {
+      "method": "GET",
+      "path": "/api/ai/customer-updates",
+      "file": "backend/command_hub_routes.py",
+      "line": 331
+    },
+    {
+      "method": "GET",
+      "path": "/ai/quotes/drafts",
+      "file": "backend/command_hub_routes.py",
+      "line": 337
+    },
+    {
+      "method": "GET",
+      "path": "/api/ai/quotes/drafts",
+      "file": "backend/command_hub_routes.py",
+      "line": 338
+    },
+    {
+      "method": "GET",
+      "path": "/ai/client-memory",
+      "file": "backend/command_hub_routes.py",
+      "line": 344
+    },
+    {
+      "method": "GET",
+      "path": "/api/ai/client-memory",
+      "file": "backend/command_hub_routes.py",
+      "line": 345
+    },
+    {
+      "method": "POST",
+      "path": "/smart-hub/scan",
+      "file": "backend/command_hub_routes.py",
+      "line": 351
+    },
+    {
+      "method": "GET",
+      "path": "/command-hub/actions",
+      "file": "backend/command_hub_routes.py",
+      "line": 358
+    },
+    {
+      "method": "PATCH",
+      "path": "/jobs/{job_id}",
+      "file": "backend/command_hub_routes.py",
+      "line": 364
+    },
+    {
+      "method": "POST",
+      "path": "/command-hub/actions/execute",
+      "file": "backend/command_hub_routes.py",
+      "line": 387
+    },
+    {
+      "method": "POST",
+      "path": "/support/contact",
+      "file": "backend/email_provider.py",
+      "line": 70
+    },
+    {
+      "method": "POST",
+      "path": "/support/contact",
+      "file": "backend/email_provider.py",
+      "line": 70
+    },
     {
       "method": "USE",
       "path": "/api/command",
@@ -220,6 +762,1024 @@
       "path": "/audit",
       "file": "backend/routes/commandRoutes.js",
       "line": 655
+    },
+    {
+      "method": "GET",
+      "path": "/api/smart-hub",
+      "file": "backend/server/__init__.py",
+      "line": 230
+    },
+    {
+      "method": "GET",
+      "path": "/api/smarthub",
+      "file": "backend/server/__init__.py",
+      "line": 231
+    },
+    {
+      "method": "GET",
+      "path": "/api/command",
+      "file": "backend/server/__init__.py",
+      "line": 232
+    },
+    {
+      "method": "POST",
+      "path": "/api/slips/{slip_id}/approve",
+      "file": "backend/server/__init__.py",
+      "line": 248
+    },
+    {
+      "method": "POST",
+      "path": "/api/command/slips/{slip_id}/approve",
+      "file": "backend/server/__init__.py",
+      "line": 249
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/operator/slips/{slip_id}/approve",
+      "file": "backend/server/__init__.py",
+      "line": 250
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai-operator/slips/{slip_id}/approve",
+      "file": "backend/server/__init__.py",
+      "line": 251
+    },
+    {
+      "method": "POST",
+      "path": "/api/operator/slips/{slip_id}/approve",
+      "file": "backend/server/__init__.py",
+      "line": 252
+    },
+    {
+      "method": "GET",
+      "path": "/api/smart-hub",
+      "file": "backend/server/__init__.py",
+      "line": 230
+    },
+    {
+      "method": "GET",
+      "path": "/api/smarthub",
+      "file": "backend/server/__init__.py",
+      "line": 231
+    },
+    {
+      "method": "GET",
+      "path": "/api/command",
+      "file": "backend/server/__init__.py",
+      "line": 232
+    },
+    {
+      "method": "POST",
+      "path": "/api/slips/{slip_id}/approve",
+      "file": "backend/server/__init__.py",
+      "line": 248
+    },
+    {
+      "method": "POST",
+      "path": "/api/command/slips/{slip_id}/approve",
+      "file": "backend/server/__init__.py",
+      "line": 249
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/operator/slips/{slip_id}/approve",
+      "file": "backend/server/__init__.py",
+      "line": 250
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai-operator/slips/{slip_id}/approve",
+      "file": "backend/server/__init__.py",
+      "line": 251
+    },
+    {
+      "method": "POST",
+      "path": "/api/operator/slips/{slip_id}/approve",
+      "file": "backend/server/__init__.py",
+      "line": 252
+    },
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "file": "backend/server.py",
+      "line": 806
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "file": "backend/server.py",
+      "line": 840
+    },
+    {
+      "method": "POST",
+      "path": "/auth/logout",
+      "file": "backend/server.py",
+      "line": 886
+    },
+    {
+      "method": "GET",
+      "path": "/auth/me",
+      "file": "backend/server.py",
+      "line": 891
+    },
+    {
+      "method": "POST",
+      "path": "/auth/refresh",
+      "file": "backend/server.py",
+      "line": 896
+    },
+    {
+      "method": "POST",
+      "path": "/auth/forgot-password",
+      "file": "backend/server.py",
+      "line": 914
+    },
+    {
+      "method": "POST",
+      "path": "/auth/reset-password",
+      "file": "backend/server.py",
+      "line": 928
+    },
+    {
+      "method": "PATCH",
+      "path": "/user/plan",
+      "file": "backend/server.py",
+      "line": 946
+    },
+    {
+      "method": "GET",
+      "path": "/plan/limits",
+      "file": "backend/server.py",
+      "line": 974
+    },
+    {
+      "method": "GET",
+      "path": "/plan/all",
+      "file": "backend/server.py",
+      "line": 1013
+    },
+    {
+      "method": "PATCH",
+      "path": "/user/gst",
+      "file": "backend/server.py",
+      "line": 1017
+    },
+    {
+      "method": "PATCH",
+      "path": "/user/trade",
+      "file": "backend/server.py",
+      "line": 1023
+    },
+    {
+      "method": "POST",
+      "path": "/team/workers",
+      "file": "backend/server.py",
+      "line": 1121
+    },
+    {
+      "method": "GET",
+      "path": "/team/workers",
+      "file": "backend/server.py",
+      "line": 1134
+    },
+    {
+      "method": "DELETE",
+      "path": "/team/workers/{worker_id}",
+      "file": "backend/server.py",
+      "line": 1143
+    },
+    {
+      "method": "GET",
+      "path": "/invite/verify/{token}",
+      "file": "backend/server.py",
+      "line": 1159
+    },
+    {
+      "method": "POST",
+      "path": "/invite/accept",
+      "file": "backend/server.py",
+      "line": 1183
+    },
+    {
+      "method": "POST",
+      "path": "/team/resend-invite/{worker_id}",
+      "file": "backend/server.py",
+      "line": 1219
+    },
+    {
+      "method": "POST",
+      "path": "/team/import-csv",
+      "file": "backend/server.py",
+      "line": 1279
+    },
+    {
+      "method": "POST",
+      "path": "/email/test",
+      "file": "backend/server.py",
+      "line": 1372
+    },
+    {
+      "method": "POST",
+      "path": "/clients",
+      "file": "backend/server.py",
+      "line": 1389
+    },
+    {
+      "method": "GET",
+      "path": "/clients",
+      "file": "backend/server.py",
+      "line": 1415
+    },
+    {
+      "method": "GET",
+      "path": "/clients/{client_id}",
+      "file": "backend/server.py",
+      "line": 1425
+    },
+    {
+      "method": "PATCH",
+      "path": "/clients/{client_id}",
+      "file": "backend/server.py",
+      "line": 1436
+    },
+    {
+      "method": "DELETE",
+      "path": "/clients/{client_id}",
+      "file": "backend/server.py",
+      "line": 1452
+    },
+    {
+      "method": "GET",
+      "path": "/clients/{client_id}/jobs",
+      "file": "backend/server.py",
+      "line": 1464
+    },
+    {
+      "method": "POST",
+      "path": "/jobs",
+      "file": "backend/server.py",
+      "line": 1480
+    },
+    {
+      "method": "GET",
+      "path": "/jobs",
+      "file": "backend/server.py",
+      "line": 1538
+    },
+    {
+      "method": "GET",
+      "path": "/jobs/today",
+      "file": "backend/server.py",
+      "line": 1559
+    },
+    {
+      "method": "GET",
+      "path": "/jobs/week",
+      "file": "backend/server.py",
+      "line": 1573
+    },
+    {
+      "method": "GET",
+      "path": "/jobs/{job_id}",
+      "file": "backend/server.py",
+      "line": 1587
+    },
+    {
+      "method": "PATCH",
+      "path": "/jobs/{job_id}",
+      "file": "backend/server.py",
+      "line": 1598
+    },
+    {
+      "method": "POST",
+      "path": "/jobs/{job_id}/assign",
+      "file": "backend/server.py",
+      "line": 1618
+    },
+    {
+      "method": "POST",
+      "path": "/jobs/{job_id}/acknowledge",
+      "file": "backend/server.py",
+      "line": 1642
+    },
+    {
+      "method": "POST",
+      "path": "/jobs/{job_id}/start",
+      "file": "backend/server.py",
+      "line": 1660
+    },
+    {
+      "method": "POST",
+      "path": "/jobs/{job_id}/complete",
+      "file": "backend/server.py",
+      "line": 1680
+    },
+    {
+      "method": "DELETE",
+      "path": "/jobs/{job_id}",
+      "file": "backend/server.py",
+      "line": 1741
+    },
+    {
+      "method": "POST",
+      "path": "/jobs/{job_id}/timer/start",
+      "file": "backend/server.py",
+      "line": 1775
+    },
+    {
+      "method": "POST",
+      "path": "/jobs/{job_id}/time/start",
+      "file": "backend/server.py",
+      "line": 1778
+    },
+    {
+      "method": "POST",
+      "path": "/jobs/{job_id}/start-timer",
+      "file": "backend/server.py",
+      "line": 1781
+    },
+    {
+      "method": "POST",
+      "path": "/jobs/{job_id}/timer/begin",
+      "file": "backend/server.py",
+      "line": 1784
+    },
+    {
+      "method": "POST",
+      "path": "/time-tracking/{job_id}/start",
+      "file": "backend/server.py",
+      "line": 1787
+    },
+    {
+      "method": "POST",
+      "path": "/jobs/{job_id}/timer/pause",
+      "file": "backend/server.py",
+      "line": 1811
+    },
+    {
+      "method": "POST",
+      "path": "/jobs/{job_id}/time/pause",
+      "file": "backend/server.py",
+      "line": 1813
+    },
+    {
+      "method": "POST",
+      "path": "/jobs/{job_id}/pause-timer",
+      "file": "backend/server.py",
+      "line": 1815
+    },
+    {
+      "method": "POST",
+      "path": "/time-tracking/{job_id}/pause",
+      "file": "backend/server.py",
+      "line": 1817
+    },
+    {
+      "method": "POST",
+      "path": "/jobs/{job_id}/timer/resume",
+      "file": "backend/server.py",
+      "line": 1841
+    },
+    {
+      "method": "POST",
+      "path": "/jobs/{job_id}/time/resume",
+      "file": "backend/server.py",
+      "line": 1843
+    },
+    {
+      "method": "POST",
+      "path": "/jobs/{job_id}/resume-timer",
+      "file": "backend/server.py",
+      "line": 1845
+    },
+    {
+      "method": "POST",
+      "path": "/time-tracking/{job_id}/resume",
+      "file": "backend/server.py",
+      "line": 1847
+    },
+    {
+      "method": "PATCH",
+      "path": "/jobs/{job_id}/timer/adjust",
+      "file": "backend/server.py",
+      "line": 1869
+    },
+    {
+      "method": "GET",
+      "path": "/jobs/{job_id}/timer",
+      "file": "backend/server.py",
+      "line": 1884
+    },
+    {
+      "method": "POST",
+      "path": "/quotes",
+      "file": "backend/server.py",
+      "line": 1898
+    },
+    {
+      "method": "GET",
+      "path": "/quotes",
+      "file": "backend/server.py",
+      "line": 1918
+    },
+    {
+      "method": "GET",
+      "path": "/quotes/{quote_id}",
+      "file": "backend/server.py",
+      "line": 1928
+    },
+    {
+      "method": "PATCH",
+      "path": "/quotes/{quote_id}",
+      "file": "backend/server.py",
+      "line": 1938
+    },
+    {
+      "method": "POST",
+      "path": "/quotes/{quote_id}/send",
+      "file": "backend/server.py",
+      "line": 1954
+    },
+    {
+      "method": "DELETE",
+      "path": "/quotes/{quote_id}",
+      "file": "backend/server.py",
+      "line": 1965
+    },
+    {
+      "method": "POST",
+      "path": "/quotes/{quote_id}/convert",
+      "file": "backend/server.py",
+      "line": 1976
+    },
+    {
+      "method": "POST",
+      "path": "/invoices",
+      "file": "backend/server.py",
+      "line": 2030
+    },
+    {
+      "method": "GET",
+      "path": "/invoices",
+      "file": "backend/server.py",
+      "line": 2067
+    },
+    {
+      "method": "GET",
+      "path": "/invoices/{invoice_id}",
+      "file": "backend/server.py",
+      "line": 2077
+    },
+    {
+      "method": "PATCH",
+      "path": "/invoices/{invoice_id}",
+      "file": "backend/server.py",
+      "line": 2087
+    },
+    {
+      "method": "POST",
+      "path": "/invoices/{invoice_id}/send",
+      "file": "backend/server.py",
+      "line": 2110
+    },
+    {
+      "method": "POST",
+      "path": "/invoices/{invoice_id}/mark-paid",
+      "file": "backend/server.py",
+      "line": 2121
+    },
+    {
+      "method": "DELETE",
+      "path": "/invoices/{invoice_id}",
+      "file": "backend/server.py",
+      "line": 2132
+    },
+    {
+      "method": "GET",
+      "path": "/dashboard/stats",
+      "file": "backend/server.py",
+      "line": 2144
+    },
+    {
+      "method": "GET",
+      "path": "/sms/balance",
+      "file": "backend/server.py",
+      "line": 2267
+    },
+    {
+      "method": "GET",
+      "path": "/sms/provider-balance",
+      "file": "backend/server.py",
+      "line": 2275
+    },
+    {
+      "method": "POST",
+      "path": "/sms/buy-credits",
+      "file": "backend/server.py",
+      "line": 2282
+    },
+    {
+      "method": "POST",
+      "path": "/sms/send",
+      "file": "backend/server.py",
+      "line": 2292
+    },
+    {
+      "method": "POST",
+      "path": "/sms/test",
+      "file": "backend/server.py",
+      "line": 2368
+    },
+    {
+      "method": "GET",
+      "path": "/sms/history",
+      "file": "backend/server.py",
+      "line": 2386
+    },
+    {
+      "method": "GET",
+      "path": "/sms/packs",
+      "file": "backend/server.py",
+      "line": 2393
+    },
+    {
+      "method": "GET",
+      "path": "/myob/settings",
+      "file": "backend/server.py",
+      "line": 2399
+    },
+    {
+      "method": "POST",
+      "path": "/myob/settings",
+      "file": "backend/server.py",
+      "line": 2414
+    },
+    {
+      "method": "POST",
+      "path": "/myob/sync/{invoice_id}",
+      "file": "backend/server.py",
+      "line": 2427
+    },
+    {
+      "method": "GET",
+      "path": "/myob/status/{invoice_id}",
+      "file": "backend/server.py",
+      "line": 2476
+    },
+    {
+      "method": "POST",
+      "path": "/myob/webhook",
+      "file": "backend/server.py",
+      "line": 2490
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "file": "backend/server.py",
+      "line": 2526
+    },
+    {
+      "method": "POST",
+      "path": "/billing/create-checkout-session",
+      "file": "backend/server.py",
+      "line": 2532
+    },
+    {
+      "method": "POST",
+      "path": "/billing/webhook",
+      "file": "backend/server.py",
+      "line": 2558
+    },
+    {
+      "method": "GET",
+      "path": "/billing/subscription-status",
+      "file": "backend/server.py",
+      "line": 2615
+    },
+    {
+      "method": "POST",
+      "path": "/stripe/webhook-sms",
+      "file": "backend/server.py",
+      "line": 2634
+    },
+    {
+      "method": "POST",
+      "path": "/stripe/create-checkout-session",
+      "file": "backend/server.py",
+      "line": 2718
+    },
+    {
+      "method": "POST",
+      "path": "/billing/create-addon-checkout-session",
+      "file": "backend/server.py",
+      "line": 2757
+    },
+    {
+      "method": "POST",
+      "path": "/billing/confirm-addon-checkout",
+      "file": "backend/server.py",
+      "line": 2786
+    },
+    {
+      "method": "GET",
+      "path": "/billing/addons",
+      "file": "backend/server.py",
+      "line": 2815
+    },
+    {
+      "method": "GET",
+      "path": "/admin/usage-summary",
+      "file": "backend/server.py",
+      "line": 3001
+    },
+    {
+      "method": "GET",
+      "path": "/admin/platform-stats",
+      "file": "backend/server.py",
+      "line": 3127
+    },
+    {
+      "method": "GET",
+      "path": "/owner/stats",
+      "file": "backend/server.py",
+      "line": 3178
+    },
+    {
+      "method": "GET",
+      "path": "/admin/stats",
+      "file": "backend/server.py",
+      "line": 3286
+    },
+    {
+      "method": "GET",
+      "path": "/admin/drilldown/{kind}",
+      "file": "backend/server.py",
+      "line": 3348
+    },
+    {
+      "method": "GET",
+      "path": "/admin/platform",
+      "file": "backend/server.py",
+      "line": 3433
+    },
+    {
+      "method": "DELETE",
+      "path": "/auth/delete-account",
+      "file": "backend/server.py",
+      "line": 3577
+    },
+    {
+      "method": "POST",
+      "path": "/auth/delete-account",
+      "file": "backend/server.py",
+      "line": 3578
+    },
+    {
+      "method": "DELETE",
+      "path": "/auth/account-delete",
+      "file": "backend/server.py",
+      "line": 3579
+    },
+    {
+      "method": "POST",
+      "path": "/auth/account-delete",
+      "file": "backend/server.py",
+      "line": 3580
+    },
+    {
+      "method": "GET",
+      "path": "/api/health-login",
+      "file": "backend/server.py",
+      "line": 3817
+    },
+    {
+      "method": "GET",
+      "path": "/clients",
+      "file": "backend/server.py",
+      "line": 3832
+    },
+    {
+      "method": "GET",
+      "path": "/clients/{client_id}",
+      "file": "backend/server.py",
+      "line": 3839
+    },
+    {
+      "method": "POST",
+      "path": "/clients",
+      "file": "backend/server.py",
+      "line": 3850
+    },
+    {
+      "method": "PUT",
+      "path": "/clients/{client_id}",
+      "file": "backend/server.py",
+      "line": 3858
+    },
+    {
+      "method": "DELETE",
+      "path": "/clients/{client_id}",
+      "file": "backend/server.py",
+      "line": 3872
+    },
+    {
+      "method": "POST",
+      "path": "/jobs/{job_id}/pause",
+      "file": "backend/server.py",
+      "line": 3883
+    },
+    {
+      "method": "POST",
+      "path": "/sms/send-fixed",
+      "file": "backend/server.py",
+      "line": 3952
+    },
+    {
+      "method": "GET",
+      "path": "/ai/actions",
+      "file": "backend/server.py",
+      "line": 4091
+    },
+    {
+      "method": "POST",
+      "path": "/ai/actions",
+      "file": "backend/server.py",
+      "line": 4100
+    },
+    {
+      "method": "POST",
+      "path": "/ai/actions/{action_id}/approve",
+      "file": "backend/server.py",
+      "line": 4129
+    },
+    {
+      "method": "POST",
+      "path": "/ai/actions/{action_id}/decline",
+      "file": "backend/server.py",
+      "line": 4146
+    },
+    {
+      "method": "GET",
+      "path": "/field-activity",
+      "file": "backend/server.py",
+      "line": 4171
+    },
+    {
+      "method": "GET",
+      "path": "/approved-notifications",
+      "file": "backend/server.py",
+      "line": 4194
+    },
+    {
+      "method": "GET",
+      "path": "/xero/status",
+      "file": "backend/server.py",
+      "line": 4209
+    },
+    {
+      "method": "GET",
+      "path": "/integrations/xero/status",
+      "file": "backend/server.py",
+      "line": 4210
+    },
+    {
+      "method": "GET",
+      "path": "/logic/business-profile",
+      "file": "backend/server.py",
+      "line": 4230
+    },
+    {
+      "method": "GET",
+      "path": "/logic/business-records/{record_type}",
+      "file": "backend/server.py",
+      "line": 4257
+    },
+    {
+      "method": "GET",
+      "path": "/api/health-login",
+      "file": "backend/server.py",
+      "line": 3817
+    },
+    {
+      "method": "INCLUDE",
+      "path": "",
+      "handler": "api_router",
+      "file": "backend/server.py",
+      "line": 3697
+    },
+    {
+      "method": "INCLUDE",
+      "path": "",
+      "handler": "api_router",
+      "file": "backend/server.py",
+      "line": 4164
+    },
+    {
+      "method": "INCLUDE",
+      "path": "",
+      "handler": "api_router",
+      "file": "backend/server.py",
+      "line": 4292
+    },
+    {
+      "method": "GET",
+      "path": "/api/logic/team-members",
+      "file": "backend/sitecustomize.py",
+      "line": 242
+    },
+    {
+      "method": "POST",
+      "path": "/api/logic/team-members",
+      "file": "backend/sitecustomize.py",
+      "line": 253
+    },
+    {
+      "method": "GET",
+      "path": "/api/billing/addons",
+      "file": "backend/sitecustomize.py",
+      "line": 368
+    },
+    {
+      "method": "POST",
+      "path": "/api/billing/create-addon-checkout-session",
+      "file": "backend/sitecustomize.py",
+      "line": 376
+    },
+    {
+      "method": "POST",
+      "path": "/api/billing/confirm-addon-checkout",
+      "file": "backend/sitecustomize.py",
+      "line": 414
+    },
+    {
+      "method": "GET",
+      "path": "/api/xero/status",
+      "file": "backend/sitecustomize.py",
+      "line": 455
+    },
+    {
+      "method": "POST",
+      "path": "/api/xero/settings",
+      "file": "backend/sitecustomize.py",
+      "line": 467
+    },
+    {
+      "method": "POST",
+      "path": "/api/xero/connect/start",
+      "file": "backend/sitecustomize.py",
+      "line": 480
+    },
+    {
+      "method": "GET",
+      "path": "/api/xero/callback",
+      "file": "backend/sitecustomize.py",
+      "line": 495
+    },
+    {
+      "method": "POST",
+      "path": "/api/xero/disconnect",
+      "file": "backend/sitecustomize.py",
+      "line": 510
+    },
+    {
+      "method": "GET",
+      "path": "/api/logic/team-members",
+      "file": "backend/sitecustomize.py",
+      "line": 242
+    },
+    {
+      "method": "POST",
+      "path": "/api/logic/team-members",
+      "file": "backend/sitecustomize.py",
+      "line": 253
+    },
+    {
+      "method": "GET",
+      "path": "/api/billing/addons",
+      "file": "backend/sitecustomize.py",
+      "line": 368
+    },
+    {
+      "method": "POST",
+      "path": "/api/billing/create-addon-checkout-session",
+      "file": "backend/sitecustomize.py",
+      "line": 376
+    },
+    {
+      "method": "POST",
+      "path": "/api/billing/confirm-addon-checkout",
+      "file": "backend/sitecustomize.py",
+      "line": 414
+    },
+    {
+      "method": "GET",
+      "path": "/api/xero/status",
+      "file": "backend/sitecustomize.py",
+      "line": 455
+    },
+    {
+      "method": "POST",
+      "path": "/api/xero/settings",
+      "file": "backend/sitecustomize.py",
+      "line": 467
+    },
+    {
+      "method": "POST",
+      "path": "/api/xero/connect/start",
+      "file": "backend/sitecustomize.py",
+      "line": 480
+    },
+    {
+      "method": "GET",
+      "path": "/api/xero/callback",
+      "file": "backend/sitecustomize.py",
+      "line": 495
+    },
+    {
+      "method": "POST",
+      "path": "/api/xero/disconnect",
+      "file": "backend/sitecustomize.py",
+      "line": 510
+    },
+    {
+      "method": "GET",
+      "path": "/xero/status",
+      "file": "backend/xero_routes.py",
+      "line": 60
+    },
+    {
+      "method": "POST",
+      "path": "/xero/connect/start",
+      "file": "backend/xero_routes.py",
+      "line": 82
+    },
+    {
+      "method": "GET",
+      "path": "/xero/callback",
+      "file": "backend/xero_routes.py",
+      "line": 95
+    },
+    {
+      "method": "POST",
+      "path": "/xero/disconnect",
+      "file": "backend/xero_routes.py",
+      "line": 135
+    },
+    {
+      "method": "POST",
+      "path": "/xero/settings",
+      "file": "backend/xero_routes.py",
+      "line": 141
+    },
+    {
+      "method": "POST",
+      "path": "/xero/prepare-payroll-handoff",
+      "file": "backend/xero_routes.py",
+      "line": 150
+    },
+    {
+      "method": "GET",
+      "path": "/xero/status",
+      "file": "backend/xero_routes.py",
+      "line": 60
+    },
+    {
+      "method": "POST",
+      "path": "/xero/connect/start",
+      "file": "backend/xero_routes.py",
+      "line": 82
+    },
+    {
+      "method": "GET",
+      "path": "/xero/callback",
+      "file": "backend/xero_routes.py",
+      "line": 95
+    },
+    {
+      "method": "POST",
+      "path": "/xero/disconnect",
+      "file": "backend/xero_routes.py",
+      "line": 135
+    },
+    {
+      "method": "POST",
+      "path": "/xero/settings",
+      "file": "backend/xero_routes.py",
+      "line": 141
+    },
+    {
+      "method": "POST",
+      "path": "/xero/prepare-payroll-handoff",
+      "file": "backend/xero_routes.py",
+      "line": 150
+    },
+    {
+      "method": "INCLUDE",
+      "path": "",
+      "handler": "router",
+      "file": "backend/xero_routes.py",
+      "line": 160
     }
   ],
   "api_calls": [
@@ -8651,6 +10211,216 @@
       "file": "backend/routes/commandRoutes.js",
       "line": 39,
       "sample": "demo"
+    },
+    {
+      "file": "backend/scripts/cleanup_test_data.py",
+      "line": 2,
+      "sample": "demo"
+    },
+    {
+      "file": "backend/scripts/cleanup_test_data.py",
+      "line": 20,
+      "sample": "demo"
+    },
+    {
+      "file": "backend/scripts/cleanup_test_data.py",
+      "line": 23,
+      "sample": "sample"
+    },
+    {
+      "file": "backend/server/__init__.py",
+      "line": 82,
+      "sample": "sample"
+    },
+    {
+      "file": "backend/server/__init__.py",
+      "line": 84,
+      "sample": "sample"
+    },
+    {
+      "file": "backend/server/__init__.py",
+      "line": 94,
+      "sample": "sample"
+    },
+    {
+      "file": "backend/server/__init__.py",
+      "line": 94,
+      "sample": "sample"
+    },
+    {
+      "file": "backend/server/__init__.py",
+      "line": 94,
+      "sample": "sample"
+    },
+    {
+      "file": "backend/server/__init__.py",
+      "line": 95,
+      "sample": "sample"
+    },
+    {
+      "file": "backend/server/__init__.py",
+      "line": 95,
+      "sample": "sample"
+    },
+    {
+      "file": "backend/server/__init__.py",
+      "line": 95,
+      "sample": "sample"
+    },
+    {
+      "file": "backend/server/__init__.py",
+      "line": 97,
+      "sample": "sample"
+    },
+    {
+      "file": "backend/server/__init__.py",
+      "line": 98,
+      "sample": "sample"
+    },
+    {
+      "file": "backend/server/__init__.py",
+      "line": 99,
+      "sample": "sample"
+    },
+    {
+      "file": "backend/server/__init__.py",
+      "line": 99,
+      "sample": "sample"
+    },
+    {
+      "file": "backend/server.py",
+      "line": 2328,
+      "sample": "Mock"
+    },
+    {
+      "file": "backend/server.py",
+      "line": 2449,
+      "sample": "mock"
+    },
+    {
+      "file": "backend/server.py",
+      "line": 2454,
+      "sample": "mock"
+    },
+    {
+      "file": "backend/server.py",
+      "line": 2465,
+      "sample": "mock"
+    },
+    {
+      "file": "backend/server.py",
+      "line": 2467,
+      "sample": "mock"
+    },
+    {
+      "file": "backend/server.py",
+      "line": 2471,
+      "sample": "MOCK"
+    },
+    {
+      "file": "backend/server.py",
+      "line": 2471,
+      "sample": "mock"
+    },
+    {
+      "file": "backend/server.py",
+      "line": 2518,
+      "sample": "mock"
+    },
+    {
+      "file": "backend/server.py",
+      "line": 2522,
+      "sample": "MOCK"
+    },
+    {
+      "file": "backend/server.py",
+      "line": 4058,
+      "sample": "mock"
+    },
+    {
+      "file": "backend/sms_provider.py",
+      "line": 217,
+      "sample": "Mock"
+    },
+    {
+      "file": "backend/sms_provider.py",
+      "line": 220,
+      "sample": "MOCK"
+    },
+    {
+      "file": "backend/sms_provider.py",
+      "line": 221,
+      "sample": "mock"
+    },
+    {
+      "file": "backend/sms_provider.py",
+      "line": 221,
+      "sample": "mock"
+    },
+    {
+      "file": "backend/sms_provider.py",
+      "line": 221,
+      "sample": "mock"
+    },
+    {
+      "file": "backend/sms_provider.py",
+      "line": 235,
+      "sample": "Mock"
+    },
+    {
+      "file": "backend/sms_provider.py",
+      "line": 236,
+      "sample": "Mock"
+    },
+    {
+      "file": "backend/tests/test_admin_dashboard.py",
+      "line": 10,
+      "sample": "preview"
+    },
+    {
+      "file": "backend/tests/test_sms_real_pipeline.py",
+      "line": 7,
+      "sample": "Mock"
+    },
+    {
+      "file": "backend/tests/test_sms_real_pipeline.py",
+      "line": 11,
+      "sample": "mock"
+    },
+    {
+      "file": "backend/tests/test_sms_real_pipeline.py",
+      "line": 65,
+      "sample": "mock"
+    },
+    {
+      "file": "backend/tests/test_sms_real_pipeline.py",
+      "line": 80,
+      "sample": "MOCK"
+    },
+    {
+      "file": "backend/tests/test_sms_real_pipeline.py",
+      "line": 81,
+      "sample": "mock"
+    },
+    {
+      "file": "backend/tests/test_sms_real_pipeline.py",
+      "line": 81,
+      "sample": "mock"
+    },
+    {
+      "file": "backend/tests/test_sms_real_pipeline.py",
+      "line": 88,
+      "sample": "mock"
+    },
+    {
+      "file": "backend/tests/test_stripe_success_redirect.py",
+      "line": 9,
+      "sample": "mock"
+    },
+    {
+      "file": "backend/tests/test_stripe_success_redirect.py",
+      "line": 9,
+      "sample": "Mock"
     }
   ]
 }

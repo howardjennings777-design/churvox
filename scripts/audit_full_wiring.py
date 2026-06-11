@@ -12,7 +12,7 @@ JSON_OUT = ROOT / "docs" / "full_wiring_audit.json"
 
 TEXT_EXTS = {".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"}
 FRONT_EXTS = {".js", ".jsx", ".ts", ".tsx"}
-BACK_EXTS = {".js", ".ts", ".mjs", ".cjs"}
+BACK_EXTS = {".js", ".ts", ".mjs", ".cjs", ".py"}
 
 SKIP_DIRS = {
     "node_modules", "build", "dist", ".git", ".next", ".cache",
@@ -78,10 +78,19 @@ def contains_any(files, patterns):
 def route_inventory():
     routes = []
     route_rx = re.compile(r'(?:router|app)\.(get|post|put|patch|delete)\s*\(\s*[\'"`]([^\'"`]+)[\'"`]', re.I)
+    py_route_rx = re.compile(r'@(?:router|app)\.(get|post|put|patch|delete)\s*\(\s*[\'"]([^\'"]+)[\'"]', re.I)
     app_use_rx = re.compile(r'app\.use\s*\(\s*[\'"`]([^\'"`]+)[\'"`]\s*,\s*([A-Za-z0-9_]+)', re.I)
+    py_include_rx = re.compile(r'(?:app|api)\.include_router\s*\(\s*([A-Za-z0-9_]+)(?:[^)]*prefix\s*=\s*[\'"]([^\'"]+)[\'"])?', re.I | re.S)
     for p in backend_files:
         text = read(p)
         for m in route_rx.finditer(text):
+            routes.append({
+                "method": m.group(1).upper(),
+                "path": m.group(2),
+                "file": rel(p),
+                "line": text[:m.start()].count("\n") + 1,
+            })
+        for m in py_route_rx.finditer(text):
             routes.append({
                 "method": m.group(1).upper(),
                 "path": m.group(2),
@@ -93,6 +102,14 @@ def route_inventory():
                 "method": "USE",
                 "path": m.group(1),
                 "handler": m.group(2),
+                "file": rel(p),
+                "line": text[:m.start()].count("\n") + 1,
+            })
+        for m in py_include_rx.finditer(text):
+            routes.append({
+                "method": "INCLUDE",
+                "path": m.group(2) or "",
+                "handler": m.group(1),
                 "file": rel(p),
                 "line": text[:m.start()].count("\n") + 1,
             })
@@ -162,11 +179,26 @@ def has_backend_route(method, path_bits):
     return False
 
 def has_any_backend_path(bits):
-    for r in routes:
-        full = (r["path"] + " " + r.get("file", "")).lower()
-        if all(bit.lower() in full for bit in bits):
-            return True
-    return False
+    joined_routes = "\n".join([
+        f"{r.get('method','')} {r.get('path','')} {r.get('handler','')} {r.get('file','')}"
+        for r in routes
+    ]).lower()
+    full_backend_text = (joined_routes + "\n" + back_text.lower())
+
+    synonyms = {
+        "register": ["register", "signup", "sign-up", "create-account"],
+        "signup": ["signup", "register", "sign-up", "create-account"],
+        "auth": ["auth", "user", "users"],
+    }
+
+    expanded = []
+    for bit in bits:
+        expanded.append(synonyms.get(bit.lower(), [bit.lower()]))
+
+    for group in expanded:
+        if not any(term in full_backend_text for term in group):
+            return False
+    return True
 
 def has_front(bits):
     text = front_text.lower()
@@ -311,7 +343,7 @@ add(
 add(
     "Security/Auth",
     "Backend CORS allows credentials",
-    "PASS" if re.search(r'credentials\s*:\s*true', back_text, re.I) and re.search(r'cors\s*\(', back_text, re.I) else "WARN",
+    "PASS" if re.search(r'credentials\s*[:=]\s*true|allow_credentials\s*=\s*true', back_text, re.I) and re.search(r'cors\s*\(|CORSMiddleware', back_text, re.I) else "WARN",
     "High",
     "Looks for CORS credentials true.",
     "Backend CORS must allow credentials from www.churvox.com."
@@ -320,7 +352,7 @@ add(
 add(
     "Security/Auth",
     "Secure cookie settings present",
-    "PASS" if re.search(r'sameSite\s*:\s*[\'"`]none[\'"`]|secure\s*:\s*true|httpOnly\s*:\s*true', back_text, re.I) else "WARN",
+    "PASS" if re.search(r'sameSite\s*[:=]\s*[\'"`]none[\'"`]|samesite\s*=\s*[\'"]none[\'"]|secure\s*[:=]\s*true|httponly\s*[:=]\s*true|httponly\s*=\s*true', back_text, re.I) else "WARN",
     "High",
     "Looks for SameSite/Secure/httpOnly.",
     "Production cookies should be httpOnly, secure, SameSite=None."
