@@ -1762,3 +1762,175 @@ html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandDeskHero > di
   color:#fed7aa !important;
   -webkit-text-fill-color:#fed7aa !important;
 }
+
+/* FINAL LIGHT COMMAND POLISH — keep dark hero, clean light cards */
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandMorning,
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSourcePanel,
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandEventFeed,
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlip{
+  background:#fffaf0 !important;
+  border:1px solid rgba(15,23,42,.12) !important;
+  box-shadow:0 12px 30px rgba(15,23,42,.08) !important;
+}
+
+/* Command checks strip should belong to light page */
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSourcePanel{
+  padding:14px 16px !important;
+  border-radius:22px !important;
+  background:#ffffff !important;
+}
+
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSourcePanel p{
+  color:#1f2937 !important;
+  -webkit-text-fill-color:#1f2937 !important;
+  font-size:13px !important;
+  font-weight:900 !important;
+}
+
+/* Tighten focus cards */
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandFocusRow{
+  gap:10px !important;
+}
+
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandFocusRow button{
+  min-height:76px !important;
+  border-radius:20px !important;
+  padding:14px 16px !important;
+}
+
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandFocusRow b{
+  font-size:18px !important;
+}
+
+/* Tabs cleaner */
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandTabs{
+  background:#ffffff !important;
+  border-radius:20px !important;
+  padding:8px !important;
+}
+
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandTabs button{
+  min-height:36px !important;
+  border-radius:14px !important;
+  padding:0 12px !important;
+}
+
+/* Slip cards: less empty space, stronger readable text */
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlip{
+  padding:14px !important;
+  border-radius:22px !important;
+  border:1px solid rgba(249,115,22,.22) !important;
+}
+
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlip header{
+  margin-bottom:10px !important;
+}
+
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlip h2{
+  color:#111827 !important;
+  -webkit-text-fill-color:#111827 !important;
+  font-size:28px !important;
+  line-height:1 !important;
+  margin:8px 0 5px !important;
+  font-weight:1000 !important;
+}
+
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlip small{
+  color:#334155 !important;
+  -webkit-text-fill-color:#334155 !important;
+  font-size:12px !important;
+  font-weight:950 !important;
+}
+
+/* Inner found/prepared/why boxes */
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlipBody{
+  gap:8px !important;
+  margin-top:10px !important;
+}
+
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlipBody section{
+  background:#ffffff !important;
+  border:1px solid rgba(15,23,42,.12) !important;
+  border-radius:16px !important;
+  padding:11px 12px !important;
+  min-height:auto !important;
+}
+
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlipBody b{
+  border-radius:999px !important;
+  padding:5px 8px !important;
+  font-size:10px !important;
+}
+
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlipBody p{
+  color:#111827 !important;
+  -webkit-text-fill-color:#111827 !important;
+  font-size:13px !important;
+  font-weight:900 !important;
+  margin-top:7px !important;
+}
+
+/* Action type strip */
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandActionType{
+  background:#ffffff !important;
+  border:1px solid rgba(15,23,42,.10) !important;
+  border-radius:14px !important;
+  padding:8px 10px !important;
+  margin-top:9px !important;
+}
+
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandActionType b,
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandActionType span{
+  color:#111827 !important;
+  -webkit-text-fill-color:#111827 !important;
+  font-size:11px !important;
+}
+
+/* Buttons tighter and cleaner */
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlipControls{
+  gap:7px !important;
+  margin-top:10px !important;
+}
+
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlipControls button{
+  min-height:38px !important;
+  border-radius:13px !important;
+  padding:0 13px !important;
+  font-size:11px !important;
+}
+
+/* Event feed compact */
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandEventFeed{
+  padding:14px !important;
+  border-radius:22px !important;
+}
+
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandEventFeed section{
+  background:#ffffff !important;
+  border:1px solid rgba(15,23,42,.10) !important;
+  border-radius:16px !important;
+  padding:10px 11px !important;
+}
+
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandEventFeed small{
+  color:#9a3412 !important;
+  -webkit-text-fill-color:#9a3412 !important;
+}
+
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandEventFeed section b,
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandEventFeed section p{
+  color:#111827 !important;
+  -webkit-text-fill-color:#111827 !important;
+}
+
+/* Keep floating help from covering buttons too much */
+html body.freshCommandOwnerMode.freshCommandLightMode .freshHelpBubble,
+html body.freshCommandOwnerMode.freshCommandLightMode [class*="Help"]{
+  z-index:40 !important;
+}
+
+@media(max-width:1350px){
+  html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlipBody{
+    grid-template-columns:1fr !important;
+  }
+}
