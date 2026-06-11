@@ -1,3 +1,7 @@
+try:
+    from churvox_invoice_pdf_routes import router as invoice_pdf_router
+except Exception:
+    from .churvox_invoice_pdf_routes import router as invoice_pdf_router
 from passlib.context import CryptContext
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
@@ -382,6 +386,7 @@ def get_country_addon_price_id(addon: str, country: str | None = "NZ") -> str:
 
 # Create the main app
 app = FastAPI(title="Churvox API")
+app.include_router(invoice_pdf_router, prefix="/api")
 
 
 

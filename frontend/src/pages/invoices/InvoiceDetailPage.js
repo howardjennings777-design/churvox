@@ -121,10 +121,49 @@ export default function InvoiceDetailPage() {
 
   async function sendInvoice() {
     const biz = invoice?.business_snapshot || loadBusinessSettings();
-    if (!invoice?.customer_email && !invoice?.client_email) return toast.error("Add a customer email before sending");
-    window.location.href = mailtoUrl(invoice, biz);
-    const note = `Email opened from Churvox on ${new Date().toLocaleDateString("en-NZ")}.`;
-    await patchInvoice("send", { status: "sent", notes: invoice?.notes ? `${invoice.notes}\n${note}` : note }, "Email opened and invoice marked sent");
+    const to = invoice?.customer_email || invoice?.client_email || "";
+    if (!to) return toast.error("Add a customer email before sending");
+
+    const invNo = invoice?.invoice_number || "invoice";
+    const subject = `Invoice ${invNo}`;
+    const html = `<p>Hi ${invoice?.customer_name || "there"},</p>
+<p>Please find invoice <strong>${invNo}</strong> attached as a PDF.</p>
+<p>Total: <strong>${money(invoice.total || invoice.amount || invoice.subtotal)}</strong><br/>
+Amount due: <strong>${money(amountDue(invoice))}</strong><br/>
+Due: ${date(invoice.due_date)}</p>
+${invoice.payment_link ? `<p><a href="${invoice.payment_link}">Pay invoice online</a></p>` : ""}
+<p>Thanks,<br/>${biz.business_name || "Churvox"}</p>`;
+
+    setBusy("send");
+    const res = await api.post(`/invoices/${encodeURIComponent(id)}/send-with-pdf`, {
+      to,
+      subject,
+      html,
+      invoice: { ...(invoice || {}), business_snapshot: biz },
+    });
+
+    if (res?.success) {
+      const note = `Invoice PDF sent by Churvox on ${new Date().toLocaleDateString("en-NZ")}.`;
+      await patchInvoice(
+        "send",
+        {
+          status: "sent",
+          sent_at: new Date().toISOString(),
+          pdf_sent_at: new Date().toISOString(),
+          pdf_attached: true,
+          email_provider: res.data?.provider,
+          notes: invoice?.notes ? `${invoice.notes}\n${note}` : note,
+        },
+        res.data?.email_sent === false
+          ? "PDF generated. Add email provider env vars on Render to send automatically."
+          : "Invoice sent with PDF attached"
+      );
+      setBusy("");
+      return;
+    }
+
+    setBusy("");
+    toast.error(res?.error || "Could not send invoice PDF");
   }
 
   async function markPaid() {

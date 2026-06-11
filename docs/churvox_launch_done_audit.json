@@ -1,0 +1,166 @@
+{
+  "score": 96,
+  "checks": [
+    {
+      "area": "Invoice PDF",
+      "name": "Backend PDF generator exists",
+      "status": "PASS",
+      "evidence": "PDF bytes route exists.",
+      "fix": "Add backend PDF generator."
+    },
+    {
+      "area": "Invoice PDF",
+      "name": "Send-with-PDF endpoint exists",
+      "status": "PASS",
+      "evidence": "Invoice PDF email endpoint exists.",
+      "fix": "Add POST /api/invoices/:id/send-with-pdf."
+    },
+    {
+      "area": "Invoice PDF",
+      "name": "PDF route mounted",
+      "status": "PASS",
+      "evidence": "Invoice PDF router mounted in backend app.",
+      "fix": "Mount invoice PDF router."
+    },
+    {
+      "area": "Invoice PDF",
+      "name": "Owner invoice send uses PDF endpoint",
+      "status": "PASS",
+      "evidence": "Invoice detail sends through backend PDF endpoint.",
+      "fix": "Replace mailto-only send with backend send-with-PDF."
+    },
+    {
+      "area": "Invoice PDF",
+      "name": "Email provider support exists",
+      "status": "PASS",
+      "evidence": "Postmark and Resend providers supported.",
+      "fix": "Set provider env vars on Render."
+    },
+    {
+      "area": "Worker",
+      "name": "Worker app routes exist",
+      "status": "PASS",
+      "evidence": "Worker route table exists.",
+      "fix": "Add worker routes."
+    },
+    {
+      "area": "Worker",
+      "name": "Worker app has timer actions",
+      "status": "PASS",
+      "evidence": "Worker timer endpoints used.",
+      "fix": "Wire worker timers."
+    },
+    {
+      "area": "Worker",
+      "name": "Worker evidence capture exists",
+      "status": "PASS",
+      "evidence": "Worker notes/photos exist.",
+      "fix": "Wire worker evidence."
+    },
+    {
+      "area": "Worker",
+      "name": "Worker help reaches owner Command",
+      "status": "PASS",
+      "evidence": "Worker help creates Command slip.",
+      "fix": "Wire worker help to Command."
+    },
+    {
+      "area": "Owner Command",
+      "name": "Command reads backend slips",
+      "status": "WARN",
+      "evidence": "Command backend slip API referenced.",
+      "fix": "Load backend Command slips."
+    },
+    {
+      "area": "Owner Command",
+      "name": "Owner notification centre covers worker issues",
+      "status": "PASS",
+      "evidence": "Worker messages category exists.",
+      "fix": "Show worker messages in Command."
+    },
+    {
+      "area": "Owner Review",
+      "name": "Send-back flow exists",
+      "status": "PASS",
+      "evidence": "Worker sees sent-back jobs.",
+      "fix": "Wire owner send-back action."
+    },
+    {
+      "area": "Customer",
+      "name": "Public quote accept/decline exists",
+      "status": "PASS",
+      "evidence": "Public quote actions exist.",
+      "fix": "Wire public quote."
+    },
+    {
+      "area": "Customer",
+      "name": "Public invoice pay link exists",
+      "status": "PASS",
+      "evidence": "Public invoice has payment path.",
+      "fix": "Wire public invoice."
+    },
+    {
+      "area": "Customer",
+      "name": "Public client approval exists",
+      "status": "PASS",
+      "evidence": "Public client portal approval exists.",
+      "fix": "Wire client portal."
+    },
+    {
+      "area": "Roles",
+      "name": "Worker blocked from owner/business shell",
+      "status": "PASS",
+      "evidence": "Worker redirected away from business shell.",
+      "fix": "Add worker route guard."
+    },
+    {
+      "area": "Roles",
+      "name": "Payroll default route clean",
+      "status": "PASS",
+      "evidence": "Payroll default route is payroll board.",
+      "fix": "Fix payroll route."
+    },
+    {
+      "area": "Roles",
+      "name": "Reports excludes payroll",
+      "status": "PASS",
+      "evidence": "Reports route/matrix excludes payroll.",
+      "fix": "Block payroll from reports."
+    },
+    {
+      "area": "Tradie basics",
+      "name": "Onboarding steps exist",
+      "status": "PASS",
+      "evidence": "Launch onboarding checklist exists.",
+      "fix": "Add onboarding checklist."
+    },
+    {
+      "area": "Tradie basics",
+      "name": "Customer message templates exist",
+      "status": "PASS",
+      "evidence": "Common tradie templates exist.",
+      "fix": "Add templates."
+    },
+    {
+      "area": "Tradie basics",
+      "name": "Client memory exists",
+      "status": "PASS",
+      "evidence": "Client memory fields exist.",
+      "fix": "Add client memory."
+    },
+    {
+      "area": "Tradie basics",
+      "name": "Price memory exists",
+      "status": "PASS",
+      "evidence": "Price memory fields exist.",
+      "fix": "Add price memory."
+    },
+    {
+      "area": "Tradie basics",
+      "name": "Offline queue helper exists",
+      "status": "PASS",
+      "evidence": "Offline queue helper exists.",
+      "fix": "Add offline queue helper."
+    }
+  ]
+}
