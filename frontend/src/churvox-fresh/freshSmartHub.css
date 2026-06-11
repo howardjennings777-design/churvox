@@ -25,3 +25,84 @@
 .freshSmartFlow button{text-align:left;background:#fff;border:1px solid rgba(15,23,42,.10);padding:14px}
 .freshSmartFlow small{display:block;margin-top:4px;color:#64748b;-webkit-text-fill-color:#64748b;font-weight:850}
 @media(max-width:1050px){.freshSmartHero,.freshSmartGrid,.freshSmartActions section{display:grid}.freshSmartStats{min-width:0;grid-template-columns:1fr}.freshSmartActionButtons,.freshSmartLaunchButtons{display:grid}}
+
+/* Live cockpit data states */
+.freshSmartSync {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.freshSmartSync b {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  font-weight: 1000;
+}
+
+.freshSmartSync small {
+  color: #cbd5e1 !important;
+  -webkit-text-fill-color: #cbd5e1 !important;
+  font-weight: 850;
+}
+
+.freshSmartSync button {
+  border: 0;
+  border-radius: 999px;
+  min-height: 36px;
+  padding: 0 13px;
+  background: #f97316;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshSmartSync button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.freshSmartError {
+  margin-top: 10px !important;
+  max-width: 720px;
+  border: 1px solid rgba(248, 113, 113, 0.38);
+  border-radius: 14px;
+  background: rgba(127, 29, 29, 0.32);
+  color: #fecaca !important;
+  -webkit-text-fill-color: #fecaca !important;
+  padding: 10px 12px;
+  font-weight: 900;
+}
+
+.freshSmartEmpty {
+  border: 1px dashed rgba(15, 23, 42, 0.22);
+  border-radius: 24px;
+  background: #ffffff;
+  padding: 18px;
+}
+
+.freshSmartEmpty b {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  font-size: 18px;
+}
+
+.freshSmartEmpty p {
+  margin: 8px 0 0;
+}
+
+.freshSmartSource {
+  display: inline-flex;
+  margin-top: 10px;
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+  padding: 6px 9px;
+  font-size: 11px;
+  font-weight: 1000;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
