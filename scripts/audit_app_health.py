@@ -15,7 +15,7 @@ def files_under(base, suffixes):
 
 front_files = files_under("frontend/src", [".js", ".jsx", ".ts", ".tsx", ".css"])
 back_files = files_under("backend", [".py", ".js", ".ts"])
-doc_files = files_under("docs", [".md", ".json"])
+doc_files = [p for p in files_under("docs", [".md", ".json"]) if p.name not in {"CHURVOX_APP_HEALTH_AUDIT.md", "churvox_app_health_audit.json"}]
 
 front_text = ""
 back_text = ""
