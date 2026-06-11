@@ -921,9 +921,9 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
           <article key={slip.id} className={`freshCommandSlip ${isImportant(slip) ? "high" : ""}`}>
             <header>
               <div>
-                <span>{slip.areaGroup}</span>
-                <h2>{slip.title}</h2>
-                <small>{slip.group} · {slip.info}</small>
+                <span className="freshCommandAreaBadge">{slip.areaGroup}</span>
+                <div className="freshCommandSlipTitle">{slip.title}</div>
+                <div className="freshCommandSlipMeta">{slip.group} · {slip.info}</div>
               </div>
               <strong>{slip.urgency}</strong>
             </header>

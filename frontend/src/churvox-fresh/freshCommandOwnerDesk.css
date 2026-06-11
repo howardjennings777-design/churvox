@@ -1989,3 +1989,75 @@ html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlipBody p{
 html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlip{
   background:#ffffff !important;
 }
+
+/* REAL SLIP HEADER FIX — avoid old h2/small global styles entirely */
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandDeskPage .freshCommandSlipTitle{
+  display:block !important;
+  margin:8px 0 5px !important;
+  padding:0 !important;
+  background:none !important;
+  background-image:none !important;
+  background-color:transparent !important;
+  background-clip:border-box !important;
+  -webkit-background-clip:border-box !important;
+  color:#0f172a !important;
+  -webkit-text-fill-color:#0f172a !important;
+  opacity:1 !important;
+  visibility:visible !important;
+  filter:none !important;
+  mix-blend-mode:normal !important;
+  text-shadow:none !important;
+  font-size:30px !important;
+  font-weight:1000 !important;
+  line-height:1.02 !important;
+  letter-spacing:-.045em !important;
+  font-family:inherit !important;
+}
+
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandDeskPage .freshCommandSlipMeta{
+  display:block !important;
+  margin:0 !important;
+  padding:0 !important;
+  background:none !important;
+  background-image:none !important;
+  color:#1f2937 !important;
+  -webkit-text-fill-color:#1f2937 !important;
+  opacity:1 !important;
+  visibility:visible !important;
+  filter:none !important;
+  mix-blend-mode:normal !important;
+  text-shadow:none !important;
+  font-size:13px !important;
+  font-weight:950 !important;
+  line-height:1.35 !important;
+  font-family:inherit !important;
+}
+
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandDeskPage .freshCommandAreaBadge{
+  display:inline-flex !important;
+  width:max-content !important;
+  max-width:100% !important;
+  border-radius:999px !important;
+  background:#111827 !important;
+  color:#fbbf24 !important;
+  -webkit-text-fill-color:#fbbf24 !important;
+  padding:6px 10px !important;
+  font-size:10px !important;
+  font-weight:1000 !important;
+  letter-spacing:.12em !important;
+  text-transform:uppercase !important;
+  opacity:1 !important;
+  visibility:visible !important;
+  filter:none !important;
+  mix-blend-mode:normal !important;
+  text-shadow:none !important;
+}
+
+/* Also force direct children in slip header */
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandDeskPage .freshCommandSlip header > div,
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandDeskPage .freshCommandSlip header > div *{
+  opacity:1 !important;
+  visibility:visible !important;
+  filter:none !important;
+  mix-blend-mode:normal !important;
+}
