@@ -495,22 +495,22 @@ class PlanType(str, Enum):
 
 PLAN_LIMITS = {
     "solo": {
-        "price": 30, "max_workers": 0, "max_clients": 20,
+        "price": 39, "max_workers": 0, "max_clients": 20,
         "sms": False, "myob": False, "team": False,
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
     },
     "team": {
-        "price": 70, "max_workers": 5, "max_clients": 30,
+        "price": 89, "max_workers": 5, "max_clients": 30,
         "sms": True, "myob": False, "team": True,
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
     },
     "pro": {
-        "price": 110, "max_workers": 20, "max_clients": 35,
+        "price": 149, "max_workers": 20, "max_clients": 40,
         "sms": True, "myob": True, "team": True,
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
     },
     "enterprise": {
-        "price": 240, "max_workers": 50, "max_clients": 50,
+        "price": 299, "max_workers": 50, "max_clients": 50,
         "sms": True, "myob": True, "team": True,
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
         "extra_blocks": True,
@@ -835,6 +835,8 @@ async def register(user_data: UserCreate, response: Response):
         "role": "employer",
         "status": "active",
         "plan": "solo",
+        "subscription_status": "trialing",
+        "trial_ends_at": datetime.now(timezone.utc) + timedelta(days=14),
         "gst_rate": DEFAULT_GST_RATE,
         "created_at": datetime.now(timezone.utc)
     }
@@ -939,8 +941,8 @@ async def forgot_password(data: ForgotPassword):
         "token": token, "user_id": user["_id"],
         "expires_at": datetime.now(timezone.utc) + timedelta(hours=1), "used": False
     })
-    logger.info(f"Reset token for {email}: {token}")
-    return {"message": "If the email exists, a reset link has been sent", "debug_token": token}
+    logger.info("Password reset requested for %s", email)
+    return {"message": "If the email exists, a reset link has been sent"}
 
 @api_router.post("/auth/reset-password")
 async def reset_password(data: ResetPassword):
@@ -1024,7 +1026,7 @@ async def get_plan_limits(request: Request):
         },
         "max_workers": max_workers,
         "extra_user_blocks": extra_blocks,
-        "extra_block_price": 100,
+        "extra_block_price": 99,
     }
 
 @api_router.get("/plan/all")
@@ -3672,10 +3674,14 @@ async def delete_my_account(response: Response, current_user: dict = Depends(get
 
 
 
-OWNER_BOOTSTRAP_EMAIL = "howardjennings77@gmail.com"
-OWNER_BOOTSTRAP_PASSWORD = "OwnerReset123!"
+OWNER_BOOTSTRAP_EMAIL = os.environ.get("OWNER_BOOTSTRAP_EMAIL", "").lower().strip()
+OWNER_BOOTSTRAP_PASSWORD = os.environ.get("OWNER_BOOTSTRAP_PASSWORD", "")
 
 async def ensure_owner_account():
+    if not OWNER_BOOTSTRAP_EMAIL or not OWNER_BOOTSTRAP_PASSWORD:
+        logger.info("Owner bootstrap skipped; OWNER_BOOTSTRAP_EMAIL and OWNER_BOOTSTRAP_PASSWORD are not both set")
+        return
+
     owner_email = OWNER_BOOTSTRAP_EMAIL.lower().strip()
     owner_password_hash = get_password_hash(OWNER_BOOTSTRAP_PASSWORD)
 
@@ -4105,6 +4111,7 @@ def _ai_action_safe(doc):
             out[k] = v
     return out
 
+@api_router.get("/ai-operator/actions")
 @api_router.get("/ai/actions")
 async def list_ai_actions(current_user: dict = Depends(get_current_user)):
     business_id = str(current_user.get("business_id") or current_user.get("id"))
