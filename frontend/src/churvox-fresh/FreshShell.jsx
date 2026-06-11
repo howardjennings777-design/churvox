@@ -4,7 +4,7 @@ import FreshSearch from "./FreshSearch";
 import FreshTopStatus from "./FreshTopStatus";
 
 const groups = [
-  { title: "Home", items: [["command", "CM", "Command"]] },
+  { title: "Home", items: [["smart", "CP", "Cockpit"], ["command", "CM", "Command"]] },
   {
     title: "Work",
     items: [
@@ -98,7 +98,7 @@ const groups = [
 ];
 
 const labels = {
-  smart: "Smart Hub",
+  smart: "Cockpit",
   morningbrief: "Morning Brief",
   askchurvox: "Ask Churvox",
   globalactions: "Global Actions",
@@ -198,6 +198,7 @@ const labels = {
 };
 
 const mobileItems = [
+  ["smart", "CP", "Cockpit"],
   ["command", "CM", "Command"],
   ["jobs", "JB", "Jobs"],
   ["dispatch", "DP", "Dispatch"],
@@ -215,7 +216,6 @@ const extraMobile = [
   ["askchurvox", "AC", "Ask Churvox"],
   ["demo", "DM", "Demo Mode"],
   ["launchpack", "LP", "Launch Pack"],
-  ["smart", "SH", "Smart Hub"],
   ["leads", "LD", "Leads"],
   ["recurring", "RC", "Recurring"],
   ["photos", "PH", "Photos"],

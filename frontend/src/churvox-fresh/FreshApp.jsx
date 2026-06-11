@@ -327,7 +327,15 @@ const pages = new Set([
 
 function readPageFromHash() {
   if (typeof window === "undefined") return "smart";
-  const hash = window.location.hash.replace("#", "").trim().toLowerCase();
+  const raw = window.location.hash.replace("#", "").trim().toLowerCase();
+  const aliases = {
+    cockpit: "smart",
+    home: "smart",
+    dashboard: "smart",
+    smarthub: "smart",
+    "smart-hub": "smart",
+  };
+  const hash = aliases[raw] || raw;
   return pages.has(hash) ? hash : "smart";
 }
 
