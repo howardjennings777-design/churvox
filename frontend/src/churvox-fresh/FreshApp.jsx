@@ -217,6 +217,10 @@ import FreshLaunchControl from "./FreshLaunchControl";
 import FreshTrustCenter from "./FreshTrustCenter";
 import FreshHelpDesk from "./FreshHelpDesk";
 import FreshXero from "./FreshXero";
+import { installFreshCommandBridge } from "./commandBridge";
+
+installFreshCommandBridge();
+
 
 const pages = new Set([
   "smart",

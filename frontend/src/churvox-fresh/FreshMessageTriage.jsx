@@ -1,4 +1,5 @@
 import React from "react";
+import { sendFreshSlipToCommand } from "./commandBridge";
 
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
 
@@ -72,6 +73,7 @@ function sendMessageToCommand(item, reply, onNavigate) {
     };
 
     window.localStorage.setItem(COMMAND_INBOX_KEY, JSON.stringify([slip, ...safeCurrent].slice(0, 120)));
+    sendFreshSlipToCommand(slip, { type: "message-triage" });
     window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "message-triage" } }));
   } catch {
     // Preview keeps working without storage.
