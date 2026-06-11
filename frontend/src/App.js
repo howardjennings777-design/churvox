@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { getDefaultRoute } from "./lib/roles";
 import "./styles/command-slip-theme.css";
 import "./styles/churvox-global-polish.css";
+import "./styles/worker-public-polish.css";
 
 import LoginPage from "./pages/auth/LoginPage";
 import SignupPage from "./pages/auth/SignupPage";

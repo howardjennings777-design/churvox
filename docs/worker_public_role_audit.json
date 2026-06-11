@@ -1,0 +1,83 @@
+{
+  "score": 100,
+  "checks": [
+    {
+      "name": "Worker routes exist",
+      "status": "PASS",
+      "evidence": "App route table includes worker routes.",
+      "fix": "Add worker list/detail routes wrapped in WorkerRoute."
+    },
+    {
+      "name": "Workers blocked from business pages",
+      "status": "PASS",
+      "evidence": "BusinessRoute redirects workers to worker app.",
+      "fix": "Block worker role from owner/business shell."
+    },
+    {
+      "name": "WorkerRoute blocks non-workers",
+      "status": "PASS",
+      "evidence": "WorkerRoute only allows worker users.",
+      "fix": "Add explicit worker-only route guard."
+    },
+    {
+      "name": "Payroll blocked from reports route",
+      "status": "PASS",
+      "evidence": "Reports route and matrix exclude payroll.",
+      "fix": "Remove payroll from reports access."
+    },
+    {
+      "name": "Payroll default route correct",
+      "status": "PASS",
+      "evidence": "Payroll role lands on payroll board.",
+      "fix": "Update payroll default route."
+    },
+    {
+      "name": "Worker app filters assigned jobs",
+      "status": "PASS",
+      "evidence": "Worker jobs are scoped to assigned worker keys.",
+      "fix": "Filter jobs by assigned worker server-side and client-side."
+    },
+    {
+      "name": "Worker timer actions wired",
+      "status": "PASS",
+      "evidence": "Worker timer start/resume endpoints detected.",
+      "fix": "Wire timer endpoints."
+    },
+    {
+      "name": "Worker notes/photos wired",
+      "status": "PASS",
+      "evidence": "Worker detail supports notes and photo upload.",
+      "fix": "Wire worker evidence capture."
+    },
+    {
+      "name": "Worker theme polish imported",
+      "status": "PASS",
+      "evidence": "Worker polish CSS is imported.",
+      "fix": "Import worker polish stylesheet."
+    },
+    {
+      "name": "Public quote not using old fallback",
+      "status": "PASS",
+      "evidence": "Public quote uses env/relative API.",
+      "fix": "Remove old backend fallback."
+    },
+    {
+      "name": "Public invoice not using old fallback",
+      "status": "PASS",
+      "evidence": "Public invoice uses env/relative API.",
+      "fix": "Remove old backend fallback."
+    },
+    {
+      "name": "Public client portal polished",
+      "status": "PASS",
+      "evidence": "Client portal now uses public document template.",
+      "fix": "Polish public client portal."
+    },
+    {
+      "name": "Public client portal approval wired",
+      "status": "PASS",
+      "evidence": "Customer approval action exists.",
+      "fix": "Wire approve completed work."
+    }
+  ]
+}

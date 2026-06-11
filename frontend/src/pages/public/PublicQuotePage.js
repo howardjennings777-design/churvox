@@ -7,7 +7,7 @@ import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import "./PublicDocumentTemplate.css";
 
-const API_BASE = (process.env.REACT_APP_BACKEND_URL || process.env.VITE_BACKEND_URL || "https://grassley-backend.onrender.com").replace(/\/$/, "");
+const API_BASE = (process.env.REACT_APP_BACKEND_URL || process.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
 function moneyNumber(value) { const n = Number(String(value ?? "").replace(/[^0-9.-]/g, "")); return Number.isFinite(n) ? n : 0; }
 function formatCurrency(value) { return moneyNumber(value).toLocaleString("en-NZ", { style: "currency", currency: "NZD" }); }
