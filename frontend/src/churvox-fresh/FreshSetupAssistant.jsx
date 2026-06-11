@@ -5,83 +5,53 @@ const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
 const setupChecks = [
   {
     id: "business",
-    title: "Business profile",
-    status: "Needs check",
+    title: "Set your business basics",
+    status: "Next step",
     urgency: "High",
-    found: "Business name, logo, GST and support email should be confirmed.",
-    prepared: "Open Settings and complete business basics.",
-    why: "Invoices, emails and customer trust depend on this.",
+    found: "Your account needs business name, contact details and invoice basics confirmed.",
+    prepared: "Open Settings and fill in the details Churvox will use on quotes and invoices.",
+    why: "This makes every quote, invoice and customer message look professional.",
     page: "settings",
   },
   {
-    id: "plan",
-    title: "Trial and plan status",
-    status: "Needs test",
-    urgency: "High",
-    found: "Owner must clearly see trial status and selected plan.",
-    prepared: "Open Plans and confirm current plan displays correctly after Stripe return.",
-    why: "Billing confusion kills signups.",
-    page: "plans",
-  },
-  {
     id: "client",
-    title: "First client",
-    status: "Needs user",
-    urgency: "Medium",
-    found: "No first client has been confirmed in setup.",
-    prepared: "Add a client manually or import clients from CSV.",
+    title: "Add your first real client",
+    status: "Waiting",
+    urgency: "High",
+    found: "There are no real clients in this new account yet.",
+    prepared: "Open Clients and add the first customer with name, phone, email and address.",
     why: "Jobs, quotes and invoices need a real customer record.",
     page: "clients",
   },
   {
     id: "job",
-    title: "First job",
-    status: "Needs user",
-    urgency: "Medium",
-    found: "Owner needs to create first job or use AI Quick Create.",
-    prepared: "Open AI Quick Create and turn rough text into a job.",
-    why: "The user should feel value in the first few minutes.",
-    page: "quickcreateai",
-  },
-  {
-    id: "worker",
-    title: "Worker setup",
-    status: "Needs user",
-    urgency: "Medium",
-    found: "Worker/self assignment should be ready before dispatch.",
-    prepared: "Add worker or assign the owner as worker for first job.",
-    why: "Jobs cannot move cleanly without ownership.",
-    page: "worker",
+    title: "Create your first real job",
+    status: "Waiting",
+    urgency: "High",
+    found: "No real job has been created yet.",
+    prepared: "Open Jobs and create the first job from real customer details.",
+    why: "This proves the main Churvox workflow: job → done → invoice → paid.",
+    page: "jobs",
   },
   {
     id: "invoice",
-    title: "Invoice settings",
-    status: "Needs check",
-    urgency: "High",
-    found: "GST, invoice details and send flow should be confirmed.",
-    prepared: "Open Invoice Checker and test invoice from completed job.",
-    why: "Job to invoice to paid is the core money flow.",
-    page: "invoicecheck",
+    title: "Prepare the first invoice",
+    status: "Waiting",
+    urgency: "Medium",
+    found: "The first job has not been turned into an invoice yet.",
+    prepared: "After the job is complete, open Invoices and prepare the first invoice draft.",
+    why: "This is where Churvox starts helping the business get paid.",
+    page: "invoices",
   },
   {
     id: "command",
-    title: "Command approvals",
-    status: "Ready",
-    urgency: "High",
-    found: "AI slips are prepared for owner approve/edit/ignore.",
-    prepared: "Use Command as the main approval desk.",
-    why: "Churvox does the admin. You approve.",
-    page: "command",
-  },
-  {
-    id: "import",
-    title: "CSV import/export",
-    status: "Ready",
+    title: "Use Command approval",
+    status: "Waiting",
     urgency: "Medium",
-    found: "Launch Pack contains CSV templates for clients, jobs, invoices, team and payroll.",
-    prepared: "Download templates and test imports before real customer onboarding.",
-    why: "Imports make switching easier for real businesses.",
-    page: "launchpack",
+    found: "The owner has not approved a prepared Churvox action yet.",
+    prepared: "Open Command when Churvox prepares an action for review.",
+    why: "This teaches the promise: Churvox does the admin. You approve.",
+    page: "command",
   },
 ];
 
@@ -92,25 +62,25 @@ function sendSetupToCommand(item, onNavigate) {
     const safeCurrent = Array.isArray(current) ? current : [];
 
     const slip = {
-      id: `setup-assistant-${item.id}-${Date.now()}`,
-      group: "AI Setup Assistant",
+      id: `ai-guide-${item.id}-${Date.now()}`,
+      group: "AI Setup Guide",
       title: item.title,
       info: `${item.status} · ${item.urgency}`,
       urgency: item.urgency,
       found: item.found,
       prepared: item.prepared,
       why: item.why,
-      owner: "Open setup step, mark ready, fix issue, or ignore.",
-      area: "Setup Assistant",
+      owner: "Open the step, complete it, or ignore if already handled.",
+      area: "AI Setup Guide",
       page: "setupassistant",
       fromInbox: true,
       createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
-    window.localStorage.setItem(COMMAND_INBOX_KEY, JSON.stringify([slip, ...safeCurrent].slice(0, 150)));
-    window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "setup-assistant" } }));
+    window.localStorage.setItem(COMMAND_INBOX_KEY, JSON.stringify([slip, ...safeCurrent].slice(0, 80)));
+    window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "ai-guide" } }));
   } catch {
-    // Preview keeps working without storage.
+    // Never block the guide.
   }
 
   onNavigate?.("command");
@@ -119,57 +89,45 @@ function sendSetupToCommand(item, onNavigate) {
 export default function FreshSetupAssistant({ onNavigate }) {
   const [checks, setChecks] = React.useState(setupChecks);
 
-  const ready = checks.filter((item) => item.status === "Ready").length;
-  const needs = checks.filter((item) => item.status !== "Ready").length;
-  const high = checks.filter((item) => item.urgency === "High").length;
+  const ready = checks.filter((item) => item.status === "Done").length;
+  const needs = checks.length - ready;
   const score = Math.round((ready / checks.length) * 100);
+  const next = checks.find((item) => item.status !== "Done") || checks[0];
 
   function updateStatus(id, status) {
     setChecks((current) => current.map((item) => item.id === id ? { ...item, status } : item));
-  }
-
-  function sendNext() {
-    const next = checks.find((item) => item.status !== "Ready") || checks[0];
-    sendSetupToCommand(next, onNavigate);
-  }
-
-  function sendAllNeeds() {
-    try {
-      checks.filter((item) => item.status !== "Ready").forEach((item) => sendSetupToCommand(item, null));
-    } catch {
-      // Preview keeps working without storage.
-    }
-    onNavigate?.("command");
   }
 
   return (
     <section className="freshOwnerAiPage">
       <div className="freshOwnerAiHero">
         <div>
-          <span>AI Launch / Setup Assistant</span>
-          <h1>New owners should never wonder what to do next</h1>
-          <p>Churvox checks setup gaps, billing clarity, first client, first job, worker setup, invoice settings, imports and Command readiness.</p>
+          <span>AI Setup Guide</span>
+          <h1>Let’s set up Churvox with real data.</h1>
+          <p>
+            I’ll guide you through the first useful workflow: business details, first client,
+            first job, first invoice, then owner approval in Command.
+          </p>
         </div>
 
         <div className="freshOwnerAiStats">
-          <div><b>{score}%</b><small>setup score</small></div>
-          <div><b>{ready}</b><small>ready</small></div>
-          <div><b>{needs}</b><small>needs action</small></div>
-          <div><b>{high}</b><small>high priority</small></div>
+          <div><b>{score}%</b><small>setup</small></div>
+          <div><b>{ready}</b><small>done</small></div>
+          <div><b>{needs}</b><small>to do</small></div>
         </div>
       </div>
 
       <div className="freshMorningLead">
         <div>
-          <b>Setup assistant has checked {checks.length} launch items.</b>
-          <p>Use this for new accounts and for your own final pre-launch test. Anything not ready should become a Command approval/fix slip.</p>
+          <b>Start here: {next.title}</b>
+          <p>{next.prepared}</p>
         </div>
-        <button type="button" onClick={sendNext}>Send next setup step</button>
+        <button type="button" onClick={() => onNavigate?.(next.page)}>Open next step</button>
       </div>
 
       <div className="freshOwnerAiGrid">
         {checks.map((item) => (
-          <article key={item.id} className={item.status === "Ready" ? "freshOwnerAiCard done" : "freshOwnerAiCard"}>
+          <article key={item.id} className={item.status === "Done" ? "freshOwnerAiCard done" : "freshOwnerAiCard"}>
             <header>
               <span>{item.status}</span>
               <h2>{item.title}</h2>
@@ -181,22 +139,14 @@ export default function FreshSetupAssistant({ onNavigate }) {
             <p><strong>Why:</strong> {item.why}</p>
 
             <div className="freshOwnerAiButtons">
-              <button type="button" onClick={() => sendSetupToCommand(item, onNavigate)}>Send to Command</button>
-              <button type="button" onClick={() => onNavigate?.(item.page)}>Open area</button>
-              <button type="button" onClick={() => updateStatus(item.id, item.status === "Ready" ? "Needs check" : "Ready")}>
-                {item.status === "Ready" ? "Recheck" : "Mark ready"}
+              <button type="button" onClick={() => onNavigate?.(item.page)}>Open step</button>
+              <button type="button" onClick={() => updateStatus(item.id, item.status === "Done" ? "Waiting" : "Done")}>
+                {item.status === "Done" ? "Mark not done" : "Mark done"}
               </button>
+              <button type="button" onClick={() => sendSetupToCommand(item, onNavigate)}>Send to Command</button>
             </div>
           </article>
         ))}
-      </div>
-
-      <div className="freshMorningLead">
-        <div>
-          <b>Final setup action</b>
-          <p>Send all unfinished setup checks to Command so the owner can approve, fix, or ignore them from one place.</p>
-        </div>
-        <button type="button" onClick={sendAllNeeds}>Send unfinished to Command</button>
       </div>
     </section>
   );

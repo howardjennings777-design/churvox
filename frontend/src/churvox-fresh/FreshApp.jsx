@@ -337,22 +337,6 @@ function isFirstSetupPending() {
   }
 }
 
-function hasSeenFirstSetup() {
-  try {
-    return window.localStorage.getItem("churvox_first_setup_seen") === "true";
-  } catch {
-    return false;
-  }
-}
-
-function markFirstSetupSeen() {
-  try {
-    window.localStorage.setItem("churvox_first_setup_seen", "true");
-  } catch {
-    // Keep app loading.
-  }
-}
-
 function clearNewUserDemoStorage() {
   try {
     window.localStorage.removeItem("churvox:fresh-demo-mode:v1");
@@ -366,30 +350,35 @@ function clearNewUserDemoStorage() {
 function readPageFromHash() {
   if (typeof window === "undefined") return "smart";
 
+  const path = window.location.pathname || "";
   const raw = window.location.hash.replace("#", "").trim().toLowerCase();
 
   const aliases = {
+    ai: "setupassistant",
+    guide: "setupassistant",
+    aiguided: "setupassistant",
+    "ai-guide": "setupassistant",
+    setupguide: "setupassistant",
+    "setup-guide": "setupassistant",
     cockpit: "smart",
     home: "smart",
     dashboard: "smart",
     smarthub: "smart",
     "smart-hub": "smart",
-    guide: "firstrun",
-    setupguide: "firstrun",
-    "setup-guide": "firstrun",
-    start: "firstrun",
   };
+
+  if (path === "/guide" || path === "/setup-guide") {
+    clearNewUserDemoStorage();
+    return "setupassistant";
+  }
+
+  if (path === "/plans" && !raw) return "plans";
 
   const hash = aliases[raw] || raw;
 
-  if (
-    isFirstSetupPending() &&
-    !hasSeenFirstSetup() &&
-    (!hash || hash === "smart" || hash === "command")
-  ) {
+  if (isFirstSetupPending() && (!hash || hash === "smart" || hash === "command" || hash === "firstrun")) {
     clearNewUserDemoStorage();
-    markFirstSetupSeen();
-    return "firstrun";
+    return "setupassistant";
   }
 
   return pages.has(hash) ? hash : "smart";

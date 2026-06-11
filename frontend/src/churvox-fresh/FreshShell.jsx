@@ -8,7 +8,7 @@ const groups = [
   {
     title: "Start",
     items: [
-      ["firstrun", "FR", "Guide"],
+      ["setupassistant", "AI", "AI Guide"],
       ["smart", "CP", "Cockpit"],
       ["command", "CM", "Command"],
     ],
@@ -38,6 +38,7 @@ const groups = [
 
 const labels = {
   firstrun: "First Run Guide",
+  setupassistant: "AI Setup Guide",
   smart: "Cockpit",
   command: "Command",
   jobs: "Jobs",
@@ -54,7 +55,7 @@ const labels = {
 };
 
 const mobileItems = [
-  ["firstrun", "FR", "Guide"],
+  ["setupassistant", "AI", "AI Guide"],
   ["smart", "CP", "Cockpit"],
   ["jobs", "JB", "Jobs"],
   ["command", "CM", "Command"],
@@ -184,7 +185,7 @@ export default function FreshShell({ active, onChange, children }) {
           <FreshSearch onNavigate={go} />
 
           <div className="freshTopActions">
-            <button type="button" onClick={() => go("firstrun")}>Guide</button>
+            <button type="button" onClick={() => go("setupassistant")}>AI Guide</button>
             <button type="button" onClick={() => go("command")}>Command</button>
             <button type="button" onClick={() => setQuickType("job")}>New job</button>
             <button type="button" onClick={() => setQuickType("quote")}>New quote</button>

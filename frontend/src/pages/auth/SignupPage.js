@@ -99,7 +99,7 @@ export default function SignupPage() {
         });
       } catch {}
 
-      navigate("/plans?first_setup=1", { replace: true });
+      navigate("/guide?first_setup=1", { replace: true });
     } catch (err) {
       setError(
         err?.response?.data?.detail ||
