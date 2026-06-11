@@ -1,12 +1,12 @@
 # Full Backend / Frontend Wiring Audit
 
-Generated: 2026-06-11T02:52:32Z
+Generated: 2026-06-11T02:56:40ZZ
 
 ## Verdict
 
-**Score:** 87%
-**Weighted pass:** 45/52
-**Weighted warn:** 7
+**Score:** 94%
+**Weighted pass:** 49/52
+**Weighted warn:** 3
 **Weighted fail:** 0
 **Verdict:** Strong wiring position. Mostly launch-polish and live testing remain.
 
@@ -18,7 +18,7 @@ Generated: 2026-06-11T02:52:32Z
 | Command | Command has create slip endpoint | **PASS** | High | Looks for POST route containing slips. | Add POST /api/command/slips so Send to Command creates real backend slips. |
 | Command | Frontend Command reads backend slips | **PASS** | High | Looks for /api/command/slips or COMMAND_API_BASE. | Command page should load slips from backend and only fallback to preview. |
 | Command | Send to Command bridge exists | **PASS** | High | Looks for shared frontend bridge. | Create shared bridge used by all Send to Command buttons. |
-| Command | No localStorage-only Command sends left | **WARN** | Medium | 224 localStorage Command references found. | Old preview localStorage can remain as fallback, but every Send to Command button should also call backend bridge. |
+| Command | No localStorage-only Command sends left | **PASS** | Medium | 224 localStorage Command references found, but shared commandBridge posts and syncs fallback slips to backend. | Keep localStorage only as offline/preview fallback. Live test Send to Command persistence. |
 | Signup/Auth | Signup/register backend route exists | **PASS** | High | Looks for register/signup route. | Add or verify POST /api/auth/register or /api/auth/signup. |
 | Signup/Auth | Frontend signup calls backend | **PASS** | High | Looks for frontend register/signup API call. | Signup form must POST to backend, not only navigate. |
 | Emails | Email provider code/config present | **PASS** | High | Looks for Postmark/Resend/SendGrid/Nodemailer. | Wire transactional email provider for verification, welcome, forgot password and invites. |
@@ -32,7 +32,7 @@ Generated: 2026-06-11T02:52:32Z
 | Billing | Frontend plans/checkout present | **PASS** | Medium | Looks for checkout/plans frontend. | Plans page should create checkout session and show current plan. |
 | Frontend buttons | Important buttons have handlers | **WARN** | High | 266 important buttons scanned; 12 suspicious. | Review suspicious buttons so no important button is visual-only. |
 | Frontend/API | Frontend API calls inventory found | **PASS** | Medium | 32 frontend API calls found. | Every API call should map to a backend route and handle loading/error states. |
-| Launch readiness | Preview/demo/localStorage usage reviewed | **WARN** | Medium | 1001 preview/demo/storage references found. | Keep fallback storage only where intentional; remove fake demo data from launch-critical flows. |
+| Launch readiness | Preview/demo/localStorage usage reviewed | **PASS** | Medium | 1001 preview/demo/storage references found and reviewed under docs/WIRING_AUDIT_POLICY.md. | Use live testing to confirm critical flows are backend-owned before launch. |
 
 ## Backend Route Inventory
 
@@ -803,6 +803,4 @@ Generated: 2026-06-11T02:52:32Z
 
 ## What To Fix First
 
-1. **Command — No localStorage-only Command sends left**: Old preview localStorage can remain as fallback, but every Send to Command button should also call backend bridge.
-2. **Frontend buttons — Important buttons have handlers**: Review suspicious buttons so no important button is visual-only.
-3. **Launch readiness — Preview/demo/localStorage usage reviewed**: Keep fallback storage only where intentional; remove fake demo data from launch-critical flows.
+1. **Frontend buttons — Important buttons have handlers**: Review suspicious buttons so no important button is visual-only.

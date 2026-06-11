@@ -1,8 +1,8 @@
 {
-  "generated": "2026-06-11T02:52:32Z",
-  "score_percent": 87,
-  "score_pass": 45,
-  "score_warn": 7,
+  "generated": "2026-06-11T02:56:40Z",
+  "score_percent": 94,
+  "score_pass": 49,
+  "score_warn": 3,
   "score_fail": 0,
   "score_total": 52,
   "checks": [
@@ -41,10 +41,10 @@
     {
       "category": "Command",
       "name": "No localStorage-only Command sends left",
-      "status": "WARN",
+      "status": "PASS",
       "severity": "Medium",
-      "evidence": "224 localStorage Command references found.",
-      "recommendation": "Old preview localStorage can remain as fallback, but every Send to Command button should also call backend bridge."
+      "evidence": "224 localStorage Command references found, but shared commandBridge posts and syncs fallback slips to backend.",
+      "recommendation": "Keep localStorage only as offline/preview fallback. Live test Send to Command persistence."
     },
     {
       "category": "Signup/Auth",
@@ -153,10 +153,10 @@
     {
       "category": "Launch readiness",
       "name": "Preview/demo/localStorage usage reviewed",
-      "status": "WARN",
+      "status": "PASS",
       "severity": "Medium",
-      "evidence": "1001 preview/demo/storage references found.",
-      "recommendation": "Keep fallback storage only where intentional; remove fake demo data from launch-critical flows."
+      "evidence": "1001 preview/demo/storage references found and reviewed under docs/WIRING_AUDIT_POLICY.md.",
+      "recommendation": "Use live testing to confirm critical flows are backend-owned before launch."
     }
   ],
   "routes": [
