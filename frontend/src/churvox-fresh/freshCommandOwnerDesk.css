@@ -1311,3 +1311,54 @@ body.freshCommandOwnerMode .freshCommandDeskPage *{
   opacity:1 !important;
   text-shadow:none !important;
 }
+
+/* EMERGENCY COMMAND HEADING VISIBILITY LOCK */
+html body.freshCommandOwnerMode section.freshCommandDeskPage .freshCommandSourcePanel h2,
+html body.freshCommandOwnerMode section.freshCommandDeskPage .freshCommandEventFeed h2,
+html body.freshCommandOwnerMode section.freshCommandDeskPage .freshCommandSlip h2,
+html body.freshCommandOwnerMode section.freshCommandDeskPage .freshCommandDeskHero h1,
+html body.freshCommandOwnerMode section.freshCommandDeskPage .freshCommandMorning b,
+html body.freshCommandOwnerMode section.freshCommandDeskPage .freshCommandEmpty b{
+  color:#ffffff !important;
+  -webkit-text-fill-color:#ffffff !important;
+  opacity:1 !important;
+  visibility:visible !important;
+  filter:none !important;
+  mix-blend-mode:normal !important;
+  text-shadow:0 2px 18px rgba(0,0,0,.34) !important;
+}
+
+html body.freshCommandOwnerMode section.freshCommandDeskPage .freshCommandSourcePanel h2{
+  display:block !important;
+  margin:10px 0 8px !important;
+  font-size:34px !important;
+  line-height:1 !important;
+  font-weight:1000 !important;
+  letter-spacing:-.055em !important;
+  color:#ffffff !important;
+  -webkit-text-fill-color:#ffffff !important;
+  background:transparent !important;
+}
+
+html body.freshCommandOwnerMode section.freshCommandDeskPage .freshCommandSourcePanel p,
+html body.freshCommandOwnerMode section.freshCommandDeskPage .freshCommandEventFeed p,
+html body.freshCommandOwnerMode section.freshCommandDeskPage .freshCommandSlipBody p,
+html body.freshCommandOwnerMode section.freshCommandDeskPage .freshCommandMorning p{
+  color:#f1f5f9 !important;
+  -webkit-text-fill-color:#f1f5f9 !important;
+  opacity:1 !important;
+  filter:none !important;
+  mix-blend-mode:normal !important;
+}
+
+html body.freshCommandOwnerMode section.freshCommandDeskPage .freshCommandSourcePanel,
+html body.freshCommandOwnerMode section.freshCommandDeskPage .freshCommandSourcePanel *{
+  opacity:1 !important;
+  filter:none !important;
+  mix-blend-mode:normal !important;
+}
+
+html body.freshCommandOwnerMode section.freshCommandDeskPage .freshCommandSourcePanel{
+  background:#0b1220 !important;
+  border:2px solid rgba(249,115,22,.28) !important;
+}
