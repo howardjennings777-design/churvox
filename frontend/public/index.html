@@ -97,6 +97,175 @@
         }
       })();
     </script>
+<!-- CHURVOX_AUTH_CRITICAL_READABLE_20260611 -->
+<style id="churvox-auth-critical-readable-style">
+  html.churvox-auth-critical,
+  html.churvox-auth-critical body,
+  html.churvox-auth-critical #root {
+    background: #f7efe3 !important;
+    color: #111827 !important;
+    color-scheme: light !important;
+    min-height: 100vh !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
+
+  html.churvox-auth-critical body {
+    overflow-x: hidden !important;
+  }
+
+  html.churvox-auth-critical #root,
+  html.churvox-auth-critical main,
+  html.churvox-auth-critical section {
+    background: #f7efe3 !important;
+    color: #111827 !important;
+  }
+
+  html.churvox-auth-critical h1,
+  html.churvox-auth-critical h2,
+  html.churvox-auth-critical h3,
+  html.churvox-auth-critical h4,
+  html.churvox-auth-critical strong,
+  html.churvox-auth-critical b {
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+    opacity: 1 !important;
+    text-shadow: none !important;
+  }
+
+  html.churvox-auth-critical p,
+  html.churvox-auth-critical label,
+  html.churvox-auth-critical span,
+  html.churvox-auth-critical small,
+  html.churvox-auth-critical li,
+  html.churvox-auth-critical div {
+    color: #334155 !important;
+    -webkit-text-fill-color: #334155 !important;
+    opacity: 1 !important;
+    text-shadow: none !important;
+  }
+
+  html.churvox-auth-critical a {
+    color: #c2410c !important;
+    -webkit-text-fill-color: #c2410c !important;
+    font-weight: 900 !important;
+    opacity: 1 !important;
+  }
+
+  html.churvox-auth-critical form,
+  html.churvox-auth-critical [class*="card"],
+  html.churvox-auth-critical [class*="Card"],
+  html.churvox-auth-critical [class*="panel"],
+  html.churvox-auth-critical [class*="Panel"],
+  html.churvox-auth-critical [class*="box"],
+  html.churvox-auth-critical [class*="Box"] {
+    background: #fffaf0 !important;
+    color: #111827 !important;
+    -webkit-text-fill-color: #111827 !important;
+    border-color: rgba(15, 23, 42, 0.16) !important;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12) !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
+
+  html.churvox-auth-critical input,
+  html.churvox-auth-critical select,
+  html.churvox-auth-critical textarea {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+    border: 1px solid rgba(15, 23, 42, 0.28) !important;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08) !important;
+    caret-color: #0f172a !important;
+    opacity: 1 !important;
+  }
+
+  html.churvox-auth-critical input::placeholder,
+  html.churvox-auth-critical textarea::placeholder {
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+    opacity: 1 !important;
+  }
+
+  html.churvox-auth-critical input:-webkit-autofill,
+  html.churvox-auth-critical input:-webkit-autofill:hover,
+  html.churvox-auth-critical input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+    -webkit-text-fill-color: #0f172a !important;
+  }
+
+  html.churvox-auth-critical button {
+    opacity: 1 !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
+
+  html.churvox-auth-critical button[type="submit"],
+  html.churvox-auth-critical form button:first-of-type {
+    background: #f97316 !important;
+    color: #111827 !important;
+    -webkit-text-fill-color: #111827 !important;
+    font-weight: 1000 !important;
+    border: 1px solid transparent !important;
+  }
+</style>
+<script>
+  (function () {
+    var words = ["login", "signin", "sign-in", "signup", "sign-up", "register", "forgot", "reset-password"];
+
+    function isAuthRoute() {
+      var here = String((window.location.pathname || "") + " " + (window.location.hash || "") + " " + (window.location.search || "")).toLowerCase();
+      return words.some(function (word) {
+        return here.indexOf(word) !== -1;
+      });
+    }
+
+    function applyAuthCriticalReadable() {
+      var on = isAuthRoute();
+      document.documentElement.classList.toggle("churvox-auth-critical", on);
+      if (document.body) {
+        document.body.classList.toggle("churvox-auth-readable", on);
+      }
+    }
+
+    applyAuthCriticalReadable();
+
+    window.__CHURVOX_APPLY_AUTH_CRITICAL_READABLE__ = applyAuthCriticalReadable;
+
+    if (!window.__CHURVOX_AUTH_CRITICAL_HISTORY_PATCHED__) {
+      window.__CHURVOX_AUTH_CRITICAL_HISTORY_PATCHED__ = true;
+
+      var pushState = window.history.pushState;
+      var replaceState = window.history.replaceState;
+
+      window.history.pushState = function () {
+        var result = pushState.apply(this, arguments);
+        setTimeout(applyAuthCriticalReadable, 0);
+        setTimeout(applyAuthCriticalReadable, 100);
+        return result;
+      };
+
+      window.history.replaceState = function () {
+        var result = replaceState.apply(this, arguments);
+        setTimeout(applyAuthCriticalReadable, 0);
+        setTimeout(applyAuthCriticalReadable, 100);
+        return result;
+      };
+    }
+
+    window.addEventListener("load", applyAuthCriticalReadable);
+    window.addEventListener("hashchange", applyAuthCriticalReadable);
+    window.addEventListener("popstate", applyAuthCriticalReadable);
+    document.addEventListener("DOMContentLoaded", applyAuthCriticalReadable);
+
+    try {
+      new MutationObserver(function () {
+        if (isAuthRoute()) applyAuthCriticalReadable();
+      }).observe(document.documentElement, { childList: true, subtree: true });
+    } catch (e) {}
+  })();
+</script>
+<!-- /CHURVOX_AUTH_CRITICAL_READABLE_20260611 -->
 </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

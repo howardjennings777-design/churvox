@@ -1,5 +1,5 @@
 function isAuthPath() {
-  const path = `${window.location.pathname || ""} ${window.location.hash || ""}`.toLowerCase();
+  const path = `${window.location.pathname || ""} ${window.location.hash || ""} ${window.location.search || ""}`.toLowerCase();
 
   return (
     path.includes("login") ||
@@ -16,17 +16,32 @@ function isAuthPath() {
 function installAuthReadableStyle() {
   if (typeof document === "undefined") return;
 
-  const existing = document.getElementById("churvox-auth-runtime-readable");
-  if (existing) return;
+  let style = document.getElementById("churvox-auth-runtime-readable");
 
-  const style = document.createElement("style");
-  style.id = "churvox-auth-runtime-readable";
+  if (!style) {
+    style = document.createElement("style");
+    style.id = "churvox-auth-runtime-readable";
+    document.head.appendChild(style);
+  }
+
   style.textContent = `
+    html.churvox-auth-critical,
     body.churvox-auth-readable,
     body.churvox-auth-readable #root {
       background: #f7efe3 !important;
       color: #111827 !important;
-      -webkit-text-fill-color: #111827 !important;
+      color-scheme: light !important;
+      opacity: 1 !important;
+      filter: none !important;
+    }
+
+    body.churvox-auth-readable #root,
+    body.churvox-auth-readable main,
+    body.churvox-auth-readable section {
+      background: #f7efe3 !important;
+      color: #111827 !important;
+      opacity: 1 !important;
+      filter: none !important;
     }
 
     body.churvox-auth-readable #root *,
@@ -35,6 +50,7 @@ function installAuthReadableStyle() {
     body.churvox-auth-readable form * {
       text-shadow: none !important;
       opacity: 1 !important;
+      filter: none !important;
     }
 
     body.churvox-auth-readable h1,
@@ -69,7 +85,7 @@ function installAuthReadableStyle() {
       background: #ffffff !important;
       color: #0f172a !important;
       -webkit-text-fill-color: #0f172a !important;
-      border: 1px solid rgba(15, 23, 42, .24) !important;
+      border: 1px solid rgba(15, 23, 42, .28) !important;
       box-shadow: 0 10px 24px rgba(15, 23, 42, .08) !important;
       caret-color: #0f172a !important;
     }
@@ -81,10 +97,18 @@ function installAuthReadableStyle() {
       opacity: 1 !important;
     }
 
+    body.churvox-auth-readable input:-webkit-autofill,
+    body.churvox-auth-readable input:-webkit-autofill:hover,
+    body.churvox-auth-readable input:-webkit-autofill:focus {
+      -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+      -webkit-text-fill-color: #0f172a !important;
+    }
+
     body.churvox-auth-readable button {
       opacity: 1 !important;
       text-shadow: none !important;
       border: 1px solid rgba(15, 23, 42, .12) !important;
+      filter: none !important;
     }
 
     body.churvox-auth-readable button[type="submit"],
@@ -106,11 +130,10 @@ function installAuthReadableStyle() {
       background-color: #fffaf0 !important;
       color: #111827 !important;
       -webkit-text-fill-color: #111827 !important;
-      border-color: rgba(15, 23, 42, .12) !important;
+      border-color: rgba(15, 23, 42, .16) !important;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, .12) !important;
     }
   `;
-
-  document.head.appendChild(style);
 }
 
 function applyAuthReadableMode() {
@@ -118,10 +141,16 @@ function applyAuthReadableMode() {
 
   installAuthReadableStyle();
 
-  if (isAuthPath()) {
-    document.body.classList.add("churvox-auth-readable");
-  } else {
-    document.body.classList.remove("churvox-auth-readable");
+  const onAuth = isAuthPath();
+
+  document.documentElement.classList.toggle("churvox-auth-critical", onAuth);
+
+  if (document.body) {
+    document.body.classList.toggle("churvox-auth-readable", onAuth);
+  }
+
+  if (typeof window !== "undefined" && typeof window.__CHURVOX_APPLY_AUTH_CRITICAL_READABLE__ === "function") {
+    window.__CHURVOX_APPLY_AUTH_CRITICAL_READABLE__();
   }
 }
 
@@ -131,20 +160,27 @@ function start() {
   window.addEventListener("load", applyAuthReadableMode);
   window.addEventListener("hashchange", applyAuthReadableMode);
   window.addEventListener("popstate", applyAuthReadableMode);
+  document.addEventListener("click", () => setTimeout(applyAuthReadableMode, 80), true);
 
-  const originalPushState = window.history.pushState;
-  window.history.pushState = function pushStatePatched() {
-    const result = originalPushState.apply(this, arguments);
-    setTimeout(applyAuthReadableMode, 0);
-    return result;
-  };
+  if (!window.__CHURVOX_AUTH_RUNTIME_HISTORY_PATCHED__) {
+    window.__CHURVOX_AUTH_RUNTIME_HISTORY_PATCHED__ = true;
 
-  const originalReplaceState = window.history.replaceState;
-  window.history.replaceState = function replaceStatePatched() {
-    const result = originalReplaceState.apply(this, arguments);
-    setTimeout(applyAuthReadableMode, 0);
-    return result;
-  };
+    const originalPushState = window.history.pushState;
+    window.history.pushState = function pushStatePatched() {
+      const result = originalPushState.apply(this, arguments);
+      setTimeout(applyAuthReadableMode, 0);
+      setTimeout(applyAuthReadableMode, 120);
+      return result;
+    };
+
+    const originalReplaceState = window.history.replaceState;
+    window.history.replaceState = function replaceStatePatched() {
+      const result = originalReplaceState.apply(this, arguments);
+      setTimeout(applyAuthReadableMode, 0);
+      setTimeout(applyAuthReadableMode, 120);
+      return result;
+    };
+  }
 
   const observer = new MutationObserver(() => {
     if (isAuthPath()) applyAuthReadableMode();
