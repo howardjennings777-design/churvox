@@ -1735,3 +1735,30 @@ html body.freshCommandOwnerMode.freshCommandLightMode [class*="Topbar"] button:n
     padding:10px !important;
   }
 }
+
+/* Keep Command hero/header like before while page stays light */
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandDeskHero{
+  background:
+    linear-gradient(110deg,rgba(7,17,31,.98),rgba(15,23,42,.94) 46%,rgba(154,52,18,.88)),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 1px,transparent 1px 76px) !important;
+  border:1px solid rgba(251,191,36,.16) !important;
+  box-shadow:0 24px 70px rgba(15,23,42,.20) !important;
+}
+
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandDeskHero h1{
+  color:#ffffff !important;
+  -webkit-text-fill-color:#ffffff !important;
+  text-shadow:0 2px 20px rgba(0,0,0,.28) !important;
+}
+
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandDeskHero p{
+  color:#e5e7eb !important;
+  -webkit-text-fill-color:#e5e7eb !important;
+  text-shadow:none !important;
+}
+
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandDeskHero > div > span{
+  background:rgba(249,115,22,.18) !important;
+  color:#fed7aa !important;
+  -webkit-text-fill-color:#fed7aa !important;
+}
