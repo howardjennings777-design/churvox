@@ -1,5 +1,5 @@
 {
-  "score": 96,
+  "score": 100,
   "checks": [
     {
       "area": "Invoice PDF",
@@ -67,8 +67,8 @@
     {
       "area": "Owner Command",
       "name": "Command reads backend slips",
-      "status": "WARN",
-      "evidence": "Command backend slip API referenced.",
+      "status": "PASS",
+      "evidence": "Command backend slip API referenced through /api/command + /slips.",
       "fix": "Load backend Command slips."
     },
     {

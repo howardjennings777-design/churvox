@@ -40,7 +40,17 @@ add("Worker", "Worker app has timer actions", "/timer/start" in front and "/time
 add("Worker", "Worker evidence capture exists", "handleSaveNotes" in front and "handleAddPhoto" in front, "Worker notes/photos exist.", "Wire worker evidence.")
 add("Worker", "Worker help reaches owner Command", "worker_help_request" in front and "Worker messages" in front, "Worker help creates Command slip.", "Wire worker help to Command.")
 
-add("Owner Command", "Command reads backend slips", "/api/command/slips" in front, "Command backend slip API referenced.", "Load backend Command slips.")
+add(
+    "Owner Command",
+    "Command reads backend slips",
+    (
+        "/api/command/slips" in front
+        or ("COMMAND_API_BASE = \"/api/command\"" in front and "commandRequest(\"/slips\"" in front)
+        or ("COMMAND_API_BASE" in front and "commandRequest(\"/slips\"" in front)
+    ),
+    "Command backend slip API referenced through /api/command + /slips.",
+    "Load backend Command slips."
+)
 add("Owner Command", "Owner notification centre covers worker issues", "Worker messages" in front, "Worker messages category exists.", "Show worker messages in Command.")
 add("Owner Review", "Send-back flow exists", "sent_back" in front and "send_back_note" in front, "Worker sees sent-back jobs.", "Wire owner send-back action.")
 add("Customer", "Public quote accept/decline exists", "/api/public/quote" in front and "Accept quote" in front and "Decline quote" in front, "Public quote actions exist.", "Wire public quote.")

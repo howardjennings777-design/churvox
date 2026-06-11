@@ -1,9 +1,9 @@
 # Churvox Launch Done Audit
 
-Generated: 2026-06-11T04:08:29Z
+Generated: 2026-06-11T04:12:42Z
 
-**Score:** 96%
-**Pass:** 22/23
+**Score:** 100%
+**Pass:** 23/23
 
 | Area | Check | Status | Evidence | Fix |
 |---|---|---:|---|---|
@@ -16,7 +16,7 @@ Generated: 2026-06-11T04:08:29Z
 | Worker | Worker app has timer actions | **PASS** | Worker timer endpoints used. | Wire worker timers. |
 | Worker | Worker evidence capture exists | **PASS** | Worker notes/photos exist. | Wire worker evidence. |
 | Worker | Worker help reaches owner Command | **PASS** | Worker help creates Command slip. | Wire worker help to Command. |
-| Owner Command | Command reads backend slips | **WARN** | Command backend slip API referenced. | Load backend Command slips. |
+| Owner Command | Command reads backend slips | **PASS** | Command backend slip API referenced through /api/command + /slips. | Load backend Command slips. |
 | Owner Command | Owner notification centre covers worker issues | **PASS** | Worker messages category exists. | Show worker messages in Command. |
 | Owner Review | Send-back flow exists | **PASS** | Worker sees sent-back jobs. | Wire owner send-back action. |
 | Customer | Public quote accept/decline exists | **PASS** | Public quote actions exist. | Wire public quote. |
