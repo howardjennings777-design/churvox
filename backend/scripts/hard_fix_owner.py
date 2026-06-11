@@ -22,7 +22,7 @@ PASSWORD = "HowardAccess2026!"
 mongo_url = os.getenv("MONGO_URL") or os.getenv("MONGODB_URL") or os.getenv("DATABASE_URL")
 db_names = [
     os.getenv("DB_NAME"),
-    "grassley",
+    "churvox",
     "churvox",
     "app",
 ]

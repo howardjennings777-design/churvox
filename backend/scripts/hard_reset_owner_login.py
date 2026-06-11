@@ -26,7 +26,7 @@ db_names = []
 for name in [
     os.getenv("DB_NAME"),
     "churvox",
-    "grassley",
+    "churvox",
     "app",
     "test",
 ]:

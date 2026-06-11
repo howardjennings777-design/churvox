@@ -1,6 +1,6 @@
 const RAW_BACKEND_URL =
   (typeof process !== "undefined" && process?.env?.REACT_APP_BACKEND_URL) ||
-  "https://grassley-backend.onrender.com";
+  "";
 
 const trimTrailingSlash = (value = "") => String(value).replace(/\/+$/, "");
 

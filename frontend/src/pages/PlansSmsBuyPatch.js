@@ -13,7 +13,7 @@ function getBackendBase() {
     (typeof process !== "undefined" && process.env && process.env.REACT_APP_BACKEND_URL) ||
     (typeof import.meta !== "undefined" && process.env && process.env.VITE_BACKEND_URL) ||
     "";
-  return String(envBase || "https://grassley-backend.onrender.com").replace(/\/$/, "");
+  return String(envBase || "").replace(/\/$/, "");
 }
 
 function getToken() {

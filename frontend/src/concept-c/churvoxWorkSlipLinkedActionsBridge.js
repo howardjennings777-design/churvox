@@ -5,7 +5,7 @@
 const CV_WSL_API_BASE =
   process.env.REACT_APP_BACKEND_URL ||
   process.env.VITE_BACKEND_URL ||
-  "https://grassley-backend.onrender.com";
+  "";
 
 function cvWslCleanBase(base) {
   return String(base || "").replace(/\/+$/, "");

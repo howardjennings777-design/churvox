@@ -1,5 +1,5 @@
 {
-  "score": 96,
+  "score": 98,
   "verdict": "HEARTY ENOUGH FOR REAL TESTING",
   "checks": [
     {
@@ -40,8 +40,8 @@
     {
       "area": "Brand",
       "name": "Old name mostly removed",
-      "status": "WARN",
-      "evidence": "Old refs found: grassley.",
+      "status": "PASS",
+      "evidence": "Old refs found: none.",
       "fix": "Remove old Grassly/Grassley references."
     },
     {

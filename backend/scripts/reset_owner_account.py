@@ -9,7 +9,7 @@ EMAIL = "howardjennings77@gmail.com"
 PASSWORD = "HowardAccess2026!"
 
 mongo_url = os.getenv("MONGO_URL") or os.getenv("MONGODB_URL") or os.getenv("DATABASE_URL")
-db_name = os.getenv("DB_NAME") or "grassley"
+db_name = os.getenv("DB_NAME") or "churvox"
 
 if not mongo_url:
     raise SystemExit("No MONGO_URL / MONGODB_URL / DATABASE_URL found")

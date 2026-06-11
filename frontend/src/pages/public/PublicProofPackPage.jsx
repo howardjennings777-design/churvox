@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import "./PublicProofPackPage.css";
 
-const API_BASE = process.env.REACT_APP_BACKEND_URL || process.env.VITE_BACKEND_URL || "https://grassley-backend.onrender.com";
+const API_BASE = process.env.REACT_APP_BACKEND_URL || process.env.VITE_BACKEND_URL || "";
 const cleanBase = (base) => String(base || "").replace(/\/+$/, "");
 
 function money(value) {
