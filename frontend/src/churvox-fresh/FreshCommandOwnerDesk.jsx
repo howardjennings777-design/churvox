@@ -212,6 +212,18 @@ const starterSlips = [
   },
 ];
 
+const starterSlipIds = new Set(starterSlips.map((slip) => slip.id));
+
+function stripDemoSlipsForNormalUsers(items) {
+  const safe = Array.isArray(items) ? items : [];
+  if (shouldShowDemoTools()) return safe;
+
+  return safe.filter((slip) => {
+    const id = String(slip?.id || "");
+    return !starterSlipIds.has(id) && !id.startsWith("starter-");
+  });
+}
+
 function getArea(slip) {
   const raw = `${slip.area || ""} ${slip.group || ""} ${slip.title || ""} ${slip.page || ""} ${slip.actionType || ""}`.toLowerCase();
 
@@ -402,10 +414,13 @@ function safeReadSlips() {
   try {
     const saved = window.localStorage.getItem(COMMAND_INBOX_KEY);
     const parsed = saved ? JSON.parse(saved) : [];
-    const base = Array.isArray(parsed) && parsed.length ? parsed : starterSlips;
-    return base.map(normalizeSlip);
+    const base = Array.isArray(parsed) && parsed.length
+      ? parsed
+      : (shouldShowDemoTools() ? starterSlips : []);
+
+    return stripDemoSlipsForNormalUsers(base).map(normalizeSlip);
   } catch {
-    return starterSlips.map(normalizeSlip);
+    return shouldShowDemoTools() ? starterSlips.map(normalizeSlip) : [];
   }
 }
 
@@ -466,7 +481,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
   }, []);
 
   const [slips, setSlips] = React.useState(safeReadSlips);
-  const [events, setEvents] = React.useState(commandEventFeed);
+  const [events, setEvents] = React.useState(() => shouldShowDemoTools() ? commandEventFeed : []);
   const [commandSync, setCommandSync] = React.useState({
     source: "Preview fallback",
     loading: false,
@@ -515,7 +530,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
   const setup = openSlips.filter((slip) => slip.areaGroup === "Setup");
   const showDemoTools = shouldShowDemoTools();
   const sourceRuleCount = commandSourceRules.length;
-  const eventCount = events.length || commandEventFeed.length;
+  const eventCount = events.length;
 
   const groups = ["Needs approval", "Money", "Today", "Customers", "Setup"];
   const visible = activeGroup === "Needs approval"
@@ -604,7 +619,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
   }
 
   function clearDemo() {
-    const next = starterSlips.map(normalizeSlip);
+    const next = shouldShowDemoTools() ? starterSlips.map(normalizeSlip) : [];
     setSlips(next);
     safeSaveSlips(next);
     setActiveGroup("Needs approval");

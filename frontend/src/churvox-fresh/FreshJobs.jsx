@@ -45,6 +45,25 @@ const seedJobs = [
 
 const filters = ["All", "Ready", "In progress", "Blocked", "Completed"];
 
+const seedJobIds = new Set(seedJobs.map((job) => job.id));
+
+function shouldShowDemoJobs() {
+  try {
+    return (
+      window.location.search.includes("demo") ||
+      window.localStorage.getItem("churvox:fresh-demo-mode:v1") === "on"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function stripSeedJobsForNormalUsers(items) {
+  const safe = Array.isArray(items) ? items : [];
+  if (shouldShowDemoJobs()) return safe;
+  return safe.filter((job) => !seedJobIds.has(String(job?.id || "")));
+}
+
 function numberFrom(value) {
   return Number(String(value || "").replace(/[^0-9.]/g, "")) || 0;
 }
@@ -80,15 +99,20 @@ function writeInvoices(invoices) {
 
 function loadJobs() {
   try {
-    if (typeof window === "undefined") return seedJobs;
+    if (typeof window === "undefined") return [];
 
     const saved = window.localStorage.getItem(JOB_STORAGE_KEY);
-    if (!saved) return seedJobs;
+
+    if (!saved) {
+      return shouldShowDemoJobs() ? seedJobs : [];
+    }
 
     const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed : seedJobs;
+    return Array.isArray(parsed)
+      ? stripSeedJobsForNormalUsers(parsed)
+      : (shouldShowDemoJobs() ? seedJobs : []);
   } catch {
-    return seedJobs;
+    return shouldShowDemoJobs() ? seedJobs : [];
   }
 }
 
@@ -131,8 +155,9 @@ export default function FreshJobs({ onNavigate }) {
       // Ignore preview storage errors.
     }
 
-    setJobs(seedJobs);
-    setSelectedId(seedJobs[0].id);
+    const nextJobs = shouldShowDemoJobs() ? seedJobs : [];
+    setJobs(nextJobs);
+    setSelectedId(nextJobs[0]?.id || "");
     setFilter("All");
   }
 
@@ -223,8 +248,8 @@ export default function FreshJobs({ onNavigate }) {
 
           {visibleJobs.length === 0 && (
             <div className="freshItem">
-              <b>No jobs</b>
-              <span>Change filter or reset the preview jobs.</span>
+              <b>No jobs yet</b>
+              <span>Start with the First Run Guide and create your first real job.</span>
             </div>
           )}
         </aside>

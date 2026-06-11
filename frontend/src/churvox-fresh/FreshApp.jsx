@@ -325,17 +325,52 @@ const pages = new Set([
   "paymentpromise",
 ]);
 
+function isFirstSetupPending() {
+  try {
+    const params = new URLSearchParams(window.location.search || "");
+    return (
+      params.get("first_setup") === "1" ||
+      window.localStorage.getItem("churvox_first_setup_pending") === "true"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function clearNewUserDemoStorage() {
+  try {
+    window.localStorage.removeItem("churvox:fresh-demo-mode:v1");
+    window.localStorage.removeItem("churvox:fresh-command-inbox:v1");
+    window.localStorage.removeItem("churvox:fresh-jobs:v1");
+  } catch {
+    // Keep app loading.
+  }
+}
+
 function readPageFromHash() {
   if (typeof window === "undefined") return "smart";
+
   const raw = window.location.hash.replace("#", "").trim().toLowerCase();
+
   const aliases = {
     cockpit: "smart",
     home: "smart",
     dashboard: "smart",
     smarthub: "smart",
     "smart-hub": "smart",
+    guide: "firstrun",
+    setupguide: "firstrun",
+    "setup-guide": "firstrun",
+    start: "firstrun",
   };
+
   const hash = aliases[raw] || raw;
+
+  if (isFirstSetupPending() && (!hash || hash === "smart" || hash === "command")) {
+    clearNewUserDemoStorage();
+    return "firstrun";
+  }
+
   return pages.has(hash) ? hash : "smart";
 }
 

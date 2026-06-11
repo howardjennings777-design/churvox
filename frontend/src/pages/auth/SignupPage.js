@@ -88,6 +88,11 @@ export default function SignupPage() {
 
       try {
         localStorage.setItem(FIRST_SETUP_KEY, "true");
+        localStorage.removeItem("churvox_first_setup_seen");
+        localStorage.removeItem("churvox:fresh-demo-mode:v1");
+        localStorage.removeItem("churvox:fresh-command-inbox:v1");
+        localStorage.removeItem("churvox:fresh-jobs:v1");
+
         saveBusinessSettings({
           business_name: businessName || "",
           email,
