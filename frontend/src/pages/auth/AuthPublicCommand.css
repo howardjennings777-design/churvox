@@ -294,3 +294,96 @@
     font-size: clamp(36px, 12vw, 56px);
   }
 }
+
+/* CHURVOX_SIGNUP_REAL_READABILITY_FIX_20260611
+   Fix actual /signup auth page: one form, centred, readable, not washed out. */
+.wh-auth-wrap.is-signup {
+  width: min(720px, 100%) !important;
+  grid-template-columns: 1fr !important;
+  align-items: center !important;
+  justify-items: stretch !important;
+  margin-top: 26px !important;
+}
+
+.wh-auth-wrap.is-signup .wh-auth-form {
+  width: 100% !important;
+  min-height: auto !important;
+  background: #fffaf0 !important;
+  color: #071118 !important;
+  -webkit-text-fill-color: #071118 !important;
+  border: 1px solid rgba(17, 24, 39, .16) !important;
+  box-shadow: 0 30px 90px rgba(17, 24, 39, .18) !important;
+  backdrop-filter: none !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+.wh-auth-wrap.is-signup .wh-auth-kicker {
+  color: #c2410c !important;
+  -webkit-text-fill-color: #c2410c !important;
+}
+
+.wh-auth-wrap.is-signup .wh-auth-title {
+  color: #071118 !important;
+  -webkit-text-fill-color: #071118 !important;
+  text-shadow: none !important;
+  opacity: 1 !important;
+}
+
+.wh-auth-wrap.is-signup .wh-auth-label {
+  color: #1f2937 !important;
+  -webkit-text-fill-color: #1f2937 !important;
+  opacity: 1 !important;
+}
+
+.wh-auth-wrap.is-signup .wh-auth-input {
+  background: #ffffff !important;
+  color: #071118 !important;
+  -webkit-text-fill-color: #071118 !important;
+  border: 1px solid rgba(8, 21, 31, .28) !important;
+  box-shadow: 0 10px 22px rgba(8, 21, 31, .08) !important;
+  opacity: 1 !important;
+}
+
+.wh-auth-wrap.is-signup .wh-auth-input::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  opacity: 1 !important;
+}
+
+.wh-auth-wrap.is-signup .wh-auth-submit {
+  background: linear-gradient(135deg, #ffb15f, #f97316) !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  opacity: 1 !important;
+  font-weight: 1000 !important;
+}
+
+.wh-auth-wrap.is-signup .wh-auth-sub,
+.wh-auth-wrap.is-signup .wh-auth-sub * {
+  color: #334155 !important;
+  -webkit-text-fill-color: #334155 !important;
+  opacity: 1 !important;
+}
+
+.wh-auth-wrap.is-signup .wh-auth-sub a {
+  color: #b45309 !important;
+  -webkit-text-fill-color: #b45309 !important;
+  font-weight: 1000 !important;
+}
+
+@media (max-width: 620px) {
+  .wh-auth-wrap.is-signup {
+    margin-top: 14px !important;
+  }
+
+  .wh-auth-wrap.is-signup .wh-auth-form {
+    padding: 22px !important;
+    border-radius: 24px !important;
+  }
+
+  .wh-auth-wrap.is-signup .wh-auth-title {
+    font-size: clamp(34px, 11vw, 50px) !important;
+    line-height: .95 !important;
+  }
+}
