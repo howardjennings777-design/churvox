@@ -1,0 +1,29 @@
+{
+  "score": 100,
+  "checks": [
+    {
+      "name": "Fresh shell-free route exists",
+      "ok": true,
+      "evidence": "FreshBusinessRoute returns AppPage without CommandShell.",
+      "fix": "Add shell-free Fresh route guard."
+    },
+    {
+      "name": "Dashboard uses shell-free Fresh route",
+      "ok": true,
+      "evidence": "/dashboard opens FreshApp without old CommandShell.",
+      "fix": "Use FreshBusinessRoute on /dashboard."
+    },
+    {
+      "name": "Plans uses shell-free Fresh route",
+      "ok": true,
+      "evidence": "/plans opens FreshApp without old CommandShell.",
+      "fix": "Use FreshBusinessRoute on /plans."
+    },
+    {
+      "name": "Old legacy dashboard retained",
+      "ok": true,
+      "evidence": "Old dashboard still kept as emergency backup.",
+      "fix": "Keep /legacy/dashboard until live testing passes."
+    }
+  ]
+}
