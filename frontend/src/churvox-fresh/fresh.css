@@ -346,3 +346,42 @@
     font-size: 46px;
   }
 }
+
+
+/* Obvious logout button */
+.freshLogoutSide,
+.freshLogoutTop {
+  border: 1px solid rgba(127, 29, 29, 0.18) !important;
+  border-radius: 999px !important;
+  background: #fee2e2 !important;
+  color: #7f1d1d !important;
+  -webkit-text-fill-color: #7f1d1d !important;
+  font-weight: 1000 !important;
+  cursor: pointer !important;
+}
+
+.freshLogoutSide {
+  width: calc(100% - 24px);
+  min-height: 42px;
+  margin: 0 12px 14px;
+}
+
+.freshLogoutTop {
+  min-height: 40px;
+  padding: 0 15px;
+}
+
+.freshLogoutSide:hover,
+.freshLogoutTop:hover {
+  background: #fecaca !important;
+}
+
+@media (max-width: 760px) {
+  .freshLogoutSide {
+    display: none !important;
+  }
+
+  .freshLogoutTop {
+    display: inline-flex !important;
+  }
+}

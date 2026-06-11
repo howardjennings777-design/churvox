@@ -2,6 +2,7 @@ import React from "react";
 import FreshQuickCreate from "./FreshQuickCreate";
 import FreshSearch from "./FreshSearch";
 import FreshTopStatus from "./FreshTopStatus";
+import { useAuth } from "../context/AuthContext";
 
 const groups = [
   { title: "Home", items: [["firstrun", "FR", "Guide"], ["smart", "CP", "Cockpit"], ["command", "CM", "Command"]] },
@@ -287,6 +288,7 @@ function cleanGroups(sourceGroups) {
 }
 
 export default function FreshShell({ active, onChange, children }) {
+  const { logout } = useAuth();
   const [moreOpen, setMoreOpen] = React.useState(false);
   const [quickType, setQuickType] = React.useState(null);
 
@@ -296,6 +298,22 @@ export default function FreshShell({ active, onChange, children }) {
     const mainKeys = new Set(safeMobileItems.map(([key]) => key));
     return uniqueItems(extraMobile).filter(([key]) => !mainKeys.has(key));
   }, [safeMobileItems]);
+
+  async function handleLogout() {
+    try {
+      await logout();
+    } finally {
+      try {
+        window.localStorage.removeItem("token");
+        window.localStorage.removeItem("owner_portal_session");
+        window.localStorage.removeItem("platform_owner_email");
+      } catch {
+        // Keep logout moving.
+      }
+
+      window.location.href = "/login";
+    }
+  }
 
   function go(key) {
     if (key === "more") return;
@@ -322,6 +340,10 @@ export default function FreshShell({ active, onChange, children }) {
             <small>Fresh build</small>
           </div>
         </div>
+
+        <button className="freshLogoutSide" type="button" onClick={handleLogout}>
+          Log out
+        </button>
 
         <nav className="freshNav">
           {safeGroups.map((group) => (
@@ -358,6 +380,7 @@ export default function FreshShell({ active, onChange, children }) {
             <button type="button" onClick={() => setQuickType("job")}>New job</button>
             <button type="button" onClick={() => setQuickType("quote")}>New quote</button>
             <button type="button" onClick={() => setQuickType("client")}>Add client</button>
+            <button className="freshLogoutTop" type="button" onClick={handleLogout}>Log out</button>
           </div>
         </div>
 
