@@ -106,3 +106,7 @@
   letter-spacing: .08em;
   text-transform: uppercase;
 }
+
+.freshSmartPage .freshNewUserGuide {
+  display: none !important;
+}
