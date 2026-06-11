@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+<!-- CHURVOX_PUBLIC_FULLSCREEN_FORCE_20260612 -->
 <!-- CHURVOX_LIVE_DEPLOY_MARKER_AI_GUIDE_20260611 -->
 <!-- CHURVOX_INVOICE_FULLSCREEN_DEPLOY_MARKER -->
 <!-- CHURVOX FULLSCREEN SLIPS DEPLOY MARKER 2026-06-03 -->
 <!-- CHURVOX COMMAND SLIP PORTAL FIX 2026-06-07 -->
 <!-- CHURVOX COMMAND SLIP SIDEBAR COVER FIX 2026-06-07 -->
-    <meta name="churvox-build-cache-reset" content="ai-guide-live-20260611" />
+    <meta name="churvox-build-cache-reset" content="public-fullscreen-force-20260612" />
     <meta charset="utf-8" />
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
@@ -58,47 +59,19 @@
         max-height: none !important;
         z-index: 2147483647 !important;
         isolation: isolate !important;
-        padding-left: 360px !important;
-        box-sizing: border-box !important;
       }
-      @media (max-width: 900px) {
-        [role="dialog"][aria-modal="true"] {
-          left: -280px !important;
-          width: calc(100vw + 280px) !important;
-          padding-left: 292px !important;
-        }
-      }
-      @media (max-width: 640px) {
-        [role="dialog"][aria-modal="true"] {
-          left: 0 !important;
-          width: 100vw !important;
-          padding-left: 12px !important;
-        }
+      [role="dialog"][aria-modal="true"] *,
+      [role="dialog"][aria-modal="true"] input,
+      [role="dialog"][aria-modal="true"] textarea,
+      [role="dialog"][aria-modal="true"] select {
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+        text-shadow: none !important;
+        filter: none !important;
+        mix-blend-mode: normal !important;
       }
     </style>
-<!-- CHURVOX_CACHE_CLEAR_ONLY_20260610 -->
-    <script>
-      (function () {
-        if ("serviceWorker" in navigator) {
-          window.addEventListener("load", function () {
-            navigator.serviceWorker.getRegistrations()
-              .then(function (regs) {
-                return Promise.all(regs.map(function (reg) { return reg.unregister(); }));
-              })
-              .catch(function () {});
-          });
-        }
-
-        if (window.caches && caches.keys) {
-          caches.keys()
-            .then(function (keys) {
-              return Promise.all(keys.map(function (key) { return caches.delete(key); }));
-            })
-            .catch(function () {});
-        }
-      })();
-    </script>
-</head>
+  </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
