@@ -1199,3 +1199,115 @@ body.freshCommandOwnerMode .freshCommandEmpty button + button{
     grid-template-columns:1fr;
   }
 }
+
+/* FINAL COMMAND TEXT COLOUR LOCK — last rule wins */
+body.freshCommandOwnerMode .freshCommandDeskPage,
+body.freshCommandOwnerMode .freshCommandDeskPage h1,
+body.freshCommandOwnerMode .freshCommandDeskPage h2,
+body.freshCommandOwnerMode .freshCommandDeskPage h3,
+body.freshCommandOwnerMode .freshCommandDeskPage h4,
+body.freshCommandOwnerMode .freshCommandDeskPage p,
+body.freshCommandOwnerMode .freshCommandDeskPage small,
+body.freshCommandOwnerMode .freshCommandDeskPage summary,
+body.freshCommandOwnerMode .freshCommandDeskPage label,
+body.freshCommandOwnerMode .freshCommandDeskPage li,
+body.freshCommandOwnerMode .freshCommandDeskPage div{
+  color:#f8fafc !important;
+  -webkit-text-fill-color:#f8fafc !important;
+}
+
+body.freshCommandOwnerMode .freshCommandDeskPage p,
+body.freshCommandOwnerMode .freshCommandDeskPage small,
+body.freshCommandOwnerMode .freshCommandDeskPage .freshCommandSourcePanel p,
+body.freshCommandOwnerMode .freshCommandDeskPage .freshCommandEventFeed p,
+body.freshCommandOwnerMode .freshCommandDeskPage .freshCommandMorning p{
+  color:#e5e7eb !important;
+  -webkit-text-fill-color:#e5e7eb !important;
+  opacity:1 !important;
+}
+
+body.freshCommandOwnerMode .freshCommandDeskPage b,
+body.freshCommandOwnerMode .freshCommandDeskPage strong{
+  color:#ffffff !important;
+  -webkit-text-fill-color:#ffffff !important;
+  opacity:1 !important;
+}
+
+/* Amber numbers and highlights stay amber */
+body.freshCommandOwnerMode .freshCommandDeskStats b,
+body.freshCommandOwnerMode .freshCommandSourceActions b,
+body.freshCommandOwnerMode .freshCommandEventFeed header b,
+body.freshCommandOwnerMode .freshCommandActionType b,
+body.freshCommandOwnerMode .freshCommandDemoTools summary{
+  color:#fbbf24 !important;
+  -webkit-text-fill-color:#fbbf24 !important;
+}
+
+/* Orange pills/buttons must use dark text */
+body.freshCommandOwnerMode .freshCommandDeskPage button:first-child,
+body.freshCommandOwnerMode .freshCommandTabs button.active,
+body.freshCommandOwnerMode .freshCommandTabs button.active *,
+body.freshCommandOwnerMode .freshCommandSourcePanel span,
+body.freshCommandOwnerMode .freshCommandEventFeed header span,
+body.freshCommandOwnerMode .freshCommandSlipBody b,
+body.freshCommandOwnerMode .freshCommandEditGrid label span,
+body.freshCommandOwnerMode .freshCommandSourceActions button,
+body.freshCommandOwnerMode .freshCommandSnoozeOptions button,
+body.freshCommandOwnerMode .freshCommandSlip header strong{
+  color:#111827 !important;
+  -webkit-text-fill-color:#111827 !important;
+}
+
+/* Dark buttons stay white */
+body.freshCommandOwnerMode .freshCommandDeskPage button:not(:first-child),
+body.freshCommandOwnerMode .freshCommandDeskPage button:not(:first-child) *,
+body.freshCommandOwnerMode .freshCommandEmpty button + button{
+  color:#ffffff !important;
+  -webkit-text-fill-color:#ffffff !important;
+}
+
+/* Inputs/edit modal */
+body.freshCommandOwnerMode .freshCommandDeskPage input,
+body.freshCommandOwnerMode .freshCommandDeskPage textarea,
+body.freshCommandOwnerMode .freshCommandDeskPage select,
+body.freshCommandOwnerMode .freshCommandDeskPage option{
+  color:#ffffff !important;
+  -webkit-text-fill-color:#ffffff !important;
+  background:#081427 !important;
+}
+
+body.freshCommandOwnerMode .freshCommandDeskPage input::placeholder,
+body.freshCommandOwnerMode .freshCommandDeskPage textarea::placeholder{
+  color:#cbd5e1 !important;
+  -webkit-text-fill-color:#cbd5e1 !important;
+  opacity:1 !important;
+}
+
+/* Top shell/header while Command is open */
+body.freshCommandOwnerMode .freshTopbar *,
+body.freshCommandOwnerMode .freshShellTopbar *,
+body.freshCommandOwnerMode .freshShellHeader *,
+body.freshCommandOwnerMode .freshHeader *,
+body.freshCommandOwnerMode [class*="Topbar"] *,
+body.freshCommandOwnerMode [class*="topbar"] *{
+  color:#f8fafc !important;
+  -webkit-text-fill-color:#f8fafc !important;
+  opacity:1 !important;
+}
+
+/* Keep orange/nav active items readable */
+body.freshCommandOwnerMode .freshTopbar button.active,
+body.freshCommandOwnerMode .freshShellTopbar button.active,
+body.freshCommandOwnerMode .freshShellHeader button.active,
+body.freshCommandOwnerMode .freshHeader button.active,
+body.freshCommandOwnerMode [class*="Topbar"] button.active,
+body.freshCommandOwnerMode [class*="topbar"] button.active{
+  color:#111827 !important;
+  -webkit-text-fill-color:#111827 !important;
+}
+
+/* Kill faded inherited text */
+body.freshCommandOwnerMode .freshCommandDeskPage *{
+  opacity:1 !important;
+  text-shadow:none !important;
+}
