@@ -1,0 +1,59 @@
+{
+  "score": 100,
+  "checks": [
+    {
+      "name": "Dashboard opens FreshApp",
+      "status": "PASS",
+      "evidence": "/dashboard uses FreshApp.",
+      "fix": "Promote FreshApp to /dashboard."
+    },
+    {
+      "name": "Fresh route redirects to dashboard",
+      "status": "PASS",
+      "evidence": "/fresh redirects to /dashboard.",
+      "fix": "Redirect /fresh."
+    },
+    {
+      "name": "Legacy dashboard retained",
+      "status": "PASS",
+      "evidence": "Old dashboard kept as backup.",
+      "fix": "Keep legacy route until real testing passes."
+    },
+    {
+      "name": "Public quote retained",
+      "status": "PASS",
+      "evidence": "Public quote route retained.",
+      "fix": "Keep public quote route."
+    },
+    {
+      "name": "Public invoice retained",
+      "status": "PASS",
+      "evidence": "Public invoice route retained.",
+      "fix": "Keep public invoice route."
+    },
+    {
+      "name": "Worker app retained",
+      "status": "PASS",
+      "evidence": "Worker routes retained.",
+      "fix": "Keep worker routes."
+    },
+    {
+      "name": "Auth retained",
+      "status": "PASS",
+      "evidence": "Auth routes retained.",
+      "fix": "Keep auth routes."
+    },
+    {
+      "name": "Admin retained",
+      "status": "PASS",
+      "evidence": "Admin route retained.",
+      "fix": "Keep platform admin."
+    },
+    {
+      "name": "Old board routes redirect to Fresh",
+      "status": "PASS",
+      "evidence": "Old board routes redirect to Fresh hash pages.",
+      "fix": "Redirect board routes to Fresh."
+    }
+  ]
+}
