@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 import "./SimplePublic.css";
 import "../../styles/public-dark-login-theme.css";
+import "../../styles/public-landing-readable-override.css";
 
 const proof = ["14-day free trial", "No card to start", "AI setup guide", "Owner approves first"];
 
