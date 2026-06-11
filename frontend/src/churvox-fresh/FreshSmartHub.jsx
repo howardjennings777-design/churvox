@@ -1,4 +1,5 @@
 import React from "react";
+import FreshNewUserGuide from "./FreshNewUserGuide";
 
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
 
@@ -103,6 +104,8 @@ export default function FreshSmartHub({ onNavigate }) {
           ))}
         </div>
       </div>
+
+      <FreshNewUserGuide onNavigate={onNavigate} mode="compact" />
 
       <div className="freshSmartGrid">
         <article className="freshSmartPanel freshSmartWide">

@@ -6,6 +6,10 @@ try:
     from churvox_platform_owner_routes import build_platform_owner_router
 except Exception:
     from .churvox_platform_owner_routes import build_platform_owner_router
+try:
+    from churvox_onboarding_routes import build_onboarding_router
+except Exception:
+    from .churvox_onboarding_routes import build_onboarding_router
 from passlib.context import CryptContext
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
@@ -743,6 +747,8 @@ async def get_current_user(request: Request) -> dict:
         raise HTTPException(status_code=401, detail="Invalid token")
 
 app.include_router(build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectId), prefix="/api")
+
+app.include_router(build_onboarding_router(db, get_current_user, ObjectId), prefix="/api")
 
 async def require_employer(request: Request) -> dict:
     user = await get_current_user(request)

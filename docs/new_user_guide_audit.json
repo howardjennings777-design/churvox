@@ -1,0 +1,71 @@
+{
+  "score": 100,
+  "checks": [
+    {
+      "name": "Backend progress endpoint exists",
+      "status": "PASS",
+      "evidence": "Backend returns guide progress.",
+      "fix": "Add /api/onboarding/progress."
+    },
+    {
+      "name": "Backend stores progress",
+      "status": "PASS",
+      "evidence": "Guide progress is stored in Mongo.",
+      "fix": "Store guide progress."
+    },
+    {
+      "name": "Backend checks real data",
+      "status": "PASS",
+      "evidence": "Guide checks clients/jobs/invoices.",
+      "fix": "Use real data counts."
+    },
+    {
+      "name": "Backend checks Command",
+      "status": "PASS",
+      "evidence": "Command progress is checked.",
+      "fix": "Check command slips."
+    },
+    {
+      "name": "Smart Hub shows guide",
+      "status": "PASS",
+      "evidence": "Guide appears on Smart Hub.",
+      "fix": "Add compact guide to Smart Hub."
+    },
+    {
+      "name": "Full wizard uses guide",
+      "status": "PASS",
+      "evidence": "First Run Wizard uses real guide.",
+      "fix": "Use real guide in wizard."
+    },
+    {
+      "name": "Guide has one next action",
+      "status": "PASS",
+      "evidence": "Guide focuses one next action.",
+      "fix": "Show one next action."
+    },
+    {
+      "name": "Guide can mark manual done",
+      "status": "PASS",
+      "evidence": "User can mark a step done.",
+      "fix": "Add manual done."
+    },
+    {
+      "name": "Guide can skip/resume",
+      "status": "PASS",
+      "evidence": "User can skip/resume guide.",
+      "fix": "Add skip/resume."
+    },
+    {
+      "name": "Guide sends to Command",
+      "status": "PASS",
+      "evidence": "Setup help can be sent to Command.",
+      "fix": "Add Command slip."
+    },
+    {
+      "name": "Guide CSS imported",
+      "status": "PASS",
+      "evidence": "Guide CSS imported.",
+      "fix": "Import CSS."
+    }
+  ]
+}

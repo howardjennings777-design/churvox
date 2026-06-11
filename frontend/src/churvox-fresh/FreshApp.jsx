@@ -115,6 +115,7 @@ import "./freshLaunchControl.css";
 import "./freshXero.css";
 import "./freshGlobalReadable.css";
 import "./freshNuclearReadable.css";
+import "./freshNewUserGuide.css";
 
 import FreshShell from "./FreshShell";
 import FreshSimple from "./FreshSimple";
