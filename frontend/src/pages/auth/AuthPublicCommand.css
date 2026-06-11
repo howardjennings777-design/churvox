@@ -387,3 +387,67 @@
     line-height: .95 !important;
   }
 }
+
+/* CHURVOX_SIGNUP_OPEN_DIRECT_FIX_20260611 */
+.wh-auth {
+  min-height: 100vh !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  background: #f7f3ea !important;
+  color: #111827 !important;
+}
+
+.wh-auth-wrap.is-signup {
+  width: min(720px, 100%) !important;
+  grid-template-columns: 1fr !important;
+  min-height: auto !important;
+  margin: 26px auto 0 !important;
+}
+
+.wh-auth-wrap.is-signup .wh-auth-form {
+  width: 100% !important;
+  background: #fffaf0 !important;
+  color: #071118 !important;
+  border: 1px solid rgba(17, 24, 39, .16) !important;
+  box-shadow: 0 30px 90px rgba(17, 24, 39, .16) !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+.wh-auth-wrap.is-signup .wh-auth-title,
+.wh-auth-wrap.is-signup .wh-auth-label,
+.wh-auth-wrap.is-signup .wh-auth-sub {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+.wh-auth-wrap.is-signup .wh-auth-title {
+  color: #071118 !important;
+  -webkit-text-fill-color: #071118 !important;
+}
+
+.wh-auth-wrap.is-signup .wh-auth-label {
+  color: #1f2937 !important;
+  -webkit-text-fill-color: #1f2937 !important;
+}
+
+.wh-auth-wrap.is-signup .wh-auth-input {
+  background: #ffffff !important;
+  color: #071118 !important;
+  -webkit-text-fill-color: #071118 !important;
+  border: 1px solid rgba(8, 21, 31, .28) !important;
+  opacity: 1 !important;
+}
+
+.wh-auth-wrap.is-signup .wh-auth-submit {
+  background: linear-gradient(135deg, #ffb15f, #f97316) !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  opacity: 1 !important;
+}
+
+@media (max-width: 620px) {
+  .wh-auth-wrap.is-signup {
+    margin-top: 14px !important;
+  }
+}
