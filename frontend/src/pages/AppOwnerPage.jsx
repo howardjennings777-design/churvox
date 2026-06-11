@@ -357,14 +357,14 @@ export default function AppOwnerPage() {
         ) : null}
 
         <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="Visitors today" value={metrics.visitors_today || 0} helper={`${metrics.visitors_7d || 0} last 7 days`} icon={Globe2} />
+          <MetricCard label="Visitors today" value={metrics.visitors_today || 0} helper={`${metrics.unique_visitors_today || 0} unique · ${metrics.visitors_7d || 0} last 7 days`} icon={Globe2} />
           <MetricCard label="On now" value={metrics.active_now || 0} helper="Visitors in last 15 minutes" icon={Eye} accent="green" />
           <MetricCard label="Total users" value={metrics.total_users || 0} helper={`${metrics.active_today || 0} active today`} icon={Users} />
           <MetricCard label="Businesses" value={metrics.total_businesses || 0} helper="Owner workspaces" icon={Building2} />
           <MetricCard label="Paid / buyers" value={metrics.paid_users || 0} helper="Users with paid/active plan signals" icon={CreditCard} accent="green" />
           <MetricCard label="Trials" value={metrics.trial_users || 0} helper="Trialing users" icon={UserCheck} accent="amber" />
-          <MetricCard label="Revenue estimate" value={money(metrics.monthly_revenue_estimate || 0)} helper="Based on plan values" icon={DollarSign} accent="green" />
-          <MetricCard label="Jobs / invoices" value={`${metrics.total_jobs || 0} / ${metrics.total_invoices || 0}`} helper={`${metrics.total_clients || 0} clients · ${metrics.total_quotes || 0} quotes`} icon={MousePointerClick} />
+          <MetricCard label="Revenue estimate" value={money(metrics.monthly_revenue_estimate || 0)} helper={`${money(metrics.invoice_value_outstanding || 0)} invoice outstanding`} icon={DollarSign} accent="green" />
+          <MetricCard label="Jobs / invoices" value={`${metrics.total_jobs || 0} / ${metrics.total_invoices || 0}`} helper={`${metrics.total_clients || 0} clients · ${money(metrics.invoice_value_total || 0)} invoiced`} icon={MousePointerClick} />
         </section>
 
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">

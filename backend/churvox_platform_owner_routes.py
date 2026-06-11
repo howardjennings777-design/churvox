@@ -1,11 +1,11 @@
-# CHURVOX_PLATFORM_OWNER_COCKPIT_20260611
+# CHURVOX_PLATFORM_OWNER_REAL_DATA_20260611
 
 from __future__ import annotations
 
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Request, HTTPException, Body
-from typing import Any, Dict, List
-import re
+from typing import Any, Dict
+import hashlib
 
 PROTECTED_EMAILS = {
     "hello@churvox.com",
@@ -65,7 +65,11 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
         if isinstance(value, list):
             return [safe_value(v) for v in value]
         if isinstance(value, dict):
-            return {k: safe_value(v) for k, v in value.items() if k not in {"password_hash", "password"}}
+            return {
+                k: safe_value(v)
+                for k, v in value.items()
+                if k not in {"password_hash", "password", "reset_token", "invite_token"}
+            }
         return value
 
     def safe_doc(doc: Dict[str, Any] | None):
@@ -77,7 +81,15 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
             out["_id"] = str(out["_id"])
         out.pop("password_hash", None)
         out.pop("password", None)
+        out.pop("reset_token", None)
+        out.pop("invite_token", None)
         return safe_value(out)
+
+    async def optional_user(request: Request):
+        try:
+            return await get_current_user(request)
+        except Exception:
+            return None
 
     async def require_owner(request: Request):
         user = await get_current_user(request)
@@ -110,6 +122,41 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
             return False
         return any(marker in txt for marker in TEST_MARKERS)
 
+    def plan_key(user: Dict[str, Any]) -> str:
+        return str(user.get("plan") or user.get("subscription_plan") or user.get("plan_type") or "").strip().lower()
+
+    def plan_label(user: Dict[str, Any]) -> str:
+        key = plan_key(user) or "unknown"
+        return PLAN_LABELS.get(key, key.title())
+
+    def is_paid_user(user: Dict[str, Any]) -> bool:
+        plan = plan_key(user)
+        status = str(user.get("subscription_status") or user.get("billing_status") or user.get("stripe_status") or "").lower()
+        if status in {"active", "paid", "trialing"}:
+            return True
+        if user.get("stripe_customer_id") or user.get("stripe_subscription_id"):
+            return True
+        return plan in PLAN_VALUE and plan not in {"", "free", "trial", "none"}
+
+    def is_trial_user(user: Dict[str, Any]) -> bool:
+        status = str(user.get("subscription_status") or user.get("billing_status") or "").lower()
+        if bool(user.get("trial_active")) or status == "trialing":
+            return True
+        raw_end = user.get("trial_end") or user.get("trial_ends_at") or user.get("trial_end_date")
+        try:
+            if raw_end:
+                d = datetime.fromisoformat(str(raw_end).replace("Z", "+00:00"))
+                return d >= datetime.now(timezone.utc)
+        except Exception:
+            pass
+        return False
+
+    async def count_docs(collection_name: str, query: Dict[str, Any] | None = None) -> int:
+        try:
+            return await db[collection_name].count_documents(query or {})
+        except Exception:
+            return 0
+
     async def list_docs(collection_name: str, query: Dict[str, Any] | None = None, limit: int = 100, sort_field: str = "created_at"):
         try:
             cursor = db[collection_name].find(query or {})
@@ -122,30 +169,16 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
         except Exception:
             return []
 
-    async def count_docs(collection_name: str, query: Dict[str, Any] | None = None) -> int:
+    async def real_collection_names():
         try:
-            return await db[collection_name].count_documents(query or {})
+            names = await db.list_collection_names()
+            return set(names or [])
         except Exception:
-            return 0
+            return set()
 
-    def plan_key(user: Dict[str, Any]) -> str:
-        return str(user.get("plan") or user.get("subscription_plan") or "").strip().lower()
-
-    def is_paid_user(user: Dict[str, Any]) -> bool:
-        plan = plan_key(user)
-        status = str(user.get("subscription_status") or user.get("billing_status") or "").lower()
-        if user.get("stripe_customer_id") or user.get("stripe_subscription_id"):
-            return True
-        if status in {"active", "paid", "trialing"}:
-            return True
-        return plan in PLAN_VALUE and plan not in {"", "free", "trial"}
-
-    def is_trial_user(user: Dict[str, Any]) -> bool:
-        status = str(user.get("subscription_status") or user.get("billing_status") or "").lower()
-        return bool(user.get("trial_active")) or status == "trialing"
-
-    def active_since_query(field: str, since: datetime):
-        return {field: {"$gte": since}}
+    def make_visit_key(ip: str, user_agent: str) -> str:
+        raw = f"{ip}|{user_agent}".encode("utf-8", errors="ignore")
+        return hashlib.sha256(raw).hexdigest()[:24]
 
     @router.post("/platform/visit")
     async def track_visit(request: Request, payload: Dict[str, Any] = Body(default={})):
@@ -153,26 +186,51 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
         ip = request.headers.get("x-forwarded-for", "").split(",")[0].strip() or (request.client.host if request.client else "")
         user_agent = request.headers.get("user-agent", "")
         referrer = request.headers.get("referer") or payload.get("referrer") or ""
-
         path = str(payload.get("path") or "")[:500]
         title = str(payload.get("title") or "")[:200]
         source = str(payload.get("source") or "")[:200]
 
+        user = await optional_user(request)
+        user_id = user.get("id") if user else None
+        business_id = user.get("business_id") if user else None
+
         doc = {
             "created_at": now,
+            "last_seen": now,
             "path": path,
             "title": title,
             "referrer": referrer[:500],
             "source": source,
             "ip": ip,
+            "visitor_key": make_visit_key(ip, user_agent),
             "user_agent": user_agent[:500],
             "kind": "pageview",
+            "user_id": user_id,
+            "user_email": user.get("email") if user else None,
+            "user_name": user.get("name") if user else None,
+            "business_id": business_id,
+            "business_name": user.get("business_name") if user else None,
         }
 
         try:
             await db.platform_visits.insert_one(doc)
         except Exception:
             pass
+
+        if user_id:
+            try:
+                await db.users.update_one(
+                    {"_id": ObjectId(user_id)},
+                    {"$set": {"last_active": now, "last_seen_path": path}},
+                )
+            except Exception:
+                try:
+                    await db.users.update_one(
+                        {"id": str(user_id)},
+                        {"$set": {"last_active": now, "last_seen_path": path}},
+                    )
+                except Exception:
+                    pass
 
         return {"ok": True}
 
@@ -184,55 +242,83 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
         today = now.replace(hour=0, minute=0, second=0, microsecond=0)
         active_cutoff = now - timedelta(minutes=15)
         seven_days = now - timedelta(days=7)
+        thirty_days = now - timedelta(days=30)
 
-        users = await list_docs("users", {}, 500)
-        invoices = await list_docs("invoices", {}, 250)
-        jobs = await list_docs("jobs", {}, 250)
-        clients = await list_docs("clients", {}, 250)
-        quotes = await list_docs("quotes", {}, 250)
-        visits = await list_docs("platform_visits", {}, 300)
+        collections = await real_collection_names()
+
+        users = await list_docs("users", {}, 1000) if "users" in collections else []
+        invoices = await list_docs("invoices", {}, 500) if "invoices" in collections else []
+        jobs = await list_docs("jobs", {}, 500) if "jobs" in collections else []
+        clients = await list_docs("clients", {}, 500) if "clients" in collections else []
+        quotes = await list_docs("quotes", {}, 500) if "quotes" in collections else []
+        visits = await list_docs("platform_visits", {}, 1000) if "platform_visits" in collections else []
 
         paid_users = [u for u in users if is_paid_user(u)]
         trial_users = [u for u in users if is_trial_user(u)]
-        business_users = [u for u in users if u.get("business_name") or str(u.get("role", "")).lower() in {"owner", "employer", "admin"}]
+        business_users = [
+            u for u in users
+            if u.get("business_name")
+            or str(u.get("role", "")).lower() in {"owner", "employer", "admin", "platform_owner"}
+        ]
 
         active_today_users = []
+        active_30d_users = []
         for u in users:
             raw = u.get("last_active") or u.get("last_login") or u.get("updated_at") or u.get("created_at")
             try:
                 d = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
                 if d >= today:
                     active_today_users.append(u)
+                if d >= thirty_days:
+                    active_30d_users.append(u)
             except Exception:
                 pass
 
         active_now_visitors = []
         visitors_today = []
         visitors_7d = []
+        unique_today = set()
+        unique_7d = set()
         for v in visits:
-            raw = v.get("created_at")
+            raw = v.get("created_at") or v.get("last_seen")
             try:
                 d = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+                key = v.get("visitor_key") or v.get("ip") or v.get("user_email") or str(v.get("id"))
                 if d >= active_cutoff:
                     active_now_visitors.append(v)
                 if d >= today:
                     visitors_today.append(v)
+                    unique_today.add(key)
                 if d >= seven_days:
                     visitors_7d.append(v)
+                    unique_7d.add(key)
             except Exception:
                 pass
 
         plan_counts = {}
         for u in users:
-            key = plan_key(u) or "unknown"
-            label = PLAN_LABELS.get(key, key.title())
+            label = plan_label(u)
             plan_counts[label] = plan_counts.get(label, 0) + 1
 
         monthly_revenue = sum(PLAN_VALUE.get(plan_key(u), 0) for u in paid_users)
 
+        total_invoice_value = 0
+        outstanding_invoice_value = 0
+        paid_invoice_value = 0
+        for inv in invoices:
+            amount = float(inv.get("total") or inv.get("amount_total") or inv.get("subtotal") or 0)
+            total_invoice_value += amount
+            status = str(inv.get("status") or "").lower()
+            if status == "paid":
+                paid_invoice_value += amount
+            elif status in {"sent", "overdue", "draft"}:
+                outstanding_invoice_value += amount
+
         test_preview = []
         for collection in ["users", "clients", "jobs", "quotes", "invoices", "businesses", "workers", "team_members"]:
-            docs = await list_docs(collection, {}, 500)
+            if collection not in collections:
+                continue
+            docs = await list_docs(collection, {}, 1000)
             matches = [d for d in docs if is_test_doc(d)]
             if matches:
                 test_preview.append({
@@ -242,64 +328,80 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
                 })
 
         events = []
-        for u in users[:20]:
+        for u in users[:50]:
             events.append({
                 "kind": "user",
-                "label": "User signup/account",
+                "label": "User/signup",
                 "title": u.get("name") or u.get("email") or "User",
-                "meta": u.get("business_name") or u.get("plan") or "",
-                "at": u.get("created_at") or u.get("updated_at") or "",
+                "meta": u.get("business_name") or plan_label(u) or "",
+                "at": u.get("created_at") or u.get("updated_at") or u.get("last_active") or "",
             })
-        for v in visits[:20]:
+        for v in visits[:80]:
             events.append({
                 "kind": "visit",
-                "label": "Visitor",
+                "label": "Visitor/pageview",
                 "title": v.get("path") or "Page visit",
-                "meta": v.get("referrer") or v.get("ip") or "",
+                "meta": v.get("user_email") or v.get("referrer") or v.get("ip") or "",
                 "at": v.get("created_at") or "",
+            })
+        for inv in invoices[:40]:
+            events.append({
+                "kind": "invoice",
+                "label": "Invoice",
+                "title": inv.get("invoice_number") or inv.get("customer_name") or "Invoice",
+                "meta": f"{inv.get('status', '')} · {inv.get('total', inv.get('subtotal', ''))}",
+                "at": inv.get("created_at") or inv.get("updated_at") or "",
             })
 
         return {
             "ok": True,
             "generated_at": now.isoformat(),
+            "collections_seen": sorted(list(collections)),
             "metrics": {
                 "total_users": len(users),
                 "total_businesses": len(business_users),
                 "paid_users": len(paid_users),
                 "trial_users": len(trial_users),
                 "active_today": len(active_today_users),
+                "active_30d": len(active_30d_users),
                 "active_now": len(active_now_visitors),
                 "visitors_today": len(visitors_today),
+                "unique_visitors_today": len(unique_today),
                 "visitors_7d": len(visitors_7d),
+                "unique_visitors_7d": len(unique_7d),
                 "total_invoices": len(invoices),
                 "total_jobs": len(jobs),
                 "total_clients": len(clients),
                 "total_quotes": len(quotes),
                 "monthly_revenue_estimate": monthly_revenue,
+                "invoice_value_total": total_invoice_value,
+                "invoice_value_paid": paid_invoice_value,
+                "invoice_value_outstanding": outstanding_invoice_value,
                 "plan_counts": plan_counts,
             },
             "lists": {
-                "users": users[:200],
-                "businesses": business_users[:200],
-                "paid_users": paid_users[:200],
-                "trial_users": trial_users[:200],
-                "active_today": active_today_users[:200],
-                "active_now": active_now_visitors[:200],
-                "visitors": visits[:200],
-                "invoices": invoices[:150],
-                "jobs": jobs[:150],
-                "clients": clients[:150],
-                "quotes": quotes[:150],
+                "users": users[:300],
+                "businesses": business_users[:300],
+                "paid_users": paid_users[:300],
+                "trial_users": trial_users[:300],
+                "active_today": active_today_users[:300],
+                "active_30d": active_30d_users[:300],
+                "active_now": active_now_visitors[:300],
+                "visitors": visits[:300],
+                "invoices": invoices[:200],
+                "jobs": jobs[:200],
+                "clients": clients[:200],
+                "quotes": quotes[:200],
                 "test_preview": test_preview,
-                "events": sorted(events, key=lambda e: str(e.get("at") or ""), reverse=True)[:40],
+                "events": sorted(events, key=lambda e: str(e.get("at") or ""), reverse=True)[:100],
             },
         }
 
     def id_query(value: str):
         queries = [{"id": value}]
         try:
-            if ObjectId.is_valid(value):
-                queries.insert(0, {"_id": ObjectId(value)})
+            if ObjectId.is_valid(str(value)):
+                queries.insert(0, {"_id": ObjectId(str(value))})
         except Exception:
             pass
         return {"$or": queries}
@@ -319,22 +421,36 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
     async def delete_owner_business(business_id: str, request: Request):
         await require_owner(request)
 
-        ids = [business_id]
+        ids = [str(business_id)]
+        object_ids = []
         try:
-            if ObjectId.is_valid(business_id):
-                ids.append(ObjectId(business_id))
+            if ObjectId.is_valid(str(business_id)):
+                object_ids.append(ObjectId(str(business_id)))
         except Exception:
             pass
 
-        protected = await db.users.find_one({"$or": [{"_id": ids[-1]} if len(ids) > 1 else {}, {"business_id": {"$in": ids}}, {"id": business_id}]})
+        protected = await db.users.find_one({
+            "$or": [
+                {"_id": {"$in": object_ids}} if object_ids else {"_id": "__none__"},
+                {"business_id": {"$in": ids + object_ids}},
+                {"id": str(business_id)},
+            ]
+        })
         if protected and (protected.get("email") or "").lower() in PROTECTED_EMAILS:
             raise HTTPException(status_code=400, detail="Protected owner workspace cannot be deleted")
 
-        collections = ["users", "clients", "jobs", "quotes", "invoices", "workers", "team_members", "sms_logs", "command_slips"]
+        collections = ["users", "clients", "jobs", "quotes", "invoices", "workers", "team_members", "sms_logs", "command_slips", "platform_visits"]
         deleted = {}
         for name in collections:
             try:
-                q = {"$or": [{"business_id": {"$in": ids}}, {"owner_id": {"$in": ids}}, {"user_id": {"$in": ids}}, {"id": business_id}]}
+                q = {
+                    "$or": [
+                        {"business_id": {"$in": ids + object_ids}},
+                        {"owner_id": {"$in": ids + object_ids}},
+                        {"user_id": {"$in": ids + object_ids}},
+                        {"id": str(business_id)},
+                    ]
+                }
                 res = await db[name].delete_many(q)
                 deleted[name] = res.deleted_count
             except Exception:
@@ -365,7 +481,7 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
                 if not raw_id:
                     continue
                 try:
-                    ids.append(ObjectId(raw_id) if ObjectId.is_valid(str(raw_id)) else raw_id)
+                    ids.append(ObjectId(str(raw_id)) if ObjectId.is_valid(str(raw_id)) else str(raw_id))
                 except Exception:
                     ids.append(str(raw_id))
 

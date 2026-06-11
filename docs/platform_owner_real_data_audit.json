@@ -1,0 +1,65 @@
+{
+  "score": 100,
+  "checks": [
+    {
+      "name": "Reads real users collection",
+      "status": "PASS",
+      "evidence": "Owner overview reads Mongo users collection.",
+      "fix": "Read users collection."
+    },
+    {
+      "name": "Reads real invoices collection",
+      "status": "PASS",
+      "evidence": "Owner overview reads invoices and totals.",
+      "fix": "Read invoice values."
+    },
+    {
+      "name": "Reads real jobs/clients/quotes",
+      "status": "PASS",
+      "evidence": "Owner overview reads core work collections.",
+      "fix": "Read jobs/clients/quotes."
+    },
+    {
+      "name": "Stores real visitor records",
+      "status": "PASS",
+      "evidence": "Visitor pageviews are stored in Mongo.",
+      "fix": "Store platform visits."
+    },
+    {
+      "name": "Attaches logged-in user to visits",
+      "status": "PASS",
+      "evidence": "Visits include user/business if logged in.",
+      "fix": "Attach user to visits."
+    },
+    {
+      "name": "Updates user last_active",
+      "status": "PASS",
+      "evidence": "Logged-in users get last_active updated.",
+      "fix": "Update last_active."
+    },
+    {
+      "name": "Counts unique visitors",
+      "status": "PASS",
+      "evidence": "Unique visitor counts are calculated.",
+      "fix": "Count unique visitors."
+    },
+    {
+      "name": "Paid users use Stripe/plan signals",
+      "status": "PASS",
+      "evidence": "Paid/buyer logic uses real payment/plan fields.",
+      "fix": "Use billing fields."
+    },
+    {
+      "name": "Frontend shows real invoice money",
+      "status": "PASS",
+      "evidence": "Owner UI shows real invoice values.",
+      "fix": "Show invoice values."
+    },
+    {
+      "name": "Protected owner only",
+      "status": "PASS",
+      "evidence": "Owner overview requires platform owner.",
+      "fix": "Protect endpoint."
+    }
+  ]
+}
