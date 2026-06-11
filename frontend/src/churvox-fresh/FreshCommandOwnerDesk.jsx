@@ -461,8 +461,8 @@ function latestAudit(slip) {
 
 export default function FreshCommandOwnerDesk({ onNavigate }) {
   React.useEffect(() => {
-    document.body.classList.add("freshCommandOwnerMode");
-    return () => document.body.classList.remove("freshCommandOwnerMode");
+    document.body.classList.add("freshCommandOwnerMode", "freshCommandLightMode");
+    return () => document.body.classList.remove("freshCommandOwnerMode", "freshCommandLightMode");
   }, []);
 
   const [slips, setSlips] = React.useState(safeReadSlips);
@@ -874,8 +874,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
 
       <div className="freshCommandSourcePanel">
         <div>
-          <span>Command checks</span>
-          <div className="freshCommandSourceTitle" role="heading" aria-level="2">What Churvox watches for</div>
+          <span className="freshCommandSourceBigPill">Command checks · What Churvox watches for</span>
           <p>These are the real source rules Command should use: jobs, invoices, quotes, workers, messages, photos and missing setup data.</p>
         </div>
 
