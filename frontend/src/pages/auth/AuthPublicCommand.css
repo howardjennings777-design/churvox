@@ -340,3 +340,45 @@
   -webkit-text-fill-color: #000000 !important;
   caret-color: #000000 !important;
 }
+
+.cvPublicNativeInput,
+.cvPublicAuthCard input.cvPublicNativeInput,
+.cvPublicAuthCard input.cvPublicNativeInput[type="text"],
+.cvPublicAuthCard input.cvPublicNativeInput[type="email"],
+.cvPublicAuthCard input.cvPublicNativeInput[type="password"] {
+  display: block !important;
+  width: 100% !important;
+  min-height: 54px !important;
+  border: 2px solid rgba(15, 23, 42, 0.30) !important;
+  border-radius: 16px !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  caret-color: #000000 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  filter: none !important;
+  text-shadow: none !important;
+  mix-blend-mode: normal !important;
+  padding: 0 14px !important;
+  font-size: 17px !important;
+  font-weight: 800 !important;
+  outline: none !important;
+  appearance: auto !important;
+  -webkit-appearance: auto !important;
+}
+
+.cvPublicNativeInput::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  opacity: 1 !important;
+}
+
+.cvPublicNativeInput:-webkit-autofill,
+.cvPublicNativeInput:-webkit-autofill:hover,
+.cvPublicNativeInput:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: #000000 !important;
+  caret-color: #000000 !important;
+}

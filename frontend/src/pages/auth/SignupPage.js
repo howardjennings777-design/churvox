@@ -6,53 +6,67 @@ import "./AuthPublicCommand.css";
 
 const FIRST_SETUP_KEY = "churvox_first_setup_pending";
 
-const inputStyle = {
-  color: "#000000",
-  WebkitTextFillColor: "#000000",
-  caretColor: "#000000",
-  backgroundColor: "#ffffff",
-};
+function lockInputText(el) {
+  if (!el) return;
+
+  el.style.setProperty("color", "#000000", "important");
+  el.style.setProperty("-webkit-text-fill-color", "#000000", "important");
+  el.style.setProperty("caret-color", "#000000", "important");
+  el.style.setProperty("background", "#ffffff", "important");
+  el.style.setProperty("background-color", "#ffffff", "important");
+  el.style.setProperty("opacity", "1", "important");
+  el.style.setProperty("visibility", "visible", "important");
+  el.style.setProperty("filter", "none", "important");
+  el.style.setProperty("text-shadow", "none", "important");
+  el.style.setProperty("mix-blend-mode", "normal", "important");
+  el.style.setProperty("font-size", "17px", "important");
+  el.style.setProperty("font-weight", "800", "important");
+}
 
 export default function SignupPage() {
   const navigate = useNavigate();
   const { register } = useAuth();
 
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    business_name: "",
-  });
-
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) =>
-    setFormData((current) => ({ ...current, [e.target.name]: e.target.value }));
+  const attachInput = (el) => {
+    lockInputText(el);
+  };
+
+  const handleInput = (e) => {
+    lockInputText(e.currentTarget);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    const cleanEmail = formData.email.trim().toLowerCase();
+    const form = e.currentTarget;
+    const data = new FormData(form);
 
-    if (!formData.name.trim()) {
+    const name = String(data.get("name") || "").trim();
+    const email = String(data.get("email") || "").trim().toLowerCase();
+    const businessName = String(data.get("business_name") || "").trim();
+    const password = String(data.get("password") || "");
+    const confirmPassword = String(data.get("confirmPassword") || "");
+
+    if (!name) {
       setError("Enter your full name.");
       return;
     }
 
-    if (!cleanEmail) {
+    if (!email) {
       setError("Enter your email.");
       return;
     }
 
-    if (formData.password !== formData.confirmPassword) {
+    if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
 
-    if (formData.password.length < 6) {
+    if (password.length < 6) {
       setError("Password must be at least 6 characters.");
       return;
     }
@@ -61,10 +75,10 @@ export default function SignupPage() {
 
     try {
       const result = await register({
-        name: formData.name.trim(),
-        email: cleanEmail,
-        password: formData.password,
-        business_name: formData.business_name.trim() || null,
+        name,
+        email,
+        password,
+        business_name: businessName || null,
       });
 
       if (!result?.token) {
@@ -75,8 +89,8 @@ export default function SignupPage() {
       try {
         localStorage.setItem(FIRST_SETUP_KEY, "true");
         saveBusinessSettings({
-          business_name: formData.business_name.trim() || "",
-          email: cleanEmail,
+          business_name: businessName || "",
+          email,
         });
       } catch {}
 
@@ -119,10 +133,11 @@ export default function SignupPage() {
           <label>
             Full name
             <input
-              style={inputStyle}
+              ref={attachInput}
+              onInput={handleInput}
+              onFocus={handleInput}
+              className="cvPublicNativeInput"
               name="name"
-              value={formData.name}
-              onChange={handleChange}
               autoComplete="name"
               placeholder="Your name"
               required
@@ -132,11 +147,12 @@ export default function SignupPage() {
           <label>
             Email
             <input
-              style={inputStyle}
+              ref={attachInput}
+              onInput={handleInput}
+              onFocus={handleInput}
+              className="cvPublicNativeInput"
               name="email"
               type="email"
-              value={formData.email}
-              onChange={handleChange}
               autoComplete="email"
               placeholder="you@example.com"
               required
@@ -146,10 +162,11 @@ export default function SignupPage() {
           <label>
             Business name
             <input
-              style={inputStyle}
+              ref={attachInput}
+              onInput={handleInput}
+              onFocus={handleInput}
+              className="cvPublicNativeInput"
               name="business_name"
-              value={formData.business_name}
-              onChange={handleChange}
               autoComplete="organization"
               placeholder="Business name"
             />
@@ -158,11 +175,12 @@ export default function SignupPage() {
           <label>
             Password
             <input
-              style={inputStyle}
+              ref={attachInput}
+              onInput={handleInput}
+              onFocus={handleInput}
+              className="cvPublicNativeInput"
               name="password"
               type="password"
-              value={formData.password}
-              onChange={handleChange}
               autoComplete="new-password"
               placeholder="Password"
               required
@@ -172,11 +190,12 @@ export default function SignupPage() {
           <label>
             Confirm password
             <input
-              style={inputStyle}
+              ref={attachInput}
+              onInput={handleInput}
+              onFocus={handleInput}
+              className="cvPublicNativeInput"
               name="confirmPassword"
               type="password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
               autoComplete="new-password"
               placeholder="Confirm password"
               required
@@ -194,11 +213,11 @@ export default function SignupPage() {
 
         <aside className="cvPublicAuthPanel">
           <p>Churvox does the admin. You approve.</p>
-          <h2>One proper public signup flow for real customers.</h2>
+          <h2>One proper signup flow for service businesses.</h2>
           <ul>
-            <li>Readable fields on mobile and desktop</li>
-            <li>Proper public navigation</li>
-            <li>Goes straight into first setup after signup</li>
+            <li>Jobs, clients, quotes and invoices in one place</li>
+            <li>AI-prepared admin for owner approval</li>
+            <li>14-day free trial, no card required</li>
           </ul>
         </aside>
       </section>
