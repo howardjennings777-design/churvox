@@ -1,453 +1,297 @@
-/* CHURVOX_PUBLIC_AUTH_COMMAND_20260605
-   Off-white auth canvas with industrial graphite panels. */
+/* CHURVOX_PUBLIC_AUTH_PROPER_20260611 */
 
-.wh-auth {
-  min-height: 100vh;
-  color: #111827;
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-  background:
-    radial-gradient(circle at 14% -10%, rgba(249, 115, 22, .12), transparent 34%),
-    radial-gradient(circle at 92% 0%, rgba(17, 24, 39, .08), transparent 32%),
-    #f7f3ea;
-  padding: 14px;
-  overflow: hidden;
-}
-
-.wh-auth * {
+.cvPublicAuth,
+.cvPublicAuth * {
   box-sizing: border-box;
+  opacity: 1 !important;
+  visibility: visible !important;
+  filter: none !important;
+  text-shadow: none !important;
+  mix-blend-mode: normal !important;
 }
 
-.wh-auth a {
-  text-decoration: none;
-  color: inherit;
-}
-
-.wh-auth:before {
-  content: "";
-  position: fixed;
-  inset: -25%;
-  pointer-events: none;
-  background: linear-gradient(110deg, transparent, rgba(249, 115, 22, .06), transparent);
-  filter: blur(30px);
-  animation: whAuthDrift 18s ease-in-out infinite alternate;
-}
-
-@keyframes whAuthDrift {
-  from { transform: translateX(-1%) scale(1); }
-  to { transform: translate(1.5%, -1%) scale(1.05); }
-}
-
-.wh-auth-nav {
-  position: relative;
-  z-index: 1;
-  width: min(1220px, 100%);
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  align-items: center;
-  gap: 18px;
-  padding: 10px 12px;
-  border: 1px solid rgba(249, 115, 22, .20);
-  border-radius: 24px;
-  background: linear-gradient(135deg, rgba(17, 24, 39, .96), rgba(11, 18, 32, .92));
-  box-shadow: 0 24px 80px rgba(17, 24, 39, .22), inset 0 1px 0 rgba(255, 255, 255, .06);
-  backdrop-filter: blur(18px);
-}
-
-.wh-auth-nav > a:first-child {
-  display: inline-flex;
-  align-items: center;
-  color: #f8fafc;
-}
-
-.wh-auth-nav > a:first-child svg {
-  height: 42px !important;
-  width: auto;
-}
-
-.wh-auth-nav > a:first-child svg text {
-  fill: #f8fafc !important;
-}
-
-.wh-auth-links {
-  display: flex;
-  gap: 6px;
-  padding: 5px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, .07);
-}
-
-.wh-auth-links a {
-  color: rgba(248, 250, 252, .78);
-  font-size: 13px;
-  font-weight: 850;
-  padding: 10px 14px;
-  border-radius: 999px;
-}
-
-.wh-auth-links a:hover {
-  color: #fff;
-  background: rgba(249, 115, 22, .16);
-}
-
-.wh-auth-nav .px-btn,
-.wh-auth-nav .px-btn--primary {
-  justify-self: end;
-  min-height: 44px;
-  border: 0;
-  border-radius: 999px;
-  padding: 0 18px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.cvPublicAuth {
+  min-height: 100vh;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 10% -10%, rgba(249, 115, 22, 0.16), transparent 34%),
+    radial-gradient(circle at 92% 0%, rgba(15, 23, 42, 0.10), transparent 34%),
+    #f7f3ea;
   color: #111827;
-  background: linear-gradient(135deg, #ffb15f, #f97316);
-  box-shadow: 0 18px 44px rgba(249, 115, 22, .24);
-  font-size: 14px;
-  font-weight: 950;
+  -webkit-text-fill-color: #111827;
+  padding: 14px;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.wh-auth-wrap {
-  position: relative;
-  z-index: 1;
-  width: min(1220px, 100%);
-  margin: 26px auto 0;
-  min-height: calc(100vh - 126px);
+.cvPublicAuthNav {
+  width: min(1180px, 100%);
+  margin: 0 auto 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 24px;
+  border: 1px solid rgba(249, 115, 22, 0.28);
+  background: linear-gradient(135deg, #111827, #071118);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.20);
+}
+
+.cvPublicAuthBrand {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  font-size: 25px;
+  font-weight: 1000;
+  letter-spacing: -0.055em;
+  text-decoration: none;
+}
+
+.cvPublicAuthNavLinks {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cvPublicAuthNavLinks a {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 900;
+  padding: 9px 11px;
+  border-radius: 999px;
+}
+
+.cvPublicAuthNavLinks a:hover {
+  background: rgba(249, 115, 22, 0.18);
+}
+
+.cvPublicAuthShell {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  min-height: calc(100vh - 112px);
   display: grid;
-  grid-template-columns: minmax(360px, .78fr) minmax(420px, 1fr);
+  grid-template-columns: minmax(320px, 0.86fr) minmax(320px, 1fr);
   gap: 18px;
   align-items: stretch;
 }
 
-.wh-auth-wrap.is-signup {
-  grid-template-columns: minmax(420px, 1fr) minmax(400px, .86fr);
-}
-
-.wh-auth-form,
-.wh-auth-panel {
-  border: 1px solid rgba(17, 24, 39, .10);
+.cvPublicAuthCard,
+.cvPublicAuthPanel {
   border-radius: 30px;
-  box-shadow: 0 30px 100px rgba(17, 24, 39, .16);
-  backdrop-filter: blur(18px);
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  box-shadow: 0 28px 90px rgba(15, 23, 42, 0.16);
 }
 
-.wh-auth-form {
+.cvPublicAuthCard {
   display: grid;
   align-content: center;
-  gap: 15px;
-  background: rgba(255, 255, 255, .94);
-  color: #071118;
-  padding: clamp(24px, 4vw, 48px);
+  gap: 14px;
+  background: #ffffff;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  padding: clamp(24px, 4vw, 46px);
 }
 
-.wh-auth-panel {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  min-height: 560px;
-  background: linear-gradient(180deg, rgba(17, 24, 39, .96), rgba(8, 13, 22, .95));
-  padding: clamp(24px, 4vw, 48px);
-  overflow: hidden;
-  position: relative;
-  color: #f8fafc;
-  border-color: rgba(249, 115, 22, .20);
-}
-
-.wh-auth-panel:before {
-  content: "";
-  position: absolute;
-  inset: auto -20% -26% -20%;
-  height: 55%;
-  background: radial-gradient(circle, rgba(249, 115, 22, .22), transparent 58%);
-}
-
-.wh-auth-kicker {
-  position: relative;
+.cvPublicAuthCard h1 {
   margin: 0;
-  color: #f97316;
-  font-size: 12px;
-  font-weight: 950;
-  text-transform: uppercase;
-  letter-spacing: .18em;
-}
-
-.wh-auth-panel .wh-auth-kicker {
-  color: #ffb15f;
-}
-
-.wh-auth-title {
-  margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(42px, 5vw, 72px);
-  line-height: .9;
-  letter-spacing: -.075em;
-  color: #071118;
-}
-
-.wh-auth-panel h2 {
-  position: relative;
-  margin: 12px 0 0;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(42px, 5vw, 76px);
-  line-height: .9;
-  letter-spacing: -.075em;
-  color: #f8fafc;
-}
-
-.wh-auth-sub,
-.wh-auth-panel p:not(.wh-auth-kicker) {
-  position: relative;
-  margin: 0;
-  color: #62737d;
-  font-size: 16px;
-  line-height: 1.6;
-}
-
-.wh-auth-panel p:not(.wh-auth-kicker) {
-  color: rgba(248, 250, 252, .72);
-  max-width: 560px;
-}
-
-.wh-auth-error {
-  border: 1px solid rgba(200, 90, 86, .22);
-  border-radius: 16px;
-  background: rgba(200, 90, 86, .10);
-  color: #a23d39;
-  padding: 12px 14px;
-  font-weight: 850;
-}
-
-.wh-auth-label {
-  display: grid;
-  gap: 7px;
-  color: #34434b;
-  font-size: 13px;
-  font-weight: 900;
-}
-
-.wh-auth-input {
-  width: 100%;
-  height: 52px;
-  border: 1px solid rgba(8, 21, 31, .14);
-  border-radius: 16px;
-  background: #fff;
-  color: #071118;
-  padding: 0 15px;
-  font-size: 15px;
-  outline: none;
-  box-shadow: 0 10px 24px rgba(8, 21, 31, .04);
-}
-
-.wh-auth-input:focus {
-  border-color: #f97316;
-  box-shadow: 0 0 0 4px rgba(249, 115, 22, .13);
-}
-
-.wh-auth-submit {
-  height: 54px;
-  border: 0;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #ffb15f, #f97316);
-  color: #111827;
-  font-size: 15px;
-  font-weight: 950;
-  box-shadow: 0 18px 44px rgba(249, 115, 22, .24);
-  cursor: pointer;
-}
-
-.wh-auth-submit:disabled {
-  opacity: .7;
-  cursor: default;
-}
-
-.wh-auth-sub a {
-  color: #b45309;
-  font-weight: 950;
-}
-
-@media (max-width: 960px) {
-  .wh-auth { overflow: auto; }
-  .wh-auth-nav { grid-template-columns: 1fr auto; }
-  .wh-auth-links { display: none; }
-  .wh-auth-wrap,
-  .wh-auth-wrap.is-signup {
-    grid-template-columns: 1fr;
-    min-height: auto;
-  }
-  .wh-auth-panel {
-    min-height: 360px;
-    order: -1;
-  }
-  .wh-auth-form { min-height: auto; }
-}
-
-@media (max-width: 620px) {
-  .wh-auth { padding: 10px; }
-  .wh-auth-nav .px-btn { display: none; }
-  .wh-auth-form,
-  .wh-auth-panel {
-    border-radius: 24px;
-    padding: 22px;
-  }
-  .wh-auth-title,
-  .wh-auth-panel h2 {
-    font-size: clamp(36px, 12vw, 56px);
-  }
-}
-
-/* CHURVOX_SIGNUP_REAL_READABILITY_FIX_20260611
-   Fix actual /signup auth page: one form, centred, readable, not washed out. */
-.wh-auth-wrap.is-signup {
-  width: min(720px, 100%) !important;
-  grid-template-columns: 1fr !important;
-  align-items: center !important;
-  justify-items: stretch !important;
-  margin-top: 26px !important;
-}
-
-.wh-auth-wrap.is-signup .wh-auth-form {
-  width: 100% !important;
-  min-height: auto !important;
-  background: #fffaf0 !important;
   color: #071118 !important;
   -webkit-text-fill-color: #071118 !important;
-  border: 1px solid rgba(17, 24, 39, .16) !important;
-  box-shadow: 0 30px 90px rgba(17, 24, 39, .18) !important;
-  backdrop-filter: none !important;
-  opacity: 1 !important;
-  filter: none !important;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(40px, 5vw, 70px);
+  line-height: 0.92;
+  letter-spacing: -0.075em;
 }
 
-.wh-auth-wrap.is-signup .wh-auth-kicker {
+.cvPublicAuthKicker {
+  margin: 0;
   color: #c2410c !important;
   -webkit-text-fill-color: #c2410c !important;
+  font-size: 12px;
+  font-weight: 1000;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 
-.wh-auth-wrap.is-signup .wh-auth-title {
-  color: #071118 !important;
-  -webkit-text-fill-color: #071118 !important;
-  text-shadow: none !important;
-  opacity: 1 !important;
+.cvPublicAuthIntro,
+.cvPublicAuthBottom {
+  margin: 0;
+  color: #334155 !important;
+  -webkit-text-fill-color: #334155 !important;
+  font-size: 16px;
+  line-height: 1.55;
+  font-weight: 760;
 }
 
-.wh-auth-wrap.is-signup .wh-auth-label {
-  color: #1f2937 !important;
-  -webkit-text-fill-color: #1f2937 !important;
-  opacity: 1 !important;
+.cvPublicAuthBottom {
+  margin-top: 4px;
 }
 
-.wh-auth-wrap.is-signup .wh-auth-input {
+.cvPublicAuthBottom a {
+  color: #b45309 !important;
+  -webkit-text-fill-color: #b45309 !important;
+  font-weight: 1000;
+}
+
+.cvPublicAuthCard label {
+  display: grid;
+  gap: 7px;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.cvPublicAuthCard input {
+  width: 100%;
+  min-height: 54px;
+  border: 2px solid rgba(15, 23, 42, 0.24);
+  border-radius: 16px;
   background: #ffffff !important;
   color: #071118 !important;
   -webkit-text-fill-color: #071118 !important;
-  border: 1px solid rgba(8, 21, 31, .28) !important;
-  box-shadow: 0 10px 22px rgba(8, 21, 31, .08) !important;
-  opacity: 1 !important;
+  padding: 0 14px;
+  font-size: 17px;
+  font-weight: 700;
+  outline: none;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.07);
 }
 
-.wh-auth-wrap.is-signup .wh-auth-input::placeholder {
+.cvPublicAuthCard input::placeholder {
   color: #64748b !important;
   -webkit-text-fill-color: #64748b !important;
   opacity: 1 !important;
 }
 
-.wh-auth-wrap.is-signup .wh-auth-submit {
-  background: linear-gradient(135deg, #ffb15f, #f97316) !important;
+.cvPublicAuthCard input:focus {
+  border-color: #f97316;
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.14);
+}
+
+.cvPublicAuthSubmit,
+.cvPublicAuthGhost {
+  min-height: 54px;
+  border-radius: 999px;
+  border: 0;
+  padding: 0 18px;
+  font-size: 16px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.cvPublicAuthSubmit {
+  background: #f97316 !important;
   color: #111827 !important;
   -webkit-text-fill-color: #111827 !important;
-  opacity: 1 !important;
-  font-weight: 1000 !important;
+  box-shadow: 0 18px 44px rgba(249, 115, 22, 0.28);
 }
 
-.wh-auth-wrap.is-signup .wh-auth-sub,
-.wh-auth-wrap.is-signup .wh-auth-sub * {
-  color: #334155 !important;
-  -webkit-text-fill-color: #334155 !important;
-  opacity: 1 !important;
+.cvPublicAuthGhost {
+  background: #111827 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
-.wh-auth-wrap.is-signup .wh-auth-sub a {
-  color: #b45309 !important;
-  -webkit-text-fill-color: #b45309 !important;
-  font-weight: 1000 !important;
+.cvPublicAuthSubmit:disabled {
+  opacity: 0.70 !important;
+  cursor: wait;
+}
+
+.cvPublicAuthError {
+  margin: 0;
+  border: 2px solid rgba(185, 28, 28, 0.24);
+  border-radius: 16px;
+  background: #fee2e2;
+  color: #991b1b !important;
+  -webkit-text-fill-color: #991b1b !important;
+  padding: 12px 14px;
+  font-weight: 900;
+  line-height: 1.45;
+}
+
+.cvPublicAuthPanel {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 560px;
+  background:
+    radial-gradient(circle at 15% 15%, rgba(249, 115, 22, 0.28), transparent 34%),
+    linear-gradient(145deg, #111827, #071118 68%, #1c1917);
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  padding: clamp(24px, 4vw, 46px);
+}
+
+.cvPublicAuthPanel p {
+  margin: 0 0 12px;
+  color: #fed7aa !important;
+  -webkit-text-fill-color: #fed7aa !important;
+  font-size: 13px;
+  font-weight: 1000;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.cvPublicAuthPanel h2 {
+  margin: 0 0 20px;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(36px, 5vw, 68px);
+  line-height: 0.92;
+  letter-spacing: -0.075em;
+}
+
+.cvPublicAuthPanel ul {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 10px;
+}
+
+.cvPublicAuthPanel li {
+  color: #e5e7eb !important;
+  -webkit-text-fill-color: #e5e7eb !important;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+@media (max-width: 900px) {
+  .cvPublicAuthShell {
+    grid-template-columns: 1fr;
+  }
+
+  .cvPublicAuthPanel {
+    min-height: 320px;
+    order: -1;
+  }
 }
 
 @media (max-width: 620px) {
-  .wh-auth-wrap.is-signup {
-    margin-top: 14px !important;
+  .cvPublicAuth {
+    padding: 10px;
   }
 
-  .wh-auth-wrap.is-signup .wh-auth-form {
-    padding: 22px !important;
-    border-radius: 24px !important;
+  .cvPublicAuthNav {
+    border-radius: 20px;
   }
 
-  .wh-auth-wrap.is-signup .wh-auth-title {
-    font-size: clamp(34px, 11vw, 50px) !important;
-    line-height: .95 !important;
+  .cvPublicAuthNavLinks {
+    display: none;
   }
-}
 
-/* CHURVOX_SIGNUP_OPEN_DIRECT_FIX_20260611 */
-.wh-auth {
-  min-height: 100vh !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  background: #f7f3ea !important;
-  color: #111827 !important;
-}
+  .cvPublicAuthCard,
+  .cvPublicAuthPanel {
+    border-radius: 24px;
+    padding: 22px;
+  }
 
-.wh-auth-wrap.is-signup {
-  width: min(720px, 100%) !important;
-  grid-template-columns: 1fr !important;
-  min-height: auto !important;
-  margin: 26px auto 0 !important;
-}
-
-.wh-auth-wrap.is-signup .wh-auth-form {
-  width: 100% !important;
-  background: #fffaf0 !important;
-  color: #071118 !important;
-  border: 1px solid rgba(17, 24, 39, .16) !important;
-  box-shadow: 0 30px 90px rgba(17, 24, 39, .16) !important;
-  opacity: 1 !important;
-  filter: none !important;
-}
-
-.wh-auth-wrap.is-signup .wh-auth-title,
-.wh-auth-wrap.is-signup .wh-auth-label,
-.wh-auth-wrap.is-signup .wh-auth-sub {
-  opacity: 1 !important;
-  filter: none !important;
-}
-
-.wh-auth-wrap.is-signup .wh-auth-title {
-  color: #071118 !important;
-  -webkit-text-fill-color: #071118 !important;
-}
-
-.wh-auth-wrap.is-signup .wh-auth-label {
-  color: #1f2937 !important;
-  -webkit-text-fill-color: #1f2937 !important;
-}
-
-.wh-auth-wrap.is-signup .wh-auth-input {
-  background: #ffffff !important;
-  color: #071118 !important;
-  -webkit-text-fill-color: #071118 !important;
-  border: 1px solid rgba(8, 21, 31, .28) !important;
-  opacity: 1 !important;
-}
-
-.wh-auth-wrap.is-signup .wh-auth-submit {
-  background: linear-gradient(135deg, #ffb15f, #f97316) !important;
-  color: #111827 !important;
-  -webkit-text-fill-color: #111827 !important;
-  opacity: 1 !important;
-}
-
-@media (max-width: 620px) {
-  .wh-auth-wrap.is-signup {
-    margin-top: 14px !important;
+  .cvPublicAuthCard h1,
+  .cvPublicAuthPanel h2 {
+    font-size: clamp(36px, 12vw, 54px);
   }
 }

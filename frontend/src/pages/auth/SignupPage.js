@@ -1,8 +1,6 @@
-// CHURVOX_SIGNUP_FIRST_SETUP_FLOW_20260601
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 import { saveBusinessSettings } from "../../lib/businessSettings";
 import "./AuthPublicCommand.css";
 
@@ -11,47 +9,89 @@ const FIRST_SETUP_KEY = "churvox_first_setup_pending";
 export default function SignupPage() {
   const navigate = useNavigate();
   const { register } = useAuth();
-  const [formData, setFormData] = useState({ name: "", email: "", password: "", confirmPassword: "", business_name: "" });
+
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    business_name: "",
+  });
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) =>
+    setFormData((current) => ({ ...current, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    if (formData.password !== formData.confirmPassword) return setError("Passwords do not match");
-    if (formData.password.length < 6) return setError("Password must be at least 6 characters");
+
+    const cleanEmail = formData.email.trim().toLowerCase();
+
+    if (!formData.name.trim()) {
+      setError("Enter your full name.");
+      return;
+    }
+
+    if (!cleanEmail) {
+      setError("Enter your email.");
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
     setLoading(true);
+
     try {
       const result = await register({
-        name: formData.name,
-        email: formData.email,
+        name: formData.name.trim(),
+        email: cleanEmail,
         password: formData.password,
-        business_name: formData.business_name || null,
+        business_name: formData.business_name.trim() || null,
       });
-      if (result?.token) {
-        try {
-          localStorage.setItem(FIRST_SETUP_KEY, "true");
-          saveBusinessSettings({
-            business_name: formData.business_name || "",
-            email: formData.email || "",
-          });
-        } catch {}
-        navigate("/plans?first_setup=1");
+
+      if (!result?.token) {
+        setError("Registration failed. Please try again.");
+        return;
       }
-      else setError("Registration failed. Please try again.");
+
+      try {
+        localStorage.setItem(FIRST_SETUP_KEY, "true");
+        saveBusinessSettings({
+          business_name: formData.business_name.trim() || "",
+          email: cleanEmail,
+        });
+      } catch {}
+
+      navigate("/plans?first_setup=1", { replace: true });
     } catch (err) {
-      setError(err?.response?.data?.detail || err?.message || "Registration failed. Please try again.");
+      setError(
+        err?.response?.data?.detail ||
+          err?.response?.data?.message ||
+          err?.message ||
+          "Registration failed. Please try again."
+      );
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
-    <main className="wh-auth" data-version="CHURVOX_SIGNUP_FIRST_SETUP_FLOW_20260601">
-      <header className="wh-auth-nav">
-        <Link to="/"><ChurvoxLogo /></Link>
-        <nav className="wh-auth-links">
+    <main className="cvPublicAuth" data-version="CHURVOX_PUBLIC_SIGNUP_20260611">
+      <header className="cvPublicAuthNav">
+        <Link to="/" className="cvPublicAuthBrand">Churvox</Link>
+
+        <nav className="cvPublicAuthNavLinks">
           <Link to="/">Home</Link>
           <Link to="/features">Features</Link>
           <Link to="/pricing">Pricing</Link>
@@ -59,48 +99,101 @@ export default function SignupPage() {
         </nav>
       </header>
 
-      <section className="wh-auth-wrap is-signup">
-        
+      <section className="cvPublicAuthShell">
+        <form className="cvPublicAuthCard" onSubmit={handleSubmit} data-testid="signup-form">
+          <p className="cvPublicAuthKicker">Create account</p>
+          <h1>Start your Churvox trial.</h1>
+          <p className="cvPublicAuthIntro">
+            Set up your business, then choose your plan. 14-day free trial, no card required.
+          </p>
 
-        <form className="wh-auth-form" onSubmit={handleSubmit}>
-          <p className="wh-auth-kicker">Create account</p>
-          <h1 className="wh-auth-title">Build your Churvox command floor.</h1>
+          {error ? <p className="cvPublicAuthError">{error}</p> : null}
 
-          {error && <p className="wh-auth-error">{error}</p>}
-
-          <label className="wh-auth-label">
+          <label>
             Full name
-            <input className="wh-auth-input" name="name" value={formData.name} onChange={handleChange} required data-testid="signup-name-input" />
+            <input
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              autoComplete="name"
+              placeholder="Your name"
+              required
+              data-testid="signup-name-input"
+            />
           </label>
 
-          <label className="wh-auth-label">
+          <label>
             Email
-            <input className="wh-auth-input" name="email" type="email" value={formData.email} onChange={handleChange} required data-testid="signup-email-input" />
+            <input
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              autoComplete="email"
+              placeholder="you@example.com"
+              required
+              data-testid="signup-email-input"
+            />
           </label>
 
-          <label className="wh-auth-label">
+          <label>
             Business name
-            <input className="wh-auth-input" name="business_name" value={formData.business_name} onChange={handleChange} data-testid="signup-business-input" />
+            <input
+              name="business_name"
+              value={formData.business_name}
+              onChange={handleChange}
+              autoComplete="organization"
+              placeholder="Business name"
+              data-testid="signup-business-input"
+            />
           </label>
 
-          <label className="wh-auth-label">
+          <label>
             Password
-            <input className="wh-auth-input" name="password" type="password" value={formData.password} onChange={handleChange} required data-testid="signup-password-input" />
+            <input
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              autoComplete="new-password"
+              placeholder="Password"
+              required
+              data-testid="signup-password-input"
+            />
           </label>
 
-          <label className="wh-auth-label">
+          <label>
             Confirm password
-            <input className="wh-auth-input" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required data-testid="signup-confirm-password-input" />
+            <input
+              name="confirmPassword"
+              type="password"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              autoComplete="new-password"
+              placeholder="Confirm password"
+              required
+              data-testid="signup-confirm-password-input"
+            />
           </label>
 
-          <button className="wh-auth-submit" type="submit" disabled={loading} data-testid="signup-submit-button">
-            {loading ? "Creating account…" : "Create account"}
+          <button className="cvPublicAuthSubmit" type="submit" disabled={loading} data-testid="signup-submit-button">
+            {loading ? "Creating account..." : "Create account"}
           </button>
 
-          <p className="wh-auth-sub">
+          <p className="cvPublicAuthBottom">
             Already have an account? <Link to="/login" data-testid="login-link">Sign in</Link>
           </p>
         </form>
+
+        <aside className="cvPublicAuthPanel">
+          <p>Churvox does the admin. You approve.</p>
+          <h2>One public signup flow for real customer testing.</h2>
+          <ul>
+            <li>Readable fields on mobile and desktop</li>
+            <li>Proper public navigation</li>
+            <li>Goes straight into first setup after signup</li>
+          </ul>
+        </aside>
       </section>
     </main>
   );
