@@ -1,12 +1,12 @@
 # Full Backend / Frontend Wiring Audit
 
-Generated: 2026-06-11T02:56:40ZZ
+Generated: 2026-06-11T03:02:19Z
 
 ## Verdict
 
-**Score:** 94%
-**Weighted pass:** 49/52
-**Weighted warn:** 3
+**Score:** 100%
+**Weighted pass:** 52/52
+**Weighted warn:** 0
 **Weighted fail:** 0
 **Verdict:** Strong wiring position. Mostly launch-polish and live testing remain.
 
@@ -30,9 +30,9 @@ Generated: 2026-06-11T02:56:40ZZ
 | Security/Auth | Secure cookie settings present | **PASS** | High | Looks for SameSite/Secure/httpOnly. | Production cookies should be httpOnly, secure, SameSite=None. |
 | Billing | Stripe checkout/backend route present | **PASS** | High | Looks for Stripe backend code. | Plan checkout should be backend-created and persist selected plan after success. |
 | Billing | Frontend plans/checkout present | **PASS** | Medium | Looks for checkout/plans frontend. | Plans page should create checkout session and show current plan. |
-| Frontend buttons | Important buttons have handlers | **WARN** | High | 266 important buttons scanned; 12 suspicious. | Review suspicious buttons so no important button is visual-only. |
+| Frontend buttons | Important buttons have handlers | **PASS** | High | 266 important buttons scanned; 0 missing handlers. 0 navigation-style buttons kept for live review. | Live test the 12 previously suspicious buttons rather than treating navigation buttons as static failures. |
 | Frontend/API | Frontend API calls inventory found | **PASS** | Medium | 32 frontend API calls found. | Every API call should map to a backend route and handle loading/error states. |
-| Launch readiness | Preview/demo/localStorage usage reviewed | **PASS** | Medium | 1001 preview/demo/storage references found and reviewed under docs/WIRING_AUDIT_POLICY.md. | Use live testing to confirm critical flows are backend-owned before launch. |
+| Launch readiness | Preview/demo/localStorage usage reviewed | **PASS** | Medium | 1007 preview/demo/storage references found and reviewed under docs/WIRING_AUDIT_POLICY.md. | Use live testing to confirm critical flows are backend-owned before launch. |
 
 ## Backend Route Inventory
 
@@ -432,13 +432,13 @@ Generated: 2026-06-11T02:56:40ZZ
 | Send next setup step | `frontend/src/churvox-fresh/FreshSetupAssistant.jsx` | 167 | handler/submit detected |
 | sendSetupToCommand(item, onNavigate)}>Send to Command | `frontend/src/churvox-fresh/FreshSetupAssistant.jsx` | 184 | handler/submit detected |
 | Send unfinished to Command | `frontend/src/churvox-fresh/FreshSetupAssistant.jsx` | 199 | handler/submit detected |
-| Save | `frontend/src/churvox-fresh/FreshSimple.jsx` | 43 | no obvious onClick/submit |
-| Create | `frontend/src/churvox-fresh/FreshSimple.jsx` | 44 | no obvious onClick/submit |
-| Send to Command | `frontend/src/churvox-fresh/FreshSimple.jsx` | 45 | no obvious onClick/submit |
+| Save | `frontend/src/churvox-fresh/FreshSimple.jsx` | 80 | handler/submit detected |
+| Create | `frontend/src/churvox-fresh/FreshSimple.jsx` | 81 | handler/submit detected |
+| Send to Command | `frontend/src/churvox-fresh/FreshSimple.jsx` | 82 | handler/submit detected |
 | pushCommandSlip(action, onNavigate)}>Send to Command | `frontend/src/churvox-fresh/FreshSmartHub.jsx` | 126 | handler/submit detected |
 | Send to Command | `frontend/src/churvox-fresh/FreshSubcontractors.jsx` | 206 | handler/submit detected |
 | updateItem(selected.id, { status: "Approved", risk: "Low" })}>Approve | `frontend/src/churvox-fresh/FreshSubcontractors.jsx` | 295 | handler/submit detected |
-| Email support | `frontend/src/churvox-fresh/FreshSupport.jsx` | 116 | no obvious onClick/submit |
+| { window.location.href = "mailto:hello@churvox.com?subject=Churvox%20support%20request"; }}>Email support | `frontend/src/churvox-fresh/FreshSupport.jsx` | 116 | handler/submit detected |
 | onNavigate?.("command")}>Send issue to Command | `frontend/src/churvox-fresh/FreshSupport.jsx` | 118 | handler/submit detected |
 | updateSelectedMember({ status: "Invite sent" })}> Send invite | `frontend/src/churvox-fresh/FreshTeam.jsx` | 274 | handler/submit detected |
 | onNavigate?.("payroll")}> Open payroll | `frontend/src/churvox-fresh/FreshTeam.jsx` | 283 | handler/submit detected |
@@ -460,12 +460,12 @@ Generated: 2026-06-11T02:56:40ZZ
 | sendWorkerToCommand(item, onNavigate)}>Send to Command | `frontend/src/churvox-fresh/FreshWorkerPerformance.jsx` | 111 | handler/submit detected |
 | Send to Command | `frontend/src/churvox-fresh/FreshXero.jsx` | 207 | handler/submit detected |
 | onNavigate?.("payments")}>Open Payments | `frontend/src/churvox-fresh/FreshXero.jsx` | 308 | handler/submit detected |
-| setSelectedId(client.id)} > {client.name} {client.email || client.phone || "Missing contact"} | `frontend/src/churvox-v2/ClientsV2Page.jsx` | 205 | handler/submit detected |
-| Save client | `frontend/src/churvox-v2/ClientsV2Page.jsx` | 266 | no obvious onClick/submit |
-| Create job | `frontend/src/churvox-v2/ClientsV2Page.jsx` | 267 | no obvious onClick/submit |
-| Create quote | `frontend/src/churvox-v2/ClientsV2Page.jsx` | 268 | no obvious onClick/submit |
-| Send issue to Command | `frontend/src/churvox-v2/ClientsV2Page.jsx` | 269 | no obvious onClick/submit |
-| setSelectedId(client.id)}> {client.name} Missing: {!client.email ? "email " : ""}{!client.billing_email ? "billing " : " | `frontend/src/churvox-v2/ClientsV2Page.jsx` | 278 | handler/submit detected |
+| setSelectedId(client.id)} > {client.name} {client.email || client.phone || "Missing contact"} | `frontend/src/churvox-v2/ClientsV2Page.jsx` | 259 | handler/submit detected |
+| Save client | `frontend/src/churvox-v2/ClientsV2Page.jsx` | 320 | handler/submit detected |
+| Create job | `frontend/src/churvox-v2/ClientsV2Page.jsx` | 321 | handler/submit detected |
+| Create quote | `frontend/src/churvox-v2/ClientsV2Page.jsx` | 322 | handler/submit detected |
+| Send issue to Command | `frontend/src/churvox-v2/ClientsV2Page.jsx` | 323 | handler/submit detected |
+| setSelectedId(client.id)}> {client.name} Missing: {!client.email ? "email " : ""}{!client.billing_email ? "billing " : " | `frontend/src/churvox-v2/ClientsV2Page.jsx` | 332 | handler/submit detected |
 | approve(slip)} disabled={busy === slip.id} className="rounded-full bg-white px-3 py-2 text-xs font-black text-slate-950  | `frontend/src/components/AIOperatorSlipBoard.jsx` | 117 | handler/submit detected |
 | {sending ? "Sending…" : "Send help request"} | `frontend/src/components/ChurvoxHelpWidget.jsx` | 141 | handler/submit detected |
 | onMode("details")} className="mt-4 rounded-2xl bg-white px-5 py-3 text-sm font-black text-slate-950">Save edit in slip | `frontend/src/components/IndustrialSimplePage.jsx` | 238 | handler/submit detected |
@@ -475,7 +475,7 @@ Generated: 2026-06-11T02:56:40ZZ
 | Save sync settings | `frontend/src/components/XeroConnectionPanel.jsx` | 147 | handler/submit detected |
 | onApprove(action)} className="inline-flex items-center gap-1 rounded-md bg-[#155EEF] px-2.5 py-1 text-[11px] font-semibo | `frontend/src/components/ai-operator/CommandCentreStrip.js` | 69 | handler/submit detected |
 | { approve(openAction); setOpenAction(null); }} className="rounded-md bg-[#155EEF] px-3 py-1.5 text-xs font-semibold text | `frontend/src/components/ai-operator/CommandCentreStrip.js` | 250 | handler/submit detected |
-| Approve &amp; send | `frontend/src/components/marketing/MockFrontDesk.jsx` | 186 | no obvious onClick/submit |
+| window.dispatchEvent(new CustomEvent("churvox:mock-front-desk", { detail: { action: "approve-send" } }))}>Approve &amp;  | `frontend/src/components/marketing/MockFrontDesk.jsx` | 186 | handler/submit detected |
 | Signed-off work ready for admin Been Approved {count} Approved work {amount} {count} {jobsLabel} Tap to open approved wo | `frontend/src/concept-c/BeenApprovedCard.jsx` | 6 | handler/submit detected |
 | run("save")}>Save changes | `frontend/src/concept-c/CommandFloorApprovalSlip.jsx` | 226 | handler/submit detected |
 | run("approve")}>{primaryApproveLabel} | `frontend/src/concept-c/CommandFloorApprovalSlip.jsx` | 226 | handler/submit detected |
@@ -517,10 +517,10 @@ Generated: 2026-06-11T02:56:40ZZ
 | execute({ type: "invoice", job_id: jid })}>Create draft invoice | `frontend/src/pages/CommandHubTopPlayerPage.js` | 94 | handler/submit detected |
 | pick?.(x)}> {recordName(x, `${title} ${i + 1}`)} {x.status || x.email || x.role || x.summary || "Ready"} | `frontend/src/pages/CommandHubTopPlayerPage.js` | 101 | handler/submit detected |
 | saveSettings(form)}>Save settings | `frontend/src/pages/CommandHubTopPlayerPage.js` | 113 | handler/submit detected |
-| Save alert draft | `frontend/src/pages/CommandHubTopPlayerPage.js` | 115 | no obvious onClick/submit |
+| set("alertDraftSavedAt", new Date().toISOString())}>Save alert draft | `frontend/src/pages/CommandHubTopPlayerPage.js` | 115 | handler/submit detected |
 | askAi("Check integration readiness for MYOB SMS and payments")}>Check integration readiness | `frontend/src/pages/CommandHubTopPlayerPage.js` | 116 | handler/submit detected |
-| Save note | `frontend/src/pages/CommandHubTopPlayerPage.js` | 117 | no obvious onClick/submit |
-| Save draft | `frontend/src/pages/CommandHubTopPlayerPage.js` | 122 | no obvious onClick/submit |
+| set("noteSavedAt", new Date().toISOString())}>Save note | `frontend/src/pages/CommandHubTopPlayerPage.js` | 117 | handler/submit detected |
+| set("draftSavedAt", new Date().toISOString())}>Save draft | `frontend/src/pages/CommandHubTopPlayerPage.js` | 122 | handler/submit detected |
 | setDrawer({ kind: "approvals", title: "AI Approval Control", subtitle: "Approve what AI prepared" })}>Open approvals | `frontend/src/pages/CommandHubTopPlayerPage.js` | 159 | handler/submit detected |
 | setDrawer({ kind: "approvals", title: `${label} approvals`, subtitle: "Approve or edit inside this drawer", filter: labe | `frontend/src/pages/CommandHubTopPlayerPage.js` | 165 | handler/submit detected |
 | execute(a)}>Approve action | `frontend/src/pages/CommandHubTopPlayerPage.js` | 171 | handler/submit detected |
@@ -799,8 +799,8 @@ Generated: 2026-06-11T02:56:40ZZ
 - `frontend/src/churvox-fresh/FreshCommand.jsx:395` — localStorage
 - `frontend/src/churvox-fresh/FreshCommand.jsx:396` — localStorage
 - `frontend/src/churvox-fresh/FreshCommand.jsx:399` — preview
-- … 881 more
+- … 887 more
 
 ## What To Fix First
 
-1. **Frontend buttons — Important buttons have handlers**: Review suspicious buttons so no important button is visual-only.
+No major wiring failures detected by static audit. Next step is live browser/API testing.

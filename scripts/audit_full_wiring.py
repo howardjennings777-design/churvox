@@ -520,7 +520,7 @@ def section_hits(title, hits, limit=80):
 lines = []
 lines.append("# Full Backend / Frontend Wiring Audit")
 lines.append("")
-lines.append(f"Generated: {datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")}Z")
+lines.append(f"Generated: {datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")}")
 lines.append("")
 lines.append("## Verdict")
 lines.append("")

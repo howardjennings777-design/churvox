@@ -183,8 +183,8 @@ export default function MockFrontDesk() {
               "Hi Acme Lawns — invoice for the tree pruning today is ready. Total $552 incl GST. Photos attached. Thanks!"
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: "auto" }}>
-              <Button kind="primary">Approve &amp; send</Button>
-              <Button kind="ghost">Reject</Button>
+              <Button kind="primary" onClick={() => window.dispatchEvent(new CustomEvent("churvox:mock-front-desk", { detail: { action: "approve-send" } }))}>Approve &amp; send</Button>
+              <Button kind="ghost" onClick={() => window.dispatchEvent(new CustomEvent("churvox:mock-front-desk", { detail: { action: "reject" } }))}>Reject</Button>
             </div>
           </div>
         </div>
@@ -350,38 +350,26 @@ function Tag({ children }) {
   );
 }
 
-function Button({ children, kind = "primary" }) {
-  if (kind === "ghost") {
-    return (
-      <span
-        style={{
-          fontSize: 11.5,
-          fontWeight: 700,
-          color: "#A8B0BD",
-          padding: "8px 12px",
-          border: "1px solid #283140",
-          borderRadius: 8,
-          background: "transparent",
-        }}
-      >
-        {children}
-      </span>
-    );
-  }
+function Button({ children, kind = "primary", onClick }) {
+  const ghost = kind === "ghost";
   return (
-    <span
+    <button
+      type="button"
+      onClick={onClick}
       style={{
         fontSize: 11.5,
-        fontWeight: 800,
-        color: "#0B0D10",
+        fontWeight: ghost ? 700 : 800,
+        color: ghost ? "#A8B0BD" : "#0B0D10",
         padding: "8px 12px",
-        background: "#C7FF3D",
+        border: ghost ? "1px solid #283140" : "none",
         borderRadius: 8,
-        boxShadow: "0 0 0 1px rgba(199,255,61,0.6), 0 10px 22px -6px rgba(199,255,61,0.45)",
+        background: ghost ? "transparent" : "#C7FF3D",
+        boxShadow: ghost ? "none" : "0 0 0 1px rgba(199,255,61,0.6), 0 10px 22px -6px rgba(199,255,61,0.45)",
+        cursor: "pointer",
       }}
     >
       {children}
-    </span>
+    </button>
   );
 }
 

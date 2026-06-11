@@ -113,8 +113,8 @@ export default function FreshSupport({ onNavigate }) {
 
           <div className="freshActions">
             <button className="freshPrimary" onClick={() => onNavigate?.("settings")}>Open setup guide</button>
-            <button className="freshOrange">Email support</button>
-            <button className="freshDark">Report issue</button>
+            <button type="button" className="freshOrange" onClick={() => { window.location.href = "mailto:hello@churvox.com?subject=Churvox%20support%20request"; }}>Email support</button>
+            <button type="button" className="freshDark" onClick={() => { window.location.href = "mailto:hello@churvox.com?subject=Churvox%20issue%20report"; }}>Report issue</button>
             <button className="freshGhost" onClick={() => onNavigate?.("command")}>Send issue to Command</button>
           </div>
 

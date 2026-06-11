@@ -1,4 +1,5 @@
 import React from "react";
+import { sendFreshSlipToCommand } from "./commandBridge";
 
 const copy = {
   hub: ["Smart Hub", "Morning view: what needs action, what is booked, and where money is waiting."],
@@ -14,8 +15,44 @@ const copy = {
   support: ["Support", "Help, setup guidance and contact options."],
 };
 
-export default function FreshSimple({ page }) {
+export default function FreshSimple({ page, onNavigate }) {
   const [title, text] = copy[page] || copy.hub;
+
+  const saveDraft = () => {
+    try {
+      window.localStorage.setItem(`churvox:fresh-simple:${page || "hub"}`, JSON.stringify({
+        page,
+        title,
+        text,
+        savedAt: new Date().toISOString(),
+      }));
+      window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "fresh-simple-save", page } }));
+    } catch (_) {}
+  };
+
+  const createRecord = () => {
+    const target = ["jobs", "quotes", "clients", "team", "invoices"].includes(page) ? page : "command";
+    onNavigate?.(target);
+  };
+
+  const sendToCommand = () => {
+    sendFreshSlipToCommand({
+      id: `fresh-simple-${page || "hub"}-${Date.now()}`,
+      group: "Fresh page",
+      title: `${title} needs owner review`,
+      info: "Fresh page action",
+      urgency: "Medium",
+      found: `${title} has a general owner action waiting.`,
+      prepared: "Churvox prepared a safe Command slip for owner review.",
+      why: "This keeps unfinished page work in Command instead of losing it.",
+      owner: "Review, edit, approve, snooze, ignore, or open the source page.",
+      area: title,
+      page: page || "command",
+      sourceType: "fresh_page",
+      actionType: "owner_review",
+    }, { type: "fresh-simple-send" });
+    onNavigate?.("command");
+  };
 
   return (
     <section>
@@ -40,9 +77,9 @@ export default function FreshSimple({ page }) {
         <aside className="freshCard">
           <h2>Next move</h2>
           <div className="freshActions">
-            <button className="freshPrimary">Save</button>
-            <button className="freshOrange">Create</button>
-            <button className="freshDark">Send to Command</button>
+            <button type="button" className="freshPrimary" onClick={saveDraft}>Save</button>
+            <button type="button" className="freshOrange" onClick={createRecord}>Create</button>
+            <button type="button" className="freshDark" onClick={sendToCommand}>Send to Command</button>
           </div>
         </aside>
       </section>

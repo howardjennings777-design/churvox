@@ -1,8 +1,8 @@
 {
-  "generated": "2026-06-11T02:56:40Z",
-  "score_percent": 94,
-  "score_pass": 49,
-  "score_warn": 3,
+  "generated": "2026-06-11T03:02:19Z",
+  "score_percent": 100,
+  "score_pass": 52,
+  "score_warn": 0,
   "score_fail": 0,
   "score_total": 52,
   "checks": [
@@ -137,10 +137,10 @@
     {
       "category": "Frontend buttons",
       "name": "Important buttons have handlers",
-      "status": "WARN",
+      "status": "PASS",
       "severity": "High",
-      "evidence": "266 important buttons scanned; 12 suspicious.",
-      "recommendation": "Review suspicious buttons so no important button is visual-only."
+      "evidence": "266 important buttons scanned; 0 missing handlers. 0 navigation-style buttons kept for live review.",
+      "recommendation": "Live test the 12 previously suspicious buttons rather than treating navigation buttons as static failures."
     },
     {
       "category": "Frontend/API",
@@ -155,7 +155,7 @@
       "name": "Preview/demo/localStorage usage reviewed",
       "status": "PASS",
       "severity": "Medium",
-      "evidence": "1001 preview/demo/storage references found and reviewed under docs/WIRING_AUDIT_POLICY.md.",
+      "evidence": "1007 preview/demo/storage references found and reviewed under docs/WIRING_AUDIT_POLICY.md.",
       "recommendation": "Use live testing to confirm critical flows are backend-owned before launch."
     }
   ],
@@ -2896,30 +2896,24 @@
     },
     {
       "file": "frontend/src/churvox-fresh/FreshSimple.jsx",
-      "line": 43,
+      "line": 80,
       "label": "Save",
-      "attrs": "className=\"freshPrimary\"",
-      "suspicious": [
-        "no obvious onClick/submit"
-      ]
+      "attrs": "type=\"button\" className=\"freshPrimary\" onClick={saveDraft}",
+      "suspicious": []
     },
     {
       "file": "frontend/src/churvox-fresh/FreshSimple.jsx",
-      "line": 44,
+      "line": 81,
       "label": "Create",
-      "attrs": "className=\"freshOrange\"",
-      "suspicious": [
-        "no obvious onClick/submit"
-      ]
+      "attrs": "type=\"button\" className=\"freshOrange\" onClick={createRecord}",
+      "suspicious": []
     },
     {
       "file": "frontend/src/churvox-fresh/FreshSimple.jsx",
-      "line": 45,
+      "line": 82,
       "label": "Send to Command",
-      "attrs": "className=\"freshDark\"",
-      "suspicious": [
-        "no obvious onClick/submit"
-      ]
+      "attrs": "type=\"button\" className=\"freshDark\" onClick={sendToCommand}",
+      "suspicious": []
     },
     {
       "file": "frontend/src/churvox-fresh/FreshSmartHub.jsx",
@@ -2945,11 +2939,9 @@
     {
       "file": "frontend/src/churvox-fresh/FreshSupport.jsx",
       "line": 116,
-      "label": "Email support",
-      "attrs": "className=\"freshOrange\"",
-      "suspicious": [
-        "no obvious onClick/submit"
-      ]
+      "label": "{ window.location.href = \"mailto:hello@churvox.com?subject=Churvox%20support%20request\"; }}>Email support",
+      "attrs": "type=\"button\" className=\"freshOrange\" onClick={() =",
+      "suspicious": []
     },
     {
       "file": "frontend/src/churvox-fresh/FreshSupport.jsx",
@@ -3100,50 +3092,42 @@
     },
     {
       "file": "frontend/src/churvox-v2/ClientsV2Page.jsx",
-      "line": 205,
+      "line": 259,
       "label": "setSelectedId(client.id)} > {client.name} {client.email || client.phone || \"Missing contact\"}",
       "attrs": "key={client.id} type=\"button\" className={`v2ListItem ${selected.id === client.id ? \"active\" : \"\"} ${needsAttention(client) ? \"needs\" : \"\"}`} onClick={() =",
       "suspicious": []
     },
     {
       "file": "frontend/src/churvox-v2/ClientsV2Page.jsx",
-      "line": 266,
+      "line": 320,
       "label": "Save client",
-      "attrs": "type=\"button\" className=\"v2PrimaryBtn\"",
-      "suspicious": [
-        "no obvious onClick/submit"
-      ]
+      "attrs": "type=\"button\" className=\"v2PrimaryBtn\" onClick={saveClient}",
+      "suspicious": []
     },
     {
       "file": "frontend/src/churvox-v2/ClientsV2Page.jsx",
-      "line": 267,
+      "line": 321,
       "label": "Create job",
-      "attrs": "type=\"button\" className=\"v2SecondaryBtn\"",
-      "suspicious": [
-        "no obvious onClick/submit"
-      ]
+      "attrs": "type=\"button\" className=\"v2SecondaryBtn\" onClick={createJobForClient}",
+      "suspicious": []
     },
     {
       "file": "frontend/src/churvox-v2/ClientsV2Page.jsx",
-      "line": 268,
+      "line": 322,
       "label": "Create quote",
-      "attrs": "type=\"button\" className=\"v2SecondaryBtn\"",
-      "suspicious": [
-        "no obvious onClick/submit"
-      ]
+      "attrs": "type=\"button\" className=\"v2SecondaryBtn\" onClick={createQuoteForClient}",
+      "suspicious": []
     },
     {
       "file": "frontend/src/churvox-v2/ClientsV2Page.jsx",
-      "line": 269,
+      "line": 323,
       "label": "Send issue to Command",
-      "attrs": "type=\"button\" className=\"v2DarkBtn\"",
-      "suspicious": [
-        "no obvious onClick/submit"
-      ]
+      "attrs": "type=\"button\" className=\"v2DarkBtn\" onClick={sendClientIssueToCommand}",
+      "suspicious": []
     },
     {
       "file": "frontend/src/churvox-v2/ClientsV2Page.jsx",
-      "line": 278,
+      "line": 332,
       "label": "setSelectedId(client.id)}> {client.name} Missing: {!client.email ? \"email \" : \"\"}{!client.billing_email ? \"billing \" : \"",
       "attrs": "type=\"button\" key={`mini-${client.id}`} className=\"v2MiniCard\" onClick={() =",
       "suspicious": []
@@ -3214,11 +3198,9 @@
     {
       "file": "frontend/src/components/marketing/MockFrontDesk.jsx",
       "line": 186,
-      "label": "Approve &amp; send",
-      "attrs": "kind=\"primary\"",
-      "suspicious": [
-        "no obvious onClick/submit"
-      ]
+      "label": "window.dispatchEvent(new CustomEvent(\"churvox:mock-front-desk\", { detail: { action: \"approve-send\" } }))}>Approve &amp; ",
+      "attrs": "kind=\"primary\" onClick={() =",
+      "suspicious": []
     },
     {
       "file": "frontend/src/concept-c/BeenApprovedCard.jsx",
@@ -3510,11 +3492,9 @@
     {
       "file": "frontend/src/pages/CommandHubTopPlayerPage.js",
       "line": 115,
-      "label": "Save alert draft",
-      "attrs": "",
-      "suspicious": [
-        "no obvious onClick/submit"
-      ]
+      "label": "set(\"alertDraftSavedAt\", new Date().toISOString())}>Save alert draft",
+      "attrs": "onClick={() =",
+      "suspicious": []
     },
     {
       "file": "frontend/src/pages/CommandHubTopPlayerPage.js",
@@ -3526,20 +3506,16 @@
     {
       "file": "frontend/src/pages/CommandHubTopPlayerPage.js",
       "line": 117,
-      "label": "Save note",
-      "attrs": "",
-      "suspicious": [
-        "no obvious onClick/submit"
-      ]
+      "label": "set(\"noteSavedAt\", new Date().toISOString())}>Save note",
+      "attrs": "onClick={() =",
+      "suspicious": []
     },
     {
       "file": "frontend/src/pages/CommandHubTopPlayerPage.js",
       "line": 122,
-      "label": "Save draft",
-      "attrs": "tone=\"light\"",
-      "suspicious": [
-        "no obvious onClick/submit"
-      ]
+      "label": "set(\"draftSavedAt\", new Date().toISOString())}>Save draft",
+      "attrs": "tone=\"light\" onClick={() =",
+      "suspicious": []
     },
     {
       "file": "frontend/src/pages/CommandHubTopPlayerPage.js",
@@ -5032,8 +5008,8 @@
     },
     {
       "file": "frontend/src/churvox-fresh/FreshSimple.jsx",
-      "line": 7,
-      "sample": "send, follow up and convert accepted quotes into jobs.\"], invoices: [\"Invoices\", \"Review drafts, approve sending, track paid and overdue money.\"], team: [\"Team\", \"People, roles, invites and access.\"], payroll: [\"Payroll\", \"Pay period, job h"
+      "line": 2,
+      "sample": "sendFreshSlipToCommand } from \"./commandBridge\"; const copy = { hub: [\"Smart Hub\", \"Morning view: what needs action, what is booked, and where money is waiting.\"], jobs: [\"Jobs\", \"Create, schedule, assign, price and complete work.\"], dispat"
     },
     {
       "file": "frontend/src/churvox-fresh/FreshSmartHub.jsx",
@@ -5252,8 +5228,8 @@
     },
     {
       "file": "frontend/src/churvox-v2/ClientsV2Page.jsx",
-      "line": 14,
-      "sample": "send before/after photos.\", notes: \"Fortnightly lawn and hedge customer. Prefers invoices sent Friday afternoon.\", status: \"Ready\", jobs: [\"Fortnightly lawn service booked\", \"Hedge trim due next month\"], quotes: [\"Accepted lawn reset quote\""
+      "line": 4,
+      "sample": "sendFreshSlipToCommand } from \"../churvox-fresh/commandBridge\"; const CLIENTS = [ { id: \"c-101\", name: \"Aroha Property Care\", phone: \"021 555 0184\", email: \"office@arohaproperty.co.nz\", preferred_contact: \"Email\", service_address: \"42 Rata "
     },
     {
       "file": "frontend/src/churvox-v2/WorkspaceV2Page.jsx",
@@ -8303,6 +8279,11 @@
       "sample": "Demo"
     },
     {
+      "file": "frontend/src/churvox-fresh/FreshSimple.jsx",
+      "line": 23,
+      "sample": "localStorage"
+    },
+    {
       "file": "frontend/src/churvox-fresh/FreshSmartHub.jsx",
       "line": 42,
       "sample": "localStorage"
@@ -8684,7 +8665,22 @@
     },
     {
       "file": "frontend/src/churvox-v2/ClientsV2Page.jsx",
-      "line": 175,
+      "line": 170,
+      "sample": "localStorage"
+    },
+    {
+      "file": "frontend/src/churvox-v2/ClientsV2Page.jsx",
+      "line": 177,
+      "sample": "localStorage"
+    },
+    {
+      "file": "frontend/src/churvox-v2/ClientsV2Page.jsx",
+      "line": 189,
+      "sample": "localStorage"
+    },
+    {
+      "file": "frontend/src/churvox-v2/ClientsV2Page.jsx",
+      "line": 229,
       "sample": "preview"
     },
     {
@@ -8985,6 +8981,16 @@
     {
       "file": "frontend/src/components/marketing/MockFrontDesk.jsx",
       "line": 12,
+      "sample": "mock"
+    },
+    {
+      "file": "frontend/src/components/marketing/MockFrontDesk.jsx",
+      "line": 186,
+      "sample": "mock"
+    },
+    {
+      "file": "frontend/src/components/marketing/MockFrontDesk.jsx",
+      "line": 187,
       "sample": "mock"
     },
     {

@@ -1,6 +1,7 @@
 import React from "react";
 import "./churvox-v2.css";
 import "../styles/churvox-v2-route-force.css";
+import { sendFreshSlipToCommand } from "../churvox-fresh/commandBridge";
 
 const CLIENTS = [
   {
@@ -164,6 +165,59 @@ export default function ClientsV2Page() {
     setTab("details");
   };
 
+  const saveClient = () => {
+    try {
+      window.localStorage.setItem("churvox:v2-clients", JSON.stringify(clients));
+      window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "v2-client-save", clientId: selected.id } }));
+    } catch (_) {}
+  };
+
+  const createJobForClient = () => {
+    try {
+      window.localStorage.setItem("churvox:v2-job-draft", JSON.stringify({
+        clientId: selected.id,
+        clientName: selected.name,
+        serviceAddress: selected.service_address,
+        createdAt: new Date().toISOString(),
+      }));
+      window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "v2-client-job-draft", clientId: selected.id } }));
+    } catch (_) {}
+  };
+
+  const createQuoteForClient = () => {
+    try {
+      window.localStorage.setItem("churvox:v2-quote-draft", JSON.stringify({
+        clientId: selected.id,
+        clientName: selected.name,
+        serviceAddress: selected.service_address,
+        createdAt: new Date().toISOString(),
+      }));
+      window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "v2-client-quote-draft", clientId: selected.id } }));
+    } catch (_) {}
+  };
+
+  const sendClientIssueToCommand = () => {
+    sendFreshSlipToCommand({
+      id: `client-v2-${selected.id}-${Date.now()}`,
+      group: "Clients",
+      title: `${selected.name} needs client review`,
+      info: needsAttention(selected) ? "Missing details" : "Client action",
+      urgency: needsAttention(selected) ? "High" : "Medium",
+      found: needsAttention(selected)
+        ? "Client record is missing contact, billing, or service address details."
+        : "Client record is ready for the next owner action.",
+      prepared: "Churvox prepared a safe owner review slip for this client.",
+      why: "Client details should be checked before jobs, quotes, invoices, or reminders are trusted.",
+      owner: "Review the client, complete missing details, create work, or ignore.",
+      area: "Clients",
+      page: "clients",
+      sourceType: "client",
+      sourceId: selected.id,
+      actionType: needsAttention(selected) ? "fix_missing_info" : "owner_review",
+      payload: selected,
+    }, { type: "v2-client-command" });
+  };
+
   const readyCount = clients.filter((client) => !needsAttention(client)).length;
   const needsCount = clients.length - readyCount;
 
@@ -263,10 +317,10 @@ export default function ClientsV2Page() {
             <h2>Next move</h2>
             <p>Clients page should do client work only. Command stays for approval slips.</p>
             <div className="v2ActionStack">
-              <button type="button" className="v2PrimaryBtn">Save client</button>
-              <button type="button" className="v2SecondaryBtn">Create job</button>
-              <button type="button" className="v2SecondaryBtn">Create quote</button>
-              <button type="button" className="v2DarkBtn">Send issue to Command</button>
+              <button type="button" className="v2PrimaryBtn" onClick={saveClient}>Save client</button>
+              <button type="button" className="v2SecondaryBtn" onClick={createJobForClient}>Create job</button>
+              <button type="button" className="v2SecondaryBtn" onClick={createQuoteForClient}>Create quote</button>
+              <button type="button" className="v2DarkBtn" onClick={sendClientIssueToCommand}>Send issue to Command</button>
               <button type="button" className="v2GhostBtn" onClick={newClient}>New client</button>
             </div>
             <article className="v2ActionNote">
