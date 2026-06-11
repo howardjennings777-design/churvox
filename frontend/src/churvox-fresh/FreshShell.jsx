@@ -4,7 +4,7 @@ import FreshSearch from "./FreshSearch";
 import FreshTopStatus from "./FreshTopStatus";
 
 const groups = [
-  { title: "Home", items: [["smart", "CP", "Cockpit"], ["command", "CM", "Command"]] },
+  { title: "Home", items: [["firstrun", "FR", "Guide"], ["smart", "CP", "Cockpit"], ["command", "CM", "Command"]] },
   {
     title: "Work",
     items: [
@@ -74,7 +74,6 @@ const groups = [
       ["launch", "LN", "Launch"],
       ["launchpack", "LP", "Launch Pack"],
       ["launchcontrol", "LC", "Launch Control"],
-      ["demo", "DM", "Demo Mode"],
       ["qa", "QA", "QA"],
       ["flags", "FG", "Flags"],
       ["feedback", "FB", "Feedback"],
@@ -197,9 +196,10 @@ const labels = {
 };
 
 const mobileItems = [
+  ["firstrun", "FR", "Guide"],
   ["smart", "CP", "Cockpit"],
-  ["command", "CM", "Command"],
   ["jobs", "JB", "Jobs"],
+  ["command", "CM", "Command"],
   ["dispatch", "DP", "Dispatch"],
   ["routes", "RT", "Routes"],
   ["time", "TL", "Time"],
@@ -212,7 +212,6 @@ const extraMobile = [
   ["globalactions", "GA", "Global Actions"],
   ["launchcontrol", "LC", "Launch Control"],
   ["askchurvox", "AC", "Ask Churvox"],
-  ["demo", "DM", "Demo Mode"],
   ["launchpack", "LP", "Launch Pack"],
   ["leads", "LD", "Leads"],
   ["recurring", "RC", "Recurring"],

@@ -337,6 +337,22 @@ function isFirstSetupPending() {
   }
 }
 
+function hasSeenFirstSetup() {
+  try {
+    return window.localStorage.getItem("churvox_first_setup_seen") === "true";
+  } catch {
+    return false;
+  }
+}
+
+function markFirstSetupSeen() {
+  try {
+    window.localStorage.setItem("churvox_first_setup_seen", "true");
+  } catch {
+    // Keep app loading.
+  }
+}
+
 function clearNewUserDemoStorage() {
   try {
     window.localStorage.removeItem("churvox:fresh-demo-mode:v1");
@@ -366,8 +382,13 @@ function readPageFromHash() {
 
   const hash = aliases[raw] || raw;
 
-  if (isFirstSetupPending() && (!hash || hash === "smart" || hash === "command")) {
+  if (
+    isFirstSetupPending() &&
+    !hasSeenFirstSetup() &&
+    (!hash || hash === "smart" || hash === "command")
+  ) {
     clearNewUserDemoStorage();
+    markFirstSetupSeen();
     return "firstrun";
   }
 
