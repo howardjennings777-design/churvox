@@ -32,16 +32,20 @@
 .simpleCard p{color:#374151!important}
 .simpleCard li{background:#fff7ed!important;border:1px solid rgba(249,115,22,.16)!important;color:#111827!important}
 .simpleBand{
-  background:rgba(255,247,237,.96)!important;
-  border:1px solid rgba(249,115,22,.24)!important;
-  box-shadow:0 26px 70px rgba(0,0,0,.24)!important;
-  color:#111827!important;
+  background:linear-gradient(135deg,rgba(17,24,39,.94),rgba(31,41,55,.90) 54%,rgba(67,36,18,.88))!important;
+  border:1px solid rgba(249,115,22,.26)!important;
+  box-shadow:0 30px 88px rgba(0,0,0,.34)!important;
+  color:#f9fafb!important;
 }
-.simpleBand h2{color:#111827!important}
-.simpleBand p{color:#374151!important;font-weight:800}
-.simpleGrid article{background:#fff!important;border:1px solid rgba(249,115,22,.20)!important}
-.simpleGrid b{color:#111827!important}
-.simpleGrid span{color:#4b5563!important}
+.simpleBand h2{color:#fff!important}
+.simpleBand p,.simpleBand .simpleLead{color:#e5e7eb!important;font-weight:850}
+.simpleGrid article{
+  background:rgba(255,247,237,.10)!important;
+  border:1px solid rgba(255,237,213,.18)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08)!important;
+}
+.simpleGrid b{color:#fff!important}
+.simpleGrid span{color:#fed7aa!important}
 .simpleFooter{color:#d1d5db!important}
 .simpleFooter b{color:#fff!important}
 .simpleFooter a{color:#ffedd5!important}
