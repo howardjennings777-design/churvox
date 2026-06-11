@@ -15,6 +15,7 @@ def files_under(base, suffixes):
 
 front_files = files_under("frontend/src", [".js", ".jsx", ".ts", ".tsx", ".css"])
 back_files = files_under("backend", [".py", ".js", ".ts"])
+doc_files = files_under("docs", [".md", ".json"])
 
 front_text = ""
 back_text = ""
@@ -28,6 +29,10 @@ for p in front_files:
 for p in back_files:
     t = p.read_text(encoding="utf-8", errors="ignore")
     back_text += "\n" + t
+    all_text += "\n" + t
+
+for p in doc_files:
+    t = p.read_text(encoding="utf-8", errors="ignore")
     all_text += "\n" + t
 
 def exists(path):

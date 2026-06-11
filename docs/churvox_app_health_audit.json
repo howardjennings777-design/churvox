@@ -40,8 +40,8 @@
     {
       "area": "Brand",
       "name": "Old name mostly removed",
-      "status": "PASS",
-      "evidence": "Old refs found: none.",
+      "status": "WARN",
+      "evidence": "Old refs found: Grassly, Grassley.",
       "fix": "Remove old Grassly/Grassley references."
     },
     {
@@ -313,7 +313,7 @@
     {
       "area": "Launch",
       "name": "Real testing reminders exist",
-      "status": "WARN",
+      "status": "PASS",
       "evidence": "Real testing reminders detected.",
       "fix": "Add test plan."
     }
