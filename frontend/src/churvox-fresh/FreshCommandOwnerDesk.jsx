@@ -1,6 +1,7 @@
 import React from "react";
 
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
+const COMMAND_API_BASE = "/api/command";
 const COMMAND_MODE_KEY = "churvox:fresh-command-mode:v1";
 
 
@@ -349,6 +350,54 @@ function shouldShowDemoTools() {
   }
 }
 
+
+function normaliseBackendSlip(slip) {
+  if (!slip) return null;
+
+  return normalizeSlip({
+    ...slip,
+    id: slip.id || slip._id || slip.dedupeKey,
+    area: slip.area || slip.areaGroup,
+    areaGroup: slip.areaGroup || slip.area,
+    createdAt: slip.createdAt || "Today",
+  });
+}
+
+async function commandRequest(path, options = {}) {
+  const init = {
+    method: options.method || "GET",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+  };
+
+  if (Object.prototype.hasOwnProperty.call(options, "body")) {
+    init.body = typeof options.body === "string" ? options.body : JSON.stringify(options.body || {});
+  }
+
+  const response = await fetch(`${COMMAND_API_BASE}${path}`, init);
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok || data?.ok === false) {
+    throw new Error(data?.message || `Command API failed: ${response.status}`);
+  }
+
+  return data;
+}
+
+function snoozeIso(label) {
+  const date = new Date();
+
+  if (label === "Tomorrow") date.setDate(date.getDate() + 1);
+  if (label === "3 days") date.setDate(date.getDate() + 3);
+  if (label === "Next week") date.setDate(date.getDate() + 7);
+  if (label === "Later today") date.setHours(date.getHours() + 4);
+
+  return date.toISOString();
+}
+
 function safeReadSlips() {
   try {
     const saved = window.localStorage.getItem(COMMAND_INBOX_KEY);
@@ -417,6 +466,12 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
   }, []);
 
   const [slips, setSlips] = React.useState(safeReadSlips);
+  const [events, setEvents] = React.useState(commandEventFeed);
+  const [commandSync, setCommandSync] = React.useState({
+    source: "Preview fallback",
+    loading: false,
+    error: "",
+  });
   const [mode, setMode] = React.useState(() => getInitialCommandMode(slips));
   const [activeGroup, setActiveGroup] = React.useState("Needs approval");
   const [editing, setEditing] = React.useState(null);
@@ -432,9 +487,16 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
   const [snoozing, setSnoozing] = React.useState(null);
 
   React.useEffect(() => {
-    const refresh = () => setSlips(safeReadSlips());
+    loadCommandData();
+
+    const refresh = () => {
+      setSlips(safeReadSlips());
+      loadCommandData();
+    };
+
     window.addEventListener("storage", refresh);
     window.addEventListener("churvox:fresh-data-updated", refresh);
+
     return () => {
       window.removeEventListener("storage", refresh);
       window.removeEventListener("churvox:fresh-data-updated", refresh);
@@ -453,18 +515,77 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
   const setup = openSlips.filter((slip) => slip.areaGroup === "Setup");
   const showDemoTools = shouldShowDemoTools();
   const sourceRuleCount = commandSourceRules.length;
-  const eventCount = commandEventFeed.length;
+  const eventCount = events.length || commandEventFeed.length;
 
   const groups = ["Needs approval", "Money", "Today", "Customers", "Setup"];
   const visible = activeGroup === "Needs approval"
     ? openSlips
     : openSlips.filter((slip) => slip.areaGroup === activeGroup);
 
-  function updateSlip(id, patch) {
+
+  function replaceOneSlip(nextSlip) {
+    const normalized = normaliseBackendSlip(nextSlip);
+    if (!normalized) return;
+
+    setSlips((current) => {
+      const currentNormal = current.map(normalizeSlip);
+      const exists = currentNormal.some((slip) => slip.id === normalized.id);
+      const next = exists
+        ? currentNormal.map((slip) => slip.id === normalized.id ? normalized : slip)
+        : [normalized, ...currentNormal];
+
+      safeSaveSlips(next);
+      return next;
+    });
+  }
+
+  async function loadCommandData() {
+    setCommandSync((current) => ({ ...current, loading: true, error: "" }));
+
+    try {
+      const data = await commandRequest("/slips");
+
+      if (Array.isArray(data.slips)) {
+        const next = data.slips.map(normaliseBackendSlip).filter(Boolean);
+        setSlips(next);
+        safeSaveSlips(next);
+      }
+
+      try {
+        const eventData = await commandRequest("/events");
+        if (Array.isArray(eventData.events) && eventData.events.length) {
+          setEvents(eventData.events);
+        }
+      } catch {
+        // Events are optional. Slips are the important part.
+      }
+
+      setCommandSync({
+        source: "Live backend",
+        loading: false,
+        error: "Command is loading slips from /api/command.",
+      });
+    } catch (error) {
+      setCommandSync({
+        source: "Preview fallback",
+        loading: false,
+        error: error?.message || "Backend Command API not available yet.",
+      });
+    }
+  }
+
+  function updateSlip(id, patch, auditLabel = null) {
     const next = slips.map((slip, index) => {
       const normal = normalizeSlip(slip, index);
-      return normal.id === id ? { ...normal, ...patch } : normal;
+      if (normal.id !== id) return normal;
+
+      const audit = auditLabel
+        ? [...safeAudit(normal), auditEvent(auditLabel, patch)].slice(-24)
+        : safeAudit(normal);
+
+      return { ...normal, ...patch, audit };
     });
+
     setSlips(next);
     safeSaveSlips(next);
   }
@@ -489,12 +610,37 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
     setActiveGroup("Needs approval");
   }
 
-  function approveSlip(slip) {
-    updateSlip(slip.id, {
+  async function approveSlip(slip) {
+    const localPatch = {
       status: "approved",
       approvedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       approvedResult: approvalResult(slip.actionType),
-    }, approveLabel(slip.actionType));
+    };
+
+    try {
+      const data = await commandRequest(`/slips/${slip.id}/approve`, {
+        method: "POST",
+        body: { note: approvalResult(slip.actionType) },
+      });
+
+      if (data.slip) {
+        replaceOneSlip(data.slip);
+        setCommandSync({
+          source: "Live backend",
+          loading: false,
+          error: `${approveLabel(slip.actionType)} saved to backend.`,
+        });
+        return;
+      }
+    } catch (error) {
+      setCommandSync({
+        source: "Preview fallback",
+        loading: false,
+        error: error?.message || "Backend approve unavailable. Saved locally.",
+      });
+    }
+
+    updateSlip(slip.id, localPatch, approveLabel(slip.actionType));
   }
 
   function startEdit(slip) {
@@ -510,9 +656,10 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
     });
   }
 
-  function saveEdit() {
+  async function saveEdit() {
     if (!editing) return;
-    updateSlip(editing.id, {
+
+    const patch = {
       title: editForm.title || editing.title,
       info: editForm.info || editing.info,
       found: editForm.found || editing.found,
@@ -522,7 +669,33 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
       actionType: editForm.actionType || editing.actionType,
       status: "edited",
       editedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    }, "Edited prepared action");
+    };
+
+    try {
+      const data = await commandRequest(`/slips/${editing.id}/edit`, {
+        method: "PATCH",
+        body: patch,
+      });
+
+      if (data.slip) {
+        replaceOneSlip(data.slip);
+        setCommandSync({
+          source: "Live backend",
+          loading: false,
+          error: "Edit saved to backend.",
+        });
+      } else {
+        updateSlip(editing.id, patch, "Edited prepared action");
+      }
+    } catch (error) {
+      setCommandSync({
+        source: "Preview fallback",
+        loading: false,
+        error: error?.message || "Backend edit unavailable. Saved locally.",
+      });
+      updateSlip(editing.id, patch, "Edited prepared action");
+    }
+
     setEditing(null);
     setEditForm({
       title: "",
@@ -535,23 +708,113 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
     });
   }
 
-  function snoozeSlip(label) {
+  async function snoozeSlip(label) {
     if (!snoozing) return;
-    updateSlip(snoozing.id, {
+
+    const localPatch = {
       status: "snoozed",
       snoozeUntil: snoozeDate(label),
-    }, `Snoozed ${label}`);
+    };
+
+    try {
+      const data = await commandRequest(`/slips/${snoozing.id}/snooze`, {
+        method: "POST",
+        body: { snoozeUntil: snoozeIso(label), note: `Snoozed ${label}` },
+      });
+
+      if (data.slip) {
+        replaceOneSlip(data.slip);
+        setCommandSync({
+          source: "Live backend",
+          loading: false,
+          error: `Snoozed ${label} on backend.`,
+        });
+      } else {
+        updateSlip(snoozing.id, localPatch, `Snoozed ${label}`);
+      }
+    } catch (error) {
+      setCommandSync({
+        source: "Preview fallback",
+        loading: false,
+        error: error?.message || "Backend snooze unavailable. Saved locally.",
+      });
+      updateSlip(snoozing.id, localPatch, `Snoozed ${label}`);
+    }
+
     setSnoozing(null);
   }
 
+  async function ignoreSlip(slip) {
+    try {
+      const data = await commandRequest(`/slips/${slip.id}/ignore`, {
+        method: "POST",
+        body: { note: "Ignored by owner" },
+      });
 
-  function runSourceChecks() {
-    const existing = slips.map(normalizeSlip);
-    const generated = commandSourceRules.map(sourceRuleToSlip);
-    const next = [...generated, ...existing].slice(0, 180);
-    setSlips(next);
-    safeSaveSlips(next);
-    setActiveGroup("Needs approval");
+      if (data.slip) {
+        replaceOneSlip(data.slip);
+        setCommandSync({
+          source: "Live backend",
+          loading: false,
+          error: "Ignored action saved to backend.",
+        });
+        return;
+      }
+    } catch (error) {
+      setCommandSync({
+        source: "Preview fallback",
+        loading: false,
+        error: error?.message || "Backend ignore unavailable. Saved locally.",
+      });
+    }
+
+    updateSlip(slip.id, { status: "ignored" }, "Ignored");
+  }
+
+
+  async function runSourceChecks() {
+    setCommandSync((current) => ({ ...current, loading: true, error: "" }));
+
+    try {
+      const data = await commandRequest("/scan", { method: "POST", body: {} });
+
+      if (Array.isArray(data.slips)) {
+        const next = data.slips.map(normaliseBackendSlip).filter(Boolean);
+        setSlips(next);
+        safeSaveSlips(next);
+      }
+
+      setActiveGroup("Needs approval");
+      setCommandSync({
+        source: "Live backend",
+        loading: false,
+        error: "Command scanned real backend sources.",
+      });
+
+      try {
+        const eventData = await commandRequest("/events");
+        if (Array.isArray(eventData.events) && eventData.events.length) {
+          setEvents(eventData.events);
+        }
+      } catch {
+        // Events are optional.
+      }
+
+      return;
+    } catch (error) {
+      const existing = slips.map(normalizeSlip);
+      const generated = commandSourceRules.map(sourceRuleToSlip);
+      const next = [...generated, ...existing].slice(0, 180);
+
+      setSlips(next);
+      safeSaveSlips(next);
+      setActiveGroup("Needs approval");
+      setCommandSync({
+        source: "Preview fallback",
+        loading: false,
+        error: error?.message || "Backend scan unavailable. Showing preview checks.",
+      });
+    }
   }
 
   return (
@@ -593,6 +856,12 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
           <button type="button" onClick={() => onNavigate?.("askchurvox")}>Ask Churvox</button>
           <button type="button" onClick={autoModeNow}>Auto mode</button>
         </div>
+      </div>
+
+
+      <div className={`freshCommandSyncBanner ${commandSync.source === "Live backend" ? "live" : "preview"}`}>
+        <b>{commandSync.loading ? "Syncing Command..." : commandSync.source}</b>
+        <span>{commandSync.error || "Command will use backend slips when available, with preview fallback."}</span>
       </div>
 
       {showDemoTools && (
@@ -691,7 +960,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
               <button type="button" onClick={() => approveSlip(slip)}>{approveLabel(slip.actionType)}</button>
               <button type="button" onClick={() => startEdit(slip)}>Edit</button>
               <button type="button" onClick={() => setSnoozing(slip)}>Snooze</button>
-              <button type="button" onClick={() => updateSlip(slip.id, { status: "ignored" }, "Ignored")}>Ignore</button>
+              <button type="button" onClick={() => ignoreSlip(slip)}>Ignore</button>
               <button type="button" onClick={() => onNavigate?.(slip.page || "smart")}>Open</button>
             </div>
           </article>
@@ -716,7 +985,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
         </header>
 
         <div>
-          {commandEventFeed.map((event) => (
+          {(events.length ? events : commandEventFeed).map((event) => (
             <section key={event.id}>
               <small>{event.time} · {event.type}</small>
               <b>{event.title}</b>
