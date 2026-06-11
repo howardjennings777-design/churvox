@@ -1,81 +1,50 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Nav, Footer } from "./ExecutiveHomePage";
-import "./ExecutiveHomePage.css";
-import "./ExecutiveMarketingPolish.css";
+import "./SimplePublic.css";
 
-const core = [
-  ["Approve Work", "Finished jobs, worker notes, job evidence and value are surfaced so the owner can sign off without hunting through screens."],
-  ["Approve Invoices", "Approved work, draft invoices, owing invoices and invoice blockers stay in one money approval lane."],
-  ["Assign Workers", "Unassigned jobs and crew gaps are pulled forward so dispatch decisions are easy to make."],
-  ["Approve Messages", "Quote follow-ups, customer updates and invoice reminders are drafted first, then the owner approves before anything sends."],
-  ["Fix Issues", "Missing price, missing customer details, overdue money and blocked admin are separated into a clear issue lane."],
-  ["Full Review", "Tap any lane or row to open the full approval view with details, notes, evidence, message draft and next-step buttons."],
+const features = [
+  ["AI Setup Guide", "New users are shown what to do first: business details, first client, first job, first invoice and Command approval."],
+  ["Jobs and clients", "Keep customer details, work notes, photos, prices and job history together."],
+  ["Quotes and invoices", "Prepare quotes, follow-ups and invoices from the real work already in the system."],
+  ["Command approval", "Churvox prepares admin actions. The owner approves, edits, snoozes or ignores."],
+  ["Worker flow", "Workers get a simple job view while the owner keeps control of the business."],
+  ["Payroll workspace", "Approved time and worker summaries stay ready for payroll review without government submission or bank files."],
 ];
-
-const advanced = [
-  ["MYOB Sync", "Operator can add MYOB. Command includes it by default for invoice and payment sync workflows."],
-  ["Payroll Workspace", "Command gives payroll/admin users a focused place for approved hours, worker summaries and payroll handoff."],
-  ["Automation Engine", "Rules and AI-prepared actions reduce repeated admin without losing approval control."],
-  ["Roles + Permissions", "Owner, Manager, Worker, Office Admin and Payroll access stay separated so each person sees what they need."],
-];
-
-const flow = ["Work comes in", "Churvox prepares admin", "Owner reviews", "Owner approves", "Next step moves"];
 
 export default function ExecutiveFeaturesPage() {
   return (
-    <main className="cvx-home cvx-public-page cvx-features-page" data-version="CHURVOX_WOW_FEATURES_20260603">
+    <main className="simplePublic" data-version="CHURVOX_SIMPLE_FEATURES_20260611">
       <Nav />
-
-      <section className="cvx-public-hero">
-        <p className="cvx-eyebrow">FEATURES WITH PURPOSE</p>
-        <h1>The approval desk for trade and service owners.</h1>
-        <span>
-          Churvox connects jobs, workers, proof, quotes, invoices and customer messages into one approval flow. The owner starts with the next decision, not another pile of screens.
-        </span>
-        <div className="cvx-actions">
-          <Link to="/signup" className="cvx-btn cvx-btn-primary">Start free</Link>
-          <Link to="/pricing" className="cvx-btn cvx-btn-secondary">View pricing</Link>
-        </div>
-      </section>
-
-      <section className="cvx-flow-strip">
+      <section className="simpleHero">
         <div>
-          <p className="cvx-eyebrow">THE CHURVOX FLOW</p>
-          <h2>Work goes in. Admin gets prepared. You approve.</h2>
+          <span className="simpleKicker">How it works</span>
+          <h1>Simple tools, guided by AI.</h1>
+          <p className="simpleLead">
+            Churvox is not another messy admin maze. It shows the owner what needs doing, prepares the next action and keeps approval in your hands.
+          </p>
+          <div className="simpleActions">
+            <Link to="/signup" className="simpleBtn simplePrimary">Start free</Link>
+            <Link to="/login" className="simpleBtn simpleGhost">Log in</Link>
+          </div>
         </div>
-        <div>
-          {flow.map((step, index) => <span key={step}><b>{index + 1}</b>{step}</span>)}
+        <aside className="simpleCard">
+          <h2>The Churvox flow</h2>
+          <ol>
+            <li>1. Work comes in</li>
+            <li>2. Churvox prepares admin</li>
+            <li>3. Owner reviews</li>
+            <li>4. Owner approves</li>
+            <li>5. The next step moves</li>
+          </ol>
+        </aside>
+      </section>
+      <section className="simpleBand">
+        <h2>Everything points to the next useful step.</h2>
+        <div className="simpleGrid">
+          {features.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
         </div>
       </section>
-
-      <section className="cvx-feature-grid-wide">
-        {core.map(([title, text]) => (
-          <article key={title}>
-            <p className="cvx-eyebrow">Approval lane</p>
-            <h2>{title}</h2>
-            <span>{text}</span>
-          </article>
-        ))}
-      </section>
-
-      <section className="cvx-addon-section">
-        <div>
-          <p className="cvx-eyebrow">POWER FEATURES</p>
-          <h2>Built to grow into a stronger operating system.</h2>
-          <span>Keep the approval desk as the centre, then add accounting, payroll, automation and role control as the business gets bigger.</span>
-        </div>
-        <div className="cvx-addon-grid">
-          {advanced.map(([title, text]) => (
-            <article key={title}>
-              <small>{title}</small>
-              <b>Command ready</b>
-              <span>{text}</span>
-            </article>
-          ))}
-        </div>
-      </section>
-
       <Footer />
     </main>
   );
