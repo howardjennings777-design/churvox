@@ -1,0 +1,28 @@
+.simplePublic .simpleCard,
+.simplePublic .simpleBand{
+  color:#111827!important;
+}
+.simplePublic .simpleCard h1,
+.simplePublic .simpleCard h2,
+.simplePublic .simpleCard h3,
+.simplePublic .simpleCard p,
+.simplePublic .simpleCard li,
+.simplePublic .simpleCard span,
+.simplePublic .simpleCard b,
+.simplePublic .simpleBand h1,
+.simplePublic .simpleBand h2,
+.simplePublic .simpleBand h3,
+.simplePublic .simpleBand p,
+.simplePublic .simpleBand li,
+.simplePublic .simpleBand span,
+.simplePublic .simpleBand b{
+  color:#111827!important;
+}
+.simplePublic .simpleGrid article,
+.simplePublic .simpleCard li{
+  color:#111827!important;
+}
+.simplePublic .simpleGrid article span,
+.simplePublic .simpleGrid article p{
+  color:#374151!important;
+}
