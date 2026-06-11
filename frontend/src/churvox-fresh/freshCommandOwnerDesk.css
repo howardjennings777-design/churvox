@@ -1362,3 +1362,56 @@ html body.freshCommandOwnerMode section.freshCommandDeskPage .freshCommandSource
   background:#0b1220 !important;
   border:2px solid rgba(249,115,22,.28) !important;
 }
+
+/* REAL FIX: do not let global h1/h2 gradient styles touch these Command titles */
+body.freshCommandOwnerMode .freshCommandDeskPage .freshCommandSourceTitle{
+  display:block !important;
+  margin:10px 0 8px !important;
+  padding:0 !important;
+  background:none !important;
+  background-image:none !important;
+  background-color:transparent !important;
+  background-clip:border-box !important;
+  -webkit-background-clip:border-box !important;
+  color:#ffffff !important;
+  -webkit-text-fill-color:#ffffff !important;
+  opacity:1 !important;
+  visibility:visible !important;
+  filter:none !important;
+  mix-blend-mode:normal !important;
+  text-shadow:none !important;
+  font-size:34px !important;
+  font-weight:1000 !important;
+  line-height:1 !important;
+  letter-spacing:-.055em !important;
+  font-family:inherit !important;
+}
+
+body.freshCommandOwnerMode .freshCommandDeskPage .freshCommandSourceTitle::before,
+body.freshCommandOwnerMode .freshCommandDeskPage .freshCommandSourceTitle::after{
+  display:none !important;
+  content:none !important;
+}
+
+/* Force source panel body text too */
+body.freshCommandOwnerMode .freshCommandDeskPage .freshCommandSourcePanel p,
+body.freshCommandOwnerMode .freshCommandDeskPage .freshCommandSourcePanel p *,
+body.freshCommandOwnerMode .freshCommandDeskPage .freshCommandEventFeed p,
+body.freshCommandOwnerMode .freshCommandDeskPage .freshCommandEventFeed p *{
+  color:#f8fafc !important;
+  -webkit-text-fill-color:#f8fafc !important;
+  background:none !important;
+  background-image:none !important;
+  background-clip:border-box !important;
+  -webkit-background-clip:border-box !important;
+  opacity:1 !important;
+  filter:none !important;
+  mix-blend-mode:normal !important;
+}
+
+/* Kill hidden gradient text inside Command panels */
+body.freshCommandOwnerMode .freshCommandSourcePanel *,
+body.freshCommandOwnerMode .freshCommandEventFeed *{
+  text-decoration:none !important;
+  -webkit-text-stroke:0 !important;
+}

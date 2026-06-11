@@ -606,7 +606,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
       <div className="freshCommandSourcePanel">
         <div>
           <span>Command checks</span>
-          <h2>What Churvox watches for</h2>
+          <div className="freshCommandSourceTitle" role="heading" aria-level="2">What Churvox watches for</div>
           <p>These are the real source rules Command should use: jobs, invoices, quotes, workers, messages, photos and missing setup data.</p>
         </div>
 
@@ -710,7 +710,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
         <header>
           <div>
             <span>Event feed</span>
-            <h2>What triggered Command</h2>
+            <div className="freshCommandSourceTitle" role="heading" aria-level="2">What triggered Command</div>
           </div>
           <b>{eventCount} recent events</b>
         </header>
