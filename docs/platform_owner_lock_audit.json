@@ -1,0 +1,47 @@
+{
+  "score": 100,
+  "checks": [
+    {
+      "name": "Frontend allows Howard owner email",
+      "status": "PASS",
+      "evidence": "Owner email is whitelisted.",
+      "fix": "Add owner email."
+    },
+    {
+      "name": "Frontend allows hello owner email",
+      "status": "PASS",
+      "evidence": "Public owner email is whitelisted.",
+      "fix": "Add owner email."
+    },
+    {
+      "name": "Frontend blocks localStorage owner_session bypass",
+      "status": "PASS",
+      "evidence": "Old localStorage owner session bypass removed.",
+      "fix": "Remove owner_portal_session."
+    },
+    {
+      "name": "Frontend blocks localStorage unlock bypass",
+      "status": "PASS",
+      "evidence": "Old localStorage unlock/email bypass removed.",
+      "fix": "Remove localStorage unlock bypass."
+    },
+    {
+      "name": "Frontend does not allow plain admin role",
+      "status": "PASS",
+      "evidence": "Plain admin flag is not enough for platform cockpit.",
+      "fix": "Only allow platform owner."
+    },
+    {
+      "name": "Backend protects owner overview",
+      "status": "PASS",
+      "evidence": "Owner overview requires platform owner.",
+      "fix": "Protect backend owner overview."
+    },
+    {
+      "name": "Backend owner emails configurable",
+      "status": "PASS",
+      "evidence": "Backend supports PLATFORM_OWNER_EMAILS env.",
+      "fix": "Use PLATFORM_OWNER_EMAILS on Render."
+    }
+  ]
+}
