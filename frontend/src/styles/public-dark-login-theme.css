@@ -22,30 +22,30 @@
 .simpleHero h1{color:#fff!important}
 .simpleLead{color:#e5e7eb!important}
 .simpleProof span{background:rgba(255,247,237,.12)!important;border:1px solid rgba(255,247,237,.18)!important;color:#ffedd5!important}
-.simpleCard{
+.simpleCard,
+.simpleBand{
   background:rgba(255,247,237,.96)!important;
   color:#111827!important;
   border:1px solid rgba(249,115,22,.28)!important;
   box-shadow:0 32px 90px rgba(0,0,0,.35)!important;
 }
-.simpleCard h2{color:#111827!important}
-.simpleCard p{color:#374151!important}
-.simpleCard li{background:#fff7ed!important;border:1px solid rgba(249,115,22,.16)!important;color:#111827!important}
-.simpleBand{
-  background:linear-gradient(135deg,rgba(17,24,39,.94),rgba(31,41,55,.90) 54%,rgba(67,36,18,.88))!important;
-  border:1px solid rgba(249,115,22,.26)!important;
-  box-shadow:0 30px 88px rgba(0,0,0,.34)!important;
-  color:#f9fafb!important;
-}
-.simpleBand h2{color:#fff!important}
-.simpleBand p,.simpleBand .simpleLead{color:#e5e7eb!important;font-weight:850}
+.simpleCard *,
+.simpleBand *{color:#111827!important}
+.simpleCard h2,
+.simpleBand h2{color:#111827!important}
+.simpleCard p,
+.simpleBand p,
+.simpleBand .simpleLead{color:#374151!important;font-weight:850}
+.simpleCard li,
 .simpleGrid article{
-  background:rgba(255,247,237,.10)!important;
-  border:1px solid rgba(255,237,213,.18)!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.08)!important;
+  background:#fff7ed!important;
+  border:1px solid rgba(249,115,22,.16)!important;
+  color:#111827!important;
 }
-.simpleGrid b{color:#fff!important}
-.simpleGrid span{color:#fed7aa!important}
+.simpleCard li *,
+.simpleGrid article *{color:#111827!important}
+.simpleGrid b{color:#111827!important}
+.simpleGrid span{color:#4b5563!important}
 .simpleFooter{color:#d1d5db!important}
 .simpleFooter b{color:#fff!important}
 .simpleFooter a{color:#ffedd5!important}
