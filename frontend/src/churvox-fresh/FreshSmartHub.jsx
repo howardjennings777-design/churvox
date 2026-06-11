@@ -10,7 +10,7 @@ const LIVE_ENDPOINTS = {
   invoices: "/invoices",
   quotes: "/quotes",
   workers: "/team/workers",
-  actions: "/ai-operator/actions",
+  actions: "/ai/actions",
   notifications: "/notifications",
 };
 
@@ -201,7 +201,7 @@ function buildLiveCockpit(data) {
       title: `Chase overdue invoice · ${invoiceTitle(invoice)}`,
       found: `${invoiceTitle(invoice)} has ${money(amountOf(invoice))} outstanding.`,
       prepared: "Owner can review the invoice and follow up before cash slips further.",
-      why: "Overdue invoices affect cashflow and should sit at the top of the cockpit.",
+      why: "Overdue invoices affect cashflow and should sit at the top of the owner brief.",
       page: "invoices",
       source: "Live invoice",
     });
@@ -320,7 +320,7 @@ function pushCommandSlip(action, onNavigate) {
 
     const slip = {
       id: `smart-live-${action.id || Date.now()}`,
-      group: "Live Cockpit",
+      group: "Owner Brief",
       title: action.title,
       info: action.source || "Live data",
       urgency: "High",
@@ -328,7 +328,7 @@ function pushCommandSlip(action, onNavigate) {
       prepared: action.prepared,
       why: action.why,
       owner: "Approve, edit, ignore, or open the related page.",
-      area: "Smart Hub",
+      area: "Owner Brief",
       page: "smart",
       fromInbox: true,
       createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
@@ -436,7 +436,7 @@ export default function FreshSmartHub({ onNavigate }) {
     <section className="freshSmartPage">
       <div className="freshSmartHero">
         <div>
-          <span>Live Cockpit</span>
+          <span>Owner Brief</span>
           <h1>Churvox does the admin. You approve.</h1>
           <p>
             This cockpit is now fed by live jobs, clients, quotes, invoices, team, AI actions and alerts.

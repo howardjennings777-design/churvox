@@ -374,6 +374,22 @@ function readPageFromHash() {
 
   if (path === "/plans" && !raw) return "plans";
 
+  const blockedPublicHashes = new Set([
+    "demo",
+    "qa",
+    "flags",
+    "roadmap",
+    "launch",
+    "launchpack",
+    "launchcontrol",
+    "firstrun",
+    "trustcenter"
+  ]);
+
+  if (blockedPublicHashes.has(raw)) {
+    return isFirstSetupPending() ? "setupassistant" : "smart";
+  }
+
   const hash = aliases[raw] || raw;
 
   if (isFirstSetupPending() && (!hash || hash === "smart" || hash === "command" || hash === "firstrun")) {
