@@ -1934,3 +1934,58 @@ html body.freshCommandOwnerMode.freshCommandLightMode [class*="Help"]{
     grid-template-columns:1fr !important;
   }
 }
+
+/* Fix light Command slip header/title faded text */
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlip > header,
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlip > header *,
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlip > header div,
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlip > header small,
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlip > header h2{
+  opacity:1 !important;
+  filter:none !important;
+  mix-blend-mode:normal !important;
+  text-shadow:none !important;
+}
+
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlip > header h2,
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlip h2{
+  color:#0f172a !important;
+  -webkit-text-fill-color:#0f172a !important;
+  background:none !important;
+  background-image:none !important;
+  -webkit-background-clip:border-box !important;
+  font-weight:1000 !important;
+  font-size:30px !important;
+  line-height:1.02 !important;
+  letter-spacing:-.045em !important;
+}
+
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlip > header small,
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlip small{
+  color:#1f2937 !important;
+  -webkit-text-fill-color:#1f2937 !important;
+  background:none !important;
+  background-image:none !important;
+  -webkit-background-clip:border-box !important;
+  font-size:13px !important;
+  font-weight:950 !important;
+  line-height:1.35 !important;
+}
+
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlip > header > div{
+  background:transparent !important;
+}
+
+/* Make card body text strong too */
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlipBody section p,
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlipBody p{
+  color:#0f172a !important;
+  -webkit-text-fill-color:#0f172a !important;
+  font-size:15px !important;
+  font-weight:950 !important;
+}
+
+/* Keep slip background clean white instead of washed grey */
+html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandSlip{
+  background:#ffffff !important;
+}
