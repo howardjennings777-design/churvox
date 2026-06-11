@@ -1,0 +1,5 @@
+.freshSmartPage .freshNewUserGuide,
+.freshCommandSyncBanner,
+.freshCommandDemoTools {
+  display: none !important;
+}
