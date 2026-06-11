@@ -1028,3 +1028,174 @@ body.freshCommandOwnerMode .freshCommandDone button span{
     display:grid !important;
   }
 }
+
+/* Command final lock — source rules, event feed, empty state */
+body.freshCommandOwnerMode .freshCommandSourcePanel,
+body.freshCommandOwnerMode .freshCommandEventFeed{
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:28px;
+  background:linear-gradient(135deg,#0b1220,#111827);
+  padding:18px;
+  box-shadow:0 18px 48px rgba(2,6,23,.22);
+}
+
+body.freshCommandOwnerMode .freshCommandSourcePanel{
+  display:flex;
+  justify-content:space-between;
+  gap:14px;
+  align-items:center;
+}
+
+body.freshCommandOwnerMode .freshCommandSourcePanel span,
+body.freshCommandOwnerMode .freshCommandEventFeed header span{
+  display:inline-flex;
+  width:max-content;
+  border-radius:999px;
+  background:#f97316;
+  color:#111827 !important;
+  -webkit-text-fill-color:#111827 !important;
+  padding:6px 10px;
+  font-size:11px;
+  font-weight:1000;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+body.freshCommandOwnerMode .freshCommandSourcePanel h2,
+body.freshCommandOwnerMode .freshCommandEventFeed h2{
+  margin:10px 0 5px;
+  color:#fff !important;
+  -webkit-text-fill-color:#fff !important;
+  font-size:28px;
+  line-height:.95;
+  letter-spacing:-.05em;
+}
+
+body.freshCommandOwnerMode .freshCommandSourcePanel p{
+  margin:0;
+  color:#e5e7eb !important;
+  -webkit-text-fill-color:#e5e7eb !important;
+  font-size:14px;
+  font-weight:850;
+  line-height:1.45;
+}
+
+body.freshCommandOwnerMode .freshCommandSourceActions{
+  display:grid;
+  gap:8px;
+  justify-items:end;
+  min-width:210px;
+}
+
+body.freshCommandOwnerMode .freshCommandSourceActions b,
+body.freshCommandOwnerMode .freshCommandEventFeed header b{
+  color:#fbbf24 !important;
+  -webkit-text-fill-color:#fbbf24 !important;
+  font-size:13px;
+  font-weight:1000;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+}
+
+body.freshCommandOwnerMode .freshCommandSourceActions button{
+  border:0;
+  border-radius:16px;
+  min-height:44px;
+  padding:0 14px;
+  background:#f97316;
+  color:#111827 !important;
+  -webkit-text-fill-color:#111827 !important;
+  font-size:12px;
+  font-weight:1000;
+  cursor:pointer;
+}
+
+body.freshCommandOwnerMode .freshCommandEventFeed header{
+  display:flex;
+  justify-content:space-between;
+  gap:14px;
+  align-items:flex-start;
+  margin-bottom:12px;
+}
+
+body.freshCommandOwnerMode .freshCommandEventFeed > div{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+
+body.freshCommandOwnerMode .freshCommandEventFeed section{
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:20px;
+  background:#081427;
+  padding:13px;
+}
+
+body.freshCommandOwnerMode .freshCommandEventFeed small{
+  display:block;
+  color:#67e8f9 !important;
+  -webkit-text-fill-color:#67e8f9 !important;
+  font-size:11px;
+  font-weight:1000;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+
+body.freshCommandOwnerMode .freshCommandEventFeed section b{
+  display:block;
+  margin-top:8px;
+  color:#fff !important;
+  -webkit-text-fill-color:#fff !important;
+  font-size:14px;
+  font-weight:1000;
+  line-height:1.25;
+}
+
+body.freshCommandOwnerMode .freshCommandEventFeed section p{
+  margin:6px 0 0;
+  color:#e5e7eb !important;
+  -webkit-text-fill-color:#e5e7eb !important;
+  font-size:13px;
+  font-weight:850;
+  line-height:1.35;
+}
+
+body.freshCommandOwnerMode .freshCommandEmpty{
+  display:grid;
+  gap:10px;
+  justify-items:center;
+}
+
+body.freshCommandOwnerMode .freshCommandEmpty button{
+  width:min(260px,100%);
+  margin-top:0;
+}
+
+body.freshCommandOwnerMode .freshCommandEmpty button + button{
+  background:#1f2937 !important;
+  color:#fff !important;
+  -webkit-text-fill-color:#fff !important;
+  border:1px solid rgba(255,255,255,.14);
+}
+
+@media(max-width:1350px){
+  body.freshCommandOwnerMode .freshCommandEventFeed > div{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media(max-width:900px){
+  body.freshCommandOwnerMode .freshCommandSourcePanel,
+  body.freshCommandOwnerMode .freshCommandEventFeed header{
+    display:grid;
+  }
+
+  body.freshCommandOwnerMode .freshCommandSourceActions{
+    justify-items:stretch;
+    min-width:0;
+  }
+
+  body.freshCommandOwnerMode .freshCommandEventFeed > div{
+    grid-template-columns:1fr;
+  }
+}

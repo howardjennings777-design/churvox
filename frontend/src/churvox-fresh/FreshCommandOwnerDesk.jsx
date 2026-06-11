@@ -3,6 +3,136 @@ import React from "react";
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
 const COMMAND_MODE_KEY = "churvox:fresh-command-mode:v1";
 
+
+const commandSourceRules = [
+  {
+    id: "source-completed-jobs",
+    title: "Completed jobs with no invoice",
+    area: "Money",
+    actionType: "review_invoice",
+    urgency: "High",
+    page: "invoicecheck",
+    found: "A completed job has photos/time but no invoice has been sent.",
+    prepared: "Prepare invoice draft and check extras before sending.",
+    why: "Completed work should become money quickly.",
+  },
+  {
+    id: "source-overdue-invoices",
+    title: "Overdue invoices",
+    area: "Money",
+    actionType: "send_payment_reminder",
+    urgency: "High",
+    page: "cashflowai",
+    found: "An invoice is overdue or a payment promise has passed.",
+    prepared: "Prepare a friendly reminder for owner approval.",
+    why: "Cashflow improves when overdue money is followed up.",
+  },
+  {
+    id: "source-cold-quotes",
+    title: "Quotes going cold",
+    area: "Money",
+    actionType: "send_quote_followup",
+    urgency: "Medium",
+    page: "followupwriter",
+    found: "A quote has not been accepted or replied to after a few days.",
+    prepared: "Prepare a polite follow-up or staged option.",
+    why: "Warm leads go cold quickly.",
+  },
+  {
+    id: "source-worker-ack",
+    title: "Workers not acknowledged",
+    area: "Today",
+    actionType: "send_worker_brief",
+    urgency: "High",
+    page: "workerbrief",
+    found: "A worker has not acknowledged an assigned job.",
+    prepared: "Prepare reminder, backup worker option or dispatch check.",
+    why: "Owner should know before the customer is affected.",
+  },
+  {
+    id: "source-missing-info",
+    title: "Missing job/client/invoice info",
+    area: "Setup",
+    actionType: "fix_missing_info",
+    urgency: "Medium",
+    page: "missinginfo",
+    found: "A client, job, quote or invoice is missing required details.",
+    prepared: "Prepare the missing-info fix and open the right area.",
+    why: "Incomplete records break workflows later.",
+  },
+  {
+    id: "source-messages",
+    title: "Customer messages",
+    area: "Customers",
+    actionType: "send_customer_message",
+    urgency: "High",
+    page: "messagetriage",
+    found: "A message looks like a booking request, complaint, payment question or quote question.",
+    prepared: "Triage the message and prepare a reply.",
+    why: "Messages should become actions, not get buried.",
+  },
+  {
+    id: "source-photos",
+    title: "Photos uploaded",
+    area: "Customers",
+    actionType: "send_customer_message",
+    urgency: "Medium",
+    page: "photoproof",
+    found: "Worker uploaded job photos.",
+    prepared: "Prepare customer proof, invoice note or review request.",
+    why: "Photos can build trust and support invoices.",
+  },
+];
+
+const commandEventFeed = [
+  {
+    id: "event-1",
+    title: "Worker completed Belmont lawn reset",
+    time: "8:42 AM",
+    type: "Job completed",
+    result: "Command prepared invoice review.",
+  },
+  {
+    id: "event-2",
+    title: "Invoice INV-1007 became overdue",
+    time: "9:05 AM",
+    type: "Money",
+    result: "Command prepared payment reminder.",
+  },
+  {
+    id: "event-3",
+    title: "Upper Hutt quote has no reply",
+    time: "9:28 AM",
+    type: "Quote",
+    result: "Command prepared follow-up.",
+  },
+  {
+    id: "event-4",
+    title: "Customer message looks like a complaint",
+    time: "10:10 AM",
+    type: "Message",
+    result: "Command prepared reply for approval.",
+  },
+];
+
+function sourceRuleToSlip(rule) {
+  return normalizeSlip({
+    id: `${rule.id}-${Date.now()}`,
+    group: "Command source check",
+    actionType: rule.actionType,
+    title: rule.title,
+    info: `${rule.area} · source rule`,
+    urgency: rule.urgency,
+    found: rule.found,
+    prepared: rule.prepared,
+    why: rule.why,
+    owner: "Approve, edit, snooze, ignore, or open.",
+    area: rule.area,
+    page: rule.page,
+    createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+  });
+}
+
 const starterSlips = [
   {
     id: "starter-money-1",
@@ -322,6 +452,8 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
   const today = openSlips.filter((slip) => slip.areaGroup === "Today");
   const setup = openSlips.filter((slip) => slip.areaGroup === "Setup");
   const showDemoTools = shouldShowDemoTools();
+  const sourceRuleCount = commandSourceRules.length;
+  const eventCount = commandEventFeed.length;
 
   const groups = ["Needs approval", "Money", "Today", "Customers", "Setup"];
   const visible = activeGroup === "Needs approval"
@@ -412,6 +544,16 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
     setSnoozing(null);
   }
 
+
+  function runSourceChecks() {
+    const existing = slips.map(normalizeSlip);
+    const generated = commandSourceRules.map(sourceRuleToSlip);
+    const next = [...generated, ...existing].slice(0, 180);
+    setSlips(next);
+    safeSaveSlips(next);
+    setActiveGroup("Needs approval");
+  }
+
   return (
     <section className="freshCommandDeskPage">
       <div className="freshCommandDeskHero">
@@ -459,6 +601,20 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
           <button type="button" onClick={clearDemo}>Reload sample slips</button>
         </details>
       )}
+
+
+      <div className="freshCommandSourcePanel">
+        <div>
+          <span>Command checks</span>
+          <h2>What Churvox watches for</h2>
+          <p>These are the real source rules Command should use: jobs, invoices, quotes, workers, messages, photos and missing setup data.</p>
+        </div>
+
+        <div className="freshCommandSourceActions">
+          <b>{sourceRuleCount} source rules</b>
+          <button type="button" onClick={runSourceChecks}>Run checks now</button>
+        </div>
+      </div>
 
       <div className="freshCommandFocusRow">
         <button type="button" onClick={() => setActiveGroup("Money")}>
@@ -541,11 +697,33 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
           </article>
         )) : (
           <div className="freshCommandEmpty">
-            <b>No open actions in {activeGroup}.</b>
-            <p>That is good. Open another group or ask Churvox to prepare something.</p>
+            <b>Nothing needs approval in {activeGroup}.</b>
+            <p>Churvox will show work here when jobs, invoices, quotes, workers, messages, photos or setup items need attention.</p>
+            <button type="button" onClick={runSourceChecks}>Run Command checks</button>
             <button type="button" onClick={() => onNavigate?.("askchurvox")}>Ask Churvox</button>
           </div>
         )}
+      </div>
+
+
+      <div className="freshCommandEventFeed">
+        <header>
+          <div>
+            <span>Event feed</span>
+            <h2>What triggered Command</h2>
+          </div>
+          <b>{eventCount} recent events</b>
+        </header>
+
+        <div>
+          {commandEventFeed.map((event) => (
+            <section key={event.id}>
+              <small>{event.time} · {event.type}</small>
+              <b>{event.title}</b>
+              <p>{event.result}</p>
+            </section>
+          ))}
+        </div>
       </div>
 
       {doneSlips.length > 0 && (
