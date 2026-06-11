@@ -1,0 +1,47 @@
+.simplePublic{
+  background:
+    radial-gradient(circle at 12% 0%,rgba(249,115,22,.38),transparent 30rem),
+    radial-gradient(circle at 86% 8%,rgba(251,146,60,.22),transparent 22rem),
+    linear-gradient(135deg,#111827 0%,#1f2937 48%,#3b2414 100%)!important;
+  color:#f9fafb!important;
+}
+.simplePublic::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:linear-gradient(90deg,rgba(249,115,22,.18),transparent 34%,rgba(255,255,255,.05));
+  pointer-events:none;
+}
+.simplePublic>*{position:relative;z-index:1}
+.simpleBrand{color:#f9fafb!important}
+.simpleBrand b{color:#fff!important}
+.simpleBrand small{color:#fed7aa!important}
+.simpleGhost{background:rgba(255,255,255,.08)!important;border:1px solid rgba(255,247,237,.18)!important;color:#f9fafb!important}
+.simplePrimary{background:#f97316!important;color:#111827!important;box-shadow:0 14px 38px rgba(249,115,22,.32)!important}
+.simpleKicker{background:#f97316!important;color:#111827!important;box-shadow:0 12px 30px rgba(249,115,22,.28)!important}
+.simpleHero h1{color:#fff!important}
+.simpleLead{color:#e5e7eb!important}
+.simpleProof span{background:rgba(255,247,237,.12)!important;border:1px solid rgba(255,247,237,.18)!important;color:#ffedd5!important}
+.simpleCard{
+  background:rgba(255,247,237,.96)!important;
+  color:#111827!important;
+  border:1px solid rgba(249,115,22,.28)!important;
+  box-shadow:0 32px 90px rgba(0,0,0,.35)!important;
+}
+.simpleCard h2{color:#111827!important}
+.simpleCard p{color:#374151!important}
+.simpleCard li{background:#fff7ed!important;border:1px solid rgba(249,115,22,.16)!important;color:#111827!important}
+.simpleBand{
+  background:rgba(255,247,237,.96)!important;
+  border:1px solid rgba(249,115,22,.24)!important;
+  box-shadow:0 26px 70px rgba(0,0,0,.24)!important;
+  color:#111827!important;
+}
+.simpleBand h2{color:#111827!important}
+.simpleBand p{color:#374151!important;font-weight:800}
+.simpleGrid article{background:#fff!important;border:1px solid rgba(249,115,22,.20)!important}
+.simpleGrid b{color:#111827!important}
+.simpleGrid span{color:#4b5563!important}
+.simpleFooter{color:#d1d5db!important}
+.simpleFooter b{color:#fff!important}
+.simpleFooter a{color:#ffedd5!important}
