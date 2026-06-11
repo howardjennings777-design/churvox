@@ -64,6 +64,7 @@ import { OnboardingCommandPage, WorkerCommandPage } from "./pages/CommandRestPag
 import { hasPlanAtLeast, nicePlanName, requiredPlanLabel } from "./config/churvoxPlans";
 import ClientWorkbenchCommandPage from "./pages/ClientWorkbenchCommandPage";
 import FreshApp from "./churvox-fresh/FreshApp";
+import { trackPlatformVisit } from "./lib/platformTelemetry";
 
 const Spinner = () => (<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-amber-400" /></div>);
 const AppPage = ({ children }) => <>{children}</>;
@@ -83,6 +84,7 @@ function QaAuditorRoute({ children }) { const { user, loading, normalizedRole, i
 function RoleRedirect() { const { user, loading, normalizedRole } = useAuth(); if (loading) return <Spinner />; if (!user) return <Navigate to="/login" replace />; const email = (user?.email || "").toLowerCase(); const isPlatformOwner = email === "hello@churvox.com" || user?.is_platform_owner === true; if (isPlatformOwner) return <Navigate to="/admin" replace />; return <Navigate to={getDefaultRoute(normalizedRole)} replace />; }
 
 function App() {
+  React.useEffect(() => { trackPlatformVisit(); }, []);
   React.useEffect(() => { const run = async () => { try { const params = new URLSearchParams(window.location.search); const checkout = params.get("checkout"); const sessionId = params.get("session_id") || ""; const plan = (params.get("plan") || "").toLowerCase(); if (!checkout && !sessionId) return; if (checkout === "success") toast.success(plan ? `Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan is being activated` : "Checkout finished — refreshing plan status"); else if (checkout === "cancelled") toast.info("Checkout cancelled — no changes to your plan"); window.dispatchEvent(new Event("churvox-auth-refresh")); const cleaned = new URL(window.location.href); ["checkout", "session_id", "plan"].forEach((k) => cleaned.searchParams.delete(k)); window.history.replaceState({}, document.title, cleaned.toString()); } catch (err) { console.error("Checkout return handler failed:", err); } }; run(); }, []);
   return <BrowserRouter><AuthProvider><ErrorBoundary><Toaster position="top-right" richColors /><ChurvoxHelpWidget /><Routes>
     <Route path="/operator-tools" element={<Navigate to="/dashboard" replace />} /><Route path="/command-board" element={<Navigate to="/dashboard" replace />} /><Route path="/smart-hub" element={<Navigate to="/dashboard" replace />} />

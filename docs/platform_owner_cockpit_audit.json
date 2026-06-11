@@ -1,0 +1,65 @@
+{
+  "score": 100,
+  "checks": [
+    {
+      "name": "Owner overview endpoint exists",
+      "status": "PASS",
+      "evidence": "Backend owner overview endpoint exists.",
+      "fix": "Add owner overview endpoint."
+    },
+    {
+      "name": "Visitor tracking endpoint exists",
+      "status": "PASS",
+      "evidence": "Public visitor tracking endpoint exists.",
+      "fix": "Add visitor tracking endpoint."
+    },
+    {
+      "name": "Visitor telemetry installed",
+      "status": "PASS",
+      "evidence": "App calls visitor tracker.",
+      "fix": "Call tracker from App."
+    },
+    {
+      "name": "Owner cockpit uses new overview",
+      "status": "PASS",
+      "evidence": "Owner cockpit loads live overview.",
+      "fix": "Load owner overview."
+    },
+    {
+      "name": "Shows visitors/on now",
+      "status": "PASS",
+      "evidence": "Visitor and active-now cards exist.",
+      "fix": "Add visitor cards."
+    },
+    {
+      "name": "Shows paid/buyers",
+      "status": "PASS",
+      "evidence": "Paid/buyer section exists.",
+      "fix": "Add buyers section."
+    },
+    {
+      "name": "Can delete user",
+      "status": "PASS",
+      "evidence": "Owner can delete user.",
+      "fix": "Add delete user action."
+    },
+    {
+      "name": "Can delete business",
+      "status": "PASS",
+      "evidence": "Owner can delete business/workspace.",
+      "fix": "Add delete business action."
+    },
+    {
+      "name": "Can preview/delete test data",
+      "status": "PASS",
+      "evidence": "Old test cleanup exists.",
+      "fix": "Add cleanup action."
+    },
+    {
+      "name": "Platform owner route protected",
+      "status": "PASS",
+      "evidence": "Backend owner endpoints require platform owner.",
+      "fix": "Protect owner endpoints."
+    }
+  ]
+}
