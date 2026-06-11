@@ -4,6 +4,13 @@ import { useAuth } from "@/context/AuthContext";
 import { normalizeRole, getDefaultRoute } from "@/lib/roles";
 import "./AuthPublicCommand.css";
 
+const inputStyle = {
+  color: "#000000",
+  WebkitTextFillColor: "#000000",
+  caretColor: "#000000",
+  backgroundColor: "#ffffff",
+};
+
 const getPostLoginPath = (payload = {}) => {
   const user = payload?.user || payload || {};
   const email = String(user?.email || payload?.email || "").trim().toLowerCase();
@@ -61,7 +68,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="cvPublicAuth" data-version="CHURVOX_PUBLIC_LOGIN_20260611">
+    <main className="cvPublicAuth">
       <header className="cvPublicAuthNav">
         <Link to="/" className="cvPublicAuthBrand">Churvox</Link>
 
@@ -74,7 +81,7 @@ export default function LoginPage() {
       </header>
 
       <section className="cvPublicAuthShell">
-        <form className="cvPublicAuthCard" onSubmit={handleSubmit} data-testid="login-form">
+        <form className="cvPublicAuthCard" onSubmit={handleSubmit}>
           <p className="cvPublicAuthKicker">Owner login</p>
           <h1>Sign in to Churvox.</h1>
           <p className="cvPublicAuthIntro">
@@ -86,7 +93,7 @@ export default function LoginPage() {
           <label>
             Email
             <input
-              data-testid="login-email-input"
+              style={inputStyle}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               type="email"
@@ -99,7 +106,7 @@ export default function LoginPage() {
           <label>
             Password
             <input
-              data-testid="login-password-input"
+              style={inputStyle}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               type={showPassword ? "text" : "password"}
@@ -117,14 +124,14 @@ export default function LoginPage() {
             {showPassword ? "Hide password" : "Show password"}
           </button>
 
-          <button className="cvPublicAuthSubmit" data-testid="login-submit-button" disabled={loading}>
+          <button className="cvPublicAuthSubmit" disabled={loading}>
             {loading ? "Signing in..." : "Sign in"}
           </button>
 
           <p className="cvPublicAuthBottom">
             New here? <Link to="/signup">Create an account</Link>
             {" · "}
-            <Link to="/forgot-password" data-testid="forgot-password-link">Forgot password?</Link>
+            <Link to="/forgot-password">Forgot password?</Link>
           </p>
         </form>
 

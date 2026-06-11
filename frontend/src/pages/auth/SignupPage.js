@@ -6,6 +6,13 @@ import "./AuthPublicCommand.css";
 
 const FIRST_SETUP_KEY = "churvox_first_setup_pending";
 
+const inputStyle = {
+  color: "#000000",
+  WebkitTextFillColor: "#000000",
+  caretColor: "#000000",
+  backgroundColor: "#ffffff",
+};
+
 export default function SignupPage() {
   const navigate = useNavigate();
   const { register } = useAuth();
@@ -87,7 +94,7 @@ export default function SignupPage() {
   };
 
   return (
-    <main className="cvPublicAuth" data-version="CHURVOX_PUBLIC_SIGNUP_20260611">
+    <main className="cvPublicAuth">
       <header className="cvPublicAuthNav">
         <Link to="/" className="cvPublicAuthBrand">Churvox</Link>
 
@@ -100,7 +107,7 @@ export default function SignupPage() {
       </header>
 
       <section className="cvPublicAuthShell">
-        <form className="cvPublicAuthCard" onSubmit={handleSubmit} data-testid="signup-form">
+        <form className="cvPublicAuthCard" onSubmit={handleSubmit}>
           <p className="cvPublicAuthKicker">Create account</p>
           <h1>Start your Churvox trial.</h1>
           <p className="cvPublicAuthIntro">
@@ -112,19 +119,20 @@ export default function SignupPage() {
           <label>
             Full name
             <input
+              style={inputStyle}
               name="name"
               value={formData.name}
               onChange={handleChange}
               autoComplete="name"
               placeholder="Your name"
               required
-              data-testid="signup-name-input"
             />
           </label>
 
           <label>
             Email
             <input
+              style={inputStyle}
               name="email"
               type="email"
               value={formData.email}
@@ -132,25 +140,25 @@ export default function SignupPage() {
               autoComplete="email"
               placeholder="you@example.com"
               required
-              data-testid="signup-email-input"
             />
           </label>
 
           <label>
             Business name
             <input
+              style={inputStyle}
               name="business_name"
               value={formData.business_name}
               onChange={handleChange}
               autoComplete="organization"
               placeholder="Business name"
-              data-testid="signup-business-input"
             />
           </label>
 
           <label>
             Password
             <input
+              style={inputStyle}
               name="password"
               type="password"
               value={formData.password}
@@ -158,13 +166,13 @@ export default function SignupPage() {
               autoComplete="new-password"
               placeholder="Password"
               required
-              data-testid="signup-password-input"
             />
           </label>
 
           <label>
             Confirm password
             <input
+              style={inputStyle}
               name="confirmPassword"
               type="password"
               value={formData.confirmPassword}
@@ -172,22 +180,21 @@ export default function SignupPage() {
               autoComplete="new-password"
               placeholder="Confirm password"
               required
-              data-testid="signup-confirm-password-input"
             />
           </label>
 
-          <button className="cvPublicAuthSubmit" type="submit" disabled={loading} data-testid="signup-submit-button">
+          <button className="cvPublicAuthSubmit" type="submit" disabled={loading}>
             {loading ? "Creating account..." : "Create account"}
           </button>
 
           <p className="cvPublicAuthBottom">
-            Already have an account? <Link to="/login" data-testid="login-link">Sign in</Link>
+            Already have an account? <Link to="/login">Sign in</Link>
           </p>
         </form>
 
         <aside className="cvPublicAuthPanel">
           <p>Churvox does the admin. You approve.</p>
-          <h2>One public signup flow for real customer testing.</h2>
+          <h2>One proper public signup flow for real customers.</h2>
           <ul>
             <li>Readable fields on mobile and desktop</li>
             <li>Proper public navigation</li>
