@@ -1,6 +1,8 @@
 import React from "react";
 
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
+const FIRST_SETUP_KEY = "churvox_first_setup_pending";
+const FIRST_SETUP_SEEN_KEY = "churvox_first_setup_seen";
 
 const setupChecks = [
   {
@@ -124,8 +126,28 @@ export default function FreshSetupAssistant({ onNavigate }) {
   const score = Math.round((ready / checks.length) * 100);
   const next = checks.find((item) => item.status !== "Done") || checks[0];
 
+  function clearSetupFlag() {
+    try {
+      window.localStorage.removeItem(FIRST_SETUP_KEY);
+      window.localStorage.setItem(FIRST_SETUP_SEEN_KEY, "true");
+    } catch {
+      // Keep the guide moving.
+    }
+  }
+
   function updateStatus(id, status) {
-    setChecks((current) => current.map((item) => item.id === id ? { ...item, status } : item));
+    setChecks((current) => {
+      const nextChecks = current.map((item) => item.id === id ? { ...item, status } : item);
+      if (nextChecks.every((item) => item.status === "Done")) {
+        clearSetupFlag();
+      }
+      return nextChecks;
+    });
+  }
+
+  function finishGuide() {
+    clearSetupFlag();
+    onNavigate?.("command");
   }
 
   return (
@@ -133,10 +155,10 @@ export default function FreshSetupAssistant({ onNavigate }) {
       <div className="freshOwnerAiHero">
         <div>
           <span>AI Setup Guide</span>
-          <h1>Let’s set up Churvox with real data.</h1>
+          <h1>Let’s get Churvox working properly.</h1>
           <p>
-            I’ll show you exactly what to do first: set business details, add a real client,
-            create a job, prepare an invoice, then use Command to approve admin work.
+            Use this guide when you first sign up, or anytime you get stuck later.
+            It tells you what matters, why it matters, how to do it, and where to go next.
           </p>
         </div>
 
@@ -157,12 +179,12 @@ export default function FreshSetupAssistant({ onNavigate }) {
 
       <div className="freshGuideDeep">
         <article>
-          <b>How to use Churvox</b>
-          <p>Start with real business details, then one real client, one real job, one invoice and one Command approval.</p>
+          <b>Start here, return anytime</b>
+          <p>New users follow the setup path. Existing users come back here when they forget what to do next.</p>
         </article>
         <article>
-          <b>What AI does</b>
-          <p>AI tells the owner what is missing, what to do next, and can send setup actions into Command for approval.</p>
+          <b>What Churvox should tell you</b>
+          <p>Churvox should point out missing details, jobs not invoiced, quotes to chase, overdue invoices and setup steps still unfinished.</p>
         </article>
         <article>
           <b>Owner control</b>
@@ -199,6 +221,14 @@ export default function FreshSetupAssistant({ onNavigate }) {
             </div>
           </article>
         ))}
+      </div>
+
+      <div className="freshMorningLead">
+        <div>
+          <b>Finished setup or stuck?</b>
+          <p>Open Command next. Command is where Churvox should tell you what needs doing, what is missing, and what the owner should approve first.</p>
+        </div>
+        <button type="button" onClick={finishGuide}>Finish guide and open Command</button>
       </div>
     </section>
   );
