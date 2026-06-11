@@ -1,0 +1,59 @@
+{
+  "score": 89,
+  "checks": [
+    {
+      "name": "Worker help box exists",
+      "status": "PASS",
+      "evidence": "Worker app has a contact office panel with message textarea and send button.",
+      "fix": "Add worker contact office panel."
+    },
+    {
+      "name": "Worker help opens from worker app",
+      "status": "PASS",
+      "evidence": "Worker pages can open the contact office panel.",
+      "fix": "Wire Contact office buttons into worker list/detail pages."
+    },
+    {
+      "name": "Worker help posts office request",
+      "status": "PASS",
+      "evidence": "Panel posts to /worker/contact-office.",
+      "fix": "Post worker message to backend office endpoint."
+    },
+    {
+      "name": "Worker help creates Command slip",
+      "status": "PASS",
+      "evidence": "Panel also creates a Command slip for owner visibility.",
+      "fix": "Create owner Command slip when worker sends help request."
+    },
+    {
+      "name": "Command bridge posts backend slips",
+      "status": "FAIL",
+      "evidence": "Shared Command bridge posts slips to backend.",
+      "fix": "Wire Command bridge to backend."
+    },
+    {
+      "name": "Command backend create endpoint exists",
+      "status": "PASS",
+      "evidence": "Backend Command create slip endpoint exists.",
+      "fix": "Add POST /api/command/slips."
+    },
+    {
+      "name": "Owner Command reads backend slips",
+      "status": "PASS",
+      "evidence": "Owner Command page loads backend slips.",
+      "fix": "Make owner Command read backend slips."
+    },
+    {
+      "name": "Worker help includes job context",
+      "status": "PASS",
+      "evidence": "Worker message includes job id/title when available.",
+      "fix": "Attach job context to worker help messages."
+    },
+    {
+      "name": "Worker help includes worker context",
+      "status": "PASS",
+      "evidence": "Worker message includes worker identity fields.",
+      "fix": "Attach worker identity to Command slip payload."
+    }
+  ]
+}

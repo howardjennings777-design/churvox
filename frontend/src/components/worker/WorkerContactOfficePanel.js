@@ -3,9 +3,12 @@ import { Building2, Mail, Phone, Copy, LifeBuoy, Send, X } from "lucide-react";
 import { PremiumButton, PremiumCard } from "@/components/premium";
 import { useApi } from "@/hooks/useApi";
 import { toast } from "sonner";
+import { sendFreshSlipToCommand } from "@/churvox-fresh/commandBridge";
+import { useAuth } from "@/context/AuthContext";
 
 export default function WorkerContactOfficePanel({ open, onClose, defaultMessage = "I need help with my jobs", jobId = "", jobTitle = "" }) {
   const { get, post } = useApi();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [businessName, setBusinessName] = useState("Your Office");
   const [contacts, setContacts] = useState([]);
@@ -32,6 +35,68 @@ export default function WorkerContactOfficePanel({ open, onClose, defaultMessage
   }, [open, get]);
 
   const hasContacts = useMemo(() => contacts.length > 0, [contacts]);
+
+
+  const sendHelpRequest = async () => {
+    const cleanMessage = String(message || "").trim();
+    if (!cleanMessage) return;
+
+    setSending(true);
+
+    let officeOk = false;
+    let commandOk = false;
+    let officeError = "";
+
+    try {
+      const res = await post("/worker/contact-office", {
+        message: cleanMessage,
+        job_id: jobId || undefined,
+        job_title: jobTitle || undefined,
+      });
+
+      officeOk = !!res?.success;
+      officeError = res?.error || "Could not send office request";
+
+      try {
+        await sendFreshSlipToCommand({
+          id: `worker-help-${jobId || "general"}-${Date.now()}`,
+          group: "Worker messages",
+          title: jobTitle ? `Worker needs help: ${jobTitle}` : "Worker needs help",
+          info: jobTitle || "General worker help request",
+          urgency: "High",
+          found: `${user?.name || user?.email || "A worker"} sent a help request from the worker app.`,
+          prepared: cleanMessage,
+          why: "The owner needs to see worker blockers quickly so jobs do not stall in the field.",
+          owner: "Open the job if linked, contact the worker, then mark this handled.",
+          area: "Workers",
+          page: jobId ? "jobs" : "team",
+          sourceType: "worker_help",
+          sourceId: jobId || "",
+          actionType: "worker_help_request",
+          payload: {
+            message: cleanMessage,
+            job_id: jobId || "",
+            job_title: jobTitle || "",
+            worker_id: user?.id || user?._id || user?.worker_id || "",
+            worker_name: user?.name || user?.full_name || "",
+            worker_email: user?.email || "",
+          },
+        }, { type: "worker-contact-office" });
+        commandOk = true;
+      } catch (_) {
+        commandOk = false;
+      }
+
+      if (officeOk || commandOk) {
+        toast.success(commandOk ? "Help request sent to Command" : "Help request sent");
+        onClose?.();
+      } else {
+        toast.error(officeError);
+      }
+    } finally {
+      setSending(false);
+    }
+  };
 
   if (!open) return null;
 
@@ -72,13 +137,7 @@ export default function WorkerContactOfficePanel({ open, onClose, defaultMessage
           <div className="rounded-xl border border-[var(--cx-border)] p-3 space-y-2">
             <p className="text-sm font-semibold text-[var(--cx-text)] flex items-center gap-1"><LifeBuoy className="h-4 w-4" />Need help now?</p>
             <textarea rows={3} className="px-input" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Tell the office what you need help with" />
-            <PremiumButton className="w-full" onClick={async () => {
-              setSending(true);
-              const res = await post("/worker/contact-office", { message, job_id: jobId || undefined, job_title: jobTitle || undefined });
-              if (res?.success) toast.success(res.data?.message || "Help request sent");
-              else toast.error(res?.error || "Could not send help request");
-              setSending(false);
-            }} disabled={sending || !message.trim()} iconLeft={<Send className="h-4 w-4" />}>
+            <PremiumButton className="w-full" onClick={sendHelpRequest} disabled={sending || !message.trim()} iconLeft={<Send className="h-4 w-4" />}>
               {sending ? "Sending..." : "Send help request"}
             </PremiumButton>
           </div>
