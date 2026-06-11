@@ -1,0 +1,321 @@
+{
+  "score": 96,
+  "verdict": "HEARTY ENOUGH FOR REAL TESTING",
+  "checks": [
+    {
+      "area": "Core",
+      "name": "Frontend package exists",
+      "status": "PASS",
+      "evidence": "frontend/package.json found.",
+      "fix": "Restore frontend package."
+    },
+    {
+      "area": "Core",
+      "name": "Backend exists",
+      "status": "PASS",
+      "evidence": "Backend files found.",
+      "fix": "Restore backend app."
+    },
+    {
+      "area": "Core",
+      "name": "Error boundary exists",
+      "status": "PASS",
+      "evidence": "Frontend has ErrorBoundary usage.",
+      "fix": "Wrap major routes in ErrorBoundary."
+    },
+    {
+      "area": "Core",
+      "name": "Loading states exist",
+      "status": "PASS",
+      "evidence": "Loading states detected.",
+      "fix": "Add loading states."
+    },
+    {
+      "area": "Core",
+      "name": "Empty states exist",
+      "status": "PASS",
+      "evidence": "Empty state text detected.",
+      "fix": "Add empty states."
+    },
+    {
+      "area": "Brand",
+      "name": "Old name mostly removed",
+      "status": "WARN",
+      "evidence": "Old refs found: grassley.",
+      "fix": "Remove old Grassly/Grassley references."
+    },
+    {
+      "area": "Brand",
+      "name": "Churvox name present",
+      "status": "PASS",
+      "evidence": "Churvox name detected.",
+      "fix": "Add Churvox brand."
+    },
+    {
+      "area": "Auth/API",
+      "name": "API base helper exists",
+      "status": "PASS",
+      "evidence": "Frontend API base detected.",
+      "fix": "Use central API base helper."
+    },
+    {
+      "area": "Auth/API",
+      "name": "Credentials/cookies enabled",
+      "status": "PASS",
+      "evidence": "Credentialed requests detected.",
+      "fix": "Enable credentials/cookies."
+    },
+    {
+      "area": "Auth/API",
+      "name": "Login wired",
+      "status": "PASS",
+      "evidence": "Login route reference detected.",
+      "fix": "Wire login."
+    },
+    {
+      "area": "Auth/API",
+      "name": "Signup/register wired",
+      "status": "PASS",
+      "evidence": "Register route reference detected.",
+      "fix": "Wire signup."
+    },
+    {
+      "area": "Auth/API",
+      "name": "Forgot/reset password wired",
+      "status": "PASS",
+      "evidence": "Password recovery detected.",
+      "fix": "Wire forgot/reset password."
+    },
+    {
+      "area": "Auth/API",
+      "name": "Email provider referenced",
+      "status": "PASS",
+      "evidence": "Email provider references detected.",
+      "fix": "Set email provider env vars on Render."
+    },
+    {
+      "area": "Roles",
+      "name": "Role source exists",
+      "status": "PASS",
+      "evidence": "Role source of truth detected.",
+      "fix": "Create role source."
+    },
+    {
+      "area": "Roles",
+      "name": "Worker route guard exists",
+      "status": "PASS",
+      "evidence": "Worker route guard detected.",
+      "fix": "Block non-worker access."
+    },
+    {
+      "area": "Roles",
+      "name": "Business route blocks worker",
+      "status": "PASS",
+      "evidence": "Workers redirected away from business shell.",
+      "fix": "Block worker from owner app."
+    },
+    {
+      "area": "Roles",
+      "name": "Payroll route separated",
+      "status": "PASS",
+      "evidence": "Payroll board detected.",
+      "fix": "Separate payroll workspace."
+    },
+    {
+      "area": "Roles",
+      "name": "Reports protected",
+      "status": "PASS",
+      "evidence": "ReportsRoute detected.",
+      "fix": "Protect reports."
+    },
+    {
+      "area": "Command",
+      "name": "Command route/page exists",
+      "status": "PASS",
+      "evidence": "Command owner desk detected.",
+      "fix": "Add Command desk."
+    },
+    {
+      "area": "Command",
+      "name": "Command backend slips referenced",
+      "status": "PASS",
+      "evidence": "Command API referenced.",
+      "fix": "Wire Command backend."
+    },
+    {
+      "area": "Command",
+      "name": "Command approve/edit/snooze exists",
+      "status": "PASS",
+      "evidence": "Command owner controls detected.",
+      "fix": "Add owner controls."
+    },
+    {
+      "area": "Command",
+      "name": "Worker help lands in Command",
+      "status": "PASS",
+      "evidence": "Worker help Command slip detected.",
+      "fix": "Send worker help to Command."
+    },
+    {
+      "area": "Worker",
+      "name": "Worker app routes exist",
+      "status": "PASS",
+      "evidence": "Worker routes detected.",
+      "fix": "Add worker routes."
+    },
+    {
+      "area": "Worker",
+      "name": "Worker job assignment filtering exists",
+      "status": "PASS",
+      "evidence": "Worker assignment filtering detected.",
+      "fix": "Filter jobs assigned to worker."
+    },
+    {
+      "area": "Worker",
+      "name": "Worker timers exist",
+      "status": "PASS",
+      "evidence": "Worker timer endpoints detected.",
+      "fix": "Wire timers."
+    },
+    {
+      "area": "Worker",
+      "name": "Worker notes/photos exist",
+      "status": "PASS",
+      "evidence": "Worker evidence detected.",
+      "fix": "Add notes/photos."
+    },
+    {
+      "area": "Worker",
+      "name": "Worker contact office exists",
+      "status": "PASS",
+      "evidence": "Worker contact office detected.",
+      "fix": "Add worker help panel."
+    },
+    {
+      "area": "Money",
+      "name": "Public quote exists",
+      "status": "PASS",
+      "evidence": "Public quote detected.",
+      "fix": "Add public quote."
+    },
+    {
+      "area": "Money",
+      "name": "Public invoice exists",
+      "status": "PASS",
+      "evidence": "Public invoice detected.",
+      "fix": "Add public invoice."
+    },
+    {
+      "area": "Money",
+      "name": "Invoice PDF sending exists",
+      "status": "PASS",
+      "evidence": "Invoice PDF sending detected.",
+      "fix": "Wire invoice PDF sending."
+    },
+    {
+      "area": "Money",
+      "name": "GST/totals visible",
+      "status": "PASS",
+      "evidence": "GST/total references detected.",
+      "fix": "Show GST/totals."
+    },
+    {
+      "area": "Money",
+      "name": "Stripe/plan flow exists",
+      "status": "PASS",
+      "evidence": "Checkout/Stripe references detected.",
+      "fix": "Wire Stripe checkout."
+    },
+    {
+      "area": "Tradie Flow",
+      "name": "Recurring concepts exist",
+      "status": "PASS",
+      "evidence": "Recurring/repeat references detected.",
+      "fix": "Add recurring jobs."
+    },
+    {
+      "area": "Tradie Flow",
+      "name": "CSV import concepts exist",
+      "status": "PASS",
+      "evidence": "CSV/import references detected.",
+      "fix": "Add CSV import."
+    },
+    {
+      "area": "Tradie Flow",
+      "name": "Client memory fields exist",
+      "status": "PASS",
+      "evidence": "Client memory references detected.",
+      "fix": "Add client memory."
+    },
+    {
+      "area": "Tradie Flow",
+      "name": "Price memory fields exist",
+      "status": "PASS",
+      "evidence": "Price memory references detected.",
+      "fix": "Add price memory."
+    },
+    {
+      "area": "Tradie Flow",
+      "name": "Offline queue helper exists",
+      "status": "PASS",
+      "evidence": "Offline queue helper detected.",
+      "fix": "Add offline queue."
+    },
+    {
+      "area": "UI",
+      "name": "Mobile worker nav exists",
+      "status": "PASS",
+      "evidence": "Worker bottom nav detected.",
+      "fix": "Add mobile worker nav."
+    },
+    {
+      "area": "UI",
+      "name": "Premium components used",
+      "status": "PASS",
+      "evidence": "Premium components detected.",
+      "fix": "Use consistent UI components."
+    },
+    {
+      "area": "UI",
+      "name": "Light/off-white styling exists",
+      "status": "PASS",
+      "evidence": "Light/polish styling detected.",
+      "fix": "Polish theme."
+    },
+    {
+      "area": "UI",
+      "name": "Text visibility safeguards exist",
+      "status": "PASS",
+      "evidence": "Text visibility styles detected.",
+      "fix": "Fix hidden text."
+    },
+    {
+      "area": "UI",
+      "name": "Public pages share document template",
+      "status": "PASS",
+      "evidence": "Public document template detected.",
+      "fix": "Use shared public template."
+    },
+    {
+      "area": "Launch",
+      "name": "Launch audit exists",
+      "status": "PASS",
+      "evidence": "Launch done audit exists.",
+      "fix": "Create launch audit."
+    },
+    {
+      "area": "Launch",
+      "name": "Full wiring audit exists",
+      "status": "PASS",
+      "evidence": "Full wiring audit exists.",
+      "fix": "Create wiring audit."
+    },
+    {
+      "area": "Launch",
+      "name": "Real testing reminders exist",
+      "status": "WARN",
+      "evidence": "Real testing reminders detected.",
+      "fix": "Add test plan."
+    }
+  ]
+}
