@@ -1,15 +1,15 @@
 {
-  "generated": "2026-06-11T02:42:20Z",
-  "score_percent": 63,
-  "score_pass": 33,
+  "generated": "2026-06-11T02:45:44Z",
+  "score_percent": 69,
+  "score_pass": 36,
   "score_warn": 13,
-  "score_fail": 6,
+  "score_fail": 3,
   "score_total": 52,
   "checks": [
     {
       "category": "Command",
       "name": "Command backend route mounted",
-      "status": "FAIL",
+      "status": "PASS",
       "severity": "High",
       "evidence": "Looks for app.use('/api/command', ...).",
       "recommendation": "Mount backend commandRoutes at /api/command."
@@ -160,6 +160,13 @@
     }
   ],
   "routes": [
+    {
+      "method": "USE",
+      "path": "/api/command",
+      "handler": "commandRoutes",
+      "file": "backend/frontend_dist/static/js/main.ac3852af.js",
+      "line": 5
+    },
     {
       "method": "POST",
       "path": "/slips",
@@ -8437,207 +8444,207 @@
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "demo"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "sample"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "mock"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "preview"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "demo"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "sample"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "demo"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "sample"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "localStorage"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "localStorage"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "localStorage"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "localStorage"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "localStorage"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "localStorage"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "localStorage"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "localStorage"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "localStorage"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "localStorage"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "localStorage"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "localStorage"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "localStorage"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "localStorage"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "localStorage"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "localStorage"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "localStorage"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "mock"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "mock"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "localStorage"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "mock"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "mock"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "localStorage"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "mock"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "mock"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "mock"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "mock"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "localStorage"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "sessionStorage"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "localStorage"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "localStorage"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "localStorage"
     },
     {
       "file": "backend/frontend_dist/static/js/main.ac3852af.js",
-      "line": 2,
+      "line": 3,
       "sample": "localStorage"
     },
     {

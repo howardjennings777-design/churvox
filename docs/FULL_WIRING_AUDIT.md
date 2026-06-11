@@ -1,20 +1,20 @@
 # Full Backend / Frontend Wiring Audit
 
-Generated: 2026-06-11T02:42:20Z
+Generated: 2026-06-11T02:45:44Z
 
 ## Verdict
 
-**Score:** 63%
-**Weighted pass:** 33/52
+**Score:** 69%
+**Weighted pass:** 36/52
 **Weighted warn:** 13
-**Weighted fail:** 6
-**Verdict:** Not launch-ready. Too many important flows are missing or preview-only.
+**Weighted fail:** 3
+**Verdict:** Partly wired. Some important launch flows still need verification/fixes.
 
 ## Check Results
 
 | Category | Check | Status | Severity | Evidence | Recommendation |
 |---|---|---:|---:|---|---|
-| Command | Command backend route mounted | **FAIL** | High | Looks for app.use('/api/command', ...). | Mount backend commandRoutes at /api/command. |
+| Command | Command backend route mounted | **PASS** | High | Looks for app.use('/api/command', ...). | Mount backend commandRoutes at /api/command. |
 | Command | Command has create slip endpoint | **PASS** | High | Looks for POST route containing slips. | Add POST /api/command/slips so Send to Command creates real backend slips. |
 | Command | Frontend Command reads backend slips | **PASS** | High | Looks for /api/command/slips or COMMAND_API_BASE. | Command page should load slips from backend and only fallback to preview. |
 | Command | Send to Command bridge exists | **PASS** | High | Looks for shared frontend bridge. | Create shared bridge used by all Send to Command buttons. |
@@ -38,6 +38,7 @@ Generated: 2026-06-11T02:42:20Z
 
 | Method | Path | File | Line |
 |---|---|---|---:|
+| USE | `/api/command` | `backend/frontend_dist/static/js/main.ac3852af.js` | 5 |
 | POST | `/slips` | `backend/routes/commandRoutes.js` | 391 |
 | GET | `/slips` | `backend/routes/commandRoutes.js` | 489 |
 | POST | `/scan` | `backend/routes/commandRoutes.js` | 509 |
@@ -591,10 +592,9 @@ Generated: 2026-06-11T02:42:20Z
 
 ## What To Fix First
 
-1. **Command — Command backend route mounted**: Mount backend commandRoutes at /api/command.
-2. **Signup/Auth — Signup/register backend route exists**: Add or verify POST /api/auth/register or /api/auth/signup.
-3. **Command — No localStorage-only Command sends left**: Old preview localStorage can remain as fallback, but every Send to Command button should also call backend bridge.
-4. **Security/Auth — Backend CORS allows credentials**: Backend CORS must allow credentials from www.churvox.com.
-5. **Security/Auth — Secure cookie settings present**: Production cookies should be httpOnly, secure, SameSite=None.
-6. **Frontend buttons — Important buttons have handlers**: Review suspicious buttons so no important button is visual-only.
-7. **Launch readiness — Preview/demo/localStorage usage reviewed**: Keep fallback storage only where intentional; remove fake demo data from launch-critical flows.
+1. **Signup/Auth — Signup/register backend route exists**: Add or verify POST /api/auth/register or /api/auth/signup.
+2. **Command — No localStorage-only Command sends left**: Old preview localStorage can remain as fallback, but every Send to Command button should also call backend bridge.
+3. **Security/Auth — Backend CORS allows credentials**: Backend CORS must allow credentials from www.churvox.com.
+4. **Security/Auth — Secure cookie settings present**: Production cookies should be httpOnly, secure, SameSite=None.
+5. **Frontend buttons — Important buttons have handlers**: Review suspicious buttons so no important button is visual-only.
+6. **Launch readiness — Preview/demo/localStorage usage reviewed**: Keep fallback storage only where intentional; remove fake demo data from launch-critical flows.
