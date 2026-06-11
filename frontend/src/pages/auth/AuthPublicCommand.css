@@ -299,3 +299,44 @@
     font-size: clamp(36px, 12vw, 54px);
   }
 }
+
+/* Keep typed auth input values visible */
+.cvPublicAuth input,
+.cvPublicAuth input[type="text"],
+.cvPublicAuth input[type="email"],
+.cvPublicAuth input[type="password"],
+.wh-auth input,
+.wh-auth input[type="text"],
+.wh-auth input[type="email"],
+.wh-auth input[type="password"] {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  caret-color: #000000 !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  filter: none !important;
+  text-shadow: none !important;
+  mix-blend-mode: normal !important;
+  font-size: 17px !important;
+  font-weight: 800 !important;
+}
+
+.cvPublicAuth input::placeholder,
+.wh-auth input::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  opacity: 1 !important;
+}
+
+.cvPublicAuth input:-webkit-autofill,
+.cvPublicAuth input:-webkit-autofill:hover,
+.cvPublicAuth input:-webkit-autofill:focus,
+.wh-auth input:-webkit-autofill,
+.wh-auth input:-webkit-autofill:hover,
+.wh-auth input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: #000000 !important;
+  caret-color: #000000 !important;
+}
