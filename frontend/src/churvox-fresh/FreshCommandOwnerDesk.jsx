@@ -148,8 +148,21 @@ function approvalResult(actionType) {
 }
 
 function isImportant(slip) {
-  const raw = `${slip.urgency || ""} ${slip.title || ""} ${slip.group || ""} ${slip.actionType || ""}`.toLowerCase();
-  return raw.includes("high") || raw.includes("overdue") || raw.includes("complaint") || raw.includes("blocked") || raw.includes("unacknowledged");
+  const raw = `${slip.urgency || ""} ${slip.title || ""} ${slip.group || ""} ${slip.actionType || ""} ${slip.status || ""} ${slip.info || ""}`.toLowerCase();
+
+  if (slip.urgency === "High") return true;
+  if (raw.includes("overdue")) return true;
+  if (raw.includes("complaint")) return true;
+  if (raw.includes("blocked")) return true;
+  if (raw.includes("unacknowledged")) return true;
+  if (raw.includes("needs review")) return true;
+  if (raw.includes("ready to review")) return true;
+  if (raw.includes("approve_invoice_extra")) return true;
+  if (raw.includes("send_payment_reminder")) return true;
+  if (raw.includes("approve_day_plan")) return true;
+  if (raw.includes("fix_setup_step") && raw.includes("high")) return true;
+
+  return false;
 }
 
 function normalizeSlip(slip, index = 0) {
@@ -175,6 +188,7 @@ function normalizeSlip(slip, index = 0) {
     approvedResult: slip.approvedResult || null,
     snoozeUntil: slip.snoozeUntil || null,
     editedAt: slip.editedAt || null,
+    audit: Array.isArray(slip.audit) ? slip.audit : [],
   };
 }
 
@@ -239,6 +253,31 @@ function snoozeDate(label) {
   if (label === "Next week") date.setDate(date.getDate() + 7);
   if (label === "Later today") date.setHours(date.getHours() + 4);
   return date.toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" });
+}
+
+function safeAudit(slip) {
+  return Array.isArray(slip.audit) ? slip.audit : [];
+}
+
+function auditEvent(label, patch = {}) {
+  return {
+    id: `audit-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    label,
+    status: patch.status || "",
+    result: patch.approvedResult || patch.snoozeUntil || "",
+    at: new Date().toLocaleString([], {
+      weekday: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "numeric",
+      month: "short",
+    }),
+  };
+}
+
+function latestAudit(slip) {
+  const audit = safeAudit(slip);
+  return audit.length ? audit[audit.length - 1] : null;
 }
 
 export default function FreshCommandOwnerDesk({ onNavigate }) {
@@ -323,7 +362,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
       status: "approved",
       approvedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       approvedResult: approvalResult(slip.actionType),
-    });
+    }, approveLabel(slip.actionType));
   }
 
   function startEdit(slip) {
@@ -351,7 +390,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
       actionType: editForm.actionType || editing.actionType,
       status: "edited",
       editedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    });
+    }, "Edited prepared action");
     setEditing(null);
     setEditForm({
       title: "",
@@ -369,7 +408,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
     updateSlip(snoozing.id, {
       status: "snoozed",
       snoozeUntil: snoozeDate(label),
-    });
+    }, `Snoozed ${label}`);
     setSnoozing(null);
   }
 
@@ -485,11 +524,18 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
               <span>{slip.actionType.replaceAll("_", " ")}</span>
             </div>
 
+            {latestAudit(slip) && (
+              <div className="freshCommandAuditNote">
+                <b>Last owner action:</b>
+                <span>{latestAudit(slip).label} · {latestAudit(slip).at}</span>
+              </div>
+            )}
+
             <div className="freshCommandSlipControls">
               <button type="button" onClick={() => approveSlip(slip)}>{approveLabel(slip.actionType)}</button>
               <button type="button" onClick={() => startEdit(slip)}>Edit</button>
               <button type="button" onClick={() => setSnoozing(slip)}>Snooze</button>
-              <button type="button" onClick={() => updateSlip(slip.id, { status: "ignored" })}>Ignore</button>
+              <button type="button" onClick={() => updateSlip(slip.id, { status: "ignored" }, "Ignored")}>Ignore</button>
               <button type="button" onClick={() => onNavigate?.(slip.page || "smart")}>Open</button>
             </div>
           </article>
@@ -507,7 +553,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
           <summary>Completed / ignored / snoozed slips ({doneSlips.length})</summary>
           <div>
             {doneSlips.slice(0, 16).map((slip) => (
-              <button type="button" key={slip.id} onClick={() => updateSlip(slip.id, { status: "open", snoozeUntil: null })}>
+              <button type="button" key={slip.id} onClick={() => updateSlip(slip.id, { status: "open", snoozeUntil: null }, "Restored")}>
                 <b>{slip.title}</b>
                 <span>
                   {slip.status}

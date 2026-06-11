@@ -927,3 +927,104 @@ body.freshCommandOwnerMode .freshCommandEditOverlay section>textarea{
     grid-template-columns:1fr;
   }
 }
+
+/* Command action lock 3 — honest counts, audit/history, tablet readability */
+body.freshCommandOwnerMode .freshCommandAuditNote{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+  margin-top:12px;
+  border:1px solid rgba(34,211,238,.28);
+  border-radius:16px;
+  background:#082f49;
+  padding:10px 12px;
+}
+
+body.freshCommandOwnerMode .freshCommandAuditNote b{
+  color:#67e8f9 !important;
+  -webkit-text-fill-color:#67e8f9 !important;
+  font-size:12px;
+  font-weight:1000;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+body.freshCommandOwnerMode .freshCommandAuditNote span{
+  color:#ffffff !important;
+  -webkit-text-fill-color:#ffffff !important;
+  font-size:13px;
+  font-weight:950;
+}
+
+body.freshCommandOwnerMode .freshCommandDeskStats div:nth-child(2){
+  border-color:rgba(249,115,22,.38) !important;
+  box-shadow:inset 0 0 0 1px rgba(249,115,22,.10);
+}
+
+body.freshCommandOwnerMode .freshCommandSlipControls button{
+  min-height:46px !important;
+  padding:0 16px !important;
+  font-size:13px !important;
+}
+
+body.freshCommandOwnerMode .freshCommandDone button{
+  align-items:flex-start !important;
+}
+
+body.freshCommandOwnerMode .freshCommandDone button span{
+  color:#cbd5e1 !important;
+  -webkit-text-fill-color:#cbd5e1 !important;
+  font-size:12px;
+  line-height:1.35;
+}
+
+/* Tablet width: stop squeezing Churvox found/prepared/why into skinny columns */
+@media(max-width:1350px){
+  body.freshCommandOwnerMode .freshCommandSlipBody{
+    grid-template-columns:1fr !important;
+  }
+
+  body.freshCommandOwnerMode .freshCommandSlipBody section{
+    min-height:auto !important;
+  }
+
+  body.freshCommandOwnerMode .freshCommandSlipBody p{
+    font-size:15px !important;
+  }
+}
+
+/* Phone/tablet: make Command feel like a stack of big owner decision cards */
+@media(max-width:900px){
+  body.freshCommandOwnerMode .freshCommandFocusRow{
+    grid-template-columns:1fr !important;
+  }
+
+  body.freshCommandOwnerMode .freshCommandSlip{
+    padding:14px !important;
+    border-radius:24px !important;
+  }
+
+  body.freshCommandOwnerMode .freshCommandSlip header{
+    display:grid !important;
+    gap:10px !important;
+  }
+
+  body.freshCommandOwnerMode .freshCommandSlip h2{
+    font-size:28px !important;
+  }
+
+  body.freshCommandOwnerMode .freshCommandSlipControls{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+  }
+
+  body.freshCommandOwnerMode .freshCommandSlipControls button{
+    width:100% !important;
+    min-height:50px !important;
+  }
+
+  body.freshCommandOwnerMode .freshCommandAuditNote{
+    display:grid !important;
+  }
+}
