@@ -1,166 +1,113 @@
 import React from "react";
-import { readFreshFocus } from "./freshFocus";
-
-const QUOTE_STORAGE_KEY = "churvox:fresh-quotes:v1";
-const JOB_STORAGE_KEY = "churvox:fresh-jobs:v1";
-
-const seedQuotes = [
-  {
-    id: "QT-2041",
-    client: "Birchville Rentals",
-    title: "Driveway clean",
-    status: "Sent",
-    amount: 240,
-    age: "Sent 6 days ago",
-    followUp: "Follow-up ready for Command",
-    note: "Customer has not replied. Churvox should prepare a polite follow-up, but owner approves first.",
-    lines: ["Driveway clean · $190", "Water blasting setup · $35", "Green waste handling · $15"],
-  },
-  {
-    id: "QT-2042",
-    client: "Aroha Property Care",
-    title: "Monthly grounds care",
-    status: "Draft",
-    amount: 420,
-    age: "Draft today",
-    followUp: "Not sent yet",
-    note: "Draft quote needs owner check before sending.",
-    lines: ["Fortnightly lawn care · $240", "Hedge tidy allowance · $120", "Waste allowance · $60"],
-  },
-  {
-    id: "QT-2038",
-    client: "Lower Hutt Medical Centre",
-    title: "Entry hedge tidy",
-    status: "Accepted",
-    amount: 180,
-    age: "Accepted yesterday",
-    followUp: "Ready to convert to job",
-    note: "Accepted quote can be converted into a scheduled job.",
-    lines: ["Entry hedge trim · $120", "Green waste removal · $60"],
-  },
-];
+import { useApi } from "../hooks/useApi";
 
 const filters = ["All", "Draft", "Sent", "Accepted", "Declined"];
+
+function listFrom(payload) {
+  const data = payload?.data ?? payload;
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.quotes)) return data.quotes;
+  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data?.records)) return data.records;
+  if (Array.isArray(data?.results)) return data.results;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.data?.quotes)) return data.data.quotes;
+  return [];
+}
+
+function idOf(value, fallback) {
+  const raw = value?.id || value?._id || value?.quote_id || value?.quote_number || fallback;
+  if (typeof raw === "object") return raw.$oid || raw.id || raw._id || fallback;
+  return String(raw || fallback);
+}
+
+function statusOf(value) {
+  const text = String(value || "draft").toLowerCase();
+  if (text.includes("accept")) return "Accepted";
+  if (text.includes("declin")) return "Declined";
+  if (text.includes("sent")) return "Sent";
+  return "Draft";
+}
 
 function money(value) {
   return `$${Number(value || 0).toFixed(2)}`;
 }
 
-function readJobs() {
-  try {
-    if (typeof window === "undefined") return [];
-
-    const saved = window.localStorage.getItem(JOB_STORAGE_KEY);
-    if (!saved) return [];
-
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+function dateScore(quote) {
+  const raw = quote?.created_at || quote?.createdAt || quote?.updated_at || quote?.updatedAt || "";
+  const parsed = Date.parse(raw);
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function writeJobs(jobs) {
-  try {
-    if (typeof window === "undefined") return;
+function normalizeQuote(quote, index) {
+  const id = idOf(quote, `quote-${index}`);
+  const status = statusOf(quote?.status);
+  const amount = Number(quote?.price ?? quote?.amount ?? quote?.total ?? 0) || 0;
 
-    window.localStorage.setItem(JOB_STORAGE_KEY, JSON.stringify(jobs));
-    window.dispatchEvent(
-      new CustomEvent("churvox:fresh-data-updated", {
-        detail: { type: "job" },
-      })
-    );
-  } catch {
-    // Fresh preview keeps working without local storage.
-  }
-}
-
-function loadQuotes() {
-  try {
-    if (typeof window === "undefined") return seedQuotes;
-
-    const saved = window.localStorage.getItem(QUOTE_STORAGE_KEY);
-    if (!saved) return seedQuotes;
-
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed : seedQuotes;
-  } catch {
-    return seedQuotes;
-  }
+  return {
+    ...quote,
+    id,
+    title: quote?.title || quote?.job_description || quote?.description || quote?.quote_number || id,
+    client: quote?.client_name || quote?.customer_name || quote?.client || "No client linked",
+    status,
+    amount,
+    age: quote?.created_at ? `Created ${new Date(quote.created_at).toLocaleDateString()}` : "Real quote",
+    followUp: status === "Sent" ? "Follow-up watch" : status === "Accepted" ? "Ready to convert to job" : "Owner review",
+    note: quote?.notes || quote?.note || "No notes yet",
+    lines: Array.isArray(quote?.lines)
+      ? quote.lines
+      : [quote?.job_description || quote?.description || quote?.notes || "Quote item"],
+    sortTime: dateScore(quote),
+  };
 }
 
 export default function FreshQuotes({ onNavigate }) {
-  const [quotes, setQuotes] = React.useState(loadQuotes);
-  const [selectedId, setSelectedId] = React.useState(() => readFreshFocus("quotes", quotes[0]?.id || ""));
+  const api = useApi();
+  const [quotes, setQuotes] = React.useState([]);
+  const [selectedId, setSelectedId] = React.useState("");
   const [filter, setFilter] = React.useState("All");
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState("");
 
-  const selected = quotes.find((quote) => quote.id === selectedId) || quotes[0];
   const visibleQuotes = filter === "All" ? quotes : quotes.filter((quote) => quote.status === filter);
+  const selected = quotes.find((quote) => quote.id === selectedId) || visibleQuotes[0] || quotes[0];
   const sentTotal = quotes.filter((quote) => quote.status === "Sent").reduce((sum, quote) => sum + quote.amount, 0);
   const acceptedTotal = quotes.filter((quote) => quote.status === "Accepted").reduce((sum, quote) => sum + quote.amount, 0);
 
+  const loadQuotes = React.useCallback(async () => {
+    setLoading(true);
+    setError("");
+    const res = await api.get("/quotes");
+
+    if (!res.success) {
+      setQuotes([]);
+      setSelectedId("");
+      setError(res.error || "Could not load real quotes");
+      setLoading(false);
+      return;
+    }
+
+    const nextQuotes = listFrom(res.data)
+      .map(normalizeQuote)
+      .sort((a, b) => b.sortTime - a.sortTime || String(b.id).localeCompare(String(a.id)));
+
+    setQuotes(nextQuotes);
+    setSelectedId((current) => nextQuotes.some((quote) => quote.id === current) ? current : nextQuotes[0]?.id || "");
+    setLoading(false);
+  }, [api]);
+
   React.useEffect(() => {
-    try {
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(QUOTE_STORAGE_KEY, JSON.stringify(quotes));
-      }
-    } catch {
-      // Fresh preview keeps working without local storage.
-    }
-  }, [quotes]);
+    loadQuotes();
+  }, [loadQuotes]);
 
-  function updateSelectedQuote(patch) {
-    if (!selected) return;
+  React.useEffect(() => {
+    const onFreshDataUpdated = () => loadQuotes();
+    window.addEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
+    return () => window.removeEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
+  }, [loadQuotes]);
 
-    setQuotes((current) =>
-      current.map((quote) =>
-        quote.id === selected.id
-          ? { ...quote, ...patch }
-          : quote
-      )
-    );
-  }
-
-  function resetQuotes() {
-    try {
-      if (typeof window !== "undefined") {
-        window.localStorage.removeItem(QUOTE_STORAGE_KEY);
-      }
-    } catch {
-      // Ignore preview storage errors.
-    }
-
-    setQuotes(seedQuotes);
-    setSelectedId(seedQuotes[0].id);
-    setFilter("All");
-  }
-
-  function convertToJob() {
-    if (!selected) return;
-
-    const job = {
-      id: `job-${Date.now()}`,
-      title: selected.title || "Converted quote job",
-      client: selected.client || "New client",
-      address: "Confirm service address",
-      status: "Ready",
-      worker: "Unassigned",
-      scheduled: "Not scheduled",
-      price: `$${Number(selected.amount || 0).toFixed(0)} quote`,
-      notes: `Converted from quote ${selected.id}. ${selected.note || ""}`,
-      risk: "Converted from accepted quote. Schedule and assign worker.",
-    };
-
-    const currentJobs = readJobs();
-    writeJobs([job, ...currentJobs]);
-
-    updateSelectedQuote({
-      status: "Accepted",
-      followUp: "Converted into job",
-      age: "Accepted and converted now",
-    });
-
-    onNavigate?.("jobs");
+  function go(path) {
+    window.location.href = path;
   }
 
   return (
@@ -168,23 +115,31 @@ export default function FreshQuotes({ onNavigate }) {
       <header className="freshHero">
         <span>Churvox fresh · Quotes</span>
         <h1>Quotes</h1>
-        <p>Draft quotes, send them, follow up missing replies and convert accepted work into jobs.</p>
+        <p>Real quote records from your business account. New quotes should appear here after save.</p>
       </header>
 
       <section className="freshCommandPulse">
         <aside className="freshCard">
-          <h2>{money(sentTotal)}</h2>
+          <h2>{loading && quotes.length === 0 ? "…" : money(sentTotal)}</h2>
           <p>Sent quote value</p>
         </aside>
         <aside className="freshCard">
-          <h2>{money(acceptedTotal)}</h2>
+          <h2>{loading && quotes.length === 0 ? "…" : money(acceptedTotal)}</h2>
           <p>Accepted value</p>
         </aside>
         <aside className="freshCard">
-          <h2>{quotes.filter((quote) => quote.status === "Sent").length}</h2>
-          <p>Need follow-up watch</p>
+          <h2>{loading && quotes.length === 0 ? "…" : quotes.length}</h2>
+          <p>Total quotes</p>
         </aside>
       </section>
+
+      {error ? (
+        <section className="freshCard freshItem need">
+          <b>Could not load quotes</b>
+          <span>{error}</span>
+          <button type="button" className="freshPrimary" onClick={loadQuotes}>Retry</button>
+        </section>
+      ) : null}
 
       <section className="freshCommandFilterBar">
         {filters.map((item) => (
@@ -204,48 +159,48 @@ export default function FreshQuotes({ onNavigate }) {
         <aside className="freshCard">
           <h2>Quote list</h2>
 
-          {visibleQuotes.map((quote) => (
+          {loading && quotes.length === 0 ? (
+            <div className="freshItem">
+              <b>Loading real quotes…</b>
+              <span>Checking your business account.</span>
+            </div>
+          ) : visibleQuotes.map((quote) => (
             <button
               type="button"
               className={`freshItem ${selected?.id === quote.id ? "active" : ""} ${quote.status === "Sent" ? "need" : ""}`}
               key={quote.id}
               onClick={() => setSelectedId(quote.id)}
             >
-              <b>{quote.id}</b>
+              <b>{quote.title}</b>
               <span>{quote.client} · {quote.status} · {money(quote.amount)}</span>
             </button>
           ))}
 
-          {visibleQuotes.length === 0 && (
+          {loading && quotes.length > 0 ? (
+            <div className="freshItem">
+              <b>Refreshing quotes…</b>
+              <span>Showing saved quotes while Churvox refreshes.</span>
+            </div>
+          ) : null}
+
+          {!loading && visibleQuotes.length === 0 ? (
             <div className="freshItem">
               <b>No quotes</b>
-              <span>Change filter or reset preview quotes.</span>
+              <span>Create your first real quote to start the workflow.</span>
             </div>
-          )}
+          ) : null}
         </aside>
 
         <section className="freshCard">
           <h2>{selected?.title || "Select quote"}</h2>
 
-          {selected && (
+          {selected ? (
             <>
               <div className="freshMiniGrid">
-                <div>
-                  <span>Quote</span>
-                  <b>{selected.id}</b>
-                </div>
-                <div>
-                  <span>Status</span>
-                  <b>{selected.status}</b>
-                </div>
-                <div>
-                  <span>Client</span>
-                  <b>{selected.client}</b>
-                </div>
-                <div>
-                  <span>Amount</span>
-                  <b>{money(selected.amount)}</b>
-                </div>
+                <div><span>Quote</span><b>{selected.id}</b></div>
+                <div><span>Status</span><b>{selected.status}</b></div>
+                <div><span>Client</span><b>{selected.client}</b></div>
+                <div><span>Amount</span><b>{money(selected.amount)}</b></div>
               </div>
 
               <div className={`freshQuoteStatus ${selected.status.toLowerCase()}`}>
@@ -254,62 +209,32 @@ export default function FreshQuotes({ onNavigate }) {
               </div>
 
               <div className="freshQuoteLines">
-                {selected.lines.map((line) => (
-                  <div key={line}>
-                    <span>{line}</span>
+                {selected.lines.map((line, index) => (
+                  <div key={`${selected.id}-${index}`}>
+                    <span>{String(line)}</span>
                   </div>
                 ))}
               </div>
 
               <label className="freshField">
-                <span>Quote title</span>
-                <input
-                  value={selected.title}
-                  onChange={(event) => updateSelectedQuote({ title: event.target.value })}
-                />
-              </label>
-
-              <label className="freshField">
-                <span>Quote amount</span>
-                <input
-                  value={selected.amount}
-                  onChange={(event) => updateSelectedQuote({ amount: Number(event.target.value.replace(/[^0-9.]/g, "")) || 0 })}
-                />
-              </label>
-
-              <label className="freshField">
                 <span>Owner quote note</span>
-                <textarea
-                  value={selected.note}
-                  onChange={(event) => updateSelectedQuote({ note: event.target.value })}
-                />
+                <textarea value={selected.note} readOnly />
               </label>
             </>
+          ) : (
+            <div className="freshItem">
+              <b>No quote selected</b>
+              <span>Create a quote to see the connected detail record.</span>
+            </div>
           )}
         </section>
 
         <aside className="freshCard">
           <h2>Owner actions</h2>
-
           <div className="freshActions">
-            <button className="freshPrimary" onClick={() => updateSelectedQuote({ status: "Sent", age: "Sent now", followUp: "Follow-up watch started" })}>
-              Send quote
-            </button>
-            <button className="freshDark" onClick={() => updateSelectedQuote({ status: "Accepted", age: "Accepted now", followUp: "Ready to convert to job" })}>
-              Mark accepted
-            </button>
-            <button className="freshOrange" onClick={convertToJob}>
-              Convert to job
-            </button>
-            <button className="freshGhost" onClick={() => updateSelectedQuote({ status: "Declined", age: "Declined today", followUp: "No follow-up needed" })}>
-              Mark declined
-            </button>
-            <button className="freshGhost" onClick={() => onNavigate?.("command")}>
-              Send follow-up to Command
-            </button>
-            <button className="freshGhost" onClick={resetQuotes}>
-              Reset quotes
-            </button>
+            <button className="freshPrimary" type="button" onClick={() => go("/quotes/new")}>New quote</button>
+            <button className="freshPrimary" type="button" onClick={loadQuotes}>Refresh quotes</button>
+            <button className="freshGhost" type="button" onClick={() => onNavigate?.("command")}>Send follow-up to Command</button>
           </div>
         </aside>
       </section>
