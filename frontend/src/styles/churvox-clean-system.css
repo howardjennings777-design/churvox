@@ -2,7 +2,7 @@
    One clean readability layer.
    This replaces the random quick-fix CSS imports.
    It does not change backend, layout logic, or routes.
-*/
+ */
 
 :root {
   --cv-bg: #f4efe7;
@@ -203,10 +203,7 @@ button:disabled,
   background: #2563eb !important;
 }
 
-/* FINAL SELECT VALUE FIX
-   The opened dropdown options are already readable.
-   This fixes the selected/closed value when the select sits on a dark panel. */
-
+/* FINAL SELECT VALUE FIX */
 main [class*="support"] select,
 main [class*="Support"] select,
 main [class*="command"] select,
@@ -222,7 +219,6 @@ main [class*="Card"] select {
   opacity: 1 !important;
 }
 
-/* Keep the actual dropdown list options black on white. */
 main select option,
 main select optgroup {
   color: #111827 !important;
@@ -231,7 +227,6 @@ main select optgroup {
   opacity: 1 !important;
 }
 
-/* Light form areas must stay dark text. */
 .cxField select,
 .cxFormPanel select,
 main [class*="field"] select,
@@ -244,11 +239,6 @@ main [class*="Profile"] select {
   -webkit-text-fill-color: #111827 !important;
 }
 
-
-/* FINAL DROPDOWN BOX FIX
-   Make the closed select box white everywhere so selected text is readable.
-   Opened option list stays black on white too.
-*/
 select,
 main select,
 form select,
@@ -299,4 +289,48 @@ body.cv-industrial-shell main:has(textarea) > section:first-child p {
 body.cv-industrial-shell main:has(select) > section:first-child + section,
 body.cv-industrial-shell main:has(textarea) > section:first-child + section {
   margin-top: 18px !important;
+}
+
+/* FINAL FIX: new prepared Command trays are off-white, so old dark Command rules must not make their text white. */
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedTray,
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedTray *,
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedModal,
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedSlipBody,
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedSlipBody * {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  opacity: 1 !important;
+}
+
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshCommandPreparedHero,
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshCommandPreparedHero *,
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedModal .freshSlipHead,
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedModal .freshSlipHead * {
+  color: #f9fafb !important;
+  -webkit-text-fill-color: #f9fafb !important;
+}
+
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedTray header span,
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedTrayList button em {
+  background: #f97316 !important;
+  background-color: #f97316 !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}
+
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedTray header strong,
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshCommandPreparedSummary button,
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedSlipBody .freshPrimary,
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedSlipBody .freshOrange {
+  background: #f97316 !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}
+
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedSlipBody .freshDark,
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedSlipBody .freshGhost,
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedSlipBody .freshClose {
+  background: #111827 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
