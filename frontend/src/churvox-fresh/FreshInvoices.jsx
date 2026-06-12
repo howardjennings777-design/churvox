@@ -1,111 +1,116 @@
 import React from "react";
-import { readFreshFocus } from "./freshFocus";
-
-const INVOICE_STORAGE_KEY = "churvox:fresh-invoices:v1";
-
-const seedInvoices = [
-  {
-    id: "INV-1007",
-    client: "Aroha Property Care",
-    job: "Lawn service",
-    status: "Draft",
-    amount: 85,
-    gst: 12.75,
-    due: "Due in 7 days",
-    sync: "Not synced yet",
-    note: "Created from completed job. Owner must approve before sending.",
-    lines: ["Lawn mowing and edges · $70", "Blower tidy and photos · $15"],
-  },
-  {
-    id: "INV-1002",
-    client: "Birchville Rentals",
-    job: "Driveway clean",
-    status: "Overdue",
-    amount: 190,
-    gst: 28.5,
-    due: "Overdue 9 days",
-    sync: "MYOB sync paused",
-    note: "Needs owner follow-up before another reminder goes out.",
-    lines: ["Driveway clean · $160", "Extra green waste handling · $30"],
-  },
-  {
-    id: "INV-1004",
-    client: "Lower Hutt Medical Centre",
-    job: "Garden tidy",
-    status: "Sent",
-    amount: 140,
-    gst: 21,
-    due: "Due tomorrow",
-    sync: "Ready to sync",
-    note: "Waiting on payment confirmation.",
-    lines: ["Garden tidy · $110", "Green waste removal · $30"],
-  },
-];
+import { useApi } from "../hooks/useApi";
 
 const filters = ["All", "Draft", "Sent", "Overdue", "Paid"];
+
+function listFrom(payload) {
+  const data = payload?.data ?? payload;
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.invoices)) return data.invoices;
+  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data?.records)) return data.records;
+  if (Array.isArray(data?.results)) return data.results;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.data?.invoices)) return data.data.invoices;
+  return [];
+}
+
+function idOf(value, fallback) {
+  const raw = value?.invoice_number || value?.number || value?.id || value?._id || value?.invoice_id || fallback;
+  if (typeof raw === "object") return raw.$oid || raw.id || raw._id || fallback;
+  return String(raw || fallback);
+}
+
+function statusOf(value) {
+  const text = String(value || "draft").toLowerCase();
+  if (text.includes("paid")) return "Paid";
+  if (text.includes("overdue")) return "Overdue";
+  if (text.includes("sent")) return "Sent";
+  return "Draft";
+}
 
 function money(value) {
   return `$${Number(value || 0).toFixed(2)}`;
 }
 
-function loadInvoices() {
-  try {
-    if (typeof window === "undefined") return seedInvoices;
+function dateScore(invoice) {
+  const raw = invoice?.created_at || invoice?.createdAt || invoice?.updated_at || invoice?.updatedAt || "";
+  const parsed = Date.parse(raw);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
 
-    const saved = window.localStorage.getItem(INVOICE_STORAGE_KEY);
-    if (!saved) return seedInvoices;
+function normalizeInvoice(invoice, index) {
+  const id = idOf(invoice, `invoice-${index}`);
+  const status = statusOf(invoice?.status);
+  const amount = Number(invoice?.total ?? invoice?.amount ?? invoice?.subtotal ?? 0) || 0;
+  const gst = Number(invoice?.gst_amount ?? invoice?.tax_amount ?? 0) || 0;
 
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed : seedInvoices;
-  } catch {
-    return seedInvoices;
-  }
+  return {
+    ...invoice,
+    id,
+    client: invoice?.client_name || invoice?.customer_name || invoice?.client || "No client linked",
+    job: invoice?.job_title || invoice?.job || invoice?.description || "Invoice",
+    status,
+    amount,
+    gst,
+    due: invoice?.due_date ? `Due ${new Date(invoice.due_date).toLocaleDateString()}` : "Draft invoice",
+    sync: invoice?.myob_sync_status || invoice?.sync || "Not synced yet",
+    note: invoice?.description || invoice?.notes || "No notes yet",
+    lines: Array.isArray(invoice?.line_items)
+      ? invoice.line_items.map((line) => `${line.description || "Invoice item"} · ${money(line.amount || line.unit_price || 0)}`)
+      : [invoice?.description || invoice?.notes || "Invoice item"],
+    sortTime: dateScore(invoice),
+  };
 }
 
 export default function FreshInvoices({ onNavigate }) {
-  const [invoices, setInvoices] = React.useState(loadInvoices);
-  const [selectedId, setSelectedId] = React.useState(() => readFreshFocus("invoices", invoices[0]?.id || ""));
+  const api = useApi();
+  const [invoices, setInvoices] = React.useState([]);
+  const [selectedId, setSelectedId] = React.useState("");
   const [filter, setFilter] = React.useState("All");
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState("");
 
-  const selected = invoices.find((invoice) => invoice.id === selectedId) || invoices[0];
   const visibleInvoices = filter === "All" ? invoices : invoices.filter((invoice) => invoice.status === filter);
+  const selected = invoices.find((invoice) => invoice.id === selectedId) || visibleInvoices[0] || invoices[0];
   const draftTotal = invoices.filter((invoice) => invoice.status === "Draft").reduce((sum, invoice) => sum + invoice.amount, 0);
   const overdueTotal = invoices.filter((invoice) => invoice.status === "Overdue").reduce((sum, invoice) => sum + invoice.amount, 0);
 
+  const loadInvoices = React.useCallback(async () => {
+    setLoading(true);
+    setError("");
+
+    const res = await api.get("/invoices");
+
+    if (!res.success) {
+      setInvoices([]);
+      setSelectedId("");
+      setError(res.error || "Could not load real invoices");
+      setLoading(false);
+      return;
+    }
+
+    const nextInvoices = listFrom(res.data)
+      .map(normalizeInvoice)
+      .sort((a, b) => b.sortTime - a.sortTime || String(b.id).localeCompare(String(a.id)));
+
+    setInvoices(nextInvoices);
+    setSelectedId((current) => nextInvoices.some((invoice) => invoice.id === current) ? current : nextInvoices[0]?.id || "");
+    setLoading(false);
+  }, [api]);
+
   React.useEffect(() => {
-    try {
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(INVOICE_STORAGE_KEY, JSON.stringify(invoices));
-      }
-    } catch {
-      // Fresh preview keeps working without local storage.
-    }
-  }, [invoices]);
+    loadInvoices();
+  }, [loadInvoices]);
 
-  function updateSelectedInvoice(patch) {
-    if (!selected) return;
+  React.useEffect(() => {
+    const onFreshDataUpdated = () => loadInvoices();
+    window.addEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
+    return () => window.removeEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
+  }, [loadInvoices]);
 
-    setInvoices((current) =>
-      current.map((invoice) =>
-        invoice.id === selected.id
-          ? { ...invoice, ...patch }
-          : invoice
-      )
-    );
-  }
-
-  function resetInvoices() {
-    try {
-      if (typeof window !== "undefined") {
-        window.localStorage.removeItem(INVOICE_STORAGE_KEY);
-      }
-    } catch {
-      // Ignore preview storage errors.
-    }
-
-    setInvoices(seedInvoices);
-    setSelectedId(seedInvoices[0].id);
-    setFilter("All");
+  function go(path) {
+    window.location.href = path;
   }
 
   return (
@@ -113,23 +118,31 @@ export default function FreshInvoices({ onNavigate }) {
       <header className="freshHero">
         <span>Churvox fresh · Invoices</span>
         <h1>Invoices</h1>
-        <p>Review draft invoices, approve sending, mark paid and send risky money issues back to Command.</p>
+        <p>Real invoice records from your business account. New invoices should appear here after save.</p>
       </header>
 
       <section className="freshCommandPulse">
         <aside className="freshCard">
-          <h2>{money(draftTotal)}</h2>
+          <h2>{loading && invoices.length === 0 ? "…" : money(draftTotal)}</h2>
           <p>Draft money</p>
         </aside>
         <aside className="freshCard">
-          <h2>{money(overdueTotal)}</h2>
+          <h2>{loading && invoices.length === 0 ? "…" : money(overdueTotal)}</h2>
           <p>Overdue money</p>
         </aside>
         <aside className="freshCard">
-          <h2>{invoices.length}</h2>
+          <h2>{loading && invoices.length === 0 ? "…" : invoices.length}</h2>
           <p>Total invoices</p>
         </aside>
       </section>
+
+      {error ? (
+        <section className="freshCard freshItem need">
+          <b>Could not load invoices</b>
+          <span>{error}</span>
+          <button type="button" className="freshPrimary" onClick={loadInvoices}>Retry</button>
+        </section>
+      ) : null}
 
       <section className="freshCommandFilterBar">
         {filters.map((item) => (
@@ -149,7 +162,12 @@ export default function FreshInvoices({ onNavigate }) {
         <aside className="freshCard">
           <h2>Invoice list</h2>
 
-          {visibleInvoices.map((invoice) => (
+          {loading && invoices.length === 0 ? (
+            <div className="freshItem">
+              <b>Loading real invoices…</b>
+              <span>Checking your business account.</span>
+            </div>
+          ) : visibleInvoices.map((invoice) => (
             <button
               type="button"
               className={`freshItem ${selected?.id === invoice.id ? "active" : ""} ${invoice.status === "Overdue" ? "need" : ""}`}
@@ -161,36 +179,31 @@ export default function FreshInvoices({ onNavigate }) {
             </button>
           ))}
 
-          {visibleInvoices.length === 0 && (
+          {loading && invoices.length > 0 ? (
+            <div className="freshItem">
+              <b>Refreshing invoices…</b>
+              <span>Showing saved invoices while Churvox refreshes.</span>
+            </div>
+          ) : null}
+
+          {!loading && visibleInvoices.length === 0 ? (
             <div className="freshItem">
               <b>No invoices</b>
-              <span>Change filter or reset preview invoices.</span>
+              <span>Create your first real invoice to start the workflow.</span>
             </div>
-          )}
+          ) : null}
         </aside>
 
         <section className="freshCard">
           <h2>{selected?.id || "Select invoice"}</h2>
 
-          {selected && (
+          {selected ? (
             <>
               <div className="freshMiniGrid">
-                <div>
-                  <span>Client</span>
-                  <b>{selected.client}</b>
-                </div>
-                <div>
-                  <span>Status</span>
-                  <b>{selected.status}</b>
-                </div>
-                <div>
-                  <span>Amount</span>
-                  <b>{money(selected.amount)}</b>
-                </div>
-                <div>
-                  <span>GST</span>
-                  <b>{money(selected.gst)}</b>
-                </div>
+                <div><span>Client</span><b>{selected.client}</b></div>
+                <div><span>Status</span><b>{selected.status}</b></div>
+                <div><span>Amount</span><b>{money(selected.amount)}</b></div>
+                <div><span>GST</span><b>{money(selected.gst)}</b></div>
               </div>
 
               <div className={`freshInvoiceStatus ${selected.status.toLowerCase()}`}>
@@ -199,43 +212,32 @@ export default function FreshInvoices({ onNavigate }) {
               </div>
 
               <div className="freshInvoiceLines">
-                {selected.lines.map((line) => (
-                  <div key={line}>
-                    <span>{line}</span>
+                {selected.lines.map((line, index) => (
+                  <div key={`${selected.id}-${index}`}>
+                    <span>{String(line)}</span>
                   </div>
                 ))}
               </div>
 
               <label className="freshField">
                 <span>Owner invoice note</span>
-                <textarea
-                  value={selected.note}
-                  onChange={(event) => updateSelectedInvoice({ note: event.target.value })}
-                />
+                <textarea value={selected.note} readOnly />
               </label>
             </>
+          ) : (
+            <div className="freshItem">
+              <b>No invoice selected</b>
+              <span>Create an invoice to see the connected detail record.</span>
+            </div>
           )}
         </section>
 
         <aside className="freshCard">
           <h2>Owner actions</h2>
-
           <div className="freshActions">
-            <button className="freshPrimary" onClick={() => updateSelectedInvoice({ status: "Sent", due: "Due in 7 days", sync: "Ready to sync" })}>
-              Approve and send
-            </button>
-            <button className="freshDark" onClick={() => updateSelectedInvoice({ status: "Paid", due: "Paid today", sync: "Payment ready to sync" })}>
-              Mark paid
-            </button>
-            <button className="freshOrange" onClick={() => updateSelectedInvoice({ status: "Overdue", due: "Overdue now", sync: "Reminder needs approval" })}>
-              Mark overdue
-            </button>
-            <button className="freshGhost" onClick={() => onNavigate?.("command")}>
-              Send issue to Command
-            </button>
-            <button className="freshGhost" onClick={resetInvoices}>
-              Reset invoices
-            </button>
+            <button className="freshPrimary" type="button" onClick={() => go("/invoices/new")}>New invoice</button>
+            <button className="freshPrimary" type="button" onClick={loadInvoices}>Refresh invoices</button>
+            <button className="freshGhost" type="button" onClick={() => onNavigate?.("command")}>Send issue to Command</button>
           </div>
         </aside>
       </section>
