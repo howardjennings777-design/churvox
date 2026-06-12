@@ -1,0 +1,60 @@
+/* Final Command readability override.
+   Loaded last from index.js so old global theme rules cannot make prepared slips unreadable. */
+
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedRecommendation,
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedRecommendation * {
+  opacity: 1 !important;
+  visibility: visible !important;
+  filter: none !important;
+  text-shadow: none !important;
+  mix-blend-mode: normal !important;
+}
+
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedRecommendation {
+  background:
+    radial-gradient(circle at top right, rgba(249, 115, 22, .16), transparent 34%),
+    linear-gradient(135deg, #fff7ed 0%, #ffffff 56%, #ffedd5 100%) !important;
+  border: 2px solid rgba(249, 115, 22, .48) !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  box-shadow: 0 16px 42px rgba(15, 23, 42, .14) !important;
+}
+
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedRecommendation span {
+  background: #f97316 !important;
+  background-color: #f97316 !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  border: 1px solid rgba(17, 24, 39, .18) !important;
+}
+
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedRecommendation h3,
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedRecommendation li,
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedRecommendation ul {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}
+
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedRecommendation h3 {
+  font-size: clamp(26px, 3vw, 42px) !important;
+  line-height: .95 !important;
+  letter-spacing: -.05em !important;
+  font-weight: 1000 !important;
+}
+
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedRecommendation li {
+  font-size: 14px !important;
+  font-weight: 950 !important;
+  line-height: 1.35 !important;
+}
+
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedFormField select,
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedFormField select option,
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedFormField input,
+main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedFormField textarea {
+  background: #fffaf2 !important;
+  background-color: #fffaf2 !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  opacity: 1 !important;
+}
