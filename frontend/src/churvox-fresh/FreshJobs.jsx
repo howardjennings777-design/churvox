@@ -1,196 +1,138 @@
 import React from "react";
-import { readFreshFocus } from "./freshFocus";
-
-const JOB_STORAGE_KEY = "churvox:fresh-jobs:v1";
-const INVOICE_STORAGE_KEY = "churvox:fresh-invoices:v1";
-
-const seedJobs = [
-  {
-    id: "job-1001",
-    title: "Lawn service",
-    client: "Aroha Property Care",
-    address: "Naenae, Lower Hutt",
-    status: "Ready",
-    worker: "Matiu Rangi",
-    scheduled: "Today · 10:00 AM",
-    price: "$85 fixed",
-    notes: "Front lawn, edges, blower tidy. Photos required after completion.",
-    risk: "Ready to dispatch",
-  },
-  {
-    id: "job-1002",
-    title: "Garden tidy",
-    client: "Lower Hutt Medical Centre",
-    address: "Lower Hutt",
-    status: "In progress",
-    worker: "Ana Williams",
-    scheduled: "Today · 1:30 PM",
-    price: "$140 fixed",
-    notes: "Weed beds, trim entry hedge, remove green waste.",
-    risk: "Worker on site",
-  },
-  {
-    id: "job-1003",
-    title: "Driveway clean",
-    client: "Birchville Rentals",
-    address: "Upper Hutt",
-    status: "Blocked",
-    worker: "Unassigned",
-    scheduled: "Tomorrow · 9:00 AM",
-    price: "$240 quote",
-    notes: "Tenant access not confirmed. Need owner approval before dispatch.",
-    risk: "Access missing",
-  },
-];
+import { useApi } from "../hooks/useApi";
 
 const filters = ["All", "Ready", "In progress", "Blocked", "Completed"];
 
-const seedJobIds = new Set(seedJobs.map((job) => job.id));
-
-function shouldShowDemoJobs() {
-  try {
-    return (
-      window.location.search.includes("demo") ||
-      window.localStorage.getItem("churvox:fresh-demo-mode:v1") === "on"
-    );
-  } catch {
-    return false;
-  }
+function normalizeId(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
+  if (typeof value === "object") return normalizeId(value.$oid || value.oid || value.id || value._id || "");
+  const text = String(value || "");
+  return text === "[object Object]" ? "" : text;
 }
 
-function stripSeedJobsForNormalUsers(items) {
-  const safe = Array.isArray(items) ? items : [];
-  if (shouldShowDemoJobs()) return safe;
-  return safe.filter((job) => !seedJobIds.has(String(job?.id || "")));
+function unpackList(payload) {
+  const data = payload?.data ?? payload;
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.jobs)) return data.jobs;
+  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data?.records)) return data.records;
+  if (Array.isArray(data?.results)) return data.results;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.data?.jobs)) return data.data.jobs;
+  return [];
 }
 
-function numberFrom(value) {
-  return Number(String(value || "").replace(/[^0-9.]/g, "")) || 0;
+function statusLabel(value) {
+  const text = String(value || "").trim().toLowerCase().replace(/[_-]+/g, " ");
+  if (/complete|done|finished/.test(text)) return "Completed";
+  if (/progress|started|active/.test(text)) return "In progress";
+  if (/block|hold|issue|missing|cancel/.test(text)) return "Blocked";
+  return "Ready";
 }
 
-function readInvoices() {
-  try {
-    if (typeof window === "undefined") return [];
-
-    const saved = window.localStorage.getItem(INVOICE_STORAGE_KEY);
-    if (!saved) return [];
-
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+function dateScore(job) {
+  const raw = job?.created_at || job?.createdAt || job?.scheduled_date || job?.updated_at || "";
+  const parsed = Date.parse(raw);
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function writeInvoices(invoices) {
-  try {
-    if (typeof window === "undefined") return;
-
-    window.localStorage.setItem(INVOICE_STORAGE_KEY, JSON.stringify(invoices));
-    window.dispatchEvent(
-      new CustomEvent("churvox:fresh-data-updated", {
-        detail: { type: "invoice" },
-      })
-    );
-  } catch {
-    // Fresh preview keeps working without local storage.
-  }
+function scheduleText(job) {
+  const raw = job?.scheduled_date || job?.scheduled_at || job?.date || "";
+  if (!raw) return "Not scheduled";
+  const parsed = Date.parse(raw);
+  if (!Number.isFinite(parsed)) return String(raw);
+  return new Date(parsed).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
-function loadJobs() {
-  try {
-    if (typeof window === "undefined") return [];
+function moneyText(job) {
+  const raw = job?.fixed_price ?? job?.price ?? job?.amount ?? job?.total ?? "";
+  const amount = Number(raw || 0);
+  if (!Number.isFinite(amount) || amount <= 0) return "No price yet";
+  return `$${amount.toFixed(amount % 1 ? 2 : 0)}`;
+}
 
-    const saved = window.localStorage.getItem(JOB_STORAGE_KEY);
+function normalizeJob(job, index) {
+  const title = job?.title || job?.job_name || job?.name || `Job ${index + 1}`;
+  const client = job?.client_name || job?.customer_name || job?.client || job?.customer || "No client linked";
+  const worker = job?.assigned_worker_name || job?.worker_name || job?.worker || "Unassigned";
+  const status = statusLabel(job?.status);
 
-    if (!saved) {
-      return shouldShowDemoJobs() ? seedJobs : [];
-    }
-
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed)
-      ? stripSeedJobsForNormalUsers(parsed)
-      : (shouldShowDemoJobs() ? seedJobs : []);
-  } catch {
-    return shouldShowDemoJobs() ? seedJobs : [];
-  }
+  return {
+    ...job,
+    id: normalizeId(job?.id || job?._id || job?.job_id) || `job-${index}`,
+    title,
+    client,
+    address: job?.address || job?.site_address || job?.service_address || "No address",
+    status,
+    worker,
+    scheduled: scheduleText(job),
+    price: moneyText(job),
+    notes: job?.notes || job?.description || "No notes yet",
+    risk: status === "Blocked" ? "Needs owner review" : worker === "Unassigned" ? "Worker not assigned" : "Ready to dispatch",
+    sortTime: dateScore(job),
+  };
 }
 
 export default function FreshJobs({ onNavigate }) {
-  const [jobs, setJobs] = React.useState(loadJobs);
-  const [selectedId, setSelectedId] = React.useState(() => readFreshFocus("jobs", jobs[0]?.id || ""));
+  const api = useApi();
+  const [jobs, setJobs] = React.useState([]);
+  const [selectedId, setSelectedId] = React.useState("");
   const [filter, setFilter] = React.useState("All");
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState("");
 
-  const selected = jobs.find((job) => job.id === selectedId) || jobs[0];
   const visibleJobs = filter === "All" ? jobs : jobs.filter((job) => job.status === filter);
+  const selected = jobs.find((job) => job.id === selectedId) || visibleJobs[0] || jobs[0];
+
+  const loadJobs = React.useCallback(async () => {
+    setLoading(true);
+    setError("");
+
+    const res = await api.get("/jobs");
+
+    if (!res.success) {
+      setJobs([]);
+      setSelectedId("");
+      setError(res.error || "Could not load real jobs");
+      setLoading(false);
+      return;
+    }
+
+    const nextJobs = unpackList(res.data)
+      .map(normalizeJob)
+      .sort((a, b) => b.sortTime - a.sortTime || String(b.id).localeCompare(String(a.id)));
+
+    setJobs(nextJobs);
+    setSelectedId((current) => nextJobs.some((job) => job.id === current) ? current : nextJobs[0]?.id || "");
+    setLoading(false);
+  }, [api]);
 
   React.useEffect(() => {
-    try {
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(JOB_STORAGE_KEY, JSON.stringify(jobs));
-      }
-    } catch {
-      // Fresh preview keeps working without local storage.
+    loadJobs();
+  }, [loadJobs]);
+
+  React.useEffect(() => {
+    const onFreshDataUpdated = () => loadJobs();
+    window.addEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
+    return () => window.removeEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
+  }, [loadJobs]);
+
+  React.useEffect(() => {
+    if (!visibleJobs.length) return;
+    if (!selectedId || !visibleJobs.some((job) => job.id === selectedId)) {
+      setSelectedId(visibleJobs[0].id);
     }
-  }, [jobs]);
+  }, [visibleJobs, selectedId]);
 
-  function updateSelectedJob(patch) {
-    if (!selected) return;
-
-    setJobs((current) =>
-      current.map((job) =>
-        job.id === selected.id
-          ? { ...job, ...patch }
-          : job
-      )
-    );
-  }
-
-  function resetJobs() {
-    try {
-      if (typeof window !== "undefined") {
-        window.localStorage.removeItem(JOB_STORAGE_KEY);
-      }
-    } catch {
-      // Ignore preview storage errors.
-    }
-
-    const nextJobs = shouldShowDemoJobs() ? seedJobs : [];
-    setJobs(nextJobs);
-    setSelectedId(nextJobs[0]?.id || "");
-    setFilter("All");
-  }
-
-  function createInvoiceDraft() {
-    if (!selected) return;
-
-    const amount = numberFrom(selected.price);
-    const invoice = {
-      id: `INV-${Date.now().toString().slice(-5)}`,
-      client: selected.client,
-      job: selected.title,
-      status: "Draft",
-      amount,
-      gst: Number((amount * 0.15).toFixed(2)),
-      due: "Due in 7 days",
-      sync: "Not synced yet",
-      note: `Created from job: ${selected.title}. Owner must approve before sending.`,
-      lines: [
-        `${selected.title} · ${selected.price || "$0"}`,
-        `Worker · ${selected.worker || "Unassigned"}`,
-        `Notes · ${selected.notes || "No notes"}`,
-      ],
-    };
-
-    const currentInvoices = readInvoices();
-    writeInvoices([invoice, ...currentInvoices]);
-
-    updateSelectedJob({
-      status: "Completed",
-      risk: "Invoice draft created",
-    });
-
-    onNavigate?.("invoices");
+  function go(path) {
+    window.location.href = path;
   }
 
   return (
@@ -198,23 +140,31 @@ export default function FreshJobs({ onNavigate }) {
       <header className="freshHero">
         <span>Churvox fresh · Jobs</span>
         <h1>Jobs</h1>
-        <p>Create, schedule, assign, price and complete work. Risky jobs should be pushed back to Command.</p>
+        <p>Real job records from your business account. New jobs should appear here after save.</p>
       </header>
 
       <section className="freshCommandPulse">
         <aside className="freshCard">
-          <h2>{jobs.length}</h2>
+          <h2>{loading && jobs.length === 0 ? "…" : jobs.length}</h2>
           <p>Total jobs</p>
         </aside>
         <aside className="freshCard">
-          <h2>{jobs.filter((job) => job.status === "Ready").length}</h2>
+          <h2>{loading && jobs.length === 0 ? "…" : jobs.filter((job) => job.status === "Ready").length}</h2>
           <p>Ready</p>
         </aside>
         <aside className="freshCard">
-          <h2>{jobs.filter((job) => job.status === "Blocked").length}</h2>
+          <h2>{loading && jobs.length === 0 ? "…" : jobs.filter((job) => job.status === "Blocked").length}</h2>
           <p>Blocked</p>
         </aside>
       </section>
+
+      {error ? (
+        <section className="freshCard freshItem need">
+          <b>Could not load jobs</b>
+          <span>{error}</span>
+          <button type="button" className="freshPrimary" onClick={loadJobs}>Retry</button>
+        </section>
+      ) : null}
 
       <section className="freshCommandFilterBar">
         {filters.map((item) => (
@@ -234,7 +184,12 @@ export default function FreshJobs({ onNavigate }) {
         <aside className="freshCard">
           <h2>Job list</h2>
 
-          {visibleJobs.map((job) => (
+          {loading && jobs.length === 0 ? (
+            <div className="freshItem">
+              <b>Loading real jobs…</b>
+              <span>Checking your business account.</span>
+            </div>
+          ) : visibleJobs.map((job) => (
             <button
               type="button"
               className={`freshItem ${selected?.id === job.id ? "active" : ""} ${job.status === "Blocked" ? "need" : ""}`}
@@ -246,92 +201,56 @@ export default function FreshJobs({ onNavigate }) {
             </button>
           ))}
 
-          {visibleJobs.length === 0 && (
+          {loading && jobs.length > 0 ? (
+            <div className="freshItem">
+              <b>Refreshing jobs…</b>
+              <span>Showing your current saved jobs while Churvox refreshes.</span>
+            </div>
+          ) : null}
+
+          {!loading && visibleJobs.length === 0 ? (
             <div className="freshItem">
               <b>No jobs yet</b>
-              <span>Start with the First Run Guide and create your first real job.</span>
+              <span>Create your first real job to start the workflow.</span>
             </div>
-          )}
+          ) : null}
         </aside>
 
         <section className="freshCard">
           <h2>{selected?.title || "Select job"}</h2>
 
-          {selected && (
+          {selected ? (
             <>
               <div className="freshMiniGrid">
-                <div>
-                  <span>Client</span>
-                  <b>{selected.client}</b>
-                </div>
-                <div>
-                  <span>Status</span>
-                  <b>{selected.status}</b>
-                </div>
-                <div>
-                  <span>Worker</span>
-                  <b>{selected.worker}</b>
-                </div>
-                <div>
-                  <span>Price</span>
-                  <b>{selected.price}</b>
-                </div>
+                <div><span>Client</span><b>{selected.client}</b></div>
+                <div><span>Status</span><b>{selected.status}</b></div>
+                <div><span>Worker</span><b>{selected.worker}</b></div>
+                <div><span>Price</span><b>{selected.price}</b></div>
               </div>
 
-              <label className="freshField">
-                <span>Address</span>
-                <input
-                  value={selected.address}
-                  onChange={(event) => updateSelectedJob({ address: event.target.value })}
-                />
-              </label>
-
-              <label className="freshField">
-                <span>Scheduled</span>
-                <input
-                  value={selected.scheduled}
-                  onChange={(event) => updateSelectedJob({ scheduled: event.target.value })}
-                />
-              </label>
-
-              <label className="freshField">
-                <span>Job notes</span>
-                <textarea
-                  value={selected.notes}
-                  onChange={(event) => updateSelectedJob({ notes: event.target.value })}
-                />
-              </label>
+              <label className="freshField"><span>Address</span><input value={selected.address} readOnly /></label>
+              <label className="freshField"><span>Scheduled</span><input value={selected.scheduled} readOnly /></label>
+              <label className="freshField"><span>Job notes</span><textarea value={selected.notes} readOnly /></label>
 
               <div className="freshItem need">
                 <b>Command check</b>
                 <span>{selected.risk}</span>
               </div>
             </>
+          ) : (
+            <div className="freshItem">
+              <b>No job selected</b>
+              <span>Create a job to see the connected detail record.</span>
+            </div>
           )}
         </section>
 
         <aside className="freshCard">
           <h2>Owner actions</h2>
-
           <div className="freshActions">
-            <button className="freshPrimary" onClick={() => updateSelectedJob({ status: "Ready", risk: "Ready to dispatch" })}>
-              Mark ready
-            </button>
-            <button className="freshOrange" onClick={() => updateSelectedJob({ status: "In progress", risk: "Worker on site" })}>
-              Start job
-            </button>
-            <button className="freshDark" onClick={() => updateSelectedJob({ status: "Completed", risk: "Ready for invoice draft" })}>
-              Complete job
-            </button>
-            <button className="freshPrimary" onClick={createInvoiceDraft}>
-              Create invoice draft
-            </button>
-            <button className="freshGhost" onClick={() => onNavigate?.("command")}>
-              Send issue to Command
-            </button>
-            <button className="freshGhost" onClick={resetJobs}>
-              Reset jobs
-            </button>
+            <button className="freshPrimary" type="button" onClick={() => go("/jobs/new")}>New job</button>
+            <button className="freshPrimary" type="button" onClick={loadJobs}>Refresh jobs</button>
+            <button className="freshGhost" type="button" onClick={() => onNavigate?.("command")}>Send issue to Command</button>
           </div>
         </aside>
       </section>
