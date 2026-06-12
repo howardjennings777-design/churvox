@@ -2,8 +2,10 @@ import React from "react";
 import "./freshPreparedCommandDesk.css";
 import "../styles/command-right-preview.css";
 
-const KEY = "churvox:fresh-command-inbox:v1";
+const OLD_KEY = "churvox:fresh-command-inbox:v1";
+const KEY = "churvox:fresh-command-inbox:v3";
 const API = "/api/command";
+const DRAFT_VERSION = "right-panel-v3";
 
 const cfg = {
   invoice: { cat: "money", title: "Invoice ready", approve: "Send invoice", fields: ["Customer", "Job", "Amount", "GST", "Due date", "Service line", "Invoice note"] },
@@ -65,16 +67,17 @@ function draftFor(type, slip = {}) {
   const values = {
     Customer: "Customer from record", Job: "Upcoming job", Amount: "Review price", GST: "15%", "Due date": today(), "Service line": "Service from completed job", "Invoice note": "Thanks for your business.", Invoice: "Invoice from record", "Amount due": "Review amount", Email: "", Phone: "", "Reminder message": "Friendly reminder prepared from invoice.", Quote: "Open quote", "Quote value": "Review value", Message: "Follow-up message prepared.", Worker: "Best available worker", Date: today(), "Time window": "Next available slot", Address: "Job address", "Notify worker": "App + email + SMS", "Worker note": "Check access, take photos, add completion notes.", Price: "Add price", "Missing details": "Churvox found missing job details.", "Owner fix": "Enter the missing details here.", "Worker message": "Worker asked for help or approval.", "Prepared reply": "Reply prepared for owner approval.", "Save to job note": "Save this decision to job activity.", Start: "Start time", Finish: "Finish time", Total: "Review hours", "Adjustment note": "Check breaks, travel and manual edits.", Client: "Client from record", Notes: "Notes from record", Area: "Business setup", "Missing step": "Setup field missing", "What needs entering": "Fill this before automation can run.", "What failed": "Message/action failed", "Missing setup/contact": "Email, phone or provider setup", "Next step": "Fix missing detail then retry."
   };
-  return { type, title: c.title, approve: c.approve, found: slip.found || slip.title || c.title, why: slip.why || "Owner approval required before Churvox changes or sends anything.", fields: c.fields.map((label) => ({ label, value: values[label] || "" })) };
+  return { version: DRAFT_VERSION, type, title: c.title, approve: c.approve, found: slip.found || slip.title || c.title, why: slip.why || "Owner approval required before Churvox changes or sends anything.", fields: c.fields.map((label) => ({ label, value: values[label] || "" })) };
 }
 
 function normalise(s, i = 0) {
   const type = typeOf(s);
-  return { id: s.id || s._id || `cmd-${Date.now()}-${i}`, type, title: s.title || cfg[type]?.title || "Command action", status: s.status || "open", urgency: s.urgency || "Medium", draft: s.draft || draftFor(type, s), source: s.source || s.info || "Prepared from Churvox records", page: s.page || "jobs" };
+  const keepDraft = s.draft && s.draft.version === DRAFT_VERSION;
+  return { id: s.id || s._id || `cmd-${Date.now()}-${i}`, type, title: s.title || cfg[type]?.title || "Command action", status: s.status || "open", urgency: s.urgency || "Medium", draft: keepDraft ? s.draft : draftFor(type, s), source: s.source || s.info || "Prepared from Churvox records", page: s.page || "jobs" };
 }
 
 function readSlips() { try { const v = JSON.parse(localStorage.getItem(KEY) || "[]"); return Array.isArray(v) ? v.map(normalise) : []; } catch { return []; } }
-function saveSlips(items) { try { localStorage.setItem(KEY, JSON.stringify(items)); } catch {} }
+function saveSlips(items) { try { localStorage.setItem(KEY, JSON.stringify(items)); localStorage.removeItem(OLD_KEY); } catch {} }
 function seed() { return starter.map(([type, title], i) => normalise({ id: `starter-${type}-${Date.now()}-${i}`, type, title, urgency: i < 5 ? "High" : "Medium" }, i)); }
 function category(s) { if ((s.status || "").includes("blocked") || s.type === "blocked") return "blocked"; if (missingFields(s.draft).length) return "missing"; return cfg[s.type]?.cat || "missing"; }
 function detail(s) { const m = missingFields(s.draft); if (m.length) return `Missing: ${m.slice(0, 3).join(", ")}`; return (s.draft.fields || []).slice(0, 3).map((f) => f.value).filter(Boolean).join(" · "); }
@@ -122,7 +125,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
   async function load() { try { const data = await request("/slips"); if (data.slips?.length) { setAndSave(data.slips.map(normalise)); return; } } catch {} const local = readSlips(); if (local.length) setSlips(local); else setAndSave(seed()); }
   async function runChecks() { try { const data = await request("/scan", {}); if (data.slips?.length) { setAndSave(data.slips.map(normalise)); setMessage("Command updated."); return; } } catch {} setAndSave([...seed(), ...slips].slice(0, 120)); setMessage("Command updated."); }
   function patch(id, patchData) { setAndSave(slips.map((s) => s.id === id ? { ...s, ...patchData } : s)); }
-  function editField(label, value) { if (!selected) return; const draft = { ...selected.draft, fields: selected.draft.fields.map((f) => f.label === label ? { ...f, value } : f) }; patch(selected.id, { draft, status: "edited" }); }
+  function editField(label, value) { if (!selected) return; const draft = { ...selected.draft, version: DRAFT_VERSION, fields: selected.draft.fields.map((f) => f.label === label ? { ...f, value } : f) }; patch(selected.id, { draft, status: "edited" }); }
   async function approve() { if (!selected) return; const m = missingFields(selected.draft); if (m.length) { setMessage(`Missing info first: ${m.join(", ")}`); return; } try { const data = await request("/execute", { slipId: selected.id, actionType: selected.type, draft: selected.draft }); patch(selected.id, { status: "approved", result: data.message || "Done" }); setMessage(data.message || "Approved and executed."); } catch { patch(selected.id, { status: "approved", result: "Approved locally — backend needs deploy/config." }); setMessage("Approved locally — backend needs deploy/config."); } }
 
   return <section className="freshCommandDeskPage freshCommandPreparedPage"><div className="freshCommandDeskHero freshCommandPreparedHero"><div><span>Command</span><h1>Churvox prepared this for you.</h1><p>Left side shows the work. Right side opens the prepared form so blank space is never wasted.</p></div><div className="freshCommandPreparedSummary"><button onClick={runChecks}>Run Command checks</button><small>{message}</small><b>{open.length} open · {handled.length} handled</b></div></div>{activeCats.length === 0 ? <section className="freshCommandUpToDate"><b>You’re up to date.</b><p>No jobs, invoices, messages or worker issues need approval right now.</p></section> : <section className="freshCommandWorkArea"><section className="freshPreparedTrayGrid">{activeCats.map((cat) => <article className={`freshPreparedTray freshPreparedTray-${cat.id}`} key={cat.id}><header><div><h2>{cat.title}</h2><p>{cat.sub}</p></div><strong>{cat.items.length}</strong></header><div className="freshPreparedTrayList">{cat.items.map((slip) => <button className={selected?.id === slip.id ? "is-selected" : ""} key={slip.id} onClick={() => setSelectedId(slip.id)}><b>{slip.title}</b><span className="freshPreparedItemDetail">{detail(slip)}</span><em>{category(slip) === "missing" ? "needs info" : `${slip.urgency} · preview`}</em></button>)}</div></article>)}</section>{selected ? <Preview slip={selected} onField={editField} onApprove={approve} onSave={() => { patch(selected.id, { status: "edited" }); setMessage("Edit saved."); }} onSnooze={() => patch(selected.id, { status: "snoozed" })} onIgnore={() => patch(selected.id, { status: "ignored" })} onOpenArea={() => onNavigate?.(selected.page || "jobs")} /> : <section className="freshCommandPreviewPanel"><header><span>Next action</span><h2>Select an action</h2><p>The prepared form opens here.</p></header></section>}</section>}</section>;
