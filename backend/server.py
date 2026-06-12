@@ -1153,10 +1153,15 @@ async def create_worker(worker_data: WorkerCreate, request: Request, current_use
 @api_router.get("/team/workers")
 async def get_team_workers(current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
+    business_ids = [str(business_id)]
+    business_obj_id = normalize_object_id(business_id)
+    if business_obj_id:
+        business_ids.append(business_obj_id)
+
     workers = await db.users.find({
-        "business_id": str(business_id),
+        "business_id": {"$in": business_ids},
         "role": "worker"
-    }).to_list(length=500)
+    }).sort("created_at", -1).to_list(length=500)
     return safe_docs(workers)
 
 @api_router.delete("/team/workers/{worker_id}")
