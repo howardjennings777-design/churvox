@@ -6,7 +6,8 @@
     "start": "npm --prefix frontend start",
     "test:e2e": "npm --prefix frontend run test:e2e",
     "test:business": "npm --prefix frontend run test:business",
-    "test:business:live": "npm --prefix frontend run test:business:live"
+    "test:business:live": "npm --prefix frontend run test:business:live",
+    "test:business:v2": "npm --prefix frontend exec playwright test tests/e2e/churvox-real-business-audit-v2.spec.js"
   },
   "dependencies": {
     "date-fns": "3.6.0"
