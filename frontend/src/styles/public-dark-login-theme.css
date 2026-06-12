@@ -18,29 +18,29 @@
 .simpleProof span{background:rgba(255,247,237,.12)!important;border:1px solid rgba(255,247,237,.18)!important;color:#ffedd5!important}
 .simpleCard,
 .simpleBand{
-  background:rgba(255,247,237,.96)!important;
-  color:#111827!important;
+  background:linear-gradient(135deg,rgba(17,24,39,.97),rgba(31,41,55,.94) 56%,rgba(67,36,18,.90))!important;
+  color:#f9fafb!important;
   border:1px solid rgba(249,115,22,.30)!important;
-  box-shadow:0 32px 90px rgba(0,0,0,.35)!important;
+  box-shadow:0 32px 90px rgba(0,0,0,.38)!important;
 }
 .simpleCard *,
-.simpleBand *{color:#111827!important}
+.simpleBand *{color:#f9fafb!important}
 .simpleCard h2,
-.simpleBand h2{color:#111827!important}
+.simpleBand h2{color:#fff!important}
 .simpleCard p,
 .simpleBand p,
-.simpleBand .simpleLead{color:#374151!important;font-weight:850!important}
+.simpleBand .simpleLead{color:#e5e7eb!important;font-weight:850!important}
 .simpleCard li,
 .simpleGrid article{
-  background:#fff7ed!important;
-  border:1px solid rgba(249,115,22,.18)!important;
-  color:#111827!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.70)!important;
+  background:rgba(255,247,237,.10)!important;
+  border:1px solid rgba(255,237,213,.18)!important;
+  color:#ffedd5!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08)!important;
 }
 .simpleCard li *,
-.simpleGrid article *{color:#111827!important}
-.simpleGrid b{color:#111827!important}
-.simpleGrid span{color:#4b5563!important}
+.simpleGrid article *{color:#ffedd5!important}
+.simpleGrid b{color:#fff!important}
+.simpleGrid span{color:#fed7aa!important}
 .simpleCard .simplePrimary,
 .simpleBand .simplePrimary{color:#111827!important}
 .simpleFooter{color:#d1d5db!important}
