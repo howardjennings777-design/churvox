@@ -1,4 +1,4 @@
-/* FINAL Command readability override.
+/* FINAL Command readability override. Render trigger 2026-06-12.
    This is loaded last from index.js. It beats the old global dark Command styles. */
 
 body main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedRecommendation,
