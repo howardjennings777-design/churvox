@@ -11,7 +11,7 @@ const sourceRules = [
     urgency: "High",
     title: "Completed jobs need invoicing",
     found: "Finished work is ready to turn into money.",
-    prepared: "Invoice review is ready. Check the price and wording, then approve it from here.",
+    prepared: "Invoice form prepared for owner approval.",
     why: "Completed work should not sit unpaid.",
     page: "invoices",
     actionType: "review_invoice",
@@ -22,7 +22,7 @@ const sourceRules = [
     urgency: "High",
     title: "Overdue invoices need chasing",
     found: "Some invoices may be overdue or still unpaid.",
-    prepared: "A payment reminder is drafted and ready for owner approval.",
+    prepared: "Payment reminder form prepared for owner approval.",
     why: "Cashflow improves when overdue money is followed up early.",
     page: "payments",
     actionType: "send_payment_reminder",
@@ -33,7 +33,7 @@ const sourceRules = [
     urgency: "Medium",
     title: "Open quotes need follow-up",
     found: "Open quotes are waiting for a customer decision.",
-    prepared: "A polite quote follow-up is drafted and ready to approve.",
+    prepared: "Quote follow-up form prepared for owner approval.",
     why: "Quotes sitting open are possible work not yet won.",
     page: "quotes",
     actionType: "send_quote_followup",
@@ -44,7 +44,7 @@ const sourceRules = [
     urgency: "High",
     title: "Jobs need workers assigned",
     found: "Upcoming work may not have the right worker assigned yet.",
-    prepared: "A worker assignment check is ready. Review the suggested dispatch note before approving.",
+    prepared: "Worker assignment form prepared for owner approval.",
     why: "Unassigned jobs become customer problems fast.",
     page: "jobs",
     actionType: "assign_worker",
@@ -55,7 +55,7 @@ const sourceRules = [
     urgency: "High",
     title: "Jobs are missing key info",
     found: "Some jobs may be missing price, access notes, photos, address details or worker notes.",
-    prepared: "A missing-info fix is ready so the job can move without opening another page.",
+    prepared: "Job info form prepared so the missing details can be fixed here.",
     why: "Bad job details slow the worker down and block clean invoicing.",
     page: "jobs",
     actionType: "fix_missing_info",
@@ -66,7 +66,7 @@ const sourceRules = [
     urgency: "Medium",
     title: "Worker time needs review",
     found: "Completed work or payroll records may need owner review.",
-    prepared: "A worker time review is ready before payroll export.",
+    prepared: "Worker time form prepared before payroll export.",
     why: "Time should be checked before it affects pay or job costing.",
     page: "payroll",
     actionType: "review_worker_time",
@@ -77,10 +77,10 @@ const sourceRules = [
     urgency: "Medium",
     title: "Client details are missing",
     found: "Some clients may be missing phone, email, address or key notes.",
-    prepared: "A missing-client-detail fix is ready before messages, quotes or invoices go out.",
+    prepared: "Client detail form prepared before messages, quotes or invoices go out.",
     why: "Bad customer details block messages, quotes, invoices and job scheduling.",
     page: "clients",
-    actionType: "fix_missing_info",
+    actionType: "fix_client_info",
   },
   {
     id: "setup-not-finished",
@@ -88,7 +88,7 @@ const sourceRules = [
     urgency: "High",
     title: "Setup needs finishing",
     found: "Business settings, invoice settings, first client, first job or first invoice steps may still be incomplete.",
-    prepared: "A setup checklist is ready. Review it and mark handled from here.",
+    prepared: "Setup checklist form prepared for owner approval.",
     why: "The app works best when the first real workflow is connected.",
     page: "setupassistant",
     actionType: "fix_setup_step",
@@ -118,9 +118,11 @@ function actionTypeFor(slip) {
   if (raw.includes("payment") || raw.includes("overdue")) return "send_payment_reminder";
   if (raw.includes("quote") && raw.includes("follow")) return "send_quote_followup";
   if (raw.includes("quote")) return "approve_quote";
+  if (raw.includes("client") && raw.includes("missing")) return "fix_client_info";
   if (raw.includes("worker") || raw.includes("assign")) return "assign_worker";
   if (raw.includes("time") || raw.includes("payroll")) return "review_worker_time";
-  if (raw.includes("setup") || raw.includes("missing")) return "fix_setup_step";
+  if (raw.includes("setup")) return "fix_setup_step";
+  if (raw.includes("missing")) return "fix_missing_info";
   if (raw.includes("invoice")) return "review_invoice";
   if (raw.includes("message")) return "send_customer_message";
   return "owner_review";
@@ -135,25 +137,25 @@ function urgencyRank(value) {
 
 function approveLabel(actionType) {
   const labels = {
-    review_invoice: "Approve invoice draft",
+    review_invoice: "Approve invoice",
     send_payment_reminder: "Approve reminder",
     send_quote_followup: "Approve follow-up",
-    approve_quote: "Approve quote action",
+    approve_quote: "Approve quote",
     assign_worker: "Approve assignment",
-    review_worker_time: "Approve time review",
+    review_worker_time: "Approve time",
     fix_setup_step: "Approve setup fix",
-    fix_missing_info: "Approve info fix",
+    fix_missing_info: "Approve job fix",
+    fix_client_info: "Approve client fix",
     send_customer_message: "Approve message",
-    owner_review: "Approve prepared work",
+    owner_review: "Approve",
   };
-  return labels[actionType] || "Approve prepared work";
+  return labels[actionType] || "Approve";
 }
 
 function normalizeSlip(slip, index = 0) {
   const actionType = actionTypeFor(slip || {});
   const areaGroup = slip?.areaGroup || slip?.area || areaFor({ ...slip, actionType });
   const urgency = slip?.urgency || (lower(slip?.title).includes("overdue") ? "High" : "Medium");
-
   return {
     id: cleanText(slip?.id || slip?._id || slip?.dedupeKey) || `command-slip-${Date.now()}-${index}`,
     title: cleanText(slip?.title) || "Owner action ready",
@@ -163,9 +165,9 @@ function normalizeSlip(slip, index = 0) {
     areaGroup,
     actionType,
     found: cleanText(slip?.found) || "Work needs owner attention.",
-    prepared: cleanText(slip?.prepared) || "The next safe action is ready.",
+    prepared: cleanText(slip?.prepared) || "The form is ready for review.",
     why: cleanText(slip?.why || slip?.owner) || "This keeps admin moving while the owner stays in control.",
-    owner: cleanText(slip?.owner) || "Review, edit, approve, snooze or ignore from this slip.",
+    owner: cleanText(slip?.owner) || "Review the form, edit anything needed, then approve.",
     page: cleanText(slip?.page) || "setupassistant",
     createdAt: cleanText(slip?.createdAt) || "Today",
     status: cleanText(slip?.status) || "open",
@@ -210,75 +212,139 @@ function makeStarterSlips() {
   return sourceRules.map(makeRuleSlip);
 }
 
-function buildPreparedDraft(slip) {
-  if (!slip) return null;
-  if (slip.draft) return { ...slip.draft };
+function field(key, label, value = "", type = "text", wide = false) {
+  return { key, label, value, type, wide };
+}
 
-  const common = {
-    title: slip.title,
-    found: slip.found,
-    prepared: slip.prepared,
-    why: slip.why,
-    ownerNote: slip.owner,
-  };
-
-  const drafts = {
+function defaultFieldsFor(slip) {
+  const today = new Date().toISOString().slice(0, 10);
+  const actionType = slip?.actionType || "owner_review";
+  const map = {
     review_invoice: {
-      actionLabel: "Invoice draft",
-      preparedBody: "Invoice draft prepared from the completed job.\n\nService: completed job work\nCustomer note: Work completed as agreed\nAmount: review price before sending\nStatus: ready for owner approval",
-      approveResult: "Invoice draft approved by owner.",
+      actionLabel: "Invoice ready to approve",
+      approveResult: "Invoice form approved by owner.",
+      fields: [
+        field("customer", "Customer", "Customer from completed job"),
+        field("job", "Job", "Completed job"),
+        field("invoiceNumber", "Invoice number", "Draft"),
+        field("amount", "Amount", "Review price", "text"),
+        field("gst", "GST", "15% if applicable"),
+        field("dueDate", "Due date", today, "date"),
+        field("serviceLine", "Service line", "Completed service work", "textarea", true),
+        field("invoiceNote", "Invoice note", "Thanks for your business. Please let us know if you need anything else.", "textarea", true),
+      ],
     },
     send_payment_reminder: {
-      actionLabel: "Payment reminder",
-      preparedBody: "Hi, just a friendly reminder that this invoice is still showing as unpaid. Please let us know if you need anything resent. Thanks.",
+      actionLabel: "Payment reminder ready",
       approveResult: "Payment reminder approved by owner.",
+      fields: [
+        field("customer", "Customer", "Customer with overdue invoice"),
+        field("invoice", "Invoice", "Overdue invoice"),
+        field("amountDue", "Amount due", "Review amount"),
+        field("sendBy", "Send by", "Email / SMS"),
+        field("message", "Reminder message", "Hi, just a friendly reminder that this invoice is still showing as unpaid. Please let us know if you need anything resent. Thanks.", "textarea", true),
+      ],
     },
     send_quote_followup: {
-      actionLabel: "Quote follow-up",
-      preparedBody: "Hi, just checking in on the quote we sent through. Happy to answer any questions or book the work in when you are ready.",
+      actionLabel: "Quote follow-up ready",
       approveResult: "Quote follow-up approved by owner.",
+      fields: [
+        field("customer", "Customer", "Customer with open quote"),
+        field("quote", "Quote", "Open quote"),
+        field("quoteValue", "Quote value", "Review value"),
+        field("sendBy", "Send by", "Email / SMS"),
+        field("message", "Follow-up message", "Hi, just checking in on the quote we sent through. Happy to answer any questions or book the work in when you are ready.", "textarea", true),
+      ],
     },
     assign_worker: {
-      actionLabel: "Worker assignment",
-      preparedBody: "Suggested dispatch action:\n\nAssign the job to the best available worker. Check area, workload, job notes and timing before confirming.",
-      approveResult: "Worker assignment action approved by owner.",
-    },
-    review_worker_time: {
-      actionLabel: "Time review",
-      preparedBody: "Worker time review prepared. Check completed work, hours, notes and any manual adjustments before payroll export.",
-      approveResult: "Worker time review approved by owner.",
-    },
-    fix_setup_step: {
-      actionLabel: "Setup fix",
-      preparedBody: "Setup fix prepared. Complete the missing business, invoice, client or first-job details so the workflow is ready.",
-      approveResult: "Setup fix marked handled by owner.",
+      actionLabel: "Worker assignment ready",
+      approveResult: "Worker assignment approved by owner.",
+      fields: [
+        field("job", "Job", "Upcoming job"),
+        field("worker", "Worker", "Choose worker"),
+        field("date", "Date", today, "date"),
+        field("timeWindow", "Time window", "Review time"),
+        field("address", "Address", "Job address", "text", true),
+        field("workerNotes", "Worker notes", "Check access, photos required, customer notes and safety details before starting.", "textarea", true),
+      ],
     },
     fix_missing_info: {
-      actionLabel: "Missing info fix",
-      preparedBody: "Missing information to check:\n\n- Price or quote amount\n- Customer contact details\n- Address or access notes\n- Job notes/photos\n- Worker assignment or completion notes",
-      approveResult: "Missing information fix approved by owner.",
+      actionLabel: "Job info fix ready",
+      approveResult: "Missing job information approved by owner.",
+      fields: [
+        field("job", "Job", "Job missing details"),
+        field("price", "Price", "Add price"),
+        field("worker", "Worker", "Assign or confirm worker"),
+        field("priority", "Priority", "High"),
+        field("missingDetails", "Missing details", "Price, access notes, address, customer contact, photos or completion notes.", "textarea", true),
+        field("ownerFix", "Owner fix", "Enter the missing information, then approve this fix.", "textarea", true),
+      ],
     },
-    send_customer_message: {
-      actionLabel: "Customer message",
-      preparedBody: "Customer message prepared. Review the wording, then approve before it goes out.",
-      approveResult: "Customer message approved by owner.",
+    fix_client_info: {
+      actionLabel: "Client details ready",
+      approveResult: "Client detail fix approved by owner.",
+      fields: [
+        field("client", "Client", "Client missing details"),
+        field("phone", "Phone", "Add phone"),
+        field("email", "Email", "Add email", "email"),
+        field("address", "Address", "Add address", "text", true),
+        field("notes", "Client notes", "Access notes, preferred contact method, gate codes or billing notes.", "textarea", true),
+      ],
+    },
+    review_worker_time: {
+      actionLabel: "Worker time ready",
+      approveResult: "Worker time approved by owner.",
+      fields: [
+        field("worker", "Worker", "Worker name"),
+        field("job", "Job", "Completed job"),
+        field("date", "Date", today, "date"),
+        field("start", "Start", "Start time"),
+        field("finish", "Finish", "Finish time"),
+        field("total", "Total", "Review hours"),
+        field("adjustment", "Adjustment note", "Check pauses, travel, manual edits or extras before payroll export.", "textarea", true),
+      ],
+    },
+    fix_setup_step: {
+      actionLabel: "Setup fix ready",
+      approveResult: "Setup fix approved by owner.",
+      fields: [
+        field("area", "Area", "Business setup"),
+        field("missingStep", "Missing step", "Business details / invoice settings / first client / first job"),
+        field("ownerInput", "What needs entering", "Complete the missing setup details so Command can prepare better work.", "textarea", true),
+        field("notes", "Notes", "Mark this handled once the setup gap is sorted.", "textarea", true),
+      ],
     },
     owner_review: {
-      actionLabel: "Owner decision",
-      preparedBody: "Owner action prepared. Review the details and approve or edit before anything moves forward.",
+      actionLabel: "Owner review ready",
       approveResult: "Prepared action approved by owner.",
+      fields: [
+        field("action", "Action", slip?.title || "Owner action"),
+        field("details", "Details", slip?.prepared || "Review and approve the prepared action.", "textarea", true),
+      ],
     },
   };
+  return map[actionType] || map.owner_review;
+}
 
-  const actionDraft = drafts[slip.actionType] || drafts.owner_review;
-  return { ...common, ...actionDraft };
+function buildPreparedDraft(slip) {
+  if (!slip) return null;
+  if (slip.draft?.fields) return { ...slip.draft, fields: slip.draft.fields.map((item) => ({ ...item })) };
+  const base = defaultFieldsFor(slip);
+  return {
+    actionType: slip.actionType,
+    actionLabel: base.actionLabel,
+    approveResult: base.approveResult,
+    title: slip.title,
+    found: slip.found,
+    why: slip.why,
+    fields: base.fields,
+  };
 }
 
 async function commandRequest(path, options = {}) {
   const token = (() => {
     try { return window.localStorage.getItem("token"); } catch { return ""; }
   })();
-
   const response = await fetch(`${COMMAND_API_BASE}${path}`, {
     method: options.method || "GET",
     credentials: "include",
@@ -289,7 +355,6 @@ async function commandRequest(path, options = {}) {
     },
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
-
   const data = await response.json().catch(() => ({}));
   if (!response.ok || data?.ok === false) throw new Error(data?.message || `Command check failed: ${response.status}`);
   return data;
@@ -344,7 +409,6 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
         return;
       }
     } catch {}
-
     const local = readLocalSlips();
     if (local.length) {
       setSlips(local);
@@ -371,10 +435,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
         return;
       }
     } catch {}
-
-    const existing = slips.map(normalizeSlip);
-    const rules = sourceRules.map(makeRuleSlip);
-    const next = [...rules, ...existing].slice(0, 180);
+    const next = [...sourceRules.map(makeRuleSlip), ...slips.map(normalizeSlip)].slice(0, 180);
     setSlips(next);
     saveLocalSlips(next);
     setMessage("Owner actions updated.");
@@ -390,19 +451,18 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
     saveLocalSlips(next);
   }
 
-  function updateDraft(field, value) {
-    setDraft((current) => ({ ...(current || buildPreparedDraft(selected)), [field]: value }));
+  function updateDraftField(key, value) {
+    setDraft((current) => ({
+      ...(current || buildPreparedDraft(selected)),
+      fields: (current?.fields || []).map((item) => item.key === key ? { ...item, value } : item),
+    }));
   }
 
   function saveDraftEdit() {
     if (!selected || !draft) return;
     updateSlip(selected.id, {
-      title: draft.title,
-      found: draft.found,
-      prepared: draft.prepared,
-      why: draft.why,
-      owner: draft.ownerNote,
       draft,
+      title: draft.title || selected.title,
       status: "edited",
       editedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     });
@@ -411,8 +471,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
 
   async function approveSlip(slip, preparedDraft = null) {
     const finalDraft = preparedDraft || buildPreparedDraft(slip);
-    const result = finalDraft?.approveResult || "Prepared action approved by owner.";
-
+    const result = finalDraft?.approveResult || "Prepared form approved by owner.";
     try {
       const data = await commandRequest(`/slips/${slip.id}/approve`, {
         method: "POST",
@@ -428,7 +487,6 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
         return;
       }
     } catch {}
-
     updateSlip(slip.id, {
       status: "approved",
       draft: finalDraft,
@@ -457,7 +515,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
         <div>
           <span>Command</span>
           <h1>Churvox prepared this for you.</h1>
-          <p>Open a tray, check the filled slip, edit in place, then approve. You only open another area when you really need to.</p>
+          <p>Open a tray, check the filled form, edit in place, then approve. You only open another area when you really need to.</p>
         </div>
         <div className="freshCommandPreparedSummary">
           <button type="button" onClick={runChecks}>{loading ? "Preparing..." : "Run Command checks"}</button>
@@ -482,7 +540,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
                 <button type="button" key={slip.id} onClick={() => setSelectedId(slip.id)}>
                   <b>{slip.title}</b>
                   <span>{slip.info}</span>
-                  <em>{slip.urgency} · open slip</em>
+                  <em>{slip.urgency} · open form</em>
                 </button>
               ))}
               {tray.items.length === 0 && <div className="freshPreparedEmpty"><b>{tray.empty}</b><span>Command will keep watching this area.</span></div>}
@@ -506,37 +564,25 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
               <h2>{draft.actionLabel}</h2>
               <p>{selected.info}</p>
             </header>
-
             <div className="freshSlipBody freshPreparedSlipBody">
-              <label className="freshPreparedEditor">
-                Action title
-                <input value={draft.title} onChange={(event) => updateDraft("title", event.target.value)} />
-              </label>
+              <div className="freshPreparedFormGrid">
+                {draft.fields.map((item) => (
+                  <label className={`freshPreparedFormField ${item.wide ? "freshPreparedFormFieldWide" : ""}`} key={item.key}>
+                    <span>{item.label}</span>
+                    {item.type === "textarea" ? (
+                      <textarea value={item.value} onChange={(event) => updateDraftField(item.key, event.target.value)} />
+                    ) : (
+                      <input type={item.type || "text"} value={item.value} onChange={(event) => updateDraftField(item.key, event.target.value)} />
+                    )}
+                  </label>
+                ))}
+              </div>
 
-              <label className="freshPreparedEditor">
-                Found
-                <textarea value={draft.found} onChange={(event) => updateDraft("found", event.target.value)} />
-              </label>
-
-              <label className="freshPreparedEditor">
-                Prepared for approval
-                <textarea value={draft.prepared} onChange={(event) => updateDraft("prepared", event.target.value)} />
-              </label>
-
-              <label className="freshPreparedEditor freshPreparedEditorTall">
-                Filled draft / action details
-                <textarea value={draft.preparedBody} onChange={(event) => updateDraft("preparedBody", event.target.value)} />
-              </label>
-
-              <label className="freshPreparedEditor">
-                Why it matters
-                <textarea value={draft.why} onChange={(event) => updateDraft("why", event.target.value)} />
-              </label>
-
-              <label className="freshPreparedEditor">
-                Owner note
-                <textarea value={draft.ownerNote} onChange={(event) => updateDraft("ownerNote", event.target.value)} />
-              </label>
+              <details className="freshPreparedContext">
+                <summary>Why this is here</summary>
+                <p><b>Found:</b> {draft.found}</p>
+                <p><b>Why:</b> {draft.why}</p>
+              </details>
 
               <div className="freshSlipActions">
                 <button className="freshPrimary" onClick={() => approveSlip(selected, draft)}>{approveLabel(selected.actionType)}</button>
@@ -545,8 +591,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
                 <button className="freshGhost" onClick={() => ignoreSlip(selected)}>Ignore</button>
                 <button className="freshOrange" onClick={() => onNavigate?.(selected.page || "setupassistant")}>Open area only if needed</button>
               </div>
-
-              <button type="button" className="freshClose" onClick={() => setSelectedId(null)}>Close slip</button>
+              <button type="button" className="freshClose" onClick={() => setSelectedId(null)}>Close form</button>
             </div>
           </section>
         </div>
