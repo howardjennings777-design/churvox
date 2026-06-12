@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { saveBusinessSettings } from "../../lib/businessSettings";
+import { Nav } from "../marketing/ExecutiveHomePage";
 import "./AuthPublicCommand.css";
 
 const FIRST_SETUP_KEY = "churvox_first_setup_pending";
@@ -114,16 +115,7 @@ export default function SignupPage() {
 
   return (
     <main className="cvPublicAuth">
-      <header className="cvPublicAuthNav">
-        <Link to="/" className="cvPublicAuthBrand">Churvox</Link>
-
-        <nav className="cvPublicAuthNavLinks">
-          <Link to="/">Home</Link>
-          <Link to="/features">Features</Link>
-          <Link to="/pricing">Pricing</Link>
-          <Link to="/login">Log in</Link>
-        </nav>
-      </header>
+      <Nav />
 
       <section className="cvPublicAuthShell">
         <form className="cvPublicAuthCard" onSubmit={handleSubmit}>
