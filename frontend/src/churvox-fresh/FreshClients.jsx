@@ -39,6 +39,12 @@ function cleanStatus(value, client) {
   return "Active";
 }
 
+function timeValue(client) {
+  const raw = client?.created_at || client?.createdAt || client?.updated_at || client?.updatedAt || client?.date || "";
+  const parsed = Date.parse(raw);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function normalizeClient(client, index) {
   const id = normalizeId(client?.id || client?._id || client?.client_id || client?.customer_id) || `client-${index}`;
   const name = client?.name || client?.client_name || client?.customer_name || client?.contact_name || client?.business_name || "Unnamed client";
@@ -63,6 +69,7 @@ function normalizeClient(client, index) {
     notes,
     risk: billingEmail || email ? "Clean setup" : "Contact detail missing",
     value: client?.value || client?.lifetime_value || client?.amount_due || "Real client",
+    sortTime: timeValue(client),
   };
 }
 
@@ -89,18 +96,22 @@ export default function FreshClients({ onNavigate }) {
     setLoading(true);
     setError("");
     const res = await api.get("/clients");
-    setLoading(false);
 
     if (!res.success) {
       setClients([]);
       setSelectedId("");
       setError(res.error || "Could not load real clients");
+      setLoading(false);
       return;
     }
 
-    const nextClients = unpackList(res.data).map(normalizeClient);
+    const nextClients = unpackList(res.data)
+      .map(normalizeClient)
+      .sort((a, b) => b.sortTime - a.sortTime || String(b.id).localeCompare(String(a.id)));
+
     setClients(nextClients);
     setSelectedId((current) => nextClients.some((client) => client.id === current) ? current : nextClients[0]?.id || "");
+    setLoading(false);
   }, [api]);
 
   React.useEffect(() => {
@@ -114,8 +125,11 @@ export default function FreshClients({ onNavigate }) {
   }, [loadClients]);
 
   React.useEffect(() => {
-    if (!selected && clients[0]) setSelectedId(clients[0].id);
-  }, [clients, selected]);
+    if (!visibleClients.length) return;
+    if (!selectedId || !visibleClients.some((client) => client.id === selectedId)) {
+      setSelectedId(visibleClients[0].id);
+    }
+  }, [visibleClients, selectedId]);
 
   function updateSelectedClient(patch) {
     if (!selected) return;
@@ -155,15 +169,15 @@ export default function FreshClients({ onNavigate }) {
 
       <section className="freshCommandPulse">
         <aside className="freshCard">
-          <h2>{loading ? "…" : clients.length}</h2>
+          <h2>{loading && clients.length === 0 ? "…" : clients.length}</h2>
           <p>Total clients</p>
         </aside>
         <aside className="freshCard">
-          <h2>{loading ? "…" : needsSetup}</h2>
+          <h2>{loading && clients.length === 0 ? "…" : needsSetup}</h2>
           <p>Need setup</p>
         </aside>
         <aside className="freshCard">
-          <h2>{loading ? "…" : clients.filter((client) => client.status === "Active").length}</h2>
+          <h2>{loading && clients.length === 0 ? "…" : clients.filter((client) => client.status === "Active").length}</h2>
           <p>Active clients</p>
         </aside>
       </section>
@@ -204,7 +218,7 @@ export default function FreshClients({ onNavigate }) {
         <aside className="freshCard">
           <h2>Client list</h2>
 
-          {loading ? (
+          {loading && clients.length === 0 ? (
             <div className="freshItem"><b>Loading real clients…</b><span>Checking your business account.</span></div>
           ) : visibleClients.map((client) => (
             <button
@@ -217,6 +231,10 @@ export default function FreshClients({ onNavigate }) {
               <span>{client.type} · {client.status} · {client.value}</span>
             </button>
           ))}
+
+          {loading && clients.length > 0 ? (
+            <div className="freshItem"><b>Refreshing clients…</b><span>Showing your current saved records while Churvox refreshes.</span></div>
+          ) : null}
 
           {!loading && visibleClients.length === 0 && (
             <div className="freshItem">
