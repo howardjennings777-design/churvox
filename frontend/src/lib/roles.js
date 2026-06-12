@@ -81,7 +81,7 @@ export function getDefaultRoute(role) {
   const r = normalizeRole(role);
   if (r === "worker") return "/worker/jobs";
   if (r === "payroll") return "/payroll-board";
-  return "/dashboard";
+  return "/dashboard#command";
 }
 
 export const INVITE_ROLES = [
