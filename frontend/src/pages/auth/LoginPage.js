@@ -77,7 +77,7 @@ export default function LoginPage() {
           <p className="cvPublicAuthKicker">Owner login</p>
           <h1>Sign in to Churvox.</h1>
           <p className="cvPublicAuthIntro">
-            Open your Smart Hub, review prepared admin, and approve the next move.
+            Get back to your jobs, admin and approvals.
           </p>
 
           {error ? <p className="cvPublicAuthError">{error}</p> : null}
@@ -128,12 +128,12 @@ export default function LoginPage() {
         </form>
 
         <aside className="cvPublicAuthPanel">
-          <p>Churvox does the admin. You approve.</p>
-          <h2>Built for service businesses that need less admin and faster decisions.</h2>
+          <p>Less admin. More jobs done.</p>
+          <h2>Your jobs, admin and approvals in one place.</h2>
           <ul>
-            <li>Jobs, clients, quotes and invoices in one place</li>
-            <li>AI-prepared admin for owner approval</li>
-            <li>14-day free trial, no card required</li>
+            <li>Keep jobs, clients, quotes and invoices together</li>
+            <li>Review prepared admin before it goes out</li>
+            <li>Stay in control of the business</li>
           </ul>
         </aside>
       </section>
