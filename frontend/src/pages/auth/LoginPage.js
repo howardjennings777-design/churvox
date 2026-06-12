@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { normalizeRole, getDefaultRoute } from "@/lib/roles";
+import { Nav } from "../marketing/ExecutiveHomePage";
 import "./AuthPublicCommand.css";
 
 const inputStyle = {
@@ -69,16 +70,7 @@ export default function LoginPage() {
 
   return (
     <main className="cvPublicAuth">
-      <header className="cvPublicAuthNav">
-        <Link to="/" className="cvPublicAuthBrand">Churvox</Link>
-
-        <nav className="cvPublicAuthNavLinks">
-          <Link to="/">Home</Link>
-          <Link to="/features">Features</Link>
-          <Link to="/pricing">Pricing</Link>
-          <Link to="/signup">Start free</Link>
-        </nav>
-      </header>
+      <Nav />
 
       <section className="cvPublicAuthShell">
         <form className="cvPublicAuthCard" onSubmit={handleSubmit}>
