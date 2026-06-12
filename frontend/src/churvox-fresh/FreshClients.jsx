@@ -1,189 +1,148 @@
 import React from "react";
+import { useApi } from "../hooks/useApi";
 import { readFreshFocus } from "./freshFocus";
-
-const CLIENT_STORAGE_KEY = "churvox:fresh-clients:v1";
-const JOB_STORAGE_KEY = "churvox:fresh-jobs:v1";
-const QUOTE_STORAGE_KEY = "churvox:fresh-quotes:v1";
-
-const seedClients = [
-  {
-    id: "client-1",
-    name: "Aroha Property Care",
-    type: "Commercial",
-    status: "Active",
-    email: "office@arohaproperty.co.nz",
-    phone: "027 410 7788",
-    address: "Naenae, Lower Hutt",
-    billingEmail: "accounts@arohaproperty.co.nz",
-    notes: "Regular lawn and tidy work. Good payer.",
-    risk: "Clean setup",
-    value: "$85 this week",
-  },
-  {
-    id: "client-2",
-    name: "Birchville Rentals",
-    type: "Property manager",
-    status: "Needs setup",
-    email: "manager@birchvillerentals.co.nz",
-    phone: "027 900 3311",
-    address: "Upper Hutt",
-    billingEmail: "",
-    notes: "Billing email missing. Do not automate invoices until fixed.",
-    risk: "Billing detail missing",
-    value: "$190 overdue",
-  },
-  {
-    id: "client-3",
-    name: "Lower Hutt Medical Centre",
-    type: "Commercial",
-    status: "Active",
-    email: "admin@lhmedical.co.nz",
-    phone: "04 555 0101",
-    address: "Lower Hutt",
-    billingEmail: "accounts@lhmedical.co.nz",
-    notes: "Garden tidy every fortnight. Needs quiet entry work.",
-    risk: "Clean setup",
-    value: "$140 due",
-  },
-];
 
 const filters = ["All", "Active", "Needs setup", "Paused"];
 
-function readFreshList(key) {
-  try {
-    if (typeof window === "undefined") return [];
-
-    const saved = window.localStorage.getItem(key);
-    if (!saved) return [];
-
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
+function normalizeId(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
+  if (typeof value === "object") {
+    if (value.$oid) return String(value.$oid);
+    if (value.oid) return String(value.oid);
+    if (value.id) return normalizeId(value.id);
+    if (value._id) return normalizeId(value._id);
   }
+  const text = String(value || "");
+  return text === "[object Object]" ? "" : text;
 }
 
-function writeFreshList(key, list, type) {
-  try {
-    if (typeof window === "undefined") return;
-
-    window.localStorage.setItem(key, JSON.stringify(list));
-    window.dispatchEvent(
-      new CustomEvent("churvox:fresh-data-updated", {
-        detail: { type },
-      })
-    );
-  } catch {
-    // Fresh preview keeps working without local storage.
-  }
+function unpackList(payload) {
+  const data = payload?.data ?? payload;
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.clients)) return data.clients;
+  if (Array.isArray(data?.customers)) return data.customers;
+  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data?.records)) return data.records;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.data?.clients)) return data.data.clients;
+  if (Array.isArray(data?.data?.customers)) return data.data.customers;
+  return [];
 }
 
-function loadClients() {
-  try {
-    if (typeof window === "undefined") return seedClients;
+function cleanStatus(value, client) {
+  const text = String(value || client?.client_status || client?.customer_status || "").trim();
+  if (!text) return client?.billing_email || client?.billingEmail || client?.email ? "Active" : "Needs setup";
+  if (/paused|inactive|archived/i.test(text)) return "Paused";
+  if (/setup|missing|draft|incomplete/i.test(text)) return "Needs setup";
+  return "Active";
+}
 
-    const saved = window.localStorage.getItem(CLIENT_STORAGE_KEY);
-    if (!saved) return seedClients;
+function normalizeClient(client, index) {
+  const id = normalizeId(client?.id || client?._id || client?.client_id || client?.customer_id) || `client-${index}`;
+  const name = client?.name || client?.client_name || client?.customer_name || client?.contact_name || client?.business_name || "Unnamed client";
+  const billingEmail = client?.billingEmail || client?.billing_email || client?.billing_contact_email || "";
+  const email = client?.email || client?.client_email || client?.customer_email || "";
+  const phone = client?.phone || client?.mobile || client?.client_phone || client?.customer_phone || "";
+  const address = client?.address || client?.site_address || client?.service_address || client?.customer_address || "";
+  const notes = client?.notes || client?.internal_notes || client?.client_notes || "";
+  const type = client?.type || client?.client_type || client?.customer_type || "Client";
+  const status = cleanStatus(client?.status, client);
 
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed : seedClients;
-  } catch {
-    return seedClients;
-  }
+  return {
+    ...client,
+    id,
+    name,
+    type,
+    status,
+    email,
+    phone,
+    address,
+    billingEmail,
+    notes,
+    risk: billingEmail || email ? "Clean setup" : "Contact detail missing",
+    value: client?.value || client?.lifetime_value || client?.amount_due || "Real client",
+  };
 }
 
 export default function FreshClients({ onNavigate }) {
-  const [clients, setClients] = React.useState(loadClients);
-  const [selectedId, setSelectedId] = React.useState(() => readFreshFocus("clients", clients[0]?.id || ""));
+  const api = useApi();
+  const [clients, setClients] = React.useState([]);
+  const [selectedId, setSelectedId] = React.useState(() => readFreshFocus("clients", ""));
   const [filter, setFilter] = React.useState("All");
+  const [search, setSearch] = React.useState("");
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
 
   const selected = clients.find((client) => client.id === selectedId) || clients[0];
-  const visibleClients = filter === "All" ? clients : clients.filter((client) => client.status === filter);
+  const query = search.trim().toLowerCase();
+  const visibleClients = clients.filter((client) => {
+    const matchesFilter = filter === "All" || client.status === filter;
+    const haystack = `${client.name} ${client.email} ${client.phone} ${client.address} ${client.notes}`.toLowerCase();
+    return matchesFilter && (!query || haystack.includes(query));
+  });
   const needsSetup = clients.filter((client) => client.status === "Needs setup").length;
 
-  React.useEffect(() => {
-    try {
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(CLIENT_STORAGE_KEY, JSON.stringify(clients));
-      }
-    } catch {
-      // Fresh preview keeps working without local storage.
+  const loadClients = React.useCallback(async () => {
+    setLoading(true);
+    setError("");
+    const res = await api.get("/clients");
+    setLoading(false);
+
+    if (!res.success) {
+      setClients([]);
+      setSelectedId("");
+      setError(res.error || "Could not load real clients");
+      return;
     }
-  }, [clients]);
+
+    const nextClients = unpackList(res.data).map(normalizeClient);
+    setClients(nextClients);
+    setSelectedId((current) => nextClients.some((client) => client.id === current) ? current : nextClients[0]?.id || "");
+  }, [api]);
+
+  React.useEffect(() => {
+    loadClients();
+  }, [loadClients]);
+
+  React.useEffect(() => {
+    const onFreshDataUpdated = () => loadClients();
+    window.addEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
+    return () => window.removeEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
+  }, [loadClients]);
+
+  React.useEffect(() => {
+    if (!selected && clients[0]) setSelectedId(clients[0].id);
+  }, [clients, selected]);
 
   function updateSelectedClient(patch) {
     if (!selected) return;
-
-    setClients((current) =>
-      current.map((client) =>
-        client.id === selected.id
-          ? { ...client, ...patch }
-          : client
-      )
-    );
+    setClients((current) => current.map((client) => client.id === selected.id ? { ...client, ...patch } : client));
   }
 
-  function resetClients() {
-    try {
-      if (typeof window !== "undefined") {
-        window.localStorage.removeItem(CLIENT_STORAGE_KEY);
-      }
-    } catch {
-      // Ignore preview storage errors.
-    }
-
-    setClients(seedClients);
-    setSelectedId(seedClients[0].id);
-    setFilter("All");
-  }
-
-  function markClean() {
-    updateSelectedClient({
-      status: "Active",
-      risk: "Clean setup",
-      notes: selected.billingEmail
-        ? selected.notes
-        : `${selected.notes}\n\nOwner note: billing email still needs checking.`,
+  async function saveSelectedClient() {
+    if (!selected?.id) return;
+    setSaving(true);
+    const res = await api.patch(`/clients/${encodeURIComponent(selected.id)}`, {
+      name: selected.name,
+      email: selected.email,
+      phone: selected.phone,
+      address: selected.address,
+      billing_email: selected.billingEmail,
+      notes: selected.notes,
     });
+    setSaving(false);
+    if (!res.success) {
+      setError(res.error || "Could not update client");
+      return;
+    }
+    await loadClients();
   }
 
-  function createJobForClient() {
-    if (!selected) return;
-
-    const job = {
-      id: `job-${Date.now()}`,
-      title: "New service job",
-      client: selected.name,
-      address: selected.address || "Confirm service address",
-      status: "Ready",
-      worker: "Unassigned",
-      scheduled: "Not scheduled",
-      price: "$0 draft",
-      notes: `Created from client record. Client phone: ${selected.phone || "missing"}.`,
-      risk: selected.billingEmail ? "Client setup clean" : "Billing detail missing",
-    };
-
-    writeFreshList(JOB_STORAGE_KEY, [job, ...readFreshList(JOB_STORAGE_KEY)], "job");
-    onNavigate?.("jobs");
-  }
-
-  function createQuoteForClient() {
-    if (!selected) return;
-
-    const quote = {
-      id: `QT-${Date.now().toString().slice(-5)}`,
-      client: selected.name,
-      title: "New quote",
-      status: "Draft",
-      amount: 0,
-      age: "Created now",
-      followUp: "Not sent yet",
-      note: `Created from client record. Confirm scope and pricing before sending.`,
-      lines: ["New quote line · $0"],
-    };
-
-    writeFreshList(QUOTE_STORAGE_KEY, [quote, ...readFreshList(QUOTE_STORAGE_KEY)], "quote");
-    onNavigate?.("quotes");
+  function go(path) {
+    window.location.href = path;
   }
 
   return (
@@ -191,23 +150,31 @@ export default function FreshClients({ onNavigate }) {
       <header className="freshHero">
         <span>Churvox fresh · Clients</span>
         <h1>Clients</h1>
-        <p>Keep client records clean so jobs, quotes, invoices and Command automation do not break.</p>
+        <p>Real client records from your business account. Jobs, quotes, invoices and Command should use these clients.</p>
       </header>
 
       <section className="freshCommandPulse">
         <aside className="freshCard">
-          <h2>{clients.length}</h2>
+          <h2>{loading ? "…" : clients.length}</h2>
           <p>Total clients</p>
         </aside>
         <aside className="freshCard">
-          <h2>{needsSetup}</h2>
+          <h2>{loading ? "…" : needsSetup}</h2>
           <p>Need setup</p>
         </aside>
         <aside className="freshCard">
-          <h2>{clients.filter((client) => client.status === "Active").length}</h2>
+          <h2>{loading ? "…" : clients.filter((client) => client.status === "Active").length}</h2>
           <p>Active clients</p>
         </aside>
       </section>
+
+      {error ? (
+        <section className="freshCard freshItem need">
+          <b>Could not load clients</b>
+          <span>{error}</span>
+          <button type="button" className="freshPrimary" onClick={loadClients}>Retry</button>
+        </section>
+      ) : null}
 
       <section className="freshCommandFilterBar">
         {filters.map((item) => (
@@ -223,11 +190,23 @@ export default function FreshClients({ onNavigate }) {
         ))}
       </section>
 
+      <label className="freshField">
+        <span>Search clients</span>
+        <input
+          type="search"
+          value={search}
+          placeholder="Search by name, email, phone or address"
+          onChange={(event) => setSearch(event.target.value)}
+        />
+      </label>
+
       <section className="freshGrid">
         <aside className="freshCard">
           <h2>Client list</h2>
 
-          {visibleClients.map((client) => (
+          {loading ? (
+            <div className="freshItem"><b>Loading real clients…</b><span>Checking your business account.</span></div>
+          ) : visibleClients.map((client) => (
             <button
               type="button"
               className={`freshItem ${selected?.id === client.id ? "active" : ""} ${client.status === "Needs setup" ? "need" : ""}`}
@@ -239,10 +218,10 @@ export default function FreshClients({ onNavigate }) {
             </button>
           ))}
 
-          {visibleClients.length === 0 && (
+          {!loading && visibleClients.length === 0 && (
             <div className="freshItem">
-              <b>No clients</b>
-              <span>Change filter or reset preview clients.</span>
+              <b>No matching clients</b>
+              <span>Create a client or clear the search/filter.</span>
             </div>
           )}
         </aside>
@@ -250,104 +229,39 @@ export default function FreshClients({ onNavigate }) {
         <section className="freshCard">
           <h2>{selected?.name || "Select client"}</h2>
 
-          {selected && (
+          {selected ? (
             <>
               <div className="freshMiniGrid">
-                <div>
-                  <span>Status</span>
-                  <b>{selected.status}</b>
-                </div>
-                <div>
-                  <span>Type</span>
-                  <b>{selected.type}</b>
-                </div>
-                <div>
-                  <span>Value</span>
-                  <b>{selected.value}</b>
-                </div>
-                <div>
-                  <span>Risk</span>
-                  <b>{selected.risk}</b>
-                </div>
+                <div><span>Status</span><b>{selected.status}</b></div>
+                <div><span>Type</span><b>{selected.type}</b></div>
+                <div><span>Value</span><b>{selected.value}</b></div>
+                <div><span>Risk</span><b>{selected.risk}</b></div>
               </div>
 
-              <label className="freshField">
-                <span>Client name</span>
-                <input
-                  value={selected.name}
-                  onChange={(event) => updateSelectedClient({ name: event.target.value })}
-                />
-              </label>
+              <label className="freshField"><span>Client name</span><input value={selected.name} onChange={(event) => updateSelectedClient({ name: event.target.value })} /></label>
+              <label className="freshField"><span>Email</span><input value={selected.email} onChange={(event) => updateSelectedClient({ email: event.target.value })} /></label>
+              <label className="freshField"><span>Billing email</span><input value={selected.billingEmail} placeholder="Required for invoice automation" onChange={(event) => updateSelectedClient({ billingEmail: event.target.value })} /></label>
+              <label className="freshField"><span>Phone</span><input value={selected.phone} onChange={(event) => updateSelectedClient({ phone: event.target.value })} /></label>
+              <label className="freshField"><span>Service address</span><input value={selected.address} onChange={(event) => updateSelectedClient({ address: event.target.value })} /></label>
+              <label className="freshField"><span>Client notes</span><textarea value={selected.notes} onChange={(event) => updateSelectedClient({ notes: event.target.value })} /></label>
 
-              <label className="freshField">
-                <span>Email</span>
-                <input
-                  value={selected.email}
-                  onChange={(event) => updateSelectedClient({ email: event.target.value })}
-                />
-              </label>
-
-              <label className="freshField">
-                <span>Billing email</span>
-                <input
-                  value={selected.billingEmail}
-                  placeholder="Required for invoice automation"
-                  onChange={(event) =>
-                    updateSelectedClient({
-                      billingEmail: event.target.value,
-                      status: event.target.value ? "Active" : "Needs setup",
-                      risk: event.target.value ? "Clean setup" : "Billing detail missing",
-                    })
-                  }
-                />
-              </label>
-
-              <label className="freshField">
-                <span>Phone</span>
-                <input
-                  value={selected.phone}
-                  onChange={(event) => updateSelectedClient({ phone: event.target.value })}
-                />
-              </label>
-
-              <label className="freshField">
-                <span>Service address</span>
-                <input
-                  value={selected.address}
-                  onChange={(event) => updateSelectedClient({ address: event.target.value })}
-                />
-              </label>
-
-              <label className="freshField">
-                <span>Client notes</span>
-                <textarea
-                  value={selected.notes}
-                  onChange={(event) => updateSelectedClient({ notes: event.target.value })}
-                />
-              </label>
+              <div className="freshActions">
+                <button className="freshPrimary" type="button" disabled={saving} onClick={saveSelectedClient}>{saving ? "Saving…" : "Save client"}</button>
+              </div>
             </>
+          ) : (
+            <div className="freshItem"><b>No client selected</b><span>Add your first client to start the workflow.</span></div>
           )}
         </section>
 
         <aside className="freshCard">
           <h2>Owner actions</h2>
-
           <div className="freshActions">
-            <button className="freshPrimary" onClick={markClean}>
-              Mark setup clean
-            </button>
-            <button className="freshOrange" onClick={createJobForClient}>
-              Create job
-            </button>
-            <button className="freshDark" onClick={createQuoteForClient}>
-              Create quote
-            </button>
-            <button className="freshGhost" onClick={() => onNavigate?.("command")}>
-              Send issue to Command
-            </button>
-            <button className="freshGhost" onClick={resetClients}>
-              Reset clients
-            </button>
+            <button className="freshPrimary" type="button" onClick={() => go("/clients/new")}>Add client</button>
+            <button className="freshOrange" type="button" disabled={!selected} onClick={() => go(selected ? `/jobs/new?client_id=${encodeURIComponent(selected.id)}` : "/jobs/new")}>Create job</button>
+            <button className="freshDark" type="button" disabled={!selected} onClick={() => go(selected ? `/quotes/new?client_id=${encodeURIComponent(selected.id)}` : "/quotes/new")}>Create quote</button>
+            <button className="freshGhost" type="button" onClick={() => onNavigate?.("command")}>Send issue to Command</button>
+            <button className="freshGhost" type="button" onClick={loadClients}>Refresh clients</button>
           </div>
         </aside>
       </section>
