@@ -3,7 +3,10 @@
   "scripts": {
     "build": "npm --prefix frontend install --legacy-peer-deps && npm --prefix frontend run build",
     "render-build": "npm --prefix frontend install --legacy-peer-deps && npm --prefix frontend run build",
-    "start": "npm --prefix frontend start"
+    "start": "npm --prefix frontend start",
+    "test:e2e": "npm --prefix frontend run test:e2e",
+    "test:business": "npm --prefix frontend run test:business",
+    "test:business:live": "npm --prefix frontend run test:business:live"
   },
   "dependencies": {
     "date-fns": "3.6.0"
