@@ -6,14 +6,14 @@ import "./SimplePublic.css";
 
 export default function ExecutivePricingPage() {
   return (
-    <main className="simplePublic" data-version="CHURVOX_SIMPLE_PRICING_20260611">
+    <main className="simplePublic" data-version="CHURVOX_PRICING_COPY_20260612">
       <Nav />
       <section className="simpleHero">
         <div>
           <span className="simpleKicker">Simple pricing</span>
-          <h1>Start free. Pick the plan that fits.</h1>
+          <h1>Start free. Choose a plan when you’re ready.</h1>
           <p className="simpleLead">
-            Start with a 14-day free trial. No card to start. Churvox guides the first setup after signup.
+            Try Churvox for 14 days with no card. Start with jobs and clients, then pick the plan that fits your business.
           </p>
           <div className="simpleActions">
             <Link to="/signup" className="simpleBtn simplePrimary">Start free</Link>
@@ -21,12 +21,12 @@ export default function ExecutivePricingPage() {
           </div>
         </div>
         <aside className="simpleCard">
-          <h2>Recommended</h2>
-          <p>Operator is the main Churvox plan: AI helps run the admin and the owner approves the work.</p>
+          <h2>Most owners start with Operator.</h2>
+          <p>Operator is where Churvox starts preparing admin actions for you to review and approve.</p>
         </aside>
       </section>
       <section className="simpleBand">
-        <h2>Plans</h2>
+        <h2>Monthly plans</h2>
         <div className="simpleGrid">
           {MARKETING_PLANS.map((plan) => (
             <article key={plan.name}>
