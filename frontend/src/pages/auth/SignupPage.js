@@ -122,7 +122,7 @@ export default function SignupPage() {
           <p className="cvPublicAuthKicker">Create account</p>
           <h1>Start your Churvox trial.</h1>
           <p className="cvPublicAuthIntro">
-            Set up your business, then choose your plan. 14-day free trial, no card required.
+            Create your account, add your business, and follow the setup guide. No card required for the trial.
           </p>
 
           {error ? <p className="cvPublicAuthError">{error}</p> : null}
@@ -209,12 +209,12 @@ export default function SignupPage() {
         </form>
 
         <aside className="cvPublicAuthPanel">
-          <p>Churvox does the admin. You approve.</p>
-          <h2>One proper signup flow for service businesses.</h2>
+          <p>Less admin. More jobs done.</p>
+          <h2>Start with the basics. Churvox guides the rest.</h2>
           <ul>
-            <li>Jobs, clients, quotes and invoices in one place</li>
-            <li>AI-prepared admin for owner approval</li>
-            <li>14-day free trial, no card required</li>
+            <li>Add your business and first client</li>
+            <li>Create the first job flow</li>
+            <li>Review prepared admin before it goes out</li>
           </ul>
         </aside>
       </section>
