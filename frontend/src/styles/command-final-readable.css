@@ -1,6 +1,48 @@
 /* FINAL Command readability override. Render trigger 2026-06-12.
    This is loaded last from index.js. It beats the old global dark Command styles. */
 
+body main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedModal .freshSlipHead,
+body .freshCommandPreparedPage .freshPreparedModal .freshSlipHead {
+  background: #fff7ed !important;
+  background-color: #fff7ed !important;
+  background-image: none !important;
+  border-bottom: 2px solid rgba(249, 115, 22, .35) !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  padding: 18px 22px !important;
+}
+
+body main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedModal .freshSlipHead *,
+body .freshCommandPreparedPage .freshPreparedModal .freshSlipHead * {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  text-shadow: none !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
+
+body main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedModal .freshSlipHead span,
+body .freshCommandPreparedPage .freshPreparedModal .freshSlipHead span {
+  display: inline-flex !important;
+  width: max-content !important;
+  background: #f97316 !important;
+  background-color: #f97316 !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  border: 1px solid rgba(17, 24, 39, .18) !important;
+}
+
+body main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedModal .freshSlipHead h2,
+body .freshCommandPreparedPage .freshPreparedModal .freshSlipHead h2 {
+  margin: 10px 0 6px !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  font-size: clamp(30px, 4vw, 52px) !important;
+  line-height: .95 !important;
+}
+
 body main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedRecommendation,
 body main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedRecommendation *,
 body .freshCommandPreparedPage .freshPreparedRecommendation,
