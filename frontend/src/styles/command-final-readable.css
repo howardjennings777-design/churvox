@@ -1,6 +1,44 @@
 /* FINAL Command readability override. Render trigger 2026-06-12.
    This is loaded last from index.js. It beats the old global dark Command styles. */
 
+body main[data-industrial-simple-page="command"] .freshCommandPreparedPage {
+  padding-top: 78px !important;
+}
+
+body main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedTrayGrid,
+body .freshCommandPreparedPage .freshPreparedTrayGrid {
+  display: grid !important;
+  grid-template-columns: minmax(310px, 420px) minmax(420px, 1fr) !important;
+  gap: 18px !important;
+  align-items: stretch !important;
+}
+
+body main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedTray,
+body .freshCommandPreparedPage .freshPreparedTray {
+  max-width: 420px !important;
+  width: 100% !important;
+}
+
+body main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedTrayGrid::after,
+body .freshCommandPreparedPage .freshPreparedTrayGrid::after {
+  content: "Prepared action preview\A\ASelect an item on the left to open the filled form.\A\ACommand will show what Churvox found, what it recommends, what is missing, and the approve/edit buttons here instead of wasting this space.";
+  white-space: pre-line !important;
+  display: block !important;
+  min-height: 520px !important;
+  border-radius: 30px !important;
+  border: 1px solid rgba(249, 115, 22, .25) !important;
+  background:
+    radial-gradient(circle at top right, rgba(249, 115, 22, .12), transparent 32%),
+    linear-gradient(135deg, #fff7ed 0%, #ffffff 60%, #ffedd5 100%) !important;
+  box-shadow: 0 22px 58px rgba(15,23,42,.14) !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  padding: 32px !important;
+  font-size: 17px !important;
+  font-weight: 900 !important;
+  line-height: 1.45 !important;
+}
+
 body main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedModal .freshSlipHead,
 body .freshCommandPreparedPage .freshPreparedModal .freshSlipHead {
   background: #fff7ed !important;
@@ -113,4 +151,16 @@ body .freshCommandPreparedPage .freshPreparedFormField textarea {
   color: #111827 !important;
   -webkit-text-fill-color: #111827 !important;
   opacity: 1 !important;
+}
+
+@media (max-width: 1000px) {
+  body main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedTrayGrid,
+  body .freshCommandPreparedPage .freshPreparedTrayGrid {
+    grid-template-columns: 1fr !important;
+  }
+
+  body main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedTray,
+  body .freshCommandPreparedPage .freshPreparedTray {
+    max-width: none !important;
+  }
 }
