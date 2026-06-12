@@ -24,28 +24,31 @@
 .simpleProof span{background:rgba(255,247,237,.12)!important;border:1px solid rgba(255,247,237,.18)!important;color:#ffedd5!important}
 .simpleCard,
 .simpleBand{
-  background:rgba(255,247,237,.96)!important;
-  color:#111827!important;
-  border:1px solid rgba(249,115,22,.28)!important;
-  box-shadow:0 32px 90px rgba(0,0,0,.35)!important;
+  background:linear-gradient(135deg,rgba(17,24,39,.96),rgba(31,41,55,.93) 55%,rgba(67,36,18,.90))!important;
+  color:#f9fafb!important;
+  border:1px solid rgba(249,115,22,.30)!important;
+  box-shadow:0 34px 92px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.08)!important;
 }
 .simpleCard *,
-.simpleBand *{color:#111827!important}
+.simpleBand *{color:inherit!important}
 .simpleCard h2,
-.simpleBand h2{color:#111827!important}
+.simpleBand h2{color:#fff!important}
 .simpleCard p,
 .simpleBand p,
-.simpleBand .simpleLead{color:#374151!important;font-weight:850}
+.simpleBand .simpleLead{color:#e5e7eb!important;font-weight:850}
 .simpleCard li,
 .simpleGrid article{
-  background:#fff7ed!important;
-  border:1px solid rgba(249,115,22,.16)!important;
-  color:#111827!important;
+  background:rgba(255,247,237,.10)!important;
+  border:1px solid rgba(255,237,213,.18)!important;
+  color:#f9fafb!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08)!important;
 }
 .simpleCard li *,
-.simpleGrid article *{color:#111827!important}
-.simpleGrid b{color:#111827!important}
-.simpleGrid span{color:#4b5563!important}
+.simpleGrid article *{color:#f9fafb!important}
+.simpleGrid b{color:#fff!important}
+.simpleGrid span{color:#fed7aa!important}
+.simpleCard .simplePrimary,
+.simpleBand .simplePrimary{color:#111827!important}
 .simpleFooter{color:#d1d5db!important}
 .simpleFooter b{color:#fff!important}
 .simpleFooter a{color:#ffedd5!important}
