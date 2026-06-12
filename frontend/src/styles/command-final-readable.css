@@ -1,39 +1,15 @@
-/* FINAL Command readability override. */
+/* FINAL Command readability override.
+   Keep this file for contrast only. The real right-side preview now lives in command-right-preview.css. */
 
 body main[data-industrial-simple-page="command"] .freshCommandPreparedPage {
   padding-top: 78px !important;
 }
 
-body main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedTrayGrid,
-body .freshCommandPreparedPage .freshPreparedTrayGrid {
-  display: grid !important;
-  grid-template-columns: minmax(310px, 420px) minmax(420px, 1fr) !important;
-  gap: 18px !important;
-  align-items: stretch !important;
-}
-
-body main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedTray,
-body .freshCommandPreparedPage .freshPreparedTray {
-  max-width: 420px !important;
-  width: 100% !important;
-}
-
+/* Do not create the old fake preview panel anymore. */
 body main[data-industrial-simple-page="command"] .freshCommandPreparedPage .freshPreparedTrayGrid::after,
 body .freshCommandPreparedPage .freshPreparedTrayGrid::after {
-  content: "Next prepared action\A\ASelect an item on the left. The full prepared form opens here.";
-  white-space: pre-line !important;
-  display: block !important;
-  min-height: 620px !important;
-  border-radius: 30px !important;
-  border: 2px solid rgba(249, 115, 22, .35) !important;
-  background: linear-gradient(135deg, #111827 0%, #1f2937 58%, #431407 100%) !important;
-  box-shadow: 0 28px 70px rgba(15,23,42,.22) !important;
-  color: #ffffff !important;
-  -webkit-text-fill-color: #ffffff !important;
-  padding: 34px !important;
-  font-size: 22px !important;
-  font-weight: 1000 !important;
-  line-height: 1.45 !important;
+  content: none !important;
+  display: none !important;
 }
 
 body .freshCommandPreparedPage .freshPreparedModal .freshSlipHead,
