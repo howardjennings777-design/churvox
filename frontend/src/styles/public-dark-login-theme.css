@@ -5,13 +5,7 @@
     linear-gradient(135deg,#111827 0%,#1f2937 48%,#3b2414 100%)!important;
   color:#f9fafb!important;
 }
-.simplePublic::before{
-  content:"";
-  position:fixed;
-  inset:0;
-  background:linear-gradient(90deg,rgba(249,115,22,.18),transparent 34%,rgba(255,255,255,.05));
-  pointer-events:none;
-}
+.simplePublic::before{content:"";position:fixed;inset:0;background:linear-gradient(90deg,rgba(249,115,22,.18),transparent 34%,rgba(255,255,255,.05));pointer-events:none}
 .simplePublic>*{position:relative;z-index:1}
 .simpleBrand{color:#f9fafb!important}
 .simpleBrand b{color:#fff!important}
@@ -24,29 +18,29 @@
 .simpleProof span{background:rgba(255,247,237,.12)!important;border:1px solid rgba(255,247,237,.18)!important;color:#ffedd5!important}
 .simpleCard,
 .simpleBand{
-  background:linear-gradient(135deg,rgba(17,24,39,.96),rgba(31,41,55,.93) 55%,rgba(67,36,18,.90))!important;
-  color:#f9fafb!important;
+  background:rgba(255,247,237,.96)!important;
+  color:#111827!important;
   border:1px solid rgba(249,115,22,.30)!important;
-  box-shadow:0 34px 92px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.08)!important;
+  box-shadow:0 32px 90px rgba(0,0,0,.35)!important;
 }
 .simpleCard *,
-.simpleBand *{color:inherit!important}
+.simpleBand *{color:#111827!important}
 .simpleCard h2,
-.simpleBand h2{color:#fff!important}
+.simpleBand h2{color:#111827!important}
 .simpleCard p,
 .simpleBand p,
-.simpleBand .simpleLead{color:#e5e7eb!important;font-weight:850}
+.simpleBand .simpleLead{color:#374151!important;font-weight:850!important}
 .simpleCard li,
 .simpleGrid article{
-  background:rgba(255,247,237,.10)!important;
-  border:1px solid rgba(255,237,213,.18)!important;
-  color:#f9fafb!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.08)!important;
+  background:#fff7ed!important;
+  border:1px solid rgba(249,115,22,.18)!important;
+  color:#111827!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.70)!important;
 }
 .simpleCard li *,
-.simpleGrid article *{color:#f9fafb!important}
-.simpleGrid b{color:#fff!important}
-.simpleGrid span{color:#fed7aa!important}
+.simpleGrid article *{color:#111827!important}
+.simpleGrid b{color:#111827!important}
+.simpleGrid span{color:#4b5563!important}
 .simpleCard .simplePrimary,
 .simpleBand .simplePrimary{color:#111827!important}
 .simpleFooter{color:#d1d5db!important}
