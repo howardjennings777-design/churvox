@@ -1,8 +1,9 @@
-/* Command right-side prepared action preview */
+/* Command right-side prepared action preview.
+   This is the real Command desk layout: list on the left, editable prepared form on the right. */
 
 .freshCommandWorkArea {
   display: grid !important;
-  grid-template-columns: minmax(310px, 420px) minmax(420px, 1fr) !important;
+  grid-template-columns: minmax(300px, 390px) minmax(520px, 1fr) !important;
   gap: 18px !important;
   align-items: start !important;
 }
@@ -25,12 +26,14 @@
 }
 
 .freshCommandPreviewPanel {
-  min-height: 620px !important;
+  position: sticky !important;
+  top: 94px !important;
+  min-height: calc(100vh - 126px) !important;
+  max-height: calc(100vh - 126px) !important;
+  overflow: auto !important;
   border-radius: 30px !important;
   border: 1px solid rgba(249, 115, 22, .28) !important;
-  background:
-    radial-gradient(circle at top right, rgba(249, 115, 22, .12), transparent 30%),
-    linear-gradient(135deg, #fff7ed 0%, #ffffff 62%, #ffedd5 100%) !important;
+  background: linear-gradient(135deg, #fff7ed 0%, #ffffff 62%, #ffedd5 100%) !important;
   box-shadow: 0 22px 58px rgba(15, 23, 42, .14) !important;
   color: #111827 !important;
   -webkit-text-fill-color: #111827 !important;
@@ -51,9 +54,12 @@
 
 .freshCommandPreviewPanel header {
   border-radius: 24px !important;
-  background: #111827 !important;
-  color: #ffffff !important;
-  -webkit-text-fill-color: #ffffff !important;
+  border: 1px solid rgba(249, 115, 22, .30) !important;
+  background: #fff7ed !important;
+  background-color: #fff7ed !important;
+  background-image: none !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
   padding: 18px !important;
 }
 
@@ -73,8 +79,8 @@
 
 .freshCommandPreviewPanel header h2 {
   margin: 12px 0 6px !important;
-  color: #ffffff !important;
-  -webkit-text-fill-color: #ffffff !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
   font-size: clamp(32px, 4vw, 58px) !important;
   line-height: .9 !important;
   letter-spacing: -.07em !important;
@@ -83,17 +89,17 @@
 
 .freshCommandPreviewPanel header p {
   margin: 0 !important;
-  color: #fed7aa !important;
-  -webkit-text-fill-color: #fed7aa !important;
+  color: #374151 !important;
+  -webkit-text-fill-color: #374151 !important;
   font-size: 13px !important;
   font-weight: 900 !important;
 }
 
 .freshCommandPreviewPanel .freshPreparedRecommendation {
-  background: #fff7ed !important;
-  background-color: #fff7ed !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
   background-image: none !important;
-  border: 2px solid rgba(249, 115, 22, .52) !important;
+  border: 2px solid rgba(249, 115, 22, .42) !important;
   box-shadow: none !important;
 }
 
@@ -138,6 +144,12 @@
   background: rgba(255, 247, 237, .94) !important;
   padding-top: 10px !important;
   backdrop-filter: blur(12px) !important;
+  z-index: 2 !important;
+}
+
+.freshCommandPreviewPanel .freshPrimary:disabled {
+  opacity: .82 !important;
+  cursor: not-allowed !important;
 }
 
 @media (max-width: 1100px) {
@@ -146,7 +158,10 @@
   }
 
   .freshCommandPreviewPanel {
+    position: relative !important;
+    top: auto !important;
     min-height: auto !important;
+    max-height: none !important;
   }
 }
 
