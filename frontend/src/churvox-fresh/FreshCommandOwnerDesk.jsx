@@ -9,8 +9,8 @@ const sourceRules = [
     areaGroup: "Money",
     urgency: "High",
     title: "Completed jobs need invoicing",
-    found: "Churvox should look for completed jobs that have no invoice attached.",
-    prepared: "Prepare invoice review slips so the owner can turn finished work into money.",
+    found: "Finished work is ready to turn into money.",
+    prepared: "Churvox prepared invoice review slips from completed job records.",
     why: "Completed work should not sit unpaid.",
     page: "invoices",
     actionType: "review_invoice",
@@ -20,8 +20,8 @@ const sourceRules = [
     areaGroup: "Money",
     urgency: "High",
     title: "Overdue invoices need chasing",
-    found: "Churvox should look for sent invoices that are overdue or still unpaid.",
-    prepared: "Prepare friendly payment reminders for owner approval.",
+    found: "Some invoices may be overdue or still unpaid.",
+    prepared: "Churvox prepared friendly payment reminders for owner approval.",
     why: "Cashflow improves when overdue money is followed up early.",
     page: "payments",
     actionType: "send_payment_reminder",
@@ -31,30 +31,52 @@ const sourceRules = [
     areaGroup: "Customers",
     urgency: "Medium",
     title: "Open quotes need follow-up",
-    found: "Churvox should look for quotes that have not been accepted, declined or replied to.",
-    prepared: "Prepare a polite follow-up or staged option for owner approval.",
+    found: "Open quotes are waiting for a customer decision.",
+    prepared: "Churvox prepared a polite follow-up message for owner approval.",
     why: "Quotes sitting open are possible work not yet won.",
     page: "quotes",
     actionType: "send_quote_followup",
   },
   {
     id: "unassigned-jobs",
-    areaGroup: "Today",
+    areaGroup: "Jobs",
     urgency: "High",
     title: "Jobs need workers assigned",
-    found: "Churvox should look for upcoming jobs with no worker or owner assignment.",
-    prepared: "Prepare a dispatch check so the owner can assign the right person before the job is missed.",
+    found: "Upcoming work may not have the right worker assigned yet.",
+    prepared: "Churvox prepared a dispatch check so the owner can assign the right person before the job is missed.",
     why: "Unassigned jobs become customer problems fast.",
     page: "jobs",
     actionType: "assign_worker",
+  },
+  {
+    id: "missing-job-info",
+    areaGroup: "Jobs",
+    urgency: "High",
+    title: "Jobs are missing key info",
+    found: "Some jobs may be missing price, access notes, photos, address details or worker notes.",
+    prepared: "Churvox prepared missing-info slips so the job can be fixed before invoicing or dispatch.",
+    why: "Bad job details slow the worker down and block clean invoicing.",
+    page: "jobs",
+    actionType: "fix_missing_info",
+  },
+  {
+    id: "worker-time-review",
+    areaGroup: "Workers",
+    urgency: "Medium",
+    title: "Worker time needs review",
+    found: "Completed work or payroll records may need owner review.",
+    prepared: "Churvox prepared a worker time review slip before payroll export.",
+    why: "Time should be checked before it affects pay or job costing.",
+    page: "payroll",
+    actionType: "review_worker_time",
   },
   {
     id: "missing-client-details",
     areaGroup: "Setup",
     urgency: "Medium",
     title: "Client details are missing",
-    found: "Churvox should look for clients missing phone, email, address or key notes.",
-    prepared: "Prepare a missing-info action so records can be completed before quotes and invoices are sent.",
+    found: "Some clients may be missing phone, email, address or key notes.",
+    prepared: "Churvox prepared missing-info actions so records can be completed before messages, quotes or invoices go out.",
     why: "Bad customer details block messages, quotes, invoices and job scheduling.",
     page: "clients",
     actionType: "fix_missing_info",
@@ -64,9 +86,9 @@ const sourceRules = [
     areaGroup: "Setup",
     urgency: "High",
     title: "Setup needs finishing",
-    found: "Churvox should look for missing business settings, invoice settings, first client, first job and first invoice steps.",
-    prepared: "Send the owner back to the AI Guide or Settings with the exact setup step to finish.",
-    why: "The app is only useful when the first real workflow is connected.",
+    found: "Business settings, invoice settings, first client, first job or first invoice steps may still be incomplete.",
+    prepared: "Churvox prepared a setup action and points the owner to the exact area to finish.",
+    why: "The app works best when the first real workflow is connected.",
     page: "setupassistant",
     actionType: "fix_setup_step",
   },
@@ -83,7 +105,8 @@ function lower(value) {
 function areaFor(slip) {
   const raw = `${slip?.areaGroup || ""} ${slip?.area || ""} ${slip?.group || ""} ${slip?.title || ""} ${slip?.page || ""} ${slip?.actionType || ""}`.toLowerCase();
   if (raw.includes("invoice") || raw.includes("payment") || raw.includes("cash") || raw.includes("quote") || raw.includes("money")) return "Money";
-  if (raw.includes("worker") || raw.includes("job") || raw.includes("dispatch") || raw.includes("today") || raw.includes("plan")) return "Today";
+  if (raw.includes("worker") || raw.includes("time") || raw.includes("payroll")) return "Workers";
+  if (raw.includes("job") || raw.includes("dispatch") || raw.includes("today") || raw.includes("plan")) return "Jobs";
   if (raw.includes("client") || raw.includes("customer") || raw.includes("message") || raw.includes("review") || raw.includes("recurring")) return "Customers";
   if (raw.includes("setup") || raw.includes("setting") || raw.includes("missing")) return "Setup";
   return "Needs approval";
@@ -95,6 +118,7 @@ function actionTypeFor(slip) {
   if (raw.includes("quote") && raw.includes("follow")) return "send_quote_followup";
   if (raw.includes("quote")) return "approve_quote";
   if (raw.includes("worker") || raw.includes("assign")) return "assign_worker";
+  if (raw.includes("time") || raw.includes("payroll")) return "review_worker_time";
   if (raw.includes("setup") || raw.includes("missing")) return "fix_setup_step";
   if (raw.includes("invoice")) return "review_invoice";
   if (raw.includes("message")) return "send_customer_message";
@@ -110,11 +134,12 @@ function urgencyRank(value) {
 
 function approveLabel(actionType) {
   const labels = {
-    review_invoice: "Approve invoice check",
+    review_invoice: "Approve invoice",
     send_payment_reminder: "Send reminder",
     send_quote_followup: "Send follow-up",
     approve_quote: "Approve quote action",
     assign_worker: "Open job assignment",
+    review_worker_time: "Approve time review",
     fix_setup_step: "Mark setup handled",
     fix_missing_info: "Mark info handled",
     send_customer_message: "Approve message",
@@ -130,6 +155,7 @@ function approvalResult(actionType) {
     send_quote_followup: "Owner approved quote follow-up.",
     approve_quote: "Owner approved quote action.",
     assign_worker: "Owner opened job assignment.",
+    review_worker_time: "Owner approved worker time review.",
     fix_setup_step: "Owner marked setup action handled.",
     fix_missing_info: "Owner marked missing info handled.",
     send_customer_message: "Owner approved customer message.",
@@ -146,7 +172,7 @@ function normalizeSlip(slip, index = 0) {
   return {
     id: cleanText(slip?.id || slip?._id || slip?.dedupeKey) || `command-slip-${Date.now()}-${index}`,
     title: cleanText(slip?.title) || "Owner action ready",
-    group: cleanText(slip?.group) || "Churvox",
+    group: cleanText(slip?.group) || "Churvox prepared",
     info: cleanText(slip?.info) || `${areaGroup} · ready for review`,
     urgency,
     areaGroup,
@@ -190,8 +216,8 @@ function makeRuleSlip(rule) {
   return normalizeSlip({
     ...rule,
     id: `rule-${rule.id}-${Date.now()}`,
-    group: "Command check",
-    info: `${rule.areaGroup} · source rule`,
+    group: "Churvox prepared",
+    info: `${rule.areaGroup} · ready to review`,
     createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
   });
 }
@@ -221,8 +247,8 @@ async function commandRequest(path, options = {}) {
 
 export default function FreshCommandOwnerDesk({ onNavigate }) {
   const [slips, setSlips] = React.useState(readLocalSlips);
-  const [activeGroup, setActiveGroup] = React.useState("Needs approval");
-  const [message, setMessage] = React.useState("Command is watching for owner actions.");
+  const [selectedId, setSelectedId] = React.useState(null);
+  const [message, setMessage] = React.useState("Churvox is ready to prepare owner actions.");
   const [loading, setLoading] = React.useState(false);
 
   const enriched = React.useMemo(() => {
@@ -231,21 +257,52 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
 
   const openSlips = enriched.filter(isOpen);
   const doneSlips = enriched.filter((slip) => !isOpen(slip));
-  const important = openSlips.filter((slip) => slip.urgency === "High" || lower(slip.title).includes("overdue"));
-  const money = openSlips.filter((slip) => slip.areaGroup === "Money");
-  const today = openSlips.filter((slip) => slip.areaGroup === "Today");
-  const setup = openSlips.filter((slip) => slip.areaGroup === "Setup");
-  const nextAction = important[0] || money[0] || today[0] || setup[0] || openSlips[0] || null;
-  const groups = ["Needs approval", "Money", "Today", "Customers", "Setup"];
+  const selected = enriched.find((slip) => slip.id === selectedId) || null;
 
-  const visible = activeGroup === "Needs approval"
-    ? openSlips
-    : openSlips.filter((slip) => slip.areaGroup === activeGroup);
-
-  const topActionCards = [important[0], money[0], today[0], setup[0], openSlips[0]]
-    .filter(Boolean)
-    .filter((slip, index, arr) => arr.findIndex((item) => item.id === slip.id) === index)
-    .slice(0, 3);
+  const preparedTrays = [
+    {
+      id: "money",
+      label: "Money ready",
+      subline: "Invoices, payments and quote value",
+      empty: "No money actions prepared yet.",
+      items: openSlips.filter((slip) => slip.areaGroup === "Money"),
+    },
+    {
+      id: "jobs",
+      label: "Missing job info",
+      subline: "Price, access, photos, worker or job notes",
+      empty: "No job gaps prepared yet.",
+      items: openSlips.filter((slip) => slip.areaGroup === "Jobs"),
+    },
+    {
+      id: "customers",
+      label: "Customer follow-ups",
+      subline: "Quotes, messages and customer replies",
+      empty: "No customer follow-ups prepared yet.",
+      items: openSlips.filter((slip) => slip.areaGroup === "Customers"),
+    },
+    {
+      id: "workers",
+      label: "Worker + time",
+      subline: "Assignments, route checks and time review",
+      empty: "No worker actions prepared yet.",
+      items: openSlips.filter((slip) => slip.areaGroup === "Workers" || slip.actionType === "assign_worker" || slip.actionType === "review_worker_time"),
+    },
+    {
+      id: "setup",
+      label: "Setup gaps",
+      subline: "Business, client and invoice setup",
+      empty: "No setup gaps prepared yet.",
+      items: openSlips.filter((slip) => slip.areaGroup === "Setup"),
+    },
+    {
+      id: "important",
+      label: "Important now",
+      subline: "High priority work Churvox prepared",
+      empty: "Nothing urgent prepared yet.",
+      items: openSlips.filter((slip) => slip.urgency === "High"),
+    },
+  ];
 
   React.useEffect(() => {
     loadCommandData();
@@ -268,12 +325,12 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
         const next = data.slips.map(normalizeSlip);
         setSlips(next);
         saveLocalSlips(next);
-        setMessage("Live Command loaded owner actions.");
+        setMessage("Churvox loaded prepared owner actions.");
       } else {
-        setMessage("Command is ready. Run checks to look for owner actions.");
+        setMessage("Run checks and Churvox will prepare the owner actions.");
       }
     } catch {
-      setMessage("Command is ready. Run checks to look for owner actions.");
+      setMessage("Run checks and Churvox will prepare the owner actions.");
     }
     setLoading(false);
   }
@@ -286,8 +343,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
         const next = data.slips.map(normalizeSlip);
         setSlips(next);
         saveLocalSlips(next);
-        setActiveGroup("Needs approval");
-        setMessage("Command scanned real work and found owner actions.");
+        setMessage("Churvox scanned the work and prepared owner actions.");
         setLoading(false);
         return;
       }
@@ -300,8 +356,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
     const next = [...rules, ...existing].slice(0, 180);
     setSlips(next);
     saveLocalSlips(next);
-    setActiveGroup("Needs approval");
-    setMessage("Command prepared source checks: invoices, quotes, workers, clients and setup.");
+    setMessage("Churvox prepared trays for money, job gaps, follow-ups, workers and setup.");
     setLoading(false);
   }
 
@@ -325,6 +380,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
         const next = slips.map((item) => normalizeSlip(item).id === slip.id ? normalized : item);
         setSlips(next);
         saveLocalSlips(next);
+        setSelectedId(null);
         setMessage(`${approveLabel(slip.actionType)} saved.`);
         return;
       }
@@ -337,6 +393,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
       approvedResult: approvalResult(slip.actionType),
       approvedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     });
+    setSelectedId(null);
     setMessage(`${approveLabel(slip.actionType)} saved.`);
   }
 
@@ -358,155 +415,67 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
       status: "snoozed",
       snoozeUntil: "Tomorrow",
     });
+    setSelectedId(null);
     setMessage("Action snoozed until tomorrow.");
   }
 
   function ignoreSlip(slip) {
     updateSlip(slip.id, { status: "ignored" });
+    setSelectedId(null);
     setMessage("Action ignored.");
   }
 
   return (
-    <section className="freshCommandDeskPage">
-      <div className="freshCommandDeskHero">
+    <section className="freshCommandDeskPage freshCommandPreparedPage">
+      <div className="freshCommandDeskHero freshCommandPreparedHero">
         <div>
           <span>Command</span>
-          <h1>Here is what needs doing next.</h1>
-          <p>Command turns jobs, invoices, quotes, workers, customers and setup gaps into clear owner actions. Churvox prepares. You approve.</p>
+          <h1>Churvox prepared this for you.</h1>
+          <p>Open a tray, review what Churvox found, then approve, edit, snooze or ignore. Every box is an owner decision, not another page to hunt through.</p>
         </div>
 
-        <div className="freshCommandDeskStats">
-          <div><b>{openSlips.length}</b><small>open actions</small></div>
-          <div><b>{important.length}</b><small>important</small></div>
-          <div><b>{money.length}</b><small>money</small></div>
-          <div><b>{today.length}</b><small>today</small></div>
-        </div>
-      </div>
-
-      <div className="freshCommandMorning">
-        <div>
-          <b>{nextAction ? nextAction.title : "Nothing urgent is waiting."}</b>
-          <p>{nextAction ? nextAction.found : "Run checks when you want Command to look for invoices, quotes, workers, client details and setup gaps."}</p>
-        </div>
-
-        <div className="freshCommandMorningActions">
-          <button type="button" onClick={runChecks}>{loading ? "Checking..." : "Run checks now"}</button>
-          <button type="button" onClick={() => onNavigate?.("setupassistant")}>AI Guide</button>
-          <button type="button" onClick={() => onNavigate?.("askchurvox")}>Ask Churvox</button>
+        <div className="freshCommandPreparedSummary">
+          <button type="button" onClick={runChecks}>{loading ? "Preparing..." : "Run Command checks"}</button>
+          <small>{message}</small>
+          <b>{openSlips.length} open · {doneSlips.length} handled</b>
         </div>
       </div>
 
-      <div className="freshCommandSyncBanner live">
-        <b>{loading ? "Command is checking..." : "Owner control"}</b>
-        <span>{message}</span>
-      </div>
-
-      <div className="freshCommandSourcePanel">
-        <div>
-          <span className="freshCommandSourceBigPill">What needs doing first</span>
-          <p>{nextAction ? nextAction.why : "Command will bring the next useful owner action here."}</p>
-        </div>
-
-        <div className="freshCommandSourceActions">
-          {topActionCards.length ? topActionCards.map((slip) => (
-            <button type="button" key={slip.id} onClick={() => setActiveGroup(slip.areaGroup || "Needs approval")}>
-              <b>{slip.areaGroup}</b>
-              <span>{slip.title}</span>
-            </button>
-          )) : (
-            <button type="button" onClick={runChecks}>
-              <b>Run checks</b>
-              <span>Look for money, jobs, clients and setup gaps</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="freshCommandFocusRow">
-        <button type="button" onClick={() => setActiveGroup("Money")}>
-          <b>Money ready</b>
-          <span>{money.length} actions</span>
-        </button>
-        <button type="button" onClick={() => setActiveGroup("Today")}>
-          <b>Plan today</b>
-          <span>{today.length} actions</span>
-        </button>
-        <button type="button" onClick={() => setActiveGroup("Needs approval")}>
-          <b>Review important</b>
-          <span>{important.length} high priority</span>
-        </button>
-      </div>
-
-      <div className="freshCommandTabs">
-        {groups.map((group) => {
-          const count = group === "Needs approval" ? openSlips.length : openSlips.filter((slip) => slip.areaGroup === group).length;
-          return (
-            <button
-              type="button"
-              key={group}
-              className={activeGroup === group ? "active" : ""}
-              onClick={() => setActiveGroup(group)}
-            >
-              <b>{group}</b>
-              <span>{count}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="freshCommandSlipList">
-        {visible.length ? visible.map((slip) => (
-          <article key={slip.id} className={`freshCommandSlip ${slip.urgency === "High" ? "high" : ""}`}>
+      <section className="freshPreparedTrayGrid">
+        {preparedTrays.map((tray) => (
+          <article className={`freshPreparedTray freshPreparedTray-${tray.id}`} key={tray.id}>
             <header>
               <div>
-                <span className="freshCommandAreaBadge">{slip.areaGroup}</span>
-                <div className="freshCommandSlipTitle">{slip.title}</div>
-                <div className="freshCommandSlipMeta">{slip.group} · {slip.info}</div>
+                <span>Churvox prepared</span>
+                <h2>{tray.label}</h2>
+                <p>{tray.subline}</p>
               </div>
-              <strong>{slip.urgency}</strong>
+              <strong>{tray.items.length}</strong>
             </header>
 
-            <div className="freshCommandSlipBody">
-              <section>
-                <b>Churvox found</b>
-                <p>{slip.found}</p>
-              </section>
-              <section>
-                <b>Churvox prepared</b>
-                <p>{slip.prepared}</p>
-              </section>
-              <section>
-                <b>Why it matters</b>
-                <p>{slip.why}</p>
-              </section>
-            </div>
+            <div className="freshPreparedTrayList">
+              {tray.items.slice(0, 3).map((slip) => (
+                <button type="button" key={slip.id} onClick={() => setSelectedId(slip.id)}>
+                  <b>{slip.title}</b>
+                  <span>{slip.info}</span>
+                  <em>{slip.urgency} · Open prepared slip</em>
+                </button>
+              ))}
 
-            <div className="freshCommandActionType">
-              <b>Action type:</b>
-              <span>{slip.actionType.replaceAll("_", " ")}</span>
-            </div>
-
-            <div className="freshCommandSlipControls">
-              <button type="button" onClick={() => approveSlip(slip)}>{approveLabel(slip.actionType)}</button>
-              <button type="button" onClick={() => editSlip(slip)}>Edit</button>
-              <button type="button" onClick={() => snoozeSlip(slip)}>Snooze</button>
-              <button type="button" onClick={() => ignoreSlip(slip)}>Ignore</button>
-              <button type="button" onClick={() => onNavigate?.(slip.page || "setupassistant")}>Open</button>
+              {tray.items.length === 0 && (
+                <div className="freshPreparedEmpty">
+                  <b>{tray.empty}</b>
+                  <span>Run checks to let Churvox prepare this tray.</span>
+                </div>
+              )}
             </div>
           </article>
-        )) : (
-          <div className="freshCommandEmpty">
-            <b>Nothing needs approval in {activeGroup} right now.</b>
-            <p>Command will show clear owner actions here: invoice this, chase that, assign this worker, complete that client detail, or approve the next message.</p>
-            <button type="button" onClick={runChecks}>Run Command checks</button>
-            <button type="button" onClick={() => onNavigate?.("askchurvox")}>Ask Churvox</button>
-          </div>
-        )}
-      </div>
+        ))}
+      </section>
 
       {doneSlips.length > 0 && (
-        <details className="freshCommandDone">
-          <summary>Completed / ignored / snoozed actions ({doneSlips.length})</summary>
+        <details className="freshCommandDone freshPreparedDone">
+          <summary>Handled actions ({doneSlips.length})</summary>
           <div>
             {doneSlips.slice(0, 16).map((slip) => (
               <button type="button" key={slip.id} onClick={() => updateSlip(slip.id, { status: "open", snoozeUntil: null })}>
@@ -516,6 +485,52 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
             ))}
           </div>
         </details>
+      )}
+
+      {selected && (
+        <div className="freshSlipOverlay freshPreparedOverlay" onClick={() => setSelectedId(null)}>
+          <section className="freshSlipModal freshPreparedModal" onClick={(event) => event.stopPropagation()}>
+            <header className="freshSlipHead">
+              <span>{selected.areaGroup}</span>
+              <h2>{selected.title}</h2>
+              <p>{selected.info}</p>
+            </header>
+
+            <div className="freshSlipBody freshPreparedSlipBody">
+              <div className="freshSlipRow">
+                <b>Churvox found</b>
+                <p>{selected.found}</p>
+              </div>
+
+              <div className="freshSlipRow">
+                <b>Churvox prepared</b>
+                <p>{selected.prepared}</p>
+              </div>
+
+              <div className="freshSlipRow">
+                <b>Why it matters</b>
+                <p>{selected.why}</p>
+              </div>
+
+              <div className="freshSlipRow">
+                <b>Owner action</b>
+                <p>{selected.owner}</p>
+              </div>
+
+              <div className="freshSlipActions">
+                <button className="freshPrimary" onClick={() => approveSlip(selected)}>{approveLabel(selected.actionType)}</button>
+                <button className="freshDark" onClick={() => editSlip(selected)}>Edit prepared action</button>
+                <button className="freshGhost" onClick={() => snoozeSlip(selected)}>Snooze</button>
+                <button className="freshGhost" onClick={() => ignoreSlip(selected)}>Ignore</button>
+                <button className="freshOrange" onClick={() => onNavigate?.(selected.page || "setupassistant")}>Open area</button>
+              </div>
+
+              <button type="button" className="freshClose" onClick={() => setSelectedId(null)}>
+                Close slip
+              </button>
+            </div>
+          </section>
+        </div>
       )}
     </section>
   );
