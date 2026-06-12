@@ -1,4 +1,4 @@
-/* Churvox public auth pages */
+/* Churvox public auth pages - matched to public landing theme */
 
 .cvPublicAuth,
 .cvPublicAuth * {
@@ -14,12 +14,25 @@
   min-height: 100vh;
   overflow-x: hidden;
   background:
-    radial-gradient(circle at 10% -10%, rgba(249, 115, 22, 0.16), transparent 34%),
-    radial-gradient(circle at 92% 0%, rgba(15, 23, 42, 0.10), transparent 34%),
-    #f7f3ea;
-  color: #111827;
+    radial-gradient(circle at 12% 0%, rgba(249, 115, 22, 0.38), transparent 30rem),
+    radial-gradient(circle at 86% 8%, rgba(251, 146, 60, 0.22), transparent 22rem),
+    linear-gradient(135deg, #111827 0%, #1f2937 48%, #3b2414 100%);
+  color: #f9fafb;
   padding: 14px;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.cvPublicAuth::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(249, 115, 22, 0.18), transparent 34%, rgba(255, 255, 255, 0.05));
+  pointer-events: none;
+}
+
+.cvPublicAuth > * {
+  position: relative;
+  z-index: 1;
 }
 
 .cvPublicAuthNav {
@@ -31,9 +44,9 @@
   gap: 14px;
   padding: 14px 16px;
   border-radius: 24px;
-  border: 1px solid rgba(249, 115, 22, 0.28);
-  background: linear-gradient(135deg, #111827, #071118);
-  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.20);
+  border: 1px solid rgba(255, 237, 213, 0.18);
+  background: rgba(17, 24, 39, 0.92);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
 }
 
 .cvPublicAuthBrand {
@@ -76,33 +89,45 @@
 .cvPublicAuthCard,
 .cvPublicAuthPanel {
   border-radius: 30px;
-  border: 1px solid rgba(15, 23, 42, 0.14);
-  box-shadow: 0 28px 90px rgba(15, 23, 42, 0.16);
+  border: 1px solid rgba(249, 115, 22, 0.30);
+  background:
+    radial-gradient(circle at 15% 15%, rgba(249, 115, 22, 0.24), transparent 32%),
+    linear-gradient(135deg, rgba(17, 24, 39, 0.97), rgba(31, 41, 55, 0.94) 56%, rgba(67, 36, 18, 0.90));
+  box-shadow: 0 32px 90px rgba(0, 0, 0, 0.38);
+  color: #f9fafb !important;
 }
 
 .cvPublicAuthCard {
   display: grid;
   align-content: center;
   gap: 14px;
-  background: #ffffff;
-  color: #111827 !important;
   padding: clamp(24px, 4vw, 46px);
 }
 
-.cvPublicAuthCard h1 {
+.cvPublicAuthCard h1,
+.cvPublicAuthPanel h2 {
   margin: 0;
-  color: #071118 !important;
-  -webkit-text-fill-color: #071118 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(40px, 5vw, 70px);
   line-height: 0.92;
   letter-spacing: -0.075em;
 }
 
-.cvPublicAuthKicker {
-  margin: 0;
-  color: #c2410c !important;
-  -webkit-text-fill-color: #c2410c !important;
+.cvPublicAuthCard h1 {
+  font-size: clamp(40px, 5vw, 70px);
+}
+
+.cvPublicAuthPanel h2 {
+  margin-bottom: 20px;
+  font-size: clamp(36px, 5vw, 68px);
+}
+
+.cvPublicAuthKicker,
+.cvPublicAuthPanel p {
+  margin: 0 0 12px;
+  color: #fed7aa !important;
+  -webkit-text-fill-color: #fed7aa !important;
   font-size: 12px;
   font-weight: 1000;
   letter-spacing: 0.18em;
@@ -112,24 +137,24 @@
 .cvPublicAuthIntro,
 .cvPublicAuthBottom {
   margin: 0;
-  color: #334155 !important;
-  -webkit-text-fill-color: #334155 !important;
+  color: #e5e7eb !important;
+  -webkit-text-fill-color: #e5e7eb !important;
   font-size: 16px;
   line-height: 1.55;
   font-weight: 760;
 }
 
 .cvPublicAuthBottom a {
-  color: #b45309 !important;
-  -webkit-text-fill-color: #b45309 !important;
+  color: #fed7aa !important;
+  -webkit-text-fill-color: #fed7aa !important;
   font-weight: 1000;
 }
 
 .cvPublicAuthCard label {
   display: grid;
   gap: 7px;
-  color: #111827 !important;
-  -webkit-text-fill-color: #111827 !important;
+  color: #f9fafb !important;
+  -webkit-text-fill-color: #f9fafb !important;
   font-size: 14px;
   font-weight: 950;
 }
@@ -140,7 +165,7 @@
 .cvPublicAuthCard input[type="password"] {
   width: 100%;
   min-height: 54px;
-  border: 2px solid rgba(15, 23, 42, 0.30);
+  border: 2px solid rgba(249, 115, 22, 0.26);
   border-radius: 16px;
   background: #ffffff !important;
   background-color: #ffffff !important;
@@ -151,7 +176,7 @@
   font-size: 17px;
   font-weight: 800;
   outline: none;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.07);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
   appearance: auto;
   -webkit-appearance: auto;
 }
@@ -164,7 +189,7 @@
 
 .cvPublicAuthCard input:focus {
   border-color: #f97316;
-  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.14);
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.18);
 }
 
 .cvPublicAuthCard input:-webkit-autofill,
@@ -194,9 +219,10 @@
 }
 
 .cvPublicAuthGhost {
-  background: #111827 !important;
-  color: #ffffff !important;
-  -webkit-text-fill-color: #ffffff !important;
+  background: rgba(255, 247, 237, 0.10) !important;
+  border: 1px solid rgba(255, 237, 213, 0.18) !important;
+  color: #ffedd5 !important;
+  -webkit-text-fill-color: #ffedd5 !important;
 }
 
 .cvPublicAuthSubmit:disabled {
@@ -206,11 +232,11 @@
 
 .cvPublicAuthError {
   margin: 0;
-  border: 2px solid rgba(185, 28, 28, 0.24);
+  border: 2px solid rgba(248, 113, 113, 0.34);
   border-radius: 16px;
-  background: #fee2e2;
-  color: #991b1b !important;
-  -webkit-text-fill-color: #991b1b !important;
+  background: rgba(127, 29, 29, 0.34);
+  color: #fecaca !important;
+  -webkit-text-fill-color: #fecaca !important;
   padding: 12px 14px;
   font-weight: 900;
   line-height: 1.45;
@@ -223,31 +249,7 @@
   flex-direction: column;
   justify-content: flex-end;
   min-height: 560px;
-  background:
-    radial-gradient(circle at 15% 15%, rgba(249, 115, 22, 0.28), transparent 34%),
-    linear-gradient(145deg, #111827, #071118 68%, #1c1917);
-  color: #ffffff !important;
   padding: clamp(24px, 4vw, 46px);
-}
-
-.cvPublicAuthPanel p {
-  margin: 0 0 12px;
-  color: #fed7aa !important;
-  -webkit-text-fill-color: #fed7aa !important;
-  font-size: 13px;
-  font-weight: 1000;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.cvPublicAuthPanel h2 {
-  margin: 0 0 20px;
-  color: #ffffff !important;
-  -webkit-text-fill-color: #ffffff !important;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(36px, 5vw, 68px);
-  line-height: 0.92;
-  letter-spacing: -0.075em;
 }
 
 .cvPublicAuthPanel ul {
@@ -318,67 +320,4 @@
   visibility: visible !important;
   filter: none !important;
   text-shadow: none !important;
-  mix-blend-mode: normal !important;
-  font-size: 17px !important;
-  font-weight: 800 !important;
-}
-
-.cvPublicAuth input::placeholder,
-.wh-auth input::placeholder {
-  color: #64748b !important;
-  -webkit-text-fill-color: #64748b !important;
-  opacity: 1 !important;
-}
-
-.cvPublicAuth input:-webkit-autofill,
-.cvPublicAuth input:-webkit-autofill:hover,
-.cvPublicAuth input:-webkit-autofill:focus,
-.wh-auth input:-webkit-autofill,
-.wh-auth input:-webkit-autofill:hover,
-.wh-auth input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
-  -webkit-text-fill-color: #000000 !important;
-  caret-color: #000000 !important;
-}
-
-.cvPublicNativeInput,
-.cvPublicAuthCard input.cvPublicNativeInput,
-.cvPublicAuthCard input.cvPublicNativeInput[type="text"],
-.cvPublicAuthCard input.cvPublicNativeInput[type="email"],
-.cvPublicAuthCard input.cvPublicNativeInput[type="password"] {
-  display: block !important;
-  width: 100% !important;
-  min-height: 54px !important;
-  border: 2px solid rgba(15, 23, 42, 0.30) !important;
-  border-radius: 16px !important;
-  background: #ffffff !important;
-  background-color: #ffffff !important;
-  color: #000000 !important;
-  -webkit-text-fill-color: #000000 !important;
-  caret-color: #000000 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  filter: none !important;
-  text-shadow: none !important;
-  mix-blend-mode: normal !important;
-  padding: 0 14px !important;
-  font-size: 17px !important;
-  font-weight: 800 !important;
-  outline: none !important;
-  appearance: auto !important;
-  -webkit-appearance: auto !important;
-}
-
-.cvPublicNativeInput::placeholder {
-  color: #64748b !important;
-  -webkit-text-fill-color: #64748b !important;
-  opacity: 1 !important;
-}
-
-.cvPublicNativeInput:-webkit-autofill,
-.cvPublicNativeInput:-webkit-autofill:hover,
-.cvPublicNativeInput:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
-  -webkit-text-fill-color: #000000 !important;
-  caret-color: #000000 !important;
 }
