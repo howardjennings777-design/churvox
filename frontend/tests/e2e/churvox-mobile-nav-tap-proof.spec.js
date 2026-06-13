@@ -29,25 +29,48 @@ function key(label) {
   return label.toUpperCase().replace(/[^A-Z0-9]+/g, '_');
 }
 
-async function tapMobileNav(page, label, expectedNeedle) {
-  const nav = page.locator('.cvxMobileNav');
+async function tapMainMobileNav(page, label, expectedHash) {
+  const nav = page.locator('.freshMobileNav');
   await expect(nav).toBeVisible({ timeout: 30000 });
 
-  const link = nav.locator('a', { hasText: label }).first();
-  await expect(link).toBeVisible({ timeout: 30000 });
+  const button = nav.locator('button', { hasText: label }).first();
+  await expect(button).toBeVisible({ timeout: 30000 });
 
-  await link.evaluate((el) => el.scrollIntoView({ block: 'nearest', inline: 'center' }));
-  await page.waitForTimeout(300);
-
-  const box = await link.boundingBox();
+  const box = await button.boundingBox();
   console.log(`MOBILE_NAV_${key(label)}_BOX=` + JSON.stringify(box));
 
-  await link.click({ timeout: 15000 });
+  await button.click({ timeout: 15000 });
   await wait(page);
 
   const current = page.url();
   console.log(`MOBILE_NAV_TAPPED_${key(label)}=` + current);
-  expect(current.toLowerCase()).toContain(expectedNeedle.toLowerCase());
+  expect(current.toLowerCase()).toContain(`#${expectedHash}`.toLowerCase());
+}
+
+async function tapMoreMobileNav(page, label, expectedHash) {
+  const nav = page.locator('.freshMobileNav');
+  await expect(nav).toBeVisible({ timeout: 30000 });
+
+  const moreButton = nav.locator('button', { hasText: 'More' }).first();
+  await expect(moreButton).toBeVisible({ timeout: 30000 });
+  await moreButton.click({ timeout: 15000 });
+  await wait(page);
+
+  const more = page.locator('.freshMobileMore');
+  await expect(more).toBeVisible({ timeout: 30000 });
+
+  const button = more.locator('button', { hasText: label }).first();
+  await expect(button).toBeVisible({ timeout: 30000 });
+
+  const box = await button.boundingBox();
+  console.log(`MOBILE_MORE_${key(label)}_BOX=` + JSON.stringify(box));
+
+  await button.click({ timeout: 15000 });
+  await wait(page);
+
+  const current = page.url();
+  console.log(`MOBILE_MORE_TAPPED_${key(label)}=` + current);
+  expect(current.toLowerCase()).toContain(`#${expectedHash}`.toLowerCase());
 }
 
 test.use({
@@ -64,16 +87,18 @@ test('mobile command nav taps are not blocked by overlays', async ({ page }) => 
   await page.goto(url('/dashboard'));
   await wait(page);
 
-  await expect(page.locator('.cvxMobileNav')).toBeVisible({ timeout: 30000 });
+  await expect(page.locator('.freshMobileNav')).toBeVisible({ timeout: 30000 });
   console.log('MOBILE_NAV_VISIBLE=true');
 
-  await tapMobileNav(page, 'Jobs', 'jobs');
-  await tapMobileNav(page, 'Clients', 'clients');
-  await tapMobileNav(page, 'Quotes', 'quotes');
-  await tapMobileNav(page, 'Invoices', 'invoices');
-  await tapMobileNav(page, 'Team', 'team');
-  await tapMobileNav(page, 'Plans', 'plans');
-  await tapMobileNav(page, 'Settings', 'settings');
+  await tapMainMobileNav(page, 'Jobs', 'jobs');
+  await tapMainMobileNav(page, 'Command', 'command');
+
+  await tapMoreMobileNav(page, 'Clients', 'clients');
+  await tapMoreMobileNav(page, 'Quotes', 'quotes');
+  await tapMoreMobileNav(page, 'Invoices', 'invoices');
+  await tapMoreMobileNav(page, 'Team', 'team');
+  await tapMoreMobileNav(page, 'Plans', 'plans');
+  await tapMoreMobileNav(page, 'Settings', 'settings');
 
   console.log('MOBILE_NAV_TAP_PROOF=passed');
 });
