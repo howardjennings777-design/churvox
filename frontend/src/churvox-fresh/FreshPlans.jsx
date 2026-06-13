@@ -1,5 +1,6 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
+import "./freshPlans.css";
 
 const plans = [
   {
