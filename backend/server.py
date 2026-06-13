@@ -1718,7 +1718,7 @@ async def acknowledge_job(job_id: str, request: Request, current_user: dict = De
     user = await get_current_user(request)
     if user.get("role") not in ("worker",):
         raise HTTPException(status_code=403, detail="Only workers can acknowledge jobs")
-    result = await db.jobs.update_one({"business_id": str(business_id), 
+    result = await db.jobs.update_one({
             "_id": ObjectId(job_id),
             "contractor_id": ObjectId(user["business_id"]),
             "assigned_worker_id": ObjectId(user["id"]),
@@ -1728,7 +1728,11 @@ async def acknowledge_job(job_id: str, request: Request, current_user: dict = De
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Job not found or not assigned to you")
-    job = await db.jobs.find_one({"business_id": str(business_id), "_id": ObjectId(job_id)})
+    job = await db.jobs.find_one({
+        "_id": ObjectId(job_id),
+        "contractor_id": ObjectId(user["business_id"]),
+        "assigned_worker_id": ObjectId(user["id"])
+    })
     return normalize_job_status_for_response(serialize_doc(job))
 @api_router.post("/jobs/{job_id}/start")
 async def start_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
