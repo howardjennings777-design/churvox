@@ -2197,6 +2197,97 @@ async def send_quote(quote_id: str, request: Request, current_user: dict = Depen
     data["public_url"] = public_url
     return data
 
+
+# CHURVOX_PUBLIC_CLIENT_PORTAL_PROOF_20260614
+async def _find_public_client_portal_job(token: str):
+    token = str(token or "").strip()
+    if not token:
+        return None
+    query = {
+        "$or": [
+            {"client_portal_token": token},
+            {"public_portal_token": token},
+            {"portal_token": token},
+            {"customer_portal_token": token},
+        ]
+    }
+    return await db.jobs.find_one(query)
+
+def _safe_public_portal_job(job: dict):
+    job = make_json_safe(job or {})
+    business_id = str(job.get("business_id") or "")
+    business_snapshot = {}
+
+    async def _load_business():
+        if not business_id:
+            return {}
+        try:
+            business = await db.users.find_one({"_id": ObjectId(business_id)})
+            if business:
+                return make_json_safe({
+                    "business_name": business.get("business_name") or business.get("company_name") or "Churvox",
+                    "email": business.get("email"),
+                    "phone": business.get("phone"),
+                    "logo_base64": business.get("logo_base64") or business.get("business_logo"),
+                })
+        except Exception:
+            pass
+        return {}
+
+    return job, _load_business
+
+@api_router.get("/public/client-portal/{token}")
+async def public_client_portal(token: str):
+    job = await _find_public_client_portal_job(token)
+    if not job:
+        raise HTTPException(status_code=404, detail="Client portal not found")
+
+    job, business_loader = _safe_public_portal_job(job)
+    business_snapshot = await business_loader()
+
+    portal = {
+        "id": job.get("id") or job.get("_id"),
+        "token": token,
+        "business_id": job.get("business_id"),
+        "business_snapshot": business_snapshot,
+        "business_name": business_snapshot.get("business_name") or job.get("business_name") or "Churvox",
+        "customer_name": job.get("customer_name") or job.get("client_name") or job.get("name") or "Customer",
+        "client_name": job.get("client_name") or job.get("customer_name") or "Customer",
+        "job_title": job.get("title") or job.get("job_title") or job.get("service_title") or "Completed work",
+        "title": job.get("title") or job.get("job_title") or "Completed work",
+        "summary": job.get("summary") or job.get("description") or job.get("notes") or "Completed work summary.",
+        "description": job.get("description") or job.get("summary") or job.get("notes") or "",
+        "address": job.get("address") or job.get("service_address") or job.get("site_address") or "",
+        "status": job.get("approval_status") or job.get("status") or "waiting",
+        "work_status": job.get("status") or job.get("job_status") or "completed",
+        "approval_status": job.get("approval_status") or "waiting",
+        "photos": job.get("photos") or job.get("proof_photos") or [],
+        "created_at": job.get("created_at"),
+        "updated_at": job.get("updated_at"),
+        "completed_at": job.get("completed_at"),
+    }
+
+    return {"success": True, "portal": make_json_safe(portal)}
+
+@api_router.post("/public/client-portal/{token}/approve-work")
+async def public_client_portal_approve_work(token: str):
+    job = await _find_public_client_portal_job(token)
+    if not job:
+        raise HTTPException(status_code=404, detail="Client portal not found")
+
+    now = datetime.now(timezone.utc)
+    result = await db.jobs.update_one(
+        {"_id": job["_id"]},
+        {"$set": {
+            "approval_status": "approved",
+            "client_approved": True,
+            "client_approved_at": now,
+            "updated_at": now,
+        }}
+    )
+
+    return {"success": result.modified_count >= 0, "status": "approved"}
+
 @api_router.get("/public/quote/{token}")
 async def get_public_quote(token: str):
     quote = await db.quotes.find_one({"public_token": token})
