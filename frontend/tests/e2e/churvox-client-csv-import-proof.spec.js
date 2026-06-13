@@ -71,7 +71,7 @@ test('client csv import proof', async ({ request }) => {
     `"${clientOne.name}",${clientOne.email},${clientOne.phone},"${clientOne.address}","${clientOne.notes}"`,
     `"${clientTwo.name}",${clientTwo.email},${clientTwo.phone},"${clientTwo.address}","${clientTwo.notes}"`,
     `"Bad Email Client",not-an-email,0210000003,"3 CSV Proof Street","Should skip"`,
-  ].join('\\n');
+  ].join('\n');
 
   console.log(`CLIENT_CSV_API_BASE=${API_BASE}`);
   console.log(`CLIENT_CSV_CLIENT_ONE=${clientOne.email}`);
