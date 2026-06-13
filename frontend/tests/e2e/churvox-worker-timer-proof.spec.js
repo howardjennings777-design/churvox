@@ -31,6 +31,17 @@ function createdId(payload) {
   return normalizeId(data.id || data._id || item.id || item._id || item.job_id || item.worker_id || payload.id || payload._id);
 }
 
+function listFrom(payload) {
+  const data = payload?.data || payload;
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.workers)) return data.workers;
+  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data?.records)) return data.records;
+  if (Array.isArray(data?.results)) return data.results;
+  if (Array.isArray(data?.data)) return data.data;
+  return [];
+}
+
 function statusOf(job) {
   return String(job?.status || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
 }
@@ -152,6 +163,8 @@ test('worker timer start pause resume complete proof', async ({ page }) => {
   const started = await getJob(request, jobId, 'WORKER_TIMER_AFTER_START');
   expect(statusOf(started)).toBe('in_progress');
 
+  await page.waitForTimeout(1500);
+
   await postAction(request, jobId, '/timer/pause', 'WORKER_TIMER_PAUSE');
   const paused = await getJob(request, jobId, 'WORKER_TIMER_AFTER_PAUSE');
   expect(statusOf(paused)).toBe('paused');
@@ -159,6 +172,8 @@ test('worker timer start pause resume complete proof', async ({ page }) => {
   await postAction(request, jobId, '/timer/resume', 'WORKER_TIMER_RESUME');
   const resumed = await getJob(request, jobId, 'WORKER_TIMER_AFTER_RESUME');
   expect(statusOf(resumed)).toBe('in_progress');
+
+  await page.waitForTimeout(1500);
 
   await postAction(request, jobId, '/complete', 'WORKER_TIMER_COMPLETE', { worker_notes: 'Timer proof completed.' });
   const completed = await getJob(request, jobId, 'WORKER_TIMER_AFTER_COMPLETE');
@@ -168,6 +183,24 @@ test('worker timer start pause resume complete proof', async ({ page }) => {
 
   await request.post(api('/auth/logout')).catch(() => null);
   await backendLogin(request, OWNER_EMAIL, OWNER_PASS, 'OWNER_RESTORE');
+
+  const payrollRes = await request.get(api('/team/workers'));
+  const payrollPayload = await readJson(payrollRes);
+  const payrollWorkers = listFrom(payrollPayload.json);
+  const payrollWorker = payrollWorkers.find((worker) => String(worker.email || '').toLowerCase() === WORKER_EMAIL.toLowerCase());
+  const payrollSeconds = Number(payrollWorker?.payroll_seconds || 0);
+  const payrollHours = Number(payrollWorker?.payroll_hours || payrollWorker?.hours_worked || 0);
+
+  console.log('WORKER_TIMER_PAYROLL_STATUS=' + payrollRes.status());
+  console.log('WORKER_TIMER_PAYROLL_WORKER_FOUND=' + Boolean(payrollWorker));
+  console.log('WORKER_TIMER_PAYROLL_SECONDS=' + payrollSeconds);
+  console.log('WORKER_TIMER_PAYROLL_HOURS=' + payrollHours);
+
+  expect(payrollRes.status()).toBeLessThan(400);
+  expect(Boolean(payrollWorker)).toBeTruthy();
+  expect(payrollSeconds).toBeGreaterThan(0);
+  expect(payrollHours).toBeGreaterThan(0);
+
   const restorePlan = await request.patch(api('/user/plan'), { data: { plan: originalPlan } });
   console.log('WORKER_TIMER_RESTORE_PLAN_STATUS=' + restorePlan.status());
   expect(restorePlan.status()).toBeLessThan(400);

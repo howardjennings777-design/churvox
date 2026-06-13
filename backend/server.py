@@ -1212,6 +1212,43 @@ async def get_team_workers(current_user: dict = Depends(get_current_user)):
             "notes": 1,
         }
     ).sort("created_at", -1).to_list(length=500)
+
+    worker_ids = [worker.get("_id") for worker in workers if worker.get("_id")]
+    seconds_by_worker = {}
+    jobs_by_worker = {}
+
+    if worker_ids:
+        payroll_rows = await db.jobs.aggregate([
+            {
+                "$match": {
+                    "contractor_id": business_obj_id,
+                    "assigned_worker_id": {"$in": worker_ids},
+                    "status": JobStatus.COMPLETED,
+                }
+            },
+            {
+                "$group": {
+                    "_id": "$assigned_worker_id",
+                    "payroll_seconds": {"$sum": {"$ifNull": ["$total_time_seconds", 0]}},
+                    "completed_job_count": {"$sum": 1},
+                }
+            },
+        ]).to_list(length=500)
+
+        for row in payroll_rows:
+            seconds_by_worker[row.get("_id")] = int(row.get("payroll_seconds") or 0)
+            jobs_by_worker[row.get("_id")] = int(row.get("completed_job_count") or 0)
+
+    for worker in workers:
+        worker_id = worker.get("_id")
+        payroll_seconds = int(seconds_by_worker.get(worker_id, 0) or 0)
+        payroll_hours = round(payroll_seconds / 3600, 4) if payroll_seconds > 0 else 0
+        worker["payroll_seconds"] = payroll_seconds
+        worker["payroll_hours"] = payroll_hours
+        worker["hours_worked"] = payroll_hours
+        worker["ordinary_hours"] = payroll_hours
+        worker["completed_job_count"] = int(jobs_by_worker.get(worker_id, 0) or 0)
+
     return safe_docs(workers)
 
 @api_router.delete("/team/workers/{worker_id}")
