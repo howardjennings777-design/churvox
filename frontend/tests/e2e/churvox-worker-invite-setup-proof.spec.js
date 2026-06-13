@@ -35,6 +35,22 @@ async function backendLogin(page, email, password, label) {
   return loginJson;
 }
 
+async function browserLogin(page, email, password, label) {
+  await page.goto(url('/login'));
+  await wait(page);
+
+  const emailInput = page.getByLabel(/email/i).first();
+  await expect(emailInput).toBeVisible({ timeout: 30000 });
+  await emailInput.fill(email);
+  await page.getByLabel(/password/i).first().fill(password);
+  await page.getByRole('button', { name: /sign in|log in|login/i }).click();
+
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(1800);
+
+  console.log(`${label}_BROWSER_LOGIN_URL=` + page.url());
+}
+
 test('worker invite setup and worker login proof', async ({ page }) => {
   console.log('WORKER_INVITE_API_BASE=' + API_BASE);
   console.log('WORKER_INVITE_NAME=' + WORKER_NAME);
@@ -105,10 +121,13 @@ test('worker invite setup and worker login proof', async ({ page }) => {
   expect(String(workerMeJson.email || '').toLowerCase()).toBe(WORKER_EMAIL.toLowerCase());
   expect(String(workerMeJson.role || '').toLowerCase()).toBe('worker');
 
+  await page.request.post(api('/auth/logout')).catch(() => null);
+  await browserLogin(page, WORKER_EMAIL, WORKER_PASS, 'WORKER');
   await page.goto(url('/worker/jobs'));
   await wait(page);
 
   const workerPageText = await page.locator('body').innerText();
+  console.log('WORKER_PAGE_URL=' + page.url());
   console.log('WORKER_PAGE_HAS_TODAYS_WORK=' + workerPageText.includes("Today's Work"));
   console.log('WORKER_PAGE_HAS_WAITING_DISPATCH=' + workerPageText.includes('Waiting for dispatch'));
 
