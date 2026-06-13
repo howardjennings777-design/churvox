@@ -97,8 +97,8 @@ test('public quote link customer page proof', async ({ request, page }) => {
   expect(publicPayload.json?.quote?.job_description).toBe(description);
 
   await page.goto(publicUrl, { waitUntil: 'domcontentloaded' });
-  await expect(page.getByText(customer)).toBeVisible();
-  await expect(page.getByText(description)).toBeVisible();
+  await expect(page.getByText(customer).first()).toBeVisible();
+  await expect(page.getByText(description).first()).toBeVisible();
   await expect(page.getByRole('button', { name: /accept quote/i })).toBeVisible();
 
   console.log(`PUBLIC_QUOTE_PAGE_URL=${page.url()}`);
