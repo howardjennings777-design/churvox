@@ -2115,8 +2115,10 @@ async def create_quote(quote_data: QuoteCreate, request: Request, current_user: 
     quote_doc = {
         **quote_data.model_dump(exclude={"client_id"}),
         "contractor_id": ObjectId(user["business_id"]),
+        "business_id": str(business_id),
         "status": QuoteStatus.DRAFT,
         "quote_number": f"QT-{datetime.now().strftime('%Y%m%d')}-{secrets.token_hex(3).upper()}",
+        "public_token": secrets.token_urlsafe(24),
         "created_at": datetime.now(timezone.utc)
     }
     if quote_data.client_id:
@@ -2168,13 +2170,84 @@ async def update_quote(quote_id: str, request: Request, quote_data: QuoteUpdate,
 async def send_quote(quote_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
-    result = await db.quotes.update_one({"business_id": str(business_id), "_id": ObjectId(quote_id), "contractor_id": ObjectId(user["business_id"])},
-        {"$set": {"status": QuoteStatus.SENT, "sent_at": datetime.now(timezone.utc)}}
-    )
-    if result.matched_count == 0:
+
+    quote = await db.quotes.find_one({
+        "_id": ObjectId(quote_id),
+        "contractor_id": ObjectId(user["business_id"])
+    })
+    if not quote:
         raise HTTPException(status_code=404, detail="Quote not found")
-    quote = await db.quotes.find_one({"business_id": str(business_id), "_id": ObjectId(quote_id)})
-    return serialize_doc(quote)
+
+    public_token = quote.get("public_token") or secrets.token_urlsafe(24)
+    public_url = f"{os.environ.get('FRONTEND_URL', 'https://www.churvox.com').rstrip('/')}/public/quote/{public_token}"
+
+    await db.quotes.update_one(
+        {"_id": quote["_id"]},
+        {"$set": {
+            "status": QuoteStatus.SENT,
+            "sent_at": datetime.now(timezone.utc),
+            "public_token": public_token,
+            "public_url": public_url,
+            "business_id": quote.get("business_id") or str(business_id),
+        }}
+    )
+
+    quote = await db.quotes.find_one({"_id": ObjectId(quote_id)})
+    data = serialize_doc(quote)
+    data["public_url"] = public_url
+    return data
+
+@api_router.get("/public/quote/{token}")
+async def get_public_quote(token: str):
+    quote = await db.quotes.find_one({"public_token": token})
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    if quote.get("status") == QuoteStatus.SENT:
+        await db.quotes.update_one(
+            {"_id": quote["_id"]},
+            {"$set": {"viewed_at": datetime.now(timezone.utc)}}
+        )
+        quote = await db.quotes.find_one({"_id": quote["_id"]})
+
+    return {"quote": serialize_doc(quote)}
+
+
+@api_router.post("/public/quote/{token}/accept")
+async def accept_public_quote(token: str):
+    quote = await db.quotes.find_one({"public_token": token})
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    await db.quotes.update_one(
+        {"_id": quote["_id"]},
+        {"$set": {
+            "status": QuoteStatus.ACCEPTED,
+            "accepted_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+        }}
+    )
+
+    return {"success": True, "status": QuoteStatus.ACCEPTED}
+
+
+@api_router.post("/public/quote/{token}/decline")
+async def decline_public_quote(token: str):
+    quote = await db.quotes.find_one({"public_token": token})
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    await db.quotes.update_one(
+        {"_id": quote["_id"]},
+        {"$set": {
+            "status": QuoteStatus.DECLINED,
+            "declined_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+        }}
+    )
+
+    return {"success": True, "status": QuoteStatus.DECLINED}
+
 @api_router.delete("/quotes/{quote_id}")
 async def delete_quote(quote_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
