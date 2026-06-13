@@ -2333,6 +2333,7 @@ async def create_invoice(invoice_data: InvoiceCreate, request: Request, current_
         "gst_rate": gst_rate, "gst_amount": gst_amount, "total": total,
         "status": InvoiceStatus.DRAFT,
         "invoice_number": f"INV-{datetime.now().strftime('%Y%m%d')}-{secrets.token_hex(3).upper()}",
+        "public_token": secrets.token_urlsafe(24),
         "myob_sync_status": MyobSyncStatus.NOT_SYNCED,
         "myob_id": None,
         "myob_last_sync": None,
@@ -2400,13 +2401,48 @@ async def update_invoice(invoice_id: str, request: Request, invoice_data: Invoic
 async def send_invoice(invoice_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
-    result = await db.invoices.update_one({"_id": ObjectId(invoice_id), "contractor_id": ObjectId(user["business_id"])},
-        {"$set": {"status": InvoiceStatus.SENT, "sent_at": datetime.now(timezone.utc)}}
-    )
-    if result.matched_count == 0:
+
+    invoice = await db.invoices.find_one({
+        "_id": ObjectId(invoice_id),
+        "contractor_id": ObjectId(user["business_id"])
+    })
+    if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
-    invoice = await db.invoices.find_one({"_id": ObjectId(invoice_id), "contractor_id": ObjectId(user["business_id"])})
-    return serialize_doc(invoice)
+
+    public_token = invoice.get("public_token") or secrets.token_urlsafe(24)
+    public_url = f"{os.environ.get('FRONTEND_URL', 'https://www.churvox.com').rstrip('/')}/public/invoice/{public_token}"
+
+    await db.invoices.update_one(
+        {"_id": invoice["_id"]},
+        {"$set": {
+            "status": InvoiceStatus.SENT,
+            "sent_at": datetime.now(timezone.utc),
+            "public_token": public_token,
+            "public_url": public_url,
+            "business_id": invoice.get("business_id") or str(business_id),
+        }}
+    )
+
+    invoice = await db.invoices.find_one({"_id": ObjectId(invoice_id)})
+    data = serialize_doc(invoice)
+    data["public_url"] = public_url
+    return data
+
+@api_router.get("/public/invoice/{token}")
+async def get_public_invoice(token: str):
+    invoice = await db.invoices.find_one({"public_token": token})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    if invoice.get("status") == InvoiceStatus.SENT:
+        await db.invoices.update_one(
+            {"_id": invoice["_id"]},
+            {"$set": {"viewed_at": datetime.now(timezone.utc)}}
+        )
+        invoice = await db.invoices.find_one({"_id": invoice["_id"]})
+
+    return {"invoice": serialize_doc(invoice)}
+
 @api_router.post("/invoices/{invoice_id}/mark-paid")
 async def mark_invoice_paid(invoice_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
