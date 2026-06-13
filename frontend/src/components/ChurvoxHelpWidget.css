@@ -90,3 +90,27 @@
   .cv-help-overlay { place-items: end center; padding: 10px; }
   .cv-help-panel header { padding: 18px; }
 }
+
+/* Fresh mobile app fix: keep help available without blocking bottom navigation or More drawer. */
+@media (max-width: 950px) {
+  .cv-help-fab {
+    left: auto;
+    right: max(12px, env(safe-area-inset-right));
+    top: calc(12px + env(safe-area-inset-top));
+    bottom: auto;
+    z-index: 3000;
+    min-width: 0;
+    width: 132px;
+    padding: 10px 12px;
+    border-radius: 18px;
+  }
+
+  .cv-help-fab span {
+    font-size: 9px;
+    letter-spacing: .1em;
+  }
+
+  .cv-help-fab b {
+    font-size: 12px;
+  }
+}
