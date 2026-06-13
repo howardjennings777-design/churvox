@@ -875,6 +875,17 @@ async def set_business_plan_from_checkout(user_id: str, plan: str, stripe_custom
         {"$set": {"plan": plan}}
     )
 
+
+def churvox_proof_helpers_enabled() -> bool:
+    value = os.environ.get("CHURVOX_ENABLE_PROOF_HELPERS", "").lower().strip()
+    return value in ("1", "true", "yes", "on")
+
+
+async def require_proof_helper_enabled():
+    if not churvox_proof_helpers_enabled():
+        raise HTTPException(status_code=404, detail="Not found")
+
+
 # ===================== AUTH ENDPOINTS =====================
 
 @api_router.post("/auth/register")
@@ -2388,6 +2399,7 @@ async def send_quote(quote_id: str, request: Request, current_user: dict = Depen
 # CHURVOX_PUBLIC_CLIENT_PORTAL_PROOF_CREATE_20260614
 @api_router.post("/client-portal/proof-job")
 async def create_client_portal_proof_job(payload: dict, request: Request):
+    await require_proof_helper_enabled()
     user = await require_employer(request)
     business_id = str(user.get("business_id") or user.get("id") or user.get("_id"))
 
@@ -3081,6 +3093,7 @@ async def send_sms(data: SmsSend, request: Request, current_user: dict = Depends
     }
 @api_router.post("/sms/test")
 async def send_test_sms(data: SmsTestSend, request: Request, current_user: dict = Depends(get_current_user)):
+    await require_proof_helper_enabled()
     business_id = await get_user_business_id(current_user)
     """Development endpoint — send a test SMS without deducting credits."""
     await require_employer(request)
