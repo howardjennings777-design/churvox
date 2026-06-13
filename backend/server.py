@@ -1157,10 +1157,29 @@ async def get_team_workers(current_user: dict = Depends(get_current_user)):
     if business_obj_id:
         business_ids.append(business_obj_id)
 
-    workers = await db.users.find({
-        "business_id": {"$in": business_ids},
-        "role": "worker"
-    }).sort("created_at", -1).to_list(length=500)
+    workers = await db.users.find(
+        {
+            "business_id": {"$in": business_ids},
+            "role": "worker"
+        },
+        {
+            "_id": 1,
+            "name": 1,
+            "email": 1,
+            "phone": 1,
+            "role": 1,
+            "status": 1,
+            "active": 1,
+            "is_active": 1,
+            "business_id": 1,
+            "created_at": 1,
+            "updated_at": 1,
+            "current_job": 1,
+            "pay_rate": 1,
+            "availability": 1,
+            "notes": 1,
+        }
+    ).sort("created_at", -1).to_list(length=500)
     return safe_docs(workers)
 
 @api_router.delete("/team/workers/{worker_id}")

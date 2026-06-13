@@ -53,6 +53,8 @@ test('team worker save proof', async ({ page }) => {
 
   expect(list.status()).toBeLessThan(400);
   expect(listText).toContain(teamName);
+  expect(listText).not.toContain('password_hash');
+  expect(listText).not.toContain('hashed_password');
 
   await page.goto(url('/dashboard#team'));
   await wait(page);
