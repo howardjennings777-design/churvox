@@ -1,44 +1,9 @@
 import React from "react";
 import { readFreshFocus } from "./freshFocus";
+import { useApi } from "../hooks/useApi";
 
-const PAYROLL_STORAGE_KEY = "churvox:fresh-payroll:v1";
 const PAYROLL_PERIOD_KEY = "churvox:fresh-payroll-period:v1";
-
-const seedPayroll = [
-  {
-    id: "pay-1",
-    name: "Matiu Rangi",
-    role: "Worker",
-    status: "Ready",
-    ordinaryHours: 31.5,
-    extraHours: 2,
-    hourlyRate: 28,
-    adjustment: 0,
-    notes: "Normal week. Lawn route complete.",
-  },
-  {
-    id: "pay-2",
-    name: "Ana Williams",
-    role: "Lead worker",
-    status: "Needs review",
-    ordinaryHours: 36,
-    extraHours: 4,
-    hourlyRate: 34,
-    adjustment: 25,
-    notes: "Manual adjustment for late finish on garden tidy.",
-  },
-  {
-    id: "pay-3",
-    name: "Tama Smith",
-    role: "Worker",
-    status: "Draft",
-    ordinaryHours: 8,
-    extraHours: 0,
-    hourlyRate: 27,
-    adjustment: 0,
-    notes: "Invite accepted. Limited hours this period.",
-  },
-];
+const PAYROLL_EDIT_KEY = "churvox:fresh-payroll-edits:v1";
 
 const filters = ["All", "Draft", "Needs review", "Ready", "Approved"];
 
@@ -46,23 +11,46 @@ function money(value) {
   return `$${Number(value || 0).toFixed(2)}`;
 }
 
-function grossPay(person) {
-  const hours = Number(person.ordinaryHours || 0) + Number(person.extraHours || 0);
-  return hours * Number(person.hourlyRate || 0) + Number(person.adjustment || 0);
+function listFrom(payload) {
+  const data = payload?.data ?? payload;
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.workers)) return data.workers;
+  if (Array.isArray(data?.team)) return data.team;
+  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data?.records)) return data.records;
+  if (Array.isArray(data?.results)) return data.results;
+  if (Array.isArray(data?.data)) return data.data;
+  return [];
 }
 
-function loadPayroll() {
-  try {
-    if (typeof window === "undefined") return seedPayroll;
+function idOf(worker, fallback) {
+  const raw = worker?.id || worker?._id || worker?.worker_id || worker?.user_id || fallback;
+  if (typeof raw === "object") return raw.$oid || raw.id || raw._id || fallback;
+  return String(raw || fallback);
+}
 
-    const saved = window.localStorage.getItem(PAYROLL_STORAGE_KEY);
-    if (!saved) return seedPayroll;
+function roleOf(value) {
+  const text = String(value || "worker").toLowerCase();
+  if (text.includes("lead")) return "Lead worker";
+  if (text.includes("sub")) return "Subcontractor";
+  if (text.includes("payroll")) return "Payroll only";
+  if (text.includes("manager")) return "Manager";
+  return "Worker";
+}
 
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed : seedPayroll;
-  } catch {
-    return seedPayroll;
+function defaultStatus(worker) {
+  const status = String(worker?.status || "").toLowerCase();
+  if (status.includes("active")) return "Ready";
+  if (status.includes("invite")) return "Draft";
+  return "Needs review";
+}
+
+function numberFrom(...values) {
+  for (const value of values) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed) && parsed > 0) return parsed;
   }
+  return 0;
 }
 
 function loadPeriod() {
@@ -74,26 +62,100 @@ function loadPeriod() {
   }
 }
 
-export default function FreshPayroll({ onNavigate }) {
-  const [people, setPeople] = React.useState(loadPayroll);
-  const [period, setPeriod] = React.useState(loadPeriod);
-  const [selectedId, setSelectedId] = React.useState(() => readFreshFocus("payroll", people[0]?.id || ""));
-  const [filter, setFilter] = React.useState("All");
+function loadEdits() {
+  try {
+    if (typeof window === "undefined") return {};
+    const saved = window.localStorage.getItem(PAYROLL_EDIT_KEY);
+    return saved ? JSON.parse(saved) : {};
+  } catch {
+    return {};
+  }
+}
 
-  const selected = people.find((person) => person.id === selectedId) || people[0];
+function saveEdits(edits) {
+  try {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(PAYROLL_EDIT_KEY, JSON.stringify(edits));
+    }
+  } catch {
+    // Keep payroll usable if local storage is blocked.
+  }
+}
+
+function grossPay(person) {
+  const hours = Number(person.ordinaryHours || 0) + Number(person.extraHours || 0);
+  return hours * Number(person.hourlyRate || 0) + Number(person.adjustment || 0);
+}
+
+function normalizePayroll(worker, index, edits = {}) {
+  const id = idOf(worker, `worker-${index}`);
+  const saved = edits[id] || {};
+  const ordinaryHours = numberFrom(
+    saved.ordinaryHours,
+    worker?.ordinary_hours,
+    worker?.ordinaryHours,
+    worker?.hours_worked,
+    worker?.hoursWorked,
+    worker?.payroll_hours,
+    worker?.payrollHours
+  );
+  const extraHours = numberFrom(saved.extraHours, worker?.extra_hours, worker?.extraHours, worker?.overtime_hours, worker?.overtimeHours);
+  const hourlyRate = numberFrom(saved.hourlyRate, worker?.pay_rate, worker?.payRate, worker?.hourly_rate, worker?.hourlyRate);
+
+  return {
+    id,
+    name: worker?.name || worker?.full_name || worker?.display_name || "Unnamed worker",
+    email: worker?.email || "",
+    phone: worker?.phone || worker?.mobile || "",
+    role: roleOf(worker?.team_role || worker?.worker_role || worker?.role),
+    status: saved.status || defaultStatus(worker),
+    ordinaryHours,
+    extraHours,
+    hourlyRate,
+    adjustment: Number(saved.adjustment ?? worker?.adjustment ?? 0) || 0,
+    notes: saved.notes || worker?.notes || (ordinaryHours + extraHours > 0 ? "Hours imported for review." : "No hours captured yet. Add hours before approving pay."),
+  };
+}
+
+export default function FreshPayroll({ onNavigate }) {
+  const { get } = useApi();
+  const [people, setPeople] = React.useState([]);
+  const [period, setPeriod] = React.useState(loadPeriod);
+  const [selectedId, setSelectedId] = React.useState(() => readFreshFocus("payroll", ""));
+  const [filter, setFilter] = React.useState("All");
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState("");
+  const [actionMessage, setActionMessage] = React.useState("");
+
   const visiblePeople = filter === "All" ? people : people.filter((person) => person.status === filter);
+  const selected = people.find((person) => person.id === selectedId) || visiblePeople[0] || people[0];
   const totalGross = people.reduce((sum, person) => sum + grossPay(person), 0);
   const totalHours = people.reduce((sum, person) => sum + Number(person.ordinaryHours || 0) + Number(person.extraHours || 0), 0);
 
-  React.useEffect(() => {
+  const loadPayroll = React.useCallback(async () => {
+    setLoading(true);
+    setError("");
+
     try {
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(PAYROLL_STORAGE_KEY, JSON.stringify(people));
-      }
-    } catch {
-      // Fresh preview keeps working without local storage.
+      const payload = await get("/team/workers");
+      const edits = loadEdits();
+      const rows = listFrom(payload)
+        .map((worker, index) => normalizePayroll(worker, index, edits))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      setPeople(rows);
+      setSelectedId((current) => (rows.some((person) => person.id === current) ? current : rows[0]?.id || ""));
+    } catch (err) {
+      setError(err?.message || "Payroll could not load workers.");
+      setPeople([]);
+    } finally {
+      setLoading(false);
     }
-  }, [people]);
+  }, [get]);
+
+  React.useEffect(() => {
+    loadPayroll();
+  }, [loadPayroll]);
 
   React.useEffect(() => {
     try {
@@ -101,45 +163,56 @@ export default function FreshPayroll({ onNavigate }) {
         window.localStorage.setItem(PAYROLL_PERIOD_KEY, period);
       }
     } catch {
-      // Fresh preview keeps working without local storage.
+      // Keep payroll usable if local storage is blocked.
     }
   }, [period]);
 
   function updateSelectedPerson(patch) {
     if (!selected) return;
 
-    setPeople((current) =>
-      current.map((person) =>
-        person.id === selected.id
-          ? { ...person, ...patch }
-          : person
-      )
-    );
+    setPeople((current) => {
+      const next = current.map((person) => (person.id === selected.id ? { ...person, ...patch } : person));
+      const updated = next.find((person) => person.id === selected.id);
+      const edits = loadEdits();
+
+      edits[selected.id] = {
+        ordinaryHours: updated.ordinaryHours,
+        extraHours: updated.extraHours,
+        hourlyRate: updated.hourlyRate,
+        adjustment: updated.adjustment,
+        status: updated.status,
+        notes: updated.notes,
+      };
+      saveEdits(edits);
+
+      return next;
+    });
   }
 
   function resetPayroll() {
     try {
       if (typeof window !== "undefined") {
-        window.localStorage.removeItem(PAYROLL_STORAGE_KEY);
+        window.localStorage.removeItem(PAYROLL_EDIT_KEY);
         window.localStorage.removeItem(PAYROLL_PERIOD_KEY);
       }
     } catch {
-      // Ignore preview storage errors.
+      // Ignore storage errors.
     }
 
-    setPeople(seedPayroll);
     setPeriod("Weekly · Current period");
-    setSelectedId(seedPayroll[0].id);
     setFilter("All");
+    setActionMessage("Payroll edits reset. Reloaded real workers.");
+    loadPayroll();
   }
 
   function exportCsv() {
     const rows = [
       ["Pay period", period],
       [],
-      ["Name", "Role", "Status", "Ordinary hours", "Extra hours", "Hourly rate", "Adjustment", "Gross pay", "Notes"],
+      ["Name", "Email", "Role", "Status", "Ordinary hours", "Extra hours", "Hourly rate", "Adjustment", "Gross pay", "Notes"],
       ...people.map((person) => [
         person.name,
+        person.email,
         person.role,
         person.status,
         person.ordinaryHours,
@@ -152,11 +225,7 @@ export default function FreshPayroll({ onNavigate }) {
     ];
 
     const csv = rows
-      .map((row) =>
-        row
-          .map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`)
-          .join(",")
-      )
+      .map((row) => row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(","))
       .join("\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -164,7 +233,7 @@ export default function FreshPayroll({ onNavigate }) {
     const link = document.createElement("a");
 
     link.href = objectUrl;
-    link.download = "churvox-payroll-preview.csv";
+    link.download = "churvox-payroll-review.csv";
     link.click();
 
     URL.revokeObjectURL(objectUrl);
@@ -175,7 +244,7 @@ export default function FreshPayroll({ onNavigate }) {
       <header className="freshHero">
         <span>Churvox fresh · Payroll</span>
         <h1>Payroll</h1>
-        <p>Review hours, adjustments and gross pay. Churvox does not submit tax, government forms or bank payout files.</p>
+        <p>Review worker hours, adjustments and gross pay from real Team records. Churvox does not submit tax, government forms or bank payout files.</p>
       </header>
 
       <section className="freshPayrollNotice">
@@ -209,7 +278,22 @@ export default function FreshPayroll({ onNavigate }) {
             <option>Monthly · Current period</option>
           </select>
         </label>
+        <button type="button" className="freshGhost" onClick={loadPayroll}>Refresh workers</button>
       </section>
+
+      {error && (
+        <section className="freshCard freshNotice need">
+          <b>Payroll needs attention</b>
+          <span>{error}</span>
+        </section>
+      )}
+
+      {actionMessage && (
+        <section className="freshCard freshNotice">
+          <b>Payroll updated</b>
+          <span>{actionMessage}</span>
+        </section>
+      )}
 
       <section className="freshCommandFilterBar">
         {filters.map((item) => (
@@ -229,7 +313,14 @@ export default function FreshPayroll({ onNavigate }) {
         <aside className="freshCard">
           <h2>Pay list</h2>
 
-          {visiblePeople.map((person) => (
+          {loading && (
+            <div className="freshItem">
+              <b>Loading payroll</b>
+              <span>Checking real Team workers.</span>
+            </div>
+          )}
+
+          {!loading && visiblePeople.map((person) => (
             <button
               type="button"
               className={`freshItem ${selected?.id === person.id ? "active" : ""} ${person.status === "Needs review" ? "need" : ""}`}
@@ -241,10 +332,10 @@ export default function FreshPayroll({ onNavigate }) {
             </button>
           ))}
 
-          {visiblePeople.length === 0 && (
+          {!loading && visiblePeople.length === 0 && (
             <div className="freshItem">
               <b>No pay records</b>
-              <span>Change filter or reset preview payroll.</span>
+              <span>{people.length ? "Change filter to see more workers." : "Add workers in Team before running payroll."}</span>
             </div>
           )}
         </aside>
@@ -277,6 +368,7 @@ export default function FreshPayroll({ onNavigate }) {
                 <span>Ordinary hours</span>
                 <input
                   value={selected.ordinaryHours}
+                  inputMode="decimal"
                   onChange={(event) => updateSelectedPerson({ ordinaryHours: Number(event.target.value) || 0 })}
                 />
               </label>
@@ -285,6 +377,7 @@ export default function FreshPayroll({ onNavigate }) {
                 <span>Extra hours</span>
                 <input
                   value={selected.extraHours}
+                  inputMode="decimal"
                   onChange={(event) => updateSelectedPerson({ extraHours: Number(event.target.value) || 0 })}
                 />
               </label>
@@ -293,6 +386,7 @@ export default function FreshPayroll({ onNavigate }) {
                 <span>Hourly rate</span>
                 <input
                   value={selected.hourlyRate}
+                  inputMode="decimal"
                   onChange={(event) => updateSelectedPerson({ hourlyRate: Number(event.target.value) || 0 })}
                 />
               </label>
@@ -301,6 +395,7 @@ export default function FreshPayroll({ onNavigate }) {
                 <span>Manual adjustment</span>
                 <input
                   value={selected.adjustment}
+                  inputMode="decimal"
                   onChange={(event) => updateSelectedPerson({ adjustment: Number(event.target.value) || 0 })}
                 />
               </label>
@@ -332,14 +427,14 @@ export default function FreshPayroll({ onNavigate }) {
             <button className="freshPrimary" onClick={exportCsv}>
               Export CSV
             </button>
-            <button className="freshGhost" onClick={() => onNavigate?.("reports")}>
-              Open reports
+            <button className="freshGhost" onClick={() => onNavigate?.("team")}>
+              Open Team
             </button>
             <button className="freshGhost" onClick={() => onNavigate?.("command")}>
               Send issue to Command
             </button>
             <button className="freshGhost" onClick={resetPayroll}>
-              Reset payroll
+              Reset payroll edits
             </button>
           </div>
         </aside>
