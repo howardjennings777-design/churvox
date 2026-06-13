@@ -79,55 +79,45 @@ test('forgot password and worker invite email triggers work', async ({ request }
 
   const invite = await postFirstWorking(request, 'WORKER_INVITE_EMAIL', [
     {
-      path: '/workers/invite',
+      path: '/team/workers',
       data: {
         name: workerName,
         full_name: workerName,
         email: workerEmail,
+        phone: '0210000000',
         role: 'worker',
         hourly_rate: 30,
-      },
-    },
-    {
-      path: '/team/invite',
-      data: {
-        name: workerName,
-        full_name: workerName,
-        email: workerEmail,
-        role: 'worker',
-        hourly_rate: 30,
-      },
-    },
-    {
-      path: '/workers',
-      data: {
-        name: workerName,
-        full_name: workerName,
-        email: workerEmail,
-        role: 'worker',
-        hourly_rate: 30,
-        send_invite: true,
-      },
-    },
-    {
-      path: '/team',
-      data: {
-        name: workerName,
-        full_name: workerName,
-        email: workerEmail,
-        role: 'worker',
-        hourly_rate: 30,
-        send_invite: true,
       },
     },
   ]);
 
+  const inviteJson = invite.payload.json || {};
+  const workerId =
+    inviteJson?.id ||
+    inviteJson?._id ||
+    inviteJson?.worker?.id ||
+    inviteJson?.worker?._id ||
+    inviteJson?.data?.id ||
+    inviteJson?.data?._id ||
+    '';
+
   console.log(`WORKER_INVITE_EMAIL_STATUS=${invite.res.status()}`);
   console.log(`WORKER_INVITE_EMAIL_PATH=${invite.path}`);
   console.log(`WORKER_INVITE_EMAIL_ADDRESS=${workerEmail}`);
+  console.log(`WORKER_INVITE_WORKER_ID=${workerId}`);
   console.log(`WORKER_INVITE_EMAIL_BODY=${invite.payload.text.slice(0, 500)}`);
 
   expect(invite.res.status()).toBeLessThan(400);
+
+  if (workerId) {
+    const resendRes = await request.post(api(`/team/resend-invite/${workerId}`));
+    const resendPayload = await readJson(resendRes);
+
+    console.log(`WORKER_RESEND_INVITE_EMAIL_STATUS=${resendRes.status()}`);
+    console.log(`WORKER_RESEND_INVITE_EMAIL_BODY=${resendPayload.text.slice(0, 500)}`);
+
+    expect(resendRes.status()).toBeLessThan(400);
+  }
 
   console.log('EMAIL_TRIGGER_PROOF=passed');
 });
