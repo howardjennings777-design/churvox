@@ -93,16 +93,22 @@
 
 /* Fresh mobile app fix: keep help available without blocking bottom navigation or More drawer. */
 @media (max-width: 950px) {
-  .cv-help-fab {
-    left: auto;
-    right: max(12px, env(safe-area-inset-right));
-    top: calc(12px + env(safe-area-inset-top));
-    bottom: auto;
-    z-index: 3000;
-    min-width: 0;
-    width: 132px;
-    padding: 10px 12px;
-    border-radius: 18px;
+  .cv-help-fab,
+  body:has(.freshMobileNav) .cv-help-fab {
+    left: auto !important;
+    right: max(12px, env(safe-area-inset-right)) !important;
+    top: calc(12px + env(safe-area-inset-top)) !important;
+    bottom: auto !important;
+    z-index: 3000 !important;
+    min-width: 0 !important;
+    width: 132px !important;
+    padding: 10px 12px !important;
+    border-radius: 18px !important;
+  }
+
+  body:has(.freshMobileMore) .cv-help-fab {
+    display: none !important;
+    pointer-events: none !important;
   }
 
   .cv-help-fab span {
