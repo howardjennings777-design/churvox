@@ -251,9 +251,8 @@ def safe_doc(doc):
         return doc
     doc = dict(doc)
     if "_id" in doc:
-        doc["id"] = str(doc["_id"])
-        del doc["_id"]
-    return doc
+        doc["id"] = str(doc.pop("_id"))
+    return make_json_safe(doc)
 
 def safe_docs(items):
     return [safe_doc(x) for x in items]
