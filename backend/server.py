@@ -269,7 +269,7 @@ from typing import List, Optional
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 from sms_provider import get_sms_provider, format_phone_au_nz
-from email_provider import get_email_provider, build_invite_email, build_resend_invite_email, build_password_reset_email, build_quote_email, build_invoice_email
+from email_provider import get_email_provider, build_invite_email, build_resend_invite_email, build_password_reset_email, build_quote_email, build_invoice_email, build_verification_email
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
@@ -796,6 +796,58 @@ def build_user_response(user_doc: dict, user_id: str, token: str = None) -> dict
     return resp
 
 
+
+async def send_verification_email_for_user(user_doc: dict, user_id: str):
+    email = str(user_doc.get("email") or "").lower().strip()
+    if not email:
+        return {"sent": False, "error": "Missing email", "provider": "", "email_id": ""}
+
+    now = datetime.now(timezone.utc)
+    token = secrets.token_urlsafe(32)
+    user_obj_id = ObjectId(user_id)
+
+    await db.email_verification_tokens.update_many(
+        {"user_id": user_obj_id, "used": False},
+        {"$set": {"used": True, "replaced_at": now}},
+    )
+
+    await db.email_verification_tokens.insert_one({
+        "token": token,
+        "user_id": user_obj_id,
+        "email": email,
+        "expires_at": now + timedelta(hours=24),
+        "used": False,
+        "created_at": now,
+    })
+
+    frontend_url = os.environ.get("FRONTEND_URL", FRONTEND_URL).rstrip("/")
+    verify_link = f"{frontend_url}/verify-email?token={token}"
+    email_content = build_verification_email(user_doc.get("name", "there"), verify_link)
+
+    email_result = await email_provider.send(
+        to=email,
+        subject=email_content["subject"],
+        html=email_content["html"],
+    )
+
+    await db.email_verification_emails.insert_one({
+        "to": email,
+        "user_id": user_obj_id,
+        "status": "sent" if email_result.success else "failed",
+        "provider": email_result.provider,
+        "email_id": email_result.email_id,
+        "error": email_result.error,
+        "created_at": now,
+    })
+
+    return {
+        "sent": bool(email_result.success),
+        "provider": email_result.provider,
+        "email_id": email_result.email_id,
+        "error": email_result.error,
+    }
+
+
 def get_stripe_price_id(plan: str, country: str | None = "NZ") -> str:
     return get_country_plan_price_id(plan, country)
 
@@ -824,6 +876,7 @@ async def set_business_plan_from_checkout(user_id: str, plan: str, stripe_custom
     )
 
 # ===================== AUTH ENDPOINTS =====================
+
 @api_router.post("/auth/register")
 async def register(user_data: UserCreate, response: Response):
     email = user_data.email.lower()
@@ -838,6 +891,8 @@ async def register(user_data: UserCreate, response: Response):
         "business_name": user_data.business_name,
         "role": "employer",
         "status": "active",
+        "email_verified": False,
+        "email_verified_at": None,
         "plan": "solo",
         "subscription_status": "trialing",
         "trial_ends_at": datetime.now(timezone.utc) + timedelta(days=14),
@@ -847,18 +902,80 @@ async def register(user_data: UserCreate, response: Response):
     result = await db.users.insert_one(user_doc)
     user_id = str(result.inserted_id)
 
-    # Set business_id = own id for employers
     await db.users.update_one(
         {"_id": result.inserted_id},
         {"$set": {"business_id": result.inserted_id}}
     )
+
+    verification = await send_verification_email_for_user(user_doc, user_id)
 
     access_token = create_access_token(user_id, email)
     refresh_token = create_refresh_token(user_id)
     set_auth_cookies(response, access_token, refresh_token)
 
     user_doc["business_id"] = user_id
-    return build_user_response(user_doc, user_id, access_token)
+    data = build_user_response(user_doc, user_id, access_token)
+    data["email_verified"] = False
+    data["email_verification_sent"] = verification["sent"]
+    data["email_verification_provider"] = verification["provider"]
+    data["email_verification_email_id"] = verification["email_id"]
+    data["email_verification_error"] = verification["error"]
+    return data
+
+
+@api_router.post("/auth/resend-verification")
+async def resend_verification_email(request: Request):
+    user = await get_current_user(request)
+    user_doc = await db.users.find_one({"_id": ObjectId(user["id"])})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if user_doc.get("email_verified") is True:
+        return {
+            "message": "Email already verified",
+            "email_verified": True,
+            "email_verification_sent": False
+        }
+
+    verification = await send_verification_email_for_user(user_doc, user["id"])
+    return {
+        "message": "Verification email sent" if verification["sent"] else "Verification email failed",
+        "email_verified": False,
+        "email_verification_sent": verification["sent"],
+        "email_verification_provider": verification["provider"],
+        "email_verification_email_id": verification["email_id"],
+        "email_verification_error": verification["error"],
+    }
+
+
+@api_router.get("/auth/verify-email/{token}")
+async def verify_email(token: str):
+    token_doc = await db.email_verification_tokens.find_one({
+        "token": token,
+        "used": False,
+        "expires_at": {"$gt": datetime.now(timezone.utc)},
+    })
+    if not token_doc:
+        raise HTTPException(status_code=400, detail="Invalid or expired verification link")
+
+    now = datetime.now(timezone.utc)
+
+    await db.users.update_one(
+        {"_id": token_doc["user_id"]},
+        {"$set": {
+            "email_verified": True,
+            "email_verified_at": now,
+            "status": "active",
+        }},
+    )
+
+    await db.email_verification_tokens.update_one(
+        {"_id": token_doc["_id"]},
+        {"$set": {"used": True, "used_at": now}},
+    )
+
+    return {"success": True, "message": "Email verified"}
+
 
 @api_router.post("/auth/login")
 async def login(user_data: UserLogin, response: Response, request: Request):
