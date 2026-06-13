@@ -1808,21 +1808,11 @@ async def complete_job(job_id: str, request: Request, user = Depends(get_current
 
         now = datetime.now(timezone.utc)
 
-        elapsed_to_add = 0
         if job.get("timer_running"):
-            started_at = job.get("timer_started_at")
-            if started_at:
-                try:
-                    if isinstance(started_at, str):
-                        started_dt = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
-                    else:
-                        started_dt = started_at
-                    elapsed_to_add = max(0, int((now - started_dt).total_seconds()))
-                except Exception:
-                    elapsed_to_add = 0
-
-        existing_total = int(job.get("total_time_seconds", 0) or 0)
-        new_total = existing_total + elapsed_to_add
+            final_entry = {"action": "pause", "timestamp": now}
+            new_total = compute_elapsed(job.get("time_entries", []) + [final_entry])
+        else:
+            new_total = int(job.get("total_time_seconds", 0) or 0)
 
         await db.jobs.update_one(
             {"_id": job["_id"]},
@@ -1912,11 +1902,12 @@ async def timer_start(job_id: str, request: Request, current_user: dict = Depend
     if job.get("timer_running"):
         raise HTTPException(status_code=400, detail="Timer already running")
 
-    entry = {"action": "start", "timestamp": datetime.now(timezone.utc)}
-    updates = {"$push": {"time_entries": entry}, "$set": {"timer_running": True}}
+    now = datetime.now(timezone.utc)
+    entry = {"action": "start", "timestamp": now}
+    updates = {"$push": {"time_entries": entry}, "$set": {"timer_running": True, "timer_started_at": now}}
     if job["status"] in (JobStatus.ASSIGNED, JobStatus.ACKNOWLEDGED):
         updates["$set"]["status"] = JobStatus.IN_PROGRESS
-        updates["$set"]["started_at"] = datetime.now(timezone.utc)
+        updates["$set"]["started_at"] = now
     await db.jobs.update_one(query, updates)
     job = await db.jobs.find_one(query)
     job_data = serialize_doc(job)
@@ -1942,11 +1933,12 @@ async def timer_pause(job_id: str, request: Request, current_user: dict = Depend
     if not job.get("timer_running"):
         raise HTTPException(status_code=400, detail="Timer not running")
 
-    entry = {"action": "pause", "timestamp": datetime.now(timezone.utc)}
+    now = datetime.now(timezone.utc)
+    entry = {"action": "pause", "timestamp": now}
     elapsed = compute_elapsed(job.get("time_entries", []) + [entry])
     await db.jobs.update_one(query, {
         "$push": {"time_entries": entry},
-        "$set": {"timer_running": False, "total_time_seconds": elapsed, "status": JobStatus.PAUSED}
+        "$set": {"timer_running": False, "timer_started_at": None, "total_time_seconds": elapsed, "status": JobStatus.PAUSED}
     })
     job = await db.jobs.find_one(query)
     job_data = serialize_doc(job)
@@ -1972,9 +1964,10 @@ async def timer_resume(job_id: str, request: Request, current_user: dict = Depen
     if job.get("timer_running"):
         raise HTTPException(status_code=400, detail="Timer already running")
 
-    entry = {"action": "resume", "timestamp": datetime.now(timezone.utc)}
+    now = datetime.now(timezone.utc)
+    entry = {"action": "resume", "timestamp": now}
     await db.jobs.update_one(query, {
-        "$push": {"time_entries": entry}, "$set": {"timer_running": True, "status": JobStatus.IN_PROGRESS}
+        "$push": {"time_entries": entry}, "$set": {"timer_running": True, "timer_started_at": now, "status": JobStatus.IN_PROGRESS}
     })
     job = await db.jobs.find_one(query)
     job_data = serialize_doc(job)
