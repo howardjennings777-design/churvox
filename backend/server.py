@@ -576,6 +576,8 @@ class JobCreate(BaseModel):
     notes: Optional[str] = None
     is_recurring: bool = False
     recurrence_pattern: Optional[str] = None
+    recurring_frequency: Optional[str] = None
+    custom_repeat_days: Optional[int] = None
     assigned_worker_id: Optional[str] = None
 
 class JobUpdate(BaseModel):
@@ -594,6 +596,8 @@ class JobUpdate(BaseModel):
     notes: Optional[str] = None
     is_recurring: Optional[bool] = None
     recurrence_pattern: Optional[str] = None
+    recurring_frequency: Optional[str] = None
+    custom_repeat_days: Optional[int] = None
     status: Optional[JobStatus] = None
 
 class JobAssign(BaseModel):
@@ -1599,6 +1603,7 @@ async def create_job(job_data: JobCreate, request: Request, current_user: dict =
     job_doc = {
         **job_data.model_dump(exclude={"assigned_worker_id", "client_id"}),
         "contractor_id": ObjectId(user["business_id"]),
+        "business_id": str(business_id),
         "created_by": ObjectId(user["id"]),
         "status": JobStatus.ASSIGNED,
         "assigned_worker_id": None,
@@ -1624,6 +1629,9 @@ async def create_job(job_data: JobCreate, request: Request, current_user: dict =
     else:
         job_doc["client_id"] = None
 
+    if job_doc.get("is_recurring") and not job_doc.get("recurring_frequency"):
+        job_doc["recurring_frequency"] = job_doc.get("recurrence_pattern")
+
     # Assign worker if provided
     if job_data.assigned_worker_id:
         worker = await db.users.find_one({"business_id": str(business_id), 
@@ -1635,6 +1643,8 @@ async def create_job(job_data: JobCreate, request: Request, current_user: dict =
             raise HTTPException(status_code=400, detail="Worker not found in your team")
         job_doc["assigned_worker_id"] = ObjectId(job_data.assigned_worker_id)
         job_doc["assigned_worker_name"] = worker["name"]
+
+    job_doc = normalize_recurring_job_fields(job_doc)
 
     result = await db.jobs.insert_one(job_doc)
     job_doc["id"] = str(result.inserted_id)
@@ -1827,6 +1837,9 @@ async def complete_job(job_id: str, request: Request, user = Depends(get_current
             }}
         )
 
+        updated_job = await db.jobs.find_one({"_id": job["_id"]})
+        next_recurring_job = await create_next_recurring_job_if_needed(updated_job)
+
         return {
             "success": True,
             "message": "Job completed successfully",
@@ -1835,7 +1848,8 @@ async def complete_job(job_id: str, request: Request, user = Depends(get_current
             "completed": True,
             "timer_running": False,
             "total_time_seconds": new_total,
-            "completed_at": now.isoformat()
+            "completed_at": now.isoformat(),
+            "next_recurring_job_id": str(next_recurring_job["_id"]) if next_recurring_job else None
         }
 
     except HTTPException:
@@ -2123,6 +2137,8 @@ async def convert_quote_to_job(quote_id: str, request: Request, current_user: di
         job_doc["client_id"] = ObjectId(quote["client_id"])
     else:
         job_doc["client_id"] = None
+
+    job_doc = normalize_recurring_job_fields(job_doc)
 
     result = await db.jobs.insert_one(job_doc)
     job_id = str(result.inserted_id)
@@ -3054,11 +3070,14 @@ async def create_next_recurring_job_if_needed(completed_job: dict):
     if not completed_job or not completed_job.get("is_recurring"):
         return None
 
-    frequency = completed_job.get("recurring_frequency")
+    frequency = completed_job.get("recurring_frequency") or completed_job.get("recurrence_pattern")
     custom_days = completed_job.get("custom_repeat_days")
     next_due = completed_job.get("next_recurring_due_date")
-    source_date = next_due or completed_job.get("scheduled_date") or completed_job.get("created_at") or datetime.now(timezone.utc)
-    next_job_date = calculate_next_recurring_date(source_date, frequency, custom_days)
+
+    next_job_date = _safe_parse_datetime(next_due) if next_due else None
+    if not next_job_date:
+        source_date = completed_job.get("scheduled_date") or completed_job.get("created_at") or datetime.now(timezone.utc)
+        next_job_date = calculate_next_recurring_date(source_date, frequency, custom_days)
 
     source_job_id = str(completed_job.get("_id"))
     parent_job_id = completed_job.get("recurring_parent_job_id") or source_job_id
@@ -3075,11 +3094,15 @@ async def create_next_recurring_job_if_needed(completed_job: dict):
     new_job = dict(completed_job)
     new_job.pop("_id", None)
 
-    for field in ["completed_at", "started_at", "acknowledged_at", "invoice_id", "paid_at"]:
+    for field in ["completed_at", "started_at", "acknowledged_at", "invoice_id", "paid_at", "timer_started_at"]:
         if field in new_job:
             new_job[field] = None
 
     new_job["status"] = "assigned"
+    new_job["completed"] = False
+    new_job["time_entries"] = []
+    new_job["total_time_seconds"] = 0
+    new_job["timer_running"] = False
     new_job["scheduled_date"] = next_job_date
     new_job["created_at"] = datetime.now(timezone.utc)
     new_job["updated_at"] = datetime.now(timezone.utc)
