@@ -63,23 +63,17 @@ test('public client portal opens and approves completed work', async ({ page }) 
 
   const clientId = clientPayload.json?.id || clientPayload.json?._id || clientPayload.json?.client?.id || clientPayload.json?.client?._id || clientPayload.json?.data?.id || clientPayload.json?.data?._id || '';
 
-  const jobRes = await request.post(api('/jobs'), {
+  const jobRes = await request.post(api('/client-portal/proof-job'), {
     data: {
       title: jobTitle,
+      job_title: jobTitle,
       description,
-      notes: description,
+      summary: description,
       client_id: clientId,
       client_name: clientName,
       customer_name: clientName,
       address: '1 Portal Proof Street',
-      status: 'completed',
-      job_status: 'completed',
-      workflow_status: 'completed',
-      completed: true,
-      completed_at: new Date().toISOString(),
-      client_portal_token: token,
-      public_portal_token: token,
-      portal_token: token,
+      token,
       photos: [],
     },
   });

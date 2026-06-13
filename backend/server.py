@@ -2198,6 +2198,49 @@ async def send_quote(quote_id: str, request: Request, current_user: dict = Depen
     return data
 
 
+
+# CHURVOX_PUBLIC_CLIENT_PORTAL_PROOF_CREATE_20260614
+@api_router.post("/client-portal/proof-job")
+async def create_client_portal_proof_job(payload: dict, request: Request):
+    user = await require_employer(request)
+    business_id = str(user.get("business_id") or user.get("id") or user.get("_id"))
+
+    token = str(payload.get("token") or "").strip()
+    if not token:
+        raise HTTPException(status_code=400, detail="Missing portal token")
+
+    now = datetime.now(timezone.utc)
+    job = {
+        "business_id": business_id,
+        "created_by": str(user.get("id") or user.get("_id")),
+        "client_id": str(payload.get("client_id") or ""),
+        "client_name": payload.get("client_name") or payload.get("customer_name") or "Portal Proof Client",
+        "customer_name": payload.get("customer_name") or payload.get("client_name") or "Portal Proof Client",
+        "title": payload.get("title") or payload.get("job_title") or "Portal Proof Work",
+        "job_title": payload.get("job_title") or payload.get("title") or "Portal Proof Work",
+        "description": payload.get("description") or payload.get("summary") or "Completed portal proof work",
+        "summary": payload.get("summary") or payload.get("description") or "Completed portal proof work",
+        "address": payload.get("address") or "1 Portal Proof Street",
+        "status": "completed",
+        "job_status": "completed",
+        "workflow_status": "completed",
+        "completed": True,
+        "completed_at": now,
+        "approval_status": "waiting",
+        "client_approved": False,
+        "client_portal_token": token,
+        "public_portal_token": token,
+        "portal_token": token,
+        "customer_portal_token": token,
+        "photos": payload.get("photos") or [],
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    result = await db.jobs.insert_one(job)
+    job["_id"] = result.inserted_id
+    return {"success": True, "job": make_json_safe(job), "id": str(result.inserted_id), "token": token}
+
 # CHURVOX_PUBLIC_CLIENT_PORTAL_PROOF_20260614
 async def _find_public_client_portal_job(token: str):
     token = str(token or "").strip()
