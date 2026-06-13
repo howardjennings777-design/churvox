@@ -933,15 +933,46 @@ async def refresh_token(request: Request, response: Response):
 async def forgot_password(data: ForgotPassword):
     email = data.email.lower()
     user = await db.users.find_one({"email": email})
+    generic_message = {"message": "If the email exists, a reset link has been sent"}
+
     if not user:
-        return {"message": "If the email exists, a reset link has been sent"}
+        return generic_message
+
     token = secrets.token_urlsafe(32)
     await db.password_reset_tokens.insert_one({
-        "token": token, "user_id": user["_id"],
-        "expires_at": datetime.now(timezone.utc) + timedelta(hours=1), "used": False
+        "token": token,
+        "user_id": user["_id"],
+        "expires_at": datetime.now(timezone.utc) + timedelta(hours=1),
+        "used": False,
+        "created_at": datetime.now(timezone.utc),
     })
-    logger.info("Password reset requested for %s", email)
-    return {"message": "If the email exists, a reset link has been sent"}
+
+    frontend_url = os.environ.get("FRONTEND_URL", FRONTEND_URL).rstrip("/")
+    reset_link = f"{frontend_url}/reset-password?token={token}"
+    email_content = build_password_reset_email(user.get("name", "there"), reset_link)
+
+    email_result = await email_provider.send(
+        to=email,
+        subject=email_content["subject"],
+        html=email_content["html"],
+    )
+
+    await db.password_reset_emails.insert_one({
+        "to": email,
+        "user_id": user["_id"],
+        "status": "sent" if email_result.success else "failed",
+        "provider": email_result.provider,
+        "email_id": email_result.email_id,
+        "error": email_result.error,
+        "created_at": datetime.now(timezone.utc),
+    })
+
+    if not email_result.success:
+        logger.warning("[Email] Password reset email to %s failed: %s", email, email_result.error)
+    else:
+        logger.info("[Email] Password reset email sent to %s via %s", email, email_result.provider)
+
+    return generic_message
 
 @api_router.post("/auth/reset-password")
 async def reset_password(data: ResetPassword):
