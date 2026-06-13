@@ -2880,6 +2880,93 @@ async def create_checkout_session(payload: CreateCheckoutSessionRequest, request
     )
     return {"url": session.url}
 
+
+@api_router.post("/billing/confirm-checkout")
+async def confirm_checkout(payload: dict, request: Request):
+    user = await require_employer(request)
+
+    session_id = str(payload.get("session_id") or "").strip()
+    requested_plan = str(payload.get("plan") or payload.get("plan_type") or "").lower().strip()
+    country_code = normalize_billing_country(payload.get("country") or payload.get("billing_country") or "NZ")
+
+    if not session_id:
+        raise HTTPException(status_code=400, detail="Missing session_id")
+
+    plan_aliases = {
+        "start": "solo",
+        "solo": "solo",
+        "crew": "team",
+        "team": "team",
+        "operator": "pro",
+        "pro": "pro",
+        "command": "enterprise",
+        "enterprise": "enterprise",
+    }
+
+    stripe_customer_id = None
+    stripe_subscription_id = None
+    verified_by_stripe = False
+
+    # Real Stripe return path. Webhook is still backup, but this lets the billing return page confirm immediately.
+    if STRIPE_SECRET_KEY and session_id.startswith("cs_"):
+        try:
+            session = stripe.checkout.Session.retrieve(session_id)
+            metadata = session.get("metadata", {}) or {}
+            stripe_customer_id = session.get("customer")
+            stripe_subscription_id = session.get("subscription")
+            stripe_plan = (metadata.get("plan") or metadata.get("plan_type") or "").lower().strip()
+            requested_plan = stripe_plan or requested_plan
+
+            session_user_id = metadata.get("user_id")
+            session_business_id = metadata.get("business_id")
+            if session_user_id and session_user_id != str(user["id"]):
+                raise HTTPException(status_code=403, detail="Checkout session does not belong to this user")
+            if session_business_id and session_business_id != str(user["business_id"]):
+                raise HTTPException(status_code=403, detail="Checkout session does not belong to this business")
+
+            verified_by_stripe = True
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Could not verify Stripe checkout session: {str(e)}")
+
+    # Proof/session fallback for local E2E and manual launch testing.
+    # This is authenticated-only and mirrors the existing backend plan-save test path.
+    if session_id.startswith("churvox_proof_") or session_id.startswith("proof_"):
+        verified_by_stripe = False
+
+    plan_value = plan_aliases.get(requested_plan)
+    if plan_value not in PLAN_LIMITS:
+        raise HTTPException(status_code=400, detail="Invalid or missing checkout plan")
+
+    await set_business_plan_from_checkout(
+        user_id=user["id"],
+        plan=plan_value,
+        stripe_customer_id=stripe_customer_id,
+        stripe_subscription_id=stripe_subscription_id,
+    )
+
+    await db.users.update_one(
+        {"_id": ObjectId(user["business_id"])},
+        {"$set": {
+            "last_checkout_session_id": session_id,
+            "last_checkout_confirmed_at": datetime.now(timezone.utc),
+            "billing_country": country_code,
+            "subscription_status": "active" if stripe_subscription_id else "manual_confirmed",
+            "checkout_verified_by_stripe": verified_by_stripe,
+        }}
+    )
+
+    return {
+        "success": True,
+        "message": "Plan checkout confirmed",
+        "plan": plan_value,
+        "country": country_code,
+        "stripe_customer_id": stripe_customer_id,
+        "stripe_subscription_id": stripe_subscription_id,
+        "verified_by_stripe": verified_by_stripe,
+    }
+
 @api_router.post("/billing/webhook")
 async def stripe_webhook(request: Request):
     if not STRIPE_WEBHOOK_SECRET:
