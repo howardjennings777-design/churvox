@@ -147,14 +147,15 @@ test('customer can mark public invoice paid and owner sees paid', async ({ reque
   expect(String(publicGetPayload.json?.invoice?.status || '').toLowerCase()).toMatch(/sent|viewed/);
 
   await page.goto(publicUrl, { waitUntil: 'domcontentloaded' });
+
+  await expect(page.locator('body')).toContainText(`Public Paid Client ${stamp}`, { timeout: 30000 });
+  await expect(page.locator('body')).toContainText(/invoice/i, { timeout: 30000 });
+
   const pageText = await page.locator('body').innerText();
 
   console.log(`PUBLIC_PAID_PAGE_URL=${page.url()}`);
   console.log(`PUBLIC_PAID_PAGE_HAS_CUSTOMER=${pageText.includes(`Public Paid Client ${stamp}`)}`);
   console.log(`PUBLIC_PAID_PAGE_HAS_INVOICE=${/invoice/i.test(pageText)}`);
-
-  expect(pageText).toContain(`Public Paid Client ${stamp}`);
-  expect(pageText).toMatch(/invoice/i);
 
   const paidResult = await postFirstOk(request, 'PUBLIC_PAID_MARK_PAID', [
     { path: `/public/invoice/${publicToken}/mark-paid` },
