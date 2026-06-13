@@ -64,14 +64,14 @@ export default function InvoiceDetailPage() {
   const loadInvoice = useCallback(async () => {
     const direct = await api.get(`/invoices/${encodeURIComponent(id)}`);
     if (direct.success) {
-      setInvoice(invoiceRecord(direct));
+      setInvoice(invoiceRecord(direct)?.invoice || invoiceRecord(direct));
       return;
     }
 
     const list = await api.get("/invoices");
     const found = list?.success ? arr(list.data).find((item) => invoiceId(item) === String(id)) : null;
     if (found) {
-      setInvoice(found);
+      setInvoice(found?.invoice || found);
       return;
     }
 
@@ -108,7 +108,7 @@ export default function InvoiceDetailPage() {
     if (res.success) {
       const nextInvoice = { ...(invoice || {}), ...payload };
       await syncSourceRecords(nextInvoice);
-      setInvoice(nextInvoice);
+      setInvoice(nextInvoice?.invoice || nextInvoice);
       setBusy("");
       toast.success(message);
       await loadInvoice();
