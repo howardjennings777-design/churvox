@@ -2149,6 +2149,7 @@ async def create_invoice(invoice_data: InvoiceCreate, request: Request, current_
     invoice_doc = {
         **invoice_data.model_dump(exclude={"gst_rate", "job_id", "client_id"}),
         "contractor_id": ObjectId(user["business_id"]),
+        "business_id": str(business_id),
         "gst_rate": gst_rate, "gst_amount": gst_amount, "total": total,
         "status": InvoiceStatus.DRAFT,
         "invoice_number": f"INV-{datetime.now().strftime('%Y%m%d')}-{secrets.token_hex(3).upper()}",
@@ -2186,7 +2187,7 @@ async def get_invoices(request: Request, status: Optional[str] = None, current_u
 async def get_invoice(invoice_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
-    invoice = await db.invoices.find_one({"business_id": str(business_id), 
+    invoice = await db.invoices.find_one({
         "_id": ObjectId(invoice_id), "contractor_id": ObjectId(user["business_id"])
     })
     if not invoice:
@@ -2219,23 +2220,23 @@ async def update_invoice(invoice_id: str, request: Request, invoice_data: Invoic
 async def send_invoice(invoice_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
-    result = await db.invoices.update_one({"business_id": str(business_id), "_id": ObjectId(invoice_id), "contractor_id": ObjectId(user["business_id"])},
+    result = await db.invoices.update_one({"_id": ObjectId(invoice_id), "contractor_id": ObjectId(user["business_id"])},
         {"$set": {"status": InvoiceStatus.SENT, "sent_at": datetime.now(timezone.utc)}}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Invoice not found")
-    invoice = await db.invoices.find_one({"business_id": str(business_id), "_id": ObjectId(invoice_id)})
+    invoice = await db.invoices.find_one({"_id": ObjectId(invoice_id), "contractor_id": ObjectId(user["business_id"])})
     return serialize_doc(invoice)
 @api_router.post("/invoices/{invoice_id}/mark-paid")
 async def mark_invoice_paid(invoice_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
-    result = await db.invoices.update_one({"business_id": str(business_id), "_id": ObjectId(invoice_id), "contractor_id": ObjectId(user["business_id"])},
+    result = await db.invoices.update_one({"_id": ObjectId(invoice_id), "contractor_id": ObjectId(user["business_id"])},
         {"$set": {"status": InvoiceStatus.PAID, "paid_at": datetime.now(timezone.utc)}}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Invoice not found")
-    invoice = await db.invoices.find_one({"business_id": str(business_id), "_id": ObjectId(invoice_id)})
+    invoice = await db.invoices.find_one({"_id": ObjectId(invoice_id), "contractor_id": ObjectId(user["business_id"])})
     return serialize_doc(invoice)
 @api_router.delete("/invoices/{invoice_id}")
 async def delete_invoice(invoice_id: str, request: Request, current_user: dict = Depends(get_current_user)):
