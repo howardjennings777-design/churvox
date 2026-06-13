@@ -1,4 +1,4 @@
-const { test, expect, devices } = require('@playwright/test');
+const { test, expect } = require('@playwright/test');
 
 const BASE = process.env.PLAYWRIGHT_BASE_URL || 'https://www.churvox.com';
 const EMAIL = process.env.CHURVOX_E2E_EMAIL || '';
@@ -51,7 +51,11 @@ async function tapMobileNav(page, label, expectedNeedle) {
 }
 
 test.use({
-  ...devices['iPhone 13'],
+  viewport: { width: 390, height: 844 },
+  isMobile: true,
+  hasTouch: true,
+  deviceScaleFactor: 3,
+  userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Mobile Safari/537.36',
 });
 
 test('mobile command nav taps are not blocked by overlays', async ({ page }) => {
