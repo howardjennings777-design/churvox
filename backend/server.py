@@ -438,6 +438,7 @@ class JobStatus(str, Enum):
     ASSIGNED = "assigned"
     ACKNOWLEDGED = "acknowledged"
     IN_PROGRESS = "in_progress"
+    PAUSED = "paused"
     COMPLETED = "completed"
 
 class JobType(str, Enum):
@@ -1908,7 +1909,7 @@ async def timer_pause(job_id: str, request: Request, current_user: dict = Depend
     elapsed = compute_elapsed(job.get("time_entries", []) + [entry])
     await db.jobs.update_one(query, {
         "$push": {"time_entries": entry},
-        "$set": {"timer_running": False, "total_time_seconds": elapsed}
+        "$set": {"timer_running": False, "total_time_seconds": elapsed, "status": JobStatus.PAUSED}
     })
     job = await db.jobs.find_one(query)
     job_data = serialize_doc(job)
@@ -1936,7 +1937,7 @@ async def timer_resume(job_id: str, request: Request, current_user: dict = Depen
 
     entry = {"action": "resume", "timestamp": datetime.now(timezone.utc)}
     await db.jobs.update_one(query, {
-        "$push": {"time_entries": entry}, "$set": {"timer_running": True}
+        "$push": {"time_entries": entry}, "$set": {"timer_running": True, "status": JobStatus.IN_PROGRESS}
     })
     job = await db.jobs.find_one(query)
     job_data = serialize_doc(job)
