@@ -159,6 +159,40 @@ def build_password_reset_email(name: str, reset_link: str):
     return EmailTemplate(subject=subject, html=html)
 
 
+def build_quote_email(customer_name: str, business_name: str, quote_number: str, amount: str, quote_link: str):
+    safe_name = _html.escape((customer_name or "").strip() or "there")
+    biz = _html.escape((business_name or "").strip() or _BRAND)
+    safe_quote_number = _html.escape((quote_number or "your quote").strip())
+    safe_amount = _html.escape(str(amount or "").strip())
+    subject = f"Quote from {biz.replace('&#x27;', '’')}"
+    html = _wrap(
+        f"<h2 style='margin:0 0 12px 0; font-size:20px;'>Your quote is ready</h2>"
+        f"<p>Hi {safe_name},</p>"
+        f"<p><strong>{biz}</strong> has sent you quote <strong>{safe_quote_number}</strong>.</p>"
+        f"<p><strong>Total:</strong> {safe_amount}</p>"
+        f"{_button('View quote', quote_link)}"
+        f"<p style='font-size:13px; color:#475569;'>You can review and accept or decline this quote online.</p>"
+    )
+    return EmailTemplate(subject=subject, html=html)
+
+
+def build_invoice_email(customer_name: str, business_name: str, invoice_number: str, amount: str, invoice_link: str):
+    safe_name = _html.escape((customer_name or "").strip() or "there")
+    biz = _html.escape((business_name or "").strip() or _BRAND)
+    safe_invoice_number = _html.escape((invoice_number or "your invoice").strip())
+    safe_amount = _html.escape(str(amount or "").strip())
+    subject = f"Invoice from {biz.replace('&#x27;', '’')}"
+    html = _wrap(
+        f"<h2 style='margin:0 0 12px 0; font-size:20px;'>Your invoice is ready</h2>"
+        f"<p>Hi {safe_name},</p>"
+        f"<p><strong>{biz}</strong> has sent you invoice <strong>{safe_invoice_number}</strong>.</p>"
+        f"<p><strong>Total:</strong> {safe_amount}</p>"
+        f"{_button('View invoice', invoice_link)}"
+        f"<p style='font-size:13px; color:#475569;'>You can view this invoice online.</p>"
+    )
+    return EmailTemplate(subject=subject, html=html)
+
+
 def build_verification_email(name: str, verify_link: str):
     safe_name = _html.escape((name or "").strip() or "there")
     subject = f"Verify your email for {_BRAND}"

@@ -269,7 +269,7 @@ from typing import List, Optional
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 from sms_provider import get_sms_provider, format_phone_au_nz
-from email_provider import get_email_provider, build_invite_email, build_resend_invite_email, build_password_reset_email
+from email_provider import get_email_provider, build_invite_email, build_resend_invite_email, build_password_reset_email, build_quote_email, build_invoice_email
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
@@ -2181,6 +2181,64 @@ async def send_quote(quote_id: str, request: Request, current_user: dict = Depen
     public_token = quote.get("public_token") or secrets.token_urlsafe(24)
     public_url = f"{os.environ.get('FRONTEND_URL', 'https://www.churvox.com').rstrip('/')}/public/quote/{public_token}"
 
+    customer_email = str(quote.get("customer_email") or quote.get("email") or "").strip()
+    if not customer_email and quote.get("client_id"):
+        try:
+            client = await db.clients.find_one({"_id": ObjectId(quote["client_id"])})
+            customer_email = str((client or {}).get("email") or "").strip()
+        except Exception:
+            customer_email = ""
+
+    business_doc = None
+    try:
+        business_doc = await db.users.find_one({"_id": ObjectId(user["business_id"])})
+    except Exception:
+        business_doc = None
+
+    business_name = (
+        (business_doc or {}).get("business_name")
+        or (business_doc or {}).get("company_name")
+        or quote.get("business_name")
+        or "Churvox"
+    )
+
+    email_sent = False
+    email_attempted = bool(customer_email)
+    email_error = ""
+    email_provider_name = ""
+    email_id = ""
+
+    if customer_email:
+        email_content = build_quote_email(
+            quote.get("customer_name") or "Customer",
+            business_name,
+            quote.get("quote_number") or "",
+            f"${float(quote.get('price') or 0):.2f}",
+            public_url,
+        )
+        email_result = await email_provider.send(
+            to=customer_email,
+            subject=email_content["subject"],
+            html=email_content["html"],
+        )
+        email_sent = bool(email_result.success)
+        email_error = email_result.error or ""
+        email_provider_name = email_result.provider or ""
+        email_id = email_result.email_id or ""
+
+        await db.quote_emails.insert_one({
+            "quote_id": quote["_id"],
+            "business_id": quote.get("business_id") or str(business_id),
+            "to": customer_email,
+            "subject": email_content["subject"],
+            "public_url": public_url,
+            "status": "sent" if email_result.success else "failed",
+            "provider": email_provider_name,
+            "email_id": email_id,
+            "error": email_error,
+            "created_at": datetime.now(timezone.utc),
+        })
+
     await db.quotes.update_one(
         {"_id": quote["_id"]},
         {"$set": {
@@ -2189,12 +2247,23 @@ async def send_quote(quote_id: str, request: Request, current_user: dict = Depen
             "public_token": public_token,
             "public_url": public_url,
             "business_id": quote.get("business_id") or str(business_id),
+            "email_to": customer_email,
+            "email_attempted": email_attempted,
+            "email_sent": email_sent,
+            "email_error": email_error,
+            "email_provider": email_provider_name,
+            "email_id": email_id,
         }}
     )
 
     quote = await db.quotes.find_one({"_id": ObjectId(quote_id)})
     data = serialize_doc(quote)
     data["public_url"] = public_url
+    data["email_attempted"] = email_attempted
+    data["email_sent"] = email_sent
+    data["email_error"] = email_error
+    data["email_provider"] = email_provider_name
+    data["email_id"] = email_id
     return data
 
 
@@ -2546,6 +2615,64 @@ async def send_invoice(invoice_id: str, request: Request, current_user: dict = D
     public_token = invoice.get("public_token") or secrets.token_urlsafe(24)
     public_url = f"{os.environ.get('FRONTEND_URL', 'https://www.churvox.com').rstrip('/')}/public/invoice/{public_token}"
 
+    customer_email = str(invoice.get("customer_email") or invoice.get("email") or "").strip()
+    if not customer_email and invoice.get("client_id"):
+        try:
+            client = await db.clients.find_one({"_id": ObjectId(invoice["client_id"])})
+            customer_email = str((client or {}).get("email") or "").strip()
+        except Exception:
+            customer_email = ""
+
+    business_doc = None
+    try:
+        business_doc = await db.users.find_one({"_id": ObjectId(user["business_id"])})
+    except Exception:
+        business_doc = None
+
+    business_name = (
+        (business_doc or {}).get("business_name")
+        or (business_doc or {}).get("company_name")
+        or invoice.get("business_name")
+        or "Churvox"
+    )
+
+    email_sent = False
+    email_attempted = bool(customer_email)
+    email_error = ""
+    email_provider_name = ""
+    email_id = ""
+
+    if customer_email:
+        email_content = build_invoice_email(
+            invoice.get("customer_name") or "Customer",
+            business_name,
+            invoice.get("invoice_number") or "",
+            f"${float(invoice.get('total') or invoice.get('subtotal') or 0):.2f}",
+            public_url,
+        )
+        email_result = await email_provider.send(
+            to=customer_email,
+            subject=email_content["subject"],
+            html=email_content["html"],
+        )
+        email_sent = bool(email_result.success)
+        email_error = email_result.error or ""
+        email_provider_name = email_result.provider or ""
+        email_id = email_result.email_id or ""
+
+        await db.invoice_emails.insert_one({
+            "invoice_id": invoice["_id"],
+            "business_id": invoice.get("business_id") or str(business_id),
+            "to": customer_email,
+            "subject": email_content["subject"],
+            "public_url": public_url,
+            "status": "sent" if email_result.success else "failed",
+            "provider": email_provider_name,
+            "email_id": email_id,
+            "error": email_error,
+            "created_at": datetime.now(timezone.utc),
+        })
+
     await db.invoices.update_one(
         {"_id": invoice["_id"]},
         {"$set": {
@@ -2554,12 +2681,23 @@ async def send_invoice(invoice_id: str, request: Request, current_user: dict = D
             "public_token": public_token,
             "public_url": public_url,
             "business_id": invoice.get("business_id") or str(business_id),
+            "email_to": customer_email,
+            "email_attempted": email_attempted,
+            "email_sent": email_sent,
+            "email_error": email_error,
+            "email_provider": email_provider_name,
+            "email_id": email_id,
         }}
     )
 
     invoice = await db.invoices.find_one({"_id": ObjectId(invoice_id)})
     data = serialize_doc(invoice)
     data["public_url"] = public_url
+    data["email_attempted"] = email_attempted
+    data["email_sent"] = email_sent
+    data["email_error"] = email_error
+    data["email_provider"] = email_provider_name
+    data["email_id"] = email_id
     return data
 
 @api_router.get("/public/invoice/{token}")
