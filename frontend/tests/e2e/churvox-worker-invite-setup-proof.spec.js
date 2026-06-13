@@ -18,14 +18,21 @@ async function wait(page) {
   await page.waitForTimeout(900);
 }
 
-async function login(page, email, password) {
-  await page.goto(url('/login'));
-  await wait(page);
-  await page.getByLabel(/email/i).fill(email);
-  await page.getByLabel(/password/i).fill(password);
-  await page.getByRole('button', { name: /sign in|log in|login/i }).click();
-  await page.waitForLoadState('domcontentloaded');
-  await page.waitForTimeout(1200);
+async function backendLogin(page, email, password, label) {
+  const loginRes = await page.request.post(api('/auth/login'), {
+    data: { email, password },
+  });
+  const loginText = await loginRes.text().catch(() => '{}');
+  let loginJson = {};
+  try { loginJson = JSON.parse(loginText || '{}'); } catch { loginJson = {}; }
+
+  console.log(`${label}_LOGIN_STATUS=` + loginRes.status());
+  console.log(`${label}_LOGIN_EMAIL=` + (loginJson.email || ''));
+
+  expect(loginRes.status()).toBeLessThan(400);
+  expect(String(loginJson.email || '').toLowerCase()).toBe(String(email || '').toLowerCase());
+
+  return loginJson;
 }
 
 test('worker invite setup and worker login proof', async ({ page }) => {
@@ -33,7 +40,7 @@ test('worker invite setup and worker login proof', async ({ page }) => {
   console.log('WORKER_INVITE_NAME=' + WORKER_NAME);
   console.log('WORKER_INVITE_EMAIL=' + WORKER_EMAIL);
 
-  await login(page, OWNER_EMAIL, OWNER_PASS);
+  await backendLogin(page, OWNER_EMAIL, OWNER_PASS, 'OWNER');
 
   const ownerMe = await page.request.get(api('/auth/me'));
   const ownerMeText = await ownerMe.text().catch(() => '{}');
@@ -84,7 +91,7 @@ test('worker invite setup and worker login proof', async ({ page }) => {
   console.log('WORKER_INVITE_ACCEPTED=true');
 
   await page.request.post(api('/auth/logout')).catch(() => null);
-  await login(page, WORKER_EMAIL, WORKER_PASS);
+  await backendLogin(page, WORKER_EMAIL, WORKER_PASS, 'WORKER');
 
   const workerMe = await page.request.get(api('/auth/me'));
   const workerMeText = await workerMe.text().catch(() => '{}');
@@ -108,7 +115,7 @@ test('worker invite setup and worker login proof', async ({ page }) => {
   await expect(page.locator('body')).toContainText("Today's Work", { timeout: 30000 });
 
   await page.request.post(api('/auth/logout')).catch(() => null);
-  await login(page, OWNER_EMAIL, OWNER_PASS);
+  await backendLogin(page, OWNER_EMAIL, OWNER_PASS, 'OWNER_RESTORE');
   const restorePlan = await page.request.patch(api('/user/plan'), { data: { plan: originalPlan } });
   console.log('WORKER_INVITE_RESTORE_PLAN_STATUS=' + restorePlan.status());
   expect(restorePlan.status()).toBeLessThan(400);
