@@ -1520,6 +1520,7 @@ async def create_client(client_data: ClientCreate, request: Request, current_use
     client_doc = {
         **client_data.model_dump(),
         "contractor_id": biz_id,
+        "business_id": str(business_id),
         "created_at": datetime.now(timezone.utc)
     }
     result = await db.clients.insert_one(client_doc)
@@ -1527,6 +1528,96 @@ async def create_client(client_data: ClientCreate, request: Request, current_use
     client_doc["contractor_id"] = user["business_id"]
     client_doc.pop("_id", None)
     return client_doc
+
+@api_router.post("/clients/import-csv")
+async def import_csv_clients(request: Request, current_user: dict = Depends(get_current_user)):
+    """Import clients from CSV. Expected columns: name,email,phone,address,notes."""
+    business_id = await get_user_business_id(current_user)
+    user = await require_employer(request)
+    biz_id = ObjectId(user["business_id"])
+
+    form = await request.form()
+    file = form.get("file")
+    if not file:
+        raise HTTPException(status_code=400, detail="No file uploaded")
+
+    content = await file.read()
+    try:
+        text = content.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = content.decode("latin-1")
+
+    import csv
+    import io
+
+    rows = list(csv.reader(io.StringIO(text)))
+    if not rows:
+        raise HTTPException(status_code=400, detail="CSV file is empty")
+
+    start = 0
+    header = [str(cell or "").strip().lower() for cell in rows[0]]
+    has_header = header and header[0] in ("name", "client", "client name", "customer", "customer name")
+    if has_header:
+        start = 1
+
+    results = []
+
+    for i, row in enumerate(rows[start:], start=start + 1):
+        padded = list(row) + ["", "", "", "", ""]
+        name = padded[0].strip()
+        email = padded[1].strip().lower()
+        phone = padded[2].strip()
+        address = padded[3].strip()
+        notes = padded[4].strip()
+
+        if not name:
+            results.append({"row": i, "status": "skipped", "reason": "Missing client name"})
+            continue
+
+        if email and ("@" not in email or "." not in email):
+            results.append({"row": i, "status": "skipped", "reason": f"Invalid email: {email}"})
+            continue
+
+        if email:
+            existing = await db.clients.find_one({"contractor_id": biz_id, "email": email})
+            if existing:
+                results.append({"row": i, "status": "skipped", "reason": f"Client email already exists: {email}"})
+                continue
+
+        plan = user.get("plan", "solo")
+        if plan not in PLAN_LIMITS:
+            plan = "solo"
+        max_clients = PLAN_LIMITS[plan]["max_clients"]
+        if max_clients > 0:
+            client_count = await db.clients.count_documents({"contractor_id": biz_id})
+            if client_count >= max_clients:
+                results.append({"row": i, "status": "skipped", "reason": f"Client limit reached ({max_clients})"})
+                continue
+
+        doc = {
+            "name": name,
+            "email": email or None,
+            "phone": phone or None,
+            "address": address or None,
+            "notes": notes or None,
+            "contractor_id": biz_id,
+            "business_id": str(business_id),
+            "created_at": datetime.now(timezone.utc),
+        }
+
+        result = await db.clients.insert_one(doc)
+        results.append({"row": i, "status": "imported", "id": str(result.inserted_id), "name": name, "email": email})
+
+    imported = sum(1 for row in results if row["status"] == "imported")
+    skipped = sum(1 for row in results if row["status"] != "imported")
+
+    return {
+        "message": f"{imported} client(s) imported, {skipped} skipped",
+        "total": len(results),
+        "imported": imported,
+        "skipped": skipped,
+        "details": results,
+    }
 @api_router.get("/clients")
 async def get_clients(request: Request, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
