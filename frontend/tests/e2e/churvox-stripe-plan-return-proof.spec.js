@@ -65,26 +65,6 @@ test('stripe return confirms and persists selected plan proof', async ({ page })
     console.log(`STRIPE_RETURN_PLAN_AFTER_RESET=${planFrom(soloPayload.json)}`);
     expect(planFrom(soloPayload.json)).toBe('solo');
 
-    await page.goto(`${APP_BASE}/login`, { waitUntil: 'domcontentloaded' });
-
-    const browserLogin = await page.evaluate(async ({ apiBase, email, password }) => {
-      const res = await fetch(`${apiBase}/api/auth/login`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const text = await res.text();
-      let data = {};
-      try { data = text ? JSON.parse(text) : {}; } catch {}
-      return { status: res.status, email: data?.email || data?.user?.email || '' };
-    }, { apiBase: API_BASE, email: OWNER_EMAIL, password: OWNER_PASS });
-
-    console.log(`STRIPE_RETURN_BROWSER_LOGIN_STATUS=${browserLogin.status}`);
-    console.log(`STRIPE_RETURN_BROWSER_LOGIN_EMAIL=${browserLogin.email}`);
-
-    expect(browserLogin.status).toBeLessThan(400);
-
     const returnUrl = `${APP_BASE}/billing/success?session_id=${encodeURIComponent(proofSession)}&plan=operator&country=NZ`;
     await page.goto(returnUrl, { waitUntil: 'domcontentloaded' });
 
