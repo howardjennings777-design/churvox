@@ -4,8 +4,8 @@ import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 import "./SimplePublic.css";
 
 const proof = [
-  "14-day trial",
-  "No card needed",
+  "14-day Stripe trial",
+  "Card collected up front",
   "Owner approval built in",
   "Real quote-to-paid workflow",
 ];
@@ -71,7 +71,7 @@ export function Footer() {
 
 export default function ExecutiveHomePage() {
   return (
-    <main className="simplePublic" data-version="CHURVOX_PUBLIC_ENTERPRISE_COPY_20260614">
+    <main className="simplePublic" data-version="CHURVOX_PUBLIC_ENTERPRISE_COPY_20260615_COMPACT">
       <Nav />
 
       <section className="simpleHero">
