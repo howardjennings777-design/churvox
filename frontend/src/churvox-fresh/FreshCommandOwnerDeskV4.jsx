@@ -6,15 +6,15 @@ const KEY = "churvox:fresh-command-inbox:v1";
 const API = "/api/command";
 
 const CONFIG = {
-  setup: { cat: "missing", title: "Command setup check", approve: "Save setup fix", fields: ["Area", "Missing step", "What needs entering", "Notes"] },
-  invoice: { cat: "money", title: "Invoice ready", approve: "Send invoice", fields: ["Customer", "Job", "Amount", "GST", "Due date", "Service line", "Invoice note"] },
-  reminder: { cat: "money", title: "Payment reminder", approve: "Send reminder", fields: ["Customer", "Invoice", "Amount due", "Email", "Phone", "Reminder message"] },
-  quote: { cat: "customers", title: "Quote follow-up", approve: "Send follow-up", fields: ["Customer", "Quote", "Quote value", "Email", "Phone", "Message"] },
-  worker: { cat: "jobs", title: "Worker assignment", approve: "Assign + notify worker", fields: ["Job", "Worker", "Date", "Time window", "Address", "Notify worker", "Worker note"] },
-  jobInfo: { cat: "missing", title: "Job info fix", approve: "Save job fix", fields: ["Job", "Price", "Worker", "Missing details", "Owner fix"] },
+  setup: { cat: "missing", title: "Command setup check", approve: "Approve setup fix", fields: ["Area", "Missing step", "What needs entering", "Notes"] },
+  invoice: { cat: "money", title: "Invoice ready", approve: "Approve invoice step", fields: ["Customer", "Job", "Amount", "GST", "Due date", "Service line", "Invoice note"] },
+  reminder: { cat: "money", title: "Payment reminder", approve: "Approve reminder", fields: ["Customer", "Invoice", "Amount due", "Email", "Phone", "Reminder message"] },
+  quote: { cat: "customers", title: "Quote follow-up", approve: "Approve follow-up", fields: ["Customer", "Quote", "Quote value", "Email", "Phone", "Message"] },
+  worker: { cat: "jobs", title: "Worker assignment", approve: "Approve assignment", fields: ["Job", "Worker", "Date", "Time window", "Address", "Notify worker", "Worker note"] },
+  jobInfo: { cat: "missing", title: "Job info fix", approve: "Approve job fix", fields: ["Job", "Price", "Worker", "Missing details", "Owner fix"] },
   time: { cat: "workers", title: "Worker time", approve: "Approve time", fields: ["Worker", "Job", "Date", "Start", "Finish", "Total", "Adjustment note"] },
-  client: { cat: "missing", title: "Client details", approve: "Save client fix", fields: ["Client", "Phone", "Email", "Address", "Notes"] },
-  workerMessage: { cat: "workerMessages", title: "Worker reply", approve: "Send worker reply", fields: ["Worker", "Job", "Worker message", "Prepared reply", "Save to job note", "Notify worker"] },
+  client: { cat: "missing", title: "Client details", approve: "Approve client fix", fields: ["Client", "Phone", "Email", "Address", "Notes"] },
+  workerMessage: { cat: "workerMessages", title: "Worker reply", approve: "Approve reply", fields: ["Worker", "Job", "Worker message", "Prepared reply", "Save to job note", "Notify worker"] },
   blocked: { cat: "blocked", title: "Blocked send", approve: "Mark reviewed", fields: ["What failed", "Missing setup/contact", "Next step"] },
 };
 
@@ -62,7 +62,7 @@ function normalise(slip, index = 0) {
 }
 
 function fallbackSlip() { return normalise({ id: "command-setup-review", type: "setup", title: "Command needs live data", urgency: "High", source: "No live Command actions came back from the backend yet" }, 0); }
-function readLocal() { try { const value = JSON.parse(localStorage.getItem(KEY) || "[]"); return Array.isArray(value) ? value.map(normalise).filter((slip) => slip.status !== "approved") : []; } catch { return []; } }
+function readLocal() { try { const value = JSON.parse(localStorage.getItem(KEY) || "[]"); return Array.isArray(value) ? value.map(normalise).filter((slip) => !["approved", "ignored"].includes(slip.status)) : []; } catch { return []; } }
 function saveLocal(items) { try { localStorage.setItem(KEY, JSON.stringify(items)); } catch {} }
 function missing(draft) { return (draft?.fields || []).filter((field) => isPlaceholder(field.value)).map((field) => field.label); }
 function category(slip) { if ((slip.status || "").includes("blocked") || slip.type === "blocked") return "blocked"; if (missing(slip.draft).length) return "missing"; return CONFIG[slip.type]?.cat || "missing"; }
@@ -72,7 +72,7 @@ async function request(path, body) {
   const token = localStorage.getItem("token") || "";
   const res = await fetch(`${API}${path}`, { method: body ? "POST" : "GET", credentials: "include", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: body ? JSON.stringify(body) : undefined });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok || data.ok === false) throw new Error(data.message || "Command failed");
+  if (!res.ok || data.ok === false || data.success === false) throw new Error(data.detail || data.message || data.error || "Command failed");
   return data;
 }
 
@@ -101,12 +101,54 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
   const activeCats = CATS.map(([id, title, sub]) => ({ id, title, sub, items: open.filter((slip) => category(slip) === id) })).filter((cat) => cat.items.length);
 
   React.useEffect(() => { load(); }, []);
+
   function setAndSave(next) { setSlips(next); saveLocal(next); }
-  async function load() { try { const data = await request("/slips"); if (Array.isArray(data.slips) && data.slips.length) { setAndSave(data.slips.map(normalise)); return; } const scan = await request("/scan", {}); if (Array.isArray(scan.slips) && scan.slips.length) { setAndSave(scan.slips.map(normalise)); return; } } catch {} const local = readLocal(); setAndSave(local.length ? local : [fallbackSlip()]); }
-  async function runChecks() { try { const data = await request("/scan", {}); if (Array.isArray(data.slips) && data.slips.length) { setAndSave(data.slips.map(normalise)); setMessage("Command updated from backend."); return; } setAndSave([fallbackSlip()]); setMessage("No live actions found yet. Setup check opened."); } catch { setAndSave([fallbackSlip()]); setMessage("Backend scan unavailable. Setup check opened."); } }
+
+  async function load() {
+    try {
+      const data = await request("/slips");
+      if (Array.isArray(data.slips) && data.slips.length) { setAndSave(data.slips.map(normalise)); setMessage("Command loaded from live backend."); return; }
+    } catch (err) {
+      setMessage(err?.message || "Command backend unavailable.");
+    }
+    const local = readLocal();
+    setAndSave(local.length ? local : [fallbackSlip()]);
+  }
+
+  async function runChecks() {
+    try {
+      const data = await request("/slips");
+      if (Array.isArray(data.slips) && data.slips.length) { setAndSave(data.slips.map(normalise)); setMessage("Command checks refreshed."); return; }
+      const local = readLocal();
+      setAndSave(local.length ? local : [fallbackSlip()]);
+      setMessage("No live approval slips returned yet. Setup check opened.");
+    } catch (err) {
+      const local = readLocal();
+      setAndSave(local.length ? local : [fallbackSlip()]);
+      setMessage(err?.message || "Command backend unavailable. Local slips kept.");
+    }
+  }
+
   function patch(id, patchData) { setAndSave(slips.map((slip) => slip.id === id ? { ...slip, ...patchData } : slip)); }
   function editField(label, value) { if (!selected) return; const draft = { ...selected.draft, fields: selected.draft.fields.map((field) => field.label === label ? { ...field, value } : field) }; patch(selected.id, { draft, status: "edited" }); }
-  async function approve() { if (!selected) return; const missed = missing(selected.draft); if (missed.length) { setMessage(`Missing info first: ${missed.join(", ")}`); return; } try { const data = await request("/execute", { slipId: selected.id, actionType: selected.type, draft: selected.draft }); patch(selected.id, { status: "approved", result: data.message || "Done" }); setMessage(data.message || "Approved and executed."); } catch { patch(selected.id, { status: "approved", result: "Approved locally — backend needs deploy/config." }); setMessage("Approved locally — backend needs deploy/config."); } }
 
-  return <section className="freshCommandDeskPage freshCommandPreparedPage"><div className="freshCommandDeskHero freshCommandPreparedHero"><div><span>Command approval desk</span><h1>Approve, edit, or decline what Churvox prepared.</h1><p>Smart Hub shows the business overview. Command is only for decisions: approve, save edits, snooze, ignore, or open the exact area.</p></div><div className="freshCommandPreparedSummary"><button onClick={runChecks}>Run Command checks</button><small>{message}</small><b>{open.length} open · {handled.length} handled</b></div></div><section className="freshCommandWorkArea"><section className="freshPreparedTrayGrid">{activeCats.length ? activeCats.map((cat) => <article className={`freshPreparedTray freshPreparedTray-${cat.id}`} key={cat.id}><header><div><h2>{cat.title}</h2><p>{cat.sub}</p></div><strong>{cat.items.length}</strong></header><div className="freshPreparedTrayList">{cat.items.map((slip) => <button className={selected?.id === slip.id ? "is-selected" : ""} key={slip.id} onClick={() => setSelectedId(slip.id)}><b>{slip.title}</b><span className="freshPreparedItemDetail">{detail(slip)}</span><em>{category(slip) === "missing" ? "needs info" : `${slip.urgency} · approval`}</em></button>)}</div></article>) : <article className="freshPreparedTray"><header><div><h2>No approval slips</h2><p>Smart Hub still shows the overview. Command opens when an owner decision is needed.</p></div><strong>0</strong></header></article>}</section>{selected ? <Preview slip={selected} onField={editField} onApprove={approve} onSave={() => { patch(selected.id, { status: "edited" }); setMessage("Edit saved."); }} onSnooze={() => patch(selected.id, { status: "snoozed" })} onIgnore={() => patch(selected.id, { status: "ignored" })} onOpenArea={() => onNavigate?.(selected.page || "jobs")} /> : <section className="freshCommandPreviewPanel"><header><span>Decision desk</span><h2>No slip selected</h2><p>Run Command checks or open one of the prepared slips from the left tray.</p></header></section>}</section></section>;
+  async function approve() {
+    if (!selected) return;
+    const missed = missing(selected.draft);
+    if (missed.length) { setMessage(`Missing info first: ${missed.join(", ")}`); return; }
+    try {
+      const data = await request(`/slips/${encodeURIComponent(selected.id)}/approve`, { draft: selected.draft, actionType: selected.type });
+      patch(selected.id, { status: "approved", result: data.message || "Approved" });
+      setMessage(data.message || "Approved and recorded.");
+    } catch (err) {
+      patch(selected.id, { status: "approved", result: "Approved locally. Backend approval route needs checking." });
+      setMessage(err?.message || "Approved locally. Backend approval route needs checking.");
+    }
+  }
+
+  function saveEdit() { if (!selected) return; patch(selected.id, { status: "edited" }); setMessage("Edit saved on this Command slip."); }
+  function snooze() { if (!selected) return; patch(selected.id, { status: "snoozed", snoozedAt: new Date().toISOString() }); setMessage("Slip snoozed."); }
+  function ignore() { if (!selected) return; patch(selected.id, { status: "ignored", ignoredAt: new Date().toISOString() }); setMessage("Slip ignored."); }
+
+  return <section className="freshCommandDeskPage freshCommandPreparedPage"><div className="freshCommandDeskHero freshCommandPreparedHero"><div><span>Command approval desk</span><h1>Approve, edit, or decline what Churvox prepared.</h1><p>Smart Hub shows the business overview. Command is only for decisions: approve, save edits, snooze, ignore, or open the exact area.</p></div><div className="freshCommandPreparedSummary"><button onClick={runChecks}>Run Command checks</button><small>{message}</small><b>{open.length} open · {handled.length} handled</b></div></div><section className="freshCommandWorkArea"><section className="freshPreparedTrayGrid">{activeCats.length ? activeCats.map((cat) => <article className={`freshPreparedTray freshPreparedTray-${cat.id}`} key={cat.id}><header><div><h2>{cat.title}</h2><p>{cat.sub}</p></div><strong>{cat.items.length}</strong></header><div className="freshPreparedTrayList">{cat.items.map((slip) => <button className={selected?.id === slip.id ? "is-selected" : ""} key={slip.id} onClick={() => setSelectedId(slip.id)}><b>{slip.title}</b><span className="freshPreparedItemDetail">{detail(slip)}</span><em>{category(slip) === "missing" ? "needs info" : `${slip.urgency} · approval`}</em></button>)}</div></article>) : <article className="freshPreparedTray"><header><div><h2>No approval slips</h2><p>Smart Hub still shows the overview. Command opens when an owner decision is needed.</p></div><strong>0</strong></header></article>}</section>{selected ? <Preview slip={selected} onField={editField} onApprove={approve} onSave={saveEdit} onSnooze={snooze} onIgnore={ignore} onOpenArea={() => onNavigate?.(selected.page || "jobs")} /> : <section className="freshCommandPreviewPanel"><header><span>Decision desk</span><h2>No slip selected</h2><p>Run Command checks or open one of the prepared slips from the left tray.</p></header></section>}</section></section>;
 }
