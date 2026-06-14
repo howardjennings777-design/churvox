@@ -6,75 +6,146 @@ import { useAuth } from "../context/AuthContext";
 
 const groups = [
   {
-    title: "Start",
+    title: "Home",
     items: [
+      ["smart", "SH", "Smart Hub"],
       ["setupassistant", "AI", "AI Guide"],
       ["command", "CM", "Command"],
+      ["aioperator", "AO", "AI Operator"],
+      ["quickcreateai", "QC", "Quick Create"],
+      ["planday", "PD", "Plan My Day"],
     ],
   },
   {
     title: "Work",
     items: [
       ["jobs", "JB", "Jobs"],
+      ["recurring", "RC", "Recurring"],
       ["dispatch", "SC", "Schedule"],
+      ["routes", "RT", "Routes"],
+      ["areas", "AR", "Areas"],
       ["clients", "CL", "Clients"],
       ["quotes", "QT", "Quotes"],
+      ["quoteai", "QA", "AI Quote Builder"],
       ["invoices", "IV", "Invoices"],
+      ["invoicecheck", "IC", "Invoice Checker"],
       ["payments", "PY", "Payments"],
+      ["creditnotes", "CN", "Credit Notes"],
     ],
   },
   {
-    title: "Business",
+    title: "Team",
     items: [
       ["team", "TM", "Team"],
+      ["roles", "RL", "Roles"],
+      ["subcontractors", "SB", "Subcontractors"],
+      ["availability", "AV", "Availability"],
       ["payroll", "PR", "Payroll"],
-      ["xero", "XE", "Xero"],
-      ["settings", "ST", "Settings"],
+      ["time", "TL", "Time Logs"],
+      ["gps", "GP", "GPS"],
+      ["worker", "WK", "Worker"],
+      ["workerbrief", "WB", "Worker Brief"],
+      ["workerperformance", "WP", "Worker Performance"],
+    ],
+  },
+  {
+    title: "Customers",
+    items: [
+      ["customerportal", "CP", "Customer Portal"],
+      ["portal", "PT", "Portal"],
+      ["customermemory", "CM", "Customer Memory"],
+      ["messages", "MS", "Messages"],
+      ["messagetriage", "MT", "Message Triage"],
+      ["followups", "FU", "Follow-ups"],
+      ["followupwriter", "FW", "Follow-up Writer"],
+      ["reviews", "RV", "Reviews"],
+      ["reviewbooster", "RB", "Review Booster"],
+      ["missinginfo", "MI", "Missing Info"],
+    ],
+  },
+  {
+    title: "Money",
+    items: [
+      ["billing", "BL", "Billing"],
       ["plans", "PL", "Plans"],
+      ["aiusage", "AU", "AI Usage"],
+      ["xero", "XE", "Xero"],
+      ["integrations", "IN", "Integrations"],
+      ["reports", "RP", "Reports"],
+      ["profit", "PF", "Profit"],
+      ["profitguard", "PG", "Profit Guard"],
+      ["pricelearner", "PR", "Price Learner"],
+      ["expenses", "EX", "Expenses"],
+      ["cashflowai", "CF", "Cashflow AI"],
+      ["paymentpromise", "PP", "Payment Promise"],
+      ["upsellfinder", "UF", "Upsell Finder"],
+    ],
+  },
+  {
+    title: "Proof & Ops",
+    items: [
+      ["photos", "PH", "Photos"],
+      ["photoproof", "PP", "Photo Proof"],
+      ["documents", "DC", "Documents"],
+      ["contracts", "CT", "Contracts"],
+      ["assets", "AS", "Assets"],
+      ["inventory", "IV", "Inventory"],
+      ["materialsai", "MA", "Materials AI"],
+      ["services", "SV", "Services"],
+      ["industries", "ID", "Industries"],
+      ["templates", "TP", "Templates"],
+    ],
+  },
+  {
+    title: "Control",
+    items: [
+      ["approvals", "AP", "Approvals"],
+      ["alerts", "AL", "Alerts"],
+      ["audit", "AD", "Audit"],
+      ["automation", "AT", "Automation"],
+      ["quality", "QL", "Quality"],
+      ["reworkresolver", "RW", "Rework Resolver"],
+      ["extras", "XT", "Extras"],
+      ["variations", "VR", "Variations"],
+      ["warranties", "WR", "Warranties"],
+      ["cancellations", "CA", "Cancellations"],
+      ["safety", "SF", "Safety"],
+    ],
+  },
+  {
+    title: "Launch & Help",
+    items: [
+      ["setup", "ST", "Setup"],
+      ["onboarding", "OB", "Onboarding"],
+      ["firstrun", "FR", "First Run"],
+      ["launch", "LC", "Launch"],
+      ["launchpack", "LP", "Launch Pack"],
+      ["launchcontrol", "LC", "Launch Control"],
+      ["businesshealth", "BH", "Business Health"],
+      ["security", "SE", "Security"],
+      ["trustcenter", "TC", "Trust Center"],
       ["support", "SP", "Support"],
+      ["helpdesk", "HD", "Help Desk"],
+      ["settings", "SG", "Settings"],
     ],
   },
 ];
 
-const labels = {
-  firstrun: "First Run Guide",
-  setupassistant: "AI Setup Guide",
-  smart: "Owner Brief",
-  command: "Command",
-  jobs: "Jobs",
-  dispatch: "Schedule",
-  clients: "Clients",
-  quotes: "Quotes",
-  invoices: "Invoices",
-  payments: "Payments",
-  team: "Team",
-  payroll: "Payroll",
-  xero: "Xero",
-  settings: "Settings",
-  plans: "Plans",
-  support: "Support",
-};
+const labels = Object.fromEntries(groups.flatMap((group) => group.items.map(([key, , label]) => [key, label])));
+labels.smart = "Smart Hub";
+labels.askchurvox = "Ask Churvox";
+labels.globalactions = "Global Actions";
+labels.schedulerai = "Scheduler AI";
+labels.recurringSaver = "Recurring Saver";
 
 const mobileItems = [
-  ["setupassistant", "AI", "AI Guide"],
+  ["smart", "SH", "Hub"],
   ["jobs", "JB", "Jobs"],
   ["command", "CM", "Command"],
   ["more", "••", "More"],
 ];
 
-const extraMobile = [
-  ["dispatch", "SC", "Schedule"],
-  ["clients", "CL", "Clients"],
-  ["quotes", "QT", "Quotes"],
-  ["invoices", "IV", "Invoices"],
-  ["payments", "PY", "Payments"],
-  ["team", "TM", "Team"],
-  ["payroll", "PR", "Payroll"],
-  ["xero", "XE", "Xero"],
-  ["settings", "ST", "Settings"],
-  ["plans", "PL", "Plans"],
-  ["support", "SP", "Support"],
-];
+const extraMobile = groups.flatMap((group) => group.items);
 
 function uniqueItems(items) {
   const seen = new Set();
@@ -186,6 +257,7 @@ export default function FreshShell({ active, onChange, children }) {
           <FreshSearch onNavigate={go} />
 
           <div className="freshTopActions">
+            <button type="button" onClick={() => go("smart")}>Smart Hub</button>
             <button type="button" onClick={() => go("setupassistant")}>AI Guide</button>
             <button type="button" onClick={() => go("command")}>Command</button>
             <button type="button" onClick={() => setQuickType("job")}>New job</button>
