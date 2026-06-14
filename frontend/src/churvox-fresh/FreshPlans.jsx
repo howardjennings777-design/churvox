@@ -3,10 +3,10 @@ import { useApi } from "../hooks/useApi";
 import "./freshPlans.css";
 
 const regions = {
-  NZ: { label: "New Zealand", short: "NZ", currency: "NZD", prefix: "$", suffix: "", tax: "+ GST" },
-  AU: { label: "Australia", short: "AU", currency: "AUD", prefix: "A$", suffix: "", tax: "+ tax" },
-  US: { label: "United States", short: "US", currency: "USD", prefix: "US$", suffix: "", tax: "+ tax" },
-  UK: { label: "United Kingdom", short: "UK", currency: "GBP", prefix: "£", suffix: "", tax: "+ VAT/tax" },
+  NZ: { label: "New Zealand", short: "NZ", currency: "NZD", prefix: "$", suffix: "", tax: "+ GST", taxRate: 0.15, taxIncluded: "incl. GST" },
+  AU: { label: "Australia", short: "AU", currency: "AUD", prefix: "A$", suffix: "", tax: "+ GST", taxRate: 0.1, taxIncluded: "incl. GST" },
+  US: { label: "United States", short: "US", currency: "USD", prefix: "US$", suffix: "", tax: "+ tax", taxRate: 0, taxIncluded: "tax may apply" },
+  UK: { label: "United Kingdom", short: "UK", currency: "GBP", prefix: "£", suffix: "", tax: "+ VAT/tax", taxRate: 0.2, taxIncluded: "incl. VAT" },
 };
 
 const plans = [
@@ -24,6 +24,7 @@ const plans = [
       "Jobs, clients, quotes and invoices",
       "Smart Hub basics",
       "Business settings and GST/tax settings",
+      "Accounting Sync Add-on available",
       "14-day free trial, no card",
     ],
   },
@@ -42,6 +43,7 @@ const plans = [
       "Team and worker setup",
       "Dispatch-ready workflow",
       "More job and client capacity",
+      "Accounting Sync Add-on available",
     ],
   },
   {
@@ -59,7 +61,7 @@ const plans = [
       "Command approval desk",
       "Quote follow-up watch",
       "Invoice and job admin prepared for approval",
-      "Xero optional add-on later",
+      "Accounting Sync Add-on available",
     ],
   },
   {
@@ -70,11 +72,11 @@ const plans = [
     tag: "Full control",
     best: false,
     headline: "Scale with control",
-    summary: "For the bigger business that wants payroll workspace, Xero included and advanced control.",
+    summary: "For the bigger business that wants payroll workspace, one accounting sync option and advanced control.",
     limit: "Up to 50 active team members",
     features: [
       "Everything in Operator",
-      "Xero included",
+      "Accounting sync included: Xero or MYOB",
       "Payroll workspace",
       "Advanced roles",
       "Priority support",
@@ -84,6 +86,7 @@ const plans = [
 ];
 
 const growthPackPrices = { NZ: 99, AU: 99, US: 79, UK: 69 };
+const accountingSyncPrices = { NZ: 39, AU: 39, US: 29, UK: 25 };
 
 const backendToUiPlan = {
   solo: "start",
@@ -116,9 +119,24 @@ function growthPackPrice(regionCode) {
   return Number(growthPackPrices[regionCode] ?? growthPackPrices.NZ);
 }
 
-function money(value, regionCode) {
+function accountingSyncPrice(regionCode) {
+  return Number(accountingSyncPrices[regionCode] ?? accountingSyncPrices.NZ);
+}
+
+function money(value, regionCode, decimals = 0) {
   const region = regions[regionCode] || regions.NZ;
-  return `${region.prefix}${Number(value || 0).toFixed(0)}${region.suffix}`;
+  return `${region.prefix}${Number(value || 0).toFixed(decimals)}${region.suffix}`;
+}
+
+function inclusiveAmount(value, regionCode) {
+  const region = regions[regionCode] || regions.NZ;
+  return Number(value || 0) * (1 + Number(region.taxRate || 0));
+}
+
+function inclusiveLabel(value, regionCode) {
+  const region = regions[regionCode] || regions.NZ;
+  if (!region.taxRate) return region.taxIncluded;
+  return `${money(inclusiveAmount(value, regionCode), regionCode, 2)}/month ${region.taxIncluded}`;
 }
 
 export default function FreshPlans({ onNavigate }) {
@@ -127,6 +145,7 @@ export default function FreshPlans({ onNavigate }) {
   const [selectedPlan, setSelectedPlan] = React.useState("operator");
   const [selectedRegion, setSelectedRegion] = React.useState("NZ");
   const [growthPacks, setGrowthPacks] = React.useState(0);
+  const [includeAccountingSync, setIncludeAccountingSync] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [checkoutLoading, setCheckoutLoading] = React.useState(false);
@@ -139,8 +158,10 @@ export default function FreshPlans({ onNavigate }) {
   const commandSelected = selected.id === "command";
   const selectedPlanPrice = planPrice(selected, selectedRegion);
   const selectedGrowthPackPrice = growthPackPrice(selectedRegion);
+  const selectedAccountingSyncPrice = accountingSyncPrice(selectedRegion);
   const growthTotal = commandSelected ? growthPacks * selectedGrowthPackPrice : 0;
-  const monthlyTotal = selectedPlanPrice + growthTotal;
+  const accountingTotal = !commandSelected && includeAccountingSync ? selectedAccountingSyncPrice : 0;
+  const monthlyTotal = selectedPlanPrice + growthTotal + accountingTotal;
 
   const loadPlan = React.useCallback(async () => {
     setLoading(true);
@@ -151,6 +172,7 @@ export default function FreshPlans({ onNavigate }) {
       const uiPlan = uiPlanFromBackend(status?.plan);
       setCurrentPlan(uiPlan);
       setSelectedPlan(uiPlan);
+      setIncludeAccountingSync(false);
 
       try {
         const addons = unwrap(await get("/billing/addons"));
@@ -177,6 +199,7 @@ export default function FreshPlans({ onNavigate }) {
   function choosePlan(planId) {
     setSelectedPlan(planId);
     if (planId !== "command") setGrowthPacks(0);
+    if (planId === "command") setIncludeAccountingSync(false);
     setError("");
   }
 
@@ -224,10 +247,10 @@ export default function FreshPlans({ onNavigate }) {
   }
 
   const planComparison = [
-    ["Start", "Solo basics", "Jobs, quotes, invoices"],
-    ["Crew", "Small team", "Workers and dispatch"],
-    ["Operator", "Recommended", "AI admin prepared for approval"],
-    ["Command", "Scale", "Xero, payroll and advanced roles"],
+    ["Start", "Solo basics", "Jobs, quotes, invoices. Accounting Sync Add-on available."],
+    ["Crew", "Small team", "Workers and dispatch. Accounting Sync Add-on available."],
+    ["Operator", "Recommended", "AI admin prepared for approval. Accounting Sync Add-on available."],
+    ["Command", "Scale", "Accounting sync, payroll and advanced roles included."],
   ];
 
   return (
@@ -245,13 +268,13 @@ export default function FreshPlans({ onNavigate }) {
         <aside>
           <small>Selected region</small>
           <strong>{region.currency}</strong>
-          <p>{region.label} · prices shown {region.tax}</p>
+          <p>{region.label} · prices shown exclude tax. GST/VAT-inclusive totals are shown where applicable.</p>
         </aside>
       </header>
 
       <section className="freshPlanNotice proper">
         <b>Launch pricing live by region</b>
-        <span>NZD, AUD, USD and GBP pricing are shown. Checkout uses the selected region and tax may apply.</span>
+        <span>Prices shown exclude GST/tax. GST or VAT is added at checkout. Inclusive totals are shown for clarity.</span>
       </section>
 
       <section className="freshRegionPicker freshCard">
@@ -296,6 +319,7 @@ export default function FreshPlans({ onNavigate }) {
               {isCurrent && <span className="freshCurrentBadge">Current</span>}
               <strong>{plan.name}</strong>
               <em>{money(displayPrice, selectedRegion)}<small>/month {region.tax}</small></em>
+              <small className="freshPlanLimit">{inclusiveLabel(displayPrice, selectedRegion)}</small>
               <h3>{plan.headline}</h3>
               <p>{plan.summary}</p>
               <small className="freshPlanLimit">{plan.limit}</small>
@@ -317,14 +341,27 @@ export default function FreshPlans({ onNavigate }) {
               <h2>{selected.name}</h2>
               <p>{selected.summary}</p>
             </div>
-            <strong>{money(monthlyTotal, selectedRegion)}<small>/month {region.tax}</small></strong>
+            <strong>{money(monthlyTotal, selectedRegion)}<small>/month {region.tax}</small><small>{inclusiveLabel(monthlyTotal, selectedRegion)}</small></strong>
+          </div>
+
+          <div className="freshGrowthPack premium">
+            <div>
+              <b>Accounting Sync Add-on</b>
+              <span>{commandSelected ? "Included with Command: choose Xero or MYOB." : `${money(selectedAccountingSyncPrice, selectedRegion)}/month ${region.tax} · ${inclusiveLabel(selectedAccountingSyncPrice, selectedRegion)} · Xero or MYOB sync where available.`}</span>
+            </div>
+            {!commandSelected && (
+              <div className="freshGrowthControls">
+                <button type="button" onClick={() => setIncludeAccountingSync(false)} className={!includeAccountingSync ? "active" : ""}>No</button>
+                <button type="button" onClick={() => setIncludeAccountingSync(true)} className={includeAccountingSync ? "active" : ""}>Add</button>
+              </div>
+            )}
           </div>
 
           {commandSelected && (
             <div className="freshGrowthPack premium">
               <div>
                 <b>Command Growth Pack</b>
-                <span>{money(selectedGrowthPackPrice, selectedRegion)}/month {region.tax} · adds 50 active team members plus extra job, AI action, automation and admin capacity.</span>
+                <span>{money(selectedGrowthPackPrice, selectedRegion)}/month {region.tax} · {inclusiveLabel(selectedGrowthPackPrice, selectedRegion)} · adds 50 active team members plus extra job, AI action, automation and admin capacity.</span>
               </div>
               <div className="freshGrowthControls">
                 <button type="button" onClick={() => setGrowthPacks((count) => Math.max(0, count - 1))}>−</button>
@@ -366,6 +403,11 @@ export default function FreshPlans({ onNavigate }) {
           <div className="freshItem">
             <b>Best default</b>
             <span>Operator is the main plan because AI runs the admin and the owner approves.</span>
+          </div>
+
+          <div className="freshItem">
+            <b>Accounting sync</b>
+            <span>Start, Crew and Operator can add Xero or MYOB sync. Command includes one accounting sync option.</span>
           </div>
 
           <div className="freshItem need">
