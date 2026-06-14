@@ -244,7 +244,6 @@ export default function FreshPlans({ onNavigate }) {
               className={`freshPricingCard ${active ? "active" : ""} ${plan.best ? "best" : ""}`}
               onClick={() => choosePlan(plan.id)}
             >
-              <span className="freshPlanTag">{plan.tag}</span>
               {isCurrent && <span className="freshCurrentBadge">Current</span>}
               <strong>{plan.name}</strong>
               <em>{money(plan.price)}<small>/month + GST</small></em>

@@ -409,3 +409,9 @@
   .freshSelectedPlanTop strong { text-align: left; }
   .freshPlanNotice.proper { align-items: flex-start; flex-direction: column; }
 }
+
+
+/* Launch polish: remove black plan tag pills */
+.freshPricingCard .freshPlanTag {
+  display: none !important;
+}
