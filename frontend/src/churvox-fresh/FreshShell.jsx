@@ -4,10 +4,12 @@ import FreshTopStatus from "./FreshTopStatus";
 import { useAuth } from "../context/AuthContext";
 import API_BASE from "../lib/apiBase";
 
+const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
+
 const groups = [
   { title: "Main", items: [["smart", "SH", "Smart Hub"], ["command", "CM", "Command"], ["jobs", "JB", "Jobs"], ["dispatch", "SC", "Schedule"], ["clients", "CL", "Clients"], ["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"]] },
   { title: "Team", items: [["team", "TM", "Team"], ["time", "TL", "Time Logs"], ["payroll", "PR", "Payroll"]] },
-  { title: "Money", items: [["xero", "XE", "Xero / MYOB Sync"], ["payments", "PY", "Payments"], ["reports", "RP", "Reports"], ["plans", "PL", "Plans & Usage"]] },
+  { title: "Money", items: [["xero", "XE", "Xero Sync"], ["payments", "PY", "Payments"], ["reports", "RP", "Reports"], ["plans", "PL", "Plans & Usage"]] },
   { title: "Operations", items: [["photos", "PH", "Photos & Proof"], ["documents", "DC", "Documents"], ["automation", "AT", "Automation"], ["settings", "SG", "Settings"]] },
   { title: "Help", items: [["setupassistant", "AI", "AI Guide"], ["security", "SE", "Security"], ["support", "SP", "Support"]] },
 ];
@@ -36,64 +38,15 @@ const relatedTools = {
 };
 
 const mobileItems = [["jobs", "JB", "Jobs"], ["dispatch", "SC", "Schedule"], ["command", "CM", "Command"], ["invoices", "IV", "Invoices"], ["team", "TM", "Team"], ["more", "••", "More"]];
-const extraMobile = groups.flatMap((group) => group.items);
 
-function uniqueItems(items) {
-  const seen = new Set();
-  return items.filter(([key]) => {
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+function guideIsComplete() {
+  try { return window.localStorage.getItem(GUIDE_COMPLETE_KEY) === "true"; } catch { return false; }
 }
-
-function cleanGroups(sourceGroups) {
-  const seen = new Set();
-  return sourceGroups.map((group) => ({
-    ...group,
-    items: group.items.filter(([key]) => {
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    }),
-  }));
-}
-
-function buildLabels() {
-  const entries = [...groups.flatMap((group) => group.items), ...Object.values(relatedTools).flat()];
-  const nextLabels = Object.fromEntries(entries.map(([key, , label]) => [key, label]));
-  nextLabels.morningbrief = "Morning Brief";
-  nextLabels.askchurvox = "Ask Churvox";
-  nextLabels.globalactions = "Global Actions";
-  nextLabels.schedulerai = "Scheduler AI";
-  nextLabels.recurringSaver = "Recurring Saver";
-  nextLabels.recurringsaver = "Recurring Saver";
-  nextLabels.followupwriter = "Follow-up Writer";
-  nextLabels.reviewbooster = "Review Booster";
-  nextLabels.portal = "Portal View";
-  nextLabels.nz = "New Zealand Setup";
-  nextLabels.myob = "MYOB";
-  return nextLabels;
-}
-
-function buildParentMap() {
-  const map = {};
-  Object.entries(relatedTools).forEach(([parent, items]) => {
-    items.forEach(([key]) => {
-      if (!map[key]) map[key] = parent;
-    });
-  });
-  groups.forEach((group) => group.items.forEach(([key]) => { map[key] = key; }));
-  map.routes = "dispatch";
-  map.areas = "dispatch";
-  map.schedulerai = "dispatch";
-  map.gps = "time";
-  map.portal = "clients";
-  map.followupwriter = "clients";
-  map.reviewbooster = "clients";
-  return map;
-}
-
+function uniqueItems(items) { const seen = new Set(); return items.filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }); }
+function stripHiddenItems(items, guideComplete) { return items.filter(([key]) => !(guideComplete && key === "setupassistant")); }
+function cleanGroups(sourceGroups, guideComplete = false) { const seen = new Set(); return sourceGroups.map((group) => ({ ...group, items: stripHiddenItems(group.items, guideComplete).filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }) })).filter((group) => group.items.length); }
+function buildLabels() { const entries = [...groups.flatMap((group) => group.items), ...Object.values(relatedTools).flat()]; const nextLabels = Object.fromEntries(entries.map(([key, , label]) => [key, label])); nextLabels.morningbrief = "Morning Brief"; nextLabels.askchurvox = "Ask Churvox"; nextLabels.globalactions = "Global Actions"; nextLabels.schedulerai = "Scheduler AI"; nextLabels.recurringSaver = "Recurring Saver"; nextLabels.recurringsaver = "Recurring Saver"; nextLabels.followupwriter = "Follow-up Writer"; nextLabels.reviewbooster = "Review Booster"; nextLabels.portal = "Portal View"; nextLabels.nz = "New Zealand Setup"; return nextLabels; }
+function buildParentMap() { const map = {}; Object.entries(relatedTools).forEach(([parent, items]) => { items.forEach(([key]) => { if (!map[key]) map[key] = parent; }); }); groups.forEach((group) => group.items.forEach(([key]) => { map[key] = key; })); map.routes = "dispatch"; map.areas = "dispatch"; map.schedulerai = "dispatch"; map.gps = "time"; map.portal = "clients"; map.followupwriter = "clients"; map.reviewbooster = "clients"; return map; }
 const labels = buildLabels();
 const parentByKey = buildParentMap();
 
@@ -102,172 +55,44 @@ export default function FreshShell({ active, onChange, children }) {
   const [moreOpen, setMoreOpen] = React.useState(false);
   const [verifySending, setVerifySending] = React.useState(false);
   const [verifySent, setVerifySent] = React.useState(false);
+  const [guideComplete, setGuideComplete] = React.useState(guideIsComplete);
 
-  const safeGroups = React.useMemo(() => cleanGroups(groups), []);
+  React.useEffect(() => {
+    const refreshGuide = () => setGuideComplete(guideIsComplete());
+    window.addEventListener("storage", refreshGuide);
+    window.addEventListener("churvox:ai-guide-status", refreshGuide);
+    window.addEventListener("churvox:fresh-data-updated", refreshGuide);
+    return () => { window.removeEventListener("storage", refreshGuide); window.removeEventListener("churvox:ai-guide-status", refreshGuide); window.removeEventListener("churvox:fresh-data-updated", refreshGuide); };
+  }, []);
+
+  const safeGroups = React.useMemo(() => cleanGroups(groups, guideComplete), [guideComplete]);
   const safeMobileItems = React.useMemo(() => uniqueItems(mobileItems), []);
-  const safeExtraMobile = React.useMemo(() => {
-    const mainKeys = new Set(safeMobileItems.map(([key]) => key));
-    return uniqueItems(extraMobile).filter(([key]) => !mainKeys.has(key));
-  }, [safeMobileItems]);
-
+  const safeExtraMobile = React.useMemo(() => { const mainKeys = new Set(safeMobileItems.map(([key]) => key)); return uniqueItems(safeGroups.flatMap((group) => group.items)).filter(([key]) => !mainKeys.has(key)); }, [safeMobileItems, safeGroups]);
   const currentPrimary = parentByKey[active] || active;
-  const currentRelatedTools = React.useMemo(() => uniqueItems(relatedTools[currentPrimary] || []), [currentPrimary]);
+  const currentRelatedTools = React.useMemo(() => uniqueItems(stripHiddenItems(relatedTools[currentPrimary] || [], guideComplete)), [currentPrimary, guideComplete]);
   const emailNeedsVerification = auth?.user && auth.user.email_verified === false;
 
-  async function handleLogout() {
-    try {
-      if (auth?.logout) await auth.logout();
-    } finally {
-      try {
-        window.localStorage.removeItem("token");
-        window.localStorage.removeItem("owner_portal_session");
-        window.localStorage.removeItem("platform_owner_email");
-      } catch {
-        // Keep logout moving.
-      }
-      window.location.href = "/login";
-    }
-  }
-
-  function go(key) {
-    if (key === "more") return;
-    setMoreOpen(false);
-    onChange(key);
-  }
-
-  function openRealCreate(path) {
-    setMoreOpen(false);
-    window.location.href = path;
-  }
-
-  async function resendVerification() {
-    setVerifySending(true);
-    try {
-      const token = window.localStorage.getItem("token") || "";
-      await fetch(`${API_BASE}/api/auth/resend-verification`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          Accept: "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
-      setVerifySent(true);
-    } catch {
-      setVerifySent(false);
-    } finally {
-      setVerifySending(false);
-    }
-  }
-
-  function handleMobile(key) {
-    if (key === "more") {
-      setMoreOpen((value) => !value);
-      return;
-    }
-    go(key);
-  }
+  async function handleLogout() { try { if (auth?.logout) await auth.logout(); } finally { try { window.localStorage.removeItem("token"); window.localStorage.removeItem("owner_portal_session"); window.localStorage.removeItem("platform_owner_email"); } catch {} window.location.href = "/login"; } }
+  function go(key) { if (key === "more") return; if (guideComplete && key === "setupassistant") return; setMoreOpen(false); onChange(key); }
+  function openRealCreate(path) { setMoreOpen(false); window.location.href = path; }
+  async function resendVerification() { setVerifySending(true); try { const token = window.localStorage.getItem("token") || ""; await fetch(`${API_BASE}/api/auth/resend-verification`, { method: "POST", credentials: "include", headers: { Accept: "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) } }); setVerifySent(true); } catch { setVerifySent(false); } finally { setVerifySending(false); } }
+  function handleMobile(key) { if (key === "more") { setMoreOpen((value) => !value); return; } go(key); }
 
   return (
     <div className="freshApp">
       <aside className="freshSide">
-        <div className="freshBrand">
-          <div className="freshLogo">C</div>
-          <div>
-            <strong>CHURVOX</strong>
-            <small>Owner workspace</small>
-          </div>
-        </div>
-
+        <div className="freshBrand"><div className="freshLogo">C</div><div><strong>CHURVOX</strong><small>Owner workspace</small></div></div>
         <button className="freshLogoutSide" type="button" onClick={handleLogout}>Log out</button>
-
-        <nav className="freshNav">
-          {safeGroups.map((group) => (
-            <section className="freshNavGroup" key={group.title}>
-              <p>{group.title}</p>
-              {group.items.map(([key, mark, label]) => (
-                <button key={key} type="button" className={currentPrimary === key ? "active" : ""} onClick={() => go(key)}>
-                  <i>{mark}</i>
-                  <span>{label}</span>
-                </button>
-              ))}
-            </section>
-          ))}
-        </nav>
+        <nav className="freshNav">{safeGroups.map((group) => <section className="freshNavGroup" key={group.title}><p>{group.title}</p>{group.items.map(([key, mark, label]) => <button key={key} type="button" className={currentPrimary === key ? "active" : ""} onClick={() => go(key)}><i>{mark}</i><span>{label}</span></button>)}</section>)}</nav>
       </aside>
-
       <main className="freshMain">
-        <div className="freshTopbar">
-          <div>
-            <span>Current area</span>
-            <strong>{labels[active] || labels[currentPrimary] || "Churvox"}</strong>
-          </div>
-
-          <FreshTopStatus onNavigate={go} />
-          <FreshSearch onNavigate={go} />
-
-          <div className="freshTopActions">
-            <button type="button" onClick={() => go("setupassistant")}>AI Guide</button>
-            <button type="button" onClick={() => go("command")}>Command</button>
-            <button type="button" onClick={() => openRealCreate("/jobs/new")}>New job</button>
-            <button type="button" onClick={() => openRealCreate("/quotes/new")}>New quote</button>
-            <button type="button" onClick={() => openRealCreate("/clients/new")}>Add client</button>
-            <button className="freshLogoutTop" type="button" onClick={handleLogout}>Log out</button>
-          </div>
-        </div>
-
-        {emailNeedsVerification && (
-          <section className="freshCard freshItem need" style={{ marginBottom: 14 }}>
-            <b>Verify your email to keep your Churvox account secure</b>
-            <span>We have sent a verification link to {auth.user.email}. You can keep setting up, but please verify before sending customer emails.</span>
-            <div className="freshActions" style={{ maxWidth: 280 }}>
-              <button className="freshPrimary" type="button" onClick={resendVerification} disabled={verifySending}>
-                {verifySending ? "Sending…" : verifySent ? "Verification sent" : "Resend verification email"}
-              </button>
-            </div>
-          </section>
-        )}
-
-        {currentRelatedTools.length > 0 && (
-          <section className="freshRelatedTools" aria-label={`${labels[currentPrimary] || "Current area"} tools`}>
-            <div className="freshRelatedHeader">
-              <span>{labels[currentPrimary] || "Current area"}</span>
-              <strong>Related tools</strong>
-              <small>Extra actions sit here so the main sidebar stays clean.</small>
-            </div>
-            <div className="freshRelatedList">
-              {currentRelatedTools.map(([key, mark, label]) => (
-                <button key={key} type="button" className={active === key ? "active" : ""} onClick={() => go(key)}>
-                  <i>{mark}</i>
-                  <span>{label}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-
+        <div className="freshTopbar"><div><span>Current area</span><strong>{labels[active] || labels[currentPrimary] || "Churvox"}</strong></div><FreshTopStatus onNavigate={go} /><FreshSearch onNavigate={go} /><div className="freshTopActions">{!guideComplete ? <button type="button" onClick={() => go("setupassistant")}>AI Guide</button> : null}<button type="button" onClick={() => go("command")}>Command</button><button type="button" onClick={() => openRealCreate("/jobs/new")}>New job</button><button type="button" onClick={() => openRealCreate("/quotes/new")}>New quote</button><button type="button" onClick={() => openRealCreate("/clients/new")}>Add client</button><button className="freshLogoutTop" type="button" onClick={handleLogout}>Log out</button></div></div>
+        {emailNeedsVerification && <section className="freshCard freshItem need" style={{ marginBottom: 14 }}><b>Verify your email to keep your Churvox account secure</b><span>We have sent a verification link to {auth.user.email}. You can keep setting up, but please verify before sending customer emails.</span><div className="freshActions" style={{ maxWidth: 280 }}><button className="freshPrimary" type="button" onClick={resendVerification} disabled={verifySending}>{verifySending ? "Sending…" : verifySent ? "Verification sent" : "Resend verification email"}</button></div></section>}
+        {currentRelatedTools.length > 0 && <section className="freshRelatedTools" aria-label={`${labels[currentPrimary] || "Current area"} tools`}><div className="freshRelatedHeader"><span>{labels[currentPrimary] || "Current area"}</span><strong>Related tools</strong><small>Extra actions sit here so the main sidebar stays clean.</small></div><div className="freshRelatedList">{currentRelatedTools.map(([key, mark, label]) => <button key={key} type="button" className={active === key ? "active" : ""} onClick={() => go(key)}><i>{mark}</i><span>{label}</span></button>)}</div></section>}
         {children}
       </main>
-
-      {moreOpen && (
-        <div className="freshMobileMore">
-          {safeExtraMobile.map(([key, mark, label]) => (
-            <button key={key} type="button" className={currentPrimary === key ? "active" : ""} onClick={() => handleMobile(key)}>
-              <i>{mark}</i>
-              <span>{label}</span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      <nav className="freshMobileNav" aria-label="Mobile navigation">
-        {safeMobileItems.map(([key, mark, label]) => (
-          <button key={key} type="button" className={currentPrimary === key || (key === "more" && moreOpen) ? "active" : ""} onClick={() => handleMobile(key)}>
-            <i>{mark}</i>
-            <span>{label}</span>
-          </button>
-        ))}
-      </nav>
+      {moreOpen && <div className="freshMobileMore">{safeExtraMobile.map(([key, mark, label]) => <button key={key} type="button" className={currentPrimary === key ? "active" : ""} onClick={() => handleMobile(key)}><i>{mark}</i><span>{label}</span></button>)}</div>}
+      <nav className="freshMobileNav" aria-label="Mobile navigation">{safeMobileItems.map(([key, mark, label]) => <button key={key} type="button" className={currentPrimary === key || (key === "more" && moreOpen) ? "active" : ""} onClick={() => handleMobile(key)}><i>{mark}</i><span>{label}</span></button>)}</nav>
     </div>
   );
 }
