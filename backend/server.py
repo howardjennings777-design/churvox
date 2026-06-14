@@ -2829,6 +2829,46 @@ async def send_invoice(invoice_id: str, request: Request, current_user: dict = D
     data["email_id"] = email_id
     return data
 
+
+
+@api_router.post("/public/invoice/{token}/mark-paid")
+async def public_mark_invoice_paid(token: str, request: Request):
+    """Allow a customer with the public invoice link to mark the invoice as paid."""
+    invoice = await db.invoices.find_one({"public_token": token})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    now = datetime.now(timezone.utc)
+    body = {}
+    try:
+        body = await request.json()
+        if not isinstance(body, dict):
+            body = {}
+    except Exception:
+        body = {}
+
+    update_data = {
+        "status": "paid",
+        "paid_at": now,
+        "updated_at": now,
+        "payment_confirmed_via": "public_invoice_link",
+        "payment_method": body.get("payment_method") or "manual",
+    }
+    if body.get("note"):
+        update_data["payment_note"] = str(body.get("note"))
+
+    await db.invoices.update_one(
+        {"_id": invoice["_id"]},
+        {"$set": update_data}
+    )
+
+    updated = await db.invoices.find_one({"_id": invoice["_id"]})
+    return {
+        "success": True,
+        "status": "paid",
+        "invoice": serialize_doc(updated),
+    }
+
 @api_router.get("/public/invoice/{token}")
 async def get_public_invoice(token: str):
     invoice = await db.invoices.find_one({"public_token": token})
