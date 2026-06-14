@@ -25,10 +25,13 @@ RETENTION_EMAIL_TEMPLATES = [
     ("upgrade_operator", "Upgrade to Operator"), ("dormant_7", "Dormant 7 days"), ("dormant_14", "Dormant 14 days"),
     ("dormant_30", "Dormant 30 days"), ("winback", "Win-back"), ("tester_welcome", "Tester welcome"), ("tester_feedback", "Tester feedback"),
 ]
+AUTO_RETENTION_INTERVAL_SECONDS = int(os.environ.get("RETENTION_EMAIL_INTERVAL_SECONDS", "21600"))
+AUTO_RETENTION_BATCH_LIMIT = int(os.environ.get("RETENTION_EMAIL_BATCH_LIMIT", "25"))
 
 
 def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectId):
     router = APIRouter(tags=["platform-owner"])
+    retention_state = {"running": False, "last_run": None, "last_result": None}
 
     def parse_dt(value):
         if not value:
@@ -271,6 +274,119 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
             await db.users.update_one({"_id": user_id}, {"$set": update})
         return update
 
+    async def collection_count(collection_name: str, business_id: str):
+        try:
+            return await db[collection_name].count_documents({"business_id": {"$in": [business_id, object_id_or_none(business_id)]}})
+        except Exception:
+            try:
+                return await db[collection_name].count_documents({"business_id": business_id})
+            except Exception:
+                return 0
+
+    async def already_sent(to: str, template: str):
+        try:
+            return bool(await db.lifecycle_emails.find_one({"to": to, "template": template, "actor": {"$in": ["auto_retention", "retention_worker"]}}))
+        except Exception:
+            return True
+
+    async def choose_auto_template(user: Dict[str, Any]):
+        if is_internal_record(user) or user.get("email_opt_out") or user.get("retention_email_opt_out"):
+            return None
+        to = email_of(user)
+        if not to:
+            return None
+        now = datetime.now(timezone.utc)
+        created = parse_dt(user.get("created_at") or user.get("registered_at")) or now
+        last = parse_dt(user.get("last_active") or user.get("last_seen") or user.get("last_login") or user.get("updated_at") or user.get("created_at")) or created
+        age_days = max(0, (now - created).days)
+        inactive_days = max(0, (now - last).days)
+        status = str(user.get("subscription_status") or "").lower()
+        business_id = str(user.get("business_id") or user.get("_id") or user.get("id") or "")
+        clients = await collection_count("clients", business_id) if business_id else 0
+        jobs = await collection_count("jobs", business_id) if business_id else 0
+        invoices = await collection_count("invoices", business_id) if business_id else 0
+        if is_free_tester(user) and age_days >= 7 and not await already_sent(to, "tester_feedback"):
+            return "tester_feedback"
+        if status in {"past_due", "unpaid", "incomplete", "incomplete_expired"} and not await already_sent(to, "payment_failed"):
+            return "payment_failed"
+        if status in {"payment_required", "canceled", "cancelled"} and not await already_sent(to, "payment_required"):
+            return "payment_required"
+        trial_end = parse_dt(user.get("trial_ends_at") or user.get("trial_end"))
+        if status == "trialing" and trial_end:
+            hours_left = (trial_end - now).total_seconds() / 3600
+            if 0 < hours_left <= 36 and not await already_sent(to, "trial_ending_1"):
+                return "trial_ending_1"
+            if 36 < hours_left <= 96 and not await already_sent(to, "trial_ending_3"):
+                return "trial_ending_3"
+            if 96 < hours_left <= 192 and not await already_sent(to, "trial_ending_7"):
+                return "trial_ending_7"
+            if age_days >= 3 and not await already_sent(to, "trial_checkin"):
+                return "trial_checkin"
+        if not checkout_verified(user):
+            if age_days >= 1 and not await already_sent(to, "need_help_setup"):
+                return "need_help_setup"
+        if clients == 0 and age_days >= 1 and not await already_sent(to, "first_client_nudge"):
+            return "first_client_nudge"
+        if clients > 0 and jobs == 0 and age_days >= 2 and not await already_sent(to, "first_job_nudge"):
+            return "first_job_nudge"
+        if jobs > 0 and invoices == 0 and age_days >= 3 and not await already_sent(to, "first_invoice_nudge"):
+            return "first_invoice_nudge"
+        if inactive_days >= 45 and not await already_sent(to, "winback"):
+            return "winback"
+        if inactive_days >= 30 and not await already_sent(to, "dormant_30"):
+            return "dormant_30"
+        if inactive_days >= 14 and not await already_sent(to, "dormant_14"):
+            return "dormant_14"
+        if inactive_days >= 7 and not await already_sent(to, "dormant_7"):
+            return "dormant_7"
+        if is_paid_user(user) and not await already_sent(to, "paid_welcome"):
+            return "paid_welcome"
+        return None
+
+    async def run_auto_retention(force: bool = False, limit: int = AUTO_RETENTION_BATCH_LIMIT):
+        if os.environ.get("RETENTION_EMAILS_ENABLED", "true").lower() in {"0", "false", "no", "off"}:
+            return {"success": True, "enabled": False, "sent": 0, "checked": 0, "message": "Retention emails disabled"}
+        try:
+            from email_provider import get_email_provider
+            provider = get_email_provider()
+            if hasattr(provider, "is_configured") and not provider.is_configured():
+                return {"success": True, "enabled": False, "sent": 0, "checked": 0, "message": "Postmark not configured"}
+        except Exception as exc:
+            return {"success": True, "enabled": False, "sent": 0, "checked": 0, "message": str(exc)}
+        now = datetime.now(timezone.utc)
+        if retention_state["running"]:
+            return {"success": True, "enabled": True, "sent": 0, "checked": 0, "message": "Retention already running"}
+        if not force and retention_state["last_run"] and (now - retention_state["last_run"]).total_seconds() < AUTO_RETENTION_INTERVAL_SECONDS:
+            return retention_state["last_result"] or {"success": True, "enabled": True, "sent": 0, "checked": 0, "message": "Not due yet"}
+        retention_state["running"] = True
+        sent, checked, failures = [], 0, []
+        try:
+            cursor = db.users.find({"email": {"$exists": True, "$ne": ""}}).sort("updated_at", -1).limit(500)
+            async for raw_user in cursor:
+                if len(sent) >= limit:
+                    break
+                checked += 1
+                user = dict(raw_user)
+                template = await choose_auto_template(user)
+                if not template:
+                    continue
+                result = await send_lifecycle_email(user, template, actor="auto_retention")
+                if result.get("email_sent"):
+                    sent.append({"email": email_of(user), "template": template})
+                else:
+                    failures.append({"email": email_of(user), "template": template, "error": result.get("error")})
+            retention_state["last_run"] = now
+            retention_state["last_result"] = {"success": True, "enabled": True, "sent": len(sent), "checked": checked, "items": sent, "failures": failures[:10], "next_run_after_seconds": AUTO_RETENTION_INTERVAL_SECONDS}
+            return retention_state["last_result"]
+        finally:
+            retention_state["running"] = False
+
+    async def maybe_run_auto_retention():
+        try:
+            return await run_auto_retention(force=False)
+        except Exception as exc:
+            return {"success": False, "error": str(exc)}
+
     @router.get("/auth/me")
     async def hq_safe_auth_me(request: Request):
         user = await get_current_user(request)
@@ -353,6 +469,7 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
                 await db.users.update_one({"_id": object_id_or_none(user.get("id"))}, {"$set": {"last_active": now, "last_seen_path": doc["path"]}})
         except Exception:
             pass
+        await maybe_run_auto_retention()
         return {"ok": True}
 
     async def remove_user_and_workspace(identifier: str, confirm: str):
@@ -459,9 +576,20 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
         user = await find_user(payload.get("identifier") or payload.get("email") or payload.get("user_id"))
         return await send_lifecycle_email(user, str(payload.get("template") or "welcome"), actor=owner.get("email"))
 
+    @router.post("/admin/owner/run-retention-emails")
+    async def owner_run_retention_emails(request: Request, payload: Dict[str, Any] = Body(default={})):
+        await require_owner(request)
+        return await run_auto_retention(force=True, limit=max(1, min(int(payload.get("limit") or AUTO_RETENTION_BATCH_LIMIT), 100)))
+
+    @router.get("/admin/owner/retention-email-status")
+    async def owner_retention_email_status(request: Request):
+        await require_owner(request)
+        return {"success": True, "state": safe_value(retention_state), "interval_seconds": AUTO_RETENTION_INTERVAL_SECONDS, "batch_limit": AUTO_RETENTION_BATCH_LIMIT, "templates": [key for key, _ in RETENTION_EMAIL_TEMPLATES]}
+
     @router.get("/admin/owner-overview")
     async def owner_overview(request: Request):
         await require_owner(request)
+        await maybe_run_auto_retention()
         now = datetime.now(timezone.utc)
         today = now.replace(hour=0, minute=0, second=0, microsecond=0)
         active_cutoff = now - timedelta(minutes=15)
@@ -521,7 +649,7 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
             events.append({"kind": "user", "label": "User", "title": user.get("name") or user.get("email") or "User", "meta": f"{user.get('hq_record_type')} · {user.get('business_name') or plan_label(user)}", "at": user.get("created_at") or user.get("updated_at") or user.get("last_active") or ""})
         for visit in visits[:80]:
             events.append({"kind": "visit", "label": "Visitor/pageview", "title": visit.get("path") or "Page visit", "meta": visit.get("user_email") or visit.get("referrer") or visit.get("ip") or "", "at": visit.get("last_seen") or visit.get("created_at") or ""})
-        return {"ok": True, "generated_at": now.isoformat(), "hq_mode": "all_users_visible", "owner_locked_to": PLATFORM_OWNER_EMAIL, "collections_seen": sorted(list(collections)), "metrics": {"total_users": len(all_users), "customer_users": len(customer_users), "internal_users": len(internal_users), "total_businesses": len(business_users), "paid_users": len(paid_users), "trial_users": len(trial_users), "free_tester_users": len(free_testers), "active_today": len(active_today_users), "active_30d": len(active_30d_users), "active_now": len(active_now_visitors), "visitors_today": len(visitors_today), "unique_visitors_today": len(unique_today), "visitors_7d": len(visitors_7d), "unique_visitors_7d": len(unique_7d), "total_invoices": len(invoices), "total_jobs": len(jobs), "total_clients": len(clients), "total_quotes": len(quotes), "monthly_revenue_estimate": sum(PLAN_VALUE.get(plan_key(u), 0) for u in paid_users), "invoice_value_total": total_invoice_value, "invoice_value_paid": paid_invoice_value, "invoice_value_outstanding": outstanding_invoice_value, "plan_counts": plan_counts}, "lists": {"users": all_users[:1000], "all_users": all_users[:1000], "customer_users": customer_users[:1000], "internal_users": internal_users[:1000], "businesses": business_users[:1000], "paid_users": paid_users[:1000], "trial_users": trial_users[:1000], "free_testers": free_testers[:1000], "active_today": active_today_users[:1000], "active_30d": active_30d_users[:1000], "active_now": active_now_visitors[:1000], "visitors": visits[:1000], "invoices": invoices[:500], "jobs": jobs[:500], "clients": clients[:500], "quotes": quotes[:500], "events": sorted(events, key=lambda e: str(e.get("at") or ""), reverse=True)[:150]}}
+        return {"ok": True, "generated_at": now.isoformat(), "hq_mode": "all_users_visible", "owner_locked_to": PLATFORM_OWNER_EMAIL, "retention_email_state": safe_value(retention_state), "collections_seen": sorted(list(collections)), "metrics": {"total_users": len(all_users), "customer_users": len(customer_users), "internal_users": len(internal_users), "total_businesses": len(business_users), "paid_users": len(paid_users), "trial_users": len(trial_users), "free_tester_users": len(free_testers), "active_today": len(active_today_users), "active_30d": len(active_30d_users), "active_now": len(active_now_visitors), "visitors_today": len(visitors_today), "unique_visitors_today": len(unique_today), "visitors_7d": len(visitors_7d), "unique_visitors_7d": len(unique_7d), "total_invoices": len(invoices), "total_jobs": len(jobs), "total_clients": len(clients), "total_quotes": len(quotes), "monthly_revenue_estimate": sum(PLAN_VALUE.get(plan_key(u), 0) for u in paid_users), "invoice_value_total": total_invoice_value, "invoice_value_paid": paid_invoice_value, "invoice_value_outstanding": outstanding_invoice_value, "plan_counts": plan_counts}, "lists": {"users": all_users[:1000], "all_users": all_users[:1000], "customer_users": customer_users[:1000], "internal_users": internal_users[:1000], "businesses": business_users[:1000], "paid_users": paid_users[:1000], "trial_users": trial_users[:1000], "free_testers": free_testers[:1000], "active_today": active_today_users[:1000], "active_30d": active_30d_users[:1000], "active_now": active_now_visitors[:1000], "visitors": visits[:1000], "invoices": invoices[:500], "jobs": jobs[:500], "clients": clients[:500], "quotes": quotes[:500], "events": sorted(events, key=lambda e: str(e.get("at") or ""), reverse=True)[:150]}}
 
     @router.post("/admin/owner/cleanup-tests")
     async def cleanup_tests(request: Request, payload: Dict[str, Any] = Body(default={})):
