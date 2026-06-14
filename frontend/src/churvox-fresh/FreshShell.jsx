@@ -8,34 +8,60 @@ const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
 const OPEN_CLIENT_MODAL_KEY = "churvox:fresh-open-client-modal:v1";
 
 const groups = [
-  { title: "Main", items: [["smart", "BP", "Business Pulse"], ["command", "CM", "Command"], ["jobs", "JB", "Jobs"], ["dispatch", "SC", "Schedule"], ["clients", "CL", "Clients"], ["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"]] },
-  { title: "Team", items: [["team", "TM", "Team"], ["time", "TL", "Time Logs"], ["payroll", "PR", "Payroll"]] },
+  { title: "Run the business", items: [["smart", "BP", "Business Pulse"], ["command", "CM", "Command"], ["jobs", "JB", "Jobs"], ["dispatch", "SC", "Schedule"], ["clients", "CL", "Clients"], ["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"]] },
+  { title: "People", items: [["team", "TM", "Team Access"], ["time", "TL", "Time Logs"], ["payroll", "PR", "Payroll"]] },
   { title: "Money", items: [["xero", "XE", "Xero Sync"], ["payments", "PY", "Payments"], ["reports", "RP", "Reports"], ["plans", "PL", "Plans & Usage"]] },
   { title: "Operations", items: [["photos", "PH", "Photos & Proof"], ["documents", "DC", "Documents"], ["automation", "AT", "Automation"], ["settings", "SG", "Settings"]] },
   { title: "Help", items: [["setupassistant", "AI", "AI Guide"], ["security", "SE", "Security"], ["support", "SP", "Support"]] },
 ];
 
 const relatedTools = {
-  command: [["aioperator", "AO", "AI Operator"], ["planday", "PD", "Plan My Day"], ["approvals", "AP", "Approvals"], ["alerts", "AL", "Alerts"], ["audit", "AD", "Audit"]],
-  jobs: [["recurring", "RC", "Recurring Jobs"], ["services", "SV", "Services"], ["industries", "ID", "Industries"], ["templates", "TP", "Templates"], ["extras", "XT", "Extras"], ["variations", "VR", "Variations"], ["warranties", "WR", "Warranties"], ["cancellations", "CA", "Cancellations"], ["safety", "SF", "Safety"], ["quality", "QL", "Quality"], ["reworkresolver", "RW", "Rework Resolver"]],
-  dispatch: [["schedulerai", "SA", "Scheduler AI"], ["planday", "PD", "Plan My Day"], ["routes", "RT", "Routes"], ["areas", "AR", "Areas"], ["availability", "AV", "Availability"], ["gps", "GP", "GPS"]],
+  smart: [["command", "CM", "Open approvals"], ["alerts", "AL", "Alerts"], ["setup", "ST", "Business Setup"]],
+  command: [["approvals", "AP", "Approvals"], ["alerts", "AL", "Alerts"], ["audit", "AD", "Audit"], ["aioperator", "AO", "AI Operator"]],
+  jobs: [["recurring", "RC", "Recurring Jobs"], ["services", "SV", "Services"], ["templates", "TP", "Templates"], ["extras", "XT", "Extras"], ["variations", "VR", "Variations"], ["warranties", "WR", "Warranties"], ["cancellations", "CA", "Cancellations"], ["safety", "SF", "Safety"], ["quality", "QL", "Quality"], ["reworkresolver", "RW", "Rework Resolver"]],
+  dispatch: [["planday", "PD", "Plan My Day"], ["schedulerai", "SA", "Scheduler AI"], ["routes", "RT", "Routes"], ["areas", "AR", "Areas"], ["availability", "AV", "Availability"], ["gps", "GP", "GPS"]],
   clients: [["customerportal", "CP", "Customer Portal"], ["customermemory", "CM", "Customer Memory"], ["messages", "MS", "Messages"], ["messagetriage", "MT", "Message Triage"], ["followups", "FU", "Follow-ups"], ["reviews", "RV", "Reviews"], ["missinginfo", "MI", "Missing Info"], ["upsellfinder", "UF", "Upsell Finder"]],
-  quotes: [["quoteai", "QA", "AI Quote Builder"], ["extras", "XT", "Extras"], ["variations", "VR", "Variations"], ["templates", "TP", "Templates"]],
-  invoices: [["invoicecheck", "IC", "Invoice Checker"], ["creditnotes", "CN", "Credit Notes"], ["paymentpromise", "PP", "Payment Promise"]],
-  team: [["roles", "RL", "Roles"], ["subcontractors", "SB", "Subcontractors"], ["availability", "AV", "Availability"], ["worker", "WK", "Worker App"], ["workerbrief", "WB", "Worker Brief"], ["workerperformance", "WP", "Worker Performance"]],
-  time: [["availability", "AV", "Availability"], ["gps", "GP", "GPS"], ["workerperformance", "WP", "Worker Performance"]],
-  payroll: [["team", "TM", "Team"], ["time", "TL", "Time Logs"], ["roles", "RL", "Roles"]],
-  xero: [["integrations", "IN", "Other Integrations"], ["billing", "BL", "Billing"], ["aiusage", "AU", "AI Usage"]],
-  payments: [["paymentpromise", "PP", "Payment Promise"], ["invoices", "IV", "Invoices"], ["billing", "BL", "Billing"]],
-  reports: [["profit", "PF", "Profit"], ["profitguard", "PG", "Profit Guard"], ["expenses", "EX", "Expenses"], ["cashflowai", "CF", "Cashflow AI"], ["businesshealth", "BH", "Business Health"], ["pricelearner", "PR", "Price Learner"], ["aiusage", "AU", "AI Usage"]],
+  quotes: [["quoteai", "QA", "AI Quote Builder"], ["templates", "TP", "Templates"], ["extras", "XT", "Extras"], ["variations", "VR", "Variations"]],
+  invoices: [["invoicecheck", "IC", "Invoice Checker"], ["creditnotes", "CN", "Credit Notes"], ["paymentpromise", "PP", "Payment Promise"], ["xero", "XE", "Xero Sync"]],
+  team: [["worker", "WK", "Worker App"], ["time", "TL", "Time Logs"], ["payroll", "PR", "Payroll"], ["roles", "RL", "Roles"], ["subcontractors", "SB", "Subcontractors"], ["availability", "AV", "Availability"], ["workerbrief", "WB", "Worker Brief"], ["workerperformance", "WP", "Worker Performance"]],
+  time: [["team", "TM", "Team Access"], ["payroll", "PR", "Payroll"], ["workerperformance", "WP", "Worker Performance"], ["gps", "GP", "GPS"]],
+  payroll: [["team", "TM", "Team Access"], ["time", "TL", "Time Logs"], ["roles", "RL", "Roles"]],
+  xero: [["invoices", "IV", "Invoices"], ["integrations", "IN", "Other Integrations"], ["billing", "BL", "Billing"]],
+  payments: [["invoices", "IV", "Invoices"], ["paymentpromise", "PP", "Payment Promise"], ["billing", "BL", "Billing"]],
+  reports: [["profit", "PF", "Profit"], ["expenses", "EX", "Expenses"], ["cashflowai", "CF", "Cashflow AI"], ["businesshealth", "BH", "Business Health"], ["aiusage", "AU", "AI Usage"]],
   plans: [["billing", "BL", "Billing"], ["aiusage", "AU", "AI Usage"]],
-  photos: [["photoproof", "PP", "Photo Proof"]],
+  photos: [["photoproof", "PP", "Photo Proof"], ["jobs", "JB", "Jobs"]],
   documents: [["contracts", "CT", "Contracts"], ["assets", "AS", "Assets"], ["inventory", "IV", "Inventory"], ["materialsai", "MA", "Materials AI"]],
-  automation: [["approvals", "AP", "Approvals"], ["alerts", "AL", "Alerts"], ["audit", "AD", "Audit"], ["quality", "QL", "Quality"]],
+  automation: [["command", "CM", "Command"], ["approvals", "AP", "Approvals"], ["alerts", "AL", "Alerts"], ["audit", "AD", "Audit"]],
   settings: [["setup", "ST", "Business Setup"], ["onboarding", "OB", "Onboarding"], ["imports", "IM", "Imports"], ["exports", "EX", "Exports"]],
-  setupassistant: [["setup", "ST", "Business Setup"], ["onboarding", "OB", "Onboarding"], ["askchurvox", "AC", "Ask Churvox"], ["globalactions", "GA", "Global Actions"]],
+  setupassistant: [["setup", "ST", "Business Setup"], ["onboarding", "OB", "Onboarding"], ["askchurvox", "AC", "Ask Churvox"]],
   security: [["trustcenter", "TC", "Trust Center"], ["audit", "AD", "Audit"]],
   support: [["helpdesk", "HD", "Help Desk"], ["feedback", "FB", "Feedback"]],
+};
+
+const purpose = {
+  smart: "Business overview: today, cash, crew gaps and quick links.",
+  command: "Decision desk: approve, decline or edit prepared admin actions.",
+  jobs: "Create, assign and complete work.",
+  dispatch: "Plan the day and move jobs into the right slots.",
+  clients: "Customer records, history, contact details and notes.",
+  quotes: "Price work, send quotes and convert accepted work into jobs.",
+  invoices: "Draft, send, track and follow up money owed.",
+  team: "People, invites, roles and worker app access.",
+  time: "Worker hours and job time logs.",
+  payroll: "Pay period workspace from approved time, no tax filing or bank files.",
+  xero: "Owner-approved draft invoice sync only.",
+  payments: "Payment status, billing links and payment follow-up tools.",
+  reports: "Business reporting, cashflow and performance.",
+  plans: "Plan, trial, usage and add-ons.",
+  photos: "Job photos, proof and completion evidence.",
+  documents: "Files, contracts, assets and job paperwork.",
+  automation: "Rules and alerts that prepare work for approval.",
+  settings: "Business details, branding, billing country and setup.",
+  setupassistant: "Guided setup for new owners.",
+  security: "Security, privacy and trust information.",
+  support: "Contact Churvox support.",
+  default: "Extra tool connected to the current area.",
 };
 
 const mobileItems = [["smart", "BP", "Pulse"], ["jobs", "JB", "Jobs"], ["dispatch", "SC", "Schedule"], ["command", "CM", "Command"], ["invoices", "IV", "Invoices"], ["more", "••", "More"]];
@@ -53,12 +79,7 @@ function resetFreshScrollTop() {
     try { document.body.scrollTop = 0; } catch {}
     try { document.scrollingElement.scrollTop = 0; } catch {}
     [".freshMain", ".freshPageMount", ".freshApp", "main"].forEach((selector) => {
-      try {
-        document.querySelectorAll(selector).forEach((el) => {
-          if (el && typeof el.scrollTo === "function") el.scrollTo({ top: 0, left: 0, behavior: "auto" });
-          if (el) el.scrollTop = 0;
-        });
-      } catch {}
+      try { document.querySelectorAll(selector).forEach((el) => { if (el && typeof el.scrollTo === "function") el.scrollTo({ top: 0, left: 0, behavior: "auto" }); if (el) el.scrollTop = 0; }); } catch {}
     });
   };
   top();
@@ -91,6 +112,8 @@ export default function FreshShell({ active, onChange, children }) {
   const currentPrimary = parentByKey[active] || active;
   const currentRelatedTools = React.useMemo(() => uniqueItems(stripHiddenItems(relatedTools[currentPrimary] || [], guideComplete)), [currentPrimary, guideComplete]);
   const emailNeedsVerification = auth?.user && auth.user.email_verified === false;
+  const currentLabel = labels[active] || labels[currentPrimary] || "Churvox";
+  const currentPurpose = purpose[active] || purpose[currentPrimary] || purpose.default;
 
   async function handleLogout() { try { if (auth?.logout) await auth.logout(); } finally { try { window.localStorage.removeItem("token"); window.localStorage.removeItem("owner_portal_session"); window.localStorage.removeItem("platform_owner_email"); } catch {} window.location.href = "/login"; } }
   function go(key) { if (key === "more") return; if (guideComplete && key === "setupassistant") return; setMoreOpen(false); resetFreshScrollTop(); onChange(key); }
@@ -107,7 +130,7 @@ export default function FreshShell({ active, onChange, children }) {
         <nav className="freshNav">{safeGroups.map((group) => <section className="freshNavGroup" key={group.title}><p>{group.title}</p>{group.items.map(([key, mark, label]) => <button key={key} type="button" className={currentPrimary === key ? "active" : ""} onClick={() => go(key)}><i>{mark}</i><span>{label}</span></button>)}</section>)}</nav>
       </aside>
       <main className="freshMain">
-        <div className="freshTopbar"><div><span>Current area</span><strong>{labels[active] || labels[currentPrimary] || "Churvox"}</strong></div><FreshTopStatus onNavigate={go} /><FreshSearch onNavigate={go} /><div className="freshTopActions">{!guideComplete ? <button type="button" onClick={() => go("setupassistant")}>AI Guide</button> : null}<button type="button" onClick={() => go("command")}>Command</button><button type="button" onClick={() => openRealCreate("/jobs/new")}>New job</button><button type="button" onClick={() => openRealCreate("/quotes/new")}>New quote</button><button type="button" onClick={openClientPopup}>Add client</button><button className="freshLogoutTop" type="button" onClick={handleLogout}>Log out</button></div></div>
+        <div className="freshTopbar"><div><span>Current area</span><strong>{currentLabel}</strong><small>{currentPurpose}</small></div><FreshTopStatus onNavigate={go} /><FreshSearch onNavigate={go} /><div className="freshTopActions">{!guideComplete ? <button type="button" onClick={() => go("setupassistant")}>AI Guide</button> : null}<button type="button" onClick={() => go("command")}>Command</button><button type="button" onClick={() => openRealCreate("/jobs/new")}>New job</button><button type="button" onClick={() => openRealCreate("/quotes/new")}>New quote</button><button type="button" onClick={openClientPopup}>Add client</button><button className="freshLogoutTop" type="button" onClick={handleLogout}>Log out</button></div></div>
         {emailNeedsVerification && <section className="freshCard freshItem need" style={{ marginBottom: 14 }}><b>Verify your email to keep your Churvox account secure</b><span>We have sent a verification link to {auth.user.email}. You can keep setting up, but please verify before sending customer emails.</span><div className="freshActions" style={{ maxWidth: 280 }}><button className="freshPrimary" type="button" onClick={resendVerification} disabled={verifySending}>{verifySending ? "Sending…" : verifySent ? "Verification sent" : "Resend verification email"}</button></div></section>}
         {currentRelatedTools.length > 0 && <section className="freshRelatedTools" aria-label={`${labels[currentPrimary] || "Current area"} tools`}><div className="freshRelatedHeader"><span>{labels[currentPrimary] || "Current area"}</span><strong>Related tools</strong><small>Extra actions sit here so the main sidebar stays clean.</small></div><div className="freshRelatedList">{currentRelatedTools.map(([key, mark, label]) => <button key={key} type="button" className={active === key ? "active" : ""} onClick={() => go(key)}><i>{mark}</i><span>{label}</span></button>)}</div></section>}
         {children}
