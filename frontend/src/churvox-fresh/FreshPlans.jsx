@@ -19,14 +19,6 @@ const plans = [
 const growthPackPrices = { NZ: 99, AU: 99, US: 79, UK: 69 };
 const accountingSyncPrices = { NZ: 39, AU: 39, US: 29, UK: 25 };
 const backendToUiPlan = { solo: "start", team: "crew", pro: "operator", enterprise: "command", start: "start", crew: "crew", operator: "operator", command: "command", none: "none" };
-const checkoutEndpoints = [
-  "/billing/create-checkout-session",
-  "/billing/checkout",
-  "/stripe/create-checkout-session",
-  "/stripe/checkout",
-  "/payments/create-checkout-session",
-  "/checkout/create-session",
-];
 function unwrap(result) { return result?.data ?? result; }
 function planByUiId(id) { return plans.find((plan) => plan.id === id) || plans[2]; }
 function uiPlanFromBackend(value) { return backendToUiPlan[String(value || "none").toLowerCase()] || "none"; }
@@ -37,41 +29,10 @@ function money(value, regionCode, decimals = 0) { const r = regions[regionCode] 
 function realPriceLabel(value, regionCode) { const r = regions[regionCode] || regions.NZ; if (!r.taxRate) return `${money(value, regionCode, 2)}/month ${r.taxIncluded}`; return `${money(realTotal(value, regionCode), regionCode, 2)}/month ${r.taxIncluded}`; }
 function taxBreakdown(value, regionCode) { const r = regions[regionCode] || regions.NZ; if (!r.taxRate) return r.taxIncluded; return `${money(value, regionCode)}/month ${r.tax} = ${money(realTotal(value, regionCode), regionCode, 2)}/month ${r.taxIncluded}`; }
 function planRequired() { try { const p = new URLSearchParams(window.location.search || ""); return p.get("must_choose_plan") === "1" || window.localStorage.getItem(PLAN_REQUIRED_KEY) === "true"; } catch { return false; } }
-function successUrl(planId, regionCode) { const url = new URL(window.location.origin + "/billing/return"); url.searchParams.set("checkout", "success"); url.searchParams.set("plan", planId); url.searchParams.set("country", regionCode); return url.toString(); }
-function cancelUrl(planId, regionCode) { const url = new URL(window.location.origin + "/dashboard"); url.hash = "plans"; url.searchParams.set("checkout", "cancelled"); url.searchParams.set("plan", planId); url.searchParams.set("country", regionCode); return url.toString(); }
+function backendMessage(payload, fallback = "Stripe checkout could not start.") { if (!payload) return fallback; if (typeof payload === "string") return payload.slice(0, 240) || fallback; return payload.error || payload.detail || payload.message || payload?.data?.error || payload?.data?.detail || payload?.data?.message || fallback; }
 function authHeaders() { try { const token = window.localStorage.getItem("token"); return token ? { Authorization: `Bearer ${token}` } : {}; } catch { return {}; } }
-function apiUrl(endpoint) { return `${API_BASE}/api${endpoint}`; }
-function extractCheckoutUrl(payload) {
-  if (!payload) return "";
-  if (typeof payload === "string") return /^https?:\/\//i.test(payload) ? payload : "";
-  const candidates = [payload.url, payload.checkout_url, payload.checkoutUrl, payload.session_url, payload.sessionUrl, payload.redirect_url, payload.redirectUrl, payload.stripe_url, payload.stripeUrl, payload.location, payload?.data?.url, payload?.data?.checkout_url, payload?.data?.checkoutUrl, payload?.data?.session_url, payload?.data?.sessionUrl, payload?.session?.url, payload?.session?.checkout_url];
-  return candidates.find((value) => typeof value === "string" && /^https?:\/\//i.test(value)) || "";
-}
-function backendMessage(payload, fallback = "Stripe checkout could not start.") {
-  if (!payload) return fallback;
-  if (typeof payload === "string") return payload.slice(0, 240) || fallback;
-  return payload.error || payload.detail || payload.message || payload?.data?.error || payload?.data?.detail || payload?.data?.message || fallback;
-}
-async function readResponse(response) {
-  const location = response.headers?.get?.("location");
-  if (location && /^https?:\/\//i.test(location)) return { url: location };
-  const text = await response.text();
-  if (!text) return null;
-  try { return JSON.parse(text); } catch { return text; }
-}
-async function createCheckoutSession(endpoint, payload) {
-  const response = await fetch(apiUrl(endpoint), {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
-    body: JSON.stringify(payload),
-  });
-  const body = await readResponse(response);
-  const checkoutUrl = extractCheckoutUrl(body);
-  if (checkoutUrl) return checkoutUrl;
-  if (!response.ok || body?.success === false || body?.ok === false) throw new Error(`${endpoint}: ${backendMessage(body, `Request failed (${response.status})`)}`);
-  throw new Error(`${endpoint}: no checkout URL returned`);
-}
+function extractCheckoutUrl(payload) { return payload?.url || payload?.checkout_url || payload?.checkoutUrl || payload?.data?.url || payload?.data?.checkout_url || ""; }
+async function readCheckoutResponse(response) { const text = await response.text(); if (!text) return null; try { return JSON.parse(text); } catch { return text; } }
 export default function FreshPlans({ onNavigate }) {
   const { get } = useApi();
   const [currentPlan, setCurrentPlan] = React.useState("none");
@@ -92,33 +53,19 @@ export default function FreshPlans({ onNavigate }) {
   async function startCheckout() {
     setCheckoutLoading(true);
     setError("");
-    const basePayload = {
-      plan: selected.id,
-      ui_plan: selected.id,
-      plan_name: selected.name,
-      legacy_plan: selected.backendPlan,
-      backend_plan: selected.backendPlan,
-      country: selectedRegion,
-      region: selectedRegion,
-      currency: region.currency,
-      success_url: successUrl(selected.id, selectedRegion),
-      cancel_url: cancelUrl(selected.id, selectedRegion),
-    };
-    const payloads = [basePayload, { ...basePayload, plan: selected.backendPlan }, { plan: selected.id, country: selectedRegion }, { plan: selected.backendPlan, country: selectedRegion }];
-    const errors = [];
     try {
-      for (const endpoint of checkoutEndpoints) {
-        for (const payload of payloads) {
-          try {
-            const checkoutUrl = await createCheckoutSession(endpoint, payload);
-            window.location.assign(checkoutUrl);
-            return;
-          } catch (err) {
-            errors.push(err?.message || String(err));
-          }
-        }
+      const response = await fetch(`${API_BASE}/api/billing/create-checkout-session`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ plan: selected.backendPlan, country: selectedRegion }),
+      });
+      const payload = await readCheckoutResponse(response);
+      const checkoutUrl = extractCheckoutUrl(payload);
+      if (!response.ok || !checkoutUrl) {
+        throw new Error(backendMessage(payload, `Stripe checkout could not start (${response.status}).`));
       }
-      throw new Error(errors.find(Boolean) || "Stripe checkout could not start. Please contact support.");
+      window.location.href = checkoutUrl;
     } catch (err) {
       setError(err?.message || "Stripe checkout could not start. Please contact support.");
     } finally {
