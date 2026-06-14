@@ -3,6 +3,8 @@ from pathlib import Path
 import runpy
 import sys
 from datetime import datetime, timezone
+from bson import ObjectId
+from fastapi.responses import JSONResponse
 
 backend_dir = Path(__file__).resolve().parents[1]
 legacy_path = backend_dir / 'server.py'
@@ -56,8 +58,55 @@ def _safe_money(value):
         return None
 
 
+def _json_safe(value):
+    if isinstance(value, dict):
+        return {k: _json_safe(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_json_safe(v) for v in value]
+    if isinstance(value, ObjectId):
+        return str(value)
+    if isinstance(value, datetime):
+        return value.isoformat()
+    return value
+
+
 def _doc_id(doc):
     return _safe_text(doc.get('id') or doc.get('_id') or doc.get('invoice_id') or doc.get('job_id'))
+
+
+def _job_id_filter(job_id):
+    clauses = [{'id': str(job_id)}, {'job_id': str(job_id)}]
+    try:
+        clauses.append({'_id': ObjectId(str(job_id))})
+    except Exception:
+        pass
+    return {'$or': clauses}
+
+
+def _user_identifiers(user):
+    values = set()
+    for key in ['id', '_id', 'email', 'name', 'full_name']:
+        value = _safe_text((user or {}).get(key))
+        if value:
+            values.add(value.lower())
+    return values
+
+
+def _job_assigned_to_user(job, user):
+    allowed = _user_identifiers(user)
+    assigned_values = []
+    for key in ['assigned_worker_id', 'worker_id', 'assigned_to', 'assigned_worker_email', 'worker_email', 'worker_name']:
+        value = _safe_text((job or {}).get(key))
+        if value:
+            assigned_values.append(value.lower())
+    workers = (job or {}).get('workers') or (job or {}).get('assigned_workers') or []
+    if isinstance(workers, list):
+        for worker in workers:
+            if isinstance(worker, dict):
+                assigned_values.extend(_safe_text(worker.get(k)).lower() for k in ['id', '_id', 'email', 'name'] if _safe_text(worker.get(k)))
+            elif _safe_text(worker):
+                assigned_values.append(_safe_text(worker).lower())
+    return bool(allowed.intersection(set(assigned_values)))
 
 
 async def _get_user_or_none(request):
@@ -65,6 +114,52 @@ async def _get_user_or_none(request):
         return await legacy.get_current_user(request)
     except Exception:
         return None
+
+
+async def _secure_complete_job(request, job_id):
+    user = await _get_user_or_none(request)
+    if not user:
+        return JSONResponse({'success': False, 'detail': 'Not authenticated'}, status_code=401)
+
+    business_id = _safe_text(user.get('business_id') or user.get('id') or user.get('_id'))
+    if not business_id:
+        return JSONResponse({'success': False, 'detail': 'User business not found'}, status_code=401)
+
+    query = {'business_id': business_id, **_job_id_filter(job_id)}
+    job = await legacy.db.jobs.find_one(query)
+    if not job:
+        return JSONResponse({'success': False, 'detail': 'Job not found'}, status_code=404)
+
+    role = _safe_text(user.get('role')).lower()
+    if role in {'worker', 'staff', 'employee', 'subcontractor', 'contractor'} and not _job_assigned_to_user(job, user):
+        return JSONResponse({'success': False, 'detail': 'Job not found'}, status_code=404)
+
+    now = datetime.now(timezone.utc)
+    update = {
+        'status': 'completed',
+        'job_status': 'completed',
+        'workflow_status': 'completed',
+        'completed': True,
+        'completed_at': now,
+        'updated_at': now,
+        'completed_by': _safe_text(user.get('id') or user.get('_id') or user.get('email')),
+    }
+    result = await legacy.db.jobs.update_one(query, {'$set': update})
+    if result.matched_count == 0:
+        return JSONResponse({'success': False, 'detail': 'Job not found'}, status_code=404)
+
+    job.update(update)
+    return JSONResponse({'success': True, 'message': 'Job completed', 'job': _json_safe(job)})
+
+
+@app.middleware('http')
+async def _secure_job_completion_middleware(request, call_next):
+    path = request.url.path.rstrip('/')
+    if request.method.upper() == 'POST' and path.startswith('/api/jobs/') and path.endswith('/complete'):
+        parts = path.split('/')
+        if len(parts) >= 5:
+            return await _secure_complete_job(request, parts[-2])
+    return await call_next(request)
 
 
 async def _business_query(request):
