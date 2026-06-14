@@ -1224,3 +1224,17 @@ body:has(.cxRoot) [class*="Approval"]:not(.cxWrap):not(.cxBoxes):not(.cxBox):not
   color: #0b111a !important;
   -webkit-text-fill-color: #0b111a !important;
 }
+
+/* Launch polish: keep white secondary hero buttons readable */
+.freshApp .freshMain [class*="hero" i] [class*="action" i] > *:nth-child(2),
+.freshApp .freshMain [class*="Hero" i] [class*="Action" i] > *:nth-child(2) {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  text-shadow: none !important;
+}
+
+.freshApp .freshMain [class*="hero" i] [class*="action" i] > *:nth-child(2):hover,
+.freshApp .freshMain [class*="Hero" i] [class*="Action" i] > *:nth-child(2):hover {
+  color: #0b111a !important;
+  -webkit-text-fill-color: #0b111a !important;
+}
