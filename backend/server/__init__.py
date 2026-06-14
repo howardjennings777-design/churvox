@@ -1,15 +1,35 @@
 from importlib.util import spec_from_file_location, module_from_spec
 from pathlib import Path
+import runpy
 import sys
 from datetime import datetime, timezone
 
-legacy_path = Path(__file__).resolve().parents[1] / 'server.py'
+backend_dir = Path(__file__).resolve().parents[1]
+legacy_path = backend_dir / 'server.py'
+
+# Render starts with: uvicorn server:app
+# Because this package is named server, this wrapper must load ../server.py.
+# Keep the backend directory first on sys.path so the legacy module's absolute
+# imports like email_provider, sms_provider and xero_routes resolve correctly.
+if str(backend_dir) not in sys.path:
+    sys.path.insert(0, str(backend_dir))
+
 spec = spec_from_file_location('churvox_legacy_server', legacy_path)
 legacy = module_from_spec(spec)
 sys.modules['churvox_legacy_server'] = legacy
 spec.loader.exec_module(legacy)
 
-app = legacy.app
+app = getattr(legacy, 'app', None)
+if app is None:
+    # Very defensive fallback: execute the file as a plain script namespace.
+    # This prevents Render from dying with a vague AttributeError if importlib
+    # loads the module but does not expose the FastAPI app for any reason.
+    legacy_namespace = runpy.run_path(str(legacy_path))
+    app = legacy_namespace.get('app')
+
+if app is None:
+    raise RuntimeError('Churvox backend boot failed: backend/server.py did not expose app')
+
 try:
     app.router.on_startup.clear()
 except Exception:
