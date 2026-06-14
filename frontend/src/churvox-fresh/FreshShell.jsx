@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import API_BASE from "../lib/apiBase";
 
 const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
+const OPEN_CLIENT_MODAL_KEY = "churvox:fresh-open-client-modal:v1";
 
 const groups = [
   { title: "Main", items: [["smart", "SH", "Smart Hub"], ["command", "CM", "Command"], ["jobs", "JB", "Jobs"], ["dispatch", "SC", "Schedule"], ["clients", "CL", "Clients"], ["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"]] },
@@ -39,9 +40,7 @@ const relatedTools = {
 
 const mobileItems = [["jobs", "JB", "Jobs"], ["dispatch", "SC", "Schedule"], ["command", "CM", "Command"], ["invoices", "IV", "Invoices"], ["team", "TM", "Team"], ["more", "••", "More"]];
 
-function guideIsComplete() {
-  try { return window.localStorage.getItem(GUIDE_COMPLETE_KEY) === "true"; } catch { return false; }
-}
+function guideIsComplete() { try { return window.localStorage.getItem(GUIDE_COMPLETE_KEY) === "true"; } catch { return false; } }
 function uniqueItems(items) { const seen = new Set(); return items.filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }); }
 function stripHiddenItems(items, guideComplete) { return items.filter(([key]) => !(guideComplete && key === "setupassistant")); }
 function cleanGroups(sourceGroups, guideComplete = false) { const seen = new Set(); return sourceGroups.map((group) => ({ ...group, items: stripHiddenItems(group.items, guideComplete).filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }) })).filter((group) => group.items.length); }
@@ -75,6 +74,7 @@ export default function FreshShell({ active, onChange, children }) {
   async function handleLogout() { try { if (auth?.logout) await auth.logout(); } finally { try { window.localStorage.removeItem("token"); window.localStorage.removeItem("owner_portal_session"); window.localStorage.removeItem("platform_owner_email"); } catch {} window.location.href = "/login"; } }
   function go(key) { if (key === "more") return; if (guideComplete && key === "setupassistant") return; setMoreOpen(false); onChange(key); }
   function openRealCreate(path) { setMoreOpen(false); window.location.href = path; }
+  function openClientPopup() { try { window.localStorage.setItem(OPEN_CLIENT_MODAL_KEY, "true"); } catch {} setMoreOpen(false); onChange("clients"); window.dispatchEvent(new CustomEvent("churvox:open-client-popup")); }
   async function resendVerification() { setVerifySending(true); try { const token = window.localStorage.getItem("token") || ""; await fetch(`${API_BASE}/api/auth/resend-verification`, { method: "POST", credentials: "include", headers: { Accept: "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) } }); setVerifySent(true); } catch { setVerifySent(false); } finally { setVerifySending(false); } }
   function handleMobile(key) { if (key === "more") { setMoreOpen((value) => !value); return; } go(key); }
 
@@ -86,7 +86,7 @@ export default function FreshShell({ active, onChange, children }) {
         <nav className="freshNav">{safeGroups.map((group) => <section className="freshNavGroup" key={group.title}><p>{group.title}</p>{group.items.map(([key, mark, label]) => <button key={key} type="button" className={currentPrimary === key ? "active" : ""} onClick={() => go(key)}><i>{mark}</i><span>{label}</span></button>)}</section>)}</nav>
       </aside>
       <main className="freshMain">
-        <div className="freshTopbar"><div><span>Current area</span><strong>{labels[active] || labels[currentPrimary] || "Churvox"}</strong></div><FreshTopStatus onNavigate={go} /><FreshSearch onNavigate={go} /><div className="freshTopActions">{!guideComplete ? <button type="button" onClick={() => go("setupassistant")}>AI Guide</button> : null}<button type="button" onClick={() => go("command")}>Command</button><button type="button" onClick={() => openRealCreate("/jobs/new")}>New job</button><button type="button" onClick={() => openRealCreate("/quotes/new")}>New quote</button><button type="button" onClick={() => openRealCreate("/clients/new")}>Add client</button><button className="freshLogoutTop" type="button" onClick={handleLogout}>Log out</button></div></div>
+        <div className="freshTopbar"><div><span>Current area</span><strong>{labels[active] || labels[currentPrimary] || "Churvox"}</strong></div><FreshTopStatus onNavigate={go} /><FreshSearch onNavigate={go} /><div className="freshTopActions">{!guideComplete ? <button type="button" onClick={() => go("setupassistant")}>AI Guide</button> : null}<button type="button" onClick={() => go("command")}>Command</button><button type="button" onClick={() => openRealCreate("/jobs/new")}>New job</button><button type="button" onClick={() => openRealCreate("/quotes/new")}>New quote</button><button type="button" onClick={openClientPopup}>Add client</button><button className="freshLogoutTop" type="button" onClick={handleLogout}>Log out</button></div></div>
         {emailNeedsVerification && <section className="freshCard freshItem need" style={{ marginBottom: 14 }}><b>Verify your email to keep your Churvox account secure</b><span>We have sent a verification link to {auth.user.email}. You can keep setting up, but please verify before sending customer emails.</span><div className="freshActions" style={{ maxWidth: 280 }}><button className="freshPrimary" type="button" onClick={resendVerification} disabled={verifySending}>{verifySending ? "Sending…" : verifySent ? "Verification sent" : "Resend verification email"}</button></div></section>}
         {currentRelatedTools.length > 0 && <section className="freshRelatedTools" aria-label={`${labels[currentPrimary] || "Current area"} tools`}><div className="freshRelatedHeader"><span>{labels[currentPrimary] || "Current area"}</span><strong>Related tools</strong><small>Extra actions sit here so the main sidebar stays clean.</small></div><div className="freshRelatedList">{currentRelatedTools.map(([key, mark, label]) => <button key={key} type="button" className={active === key ? "active" : ""} onClick={() => go(key)}><i>{mark}</i><span>{label}</span></button>)}</div></section>}
         {children}
