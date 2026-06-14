@@ -1,5 +1,6 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
+import FreshTeamAddPerson from "./FreshTeamAddPerson";
 
 const filters = ["All", "Active", "Invite sent", "Paused"];
 
@@ -149,15 +150,15 @@ export default function FreshTeam({ onNavigate }) {
   return (
     <section>
       <header className="freshHero">
-        <span>Churvox fresh · Team</span>
+        <span>Team</span>
         <h1>Team</h1>
-        <p>Real worker records from your business account. Invited team members should appear here after save.</p>
+        <p>Add people, send invites, and keep your crew connected to jobs, time logs and payroll.</p>
       </header>
 
       <section className="freshCommandPulse">
         <aside className="freshCard">
           <h2>{loading && team.length === 0 ? "…" : team.filter((member) => member.status === "Active").length}</h2>
-          <p>Active workers</p>
+          <p>Active people</p>
         </aside>
         <aside className="freshCard">
           <h2>{loading && team.length === 0 ? "…" : team.filter((member) => member.status === "Invite sent").length}</h2>
@@ -200,11 +201,16 @@ export default function FreshTeam({ onNavigate }) {
 
       <section className="freshGrid">
         <aside className="freshCard">
+          <h2>Add person</h2>
+          <FreshTeamAddPerson onAdded={loadTeam} />
+        </aside>
+
+        <aside className="freshCard">
           <h2>Team list</h2>
 
           {loading && team.length === 0 ? (
             <div className="freshItem">
-              <b>Loading real team…</b>
+              <b>Loading team…</b>
               <span>Checking your business account.</span>
             </div>
           ) : visibleTeam.map((member) => (
@@ -229,7 +235,7 @@ export default function FreshTeam({ onNavigate }) {
           {!loading && visibleTeam.length === 0 ? (
             <div className="freshItem">
               <b>No team members</b>
-              <span>Invite a worker to start the team workflow.</span>
+              <span>Add a person to start the team workflow.</span>
             </div>
           ) : null}
         </aside>
@@ -246,40 +252,17 @@ export default function FreshTeam({ onNavigate }) {
                 <div><span>Current job</span><b>{selected.currentJob}</b></div>
               </div>
 
-              <label className="freshField">
-                <span>Name</span>
-                <input value={selected.name} readOnly />
-              </label>
-
-              <label className="freshField">
-                <span>Role</span>
-                <input value={selected.role} readOnly />
-              </label>
-
-              <label className="freshField">
-                <span>Email</span>
-                <input value={selected.email} readOnly />
-              </label>
-
-              <label className="freshField">
-                <span>Phone</span>
-                <input value={selected.phone} readOnly />
-              </label>
-
-              <label className="freshField">
-                <span>Availability</span>
-                <input value={selected.availability} readOnly />
-              </label>
-
-              <label className="freshField">
-                <span>Team notes</span>
-                <textarea value={selected.notes} readOnly />
-              </label>
+              <label className="freshField"><span>Name</span><input value={selected.name} readOnly /></label>
+              <label className="freshField"><span>Role</span><input value={selected.role} readOnly /></label>
+              <label className="freshField"><span>Email</span><input value={selected.email} readOnly /></label>
+              <label className="freshField"><span>Phone</span><input value={selected.phone} readOnly /></label>
+              <label className="freshField"><span>Availability</span><input value={selected.availability} readOnly /></label>
+              <label className="freshField"><span>Team notes</span><textarea value={selected.notes} readOnly /></label>
             </>
           ) : (
             <div className="freshItem">
               <b>No team member selected</b>
-              <span>Invite a worker to see their connected record.</span>
+              <span>Add a person to see their connected record.</span>
             </div>
           )}
         </section>
@@ -288,24 +271,11 @@ export default function FreshTeam({ onNavigate }) {
           <h2>Owner actions</h2>
 
           <div className="freshActions">
-            <button className="freshPrimary" type="button" onClick={loadTeam}>
-              Refresh team
-            </button>
-            <button className="freshOrange" type="button" disabled={!selected?.id || selected.status !== "Invite sent"} onClick={resendInvite}>
-              Resend invite
-            </button>
-            <button className="freshDark" type="button" disabled={!selected?.id} onClick={removeSelected}>
-              Remove worker
-            </button>
-            <button className="freshGhost" type="button" onClick={() => onNavigate?.("dispatch")}>
-              Back to Dispatch
-            </button>
-            <button className="freshGhost" type="button" onClick={() => onNavigate?.("payroll")}>
-              Open payroll
-            </button>
-            <button className="freshGhost" type="button" onClick={() => onNavigate?.("command")}>
-              Send issue to Command
-            </button>
+            <button className="freshPrimary" type="button" onClick={loadTeam}>Refresh team</button>
+            <button className="freshOrange" type="button" disabled={!selected?.id || selected.status !== "Invite sent"} onClick={resendInvite}>Resend invite</button>
+            <button className="freshDark" type="button" disabled={!selected?.id} onClick={removeSelected}>Remove person</button>
+            <button className="freshGhost" type="button" onClick={() => onNavigate?.("dispatch")}>Open Schedule</button>
+            <button className="freshGhost" type="button" onClick={() => onNavigate?.("payroll")}>Open payroll</button>
           </div>
         </aside>
       </section>
