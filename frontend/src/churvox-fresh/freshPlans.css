@@ -133,6 +133,70 @@
   font-weight: 850;
 }
 
+.freshRegionPicker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: rgba(255, 250, 240, 0.96);
+}
+
+.freshRegionPicker > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.freshRegionPicker b {
+  color: #101827;
+}
+
+.freshRegionPicker span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.freshRegionButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  justify-content: flex-end;
+}
+
+.freshRegionButtons button {
+  min-width: 82px;
+  display: grid;
+  gap: 2px;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 16px;
+  background: white;
+  padding: 10px 12px;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.07);
+}
+
+.freshRegionButtons button b {
+  color: #101827;
+  font-size: 15px;
+}
+
+.freshRegionButtons button span {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 1000;
+}
+
+.freshRegionButtons button.active {
+  border-color: rgba(249, 115, 22, 0.7);
+  background: #fff7ed;
+  box-shadow: 0 14px 34px rgba(249, 115, 22, 0.18);
+}
+
+.freshRegionButtons button.active b,
+.freshRegionButtons button.active span {
+  color: #9a3412;
+}
+
 .freshPricingCards {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -408,6 +472,9 @@
   .freshSelectedPlanTop { grid-template-columns: 1fr; }
   .freshSelectedPlanTop strong { text-align: left; }
   .freshPlanNotice.proper { align-items: flex-start; flex-direction: column; }
+  .freshRegionPicker { align-items: flex-start; flex-direction: column; }
+  .freshRegionButtons { width: 100%; justify-content: stretch; }
+  .freshRegionButtons button { flex: 1; min-width: 0; }
 }
 
 
