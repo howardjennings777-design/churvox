@@ -18,7 +18,7 @@ XERO_AUTHORIZE_URL = "https://login.xero.com/identity/connect/authorize"
 XERO_TOKEN_URL = "https://identity.xero.com/connect/token"
 XERO_CONNECTIONS_URL = "https://api.xero.com/connections"
 XERO_INVOICES_URL = "https://api.xero.com/api.xro/2.0/Invoices"
-XERO_DEFAULT_SCOPES = "offline_access accounting.transactions accounting.contacts accounting.settings payroll.timesheets payroll.employees"
+XERO_DEFAULT_SCOPES = "openid profile email offline_access accounting.transactions accounting.contacts accounting.settings"
 XERO_SALES_ACCOUNT_CODE = os.environ.get("XERO_SALES_ACCOUNT_CODE", "200").strip()
 XERO_SALES_TAX_TYPE = os.environ.get("XERO_SALES_TAX_TYPE", "OUTPUT2").strip()
 
