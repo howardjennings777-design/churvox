@@ -13,30 +13,64 @@ function removePlanRequiredFlag() {
   try { window.localStorage.removeItem(PLAN_REQUIRED_KEY); } catch {}
 }
 
+function clearStoredAuth() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("owner_portal_session");
+  localStorage.removeItem("platform_owner_email");
+}
+
+function pickToken(payload = {}) {
+  return (
+    payload?.token ||
+    payload?.access_token ||
+    payload?.auth_token ||
+    payload?.jwt ||
+    payload?.data?.token ||
+    payload?.data?.access_token ||
+    payload?.data?.auth_token ||
+    payload?.session?.token ||
+    payload?.session?.access_token ||
+    payload?.user?.token ||
+    payload?.user?.access_token ||
+    null
+  );
+}
+
+function pickUser(payload = {}) {
+  return payload?.user || payload?.data?.user || payload?.account || payload?.data || payload || {};
+}
+
+function looksLikeUser(value = {}) {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      (value.email || value.id || value._id || value.role || value.business_id || value.businessId)
+  );
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const fetchMe = useCallback(async (token) => {
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
     const response = await axios.get(`${API_BASE}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers,
       withCredentials: true,
       timeout: AUTH_TIMEOUT_MS,
     });
-    return response.data;
+    return pickUser(response.data);
   }, []);
 
   const checkAuth = useCallback(async () => {
     const token = localStorage.getItem("token");
-    if (!token) { setLoading(false); return; }
     try {
-      const me = await fetchMe(token);
+      const me = await fetchMe(token || undefined);
+      if (!looksLikeUser(me)) throw new Error("No current user returned.");
       if (me?.has_app_access) removePlanRequiredFlag();
-      setUser({ ...me, token });
+      setUser({ ...me, ...(token ? { token } : {}) });
     } catch {
-      localStorage.removeItem("token");
-      localStorage.removeItem("owner_portal_session");
-      localStorage.removeItem("platform_owner_email");
+      clearStoredAuth();
       setUser(null);
     } finally { setLoading(false); }
   }, [fetchMe]);
@@ -55,33 +89,39 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (email, password) => {
     const response = await axios.post(`${API_BASE}/api/auth/login`, { email, password }, { withCredentials: true, timeout: AUTH_TIMEOUT_MS });
-    const token = response?.data?.token || response?.data?.access_token || response?.data?.auth_token || null;
-    const fallbackUser = response?.data?.user ? response.data.user : response.data;
-    if (!token) throw new Error("No token returned from login.");
-    localStorage.setItem("token", token);
+    const token = pickToken(response.data);
+    const fallbackUser = pickUser(response.data);
+
+    if (token) localStorage.setItem("token", token);
 
     let nextUser = fallbackUser;
-    try { nextUser = await fetchMe(token); } catch {}
+    try {
+      nextUser = await fetchMe(token || undefined);
+    } catch {
+      if (!looksLikeUser(nextUser)) {
+        throw new Error("Login succeeded but Churvox could not load your account yet. Please refresh and try again.");
+      }
+    }
+
     if (nextUser?.has_app_access) removePlanRequiredFlag();
-    setUser({ ...nextUser, token });
+    setUser({ ...nextUser, ...(token ? { token } : {}) });
 
     const cleanEmail = String(email || nextUser?.email || "").toLowerCase();
-    if (cleanEmail === "hello@churvox.com" || nextUser?.is_platform_owner === true) {
+    if (cleanEmail === "hello@churvox.com" || nextUser?.is_platform_owner === true || nextUser?.is_admin === true) {
       localStorage.setItem("owner_portal_session", "true");
       localStorage.setItem("platform_owner_email", cleanEmail);
     }
-    return { ...response.data, ...nextUser, token };
+    return { ...response.data, user: nextUser, ...nextUser, ...(token ? { token } : { cookieSession: true }) };
   }, [fetchMe]);
 
   const register = useCallback(async (userData) => {
     const response = await axios.post(`${API_BASE}/api/auth/register`, userData, { withCredentials: true, timeout: AUTH_TIMEOUT_MS });
-    const token = response?.data?.token || response?.data?.access_token || response?.data?.auth_token || null;
-    const restData = response?.data?.user ? response.data.user : response.data;
-    if (!token) throw new Error("No token returned from register.");
-    localStorage.setItem("token", token);
+    const token = pickToken(response.data);
+    const restData = pickUser(response.data);
+    if (token) localStorage.setItem("token", token);
     localStorage.setItem(PLAN_REQUIRED_KEY, "true");
-    setUser({ ...restData, token, plan: "none", has_app_access: false, billing_lock_reason: "choose_plan_in_stripe" });
-    return { ...response.data, token };
+    setUser({ ...restData, ...(token ? { token } : {}), plan: "none", has_app_access: false, billing_lock_reason: "choose_plan_in_stripe" });
+    return { ...response.data, user: restData, ...(token ? { token } : { cookieSession: true }) };
   }, []);
 
   const logout = useCallback(async () => {
@@ -89,9 +129,7 @@ export function AuthProvider({ children }) {
       const token = localStorage.getItem("token");
       await axios.post(`${API_BASE}/api/auth/logout`, {}, { headers: token ? { Authorization: `Bearer ${token}` } : {}, withCredentials: true, timeout: AUTH_TIMEOUT_MS });
     } catch {}
-    localStorage.removeItem("token");
-    localStorage.removeItem("owner_portal_session");
-    localStorage.removeItem("platform_owner_email");
+    clearStoredAuth();
     localStorage.removeItem(PLAN_REQUIRED_KEY);
     setUser(null);
   }, []);
