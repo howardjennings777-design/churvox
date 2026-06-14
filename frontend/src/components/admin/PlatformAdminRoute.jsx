@@ -4,7 +4,6 @@ import { useAuth } from "@/context/AuthContext";
 
 const PLATFORM_OWNER_EMAILS = [
   "hello@churvox.com",
-  "howardjennings77@gmail.com",
 ];
 
 export default function PlatformAdminRoute({ children }) {
