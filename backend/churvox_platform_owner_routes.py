@@ -1,19 +1,19 @@
-# CHURVOX_PLATFORM_OWNER_REAL_DATA_20260611
+# CHURVOX_HQ_REAL_CUSTOMER_DATA_ONLY_20260614
 
 from __future__ import annotations
 
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Request, HTTPException, Body
-from typing import Any, Dict
+from typing import Any, Dict, Iterable
 import hashlib
 
-PROTECTED_EMAILS = {
+OWNER_EMAILS = {
     "hello@churvox.com",
     "howardjennings77@gmail.com",
     "howardjennings77@outlook.com",
 }
 
-TEST_MARKERS = [
+INTERNAL_MARKERS = [
     "test",
     "demo",
     "sample",
@@ -68,7 +68,7 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
             return {
                 k: safe_value(v)
                 for k, v in value.items()
-                if k not in {"password_hash", "password", "reset_token", "invite_token"}
+                if k not in {"password_hash", "password", "reset_token", "invite_token", "verification_token"}
             }
         return value
 
@@ -79,10 +79,8 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
         if "_id" in out:
             out["id"] = str(out["_id"])
             out["_id"] = str(out["_id"])
-        out.pop("password_hash", None)
-        out.pop("password", None)
-        out.pop("reset_token", None)
-        out.pop("invite_token", None)
+        for key in ["password_hash", "password", "reset_token", "invite_token", "verification_token"]:
+            out.pop(key, None)
         return safe_value(out)
 
     async def optional_user(request: Request):
@@ -97,11 +95,12 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
             raise HTTPException(status_code=403, detail="Platform owner access required")
         return user
 
-    def text_of(doc: Dict[str, Any] | None) -> str:
+    def doc_text(doc: Dict[str, Any] | None) -> str:
         if not doc:
             return ""
         fields = [
             doc.get("email"),
+            doc.get("user_email"),
             doc.get("name"),
             doc.get("full_name"),
             doc.get("business_name"),
@@ -111,16 +110,54 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
             doc.get("client_name"),
             doc.get("phone"),
             doc.get("address"),
+            doc.get("path"),
+            doc.get("title"),
+            doc.get("referrer"),
+            doc.get("source"),
         ]
         return " ".join(str(x or "") for x in fields).lower()
 
-    def is_test_doc(doc: Dict[str, Any] | None) -> bool:
+    def email_of(doc: Dict[str, Any] | None) -> str:
+        if not doc:
+            return ""
+        return str(doc.get("email") or doc.get("user_email") or "").strip().lower()
+
+    def has_internal_marker(doc: Dict[str, Any] | None) -> bool:
+        text = doc_text(doc)
+        return any(marker in text for marker in INTERNAL_MARKERS)
+
+    def is_owner_record(doc: Dict[str, Any] | None) -> bool:
+        return email_of(doc) in OWNER_EMAILS
+
+    def doc_refs(doc: Dict[str, Any] | None) -> set[str]:
+        if not doc:
+            return set()
+        refs = set()
+        for key in ["id", "_id", "business_id", "owner_id", "user_id", "client_business_id"]:
+            value = doc.get(key)
+            if value:
+                refs.add(str(value))
+        return refs
+
+    def is_real_user(doc: Dict[str, Any] | None) -> bool:
         if not doc:
             return False
-        txt = text_of(doc)
-        if any(email in txt for email in PROTECTED_EMAILS):
+        if is_owner_record(doc):
             return False
-        return any(marker in txt for marker in TEST_MARKERS)
+        if has_internal_marker(doc):
+            return False
+        return True
+
+    def is_real_doc(doc: Dict[str, Any] | None, blocked_refs: set[str] | None = None) -> bool:
+        if not doc:
+            return False
+        if is_owner_record(doc):
+            return False
+        if has_internal_marker(doc):
+            return False
+        if blocked_refs and doc_refs(doc).intersection(blocked_refs):
+            return False
+        return True
 
     def plan_key(user: Dict[str, Any]) -> str:
         return str(user.get("plan") or user.get("subscription_plan") or user.get("plan_type") or "").strip().lower()
@@ -132,7 +169,7 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
     def is_paid_user(user: Dict[str, Any]) -> bool:
         plan = plan_key(user)
         status = str(user.get("subscription_status") or user.get("billing_status") or user.get("stripe_status") or "").lower()
-        if status in {"active", "paid", "trialing"}:
+        if status in {"active", "paid"}:
             return True
         if user.get("stripe_customer_id") or user.get("stripe_subscription_id"):
             return True
@@ -151,11 +188,15 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
             pass
         return False
 
-    async def count_docs(collection_name: str, query: Dict[str, Any] | None = None) -> int:
+    def parse_dt(value):
+        if not value:
+            return None
         try:
-            return await db[collection_name].count_documents(query or {})
+            if isinstance(value, datetime):
+                return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+            return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
         except Exception:
-            return 0
+            return None
 
     async def list_docs(collection_name: str, query: Dict[str, Any] | None = None, limit: int = 100, sort_field: str = "created_at"):
         try:
@@ -169,10 +210,9 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
         except Exception:
             return []
 
-    async def real_collection_names():
+    async def collection_names():
         try:
-            names = await db.list_collection_names()
-            return set(names or [])
+            return set(await db.list_collection_names() or [])
         except Exception:
             return set()
 
@@ -244,14 +284,23 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
         seven_days = now - timedelta(days=7)
         thirty_days = now - timedelta(days=30)
 
-        collections = await real_collection_names()
+        collections = await collection_names()
 
-        users = await list_docs("users", {}, 1000) if "users" in collections else []
-        invoices = await list_docs("invoices", {}, 500) if "invoices" in collections else []
-        jobs = await list_docs("jobs", {}, 500) if "jobs" in collections else []
-        clients = await list_docs("clients", {}, 500) if "clients" in collections else []
-        quotes = await list_docs("quotes", {}, 500) if "quotes" in collections else []
-        visits = await list_docs("platform_visits", {}, 1000) if "platform_visits" in collections else []
+        raw_users = await list_docs("users", {}, 1500) if "users" in collections else []
+        internal_users = [u for u in raw_users if not is_real_user(u)]
+        blocked_refs = set()
+        for user in internal_users:
+            blocked_refs.update(doc_refs(user))
+            business_id = user.get("business_id")
+            if business_id:
+                blocked_refs.add(str(business_id))
+
+        users = [u for u in raw_users if is_real_user(u)]
+        invoices = [d for d in (await list_docs("invoices", {}, 1000) if "invoices" in collections else []) if is_real_doc(d, blocked_refs)]
+        jobs = [d for d in (await list_docs("jobs", {}, 1000) if "jobs" in collections else []) if is_real_doc(d, blocked_refs)]
+        clients = [d for d in (await list_docs("clients", {}, 1000) if "clients" in collections else []) if is_real_doc(d, blocked_refs)]
+        quotes = [d for d in (await list_docs("quotes", {}, 1000) if "quotes" in collections else []) if is_real_doc(d, blocked_refs)]
+        visits = [d for d in (await list_docs("platform_visits", {}, 1500) if "platform_visits" in collections else []) if is_real_doc(d, blocked_refs)]
 
         paid_users = [u for u in users if is_paid_user(u)]
         trial_users = [u for u in users if is_trial_user(u)]
@@ -264,15 +313,13 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
         active_today_users = []
         active_30d_users = []
         for u in users:
-            raw = u.get("last_active") or u.get("last_login") or u.get("updated_at") or u.get("created_at")
-            try:
-                d = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
-                if d >= today:
-                    active_today_users.append(u)
-                if d >= thirty_days:
-                    active_30d_users.append(u)
-            except Exception:
-                pass
+            d = parse_dt(u.get("last_active") or u.get("last_login") or u.get("updated_at") or u.get("created_at"))
+            if not d:
+                continue
+            if d >= today:
+                active_today_users.append(u)
+            if d >= thirty_days:
+                active_30d_users.append(u)
 
         active_now_visitors = []
         visitors_today = []
@@ -280,20 +327,18 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
         unique_today = set()
         unique_7d = set()
         for v in visits:
-            raw = v.get("created_at") or v.get("last_seen")
-            try:
-                d = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
-                key = v.get("visitor_key") or v.get("ip") or v.get("user_email") or str(v.get("id"))
-                if d >= active_cutoff:
-                    active_now_visitors.append(v)
-                if d >= today:
-                    visitors_today.append(v)
-                    unique_today.add(key)
-                if d >= seven_days:
-                    visitors_7d.append(v)
-                    unique_7d.add(key)
-            except Exception:
-                pass
+            d = parse_dt(v.get("created_at") or v.get("last_seen"))
+            if not d:
+                continue
+            key = v.get("visitor_key") or v.get("ip") or v.get("user_email") or str(v.get("id"))
+            if d >= active_cutoff:
+                active_now_visitors.append(v)
+            if d >= today:
+                visitors_today.append(v)
+                unique_today.add(key)
+            if d >= seven_days:
+                visitors_7d.append(v)
+                unique_7d.add(key)
 
         plan_counts = {}
         for u in users:
@@ -306,26 +351,16 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
         outstanding_invoice_value = 0
         paid_invoice_value = 0
         for inv in invoices:
-            amount = float(inv.get("total") or inv.get("amount_total") or inv.get("subtotal") or 0)
+            try:
+                amount = float(inv.get("total") or inv.get("amount_total") or inv.get("subtotal") or 0)
+            except Exception:
+                amount = 0
             total_invoice_value += amount
             status = str(inv.get("status") or "").lower()
             if status == "paid":
                 paid_invoice_value += amount
             elif status in {"sent", "overdue", "draft"}:
                 outstanding_invoice_value += amount
-
-        test_preview = []
-        for collection in ["users", "clients", "jobs", "quotes", "invoices", "businesses", "workers", "team_members"]:
-            if collection not in collections:
-                continue
-            docs = await list_docs(collection, {}, 1000)
-            matches = [d for d in docs if is_test_doc(d)]
-            if matches:
-                test_preview.append({
-                    "collection": collection,
-                    "count": len(matches),
-                    "examples": matches[:8],
-                })
 
         events = []
         for u in users[:50]:
@@ -356,6 +391,7 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
         return {
             "ok": True,
             "generated_at": now.isoformat(),
+            "real_data_only": True,
             "collections_seen": sorted(list(collections)),
             "metrics": {
                 "total_users": len(users),
@@ -392,119 +428,14 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
                 "jobs": jobs[:200],
                 "clients": clients[:200],
                 "quotes": quotes[:200],
-                "test_preview": test_preview,
+                "test_preview": [],
                 "events": sorted(events, key=lambda e: str(e.get("at") or ""), reverse=True)[:100],
             },
         }
 
-    def id_query(value: str):
-        queries = [{"id": value}]
-        try:
-            if ObjectId.is_valid(str(value)):
-                queries.insert(0, {"_id": ObjectId(str(value))})
-        except Exception:
-            pass
-        return {"$or": queries}
-
-    @router.delete("/admin/owner/users/{user_id}")
-    async def delete_owner_user(user_id: str, request: Request):
-        await require_owner(request)
-
-        found = await db.users.find_one(id_query(user_id))
-        if found and (found.get("email") or "").lower() in PROTECTED_EMAILS:
-            raise HTTPException(status_code=400, detail="Protected owner account cannot be deleted")
-
-        result = await db.users.delete_one(id_query(user_id))
-        return {"ok": True, "deleted": result.deleted_count}
-
-    @router.delete("/admin/owner/businesses/{business_id}")
-    async def delete_owner_business(business_id: str, request: Request):
-        await require_owner(request)
-
-        ids = [str(business_id)]
-        object_ids = []
-        try:
-            if ObjectId.is_valid(str(business_id)):
-                object_ids.append(ObjectId(str(business_id)))
-        except Exception:
-            pass
-
-        protected = await db.users.find_one({
-            "$or": [
-                {"_id": {"$in": object_ids}} if object_ids else {"_id": "__none__"},
-                {"business_id": {"$in": ids + object_ids}},
-                {"id": str(business_id)},
-            ]
-        })
-        if protected and (protected.get("email") or "").lower() in PROTECTED_EMAILS:
-            raise HTTPException(status_code=400, detail="Protected owner workspace cannot be deleted")
-
-        collections = ["users", "clients", "jobs", "quotes", "invoices", "workers", "team_members", "sms_logs", "command_slips", "platform_visits"]
-        deleted = {}
-        for name in collections:
-            try:
-                q = {
-                    "$or": [
-                        {"business_id": {"$in": ids + object_ids}},
-                        {"owner_id": {"$in": ids + object_ids}},
-                        {"user_id": {"$in": ids + object_ids}},
-                        {"id": str(business_id)},
-                    ]
-                }
-                res = await db[name].delete_many(q)
-                deleted[name] = res.deleted_count
-            except Exception:
-                deleted[name] = 0
-
-        try:
-            res = await db.businesses.delete_one(id_query(business_id))
-            deleted["businesses"] = deleted.get("businesses", 0) + res.deleted_count
-        except Exception:
-            pass
-
-        return {"ok": True, "deleted": deleted}
-
     @router.post("/admin/owner/cleanup-tests")
     async def cleanup_tests(request: Request, payload: Dict[str, Any] = Body(default={})):
         await require_owner(request)
-        dry_run = bool(payload.get("dry_run", True))
-
-        collections = ["users", "clients", "jobs", "quotes", "invoices", "businesses", "workers", "team_members"]
-        result = []
-
-        for name in collections:
-            docs = await list_docs(name, {}, 1000)
-            matches = [d for d in docs if is_test_doc(d)]
-            ids = []
-            for doc in matches:
-                raw_id = doc.get("_id") or doc.get("id")
-                if not raw_id:
-                    continue
-                try:
-                    ids.append(ObjectId(str(raw_id)) if ObjectId.is_valid(str(raw_id)) else str(raw_id))
-                except Exception:
-                    ids.append(str(raw_id))
-
-            deleted_count = 0
-            if ids and not dry_run:
-                object_ids = [x for x in ids if not isinstance(x, str)]
-                string_ids = [str(x) for x in ids]
-                q = {"$or": []}
-                if object_ids:
-                    q["$or"].append({"_id": {"$in": object_ids}})
-                if string_ids:
-                    q["$or"].append({"id": {"$in": string_ids}})
-                if q["$or"]:
-                    res = await db[name].delete_many(q)
-                    deleted_count = res.deleted_count
-
-            result.append({
-                "collection": name,
-                "matched": len(matches),
-                "deleted": deleted_count,
-                "examples": matches[:10],
-            })
-
-        return {"ok": True, "dry_run": dry_run, "collections": result}
+        return {"ok": True, "dry_run": True, "collections": [], "real_data_only": True}
 
     return router
