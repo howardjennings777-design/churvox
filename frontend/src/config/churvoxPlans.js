@@ -212,7 +212,14 @@ export const GROWTH_PACK = {
   period: "month",
   interval: "month",
   addsTeamMembers: 50,
-  description: "Add more crew, more jobs and more AI Operator capacity as your business grows."
+  description: "Add more crew, more jobs and more AI Operator capacity as your business grows.",
+  includes: [
+    "50 more active team members",
+    "Extra job capacity",
+    "Extra AI Operator Actions",
+    "Extra automation runs",
+    "Extra admin and payroll capacity"
+  ]
 };
 
 export const COMMAND_GROWTH_PACK = GROWTH_PACK;
@@ -234,6 +241,12 @@ export const ACCOUNTING_SYNC_ADDON = {
 export const XERO_ADDON = ACCOUNTING_SYNC_ADDON;
 export const MYOB_ADDON = ACCOUNTING_SYNC_ADDON;
 export const ADDONS = [GROWTH_PACK, ACCOUNTING_SYNC_ADDON];
+
+export const SMS_PACKS = [
+  { key: "sms_100", credits: 100, price: "$10", note: "Coming soon" },
+  { key: "sms_500", credits: 500, price: "$45", note: "Coming soon" },
+  { key: "sms_1000", credits: 1000, price: "$80", note: "Coming soon" }
+];
 
 export const COMMAND_ADDONS = [
   "SMS credits can be added when needed.",
@@ -557,6 +570,7 @@ export default {
   XERO_ADDON,
   MYOB_ADDON,
   ADDONS,
+  SMS_PACKS,
   PLAN_NAMES,
   PLAN_DISPLAY_NAMES,
   PLAN_PRICES,
