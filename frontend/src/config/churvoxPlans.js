@@ -114,7 +114,7 @@ export const PLAN_PRICING = {
       "AI Operator Actions",
       "Approval queue",
       "Advanced job admin",
-      "Xero add-on available",
+      "Xero support when connected add-on when connected",
       "Up to 40 active clients"
     ],
     features: [
@@ -122,7 +122,7 @@ export const PLAN_PRICING = {
       "AI Operator Actions",
       "Approval queue",
       "Advanced job admin",
-      "Xero add-on available",
+      "Xero support when connected add-on when connected",
       "Up to 40 active clients"
     ]
   },
@@ -133,7 +133,7 @@ export const PLAN_PRICING = {
     name: "Command",
     summary: "Full command centre for larger teams.",
     tagline: "Full command centre for larger teams.",
-    description: "Advanced control, roles, payroll workspace, Xero support and priority support.",
+    description: "Advanced control, roles, payroll workspace, Xero support when connected and priority support.",
     price: 299,
     monthly: 299,
     period: "month",
@@ -144,7 +144,7 @@ export const PLAN_PRICING = {
       "Everything in Operator",
       "Up to 50 active clients",
       "Up to 50 active team members",
-      "Xero support",
+      "Xero support when connected",
       "Payroll workspace",
       "Advanced roles",
       "Reports and exports",
@@ -154,7 +154,7 @@ export const PLAN_PRICING = {
       "Everything in Operator",
       "Up to 50 active clients",
       "Up to 50 active team members",
-      "Xero support",
+      "Xero support when connected",
       "Payroll workspace",
       "Advanced roles",
       "Reports and exports",
@@ -224,7 +224,7 @@ export const XERO_ADDON = {
   monthly: 39,
   period: "month",
   interval: "month",
-  description: "Optional Xero support for Operator. Included with Command."
+  description: "Optional Xero support when connected for Operator. Included with Command."
 };
 
 export const ADDONS = [GROWTH_PACK, XERO_ADDON];
