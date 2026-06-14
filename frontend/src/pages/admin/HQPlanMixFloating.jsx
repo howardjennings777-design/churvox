@@ -9,6 +9,15 @@ const EMAIL_TEMPLATES = [["welcome", "Welcome"], ["trial_started", "Trial starte
 function token() { try { return window.localStorage.getItem("token") || ""; } catch { return ""; } }
 function headers() { return { Accept: "application/json", "Content-Type": "application/json", ...(token() ? { Authorization: `Bearer ${token()}` } : {}) }; }
 function money(value) { return Number(value || 0).toLocaleString("en-NZ", { style: "currency", currency: "NZD", maximumFractionDigits: 0 }); }
+function customerOnly(items) { return (Array.isArray(items) ? items : []).filter((item) => item?.hq_record_type !== "internal"); }
+function countByPlan(items) {
+  const next = Object.fromEntries(PLAN_BUCKETS.map((label) => [label, 0]));
+  customerOnly(items).forEach((item) => {
+    const label = item?.plan_name === "Choose plan" ? "No plan" : (item?.plan_name || "Other");
+    next[label in next ? label : "Other"] += 1;
+  });
+  return next;
+}
 
 async function apiGet(path) {
   const res = await fetch(`${API_BASE}${path}`, { credentials: "include", headers: headers() });
@@ -26,7 +35,7 @@ async function apiPost(path, payload) {
 
 export default function HQPlanMixFloating() {
   const location = useLocation();
-  const [open, setOpen] = React.useState(true);
+  const [open, setOpen] = React.useState(false);
   const [report, setReport] = React.useState(null);
   const [identifier, setIdentifier] = React.useState("");
   const [testerPlan, setTesterPlan] = React.useState("operator");
@@ -87,56 +96,69 @@ export default function HQPlanMixFloating() {
   }
 
   if (!isHQ) return null;
-  const counts = report?.counts || {};
+
+  const reportUsers = [...customerOnly(report?.paid_users), ...customerOnly(report?.trial_users), ...customerOnly(report?.free_testers), ...customerOnly(report?.no_plan_users)];
+  const counts = reportUsers.length ? countByPlan(reportUsers) : (report?.counts || {});
   const total = Object.values(counts).reduce((sum, value) => sum + Number(value || 0), 0);
+  const paidCount = customerOnly(report?.paid_users).length || report?.paid_count || 0;
+  const trialCount = customerOnly(report?.trial_users).length || report?.trial_count || 0;
+  const testerCount = customerOnly(report?.free_testers).length || report?.free_tester_count || 0;
+  const mrr = report?.monthly_revenue_estimate || 0;
+
+  if (!open) {
+    return (
+      <button type="button" onClick={() => setOpen(true)} className="fixed bottom-5 left-5 z-[9998] rounded-2xl border border-orange-500/40 bg-slate-950/95 px-4 py-3 text-left text-white shadow-2xl backdrop-blur">
+        <span className="block text-[10px] font-black uppercase tracking-[0.18em] text-orange-200">HQ plans</span>
+        <b className="block text-sm font-black">{paidCount} paid · {trialCount} trials · {testerCount} testers</b>
+      </button>
+    );
+  }
 
   return (
-    <aside className="fixed bottom-5 left-5 z-[9998] w-[min(430px,calc(100vw-40px))] rounded-[26px] border border-orange-500/30 bg-slate-950/95 p-4 text-white shadow-2xl backdrop-blur">
-      <div className="flex items-center justify-between gap-3">
-        <button type="button" onClick={() => setOpen((value) => !value)} className="text-left">
-          <span className="block text-xs font-black uppercase tracking-[0.16em] text-orange-200">HQ plans + testers</span>
-          <b className="text-lg font-black">{total} users · {report?.paid_count || 0} paid · {report?.free_tester_count || 0} testers</b>
-        </button>
-        <button type="button" onClick={() => setOpen((value) => !value)} className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-black text-slate-200">{open ? "Hide" : "Show"}</button>
+    <aside className="fixed bottom-5 left-5 z-[9998] max-h-[82vh] w-[min(360px,calc(100vw-32px))] overflow-y-auto rounded-[24px] border border-orange-500/30 bg-slate-950/96 p-3 text-white shadow-2xl backdrop-blur">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <span className="block text-[10px] font-black uppercase tracking-[0.18em] text-orange-200">HQ tester drawer</span>
+          <b className="block text-sm font-black">Customer plans only</b>
+          <small className="text-xs font-bold text-slate-400">{total} customer records · {money(mrr)} paid MRR estimate</small>
+        </div>
+        <button type="button" onClick={() => setOpen(false)} className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-black text-slate-200">Close</button>
       </div>
 
-      {open ? (
-        <div className="mt-3 grid gap-3">
-          <div className="grid grid-cols-3 gap-2 text-center text-xs font-black">
-            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3"><b className="block text-lg text-emerald-100">{report?.paid_count || 0}</b><span className="text-emerald-200">paid</span></div>
-            <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3"><b className="block text-lg text-amber-100">{report?.trial_count || 0}</b><span className="text-amber-200">trials</span></div>
-            <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-3"><b className="block text-lg text-cyan-100">{report?.free_tester_count || 0}</b><span className="text-cyan-200">free testers</span></div>
-          </div>
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3 text-sm font-black"><span className="text-slate-400">Paid MRR estimate</span><b className="float-right text-orange-200">{money(report?.monthly_revenue_estimate || 0)}</b></div>
-
-          <div className="grid gap-2">
-            {PLAN_BUCKETS.map((label) => {
-              const count = Number(counts[label] || 0);
-              const pct = total ? Math.round((count / total) * 100) : 0;
-              return <div key={label} className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3"><div className="flex justify-between gap-3 text-sm font-black"><span>{label}</span><span className="text-orange-200">{count}</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-800"><i className="block h-full rounded-full bg-orange-500" style={{ width: `${pct}%` }} /></div></div>;
-            })}
-          </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3">
-            <b className="text-sm">Grant free tester access</b>
-            <input value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="email or user ID" className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-bold text-white outline-none" />
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <select value={testerPlan} onChange={(e) => setTesterPlan(e.target.value)} className="rounded-xl border border-slate-700 bg-white px-3 py-2 text-sm font-black text-slate-950">{TESTER_PLANS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
-              <input value={testerDays} onChange={(e) => setTesterDays(e.target.value)} type="number" min="1" max="365" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-bold text-white" />
-            </div>
-            <div className="mt-2 grid grid-cols-2 gap-2"><button type="button" onClick={grantTester} disabled={busy || !identifier} className="rounded-xl bg-cyan-500 px-3 py-2 text-xs font-black text-slate-950 disabled:opacity-40">Grant free</button><button type="button" onClick={revokeTester} disabled={busy || !identifier} className="rounded-xl border border-red-500/40 bg-red-500/15 px-3 py-2 text-xs font-black text-red-100 disabled:opacity-40">Revoke</button></div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3">
-            <b className="text-sm">Lifecycle email</b>
-            <select value={emailTemplate} onChange={(e) => setEmailTemplate(e.target.value)} className="mt-2 w-full rounded-xl border border-slate-700 bg-white px-3 py-2 text-sm font-black text-slate-950">{EMAIL_TEMPLATES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
-            <button type="button" onClick={sendLifecycleEmail} disabled={busy || !identifier} className="mt-2 w-full rounded-xl bg-orange-500 px-3 py-2 text-xs font-black text-slate-950 disabled:opacity-40">Send to entered user</button>
-          </div>
-
-          {message ? <p className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs font-black text-emerald-100">{message}</p> : null}
-          {error ? <p className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-black text-red-100">{error}</p> : null}
+      <div className="mt-3 grid gap-3">
+        <div className="grid grid-cols-3 gap-2 text-center text-xs font-black">
+          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-2"><b className="block text-base text-emerald-100">{paidCount}</b><span className="text-emerald-200">paid</span></div>
+          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-2"><b className="block text-base text-amber-100">{trialCount}</b><span className="text-amber-200">trials</span></div>
+          <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-2"><b className="block text-base text-cyan-100">{testerCount}</b><span className="text-cyan-200">testers</span></div>
         </div>
-      ) : null}
+
+        <div className="grid gap-1.5">
+          {PLAN_BUCKETS.map((label) => {
+            const count = Number(counts[label] || 0);
+            const pct = total ? Math.round((count / total) * 100) : 0;
+            return <div key={label} className="rounded-2xl border border-slate-800 bg-slate-900/80 px-3 py-2"><div className="flex justify-between gap-3 text-xs font-black"><span>{label}</span><span className="text-orange-200">{count}</span></div><div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-800"><i className="block h-full rounded-full bg-orange-500" style={{ width: `${pct}%` }} /></div></div>;
+          })}
+        </div>
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3">
+          <b className="text-sm">Grant tester access</b>
+          <input value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="email or user ID" className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-bold text-white outline-none" />
+          <div className="mt-2 grid grid-cols-[1fr_76px] gap-2">
+            <select value={testerPlan} onChange={(e) => setTesterPlan(e.target.value)} className="rounded-xl border border-slate-700 bg-white px-3 py-2 text-sm font-black text-slate-950">{TESTER_PLANS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+            <input value={testerDays} onChange={(e) => setTesterDays(e.target.value)} type="number" min="1" max="365" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-bold text-white" />
+          </div>
+          <div className="mt-2 grid grid-cols-2 gap-2"><button type="button" onClick={grantTester} disabled={busy || !identifier} className="rounded-xl bg-cyan-400 px-3 py-2 text-xs font-black text-slate-950 disabled:opacity-40">Grant</button><button type="button" onClick={revokeTester} disabled={busy || !identifier} className="rounded-xl border border-red-500/40 bg-red-500/15 px-3 py-2 text-xs font-black text-red-100 disabled:opacity-40">Revoke</button></div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3">
+          <b className="text-sm">Send lifecycle email</b>
+          <select value={emailTemplate} onChange={(e) => setEmailTemplate(e.target.value)} className="mt-2 w-full rounded-xl border border-slate-700 bg-white px-3 py-2 text-sm font-black text-slate-950">{EMAIL_TEMPLATES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+          <button type="button" onClick={sendLifecycleEmail} disabled={busy || !identifier} className="mt-2 w-full rounded-xl bg-orange-500 px-3 py-2 text-xs font-black text-slate-950 disabled:opacity-40">Send email</button>
+        </div>
+
+        {message ? <p className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs font-black text-emerald-100">{message}</p> : null}
+        {error ? <p className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-black text-red-100">{error}</p> : null}
+      </div>
     </aside>
   );
 }
