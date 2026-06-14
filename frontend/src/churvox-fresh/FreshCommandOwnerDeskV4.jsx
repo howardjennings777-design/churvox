@@ -5,150 +5,179 @@ import "../styles/command-right-preview.css";
 const KEY = "churvox:fresh-command-inbox:v1";
 const API = "/api/command";
 
-const CONFIG = {
-  setup: { cat: "missing", title: "Command setup check", approve: "Approve setup fix", fields: ["Area", "Missing step", "What needs entering", "Notes"] },
-  invoice: { cat: "money", title: "Invoice ready", approve: "Approve invoice step", fields: ["Customer", "Job", "Amount", "GST", "Due date", "Service line", "Invoice note"] },
-  reminder: { cat: "money", title: "Payment reminder", approve: "Approve reminder", fields: ["Customer", "Invoice", "Amount due", "Email", "Phone", "Reminder message"] },
-  quote: { cat: "customers", title: "Quote follow-up", approve: "Approve follow-up", fields: ["Customer", "Quote", "Quote value", "Email", "Phone", "Message"] },
-  worker: { cat: "jobs", title: "Worker assignment", approve: "Approve assignment", fields: ["Job", "Worker", "Date", "Time window", "Address", "Notify worker", "Worker note"] },
-  jobInfo: { cat: "missing", title: "Job info fix", approve: "Approve job fix", fields: ["Job", "Price", "Worker", "Missing details", "Owner fix"] },
-  time: { cat: "workers", title: "Worker time", approve: "Approve time", fields: ["Worker", "Job", "Date", "Start", "Finish", "Total", "Adjustment note"] },
-  client: { cat: "missing", title: "Client details", approve: "Approve client fix", fields: ["Client", "Phone", "Email", "Address", "Notes"] },
-  workerMessage: { cat: "workerMessages", title: "Worker reply", approve: "Approve reply", fields: ["Worker", "Job", "Worker message", "Prepared reply", "Save to job note", "Notify worker"] },
-  blocked: { cat: "blocked", title: "Blocked send", approve: "Mark reviewed", fields: ["What failed", "Missing setup/contact", "Next step"] },
-};
-
 const CATS = [
-  ["money", "Money ready", "Invoices and payment follow-ups"],
-  ["jobs", "Jobs needing action", "Workers, price, access and job info"],
-  ["workerMessages", "Worker messages", "Questions waiting on owner"],
-  ["customers", "Customer follow-ups", "Quotes and replies"],
-  ["workers", "Worker time", "Time checks before payroll"],
-  ["missing", "Missing info", "Churvox will not guess"],
-  ["blocked", "Blocked / failed", "Needs setup or contact fix"],
+  ["money", "Money", "Invoices, payments and quote money"],
+  ["jobs", "Jobs", "Assignment, job gaps and dispatch decisions"],
+  ["customers", "Customers", "Quotes, follow-ups and customer replies"],
+  ["workers", "Workers", "Worker time, replies and payroll checks"],
+  ["missing", "Missing info", "Churvox needs owner input first"],
+  ["blocked", "Blocked", "Something failed or setup is missing"],
 ];
 
-const WIDE = new Set(["Service line", "Invoice note", "Reminder message", "Message", "Worker note", "Owner fix", "Worker message", "Prepared reply", "Save to job note", "Notes", "Missing details", "What needs entering", "Next step"]);
-const PLACEHOLDERS = ["", "choose", "review", "upcoming", "completed job", "best available", "job address", "customer from", "client from", "worker name", "missing", "add "];
-const today = () => new Date().toISOString().slice(0, 10);
-const isPlaceholder = (value) => PLACEHOLDERS.some((word) => String(value || "").toLowerCase().startsWith(word));
+function safe(value, fallback = "Not supplied") {
+  const text = String(value ?? "").trim();
+  return text || fallback;
+}
 
-function typeOf(slip = {}) {
-  const raw = `${slip.type || ""} ${slip.actionType || ""} ${slip.title || ""}`.toLowerCase();
-  if (raw.includes("worker") && raw.includes("message")) return "workerMessage";
-  if (raw.includes("overdue") || raw.includes("payment")) return "reminder";
-  if (raw.includes("quote")) return "quote";
-  if (raw.includes("assign") || raw.includes("worker")) return "worker";
-  if (raw.includes("time")) return "time";
-  if (raw.includes("client")) return "client";
-  if (raw.includes("invoice")) return "invoice";
+function idOf(item, index = 0) {
+  return String(item?.id || item?._id || item?.slip_id || item?.uuid || `cmd-${index}`);
+}
+
+function typeOf(item = {}) {
+  const raw = `${item.type || ""} ${item.category || ""} ${item.title || ""} ${item.summary || ""}`.toLowerCase();
+  if (raw.includes("overdue") || raw.includes("payment") || raw.includes("invoice") || raw.includes("money") || raw.includes("xero")) return "money";
+  if (raw.includes("quote") || raw.includes("customer") || raw.includes("client")) return "customers";
+  if (raw.includes("worker") || raw.includes("time") || raw.includes("payroll")) return "workers";
+  if (raw.includes("assign") || raw.includes("job") || raw.includes("dispatch")) return "jobs";
   if (raw.includes("blocked") || raw.includes("failed")) return "blocked";
-  if (raw.includes("setup")) return "setup";
-  return "jobInfo";
+  return "missing";
 }
 
-function makeDraft(type, slip = {}) {
-  const config = CONFIG[type] || CONFIG.setup;
-  const values = {
-    Area: "Command setup", "Missing step": "Live Command actions", "What needs entering": "Add or scan real clients, jobs, invoices, workers or messages so Churvox can prepare owner actions.", Notes: "This is here so Command never looks empty while setup/data is missing.",
-    Customer: "Customer from record", Job: "Upcoming job", Amount: "Review price", GST: "15%", "Due date": today(), "Service line": "Service from completed job", "Invoice note": "Thanks for your business.", Invoice: "Invoice from record", "Amount due": "Review amount", Email: "", Phone: "", "Reminder message": "Friendly reminder prepared from invoice.", Quote: "Open quote", "Quote value": "Review value", Message: "Follow-up message prepared.", Worker: "Best available worker", Date: today(), "Time window": "Next available slot", Address: "Job address", "Notify worker": "App + email + SMS", "Worker note": "Check access, take photos, add completion notes.", Price: "Add price", "Missing details": "Churvox found missing job details.", "Owner fix": "Enter the missing details here.", "Worker message": "Worker asked for help or approval.", "Prepared reply": "Reply prepared for owner approval.", "Save to job note": "Save this decision to job activity.", Start: "Start time", Finish: "Finish time", Total: "Review hours", "Adjustment note": "Check breaks, travel and manual edits.", Client: "Client from record", "What failed": "Message/action failed", "Missing setup/contact": "Email, phone or provider setup", "Next step": "Fix missing detail then retry."
+function priorityOf(item = {}) {
+  const raw = String(item.priority || item.urgency || item.status || "").toLowerCase();
+  if (raw.includes("high") || raw.includes("urgent") || raw.includes("overdue") || raw.includes("blocked")) return "High";
+  if (raw.includes("low")) return "Low";
+  return "Normal";
+}
+
+function normalise(item = {}, index = 0) {
+  const details = item.details && typeof item.details === "object" ? item.details : {};
+  const found = item.found || item.summary || item.ai_found || item.message || details.found || item.title;
+  const prepared = item.prepared || item.ai_prepared || item.recommendation || details.prepared || item.primary_action || item.secondary_action;
+  const why = item.why || item.reason || details.reason || details.why || "This needs owner review before Churvox changes, sends, assigns or syncs anything.";
+  const title = item.title || item.name || prepared || "Command decision";
+  return {
+    raw: item,
+    id: idOf(item, index),
+    title: safe(title, "Command decision"),
+    category: typeOf(item),
+    priority: priorityOf(item),
+    status: item.status || "open",
+    found: safe(found, "Churvox found something that needs owner review."),
+    prepared: safe(prepared, "Churvox prepared the next safe action for you to review."),
+    why: safe(why, "Owner approval keeps risky admin under control."),
+    source: item.source || item.info || item.prepared_by || "Churvox AI Operator",
+    page: item.page || details.page || item.area || "jobs",
+    details,
+    editableNote: item.editableNote || item.owner_note || details.message || details.note || "",
   };
-  return { type, title: config.title, approve: config.approve, found: slip.found || slip.title || config.title, why: slip.why || "Owner approval is required before Churvox changes, sends or assigns anything.", fields: config.fields.map((label) => ({ label, value: values[label] || "" })) };
 }
 
-function normalise(slip, index = 0) {
-  const type = typeOf(slip);
-  return { id: slip.id || slip._id || `cmd-${type}-${Date.now()}-${index}`, type, title: slip.title || CONFIG[type]?.title || "Command action", status: slip.status || "open", urgency: slip.urgency || "Medium", draft: slip.draft || makeDraft(type, slip), source: slip.source || slip.info || "Prepared from Churvox records", page: slip.page || "jobs" };
+function readLocal() {
+  try {
+    const value = JSON.parse(localStorage.getItem(KEY) || "[]");
+    return Array.isArray(value) ? value.map(normalise).filter((slip) => !["approved", "declined", "ignored"].includes(String(slip.status).toLowerCase())) : [];
+  } catch {
+    return [];
+  }
 }
 
-function fallbackSlip() { return normalise({ id: "command-setup-review", type: "setup", title: "Command needs live data", urgency: "High", source: "No live Command actions came back from the backend yet" }, 0); }
-function readLocal() { try { const value = JSON.parse(localStorage.getItem(KEY) || "[]"); return Array.isArray(value) ? value.map(normalise).filter((slip) => !["approved", "ignored"].includes(slip.status)) : []; } catch { return []; } }
-function saveLocal(items) { try { localStorage.setItem(KEY, JSON.stringify(items)); } catch {} }
-function missing(draft) { return (draft?.fields || []).filter((field) => isPlaceholder(field.value)).map((field) => field.label); }
-function category(slip) { if ((slip.status || "").includes("blocked") || slip.type === "blocked") return "blocked"; if (missing(slip.draft).length) return "missing"; return CONFIG[slip.type]?.cat || "missing"; }
-function detail(slip) { const missed = missing(slip.draft); if (missed.length) return `Missing: ${missed.slice(0, 3).join(", ")}`; return (slip.draft.fields || []).slice(0, 3).map((field) => field.value).filter(Boolean).join(" · "); }
+function saveLocal(items) {
+  try { localStorage.setItem(KEY, JSON.stringify(items)); } catch {}
+}
 
 async function request(path, body) {
   const token = localStorage.getItem("token") || "";
-  const res = await fetch(`${API}${path}`, { method: body ? "POST" : "GET", credentials: "include", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  const res = await fetch(`${API}${path}`, {
+    method: body ? "POST" : "GET",
+    credentials: "include",
+    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: body ? JSON.stringify(body) : undefined,
+  });
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data.ok === false || data.success === false) throw new Error(data.detail || data.message || data.error || "Command failed");
   return data;
 }
 
-function Input({ field, onChange }) {
-  if (["Worker", "Notify worker", "Send by"].includes(field.label)) {
-    const options = [field.value, "Best available worker", "Owner / myself", "Nearest available worker", "Backup worker", "Email + SMS", "Email only", "SMS only", "Do not notify yet"].filter(Boolean);
-    return <select value={field.value} onChange={(event) => onChange(field.label, event.target.value)}>{[...new Set(options)].map((option) => <option key={option}>{option}</option>)}</select>;
-  }
-  if (WIDE.has(field.label)) return <textarea value={field.value} onChange={(event) => onChange(field.label, event.target.value)} />;
-  return <input value={field.value} onChange={(event) => onChange(field.label, event.target.value)} />;
+function detailRows(slip) {
+  const rows = Object.entries(slip.details || {}).filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== "");
+  if (rows.length) return rows.slice(0, 8);
+  return [
+    ["Source", slip.source],
+    ["Priority", slip.priority],
+    ["Related area", slip.page],
+  ];
 }
 
-function Preview({ slip, onField, onApprove, onSave, onSnooze, onIgnore, onOpenArea }) {
-  const missed = missing(slip.draft);
-  const isWorker = slip.type === "worker";
-  return <section className="freshCommandPreviewPanel"><header><span>{missed.length ? "Needs info first" : "Prepared decision"}</span><h2>{slip.draft.title}</h2><p>{slip.source}</p></header><section className="freshPreparedRecommendation"><span>{isWorker ? "Recommended worker" : "Churvox recommends"}</span><h3>{isWorker ? "Best available worker" : slip.draft.approve}</h3><ul><li>{slip.draft.found}</li><li>{slip.draft.why}</li><li>{missed.length ? "Finish missing fields before approval." : "Ready for owner approval."}</li></ul></section>{missed.length > 0 && <section className="freshPreparedMissingBlock"><b>Missing info before approval</b><p>{missed.join(", ")}</p></section>}<div className="freshPreparedFormGrid freshPreparedPreviewGrid">{(slip.draft.fields || []).map((field) => <label className={`freshPreparedFormField ${WIDE.has(field.label) ? "freshPreparedFormFieldWide" : ""}`} key={field.label}><span>{field.label}</span><Input field={field} onChange={onField} /></label>)}</div><div className="freshSlipActions freshPreviewActions"><button className="freshPrimary" disabled={missed.length > 0} onClick={onApprove}>{missed.length ? "Finish missing info" : slip.draft.approve}</button><button className="freshDark" onClick={onSave}>Save edit</button><button className="freshGhost" onClick={onSnooze}>Snooze</button><button className="freshGhost" onClick={onIgnore}>Ignore</button><button className="freshOrange" onClick={onOpenArea}>Open area only if needed</button></div></section>;
+function DecisionPanel({ slip, note, setNote, onApprove, onDecline, onSave, onSnooze, onOpenArea }) {
+  if (!slip) {
+    return <section className="freshCommandPreviewPanel"><header><span>Decision desk</span><h2>No approval selected</h2><p>Select a Command card on the left, or run Command checks.</p></header></section>;
+  }
+  return (
+    <section className="freshCommandPreviewPanel">
+      <header><span>{slip.priority} priority</span><h2>{slip.title}</h2><p>{slip.source}</p></header>
+      <section className="freshPreparedRecommendation"><span>AI found</span><h3>{slip.found}</h3><ul><li><b>Prepared:</b> {slip.prepared}</li><li><b>Why:</b> {slip.why}</li></ul></section>
+      <div className="freshPreparedFormGrid freshPreparedPreviewGrid">
+        {detailRows(slip).map(([key, value]) => <label className="freshPreparedFormField" key={key}><span>{String(key).replaceAll("_", " ")}</span><input readOnly value={String(value)} /></label>)}
+        <label className="freshPreparedFormField freshPreparedFormFieldWide"><span>Owner edit / note</span><textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Edit the instruction, add a note, or leave blank." /></label>
+      </div>
+      <div className="freshSlipActions freshPreviewActions">
+        <button className="freshPrimary" onClick={onApprove}>Approve</button>
+        <button className="freshDark" onClick={onSave}>Save edit</button>
+        <button className="freshGhost" onClick={onSnooze}>Snooze</button>
+        <button className="freshGhost" onClick={onDecline}>Decline</button>
+        <button className="freshOrange" onClick={onOpenArea}>Open related area</button>
+      </div>
+    </section>
+  );
 }
 
 export default function FreshCommandOwnerDesk({ onNavigate }) {
   const [slips, setSlips] = React.useState(() => readLocal());
   const [selectedId, setSelectedId] = React.useState(null);
   const [message, setMessage] = React.useState("Ready.");
-  const open = slips.filter((slip) => ["open", "edited"].includes(slip.status));
-  const handled = slips.filter((slip) => !["open", "edited"].includes(slip.status));
+  const [note, setNote] = React.useState("");
+  const open = slips.filter((slip) => ["open", "edited"].includes(String(slip.status).toLowerCase()));
+  const handled = slips.filter((slip) => !["open", "edited"].includes(String(slip.status).toLowerCase()));
   const selected = slips.find((slip) => slip.id === selectedId) || open[0] || null;
-  const activeCats = CATS.map(([id, title, sub]) => ({ id, title, sub, items: open.filter((slip) => category(slip) === id) })).filter((cat) => cat.items.length);
+  const activeCats = CATS.map(([id, title, sub]) => ({ id, title, sub, items: open.filter((slip) => slip.category === id) })).filter((cat) => cat.items.length);
 
   React.useEffect(() => { load(); }, []);
+  React.useEffect(() => { setNote(selected?.editableNote || ""); }, [selected?.id]);
 
   function setAndSave(next) { setSlips(next); saveLocal(next); }
+  function patch(id, patchData) { setAndSave(slips.map((slip) => slip.id === id ? { ...slip, ...patchData } : slip)); }
 
   async function load() {
     try {
       const data = await request("/slips");
-      if (Array.isArray(data.slips) && data.slips.length) { setAndSave(data.slips.map(normalise)); setMessage("Command loaded from live backend."); return; }
-    } catch (err) {
-      setMessage(err?.message || "Command backend unavailable.");
-    }
-    const local = readLocal();
-    setAndSave(local.length ? local : [fallbackSlip()]);
-  }
-
-  async function runChecks() {
-    try {
-      const data = await request("/slips");
-      if (Array.isArray(data.slips) && data.slips.length) { setAndSave(data.slips.map(normalise)); setMessage("Command checks refreshed."); return; }
-      const local = readLocal();
-      setAndSave(local.length ? local : [fallbackSlip()]);
-      setMessage("No live approval slips returned yet. Setup check opened.");
+      const rows = Array.isArray(data.slips) ? data.slips : [];
+      const normalised = rows.map(normalise).filter((slip) => !["approved", "declined", "ignored"].includes(String(slip.status).toLowerCase()));
+      setAndSave(normalised);
+      setMessage(normalised.length ? "Command loaded live approval work." : "No approvals needed right now.");
+      return;
     } catch (err) {
       const local = readLocal();
-      setAndSave(local.length ? local : [fallbackSlip()]);
-      setMessage(err?.message || "Command backend unavailable. Local slips kept.");
+      setAndSave(local);
+      setMessage(local.length ? "Using saved Command items. Live check failed." : err?.message || "No live Command items available.");
     }
   }
-
-  function patch(id, patchData) { setAndSave(slips.map((slip) => slip.id === id ? { ...slip, ...patchData } : slip)); }
-  function editField(label, value) { if (!selected) return; const draft = { ...selected.draft, fields: selected.draft.fields.map((field) => field.label === label ? { ...field, value } : field) }; patch(selected.id, { draft, status: "edited" }); }
 
   async function approve() {
     if (!selected) return;
-    const missed = missing(selected.draft);
-    if (missed.length) { setMessage(`Missing info first: ${missed.join(", ")}`); return; }
     try {
-      const data = await request(`/slips/${encodeURIComponent(selected.id)}/approve`, { draft: selected.draft, actionType: selected.type });
-      patch(selected.id, { status: "approved", result: data.message || "Approved" });
+      const data = await request(`/slips/${encodeURIComponent(selected.id)}/approve`, { owner_note: note, slip: selected.raw || selected });
+      patch(selected.id, { status: "approved", editableNote: note, result: data.message || "Approved" });
       setMessage(data.message || "Approved and recorded.");
     } catch (err) {
-      patch(selected.id, { status: "approved", result: "Approved locally. Backend approval route needs checking." });
-      setMessage(err?.message || "Approved locally. Backend approval route needs checking.");
+      patch(selected.id, { status: "approved", editableNote: note, result: "Approved locally" });
+      setMessage(err?.message || "Approved locally. Backend did not confirm.");
     }
   }
+  function saveEdit() { if (!selected) return; patch(selected.id, { status: "edited", editableNote: note }); setMessage("Edit saved on this Command card."); }
+  function snooze() { if (!selected) return; patch(selected.id, { status: "snoozed", editableNote: note, snoozedAt: new Date().toISOString() }); setMessage("Snoozed. It is out of the open list for now."); }
+  function decline() { if (!selected) return; patch(selected.id, { status: "declined", editableNote: note, declinedAt: new Date().toISOString() }); setMessage("Declined. Nothing was sent or changed."); }
+  function openArea() { if (!selected) return; onNavigate?.(selected.page || "jobs"); }
 
-  function saveEdit() { if (!selected) return; patch(selected.id, { status: "edited" }); setMessage("Edit saved on this Command slip."); }
-  function snooze() { if (!selected) return; patch(selected.id, { status: "snoozed", snoozedAt: new Date().toISOString() }); setMessage("Slip snoozed."); }
-  function ignore() { if (!selected) return; patch(selected.id, { status: "ignored", ignoredAt: new Date().toISOString() }); setMessage("Slip ignored."); }
-
-  return <section className="freshCommandDeskPage freshCommandPreparedPage"><div className="freshCommandDeskHero freshCommandPreparedHero"><div><span>Command approval desk</span><h1>Approve, edit, or decline what Churvox prepared.</h1><p>Smart Hub shows the business overview. Command is only for decisions: approve, save edits, snooze, ignore, or open the exact area.</p></div><div className="freshCommandPreparedSummary"><button onClick={runChecks}>Run Command checks</button><small>{message}</small><b>{open.length} open · {handled.length} handled</b></div></div><section className="freshCommandWorkArea"><section className="freshPreparedTrayGrid">{activeCats.length ? activeCats.map((cat) => <article className={`freshPreparedTray freshPreparedTray-${cat.id}`} key={cat.id}><header><div><h2>{cat.title}</h2><p>{cat.sub}</p></div><strong>{cat.items.length}</strong></header><div className="freshPreparedTrayList">{cat.items.map((slip) => <button className={selected?.id === slip.id ? "is-selected" : ""} key={slip.id} onClick={() => setSelectedId(slip.id)}><b>{slip.title}</b><span className="freshPreparedItemDetail">{detail(slip)}</span><em>{category(slip) === "missing" ? "needs info" : `${slip.urgency} · approval`}</em></button>)}</div></article>) : <article className="freshPreparedTray"><header><div><h2>No approval slips</h2><p>Smart Hub still shows the overview. Command opens when an owner decision is needed.</p></div><strong>0</strong></header></article>}</section>{selected ? <Preview slip={selected} onField={editField} onApprove={approve} onSave={saveEdit} onSnooze={snooze} onIgnore={ignore} onOpenArea={() => onNavigate?.(selected.page || "jobs")} /> : <section className="freshCommandPreviewPanel"><header><span>Decision desk</span><h2>No slip selected</h2><p>Run Command checks or open one of the prepared slips from the left tray.</p></header></section>}</section></section>;
+  return (
+    <section className="freshCommandDeskPage freshCommandPreparedPage">
+      <div className="freshCommandDeskHero freshCommandPreparedHero"><div><span>Command approval desk</span><h1>Review the decisions Churvox prepared.</h1><p>Command is not the dashboard. It only holds work that needs owner approval before anything is sent, assigned, synced or changed.</p></div><div className="freshCommandPreparedSummary"><button onClick={load}>Run Command checks</button><small>{message}</small><b>{open.length} open · {handled.length} handled</b></div></div>
+      <section className="freshCommandWorkArea">
+        <section className="freshPreparedTrayGrid">
+          {activeCats.length ? activeCats.map((cat) => <article className={`freshPreparedTray freshPreparedTray-${cat.id}`} key={cat.id}><header><div><h2>{cat.title}</h2><p>{cat.sub}</p></div><strong>{cat.items.length}</strong></header><div className="freshPreparedTrayList">{cat.items.map((slip) => <button className={selected?.id === slip.id ? "is-selected" : ""} key={slip.id} onClick={() => setSelectedId(slip.id)}><b>{slip.title}</b><span className="freshPreparedItemDetail">{slip.found}</span><em>{slip.priority} · decision</em></button>)}</div></article>) : <article className="freshPreparedTray"><header><div><h2>No approvals waiting</h2><p>Smart Hub still gives the overview. Command opens when a real decision is needed.</p></div><strong>0</strong></header></article>}
+        </section>
+        <DecisionPanel slip={selected} note={note} setNote={setNote} onApprove={approve} onDecline={decline} onSave={saveEdit} onSnooze={snooze} onOpenArea={openArea} />
+      </section>
+    </section>
+  );
 }
