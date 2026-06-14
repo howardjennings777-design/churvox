@@ -45,7 +45,7 @@ export default function PlansPage() {
           }
           if (smsPack) setNotice({ type: "warning", title: "SMS coming soon", text: "SMS credits are not active during launch testing." });
           else if (addon === "command_growth_pack") setNotice({ type: "success", title: "Growth Pack added", text: "Your Command Growth Pack checkout completed." });
-          else if (addon === "myob_addon") setNotice({ type: "success", title: "MYOB add-on added", text: "Your MYOB add-on checkout completed." });
+          else if (addon === "myob_addon") setNotice({ type: "success", title: "Accounting Sync Add-on added", text: "Your accounting sync add-on checkout completed." });
           else {
             if (plan) setCurrentPlan(plan);
             setNotice({ type: "success", title: "Plan updated", text: `${nicePlanName(plan)} is now active.` });
@@ -147,10 +147,10 @@ export default function PlansPage() {
 
   const handleBuyMyobAddon = async () => {
     if (busyPlan || busyAddon || busySms) return;
-    if (isNewUser) return toast.error("Choose Operator or Command before adding MYOB.");
-    if (currentPlan === "enterprise") return toast.success("MYOB is already included in Command.");
+    if (isNewUser) return toast.error("Choose a plan before adding accounting sync.");
+    if (currentPlan === "enterprise") return toast.success("Accounting sync is already included in Command.");
     try { setBusyAddon("myob_addon"); await openCheckout({ checkout_type: "myob_addon", addon_type: "myob_addon", quantity: 1, success_path: "/plans?checkout=success&addon=myob_addon", cancel_path: "/plans?checkout=cancelled&addon=myob_addon" }); }
-    catch (err) { toast.error(err?.response?.data?.detail || err?.data?.detail || err?.message || "Failed to open MYOB checkout"); }
+    catch (err) { toast.error(err?.response?.data?.detail || err?.data?.detail || err?.message || "Failed to open Accounting Sync checkout"); }
     finally { setBusyAddon(""); }
   };
 
@@ -173,7 +173,7 @@ export default function PlansPage() {
           <div>
             <p className="cv-kicker">Plans & billing</p>
             <h1>Choose the plan that fits your crew.</h1>
-            <p>{isFirstSetup() ? "Choose your trial plan first. Then Churvox will take you into business setup so your first client, job, quote and invoice make sense." : "Start keeps solo admin tidy. Crew adds worker control. Operator prepares admin for approval. Command adds MYOB, payroll, advanced roles and higher limits."}</p>
+            <p>{isFirstSetup() ? "Choose your trial plan first. Then Churvox will take you into business setup so your first client, job, quote and invoice make sense." : "Start keeps solo admin tidy. Crew adds worker control. Operator prepares admin for approval. Command includes one accounting sync option, payroll, advanced roles and higher limits."}</p>
           </div>
           <div className="cv-status-pill">{currencyInfo?.currency ? `Billed in ${currencyInfo.currency}` : status.label}</div>
         </section>
@@ -197,6 +197,7 @@ export default function PlansPage() {
                 <div className="cv-price">
                   <b>{plan.price}</b>
                   <small>{plan.period}</small>
+                  {plan.inclGst ? <small>{plan.inclGst}</small> : null}
                 </div>
               </div>
 
@@ -226,10 +227,12 @@ export default function PlansPage() {
           );
         })}</section>
 
-        <section className="cv-user-blocks"><div><small>Command Growth Pack</small><b>+50 active team members</b><span>Add more crew, jobs and AI Operator capacity as your business grows. Built for Command customers who need more capacity without changing the whole plan.</span></div><article><small>Growth Pack</small><strong>$99<em> /month + GST</em></strong><p>Each block adds 50 more active team members.</p><button className="cv-user-block-buy" type="button" onClick={handleBuyGrowthPack} disabled={Boolean(busyPlan || busyAddon || busySms)} data-testid="buy-command-growth-pack">{busyAddon === "command_growth_pack" ? "Opening checkout…" : "Buy Growth Pack"}</button></article><ul>{userBlocks.map((item) => <li key={item}>{item}</li>)}</ul></section>
-        <section className="cv-myob-addon"><div><small>MYOB add-on</small><b>MYOB sync for Operator</b><span>Operator can add MYOB for $39/month + GST. Command includes MYOB by default.</span></div><button type="button" onClick={handleBuyMyobAddon} disabled={Boolean(busyPlan || busyAddon || busySms || currentPlan === "enterprise")} data-testid="buy-myob-addon">{currentPlan === "enterprise" ? "Included in Command" : busyAddon === "myob_addon" ? "Opening checkout…" : "Add MYOB — $39/month"}</button></section>
+        <div className="cv-notice"><b>GST clarity</b><span>Prices shown exclude GST. GST is added at checkout. GST-inclusive totals are shown for clarity.</span></div>
+
+        <section className="cv-user-blocks"><div><small>Command Growth Pack</small><b>+50 active team members</b><span>Add more crew, jobs and AI Operator capacity as your business grows. Built for Command customers who need more capacity without changing the whole plan.</span></div><article><small>Growth Pack</small><strong>$99<em> /month + GST</em></strong><p>$113.85/month incl. GST. Each block adds 50 more active team members.</p><button className="cv-user-block-buy" type="button" onClick={handleBuyGrowthPack} disabled={Boolean(busyPlan || busyAddon || busySms)} data-testid="buy-command-growth-pack">{busyAddon === "command_growth_pack" ? "Opening checkout…" : "Buy Growth Pack"}</button></article><ul>{userBlocks.map((item) => <li key={item}>{item}</li>)}</ul></section>
+        <section className="cv-myob-addon"><div><small>Accounting Sync Add-on</small><b>Xero or MYOB sync</b><span>Start, Crew and Operator can add Xero or MYOB sync for $39/month + GST where available. Command includes one accounting sync option.</span></div><button type="button" onClick={handleBuyMyobAddon} disabled={Boolean(busyPlan || busyAddon || busySms || currentPlan === "enterprise")} data-testid="buy-myob-addon">{currentPlan === "enterprise" ? "Included in Command" : busyAddon === "myob_addon" ? "Opening checkout…" : "Add Accounting Sync — $39/month"}</button></section>
         <section className="cv-sms-pricing"><div><b>SMS credit blocks</b><span>SMS reminders and follow-ups are coming soon. They stay approval-first and are not active during launch testing.</span></div><div className="cv-sms-grid">{smsBlocks.map((pack) => <article key={pack.key}><small>{pack.credits} credits</small><strong>{pack.price}<em> + GST</em></strong><span>{pack.note}</span><button type="button" onClick={() => handleBuySmsPack(pack)} disabled={true} data-testid={smsTestIds[pack.key] || `sms-coming-soon-${pack.key}`}>Coming soon</button></article>)}</div></section>
-        <section className="cv-footer-row"><div><b>Churvox does the admin</b><span>AI prepares daily actions for owner approval.</span></div><div><b>Command scales</b><span>Growth Pack adds 50 active team members for $99/month + GST.</span></div><div><b>MYOB ready</b><span>Operator add-on available. Included in Command.</span></div></section>
+        <section className="cv-footer-row"><div><b>Churvox does the admin</b><span>AI prepares daily actions for owner approval.</span></div><div><b>Command scales</b><span>Growth Pack adds 50 active team members for $99/month + GST.</span></div><div><b>Accounting sync</b><span>Xero or MYOB add-on available. One option included with Command.</span></div></section>
       </div>
     </main>
   );
