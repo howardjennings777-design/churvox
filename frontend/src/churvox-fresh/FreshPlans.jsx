@@ -3,189 +3,62 @@ import { useApi } from "../hooks/useApi";
 import "./freshPlans.css";
 
 const regions = {
-  NZ: { label: "New Zealand", short: "NZ", currency: "NZD", prefix: "$", suffix: "", tax: "+ GST", taxRate: 0.15, taxIncluded: "incl. GST" },
-  AU: { label: "Australia", short: "AU", currency: "AUD", prefix: "A$", suffix: "", tax: "+ GST", taxRate: 0.1, taxIncluded: "incl. GST" },
-  US: { label: "United States", short: "US", currency: "USD", prefix: "US$", suffix: "", tax: "+ tax", taxRate: 0, taxIncluded: "tax may apply" },
-  UK: { label: "United Kingdom", short: "UK", currency: "GBP", prefix: "£", suffix: "", tax: "+ VAT/tax", taxRate: 0.2, taxIncluded: "incl. VAT" },
+  NZ: { label: "New Zealand", short: "NZ", currency: "NZD", prefix: "$", tax: "+ GST", taxRate: 0.15, taxIncluded: "incl. GST" },
+  AU: { label: "Australia", short: "AU", currency: "AUD", prefix: "A$", tax: "+ GST", taxRate: 0.1, taxIncluded: "incl. GST" },
+  US: { label: "United States", short: "US", currency: "USD", prefix: "US$", tax: "+ tax", taxRate: 0, taxIncluded: "tax may apply" },
+  UK: { label: "United Kingdom", short: "UK", currency: "GBP", prefix: "£", tax: "+ VAT", taxRate: 0.2, taxIncluded: "incl. VAT" },
 };
 
 const plans = [
-  {
-    id: "start",
-    backendPlan: "solo",
-    name: "Start",
-    prices: { NZ: 39, AU: 39, US: 29, UK: 25 },
-    tag: "Starter",
-    best: false,
-    headline: "Get organised",
-    summary: "For a solo operator who needs jobs, clients, quotes and invoices under control.",
-    limit: "Best for one owner",
-    features: [
-      "Jobs, clients, quotes and invoices",
-      "Smart Hub basics",
-      "Business settings and GST/tax settings",
-      "Accounting Sync Add-on available",
-      "14-day free trial, no card",
-    ],
-  },
-  {
-    id: "crew",
-    backendPlan: "team",
-    name: "Crew",
-    prices: { NZ: 89, AU: 89, US: 69, UK: 59 },
-    tag: "Growing team",
-    best: false,
-    headline: "Run the crew",
-    summary: "For a business with workers, daily dispatch, job handover and more client admin.",
-    limit: "Up to 5 workers",
-    features: [
-      "Everything in Start",
-      "Team and worker setup",
-      "Dispatch-ready workflow",
-      "More job and client capacity",
-      "Accounting Sync Add-on available",
-    ],
-  },
-  {
-    id: "operator",
-    backendPlan: "pro",
-    name: "Operator",
-    prices: { NZ: 149, AU: 149, US: 119, UK: 99 },
-    tag: "Most Popular",
-    best: true,
-    headline: "Admin done for approval",
-    summary: "Where Churvox starts doing the admin and you approve the work before it goes out.",
-    limit: "Recommended plan",
-    features: [
-      "AI Operator Actions",
-      "Command approval desk",
-      "Quote follow-up watch",
-      "Invoice and job admin prepared for approval",
-      "Accounting Sync Add-on available",
-    ],
-  },
-  {
-    id: "command",
-    backendPlan: "enterprise",
-    name: "Command",
-    prices: { NZ: 299, AU: 299, US: 239, UK: 199 },
-    tag: "Full control",
-    best: false,
-    headline: "Scale with control",
-    summary: "For the bigger business that wants payroll workspace, one accounting sync option and advanced control.",
-    limit: "Up to 50 active team members",
-    features: [
-      "Everything in Operator",
-      "Accounting sync included: Xero or MYOB",
-      "Payroll workspace",
-      "Advanced roles",
-      "Priority support",
-      "Command Growth Pack available",
-    ],
-  },
+  { id: "start", backendPlan: "solo", name: "Start", prices: { NZ: 39, AU: 39, US: 29, UK: 25 }, best: false, headline: "Get organised", summary: "For a solo operator who needs jobs, clients, quotes and invoices under control.", limit: "Best for one owner", features: ["Jobs, clients, quotes and invoices", "Smart Hub basics", "Business settings", "Accounting Sync Add-on available", "14-day free trial, no card"] },
+  { id: "crew", backendPlan: "team", name: "Crew", prices: { NZ: 89, AU: 89, US: 69, UK: 59 }, best: false, headline: "Run the crew", summary: "For a business with workers, daily dispatch, job handover and more client admin.", limit: "Up to 5 workers", features: ["Everything in Start", "Team and worker setup", "Dispatch-ready workflow", "More job and client capacity", "Accounting Sync Add-on available"] },
+  { id: "operator", backendPlan: "pro", name: "Operator", prices: { NZ: 149, AU: 149, US: 119, UK: 99 }, best: true, headline: "Admin done for approval", summary: "Where Churvox starts preparing the admin and you approve the work before it goes out.", limit: "Recommended plan", features: ["AI Operator Actions", "Command approval desk", "Quote follow-up watch", "Invoice and job admin prepared for approval", "Accounting Sync Add-on available"] },
+  { id: "command", backendPlan: "enterprise", name: "Command", prices: { NZ: 299, AU: 299, US: 239, UK: 199 }, best: false, headline: "Scale with control", summary: "For the bigger business that wants payroll workspace, one accounting sync option and advanced control.", limit: "Up to 50 active team members", features: ["Everything in Operator", "Accounting sync included: Xero or MYOB", "Payroll workspace", "Advanced roles", "Priority support", "Command Growth Pack available"] },
 ];
 
 const growthPackPrices = { NZ: 99, AU: 99, US: 79, UK: 69 };
 const accountingSyncPrices = { NZ: 39, AU: 39, US: 29, UK: 25 };
+const backendToUiPlan = { solo: "start", team: "crew", pro: "operator", enterprise: "command", start: "start", crew: "crew", operator: "operator", command: "command" };
 
-const backendToUiPlan = {
-  solo: "start",
-  team: "crew",
-  pro: "operator",
-  enterprise: "command",
-  start: "start",
-  crew: "crew",
-  operator: "operator",
-  command: "command",
-};
-
-function uiPlanFromBackend(value) {
-  return backendToUiPlan[String(value || "pro").toLowerCase()] || "operator";
-}
-
-function planByUiId(id) {
-  return plans.find((plan) => plan.id === id) || plans[2];
-}
-
-function unwrap(result) {
-  return result?.data ?? result;
-}
-
-function planPrice(plan, regionCode) {
-  return Number(plan?.prices?.[regionCode] ?? plan?.prices?.NZ ?? 0);
-}
-
-function growthPackPrice(regionCode) {
-  return Number(growthPackPrices[regionCode] ?? growthPackPrices.NZ);
-}
-
-function accountingSyncPrice(regionCode) {
-  return Number(accountingSyncPrices[regionCode] ?? accountingSyncPrices.NZ);
-}
-
-function money(value, regionCode, decimals = 0) {
-  const region = regions[regionCode] || regions.NZ;
-  return `${region.prefix}${Number(value || 0).toFixed(decimals)}${region.suffix}`;
-}
-
-function inclusiveAmount(value, regionCode) {
-  const region = regions[regionCode] || regions.NZ;
-  return Number(value || 0) * (1 + Number(region.taxRate || 0));
-}
-
+function unwrap(result) { return result?.data ?? result; }
+function planByUiId(id) { return plans.find((plan) => plan.id === id) || plans[2]; }
+function uiPlanFromBackend(value) { return backendToUiPlan[String(value || "pro").toLowerCase()] || "operator"; }
+function price(plan, region) { return Number(plan?.prices?.[region] ?? plan?.prices?.NZ ?? 0); }
+function money(value, regionCode, decimals = 0) { const r = regions[regionCode] || regions.NZ; return `${r.prefix}${Number(value || 0).toFixed(decimals)}`; }
 function inclusiveLabel(value, regionCode) {
-  const region = regions[regionCode] || regions.NZ;
-  if (!region.taxRate) return region.taxIncluded;
-  return `${money(inclusiveAmount(value, regionCode), regionCode, 2)}/month ${region.taxIncluded}`;
+  const r = regions[regionCode] || regions.NZ;
+  if (!r.taxRate) return r.taxIncluded;
+  return `${money(Number(value || 0) * (1 + r.taxRate), regionCode, 2)}/month ${r.taxIncluded}`;
 }
 
 export default function FreshPlans({ onNavigate }) {
-  const { get, patch, post } = useApi();
+  const { get, post } = useApi();
   const [currentPlan, setCurrentPlan] = React.useState("operator");
   const [selectedPlan, setSelectedPlan] = React.useState("operator");
   const [selectedRegion, setSelectedRegion] = React.useState("NZ");
   const [growthPacks, setGrowthPacks] = React.useState(0);
   const [includeAccountingSync, setIncludeAccountingSync] = React.useState(false);
-  const [saving, setSaving] = React.useState(false);
   const [checkoutLoading, setCheckoutLoading] = React.useState(false);
   const [error, setError] = React.useState("");
 
   const selected = planByUiId(selectedPlan);
   const region = regions[selectedRegion] || regions.NZ;
   const commandSelected = selected.id === "command";
-  const selectedPlanPrice = planPrice(selected, selectedRegion);
-  const selectedGrowthPackPrice = growthPackPrice(selectedRegion);
-  const selectedAccountingSyncPrice = accountingSyncPrice(selectedRegion);
-  const growthTotal = commandSelected ? growthPacks * selectedGrowthPackPrice : 0;
-  const accountingTotal = !commandSelected && includeAccountingSync ? selectedAccountingSyncPrice : 0;
-  const monthlyTotal = selectedPlanPrice + growthTotal + accountingTotal;
+  const accountingPrice = Number(accountingSyncPrices[selectedRegion] ?? accountingSyncPrices.NZ);
+  const growthPrice = Number(growthPackPrices[selectedRegion] ?? growthPackPrices.NZ);
+  const monthlyTotal = price(selected, selectedRegion) + (commandSelected ? growthPacks * growthPrice : 0) + (!commandSelected && includeAccountingSync ? accountingPrice : 0);
 
   const loadPlan = React.useCallback(async () => {
     setError("");
-
     try {
       const status = unwrap(await get("/billing/subscription-status"));
-      const uiPlan = uiPlanFromBackend(status?.plan);
-      setCurrentPlan(uiPlan);
-      setSelectedPlan(uiPlan);
-      setIncludeAccountingSync(false);
-
-      try {
-        const addons = unwrap(await get("/billing/addons"));
-        if (addons && typeof addons.extra_user_blocks !== "undefined") {
-          setGrowthPacks(Number(addons.extra_user_blocks || 0));
-        }
-      } catch {
-        // Add-ons should not block the main plan page.
-      }
-    } catch (err) {
-      setError(err?.message || "Plan could not load from backend.");
+      setCurrentPlan(uiPlanFromBackend(status?.plan));
+    } catch {
+      setError("We could not load your current plan. You can still choose a plan and continue to checkout.");
     }
   }, [get]);
 
-  React.useEffect(() => {
-    loadPlan();
-  }, [loadPlan]);
+  React.useEffect(() => { loadPlan(); }, [loadPlan]);
 
   function choosePlan(planId) {
     setSelectedPlan(planId);
@@ -194,51 +67,20 @@ export default function FreshPlans({ onNavigate }) {
     setError("");
   }
 
-  function chooseRegion(regionCode) {
-    setSelectedRegion(regionCode);
-    setError("");
-  }
-
-  async function saveCurrentPlan() {
-    setSaving(true);
-    setError("");
-
-    try {
-      await patch("/user/plan", { plan: selected.backendPlan });
-      await loadPlan();
-      setSelectedPlan(selected.id);
-    } catch (err) {
-      setError(err?.message || "Plan could not be saved.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   async function startCheckout() {
     setCheckoutLoading(true);
     setError("");
-
     try {
-      const response = unwrap(await post("/billing/create-checkout-session", {
-        plan: selected.backendPlan,
-        country: selectedRegion,
-      }));
+      const response = unwrap(await post("/billing/create-checkout-session", { plan: selected.backendPlan, country: selectedRegion }));
       const checkoutUrl = response?.url || response?.checkout_url;
-      if (!checkoutUrl) throw new Error("Checkout URL was not returned.");
+      if (!checkoutUrl) throw new Error("Checkout could not start. Please contact support.");
       window.location.href = checkoutUrl;
     } catch (err) {
-      setError(err?.message || `Stripe checkout could not start for ${selectedRegion}. Check the ${selected.name} Stripe price ID for this region.`);
+      setError(err?.message || "Checkout could not start. Please contact support and we will help you activate the plan.");
     } finally {
       setCheckoutLoading(false);
     }
   }
-
-  const planComparison = [
-    ["Start", "Solo basics", "Jobs, quotes, invoices. Accounting Sync Add-on available."],
-    ["Crew", "Small team", "Workers and dispatch. Accounting Sync Add-on available."],
-    ["Operator", "Recommended", "AI admin prepared for approval. Accounting Sync Add-on available."],
-    ["Command", "Scale", "Accounting sync, payroll and advanced roles included."],
-  ];
 
   return (
     <section className="freshPricingPage">
@@ -252,69 +94,31 @@ export default function FreshPlans({ onNavigate }) {
             <button className="freshGhost" type="button" onClick={() => onNavigate?.("support")}>Talk to support</button>
           </div>
         </div>
-        <aside>
-          <small>Selected region</small>
-          <strong>{region.currency}</strong>
-          <p>{region.label} · prices shown exclude tax. GST/VAT-inclusive totals are shown where applicable.</p>
-        </aside>
+        <aside><small>Selected region</small><strong>{region.currency}</strong><p>{region.label} · checkout confirms the final total.</p></aside>
       </header>
 
-      <section className="freshPlanNotice proper">
-        <b>Launch pricing live by region</b>
-        <span>Prices shown exclude GST/tax. GST or VAT is added at checkout. Inclusive totals are shown for clarity.</span>
-      </section>
+      <section className="freshPlanNotice proper"><b>Launch pricing</b><span>Prices are monthly and shown before GST/tax. Checkout confirms the final amount before you pay.</span></section>
 
       <section className="freshRegionPicker freshCard">
-        <div>
-          <b>Choose pricing region</b>
-          <span>Stripe checkout will use this region.</span>
-        </div>
+        <div><b>Choose pricing region</b><span>Checkout will use this region.</span></div>
         <div className="freshRegionButtons">
-          {Object.entries(regions).map(([code, item]) => (
-            <button
-              key={code}
-              type="button"
-              className={selectedRegion === code ? "active" : ""}
-              onClick={() => chooseRegion(code)}
-            >
-              <b>{item.short}</b>
-              <span>{item.currency}</span>
-            </button>
-          ))}
+          {Object.entries(regions).map(([code, item]) => <button key={code} type="button" className={selectedRegion === code ? "active" : ""} onClick={() => setSelectedRegion(code)}><b>{item.short}</b><span>{item.currency}</span></button>)}
         </div>
       </section>
 
-      {error && (
-        <section className="freshCard freshNotice need">
-          <b>Plans need attention</b>
-          <span>{error}</span>
-        </section>
-      )}
+      {error ? <section className="freshCard freshNotice need"><b>Plans need attention</b><span>{error}</span></section> : null}
 
       <section className="freshPricingCards">
         {plans.map((plan) => {
-          const active = selectedPlan === plan.id;
-          const isCurrent = currentPlan === plan.id;
-          const displayPrice = planPrice(plan, selectedRegion);
+          const displayPrice = price(plan, selectedRegion);
           return (
-            <button
-              type="button"
-              key={plan.id}
-              className={`freshPricingCard ${active ? "active" : ""} ${plan.best ? "best" : ""}`}
-              onClick={() => choosePlan(plan.id)}
-            >
-              {isCurrent && <span className="freshCurrentBadge">Current</span>}
+            <button type="button" key={plan.id} className={`freshPricingCard ${selectedPlan === plan.id ? "active" : ""} ${plan.best ? "best" : ""}`} onClick={() => choosePlan(plan.id)}>
+              {currentPlan === plan.id ? <span className="freshCurrentBadge">Current</span> : null}
               <strong>{plan.name}</strong>
               <em>{money(displayPrice, selectedRegion)}<small>/month {region.tax}</small></em>
               <small className="freshPlanLimit">{inclusiveLabel(displayPrice, selectedRegion)}</small>
-              <h3>{plan.headline}</h3>
-              <p>{plan.summary}</p>
-              <small className="freshPlanLimit">{plan.limit}</small>
-              <ul>
-                {plan.features.map((feature) => (
-                  <li key={feature}>✓ {feature}</li>
-                ))}
-              </ul>
+              <h3>{plan.headline}</h3><p>{plan.summary}</p><small className="freshPlanLimit">{plan.limit}</small>
+              <ul>{plan.features.map((feature) => <li key={feature}>✓ {feature}</li>)}</ul>
             </button>
           );
         })}
@@ -322,99 +126,19 @@ export default function FreshPlans({ onNavigate }) {
 
       <section className="freshPricingDetail">
         <section className="freshCard freshSelectedPlanCard">
-          <div className="freshSelectedPlanTop">
-            <div>
-              <span>Selected · {region.currency}</span>
-              <h2>{selected.name}</h2>
-              <p>{selected.summary}</p>
-            </div>
-            <strong>{money(monthlyTotal, selectedRegion)}<small>/month {region.tax}</small><small>{inclusiveLabel(monthlyTotal, selectedRegion)}</small></strong>
-          </div>
-
-          <div className="freshGrowthPack premium">
-            <div>
-              <b>Accounting Sync Add-on</b>
-              <span>{commandSelected ? "Included with Command: choose Xero or MYOB." : `${money(selectedAccountingSyncPrice, selectedRegion)}/month ${region.tax} · ${inclusiveLabel(selectedAccountingSyncPrice, selectedRegion)} · Xero or MYOB sync where available.`}</span>
-            </div>
-            {!commandSelected && (
-              <div className="freshGrowthControls">
-                <button type="button" onClick={() => setIncludeAccountingSync(false)} className={!includeAccountingSync ? "active" : ""}>No</button>
-                <button type="button" onClick={() => setIncludeAccountingSync(true)} className={includeAccountingSync ? "active" : ""}>Add</button>
-              </div>
-            )}
-          </div>
-
-          {commandSelected && (
-            <div className="freshGrowthPack premium">
-              <div>
-                <b>Command Growth Pack</b>
-                <span>{money(selectedGrowthPackPrice, selectedRegion)}/month {region.tax} · {inclusiveLabel(selectedGrowthPackPrice, selectedRegion)} · adds 50 active team members plus extra job, AI action, automation and admin capacity.</span>
-              </div>
-              <div className="freshGrowthControls">
-                <button type="button" onClick={() => setGrowthPacks((count) => Math.max(0, count - 1))}>−</button>
-                <strong>{growthPacks}</strong>
-                <button type="button" onClick={() => setGrowthPacks((count) => count + 1)}>+</button>
-              </div>
-            </div>
-          )}
-
-          <div className="freshPlanFeatures premium">
-            {selected.features.map((feature) => (
-              <div key={feature}>
-                <b>✓</b>
-                <span>{feature}</span>
-              </div>
-            ))}
-          </div>
+          <div className="freshSelectedPlanTop"><div><span>Selected · {region.currency}</span><h2>{selected.name}</h2><p>{selected.summary}</p></div><strong>{money(monthlyTotal, selectedRegion)}<small>/month {region.tax}</small><small>{inclusiveLabel(monthlyTotal, selectedRegion)}</small></strong></div>
+          <div className="freshGrowthPack premium"><div><b>Accounting Sync Add-on</b><span>{commandSelected ? "Included with Command: choose Xero or MYOB." : `${money(accountingPrice, selectedRegion)}/month ${region.tax} · ${inclusiveLabel(accountingPrice, selectedRegion)} · Xero or MYOB sync where available.`}</span></div>{!commandSelected ? <div className="freshGrowthControls"><button type="button" onClick={() => setIncludeAccountingSync(false)} className={!includeAccountingSync ? "active" : ""}>No</button><button type="button" onClick={() => setIncludeAccountingSync(true)} className={includeAccountingSync ? "active" : ""}>Add</button></div> : null}</div>
+          {commandSelected ? <div className="freshGrowthPack premium"><div><b>Command Growth Pack</b><span>{money(growthPrice, selectedRegion)}/month {region.tax} · adds 50 active team members plus extra job, AI action, automation and admin capacity.</span></div><div className="freshGrowthControls"><button type="button" onClick={() => setGrowthPacks((c) => Math.max(0, c - 1))}>−</button><strong>{growthPacks}</strong><button type="button" onClick={() => setGrowthPacks((c) => c + 1)}>+</button></div></div> : null}
+          <div className="freshPlanFeatures premium">{selected.features.map((feature) => <div key={feature}><b>✓</b><span>{feature}</span></div>)}</div>
         </section>
 
         <aside className="freshCard freshCheckoutCard">
-          <h2>Billing actions</h2>
-          <p>Use backend save for testing and persistence. Stripe checkout will use {region.label} pricing.</p>
-
-          <div className="freshActions">
-            <button className="freshPrimary" type="button" onClick={saveCurrentPlan} disabled={saving}>
-              {saving ? "Saving..." : `Save ${selected.name} as current plan`}
-            </button>
-            <button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading}>
-              {checkoutLoading ? "Starting checkout..." : `Start Stripe checkout · ${region.currency}`}
-            </button>
-            <button className="freshOrange" type="button" onClick={() => choosePlan("operator")}>
-              Recommend Operator
-            </button>
-            <button className="freshGhost" type="button" onClick={loadPlan}>
-              Reload backend plan
-            </button>
-          </div>
-
-          <div className="freshItem">
-            <b>Best default</b>
-            <span>Operator is the main plan because AI runs the admin and the owner approves.</span>
-          </div>
-
-          <div className="freshItem">
-            <b>Accounting sync</b>
-            <span>Start, Crew and Operator can add Xero or MYOB sync. Command includes one accounting sync option.</span>
-          </div>
-
-          <div className="freshItem need">
-            <b>Regional checkout</b>
-            <span>Make sure Stripe has price IDs for {selected.name} in {selectedRegion} before live sales in this region.</span>
-          </div>
+          <h2>Checkout</h2><p>Choose your plan, check the total, then start checkout when ready.</p>
+          <div className="freshActions"><button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading}>{checkoutLoading ? "Starting checkout..." : `Start checkout · ${region.currency}`}</button><button className="freshOrange" type="button" onClick={() => choosePlan("operator")}>Recommend Operator</button><button className="freshGhost" type="button" onClick={loadPlan}>Refresh current plan</button></div>
+          <div className="freshItem"><b>Current plan</b><span>{planByUiId(currentPlan).name}</span></div>
+          <div className="freshItem"><b>Best default</b><span>Operator is the main plan because AI runs the admin and the owner approves.</span></div>
+          <div className="freshItem"><b>Accounting sync</b><span>Start, Crew and Operator can add Xero or MYOB sync. Command includes one accounting sync option.</span></div>
         </aside>
-      </section>
-
-      <section className="freshCard freshCompareCard">
-        <h2>Simple comparison</h2>
-        <div className="freshCompareGrid">
-          {planComparison.map(([name, fit, value]) => (
-            <div key={name}>
-              <b>{name}</b>
-              <span>{fit}</span>
-              <p>{value}</p>
-            </div>
-          ))}
-        </div>
       </section>
     </section>
   );
