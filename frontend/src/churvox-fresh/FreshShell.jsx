@@ -64,8 +64,6 @@ const relatedTools = {
   ],
   jobs: [
     ["recurring", "RC", "Recurring Jobs"],
-    ["routes", "RT", "Routes"],
-    ["areas", "AR", "Areas"],
     ["services", "SV", "Services"],
     ["industries", "ID", "Industries"],
     ["templates", "TP", "Templates"],
@@ -87,14 +85,11 @@ const relatedTools = {
   ],
   clients: [
     ["customerportal", "CP", "Customer Portal"],
-    ["portal", "PT", "Portal View"],
     ["customermemory", "CM", "Customer Memory"],
     ["messages", "MS", "Messages"],
     ["messagetriage", "MT", "Message Triage"],
     ["followups", "FU", "Follow-ups"],
-    ["followupwriter", "FW", "Follow-up Writer"],
     ["reviews", "RV", "Reviews"],
-    ["reviewbooster", "RB", "Review Booster"],
     ["missinginfo", "MI", "Missing Info"],
     ["upsellfinder", "UF", "Upsell Finder"],
   ],
@@ -128,7 +123,7 @@ const relatedTools = {
     ["roles", "RL", "Roles"],
   ],
   xero: [
-    ["integrations", "IN", "Integrations"],
+    ["integrations", "IN", "Other Integrations"],
     ["billing", "BL", "Billing"],
     ["aiusage", "AU", "AI Usage"],
   ],
@@ -235,6 +230,9 @@ function buildLabels() {
   nextLabels.schedulerai = "Scheduler AI";
   nextLabels.recurringSaver = "Recurring Saver";
   nextLabels.recurringsaver = "Recurring Saver";
+  nextLabels.followupwriter = "Follow-up Writer";
+  nextLabels.reviewbooster = "Review Booster";
+  nextLabels.portal = "Portal View";
   nextLabels.nz = "New Zealand Setup";
   nextLabels.myob = "MYOB";
   return nextLabels;
@@ -252,6 +250,13 @@ function buildParentMap() {
       map[key] = key;
     });
   });
+  map.routes = "dispatch";
+  map.areas = "dispatch";
+  map.schedulerai = "dispatch";
+  map.gps = "time";
+  map.portal = "clients";
+  map.followupwriter = "clients";
+  map.reviewbooster = "clients";
   return map;
 }
 
