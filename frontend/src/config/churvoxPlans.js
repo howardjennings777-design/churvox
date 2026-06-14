@@ -23,10 +23,10 @@ export const PLAN_ALIASES = {
 };
 
 export const COUNTRY_OPTIONS = [
-  { code: "NZ", label: "New Zealand", currency: "NZD", symbol: "NZ$", taxLabel: "+ GST" },
-  { code: "AU", label: "Australia", currency: "AUD", symbol: "A$", taxLabel: "+ GST" },
-  { code: "US", label: "United States", currency: "USD", symbol: "US$", taxLabel: "" },
-  { code: "UK", label: "United Kingdom", currency: "GBP", symbol: "GBP", taxLabel: "+ VAT" }
+  { code: "NZ", label: "New Zealand", currency: "NZD", symbol: "$", taxLabel: "+ GST", taxInclusiveLabel: "incl. GST", taxRate: 0.15 },
+  { code: "AU", label: "Australia", currency: "AUD", symbol: "A$", taxLabel: "+ GST", taxInclusiveLabel: "incl. GST", taxRate: 0.10 },
+  { code: "US", label: "United States", currency: "USD", symbol: "US$", taxLabel: "", taxInclusiveLabel: "", taxRate: 0 },
+  { code: "UK", label: "United Kingdom", currency: "GBP", symbol: "GBP", taxLabel: "+ VAT", taxInclusiveLabel: "incl. VAT", taxRate: 0.20 }
 ];
 
 export const COUNTRIES = COUNTRY_OPTIONS;
@@ -41,7 +41,7 @@ export const PLAN_PRICING = {
     code: "start",
     tag: "Start",
     name: "Start",
-    summary: "For solo operators getting organised.",
+    summary: "Solo operators getting organised.",
     tagline: "For solo operators getting organised.",
     description: "Simple jobs, clients, quotes and invoices for one-person trade or service businesses.",
     price: 39,
@@ -55,6 +55,7 @@ export const PLAN_PRICING = {
       "Quotes and invoices",
       "Basic scheduling",
       "Basic AI admin help",
+      "Accounting Sync Add-on available",
       "Up to 20 active clients"
     ],
     features: [
@@ -62,6 +63,7 @@ export const PLAN_PRICING = {
       "Quotes and invoices",
       "Basic scheduling",
       "Basic AI admin help",
+      "Accounting Sync Add-on available",
       "Up to 20 active clients"
     ]
   },
@@ -70,7 +72,7 @@ export const PLAN_PRICING = {
     code: "crew",
     tag: "Crew",
     name: "Crew",
-    summary: "For small crews that need control.",
+    summary: "Small crews that need control.",
     tagline: "For small crews that need control.",
     description: "Run jobs, team assignments, clients, quotes and invoices from one workspace.",
     price: 89,
@@ -84,6 +86,7 @@ export const PLAN_PRICING = {
       "Team workflow",
       "Worker assignments",
       "Time tracking",
+      "Accounting Sync Add-on available",
       "Up to 30 active clients"
     ],
     features: [
@@ -91,6 +94,7 @@ export const PLAN_PRICING = {
       "Team workflow",
       "Worker assignments",
       "Time tracking",
+      "Accounting Sync Add-on available",
       "Up to 30 active clients"
     ]
   },
@@ -114,7 +118,7 @@ export const PLAN_PRICING = {
       "AI Operator Actions",
       "Approval queue",
       "Advanced job admin",
-      "Xero support when connected when connected add-on when connected",
+      "Accounting Sync Add-on available",
       "Up to 40 active clients"
     ],
     features: [
@@ -122,7 +126,7 @@ export const PLAN_PRICING = {
       "AI Operator Actions",
       "Approval queue",
       "Advanced job admin",
-      "Xero support when connected when connected add-on when connected",
+      "Accounting Sync Add-on available",
       "Up to 40 active clients"
     ]
   },
@@ -133,7 +137,7 @@ export const PLAN_PRICING = {
     name: "Command",
     summary: "Full command centre for larger teams.",
     tagline: "Full command centre for larger teams.",
-    description: "Advanced control, roles, payroll workspace, Xero support when connected when connected and priority support.",
+    description: "Advanced control, roles, payroll workspace, one accounting sync option, and priority support.",
     price: 299,
     monthly: 299,
     period: "month",
@@ -144,7 +148,7 @@ export const PLAN_PRICING = {
       "Everything in Operator",
       "Up to 50 active clients",
       "Up to 50 active team members",
-      "Xero support when connected when connected",
+      "Accounting sync included: Xero or MYOB",
       "Payroll workspace",
       "Advanced roles",
       "Reports and exports",
@@ -154,13 +158,13 @@ export const PLAN_PRICING = {
       "Everything in Operator",
       "Up to 50 active clients",
       "Up to 50 active team members",
-      "Xero support when connected when connected",
+      "Accounting sync included: Xero or MYOB",
       "Payroll workspace",
       "Advanced roles",
       "Reports and exports",
       "Priority support"
     ],
-    addonNote: "SMS credits and Command Growth Packs can be added when needed."
+    addonNote: "SMS credits and Command Growth Packs can be added when needed. One accounting sync option is included."
   }
 };
 
@@ -215,23 +219,26 @@ export const COMMAND_GROWTH_PACK = GROWTH_PACK;
 export const COMMAND_GROWTH_PACK_ADDON = GROWTH_PACK;
 export const GROWTH_PACK_ADDON = GROWTH_PACK;
 
-export const XERO_ADDON = {
+export const ACCOUNTING_SYNC_ADDON = {
   key: "xero_addon",
   code: "xero_addon",
-  name: "Xero add-on",
-  tag: "Xero",
+  name: "Accounting Sync Add-on",
+  tag: "Accounting Sync",
   price: 39,
   monthly: 39,
   period: "month",
   interval: "month",
-  description: "Optional Xero support when connected when connected for Operator. Included with Command."
+  description: "Optional Xero or MYOB sync where available. Included with Command."
 };
 
-export const ADDONS = [GROWTH_PACK, XERO_ADDON];
+export const XERO_ADDON = ACCOUNTING_SYNC_ADDON;
+export const MYOB_ADDON = ACCOUNTING_SYNC_ADDON;
+export const ADDONS = [GROWTH_PACK, ACCOUNTING_SYNC_ADDON];
 
 export const COMMAND_ADDONS = [
   "SMS credits can be added when needed.",
-  "Command Growth Packs can be added as your team grows."
+  "Command Growth Packs can be added as your team grows.",
+  "One accounting sync option is included with Command."
 ];
 
 export function normalizePlanKey(planKey) {
@@ -374,6 +381,18 @@ export function formatMoney(amount, countryCode) {
   return formatCurrency(amount, countryCode);
 }
 
+export function taxInclusiveAmount(amount, countryCode) {
+  const country = getCountryMeta(countryCode);
+  const value = Number(amount || 0);
+  return value + value * Number(country.taxRate || 0);
+}
+
+export function formatTaxInclusivePrice(amount, countryCode) {
+  const country = getCountryMeta(countryCode);
+  if (!country.taxLabel || !country.taxRate) return "";
+  return formatCurrency(taxInclusiveAmount(amount, countryCode), countryCode) + "/month " + (country.taxInclusiveLabel || "incl. tax");
+}
+
 export function pricePlanForCountry(planOrKey, countryCode) {
   const plan = typeof planOrKey === "object" && planOrKey !== null
     ? planOrKey
@@ -396,7 +415,8 @@ export function pricePlanForCountry(planOrKey, countryCode) {
     countryCode: country.code,
     countryLabel: country.label,
     priceLabel,
-    formattedPrice: priceLabel
+    formattedPrice: priceLabel,
+    taxInclusiveLabel: formatTaxInclusivePrice(monthly, country.code)
   };
 }
 
@@ -425,8 +445,8 @@ export function addonPriceForCountry(addonOrKey, countryCode) {
   if (!addon) {
     if (lower.includes("growth")) {
       addon = GROWTH_PACK;
-    } else if (lower.includes("xero")) {
-      addon = XERO_ADDON;
+    } else if (lower.includes("xero") || lower.includes("myob") || lower.includes("accounting")) {
+      addon = ACCOUNTING_SYNC_ADDON;
     } else {
       addon = { name: key || "Add-on", price: 0, monthly: 0, period: "month", interval: "month", description: "" };
     }
@@ -448,7 +468,8 @@ export function addonPriceForCountry(addonOrKey, countryCode) {
     countryCode: country.code,
     countryLabel: country.label,
     priceLabel,
-    formattedPrice: priceLabel
+    formattedPrice: priceLabel,
+    taxInclusiveLabel: formatTaxInclusivePrice(monthly, country.code)
   };
 }
 
@@ -464,8 +485,8 @@ export function pricingNotesForCountry(countryCode) {
   const country = getCountryMeta(countryCode);
   return [
     "Prices are monthly and shown in " + country.currency + ".",
-    country.taxLabel ? "Tax shown as " + country.taxLabel + " where applicable." : "Local taxes may apply where applicable.",
-    "SMS credits and Growth Packs can be added when needed."
+    country.taxLabel ? "Prices shown exclude " + country.taxLabel.replace("+ ", "") + ". Tax is added at checkout. Tax-inclusive totals are shown for clarity." : "Local taxes may apply where applicable.",
+    "Accounting Sync, SMS credits and Command Growth Packs can be added when needed."
   ];
 }
 
@@ -481,6 +502,36 @@ export function formatPlanPrice(planKey, countryCode) {
   const plan = pricePlanForCountry(planKey, countryCode);
   return plan.priceLabel;
 }
+
+export const MARKETING_PLANS = CHURVOX_PLANS.map((plan) => pricePlanForCountry(plan, DEFAULT_COUNTRY));
+export const MARKETING_PLAN_LIST = MARKETING_PLANS;
+export const MARKETING_PLAN_KEYS = PLAN_ORDER;
+export const MARKETING_PLAN_NAMES = PLAN_NAMES;
+
+export const APP_PLANS = CHURVOX_PLANS.map((plan) => {
+  const monthly = Number(plan.monthly || plan.price || 0);
+  const limits = PLAN_LIMITS[plan.key] || {};
+  return {
+    ...plan,
+    price: "$" + monthly,
+    period: "/month + GST",
+    inclGst: formatTaxInclusivePrice(monthly, DEFAULT_COUNTRY),
+    blurb: plan.description || plan.summary || plan.tagline,
+    bestFor: plan.summary || plan.tagline || "",
+    clientLimit: limits.clients,
+    teamLimit: limits.teamMembers,
+    limits: plan.features || plan.includes || []
+  };
+});
+
+export const QUICK_PRICING_NOTES = [
+  "14-day free trial. No card required.",
+  "Prices shown exclude GST. GST is added at checkout. GST-inclusive totals are shown for clarity.",
+  "Accounting Sync, SMS credits and Command Growth Packs can be added when needed."
+];
+
+export const QUICK_PLAN_NOTES = QUICK_PRICING_NOTES;
+export const QUICK_BILLING_NOTES = QUICK_PRICING_NOTES;
 
 export default {
   DEFAULT_COUNTRY,
@@ -502,11 +553,21 @@ export default {
   COMMAND_GROWTH_PACK,
   COMMAND_GROWTH_PACK_ADDON,
   GROWTH_PACK_ADDON,
+  ACCOUNTING_SYNC_ADDON,
   XERO_ADDON,
+  MYOB_ADDON,
   ADDONS,
   PLAN_NAMES,
   PLAN_DISPLAY_NAMES,
   PLAN_PRICES,
+  MARKETING_PLANS,
+  MARKETING_PLAN_LIST,
+  MARKETING_PLAN_KEYS,
+  MARKETING_PLAN_NAMES,
+  APP_PLANS,
+  QUICK_PRICING_NOTES,
+  QUICK_PLAN_NOTES,
+  QUICK_BILLING_NOTES,
   normalizePlanKey,
   normalisePlanKey,
   getPlanConfig,
@@ -536,6 +597,8 @@ export default {
   getCurrencyCode,
   formatCurrency,
   formatMoney,
+  taxInclusiveAmount,
+  formatTaxInclusivePrice,
   pricePlanForCountry,
   getPlanPriceForCountry,
   getPlanPricingForCountry,
@@ -548,18 +611,3 @@ export default {
   pricingNotes,
   formatPlanPrice
 };
-
-export const MARKETING_PLANS = CHURVOX_PLANS.map((plan) => pricePlanForCountry(plan, DEFAULT_COUNTRY));
-export const MARKETING_PLAN_LIST = MARKETING_PLANS;
-export const MARKETING_PLAN_KEYS = PLAN_ORDER;
-export const MARKETING_PLAN_NAMES = PLAN_NAMES;
-
-export const QUICK_PRICING_NOTES = [
-  "14-day free trial. No card required.",
-  "Prices are monthly and shown for your selected country.",
-  "SMS credits and Command Growth Packs can be added when needed."
-];
-
-export const QUICK_PLAN_NOTES = QUICK_PRICING_NOTES;
-export const QUICK_BILLING_NOTES = QUICK_PRICING_NOTES;
-
