@@ -46,6 +46,25 @@ function stripHiddenItems(items, guideComplete) { return items.filter(([key]) =>
 function cleanGroups(sourceGroups, guideComplete = false) { const seen = new Set(); return sourceGroups.map((group) => ({ ...group, items: stripHiddenItems(group.items, guideComplete).filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }) })).filter((group) => group.items.length); }
 function buildLabels() { const entries = [...groups.flatMap((group) => group.items), ...Object.values(relatedTools).flat()]; const nextLabels = Object.fromEntries(entries.map(([key, , label]) => [key, label])); nextLabels.morningbrief = "Morning Brief"; nextLabels.askchurvox = "Ask Churvox"; nextLabels.globalactions = "Global Actions"; nextLabels.schedulerai = "Scheduler AI"; nextLabels.recurringSaver = "Recurring Saver"; nextLabels.recurringsaver = "Recurring Saver"; nextLabels.followupwriter = "Follow-up Writer"; nextLabels.reviewbooster = "Review Booster"; nextLabels.portal = "Portal View"; nextLabels.nz = "New Zealand Setup"; return nextLabels; }
 function buildParentMap() { const map = {}; Object.entries(relatedTools).forEach(([parent, items]) => { items.forEach(([key]) => { if (!map[key]) map[key] = parent; }); }); groups.forEach((group) => group.items.forEach(([key]) => { map[key] = key; })); map.routes = "dispatch"; map.areas = "dispatch"; map.schedulerai = "dispatch"; map.gps = "time"; map.portal = "clients"; map.followupwriter = "clients"; map.reviewbooster = "clients"; return map; }
+function resetFreshScrollTop() {
+  const top = () => {
+    try { window.scrollTo({ top: 0, left: 0, behavior: "auto" }); } catch { try { window.scrollTo(0, 0); } catch {} }
+    try { document.documentElement.scrollTop = 0; } catch {}
+    try { document.body.scrollTop = 0; } catch {}
+    try { document.scrollingElement.scrollTop = 0; } catch {}
+    [".freshMain", ".freshPageMount", ".freshApp", "main"].forEach((selector) => {
+      try {
+        document.querySelectorAll(selector).forEach((el) => {
+          if (el && typeof el.scrollTo === "function") el.scrollTo({ top: 0, left: 0, behavior: "auto" });
+          if (el) el.scrollTop = 0;
+        });
+      } catch {}
+    });
+  };
+  top();
+  window.requestAnimationFrame(top);
+  window.setTimeout(top, 80);
+}
 const labels = buildLabels();
 const parentByKey = buildParentMap();
 
@@ -64,6 +83,10 @@ export default function FreshShell({ active, onChange, children }) {
     return () => { window.removeEventListener("storage", refreshGuide); window.removeEventListener("churvox:ai-guide-status", refreshGuide); window.removeEventListener("churvox:fresh-data-updated", refreshGuide); };
   }, []);
 
+  React.useEffect(() => {
+    resetFreshScrollTop();
+  }, [active]);
+
   const safeGroups = React.useMemo(() => cleanGroups(groups, guideComplete), [guideComplete]);
   const safeMobileItems = React.useMemo(() => uniqueItems(mobileItems), []);
   const safeExtraMobile = React.useMemo(() => { const mainKeys = new Set(safeMobileItems.map(([key]) => key)); return uniqueItems(safeGroups.flatMap((group) => group.items)).filter(([key]) => !mainKeys.has(key)); }, [safeMobileItems, safeGroups]);
@@ -72,9 +95,9 @@ export default function FreshShell({ active, onChange, children }) {
   const emailNeedsVerification = auth?.user && auth.user.email_verified === false;
 
   async function handleLogout() { try { if (auth?.logout) await auth.logout(); } finally { try { window.localStorage.removeItem("token"); window.localStorage.removeItem("owner_portal_session"); window.localStorage.removeItem("platform_owner_email"); } catch {} window.location.href = "/login"; } }
-  function go(key) { if (key === "more") return; if (guideComplete && key === "setupassistant") return; setMoreOpen(false); onChange(key); }
+  function go(key) { if (key === "more") return; if (guideComplete && key === "setupassistant") return; setMoreOpen(false); resetFreshScrollTop(); onChange(key); }
   function openRealCreate(path) { setMoreOpen(false); window.location.href = path; }
-  function openClientPopup() { try { window.localStorage.setItem(OPEN_CLIENT_MODAL_KEY, "true"); } catch {} setMoreOpen(false); onChange("clients"); window.dispatchEvent(new CustomEvent("churvox:open-client-popup")); }
+  function openClientPopup() { try { window.localStorage.setItem(OPEN_CLIENT_MODAL_KEY, "true"); } catch {} setMoreOpen(false); resetFreshScrollTop(); onChange("clients"); window.dispatchEvent(new CustomEvent("churvox:open-client-popup")); }
   async function resendVerification() { setVerifySending(true); try { const token = window.localStorage.getItem("token") || ""; await fetch(`${API_BASE}/api/auth/resend-verification`, { method: "POST", credentials: "include", headers: { Accept: "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) } }); setVerifySent(true); } catch { setVerifySent(false); } finally { setVerifySending(false); } }
   function handleMobile(key) { if (key === "more") { setMoreOpen((value) => !value); return; } go(key); }
 
