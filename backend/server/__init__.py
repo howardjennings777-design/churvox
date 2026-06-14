@@ -49,6 +49,16 @@ FEATURE_ROUTES = [
     ('/api/payroll', 'enterprise'), ('/api/reports', 'enterprise'), ('/api/exports', 'enterprise'), ('/api/roles', 'enterprise'), ('/api/profit', 'enterprise'), ('/api/assets', 'enterprise'), ('/api/inventory', 'enterprise'), ('/api/gps', 'enterprise')
 ]
 PUBLIC_PREFIXES = ('/api/auth', '/api/billing', '/api/admin', '/api/lifecycle', '/api/platform/visit', '/api/support', '/api/invite', '/api/health')
+CORS_ALLOWED_ORIGINS = {
+    'https://www.churvox.com',
+    'https://churvox.com',
+    'https://www.churvox.onrender.com',
+    'https://churvox.onrender.com',
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:5173',
+}
 
 
 def _safe_text(value, fallback=''):
@@ -217,6 +227,30 @@ def _stripe_price_id(plan, country='NZ'):
     return ''
 
 
+def _cors_origin(request):
+    origin = _safe_text(request.headers.get('origin'))
+    if origin in CORS_ALLOWED_ORIGINS:
+        return origin
+    if origin.endswith('.onrender.com') and 'churvox' in origin:
+        return origin
+    return ''
+
+
+def _add_cors_headers(request, response):
+    origin = _cors_origin(request)
+    if not origin:
+        return response
+    response.headers['Access-Control-Allow-Origin'] = origin
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
+    response.headers['Access-Control-Allow-Methods'] = 'GET,POST,PUT,PATCH,DELETE,OPTIONS'
+    request_headers = _safe_text(request.headers.get('access-control-request-headers'), 'Authorization,Content-Type,Accept')
+    response.headers['Access-Control-Allow-Headers'] = request_headers
+    response.headers['Access-Control-Expose-Headers'] = 'Content-Type,Authorization'
+    vary = response.headers.get('Vary')
+    response.headers['Vary'] = 'Origin' if not vary else vary + ', Origin'
+    return response
+
+
 async def _get_user_or_none(request):
     try:
         return await legacy.get_current_user(request)
@@ -344,6 +378,14 @@ async def _churvox_launch_guard_middleware(request, call_next):
         elif _plan_rank(user) < PLAN_RANK.get(required, 1):
             return JSONResponse({'success': False, 'detail': 'Your plan does not include this feature'}, status_code=403)
     return await call_next(request)
+
+
+@app.middleware('http')
+async def _churvox_hard_cors_middleware(request, call_next):
+    if request.method.upper() == 'OPTIONS':
+        return _add_cors_headers(request, JSONResponse({'ok': True}, status_code=204))
+    response = await call_next(request)
+    return _add_cors_headers(request, response)
 
 
 async def _business_query(request):
