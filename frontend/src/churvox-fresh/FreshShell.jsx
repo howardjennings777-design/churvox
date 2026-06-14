@@ -8,7 +8,6 @@ const groups = [
   {
     title: "Home",
     items: [
-      ["smart", "SH", "Smart Hub"],
       ["setupassistant", "AI", "AI Guide"],
       ["command", "CM", "Command"],
       ["aioperator", "AO", "AI Operator"],
@@ -132,16 +131,16 @@ const groups = [
 ];
 
 const labels = Object.fromEntries(groups.flatMap((group) => group.items.map(([key, , label]) => [key, label])));
-labels.smart = "Smart Hub";
+labels.smart = "Owner Brief";
 labels.askchurvox = "Ask Churvox";
 labels.globalactions = "Global Actions";
 labels.schedulerai = "Scheduler AI";
 labels.recurringSaver = "Recurring Saver";
 
 const mobileItems = [
-  ["smart", "SH", "Hub"],
   ["jobs", "JB", "Jobs"],
   ["command", "CM", "Command"],
+  ["setupassistant", "AI", "AI Guide"],
   ["more", "••", "More"],
 ];
 
@@ -257,7 +256,6 @@ export default function FreshShell({ active, onChange, children }) {
           <FreshSearch onNavigate={go} />
 
           <div className="freshTopActions">
-            <button type="button" onClick={() => go("smart")}>Smart Hub</button>
             <button type="button" onClick={() => go("setupassistant")}>AI Guide</button>
             <button type="button" onClick={() => go("command")}>Command</button>
             <button type="button" onClick={() => setQuickType("job")}>New job</button>
