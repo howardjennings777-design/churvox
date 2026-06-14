@@ -48,6 +48,12 @@ def _basic_auth():
 def _configured():
     return bool(XERO_CLIENT_ID and XERO_CLIENT_SECRET and XERO_REDIRECT_URI)
 
+def _xero_addon_active(owner):
+    owner = owner or {}
+    plan = str(owner.get("plan") or "").lower().strip()
+    return bool(owner.get("xero_addon_active")) or plan in {"command", "enterprise"}
+
+
 
 async def _get_connection(db, bid):
     return await db.xero_connections.find_one({"business_id": str(bid)})
@@ -67,7 +73,7 @@ def install(app, db, get_current_user):
         return {
             "success": True,
             "configured": _configured(),
-            "addon_active": bool((owner or {}).get("xero_addon_active")),
+            "addon_active": _xero_addon_active(owner),
             "connected": bool(conn and conn.get("status") == "connected"),
             "connection": _safe(conn),
             "settings": _safe(settings) or {
@@ -86,8 +92,8 @@ def install(app, db, get_current_user):
             raise HTTPException(status_code=400, detail="Xero credentials are not configured in Render yet")
         bid = _bid(current_user)
         owner = await db.users.find_one({"_id": ObjectId(bid)})
-        if not (owner or {}).get("xero_addon_active"):
-            raise HTTPException(status_code=403, detail="Xero add-on must be active before connecting Xero")
+        if not _xero_addon_active(owner):
+            raise HTTPException(status_code=403, detail="Xero add-on must be active before connecting Xero, or the business must be on Command")
         state = secrets.token_urlsafe(32)
         await db.xero_oauth_states.insert_one({"state": state, "business_id": bid, "user_id": str(current_user.get("id")), "created_at": datetime.now(timezone.utc), "used": False})
         params = {"response_type": "code", "client_id": XERO_CLIENT_ID, "redirect_uri": XERO_REDIRECT_URI, "scope": XERO_DEFAULT_SCOPES, "state": state}
