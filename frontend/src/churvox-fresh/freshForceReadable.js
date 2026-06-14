@@ -67,7 +67,7 @@ export function forceFreshReadable() {
     const hero = closestClassContains(el, "Hero");
     const stats = closestClassContains(el, "Stats");
     const listHeader = el.closest('[class*="List"] header, aside header, .freshWorkerPhone header');
-    const button = el.closest("button");
+    const button = el.closest("button, a");
 
     setImportant(el, "opacity", "1");
     setImportant(el, "text-shadow", "none");
@@ -78,6 +78,14 @@ export function forceFreshReadable() {
       paint(el, "#101827");
       setImportant(el, "background-color", "#ffffff");
       setImportant(el, "caret-color", "#101827");
+      return;
+    }
+
+    // Buttons must be handled before hero panels. Otherwise white pill buttons inside a dark hero get white text.
+    if (button) {
+      const bg = window.getComputedStyle(button).backgroundColor;
+      const color = rgbIsDark(bg) ? "#ffffff" : "#111827";
+      paint(el, color);
       return;
     }
 
@@ -97,13 +105,6 @@ export function forceFreshReadable() {
     if (listHeader) {
       if (el.tagName === "SPAN" || el.tagName === "SMALL" || el.tagName === "P") paint(el, "#fed7aa");
       else paint(el, "#ffffff");
-      return;
-    }
-
-    if (button) {
-      const bg = window.getComputedStyle(button).backgroundColor;
-      const color = rgbIsDark(bg) ? "#ffffff" : "#111827";
-      paint(el, color);
       return;
     }
 
