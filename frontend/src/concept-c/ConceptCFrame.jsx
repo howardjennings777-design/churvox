@@ -78,6 +78,10 @@ export default function ConceptCFrame({ area = "jobs", children }) {
   const pathActive = LINKS.find(([key, _label, to]) => pathname === to || (to !== "/dashboard" && pathname.startsWith(`${to}/`)))?.[0];
   const active = pathActive || AREA_ACTIVE[area] || "command";
 
+  if (area === "worker" || String(pathname || "").startsWith("/worker")) {
+    return <>{children}</>;
+  }
+
   if (isRecordPath(pathname)) {
     return (
       <main className="concept-c2 c2-record-fullscreen" data-churvox-record-workspace="true" data-version="CHURVOX_RECORD_FULLSCREEN_20260605">
@@ -113,15 +117,11 @@ export default function ConceptCFrame({ area = "jobs", children }) {
       </header>
 
       <section className="c2-frame">
-        
-
         <section className="c2-stage c2-real-page-stage">
           <div className="c2-real-page-card">
             {children}
           </div>
         </section>
-
-        
       </section>
 
       <nav className="c2-dock c2-dock-full" aria-label="Churvox command navigation">
