@@ -1,8 +1,15 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { ChurvoxLogo } from "@/components/ChurvoxLogo";
+import { Nav } from "../marketing/ExecutiveHomePage";
 import "./AuthPublicCommand.css";
+
+const inputStyle = {
+  color: "#000000",
+  WebkitTextFillColor: "#000000",
+  caretColor: "#000000",
+  backgroundColor: "#ffffff",
+};
 
 export default function ForgotPasswordPage() {
   const { forgotPassword } = useAuth();
@@ -15,51 +22,74 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const result = await forgotPassword(email);
-    if (result.success) setSuccess(true);
-    else setError(result.error);
-    setLoading(false);
+
+    try {
+      const result = await forgotPassword(email.trim().toLowerCase());
+      if (result.success) setSuccess(true);
+      else setError(result.error || "Could not send reset link. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <main className="wh-auth">
-      <header className="wh-auth-nav">
-        <Link to="/"><ChurvoxLogo /></Link>
-        <nav className="wh-auth-links">
-          <Link to="/">Home</Link>
-          <Link to="/features">Features</Link>
-          <Link to="/pricing">Pricing</Link>
-          <Link to="/login">Log in</Link>
-        </nav>
-      </header>
+    <main className="cvPublicAuth">
+      <Nav />
 
-      <section className="wh-auth-wrap">
-        <form className="wh-auth-form" onSubmit={handleSubmit}>
-          <p className="wh-auth-kicker">Password recovery</p>
-          <h1 className="wh-auth-title">Get back to the command floor.</h1>
-          <p className="wh-auth-sub">Enter your email and Churvox will send a secure reset link if an account exists.</p>
+      <section className="cvPublicAuthShell">
+        <form className="cvPublicAuthCard" onSubmit={handleSubmit}>
+          <p className="cvPublicAuthKicker">Password recovery</p>
+          <h1>Get back into Churvox.</h1>
+          <p className="cvPublicAuthIntro">
+            Enter your email and Churvox will send a secure reset link if an account exists.
+          </p>
 
           {success ? (
             <>
-              <p className="wh-auth-error" style={{ background: "rgba(43,189,145,.12)", borderColor: "rgba(43,189,145,.24)", color: "#0d765f" }}>Reset link sent. Check your email shortly.</p>
-              <Link to="/login" className="wh-auth-submit" style={{ textDecoration: "none" }}>Back to login</Link>
+              <p className="cvPublicAuthError" style={{ background: "rgba(43,189,145,.14)", borderColor: "rgba(43,189,145,.28)", color: "#bbf7d0", WebkitTextFillColor: "#bbf7d0" }}>
+                Reset link sent. Check your email shortly.
+              </p>
+              <Link to="/login" className="cvPublicAuthSubmit" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+                Back to login
+              </Link>
             </>
           ) : (
             <>
-              {error && <p className="wh-auth-error">{error}</p>}
-              <label className="wh-auth-label">
+              {error ? <p className="cvPublicAuthError">{error}</p> : null}
+
+              <label>
                 Email
-                <input type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="wh-auth-input" required data-testid="forgot-password-email-input" />
+                <input
+                  style={inputStyle}
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  data-testid="forgot-password-email-input"
+                />
               </label>
-              <button className="wh-auth-submit" type="submit" disabled={loading} data-testid="forgot-password-submit-button">
-                {loading ? "Sending…" : "Send reset link"}
+
+              <button className="cvPublicAuthSubmit" type="submit" disabled={loading} data-testid="forgot-password-submit-button">
+                {loading ? "Sending..." : "Send reset link"}
               </button>
-              <p className="wh-auth-sub"><Link to="/login" data-testid="back-to-login-link">Back to login</Link></p>
+
+              <p className="cvPublicAuthBottom">
+                Remembered it? <Link to="/login" data-testid="back-to-login-link">Back to login</Link>
+              </p>
             </>
           )}
         </form>
 
-        
+        <aside className="cvPublicAuthPanel">
+          <p>Secure account access</p>
+          <h2>Reset your password and get back to work.</h2>
+          <ul>
+            <li>Secure reset link sent to your email</li>
+            <li>No account details shown on this page</li>
+            <li>Return straight to your Churvox workspace</li>
+          </ul>
+        </aside>
       </section>
     </main>
   );
