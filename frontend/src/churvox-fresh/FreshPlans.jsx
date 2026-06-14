@@ -52,7 +52,7 @@ const plans = [
       "Command approval desk",
       "Quote follow-up watch",
       "Invoice and job admin prepared for approval",
-      "MYOB optional add-on later",
+      "Xero optional add-on later",
     ],
   },
   {
@@ -63,11 +63,11 @@ const plans = [
     tag: "Full control",
     best: false,
     headline: "Scale with control",
-    summary: "For the bigger business that wants payroll workspace, MYOB included and advanced control.",
+    summary: "For the bigger business that wants payroll workspace, Xero included and advanced control.",
     limit: "Up to 50 active team members",
     features: [
       "Everything in Operator",
-      "MYOB included",
+      "Xero included",
       "Payroll workspace",
       "Advanced roles",
       "Priority support",
@@ -199,7 +199,7 @@ export default function FreshPlans({ onNavigate }) {
     ["Start", "Solo basics", "Jobs, quotes, invoices"],
     ["Crew", "Small team", "Workers and dispatch"],
     ["Operator", "Recommended", "AI admin prepared for approval"],
-    ["Command", "Scale", "MYOB, payroll and advanced roles"],
+    ["Command", "Scale", "Xero, payroll and advanced roles"],
   ];
 
   return (
