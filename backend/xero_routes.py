@@ -1,7 +1,7 @@
 import base64
 import os
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
 import httpx
@@ -17,7 +17,10 @@ XERO_REDIRECT_URI = os.environ.get("XERO_REDIRECT_URI", f"{BACKEND_PUBLIC_URL}/a
 XERO_AUTHORIZE_URL = "https://login.xero.com/identity/connect/authorize"
 XERO_TOKEN_URL = "https://identity.xero.com/connect/token"
 XERO_CONNECTIONS_URL = "https://api.xero.com/connections"
+XERO_INVOICES_URL = "https://api.xero.com/api.xro/2.0/Invoices"
 XERO_DEFAULT_SCOPES = "offline_access accounting.transactions accounting.contacts accounting.settings payroll.timesheets payroll.employees"
+XERO_SALES_ACCOUNT_CODE = os.environ.get("XERO_SALES_ACCOUNT_CODE", "200").strip()
+XERO_SALES_TAX_TYPE = os.environ.get("XERO_SALES_TAX_TYPE", "OUTPUT2").strip()
 
 
 def _bid(user):
@@ -48,15 +51,222 @@ def _basic_auth():
 def _configured():
     return bool(XERO_CLIENT_ID and XERO_CLIENT_SECRET and XERO_REDIRECT_URI)
 
+
 def _xero_addon_active(owner):
     owner = owner or {}
     plan = str(owner.get("plan") or "").lower().strip()
     return bool(owner.get("xero_addon_active")) or plan in {"command", "enterprise"}
 
 
+def _round_money(value):
+    try:
+        return round(float(value or 0), 2)
+    except Exception:
+        return 0.0
+
+
+def _date_only(value=None):
+    if isinstance(value, datetime):
+        return value.date().isoformat()
+    return datetime.now(timezone.utc).date().isoformat()
+
+
+def _as_object_id(value):
+    try:
+        return ObjectId(str(value))
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid id")
+
 
 async def _get_connection(db, bid):
     return await db.xero_connections.find_one({"business_id": str(bid)})
+
+
+def _xero_headers(conn, access_token=None):
+    tenant_id = conn.get("tenant_id")
+    token = access_token or conn.get("access_token")
+    if not tenant_id or not token:
+        raise HTTPException(status_code=400, detail="Xero connection is missing tenant or access token")
+    return {
+        "Authorization": f"Bearer {token}",
+        "xero-tenant-id": tenant_id,
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+    }
+
+
+async def _refresh_connection(db, conn):
+    if not conn or conn.get("status") != "connected":
+        raise HTTPException(status_code=400, detail="Connect Xero before syncing")
+    refresh_token = conn.get("refresh_token")
+    if not refresh_token:
+        raise HTTPException(status_code=400, detail="Xero refresh token is missing. Reconnect Xero.")
+
+    async with httpx.AsyncClient(timeout=25) as client:
+        token_res = await client.post(
+            XERO_TOKEN_URL,
+            headers=_basic_auth(),
+            data={"grant_type": "refresh_token", "refresh_token": refresh_token},
+        )
+    if token_res.status_code >= 400:
+        await db.xero_connections.update_one(
+            {"_id": conn["_id"]},
+            {"$set": {"last_refresh_error": token_res.text, "updated_at": datetime.now(timezone.utc)}},
+        )
+        raise HTTPException(status_code=400, detail="Xero token refresh failed. Reconnect Xero.")
+
+    tokens = token_res.json()
+    now = datetime.now(timezone.utc)
+    expires_in = int(tokens.get("expires_in") or 1800)
+    update = {
+        "access_token": tokens.get("access_token"),
+        "refresh_token": tokens.get("refresh_token") or refresh_token,
+        "expires_in": expires_in,
+        "expires_at": now + timedelta(seconds=max(60, expires_in - 60)),
+        "last_refresh_error": None,
+        "refreshed_at": now,
+        "updated_at": now,
+    }
+    await db.xero_connections.update_one({"_id": conn["_id"]}, {"$set": update})
+    conn.update(update)
+    return conn
+
+
+async def _live_connection(db, bid):
+    conn = await _get_connection(db, bid)
+    if not conn or conn.get("status") != "connected":
+        raise HTTPException(status_code=400, detail="Connect Xero before syncing")
+    return await _refresh_connection(db, conn)
+
+
+async def _find_invoice(db, bid, invoice_id):
+    invoice = await db.invoices.find_one({"_id": _as_object_id(invoice_id), "business_id": str(bid)})
+    if not invoice:
+        invoice = await db.invoices.find_one({"_id": _as_object_id(invoice_id), "contractor_id": _as_object_id(bid)})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    return invoice
+
+
+def _build_xero_invoice_payload(invoice):
+    subtotal = _round_money(invoice.get("subtotal") or invoice.get("amount") or 0)
+    gst_rate = _round_money(invoice.get("gst_rate") or 0)
+    customer_name = (invoice.get("customer_name") or invoice.get("client_name") or "Churvox Customer").strip() or "Churvox Customer"
+    customer_email = (invoice.get("customer_email") or invoice.get("email") or "").strip()
+    description = (invoice.get("description") or invoice.get("notes") or invoice.get("invoice_number") or "Churvox invoice").strip()
+    created_at = invoice.get("created_at") if isinstance(invoice.get("created_at"), datetime) else datetime.now(timezone.utc)
+
+    contact = {"Name": customer_name}
+    if customer_email:
+        contact["EmailAddress"] = customer_email
+
+    line_item = {
+        "Description": description[:4000] or "Churvox invoice",
+        "Quantity": 1,
+        "UnitAmount": subtotal,
+        "TaxType": XERO_SALES_TAX_TYPE if gst_rate > 0 else "NONE",
+    }
+    if XERO_SALES_ACCOUNT_CODE:
+        line_item["AccountCode"] = XERO_SALES_ACCOUNT_CODE
+
+    return {
+        "Invoices": [
+            {
+                "Type": "ACCREC",
+                "Contact": contact,
+                "Date": _date_only(created_at),
+                "DueDate": _date_only(created_at + timedelta(days=14)),
+                "InvoiceNumber": invoice.get("invoice_number") or f"CHURVOX-{str(invoice.get('_id'))[-6:]}",
+                "Reference": f"Churvox invoice {str(invoice.get('_id'))}",
+                "Status": "DRAFT",
+                "LineAmountTypes": "Exclusive",
+                "LineItems": [line_item],
+            }
+        ]
+    }
+
+
+async def _sync_invoice_to_xero(db, bid, invoice, force=False):
+    if invoice.get("xero_invoice_id") and not force:
+        return {
+            "success": True,
+            "already_synced": True,
+            "invoice_id": str(invoice.get("_id")),
+            "xero_invoice_id": invoice.get("xero_invoice_id"),
+            "xero_invoice_number": invoice.get("xero_invoice_number"),
+            "xero_status": invoice.get("xero_status"),
+            "message": "Invoice already has a Xero invoice id. Pass force=true to recreate/update later.",
+        }
+
+    conn = await _live_connection(db, bid)
+    payload = _build_xero_invoice_payload(invoice)
+    now = datetime.now(timezone.utc)
+
+    await db.invoices.update_one(
+        {"_id": invoice["_id"]},
+        {"$set": {"xero_sync_status": "syncing", "xero_last_sync": now, "xero_error": None}},
+    )
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        res = await client.post(XERO_INVOICES_URL, headers=_xero_headers(conn), json=payload)
+
+    if res.status_code >= 400:
+        error_text = res.text[:2000]
+        await db.invoices.update_one(
+            {"_id": invoice["_id"]},
+            {"$set": {"xero_sync_status": "failed", "xero_error": error_text, "xero_last_sync": now}},
+        )
+        await db.xero_sync_events.insert_one({
+            "business_id": str(bid),
+            "invoice_id": invoice["_id"],
+            "status": "failed",
+            "error": error_text,
+            "created_at": now,
+        })
+        raise HTTPException(status_code=502, detail=f"Xero draft invoice sync failed: {error_text}")
+
+    data = res.json()
+    xero_invoice = (data.get("Invoices") or [{}])[0]
+    update = {
+        "xero_sync_status": "synced",
+        "xero_invoice_id": xero_invoice.get("InvoiceID"),
+        "xero_invoice_number": xero_invoice.get("InvoiceNumber"),
+        "xero_status": xero_invoice.get("Status"),
+        "xero_last_sync": now,
+        "xero_synced_at": now,
+        "xero_error": None,
+    }
+    await db.invoices.update_one({"_id": invoice["_id"]}, {"$set": update})
+    await db.xero_sync_events.insert_one({
+        "business_id": str(bid),
+        "invoice_id": invoice["_id"],
+        "status": "synced",
+        "xero_invoice_id": update["xero_invoice_id"],
+        "xero_status": update["xero_status"],
+        "payload_preview": {"InvoiceNumber": payload["Invoices"][0].get("InvoiceNumber"), "Status": "DRAFT"},
+        "created_at": now,
+    })
+    return {"success": True, "invoice_id": str(invoice["_id"]), "xero_invoice": xero_invoice, "local_update": _safe(update)}
+
+
+async def _refresh_xero_invoice_status(db, bid, invoice):
+    xero_invoice_id = invoice.get("xero_invoice_id")
+    if not xero_invoice_id:
+        raise HTTPException(status_code=400, detail="Invoice has not been synced to Xero yet")
+    conn = await _live_connection(db, bid)
+    async with httpx.AsyncClient(timeout=25) as client:
+        res = await client.get(f"{XERO_INVOICES_URL}/{xero_invoice_id}", headers=_xero_headers(conn))
+    if res.status_code >= 400:
+        raise HTTPException(status_code=502, detail=f"Xero invoice status read failed: {res.text[:1000]}")
+    data = res.json()
+    xero_invoice = (data.get("Invoices") or [{}])[0]
+    xero_status = xero_invoice.get("Status")
+    update = {"xero_status": xero_status, "xero_status_checked_at": datetime.now(timezone.utc)}
+    if str(xero_status).upper() == "PAID":
+        update["status"] = "paid"
+        update["paid_at"] = datetime.now(timezone.utc)
+    await db.invoices.update_one({"_id": invoice["_id"]}, {"$set": update})
+    return {"success": True, "invoice_id": str(invoice["_id"]), "xero_invoice": xero_invoice, "local_update": _safe(update)}
 
 
 def install(app, db, get_current_user):
@@ -70,11 +280,15 @@ def install(app, db, get_current_user):
         owner = await db.users.find_one({"_id": ObjectId(bid)})
         conn = await _get_connection(db, bid)
         settings = await db.xero_sync_settings.find_one({"business_id": bid})
+        connected = bool(conn and conn.get("status") == "connected")
         return {
             "success": True,
             "configured": _configured(),
             "addon_active": _xero_addon_active(owner),
-            "connected": bool(conn and conn.get("status") == "connected"),
+            "connected": connected,
+            "draft_invoice_sync_ready": bool(_configured() and connected),
+            "sales_account_code": XERO_SALES_ACCOUNT_CODE,
+            "sales_tax_type": XERO_SALES_TAX_TYPE,
             "connection": _safe(conn),
             "settings": _safe(settings) or {
                 "invoice_sync_enabled": False,
@@ -102,24 +316,25 @@ def install(app, db, get_current_user):
     @router.get("/xero/callback")
     async def xero_callback(code: str | None = Query(None), state: str | None = Query(None), error: str | None = Query(None)):
         if error:
-            return RedirectResponse(f"{FRONTEND_URL}/dashboard?xero_error={urlencode({'e': error})}")
+            return RedirectResponse(f"{FRONTEND_URL}/dashboard?xero_error={urlencode({'e': error})}#xero")
         if not code or not state:
-            return RedirectResponse(f"{FRONTEND_URL}/dashboard?xero_error=missing_code")
+            return RedirectResponse(f"{FRONTEND_URL}/dashboard?xero_error=missing_code#xero")
         saved = await db.xero_oauth_states.find_one({"state": state, "used": False})
         if not saved:
-            return RedirectResponse(f"{FRONTEND_URL}/dashboard?xero_error=bad_state")
+            return RedirectResponse(f"{FRONTEND_URL}/dashboard?xero_error=bad_state#xero")
         bid = saved["business_id"]
         async with httpx.AsyncClient(timeout=25) as client:
             token_res = await client.post(XERO_TOKEN_URL, headers=_basic_auth(), data={"grant_type": "authorization_code", "code": code, "redirect_uri": XERO_REDIRECT_URI})
             if token_res.status_code >= 400:
                 await db.xero_oauth_states.update_one({"_id": saved["_id"]}, {"$set": {"used": True, "error": token_res.text, "updated_at": datetime.now(timezone.utc)}})
-                return RedirectResponse(f"{FRONTEND_URL}/dashboard?xero_error=token_failed")
+                return RedirectResponse(f"{FRONTEND_URL}/dashboard?xero_error=token_failed#xero")
             tokens = token_res.json()
             access_token = tokens.get("access_token")
             connections_res = await client.get(XERO_CONNECTIONS_URL, headers={"Authorization": f"Bearer {access_token}"})
             tenants = connections_res.json() if connections_res.status_code < 400 else []
         tenant = tenants[0] if tenants else {}
         now = datetime.now(timezone.utc)
+        expires_in = int(tokens.get("expires_in") or 1800)
         doc = {
             "business_id": bid,
             "status": "connected",
@@ -129,7 +344,8 @@ def install(app, db, get_current_user):
             "scopes": XERO_DEFAULT_SCOPES.split(),
             "access_token": tokens.get("access_token"),
             "refresh_token": tokens.get("refresh_token"),
-            "expires_in": tokens.get("expires_in"),
+            "expires_in": expires_in,
+            "expires_at": now + timedelta(seconds=max(60, expires_in - 60)),
             "connected_at": now,
             "updated_at": now,
             "available_tenants": tenants,
@@ -153,6 +369,30 @@ def install(app, db, get_current_user):
         update["updated_at"] = datetime.now(timezone.utc)
         await db.xero_sync_settings.update_one({"business_id": bid}, {"$set": update, "$setOnInsert": {"business_id": bid, "created_at": datetime.now(timezone.utc)}}, upsert=True)
         return {"success": True, "message": "Xero sync settings saved"}
+
+    @router.post("/xero/invoices/{invoice_id}/sync-draft")
+    async def sync_xero_draft_invoice(invoice_id: str, payload: dict | None = None, current_user: dict = Depends(get_current_user)):
+        bid = _bid(current_user)
+        invoice = await _find_invoice(db, bid, invoice_id)
+        force = bool((payload or {}).get("force"))
+        return await _sync_invoice_to_xero(db, bid, invoice, force=force)
+
+    @router.post("/xero/sync-latest-invoice")
+    async def sync_latest_xero_invoice(payload: dict | None = None, current_user: dict = Depends(get_current_user)):
+        bid = _bid(current_user)
+        invoice = await db.invoices.find_one({"business_id": str(bid)}, sort=[("created_at", -1)])
+        if not invoice:
+            invoice = await db.invoices.find_one({"contractor_id": _as_object_id(bid)}, sort=[("created_at", -1)])
+        if not invoice:
+            raise HTTPException(status_code=404, detail="No invoice found to sync")
+        force = bool((payload or {}).get("force"))
+        return await _sync_invoice_to_xero(db, bid, invoice, force=force)
+
+    @router.post("/xero/invoices/{invoice_id}/refresh-status")
+    async def refresh_xero_invoice_status(invoice_id: str, current_user: dict = Depends(get_current_user)):
+        bid = _bid(current_user)
+        invoice = await _find_invoice(db, bid, invoice_id)
+        return await _refresh_xero_invoice_status(db, bid, invoice)
 
     @router.post("/xero/prepare-payroll-handoff")
     async def prepare_payroll_handoff(payload: dict, current_user: dict = Depends(get_current_user)):
