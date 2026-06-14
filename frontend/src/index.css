@@ -1194,3 +1194,19 @@ body:has(.cxRoot) [class*="Approval"]:not(.cxWrap):not(.cxBoxes):not(.cxBox):not
   pointer-events: none !important;
 }
 
+
+/* Churvox launch polish: remove empty black decorative pills from plan cards */
+[class*="plan" i][class*="card" i]::before,
+[class*="plan" i] [class*="card" i]::before,
+[class*="pricing" i][class*="card" i]::before,
+[class*="pricing" i] [class*="card" i]::before {
+  content: none !important;
+  display: none !important;
+}
+
+[class*="plan" i] [class*="pill" i]:empty,
+[class*="plan" i] [class*="badge" i]:empty,
+[class*="pricing" i] [class*="pill" i]:empty,
+[class*="pricing" i] [class*="badge" i]:empty {
+  display: none !important;
+}
