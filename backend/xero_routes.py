@@ -6,8 +6,8 @@ from urllib.parse import urlencode
 
 import httpx
 from bson import ObjectId
-from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from fastapi.responses import JSONResponse, RedirectResponse
 
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://www.churvox.com").rstrip("/")
 BACKEND_PUBLIC_URL = os.environ.get("BACKEND_PUBLIC_URL", os.environ.get("RENDER_EXTERNAL_URL", "https://grassley-backend.onrender.com")).rstrip("/")
@@ -25,6 +25,10 @@ XERO_SALES_TAX_TYPE = os.environ.get("XERO_SALES_TAX_TYPE", "OUTPUT2").strip()
 
 def _bid(user):
     return str(user.get("business_id") or user.get("id"))
+
+
+def _uid(user):
+    return str(user.get("id") or user.get("_id") or "")
 
 
 def _safe(doc):
@@ -76,6 +80,91 @@ def _as_object_id(value):
         return ObjectId(str(value))
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid id")
+
+
+def _maybe_object_id(value):
+    try:
+        return ObjectId(str(value))
+    except Exception:
+        return None
+
+
+def _same_id(left, right):
+    return str(left or "") == str(right or "")
+
+
+def _role(user):
+    return str((user or {}).get("role") or "").lower().strip()
+
+
+def _is_owner_role(user):
+    return _role(user) in {"owner", "employer", "admin", "business_owner", "superadmin"}
+
+
+def _is_worker_role(user):
+    return _role(user) == "worker"
+
+
+def _job_business_matches(job, user):
+    bid = _bid(user)
+    if _same_id(job.get("business_id"), bid):
+        return True
+    contractor_id = job.get("contractor_id")
+    return _same_id(contractor_id, bid)
+
+
+def _job_assigned_to_worker(job, user):
+    user_id = _uid(user)
+    candidates = [
+        job.get("assigned_worker_id"),
+        job.get("worker_id"),
+        job.get("assigned_to"),
+        job.get("assignedWorkerId"),
+    ]
+    return any(_same_id(candidate, user_id) for candidate in candidates if candidate)
+
+
+async def _find_job_by_id(db, job_id):
+    oid = _maybe_object_id(job_id)
+    if oid:
+        job = await db.jobs.find_one({"_id": oid})
+        if job:
+            return job
+    return await db.jobs.find_one({"id": str(job_id)})
+
+
+async def _find_accessible_job(db, job_id, user):
+    job = await _find_job_by_id(db, job_id)
+    if not job or not _job_business_matches(job, user):
+        return None
+    if _is_worker_role(user) and not _job_assigned_to_worker(job, user):
+        return None
+    if _is_owner_role(user) or _is_worker_role(user):
+        return job
+    return None
+
+
+def _compute_elapsed(time_entries):
+    total = 0
+    last_start = None
+    for entry in time_entries or []:
+        ts = entry.get("timestamp") if isinstance(entry, dict) else None
+        if isinstance(ts, str):
+            try:
+                ts = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+            except Exception:
+                ts = None
+        if ts and ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        action = entry.get("action") if isinstance(entry, dict) else ""
+        if action in ("start", "resume"):
+            last_start = ts
+        elif action == "pause" and last_start and ts:
+            total += (ts - last_start).total_seconds()
+            last_start = None
+    if last_start:
+        total += (datetime.now(timezone.utc) - last_start).total_seconds()
+    return int(max(0, total))
 
 
 async def _get_connection(db, bid):
@@ -273,6 +362,107 @@ def install(app, db, get_current_user):
     if getattr(app.state, "xero_routes_installed", False):
         return
     router = APIRouter(prefix="/api")
+
+    @app.middleware("http")
+    async def protect_job_completion_routes(request, call_next):
+        path = request.url.path.rstrip("/")
+        method = request.method.upper()
+        is_legacy_job_write = method == "POST" and path.startswith("/api/jobs/") and (path.endswith("/complete") or path.endswith("/pause"))
+        if not is_legacy_job_write:
+            return await call_next(request)
+
+        try:
+            current_user = await get_current_user(request)
+        except Exception:
+            return JSONResponse({"detail": "Not authenticated"}, status_code=401)
+
+        parts = path.split("/")
+        job_id = parts[3] if len(parts) >= 5 else ""
+        job = await _find_accessible_job(db, job_id, current_user)
+        if not job:
+            return JSONResponse({"detail": "Job not found"}, status_code=404)
+        return await call_next(request)
+
+    @router.patch("/worker/jobs/{job_id}/field-update")
+    async def worker_field_update(job_id: str, payload: dict = Body(default_factory=dict), current_user: dict = Depends(get_current_user)):
+        if not _is_worker_role(current_user):
+            raise HTTPException(status_code=403, detail="Only assigned workers can update field notes")
+        job = await _find_accessible_job(db, job_id, current_user)
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+
+        payload = dict(payload or {})
+        allowed = {}
+        if "worker_notes" in payload:
+            allowed["worker_notes"] = str(payload.get("worker_notes") or "")
+        if "photos" in payload and isinstance(payload.get("photos"), list):
+            allowed["photos"] = payload.get("photos")
+        if "worker_action_required" in payload:
+            allowed["worker_action_required"] = bool(payload.get("worker_action_required"))
+        for key in ["work_review_status", "review_status", "owner_review_status"]:
+            if key in payload:
+                allowed[key] = str(payload.get(key) or "")[:80]
+        if payload.get("resubmitted_at"):
+            allowed["resubmitted_at"] = datetime.now(timezone.utc)
+        if not allowed:
+            raise HTTPException(status_code=400, detail="Nothing to save")
+
+        allowed["updated_at"] = datetime.now(timezone.utc)
+        await db.jobs.update_one({"_id": job["_id"]}, {"$set": allowed})
+        updated = await db.jobs.find_one({"_id": job["_id"]})
+        return {"success": True, "job": _safe(updated), "data": _safe(updated)}
+
+    @router.post("/worker/jobs/{job_id}/complete")
+    async def worker_complete_job(job_id: str, payload: dict = Body(default_factory=dict), current_user: dict = Depends(get_current_user)):
+        if not _is_worker_role(current_user):
+            raise HTTPException(status_code=403, detail="Only assigned workers can complete field jobs")
+        job = await _find_accessible_job(db, job_id, current_user)
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+
+        now = datetime.now(timezone.utc)
+        time_entries = list(job.get("time_entries") or [])
+        if job.get("timer_running"):
+            time_entries.append({"action": "pause", "timestamp": now})
+        total_seconds = _compute_elapsed(time_entries) if time_entries else int(job.get("total_time_seconds", 0) or 0)
+
+        update = {
+            "status": "completed",
+            "completed": True,
+            "completed_at": now,
+            "timer_running": False,
+            "timer_started_at": None,
+            "time_entries": time_entries,
+            "total_time_seconds": total_seconds,
+            "updated_at": now,
+        }
+
+        payload = dict(payload or {})
+        if "worker_notes" in payload:
+            update["worker_notes"] = str(payload.get("worker_notes") or "")
+        if payload.get("worker_action_required") is False:
+            update["worker_action_required"] = False
+        for key in ["work_review_status", "review_status", "owner_review_status"]:
+            if key in payload:
+                update[key] = str(payload.get(key) or "")[:80]
+        if payload.get("resubmitted_at"):
+            update["resubmitted_at"] = now
+        if payload.get("location"):
+            update["completion_location"] = payload.get("location")
+
+        await db.jobs.update_one({"_id": job["_id"]}, {"$set": update})
+        updated = await db.jobs.find_one({"_id": job["_id"]})
+        return {
+            "success": True,
+            "message": "Job completed successfully",
+            "job_id": str(job["_id"]),
+            "status": "completed",
+            "completed": True,
+            "timer_running": False,
+            "total_time_seconds": total_seconds,
+            "completed_at": now.isoformat(),
+            "job": _safe(updated),
+        }
 
     @router.get("/xero/status")
     async def xero_status(current_user: dict = Depends(get_current_user)):
