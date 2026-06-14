@@ -146,14 +146,11 @@ export default function FreshPlans({ onNavigate }) {
   const [selectedRegion, setSelectedRegion] = React.useState("NZ");
   const [growthPacks, setGrowthPacks] = React.useState(0);
   const [includeAccountingSync, setIncludeAccountingSync] = React.useState(false);
-  const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [checkoutLoading, setCheckoutLoading] = React.useState(false);
-  const [notice, setNotice] = React.useState("Loading backend plan");
   const [error, setError] = React.useState("");
 
   const selected = planByUiId(selectedPlan);
-  const current = planByUiId(currentPlan);
   const region = regions[selectedRegion] || regions.NZ;
   const commandSelected = selected.id === "command";
   const selectedPlanPrice = planPrice(selected, selectedRegion);
@@ -164,7 +161,6 @@ export default function FreshPlans({ onNavigate }) {
   const monthlyTotal = selectedPlanPrice + growthTotal + accountingTotal;
 
   const loadPlan = React.useCallback(async () => {
-    setLoading(true);
     setError("");
 
     try {
@@ -182,13 +178,8 @@ export default function FreshPlans({ onNavigate }) {
       } catch {
         // Add-ons should not block the main plan page.
       }
-
-      setNotice("Loaded from backend billing profile");
     } catch (err) {
       setError(err?.message || "Plan could not load from backend.");
-      setNotice("Plan needs attention");
-    } finally {
-      setLoading(false);
     }
   }, [get]);
 
@@ -206,7 +197,6 @@ export default function FreshPlans({ onNavigate }) {
   function chooseRegion(regionCode) {
     setSelectedRegion(regionCode);
     setError("");
-    setNotice(`${regions[regionCode]?.label || regionCode} pricing selected`);
   }
 
   async function saveCurrentPlan() {
@@ -217,10 +207,8 @@ export default function FreshPlans({ onNavigate }) {
       await patch("/user/plan", { plan: selected.backendPlan });
       await loadPlan();
       setSelectedPlan(selected.id);
-      setNotice(`${selected.name} saved as current backend plan`);
     } catch (err) {
       setError(err?.message || "Plan could not be saved.");
-      setNotice("Plan save failed");
     } finally {
       setSaving(false);
     }
@@ -240,7 +228,6 @@ export default function FreshPlans({ onNavigate }) {
       window.location.href = checkoutUrl;
     } catch (err) {
       setError(err?.message || `Stripe checkout could not start for ${selectedRegion}. Check the ${selected.name} Stripe price ID for this region.`);
-      setNotice("Checkout needs Stripe settings");
     } finally {
       setCheckoutLoading(false);
     }
