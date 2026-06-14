@@ -25,27 +25,32 @@ export default function BillingReturnPage({ cancelled = false }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { get, post } = useApi();
-  const { checkAuth } = useAuth();
+  const { updateUser } = useAuth();
   const [status, setStatus] = React.useState("Checking billing status…");
   const [details, setDetails] = React.useState(null);
   const [addonStatus, setAddonStatus] = React.useState("");
   const [checkedAt, setCheckedAt] = React.useState("");
   const ranOnce = React.useRef(false);
 
-  async function refreshBilling({ refreshAuth = false } = {}) {
+  async function refreshBilling() {
     const sub = await get("/billing/subscription-status", { timeout: 12000 });
     if (sub?.success) {
       const data = unwrap(sub);
       setDetails(data);
       setStatus(`Plan status: ${niceStatus(data?.plan_name || data?.plan)} · ${subscriptionText(data)}`);
+      if (data?.has_app_access) {
+        updateUser?.({
+          plan: data.plan,
+          subscription_status: data.subscription_status,
+          trial_ends_at: data.trial_ends_at,
+          stripe_customer_id: data.stripe_customer_id,
+          stripe_subscription_id: data.stripe_subscription_id,
+          has_app_access: true,
+          billing_lock_reason: null,
+        });
+      }
     } else {
       setStatus("Could not refresh billing status. Open Plans or Support if this does not update shortly.");
-    }
-    if (refreshAuth) {
-      try {
-        await checkAuth?.();
-        window.dispatchEvent(new Event("churvox-auth-refresh"));
-      } catch {}
     }
     setCheckedAt(new Date().toLocaleString("en-NZ"));
   }
@@ -82,6 +87,15 @@ export default function BillingReturnPage({ cancelled = false }) {
             window.localStorage.removeItem(PLAN_REQUIRED_KEY);
             window.localStorage.setItem(FIRST_SETUP_KEY, "true");
           } catch {}
+          updateUser?.({
+            plan: res?.data?.plan || plan,
+            subscription_status: res?.data?.subscription_status || "trialing",
+            trial_ends_at: res?.data?.trial_ends_at,
+            stripe_customer_id: res?.data?.stripe_customer_id,
+            stripe_subscription_id: res?.data?.stripe_subscription_id,
+            has_app_access: true,
+            billing_lock_reason: null,
+          });
           toast.success("Trial started");
           setStatus("Trial started. Refreshing billing status…");
         } else {
@@ -90,7 +104,7 @@ export default function BillingReturnPage({ cancelled = false }) {
         }
       }
       if (!alive) return;
-      await refreshBilling({ refreshAuth: true });
+      await refreshBilling();
       try {
         const cleaned = new URL(window.location.href);
         ["session_id", "plan", "country", "checkout", "success"].forEach((key) => cleaned.searchParams.delete(key));
@@ -101,5 +115,5 @@ export default function BillingReturnPage({ cancelled = false }) {
     return () => { alive = false; };
   }, []);
 
-  return <main className="min-h-screen bg-[#f7f3ea] p-4 text-slate-950 md:p-8"><section className="mx-auto grid min-h-[70vh] max-w-4xl place-items-center"><article className="w-full rounded-[34px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.10)] md:p-9"><div className="inline-flex rounded-full bg-amber-100 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-amber-800">Billing return</div><h1 className="mt-4 text-4xl font-black tracking-[-0.07em] md:text-6xl">{cancelled ? "Checkout cancelled" : "Checking your billing"}</h1><p className="mt-4 max-w-2xl text-base font-bold leading-7 text-slate-600">{status}</p>{addonStatus ? <p className="mt-3 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-black text-orange-900">{addonStatus}</p> : null}{details ? <div className="mt-5 grid gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm font-black text-slate-800 md:grid-cols-2"><div>Plan: {niceStatus(details.plan_name || details.plan)}</div><div>Stripe: {subscriptionText(details)}</div><div>Country: {details.billing_country || details.country || "NZ"}</div>{details.trial_ends_at ? <div>Trial ends: {new Date(details.trial_ends_at).toLocaleString("en-NZ")}</div> : null}{checkedAt ? <div>Last checked: {checkedAt}</div> : null}</div> : null}<div className="mt-6 flex flex-wrap gap-3"><button type="button" onClick={() => refreshBilling({ refreshAuth: true })} className="rounded-full bg-amber-300 px-5 py-3 text-sm font-black text-slate-950">Refresh billing status</button><button type="button" onClick={() => navigate("/dashboard#setupassistant", { replace: true })} className="rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white">Open setup guide</button><button type="button" onClick={() => navigate("/plans", { replace: true })} className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900">Back to Plans</button><Link to="/support-board" className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900 no-underline">Need help?</Link></div><p className="mt-5 rounded-2xl border border-cyan-200 bg-cyan-50 p-4 text-sm font-bold leading-6 text-cyan-900">Stripe checkout is confirmed once using the returned session ID, then the URL is cleaned so mobile browsers do not loop.</p></article></section></main>;
+  return <main className="min-h-screen bg-[#f7f3ea] p-4 text-slate-950 md:p-8"><section className="mx-auto grid min-h-[70vh] max-w-4xl place-items-center"><article className="w-full rounded-[34px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.10)] md:p-9"><div className="inline-flex rounded-full bg-amber-100 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-amber-800">Billing return</div><h1 className="mt-4 text-4xl font-black tracking-[-0.07em] md:text-6xl">{cancelled ? "Checkout cancelled" : "Checking your billing"}</h1><p className="mt-4 max-w-2xl text-base font-bold leading-7 text-slate-600">{status}</p>{addonStatus ? <p className="mt-3 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-black text-orange-900">{addonStatus}</p> : null}{details ? <div className="mt-5 grid gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm font-black text-slate-800 md:grid-cols-2"><div>Plan: {niceStatus(details.plan_name || details.plan)}</div><div>Stripe: {subscriptionText(details)}</div><div>Country: {details.billing_country || details.country || "NZ"}</div>{details.trial_ends_at ? <div>Trial ends: {new Date(details.trial_ends_at).toLocaleString("en-NZ")}</div> : null}{checkedAt ? <div>Last checked: {checkedAt}</div> : null}</div> : null}<div className="mt-6 flex flex-wrap gap-3"><button type="button" onClick={refreshBilling} className="rounded-full bg-amber-300 px-5 py-3 text-sm font-black text-slate-950">Refresh billing status</button><button type="button" onClick={() => navigate("/dashboard#setupassistant", { replace: true })} className="rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white">Open setup guide</button><button type="button" onClick={() => navigate("/plans", { replace: true })} className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900">Back to Plans</button><Link to="/support-board" className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900 no-underline">Need help?</Link></div><p className="mt-5 rounded-2xl border border-cyan-200 bg-cyan-50 p-4 text-sm font-bold leading-6 text-cyan-900">Stripe checkout is confirmed once using the returned session ID, then the URL is cleaned so mobile browsers do not loop.</p></article></section></main>;
 }
