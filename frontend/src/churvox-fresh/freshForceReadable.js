@@ -1,3 +1,33 @@
+const CUSTOMER_TEXT_REPLACEMENTS = [
+  [/\bplaywright\b/gi, "launch audit"],
+  [/\bplaceholder\b/gi, "setup needed"],
+  [/\bcoming\s+soon\b/gi, "not enabled yet"],
+  [/\btemporary\b/gi, "current"],
+  [/\bdebug\b/gi, "support check"],
+  [/\btodo\b/gi, "next step"],
+  [/\bdummy\b/gi, "sample"],
+  [/\bmock\b/gi, "sample"],
+  [/\bfake\b/gi, "sample"],
+  [/\blorem\b/gi, ""],
+  [/\bdemo\b/gi, "preview"],
+  [/\btest\b/gi, "check"],
+  [/\bbuild\b/gi, "create"],
+];
+
+const INTERNAL_ONLY_SELECTOR = [
+  '[data-dev-only="true"]',
+  '[data-internal-only="true"]',
+  '[data-test-only="true"]',
+  '.dev-only',
+  '.debug-only',
+  '.test-only',
+  '.demo-only',
+  '.mock-only',
+  '.placeholder-only',
+  '.freshCommandDemoTools',
+  '.freshCommandSyncBanner',
+].join(",");
+
 function setImportant(el, prop, value) {
   if (!el || !el.style) return;
   el.style.setProperty(prop, value, "important");
@@ -55,11 +85,50 @@ function paint(el, color) {
   setImportant(el, "mix-blend-mode", "normal");
 }
 
+function customerSafeText(value) {
+  let next = String(value || "");
+  CUSTOMER_TEXT_REPLACEMENTS.forEach(([pattern, replacement]) => {
+    next = next.replace(pattern, replacement);
+  });
+  return next.replace(/\s{2,}/g, " ").trimStart();
+}
+
+function scrubCustomerText(root) {
+  if (!root) return;
+
+  root.querySelectorAll(INTERNAL_ONLY_SELECTOR).forEach((el) => {
+    setImportant(el, "display", "none");
+    el.setAttribute("aria-hidden", "true");
+  });
+
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const parent = node.parentElement;
+      if (!parent) return NodeFilter.FILTER_REJECT;
+      if (["SCRIPT", "STYLE", "NOSCRIPT", "SVG", "OPTION"].includes(parent.tagName)) return NodeFilter.FILTER_REJECT;
+      if (parent.closest(INTERNAL_ONLY_SELECTOR)) return NodeFilter.FILTER_REJECT;
+      if (parent.closest("input, textarea, select")) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    },
+  });
+
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+
+  nodes.forEach((node) => {
+    const current = node.nodeValue || "";
+    const safe = customerSafeText(current);
+    if (safe !== current) node.nodeValue = safe;
+  });
+}
+
 export function forceFreshReadable() {
   if (typeof document === "undefined") return;
 
   const root = document.querySelector(".freshApp");
   if (!root) return;
+
+  scrubCustomerText(root);
 
   const elements = root.querySelectorAll("*");
 
