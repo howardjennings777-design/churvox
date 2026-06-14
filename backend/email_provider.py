@@ -16,6 +16,31 @@ OWNER_EMAIL = "hello@churvox.com"
 PLAN_ALIAS = {"start": "solo", "solo": "solo", "crew": "team", "team": "team", "operator": "pro", "pro": "pro", "command": "enterprise", "enterprise": "enterprise"}
 PLAN_LABELS = {"solo": "Start", "start": "Start", "team": "Crew", "crew": "Crew", "pro": "Operator", "operator": "Operator", "enterprise": "Command", "command": "Command", "none": "No plan", "": "No plan"}
 PLAN_VALUE = {"solo": 39, "team": 89, "pro": 149, "enterprise": 299}
+RETENTION_EMAIL_TEMPLATES = [
+    ("welcome", "Welcome"),
+    ("verify_email", "Verify email"),
+    ("trial_started", "Trial started"),
+    ("need_help_setup", "Need help setting up"),
+    ("setup_nudge", "Finish setup"),
+    ("first_client_nudge", "Add first client"),
+    ("first_job_nudge", "Create first job"),
+    ("first_invoice_nudge", "Create first invoice"),
+    ("trial_checkin", "Trial check-in"),
+    ("trial_ending_7", "Trial ending 7 days"),
+    ("trial_ending_3", "Trial ending 3 days"),
+    ("trial_ending_1", "Trial ending tomorrow"),
+    ("trial_ending", "Trial ending soon"),
+    ("payment_required", "Payment required"),
+    ("payment_failed", "Payment failed"),
+    ("paid_welcome", "Paid welcome"),
+    ("upgrade_operator", "Upgrade to Operator"),
+    ("dormant_7", "Dormant 7 days"),
+    ("dormant_14", "Dormant 14 days"),
+    ("dormant_30", "Dormant 30 days"),
+    ("winback", "Win-back"),
+    ("tester_welcome", "Tester welcome"),
+    ("tester_feedback", "Tester feedback"),
+]
 
 
 @dataclass
@@ -79,6 +104,60 @@ def _looks_like_url(value: str) -> bool:
 def _pretty_role(role: str) -> str:
     r = (role or "worker").strip().lower()
     return {"worker": "Worker", "manager": "Manager", "office_admin": "Office Admin", "payroll": "Payroll"}.get(r, r.replace("_", " ").title())
+
+
+def _safe_name(user: dict):
+    return _html.escape(str((user or {}).get("name") or (user or {}).get("full_name") or "there").strip() or "there")
+
+
+def _safe_business(user: dict):
+    return _html.escape(str((user or {}).get("business_name") or (user or {}).get("company") or "your business").strip() or "your business")
+
+
+def _clean_plan(value):
+    return PLAN_ALIAS.get(str(value or "").lower().strip(), str(value or "none").lower().strip() or "none")
+
+
+def _plan_label(user: dict):
+    return PLAN_LABELS.get(_clean_plan((user or {}).get("plan")), "your plan")
+
+
+def build_lifecycle_email(kind: str, user: dict, frontend_url: str = "https://www.churvox.com"):
+    kind = str(kind or "welcome").strip().lower()
+    base = str(frontend_url or "https://www.churvox.com").rstrip("/")
+    name = _safe_name(user)
+    business = _safe_business(user)
+    plan = _html.escape(_plan_label(user))
+    links = {"setup": f"{base}/dashboard#setupassistant", "plans": f"{base}/plans", "command": f"{base}/dashboard#command", "clients": f"{base}/dashboard#clients", "jobs": f"{base}/dashboard#jobs", "invoices": f"{base}/dashboard#invoices", "support": f"{base}/dashboard#support"}
+    templates = {
+        "welcome": ("Welcome to Churvox", f"Hi {name}, welcome to Churvox. Start with the setup guide so {business} can get jobs, clients and invoices working properly.", links["setup"], "Open setup guide"),
+        "verify_email": ("Please verify your Churvox email", f"Hi {name}, please verify your email so Churvox can safely send account and customer updates for {business}.", links["setup"], "Open Churvox"),
+        "trial_started": ("Your Churvox trial is active", f"Hi {name}, your {plan} trial is active. Finish setup now so Churvox can start preparing admin work for owner approval.", links["setup"], "Finish setup"),
+        "need_help_setup": ("Need help setting up Churvox?", f"Hi {name}, it looks like setup may have stalled. The quickest path is: business details, first client, first job, first invoice. Churvox can guide you step by step.", links["setup"], "Continue setup"),
+        "setup_nudge": ("Finish setting up Churvox", f"Hi {name}, your account is nearly there. Add your business details, first client, first job and first invoice path so Churvox can start helping properly.", links["setup"], "Continue setup"),
+        "first_client_nudge": ("Add your first client in Churvox", f"Hi {name}, adding one real client is the fastest way to see Churvox work. Add the customer name, email, phone and job address.", links["clients"], "Add first client"),
+        "first_job_nudge": ("Create your first Churvox job", f"Hi {name}, your next step is creating a real job. Once a job is in Churvox, the job-to-invoice flow starts making sense.", links["jobs"], "Create first job"),
+        "first_invoice_nudge": ("Prepare your first invoice", f"Hi {name}, once a job is done, Churvox can help prepare the invoice for owner approval. That is where the admin starts paying off.", links["invoices"], "Prepare invoice"),
+        "trial_checkin": ("How is Churvox going so far?", f"Hi {name}, checking in on your Churvox trial. If setup feels stuck, open the guide and Churvox will walk you through the next job-to-invoice step.", links["setup"], "Open guide"),
+        "trial_ending_7": ("Your Churvox trial has 7 days left", f"Hi {name}, your trial has about a week left. Keep access open by making sure your plan and card details are ready before the trial ends.", links["plans"], "Check plan"),
+        "trial_ending_3": ("Your Churvox trial ends soon", f"Hi {name}, your trial is almost finished. Keep Churvox running for {business} by confirming your plan now.", links["plans"], "Keep Churvox active"),
+        "trial_ending_1": ("Your Churvox trial ends tomorrow", f"Hi {name}, your Churvox trial ends tomorrow. To avoid losing access, confirm your plan before the trial closes.", links["plans"], "Confirm plan"),
+        "trial_ending": ("Your Churvox trial is ending soon", f"Hi {name}, your Churvox trial is nearly finished. Keep access open by confirming your plan before the trial ends.", links["plans"], "Keep Churvox active"),
+        "payment_required": ("Keep using Churvox", f"Hi {name}, billing needs attention before Churvox can keep running for {business}. Choose or confirm a plan to continue.", links["plans"], "Open plans"),
+        "payment_failed": ("Churvox billing needs attention", f"Hi {name}, the payment for Churvox needs attention. Update your billing details so {business} does not lose access.", links["plans"], "Fix billing"),
+        "paid_welcome": ("You're fully set up on Churvox", f"Hi {name}, thanks for choosing Churvox. Your plan is active, and Churvox is ready to help with jobs, invoices and admin approvals.", links["command"], "Open Command"),
+        "upgrade_operator": ("Let Churvox handle more admin", f"Hi {name}, Operator is where Churvox starts preparing admin work for approval: follow-ups, invoice checks and owner-ready actions.", links["plans"], "See Operator"),
+        "dormant_7": ("Still setting up Churvox?", f"Hi {name}, we noticed Churvox has been quiet for a few days. Open the setup guide and take one simple next step so you do not lose momentum.", links["setup"], "Resume setup"),
+        "dormant_14": ("Can we help get Churvox moving?", f"Hi {name}, it looks like {business} has not used Churvox for a while. If something is confusing, open the guide or reply for help before your trial momentum disappears.", links["setup"], "Get moving again"),
+        "dormant_30": ("Should we keep Churvox ready for you?", f"Hi {name}, Churvox has been quiet for about a month. Come back and finish one job-to-invoice flow, or reply if you need help setting it up.", links["setup"], "Return to Churvox"),
+        "winback": ("Want to give Churvox another go?", f"Hi {name}, if Churvox did not click the first time, start with one client and one job. That is the easiest way to see the value without overthinking it.", links["setup"], "Try again"),
+        "tester_welcome": ("Your Churvox tester access is ready", f"Hi {name}, tester access is open. Please use Churvox like a real business and tell us what feels confusing, missing or broken.", links["command"], "Open Churvox"),
+        "tester_feedback": ("How did Churvox feel as a tester?", f"Hi {name}, thanks for testing Churvox. What slowed you down, what felt useful, and what would stop you paying for it? Honest feedback helps shape the product.", links["support"], "Send feedback"),
+    }
+    subject, intro, link, cta = templates.get(kind, templates["welcome"])
+    html = _wrap(f"<h1 style='margin:0 0 12px;font-size:24px;'>{_html.escape(subject)}</h1><p style='font-size:15px;color:#334155;'>{intro}</p>{_button(cta, link)}<p style='font-size:13px;color:#64748b;'>Churvox does the admin. You approve.</p>")
+    text_intro = _html.unescape(intro).replace("<strong>", "").replace("</strong>", "")
+    return {"kind": kind, "subject": subject, "html": html, "text": f"{subject}\n\n{text_intro}\n\n{cta}: {link}"}
 
 
 def build_invite_email(name: str, invite_link: str, business_name: str = "", role: str = "worker"):
@@ -272,37 +351,20 @@ def _maybe_register_support_route():
                 raise HTTPException(status_code=404, detail="User not found")
             return user
 
-        def lifecycle_template(kind: str, user: dict):
-            name = safe_text(user.get("name") or user.get("full_name"), "there")
-            business = safe_text(user.get("business_name") or user.get("company"), "your business")
-            plan = plan_label(user.get("plan"))
-            links = {"setup": f"{FRONTEND_URL}/dashboard#setupassistant", "plans": f"{FRONTEND_URL}/plans", "command": f"{FRONTEND_URL}/dashboard#command"}
-            templates = {
-                "welcome": ("Welcome to Churvox", f"Hi {name}, welcome to Churvox. Set up {business}, choose your plan, and Churvox will guide you through the first job-to-invoice flow.", links["setup"], "Open setup guide"),
-                "trial_started": ("Your Churvox trial is active", f"Hi {name}, your Churvox {plan} trial is active. Finish setup now so Churvox can start preparing admin work for owner approval.", links["setup"], "Finish setup"),
-                "setup_nudge": ("Finish setting up Churvox", f"Hi {name}, your account is ready but setup still needs attention. Add your business details, first client, first job and first invoice path.", links["setup"], "Continue setup"),
-                "trial_ending": ("Your Churvox trial is ending soon", f"Hi {name}, your Churvox trial is nearly finished. Keep access open by confirming your plan before the trial ends.", links["plans"], "Keep Churvox active"),
-                "payment_required": ("Keep using Churvox", f"Hi {name}, your trial has ended or billing needs attention. Choose or confirm a plan to keep Churvox running for {business}.", links["plans"], "Open plans"),
-                "tester_welcome": ("Your Churvox tester access is ready", f"Hi {name}, tester access has been opened for you. Please use Churvox like a real business and send feedback on anything confusing or broken.", links["command"], "Open Churvox"),
-            }
-            subject, intro, link, cta = templates.get(kind, templates["welcome"])
-            html = _wrap(f"<h1 style='margin:0 0 12px;font-size:24px;'>{_html.escape(subject)}</h1><p style='font-size:15px;color:#334155;'>{_html.escape(intro)}</p>{_button(cta, link)}<p style='font-size:13px;color:#64748b;'>Churvox does the admin. You approve.</p>")
-            return {"subject": subject, "html": html, "text": f"{subject}\n\n{intro}\n\n{cta}: {link}"}
-
         async def send_lifecycle_email(user: dict, kind: str, actor: str = "system"):
-            tpl = lifecycle_template(kind, user)
+            tpl = build_lifecycle_email(kind, user, FRONTEND_URL)
             to = email_of(user)
             if not to:
                 return {"success": False, "email_sent": False, "error": "No user email"}
             result = await _PROVIDER.send(to, tpl["subject"], tpl["html"], tpl["text"])
-            event = {"created_at": datetime.now(timezone.utc), "template": kind, "to": to, "user_id": str(user.get("_id") or user.get("id") or ""), "business_name": user.get("business_name"), "subject": tpl["subject"], "sent": bool(result.success), "provider": result.provider, "error": result.error, "actor": actor}
+            event = {"created_at": datetime.now(timezone.utc), "template": tpl["kind"], "to": to, "user_id": str(user.get("_id") or user.get("id") or ""), "business_name": user.get("business_name"), "subject": tpl["subject"], "sent": bool(result.success), "provider": result.provider, "error": result.error, "actor": actor}
             try:
                 await db.lifecycle_emails.insert_one(event)
-                if kind == "welcome" and result.success:
+                if tpl["kind"] == "welcome" and result.success:
                     await db.users.update_one({"_id": user.get("_id")}, {"$set": {"welcome_email_sent_at": datetime.now(timezone.utc)}})
             except Exception:
                 pass
-            return {"success": True, "email_sent": bool(result.success), "provider": result.provider, "error": result.error, "template": kind, "subject": tpl["subject"]}
+            return {"success": True, "email_sent": bool(result.success), "provider": result.provider, "error": result.error, "template": tpl["kind"], "subject": tpl["subject"]}
 
         @router.post("/support/contact")
         async def churvox_support_contact(payload: dict):
@@ -371,7 +433,7 @@ def _maybe_register_support_route():
         @router.get("/admin/owner/lifecycle-email-templates")
         async def lifecycle_templates(request: Request):
             await require_owner(request)
-            return {"success": True, "templates": ["welcome", "trial_started", "setup_nudge", "trial_ending", "payment_required", "tester_welcome"]}
+            return {"success": True, "templates": [key for key, _ in RETENTION_EMAIL_TEMPLATES], "template_options": [{"value": key, "label": label} for key, label in RETENTION_EMAIL_TEMPLATES]}
 
         @router.post("/admin/owner/send-lifecycle-email")
         async def owner_send_lifecycle_email(request: Request, payload: dict = Body(default={})):
