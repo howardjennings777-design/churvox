@@ -30,3 +30,39 @@ body { overflow-x: hidden; }
   color: inherit !important;
   -webkit-text-fill-color: inherit !important;
 }
+
+/* Stronger catch-all for the white pill on the Plans hero. */
+.freshApp .freshMain a,
+.freshApp .freshMain button {
+  font-weight: 900;
+}
+
+.freshApp .freshMain a:not(.freshPrimary):not(.freshOrange):not(.freshDark),
+.freshApp .freshMain button:not(.freshPrimary):not(.freshOrange):not(.freshDark) {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}
+
+.freshApp .freshMain a:not(.freshPrimary):not(.freshOrange):not(.freshDark) *,
+.freshApp .freshMain button:not(.freshPrimary):not(.freshOrange):not(.freshDark) * {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  text-shadow: none !important;
+}
+
+.freshApp .freshMain a[aria-label*="support" i],
+.freshApp .freshMain button[aria-label*="support" i],
+.freshApp .freshMain a[href*="support" i],
+.freshApp .freshMain button[class*="support" i] {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  background: #fff7ed !important;
+}
+
+.freshApp .freshMain a[aria-label*="support" i] *,
+.freshApp .freshMain button[aria-label*="support" i] *,
+.freshApp .freshMain a[href*="support" i] *,
+.freshApp .freshMain button[class*="support" i] * {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}
