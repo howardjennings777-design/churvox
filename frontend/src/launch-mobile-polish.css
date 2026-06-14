@@ -1,3 +1,32 @@
 /* Safe imported mobile polish stylesheet. */
 html, body, #root { min-height: 100%; }
 body { overflow-x: hidden; }
+
+/* Launch polish: make light secondary action buttons readable on dark hero panels. */
+.freshApp .freshMain a,
+.freshApp .freshMain button {
+  text-decoration-thickness: 2px;
+}
+
+.freshApp .freshMain a[style*="white"],
+.freshApp .freshMain button[style*="white"],
+.freshApp .freshMain a[class*="ghost" i],
+.freshApp .freshMain button[class*="ghost" i],
+.freshApp .freshMain a[class*="secondary" i],
+.freshApp .freshMain button[class*="secondary" i],
+.freshApp .freshMain [class*="hero" i] a:not([class*="primary" i]):not([class*="orange" i]),
+.freshApp .freshMain [class*="hero" i] button:not([class*="primary" i]):not([class*="orange" i]) {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  text-shadow: none !important;
+}
+
+.freshApp .freshMain a[style*="white"] *,
+.freshApp .freshMain button[style*="white"] *,
+.freshApp .freshMain a[class*="ghost" i] *,
+.freshApp .freshMain button[class*="ghost" i] *,
+.freshApp .freshMain a[class*="secondary" i] *,
+.freshApp .freshMain button[class*="secondary" i] * {
+  color: inherit !important;
+  -webkit-text-fill-color: inherit !important;
+}
