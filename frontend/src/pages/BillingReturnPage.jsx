@@ -4,15 +4,19 @@ import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "../context/AuthContext";
 
+const PLAN_REQUIRED_KEY = "churvox_plan_choice_required";
+const FIRST_SETUP_KEY = "churvox_first_setup_pending";
+
 function niceStatus(value) {
   const text = String(value || "").replaceAll("_", " ").trim();
   return text ? text.charAt(0).toUpperCase() + text.slice(1) : "Unknown";
 }
-function unwrap(value) {
-  return value?.data?.data || value?.data || value || {};
-}
+function unwrap(value) { return value?.data?.data || value?.data || value || {}; }
 function subscriptionText(details) {
   if (!details) return "Checking Stripe status";
+  if (details.subscription_status === "trialing") return "14-day trial active";
+  if (details.subscription_status === "active") return "Subscription active";
+  if (details.billing_lock_reason === "payment_required") return "Payment required";
   if (details.stripe_subscription_id) return "Subscription saved";
   return "Waiting for Stripe confirmation";
 }
@@ -32,15 +36,11 @@ export default function BillingReturnPage({ cancelled = false }) {
     if (sub?.success) {
       const data = unwrap(sub);
       setDetails(data);
-      const active = Boolean(data?.stripe_subscription_id);
-      setStatus(active ? `Plan status: ${niceStatus(data?.plan_name || data?.plan)} · subscription active` : `Plan status: ${niceStatus(data?.plan_name || data?.plan)} · saved/trial or waiting for Stripe`);
+      setStatus(`Plan status: ${niceStatus(data?.plan_name || data?.plan)} · ${subscriptionText(data)}`);
     } else {
       setStatus("Could not refresh billing status. Open Plans or Support if this does not update shortly.");
     }
-    try {
-      await checkAuth?.();
-      window.dispatchEvent(new Event("churvox-auth-refresh"));
-    } catch {}
+    try { await checkAuth?.(); window.dispatchEvent(new Event("churvox-auth-refresh")); } catch {}
     setCheckedAt(new Date().toLocaleString("en-NZ"));
   }, [checkAuth, get]);
 
@@ -63,23 +63,19 @@ export default function BillingReturnPage({ cancelled = false }) {
         setAddonStatus("Confirming add-on checkout…");
         const res = await post("/billing/confirm-addon-checkout", { addon, session_id: sessionId, country }, { timeout: 25000 });
         if (!alive) return;
-        if (res?.success) {
-          setAddonStatus(res?.data?.message || res?.message || "Add-on activated");
-          toast.success("Add-on activated");
-        } else {
-          setAddonStatus(res?.error || "Could not confirm add-on yet. Try refreshing shortly.");
-          toast.error(res?.error || "Could not confirm add-on");
-        }
+        if (res?.success) { setAddonStatus(res?.data?.message || res?.message || "Add-on activated"); toast.success("Add-on activated"); }
+        else { setAddonStatus(res?.error || "Could not confirm add-on yet. Try refreshing shortly."); toast.error(res?.error || "Could not confirm add-on"); }
       } else if (sessionId) {
-        setStatus("Confirming plan checkout with Stripe…");
+        setStatus("Confirming Stripe trial checkout…");
         const res = await post("/billing/confirm-checkout", { session_id: sessionId, plan, country }, { timeout: 25000 });
         if (!alive) return;
         if (res?.success) {
-          toast.success("Plan activated");
-          setStatus("Plan activated. Refreshing billing status…");
+          try { window.localStorage.removeItem(PLAN_REQUIRED_KEY); window.localStorage.setItem(FIRST_SETUP_KEY, "true"); } catch {}
+          toast.success("Trial started");
+          setStatus("Trial started. Refreshing billing status…");
         } else {
-          toast.error(res?.error || "Could not confirm plan checkout");
-          setStatus(res?.error || "Could not confirm plan checkout. Refresh shortly or contact support.");
+          toast.error(res?.error || "Could not confirm Stripe checkout");
+          setStatus(res?.error || "Could not confirm Stripe checkout. Refresh shortly or contact support.");
         }
       }
       await refreshBilling();
@@ -88,5 +84,5 @@ export default function BillingReturnPage({ cancelled = false }) {
     return () => { alive = false; };
   }, [cancelled, location.search, post, refreshBilling]);
 
-  return <main className="min-h-screen bg-[#f7f3ea] p-4 text-slate-950 md:p-8"><section className="mx-auto grid min-h-[70vh] max-w-4xl place-items-center"><article className="w-full rounded-[34px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.10)] md:p-9"><div className="inline-flex rounded-full bg-amber-100 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-amber-800">Billing return</div><h1 className="mt-4 text-4xl font-black tracking-[-0.07em] md:text-6xl">{cancelled ? "Checkout cancelled" : "Checking your billing"}</h1><p className="mt-4 max-w-2xl text-base font-bold leading-7 text-slate-600">{status}</p>{addonStatus ? <p className="mt-3 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-black text-orange-900">{addonStatus}</p> : null}{details ? <div className="mt-5 grid gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm font-black text-slate-800 md:grid-cols-2"><div>Plan: {niceStatus(details.plan_name || details.plan)}</div><div>Stripe: {subscriptionText(details)}</div><div>Country: {details.billing_country || details.country || "NZ"}</div>{checkedAt ? <div>Last checked: {checkedAt}</div> : null}</div> : null}<div className="mt-6 flex flex-wrap gap-3"><button type="button" onClick={refreshBilling} className="rounded-full bg-amber-300 px-5 py-3 text-sm font-black text-slate-950">Refresh billing status</button><button type="button" onClick={() => navigate("/plans", { replace: true })} className="rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white">Back to Plans</button><Link to="/dashboard" className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900 no-underline">Command Board</Link><Link to="/support-board" className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900 no-underline">Need help?</Link></div><p className="mt-5 rounded-2xl border border-cyan-200 bg-cyan-50 p-4 text-sm font-bold leading-6 text-cyan-900">Plan and add-on checkout are confirmed here using the returned Stripe session ID, with webhook as backup.</p></article></section></main>;
+  return <main className="min-h-screen bg-[#f7f3ea] p-4 text-slate-950 md:p-8"><section className="mx-auto grid min-h-[70vh] max-w-4xl place-items-center"><article className="w-full rounded-[34px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.10)] md:p-9"><div className="inline-flex rounded-full bg-amber-100 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-amber-800">Billing return</div><h1 className="mt-4 text-4xl font-black tracking-[-0.07em] md:text-6xl">{cancelled ? "Checkout cancelled" : "Checking your billing"}</h1><p className="mt-4 max-w-2xl text-base font-bold leading-7 text-slate-600">{status}</p>{addonStatus ? <p className="mt-3 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-black text-orange-900">{addonStatus}</p> : null}{details ? <div className="mt-5 grid gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm font-black text-slate-800 md:grid-cols-2"><div>Plan: {niceStatus(details.plan_name || details.plan)}</div><div>Stripe: {subscriptionText(details)}</div><div>Country: {details.billing_country || details.country || "NZ"}</div>{details.trial_ends_at ? <div>Trial ends: {new Date(details.trial_ends_at).toLocaleString("en-NZ")}</div> : null}{checkedAt ? <div>Last checked: {checkedAt}</div> : null}</div> : null}<div className="mt-6 flex flex-wrap gap-3"><button type="button" onClick={refreshBilling} className="rounded-full bg-amber-300 px-5 py-3 text-sm font-black text-slate-950">Refresh billing status</button><button type="button" onClick={() => navigate("/dashboard#setupassistant", { replace: true })} className="rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white">Open setup guide</button><button type="button" onClick={() => navigate("/plans", { replace: true })} className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900">Back to Plans</button><Link to="/support-board" className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900 no-underline">Need help?</Link></div><p className="mt-5 rounded-2xl border border-cyan-200 bg-cyan-50 p-4 text-sm font-bold leading-6 text-cyan-900">Stripe checkout is confirmed here using the returned session ID, with webhook as backup.</p></article></section></main>;
 }
