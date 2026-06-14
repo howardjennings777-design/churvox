@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Request, HTTPException, Body
+from fastapi.responses import HTMLResponse
 from typing import Any, Dict
+from urllib.parse import quote
 import hashlib
+import json
 import os
 import stripe
 
@@ -15,16 +18,7 @@ PLAN_LABELS = {"solo": "Start", "team": "Crew", "pro": "Operator", "enterprise":
 PLAN_ENV_BY_KEY = {"solo": "START", "team": "CREW", "pro": "OPERATOR", "enterprise": "COMMAND"}
 PLAN_ALIAS = {"start": "solo", "solo": "solo", "crew": "team", "team": "team", "operator": "pro", "pro": "pro", "command": "enterprise", "enterprise": "enterprise"}
 SUPPORTED_BILLING_COUNTRIES = {"NZ", "AU", "US", "UK"}
-RETENTION_EMAIL_TEMPLATES = [
-    ("welcome", "Welcome"), ("verify_email", "Verify email"), ("trial_started", "Trial started"),
-    ("need_help_setup", "Need help setting up"), ("setup_nudge", "Finish setup"),
-    ("first_client_nudge", "Add first client"), ("first_job_nudge", "Create first job"), ("first_invoice_nudge", "Create first invoice"),
-    ("trial_checkin", "Trial check-in"), ("trial_ending_7", "Trial ending 7 days"), ("trial_ending_3", "Trial ending 3 days"),
-    ("trial_ending_1", "Trial ending tomorrow"), ("trial_ending", "Trial ending soon"),
-    ("payment_required", "Payment required"), ("payment_failed", "Payment failed"), ("paid_welcome", "Paid welcome"),
-    ("upgrade_operator", "Upgrade to Operator"), ("dormant_7", "Dormant 7 days"), ("dormant_14", "Dormant 14 days"),
-    ("dormant_30", "Dormant 30 days"), ("winback", "Win-back"), ("tester_welcome", "Tester welcome"), ("tester_feedback", "Tester feedback"),
-]
+RETENTION_EMAIL_TEMPLATES = [("welcome", "Welcome"), ("verify_email", "Verify email"), ("trial_started", "Trial started"), ("need_help_setup", "Need help setting up"), ("setup_nudge", "Finish setup"), ("first_client_nudge", "Add first client"), ("first_job_nudge", "Create first job"), ("first_invoice_nudge", "Create first invoice"), ("trial_checkin", "Trial check-in"), ("trial_ending_7", "Trial ending 7 days"), ("trial_ending_3", "Trial ending 3 days"), ("trial_ending_1", "Trial ending tomorrow"), ("trial_ending", "Trial ending soon"), ("payment_required", "Payment required"), ("payment_failed", "Payment failed"), ("paid_welcome", "Paid welcome"), ("upgrade_operator", "Upgrade to Operator"), ("dormant_7", "Dormant 7 days"), ("dormant_14", "Dormant 14 days"), ("dormant_30", "Dormant 30 days"), ("winback", "Win-back"), ("tester_welcome", "Tester welcome"), ("tester_feedback", "Tester feedback")]
 AUTO_RETENTION_INTERVAL_SECONDS = int(os.environ.get("RETENTION_EMAIL_INTERVAL_SECONDS", "21600"))
 AUTO_RETENTION_BATCH_LIMIT = int(os.environ.get("RETENTION_EMAIL_BATCH_LIMIT", "25"))
 
@@ -102,10 +96,7 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
         return PLAN_ALIAS.get(raw, raw)
 
     def plan_label(user_or_plan: Any) -> str:
-        if isinstance(user_or_plan, dict):
-            key = plan_key(user_or_plan)
-        else:
-            key = PLAN_ALIAS.get(str(user_or_plan or "").strip().lower(), str(user_or_plan or "").strip().lower())
+        key = plan_key(user_or_plan) if isinstance(user_or_plan, dict) else PLAN_ALIAS.get(str(user_or_plan or "").strip().lower(), str(user_or_plan or "").strip().lower())
         return PLAN_LABELS.get(key, key.title() if key else "Choose plan")
 
     def trial_expired(user: Dict[str, Any]) -> bool:
@@ -163,6 +154,15 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
         item["hq_can_remove"] = email_of(doc) not in OWNER_FILTER_EMAILS
         item["billing_health"] = user_access_status(item)
         return item
+
+    def unsubscribe_secret() -> str:
+        return os.environ.get("RETENTION_UNSUBSCRIBE_SECRET") or os.environ.get("JWT_SECRET") or "churvox-retention"
+
+    def unsubscribe_token(email: str) -> str:
+        return hashlib.sha256(f"{email.lower()}|{unsubscribe_secret()}".encode("utf-8")).hexdigest()
+
+    def unsubscribe_link(email: str) -> str:
+        return f"{frontend_url('/api/lifecycle/unsubscribe')}?email={quote(email)}&token={unsubscribe_token(email)}"
 
     async def optional_user(request: Request):
         try:
@@ -226,11 +226,19 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
             html = f"<div style='font-family:system-ui'><h1>{subject}</h1><p>Open Churvox and continue setup.</p><p><a href='{link}'>Open Churvox</a></p></div>"
             return {"kind": kind or "welcome", "subject": subject, "html": html, "text": f"{subject}\n\nOpen Churvox: {link}"}
 
+    def with_unsubscribe(tpl: Dict[str, str], email: str) -> Dict[str, str]:
+        if not email:
+            return tpl
+        link = unsubscribe_link(email)
+        html = (tpl.get("html") or "") + f"<p style='font-size:12px;color:#64748b;margin-top:22px;'>No longer want Churvox setup and retention emails? <a href='{link}' style='color:#475569;'>Unsubscribe</a>.</p>"
+        text = (tpl.get("text") or "") + f"\n\nUnsubscribe from Churvox retention emails: {link}"
+        return {**tpl, "html": html, "text": text}
+
     async def send_lifecycle_email(user: Dict[str, Any], kind: str, actor: str = "system"):
         to = email_of(user)
         if not to:
             return {"success": False, "email_sent": False, "error": "No user email"}
-        tpl = lifecycle_template(kind, user)
+        tpl = with_unsubscribe(lifecycle_template(kind, user), to)
         try:
             from email_provider import get_email_provider
             provider = get_email_provider()
@@ -322,9 +330,8 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
                 return "trial_ending_7"
             if age_days >= 3 and not await already_sent(to, "trial_checkin"):
                 return "trial_checkin"
-        if not checkout_verified(user):
-            if age_days >= 1 and not await already_sent(to, "need_help_setup"):
-                return "need_help_setup"
+        if not checkout_verified(user) and age_days >= 1 and not await already_sent(to, "need_help_setup"):
+            return "need_help_setup"
         if clients == 0 and age_days >= 1 and not await already_sent(to, "first_client_nudge"):
             return "first_client_nudge"
         if clients > 0 and jobs == 0 and age_days >= 2 and not await already_sent(to, "first_job_nudge"):
@@ -386,6 +393,25 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
             return await run_auto_retention(force=False)
         except Exception as exc:
             return {"success": False, "error": str(exc)}
+
+    async def users_for_stripe(customer_id=None, subscription_id=None):
+        clauses = []
+        if customer_id:
+            clauses.append({"stripe_customer_id": str(customer_id)})
+        if subscription_id:
+            clauses.append({"stripe_subscription_id": str(subscription_id)})
+        if not clauses:
+            return []
+        return await db.users.find({"$or": clauses}).to_list(length=100)
+
+    async def update_users_for_stripe(customer_id=None, subscription_id=None, update=None):
+        users = await users_for_stripe(customer_id, subscription_id)
+        if not users:
+            return []
+        ids = [u.get("_id") for u in users if u.get("_id")]
+        if ids:
+            await db.users.update_many({"_id": {"$in": ids}}, {"$set": {**(update or {}), "updated_at": datetime.now(timezone.utc)}})
+        return users
 
     @router.get("/auth/me")
     async def hq_safe_auth_me(request: Request):
@@ -449,6 +475,97 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
             pass
         return {"success": True, "message": "Plan trial started", "plan": plan, "country": country, "trial_ends_at": safe_value(update.get("trial_ends_at")), "subscription_status": update.get("subscription_status"), "stripe_customer_id": session.get("customer"), "stripe_subscription_id": session.get("subscription")}
 
+    @router.post("/billing/stripe-webhook")
+    @router.post("/stripe/webhook")
+    async def stripe_webhook(request: Request):
+        secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "").strip()
+        raw = await request.body()
+        try:
+            if secret:
+                event = stripe.Webhook.construct_event(raw, request.headers.get("stripe-signature"), secret)
+            else:
+                event = json.loads(raw.decode("utf-8") or "{}")
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=f"Invalid Stripe webhook: {exc}")
+        event_id = str(event.get("id") or "")
+        event_type = str(event.get("type") or "")
+        if event_id and await db.stripe_webhook_events.find_one({"event_id": event_id}):
+            return {"success": True, "duplicate": True, "event": event_type}
+        obj = (event.get("data") or {}).get("object") or {}
+        now = datetime.now(timezone.utc)
+        processed = {"event_id": event_id, "type": event_type, "created_at": now, "object_id": obj.get("id"), "customer": obj.get("customer"), "subscription": obj.get("subscription")}
+        try:
+            if event_type == "checkout.session.completed":
+                metadata = obj.get("metadata") or {}
+                user_id = object_id_or_none(metadata.get("user_id"))
+                plan = PLAN_ALIAS.get(str(metadata.get("plan") or "").lower().strip(), str(metadata.get("plan") or "").lower().strip())
+                update = {"stripe_customer_id": obj.get("customer"), "stripe_subscription_id": obj.get("subscription"), "checkout_verified_by_stripe": True, "subscription_status": "trialing", "billing_country": normalize_country(metadata.get("country")), "last_checkout_confirmed_at": now, "updated_at": now}
+                if plan in PLAN_VALUE:
+                    update["plan"] = plan
+                if user_id:
+                    await db.users.update_one({"_id": user_id}, {"$set": update})
+                else:
+                    await update_users_for_stripe(obj.get("customer"), obj.get("subscription"), update)
+            elif event_type.startswith("customer.subscription."):
+                status = str(obj.get("status") or "").lower()
+                update = {"subscription_status": status, "stripe_subscription_id": obj.get("id"), "stripe_customer_id": obj.get("customer"), "checkout_verified_by_stripe": True, "updated_at": now}
+                if obj.get("trial_end"):
+                    update["trial_ends_at"] = datetime.fromtimestamp(int(obj.get("trial_end")), tz=timezone.utc)
+                if obj.get("current_period_end"):
+                    update["current_period_end"] = datetime.fromtimestamp(int(obj.get("current_period_end")), tz=timezone.utc)
+                if event_type == "customer.subscription.deleted" or status in {"canceled", "cancelled", "unpaid", "incomplete_expired"}:
+                    update["billing_lock_reason"] = "payment_required"
+                elif status in {"active", "trialing"}:
+                    update["billing_lock_reason"] = None
+                await update_users_for_stripe(obj.get("customer"), obj.get("id"), update)
+            elif event_type == "invoice.paid":
+                await update_users_for_stripe(obj.get("customer"), obj.get("subscription"), {"subscription_status": "active", "billing_lock_reason": None, "checkout_verified_by_stripe": True, "last_invoice_paid_at": now})
+            elif event_type == "invoice.payment_failed":
+                users = await update_users_for_stripe(obj.get("customer"), obj.get("subscription"), {"subscription_status": "past_due", "billing_lock_reason": "payment_failed", "last_payment_failed_at": now})
+                for user in users[:5]:
+                    await send_lifecycle_email(user, "payment_failed", actor="stripe_webhook")
+            processed["processed"] = True
+        except Exception as exc:
+            processed["processed"] = False
+            processed["error"] = str(exc)
+        if event_id:
+            try:
+                await db.stripe_webhook_events.insert_one(processed)
+            except Exception:
+                pass
+        return {"success": True, "event": event_type, "processed": processed.get("processed", False)}
+
+    @router.get("/lifecycle/unsubscribe")
+    async def lifecycle_unsubscribe(email: str = "", token: str = ""):
+        clean = str(email or "").strip().lower()
+        if not clean or token != unsubscribe_token(clean):
+            return HTMLResponse("<h1>Invalid unsubscribe link</h1><p>Please contact hello@churvox.com if you need help.</p>", status_code=400)
+        await db.users.update_many({"email": clean}, {"$set": {"retention_email_opt_out": True, "retention_unsubscribed_at": datetime.now(timezone.utc)}})
+        return HTMLResponse("<h1>You are unsubscribed</h1><p>You will no longer receive Churvox setup, dormant or win-back emails.</p>")
+
+    @router.post("/support/contact")
+    async def support_contact(request: Request, payload: Dict[str, Any] = Body(default={})):
+        user = await optional_user(request)
+        message = str(payload.get("message") or "").strip()
+        if not message:
+            return {"success": False, "error": "Message is required"}
+        subject = f"Churvox support: {str(payload.get('help_type') or 'Support request')[:80]}"
+        from_line = f"{(user or {}).get('name') or payload.get('user_name') or 'Unknown'} <{(user or {}).get('email') or payload.get('user_email') or 'no email'}>"
+        text = f"From: {from_line}\nBusiness: {(user or {}).get('business_name') or payload.get('business_name') or 'Not supplied'}\nPage: {payload.get('page_url') or ''}\n\n{message}"
+        html = f"<div style='font-family:system-ui'><h2>Churvox support request</h2><pre style='white-space:pre-wrap'>{text}</pre></div>"
+        sent = False; error = ""
+        try:
+            from email_provider import get_email_provider
+            result = await get_email_provider().send(PLATFORM_OWNER_EMAIL, subject, html, text)
+            sent = bool(getattr(result, "success", False)); error = getattr(result, "error", "") or ""
+        except Exception as exc:
+            error = str(exc)
+        try:
+            await db.support_messages.insert_one({"created_at": datetime.now(timezone.utc), "from": from_line, "business_name": (user or {}).get("business_name") or payload.get("business_name"), "message": message, "sent": sent, "error": error})
+        except Exception:
+            pass
+        return {"success": sent, "message": "Support message sent" if sent else "Support request saved but email failed", "error": error}
+
     @router.post("/lifecycle/welcome")
     async def signup_welcome_email(request: Request):
         user = await get_current_user(request)
@@ -499,7 +616,7 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
                     if maybe_oid:
                         id_values.add(maybe_oid)
         collections = await collection_names()
-        target_collections = ["users", "clients", "jobs", "quotes", "invoices", "time_logs", "payments", "platform_visits", "email_verification_tokens", "password_reset_tokens", "invite_tokens", "invite_emails", "password_reset_emails", "invoice_emails", "quote_emails", "sms_credits", "sms_credit_purchases", "xero_connections", "xero_sync_log", "lifecycle_emails"]
+        target_collections = ["users", "clients", "jobs", "quotes", "invoices", "time_logs", "payments", "platform_visits", "email_verification_tokens", "password_reset_tokens", "invite_tokens", "invite_emails", "password_reset_emails", "invoice_emails", "quote_emails", "sms_credits", "sms_credit_purchases", "xero_connections", "xero_sync_log", "lifecycle_emails", "support_messages"]
         deleted = {}
         for collection_name in target_collections:
             if collection_name not in collections:
@@ -579,6 +696,14 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
     @router.post("/admin/owner/run-retention-emails")
     async def owner_run_retention_emails(request: Request, payload: Dict[str, Any] = Body(default={})):
         await require_owner(request)
+        return await run_auto_retention(force=True, limit=max(1, min(int(payload.get("limit") or AUTO_RETENTION_BATCH_LIMIT), 100)))
+
+    @router.post("/cron/run-retention-emails")
+    async def cron_run_retention_emails(request: Request, payload: Dict[str, Any] = Body(default={})):
+        expected = os.environ.get("RETENTION_CRON_SECRET", "").strip()
+        supplied = request.headers.get("x-cron-secret", "").strip() or str(request.query_params.get("secret") or "").strip()
+        if not expected or supplied != expected:
+            raise HTTPException(status_code=403, detail="Invalid retention cron secret")
         return await run_auto_retention(force=True, limit=max(1, min(int(payload.get("limit") or AUTO_RETENTION_BATCH_LIMIT), 100)))
 
     @router.get("/admin/owner/retention-email-status")
