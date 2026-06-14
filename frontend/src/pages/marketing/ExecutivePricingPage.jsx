@@ -11,25 +11,25 @@ function priceLabel(plan) {
 
 function featureList(plan) {
   const list = plan.features || plan.includes || [];
-  return Array.isArray(list) ? list.slice(0, 5) : [];
+  return Array.isArray(list) ? list.slice(0, 6) : [];
 }
 
 const chooser = [
-  ["Start", "You work solo and want jobs, clients, quotes and invoices organised."],
-  ["Crew", "You assign work to a small team and need basic time tracking."],
-  ["Operator", "You want Churvox to prepare admin actions for you to review and approve."],
-  ["Command", "You run a larger crew and need roles, payroll workspace, exports and priority support."],
+  ["Start", "For solo operators who need jobs, clients, quotes and invoices organised."],
+  ["Crew", "For small crews that assign work and need time tracking."],
+  ["Operator", "For owners who want AI Operator Actions prepared for review and approval."],
+  ["Command", "For larger teams that need stronger control, roles, payroll workspace, exports and priority support."],
 ];
 
 export default function ExecutivePricingPage() {
   return (
-    <main className="simplePublic" data-version="CHURVOX_PRICING_COPY_20260614">
+    <main className="simplePublic" data-version="CHURVOX_PRICING_ENTERPRISE_COPY_20260614">
       <Nav />
 
       <section className="simpleHero">
         <div>
-          <span className="simpleKicker">Simple pricing</span>
-          <h1>Start free. Pick the plan that matches how you run jobs.</h1>
+          <span className="simpleKicker">Plans for real service businesses</span>
+          <h1>Start free. Choose the plan that matches how you run jobs.</h1>
           <p className="simpleLead">
             Try Churvox for 14 days with no card. Start with the basics, then move up when you need workers,
             AI Operator Actions, payroll workspace or bigger team control.
@@ -41,10 +41,10 @@ export default function ExecutivePricingPage() {
         </div>
 
         <aside className="simpleCard">
-          <h2>Most owners should look at Operator.</h2>
+          <h2>Most growing businesses should look at Operator.</h2>
           <p>
-            Operator is the plan for “Churvox does the admin. You approve.”
-            Start or Crew are better if you only need the basics first.
+            Operator is where Churvox starts preparing admin actions for you to approve.
+            Start or Crew are better if you only need the core workflow first.
           </p>
         </aside>
       </section>
@@ -64,7 +64,7 @@ export default function ExecutivePricingPage() {
       <section className="simpleBand">
         <h2>Monthly plans</h2>
         <p className="simpleLead">
-          Prices are monthly and shown before GST. You can start the trial first and choose properly once you have tried the workflow.
+          Prices are monthly and shown before GST. Start the trial first, run the workflow, then choose properly.
         </p>
 
         <div className="simpleGrid">
