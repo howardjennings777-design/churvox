@@ -1,6 +1,7 @@
 import React from "react";
 import FreshDataControls from "./FreshDataControls";
 import { useApi } from "../hooks/useApi";
+import { useAuth } from "../context/AuthContext";
 
 const SETTINGS_DRAFT_KEY = "churvox:fresh-settings-draft:v1";
 
@@ -31,6 +32,10 @@ const defaultDraft = {
   commandRule: "Churvox prepares admin. Owner approves before customer action.",
 };
 
+function unwrapApi(result) {
+  return result?.data?.data || result?.data || result || {};
+}
+
 function loadDraft() {
   try {
     if (typeof window === "undefined") return defaultDraft;
@@ -48,23 +53,37 @@ function tradeLabel(value) {
   return found?.[1] || "Other trade/service";
 }
 
-function normalizeProfile(profile, draft) {
-  return {
-    id: profile?.id || "",
-    email: profile?.email || "",
-    ownerName: profile?.name || "",
-    businessName: profile?.business_name || profile?.businessName || "Your business",
+function normalizeProfile(rawProfile, draft) {
+  const profile = unwrapApi(rawProfile);
+  const ownerEmail = profile?.email || profile?.user?.email || draft?.ownerEmail || draft?.email || "";
+  const businessName = profile?.business_name || profile?.businessName || profile?.company_name || profile?.company || "Your business";
+  const next = {
+    ...draft,
+    id: profile?.id || profile?._id || "",
+    email: ownerEmail,
+    ownerEmail,
+    ownerName: profile?.name || profile?.full_name || "",
+    businessName,
     plan: profile?.plan || "solo",
     gstRate: String(profile?.gst_rate ?? profile?.gstRate ?? "15"),
     tradeType: profile?.trade_type || profile?.tradeType || "other",
-    ...draft,
   };
+
+  if (!draft?.supportEmail || draft.supportEmail === defaultDraft.supportEmail) {
+    next.supportEmail = ownerEmail || defaultDraft.supportEmail;
+  }
+  if (!draft?.replyEmail || draft.replyEmail === defaultDraft.replyEmail) {
+    next.replyEmail = ownerEmail || defaultDraft.replyEmail;
+  }
+
+  return next;
 }
 
 export default function FreshSettings({ onNavigate }) {
   const { get, patch } = useApi();
+  const { user } = useAuth();
   const [draft, setDraft] = React.useState(loadDraft);
-  const [settings, setSettings] = React.useState(() => normalizeProfile({}, loadDraft()));
+  const [settings, setSettings] = React.useState(() => normalizeProfile(user || {}, loadDraft()));
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState("");
@@ -75,18 +94,24 @@ export default function FreshSettings({ onNavigate }) {
     setError("");
 
     try {
-      const profile = await get("/auth/me");
+      const profileResult = await get("/auth/me");
+      const profile = profileResult?.success ? unwrapApi(profileResult) : (user || {});
       const currentDraft = loadDraft();
+      const nextSettings = normalizeProfile({ ...(user || {}), ...(profile || {}) }, currentDraft);
       setDraft(currentDraft);
-      setSettings(normalizeProfile(profile, currentDraft));
-      setSavedAt("Loaded from business account");
+      setSettings(nextSettings);
+      setSavedAt(nextSettings.email ? "Loaded from business account" : "Owner email needs attention");
     } catch (err) {
+      const currentDraft = loadDraft();
+      const nextSettings = normalizeProfile(user || {}, currentDraft);
+      setDraft(currentDraft);
+      setSettings(nextSettings);
       setError(err?.message || "Settings could not load.");
-      setSavedAt("Settings need attention");
+      setSavedAt(nextSettings.email ? "Loaded from logged-in owner" : "Settings need attention");
     } finally {
       setLoading(false);
     }
-  }, [get]);
+  }, [get, user]);
 
   React.useEffect(() => {
     loadSettings();
@@ -95,7 +120,10 @@ export default function FreshSettings({ onNavigate }) {
   React.useEffect(() => {
     try {
       if (typeof window !== "undefined") {
-        window.localStorage.setItem(SETTINGS_DRAFT_KEY, JSON.stringify(draft));
+        const draftToSave = { ...draft };
+        delete draftToSave.email;
+        delete draftToSave.ownerEmail;
+        window.localStorage.setItem(SETTINGS_DRAFT_KEY, JSON.stringify(draftToSave));
       }
     } catch {
       // Draft settings keep working without local storage.
@@ -145,8 +173,10 @@ export default function FreshSettings({ onNavigate }) {
       // Ignore draft reset errors.
     }
 
-    setDraft(defaultDraft);
-    setSettings((current) => ({ ...current, ...defaultDraft }));
+    const freshDraft = defaultDraft;
+    const nextSettings = normalizeProfile(user || {}, freshDraft);
+    setDraft(freshDraft);
+    setSettings(nextSettings);
     setSavedAt("Draft settings reset");
   }
 
@@ -219,7 +249,7 @@ export default function FreshSettings({ onNavigate }) {
 
           <label className="freshField">
             <span>Owner email</span>
-            <input value={settings.email} readOnly />
+            <input value={settings.email || user?.email || ""} readOnly />
           </label>
 
           <label className="freshField">
