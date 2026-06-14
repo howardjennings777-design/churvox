@@ -13,12 +13,12 @@ function niceStatus(value) {
 }
 function unwrap(value) { return value?.data?.data || value?.data || value || {}; }
 function subscriptionText(details) {
-  if (!details) return "Checking Stripe status";
+  if (!details) return "Checking setup status";
   if (details.subscription_status === "trialing") return "14-day trial active";
   if (details.subscription_status === "active") return "Subscription active";
   if (details.billing_lock_reason === "payment_required") return "Payment required";
   if (details.stripe_subscription_id) return "Subscription saved";
-  return "Waiting for Stripe confirmation";
+  return "Waiting for confirmation";
 }
 
 export default function BillingReturnPage({ cancelled = false }) {
@@ -26,19 +26,29 @@ export default function BillingReturnPage({ cancelled = false }) {
   const location = useLocation();
   const { get, post } = useApi();
   const { updateUser } = useAuth();
-  const [status, setStatus] = React.useState("Checking billing status…");
+  const [status, setStatus] = React.useState("Checking your plan…");
   const [details, setDetails] = React.useState(null);
   const [addonStatus, setAddonStatus] = React.useState("");
   const [checkedAt, setCheckedAt] = React.useState("");
+  const [confirmed, setConfirmed] = React.useState(false);
   const ranOnce = React.useRef(false);
+  const redirectTimer = React.useRef(null);
 
-  async function refreshBilling() {
+  function openSetupSoon() {
+    window.clearTimeout(redirectTimer.current);
+    redirectTimer.current = window.setTimeout(() => {
+      navigate("/dashboard#setupassistant", { replace: true });
+    }, 1800);
+  }
+
+  async function refreshBilling({ goToSetup = false } = {}) {
     const sub = await get("/billing/subscription-status", { timeout: 12000 });
     if (sub?.success) {
       const data = unwrap(sub);
       setDetails(data);
-      setStatus(`Plan status: ${niceStatus(data?.plan_name || data?.plan)} · ${subscriptionText(data)}`);
+      setStatus(data?.has_app_access ? "Your trial is active. Opening setup now…" : `Plan status: ${niceStatus(data?.plan_name || data?.plan)} · ${subscriptionText(data)}`);
       if (data?.has_app_access) {
+        setConfirmed(true);
         updateUser?.({
           plan: data.plan,
           subscription_status: data.subscription_status,
@@ -48,12 +58,15 @@ export default function BillingReturnPage({ cancelled = false }) {
           has_app_access: true,
           billing_lock_reason: null,
         });
+        if (goToSetup) openSetupSoon();
       }
     } else {
-      setStatus("Could not refresh billing status. Open Plans or Support if this does not update shortly.");
+      setStatus("Could not refresh your plan yet. Open Plans or Support if this does not update shortly.");
     }
     setCheckedAt(new Date().toLocaleString("en-NZ"));
   }
+
+  React.useEffect(() => () => window.clearTimeout(redirectTimer.current), []);
 
   React.useEffect(() => {
     if (ranOnce.current) return;
@@ -79,7 +92,7 @@ export default function BillingReturnPage({ cancelled = false }) {
         if (res?.success) { setAddonStatus(res?.data?.message || res?.message || "Add-on activated"); toast.success("Add-on activated"); }
         else { setAddonStatus(res?.error || "Could not confirm add-on yet. Try refreshing shortly."); toast.error(res?.error || "Could not confirm add-on"); }
       } else if (sessionId) {
-        setStatus("Confirming Stripe trial checkout…");
+        setStatus("Confirming your 14-day trial…");
         const res = await post("/billing/confirm-checkout", { session_id: sessionId, plan, country }, { timeout: 25000 });
         if (!alive) return;
         if (res?.success) {
@@ -96,15 +109,16 @@ export default function BillingReturnPage({ cancelled = false }) {
             has_app_access: true,
             billing_lock_reason: null,
           });
+          setConfirmed(true);
           toast.success("Trial started");
-          setStatus("Trial started. Refreshing billing status…");
+          setStatus("Your trial is active. Opening setup now…");
         } else {
-          toast.error(res?.error || "Could not confirm Stripe checkout");
-          setStatus(res?.error || "Could not confirm Stripe checkout. Refresh shortly or contact support.");
+          toast.error(res?.error || "Could not confirm checkout");
+          setStatus(res?.error || "Could not confirm checkout. Refresh shortly or contact support.");
         }
       }
       if (!alive) return;
-      await refreshBilling();
+      await refreshBilling({ goToSetup: true });
       try {
         const cleaned = new URL(window.location.href);
         ["session_id", "plan", "country", "checkout", "success"].forEach((key) => cleaned.searchParams.delete(key));
@@ -115,5 +129,6 @@ export default function BillingReturnPage({ cancelled = false }) {
     return () => { alive = false; };
   }, []);
 
-  return <main className="min-h-screen bg-[#f7f3ea] p-4 text-slate-950 md:p-8"><section className="mx-auto grid min-h-[70vh] max-w-4xl place-items-center"><article className="w-full rounded-[34px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.10)] md:p-9"><div className="inline-flex rounded-full bg-amber-100 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-amber-800">Billing return</div><h1 className="mt-4 text-4xl font-black tracking-[-0.07em] md:text-6xl">{cancelled ? "Checkout cancelled" : "Checking your billing"}</h1><p className="mt-4 max-w-2xl text-base font-bold leading-7 text-slate-600">{status}</p>{addonStatus ? <p className="mt-3 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-black text-orange-900">{addonStatus}</p> : null}{details ? <div className="mt-5 grid gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm font-black text-slate-800 md:grid-cols-2"><div>Plan: {niceStatus(details.plan_name || details.plan)}</div><div>Stripe: {subscriptionText(details)}</div><div>Country: {details.billing_country || details.country || "NZ"}</div>{details.trial_ends_at ? <div>Trial ends: {new Date(details.trial_ends_at).toLocaleString("en-NZ")}</div> : null}{checkedAt ? <div>Last checked: {checkedAt}</div> : null}</div> : null}<div className="mt-6 flex flex-wrap gap-3"><button type="button" onClick={refreshBilling} className="rounded-full bg-amber-300 px-5 py-3 text-sm font-black text-slate-950">Refresh billing status</button><button type="button" onClick={() => navigate("/dashboard#setupassistant", { replace: true })} className="rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white">Open setup guide</button><button type="button" onClick={() => navigate("/plans", { replace: true })} className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900">Back to Plans</button><Link to="/support-board" className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900 no-underline">Need help?</Link></div><p className="mt-5 rounded-2xl border border-cyan-200 bg-cyan-50 p-4 text-sm font-bold leading-6 text-cyan-900">Stripe checkout is confirmed once using the returned session ID, then the URL is cleaned so mobile browsers do not loop.</p></article></section></main>;
+  const title = cancelled ? "Checkout cancelled" : confirmed ? "Trial active" : "Checking your plan";
+  return <main className="min-h-screen bg-[#f7f3ea] p-4 text-slate-950 md:p-8"><section className="mx-auto grid min-h-[70vh] max-w-4xl place-items-center"><article className="w-full rounded-[34px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.10)] md:p-9"><div className="inline-flex rounded-full bg-amber-100 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-amber-800">Plan setup</div><h1 className="mt-4 text-4xl font-black tracking-[-0.07em] md:text-6xl">{title}</h1><p className="mt-4 max-w-2xl text-base font-bold leading-7 text-slate-600">{status}</p>{addonStatus ? <p className="mt-3 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-black text-orange-900">{addonStatus}</p> : null}{details ? <div className="mt-5 grid gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm font-black text-slate-800 md:grid-cols-2"><div>Plan: {niceStatus(details.plan_name || details.plan)}</div><div>Status: {subscriptionText(details)}</div>{details.trial_ends_at ? <div>Trial ends: {new Date(details.trial_ends_at).toLocaleString("en-NZ")}</div> : null}{checkedAt ? <div>Last checked: {checkedAt}</div> : null}</div> : null}<div className="mt-6 flex flex-wrap gap-3"><button type="button" onClick={() => refreshBilling({ goToSetup: true })} className="rounded-full bg-amber-300 px-5 py-3 text-sm font-black text-slate-950">Refresh plan status</button><button type="button" onClick={() => navigate("/dashboard#setupassistant", { replace: true })} className="rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white">Open setup now</button><button type="button" onClick={() => navigate("/plans", { replace: true })} className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900">Back to Plans</button><Link to="/support-board" className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900 no-underline">Need help?</Link></div><p className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold leading-6 text-emerald-900">Once your trial is active, Churvox opens the setup guide automatically.</p></article></section></main>;
 }
