@@ -6,7 +6,7 @@ const groups = [
   ["Command", [["Command Board", "/dashboard", "CM"]]],
   ["Work", [["Jobs", "/jobs-board", "JB"], ["Dispatch", "/dispatch-board", "DP"], ["Clients", "/clients-board", "CL"], ["Quotes", "/quotes-board", "QT"], ["Invoices", "/invoices-board", "IV"]]],
   ["Business", [["Team", "/team-board", "TM"], ["Payroll", "/payroll-board", "PR"], ["Reports", "/reports-board", "RP"]]],
-  ["System", [["Plans", "/plans", "PL"], ["Settings", "/settings-board", "ST"], ["Support", "/support-board", "SP"]]],
+  ["System", [["Plans", "/plans", "PL"], ["Xero", "/dashboard#xero", "XE"], ["Settings", "/settings-board", "ST"], ["Support", "/support-board", "SP"]]],
 ];
 
 const FIT_SCREEN_OVERRIDE = `
@@ -269,8 +269,9 @@ const FIT_SCREEN_OVERRIDE = `
   }
 `;
 
-function active(pathname, href) {
-  if (href === "/dashboard") return pathname === "/dashboard" || pathname === "/overview";
+function active(pathname, hash, href) {
+  if (href === "/dashboard#xero") return pathname === "/dashboard" && hash === "#xero";
+  if (href === "/dashboard") return (pathname === "/dashboard" && hash !== "#xero") || pathname === "/overview";
   if (href === "/jobs-board") return pathname.includes("job");
   if (href === "/dispatch-board") return pathname.includes("dispatch") || pathname.includes("crew-map") || pathname.includes("calendar") || pathname.includes("schedule");
   if (href === "/clients-board") return pathname.includes("client");
@@ -285,7 +286,7 @@ function active(pathname, href) {
 }
 
 export default function CommandShell({ children }) {
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
   const mobile = groups.flatMap((group) => group[1]).slice(0, 5);
 
   return (
@@ -300,7 +301,7 @@ export default function CommandShell({ children }) {
             <section key={group}>
               <p>{group}</p>
               {items.map(([label, href, icon]) => (
-                <Link key={href} to={href} className={active(pathname, href) ? "active" : ""}>
+                <Link key={href} to={href} className={active(pathname, hash, href) ? "active" : ""}>
                   <i>{icon}</i><span>{label}</span>
                 </Link>
               ))}
@@ -312,7 +313,7 @@ export default function CommandShell({ children }) {
       <style>{FIT_SCREEN_OVERRIDE}</style>
       <nav className="cvxAppMobileNav" aria-label="Churvox mobile command navigation">
         {mobile.map(([label, href, icon]) => (
-          <Link key={href} to={href} className={active(pathname, href) ? "active" : ""}>
+          <Link key={href} to={href} className={active(pathname, hash, href) ? "active" : ""}>
             <i>{icon}</i><span>{label}</span>
           </Link>
         ))}
