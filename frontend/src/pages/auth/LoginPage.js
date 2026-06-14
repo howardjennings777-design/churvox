@@ -24,6 +24,18 @@ const getPostLoginPath = (payload = {}) => {
   return getDefaultRoute(normalizeRole(user?.role || payload?.role));
 };
 
+const loginLooksValid = (result = {}) => {
+  const user = result?.user || result || {};
+  return Boolean(
+    result?.token ||
+      result?.cookieSession ||
+      user?.email ||
+      user?.id ||
+      user?._id ||
+      user?.role
+  );
+};
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -50,8 +62,8 @@ export default function LoginPage() {
     try {
       const result = await login(cleanEmail, password);
 
-      if (!result?.token) {
-        setError("Login failed. Please try again.");
+      if (!loginLooksValid(result)) {
+        setError("Login worked, but Churvox could not load your account. Please refresh and try again.");
         return;
       }
 
