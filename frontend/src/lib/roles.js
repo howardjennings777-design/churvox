@@ -10,20 +10,46 @@ export const ROLES = {
 
 const ROLE_ALIASES = {
   owner: "owner",
+  business_owner: "owner",
+  businessowner: "owner",
+  account_owner: "owner",
+  accountowner: "owner",
   admin: "owner",
+  administrator: "owner",
   employer: "owner",
   manager: "manager",
   office_admin: "office_admin",
   officeadmin: "office_admin",
+  office: "office_admin",
   "office admin": "office_admin",
   worker: "worker",
+  staff: "worker",
+  crew: "worker",
+  field_worker: "worker",
+  fieldworker: "worker",
   payroll: "payroll",
+  payroll_user: "payroll",
+  payrolluser: "payroll",
 };
 
 export function normalizeRole(raw) {
-  if (!raw) return ROLES.WORKER;
+  if (!raw) return ROLES.OWNER;
   const key = String(raw).trim().toLowerCase().replace(/[\s_-]+/g, "_");
-  return ROLE_ALIASES[key] || ROLE_ALIASES[key.replace(/_/g, "")] || ROLES.WORKER;
+  return ROLE_ALIASES[key] || ROLE_ALIASES[key.replace(/_/g, "")] || ROLES.OWNER;
+}
+
+export function isExplicitWorkerRole(raw) {
+  if (!raw) return false;
+  const key = String(raw).trim().toLowerCase().replace(/[\s_-]+/g, "_");
+  const compact = key.replace(/_/g, "");
+  return ["worker", "staff", "crew", "field_worker", "fieldworker"].includes(key) || ["worker", "staff", "crew", "fieldworker"].includes(compact);
+}
+
+export function isExplicitPayrollRole(raw) {
+  if (!raw) return false;
+  const key = String(raw).trim().toLowerCase().replace(/[\s_-]+/g, "_");
+  const compact = key.replace(/_/g, "");
+  return ["payroll", "payroll_user", "payrolluser"].includes(key) || ["payroll", "payrolluser"].includes(compact);
 }
 
 // Access matrices
@@ -70,18 +96,18 @@ export function isOwner(role) {
 }
 
 export function isWorkerRole(role) {
-  return normalizeRole(role) === "worker";
+  return isExplicitWorkerRole(role);
 }
 
 export function isPayrollRole(role) {
-  return normalizeRole(role) === "payroll";
+  return isExplicitPayrollRole(role);
 }
 
 export function getDefaultRoute(role) {
   const r = normalizeRole(role);
-  if (r === "worker") return "/worker/jobs";
-  if (r === "payroll") return "/payroll-board";
-  return "/dashboard#command";
+  if (isExplicitWorkerRole(role)) return "/worker/jobs";
+  if (isExplicitPayrollRole(role)) return "/payroll-board";
+  return "/dashboard#smart";
 }
 
 export const INVITE_ROLES = [
