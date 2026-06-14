@@ -28,6 +28,7 @@ const groups = [
     items: [
       ["team", "TM", "Team"],
       ["payroll", "PR", "Payroll"],
+      ["xero", "XE", "Xero"],
       ["settings", "ST", "Settings"],
       ["plans", "PL", "Plans"],
       ["support", "SP", "Support"],
@@ -48,6 +49,7 @@ const labels = {
   payments: "Payments",
   team: "Team",
   payroll: "Payroll",
+  xero: "Xero",
   settings: "Settings",
   plans: "Plans",
   support: "Support",
@@ -68,6 +70,7 @@ const extraMobile = [
   ["payments", "PY", "Payments"],
   ["team", "TM", "Team"],
   ["payroll", "PR", "Payroll"],
+  ["xero", "XE", "Xero"],
   ["settings", "ST", "Settings"],
   ["plans", "PL", "Plans"],
   ["support", "SP", "Support"],
