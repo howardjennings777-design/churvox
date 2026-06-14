@@ -308,7 +308,7 @@ export default function CommandShell({ children }) {
             <section key={group}>
               <p>{group}</p>
               {items.map(([label, href, icon]) => (
-                <Link key={href} to={href} className={active(pathname, hash, href) ? "active" : ""}>
+                <Link key={href} to={href} className={active(pathname, hash, href) ? "active" : ""} reloadDocument={href.includes("#")}>
                   <i>{icon}</i><span>{label}</span>
                 </Link>
               ))}
@@ -320,7 +320,7 @@ export default function CommandShell({ children }) {
       <style>{FIT_SCREEN_OVERRIDE}</style>
       <nav className="cvxAppMobileNav" aria-label="Churvox mobile command navigation">
         {mobileNav.map(([label, href, icon]) => (
-          <Link key={href} to={href} className={active(pathname, hash, href) ? "active" : ""}>
+          <Link key={href} to={href} className={active(pathname, hash, href) ? "active" : ""} reloadDocument={href.includes("#")}>
             <i>{icon}</i><span>{label}</span>
           </Link>
         ))}
