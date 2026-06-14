@@ -16,7 +16,7 @@ const groups = [
     title: "Work",
     items: [
       ["jobs", "JB", "Jobs"],
-      ["dispatch", "DP", "Calendar"],
+      ["dispatch", "SC", "Schedule"],
       ["clients", "CL", "Clients"],
       ["quotes", "QT", "Quotes"],
       ["invoices", "IV", "Invoices"],
@@ -41,7 +41,7 @@ const labels = {
   smart: "Owner Brief",
   command: "Command",
   jobs: "Jobs",
-  dispatch: "Calendar",
+  dispatch: "Schedule",
   clients: "Clients",
   quotes: "Quotes",
   invoices: "Invoices",
@@ -61,7 +61,7 @@ const mobileItems = [
 ];
 
 const extraMobile = [
-  ["dispatch", "DP", "Calendar"],
+  ["dispatch", "SC", "Schedule"],
   ["clients", "CL", "Clients"],
   ["quotes", "QT", "Quotes"],
   ["invoices", "IV", "Invoices"],
