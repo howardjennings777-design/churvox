@@ -8,7 +8,7 @@ const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
 const OPEN_CLIENT_MODAL_KEY = "churvox:fresh-open-client-modal:v1";
 
 const groups = [
-  { title: "Main", items: [["smart", "SH", "Smart Hub"], ["command", "CM", "Command"], ["jobs", "JB", "Jobs"], ["dispatch", "SC", "Schedule"], ["clients", "CL", "Clients"], ["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"]] },
+  { title: "Main", items: [["smart", "BP", "Business Pulse"], ["command", "CM", "Command"], ["jobs", "JB", "Jobs"], ["dispatch", "SC", "Schedule"], ["clients", "CL", "Clients"], ["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"]] },
   { title: "Team", items: [["team", "TM", "Team"], ["time", "TL", "Time Logs"], ["payroll", "PR", "Payroll"]] },
   { title: "Money", items: [["xero", "XE", "Xero Sync"], ["payments", "PY", "Payments"], ["reports", "RP", "Reports"], ["plans", "PL", "Plans & Usage"]] },
   { title: "Operations", items: [["photos", "PH", "Photos & Proof"], ["documents", "DC", "Documents"], ["automation", "AT", "Automation"], ["settings", "SG", "Settings"]] },
@@ -38,7 +38,7 @@ const relatedTools = {
   support: [["helpdesk", "HD", "Help Desk"], ["feedback", "FB", "Feedback"]],
 };
 
-const mobileItems = [["jobs", "JB", "Jobs"], ["dispatch", "SC", "Schedule"], ["command", "CM", "Command"], ["invoices", "IV", "Invoices"], ["team", "TM", "Team"], ["more", "••", "More"]];
+const mobileItems = [["smart", "BP", "Pulse"], ["jobs", "JB", "Jobs"], ["dispatch", "SC", "Schedule"], ["command", "CM", "Command"], ["invoices", "IV", "Invoices"], ["more", "••", "More"]];
 
 function guideIsComplete() { try { return window.localStorage.getItem(GUIDE_COMPLETE_KEY) === "true"; } catch { return false; } }
 function uniqueItems(items) { const seen = new Set(); return items.filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }); }
@@ -83,9 +83,7 @@ export default function FreshShell({ active, onChange, children }) {
     return () => { window.removeEventListener("storage", refreshGuide); window.removeEventListener("churvox:ai-guide-status", refreshGuide); window.removeEventListener("churvox:fresh-data-updated", refreshGuide); };
   }, []);
 
-  React.useEffect(() => {
-    resetFreshScrollTop();
-  }, [active]);
+  React.useEffect(() => { resetFreshScrollTop(); }, [active]);
 
   const safeGroups = React.useMemo(() => cleanGroups(groups, guideComplete), [guideComplete]);
   const safeMobileItems = React.useMemo(() => uniqueItems(mobileItems), []);
