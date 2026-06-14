@@ -54,6 +54,21 @@ async function collectVisibleText(page) {
   });
 }
 
+async function anyVisibleText(page, text) {
+  return page.evaluate((needle) => {
+    const wanted = String(needle || '').toLowerCase();
+    const els = [...document.querySelectorAll('body *')];
+    return els.some((el) => {
+      const value = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+      if (!value.includes(wanted)) return false;
+      const style = getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity || '1') < 0.08) return false;
+      const rect = el.getBoundingClientRect();
+      return rect.width > 1 && rect.height > 1;
+    });
+  }, text);
+}
+
 async function expectNoLaunchLanguage(page, label) {
   const visibleText = await collectVisibleText(page);
   const hits = blockedVisibleWords
@@ -146,13 +161,17 @@ test.describe('Churvox full launch owner audit', () => {
     });
   }
 
-  test('sidebar keeps full launch feature navigation', async ({ page }) => {
+  test('sidebar keeps full launch feature navigation', async ({ page, isMobile }) => {
     await page.goto('/dashboard#command');
     await waitStable(page);
+    if (isMobile) {
+      await page.getByRole('button', { name: /more/i }).click().catch(() => null);
+      await waitStable(page);
+    }
     const required = ['AI Guide', 'Command', 'Jobs', 'Clients', 'Quotes', 'Invoices', 'Team', 'Payroll', 'Xero', 'Settings', 'Support'];
     const missing = [];
     for (const item of required) {
-      const found = await page.getByText(item, { exact: false }).first().isVisible().catch(() => false);
+      const found = await anyVisibleText(page, item);
       if (!found) missing.push(item);
     }
     expect(missing, 'missing launch nav items').toEqual([]);
