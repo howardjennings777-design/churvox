@@ -1,6 +1,4 @@
-const RAW_BACKEND_URL =
-  (typeof process !== "undefined" && process?.env?.REACT_APP_BACKEND_URL) ||
-  "";
+import API_BASE from "./apiBase";
 
 const trimTrailingSlash = (value = "") => String(value).replace(/\/+$/, "");
 
@@ -9,7 +7,7 @@ const withApiSuffix = (base) => {
   return clean.endsWith("/api") ? clean : `${clean}/api`;
 };
 
-export const API_BASE_URL = withApiSuffix(RAW_BACKEND_URL);
+export const API_BASE_URL = withApiSuffix(API_BASE);
 
 const getStoredToken = () => {
   if (typeof localStorage === "undefined") return "";
