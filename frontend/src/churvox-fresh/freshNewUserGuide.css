@@ -258,15 +258,21 @@
   .freshGuideNext {
     flex-direction: column;
   }
+}
 
-  .freshGuideProgress,
-  .freshGuideNextActions {
-    width: 100%;
-    min-width: 0;
-  }
+/* Hard fix: Plans hero secondary button must stay readable. */
+.freshPricingPage .freshPricingHeroActions button:nth-child(2),
+.freshPricingPage .freshPricingHeroActions .freshGhost,
+.freshPricingPage .freshPricingHeroActions button.freshGhost {
+  background: #fffaf0 !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  border-color: rgba(255,255,255,.86) !important;
+  text-shadow: none !important;
+}
 
-  .freshGuideNextActions button,
-  .freshGuideFooter button {
-    width: 100%;
-  }
+.freshPricingPage .freshPricingHeroActions button:nth-child(2) *,
+.freshPricingPage .freshPricingHeroActions .freshGhost * {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
 }
