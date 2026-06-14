@@ -9,14 +9,6 @@ const groups = [
   ["System", [["Plans", "/plans", "PL"], ["Xero", "/dashboard#xero", "XE"], ["Settings", "/settings-board", "ST"], ["Support", "/support-board", "SP"]]],
 ];
 
-const mobileNav = [
-  ["Command", "/dashboard", "CM"],
-  ["Jobs", "/jobs-board", "JB"],
-  ["Dispatch", "/dispatch-board", "DP"],
-  ["Invoices", "/invoices-board", "IV"],
-  ["Xero", "/dashboard#xero", "XE"],
-];
-
 const FIT_SCREEN_OVERRIDE = `
   html, body, #root {
     width: 100% !important;
@@ -295,6 +287,7 @@ function active(pathname, hash, href) {
 
 export default function CommandShell({ children }) {
   const { pathname, hash } = useLocation();
+  const mobile = groups.flatMap((group) => group[1]).slice(0, 5);
 
   return (
     <div className="cvxAppShell" data-churvox-shell="command">
@@ -319,7 +312,7 @@ export default function CommandShell({ children }) {
       <main className="cvxAppMain" data-command-canvas="true">{children}</main>
       <style>{FIT_SCREEN_OVERRIDE}</style>
       <nav className="cvxAppMobileNav" aria-label="Churvox mobile command navigation">
-        {mobileNav.map(([label, href, icon]) => (
+        {mobile.map(([label, href, icon]) => (
           <Link key={href} to={href} className={active(pathname, hash, href) ? "active" : ""}>
             <i>{icon}</i><span>{label}</span>
           </Link>
