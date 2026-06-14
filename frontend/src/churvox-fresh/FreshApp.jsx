@@ -7,7 +7,6 @@ import "./freshApprovals.css";
 import "./freshAutomation.css";
 import "./freshAvailability.css";
 import "./freshBilling.css";
-import "./freshBusinessPulse.css";
 import "./freshClients.css";
 import "./freshCommand.css";
 import "./freshCommandDesk.css";
