@@ -112,6 +112,94 @@
   padding: 14px;
 }
 
+.freshRelatedTools {
+  display: grid;
+  grid-template-columns: minmax(190px, 240px) 1fr;
+  gap: 12px;
+  align-items: stretch;
+  border: 1px solid rgba(15,23,42,.13);
+  border-left: 6px solid #f97316;
+  border-radius: 22px;
+  background: rgba(255,250,240,.92);
+  box-shadow: 0 14px 36px rgba(2,6,23,.08);
+  padding: 12px;
+  margin: 0 0 14px;
+}
+
+.freshRelatedHeader {
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  border-radius: 16px;
+  background: #111827;
+  color: white;
+  padding: 12px;
+}
+
+.freshRelatedHeader span {
+  color: #fed7aa;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.freshRelatedHeader strong {
+  color: white;
+  font-size: 16px;
+  font-weight: 1000;
+}
+
+.freshRelatedHeader small {
+  color: #e5e7eb;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.freshRelatedList {
+  display: flex;
+  gap: 8px;
+  align-content: flex-start;
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+.freshRelatedList button {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(15,23,42,.13);
+  border-radius: 14px;
+  background: white;
+  color: #1f2937;
+  padding: 8px 11px;
+  font-size: 12px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshRelatedList button.active,
+.freshRelatedList button:hover {
+  background: #f97316;
+  color: #111827;
+  border-color: rgba(249,115,22,.65);
+}
+
+.freshRelatedList i {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: #111827;
+  color: #fbbf24;
+  font-style: normal;
+  font-size: 9px;
+  font-weight: 1000;
+}
+
 .freshHero {
   min-height: 145px;
   border-radius: 28px;
@@ -271,6 +359,8 @@
   .freshMain { height: auto; min-height: 100vh; }
   .freshGrid, .freshGrid.two { grid-template-columns: 1fr; }
   .freshHero h1 { font-size: 46px; }
+  .freshRelatedTools { grid-template-columns: 1fr; }
+  .freshRelatedList { max-height: 172px; overflow: auto; }
 }
 
 .freshLogoutSide,
