@@ -10,9 +10,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import RedirectResponse
 
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://www.churvox.com").rstrip("/")
+BACKEND_PUBLIC_URL = os.environ.get("BACKEND_PUBLIC_URL", os.environ.get("RENDER_EXTERNAL_URL", "https://grassley-backend.onrender.com")).rstrip("/")
 XERO_CLIENT_ID = os.environ.get("XERO_CLIENT_ID", "")
 XERO_CLIENT_SECRET = os.environ.get("XERO_CLIENT_SECRET", "")
-XERO_REDIRECT_URI = os.environ.get("XERO_REDIRECT_URI", f"{FRONTEND_URL}/api/xero/callback")
+XERO_REDIRECT_URI = os.environ.get("XERO_REDIRECT_URI", f"{BACKEND_PUBLIC_URL}/api/xero/callback")
 XERO_AUTHORIZE_URL = "https://login.xero.com/identity/connect/authorize"
 XERO_TOKEN_URL = "https://identity.xero.com/connect/token"
 XERO_CONNECTIONS_URL = "https://api.xero.com/connections"
@@ -95,18 +96,18 @@ def install(app, db, get_current_user):
     @router.get("/xero/callback")
     async def xero_callback(code: str | None = Query(None), state: str | None = Query(None), error: str | None = Query(None)):
         if error:
-            return RedirectResponse(f"{FRONTEND_URL}/settings-board?xero_error={urlencode({'e': error})}")
+            return RedirectResponse(f"{FRONTEND_URL}/dashboard?xero_error={urlencode({'e': error})}")
         if not code or not state:
-            return RedirectResponse(f"{FRONTEND_URL}/settings-board?xero_error=missing_code")
+            return RedirectResponse(f"{FRONTEND_URL}/dashboard?xero_error=missing_code")
         saved = await db.xero_oauth_states.find_one({"state": state, "used": False})
         if not saved:
-            return RedirectResponse(f"{FRONTEND_URL}/settings-board?xero_error=bad_state")
+            return RedirectResponse(f"{FRONTEND_URL}/dashboard?xero_error=bad_state")
         bid = saved["business_id"]
         async with httpx.AsyncClient(timeout=25) as client:
             token_res = await client.post(XERO_TOKEN_URL, headers=_basic_auth(), data={"grant_type": "authorization_code", "code": code, "redirect_uri": XERO_REDIRECT_URI})
             if token_res.status_code >= 400:
                 await db.xero_oauth_states.update_one({"_id": saved["_id"]}, {"$set": {"used": True, "error": token_res.text, "updated_at": datetime.now(timezone.utc)}})
-                return RedirectResponse(f"{FRONTEND_URL}/settings-board?xero_error=token_failed")
+                return RedirectResponse(f"{FRONTEND_URL}/dashboard?xero_error=token_failed")
             tokens = token_res.json()
             access_token = tokens.get("access_token")
             connections_res = await client.get(XERO_CONNECTIONS_URL, headers={"Authorization": f"Bearer {access_token}"})
@@ -130,7 +131,7 @@ def install(app, db, get_current_user):
         await db.xero_connections.update_one({"business_id": bid}, {"$set": doc}, upsert=True)
         await db.xero_oauth_states.update_one({"_id": saved["_id"]}, {"$set": {"used": True, "updated_at": now}})
         await db.xero_sync_settings.update_one({"business_id": bid}, {"$setOnInsert": {"business_id": bid, "invoice_sync_enabled": False, "contact_sync_enabled": False, "payment_sync_enabled": False, "payroll_handoff_enabled": False, "approval_required": True, "created_at": now}, "$set": {"updated_at": now}}, upsert=True)
-        return RedirectResponse(f"{FRONTEND_URL}/settings-board?xero_connected=1")
+        return RedirectResponse(f"{FRONTEND_URL}/dashboard?xero_connected=1#xero")
 
     @router.post("/xero/disconnect")
     async def xero_disconnect(current_user: dict = Depends(get_current_user)):
