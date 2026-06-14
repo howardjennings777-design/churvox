@@ -11,7 +11,9 @@ export default function FreshXero({ onNavigate }) {
   const [status, setStatus] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
   const [busy, setBusy] = React.useState(false);
+  const [syncing, setSyncing] = React.useState(false);
   const [message, setMessage] = React.useState("");
+  const [syncResult, setSyncResult] = React.useState(null);
 
   async function loadStatus() {
     setLoading(true);
@@ -28,6 +30,7 @@ export default function FreshXero({ onNavigate }) {
 
   React.useEffect(() => {
     loadStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function connectXero() {
@@ -51,6 +54,7 @@ export default function FreshXero({ onNavigate }) {
       await post("/xero/disconnect", {});
       await loadStatus();
       setMessage("Xero disconnected.");
+      setSyncResult(null);
     } catch (err) {
       setMessage(err?.message || "Could not disconnect Xero.");
     } finally {
@@ -58,21 +62,38 @@ export default function FreshXero({ onNavigate }) {
     }
   }
 
+  async function syncLatestInvoice() {
+    setSyncing(true);
+    setMessage("");
+    setSyncResult(null);
+    try {
+      const data = unwrap(await post("/xero/sync-latest-invoice", {}));
+      setSyncResult(data);
+      const invoiceNumber = data?.xero_invoice?.InvoiceNumber || data?.xero_invoice?.InvoiceID || "draft invoice";
+      setMessage(`Xero draft invoice sync complete: ${invoiceNumber}`);
+    } catch (err) {
+      setMessage(err?.message || "Xero draft invoice sync failed.");
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   const configured = Boolean(status?.configured);
   const connected = Boolean(status?.connected);
   const addonActive = Boolean(status?.addon_active);
+  const draftReady = Boolean(status?.draft_invoice_sync_ready);
   const connection = status?.connection || {};
   const settings = status?.settings || {};
+  const xeroInvoice = syncResult?.xero_invoice || {};
 
   return (
     <section className="freshXeroPage">
       <div className="freshXeroHero">
         <div>
           <span>Xero connection</span>
-          <h1>Connect Xero when the business is ready for approved accounting sync</h1>
+          <h1>Connect Xero and sync approved Churvox invoices as Xero drafts</h1>
           <p>
-            Phase one connects the Xero organisation, stores the connection securely,
-            and keeps sync settings owner-approved before invoice/payment syncing is used.
+            Phase one creates draft invoices in Xero only. The owner still reviews before anything is sent or marked paid.
           </p>
         </div>
 
@@ -85,7 +106,7 @@ export default function FreshXero({ onNavigate }) {
       </div>
 
       {message && (
-        <div className="freshXeroNotice need">
+        <div className={`freshXeroNotice ${syncResult?.success ? "proper" : "need"}`}>
           <b>Xero notice</b>
           <span>{message}</span>
         </div>
@@ -95,7 +116,7 @@ export default function FreshXero({ onNavigate }) {
         <b>{connected ? "Xero connected" : "Xero not connected yet"}</b>
         <span>
           {connected
-            ? `Connected to ${connection?.tenant_name || "a Xero organisation"}. Keep invoice sync owner-approved.`
+            ? `Connected to ${connection?.tenant_name || "a Xero organisation"}. Draft invoice sync is available for proof testing.`
             : "Connect is blocked until Render env vars are ready and the Xero add-on is active for this business."}
         </span>
       </div>
@@ -127,6 +148,12 @@ export default function FreshXero({ onNavigate }) {
             <span>{connection?.tenant_name || "No tenant connected"}</span>
             <small>{connected ? "Connected" : "Not connected"}</small>
           </button>
+
+          <button type="button" className={draftReady ? "active" : ""}>
+            <b>Draft invoice sync</b>
+            <span>Latest Churvox invoice can be sent as Xero draft</span>
+            <small>{draftReady ? "Ready" : "Connect first"}</small>
+          </button>
         </aside>
 
         <article className="freshXeroDetail">
@@ -136,7 +163,7 @@ export default function FreshXero({ onNavigate }) {
               <h2>{connected ? connection?.tenant_name || "Xero connected" : "Connect Xero"}</h2>
               <p>
                 {connected
-                  ? "Your Xero organisation is connected. Next step is controlled draft invoice sync."
+                  ? "Now test controlled draft invoice sync. Churvox will create a draft invoice in Xero, not send it."
                   : "Start the Xero OAuth connection once credentials and add-on are ready."}
               </p>
             </div>
@@ -148,7 +175,12 @@ export default function FreshXero({ onNavigate }) {
                 </button>
               )}
               {connected && (
-                <button type="button" onClick={disconnectXero} disabled={busy}>
+                <button type="button" onClick={syncLatestInvoice} disabled={syncing || !draftReady}>
+                  {syncing ? "Syncing draft..." : "Sync latest invoice draft"}
+                </button>
+              )}
+              {connected && (
+                <button type="button" onClick={disconnectXero} disabled={busy || syncing}>
                   Disconnect Xero
                 </button>
               )}
@@ -166,14 +198,14 @@ export default function FreshXero({ onNavigate }) {
 
             <section>
               <span>Invoice sync</span>
-              <b>{settings.invoice_sync_enabled ? "Enabled" : "Approval first"}</b>
-              <p>Keep sync disabled until a draft invoice sync proof passes.</p>
+              <b>{draftReady ? "Draft ready" : "Approval first"}</b>
+              <p>Creates a Xero draft invoice from the latest Churvox invoice.</p>
             </section>
 
             <section>
               <span>Payment status</span>
               <b>{settings.payment_sync_enabled ? "Enabled" : "Later"}</b>
-              <p>Payment read-back should be tested after invoice draft sync is proven.</p>
+              <p>Payment read-back is available after an invoice has a Xero invoice ID.</p>
             </section>
           </div>
 
@@ -194,14 +226,32 @@ export default function FreshXero({ onNavigate }) {
               <span>Organisation</span>
               <input readOnly value={connection?.tenant_name || ""} />
             </label>
+            <label>
+              <span>Sales account</span>
+              <input readOnly value={status?.sales_account_code || ""} />
+            </label>
+            <label>
+              <span>Tax type</span>
+              <input readOnly value={status?.sales_tax_type || ""} />
+            </label>
             <label className="wide">
               <span>Required env</span>
-              <textarea readOnly value={(status?.required_env || []).join("\\n")} />
+              <textarea readOnly value={(status?.required_env || []).join("\n")} />
             </label>
+            {syncResult?.success && (
+              <label className="wide">
+                <span>Last Xero draft result</span>
+                <textarea
+                  readOnly
+                  value={`Invoice: ${xeroInvoice.InvoiceNumber || ""}\nXero ID: ${xeroInvoice.InvoiceID || ""}\nStatus: ${xeroInvoice.Status || ""}`}
+                />
+              </label>
+            )}
           </div>
 
           <div className="freshXeroActions">
             <button type="button" onClick={loadStatus}>Reload status</button>
+            <button type="button" onClick={syncLatestInvoice} disabled={syncing || !draftReady}>Sync latest invoice draft</button>
             <button type="button" onClick={() => onNavigate?.("command")}>Open Command</button>
             <button type="button" onClick={() => onNavigate?.("settings")}>Open Settings</button>
           </div>
