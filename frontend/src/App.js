@@ -14,6 +14,7 @@ import "./styles/public-dark-login-theme.css";
 
 import LoginPage from "./pages/auth/LoginPage";
 import SignupPage from "./pages/auth/SignupPage";
+import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
 import InviteSetupPage from "./pages/auth/InviteSetupPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
@@ -26,7 +27,6 @@ import QuoteDetailPage from "./pages/quotes/QuoteDetailPage";
 import InvoiceFormPage from "./pages/invoices/InvoiceFormPage";
 import InvoiceDetailPage from "./pages/invoices/InvoiceDetailPage";
 import ChurvoxHQPage from "./pages/ChurvoxHQPage";
-import CustomerRecordsPage from "./pages/CustomerRecordsPage";
 import WorkerJobsPage from "./pages/worker/WorkerJobsPage";
 import WorkerJobDetailPage from "./pages/worker/WorkerJobDetailPage";
 import PrivacyPage from "./pages/legal/PrivacyPage";
@@ -48,18 +48,9 @@ import ChurvoxHelpWidget from "./components/ChurvoxHelpWidget";
 import CommandShell from "./components/CommandShell";
 import ConceptCFrame from "./concept-c/ConceptCFrame";
 import CommandDeskOperatorPage from "./pages/CommandDeskOperatorPageV2";
-import JobsCommandPage from "./pages/JobsCommandPage";
-import QuotesCommandPage from "./pages/QuotesCommandPage";
-import InvoicesCommandPage from "./pages/InvoicesCommandPage";
-import TeamRolesWorkbenchPage from "./pages/TeamRolesWorkbenchPage";
-import DispatchCommandPage from "./pages/DispatchCommandPage";
 import WorkerMapCommandPage from "./pages/WorkerMapCommandPage";
-import ReportsCommandPage from "./pages/ReportsCommandPage";
-import SettingsCommandPage from "./pages/SettingsCommandPageClean";
-import SupportCommandPage from "./pages/SupportCommandPage";
 import PayrollCommandPage from "./pages/PayrollCommandPage";
 import OfflineSyncPage from "./pages/OfflineSyncPage";
-import PlansCommandPage from "./pages/PlansCommandPage";
 import BillingReturnPage from "./pages/BillingReturnPage";
 import { OnboardingCommandPage, WorkerCommandPage } from "./pages/CommandRestPages";
 import { hasPlanAtLeast, nicePlanName, requiredPlanLabel } from "./config/churvoxPlans";
@@ -74,9 +65,8 @@ function PrivateRoute({ children }) { const { user, loading } = useAuth(); if (l
 function PublicRoute({ children }) { const { user, loading, normalizedRole } = useAuth(); if (loading) return <Spinner />; if (!user) return children; const email = (user?.email || "").toLowerCase(); const isPlatformOwner = email === "hello@churvox.com" || user?.is_platform_owner === true || user?.is_admin === true; if (isPlatformOwner) return <Navigate to="/admin" replace />; return <Navigate to={getDefaultRoute(normalizedRole)} replace />; }
 function BusinessRoute({ children }) { const { user, loading, isWorker, isPayroll, hasAppAccess } = useAuth(); if (loading) return <Spinner />; if (!user) return <Navigate to="/login" replace />; if (isWorker) return <Navigate to="/worker/jobs" replace />; if (isPayroll) return <Navigate to="/payroll-board" replace />; if (!hasAppAccess) return <Navigate to="/plans" replace />; return <CommandShell><AppPage>{children}</AppPage></CommandShell>; }
 function FreshBusinessRoute({ children }) { const { user, loading, isWorker, isPayroll, hasAppAccess } = useAuth(); if (loading) return <Spinner />; if (!user) return <Navigate to="/login" replace />; if (isWorker) return <Navigate to="/worker/jobs" replace />; if (isPayroll) return <Navigate to="/payroll-board" replace />; const setupAccess = typeof window !== "undefined" && (window.location.pathname === "/plans" || window.location.pathname === "/guide" || window.location.pathname === "/setup-guide" || window.location.search.includes("first_setup=1") || window.location.hash === "#setupassistant" || window.location.hash === "#firstrun"); if (!hasAppAccess && !setupAccess) return <Navigate to="/plans" replace />; return <AppPage>{children}</AppPage>; }
-function OwnerRoute({ children }) { const { user, loading, isOwnerUser, isWorker, isPayroll, normalizedRole } = useAuth(); if (loading) return <Spinner />; if (!user) return <Navigate to="/login" replace />; if (isWorker) return <Navigate to="/worker/jobs" replace />; if (isPayroll) return <Navigate to="/payroll-board" replace />; if (!isOwnerUser) return <Navigate to={getDefaultRoute(normalizedRole)} replace />; return <AppPage>{children}</AppPage>; }
+function OwnerRoute({ children }) { const { user, loading, isWorker, isPayroll } = useAuth(); if (loading) return <Spinner />; if (!user) return <Navigate to="/login" replace />; if (isWorker) return <Navigate to="/worker/jobs" replace />; if (isPayroll) return <Navigate to="/payroll-board" replace />; return <AppPage>{children}</AppPage>; }
 function WorkerRoute({ children }) { const { user, loading, isWorker } = useAuth(); if (loading) return <Spinner />; if (!user) return <Navigate to="/login" replace />; if (!isWorker) return <Navigate to="/dashboard" replace />; return <AppPage>{children}</AppPage>; }
-function ReportsRoute({ children }) { const { user, loading, normalizedRole } = useAuth(); if (loading) return <Spinner />; if (!user) return <Navigate to="/login" replace />; if (!["owner", "manager", "office_admin"].includes(normalizedRole)) return <Navigate to={getDefaultRoute(normalizedRole)} replace />; return <CommandShell><AppPage>{children}</AppPage></CommandShell>; }
 function UpgradeRequiredPage({ requiredPlan = "pro", feature = "This feature" }) { const { user, normalizedRole } = useAuth(); const currentPlan = (user?.plan || "none").toLowerCase(); const requiredName = requiredPlanLabel(requiredPlan); const currentName = nicePlanName(currentPlan) || "No plan"; return <main className="min-h-screen bg-[#f5f7f1] p-4 text-slate-950 md:p-8"><section className="mx-auto grid min-h-[72vh] max-w-4xl place-items-center"><div className="w-full rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.10)] md:p-9"><div className="mb-4 inline-flex rounded-full bg-cyan-50 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-cyan-700">Plan locked</div><h1 className="mb-3 text-4xl font-black tracking-[-0.06em] md:text-6xl">{feature} needs {requiredName}.</h1><p className="mb-6 max-w-2xl text-base font-bold leading-7 text-slate-600">Your current plan is {currentName}. This keeps Start, Crew, Operator and Command matched to the pricing page.</p><div className="flex flex-wrap gap-3">{normalizedRole === "owner" || normalizedRole === "manager" ? <NavigateButton to="/plans">View plans</NavigateButton> : null}<NavigateButton to="/dashboard" subtle>Back to Smart Hub</NavigateButton></div></div></section></main>; }
 function NavigateButton({ to, children, subtle = false }) { return <NavigateLink to={to} className={subtle ? "rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900 no-underline" : "rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white no-underline"}>{children}</NavigateLink>; }
 function NavigateLink({ to, className, children }) { return <a href={to} className={className}>{children}</a>; }
@@ -86,12 +76,12 @@ function RoleRedirect() { const { user, loading, normalizedRole } = useAuth(); i
 
 function App() {
   React.useEffect(() => { trackPlatformVisit(); }, []);
-  React.useEffect(() => { const run = async () => { try { const params = new URLSearchParams(window.location.search); const checkout = params.get("checkout"); const sessionId = params.get("session_id") || ""; const plan = (params.get("plan") || "").toLowerCase(); if (!checkout && !sessionId) return; if (checkout === "success") toast.success(plan ? `Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan is being activated` : "Checkout finished — refreshing plan status"); else if (checkout === "cancelled") toast.info("Checkout cancelled — no changes to your plan"); window.dispatchEvent(new Event("churvox-auth-refresh")); const cleaned = new URL(window.location.href); ["checkout", "session_id", "plan"].forEach((k) => cleaned.searchParams.delete(k)); window.history.replaceState({}, document.title, cleaned.toString()); } catch (err) { console.error("Checkout return handler failed:", err); } }; run(); }, []);
+  React.useEffect(() => { const run = async () => { try { if (window.location.pathname.startsWith("/billing")) return; const params = new URLSearchParams(window.location.search); const checkout = params.get("checkout"); const sessionId = params.get("session_id") || ""; const plan = (params.get("plan") || "").toLowerCase(); if (!checkout && !sessionId) return; if (checkout === "success") toast.success(plan ? `Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan is being activated` : "Checkout finished — refreshing plan status"); else if (checkout === "cancelled") toast.info("Checkout cancelled — no changes to your plan"); window.dispatchEvent(new Event("churvox-auth-refresh")); const cleaned = new URL(window.location.href); ["checkout", "session_id", "plan"].forEach((k) => cleaned.searchParams.delete(k)); window.history.replaceState({}, document.title, cleaned.toString()); } catch (err) { console.error("Checkout return handler failed:", err); } }; run(); }, []);
   return <BrowserRouter><AuthProvider><ErrorBoundary><Toaster position="top-right" richColors /><ChurvoxHelpWidget /><Routes>
     <Route path="/guide" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} /><Route path="/setup-guide" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} /><Route path="/operator-tools" element={<Navigate to="/dashboard" replace />} /><Route path="/command-board" element={<Navigate to="/dashboard#command" replace />} /><Route path="/cockpit" element={<Navigate to="/dashboard#smart" replace />} /><Route path="/smart-hub" element={<Navigate to="/dashboard#smart" replace />} />
     <Route path="/public/proof/:token" element={<PublicProofPackPage />} /><Route path="/offline-sync" element={<PrivateRoute><OfflineSyncPage /></PrivateRoute>} />
     <Route path="/dispatch-board" element={<Navigate to="/dashboard#dispatch" replace />} /><Route path="/dispatch/map" element={<BusinessRoute><WorkerMapCommandPage /></BusinessRoute>} /><Route path="/crew-map" element={<Navigate to="/dispatch-board" replace />} /><Route path="/dispatch" element={<Navigate to="/dispatch-board" replace />} /><Route path="/schedule" element={<Navigate to="/dispatch-board" replace />} /><Route path="/calendar" element={<Navigate to="/dispatch-board" replace />} />
-    <Route path="/login" element={<LoginPage />} /><Route path="/signin" element={<Navigate to="/login" replace />} /><Route path="/sign-in" element={<Navigate to="/login" replace />} /><Route path="/signup" element={<SignupPage />} /><Route path="/signup/" element={<SignupPage />} /><Route path="/register" element={<SignupPage />} /><Route path="/register/" element={<SignupPage />} /><Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} /><Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} /><Route path="/invite/setup/:token" element={<InviteSetupPage />} />
+    <Route path="/login" element={<LoginPage />} /><Route path="/signin" element={<Navigate to="/login" replace />} /><Route path="/sign-in" element={<Navigate to="/login" replace />} /><Route path="/signup" element={<SignupPage />} /><Route path="/signup/" element={<SignupPage />} /><Route path="/register" element={<SignupPage />} /><Route path="/register/" element={<SignupPage />} /><Route path="/verify-email" element={<VerifyEmailPage />} /><Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} /><Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} /><Route path="/invite/setup/:token" element={<InviteSetupPage />} />
     <Route path="/public/quote/:token" element={<PublicQuotePage />} /><Route path="/public/invoice/:token" element={<PublicInvoicePage />} /><Route path="/client-portal/:token" element={<PublicClientPortalPage />} />
     <Route path="/owner-login" element={<Navigate to="/login" replace />} /><Route path="/admin/login" element={<Navigate to="/login" replace />} /><Route path="/owner" element={<Navigate to="/admin" replace />} /><Route path="/owner/login" element={<Navigate to="/login" replace />} />
     <Route path="/ai-operator" element={<BusinessRoute><CommandDeskRoute /></BusinessRoute>} /><Route path="/ai-operator/approvals" element={<BusinessRoute><CommandDeskRoute /></BusinessRoute>} />
@@ -108,6 +98,6 @@ function App() {
     <Route path="/privacy" element={<PrivacyPage />} /><Route path="/terms" element={<TermsPage />} /><Route path="/privacy-policy" element={<PrivacyPolicyPage />} /><Route path="/terms-of-service" element={<TermsOfServicePage />} /><Route path="/account-deletion" element={<AccountDeletionPage />} /><Route path="/platform-unlock" element={<PlatformUnlock />} />
     <Route path="/" element={<HomePage />} /><Route path="/pricing" element={<PricingPage />} /><Route path="/features" element={<FeaturesPage />} /><Route path="*" element={<RoleRedirect />} />
     <Route path="/fresh" element={<Navigate to="/dashboard" replace />} />
-</Routes></ErrorBoundary></AuthProvider></BrowserRouter>;
+  </Routes></ErrorBoundary></AuthProvider></BrowserRouter>;
 }
 export default App;
