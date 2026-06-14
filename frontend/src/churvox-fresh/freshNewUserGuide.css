@@ -276,3 +276,28 @@
   color: #111827 !important;
   -webkit-text-fill-color: #111827 !important;
 }
+
+/* Customer form dropdowns must not flash black on Windows/mobile browsers. */
+.freshApp,
+.freshApp input,
+.freshApp textarea,
+.freshApp select,
+.freshApp option {
+  color-scheme: light !important;
+}
+
+.freshApp select,
+.freshApp select:focus,
+.freshApp select:active,
+.freshApp select option,
+.freshApp select optgroup {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+.freshApp select {
+  appearance: auto !important;
+  -webkit-appearance: menulist !important;
+}
