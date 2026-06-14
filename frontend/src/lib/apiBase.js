@@ -1,5 +1,3 @@
-const CHURVOX_BACKEND_FALLBACK = "https://churvox-backend.onrender.com";
-
 function clean(value) {
   return String(value || "").replace(/\/$/, "");
 }
@@ -14,13 +12,12 @@ function configuredBackend() {
 
 function resolveApiBase() {
   const configured = configuredBackend();
-  if (typeof window === "undefined") return configured || CHURVOX_BACKEND_FALLBACK;
+  if (typeof window === "undefined") return configured;
 
   const host = window.location.hostname || "";
   const isChurvox = host === "www.churvox.com" || host === "churvox.com";
-  const isLegacyGrassley = /grassley-backend\.onrender\.com/i.test(configured);
 
-  if (isChurvox && (isLegacyGrassley || !configured)) return CHURVOX_BACKEND_FALLBACK;
+  if (isChurvox) return "";
   return configured;
 }
 
