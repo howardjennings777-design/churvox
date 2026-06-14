@@ -1,12 +1,12 @@
 /*
-  Churvox old PWA cache killer.
-  This is temporary-safe: clears old service workers/caches so users stop seeing old Work Slip screens.
+  Churvox old PWA/cache killer.
+  Clears old service workers/caches so users stop seeing stale production bundles.
 */
 
 async function clearOldChurvoxCache() {
   if (typeof window === "undefined") return;
 
-  const key = "churvox-cache-reset-20260603-v3";
+  const key = "churvox-cache-reset-20260615-auth-v1";
   if (window.localStorage.getItem(key) === "done") return;
 
   try {
@@ -22,9 +22,9 @@ async function clearOldChurvoxCache() {
 
     window.localStorage.setItem(key, "done");
 
-    if (!window.location.search.includes("cacheReset=1")) {
+    if (!window.location.search.includes("cacheReset=auth1")) {
       const url = new URL(window.location.href);
-      url.searchParams.set("cacheReset", "1");
+      url.searchParams.set("cacheReset", "auth1");
       window.location.replace(url.toString());
     }
   } catch (err) {
