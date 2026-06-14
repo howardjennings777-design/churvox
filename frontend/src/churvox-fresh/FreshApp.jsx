@@ -191,6 +191,7 @@ installFreshCommandBridge();
 const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
 const PLAN_RANK = { none: 0, trial: 1, solo: 1, start: 1, team: 2, crew: 2, pro: 3, operator: 3, enterprise: 4, command: 4 };
 const PLAN_NAME = { start: "Start", solo: "Start", crew: "Crew", team: "Crew", operator: "Operator", pro: "Operator", command: "Command", enterprise: "Command" };
+const PLAN_FREE_PAGES = new Set(["plans", "billing", "support", "helpdesk", "setup", "setupassistant", "firstrun", "onboarding", "settings", "security", "trustcenter"]);
 const FEATURE_PLAN = {
   team: "crew", subcontractors: "crew", availability: "crew", time: "crew", dispatch: "crew", routes: "crew", areas: "crew", photos: "crew", photoproof: "crew", documents: "crew", safety: "crew", recurring: "crew", recurringsaver: "crew",
   command: "operator", aioperator: "operator", quickcreateai: "operator", followupwriter: "operator", planday: "operator", schedulerai: "operator", askchurvox: "operator", globalactions: "operator", quoteai: "operator", invoicecheck: "operator", customerportal: "operator", approvals: "operator", alerts: "operator", audit: "operator", automation: "operator", messages: "operator", messagetriage: "operator", followups: "operator", reviews: "operator", reviewbooster: "operator", quality: "operator", reworkresolver: "operator", extras: "operator", variations: "operator", warranties: "operator", cancellations: "operator", customermemory: "operator", upsellfinder: "operator", missinginfo: "operator",
@@ -198,7 +199,7 @@ const FEATURE_PLAN = {
 };
 
 function normalPlan(plan) { return String(plan || "none").trim().toLowerCase(); }
-function hasFeatureAccess(plan, page) { const required = FEATURE_PLAN[page] || "start"; return (PLAN_RANK[normalPlan(plan)] || 0) >= (PLAN_RANK[required] || 1); }
+function hasFeatureAccess(plan, page) { if (PLAN_FREE_PAGES.has(page)) return true; const required = FEATURE_PLAN[page] || "start"; return (PLAN_RANK[normalPlan(plan)] || 0) >= (PLAN_RANK[required] || 1); }
 function requiredPlanName(page) { const required = FEATURE_PLAN[page] || "start"; return PLAN_NAME[required] || "Start"; }
 function guideComplete() { try { return window.localStorage.getItem(GUIDE_COMPLETE_KEY) === "true"; } catch { return false; } }
 
@@ -209,7 +210,7 @@ const pages = new Set([
 function FreshUpgradeGate({ page, plan, onNavigate }) {
   const required = requiredPlanName(page);
   const current = PLAN_NAME[normalPlan(plan)] || "No plan";
-  return <section className="freshHero"><span>Plan locked</span><h1>{required} feature</h1><p>This area is included on {required}. Your current plan is {current}. This keeps each Churvox plan locked to the right feature set.</p><div className="freshActions" style={{ marginTop: 16 }}><button className="freshPrimary" onClick={() => onNavigate?.("plans")}>View plans</button><button className="freshGhost" onClick={() => onNavigate?.("smart")}>Back to Business Pulse</button></div></section>;
+  return <section className="freshHero"><span>Plan locked</span><h1>{required} plan required</h1><p>This area is included with the {required} plan. Your current plan is {current}. Open Plans & Usage to choose or restore your plan.</p><div className="freshActions" style={{ marginTop: 16 }}><button className="freshPrimary" onClick={() => onNavigate?.("plans")}>Open Plans & Usage</button><button className="freshGhost" onClick={() => onNavigate?.("smart")}>Back to Business Pulse</button></div></section>;
 }
 
 function isFirstSetupPending() { try { const params = new URLSearchParams(window.location.search || ""); return params.get("first_setup") === "1" || window.localStorage.getItem("churvox_first_setup_pending") === "true"; } catch { return false; } }
