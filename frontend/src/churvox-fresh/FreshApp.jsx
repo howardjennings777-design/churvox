@@ -116,6 +116,7 @@ import "./freshXero.css";
 import "./freshGlobalReadable.css";
 import "./freshNuclearReadable.css";
 import "./freshNewUserGuide.css";
+import "./freshDropdownLightFix.css";
 
 import FreshShell from "./FreshShell";
 import FreshSimple from "./FreshSimple";
@@ -133,7 +134,6 @@ import FreshBilling from "./FreshBilling";
 import FreshCancellations from "./FreshCancellations";
 import FreshClientPortal from "./FreshClientPortal";
 import FreshClients from "./FreshClients";
-import FreshCommand from "./FreshCommand";
 import FreshCommandOwnerDesk from "./FreshCommandOwnerDesk";
 import FreshContracts from "./FreshContracts";
 import FreshCreditNotes from "./FreshCreditNotes";
@@ -223,73 +223,43 @@ import { installFreshCommandBridge } from "./commandBridge";
 
 installFreshCommandBridge();
 
+const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
 const PLAN_RANK = { none: 0, trial: 1, solo: 1, start: 1, team: 2, crew: 2, pro: 3, operator: 3, enterprise: 4, command: 4 };
 const PLAN_NAME = { start: "Start", solo: "Start", crew: "Crew", team: "Crew", operator: "Operator", pro: "Operator", command: "Command", enterprise: "Command" };
 const FEATURE_PLAN = {
   team: "crew", subcontractors: "crew", availability: "crew", time: "crew", dispatch: "crew", routes: "crew", areas: "crew", photos: "crew", photoproof: "crew", documents: "crew", safety: "crew", recurring: "crew", recurringsaver: "crew",
   command: "operator", aioperator: "operator", quickcreateai: "operator", followupwriter: "operator", planday: "operator", schedulerai: "operator", askchurvox: "operator", globalactions: "operator", quoteai: "operator", invoicecheck: "operator", customerportal: "operator", approvals: "operator", alerts: "operator", audit: "operator", automation: "operator", messages: "operator", messagetriage: "operator", followups: "operator", reviews: "operator", reviewbooster: "operator", quality: "operator", reworkresolver: "operator", extras: "operator", variations: "operator", warranties: "operator", cancellations: "operator", customermemory: "operator", upsellfinder: "operator", missinginfo: "operator",
-  payroll: "command", reports: "command", profit: "command", profitguard: "command", pricelearner: "command", expenses: "command", exports: "command", roles: "command", businesshealth: "command", cashflowai: "command", aiusage: "command", assets: "command", inventory: "command", materialsai: "command", contracts: "command", integrations: "command", gps: "command", xero: "command", myob: "command"
+  payroll: "command", reports: "command", profit: "command", profitguard: "command", pricelearner: "command", expenses: "command", exports: "command", roles: "command", businesshealth: "command", cashflowai: "command", aiusage: "command", assets: "command", inventory: "command", materialsai: "command", contracts: "command", integrations: "command", gps: "command", xero: "command"
 };
 
-function normalPlan(plan) {
-  return String(plan || "none").trim().toLowerCase();
-}
-function hasFeatureAccess(plan, page) {
-  const required = FEATURE_PLAN[page] || "start";
-  return (PLAN_RANK[normalPlan(plan)] || 0) >= (PLAN_RANK[required] || 1);
-}
-function requiredPlanName(page) {
-  const required = FEATURE_PLAN[page] || "start";
-  return PLAN_NAME[required] || "Start";
-}
+function normalPlan(plan) { return String(plan || "none").trim().toLowerCase(); }
+function hasFeatureAccess(plan, page) { const required = FEATURE_PLAN[page] || "start"; return (PLAN_RANK[normalPlan(plan)] || 0) >= (PLAN_RANK[required] || 1); }
+function requiredPlanName(page) { const required = FEATURE_PLAN[page] || "start"; return PLAN_NAME[required] || "Start"; }
+function guideComplete() { try { return window.localStorage.getItem(GUIDE_COMPLETE_KEY) === "true"; } catch { return false; } }
 
 const pages = new Set([
-  "smart", "morningbrief", "messagetriage", "schedulerai", "askchurvox", "globalactions", "aioperator", "invoicecheck", "quickcreateai", "followupwriter", "planday", "command", "jobs", "recurring", "recurringsaver", "leads", "dispatch", "routes", "areas", "clients", "quotes", "quoteai", "invoices", "payments", "creditnotes", "customerportal", "approvals", "alerts", "audit", "setup", "launch", "launchpack", "launchcontrol", "demo", "onboarding", "firstrun", "setupassistant", "qa", "flags", "feedback", "roadmap", "imports", "exports", "security", "trustcenter", "roles", "billing", "aiusage", "templates", "gps", "xero", "myob", "nz", "team", "subcontractors", "availability", "payroll", "time", "reports", "profit", "profitguard", "pricelearner", "expenses", "assets", "inventory", "materialsai", "services", "industries", "settings", "plans", "support", "helpdesk", "integrations", "messages", "followups", "reviews", "reviewbooster", "quality", "reworkresolver", "extras", "variations", "warranties", "cancellations", "photos", "photoproof", "documents", "contracts", "safety", "automation", "portal", "worker", "workerbrief", "workerperformance", "missinginfo", "customermemory", "upsellfinder", "businesshealth", "cashflowai", "paymentpromise"
+  "smart", "morningbrief", "messagetriage", "schedulerai", "askchurvox", "globalactions", "aioperator", "invoicecheck", "quickcreateai", "followupwriter", "planday", "command", "jobs", "recurring", "recurringsaver", "leads", "dispatch", "routes", "areas", "clients", "quotes", "quoteai", "invoices", "payments", "creditnotes", "customerportal", "approvals", "alerts", "audit", "setup", "launch", "launchpack", "launchcontrol", "demo", "onboarding", "firstrun", "setupassistant", "qa", "flags", "feedback", "roadmap", "imports", "exports", "security", "trustcenter", "roles", "billing", "aiusage", "templates", "gps", "xero", "nz", "team", "subcontractors", "availability", "payroll", "time", "reports", "profit", "profitguard", "pricelearner", "expenses", "assets", "inventory", "materialsai", "services", "industries", "settings", "plans", "support", "helpdesk", "integrations", "messages", "followups", "reviews", "reviewbooster", "quality", "reworkresolver", "extras", "variations", "warranties", "cancellations", "photos", "photoproof", "documents", "contracts", "safety", "automation", "portal", "worker", "workerbrief", "workerperformance", "missinginfo", "customermemory", "upsellfinder", "businesshealth", "cashflowai", "paymentpromise"
 ]);
 
 function FreshUpgradeGate({ page, plan, onNavigate }) {
   const required = requiredPlanName(page);
   const current = PLAN_NAME[normalPlan(plan)] || "No plan";
-  return (
-    <section className="freshHero">
-      <span>Plan locked</span>
-      <h1>{required} feature</h1>
-      <p>This area is included on {required}. Your current plan is {current}. This keeps each Churvox plan locked to the right feature set.</p>
-      <div className="freshActions" style={{ marginTop: 16 }}>
-        <button className="freshPrimary" onClick={() => onNavigate?.("plans")}>View plans</button>
-        <button className="freshGhost" onClick={() => onNavigate?.("smart")}>Back to Smart Hub</button>
-      </div>
-    </section>
-  );
+  return <section className="freshHero"><span>Plan locked</span><h1>{required} feature</h1><p>This area is included on {required}. Your current plan is {current}. This keeps each Churvox plan locked to the right feature set.</p><div className="freshActions" style={{ marginTop: 16 }}><button className="freshPrimary" onClick={() => onNavigate?.("plans")}>View plans</button><button className="freshGhost" onClick={() => onNavigate?.("smart")}>Back to Smart Hub</button></div></section>;
 }
 
-function isFirstSetupPending() {
-  try {
-    const params = new URLSearchParams(window.location.search || "");
-    return params.get("first_setup") === "1" || window.localStorage.getItem("churvox_first_setup_pending") === "true";
-  } catch {
-    return false;
-  }
-}
-
-function clearNewUserDemoStorage() {
-  try {
-    window.localStorage.removeItem("churvox:fresh-demo-mode:v1");
-    window.localStorage.removeItem("churvox:fresh-command-inbox:v1");
-    window.localStorage.removeItem("churvox:fresh-jobs:v1");
-  } catch {}
-}
-
+function isFirstSetupPending() { try { const params = new URLSearchParams(window.location.search || ""); return params.get("first_setup") === "1" || window.localStorage.getItem("churvox_first_setup_pending") === "true"; } catch { return false; } }
+function clearNewUserDemoStorage() { try { window.localStorage.removeItem("churvox:fresh-demo-mode:v1"); window.localStorage.removeItem("churvox:fresh-command-inbox:v1"); window.localStorage.removeItem("churvox:fresh-jobs:v1"); } catch {} }
 function readPageFromHash() {
   if (typeof window === "undefined") return "smart";
   const path = window.location.pathname || "";
   const raw = window.location.hash.replace("#", "").trim().toLowerCase();
   const aliases = { ai: "setupassistant", guide: "setupassistant", aiguided: "setupassistant", "ai-guide": "setupassistant", setupguide: "setupassistant", "setup-guide": "setupassistant", cockpit: "smart", home: "smart", dashboard: "smart", smarthub: "smart", "smart-hub": "smart" };
-  if (path === "/guide" || path === "/setup-guide") { clearNewUserDemoStorage(); return "setupassistant"; }
+  if (path === "/guide" || path === "/setup-guide") { clearNewUserDemoStorage(); return guideComplete() ? "smart" : "setupassistant"; }
   if (path === "/plans" && !raw) return "plans";
   const blockedPublicHashes = new Set(["demo", "qa", "flags", "roadmap", "launch", "launchpack", "launchcontrol", "firstrun", "trustcenter"]);
   if (blockedPublicHashes.has(raw)) return isFirstSetupPending() ? "setupassistant" : "smart";
   const hash = aliases[raw] || raw;
+  if (guideComplete() && hash === "setupassistant") return "smart";
   if (isFirstSetupPending() && (!hash || hash === "smart" || hash === "command" || hash === "firstrun")) { clearNewUserDemoStorage(); return "setupassistant"; }
   return pages.has(hash) ? hash : "smart";
 }
@@ -299,37 +269,11 @@ export default function FreshApp() {
   const userPlan = user?.plan || user?.subscription_plan || "none";
   const [page, setPage] = React.useState(readPageFromHash);
   const [dataVersion, setDataVersion] = React.useState(0);
-
-  React.useEffect(() => {
-    const onHashChange = () => setPage(readPageFromHash());
-    window.addEventListener("hashchange", onHashChange);
-    return () => window.removeEventListener("hashchange", onHashChange);
-  }, []);
-
-  React.useEffect(() => {
-    const onFreshDataUpdated = () => setDataVersion((version) => version + 1);
-    window.addEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
-    return () => window.removeEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
-  }, []);
-
-  React.useEffect(() => {
-    const cleanupReadable = installFreshReadableRuntime();
-    return cleanupReadable;
-  }, []);
-
-  React.useEffect(() => {
-    const frame = window.requestAnimationFrame(forceFreshReadable);
-    return () => window.cancelAnimationFrame(frame);
-  }, [page, dataVersion]);
-
-  function goToPage(nextPage) {
-    if (!pages.has(nextPage)) return;
-    setPage(nextPage);
-    const nextUrl = `${window.location.pathname}#${nextPage}`;
-    window.history.replaceState(null, "", nextUrl);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
+  React.useEffect(() => { const onHashChange = () => setPage(readPageFromHash()); window.addEventListener("hashchange", onHashChange); return () => window.removeEventListener("hashchange", onHashChange); }, []);
+  React.useEffect(() => { const onFreshDataUpdated = () => setDataVersion((version) => version + 1); window.addEventListener("churvox:fresh-data-updated", onFreshDataUpdated); return () => window.removeEventListener("churvox:fresh-data-updated", onFreshDataUpdated); }, []);
+  React.useEffect(() => { const cleanupReadable = installFreshReadableRuntime(); return cleanupReadable; }, []);
+  React.useEffect(() => { const frame = window.requestAnimationFrame(forceFreshReadable); return () => window.cancelAnimationFrame(frame); }, [page, dataVersion]);
+  function goToPage(nextPage) { if (!pages.has(nextPage)) return; if (guideComplete() && nextPage === "setupassistant") nextPage = "smart"; setPage(nextPage); window.history.replaceState(null, "", `${window.location.pathname}#${nextPage}`); window.scrollTo({ top: 0, behavior: "smooth" }); }
   let content = <FreshSimple page={page} />;
   if (!hasFeatureAccess(userPlan, page)) content = <FreshUpgradeGate page={page} plan={userPlan} onNavigate={goToPage} />;
   else {
@@ -431,12 +375,5 @@ export default function FreshApp() {
     if (page === "workerperformance") content = <FreshWorkerPerformance onNavigate={goToPage} />;
     if (page === "missinginfo") content = <FreshMissingInfo onNavigate={goToPage} />;
   }
-
-  return (
-    <FreshShell active={page} onChange={goToPage}>
-      <div key={`${page}-${dataVersion}`} className="freshPageMount">
-        {content}
-      </div>
-    </FreshShell>
-  );
+  return <FreshShell active={page} onChange={goToPage}><div key={`${page}-${dataVersion}`} className="freshPageMount">{content}</div></FreshShell>;
 }
