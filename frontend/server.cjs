@@ -2,11 +2,13 @@
 // Serves React build with correct MIME types and no stale index caching.
 
 const http = require("http");
+const https = require("https");
 const fs = require("fs");
 const path = require("path");
 
 const PORT = Number(process.env.PORT || 3000);
 const BUILD_DIR = path.join(__dirname, "build");
+const DEFAULT_BACKEND_URL = "https://churvox-backend.onrender.com";
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -27,6 +29,102 @@ const MIME = {
   ".woff2": "font/woff2",
   ".ttf": "font/ttf",
 };
+
+const HOP_BY_HOP_HEADERS = new Set([
+  "connection",
+  "keep-alive",
+  "proxy-authenticate",
+  "proxy-authorization",
+  "te",
+  "trailer",
+  "transfer-encoding",
+  "upgrade",
+]);
+
+function clean(value) {
+  return String(value || "").replace(/\/+$/, "");
+}
+
+function backendBaseUrl() {
+  const configured =
+    process.env.BACKEND_URL ||
+    process.env.CHURVOX_BACKEND_URL ||
+    process.env.REACT_APP_BACKEND_URL ||
+    process.env.VITE_BACKEND_URL ||
+    DEFAULT_BACKEND_URL;
+
+  return clean(configured).replace(/\/api$/i, "");
+}
+
+function filterHeaders(headers = {}) {
+  return Object.entries(headers).reduce((next, [key, value]) => {
+    if (!HOP_BY_HOP_HEADERS.has(String(key).toLowerCase())) next[key] = value;
+    return next;
+  }, {});
+}
+
+function rewriteSetCookieHeader(value) {
+  return String(value || "")
+    .replace(/;\s*Domain=churvox-backend\.onrender\.com/gi, "")
+    .replace(/;\s*Domain=\.onrender\.com/gi, "");
+}
+
+function proxyApiRequest(req, res, urlPath) {
+  const base = backendBaseUrl();
+  let target;
+
+  try {
+    target = new URL(req.url, base);
+  } catch (err) {
+    console.error("API_PROXY_BAD_TARGET", err);
+    res.writeHead(502, { "Content-Type": "application/json; charset=utf-8" });
+    res.end(JSON.stringify({ detail: "API proxy target is invalid." }));
+    return;
+  }
+
+  const client = target.protocol === "http:" ? http : https;
+  const requestHeaders = filterHeaders(req.headers);
+  requestHeaders.host = target.host;
+  requestHeaders["x-forwarded-host"] = req.headers.host || "";
+  requestHeaders["x-forwarded-proto"] = "https";
+  requestHeaders["x-churvox-proxy"] = "frontend";
+
+  const proxyReq = client.request(
+    target,
+    {
+      method: req.method,
+      headers: requestHeaders,
+      timeout: 25000,
+    },
+    (proxyRes) => {
+      const responseHeaders = filterHeaders(proxyRes.headers);
+
+      if (responseHeaders["set-cookie"]) {
+        const cookies = Array.isArray(responseHeaders["set-cookie"])
+          ? responseHeaders["set-cookie"]
+          : [responseHeaders["set-cookie"]];
+        responseHeaders["set-cookie"] = cookies.map(rewriteSetCookieHeader);
+      }
+
+      res.writeHead(proxyRes.statusCode || 502, responseHeaders);
+      proxyRes.pipe(res);
+    }
+  );
+
+  proxyReq.on("timeout", () => {
+    proxyReq.destroy(new Error(`API proxy timeout for ${urlPath}`));
+  });
+
+  proxyReq.on("error", (err) => {
+    console.error("API_PROXY_ERROR", err);
+    if (!res.headersSent) {
+      res.writeHead(502, { "Content-Type": "application/json; charset=utf-8" });
+    }
+    res.end(JSON.stringify({ detail: "Churvox API is temporarily unreachable." }));
+  });
+
+  req.pipe(proxyReq);
+}
 
 function safePath(urlPath) {
   const clean = decodeURIComponent(urlPath.split("?")[0]).replace(/^\/+/, "");
@@ -60,6 +158,12 @@ function sendFile(res, filePath) {
 const server = http.createServer((req, res) => {
   try {
     const urlPath = new URL(req.url, `http://${req.headers.host}`).pathname;
+
+    if (urlPath === "/api" || urlPath.startsWith("/api/")) {
+      proxyApiRequest(req, res, urlPath);
+      return;
+    }
+
     let filePath = safePath(urlPath);
 
     if (!filePath) {
@@ -108,4 +212,5 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`Churvox frontend server running on ${PORT}`);
+  console.log(`Churvox API proxy target ${backendBaseUrl()}`);
 });
