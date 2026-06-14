@@ -33,6 +33,7 @@ import PrivacyPage from "./pages/legal/PrivacyPage";
 import TermsPage from "./pages/legal/TermsPage";
 import AccountDeletionPage from "./pages/legal/AccountDeletionPage";
 import AdminUsagePage from "./pages/AdminUsagePage";
+import HQPlanMixFloating from "./pages/admin/HQPlanMixFloating";
 import PlatformAdminRoute from "./components/admin/PlatformAdminRoute";
 import PlatformUnlock from "./pages/admin/PlatformUnlock";
 import PublicQuotePage from "./pages/public/PublicQuotePage";
@@ -77,7 +78,7 @@ function RoleRedirect() { const { user, loading, normalizedRole } = useAuth(); i
 function App() {
   React.useEffect(() => { trackPlatformVisit(); }, []);
   React.useEffect(() => { const run = async () => { try { if (window.location.pathname.startsWith("/billing")) return; const params = new URLSearchParams(window.location.search); const checkout = params.get("checkout"); const sessionId = params.get("session_id") || ""; const plan = (params.get("plan") || "").toLowerCase(); if (!checkout && !sessionId) return; if (checkout === "success") toast.success(plan ? `Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan is being activated` : "Checkout finished — refreshing plan status"); else if (checkout === "cancelled") toast.info("Checkout cancelled — no changes to your plan"); window.dispatchEvent(new Event("churvox-auth-refresh")); const cleaned = new URL(window.location.href); ["checkout", "session_id", "plan"].forEach((k) => cleaned.searchParams.delete(k)); window.history.replaceState({}, document.title, cleaned.toString()); } catch (err) { console.error("Checkout return handler failed:", err); } }; run(); }, []);
-  return <BrowserRouter><AuthProvider><ErrorBoundary><Toaster position="top-right" richColors /><ChurvoxHelpWidget /><Routes>
+  return <BrowserRouter><AuthProvider><ErrorBoundary><Toaster position="top-right" richColors /><ChurvoxHelpWidget /><HQPlanMixFloating /><Routes>
     <Route path="/guide" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} /><Route path="/setup-guide" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} /><Route path="/operator-tools" element={<Navigate to="/dashboard" replace />} /><Route path="/command-board" element={<Navigate to="/dashboard#command" replace />} /><Route path="/cockpit" element={<Navigate to="/dashboard#smart" replace />} /><Route path="/smart-hub" element={<Navigate to="/dashboard#smart" replace />} />
     <Route path="/public/proof/:token" element={<PublicProofPackPage />} /><Route path="/offline-sync" element={<PrivateRoute><OfflineSyncPage /></PrivateRoute>} />
     <Route path="/dispatch-board" element={<Navigate to="/dashboard#dispatch" replace />} /><Route path="/dispatch/map" element={<BusinessRoute><WorkerMapCommandPage /></BusinessRoute>} /><Route path="/crew-map" element={<Navigate to="/dispatch-board" replace />} /><Route path="/dispatch" element={<Navigate to="/dispatch-board" replace />} /><Route path="/schedule" element={<Navigate to="/dispatch-board" replace />} /><Route path="/calendar" element={<Navigate to="/dispatch-board" replace />} />
