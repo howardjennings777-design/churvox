@@ -61,7 +61,7 @@ body,
   display: block;
   overflow: hidden;
   border-radius: 14px;
-  background: url("/churvox-app-icon.svg?v=orange-command-check-20260614") center / cover no-repeat;
+  background: url("/churvox-app-icon.svg") center / cover no-repeat;
   color: transparent;
   font-size: 0;
   line-height: 0;

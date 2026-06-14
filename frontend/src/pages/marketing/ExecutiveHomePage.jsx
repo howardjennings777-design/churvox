@@ -42,14 +42,10 @@ export function Nav() {
 export function Footer() {
   return (
     <footer className="simpleFooter">
-<<<<<<< HEAD
       <div className="simpleFooterBrand">
         <ChurvoxLogo variant="mark" size="md" />
-        <span><b>Churvox</b><small>Less admin. More jobs done.</small></span>
+        <span><b>Churvox</b><small>Job → Invoice → Paid.</small></span>
       </div>
-=======
-      <div><b>Churvox</b><span>Job → Invoice → Paid.</span></div>
->>>>>>> ba9f3a28 (Clarify marketing message and plan choice)
       <nav>
         <Link to="/pricing">Pricing</Link>
         <Link to="/features">How it works</Link>
