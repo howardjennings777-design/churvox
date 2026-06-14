@@ -4,7 +4,30 @@ import API_BASE from "../../lib/apiBase";
 
 const PLAN_BUCKETS = ["Start", "Crew", "Operator", "Command", "No plan", "Other"];
 const TESTER_PLANS = [["operator", "Operator tester"], ["command", "Command tester"], ["crew", "Crew tester"], ["start", "Start tester"]];
-const EMAIL_TEMPLATES = [["welcome", "Welcome"], ["trial_started", "Trial started"], ["setup_nudge", "Setup nudge"], ["trial_ending", "Trial ending"], ["payment_required", "Payment required"], ["tester_welcome", "Tester welcome"]];
+const EMAIL_TEMPLATES = [
+  ["welcome", "Welcome"],
+  ["verify_email", "Verify email"],
+  ["trial_started", "Trial started"],
+  ["need_help_setup", "Need help setting up"],
+  ["setup_nudge", "Finish setup"],
+  ["first_client_nudge", "Add first client"],
+  ["first_job_nudge", "Create first job"],
+  ["first_invoice_nudge", "Create first invoice"],
+  ["trial_checkin", "Trial check-in"],
+  ["trial_ending_7", "Trial ending 7 days"],
+  ["trial_ending_3", "Trial ending 3 days"],
+  ["trial_ending_1", "Trial ending tomorrow"],
+  ["payment_required", "Payment required"],
+  ["payment_failed", "Payment failed"],
+  ["paid_welcome", "Paid welcome"],
+  ["upgrade_operator", "Upgrade to Operator"],
+  ["dormant_7", "Dormant 7 days"],
+  ["dormant_14", "Dormant 14 days"],
+  ["dormant_30", "Dormant 30 days"],
+  ["winback", "Win-back"],
+  ["tester_welcome", "Tester welcome"],
+  ["tester_feedback", "Tester feedback"],
+];
 
 function token() { try { return window.localStorage.getItem("token") || ""; } catch { return ""; } }
 function headers() { return { Accept: "application/json", "Content-Type": "application/json", ...(token() ? { Authorization: `Bearer ${token()}` } : {}) }; }
@@ -40,7 +63,7 @@ export default function HQPlanMixFloating() {
   const [identifier, setIdentifier] = React.useState("");
   const [testerPlan, setTesterPlan] = React.useState("operator");
   const [testerDays, setTesterDays] = React.useState(30);
-  const [emailTemplate, setEmailTemplate] = React.useState("welcome");
+  const [emailTemplate, setEmailTemplate] = React.useState("need_help_setup");
   const [busy, setBusy] = React.useState(false);
   const [message, setMessage] = React.useState("");
   const [error, setError] = React.useState("");
@@ -118,8 +141,8 @@ export default function HQPlanMixFloating() {
     <aside className="fixed bottom-5 left-5 z-[9998] max-h-[82vh] w-[min(360px,calc(100vw-32px))] overflow-y-auto rounded-[24px] border border-orange-500/30 bg-slate-950/96 p-3 text-white shadow-2xl backdrop-blur">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <span className="block text-[10px] font-black uppercase tracking-[0.18em] text-orange-200">HQ tester drawer</span>
-          <b className="block text-sm font-black">Customer plans only</b>
+          <span className="block text-[10px] font-black uppercase tracking-[0.18em] text-orange-200">HQ retention drawer</span>
+          <b className="block text-sm font-black">Plans, testers + save emails</b>
           <small className="text-xs font-bold text-slate-400">{total} customer records · {money(mrr)} paid MRR estimate</small>
         </div>
         <button type="button" onClick={() => setOpen(false)} className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-black text-slate-200">Close</button>
@@ -151,7 +174,7 @@ export default function HQPlanMixFloating() {
         </div>
 
         <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3">
-          <b className="text-sm">Send lifecycle email</b>
+          <b className="text-sm">Send retention email</b>
           <select value={emailTemplate} onChange={(e) => setEmailTemplate(e.target.value)} className="mt-2 w-full rounded-xl border border-slate-700 bg-white px-3 py-2 text-sm font-black text-slate-950">{EMAIL_TEMPLATES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
           <button type="button" onClick={sendLifecycleEmail} disabled={busy || !identifier} className="mt-2 w-full rounded-xl bg-orange-500 px-3 py-2 text-xs font-black text-slate-950 disabled:opacity-40">Send email</button>
         </div>
