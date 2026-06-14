@@ -17,8 +17,7 @@ legacy_path = backend_dir / 'server.py'
 
 # Render starts with: uvicorn server:app
 # Because this package is named server, this wrapper must load ../server.py.
-# Keep the backend directory first on sys.path so the legacy module's absolute
-# imports like email_provider, sms_provider and xero_routes resolve correctly.
+# Keep the backend directory first on sys.path so absolute legacy imports resolve.
 if str(backend_dir) not in sys.path:
     sys.path.insert(0, str(backend_dir))
 
@@ -287,14 +286,17 @@ async def _create_card_required_checkout(request):
             line_items=[{'price': price, 'quantity': 1}],
             subscription_data={'trial_period_days': 14, 'metadata': {'user_id': user['id'], 'business_id': str(user.get('business_id') or user['id']), 'plan': plan, 'country': country}},
             payment_method_collection='always',
+            automatic_tax={'enabled': True},
+            billing_address_collection='required',
+            tax_id_collection={'enabled': True},
             success_url=f'{frontend}/billing/success?session_id={{CHECKOUT_SESSION_ID}}&plan={plan}&country={country}',
             cancel_url=f'{frontend}/billing/cancel?plan={plan}&country={country}',
             customer_email=user.get('email'),
-            metadata={'user_id': user['id'], 'business_id': str(user.get('business_id') or user['id']), 'plan': plan, 'country': country, 'trial_days': '14', 'card_required': 'true'},
+            metadata={'user_id': user['id'], 'business_id': str(user.get('business_id') or user['id']), 'plan': plan, 'country': country, 'trial_days': '14', 'card_required': 'true', 'automatic_tax': 'true'},
         )
     except Exception as exc:
         return JSONResponse({'success': False, 'detail': f'Stripe checkout could not start: {exc}'}, status_code=400)
-    return JSONResponse({'success': True, 'url': session.url, 'trial_days': 14, 'plan': plan, 'country': country, 'card_required': True})
+    return JSONResponse({'success': True, 'url': session.url, 'trial_days': 14, 'plan': plan, 'country': country, 'card_required': True, 'automatic_tax': True})
 
 
 async def _secure_complete_job(request, job_id):
