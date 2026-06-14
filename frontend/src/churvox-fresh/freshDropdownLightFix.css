@@ -1,23 +1,39 @@
-.freshApp,
-.freshApp input,
-.freshApp textarea,
-.freshApp select,
-.freshApp option {
+:root,
+html,
+body,
+.freshApp {
   color-scheme: light !important;
 }
 
+select,
+option,
+optgroup,
 .freshApp select,
 .freshApp select:focus,
 .freshApp select:active,
 .freshApp select option,
-.freshApp select optgroup {
+.freshApp select optgroup,
+.freshApp option:checked {
   background-color: #ffffff !important;
-  background: #ffffff !important;
   color: #0f172a !important;
   -webkit-text-fill-color: #0f172a !important;
+  text-shadow: none !important;
 }
 
 .freshApp select {
   appearance: auto !important;
   -webkit-appearance: menulist !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  select,
+  option,
+  optgroup,
+  .freshApp select,
+  .freshApp select option,
+  .freshApp select optgroup {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+  }
 }
