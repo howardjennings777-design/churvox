@@ -13,6 +13,7 @@ INTERNAL_MARKERS = ["test", "demo", "sample", "fake", "mock", "preview", "seed",
 PLAN_VALUE = {"start": 39, "solo": 39, "crew": 89, "team": 89, "operator": 149, "pro": 149, "command": 299, "enterprise": 299}
 PLAN_LABELS = {"solo": "Start", "team": "Crew", "pro": "Operator", "enterprise": "Command", "start": "Start", "crew": "Crew", "operator": "Operator", "command": "Command", "none": "Choose plan", "": "Choose plan"}
 PLAN_ENV_BY_KEY = {"solo": "START", "team": "CREW", "pro": "OPERATOR", "enterprise": "COMMAND"}
+PLAN_ALIAS = {"start": "solo", "solo": "solo", "crew": "team", "team": "team", "operator": "pro", "pro": "pro", "command": "enterprise", "enterprise": "enterprise"}
 SUPPORTED_BILLING_COUNTRIES = {"NZ", "AU", "US", "UK"}
 
 
@@ -77,7 +78,12 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
         if "_id" in out:
             out["id"] = str(out["_id"])
             out["_id"] = str(out["_id"])
-        return safe_value(out)
+        out = safe_value(out)
+        out["plan_name"] = PLAN_LABELS.get(plan_key(out), plan_key(out).title() if plan_key(out) else "Choose plan")
+        out["is_free_tester"] = is_free_tester(out)
+        out["is_paid_plan"] = is_paid_user(out)
+        out["is_trialing"] = is_trial_user(out)
+        return out
 
     def email_of(doc: Dict[str, Any] | None) -> str:
         return str((doc or {}).get("email") or (doc or {}).get("user_email") or "").strip().lower()
@@ -91,6 +97,45 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
     def is_internal_record(doc: Dict[str, Any] | None) -> bool:
         text = text_of(doc)
         return email_of(doc) in OWNER_FILTER_EMAILS or any(marker in text for marker in INTERNAL_MARKERS)
+
+    def plan_key(user: Dict[str, Any]) -> str:
+        raw = str(user.get("plan") or user.get("subscription_plan") or user.get("plan_type") or "").strip().lower()
+        return PLAN_ALIAS.get(raw, raw)
+
+    def trial_expired(user: Dict[str, Any]) -> bool:
+        d = parse_dt(user.get("trial_end") or user.get("trial_ends_at") or user.get("trial_end_date"))
+        return bool(d and d < datetime.now(timezone.utc))
+
+    def checkout_verified(user: Dict[str, Any]) -> bool:
+        return bool(user.get("checkout_verified_by_stripe") or user.get("stripe_subscription_id") or user.get("stripe_customer_id"))
+
+    def is_free_tester(user: Dict[str, Any]) -> bool:
+        if not user.get("free_tester_access"):
+            return False
+        until = parse_dt(user.get("free_tester_until"))
+        return not until or until >= datetime.now(timezone.utc)
+
+    def user_access_status(user: Dict[str, Any]) -> Dict[str, Any]:
+        status = str(user.get("subscription_status") or "").lower()
+        plan = plan_key(user)
+        if email_of(user) == PLATFORM_OWNER_EMAIL:
+            return {"plan": plan or "command", "subscription_status": status or "active", "has_app_access": True, "billing_lock_reason": None}
+        if is_free_tester(user):
+            return {"plan": plan or "pro", "subscription_status": "tester_free", "has_app_access": True, "billing_lock_reason": None}
+        if not checkout_verified(user):
+            return {"plan": "none", "subscription_status": "plan_required", "has_app_access": False, "billing_lock_reason": "choose_plan_in_stripe"}
+        if status in {"active", "paid"}:
+            return {"plan": plan, "subscription_status": status, "has_app_access": True, "billing_lock_reason": None}
+        if status == "trialing" and not trial_expired(user):
+            return {"plan": plan, "subscription_status": status, "has_app_access": True, "billing_lock_reason": None}
+        return {"plan": plan or "none", "subscription_status": status or "payment_required", "has_app_access": False, "billing_lock_reason": "payment_required"}
+
+    def is_paid_user(user: Dict[str, Any]) -> bool:
+        return (not is_free_tester(user)) and str(user.get("subscription_status") or "").lower() in {"active", "paid"}
+
+    def is_trial_user(user: Dict[str, Any]) -> bool:
+        d = parse_dt(user.get("trial_end") or user.get("trial_ends_at") or user.get("trial_end_date"))
+        return str(user.get("subscription_status") or "").lower() == "trialing" and bool(d and d >= datetime.now(timezone.utc))
 
     def mark_user(doc: Dict[str, Any]) -> Dict[str, Any]:
         item = safe_doc(doc) or {}
@@ -112,6 +157,19 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
             raise HTTPException(status_code=403, detail="Churvox HQ is locked to hello@churvox.com")
         return user
 
+    async def find_user(identifier: str):
+        ident = str(identifier or "").strip().lower()
+        if not ident:
+            raise HTTPException(status_code=400, detail="Enter an email or user ID")
+        query = {"$or": [{"email": ident}]}
+        oid = object_id_or_none(ident)
+        if oid:
+            query["$or"].append({"_id": oid})
+        user = await db.users.find_one(query)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        return user
+
     def doc_refs(doc: Dict[str, Any] | None) -> set[str]:
         refs = set()
         for key in ["id", "_id", "business_id", "owner_id", "user_id", "client_business_id", "contractor_id", "worker_id", "assigned_worker_id"]:
@@ -119,36 +177,6 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
             if value:
                 refs.add(str(value))
         return refs
-
-    def plan_key(user: Dict[str, Any]) -> str:
-        return str(user.get("plan") or user.get("subscription_plan") or user.get("plan_type") or "").strip().lower()
-
-    def trial_expired(user: Dict[str, Any]) -> bool:
-        d = parse_dt(user.get("trial_end") or user.get("trial_ends_at") or user.get("trial_end_date"))
-        return bool(d and d < datetime.now(timezone.utc))
-
-    def checkout_verified(user: Dict[str, Any]) -> bool:
-        return bool(user.get("checkout_verified_by_stripe") or user.get("stripe_subscription_id") or user.get("stripe_customer_id"))
-
-    def user_access_status(user: Dict[str, Any]) -> Dict[str, Any]:
-        status = str(user.get("subscription_status") or "").lower()
-        plan = plan_key(user)
-        if email_of(user) == PLATFORM_OWNER_EMAIL:
-            return {"plan": plan or "command", "subscription_status": status or "active", "has_app_access": True, "billing_lock_reason": None}
-        if not checkout_verified(user):
-            return {"plan": "none", "subscription_status": "plan_required", "has_app_access": False, "billing_lock_reason": "choose_plan_in_stripe"}
-        if status in {"active", "paid"}:
-            return {"plan": plan, "subscription_status": status, "has_app_access": True, "billing_lock_reason": None}
-        if status == "trialing" and not trial_expired(user):
-            return {"plan": plan, "subscription_status": status, "has_app_access": True, "billing_lock_reason": None}
-        return {"plan": plan or "none", "subscription_status": status or "payment_required", "has_app_access": False, "billing_lock_reason": "payment_required"}
-
-    def is_paid_user(user: Dict[str, Any]) -> bool:
-        return str(user.get("subscription_status") or "").lower() in {"active", "paid"}
-
-    def is_trial_user(user: Dict[str, Any]) -> bool:
-        d = parse_dt(user.get("trial_end") or user.get("trial_ends_at") or user.get("trial_end_date"))
-        return str(user.get("subscription_status") or "").lower() == "trialing" and bool(d and d >= datetime.now(timezone.utc))
 
     async def collection_names():
         try:
@@ -173,6 +201,51 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
     def make_visit_key(ip: str, user_agent: str) -> str:
         return hashlib.sha256(f"{ip}|{user_agent}".encode("utf-8", errors="ignore")).hexdigest()[:24]
 
+    def frontend_url(path: str = "/dashboard") -> str:
+        base = os.environ.get("FRONTEND_URL", "https://www.churvox.com").rstrip("/")
+        return f"{base}{path if path.startswith('/') else '/' + path}"
+
+    def lifecycle_template(kind: str, user: Dict[str, Any]) -> Dict[str, str]:
+        name = str(user.get("name") or user.get("full_name") or "there").strip()
+        business = str(user.get("business_name") or user.get("company") or "your business").strip()
+        plan = PLAN_LABELS.get(plan_key(user), plan_key(user).title() if plan_key(user) else "your plan")
+        templates = {
+            "welcome": ("Welcome to Churvox", f"Hi {name}, welcome to Churvox. Set up {business}, choose your plan, and Churvox will guide you through the first job-to-invoice flow.", frontend_url("/dashboard#setupassistant"), "Open setup guide"),
+            "trial_started": ("Your Churvox trial is active", f"Hi {name}, your Churvox {plan} trial is active. Finish setup now so Churvox can start preparing admin work for owner approval.", frontend_url("/dashboard#setupassistant"), "Finish setup"),
+            "setup_nudge": ("Finish setting up Churvox", f"Hi {name}, your account is ready but setup still needs attention. Add your business details, first client, first job and first invoice path.", frontend_url("/dashboard#setupassistant"), "Continue setup"),
+            "trial_ending": ("Your Churvox trial is ending soon", f"Hi {name}, your Churvox trial is nearly finished. Keep access open by confirming your plan before the trial ends.", frontend_url("/plans"), "Keep Churvox active"),
+            "payment_required": ("Keep using Churvox", f"Hi {name}, your trial has ended or billing needs attention. Choose or confirm a plan to keep Churvox running for {business}.", frontend_url("/plans"), "Open plans"),
+            "tester_welcome": ("Your Churvox tester access is ready", f"Hi {name}, tester access has been opened for you. Please use Churvox like a real business and send feedback on anything confusing or broken.", frontend_url("/dashboard#command"), "Open Churvox"),
+        }
+        subject, intro, link, cta = templates.get(kind, templates["welcome"])
+        html = f"<div style='font-family:system-ui;background:#f8fafc;padding:24px;color:#0f172a;'><div style='max-width:560px;margin:auto;background:white;border:1px solid #e2e8f0;border-radius:14px;padding:28px;'><div style='font-size:22px;font-weight:900;color:#f97316;margin-bottom:14px;'>Churvox</div><h1 style='margin:0 0 12px;font-size:24px;'>{subject}</h1><p style='font-size:15px;line-height:1.6;color:#334155;'>{intro}</p><p style='margin:24px 0;'><a href='{link}' style='background:#0f172a;color:white;padding:12px 18px;border-radius:999px;text-decoration:none;font-weight:800;display:inline-block;'>{cta}</a></p><p style='font-size:13px;color:#64748b;'>Churvox does the admin. You approve.</p></div></div>"
+        return {"subject": subject, "html": html, "text": f"{subject}\n\n{intro}\n\n{cta}: {link}"}
+
+    async def send_lifecycle_email(user: Dict[str, Any], kind: str, actor: str = "system"):
+        to = email_of(user)
+        if not to:
+            return {"success": False, "email_sent": False, "error": "No user email"}
+        tpl = lifecycle_template(kind, user)
+        try:
+            from email_provider import get_email_provider
+            provider = get_email_provider()
+            result = await provider.send(to, tpl["subject"], tpl["html"], tpl["text"])
+            sent = bool(getattr(result, "success", False))
+            error = str(getattr(result, "error", "") or "")
+            provider_name = str(getattr(result, "provider", "postmark") or "postmark")
+        except Exception as exc:
+            sent = False
+            error = str(exc)
+            provider_name = "postmark"
+        event = {"created_at": datetime.now(timezone.utc), "template": kind, "to": to, "user_id": str(user.get("_id") or user.get("id") or ""), "business_name": user.get("business_name"), "subject": tpl["subject"], "sent": sent, "provider": provider_name, "error": error, "actor": actor}
+        try:
+            await db.lifecycle_emails.insert_one(event)
+            if kind == "welcome" and sent and user.get("_id"):
+                await db.users.update_one({"_id": user.get("_id")}, {"$set": {"welcome_email_sent_at": datetime.now(timezone.utc)}})
+        except Exception:
+            pass
+        return {"success": True, "email_sent": sent, "provider": provider_name, "error": error, "template": kind, "subject": tpl["subject"]}
+
     async def set_plan_after_stripe(user: Dict[str, Any], plan: str, country: str, session_id: str, stripe_customer_id: str | None, stripe_subscription_id: str | None):
         now = datetime.now(timezone.utc)
         subscription_status = "trialing"
@@ -185,7 +258,7 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
                     trial_end_dt = datetime.fromtimestamp(int(sub.get("trial_end")), tz=timezone.utc)
             except Exception:
                 pass
-        update = {"plan": plan, "subscription_status": subscription_status, "trial_started_at": now, "trial_ends_at": trial_end_dt, "billing_country": country, "stripe_customer_id": stripe_customer_id, "stripe_subscription_id": stripe_subscription_id, "last_checkout_session_id": session_id, "last_checkout_confirmed_at": now, "checkout_verified_by_stripe": True}
+        update = {"plan": plan, "subscription_status": subscription_status, "trial_started_at": now, "trial_ends_at": trial_end_dt, "billing_country": country, "stripe_customer_id": stripe_customer_id, "stripe_subscription_id": stripe_subscription_id, "last_checkout_session_id": session_id, "last_checkout_confirmed_at": now, "checkout_verified_by_stripe": True, "free_tester_access": False}
         business_id = object_id_or_none(user.get("business_id") or user.get("id"))
         user_id = object_id_or_none(user.get("id"))
         if business_id:
@@ -199,7 +272,7 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
     async def hq_safe_auth_me(request: Request):
         user = await get_current_user(request)
         access = user_access_status(user)
-        return {"id": user.get("id"), "email": user.get("email"), "name": user.get("name"), "business_name": user.get("business_name"), "role": user.get("role", "employer"), "plan": access["plan"], "subscription_status": access["subscription_status"], "trial_ends_at": safe_value(user.get("trial_ends_at")), "stripe_customer_id": user.get("stripe_customer_id"), "stripe_subscription_id": user.get("stripe_subscription_id"), "checkout_verified_by_stripe": checkout_verified(user), "has_app_access": access["has_app_access"], "billing_lock_reason": access["billing_lock_reason"], "email_verified": user.get("email_verified"), "gst_rate": user.get("gst_rate"), "trade_type": user.get("trade_type", "other"), "business_id": str(user.get("business_id") or user.get("id"))}
+        return {"id": user.get("id"), "email": user.get("email"), "name": user.get("name"), "business_name": user.get("business_name"), "role": user.get("role", "employer"), "plan": access["plan"], "plan_name": PLAN_LABELS.get(access["plan"], access["plan"].title() if access["plan"] else "Choose plan"), "subscription_status": access["subscription_status"], "trial_ends_at": safe_value(user.get("trial_ends_at")), "stripe_customer_id": user.get("stripe_customer_id"), "stripe_subscription_id": user.get("stripe_subscription_id"), "free_tester_access": is_free_tester(user), "free_tester_until": safe_value(user.get("free_tester_until")), "checkout_verified_by_stripe": checkout_verified(user), "has_app_access": access["has_app_access"], "billing_lock_reason": access["billing_lock_reason"], "email_verified": user.get("email_verified"), "gst_rate": user.get("gst_rate"), "trade_type": user.get("trade_type", "other"), "business_id": str(user.get("business_id") or user.get("id"))}
 
     @router.get("/billing/subscription-status")
     async def subscription_status(request: Request):
@@ -208,7 +281,7 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
         owner = await db.users.find_one({"_id": owner_id}) if owner_id else None
         owner = owner or user
         access = user_access_status({**owner, "id": str(owner.get("_id", user.get("id")))})
-        return {"plan": access["plan"], "plan_name": PLAN_LABELS.get(access["plan"], access["plan"].title() if access["plan"] else "Choose plan"), "subscription_status": access["subscription_status"], "trial_ends_at": safe_value(owner.get("trial_ends_at")), "stripe_customer_id": owner.get("stripe_customer_id"), "stripe_subscription_id": owner.get("stripe_subscription_id"), "has_app_access": access["has_app_access"], "billing_lock_reason": access["billing_lock_reason"], "billing_country": owner.get("billing_country", "NZ")}
+        return {"plan": access["plan"], "plan_name": PLAN_LABELS.get(access["plan"], access["plan"].title() if access["plan"] else "Choose plan"), "subscription_status": access["subscription_status"], "trial_ends_at": safe_value(owner.get("trial_ends_at")), "stripe_customer_id": owner.get("stripe_customer_id"), "stripe_subscription_id": owner.get("stripe_subscription_id"), "free_tester_access": is_free_tester(owner), "free_tester_until": safe_value(owner.get("free_tester_until")), "has_app_access": access["has_app_access"], "billing_lock_reason": access["billing_lock_reason"], "billing_country": owner.get("billing_country", "NZ")}
 
     @router.post("/billing/create-checkout-session")
     async def trial_checkout_session(payload: Dict[str, Any], request: Request):
@@ -219,13 +292,12 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
         if not secret:
             raise HTTPException(status_code=500, detail="Stripe secret key not configured")
         stripe.api_key = secret
-        aliases = {"start": "solo", "solo": "solo", "crew": "team", "team": "team", "operator": "pro", "pro": "pro", "command": "enterprise", "enterprise": "enterprise"}
-        plan = aliases.get(str(payload.get("plan") or "").lower().strip())
+        plan = PLAN_ALIAS.get(str(payload.get("plan") or "").lower().strip())
         if plan not in PLAN_VALUE:
             raise HTTPException(status_code=400, detail="Choose a valid plan")
         country = normalize_country(payload.get("country"))
-        frontend_url = os.environ.get("FRONTEND_URL", "https://www.churvox.com").rstrip("/")
-        session = stripe.checkout.Session.create(mode="subscription", line_items=[{"price": stripe_price_id(plan, country), "quantity": 1}], subscription_data={"trial_period_days": 14, "metadata": {"user_id": user["id"], "business_id": str(user.get("business_id") or user["id"]), "plan": plan, "country": country}}, payment_method_collection="if_required", success_url=f"{frontend_url}/billing/success?session_id={{CHECKOUT_SESSION_ID}}&plan={plan}&country={country}", cancel_url=f"{frontend_url}/billing/cancel?plan={plan}&country={country}", customer_email=user["email"], metadata={"user_id": user["id"], "business_id": str(user.get("business_id") or user["id"]), "plan": plan, "country": country, "trial_days": "14"})
+        frontend = os.environ.get("FRONTEND_URL", "https://www.churvox.com").rstrip("/")
+        session = stripe.checkout.Session.create(mode="subscription", line_items=[{"price": stripe_price_id(plan, country), "quantity": 1}], subscription_data={"trial_period_days": 14, "metadata": {"user_id": user["id"], "business_id": str(user.get("business_id") or user["id"]), "plan": plan, "country": country}}, payment_method_collection="if_required", success_url=f"{frontend}/billing/success?session_id={{CHECKOUT_SESSION_ID}}&plan={plan}&country={country}", cancel_url=f"{frontend}/billing/cancel?plan={plan}&country={country}", customer_email=user["email"], metadata={"user_id": user["id"], "business_id": str(user.get("business_id") or user["id"]), "plan": plan, "country": country, "trial_days": "14"})
         return {"url": session.url, "trial_days": 14, "plan": plan, "country": country}
 
     @router.post("/billing/confirm-checkout")
@@ -252,7 +324,19 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
             raise HTTPException(status_code=400, detail="Stripe checkout session is not complete")
         country = normalize_country(metadata.get("country") or payload.get("country"))
         update = await set_plan_after_stripe(user, plan, country, session_id, session.get("customer"), session.get("subscription"))
+        try:
+            updated_user = {**user, **update}
+            await send_lifecycle_email(updated_user, "trial_started", actor="stripe_checkout")
+        except Exception:
+            pass
         return {"success": True, "message": "Plan trial started", "plan": plan, "country": country, "trial_ends_at": safe_value(update.get("trial_ends_at")), "subscription_status": update.get("subscription_status"), "stripe_customer_id": session.get("customer"), "stripe_subscription_id": session.get("subscription")}
+
+    @router.post("/lifecycle/welcome")
+    async def signup_welcome_email(request: Request):
+        user = await get_current_user(request)
+        if user.get("welcome_email_sent_at"):
+            return {"success": True, "email_sent": False, "message": "Welcome email already sent"}
+        return await send_lifecycle_email(user, "welcome", actor="signup")
 
     @router.post("/platform/visit")
     async def track_visit(request: Request, payload: Dict[str, Any] = Body(default={})):
@@ -284,8 +368,7 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
             return {"ok": True, "identifier": ident, "deleted": {}, "message": "No matching user found"}
         if any(email_of(u) in OWNER_FILTER_EMAILS for u in matched_users):
             raise HTTPException(status_code=403, detail="Owner/internal protected emails cannot be removed")
-        id_values = set()
-        email_values = set()
+        id_values, email_values = set(), set()
         for user in matched_users:
             if email_of(user):
                 email_values.add(email_of(user))
@@ -323,6 +406,57 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
         await require_owner(request)
         return await remove_user_and_workspace(payload.get("user_id") or payload.get("email") or payload.get("identifier"), str(payload.get("confirm") or ""))
 
+    @router.get("/admin/owner/plan-report")
+    async def owner_plan_report(request: Request):
+        await require_owner(request)
+        raw_users = await list_raw("users", 3000)
+        all_users = [mark_user(u) for u in raw_users]
+        counts = {"Start": 0, "Crew": 0, "Operator": 0, "Command": 0, "No plan": 0, "Other": 0}
+        for user in all_users:
+            label = PLAN_LABELS.get(plan_key(user), plan_key(user).title() if plan_key(user) else "No plan")
+            if label == "Choose plan":
+                label = "No plan"
+            counts[label if label in counts else "Other"] += 1
+        paid = [u for u in all_users if is_paid_user(u)]
+        trials = [u for u in all_users if is_trial_user(u)]
+        testers = [u for u in all_users if is_free_tester(u)]
+        no_plan = [u for u in all_users if PLAN_LABELS.get(plan_key(u), "No plan") in {"Choose plan", "No plan"}]
+        return {"success": True, "counts": counts, "paid_count": len(paid), "trial_count": len(trials), "free_tester_count": len(testers), "no_plan_count": len(no_plan), "monthly_revenue_estimate": sum(PLAN_VALUE.get(plan_key(u), 0) for u in paid), "paid_users": paid[:500], "trial_users": trials[:500], "free_testers": testers[:500], "no_plan_users": no_plan[:500]}
+
+    @router.post("/admin/owner/grant-free-tester")
+    async def grant_free_tester(request: Request, payload: Dict[str, Any] = Body(default={})):
+        owner = await require_owner(request)
+        user = await find_user(payload.get("identifier") or payload.get("email") or payload.get("user_id"))
+        days = max(1, min(int(payload.get("days") or 30), 365))
+        plan = PLAN_ALIAS.get(str(payload.get("plan") or "operator").lower().strip(), "pro")
+        until = datetime.now(timezone.utc) + timedelta(days=days)
+        update = {"free_tester_access": True, "free_tester_until": until, "free_tester_note": str(payload.get("note") or ""), "free_tester_granted_at": datetime.now(timezone.utc), "free_tester_granted_by": owner.get("email"), "plan": plan, "subscription_status": "tester_free", "checkout_verified_by_stripe": True, "billing_lock_reason": None}
+        await db.users.update_one({"_id": user["_id"]}, {"$set": update})
+        user.update(update)
+        email_result = await send_lifecycle_email(user, "tester_welcome", actor=owner.get("email")) if payload.get("send_email", True) else None
+        return {"success": True, "message": "Free tester access granted", "user": safe_doc(user), "email": email_result}
+
+    @router.post("/admin/owner/revoke-free-tester")
+    async def revoke_free_tester(request: Request, payload: Dict[str, Any] = Body(default={})):
+        await require_owner(request)
+        user = await find_user(payload.get("identifier") or payload.get("email") or payload.get("user_id"))
+        update = {"free_tester_access": False, "free_tester_revoked_at": datetime.now(timezone.utc)}
+        if not user.get("stripe_subscription_id"):
+            update.update({"subscription_status": "payment_required", "checkout_verified_by_stripe": False, "billing_lock_reason": "payment_required"})
+        await db.users.update_one({"_id": user["_id"]}, {"$set": update})
+        return {"success": True, "message": "Free tester access revoked", "user_id": str(user["_id"])}
+
+    @router.get("/admin/owner/lifecycle-email-templates")
+    async def lifecycle_templates(request: Request):
+        await require_owner(request)
+        return {"success": True, "templates": ["welcome", "trial_started", "setup_nudge", "trial_ending", "payment_required", "tester_welcome"]}
+
+    @router.post("/admin/owner/send-lifecycle-email")
+    async def owner_send_lifecycle_email(request: Request, payload: Dict[str, Any] = Body(default={})):
+        owner = await require_owner(request)
+        user = await find_user(payload.get("identifier") or payload.get("email") or payload.get("user_id"))
+        return await send_lifecycle_email(user, str(payload.get("template") or "welcome"), actor=owner.get("email"))
+
     @router.get("/admin/owner-overview")
     async def owner_overview(request: Request):
         await require_owner(request)
@@ -343,6 +477,7 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
         visits = await list_safe("platform_visits", 3000) if "platform_visits" in collections else []
         paid_users = [u for u in all_users if is_paid_user(u)]
         trial_users = [u for u in all_users if is_trial_user(u)]
+        free_testers = [u for u in all_users if is_free_tester(u)]
         business_users = [u for u in all_users if u.get("business_name") or str(u.get("role", "")).lower() in {"owner", "employer", "admin"}]
         active_today_users, active_30d_users = [], []
         for user in all_users:
@@ -384,7 +519,7 @@ def build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectI
             events.append({"kind": "user", "label": "User", "title": user.get("name") or user.get("email") or "User", "meta": f"{user.get('hq_record_type')} · {user.get('business_name') or PLAN_LABELS.get(plan_key(user), plan_key(user))}", "at": user.get("created_at") or user.get("updated_at") or user.get("last_active") or ""})
         for visit in visits[:80]:
             events.append({"kind": "visit", "label": "Visitor/pageview", "title": visit.get("path") or "Page visit", "meta": visit.get("user_email") or visit.get("referrer") or visit.get("ip") or "", "at": visit.get("last_seen") or visit.get("created_at") or ""})
-        return {"ok": True, "generated_at": now.isoformat(), "hq_mode": "all_users_visible", "owner_locked_to": PLATFORM_OWNER_EMAIL, "collections_seen": sorted(list(collections)), "metrics": {"total_users": len(all_users), "customer_users": len(customer_users), "internal_users": len(internal_users), "total_businesses": len(business_users), "paid_users": len(paid_users), "trial_users": len(trial_users), "active_today": len(active_today_users), "active_30d": len(active_30d_users), "active_now": len(active_now_visitors), "visitors_today": len(visitors_today), "unique_visitors_today": len(unique_today), "visitors_7d": len(visitors_7d), "unique_visitors_7d": len(unique_7d), "total_invoices": len(invoices), "total_jobs": len(jobs), "total_clients": len(clients), "total_quotes": len(quotes), "monthly_revenue_estimate": sum(PLAN_VALUE.get(plan_key(u), 0) for u in paid_users), "invoice_value_total": total_invoice_value, "invoice_value_paid": paid_invoice_value, "invoice_value_outstanding": outstanding_invoice_value, "plan_counts": plan_counts}, "lists": {"users": all_users[:1000], "all_users": all_users[:1000], "customer_users": customer_users[:1000], "internal_users": internal_users[:1000], "businesses": business_users[:1000], "paid_users": paid_users[:1000], "trial_users": trial_users[:1000], "active_today": active_today_users[:1000], "active_30d": active_30d_users[:1000], "active_now": active_now_visitors[:1000], "visitors": visits[:1000], "invoices": invoices[:500], "jobs": jobs[:500], "clients": clients[:500], "quotes": quotes[:500], "events": sorted(events, key=lambda e: str(e.get("at") or ""), reverse=True)[:150]}}
+        return {"ok": True, "generated_at": now.isoformat(), "hq_mode": "all_users_visible", "owner_locked_to": PLATFORM_OWNER_EMAIL, "collections_seen": sorted(list(collections)), "metrics": {"total_users": len(all_users), "customer_users": len(customer_users), "internal_users": len(internal_users), "total_businesses": len(business_users), "paid_users": len(paid_users), "trial_users": len(trial_users), "free_tester_users": len(free_testers), "active_today": len(active_today_users), "active_30d": len(active_30d_users), "active_now": len(active_now_visitors), "visitors_today": len(visitors_today), "unique_visitors_today": len(unique_today), "visitors_7d": len(visitors_7d), "unique_visitors_7d": len(unique_7d), "total_invoices": len(invoices), "total_jobs": len(jobs), "total_clients": len(clients), "total_quotes": len(quotes), "monthly_revenue_estimate": sum(PLAN_VALUE.get(plan_key(u), 0) for u in paid_users), "invoice_value_total": total_invoice_value, "invoice_value_paid": paid_invoice_value, "invoice_value_outstanding": outstanding_invoice_value, "plan_counts": plan_counts}, "lists": {"users": all_users[:1000], "all_users": all_users[:1000], "customer_users": customer_users[:1000], "internal_users": internal_users[:1000], "businesses": business_users[:1000], "paid_users": paid_users[:1000], "trial_users": trial_users[:1000], "free_testers": free_testers[:1000], "active_today": active_today_users[:1000], "active_30d": active_30d_users[:1000], "active_now": active_now_visitors[:1000], "visitors": visits[:1000], "invoices": invoices[:500], "jobs": jobs[:500], "clients": clients[:500], "quotes": quotes[:500], "events": sorted(events, key=lambda e: str(e.get("at") or ""), reverse=True)[:150]}}
 
     @router.post("/admin/owner/cleanup-tests")
     async def cleanup_tests(request: Request, payload: Dict[str, Any] = Body(default={})):
