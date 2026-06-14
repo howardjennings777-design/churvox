@@ -47,10 +47,8 @@ function clean(value) {
 
 function backendBaseUrl() {
   const configured =
-    process.env.BACKEND_URL ||
     process.env.CHURVOX_BACKEND_URL ||
-    process.env.REACT_APP_BACKEND_URL ||
-    process.env.VITE_BACKEND_URL ||
+    process.env.BACKEND_URL ||
     DEFAULT_BACKEND_URL;
 
   return clean(configured).replace(/\/api$/i, "");
