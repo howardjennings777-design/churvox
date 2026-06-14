@@ -1,0 +1,23 @@
+.freshApp,
+.freshApp input,
+.freshApp textarea,
+.freshApp select,
+.freshApp option {
+  color-scheme: light !important;
+}
+
+.freshApp select,
+.freshApp select:focus,
+.freshApp select:active,
+.freshApp select option,
+.freshApp select optgroup {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+.freshApp select {
+  appearance: auto !important;
+  -webkit-appearance: menulist !important;
+}
