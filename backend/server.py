@@ -2235,6 +2235,75 @@ async def get_timer(job_id: str, request: Request, current_user: dict = Depends(
     elapsed = compute_elapsed(job.get("time_entries", [])) if job.get("timer_running") else job.get("total_time_seconds", 0)
     return {"total_time_seconds": elapsed, "timer_running": job.get("timer_running", False)}
 
+
+async def create_job_from_accepted_quote(quote: dict):
+    """Create one job from an accepted public quote, idempotently."""
+    if not quote:
+        return None
+
+    existing_job = await db.jobs.find_one({"quote_id": quote["_id"]})
+    if existing_job:
+        return existing_job
+
+    now = datetime.now(timezone.utc)
+
+    contractor_id = quote.get("contractor_id")
+    business_id = quote.get("business_id")
+    client_id = quote.get("client_id")
+
+    job_type = quote.get("job_type") or quote.get("service_type") or "lawn_mowing"
+    if hasattr(job_type, "value"):
+        job_type = job_type.value
+
+    title = (
+        quote.get("job_title")
+        or quote.get("title")
+        or quote.get("job_description")
+        or quote.get("description")
+        or f"Accepted quote - {quote.get('customer_name') or 'Customer'}"
+    )
+
+    job_doc = {
+        "title": str(title),
+        "job_type": job_type,
+        "customer_name": quote.get("customer_name") or quote.get("client_name") or quote.get("name") or "Customer",
+        "address": quote.get("address") or "",
+        "scheduled_date": quote.get("scheduled_date") or now,
+        "scheduled_time": quote.get("scheduled_time"),
+        "estimated_duration": quote.get("estimated_duration") or 60,
+        "price": float(quote.get("price") or quote.get("total") or 0),
+        "pricing_type": quote.get("pricing_type") or "fixed",
+        "notes": quote.get("notes") or quote.get("job_description") or quote.get("description") or "",
+        "contractor_id": contractor_id,
+        "business_id": str(business_id or contractor_id),
+        "created_by": contractor_id,
+        "client_id": client_id if client_id else None,
+        "quote_id": quote["_id"],
+        "source": "accepted_quote",
+        "status": JobStatus.ASSIGNED,
+        "assigned_worker_id": None,
+        "assigned_worker_name": None,
+        "acknowledged_at": None,
+        "started_at": None,
+        "completed_at": None,
+        "photos": [],
+        "time_entries": [],
+        "total_time_seconds": 0,
+        "timer_running": False,
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    result = await db.jobs.insert_one(job_doc)
+    job_doc["_id"] = result.inserted_id
+
+    await db.quotes.update_one(
+        {"_id": quote["_id"]},
+        {"$set": {"job_id": result.inserted_id, "converted_to_job": True, "updated_at": now}}
+    )
+
+    return job_doc
+
 # ===================== QUOTES =====================
 @api_router.post("/quotes")
 async def create_quote(quote_data: QuoteCreate, request: Request, current_user: dict = Depends(get_current_user)):
@@ -2560,7 +2629,16 @@ async def accept_public_quote(token: str):
         }}
     )
 
-    return {"success": True, "status": QuoteStatus.ACCEPTED}
+    accepted_quote = await db.quotes.find_one({"_id": quote["_id"]})
+
+    created_job = await create_job_from_accepted_quote(accepted_quote)
+
+
+    return {"success": True, "status": QuoteStatus.ACCEPTED,
+
+        "job_id": str(created_job["_id"]) if created_job else None,
+
+    }
 
 
 @api_router.post("/public/quote/{token}/decline")
