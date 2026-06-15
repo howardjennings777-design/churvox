@@ -6,7 +6,7 @@
 async function clearOldChurvoxCache() {
   if (typeof window === "undefined") return;
 
-  const key = "churvox-cache-reset-20260615-stripe-existing-endpoint-v1";
+  const key = "churvox-cache-reset-20260615-same-site-checkout-v1";
   if (window.localStorage.getItem(key) === "done") return;
 
   try {
@@ -22,9 +22,9 @@ async function clearOldChurvoxCache() {
 
     window.localStorage.setItem(key, "done");
 
-    if (!window.location.search.includes("cacheReset=stripe-existing")) {
+    if (!window.location.search.includes("cacheReset=same-site-checkout")) {
       const url = new URL(window.location.href);
-      url.searchParams.set("cacheReset", "stripe-existing");
+      url.searchParams.set("cacheReset", "same-site-checkout");
       window.location.replace(url.toString());
     }
   } catch (err) {
