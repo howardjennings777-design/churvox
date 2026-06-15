@@ -8,7 +8,16 @@ from fastapi.responses import RedirectResponse
 
 
 def _server():
-    return sys.modules.get("server") or sys.modules.get("backend.server") or sys.modules.get("main")
+    # Render starts backend as uvicorn server:app. Because backend/server/ is a
+    # package, backend/server/__init__.py loads backend/server.py as
+    # churvox_legacy_server. The billing routes need the legacy module because it
+    # owns db, stripe, auth helpers and ObjectId.
+    return (
+        sys.modules.get("churvox_legacy_server")
+        or sys.modules.get("backend.server")
+        or sys.modules.get("main")
+        or sys.modules.get("server")
+    )
 
 
 def _clean(value):
@@ -32,6 +41,18 @@ def _normal_plan(value):
 
 def _country(value):
     code = _clean(value).upper() or "NZ"
+    aliases = {
+        "NZL": "NZ",
+        "NEW ZEALAND": "NZ",
+        "AUS": "AU",
+        "AUSTRALIA": "AU",
+        "USA": "US",
+        "UNITED STATES": "US",
+        "GB": "UK",
+        "GBR": "UK",
+        "UNITED KINGDOM": "UK",
+    }
+    code = aliases.get(code, code)
     return code if code in ["NZ", "AU", "US", "UK"] else "NZ"
 
 
@@ -322,7 +343,7 @@ def install(router):
         frontend = (getattr(app, "FRONTEND_URL", "") or os.environ.get("FRONTEND_URL", "https://www.churvox.com")).rstrip("/")
         business_id = str(user.get("business_id") or user.get("id"))
         await db.users.update_one({"_id": _obj(business_id)}, {"$set": {"billing_country": country, "business_country": country, "country": country, "updated_at": datetime.now(timezone.utc)}})
-        metadata = {"user_id": user.get("id"), "business_id": business_id, "plan": plan, "plan_name": meta["name"], "country": country, "currency": meta["currency"], "purpose": "plan_subscription"}
+        metadata = {"user_id": str(user.get("id")), "business_id": business_id, "plan": plan, "plan_name": meta["name"], "country": country, "currency": meta["currency"], "purpose": "plan_subscription", "source": "clean_json_checkout_legacy_module_fix"}
         args = {
             "mode": "subscription",
             "payment_method_collection": "if_required",
