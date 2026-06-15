@@ -1,8 +1,9 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
+import { useAuth } from "../context/AuthContext";
 import "./freshPlans.css";
 
-const CHECKOUT_TRACE_MARKER = "checkout-js-trace-clean-samesite-stripe-v14";
+const CHECKOUT_TRACE_MARKER = "checkout-js-trace-form-redirect-stripe-v15";
 
 const plans = [
   { id: "start", backendPlan: "solo", name: "Start", price: 39, tag: "Starter", best: false, headline: "Get organised", summary: "For a solo operator who needs jobs, clients, quotes and invoices under control.", limit: "Best for one owner", features: ["Jobs, clients, quotes and invoices", "Business Pulse basics", "Business settings and GST", "Accounting Sync Add-on available"] },
@@ -38,20 +39,10 @@ function money(value) {
   return `$${Number(value || 0).toFixed(0)}`;
 }
 
-function checkoutUrl(body) {
-  return (
-    body?.url ||
-    body?.checkout_url ||
-    body?.checkoutUrl ||
-    body?.session_url ||
-    body?.data?.url ||
-    body?.data?.checkout_url ||
-    ""
-  );
-}
-
 export default function FreshPlans({ onNavigate }) {
   const { get, post } = useApi();
+  const { user } = useAuth();
+  const formRef = React.useRef(null);
 
   const [currentPlan, setCurrentPlan] = React.useState("operator");
   const [selectedPlan, setSelectedPlan] = React.useState("operator");
@@ -159,32 +150,21 @@ export default function FreshPlans({ onNavigate }) {
     setError("");
   }
 
-  async function startCheckout() {
+  function startCheckout() {
     setCheckoutLoading(true);
     setError("");
     setNotice("Opening Stripe checkout");
 
-    try {
-      const result = await post("/billing/create-checkout-session", {
-        plan: selected.backendPlan,
-        plan_type: selected.backendPlan,
-        country: "NZ",
-        billing_country: "NZ",
-      });
-
-      if (!result?.success) {
-        throw new Error(result?.error || result?.data?.error || "Stripe checkout could not be opened.");
-      }
-
-      const url = checkoutUrl(result.data || result);
-      if (!url) throw new Error("Stripe checkout did not return a checkout URL.");
-
-      window.location.assign(url);
-    } catch (err) {
-      setNotice("Checkout needs attention");
-      setError(err?.message || "Stripe checkout could not be opened.");
+    if (!user?.token) {
       setCheckoutLoading(false);
+      setNotice("Checkout needs attention");
+      setError("Your login token was not found. Please sign out, sign back in, then open Stripe checkout again.");
+      return;
     }
+
+    window.setTimeout(() => {
+      formRef.current?.submit();
+    }, 0);
   }
 
   const planComparison = [
@@ -196,6 +176,13 @@ export default function FreshPlans({ onNavigate }) {
 
   return (
     <section className="freshPricingPage" data-checkout-trace={CHECKOUT_TRACE_MARKER}>
+      <form ref={formRef} method="POST" action="/api/billing/start-checkout-form" style={{ display: "none" }}>
+        <input type="hidden" name="token" value={user?.token || ""} readOnly />
+        <input type="hidden" name="plan" value={selected.backendPlan} readOnly />
+        <input type="hidden" name="ui_plan" value={selected.id} readOnly />
+        <input type="hidden" name="country" value="NZ" readOnly />
+      </form>
+
       <section className="freshCard freshNotice" style={{ marginBottom: 12 }}>
         <b>Checkout trace</b>
         <span>{CHECKOUT_TRACE_MARKER}</span>
@@ -207,12 +194,8 @@ export default function FreshPlans({ onNavigate }) {
           <h1>Pick the plan that fits how much admin you want Churvox to handle.</h1>
           <p>Simple monthly pricing + GST. Churvox does the admin. You approve.</p>
           <div className="freshPricingHeroActions">
-            <button className="freshPrimary" type="button" onClick={() => choosePlan("operator")}>
-              See recommended plan
-            </button>
-            <button className="freshGhost" type="button" onClick={() => onNavigate?.("support")}>
-              Talk to support
-            </button>
+            <button className="freshPrimary" type="button" onClick={() => choosePlan("operator")}>See recommended plan</button>
+            <button className="freshGhost" type="button" onClick={() => onNavigate?.("support")}>Talk to support</button>
           </div>
         </div>
 
@@ -241,27 +224,15 @@ export default function FreshPlans({ onNavigate }) {
           const isCurrent = currentPlan === plan.id;
 
           return (
-            <button
-              type="button"
-              key={plan.id}
-              className={`freshPricingCard ${active ? "active" : ""} ${plan.best ? "best" : ""}`}
-              onClick={() => choosePlan(plan.id)}
-            >
+            <button type="button" key={plan.id} className={`freshPricingCard ${active ? "active" : ""} ${plan.best ? "best" : ""}`} onClick={() => choosePlan(plan.id)}>
               <span className="freshPlanTag">{plan.tag}</span>
               {isCurrent && <span className="freshCurrentBadge">Current</span>}
               <strong>{plan.name}</strong>
-              <em>
-                {money(plan.price)}
-                <small>/month + GST</small>
-              </em>
+              <em>{money(plan.price)}<small>/month + GST</small></em>
               <h3>{plan.headline}</h3>
               <p>{plan.summary}</p>
               <small className="freshPlanLimit">{plan.limit}</small>
-              <ul>
-                {plan.features.map((feature) => (
-                  <li key={feature}>✓ {feature}</li>
-                ))}
-              </ul>
+              <ul>{plan.features.map((feature) => <li key={feature}>✓ {feature}</li>)}</ul>
             </button>
           );
         })}
@@ -275,10 +246,7 @@ export default function FreshPlans({ onNavigate }) {
               <h2>{selected.name}</h2>
               <p>{selected.summary}</p>
             </div>
-            <strong>
-              {money(monthlyTotal)}
-              <small>/month + GST</small>
-            </strong>
+            <strong>{money(monthlyTotal)}<small>/month + GST</small></strong>
           </div>
 
           {commandSelected && (
@@ -296,53 +264,29 @@ export default function FreshPlans({ onNavigate }) {
           )}
 
           <div className="freshPlanFeatures premium">
-            {selected.features.map((feature) => (
-              <div key={feature}>
-                <b>✓</b>
-                <span>{feature}</span>
-              </div>
-            ))}
+            {selected.features.map((feature) => <div key={feature}><b>✓</b><span>{feature}</span></div>)}
           </div>
         </section>
 
         <aside className="freshCard freshCheckoutCard">
           <h2>Stripe checkout</h2>
-          <p>This uses Churvox same-site API so login, cookies and billing stay together.</p>
+          <p>This submits directly to the backend checkout redirect route, so the browser can be sent straight to Stripe.</p>
 
           <div className="freshActions">
-            <button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading}>
-              {checkoutLoading ? "Opening Stripe..." : "Start Stripe checkout"}
-            </button>
-            <button className="freshOrange" type="button" onClick={() => choosePlan("operator")}>
-              Recommend Operator
-            </button>
-            <button className="freshGhost" type="button" onClick={loadPlan}>
-              Reload backend plan
-            </button>
+            <button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading}>{checkoutLoading ? "Opening Stripe..." : "Start Stripe checkout"}</button>
+            <button className="freshOrange" type="button" onClick={() => choosePlan("operator")}>Recommend Operator</button>
+            <button className="freshGhost" type="button" onClick={loadPlan}>Reload backend plan</button>
           </div>
 
-          <div className="freshItem">
-            <b>Best default</b>
-            <span>Operator is the main plan because AI runs the admin and the owner approves.</span>
-          </div>
-
-          <div className="freshItem need">
-            <b>Command scale</b>
-            <span>Command includes up to 50 active team members. Inactive old staff should not count as billable.</span>
-          </div>
+          <div className="freshItem"><b>Best default</b><span>Operator is the main plan because AI runs the admin and the owner approves.</span></div>
+          <div className="freshItem need"><b>Command scale</b><span>Command includes up to 50 active team members. Inactive old staff should not count as billable.</span></div>
         </aside>
       </section>
 
       <section className="freshCard freshCompareCard">
         <h2>Simple comparison</h2>
         <div className="freshCompareGrid">
-          {planComparison.map(([name, fit, value]) => (
-            <div key={name}>
-              <b>{name}</b>
-              <span>{fit}</span>
-              <p>{value}</p>
-            </div>
-          ))}
+          {planComparison.map(([name, fit, value]) => <div key={name}><b>{name}</b><span>{fit}</span><p>{value}</p></div>)}
         </div>
       </section>
     </section>
