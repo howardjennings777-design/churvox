@@ -5,6 +5,9 @@ import { normalizeRole, getDefaultRoute, isWorkerRole, isPayrollRole } from "@/l
 import { Nav } from "../marketing/ExecutiveHomePage";
 import "./AuthPublicCommand.css";
 
+const FIRST_SETUP_KEY = "churvox_first_setup_pending";
+const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
+
 const inputStyle = {
   color: "#000000",
   WebkitTextFillColor: "#000000",
@@ -63,6 +66,14 @@ const submitStyle = {
   WebkitTextFillColor: "#111827",
 };
 
+function setupPendingLocally() {
+  try {
+    return window.localStorage.getItem(FIRST_SETUP_KEY) === "true" && window.localStorage.getItem(GUIDE_COMPLETE_KEY) !== "true";
+  } catch {
+    return false;
+  }
+}
+
 const getPostLoginPath = (payload = {}) => {
   const user = payload?.user || payload || {};
   const email = String(user?.email || payload?.email || "").trim().toLowerCase();
@@ -75,7 +86,14 @@ const getPostLoginPath = (payload = {}) => {
   if (isPlatformOwner) return "/admin";
   if (isWorkerRole(role) || isPayrollRole(role)) return getDefaultRoute(role);
 
-  return "/plans";
+  const plan = String(user?.plan || payload?.plan || "").trim().toLowerCase();
+  const status = String(user?.subscription_status || payload?.subscription_status || "").trim().toLowerCase();
+  const noPlan = !plan || plan === "none" || plan === "free" || plan === "null" || plan === "undefined";
+  const inactiveBilling = !status || status === "none" || status === "cancelled" || status === "canceled" || status === "incomplete" || status === "past_due";
+
+  if (user?.has_app_access === false || payload?.has_app_access === false || noPlan || inactiveBilling) return "/plans";
+  if (setupPendingLocally()) return "/setup-guide?first_setup=1";
+  return getDefaultRoute(role);
 };
 
 const loginLooksValid = (result = {}) => {
