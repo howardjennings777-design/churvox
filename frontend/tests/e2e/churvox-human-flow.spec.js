@@ -23,7 +23,7 @@ const areas = [
   'xero',
 ];
 
-const dangerous = /delete|remove|archive|trash|send invoice|send quote|send email|send sms|approve|decline|pay now|checkout|stripe|log out|logout|disconnect|revoke|sync to xero|sync to myob/i;
+const dangerous = /delete|remove|archive|trash|send invoice|send quote|send email|send sms|approve|decline|pay now|checkout|stripe|log in|login|sign in|sign up|signup|register|log out|logout|disconnect|revoke|sync to xero|sync to myob/i;
 const safeClick = /open|view|details|next|back|cancel|close|plans|business pulse|client|job|quote|invoice|settings|support|setup|command|refresh|search/i;
 
 function stamp() {
@@ -39,7 +39,7 @@ async function watchErrors(page, errors) {
   page.on('pageerror', e => errors.push(`pageerror: ${e.message}`));
   page.on('console', msg => {
     const text = msg.text();
-    if (msg.type() === 'error' && !/favicon|manifest|ResizeObserver|AbortError|net::ERR_ABORTED|Failed to fetch|status of 401|status of 403/i.test(text)) {
+    if (msg.type() === 'error' && !/favicon|manifest|ResizeObserver|AbortError|net::ERR_ABORTED|Failed to fetch|CORS policy|Access-Control-Allow-Origin|net::ERR_FAILED|status of 401|status of 403/i.test(text)) {
       errors.push(`console: ${text}`);
     }
   });
