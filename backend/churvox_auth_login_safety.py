@@ -18,6 +18,29 @@ def _route_matches(route, suffix: str, method: str) -> bool:
         return False
 
 
+def _context_ready(context: dict | None) -> bool:
+    context = context or {}
+    required = ["db", "ObjectId", "bcrypt", "create_access_token", "create_refresh_token", "set_auth_cookies", "clear_auth_cookies"]
+    return all(context.get(key) is not None for key in required)
+
+
+def _find_server_context(preferred: dict | None = None) -> dict:
+    if _context_ready(preferred):
+        return preferred or {}
+
+    frame = inspect.currentframe()
+    seen = set()
+    while frame:
+        glob = frame.f_globals or {}
+        ident = id(glob)
+        if ident not in seen and _context_ready(glob):
+            return glob
+        seen.add(ident)
+        frame = frame.f_back
+
+    return preferred or {}
+
+
 def _serial(value):
     try:
         from bson import ObjectId
@@ -111,13 +134,7 @@ def _user_response(user_doc: dict, user_id: str, token: str | None, build_user_r
 
 
 def _verify_password(password: str, user_doc: dict, bcrypt_module) -> tuple[bool, str | None]:
-    hash_fields = [
-        "password_hash",
-        "hashed_password",
-        "passwordHash",
-        "bcrypt_hash",
-        "pass_hash",
-    ]
+    hash_fields = ["password_hash", "hashed_password", "passwordHash", "bcrypt_hash", "pass_hash"]
 
     for field in hash_fields:
         stored = user_doc.get(field)
@@ -129,9 +146,6 @@ def _verify_password(password: str, user_doc: dict, bcrypt_module) -> tuple[bool
         except Exception:
             continue
 
-    # Emergency migration path for very old dev records only.
-    # If an ancient record stored a plain password, allow exact match once and
-    # the login route will immediately migrate it to password_hash.
     for field in ["password", "plain_password"]:
         stored = user_doc.get(field)
         if isinstance(stored, str) and stored and not _looks_bcrypt(stored) and stored == password:
@@ -141,7 +155,7 @@ def _verify_password(password: str, user_doc: dict, bcrypt_module) -> tuple[bool
 
 
 def install(router, context: dict | None = None) -> bool:
-    context = context or {}
+    context = _find_server_context(context)
     if router is None or getattr(router, "churvox_auth_login_safety_installed", False):
         return False
 
@@ -162,10 +176,7 @@ def install(router, context: dict | None = None) -> bool:
     router.routes = [
         route
         for route in getattr(router, "routes", [])
-        if not (
-            _route_matches(route, "/auth/login", "POST")
-            or _route_matches(route, "/auth/me", "GET")
-        )
+        if not (_route_matches(route, "/auth/login", "POST") or _route_matches(route, "/auth/me", "GET"))
     ]
 
     async def _current_user_from_request(request: Request):
@@ -224,7 +235,6 @@ def install(router, context: dict | None = None) -> bool:
         refresh_token = create_refresh_token(user_id)
         set_auth_cookies(response, access_token, refresh_token)
 
-        # Migrate legacy successful logins to the canonical field.
         updates = {}
         if matched_field and matched_field != "password_hash":
             try:
@@ -264,9 +274,7 @@ def install_include_router_hook() -> bool:
             routes = getattr(router, "routes", []) or []
             has_login = any(_route_matches(route, "/auth/login", "POST") for route in routes)
             if has_login:
-                frame = inspect.currentframe()
-                caller_globals = frame.f_back.f_globals if frame and frame.f_back else {}
-                install(router, caller_globals)
+                install(router, _find_server_context())
         except Exception:
             pass
         return original(self, router, *args, **kwargs)
