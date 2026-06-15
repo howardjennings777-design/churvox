@@ -32,8 +32,12 @@ function userFrom(data = {}) {
   return picked.user && !picked.email && !picked.id && !picked._id ? picked.user : picked;
 }
 
+function anyEmail(value = {}, fallback = {}) {
+  return String(value.email || value.user_email || value.email_address || value.login_email || fallback.email || fallback.user_email || fallback.email_address || "").trim().toLowerCase();
+}
+
 function looksUser(value = {}) {
-  return Boolean(value && typeof value === "object" && (value.email || value.id || value._id || value.role || value.business_id || value.businessId));
+  return Boolean(value && typeof value === "object" && (value.email || value.user_email || value.email_address || value.id || value._id || value.role || value.business_id || value.businessId));
 }
 
 function cleanUser(data = {}, token = "") {
@@ -41,7 +45,8 @@ function cleanUser(data = {}, token = "") {
   if (!looksUser(raw)) return null;
   const id = raw.id || raw._id || data.id || data._id || "";
   const businessId = raw.business_id || raw.businessId || data.business_id || data.businessId || id;
-  const next = { ...data, ...raw, id: String(id || ""), business_id: businessId ? String(businessId) : "" };
+  const email = anyEmail(raw, data);
+  const next = { ...data, ...raw, id: String(id || ""), business_id: businessId ? String(businessId) : "", email: email || raw.email || data.email || "" };
   delete next.password_hash;
   delete next.hashed_password;
   delete next.password;
@@ -57,6 +62,10 @@ function headersFor(token) {
 function permanentAuthError(err) {
   const code = err?.response?.status;
   return code === 401 || code === 403;
+}
+
+function messageFrom(data = {}) {
+  return data?.detail || data?.message || data?.error || data?.data?.detail || data?.data?.message || data?.data?.error || "";
 }
 
 export function AuthProvider({ children }) {
@@ -111,11 +120,36 @@ export function AuthProvider({ children }) {
     setUser(null);
     const cleanEmail = String(email || "").trim().toLowerCase();
     const response = await axios.post(`${API_BASE}/api/auth/login`, { email: cleanEmail, password }, { withCredentials: true, timeout: AUTH_TIMEOUT_MS });
-    if (response.data?.success === false) throw new Error(response.data?.detail || response.data?.message || "Invalid email or password.");
+    const serverMessage = messageFrom(response.data);
+    if (response.data?.success === false) throw new Error(serverMessage || "Invalid email or password.");
+
     const token = tokenFrom(response.data);
-    const nextUser = cleanUser(response.data, token);
-    const returnedEmail = String(nextUser?.email || response.data?.email || "").trim().toLowerCase();
-    if (!nextUser || returnedEmail !== cleanEmail) throw new Error("Login failed because Churvox could not confirm the account returned by the server.");
+    let nextUser = cleanUser(response.data, token);
+
+    if (!nextUser) {
+      try {
+        nextUser = await fetchMe(token || undefined);
+      } catch {
+        throw new Error(serverMessage || "Login response did not include a usable account. Please try again.");
+      }
+    }
+
+    let returnedEmail = anyEmail(nextUser, response.data);
+    if (!returnedEmail && token) {
+      try {
+        nextUser = await fetchMe(token);
+        returnedEmail = anyEmail(nextUser, response.data);
+      } catch {}
+    }
+
+    if (returnedEmail && returnedEmail !== cleanEmail) {
+      throw new Error("Churvox returned a different account than the email entered. Please log out and try again.");
+    }
+
+    if (!returnedEmail) {
+      nextUser = { ...nextUser, email: cleanEmail };
+    }
+
     if (token) localStorage.setItem("token", token);
     else localStorage.removeItem("token");
     if (nextUser?.has_app_access) removePlanFlag();
