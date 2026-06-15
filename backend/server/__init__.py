@@ -297,6 +297,132 @@ async def _create_card_required_checkout(request):
         {'success': False, 'detail': 'Deprecated checkout route disabled; use clean billing checkout'},
         status_code=410
     )
+
+def _checkout_line_item(plan, country):
+    price_id = _stripe_price_id(plan, country)
+    if price_id:
+        return {'price': price_id, 'quantity': 1}, 'env_price'
+
+    currencies = {'NZ': 'nzd', 'AU': 'aud', 'US': 'usd', 'UK': 'gbp'}
+    amounts = {
+        'solo': {'NZ': 3900, 'AU': 3900, 'US': 2900, 'UK': 2500},
+        'team': {'NZ': 8900, 'AU': 8900, 'US': 6900, 'UK': 5900},
+        'pro': {'NZ': 14900, 'AU': 14900, 'US': 11900, 'UK': 9900},
+        'enterprise': {'NZ': 29900, 'AU': 29900, 'US': 23900, 'UK': 19900},
+    }
+    labels = {'solo': 'Start', 'team': 'Crew', 'pro': 'Operator', 'enterprise': 'Command'}
+
+    return {
+        'price_data': {
+            'currency': currencies.get(country, 'nzd'),
+            'unit_amount': amounts.get(plan, amounts['pro']).get(country, amounts['pro']['NZ']),
+            'recurring': {'interval': 'month'},
+            'product_data': {
+                'name': f"Churvox {labels.get(plan, 'Operator')}",
+                'description': 'Churvox monthly subscription plan',
+            },
+        },
+        'quantity': 1,
+    }, 'dynamic_price'
+
+
+def _remove_conflicting_checkout_routes():
+    bad_paths = {
+        '/api/billing/create-checkout-session',
+        '/api/stripe/create-checkout-session',
+        '/api/billing/start-checkout',
+        '/api/billing/start-checkout-form',
+    }
+    kept = []
+    for route in list(app.router.routes):
+        if getattr(route, 'path', '') in bad_paths:
+            continue
+        kept.append(route)
+    app.router.routes = kept
+
+
+_remove_conflicting_checkout_routes()
+
+
+@app.post('/api/billing/create-checkout-session')
+async def _clean_json_checkout(request):
+    user = await _get_user_or_none(request)
+    if not user:
+        return JSONResponse({'success': False, 'detail': 'Not authenticated'}, status_code=401)
+
+    role = _safe_text(user.get('role'), 'employer').lower()
+    if role not in {'employer', 'owner', 'admin', 'business_owner', 'superadmin', 'manager', 'office_admin'} and not user.get('is_admin') and not user.get('is_platform_owner'):
+        return JSONResponse({'success': False, 'detail': 'Only business owners and admins can start billing checkout'}, status_code=403)
+
+    secret = os.environ.get('STRIPE_SECRET_KEY', '').strip()
+    if not secret:
+        return JSONResponse({'success': False, 'detail': 'Stripe secret key not configured in Render'}, status_code=500)
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    plan = _clean_plan(payload.get('plan') or payload.get('plan_type') or payload.get('backend_plan') or 'pro')
+    if plan not in {'solo', 'team', 'pro', 'enterprise'}:
+        plan = 'pro'
+
+    country = _normalize_country(payload.get('country') or payload.get('billing_country') or 'NZ')
+    line_item, price_source = _checkout_line_item(plan, country)
+
+    stripe.api_key = secret
+    frontend = os.environ.get('FRONTEND_URL', 'https://www.churvox.com').rstrip('/')
+
+    user_id = _safe_text(user.get('id') or user.get('_id'))
+    business_id = _safe_text(user.get('business_id') or user.get('id') or user.get('_id'))
+    metadata = {
+        'user_id': user_id,
+        'business_id': business_id,
+        'plan': plan,
+        'country': country,
+        'source': 'server_wrapper_clean_json_checkout',
+        'trial_days': '14',
+        'card_required': 'false',
+    }
+
+    try:
+        kwargs = {
+            'mode': 'subscription',
+            'payment_method_collection': 'if_required',
+            'line_items': [line_item],
+            'subscription_data': {
+                'trial_period_days': 14,
+                'trial_settings': {'end_behavior': {'missing_payment_method': 'cancel'}},
+                'metadata': metadata,
+            },
+            'metadata': metadata,
+            'success_url': f'{frontend}/plans?checkout=success&session_id={{CHECKOUT_SESSION_ID}}&plan={plan}&country={country}',
+            'cancel_url': f'{frontend}/plans?checkout=cancelled&plan={plan}&country={country}',
+        }
+        if _safe_text(user.get('email')):
+            kwargs['customer_email'] = _safe_text(user.get('email'))
+
+        session = stripe.checkout.Session.create(**kwargs)
+    except Exception as exc:
+        return JSONResponse({'success': False, 'detail': f'Stripe checkout error: {exc}'}, status_code=500)
+
+    url = getattr(session, 'url', '') or ''
+    session_id = getattr(session, 'id', '') or ''
+
+    if not url:
+        return JSONResponse({'success': False, 'detail': 'Stripe did not return a checkout URL'}, status_code=500)
+
+    return JSONResponse({
+        'success': True,
+        'url': url,
+        'checkout_url': url,
+        'session_id': session_id,
+        'plan': plan,
+        'country': country,
+        'price_source': price_source,
+        'trial_days': 14,
+        'card_required': False,
+    })
 async def _secure_complete_job(request, job_id):
     user = await _get_user_or_none(request)
     if not user:
