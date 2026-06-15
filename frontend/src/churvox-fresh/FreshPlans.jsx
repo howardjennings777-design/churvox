@@ -1,9 +1,9 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
-import API_BASE from "../lib/apiBase";
 import "./freshPlans.css";
 
 const PLAN_REQUIRED_KEY = "churvox_plan_choice_required";
+const CHECKOUT_FORM_URL = "https://churvox-backend.onrender.com/api/billing/start-checkout-form";
 const regions = {
   NZ: { label: "New Zealand", short: "NZ", currency: "NZD", prefix: "$", tax: "+ GST", taxName: "GST", taxRate: 0.15, taxIncluded: "incl. GST" },
   AU: { label: "Australia", short: "AU", currency: "AUD", prefix: "A$", tax: "+ GST", taxName: "GST", taxRate: 0.1, taxIncluded: "incl. GST" },
@@ -29,24 +29,16 @@ function money(value, regionCode, decimals = 0) { const r = regions[regionCode] 
 function realPriceLabel(value, regionCode) { const r = regions[regionCode] || regions.NZ; if (!r.taxRate) return `${money(value, regionCode, 2)}/month ${r.taxIncluded}`; return `${money(realTotal(value, regionCode), regionCode, 2)}/month ${r.taxIncluded}`; }
 function taxBreakdown(value, regionCode) { const r = regions[regionCode] || regions.NZ; if (!r.taxRate) return r.taxIncluded; return `${money(value, regionCode)}/month ${r.tax} = ${money(realTotal(value, regionCode), regionCode, 2)}/month ${r.taxIncluded}`; }
 function planRequired() { try { const p = new URLSearchParams(window.location.search || ""); return p.get("must_choose_plan") === "1" || window.localStorage.getItem(PLAN_REQUIRED_KEY) === "true"; } catch { return false; } }
-function backendMessage(payload, fallback = "Stripe checkout could not start.") { if (!payload) return fallback; if (typeof payload === "string") return payload.slice(0, 240) || fallback; return payload.error || payload.detail || payload.message || payload?.data?.error || payload?.data?.detail || payload?.data?.message || fallback; }
-function authHeaders() { try { const token = window.localStorage.getItem("token"); return token ? { Authorization: `Bearer ${token}` } : {}; } catch { return {}; } }
-function extractCheckoutUrl(payload) { return payload?.url || payload?.checkout_url || payload?.checkoutUrl || payload?.data?.url || payload?.data?.checkout_url || ""; }
-async function readCheckoutResponse(response) { const text = await response.text(); if (!text) return null; try { return JSON.parse(text); } catch { return text; } }
-async function createCheckout(payload) {
-  const apiBase = `${API_BASE}/api` || "/api";
-  const response = await fetch(`${apiBase}/billing/create-checkout-session`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
-    body: JSON.stringify(payload),
-  });
-  const body = await readCheckoutResponse(response);
-  const checkoutUrl = extractCheckoutUrl(body);
-  if (!response.ok || !checkoutUrl) {
-    throw new Error(backendMessage(body, `Stripe checkout could not start (${response.status}).`));
-  }
-  return checkoutUrl;
+function storedCheckoutToken() { try { return window.localStorage.getItem("token") || window.localStorage.getItem("access_token") || window.localStorage.getItem("churvox_token") || ""; } catch { return ""; } }
+function appendHidden(form, name, value) { const input = document.createElement("input"); input.type = "hidden"; input.name = name; input.value = String(value || ""); form.appendChild(input); }
+function submitCheckoutForm(payload) {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = CHECKOUT_FORM_URL;
+  form.style.display = "none";
+  Object.entries(payload).forEach(([key, value]) => appendHidden(form, key, value));
+  document.body.appendChild(form);
+  form.submit();
 }
 export default function FreshPlans({ onNavigate }) {
   const { get } = useApi();
@@ -68,14 +60,13 @@ export default function FreshPlans({ onNavigate }) {
   async function startCheckout() {
     setCheckoutLoading(true);
     setError("");
-    try {
-      const checkoutUrl = await createCheckout({ plan: selected.backendPlan, country: selectedRegion, ui_plan: selected.id });
-      window.location.assign(checkoutUrl);
-    } catch (err) {
-      setError(err?.message || "Stripe checkout could not start. Please contact support.");
-    } finally {
+    const token = storedCheckoutToken();
+    if (!token) {
       setCheckoutLoading(false);
+      setError("Your login token is missing. Log out, log back in, then start Stripe checkout again.");
+      return;
     }
+    submitCheckoutForm({ token, plan: selected.backendPlan, country: selectedRegion, ui_plan: selected.id });
   }
   const currentPlanLabel = currentPlan === "none" ? "Choose a plan" : planByUiId(currentPlan).name;
   return (
