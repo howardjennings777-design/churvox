@@ -145,9 +145,10 @@ async def _make_checkout(module, request, payload):
     try:
         session = module.stripe.checkout.Session.create(
             mode="subscription",
+            payment_method_collection="if_required",
             customer_email=user.get("email"),
             line_items=[line_item],
-            subscription_data={"trial_period_days": 14, "metadata": metadata},
+            subscription_data={"trial_period_days": 14, "trial_settings": {"end_behavior": {"missing_payment_method": "cancel"}}, "metadata": metadata},
             metadata=metadata,
             success_url=f"{frontend}/billing/success?session_id={{CHECKOUT_SESSION_ID}}&plan={plan}&country={country}",
             cancel_url=f"{frontend}/dashboard?checkout=cancelled&plan={plan}&country={country}#plans",
