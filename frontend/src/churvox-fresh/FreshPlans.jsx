@@ -1,14 +1,54 @@
 import React from "react";
-import { useApi } from "../hooks/useApi";
 import "./freshPlans.css";
 
-const CHECKOUT_TRACE_MARKER = "checkout-js-trace-direct-backend-json-v22";
+const CHECKOUT_TRACE_MARKER = "checkout-js-trace-clean-replace-v30";
+const LIVE_BACKEND = "https://grassley-backend.onrender.com";
 
 const plans = [
-  { id: "start", backendPlan: "solo", name: "Start", price: 39, tag: "Starter", best: false, headline: "Get organised", summary: "For a solo operator who needs jobs, clients, quotes and invoices under control.", limit: "Best for one owner", features: ["Jobs, clients, quotes and invoices", "Business Pulse basics", "Business settings and GST", "Accounting Sync Add-on available"] },
-  { id: "crew", backendPlan: "team", name: "Crew", price: 89, tag: "Growing team", best: false, headline: "Run the crew", summary: "For a business with workers, daily dispatch, job handover and more client admin.", limit: "Up to 5 workers", features: ["Everything in Start", "Team and worker setup", "Dispatch-ready workflow", "More job and client capacity", "Accounting Sync Add-on available"] },
-  { id: "operator", backendPlan: "pro", name: "Operator", price: 149, tag: "Most Popular", best: true, headline: "Admin done for approval", summary: "Where Churvox starts preparing the admin and you approve the work before it goes out.", limit: "Recommended plan", features: ["AI Operator Actions", "Command approval desk", "Quote follow-up watch", "Invoice and job admin prepared for approval", "Accounting Sync Add-on available"] },
-  { id: "command", backendPlan: "enterprise", name: "Command", price: 299, tag: "Full control", best: false, headline: "Scale with control", summary: "For the bigger business that wants payroll workspace, accounting sync included and advanced control.", limit: "Up to 50 active team members", features: ["Everything in Operator", "Accounting sync included", "Payroll workspace", "Advanced roles", "Priority support", "Command Growth Pack available"] },
+  {
+    id: "start",
+    backendPlan: "solo",
+    name: "Start",
+    price: 39,
+    tag: "Starter",
+    headline: "Get organised",
+    summary: "For a solo operator who needs jobs, clients, quotes and invoices under control.",
+    limit: "Best for one owner",
+    features: ["Jobs, clients, quotes and invoices", "Business Pulse basics", "Business settings and GST", "Accounting Sync Add-on available"],
+  },
+  {
+    id: "crew",
+    backendPlan: "team",
+    name: "Crew",
+    price: 89,
+    tag: "Growing team",
+    headline: "Run the crew",
+    summary: "For a business with workers, daily dispatch, job handover and more client admin.",
+    limit: "Up to 5 workers",
+    features: ["Everything in Start", "Team and worker setup", "Dispatch-ready workflow", "More job and client capacity", "Accounting Sync Add-on available"],
+  },
+  {
+    id: "operator",
+    backendPlan: "pro",
+    name: "Operator",
+    price: 149,
+    tag: "Most Popular",
+    headline: "Admin done for approval",
+    summary: "Where Churvox starts preparing the admin and you approve the work before it goes out.",
+    limit: "Recommended plan",
+    features: ["AI Operator Actions", "Command approval desk", "Quote follow-up watch", "Invoice and job admin prepared for approval", "Accounting Sync Add-on available"],
+  },
+  {
+    id: "command",
+    backendPlan: "enterprise",
+    name: "Command",
+    price: 299,
+    tag: "Full control",
+    headline: "Scale with control",
+    summary: "For the bigger business that wants payroll workspace, accounting sync included and advanced control.",
+    limit: "Up to 50 active team members",
+    features: ["Everything in Operator", "Accounting sync included", "Payroll workspace", "Advanced roles", "Priority support", "Command Growth Pack available"],
+  },
 ];
 
 const backendToUiPlan = {
@@ -22,16 +62,16 @@ const backendToUiPlan = {
   command: "command",
 };
 
-function unwrap(result) {
-  const body = result?.data ?? result ?? {};
-  if (body && typeof body === "object" && body.success === true && body.data && typeof body.data === "object") {
-    return body.data;
-  }
-  return body;
+function money(value) {
+  return `$${Number(value || 0).toFixed(0)}`;
 }
 
-function planByUiId(id) {
-  return plans.find((plan) => plan.id === id) || null;
+function authToken() {
+  try {
+    return window.localStorage.getItem("token") || window.localStorage.getItem("authToken") || window.localStorage.getItem("access_token") || "";
+  } catch {
+    return "";
+  }
 }
 
 function uiPlanFromBackend(value) {
@@ -40,11 +80,11 @@ function uiPlanFromBackend(value) {
   return backendToUiPlan[raw] || "";
 }
 
-function money(value) {
-  return `$${Number(value || 0).toFixed(0)}`;
+function planByUiId(id) {
+  return plans.find((plan) => plan.id === id) || plans[2];
 }
 
-function checkoutUrl(body) {
+function firstCheckoutUrl(body) {
   return (
     body?.url ||
     body?.checkout_url ||
@@ -59,59 +99,46 @@ function checkoutUrl(body) {
   );
 }
 
-function authToken() {
-  try {
-    return window.localStorage.getItem("token") || window.localStorage.getItem("authToken") || window.localStorage.getItem("access_token") || "";
-  } catch {
-    return "";
-  }
-}
-
-function liveBackendBase() {
-  return "https://grassley-backend.onrender.com";
-}
-
-async function readJsonOrText(response) {
+async function readBody(response) {
   const text = await response.text();
-  if (!text) {
-    throw new Error(`Backend returned an empty response (${response.status})`);
+  if (!text.trim()) {
+    return {
+      success: false,
+      detail: `Empty response from ${response.url || "checkout endpoint"}`,
+      status: response.status,
+    };
   }
+
   try {
     return JSON.parse(text);
   } catch {
-    throw new Error(`Backend returned non-JSON (${response.status}): ${text.slice(0, 250)}`);
+    return {
+      success: false,
+      detail: `Non-JSON response from checkout endpoint (${response.status})`,
+      status: response.status,
+      body: text.slice(0, 500),
+    };
   }
 }
 
-function tokenFromStorage() {
-  try {
-    return window.localStorage.getItem("token") || window.localStorage.getItem("authToken") || window.localStorage.getItem("access_token") || "";
-  } catch {
-    return "";
-  }
+async function apiRequest(url, options = {}) {
+  const response = await fetch(url, options);
+  const body = await readBody(response);
+  return { response, body };
 }
 
-function submitCheckoutForm(fields) {
-  const form = document.createElement("form");
-  form.method = "POST";
-  form.action = "/api/billing/start-checkout-form";
-  form.style.display = "none";
-
-  Object.entries(fields).forEach(([name, value]) => {
-    const input = document.createElement("input");
-    input.type = "hidden";
-    input.name = name;
-    input.value = String(value ?? "");
-    form.appendChild(input);
-  });
-
-  document.body.appendChild(form);
-  form.submit();
+function errorFrom(body, response) {
+  return (
+    body?.detail ||
+    body?.error ||
+    body?.message ||
+    body?.data?.detail ||
+    body?.data?.error ||
+    `Checkout failed with status ${response?.status || body?.status || "unknown"}`
+  );
 }
 
 export default function FreshPlans({ onNavigate }) {
-  const { get, post } = useApi();
-
   const [currentPlan, setCurrentPlan] = React.useState("");
   const [selectedPlan, setSelectedPlan] = React.useState("operator");
   const [growthPacks, setGrowthPacks] = React.useState(0);
@@ -119,9 +146,10 @@ export default function FreshPlans({ onNavigate }) {
   const [checkoutLoading, setCheckoutLoading] = React.useState(false);
   const [notice, setNotice] = React.useState("Loading backend plan");
   const [error, setError] = React.useState("");
+  const [debug, setDebug] = React.useState(null);
 
-  const selected = planByUiId(selectedPlan) || plans[2];
-  const current = planByUiId(currentPlan);
+  const selected = planByUiId(selectedPlan);
+  const current = currentPlan ? planByUiId(currentPlan) : null;
   const commandSelected = selected.id === "command";
   const growthTotal = commandSelected ? growthPacks * 99 : 0;
   const monthlyTotal = selected.price + growthTotal;
@@ -131,37 +159,33 @@ export default function FreshPlans({ onNavigate }) {
     setError("");
 
     try {
-      const result = await get("/billing/subscription-status");
-      if (!result?.success) throw new Error(result?.error || "Plan could not load from backend.");
+      const token = authToken();
+      const headers = { Accept: "application/json" };
+      if (token) headers.Authorization = `Bearer ${token}`;
 
-      const status = unwrap(result);
-      const uiPlan = uiPlanFromBackend(status?.plan);
+      const { response, body } = await apiRequest("/api/billing/subscription-status", {
+        method: "GET",
+        credentials: "include",
+        headers,
+      });
 
+      if (!response.ok || body?.success === false) {
+        throw new Error(errorFrom(body, response));
+      }
+
+      const data = body?.data && typeof body.data === "object" ? body.data : body;
+      const uiPlan = uiPlanFromBackend(data?.plan);
       setCurrentPlan(uiPlan);
       if (uiPlan) setSelectedPlan(uiPlan);
-
-      try {
-        const addonsResult = await get("/billing/addons");
-        const addons = unwrap(addonsResult);
-        if (addons && typeof addons.extra_user_blocks !== "undefined") {
-          setGrowthPacks(Number(addons.extra_user_blocks || 0));
-        }
-      } catch {
-        // Add-ons are not critical for checkout.
-      }
-
-      if (!uiPlan) {
-        setNotice("No plan chosen yet");
-      } else {
-        setNotice(status?.subscription_status === "trialing" ? "Trial active" : "Loaded from backend billing profile");
-      }
+      setNotice(uiPlan ? "Loaded from backend billing profile" : "No plan chosen yet");
+      setDebug((previous) => ({ ...(previous || {}), status: { status: response.status, body: data } }));
     } catch (err) {
-      setError(err?.message || "Plan could not load from backend.");
       setNotice("Plan needs attention");
+      setError(err?.message || "Plan could not load from backend.");
     } finally {
       setLoading(false);
     }
-  }, [get]);
+  }, []);
 
   React.useEffect(() => {
     loadPlan();
@@ -179,42 +203,39 @@ export default function FreshPlans({ onNavigate }) {
     }
 
     if (checkout === "success" && sessionId) {
-      let cancelled = false;
-
-      (async () => {
-        setNotice("Confirming Stripe checkout");
-        setError("");
-
-        try {
-          const result = await post("/billing/confirm-checkout", {
-            session_id: sessionId,
-            plan: params.get("plan") || selected.backendPlan,
-            country: params.get("country") || "NZ",
-          });
-
-          if (!result?.success) {
-            throw new Error(result?.error || result?.data?.error || "Stripe checkout could not be confirmed.");
-          }
-
-          if (!cancelled) {
-            window.history.replaceState(null, "", "/plans");
-            window.dispatchEvent(new Event("churvox-auth-refresh"));
-            setNotice("Stripe checkout confirmed");
-            loadPlan();
-          }
-        } catch (err) {
-          if (!cancelled) {
-            setNotice("Checkout needs attention");
-            setError(err?.message || "Stripe checkout could not be confirmed.");
-          }
-        }
-      })();
-
-      return () => {
-        cancelled = true;
-      };
+      setNotice("Stripe checkout returned. Confirming plan now.");
+      confirmCheckout(sessionId, params.get("plan") || selected.backendPlan, params.get("country") || "NZ");
     }
-  }, [loadPlan, post, selected.backendPlan]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function confirmCheckout(sessionId, plan, country) {
+    try {
+      const token = authToken();
+      const headers = { "Content-Type": "application/json", Accept: "application/json" };
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const { response, body } = await apiRequest("/api/billing/confirm-checkout", {
+        method: "POST",
+        credentials: "include",
+        headers,
+        body: JSON.stringify({ session_id: sessionId, plan, country }),
+      });
+
+      if (!response.ok || body?.success === false) {
+        throw new Error(errorFrom(body, response));
+      }
+
+      window.history.replaceState(null, "", "/plans");
+      window.dispatchEvent(new Event("churvox-auth-refresh"));
+      setNotice("Stripe checkout confirmed");
+      setDebug((previous) => ({ ...(previous || {}), confirm: { status: response.status, body } }));
+      loadPlan();
+    } catch (err) {
+      setNotice("Checkout needs attention");
+      setError(err?.message || "Stripe checkout could not be confirmed.");
+    }
+  }
 
   function choosePlan(planId) {
     setSelectedPlan(planId);
@@ -222,54 +243,65 @@ export default function FreshPlans({ onNavigate }) {
     setError("");
   }
 
+  async function tryCheckoutEndpoint(url, payload, token) {
+    const headers = { "Content-Type": "application/json", Accept: "application/json" };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    const { response, body } = await apiRequest(url, {
+      method: "POST",
+      credentials: "include",
+      headers,
+      body: JSON.stringify(payload),
+    });
+
+    const urlFromBody = firstCheckoutUrl(body);
+    return {
+      ok: response.ok && body?.success !== false && Boolean(urlFromBody),
+      checkoutUrl: urlFromBody,
+      status: response.status,
+      body,
+      endpoint: url,
+    };
+  }
+
   async function startCheckout() {
     setCheckoutLoading(true);
     setError("");
+    setDebug(null);
     setNotice("Opening Stripe checkout");
 
+    const token = authToken();
+    const payload = {
+      plan: selected.backendPlan,
+      plan_type: selected.backendPlan,
+      country: "NZ",
+      billing_country: "NZ",
+      source: "fresh_plans_clean_replace_v30",
+    };
+
     try {
-      const token = authToken();
-      if (!token) {
-        throw new Error("Your login token is missing. Log out, log back in, then try checkout again.");
+      const attempts = [];
+
+      attempts.push(await tryCheckoutEndpoint("/api/billing/create-checkout-session", payload, token));
+      if (!attempts[0].ok) {
+        attempts.push(await tryCheckoutEndpoint(`${LIVE_BACKEND}/api/billing/create-checkout-session`, payload, token));
       }
 
-      const response = await fetch(`${liveBackendBase()}/api/billing/create-checkout-session`, {
-        method: "POST",
-        mode: "cors",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          plan: selected.backendPlan,
-          plan_type: selected.backendPlan,
-          country: "NZ",
-          billing_country: "NZ",
-          source: "fresh_plans_direct_backend_v22",
-        }),
-      });
+      setDebug({ attempts });
 
-      const body = await readJsonOrText(response);
-
-      if (!response.ok || body?.success === false) {
-        throw new Error(body?.detail || body?.error || body?.message || `Checkout failed with status ${response.status}`);
+      const success = attempts.find((attempt) => attempt.ok);
+      if (!success) {
+        const last = attempts[attempts.length - 1];
+        throw new Error(errorFrom(last?.body, { status: last?.status }));
       }
 
-      const url = checkoutUrl(body);
-      if (!url) {
-        throw new Error(`Stripe checkout did not return a checkout URL. ${JSON.stringify(body).slice(0, 300)}`);
-      }
-
-      window.location.href = url;
+      window.location.assign(success.checkoutUrl);
     } catch (err) {
       setNotice("Checkout needs attention");
       setError(err?.message || "Stripe checkout could not be opened.");
       setCheckoutLoading(false);
     }
   }
-
 
   const planComparison = [
     ["Start", "Solo basics", "Jobs, quotes, invoices"],
@@ -321,7 +353,7 @@ export default function FreshPlans({ onNavigate }) {
           const isCurrent = Boolean(currentPlan) && currentPlan === plan.id;
 
           return (
-            <button type="button" key={plan.id} className={`freshPricingCard ${active ? "active" : ""} ${plan.best ? "best" : ""}`} onClick={() => choosePlan(plan.id)}>
+            <button type="button" key={plan.id} className={`freshPricingCard ${active ? "active" : ""} ${plan.id === "operator" ? "best" : ""}`} onClick={() => choosePlan(plan.id)}>
               <span className="freshPlanTag">{plan.tag}</span>
               {isCurrent && <span className="freshCurrentBadge">Current</span>}
               <strong>{plan.name}</strong>
@@ -367,7 +399,7 @@ export default function FreshPlans({ onNavigate }) {
 
         <aside className="freshCard freshCheckoutCard">
           <h2>Stripe checkout</h2>
-          <p>This calls the live backend directly, gets a Stripe checkout URL as JSON, then redirects.</p>
+          <p>This page was rebuilt clean. It asks for a Stripe checkout URL first, then redirects only when a real URL is returned.</p>
 
           <div className="freshActions">
             <button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading}>{checkoutLoading ? "Opening Stripe..." : "Start Stripe checkout"}</button>
@@ -379,6 +411,13 @@ export default function FreshPlans({ onNavigate }) {
           <div className="freshItem need"><b>Command scale</b><span>Command includes up to 50 active team members. Inactive old staff should not count as billable.</span></div>
         </aside>
       </section>
+
+      {debug && (
+        <section className="freshCard freshNotice" style={{ marginTop: 14 }}>
+          <b>Checkout diagnostic</b>
+          <span style={{ whiteSpace: "pre-wrap", fontFamily: "monospace", fontSize: 12 }}>{JSON.stringify(debug, null, 2).slice(0, 1800)}</span>
+        </section>
+      )}
 
       <section className="freshCard freshCompareCard">
         <h2>Simple comparison</h2>
