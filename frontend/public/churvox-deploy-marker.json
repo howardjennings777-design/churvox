@@ -1,0 +1,6 @@
+{
+  "service": "frontend",
+  "marker": "checkout-deploy-trace-20260615-frontend-v1",
+  "purpose": "Proves which frontend bundle/static deploy is live while debugging Stripe checkout.",
+  "expected_path": "/churvox-deploy-marker.json"
+}
