@@ -2,7 +2,7 @@ import React from "react";
 import { useApi } from "../hooks/useApi";
 import "./freshPlans.css";
 
-const CHECKOUT_TRACE_MARKER = "checkout-js-trace-plan-status-fix-v18";
+const CHECKOUT_TRACE_MARKER = "checkout-js-trace-browser-redirect-v19";
 
 const plans = [
   { id: "start", backendPlan: "solo", name: "Start", price: 39, tag: "Starter", best: false, headline: "Get organised", summary: "For a solo operator who needs jobs, clients, quotes and invoices under control.", limit: "Best for one owner", features: ["Jobs, clients, quotes and invoices", "Business Pulse basics", "Business settings and GST", "Accounting Sync Add-on available"] },
@@ -42,21 +42,6 @@ function uiPlanFromBackend(value) {
 
 function money(value) {
   return `$${Number(value || 0).toFixed(0)}`;
-}
-
-function checkoutUrl(body) {
-  return (
-    body?.url ||
-    body?.checkout_url ||
-    body?.checkoutUrl ||
-    body?.session_url ||
-    body?.stripe_url ||
-    body?.redirect_url ||
-    body?.data?.url ||
-    body?.data?.checkout_url ||
-    body?.session?.url ||
-    ""
-  );
 }
 
 export default function FreshPlans({ onNavigate }) {
@@ -172,36 +157,18 @@ export default function FreshPlans({ onNavigate }) {
     setError("");
   }
 
-  async function startCheckout() {
+  function startCheckout() {
     setCheckoutLoading(true);
     setError("");
     setNotice("Opening Stripe checkout");
 
-    try {
-      const result = await post("/billing/create-checkout-session", {
-        plan: selected.backendPlan,
-        plan_type: selected.backendPlan,
-        country: "NZ",
-        billing_country: "NZ",
-      });
+    const params = new URLSearchParams({
+      plan: selected.backendPlan,
+      country: "NZ",
+      t: String(Date.now()),
+    });
 
-      if (!result?.success) {
-        throw new Error(result?.error || result?.data?.error || "Stripe checkout could not be opened.");
-      }
-
-      const body = result.data || result;
-      const url = checkoutUrl(body);
-      if (!url) {
-        const detail = body?.error || body?.detail || body?.message || JSON.stringify(body).slice(0, 300);
-        throw new Error(`Stripe checkout did not return a checkout URL. ${detail}`);
-      }
-
-      window.location.href = url;
-    } catch (err) {
-      setNotice("Checkout needs attention");
-      setError(err?.message || "Stripe checkout could not be opened.");
-      setCheckoutLoading(false);
-    }
+    window.location.href = `/api/billing/start-checkout?${params.toString()}`;
   }
 
   const planComparison = [
@@ -300,7 +267,7 @@ export default function FreshPlans({ onNavigate }) {
 
         <aside className="freshCard freshCheckoutCard">
           <h2>Stripe checkout</h2>
-          <p>This uses the clean billing API route and redirects only after Stripe returns a checkout URL.</p>
+          <p>This now opens the browser redirect checkout route directly, avoiding the AJAX endpoint that returned an empty body.</p>
 
           <div className="freshActions">
             <button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading}>{checkoutLoading ? "Opening Stripe..." : "Start Stripe checkout"}</button>
