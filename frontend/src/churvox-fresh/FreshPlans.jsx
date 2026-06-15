@@ -1,7 +1,7 @@
 import React from "react";
 import "./freshPlans.css";
 
-const CHECKOUT_TRACE_MARKER = "checkout-js-trace-clean-replace-v30";
+const CHECKOUT_TRACE_MARKER = "checkout-js-trace-public-save-v31";
 const LIVE_BACKEND = "https://grassley-backend.onrender.com";
 
 const plans = [
@@ -215,7 +215,7 @@ export default function FreshPlans({ onNavigate }) {
       const headers = { "Content-Type": "application/json", Accept: "application/json" };
       if (token) headers.Authorization = `Bearer ${token}`;
 
-      const { response, body } = await apiRequest("/api/billing/confirm-checkout", {
+      const { response, body } = await apiRequest("/api/billing/checkout-save", {
         method: "POST",
         credentials: "include",
         headers,
@@ -228,12 +228,12 @@ export default function FreshPlans({ onNavigate }) {
 
       window.history.replaceState(null, "", "/plans");
       window.dispatchEvent(new Event("churvox-auth-refresh"));
-      setNotice("Stripe checkout confirmed");
+      setNotice("Stripe checkout saved");
       setDebug((previous) => ({ ...(previous || {}), confirm: { status: response.status, body } }));
       loadPlan();
     } catch (err) {
       setNotice("Checkout needs attention");
-      setError(err?.message || "Stripe checkout could not be confirmed.");
+      setError(err?.message || "Stripe checkout could not be saved.");
     }
   }
 
