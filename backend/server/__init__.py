@@ -316,6 +316,7 @@ def _checkout_line_item(plan, country):
     return {
         'price_data': {
             'currency': currencies.get(country, 'nzd'),
+            'tax_behavior': 'exclusive',
             'unit_amount': amounts.get(plan, amounts['pro']).get(country, amounts['pro']['NZ']),
             'recurring': {'interval': 'month'},
             'product_data': {
@@ -390,6 +391,8 @@ async def _clean_json_checkout(request: Request):
         kwargs = {
             'mode': 'subscription',
             'payment_method_collection': 'if_required',
+            'automatic_tax': {'enabled': True},
+            'billing_address_collection': 'required',
             'line_items': [line_item],
             'subscription_data': {
                 'trial_period_days': 14,

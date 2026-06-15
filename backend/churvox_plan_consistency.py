@@ -227,6 +227,7 @@ def _stripe_line_item(plan, country):
     return {
         "price_data": {
             "currency": str(meta["currency"]).lower(),
+            "tax_behavior": "exclusive",
             "unit_amount": int(round(float(meta["price"]) * 100)),
             "recurring": {"interval": "month"},
             "product_data": {
@@ -298,6 +299,8 @@ def install(router):
         args = {
             "mode": "subscription",
             "payment_method_collection": "if_required",
+            "automatic_tax": {"enabled": True},
+            "billing_address_collection": "required",
             "line_items": [_stripe_line_item(plan, country)],
             "success_url": f"{os.environ.get('BACKEND_PUBLIC_URL', 'https://grassley-backend.onrender.com').rstrip('/')}/api/billing/checkout-return?session_id={{CHECKOUT_SESSION_ID}}",
             "cancel_url": f"{frontend}/plans?checkout=cancelled&plan={plan}&country={country}",
@@ -347,6 +350,8 @@ def install(router):
         args = {
             "mode": "subscription",
             "payment_method_collection": "if_required",
+            "automatic_tax": {"enabled": True},
+            "billing_address_collection": "required",
             "line_items": [_stripe_line_item(plan, country)],
             "success_url": f"{os.environ.get('BACKEND_PUBLIC_URL', 'https://grassley-backend.onrender.com').rstrip('/')}/api/billing/checkout-return?session_id={{CHECKOUT_SESSION_ID}}",
             "cancel_url": f"{frontend}/plans?checkout=cancelled&plan={plan}&country={country}",
