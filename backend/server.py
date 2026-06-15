@@ -725,29 +725,35 @@ def create_refresh_token(user_id: str) -> str:
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 async def get_current_user(request: Request) -> dict:
-    # Prefer the explicit Bearer token from the current frontend login.
-    # A stale secure cookie from a previous platform-owner login can otherwise
-    # make every checkout look like hello@churvox.com.
+    # Prefer the fresh frontend login token over any old secure cookie.
+    # This stops an old hello@churvox.com session from taking over checkout.
     auth_header = request.headers.get("Authorization", "")
     token = auth_header[7:] if auth_header.startswith("Bearer ") else None
+
     if not token:
         token = request.cookies.get("access_token")
+
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
+
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         if payload.get("type") != "access":
             raise HTTPException(status_code=401, detail="Invalid token type")
+
         user = await db.users.find_one({"_id": ObjectId(payload["sub"])})
         if not user:
+            raise HTTPException(status_code": ObjectId(payload["sub"])})
+        if not user:
             raise HTTPException(status_code=401, detail="User not found")
+
         user["id"] = str(user["_id"])
-        # Ensure business_id is always a string
+
         if "business_id" in user and isinstance(user["business_id"], ObjectId):
             user["business_id"] = str(user["business_id"])
         elif "business_id" not in user:
-            # Legacy fallback: use own id as business_id
             user["business_id"] = user["id"]
+
         user.pop("_id", None)
         user.pop("password_hash", None)
         return user
@@ -755,6 +761,7 @@ async def get_current_user(request: Request) -> dict:
         raise HTTPException(status_code=401, detail="Token expired")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
+
 
 app.include_router(build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectId), prefix="/api")
 
@@ -773,8 +780,9 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
     response.set_cookie(key="refresh_token", value=refresh_token, httponly=True, secure=True, samesite="none", max_age=604800, path="/")
 
 def clear_auth_cookies(response: Response):
-    response.delete_cookie(key="access_token", path="/")
-    response.delete_cookie(key="refresh_token", path="/")
+    response.delete_cookie(key="access_token", path="/", httponly=True, secure=True, samesite="none")
+    response.delete_cookie(key="refresh_token", path="/", httponly=True, secure=True, samesite="none")
+
 
 def serialize_doc(doc: dict) -> dict:
     if doc is None:
@@ -998,6 +1006,7 @@ async def verify_email(token: str):
 
 @api_router.post("/auth/login")
 async def login(user_data: UserLogin, response: Response, request: Request):
+    clear_auth_cookies(response)
     email = user_data.email.lower()
     identifier = f"{request.client.host}:{email}"
 
@@ -1027,11 +1036,15 @@ async def login(user_data: UserLogin, response: Response, request: Request):
             {"$inc": {"count": 1}, "$set": {"locked_until": datetime.now(timezone.utc) + timedelta(minutes=15)}},
             upsert=True
         )
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+        clear_auth_cookies(response)
+        response.status_code = 401
+        return {"detail": "Invalid email or password"}
 
     # Block invited users who haven't completed setup
     if user.get("status") == "invited":
-        raise HTTPException(status_code=403, detail="Please complete your account setup using the invite link sent to your email.")
+        clear_auth_cookies(response)
+        response.status_code = 403
+        return {"detail": "Please complete your account setup using the invite link sent to your email."}
 
     await db.login_attempts.delete_one({"identifier": identifier})
 

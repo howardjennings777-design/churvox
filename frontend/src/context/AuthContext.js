@@ -107,6 +107,7 @@ export function AuthProvider({ children }) {
 
     if (token) localStorage.setItem("token", token);
     else localStorage.removeItem("token");
+    else localStorage.removeItem("token");
 
     let nextUser = fallbackUser;
     try {

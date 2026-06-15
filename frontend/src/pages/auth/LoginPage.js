@@ -67,6 +67,13 @@ export default function LoginPage() {
         return;
       }
 
+      const resultEmail = String(result?.user?.email || result?.email || "").trim().toLowerCase();
+
+      if (resultEmail && resultEmail !== cleanEmail) {
+        setError("Old login session cleared. Please press Sign in again with the correct email.");
+        return;
+      }
+
       navigate(getPostLoginPath(result), { replace: true });
     } catch (err) {
       setError(
