@@ -167,7 +167,7 @@ def build_invite_email(name: str, invite_link: str, business_name: str = "", rol
     biz = _html.escape((business_name or "").strip()) or _BRAND
     role_label = _html.escape(_pretty_role(role))
     subject = f"You're invited to join {biz.replace('&#x27;', '’')} on {_BRAND}"
-    html = _wrap(f"<h2 style='margin:0 0 12px;'>You've been invited</h2><p>Hi {safe_name},</p><p><strong>{biz}</strong> has invited you to join their team on {_BRAND} as <strong>{role_label}</strong>.</p><p>Click below to finish setting up your account.</p>{_button('Accept invite', invite_link)}<p style='font-size:13px;color:#475569;'>If you were not expecting this invite, you can ignore this email.</p>")
+    html = _wrap(f"<h2 style='margin:0 0 12px;'>You've been invited</h2><p>Hi {safe_name},</p><p><strong>{biz}</strong> has invited you to join their team on <strong>{_BRAND}</strong> as <strong>{role_label}</strong>.</p><p>Click below to finish setting up your account.</p>{_button('Accept invite', invite_link)}<p style='font-size:13px;color:#475569;'>If you were not expecting this invite, you can ignore this email.</p>")
     return EmailTemplate(subject=subject, html=html)
 
 
@@ -250,13 +250,19 @@ def _maybe_register_support_route():
         return
     try:
         import inspect
+        from urllib.parse import parse_qs
         from fastapi import Body, HTTPException, Request
+        from fastapi.responses import RedirectResponse
         frame = inspect.currentframe()
         caller_globals = (frame.f_back.f_back.f_globals if frame and frame.f_back and frame.f_back.f_back else {})
         router = caller_globals.get("api_router")
         db = caller_globals.get("db")
         get_current_user = caller_globals.get("get_current_user")
         ObjectId = caller_globals.get("ObjectId")
+        jwt = caller_globals.get("jwt")
+        stripe = caller_globals.get("stripe")
+        JWT_SECRET = caller_globals.get("JWT_SECRET")
+        JWT_ALGORITHM = caller_globals.get("JWT_ALGORITHM", "HS256")
         FRONTEND_URL = str(caller_globals.get("FRONTEND_URL") or os.getenv("FRONTEND_URL") or "https://www.churvox.com").rstrip("/")
         if router is None or db is None or get_current_user is None:
             return
@@ -365,6 +371,78 @@ def _maybe_register_support_route():
             except Exception:
                 pass
             return {"success": True, "email_sent": bool(result.success), "provider": result.provider, "error": result.error, "template": tpl["kind"], "subject": tpl["subject"]}
+
+        async def checkout_user_from_token(token: str):
+            if not jwt or not JWT_SECRET or not ObjectId:
+                raise HTTPException(status_code=500, detail="Checkout token support is not loaded")
+            try:
+                decoded = jwt.decode(str(token or ""), JWT_SECRET, algorithms=[JWT_ALGORITHM])
+                if decoded.get("type") != "access":
+                    raise HTTPException(status_code=401, detail="Invalid checkout token type")
+                user = await db.users.find_one({"_id": ObjectId(decoded["sub"])})
+            except HTTPException:
+                raise
+            except Exception:
+                raise HTTPException(status_code=401, detail="Invalid checkout token")
+            if not user:
+                raise HTTPException(status_code=401, detail="User not found")
+            return user
+
+        @router.post("/billing/start-checkout-form")
+        async def billing_start_checkout_form(request: Request):
+            raw = (await request.body()).decode("utf-8", errors="ignore")
+            form = {k: v[0] for k, v in parse_qs(raw).items() if v}
+            user = await checkout_user_from_token(form.get("token") or form.get("access_token"))
+            role = str(user.get("role") or "employer").lower().strip()
+            if role not in {"employer", "owner", "admin", "business_owner", "superadmin", "manager", "office_admin"} and not user.get("is_admin") and not user.get("is_platform_owner"):
+                raise HTTPException(status_code=403, detail="Only business owners and admins can start billing checkout")
+            if not stripe:
+                raise HTTPException(status_code=500, detail="Stripe is not loaded")
+            secret = os.getenv("STRIPE_SECRET_KEY", "").strip()
+            if not secret:
+                raise HTTPException(status_code=500, detail="Stripe secret key not configured in Render")
+            stripe.api_key = secret
+            plan_alias = {"start": "solo", "solo": "solo", "crew": "team", "team": "team", "operator": "pro", "pro": "pro", "command": "enterprise", "enterprise": "enterprise"}
+            plan_labels = {"solo": "Start", "team": "Crew", "pro": "Operator", "enterprise": "Command"}
+            prices = {"solo": {"NZ": 39, "AU": 39, "US": 29, "UK": 25}, "team": {"NZ": 89, "AU": 89, "US": 69, "UK": 59}, "pro": {"NZ": 149, "AU": 149, "US": 119, "UK": 99}, "enterprise": {"NZ": 299, "AU": 299, "US": 239, "UK": 199}}
+            currencies = {"NZ": "nzd", "AU": "aud", "US": "usd", "UK": "gbp"}
+            plan = plan_alias.get(str(form.get("plan") or form.get("ui_plan") or "pro").lower().strip(), "pro")
+            country_raw = str(form.get("country") or "NZ").upper().strip()
+            country = {"NZL": "NZ", "NEW ZEALAND": "NZ", "AUS": "AU", "AUSTRALIA": "AU", "USA": "US", "UNITED STATES": "US", "GB": "UK", "GBR": "UK", "UNITED KINGDOM": "UK"}.get(country_raw, country_raw)
+            if country not in {"NZ", "AU", "US", "UK"}:
+                country = "NZ"
+            env_map = {"solo": "START", "team": "CREW", "pro": "OPERATOR", "enterprise": "COMMAND"}
+            legacy_map = {"solo": "SOLO", "team": "TEAM", "pro": "PRO", "enterprise": "ENTERPRISE"}
+            price_id = ""
+            for key in [f"STRIPE_PRICE_{env_map.get(plan, 'OPERATOR')}_{country}", f"STRIPE_PRICE_{legacy_map.get(plan, 'PRO')}_{country}", f"STRIPE_PRICE_{env_map.get(plan, 'OPERATOR')}", f"STRIPE_PRICE_{legacy_map.get(plan, 'PRO')}"]:
+                if os.getenv(key, "").strip():
+                    price_id = os.getenv(key, "").strip()
+                    break
+            if price_id:
+                line_item = {"price": price_id, "quantity": 1}
+            else:
+                amount = int(round(float(prices.get(plan, prices["pro"]).get(country, prices["pro"]["NZ"])) * 100))
+                line_item = {"price_data": {"currency": currencies.get(country, "nzd"), "unit_amount": amount, "recurring": {"interval": "month"}, "product_data": {"name": f"Churvox {plan_labels.get(plan, 'Operator')}", "description": "Churvox monthly subscription plan"}}, "quantity": 1}
+            user_id = str(user.get("_id") or user.get("id"))
+            business_id = str(user.get("business_id") or user.get("_id") or user.get("id"))
+            metadata = {"user_id": user_id, "business_id": business_id, "plan": plan, "country": country, "source": "email_provider_checkout_route"}
+            try:
+                session = stripe.checkout.Session.create(
+                    mode="subscription",
+                    customer_email=user.get("email"),
+                    line_items=[line_item],
+                    subscription_data={"trial_period_days": 14, "metadata": metadata},
+                    metadata=metadata,
+                    success_url=f"{FRONTEND_URL}/billing/success?session_id={{CHECKOUT_SESSION_ID}}&plan={plan}&country={country}",
+                    cancel_url=f"{FRONTEND_URL}/dashboard?checkout=cancelled&plan={plan}&country={country}#plans",
+                )
+            except Exception as exc:
+                raise HTTPException(status_code=500, detail=f"Stripe checkout error: {str(exc)}")
+            try:
+                await db.checkout_debug.insert_one({**metadata, "session_id": session.id, "created_at": datetime.now(timezone.utc)})
+            except Exception:
+                pass
+            return RedirectResponse(session.url, status_code=303)
 
         @router.post("/support/contact")
         async def churvox_support_contact(payload: dict):
