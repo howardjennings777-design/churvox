@@ -46,8 +46,7 @@ function clean(value) {
 }
 
 function backendBaseUrl() {
-  const configured = process.env.CHURVOX_BACKEND_URL || process.env.BACKEND_URL || DEFAULT_BACKEND_URL;
-  return clean(configured).replace(/\/api$/i, "");
+  return clean(DEFAULT_BACKEND_URL);
 }
 
 function filterHeaders(headers = {}) {
