@@ -725,11 +725,13 @@ def create_refresh_token(user_id: str) -> str:
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 async def get_current_user(request: Request) -> dict:
-    token = request.cookies.get("access_token")
+    # Prefer the explicit Bearer token from the current frontend login.
+    # A stale secure cookie from a previous platform-owner login can otherwise
+    # make every checkout look like hello@churvox.com.
+    auth_header = request.headers.get("Authorization", "")
+    token = auth_header[7:] if auth_header.startswith("Bearer ") else None
     if not token:
-        auth_header = request.headers.get("Authorization", "")
-        if auth_header.startswith("Bearer "):
-            token = auth_header[7:]
+        token = request.cookies.get("access_token")
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
     try:
