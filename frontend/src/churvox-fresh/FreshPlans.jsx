@@ -3,7 +3,7 @@ import { useApi } from "../hooks/useApi";
 import { useAuth } from "../context/AuthContext";
 import "./freshPlans.css";
 
-const CHECKOUT_TRACE_MARKER = "checkout-js-trace-form-redirect-stripe-v15";
+const CHECKOUT_TRACE_MARKER = "checkout-js-trace-form-session-stripe-v16";
 
 const plans = [
   { id: "start", backendPlan: "solo", name: "Start", price: 39, tag: "Starter", best: false, headline: "Get organised", summary: "For a solo operator who needs jobs, clients, quotes and invoices under control.", limit: "Best for one owner", features: ["Jobs, clients, quotes and invoices", "Business Pulse basics", "Business settings and GST", "Accounting Sync Add-on available"] },
@@ -154,14 +154,6 @@ export default function FreshPlans({ onNavigate }) {
     setCheckoutLoading(true);
     setError("");
     setNotice("Opening Stripe checkout");
-
-    if (!user?.token) {
-      setCheckoutLoading(false);
-      setNotice("Checkout needs attention");
-      setError("Your login token was not found. Please sign out, sign back in, then open Stripe checkout again.");
-      return;
-    }
-
     window.setTimeout(() => {
       formRef.current?.submit();
     }, 0);
