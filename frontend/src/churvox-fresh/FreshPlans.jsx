@@ -1,9 +1,8 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
-import { useAuth } from "../context/AuthContext";
 import "./freshPlans.css";
 
-const CHECKOUT_TRACE_MARKER = "checkout-js-trace-form-session-stripe-v16";
+const CHECKOUT_TRACE_MARKER = "checkout-js-trace-api-session-stripe-v17";
 
 const plans = [
   { id: "start", backendPlan: "solo", name: "Start", price: 39, tag: "Starter", best: false, headline: "Get organised", summary: "For a solo operator who needs jobs, clients, quotes and invoices under control.", limit: "Best for one owner", features: ["Jobs, clients, quotes and invoices", "Business Pulse basics", "Business settings and GST", "Accounting Sync Add-on available"] },
@@ -39,10 +38,23 @@ function money(value) {
   return `$${Number(value || 0).toFixed(0)}`;
 }
 
+function checkoutUrl(body) {
+  return (
+    body?.url ||
+    body?.checkout_url ||
+    body?.checkoutUrl ||
+    body?.session_url ||
+    body?.stripe_url ||
+    body?.redirect_url ||
+    body?.data?.url ||
+    body?.data?.checkout_url ||
+    body?.session?.url ||
+    ""
+  );
+}
+
 export default function FreshPlans({ onNavigate }) {
   const { get, post } = useApi();
-  const { user } = useAuth();
-  const formRef = React.useRef(null);
 
   const [currentPlan, setCurrentPlan] = React.useState("operator");
   const [selectedPlan, setSelectedPlan] = React.useState("operator");
@@ -150,13 +162,36 @@ export default function FreshPlans({ onNavigate }) {
     setError("");
   }
 
-  function startCheckout() {
+  async function startCheckout() {
     setCheckoutLoading(true);
     setError("");
     setNotice("Opening Stripe checkout");
-    window.setTimeout(() => {
-      formRef.current?.submit();
-    }, 0);
+
+    try {
+      const result = await post("/billing/create-checkout-session", {
+        plan: selected.backendPlan,
+        plan_type: selected.backendPlan,
+        country: "NZ",
+        billing_country: "NZ",
+      });
+
+      if (!result?.success) {
+        throw new Error(result?.error || result?.data?.error || "Stripe checkout could not be opened.");
+      }
+
+      const body = result.data || result;
+      const url = checkoutUrl(body);
+      if (!url) {
+        const detail = body?.error || body?.detail || body?.message || JSON.stringify(body).slice(0, 300);
+        throw new Error(`Stripe checkout did not return a checkout URL. ${detail}`);
+      }
+
+      window.location.href = url;
+    } catch (err) {
+      setNotice("Checkout needs attention");
+      setError(err?.message || "Stripe checkout could not be opened.");
+      setCheckoutLoading(false);
+    }
   }
 
   const planComparison = [
@@ -168,13 +203,6 @@ export default function FreshPlans({ onNavigate }) {
 
   return (
     <section className="freshPricingPage" data-checkout-trace={CHECKOUT_TRACE_MARKER}>
-      <form ref={formRef} method="POST" action="/api/billing/start-checkout-form" style={{ display: "none" }}>
-        <input type="hidden" name="token" value={user?.token || ""} readOnly />
-        <input type="hidden" name="plan" value={selected.backendPlan} readOnly />
-        <input type="hidden" name="ui_plan" value={selected.id} readOnly />
-        <input type="hidden" name="country" value="NZ" readOnly />
-      </form>
-
       <section className="freshCard freshNotice" style={{ marginBottom: 12 }}>
         <b>Checkout trace</b>
         <span>{CHECKOUT_TRACE_MARKER}</span>
@@ -262,7 +290,7 @@ export default function FreshPlans({ onNavigate }) {
 
         <aside className="freshCard freshCheckoutCard">
           <h2>Stripe checkout</h2>
-          <p>This submits directly to the backend checkout redirect route, so the browser can be sent straight to Stripe.</p>
+          <p>This uses the clean billing API route and redirects only after Stripe returns a checkout URL.</p>
 
           <div className="freshActions">
             <button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading}>{checkoutLoading ? "Opening Stripe..." : "Start Stripe checkout"}</button>
