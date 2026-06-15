@@ -15,6 +15,8 @@ function removePlanRequiredFlag() {
 
 function clearStoredAuth() {
   localStorage.removeItem("token");
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("access_token");
   localStorage.removeItem("owner_portal_session");
   localStorage.removeItem("platform_owner_email");
 }
@@ -97,11 +99,14 @@ export function AuthProvider({ children }) {
   }, [checkAuth]);
 
   const login = useCallback(async (email, password) => {
+    clearStoredAuth();
+    setUser(null);
     const response = await axios.post(`${API_BASE}/api/auth/login`, { email, password }, { withCredentials: true, timeout: AUTH_TIMEOUT_MS });
     const token = pickToken(response.data);
     const fallbackUser = pickUser(response.data);
 
     if (token) localStorage.setItem("token", token);
+    else localStorage.removeItem("token");
 
     let nextUser = fallbackUser;
     try {
@@ -124,10 +129,13 @@ export function AuthProvider({ children }) {
   }, [fetchMe]);
 
   const register = useCallback(async (userData) => {
+    clearStoredAuth();
+    setUser(null);
     const response = await axios.post(`${API_BASE}/api/auth/register`, userData, { withCredentials: true, timeout: AUTH_TIMEOUT_MS });
     const token = pickToken(response.data);
     const restData = pickUser(response.data);
     if (token) localStorage.setItem("token", token);
+    else localStorage.removeItem("token");
     localStorage.setItem(PLAN_REQUIRED_KEY, "true");
     setUser({ ...restData, ...(token ? { token } : {}), plan: "none", has_app_access: false, billing_lock_reason: "choose_plan_in_stripe" });
     return { ...response.data, user: restData, ...(token ? { token } : { cookieSession: true }) };
