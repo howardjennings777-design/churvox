@@ -2,8 +2,8 @@ import React from "react";
 import { useApi } from "../hooks/useApi";
 import "./freshPlans.css";
 
-const CHECKOUT_TRACE_MARKER = "checkout-js-trace-20260615-form-submit-v2";
-const CHECKOUT_FORM_URL = "https://churvox-backend.onrender.com/api/billing/start-checkout-form";
+const CHECKOUT_TRACE_MARKER = "checkout-js-trace-20260615-same-site-form-v3";
+const CHECKOUT_FORM_URL = "/api/billing/start-checkout-form";
 
 const plans = [
   { id: "start", backendPlan: "solo", name: "Start", price: 39, tag: "Starter", best: false, headline: "Get organised", summary: "For a solo operator who needs jobs, clients, quotes and invoices under control.", limit: "Best for one owner", features: ["Jobs, clients, quotes and invoices", "Business Pulse basics", "Business settings and GST", "Accounting Sync Add-on available"] },
@@ -101,12 +101,6 @@ export default function FreshPlans({ onNavigate }) {
     setCheckoutLoading(true);
     setError("");
     const token = checkoutToken();
-    if (!token) {
-      setCheckoutLoading(false);
-      setNotice("Checkout needs login");
-      setError("Your login token is missing. Log out, log back in, then start Stripe checkout again.");
-      return;
-    }
     submitCheckoutForm({ token, plan: selected.backendPlan, country: "NZ" });
   }
 
@@ -166,7 +160,7 @@ export default function FreshPlans({ onNavigate }) {
         </section>
         <aside className="freshCard freshCheckoutCard">
           <h2>Stripe checkout</h2>
-          <p>This uses a direct browser form redirect to Stripe, avoiding CORS and the frontend proxy.</p>
+          <p>This uses the normal Churvox /api route and then redirects to Stripe.</p>
           <div className="freshActions">
             <button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading}>{checkoutLoading ? "Opening Stripe..." : "Start Stripe checkout"}</button>
             <button className="freshOrange" type="button" onClick={() => choosePlan("operator")}>Recommend Operator</button>
