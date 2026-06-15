@@ -6,7 +6,7 @@
 async function clearOldChurvoxCache() {
   if (typeof window === "undefined") return;
 
-  const key = "churvox-cache-reset-20260615-auth-v1";
+  const key = "churvox-cache-reset-20260615-stripe-v2";
   if (window.localStorage.getItem(key) === "done") return;
 
   try {
@@ -22,9 +22,9 @@ async function clearOldChurvoxCache() {
 
     window.localStorage.setItem(key, "done");
 
-    if (!window.location.search.includes("cacheReset=auth1")) {
+    if (!window.location.search.includes("cacheReset=stripe2")) {
       const url = new URL(window.location.href);
-      url.searchParams.set("cacheReset", "auth1");
+      url.searchParams.set("cacheReset", "stripe2");
       window.location.replace(url.toString());
     }
   } catch (err) {
