@@ -25,12 +25,17 @@ const getPostLoginPath = (payload = {}) => {
 };
 
 const loginLooksValid = (result = {}) => {
+  const user = result?.user || result || {};
   return Boolean(
     result?.token ||
       result?.access_token ||
       result?.auth_token ||
       result?.user?.token ||
-      result?.user?.access_token
+      result?.user?.access_token ||
+      user?.email ||
+      user?.id ||
+      user?._id ||
+      user?.role
   );
 };
 
@@ -61,14 +66,14 @@ export default function LoginPage() {
       const result = await login(cleanEmail, password);
 
       if (!loginLooksValid(result)) {
-        setError("Login worked, but Churvox could not load your account. Please refresh and try again.");
+        setError("Invalid email or password.");
         return;
       }
 
       const resultEmail = String(result?.user?.email || result?.email || "").trim().toLowerCase();
 
-      if (resultEmail && resultEmail !== cleanEmail) {
-        setError("Old login session cleared. Please press Sign in again with the correct email.");
+      if (!resultEmail || resultEmail !== cleanEmail) {
+        setError("Login session mismatch. Please try again.");
         return;
       }
 
@@ -86,74 +91,59 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="cvPublicAuth">
+    <>
       <Nav />
+      <main className="auth-public-wrap">
+        <section className="auth-public-card">
+          <div className="auth-public-copy">
+            <p className="auth-eyebrow">Welcome back</p>
+            <h1>Sign in to Churvox</h1>
+            <p>Open your job desk, keep work moving, and approve the admin Churvox prepared.</p>
+          </div>
 
-      <section className="cvPublicAuthShell">
-        <form className="cvPublicAuthCard" onSubmit={handleSubmit}>
-          <p className="cvPublicAuthKicker">Owner login</p>
-          <h1>Sign in to Churvox.</h1>
-          <p className="cvPublicAuthIntro">
-            Get back to your jobs, admin and approvals.
-          </p>
+          <form className="auth-public-form" onSubmit={handleSubmit}>
+            {error && <div className="auth-error">{error}</div>}
 
-          {error ? <p className="cvPublicAuthError">{error}</p> : null}
+            <label>
+              Email
+              <input
+                style={inputStyle}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@business.co.nz"
+                autoComplete="email"
+              />
+            </label>
 
-          <label>
-            Email
-            <input
-              style={inputStyle}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              type="email"
-              autoComplete="email"
-              placeholder="hello@churvox.com"
-              required
-            />
-          </label>
+            <label>
+              Password
+              <div className="password-row">
+                <input
+                  style={inputStyle}
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Your password"
+                  autoComplete="current-password"
+                />
+                <button type="button" onClick={() => setShowPassword((v) => !v)}>
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
+            </label>
 
-          <label>
-            Password
-            <input
-              style={inputStyle}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              type={showPassword ? "text" : "password"}
-              autoComplete="current-password"
-              placeholder="Password"
-              required
-            />
-          </label>
+            <button className="auth-submit" type="submit" disabled={loading}>
+              {loading ? "Signing in..." : "Sign in"}
+            </button>
 
-          <button
-            type="button"
-            className="cvPublicAuthGhost"
-            onClick={() => setShowPassword((v) => !v)}
-          >
-            {showPassword ? "Hide password" : "Show password"}
-          </button>
-
-          <button className="cvPublicAuthSubmit" disabled={loading}>
-            {loading ? "Signing in..." : "Sign in"}
-          </button>
-
-          <p className="cvPublicAuthBottom">
-            New here? <Link to="/signup">Create an account</Link>
-            {" · "}
-            <Link to="/forgot-password">Forgot password?</Link>
-          </p>
-        </form>
-
-        <aside className="cvPublicAuthPanel">
-          <p>Less admin. More jobs done.</p>
-          <h2>Your jobs, admin and approvals in one place.</h2>
-          <ul>
-            <li>Keep jobs, clients, quotes and invoices together</li>
-            <li>Review prepared admin before it goes out</li>
-            <li>Stay in control of the business</li>
-          </ul>
-        </aside>
-      </section>
-    </main>
+            <div className="auth-links">
+              <Link to="/forgot-password">Forgot password?</Link>
+              <Link to="/signup">Create account</Link>
+            </div>
+          </form>
+        </section>
+      </main>
+    </>
   );
 }
