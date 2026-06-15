@@ -3380,6 +3380,141 @@ async def root():
 
 # Include router
 
+
+# ===================== DIRECT STRIPE CHECKOUT FORM REDIRECT =====================
+# This route is used by the Plans page. It avoids frontend /api proxy and CORS fetch issues
+# by letting the browser submit a normal form to the backend, then redirecting straight to Stripe.
+@api_router.post("/billing/start-checkout-form")
+async def start_checkout_form(request: Request):
+    from urllib.parse import parse_qs
+    from fastapi.responses import RedirectResponse
+
+    raw = (await request.body()).decode("utf-8", errors="ignore")
+    form = {k: v[0] for k, v in parse_qs(raw).items() if v}
+
+    token = str(form.get("token") or form.get("access_token") or "").strip()
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing checkout token")
+
+    try:
+        jwt_payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        if jwt_payload.get("type") != "access":
+            raise HTTPException(status_code=401, detail="Invalid checkout token type")
+        user_doc = await db.users.find_one({"_id": ObjectId(jwt_payload["sub"])})
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid checkout token")
+
+    if not user_doc:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    user_id = str(user_doc["_id"])
+    business_id = user_doc.get("business_id") or user_doc["_id"]
+    if isinstance(business_id, ObjectId):
+        business_id = str(business_id)
+
+    role = str(user_doc.get("role") or "employer").lower().strip()
+    allowed_roles = {"employer", "owner", "admin", "business_owner", "superadmin", "manager", "office_admin"}
+    if role not in allowed_roles and not user_doc.get("is_admin") and not user_doc.get("is_platform_owner"):
+        raise HTTPException(status_code=403, detail="Only business owners and admins can start billing checkout")
+
+    secret = os.environ.get("STRIPE_SECRET_KEY", "").strip()
+    if not secret:
+        raise HTTPException(status_code=500, detail="Stripe secret key not configured in Render")
+    stripe.api_key = secret
+
+    plan_aliases = {
+        "start": "solo",
+        "solo": "solo",
+        "crew": "team",
+        "team": "team",
+        "operator": "pro",
+        "pro": "pro",
+        "command": "enterprise",
+        "enterprise": "enterprise",
+    }
+    plan_labels = {"solo": "Start", "team": "Crew", "pro": "Operator", "enterprise": "Command"}
+    plan_env_names = {"solo": "START", "team": "CREW", "pro": "OPERATOR", "enterprise": "COMMAND"}
+    legacy_env_names = {"solo": "SOLO", "team": "TEAM", "pro": "PRO", "enterprise": "ENTERPRISE"}
+    currencies = {"NZ": "nzd", "AU": "aud", "US": "usd", "UK": "gbp"}
+    plan_prices = {
+        "solo": {"NZ": 39, "AU": 39, "US": 29, "UK": 25},
+        "team": {"NZ": 89, "AU": 89, "US": 69, "UK": 59},
+        "pro": {"NZ": 149, "AU": 149, "US": 119, "UK": 99},
+        "enterprise": {"NZ": 299, "AU": 299, "US": 239, "UK": 199},
+    }
+
+    requested_plan = str(form.get("plan") or form.get("ui_plan") or "pro").lower().strip()
+    plan = plan_aliases.get(requested_plan, "pro")
+    country = normalize_billing_country(form.get("country") or "NZ")
+
+    price_id = ""
+    for key in [
+        f"STRIPE_PRICE_{plan_env_names.get(plan, 'OPERATOR')}_{country}",
+        f"STRIPE_PRICE_{legacy_env_names.get(plan, 'PRO')}_{country}",
+        f"STRIPE_PRICE_{plan_env_names.get(plan, 'OPERATOR')}",
+        f"STRIPE_PRICE_{legacy_env_names.get(plan, 'PRO')}",
+    ]:
+        value = os.environ.get(key, "").strip()
+        if value:
+            price_id = value
+            break
+
+    if price_id:
+        line_item = {"price": price_id, "quantity": 1}
+    else:
+        amount = int(round(float(plan_prices.get(plan, plan_prices["pro"]).get(country, plan_prices["pro"]["NZ"])) * 100))
+        line_item = {
+            "price_data": {
+                "currency": currencies.get(country, "nzd"),
+                "unit_amount": amount,
+                "recurring": {"interval": "month"},
+                "product_data": {
+                    "name": f"Churvox {plan_labels.get(plan, 'Operator')}",
+                    "description": "Churvox monthly subscription plan",
+                },
+            },
+            "quantity": 1,
+        }
+
+    frontend = os.environ.get("FRONTEND_URL", FRONTEND_URL).rstrip("/")
+    metadata = {
+        "user_id": user_id,
+        "business_id": str(business_id),
+        "plan": plan,
+        "country": country,
+        "source": "server_py_form_checkout",
+    }
+
+    try:
+        session = stripe.checkout.Session.create(
+            mode="subscription",
+            customer_email=user_doc.get("email"),
+            line_items=[line_item],
+            subscription_data={"trial_period_days": 14, "metadata": metadata},
+            metadata=metadata,
+            success_url=f"{frontend}/billing/success?session_id={{CHECKOUT_SESSION_ID}}&plan={plan}&country={country}",
+            cancel_url=f"{frontend}/dashboard?checkout=cancelled&plan={plan}&country={country}#plans",
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Stripe checkout error: {str(e)}")
+
+    try:
+        await db.checkout_debug.insert_one({
+            "business_id": str(business_id),
+            "user_id": user_id,
+            "plan": plan,
+            "country": country,
+            "session_id": session.id,
+            "created_at": datetime.now(timezone.utc),
+        })
+    except Exception:
+        pass
+
+    return RedirectResponse(session.url, status_code=303)
+
+
 @api_router.post("/billing/create-checkout-session")
 async def create_checkout_session(payload: CreateCheckoutSessionRequest, request: Request):
     user = await require_employer(request)
