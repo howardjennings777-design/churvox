@@ -31,14 +31,7 @@ _LAUNCH_ROUTES_WIRED = False
 
 
 def _install_checkout_route_override():
-    """Ensure the final included API router has only the clean Plans checkout routes.
-
-    server.py still defines older Stripe checkout routes later in the file.  Those
-    later definitions can sit beside the clean route and confuse Plans.  We patch
-    FastAPI.include_router once so, at the exact moment the full api_router is
-    included, billing routes are cleaned and churvox_plan_consistency becomes the
-    single source of truth for Plans checkout.
-    """
+    """Ensure the final included API router has only the clean Plans checkout routes."""
     try:
         from fastapi import FastAPI
     except Exception:
@@ -58,9 +51,10 @@ def _install_checkout_route_override():
 
             if has_billing_checkout:
                 try:
-                    from backend import churvox_plan_consistency
+                    from backend import churvox_plan_consistency, churvox_checkout_return
                 except Exception:
                     import churvox_plan_consistency
+                    import churvox_checkout_return
 
                 try:
                     delattr(router, "churvox_plan_consistency_installed")
@@ -68,6 +62,7 @@ def _install_checkout_route_override():
                     pass
 
                 churvox_plan_consistency.install(router)
+                churvox_checkout_return.install(router)
 
                 # Delete the old plan checkout fallback. Plans should use only
                 # /billing/create-checkout-session so it cannot accidentally hit
@@ -134,7 +129,7 @@ def _wire_launch_routes_once():
         if router is None:
             return
         try:
-            from backend import churvox_public_contact, churvox_create_record_key_fix, churvox_launch_routes, churvox_team_roles, churvox_recurring_routes, churvox_isolation_routes, churvox_billing_addon_fix, churvox_plan_consistency
+            from backend import churvox_public_contact, churvox_create_record_key_fix, churvox_launch_routes, churvox_team_roles, churvox_recurring_routes, churvox_isolation_routes, churvox_billing_addon_fix, churvox_plan_consistency, churvox_checkout_return
         except Exception:
             import churvox_public_contact
             import churvox_create_record_key_fix
@@ -144,6 +139,7 @@ def _wire_launch_routes_once():
             import churvox_isolation_routes
             import churvox_billing_addon_fix
             import churvox_plan_consistency
+            import churvox_checkout_return
         churvox_public_contact.install(router)
         churvox_create_record_key_fix.install(router)
         churvox_launch_routes.install(router)
@@ -152,6 +148,7 @@ def _wire_launch_routes_once():
         churvox_isolation_routes.install(router)
         churvox_billing_addon_fix.install(router)
         churvox_plan_consistency.install(router)
+        churvox_checkout_return.install(router)
         _install_late_route_guard(app, router)
         _LAUNCH_ROUTES_WIRED = True
     except Exception as exc:
@@ -183,7 +180,7 @@ def _clean_phone(raw: str) -> str:
     return re.sub(r"[^\d+]", "", str(raw or "").strip())
 
 
-def format_phone_au_nz(raw: str, default_country: str = "NZ") -> str:
+def format_phone_au_nz(raw, default_country="NZ"):
     phone = _clean_phone(raw)
     if not phone:
         return ""
