@@ -3,6 +3,12 @@
 from __future__ import annotations
 
 try:
+    from churvox_stripe_no_card import install_no_card_trial_defaults
+    install_no_card_trial_defaults()
+except Exception:
+    pass
+
+try:
     from pathlib import Path
     from base64 import b64decode
 
