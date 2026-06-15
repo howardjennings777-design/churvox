@@ -6,7 +6,7 @@ import sys
 from datetime import datetime, timezone
 from bson import ObjectId
 from fastapi import Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 
 try:
     import stripe
@@ -397,7 +397,7 @@ async def _clean_json_checkout(request: Request):
                 'metadata': metadata,
             },
             'metadata': metadata,
-            'success_url': f'{frontend}/plans?checkout=success&session_id={{CHECKOUT_SESSION_ID}}&plan={plan}&country={country}',
+            'success_url': f'{_backend_public_url(request)}/api/billing/checkout-return?session_id={{CHECKOUT_SESSION_ID}}',
             'cancel_url': f'{frontend}/plans?checkout=cancelled&plan={plan}&country={country}',
         }
         if _safe_text(user.get('email')):
@@ -424,6 +424,123 @@ async def _clean_json_checkout(request: Request):
         'trial_days': 14,
         'card_required': False,
     })
+
+def _backend_public_url(request=None):
+    configured = os.environ.get('BACKEND_PUBLIC_URL') or os.environ.get('API_PUBLIC_URL') or ''
+    if configured:
+        return configured.rstrip('/')
+    return 'https://grassley-backend.onrender.com'
+
+
+def _frontend_public_url():
+    return os.environ.get('FRONTEND_URL', 'https://www.churvox.com').rstrip('/')
+
+
+def _save_meta_for_plan(plan, country):
+    plan = _clean_plan(plan)
+    country = _normalize_country(country)
+    prices = {
+        'solo': 39,
+        'team': 89,
+        'pro': 149,
+        'enterprise': 299,
+    }
+    names = {
+        'solo': 'Start',
+        'team': 'Crew',
+        'pro': 'Operator',
+        'enterprise': 'Command',
+    }
+    return {
+        'plan': plan,
+        'plan_name': names.get(plan, 'Operator'),
+        'plan_price': prices.get(plan, 149),
+        'billing_country': country,
+        'business_country': country,
+        'country': country,
+    }
+
+
+async def _save_plan_from_checkout_session(session):
+    meta = dict(getattr(session, 'metadata', {}) or {})
+    plan = _clean_plan(meta.get('plan') or 'pro')
+    if plan not in {'solo', 'team', 'pro', 'enterprise'}:
+        plan = 'pro'
+
+    country = _normalize_country(meta.get('country') or 'NZ')
+    user_id = _safe_text(meta.get('user_id'))
+    business_id = _safe_text(meta.get('business_id') or user_id)
+
+    owner_oid = _as_object_id(business_id) or _as_object_id(user_id)
+    user_oid = _as_object_id(user_id)
+
+    if not owner_oid and not user_oid:
+        return {'success': False, 'detail': 'Stripe session has no usable business/user id metadata', 'metadata': meta}
+
+    owner_oid = owner_oid or user_oid
+    now = datetime.now(timezone.utc)
+
+    update = _save_meta_for_plan(plan, country)
+    update.update({
+        'subscription_status': 'trialing',
+        'stripe_customer_id': _safe_text(getattr(session, 'customer', '')),
+        'stripe_subscription_id': _safe_text(getattr(session, 'subscription', '')),
+        'has_app_access': True,
+        'updated_at': now,
+        'trial_started_at': now,
+    })
+
+    await legacy.db.users.update_one({'_id': owner_oid}, {'$set': update})
+    if user_oid and user_oid != owner_oid:
+        await legacy.db.users.update_one({'_id': user_oid}, {'$set': update})
+
+    await legacy.db.billing_plan_sessions.update_one(
+        {'stripe_session_id': _safe_text(getattr(session, 'id', ''))},
+        {'$set': {
+            'business_id': str(owner_oid),
+            'owner_user_id': user_id,
+            'plan': plan,
+            'country': country,
+            'status': 'confirmed',
+            'stripe_customer_id': _safe_text(getattr(session, 'customer', '')),
+            'stripe_subscription_id': _safe_text(getattr(session, 'subscription', '')),
+            'confirmed_at': now,
+            'source': 'backend_checkout_return',
+        }},
+        upsert=True,
+    )
+
+    return {'success': True, 'plan': plan, 'country': country}
+
+
+@app.get('/api/billing/checkout-return')
+async def _checkout_return_save_plan(request: Request):
+    frontend = _frontend_public_url()
+    session_id = _safe_text(request.query_params.get('session_id'))
+
+    if not session_id:
+        return RedirectResponse(f'{frontend}/plans?checkout=missing_session', status_code=303)
+
+    secret = os.environ.get('STRIPE_SECRET_KEY', '').strip()
+    if not secret:
+        return RedirectResponse(f'{frontend}/plans?checkout=save_failed&reason=stripe_secret_missing', status_code=303)
+
+    try:
+        stripe.api_key = secret
+        session = stripe.checkout.Session.retrieve(session_id)
+    except Exception:
+        return RedirectResponse(f'{frontend}/plans?checkout=verify_failed', status_code=303)
+
+    saved = await _save_plan_from_checkout_session(session)
+    if not saved.get('success'):
+        return RedirectResponse(f'{frontend}/plans?checkout=save_failed', status_code=303)
+
+    return RedirectResponse(
+        f"{frontend}/plans?checkout=saved&plan={saved.get('plan')}&country={saved.get('country')}",
+        status_code=303,
+    )
+
+
 async def _secure_complete_job(request, job_id):
     user = await _get_user_or_none(request)
     if not user:
