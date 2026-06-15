@@ -2,8 +2,7 @@ import React from "react";
 import { useApi } from "../hooks/useApi";
 import "./freshPlans.css";
 
-const CHECKOUT_TRACE_MARKER = "checkout-js-trace-20260615-same-site-form-v3";
-const CHECKOUT_FORM_URL = "/api/billing/start-checkout-form";
+const CHECKOUT_TRACE_MARKER = "checkout-js-trace-20260615-same-site-fetch-v4";
 
 const plans = [
   { id: "start", backendPlan: "solo", name: "Start", price: 39, tag: "Starter", best: false, headline: "Get organised", summary: "For a solo operator who needs jobs, clients, quotes and invoices under control.", limit: "Best for one owner", features: ["Jobs, clients, quotes and invoices", "Business Pulse basics", "Business settings and GST", "Accounting Sync Add-on available"] },
@@ -18,38 +17,27 @@ function unwrap(result) { return result?.data ?? result; }
 function planByUiId(id) { return plans.find((plan) => plan.id === id) || plans[2]; }
 function uiPlanFromBackend(value) { return backendToUiPlan[String(value || "pro").toLowerCase()] || "operator"; }
 function money(value) { return `$${Number(value || 0).toFixed(0)}`; }
-function checkoutToken() {
-  try {
-    return window.localStorage.getItem("token") || window.localStorage.getItem("access_token") || window.localStorage.getItem("churvox_token") || "";
-  } catch {
-    return "";
-  }
-}
-function submitCheckoutForm({ token, plan, country }) {
-  const form = document.createElement("form");
-  form.method = "POST";
-  form.action = CHECKOUT_FORM_URL;
-  form.style.display = "none";
 
-  const fields = {
-    token,
-    access_token: token,
-    plan,
-    ui_plan: plan,
-    country,
-    trace: CHECKOUT_TRACE_MARKER,
-  };
-
-  Object.entries(fields).forEach(([name, value]) => {
-    const input = document.createElement("input");
-    input.type = "hidden";
-    input.name = name;
-    input.value = String(value || "");
-    form.appendChild(input);
+async function createCheckout({ plan, country }) {
+  const response = await fetch("/api/billing/create-checkout-session", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ plan, plan_type: plan, country, billing_country: country }),
   });
 
-  document.body.appendChild(form);
-  form.submit();
+  const text = await response.text();
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch {}
+
+  if (!response.ok) {
+    const detail = data?.detail || data?.message || text || `Checkout failed with HTTP ${response.status}`;
+    throw new Error(String(detail));
+  }
+
+  const url = data?.url || data?.checkout_url || data?.checkoutUrl || data?.session_url;
+  if (!url) throw new Error("Stripe checkout did not return a checkout URL.");
+  return url;
 }
 
 export default function FreshPlans({ onNavigate }) {
@@ -97,11 +85,18 @@ export default function FreshPlans({ onNavigate }) {
     setError("");
   }
 
-  function startCheckout() {
+  async function startCheckout() {
     setCheckoutLoading(true);
     setError("");
-    const token = checkoutToken();
-    submitCheckoutForm({ token, plan: selected.backendPlan, country: "NZ" });
+    setNotice("Opening Stripe checkout");
+    try {
+      const url = await createCheckout({ plan: selected.backendPlan, country: "NZ" });
+      window.location.assign(url);
+    } catch (err) {
+      setNotice("Checkout needs attention");
+      setError(err?.message || "Stripe checkout could not be opened.");
+      setCheckoutLoading(false);
+    }
   }
 
   const planComparison = [["Start", "Solo basics", "Jobs, quotes, invoices"], ["Crew", "Small team", "Workers and dispatch"], ["Operator", "Recommended", "AI admin prepared for approval"], ["Command", "Scale", "Accounting sync, payroll and advanced roles"]];
@@ -160,7 +155,7 @@ export default function FreshPlans({ onNavigate }) {
         </section>
         <aside className="freshCard freshCheckoutCard">
           <h2>Stripe checkout</h2>
-          <p>This uses the normal Churvox /api route and then redirects to Stripe.</p>
+          <p>This uses the normal Churvox /api route and redirects to Stripe.</p>
           <div className="freshActions">
             <button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading}>{checkoutLoading ? "Opening Stripe..." : "Start Stripe checkout"}</button>
             <button className="freshOrange" type="button" onClick={() => choosePlan("operator")}>Recommend Operator</button>
