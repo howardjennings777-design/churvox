@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { normalizeRole, getDefaultRoute } from "@/lib/roles";
@@ -30,6 +30,7 @@ const loginLooksValid = (result = {}) => {
     result?.token ||
       result?.access_token ||
       result?.auth_token ||
+      result?.cookieSession ||
       result?.user?.token ||
       result?.user?.access_token ||
       user?.email ||
@@ -41,13 +42,37 @@ const loginLooksValid = (result = {}) => {
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, user, loading, checkAuth } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const isRestoredCheckout = (() => {
+    try {
+      const params = new URLSearchParams(window.location.search || "");
+      return params.get("cacheReset") === "restored-checkout";
+    } catch {
+      return false;
+    }
+  })();
+
+  useEffect(() => {
+    if (isRestoredCheckout && !user && !loading) {
+      checkAuth?.();
+    }
+  }, [checkAuth, isRestoredCheckout, loading, user]);
+
+  useEffect(() => {
+    if (!user) return;
+    if (isRestoredCheckout) {
+      navigate("/plans", { replace: true });
+      return;
+    }
+    navigate(getPostLoginPath(user), { replace: true });
+  }, [isRestoredCheckout, navigate, user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -60,7 +85,7 @@ export default function LoginPage() {
     }
 
     setError("");
-    setLoading(true);
+    setSubmitting(true);
 
     try {
       const result = await login(cleanEmail, password);
@@ -77,7 +102,7 @@ export default function LoginPage() {
         return;
       }
 
-      navigate(getPostLoginPath(result), { replace: true });
+      navigate(isRestoredCheckout ? "/plans" : getPostLoginPath(result), { replace: true });
     } catch (err) {
       setError(
         err?.response?.data?.detail ||
@@ -86,64 +111,75 @@ export default function LoginPage() {
           "Invalid email or password."
       );
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   return (
-    <>
+    <main className="cvPublicAuth">
       <Nav />
-      <main className="auth-public-wrap">
-        <section className="auth-public-card">
-          <div className="auth-public-copy">
-            <p className="auth-eyebrow">Welcome back</p>
-            <h1>Sign in to Churvox</h1>
-            <p>Open your job desk, keep work moving, and approve the admin Churvox prepared.</p>
-          </div>
+      <section className="cvPublicAuthShell">
+        <form className="cvPublicAuthCard" onSubmit={handleSubmit}>
+          <p className="cvPublicAuthKicker">Welcome back</p>
+          <h1>Sign in to Churvox</h1>
+          <p className="cvPublicAuthIntro">Open your job desk, keep work moving, and approve the admin Churvox prepared.</p>
 
-          <form className="auth-public-form" onSubmit={handleSubmit}>
-            {error && <div className="auth-error">{error}</div>}
+          {isRestoredCheckout && (
+            <p className="cvPublicAuthIntro">We are restoring your checkout session. Sign in again only if Churvox does not return you to plans automatically.</p>
+          )}
 
-            <label>
-              Email
+          {error && <div className="cvPublicAuthError">{error}</div>}
+
+          <label>
+            Email
+            <input
+              style={inputStyle}
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@business.co.nz"
+              autoComplete="email"
+            />
+          </label>
+
+          <label>
+            Password
+            <div className="password-row">
               <input
                 style={inputStyle}
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@business.co.nz"
-                autoComplete="email"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Your password"
+                autoComplete="current-password"
               />
-            </label>
-
-            <label>
-              Password
-              <div className="password-row">
-                <input
-                  style={inputStyle}
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Your password"
-                  autoComplete="current-password"
-                />
-                <button type="button" onClick={() => setShowPassword((v) => !v)}>
-                  {showPassword ? "Hide" : "Show"}
-                </button>
-              </div>
-            </label>
-
-            <button className="auth-submit" type="submit" disabled={loading}>
-              {loading ? "Signing in..." : "Sign in"}
-            </button>
-
-            <div className="auth-links">
-              <Link to="/forgot-password">Forgot password?</Link>
-              <Link to="/signup">Create account</Link>
+              <button className="cvPublicAuthGhost" type="button" onClick={() => setShowPassword((v) => !v)}>
+                {showPassword ? "Hide" : "Show"}
+              </button>
             </div>
-          </form>
-        </section>
-      </main>
-    </>
+          </label>
+
+          <button className="cvPublicAuthSubmit" type="submit" disabled={submitting || loading}>
+            {submitting ? "Signing in..." : loading ? "Checking session..." : "Sign in"}
+          </button>
+
+          <div className="cvPublicAuthBottom">
+            <Link to="/forgot-password">Forgot password?</Link>
+            {" · "}
+            <Link to="/signup">Create account</Link>
+          </div>
+        </form>
+
+        <aside className="cvPublicAuthPanel">
+          <p>Churvox job admin</p>
+          <h2>Job → Invoice → Paid → Synced.</h2>
+          <ul>
+            <li>Keep the business moving from one desk.</li>
+            <li>Churvox prepares the admin.</li>
+            <li>You stay in control and approve what goes out.</li>
+          </ul>
+        </aside>
+      </section>
+    </main>
   );
 }
