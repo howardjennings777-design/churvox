@@ -82,7 +82,7 @@ export function AuthProvider({ children }) {
       const me = await fetchMe(token);
       if (!looksLikeUser(me)) throw new Error("No current user returned.");
       if (me?.has_app_access) removePlanRequiredFlag();
-      setUser({ ...me, ...(token ? { token } : {}) });
+      setUser({ ...me, token });
     } catch (err) {
       if (authFailedPermanently(err)) {
         clearStoredAuth();
@@ -121,14 +121,13 @@ export function AuthProvider({ children }) {
     let nextUser = pickUser(response.data);
     const returnedEmail = String(nextUser?.email || response.data?.email || "").trim().toLowerCase();
 
-    if (!token) {
+    if (!token && (!returnedEmail || returnedEmail !== cleanEmail)) {
       clearStoredAuth();
       throw new Error(response?.data?.detail || response?.data?.message || "Invalid email or password.");
     }
 
-    localStorage.setItem("token", token);
-
     if (token) {
+      localStorage.setItem("token", token);
       try {
         nextUser = await fetchMe(token);
       } catch {
@@ -137,6 +136,8 @@ export function AuthProvider({ children }) {
           throw new Error("Login succeeded but Churvox could not load your account yet. Please refresh and try again.");
         }
       }
+    } else {
+      localStorage.removeItem("token");
     }
 
     const finalEmail = String(nextUser?.email || returnedEmail || "").trim().toLowerCase();
@@ -155,7 +156,7 @@ export function AuthProvider({ children }) {
       localStorage.setItem("platform_owner_email", finalEmail);
     }
 
-    return { ...response.data, user: nextUser, ...nextUser, token };
+    return { ...response.data, user: nextUser, ...nextUser, ...(token ? { token } : { cookieSession: true }) };
   }, [fetchMe]);
 
   const register = useCallback(async (userData) => {
