@@ -7,7 +7,7 @@ route on top of it before Uvicorn serves the app.
 Why this exists:
 - The old checkout route was brittle around plan aliases, roles and Stripe price envs.
 - Browser fetch handling made it hard to tell if checkout failed or just never redirected.
-- This adds /api/billing/start-checkout as a real browser redirect to Stripe.
+- This adds checkout redirect routes that send the browser straight to Stripe.
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ from __future__ import annotations
 import os
 from datetime import datetime, timezone
 from typing import Any
+from urllib.parse import parse_qs
 
 from fastapi import Body, HTTPException, Request
 from starlette.responses import RedirectResponse
@@ -146,6 +147,7 @@ def _remove_checkout_routes() -> None:
     remove_paths = {
         "/api/billing/create-checkout-session",
         "/api/billing/start-checkout",
+        "/api/billing/start-checkout-form",
     }
     kept = []
     for route in list(app.router.routes):
@@ -164,8 +166,35 @@ def _billing_allowed(user: dict[str, Any]) -> bool:
     )
 
 
+async def _user_from_token(token: str) -> dict[str, Any]:
+    token = _s(token).strip()
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing checkout token")
+    try:
+        payload = server.jwt.decode(token, server.JWT_SECRET, algorithms=[server.JWT_ALGORITHM])
+        if payload.get("type") != "access":
+            raise HTTPException(status_code=401, detail="Invalid token type")
+        user = await server.db.users.find_one({"_id": server.ObjectId(payload["sub"])})
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+        user["id"] = str(user["_id"])
+        if "business_id" in user and isinstance(user["business_id"], server.ObjectId):
+            user["business_id"] = str(user["business_id"])
+        elif "business_id" not in user:
+            user["business_id"] = user["id"]
+        user.pop("_id", None)
+        user.pop("password_hash", None)
+        return user
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid checkout token")
+
+
 async def _make_checkout(request: Request, payload: dict[str, Any]) -> tuple[Any, str, str, str]:
-    user = await server.get_current_user(request)
+    payload = dict(payload or {})
+    token = payload.get("token") or payload.get("access_token")
+    user = await _user_from_token(token) if token else await server.get_current_user(request)
     if not _billing_allowed(user):
         raise HTTPException(status_code=403, detail="Only business owners and admins can start billing checkout")
 
@@ -174,7 +203,6 @@ async def _make_checkout(request: Request, payload: dict[str, Any]) -> tuple[Any
         raise HTTPException(status_code=500, detail="Stripe secret key not configured in Render")
     server.stripe.api_key = secret
 
-    payload = dict(payload or {})
     plan = _normal_plan(
         payload.get("plan")
         or payload.get("plan_type")
@@ -229,6 +257,14 @@ _remove_checkout_routes()
 @app.get("/api/billing/start-checkout")
 async def start_checkout(request: Request, plan: str = "pro", country: str = "NZ"):
     session, _plan, _country, _source = await _make_checkout(request, {"plan": plan, "country": country})
+    return RedirectResponse(session.url, status_code=303)
+
+
+@app.post("/api/billing/start-checkout-form")
+async def start_checkout_form(request: Request):
+    raw = (await request.body()).decode("utf-8", errors="ignore")
+    payload = {key: values[0] for key, values in parse_qs(raw).items() if values}
+    session, _plan, _country, _source = await _make_checkout(request, payload)
     return RedirectResponse(session.url, status_code=303)
 
 
