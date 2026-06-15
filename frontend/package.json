@@ -65,7 +65,9 @@
     "test:launch": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-big-launch-audit.spec.js",
     "test:launch:local": "playwright test tests/e2e/churvox-big-launch-audit.spec.js",
     "test:business": "playwright test tests/e2e/churvox-real-business-audit.spec.js",
-    "test:business:live": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-real-business-audit.spec.js"
+    "test:business:live": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-real-business-audit.spec.js",
+    "test:human": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-human-flow.spec.js --project=desktop-chromium",
+    "test:human:mobile": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-human-flow.spec.js --project=mobile-chromium"
   },
   "browserslist": {
     "production": [
