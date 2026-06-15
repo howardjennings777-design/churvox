@@ -2,7 +2,7 @@ import React from "react";
 import { useApi } from "../hooks/useApi";
 import "./freshPlans.css";
 
-const CHECKOUT_TRACE_MARKER = "checkout-js-trace-20260615-url-shape-v5";
+const CHECKOUT_TRACE_MARKER = "checkout-js-trace-20260615-auth-fetch-v6";
 
 const plans = [
   { id: "start", backendPlan: "solo", name: "Start", price: 39, tag: "Starter", best: false, headline: "Get organised", summary: "For a solo operator who needs jobs, clients, quotes and invoices under control.", limit: "Best for one owner", features: ["Jobs, clients, quotes and invoices", "Business Pulse basics", "Business settings and GST", "Accounting Sync Add-on available"] },
@@ -17,11 +17,22 @@ function unwrap(result) { return result?.data ?? result; }
 function planByUiId(id) { return plans.find((plan) => plan.id === id) || plans[2]; }
 function uiPlanFromBackend(value) { return backendToUiPlan[String(value || "pro").toLowerCase()] || "operator"; }
 function money(value) { return `$${Number(value || 0).toFixed(0)}`; }
+function tokenValue() {
+  try {
+    return localStorage.getItem("token") || localStorage.getItem("access_token") || localStorage.getItem("churvox_token") || "";
+  } catch {
+    return "";
+  }
+}
+function authHeaders() {
+  const token = tokenValue();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 function looksLikeStripeUrl(value) {
   return typeof value === "string" && /^https:\/\/(checkout\.stripe\.com|buy\.stripe\.com)\//i.test(value.trim());
 }
 function findCheckoutUrl(value, depth = 0) {
-  if (!value || depth > 4) return "";
+  if (!value || depth > 5) return "";
   if (looksLikeStripeUrl(value)) return value.trim();
   if (Array.isArray(value)) {
     for (const item of value) {
@@ -31,8 +42,10 @@ function findCheckoutUrl(value, depth = 0) {
     return "";
   }
   if (typeof value === "object") {
-    const direct = value.url || value.checkout_url || value.checkoutUrl || value.session_url || value.sessionUrl || value.stripe_url || value.redirect_url || value.redirectUrl;
-    if (looksLikeStripeUrl(direct)) return String(direct).trim();
+    const keys = ["url", "checkout_url", "checkoutUrl", "session_url", "sessionUrl", "stripe_url", "redirect_url", "redirectUrl"];
+    for (const key of keys) {
+      if (looksLikeStripeUrl(value[key])) return String(value[key]).trim();
+    }
     for (const key of ["data", "session", "checkout", "result", "payload"]) {
       const found = findCheckoutUrl(value[key], depth + 1);
       if (found) return found;
@@ -48,7 +61,7 @@ async function postCheckout(endpoint, body) {
   const response = await fetch(endpoint, {
     method: "POST",
     credentials: "include",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify(body),
   });
 
@@ -62,7 +75,7 @@ async function postCheckout(endpoint, body) {
   }
 
   const url = findCheckoutUrl(data) || extractStripeUrlFromText(text);
-  return { url, text, data, endpoint };
+  return { url, text, data, endpoint, status: response.status };
 }
 async function createCheckout({ plan, country }) {
   const body = { plan, plan_type: plan, country, billing_country: country };
@@ -73,7 +86,7 @@ async function createCheckout({ plan, country }) {
       const result = await postCheckout(endpoint, body);
       if (result.url) return result.url;
       const raw = result.text || JSON.stringify(result.data || {});
-      errors.push(`${endpoint} returned no Stripe URL: ${String(raw).slice(0, 400)}`);
+      errors.push(`${endpoint} HTTP ${result.status} returned no Stripe URL: ${String(raw).slice(0, 400)}`);
     } catch (err) {
       errors.push(`${endpoint}: ${err?.message || err}`);
     }
@@ -197,7 +210,7 @@ export default function FreshPlans({ onNavigate }) {
         </section>
         <aside className="freshCard freshCheckoutCard">
           <h2>Stripe checkout</h2>
-          <p>This uses the normal Churvox /api route and redirects to Stripe.</p>
+          <p>This uses the same Churvox auth header as the rest of the app and redirects to Stripe.</p>
           <div className="freshActions">
             <button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading}>{checkoutLoading ? "Opening Stripe..." : "Start Stripe checkout"}</button>
             <button className="freshOrange" type="button" onClick={() => choosePlan("operator")}>Recommend Operator</button>
