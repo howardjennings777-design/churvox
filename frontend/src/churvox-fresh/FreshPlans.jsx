@@ -2,7 +2,7 @@ import React from "react";
 import { useApi } from "../hooks/useApi";
 import "./freshPlans.css";
 
-const CHECKOUT_TRACE_MARKER = "checkout-js-trace-clean-json-checkout-v21";
+const CHECKOUT_TRACE_MARKER = "checkout-js-trace-direct-backend-json-v22";
 
 const plans = [
   { id: "start", backendPlan: "solo", name: "Start", price: 39, tag: "Starter", best: false, headline: "Get organised", summary: "For a solo operator who needs jobs, clients, quotes and invoices under control.", limit: "Best for one owner", features: ["Jobs, clients, quotes and invoices", "Business Pulse basics", "Business settings and GST", "Accounting Sync Add-on available"] },
@@ -57,6 +57,30 @@ function checkoutUrl(body) {
     body?.session?.url ||
     ""
   );
+}
+
+function authToken() {
+  try {
+    return window.localStorage.getItem("token") || window.localStorage.getItem("authToken") || window.localStorage.getItem("access_token") || "";
+  } catch {
+    return "";
+  }
+}
+
+function liveBackendBase() {
+  return "https://grassley-backend.onrender.com";
+}
+
+async function readJsonOrText(response) {
+  const text = await response.text();
+  if (!text) {
+    throw new Error(`Backend returned an empty response (${response.status})`);
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`Backend returned non-JSON (${response.status}): ${text.slice(0, 250)}`);
+  }
 }
 
 function tokenFromStorage() {
@@ -204,22 +228,38 @@ export default function FreshPlans({ onNavigate }) {
     setNotice("Opening Stripe checkout");
 
     try {
-      const result = await post("/billing/create-checkout-session", {
-        plan: selected.backendPlan,
-        plan_type: selected.backendPlan,
-        country: "NZ",
-        billing_country: "NZ",
-      });
-
-      if (!result?.success) {
-        throw new Error(result?.error || result?.data?.detail || result?.data?.error || "Stripe checkout could not be opened.");
+      const token = authToken();
+      if (!token) {
+        throw new Error("Your login token is missing. Log out, log back in, then try checkout again.");
       }
 
-      const body = result.data || result;
+      const response = await fetch(`${liveBackendBase()}/api/billing/create-checkout-session`, {
+        method: "POST",
+        mode: "cors",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          plan: selected.backendPlan,
+          plan_type: selected.backendPlan,
+          country: "NZ",
+          billing_country: "NZ",
+          source: "fresh_plans_direct_backend_v22",
+        }),
+      });
+
+      const body = await readJsonOrText(response);
+
+      if (!response.ok || body?.success === false) {
+        throw new Error(body?.detail || body?.error || body?.message || `Checkout failed with status ${response.status}`);
+      }
+
       const url = checkoutUrl(body);
       if (!url) {
-        const detail = body?.error || body?.detail || body?.message || JSON.stringify(body).slice(0, 300);
-        throw new Error(`Stripe checkout did not return a checkout URL. ${detail}`);
+        throw new Error(`Stripe checkout did not return a checkout URL. ${JSON.stringify(body).slice(0, 300)}`);
       }
 
       window.location.href = url;
@@ -229,6 +269,7 @@ export default function FreshPlans({ onNavigate }) {
       setCheckoutLoading(false);
     }
   }
+
 
   const planComparison = [
     ["Start", "Solo basics", "Jobs, quotes, invoices"],
@@ -326,7 +367,7 @@ export default function FreshPlans({ onNavigate }) {
 
         <aside className="freshCard freshCheckoutCard">
           <h2>Stripe checkout</h2>
-          <p>This uses the clean JSON checkout route and redirects only after Stripe returns a checkout URL.</p>
+          <p>This calls the live backend directly, gets a Stripe checkout URL as JSON, then redirects.</p>
 
           <div className="freshActions">
             <button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading}>{checkoutLoading ? "Opening Stripe..." : "Start Stripe checkout"}</button>
