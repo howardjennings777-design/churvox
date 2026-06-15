@@ -72,17 +72,11 @@ export function AuthProvider({ children }) {
   const checkAuth = useCallback(async () => {
     const token = localStorage.getItem("token");
 
-    if (!token) {
-      setUser(null);
-      setLoading(false);
-      return;
-    }
-
     try {
-      const me = await fetchMe(token);
+      const me = await fetchMe(token || undefined);
       if (!looksLikeUser(me)) throw new Error("No current user returned.");
       if (me?.has_app_access) removePlanRequiredFlag();
-      setUser({ ...me, token });
+      setUser({ ...me, ...(token ? { token } : { cookieSession: true }) });
     } catch (err) {
       if (authFailedPermanently(err)) {
         clearStoredAuth();
@@ -138,6 +132,15 @@ export function AuthProvider({ children }) {
       }
     } else {
       localStorage.removeItem("token");
+      try {
+        const cookieUser = await fetchMe();
+        if (looksLikeUser(cookieUser)) nextUser = cookieUser;
+      } catch {
+        if (!looksLikeUser(nextUser)) {
+          clearStoredAuth();
+          throw new Error("Login succeeded but Churvox could not restore your session yet. Please refresh and try again.");
+        }
+      }
     }
 
     const finalEmail = String(nextUser?.email || returnedEmail || "").trim().toLowerCase();
@@ -149,7 +152,7 @@ export function AuthProvider({ children }) {
 
     if (nextUser?.has_app_access) removePlanRequiredFlag();
 
-    setUser({ ...nextUser, ...(token ? { token } : {}) });
+    setUser({ ...nextUser, ...(token ? { token } : { cookieSession: true }) });
 
     if (finalEmail === "hello@churvox.com" || nextUser?.is_platform_owner === true || nextUser?.is_admin === true) {
       localStorage.setItem("owner_portal_session", "true");
@@ -168,7 +171,7 @@ export function AuthProvider({ children }) {
     if (token) localStorage.setItem("token", token);
     else localStorage.removeItem("token");
     localStorage.setItem(PLAN_REQUIRED_KEY, "true");
-    setUser({ ...restData, ...(token ? { token } : {}), plan: "none", has_app_access: false, billing_lock_reason: "choose_plan_in_stripe" });
+    setUser({ ...restData, ...(token ? { token } : { cookieSession: true }), plan: "none", has_app_access: false, billing_lock_reason: "choose_plan_in_stripe" });
     return { ...response.data, user: restData, ...(token ? { token } : { cookieSession: true }) };
   }, []);
 
