@@ -1,4 +1,4 @@
-// CHURVOX_FRONTEND_MIME_SERVER_20260615_CHECKOUT_PROXY_FIX
+// CHURVOX_FRONTEND_MIME_SERVER_20260616_JOB_NEW_REDIRECT_FIX
 // Serves React build with correct MIME types and no stale index caching.
 
 const http = require("http");
@@ -70,6 +70,16 @@ function sendJson(res, statusCode, body, extraHeaders = {}) {
     ...extraHeaders,
   });
   res.end(JSON.stringify(body));
+}
+
+function redirect(res, location) {
+  res.writeHead(302, {
+    Location: location,
+    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+    Pragma: "no-cache",
+    Expires: "0",
+  });
+  res.end("");
 }
 
 function readRequestBody(req, done) {
@@ -326,6 +336,11 @@ function sendFile(res, filePath) {
 const server = http.createServer((req, res) => {
   try {
     const urlPath = new URL(req.url, `http://${req.headers.host}`).pathname;
+
+    if (req.method === "GET" && (urlPath === "/jobs/new" || urlPath === "/jobs/new/")) {
+      redirect(res, "/dashboard#jobs-new");
+      return;
+    }
 
     if (urlPath === "/api" || urlPath.startsWith("/api/")) {
       proxyApiRequest(req, res, urlPath);
