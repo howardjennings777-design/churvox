@@ -1,5 +1,6 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
+import JobCreateForm from "../components/forms/JobCreateForm";
 
 const filters = ["All", "Ready", "In progress", "Blocked", "Completed"];
 
@@ -80,6 +81,12 @@ function normalizeJob(job, index) {
   };
 }
 
+function createdId(payload) {
+  const data = payload?.data ?? payload;
+  const item = data?.job || data?.item || data?.record || data;
+  return normalizeId(data?.id || data?._id || item?.id || item?._id || payload?.id || payload?._id || "");
+}
+
 export default function FreshJobs({ onNavigate }) {
   const api = useApi();
   const [jobs, setJobs] = React.useState([]);
@@ -87,6 +94,7 @@ export default function FreshJobs({ onNavigate }) {
   const [filter, setFilter] = React.useState("All");
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
+  const [createOpen, setCreateOpen] = React.useState(false);
 
   const visibleJobs = filter === "All" ? jobs : jobs.filter((job) => job.status === filter);
   const selected = jobs.find((job) => job.id === selectedId) || visibleJobs[0] || jobs[0];
@@ -131,8 +139,12 @@ export default function FreshJobs({ onNavigate }) {
     }
   }, [visibleJobs, selectedId]);
 
-  function go(path) {
-    window.location.href = path;
+  function handleJobCreated(payload) {
+    const nextId = createdId(payload);
+    setCreateOpen(false);
+    if (nextId) setSelectedId(nextId);
+    window.dispatchEvent(new Event("churvox:fresh-data-updated"));
+    loadJobs();
   }
 
   return (
@@ -248,12 +260,54 @@ export default function FreshJobs({ onNavigate }) {
         <aside className="freshCard">
           <h2>Owner actions</h2>
           <div className="freshActions">
-            <button className="freshPrimary" type="button" onClick={() => go("/jobs/new")}>New job</button>
+            <button className="freshPrimary" type="button" onClick={() => setCreateOpen(true)}>New job</button>
             <button className="freshPrimary" type="button" onClick={loadJobs}>Refresh jobs</button>
             <button className="freshGhost" type="button" onClick={() => onNavigate?.("command")}>Send issue to Command</button>
           </div>
         </aside>
       </section>
+
+      {createOpen ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Create new job"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            background: "rgba(15, 23, 42, 0.72)",
+            backdropFilter: "blur(10px)",
+            display: "grid",
+            placeItems: "center",
+            padding: "18px",
+          }}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setCreateOpen(false);
+          }}
+        >
+          <section
+            className="freshCard"
+            style={{
+              width: "min(920px, 100%)",
+              maxHeight: "92vh",
+              overflow: "auto",
+              padding: 0,
+            }}
+          >
+            <header style={{ position: "sticky", top: 0, zIndex: 2, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "18px 20px", borderBottom: "1px solid rgba(148, 163, 184, 0.24)", background: "rgba(15, 23, 42, 0.96)" }}>
+              <div>
+                <span style={{ color: "#fb923c", fontWeight: 1000, textTransform: "uppercase", letterSpacing: ".14em", fontSize: 12 }}>New job</span>
+                <h2 style={{ margin: "4px 0 0" }}>Create job without leaving Jobs</h2>
+              </div>
+              <button className="freshGhost" type="button" onClick={() => setCreateOpen(false)}>Close</button>
+            </header>
+            <div style={{ padding: "18px 20px 0" }}>
+              <JobCreateForm onCancel={() => setCreateOpen(false)} onSuccess={handleJobCreated} submitLabel="Create job" />
+            </div>
+          </section>
+        </div>
+      ) : null}
     </section>
   );
 }
