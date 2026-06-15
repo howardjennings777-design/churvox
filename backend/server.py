@@ -404,18 +404,39 @@ app.include_router(invoice_pdf_router, prefix="/api")
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://www.churvox.com").rstrip("/")
 
+ALLOWED_CORS_ORIGINS = {
+    "https://www.churvox.com",
+    "https://churvox.com",
+    "https://www.churvox.onrender.com",
+    "https://churvox.onrender.com",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+}
+
+@app.middleware("http")
+async def churvox_force_cors_headers(request: Request, call_next):
+    origin = request.headers.get("origin", "")
+    if request.method == "OPTIONS" and origin in ALLOWED_CORS_ORIGINS:
+        response = Response(status_code=204)
+    else:
+        response = await call_next(request)
+
+    if origin in ALLOWED_CORS_ORIGINS:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Vary"] = "Origin"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = request.headers.get(
+            "access-control-request-headers",
+            "Authorization,Content-Type,X-Requested-With",
+        )
+    return response
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://www.churvox.com",
-        "https://churvox.com",
-        "https://www.churvox.onrender.com",
-        "https://churvox.onrender.com",
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=list(ALLOWED_CORS_ORIGINS),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
