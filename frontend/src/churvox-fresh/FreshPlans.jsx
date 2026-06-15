@@ -2,7 +2,8 @@ import React from "react";
 import { useApi } from "../hooks/useApi";
 import "./freshPlans.css";
 
-const CHECKOUT_TRACE_MARKER = "checkout-js-trace-20260615-auth-fetch-v6";
+const CHECKOUT_TRACE_MARKER = "checkout-js-trace-20260615-direct-grassley-v8";
+const DIRECT_API = "https://grassley-backend.onrender.com/api";
 
 const plans = [
   { id: "start", backendPlan: "solo", name: "Start", price: 39, tag: "Starter", best: false, headline: "Get organised", summary: "For a solo operator who needs jobs, clients, quotes and invoices under control.", limit: "Best for one owner", features: ["Jobs, clients, quotes and invoices", "Business Pulse basics", "Business settings and GST", "Accounting Sync Add-on available"] },
@@ -81,7 +82,12 @@ async function createCheckout({ plan, country }) {
   const body = { plan, plan_type: plan, country, billing_country: country };
   const errors = [];
 
-  for (const endpoint of ["/api/billing/create-checkout-session", "/api/stripe/create-checkout-session"]) {
+  for (const endpoint of [
+    `${DIRECT_API}/billing/create-checkout-session`,
+    `${DIRECT_API}/stripe/create-checkout-session`,
+    "/api/billing/create-checkout-session",
+    "/api/stripe/create-checkout-session",
+  ]) {
     try {
       const result = await postCheckout(endpoint, body);
       if (result.url) return result.url;
@@ -210,7 +216,7 @@ export default function FreshPlans({ onNavigate }) {
         </section>
         <aside className="freshCard freshCheckoutCard">
           <h2>Stripe checkout</h2>
-          <p>This uses the same Churvox auth header as the rest of the app and redirects to Stripe.</p>
+          <p>This now tries the live grassley backend directly before using the frontend proxy.</p>
           <div className="freshActions">
             <button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading}>{checkoutLoading ? "Opening Stripe..." : "Start Stripe checkout"}</button>
             <button className="freshOrange" type="button" onClick={() => choosePlan("operator")}>Recommend Operator</button>
