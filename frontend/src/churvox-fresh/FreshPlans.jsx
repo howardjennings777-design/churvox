@@ -2,7 +2,7 @@ import React from "react";
 import { useApi } from "../hooks/useApi";
 import "./freshPlans.css";
 
-const CHECKOUT_TRACE_MARKER = "checkout-js-trace-plan-status-fix-v18";
+const CHECKOUT_TRACE_MARKER = "checkout-js-trace-form-token-checkout-v20";
 
 const plans = [
   { id: "start", backendPlan: "solo", name: "Start", price: 39, tag: "Starter", best: false, headline: "Get organised", summary: "For a solo operator who needs jobs, clients, quotes and invoices under control.", limit: "Best for one owner", features: ["Jobs, clients, quotes and invoices", "Business Pulse basics", "Business settings and GST", "Accounting Sync Add-on available"] },
@@ -57,6 +57,32 @@ function checkoutUrl(body) {
     body?.session?.url ||
     ""
   );
+}
+
+function tokenFromStorage() {
+  try {
+    return window.localStorage.getItem("token") || window.localStorage.getItem("authToken") || window.localStorage.getItem("access_token") || "";
+  } catch {
+    return "";
+  }
+}
+
+function submitCheckoutForm(fields) {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = "/api/billing/start-checkout-form";
+  form.style.display = "none";
+
+  Object.entries(fields).forEach(([name, value]) => {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = name;
+    input.value = String(value ?? "");
+    form.appendChild(input);
+  });
+
+  document.body.appendChild(form);
+  form.submit();
 }
 
 export default function FreshPlans({ onNavigate }) {
@@ -172,36 +198,27 @@ export default function FreshPlans({ onNavigate }) {
     setError("");
   }
 
-  async function startCheckout() {
+  function startCheckout() {
+    const token = tokenFromStorage();
+
+    if (!token) {
+      setNotice("Checkout needs attention");
+      setError("Your login token is missing. Log out, log back in, then start checkout again.");
+      return;
+    }
+
     setCheckoutLoading(true);
     setError("");
     setNotice("Opening Stripe checkout");
 
-    try {
-      const result = await post("/billing/create-checkout-session", {
-        plan: selected.backendPlan,
-        plan_type: selected.backendPlan,
-        country: "NZ",
-        billing_country: "NZ",
-      });
-
-      if (!result?.success) {
-        throw new Error(result?.error || result?.data?.error || "Stripe checkout could not be opened.");
-      }
-
-      const body = result.data || result;
-      const url = checkoutUrl(body);
-      if (!url) {
-        const detail = body?.error || body?.detail || body?.message || JSON.stringify(body).slice(0, 300);
-        throw new Error(`Stripe checkout did not return a checkout URL. ${detail}`);
-      }
-
-      window.location.href = url;
-    } catch (err) {
-      setNotice("Checkout needs attention");
-      setError(err?.message || "Stripe checkout could not be opened.");
-      setCheckoutLoading(false);
-    }
+    submitCheckoutForm({
+      token,
+      plan: selected.backendPlan,
+      plan_type: selected.backendPlan,
+      ui_plan: selected.id,
+      country: "NZ",
+      billing_country: "NZ",
+    });
   }
 
   const planComparison = [
@@ -300,7 +317,7 @@ export default function FreshPlans({ onNavigate }) {
 
         <aside className="freshCard freshCheckoutCard">
           <h2>Stripe checkout</h2>
-          <p>This uses the clean billing API route and redirects only after Stripe returns a checkout URL.</p>
+          <p>This uses the secure form checkout route with your login token, avoiding the empty AJAX response.</p>
 
           <div className="freshActions">
             <button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading}>{checkoutLoading ? "Opening Stripe..." : "Start Stripe checkout"}</button>
