@@ -68,8 +68,13 @@ function dateInput(date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-function simpleDate(date) {
-  return date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+function nextWeekday(dayName) {
+  const names = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  const target = names.indexOf(dayName);
+  const date = new Date();
+  const diff = (target + 7 - date.getDay()) % 7 || 7;
+  date.setDate(date.getDate() + diff);
+  return date;
 }
 
 function parseTime(text) {
@@ -82,18 +87,7 @@ function parseTime(text) {
     if (match[3] === "am" && hour === 12) hour = 0;
     return { hour, minute, label: `${Number(match[1])}:${pad(minute)} ${match[3].toUpperCase()}` };
   }
-  const plain = lower.match(/\b(\d{1,2}):(\d{2})\b/);
-  if (plain) return { hour: Number(plain[1]), minute: Number(plain[2]), label: `${plain[1]}:${plain[2]}` };
   return { hour: 9, minute: 0, label: "9:00 AM" };
-}
-
-function nextWeekday(dayName) {
-  const names = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-  const target = names.indexOf(dayName);
-  const date = new Date();
-  const diff = (target + 7 - date.getDay()) % 7 || 7;
-  date.setDate(date.getDate() + diff);
-  return date;
 }
 
 function parseSchedule(text) {
@@ -101,7 +95,6 @@ function parseSchedule(text) {
   const time = parseTime(text);
   let date = null;
   let label = "Date needed";
-
   if (/\btoday\b/.test(lower)) {
     date = new Date();
     label = "Today";
@@ -117,7 +110,6 @@ function parseSchedule(text) {
       label = next ? `Next ${titleCase(day[1])}` : titleCase(day[1]);
     }
   }
-
   if (!date) return { human: "Date needed", input: "", time: time.label };
   date.setHours(time.hour, time.minute, 0, 0);
   return { human: `${label} · ${time.label}`, input: dateInput(date), time: time.label };
@@ -127,9 +119,7 @@ function parseDueDate(text) {
   const lower = String(text || "").toLowerCase();
   const days = lower.match(/\bdue\s+in\s+(\d{1,2})\s+days?\b/);
   const date = new Date();
-  if (days) date.setDate(date.getDate() + Number(days[1]));
-  else if (/\bdue\s+tomorrow\b/.test(lower)) date.setDate(date.getDate() + 1);
-  else date.setDate(date.getDate() + 7);
+  date.setDate(date.getDate() + (days ? Number(days[1]) : 7));
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
@@ -143,9 +133,7 @@ function extractPhone(text) {
 
 function extractPrice(text) {
   const raw = String(text || "");
-  const match = raw.match(/\$\s*(\d+(?:\.\d{1,2})?)/) ||
-    raw.match(/\b(?:price|charge|amount|total|for)\s*\$?\s*(\d+(?:\.\d{1,2})?)/i) ||
-    raw.match(/\b(\d+(?:\.\d{1,2})?)\s*(?:incl|inc|including)\s*gst\b/i);
+  const match = raw.match(/\$\s*(\d+(?:\.\d{1,2})?)/) || raw.match(/\b(?:price|charge|amount|total|for)\s*\$?\s*(\d+(?:\.\d{1,2})?)/i);
   return match ? Number(match[1]) : 0;
 }
 
@@ -245,14 +233,13 @@ function gstLabel(text, kind) {
   return "Needs check";
 }
 
-function parse(kind, text) {
+function localParse(kind, text) {
   const resolvedKind = resolveKind(kind, text);
   const service = extractService(text);
   const schedule = parseSchedule(text);
   const amount = extractPrice(text);
   const payRate = extractPayRate(text);
   const address = extractAddress(text);
-  const area = extractArea(text);
   const email = extractEmail(text);
   const phone = extractPhone(text);
   const repeat = extractRepeat(text);
@@ -260,110 +247,98 @@ function parse(kind, text) {
   const clientName = extractName(text, "New customer");
   const personName = extractName(text, "New person");
   const gst = gstLabel(text, resolvedKind);
-  const dueDate = parseDueDate(text);
-  const raw = String(text || "").trim();
-  const title = resolvedKind === "person" ? personName : `${service.name} for ${clientName}`;
+  const notes = String(text || "").trim();
 
-  const base = {
+  return normaliseParsed({
     kind: resolvedKind,
-    label: TYPE_LABELS[resolvedKind] || "Action",
     clientName,
     personName,
     service: service.name,
     jobType: service.jobType,
     address,
-    area,
+    area: extractArea(text),
     email,
     phone,
     amount,
-    priceText: money(amount),
     payRate,
-    payRateText: payRate ? `$${payRate}/hr` : "Not set",
     schedule,
     repeat,
     role,
-    roleText: roleLabel(role),
     gst,
-    dueDate,
-    title,
-    notes: raw,
-    targetPage: TARGET_PAGE[resolvedKind] || "jobs",
+    dueDate: parseDueDate(text),
+    title: resolvedKind === "person" ? personName : `${service.name} for ${clientName}`,
+    notes,
+    confidence: 0.35,
+  }, kind, text);
+}
+
+function normaliseParsed(raw, kind, text) {
+  const resolvedKind = resolveKind(raw?.kind || kind, text);
+  const amount = Number(raw?.amount || raw?.price || raw?.total || 0) || 0;
+  const payRate = Number(raw?.payRate || raw?.pay_rate || 0) || 0;
+  const role = raw?.role || "worker";
+  const service = raw?.service || raw?.description || "General service";
+  const clientName = raw?.clientName || raw?.client_name || raw?.customer_name || "New customer";
+  const personName = raw?.personName || raw?.person_name || raw?.name || clientName || "New person";
+  const schedule = raw?.schedule && typeof raw.schedule === "object" ? raw.schedule : { human: "Date needed", input: "", time: "" };
+  const parsed = {
+    kind: resolvedKind,
+    label: TYPE_LABELS[resolvedKind] || "Action",
+    clientName,
+    personName,
+    service,
+    jobType: raw?.jobType || raw?.job_type || "other",
+    address: raw?.address || raw?.site_address || "",
+    area: raw?.area || raw?.region || "Wellington",
+    email: raw?.email || raw?.customer_email || raw?.client_email || "",
+    phone: raw?.phone || raw?.mobile || raw?.customer_phone || "",
+    amount,
+    priceText: raw?.priceText || money(amount),
+    payRate,
+    payRateText: raw?.payRateText || (payRate ? `$${payRate}/hr` : "Not set"),
+    schedule: { human: schedule.human || "Date needed", input: schedule.input || "", time: schedule.time || "" },
+    repeat: raw?.repeat || raw?.recurring_frequency || "one-off",
+    role,
+    roleText: raw?.roleText || roleLabel(role),
+    gst: raw?.gst || raw?.gstStatus || raw?.gst_status || (resolvedKind === "invoice" ? "GST included" : "Needs check"),
+    dueDate: raw?.dueDate || raw?.due_date || parseDueDate(text),
+    title: raw?.title || (resolvedKind === "person" ? personName : `${service} for ${clientName}`),
+    notes: raw?.notes || text || "",
+    targetPage: raw?.targetPage || TARGET_PAGE[resolvedKind] || "jobs",
+    missing: Array.isArray(raw?.missing) ? raw.missing.filter(Boolean) : [],
+    confidence: raw?.confidence ?? null,
   };
 
-  const missing = [];
-  if (resolvedKind === "client") {
-    if (!clientName || clientName === "New customer") missing.push("client name");
+  const addMissing = (name) => {
+    if (!parsed.missing.includes(name)) parsed.missing.push(name);
+  };
+  if (parsed.kind === "job") {
+    if (!parsed.clientName || parsed.clientName === "New customer") addMissing("client name");
+    if (!parsed.address) addMissing("job address");
+    if (!parsed.schedule.input) addMissing("date");
   }
-  if (resolvedKind === "job") {
-    if (!clientName || clientName === "New customer") missing.push("client name");
-    if (!address) missing.push("job address");
-    if (!schedule.input) missing.push("date");
+  if (parsed.kind === "quote") {
+    if (!parsed.clientName || parsed.clientName === "New customer") addMissing("client name");
+    if (!parsed.address) addMissing("site address");
+    if (!parsed.amount) addMissing("quote price");
   }
-  if (resolvedKind === "quote") {
-    if (!clientName || clientName === "New customer") missing.push("client name");
-    if (!address) missing.push("site address");
-    if (!amount) missing.push("quote price");
+  if (parsed.kind === "invoice") {
+    if (!parsed.clientName || parsed.clientName === "New customer") addMissing("client name");
+    if (!parsed.amount) addMissing("invoice amount");
   }
-  if (resolvedKind === "invoice") {
-    if (!clientName || clientName === "New customer") missing.push("client name");
-    if (!amount) missing.push("invoice amount");
+  if (parsed.kind === "person") {
+    if (!parsed.personName || parsed.personName === "New person") addMissing("person name");
+    if (!parsed.email) addMissing("email for invite");
   }
-  if (resolvedKind === "person") {
-    if (!personName || personName === "New person") missing.push("person name");
-    if (!email) missing.push("email for invite");
-  }
-
-  return { ...base, missing };
+  return parsed;
 }
 
 function detailsFor(parsed) {
-  if (parsed.kind === "client") {
-    return [
-      ["Client", parsed.clientName],
-      ["Email", parsed.email || "Not supplied"],
-      ["Phone", parsed.phone || "Not supplied"],
-      ["Address", parsed.address || "Not supplied"],
-      ["Notes", parsed.notes || "Not supplied"],
-    ];
-  }
-  if (parsed.kind === "person") {
-    return [
-      ["Person", parsed.personName],
-      ["Role", parsed.roleText],
-      ["Email", parsed.email || "Needed"],
-      ["Phone", parsed.phone || "Not supplied"],
-      ["Pay rate", parsed.payRateText],
-      ["Notes", parsed.notes || "Not supplied"],
-    ];
-  }
-  if (parsed.kind === "invoice") {
-    return [
-      ["Client", parsed.clientName],
-      ["Invoice line", parsed.service],
-      ["Amount", parsed.priceText],
-      ["GST", parsed.gst],
-      ["Due", parsed.dueDate],
-      ["Status", "Draft only"],
-    ];
-  }
-  if (parsed.kind === "quote") {
-    return [
-      ["Client", parsed.clientName],
-      ["Scope", parsed.service],
-      ["Address", parsed.address || "Needed"],
-      ["Price", parsed.priceText],
-      ["GST", parsed.gst],
-      ["Status", "Draft quote"],
-    ];
-  }
-  return [
-    ["Client", parsed.clientName],
-    ["Job", parsed.service],
-    ["Address", parsed.address || "Needed"],
-    ["Schedule", parsed.schedule.human],
-    ["Price", parsed.priceText],
-    ["Repeat", parsed.repeat],
-  ];
+  if (parsed.kind === "client") return [["Client", parsed.clientName], ["Email", parsed.email || "Not supplied"], ["Phone", parsed.phone || "Not supplied"], ["Address", parsed.address || "Not supplied"], ["Notes", parsed.notes || "Not supplied"]];
+  if (parsed.kind === "person") return [["Person", parsed.personName], ["Role", parsed.roleText], ["Email", parsed.email || "Needed"], ["Phone", parsed.phone || "Not supplied"], ["Pay rate", parsed.payRateText], ["Notes", parsed.notes || "Not supplied"]];
+  if (parsed.kind === "invoice") return [["Client", parsed.clientName], ["Invoice line", parsed.service], ["Amount", parsed.priceText], ["GST", parsed.gst], ["Due", parsed.dueDate], ["Status", "Draft only"]];
+  if (parsed.kind === "quote") return [["Client", parsed.clientName], ["Scope", parsed.service], ["Address", parsed.address || "Needed"], ["Price", parsed.priceText], ["GST", parsed.gst], ["Status", "Draft quote"]];
+  return [["Client", parsed.clientName], ["Job", parsed.service], ["Address", parsed.address || "Needed"], ["Schedule", parsed.schedule.human], ["Price", parsed.priceText], ["Repeat", parsed.repeat]];
 }
 
 function commandSummary(parsed) {
@@ -373,93 +348,18 @@ function commandSummary(parsed) {
 
 function payloadFor(parsed) {
   if (parsed.kind === "client") {
-    return {
-      endpoints: ["/clients"],
-      success: "Client created",
-      payload: { name: parsed.clientName, email: parsed.email || null, phone: parsed.phone || null, address: parsed.address || null, notes: parsed.notes || null },
-    };
+    return { endpoints: ["/clients"], success: "Client created", payload: { name: parsed.clientName, email: parsed.email || null, phone: parsed.phone || null, address: parsed.address || null, notes: parsed.notes || null } };
   }
   if (parsed.kind === "person") {
-    return {
-      endpoints: ["/team/workers", "/team", "/workers"],
-      success: "Person added",
-      payload: { name: parsed.personName, email: parsed.email, phone: parsed.phone || null, role: parsed.role, team_role: parsed.role, pay_rate: parsed.payRate || null, notes: parsed.notes || null },
-    };
+    return { endpoints: ["/team/workers", "/team", "/workers"], success: "Person added", payload: { name: parsed.personName, email: parsed.email, phone: parsed.phone || null, role: parsed.role, team_role: parsed.role, pay_rate: parsed.payRate || null, notes: parsed.notes || null } };
   }
   if (parsed.kind === "quote") {
-    return {
-      endpoints: ["/quotes"],
-      success: "Draft quote created",
-      payload: {
-        title: parsed.title,
-        client_name: parsed.clientName,
-        customer_name: parsed.clientName,
-        customer_email: parsed.email || null,
-        customer_phone: parsed.phone || null,
-        address: parsed.address || null,
-        site_address: parsed.address || null,
-        job_description: parsed.service,
-        description: parsed.notes,
-        notes: parsed.notes,
-        price: parsed.amount,
-        amount: parsed.amount,
-        total: parsed.amount,
-        status: "draft",
-        gst_status: parsed.gst,
-        lines: [{ description: parsed.service, amount: parsed.amount }],
-      },
-    };
+    return { endpoints: ["/quotes"], success: "Draft quote created", payload: { title: parsed.title, customer_name: parsed.clientName, client_name: parsed.clientName, customer_email: parsed.email || null, customer_phone: parsed.phone || null, address: parsed.address || null, site_address: parsed.address || null, job_description: parsed.service, description: parsed.notes, notes: parsed.notes, price: parsed.amount, amount: parsed.amount, total: parsed.amount, status: "draft", gst_status: parsed.gst, lines: [{ description: parsed.service, amount: parsed.amount }] } };
   }
   if (parsed.kind === "invoice") {
-    return {
-      endpoints: ["/invoices"],
-      success: "Draft invoice created",
-      payload: {
-        client_name: parsed.clientName,
-        customer_name: parsed.clientName,
-        customer_email: parsed.email || null,
-        customer_phone: parsed.phone || null,
-        address: parsed.address || null,
-        description: parsed.service,
-        notes: parsed.notes,
-        status: "draft",
-        amount: parsed.amount,
-        subtotal: parsed.amount,
-        total: parsed.amount,
-        gst_status: parsed.gst,
-        due_date: parsed.dueDate,
-        line_items: [{ description: parsed.service, quantity: 1, unit_price: parsed.amount, amount: parsed.amount }],
-      },
-    };
+    return { endpoints: ["/invoices"], success: "Draft invoice created", payload: { customer_name: parsed.clientName, client_name: parsed.clientName, customer_email: parsed.email || null, customer_phone: parsed.phone || null, address: parsed.address || null, description: parsed.service, notes: parsed.notes, status: "draft", amount: parsed.amount, subtotal: parsed.amount, total: parsed.amount, gst_status: parsed.gst, due_date: parsed.dueDate, line_items: [{ description: parsed.service, quantity: 1, unit_price: parsed.amount, amount: parsed.amount }] } };
   }
-  return {
-    endpoints: ["/jobs"],
-    success: "Job created",
-    payload: {
-      title: parsed.title,
-      job_name: parsed.title,
-      job_type: parsed.jobType,
-      client_name: parsed.clientName,
-      customer_name: parsed.clientName,
-      customer_email: parsed.email || null,
-      customer_phone: parsed.phone || null,
-      address: parsed.address,
-      site_address: parsed.address,
-      scheduled_date: parsed.schedule.input,
-      estimated_duration: 60,
-      country: "New Zealand",
-      region: "Wellington",
-      notes: parsed.notes,
-      description: parsed.notes,
-      status: "assigned",
-      pricing_type: parsed.amount ? "fixed" : "fixed",
-      fixed_price: parsed.amount || 0,
-      price: parsed.amount || 0,
-      is_recurring: parsed.repeat !== "one-off",
-      recurring_frequency: parsed.repeat !== "one-off" ? parsed.repeat : null,
-      recurrence_pattern: parsed.repeat !== "one-off" ? parsed.repeat : null,
-    },
-  };
+  return { endpoints: ["/jobs"], success: "Job created", payload: { title: parsed.title, job_name: parsed.title, job_type: parsed.jobType || "other", client_name: parsed.clientName, customer_name: parsed.clientName, customer_email: parsed.email || null, customer_phone: parsed.phone || null, address: parsed.address, site_address: parsed.address, scheduled_date: parsed.schedule.input, estimated_duration: 60, country: "New Zealand", region: parsed.area || "Wellington", notes: parsed.notes, description: parsed.notes, status: "assigned", pricing_type: "fixed", fixed_price: parsed.amount || 0, price: parsed.amount || 0, is_recurring: parsed.repeat !== "one-off", recurring_frequency: parsed.repeat !== "one-off" ? parsed.repeat : null, recurrence_pattern: parsed.repeat !== "one-off" ? parsed.repeat : null } };
 }
 
 async function postFirst(post, endpoints, payload) {
@@ -481,8 +381,6 @@ function sendToCommand(parsed, raw, onNavigate, setStatus) {
     const saved = window.localStorage.getItem(COMMAND_INBOX_KEY);
     const current = saved ? JSON.parse(saved) : [];
     const safeCurrent = Array.isArray(current) ? current : [];
-    const detailObject = Object.fromEntries(detailsFor(parsed));
-
     const slip = {
       id: `create-with-churvox-${Date.now()}`,
       type: parsed.kind,
@@ -492,14 +390,13 @@ function sendToCommand(parsed, raw, onNavigate, setStatus) {
       urgency: parsed.missing.length ? "High" : "Normal",
       found: `Raw note: ${raw}`,
       prepared: `${parsed.label}: ${commandSummary(parsed)}`,
-      why: parsed.missing.length ? `Missing info still needed: ${parsed.missing.join(", ")}.` : "The messy note has been turned into a clean owner-approved action.",
+      why: parsed.missing.length ? `Missing info still needed: ${parsed.missing.join(", ")}.` : "The note has been turned into a clean owner-approved action.",
       source: "Create with Churvox",
       page: parsed.targetPage,
-      details: detailObject,
+      details: Object.fromEntries(detailsFor(parsed)),
       status: "open",
       createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
-
     window.localStorage.setItem(COMMAND_INBOX_KEY, JSON.stringify([slip, ...safeCurrent].slice(0, 50)));
     window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "quick-create-command" } }));
     setStatus({ tone: "ok", text: "Sent to Command for owner approval." });
@@ -513,36 +410,86 @@ export default function FreshAiQuickCreate({ onNavigate }) {
   const { post } = useApi();
   const [kind, setKind] = React.useState("job");
   const [text, setText] = React.useState(examples.job);
+  const [aiParsed, setAiParsed] = React.useState(null);
+  const [aiInfo, setAiInfo] = React.useState({ provider: "local", ai_enabled: false });
   const [saving, setSaving] = React.useState(false);
+  const [analysing, setAnalysing] = React.useState(false);
   const [status, setStatus] = React.useState(null);
-  const parsed = React.useMemo(() => parse(kind, text), [kind, text]);
+
+  const localParsed = React.useMemo(() => localParse(kind, text), [kind, text]);
+  const parsed = aiParsed || localParsed;
   const details = React.useMemo(() => detailsFor(parsed), [parsed]);
+
+  function clearAi() {
+    setAiParsed(null);
+    setAiInfo({ provider: "local", ai_enabled: false });
+  }
 
   function loadExample(nextKind) {
     setKind(nextKind);
     setText(examples[nextKind] || examples.job);
     setStatus(null);
+    clearAi();
+  }
+
+  async function askRealAi({ quiet = false } = {}) {
+    if (!text.trim()) {
+      setStatus({ tone: "need", text: "Write what you want Churvox to create first." });
+      return null;
+    }
+    setAnalysing(true);
+    if (!quiet) setStatus(null);
+    const res = await post("/ai/quick-create/parse", { kind, text, timezone: "Pacific/Auckland" }, { timeout: 30000 });
+    setAnalysing(false);
+    if (!res?.success) {
+      if (!quiet) setStatus({ tone: "need", text: res?.error || "AI could not read this yet. Local preview is still available." });
+      return null;
+    }
+    const body = res.data || {};
+    const nextParsed = normaliseParsed(body.parsed || body.data?.parsed || {}, kind, text);
+    setAiParsed(nextParsed);
+    setAiInfo({ provider: body.provider || "ai", ai_enabled: Boolean(body.ai_enabled), model: body.model || "" });
+    if (!quiet) {
+      setStatus({ tone: body.ai_enabled ? "ok" : "need", text: body.ai_enabled ? "Real AI read it. Check the preview, then approve." : (body.message || "OpenAI key is not configured, so Churvox used safe local extraction.") });
+    }
+    return nextParsed;
+  }
+
+  async function bestParsedForCreate() {
+    if (aiParsed) return aiParsed;
+    const fromAi = await askRealAi({ quiet: true });
+    return fromAi || localParsed;
   }
 
   async function createRecord() {
     setStatus(null);
-    if (parsed.missing.length) {
-      setStatus({ tone: "need", text: `Churvox needs ${parsed.missing.join(", ")} before it can safely create this.` });
+    const ready = await bestParsedForCreate();
+    if (ready.missing.length) {
+      setStatus({ tone: "need", text: `Churvox needs ${ready.missing.join(", ")} before it can safely create this.` });
       return;
     }
-
-    const plan = payloadFor(parsed);
+    const plan = payloadFor(ready);
     setSaving(true);
     const res = await postFirst(post, plan.endpoints, plan.payload);
     setSaving(false);
-
     if (!res.success) {
       setStatus({ tone: "need", text: `${res.error || "Create failed"}. You can still send this to Command for review.` });
       return;
     }
+    window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: `${ready.kind}-created`, source: "quick-create" } }));
+    setStatus({ tone: "ok", text: `${plan.success}. Open ${TYPE_LABELS[ready.kind] || "the area"} to check it.` });
+  }
 
-    window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: `${parsed.kind}-created`, source: "quick-create" } }));
-    setStatus({ tone: "ok", text: `${plan.success}. Open ${TYPE_LABELS[parsed.kind] || "the area"} to check it.` });
+  function handleText(value) {
+    setText(value);
+    setStatus(null);
+    clearAi();
+  }
+
+  function handleKind(value) {
+    setKind(value);
+    setStatus(null);
+    clearAi();
   }
 
   return (
@@ -551,14 +498,13 @@ export default function FreshAiQuickCreate({ onNavigate }) {
         <div>
           <span>Create with Churvox</span>
           <h1>Tell Churvox what to add.</h1>
-          <p>Choose the area, type normal messy notes, check the preview, then approve. This is the fast admin box for clients, jobs, quotes, invoices and people.</p>
+          <p>Choose the area, type normal messy notes, ask real AI to structure it, then approve. Churvox creates the record only after owner approval.</p>
         </div>
-
         <div className="freshQuickAiStats">
           <div><b>{parsed.label}</b><small>target</small></div>
           <div><b>{parsed.priceText}</b><small>money</small></div>
           <div><b>{parsed.missing.length}</b><small>missing</small></div>
-          <div><b>Approve</b><small>owner control</small></div>
+          <div><b>{aiInfo.ai_enabled ? "Real AI" : "Safe"}</b><small>{aiInfo.provider}</small></div>
         </div>
       </div>
 
@@ -572,15 +518,16 @@ export default function FreshAiQuickCreate({ onNavigate }) {
 
           <label className="freshQuickAiSelector">
             <span>Create type</span>
-            <select value={kind} onChange={(event) => { setKind(event.target.value); setStatus(null); }}>
+            <select value={kind} onChange={(event) => handleKind(event.target.value)}>
               {CREATE_TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
           </label>
 
-          <textarea value={text} onChange={(event) => { setText(event.target.value); setStatus(null); }} placeholder="Example: Bob Smith, 24 Jackson Street, lawns next Friday 9am, $65, fortnightly, phone 021..." />
+          <textarea value={text} onChange={(event) => handleText(event.target.value)} placeholder="Example: Bob Smith, 24 Jackson Street, lawns next Friday 9am, $65, fortnightly, phone 021..." />
 
           <div className="freshQuickAiButtons">
-            <button type="button" onClick={createRecord} disabled={saving}>{saving ? "Creating…" : `Create ${parsed.label}`}</button>
+            <button type="button" onClick={() => askRealAi()} disabled={analysing}>{analysing ? "Asking AI…" : "Ask real AI"}</button>
+            <button type="button" onClick={createRecord} disabled={saving || analysing}>{saving ? "Creating…" : `Approve + create ${parsed.label}`}</button>
             <button type="button" onClick={() => sendToCommand(parsed, text, onNavigate, setStatus)}>Send to Command</button>
             <button type="button" onClick={() => loadExample("client")}>Client example</button>
             <button type="button" onClick={() => loadExample("job")}>Job example</button>
@@ -592,9 +539,9 @@ export default function FreshAiQuickCreate({ onNavigate }) {
 
         <article className="freshQuickAiPanel">
           <header>
-            <span>AI preview</span>
+            <span>{aiInfo.ai_enabled ? "Real AI preview" : "Safe preview"}</span>
             <h2>{parsed.label} draft</h2>
-            <p>Nothing risky is hidden. You see what Churvox found before it creates or sends anything.</p>
+            <p>{aiInfo.ai_enabled ? "AI has structured your messy note. Check it before approving." : "This is the safe fallback preview. Use Ask real AI for smarter reading."}</p>
           </header>
 
           <div className="freshQuickAiResult">
@@ -623,7 +570,7 @@ export default function FreshAiQuickCreate({ onNavigate }) {
           ) : null}
 
           <div className="freshQuickAiButtons">
-            <button type="button" onClick={createRecord} disabled={saving}>{saving ? "Creating…" : `Approve + create ${parsed.label}`}</button>
+            <button type="button" onClick={createRecord} disabled={saving || analysing}>{saving ? "Creating…" : `Approve + create ${parsed.label}`}</button>
             <button type="button" onClick={() => onNavigate?.(parsed.targetPage)}>Open {parsed.targetPage}</button>
           </div>
         </article>
