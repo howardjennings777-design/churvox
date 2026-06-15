@@ -156,34 +156,43 @@ async def _save_from_session(session):
     return {"success": True, "plan": plan, "country": country, "matched": matched}
 
 
+async def _retrieve_and_save(session_id):
+    app = _server()
+    stripe = getattr(app, "stripe", None)
+    secret = os.environ.get("STRIPE_SECRET_KEY", "").strip()
+    if not session_id:
+        return {"success": False, "error": "Missing Stripe session id"}
+    if not stripe or not secret:
+        return {"success": False, "error": "Stripe not ready"}
+    try:
+        stripe.api_key = secret
+        session = stripe.checkout.Session.retrieve(session_id)
+    except Exception as exc:
+        return {"success": False, "error": f"Could not verify Stripe session: {exc}"}
+    return await _save_from_session(session)
+
+
 def install(router):
     if getattr(router, "churvox_checkout_return_installed", False):
         return
 
+    @router.get("/billing/checkout-save")
+    async def checkout_save_get(request: Request):
+        session_id = _clean(request.query_params.get("session_id"))
+        return await _retrieve_and_save(session_id)
+
+    @router.post("/billing/checkout-save")
+    async def checkout_save_post(payload: dict, request: Request):
+        session_id = _clean((payload or {}).get("session_id") or request.query_params.get("session_id"))
+        return await _retrieve_and_save(session_id)
+
     @router.get("/billing/checkout-return")
     async def checkout_return(request: Request):
-        app = _server()
-        stripe = getattr(app, "stripe", None)
         frontend = _frontend()
         session_id = _clean(request.query_params.get("session_id"))
-
-        if not session_id:
-            return RedirectResponse(f"{frontend}/plans?checkout=save_failed&reason=missing_session", status_code=303)
-
-        secret = os.environ.get("STRIPE_SECRET_KEY", "").strip()
-        if not stripe or not secret:
-            return RedirectResponse(f"{frontend}/plans?checkout=save_failed&reason=stripe_not_ready", status_code=303)
-
-        try:
-            stripe.api_key = secret
-            session = stripe.checkout.Session.retrieve(session_id)
-        except Exception:
-            return RedirectResponse(f"{frontend}/plans?checkout=save_failed&reason=session_verify_failed", status_code=303)
-
-        saved = await _save_from_session(session)
+        saved = await _retrieve_and_save(session_id)
         if not saved.get("success"):
             return RedirectResponse(f"{frontend}/plans?checkout=save_failed&reason=metadata_save_failed", status_code=303)
-
         return RedirectResponse(
             f"{frontend}/plans?checkout=saved&plan={saved.get('plan')}&country={saved.get('country')}",
             status_code=303,
