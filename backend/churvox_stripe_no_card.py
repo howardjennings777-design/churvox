@@ -10,6 +10,14 @@ from __future__ import annotations
 
 import os
 
+try:
+    import churvox_auth_login_safety  # noqa: F401
+except Exception:
+    try:
+        from . import churvox_auth_login_safety  # noqa: F401
+    except Exception:
+        pass
+
 
 PLAN_ALIASES = {
     "start": "solo",
