@@ -3,14 +3,14 @@
   top: 0;
   z-index: 2500;
   display: grid;
-  grid-template-columns: minmax(150px, 220px) minmax(260px, 360px) minmax(260px, 1fr) auto;
+  grid-template-columns: minmax(150px, 220px) minmax(240px, 320px) minmax(220px, 1fr) auto;
   align-items: center;
   gap: 10px;
   margin-bottom: 12px;
   padding: 10px;
   border: 1px solid rgba(15,23,42,.12);
   border-radius: 22px;
-  background: rgba(255,250,240,.86);
+  background: rgba(255,250,240,.90);
   backdrop-filter: blur(14px);
   box-shadow: 0 14px 32px rgba(2,6,23,.10);
 }
@@ -31,6 +31,14 @@
   line-height: 1;
   letter-spacing: -.04em;
   margin-top: 3px;
+}
+
+.freshTopbar > div:first-child small {
+  display: block;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .freshSearch {
@@ -64,11 +72,10 @@
 
 .freshTopActions {
   display: flex;
-  flex-wrap: wrap;
   gap: 7px;
   align-items: center;
   justify-content: flex-end;
-  max-width: 720px;
+  white-space: nowrap;
 }
 
 .freshTopActions button {
@@ -89,48 +96,27 @@
 }
 
 .freshTopActions button.freshHeaderPill {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 36px;
-  border: 1px solid rgba(15,23,42,.12);
-  background: #fff;
-  color: #111827;
-  box-shadow: 0 6px 16px rgba(2,6,23,.07);
+  display: none !important;
 }
 
-.freshTopActions button.freshHeaderPill i {
-  display: grid;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 7px;
-  background: #020617;
-  color: #fff;
-  font-style: normal;
-  font-size: 9px;
-}
-
-.freshTopActions button.freshHeaderPill.active {
-  border-color: rgba(249,115,22,.45);
-  background: #fff7ed;
-  color: #9a3412;
-}
-
-.freshTopActions button.freshHeaderPill.active i {
-  background: #f97316;
-  color: #111827;
-}
-
-@media (max-width: 1150px) {
+@media (max-width: 1200px) {
   .freshTopbar {
-    grid-template-columns: 1fr;
-    align-items: stretch;
+    grid-template-columns: minmax(150px, 220px) minmax(220px, 300px) 1fr;
+  }
+
+  .freshSearch {
+    grid-column: 2 / 4;
   }
 
   .freshTopActions {
-    max-width: none;
-    justify-content: flex-start;
+    grid-column: 1 / 4;
+    justify-content: flex-end;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .freshTopActions::-webkit-scrollbar {
+    display: none;
   }
 }
 
@@ -140,6 +126,11 @@
     grid-template-columns: 1fr;
     gap: 8px;
     border-radius: 20px;
+  }
+
+  .freshSearch,
+  .freshTopActions {
+    grid-column: auto;
   }
 
   .freshSearch {
@@ -152,11 +143,12 @@
   }
 
   .freshTopActions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    justify-content: flex-start;
+    overflow-x: auto;
   }
 
   .freshTopActions button {
-    width: 100%;
+    flex: 0 0 auto;
   }
 }
