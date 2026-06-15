@@ -19,6 +19,11 @@ function clearStoredAuth() {
   localStorage.removeItem("platform_owner_email");
 }
 
+function authFailedPermanently(err) {
+  const status = err?.response?.status;
+  return status === 401 || status === 403;
+}
+
 function pickToken(payload = {}) {
   return (
     payload?.token ||
@@ -69,9 +74,13 @@ export function AuthProvider({ children }) {
       if (!looksLikeUser(me)) throw new Error("No current user returned.");
       if (me?.has_app_access) removePlanRequiredFlag();
       setUser({ ...me, ...(token ? { token } : {}) });
-    } catch {
-      clearStoredAuth();
-      setUser(null);
+    } catch (err) {
+      if (authFailedPermanently(err)) {
+        clearStoredAuth();
+        setUser(null);
+      } else {
+        setUser((prev) => prev || null);
+      }
     } finally { setLoading(false); }
   }, [fetchMe]);
 
