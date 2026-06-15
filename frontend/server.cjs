@@ -104,6 +104,10 @@ function normalizeCheckoutProxyResponse(req, res, urlPath) {
     requestHeaders["x-forwarded-proto"] = "https";
     requestHeaders["x-churvox-proxy"] = "frontend-checkout-normalizer";
     requestHeaders["content-length"] = String(bodyBuffer.length);
+    if (requestHeaders.authorization || requestHeaders.Authorization) {
+      delete requestHeaders.cookie;
+      delete requestHeaders.Cookie;
+    }
 
     const proxyReq = client.request(
       target,
@@ -212,6 +216,10 @@ function proxyApiRequest(req, res, urlPath) {
   requestHeaders["x-forwarded-host"] = req.headers.host || "";
   requestHeaders["x-forwarded-proto"] = "https";
   requestHeaders["x-churvox-proxy"] = "frontend";
+  if (requestHeaders.authorization || requestHeaders.Authorization) {
+    delete requestHeaders.cookie;
+    delete requestHeaders.Cookie;
+  }
 
   const proxyReq = client.request(
     target,
@@ -228,6 +236,35 @@ function proxyApiRequest(req, res, urlPath) {
           ? responseHeaders["set-cookie"]
           : [responseHeaders["set-cookie"]];
         responseHeaders["set-cookie"] = cookies.map(rewriteSetCookieHeader);
+      }
+
+      if (req.method === "POST" && urlPath === "/api/auth/login") {
+        const chunks = [];
+        proxyRes.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+        proxyRes.on("end", () => {
+          const bodyText = Buffer.concat(chunks).toString("utf-8");
+          let statusCode = proxyRes.statusCode || 502;
+
+          try {
+            const data = JSON.parse(bodyText || "{}");
+            const detail = String(data.detail || data.message || "").toLowerCase();
+            const hasRealLogin =
+              Boolean(data.token || data.access_token || data.auth_token) ||
+              Boolean(data.user?.email || data.email || data.id || data._id);
+
+            if (statusCode < 400 && !hasRealLogin && (
+              detail.includes("invalid email") ||
+              detail.includes("invalid password") ||
+              detail.includes("please complete your account setup")
+            )) {
+              statusCode = detail.includes("please complete") ? 403 : 401;
+            }
+          } catch {}
+
+          res.writeHead(statusCode, responseHeaders);
+          res.end(bodyText);
+        });
+        return;
       }
 
       res.writeHead(proxyRes.statusCode || 502, responseHeaders);
