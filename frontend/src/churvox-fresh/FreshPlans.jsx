@@ -2,7 +2,8 @@ import React from "react";
 import { useApi } from "../hooks/useApi";
 import "./freshPlans.css";
 
-const CHECKOUT_TRACE_MARKER = "checkout-js-trace-20260615-freshplans-v1";
+const CHECKOUT_TRACE_MARKER = "checkout-js-trace-20260615-form-submit-v2";
+const CHECKOUT_FORM_URL = "https://churvox-backend.onrender.com/api/billing/start-checkout-form";
 
 const plans = [
   { id: "start", backendPlan: "solo", name: "Start", price: 39, tag: "Starter", best: false, headline: "Get organised", summary: "For a solo operator who needs jobs, clients, quotes and invoices under control.", limit: "Best for one owner", features: ["Jobs, clients, quotes and invoices", "Business Pulse basics", "Business settings and GST", "Accounting Sync Add-on available"] },
@@ -17,9 +18,42 @@ function unwrap(result) { return result?.data ?? result; }
 function planByUiId(id) { return plans.find((plan) => plan.id === id) || plans[2]; }
 function uiPlanFromBackend(value) { return backendToUiPlan[String(value || "pro").toLowerCase()] || "operator"; }
 function money(value) { return `$${Number(value || 0).toFixed(0)}`; }
+function checkoutToken() {
+  try {
+    return window.localStorage.getItem("token") || window.localStorage.getItem("access_token") || window.localStorage.getItem("churvox_token") || "";
+  } catch {
+    return "";
+  }
+}
+function submitCheckoutForm({ token, plan, country }) {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = CHECKOUT_FORM_URL;
+  form.style.display = "none";
+
+  const fields = {
+    token,
+    access_token: token,
+    plan,
+    ui_plan: plan,
+    country,
+    trace: CHECKOUT_TRACE_MARKER,
+  };
+
+  Object.entries(fields).forEach(([name, value]) => {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = name;
+    input.value = String(value || "");
+    form.appendChild(input);
+  });
+
+  document.body.appendChild(form);
+  form.submit();
+}
 
 export default function FreshPlans({ onNavigate }) {
-  const { get, post } = useApi();
+  const { get } = useApi();
   const [currentPlan, setCurrentPlan] = React.useState("operator");
   const [selectedPlan, setSelectedPlan] = React.useState("operator");
   const [growthPacks, setGrowthPacks] = React.useState(0);
@@ -63,20 +97,17 @@ export default function FreshPlans({ onNavigate }) {
     setError("");
   }
 
-  async function startCheckout() {
+  function startCheckout() {
     setCheckoutLoading(true);
     setError("");
-    try {
-      const response = unwrap(await post("/billing/create-checkout-session", { plan: selected.backendPlan, country: "NZ", trace: CHECKOUT_TRACE_MARKER }));
-      const checkoutUrl = response?.url || response?.checkout_url;
-      if (!checkoutUrl) throw new Error("Checkout URL was not returned.");
-      window.location.href = checkoutUrl;
-    } catch (err) {
-      setError(err?.message || "Stripe checkout could not start. Check Stripe environment settings.");
-      setNotice("Checkout needs Stripe settings");
-    } finally {
+    const token = checkoutToken();
+    if (!token) {
       setCheckoutLoading(false);
+      setNotice("Checkout needs login");
+      setError("Your login token is missing. Log out, log back in, then start Stripe checkout again.");
+      return;
     }
+    submitCheckoutForm({ token, plan: selected.backendPlan, country: "NZ" });
   }
 
   const planComparison = [["Start", "Solo basics", "Jobs, quotes, invoices"], ["Crew", "Small team", "Workers and dispatch"], ["Operator", "Recommended", "AI admin prepared for approval"], ["Command", "Scale", "Accounting sync, payroll and advanced roles"]];
@@ -135,9 +166,9 @@ export default function FreshPlans({ onNavigate }) {
         </section>
         <aside className="freshCard freshCheckoutCard">
           <h2>Stripe checkout</h2>
-          <p>This uses the original backend checkout endpoint.</p>
+          <p>This uses a direct browser form redirect to Stripe, avoiding CORS and the frontend proxy.</p>
           <div className="freshActions">
-            <button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading}>{checkoutLoading ? "Starting checkout..." : "Start Stripe checkout"}</button>
+            <button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading}>{checkoutLoading ? "Opening Stripe..." : "Start Stripe checkout"}</button>
             <button className="freshOrange" type="button" onClick={() => choosePlan("operator")}>Recommend Operator</button>
             <button className="freshGhost" type="button" onClick={loadPlan}>Reload backend plan</button>
           </div>
