@@ -1,27 +1,18 @@
 """
-Churvox runtime safety patches.
+Churvox runtime Stripe checkout repair.
 
-This file is imported automatically by Python before server.py. It keeps a few
-production fixes alive and, most importantly, replaces the brittle Stripe plan
-checkout route after server.py loads so /api/billing/create-checkout-session
-always reaches a working Stripe Checkout creator.
+Loaded automatically by Python before server.py. This patches the live FastAPI app
+so both normal server:app and churvox_start:app can create Stripe checkout.
 """
 
 from __future__ import annotations
 
-import os
-import sys
 import importlib.abc
 import importlib.machinery
+import os
+import sys
 from datetime import datetime, timezone
-
-try:
-    import builtins
-    from fastapi import Body
-    if not hasattr(builtins, "Body"):
-        builtins.Body = Body
-except Exception:
-    pass
+from urllib.parse import parse_qs
 
 try:
     from pathlib import Path
@@ -38,65 +29,25 @@ try:
 except Exception:
     pass
 
-try:
-    from pymongo.errors import DuplicateKeyError
-    from pymongo.collection import Collection
-    _original_update_one = Collection.update_one
+_checkout_patched = False
+_checkout_finding = False
 
-    class _IgnoredDuplicateResult:
-        acknowledged = True
-        matched_count = 1
-        modified_count = 0
-        upserted_id = None
-        raw_result = {"ok": 1, "n": 1, "nModified": 0}
-
-    def _churvox_safe_update_one(self, *args, **kwargs):
-        try:
-            return _original_update_one(self, *args, **kwargs)
-        except DuplicateKeyError as exc:
-            message = str(exc).lower()
-            if getattr(self, "name", "") == "users" and "howardjennings77@gmail.com" in message:
-                return _IgnoredDuplicateResult()
-            raise
-
-    Collection.update_one = _churvox_safe_update_one
-except Exception:
-    pass
-
-_cv_checkout_patched = False
-_cv_checkout_finding = False
-
-PLAN_ALIASES = {
-    "start": "solo",
-    "solo": "solo",
-    "crew": "team",
-    "team": "team",
-    "operator": "pro",
-    "pro": "pro",
-    "command": "enterprise",
-    "enterprise": "enterprise",
-}
+PLAN_ALIASES = {"start": "solo", "solo": "solo", "crew": "team", "team": "team", "operator": "pro", "pro": "pro", "command": "enterprise", "enterprise": "enterprise"}
 PLAN_LABELS = {"solo": "Start", "team": "Crew", "pro": "Operator", "enterprise": "Command"}
 PLAN_ENV_NAMES = {"solo": "START", "team": "CREW", "pro": "OPERATOR", "enterprise": "COMMAND"}
 LEGACY_ENV_NAMES = {"solo": "SOLO", "team": "TEAM", "pro": "PRO", "enterprise": "ENTERPRISE"}
-COUNTRY_ALIASES = {
-    "NZ": "NZ", "NZL": "NZ", "NEW ZEALAND": "NZ",
-    "AU": "AU", "AUS": "AU", "AUSTRALIA": "AU",
-    "US": "US", "USA": "US", "UNITED STATES": "US", "UNITED STATES OF AMERICA": "US",
-    "UK": "UK", "GB": "UK", "GBR": "UK", "UNITED KINGDOM": "UK",
-}
-PLAN_PRICES = {
-    "solo": {"NZ": 39, "AU": 39, "US": 29, "UK": 25},
-    "team": {"NZ": 89, "AU": 89, "US": 69, "UK": 59},
-    "pro": {"NZ": 149, "AU": 149, "US": 119, "UK": 99},
-    "enterprise": {"NZ": 299, "AU": 299, "US": 239, "UK": 199},
-}
+COUNTRY_ALIASES = {"NZ": "NZ", "NZL": "NZ", "NEW ZEALAND": "NZ", "AU": "AU", "AUS": "AU", "AUSTRALIA": "AU", "US": "US", "USA": "US", "UNITED STATES": "US", "UNITED STATES OF AMERICA": "US", "UK": "UK", "GB": "UK", "GBR": "UK", "UNITED KINGDOM": "UK"}
+PLAN_PRICES = {"solo": {"NZ": 39, "AU": 39, "US": 29, "UK": 25}, "team": {"NZ": 89, "AU": 89, "US": 69, "UK": 59}, "pro": {"NZ": 149, "AU": 149, "US": 119, "UK": 99}, "enterprise": {"NZ": 299, "AU": 299, "US": 239, "UK": 199}}
 CURRENCIES = {"NZ": "nzd", "AU": "aud", "US": "usd", "UK": "gbp"}
-OWNER_BILLING_ROLES = {"employer", "admin", "owner", "business_owner", "superadmin", "manager", "office_admin"}
+OWNER_ROLES = {"employer", "admin", "owner", "business_owner", "superadmin", "manager", "office_admin"}
 
 
 def _s(value):
     return "" if value is None else str(value)
+
+
+def _plan(value=None):
+    return PLAN_ALIASES.get(_s(value or "pro").strip().lower(), "pro")
 
 
 def _country(value=None):
@@ -104,9 +55,9 @@ def _country(value=None):
     return COUNTRY_ALIASES.get(raw, "NZ")
 
 
-def _plan(value=None):
-    raw = _s(value or "pro").strip().lower()
-    return PLAN_ALIASES.get(raw, "pro")
+def _amount_cents(plan, country):
+    amount = PLAN_PRICES.get(plan, PLAN_PRICES["pro"]).get(country, PLAN_PRICES.get(plan, PLAN_PRICES["pro"])["NZ"])
+    return int(round(float(amount) * 100))
 
 
 def _price_id(plan, country):
@@ -120,128 +71,134 @@ def _price_id(plan, country):
         value = os.environ.get(key, "").strip()
         if value:
             return value, key
-    return "", candidates[0]
+    return "", "dynamic_price_data"
 
 
-def _amount_cents(plan, country):
-    amount = PLAN_PRICES.get(plan, PLAN_PRICES["pro"]).get(country, PLAN_PRICES.get(plan, PLAN_PRICES["pro"])["NZ"])
-    return int(round(float(amount) * 100))
+def _checkout_line_item(plan, country):
+    price_id, source = _price_id(plan, country)
+    if price_id:
+        return {"price": price_id, "quantity": 1}, source
+    return {
+        "price_data": {
+            "currency": CURRENCIES.get(country, "nzd"),
+            "unit_amount": _amount_cents(plan, country),
+            "recurring": {"interval": "month"},
+            "product_data": {"name": f"Churvox {PLAN_LABELS.get(plan, 'Operator')}", "description": "Churvox monthly subscription plan"},
+        },
+        "quantity": 1,
+    }, source
 
 
-def _remove_old_checkout_routes(app):
-    kept = []
-    for route in list(app.router.routes):
-        path = getattr(route, "path", "")
-        methods = getattr(route, "methods", set()) or set()
-        if path == "/api/billing/create-checkout-session" and "POST" in methods:
-            continue
-        kept.append(route)
-    app.router.routes = kept
+def _remove_checkout_routes(app):
+    old_paths = {"/api/billing/create-checkout-session", "/api/billing/start-checkout", "/api/billing/start-checkout-form"}
+    app.router.routes = [route for route in list(app.router.routes) if getattr(route, "path", "") not in old_paths]
+
+
+def _billing_allowed(user):
+    role = _s((user or {}).get("role") or "employer").strip().lower()
+    return role in OWNER_ROLES or bool((user or {}).get("is_admin") or (user or {}).get("is_platform_owner"))
+
+
+async def _user_from_token(module, token):
+    token = _s(token).strip()
+    if not token:
+        raise module.HTTPException(status_code=401, detail="Missing checkout token")
+    try:
+        payload = module.jwt.decode(token, module.JWT_SECRET, algorithms=[module.JWT_ALGORITHM])
+        if payload.get("type") != "access":
+            raise module.HTTPException(status_code=401, detail="Invalid token type")
+        user = await module.db.users.find_one({"_id": module.ObjectId(payload["sub"])})
+        if not user:
+            raise module.HTTPException(status_code=401, detail="User not found")
+        user["id"] = str(user["_id"])
+        if "business_id" in user and isinstance(user["business_id"], module.ObjectId):
+            user["business_id"] = str(user["business_id"])
+        elif "business_id" not in user:
+            user["business_id"] = user["id"]
+        user.pop("_id", None)
+        user.pop("password_hash", None)
+        return user
+    except Exception as exc:
+        if exc.__class__.__name__ == "HTTPException":
+            raise
+        raise module.HTTPException(status_code=401, detail="Invalid checkout token")
+
+
+async def _make_checkout(module, request, payload):
+    payload = dict(payload or {})
+    token = payload.get("token") or payload.get("access_token")
+    user = await _user_from_token(module, token) if token else await module.get_current_user(request)
+    if not _billing_allowed(user):
+        raise module.HTTPException(status_code=403, detail="Only business owners and admins can start billing checkout")
+
+    secret = os.environ.get("STRIPE_SECRET_KEY", "").strip()
+    if not secret:
+        raise module.HTTPException(status_code=500, detail="Stripe secret key not configured in Render")
+    module.stripe.api_key = secret
+
+    plan = _plan(payload.get("plan") or payload.get("plan_type") or payload.get("ui_plan") or payload.get("backend_plan") or payload.get("legacy_plan"))
+    country = _country(payload.get("country") or payload.get("region") or payload.get("billing_country"))
+    line_item, price_source = _checkout_line_item(plan, country)
+    frontend = (os.environ.get("FRONTEND_URL") or "https://www.churvox.com").rstrip("/")
+    metadata = {"user_id": _s(user.get("id") or user.get("_id")), "business_id": _s(user.get("business_id") or user.get("id")), "plan": plan, "country": country, "source": "sitecustomize_checkout"}
+
+    try:
+        session = module.stripe.checkout.Session.create(
+            mode="subscription",
+            customer_email=user.get("email"),
+            line_items=[line_item],
+            subscription_data={"trial_period_days": 14, "metadata": metadata},
+            metadata=metadata,
+            success_url=f"{frontend}/billing/success?session_id={{CHECKOUT_SESSION_ID}}&plan={plan}&country={country}",
+            cancel_url=f"{frontend}/dashboard?checkout=cancelled&plan={plan}&country={country}#plans",
+        )
+    except Exception as exc:
+        raise module.HTTPException(status_code=500, detail=f"Stripe checkout error: {str(exc)}")
+
+    try:
+        await module.db.checkout_debug.insert_one({**metadata, "session_id": session.id, "price_source": price_source, "created_at": datetime.now(timezone.utc)})
+    except Exception:
+        pass
+
+    return session, plan, country, price_source
 
 
 def _patch_server(module):
-    global _cv_checkout_patched
-    if _cv_checkout_patched or not hasattr(module, "app"):
+    global _checkout_patched
+    if _checkout_patched or not hasattr(module, "app"):
         return
-    _cv_checkout_patched = True
+    _checkout_patched = True
 
     app = module.app
-    db = getattr(module, "db", None)
-    HTTPException = module.HTTPException
+    _remove_checkout_routes(app)
+    Body = module.Body
     Request = module.Request
-    stripe = module.stripe
-    get_current_user = module.get_current_user
+    RedirectResponse = module.RedirectResponse
 
-    _remove_old_checkout_routes(app)
+    @app.get("/api/billing/start-checkout")
+    async def start_checkout(request: Request, plan: str = "pro", country: str = "NZ"):
+        session, _plan_value, _country_value, _source = await _make_checkout(module, request, {"plan": plan, "country": country})
+        return RedirectResponse(session.url, status_code=303)
+
+    @app.post("/api/billing/start-checkout-form")
+    async def start_checkout_form(request: Request):
+        raw = (await request.body()).decode("utf-8", errors="ignore")
+        payload = {key: values[0] for key, values in parse_qs(raw).items() if values}
+        session, _plan_value, _country_value, _source = await _make_checkout(module, request, payload)
+        return RedirectResponse(session.url, status_code=303)
 
     @app.post("/api/billing/create-checkout-session")
-    async def churvox_checkout_session(payload: dict, request: Request):
-        user = await get_current_user(request)
-        role = _s(user.get("role") or "employer").strip().lower()
-        if role not in OWNER_BILLING_ROLES and not user.get("is_admin") and not user.get("is_platform_owner"):
-            raise HTTPException(status_code=403, detail="Only business owners and admins can start billing checkout")
-
-        secret = os.environ.get("STRIPE_SECRET_KEY", "").strip()
-        if not secret:
-            raise HTTPException(status_code=500, detail="Stripe secret key not configured in Render")
-        stripe.api_key = secret
-
-        payload = dict(payload or {})
-        plan = _plan(payload.get("plan") or payload.get("plan_type") or payload.get("ui_plan") or payload.get("backend_plan") or payload.get("legacy_plan"))
-        country = _country(payload.get("country") or payload.get("region") or payload.get("billing_country"))
-        frontend = (os.environ.get("FRONTEND_URL") or "https://www.churvox.com").rstrip("/")
-        price_id, price_source = _price_id(plan, country)
-
-        if price_id:
-            line_item = {"price": price_id, "quantity": 1}
-        else:
-            line_item = {
-                "price_data": {
-                    "currency": CURRENCIES.get(country, "nzd"),
-                    "unit_amount": _amount_cents(plan, country),
-                    "recurring": {"interval": "month"},
-                    "product_data": {
-                        "name": f"Churvox {PLAN_LABELS.get(plan, 'Operator')}",
-                        "description": "Churvox monthly subscription plan",
-                    },
-                },
-                "quantity": 1,
-            }
-            price_source = "dynamic_price_data"
-
-        metadata = {
-            "user_id": _s(user.get("id") or user.get("_id")),
-            "business_id": _s(user.get("business_id") or user.get("id")),
-            "plan": plan,
-            "country": country,
-            "source": "sitecustomize_checkout_patch",
-        }
-
-        try:
-            session = stripe.checkout.Session.create(
-                mode="subscription",
-                customer_email=user.get("email"),
-                line_items=[line_item],
-                subscription_data={"trial_period_days": 14, "metadata": metadata},
-                metadata=metadata,
-                success_url=f"{frontend}/billing/success?session_id={{CHECKOUT_SESSION_ID}}&plan={plan}&country={country}",
-                cancel_url=f"{frontend}/dashboard?checkout=cancelled&plan={plan}&country={country}#plans",
-            )
-        except Exception as exc:
-            raise HTTPException(status_code=500, detail=f"Stripe checkout error: {str(exc)}")
-
-        if db is not None:
-            try:
-                await db.checkout_debug.insert_one({
-                    "business_id": metadata["business_id"],
-                    "user_id": metadata["user_id"],
-                    "plan": plan,
-                    "country": country,
-                    "session_id": session.id,
-                    "price_source": price_source,
-                    "role": role,
-                    "created_at": datetime.now(timezone.utc),
-                })
-            except Exception:
-                pass
-
-        return {
-            "success": True,
-            "url": session.url,
-            "checkout_url": session.url,
-            "session_id": session.id,
-            "plan": plan,
-            "country": country,
-            "price_source": price_source,
-        }
+    async def create_checkout_session(request: Request, payload: dict = Body(default_factory=dict)):
+        session, plan, country, price_source = await _make_checkout(module, request, payload)
+        return {"success": True, "url": session.url, "checkout_url": session.url, "session_id": session.id, "plan": plan, "country": country, "price_source": price_source}
 
     try:
-        module.logger.info("[Churvox] Emergency Stripe checkout route installed")
+        module.logger.info("[Churvox] Stripe checkout routes installed by sitecustomize")
     except Exception:
         pass
 
 
-class _CheckoutPatchLoader(importlib.abc.Loader):
+class _CheckoutLoader(importlib.abc.Loader):
     def __init__(self, wrapped):
         self.wrapped = wrapped
 
@@ -255,26 +212,26 @@ class _CheckoutPatchLoader(importlib.abc.Loader):
         _patch_server(module)
 
 
-class _CheckoutPatchFinder(importlib.abc.MetaPathFinder):
+class _CheckoutFinder(importlib.abc.MetaPathFinder):
     def find_spec(self, fullname, path, target=None):
-        global _cv_checkout_finding
-        if fullname != "server" or _cv_checkout_finding:
+        global _checkout_finding
+        if fullname != "server" or _checkout_finding:
             return None
-        _cv_checkout_finding = True
+        _checkout_finding = True
         try:
             spec = importlib.machinery.PathFinder.find_spec(fullname, path)
             if spec and spec.loader:
-                spec.loader = _CheckoutPatchLoader(spec.loader)
+                spec.loader = _CheckoutLoader(spec.loader)
                 return spec
             return None
         finally:
-            _cv_checkout_finding = False
+            _checkout_finding = False
 
 
 try:
     if "server" in sys.modules:
         _patch_server(sys.modules["server"])
     else:
-        sys.meta_path.insert(0, _CheckoutPatchFinder())
+        sys.meta_path.insert(0, _CheckoutFinder())
 except Exception:
     pass
