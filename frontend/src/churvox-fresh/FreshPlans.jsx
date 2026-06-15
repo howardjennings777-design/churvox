@@ -3,7 +3,7 @@ import { useApi } from "../hooks/useApi";
 import "./freshPlans.css";
 
 const PLAN_REQUIRED_KEY = "churvox_plan_choice_required";
-const CHECKOUT_API_URL = "https://churvox-backend.onrender.com/api/billing/create-checkout-session";
+const CHECKOUT_API_URL = "/api/billing/create-checkout-session";
 const regions = {
   NZ: { label: "New Zealand", short: "NZ", currency: "NZD", prefix: "$", tax: "+ GST", taxName: "GST", taxRate: 0.15, taxIncluded: "incl. GST" },
   AU: { label: "Australia", short: "AU", currency: "AUD", prefix: "A$", tax: "+ GST", taxName: "GST", taxRate: 0.1, taxIncluded: "incl. GST" },
@@ -31,12 +31,19 @@ function taxBreakdown(value, regionCode) { const r = regions[regionCode] || regi
 function planRequired() { try { const p = new URLSearchParams(window.location.search || ""); return p.get("must_choose_plan") === "1" || window.localStorage.getItem(PLAN_REQUIRED_KEY) === "true"; } catch { return false; } }
 function storedCheckoutToken() { try { return window.localStorage.getItem("token") || window.localStorage.getItem("access_token") || window.localStorage.getItem("churvox_token") || ""; } catch { return ""; } }
 async function readCheckoutResponse(response) { const text = await response.text(); if (!text) return null; try { return JSON.parse(text); } catch { return text; } }
-function checkoutMessage(payload, status) { if (!payload) return `Stripe checkout could not start (${status}).`; if (typeof payload === "string") return payload.slice(0, 300) || `Stripe checkout could not start (${status}).`; return payload.detail || payload.error || payload.message || payload?.data?.detail || payload?.data?.error || `Stripe checkout could not start (${status}).`; }
+function checkoutMessage(payload, status) {
+  if (typeof payload === "string" && payload.trim().startsWith("<!")) return "The /api proxy is returning the website instead of the backend. The frontend service must run node server.cjs, not static hosting.";
+  if (!payload) return `Stripe checkout could not start (${status}).`;
+  if (typeof payload === "string") return payload.slice(0, 300) || `Stripe checkout could not start (${status}).`;
+  return payload.detail || payload.error || payload.message || payload?.data?.detail || payload?.data?.error || `Stripe checkout could not start (${status}).`;
+}
 async function createCheckout(payload, token) {
+  const headers = { "Content-Type": "application/json" };
+  if (token) headers.Authorization = `Bearer ${token}`;
   const response = await fetch(CHECKOUT_API_URL, {
     method: "POST",
-    credentials: "omit",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    credentials: "include",
+    headers,
     body: JSON.stringify(payload),
   });
   const body = await readCheckoutResponse(response);
@@ -65,11 +72,6 @@ export default function FreshPlans({ onNavigate }) {
     setCheckoutLoading(true);
     setError("");
     const token = storedCheckoutToken();
-    if (!token) {
-      setCheckoutLoading(false);
-      setError("Your login token is missing. Log out, log back in, then start Stripe checkout again.");
-      return;
-    }
     try {
       const checkoutUrl = await createCheckout({ plan: selected.backendPlan, country: selectedRegion }, token);
       window.location.assign(checkoutUrl);
