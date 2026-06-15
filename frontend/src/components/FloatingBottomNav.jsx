@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 const NAV_ITEMS = [
-  ["Command Board", "/dashboard", "CM", "Command"],
+  ["Command Board", "/command-board", "CM", "Command"],
   ["Jobs", "/jobs-board", "JB", "Work"],
   ["Crew Dispatch", "/dispatch-board", "DP", "Work"],
   ["Clients", "/clients-board", "CL", "Work"],
@@ -17,7 +17,7 @@ const NAV_ITEMS = [
 ];
 
 const COMMAND_PATHS = [
-  "/dashboard", "/overview",
+  "/command-board", "/dashboard", "/overview",
   "/jobs-board", "/jobs",
   "/dispatch-board", "/dispatch", "/crew-map",
   "/clients-board", "/clients",
@@ -36,6 +36,7 @@ function isCommandPath(pathname) {
 }
 
 function isActive(pathname, href) {
+  if (href === "/command-board") return pathname === "/command-board";
   if (href === "/dashboard") return pathname === "/dashboard" || pathname === "/overview";
   if (href === "/jobs-board") return pathname === "/jobs-board" || pathname === "/jobs" || pathname.startsWith("/jobs/");
   if (href === "/dispatch-board") return pathname === "/dispatch-board" || pathname === "/dispatch" || pathname === "/crew-map";
