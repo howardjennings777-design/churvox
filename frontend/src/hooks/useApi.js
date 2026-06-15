@@ -43,12 +43,26 @@ export function useApi() {
         }
         const response = await axios(config);
         const body = response.data;
+
+        if (body === "" || body === null || body === undefined) {
+          const msg = `Empty response from API: ${method} ${endpoint}`;
+          setError(msg);
+          return {
+            success: false,
+            error: msg,
+            status: response.status,
+            headers: response.headers,
+            data: body,
+          };
+        }
+
         if (body && body.success === false) {
           const msg = backendErrorMessage(body);
           setError(msg);
-          return { success: false, error: msg, data: body };
+          return { success: false, error: msg, data: body, status: response.status };
         }
-        return { success: true, data: body };
+
+        return { success: true, data: body, status: response.status };
       } catch (err) {
         const isTimeout = err?.code === "ECONNABORTED" || /timeout/i.test(err?.message || "");
         const errorMessage = isTimeout
