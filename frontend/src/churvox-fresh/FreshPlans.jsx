@@ -4,6 +4,7 @@ import API_BASE from "../lib/apiBase";
 import "./freshPlans.css";
 
 const PLAN_REQUIRED_KEY = "churvox_plan_choice_required";
+const DIRECT_BACKEND_API = "https://churvox-backend.onrender.com/api";
 const regions = {
   NZ: { label: "New Zealand", short: "NZ", currency: "NZD", prefix: "$", tax: "+ GST", taxName: "GST", taxRate: 0.15, taxIncluded: "incl. GST" },
   AU: { label: "Australia", short: "AU", currency: "AUD", prefix: "A$", tax: "+ GST", taxName: "GST", taxRate: 0.1, taxIncluded: "incl. GST" },
@@ -33,6 +34,20 @@ function backendMessage(payload, fallback = "Stripe checkout could not start.") 
 function authHeaders() { try { const token = window.localStorage.getItem("token"); return token ? { Authorization: `Bearer ${token}` } : {}; } catch { return {}; } }
 function extractCheckoutUrl(payload) { return payload?.url || payload?.checkout_url || payload?.checkoutUrl || payload?.data?.url || payload?.data?.checkout_url || ""; }
 async function readCheckoutResponse(response) { const text = await response.text(); if (!text) return null; try { return JSON.parse(text); } catch { return text; } }
+async function createCheckoutAt(apiBase, payload) {
+  const response = await fetch(`${apiBase}/billing/create-checkout-session`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(payload),
+  });
+  const body = await readCheckoutResponse(response);
+  const checkoutUrl = extractCheckoutUrl(body);
+  if (!response.ok || !checkoutUrl) {
+    throw new Error(`${apiBase || "/api"}: ${backendMessage(body, `Stripe checkout could not start (${response.status}).`)}`);
+  }
+  return checkoutUrl;
+}
 export default function FreshPlans({ onNavigate }) {
   const { get } = useApi();
   const [currentPlan, setCurrentPlan] = React.useState("none");
@@ -53,21 +68,25 @@ export default function FreshPlans({ onNavigate }) {
   async function startCheckout() {
     setCheckoutLoading(true);
     setError("");
+    const payload = { plan: selected.backendPlan, country: selectedRegion, ui_plan: selected.id };
+    const attempts = [];
+    const apiBase = `${API_BASE}/api`;
     try {
-      const response = await fetch(`${API_BASE}/api/billing/create-checkout-session`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
-        body: JSON.stringify({ plan: selected.backendPlan, country: selectedRegion }),
-      });
-      const payload = await readCheckoutResponse(response);
-      const checkoutUrl = extractCheckoutUrl(payload);
-      if (!response.ok || !checkoutUrl) {
-        throw new Error(backendMessage(payload, `Stripe checkout could not start (${response.status}).`));
-      }
-      window.location.href = checkoutUrl;
+      attempts.push(apiBase || "/api");
+      const checkoutUrl = await createCheckoutAt(apiBase, payload);
+      window.location.assign(checkoutUrl);
+      return;
     } catch (err) {
-      setError(err?.message || "Stripe checkout could not start. Please contact support.");
+      attempts.push(err?.message || String(err));
+    }
+    try {
+      attempts.push(DIRECT_BACKEND_API);
+      const checkoutUrl = await createCheckoutAt(DIRECT_BACKEND_API, payload);
+      window.location.assign(checkoutUrl);
+      return;
+    } catch (err) {
+      attempts.push(err?.message || String(err));
+      setError(attempts.filter(Boolean).join(" | "));
     } finally {
       setCheckoutLoading(false);
     }
