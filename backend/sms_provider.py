@@ -20,6 +20,12 @@ from dataclasses import dataclass, field
 from typing import Optional
 from datetime import datetime, timezone
 
+try:
+    from churvox_stripe_no_card import install_no_card_trial_defaults
+    install_no_card_trial_defaults()
+except Exception:
+    pass
+
 logger = logging.getLogger(__name__)
 _LAUNCH_ROUTES_WIRED = False
 
