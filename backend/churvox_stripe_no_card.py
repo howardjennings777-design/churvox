@@ -4,6 +4,7 @@ This is loaded early by sms_provider.py.  Keep it small and deliberate:
 - trial subscriptions do not require a card upfront
 - Stripe Checkout uses dynamic exclusive prices so $149 stays $149 + GST,
   instead of depending on old Stripe Price IDs that may be GST-inclusive
+- plan checkout returns to billing confirmation first, then setup
 """
 
 from __future__ import annotations
@@ -79,6 +80,20 @@ def _dynamic_line_item(plan, country):
     }
 
 
+def _frontend_url():
+    return os.environ.get("FRONTEND_URL", "https://www.churvox.com").rstrip("/")
+
+
+def _is_plan_checkout(metadata):
+    if not metadata:
+        return False
+    if metadata.get("addon") or str(metadata.get("purpose") or "").startswith("addon"):
+        return False
+    return bool(metadata.get("plan") or metadata.get("plan_type")) and bool(
+        metadata.get("business_id") or metadata.get("user_id")
+    )
+
+
 def install_no_card_trial_defaults():
     try:
         import stripe
@@ -96,9 +111,19 @@ def install_no_card_trial_defaults():
             plan = _normal_plan(metadata.get("plan") or metadata.get("plan_type"))
             country = _country(metadata.get("country") or metadata.get("billing_country"))
 
-            # Always use dynamic exclusive prices for Churvox plans. This avoids
-            # old dashboard Price IDs that may be GST-inclusive.
-            kwargs["line_items"] = [_dynamic_line_item(plan, country)]
+            if _is_plan_checkout(metadata):
+                # Always use dynamic exclusive prices for Churvox plans. This avoids
+                # old dashboard Price IDs that may be GST-inclusive.
+                kwargs["line_items"] = [_dynamic_line_item(plan, country)]
+
+                # Correct first-run flow:
+                # Plans -> Stripe -> Billing confirmation -> Setup -> Business Pulse.
+                frontend = _frontend_url()
+                kwargs["success_url"] = (
+                    f"{frontend}/billing/success?session_id={{CHECKOUT_SESSION_ID}}"
+                    f"&plan={plan}&country={country}&first_setup=1"
+                )
+                kwargs["cancel_url"] = f"{frontend}/plans?checkout=cancelled&plan={plan}&country={country}"
 
             kwargs["payment_method_collection"] = "if_required"
             kwargs["automatic_tax"] = {"enabled": True}
