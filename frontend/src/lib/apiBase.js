@@ -6,6 +6,8 @@ function stripApiSuffix(value) {
   return clean(value).replace(/\/api$/i, "");
 }
 
+const PRODUCTION_BACKEND_URL = "https://grassley-backend.onrender.com";
+
 function configuredBackend() {
   const env = typeof process !== "undefined" && process.env ? process.env : {};
   return stripApiSuffix(
@@ -23,12 +25,11 @@ function isChurvoxHost(host = "") {
 
 function resolveApiBase() {
   if (typeof window !== "undefined" && isChurvoxHost(window.location.hostname)) {
-    return "";
+    return PRODUCTION_BACKEND_URL;
   }
 
-  return configuredBackend();
+  return configuredBackend() || "";
 }
 
 export const API_BASE = resolveApiBase();
-
 export default API_BASE;
