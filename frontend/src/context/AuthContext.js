@@ -65,7 +65,19 @@ function permanentAuthError(err) {
 }
 
 function messageFrom(data = {}) {
+  if (typeof data === "string") {
+    if (data.trim().startsWith("<!doctype") || data.trim().startsWith("<html")) return "";
+    return data.slice(0, 140);
+  }
   return data?.detail || data?.message || data?.error || data?.data?.detail || data?.data?.message || data?.data?.error || "";
+}
+
+function responseShapeMessage(response) {
+  const data = response?.data;
+  const type = Array.isArray(data) ? "array" : typeof data;
+  const keys = data && typeof data === "object" ? Object.keys(data).slice(0, 12).join(",") : "none";
+  const preview = typeof data === "string" ? data.slice(0, 140).replace(/\s+/g, " ") : "";
+  return `Login response had no usable account. status=${response?.status || "unknown"}; type=${type}; keys=${keys}${preview ? `; body=${preview}` : ""}`;
 }
 
 export function AuthProvider({ children }) {
@@ -130,7 +142,7 @@ export function AuthProvider({ children }) {
       try {
         nextUser = await fetchMe(token || undefined);
       } catch {
-        throw new Error(serverMessage || "Login response did not include a usable account. Please try again.");
+        throw new Error(serverMessage || responseShapeMessage(response));
       }
     }
 
