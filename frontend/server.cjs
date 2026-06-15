@@ -1,4 +1,4 @@
-// CHURVOX_FRONTEND_MIME_SERVER_20260530
+// CHURVOX_FRONTEND_MIME_SERVER_20260615_CHECKOUT_PROXY_FIX
 // Serves React build with correct MIME types and no stale index caching.
 
 const http = require("http");
@@ -63,7 +63,137 @@ function rewriteSetCookieHeader(value) {
     .replace(/;\s*Domain=\.onrender\.com/gi, "");
 }
 
+function sendJson(res, statusCode, body, extraHeaders = {}) {
+  res.writeHead(statusCode, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "no-store",
+    ...extraHeaders,
+  });
+  res.end(JSON.stringify(body));
+}
+
+function readRequestBody(req, done) {
+  const chunks = [];
+  req.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+  req.on("end", () => done(null, Buffer.concat(chunks)));
+  req.on("error", (err) => done(err));
+}
+
+function normalizeCheckoutProxyResponse(req, res, urlPath) {
+  readRequestBody(req, (readErr, bodyBuffer) => {
+    if (readErr) {
+      console.error("CHECKOUT_PROXY_READ_ERROR", readErr);
+      sendJson(res, 502, { success: false, detail: "Could not read checkout request body." });
+      return;
+    }
+
+    const base = backendBaseUrl();
+    let target;
+    try {
+      target = new URL(req.url, base);
+    } catch (err) {
+      console.error("CHECKOUT_PROXY_BAD_TARGET", err);
+      sendJson(res, 502, { success: false, detail: "Checkout proxy target is invalid." });
+      return;
+    }
+
+    const client = target.protocol === "http:" ? http : https;
+    const requestHeaders = filterHeaders(req.headers);
+    requestHeaders.host = target.host;
+    requestHeaders["x-forwarded-host"] = req.headers.host || "";
+    requestHeaders["x-forwarded-proto"] = "https";
+    requestHeaders["x-churvox-proxy"] = "frontend-checkout-normalizer";
+    requestHeaders["content-length"] = String(bodyBuffer.length);
+
+    const proxyReq = client.request(
+      target,
+      {
+        method: req.method,
+        headers: requestHeaders,
+        timeout: 25000,
+      },
+      (proxyRes) => {
+        const responseHeaders = filterHeaders(proxyRes.headers);
+        const chunks = [];
+
+        proxyRes.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+        proxyRes.on("end", () => {
+          const statusCode = proxyRes.statusCode || 502;
+          const location = responseHeaders.location || responseHeaders.Location || "";
+          const responseText = Buffer.concat(chunks).toString("utf-8");
+
+          let cookieHeaders = {};
+          if (responseHeaders["set-cookie"]) {
+            const cookies = Array.isArray(responseHeaders["set-cookie"])
+              ? responseHeaders["set-cookie"]
+              : [responseHeaders["set-cookie"]];
+            cookieHeaders["set-cookie"] = cookies.map(rewriteSetCookieHeader);
+          }
+
+          if (statusCode >= 300 && statusCode < 400 && location) {
+            sendJson(res, 200, {
+              success: true,
+              url: location,
+              checkout_url: location,
+              proxied_redirect: true,
+              status: statusCode,
+            }, cookieHeaders);
+            return;
+          }
+
+          if (!responseText.trim()) {
+            sendJson(res, statusCode >= 400 ? statusCode : 502, {
+              success: false,
+              detail: "Checkout backend returned an empty response.",
+              status: statusCode,
+              location: location || null,
+              endpoint: urlPath,
+            }, cookieHeaders);
+            return;
+          }
+
+          const contentType = responseHeaders["content-type"] || responseHeaders["Content-Type"] || "";
+          if (contentType.includes("application/json")) {
+            res.writeHead(statusCode, {
+              ...responseHeaders,
+              "Cache-Control": "no-store",
+            });
+            res.end(responseText);
+            return;
+          }
+
+          sendJson(res, statusCode >= 400 ? statusCode : 502, {
+            success: false,
+            detail: "Checkout backend returned non-JSON response.",
+            status: statusCode,
+            location: location || null,
+            body: responseText.slice(0, 500),
+          }, cookieHeaders);
+        });
+      }
+    );
+
+    proxyReq.on("timeout", () => {
+      proxyReq.destroy(new Error(`Checkout proxy timeout for ${urlPath}`));
+    });
+
+    proxyReq.on("error", (err) => {
+      console.error("CHECKOUT_PROXY_ERROR", err);
+      if (!res.headersSent) {
+        sendJson(res, 502, { success: false, detail: "Checkout API is temporarily unreachable." });
+      }
+    });
+
+    proxyReq.end(bodyBuffer);
+  });
+}
+
 function proxyApiRequest(req, res, urlPath) {
+  if (req.method === "POST" && urlPath === "/api/billing/create-checkout-session") {
+    normalizeCheckoutProxyResponse(req, res, urlPath);
+    return;
+  }
+
   const base = backendBaseUrl();
   let target;
 
