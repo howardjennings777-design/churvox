@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { normalizeRole, getDefaultRoute } from "@/lib/roles";
+import { normalizeRole, getDefaultRoute, isWorkerRole, isPayrollRole } from "@/lib/roles";
 import { Nav } from "../marketing/ExecutiveHomePage";
 import "./AuthPublicCommand.css";
 
@@ -66,13 +66,23 @@ const submitStyle = {
 const getPostLoginPath = (payload = {}) => {
   const user = payload?.user || payload || {};
   const email = String(user?.email || payload?.email || "").trim().toLowerCase();
+  const role = normalizeRole(user?.role || payload?.role);
   const isPlatformOwner =
     email === "hello@churvox.com" ||
     user?.is_platform_owner === true ||
     user?.is_admin === true;
 
   if (isPlatformOwner) return "/admin";
-  return getDefaultRoute(normalizeRole(user?.role || payload?.role));
+  if (isWorkerRole(role) || isPayrollRole(role)) return getDefaultRoute(role);
+
+  const plan = String(user?.plan || payload?.plan || "").trim().toLowerCase();
+  const status = String(user?.subscription_status || payload?.subscription_status || "").trim().toLowerCase();
+  const explicitlyLocked = user?.has_app_access === false || payload?.has_app_access === false;
+  const noPlan = !plan || plan === "none" || plan === "free" || plan === "null" || plan === "undefined";
+  const inactiveBilling = !status || status === "none" || status === "cancelled" || status === "canceled" || status === "incomplete" || status === "past_due";
+
+  if (explicitlyLocked || noPlan || inactiveBilling) return "/plans";
+  return getDefaultRoute(role);
 };
 
 const loginLooksValid = (result = {}) => {
@@ -123,13 +133,14 @@ export default function LoginPage() {
         return;
       }
 
+      let fresh = null;
       try {
-        await checkAuth?.();
+        fresh = await checkAuth?.();
       } catch {
         // Login already succeeded. The app shell can refresh again after navigation.
       }
 
-      navigate(getPostLoginPath(result), { replace: true });
+      navigate(getPostLoginPath(fresh || result), { replace: true });
     } catch (err) {
       setError(
         err?.response?.data?.detail ||
