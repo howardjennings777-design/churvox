@@ -108,34 +108,52 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (email, password) => {
     clearStoredAuth();
     setUser(null);
-    const response = await axios.post(`${API_BASE}/api/auth/login`, { email, password }, { withCredentials: true, timeout: AUTH_TIMEOUT_MS });
-    const token = pickToken(response.data);
-    const fallbackUser = pickUser(response.data);
 
-    if (!token) {
+    const cleanEmail = String(email || "").trim().toLowerCase();
+
+    const response = await axios.post(
+      `${API_BASE}/api/auth/login`,
+      { email: cleanEmail, password },
+      { withCredentials: true, timeout: AUTH_TIMEOUT_MS }
+    );
+
+    const token = pickToken(response.data);
+    let nextUser = pickUser(response.data);
+    const returnedEmail = String(nextUser?.email || response.data?.email || "").trim().toLowerCase();
+
+    if (!token && (!returnedEmail || returnedEmail !== cleanEmail)) {
       clearStoredAuth();
       throw new Error(response?.data?.detail || response?.data?.message || "Invalid email or password.");
     }
 
-    localStorage.setItem("token", token);
-
-    let nextUser = fallbackUser;
-    try {
-      nextUser = await fetchMe(token);
-    } catch {
-      if (!looksLikeUser(nextUser)) {
-        throw new Error("Login succeeded but Churvox could not load your account yet. Please refresh and try again.");
+    if (token) {
+      localStorage.setItem("token", token);
+      try {
+        nextUser = await fetchMe(token);
+      } catch {
+        if (!looksLikeUser(nextUser)) {
+          clearStoredAuth();
+          throw new Error("Login succeeded but Churvox could not load your account yet. Please refresh and try again.");
+        }
       }
     }
 
+    const finalEmail = String(nextUser?.email || returnedEmail || "").trim().toLowerCase();
+
+    if (!finalEmail || finalEmail !== cleanEmail) {
+      clearStoredAuth();
+      throw new Error("Login session mismatch. Please try again.");
+    }
+
     if (nextUser?.has_app_access) removePlanRequiredFlag();
+
     setUser({ ...nextUser, ...(token ? { token } : {}) });
 
-    const cleanEmail = String(email || nextUser?.email || "").toLowerCase();
-    if (cleanEmail === "hello@churvox.com" || nextUser?.is_platform_owner === true || nextUser?.is_admin === true) {
+    if (finalEmail === "hello@churvox.com" || nextUser?.is_platform_owner === true || nextUser?.is_admin === true) {
       localStorage.setItem("owner_portal_session", "true");
-      localStorage.setItem("platform_owner_email", cleanEmail);
+      localStorage.setItem("platform_owner_email", finalEmail);
     }
+
     return { ...response.data, user: nextUser, ...nextUser, ...(token ? { token } : { cookieSession: true }) };
   }, [fetchMe]);
 
