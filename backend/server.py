@@ -5388,6 +5388,154 @@ async def get_logic_business_records(record_type: str, current_user: dict = Depe
     return {"success": True, "record_type": record_type, "items": items, "records": items, "data": items}
 
 
+
+# =========================
+# CHURVOX_CLEAN_AUTH_FINAL_20260616
+# Hard replace login/me routes so login never returns 200 with an empty body.
+# =========================
+
+def _churvox_auth_route_path(route):
+    return str(getattr(route, "path", "") or "")
+
+api_router.routes = [
+    route for route in getattr(api_router, "routes", [])
+    if not (
+        _churvox_auth_route_path(route).endswith("/auth/login")
+        or _churvox_auth_route_path(route).endswith("/auth/me")
+    )
+]
+
+def _churvox_password_ok(plain_password: str, user_doc: dict):
+    fields = ["password_hash", "hashed_password", "passwordHash", "bcrypt_hash", "pass_hash"]
+    for field in fields:
+        stored = user_doc.get(field)
+        if isinstance(stored, str) and stored.strip():
+            try:
+                if bcrypt.checkpw(str(plain_password or "").encode("utf-8"), stored.encode("utf-8")):
+                    return True, field
+            except Exception:
+                pass
+
+    for field in ["password", "plain_password"]:
+        stored = user_doc.get(field)
+        if isinstance(stored, str) and stored and stored == plain_password:
+            return True, field
+
+    return False, None
+
+def _churvox_trial_expired(user_doc: dict):
+    trial_ends_at = user_doc.get("trial_ends_at")
+    if not trial_ends_at:
+        return False
+    try:
+        if isinstance(trial_ends_at, str):
+            trial_ends_at = datetime.fromisoformat(trial_ends_at.replace("Z", "+00:00"))
+        if trial_ends_at.tzinfo is None:
+            trial_ends_at = trial_ends_at.replace(tzinfo=timezone.utc)
+        return trial_ends_at < datetime.now(timezone.utc)
+    except Exception:
+        return False
+
+def _churvox_has_app_access(user_doc: dict):
+    role = str(user_doc.get("role") or "").strip().lower()
+    if role in {"worker", "payroll", "payroll_user"}:
+        return True
+
+    plan = str(user_doc.get("plan") or "").strip().lower()
+    if not plan or plan in {"none", "free", "null", "undefined"}:
+        return False
+
+    status = str(user_doc.get("subscription_status") or "trialing").strip().lower()
+    if status in {"active", "paid"}:
+        return True
+    return status == "trialing" and not _churvox_trial_expired(user_doc)
+
+def _churvox_clean_user_payload(user_doc: dict, token: str = None):
+    user_id = str(user_doc["_id"])
+    business_id = str(user_doc.get("business_id") or user_doc["_id"])
+    payload = {
+        "id": user_id,
+        "email": str(user_doc.get("email") or "").strip().lower(),
+        "name": user_doc.get("name") or user_doc.get("business_name") or "Churvox user",
+        "business_name": user_doc.get("business_name"),
+        "role": user_doc.get("role") or "employer",
+        "plan": user_doc.get("plan") or "none",
+        "subscription_status": user_doc.get("subscription_status") or "none",
+        "trial_ends_at": user_doc.get("trial_ends_at"),
+        "email_verified": user_doc.get("email_verified", True),
+        "business_id": business_id,
+        "gst_rate": user_doc.get("gst_rate", DEFAULT_GST_RATE),
+        "trade_type": user_doc.get("trade_type", "other"),
+        "has_app_access": _churvox_has_app_access(user_doc),
+    }
+    if token:
+        payload["token"] = token
+    payload = make_json_safe(payload)
+    return {"success": True, **payload, "user": payload}
+
+@api_router.post("/auth/login")
+async def churvox_clean_auth_login(request: Request, response: Response):
+    clear_auth_cookies(response)
+
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+
+    email = str(body.get("email") or "").strip().lower()
+    password = str(body.get("password") or "")
+
+    if not email or not password:
+        response.status_code = 400
+        return {"success": False, "detail": "Enter your email and password."}
+
+    user_doc = await db.users.find_one({"email": email})
+    password_ok = False
+    matched_field = None
+
+    if user_doc:
+        password_ok, matched_field = _churvox_password_ok(password, user_doc)
+
+    if not user_doc or not password_ok:
+        clear_auth_cookies(response)
+        response.status_code = 401
+        return {"success": False, "detail": "Invalid email or password"}
+
+    if user_doc.get("status") == "invited":
+        clear_auth_cookies(response)
+        response.status_code = 403
+        return {"success": False, "detail": "Please complete your account setup using the invite link sent to your email."}
+
+    user_id = str(user_doc["_id"])
+    access_token = create_access_token(user_id, email)
+    refresh_token = create_refresh_token(user_id)
+    set_auth_cookies(response, access_token, refresh_token)
+
+    updates = {}
+    if matched_field and matched_field != "password_hash":
+        try:
+            updates["password_hash"] = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+        except Exception:
+            pass
+
+    if not user_doc.get("business_id"):
+        updates["business_id"] = user_doc["_id"]
+
+    if updates:
+        await db.users.update_one({"_id": user_doc["_id"]}, {"$set": updates})
+        user_doc.update(updates)
+
+    return _churvox_clean_user_payload(user_doc, access_token)
+
+@api_router.get("/auth/me")
+async def churvox_clean_auth_me(request: Request):
+    user = await get_current_user(request)
+    user_doc = await db.users.find_one({"_id": ObjectId(user["id"])})
+    if not user_doc:
+        raise HTTPException(status_code=401, detail="User not found")
+    return _churvox_clean_user_payload(user_doc, user.get("token"))
+
+
 # Include router once, after every route above has been registered.
 app.include_router(api_router)
 
