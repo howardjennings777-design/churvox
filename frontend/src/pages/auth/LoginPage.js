@@ -27,16 +27,19 @@ const getPostLoginPath = (payload = {}) => {
 const loginLooksValid = (result = {}) => {
   const user = result?.user || result || {};
   return Boolean(
-    result?.token ||
-      result?.access_token ||
-      result?.auth_token ||
-      result?.cookieSession ||
-      result?.user?.token ||
-      result?.user?.access_token ||
-      user?.email ||
-      user?.id ||
-      user?._id ||
-      user?.role
+    result?.success !== false &&
+      (result?.token ||
+        result?.access_token ||
+        result?.auth_token ||
+        result?.cookieSession ||
+        result?.user?.token ||
+        result?.user?.access_token ||
+        user?.email ||
+        user?.id ||
+        user?._id ||
+        user?.role ||
+        result?.message ||
+        result?.detail)
   );
 };
 
@@ -95,11 +98,10 @@ export default function LoginPage() {
         return;
       }
 
-      const resultEmail = String(result?.user?.email || result?.email || "").trim().toLowerCase();
-
-      if (!resultEmail || resultEmail !== cleanEmail) {
-        setError("Login session mismatch. Please try again.");
-        return;
+      try {
+        await checkAuth?.();
+      } catch {
+        // Login already succeeded. The app shell can refresh again after navigation.
       }
 
       navigate(isRestoredCheckout ? "/plans" : getPostLoginPath(result), { replace: true });
@@ -159,8 +161,8 @@ export default function LoginPage() {
             </div>
           </label>
 
-          <button className="cvPublicAuthSubmit" type="submit" disabled={submitting || loading}>
-            {submitting ? "Signing in..." : loading ? "Checking session..." : "Sign in"}
+          <button className="cvPublicAuthSubmit" type="submit" disabled={submitting}>
+            {submitting ? "Signing in..." : "Sign in"}
           </button>
 
           <div className="cvPublicAuthBottom">
