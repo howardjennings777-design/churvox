@@ -3635,8 +3635,8 @@ async def start_checkout_form(request: Request):
             line_items=[line_item],
             subscription_data={"trial_period_days": 14, "metadata": metadata},
             metadata=metadata,
-            success_url=f"{frontend}/billing/success?session_id={{CHECKOUT_SESSION_ID}}&plan={plan}&country={country}",
-            cancel_url=f"{frontend}/dashboard?checkout=cancelled&plan={plan}&country={country}#plans",
+            success_url=f"{frontend}/billing/success?session_id={{CHECKOUT_SESSION_ID}}&plan={plan}&country={country}&first_setup=1",
+            cancel_url=f"{frontend}/plans?checkout=cancelled&plan={plan}&country={country}",
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Stripe checkout error: {str(e)}")
@@ -3670,7 +3670,7 @@ async def create_checkout_session(payload: CreateCheckoutSessionRequest, request
     session = stripe.checkout.Session.create(
         mode="subscription",
         line_items=[{"price": price_id, "quantity": 1}],
-        success_url=f"{FRONTEND_URL}/billing/success?session_id={{CHECKOUT_SESSION_ID}}&plan={plan_value}&country={country_code}",
+        success_url=f"{FRONTEND_URL}/billing/success?session_id={{CHECKOUT_SESSION_ID}}&plan={plan_value}&country={country_code}&first_setup=1",
         cancel_url=f"{FRONTEND_URL}/billing/cancel",
         customer_email=user["email"],
         metadata={
@@ -3952,7 +3952,7 @@ async def create_checkout_session(payload: dict, request: Request, user=Depends(
                 "price": price_id,
                 "quantity": 1,
             }],
-            success_url=f"{frontend_url}/billing?success=1&session_id={CHECKOUT_SESSION_ID}&plan={plan_type}&country={country_code}",
+            success_url=f"{frontend_url}/billing/success?session_id={{CHECKOUT_SESSION_ID}}&plan={plan_type}&country={country_code}&first_setup=1",
             cancel_url=f"{frontend_url}/plans?canceled=1",
             customer_email=customer_email,
             metadata={
