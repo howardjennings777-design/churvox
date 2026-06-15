@@ -216,6 +216,13 @@ function proxyApiRequest(req, res, urlPath) {
   requestHeaders["x-forwarded-host"] = req.headers.host || "";
   requestHeaders["x-forwarded-proto"] = "https";
   requestHeaders["x-churvox-proxy"] = "frontend";
+
+  // Login and signup must never forward an old browser auth cookie.
+  // Otherwise hello@churvox.com can stay logged in even when another email is typed.
+  if (urlPath === "/api/auth/login" || urlPath === "/api/auth/register") {
+    delete requestHeaders.cookie;
+    delete requestHeaders.Cookie;
+  }
   if (requestHeaders.authorization || requestHeaders.Authorization) {
     delete requestHeaders.cookie;
     delete requestHeaders.Cookie;
