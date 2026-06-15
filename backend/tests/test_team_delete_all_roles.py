@@ -28,7 +28,7 @@ def req(method, path, token=None, body=None):
 
 
 def main():
-    code, body = req("POST", "/api/auth/login", body={"email": "launchtest@churvox.com", "password": "Launch2025!"})
+    code, body = req("POST", "/api/auth/login", body={"email": "hello@churvox.com", "password": "Launch2025!"})
     assert code == 200, f"login failed {code} {body}"
     tok = body["token"]
 

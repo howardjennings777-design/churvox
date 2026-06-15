@@ -198,7 +198,7 @@ export default function TeamWorkspacePage() {
         <PremiumCard title="Invite / add team member" icon={<MailPlus className="h-5 w-5" />}>
           <form onSubmit={submitInvite} className="grid gap-3" data-version="CHURVOX_TEAM_WORKSPACE_STABLE_WIRING_20260601">
             <label className="grid gap-2"><span className={labelClass}>Name</span><input className={inputClass} value={invite.name} onChange={(e) => updateInvite("name", e.target.value)} placeholder="Worker name" /></label>
-            <label className="grid gap-2"><span className={labelClass}>Email *</span><input className={inputClass} type="email" required value={invite.email} onChange={(e) => updateInvite("email", e.target.value)} placeholder="worker@email.com" /></label>
+            <label className="grid gap-2"><span className={labelClass}>Email *</span><input className={inputClass} type="email" required value={invite.email} onChange={(e) => updateInvite("email", e.target.value)} placeholder="hello@churvox.com" /></label>
             <label className="grid gap-2"><span className={labelClass}>Phone</span><input className={inputClass} value={invite.phone} onChange={(e) => updateInvite("phone", e.target.value)} placeholder="Optional" /></label>
             <div className="grid gap-3 md:grid-cols-2">
               <label className="grid gap-2"><span className={labelClass}>Role</span><select className={inputClass} value={invite.role} onChange={(e) => updateInvite("role", e.target.value)}>{ROLE_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>

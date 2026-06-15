@@ -13,13 +13,13 @@
   },
 
   "passed_tests": [
-    "DASHBOARD: Login launchtest@churvox.com/Launch2025! → dashboard shows content (not blank) ✓",
+    "DASHBOARD: Login hello@churvox.com/Launch2025! → dashboard shows content (not blank) ✓",
     "DASHBOARD: Dashboard page has data-testid='dashboard-page' and greeting ✓",
     "EMPLOYER NOTES: Job detail page has editable notes textarea (data-testid='employer-notes-textarea') ✓",
     "EMPLOYER NOTES: Save button exists (data-testid='save-employer-notes-btn') ✓",
     "EMPLOYER NOTES: Note persists after reload ✓",
     "EMPLOYER SEES WORKER NOTES: Worker Notes section visible on job detail (read-only) ✓",
-    "WORKER LOGIN: worker@churvox.com/Worker123! → redirected to /dashboard ✓",
+    "WORKER LOGIN: hello@churvox.com/Worker123! → redirected to /dashboard ✓",
     "WORKER NOTES: Worker sees editable notes textarea (data-testid='worker-notes-textarea') ✓",
     "WORKER NOTES: Save Notes button exists (data-testid='save-worker-notes-button') ✓",
     "WORKER SEES EMPLOYER NOTES: Worker can see employer notes (read-only) in NOTES section ✓",
@@ -60,8 +60,8 @@
   },
 
   "test_credentials": {
-    "active_employer": "launchtest@churvox.com / Launch2025!",
-    "worker": "worker@churvox.com / Worker123!"
+    "active_employer": "hello@churvox.com / Launch2025!",
+    "worker": "hello@churvox.com / Worker123!"
   },
 
   "seed_data_creation": "Created test invoice INV-1776590003 for delete testing",

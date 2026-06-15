@@ -18,7 +18,7 @@
     "POST /api/team/workers - employer can create worker account",
     "GET /api/team/workers - employer can list workers",
     "DELETE /api/team/workers/{id} - employer can delete worker",
-    "Worker login with john@churvox.com / Worker123! works correctly",
+    "Worker login with hello@churvox.com / Worker123! works correctly",
     "Worker cannot create jobs (returns 403)",
     "Worker cannot delete jobs (returns 403)",
     "Job created with assigned_worker_id has status 'assigned'",
@@ -63,19 +63,19 @@
   },
   
   "test_credentials": {
-    "admin_email": "admin@churvox.com",
+    "admin_email": "hello@churvox.com",
     "admin_password": "Admin123!",
-    "worker_email": "john@churvox.com",
+    "worker_email": "hello@churvox.com",
     "worker_password": "Worker123!"
   },
   
-  "seed_data_creation": "Admin user seeded on startup. Worker john@churvox.com created via API tests.",
+  "seed_data_creation": "Admin user seeded on startup. Worker hello@churvox.com created via API tests.",
   
   "retest_needed": false,
   
   "should_main_agent_self_test": false,
   
-  "context_for_next_testing_agent": "Churvox Phase 1 Batch 2 is complete. Business isolation implemented (all data filtered by business_id). Employer/worker roles working correctly. Team management (employer creates worker accounts with temp password). Job assignment workflow: assigned → acknowledged → in_progress → completed. Job statuses are only: assigned, acknowledged, in_progress, completed (no scheduled/cancelled). Logo uses mix-blend-mode: screen for transparent appearance on dark backgrounds. Worker john@churvox.com exists with password Worker123!.",
+  "context_for_next_testing_agent": "Churvox Phase 1 Batch 2 is complete. Business isolation implemented (all data filtered by business_id). Employer/worker roles working correctly. Team management (employer creates worker accounts with temp password). Job assignment workflow: assigned → acknowledged → in_progress → completed. Job statuses are only: assigned, acknowledged, in_progress, completed (no scheduled/cancelled). Logo uses mix-blend-mode: screen for transparent appearance on dark backgrounds. Worker hello@churvox.com exists with password Worker123!.",
   
   "batch2_verification": {
     "business_isolation": true,

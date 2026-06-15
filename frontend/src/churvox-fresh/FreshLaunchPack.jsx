@@ -7,13 +7,13 @@ const templates = [
     name: "Clients CSV",
     file: "churvox-clients-template.csv",
     headers: ["client_name", "contact_name", "email", "phone", "address", "suburb", "notes"],
-    sample: ["Belmont Customer", "John", "john@example.com", "021000000", "1 Example Street", "Belmont", "Prefers Fridays"],
+    sample: ["Belmont Customer", "John", "hello@churvox.com", "021000000", "1 Example Street", "Belmont", "Prefers Fridays"],
   },
   {
     name: "Team CSV",
     file: "churvox-team-template.csv",
     headers: ["name", "email", "phone", "role", "hourly_rate", "region", "status"],
-    sample: ["Tama Worker", "worker@example.com", "021111111", "Worker", "28", "Lower Hutt", "Active"],
+    sample: ["Tama Worker", "hello@churvox.com", "021111111", "Worker", "28", "Lower Hutt", "Active"],
   },
   {
     name: "Jobs CSV",

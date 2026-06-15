@@ -43,7 +43,7 @@ def main():
 
     # Saved country wins over hint: we'll hit as authenticated user.
     code, login_body = req("POST", "/api/auth/login",
-                           body={"email": "launchtest@churvox.com", "password": "Launch2025!"})
+                           body={"email": "hello@churvox.com", "password": "Launch2025!"})
     assert code == 200, login_body
     tok = login_body["token"]
 
@@ -63,7 +63,7 @@ def main():
         c = AsyncIOMotorClient(os.environ['MONGO_URL'])
         db = c[os.environ['DB_NAME']]
         await db.users.update_one(
-            {"email": "launchtest@churvox.com"},
+            {"email": "hello@churvox.com"},
             {"$set": {"country": "Australia"}}
         )
 
@@ -71,7 +71,7 @@ def main():
         c = AsyncIOMotorClient(os.environ['MONGO_URL'])
         db = c[os.environ['DB_NAME']]
         await db.users.update_one(
-            {"email": "launchtest@churvox.com"},
+            {"email": "hello@churvox.com"},
             {"$unset": {"country": ""}}
         )
 

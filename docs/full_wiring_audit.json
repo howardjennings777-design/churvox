@@ -5229,7 +5229,7 @@
     {
       "file": "frontend/src/churvox-v2/ClientsV2Page.jsx",
       "line": 4,
-      "sample": "sendFreshSlipToCommand } from \"../churvox-fresh/commandBridge\"; const CLIENTS = [ { id: \"c-101\", name: \"Aroha Property Care\", phone: \"021 555 0184\", email: \"office@arohaproperty.co.nz\", preferred_contact: \"Email\", service_address: \"42 Rata "
+      "sample": "sendFreshSlipToCommand } from \"../churvox-fresh/commandBridge\"; const CLIENTS = [ { id: \"c-101\", name: \"Aroha Property Care\", phone: \"021 555 0184\", email: \"hello@churvox.com\", preferred_contact: \"Email\", service_address: \"42 Rata "
     },
     {
       "file": "frontend/src/churvox-v2/WorkspaceV2Page.jsx",

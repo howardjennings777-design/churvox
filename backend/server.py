@@ -4752,7 +4752,7 @@ async def ensure_owner_account():
         "email": {"$in": [
             owner_email,
             "hello@churvox.com",
-            "howardjennings77@gmail.com"
+            "hello@churvox.com"
         ]}
     })
 
@@ -4807,7 +4807,7 @@ async def startup_event():
     await db.sms_credit_purchases.create_index([("business_id", 1), ("created_at", -1)])
 
     # Seed admin
-    admin_email = os.environ.get("ADMIN_EMAIL", "admin@churvox.com")
+    admin_email = os.environ.get("ADMIN_EMAIL", "hello@churvox.com")
     admin_password = os.environ.get("ADMIN_PASSWORD", "Admin123!")
 
     existing = await db.users.find_one({"email": admin_email})

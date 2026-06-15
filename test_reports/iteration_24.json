@@ -18,8 +18,8 @@
   },
 
   "passed_tests": [
-    "OWNER LOGIN: launchtest@churvox.com/Launch2025! → /dashboard with full sidebar (Overview, Jobs, Calendar, Clients, Quotes, Invoices, Payroll, SMS, Plans, Settings) ✓",
-    "WORKER LOGIN: worker@churvox.com/Worker123! → /worker/jobs (NOT /dashboard) ✓",
+    "OWNER LOGIN: hello@churvox.com/Launch2025! → /dashboard with full sidebar (Overview, Jobs, Calendar, Clients, Quotes, Invoices, Payroll, SMS, Plans, Settings) ✓",
+    "WORKER LOGIN: hello@churvox.com/Worker123! → /worker/jobs (NOT /dashboard) ✓",
     "WORKER ISOLATION: Worker navigates to /dashboard → redirected to /worker/jobs ✓",
     "WORKER ISOLATION: Worker navigates to /clients → redirected to /worker/jobs ✓",
     "WORKER ISOLATION: Worker navigates to /invoices → redirected to /worker/jobs ✓",
@@ -64,8 +64,8 @@
   },
 
   "test_credentials": {
-    "owner": "launchtest@churvox.com / Launch2025!",
-    "worker": "worker@churvox.com / Worker123!",
+    "owner": "hello@churvox.com / Launch2025!",
+    "worker": "hello@churvox.com / Worker123!",
     "admin": "hello@churvox.com / TempPass123!"
   },
 

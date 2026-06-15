@@ -64,9 +64,9 @@
   },
 
   "test_credentials": {
-    "admin_email": "admin@churvox.com",
+    "admin_email": "hello@churvox.com",
     "admin_password": "Admin123!",
-    "worker_email": "john@churvox.com",
+    "worker_email": "hello@churvox.com",
     "worker_password": "Worker123!"
   },
 

@@ -14,7 +14,7 @@
   
   "passed_tests": [
     "API root returns 'Churvox API' branding",
-    "Admin login with admin@churvox.com / Admin123! works correctly",
+    "Admin login with hello@churvox.com / Admin123! works correctly",
     "Dashboard stats endpoint returns all 6 required fields (jobs_today, jobs_this_week, completed_this_month, revenue_this_month, pending_invoices, active_clients)",
     "Client CRUD operations working",
     "Job creation with multi-trade types (plumbing, electrical, cleaning, handyman, painting) working",
@@ -67,7 +67,7 @@
   },
   
   "test_credentials": {
-    "admin_email": "admin@churvox.com",
+    "admin_email": "hello@churvox.com",
     "admin_password": "Admin123!"
   },
   

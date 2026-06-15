@@ -13,7 +13,7 @@
   },
   
   "passed_tests": [
-    "Admin login with admin@churvox.com / Admin123!",
+    "Admin login with hello@churvox.com / Admin123!",
     "Dashboard loads with stats (TODAY, THIS WEEK, COMPLETED, REVENUE, INVOICES, CLIENTS)",
     "Dashboard Quick Actions (New Job, New Quote, New Client, New Invoice) all functional",
     "Navigation between all pages (Dashboard, Clients, Jobs, Quotes, Invoices, Plans)",

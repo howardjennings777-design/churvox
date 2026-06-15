@@ -2853,7 +2853,7 @@
 2951:     await db.sms_credit_purchases.create_index([("business_id", 1), ("created_at", -1)])
 2952: 
 2953:     # Seed admin
-2954:     admin_email = os.environ.get("ADMIN_EMAIL", "admin@churvox.com")
+2954:     admin_email = os.environ.get("ADMIN_EMAIL", "hello@churvox.com")
 2955:     admin_password = os.environ.get("ADMIN_PASSWORD", "Admin123!")
 2956: 
 2957:     existing = await db.users.find_one({"email": admin_email})

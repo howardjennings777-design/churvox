@@ -96,7 +96,7 @@ export default function SignupPage() {
           <p className="cvPublicAuthIntro">Create your account first, then choose a plan and add card details in Stripe to start the 14-day trial.</p>
           {error ? <p className="cvPublicAuthError">{error}</p> : null}
           <label>Full name<input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="name" autoComplete="name" placeholder="Your name" required /></label>
-          <label>Email<input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="email" type="email" autoComplete="email" placeholder="you@example.com" required /></label>
+          <label>Email<input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="email" type="email" autoComplete="email" placeholder="hello@churvox.com" required /></label>
           <label>Business name<input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="business_name" autoComplete="organization" placeholder="Business name" /></label>
           <label>Password<input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="password" type="password" autoComplete="new-password" placeholder="Password" required /></label>
           <label>Confirm password<input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="confirmPassword" type="password" autoComplete="new-password" placeholder="Confirm password" required /></label>

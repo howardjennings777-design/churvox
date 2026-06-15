@@ -28,9 +28,9 @@ export const commandSlips = [
 ];
 
 export const clients = [
-  { name: "Aroha Property Care", detail: "office@arohaproperty.co.nz", status: "Ready" },
-  { name: "Birchville Rentals", detail: "manager@birchvillerentals.co.nz", status: "Needs billing" },
-  { name: "Lower Hutt Medical Centre", detail: "admin@lhmedical.example", status: "Ready" },
+  { name: "Aroha Property Care", detail: "hello@churvox.com", status: "Ready" },
+  { name: "Birchville Rentals", detail: "hello@churvox.com", status: "Needs billing" },
+  { name: "Lower Hutt Medical Centre", detail: "hello@churvox.com", status: "Ready" },
 ];
 
 export const boards = {

@@ -5,7 +5,7 @@ Run with: python3 /app/backend/tests/test_automation_new_triggers.py
 import os, sys, json, time, urllib.request, urllib.error
 
 API = os.environ.get("API", "http://localhost:8001")
-EMAIL = os.environ.get("EMAIL", "launchtest@churvox.com")
+EMAIL = os.environ.get("EMAIL", "hello@churvox.com")
 PASSWORD = os.environ.get("PASSWORD", "Launch2025!")
 
 

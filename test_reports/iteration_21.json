@@ -19,8 +19,8 @@
     "PLAN GATE: New user (no plan) tries /dashboard directly → redirected to /plans ✓",
     "PLAN GATE: New user (no plan) tries /jobs → redirected to /plans ✓",
     "PLAN SELECTION: New user on /plans sees all 4 plans, none marked 'Current Plan', all have 'Choose X' buttons ✓",
-    "EXISTING USER: Login launchtest@churvox.com/Launch2025! → goes to /dashboard (has plan) ✓",
-    "WORKER BYPASS: Login worker@churvox.com/Worker123! → goes to /dashboard (workers skip plan check) ✓",
+    "EXISTING USER: Login hello@churvox.com/Launch2025! → goes to /dashboard (has plan) ✓",
+    "WORKER BYPASS: Login hello@churvox.com/Worker123! → goes to /dashboard (workers skip plan check) ✓",
     "ADMIN: Login hello@churvox.com/TempPass123! → goes to /admin ✓",
     "REGRESSION: Employer dashboard shows sidebar with all nav items ✓",
     "REGRESSION: Employer can access /clients page ✓",
@@ -57,8 +57,8 @@
 
   "test_credentials": {
     "platform_owner": "hello@churvox.com / TempPass123!",
-    "employer": "launchtest@churvox.com / Launch2025!",
-    "worker": "worker@churvox.com / Worker123!"
+    "employer": "hello@churvox.com / Launch2025!",
+    "worker": "hello@churvox.com / Worker123!"
   },
 
   "seed_data_creation": "Created and deleted 5 test users during testing (test-*, plangate-*, planselect-*, billing-test-*@test.com)",

@@ -43,7 +43,7 @@ def main():
 
     users = db["users"]
 
-    users.delete_many({"email": "admin@churvox.com"})
+    users.delete_many({"email": "hello@churvox.com"})
 
     owner_doc = {
         "email": EMAIL,

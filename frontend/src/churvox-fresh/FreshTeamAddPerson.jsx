@@ -67,7 +67,7 @@ export default function FreshTeamAddPerson({ onAdded, onNavigate }) {
       {message ? <div className="freshItem"><b>Done</b><span>{message}</span></div> : null}
 
       <label className="freshField"><span>Name</span><input value={form.name} onChange={(event) => update("name", event.target.value)} placeholder="Person's name" /></label>
-      <label className="freshField"><span>Email</span><input type="email" value={form.email} onChange={(event) => update("email", event.target.value)} placeholder="person@email.co.nz" /></label>
+      <label className="freshField"><span>Email</span><input type="email" value={form.email} onChange={(event) => update("email", event.target.value)} placeholder="hello@churvox.com" /></label>
       <label className="freshField"><span>Phone</span><input value={form.phone} onChange={(event) => update("phone", event.target.value)} placeholder="Phone number" /></label>
       <label className="freshField"><span>Role</span><select value={form.role} onChange={(event) => update("role", event.target.value)}>{roles.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
 

@@ -46,7 +46,7 @@ export default function HomeInlineLogin() {
         {error ? <div className="home-login-error" data-testid="home-login-error"><AlertCircle size={17} /><span>{error}</span></div> : null}
         <label>
           <span>Email</span>
-          <div className="home-login-field"><Mail size={17} /><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required data-testid="home-login-email-input" /></div>
+          <div className="home-login-field"><Mail size={17} /><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="hello@churvox.com" required data-testid="home-login-email-input" /></div>
         </label>
         <label>
           <span>Password</span>

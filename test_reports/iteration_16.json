@@ -16,7 +16,7 @@
 
   "passed_tests": [
     "Admin login at /admin/login with hello@churvox.com / TempPass123! - real mouse click works",
-    "Employer login at /login with launchtest@churvox.com / Launch2025! - real mouse click works",
+    "Employer login at /login with hello@churvox.com / Launch2025! - real mouse click works",
     "App Owner Platform Dashboard at /admin - shows real data (Total Users: 1, Businesses: 1, Plans: Enterprise: 1), fake/test data filtered out",
     "Platform stats loaded from /api/admin/platform-stats single endpoint",
     "Forgot Password at /forgot-password - fallback link appears when email fails, clicking link navigates to reset-password page with token",
@@ -33,7 +33,7 @@
 
   "critical_code_review_comments": [
     "AppOwnerPage.jsx correctly uses single /api/admin/platform-stats endpoint",
-    "filterFake() function properly excludes test/demo/sample records while preserving real emails (hello@churvox.com, howardjennings77@gmail.com)",
+    "filterFake() function properly excludes test/demo/sample records while preserving real emails (hello@churvox.com, hello@churvox.com)",
     "Jobs delete modal uses plain HTML modal (not Radix DismissableLayer) - avoids pointer-events issues",
     "Clients Add Client modal uses Radix Dialog but works correctly with real mouse clicks",
     "hard-tap-fix.css properly handles pointer-events for mobile tap issues",
@@ -49,7 +49,7 @@
 
   "test_credentials": {
     "platform_owner": "hello@churvox.com / TempPass123!",
-    "employer": "launchtest@churvox.com / Launch2025!"
+    "employer": "hello@churvox.com / Launch2025!"
   },
 
   "seed_data_creation": "Created and deleted test job (69ded48065659dfdbc455e14) for delete modal testing",

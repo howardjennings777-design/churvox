@@ -60,10 +60,10 @@ const quick = {
     primary: "Create client",
     fields: [
       { key: "name", label: "Client name", value: "New client" },
-      { key: "email", label: "Email", value: "client@example.co.nz", type: "email" },
+      { key: "email", label: "Email", value: "hello@churvox.com", type: "email" },
       { key: "phone", label: "Phone", value: "027 000 0000", type: "tel" },
       { key: "address", label: "Service address", value: "Street, suburb" },
-      { key: "billingEmail", label: "Billing email", value: "accounts@example.co.nz", type: "email" },
+      { key: "billingEmail", label: "Billing email", value: "hello@churvox.com", type: "email" },
     ],
     note: "Clean client setup keeps invoices, reminders and Command boxes accurate.",
   },

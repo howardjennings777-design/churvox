@@ -11,8 +11,8 @@ BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://operator-command-1.p
 
 # Test credentials from test_credentials.md
 PLATFORM_OWNER = {"email": "hello@churvox.com", "password": "TempPass123!"}
-EMPLOYER = {"email": "launchtest@churvox.com", "password": "Launch2025!"}
-WORKER = {"email": "worker@churvox.com", "password": "Worker123!"}
+EMPLOYER = {"email": "hello@churvox.com", "password": "Launch2025!"}
+WORKER = {"email": "hello@churvox.com", "password": "Worker123!"}
 
 
 class TestPlatformOwnerLogin:
@@ -188,7 +188,7 @@ class TestCreateAndDeleteUser:
         """Create a test user via registration, then delete via admin"""
         # First, try to create a test user via registration
         test_user = {
-            "email": "realadmintest@churvox.com",  # Using 'real' prefix to avoid filter
+            "email": "hello@churvox.com",  # Using 'real' prefix to avoid filter
             "password": "TestPass123!",
             "name": "Admin Test User",
             "business_name": "Admin Test Business",

@@ -68,7 +68,7 @@ class TestSignupAndPlanFlow:
     def test_02_employer_login_returns_valid_plan(self):
         """Existing employer with plan should return valid plan"""
         response = self.session.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "launchtest@churvox.com",
+            "email": "hello@churvox.com",
             "password": "Launch2025!"
         })
         
@@ -77,7 +77,7 @@ class TestSignupAndPlanFlow:
         
         # Verify user data
         assert "token" in data, "No token returned"
-        assert data.get("email") == "launchtest@churvox.com", "Email mismatch"
+        assert data.get("email") == "hello@churvox.com", "Email mismatch"
         
         # Employer should have a plan
         plan = data.get("plan")
@@ -87,7 +87,7 @@ class TestSignupAndPlanFlow:
     def test_03_worker_login_works(self):
         """Worker login should work (workers bypass plan check)"""
         response = self.session.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "worker@churvox.com",
+            "email": "hello@churvox.com",
             "password": "Worker123!"
         })
         
@@ -142,7 +142,7 @@ class TestSignupAndPlanFlow:
         """Billing status should return valid plan for existing employer"""
         # Login as employer
         login_response = self.session.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "launchtest@churvox.com",
+            "email": "hello@churvox.com",
             "password": "Launch2025!"
         })
         
@@ -194,7 +194,7 @@ class TestRegressionEndpoints:
         
         # Login as employer
         login_response = self.session.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "launchtest@churvox.com",
+            "email": "hello@churvox.com",
             "password": "Launch2025!"
         })
         

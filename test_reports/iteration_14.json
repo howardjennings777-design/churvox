@@ -84,7 +84,7 @@
   },
 
   "test_credentials": {
-    "admin_email": "admin@churvox.com",
+    "admin_email": "hello@churvox.com",
     "admin_password": "Admin123!",
     "sms_balance_after_tests": 193
   },

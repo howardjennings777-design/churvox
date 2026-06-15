@@ -282,8 +282,8 @@ _No matches found._
 - `STAGE_5_JOB_COMPLETION_FLOW.md:27` — `3. Completed jobs should create/update timesheets and owner approval slips.`
 - `STAGE_5_JOB_COMPLETION_FLOW.md:28` — `4. Complete a worker job.`
 - `test_result.md:62` — `comment: "New top-strip injected at top of Smart Hub (AIControlRoomCompletePage). Pulls /ai-operator/command-snapshot, shows urgent tiles (approvals, unassigned jobs, ready-to-invoice, overdue invoices, quotes, timesheet`
-- `test_result.md:68` — `comment: "RE-RUN COMPLETE: Used Pro trial owner (test_owner_20260506_091108@example.com) with full app access. Command centre strip FULLY FUNCTIONAL: (1) 'Command centre' heading visible at top of /dashboard, (2) All 8 u`
-- `test_result.md:153` — `message: "COMPREHENSIVE FRONTEND VALIDATION COMPLETE (RE-RUN): Used Pro trial owner credentials (test_owner_20260506_091108@example.com) with full app access. Previous /plans blocker was NOT a bug - it was the intended o`
+- `test_result.md:68` — `comment: "RE-RUN COMPLETE: Used Pro trial owner (hello@churvox.com) with full app access. Command centre strip FULLY FUNCTIONAL: (1) 'Command centre' heading visible at top of /dashboard, (2) All 8 u`
+- `test_result.md:153` — `message: "COMPREHENSIVE FRONTEND VALIDATION COMPLETE (RE-RUN): Used Pro trial owner credentials (hello@churvox.com) with full app access. Previous /plans blocker was NOT a bug - it was the intended o`
 - `sitecustomize.py:77` — `events.append(("job_completed", "Worker finished job", f"{worker_name} finished {job_title}."))`
 - `CHURVOX_BIG_AUDIT_REPORT.md:56` — `- `frontend/src/concept-c/churvoxWorkerOfflineRuntimePatch.js`: `<button type="button" data-cv-offline-action="job_resume">Resume</button>       <button type="button" data-cv-offline-action="job_complete">Complete</butto`
 - `CHURVOX_BIG_AUDIT_REPORT.md:57` — `- `frontend/src/concept-c/churvoxWorkerOfflineRuntimePatch.js`: `<button type="button" data-cv-offline-action="job_complete">Complete</button>       <button type="button" data-cv-offline-action="job_issue">Report issue</`
@@ -307,7 +307,7 @@ _No matches found._
 - `backend_test.py:464` — `"unassigned_jobs", "completed_no_invoice", "overdue_invoices",`
 - `FINAL_LAUNCH_SMOKE_TEST.md:62` — `- Expected: jobs, quotes, invoices and unpaid totals show`
 - `test_result.md:62` — `comment: "New top-strip injected at top of Smart Hub (AIControlRoomCompletePage). Pulls /ai-operator/command-snapshot, shows urgent tiles (approvals, unassigned jobs, ready-to-invoice, overdue invoices, quotes, timesheet`
-- `test_result.md:68` — `comment: "RE-RUN COMPLETE: Used Pro trial owner (test_owner_20260506_091108@example.com) with full app access. Command centre strip FULLY FUNCTIONAL: (1) 'Command centre' heading visible at top of /dashboard, (2) All 8 u`
+- `test_result.md:68` — `comment: "RE-RUN COMPLETE: Used Pro trial owner (hello@churvox.com) with full app access. Command centre strip FULLY FUNCTIONAL: (1) 'Command centre' heading visible at top of /dashboard, (2) All 8 u`
 - `backend/server.py:464` — `class InvoiceStatus(str, Enum):`
 - `backend/server.py:467` — `PAID = "paid"`
 - `backend/server.py:468` — `OVERDUE = "overdue"`
@@ -562,12 +562,12 @@ _No matches found._
 - `FINAL_LAUNCH_SMOKE_TEST.md:75` — `- Expected: worker cannot access invoices, quotes, clients, team, settings, plans`
 - `test_result.md:62` — `comment: "New top-strip injected at top of Smart Hub (AIControlRoomCompletePage). Pulls /ai-operator/command-snapshot, shows urgent tiles (approvals, unassigned jobs, ready-to-invoice, overdue invoices, quotes, timesheet`
 - `test_result.md:65` — `comment: "CRITICAL BLOCKER: Registration endpoint (POST /api/auth/register) creates user but does NOT create associated business record. Without a business record, users cannot access any routes - they get stuck on /plan`
-- `test_result.md:68` — `comment: "RE-RUN COMPLETE: Used Pro trial owner (test_owner_20260506_091108@example.com) with full app access. Command centre strip FULLY FUNCTIONAL: (1) 'Command centre' heading visible at top of /dashboard, (2) All 8 u`
+- `test_result.md:68` — `comment: "RE-RUN COMPLETE: Used Pro trial owner (hello@churvox.com) with full app access. Command centre strip FULLY FUNCTIONAL: (1) 'Command centre' heading visible at top of /dashboard, (2) All 8 u`
 - `test_result.md:83` — `comment: "Could not test due to registration/business creation blocker. Requires working owner account with business + plan to access route."`
 - `test_result.md:101` — `comment: "Could not test due to registration/business creation blocker. Requires working owner account with business + plan to access route."`
 - `test_result.md:136` — `## test_plan`
 - `test_result.md:151` — `message: "Frontend testing BLOCKED by critical registration bug. POST /api/auth/register creates user but does NOT create business record. Without business, users cannot access any routes (stuck on /plans page). Attempte`
-- `test_result.md:153` — `message: "COMPREHENSIVE FRONTEND VALIDATION COMPLETE (RE-RUN): Used Pro trial owner credentials (test_owner_20260506_091108@example.com) with full app access. Previous /plans blocker was NOT a bug - it was the intended o`
+- `test_result.md:153` — `message: "COMPREHENSIVE FRONTEND VALIDATION COMPLETE (RE-RUN): Used Pro trial owner credentials (hello@churvox.com) with full app access. Previous /plans blocker was NOT a bug - it was the intended o`
 - `SAFE_CLEANUP_OLD_JUNK_REPORT.md:12` — `- `frontend/src/concept-c/churvoxPlansNavPatch.js``
 - `SAFE_CLEANUP_OLD_JUNK_REPORT.md:18` — `- `frontend/src/concept-c/churvoxFourteenDayTrialPlansPatch.js``
 - `README.md:35` — `- /plans — Pricing and plan control`
@@ -602,12 +602,12 @@ _No matches found._
 - `test_result.md:28` — `comment: "Added GET /ai-operator/setup-status (SMS/MYOB/AI readiness), GET /ai-operator/audit-log (paginated logs), GET /ai-operator/command-snapshot (combined urgent+approvals+next_best_move). Fixed broken double-/api/ `
 - `test_result.md:34` — `comment: "Fixed ObjectId serialization bug in both PATCH endpoints. All endpoints now working correctly: GET /ai-operator/setup-status returns proper SMS/MYOB/AI readiness (SMS ready=true with CLICKSEND_API_KEY set, MYOB`
 - `test_result.md:62` — `comment: "New top-strip injected at top of Smart Hub (AIControlRoomCompletePage). Pulls /ai-operator/command-snapshot, shows urgent tiles (approvals, unassigned jobs, ready-to-invoice, overdue invoices, quotes, timesheet`
-- `test_result.md:68` — `comment: "RE-RUN COMPLETE: Used Pro trial owner (test_owner_20260506_091108@example.com) with full app access. Command centre strip FULLY FUNCTIONAL: (1) 'Command centre' heading visible at top of /dashboard, (2) All 8 u`
+- `test_result.md:68` — `comment: "RE-RUN COMPLETE: Used Pro trial owner (hello@churvox.com) with full app access. Command centre strip FULLY FUNCTIONAL: (1) 'Command centre' heading visible at top of /dashboard, (2) All 8 u`
 - `test_result.md:98` — `comment: "New page at /ai-operator/settings. Three modes (approval_first | auto_safe | auto_send), quiet hours, max msgs/client/day, first-message-approval, owner notify. Auto-send categories tab (master + 7 per-category`
 - `test_result.md:104` — `comment: "FULLY FUNCTIONAL: (1) Heading 'AI Operator' present, (2) All 4 tabs working (Operator mode, Auto-send categories, Setup status, Audit log), (3) Operator mode tab: three mode cards visible (Approval-first, Auto-`
 - `test_result.md:147` — `message: "Completed deep finish pass: (1) Section 2 blockers fixed and verified. (2) New AI Operator approvals queue + settings pages with Mode 1/2/3, quiet hours, per-category auto-send, audit log, setup-required gates `
 - `test_result.md:149` — `message: "Backend testing complete. Found and fixed critical ObjectId serialization bug in PATCH /ai-operator/settings and PATCH /ai-auto-send/settings (both were returning 500 errors). Applied serialize_doc() to both en`
-- `test_result.md:153` — `message: "COMPREHENSIVE FRONTEND VALIDATION COMPLETE (RE-RUN): Used Pro trial owner credentials (test_owner_20260506_091108@example.com) with full app access. Previous /plans blocker was NOT a bug - it was the intended o`
+- `test_result.md:153` — `message: "COMPREHENSIVE FRONTEND VALIDATION COMPLETE (RE-RUN): Used Pro trial owner credentials (hello@churvox.com) with full app access. Previous /plans blocker was NOT a bug - it was the intended o`
 - `QA_SMART_HUB_BUTTON_REPORT.md:32` — `- No direct production SMS/email/payment/MYOB mutations are triggered by tests.`
 - `sitecustomize.py:149` — `for route_name, args in [("ai_operator_routes", (app, db, get_current_user, require_employer)), ("billing_addon_routes", (app, db, get_current_user)), ("xero_routes", (app, db, get_current_user))]:`
 - `backend/server.py:352` — `"xero_addon": "XERO_ADDON",`

@@ -25,8 +25,8 @@
     "index.html has apple-touch-icon link tag",
     "index.html has manifest link tag",
     "index.html has theme-color meta tag",
-    "Admin login works (admin@churvox.com / Admin123!) - no regression",
-    "Worker login works (john@churvox.com / Worker123!) - no regression",
+    "Admin login works (hello@churvox.com / Admin123!) - no regression",
+    "Worker login works (hello@churvox.com / Worker123!) - no regression",
     "Invalid login rejected with 401 - no regression",
     "Dashboard stats endpoint accessible",
     "Jobs list endpoint accessible",
@@ -85,9 +85,9 @@
   },
 
   "test_credentials": {
-    "admin_email": "admin@churvox.com",
+    "admin_email": "hello@churvox.com",
     "admin_password": "Admin123!",
-    "worker_email": "john@churvox.com",
+    "worker_email": "hello@churvox.com",
     "worker_password": "Worker123!"
   },
 

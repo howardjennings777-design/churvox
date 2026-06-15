@@ -13,7 +13,7 @@
   },
 
   "passed_tests": [
-    "Admin login with admin@churvox.com / Admin123! works",
+    "Admin login with hello@churvox.com / Admin123! works",
     "Wrong password correctly rejected (401)",
     "Non-existent user correctly rejected (401)",
     "POST /api/team/workers creates worker with status:'invited' and returns invite_link",
@@ -64,9 +64,9 @@
   },
 
   "test_credentials": {
-    "admin_email": "admin@churvox.com",
+    "admin_email": "hello@churvox.com",
     "admin_password": "Admin123!",
-    "test_worker_created": "ui_test_worker_1774928670@example.com",
+    "test_worker_created": "hello@churvox.com",
     "test_worker_password": "TestPass123!"
   },
 

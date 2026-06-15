@@ -5,7 +5,7 @@ from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-EMAIL = "howardjennings77@gmail.com"
+EMAIL = "hello@churvox.com"
 PASSWORD = "HowardAccess2026!"
 
 mongo_url = os.getenv("MONGO_URL") or os.getenv("MONGODB_URL") or os.getenv("DATABASE_URL")

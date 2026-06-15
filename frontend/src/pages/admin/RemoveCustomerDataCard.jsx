@@ -47,7 +47,7 @@ export default function RemoveCustomerDataCard({ onRemoved }) {
         Owner-only data removal for a customer email and connected Churvox workspace records. Type DELETE to confirm.
       </p>
       <div className="mt-4 grid gap-3 md:grid-cols-[1fr_180px_auto]">
-        <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="customer@email.co.nz" className="rounded-2xl border border-red-500/30 bg-slate-950 px-4 py-3 text-sm font-bold text-white outline-none" />
+        <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="hello@churvox.com" className="rounded-2xl border border-red-500/30 bg-slate-950 px-4 py-3 text-sm font-bold text-white outline-none" />
         <input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Type DELETE" className="rounded-2xl border border-red-500/30 bg-slate-950 px-4 py-3 text-sm font-bold text-white outline-none" />
         <button type="button" onClick={removeCustomerRecords} disabled={busy || confirm !== "DELETE" || !email} className="rounded-2xl border border-red-400/40 bg-red-500 px-5 py-3 text-sm font-black text-white disabled:opacity-40">
           {busy ? "Removing…" : "Remove records"}

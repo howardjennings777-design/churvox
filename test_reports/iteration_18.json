@@ -61,11 +61,11 @@
 
   "test_credentials": {
     "platform_owner": "hello@churvox.com / TempPass123!",
-    "employer": "launchtest@churvox.com / Launch2025!",
-    "worker": "worker@churvox.com / Worker123!"
+    "employer": "hello@churvox.com / Launch2025!",
+    "worker": "hello@churvox.com / Worker123!"
   },
 
-  "seed_data_creation": "Test worker frontendtestworker@churvox.com was created and cleaned up during testing",
+  "seed_data_creation": "Test worker hello@churvox.com was created and cleaned up during testing",
 
   "retest_needed": false,
 

@@ -15,7 +15,7 @@
   },
 
   "passed_tests": [
-    "EXPIRED TRIAL: Login expired@churvox.com/Expired123! → redirected to /plans (not /dashboard) ✓",
+    "EXPIRED TRIAL: Login hello@churvox.com/Expired123! → redirected to /plans (not /dashboard) ✓",
     "EXPIRED TRIAL: On /plans, sees 'Your free trial has ended' banner ✓",
     "EXPIRED TRIAL: Team card shows 'Trial Ended' badge ✓",
     "EXPIRED TRIAL: Team card shows 'Subscribe to Team' button (not disabled) ✓",
@@ -24,11 +24,11 @@
     "EXPIRED TRIAL: Navigate to /jobs → redirected to /plans ✓",
     "EXPIRED TRIAL: Navigate to /clients → redirected to /plans ✓",
     "EXPIRED TRIAL: Subscribe button attempts Stripe checkout (fails in preview - expected) ✓",
-    "ACTIVE TRIAL: Login launchtest@churvox.com/Launch2025! → goes to /dashboard ✓",
+    "ACTIVE TRIAL: Login hello@churvox.com/Launch2025! → goes to /dashboard ✓",
     "ACTIVE TRIAL: Can access /jobs ✓",
     "ACTIVE TRIAL: Can access /clients ✓",
     "ACTIVE TRIAL: Can access /team ✓",
-    "WORKER: Login worker@churvox.com/Worker123! → goes to /dashboard (bypasses plan check) ✓",
+    "WORKER: Login hello@churvox.com/Worker123! → goes to /dashboard (bypasses plan check) ✓",
     "ADMIN: Login hello@churvox.com/TempPass123! → goes to /admin ✓"
   ],
 
@@ -54,19 +54,19 @@
   },
 
   "test_credentials": {
-    "expired_trial": "expired@churvox.com / Expired123!",
-    "active_employer": "launchtest@churvox.com / Launch2025!",
-    "worker": "worker@churvox.com / Worker123!",
+    "expired_trial": "hello@churvox.com / Expired123!",
+    "active_employer": "hello@churvox.com / Launch2025!",
+    "worker": "hello@churvox.com / Worker123!",
     "platform_owner": "hello@churvox.com / TempPass123!"
   },
 
-  "seed_data_creation": "Expired trial user (expired@churvox.com) was created directly in MongoDB with trial_ends_at set 2 days in the past",
+  "seed_data_creation": "Expired trial user (hello@churvox.com) was created directly in MongoDB with trial_ends_at set 2 days in the past",
 
   "retest_needed": false,
 
   "should_main_agent_self_test": false,
 
-  "context_for_next_testing_agent": "Iteration 22 verified trial expiry enforcement: (1) Expired trial users are blocked from /dashboard, /jobs, /clients and redirected to /plans, (2) /plans shows 'Your free trial has ended' banner for expired users, (3) Team card shows 'Trial Ended' badge and 'Subscribe to Team' button, (4) Other plans show 'Choose X' buttons (all clickable), (5) Subscribe button attempts Stripe checkout (fails in preview due to missing Stripe keys - expected), (6) Active trial users can access all app pages normally, (7) Workers bypass plan check and go to /dashboard, (8) Admin goes to /admin. Test user: expired@churvox.com / Expired123! (trial_ends_at in past, plan=team).",
+  "context_for_next_testing_agent": "Iteration 22 verified trial expiry enforcement: (1) Expired trial users are blocked from /dashboard, /jobs, /clients and redirected to /plans, (2) /plans shows 'Your free trial has ended' banner for expired users, (3) Team card shows 'Trial Ended' badge and 'Subscribe to Team' button, (4) Other plans show 'Choose X' buttons (all clickable), (5) Subscribe button attempts Stripe checkout (fails in preview due to missing Stripe keys - expected), (6) Active trial users can access all app pages normally, (7) Workers bypass plan check and go to /dashboard, (8) Admin goes to /admin. Test user: hello@churvox.com / Expired123! (trial_ends_at in past, plan=team).",
 
   "mocked_apis": {
     "has_mocked_apis": false,

@@ -17,9 +17,9 @@
   },
 
   "passed_tests": [
-    "EMPLOYER: Login launchtest@churvox.com/Launch2025! - SUCCESS ✓",
+    "EMPLOYER: Login hello@churvox.com/Launch2025! - SUCCESS ✓",
     "EMPLOYER: Create job 'Plumber Test Job' with title, address, notes, assign worker - SUCCESS ✓",
-    "WORKER: Login worker@churvox.com/Worker123! - SUCCESS ✓",
+    "WORKER: Login hello@churvox.com/Worker123! - SUCCESS ✓",
     "WORKER: Only sees assigned jobs (not all business jobs) - SUCCESS ✓",
     "WORKER: Open assigned job, sees job details (title, client, address, notes from owner) - SUCCESS ✓",
     "WORKER: Click Accept Job button (acknowledge) - SUCCESS ✓ (status changed to Acknowledged, accepted_at set)",
@@ -64,8 +64,8 @@
   },
 
   "test_credentials": {
-    "employer": "launchtest@churvox.com / Launch2025!",
-    "worker": "worker@churvox.com / Worker123!"
+    "employer": "hello@churvox.com / Launch2025!",
+    "worker": "hello@churvox.com / Worker123!"
   },
 
   "seed_data_creation": "Created job 'Plumber Test Job' (ID: 69dfe995f1c8367b42db68d5) assigned to Test Worker",

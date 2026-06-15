@@ -10,9 +10,9 @@ import os
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
 # Test credentials
-EMPLOYER_EMAIL = "launchtest@churvox.com"
+EMPLOYER_EMAIL = "hello@churvox.com"
 EMPLOYER_PASSWORD = "Launch2025!"
-WORKER_EMAIL = "worker@churvox.com"
+WORKER_EMAIL = "hello@churvox.com"
 WORKER_PASSWORD = "Worker123!"
 
 # Test job ID created during testing
@@ -242,7 +242,7 @@ class TestWorkerRestrictions:
             headers={"Authorization": f"Bearer {worker_token}"},
             json={
                 "name": "Unauthorized Client",
-                "email": "test@test.com"
+                "email": "hello@churvox.com"
             }
         )
         assert response.status_code == 403, "Worker should not be able to create clients"

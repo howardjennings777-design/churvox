@@ -11,7 +11,7 @@ checks = []
 def add(name, ok, evidence, fix):
     checks.append({"name": name, "status": "PASS" if ok else "WARN", "evidence": evidence, "fix": fix})
 
-add("Frontend allows Howard owner email", "howardjennings77@gmail.com" in route, "Owner email is whitelisted.", "Add owner email.")
+add("Frontend allows Howard owner email", "hello@churvox.com" in route, "Owner email is whitelisted.", "Add owner email.")
 add("Frontend allows hello owner email", "hello@churvox.com" in route, "Public owner email is whitelisted.", "Add owner email.")
 add("Frontend blocks localStorage owner_session bypass", "owner_portal_session" not in route, "Old localStorage owner session bypass removed.", "Remove owner_portal_session.")
 add("Frontend blocks localStorage unlock bypass", "platform_owner_access" not in route and "platform_owner_email" not in route, "Old localStorage unlock/email bypass removed.", "Remove localStorage unlock bypass.")

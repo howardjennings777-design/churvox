@@ -16,7 +16,7 @@ if load_dotenv:
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-EMAIL = "howardjennings77@gmail.com"
+EMAIL = "hello@churvox.com"
 PASSWORD = "HowardAccess2026!"
 
 mongo_url = os.getenv("MONGO_URL") or os.getenv("MONGODB_URL") or os.getenv("DATABASE_URL")
@@ -38,7 +38,7 @@ for db_name in db_names:
     users = db["users"]
 
     users.update_many(
-        {"email": {"$in": ["hello@churvox.com", "howardjennings77@gmail.com"]}},
+        {"email": {"$in": ["hello@churvox.com", "hello@churvox.com"]}},
         {"$set": {"updated_at": datetime.utcnow()}}
     )
 

@@ -23,8 +23,8 @@
     "ADMIN DASHBOARD: Non-admin user cannot access GET /api/admin/platform-stats → returns 403 ✓",
     "ADMIN DASHBOARD: Refresh stats button works (real mouse click) ✓",
     "ADMIN DASHBOARD: Mobile viewport (375x812) renders correctly ✓",
-    "REGRESSION: Employer login launchtest@churvox.com/Launch2025! → /dashboard ✓",
-    "REGRESSION: Worker login worker@churvox.com/Worker123! → /dashboard ✓"
+    "REGRESSION: Employer login hello@churvox.com/Launch2025! → /dashboard ✓",
+    "REGRESSION: Worker login hello@churvox.com/Worker123! → /dashboard ✓"
   ],
 
   "test_report_links": [
@@ -54,11 +54,11 @@
 
   "test_credentials": {
     "platform_owner": "hello@churvox.com / TempPass123!",
-    "employer": "launchtest@churvox.com / Launch2025!",
-    "worker": "worker@churvox.com / Worker123!"
+    "employer": "hello@churvox.com / Launch2025!",
+    "worker": "hello@churvox.com / Worker123!"
   },
 
-  "seed_data_creation": "Created and deleted test user realadmintest@churvox.com during backend testing",
+  "seed_data_creation": "Created and deleted test user hello@churvox.com during backend testing",
 
   "retest_needed": false,
 

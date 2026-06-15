@@ -71,9 +71,9 @@
   },
 
   "test_credentials": {
-    "admin_email": "admin@churvox.com",
+    "admin_email": "hello@churvox.com",
     "admin_password": "Admin123!",
-    "worker_email": "john@churvox.com",
+    "worker_email": "hello@churvox.com",
     "worker_password": "Worker123!"
   },
 
@@ -83,7 +83,7 @@
 
   "should_main_agent_self_test": false,
 
-  "context_for_next_testing_agent": "Churvox Batch 3 is complete. Features added: (1) Quotes module with pricing types (fixed/hourly/fixed_extras/hourly_extras), send, and convert-to-job. (2) Time tracking with timer endpoints (start/pause/resume/adjust) and live HH:MM:SS display. (3) Time-based invoicing with automatic calculation based on pricing type. (4) Client-job-invoice linking. (5) Logo asset updated to new PNG URL with mix-blend-mode: screen. Batch 1+2 features remain intact. Worker john@churvox.com exists with password Worker123!.",
+  "context_for_next_testing_agent": "Churvox Batch 3 is complete. Features added: (1) Quotes module with pricing types (fixed/hourly/fixed_extras/hourly_extras), send, and convert-to-job. (2) Time tracking with timer endpoints (start/pause/resume/adjust) and live HH:MM:SS display. (3) Time-based invoicing with automatic calculation based on pricing type. (4) Client-job-invoice linking. (5) Logo asset updated to new PNG URL with mix-blend-mode: screen. Batch 1+2 features remain intact. Worker hello@churvox.com exists with password Worker123!.",
 
   "batch3_verification": {
     "quotes_module": {

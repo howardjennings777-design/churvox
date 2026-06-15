@@ -11,7 +11,7 @@ import os
 import stripe
 
 PLATFORM_OWNER_EMAIL = "hello@churvox.com"
-OWNER_FILTER_EMAILS = {"hello@churvox.com", "howardjennings77@gmail.com", "howardjennings77@outlook.com"}
+OWNER_FILTER_EMAILS = {"hello@churvox.com", "hello@churvox.com", "hello@churvox.com"}
 INTERNAL_MARKERS = ["test", "demo", "sample", "fake", "mock", "preview", "seed", "example.com", "mailinator", "tempmail", "john@churvox", "johnworker"]
 PLAN_VALUE = {"start": 39, "solo": 39, "crew": 89, "team": 89, "operator": 149, "pro": 149, "command": 299, "enterprise": 299}
 PLAN_LABELS = {"solo": "Start", "team": "Crew", "pro": "Operator", "enterprise": "Command", "start": "Start", "crew": "Crew", "operator": "Operator", "command": "Command", "none": "Choose plan", "": "Choose plan"}

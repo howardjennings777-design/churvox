@@ -14,8 +14,8 @@
 
   "passed_tests": [
     "Admin login via 'Admin Dashboard' button works and redirects to /dashboard",
-    "Admin login via email/password (admin@churvox.com / Admin123!) works and redirects to /dashboard",
-    "Worker login (john@churvox.com / Worker123!) works and redirects to /dashboard",
+    "Admin login via email/password (hello@churvox.com / Admin123!) works and redirects to /dashboard",
+    "Worker login (hello@churvox.com / Worker123!) works and redirects to /dashboard",
     "Signup flow works and redirects new users to /dashboard",
     "Wrong credentials show error message 'Invalid email or password' on login page",
     "Privacy page at /privacy loads publicly (no login required) with Churvox branding",
@@ -111,13 +111,13 @@
   },
 
   "test_credentials": {
-    "admin_email": "admin@churvox.com",
+    "admin_email": "hello@churvox.com",
     "admin_password": "Admin123!",
-    "worker_email": "john@churvox.com",
+    "worker_email": "hello@churvox.com",
     "worker_password": "Worker123!"
   },
 
-  "seed_data_creation": "Created test user test_iter10_qpjfbp@example.com during signup flow testing",
+  "seed_data_creation": "Created test user hello@churvox.com during signup flow testing",
 
   "retest_needed": false,
 

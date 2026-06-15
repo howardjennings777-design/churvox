@@ -2,7 +2,7 @@
 End-to-end proof: Real rule + real app event + real run + real notification + deep-link.
 
 Flow:
-  1. Log in as business owner (launchtest@churvox.com)
+  1. Log in as business owner (hello@churvox.com)
   2. Create a client + worker
   3. Create an automation rule on `job_assigned` that fires a notification to the worker
   4. Create a job assigned to that worker — hits real /api/jobs endpoint
@@ -39,7 +39,7 @@ def login(email, password):
 
 def main():
     # 1) Owner login
-    owner_tok, owner_user = login("launchtest@churvox.com", "Launch2025!")
+    owner_tok, owner_user = login("hello@churvox.com", "Launch2025!")
     bid = owner_user.get("business_id") or owner_user.get("id") or owner_user.get("_id")
     print(f"[ok] owner logged in, business_id={bid}")
 
@@ -60,7 +60,7 @@ def main():
 
     # Quick client
     code, client = req("POST", "/api/clients", token=owner_tok, body={
-        "name": "E2E Client", "email": "client@example.com", "phone": "",
+        "name": "E2E Client", "email": "hello@churvox.com", "phone": "",
         "address": "123 Test St",
     })
     client_id = client.get("id") or client.get("client_id")

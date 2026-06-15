@@ -120,7 +120,7 @@ Churvox is **launch-ready**. No further building until the user resumes.
   - `GET /api/clients` → returns `[]` for workers (was leaking the entire client list).
   - `GET /api/quotes` → returns `[]` for workers (was reachable).
   - `GET /api/jobs` and `GET /api/jobs/{job_id}` → strip `price`, `hourly_rate`, `pricing_type`, `extras`, `invoice_id`, `invoice_status`, `invoice_created`, `invoiced`, `ai_invoice_description`, `invoice_description_draft`, `quote_id`, `draft_invoice_id` from the payload when the requester is a worker.
-- **Worker app verified end-to-end** on a 390 px mobile viewport with the new test account `mike.test@example.com` / `MikePass123!`:
+- **Worker app verified end-to-end** on a 390 px mobile viewport with the new test account `hello@churvox.com` / `MikePass123!`:
   - login → auto-redirect to `/worker/jobs`
   - `/dashboard`, `/invoices`, `/payroll`, `/team`, `/clients`, `/quotes` all redirect back to `/worker/jobs`
   - 4 KPI cards + per-job View/Directions/Completed buttons

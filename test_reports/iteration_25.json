@@ -39,14 +39,14 @@
   },
 
   "passed_tests": [
-    "OWNER LOGIN: launchtest@churvox.com/Launch2025! → /dashboard ✓",
+    "OWNER LOGIN: hello@churvox.com/Launch2025! → /dashboard ✓",
     "DASHBOARD: Light theme (white sidebar rgb(255,255,255)), stat cards, Today's Jobs, This Week sections visible ✓",
     "JOBS PAGE: Light theme, search works, status filter (All dropdown), New Job button visible ✓",
     "JOB CREATE: /jobs/new form has recurring job checkbox + frequency selector (weekly/fortnightly/monthly) ✓",
     "CLIENTS PAGE: Light theme, CSV Import button, Add Client button, edit/delete icons (pencil/trash) visible ✓",
     "INVOICES PAGE: Light theme, invoice list with Send button, three-dot menu with Delete option ✓",
     "TEAM PAGE: Shows 'Team management requires a Team plan or higher' for Solo plan user (expected) ✓",
-    "WORKER LOGIN: worker@churvox.com/Worker123! → /worker/jobs ✓",
+    "WORKER LOGIN: hello@churvox.com/Worker123! → /worker/jobs ✓",
     "WORKER JOB DETAIL: Worker sees job detail with status buttons (in progress, paused, completed), My Notes, Employer Notes ✓",
     "PAYROLL PAGE: Light theme, Timesheets, Pay Summary, Team Hours, Reports cards visible ✓",
     "ADMIN LOGIN: hello@churvox.com/TempPass123! → /admin (Platform Dashboard) ✓"
@@ -84,8 +84,8 @@
   },
 
   "test_credentials": {
-    "owner": "launchtest@churvox.com / Launch2025!",
-    "worker": "worker@churvox.com / Worker123!",
+    "owner": "hello@churvox.com / Launch2025!",
+    "worker": "hello@churvox.com / Worker123!",
     "admin": "hello@churvox.com / TempPass123!"
   },
 

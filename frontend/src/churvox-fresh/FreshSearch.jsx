@@ -32,9 +32,9 @@ const fallback = {
     { id: "dispatch-3", job: "Driveway clean", client: "Birchville Rentals", status: "Blocked", worker: "Unassigned" },
   ],
   clients: [
-    { id: "client-1", name: "Aroha Property Care", status: "Active", email: "office@arohaproperty.co.nz", billingEmail: "accounts@arohaproperty.co.nz" },
-    { id: "client-2", name: "Birchville Rentals", status: "Needs setup", email: "manager@birchvillerentals.co.nz", billingEmail: "" },
-    { id: "client-3", name: "Lower Hutt Medical Centre", status: "Active", email: "admin@lhmedical.co.nz", billingEmail: "accounts@lhmedical.co.nz" },
+    { id: "client-1", name: "Aroha Property Care", status: "Active", email: "hello@churvox.com", billingEmail: "hello@churvox.com" },
+    { id: "client-2", name: "Birchville Rentals", status: "Needs setup", email: "hello@churvox.com", billingEmail: "" },
+    { id: "client-3", name: "Lower Hutt Medical Centre", status: "Active", email: "hello@churvox.com", billingEmail: "hello@churvox.com" },
   ],
   quotes: [
     { id: "QT-2041", client: "Birchville Rentals", title: "Driveway clean", status: "Sent", amount: 240 },

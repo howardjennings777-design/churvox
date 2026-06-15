@@ -18,11 +18,11 @@ MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
 DB_NAME = os.environ.get('DB_NAME', 'test_database')
 
 # Test credentials
-EMPLOYER_EMAIL = "launchtest@churvox.com"
+EMPLOYER_EMAIL = "hello@churvox.com"
 EMPLOYER_PASSWORD = "Launch2025!"
 OWNER_EMAIL = "hello@churvox.com"
 OWNER_PASSWORD = "TempPass123!"
-WORKER_EMAIL = "worker@churvox.com"
+WORKER_EMAIL = "hello@churvox.com"
 WORKER_PASSWORD = "Worker123!"
 
 # Test data for new worker invite
@@ -89,7 +89,7 @@ class TestForgotPassword:
     def test_forgot_password_nonexistent_email(self, api_client):
         """POST /api/auth/forgot-password with nonexistent email returns success (no leak)"""
         response = api_client.post(f"{BASE_URL}/api/auth/forgot-password", json={
-            "email": "nonexistent_user_12345@example.com"
+            "email": "hello@churvox.com"
         })
         
         assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"

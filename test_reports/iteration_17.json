@@ -18,8 +18,8 @@
 
   "passed_tests": [
     "OWNER FLOW: Login at /login with hello@churvox.com / TempPass123! → redirects to /admin automatically ✓",
-    "EMPLOYER FLOW: Login at /login with launchtest@churvox.com / Launch2025! → redirects to /dashboard automatically ✓",
-    "WORKER FLOW: Login at /login with worker@churvox.com / Worker123! → redirects to /dashboard ✓",
+    "EMPLOYER FLOW: Login at /login with hello@churvox.com / Launch2025! → redirects to /dashboard automatically ✓",
+    "WORKER FLOW: Login at /login with hello@churvox.com / Worker123! → redirects to /dashboard ✓",
     "WORKER SIDEBAR: Worker sees Jobs but NOT Clients/Quotes/Invoices in sidebar ✓",
     "WORKER ROUTE BLOCKING: Worker navigating to /clients → redirects to /dashboard ✓",
     "WORKER ROUTE BLOCKING: Worker navigating to /invoices → redirects to /dashboard ✓",
@@ -57,8 +57,8 @@
 
   "test_credentials": {
     "platform_owner": "hello@churvox.com / TempPass123!",
-    "employer": "launchtest@churvox.com / Launch2025!",
-    "worker": "worker@churvox.com / Worker123!"
+    "employer": "hello@churvox.com / Launch2025!",
+    "worker": "hello@churvox.com / Worker123!"
   },
 
   "seed_data_creation": "No new seed data created",

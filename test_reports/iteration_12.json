@@ -15,9 +15,9 @@
   "passed_tests": [
     "Login page does NOT have admin bypass/quick-login button",
     "Login page only has email + password + Sign In button",
-    "Admin login works with correct credentials (admin@churvox.com / Admin123!)",
+    "Admin login works with correct credentials (hello@churvox.com / Admin123!)",
     "Wrong password shows error message 'Invalid email or password'",
-    "Non-existent user (john@churvox.com) correctly rejected with 401",
+    "Non-existent user (hello@churvox.com) correctly rejected with 401",
     "Dashboard shows 0 for all stats (jobs_today, jobs_this_week, completed, revenue, pending_invoices, clients, team_count)",
     "Dashboard shows Getting Started checklist for empty business",
     "Jobs page shows 'No jobs yet' empty state with Create button",
@@ -55,9 +55,9 @@
   },
 
   "test_credentials": {
-    "admin_email": "admin@churvox.com",
+    "admin_email": "hello@churvox.com",
     "admin_password": "Admin123!",
-    "note": "john@churvox.com worker was deleted - only admin user exists"
+    "note": "hello@churvox.com worker was deleted - only admin user exists"
   },
 
   "seed_data_creation": "None - database was cleaned, only admin user remains",
@@ -66,7 +66,7 @@
 
   "should_main_agent_self_test": false,
 
-  "context_for_next_testing_agent": "Iteration 12 verified launch readiness: (1) Admin bypass button permanently removed from LoginPage.js - only email/password form remains, (2) All test data deleted from database - jobs, clients, quotes, invoices, workers, SMS logs all empty, (3) Auth flow clean - no demo fallbacks, protected routes work, logout works. Only admin@churvox.com user exists. MOCKED: SMS delivery (POST /api/sms/send), MYOB sync (POST /api/myob/sync/{id}), billing/payment (PATCH /api/user/plan).",
+  "context_for_next_testing_agent": "Iteration 12 verified launch readiness: (1) Admin bypass button permanently removed from LoginPage.js - only email/password form remains, (2) All test data deleted from database - jobs, clients, quotes, invoices, workers, SMS logs all empty, (3) Auth flow clean - no demo fallbacks, protected routes work, logout works. Only hello@churvox.com user exists. MOCKED: SMS delivery (POST /api/sms/send), MYOB sync (POST /api/myob/sync/{id}), billing/payment (PATCH /api/user/plan).",
 
   "mocked_apis": {
     "sms_delivery": "POST /api/sms/send - mock SMS delivery",

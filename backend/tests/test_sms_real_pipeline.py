@@ -53,7 +53,7 @@ async def last_log(db, bid):
 
 def main():
     code, body = req("POST", "/api/auth/login",
-                     body={"email": "launchtest@churvox.com", "password": "Launch2025!"})
+                     body={"email": "hello@churvox.com", "password": "Launch2025!"})
     assert code == 200, body
     tok = body["token"]
     bid = body.get("user", {}).get("business_id") or body.get("user", {}).get("id") or body.get("id")
