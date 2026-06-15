@@ -92,6 +92,7 @@ PLAN_PRICES = {
     "enterprise": {"NZ": 299, "AU": 299, "US": 239, "UK": 199},
 }
 CURRENCIES = {"NZ": "nzd", "AU": "aud", "US": "usd", "UK": "gbp"}
+OWNER_BILLING_ROLES = {"employer", "admin", "owner", "business_owner", "superadmin", "manager", "office_admin"}
 
 
 def _s(value):
@@ -150,13 +151,16 @@ def _patch_server(module):
     Request = module.Request
     stripe = module.stripe
     get_current_user = module.get_current_user
-    require_employer = module.require_employer
 
     _remove_old_checkout_routes(app)
 
     @app.post("/api/billing/create-checkout-session")
     async def churvox_checkout_session(payload: dict, request: Request):
-        user = await require_employer(request)
+        user = await get_current_user(request)
+        role = _s(user.get("role") or "employer").strip().lower()
+        if role not in OWNER_BILLING_ROLES and not user.get("is_admin") and not user.get("is_platform_owner"):
+            raise HTTPException(status_code=403, detail="Only business owners and admins can start billing checkout")
+
         secret = os.environ.get("STRIPE_SECRET_KEY", "").strip()
         if not secret:
             raise HTTPException(status_code=500, detail="Stripe secret key not configured in Render")
@@ -215,6 +219,7 @@ def _patch_server(module):
                     "country": country,
                     "session_id": session.id,
                     "price_source": price_source,
+                    "role": role,
                     "created_at": datetime.now(timezone.utc),
                 })
             except Exception:
