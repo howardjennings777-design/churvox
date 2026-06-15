@@ -25,14 +25,12 @@ const getPostLoginPath = (payload = {}) => {
 };
 
 const loginLooksValid = (result = {}) => {
-  const user = result?.user || result || {};
   return Boolean(
     result?.token ||
-      result?.cookieSession ||
-      user?.email ||
-      user?.id ||
-      user?._id ||
-      user?.role
+      result?.access_token ||
+      result?.auth_token ||
+      result?.user?.token ||
+      result?.user?.access_token
   );
 };
 

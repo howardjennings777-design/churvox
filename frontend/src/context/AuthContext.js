@@ -121,13 +121,14 @@ export function AuthProvider({ children }) {
     let nextUser = pickUser(response.data);
     const returnedEmail = String(nextUser?.email || response.data?.email || "").trim().toLowerCase();
 
-    if (!token && (!returnedEmail || returnedEmail !== cleanEmail)) {
+    if (!token) {
       clearStoredAuth();
       throw new Error(response?.data?.detail || response?.data?.message || "Invalid email or password.");
     }
 
+    localStorage.setItem("token", token);
+
     if (token) {
-      localStorage.setItem("token", token);
       try {
         nextUser = await fetchMe(token);
       } catch {
@@ -154,7 +155,7 @@ export function AuthProvider({ children }) {
       localStorage.setItem("platform_owner_email", finalEmail);
     }
 
-    return { ...response.data, user: nextUser, ...nextUser, ...(token ? { token } : { cookieSession: true }) };
+    return { ...response.data, user: nextUser, ...nextUser, token };
   }, [fetchMe]);
 
   const register = useCallback(async (userData) => {
