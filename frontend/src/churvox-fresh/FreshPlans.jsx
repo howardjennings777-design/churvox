@@ -3,7 +3,7 @@ import { useApi } from "../hooks/useApi";
 import "./freshPlans.css";
 
 const PLAN_REQUIRED_KEY = "churvox_plan_choice_required";
-const CHECKOUT_FORM_URL = "https://churvox-backend.onrender.com/api/billing/start-checkout-form";
+const CHECKOUT_API_URL = "https://churvox-backend.onrender.com/api/billing/create-checkout-session";
 const regions = {
   NZ: { label: "New Zealand", short: "NZ", currency: "NZD", prefix: "$", tax: "+ GST", taxName: "GST", taxRate: 0.15, taxIncluded: "incl. GST" },
   AU: { label: "Australia", short: "AU", currency: "AUD", prefix: "A$", tax: "+ GST", taxName: "GST", taxRate: 0.1, taxIncluded: "incl. GST" },
@@ -30,15 +30,19 @@ function realPriceLabel(value, regionCode) { const r = regions[regionCode] || re
 function taxBreakdown(value, regionCode) { const r = regions[regionCode] || regions.NZ; if (!r.taxRate) return r.taxIncluded; return `${money(value, regionCode)}/month ${r.tax} = ${money(realTotal(value, regionCode), regionCode, 2)}/month ${r.taxIncluded}`; }
 function planRequired() { try { const p = new URLSearchParams(window.location.search || ""); return p.get("must_choose_plan") === "1" || window.localStorage.getItem(PLAN_REQUIRED_KEY) === "true"; } catch { return false; } }
 function storedCheckoutToken() { try { return window.localStorage.getItem("token") || window.localStorage.getItem("access_token") || window.localStorage.getItem("churvox_token") || ""; } catch { return ""; } }
-function appendHidden(form, name, value) { const input = document.createElement("input"); input.type = "hidden"; input.name = name; input.value = String(value || ""); form.appendChild(input); }
-function submitCheckoutForm(payload) {
-  const form = document.createElement("form");
-  form.method = "POST";
-  form.action = CHECKOUT_FORM_URL;
-  form.style.display = "none";
-  Object.entries(payload).forEach(([key, value]) => appendHidden(form, key, value));
-  document.body.appendChild(form);
-  form.submit();
+async function readCheckoutResponse(response) { const text = await response.text(); if (!text) return null; try { return JSON.parse(text); } catch { return text; } }
+function checkoutMessage(payload, status) { if (!payload) return `Stripe checkout could not start (${status}).`; if (typeof payload === "string") return payload.slice(0, 300) || `Stripe checkout could not start (${status}).`; return payload.detail || payload.error || payload.message || payload?.data?.detail || payload?.data?.error || `Stripe checkout could not start (${status}).`; }
+async function createCheckout(payload, token) {
+  const response = await fetch(CHECKOUT_API_URL, {
+    method: "POST",
+    credentials: "omit",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  });
+  const body = await readCheckoutResponse(response);
+  const checkoutUrl = body?.url || body?.checkout_url || body?.checkoutUrl || body?.data?.url || "";
+  if (!response.ok || !checkoutUrl) throw new Error(checkoutMessage(body, response.status));
+  return checkoutUrl;
 }
 export default function FreshPlans({ onNavigate }) {
   const { get } = useApi();
@@ -66,7 +70,14 @@ export default function FreshPlans({ onNavigate }) {
       setError("Your login token is missing. Log out, log back in, then start Stripe checkout again.");
       return;
     }
-    submitCheckoutForm({ token, plan: selected.backendPlan, country: selectedRegion, ui_plan: selected.id });
+    try {
+      const checkoutUrl = await createCheckout({ plan: selected.backendPlan, country: selectedRegion }, token);
+      window.location.assign(checkoutUrl);
+    } catch (err) {
+      setError(err?.message || "Stripe checkout could not start. Please contact support.");
+    } finally {
+      setCheckoutLoading(false);
+    }
   }
   const currentPlanLabel = currentPlan === "none" ? "Choose a plan" : planByUiId(currentPlan).name;
   return (
