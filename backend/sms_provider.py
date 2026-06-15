@@ -51,10 +51,11 @@ def _install_checkout_route_override():
 
             if has_billing_checkout:
                 try:
-                    from backend import churvox_plan_consistency, churvox_checkout_return
+                    from backend import churvox_plan_consistency, churvox_checkout_return, churvox_checkout_confirm_public
                 except Exception:
                     import churvox_plan_consistency
                     import churvox_checkout_return
+                    import churvox_checkout_confirm_public
 
                 try:
                     delattr(router, "churvox_plan_consistency_installed")
@@ -63,10 +64,8 @@ def _install_checkout_route_override():
 
                 churvox_plan_consistency.install(router)
                 churvox_checkout_return.install(router)
+                churvox_checkout_confirm_public.install(router)
 
-                # Delete the old plan checkout fallback. Plans should use only
-                # /billing/create-checkout-session so it cannot accidentally hit
-                # the old card-forcing /stripe/create-checkout-session route.
                 router.routes = [
                     route
                     for route in getattr(router, "routes", [])
@@ -129,7 +128,7 @@ def _wire_launch_routes_once():
         if router is None:
             return
         try:
-            from backend import churvox_public_contact, churvox_create_record_key_fix, churvox_launch_routes, churvox_team_roles, churvox_recurring_routes, churvox_isolation_routes, churvox_billing_addon_fix, churvox_plan_consistency, churvox_checkout_return
+            from backend import churvox_public_contact, churvox_create_record_key_fix, churvox_launch_routes, churvox_team_roles, churvox_recurring_routes, churvox_isolation_routes, churvox_billing_addon_fix, churvox_plan_consistency, churvox_checkout_return, churvox_checkout_confirm_public
         except Exception:
             import churvox_public_contact
             import churvox_create_record_key_fix
@@ -140,6 +139,7 @@ def _wire_launch_routes_once():
             import churvox_billing_addon_fix
             import churvox_plan_consistency
             import churvox_checkout_return
+            import churvox_checkout_confirm_public
         churvox_public_contact.install(router)
         churvox_create_record_key_fix.install(router)
         churvox_launch_routes.install(router)
@@ -149,6 +149,7 @@ def _wire_launch_routes_once():
         churvox_billing_addon_fix.install(router)
         churvox_plan_consistency.install(router)
         churvox_checkout_return.install(router)
+        churvox_checkout_confirm_public.install(router)
         _install_late_route_guard(app, router)
         _LAUNCH_ROUTES_WIRED = True
     except Exception as exc:
