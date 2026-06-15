@@ -5,6 +5,7 @@ import runpy
 import sys
 from datetime import datetime, timezone
 from bson import ObjectId
+from fastapi import Request
 from fastapi.responses import JSONResponse
 
 try:
@@ -258,7 +259,7 @@ async def _get_user_or_none(request):
         return None
 
 
-async def _save_business_profile(request):
+async def _save_business_profile(request: Request):
     user = await _get_user_or_none(request)
     if not user:
         return JSONResponse({'success': False, 'detail': 'Not authenticated'}, status_code=401)
@@ -290,7 +291,7 @@ async def _save_business_profile(request):
     return JSONResponse({'success': True, 'message': 'Business profile saved', 'data': _json_safe(updated)})
 
 
-async def _create_card_required_checkout(request):
+async def _create_card_required_checkout(request: Request):
     # Deprecated. Do not create Stripe sessions here.
     # Clean checkout lives in backend/churvox_plan_consistency.py.
     return JSONResponse(
@@ -345,7 +346,7 @@ _remove_conflicting_checkout_routes()
 
 
 @app.post('/api/billing/create-checkout-session')
-async def _clean_json_checkout(request):
+async def _clean_json_checkout(request: Request):
     user = await _get_user_or_none(request)
     if not user:
         return JSONResponse({'success': False, 'detail': 'Not authenticated'}, status_code=401)
@@ -528,7 +529,7 @@ async def _slips_payload(request):
 
 
 for _path in ['/api/slips', '/api/command/slips', '/api/smart-hub/slips', '/api/smarthub/slips', '/api/ai/slips', '/api/ai/actions', '/api/ai/operator/slips', '/api/ai/operator/actions', '/api/ai-operator/slips', '/api/ai-operator/actions', '/api/operator/slips', '/api/operator/actions', '/api/approval-queue', '/api/operator/approval-queue', '/api/ai/operator/approval-queue', '/api/ai-operator/approval-queue']:
-    async def _handler(request, _p=_path):
+    async def _handler(request: Request, _p=_path):
         return await _slips_payload(request)
     app.get(_path)(_handler)
 
@@ -536,7 +537,7 @@ for _path in ['/api/slips', '/api/command/slips', '/api/smart-hub/slips', '/api/
 @app.get('/api/smart-hub')
 @app.get('/api/smarthub')
 @app.get('/api/command')
-async def command_summary(request):
+async def command_summary(request: Request):
     slips = await _build_operator_slips(request)
     return {'success': True, 'summary': 'Churvox AI Operator has prepared the next admin actions.', 'slips': slips, 'actions': slips, 'approval_queue': slips, 'counts': {'prepared': len(slips), 'urgent': len([s for s in slips if s.get('priority') == 'high'])}}
 
