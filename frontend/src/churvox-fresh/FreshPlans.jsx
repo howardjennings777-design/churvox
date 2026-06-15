@@ -2,7 +2,7 @@ import React from "react";
 import { useApi } from "../hooks/useApi";
 import "./freshPlans.css";
 
-const CHECKOUT_TRACE_MARKER = "checkout-js-trace-20260615-same-site-fetch-v4";
+const CHECKOUT_TRACE_MARKER = "checkout-js-trace-20260615-url-shape-v5";
 
 const plans = [
   { id: "start", backendPlan: "solo", name: "Start", price: 39, tag: "Starter", best: false, headline: "Get organised", summary: "For a solo operator who needs jobs, clients, quotes and invoices under control.", limit: "Best for one owner", features: ["Jobs, clients, quotes and invoices", "Business Pulse basics", "Business settings and GST", "Accounting Sync Add-on available"] },
@@ -17,13 +17,39 @@ function unwrap(result) { return result?.data ?? result; }
 function planByUiId(id) { return plans.find((plan) => plan.id === id) || plans[2]; }
 function uiPlanFromBackend(value) { return backendToUiPlan[String(value || "pro").toLowerCase()] || "operator"; }
 function money(value) { return `$${Number(value || 0).toFixed(0)}`; }
-
-async function createCheckout({ plan, country }) {
-  const response = await fetch("/api/billing/create-checkout-session", {
+function looksLikeStripeUrl(value) {
+  return typeof value === "string" && /^https:\/\/(checkout\.stripe\.com|buy\.stripe\.com)\//i.test(value.trim());
+}
+function findCheckoutUrl(value, depth = 0) {
+  if (!value || depth > 4) return "";
+  if (looksLikeStripeUrl(value)) return value.trim();
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findCheckoutUrl(item, depth + 1);
+      if (found) return found;
+    }
+    return "";
+  }
+  if (typeof value === "object") {
+    const direct = value.url || value.checkout_url || value.checkoutUrl || value.session_url || value.sessionUrl || value.stripe_url || value.redirect_url || value.redirectUrl;
+    if (looksLikeStripeUrl(direct)) return String(direct).trim();
+    for (const key of ["data", "session", "checkout", "result", "payload"]) {
+      const found = findCheckoutUrl(value[key], depth + 1);
+      if (found) return found;
+    }
+  }
+  return "";
+}
+function extractStripeUrlFromText(text) {
+  const match = String(text || "").match(/https:\/\/(checkout\.stripe\.com|buy\.stripe\.com)\/[^\s"'<>]+/i);
+  return match ? match[0] : "";
+}
+async function postCheckout(endpoint, body) {
+  const response = await fetch(endpoint, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ plan, plan_type: plan, country, billing_country: country }),
+    body: JSON.stringify(body),
   });
 
   const text = await response.text();
@@ -35,9 +61,25 @@ async function createCheckout({ plan, country }) {
     throw new Error(String(detail));
   }
 
-  const url = data?.url || data?.checkout_url || data?.checkoutUrl || data?.session_url;
-  if (!url) throw new Error("Stripe checkout did not return a checkout URL.");
-  return url;
+  const url = findCheckoutUrl(data) || extractStripeUrlFromText(text);
+  return { url, text, data, endpoint };
+}
+async function createCheckout({ plan, country }) {
+  const body = { plan, plan_type: plan, country, billing_country: country };
+  const errors = [];
+
+  for (const endpoint of ["/api/billing/create-checkout-session", "/api/stripe/create-checkout-session"]) {
+    try {
+      const result = await postCheckout(endpoint, body);
+      if (result.url) return result.url;
+      const raw = result.text || JSON.stringify(result.data || {});
+      errors.push(`${endpoint} returned no Stripe URL: ${String(raw).slice(0, 400)}`);
+    } catch (err) {
+      errors.push(`${endpoint}: ${err?.message || err}`);
+    }
+  }
+
+  throw new Error(errors.join(" | ") || "Stripe checkout did not return a checkout URL.");
 }
 
 export default function FreshPlans({ onNavigate }) {
