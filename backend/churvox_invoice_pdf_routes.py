@@ -2,18 +2,58 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 import os
 import re
 import urllib.request
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
+import jwt
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import Response, JSONResponse
 
 router = APIRouter(tags=["invoice-pdf"])
+
+
+CREATE_TYPE_LABELS = {
+    "client": "Client",
+    "job": "Job",
+    "quote": "Quote",
+    "invoice": "Invoice",
+    "person": "Person / worker",
+}
+
+TARGET_PAGE_BY_KIND = {
+    "client": "clients",
+    "job": "jobs",
+    "quote": "quotes",
+    "invoice": "invoices",
+    "person": "team",
+}
+
+JOB_TYPES = {
+    "lawn_mowing",
+    "garden_maintenance",
+    "landscaping",
+    "cleaning",
+    "window_cleaning",
+    "pressure_washing",
+    "handyman",
+    "plumbing",
+    "electrical",
+    "painting",
+    "carpentry",
+    "pest_control",
+    "pool_maintenance",
+    "hvac",
+    "roofing",
+    "other",
+}
+
+ROLES = {"worker", "lead_worker", "subcontractor", "payroll"}
 
 
 def _money(value: Any) -> float:
@@ -39,6 +79,203 @@ def _first(*values: Any) -> str:
         if str(value or "").strip():
             return str(value)
     return ""
+
+
+def _plain(value: Any, limit: int = 240) -> str:
+    return re.sub(r"\s+", " ", str(value or "").strip())[:limit]
+
+
+def _num(value: Any) -> float:
+    try:
+        number = float(str(value or "0").replace("$", "").replace(",", ""))
+        return number if number > 0 else 0.0
+    except Exception:
+        return 0.0
+
+
+def _price_text(value: Any) -> str:
+    amount = _num(value)
+    if amount <= 0:
+        return "Price needed"
+    return f"${amount:,.2f}" if amount % 1 else f"${int(amount):,}"
+
+
+def _role_label(value: str) -> str:
+    value = (value or "worker").strip().lower()
+    if value == "lead_worker":
+        return "Lead worker"
+    if value == "subcontractor":
+        return "Subcontractor"
+    if value == "payroll":
+        return "Payroll only"
+    return "Worker"
+
+
+def _normal_kind(value: Any, text: str = "") -> str:
+    value = str(value or "auto").strip().lower().replace("worker", "person")
+    if value in CREATE_TYPE_LABELS:
+        return value
+    low = str(text or "").lower()
+    if any(word in low for word in ["invoice", "bill", "charge"]):
+        return "invoice"
+    if any(word in low for word in ["quote", "estimate", "price up"]):
+        return "quote"
+    if any(word in low for word in ["worker", "staff", "team member", "employee", "subcontractor", "payroll"]):
+        return "person"
+    if "client" in low or "customer" in low:
+        return "client"
+    return "job"
+
+
+def _date_only(days: int = 7) -> str:
+    return (datetime.utcnow() + timedelta(days=days)).date().isoformat()
+
+
+def _normalise_ai_payload(raw: Dict[str, Any], requested_kind: str, source_text: str) -> Dict[str, Any]:
+    raw = raw if isinstance(raw, dict) else {}
+    kind = _normal_kind(raw.get("kind") or requested_kind, source_text)
+    amount = _num(raw.get("amount") or raw.get("price") or raw.get("total") or raw.get("subtotal"))
+    pay_rate = _num(raw.get("payRate") or raw.get("pay_rate"))
+    schedule = raw.get("schedule") if isinstance(raw.get("schedule"), dict) else {}
+    schedule_input = _plain(schedule.get("input") or raw.get("scheduled_date"), 40)
+    schedule_human = _plain(schedule.get("human") or raw.get("schedule_human") or ("Date needed" if kind == "job" else "Not needed"), 80)
+    service = _plain(raw.get("service") or raw.get("description") or raw.get("job_description") or "General service", 120)
+    client_name = _plain(raw.get("clientName") or raw.get("client_name") or raw.get("customer_name") or raw.get("customerName") or "New customer", 100)
+    person_name = _plain(raw.get("personName") or raw.get("person_name") or raw.get("name") or client_name or "New person", 100)
+    email = _plain(raw.get("email") or raw.get("customer_email") or raw.get("client_email"), 120)
+    phone = _plain(raw.get("phone") or raw.get("mobile") or raw.get("customer_phone") or raw.get("client_phone"), 80)
+    address = _plain(raw.get("address") or raw.get("site_address") or raw.get("service_address"), 160)
+    role = _plain(raw.get("role") or raw.get("team_role") or "worker", 40).lower().replace("lead worker", "lead_worker").replace("payroll only", "payroll")
+    if role not in ROLES:
+        role = "worker"
+    job_type = _plain(raw.get("jobType") or raw.get("job_type") or "other", 60).lower()
+    if job_type not in JOB_TYPES:
+        job_type = "other"
+    repeat = _plain(raw.get("repeat") or raw.get("recurring_frequency") or raw.get("recurrence") or "one-off", 60).lower()
+    gst = _plain(raw.get("gst") or raw.get("gstStatus") or raw.get("gst_status") or ("GST included" if kind == "invoice" else "Needs check"), 60)
+    due_date = _plain(raw.get("dueDate") or raw.get("due_date") or (_date_only(7) if kind == "invoice" else ""), 40)
+    title = _plain(raw.get("title") or (person_name if kind == "person" else f"{service} for {client_name}"), 140)
+    notes = _plain(raw.get("notes") or raw.get("raw") or source_text, 1000)
+    missing = raw.get("missing") if isinstance(raw.get("missing"), list) else []
+    missing = [_plain(item, 80) for item in missing if _plain(item, 80)]
+
+    def add_missing(name: str):
+        if name not in missing:
+            missing.append(name)
+
+    if kind == "client" and not client_name:
+        add_missing("client name")
+    if kind == "job":
+        if not client_name or client_name == "New customer":
+            add_missing("client name")
+        if not address:
+            add_missing("job address")
+        if not schedule_input:
+            add_missing("date")
+    if kind == "quote":
+        if not client_name or client_name == "New customer":
+            add_missing("client name")
+        if not address:
+            add_missing("site address")
+        if not amount:
+            add_missing("quote price")
+    if kind == "invoice":
+        if not client_name or client_name == "New customer":
+            add_missing("client name")
+        if not amount:
+            add_missing("invoice amount")
+    if kind == "person":
+        if not person_name or person_name == "New person":
+            add_missing("person name")
+        if not email:
+            add_missing("email for invite")
+
+    return {
+        "kind": kind,
+        "label": CREATE_TYPE_LABELS.get(kind, "Action"),
+        "clientName": client_name,
+        "personName": person_name,
+        "service": service,
+        "jobType": job_type,
+        "address": address,
+        "area": _plain(raw.get("area") or raw.get("region") or "Wellington", 80),
+        "email": email,
+        "phone": phone,
+        "amount": amount,
+        "priceText": _price_text(amount),
+        "payRate": pay_rate,
+        "payRateText": f"${pay_rate:g}/hr" if pay_rate else "Not set",
+        "schedule": {"human": schedule_human, "input": schedule_input, "time": _plain(schedule.get("time"), 40)},
+        "repeat": repeat,
+        "role": role,
+        "roleText": _role_label(role),
+        "gst": gst,
+        "dueDate": due_date,
+        "title": title,
+        "notes": notes,
+        "targetPage": TARGET_PAGE_BY_KIND.get(kind, "jobs"),
+        "missing": missing,
+        "confidence": raw.get("confidence") if isinstance(raw.get("confidence"), (int, float)) else None,
+    }
+
+
+def _fallback_parse(kind: str, text: str) -> Dict[str, Any]:
+    text = str(text or "")
+    low = text.lower()
+    resolved = _normal_kind(kind, text)
+    email = re.search(r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", text, re.I)
+    phone = re.search(r"(?:\+?64|0)\s?[\d\s().-]{7,14}\d", text)
+    price = re.search(r"\$\s*(\d+(?:\.\d{1,2})?)", text) or re.search(r"\b(\d+(?:\.\d{1,2})?)\s*(?:incl|inc|including)\s*gst\b", low)
+    address = re.search(r"\b\d{1,5}\s+[A-Za-z0-9'. -]+?\b(?:street|st|road|rd|avenue|ave|drive|dr|lane|ln|place|pl|crescent|cres|terrace|tce|court|ct|way|highway|hwy)\b", text, re.I)
+    service = "Hedge trimming" if "hedge" in low else "Cleaning" if "clean" in low else "Handyman repair" if "repair" in low or "handyman" in low else "Lawn mowing" if "lawn" in low or "mow" in low else "General service"
+    job_type = "garden_maintenance" if "hedge" in low or "garden" in low else "cleaning" if "clean" in low else "handyman" if "repair" in low or "handyman" in low else "lawn_mowing" if "lawn" in low or "mow" in low else "other"
+    amount = _num(price.group(1) if price else 0)
+    words = [w for w in re.findall(r"[A-Za-z][A-Za-z'-]*", text) if w.lower() not in {"add", "create", "job", "quote", "invoice", "client", "customer", "worker", "for", "at", "to", "the", "a", "an", "mow", "lawn", "hedge", "trim", "clean", "repair", "today", "tomorrow", "next", "friday", "gst"}]
+    name = " ".join(w.capitalize() for w in words[:2]) or ("New person" if resolved == "person" else "New customer")
+    schedule_input = ""
+    schedule_human = "Date needed" if resolved == "job" else "Not needed"
+    if "tomorrow" in low:
+        dt = datetime.utcnow() + timedelta(days=1)
+        schedule_input = dt.strftime("%Y-%m-%dT09:00")
+        schedule_human = "Tomorrow · 9:00 AM"
+    elif "today" in low:
+        dt = datetime.utcnow()
+        schedule_input = dt.strftime("%Y-%m-%dT09:00")
+        schedule_human = "Today · 9:00 AM"
+    return _normalise_ai_payload({
+        "kind": resolved,
+        "clientName": name,
+        "personName": name,
+        "service": service,
+        "jobType": job_type,
+        "address": address.group(0).title() if address else "",
+        "email": email.group(0) if email else "",
+        "phone": phone.group(0).strip() if phone else "",
+        "amount": amount,
+        "schedule": {"human": schedule_human, "input": schedule_input},
+        "repeat": "fortnightly" if "fortnight" in low else "weekly" if "weekly" in low else "monthly" if "monthly" in low else "one-off",
+        "role": "subcontractor" if "subcontractor" in low else "payroll" if "payroll" in low else "worker",
+        "gst": "GST included" if "gst" in low else "Needs check",
+        "dueDate": _date_only(7),
+        "notes": text,
+        "confidence": 0.35,
+    }, resolved, text)
+
+
+def _auth_payload(request: Request) -> Dict[str, Any]:
+    auth_header = request.headers.get("Authorization", "")
+    token = auth_header[7:] if auth_header.startswith("Bearer ") else request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    try:
+        payload = jwt.decode(token, os.getenv("JWT_SECRET", "default_secret_change_me"), algorithms=["HS256"])
+        if payload.get("type") != "access":
+            raise HTTPException(status_code=401, detail="Invalid token type")
+        return payload
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 
 def invoice_number(invoice: Dict[str, Any]) -> str:
@@ -157,6 +394,89 @@ async def find_invoice(request: Request, invoice_id: str, body: Optional[Dict[st
             pass
 
     return body if isinstance(body, dict) and body else {"id": invoice_id, "invoice_number": invoice_id}
+
+
+@router.post("/ai/quick-create/parse")
+@router.post("/create-with-churvox/parse")
+async def ai_quick_create_parse(request: Request):
+    _auth_payload(request)
+    body = await request.json() if request.headers.get("content-type", "").startswith("application/json") else {}
+    if not isinstance(body, dict):
+        body = {}
+
+    text = _plain(body.get("text"), 4000)
+    requested_kind = _normal_kind(body.get("kind"), text)
+    timezone = _plain(body.get("timezone") or "Pacific/Auckland", 80)
+    if not text:
+        raise HTTPException(status_code=400, detail="Write what you want Churvox to create first.")
+
+    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    model = os.getenv("CHURVOX_AI_MODEL", "gpt-4o-mini").strip() or "gpt-4o-mini"
+    if not api_key:
+        parsed = _fallback_parse(requested_kind, text)
+        return {"success": True, "provider": "fallback", "ai_enabled": False, "parsed": parsed, "message": "OPENAI_API_KEY is not configured, so Churvox used safe local extraction."}
+
+    system = (
+        "You are the Create with Churvox parser for a trade/job-management app. "
+        "Return ONLY valid JSON. Do not invent unknown facts. Keep risky actions owner-approved. "
+        "Invoices must be drafts only; do not send, sync, mark paid, submit tax, or create bank files. "
+        "Use New Zealand context and the user's timezone for relative dates. "
+        "Allowed kind values: client, job, quote, invoice, person. "
+        "Allowed jobType values: lawn_mowing, garden_maintenance, landscaping, cleaning, window_cleaning, pressure_washing, handyman, plumbing, electrical, painting, carpentry, pest_control, pool_maintenance, hvac, roofing, other. "
+        "Allowed role values: worker, lead_worker, subcontractor, payroll."
+    )
+    today = datetime.utcnow().date().isoformat()
+    user = {
+        "target_kind": requested_kind,
+        "timezone": timezone,
+        "today_utc": today,
+        "text": text,
+        "schema": {
+            "kind": "client|job|quote|invoice|person",
+            "clientName": "string",
+            "personName": "string",
+            "service": "string",
+            "jobType": "allowed jobType",
+            "address": "string",
+            "area": "string",
+            "email": "string",
+            "phone": "string",
+            "amount": "number",
+            "schedule": {"human": "string", "input": "YYYY-MM-DDTHH:mm or empty", "time": "string"},
+            "repeat": "one-off|weekly|fortnightly|monthly|custom",
+            "role": "worker|lead_worker|subcontractor|payroll",
+            "gst": "GST included|GST excluded|No GST|Needs check",
+            "dueDate": "YYYY-MM-DD or empty",
+            "title": "string",
+            "notes": "string",
+            "missing": ["short missing field names"],
+            "confidence": "0 to 1 number"
+        }
+    }
+
+    try:
+        from openai import OpenAI
+        client = OpenAI(api_key=api_key)
+
+        def run_ai():
+            return client.chat.completions.create(
+                model=model,
+                temperature=0.1,
+                response_format={"type": "json_object"},
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": json.dumps(user)},
+                ],
+            )
+
+        completion = await asyncio.to_thread(run_ai)
+        content = completion.choices[0].message.content or "{}"
+        parsed_raw = json.loads(content)
+        parsed = _normalise_ai_payload(parsed_raw, requested_kind, text)
+        return {"success": True, "provider": "openai", "ai_enabled": True, "model": model, "parsed": parsed}
+    except Exception as exc:
+        parsed = _fallback_parse(requested_kind, text)
+        return {"success": True, "provider": "fallback", "ai_enabled": False, "parsed": parsed, "message": f"AI parse failed, so Churvox used safe local extraction: {str(exc)[:160]}"}
 
 
 def send_email_with_pdf(to_email: str, subject: str, html: str, pdf_name: str, pdf_bytes: bytes) -> Dict[str, Any]:
