@@ -8,7 +8,7 @@ const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
 const OPEN_CLIENT_MODAL_KEY = "churvox:fresh-open-client-modal:v1";
 
 const groups = [
-  { title: "Run the business", items: [["smart", "BP", "Business Pulse"], ["command", "CM", "Command"], ["jobs", "JB", "Jobs"], ["dispatch", "SC", "Schedule"], ["clients", "CL", "Clients"], ["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"]] },
+  { title: "Run the business", items: [["smart", "BP", "Business Pulse"], ["command", "CM", "Command"], ["quickcreateai", "CR", "Create"], ["jobs", "JB", "Jobs"], ["dispatch", "SC", "Schedule"], ["clients", "CL", "Clients"], ["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"]] },
   { title: "People", items: [["team", "TM", "Team Access"], ["time", "TL", "Time Logs"], ["payroll", "PR", "Payroll"]] },
   { title: "Money", items: [["xero", "XE", "Xero Sync"], ["payments", "PY", "Payments"], ["reports", "RP", "Reports"], ["plans", "PL", "Plans & Usage"]] },
   { title: "Operations", items: [["photos", "PH", "Photos & Proof"], ["documents", "DC", "Documents"], ["automation", "AT", "Automation"], ["settings", "SG", "Settings"]] },
@@ -16,14 +16,15 @@ const groups = [
 ];
 
 const relatedTools = {
-  smart: [["command", "CM", "Open approvals"], ["alerts", "AL", "Alerts"], ["setup", "ST", "Business Setup"]],
-  command: [["approvals", "AP", "Approvals"], ["alerts", "AL", "Alerts"], ["audit", "AD", "Audit"], ["aioperator", "AO", "AI Operator"]],
+  smart: [["quickcreateai", "CR", "Create with Churvox"], ["command", "CM", "Open approvals"], ["alerts", "AL", "Alerts"], ["setup", "ST", "Business Setup"]],
+  command: [["quickcreateai", "CR", "Create with Churvox"], ["approvals", "AP", "Approvals"], ["alerts", "AL", "Alerts"], ["audit", "AD", "Audit"], ["aioperator", "AO", "AI Operator"]],
+  quickcreateai: [["clients", "CL", "Clients"], ["jobs", "JB", "Jobs"], ["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["team", "TM", "Team Access"], ["command", "CM", "Command"]],
   jobs: [["recurring", "RC", "Recurring Jobs"], ["services", "SV", "Services"], ["templates", "TP", "Templates"], ["extras", "XT", "Extras"], ["variations", "VR", "Variations"], ["warranties", "WR", "Warranties"], ["cancellations", "CA", "Cancellations"], ["safety", "SF", "Safety"], ["quality", "QL", "Quality"], ["reworkresolver", "RW", "Rework Resolver"]],
   dispatch: [["planday", "PD", "Plan My Day"], ["schedulerai", "SA", "Scheduler AI"], ["routes", "RT", "Routes"], ["areas", "AR", "Areas"], ["availability", "AV", "Availability"], ["gps", "GP", "GPS"]],
-  clients: [["customerportal", "CP", "Customer Portal"], ["customermemory", "CM", "Customer Memory"], ["messages", "MS", "Messages"], ["messagetriage", "MT", "Message Triage"], ["followups", "FU", "Follow-ups"], ["reviews", "RV", "Reviews"], ["missinginfo", "MI", "Missing Info"], ["upsellfinder", "UF", "Upsell Finder"]],
-  quotes: [["quoteai", "QA", "AI Quote Builder"], ["templates", "TP", "Templates"], ["extras", "XT", "Extras"], ["variations", "VR", "Variations"]],
-  invoices: [["invoicecheck", "IC", "Invoice Checker"], ["creditnotes", "CN", "Credit Notes"], ["paymentpromise", "PP", "Payment Promise"], ["xero", "XE", "Xero Sync"]],
-  team: [["worker", "WK", "Worker App"], ["time", "TL", "Time Logs"], ["payroll", "PR", "Payroll"], ["roles", "RL", "Roles"], ["subcontractors", "SB", "Subcontractors"], ["availability", "AV", "Availability"], ["workerbrief", "WB", "Worker Brief"], ["workerperformance", "WP", "Worker Performance"]],
+  clients: [["quickcreateai", "CR", "Create"], ["customerportal", "CP", "Customer Portal"], ["customermemory", "CM", "Customer Memory"], ["messages", "MS", "Messages"], ["messagetriage", "MT", "Message Triage"], ["followups", "FU", "Follow-ups"], ["reviews", "RV", "Reviews"], ["missinginfo", "MI", "Missing Info"], ["upsellfinder", "UF", "Upsell Finder"]],
+  quotes: [["quickcreateai", "CR", "Create"], ["quoteai", "QA", "AI Quote Builder"], ["templates", "TP", "Templates"], ["extras", "XT", "Extras"], ["variations", "VR", "Variations"]],
+  invoices: [["quickcreateai", "CR", "Create"], ["invoicecheck", "IC", "Invoice Checker"], ["creditnotes", "CN", "Credit Notes"], ["paymentpromise", "PP", "Payment Promise"], ["xero", "XE", "Xero Sync"]],
+  team: [["quickcreateai", "CR", "Create"], ["worker", "WK", "Worker App"], ["time", "TL", "Time Logs"], ["payroll", "PR", "Payroll"], ["roles", "RL", "Roles"], ["subcontractors", "SB", "Subcontractors"], ["availability", "AV", "Availability"], ["workerbrief", "WB", "Worker Brief"], ["workerperformance", "WP", "Worker Performance"]],
   time: [["team", "TM", "Team Access"], ["payroll", "PR", "Payroll"], ["workerperformance", "WP", "Worker Performance"], ["gps", "GP", "GPS"]],
   payroll: [["team", "TM", "Team Access"], ["time", "TL", "Time Logs"], ["roles", "RL", "Roles"]],
   xero: [["invoices", "IV", "Invoices"], ["integrations", "IN", "Other Integrations"], ["billing", "BL", "Billing"]],
@@ -32,7 +33,7 @@ const relatedTools = {
   plans: [["billing", "BL", "Billing"], ["aiusage", "AU", "AI Usage"]],
   photos: [["photoproof", "PP", "Photo Proof"], ["jobs", "JB", "Jobs"]],
   documents: [["contracts", "CT", "Contracts"], ["assets", "AS", "Assets"], ["inventory", "IV", "Inventory"], ["materialsai", "MA", "Materials AI"]],
-  automation: [["command", "CM", "Command"], ["approvals", "AP", "Approvals"], ["alerts", "AL", "Alerts"], ["audit", "AD", "Audit"]],
+  automation: [["command", "CM", "Command"], ["quickcreateai", "CR", "Create"], ["approvals", "AP", "Approvals"], ["alerts", "AL", "Alerts"], ["audit", "AD", "Audit"]],
   settings: [["setup", "ST", "Business Setup"], ["onboarding", "OB", "Onboarding"], ["imports", "IM", "Imports"], ["exports", "EX", "Exports"]],
   setupassistant: [["setup", "ST", "Business Setup"], ["onboarding", "OB", "Onboarding"], ["askchurvox", "AC", "Ask Churvox"]],
   security: [["trustcenter", "TC", "Trust Center"], ["audit", "AD", "Audit"]],
@@ -42,6 +43,7 @@ const relatedTools = {
 const purpose = {
   smart: "Business overview: today, cash, crew gaps and quick links.",
   command: "Decision desk: approve, decline or edit prepared admin actions.",
+  quickcreateai: "Create clients, jobs, quotes, invoices and people from one plain-English box.",
   jobs: "Create, assign and complete work.",
   dispatch: "Plan the day and move jobs into the right slots.",
   clients: "Customer records, history, contact details and notes.",
@@ -64,13 +66,13 @@ const purpose = {
   default: "Extra tool connected to the current area.",
 };
 
-const mobileItems = [["smart", "BP", "Pulse"], ["jobs", "JB", "Jobs"], ["dispatch", "SC", "Schedule"], ["command", "CM", "Command"], ["invoices", "IV", "Invoices"], ["more", "••", "More"]];
+const mobileItems = [["smart", "BP", "Pulse"], ["quickcreateai", "CR", "Create"], ["jobs", "JB", "Jobs"], ["dispatch", "SC", "Schedule"], ["command", "CM", "Command"], ["more", "••", "More"]];
 
 function guideIsComplete() { try { return window.localStorage.getItem(GUIDE_COMPLETE_KEY) === "true"; } catch { return false; } }
 function uniqueItems(items) { const seen = new Set(); return items.filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }); }
 function stripHiddenItems(items, guideComplete) { return items.filter(([key]) => !(guideComplete && key === "setupassistant")); }
 function cleanGroups(sourceGroups, guideComplete = false) { const seen = new Set(); return sourceGroups.map((group) => ({ ...group, items: stripHiddenItems(group.items, guideComplete).filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }) })).filter((group) => group.items.length); }
-function buildLabels() { const entries = [...groups.flatMap((group) => group.items), ...Object.values(relatedTools).flat()]; const nextLabels = Object.fromEntries(entries.map(([key, , label]) => [key, label])); nextLabels.morningbrief = "Morning Brief"; nextLabels.askchurvox = "Ask Churvox"; nextLabels.globalactions = "Global Actions"; nextLabels.schedulerai = "Scheduler AI"; nextLabels.recurringSaver = "Recurring Saver"; nextLabels.recurringsaver = "Recurring Saver"; nextLabels.followupwriter = "Follow-up Writer"; nextLabels.reviewbooster = "Review Booster"; nextLabels.portal = "Portal View"; nextLabels.nz = "New Zealand Setup"; return nextLabels; }
+function buildLabels() { const entries = [...groups.flatMap((group) => group.items), ...Object.values(relatedTools).flat()]; const nextLabels = Object.fromEntries(entries.map(([key, , label]) => [key, label])); nextLabels.quickcreateai = "Create with Churvox"; nextLabels.morningbrief = "Morning Brief"; nextLabels.askchurvox = "Ask Churvox"; nextLabels.globalactions = "Global Actions"; nextLabels.schedulerai = "Scheduler AI"; nextLabels.recurringSaver = "Recurring Saver"; nextLabels.recurringsaver = "Recurring Saver"; nextLabels.followupwriter = "Follow-up Writer"; nextLabels.reviewbooster = "Review Booster"; nextLabels.portal = "Portal View"; nextLabels.nz = "New Zealand Setup"; return nextLabels; }
 function buildParentMap() { const map = {}; Object.entries(relatedTools).forEach(([parent, items]) => { items.forEach(([key]) => { if (!map[key]) map[key] = parent; }); }); groups.forEach((group) => group.items.forEach(([key]) => { map[key] = key; })); map.routes = "dispatch"; map.areas = "dispatch"; map.schedulerai = "dispatch"; map.gps = "time"; map.portal = "clients"; map.followupwriter = "clients"; map.reviewbooster = "clients"; return map; }
 function resetFreshScrollTop() {
   const top = () => {
@@ -130,7 +132,7 @@ export default function FreshShell({ active, onChange, children }) {
         <nav className="freshNav">{safeGroups.map((group) => <section className="freshNavGroup" key={group.title}><p>{group.title}</p>{group.items.map(([key, mark, label]) => <button key={key} type="button" className={currentPrimary === key ? "active" : ""} onClick={() => go(key)}><i>{mark}</i><span>{label}</span></button>)}</section>)}</nav>
       </aside>
       <main className="freshMain">
-        <div className="freshTopbar"><div><span>Current area</span><strong>{currentLabel}</strong><small>{currentPurpose}</small></div><FreshTopStatus onNavigate={go} /><FreshSearch onNavigate={go} /><div className="freshTopActions">{!guideComplete ? <button type="button" onClick={() => go("setupassistant")}>AI Guide</button> : null}<button type="button" onClick={() => go("command")}>Command</button><button type="button" onClick={() => openRealCreate("/jobs/new")}>New job</button><button type="button" onClick={() => openRealCreate("/quotes/new")}>New quote</button><button type="button" onClick={openClientPopup}>Add client</button><button className="freshLogoutTop" type="button" onClick={handleLogout}>Log out</button></div></div>
+        <div className="freshTopbar"><div><span>Current area</span><strong>{currentLabel}</strong><small>{currentPurpose}</small></div><FreshTopStatus onNavigate={go} /><FreshSearch onNavigate={go} /><div className="freshTopActions">{!guideComplete ? <button type="button" onClick={() => go("setupassistant")}>AI Guide</button> : null}<button type="button" onClick={() => go("quickcreateai")}>Create with Churvox</button><button type="button" onClick={() => go("command")}>Command</button><button type="button" onClick={() => openRealCreate("/jobs/new")}>New job</button><button type="button" onClick={() => openRealCreate("/quotes/new")}>New quote</button><button type="button" onClick={openClientPopup}>Add client</button><button className="freshLogoutTop" type="button" onClick={handleLogout}>Log out</button></div></div>
         {emailNeedsVerification && <section className="freshCard freshItem need" style={{ marginBottom: 14 }}><b>Verify your email to keep your Churvox account secure</b><span>We have sent a verification link to {auth.user.email}. You can keep setting up, but please verify before sending customer emails.</span><div className="freshActions" style={{ maxWidth: 280 }}><button className="freshPrimary" type="button" onClick={resendVerification} disabled={verifySending}>{verifySending ? "Sending…" : verifySent ? "Verification sent" : "Resend verification email"}</button></div></section>}
         {currentRelatedTools.length > 0 && <section className="freshRelatedTools" aria-label={`${labels[currentPrimary] || "Current area"} tools`}><div className="freshRelatedHeader"><span>{labels[currentPrimary] || "Current area"}</span><strong>Related tools</strong><small>Extra actions sit here so the main sidebar stays clean.</small></div><div className="freshRelatedList">{currentRelatedTools.map(([key, mark, label]) => <button key={key} type="button" className={active === key ? "active" : ""} onClick={() => go(key)}><i>{mark}</i><span>{label}</span></button>)}</div></section>}
         {children}
