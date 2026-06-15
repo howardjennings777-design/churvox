@@ -75,14 +75,7 @@ const getPostLoginPath = (payload = {}) => {
   if (isPlatformOwner) return "/admin";
   if (isWorkerRole(role) || isPayrollRole(role)) return getDefaultRoute(role);
 
-  const plan = String(user?.plan || payload?.plan || "").trim().toLowerCase();
-  const status = String(user?.subscription_status || payload?.subscription_status || "").trim().toLowerCase();
-  const explicitlyLocked = user?.has_app_access === false || payload?.has_app_access === false;
-  const noPlan = !plan || plan === "none" || plan === "free" || plan === "null" || plan === "undefined";
-  const inactiveBilling = !status || status === "none" || status === "cancelled" || status === "canceled" || status === "incomplete" || status === "past_due";
-
-  if (explicitlyLocked || noPlan || inactiveBilling) return "/plans";
-  return getDefaultRoute(role);
+  return "/plans";
 };
 
 const loginLooksValid = (result = {}) => {
