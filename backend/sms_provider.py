@@ -30,6 +30,70 @@ logger = logging.getLogger(__name__)
 _LAUNCH_ROUTES_WIRED = False
 
 
+def _install_checkout_route_override():
+    """Ensure the final included API router has only the clean Plans checkout routes.
+
+    server.py still defines older Stripe checkout routes later in the file.  Those
+    later definitions can sit beside the clean route and confuse Plans.  We patch
+    FastAPI.include_router once so, at the exact moment the full api_router is
+    included, billing routes are cleaned and churvox_plan_consistency becomes the
+    single source of truth for Plans checkout.
+    """
+    try:
+        from fastapi import FastAPI
+    except Exception:
+        return
+
+    original = getattr(FastAPI, "include_router", None)
+    if not original or getattr(original, "_churvox_checkout_override", False):
+        return
+
+    def include_router_with_checkout_cleanup(self, router, *args, **kwargs):
+        try:
+            routes = getattr(router, "routes", []) or []
+            has_billing_checkout = any(
+                str(getattr(route, "path", "")).endswith("/billing/create-checkout-session")
+                for route in routes
+            )
+
+            if has_billing_checkout:
+                try:
+                    from backend import churvox_plan_consistency
+                except Exception:
+                    import churvox_plan_consistency
+
+                try:
+                    delattr(router, "churvox_plan_consistency_installed")
+                except Exception:
+                    pass
+
+                churvox_plan_consistency.install(router)
+
+                # Delete the old plan checkout fallback. Plans should use only
+                # /billing/create-checkout-session so it cannot accidentally hit
+                # the old card-forcing /stripe/create-checkout-session route.
+                router.routes = [
+                    route
+                    for route in getattr(router, "routes", [])
+                    if not (
+                        str(getattr(route, "path", "")).endswith("/stripe/create-checkout-session")
+                        and "POST" in (getattr(route, "methods", set()) or set())
+                    )
+                ]
+                logger.info("Churvox checkout route override installed clean billing routes")
+        except Exception as exc:
+            logger.warning("Churvox checkout route override failed: %s", exc)
+
+        return original(self, router, *args, **kwargs)
+
+    include_router_with_checkout_cleanup._churvox_checkout_override = True
+    include_router_with_checkout_cleanup._churvox_original_include_router = original
+    FastAPI.include_router = include_router_with_checkout_cleanup
+
+
+_install_checkout_route_override()
+
+
 def _route_key(route):
     return (getattr(route, "path", ""), tuple(sorted(getattr(route, "methods", []) or [])))
 
