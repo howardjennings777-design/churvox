@@ -116,7 +116,7 @@ export default function FreshShell({ active, onChange, children }) {
   const currentPurpose = purpose[active] || purpose[currentPrimary] || purpose.default;
 
   async function handleLogout() { try { if (auth?.logout) await auth.logout(); } finally { try { window.localStorage.removeItem("token"); window.localStorage.removeItem("owner_portal_session"); window.localStorage.removeItem("platform_owner_email"); } catch {} window.location.href = "/login"; } }
-  function go(key) { if (key === "more") return; if (guideComplete && key === "setupassistant") return; setMoreOpen(false); resetFreshScrollTop(); onChange(key); }
+  function go(key) { if (key === "more") return; if (key === "command") { setMoreOpen(false); window.location.href = "/command-board"; return; } if (guideComplete && key === "setupassistant") return; setMoreOpen(false); resetFreshScrollTop(); onChange(key); }
   function openRealCreate(path) { setMoreOpen(false); window.location.href = path; }
   function openClientPopup() { try { window.localStorage.setItem(OPEN_CLIENT_MODAL_KEY, "true"); } catch {} setMoreOpen(false); resetFreshScrollTop(); onChange("clients"); window.dispatchEvent(new CustomEvent("churvox:open-client-popup")); }
   async function resendVerification() { setVerifySending(true); try { const token = window.localStorage.getItem("token") || ""; await fetch(`${API_BASE}/api/auth/resend-verification`, { method: "POST", credentials: "include", headers: { Accept: "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) } }); setVerifySent(true); } catch { setVerifySent(false); } finally { setVerifySending(false); } }
