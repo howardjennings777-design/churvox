@@ -2,6 +2,8 @@ import React from "react";
 import { useApi } from "../hooks/useApi";
 import "./freshPlans.css";
 
+const CHECKOUT_TRACE_MARKER = "checkout-js-trace-20260615-freshplans-v1";
+
 const plans = [
   { id: "start", backendPlan: "solo", name: "Start", price: 39, tag: "Starter", best: false, headline: "Get organised", summary: "For a solo operator who needs jobs, clients, quotes and invoices under control.", limit: "Best for one owner", features: ["Jobs, clients, quotes and invoices", "Business Pulse basics", "Business settings and GST", "Accounting Sync Add-on available"] },
   { id: "crew", backendPlan: "team", name: "Crew", price: 89, tag: "Growing team", best: false, headline: "Run the crew", summary: "For a business with workers, daily dispatch, job handover and more client admin.", limit: "Up to 5 workers", features: ["Everything in Start", "Team and worker setup", "Dispatch-ready workflow", "More job and client capacity", "Accounting Sync Add-on available"] },
@@ -65,7 +67,7 @@ export default function FreshPlans({ onNavigate }) {
     setCheckoutLoading(true);
     setError("");
     try {
-      const response = unwrap(await post("/billing/create-checkout-session", { plan: selected.backendPlan, country: "NZ" }));
+      const response = unwrap(await post("/billing/create-checkout-session", { plan: selected.backendPlan, country: "NZ", trace: CHECKOUT_TRACE_MARKER }));
       const checkoutUrl = response?.url || response?.checkout_url;
       if (!checkoutUrl) throw new Error("Checkout URL was not returned.");
       window.location.href = checkoutUrl;
@@ -80,7 +82,8 @@ export default function FreshPlans({ onNavigate }) {
   const planComparison = [["Start", "Solo basics", "Jobs, quotes, invoices"], ["Crew", "Small team", "Workers and dispatch"], ["Operator", "Recommended", "AI admin prepared for approval"], ["Command", "Scale", "Accounting sync, payroll and advanced roles"]];
 
   return (
-    <section className="freshPricingPage">
+    <section className="freshPricingPage" data-checkout-trace={CHECKOUT_TRACE_MARKER}>
+      <section className="freshCard freshNotice" style={{ marginBottom: 12 }}><b>Checkout trace</b><span>{CHECKOUT_TRACE_MARKER}</span></section>
       <header className="freshPricingHero">
         <div>
           <span>Churvox pricing</span>
