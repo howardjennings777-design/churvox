@@ -2,7 +2,7 @@ import React from "react";
 import { useApi } from "../hooks/useApi";
 import "./freshPlans.css";
 
-const CHECKOUT_TRACE_MARKER = "checkout-js-trace-api-session-stripe-v17";
+const CHECKOUT_TRACE_MARKER = "checkout-js-trace-plan-status-fix-v18";
 
 const plans = [
   { id: "start", backendPlan: "solo", name: "Start", price: 39, tag: "Starter", best: false, headline: "Get organised", summary: "For a solo operator who needs jobs, clients, quotes and invoices under control.", limit: "Best for one owner", features: ["Jobs, clients, quotes and invoices", "Business Pulse basics", "Business settings and GST", "Accounting Sync Add-on available"] },
@@ -23,15 +23,21 @@ const backendToUiPlan = {
 };
 
 function unwrap(result) {
-  return result?.data ?? result ?? {};
+  const body = result?.data ?? result ?? {};
+  if (body && typeof body === "object" && body.success === true && body.data && typeof body.data === "object") {
+    return body.data;
+  }
+  return body;
 }
 
 function planByUiId(id) {
-  return plans.find((plan) => plan.id === id) || plans[2];
+  return plans.find((plan) => plan.id === id) || null;
 }
 
 function uiPlanFromBackend(value) {
-  return backendToUiPlan[String(value || "pro").toLowerCase()] || "operator";
+  const raw = String(value || "").toLowerCase().trim();
+  if (!raw || raw === "none" || raw === "null" || raw === "undefined") return "";
+  return backendToUiPlan[raw] || "";
 }
 
 function money(value) {
@@ -56,7 +62,7 @@ function checkoutUrl(body) {
 export default function FreshPlans({ onNavigate }) {
   const { get, post } = useApi();
 
-  const [currentPlan, setCurrentPlan] = React.useState("operator");
+  const [currentPlan, setCurrentPlan] = React.useState("");
   const [selectedPlan, setSelectedPlan] = React.useState("operator");
   const [growthPacks, setGrowthPacks] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
@@ -64,7 +70,7 @@ export default function FreshPlans({ onNavigate }) {
   const [notice, setNotice] = React.useState("Loading backend plan");
   const [error, setError] = React.useState("");
 
-  const selected = planByUiId(selectedPlan);
+  const selected = planByUiId(selectedPlan) || plans[2];
   const current = planByUiId(currentPlan);
   const commandSelected = selected.id === "command";
   const growthTotal = commandSelected ? growthPacks * 99 : 0;
@@ -82,7 +88,7 @@ export default function FreshPlans({ onNavigate }) {
       const uiPlan = uiPlanFromBackend(status?.plan);
 
       setCurrentPlan(uiPlan);
-      setSelectedPlan(uiPlan);
+      if (uiPlan) setSelectedPlan(uiPlan);
 
       try {
         const addonsResult = await get("/billing/addons");
@@ -94,7 +100,11 @@ export default function FreshPlans({ onNavigate }) {
         // Add-ons are not critical for checkout.
       }
 
-      setNotice(status?.subscription_status === "trialing" ? "Trial active" : "Loaded from backend billing profile");
+      if (!uiPlan) {
+        setNotice("No plan chosen yet");
+      } else {
+        setNotice(status?.subscription_status === "trialing" ? "Trial active" : "Loaded from backend billing profile");
+      }
     } catch (err) {
       setError(err?.message || "Plan could not load from backend.");
       setNotice("Plan needs attention");
@@ -221,7 +231,7 @@ export default function FreshPlans({ onNavigate }) {
 
         <aside>
           <small>Current backend plan</small>
-          <strong>{loading ? "Loading..." : current.name}</strong>
+          <strong>{loading ? "Loading..." : current ? current.name : "No plan chosen"}</strong>
           <p>{notice}</p>
         </aside>
       </header>
@@ -241,7 +251,7 @@ export default function FreshPlans({ onNavigate }) {
       <section className="freshPricingCards">
         {plans.map((plan) => {
           const active = selectedPlan === plan.id;
-          const isCurrent = currentPlan === plan.id;
+          const isCurrent = Boolean(currentPlan) && currentPlan === plan.id;
 
           return (
             <button type="button" key={plan.id} className={`freshPricingCard ${active ? "active" : ""} ${plan.best ? "best" : ""}`} onClick={() => choosePlan(plan.id)}>
