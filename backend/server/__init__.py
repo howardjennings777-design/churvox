@@ -473,18 +473,13 @@ async def _save_plan_from_checkout_session(session):
     country = _normalize_country(meta.get('country') or 'NZ')
     user_id = _safe_text(meta.get('user_id'))
     business_id = _safe_text(meta.get('business_id') or user_id)
+    customer_email = _safe_text(getattr(session, 'customer_email', '') or meta.get('email') or meta.get('customer_email')).lower()
 
-    owner_oid = _as_object_id(business_id) or _as_object_id(user_id)
-    user_oid = _as_object_id(user_id)
-
-    if not owner_oid and not user_oid:
-        return {'success': False, 'detail': 'Stripe session has no usable business/user id metadata', 'metadata': meta}
-
-    owner_oid = owner_oid or user_oid
     now = datetime.now(timezone.utc)
 
     update = _save_meta_for_plan(plan, country)
     update.update({
+        'subscription_plan': plan,
         'subscription_status': 'trialing',
         'stripe_customer_id': _safe_text(getattr(session, 'customer', '')),
         'stripe_subscription_id': _safe_text(getattr(session, 'subscription', '')),
@@ -493,27 +488,75 @@ async def _save_plan_from_checkout_session(session):
         'trial_started_at': now,
     })
 
-    await legacy.db.users.update_one({'_id': owner_oid}, {'$set': update})
-    if user_oid and user_oid != owner_oid:
-        await legacy.db.users.update_one({'_id': user_oid}, {'$set': update})
+    clauses = []
+
+    for raw in [business_id, user_id]:
+        value = _safe_text(raw)
+        if not value:
+            continue
+
+        oid = _as_object_id(value)
+        if oid:
+            clauses.extend([
+                {'_id': oid},
+                {'business_id': oid},
+                {'owner_id': oid},
+            ])
+
+        clauses.extend([
+            {'id': value},
+            {'business_id': value},
+            {'owner_id': value},
+            {'_id': value},
+        ])
+
+    if customer_email:
+        clauses.append({'email': customer_email})
+
+    if not clauses:
+        await legacy.db.billing_plan_sessions.update_one(
+            {'stripe_session_id': _safe_text(getattr(session, 'id', ''))},
+            {'$set': {
+                'status': 'save_failed',
+                'reason': 'missing_user_metadata',
+                'metadata': meta,
+                'updated_at': now,
+            }},
+            upsert=True,
+        )
+        return {'success': False, 'detail': 'Stripe session has no usable business/user/email metadata', 'metadata': meta}
+
+    result = await legacy.db.users.update_many({'$or': clauses}, {'$set': update})
+    matched = int(getattr(result, 'matched_count', 0) or 0)
 
     await legacy.db.billing_plan_sessions.update_one(
         {'stripe_session_id': _safe_text(getattr(session, 'id', ''))},
         {'$set': {
-            'business_id': str(owner_oid),
+            'business_id': business_id,
             'owner_user_id': user_id,
+            'customer_email': customer_email,
             'plan': plan,
             'country': country,
-            'status': 'confirmed',
+            'status': 'confirmed' if matched else 'save_failed',
+            'matched_users': matched,
             'stripe_customer_id': _safe_text(getattr(session, 'customer', '')),
             'stripe_subscription_id': _safe_text(getattr(session, 'subscription', '')),
             'confirmed_at': now,
-            'source': 'backend_checkout_return',
+            'source': 'backend_checkout_return_robust_save',
+            'metadata': meta,
         }},
         upsert=True,
     )
 
-    return {'success': True, 'plan': plan, 'country': country}
+    if matched <= 0:
+        return {
+            'success': False,
+            'detail': 'No user matched Stripe metadata/email',
+            'metadata': meta,
+            'customer_email': customer_email,
+        }
+
+    return {'success': True, 'plan': plan, 'country': country, 'matched_users': matched}
 
 
 @app.get('/api/billing/checkout-return')
