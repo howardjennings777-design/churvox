@@ -291,48 +291,12 @@ async def _save_business_profile(request):
 
 
 async def _create_card_required_checkout(request):
-    if stripe is None:
-        return JSONResponse({'success': False, 'detail': 'Stripe library not available'}, status_code=500)
-    user = await _get_user_or_none(request)
-    if not user:
-        return JSONResponse({'success': False, 'detail': 'Not authenticated'}, status_code=401)
-    if _safe_text(user.get('role'), 'employer').lower() not in {'employer', 'owner', 'admin'}:
-        return JSONResponse({'success': False, 'detail': 'Only business owners can choose a plan'}, status_code=403)
-    secret = os.environ.get('STRIPE_SECRET_KEY', '').strip()
-    if not secret:
-        return JSONResponse({'success': False, 'detail': 'Stripe secret key not configured'}, status_code=500)
-    try:
-        payload = await request.json()
-    except Exception:
-        payload = {}
-    plan = _clean_plan(payload.get('plan'))
-    if plan not in {'solo', 'team', 'pro', 'enterprise'}:
-        return JSONResponse({'success': False, 'detail': 'Choose a valid plan'}, status_code=400)
-    country = _normalize_country(payload.get('country'))
-    price = _stripe_price_id(plan, country)
-    if not price:
-        return JSONResponse({'success': False, 'detail': f'Missing Stripe price ID for {plan} in {country}'}, status_code=400)
-    frontend = os.environ.get('FRONTEND_URL', 'https://www.churvox.com').rstrip('/')
-    stripe.api_key = secret
-    try:
-        session = stripe.checkout.Session.create(
-            mode='subscription',
-            line_items=[{'price': price, 'quantity': 1}],
-            subscription_data={'trial_period_days': 14, 'metadata': {'user_id': user['id'], 'business_id': str(user.get('business_id') or user['id']), 'plan': plan, 'country': country}},
-            payment_method_collection='always',
-            automatic_tax={'enabled': True},
-            billing_address_collection='required',
-            tax_id_collection={'enabled': True},
-            success_url=f'{frontend}/billing/success?session_id={{CHECKOUT_SESSION_ID}}&plan={plan}&country={country}',
-            cancel_url=f'{frontend}/billing/cancel?plan={plan}&country={country}',
-            customer_email=user.get('email'),
-            metadata={'user_id': user['id'], 'business_id': str(user.get('business_id') or user['id']), 'plan': plan, 'country': country, 'trial_days': '14', 'card_required': 'true', 'automatic_tax': 'true'},
-        )
-    except Exception as exc:
-        return JSONResponse({'success': False, 'detail': f'Stripe checkout could not start: {exc}'}, status_code=400)
-    return JSONResponse({'success': True, 'url': session.url, 'trial_days': 14, 'plan': plan, 'country': country, 'card_required': True, 'automatic_tax': True})
-
-
+    # Deprecated. Do not create Stripe sessions here.
+    # Clean checkout lives in backend/churvox_plan_consistency.py.
+    return JSONResponse(
+        {'success': False, 'detail': 'Deprecated checkout route disabled; use clean billing checkout'},
+        status_code=410
+    )
 async def _secure_complete_job(request, job_id):
     user = await _get_user_or_none(request)
     if not user:
@@ -359,8 +323,8 @@ async def _churvox_launch_guard_middleware(request, call_next):
     method = request.method.upper()
     if method == 'PATCH' and path == '/api/user/business-profile':
         return await _save_business_profile(request)
-    if method == 'POST' and path == '/api/billing/create-checkout-session':
-        return await _create_card_required_checkout(request)
+    # Billing checkout must fall through to the clean billing router.
+    # The old wrapper intercept forced card collection and /billing/success.
     if method == 'POST' and path.startswith('/api/jobs/') and path.endswith('/complete'):
         parts = path.split('/')
         if len(parts) >= 5:
