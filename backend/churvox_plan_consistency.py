@@ -152,7 +152,7 @@ def _patch_globals():
         business_id = user_doc.get("business_id", user_obj_id)
         if isinstance(business_id, str):
             business_id = _obj(business_id)
-        update = {"plan": normal, "plan_name": meta["name"], "plan_price": meta["price"], "plan_price_label": meta["price_label"], "country": code, "business_country": code, "billing_country": code, "stripe_customer_id": stripe_customer_id, "stripe_subscription_id": stripe_subscription_id, "updated_at": datetime.now(timezone.utc)}
+        update = {"plan": normal, "plan_name": meta["name"], "plan_price": meta["price"], "plan_price_label": meta["price_label"], "country": code, "business_country": code, "billing_country": code, "stripe_customer_id": stripe_customer_id, "stripe_subscription_id": stripe_subscription_id, "subscription_status": "trialing", "trial_started_at": datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc)}
         await db.users.update_one({"_id": business_id}, {"$set": update})
         await db.users.update_many({"business_id": business_id, "role": {"$in": ["worker", "manager", "office_admin", "payroll"]}}, {"$set": {"plan": normal, "plan_name": meta["name"], "country": code, "business_country": code}})
         return {"plan": normal, "plan_name": meta["name"], "country": code, "plan_price": meta["price"], "plan_price_label": meta["price_label"]}
@@ -185,7 +185,7 @@ def install(router):
         country = _country(owner.get("billing_country") or owner.get("business_country") or owner.get("country") or user.get("country") or "NZ")
         plan = _normal_plan(owner.get("plan") or user.get("plan") or "solo")
         meta = _meta_for(plan, country)
-        return {"success": True, "data": {"plan": plan, "plan_name": meta["name"], "plan_price": meta["price"], "plan_price_label": meta["price_label"], "country": country, "billing_country": country, "currency": meta["currency"], "tax_label": meta["tax_label"], "limits": meta, "stripe_customer_id": owner.get("stripe_customer_id"), "stripe_subscription_id": owner.get("stripe_subscription_id")}}
+        return {"success": True, "data": {"plan": plan, "plan_name": meta["name"], "plan_price": meta["price"], "plan_price_label": meta["price_label"], "country": country, "billing_country": country, "currency": meta["currency"], "tax_label": meta["tax_label"], "limits": meta, "stripe_customer_id": owner.get("stripe_customer_id"), "stripe_subscription_id": owner.get("stripe_subscription_id"), "subscription_status": owner.get("subscription_status")}}
 
     @router.post("/billing/create-checkout-session")
     async def create_checkout(payload: dict, request):
@@ -212,7 +212,16 @@ def install(router):
         frontend = (getattr(app, "FRONTEND_URL", "") or os.environ.get("FRONTEND_URL", "https://www.churvox.com")).rstrip("/")
         business_id = str(user.get("business_id") or user.get("id"))
         await db.users.update_one({"_id": _obj(business_id)}, {"$set": {"billing_country": country, "business_country": country, "country": country, "updated_at": datetime.now(timezone.utc)}})
-        args = {"mode": "subscription", "line_items": [{"price": price_id, "quantity": 1}], "success_url": f"{frontend}/billing/success?session_id={{CHECKOUT_SESSION_ID}}&plan={plan}&country={country}", "cancel_url": f"{frontend}/billing/cancel", "metadata": {"user_id": user.get("id"), "business_id": business_id, "plan": plan, "plan_name": meta["name"], "country": country, "currency": meta["currency"], "purpose": "plan_subscription"}, "subscription_data": {"metadata": {"user_id": user.get("id"), "business_id": business_id, "plan": plan, "country": country, "purpose": "plan_subscription"}}}
+        metadata = {"user_id": user.get("id"), "business_id": business_id, "plan": plan, "plan_name": meta["name"], "country": country, "currency": meta["currency"], "purpose": "plan_subscription"}
+        args = {
+            "mode": "subscription",
+            "payment_method_collection": "if_required",
+            "line_items": [{"price": price_id, "quantity": 1}],
+            "success_url": f"{frontend}/plans?checkout=success&session_id={{CHECKOUT_SESSION_ID}}&plan={plan}&country={country}",
+            "cancel_url": f"{frontend}/plans?checkout=cancelled&plan={plan}&country={country}",
+            "metadata": metadata,
+            "subscription_data": {"trial_period_days": 14, "trial_settings": {"end_behavior": {"missing_payment_method": "cancel"}}, "metadata": metadata},
+        }
         if owner.get("stripe_customer_id"):
             args["customer"] = owner.get("stripe_customer_id")
         else:
@@ -220,7 +229,7 @@ def install(router):
         try:
             session = stripe.checkout.Session.create(**args)
             await db.billing_plan_sessions.update_one({"stripe_session_id": session.id}, {"$setOnInsert": {"business_id": business_id, "owner_user_id": str(user.get("id")), "plan": plan, "country": country, "stripe_session_id": session.id, "status": "created", "created_at": datetime.now(timezone.utc)}}, upsert=True)
-            return {"success": True, "url": session.url, "checkout_url": session.url, "session_id": session.id, "plan": plan, "plan_name": meta["name"], "country": country}
+            return {"success": True, "url": session.url, "checkout_url": session.url, "session_id": session.id, "plan": plan, "plan_name": meta["name"], "country": country, "trial_days": 14, "no_card_required": True}
         except Exception as exc:
             return {"success": False, "error": f"Stripe checkout failed: {exc}"}
 
@@ -250,7 +259,7 @@ def install(router):
         except Exception as exc:
             return {"success": False, "error": f"Could not verify Stripe session: {exc}"}
         if getattr(session, "payment_status", None) not in ["paid", "no_payment_required"]:
-            return {"success": False, "error": "Stripe checkout is not paid yet"}
+            return {"success": False, "error": "Stripe checkout is not complete yet"}
         meta = getattr(session, "metadata", {}) or {}
         plan = _normal_plan(meta.get("plan") or payload.get("plan"))
         country = _country(meta.get("country") or payload.get("country") or "NZ")
