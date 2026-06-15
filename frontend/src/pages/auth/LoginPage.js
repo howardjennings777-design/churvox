@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { normalizeRole, getDefaultRoute } from "@/lib/roles";
@@ -94,17 +94,13 @@ const loginLooksValid = (result = {}) => {
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, user, loading, checkAuth } = useAuth();
+  const { login, checkAuth } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  useEffect(() => {
-    if (!user) return;
-    navigate(getPostLoginPath(user), { replace: true });
-  }, [navigate, user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
