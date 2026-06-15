@@ -1,8 +1,10 @@
 import os
 import sys
 from datetime import datetime, timezone
+from urllib.parse import parse_qs
 
 from fastapi import Request
+from fastapi.responses import RedirectResponse
 
 
 def _server():
@@ -196,11 +198,31 @@ def _patch_globals():
     app.set_business_plan_from_checkout = set_business_plan_from_checkout
 
 
+def _stripe_line_item(plan, country):
+    meta = _meta_for(plan, country)
+    price_id, _ = _first_env(_price_envs(plan, country))
+    if price_id:
+        return {"price": price_id, "quantity": 1}
+    return {
+        "price_data": {
+            "currency": str(meta["currency"]).lower(),
+            "unit_amount": int(round(float(meta["price"]) * 100)),
+            "recurring": {"interval": "month"},
+            "product_data": {
+                "name": f"Churvox {meta['name']}",
+                "description": "Churvox monthly subscription plan",
+            },
+        },
+        "quantity": 1,
+    }
+
+
 def install(router):
     if getattr(router, "churvox_plan_consistency_installed", False):
         return
 
     _patch_globals()
+    _remove_route(router, "/billing/start-checkout-form", "POST")
     _remove_route(router, "/billing/create-checkout-session", "POST")
     _remove_route(router, "/billing/confirm-checkout", "POST")
     _remove_route(router, "/billing/subscription-status", "GET")
@@ -223,6 +245,59 @@ def install(router):
         meta = _meta_for(plan, country)
         return {"success": True, "data": {"plan": plan, "plan_name": meta["name"], "plan_price": meta["price"], "plan_price_label": meta["price_label"], "country": country, "billing_country": country, "currency": meta["currency"], "tax_label": meta["tax_label"], "limits": meta, "stripe_customer_id": owner.get("stripe_customer_id"), "stripe_subscription_id": owner.get("stripe_subscription_id"), "subscription_status": owner.get("subscription_status")}}
 
+    @router.post("/billing/start-checkout-form")
+    async def start_checkout_form(request: Request):
+        app = _server()
+        db = getattr(app, "db", None)
+        stripe = getattr(app, "stripe", None)
+        HTTPException = getattr(app, "HTTPException", Exception)
+        if db is None or stripe is None:
+            raise HTTPException(status_code=500, detail="Billing route not ready")
+
+        try:
+            user = await getattr(app, "require_employer")(request)
+        except Exception:
+            raise HTTPException(status_code=401, detail="Please sign in again before opening Stripe checkout")
+
+        raw = (await request.body()).decode("utf-8", errors="ignore")
+        form = {k: v[0] for k, v in parse_qs(raw).items() if v}
+        owner = await _owner_doc(db, user)
+        plan = _normal_plan(form.get("plan") or form.get("plan_type") or form.get("ui_plan") or "pro")
+        country = _country(form.get("country") or owner.get("billing_country") or owner.get("business_country") or owner.get("country") or user.get("country") or "NZ")
+        meta = _meta_for(plan, country)
+        stripe_secret = os.environ.get("STRIPE_SECRET_KEY", "").strip()
+        if not stripe_secret:
+            raise HTTPException(status_code=500, detail="Missing STRIPE_SECRET_KEY in Render")
+
+        stripe.api_key = stripe_secret
+        frontend = (getattr(app, "FRONTEND_URL", "") or os.environ.get("FRONTEND_URL", "https://www.churvox.com")).rstrip("/")
+        business_id = str(user.get("business_id") or user.get("id"))
+        await db.users.update_one({"_id": _obj(business_id)}, {"$set": {"billing_country": country, "business_country": country, "country": country, "updated_at": datetime.now(timezone.utc)}})
+        metadata = {"user_id": str(user.get("id")), "business_id": business_id, "plan": plan, "plan_name": meta["name"], "country": country, "currency": meta["currency"], "purpose": "plan_subscription", "source": "clean_form_checkout"}
+        args = {
+            "mode": "subscription",
+            "payment_method_collection": "if_required",
+            "line_items": [_stripe_line_item(plan, country)],
+            "success_url": f"{frontend}/plans?checkout=success&session_id={{CHECKOUT_SESSION_ID}}&plan={plan}&country={country}",
+            "cancel_url": f"{frontend}/plans?checkout=cancelled&plan={plan}&country={country}",
+            "metadata": metadata,
+            "subscription_data": {"trial_period_days": 14, "trial_settings": {"end_behavior": {"missing_payment_method": "cancel"}}, "metadata": metadata},
+        }
+        if owner.get("stripe_customer_id"):
+            args["customer"] = owner.get("stripe_customer_id")
+        elif user.get("email"):
+            args["customer_email"] = user.get("email")
+        try:
+            session = stripe.checkout.Session.create(**args)
+            await db.billing_plan_sessions.update_one(
+                {"stripe_session_id": session.id},
+                {"$setOnInsert": {"business_id": business_id, "owner_user_id": str(user.get("id")), "plan": plan, "country": country, "stripe_session_id": session.id, "status": "created", "created_at": datetime.now(timezone.utc)}},
+                upsert=True,
+            )
+            return RedirectResponse(session.url, status_code=303)
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=f"Stripe checkout failed: {exc}")
+
     @router.post("/billing/create-checkout-session")
     async def create_checkout(payload: dict, request: Request):
         app = _server()
@@ -239,9 +314,6 @@ def install(router):
         plan = _normal_plan(payload.get("plan") or payload.get("plan_type") or payload.get("planKey"))
         country = _country(payload.get("country") or owner.get("billing_country") or owner.get("business_country") or owner.get("country") or user.get("country") or "NZ")
         meta = _meta_for(plan, country)
-        price_id, env_name = _first_env(_price_envs(plan, country))
-        if not price_id:
-            return {"success": False, "error": f"Missing Stripe price ID for {meta['name']} {country}. Add {env_name} in Render."}
         stripe_secret = os.environ.get("STRIPE_SECRET_KEY", "").strip()
         if not stripe_secret:
             return {"success": False, "error": "Missing STRIPE_SECRET_KEY in Render."}
@@ -254,7 +326,7 @@ def install(router):
         args = {
             "mode": "subscription",
             "payment_method_collection": "if_required",
-            "line_items": [{"price": price_id, "quantity": 1}],
+            "line_items": [_stripe_line_item(plan, country)],
             "success_url": f"{frontend}/plans?checkout=success&session_id={{CHECKOUT_SESSION_ID}}&plan={plan}&country={country}",
             "cancel_url": f"{frontend}/plans?checkout=cancelled&plan={plan}&country={country}",
             "metadata": metadata,
