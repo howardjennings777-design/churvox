@@ -88,9 +88,7 @@ const loginLooksValid = (result = {}) => {
         user?.email ||
         user?.id ||
         user?._id ||
-        user?.role ||
-        result?.message ||
-        result?.detail)
+        user?.role)
   );
 };
 
@@ -103,6 +101,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [restoringCheckout, setRestoringCheckout] = useState(false);
 
   const isRestoredCheckout = (() => {
     try {
@@ -115,23 +114,24 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isRestoredCheckout && !user && !loading) {
-      checkAuth?.();
+      setRestoringCheckout(true);
+      checkAuth?.().finally(() => setRestoringCheckout(false));
     }
   }, [checkAuth, isRestoredCheckout, loading, user]);
 
   useEffect(() => {
-    if (!isRestoredCheckout) return undefined;
+    if (!isRestoredCheckout) return;
 
     if (user) {
       navigate("/plans", { replace: true });
-      return undefined;
+      return;
     }
 
-    const timer = window.setTimeout(() => {
-      navigate("/plans", { replace: true });
-    }, 900);
-
-    return () => window.clearTimeout(timer);
+    try {
+      window.history.replaceState({}, document.title, "/login");
+    } catch {
+      // Non-critical. The user can still sign in.
+    }
   }, [isRestoredCheckout, navigate, user]);
 
   useEffect(() => {
@@ -189,7 +189,9 @@ export default function LoginPage() {
           <p className="cvPublicAuthIntro" style={{ margin: 0, color: "#e5e7eb", fontWeight: 760, lineHeight: 1.55 }}>Open your job desk, keep work moving, and approve the admin Churvox prepared.</p>
 
           {isRestoredCheckout && (
-            <p className="cvPublicAuthIntro" style={{ margin: 0, color: "#fed7aa", fontWeight: 850, lineHeight: 1.45 }}>Restoring checkout. Sending you back to plans now.</p>
+            <p className="cvPublicAuthIntro" style={{ margin: 0, color: "#fed7aa", fontWeight: 850, lineHeight: 1.45 }}>
+              {restoringCheckout ? "Checking your saved session. Stay here if Churvox asks you to sign in." : "Checkout restore link cleared. Sign in normally."}
+            </p>
           )}
 
           {error && <div className="cvPublicAuthError">{error}</div>}
