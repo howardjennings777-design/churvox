@@ -8,7 +8,7 @@ const path = require("path");
 
 const PORT = Number(process.env.PORT || 3000);
 const BUILD_DIR = path.join(__dirname, "build");
-const DEFAULT_BACKEND_URL = "https://churvox-backend.onrender.com";
+const DEFAULT_BACKEND_URL = "https://grassley-backend.onrender.com";
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -46,7 +46,8 @@ function clean(value) {
 }
 
 function backendBaseUrl() {
-  return clean(DEFAULT_BACKEND_URL);
+  const configured = process.env.CHURVOX_BACKEND_URL || process.env.BACKEND_URL || DEFAULT_BACKEND_URL;
+  return clean(configured).replace(/\/api$/i, "");
 }
 
 function filterHeaders(headers = {}) {
@@ -59,6 +60,7 @@ function filterHeaders(headers = {}) {
 function rewriteSetCookieHeader(value) {
   return String(value || "")
     .replace(/;\s*Domain=churvox-backend\.onrender\.com/gi, "")
+    .replace(/;\s*Domain=grassley-backend\.onrender\.com/gi, "")
     .replace(/;\s*Domain=\.onrender\.com/gi, "");
 }
 
@@ -174,8 +176,6 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    // Do not return index.html for missing hashed assets.
-    // This avoids CSS/JS requests receiving HTML/text with the wrong MIME type.
     if (urlPath.startsWith("/static/")) {
       const ext = path.extname(urlPath).toLowerCase();
       const type = MIME[ext] || "text/plain; charset=utf-8";
@@ -187,7 +187,6 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    // SPA route fallback.
     const indexPath = path.join(BUILD_DIR, "index.html");
     if (fs.existsSync(indexPath)) {
       sendFile(res, indexPath);
