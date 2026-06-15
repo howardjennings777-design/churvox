@@ -71,8 +71,15 @@ export function AuthProvider({ children }) {
 
   const checkAuth = useCallback(async () => {
     const token = localStorage.getItem("token");
+
+    if (!token) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
     try {
-      const me = await fetchMe(token || undefined);
+      const me = await fetchMe(token);
       if (!looksLikeUser(me)) throw new Error("No current user returned.");
       if (me?.has_app_access) removePlanRequiredFlag();
       setUser({ ...me, ...(token ? { token } : {}) });
@@ -105,12 +112,16 @@ export function AuthProvider({ children }) {
     const token = pickToken(response.data);
     const fallbackUser = pickUser(response.data);
 
-    if (token) localStorage.setItem("token", token);
-    else localStorage.removeItem("token");
+    if (!token) {
+      clearStoredAuth();
+      throw new Error(response?.data?.detail || response?.data?.message || "Invalid email or password.");
+    }
+
+    localStorage.setItem("token", token);
 
     let nextUser = fallbackUser;
     try {
-      nextUser = await fetchMe(token || undefined);
+      nextUser = await fetchMe(token);
     } catch {
       if (!looksLikeUser(nextUser)) {
         throw new Error("Login succeeded but Churvox could not load your account yet. Please refresh and try again.");
