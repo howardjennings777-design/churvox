@@ -901,14 +901,113 @@ async def require_proof_helper_enabled():
 
 
 # ===================== AUTH ENDPOINTS =====================
+# CHURVOX_AUTH_CLEAN_REBUILD_20260616
+# One auth path only. No hooks. No hidden overrides. Login always returns JSON.
+
+def _auth_safe_value(value):
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, ObjectId):
+        return str(value)
+    if isinstance(value, list):
+        return [_auth_safe_value(v) for v in value]
+    if isinstance(value, dict):
+        return {k: _auth_safe_value(v) for k, v in value.items()}
+    return value
+
+
+def _auth_normal_email(value) -> str:
+    return str(value or "").strip().lower()
+
+
+def _auth_trial_expired(user_doc: dict) -> bool:
+    trial_ends_at = user_doc.get("trial_ends_at")
+    if not trial_ends_at:
+        return False
+    try:
+        if isinstance(trial_ends_at, str):
+            trial_ends_at = datetime.fromisoformat(trial_ends_at.replace("Z", "+00:00"))
+        if trial_ends_at.tzinfo is None:
+            trial_ends_at = trial_ends_at.replace(tzinfo=timezone.utc)
+        return trial_ends_at < datetime.now(timezone.utc)
+    except Exception:
+        return False
+
+
+def _auth_has_app_access(user_doc: dict) -> bool:
+    role = str(user_doc.get("role") or "").strip().lower()
+    if role in {"worker", "payroll", "payroll_user"}:
+        return True
+
+    plan = str(user_doc.get("plan") or "").strip().lower()
+    if not plan or plan in {"none", "free", "null", "undefined"}:
+        return False
+
+    status = str(user_doc.get("subscription_status") or "trialing").strip().lower()
+    if status in {"active", "paid"}:
+        return True
+    if status == "trialing" and not _auth_trial_expired(user_doc):
+        return True
+    return False
+
+
+def _auth_user_response(user_doc: dict, token: str = None) -> dict:
+    user_id = str(user_doc["_id"])
+    business_id = str(user_doc.get("business_id") or user_doc["_id"])
+
+    user = {
+        "id": user_id,
+        "email": _auth_normal_email(user_doc.get("email")),
+        "name": user_doc.get("name") or user_doc.get("business_name") or "Churvox user",
+        "business_name": user_doc.get("business_name"),
+        "role": user_doc.get("role") or "employer",
+        "plan": user_doc.get("plan") or "none",
+        "subscription_status": user_doc.get("subscription_status") or "none",
+        "trial_ends_at": _auth_safe_value(user_doc.get("trial_ends_at")),
+        "email_verified": user_doc.get("email_verified", True),
+        "business_id": business_id,
+        "gst_rate": user_doc.get("gst_rate", DEFAULT_GST_RATE),
+        "trade_type": user_doc.get("trade_type", "other"),
+        "has_app_access": _auth_has_app_access(user_doc),
+    }
+
+    if token:
+        user["token"] = token
+
+    user = _auth_safe_value(user)
+    return {"success": True, **user, "user": user}
+
+
+def _auth_check_password(plain_password: str, user_doc: dict):
+    fields = ["password_hash", "hashed_password", "passwordHash", "bcrypt_hash", "pass_hash"]
+
+    for field in fields:
+        stored = user_doc.get(field)
+        if not isinstance(stored, str) or not stored.strip():
+            continue
+        try:
+            if bcrypt.checkpw(str(plain_password or "").encode("utf-8"), stored.encode("utf-8")):
+                return True, field
+        except Exception:
+            continue
+
+    # Legacy dev record support. If this matches, we migrate it immediately.
+    for field in ["password", "plain_password"]:
+        stored = user_doc.get(field)
+        if isinstance(stored, str) and stored and stored == plain_password:
+            return True, field
+
+    return False, None
+
 
 @api_router.post("/auth/register")
 async def register(user_data: UserCreate, response: Response):
-    email = user_data.email.lower()
+    email = _auth_normal_email(user_data.email)
     existing = await db.users.find_one({"email": email})
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
+    now = datetime.now(timezone.utc)
     user_doc = {
         "email": email,
         "password_hash": hash_password(user_data.password),
@@ -918,34 +1017,148 @@ async def register(user_data: UserCreate, response: Response):
         "status": "active",
         "email_verified": False,
         "email_verified_at": None,
-        "plan": "solo",
-        "subscription_status": "trialing",
-        "trial_ends_at": datetime.now(timezone.utc) + timedelta(days=14),
+        "plan": "none",
+        "subscription_status": "none",
+        "trial_ends_at": None,
         "gst_rate": DEFAULT_GST_RATE,
-        "created_at": datetime.now(timezone.utc)
+        "trade_type": "other",
+        "created_at": now,
+        "updated_at": now,
     }
+
     result = await db.users.insert_one(user_doc)
-    user_id = str(result.inserted_id)
+    user_doc["_id"] = result.inserted_id
+    user_doc["business_id"] = result.inserted_id
 
     await db.users.update_one(
         {"_id": result.inserted_id},
         {"$set": {"business_id": result.inserted_id}}
     )
 
-    verification = await send_verification_email_for_user(user_doc, user_id)
+    try:
+        verification = await send_verification_email_for_user(user_doc, str(result.inserted_id))
+    except Exception as exc:
+        verification = {"sent": False, "provider": "", "email_id": "", "error": str(exc)}
 
+    access_token = create_access_token(str(result.inserted_id), email)
+    refresh_token = create_refresh_token(str(result.inserted_id))
+    set_auth_cookies(response, access_token, refresh_token)
+
+    data = _auth_user_response(user_doc, access_token)
+    data["email_verified"] = False
+    data["email_verification_sent"] = bool(verification.get("sent"))
+    data["email_verification_provider"] = verification.get("provider", "")
+    data["email_verification_email_id"] = verification.get("email_id", "")
+    data["email_verification_error"] = verification.get("error", "")
+    return data
+
+
+@api_router.post("/auth/login")
+async def login(user_data: UserLogin, response: Response, request: Request):
+    clear_auth_cookies(response)
+
+    email = _auth_normal_email(user_data.email)
+    password = str(user_data.password or "")
+
+    if not email or not password:
+        response.status_code = 400
+        return {"success": False, "detail": "Enter your email and password."}
+
+    identifier = f"{request.client.host if request.client else 'unknown'}:{email}"
+    attempt = await db.login_attempts.find_one({"identifier": identifier})
+    if attempt and attempt.get("count", 0) >= 5:
+        lockout_time = attempt.get("locked_until")
+        if lockout_time and datetime.now(timezone.utc) < lockout_time:
+            response.status_code = 429
+            return {"success": False, "detail": "Too many failed attempts. Try again later."}
+        await db.login_attempts.delete_one({"identifier": identifier})
+
+    user_doc = await db.users.find_one({"email": email})
+    password_ok = False
+    matched_field = None
+
+    if user_doc:
+        password_ok, matched_field = _auth_check_password(password, user_doc)
+
+    if not user_doc or not password_ok:
+        await db.login_attempts.update_one(
+            {"identifier": identifier},
+            {
+                "$inc": {"count": 1},
+                "$set": {"locked_until": datetime.now(timezone.utc) + timedelta(minutes=15)},
+            },
+            upsert=True,
+        )
+        clear_auth_cookies(response)
+        response.status_code = 401
+        return {"success": False, "detail": "Invalid email or password"}
+
+    if user_doc.get("status") == "invited":
+        clear_auth_cookies(response)
+        response.status_code = 403
+        return {"success": False, "detail": "Please complete your account setup using the invite link sent to your email."}
+
+    await db.login_attempts.delete_one({"identifier": identifier})
+
+    user_id = str(user_doc["_id"])
     access_token = create_access_token(user_id, email)
     refresh_token = create_refresh_token(user_id)
     set_auth_cookies(response, access_token, refresh_token)
 
-    user_doc["business_id"] = user_id
-    data = build_user_response(user_doc, user_id, access_token)
-    data["email_verified"] = False
-    data["email_verification_sent"] = verification["sent"]
-    data["email_verification_provider"] = verification["provider"]
-    data["email_verification_email_id"] = verification["email_id"]
-    data["email_verification_error"] = verification["error"]
-    return data
+    updates = {"last_login_at": datetime.now(timezone.utc)}
+    if matched_field and matched_field != "password_hash":
+        try:
+            updates["password_hash"] = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+        except Exception:
+            pass
+
+    if not user_doc.get("business_id"):
+        updates["business_id"] = user_doc["_id"]
+
+    await db.users.update_one({"_id": user_doc["_id"]}, {"$set": updates})
+    user_doc.update(updates)
+
+    return _auth_user_response(user_doc, access_token)
+
+
+@api_router.post("/auth/logout")
+async def logout(response: Response):
+    clear_auth_cookies(response)
+    return {"success": True, "message": "Logged out successfully"}
+
+
+@api_router.get("/auth/me")
+async def get_me(request: Request):
+    user = await get_current_user(request)
+    user_doc = await db.users.find_one({"_id": ObjectId(user["id"])})
+    if not user_doc:
+        raise HTTPException(status_code=401, detail="User not found")
+    token = request.headers.get("Authorization", "")
+    token = token[7:] if token.startswith("Bearer ") else request.cookies.get("access_token")
+    return _auth_user_response(user_doc, token)
+
+
+@api_router.post("/auth/refresh")
+async def refresh_token(request: Request, response: Response):
+    token = request.cookies.get("refresh_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="No refresh token")
+
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        if payload.get("type") != "refresh":
+            raise HTTPException(status_code=401, detail="Invalid token type")
+
+        user_doc = await db.users.find_one({"_id": ObjectId(payload["sub"])})
+        if not user_doc:
+            raise HTTPException(status_code=401, detail="User not found")
+
+        access_token = create_access_token(str(user_doc["_id"]), user_doc["email"])
+        refresh_token_value = create_refresh_token(str(user_doc["_id"]))
+        set_auth_cookies(response, access_token, refresh_token_value)
+        return _auth_user_response(user_doc, access_token)
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
 
 
 @api_router.post("/auth/resend-verification")
@@ -956,20 +1169,17 @@ async def resend_verification_email(request: Request):
         raise HTTPException(status_code=404, detail="User not found")
 
     if user_doc.get("email_verified") is True:
-        return {
-            "message": "Email already verified",
-            "email_verified": True,
-            "email_verification_sent": False
-        }
+        return {"success": True, "message": "Email already verified", "email_verified": True, "email_verification_sent": False}
 
     verification = await send_verification_email_for_user(user_doc, user["id"])
     return {
-        "message": "Verification email sent" if verification["sent"] else "Verification email failed",
+        "success": bool(verification.get("sent")),
+        "message": "Verification email sent" if verification.get("sent") else "Verification email failed",
         "email_verified": False,
-        "email_verification_sent": verification["sent"],
-        "email_verification_provider": verification["provider"],
-        "email_verification_email_id": verification["email_id"],
-        "email_verification_error": verification["error"],
+        "email_verification_sent": bool(verification.get("sent")),
+        "email_verification_provider": verification.get("provider", ""),
+        "email_verification_email_id": verification.get("email_id", ""),
+        "email_verification_error": verification.get("error", ""),
     }
 
 
@@ -984,116 +1194,30 @@ async def verify_email(token: str):
         raise HTTPException(status_code=400, detail="Invalid or expired verification link")
 
     now = datetime.now(timezone.utc)
-
     await db.users.update_one(
         {"_id": token_doc["user_id"]},
-        {"$set": {
-            "email_verified": True,
-            "email_verified_at": now,
-            "status": "active",
-        }},
+        {"$set": {"email_verified": True, "email_verified_at": now, "status": "active"}},
     )
-
     await db.email_verification_tokens.update_one(
         {"_id": token_doc["_id"]},
         {"$set": {"used": True, "used_at": now}},
     )
-
     return {"success": True, "message": "Email verified"}
 
 
-@api_router.post("/auth/login")
-async def login(user_data: UserLogin, response: Response, request: Request):
-    clear_auth_cookies(response)
-    email = user_data.email.lower()
-    identifier = f"{request.client.host}:{email}"
-
-    # Check brute force
-    attempt = await db.login_attempts.find_one({"identifier": identifier})
-    if attempt and attempt.get("count", 0) >= 5:
-        lockout_time = attempt.get("locked_until")
-        if lockout_time and datetime.now(timezone.utc) < lockout_time:
-            raise HTTPException(status_code=429, detail="Too many failed attempts. Try again later.")
-        else:
-            await db.login_attempts.delete_one({"identifier": identifier})
-
-    user = await db.users.find_one({"email": email})
-
-    password_ok = False
-    if user:
-        stored_hash = user.get("password_hash")
-        if isinstance(stored_hash, str) and stored_hash.strip():
-            try:
-                password_ok = verify_password(user_data.password, stored_hash)
-            except Exception:
-                password_ok = False
-
-    if not user or not password_ok:
-        await db.login_attempts.update_one(
-            {"identifier": identifier},
-            {"$inc": {"count": 1}, "$set": {"locked_until": datetime.now(timezone.utc) + timedelta(minutes=15)}},
-            upsert=True
-        )
-        clear_auth_cookies(response)
-        response.status_code = 401
-        return {"detail": "Invalid email or password"}
-
-    # Block invited users who haven't completed setup
-    if user.get("status") == "invited":
-        clear_auth_cookies(response)
-        response.status_code = 403
-        return {"detail": "Please complete your account setup using the invite link sent to your email."}
-
-    await db.login_attempts.delete_one({"identifier": identifier})
-
-    user_id = str(user["_id"])
-    access_token = create_access_token(user_id, email)
-    refresh_token = create_refresh_token(user_id)
-    set_auth_cookies(response, access_token, refresh_token)
-
-    return build_user_response(user, user_id, access_token)
-
-@api_router.post("/auth/logout")
-async def logout(response: Response):
-    clear_auth_cookies(response)
-    return {"message": "Logged out successfully"}
-
-@api_router.get("/auth/me")
-async def get_me(request: Request):
-    user = await get_current_user(request)
-    return build_user_response(user, user["id"])
-
-@api_router.post("/auth/refresh")
-async def refresh_token(request: Request, response: Response):
-    token = request.cookies.get("refresh_token")
-    if not token:
-        raise HTTPException(status_code=401, detail="No refresh token")
-    try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        if payload.get("type") != "refresh":
-            raise HTTPException(status_code=401, detail="Invalid token type")
-        user = await db.users.find_one({"_id": ObjectId(payload["sub"])})
-        if not user:
-            raise HTTPException(status_code=401, detail="User not found")
-        access_token = create_access_token(str(user["_id"]), user["email"])
-        response.set_cookie(key="access_token", value=access_token, httponly=True, secure=True, samesite="none", max_age=86400, path="/")
-        return {"message": "Token refreshed"}
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid refresh token")
-
 @api_router.post("/auth/forgot-password")
 async def forgot_password(data: ForgotPassword):
-    email = data.email.lower()
-    user = await db.users.find_one({"email": email})
-    generic_message = {"message": "If the email exists, a reset link has been sent"}
+    email = _auth_normal_email(data.email)
+    user_doc = await db.users.find_one({"email": email})
+    generic = {"success": True, "message": "If the email exists, a reset link has been sent", "email_sent": True}
 
-    if not user:
-        return generic_message
+    if not user_doc:
+        return generic
 
     token = secrets.token_urlsafe(32)
     await db.password_reset_tokens.insert_one({
         "token": token,
-        "user_id": user["_id"],
+        "user_id": user_doc["_id"],
         "expires_at": datetime.now(timezone.utc) + timedelta(hours=1),
         "used": False,
         "created_at": datetime.now(timezone.utc),
@@ -1101,7 +1225,7 @@ async def forgot_password(data: ForgotPassword):
 
     frontend_url = os.environ.get("FRONTEND_URL", FRONTEND_URL).rstrip("/")
     reset_link = f"{frontend_url}/reset-password?token={token}"
-    email_content = build_password_reset_email(user.get("name", "there"), reset_link)
+    email_content = build_password_reset_email(user_doc.get("name", "there"), reset_link)
 
     email_result = await email_provider.send(
         to=email,
@@ -1111,7 +1235,7 @@ async def forgot_password(data: ForgotPassword):
 
     await db.password_reset_emails.insert_one({
         "to": email,
-        "user_id": user["_id"],
+        "user_id": user_doc["_id"],
         "status": "sent" if email_result.success else "failed",
         "provider": email_result.provider,
         "email_id": email_result.email_id,
@@ -1119,29 +1243,33 @@ async def forgot_password(data: ForgotPassword):
         "created_at": datetime.now(timezone.utc),
     })
 
-    if not email_result.success:
-        logger.warning("[Email] Password reset email to %s failed: %s", email, email_result.error)
-    else:
-        logger.info("[Email] Password reset email sent to %s via %s", email, email_result.provider)
+    return {
+        "success": True,
+        "message": "If the email exists, a reset link has been sent",
+        "email_sent": bool(email_result.success),
+    }
 
-    return generic_message
 
 @api_router.post("/auth/reset-password")
 async def reset_password(data: ResetPassword):
     token_doc = await db.password_reset_tokens.find_one({
-        "token": data.token, "used": False,
-        "expires_at": {"$gt": datetime.now(timezone.utc)}
+        "token": data.token,
+        "used": False,
+        "expires_at": {"$gt": datetime.now(timezone.utc)},
     })
     if not token_doc:
         raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+
     await db.users.update_one(
         {"_id": token_doc["user_id"]},
-        {"$set": {"password_hash": hash_password(data.new_password)}}
+        {"$set": {"password_hash": hash_password(data.new_password), "updated_at": datetime.now(timezone.utc)}},
     )
     await db.password_reset_tokens.update_one(
-        {"_id": token_doc["_id"]}, {"$set": {"used": True}}
+        {"_id": token_doc["_id"]},
+        {"$set": {"used": True, "used_at": datetime.now(timezone.utc)}},
     )
-    return {"message": "Password reset successfully"}
+    return {"success": True, "message": "Password reset successfully"}
+
 
 # ===================== USER SETTINGS =====================
 @api_router.patch("/user/plan")
@@ -5387,153 +5515,6 @@ async def get_logic_business_records(record_type: str, current_user: dict = Depe
 
     return {"success": True, "record_type": record_type, "items": items, "records": items, "data": items}
 
-
-
-# =========================
-# CHURVOX_CLEAN_AUTH_FINAL_20260616
-# Hard replace login/me routes so login never returns 200 with an empty body.
-# =========================
-
-def _churvox_auth_route_path(route):
-    return str(getattr(route, "path", "") or "")
-
-api_router.routes = [
-    route for route in getattr(api_router, "routes", [])
-    if not (
-        _churvox_auth_route_path(route).endswith("/auth/login")
-        or _churvox_auth_route_path(route).endswith("/auth/me")
-    )
-]
-
-def _churvox_password_ok(plain_password: str, user_doc: dict):
-    fields = ["password_hash", "hashed_password", "passwordHash", "bcrypt_hash", "pass_hash"]
-    for field in fields:
-        stored = user_doc.get(field)
-        if isinstance(stored, str) and stored.strip():
-            try:
-                if bcrypt.checkpw(str(plain_password or "").encode("utf-8"), stored.encode("utf-8")):
-                    return True, field
-            except Exception:
-                pass
-
-    for field in ["password", "plain_password"]:
-        stored = user_doc.get(field)
-        if isinstance(stored, str) and stored and stored == plain_password:
-            return True, field
-
-    return False, None
-
-def _churvox_trial_expired(user_doc: dict):
-    trial_ends_at = user_doc.get("trial_ends_at")
-    if not trial_ends_at:
-        return False
-    try:
-        if isinstance(trial_ends_at, str):
-            trial_ends_at = datetime.fromisoformat(trial_ends_at.replace("Z", "+00:00"))
-        if trial_ends_at.tzinfo is None:
-            trial_ends_at = trial_ends_at.replace(tzinfo=timezone.utc)
-        return trial_ends_at < datetime.now(timezone.utc)
-    except Exception:
-        return False
-
-def _churvox_has_app_access(user_doc: dict):
-    role = str(user_doc.get("role") or "").strip().lower()
-    if role in {"worker", "payroll", "payroll_user"}:
-        return True
-
-    plan = str(user_doc.get("plan") or "").strip().lower()
-    if not plan or plan in {"none", "free", "null", "undefined"}:
-        return False
-
-    status = str(user_doc.get("subscription_status") or "trialing").strip().lower()
-    if status in {"active", "paid"}:
-        return True
-    return status == "trialing" and not _churvox_trial_expired(user_doc)
-
-def _churvox_clean_user_payload(user_doc: dict, token: str = None):
-    user_id = str(user_doc["_id"])
-    business_id = str(user_doc.get("business_id") or user_doc["_id"])
-    payload = {
-        "id": user_id,
-        "email": str(user_doc.get("email") or "").strip().lower(),
-        "name": user_doc.get("name") or user_doc.get("business_name") or "Churvox user",
-        "business_name": user_doc.get("business_name"),
-        "role": user_doc.get("role") or "employer",
-        "plan": user_doc.get("plan") or "none",
-        "subscription_status": user_doc.get("subscription_status") or "none",
-        "trial_ends_at": user_doc.get("trial_ends_at"),
-        "email_verified": user_doc.get("email_verified", True),
-        "business_id": business_id,
-        "gst_rate": user_doc.get("gst_rate", DEFAULT_GST_RATE),
-        "trade_type": user_doc.get("trade_type", "other"),
-        "has_app_access": _churvox_has_app_access(user_doc),
-    }
-    if token:
-        payload["token"] = token
-    payload = make_json_safe(payload)
-    return {"success": True, **payload, "user": payload}
-
-@api_router.post("/auth/login")
-async def churvox_clean_auth_login(request: Request, response: Response):
-    clear_auth_cookies(response)
-
-    try:
-        body = await request.json()
-    except Exception:
-        body = {}
-
-    email = str(body.get("email") or "").strip().lower()
-    password = str(body.get("password") or "")
-
-    if not email or not password:
-        response.status_code = 400
-        return {"success": False, "detail": "Enter your email and password."}
-
-    user_doc = await db.users.find_one({"email": email})
-    password_ok = False
-    matched_field = None
-
-    if user_doc:
-        password_ok, matched_field = _churvox_password_ok(password, user_doc)
-
-    if not user_doc or not password_ok:
-        clear_auth_cookies(response)
-        response.status_code = 401
-        return {"success": False, "detail": "Invalid email or password"}
-
-    if user_doc.get("status") == "invited":
-        clear_auth_cookies(response)
-        response.status_code = 403
-        return {"success": False, "detail": "Please complete your account setup using the invite link sent to your email."}
-
-    user_id = str(user_doc["_id"])
-    access_token = create_access_token(user_id, email)
-    refresh_token = create_refresh_token(user_id)
-    set_auth_cookies(response, access_token, refresh_token)
-
-    updates = {}
-    if matched_field and matched_field != "password_hash":
-        try:
-            updates["password_hash"] = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-        except Exception:
-            pass
-
-    if not user_doc.get("business_id"):
-        updates["business_id"] = user_doc["_id"]
-
-    if updates:
-        await db.users.update_one({"_id": user_doc["_id"]}, {"$set": updates})
-        user_doc.update(updates)
-
-    return _churvox_clean_user_payload(user_doc, access_token)
-
-@api_router.get("/auth/me")
-async def churvox_clean_auth_me(request: Request):
-    user = await get_current_user(request)
-    user_doc = await db.users.find_one({"_id": ObjectId(user["id"])})
-    if not user_doc:
-        raise HTTPException(status_code=401, detail="User not found")
-    return _churvox_clean_user_payload(user_doc, user.get("token"))
 
 
 # Include router once, after every route above has been registered.

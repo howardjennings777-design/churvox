@@ -101,43 +101,10 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [restoringCheckout, setRestoringCheckout] = useState(false);
-
-  const isRestoredCheckout = (() => {
-    try {
-      const params = new URLSearchParams(window.location.search || "");
-      return params.get("cacheReset") === "restored-checkout";
-    } catch {
-      return false;
-    }
-  })();
-
   useEffect(() => {
-    if (isRestoredCheckout && !user && !loading) {
-      setRestoringCheckout(true);
-      checkAuth?.().finally(() => setRestoringCheckout(false));
-    }
-  }, [checkAuth, isRestoredCheckout, loading, user]);
-
-  useEffect(() => {
-    if (!isRestoredCheckout) return;
-
-    if (user) {
-      navigate("/plans", { replace: true });
-      return;
-    }
-
-    try {
-      window.history.replaceState({}, document.title, "/login");
-    } catch {
-      // Non-critical. The user can still sign in.
-    }
-  }, [isRestoredCheckout, navigate, user]);
-
-  useEffect(() => {
-    if (!user || isRestoredCheckout) return;
+    if (!user) return;
     navigate(getPostLoginPath(user), { replace: true });
-  }, [isRestoredCheckout, navigate, user]);
+  }, [navigate, user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -166,7 +133,7 @@ export default function LoginPage() {
         // Login already succeeded. The app shell can refresh again after navigation.
       }
 
-      navigate(isRestoredCheckout ? "/plans" : getPostLoginPath(result), { replace: true });
+      navigate(getPostLoginPath(result), { replace: true });
     } catch (err) {
       setError(
         err?.response?.data?.detail ||
@@ -187,12 +154,6 @@ export default function LoginPage() {
           <p className="cvPublicAuthKicker" style={{ margin: 0, color: "#fed7aa", fontWeight: 1000, letterSpacing: ".18em", textTransform: "uppercase" }}>Welcome back</p>
           <h1 style={{ margin: 0, color: "#fff", fontSize: "clamp(42px, 5vw, 70px)", lineHeight: ".92", letterSpacing: "-.075em" }}>Sign in to Churvox</h1>
           <p className="cvPublicAuthIntro" style={{ margin: 0, color: "#e5e7eb", fontWeight: 760, lineHeight: 1.55 }}>Open your job desk, keep work moving, and approve the admin Churvox prepared.</p>
-
-          {isRestoredCheckout && (
-            <p className="cvPublicAuthIntro" style={{ margin: 0, color: "#fed7aa", fontWeight: 850, lineHeight: 1.45 }}>
-              {restoringCheckout ? "Checking your saved session. Stay here if Churvox asks you to sign in." : "Checkout restore link cleared. Sign in normally."}
-            </p>
-          )}
 
           {error && <div className="cvPublicAuthError">{error}</div>}
 

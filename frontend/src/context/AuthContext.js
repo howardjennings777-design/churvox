@@ -24,60 +24,30 @@ function removePlanFlag() {
 }
 
 function tokenFrom(data = {}) {
-  return data.token || data.access_token || data.auth_token || data.jwt || data.data?.token || data.data?.access_token || data.user?.token || data.user?.access_token || "";
+  return data?.token || data?.access_token || data?.auth_token || data?.user?.token || data?.user?.access_token || "";
 }
 
 function userFrom(data = {}) {
-  const picked = data.user || data.data?.user || data.account || data.data || data || {};
-  return picked.user && !picked.email && !picked.id && !picked._id ? picked.user : picked;
-}
-
-function anyEmail(value = {}, fallback = {}) {
-  return String(value.email || value.user_email || value.email_address || value.login_email || fallback.email || fallback.user_email || fallback.email_address || "").trim().toLowerCase();
-}
-
-function looksUser(value = {}) {
-  return Boolean(value && typeof value === "object" && (value.email || value.user_email || value.email_address || value.id || value._id || value.role || value.business_id || value.businessId));
-}
-
-function cleanUser(data = {}, token = "") {
-  const raw = userFrom(data);
-  if (!looksUser(raw)) return null;
-  const id = raw.id || raw._id || data.id || data._id || "";
-  const businessId = raw.business_id || raw.businessId || data.business_id || data.businessId || id;
-  const email = anyEmail(raw, data);
-  const next = { ...data, ...raw, id: String(id || ""), business_id: businessId ? String(businessId) : "", email: email || raw.email || data.email || "" };
-  delete next.password_hash;
-  delete next.hashed_password;
-  delete next.password;
-  if (token) next.token = token;
-  else next.cookieSession = true;
-  return next;
+  const picked = data?.user || data?.data?.user || data?.data || data || {};
+  if (!picked || typeof picked !== "object") return null;
+  if (!(picked.email || picked.id || picked._id || picked.role || picked.business_id || picked.businessId)) return null;
+  const id = picked.id || picked._id || data.id || data._id || "";
+  const email = String(picked.email || data.email || "").trim().toLowerCase();
+  return {
+    ...picked,
+    id: String(id || ""),
+    email,
+    business_id: String(picked.business_id || picked.businessId || data.business_id || id || ""),
+  };
 }
 
 function headersFor(token) {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-function permanentAuthError(err) {
-  const code = err?.response?.status;
-  return code === 401 || code === 403;
-}
-
-function messageFrom(data = {}) {
-  if (typeof data === "string") {
-    if (data.trim().startsWith("<!doctype") || data.trim().startsWith("<html")) return "";
-    return data.slice(0, 140);
-  }
-  return data?.detail || data?.message || data?.error || data?.data?.detail || data?.data?.message || data?.data?.error || "";
-}
-
-function responseShapeMessage(response) {
-  const data = response?.data;
-  const type = Array.isArray(data) ? "array" : typeof data;
-  const keys = data && typeof data === "object" ? Object.keys(data).slice(0, 12).join(",") : "none";
-  const preview = typeof data === "string" ? data.slice(0, 140).replace(/\s+/g, " ") : "";
-  return `Login response had no usable account. status=${response?.status || "unknown"}; type=${type}; keys=${keys}${preview ? `; body=${preview}` : ""}`;
+function authError(data = {}) {
+  if (typeof data === "string") return data || "Invalid email or password.";
+  return data?.detail || data?.message || data?.error || data?.data?.detail || data?.data?.message || "Invalid email or password.";
 }
 
 export function AuthProvider({ children }) {
@@ -91,8 +61,9 @@ export function AuthProvider({ children }) {
       timeout: AUTH_TIMEOUT_MS,
     });
     const nextToken = tokenFrom(response.data) || token || "";
-    const nextUser = cleanUser(response.data, nextToken);
+    const nextUser = userFrom(response.data);
     if (!nextUser) throw new Error("No current user returned.");
+    if (nextToken) nextUser.token = nextToken;
     return nextUser;
   }, []);
 
@@ -105,7 +76,7 @@ export function AuthProvider({ children }) {
       setUser(me);
       return me;
     } catch (err) {
-      if (permanentAuthError(err)) {
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
         clearStoredAuth();
         setUser(null);
       }
@@ -115,75 +86,73 @@ export function AuthProvider({ children }) {
     }
   }, [fetchMe]);
 
-  useEffect(() => { checkAuth().catch(() => {}); }, [checkAuth]);
-
   useEffect(() => {
-    const refresh = () => { setLoading(true); checkAuth().catch(() => {}); };
-    window.addEventListener("churvox-auth-refresh", refresh);
-    window.addEventListener("storage", refresh);
-    return () => {
-      window.removeEventListener("churvox-auth-refresh", refresh);
-      window.removeEventListener("storage", refresh);
-    };
+    checkAuth().catch(() => {});
   }, [checkAuth]);
 
   const login = useCallback(async (email, password) => {
     clearStoredAuth();
     setUser(null);
+
     const cleanEmail = String(email || "").trim().toLowerCase();
-    const response = await axios.post(`${API_BASE}/api/auth/login`, { email: cleanEmail, password }, { withCredentials: true, timeout: AUTH_TIMEOUT_MS });
-    const serverMessage = messageFrom(response.data);
-    if (response.data?.success === false) throw new Error(serverMessage || "Invalid email or password.");
+    const response = await axios.post(
+      `${API_BASE}/api/auth/login`,
+      { email: cleanEmail, password },
+      { withCredentials: true, timeout: AUTH_TIMEOUT_MS }
+    );
+
+    if (response.data?.success === false) {
+      throw new Error(authError(response.data));
+    }
 
     const token = tokenFrom(response.data);
-    let nextUser = cleanUser(response.data, token);
+    const nextUser = userFrom(response.data);
 
     if (!nextUser) {
-      try {
-        nextUser = await fetchMe(token || undefined);
-      } catch {
-        throw new Error(serverMessage || responseShapeMessage(response));
-      }
+      throw new Error("Login failed because the server did not return account JSON.");
     }
 
-    let returnedEmail = anyEmail(nextUser, response.data);
-    if (!returnedEmail && token) {
-      try {
-        nextUser = await fetchMe(token);
-        returnedEmail = anyEmail(nextUser, response.data);
-      } catch {}
-    }
-
+    const returnedEmail = String(nextUser.email || "").trim().toLowerCase();
     if (returnedEmail && returnedEmail !== cleanEmail) {
-      throw new Error("Churvox returned a different account than the email entered. Please log out and try again.");
+      throw new Error("Churvox returned a different account than the email entered.");
     }
 
-    if (!returnedEmail) {
-      nextUser = { ...nextUser, email: cleanEmail };
+    if (token) {
+      nextUser.token = token;
+      localStorage.setItem("token", token);
+    } else {
+      localStorage.removeItem("token");
     }
 
-    if (token) localStorage.setItem("token", token);
-    else localStorage.removeItem("token");
     if (nextUser?.has_app_access) removePlanFlag();
     setUser(nextUser);
+
     const finalEmail = String(nextUser.email || "").trim().toLowerCase();
     if (finalEmail === "hello@churvox.com" || nextUser?.is_platform_owner === true || nextUser?.is_admin === true) {
       localStorage.setItem("owner_portal_session", "true");
       localStorage.setItem("platform_owner_email", finalEmail);
     }
-    fetchMe(token || undefined).then((fresh) => setUser(fresh)).catch(() => {});
+
     return { ...response.data, user: nextUser, ...nextUser };
-  }, [fetchMe]);
+  }, []);
 
   const register = useCallback(async (userData) => {
     clearStoredAuth();
     setUser(null);
     const response = await axios.post(`${API_BASE}/api/auth/register`, userData, { withCredentials: true, timeout: AUTH_TIMEOUT_MS });
+    if (response.data?.success === false) throw new Error(authError(response.data));
+
     const token = tokenFrom(response.data);
-    const nextUser = cleanUser(response.data, token);
+    const nextUser = userFrom(response.data);
     if (!nextUser) throw new Error("Account was created but Churvox could not load the session.");
-    if (token) localStorage.setItem("token", token);
-    else localStorage.removeItem("token");
+
+    if (token) {
+      nextUser.token = token;
+      localStorage.setItem("token", token);
+    } else {
+      localStorage.removeItem("token");
+    }
+
     localStorage.setItem(PLAN_REQUIRED_KEY, "true");
     const locked = { ...nextUser, plan: nextUser.plan || "none", has_app_access: false, billing_lock_reason: "choose_plan_in_stripe" };
     setUser(locked);
