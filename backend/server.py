@@ -3561,7 +3561,7 @@ async def root():
 
 
 # ===================== DIRECT STRIPE CHECKOUT FORM REDIRECT =====================
-# This route is used by the Plans page. It avoids frontend /api proxy and CORS fetch issues. Live checkout route v2.
+# This route is used by the Plans page. It avoids frontend /api proxy and CORS fetch issues. Live checkout route v3.. Live checkout route v2.
 # by letting the browser submit a normal form to the backend, then redirecting straight to Stripe.
 @api_router.post("/billing/start-checkout-form")
 async def start_checkout_form(request: Request):
