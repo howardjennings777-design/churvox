@@ -155,6 +155,13 @@ export default function FreshPlans({ onNavigate }) {
   const commandSelected = selected.id === "command";
   const growthTotal = commandSelected ? growthPacks * 99 : 0;
   const monthlyTotal = selected.price + growthTotal;
+  const showDebug = React.useMemo(() => {
+    try {
+      return new URLSearchParams(window.location.search || "").get("debug") === "1";
+    } catch {
+      return false;
+    }
+  }, []);
 
   const loadPlan = React.useCallback(async () => {
     setLoading(true);
@@ -420,7 +427,7 @@ export default function FreshPlans({ onNavigate }) {
         </aside>
       </section>
 
-      {debug && (
+      {showDebug && debug && (
         <section className="freshCard freshNotice" style={{ marginTop: 14 }}>
           <b>Checkout diagnostic</b>
           <span style={{ whiteSpace: "pre-wrap", fontFamily: "monospace", fontSize: 12 }}>{JSON.stringify(debug, null, 2).slice(0, 1800)}</span>
