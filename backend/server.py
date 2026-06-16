@@ -2904,6 +2904,23 @@ async def create_invoice(invoice_data: InvoiceCreate, request: Request, current_
     gst_amount = invoice_data.subtotal * (gst_rate / 100)
     total = invoice_data.subtotal + gst_amount
 
+    if invoice_data.job_id:
+        job_object_id = ObjectId(invoice_data.job_id)
+        existing_invoice = await db.invoices.find_one({
+            "contractor_id": ObjectId(user["business_id"]),
+            "job_id": job_object_id,
+            "status": {"$ne": "void"}
+        })
+        if existing_invoice:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "message": "This job already has an invoice. No duplicate draft was created.",
+                    "invoice_id": str(existing_invoice["_id"]),
+                    "invoice_number": existing_invoice.get("invoice_number")
+                }
+            )
+
     invoice_doc = {
         **invoice_data.model_dump(exclude={"gst_rate", "job_id", "client_id"}),
         "contractor_id": ObjectId(user["business_id"]),
