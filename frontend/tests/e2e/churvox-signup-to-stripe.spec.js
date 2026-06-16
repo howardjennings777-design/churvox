@@ -38,6 +38,20 @@ test.describe('Fresh customer signup to Stripe launch path', () => {
   test('new owner can sign up, land on Plans, and open Stripe checkout', async ({ page }) => {
     test.skip(!RUN_SIGNUP, 'Set CHURVOX_E2E_SIGNUP=1 because this creates a real test owner account.');
 
+    const checkoutEvents = [];
+    page.on('request', (request) => {
+      const url = request.url();
+      if (url.includes('/billing/') || url.includes('stripe')) {
+        checkoutEvents.push({ type: 'request', method: request.method(), url });
+      }
+    });
+    page.on('response', (response) => {
+      const url = response.url();
+      if (url.includes('/billing/') || url.includes('stripe')) {
+        checkoutEvents.push({ type: 'response', status: response.status(), url });
+      }
+    });
+
     const email = uniqueEmail();
     const secret = `Churvox${Date.now()}!`;
     const businessName = `Playwright Signup ${Date.now()}`;
@@ -70,12 +84,25 @@ test.describe('Fresh customer signup to Stripe launch path', () => {
     const trace = await page.locator('[data-checkout-trace]').first().getAttribute('data-checkout-trace').catch(() => '');
     expect(trace || '', 'live Plans bundle should include latest auth recovery marker').toContain('auth-recover');
 
+    const beforeClickUrl = page.url();
     const stripePromise = page.waitForURL(/checkout\.stripe\.com|stripe\.com/i, { timeout: 45000 }).catch(() => null);
     const opened = await clickText(page, ['Start Stripe checkout']);
     expect(opened, 'Start Stripe checkout should be clickable').toBeTruthy();
 
     const stripeUrl = await stripePromise;
-    expect(stripeUrl, 'new signup should reach Stripe Checkout without completing payment').toBeTruthy();
+    if (!stripeUrl) {
+      await page.waitForTimeout(2500).catch(() => {});
+      const afterClickUrl = page.url();
+      const visibleText = await page.locator('body').innerText({ timeout: 5000 }).catch(() => 'Could not read page body');
+      throw new Error([
+        'Stripe checkout did not open.',
+        `Before click URL: ${beforeClickUrl}`,
+        `After click URL: ${afterClickUrl}`,
+        `Checkout events: ${JSON.stringify(checkoutEvents.slice(-20), null, 2)}`,
+        `Visible body: ${String(visibleText).slice(0, 1200)}`,
+      ].join('\n'));
+    }
+
     expect(page.url()).toMatch(/checkout\.stripe\.com|stripe\.com/i);
   });
 });
