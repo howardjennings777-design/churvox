@@ -35,7 +35,7 @@ export default function BillingReturnPage({ cancelled = false }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { get, post } = useApi();
-  const { updateUser } = useAuth();
+  const { updateUser, checkAuth } = useAuth();
   const [status, setStatus] = React.useState("Checking your plan…");
   const [details, setDetails] = React.useState(null);
   const [addonStatus, setAddonStatus] = React.useState("");
@@ -49,6 +49,13 @@ export default function BillingReturnPage({ cancelled = false }) {
     redirectTimer.current = window.setTimeout(() => {
       navigate("/setup-guide?first_setup=1", { replace: true });
     }, 1800);
+  }
+
+  function refreshAuthUser() {
+    try {
+      window.dispatchEvent(new Event("churvox-auth-refresh"));
+    } catch {}
+    checkAuth?.().catch(() => {});
   }
 
   async function refreshBilling({ goToSetup = false } = {}) {
@@ -70,6 +77,7 @@ export default function BillingReturnPage({ cancelled = false }) {
           has_app_access: true,
           billing_lock_reason: null,
         });
+        refreshAuthUser();
         if (goToSetup) openSetupSoon();
       }
     } else {
@@ -105,6 +113,7 @@ export default function BillingReturnPage({ cancelled = false }) {
         if (res?.success) {
           setAddonStatus(result?.message || res?.message || "Add-on activated");
           toast.success("Add-on activated");
+          refreshAuthUser();
         } else {
           setAddonStatus(res?.error || "Could not confirm add-on yet. Try refreshing shortly.");
           toast.error(res?.error || "Could not confirm add-on");
@@ -129,6 +138,7 @@ export default function BillingReturnPage({ cancelled = false }) {
             has_app_access: true,
             billing_lock_reason: null,
           });
+          refreshAuthUser();
           setConfirmed(true);
           toast.success("Trial started");
           setStatus("Your plan is active. Opening setup now…");
