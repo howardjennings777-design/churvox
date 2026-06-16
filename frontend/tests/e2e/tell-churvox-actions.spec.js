@@ -15,7 +15,7 @@ async function openTellChurvox(page) {
 
   const loginVisible = await page.getByRole('button', { name: /log in|sign in/i }).first().isVisible().catch(() => false);
   if (loginVisible || /login/i.test(page.url())) {
-    test.skip(true, 'Login is required. Run with PLAYWRIGHT_STORAGE_STATE pointing to a logged-in state file.');
+    test.skip(true, 'Login is required. Run with a logged-in Playwright storage state.');
   }
 
   const tellNav = page.getByRole('button', { name: /Tell Churvox|Tell/i }).first();
@@ -36,14 +36,14 @@ test.describe('Tell Churvox action pills', () => {
   for (const action of actions) {
     test(`${action.label} opens the right approval preview`, async ({ page }) => {
       await page.getByRole('button', { name: action.label }).click();
-      await expect(page.locator('textarea')).toContainText(action.expectedText);
+      await expect(page.locator('textarea')).toHaveValue(action.expectedText);
 
       await page.getByRole('button', { name: /Open approval pop-up/i }).first().click();
       await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15000 });
       await expect(page.getByRole('dialog')).toContainText(action.expectedTitle);
       await expect(page.getByRole('dialog')).toContainText(/Owner approval|Churvox understood|Safe rule/i);
 
-      await page.getByRole('button', { name: /Cancel|×/i }).last().click();
+      await page.getByRole('button', { name: /Cancel/i }).last().click();
       await expect(page.getByRole('dialog')).toBeHidden({ timeout: 10000 });
     });
   }
