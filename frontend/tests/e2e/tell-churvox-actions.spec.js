@@ -46,16 +46,18 @@ test.describe('Tell Churvox daily action pills', () => {
 
   for (const action of actions) {
     test(`${action.label} opens the right approval preview`, async ({ page }) => {
-      await page.getByRole('button', { name: action.label }).click();
+      const examples = page.getByLabel('Tell Churvox examples');
+      await examples.getByRole('button', { name: action.label, exact: true }).click();
       await expect(page.locator('textarea')).toHaveValue(action.expectedText);
 
       await page.getByRole('button', { name: /Open approval pop-up/i }).first().click();
-      await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15000 });
-      await expect(page.getByRole('dialog')).toContainText(action.expectedTitle);
-      await expect(page.getByRole('dialog')).toContainText(/Owner approval|Safe rule/i);
+      const dialog = page.getByRole('dialog');
+      await expect(dialog).toBeVisible({ timeout: 15000 });
+      await expect(dialog).toContainText(action.expectedTitle);
+      await expect(dialog).toContainText(/Owner approval|Safe rule/i);
 
-      await page.getByRole('button', { name: /Cancel/i }).last().click();
-      await expect(page.getByRole('dialog')).toBeHidden({ timeout: 10000 });
+      await dialog.locator('button.freshQuickAiModalClose').click();
+      await expect(dialog).toBeHidden({ timeout: 10000 });
     });
   }
 });
