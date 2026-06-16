@@ -1,8 +1,10 @@
 import React from "react";
 import "./freshPlans.css";
 
-const CHECKOUT_TRACE_MARKER = "checkout-js-trace-public-save-v31";
+const CHECKOUT_TRACE_MARKER = "checkout-return-current-plan-v32";
 const LIVE_BACKEND = "https://grassley-backend.onrender.com";
+
+const accountingAddonText = "Accounting Sync Add-on — $39/month + GST (MYOB or Xero, where available)";
 
 const plans = [
   {
@@ -14,7 +16,7 @@ const plans = [
     headline: "Get organised",
     summary: "For a solo operator who needs jobs, clients, quotes and invoices under control.",
     limit: "Best for one owner",
-    features: ["Jobs, clients, quotes and invoices", "Business Pulse basics", "Business settings and GST", "Accounting Sync Add-on available"],
+    features: ["Jobs, clients, quotes and invoices", "Business Pulse basics", "Business settings and GST", accountingAddonText],
   },
   {
     id: "crew",
@@ -25,7 +27,7 @@ const plans = [
     headline: "Run the crew",
     summary: "For a business with workers, daily dispatch, job handover and more client admin.",
     limit: "Up to 5 workers",
-    features: ["Everything in Start", "Team and worker setup", "Dispatch-ready workflow", "More job and client capacity", "Accounting Sync Add-on available"],
+    features: ["Everything in Start", "Team and worker setup", "Dispatch-ready workflow", "More job and client capacity", accountingAddonText],
   },
   {
     id: "operator",
@@ -36,7 +38,7 @@ const plans = [
     headline: "Admin done for approval",
     summary: "Where Churvox starts preparing the admin and you approve the work before it goes out.",
     limit: "Recommended plan",
-    features: ["AI Operator Actions", "Command approval desk", "Quote follow-up watch", "Invoice and job admin prepared for approval", "Accounting Sync Add-on available"],
+    features: ["AI Operator Actions", "Command approval desk", "Quote follow-up watch", "Invoice and job admin prepared for approval", accountingAddonText],
   },
   {
     id: "command",
@@ -45,9 +47,9 @@ const plans = [
     price: 299,
     tag: "Full control",
     headline: "Scale with control",
-    summary: "For the bigger business that wants payroll workspace, accounting sync included and advanced control.",
+    summary: "For the bigger business that wants payroll workspace, one accounting sync option included and advanced control.",
     limit: "Up to 50 active team members",
-    features: ["Everything in Operator", "Accounting sync included", "Payroll workspace", "Advanced roles", "Priority support", "Command Growth Pack available"],
+    features: ["Everything in Operator", "Includes one accounting sync option — MYOB or Xero, where available", "Payroll workspace", "Advanced roles", "Priority support", "Command Growth Pack available"],
   },
 ];
 
@@ -144,7 +146,7 @@ export default function FreshPlans({ onNavigate }) {
   const [growthPacks, setGrowthPacks] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
   const [checkoutLoading, setCheckoutLoading] = React.useState(false);
-  const [notice, setNotice] = React.useState("Loading backend plan");
+  const [notice, setNotice] = React.useState("Loading plan");
   const [error, setError] = React.useState("");
   const [debug, setDebug] = React.useState(null);
 
@@ -177,7 +179,7 @@ export default function FreshPlans({ onNavigate }) {
       const uiPlan = uiPlanFromBackend(data?.plan);
       setCurrentPlan(uiPlan);
       if (uiPlan) setSelectedPlan(uiPlan);
-      setNotice(uiPlan ? "Loaded from backend billing profile" : "No plan chosen yet");
+      setNotice(uiPlan ? "Loaded from billing profile" : "No plan chosen yet");
       setDebug((previous) => ({ ...(previous || {}), status: { status: response.status, body: data } }));
     } catch (err) {
       setNotice("Plan needs attention");
@@ -196,7 +198,7 @@ export default function FreshPlans({ onNavigate }) {
     const checkout = params.get("checkout");
     const sessionId = params.get("session_id");
 
-    if (checkout === "cancelled") {
+    if (checkout === "cancelled" || params.get("canceled") || params.get("cancelled")) {
       setNotice("Stripe checkout cancelled");
       window.history.replaceState(null, "", "/plans");
       return;
@@ -215,7 +217,7 @@ export default function FreshPlans({ onNavigate }) {
       const headers = { "Content-Type": "application/json", Accept: "application/json" };
       if (token) headers.Authorization = `Bearer ${token}`;
 
-      const { response, body } = await apiRequest("/api/billing/checkout-save", {
+      const { response, body } = await apiRequest("/api/billing/confirm-checkout", {
         method: "POST",
         credentials: "include",
         headers,
@@ -226,9 +228,14 @@ export default function FreshPlans({ onNavigate }) {
         throw new Error(errorFrom(body, response));
       }
 
+      const confirmedPlan = uiPlanFromBackend(body?.plan || body?.data?.plan || plan);
+      if (confirmedPlan) {
+        setCurrentPlan(confirmedPlan);
+        setSelectedPlan(confirmedPlan);
+      }
       window.history.replaceState(null, "", "/plans");
       window.dispatchEvent(new Event("churvox-auth-refresh"));
-      setNotice("Stripe checkout saved");
+      setNotice("Stripe checkout saved. Current plan updated.");
       setDebug((previous) => ({ ...(previous || {}), confirm: { status: response.status, body } }));
       loadPlan();
     } catch (err) {
@@ -276,7 +283,7 @@ export default function FreshPlans({ onNavigate }) {
       plan_type: selected.backendPlan,
       country: "NZ",
       billing_country: "NZ",
-      source: "fresh_plans_clean_replace_v30",
+      source: "fresh_plans_checkout_return_v32",
     };
 
     try {
@@ -307,16 +314,11 @@ export default function FreshPlans({ onNavigate }) {
     ["Start", "Solo basics", "Jobs, quotes, invoices"],
     ["Crew", "Small team", "Workers and dispatch"],
     ["Operator", "Recommended", "AI admin prepared for approval"],
-    ["Command", "Scale", "Accounting sync, payroll and advanced roles"],
+    ["Command", "Scale", "One accounting sync option, payroll and advanced roles"],
   ];
 
   return (
     <section className="freshPricingPage" data-checkout-trace={CHECKOUT_TRACE_MARKER}>
-      <section className="freshCard freshNotice" style={{ marginBottom: 12 }}>
-        <b>Checkout trace</b>
-        <span>{CHECKOUT_TRACE_MARKER}</span>
-      </section>
-
       <header className="freshPricingHero">
         <div>
           <span>Churvox pricing</span>
@@ -324,12 +326,12 @@ export default function FreshPlans({ onNavigate }) {
           <p>Simple monthly pricing + GST. Churvox does the admin. You approve.</p>
           <div className="freshPricingHeroActions">
             <button className="freshPrimary" type="button" onClick={() => choosePlan("operator")}>See recommended plan</button>
-            <button className="freshGhost" type="button" onClick={() => onNavigate?.("support")}>Talk to support</button>
+            <button className="freshGhost" type="button" onClick={() => onNavigate?.("support")}>Need help setting up?</button>
           </div>
         </div>
 
         <aside>
-          <small>Current backend plan</small>
+          <small>Current plan</small>
           <strong>{loading ? "Loading..." : current ? current.name : "No plan chosen"}</strong>
           <p>{notice}</p>
         </aside>
@@ -337,7 +339,12 @@ export default function FreshPlans({ onNavigate }) {
 
       <section className="freshPlanNotice proper">
         <b>Launch pricing locked</b>
-        <span>Start $39 · Crew $89 · Operator $149 · Command $299. Accounting Sync Add-on is available where supported.</span>
+        <span>Start $39 · Crew $89 · Operator $149 · Command $299. Accounting Sync Add-on — $39/month + GST. MYOB or Xero, where available.</span>
+      </section>
+
+      <section className="freshPlanNotice proper">
+        <b>Owner-approved money actions</b>
+        <span>Invoices stay draft-only until approved. Accounting sync is owner-approved. Churvox does not auto-send invoices, mark paid, file tax or create bank payout files.</span>
       </section>
 
       {error && (
@@ -398,16 +405,17 @@ export default function FreshPlans({ onNavigate }) {
         </section>
 
         <aside className="freshCard freshCheckoutCard">
-          <h2>Stripe checkout</h2>
-          <p>This page was rebuilt clean. It asks for a Stripe checkout URL first, then redirects only when a real URL is returned.</p>
+          <h2>Start your 14-day trial</h2>
+          <p>Stripe opens securely, then Churvox confirms the session and updates this Current plan box from the billing profile.</p>
 
           <div className="freshActions">
             <button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading}>{checkoutLoading ? "Opening Stripe..." : "Start Stripe checkout"}</button>
             <button className="freshOrange" type="button" onClick={() => choosePlan("operator")}>Recommend Operator</button>
-            <button className="freshGhost" type="button" onClick={loadPlan}>Reload backend plan</button>
+            <button className="freshGhost" type="button" onClick={loadPlan}>Reload current plan</button>
           </div>
 
-          <div className="freshItem"><b>Best default</b><span>Operator is the main plan because AI runs the admin and the owner approves.</span></div>
+          <div className="freshItem"><b>Best default</b><span>Operator is the main plan because AI prepares the admin and the owner approves.</span></div>
+          <div className="freshItem"><b>Accounting sync</b><span>{selected.id === "command" ? "Command includes one accounting sync option — MYOB or Xero, where available." : accountingAddonText}</span></div>
           <div className="freshItem need"><b>Command scale</b><span>Command includes up to 50 active team members. Inactive old staff should not count as billable.</span></div>
         </aside>
       </section>
