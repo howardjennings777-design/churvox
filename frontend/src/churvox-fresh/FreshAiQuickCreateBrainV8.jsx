@@ -9,28 +9,28 @@ const ACTION_GROUPS = [
     title: "Create",
     hint: "New records",
     actions: [
-      ["add-job", "Add job", "bob 16 taita drive $60 repeat 23/07/09"],
-      ["add-client", "Add client", "add client Sarah Johnson 027 555 1212 sarah@example.com 12 High Street"],
-      ["add-quote", "Add quote", "quote Sarah hedge trim $180 at 12 High Street"],
-      ["add-invoice", "Add invoice", "invoice Sarah hedge trim $120 due friday"],
-      ["add-worker", "Add worker", "add worker Mike mike@example.com 021 555 999"],
+      ["add-job", "Add job", "16 Taita Drive $60 repeat 23/07/09"],
+      ["add-client", "Add client", "add client client@example.com 027 555 1212 12 High Street"],
+      ["add-quote", "Add quote", "quote hedge trim $180 at 12 High Street"],
+      ["add-invoice", "Add invoice", "invoice hedge trim $120 due Friday"],
+      ["add-worker", "Add worker", "add worker worker@example.com 021 555 999"],
     ],
   },
   {
     title: "Work",
     hint: "Live job changes",
     actions: [
-      ["find-record", "Find record", "find Sarah"],
-      ["move-job", "Move job", "move bob to next week"],
-      ["complete-job", "Complete job", "mark bob complete"],
-      ["update-price", "Update price", "change bob to $70"],
+      ["find-record", "Find record", "find client"],
+      ["move-job", "Move job", "move job to next week"],
+      ["complete-job", "Complete job", "mark job complete"],
+      ["update-price", "Update price", "change job to $70"],
     ],
   },
   {
     title: "Money",
     hint: "Draft only",
     actions: [
-      ["invoice-job", "Invoice job", "invoice bob completed job"],
+      ["invoice-job", "Invoice job", "invoice completed job"],
       ["invoice-jobs", "Invoice jobs", "invoice completed jobs"],
       ["chase-invoices", "Chase invoices", "chase unpaid invoices"],
     ],
@@ -53,7 +53,7 @@ const TARGET_PAGE = {
   person: "team",
 };
 
-const FIRST_EXAMPLE = ACTION_GROUPS[0].actions[0][2];
+const FIRST_EXAMPLE = "";
 
 const groupGrid = { display: "grid", gap: 10, marginTop: 12 };
 const groupBox = { border: "1px solid rgba(154,52,18,.16)", borderRadius: 18, background: "rgba(255,247,237,.72)", padding: 10 };
@@ -138,7 +138,7 @@ function dateTextOf(value) {
   if (low.includes("today")) return "Today";
   if (low.includes("tomorrow")) return "Tomorrow";
   if (low.includes("next week")) return "Next week";
-  const short = String(value || "").match(/\b\d{1,2}[/.\-]\d{1,2}(?:[/.\-]\d{1,4})?\b/);
+  const short = String(value || "").match(/\b\d{1,2}[/\.\-]\d{1,2}(?:[/\.\-]\d{1,4})?\b/);
   return short?.[0] || "Date needed";
 }
 
@@ -368,8 +368,9 @@ export default function FreshAiQuickCreateBrainV8({ onNavigate }) {
   const [open, setOpen] = React.useState(false);
   const [status, setStatus] = React.useState(null);
   const [analysing, setAnalysing] = React.useState(false);
-  const parsed = draft || parse(text);
-  const typoFixed = cleanText(text) !== String(text || "").replace(/\s+/g, " ").trim();
+  const hasText = Boolean(text.trim());
+  const parsed = draft || (hasText ? parse(text) : null);
+  const typoFixed = hasText && cleanText(text) !== String(text || "").replace(/\s+/g, " ").trim();
 
   function setExample(value) {
     setText(value);
@@ -446,6 +447,7 @@ export default function FreshAiQuickCreateBrainV8({ onNavigate }) {
   }
 
   function saveReview(candidate = parsed, match = live) {
+    if (!candidate) return;
     const details = Object.fromEntries(detailsFor(candidate, match));
     const slip = {
       id: `tell-churvox-${Date.now()}`,
@@ -468,7 +470,7 @@ export default function FreshAiQuickCreateBrainV8({ onNavigate }) {
     setOpen(false);
   }
 
-  const cards = detailsFor(parsed, live);
+  const cards = parsed ? detailsFor(parsed, live) : [];
 
   return <section className="freshQuickAiPage">
     <div className="freshQuickAiHero">
@@ -478,16 +480,16 @@ export default function FreshAiQuickCreateBrainV8({ onNavigate }) {
         <p>No dropdown. Type messy. Churvox understands, finds records, shows a pop-up, then waits for approval.</p>
       </div>
       <div className="freshQuickAiStats">
-        <div><b>{parsed.actionTitle}</b><small>understood</small></div>
-        <div><b>{parsed.priceText}</b><small>money</small></div>
-        <div><b>{parsed.missing?.length || 0}</b><small>required</small></div>
+        <div><b>{parsed?.actionTitle || "Ready"}</b><small>understood</small></div>
+        <div><b>{parsed?.priceText || "$0"}</b><small>money</small></div>
+        <div><b>{parsed?.missing?.length || 0}</b><small>required</small></div>
         <div><b>{typoFixed ? "Typo fix" : "Smart"}</b><small>brain</small></div>
       </div>
     </div>
     <div className="freshQuickAiGrid">
       <article className="freshQuickAiPanel">
-        <header><span>One brain</span><h2>Tell Churvox like a real assistant.</h2><p>Pick a grouped action below or type your own instruction.</p></header>
-        <textarea value={text} onChange={(e) => updateText(e.target.value)} />
+        <header><span>Tell Churvox</span><h2>Type the job, customer, price, date or change.</h2><p>Start blank, type naturally, or pick one of the grouped actions below.</p></header>
+        <textarea value={text} onChange={(e) => updateText(e.target.value)} placeholder="Example: 16 Taita Drive $60 repeat next Friday" />
         {typoFixed ? <div className="freshQuickAiStatus ok"><b>Auto cleaned</b><span>{cleanText(text)}</span></div> : null}
         <div className="freshQuickAiButtons">
           <button type="button" onClick={() => understand({ show: true })} disabled={analysing}>{analysing ? "Thinking…" : "Understand + show pop-up"}</button>
@@ -497,13 +499,13 @@ export default function FreshAiQuickCreateBrainV8({ onNavigate }) {
         {status ? <div className={`freshQuickAiStatus ${status.tone}`}><b>{status.tone === "ok" ? "Done" : "Needs attention"}</b><span>{status.text}</span></div> : null}
       </article>
       <article className="freshQuickAiPanel">
-        <header><span>Smart preview</span><h2>{parsed.actionTitle}</h2><p>The approval pop-up is where Churvox does the final owner check.</p></header>
-        <div className="freshQuickAiResult">
+        <header><span>Smart preview</span><h2>{parsed?.actionTitle || "Waiting for your instruction"}</h2><p>The approval pop-up is where Churvox does the final owner check.</p></header>
+        {parsed ? <div className="freshQuickAiResult">
           {cards.map(([label, value]) => <section key={label}><b>{label}</b><p>{value}</p></section>)}
-        </div>
-        {parsed.intent !== "create" ? <div className="freshQuickAiStatus need"><b>{live?.previewTitle || "Live match"}</b><span>{(live?.previewLines || []).join(" ") || "Search runs when you ask Churvox to understand."}</span></div> : null}
-        <div className="freshQuickAiPrepared"><b>Original</b><p>{text}</p><b>Cleaned</b><p>{parsed.cleanedText}</p><b>Safe rule</b><p>{parsed.intent.startsWith("invoice") || parsed.kind === "invoice" ? "Invoices stay draft only. Nothing is sent or synced without approval." : parsed.intent === "find" ? "Search only. Nothing changes." : "Live changes only happen after a confident match and approval."}</p></div>
-        <div className="freshQuickAiButtons"><button type="button" onClick={openModal}>Open approval pop-up</button><button type="button" onClick={() => onNavigate?.(parsed.targetPage)}>Open {parsed.targetPage}</button></div>
+        </div> : <div className="freshQuickAiStatus need"><b>No test data loaded</b><span>Type a real instruction and Churvox will build the preview here.</span></div>}
+        {parsed && parsed.intent !== "create" ? <div className="freshQuickAiStatus need"><b>{live?.previewTitle || "Live match"}</b><span>{(live?.previewLines || []).join(" ") || "Search runs when you ask Churvox to understand."}</span></div> : null}
+        {parsed ? <div className="freshQuickAiPrepared"><b>Original</b><p>{text}</p><b>Cleaned</b><p>{parsed.cleanedText}</p><b>Safe rule</b><p>{parsed.intent.startsWith("invoice") || parsed.kind === "invoice" ? "Invoices stay draft only. Nothing is sent or synced without approval." : parsed.intent === "find" ? "Search only. Nothing changes." : "Live changes only happen after a confident match and approval."}</p></div> : null}
+        <div className="freshQuickAiButtons"><button type="button" onClick={openModal}>Open approval pop-up</button><button type="button" disabled={!parsed} onClick={() => parsed && onNavigate?.(parsed.targetPage)}>Open {parsed?.targetPage || "area"}</button></div>
       </article>
     </div>
     <ApprovalModal parsed={open ? parsed : null} live={live} rawText={text} onClose={() => setOpen(false)} onReview={() => saveReview(parsed, live)} />
