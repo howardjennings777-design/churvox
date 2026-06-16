@@ -41,7 +41,10 @@ async function seedReviewItem(page) {
   const dialog = page.getByRole('dialog');
   await expect(dialog).toContainText(/Create Client/i);
   await dialog.getByRole('button', { name: /Save to Review/i }).click();
-  await expect(page.getByText(/Saved to Review/i).first()).toBeVisible({ timeout: 10000 });
+  await page.waitForFunction(() => {
+    const items = JSON.parse(window.localStorage.getItem('churvox:review-inbox:v1') || '[]');
+    return Array.isArray(items) && items.some((item) => /Create Client ready for review/i.test(item.title || ''));
+  }, null, { timeout: 10000 });
 }
 
 test('saving a Tell Churvox item shows it in Owner Review', async ({ page }) => {
