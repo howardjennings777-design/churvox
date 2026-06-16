@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const { test, expect } = require('@playwright/test');
 
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'https://www.churvox.com';
@@ -13,5 +15,6 @@ test('save logged-in Churvox owner state', async ({ page }) => {
   await page.waitForURL(/dashboard|command-board|plans|jobs|invoices/i, { timeout: 180000 });
 
   await expect(page.getByText(/Tell Churvox|Today|Review|Jobs|Invoices/i).first()).toBeVisible({ timeout: 30000 });
+  fs.mkdirSync(path.dirname(storagePath), { recursive: true });
   await page.context().storageState({ path: storagePath });
 });
