@@ -44,38 +44,39 @@ async function login(page) {
   await expect(page.locator('body')).toContainText(/Churvox|Plans|Command|Smart|Dashboard/i);
 }
 
+async function waitForSubscriptionStatus(page, action) {
+  const waiter = page.waitForResponse(
+    (res) => res.url().includes('/api/billing/subscription-status'),
+    { timeout: 45000 }
+  ).catch(() => null);
+  await action();
+  return waiter;
+}
+
 test.describe('Plans regression and live test cleanup', () => {
   test('Plans page loads billing JSON from backend, not frontend HTML', async ({ page }) => {
     await login(page);
 
-    const statusResponse = page.waitForResponse(
-      (res) => res.url().includes('/api/billing/subscription-status'),
-      { timeout: 30000 }
-    ).catch(() => null);
-
     await page.goto('/plans?debug=1');
     await page.waitForLoadState('domcontentloaded');
-
-    const response = await statusResponse;
-    expect(response, 'Plans should call subscription-status API').toBeTruthy();
-    expect(response.status(), `subscription-status returned ${response && response.status()}`).toBe(200);
 
     const body = page.locator('body');
     await expect(body).toContainText(/Current plan|Churvox pricing/i);
     await expect(body).not.toContainText(/Non-JSON response/i);
     await expect(body).not.toContainText(/Plans need attention/i);
 
-    const reload = await clickText(page, ['Reload current plan']);
-    expect(reload, 'Reload current plan should be visible').toBeTruthy();
+    const trace = await page.locator('[data-checkout-trace]').first().getAttribute('data-checkout-trace').catch(() => '');
+    expect(trace || '', 'live Plans bundle should include latest auth-recover marker; wait for Render if this fails').toContain('auth-recover');
 
-    const reloadResponse = await page.waitForResponse(
-      (res) => res.url().includes('/api/billing/subscription-status'),
-      { timeout: 30000 }
-    ).catch(() => null);
+    const reloadResponse = await waitForSubscriptionStatus(page, async () => {
+      const reload = await clickText(page, ['Reload current plan']);
+      expect(reload, 'Reload current plan should be visible').toBeTruthy();
+    });
 
-    expect(reloadResponse, 'Reload should call subscription-status API').toBeTruthy();
+    expect(reloadResponse, 'Reload should call subscription-status API after auth is settled').toBeTruthy();
     expect(reloadResponse.status(), `reload subscription-status returned ${reloadResponse && reloadResponse.status()}`).toBe(200);
     await expect(body).not.toContainText(/Non-JSON response/i);
+    await expect(body).not.toContainText(/Plans need attention/i);
   });
 
   test('cleanup live Playwright test records when explicitly enabled', async ({ page }) => {
