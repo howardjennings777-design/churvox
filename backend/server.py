@@ -3693,6 +3693,12 @@ async def start_checkout_form(request: Request):
 
     return RedirectResponse(session.url, status_code=303)
 
+# Register direct app alias as well as api_router so live Render cannot miss it due to router include ordering.
+try:
+    app.add_api_route("/api/billing/start-checkout-form", start_checkout_form, methods=["POST"], include_in_schema=False)
+except Exception:
+    pass
+
 
 @api_router.post("/billing/create-checkout-session")
 async def create_checkout_session(payload: CreateCheckoutSessionRequest, request: Request):
