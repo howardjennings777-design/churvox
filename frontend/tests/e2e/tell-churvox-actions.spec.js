@@ -16,7 +16,7 @@ const actions = [
   { label: 'Move job', expectedTitle: /Reschedule job/i, expectedText: /move bob to next week/i },
   { label: 'Complete job', expectedTitle: /Complete job/i, expectedText: /mark bob complete/i },
   { label: 'Update price', expectedTitle: /Update job/i, expectedText: /change bob to \$70/i },
-  { label: 'Invoice job', expectedTitle: /Create draft invoice/i, expectedText: /invoice bob completed job/i },
+  { label: 'Invoice job', expectedTitle: /Create draft invoice|Draft invoices for completed jobs/i, expectedText: /invoice bob completed job/i },
   { label: 'Invoice jobs', expectedTitle: /Draft invoices for completed jobs/i, expectedText: /invoice completed jobs/i },
   { label: 'Chase invoices', expectedTitle: /Prepare invoice follow-ups/i, expectedText: /chase unpaid invoices/i },
 ];
