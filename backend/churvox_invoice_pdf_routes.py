@@ -8,14 +8,19 @@ import json
 import os
 import re
 import urllib.request
-from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, Optional, List
 
 import jwt
+from bson import ObjectId
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import Response, JSONResponse
+from motor.motor_asyncio import AsyncIOMotorClient
 
 router = APIRouter(tags=["invoice-pdf"])
+
+_mongo_client = None
+_mongo_db = None
 
 
 CREATE_TYPE_LABELS = {
@@ -35,22 +40,9 @@ TARGET_PAGE_BY_KIND = {
 }
 
 JOB_TYPES = {
-    "lawn_mowing",
-    "garden_maintenance",
-    "landscaping",
-    "cleaning",
-    "window_cleaning",
-    "pressure_washing",
-    "handyman",
-    "plumbing",
-    "electrical",
-    "painting",
-    "carpentry",
-    "pest_control",
-    "pool_maintenance",
-    "hvac",
-    "roofing",
-    "other",
+    "lawn_mowing", "garden_maintenance", "landscaping", "cleaning", "window_cleaning",
+    "pressure_washing", "handyman", "plumbing", "electrical", "painting", "carpentry",
+    "pest_control", "pool_maintenance", "hvac", "roofing", "other",
 }
 
 ROLES = {"worker", "lead_worker", "subcontractor", "payroll"}
@@ -116,7 +108,7 @@ def _normal_kind(value: Any, text: str = "") -> str:
     if value in CREATE_TYPE_LABELS:
         return value
     low = str(text or "").lower()
-    if any(word in low for word in ["invoice", "bill", "charge"]):
+    if any(word in low for word in ["invoice", "bill", "charge", "unpaid", "overdue"]):
         return "invoice"
     if any(word in low for word in ["quote", "estimate", "price up"]):
         return "quote"
@@ -129,6 +121,83 @@ def _normal_kind(value: Any, text: str = "") -> str:
 
 def _date_only(days: int = 7) -> str:
     return (datetime.utcnow() + timedelta(days=days)).date().isoformat()
+
+
+def _db():
+    global _mongo_client, _mongo_db
+    if _mongo_db is not None:
+        return _mongo_db
+    mongo_url = os.getenv("MONGO_URL")
+    db_name = os.getenv("DB_NAME")
+    if not mongo_url or not db_name:
+        raise HTTPException(status_code=500, detail="Database environment is not configured")
+    _mongo_client = AsyncIOMotorClient(mongo_url)
+    _mongo_db = _mongo_client[db_name]
+    return _mongo_db
+
+
+def _oid(value: Any):
+    try:
+        if ObjectId.is_valid(str(value)):
+            return ObjectId(str(value))
+    except Exception:
+        return None
+    return None
+
+
+def _make_safe(value: Any):
+    if isinstance(value, list):
+        return [_make_safe(item) for item in value]
+    if isinstance(value, dict):
+        out = {}
+        for key, item in value.items():
+            if key == "_id":
+                out["id"] = str(item)
+            else:
+                out[key] = _make_safe(item)
+        return out
+    if isinstance(value, ObjectId):
+        return str(value)
+    if hasattr(value, "isoformat"):
+        try:
+            return value.isoformat()
+        except Exception:
+            return str(value)
+    return value
+
+
+def _auth_payload(request: Request) -> Dict[str, Any]:
+    auth_header = request.headers.get("Authorization", "")
+    token = auth_header[7:] if auth_header.startswith("Bearer ") else request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    try:
+        payload = jwt.decode(token, os.getenv("JWT_SECRET", "default_secret_change_me"), algorithms=["HS256"])
+        if payload.get("type") != "access":
+            raise HTTPException(status_code=401, detail="Invalid token type")
+        return payload
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+
+async def _current_user(request: Request) -> Dict[str, Any]:
+    payload = _auth_payload(request)
+    database = _db()
+    sub = str(payload.get("sub") or "")
+    user = None
+    oid = _oid(sub)
+    if oid:
+        user = await database.users.find_one({"_id": oid})
+    if not user and payload.get("email"):
+        user = await database.users.find_one({"email": str(payload.get("email")).lower()})
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    user["id"] = str(user.get("_id"))
+    business_id = user.get("business_id") or user.get("id")
+    user["business_id"] = str(business_id)
+    return user
 
 
 def _normalise_ai_payload(raw: Dict[str, Any], requested_kind: str, source_text: str) -> Dict[str, Any]:
@@ -230,7 +299,7 @@ def _fallback_parse(kind: str, text: str) -> Dict[str, Any]:
     service = "Hedge trimming" if "hedge" in low else "Cleaning" if "clean" in low else "Handyman repair" if "repair" in low or "handyman" in low else "Lawn mowing" if "lawn" in low or "mow" in low else "General service"
     job_type = "garden_maintenance" if "hedge" in low or "garden" in low else "cleaning" if "clean" in low else "handyman" if "repair" in low or "handyman" in low else "lawn_mowing" if "lawn" in low or "mow" in low else "other"
     amount = _num(price.group(1) if price else 0)
-    words = [w for w in re.findall(r"[A-Za-z][A-Za-z'-]*", text) if w.lower() not in {"add", "create", "job", "quote", "invoice", "client", "customer", "worker", "for", "at", "to", "the", "a", "an", "mow", "lawn", "hedge", "trim", "clean", "repair", "today", "tomorrow", "next", "friday", "gst"}]
+    words = [w for w in re.findall(r"[A-Za-z][A-Za-z'-]*", text) if w.lower() not in {"add", "create", "job", "quote", "invoice", "client", "customer", "worker", "for", "at", "to", "the", "a", "an", "book", "move", "reschedule", "show", "find", "mow", "lawn", "hedge", "trim", "clean", "repair", "today", "tomorrow", "next", "week", "friday", "gst"}]
     name = " ".join(w.capitalize() for w in words[:2]) or ("New person" if resolved == "person" else "New customer")
     schedule_input = ""
     schedule_human = "Date needed" if resolved == "job" else "Not needed"
@@ -242,6 +311,10 @@ def _fallback_parse(kind: str, text: str) -> Dict[str, Any]:
         dt = datetime.utcnow()
         schedule_input = dt.strftime("%Y-%m-%dT09:00")
         schedule_human = "Today · 9:00 AM"
+    elif "next week" in low:
+        dt = datetime.utcnow() + timedelta(days=7)
+        schedule_input = dt.strftime("%Y-%m-%dT09:00")
+        schedule_human = "Next week · 9:00 AM"
     return _normalise_ai_payload({
         "kind": resolved,
         "clientName": name,
@@ -262,20 +335,302 @@ def _fallback_parse(kind: str, text: str) -> Dict[str, Any]:
     }, resolved, text)
 
 
-def _auth_payload(request: Request) -> Dict[str, Any]:
-    auth_header = request.headers.get("Authorization", "")
-    token = auth_header[7:] if auth_header.startswith("Bearer ") else request.cookies.get("access_token")
-    if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+def _tokens(*parts: Any) -> List[str]:
+    text = " ".join(str(p or "") for p in parts).lower()
+    words = re.findall(r"[a-z0-9]+", text)
+    stop = {"the", "and", "for", "job", "invoice", "quote", "move", "next", "week", "to", "a", "an", "at", "show", "find", "unpaid", "overdue"}
+    return [w for w in words if len(w) > 1 and w not in stop]
+
+
+def _record_label(record: Dict[str, Any], record_type: str) -> str:
+    if record_type == "job":
+        return _first(record.get("title"), record.get("job_name"), record.get("client_name"), record.get("customer_name"), record.get("address"), "Job")
+    if record_type == "invoice":
+        return _first(record.get("invoice_number"), record.get("number"), record.get("customer_name"), record.get("client_name"), "Invoice")
+    if record_type == "quote":
+        return _first(record.get("quote_number"), record.get("number"), record.get("customer_name"), record.get("client_name"), "Quote")
+    if record_type == "person":
+        return _first(record.get("name"), record.get("email"), "Person")
+    return _first(record.get("name"), record.get("client_name"), record.get("customer_name"), "Client")
+
+
+def _record_search_text(record: Dict[str, Any], record_type: str) -> str:
+    keys = ["name", "client_name", "customer_name", "title", "job_name", "address", "site_address", "email", "phone", "description", "notes", "invoice_number", "quote_number"]
+    return " ".join(str(record.get(k) or "") for k in keys).lower()
+
+
+def _score_record(record: Dict[str, Any], record_type: str, query_text: str, parsed: Dict[str, Any]) -> int:
+    hay = _record_search_text(record, record_type)
+    score = 0
+    for tok in _tokens(query_text, parsed.get("clientName"), parsed.get("personName"), parsed.get("address")):
+        if tok in hay:
+            score += 3 if len(tok) > 3 else 1
+    name = str(parsed.get("clientName") or parsed.get("personName") or "").strip().lower()
+    if name and name != "new customer" and name != "new person" and name in hay:
+        score += 12
+    address = str(parsed.get("address") or "").strip().lower()
+    if address and address in hay:
+        score += 12
+    if record_type == "job" and str(record.get("status") or "").lower() in {"completed", "cancelled"}:
+        score -= 2
+    return score
+
+
+async def _find_matches(business_id: str, record_type: str, query_text: str, parsed: Dict[str, Any], limit: int = 5) -> List[Dict[str, Any]]:
+    database = _db()
+    collection_name = {"client": "clients", "job": "jobs", "invoice": "invoices", "quote": "quotes", "person": "users"}.get(record_type, "jobs")
+    query = {"business_id": str(business_id)}
+    if record_type == "person":
+        query = {"business_id": str(business_id), "role": {"$in": ["worker", "staff", "employee", "subcontractor", "payroll"]}}
+    cursor = getattr(database, collection_name).find(query).sort("created_at", -1).limit(120)
+    matches = []
+    async for item in cursor:
+        score = _score_record(item, record_type, query_text, parsed)
+        if score <= 0 and _tokens(query_text):
+            continue
+        safe = _make_safe(item)
+        matches.append({
+            "score": score,
+            "recordType": record_type,
+            "id": safe.get("id") or str(item.get("_id")),
+            "label": _record_label(safe, record_type),
+            "summary": _first(safe.get("address"), safe.get("customer_name"), safe.get("client_name"), safe.get("email"), safe.get("status"), ""),
+            "status": safe.get("status") or safe.get("job_status") or "",
+            "scheduled_date": safe.get("scheduled_date") or safe.get("date") or "",
+            "amount": safe.get("total") or safe.get("subtotal") or safe.get("price") or safe.get("amount") or 0,
+            "record": safe,
+        })
+    matches.sort(key=lambda x: x.get("score", 0), reverse=True)
+    return matches[:limit]
+
+
+@router.post("/tell-churvox/preview")
+async def tell_churvox_preview(request: Request):
+    user = await _current_user(request)
+    business_id = str(user.get("business_id") or user.get("id"))
+    body = await request.json() if request.headers.get("content-type", "").startswith("application/json") else {}
+    parsed = body.get("parsed") if isinstance(body.get("parsed"), dict) else {}
+    text = _plain(body.get("text") or parsed.get("cleanedText") or parsed.get("notes"), 4000)
+    intent = _plain(parsed.get("intent") or body.get("intent") or "create", 60)
+    kind = _normal_kind(parsed.get("kind") or body.get("kind") or "job", text)
+
+    record_type = kind
+    if intent in {"reschedule", "update"}:
+        record_type = "job" if kind not in {"invoice", "quote", "person", "client"} else kind
+    if intent in {"money_review"}:
+        record_type = "invoice"
+
+    if intent == "money_review":
+        database = _db()
+        invoice_matches = []
+        cursor = database.invoices.find({"business_id": business_id, "status": {"$in": ["sent", "overdue", "draft"]}}).sort("created_at", -1).limit(25)
+        async for inv in cursor:
+            safe = _make_safe(inv)
+            amount = safe.get("total") or safe.get("subtotal") or safe.get("amount") or 0
+            invoice_matches.append({
+                "recordType": "invoice",
+                "id": safe.get("id"),
+                "label": _record_label(safe, "invoice"),
+                "summary": f"{safe.get('status', 'invoice')} · {_price_text(amount)}",
+                "status": safe.get("status") or "",
+                "amount": amount,
+                "record": safe,
+                "score": 1,
+            })
+        return {
+            "success": True,
+            "intent": intent,
+            "recordType": "invoice",
+            "matches": invoice_matches,
+            "bestMatch": invoice_matches[0] if invoice_matches else None,
+            "canCommit": False,
+            "ambiguity": "none" if invoice_matches else "no_match",
+            "previewTitle": "Money review ready",
+            "previewLines": [f"Found {len(invoice_matches)} invoice(s) to review.", "No invoice will be sent or synced without approval."],
+        }
+
+    matches = await _find_matches(business_id, record_type, text, parsed)
+    best = matches[0] if matches else None
+    ambiguity = "none"
+    if not matches:
+        ambiguity = "no_match"
+    elif len(matches) > 1 and matches[0].get("score", 0) - matches[1].get("score", 0) < 5:
+        ambiguity = "multiple_matches"
+
+    can_commit = bool(best and ambiguity == "none" and intent == "reschedule" and parsed.get("schedule", {}).get("input"))
+    preview_lines = []
+    if best:
+        preview_lines.append(f"I found {best.get('label')} ({best.get('summary') or best.get('status') or 'matching record'}).")
+    else:
+        preview_lines.append("I could not find a matching live record yet.")
+    if intent == "reschedule":
+        preview_lines.append(f"New date: {parsed.get('schedule', {}).get('human') or parsed.get('schedule', {}).get('input') or 'date needed'}.")
+    elif intent == "update":
+        preview_lines.append("This is prepared as an update action and needs approval.")
+    elif intent == "message":
+        preview_lines.append("This is prepared as a draft message and needs approval before sending.")
+
+    return {
+        "success": True,
+        "intent": intent,
+        "recordType": record_type,
+        "matches": matches,
+        "bestMatch": best,
+        "canCommit": can_commit,
+        "ambiguity": ambiguity,
+        "previewTitle": "Live match found" if best else "Needs matching",
+        "previewLines": preview_lines,
+    }
+
+
+@router.post("/tell-churvox/commit")
+async def tell_churvox_commit(request: Request):
+    user = await _current_user(request)
+    business_id = str(user.get("business_id") or user.get("id"))
+    body = await request.json() if request.headers.get("content-type", "").startswith("application/json") else {}
+    parsed = body.get("parsed") if isinstance(body.get("parsed"), dict) else {}
+    match = body.get("match") if isinstance(body.get("match"), dict) else {}
+    intent = _plain(parsed.get("intent") or body.get("intent") or "", 60)
+    record_type = _plain(match.get("recordType") or body.get("recordType") or "", 40)
+    record_id = _plain(match.get("id") or body.get("recordId") or "", 80)
+
+    if intent != "reschedule" or record_type != "job":
+        raise HTTPException(status_code=400, detail="Only approved job reschedule actions are live-enabled right now")
+
+    schedule = parsed.get("schedule") if isinstance(parsed.get("schedule"), dict) else {}
+    schedule_input = _plain(schedule.get("input"), 80)
+    if not schedule_input:
+        raise HTTPException(status_code=400, detail="New schedule is required")
+
     try:
-        payload = jwt.decode(token, os.getenv("JWT_SECRET", "default_secret_change_me"), algorithms=["HS256"])
-        if payload.get("type") != "access":
-            raise HTTPException(status_code=401, detail="Invalid token type")
-        return payload
-    except HTTPException:
-        raise
+        scheduled_date = datetime.fromisoformat(schedule_input.replace("Z", "+00:00"))
     except Exception:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=400, detail="Invalid schedule date")
+
+    database = _db()
+    filters = [{"business_id": business_id, "id": record_id}]
+    oid = _oid(record_id)
+    if oid:
+        filters.append({"business_id": business_id, "_id": oid})
+
+    now = datetime.now(timezone.utc)
+    update = {
+        "scheduled_date": scheduled_date,
+        "updated_at": now,
+        "tell_churvox_last_action": {
+            "intent": intent,
+            "text": _plain(body.get("text") or parsed.get("originalText") or parsed.get("cleanedText"), 1000),
+            "approved_at": now,
+            "approved_by": str(user.get("id") or ""),
+        },
+    }
+
+    result = None
+    used_filter = None
+    for flt in filters:
+        result = await database.jobs.update_one(flt, {"$set": update})
+        if result.matched_count:
+            used_filter = flt
+            break
+
+    if not result or result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Matching job not found")
+
+    doc = await database.jobs.find_one(used_filter)
+    return {
+        "success": True,
+        "message": "Job rescheduled",
+        "record": _make_safe(doc),
+        "undo": {"type": "job_reschedule", "recordId": record_id},
+    }
+
+
+@router.post("/ai/quick-create/parse")
+@router.post("/create-with-churvox/parse")
+async def ai_quick_create_parse(request: Request):
+    _auth_payload(request)
+    body = await request.json() if request.headers.get("content-type", "").startswith("application/json") else {}
+    if not isinstance(body, dict):
+        body = {}
+
+    text = _plain(body.get("text"), 4000)
+    requested_kind = _normal_kind(body.get("kind"), text)
+    timezone_name = _plain(body.get("timezone") or "Pacific/Auckland", 80)
+    if not text:
+        raise HTTPException(status_code=400, detail="Write what you want Churvox to create first.")
+
+    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    model = os.getenv("CHURVOX_AI_MODEL", "gpt-4o-mini").strip() or "gpt-4o-mini"
+    if not api_key:
+        parsed = _fallback_parse(requested_kind, text)
+        return {"success": True, "provider": "fallback", "ai_enabled": False, "parsed": parsed, "message": "OPENAI_API_KEY is not configured, so Churvox used safe local extraction."}
+
+    system = (
+        "You are the Tell Churvox parser for a trade/job-management app. Return ONLY valid JSON. "
+        "Infer if the owner wants to create, reschedule, update, find, review money, or prepare a message. "
+        "Do not invent unknown facts. Keep risky actions owner-approved. "
+        "Invoices must be drafts only; do not send, sync, mark paid, submit tax, or create bank files. "
+        "Use New Zealand context and the user's timezone for relative dates. "
+        "Allowed kind values: client, job, quote, invoice, person. "
+        "Allowed intent values: create, reschedule, update, find, money_review, message. "
+        "Allowed jobType values: lawn_mowing, garden_maintenance, landscaping, cleaning, window_cleaning, pressure_washing, handyman, plumbing, electrical, painting, carpentry, pest_control, pool_maintenance, hvac, roofing, other. "
+        "Allowed role values: worker, lead_worker, subcontractor, payroll."
+    )
+    today = datetime.utcnow().date().isoformat()
+    user = {
+        "target_kind": requested_kind,
+        "timezone": timezone_name,
+        "today_utc": today,
+        "text": text,
+        "schema": {
+            "intent": "create|reschedule|update|find|money_review|message",
+            "kind": "client|job|quote|invoice|person",
+            "clientName": "string",
+            "personName": "string",
+            "service": "string",
+            "jobType": "allowed jobType",
+            "address": "string",
+            "area": "string",
+            "email": "string",
+            "phone": "string",
+            "amount": "number",
+            "schedule": {"human": "string", "input": "YYYY-MM-DDTHH:mm or empty", "time": "string"},
+            "repeat": "one-off|weekly|fortnightly|monthly|custom",
+            "role": "worker|lead_worker|subcontractor|payroll",
+            "gst": "GST included|GST excluded|No GST|Needs check",
+            "dueDate": "YYYY-MM-DD or empty",
+            "title": "string",
+            "notes": "string",
+            "missing": ["short missing field names"],
+            "confidence": "0 to 1 number"
+        }
+    }
+
+    try:
+        from openai import OpenAI
+        client = OpenAI(api_key=api_key)
+
+        def run_ai():
+            return client.chat.completions.create(
+                model=model,
+                temperature=0.1,
+                response_format={"type": "json_object"},
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": json.dumps(user)},
+                ],
+            )
+
+        completion = await asyncio.to_thread(run_ai)
+        content = completion.choices[0].message.content or "{}"
+        parsed_raw = json.loads(content)
+        parsed = _normalise_ai_payload(parsed_raw, requested_kind, text)
+        if isinstance(parsed_raw, dict) and parsed_raw.get("intent"):
+            parsed["intent"] = _plain(parsed_raw.get("intent"), 40)
+        return {"success": True, "provider": "openai", "ai_enabled": True, "model": model, "parsed": parsed}
+    except Exception as exc:
+        parsed = _fallback_parse(requested_kind, text)
+        return {"success": True, "provider": "fallback", "ai_enabled": False, "parsed": parsed, "message": f"AI parse failed, so Churvox used safe local extraction: {str(exc)[:160]}"}
 
 
 def invoice_number(invoice: Dict[str, Any]) -> str:
@@ -356,16 +711,10 @@ async def _maybe_await(value: Any) -> Any:
 
 
 async def _collection(request: Request, name: str):
-    for holder in [getattr(request.app, "state", None), request.app]:
-        if not holder:
-            continue
-        db = getattr(holder, "db", None) or getattr(holder, "database", None) or getattr(holder, "mongodb", None)
-        if db is not None:
-            try:
-                return db[name]
-            except Exception:
-                pass
-    return None
+    try:
+        return _db()[name]
+    except Exception:
+        return None
 
 
 async def find_invoice(request: Request, invoice_id: str, body: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -377,12 +726,9 @@ async def find_invoice(request: Request, invoice_id: str, body: Optional[Dict[st
         return body if isinstance(body, dict) and body else {"id": invoice_id, "invoice_number": invoice_id}
 
     queries = [{"id": invoice_id}, {"invoice_id": invoice_id}, {"invoice_number": invoice_id}]
-    try:
-        from bson import ObjectId
-        if ObjectId.is_valid(invoice_id):
-            queries.append({"_id": ObjectId(invoice_id)})
-    except Exception:
-        pass
+    oid = _oid(invoice_id)
+    if oid:
+        queries.append({"_id": oid})
 
     for query in queries:
         try:
@@ -394,89 +740,6 @@ async def find_invoice(request: Request, invoice_id: str, body: Optional[Dict[st
             pass
 
     return body if isinstance(body, dict) and body else {"id": invoice_id, "invoice_number": invoice_id}
-
-
-@router.post("/ai/quick-create/parse")
-@router.post("/create-with-churvox/parse")
-async def ai_quick_create_parse(request: Request):
-    _auth_payload(request)
-    body = await request.json() if request.headers.get("content-type", "").startswith("application/json") else {}
-    if not isinstance(body, dict):
-        body = {}
-
-    text = _plain(body.get("text"), 4000)
-    requested_kind = _normal_kind(body.get("kind"), text)
-    timezone = _plain(body.get("timezone") or "Pacific/Auckland", 80)
-    if not text:
-        raise HTTPException(status_code=400, detail="Write what you want Churvox to create first.")
-
-    api_key = os.getenv("OPENAI_API_KEY", "").strip()
-    model = os.getenv("CHURVOX_AI_MODEL", "gpt-4o-mini").strip() or "gpt-4o-mini"
-    if not api_key:
-        parsed = _fallback_parse(requested_kind, text)
-        return {"success": True, "provider": "fallback", "ai_enabled": False, "parsed": parsed, "message": "OPENAI_API_KEY is not configured, so Churvox used safe local extraction."}
-
-    system = (
-        "You are the Create with Churvox parser for a trade/job-management app. "
-        "Return ONLY valid JSON. Do not invent unknown facts. Keep risky actions owner-approved. "
-        "Invoices must be drafts only; do not send, sync, mark paid, submit tax, or create bank files. "
-        "Use New Zealand context and the user's timezone for relative dates. "
-        "Allowed kind values: client, job, quote, invoice, person. "
-        "Allowed jobType values: lawn_mowing, garden_maintenance, landscaping, cleaning, window_cleaning, pressure_washing, handyman, plumbing, electrical, painting, carpentry, pest_control, pool_maintenance, hvac, roofing, other. "
-        "Allowed role values: worker, lead_worker, subcontractor, payroll."
-    )
-    today = datetime.utcnow().date().isoformat()
-    user = {
-        "target_kind": requested_kind,
-        "timezone": timezone,
-        "today_utc": today,
-        "text": text,
-        "schema": {
-            "kind": "client|job|quote|invoice|person",
-            "clientName": "string",
-            "personName": "string",
-            "service": "string",
-            "jobType": "allowed jobType",
-            "address": "string",
-            "area": "string",
-            "email": "string",
-            "phone": "string",
-            "amount": "number",
-            "schedule": {"human": "string", "input": "YYYY-MM-DDTHH:mm or empty", "time": "string"},
-            "repeat": "one-off|weekly|fortnightly|monthly|custom",
-            "role": "worker|lead_worker|subcontractor|payroll",
-            "gst": "GST included|GST excluded|No GST|Needs check",
-            "dueDate": "YYYY-MM-DD or empty",
-            "title": "string",
-            "notes": "string",
-            "missing": ["short missing field names"],
-            "confidence": "0 to 1 number"
-        }
-    }
-
-    try:
-        from openai import OpenAI
-        client = OpenAI(api_key=api_key)
-
-        def run_ai():
-            return client.chat.completions.create(
-                model=model,
-                temperature=0.1,
-                response_format={"type": "json_object"},
-                messages=[
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": json.dumps(user)},
-                ],
-            )
-
-        completion = await asyncio.to_thread(run_ai)
-        content = completion.choices[0].message.content or "{}"
-        parsed_raw = json.loads(content)
-        parsed = _normalise_ai_payload(parsed_raw, requested_kind, text)
-        return {"success": True, "provider": "openai", "ai_enabled": True, "model": model, "parsed": parsed}
-    except Exception as exc:
-        parsed = _fallback_parse(requested_kind, text)
-        return {"success": True, "provider": "fallback", "ai_enabled": False, "parsed": parsed, "message": f"AI parse failed, so Churvox used safe local extraction: {str(exc)[:160]}"}
 
 
 def send_email_with_pdf(to_email: str, subject: str, html: str, pdf_name: str, pdf_bytes: bytes) -> Dict[str, Any]:
