@@ -3,7 +3,7 @@ import "./freshPlans.css";
 import API_BASE from "../lib/apiBase";
 import { useAuth } from "../context/AuthContext";
 
-const CHECKOUT_TRACE_MARKER = "checkout-return-current-plan-v34-auth-recover";
+const CHECKOUT_TRACE_MARKER = "checkout-return-current-plan-v35-form-redirect-auth-recover";
 const LIVE_BACKEND = API_BASE || "https://grassley-backend.onrender.com";
 
 const accountingAddonText = "Accounting Sync Add-on — $39/month + GST (MYOB or Xero, where available)";
@@ -156,6 +156,33 @@ function userFromMe(data = {}) {
   if (!picked || typeof picked !== "object") return null;
   if (!(picked.email || picked.id || picked._id || picked.role || picked.business_id || picked.businessId)) return null;
   return picked;
+}
+
+
+function postCheckoutForm({ token, plan, country }) {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = backendUrl("/billing/start-checkout-form");
+  form.style.display = "none";
+
+  const fields = {
+    token,
+    plan,
+    ui_plan: plan,
+    country: country || "NZ",
+    source: "fresh_plans_form_redirect_v35",
+  };
+
+  Object.entries(fields).forEach(([name, value]) => {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = name;
+    input.value = String(value || "");
+    form.appendChild(input);
+  });
+
+  document.body.appendChild(form);
+  form.submit();
 }
 
 export default function FreshPlans({ onNavigate }) {
@@ -343,33 +370,15 @@ export default function FreshPlans({ onNavigate }) {
     setDebug(null);
     setNotice("Opening Stripe checkout");
 
-    const payload = {
-      plan: selected.backendPlan,
-      plan_type: selected.backendPlan,
-      country: "NZ",
-      billing_country: "NZ",
-      source: "fresh_plans_checkout_return_v34",
-    };
-
     try {
       const session = await recoverCurrentUser();
       const token = session.token;
-      const attempts = [];
 
-      attempts.push(await tryCheckoutEndpoint(backendUrl("/billing/create-checkout-session"), payload, token));
-      if (!attempts[0].ok && backendUrl("/billing/create-checkout-session") !== `${LIVE_BACKEND}/api/billing/create-checkout-session`) {
-        attempts.push(await tryCheckoutEndpoint(`${LIVE_BACKEND}/api/billing/create-checkout-session`, payload, token));
+      if (!token) {
+        throw new Error("Checkout token missing. Please sign in again.");
       }
 
-      setDebug({ attempts });
-
-      const success = attempts.find((attempt) => attempt.ok);
-      if (!success) {
-        const last = attempts[attempts.length - 1];
-        throw new Error(errorFrom(last?.body, { status: last?.status }));
-      }
-
-      window.location.assign(success.checkoutUrl);
+      postCheckoutForm({ token, plan: selected.backendPlan, country: "NZ" });
     } catch (err) {
       setNotice("Checkout needs attention");
       setError(err?.message || "Stripe checkout could not be opened.");
