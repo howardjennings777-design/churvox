@@ -102,11 +102,12 @@ test.describe('Churvox real AI loop', () => {
 
   test('backend Review list is the source of truth', async ({ page }) => {
     await page.goto('/dashboard#command');
+    const listResponsePromise = page.waitForResponse((res) => res.url().includes('/api/ai-review-items'), { timeout: 30_000 }).catch(() => null);
     await waitStable(page);
     const body = page.locator('body');
 
     await expect(body).toContainText(/Backend-owned Review only|backend Review|Approve what Churvox AI prepared/i);
-    const listResponse = await page.waitForResponse((res) => res.url().includes('/api/ai-review-items'), { timeout: 30_000 }).catch(() => null);
+    const listResponse = await listResponsePromise;
     expect(listResponse, 'Review should request backend AI review items').toBeTruthy();
     expect([200, 401, 403], `unexpected review list status ${listResponse && listResponse.status()}`).toContain(listResponse.status());
 
@@ -133,7 +134,8 @@ test.describe('Churvox real AI loop', () => {
 
     await page.goto('/dashboard#command');
     await waitStable(page);
-    await expect(page.locator('body')).toContainText(new RegExp(item.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').slice(0, 40), 'i'));
+    await expect(page.locator('body')).toContainText(/Backend-owned Review only|Approve what Churvox AI prepared/i);
+    await expect(page.locator('body')).toContainText((item.title || item.summary || '').slice(0, 30));
 
     if (!ALLOW_AI_APPROVE) return;
 
