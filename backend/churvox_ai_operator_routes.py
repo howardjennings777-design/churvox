@@ -129,6 +129,15 @@ def build_ai_operator_router(db, get_current_user, ObjectId):
         user = await require_owner(request); business_id, _ = business_ids(user)
         items = await db.ai_review_items.find({"business_id": business_id, "status": {"$in": ["open", "edited"]}}).sort("created_at", -1).limit(200).to_list(200)
         return {"success": True, "items": [doc_out(x) for x in items]}
+    @router.patch("/ai-review-items/{item_id}")
+    async def save_ai_review_item(item_id: str, payload: Dict[str, Any], request: Request):
+        user = await require_owner(request); business_id, _ = business_ids(user)
+        update = {"status": "edited", "owner_note": payload.get("note") or payload.get("owner_note") or "", "updated_at": now()}
+        if isinstance(payload.get("payload"), dict): update["payload"] = payload["payload"]
+        await db.ai_review_items.update_one({"_id": oid(item_id, "review item"), "business_id": business_id}, {"$set": update})
+        item = await db.ai_review_items.find_one({"_id": oid(item_id, "review item"), "business_id": business_id})
+        if not item: raise HTTPException(status_code=404, detail="Review item not found")
+        return {"success": True, "item": doc_out(item)}
     @router.post("/ai-review-items/{item_id}/ignore")
     async def ignore_item(item_id: str, payload: Dict[str, Any], request: Request):
         user = await require_owner(request); business_id, _ = business_ids(user)
