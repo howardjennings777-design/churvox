@@ -2,6 +2,7 @@ const { defineConfig, devices } = require('@playwright/test');
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:3000';
 const useExternalSite = Boolean(process.env.PLAYWRIGHT_BASE_URL);
+const storageState = process.env.PLAYWRIGHT_STORAGE_STATE || undefined;
 
 module.exports = defineConfig({
   testDir: './tests/e2e',
@@ -16,6 +17,7 @@ module.exports = defineConfig({
   ],
   use: {
     baseURL,
+    storageState,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
