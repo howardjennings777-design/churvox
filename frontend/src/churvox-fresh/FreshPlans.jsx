@@ -3,7 +3,7 @@ import "./freshPlans.css";
 import API_BASE from "../lib/apiBase";
 import { useAuth } from "../context/AuthContext";
 
-const CHECKOUT_TRACE_MARKER = "checkout-return-current-plan-v33";
+const CHECKOUT_TRACE_MARKER = "checkout-return-current-plan-v34-auth-recover";
 const LIVE_BACKEND = API_BASE || "https://grassley-backend.onrender.com";
 
 const accountingAddonText = "Accounting Sync Add-on — $39/month + GST (MYOB or Xero, where available)";
@@ -151,8 +151,15 @@ function errorFrom(body, response) {
   );
 }
 
+function userFromMe(data = {}) {
+  const picked = data?.user || data?.data?.user || data?.data || data || {};
+  if (!picked || typeof picked !== "object") return null;
+  if (!(picked.email || picked.id || picked._id || picked.role || picked.business_id || picked.businessId)) return null;
+  return picked;
+}
+
 export default function FreshPlans({ onNavigate }) {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, updateUser } = useAuth();
   const [currentPlan, setCurrentPlan] = React.useState("");
   const [selectedPlan, setSelectedPlan] = React.useState("operator");
   const [growthPacks, setGrowthPacks] = React.useState(0);
@@ -175,6 +182,28 @@ export default function FreshPlans({ onNavigate }) {
     }
   }, []);
 
+  const recoverCurrentUser = React.useCallback(async () => {
+    const token = authToken(user);
+    const headers = { Accept: "application/json" };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    const { response, body } = await apiRequest(backendUrl("/auth/me"), {
+      method: "GET",
+      credentials: "include",
+      headers,
+    });
+
+    if (!response.ok || body?.success === false) {
+      throw new Error(errorFrom(body, response));
+    }
+
+    const recovered = userFromMe(body);
+    if (recovered) {
+      updateUser?.(recovered);
+    }
+    return { user: recovered || user, token: authToken(recovered || user) };
+  }, [user, updateUser]);
+
   const loadPlan = React.useCallback(async () => {
     if (authLoading) {
       setLoading(true);
@@ -182,18 +211,12 @@ export default function FreshPlans({ onNavigate }) {
       return;
     }
 
-    if (!user) {
-      setLoading(false);
-      setCurrentPlan("");
-      setNotice("Sign in to load plan");
-      return;
-    }
-
     setLoading(true);
     setError("");
 
     try {
-      const token = authToken(user);
+      const session = await recoverCurrentUser();
+      const token = session.token;
       const headers = { Accept: "application/json" };
       if (token) headers.Authorization = `Bearer ${token}`;
 
@@ -214,12 +237,17 @@ export default function FreshPlans({ onNavigate }) {
       setNotice(uiPlan ? "Loaded from billing profile" : "No plan chosen yet");
       setDebug((previous) => ({ ...(previous || {}), status: { endpoint: backendUrl("/billing/subscription-status"), status: response.status, body: data } }));
     } catch (err) {
-      setNotice("Plan needs attention");
-      setError(err?.message || "Plan could not load from backend.");
+      const message = err?.message || "Plan could not load from backend.";
+      if (/not authenticated|401|403/i.test(message)) {
+        setNotice("Sign in to load plan");
+      } else {
+        setNotice("Plan needs attention");
+      }
+      setError(message);
     } finally {
       setLoading(false);
     }
-  }, [authLoading, user]);
+  }, [authLoading, recoverCurrentUser]);
 
   React.useEffect(() => {
     loadPlan();
@@ -245,7 +273,8 @@ export default function FreshPlans({ onNavigate }) {
 
   async function confirmCheckout(sessionId, plan, country) {
     try {
-      const token = authToken(user);
+      const session = await recoverCurrentUser();
+      const token = session.token;
       const headers = { "Content-Type": "application/json", Accept: "application/json" };
       if (token) headers.Authorization = `Bearer ${token}`;
 
@@ -304,8 +333,8 @@ export default function FreshPlans({ onNavigate }) {
   }
 
   async function startCheckout() {
-    if (authLoading || !user) {
-      setNotice("Sign in to start checkout");
+    if (authLoading) {
+      setNotice("Loading account");
       return;
     }
 
@@ -314,16 +343,17 @@ export default function FreshPlans({ onNavigate }) {
     setDebug(null);
     setNotice("Opening Stripe checkout");
 
-    const token = authToken(user);
     const payload = {
       plan: selected.backendPlan,
       plan_type: selected.backendPlan,
       country: "NZ",
       billing_country: "NZ",
-      source: "fresh_plans_checkout_return_v33",
+      source: "fresh_plans_checkout_return_v34",
     };
 
     try {
+      const session = await recoverCurrentUser();
+      const token = session.token;
       const attempts = [];
 
       attempts.push(await tryCheckoutEndpoint(backendUrl("/billing/create-checkout-session"), payload, token));
@@ -384,7 +414,7 @@ export default function FreshPlans({ onNavigate }) {
         <span>Invoices stay draft-only until approved. Accounting sync is owner-approved. Churvox does not auto-send invoices, mark paid, file tax or create bank payout files.</span>
       </section>
 
-      {error && (
+      {error && !/not authenticated|401|403/i.test(error) && (
         <section className="freshCard freshNotice need">
           <b>Plans need attention</b>
           <span>{error}</span>
