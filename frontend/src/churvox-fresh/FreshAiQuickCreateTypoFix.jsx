@@ -1,7 +1,8 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
 
-const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
+const REVIEW_INBOX_KEY = "churvox:review-inbox:v1";
+const LEGACY_COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
 
 const LABEL = { client: "Client", job: "Job", quote: "Quote", invoice: "Invoice", person: "Person / worker" };
 const PAGE = { client: "clients", job: "jobs", quote: "quotes", invoice: "invoices", person: "team" };
@@ -9,6 +10,8 @@ const PAGE = { client: "clients", job: "jobs", quote: "quotes", invoice: "invoic
 const examples = {
   job: "bob 16 taita drive $60 repeat 23/07/09",
   move: "move bob to next week",
+  price: "change bob to $70",
+  note: "add note to bob: dog in backyard, close gate after mowing",
   quote: "quote Sarah at 15 High strt Upper Hutt for overgrown lawn and hedge trim, $190 including GST",
   invoice: "invoice Sarah for hedge trim today, $120 including GST, due in 7 days",
   person: "add Mike Jones as a wrker, mike@example.com, 022 555 777, pay rate $28/hr",
@@ -59,7 +62,7 @@ function intentOf(text) {
   if (/\b(move|reschedule|shift|postpone|push|change date|next week|tomorrow instead)\b/.test(low)) return "reschedule";
   if (/\b(show|find|search|where is|list|what money|unpaid|overdue)\b/.test(low)) return low.includes("unpaid") || low.includes("overdue") ? "money_review" : "find";
   if (/\b(tell|message|sms|text|send)\b/.test(low)) return "message";
-  if (/\b(change|update|edit|make .*\$|price to|add note)\b/.test(low)) return "update";
+  if (/\b(change|update|edit|make .*\$|price to|add note|note to|notes? for)\b/.test(low)) return "update";
   return "create";
 }
 
@@ -84,7 +87,7 @@ function actionTitle(intent, kind) {
   if (intent === "money_review") return "Review money";
   if (intent === "find") return "Find records";
   if (intent === "message") return "Prepare message";
-  if (intent === "update") return "Update record";
+  if (intent === "update") return "Update job";
   return `Create ${LABEL[kind] || "record"}`;
 }
 
@@ -135,10 +138,18 @@ function nameOf(text, fallback) {
   let cleaned = String(text || "");
   [emailOf(text), phoneOf(text), addressOf(text)].filter(Boolean).forEach((piece) => { cleaned = cleaned.replace(piece, " "); });
   cleaned = cleaned.replace(/\$\s*\d+(?:\.\d{1,2})?/g, " ").replace(/\b\d{1,2}[\/.\-]\d{1,2}(?:[\/.\-]\d{1,4})?\b/g, " ");
-  const stop = new Set("add create make new please client customer person worker staff team job quote invoice bill for at to from his her their the a an address phone mobile email price charge amount total due pay rate mow mowing lawn lawns hedge trim clean cleaning repair handyman paint painting today tomorrow next monday tuesday wednesday thursday friday saturday sunday front back photos photo green waste gst including include included repeat custom move reschedule shift postpone push show find search unpaid overdue chase tell message sms text send next week".split(" "));
+  const stop = new Set("add create make new please client customer person worker staff team job quote invoice bill for at to from his her their the a an address phone mobile email price charge amount total due pay rate mow mowing lawn lawns hedge trim clean cleaning repair handyman paint painting today tomorrow next monday tuesday wednesday thursday friday saturday sunday front back photos photo green waste gst including include included repeat custom move reschedule shift postpone push show find search unpaid overdue chase tell message sms text send next week change update edit make note notes".split(" "));
   const words = cleaned.match(/[A-Za-z][A-Za-z'-]*/g) || [];
   const picked = words.filter((w) => !stop.has(w.toLowerCase())).slice(0, 2);
   return picked.map(title).join(" ") || fallback;
+}
+
+function noteTextOf(text) {
+  const value = String(text || "").trim();
+  const colon = value.match(/(?:add\s+)?notes?\s+(?:to|for)\s+[^:]+:\s*(.+)$/i) || value.match(/:\s*(.+)$/);
+  if (colon?.[1]) return colon[1].trim();
+  const note = value.match(/(?:add\s+)?notes?\s+(?:to|for)\s+(.+)$/i);
+  return note?.[1]?.trim() || value;
 }
 
 function requiredMissing(p) {
@@ -191,6 +202,7 @@ function normalise(raw, originalText) {
     dueDate: raw?.dueDate || raw?.due_date || isoDate(7),
     title: raw?.title || (actualKind === "person" ? personName : `${raw?.service || service} for ${clientName}`),
     notes: raw?.notes || cleanedText,
+    updateNote: raw?.updateNote || noteTextOf(cleanedText),
     originalText,
     cleanedText,
     targetPage: raw?.targetPage || PAGE[actualKind] || "jobs",
@@ -200,10 +212,30 @@ function normalise(raw, originalText) {
   return parsed;
 }
 
+function liveCanCommit(p, livePreview) {
+  if (!p || !livePreview?.bestMatch || livePreview.ambiguity !== "none") return false;
+  if (p.intent === "reschedule") return Boolean(p.schedule?.input);
+  if (p.intent === "update") return Number(p.amount || 0) > 0 || Boolean(String(p.updateNote || p.notes || "").trim());
+  return false;
+}
+
+function buildJobUpdatePayload(p) {
+  const payload = {};
+  if (Number(p.amount || 0) > 0) {
+    payload.price = Number(p.amount || 0);
+    payload.pricing_type = "fixed";
+  }
+  const low = String(p.cleanedText || p.notes || "").toLowerCase();
+  if (/\b(add note|note to|notes? for)\b/.test(low)) {
+    payload.notes = p.updateNote || p.notes || "";
+  }
+  return payload;
+}
+
 function detailsFor(p, livePreview) {
   if (p.intent !== "create") {
     const best = livePreview?.bestMatch;
-    return [["Action", p.actionTitle], ["Live match", best ? `${best.label} · ${best.summary || best.status || "matched"}` : "Needs matching"], ["New date", p.schedule?.human || "Not supplied"], ["Confidence", livePreview?.ambiguity === "none" ? "High" : livePreview?.ambiguity === "multiple_matches" ? "Needs choice" : "Needs review"], ["Notes", p.notes || "Not supplied"], ["Status", livePreview?.canCommit ? "Ready to approve" : "Save to Review"]];
+    return [["Action", p.actionTitle], ["Live match", best ? `${best.label} · ${best.summary || best.status || "matched"}` : "Needs matching"], [p.intent === "reschedule" ? "New date" : "Change", p.intent === "reschedule" ? (p.schedule?.human || "Not supplied") : (Number(p.amount || 0) > 0 ? `Set price to ${p.priceText}` : p.updateNote || p.notes || "Prepared update")], ["Confidence", livePreview?.ambiguity === "none" ? "High" : livePreview?.ambiguity === "multiple_matches" ? "Needs choice" : "Needs review"], ["Notes", p.updateNote || p.notes || "Not supplied"], ["Status", liveCanCommit(p, livePreview) ? "Ready to approve" : "Save to Review"]];
   }
   if (p.kind === "client") return [["Client", p.clientName], ["Email", p.email || "Optional"], ["Phone", p.phone || "Optional"], ["Address", p.address || "Optional"], ["Notes", p.notes || "Optional"]];
   if (p.kind === "person") return [["Person", p.personName], ["Role", p.roleText], ["Email", p.email || "Needed"], ["Phone", p.phone || "Optional"], ["Pay rate", p.payRateText], ["Notes", p.notes || "Optional"]];
@@ -213,7 +245,7 @@ function detailsFor(p, livePreview) {
 }
 
 function editFieldsFor(p) {
-  if (p.intent !== "create") return ["clientName", "service", "scheduleInput", "address", "amount", "notes"];
+  if (p.intent !== "create") return ["clientName", "service", "scheduleInput", "amount", "notes"];
   if (p.kind === "person") return ["personName", "role", "email", "phone", "payRate", "notes"];
   if (p.kind === "client") return ["clientName", "address", "email", "phone", "notes"];
   if (p.kind === "invoice") return ["clientName", "service", "amount", "dueDate", "email", "phone", "address", "notes"];
@@ -242,16 +274,28 @@ async function postFirst(post, endpoints, payload) {
   return { success: false, error: last };
 }
 
-function saveToReview(p, raw, setStatus, closeModal = () => {}, livePreview = null) {
+async function saveToReview(p, raw, setStatus, closeModal = () => {}, livePreview = null, post = null) {
+  const details = Object.fromEntries(detailsFor(p, livePreview));
+  const slip = { id: `tell-churvox-${Date.now()}`, type: p.kind, category: p.intent === "create" ? p.kind : "action", title: `${p.actionTitle} ready for review`, summary: summary(p), urgency: p.missing.length ? "High" : p.intent === "create" ? "Normal" : "Needs matching", found: `Raw note: ${raw}`, prepared: `${p.actionTitle}: ${summary(p)}`, why: p.intent === "create" ? "The note has been cleaned and turned into a safe owner-approved create action." : (livePreview?.bestMatch ? `Matched ${livePreview.bestMatch.label}. Review before applying.` : "This needs owner review before changing anything."), source: "Tell Churvox", page: p.targetPage, details, livePreview, status: "open", createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
   try {
-    const saved = window.localStorage.getItem(COMMAND_INBOX_KEY);
-    const current = saved ? JSON.parse(saved) : [];
-    const slip = { id: `tell-churvox-${Date.now()}`, type: p.kind, category: p.intent === "create" ? p.kind : "action", title: `${p.actionTitle} ready for review`, summary: summary(p), urgency: p.missing.length ? "High" : p.intent === "create" ? "Normal" : "Needs matching", found: `Raw note: ${raw}`, prepared: `${p.actionTitle}: ${summary(p)}`, why: p.intent === "create" ? "The note has been cleaned and turned into a safe owner-approved create action." : (livePreview?.bestMatch ? `Matched ${livePreview.bestMatch.label}. Review before applying.` : "This needs owner review before changing anything."), source: "Tell Churvox", page: p.targetPage, details: Object.fromEntries(detailsFor(p, livePreview)), livePreview, status: "open", createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
-    window.localStorage.setItem(COMMAND_INBOX_KEY, JSON.stringify([slip, ...(Array.isArray(current) ? current : [])].slice(0, 50)));
+    [REVIEW_INBOX_KEY, LEGACY_COMMAND_INBOX_KEY].forEach((key) => {
+      const saved = window.localStorage.getItem(key);
+      const current = saved ? JSON.parse(saved) : [];
+      window.localStorage.setItem(key, JSON.stringify([slip, ...(Array.isArray(current) ? current : [])].slice(0, 50)));
+    });
     window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "tell-churvox-review" } }));
+  } catch {}
+  if (post) {
+    try {
+      await post("/ai/actions", { title: slip.title, status: "pending", actionKey: p.intent, recordType: livePreview?.recordType || p.kind, recordId: livePreview?.bestMatch?.id || "", notifyMode: "Internal only", afterApproval: p.intent === "create" ? "Create after owner approval" : "Apply after owner approval", ownerAuditNote: slip.why, form: { parsed: p, livePreview, details }, raw: slip }, { timeout: 12000 });
+      setStatus({ tone: "ok", text: "Saved to Review on this account. Nothing changes until approved." });
+    } catch {
+      setStatus({ tone: "ok", text: "Saved to Review on this device. Nothing changes until approved." });
+    }
+  } else {
     setStatus({ tone: "ok", text: "Saved to Review. Churvox will not change anything until approved." });
-    closeModal();
-  } catch { setStatus({ tone: "need", text: "Could not save this to Review on this device." }); }
+  }
+  closeModal();
 }
 
 function FieldEditor({ parsed, patchDraft }) {
@@ -278,7 +322,7 @@ function LiveMatchBlock({ livePreview }) {
   if (!livePreview) return <div className="freshQuickAiStatus need"><b>Live match</b><span>Churvox will search your records when you ask it to understand.</span></div>;
   const matches = Array.isArray(livePreview.matches) ? livePreview.matches : [];
   return (
-    <div className={livePreview.canCommit ? "freshQuickAiStatus ok" : "freshQuickAiStatus need"}>
+    <div className={livePreview.canCommit || (livePreview.bestMatch && livePreview.ambiguity === "none") ? "freshQuickAiStatus ok" : "freshQuickAiStatus need"}>
       <b>{livePreview.previewTitle || "Live match"}</b>
       <span>{(livePreview.previewLines || []).join(" ") || (livePreview.bestMatch ? `Found ${livePreview.bestMatch.label}` : "No confident live match yet.")}</span>
       {matches.length > 1 ? <span>{matches.slice(0, 3).map((m) => `${m.label}${m.summary ? ` — ${m.summary}` : ""}`).join(" | ")}</span> : null}
@@ -288,7 +332,7 @@ function LiveMatchBlock({ livePreview }) {
 
 function ApprovalModal({ parsed, rawText, saving, analysing, livePreview, onClose, onApprove, onReview, patchDraft }) {
   if (!parsed) return null;
-  const canApproveLive = parsed.intent !== "create" && livePreview?.canCommit;
+  const canApproveLive = liveCanCommit(parsed, livePreview);
   return (
     <div className="freshQuickAiModalShade" role="dialog" aria-modal="true" aria-label="Tell Churvox approval">
       <div className="freshQuickAiModal">
@@ -296,7 +340,7 @@ function ApprovalModal({ parsed, rawText, saving, analysing, livePreview, onClos
         <header>
           <span>Churvox understood this</span>
           <h2>{parsed.actionTitle}</h2>
-          <p>{parsed.intent === "create" ? "Check the details, edit anything, then approve. Nothing happens until you approve." : canApproveLive ? "Churvox found the live record. Check the match, then approve the change." : "Churvox has prepared this action. Save it to Review if the match needs checking first."}</p>
+          <p>{parsed.intent === "create" ? "Check the details, edit anything, then approve. Nothing happens until you approve." : canApproveLive ? "Churvox found the live job. Check the match, then approve the change." : "Churvox has prepared this action. Save it to Review if the match needs checking first."}</p>
         </header>
         <div className="freshQuickAiModalGrid">
           <section className="freshQuickAiResult modalCards">
@@ -322,7 +366,7 @@ function ApprovalModal({ parsed, rawText, saving, analysing, livePreview, onClos
 }
 
 export default function FreshAiQuickCreateTypoFix({ onNavigate }) {
-  const { post } = useApi();
+  const { post, patch } = useApi();
   const [text, setText] = React.useState(examples.job);
   const [draft, setDraft] = React.useState(null);
   const [livePreview, setLivePreview] = React.useState(null);
@@ -351,6 +395,7 @@ export default function FreshAiQuickCreateTypoFix({ onNavigate }) {
     next.payRateText = next.payRate ? `$${next.payRate}/hr` : "Not set";
     next.roleText = roleText(next.role);
     next.title = next.kind === "person" ? next.personName : `${next.service} for ${next.clientName}`;
+    next.updateNote = key === "notes" ? noteTextOf(value) : next.updateNote;
     next.missing = requiredMissing(next);
     setDraft(next);
     setLivePreview(null);
@@ -415,16 +460,35 @@ export default function FreshAiQuickCreateTypoFix({ onNavigate }) {
     if (!ready) return;
     if (ready.intent !== "create") {
       const live = livePreview || await loadLivePreview(ready);
-      if (!live?.canCommit || !live?.bestMatch) {
-        saveToReview(ready, text, setStatus, () => setReviewOpen(false), live);
+      if (!liveCanCommit(ready, live) || !live?.bestMatch) {
+        await saveToReview(ready, text, setStatus, () => setReviewOpen(false), live, post);
         return;
       }
       setSaving(true);
+      if (ready.intent === "update") {
+        const payload = buildJobUpdatePayload(ready);
+        if (!Object.keys(payload).length) {
+          setSaving(false);
+          await saveToReview(ready, text, setStatus, () => setReviewOpen(false), live, post);
+          return;
+        }
+        const res = await patch(`/jobs/${live.bestMatch.id}`, payload, { timeout: 20000 });
+        setSaving(false);
+        if (!res?.success) {
+          setStatus({ tone: "need", text: `${res?.error || "Job update failed"}. Saved to Review instead.` });
+          await saveToReview(ready, text, setStatus, () => setReviewOpen(false), live, post);
+          return;
+        }
+        window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "tell-churvox-job-update", source: "tell-churvox" } }));
+        setReviewOpen(false);
+        setStatus({ tone: "ok", text: Number(ready.amount || 0) > 0 ? `Updated ${live.bestMatch.label} to ${ready.priceText}.` : `Added note to ${live.bestMatch.label}.` });
+        return;
+      }
       const res = await post("/tell-churvox/commit", { text, parsed: ready, match: live.bestMatch, intent: ready.intent }, { timeout: 20000 });
       setSaving(false);
       if (!res?.success) {
         setStatus({ tone: "need", text: `${res?.error || "Change failed"}. Saved to Review instead.` });
-        saveToReview(ready, text, setStatus, () => setReviewOpen(false), live);
+        await saveToReview(ready, text, setStatus, () => setReviewOpen(false), live, post);
         return;
       }
       window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "tell-churvox-live-update", source: "tell-churvox" } }));
@@ -461,7 +525,7 @@ export default function FreshAiQuickCreateTypoFix({ onNavigate }) {
 
       <div className="freshQuickAiGrid">
         <article className="freshQuickAiPanel">
-          <header><span>One brain</span><h2>Tell Churvox like a real assistant.</h2><p>Try: move Bob to next week, invoice Sarah $120, add Mike as worker, or chase unpaid invoices.</p></header>
+          <header><span>One brain</span><h2>Tell Churvox like a real assistant.</h2><p>Try: move Bob to next week, change Bob to $70, add note to Bob, or chase unpaid invoices.</p></header>
           <textarea value={text} onChange={(e) => updateText(e.target.value)} placeholder="Example: Bob 16 Taita drive $60 repeat 23/07/09" />
           {typoFixed ? <div className="freshQuickAiStatus ok"><b>Auto cleaned</b><span>{cleanOwnerText(text)}</span></div> : null}
           <div className="freshQuickAiButtons">
@@ -469,6 +533,8 @@ export default function FreshAiQuickCreateTypoFix({ onNavigate }) {
             <button type="button" onClick={openApproval} disabled={saving || analysing}>Open approval pop-up</button>
             <button type="button" onClick={() => loadExample("job")}>Job</button>
             <button type="button" onClick={() => loadExample("move")}>Move job</button>
+            <button type="button" onClick={() => loadExample("price")}>Price</button>
+            <button type="button" onClick={() => loadExample("note")}>Note</button>
             <button type="button" onClick={() => loadExample("invoice")}>Invoice</button>
             <button type="button" onClick={() => loadExample("money")}>Money</button>
           </div>
@@ -479,13 +545,13 @@ export default function FreshAiQuickCreateTypoFix({ onNavigate }) {
           <header><span>{aiInfo.ai_enabled ? "Real AI preview" : "Smart preview"}</span><h2>{parsed.actionTitle}</h2><p>This is the preview. The approval pop-up is where Churvox does the final owner check.</p></header>
           <div className="freshQuickAiResult">{details.map(([label, value]) => <section key={label} className={String(value).toLowerCase().includes("needed") || String(value).toLowerCase().includes("needs") ? "need" : ""}><b>{label}</b><p>{value}</p></section>)}</div>
           {parsed.intent !== "create" ? <LiveMatchBlock livePreview={livePreview} /> : null}
-          <div className="freshQuickAiPrepared"><b>Original</b><p>{text || "Tell Churvox what to do."}</p><b>Cleaned</b><p>{parsed.cleanedText || cleanOwnerText(text)}</p><b>Safe rule</b><p>{parsed.intent === "create" ? "Creates only after approval. Invoices stay draft only." : livePreview?.canCommit ? "Churvox found a live match. It only updates after you approve." : "Update/search/message actions are saved for Review unless the live match is confident."}</p></div>
+          <div className="freshQuickAiPrepared"><b>Original</b><p>{text || "Tell Churvox what to do."}</p><b>Cleaned</b><p>{parsed.cleanedText || cleanOwnerText(text)}</p><b>Safe rule</b><p>{parsed.intent === "create" ? "Creates only after approval. Invoices stay draft only." : liveCanCommit(parsed, livePreview) ? "Churvox found a live match. It only updates after you approve." : "Update/search/message actions are saved for Review unless the live match is confident."}</p></div>
           {parsed.missing.length ? <div className="freshQuickAiMissing"><b>Required before safe create</b><span>{parsed.missing.join(", ")}</span></div> : null}
           <div className="freshQuickAiButtons"><button type="button" onClick={openApproval} disabled={saving || analysing}>Open approval pop-up</button><button type="button" onClick={() => onNavigate?.(parsed.targetPage)}>Open {parsed.targetPage}</button></div>
         </article>
       </div>
 
-      <ApprovalModal parsed={reviewOpen ? parsed : null} rawText={text} saving={saving} analysing={analysing} livePreview={livePreview} onClose={() => setReviewOpen(false)} onApprove={() => createRecord(parsed)} onReview={() => saveToReview(parsed, text, setStatus, () => setReviewOpen(false), livePreview)} patchDraft={patchDraft} />
+      <ApprovalModal parsed={reviewOpen ? parsed : null} rawText={text} saving={saving} analysing={analysing} livePreview={livePreview} onClose={() => setReviewOpen(false)} onApprove={() => createRecord(parsed)} onReview={() => saveToReview(parsed, text, setStatus, () => setReviewOpen(false), livePreview, post)} patchDraft={patchDraft} />
     </section>
   );
 }
