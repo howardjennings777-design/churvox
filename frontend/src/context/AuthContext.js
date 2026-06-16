@@ -90,6 +90,18 @@ export function AuthProvider({ children }) {
     checkAuth().catch(() => {});
   }, [checkAuth]);
 
+  useEffect(() => {
+    const refreshAuthAfterBilling = () => {
+      checkAuth().catch(() => {});
+    };
+    window.addEventListener("churvox-auth-refresh", refreshAuthAfterBilling);
+    window.addEventListener("storage", refreshAuthAfterBilling);
+    return () => {
+      window.removeEventListener("churvox-auth-refresh", refreshAuthAfterBilling);
+      window.removeEventListener("storage", refreshAuthAfterBilling);
+    };
+  }, [checkAuth]);
+
   const login = useCallback(async (email, password) => {
     clearStoredAuth();
     setUser(null);
