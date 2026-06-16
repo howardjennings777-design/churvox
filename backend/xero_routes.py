@@ -9,6 +9,14 @@ from bson import ObjectId
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse, RedirectResponse
 
+try:
+    from churvox_ai_operator_routes import build_ai_operator_router
+except Exception:
+    try:
+        from .churvox_ai_operator_routes import build_ai_operator_router
+    except Exception:
+        build_ai_operator_router = None
+
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://www.churvox.com").rstrip("/")
 BACKEND_PUBLIC_URL = os.environ.get("BACKEND_PUBLIC_URL", os.environ.get("RENDER_EXTERNAL_URL", "https://grassley-backend.onrender.com")).rstrip("/")
 XERO_CLIENT_ID = os.environ.get("XERO_CLIENT_ID", "")
@@ -21,6 +29,15 @@ XERO_INVOICES_URL = "https://api.xero.com/api.xro/2.0/Invoices"
 XERO_DEFAULT_SCOPES = "openid profile email offline_access accounting.transactions accounting.contacts accounting.settings"
 XERO_SALES_ACCOUNT_CODE = os.environ.get("XERO_SALES_ACCOUNT_CODE", "200").strip()
 XERO_SALES_TAX_TYPE = os.environ.get("XERO_SALES_TAX_TYPE", "OUTPUT2").strip()
+
+
+def _install_ai_operator_routes(app, db, get_current_user):
+    if getattr(app.state, "churvox_real_ai_operator_routes_installed", False):
+        return
+    if build_ai_operator_router is None:
+        return
+    app.include_router(build_ai_operator_router(db, get_current_user, ObjectId), prefix="/api")
+    app.state.churvox_real_ai_operator_routes_installed = True
 
 
 def _bid(user):
@@ -203,7 +220,6 @@ async def _refresh_connection(db, conn):
             {"$set": {"last_refresh_error": token_res.text, "updated_at": datetime.now(timezone.utc)}},
         )
         raise HTTPException(status_code=400, detail="Xero token refresh failed. Reconnect Xero.")
-
     tokens = token_res.json()
     now = datetime.now(timezone.utc)
     expires_in = int(tokens.get("expires_in") or 1800)
@@ -359,6 +375,7 @@ async def _refresh_xero_invoice_status(db, bid, invoice):
 
 
 def install(app, db, get_current_user):
+    _install_ai_operator_routes(app, db, get_current_user)
     if getattr(app.state, "xero_routes_installed", False):
         return
     router = APIRouter(prefix="/api")
