@@ -1,1 +1,3 @@
-export { default } from "./FreshAiQuickCreateTypoFix";
+import FreshAiQuickCreateBrain from "./FreshAiQuickCreateBrain";
+
+export default FreshAiQuickCreateBrain;
