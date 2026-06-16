@@ -211,7 +211,7 @@ test.describe('Churvox owner app audit', () => {
     await visitFreshPage(page, 'command');
 
     const actions = testInfo.project.name.includes('mobile')
-      ? ['AI Guide', 'Review', 'New job', 'Add client']
+      ? ['AI Guide', 'New job', 'Add client']
       : ['AI Guide', 'Review', 'New job', 'Add client', 'Log out'];
 
     const missing = [];

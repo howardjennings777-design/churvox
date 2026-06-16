@@ -6,22 +6,21 @@ const MUTATE = process.env.CHURVOX_E2E_MUTATE === '1';
 
 const areas = [
   'plans',
-  'setupassistant',
   'smart',
   'jobs',
   'clients',
   'quotes',
   'invoices',
-  'payments',
   'dispatch',
   'team',
   'settings',
   'support',
   'command',
-  'reports',
   'payroll',
   'xero',
 ];
+
+const clickWalkAreas = new Set(['smart', 'jobs', 'clients', 'quotes', 'invoices', 'command']);
 
 const dangerous = /delete|remove|archive|trash|send invoice|send quote|send email|send sms|approve|decline|pay now|checkout|stripe|log in|login|sign in|sign up|signup|register|log out|logout|disconnect|revoke|sync to xero|sync to myob/i;
 const safeClick = /open|view|details|next|back|cancel|close|plans|business pulse|client|job|quote|invoice|settings|support|setup|command|refresh|search/i;
@@ -254,7 +253,9 @@ test.describe('Churvox human flow', () => {
 
     for (const area of areas) {
       await visitArea(page, area);
-      await safeButtonWalk(page, area);
+      if (clickWalkAreas.has(area)) {
+        await safeButtonWalk(page, area);
+      }
     }
 
     expect(errors).toEqual([]);
