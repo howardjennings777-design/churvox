@@ -1,1 +1,1 @@
-export { default } from "./FreshAiQuickCreateBrainV4";
+export { default } from "./FreshAiQuickCreateBrainV5";
