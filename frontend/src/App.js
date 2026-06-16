@@ -48,7 +48,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import ChurvoxHelpWidget from "./components/ChurvoxHelpWidget";
 import CommandShell from "./components/CommandShell";
 import ConceptCFrame from "./concept-c/ConceptCFrame";
-import CommandDeskOperatorPage from "./pages/CommandDeskOperatorPageV3";
+import CommandDeskOperatorPage from "./pages/CommandDeskOperatorPageV4";
 import WorkerMapCommandPage from "./pages/WorkerMapCommandPage";
 import PayrollCommandPage from "./pages/PayrollCommandPage";
 import OfflineSyncPage from "./pages/OfflineSyncPage";
