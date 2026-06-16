@@ -69,7 +69,9 @@
     "test:human": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-human-flow.spec.js --project=desktop-chromium",
     "test:human:mobile": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-human-flow.spec.js --project=mobile-chromium",
     "test:ai": "playwright test tests/e2e/churvox-real-ai-loop.spec.js",
-    "test:ai:live": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-real-ai-loop.spec.js --project=desktop-chromium"
+    "test:ai:live": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-real-ai-loop.spec.js --project=desktop-chromium",
+    "test:plans": "playwright test tests/e2e/churvox-plans-regression-and-cleanup.spec.js --project=desktop-chromium -g \"Plans page loads billing JSON\"",
+    "test:cleanup": "playwright test tests/e2e/churvox-plans-regression-and-cleanup.spec.js --project=desktop-chromium -g \"cleanup live Playwright test records\""
   },
   "browserslist": {
     "production": [
