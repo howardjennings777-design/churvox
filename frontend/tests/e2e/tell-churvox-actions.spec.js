@@ -2,6 +2,10 @@ const { test, expect } = require('@playwright/test');
 
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000';
 
+if (process.env.PLAYWRIGHT_STORAGE_STATE) {
+  test.use({ storageState: process.env.PLAYWRIGHT_STORAGE_STATE });
+}
+
 const actions = [
   { label: 'Add job', expectedTitle: /Create Job/i, expectedText: /bob 16 taita drive/i },
   { label: 'Move job', expectedTitle: /Reschedule job/i, expectedText: /move bob to next week/i },
@@ -15,7 +19,7 @@ async function openTellChurvox(page) {
 
   const loginVisible = await page.getByRole('button', { name: /log in|sign in/i }).first().isVisible().catch(() => false);
   if (loginVisible || /login/i.test(page.url())) {
-    test.skip(true, 'Login is required. Run with a logged-in Playwright storage state.');
+    test.skip(true, 'Login is required. Run with PLAYWRIGHT_STORAGE_STATE pointing to a logged-in state file.');
   }
 
   const tellNav = page.getByRole('button', { name: /Tell Churvox|Tell/i }).first();
