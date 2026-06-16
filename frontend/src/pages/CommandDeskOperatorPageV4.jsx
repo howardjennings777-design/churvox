@@ -1,515 +1,86 @@
 import React from "react";
 import { toast } from "sonner";
+import { useApi } from "../hooks/useApi";
 
-const SLIPS = [
-  {
-    key: "approvals",
-    title: "Approvals",
-    card: "Master queue for owner decisions prepared by Churvox.",
-    formTitle: "Approval decision",
-    actionKey: "approve_prepared_action",
-    recordType: "approval",
-    recordLabel: "Approval / source record",
-    notifyOptions: ["Internal only", "Notify owner", "Notify relevant user after approval"],
-    found: "Churvox found work that should not happen without owner approval.",
-    prepared: "A clear decision with the linked record, owner changes and approval note.",
-    why: "This keeps the AI Operator approval-first and stops silent changes.",
-    risk: "High-risk actions must show source, record and outcome before approval.",
-    after: "The prepared action is accepted, declined, or sent back for editing.",
-    approveLabel: "Approve decision",
-    fields: [
-      ["approvalSource", "Approval source", "select", ["Money", "Crew", "Quote", "Job", "Client", "Worker update", "Payroll", "Setup"]],
-      ["linkedRecord", "Linked record name"],
-      ["affectedPerson", "Affected client / worker"],
-      ["approvalStatus", "Approval status", "select", ["Needs approval", "Approved", "Declined", "Needs edit", "Hold"]],
-      ["riskLevel", "Risk level", "select", ["Normal", "Important", "Urgent", "High risk"]],
-      ["dueStatus", "Due / urgency"],
-      ["preparedAction", "Prepared action", "textarea"],
-      ["ownerChanges", "Owner changes before approval", "textarea"],
-      ["decisionNote", "Decision note", "textarea"]
-    ]
-  },
-  {
-    key: "crew",
-    title: "Crew dispatch",
-    card: "Approve the recommended worker, schedule and dispatch note.",
-    formTitle: "Crew assignment",
-    actionKey: "assign_worker_to_job",
-    recordType: "job",
-    recordLabel: "Job",
-    notifyOptions: ["Internal only", "Notify worker", "Notify worker and owner"],
-    found: "A job needs a worker, schedule, or clearer dispatch instructions.",
-    prepared: "A recommended worker, backup option and message for the field crew.",
-    why: "The owner should see why a worker is recommended before assigning the job.",
-    risk: "Check workload, travel area and schedule conflict before approval.",
-    after: "The worker is assigned and the dispatch note is ready for notification.",
-    approveLabel: "Approve assignment",
-    fields: [
-      ["jobName", "Job to assign"],
-      ["clientSite", "Client / site"],
-      ["jobAddress", "Job address"],
-      ["accessInstructions", "Access instructions / site notes", "textarea"],
-      ["workerId", "Worker ID"],
-      ["recommendedWorker", "Recommended worker"],
-      ["matchReason", "Why this worker", "textarea"],
-      ["workerWorkload", "Worker workload today"],
-      ["backupWorker", "Backup worker"],
-      ["schedule", "Scheduled date/time"],
-      ["assignmentStatus", "Assignment after approval", "select", ["Assign now", "Offer to worker", "Hold", "Needs schedule check"]],
-      ["workerAckRequired", "Worker acknowledgement", "select", ["Required", "Not required", "Ask worker to confirm"]],
-      ["customerArrivalNote", "Customer-visible arrival note", "textarea"],
-      ["conflictWarning", "Conflict / warning", "textarea"],
-      ["dispatchNote", "Worker dispatch note", "textarea"]
-    ]
-  },
-  {
-    key: "money",
-    title: "Money",
-    card: "Approve invoice drafts, payment follow-ups and money reviews.",
-    formTitle: "Money action",
-    actionKey: "approve_money_action",
-    recordType: "invoice",
-    recordLabel: "Invoice / job",
-    notifyOptions: ["Internal only", "Notify customer after approval", "Notify owner only", "Stage for accounting later"],
-    found: "A money item needs owner approval before sending, following up, or marking reviewed.",
-    prepared: "The amount, due date, customer wording and accounting status are ready to review.",
-    why: "Money actions should be checked before customers see them or records change.",
-    risk: "Watch for missing amount, missing customer email, GST issues or accounting sync status.",
-    after: "The invoice, reminder or money note is approved for the next step.",
-    approveLabel: "Approve money action",
-    fields: [
-      ["moneyAction", "Money action", "select", ["Draft invoice", "Approve invoice", "Payment follow-up", "Mark paid reviewed", "Accounting review"]],
-      ["sendMode", "Send mode", "select", ["Draft only", "Send after approval", "Internal only", "Prepare reminder only"]],
-      ["invoiceType", "Invoice type", "select", ["Job invoice", "Deposit invoice", "Extras", "Time-based", "Adjustment"]],
-      ["paymentLinkStatus", "Payment link", "select", ["Not included", "Included", "Coming soon", "Needs setup"]],
-      ["clientId", "Client ID"],
-      ["client", "Client"],
-      ["clientEmail", "Client email"],
-      ["invoiceRef", "Invoice / job reference"],
-      ["amount", "Amount"],
-      ["paymentStatus", "Payment status", "select", ["Unpaid", "Part paid", "Paid", "Overdue", "Needs check"]],
-      ["gstStatus", "GST status", "select", ["GST included", "GST excluded", "No GST", "Needs check"]],
-      ["dueDate", "Due date"],
-      ["contactWarning", "Contact / amount warning"],
-      ["accountingStatus", "Accounting status", "select", ["Not synced", "Xero staged", "MYOB staged", "Ready later", "Needs review"]],
-      ["customerMessage", "Customer wording", "textarea"],
-      ["internalNote", "Internal money note", "textarea"]
-    ]
-  },
-  {
-    key: "jobs",
-    title: "Jobs needing info",
-    card: "Fix the job blocker before dispatch, reminders or invoices move.",
-    formTitle: "Job blocker fix",
-    actionKey: "fix_job_blocker",
-    recordType: "job",
-    recordLabel: "Job",
-    notifyOptions: ["Internal only", "Notify assigned worker", "Notify owner", "Do not notify"],
-    found: "A job is missing information or has a blocker that stops the next step.",
-    prepared: "The missing fields, pricing, worker notes and owner-only note are ready to review.",
-    why: "Clean job details feed dispatch, reminders, invoices, payroll and worker instructions.",
-    risk: "Do not show owner-only pricing or internal notes to workers.",
-    after: "The job becomes ready for scheduling, assignment or invoice preparation.",
-    approveLabel: "Save job fix",
-    fields: [
-      ["clientId", "Client ID"],
-      ["workerId", "Worker ID"],
-      ["jobTitle", "Job title"],
-      ["client", "Client"],
-      ["clientContact", "Client phone / email"],
-      ["address", "Job address"],
-      ["jobType", "Job type / trade"],
-      ["priority", "Priority", "select", ["Normal", "High", "Urgent"]],
-      ["jobStatusAfterApproval", "Status after approval", "select", ["Ready to schedule", "Ready to dispatch", "Ready to invoice", "Hold", "Needs owner review"]],
-      ["invoiceReadiness", "Invoice readiness", "select", ["No", "Yes after completion", "Ready now", "Needs price", "Needs worker update"]],
-      ["customerReminderAllowed", "Customer reminder", "select", ["No", "Yes later", "Coming soon", "Do not remind"]],
-      ["schedule", "Schedule/date"],
-      ["repeatType", "Recurring", "select", ["One-off", "Weekly", "Fortnightly", "Monthly", "Custom"]],
-      ["assignedWorker", "Assigned worker"],
-      ["pricingType", "Pricing type", "select", ["Fixed price", "Hourly", "Fixed + extras", "Hourly + extras", "Needs price"]],
-      ["price", "Price / rate"],
-      ["photoRequired", "Photos required", "select", ["Not required", "Before photo", "After photo", "Before and after"]],
-      ["gpsRequired", "GPS/site check", "select", ["Not required", "Start check", "Completion check", "Start and completion"]],
-      ["missingChecklist", "Missing info checklist", "textarea"],
-      ["customerVisibleNote", "Customer-visible note", "textarea"],
-      ["workerInstructions", "Worker-visible instructions", "textarea"],
-      ["ownerOnlyNote", "Owner-only note", "textarea"]
-    ]
-  },
-  {
-    key: "quotes",
-    title: "Quotes",
-    card: "Approve quote follow-ups, revisions or quote-to-job actions.",
-    formTitle: "Quote action",
-    actionKey: "approve_quote_action",
-    recordType: "quote",
-    recordLabel: "Quote",
-    notifyOptions: ["Internal only", "Notify customer after approval", "Convert without notifying", "Notify owner only"],
-    found: "A quote needs follow-up, revision, expiry review or conversion to a job.",
-    prepared: "The quote value, scope, assumptions and customer message are ready to approve.",
-    why: "Quotes should not sit untouched when they can become work or need a clear response.",
-    risk: "Check scope, exclusions, expiry and client contact before sending anything.",
-    after: "The quote action is saved, followed up, revised or ready to convert into a job.",
-    approveLabel: "Approve quote action",
-    fields: [
-      ["clientId", "Client ID"],
-      ["quoteAction", "Quote action", "select", ["Follow up quote", "Convert accepted quote", "Revise quote", "Archive quote"]],
-      ["client", "Client"],
-      ["clientEmail", "Client email"],
-      ["quoteRef", "Quote title / number"],
-      ["quoteStatus", "Quote status", "select", ["Draft", "Sent", "Accepted", "Declined", "Expired"]],
-      ["quoteValue", "Quote value"],
-      ["depositRequired", "Deposit required", "select", ["No", "Yes", "Needs owner check"]],
-      ["followUpDate", "Follow-up date"],
-      ["conversionJobTitle", "Conversion job title"],
-      ["conversionStartDate", "Preferred start date"],
-      ["conversionWorker", "Preferred worker"],
-      ["gstStatus", "GST status", "select", ["GST included", "GST excluded", "No GST", "Needs check"]],
-      ["validUntil", "Valid until"],
-      ["expiryWarning", "Expiry warning"],
-      ["convertToJob", "Convert to job", "select", ["No", "Yes after approval", "Needs owner check"]],
-      ["contactWarning", "Client contact warning"],
-      ["scope", "Scope of work", "textarea"],
-      ["exclusions", "Exclusions / assumptions", "textarea"],
-      ["message", "Customer follow-up message", "textarea"]
-    ]
-  },
-  {
-    key: "clients",
-    title: "Clients",
-    card: "Approve client contact fixes and next customer action.",
-    formTitle: "Client record fix",
-    actionKey: "fix_client_record",
-    recordType: "client",
-    recordLabel: "Client",
-    notifyOptions: ["Internal only", "No notification", "Notify owner", "Prepare customer message only"],
-    found: "A client record needs details before jobs, quotes, invoices or reminders work properly.",
-    prepared: "Contact details, site notes, billing contact and next action are ready to review.",
-    why: "Clean client data stops failed reminders, invoice issues and wrong job details.",
-    risk: "Missing phone/email can block reminders and follow-ups.",
-    after: "The client record is ready for job, quote, invoice and reminder workflows.",
-    approveLabel: "Save client fix",
-    fields: [
-      ["clientName", "Client name"],
-      ["clientType", "Client type", "select", ["Residential", "Commercial", "Property manager", "Landlord", "Other"]],
-      ["nextAction", "Next action", "select", ["Create job", "Create quote", "Fix details", "Follow up", "No action"]],
-      ["defaultInvoiceRecipient", "Invoice recipient", "select", ["Client", "Billing contact", "Property manager", "Other"]],
-      ["duplicateWarning", "Duplicate client warning"],
-      ["phone", "Phone"],
-      ["email", "Email"],
-      ["preferredContact", "Preferred contact", "select", ["Phone", "Email", "SMS later", "No preference"]],
-      ["contactPermission", "Contact permission", "select", ["Allowed", "Do not contact", "Needs permission", "Unknown"]],
-      ["serviceAddress", "Service address"],
-      ["billingAddress", "Billing address"],
-      ["billingContact", "Billing contact"],
-      ["billingEmail", "Billing email"],
-      ["clientStatus", "Client status", "select", ["Active", "Needs details", "Do not contact", "Archived"]],
-      ["reminderStatus", "Reminder status", "select", ["Ready", "Missing contact", "Coming soon", "Do not remind"]],
-      ["siteNotes", "Property / access notes", "textarea"],
-      ["lastJobNextAction", "Last job / next action", "textarea"],
-      ["clientNote", "Client note", "textarea"]
-    ]
-  },
-  {
-    key: "workers",
-    title: "Worker updates",
-    card: "Accept field updates, proof, notes and completion issues.",
-    formTitle: "Worker update review",
-    actionKey: "accept_worker_update",
-    recordType: "worker_update",
-    recordLabel: "Worker update / job",
-    notifyOptions: ["Internal only", "Notify owner", "Notify worker", "Move to invoice/payroll queues"],
-    found: "A field update needs owner review before invoice, payroll or follow-up work continues.",
-    prepared: "Worker note, proof status, timing and owner review note are ready to accept or reject.",
-    why: "Worker updates are the bridge between job completion, invoice preparation and payroll review.",
-    risk: "Check missing photos, client issues, time issues and site verification before accepting.",
-    after: "The update is accepted and can feed invoice preparation or payroll review.",
-    approveLabel: "Accept worker update",
-    fields: [
-      ["jobId", "Job ID"],
-      ["workerId", "Worker ID"],
-      ["timeLogId", "Time log ID"],
-      ["worker", "Worker"],
-      ["job", "Job"],
-      ["completionStatus", "Completion status", "select", ["Completed", "Needs review", "Photos missing", "Client issue", "Rejected"]],
-      ["ownerCompletionDecision", "Accept completion", "select", ["Yes", "Needs follow-up", "Reject", "Hold"]],
-      ["customerIssueNote", "Customer issue note", "textarea"],
-      ["materialsExtras", "Materials / extras used", "textarea"],
-      ["photoCount", "Photo count"],
-      ["proofStatus", "Photo / proof status", "select", ["Photos attached", "No photos", "Needs owner review", "Not required"]],
-      ["timeStarted", "Started time"],
-      ["timeCompleted", "Completed time"],
-      ["siteCheck", "Owner-side site check", "select", ["Not checked", "On site", "Near site", "Away from site", "GPS missing"]],
-      ["gpsDistance", "GPS distance/status"],
-      ["issueFlag", "Issue flag", "select", ["None", "Client issue", "Pricing issue", "Photo missing", "Time issue", "Needs call"]],
-      ["createInvoiceDraft", "Create invoice draft", "select", ["No", "Yes after approval", "Needs price first"]],
-      ["sendToPayroll", "Send to payroll", "select", ["No", "Yes after approval", "Needs time review"]],
-      ["workerNote", "Worker note", "textarea"],
-      ["ownerReview", "Owner review note", "textarea"]
-    ]
-  },
-  {
-    key: "payroll",
-    title: "Payroll/time",
-    card: "Approve reviewed time before payroll handoff.",
-    formTitle: "Payroll time review",
-    actionKey: "approve_time_review",
-    recordType: "time_log",
-    recordLabel: "Time log / pay period",
-    notifyOptions: ["Internal only", "Notify payroll", "Notify owner", "No notification"],
-    found: "A worker time record needs review before payroll export or handoff.",
-    prepared: "Reviewed hours, pause time, hold reason and export note are ready for payroll approval.",
-    why: "Payroll needs clean time records separate from normal job admin.",
-    risk: "Hold anything with missing start/finish, strange pause time or disputed hours.",
-    after: "The time is marked ready, held for review, or prepared for export/handoff.",
-    approveLabel: "Approve time review",
-    fields: [
-      ["timeLogId", "Time log ID"],
-      ["payPeriodId", "Pay period ID"],
-      ["workerId", "Worker ID"],
-      ["jobId", "Job ID"],
-      ["worker", "Worker"],
-      ["payPeriod", "Pay period"],
-      ["jobSource", "Job / time source"],
-      ["payType", "Pay type", "select", ["Hourly", "Fixed", "Manual adjustment", "Unpaid review"]],
-      ["approvalStatus", "Approval status", "select", ["Needs review", "Approved by owner", "Approved by payroll", "Hold", "Exported"]],
-      ["adjustmentAmount", "Adjustment time/amount"],
-      ["adjustmentReason", "Adjustment reason", "textarea"],
-      ["startTime", "Start time"],
-      ["finishTime", "Finish time"],
-      ["totalTime", "Total time"],
-      ["pauseTime", "Pause time"],
-      ["reviewedHours", "Reviewed hours"],
-      ["payableTotal", "Payable total"],
-      ["payStatus", "Payroll status", "select", ["Ready", "Needs review", "Hold", "Exported"]],
-      ["exportStatus", "Export status", "select", ["Not exported", "Ready to export", "Exported", "Hold"]],
-      ["holdReason", "Hold reason", "textarea"],
-      ["payrollNote", "Payroll note", "textarea"],
-      ["exportNote", "Export / handoff note", "textarea"]
-    ]
-  },
-  {
-    key: "setup",
-    title: "Setup blockers",
-    card: "Approve setup fixes that unblock launch or customer use.",
-    formTitle: "Setup blocker fix",
-    actionKey: "fix_setup_blocker",
-    recordType: "setup_item",
-    recordLabel: "Setup item",
-    notifyOptions: ["Internal only", "Notify owner", "Ignore for now", "No notification"],
-    found: "A setup item is missing or unfinished and may block launch readiness.",
-    prepared: "The missing item, required value, prepared fix and owner note are ready to review.",
-    why: "Setup blockers should be clear, not hidden inside random settings pages.",
-    risk: "Some setup items can block signups, billing, support, legal links or customer trust.",
-    after: "The setup item is saved as fixed, left for later, or ignored for now.",
-    approveLabel: "Save setup fix",
-    fields: [
-      ["setupKey", "Setup key"],
-      ["targetArea", "Target page / area"],
-      ["setupArea", "Setup area", "select", ["Business profile", "Branding", "Team", "Plans/billing", "Legal links", "Accounting", "Notifications", "PWA install"]],
-      ["missingThing", "What is missing"],
-      ["launchRequired", "Launch required", "select", ["Yes", "No", "Recommended", "Later"]],
-      ["customerImpact", "Customer-visible impact", "select", ["None", "Low", "High", "Blocks customer trust"]],
-      ["fixType", "Fix type", "select", ["Owner input", "App setting", "Developer fix", "External service", "Ignore for now"]],
-      ["severity", "Blocker severity", "select", ["Low", "Medium", "High", "Launch blocker"]],
-      ["ownerInputRequired", "Owner input required", "select", ["Yes", "No", "Maybe"]],
-      ["launchImpact", "Why it blocks launch", "textarea"],
-      ["preparedTask", "Prepared setup task"],
-      ["requiredValue", "Required value"],
-      ["setupStatus", "Setup status", "select", ["Not started", "Needs owner input", "Ready to save", "Done", "Ignore for now"]],
-      ["ownerNote", "Owner setup note", "textarea"]
-    ]
-  }
+const REVIEW_KEY = "churvox:review-inbox:v1";
+const OLD_REVIEW_KEY = "churvox:fresh-command-inbox:v1";
+const ARCHIVE_KEY = "churvox:review-archive:v1";
+
+const EMPTY_ITEMS = [
+  { id: "empty-create", title: "Created records will appear here", category: "create", type: "record", summary: "New clients, jobs, quotes, invoices and workers can be checked here before they become real records.", status: "guide", createdAt: "Ready", details: { "What Churvox found": "No saved create approvals yet.", "What Churvox prepared": "Tell Churvox can prepare draft details and hold them here.", "Why it needs approval": "You stay in control before anything is created." } },
+  { id: "empty-money", title: "Draft invoices and follow-ups will appear here", category: "money", type: "invoice", summary: "Invoice and follow-up work stays draft-only until you approve it.", status: "guide", createdAt: "Ready", details: { "What Churvox found": "No saved money approvals yet.", "What Churvox prepared": "Draft invoices and follow-up drafts can be prepared safely.", "Why it needs approval": "Nothing sends, syncs, marks paid, or contacts a customer silently." } },
+  { id: "empty-work", title: "Job changes will appear here", category: "work", type: "job", summary: "Move, complete, update price and find-record actions can be checked before live changes.", status: "guide", createdAt: "Ready", details: { "What Churvox found": "No saved job-change approvals yet.", "What Churvox prepared": "Matched records and exact changes will show here.", "Why it needs approval": "Owner approval stops accidental live changes." } },
 ];
 
-function logicFields(slip) {
-  return [
-    ["recordId", `${slip.recordLabel} ID`],
-    ["notifyMode", "Notify mode", "select", slip.notifyOptions],
-    ["afterApprovalOverride", "After approval override", "textarea"],
-    ["ownerAuditNote", "Owner audit note", "textarea"]
-  ];
+function safeParse(value, fallback = []) { try { const parsed = JSON.parse(value || "[]"); return Array.isArray(parsed) ? parsed : fallback; } catch { return fallback; } }
+function titleOf(item) { return item?.title || item?.summary || "Review item"; }
+function summaryOf(item) { const d = item?.details || {}; return item?.summary || d.Change || d.Action || d.Status || "Prepared by Churvox and waiting for owner review."; }
+function categoryOf(item) { const raw = String(item?.category || item?.type || "").toLowerCase(); if (raw.includes("invoice") || raw.includes("money") || raw.includes("chase")) return "money"; if (raw.includes("job") || raw.includes("complete") || raw.includes("reschedule") || raw.includes("update") || raw.includes("find")) return "work"; if (raw.includes("client") || raw.includes("quote") || raw.includes("person") || raw.includes("worker") || raw.includes("create")) return "create"; return "other"; }
+function entriesOf(item) { const entries = Object.entries(item?.details || {}).filter(([, v]) => v !== undefined && v !== null && String(v).trim()); return entries.length ? entries : [["What Churvox found", item?.livePreview?.previewTitle || "Saved owner-review item"], ["What Churvox prepared", summaryOf(item)], ["Why it needs approval", "Nothing changes, sends, or syncs until the owner approves."]]; }
+function loadItems() { const main = safeParse(window.localStorage.getItem(REVIEW_KEY)); const old = safeParse(window.localStorage.getItem(OLD_REVIEW_KEY)); const byId = new Map(); [...main, ...old].forEach((item) => { if (!item || typeof item !== "object") return; const id = item.id || `${item.title || "review"}-${item.createdAt || ""}`; if (!byId.has(id)) byId.set(id, { ...item, id, category: categoryOf(item) }); }); return Array.from(byId.values()); }
+function saveItems(items) { window.localStorage.setItem(REVIEW_KEY, JSON.stringify(items)); window.localStorage.setItem(OLD_REVIEW_KEY, JSON.stringify(items)); window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "review-tray" } })); }
+function archiveItem(item, outcome) { const current = safeParse(window.localStorage.getItem(ARCHIVE_KEY)); window.localStorage.setItem(ARCHIVE_KEY, JSON.stringify([{ ...item, outcome, archivedAt: new Date().toISOString() }, ...current].slice(0, 100))); }
+function amountFrom(value) { const raw = String(value || ""); const money = raw.match(/\$\s*(\d+(?:\.\d{1,2})?)/); if (money) return Number(money[1]); const number = raw.match(/\b(\d+(?:\.\d{1,2})?)\b/); return number ? Number(number[1]) : 0; }
+function valueOf(details, keys, fallback = "") { for (const key of keys) { const value = details?.[key]; if (value !== undefined && value !== null && String(value).trim() && !/optional|needed|date needed|price needed/i.test(String(value))) return String(value).trim(); } return fallback; }
+function firstMatch(item) { const live = item?.livePreview || {}; return live.bestMatch || live.matches?.[0] || null; }
+function jobAmount(match, fallback = 0) { const record = match?.record || match || {}; return Number(match?.amount || record.price || record.fixed_price || record.total || record.subtotal || record.amount || fallback || 0); }
+function invoicePayloadFromJob(match, fallbackAmount = 0) { const record = match?.record || match || {}; const amount = jobAmount(match, fallbackAmount); const clientName = record.client_name || record.customer_name || match?.label || "Customer"; const description = record.title || record.job_name || record.description || "Completed job"; return { customer_name: clientName, client_name: clientName, customer_email: record.customer_email || record.client_email || null, customer_phone: record.customer_phone || record.client_phone || null, address: record.address || record.site_address || null, description, notes: `Draft invoice prepared from Owner Review for ${match?.label || description}.`, status: "draft", amount, subtotal: amount, total: amount, job_id: match?.id || record.id || record._id || null, line_items: [{ description, quantity: 1, unit_price: amount, amount }] }; }
+async function postFirst(post, endpoints, payload) { let lastError = "Action failed"; for (const endpoint of endpoints) { const res = await post(endpoint, payload, { timeout: 20000 }); if (res?.success) return res; lastError = res?.error || lastError; } return { success: false, error: lastError }; }
+function createPlan(item) { const d = item?.details || {}; const type = String(item?.type || "").toLowerCase(); const amount = amountFrom(valueOf(d, ["Price", "Amount"])); const client = valueOf(d, ["Client", "Client / target"], "Customer"); const line = valueOf(d, ["Line", "Scope", "Job", "Action"], "General service"); const address = valueOf(d, ["Address"]); const email = valueOf(d, ["Email"]); const phone = valueOf(d, ["Phone"]); if (type === "client") return { endpoints: ["/clients"], payload: { name: client, email: email || null, phone: phone || null, address: address || null, notes: summaryOf(item) } }; if (type === "person" || type === "worker") return { endpoints: ["/team/workers", "/team", "/workers"], payload: { name: valueOf(d, ["Worker"], client), email: email || null, phone: phone || null, role: "worker", team_role: "worker", notes: summaryOf(item) } }; if (type === "quote") return { endpoints: ["/quotes"], payload: { customer_name: client, client_name: client, customer_email: email || null, address, site_address: address, job_description: line, price: amount, amount, total: amount, status: "draft", notes: summaryOf(item) } }; if (type === "invoice") return { endpoints: ["/invoices"], payload: { customer_name: client, client_name: client, customer_email: email || null, description: line, notes: summaryOf(item), status: "draft", amount, subtotal: amount, total: amount, line_items: [{ description: line, quantity: 1, unit_price: amount, amount }] } }; return { endpoints: ["/jobs"], payload: { title: `${line} for ${client}`, job_name: `${line} for ${client}`, client_name: client, customer_name: client, address, site_address: address, notes: summaryOf(item), status: "assigned", pricing_type: "fixed", price: amount || 0 } }; }
+
+function Stat({ label, value, hint }) { return <div className="rv4Stat"><small>{label}</small><b>{value}</b><span>{hint}</span></div>; }
+function DetailGrid({ item }) { return <div className="rv4DetailGrid">{entriesOf(item).slice(0, 8).map(([key, value]) => <section key={key}><b>{key}</b><p>{String(value)}</p></section>)}</div>; }
+
+function ReviewModal({ item, busy, onClose, onSave, onApprove, onIgnore }) {
+  const [note, setNote] = React.useState(item?.ownerNote || "");
+  const [status, setStatus] = React.useState(item?.status || "open");
+  React.useEffect(() => { setNote(item?.ownerNote || ""); setStatus(item?.status || "open"); }, [item?.id]);
+  if (!item) return null;
+  return <div className="rvShade rv4Shade" role="dialog" aria-modal="true"><section className="rvModal rv4Modal"><button className="rv4Close" type="button" onClick={onClose}>×</button><header><span>Owner Review</span><h2>{titleOf(item)}</h2><p>{summaryOf(item)}</p></header><div className="rvModalGrid rv4ModalGrid"><div><DetailGrid item={item} /><section className="rv4SafeBox"><b>Safe rule</b><p>{item.category === "money" ? "Money actions stay draft-only. Nothing sends, syncs, marks paid, or contacts a customer from Review." : item.category === "work" ? "Job changes only happen after you approve the matched action." : "Create actions can be checked before they become real records."}</p></section></div><div className="rv4Editor"><label><span>Review status</span><select value={status} onChange={(e) => setStatus(e.target.value)}><option value="open">Needs approval</option><option value="edited">Edited</option><option value="approved">Approved</option><option value="ignored">Ignored</option></select></label><label><span>Owner note / edit</span><textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Add what you changed or why you approved it." /></label></div></div><div className="rvActions rv4Actions"><button type="button" disabled={busy} onClick={() => onApprove(item, { note, status: "approved" })}>{busy ? "Working…" : "Approve"}</button><button type="button" disabled={busy} onClick={() => onSave(item, { note, status })}>Save edit</button><button type="button" disabled={busy} onClick={() => onIgnore(item, { note, status: "ignored" })}>Ignore</button></div></section></div>;
 }
 
-function makeForm(slip) {
-  const out = { actionKey: slip.actionKey, recordType: slip.recordType };
-  [...logicFields(slip), ...slip.fields].forEach(([key, label, type, options]) => {
-    out[key] = type === "select" ? options[0] : "";
-  });
-  return out;
+function ReviewCard({ item, busy, onOpen, onApprove, onIgnore }) {
+  const isGuide = item.status === "guide";
+  return <article className={`rv4Card ${item.category || "other"} ${isGuide ? "guide" : ""}`}><div className="rv4CardTop"><span>{item.category || "review"}</span><em>{item.createdAt || "now"}</em></div><h3>{titleOf(item)}</h3><p>{summaryOf(item)}</p><DetailGrid item={item} /><div className="rv4CardActions"><button type="button" onClick={() => onOpen(item)}>{isGuide ? "Open guide" : "Open review"}</button>{!isGuide ? <button type="button" disabled={busy} onClick={() => onApprove(item, { note: "Approved from Review tray.", status: "approved" })}>Approve</button> : null}{!isGuide ? <button type="button" disabled={busy} onClick={() => onIgnore(item, { note: "Ignored from Review tray.", status: "ignored" })}>Ignore</button> : null}</div></article>;
 }
 
-function Field({ field, form, setForm }) {
-  const [key, label, type, options = []] = field;
-  const update = (value) => setForm({ ...form, [key]: value });
-  return (
-    <label className={type === "textarea" ? "cxField wide" : "cxField"}>
-      <span>{label}</span>
-      {type === "textarea" ? (
-        <textarea value={form[key] || ""} onChange={(e) => update(e.target.value)} />
-      ) : type === "select" ? (
-        <select value={form[key] || options[0]} onChange={(e) => update(e.target.value)}>
-          {options.map((o) => <option key={o} value={o}>{o}</option>)}
-        </select>
-      ) : (
-        <input value={form[key] || ""} onChange={(e) => update(e.target.value)} />
-      )}
-    </label>
-  );
-}
-
-function CommandBox({ slip, onOpen }) {
-  return (
-    <button className="cxBox" onClick={() => onOpen(slip)}>
-      <b>{slip.title}</b>
-      <strong>{slip.formTitle}</strong>
-      <p>{slip.card}</p>
-      <em>Open prepared action</em>
-    </button>
-  );
-}
-
-function ContextCard({ label, children, tone = "dark" }) {
-  return <div className={`cxContextCard ${tone}`}><b>{label}</b><span>{children}</span></div>;
-}
-
-function Slip({ slip, onClose }) {
-  const [form, setForm] = React.useState(makeForm(slip));
-  const [msg, setMsg] = React.useState("Ready to edit and approve inside this Command slip.");
-
-  React.useEffect(() => {
-    setForm(makeForm(slip));
-    setMsg("Ready to edit and approve inside this Command slip.");
-  }, [slip.key]);
-
-  const save = () => { setMsg("Edits saved in this slip."); toast.success("Edits saved in this slip"); };
-  const approve = () => { setMsg(`${slip.title} approved from this slip.`); toast.success(`${slip.title} approved from this slip`); };
-  const decline = () => { toast.success(`${slip.title} declined`); onClose(); };
-
-  const routingFields = logicFields(slip);
-
-  return (
-    <div className="cxOverlay">
-      <section className="cxSlip">
-        <header>
-          <div>
-            <small>COMMAND / {slip.title}</small>
-            <h1>{slip.title}</h1>
-            <p>{slip.formTitle} — {slip.card}</p>
-          </div>
-          <button onClick={onClose}>Close</button>
-        </header>
-
-        <main>
-          <section className="cxFormPanel">
-            <div className="cxFormTop">
-              <span>{slip.formTitle}</span>
-            </div>
-            <div className="cxLogicStrip">
-              <i>Action: {slip.actionKey}</i>
-              <i>Record: {slip.recordType}</i>
-              <i>Approval-first</i>
-            </div>
-            <div className="cxContextGrid">
-              <ContextCard label="AI found">{slip.found}</ContextCard>
-              <ContextCard label="AI prepared">{slip.prepared}</ContextCard>
-              <ContextCard label="Why it matters">{slip.why}</ContextCard>
-              <ContextCard label="Risk / warning" tone="warn">{slip.risk}</ContextCard>
-              <ContextCard label="After approval" tone="ok">{form.afterApprovalOverride || slip.after}</ContextCard>
-            </div>
-            <div className="cxSectionLabel">Logic-ready details</div>
-            <div className="cxFields cxRoutingFields">
-              {routingFields.map((field) => <Field key={field[0]} field={field} form={form} setForm={setForm} />)}
-            </div>
-            <div className="cxSectionLabel">Prepared action form</div>
-            <div className="cxFields">
-              {slip.fields.map((field) => <Field key={field[0]} field={field} form={form} setForm={setForm} />)}
-            </div>
-          </section>
-
-          
-        </main>
-      </section>
-    </div>
-  );
-}
-
-function Style() {
-  return <style>{`
-    .cxRoot,.cxRoot *{box-sizing:border-box;color-scheme:light;opacity:1;text-shadow:none}
-    .cxRoot{position:fixed;inset:0;z-index:2147483000;background:#f6f1e7;overflow:auto;font-family:Inter,system-ui;color:#111827}
-    .cxWrap{max-width:1380px;margin:0 auto;padding:24px 28px 120px}
-    .cxHero{background:#0b1018;color:#ffffff;border-radius:34px;padding:34px;box-shadow:0 24px 70px rgba(2,6,23,.24)}
-    .cxPill{display:inline-flex;border-radius:999px;padding:8px 14px;background:#fff7ed;color:#7c2d12;font-size:11px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}
-    .cxHero h1{margin:18px 0 12px;font-size:clamp(42px,5.4vw,72px);line-height:.92;letter-spacing:-.055em;color:#ffffff;user-select:none}
-    .cxHero p{color:#f8fafc;font-weight:900;max-width:820px}
-    .cxBoxes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-top:20px}
-    .cxBox{background:#0b1018;color:#ffffff;border:1px solid rgba(255,255,255,.14);border-left:8px solid #f97316;border-radius:28px;padding:22px;text-align:left;min-height:224px;display:grid;gap:12px;cursor:pointer;box-shadow:0 22px 62px rgba(2,6,23,.24)}
-    .cxBox b{font-size:28px;line-height:.95;color:#ffffff}
-    .cxBox strong{color:#fbbf24;text-transform:uppercase;font-size:11px;letter-spacing:.12em;font-weight:1000}
-    .cxBox p{color:#f1f5f9;font-weight:900;line-height:1.45;margin:0}
-    .cxBox em{font-style:normal;justify-self:start;border-radius:14px;background:#fbbf24;color:#111827;padding:10px 14px;font-weight:1000}
-    .cxOverlay{position:fixed;inset:0;z-index:2147483647;background:rgba(2,6,23,.90);padding:16px 22px 16px 286px;display:flex}
-    .cxSlip{width:100%;background:#f7efe3;border-radius:34px;overflow:hidden;display:grid;grid-template-rows:auto 1fr;box-shadow:0 38px 120px rgba(2,6,23,.50)}
-    .cxSlip header{background:#0b1018;color:#ffffff;border-left:8px solid #f97316;padding:20px 28px;display:flex;justify-content:space-between;gap:16px}
-    .cxSlip header small{color:#fed7aa;font-weight:1000;letter-spacing:.14em;user-select:none}
-    .cxSlip header h1{font-size:clamp(30px,3.4vw,48px);line-height:.98;margin:8px 0;color:#ffffff;letter-spacing:-.035em;max-width:980px;overflow-wrap:anywhere;user-select:none}
-    .cxSlip header p{font-weight:900;color:#f8fafc;max-width:940px;margin:0}
-    .cxSlip header button{height:max-content;border:0;border-radius:15px;padding:12px 18px;font-weight:1000;background:#ffffff;color:#111827}
-    .cxSlip main{min-height:0;display:grid;grid-template-columns:minmax(0,1fr)340px;gap:16px;padding:16px;overflow:auto}
-    .cxFormPanel,.cxControls{background:#fffaf0;border:1px solid rgba(15,23,42,.20);border-radius:26px;padding:20px;box-shadow:0 14px 38px rgba(15,23,42,.12);color:#111827}
-    .cxFormTop{display:flex;align-items:center;margin-bottom:10px;min-height:0}
-    .cxFormTop span{display:inline-flex;background:#111827;color:#fbbf24;border-radius:999px;padding:7px 12px;text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:1000;user-select:none}
-    .cxLogicStrip{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
-    .cxLogicStrip i{font-style:normal;border-radius:999px;background:#fff7ed;color:#7c2d12;border:1px solid #fed7aa;padding:7px 10px;font-size:11px;font-weight:1000;letter-spacing:.06em;text-transform:uppercase}
-    .cxSectionLabel{margin:16px 0 10px;color:#7c2d12;font-size:11px;font-weight:1000;text-transform:uppercase;letter-spacing:.16em}
-    .cxContextGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:16px}
-    .cxContextCard{border-radius:18px;background:#111827;color:#ffffff;padding:13px 14px;border-left:5px solid #f97316}
-    .cxContextCard.warn{background:#451a03;border-left-color:#f59e0b}
-    .cxContextCard.ok{background:#052e16;border-left-color:#22c55e;grid-column:1/-1}
-    .cxContextCard b{display:block;color:#fbbf24;text-transform:uppercase;letter-spacing:.12em;font-size:10px;font-weight:1000;margin-bottom:6px}
-    .cxContextCard span{display:block;color:#f8fafc;font-size:13px;font-weight:900;line-height:1.42}
-    .cxFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-    .cxRoutingFields{padding:14px;border-radius:22px;background:#f8edda;border:1px solid #ead4b6}
-    .cxField.wide{grid-column:1/-1}
-    .cxField span{display:block;color:#431407;text-transform:uppercase;letter-spacing:.11em;font-size:12px;font-weight:1000;margin-bottom:7px;user-select:none}
-    .cxField input,.cxField textarea,.cxField select{width:100%;border:2px solid #d6b98f;border-radius:16px;padding:13px 15px;font-size:16px;font-weight:900;background:#fffdf7!important;background-color:#fffdf7!important;background-image:linear-gradient(#fffdf7,#fffdf7)!important;color:#0f172a!important;-webkit-text-fill-color:#0f172a!important;caret-color:#0f172a;opacity:1!important;outline:none;box-shadow:0 2px 0 rgba(15,23,42,.06), inset 0 0 0 9999px rgba(255,253,247,1)!important;filter:none!important}
-    .cxField input:focus,.cxField textarea:focus,.cxField select:focus{border-color:#f97316;background:#ffffff!important;background-color:#ffffff!important;background-image:linear-gradient(#ffffff,#ffffff)!important;box-shadow:0 0 0 4px rgba(249,115,22,.18), inset 0 0 0 9999px rgba(255,255,255,1)!important}
-    .cxField textarea{min-height:116px;resize:vertical}
-    .cxField option{background:#ffffff;color:#0f172a}
-    .cxField input::placeholder,.cxField textarea::placeholder{color:#7c2d12!important;opacity:.65!important;-webkit-text-fill-color:#7c2d12!important}
-    .cxField input:-webkit-autofill,.cxField textarea:-webkit-autofill,.cxField select:-webkit-autofill{-webkit-box-shadow:0 0 0 1000px #fffdf7 inset!important;-webkit-text-fill-color:#0f172a!important}
-    .cxControls{align-self:start;position:sticky;top:0;display:grid;gap:10px}
-    .cxControls h2{font-size:30px;line-height:.95;margin:0;color:#111827;user-select:none}
-    .cxControls p{background:#14532d;color:#ffffff;border-radius:16px;padding:12px 14px;font-weight:1000;line-height:1.45}
-    .cxControls button{width:100%;border:0;border-radius:16px;padding:14px;font-weight:1000;font-size:16px;letter-spacing:0;cursor:pointer;color:#111827!important}
-    .cxControls .save{background:#ffedd5;color:#7c2d12!important;border:2px solid #fed7aa}
-    .cxControls .approve{background:#16a34a;color:#052e16!important;border:2px solid #15803d}
-    .cxControls .decline{background:#fecaca;color:#7f1d1d!important;border:2px solid #fca5a5}
-    .cxControls .dark{background:#111827;color:#ffffff!important}
-    /* FINAL REMOVE COMMAND FOCUS STRIP */
-    .cxUrgent{display:none!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important;border:0!important;box-shadow:none!important}
-
-    @media(max-width:1200px){.cxOverlay{padding:12px}.cxSlip main,.cxBoxes,.cxContextGrid{grid-template-columns:1fr}.cxControls{position:static}}
-  `}</style>;
-}
+function Style() { return <style>{`
+.rv4Root,.rv4Root *{box-sizing:border-box;color-scheme:light;text-shadow:none}.rv4Root{min-height:100vh;background:#f6f1e7;color:#111827;font-family:Inter,system-ui;padding:24px 26px 120px}.rv4Wrap{max-width:1400px;margin:0 auto;display:grid;gap:18px}.rv4Hero{border-radius:34px;background:#101827;color:#fff;padding:28px 30px;box-shadow:0 24px 70px rgba(2,6,23,.22);border-left:8px solid #f97316}.rv4Hero h1{margin:12px 0 8px;color:#fff;font-size:clamp(42px,5vw,70px);line-height:.92;letter-spacing:-.06em}.rv4Hero p{margin:0;color:#e5e7eb;font-weight:850;line-height:1.45;max-width:920px}.rv4Top{display:flex;justify-content:space-between;gap:14px;align-items:center;margin-bottom:16px}.rv4Top a,.rv4Top span{border-radius:999px;background:#fff7ed;color:#9a3412;padding:11px 15px;font-weight:1000;text-decoration:none}.rv4Stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:18px}.rv4Stat{border-radius:18px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);padding:13px}.rv4Stat small{display:block;color:#fed7aa;font-size:10px;font-weight:1000;text-transform:uppercase;letter-spacing:.12em}.rv4Stat b{display:block;color:#fff;font-size:24px;margin:4px 0}.rv4Stat span{color:#e5e7eb;font-size:12px;font-weight:800}.rv4Filters{display:flex;flex-wrap:wrap;gap:8px}.rv4Filters button{border:1px solid rgba(15,23,42,.12);border-radius:999px;background:#fffaf0;color:#101827;padding:10px 14px;font-weight:1000;cursor:pointer}.rv4Filters button.active{background:#111827;color:#fff}.rv4Grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.rv4Card{border:1px solid rgba(15,23,42,.12);border-left:7px solid #f97316;border-radius:28px;background:#fffaf0;padding:17px;box-shadow:0 16px 42px rgba(2,6,23,.09);display:grid;gap:11px}.rv4Card.money{border-left-color:#16a34a}.rv4Card.work{border-left-color:#2563eb}.rv4Card.guide{opacity:.82}.rv4CardTop{display:flex;justify-content:space-between;gap:10px;align-items:center}.rv4CardTop span{border-radius:999px;background:#fff7ed;color:#9a3412;padding:7px 10px;text-transform:uppercase;letter-spacing:.12em;font-size:10px;font-weight:1000}.rv4CardTop em{font-style:normal;color:#64748b;font-size:11px;font-weight:900}.rv4Card h3{margin:0;color:#101827;font-size:24px;line-height:1;letter-spacing:-.04em}.rv4Card p{margin:0;color:#475569;font-weight:850;line-height:1.4}.rv4DetailGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.rv4DetailGrid section{border:1px solid rgba(15,23,42,.10);border-radius:16px;background:#fff;padding:10px}.rv4DetailGrid b{display:block;color:#101827;font-size:12px;font-weight:1000}.rv4DetailGrid p{margin:4px 0 0;color:#475569;font-size:12px;font-weight:850;word-break:break-word}.rv4CardActions,.rv4Actions{display:flex;flex-wrap:wrap;gap:8px}.rv4CardActions button,.rv4Actions button{border:0;border-radius:15px;min-height:42px;padding:0 14px;background:#111827;color:#fff;font-weight:1000;cursor:pointer}.rv4CardActions button:first-child,.rv4Actions button:first-child{background:#f97316;color:#111827}.rv4CardActions button:last-child,.rv4Actions button:last-child{background:#fff;border:1px solid rgba(15,23,42,.14);color:#111827}.rv4Shade{position:fixed;inset:0;z-index:2147483600;display:grid;place-items:center;background:rgba(15,23,42,.62);backdrop-filter:blur(10px);padding:18px}.rv4Modal{position:relative;width:min(1040px,100%);max-height:92vh;overflow:auto;border-radius:32px;background:#fffaf0;padding:20px;box-shadow:0 30px 100px rgba(2,6,23,.38);border:1px solid rgba(15,23,42,.14)}.rv4Close{position:absolute;right:14px;top:14px;border:0;border-radius:999px;width:42px;height:42px;background:#111827;color:#fff;font-size:24px;font-weight:1000;cursor:pointer}.rv4Modal h2{margin:10px 0 6px;color:#101827;font-size:36px;line-height:.95;letter-spacing:-.05em}.rv4Modal header span{display:inline-flex;border-radius:999px;background:rgba(249,115,22,.16);color:#9a3412;padding:8px 11px;font-size:10px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}.rv4Modal header p{margin:0 44px 12px 0;color:#475569;font-weight:850;line-height:1.45}.rv4ModalGrid{display:grid;grid-template-columns:1.4fr .8fr;gap:12px}.rv4SafeBox{margin-top:10px;border-radius:18px;background:#111827;color:#fff;padding:13px}.rv4SafeBox b,.rv4SafeBox p{color:#fff}.rv4Editor{display:grid;gap:10px;align-content:start}.rv4Editor label{display:grid;gap:6px}.rv4Editor span{font-size:11px;font-weight:1000;color:#475569;text-transform:uppercase;letter-spacing:.08em}.rv4Editor textarea,.rv4Editor select{border:1px solid rgba(15,23,42,.14);border-radius:16px;background:#fff;color:#111827;padding:12px;font-weight:800}.rv4Editor textarea{min-height:190px;resize:vertical}@media(max-width:760px){.rv4Root{padding:14px 12px 110px}.rv4Stats,.rv4Grid,.rv4ModalGrid{grid-template-columns:1fr}.rv4Hero{padding:22px}.rv4Hero h1{font-size:42px}.rv4Card h3{font-size:22px}.rv4DetailGrid{grid-template-columns:1fr}.rv4Shade{padding:8px;place-items:stretch;overflow:hidden}.rv4Modal{height:calc(100dvh - 16px);max-height:calc(100dvh - 16px);display:flex;flex-direction:column;overflow:hidden;border-radius:24px;padding:14px}.rv4ModalGrid{flex:1 1 auto;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch}.rv4Actions{flex:0 0 auto;position:sticky;bottom:0;background:#fffaf0;padding-top:10px;box-shadow:0 -12px 24px rgba(15,23,42,.08)}.rv4Actions button{flex:1 1 100%;min-height:44px}}
+`}</style>; }
 
 export default function CommandDeskOperatorPageV4() {
-  const [open, setOpen] = React.useState(null);
-  return (
-    <main className="cxRoot">
-      <Style />
-      <section className="cxWrap">
-        <article className="cxHero">
-          <span className="cxPill">AI approval desk</span>
-          <h1>Churvox prepared the admin. You approve.</h1>
-          <p>Each Command box opens a prepared action slip with action key, linked record, notify mode, audit note and owner approval controls ready for later logic.</p>
-        </article>
-        <section className="cxBoxes">
-          {SLIPS.map((slip) => <CommandBox key={slip.key} slip={slip} onOpen={setOpen} />)}
-        </section>
-      </section>
-      {open ? <Slip slip={open} onClose={() => setOpen(null)} /> : null}
-    </main>
-  );
+  const { post, patch } = useApi();
+  const [items, setItems] = React.useState([]);
+  const [filter, setFilter] = React.useState("all");
+  const [selected, setSelected] = React.useState(null);
+  const [busy, setBusy] = React.useState(false);
+  const refresh = React.useCallback(() => setItems(loadItems()), []);
+  React.useEffect(() => { refresh(); const onUpdate = () => refresh(); window.addEventListener("storage", onUpdate); window.addEventListener("churvox:fresh-data-updated", onUpdate); return () => { window.removeEventListener("storage", onUpdate); window.removeEventListener("churvox:fresh-data-updated", onUpdate); }; }, [refresh]);
+  const visible = items.length ? items : EMPTY_ITEMS;
+  const filtered = filter === "all" ? visible : visible.filter((item) => item.category === filter);
+  const counts = items.reduce((acc, item) => { acc[item.category] = (acc[item.category] || 0) + 1; return acc; }, {});
+  function removeItem(item, patchData, outcome) { const next = items.filter((current) => current.id !== item.id); saveItems(next); setItems(next); archiveItem({ ...item, ...patchData }, outcome); setSelected(null); }
+  function updateItem(item, patchData, outcome) { const next = items.map((current) => current.id === item.id ? { ...current, ...patchData, updatedAt: new Date().toISOString() } : current); saveItems(next); setItems(next); if (outcome) archiveItem({ ...item, ...patchData }, outcome); setSelected(null); }
+  async function execute(item) {
+    if (item.status === "guide") return { success: true, guide: true };
+    const category = String(item.category || "").toLowerCase();
+    const lowerTitle = titleOf(item).toLowerCase();
+    const details = item.details || {};
+    if (category === "create" || lowerTitle.startsWith("create ")) { const plan = createPlan(item); return postFirst(post, plan.endpoints, plan.payload); }
+    if (category === "money" || lowerTitle.includes("invoice")) {
+      if (lowerTitle.includes("follow-up") || lowerTitle.includes("chase")) return { success: true, draftOnly: true };
+      const matches = Array.isArray(item.livePreview?.matches) ? item.livePreview.matches : [];
+      if (lowerTitle.includes("completed jobs") || item.category === "invoice_batch") { if (!matches.length) return { success: false, error: "No completed jobs are ready to invoice." }; for (const match of matches) { const res = await post("/invoices", invoicePayloadFromJob(match), { timeout: 20000 }); if (!res?.success) return res; } return { success: true }; }
+      const match = firstMatch(item); if (!match) return { success: false, error: "No matched job found for this draft invoice." }; const amount = amountFrom(details.Change) || jobAmount(match); if (!amount) return { success: false, error: "Matched job needs a price before a draft invoice can be created." }; return post("/invoices", invoicePayloadFromJob(match, amount), { timeout: 20000 });
+    }
+    if (category === "work") {
+      const match = firstMatch(item); const id = match?.id || match?.record?.id || match?.record?._id; if (!id) return { success: false, error: "No matched job found for this change." };
+      const payload = {}; if (lowerTitle.includes("complete")) payload.status = "completed"; if (lowerTitle.includes("reschedule")) payload.scheduled_date = details.Change || details.Schedule; if (lowerTitle.includes("update")) payload.price = amountFrom(details.Change) || amountFrom(details.Price); if (!Object.keys(payload).length) return { success: true, searchOnly: true }; return patch(`/jobs/${id}`, payload, { timeout: 20000 });
+    }
+    return { success: true, reviewOnly: true };
+  }
+  async function approve(item, patchData = {}) { if (item.status === "guide") return setSelected(item); setBusy(true); try { const res = await execute(item); if (!res?.success) { toast.error(res?.error || "Approve failed"); return; } removeItem(item, { ...patchData, status: "approved" }, "approved"); toast.success(res?.draftOnly ? "Draft saved safely" : "Review item approved"); } catch (error) { toast.error(error?.message || "Approve failed"); } finally { setBusy(false); } }
+  function save(item, patchData = {}) { if (item.status === "guide") return setSelected(null); updateItem(item, { ...patchData, status: patchData.status || "edited", ownerNote: patchData.note || item.ownerNote || "" }); toast.success("Review edit saved"); }
+  function ignore(item, patchData = {}) { if (item.status === "guide") return setSelected(null); removeItem(item, { ...patchData, status: "ignored" }, "ignored"); toast.success("Review item ignored"); }
+  return <main className="rv4Root"><Style /><div className="rv4Wrap"><section className="rv4Hero"><div className="rv4Top"><span>Owner Review</span><a href="/dashboard#quickcreateai">Tell Churvox</a></div><h1>Approve what Churvox prepared.</h1><p>This is the holding tray for AI prepared admin work. Nothing sends, syncs, marks paid, creates bank files, or changes live records without your decision.</p><div className="rv4Stats"><Stat label="Waiting" value={items.length} hint="owner decisions" /><Stat label="Money" value={counts.money || 0} hint="draft only" /><Stat label="Work" value={counts.work || 0} hint="job changes" /><Stat label="Create" value={counts.create || 0} hint="new records" /></div></section><div className="rv4Filters">{["all", "money", "work", "create", "other"].map((key) => <button key={key} type="button" className={filter === key ? "active" : ""} onClick={() => setFilter(key)}>{key === "all" ? "All" : key}</button>)}</div><section className="rv4Grid">{filtered.map((item) => <ReviewCard key={item.id} item={item} busy={busy} onOpen={setSelected} onApprove={approve} onIgnore={ignore} />)}</section></div><ReviewModal item={selected} busy={busy} onClose={() => setSelected(null)} onSave={save} onApprove={approve} onIgnore={ignore} /></main>;
 }
