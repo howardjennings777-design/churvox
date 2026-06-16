@@ -1,8 +1,9 @@
 import React from "react";
 import "./freshPlans.css";
+import API_BASE from "../lib/apiBase";
 
-const CHECKOUT_TRACE_MARKER = "checkout-return-current-plan-v32";
-const LIVE_BACKEND = "https://grassley-backend.onrender.com";
+const CHECKOUT_TRACE_MARKER = "checkout-return-current-plan-v33";
+const LIVE_BACKEND = API_BASE || "https://grassley-backend.onrender.com";
 
 const accountingAddonText = "Accounting Sync Add-on — $39/month + GST (MYOB or Xero, where available)";
 
@@ -76,6 +77,14 @@ function authToken() {
   }
 }
 
+function backendUrl(path) {
+  const base = String(LIVE_BACKEND || "").replace(/\/+$/, "");
+  const cleanPath = String(path || "").replace(/^\/+/, "");
+  if (/^https?:\/\//i.test(path)) return path;
+  if (!base) return `/${cleanPath}`;
+  return `${base}/api/${cleanPath.replace(/^api\//i, "")}`;
+}
+
 function uiPlanFromBackend(value) {
   const raw = String(value || "").toLowerCase().trim();
   if (!raw || raw === "none" || raw === "null" || raw === "undefined") return "";
@@ -116,7 +125,7 @@ async function readBody(response) {
   } catch {
     return {
       success: false,
-      detail: `Non-JSON response from checkout endpoint (${response.status})`,
+      detail: `Non-JSON response from backend endpoint (${response.status}). Churvox expected billing JSON but received a website page.`,
       status: response.status,
       body: text.slice(0, 500),
     };
@@ -172,7 +181,7 @@ export default function FreshPlans({ onNavigate }) {
       const headers = { Accept: "application/json" };
       if (token) headers.Authorization = `Bearer ${token}`;
 
-      const { response, body } = await apiRequest("/api/billing/subscription-status", {
+      const { response, body } = await apiRequest(backendUrl("/billing/subscription-status"), {
         method: "GET",
         credentials: "include",
         headers,
@@ -187,7 +196,7 @@ export default function FreshPlans({ onNavigate }) {
       setCurrentPlan(uiPlan);
       if (uiPlan) setSelectedPlan(uiPlan);
       setNotice(uiPlan ? "Loaded from billing profile" : "No plan chosen yet");
-      setDebug((previous) => ({ ...(previous || {}), status: { status: response.status, body: data } }));
+      setDebug((previous) => ({ ...(previous || {}), status: { endpoint: backendUrl("/billing/subscription-status"), status: response.status, body: data } }));
     } catch (err) {
       setNotice("Plan needs attention");
       setError(err?.message || "Plan could not load from backend.");
@@ -224,7 +233,7 @@ export default function FreshPlans({ onNavigate }) {
       const headers = { "Content-Type": "application/json", Accept: "application/json" };
       if (token) headers.Authorization = `Bearer ${token}`;
 
-      const { response, body } = await apiRequest("/api/billing/confirm-checkout", {
+      const { response, body } = await apiRequest(backendUrl("/billing/confirm-checkout"), {
         method: "POST",
         credentials: "include",
         headers,
@@ -243,7 +252,7 @@ export default function FreshPlans({ onNavigate }) {
       window.history.replaceState(null, "", "/plans");
       window.dispatchEvent(new Event("churvox-auth-refresh"));
       setNotice("Stripe checkout saved. Current plan updated.");
-      setDebug((previous) => ({ ...(previous || {}), confirm: { status: response.status, body } }));
+      setDebug((previous) => ({ ...(previous || {}), confirm: { endpoint: backendUrl("/billing/confirm-checkout"), status: response.status, body } }));
       loadPlan();
     } catch (err) {
       setNotice("Checkout needs attention");
@@ -290,14 +299,14 @@ export default function FreshPlans({ onNavigate }) {
       plan_type: selected.backendPlan,
       country: "NZ",
       billing_country: "NZ",
-      source: "fresh_plans_checkout_return_v32",
+      source: "fresh_plans_checkout_return_v33",
     };
 
     try {
       const attempts = [];
 
-      attempts.push(await tryCheckoutEndpoint("/api/billing/create-checkout-session", payload, token));
-      if (!attempts[0].ok) {
+      attempts.push(await tryCheckoutEndpoint(backendUrl("/billing/create-checkout-session"), payload, token));
+      if (!attempts[0].ok && backendUrl("/billing/create-checkout-session") !== `${LIVE_BACKEND}/api/billing/create-checkout-session`) {
         attempts.push(await tryCheckoutEndpoint(`${LIVE_BACKEND}/api/billing/create-checkout-session`, payload, token));
       }
 
