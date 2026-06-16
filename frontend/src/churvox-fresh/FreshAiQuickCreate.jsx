@@ -1,3 +1,1 @@
-import FreshAiQuickCreateBrainV3 from "./FreshAiQuickCreateBrainV3";
-
-export default FreshAiQuickCreateBrainV3;
+export { default } from "./FreshAiQuickCreateBrainV4";
