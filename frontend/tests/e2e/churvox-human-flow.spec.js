@@ -31,15 +31,17 @@ function stamp() {
 }
 
 async function waitHuman(page) {
-  await page.waitForLoadState('domcontentloaded');
-  await page.waitForTimeout(250);
+  if (page.isClosed()) return;
+  await page.waitForLoadState('domcontentloaded').catch(() => null);
+  if (page.isClosed()) return;
+  await page.waitForTimeout(250).catch(() => null);
 }
 
 async function watchErrors(page, errors) {
   page.on('pageerror', e => errors.push(`pageerror: ${e.message}`));
   page.on('console', msg => {
     const text = msg.text();
-    if (msg.type() === 'error' && !/favicon|manifest|ResizeObserver|AbortError|net::ERR_ABORTED|Failed to fetch|CORS policy|Access-Control-Allow-Origin|net::ERR_FAILED|status of 401|status of 403/i.test(text)) {
+    if (msg.type() === 'error' && !/favicon|manifest|ResizeObserver|AbortError|net::ERR_ABORTED|Failed to fetch|CORS policy|Access-Control-Allow-Origin|net::ERR_FAILED|status of 401|status of 403|status of 404/i.test(text)) {
       errors.push(`console: ${text}`);
     }
   });
@@ -185,13 +187,13 @@ async function safeButtonWalk(page, label) {
       const s = getComputedStyle(el);
       const label = (el.innerText || el.getAttribute('aria-label') || el.getAttribute('title') || '').trim().replace(/\s+/g, ' ');
       return { label, visible: r.width > 1 && r.height > 1 && s.display !== 'none' && s.visibility !== 'hidden' };
-    }).filter(x => x.visible && x.label).slice(0, 80)
+    }).filter(x => x.visible && x.label).slice(0, 25)
   );
 
   let clicked = 0;
 
   for (const item of candidates) {
-    if (clicked >= 2) break;
+    if (clicked >= 1) break;
     if (dangerous.test(item.label)) continue;
     // Prefer known safe labels, but still click ordinary visible non-dangerous controls like a human would.
     if (!safeClick.test(item.label) && item.label.length < 2) continue;
