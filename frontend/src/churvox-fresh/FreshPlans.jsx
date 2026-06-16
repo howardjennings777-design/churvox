@@ -1,6 +1,7 @@
 import React from "react";
 import "./freshPlans.css";
 import API_BASE from "../lib/apiBase";
+import { useAuth } from "../context/AuthContext";
 
 const CHECKOUT_TRACE_MARKER = "checkout-return-current-plan-v33";
 const LIVE_BACKEND = API_BASE || "https://grassley-backend.onrender.com";
@@ -69,7 +70,8 @@ function money(value) {
   return `$${Number(value || 0).toFixed(0)}`;
 }
 
-function authToken() {
+function authToken(user) {
+  if (user?.token) return user.token;
   try {
     return window.localStorage.getItem("token") || window.localStorage.getItem("authToken") || window.localStorage.getItem("access_token") || "";
   } catch {
@@ -150,12 +152,13 @@ function errorFrom(body, response) {
 }
 
 export default function FreshPlans({ onNavigate }) {
+  const { user, loading: authLoading } = useAuth();
   const [currentPlan, setCurrentPlan] = React.useState("");
   const [selectedPlan, setSelectedPlan] = React.useState("operator");
   const [growthPacks, setGrowthPacks] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
   const [checkoutLoading, setCheckoutLoading] = React.useState(false);
-  const [notice, setNotice] = React.useState("Loading plan");
+  const [notice, setNotice] = React.useState("Loading account");
   const [error, setError] = React.useState("");
   const [debug, setDebug] = React.useState(null);
 
@@ -173,11 +176,24 @@ export default function FreshPlans({ onNavigate }) {
   }, []);
 
   const loadPlan = React.useCallback(async () => {
+    if (authLoading) {
+      setLoading(true);
+      setNotice("Loading account");
+      return;
+    }
+
+    if (!user) {
+      setLoading(false);
+      setCurrentPlan("");
+      setNotice("Sign in to load plan");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
     try {
-      const token = authToken();
+      const token = authToken(user);
       const headers = { Accept: "application/json" };
       if (token) headers.Authorization = `Bearer ${token}`;
 
@@ -203,7 +219,7 @@ export default function FreshPlans({ onNavigate }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [authLoading, user]);
 
   React.useEffect(() => {
     loadPlan();
@@ -229,7 +245,7 @@ export default function FreshPlans({ onNavigate }) {
 
   async function confirmCheckout(sessionId, plan, country) {
     try {
-      const token = authToken();
+      const token = authToken(user);
       const headers = { "Content-Type": "application/json", Accept: "application/json" };
       if (token) headers.Authorization = `Bearer ${token}`;
 
@@ -288,12 +304,17 @@ export default function FreshPlans({ onNavigate }) {
   }
 
   async function startCheckout() {
+    if (authLoading || !user) {
+      setNotice("Sign in to start checkout");
+      return;
+    }
+
     setCheckoutLoading(true);
     setError("");
     setDebug(null);
     setNotice("Opening Stripe checkout");
 
-    const token = authToken();
+    const token = authToken(user);
     const payload = {
       plan: selected.backendPlan,
       plan_type: selected.backendPlan,
@@ -425,9 +446,9 @@ export default function FreshPlans({ onNavigate }) {
           <p>Stripe opens securely, then Churvox confirms the session and updates this Current plan box from the billing profile.</p>
 
           <div className="freshActions">
-            <button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading}>{checkoutLoading ? "Opening Stripe..." : "Start Stripe checkout"}</button>
+            <button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading || authLoading}>{checkoutLoading ? "Opening Stripe..." : "Start Stripe checkout"}</button>
             <button className="freshOrange" type="button" onClick={() => choosePlan("operator")}>Recommend Operator</button>
-            <button className="freshGhost" type="button" onClick={loadPlan}>Reload current plan</button>
+            <button className="freshGhost" type="button" onClick={loadPlan} disabled={authLoading}>Reload current plan</button>
           </div>
 
           <div className="freshItem"><b>Best default</b><span>Operator is the main plan because AI prepares the admin and the owner approves.</span></div>
