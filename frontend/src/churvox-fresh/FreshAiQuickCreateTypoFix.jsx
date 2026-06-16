@@ -3,24 +3,16 @@ import { useApi } from "../hooks/useApi";
 
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
 
-const TYPES = [
-  ["auto", "Let AI decide"],
-  ["client", "Client"],
-  ["job", "Job"],
-  ["quote", "Quote"],
-  ["invoice", "Invoice"],
-  ["person", "Person / worker"],
-];
-
 const LABEL = { client: "Client", job: "Job", quote: "Quote", invoice: "Invoice", person: "Person / worker" };
 const PAGE = { client: "clients", job: "jobs", quote: "quotes", invoice: "invoices", person: "team" };
 
 const examples = {
-  client: "Bob Smith, 24 Jackson drve, Lower Hutt, phon 021 555 881, emial bob@example.com. Wants fortnightly lawns.",
   job: "bob 16 taita drive $60 repeat 23/07/09",
-  quote: "Qoute Sarah at 15 High strt Upper Hutt for overgrown lawn and hedge trim, $190 including GST.",
-  invoice: "Invocie Sarah for hedge trim today, $120 including GST, due in 7 days. Job was at 15 High st.",
-  person: "Add Mike Jones as a wrker, mike@example.com, 022 555 777, pay rate $28/hr.",
+  move: "move bob to next week",
+  quote: "quote Sarah at 15 High strt Upper Hutt for overgrown lawn and hedge trim, $190 including GST",
+  invoice: "invoice Sarah for hedge trim today, $120 including GST, due in 7 days",
+  person: "add Mike Jones as a wrker, mike@example.com, 022 555 777, pay rate $28/hr",
+  money: "show unpaid invoices and chase anything overdue",
 };
 
 const typoPairs = [
@@ -61,7 +53,40 @@ function serviceOf(text) { const low = String(text || "").toLowerCase(); if (low
 function repeatOf(text) { const low = String(text || "").toLowerCase(); if (low.includes("fortnight")) return "fortnightly"; if (low.includes("weekly")) return "weekly"; if (low.includes("monthly")) return "monthly"; if (low.includes("repeat")) return "custom"; return "one-off"; }
 function roleOf(text) { const low = String(text || "").toLowerCase(); if (low.includes("subcontractor")) return "subcontractor"; if (low.includes("payroll")) return "payroll"; if (low.includes("lead")) return "lead_worker"; return "worker"; }
 function roleText(role) { return role === "lead_worker" ? "Lead worker" : role === "subcontractor" ? "Subcontractor" : role === "payroll" ? "Payroll only" : "Worker"; }
-function kindOf(kind, text) { if (kind && kind !== "auto") return kind; const low = String(text || "").toLowerCase(); if (low.includes("invoice") || low.includes("bill")) return "invoice"; if (low.includes("quote")) return "quote"; if (low.includes("worker") || low.includes("staff") || low.includes("employee")) return "person"; if (low.includes("client") || low.includes("customer")) return "client"; return "job"; }
+
+function intentOf(text) {
+  const low = String(text || "").toLowerCase();
+  if (/\b(move|reschedule|shift|postpone|push|change date|next week|tomorrow instead)\b/.test(low)) return "reschedule";
+  if (/\b(show|find|search|where is|list|what money|unpaid|overdue)\b/.test(low)) return low.includes("unpaid") || low.includes("overdue") ? "money_review" : "find";
+  if (/\b(tell|message|sms|text|send)\b/.test(low)) return "message";
+  if (/\b(change|update|edit|make .*\$|price to|add note)\b/.test(low)) return "update";
+  return "create";
+}
+
+function kindOf(kind, text, intent = intentOf(text)) {
+  if (kind && kind !== "auto") return kind;
+  const low = String(text || "").toLowerCase();
+  if (intent !== "create") {
+    if (low.includes("invoice") || low.includes("unpaid") || low.includes("overdue")) return "invoice";
+    if (low.includes("quote")) return "quote";
+    if (low.includes("worker") || low.includes("staff") || low.includes("employee")) return "person";
+    return "job";
+  }
+  if (low.includes("invoice") || low.includes("bill")) return "invoice";
+  if (low.includes("quote") || low.includes("estimate")) return "quote";
+  if (low.includes("worker") || low.includes("staff") || low.includes("employee")) return "person";
+  if (low.includes("client") || low.includes("customer")) return "client";
+  return "job";
+}
+
+function actionTitle(intent, kind) {
+  if (intent === "reschedule") return "Reschedule job";
+  if (intent === "money_review") return "Review money";
+  if (intent === "find") return "Find records";
+  if (intent === "message") return "Prepare message";
+  if (intent === "update") return "Update record";
+  return `Create ${LABEL[kind] || "record"}`;
+}
 
 function parseShortDate(text) {
   const m = String(text || "").match(/\b(\d{1,2})[\/.\-](\d{1,2})(?:[\/.\-](\d{1,4}))?\b/);
@@ -74,13 +99,9 @@ function parseShortDate(text) {
   let year = now.getFullYear();
   let hour = 9;
   if (third !== null) {
-    if (third >= 0 && third <= 23 && third !== Number(String(year).slice(-2))) {
-      hour = third;
-    } else if (third < 100) {
-      year = 2000 + third;
-    } else {
-      year = third;
-    }
+    if (third >= 0 && third <= 23 && third !== Number(String(year).slice(-2))) hour = third;
+    else if (third < 100) year = 2000 + third;
+    else year = third;
   }
   let date = new Date(year, month - 1, day, hour, 0, 0, 0);
   if (date.getFullYear() < now.getFullYear() || date < new Date(now.getFullYear(), now.getMonth(), now.getDate())) {
@@ -100,7 +121,11 @@ function parseSchedule(text) {
   let date = null; let label = "Date needed";
   if (low.includes("today")) { date = new Date(); label = "Today"; }
   if (!date && low.includes("tomorrow")) { date = new Date(); date.setDate(date.getDate() + 1); label = "Tomorrow"; }
-  if (!date) { const m = low.match(/\bnext\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/) || low.match(/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/); if (m) { const names = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]; const target = names.indexOf(m[1]); date = new Date(); date.setDate(date.getDate() + ((target + 7 - date.getDay()) % 7 || 7)); label = title(m[1]); } }
+  if (!date && low.includes("next week")) { date = new Date(); date.setDate(date.getDate() + 7); label = "Next week"; }
+  if (!date) {
+    const m = low.match(/\bnext\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/) || low.match(/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/);
+    if (m) { const names = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]; const target = names.indexOf(m[1]); date = new Date(); date.setDate(date.getDate() + ((target + 7 - date.getDay()) % 7 || 7)); label = title(m[1]); }
+  }
   if (!date) return { human: "Date needed", input: "", time };
   date.setHours(hour, minute, 0, 0);
   return { human: `${label} · ${time}`, input: `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`, time };
@@ -110,13 +135,14 @@ function nameOf(text, fallback) {
   let cleaned = String(text || "");
   [emailOf(text), phoneOf(text), addressOf(text)].filter(Boolean).forEach((piece) => { cleaned = cleaned.replace(piece, " "); });
   cleaned = cleaned.replace(/\$\s*\d+(?:\.\d{1,2})?/g, " ").replace(/\b\d{1,2}[\/.\-]\d{1,2}(?:[\/.\-]\d{1,4})?\b/g, " ");
-  const stop = new Set("add create make new please client customer person worker staff team job quote invoice bill for at to from his her their the a an address phone mobile email price charge amount total due pay rate mow mowing lawn lawns hedge trim clean cleaning repair handyman paint painting today tomorrow next monday tuesday wednesday thursday friday saturday sunday front back photos photo green waste gst including include included repeat custom".split(" "));
+  const stop = new Set("add create make new please client customer person worker staff team job quote invoice bill for at to from his her their the a an address phone mobile email price charge amount total due pay rate mow mowing lawn lawns hedge trim clean cleaning repair handyman paint painting today tomorrow next monday tuesday wednesday thursday friday saturday sunday front back photos photo green waste gst including include included repeat custom move reschedule shift postpone push show find search unpaid overdue chase tell message sms text send next week".split(" "));
   const words = cleaned.match(/[A-Za-z][A-Za-z'-]*/g) || [];
   const picked = words.filter((w) => !stop.has(w.toLowerCase())).slice(0, 2);
   return picked.map(title).join(" ") || fallback;
 }
 
 function requiredMissing(p) {
+  if (p.intent !== "create") return [];
   const missing = [];
   const need = (key, label) => { if (!String(key || "").trim()) missing.push(label); };
   if (p.kind === "client") need(p.clientName, "client name");
@@ -127,18 +153,22 @@ function requiredMissing(p) {
   return missing;
 }
 
-function normalise(raw, kind, originalText) {
+function normalise(raw, originalText) {
   const cleanedText = cleanOwnerText(originalText);
-  const actualKind = kindOf(raw?.kind || kind, cleanedText);
+  const intent = raw?.intent || raw?.actionIntent || intentOf(cleanedText);
+  const actualKind = kindOf(raw?.kind || "auto", cleanedText, intent);
   const [service, jobType] = serviceOf(cleanedText);
   const localSchedule = parseSchedule(cleanedText);
   const rawSchedule = raw?.schedule && typeof raw.schedule === "object" ? raw.schedule : {};
   const schedule = rawSchedule.input ? rawSchedule : localSchedule;
   const amount = Number(raw?.amount || raw?.price || raw?.total || priceOf(cleanedText) || 0);
   const role = raw?.role || roleOf(cleanedText);
-  const clientName = raw?.clientName || raw?.client_name || raw?.customer_name || nameOf(cleanedText, "New customer");
+  const clientName = raw?.clientName || raw?.client_name || raw?.customer_name || nameOf(cleanedText, actualKind === "person" ? "New person" : "New customer");
   const personName = raw?.personName || raw?.person_name || raw?.name || nameOf(cleanedText, "New person");
   const parsed = {
+    intent,
+    actionTitle: actionTitle(intent, actualKind),
+    canExecuteNow: intent === "create",
     kind: actualKind,
     label: LABEL[actualKind] || "Action",
     clientName,
@@ -171,6 +201,7 @@ function normalise(raw, kind, originalText) {
 }
 
 function detailsFor(p) {
+  if (p.intent !== "create") return [["Action", p.actionTitle], ["Found / target", p.clientName || p.personName || "Needs matching"], ["New date", p.schedule?.human || "Not supplied"], ["Area", p.area || "Wellington"], ["Notes", p.notes || "Not supplied"], ["Status", "Needs record matching"]];
   if (p.kind === "client") return [["Client", p.clientName], ["Email", p.email || "Optional"], ["Phone", p.phone || "Optional"], ["Address", p.address || "Optional"], ["Notes", p.notes || "Optional"]];
   if (p.kind === "person") return [["Person", p.personName], ["Role", p.roleText], ["Email", p.email || "Needed"], ["Phone", p.phone || "Optional"], ["Pay rate", p.payRateText], ["Notes", p.notes || "Optional"]];
   if (p.kind === "invoice") return [["Client", p.clientName], ["Invoice line", p.service], ["Amount", p.priceText], ["GST", p.gst], ["Due", p.dueDate], ["Status", "Draft only"]];
@@ -179,6 +210,7 @@ function detailsFor(p) {
 }
 
 function editFieldsFor(p) {
+  if (p.intent !== "create") return ["clientName", "service", "scheduleInput", "address", "amount", "notes"];
   if (p.kind === "person") return ["personName", "role", "email", "phone", "payRate", "notes"];
   if (p.kind === "client") return ["clientName", "address", "email", "phone", "notes"];
   if (p.kind === "invoice") return ["clientName", "service", "amount", "dueDate", "email", "phone", "address", "notes"];
@@ -186,15 +218,9 @@ function editFieldsFor(p) {
   return ["clientName", "service", "address", "scheduleInput", "amount", "repeat", "area", "email", "phone", "notes"];
 }
 
-function fieldLabel(key) {
-  return ({ clientName: "Client name", personName: "Person name", service: "Job / service", address: "Address", scheduleInput: "Date + time", amount: "Price", repeat: "Repeat", area: "Area", email: "Email", phone: "Phone", notes: "Notes", role: "Role", payRate: "Pay rate", dueDate: "Due date" })[key] || key;
-}
-
-function fieldPlaceholder(key) {
-  return ({ scheduleInput: "2026-07-23T09:00", email: "Optional for jobs", phone: "Optional", notes: "Optional notes", area: "Taita / Lower Hutt", amount: "60" })[key] || "";
-}
-
-function summary(p) { return p.kind === "person" ? `${p.personName} · ${p.roleText} · ${p.email || "email needed"}` : `${p.clientName} · ${p.service} · ${p.priceText}`; }
+function fieldLabel(key) { return ({ clientName: "Client / target", personName: "Person name", service: "Job / service", address: "Address", scheduleInput: "Date + time", amount: "Price", repeat: "Repeat", area: "Area", email: "Email", phone: "Phone", notes: "Notes", role: "Role", payRate: "Pay rate", dueDate: "Due date" })[key] || key; }
+function fieldPlaceholder(key) { return ({ scheduleInput: "2026-07-23T09:00", email: "Optional for jobs", phone: "Optional", notes: "Optional notes", area: "Taita / Lower Hutt", amount: "60" })[key] || ""; }
+function summary(p) { return p.intent !== "create" ? `${p.actionTitle} · ${p.clientName || p.personName || "target needed"}` : p.kind === "person" ? `${p.personName} · ${p.roleText} · ${p.email || "email needed"}` : `${p.clientName} · ${p.service} · ${p.priceText}`; }
 
 function payloadFor(p) {
   if (p.kind === "client") return { endpoints: ["/clients"], success: "Client created", payload: { name: p.clientName, email: p.email || null, phone: p.phone || null, address: p.address || null, notes: p.notes || null } };
@@ -204,39 +230,98 @@ function payloadFor(p) {
   return { endpoints: ["/jobs"], success: "Job created", payload: { title: p.title || `${p.service} for ${p.clientName}`, job_name: p.title || `${p.service} for ${p.clientName}`, job_type: p.jobType || "other", client_name: p.clientName, customer_name: p.clientName, customer_email: p.email || null, customer_phone: p.phone || null, address: p.address, site_address: p.address, scheduled_date: p.schedule.input, estimated_duration: 60, country: "New Zealand", region: p.area || "Wellington", notes: p.notes || "", description: p.notes || p.service, status: "assigned", pricing_type: "fixed", fixed_price: Number(p.amount || 0), price: Number(p.amount || 0), is_recurring: p.repeat !== "one-off", recurring_frequency: p.repeat !== "one-off" ? p.repeat : null, recurrence_pattern: p.repeat !== "one-off" ? p.repeat : null } };
 }
 
-async function postFirst(post, endpoints, payload) { let last = "Could not create this record."; for (const endpoint of endpoints) { try { const res = await post(endpoint, payload); if (res?.success) return res; last = res?.error || last; } catch (e) { last = e?.message || last; } } return { success: false, error: last }; }
+async function postFirst(post, endpoints, payload) {
+  let last = "Could not create this record.";
+  for (const endpoint of endpoints) {
+    try { const res = await post(endpoint, payload); if (res?.success) return res; last = res?.error || last; }
+    catch (e) { last = e?.message || last; }
+  }
+  return { success: false, error: last };
+}
 
-function sendToCommand(p, raw, onNavigate, setStatus) {
+function saveToReview(p, raw, setStatus, closeModal = () => {}) {
   try {
     const saved = window.localStorage.getItem(COMMAND_INBOX_KEY);
     const current = saved ? JSON.parse(saved) : [];
-    const slip = { id: `create-with-churvox-${Date.now()}`, type: p.kind, category: p.kind === "invoice" ? "money" : p.kind === "person" ? "workers" : p.kind, title: `${p.label} ready from Create with Churvox`, summary: summary(p), urgency: p.missing.length ? "High" : "Normal", found: `Raw note: ${raw}`, prepared: `${p.label}: ${summary(p)}`, why: p.missing.length ? `Missing info still needed: ${p.missing.join(", ")}.` : "The note has been cleaned and turned into a safe owner-approved action.", source: "Create with Churvox", page: p.targetPage, details: Object.fromEntries(detailsFor(p)), status: "open", createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
+    const slip = { id: `tell-churvox-${Date.now()}`, type: p.kind, category: p.intent === "create" ? p.kind : "action", title: `${p.actionTitle} ready for review`, summary: summary(p), urgency: p.missing.length ? "High" : p.intent === "create" ? "Normal" : "Needs matching", found: `Raw note: ${raw}`, prepared: `${p.actionTitle}: ${summary(p)}`, why: p.intent === "create" ? "The note has been cleaned and turned into a safe owner-approved create action." : "This needs the next backend action phase to match the live record before changing anything.", source: "Tell Churvox", page: p.targetPage, details: Object.fromEntries(detailsFor(p)), status: "open", createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
     window.localStorage.setItem(COMMAND_INBOX_KEY, JSON.stringify([slip, ...(Array.isArray(current) ? current : [])].slice(0, 50)));
-    window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "quick-create-command" } }));
-    setStatus({ tone: "ok", text: "Sent to Command for owner approval." });
-    onNavigate?.("command");
-  } catch { setStatus({ tone: "need", text: "Could not save this to Command on this device." }); }
+    window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "tell-churvox-review" } }));
+    setStatus({ tone: "ok", text: "Saved to Review. Churvox will not change anything until approved." });
+    closeModal();
+  } catch { setStatus({ tone: "need", text: "Could not save this to Review on this device." }); }
+}
+
+function FieldEditor({ parsed, patchDraft }) {
+  const inputValue = (key) => key === "scheduleInput" ? parsed.schedule?.input || "" : parsed[key] ?? "";
+  return (
+    <div className="freshQuickAiEdit">
+      <b>Fix details here</b>
+      <div>
+        {editFieldsFor(parsed).map((key) => (
+          <label key={key} className={key === "notes" ? "wide" : ""}>
+            <span>{fieldLabel(key)}</span>
+            {key === "notes" ? <textarea value={inputValue(key)} placeholder={fieldPlaceholder(key)} onChange={(e) => patchDraft(key, e.target.value)} />
+              : key === "repeat" ? <select value={inputValue(key)} onChange={(e) => patchDraft(key, e.target.value)}><option value="one-off">One-off</option><option value="weekly">Weekly</option><option value="fortnightly">Fortnightly</option><option value="monthly">Monthly</option><option value="custom">Custom</option></select>
+              : key === "role" ? <select value={inputValue(key)} onChange={(e) => patchDraft(key, e.target.value)}><option value="worker">Worker</option><option value="lead_worker">Lead worker</option><option value="subcontractor">Subcontractor</option><option value="payroll">Payroll only</option></select>
+              : <input type={key === "amount" || key === "payRate" ? "number" : key === "scheduleInput" ? "datetime-local" : key === "dueDate" ? "date" : "text"} value={inputValue(key)} placeholder={fieldPlaceholder(key)} onChange={(e) => patchDraft(key, e.target.value)} />}
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ApprovalModal({ parsed, rawText, saving, analysing, onClose, onApprove, onReview, patchDraft }) {
+  if (!parsed) return null;
+  return (
+    <div className="freshQuickAiModalShade" role="dialog" aria-modal="true" aria-label="Tell Churvox approval">
+      <div className="freshQuickAiModal">
+        <button className="freshQuickAiModalClose" type="button" onClick={onClose}>×</button>
+        <header>
+          <span>Churvox understood this</span>
+          <h2>{parsed.actionTitle}</h2>
+          <p>{parsed.intent === "create" ? "Check the details, edit anything, then approve. Nothing happens until you approve." : "This is an assistant action. Churvox will save it for review until the record-matching engine is wired in."}</p>
+        </header>
+        <div className="freshQuickAiModalGrid">
+          <section className="freshQuickAiResult modalCards">
+            {detailsFor(parsed).map(([label, value]) => <section key={label} className={String(value).toLowerCase().includes("needed") ? "need" : ""}><b>{label}</b><p>{value}</p></section>)}
+          </section>
+          <section className="freshQuickAiPrepared modalExplain">
+            <b>You typed</b><p>{rawText}</p>
+            <b>Churvox cleaned</b><p>{parsed.cleanedText}</p>
+            <b>Why this is safe</b><p>{parsed.intent === "create" ? "This creates a draft/record only after owner approval. Invoices are draft only." : "This will not update a live record yet. It is saved for review instead of guessing."}</p>
+          </section>
+        </div>
+        <FieldEditor parsed={parsed} patchDraft={patchDraft} />
+        {parsed.missing.length ? <div className="freshQuickAiMissing"><b>Required before approve</b><span>{parsed.missing.join(", ")}</span></div> : null}
+        <div className="freshQuickAiModalActions">
+          <button type="button" onClick={onApprove} disabled={saving || analysing || parsed.missing.length > 0 || parsed.intent !== "create"}>{saving ? "Creating…" : parsed.intent === "create" ? `Approve + create ${parsed.label}` : "Approve coming next"}</button>
+          <button type="button" onClick={onReview}>Save to Review</button>
+          <button type="button" onClick={onClose}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function FreshAiQuickCreateTypoFix({ onNavigate }) {
   const { post } = useApi();
-  const [kind, setKind] = React.useState("job");
   const [text, setText] = React.useState(examples.job);
   const [draft, setDraft] = React.useState(null);
   const [aiInfo, setAiInfo] = React.useState({ provider: "local", ai_enabled: false });
   const [saving, setSaving] = React.useState(false);
   const [analysing, setAnalysing] = React.useState(false);
   const [status, setStatus] = React.useState(null);
+  const [reviewOpen, setReviewOpen] = React.useState(false);
 
-  const localParsed = React.useMemo(() => normalise({}, kind, text), [kind, text]);
+  const localParsed = React.useMemo(() => normalise({}, text), [text]);
   const parsed = draft || localParsed;
   const details = React.useMemo(() => detailsFor(parsed), [parsed]);
   const typoFixed = cleanOwnerText(text) !== String(text || "").replace(/\s+/g, " ").trim();
 
-  function resetDraft() { setDraft(null); setAiInfo({ provider: "local", ai_enabled: false }); }
+  function resetDraft() { setDraft(null); setAiInfo({ provider: "local", ai_enabled: false }); setReviewOpen(false); }
   function updateText(value) { setText(value); setStatus(null); resetDraft(); }
-  function updateKind(value) { setKind(value); setStatus(null); resetDraft(); }
-  function loadExample(next) { setKind(next); setText(examples[next] || examples.job); setStatus(null); resetDraft(); }
+  function loadExample(key) { setText(examples[key] || examples.job); setStatus(null); resetDraft(); }
 
   function patchDraft(key, value) {
     const base = parsed;
@@ -253,106 +338,92 @@ export default function FreshAiQuickCreateTypoFix({ onNavigate }) {
     setStatus(null);
   }
 
-  async function askRealAi({ quiet = false } = {}) {
-    if (!text.trim()) { setStatus({ tone: "need", text: "Write what you want Churvox to create first." }); return null; }
+  async function askRealAi({ quiet = false, openReview = false } = {}) {
+    if (!text.trim()) { setStatus({ tone: "need", text: "Tell Churvox what you want done first." }); return null; }
     setAnalysing(true);
     if (!quiet) setStatus(null);
     const cleaned = cleanOwnerText(text);
-    const res = await post("/ai/quick-create/parse", { kind, text: cleaned, rawText: text, typo_cleaned: cleaned !== text, timezone: "Pacific/Auckland" }, { timeout: 30000 });
+    const res = await post("/ai/quick-create/parse", { kind: "auto", text: cleaned, rawText: text, typo_cleaned: cleaned !== text, timezone: "Pacific/Auckland" }, { timeout: 30000 });
     setAnalysing(false);
-    if (!res?.success) { if (!quiet) setStatus({ tone: "need", text: res?.error || "AI could not read this yet. Safe preview is still available." }); return null; }
-    const body = res.data || {};
-    const next = normalise(body.parsed || body.data?.parsed || {}, kind, cleaned);
-    next.originalText = text;
-    next.cleanedText = cleaned;
+    let next = normalise({}, cleaned);
+    if (res?.success) {
+      const body = res.data || {};
+      next = normalise(body.parsed || body.data?.parsed || {}, cleaned);
+      next.originalText = text;
+      next.cleanedText = cleaned;
+      setAiInfo({ provider: body.provider || "ai", ai_enabled: Boolean(body.ai_enabled), model: body.model || "" });
+      if (!quiet) setStatus({ tone: body.ai_enabled ? "ok" : "need", text: body.ai_enabled ? "Churvox understood it. Check the approval pop-up." : (body.message || "OpenAI key is not configured, so Churvox used safe typo-aware extraction.") });
+    } else if (!quiet) {
+      setStatus({ tone: "need", text: res?.error || "AI could not read this yet. Safe preview is still available." });
+    }
     setDraft(next);
-    setAiInfo({ provider: body.provider || "ai", ai_enabled: Boolean(body.ai_enabled), model: body.model || "" });
-    if (!quiet) setStatus({ tone: body.ai_enabled ? "ok" : "need", text: body.ai_enabled ? (cleaned !== text ? "Real AI read it and cleaned obvious typos. Fix anything in the boxes, then approve." : "Real AI read it. Fix anything in the boxes, then approve.") : (body.message || "OpenAI key is not configured, so Churvox used safe typo-aware extraction.") });
+    if (openReview) setReviewOpen(true);
     return next;
   }
 
-  async function bestParsed() { if (draft) return draft; return (await askRealAi({ quiet: true })) || localParsed; }
+  async function openApproval() {
+    const next = draft || await askRealAi({ quiet: true, openReview: false });
+    if (next) setReviewOpen(true);
+  }
 
-  async function createRecord() {
+  async function createRecord(candidate = null) {
     setStatus(null);
-    const ready = await bestParsed();
-    if (ready.missing.length) { setStatus({ tone: "need", text: `Add ${ready.missing.join(", ")} in the boxes on the right before Churvox creates it.` }); return; }
+    const ready = candidate || draft || await askRealAi({ quiet: true });
+    if (!ready) return;
+    if (ready.intent !== "create") { saveToReview(ready, text, setStatus, () => setReviewOpen(false)); return; }
+    if (ready.missing.length) { setStatus({ tone: "need", text: `Add ${ready.missing.join(", ")} in the approval pop-up before Churvox creates it.` }); setReviewOpen(true); return; }
     setSaving(true);
     const plan = payloadFor(ready);
     const res = await postFirst(post, plan.endpoints, plan.payload);
     setSaving(false);
-    if (!res.success) { setStatus({ tone: "need", text: `${res.error || "Create failed"}. You can still send this to Command for review.` }); return; }
-    window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: `${ready.kind}-created`, source: "quick-create" } }));
-    setStatus({ tone: "ok", text: `${plan.success}. Churvox used the edited preview fields.` });
-  }
-
-  function inputValue(key) {
-    if (key === "scheduleInput") return parsed.schedule?.input || "";
-    return parsed[key] ?? "";
+    if (!res.success) { setStatus({ tone: "need", text: `${res.error || "Create failed"}. You can still save this to Review.` }); return; }
+    window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: `${ready.kind}-created`, source: "tell-churvox" } }));
+    setReviewOpen(false);
+    setStatus({ tone: "ok", text: `${plan.success}. Churvox used the approved pop-up details.` });
   }
 
   return (
     <section className="freshQuickAiPage">
       <div className="freshQuickAiHero">
         <div>
-          <span>Create with Churvox</span>
-          <h1>Tell Churvox what to add.</h1>
-          <p>Type messy. Churvox cleans obvious mistakes, asks real AI to structure it, then gives you editable boxes before anything is created.</p>
+          <span>Tell Churvox</span>
+          <h1>Say what you want done.</h1>
+          <p>No dropdown. Type messy. Churvox works out if it is a job, invoice, quote, person, search, message, or update — then opens an approval pop-up.</p>
         </div>
         <div className="freshQuickAiStats">
-          <div><b>{parsed.label}</b><small>target</small></div>
+          <div><b>{parsed.actionTitle}</b><small>understood</small></div>
           <div><b>{parsed.priceText}</b><small>money</small></div>
           <div><b>{parsed.missing.length}</b><small>required</small></div>
-          <div><b>{aiInfo.ai_enabled ? "Real AI" : typoFixed ? "Typo fix" : "Safe"}</b><small>{aiInfo.provider}</small></div>
+          <div><b>{aiInfo.ai_enabled ? "Real AI" : typoFixed ? "Typo fix" : "Smart"}</b><small>{aiInfo.provider}</small></div>
         </div>
       </div>
 
       <div className="freshQuickAiGrid">
         <article className="freshQuickAiPanel">
-          <header><span>Write once</span><h2>What do you want Churvox to create?</h2><p>Pick the area, write naturally, spelling mistakes included. Churvox cleans and previews it first.</p></header>
-          <label className="freshQuickAiSelector"><span>Create type</span><select value={kind} onChange={(e) => updateKind(e.target.value)}>{TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+          <header><span>One brain</span><h2>Tell Churvox like a real assistant.</h2><p>Try: move Bob to next week, invoice Sarah $120, add Mike as worker, or chase unpaid invoices.</p></header>
           <textarea value={text} onChange={(e) => updateText(e.target.value)} placeholder="Example: Bob 16 Taita drive $60 repeat 23/07/09" />
           {typoFixed ? <div className="freshQuickAiStatus ok"><b>Auto cleaned</b><span>{cleanOwnerText(text)}</span></div> : null}
           <div className="freshQuickAiButtons">
-            <button type="button" onClick={() => askRealAi()} disabled={analysing}>{analysing ? "Asking AI…" : "Ask real AI"}</button>
-            <button type="button" onClick={createRecord} disabled={saving || analysing}>{saving ? "Creating…" : `Approve + create ${parsed.label}`}</button>
-            <button type="button" onClick={() => sendToCommand(parsed, text, onNavigate, setStatus)}>Send to Command</button>
-            <button type="button" onClick={() => loadExample("client")}>Client typo example</button>
-            <button type="button" onClick={() => loadExample("job")}>Job example</button>
-            <button type="button" onClick={() => loadExample("invoice")}>Invoice typo example</button>
+            <button type="button" onClick={() => askRealAi({ openReview: true })} disabled={analysing}>{analysing ? "Thinking…" : "Understand + show pop-up"}</button>
+            <button type="button" onClick={openApproval} disabled={saving || analysing}>Open approval pop-up</button>
+            <button type="button" onClick={() => loadExample("job")}>Job</button>
+            <button type="button" onClick={() => loadExample("move")}>Move job</button>
+            <button type="button" onClick={() => loadExample("invoice")}>Invoice</button>
+            <button type="button" onClick={() => loadExample("money")}>Money</button>
           </div>
           {status ? <div className={`freshQuickAiStatus ${status.tone}`}><b>{status.tone === "ok" ? "Done" : "Needs attention"}</b><span>{status.text}</span></div> : null}
         </article>
 
         <article className="freshQuickAiPanel">
-          <header><span>{aiInfo.ai_enabled ? "Real AI preview" : "Editable preview"}</span><h2>{parsed.label} draft</h2><p>Fix the boxes below if AI misses anything. Optional email/phone won’t block a job.</p></header>
+          <header><span>{aiInfo.ai_enabled ? "Real AI preview" : "Smart preview"}</span><h2>{parsed.actionTitle}</h2><p>This is the preview. The approval pop-up is where Churvox does the final owner check.</p></header>
           <div className="freshQuickAiResult">{details.map(([label, value]) => <section key={label} className={String(value).toLowerCase().includes("needed") ? "need" : ""}><b>{label}</b><p>{value}</p></section>)}</div>
-
-          <div className="freshQuickAiEdit">
-            <b>Fix details here</b>
-            <div>
-              {editFieldsFor(parsed).map((key) => (
-                <label key={key} className={key === "notes" ? "wide" : ""}>
-                  <span>{fieldLabel(key)}</span>
-                  {key === "notes" ? (
-                    <textarea value={inputValue(key)} placeholder={fieldPlaceholder(key)} onChange={(e) => patchDraft(key, e.target.value)} />
-                  ) : key === "repeat" ? (
-                    <select value={inputValue(key)} onChange={(e) => patchDraft(key, e.target.value)}><option value="one-off">One-off</option><option value="weekly">Weekly</option><option value="fortnightly">Fortnightly</option><option value="monthly">Monthly</option><option value="custom">Custom</option></select>
-                  ) : key === "role" ? (
-                    <select value={inputValue(key)} onChange={(e) => patchDraft(key, e.target.value)}><option value="worker">Worker</option><option value="lead_worker">Lead worker</option><option value="subcontractor">Subcontractor</option><option value="payroll">Payroll only</option></select>
-                  ) : (
-                    <input type={key === "amount" || key === "payRate" ? "number" : key === "scheduleInput" ? "datetime-local" : key === "dueDate" ? "date" : "text"} value={inputValue(key)} placeholder={fieldPlaceholder(key)} onChange={(e) => patchDraft(key, e.target.value)} />
-                  )}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="freshQuickAiPrepared"><b>Original</b><p>{text || "Write the details on the left."}</p><b>Cleaned</b><p>{parsed.cleanedText || cleanOwnerText(text)}</p><b>AI prepared</b><p>{summary(parsed)}</p><b>Safe rule</b><p>{parsed.kind === "invoice" ? "Invoices are created as drafts. Nothing is sent or synced without owner approval." : "Churvox prepares the record first. You still approve the action."}</p></div>
+          <div className="freshQuickAiPrepared"><b>Original</b><p>{text || "Tell Churvox what to do."}</p><b>Cleaned</b><p>{parsed.cleanedText || cleanOwnerText(text)}</p><b>Safe rule</b><p>{parsed.intent === "create" ? "Creates only after approval. Invoices stay draft only." : "Update/search/message actions are recognised but saved for review until live record matching is wired in."}</p></div>
           {parsed.missing.length ? <div className="freshQuickAiMissing"><b>Required before safe create</b><span>{parsed.missing.join(", ")}</span></div> : null}
-          <div className="freshQuickAiButtons"><button type="button" onClick={createRecord} disabled={saving || analysing}>{saving ? "Creating…" : `Approve + create ${parsed.label}`}</button><button type="button" onClick={() => onNavigate?.(parsed.targetPage)}>Open {parsed.targetPage}</button></div>
+          <div className="freshQuickAiButtons"><button type="button" onClick={openApproval} disabled={saving || analysing}>Open approval pop-up</button><button type="button" onClick={() => onNavigate?.(parsed.targetPage)}>Open {parsed.targetPage}</button></div>
         </article>
       </div>
+
+      <ApprovalModal parsed={reviewOpen ? parsed : null} rawText={text} saving={saving} analysing={analysing} onClose={() => setReviewOpen(false)} onApprove={() => createRecord(parsed)} onReview={() => saveToReview(parsed, text, setStatus, () => setReviewOpen(false))} patchDraft={patchDraft} />
     </section>
   );
 }
