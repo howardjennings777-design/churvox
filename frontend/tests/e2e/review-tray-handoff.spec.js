@@ -33,13 +33,15 @@ async function seedReviewItem(page) {
   await openTellChurvox(page);
   await page.evaluate((keys) => keys.forEach((key) => window.localStorage.removeItem(key)), reviewKeys);
 
-  await page.getByRole('button', { name: 'Add client' }).click();
+  const examples = page.getByLabel('Tell Churvox examples');
+  await examples.getByRole('button', { name: 'Add client', exact: true }).click();
   await expect(page.locator('textarea')).toHaveValue(/add client Sarah Johnson/i);
 
   await page.getByRole('button', { name: /Open approval pop-up/i }).first().click();
-  await expect(page.getByRole('dialog')).toContainText(/Create Client/i);
-  await page.getByRole('button', { name: /Save to Review/i }).click();
-  await expect(page.getByText(/Saved to Review/i)).toBeVisible({ timeout: 10000 });
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toContainText(/Create Client/i);
+  await dialog.getByRole('button', { name: /Save to Review/i }).click();
+  await expect(page.getByText(/Saved to Review/i).first()).toBeVisible({ timeout: 10000 });
 }
 
 test('saving a Tell Churvox item shows it in Owner Review', async ({ page }) => {
@@ -47,8 +49,8 @@ test('saving a Tell Churvox item shows it in Owner Review', async ({ page }) => 
 
   await page.goto(`${baseUrl}/command-board`, { waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('heading', { name: /Approve what Churvox prepared/i })).toBeVisible({ timeout: 15000 });
-  await expect(page.getByText(/Create Client ready for review/i)).toBeVisible({ timeout: 15000 });
-  await expect(page.getByText(/Sarah Johnson/i)).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Create Client ready for review/i })).toBeVisible({ timeout: 15000 });
+  await expect(page.getByText(/Sarah Johnson/i).first()).toBeVisible();
   await expect(page.getByRole('button', { name: /Open review/i }).first()).toBeVisible();
 });
 
@@ -57,14 +59,16 @@ test('Owner Review item can be opened, edited, saved, and ignored', async ({ pag
   await page.goto(`${baseUrl}/command-board`, { waitUntil: 'domcontentloaded' });
 
   await page.getByRole('button', { name: /Open review/i }).first().click();
-  await expect(page.getByRole('dialog')).toContainText(/Owner Review/i);
-  await page.getByLabel(/Owner note/i).fill('Checked in Playwright before ignoring.');
-  await page.getByRole('button', { name: /Save edit/i }).click();
-  await expect(page.getByText(/Review edit saved/i)).toBeVisible({ timeout: 10000 });
+  let dialog = page.getByRole('dialog');
+  await expect(dialog).toContainText(/Owner Review/i);
+  await dialog.getByLabel(/Owner note/i).fill('Checked in Playwright before ignoring.');
+  await dialog.getByRole('button', { name: /Save edit/i }).click();
+  await expect(page.getByText(/Review edit saved/i).first()).toBeVisible({ timeout: 10000 });
 
   await page.getByRole('button', { name: /Open review/i }).first().click();
-  await expect(page.getByRole('dialog')).toContainText(/Checked in Playwright/i);
-  await page.getByRole('button', { name: /Ignore/i }).click();
-  await expect(page.getByText(/Review item ignored/i)).toBeVisible({ timeout: 10000 });
-  await expect(page.getByText(/Create Client ready for review/i)).toBeHidden({ timeout: 10000 });
+  dialog = page.getByRole('dialog');
+  await expect(dialog).toContainText(/Checked in Playwright/i);
+  await dialog.getByRole('button', { name: /^Ignore$/i }).click();
+  await expect(page.getByText(/Review item ignored/i).first()).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole('heading', { name: /Create Client ready for review/i })).toBeHidden({ timeout: 10000 });
 });
