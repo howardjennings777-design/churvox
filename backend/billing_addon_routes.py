@@ -40,7 +40,18 @@ async def _apply(db, addon, user, session_id):
         await db.users.update_one({"_id": ObjectId(bid)}, {"$set": {"xero_addon_active": True, "xero_addon_started_at": now, "updated_at": now}})
     await db.billing_addons.insert_one({"business_id": bid, "user_id": str(user.get("id")), "addon_key": addon, "stripe_session_id": session_id, "status": "active", "created_at": now})
 
+def _install_real_ai_review_routes(app, db, get_current_user):
+    if getattr(app.state, "churvox_real_ai_operator_routes_installed", False):
+        return
+    try:
+        from churvox_ai_operator_routes import build_ai_operator_router
+    except Exception:
+        from .churvox_ai_operator_routes import build_ai_operator_router
+    app.include_router(build_ai_operator_router(db, get_current_user, ObjectId), prefix="/api")
+    app.state.churvox_real_ai_operator_routes_installed = True
+
 def install(app, db, get_current_user):
+    _install_real_ai_review_routes(app, db, get_current_user)
     if getattr(app.state, "billing_addon_routes_installed", False): return
     router = APIRouter(prefix="/api")
 
