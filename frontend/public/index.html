@@ -69,6 +69,43 @@
         filter: none !important;
         mix-blend-mode: normal !important;
       }
+      .rvShade[role="dialog"][aria-modal="true"] {
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100dvh !important;
+        padding: 8px !important;
+        place-items: stretch !important;
+        overflow: hidden !important;
+      }
+      .rvShade .rvModal {
+        width: 100% !important;
+        height: calc(100dvh - 16px) !important;
+        max-height: calc(100dvh - 16px) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+      }
+      .rvShade .rvModalGrid {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        overflow: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+      }
+      .rvShade .rvActions {
+        flex: 0 0 auto !important;
+        position: sticky !important;
+        bottom: 0 !important;
+        z-index: 3 !important;
+        background: #fffaf0 !important;
+        padding: 10px 0 2px !important;
+        margin-top: 8px !important;
+        box-shadow: 0 -12px 24px rgba(15,23,42,.08) !important;
+      }
+      @media (max-width: 640px) {
+        .rvShade .rvModal { border-radius: 24px !important; padding: 14px !important; }
+        .rvShade .rvModalGrid { grid-template-columns: 1fr !important; }
+        .rvShade .rvActions button { flex: 1 1 100% !important; min-height: 44px !important; }
+      }
     </style>
   </head>
   <body>
