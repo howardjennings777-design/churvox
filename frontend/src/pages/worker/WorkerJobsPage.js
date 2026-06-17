@@ -245,6 +245,10 @@ export default function WorkerJobsPage() {
 
   useEffect(() => { fetchJobs(); }, [fetchJobs]);
 
+  useEffect(() => {
+    fetchShiftStatus();
+  }, [fetchShiftStatus]); // worker-shift-status-on-refresh
+
 
   useEffect(() => {
     if (shiftStatus !== "clocked_in") return undefined;
