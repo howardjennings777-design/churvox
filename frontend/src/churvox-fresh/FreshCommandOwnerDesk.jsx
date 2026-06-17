@@ -300,9 +300,11 @@ function ReviewCard({ item, busy, onOpen, onApprove, onIgnore }) {
 }
 
 function ReviewModal({ item, busy, onClose, onSave, onApprove, onIgnore }) {
+  const [note, setNote] = React.useState("");
   const [draft, setDraft] = React.useState(buildDraft(item));
 
   React.useEffect(() => {
+    setNote(item?.owner_note || "");
     setDraft(buildDraft(item));
   }, [item]);
 
@@ -329,11 +331,11 @@ function ReviewModal({ item, busy, onClose, onSave, onApprove, onIgnore }) {
         </section>
 
         <div className="freshActions freshReviewModalActions">
-          <button className="freshPrimary" type="button" disabled={busy} onClick={() => onApprove(item, "", payload)}>
+          <button className="freshPrimary" type="button" disabled={busy} onClick={() => onApprove(item, note, payload)}>
             {busy ? "Approving…" : "Approve backend action"}
           </button>
-          <button className="freshGhost" type="button" disabled={busy} onClick={() => onSave(item, "Saved edited approval form.", payload)}>Save form</button>
-          <button className="freshGhost" type="button" disabled={busy} onClick={() => onIgnore(item, "Ignored from Review.")}>Ignore</button>
+          <button className="freshGhost" type="button" disabled={busy} onClick={() => onSave(item, note, payload)}>Save form</button>
+          <button className="freshGhost" type="button" disabled={busy} onClick={() => onIgnore(item, note)}>Ignore</button>
         </div>
       </section>
     </div>,
@@ -373,8 +375,8 @@ function Style() {
       .freshReviewEmpty h2,.freshReviewError h2{margin:0;color:#101827;font-size:30px;letter-spacing:-.04em}
       .freshReviewEmpty p,.freshReviewError p{margin:0;color:#475569;font-weight:850;max-width:780px}
 
-      .freshReviewShade{position:fixed;inset:0;background:rgba(2,6,23,.62);z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px;box-sizing:border-box}
-      .freshReviewModal{width:min(880px,calc(100vw - 44px));max-height:88vh;overflow:auto;border-radius:30px;background:#fffaf0;padding:24px;box-shadow:0 30px 90px rgba(2,6,23,.38);display:grid;gap:16px;position:relative;margin:auto}
+      .freshReviewShade{position:fixed;inset:0;width:100vw;height:100dvh;background:rgba(2,6,23,.68);z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:18px;box-sizing:border-box}
+      .freshReviewModal{width:min(820px,calc(100vw - 36px));max-height:min(88dvh,760px);overflow:auto;border-radius:30px;background:#fffaf0;padding:22px;box-shadow:0 36px 110px rgba(2,6,23,.42);display:grid;gap:16px;position:relative;margin:0 auto}
       .freshReviewClose{position:absolute;right:16px;top:16px;border:0;border-radius:999px;width:44px;height:44px;background:#111827;color:#fff;font-size:24px;font-weight:1000;cursor:pointer}
       .freshReviewModalHead span,.freshReviewFormHead span{display:inline-flex;border-radius:999px;background:#fff7ed;color:#9a3412;padding:8px 11px;font-size:10px;font-weight:1000;text-transform:uppercase;letter-spacing:.12em}
       .freshReviewModalHead h2{margin:12px 52px 6px 0;color:#101827;font-size:clamp(32px,4vw,52px);line-height:.92;letter-spacing:-.06em}
