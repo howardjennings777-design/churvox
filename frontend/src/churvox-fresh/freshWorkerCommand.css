@@ -575,3 +575,82 @@
     font-size: 16px !important;
   }
 }
+
+/* CHURVOX_WORKER_TIME_CARDS_BOLD_NOT_WHITE_20260618 */
+.workerTimeStatsReadable {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+}
+
+.workerTimeStatsReadable .freshWorkerTimeCard {
+  min-height: 180px !important;
+  padding: 18px !important;
+  border-radius: 22px !important;
+  border: 2px solid rgba(249, 115, 22, 0.55) !important;
+  background: linear-gradient(135deg, #111827 0%, #1f2937 55%, #7c2d12 100%) !important;
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.24) !important;
+  display: grid !important;
+  align-content: start !important;
+  gap: 12px !important;
+  overflow: visible !important;
+}
+
+.workerTimeMeaning {
+  color: #fed7aa !important;
+  background: rgba(15, 23, 42, 0.55) !important;
+  border: 1px solid rgba(251, 146, 60, 0.75) !important;
+  border-radius: 14px !important;
+  padding: 10px 12px !important;
+  font-size: 16px !important;
+  font-weight: 1000 !important;
+  line-height: 1.2 !important;
+  text-transform: none !important;
+  display: block !important;
+}
+
+.workerTimeStatsReadable .freshWorkerTimeCard > b {
+  color: #ffffff !important;
+  font-size: 42px !important;
+  font-weight: 1000 !important;
+  line-height: 1 !important;
+  display: block !important;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.28) !important;
+}
+
+.workerTimeBottom {
+  color: #ffffff !important;
+  background: rgba(2, 6, 23, 0.62) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 14px !important;
+  padding: 10px 12px !important;
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  line-height: 1.3 !important;
+  display: block !important;
+  white-space: normal !important;
+}
+
+@media (max-width: 1100px) {
+  .workerTimeStatsReadable {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .workerTimeStatsReadable {
+    grid-template-columns: 1fr !important;
+  }
+
+  .workerTimeStatsReadable .freshWorkerTimeCard {
+    min-height: 170px !important;
+  }
+
+  .workerTimeMeaning {
+    font-size: 17px !important;
+  }
+
+  .workerTimeBottom {
+    font-size: 16px !important;
+  }
+}
