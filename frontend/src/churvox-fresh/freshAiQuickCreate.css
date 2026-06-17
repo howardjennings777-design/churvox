@@ -198,3 +198,29 @@
   color: #111827 !important;
   -webkit-text-fill-color: #111827 !important;
 }
+
+/* CHURVOX_TELL_CHURVOX_NO_PILLS_20260617 */
+.freshQuickAiPage--noPills {
+  gap: 14px !important;
+}
+
+.freshQuickAiPanel--soloCommand textarea {
+  min-height: 260px !important;
+  white-space: pre-line !important;
+}
+
+.freshQuickAiPanel--soloCommand textarea::placeholder {
+  color: #94a3b8 !important;
+  -webkit-text-fill-color: #94a3b8 !important;
+  font-weight: 800 !important;
+}
+
+.freshQuickAiPanel--soloCommand {
+  min-height: 100% !important;
+}
+
+@media (min-width: 1101px) {
+  .freshQuickAiPanel--soloCommand textarea {
+    min-height: 300px !important;
+  }
+}
