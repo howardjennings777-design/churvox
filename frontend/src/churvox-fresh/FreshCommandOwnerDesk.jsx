@@ -3,12 +3,13 @@ import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
 
 function itemId(item) { return item?.id || item?._id || ""; }
-function categoryOf(item) { return String(item?.category || item?.action || "other").toLowerCase(); }
 function payloadOf(item) { return item?.payload && typeof item.payload === "object" ? item.payload : {}; }
+function categoryOf(item) { return String(item?.category || item?.action || "other").toLowerCase(); }
+function actionOf(item) { return String(item?.action || "").toLowerCase(); }
 
 function moneyValue(value) {
   const n = Number(String(value ?? "").replace(/[^0-9.-]/g, ""));
-  return Number.isFinite(n) && n > 0 ? `$${n.toFixed(0)}` : "";
+  return Number.isFinite(n) && n > 0 ? String(n.toFixed(0)) : "";
 }
 
 function dateValue(value) {
@@ -18,88 +19,326 @@ function dateValue(value) {
 }
 
 function genericText(value) {
-  return /^(ai prepared admin work|review prepared from tell churvox|prepared admin action)$/i.test(String(value || "").trim());
+  return /^(ai prepared admin work|review prepared from tell churvox|prepared admin action|new job: job to review|job to review)$/i.test(String(value || "").trim());
+}
+
+function parseNameFromText(text) {
+  const raw = String(text || "");
+  const patterns = [
+    /^\s*(?:job|quote|invoice)\s+(?:for\s+)?([A-Za-z][A-Za-z' -]{1,60}?)(?=\s+(?:lawn|lawnmowing|mow|mowing|hedge|clean|cleaning|paint|painting|at|\d|\$|weekly|fortnight|fortnightly|monthly|next|tomorrow|today)\b|[,.;]|$)/i,
+    /\bfor\s+([A-Za-z][A-Za-z' -]{1,60}?)(?=\s+(?:at|lawn|lawnmowing|mow|mowing|hedge|clean|cleaning|\d|\$|weekly|fortnight|fortnightly|monthly|next|tomorrow|today)\b|[,.;]|$)/i,
+  ];
+  for (const pattern of patterns) {
+    const m = raw.match(pattern);
+    if (m?.[1]) {
+      return m[1]
+        .replace(/\b(job|client|customer|lawn|mowing|mow|fortnightly|weekly|monthly)\b/gi, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+  }
+  return "";
+}
+
+function buildDraft(item) {
+  const p = payloadOf(item);
+  const original = item?.original_text || "";
+  const customer = p.customer_name || p.client_name || p.name || parseNameFromText(original) || "";
+  return {
+    customer_name: customer,
+    address: p.address || "",
+    title: p.title || p.description || p.job_description || original || "",
+    job_type: p.job_type || "lawn_mowing",
+    price: moneyValue(p.price || p.amount || p.subtotal || p.total),
+    scheduled_date_human: p.scheduled_date_human || dateValue(p.scheduled_date || p.date) || "",
+    repeat: p.repeat || p.recurrence || "",
+    email: p.email || p.customer_email || "",
+    phone: p.phone || "",
+    notes: p.notes || original || "",
+  };
 }
 
 function titleOf(item) {
   const p = payloadOf(item);
-  const action = String(item?.action || "").toLowerCase();
+  const action = actionOf(item);
   const existing = item?.title || item?.summary;
+  const customer = p.customer_name || p.client_name || p.name || parseNameFromText(item?.original_text);
 
   if (existing && !genericText(existing)) return existing;
-
-  if (action === "create_job") return `New job: ${p.address || p.title || p.customer_name || "job to review"}`;
-  if (action === "create_client") return `New client: ${p.name || p.customer_name || "client to review"}`;
-  if (action === "create_quote") return `New quote: ${p.address || p.customer_name || p.job_description || "quote to review"}`;
-  if (action === "create_invoice" || action === "draft_invoice_from_job" || action === "batch_draft_invoices") return `Draft invoice: ${p.address || p.customer_name || p.description || "invoice to review"}`;
-  if (action === "complete_job") return `Complete job: ${p.job_id || item?.match?.label || "matched job"}`;
-  if (action === "reschedule_job") return `Move job: ${item?.match?.label || p.job_id || "matched job"}`;
-  if (action === "update_job_price") return `Update price: ${item?.match?.label || p.job_id || "matched job"}`;
-  if (action === "prepare_invoice_followups") return "Prepare invoice follow-ups";
-  if (action === "find_records") return "Find matching records";
-
+  if (action === "create_job") return `New job${customer ? ` for ${customer}` : ""}`;
+  if (action === "create_client") return `New client: ${customer || "client to review"}`;
+  if (action === "create_quote") return `New quote${customer ? ` for ${customer}` : ""}`;
+  if (action.includes("invoice")) return `Draft invoice${customer ? ` for ${customer}` : ""}`;
   return item?.original_text ? `Review: ${String(item.original_text).slice(0, 70)}` : "Prepared admin action";
 }
 
 function summaryOf(item) {
   const p = payloadOf(item);
-  const action = String(item?.action || "").toLowerCase();
-  const existing = item?.summary;
-
-  if (existing && !genericText(existing)) return existing;
-
+  const customer = p.customer_name || p.client_name || p.name || parseNameFromText(item?.original_text);
   const bits = [
-    p.customer_name || p.client_name || p.name,
+    customer,
     p.address,
-    moneyValue(p.price || p.amount || p.subtotal || p.total),
-    dateValue(p.scheduled_date || p.date),
+    p.price || p.amount || p.subtotal ? `$${moneyValue(p.price || p.amount || p.subtotal)}` : "",
+    p.scheduled_date_human || dateValue(p.scheduled_date || p.date),
+    p.repeat || p.recurrence,
   ].filter(Boolean);
-
-  if (bits.length) return bits.join(" · ");
-  if (item?.original_text) return String(item.original_text).slice(0, 140);
-  return action ? `${action.replaceAll("_", " ")} prepared for owner Review.` : "Prepared by Churvox and waiting for owner approval.";
+  return bits.length ? bits.join(" · ") : (item?.summary && !genericText(item.summary) ? item.summary : "Prepared for owner Review.");
 }
 
-function entriesOf(item) {
-  const p = payloadOf(item);
+function compactDetails(item) {
+  const d = buildDraft(item);
   const rows = [];
-
-  if (item?.original_text) rows.push(["Original instruction", item.original_text]);
-  if (p.customer_name || p.client_name || p.name) rows.push(["Customer", p.customer_name || p.client_name || p.name]);
-  if (p.address) rows.push(["Address", p.address]);
-  if (p.price || p.amount || p.subtotal || p.total) rows.push(["Price", moneyValue(p.price || p.amount || p.subtotal || p.total) || String(p.price || p.amount || p.subtotal || p.total)]);
-  if (p.scheduled_date || p.date || p.scheduled_date_human) rows.push(["Date", dateValue(p.scheduled_date || p.date) || p.scheduled_date_human]);
-  if (p.email || p.customer_email) rows.push(["Email", p.email || p.customer_email]);
-  if (p.phone) rows.push(["Phone", p.phone]);
-
-  const details = item?.details && typeof item.details === "object" ? item.details : {};
-  Object.entries(details).forEach(([key, value]) => {
-    if (rows.length >= 8) return;
-    if (value !== undefined && value !== null && String(value).trim() && !genericText(value)) rows.push([key, value]);
-  });
-
-  if (!rows.length) rows.push(["What Churvox prepared", summaryOf(item)]);
-  rows.push(["Safe rule", "Nothing changes until you approve."]);
-
-  return rows.slice(0, 8);
+  if (d.customer_name) rows.push(["Customer", d.customer_name]);
+  if (d.address) rows.push(["Address", d.address]);
+  if (d.price) rows.push(["Price", `$${d.price}`]);
+  if (d.scheduled_date_human) rows.push(["Date", d.scheduled_date_human]);
+  if (d.repeat) rows.push(["Repeat", d.repeat]);
+  if (item?.original_text) rows.push(["Original", item.original_text]);
+  return rows.slice(0, 6);
 }
 
-function DetailGrid({ item }) {
-  return <div className="freshReviewDetailGrid">{entriesOf(item).slice(0, 8).map(([key, value]) => <section key={key}><b>{key}</b><p>{String(value)}</p></section>)}</div>;
+function draftToPayload(item, draft) {
+  const existing = payloadOf(item);
+  const action = actionOf(item);
+
+  if (action === "create_client") {
+    return {
+      ...existing,
+      name: draft.customer_name,
+      customer_name: draft.customer_name,
+      email: draft.email,
+      phone: draft.phone,
+      address: draft.address,
+      notes: draft.notes,
+    };
+  }
+
+  return {
+    ...existing,
+    customer_name: draft.customer_name,
+    client_name: draft.customer_name,
+    title: draft.title,
+    description: draft.title,
+    job_description: draft.title,
+    job_type: draft.job_type,
+    address: draft.address,
+    price: Number(draft.price || 0),
+    amount: Number(draft.price || 0),
+    scheduled_date_human: draft.scheduled_date_human,
+    date: draft.scheduled_date_human,
+    repeat: draft.repeat,
+    recurrence: draft.repeat,
+    email: draft.email,
+    customer_email: draft.email,
+    phone: draft.phone,
+    notes: draft.notes,
+  };
 }
 
-function ReviewModal({ item, busy, onClose, onSave, onApprove, onIgnore }) {
-  const [note, setNote] = React.useState(item?.owner_note || "");
-  React.useEffect(() => { setNote(item?.owner_note || ""); }, [itemId(item)]);
-  if (!item) return null;
-  return <div className="freshReviewShade" role="dialog" aria-modal="true"><section className="freshReviewModal"><button className="freshReviewClose" type="button" onClick={onClose}>×</button><header><span>Backend Owner Review</span><h2>{titleOf(item)}</h2><p>{summaryOf(item)}</p></header><DetailGrid item={item} /><section className="freshReviewSafe"><b>Safe rule</b><p>{categoryOf(item) === "money" ? "Money actions stay draft-only. Nothing sends, syncs or marks paid from Review." : "Churvox changes live records only after this backend approval."}</p></section><label className="freshReviewNote"><span>Owner note / edit</span><textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Add a note before saving or approval." /></label><div className="freshActions"><button className="freshPrimary" type="button" disabled={busy} onClick={() => onApprove(item, note)}>{busy ? "Approving…" : "Approve backend action"}</button><button className="freshGhost" type="button" disabled={busy} onClick={() => onSave(item, note)}>Save note</button><button className="freshGhost" type="button" disabled={busy} onClick={() => onIgnore(item, note)}>Ignore</button></div></section></div>;
+function FilledForm({ item, draft, setDraft }) {
+  const action = actionOf(item);
+  const update = (key) => (event) => setDraft((current) => ({ ...current, [key]: event.target.value }));
+
+  return (
+    <section className="freshReviewForm">
+      <div className="freshReviewFormHead">
+        <span>Filled approval form</span>
+        <p>Check or edit this before approving. This is the form Churvox will use.</p>
+      </div>
+
+      <div className="freshReviewFormGrid">
+        <label>
+          <span>{action === "create_client" ? "Client name" : "Customer name"}</span>
+          <input value={draft.customer_name} onChange={update("customer_name")} placeholder="Customer name" />
+        </label>
+
+        <label>
+          <span>Address / site</span>
+          <input value={draft.address} onChange={update("address")} placeholder="Job address" />
+        </label>
+
+        {action !== "create_client" ? (
+          <>
+            <label className="wide">
+              <span>Job / work</span>
+              <input value={draft.title} onChange={update("title")} placeholder="What work is being done?" />
+            </label>
+
+            <label>
+              <span>Price</span>
+              <input value={draft.price} onChange={update("price")} placeholder="60" inputMode="decimal" />
+            </label>
+
+            <label>
+              <span>Date</span>
+              <input value={draft.scheduled_date_human} onChange={update("scheduled_date_human")} placeholder="18 Aug / next Friday" />
+            </label>
+
+            <label>
+              <span>Repeat</span>
+              <select value={draft.repeat} onChange={update("repeat")}>
+                <option value="">One-off</option>
+                <option value="weekly">Weekly</option>
+                <option value="fortnightly">Fortnightly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </label>
+          </>
+        ) : (
+          <>
+            <label>
+              <span>Email</span>
+              <input value={draft.email} onChange={update("email")} placeholder="email@example.com" />
+            </label>
+            <label>
+              <span>Phone</span>
+              <input value={draft.phone} onChange={update("phone")} placeholder="021..." />
+            </label>
+          </>
+        )}
+
+        <label className="wide">
+          <span>Notes</span>
+          <textarea value={draft.notes} onChange={update("notes")} placeholder="Notes for the record" />
+        </label>
+      </div>
+    </section>
+  );
 }
 
 function ReviewCard({ item, busy, onOpen, onApprove, onIgnore }) {
-  return <article className={`freshReviewItem ${categoryOf(item)}`}><div><span>{categoryOf(item)}</span><em>{item?.created_at ? new Date(item.created_at).toLocaleString("en-NZ") : "backend"}</em></div><h3>{titleOf(item)}</h3><p>{summaryOf(item)}</p><DetailGrid item={item} /><div className="freshActions"><button className="freshPrimary" type="button" onClick={() => onOpen(item)}>Open review</button><button className="freshGhost" type="button" disabled={busy} onClick={() => onApprove(item, "Approved from Review.")}>Approve</button><button className="freshGhost" type="button" disabled={busy} onClick={() => onIgnore(item, "Ignored from Review.")}>Ignore</button></div></article>;
+  return (
+    <article className={`freshReviewItem ${categoryOf(item)}`}>
+      <div><span>{categoryOf(item)}</span><em>{item?.created_at ? new Date(item.created_at).toLocaleString("en-NZ") : "backend"}</em></div>
+      <h3>{titleOf(item)}</h3>
+      <p>{summaryOf(item)}</p>
+      <div className="freshReviewMiniGrid">
+        {compactDetails(item).map(([key, value]) => <section key={key}><b>{key}</b><p>{value}</p></section>)}
+      </div>
+      <div className="freshActions">
+        <button className="freshPrimary" type="button" onClick={() => onOpen(item)}>Open form</button>
+        <button className="freshGhost" type="button" disabled={busy} onClick={() => onApprove(item, "Approved from Review.", draftToPayload(item, buildDraft(item)))}>Approve</button>
+        <button className="freshGhost" type="button" disabled={busy} onClick={() => onIgnore(item, "Ignored from Review.")}>Ignore</button>
+      </div>
+    </article>
+  );
 }
 
-function Style() { return <style>{`.freshReviewPage{display:grid;gap:16px}.freshReviewHero{border-radius:34px;background:#101827;color:white;padding:28px;border-left:8px solid #f97316;box-shadow:0 24px 70px rgba(2,6,23,.20)}.freshReviewHero span{display:inline-flex;border-radius:999px;background:#fff7ed;color:#9a3412;padding:9px 13px;font-size:11px;font-weight:1000;text-transform:uppercase;letter-spacing:.12em}.freshReviewHero h1{margin:13px 0 8px;color:white;font-size:clamp(38px,5vw,66px);line-height:.92;letter-spacing:-.06em}.freshReviewHero p{margin:0;color:#e5e7eb;font-weight:850;line-height:1.45}.freshReviewStats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:18px}.freshReviewStats div{border-radius:18px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);padding:13px}.freshReviewStats small{display:block;color:#fed7aa;font-size:10px;font-weight:1000;text-transform:uppercase;letter-spacing:.12em}.freshReviewStats b{display:block;color:#fff;font-size:25px;margin-top:4px}.freshReviewToolbar{display:flex;flex-wrap:wrap;gap:8px}.freshReviewToolbar button{border:1px solid rgba(15,23,42,.12);border-radius:999px;background:#fffaf0;color:#101827;padding:10px 14px;font-weight:1000;cursor:pointer}.freshReviewToolbar button.active{background:#111827;color:white}.freshReviewList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.freshReviewItem{border:1px solid rgba(15,23,42,.12);border-left:7px solid #f97316;border-radius:28px;background:#fffaf0;padding:17px;box-shadow:0 16px 42px rgba(2,6,23,.08);display:grid;gap:11px}.freshReviewItem.money{border-left-color:#16a34a}.freshReviewItem.work{border-left-color:#2563eb}.freshReviewItem>div:first-child{display:flex;justify-content:space-between;gap:10px}.freshReviewItem span{border-radius:999px;background:#fff7ed;color:#9a3412;padding:7px 10px;text-transform:uppercase;letter-spacing:.12em;font-size:10px;font-weight:1000}.freshReviewItem em{font-style:normal;color:#64748b;font-size:11px;font-weight:900}.freshReviewItem h3{margin:0;color:#101827;font-size:24px;line-height:1;letter-spacing:-.04em}.freshReviewItem p{margin:0;color:#475569;font-weight:850;line-height:1.4}.freshReviewDetailGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.freshReviewDetailGrid section{border:1px solid rgba(15,23,42,.10);border-radius:16px;background:#fff;padding:10px}.freshReviewDetailGrid b{display:block;color:#101827;font-size:12px;font-weight:1000}.freshReviewDetailGrid p{margin:4px 0 0;color:#475569;font-size:12px;font-weight:850;word-break:break-word}.freshReviewEmpty,.freshReviewError{border:1px dashed rgba(15,23,42,.18);border-radius:28px;background:#fffaf0;padding:26px;display:grid;gap:12px}.freshReviewEmpty h2,.freshReviewError h2{margin:0;color:#101827;font-size:30px;letter-spacing:-.04em}.freshReviewEmpty p,.freshReviewError p{margin:0;color:#475569;font-weight:850;max-width:780px}.freshReviewShade{position:fixed;inset:0;background:rgba(2,6,23,.60);z-index:9999;display:grid;place-items:center;padding:18px}.freshReviewModal{max-width:980px;width:min(980px,100%);max-height:90vh;overflow:auto;border-radius:30px;background:#fffaf0;padding:22px;box-shadow:0 30px 90px rgba(2,6,23,.35);display:grid;gap:14px;position:relative}.freshReviewClose{position:absolute;right:14px;top:14px;border:0;border-radius:999px;width:40px;height:40px;background:#111827;color:#fff;font-size:22px;cursor:pointer}.freshReviewModal header span{display:inline-flex;border-radius:999px;background:#fff7ed;color:#9a3412;padding:8px 11px;font-size:10px;font-weight:1000;text-transform:uppercase;letter-spacing:.12em}.freshReviewModal h2{margin:9px 0 4px;color:#101827;font-size:34px;letter-spacing:-.05em}.freshReviewModal p{margin:0;color:#475569;font-weight:850}.freshReviewSafe{border:1px solid rgba(249,115,22,.22);border-radius:20px;background:#fff7ed;padding:13px}.freshReviewSafe b{color:#9a3412}.freshReviewSafe p{margin-top:5px}.freshReviewNote{display:grid;gap:7px}.freshReviewNote span{font-weight:1000;color:#101827}.freshReviewNote textarea{min-height:110px;border:1px solid rgba(15,23,42,.14);border-radius:18px;padding:12px;font-weight:850;color:#101827;background:white}@media(max-width:800px){.freshReviewStats,.freshReviewList,.freshReviewDetailGrid{grid-template-columns:1fr}.freshReviewHero{padding:22px}.freshReviewHero h1{font-size:42px}}`}</style>; }
+function ReviewModal({ item, busy, onClose, onSave, onApprove, onIgnore }) {
+  const [note, setNote] = React.useState("");
+  const [draft, setDraft] = React.useState(buildDraft(item));
+
+  React.useEffect(() => {
+    setNote(item?.owner_note || "");
+    setDraft(buildDraft(item));
+  }, [item]);
+
+  if (!item) return null;
+
+  const payload = draftToPayload(item, draft);
+
+  return (
+    <div className="freshReviewShade" role="dialog" aria-modal="true">
+      <section className="freshReviewModal">
+        <button className="freshReviewClose" type="button" onClick={onClose}>×</button>
+
+        <header className="freshReviewModalHead">
+          <span>Backend owner review</span>
+          <h2>{titleOf({ ...item, payload })}</h2>
+          <p>{summaryOf({ ...item, payload })}</p>
+        </header>
+
+        <FilledForm item={item} draft={draft} setDraft={setDraft} />
+
+        <section className="freshReviewSafe">
+          <b>Safe rule</b>
+          <p>Nothing creates, sends, syncs, marks paid, or changes live records until you approve this form.</p>
+        </section>
+
+        <label className="freshReviewNote">
+          <span>Owner note / edit</span>
+          <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Add a note before saving or approval." />
+        </label>
+
+        <div className="freshActions freshReviewModalActions">
+          <button className="freshPrimary" type="button" disabled={busy} onClick={() => onApprove(item, note, payload)}>
+            {busy ? "Approving…" : "Approve backend action"}
+          </button>
+          <button className="freshGhost" type="button" disabled={busy} onClick={() => onSave(item, note, payload)}>Save form</button>
+          <button className="freshGhost" type="button" disabled={busy} onClick={() => onIgnore(item, note)}>Ignore</button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function Style() {
+  return (
+    <style>{`
+      .freshReviewPage{display:grid;gap:16px}
+      .freshReviewHero{border-radius:34px;background:radial-gradient(circle at top right,rgba(249,115,22,.24),transparent 34%),linear-gradient(135deg,#0b1220,#111827 48%,#1f2937);color:white;padding:28px;border-left:8px solid #f97316;box-shadow:0 24px 70px rgba(2,6,23,.20)}
+      .freshReviewHero span{display:inline-flex;border-radius:999px;background:#fff7ed;color:#9a3412;padding:9px 13px;font-size:11px;font-weight:1000;text-transform:uppercase;letter-spacing:.12em}
+      .freshReviewHero h1{margin:13px 0 8px;color:white;font-size:clamp(38px,5vw,66px);line-height:.92;letter-spacing:-.06em}
+      .freshReviewHero p{margin:0;color:#e5e7eb;font-weight:850;line-height:1.45}
+      .freshReviewStats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:18px}
+      .freshReviewStats div{border-radius:18px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);padding:13px}
+      .freshReviewStats small{display:block;color:#fed7aa;font-size:10px;font-weight:1000;text-transform:uppercase;letter-spacing:.12em}
+      .freshReviewStats b{display:block;color:#fff;font-size:25px;margin-top:4px}
+      .freshReviewToolbar{display:flex;flex-wrap:wrap;gap:8px}
+      .freshReviewToolbar button{border:1px solid rgba(15,23,42,.12);border-radius:999px;background:#fffaf0;color:#101827;padding:10px 14px;font-weight:1000;cursor:pointer}
+      .freshReviewToolbar button.active{background:#111827;color:white}
+      .freshReviewList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+      .freshReviewItem{border:1px solid rgba(15,23,42,.12);border-left:7px solid #f97316;border-radius:28px;background:#fffaf0;padding:17px;box-shadow:0 16px 42px rgba(2,6,23,.08);display:grid;gap:11px}
+      .freshReviewItem.money{border-left-color:#16a34a}
+      .freshReviewItem.work{border-left-color:#2563eb}
+      .freshReviewItem>div:first-child{display:flex;justify-content:space-between;gap:10px}
+      .freshReviewItem span{border-radius:999px;background:#fff7ed;color:#9a3412;padding:7px 10px;text-transform:uppercase;letter-spacing:.12em;font-size:10px;font-weight:1000}
+      .freshReviewItem em{font-style:normal;color:#64748b;font-size:11px;font-weight:900}
+      .freshReviewItem h3{margin:0;color:#101827;font-size:24px;line-height:1;letter-spacing:-.04em}
+      .freshReviewItem p{margin:0;color:#475569;font-weight:850;line-height:1.4}
+      .freshReviewMiniGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+      .freshReviewMiniGrid section{border:1px solid rgba(15,23,42,.10);border-radius:16px;background:#fff;padding:10px}
+      .freshReviewMiniGrid b{display:block;color:#101827;font-size:12px;font-weight:1000}
+      .freshReviewMiniGrid p{margin:4px 0 0;color:#475569;font-size:12px;font-weight:850;word-break:break-word}
+      .freshReviewEmpty,.freshReviewError{border:1px dashed rgba(15,23,42,.18);border-radius:28px;background:#fffaf0;padding:26px;display:grid;gap:12px}
+      .freshReviewEmpty h2,.freshReviewError h2{margin:0;color:#101827;font-size:30px;letter-spacing:-.04em}
+      .freshReviewEmpty p,.freshReviewError p{margin:0;color:#475569;font-weight:850;max-width:780px}
+
+      .freshReviewShade{position:fixed;inset:0;background:rgba(2,6,23,.62);z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px;box-sizing:border-box}
+      .freshReviewModal{width:min(880px,calc(100vw - 44px));max-height:88vh;overflow:auto;border-radius:30px;background:#fffaf0;padding:24px;box-shadow:0 30px 90px rgba(2,6,23,.38);display:grid;gap:16px;position:relative;margin:auto}
+      .freshReviewClose{position:absolute;right:16px;top:16px;border:0;border-radius:999px;width:44px;height:44px;background:#111827;color:#fff;font-size:24px;font-weight:1000;cursor:pointer}
+      .freshReviewModalHead span,.freshReviewFormHead span{display:inline-flex;border-radius:999px;background:#fff7ed;color:#9a3412;padding:8px 11px;font-size:10px;font-weight:1000;text-transform:uppercase;letter-spacing:.12em}
+      .freshReviewModalHead h2{margin:12px 52px 6px 0;color:#101827;font-size:clamp(32px,4vw,52px);line-height:.92;letter-spacing:-.06em}
+      .freshReviewModalHead p{margin:0;color:#475569;font-size:16px;font-weight:950}
+
+      .freshReviewForm{border:1px solid rgba(15,23,42,.12);border-radius:24px;background:#fff;padding:16px;display:grid;gap:14px}
+      .freshReviewFormHead p{margin:8px 0 0;color:#64748b;font-weight:850}
+      .freshReviewFormGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+      .freshReviewFormGrid label{display:grid;gap:6px}
+      .freshReviewFormGrid label.wide{grid-column:1/-1}
+      .freshReviewFormGrid label span,.freshReviewNote span{font-size:11px;font-weight:1000;text-transform:uppercase;letter-spacing:.12em;color:#9a3412}
+      .freshReviewFormGrid input,.freshReviewFormGrid select,.freshReviewFormGrid textarea,.freshReviewNote textarea{width:100%;box-sizing:border-box;border:1px solid rgba(15,23,42,.14);border-radius:16px;background:#fffaf0;color:#101827;padding:12px;font-size:16px;font-weight:900;outline:0}
+      .freshReviewFormGrid input,.freshReviewFormGrid select{min-height:48px}
+      .freshReviewFormGrid textarea{min-height:86px;resize:vertical}
+      .freshReviewFormGrid input:focus,.freshReviewFormGrid select:focus,.freshReviewFormGrid textarea:focus,.freshReviewNote textarea:focus{border-color:#f97316;box-shadow:0 0 0 3px rgba(249,115,22,.12)}
+
+      .freshReviewSafe{border:1px solid rgba(249,115,22,.22);border-radius:20px;background:#fff7ed;padding:13px}
+      .freshReviewSafe b{color:#9a3412}
+      .freshReviewSafe p{margin:5px 0 0;color:#475569;font-weight:850}
+      .freshReviewNote{display:grid;gap:7px}
+      .freshReviewNote textarea{min-height:88px;resize:vertical}
+      .freshReviewModalActions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+      .freshReviewModalActions button{min-height:46px}
+
+      @media(max-width:800px){
+        .freshReviewStats,.freshReviewList,.freshReviewMiniGrid,.freshReviewFormGrid,.freshReviewModalActions{grid-template-columns:1fr}
+        .freshReviewHero{padding:22px}
+        .freshReviewHero h1{font-size:42px}
+        .freshReviewModal{width:calc(100vw - 22px);max-height:92vh;padding:16px;border-radius:24px}
+      }
+    `}</style>
+  );
+}
 
 export default function FreshCommandOwnerDesk({ onNavigate }) {
   const { get, post, patch } = useApi();
@@ -142,34 +381,66 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
   }, [get]);
 
   React.useEffect(() => { loadItems(); }, [loadItems]);
-  React.useEffect(() => { const reload = () => loadItems(); window.addEventListener("churvox:fresh-data-updated", reload); return () => window.removeEventListener("churvox:fresh-data-updated", reload); }, [loadItems]);
+  React.useEffect(() => {
+    const reload = () => loadItems();
+    window.addEventListener("churvox:fresh-data-updated", reload);
+    return () => window.removeEventListener("churvox:fresh-data-updated", reload);
+  }, [loadItems]);
 
-  async function approveItem(item, note = "") {
-    const id = itemId(item); if (!id) return;
+  async function savePayload(item, note, payload) {
+    const id = itemId(item);
+    if (!id) return false;
+    const res = await patch(`/ai-review-items/${id}`, { note, payload }, { timeout: 25000 });
+    if (!res?.success) {
+      toast.error(res?.error || "Could not save Review form.");
+      return false;
+    }
+    return true;
+  }
+
+  async function approveItem(item, note = "", payload = null) {
+    const id = itemId(item);
+    if (!id) return;
     setBusyId(id);
+
+    if (payload) {
+      const saved = await savePayload(item, note, payload);
+      if (!saved) {
+        setBusyId("");
+        return;
+      }
+    }
+
     const res = await post(`/ai-review-items/${id}/approve`, { note }, { timeout: 60000 });
     setBusyId("");
     if (!res?.success) { toast.error(res?.error || "Backend approval failed."); return; }
     toast.success("Approved. Backend executed the prepared work.");
-    setActive(null); loadItems();
+    setActive(null);
+    loadItems();
   }
-  async function saveEdit(item, note = "") {
-    const id = itemId(item); if (!id) return;
+
+  async function saveEdit(item, note = "", payload = null) {
+    const id = itemId(item);
+    if (!id) return;
     setBusyId(id);
-    const res = await patch(`/ai-review-items/${id}`, { note }, { timeout: 25000 });
+    const saved = await savePayload(item, note, payload);
     setBusyId("");
-    if (!res?.success) { toast.error(res?.error || "Could not save note."); return; }
-    toast.success("Saved in backend Review.");
-    setActive(null); loadItems();
+    if (!saved) return;
+    toast.success("Saved form in backend Review.");
+    setActive(null);
+    loadItems();
   }
+
   async function ignoreItem(item, note = "") {
-    const id = itemId(item); if (!id) return;
+    const id = itemId(item);
+    if (!id) return;
     setBusyId(id);
     const res = await post(`/ai-review-items/${id}/ignore`, { note }, { timeout: 25000 });
     setBusyId("");
     if (!res?.success) { toast.error(res?.error || "Could not ignore item."); return; }
     toast.info("Ignored. Backend Review updated.");
-    setActive(null); loadItems();
+    setActive(null);
+    loadItems();
   }
 
   const waiting = items.length;
@@ -178,10 +449,72 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
   const create = items.filter((item) => categoryOf(item) === "create").length;
   const visible = filter === "all" ? items : items.filter((item) => categoryOf(item) === filter);
 
-  return <section className="freshReviewPage"><Style />
-    <header className="freshReviewHero"><span>Owner Review</span><h1>Approve what Churvox AI prepared.</h1><p>Backend-owned Review only. Items come from real AI and live in the business database. Nothing changes until you approve.</p><div className="freshReviewStats"><div><small>Waiting</small><b>{loading ? "…" : waiting}</b></div><div><small>Money</small><b>{money}</b></div><div><small>Work</small><b>{work}</b></div><div><small>Create</small><b>{create}</b></div></div></header>
-    <div className="freshReviewToolbar">{["all", "money", "work", "create", "other"].map((key) => <button key={key} type="button" className={filter === key ? "active" : ""} onClick={() => setFilter(key)}>{key}</button>)}<button type="button" onClick={loadItems}>Reload backend Review</button></div>
-    {error ? <section className="freshReviewError"><h2>Backend Review is not available.</h2><p>{error}</p><div className="freshActions"><button className="freshPrimary" type="button" onClick={() => onNavigate?.("quickcreateai")}>Back to Tell Churvox</button><button className="freshGhost" type="button" onClick={loadItems}>Retry backend</button></div></section> : loading ? <section className="freshReviewEmpty"><h2>Loading backend Review…</h2><p>Checking the business database for AI-prepared work.</p></section> : waiting === 0 ? <section className="freshReviewEmpty"><h2>Nothing waiting for approval.</h2><p>Tell Churvox what happened and real AI-prepared backend work will appear here.</p><div className="freshActions"><button className="freshPrimary" type="button" onClick={() => onNavigate?.("quickcreateai")}>Tell Churvox</button><button className="freshGhost" type="button" onClick={() => onNavigate?.("smart")}>Back to Today</button></div></section> : <section className="freshReviewList">{visible.map((item) => <ReviewCard key={itemId(item)} item={item} busy={busyId === itemId(item)} onOpen={setActive} onApprove={approveItem} onIgnore={ignoreItem} />)}</section>}
-    <ReviewModal item={active} busy={busyId === itemId(active)} onClose={() => setActive(null)} onApprove={approveItem} onSave={saveEdit} onIgnore={ignoreItem} />
-  </section>;
+  return (
+    <section className="freshReviewPage">
+      <Style />
+
+      <header className="freshReviewHero">
+        <span>Owner Review</span>
+        <h1>Approve what Churvox prepared.</h1>
+        <p>Backend-owned Review only. Items come from Tell Churvox and live in the business database. Nothing changes until you approve.</p>
+        <div className="freshReviewStats">
+          <div><small>Waiting</small><b>{loading ? "…" : waiting}</b></div>
+          <div><small>Money</small><b>{money}</b></div>
+          <div><small>Work</small><b>{work}</b></div>
+          <div><small>Create</small><b>{create}</b></div>
+        </div>
+      </header>
+
+      <div className="freshReviewToolbar">
+        {["all", "money", "work", "create", "other"].map((key) => (
+          <button key={key} type="button" className={filter === key ? "active" : ""} onClick={() => setFilter(key)}>{key}</button>
+        ))}
+        <button type="button" onClick={loadItems}>Reload backend Review</button>
+      </div>
+
+      {error ? (
+        <section className="freshReviewError">
+          <h2>Backend Review is not available.</h2>
+          <p>{error}</p>
+          <div className="freshActions">
+            <button className="freshPrimary" type="button" onClick={() => onNavigate?.("quickcreateai")}>Back to Tell Churvox</button>
+            <button className="freshGhost" type="button" onClick={loadItems}>Retry backend</button>
+          </div>
+        </section>
+      ) : loading ? (
+        <section className="freshReviewEmpty"><h2>Loading backend Review…</h2><p>Checking the business database for prepared work.</p></section>
+      ) : waiting === 0 ? (
+        <section className="freshReviewEmpty">
+          <h2>Nothing waiting for approval.</h2>
+          <p>Tell Churvox what happened and prepared backend work will appear here.</p>
+          <div className="freshActions">
+            <button className="freshPrimary" type="button" onClick={() => onNavigate?.("quickcreateai")}>Tell Churvox</button>
+            <button className="freshGhost" type="button" onClick={() => onNavigate?.("smart")}>Back to Today</button>
+          </div>
+        </section>
+      ) : (
+        <section className="freshReviewList">
+          {visible.map((item) => (
+            <ReviewCard
+              key={itemId(item)}
+              item={item}
+              busy={busyId === itemId(item)}
+              onOpen={setActive}
+              onApprove={approveItem}
+              onIgnore={ignoreItem}
+            />
+          ))}
+        </section>
+      )}
+
+      <ReviewModal
+        item={active}
+        busy={busyId === itemId(active)}
+        onClose={() => setActive(null)}
+        onApprove={approveItem}
+        onSave={saveEdit}
+        onIgnore={ignoreItem}
+      />
+    </section>
+  );
 }

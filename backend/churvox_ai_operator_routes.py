@@ -61,6 +61,13 @@ def build_ai_operator_router(db, get_current_user, ObjectId):
         if "today" in raw: return base
         if "tomorrow" in raw: return base + timedelta(days=1)
         if "next week" in raw: return base + timedelta(days=7)
+        month_names = {"jan":1,"january":1,"feb":2,"february":2,"mar":3,"march":3,"apr":4,"april":4,"may":5,"jun":6,"june":6,"jul":7,"july":7,"aug":8,"august":8,"sep":9,"sept":9,"september":9,"oct":10,"october":10,"nov":11,"november":11,"dec":12,"december":12}
+        mn = re.search(r"\b(\d{1,2})(?:st|nd|rd|th)?\s+(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)(?:\s+(\d{2,4}))?\b", raw)
+        if mn:
+            y = int(mn.group(3)) if mn.group(3) else base.year
+            if y < 100: y += 2000
+            try: return datetime(y, month_names[mn.group(2)], int(mn.group(1)), 9, 0, tzinfo=timezone.utc)
+            except Exception: pass
         m = re.search(r"\b(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{2,4}))?\b", raw)
         if m:
             y = int(m.group(3)) if m.group(3) else base.year
@@ -123,6 +130,7 @@ def build_ai_operator_router(db, get_current_user, ObjectId):
         protected = raw.replace(address, " ") if address else raw
 
         patterns = [
+            r"^\s*(?:job|quote|invoice)\s+(?:for\s+)?([A-Za-z][A-Za-z' -]{1,70}?)(?=\s+(?:lawn|lawnmowing|mow|mowing|hedge|clean|cleaning|paint|painting|pest|plumbing|electrical|at|\d{1,5}\s|\$|\d+\b|weekly|fortnight|fortnightly|monthly|next|tomorrow|today|\d{1,2}(?:st|nd|rd|th)?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec))\b|[,.;]|$)",
             r"\bfor\s+([A-Za-z][A-Za-z' -]{1,70}?)(?=\s+(?:at|on|in|with|\$|\d{1,5}\s|next|tomorrow|today|weekly|fortnight|fortnightly|monthly|mow|mowing|lawn|hedge|clean|painting|paint|job|quote|invoice)\b|[,.;]|$)",
             r"\b(?:add|create|make|book)\s+(?:a\s+)?(?:job|quote|invoice)\s+(?:for\s+)?([A-Za-z][A-Za-z' -]{1,70}?)(?=\s+(?:at|\d{1,5}\s|on|in|with|\$|next|tomorrow|today|weekly|fortnight|fortnightly|monthly|mow|mowing|lawn|hedge|clean|painting|paint)\b|[,.;]|$)",
             r"\b(?:add|create)\s+(?:a\s+)?(?:client|customer)\s+(?:called|named)?\s*([A-Za-z][A-Za-z' -]{1,70}?)(?=\s+(?:with|email|phone|at|\d{1,5}\s)\b|[,.;]|$)",
@@ -176,6 +184,22 @@ def build_ai_operator_router(db, get_current_user, ObjectId):
 
         if address and action in {"create_job", "create_quote", "create_invoice"}:
             payload["address"] = address
+
+        low_text = str(text or "").lower()
+        if action == "create_job":
+            if "fortnight" in low_text or "every 2 weeks" in low_text:
+                payload["repeat"] = "fortnightly"
+                payload["recurrence"] = "fortnightly"
+            elif "weekly" in low_text:
+                payload["repeat"] = "weekly"
+                payload["recurrence"] = "weekly"
+            elif "monthly" in low_text:
+                payload["repeat"] = "monthly"
+                payload["recurrence"] = "monthly"
+
+            mn = re.search(r"\b\d{1,2}(?:st|nd|rd|th)?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\b", low_text, re.I)
+            if mn and not payload.get("scheduled_date_human"):
+                payload["scheduled_date_human"] = mn.group(0)
 
         data["payload"] = payload
 
@@ -305,7 +329,8 @@ def build_ai_operator_router(db, get_current_user, ObjectId):
 
         elif any(w in low for w in ("job", "mow", "mowing", "lawn", "hedge", "clean", "paint", "pest", "plumb", "electric")) or address or price:
             action = "create_job"
-            payload = {"title": raw[:90] or "New job", "description": raw, "job_type": job_type(raw), "customer_name": client_match.get("label") or "Customer", "address": address or "Address needed", "scheduled_date_human": raw, "date": raw, "price": price, "amount": price, "notes": raw}
+            typed_name = explicit_customer_name(raw)
+            payload = {"title": raw[:90] or "New job", "description": raw, "job_type": job_type(raw), "customer_name": typed_name or client_match.get("label") or "Customer", "client_name": typed_name or client_match.get("label") or "Customer", "address": address or "Address needed", "scheduled_date_human": raw, "date": raw, "price": price, "amount": price, "notes": raw}
             match = client_match if client_match.get("id") else match
             title = "Prepare new job"
 
