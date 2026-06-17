@@ -104,6 +104,95 @@ def build_ai_operator_router(db, get_current_user, ObjectId):
         m = re.search(r"\bat\s+([^,$]+)", raw, re.I)
         return m.group(1).strip() if m else ""
 
+    def clean_customer_name(value):
+        name = re.sub(r"\s+", " ", str(value or "")).strip(" ,.-")
+        name = re.sub(r"\b(?:a|an|the|new|client|customer|job|quote|invoice|mowing|mow|lawn|hedge|clean|cleaning|paint|painting|pest|plumbing|electrical|fortnightly|weekly|monthly)\b", " ", name, flags=re.I)
+        name = re.sub(r"\s+", " ", name).strip(" ,.-")
+        bad = {"", "completed", "completed jobs", "unpaid", "unpaid invoices", "tomorrow", "today", "next week"}
+        if name.lower() in bad:
+            return ""
+        if len(name) > 80:
+            name = name[:80].strip()
+        return name
+
+    def explicit_customer_name(text):
+        raw = str(text or "")
+        raw = re.sub(r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", " ", raw, flags=re.I)
+        raw = re.sub(r"(?:\+?64|0)\s?\d[\d\s-]{6,}", " ", raw)
+        address = extract_address(raw)
+        protected = raw.replace(address, " ") if address else raw
+
+        patterns = [
+            r"\bfor\s+([A-Za-z][A-Za-z' -]{1,70}?)(?=\s+(?:at|on|in|with|\$|\d{1,5}\s|next|tomorrow|today|weekly|fortnight|fortnightly|monthly|mow|mowing|lawn|hedge|clean|painting|paint|job|quote|invoice)\b|[,.;]|$)",
+            r"\b(?:add|create|make|book)\s+(?:a\s+)?(?:job|quote|invoice)\s+(?:for\s+)?([A-Za-z][A-Za-z' -]{1,70}?)(?=\s+(?:at|\d{1,5}\s|on|in|with|\$|next|tomorrow|today|weekly|fortnight|fortnightly|monthly|mow|mowing|lawn|hedge|clean|painting|paint)\b|[,.;]|$)",
+            r"\b(?:add|create)\s+(?:a\s+)?(?:client|customer)\s+(?:called|named)?\s*([A-Za-z][A-Za-z' -]{1,70}?)(?=\s+(?:with|email|phone|at|\d{1,5}\s)\b|[,.;]|$)",
+        ]
+
+        for pattern in patterns:
+            m = re.search(pattern, protected, re.I)
+            if m:
+                name = clean_customer_name(m.group(1))
+                if name:
+                    return name
+        return ""
+
+    def human_summary_from_payload(p):
+        bits = []
+        for key in ("customer_name", "client_name", "name"):
+            if p.get(key):
+                bits.append(str(p.get(key)))
+                break
+        if p.get("address"):
+            bits.append(str(p.get("address")))
+        amount = p.get("price") or p.get("amount") or p.get("subtotal") or p.get("total")
+        if amount:
+            try:
+                bits.append(f"${float(str(amount).replace('$', '').strip()):.0f}")
+            except Exception:
+                bits.append(str(amount))
+        if p.get("scheduled_date_human"):
+            bits.append(str(p.get("scheduled_date_human")))
+        return " · ".join([b for b in bits if b])
+
+    def repair_ai_data(data: dict, text: str, ctx: dict):
+        if not isinstance(data, dict):
+            return data
+
+        action = str(data.get("action") or "").strip()
+        payload = data.get("payload") if isinstance(data.get("payload"), dict) else {}
+        name = explicit_customer_name(text)
+        address = extract_address(text)
+
+        if name and action in {"create_job", "create_quote", "create_invoice", "draft_invoice_from_job"}:
+            payload["customer_name"] = name
+            payload["client_name"] = name
+            data["match"] = {"record_type": "none", "id": "", "label": "", "reason": "Customer name came directly from owner instruction"}
+            details = data.get("details") if isinstance(data.get("details"), dict) else {}
+            details["What Churvox found"] = f"Customer name came from the instruction: {name}."
+            data["details"] = details
+
+        if name and action == "create_client":
+            payload["name"] = name
+
+        if address and action in {"create_job", "create_quote", "create_invoice"}:
+            payload["address"] = address
+
+        data["payload"] = payload
+
+        if action == "create_job":
+            data["title"] = f"New job: {payload.get('address') or payload.get('customer_name') or 'job to review'}"
+        elif action == "create_client":
+            data["title"] = f"New client: {payload.get('name') or payload.get('customer_name') or 'client to review'}"
+        elif action == "create_quote":
+            data["title"] = f"New quote: {payload.get('address') or payload.get('customer_name') or 'quote to review'}"
+
+        summary = human_summary_from_payload(payload)
+        if summary:
+            data["summary"] = summary
+
+        return data
+
+
     def word_set(text):
         stop = {"the","a","an","to","for","at","on","in","and","or","of","with","job","client","quote","invoice","create","add","move","complete","change","price"}
         return {w for w in re.findall(r"[a-z0-9]+", str(text or "").lower()) if w not in stop and len(w) > 2}
@@ -229,7 +318,7 @@ def build_ai_operator_router(db, get_current_user, ObjectId):
             title = "Needs clearer job match"
             confidence = 0.25
 
-        return {
+        return repair_ai_data({
             "action": action,
             "confidence": confidence,
             "title": title,
@@ -242,7 +331,7 @@ def build_ai_operator_router(db, get_current_user, ObjectId):
             "payload": payload,
             "match": match,
             "matches": matches,
-        }
+        }, text, ctx)
 
     async def call_ai(text: str, ctx: dict):
         key = provider_key()
@@ -258,7 +347,7 @@ def build_ai_operator_router(db, get_current_user, ObjectId):
             action = str(data.get("action") or "needs_clarification").strip()
             if action not in ALLOWED_ACTIONS:
                 return fallback_ai(text, ctx, f"AI returned unsupported action: {action}")
-            return data
+            return repair_ai_data(data, text, ctx)
         except HTTPException:
             raise
         except Exception as exc:

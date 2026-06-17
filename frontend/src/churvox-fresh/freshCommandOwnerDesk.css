@@ -2061,3 +2061,52 @@ html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandDeskPage .fre
   filter:none !important;
   mix-blend-mode:normal !important;
 }
+
+
+/* CHURVOX_REVIEW_MODAL_CENTERED_20260617 */
+.freshReviewShade {
+  place-items: center !important;
+  align-items: center !important;
+  justify-items: center !important;
+  padding: clamp(14px, 4vh, 34px) !important;
+}
+
+.freshReviewModal {
+  width: min(860px, calc(100vw - 42px)) !important;
+  max-width: 860px !important;
+  max-height: min(86vh, 820px) !important;
+  margin: auto !important;
+  border-radius: 28px !important;
+  padding: 22px !important;
+  overflow: auto !important;
+}
+
+.freshReviewModal h2 {
+  font-size: clamp(28px, 4vw, 44px) !important;
+  line-height: .95 !important;
+  max-width: 760px !important;
+}
+
+.freshReviewDetailGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.freshReviewDetailGrid section {
+  min-height: 72px !important;
+}
+
+.freshReviewNote textarea {
+  min-height: 88px !important;
+}
+
+@media (max-width: 760px) {
+  .freshReviewModal {
+    width: calc(100vw - 24px) !important;
+    max-height: 90vh !important;
+    padding: 16px !important;
+  }
+
+  .freshReviewDetailGrid {
+    grid-template-columns: 1fr !important;
+  }
+}
