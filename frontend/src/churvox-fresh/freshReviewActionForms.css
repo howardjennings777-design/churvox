@@ -246,3 +246,51 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+
+/* CHURVOX_CENTER_MODAL_FIX_20260617 */
+.freshReviewPopupBackdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 18px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+.freshReviewPopupCard {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  margin: 0 auto !important;
+}
+
+@media (min-width: 761px) {
+  .freshReviewPopupBackdrop {
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+
+  .freshReviewPopupCard {
+    width: min(980px, calc(100vw - 48px)) !important;
+    max-width: 980px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .freshReviewPopupBackdrop {
+    justify-content: center !important;
+    align-items: flex-end !important;
+  }
+
+  .freshReviewPopupCard {
+    margin: 0 auto !important;
+  }
+}
