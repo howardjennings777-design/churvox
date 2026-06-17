@@ -383,11 +383,6 @@ export default function FreshWorkerCommand({ onNavigate }) {
   const selectedCurrent = selected ? directCurrentJob(selected, view) : { title: "", status: "" };
   const selectedTodayCount = selected?.today_job_count !== undefined ? Number(selected.today_job_count || 0) : Number(view?.todayJobs?.length || 0);
   const selectedLatestUpdate = selected ? (pick(selected, "live_updated_at", "last_live_status_at", "last_gps_at", "updated_at") || (view?.currentJob ? latestJobActivity(view.currentJob) : "")) : "";
-  const selectedGpsText = selected ? lastGps(selected, gpsLabels) : "";
-  const selectedCurrentJobTitle = selected ? (pick(selected, "current_job_title", "job_title") || (view?.currentJob ? jobTitle(view.currentJob) : "")) : "";
-  const selectedCurrentJobStatus = selected ? (pick(selected, "current_job_status", "job_status") || (view?.currentJob ? statusOf(view.currentJob) : "")) : "";
-  const selectedTodayCount = selected?.today_job_count !== undefined ? Number(selected.today_job_count || 0) : Number(view?.todayJobs?.length || 0);
-  const selectedLatestUpdate = selected ? (pick(selected, "live_updated_at", "last_live_status_at", "last_gps_at", "updated_at") || (view?.currentJob ? latestJobActivity(view.currentJob) : "")) : "";
 
   const load = React.useCallback(async (options = {}) => {
     const silent = Boolean(options?.silent);
@@ -544,13 +539,13 @@ export default function FreshWorkerCommand({ onNavigate }) {
                 <article className="freshCard">
                   <h2>Live now</h2>
                   <div className="freshMiniGrid">
-                    <div><span>Current job</span><b>{selectedCurrentJobTitle || "No active job"}</b></div>
+                    <div><span>Current job</span><b>{selectedCurrent.title || "No active job"}</b></div>
                     <div><span>Status</span><b>{clockStatus(selected)}</b></div>
                     <div><span>Last GPS</span><b>{selectedGpsText || "Not recorded"}</b></div>
                     <div><span>Jobs today</span><b>{selectedTodayCount}</b></div>
                     <div><span>Latest update</span><b>{selectedLatestUpdate || "Waiting"}</b></div>
                   </div>
-                  {view.currentJob ? <JobRow job={view.currentJob} /> : selectedCurrentJobTitle ? <div className="freshItem"><b>{selectedCurrentJobTitle}</b><span>{selectedCurrentJobStatus ? selectedCurrentJobStatus.replaceAll("_", " ") : "Live worker update"}</span></div> : <div className="freshItem"><b>No active job</b><span>Worker is not currently on a started job.</span></div>}
+                  {view.currentJob ? <JobRow job={view.currentJob} /> : selectedCurrentJobTitle ? <div className="freshItem"><b>{selectedCurrentJobTitle}</b><span>{selectedCurrent.status ? selectedCurrent.status.replaceAll("_", " ") : "Live worker update"}</span></div> : <div className="freshItem"><b>No active job</b><span>Worker is not currently on a started job.</span></div>}
                 </article>
 
                 <article className="freshCard">
