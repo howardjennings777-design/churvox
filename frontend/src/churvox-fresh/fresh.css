@@ -1240,3 +1240,84 @@ body:has(.freshSupportPage) [class*="HelpWidget"],
 body:has(.freshSupportPage) [class*="helpWidget"] {
   display: none !important;
 }
+
+/* CHURVOX_HIDE_FLOATING_HELP_AND_STOP_CARD_TEXT_SELECTION_20260617 */
+
+/* The floating help bubble repeats the Support page and blocks right-side content. */
+.churvox-help-widget,
+.help-widget,
+[data-testid="churvox-help-widget"],
+[aria-label="Need help?"],
+[class*="HelpWidget"],
+[class*="helpWidget"] {
+  display: none !important;
+}
+
+/* Stop dashboard/control cards highlighting blue when clicked or dragged. */
+.freshShell,
+.freshPage,
+.freshCard,
+.freshHero,
+.freshMetric,
+.freshStat,
+.freshTile,
+.freshTimeline,
+.freshTimeline *,
+.freshPricingCard,
+.freshWorkerCard,
+.freshLiveCard,
+.freshControlCard,
+.freshTeamPage,
+.freshPayrollPage,
+.freshSupportPage {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+
+/* Keep real typing/selecting working inside forms. */
+input,
+textarea,
+select,
+[contenteditable="true"],
+.freshCard input,
+.freshCard textarea,
+.freshCard select {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+
+/* Tighten worker/control overview cards so they read cleaner on laptop screens. */
+@media (min-width: 901px) {
+  .freshTeamPage .freshHero,
+  .freshPayrollPage .freshHero,
+  .freshControlView .freshHero {
+    min-height: 220px !important;
+  }
+
+  .freshTeamPage .freshHero h1,
+  .freshPayrollPage .freshHero h1,
+  .freshControlView .freshHero h1 {
+    font-size: clamp(42px, 5vw, 72px) !important;
+    line-height: .92 !important;
+  }
+
+  .freshTeamPage .freshMetric,
+  .freshPayrollPage .freshMetric,
+  .freshControlView .freshMetric,
+  .freshTeamPage .freshStat,
+  .freshPayrollPage .freshStat,
+  .freshControlView .freshStat {
+    min-height: 96px !important;
+    padding: 18px !important;
+  }
+
+  .freshTeamPage .freshMetric strong,
+  .freshPayrollPage .freshMetric strong,
+  .freshControlView .freshMetric strong,
+  .freshTeamPage .freshStat strong,
+  .freshPayrollPage .freshStat strong,
+  .freshControlView .freshStat strong {
+    font-size: 34px !important;
+    line-height: 1 !important;
+  }
+}
