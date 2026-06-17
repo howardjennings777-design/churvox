@@ -179,8 +179,17 @@ def build_ai_operator_router(db, get_current_user, ObjectId):
             details["What Churvox found"] = f"Customer name came from the instruction: {name}."
             data["details"] = details
 
-        if name and action == "create_client":
-            payload["name"] = name
+        if action == "create_client":
+            client_name = name or payload.get("name") or payload.get("customer_name") or payload.get("client_name") or "New customer"
+            client_name = clean_customer_name(client_name) or "New customer"
+            payload["name"] = client_name
+            payload["customer_name"] = client_name
+            payload["client_name"] = client_name
+            payload["email"] = payload.get("email") or payload.get("customer_email") or extract_email(text)
+            payload["customer_email"] = payload.get("customer_email") or payload.get("email")
+            payload["phone"] = payload.get("phone") or extract_phone(text)
+            payload["address"] = payload.get("address") or address
+            payload["notes"] = clean_customer_name(payload.get("notes") or "") if False else (payload.get("notes") or "")
 
         if address and action in {"create_job", "create_quote", "create_invoice"}:
             payload["address"] = address
@@ -301,12 +310,25 @@ def build_ai_operator_router(db, get_current_user, ObjectId):
             match = client_match if client_match.get("id") else match
             title = "Prepare quote"
 
-        elif "client" in low or email or phone:
+        elif any(w in low for w in ("client", "customer", "contact")) or email or phone:
             action = "create_client"
-            clean_name = re.sub(r"\b(add|create|client|customer|with|email|phone|for|named)\b", " ", raw, flags=re.I)
+            typed_name = explicit_customer_name(raw)
+            clean_name = typed_name or re.sub(r"\b(add|create|new|client|customer|contact|with|email|phone|for|called|named|name|address)\b", " ", raw, flags=re.I)
             clean_name = re.sub(r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", " ", clean_name, flags=re.I)
-            clean_name = re.sub(r"(?:\+?64|0)\s?\d[\d\s-]{6,}", " ", clean_name).strip(" ,.-")
-            payload = {"name": clean_name[:80] or "New customer", "email": email, "phone": phone, "address": address, "notes": raw}
+            clean_name = re.sub(r"(?:\+?64|0)\s?\d[\d\s-]{6,}", " ", clean_name)
+            if address:
+                clean_name = clean_name.replace(address, " ")
+            clean_name = clean_customer_name(clean_name)
+            payload = {
+                "name": clean_name[:80] or "New customer",
+                "customer_name": clean_name[:80] or "New customer",
+                "client_name": clean_name[:80] or "New customer",
+                "email": email,
+                "customer_email": email,
+                "phone": phone,
+                "address": address,
+                "notes": "",
+            }
             title = "Prepare new client"
 
         elif "complete" in low or "done" in low or "finished" in low:
@@ -428,7 +450,33 @@ def build_ai_operator_router(db, get_current_user, ObjectId):
         if not item: raise HTTPException(status_code=404, detail="Review item not found")
         action = item.get("action"); p = dict(item.get("payload") or {}); executed = {}
         if action == "create_client":
-            doc = {"name": p.get("name") or p.get("customer_name") or "Customer", "email": p.get("email") or p.get("customer_email"), "phone": p.get("phone"), "address": p.get("address"), "notes": p.get("notes") or item.get("summary"), "contractor_id": business_oid, "business_id": business_id, "created_at": now()}; res = await db.clients.insert_one(doc); doc["_id"] = res.inserted_id; executed = {"client": doc_out(doc)}
+            client_name = clean_customer_name(p.get("name") or p.get("customer_name") or p.get("client_name") or "Customer") or "Customer"
+            email = p.get("email") or p.get("customer_email")
+            phone = p.get("phone") or p.get("customer_phone")
+            doc = {
+                "name": client_name,
+                "client_name": client_name,
+                "customer_name": client_name,
+                "email": email,
+                "client_email": email,
+                "customer_email": email,
+                "phone": phone,
+                "client_phone": phone,
+                "customer_phone": phone,
+                "address": p.get("address") or p.get("customer_address") or "",
+                "customer_address": p.get("address") or p.get("customer_address") or "",
+                "notes": p.get("notes") or "",
+                "status": "Active",
+                "type": "Client",
+                "contractor_id": business_oid,
+                "business_id": business_id,
+                "created_by": oid(user.get("id"), "user"),
+                "created_at": now(),
+                "updated_at": now(),
+            }
+            res = await db.clients.insert_one(doc)
+            doc["_id"] = res.inserted_id
+            executed = {"client": doc_out(doc)}
         elif action == "create_job":
             doc = {"title": p.get("title") or p.get("description") or "AI prepared job", "job_type": job_type(p.get("job_type") or p.get("title") or p.get("notes")), "customer_name": p.get("customer_name") or p.get("client_name") or "Customer", "address": p.get("address") or "Address needed", "scheduled_date": date_value(p.get("scheduled_date") or p.get("scheduled_date_human") or p.get("date")), "estimated_duration": int(p.get("estimated_duration") or 60), "price": money_number(p.get("price") or p.get("amount")), "pricing_type": "fixed", "notes": p.get("notes") or item.get("summary"), "contractor_id": business_oid, "business_id": business_id, "created_by": oid(user.get("id"), "user"), "status": "assigned", "created_at": now()}; res = await db.jobs.insert_one(doc); doc["_id"] = res.inserted_id; executed = {"job": doc_out(doc)}
         elif action == "create_quote":

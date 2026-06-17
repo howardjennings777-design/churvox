@@ -387,6 +387,7 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
     setBusyId("");
     if (!res?.success) { toast.error(res?.error || "Backend approval failed."); return; }
     toast.success("Approved. Backend executed the prepared work.");
+    try { window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "review-approved", action: item?.action } })); } catch {}
     setActive(null); loadItems();
   }
 
