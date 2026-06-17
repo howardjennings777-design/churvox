@@ -449,8 +449,6 @@ export default function FreshPlans({ onNavigate }) {
 
   const selectedIncludes = selected.includes || selected.features || [];
   const selectedAddOns = selected.addOns || [];
-  const selectedIncludes = selected.includes || selected.features || [];
-  const selectedAddOns = selected.addOns || [];
   const planComparison = [
     ["Start", "Solo owner", "Run jobs, clients, quotes and invoices."],
     ["Crew", "Small team", "Add workers, schedule flow and team handover."],
