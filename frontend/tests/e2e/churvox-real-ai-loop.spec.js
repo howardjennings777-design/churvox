@@ -77,7 +77,7 @@ test.describe('Churvox real AI loop', () => {
 
     await page.locator('textarea').first().fill('Playwright check: create a job for 16 Taita Drive $60 next Friday');
 
-    const prepareResponsePromise = page.waitForResponse((res) => res.url().includes('/api/tell-churvox/prepare'), { timeout: 70_000 }).catch(() => null);
+    const prepareResponsePromise = page.waitForResponse((res) => res.url().includes('/api/tell-churvox/prepare') && res.request().method() === 'POST', { timeout: 70_000 }).catch(() => null);
     const clicked = await clickByText(page, [/prepare for review/i, /prepare with real ai/i]);
     expect(clicked, 'Prepare with real AI button should be clickable').toBeTruthy();
     const prepareResponse = await prepareResponsePromise;
@@ -94,7 +94,11 @@ test.describe('Churvox real AI loop', () => {
       return;
     }
 
-    await expect(body).toContainText(/Saved to Review|backend Review work|Review prepared work/i);
+    const prepareBody = await prepareResponse.json().catch(() => ({}));
+    const preparedItem = prepareBody.item || prepareBody.data?.item;
+    expect(preparedItem?.id, 'Tell Churvox should return a persisted backend Review item').toBeTruthy();
+    expect(preparedItem?.status, 'Prepared Review item should be open').toMatch(/open|edited/i);
+
     const inbox = await localReviewInbox(page);
     expect(inbox.review, 'Tell Churvox must not use localStorage review inbox after successful backend AI').toBeFalsy();
     expect(inbox.oldReview, 'Tell Churvox must not use old localStorage inbox after successful backend AI').toBeFalsy();
@@ -124,7 +128,7 @@ test.describe('Churvox real AI loop', () => {
     await waitStable(page);
     await page.locator('textarea').first().fill(instruction);
 
-    const prepareResponsePromise = page.waitForResponse((res) => res.url().includes('/api/tell-churvox/prepare'), { timeout: 70_000 });
+    const prepareResponsePromise = page.waitForResponse((res) => res.url().includes('/api/tell-churvox/prepare') && res.request().method() === 'POST', { timeout: 70_000 });
     await clickByText(page, [/prepare for review/i, /prepare with real ai/i]);
     const prepareResponse = await prepareResponsePromise;
     expect(prepareResponse.status(), 'Tell Churvox prepare should succeed with backend AI or safe backend parser').toBe(200);
