@@ -42,6 +42,7 @@ function seconds(value) {
 
 function hoursText(totalSeconds) {
   const total = Math.round(seconds(totalSeconds));
+  if (total > 0 && total < 60) return "<1m";
   const h = Math.floor(total / 3600);
   const m = Math.floor((total % 3600) / 60);
   if (!h && !m) return "0m";
@@ -53,6 +54,17 @@ function dateValue(record, ...keys) {
   const raw = pick(record, ...keys);
   const date = raw ? new Date(raw) : null;
   return date && !Number.isNaN(date.getTime()) ? date : null;
+}
+
+function secondsSince(date) {
+  if (!date) return 0;
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+  return Number.isFinite(diff) ? Math.max(0, diff) : 0;
+}
+
+function runningStatusText(value) {
+  const text = lower(value).replaceAll(" ", "_");
+  return ["on_job", "on_job_now", "clocked_in", "in_progress", "paused", "started"].some((key) => text.includes(key));
 }
 
 function isToday(date) {
@@ -180,7 +192,7 @@ function isActive(job) {
 }
 
 function jobSeconds(job) {
-  return seconds(
+  const saved = seconds(
     job?.total_job_seconds ||
     job?.total_time_seconds ||
     job?.timer_total_seconds ||
@@ -191,6 +203,37 @@ function jobSeconds(job) {
     job?.duration_seconds ||
     job?.payroll_seconds
   );
+
+  const entries = Array.isArray(job?.time_entries) ? job.time_entries : [];
+  let total = 0;
+  let start = null;
+
+  entries.forEach((entry) => {
+    const action = lower(entry?.action);
+    const raw = entry?.timestamp || entry?.time || entry?.created_at;
+    const date = raw ? new Date(raw) : null;
+    if (!date || Number.isNaN(date.getTime())) return;
+
+    if (["start", "resume"].includes(action)) {
+      start = date;
+    }
+
+    if (["pause", "stop", "complete", "finish"].includes(action) && start) {
+      total += Math.max(0, Math.floor((date.getTime() - start.getTime()) / 1000));
+      start = null;
+    }
+  });
+
+  if (start && ["in_progress", "started"].includes(statusOf(job))) {
+    total += secondsSince(start);
+  }
+
+  const timerStart = dateValue(job, "timer_started_at", "started_at");
+  if (!total && ["in_progress", "started"].includes(statusOf(job)) && timerStart) {
+    total = secondsSince(timerStart);
+  }
+
+  return Math.max(saved, total);
 }
 
 function latestJobActivity(job) {
@@ -341,9 +384,13 @@ function buildWorkerView(worker, jobs) {
   const currentJob = todayJobs.find(isActive) || assignedJobs.find(isActive) || todayJobs.find((job) => !isComplete(job)) || null;
   const directJobSeconds = seconds(worker?.job_time_seconds || worker?.total_job_seconds || worker?.current_job_seconds);
   const calculatedJobSeconds = assignedJobs.reduce((sum, job) => sum + jobSeconds(job), 0);
-  const jobTimeSeconds = directJobSeconds || calculatedJobSeconds;
+  const activeJobSeconds = currentJob ? jobSeconds(currentJob) : 0;
+  const jobTimeSeconds = Math.max(directJobSeconds, calculatedJobSeconds, activeJobSeconds);
 
-  const shiftSeconds = seconds(worker?.shift_seconds || worker?.today_shift_seconds || worker?.total_shift_seconds);
+  const directShiftSeconds = seconds(worker?.shift_seconds || worker?.today_shift_seconds || worker?.total_shift_seconds);
+  const shiftStart = dateValue(worker, "shift_started_at", "clock_in_time", "shift_start_time", "last_clock_in_at");
+  const computedShiftSeconds = runningStatusText(clockStatus(worker)) && shiftStart ? secondsSince(shiftStart) : 0;
+  const shiftSeconds = Math.max(directShiftSeconds, computedShiftSeconds);
   const unallocatedSeconds = Math.max(0, shiftSeconds - jobTimeSeconds);
 
   const alerts = [];
