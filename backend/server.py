@@ -3237,6 +3237,19 @@ def _live_job_status(job):
 
 
 def _live_job_seconds(job):
+    if not job:
+        return 0
+
+    # If a timer is currently running, calculate elapsed live from time_entries.
+    try:
+        entries = job.get("time_entries") or []
+        if entries:
+            live_elapsed = compute_elapsed(entries)
+            if live_elapsed > 0:
+                return int(live_elapsed)
+    except Exception:
+        pass
+
     for key in [
         "total_job_seconds",
         "total_time_seconds",
@@ -3335,6 +3348,16 @@ async def worker_live_ping(payload: dict = Body(default_factory=dict), current_u
     live_status = str(payload.get("live_status") or payload.get("status") or "Active").strip()
     clock_status = str(payload.get("clock_status") or live_status).strip()
 
+    existing_live = await db.worker_live_status.find_one({"business_id": business_id, "worker_id": worker_id})
+    source = str(payload.get("source") or "worker").lower()
+    existing_shift_started_at = (existing_live or {}).get("shift_started_at")
+
+    shift_started_at = existing_shift_started_at
+    if "clock-in" in source or "clock_in" in source:
+        shift_started_at = now
+    elif "clock-out" in source or "clock_out" in source:
+        shift_started_at = None
+
     live_doc = {
         "business_id": business_id,
         "worker_id": worker_id,
@@ -3344,6 +3367,7 @@ async def worker_live_ping(payload: dict = Body(default_factory=dict), current_u
         "clock_status": clock_status,
         "shift_status": clock_status,
         "source": payload.get("source") or "worker",
+        "shift_started_at": shift_started_at,
         "job_id": str(payload.get("job_id") or ""),
         "job_title": payload.get("job_title") or "",
         "job_status": payload.get("job_status") or "",
@@ -3374,6 +3398,7 @@ async def worker_live_ping(payload: dict = Body(default_factory=dict), current_u
         "gps_label": gps_label,
         "last_gps_at": now,
         "last_live_status_at": now,
+        "shift_started_at": shift_started_at,
         "updated_at": now,
     }
     if lat is not None:
@@ -3518,10 +3543,25 @@ async def worker_live_status(request: Request, current_user: dict = Depends(get_
             )
 
             worker_live = dict(worker)
+            shift_started_at = live.get("shift_started_at") or worker.get("shift_started_at")
+            shift_seconds = 0
+            try:
+                shift_dt = _live_datetime_value(shift_started_at)
+                if shift_dt and str(clock_status).lower() not in ["clocked_out", "clocked out"]:
+                    if shift_dt.tzinfo is None:
+                        shift_dt = shift_dt.replace(tzinfo=timezone.utc)
+                    shift_seconds = max(0, int((datetime.now(timezone.utc) - shift_dt).total_seconds()))
+            except Exception:
+                shift_seconds = 0
+
             worker_live.update({
                 "live_status": live_status,
                 "clock_status": clock_status,
                 "shift_status": clock_status,
+                "shift_started_at": shift_started_at,
+                "shift_seconds": shift_seconds,
+                "today_shift_seconds": shift_seconds,
+                "total_shift_seconds": shift_seconds,
                 "today_job_count": len(today_jobs),
                 "assigned_job_count": len(assigned_jobs),
                 "job_time_seconds": sum(_live_job_seconds(job) for job in assigned_jobs),

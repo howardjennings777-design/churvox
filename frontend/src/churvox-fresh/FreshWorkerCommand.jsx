@@ -339,7 +339,9 @@ function buildWorkerView(worker, jobs) {
   const assignedJobs = jobs.filter((job) => jobForWorker(job, worker));
   const todayJobs = assignedJobs.filter((job) => isToday(dateValue(job, "scheduled_date", "date", "start", "start_time", "due_date")));
   const currentJob = todayJobs.find(isActive) || assignedJobs.find(isActive) || todayJobs.find((job) => !isComplete(job)) || null;
-  const jobTimeSeconds = todayJobs.reduce((sum, job) => sum + jobSeconds(job), 0);
+  const directJobSeconds = seconds(worker?.job_time_seconds || worker?.total_job_seconds || worker?.current_job_seconds);
+  const calculatedJobSeconds = assignedJobs.reduce((sum, job) => sum + jobSeconds(job), 0);
+  const jobTimeSeconds = directJobSeconds || calculatedJobSeconds;
 
   const shiftSeconds = seconds(worker?.shift_seconds || worker?.today_shift_seconds || worker?.total_shift_seconds);
   const unallocatedSeconds = Math.max(0, shiftSeconds - jobTimeSeconds);
