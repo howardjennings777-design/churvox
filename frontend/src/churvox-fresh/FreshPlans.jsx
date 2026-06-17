@@ -247,7 +247,6 @@ export default function FreshPlans({ onNavigate }) {
   const [selectedPlan, setSelectedPlan] = React.useState("operator");
   const [growthPacks, setGrowthPacks] = React.useState(0);
   const [accountingSync, setAccountingSync] = React.useState(false);
-  const [accountingSync, setAccountingSync] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [checkoutLoading, setCheckoutLoading] = React.useState(false);
   const [notice, setNotice] = React.useState("Loading account");
