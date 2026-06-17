@@ -1230,3 +1230,13 @@ body,
     margin: 3px 0 3px 7px !important;
   }
 }
+
+/* CHURVOX_HIDE_HELP_BUBBLE_ON_SUPPORT_PAGE_20260617 */
+body:has(.freshSupportPage) .churvox-help-widget,
+body:has(.freshSupportPage) .help-widget,
+body:has(.freshSupportPage) [data-testid="churvox-help-widget"],
+body:has(.freshSupportPage) [aria-label="Need help?"],
+body:has(.freshSupportPage) [class*="HelpWidget"],
+body:has(.freshSupportPage) [class*="helpWidget"] {
+  display: none !important;
+}
