@@ -73,12 +73,12 @@ test.describe('Churvox real AI loop', () => {
     await waitStable(page);
 
     const body = page.locator('body');
-    await expect(body).toContainText(/Real AI only|No local shortcut|backend AI|will not show fake parsed data/i);
+    await expect(body).toContainText(/backend Review|safe backend parser|Backend AI|no fake local preview|Review item/i);
 
     await page.locator('textarea').first().fill('Playwright check: create a job for 16 Taita Drive $60 next Friday');
 
     const prepareResponsePromise = page.waitForResponse((res) => res.url().includes('/api/tell-churvox/prepare'), { timeout: 70_000 }).catch(() => null);
-    const clicked = await clickByText(page, [/prepare with real ai/i]);
+    const clicked = await clickByText(page, [/prepare for review/i, /prepare with real ai/i]);
     expect(clicked, 'Prepare with real AI button should be clickable').toBeTruthy();
     const prepareResponse = await prepareResponsePromise;
 
@@ -125,9 +125,9 @@ test.describe('Churvox real AI loop', () => {
     await page.locator('textarea').first().fill(instruction);
 
     const prepareResponsePromise = page.waitForResponse((res) => res.url().includes('/api/tell-churvox/prepare'), { timeout: 70_000 });
-    await clickByText(page, [/prepare with real ai/i]);
+    await clickByText(page, [/prepare for review/i, /prepare with real ai/i]);
     const prepareResponse = await prepareResponsePromise;
-    expect(prepareResponse.status(), 'backend AI prepare should succeed when mutation is enabled and AI key is configured').toBe(200);
+    expect(prepareResponse.status(), 'Tell Churvox prepare should succeed with backend AI or safe backend parser').toBe(200);
     const prepareBody = await prepareResponse.json();
     const item = prepareBody.item || prepareBody.data?.item;
     expect(item?.id, 'backend prepare should return a persisted review item id').toBeTruthy();
