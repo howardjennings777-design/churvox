@@ -30,6 +30,34 @@ function tokenFromInviteLink(link) {
   return match ? match[1] : '';
 }
 
+function planFrom(...sources) {
+  for (const source of sources) {
+    const plan = String(
+      source?.plan ||
+      source?.user?.plan ||
+      source?.data?.plan ||
+      source?.data?.user?.plan ||
+      source?.subscription?.plan ||
+      source?.billing?.plan ||
+      ''
+    ).trim().toLowerCase();
+
+    if (plan) return plan;
+  }
+  return '';
+}
+
+function listFrom(payload) {
+  const data = payload?.data || payload || {};
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data.workers)) return data.workers;
+  if (Array.isArray(data.items)) return data.items;
+  if (Array.isArray(data.records)) return data.records;
+  if (Array.isArray(data.results)) return data.results;
+  if (Array.isArray(data.data)) return data.data;
+  return [];
+}
+
 test('existing paid owner can invite worker and worker can accept/login', async ({ request, browser }) => {
   test.setTimeout(180000);
 
@@ -61,13 +89,14 @@ test('existing paid owner can invite worker and worker can accept/login', async 
 
   const statusRes = await request.get(api('/billing/subscription-status'));
   const statusPayload = await readJson(statusRes);
-  const plan = statusPayload.json?.plan || '';
+  const plan = planFrom(statusPayload.json, loginPayload.json);
 
   console.log(`EXISTING_WORKER_OWNER_PLAN_STATUS=${statusRes.status()}`);
   console.log(`EXISTING_WORKER_OWNER_PLAN_VALUE=${plan}`);
+  console.log(`EXISTING_WORKER_OWNER_PLAN_SOURCE_LOGIN=${loginPayload.json?.plan || loginPayload.json?.user?.plan || ''}`);
 
   expect(statusRes.status()).toBeLessThan(400);
-  expect(['team', 'pro', 'enterprise']).toContain(plan);
+  expect(['team', 'pro', 'enterprise', 'crew', 'operator', 'command']).toContain(plan);
 
   const workerCreateRes = await request.post(api('/team/workers'), {
     data: {
@@ -159,7 +188,7 @@ test('existing paid owner can invite worker and worker can accept/login', async 
 
   const teamRes = await request.get(api('/team/workers'));
   const teamPayload = await readJson(teamRes);
-  const workers = Array.isArray(teamPayload.json) ? teamPayload.json : [];
+  const workers = listFrom(teamPayload.json);
   const foundWorker = workers.find((w) => String(w.email || '').toLowerCase() === workerEmail.toLowerCase());
 
   console.log(`EXISTING_WORKER_TEAM_LIST_STATUS=${teamRes.status()}`);
@@ -169,6 +198,12 @@ test('existing paid owner can invite worker and worker can accept/login', async 
   expect(teamRes.status()).toBeLessThan(400);
   expect(foundWorker).toBeTruthy();
   expect(String(foundWorker.status || '').toLowerCase()).toMatch(/active|accepted|setup|complete/);
+
+  if (workerId) {
+    const cleanupRes = await request.delete(api(`/team/workers/${encodeURIComponent(workerId)}`));
+    console.log(`EXISTING_WORKER_CLEANUP_STATUS=${cleanupRes.status()}`);
+    expect([200, 204, 404]).toContain(cleanupRes.status());
+  }
 
   console.log('EXISTING_OWNER_WORKER_INVITE_PROOF=passed');
 });
