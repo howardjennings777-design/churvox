@@ -216,14 +216,49 @@ function liveStatusFor(worker, view) {
   return "Waiting";
 }
 
-function lastGps(worker) {
-  const label = pick(worker, "last_gps_label", "gps_label", "gps_address", "address_label", "last_location_label");
-  if (label) return label;
+function gpsLabel(worker) {
+  return pick(worker, "last_gps_label", "gps_label", "gps_address", "address_label", "last_location_label");
+}
 
+function gpsCoords(worker) {
   const lat = pick(worker, "last_lat", "gps_lat", "latitude", "lat");
   const lng = pick(worker, "last_lng", "gps_lng", "longitude", "lng");
+  if (!lat || !lng) return null;
+  return { lat, lng, key: `${lat},${lng}` };
+}
+
+function lastGps(worker, gpsLabels = {}) {
+  const label = gpsLabel(worker);
+  if (label) return label;
+
+  const coords = gpsCoords(worker);
+  if (!coords) return "";
+
+  return gpsLabels[coords.key] || `${coords.lat}, ${coords.lng}`;
+}
+
+async function reverseGpsLabel(lat, lng) {
   if (!lat || !lng) return "";
-  return `${lat}, ${lng}`;
+  try {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 4500);
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&addressdetails=1&zoom=18`, {
+      signal: controller.signal,
+      headers: { Accept: "application/json" },
+    });
+    window.clearTimeout(timer);
+
+    if (!res.ok) return "";
+    const data = await res.json();
+    const address = data?.address || {};
+    const street = [address.house_number, address.road].filter(Boolean).join(" ");
+    const suburb = address.suburb || address.neighbourhood || address.city_district || address.locality || "";
+    const town = address.city || address.town || address.village || address.state_district || "";
+    const parts = [street, suburb, town].filter(Boolean);
+    return [...new Set(parts)].join(", ") || data?.display_name || "";
+  } catch {
+    return "";
+  }
 }
 
 function clockStatus(worker) {
@@ -277,10 +312,16 @@ export default function FreshWorkerCommand({ onNavigate }) {
   const [autoRefresh, setAutoRefresh] = React.useState(true);
   const [lastUpdated, setLastUpdated] = React.useState(null);
   const [error, setError] = React.useState("");
+  const [gpsLabels, setGpsLabels] = React.useState({});
 
   const selected = workers.find((worker) => idOf(worker) === selectedId) || workers[0] || null;
   const view = selected ? buildWorkerView(selected, jobs) : null;
   const selectedLiveStatus = selected && view ? liveStatusFor(selected, view) : "Waiting";
+  const selectedGpsText = selected ? lastGps(selected, gpsLabels) : "";
+  const selectedCurrentJobTitle = selected ? (pick(selected, "current_job_title", "job_title") || (view?.currentJob ? jobTitle(view.currentJob) : "")) : "";
+  const selectedCurrentJobStatus = selected ? (pick(selected, "current_job_status", "job_status") || (view?.currentJob ? statusOf(view.currentJob) : "")) : "";
+  const selectedTodayCount = selected?.today_job_count !== undefined ? Number(selected.today_job_count || 0) : Number(view?.todayJobs?.length || 0);
+  const selectedLatestUpdate = selected ? (pick(selected, "live_updated_at", "last_live_status_at", "last_gps_at", "updated_at") || (view?.currentJob ? latestJobActivity(view.currentJob) : "")) : "";
 
   const load = React.useCallback(async (options = {}) => {
     const silent = Boolean(options?.silent);
@@ -356,6 +397,27 @@ export default function FreshWorkerCommand({ onNavigate }) {
     };
   }, [autoRefresh, load]); // worker-command-auto-refresh
 
+  React.useEffect(() => {
+    const missing = workers
+      .map((worker) => gpsCoords(worker))
+      .filter((coords) => coords && !gpsLabels[coords.key])
+      .slice(0, 6);
+
+    if (!missing.length) return undefined;
+
+    let cancelled = false;
+
+    missing.forEach(async (coords) => {
+      const label = await reverseGpsLabel(coords.lat, coords.lng);
+      if (!label || cancelled) return;
+      setGpsLabels((current) => current[coords.key] ? current : { ...current, [coords.key]: label });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [workers, gpsLabels]); // boss-worker-gps-reverse-labels
+
   return (
     <section className="freshWorkerCommandPage">
       <header className="freshHero freshWorkerCommandHero">
@@ -384,7 +446,7 @@ export default function FreshWorkerCommand({ onNavigate }) {
             return (
               <button key={idOf(worker)} type="button" className={`freshWorkerCommandWorker ${active ? "active" : ""}`} onClick={() => setSelectedId(idOf(worker))}>
                 <b>{workerName(worker)}</b>
-                <span>{clockStatus(worker)} · {itemView.todayJobs.length} jobs today</span>
+                <span>{clockStatus(worker)} · {worker.today_job_count !== undefined ? Number(worker.today_job_count || 0) : itemView.todayJobs.length} jobs today</span>
                 <small>{workerEmail(worker) || "No email"}</small>
               </button>
             );
@@ -407,20 +469,20 @@ export default function FreshWorkerCommand({ onNavigate }) {
                 <aside className="freshCard"><span>Payroll time today</span><b>{hoursText(view.shiftSeconds)}</b><small>Clock in/out total</small></aside>
                 <aside className="freshCard"><span>Job time today</span><b>{hoursText(view.jobTimeSeconds)}</b><small>Job timers only</small></aside>
                 <aside className="freshCard"><span>Unallocated time</span><b>{hoursText(view.unallocatedSeconds)}</b><small>Paid time not on job timers</small></aside>
-                <aside className="freshCard"><span>GPS</span><b>{lastGps(selected) ? "Recorded" : "Waiting"}</b><small>{lastGps(selected) || "No location yet"}</small></aside>
+                <aside className="freshCard"><span>GPS</span><b>{selectedGpsText ? "Recorded" : "Waiting"}</b><small>{selectedGpsText || "No location yet"}</small></aside>
               </section>
 
               <section className="freshWorkerCommandGrid">
                 <article className="freshCard">
                   <h2>Live now</h2>
                   <div className="freshMiniGrid">
-                    <div><span>Current job</span><b>{view.currentJob ? jobTitle(view.currentJob) : "No active job"}</b></div>
+                    <div><span>Current job</span><b>{selectedCurrentJobTitle || "No active job"}</b></div>
                     <div><span>Status</span><b>{clockStatus(selected)}</b></div>
-                    <div><span>Last GPS</span><b>{lastGps(selected) || "Not recorded"}</b></div>
-                    <div><span>Jobs today</span><b>{view.todayJobs.length}</b></div>
-                    <div><span>Latest update</span><b>{view.currentJob ? latestJobActivity(view.currentJob) || "Just now" : "Waiting"}</b></div>
+                    <div><span>Last GPS</span><b>{selectedGpsText || "Not recorded"}</b></div>
+                    <div><span>Jobs today</span><b>{selectedTodayCount}</b></div>
+                    <div><span>Latest update</span><b>{selectedLatestUpdate || "Waiting"}</b></div>
                   </div>
-                  {view.currentJob ? <JobRow job={view.currentJob} /> : <div className="freshItem"><b>No active job</b><span>Worker is not currently on a started job.</span></div>}
+                  {view.currentJob ? <JobRow job={view.currentJob} /> : selectedCurrentJobTitle ? <div className="freshItem"><b>{selectedCurrentJobTitle}</b><span>{selectedCurrentJobStatus ? selectedCurrentJobStatus.replaceAll("_", " ") : "Live worker update"}</span></div> : <div className="freshItem"><b>No active job</b><span>Worker is not currently on a started job.</span></div>}
                 </article>
 
                 <article className="freshCard">
