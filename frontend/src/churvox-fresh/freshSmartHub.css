@@ -544,3 +544,42 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+/* CHURVOX_TODAY_COLUMNS_NO_EMPTY_GAP_20260617 */
+.freshTodayBriefGrid--columns {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, .9fr) !important;
+  gap: 14px !important;
+  align-items: start !important;
+}
+
+.freshTodayColumn {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 14px !important;
+  align-content: start !important;
+}
+
+.freshTodayColumn--left .freshTodayPanel--jobs {
+  min-height: 0 !important;
+}
+
+.freshTodayColumn--left .freshTodayPanel--money {
+  margin-top: 0 !important;
+}
+
+.freshTodayPanel--talk {
+  display: none !important;
+}
+
+.freshTodayPanel--jobs .freshTodayEmpty {
+  min-height: 74px !important;
+  display: grid !important;
+  align-items: center !important;
+}
+
+@media (max-width: 900px) {
+  .freshTodayBriefGrid--columns {
+    grid-template-columns: 1fr !important;
+  }
+}
