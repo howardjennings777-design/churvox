@@ -273,6 +273,68 @@ function clockStatus(worker) {
   return "Not clocked in";
 }
 
+function isLiveActiveWorker(worker) {
+  const text = lower([
+    worker?.live_status,
+    worker?.clock_status,
+    worker?.shift_status,
+    worker?.current_job_title,
+    worker?.current_job_status,
+  ].filter(Boolean).join(" "));
+
+  return (
+    text.includes("on job") ||
+    text.includes("paused") ||
+    text.includes("clocked_in") ||
+    text.includes("clocked in") ||
+    Boolean(worker?.current_job_title)
+  );
+}
+
+function liveWorkerScore(worker) {
+  const text = lower([
+    worker?.live_status,
+    worker?.clock_status,
+    worker?.shift_status,
+    worker?.current_job_status,
+  ].filter(Boolean).join(" "));
+
+  if (text.includes("on job") || text.includes("in_progress")) return 100;
+  if (text.includes("paused")) return 90;
+  if (text.includes("clocked_in") || text.includes("clocked in")) return 80;
+  if (worker?.current_job_title) return 70;
+  if (Number(worker?.today_job_count || 0) > 0) return 40;
+  if (Number(worker?.assigned_job_count || 0) > 0) return 30;
+  return 0;
+}
+
+function sortLiveWorkers(list) {
+  return [...(list || [])].sort((a, b) => {
+    const score = liveWorkerScore(b) - liveWorkerScore(a);
+    if (score !== 0) return score;
+    return workerName(a).localeCompare(workerName(b));
+  });
+}
+
+function preferredWorkerId(list, currentId = "") {
+  const ordered = sortLiveWorkers(list);
+  const current = ordered.find((worker) => idOf(worker) === currentId);
+
+  // If current worker is not active and another worker is live, show the live worker first.
+  const active = ordered.find(isLiveActiveWorker);
+  if (active && (!current || !isLiveActiveWorker(current))) return idOf(active);
+
+  if (current) return currentId;
+  return idOf(active || ordered[0] || "");
+}
+
+function directCurrentJob(worker, view) {
+  return {
+    title: pick(worker, "current_job_title", "job_title") || (view?.currentJob ? jobTitle(view.currentJob) : ""),
+    status: pick(worker, "current_job_status", "job_status") || (view?.currentJob ? statusOf(view.currentJob) : ""),
+  };
+}
+
 function buildWorkerView(worker, jobs) {
   const assignedJobs = jobs.filter((job) => jobForWorker(job, worker));
   const todayJobs = assignedJobs.filter((job) => isToday(dateValue(job, "scheduled_date", "date", "start", "start_time", "due_date")));
@@ -318,6 +380,10 @@ export default function FreshWorkerCommand({ onNavigate }) {
   const view = selected ? buildWorkerView(selected, jobs) : null;
   const selectedLiveStatus = selected && view ? liveStatusFor(selected, view) : "Waiting";
   const selectedGpsText = selected ? lastGps(selected, gpsLabels) : "";
+  const selectedCurrent = selected ? directCurrentJob(selected, view) : { title: "", status: "" };
+  const selectedTodayCount = selected?.today_job_count !== undefined ? Number(selected.today_job_count || 0) : Number(view?.todayJobs?.length || 0);
+  const selectedLatestUpdate = selected ? (pick(selected, "live_updated_at", "last_live_status_at", "last_gps_at", "updated_at") || (view?.currentJob ? latestJobActivity(view.currentJob) : "")) : "";
+  const selectedGpsText = selected ? lastGps(selected, gpsLabels) : "";
   const selectedCurrentJobTitle = selected ? (pick(selected, "current_job_title", "job_title") || (view?.currentJob ? jobTitle(view.currentJob) : "")) : "";
   const selectedCurrentJobStatus = selected ? (pick(selected, "current_job_status", "job_status") || (view?.currentJob ? statusOf(view.currentJob) : "")) : "";
   const selectedTodayCount = selected?.today_job_count !== undefined ? Number(selected.today_job_count || 0) : Number(view?.todayJobs?.length || 0);
@@ -339,9 +405,10 @@ export default function FreshWorkerCommand({ onNavigate }) {
       const liveJobs = liveRes?.data?.jobs || liveRes?.data?.data?.jobs || [];
 
       if (liveRes?.success && Array.isArray(liveWorkers)) {
-        setWorkers(liveWorkers);
+        const orderedWorkers = sortLiveWorkers(liveWorkers);
+        setWorkers(orderedWorkers);
         setJobs(Array.isArray(liveJobs) ? liveJobs : []);
-        setSelectedId((current) => liveWorkers.some((worker) => idOf(worker) === current) ? current : idOf(liveWorkers[0] || ""));
+        setSelectedId((current) => preferredWorkerId(orderedWorkers, current));
         setLastUpdated(new Date());
         return;
       }
@@ -361,9 +428,10 @@ export default function FreshWorkerCommand({ onNavigate }) {
       const jobRes = await get("/jobs", { timeout: 25000 });
       const nextJobs = jobRes?.success ? arr(jobRes.data) : [];
 
-      setWorkers(nextWorkers);
+      const orderedWorkers = sortLiveWorkers(nextWorkers);
+      setWorkers(orderedWorkers);
       setJobs(nextJobs);
-      setSelectedId((current) => nextWorkers.some((worker) => idOf(worker) === current) ? current : idOf(nextWorkers[0] || ""));
+      setSelectedId((current) => preferredWorkerId(orderedWorkers, current));
       if (!nextWorkers.length && lastWorkerError) setError(lastWorkerError);
       setLastUpdated(new Date());
     } finally {
