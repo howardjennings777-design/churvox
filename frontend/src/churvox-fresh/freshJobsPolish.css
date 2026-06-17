@@ -122,3 +122,97 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+
+/* CHURVOX_JOBS_REMOVE_EXTRA_SCROLLBARS_20260617 */
+html:has(.freshJobsPage),
+body:has(.freshJobsPage) {
+  overflow: hidden !important;
+}
+
+.freshSide,
+.freshNav,
+.freshMain,
+.freshJobsPage,
+.freshJobsListCard,
+.freshJobsDetailCard {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.freshSide::-webkit-scrollbar,
+.freshNav::-webkit-scrollbar,
+.freshMain::-webkit-scrollbar,
+.freshJobsPage::-webkit-scrollbar,
+.freshJobsListCard::-webkit-scrollbar,
+.freshJobsDetailCard::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
+@media (min-width: 901px) {
+  .freshJobsPage {
+    height: calc(100dvh - 92px) !important;
+    overflow: hidden !important;
+    display: grid !important;
+    grid-template-rows: auto auto auto minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .freshJobsPage .freshHero {
+    min-height: 118px !important;
+    padding: 22px 26px !important;
+    margin-bottom: 0 !important;
+  }
+
+  .freshJobsPage .freshHero h1 {
+    font-size: clamp(42px, 5vw, 64px) !important;
+    margin: 8px 0 6px !important;
+  }
+
+  .freshJobsPage .freshCommandPulse {
+    margin: 0 !important;
+  }
+
+  .freshJobsPage .freshCommandFilterBar {
+    margin: 0 !important;
+  }
+
+  .freshJobsPage .freshGrid {
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    display: grid !important;
+    grid-template-columns: minmax(230px, .85fr) minmax(360px, 1.45fr) minmax(190px, .7fr) !important;
+    gap: 12px !important;
+    align-items: stretch !important;
+  }
+
+  .freshJobsListCard,
+  .freshJobsDetailCard,
+  .freshJobsActionsCard {
+    min-height: 0 !important;
+    height: 100% !important;
+  }
+
+  .freshJobsListCard,
+  .freshJobsDetailCard {
+    overflow: auto !important;
+  }
+
+  .freshJobsActionsCard {
+    overflow: hidden !important;
+  }
+}
+
+@media (max-width: 900px) {
+  html:has(.freshJobsPage),
+  body:has(.freshJobsPage) {
+    overflow: auto !important;
+  }
+
+  .freshJobsPage {
+    overflow: visible !important;
+  }
+}

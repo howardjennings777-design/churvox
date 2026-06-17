@@ -149,7 +149,7 @@ export default function FreshJobs({ onNavigate }) {
   }
 
   return (
-    <section>
+    <section className="freshJobsPage">
       <header className="freshHero">
         <span>Churvox fresh · Jobs</span>
         <h1>Jobs</h1>
@@ -194,7 +194,7 @@ export default function FreshJobs({ onNavigate }) {
       </section>
 
       <section className="freshGrid">
-        <aside className="freshCard">
+        <aside className="freshCard freshJobsListCard">
           <h2>Job list</h2>
 
           {loading && jobs.length === 0 ? (
@@ -229,7 +229,7 @@ export default function FreshJobs({ onNavigate }) {
           ) : null}
         </aside>
 
-        <section className="freshCard">
+        <section className="freshCard freshJobsDetailCard">
           <h2>{selected?.title || "Select job"}</h2>
 
           {selected ? (
@@ -258,7 +258,7 @@ export default function FreshJobs({ onNavigate }) {
           )}
         </section>
 
-        <aside className="freshCard">
+        <aside className="freshCard freshJobsActionsCard">
           <h2>Owner actions</h2>
           <div className="freshActions">
             <button className="freshPrimary" type="button" onClick={() => setCreateOpen(true)}>New job</button>
