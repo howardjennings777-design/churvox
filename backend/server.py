@@ -3282,15 +3282,30 @@ def _live_is_today(value):
 
 def _live_serial(doc):
     """
-    Worker live status can contain nested Mongo ObjectIds/datetimes inside
-    jobs, workers, assigned_worker objects, photos metadata, etc.
-    Always recursively JSON-safe it before FastAPI returns it.
+    Worker live status can contain nested Mongo ObjectIds/datetimes.
+    Keep it JSON-safe and never return sensitive user fields.
     """
     if not doc:
         return {}
+
     safe = dict(doc)
+
     if "_id" in safe:
         safe["id"] = str(safe.pop("_id"))
+
+    for key in [
+        "password",
+        "password_hash",
+        "hashed_password",
+        "refresh_token",
+        "access_token",
+        "reset_token",
+        "verification_token",
+        "stripe_customer_id",
+        "stripe_subscription_id",
+    ]:
+        safe.pop(key, None)
+
     return make_json_safe(safe)
 
 
