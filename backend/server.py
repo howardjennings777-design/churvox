@@ -3369,7 +3369,7 @@ async def worker_live_status(request: Request, current_user: dict = Depends(get_
             if _live_is_today(job.get("scheduled_date") or job.get("date") or job.get("start") or job.get("start_time") or job.get("due_date"))
         ]
 
-        job_time_seconds = sum(_live_job_seconds(job) for job in today_jobs)
+        job_time_seconds = sum(_live_job_seconds(job) for job in assigned_jobs)
         current_job = active_job or paused_job
 
         worker_live = dict(worker)
@@ -3399,7 +3399,12 @@ async def worker_live_status(request: Request, current_user: dict = Depends(get_
             "job_time_seconds": job_time_seconds,
             "total_job_seconds": job_time_seconds,
             "current_job_id": str(current_job.get("_id")) if current_job else "",
-            "current_job_title": current_job.get("title") or current_job.get("job_name") or current_job.get("job_title") or "",
+            "current_job_title": (
+                current_job.get("title")
+                or current_job.get("job_name")
+                or current_job.get("job_title")
+                or ""
+            ) if current_job else "",
             "current_job_status": _live_job_status(current_job) if current_job else "",
             "live_updated_at": datetime.now(timezone.utc),
         })
