@@ -408,3 +408,29 @@
   font-weight: 700;
   line-height: 1.35;
 }
+
+/* CHURVOX_WORKER_TIME_CARD_EXPLAINERS_20260618 */
+.freshWorkerTimeCard {
+  min-height: 142px;
+}
+
+.freshWorkerTimeCard > span {
+  display: block;
+  font-weight: 900;
+}
+
+.freshWorkerTimeCard > b {
+  display: block;
+  margin-top: 8px;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.freshWorkerTimeCard > small {
+  display: block;
+  margin-top: 10px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+}

@@ -577,21 +577,30 @@ export default function FreshWorkerCommand({ onNavigate }) {
                 <div className="freshWorkerStatusPill">{selectedLiveStatus}</div>
               </section>
 
-              <section className="freshCard freshWorkerTimeHelp">
-                <h2>What the times mean</h2>
-                <div className="freshMiniGrid">
-                  <div><span>Paid day time</span><b>Clock-in to now</b><small>Everything while the worker is clocked in.</small></div>
-                  <div><span>Job timer time</span><b>Start to pause/finish</b><small>Only time attached to job timers.</small></div>
-                  <div><span>Paid time not on jobs</span><b>Paid day minus job timers</b><small>Travel, setup, waiting, or forgotten job timer time.</small></div>
-                  <div><span>Last location</span><b>Latest GPS check</b><small>Street/suburb if available, coordinates as fallback.</small></div>
-                </div>
-              </section>
-
               <section className="freshWorkerCommandStats">
-                <aside className="freshCard"><span>Paid day time</span><b>{hoursText(view.shiftSeconds)}</b><small>Clock-in to now</small></aside>
-                <aside className="freshCard"><span>Job timer time</span><b>{hoursText(view.jobTimeSeconds)}</b><small>Time saved on jobs</small></aside>
-                <aside className="freshCard"><span>Paid time not on jobs</span><b>{hoursText(view.unallocatedSeconds)}</b><small>Paid time not attached to a job</small></aside>
-                <aside className="freshCard"><span>Last location</span><b>{selectedGpsText ? "Recorded" : "Waiting"}</b><small>{selectedGpsText || "No GPS location yet"}</small></aside>
+                <aside className="freshCard freshWorkerTimeCard">
+                  <span>Paid day time</span>
+                  <b>{hoursText(view.shiftSeconds)}</b>
+                  <small>Worker clock-in time to now. This is paid time for the day.</small>
+                </aside>
+
+                <aside className="freshCard freshWorkerTimeCard">
+                  <span>Job timer time</span>
+                  <b>{hoursText(view.jobTimeSeconds)}</b>
+                  <small>Time from job Start/Pause/Resume/Finish timers.</small>
+                </aside>
+
+                <aside className="freshCard freshWorkerTimeCard">
+                  <span>Paid time not on jobs</span>
+                  <b>{hoursText(view.unallocatedSeconds)}</b>
+                  <small>Paid day time minus job timer time. Travel, setup, waiting, or missed timer.</small>
+                </aside>
+
+                <aside className="freshCard freshWorkerTimeCard">
+                  <span>Last location</span>
+                  <b>{selectedGpsText ? "Recorded" : "Waiting"}</b>
+                  <small>{selectedGpsText || "Latest GPS street/suburb will show here."}</small>
+                </aside>
               </section>
 
               <section className="freshWorkerCommandGrid">
