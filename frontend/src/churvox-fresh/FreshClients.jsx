@@ -182,9 +182,9 @@ export default function FreshClients({ onNavigate }) {
       </section>
 
       {addOpen ? (
-        <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(15,23,42,.62)", display: "grid", placeItems: "center", padding: 16 }} onMouseDown={(event) => { if (event.target === event.currentTarget) setAddOpen(false); }}>
-          <section className="freshCard" style={{ width: "min(640px, 100%)", maxHeight: "88vh", overflow: "auto", boxShadow: "0 30px 80px rgba(0,0,0,.35)" }}>
-            <header className="freshHero" style={{ marginBottom: 12 }}><span>New client</span><h1>Add client</h1><p>Add the real customer here without leaving the Clients area.</p></header>
+        <div className="freshPopupBackdrop freshClientPopupBackdrop" style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(15,23,42,.62)", display: "grid", placeItems: "center", padding: 16 }} onMouseDown={(event) => { if (event.target === event.currentTarget) setAddOpen(false); }}>
+          <section className="freshCard freshClientPopupCard" style={{ width: "min(1040px, calc(100vw - 56px))", maxHeight: "90dvh", overflow: "auto", boxShadow: "0 30px 80px rgba(0,0,0,.35)" }}>
+            <header className="freshHero freshClientPopupHero" style={{ marginBottom: 12 }}><span>New client</span><h1>Add client</h1><p>Add the real customer here without leaving the Clients area.</p></header>
             {addError ? <div className="freshItem need"><b>Client needs attention</b><span>{addError}</span></div> : null}
             <label className="freshField"><span>Client name</span><input autoFocus value={newClient.name} onChange={(e) => setNewClient((c) => ({ ...c, name: e.target.value }))} placeholder="Customer or business name" /></label>
             <label className="freshField"><span>Invoice/customer email</span><input value={newClient.email} onChange={(e) => setNewClient((c) => ({ ...c, email: e.target.value }))} placeholder="hello@churvox.com" /></label>

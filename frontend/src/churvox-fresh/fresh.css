@@ -741,3 +741,118 @@ body,
   min-height: calc(100dvh + 1px) !important;
   padding-bottom: 80px !important;
 }
+
+
+/* CHURVOX_UNIFIED_LARGE_POPUP_SLIPS_20260617 */
+:root {
+  --churvox-popup-width: min(1040px, calc(100vw - 56px));
+  --churvox-popup-height: 90dvh;
+  --churvox-popup-shift: 118px;
+}
+
+.freshPopupBackdrop,
+.freshRoutePopupBackdrop,
+.freshReviewPopupBackdrop,
+.freshJobPopupBackdrop,
+.freshClientPopupBackdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483000 !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 18px !important;
+  background: rgba(2, 6, 23, .68) !important;
+  backdrop-filter: blur(7px) !important;
+  box-sizing: border-box !important;
+}
+
+.freshJobPopupCard,
+.freshClientPopupCard,
+.freshReviewPopupCard,
+.freshRoutePopupCard,
+.freshPopupBackdrop > .freshCard,
+.freshRoutePopupBackdrop > .freshCard,
+.freshReviewPopupBackdrop > .freshCard {
+  width: var(--churvox-popup-width) !important;
+  max-width: var(--churvox-popup-width) !important;
+  min-width: min(760px, calc(100vw - 56px)) !important;
+  max-height: var(--churvox-popup-height) !important;
+  min-height: min(620px, calc(100dvh - 56px)) !important;
+  overflow: auto !important;
+  border-radius: 30px !important;
+  padding: 18px !important;
+  background: #fffaf0 !important;
+  box-shadow: 0 34px 100px rgba(0, 0, 0, .42) !important;
+  box-sizing: border-box !important;
+}
+
+.freshJobPopupHero,
+.freshClientPopupHero,
+.freshReviewPopupHero,
+.freshRoutePopupHero,
+.freshPopupBackdrop .freshHero,
+.freshRoutePopupBackdrop .freshHero,
+.freshReviewPopupBackdrop .freshHero {
+  min-height: 132px !important;
+  margin-bottom: 14px !important;
+  padding: 22px 26px !important;
+  border-radius: 24px !important;
+}
+
+.freshJobPopupHero h1,
+.freshClientPopupHero h1,
+.freshReviewPopupHero h1,
+.freshRoutePopupHero h1,
+.freshPopupBackdrop .freshHero h1,
+.freshRoutePopupBackdrop .freshHero h1,
+.freshReviewPopupBackdrop .freshHero h1 {
+  font-size: clamp(42px, 5vw, 64px) !important;
+  line-height: .88 !important;
+  margin: 12px 56px 8px 0 !important;
+}
+
+/* Centre over the app workspace instead of the full browser/sidebar */
+@media (min-width: 901px) {
+  .freshJobPopupCard,
+  .freshClientPopupCard,
+  .freshReviewPopupCard,
+  .freshRoutePopupCard,
+  .freshPopupBackdrop > .freshCard,
+  .freshRoutePopupBackdrop > .freshCard,
+  .freshReviewPopupBackdrop > .freshCard {
+    transform: translateX(var(--churvox-popup-shift)) !important;
+  }
+}
+
+/* Mobile/tablet: no sideways shift, still large but usable */
+@media (max-width: 900px) {
+  :root {
+    --churvox-popup-width: min(100%, calc(100vw - 20px));
+    --churvox-popup-height: 92dvh;
+  }
+
+  .freshPopupBackdrop,
+  .freshRoutePopupBackdrop,
+  .freshReviewPopupBackdrop,
+  .freshJobPopupBackdrop,
+  .freshClientPopupBackdrop {
+    align-items: end !important;
+    padding: 10px !important;
+  }
+
+  .freshJobPopupCard,
+  .freshClientPopupCard,
+  .freshReviewPopupCard,
+  .freshRoutePopupCard,
+  .freshPopupBackdrop > .freshCard,
+  .freshRoutePopupBackdrop > .freshCard,
+  .freshReviewPopupBackdrop > .freshCard {
+    min-width: 0 !important;
+    min-height: min(640px, 92dvh) !important;
+    width: var(--churvox-popup-width) !important;
+    max-height: var(--churvox-popup-height) !important;
+    transform: none !important;
+    border-radius: 24px 24px 18px 18px !important;
+    padding: 14px !important;
+  }
+}
