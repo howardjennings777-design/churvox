@@ -65,43 +65,48 @@ export default function FreshAiQuickCreateBrainV8({ onNavigate }) {
     window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "backend-ai-review" } }));
   }
 
-  return <section className="freshQuickAiPage">
-    <div className="freshQuickAiHero">
+  return <section className="freshQuickAiPage freshQuickAiPage--clean">
+    <div className="freshQuickAiHero freshQuickAiHero--clean">
       <div>
         <span>Tell Churvox</span>
-        <h1>Say what you want done.</h1>
-        <p>Real AI only. Churvox checks live business data, prepares backend Review work, then waits for your approval.</p>
+        <h1>Say it once.</h1>
+        <p>Type the job, customer, price, date or change. Churvox prepares it for Review — nothing changes until you approve.</p>
       </div>
-      <div className="freshQuickAiStats">
-        <div><b>{item?.action || (busy ? "Working" : "Ready")}</b><small>AI action</small></div>
-        <div><b>{item?.category || "Review"}</b><small>approval tray</small></div>
-        <div><b>{item?.ai_confidence ? `${Math.round(Number(item.ai_confidence) * 100)}%` : "—"}</b><small>confidence</small></div>
-        <div><b>{item ? "Backend" : "No fake"}</b><small>source</small></div>
+      <div className="freshQuickAiStats freshQuickAiStats--clean">
+        <button type="button" onClick={() => onNavigate?.("command")}><b>{item ? "Ready" : busy ? "Working" : "Review"}</b><small>Approval tray</small></button>
+        <button type="button" onClick={() => onNavigate?.("jobs")}><b>Live</b><small>Checks records</small></button>
       </div>
     </div>
 
-    <div className="freshQuickAiGrid">
-      <article className="freshQuickAiPanel">
-        <header><span>Real AI instruction</span><h2>Type the job, customer, price, date or change.</h2><p>No local shortcut. If backend AI is not configured, Churvox will say so instead of pretending.</p></header>
-        <textarea value={text} onChange={(event) => { setText(event.target.value); setItem(null); setStatus(null); }} placeholder="Example: 16 Taita Drive $60 repeat next Friday" />
-        <div className="freshQuickAiButtons">
-          <button type="button" onClick={prepareWithRealAi} disabled={busy || !hasText}>{busy ? "AI preparing…" : "Prepare with real AI"}</button>
+    <div className="freshQuickAiCommandGrid">
+      <article className="freshQuickAiPanel freshQuickAiPanel--command">
+        <header><span>Real AI instruction</span><h2>What do you want done?</h2><p>Example: “16 Taita Drive $60 repeat next Friday” or “invoice completed mowing jobs”.</p></header>
+        <textarea value={text} onChange={(event) => { setText(event.target.value); setItem(null); setStatus(null); }} placeholder="Type naturally here…" autoFocus />
+        <div className="freshQuickAiButtons freshQuickAiButtons--primary">
+          <button type="button" onClick={prepareWithRealAi} disabled={busy || !hasText}>{busy ? "AI preparing…" : "Prepare for Review"}</button>
+          <button type="button" onClick={() => { setText(""); setItem(null); setStatus(null); }}>Clear</button>
           <button type="button" onClick={() => onNavigate?.("command")}>Open Review</button>
         </div>
-        <ActionGroups onPick={setExample} />
         {status ? <div className={`freshQuickAiStatus ${status.tone}`}><b>{status.title}</b><span>{status.text}</span></div> : null}
       </article>
 
-      <article className="freshQuickAiPanel">
-        <header><span>Backend Review preview</span><h2>{item?.title || "Waiting for real AI"}</h2><p>This preview only appears after backend AI saves a Review item.</p></header>
+      <aside className="freshQuickAiPanel freshQuickAiPanel--side">
+        <header><span>What happens next</span><h2>{item?.title || "Safe by default"}</h2><p>Churvox prepares work only. You approve the final action in Review.</p></header>
+
         {item ? <>
-          <div className="freshQuickAiResult">
+          <div className="freshQuickAiResult freshQuickAiResult--stacked">
             {itemDetails(item).map(([label, value]) => <section key={label}><b>{label}</b><p>{String(value)}</p></section>)}
           </div>
-          <div className="freshQuickAiPrepared"><b>Original instruction</b><p>{item.original_text || text}</p><b>Backend action</b><p>{item.action || "prepared"}</p><b>Safe rule</b><p>Nothing sends, syncs, marks paid, or changes live records until Review approval.</p></div>
           <div className="freshQuickAiButtons"><button type="button" onClick={() => onNavigate?.("command")}>Review prepared work</button><button type="button" onClick={() => setItem(null)}>Clear preview</button></div>
-        </> : <div className="freshQuickAiStatus need"><b>No AI work prepared yet</b><span>Type an instruction and press Prepare with real AI. Churvox will not show fake parsed data.</span></div>}
-      </article>
+        </> : <div className="freshQuickAiSteps">
+          <section><b>1</b><span>Type the job or admin request</span></section>
+          <section><b>2</b><span>AI checks live Churvox records</span></section>
+          <section><b>3</b><span>Prepared work lands in Review</span></section>
+          <section><b>4</b><span>You approve before anything changes</span></section>
+        </div>}
+      </aside>
     </div>
+
+    <ActionGroups onPick={setExample} />
   </section>;
 }
