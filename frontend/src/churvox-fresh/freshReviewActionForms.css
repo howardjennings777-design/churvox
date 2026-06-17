@@ -1,0 +1,248 @@
+
+/* CHURVOX_REVIEW_ACTION_FORMS_POLISH_20260617 */
+
+.freshReviewPopupBackdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483000 !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 18px !important;
+  background: rgba(2, 6, 23, .68) !important;
+  backdrop-filter: blur(7px) !important;
+  box-sizing: border-box !important;
+}
+
+.freshReviewPopupCard {
+  width: min(980px, calc(100vw - 42px)) !important;
+  max-height: 90dvh !important;
+  overflow: auto !important;
+  border-radius: 28px !important;
+  padding: 18px !important;
+  background: #fffaf0 !important;
+  position: relative !important;
+  box-shadow: 0 34px 100px rgba(0, 0, 0, .42) !important;
+}
+
+.freshReviewPopupHero {
+  min-height: 136px !important;
+  margin-bottom: 14px !important;
+  padding: 22px 26px !important;
+  border-radius: 24px !important;
+}
+
+.freshReviewPopupHero h1 {
+  font-size: clamp(42px, 5vw, 66px) !important;
+  line-height: .86 !important;
+  letter-spacing: -.075em !important;
+  margin: 12px 56px 8px 0 !important;
+}
+
+.freshReviewPopupHero p {
+  font-size: 14px !important;
+  max-width: 780px !important;
+  color: #f8fafc !important;
+  -webkit-text-fill-color: #f8fafc !important;
+}
+
+.freshReviewClose {
+  position: absolute !important;
+  right: 16px !important;
+  top: 16px !important;
+  z-index: 20 !important;
+  width: 44px !important;
+  height: 44px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: #111827 !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  font-size: 25px !important;
+  font-weight: 1000 !important;
+  cursor: pointer !important;
+}
+
+.freshReviewPopupBody {
+  display: grid !important;
+  gap: 14px !important;
+}
+
+.freshReviewPopupBody .freshReviewForm {
+  display: grid !important;
+  gap: 14px !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, .14) !important;
+  border-radius: 22px !important;
+  padding: 18px !important;
+  color: #0f172a !important;
+}
+
+.freshReviewPopupBody .freshReviewFormHead {
+  display: grid !important;
+  gap: 5px !important;
+}
+
+.freshReviewPopupBody .freshReviewFormHead span {
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+  font-size: 11px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase !important;
+}
+
+.freshReviewPopupBody .freshReviewFormHead p {
+  margin: 0 !important;
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+}
+
+.freshReviewPopupBody .freshReviewFormGrid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  align-items: start !important;
+}
+
+.freshReviewPopupBody .freshReviewFormGrid label {
+  display: grid !important;
+  gap: 7px !important;
+  min-width: 0 !important;
+}
+
+.freshReviewPopupBody .freshReviewFormGrid label.wide {
+  grid-column: 1 / -1 !important;
+}
+
+.freshReviewPopupBody .freshReviewFormGrid label span {
+  display: block !important;
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .13em !important;
+  text-transform: uppercase !important;
+  line-height: 1.1 !important;
+}
+
+.freshReviewPopupBody .freshReviewFormGrid input,
+.freshReviewPopupBody .freshReviewFormGrid textarea,
+.freshReviewPopupBody .freshReviewFormGrid select {
+  display: block !important;
+  width: 100% !important;
+  min-height: 50px !important;
+  box-sizing: border-box !important;
+  border: 1.5px solid rgba(15, 23, 42, .17) !important;
+  border-radius: 16px !important;
+  background: #fffdf7 !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  padding: 12px 13px !important;
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  line-height: 1.25 !important;
+  outline: none !important;
+}
+
+.freshReviewPopupBody .freshReviewFormGrid textarea {
+  min-height: 92px !important;
+  resize: vertical !important;
+}
+
+.freshReviewPopupBody .freshReviewFormGrid input:focus,
+.freshReviewPopupBody .freshReviewFormGrid textarea:focus,
+.freshReviewPopupBody .freshReviewFormGrid select:focus {
+  border-color: #f97316 !important;
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, .12) !important;
+}
+
+.freshReviewMoneyInput {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.freshReviewMoneyInput i {
+  position: absolute !important;
+  left: 14px !important;
+  z-index: 2 !important;
+  font-style: normal !important;
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+  font-weight: 1000 !important;
+  pointer-events: none !important;
+}
+
+.freshReviewMoneyInput input {
+  padding-left: 31px !important;
+}
+
+.freshReviewPopupBody .freshReviewSafe {
+  background: #fff7ed !important;
+  border: 1px solid rgba(249, 115, 22, .25) !important;
+  border-radius: 20px !important;
+  padding: 13px !important;
+}
+
+.freshReviewPopupBody .freshReviewSafe b {
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+  font-weight: 1000 !important;
+}
+
+.freshReviewPopupBody .freshReviewSafe p {
+  margin: 5px 0 0 !important;
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  font-weight: 850 !important;
+}
+
+.freshReviewPopupBody .freshReviewModalActions {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 12 !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr 1fr !important;
+  gap: 10px !important;
+  margin: 0 -18px -18px !important;
+  padding: 14px 18px !important;
+  background: rgba(255, 255, 255, .97) !important;
+  border-top: 1px solid rgba(15, 23, 42, .12) !important;
+  border-radius: 0 0 24px 24px !important;
+}
+
+.freshReviewPopupBody .freshReviewModalActions button {
+  min-height: 48px !important;
+  border-radius: 15px !important;
+}
+
+@media (max-width: 760px) {
+  .freshReviewPopupBackdrop {
+    align-items: end !important;
+    padding: 10px !important;
+  }
+
+  .freshReviewPopupCard {
+    width: 100% !important;
+    max-height: 92dvh !important;
+    border-radius: 24px 24px 18px 18px !important;
+    padding: 14px !important;
+  }
+
+  .freshReviewPopupHero {
+    min-height: 120px !important;
+    padding: 18px !important;
+  }
+
+  .freshReviewPopupHero h1 {
+    font-size: 38px !important;
+  }
+
+  .freshReviewPopupBody .freshReviewFormGrid,
+  .freshReviewPopupBody .freshReviewModalActions {
+    grid-template-columns: 1fr !important;
+  }
+}

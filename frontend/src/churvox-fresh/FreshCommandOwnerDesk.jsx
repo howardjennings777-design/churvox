@@ -2,6 +2,7 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
+import "./freshReviewActionForms.css";
 
 function itemId(item) { return item?.id || item?._id || ""; }
 function payloadOf(item) { return item?.payload && typeof item.payload === "object" ? item.payload : {}; }
