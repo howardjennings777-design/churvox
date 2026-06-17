@@ -595,3 +595,106 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+
+/* CHURVOX_STICKY_TOPBAR_REAL_PAGE_SCROLL_20260617 */
+html,
+body {
+  height: 100% !important;
+}
+
+.freshApp {
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  overflow: hidden !important;
+}
+
+.freshSide {
+  height: 100dvh !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+}
+
+.freshMain {
+  height: 100dvh !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 0 14px 18px !important;
+  scroll-padding-top: 86px !important;
+}
+
+.freshTopbar {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 2500 !important;
+  margin: 0 -14px 14px !important;
+  padding: 10px 14px !important;
+  background: rgba(247, 241, 231, .92) !important;
+  border-bottom: 1px solid rgba(15, 23, 42, .10) !important;
+  backdrop-filter: blur(14px) !important;
+  box-shadow: 0 10px 28px rgba(2, 6, 23, .06) !important;
+}
+
+.freshPageScroll {
+  min-height: calc(100dvh - 84px) !important;
+  padding-bottom: 34px !important;
+}
+
+/* Let the page scroll down properly instead of trapping scroll inside page sections */
+.freshPageScroll .freshJobsPage,
+.freshPageScroll .freshDispatchPage {
+  height: auto !important;
+  min-height: calc(100dvh - 110px) !important;
+  overflow: visible !important;
+}
+
+/* Keep inner cards tidy, but do not create a second visible page scrollbar */
+.freshPageScroll .freshJobsListCard,
+.freshPageScroll .freshJobsDetailCard,
+.freshPageScroll .freshDispatchListCard,
+.freshPageScroll .freshDispatchDetailCard {
+  max-height: none !important;
+}
+
+/* Hide ugly sidebar scrollbar while still allowing the sidebar to move if needed */
+.freshSide,
+.freshNav,
+.freshMain {
+  scrollbar-width: thin !important;
+}
+
+.freshSide::-webkit-scrollbar,
+.freshNav::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.freshMain::-webkit-scrollbar {
+  width: 10px !important;
+}
+
+.freshMain::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, .22) !important;
+  border-radius: 999px !important;
+  border: 3px solid rgba(247, 241, 231, .95) !important;
+}
+
+.freshMain::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+@media (max-width: 900px) {
+  .freshMain {
+    padding: 0 10px 86px !important;
+  }
+
+  .freshTopbar {
+    margin: 0 -10px 12px !important;
+    padding: 9px 10px !important;
+  }
+
+  .freshPageScroll {
+    min-height: auto !important;
+  }
+}
