@@ -224,9 +224,13 @@ function lastGps(worker) {
 }
 
 function clockStatus(worker) {
+  const direct = String(worker?.live_status || "").trim();
+  if (direct) return direct;
+
   const text = lower(worker?.clock_status || worker?.shift_status || worker?.status);
+  if (text.includes("on job")) return "On job now";
+  if (text.includes("paused")) return "Paused";
   if (text.includes("clocked_in") || text.includes("clocked in")) return "Clocked in";
-  if (text.includes("on job") || text.includes("working")) return "On job";
   if (text.includes("clocked_out") || text.includes("clocked out")) return "Clocked out";
   return "Not clocked in";
 }
@@ -282,6 +286,22 @@ export default function FreshWorkerCommand({ onNavigate }) {
     setError("");
 
     try {
+      const liveRes = await get(`/worker/live-status?ts=${Date.now()}`, {
+        timeout: 25000,
+        headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+      });
+
+      const liveWorkers = liveRes?.data?.workers || liveRes?.data?.data?.workers || [];
+      const liveJobs = liveRes?.data?.jobs || liveRes?.data?.data?.jobs || [];
+
+      if (liveRes?.success && Array.isArray(liveWorkers)) {
+        setWorkers(liveWorkers);
+        setJobs(Array.isArray(liveJobs) ? liveJobs : []);
+        setSelectedId((current) => liveWorkers.some((worker) => idOf(worker) === current) ? current : idOf(liveWorkers[0] || ""));
+        setLastUpdated(new Date());
+        return;
+      }
+
       let nextWorkers = [];
       let lastWorkerError = "";
 
@@ -324,7 +344,7 @@ export default function FreshWorkerCommand({ onNavigate }) {
       load({ silent: true });
     };
 
-    const timer = window.setInterval(refreshLiveWorkerView, 10000);
+    const timer = window.setInterval(refreshLiveWorkerView, 5000);
     window.addEventListener("focus", refreshLiveWorkerView);
 
     return () => {

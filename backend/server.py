@@ -3169,6 +3169,239 @@ async def delete_invoice(invoice_id: str, request: Request, current_user: dict =
         raise HTTPException(status_code=404, detail="Invoice not found")
     return {"message": "Invoice deleted"}
 
+
+# CHURVOX_WORKER_LIVE_STATUS_ENDPOINT_20260618
+def _live_token(value):
+    if value is None:
+        return ""
+    try:
+        if isinstance(value, ObjectId):
+            return str(value).lower()
+    except Exception:
+        pass
+    if isinstance(value, dict):
+        for key in [
+            "_id", "id", "$oid", "oid", "uuid",
+            "worker_id", "user_id", "team_member_id",
+            "assigned_worker_id", "assigned_to",
+            "email", "worker_email", "assigned_worker_email",
+            "name", "full_name", "display_name",
+            "assigned_worker_name", "worker_name",
+        ]:
+            token = _live_token(value.get(key))
+            if token:
+                return token
+        return ""
+    text = str(value).strip().lower()
+    return "" if text == "[object object]" else text
+
+
+def _live_tokens(*values):
+    out = set()
+    def add(v):
+        if v is None:
+            return
+        if isinstance(v, list):
+            for item in v:
+                add(item)
+            return
+        if isinstance(v, dict):
+            for key in [
+                "_id", "id", "$oid", "oid", "uuid",
+                "worker_id", "user_id", "team_member_id",
+                "assigned_worker_id", "assigned_to",
+                "email", "worker_email", "assigned_worker_email",
+                "name", "full_name", "display_name",
+                "assigned_worker_name", "worker_name",
+            ]:
+                add(v.get(key))
+            return
+        token = _live_token(v)
+        if token:
+            out.add(token)
+    for value in values:
+        add(value)
+    return out
+
+
+def _live_job_status(job):
+    status = str(job.get("status") or job.get("job_status") or job.get("workflow_status") or "assigned").strip().lower().replace(" ", "_")
+    if job.get("completed") is True or job.get("completed_at"):
+        return "completed"
+    return status
+
+
+def _live_job_seconds(job):
+    for key in [
+        "total_job_seconds",
+        "total_time_seconds",
+        "timer_total_seconds",
+        "job_seconds",
+        "total_seconds",
+        "total_time_on_site_seconds",
+        "time_seconds",
+        "duration_seconds",
+        "payroll_seconds",
+    ]:
+        try:
+            value = float(job.get(key) or 0)
+            if value > 0:
+                return int(value)
+        except Exception:
+            pass
+    return 0
+
+
+def _live_datetime_value(value):
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, str):
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except Exception:
+            return None
+    return None
+
+
+def _live_is_today(value):
+    dt = _live_datetime_value(value)
+    if not dt:
+        return False
+    now = datetime.now(timezone.utc)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.date() == now.date()
+
+
+def _live_serial(doc):
+    try:
+        return serialize_doc(dict(doc))
+    except Exception:
+        return make_json_safe(dict(doc))
+
+
+@api_router.get("/worker/live-status")
+async def worker_live_status(request: Request, current_user: dict = Depends(get_current_user)):
+    user = await require_employer(request)
+    business_id = str(user.get("business_id") or user.get("id"))
+    business_oid = normalize_object_id(business_id)
+
+    business_or = [{"business_id": business_id}]
+    job_or = [{"business_id": business_id}]
+
+    if business_oid:
+        business_or.append({"business_id": business_oid})
+        job_or.append({"business_id": business_oid})
+        job_or.append({"contractor_id": business_oid})
+    else:
+        job_or.append({"contractor_id": business_id})
+
+    workers = await db.users.find({
+        "$and": [
+            {"$or": business_or},
+            {"role": "worker"},
+        ]
+    }).to_list(length=500)
+
+    jobs = await db.jobs.find({"$or": job_or}).sort("updated_at", -1).limit(1000).to_list(length=1000)
+
+    live_workers = []
+    for worker in workers:
+        worker_tokens = _live_tokens(
+            worker,
+            worker.get("_id"),
+            worker.get("id"),
+            worker.get("worker_id"),
+            worker.get("user_id"),
+            worker.get("team_member_id"),
+            worker.get("email"),
+            worker.get("name"),
+            worker.get("full_name"),
+            worker.get("display_name"),
+        )
+
+        assigned_jobs = []
+        for job in jobs:
+            assigned_tokens = _live_tokens(
+                job.get("assigned_worker_id"),
+                job.get("worker_id"),
+                job.get("assigned_to"),
+                job.get("assignedWorkerId"),
+                job.get("assigned_worker_email"),
+                job.get("worker_email"),
+                job.get("assigned_to_email"),
+                job.get("assigned_worker_name"),
+                job.get("worker_name"),
+                job.get("assigned_to_name"),
+                job.get("assigned_worker"),
+                job.get("worker"),
+                job.get("assignedWorker"),
+                job.get("team_member"),
+            )
+            if worker_tokens and assigned_tokens and worker_tokens.intersection(assigned_tokens):
+                assigned_jobs.append(job)
+
+        active_job = None
+        paused_job = None
+        for job in assigned_jobs:
+            status = _live_job_status(job)
+            if status == "in_progress":
+                active_job = job
+                break
+            if status == "paused":
+                paused_job = job
+
+        today_jobs = [
+            job for job in assigned_jobs
+            if _live_is_today(job.get("scheduled_date") or job.get("date") or job.get("start") or job.get("start_time") or job.get("due_date"))
+        ]
+
+        job_time_seconds = sum(_live_job_seconds(job) for job in today_jobs)
+        current_job = active_job or paused_job
+
+        worker_live = dict(worker)
+        if active_job:
+            live_status = "On job now"
+            clock_status = "On job"
+        elif paused_job:
+            live_status = "Paused"
+            clock_status = "Paused"
+        elif str(worker.get("shift_status") or worker.get("clock_status") or "").lower() in ["clocked_in", "clocked in"]:
+            live_status = "Clocked in"
+            clock_status = "Clocked in"
+        elif today_jobs:
+            live_status = "Jobs assigned"
+            clock_status = "Not clocked in"
+        else:
+            live_status = "Waiting"
+            clock_status = "Not clocked in"
+
+        worker_live.update({
+            "live_status": live_status,
+            "clock_status": clock_status,
+            "shift_status": clock_status,
+            "today_job_count": len(today_jobs),
+            "assigned_job_count": len(assigned_jobs),
+            "job_time_seconds": job_time_seconds,
+            "total_job_seconds": job_time_seconds,
+            "current_job_id": str(current_job.get("_id")) if current_job else "",
+            "current_job_title": current_job.get("title") or current_job.get("job_name") or current_job.get("job_title") or "",
+            "current_job_status": _live_job_status(current_job) if current_job else "",
+            "live_updated_at": datetime.now(timezone.utc),
+        })
+
+        live_workers.append(_live_serial(worker_live))
+
+    return {
+        "success": True,
+        "workers": live_workers,
+        "jobs": [_live_serial(job) for job in jobs],
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
 # ===================== DASHBOARD STATS =====================
 @api_router.get("/dashboard/stats")
 async def get_dashboard_stats(request: Request, current_user: dict = Depends(get_current_user)):
