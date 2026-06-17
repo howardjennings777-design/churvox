@@ -1,9 +1,10 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Briefcase, X } from "lucide-react";
 import JobCreateForm from "./forms/JobCreateForm";
 
-const OPEN_EVENT = "churvox:open-job-modal";
+const OPEN_EVENT = "churvox:open-job-popup";
+const LEGACY_OPEN_EVENT = "churvox:open-job-modal";
+const OPEN_JOB_MODAL_KEY = "churvox:fresh-open-job-modal:v1";
 const LAST_BACKGROUND_KEY = "churvox_last_non_modal_route";
 
 function isJobsNewUrl(href) {
@@ -55,18 +56,12 @@ export default function GlobalJobCreateModal() {
   React.useEffect(() => {
     const path = `${location.pathname}${location.search}${location.hash}`;
     if (location.pathname !== "/jobs/new") {
-      try {
-        sessionStorage.setItem(LAST_BACKGROUND_KEY, path || "/dashboard#jobs");
-      } catch {}
+      try { sessionStorage.setItem(LAST_BACKGROUND_KEY, path || "/dashboard#jobs"); } catch {}
       return;
     }
 
     const last = (() => {
-      try {
-        return sessionStorage.getItem(LAST_BACKGROUND_KEY) || "/dashboard#jobs";
-      } catch {
-        return "/dashboard#jobs";
-      }
+      try { return sessionStorage.getItem(LAST_BACKGROUND_KEY) || "/dashboard#jobs"; } catch { return "/dashboard#jobs"; }
     })();
 
     openModal(location.search || "");
@@ -74,9 +69,7 @@ export default function GlobalJobCreateModal() {
   }, [location.pathname, location.search, location.hash, navigate, openModal]);
 
   React.useEffect(() => {
-    const onOpen = (event) => {
-      openModal(event?.detail?.search || "");
-    };
+    const onOpen = (event) => openModal(event?.detail?.search || "");
 
     const onClick = (event) => {
       const target = event.target;
@@ -92,10 +85,20 @@ export default function GlobalJobCreateModal() {
     };
 
     window.addEventListener(OPEN_EVENT, onOpen);
+    window.addEventListener(LEGACY_OPEN_EVENT, onOpen);
     document.addEventListener("click", onClick, true);
+
+    try {
+      const stored = window.localStorage.getItem(OPEN_JOB_MODAL_KEY);
+      if (stored) {
+        window.localStorage.removeItem(OPEN_JOB_MODAL_KEY);
+        setTimeout(() => openModal(stored === "true" ? "" : stored), 60);
+      }
+    } catch {}
 
     return () => {
       window.removeEventListener(OPEN_EVENT, onOpen);
+      window.removeEventListener(LEGACY_OPEN_EVENT, onOpen);
       document.removeEventListener("click", onClick, true);
     };
   }, [openModal]);
@@ -103,37 +106,29 @@ export default function GlobalJobCreateModal() {
   if (!open) return null;
 
   return (
-    <div className="cv-route-modal cv-global-job-modal" role="dialog" aria-modal="true" aria-label="Create new job">
-      <button
-        type="button"
-        className="cv-route-modal__backdrop"
-        aria-label="Close new job"
-        onClick={closeModal}
-      />
-
-      <section className="cv-route-modal__sheet cv-route-modal__sheet--job">
-        <header className="cv-route-modal__header">
-          <div>
-            <p>{firstSetup ? "Step 4 of 4" : "New job"}</p>
-            <h1>{firstSetup ? "Create your first job" : "New Job"}</h1>
-            <span>Quick add from wherever you are. Save it, then carry on.</span>
-          </div>
-
-          <button type="button" className="cv-route-modal__close" onClick={closeModal}>
-            <X className="h-5 w-5" />
-          </button>
+    <div
+      className="freshPopupBackdrop freshJobPopupBackdrop"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) closeModal();
+      }}
+    >
+      <section className="freshCard freshJobPopupCard">
+        <header className="freshHero freshJobPopupHero">
+          <span>{firstSetup ? "First job" : "New job"}</span>
+          <h1>{firstSetup ? "Create job" : "Add job"}</h1>
+          <p>Add the real job here without leaving the current area.</p>
         </header>
 
-        <div className="cv-route-modal__body">
+        <div className="freshJobPopupBody">
           <JobCreateForm
             modalSearch={modalSearch}
             onCancel={closeModal}
             onSuccess={() => {
               closeModal();
               window.dispatchEvent(new Event("churvox-records-refresh"));
-              window.dispatchEvent(new Event("churvox-auth-refresh"));
+              window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "job-created" } }));
             }}
-            submitLabel={firstSetup ? "Create first job" : "Create Job"}
+            submitLabel={firstSetup ? "Create first job" : "Save job"}
           />
         </div>
       </section>

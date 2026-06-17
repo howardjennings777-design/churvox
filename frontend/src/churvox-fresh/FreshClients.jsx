@@ -4,6 +4,7 @@ import { readFreshFocus } from "./freshFocus";
 
 const filters = ["All", "Active", "Needs setup", "Paused"];
 const OPEN_CLIENT_MODAL_KEY = "churvox:fresh-open-client-modal:v1";
+const OPEN_JOB_MODAL_KEY = "churvox:fresh-open-job-modal:v1";
 const emptyClient = { name: "", email: "", phone: "", address: "", notes: "" };
 
 function normalizeId(value) {
@@ -141,6 +142,12 @@ export default function FreshClients({ onNavigate }) {
     await loadClients({ quiet: true });
   }
 
+  function openJobPopup(clientId = "") {
+    const search = clientId ? `?client_id=${encodeURIComponent(clientId)}` : "";
+    try { window.localStorage.setItem(OPEN_JOB_MODAL_KEY, search || "true"); } catch {}
+    window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: { search } }));
+  }
+
   async function saveNewClient() {
     const name = newClient.name.trim();
     if (!name) { setAddError("Client name is required."); return; }
@@ -171,7 +178,7 @@ export default function FreshClients({ onNavigate }) {
       <section className="freshGrid">
         <aside className="freshCard"><h2>Client list</h2>{loading && clients.length === 0 ? <div className="freshItem"><b>Loading real clients…</b><span>Checking your business account.</span></div> : visibleClients.map((client) => <button type="button" className={`freshItem ${selected?.id === client.id ? "active" : ""} ${client.status === "Needs setup" ? "need" : ""}`} key={client.id} onClick={() => setSelectedId(client.id)}><b>{client.name}</b><span>{client.type} · {client.status} · {client.value}</span></button>)}{loading && clients.length > 0 ? <div className="freshItem"><b>Refreshing clients…</b><span>Showing your current saved records while Churvox refreshes.</span></div> : null}{!loading && visibleClients.length === 0 ? <div className="freshItem"><b>No matching clients</b><span>Create a client or clear the search/filter.</span></div> : null}</aside>
         <section className="freshCard"><h2>{selected?.name || "Select client"}</h2>{selected ? <><div className="freshMiniGrid"><div><span>Status</span><b>{selected.status}</b></div><div><span>Type</span><b>{selected.type}</b></div><div><span>Value</span><b>{selected.value}</b></div><div><span>Risk</span><b>{selected.risk}</b></div></div><label className="freshField"><span>Client name</span><input value={selected.name} onChange={(event) => updateSelectedClient({ name: event.target.value })} /></label><label className="freshField"><span>Invoice/customer email</span><input value={selected.email} onChange={(event) => updateSelectedClient({ email: event.target.value })} /></label><label className="freshField"><span>Phone</span><input value={selected.phone} onChange={(event) => updateSelectedClient({ phone: event.target.value })} /></label><label className="freshField"><span>Service address</span><input value={selected.address} onChange={(event) => updateSelectedClient({ address: event.target.value })} /></label><label className="freshField"><span>Client notes</span><textarea value={selected.notes} onChange={(event) => updateSelectedClient({ notes: event.target.value })} /></label><div className="freshActions"><button className="freshPrimary" type="button" disabled={saving} onClick={saveSelectedClient}>{saving ? "Saving…" : "Save client"}</button></div></> : <div className="freshItem"><b>No client selected</b><span>Add your first client to start the workflow.</span></div>}</section>
-        <aside className="freshCard"><h2>Owner actions</h2><div className="freshActions"><button className="freshPrimary" type="button" onClick={() => setAddOpen(true)}>Add client</button><button className="freshOrange" type="button" disabled={!selected} onClick={() => window.location.href = selected ? `/jobs/new?client_id=${encodeURIComponent(selected.id)}` : "/jobs/new"}>Create job</button><button className="freshDark" type="button" disabled={!selected} onClick={() => window.location.href = selected ? `/quotes/new?client_id=${encodeURIComponent(selected.id)}` : "/quotes/new"}>Create quote</button><button className="freshGhost" type="button" onClick={() => onNavigate?.("command")}>Send issue to Command</button><button className="freshGhost" type="button" onClick={() => loadClients()}>Refresh clients</button></div></aside>
+        <aside className="freshCard"><h2>Owner actions</h2><div className="freshActions"><button className="freshPrimary" type="button" onClick={() => setAddOpen(true)}>Add client</button><button className="freshOrange" type="button" disabled={!selected} onClick={() => openJobPopup(selected?.id || "")}>Create job</button><button className="freshDark" type="button" disabled={!selected} onClick={() => window.location.href = selected ? `/quotes/new?client_id=${encodeURIComponent(selected.id)}` : "/quotes/new"}>Create quote</button><button className="freshGhost" type="button" onClick={() => onNavigate?.("command")}>Send issue to Command</button><button className="freshGhost" type="button" onClick={() => loadClients()}>Refresh clients</button></div></aside>
       </section>
 
       {addOpen ? (

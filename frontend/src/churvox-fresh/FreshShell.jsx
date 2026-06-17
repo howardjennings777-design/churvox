@@ -6,6 +6,7 @@ import API_BASE from "../lib/apiBase";
 
 const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
 const OPEN_CLIENT_MODAL_KEY = "churvox:fresh-open-client-modal:v1";
+const OPEN_JOB_MODAL_KEY = "churvox:fresh-open-job-modal:v1";
 
 const groups = [
   { title: "Daily", items: [["smart", "TD", "Today"], ["quickcreateai", "AI", "Tell Churvox"], ["command", "RV", "Review"]] },
@@ -120,7 +121,15 @@ export default function FreshShell({ active, onChange, children }) {
 
   async function handleLogout() { try { if (auth?.logout) await auth.logout(); } finally { try { window.localStorage.removeItem("token"); window.localStorage.removeItem("owner_portal_session"); window.localStorage.removeItem("platform_owner_email"); } catch {} window.location.href = "/login"; } }
   function go(key) { if (key === "more") return; if (guideComplete && key === "setupassistant") return; setMoreOpen(false); resetFreshScrollTop(); onChange(key); }
-  function openRealCreate(path) { setMoreOpen(false); window.location.href = path; }
+  function openRealCreate(path) {
+    setMoreOpen(false);
+    if (String(path || "").startsWith("/jobs/new")) {
+      try { window.localStorage.setItem(OPEN_JOB_MODAL_KEY, "true"); } catch {}
+      window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: { search: "" } }));
+      return;
+    }
+    window.location.href = path;
+  }
   function openClientPopup() { try { window.localStorage.setItem(OPEN_CLIENT_MODAL_KEY, "true"); } catch {} setMoreOpen(false); resetFreshScrollTop(); onChange("clients"); window.dispatchEvent(new CustomEvent("churvox:open-client-popup")); }
   async function resendVerification() { setVerifySending(true); try { const token = window.localStorage.getItem("token") || ""; await fetch(`${API_BASE}/api/auth/resend-verification`, { method: "POST", credentials: "include", headers: { Accept: "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) } }); setVerifySent(true); } catch { setVerifySent(false); } finally { setVerifySending(false); } }
   function handleMobile(key) { if (key === "more") { setMoreOpen((value) => !value); return; } go(key); }

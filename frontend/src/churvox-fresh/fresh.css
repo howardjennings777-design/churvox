@@ -392,3 +392,84 @@
   .freshLogoutSide { display: none !important; }
   .freshLogoutTop { display: inline-flex !important; }
 }
+
+
+/* CHURVOX_FRESH_JOB_POPUP_LIKE_CLIENT_20260617 */
+.freshPopupBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  background: rgba(15,23,42,.62);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  backdrop-filter: blur(6px);
+}
+
+.freshJobPopupCard {
+  width: min(640px, 100%);
+  max-height: 88vh;
+  overflow: auto;
+  box-shadow: 0 30px 80px rgba(0,0,0,.35);
+  border-radius: 24px;
+}
+
+.freshJobPopupHero {
+  margin-bottom: 12px;
+}
+
+.freshJobPopupBody form {
+  min-height: auto !important;
+}
+
+.freshJobPopupBody form > div:first-child {
+  padding-bottom: 14px !important;
+}
+
+.freshJobPopupBody section {
+  background: #ffffff !important;
+  border-color: rgba(15,23,42,.14) !important;
+  color: #0f172a !important;
+}
+
+.freshJobPopupBody section p,
+.freshJobPopupBody label,
+.freshJobPopupBody span,
+.freshJobPopupBody b {
+  color: #0f172a !important;
+}
+
+.freshJobPopupBody input,
+.freshJobPopupBody textarea,
+.freshJobPopupBody select {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: rgba(15,23,42,.16) !important;
+}
+
+.freshJobPopupBody .sticky {
+  position: sticky !important;
+  bottom: 0 !important;
+  margin: 0 -16px -16px !important;
+  padding: 12px 16px !important;
+  background: rgba(255,255,255,.96) !important;
+  border-top: 1px solid rgba(15,23,42,.12) !important;
+  border-radius: 0 0 22px 22px !important;
+}
+
+.freshJobPopupBody .px-btn {
+  min-height: 42px;
+}
+
+@media (max-width: 720px) {
+  .freshPopupBackdrop {
+    align-items: end;
+    padding: 10px;
+  }
+
+  .freshJobPopupCard {
+    max-height: 92vh;
+    width: 100%;
+    border-radius: 24px 24px 18px 18px;
+  }
+}
