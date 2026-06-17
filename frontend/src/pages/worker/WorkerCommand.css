@@ -545,3 +545,102 @@ body:has(.px-app.pb-28) .cv-help-fab {
     color: #fff7ed !important;
   }
 }
+
+/* CHURVOX_WORKER_SIMPLE_MOBILE_FLOW_20260618 */
+.px-app.pb-28 .worker-flow-panel {
+  display: none !important;
+}
+
+.px-app.pb-28 .worker-simple-next {
+  display: grid !important;
+  gap: 14px !important;
+  border-radius: 28px !important;
+  padding: 18px !important;
+  background: #111827 !important;
+  color: #fff7ed !important;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.2) !important;
+}
+
+.px-app.pb-28 .worker-simple-next__top {
+  display: grid !important;
+  gap: 6px !important;
+}
+
+.px-app.pb-28 .worker-simple-next__top p {
+  margin: 0 !important;
+  color: #fed7aa !important;
+  font-size: 11px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase !important;
+}
+
+.px-app.pb-28 .worker-simple-next__top h2 {
+  margin: 0 !important;
+  color: #ffffff !important;
+  font-size: 27px !important;
+  line-height: 1 !important;
+  letter-spacing: -.04em !important;
+}
+
+.px-app.pb-28 .worker-simple-next__top span {
+  color: #dbeafe !important;
+  font-size: 14px !important;
+  font-weight: 850 !important;
+  line-height: 1.35 !important;
+}
+
+.px-app.pb-28 .worker-simple-actions {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.px-app.pb-28 .worker-simple-actions button {
+  min-height: 92px !important;
+  border-radius: 22px !important;
+  border: 1px solid rgba(255,255,255,.13) !important;
+  background: rgba(255,255,255,.09) !important;
+  color: #ffffff !important;
+  padding: 13px !important;
+  display: grid !important;
+  align-content: center !important;
+  gap: 5px !important;
+  text-align: left !important;
+}
+
+.px-app.pb-28 .worker-simple-actions button b {
+  color: #ffffff !important;
+  font-size: 17px !important;
+  line-height: 1.05 !important;
+}
+
+.px-app.pb-28 .worker-simple-actions button small {
+  color: #cbd5e1 !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+  line-height: 1.2 !important;
+}
+
+.px-app.pb-28 .worker-simple-actions button:disabled {
+  opacity: .55 !important;
+}
+
+.px-app.pb-28 .worker-simple-help {
+  min-height: 50px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: #f97316 !important;
+  color: #111827 !important;
+  font-weight: 1000 !important;
+}
+
+@media (max-width: 420px) {
+  .px-app.pb-28 .worker-simple-actions {
+    grid-template-columns: 1fr !important;
+  }
+
+  .px-app.pb-28 .worker-simple-actions button {
+    min-height: 76px !important;
+  }
+}

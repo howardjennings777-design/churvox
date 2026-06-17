@@ -79,14 +79,14 @@ function WorkerWorkSlipReadiness({ status, photoCount, workerNotes, sentBack }) 
   return (
     <section className={`worker-readiness-card ${readyCount >= 2 ? "worker-readiness-card--ready" : ""}`}>
       <div>
-        <p>OWNER WORK SLIP</p>
-        <h2>{sentBack ? "Fix it, then send it back to owner review." : "Make the owner approval easy."}</h2>
-        <span>Add a clear note and photos before completing. Churvox uses this evidence to prepare the owner Work Slip and invoice admin.</span>
+        <p>Before you finish</p>
+        <h2>{sentBack ? "Fix this job, then finish it again." : "Add proof before finishing."}</h2>
+        <span>Add a clear note and photos. This helps the boss see what happened.</span>
       </div>
       <div className="worker-readiness-list">
-        <span className={noteReady ? "is-done" : ""}><b>{noteReady ? "✓" : "1"}</b><small>Worker note</small></span>
+        <span className={noteReady ? "is-done" : ""}><b>{noteReady ? "✓" : "1"}</b><small>Note</small></span>
         <span className={photosReady ? "is-done" : ""}><b>{photosReady ? "✓" : "2"}</b><small>Photos</small></span>
-        <span className={completed ? "is-done" : ""}><b>{completed ? "✓" : "3"}</b><small>Complete job</small></span>
+        <span className={completed ? "is-done" : ""}><b>{completed ? "✓" : "3"}</b><small>Finish</small></span>
       </div>
     </section>
   );
@@ -239,7 +239,7 @@ export default function WorkerJobDetailPage() {
       <header className="bg-[rgba(17,21,27,0.92)] backdrop-blur border-b border-[var(--cx-border)] px-4 py-4 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <Link to="/worker/jobs"><ArrowLeft className="h-5 w-5 text-[var(--cx-muted)]" /></Link>
-          <h1 className="text-lg font-bold text-[var(--cx-text)]">Job checklist</h1>
+          <h1 className="text-lg font-bold text-[var(--cx-text)]">Job</h1>
         </div>
       </header>
 
@@ -257,12 +257,12 @@ export default function WorkerJobDetailPage() {
 
         <PremiumCard>
           <div className="px-card__body space-y-2">
-            <p className="text-sm font-semibold text-[var(--cx-text)]">Work timer</p>
+            <p className="text-sm font-semibold text-[var(--cx-text)]">Timer</p>
             <div className="grid grid-cols-2 gap-2 text-xs text-[var(--cx-muted)]">
               <div className="rounded-xl border border-[var(--cx-border)] p-2">Timer: <b className="text-[var(--cx-text)]">{activeStatuses.has(status) ? status.replace("_", " ") : "not running"}</b></div>
               <div className="rounded-xl border border-[var(--cx-border)] p-2">Timesheet: <b className="text-[var(--cx-text)]">{timeLabel}</b></div>
             </div>
-            <p className="text-xs text-[var(--cx-muted)]">Start, pause, resume and finish use the real job timer so the owner can review the work cleanly.</p>
+            <p className="text-xs text-[var(--cx-muted)]">Use this timer while you are on the job.</p>
           </div>
         </PremiumCard>
 
@@ -281,13 +281,13 @@ export default function WorkerJobDetailPage() {
 
         <PremiumCard>
           <div className="px-card__body space-y-2">
-            <p className="text-sm font-semibold text-[var(--cx-text)]">Time & work controls</p>
+            <p className="text-sm font-semibold text-[var(--cx-text)]">Job controls</p>
             <div className="grid grid-cols-2 gap-2">
               <PremiumButton onClick={handleAcknowledge} disabled={saving || !canAcknowledge(status)} iconLeft={<Hand className="h-4 w-4" />}>Acknowledge</PremiumButton>
               <PremiumButton onClick={() => runTimerAction(status === "paused" ? "Job resumed" : "Job started", status === "paused" ? "resume" : "start", status === "paused" ? `/jobs/${encodeURIComponent(id)}/timer/resume` : `/jobs/${encodeURIComponent(id)}/timer/start`)} disabled={saving || (!canStart(status) && !canResume(status))} iconLeft={status === "paused" ? <RotateCcw className="h-4 w-4" /> : <Play className="h-4 w-4" />}>{status === "paused" ? "Resume" : "Start"}</PremiumButton>
               <PremiumButton variant="secondary" onClick={() => runTimerAction("Job paused", "pause", `/jobs/${encodeURIComponent(id)}/timer/pause`)} disabled={saving || !canPause(status)} iconLeft={<Pause className="h-4 w-4" />}>Pause</PremiumButton>
               <PremiumButton variant="secondary" onClick={() => runTimerAction("Job resumed", "resume", `/jobs/${encodeURIComponent(id)}/timer/resume`)} disabled={saving || !canResume(status)} iconLeft={<RotateCcw className="h-4 w-4" />}>Resume</PremiumButton>
-              <div className="col-span-2"><PremiumButton className="w-full" onClick={() => completeJob(sentBack ? "Sent back to owner review" : "Job finished — time saved", resubmitPayload)} disabled={saving || !canComplete(status, sentBack)} iconLeft={<CheckCircle className="h-4 w-4" />}>{sentBack ? "Send back to owner review" : "Finish job & save time"}</PremiumButton></div>
+              <div className="col-span-2"><PremiumButton className="w-full" onClick={() => completeJob(sentBack ? "Sent back to owner review" : "Job finished", resubmitPayload)} disabled={saving || !canComplete(status, sentBack)} iconLeft={<CheckCircle className="h-4 w-4" />}>{sentBack ? "Send back to owner review" : "Finish job"}</PremiumButton></div>
             </div>
           </div>
         </PremiumCard>
@@ -302,21 +302,21 @@ export default function WorkerJobDetailPage() {
           </div>
         </PremiumCard>
 
-        <PremiumAIDraftPanel title={sentBack ? "AI Fix Helper" : "AI Job Helper"} subtitle={sentBack ? "Draft a clear response for the owner." : "Worker-safe drafting for your field updates."} surface="jobs" context={safeAiContext} defaultPrompt={sentBack ? "Write a clear note explaining what I fixed for the owner." : "Summarise what I need to do for this job."} quickActions={[{ label: sentBack ? "Fix note" : "Summarise tasks", prompt: sentBack ? "Write a clear note explaining what I fixed for the owner." : "Summarise what I need to do for this job." }, { label: "Professional note", prompt: "Turn my rough note into a professional job note." }, { label: "Completion summary", prompt: "Create a completion summary for the owner." }, { label: "Checklist", prompt: "Create a clear checklist for this job." }]} />
+        <PremiumAIDraftPanel title={sentBack ? "AI Fix Helper" : "AI Job Helper"} subtitle={sentBack ? "Draft a clear response for the owner." : "Worker-safe drafting for your field updates."} surface="jobs" context={safeAiContext} defaultPrompt={sentBack ? "Write a clear note explaining what I fixed for the owner." : "Summarise what I need to do for this job."} quickActions={[{ label: sentBack ? "Fix note" : "Summarise tasks", prompt: sentBack ? "Write a clear note explaining what I fixed for the owner." : "Summarise what I need to do for this job." }, { label: "Professional note", prompt: "Turn my rough note into a professional job note." }, { label: "Finish job summary", prompt: "Create a completion summary for the owner." }, { label: "Checklist", prompt: "Create a clear checklist for this job." }]} />
 
         <PremiumCard id="complete">
           <div className="px-card__body space-y-2">
-            <p className="text-sm font-semibold text-[var(--cx-text)]">{sentBack ? "Resubmit to owner" : "Completion"}</p>
-            <textarea className="px-input" rows={3} value={finalNote} onChange={(e) => setFinalNote(e.target.value)} placeholder={sentBack ? "What did you fix?" : "Final completion note..."} />
-            <p className="text-xs text-[var(--cx-muted)]">{sentBack ? "This will send the job back to Work Review for the owner." : "Reminder: add at least one final photo where possible before completion."}</p>
-            <PremiumButton className="w-full" onClick={async () => { await handleSaveNotes(finalNote); await completeJob(sentBack ? "Resubmitted for owner review" : "Job finished — time saved", resubmitPayload); }} disabled={saving || savingNotes || !canComplete(status, sentBack)}>{sentBack ? "Resubmit for owner review" : "Finish job & save time"}</PremiumButton>
+            <p className="text-sm font-semibold text-[var(--cx-text)]">{sentBack ? "Resubmit to owner" : "Finish job"}</p>
+            <textarea className="px-input" rows={3} value={finalNote} onChange={(e) => setFinalNote(e.target.value)} placeholder={sentBack ? "What did you fix?" : "What did you do?"} />
+            <p className="text-xs text-[var(--cx-muted)]">{sentBack ? "This will send the job back to Work Review for the owner." : "Add a photo where possible before finishing."}</p>
+            <PremiumButton className="w-full" onClick={async () => { await handleSaveNotes(finalNote); await completeJob(sentBack ? "Resubmitted for owner review" : "Job finished", resubmitPayload); }} disabled={saving || savingNotes || !canComplete(status, sentBack)}>{sentBack ? "Resubmit for owner review" : "Finish job"}</PremiumButton>
           </div>
         </PremiumCard>
 
         <PremiumCard>
           <div className="px-card__body space-y-2">
             <p className="text-sm font-semibold text-[var(--cx-text)]">Need help with this job?</p>
-            <p className="text-xs text-[var(--cx-muted)]">Contact your office team for scheduling, access, or job instruction support.</p>
+            <p className="text-xs text-[var(--cx-muted)]">Message the office if the address, access, or job notes are wrong.</p>
             <PremiumButton variant="secondary" className="w-full" onClick={() => setShowContactOffice(true)} iconLeft={<ClipboardList className="h-4 w-4" />}>Contact office</PremiumButton>
           </div>
         </PremiumCard>
