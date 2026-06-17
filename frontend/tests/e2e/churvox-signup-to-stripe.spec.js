@@ -34,6 +34,10 @@ async function clickText(page, texts) {
   return false;
 }
 
+function isStripeCheckoutUrl(url) {
+  return /https:\/\/checkout\.stripe\.com\//i.test(String(url || ''));
+}
+
 test.describe('Fresh customer signup to Stripe launch path', () => {
   test('new owner can sign up, land on Plans, and open Stripe checkout', async ({ page }) => {
     test.skip(!RUN_SIGNUP, 'Set CHURVOX_E2E_SIGNUP=1 because this creates a real test owner account.');
@@ -85,24 +89,33 @@ test.describe('Fresh customer signup to Stripe launch path', () => {
     expect(trace || '', 'live Plans bundle should include latest auth recovery marker').toContain('auth-recover');
 
     const beforeClickUrl = page.url();
-    const stripePromise = page.waitForURL(/checkout\.stripe\.com|stripe\.com/i, { timeout: 45000 }).catch(() => null);
+    const stripeNavigation = page
+      .waitForURL(/checkout\.stripe\.com/i, { timeout: 45000 })
+      .then(() => true)
+      .catch(() => false);
+
     const opened = await clickText(page, ['Start Stripe checkout']);
     expect(opened, 'Start Stripe checkout should be clickable').toBeTruthy();
 
-    const stripeUrl = await stripePromise;
-    if (!stripeUrl) {
+    const reachedStripeByWait = await stripeNavigation;
+    const afterClickUrl = page.url();
+    const reachedStripe = reachedStripeByWait || isStripeCheckoutUrl(afterClickUrl);
+
+    if (!reachedStripe) {
       await page.waitForTimeout(2500).catch(() => {});
-      const afterClickUrl = page.url();
+      const finalUrl = page.url();
       const visibleText = await page.locator('body').innerText({ timeout: 5000 }).catch(() => 'Could not read page body');
       throw new Error([
         'Stripe checkout did not open.',
         `Before click URL: ${beforeClickUrl}`,
         `After click URL: ${afterClickUrl}`,
+        `Final URL: ${finalUrl}`,
         `Checkout events: ${JSON.stringify(checkoutEvents.slice(-20), null, 2)}`,
         `Visible body: ${String(visibleText).slice(0, 1200)}`,
       ].join('\n'));
     }
 
-    expect(page.url()).toMatch(/checkout\.stripe\.com|stripe\.com/i);
+    expect(page.url()).toMatch(/checkout\.stripe\.com/i);
+    await expect(page.locator('body')).toContainText(/Start for free|Churvox|trial/i, { timeout: 30000 });
   });
 });
