@@ -3276,17 +3276,25 @@ def _live_is_today(value):
 
 
 def _live_serial(doc):
-    try:
-        return serialize_doc(dict(doc))
-    except Exception:
-        return make_json_safe(dict(doc))
+    """
+    Worker live status can contain nested Mongo ObjectIds/datetimes inside
+    jobs, workers, assigned_worker objects, photos metadata, etc.
+    Always recursively JSON-safe it before FastAPI returns it.
+    """
+    if not doc:
+        return {}
+    safe = dict(doc)
+    if "_id" in safe:
+        safe["id"] = str(safe.pop("_id"))
+    return make_json_safe(safe)
 
 
 @api_router.get("/worker/live-status")
 async def worker_live_status(request: Request, current_user: dict = Depends(get_current_user)):
-    user = await require_employer(request)
-    business_id = str(user.get("business_id") or user.get("id"))
-    business_oid = normalize_object_id(business_id)
+    try:
+        user = await require_employer(request)
+        business_id = str(user.get("business_id") or user.get("id"))
+        business_oid = normalize_object_id(business_id)
 
     business_or = [{"business_id": business_id}]
     job_or = [{"business_id": business_id}]
@@ -3394,12 +3402,21 @@ async def worker_live_status(request: Request, current_user: dict = Depends(get_
 
         live_workers.append(_live_serial(worker_live))
 
-    return {
-        "success": True,
-        "workers": live_workers,
-        "jobs": [_live_serial(job) for job in jobs],
-        "updated_at": datetime.now(timezone.utc).isoformat(),
-    }
+        return {
+            "success": True,
+            "workers": live_workers,
+            "jobs": [_live_serial(job) for job in jobs],
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+    except Exception as exc:
+        logger.exception("WORKER_LIVE_STATUS_DEBUG_ERROR_20260618")
+        return {
+            "success": False,
+            "error": str(exc),
+            "workers": [],
+            "jobs": [],
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
 
 
 # ===================== DASHBOARD STATS =====================
