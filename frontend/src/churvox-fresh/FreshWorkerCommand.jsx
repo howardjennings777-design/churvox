@@ -545,7 +545,7 @@ export default function FreshWorkerCommand({ onNavigate }) {
                     <div><span>Jobs today</span><b>{selectedTodayCount}</b></div>
                     <div><span>Latest update</span><b>{selectedLatestUpdate || "Waiting"}</b></div>
                   </div>
-                  {view.currentJob ? <JobRow job={view.currentJob} /> : selectedCurrentJobTitle ? <div className="freshItem"><b>{selectedCurrentJobTitle}</b><span>{selectedCurrent.status ? selectedCurrent.status.replaceAll("_", " ") : "Live worker update"}</span></div> : <div className="freshItem"><b>No active job</b><span>Worker is not currently on a started job.</span></div>}
+                  {view.currentJob ? <JobRow job={view.currentJob} /> : selectedCurrent.title ? <div className="freshItem"><b>{selectedCurrent.title}</b><span>{selectedCurrent.status ? selectedCurrent.status.replaceAll("_", " ") : "Live worker update"}</span></div> : <div className="freshItem"><b>No active job</b><span>Worker is not currently on a started job.</span></div>}
                 </article>
 
                 <article className="freshCard">
