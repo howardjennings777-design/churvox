@@ -577,29 +577,29 @@ export default function FreshWorkerCommand({ onNavigate }) {
                 <div className="freshWorkerStatusPill">{selectedLiveStatus}</div>
               </section>
 
-              <section className="freshWorkerCommandStats">
+              <section className="freshWorkerCommandStats workerTimeStatsReadable">
                 <aside className="freshCard freshWorkerTimeCard">
-                  <span>Paid day time</span>
+                  <div className="workerTimeMeaning">Clocked-in paid day time</div>
                   <b>{hoursText(view.shiftSeconds)}</b>
-                  <small>Worker clock-in time to now. This is paid time for the day.</small>
+                  <div className="workerTimeBottom">From Clock In until now / Clock Out.</div>
                 </aside>
 
                 <aside className="freshCard freshWorkerTimeCard">
-                  <span>Job timer time</span>
+                  <div className="workerTimeMeaning">Job timer time</div>
                   <b>{hoursText(view.jobTimeSeconds)}</b>
-                  <small>Time from job Start/Pause/Resume/Finish timers.</small>
+                  <div className="workerTimeBottom">Only time on Start, Pause, Resume, Finish job timer.</div>
                 </aside>
 
                 <aside className="freshCard freshWorkerTimeCard">
-                  <span>Paid time not on jobs</span>
+                  <div className="workerTimeMeaning">Paid time not on jobs</div>
                   <b>{hoursText(view.unallocatedSeconds)}</b>
-                  <small>Paid day time minus job timer time. Travel, setup, waiting, or missed timer.</small>
+                  <div className="workerTimeBottom">Paid day time minus job timer time.</div>
                 </aside>
 
                 <aside className="freshCard freshWorkerTimeCard">
-                  <span>Last location</span>
-                  <b>{selectedGpsText ? "Recorded" : "Waiting"}</b>
-                  <small>{selectedGpsText || "Latest GPS street/suburb will show here."}</small>
+                  <div className="workerTimeMeaning">Last GPS location</div>
+                  <b>{selectedGpsText ? "GPS" : "Waiting"}</b>
+                  <div className="workerTimeBottom">{selectedGpsText || "Street/suburb shows after GPS check."}</div>
                 </aside>
               </section>
 
