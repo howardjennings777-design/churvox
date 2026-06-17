@@ -237,3 +237,17 @@
   -webkit-text-fill-color: #94a3b8 !important;
   font-weight: 800 !important;
 }
+
+/* CHURVOX_TELL_CHURVOX_NO_PILLS_AND_FOCUS_20260617 */
+.freshQuickAiPanel--soloCommand textarea,
+.freshQuickAiPanel--command textarea {
+  min-height: 300px !important;
+  white-space: pre-line !important;
+}
+
+.freshQuickAiPanel--soloCommand textarea::placeholder,
+.freshQuickAiPanel--command textarea::placeholder {
+  color: #94a3b8 !important;
+  -webkit-text-fill-color: #94a3b8 !important;
+  font-weight: 800 !important;
+}

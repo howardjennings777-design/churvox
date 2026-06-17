@@ -5,23 +5,29 @@ import { useApi } from "../hooks/useApi";
 function itemId(item) { return item?.id || item?._id || ""; }
 function categoryOf(item) { return String(item?.category || item?.action || "other").toLowerCase(); }
 function payloadOf(item) { return item?.payload && typeof item.payload === "object" ? item.payload : {}; }
+
 function moneyValue(value) {
   const n = Number(String(value ?? "").replace(/[^0-9.-]/g, ""));
   return Number.isFinite(n) && n > 0 ? `$${n.toFixed(0)}` : "";
 }
+
 function dateValue(value) {
   if (!value) return "";
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleDateString("en-NZ", { day: "2-digit", month: "short", year: "numeric" });
 }
+
 function genericText(value) {
   return /^(ai prepared admin work|review prepared from tell churvox|prepared admin action)$/i.test(String(value || "").trim());
 }
+
 function titleOf(item) {
   const p = payloadOf(item);
   const action = String(item?.action || "").toLowerCase();
   const existing = item?.title || item?.summary;
+
   if (existing && !genericText(existing)) return existing;
+
   if (action === "create_job") return `New job: ${p.address || p.title || p.customer_name || "job to review"}`;
   if (action === "create_client") return `New client: ${p.name || p.customer_name || "client to review"}`;
   if (action === "create_quote") return `New quote: ${p.address || p.customer_name || p.job_description || "quote to review"}`;
@@ -31,26 +37,33 @@ function titleOf(item) {
   if (action === "update_job_price") return `Update price: ${item?.match?.label || p.job_id || "matched job"}`;
   if (action === "prepare_invoice_followups") return "Prepare invoice follow-ups";
   if (action === "find_records") return "Find matching records";
+
   return item?.original_text ? `Review: ${String(item.original_text).slice(0, 70)}` : "Prepared admin action";
 }
+
 function summaryOf(item) {
   const p = payloadOf(item);
   const action = String(item?.action || "").toLowerCase();
   const existing = item?.summary;
+
   if (existing && !genericText(existing)) return existing;
+
   const bits = [
     p.customer_name || p.client_name || p.name,
     p.address,
     moneyValue(p.price || p.amount || p.subtotal || p.total),
     dateValue(p.scheduled_date || p.date),
   ].filter(Boolean);
+
   if (bits.length) return bits.join(" · ");
   if (item?.original_text) return String(item.original_text).slice(0, 140);
   return action ? `${action.replaceAll("_", " ")} prepared for owner Review.` : "Prepared by Churvox and waiting for owner approval.";
 }
+
 function entriesOf(item) {
   const p = payloadOf(item);
   const rows = [];
+
   if (item?.original_text) rows.push(["Original instruction", item.original_text]);
   if (p.customer_name || p.client_name || p.name) rows.push(["Customer", p.customer_name || p.client_name || p.name]);
   if (p.address) rows.push(["Address", p.address]);
@@ -58,13 +71,16 @@ function entriesOf(item) {
   if (p.scheduled_date || p.date || p.scheduled_date_human) rows.push(["Date", dateValue(p.scheduled_date || p.date) || p.scheduled_date_human]);
   if (p.email || p.customer_email) rows.push(["Email", p.email || p.customer_email]);
   if (p.phone) rows.push(["Phone", p.phone]);
+
   const details = item?.details && typeof item.details === "object" ? item.details : {};
   Object.entries(details).forEach(([key, value]) => {
     if (rows.length >= 8) return;
     if (value !== undefined && value !== null && String(value).trim() && !genericText(value)) rows.push([key, value]);
   });
+
   if (!rows.length) rows.push(["What Churvox prepared", summaryOf(item)]);
   rows.push(["Safe rule", "Nothing changes until you approve."]);
+
   return rows.slice(0, 8);
 }
 
@@ -95,10 +111,18 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
   const [error, setError] = React.useState("");
 
   const loadItems = React.useCallback(async () => {
-    setLoading(true); setError("");
+    setLoading(true);
+    setError("");
+
     const res = await get("/ai-review-items", { timeout: 25000 });
     setLoading(false);
-    if (!res?.success) { setItems([]); setError(res?.error || "Backend Review is not ready. No local fallback was loaded."); return; }
+
+    if (!res?.success) {
+      setItems([]);
+      setError(res?.error || "Backend Review is not ready. No local fallback was loaded.");
+      return;
+    }
+
     const list = res?.data?.items || res?.items || [];
     const safeList = Array.isArray(list) ? [...list] : [];
     safeList.sort((a, b) => new Date(b?.created_at || 0) - new Date(a?.created_at || 0));

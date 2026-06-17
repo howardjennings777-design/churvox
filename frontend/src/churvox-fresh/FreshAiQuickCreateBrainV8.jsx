@@ -35,7 +35,7 @@ export default function FreshAiQuickCreateBrainV8({ onNavigate }) {
       setStatus({
         tone: "need",
         title: "Tell Churvox first",
-        text: "Type the job, customer, price, date or change. Churvox will prepare it for Review.",
+        text: "Type what you want done. Churvox will prepare it for Review.",
       });
       return;
     }
@@ -61,15 +61,22 @@ export default function FreshAiQuickCreateBrainV8({ onNavigate }) {
     }
 
     const nextItem = res?.data?.item || res?.item || res?.data;
+    const nextId = nextItem?.id || nextItem?._id || "";
+
     setItem(nextItem);
     setText("");
     setStatus({
       tone: "ok",
       title: "Saved to Review",
-      text: "Churvox prepared backend Review work. Nothing changes until you approve it.",
+      text: "Churvox prepared backend Review work. Opening Review now.",
     });
 
-    window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "backend-ai-review" } }));
+    try {
+      if (nextId) window.localStorage.setItem("churvox:last-ai-review-id:v1", nextId);
+    } catch {}
+
+    window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "backend-ai-review", id: nextId } }));
+    window.setTimeout(() => onNavigate?.("command"), 450);
   }
 
   return (
