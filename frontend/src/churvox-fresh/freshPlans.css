@@ -1053,3 +1053,62 @@
     min-height: auto !important;
   }
 }
+
+/* CHURVOX_PLANS_SHORTER_HEADER_20260617 */
+.freshPricingHero,
+.freshPricingHeroV2 {
+  min-height: 170px !important;
+  padding: 18px 24px !important;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 280px) !important;
+  gap: 14px !important;
+}
+
+.freshPricingHero h1,
+.freshPricingHeroV2 h1 {
+  font-size: clamp(34px, 4.3vw, 58px) !important;
+  line-height: .9 !important;
+  margin: 10px 0 8px !important;
+  max-width: 680px !important;
+}
+
+.freshPricingHero p,
+.freshPricingHeroV2 p {
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+  max-width: 620px !important;
+}
+
+.freshPricingHeroActions {
+  margin-top: 12px !important;
+}
+
+.freshPricingHeroActions button {
+  padding: 10px 13px !important;
+  min-height: 38px !important;
+}
+
+.freshCurrentPlanBox,
+.freshPricingHero aside {
+  padding: 16px !important;
+  border-radius: 22px !important;
+}
+
+.freshPricingHero aside strong,
+.freshCurrentPlanBox strong {
+  font-size: clamp(26px, 3vw, 38px) !important;
+  margin-top: 6px !important;
+}
+
+.freshPricingHero aside p,
+.freshCurrentPlanBox p {
+  margin-top: 8px !important;
+  font-size: 12px !important;
+}
+
+@media (max-width: 900px) {
+  .freshPricingHero,
+  .freshPricingHeroV2 {
+    grid-template-columns: 1fr !important;
+    min-height: auto !important;
+  }
+}
