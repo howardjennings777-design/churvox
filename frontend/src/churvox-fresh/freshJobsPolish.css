@@ -216,3 +216,25 @@ body:has(.freshJobsPage) {
     overflow: visible !important;
   }
 }
+
+/* CHURVOX_JOBS_ALLOW_MAIN_SCROLLBAR_20260617 */
+html:has(.freshJobsPage),
+body:has(.freshJobsPage) {
+  overflow: hidden !important;
+}
+
+.freshMain {
+  overflow-y: scroll !important;
+  scrollbar-width: auto !important;
+}
+
+.freshMain::-webkit-scrollbar {
+  display: block !important;
+  width: 12px !important;
+}
+
+.freshJobsPage {
+  height: auto !important;
+  min-height: calc(100dvh - 110px) !important;
+  overflow: visible !important;
+}

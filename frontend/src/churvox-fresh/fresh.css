@@ -698,3 +698,46 @@ body {
     min-height: auto !important;
   }
 }
+
+/* CHURVOX_RESTORE_MAIN_SCROLLBAR_20260617 */
+html,
+body,
+#root {
+  height: 100% !important;
+}
+
+.freshApp {
+  height: 100dvh !important;
+  overflow: hidden !important;
+}
+
+.freshMain {
+  height: 100dvh !important;
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  scrollbar-width: auto !important;
+}
+
+.freshMain::-webkit-scrollbar {
+  display: block !important;
+  width: 12px !important;
+}
+
+.freshMain::-webkit-scrollbar-track {
+  background: rgba(237, 225, 209, .95) !important;
+}
+
+.freshMain::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, .38) !important;
+  border-radius: 999px !important;
+  border: 3px solid rgba(237, 225, 209, .95) !important;
+}
+
+.freshMain::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 23, 42, .55) !important;
+}
+
+.freshPageScroll {
+  min-height: calc(100dvh + 1px) !important;
+  padding-bottom: 80px !important;
+}

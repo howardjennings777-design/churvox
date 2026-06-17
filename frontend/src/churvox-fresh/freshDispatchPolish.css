@@ -257,3 +257,25 @@ body:has(.freshDispatchPage) {
 .freshDispatchActionsCard .freshActions button {
   font-weight: 1000 !important;
 }
+
+/* CHURVOX_DISPATCH_ALLOW_MAIN_SCROLLBAR_20260617 */
+html:has(.freshDispatchPage),
+body:has(.freshDispatchPage) {
+  overflow: hidden !important;
+}
+
+.freshMain {
+  overflow-y: scroll !important;
+  scrollbar-width: auto !important;
+}
+
+.freshMain::-webkit-scrollbar {
+  display: block !important;
+  width: 12px !important;
+}
+
+.freshDispatchPage {
+  height: auto !important;
+  min-height: calc(100dvh - 110px) !important;
+  overflow: visible !important;
+}
