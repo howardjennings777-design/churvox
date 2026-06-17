@@ -220,7 +220,14 @@ function readPageFromHash() {
   const path = window.location.pathname || "";
   const raw = window.location.hash.replace("#", "").trim().toLowerCase();
   const aliases = { ai: "setupassistant", guide: "setupassistant", aiguided: "setupassistant", "ai-guide": "setupassistant", setupguide: "setupassistant", "setup-guide": "setupassistant", cockpit: "smart", home: "smart", dashboard: "smart", pulse: "smart", businesspulse: "smart", "business-pulse": "smart", smarthub: "smart", "smart-hub": "smart" };
-  if (path === "/guide" || path === "/setup-guide") { clearNewUserDemoStorage(); return guideComplete() ? "smart" : "setupassistant"; }
+  if ((path === "/guide" || path === "/setup-guide") && hash && pages.has(hash)) {
+    clearNewUserDemoStorage();
+    return hash;
+  }
+  if (path === "/guide" || path === "/setup-guide") {
+    clearNewUserDemoStorage();
+    return guideComplete() ? "smart" : "setupassistant";
+  }
   if (path === "/plans" && !raw) return "plans";
   const blockedPublicHashes = new Set(["demo", "qa", "flags", "roadmap", "launch", "launchpack", "launchcontrol", "firstrun", "trustcenter"]);
   if (blockedPublicHashes.has(raw)) return isFirstSetupPending() ? "setupassistant" : "smart";
