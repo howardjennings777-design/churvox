@@ -268,7 +268,7 @@ export default function WorkerJobDetailPage() {
 
         {sentBack ? <PremiumCard><div className="px-card__body space-y-3"><div className="flex items-center gap-2 text-orange-700 font-bold"><AlertTriangle className="h-4 w-4" /> Sent back from Work Review</div><p className="text-sm text-[var(--cx-muted)]">Fix what the owner asked for, add a note/photo if needed, then complete the job again so it returns to Work Review.</p>{sentBackNote ? <div className="rounded-2xl border border-orange-200 bg-orange-50 p-3 text-sm text-orange-900 whitespace-pre-wrap">{sentBackNote}</div> : null}</div></PremiumCard> : null}
 
-        {job.address ? <PremiumCard><div className="px-card__body"><p className="text-sm font-semibold text-[var(--cx-text)] mb-2">Directions</p><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`} target="_blank" rel="noreferrer"><PremiumButton className="w-full" iconLeft={<Navigation className="h-4 w-4" />}>Open map</PremiumButton></a></div></PremiumCard> : null}
+        {job.address ? <PremiumCard><div className="px-card__body"><p className="text-sm font-semibold text-[var(--cx-text)] mb-2">Directions</p><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`} target="_blank" rel="noreferrer" className="px-btn px-btn--primary px-btn--md w-full no-underline"><Navigation className="h-4 w-4" />Open map</a></div></PremiumCard> : null}
 
         <PremiumCard>
           <div className="px-card__body space-y-3">

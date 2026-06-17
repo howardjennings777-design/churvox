@@ -123,3 +123,74 @@
     min-height: 112px !important;
   }
 }
+
+
+/* CHURVOX_WORKER_TAP_FIX_20260617 */
+body:has(.px-app.pb-28) .cv-help-fab {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+.px-app.pb-28,
+.px-app.pb-28 main,
+.px-app.pb-28 header,
+.px-app.pb-28 nav,
+.px-app.pb-28 section,
+.px-app.pb-28 article,
+.px-app.pb-28 .px-card__body {
+  pointer-events: auto !important;
+}
+
+.px-app.pb-28 button,
+.px-app.pb-28 a,
+.px-app.pb-28 input,
+.px-app.pb-28 textarea,
+.px-app.pb-28 select,
+.px-app.pb-28 label {
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: rgba(249, 115, 22, 0.22) !important;
+  cursor: pointer !important;
+  position: relative !important;
+  z-index: 5 !important;
+}
+
+.px-app.pb-28 button:disabled,
+.px-app.pb-28 .px-btn:disabled {
+  pointer-events: none !important;
+  cursor: not-allowed !important;
+}
+
+.px-app.pb-28 .worker-bottom-nav,
+.px-app.pb-28 nav.fixed {
+  z-index: 2147482000 !important;
+  pointer-events: auto !important;
+}
+
+.px-app.pb-28 .worker-bottom-nav a,
+.px-app.pb-28 nav.fixed a {
+  pointer-events: auto !important;
+  z-index: 2147482001 !important;
+}
+
+.px-app.pb-28 .px-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  text-align: center !important;
+  user-select: none !important;
+}
+
+.px-app.pb-28 .px-mobile-header {
+  z-index: 2147481000 !important;
+}
+
+.px-app.pb-28 .px-hero,
+.px-app.pb-28 .worker-flow-panel,
+.px-app.pb-28 .worker-readiness-card,
+.px-app.pb-28 .px-card__body,
+.px-app.pb-28 .px-empty {
+  position: relative !important;
+  z-index: 1 !important;
+}
