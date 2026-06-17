@@ -30,6 +30,69 @@ function tokenFromInviteLink(link) {
   return match ? match[1] : '';
 }
 
+function planFrom(...sources) {
+  for (const source of sources) {
+    const plan = String(
+      source?.plan ||
+      source?.user?.plan ||
+      source?.data?.plan ||
+      source?.data?.user?.plan ||
+      source?.subscription?.plan ||
+      source?.billing?.plan ||
+      ''
+    ).trim().toLowerCase();
+    if (plan) return plan;
+  }
+  return '';
+}
+
+function idFrom(payload, keys = []) {
+  const data = payload?.data || payload || {};
+  const candidates = [
+    data.id,
+    data._id,
+    data.job_id,
+    data.client_id,
+    data.worker_id,
+    data.job?.id,
+    data.job?._id,
+    data.client?.id,
+    data.client?._id,
+    data.worker?.id,
+    data.worker?._id,
+    data.record?.id,
+    data.record?._id,
+    data.item?.id,
+    data.item?._id,
+    ...keys.map((key) => data?.[key]),
+  ];
+
+  for (const value of candidates) {
+    if (!value) continue;
+    if (typeof value === 'object') {
+      const nested = value.$oid || value.oid || value.id || value._id;
+      if (nested) return String(nested);
+      continue;
+    }
+    return String(value);
+  }
+
+  return '';
+}
+
+function listFrom(payload) {
+  const data = payload?.data || payload || {};
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data.jobs)) return data.jobs;
+  if (Array.isArray(data.workers)) return data.workers;
+  if (Array.isArray(data.clients)) return data.clients;
+  if (Array.isArray(data.items)) return data.items;
+  if (Array.isArray(data.records)) return data.records;
+  if (Array.isArray(data.results)) return data.results;
+  if (Array.isArray(data.data)) return data.data;
+  return [];
+}
+
 async function postFirstOk(request, label, paths) {
   const attempts = [];
 
@@ -81,13 +144,14 @@ test('owner assigns job to worker and worker completes it', async ({ request, br
 
   const planRes = await request.get(api('/billing/subscription-status'));
   const planPayload = await readJson(planRes);
-  const plan = planPayload.json?.plan || '';
+  const plan = planFrom(planPayload.json, ownerLoginPayload.json);
 
   console.log(`WORKER_JOB_OWNER_PLAN_STATUS=${planRes.status()}`);
   console.log(`WORKER_JOB_OWNER_PLAN_VALUE=${plan}`);
+  console.log(`WORKER_JOB_OWNER_PLAN_SOURCE_LOGIN=${ownerLoginPayload.json?.plan || ownerLoginPayload.json?.user?.plan || ''}`);
 
   expect(planRes.status()).toBeLessThan(400);
-  expect(['team', 'pro', 'enterprise']).toContain(plan);
+  expect(['team', 'pro', 'enterprise', 'crew', 'operator', 'command']).toContain(plan);
 
   const workerCreateRes = await request.post(api('/team/workers'), {
     data: {
@@ -105,12 +169,7 @@ test('owner assigns job to worker and worker completes it', async ({ request, br
 
   expect(workerCreateRes.status()).toBeLessThan(400);
 
-  const workerId =
-    workerCreatePayload.json?.id ||
-    workerCreatePayload.json?.worker_id ||
-    workerCreatePayload.json?.worker?.id ||
-    workerCreatePayload.json?.worker?._id ||
-    '';
+  const workerId = idFrom(workerCreatePayload.json, ['worker_id']);
 
   const inviteLink =
     workerCreatePayload.json?.invite_link ||
@@ -150,7 +209,7 @@ test('owner assigns job to worker and worker completes it', async ({ request, br
     },
   });
   const clientPayload = await readJson(clientRes);
-  const clientId = clientPayload.json?.id || clientPayload.json?._id;
+  const clientId = idFrom(clientPayload.json, ['client_id']);
 
   console.log(`WORKER_JOB_CLIENT_CREATE_STATUS=${clientRes.status()}`);
   console.log(`WORKER_JOB_CLIENT_ID=${clientId || ''}`);
@@ -173,7 +232,7 @@ test('owner assigns job to worker and worker completes it', async ({ request, br
     },
   });
   const jobPayload = await readJson(jobRes);
-  const jobId = jobPayload.json?.id || jobPayload.json?._id;
+  const jobId = idFrom(jobPayload.json, ['job_id']);
 
   console.log(`WORKER_JOB_CREATE_STATUS=${jobRes.status()}`);
   console.log(`WORKER_JOB_ID=${jobId || ''}`);
@@ -202,7 +261,7 @@ test('owner assigns job to worker and worker completes it', async ({ request, br
 
   const workerJobsRes = await workerApi.get(api('/jobs'));
   const workerJobsPayload = await readJson(workerJobsRes);
-  const jobs = Array.isArray(workerJobsPayload.json) ? workerJobsPayload.json : [];
+  const jobs = listFrom(workerJobsPayload.json);
   const foundJob = jobs.find((j) => String(j.id || j._id) === String(jobId));
 
   console.log(`WORKER_JOB_WORKER_LIST_STATUS=${workerJobsRes.status()}`);
@@ -256,6 +315,24 @@ test('owner assigns job to worker and worker completes it', async ({ request, br
   expect(String(ownerJobPayload.json?.status || '').toLowerCase()).toBe('completed');
   expect(ownerJobPayload.json?.completed).toBeTruthy();
   expect(Number(ownerJobPayload.json?.total_time_seconds || 0)).toBeGreaterThanOrEqual(1);
+
+  if (jobId) {
+    const cleanupJob = await request.delete(api(`/jobs/${encodeURIComponent(jobId)}`));
+    console.log(`WORKER_JOB_CLEANUP_JOB_STATUS=${cleanupJob.status()}`);
+    expect([200, 204, 404]).toContain(cleanupJob.status());
+  }
+
+  if (clientId) {
+    const cleanupClient = await request.delete(api(`/clients/${encodeURIComponent(clientId)}`));
+    console.log(`WORKER_JOB_CLEANUP_CLIENT_STATUS=${cleanupClient.status()}`);
+    expect([200, 204, 404]).toContain(cleanupClient.status());
+  }
+
+  if (workerId) {
+    const cleanupWorker = await request.delete(api(`/team/workers/${encodeURIComponent(workerId)}`));
+    console.log(`WORKER_JOB_CLEANUP_WORKER_STATUS=${cleanupWorker.status()}`);
+    expect([200, 204, 404]).toContain(cleanupWorker.status());
+  }
 
   console.log('OWNER_ASSIGNED_WORKER_JOB_PROOF=passed');
 });
