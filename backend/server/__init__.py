@@ -428,6 +428,98 @@ async def _clean_json_checkout(request: Request):
         'card_required': False,
     })
 
+
+@app.post('/api/billing/start-checkout-form')
+async def _clean_form_checkout(request: Request):
+    from urllib.parse import parse_qs
+
+    raw = (await request.body()).decode('utf-8', errors='ignore')
+    form = {k: v[0] for k, v in parse_qs(raw).items() if v}
+
+    token = _safe_text(form.get('token') or form.get('access_token'))
+    if not token:
+        return JSONResponse({'success': False, 'detail': 'Missing checkout token'}, status_code=401)
+
+    try:
+        jwt_payload = legacy.jwt.decode(
+            token,
+            legacy.JWT_SECRET,
+            algorithms=[legacy.JWT_ALGORITHM],
+        )
+        if jwt_payload.get('type') != 'access':
+            return JSONResponse({'success': False, 'detail': 'Invalid checkout token type'}, status_code=401)
+        user_doc = await legacy.db.users.find_one({'_id': ObjectId(jwt_payload['sub'])})
+    except Exception:
+        return JSONResponse({'success': False, 'detail': 'Invalid checkout token'}, status_code=401)
+
+    if not user_doc:
+        return JSONResponse({'success': False, 'detail': 'User not found'}, status_code=401)
+
+    role = _safe_text(user_doc.get('role'), 'employer').lower()
+    if role not in {'employer', 'owner', 'admin', 'business_owner', 'superadmin', 'manager', 'office_admin'} and not user_doc.get('is_admin') and not user_doc.get('is_platform_owner'):
+        return JSONResponse({'success': False, 'detail': 'Only business owners and admins can start billing checkout'}, status_code=403)
+
+    secret = os.environ.get('STRIPE_SECRET_KEY', '').strip()
+    if not secret:
+        return JSONResponse({'success': False, 'detail': 'Stripe secret key not configured in Render'}, status_code=500)
+
+    if stripe is None:
+        return JSONResponse({'success': False, 'detail': 'Stripe package is not available'}, status_code=500)
+
+    plan = _clean_plan(form.get('plan') or form.get('plan_type') or form.get('backend_plan') or 'pro')
+    if plan not in {'solo', 'team', 'pro', 'enterprise'}:
+        plan = 'pro'
+
+    country = _normalize_country(form.get('country') or form.get('billing_country') or 'NZ')
+    line_item, price_source = _checkout_line_item(plan, country)
+
+    stripe.api_key = secret
+    frontend = _frontend_public_url()
+
+    user_id = _safe_text(user_doc.get('id') or user_doc.get('_id'))
+    business_id = _safe_text(user_doc.get('business_id') or user_doc.get('id') or user_doc.get('_id'))
+
+    metadata = {
+        'user_id': user_id,
+        'business_id': business_id,
+        'plan': plan,
+        'country': country,
+        'source': 'server_wrapper_clean_form_checkout',
+        'trial_days': '14',
+        'card_required': 'false',
+    }
+
+    try:
+        kwargs = {
+            'mode': 'subscription',
+            'payment_method_collection': 'if_required',
+            'automatic_tax': {'enabled': True},
+            'billing_address_collection': 'required',
+            'line_items': [line_item],
+            'subscription_data': {
+                'trial_period_days': 14,
+                'trial_settings': {'end_behavior': {'missing_payment_method': 'cancel'}},
+                'metadata': metadata,
+            },
+            'metadata': metadata,
+            'success_url': f'{_backend_public_url(request)}/api/billing/checkout-return?session_id={{CHECKOUT_SESSION_ID}}',
+            'cancel_url': f'{frontend}/plans?checkout=cancelled&plan={plan}&country={country}',
+        }
+
+        if _safe_text(user_doc.get('email')):
+            kwargs['customer_email'] = _safe_text(user_doc.get('email'))
+
+        session = stripe.checkout.Session.create(**kwargs)
+    except Exception as exc:
+        return JSONResponse({'success': False, 'detail': f'Stripe checkout error: {exc}'}, status_code=500)
+
+    url = getattr(session, 'url', '') or ''
+    if not url:
+        return JSONResponse({'success': False, 'detail': 'Stripe did not return a checkout URL'}, status_code=500)
+
+    return RedirectResponse(url, status_code=303)
+
+
 def _backend_public_url(request=None):
     configured = os.environ.get('BACKEND_PUBLIC_URL') or os.environ.get('API_PUBLIC_URL') or ''
     if configured:
