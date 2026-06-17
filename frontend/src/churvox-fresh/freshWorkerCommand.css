@@ -207,3 +207,101 @@
     flex-direction: column;
   }
 }
+
+/* CHURVOX_BOSS_WORKER_VIEW_REAL_TIME_LOOP_20260618 */
+.freshWorkerLiveStrip {
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.freshWorkerLiveStrip b {
+  color: #bbf7d0;
+  font-size: 12px;
+  font-weight: 1000;
+}
+
+.freshWorkerLiveStrip span {
+  color: #dbeafe;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.freshWorkerLiveStrip button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 11px;
+  background: #f97316;
+  color: #111827;
+  font-size: 12px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshWorkerLiveStrip button:last-child {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.freshWorkerStatusPill::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  display: inline-block;
+  margin-right: 7px;
+  background: #22c55e;
+  box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.15);
+}
+
+.freshWorkerCommandHero {
+  position: relative;
+  overflow: hidden;
+}
+
+.freshWorkerCommandHero::after {
+  content: "LIVE";
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  border-radius: 999px;
+  padding: 8px 11px;
+  background: rgba(34, 197, 94, 0.14);
+  color: #bbf7d0;
+  border: 1px solid rgba(187, 247, 208, 0.24);
+  font-size: 11px;
+  font-weight: 1000;
+  letter-spacing: 0.14em;
+}
+
+@media (max-width: 700px) {
+  .freshWorkerLiveStrip {
+    width: 100%;
+    border-radius: 22px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .freshWorkerLiveStrip b,
+  .freshWorkerLiveStrip span {
+    grid-column: 1 / -1;
+  }
+
+  .freshWorkerLiveStrip button {
+    width: 100%;
+  }
+
+  .freshWorkerCommandHero::after {
+    right: 14px;
+    top: 14px;
+  }
+}

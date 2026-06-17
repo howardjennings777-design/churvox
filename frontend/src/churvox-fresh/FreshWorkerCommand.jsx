@@ -184,51 +184,84 @@ export default function FreshWorkerCommand({ onNavigate }) {
   const [jobs, setJobs] = React.useState([]);
   const [selectedId, setSelectedId] = React.useState("");
   const [loading, setLoading] = React.useState(true);
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [autoRefresh, setAutoRefresh] = React.useState(true);
+  const [lastUpdated, setLastUpdated] = React.useState(null);
   const [error, setError] = React.useState("");
 
   const selected = workers.find((worker) => idOf(worker) === selectedId) || workers[0] || null;
   const view = selected ? buildWorkerView(selected, jobs) : null;
 
-  const load = React.useCallback(async () => {
-    setLoading(true);
+  const load = React.useCallback(async (options = {}) => {
+    const silent = Boolean(options?.silent);
+    if (silent) setRefreshing(true);
+    else setLoading(true);
     setError("");
 
-    let nextWorkers = [];
-    let lastWorkerError = "";
+    try {
+      let nextWorkers = [];
+      let lastWorkerError = "";
 
-    for (const endpoint of workerEndpoints) {
-      const res = await get(endpoint, { timeout: 25000 });
-      if (res?.success) {
-        nextWorkers = arr(res.data);
-        break;
+      for (const endpoint of workerEndpoints) {
+        const res = await get(endpoint, { timeout: 25000 });
+        if (res?.success) {
+          nextWorkers = arr(res.data);
+          break;
+        }
+        lastWorkerError = res?.error || res?.detail || lastWorkerError;
       }
-      lastWorkerError = res?.error || res?.detail || lastWorkerError;
+
+      const jobRes = await get("/jobs", { timeout: 25000 });
+      const nextJobs = jobRes?.success ? arr(jobRes.data) : [];
+
+      setWorkers(nextWorkers);
+      setJobs(nextJobs);
+      setSelectedId((current) => nextWorkers.some((worker) => idOf(worker) === current) ? current : idOf(nextWorkers[0] || ""));
+      if (!nextWorkers.length && lastWorkerError) setError(lastWorkerError);
+      setLastUpdated(new Date());
+    } finally {
+      if (!silent) setLoading(false);
+      setRefreshing(false);
     }
-
-    const jobRes = await get("/jobs", { timeout: 25000 });
-    const nextJobs = jobRes?.success ? arr(jobRes.data) : [];
-
-    setWorkers(nextWorkers);
-    setJobs(nextJobs);
-    setSelectedId((current) => nextWorkers.some((worker) => idOf(worker) === current) ? current : idOf(nextWorkers[0] || ""));
-    if (!nextWorkers.length && lastWorkerError) setError(lastWorkerError);
-    setLoading(false);
   }, [get]);
 
   React.useEffect(() => { load(); }, [load]);
 
   React.useEffect(() => {
-    const refresh = () => load();
+    const refresh = () => load({ silent: true });
     window.addEventListener("churvox:fresh-data-updated", refresh);
     return () => window.removeEventListener("churvox:fresh-data-updated", refresh);
   }, [load]);
+
+  React.useEffect(() => {
+    if (!autoRefresh) return undefined;
+
+    const refreshLiveWorkerView = () => {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
+      load({ silent: true });
+    };
+
+    const timer = window.setInterval(refreshLiveWorkerView, 10000);
+    window.addEventListener("focus", refreshLiveWorkerView);
+
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshLiveWorkerView);
+    };
+  }, [autoRefresh, load]); // worker-command-auto-refresh
 
   return (
     <section className="freshWorkerCommandPage">
       <header className="freshHero freshWorkerCommandHero">
         <span>Worker Command</span>
-        <h1>Worker command view</h1>
-        <p>Pick a worker and see clock status, job time, GPS status, today’s work, alerts and owner controls in one place.</p>
+        <h1>Live worker view</h1>
+        <p>See what workers are doing now: clock status, job timer, GPS status, today’s work and alerts.</p>
+        <div className="freshWorkerLiveStrip">
+          <b>{autoRefresh ? "Live updates on" : "Live updates paused"}</b>
+          <span>{refreshing ? "Updating now…" : lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString("en-NZ", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}` : "Waiting for first update"}</span>
+          <button type="button" onClick={() => setAutoRefresh((value) => !value)}>{autoRefresh ? "Pause live" : "Resume live"}</button>
+          <button type="button" onClick={() => load({ silent: true })}>Refresh now</button>
+        </div>
       </header>
 
       {error ? <section className="freshCard freshItem need"><b>Worker command needs attention</b><span>{error}</span><button className="freshPrimary" type="button" onClick={load}>Retry</button></section> : null}
