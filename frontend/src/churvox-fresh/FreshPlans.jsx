@@ -8,52 +8,105 @@ const LIVE_BACKEND = API_BASE || "https://grassley-backend.onrender.com";
 
 const accountingAddonText = "Accounting Sync Add-on — $39/month + GST (MYOB or Xero, where available)";
 
+const addOns = [
+  {
+    id: "accounting_sync",
+    name: "Accounting Sync Add-on",
+    price: 39,
+    summary: "Connect invoices to MYOB or Xero, where available. Owner-approved draft sync only.",
+    forPlans: "Available on Start, Crew and Operator. Included with Command.",
+  },
+  {
+    id: "command_growth_pack",
+    name: "Command Growth Pack",
+    price: 99,
+    summary: "Adds 50 active team members plus extra job, AI action, automation and admin capacity.",
+    forPlans: "Available on Command.",
+  },
+];
+
 const plans = [
   {
     id: "start",
     backendPlan: "solo",
     name: "Start",
     price: 39,
-    tag: "Starter",
-    headline: "Get organised",
-    summary: "For a solo operator who needs jobs, clients, quotes and invoices under control.",
+    tag: "Solo",
+    headline: "Get the work under control",
+    summary: "For one owner who wants jobs, clients, quotes and invoices in one place.",
     limit: "Best for one owner",
-    features: ["Jobs, clients, quotes and invoices", "Business Pulse basics", "Business settings and GST", accountingAddonText],
+    includes: [
+      "Jobs and client records",
+      "Quotes and draft invoices",
+      "Today view",
+      "Schedule board",
+      "Business setup and GST basics",
+      "Email-ready customer records",
+    ],
+    addOns: [accountingAddonText],
   },
   {
     id: "crew",
     backendPlan: "team",
     name: "Crew",
     price: 89,
-    tag: "Growing team",
+    tag: "Team",
     headline: "Run the crew",
-    summary: "For a business with workers, daily dispatch, job handover and more client admin.",
+    summary: "For a small team that needs workers, schedule visibility and cleaner handover.",
     limit: "Up to 5 workers",
-    features: ["Everything in Start", "Team and worker setup", "Dispatch-ready workflow", "More job and client capacity", accountingAddonText],
+    includes: [
+      "Everything in Start",
+      "Worker app access",
+      "Team invites and worker setup",
+      "Schedule and dispatch workflow",
+      "Time capture workspace",
+      "More job and client capacity",
+    ],
+    addOns: [accountingAddonText],
   },
   {
     id: "operator",
     backendPlan: "pro",
     name: "Operator",
     price: 149,
-    tag: "Most Popular",
-    headline: "Admin done for approval",
-    summary: "Where Churvox starts preparing the admin and you approve the work before it goes out.",
-    limit: "Recommended plan",
-    features: ["AI Operator Actions", "Command approval desk", "Quote follow-up watch", "Invoice and job admin prepared for approval", accountingAddonText],
+    tag: "Recommended",
+    headline: "Churvox prepares the admin",
+    summary: "For owners who want Churvox to prepare jobs, quotes, invoices and follow-ups for approval.",
+    limit: "Best default plan",
+    includes: [
+      "Everything in Crew",
+      "Tell Churvox",
+      "AI Operator Actions",
+      "Review approval desk",
+      "Quote and invoice admin prepared",
+      "Follow-up watch",
+    ],
+    addOns: [accountingAddonText],
   },
   {
     id: "command",
     backendPlan: "enterprise",
     name: "Command",
     price: 299,
-    tag: "Full control",
-    headline: "Scale with control",
-    summary: "For the bigger business that wants payroll workspace, one accounting sync option included and advanced control.",
+    tag: "Scale",
+    headline: "Full control at scale",
+    summary: "For the bigger business that wants AI approval control, payroll workspace and accounting sync included.",
     limit: "Up to 50 active team members",
-    features: ["Everything in Operator", "Includes one accounting sync option — MYOB or Xero, where available", "Payroll workspace", "Advanced roles", "Priority support", "Command Growth Pack available"],
+    includes: [
+      "Everything in Operator",
+      "One accounting sync option included — MYOB or Xero, where available",
+      "Payroll workspace",
+      "Advanced roles",
+      "Priority support",
+      "Command Growth Pack available",
+    ],
+    addOns: ["Command Growth Pack — $99/month + GST"],
   },
 ];
+
+plans.forEach((plan) => {
+  plan.features = plan.includes;
+});
 
 const backendToUiPlan = {
   solo: "start",
@@ -159,7 +212,7 @@ function userFromMe(data = {}) {
 }
 
 
-function postCheckoutForm({ token, plan, country }) {
+function postCheckoutForm({ token, plan, country, accountingSync = false, growthPacks = 0 }) {
   const form = document.createElement("form");
   form.method = "POST";
   form.action = backendUrl("/billing/start-checkout-form");
@@ -170,6 +223,9 @@ function postCheckoutForm({ token, plan, country }) {
     plan,
     ui_plan: plan,
     country: country || "NZ",
+    accounting_sync: accountingSync ? "1" : "",
+    growth_packs: growthPacks || 0,
+    addons: JSON.stringify({ accounting_sync: Boolean(accountingSync), growth_packs: Number(growthPacks || 0) }),
     source: "fresh_plans_form_redirect_v35",
   };
 
@@ -190,6 +246,7 @@ export default function FreshPlans({ onNavigate }) {
   const [currentPlan, setCurrentPlan] = React.useState("");
   const [selectedPlan, setSelectedPlan] = React.useState("operator");
   const [growthPacks, setGrowthPacks] = React.useState(0);
+  const [accountingSync, setAccountingSync] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [checkoutLoading, setCheckoutLoading] = React.useState(false);
   const [notice, setNotice] = React.useState("Loading account");
@@ -200,7 +257,10 @@ export default function FreshPlans({ onNavigate }) {
   const current = currentPlan ? planByUiId(currentPlan) : null;
   const commandSelected = selected.id === "command";
   const growthTotal = commandSelected ? growthPacks * 99 : 0;
-  const monthlyTotal = selected.price + growthTotal;
+  const accountingAddonTotal = !commandSelected && accountingSync ? 39 : 0;
+  const monthlyTotal = selected.price + growthTotal + accountingAddonTotal;
+  const accountingIncluded = commandSelected;
+  const accountingSelected = accountingIncluded || accountingSync;
   const showDebug = React.useMemo(() => {
     try {
       return new URLSearchParams(window.location.search || "").get("debug") === "1";
@@ -335,6 +395,7 @@ export default function FreshPlans({ onNavigate }) {
   function choosePlan(planId) {
     setSelectedPlan(planId);
     if (planId !== "command") setGrowthPacks(0);
+    if (planId === "command") setAccountingSync(false);
     setError("");
   }
 
@@ -378,7 +439,7 @@ export default function FreshPlans({ onNavigate }) {
         throw new Error("Checkout token missing. Please sign in again.");
       }
 
-      postCheckoutForm({ token, plan: selected.backendPlan, country: "NZ" });
+      postCheckoutForm({ token, plan: selected.backendPlan, country: "NZ", accountingSync: accountingSelected, growthPacks });
     } catch (err) {
       setNotice("Checkout needs attention");
       setError(err?.message || "Stripe checkout could not be opened.");
@@ -386,40 +447,43 @@ export default function FreshPlans({ onNavigate }) {
     }
   }
 
+  const selectedIncludes = selected.includes || selected.features || [];
+  const selectedAddOns = selected.addOns || [];
   const planComparison = [
-    ["Start", "Solo basics", "Jobs, quotes, invoices"],
-    ["Crew", "Small team", "Workers and dispatch"],
-    ["Operator", "Recommended", "AI admin prepared for approval"],
-    ["Command", "Scale", "One accounting sync option, payroll and advanced roles"],
+    ["Start", "Solo owner", "Run jobs, clients, quotes and invoices."],
+    ["Crew", "Small team", "Add workers, schedule flow and team handover."],
+    ["Operator", "Recommended", "AI prepares admin. You approve."],
+    ["Command", "Bigger crew", "Accounting sync included, payroll workspace and scale controls."],
   ];
 
   return (
-    <section className="freshPricingPage" data-checkout-trace={CHECKOUT_TRACE_MARKER}>
-      <header className="freshPricingHero">
+    <section className="freshPricingPage freshPricingPageV2" data-checkout-trace={CHECKOUT_TRACE_MARKER}>
+      <header className="freshPricingHero freshPricingHeroV2">
         <div>
           <span>Churvox pricing</span>
-          <h1>Pick the plan that fits how much admin you want Churvox to handle.</h1>
-          <p>Simple monthly pricing + GST. Churvox does the admin. You approve.</p>
+          <h1>Choose how much admin Churvox handles.</h1>
+          <p>Start simple, add crew tools when you need them, then move into AI prepared admin when you are ready. You stay in control — Churvox prepares, you approve.</p>
           <div className="freshPricingHeroActions">
-            <button className="freshPrimary" type="button" onClick={() => choosePlan("operator")}>See recommended plan</button>
-            <button className="freshGhost" type="button" onClick={() => onNavigate?.("support")}>Need help setting up?</button>
+            <button className="freshPrimary" type="button" onClick={() => choosePlan("operator")}>Recommend Operator</button>
+            <button className="freshGhost" type="button" onClick={() => onNavigate?.("support")}>Ask which plan fits</button>
           </div>
         </div>
 
-        <aside>
+        <aside className="freshCurrentPlanBox">
           <small>Current plan</small>
           <strong>{loading ? "Loading..." : current ? current.name : "No plan chosen"}</strong>
           <p>{notice}</p>
+          {current ? <button type="button" onClick={() => choosePlan(current.id)}>View current plan</button> : null}
         </aside>
       </header>
 
-      <section className="freshPlanNotice proper">
-        <b>Launch pricing locked</b>
-        <span>Start $39 · Crew $89 · Operator $149 · Command $299. Accounting Sync Add-on — $39/month + GST. MYOB or Xero, where available.</span>
+      <section className="freshPlanNotice proper freshPlanNoticeV2">
+        <b>14-day trial</b>
+        <span>Start testing Churvox with real jobs, clients, quotes and invoices. Billing actions stay owner-approved.</span>
       </section>
 
-      <section className="freshPlanNotice proper">
-        <b>Owner-approved money actions</b>
+      <section className="freshPlanNotice proper freshPlanNoticeV2">
+        <b>Safe money rules</b>
         <span>Invoices stay draft-only until approved. Accounting sync is owner-approved. Churvox does not auto-send invoices, mark paid, file tax or create bank payout files.</span>
       </section>
 
@@ -430,13 +494,13 @@ export default function FreshPlans({ onNavigate }) {
         </section>
       )}
 
-      <section className="freshPricingCards">
+      <section className="freshPricingCards freshPricingCardsV2">
         {plans.map((plan) => {
           const active = selectedPlan === plan.id;
           const isCurrent = Boolean(currentPlan) && currentPlan === plan.id;
 
           return (
-            <button type="button" key={plan.id} className={`freshPricingCard ${active ? "active" : ""} ${plan.id === "operator" ? "best" : ""}`} onClick={() => choosePlan(plan.id)}>
+            <button type="button" key={plan.id} className={`freshPricingCard freshPricingCardV2 ${active ? "active" : ""} ${plan.id === "operator" ? "best" : ""}`} onClick={() => choosePlan(plan.id)}>
               <span className="freshPlanTag">{plan.tag}</span>
               {isCurrent && <span className="freshCurrentBadge">Current</span>}
               <strong>{plan.name}</strong>
@@ -444,54 +508,95 @@ export default function FreshPlans({ onNavigate }) {
               <h3>{plan.headline}</h3>
               <p>{plan.summary}</p>
               <small className="freshPlanLimit">{plan.limit}</small>
-              <ul>{plan.features.map((feature) => <li key={feature}>✓ {feature}</li>)}</ul>
+              <div className="freshPlanIncludedTitle">Included</div>
+              <ul>{plan.includes.slice(0, 6).map((feature) => <li key={feature}>✓ {feature}</li>)}</ul>
             </button>
           );
         })}
       </section>
 
-      <section className="freshPricingDetail">
-        <section className="freshCard freshSelectedPlanCard">
+      <section className="freshPricingDetail freshPricingDetailV2">
+        <section className="freshCard freshSelectedPlanCard freshSelectedPlanCardV2">
           <div className="freshSelectedPlanTop">
             <div>
-              <span>Selected</span>
+              <span>Selected plan</span>
               <h2>{selected.name}</h2>
               <p>{selected.summary}</p>
             </div>
             <strong>{money(monthlyTotal)}<small>/month + GST</small></strong>
           </div>
 
-          {commandSelected && (
-            <div className="freshGrowthPack premium">
-              <div>
-                <b>Command Growth Pack</b>
-                <span>$99/month + GST · adds 50 active team members plus extra job, AI action, automation and admin capacity.</span>
-              </div>
-              <div className="freshGrowthControls">
-                <button type="button" onClick={() => setGrowthPacks((count) => Math.max(0, count - 1))}>−</button>
-                <strong>{growthPacks}</strong>
-                <button type="button" onClick={() => setGrowthPacks((count) => count + 1)}>+</button>
-              </div>
-            </div>
-          )}
-
-          <div className="freshPlanFeatures premium">
-            {selected.features.map((feature) => <div key={feature}><b>✓</b><span>{feature}</span></div>)}
+          <div className="freshPlanBreakdown">
+            <div><b>Base plan</b><span>{selected.name}</span><strong>{money(selected.price)}</strong></div>
+            <div><b>Accounting sync</b><span>{accountingIncluded ? "Included with Command" : accountingSync ? "Add-on selected" : "Optional add-on"}</span><strong>{accountingAddonTotal ? money(accountingAddonTotal) : accountingIncluded ? "Included" : "$39"}</strong></div>
+            <div><b>Growth packs</b><span>{commandSelected ? `${growthPacks} selected` : "Only for Command"}</span><strong>{growthTotal ? money(growthTotal) : "$0"}</strong></div>
           </div>
+
+          <section className="freshPlanSection">
+            <h3>What you get on {selected.name}</h3>
+            <div className="freshPlanFeatures premium">
+              {selectedIncludes.map((feature) => <div key={feature}><b>✓</b><span>{feature}</span></div>)}
+            </div>
+          </section>
+
+          <section className="freshPlanSection">
+            <h3>Add-ons</h3>
+            <div className="freshAddOnGrid">
+              <button
+                type="button"
+                className={`freshAddOnCard ${accountingSelected ? "active" : ""}`}
+                onClick={() => {
+                  if (!accountingIncluded) setAccountingSync((value) => !value);
+                }}
+              >
+                <b>Accounting Sync Add-on</b>
+                <span>{accountingIncluded ? "Included with Command" : "$39/month + GST"}</span>
+                <p>MYOB or Xero, where available. Owner-approved draft invoice sync only.</p>
+              </button>
+
+              <button
+                type="button"
+                className={`freshAddOnCard ${commandSelected ? "active" : "locked"}`}
+                onClick={() => {
+                  if (!commandSelected) choosePlan("command");
+                }}
+              >
+                <b>Command Growth Pack</b>
+                <span>$99/month + GST</span>
+                <p>Adds 50 active team members plus extra job, AI action, automation and admin capacity.</p>
+              </button>
+            </div>
+
+            {commandSelected && (
+              <div className="freshGrowthPack premium freshGrowthPackV2">
+                <div>
+                  <b>Command Growth Pack</b>
+                  <span>Command includes 50 active team members. Each pack adds 50 more active team members.</span>
+                </div>
+                <div className="freshGrowthControls">
+                  <button type="button" onClick={() => setGrowthPacks((count) => Math.max(0, count - 1))}>−</button>
+                  <strong>{growthPacks}</strong>
+                  <button type="button" onClick={() => setGrowthPacks((count) => count + 1)}>+</button>
+                </div>
+              </div>
+            )}
+          </section>
         </section>
 
-        <aside className="freshCard freshCheckoutCard">
-          <h2>Start your 14-day trial</h2>
-          <p>Stripe opens securely, then Churvox confirms the session and updates this Current plan box from the billing profile.</p>
+        <aside className="freshCard freshCheckoutCard freshCheckoutCardV2">
+          <span>Buy / update</span>
+          <h2>{selected.name}</h2>
+          <strong>{money(monthlyTotal)}<small>/month + GST</small></strong>
+          <p>Stripe opens securely. Churvox then confirms the session and updates your current plan from billing.</p>
 
           <div className="freshActions">
-            <button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading || authLoading}>{checkoutLoading ? "Opening Stripe..." : "Start Stripe checkout"}</button>
+            <button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading || authLoading}>{checkoutLoading ? "Opening Stripe..." : "Buy selected plan"}</button>
             <button className="freshOrange" type="button" onClick={() => choosePlan("operator")}>Recommend Operator</button>
             <button className="freshGhost" type="button" onClick={loadPlan} disabled={authLoading}>Reload current plan</button>
           </div>
 
+          <div className="freshItem"><b>Selected total</b><span>{selected.name} {accountingSync && !commandSelected ? "+ Accounting Sync" : ""} {growthPacks ? `+ ${growthPacks} Growth Pack${growthPacks === 1 ? "" : "s"}` : ""}</span></div>
           <div className="freshItem"><b>Best default</b><span>Operator is the main plan because AI prepares the admin and the owner approves.</span></div>
-          <div className="freshItem"><b>Accounting sync</b><span>{selected.id === "command" ? "Command includes one accounting sync option — MYOB or Xero, where available." : accountingAddonText}</span></div>
           <div className="freshItem need"><b>Command scale</b><span>Command includes up to 50 active team members. Inactive old staff should not count as billable.</span></div>
         </aside>
       </section>
@@ -503,7 +608,7 @@ export default function FreshPlans({ onNavigate }) {
         </section>
       )}
 
-      <section className="freshCard freshCompareCard">
+      <section className="freshCard freshCompareCard freshCompareCardV2">
         <h2>Simple comparison</h2>
         <div className="freshCompareGrid">
           {planComparison.map(([name, fit, value]) => <div key={name}><b>{name}</b><span>{fit}</span><p>{value}</p></div>)}

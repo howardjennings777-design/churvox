@@ -511,3 +511,274 @@
 .freshPricingCard .freshPlanTag {
   display: none !important;
 }
+
+/* CHURVOX_PLANS_PAGE_REDESIGN_20260617 */
+.freshPricingPageV2 {
+  gap: 16px !important;
+}
+
+.freshPricingHeroV2 {
+  min-height: 250px !important;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 330px) !important;
+}
+
+.freshPricingHeroV2 h1 {
+  max-width: 760px !important;
+  font-size: clamp(46px, 6vw, 86px) !important;
+}
+
+.freshCurrentPlanBox button {
+  margin-top: 14px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: #f97316 !important;
+  color: #111827 !important;
+  padding: 11px 14px !important;
+  font-weight: 1000 !important;
+  cursor: pointer !important;
+}
+
+.freshPricingCardsV2 {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  align-items: stretch !important;
+}
+
+.freshPricingCardV2 {
+  min-height: 500px !important;
+  padding: 18px !important;
+}
+
+.freshPricingCardV2 strong {
+  color: #111827 !important;
+  font-size: 32px !important;
+  line-height: 1 !important;
+  margin-top: 14px !important;
+}
+
+.freshPricingCardV2 em {
+  color: #111827 !important;
+  font-style: normal !important;
+  font-weight: 1000 !important;
+  font-size: 28px !important;
+  margin: 9px 0 12px !important;
+}
+
+.freshPricingCardV2 em small {
+  color: #64748b !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  margin-left: 3px !important;
+}
+
+.freshPricingCardV2 h3 {
+  color: #111827 !important;
+  font-size: 19px !important;
+  line-height: 1.05 !important;
+  margin: 0 0 9px !important;
+}
+
+.freshPricingCardV2 p {
+  color: #475569 !important;
+  font-weight: 850 !important;
+  line-height: 1.35 !important;
+}
+
+.freshPlanIncludedTitle {
+  margin-top: 14px !important;
+  color: #9a3412 !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .13em !important;
+  text-transform: uppercase !important;
+}
+
+.freshPricingCardV2 ul {
+  margin-top: 9px !important;
+  display: grid !important;
+  gap: 7px !important;
+}
+
+.freshPricingCardV2 li {
+  color: #1f2937 !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  line-height: 1.25 !important;
+}
+
+.freshPricingDetailV2 {
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr) !important;
+  align-items: start !important;
+}
+
+.freshSelectedPlanCardV2 {
+  padding: 22px !important;
+}
+
+.freshPlanBreakdown {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  margin: 16px 0 !important;
+}
+
+.freshPlanBreakdown div {
+  border: 1px solid rgba(15,23,42,.12) !important;
+  border-radius: 18px !important;
+  background: #fff !important;
+  padding: 13px !important;
+  display: grid !important;
+  gap: 4px !important;
+}
+
+.freshPlanBreakdown b {
+  color: #9a3412 !important;
+  font-size: 10px !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase !important;
+}
+
+.freshPlanBreakdown span {
+  color: #475569 !important;
+  font-weight: 850 !important;
+  font-size: 12px !important;
+}
+
+.freshPlanBreakdown strong {
+  color: #111827 !important;
+  font-size: 20px !important;
+}
+
+.freshPlanSection {
+  display: grid !important;
+  gap: 12px !important;
+  margin-top: 16px !important;
+}
+
+.freshPlanSection h3 {
+  margin: 0 !important;
+  color: #111827 !important;
+  font-size: 24px !important;
+  letter-spacing: -.04em !important;
+}
+
+.freshAddOnGrid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+.freshAddOnCard {
+  border: 1px solid rgba(15,23,42,.13) !important;
+  border-left: 6px solid #111827 !important;
+  border-radius: 22px !important;
+  background: #fff !important;
+  color: #111827 !important;
+  text-align: left !important;
+  padding: 15px !important;
+  display: grid !important;
+  gap: 7px !important;
+  cursor: pointer !important;
+}
+
+.freshAddOnCard.active {
+  border-left-color: #16a34a !important;
+  background: #f0fdf4 !important;
+}
+
+.freshAddOnCard.locked {
+  opacity: .86 !important;
+}
+
+.freshAddOnCard b {
+  font-size: 17px !important;
+  color: #111827 !important;
+}
+
+.freshAddOnCard span {
+  color: #9a3412 !important;
+  font-weight: 1000 !important;
+}
+
+.freshAddOnCard p {
+  margin: 0 !important;
+  color: #475569 !important;
+  font-weight: 850 !important;
+  line-height: 1.35 !important;
+}
+
+.freshGrowthPackV2 {
+  margin-top: 0 !important;
+}
+
+.freshCheckoutCardV2 {
+  position: sticky !important;
+  top: 92px !important;
+  padding: 20px !important;
+  border-top: 7px solid #f97316 !important;
+}
+
+.freshCheckoutCardV2 > span {
+  color: #9a3412 !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .13em !important;
+  text-transform: uppercase !important;
+}
+
+.freshCheckoutCardV2 > h2 {
+  margin: 6px 0 !important;
+  color: #111827 !important;
+  font-size: 34px !important;
+  line-height: 1 !important;
+}
+
+.freshCheckoutCardV2 > strong {
+  display: block !important;
+  color: #111827 !important;
+  font-size: 34px !important;
+  line-height: 1 !important;
+  margin: 8px 0 10px !important;
+}
+
+.freshCheckoutCardV2 > strong small {
+  color: #64748b !important;
+  font-size: 12px !important;
+  margin-left: 4px !important;
+}
+
+.freshCheckoutCardV2 > p {
+  color: #475569 !important;
+  font-weight: 850 !important;
+  line-height: 1.4 !important;
+}
+
+.freshCompareCardV2 {
+  margin-bottom: 28px !important;
+}
+
+@media (max-width: 1100px) {
+  .freshPricingCardsV2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .freshPricingDetailV2 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshCheckoutCardV2 {
+    position: static !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .freshPricingHeroV2,
+  .freshPlanBreakdown,
+  .freshAddOnGrid,
+  .freshPricingCardsV2 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshPricingCardV2 {
+    min-height: auto !important;
+  }
+}
