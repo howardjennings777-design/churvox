@@ -270,7 +270,7 @@ export default function WorkerJobDetailPage() {
 
         {job.address ? <PremiumCard><div className="px-card__body"><p className="text-sm font-semibold text-[var(--cx-text)] mb-2">Directions</p><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`} target="_blank" rel="noreferrer" className="px-btn px-btn--primary px-btn--md w-full no-underline"><Navigation className="h-4 w-4" />Open map</a></div></PremiumCard> : null}
 
-        <PremiumCard>
+        <PremiumCard id="notes">
           <div className="px-card__body space-y-3">
             <p className="text-sm font-semibold text-[var(--cx-text)]">Job notes</p>
             {job.notes ? <p className="text-sm text-[var(--cx-muted)] whitespace-pre-wrap">{job.notes}</p> : <p className="text-sm text-[var(--cx-muted-2)]">No owner notes added.</p>}
@@ -304,7 +304,7 @@ export default function WorkerJobDetailPage() {
 
         <PremiumAIDraftPanel title={sentBack ? "AI Fix Helper" : "AI Job Helper"} subtitle={sentBack ? "Draft a clear response for the owner." : "Worker-safe drafting for your field updates."} surface="jobs" context={safeAiContext} defaultPrompt={sentBack ? "Write a clear note explaining what I fixed for the owner." : "Summarise what I need to do for this job."} quickActions={[{ label: sentBack ? "Fix note" : "Summarise tasks", prompt: sentBack ? "Write a clear note explaining what I fixed for the owner." : "Summarise what I need to do for this job." }, { label: "Professional note", prompt: "Turn my rough note into a professional job note." }, { label: "Completion summary", prompt: "Create a completion summary for the owner." }, { label: "Checklist", prompt: "Create a clear checklist for this job." }]} />
 
-        <PremiumCard>
+        <PremiumCard id="complete">
           <div className="px-card__body space-y-2">
             <p className="text-sm font-semibold text-[var(--cx-text)]">{sentBack ? "Resubmit to owner" : "Completion"}</p>
             <textarea className="px-input" rows={3} value={finalNote} onChange={(e) => setFinalNote(e.target.value)} placeholder={sentBack ? "What did you fix?" : "Final completion note..."} />
