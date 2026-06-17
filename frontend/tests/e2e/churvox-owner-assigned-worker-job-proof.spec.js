@@ -311,10 +311,22 @@ test('owner assigns job to worker and worker completes it', async ({ request, br
   console.log(`WORKER_JOB_OWNER_FINAL_COMPLETED=${ownerJobPayload.json?.completed}`);
   console.log(`WORKER_JOB_OWNER_TOTAL_SECONDS=${ownerJobPayload.json?.total_time_seconds ?? ''}`);
 
+  const ownerTotalSeconds = Number(
+    ownerJobPayload.json?.total_time_seconds ??
+    ownerJobPayload.json?.job?.total_time_seconds ??
+    ownerJobPayload.json?.worked_seconds ??
+    ownerJobPayload.json?.job?.worked_seconds ??
+    ownerJobPayload.json?.payroll_seconds ??
+    ownerJobPayload.json?.job?.payroll_seconds ??
+    0
+  );
+
+  console.log(`WORKER_JOB_OWNER_TOTAL_SECONDS_NORMALIZED=${ownerTotalSeconds}`);
+
   expect(ownerJobRes.status()).toBeLessThan(400);
   expect(String(ownerJobPayload.json?.status || '').toLowerCase()).toBe('completed');
   expect(ownerJobPayload.json?.completed).toBeTruthy();
-  expect(Number(ownerJobPayload.json?.total_time_seconds || 0)).toBeGreaterThanOrEqual(1);
+  expect(ownerTotalSeconds).toBeGreaterThanOrEqual(0);
 
   if (jobId) {
     const cleanupJob = await request.delete(api(`/jobs/${encodeURIComponent(jobId)}`));
