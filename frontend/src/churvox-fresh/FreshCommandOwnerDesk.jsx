@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
 
@@ -69,8 +70,36 @@ function parseWorkFromText(text) {
 function parseCleanDateFromText(text) {
   const raw = String(text || "");
   const m = raw.match(/\b(\d{1,2})(?:st|nd|rd|th)?\s+(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/i);
-  if (m) return `${m[1]} ${m[2][0].toUpperCase()}${m[2].slice(1).toLowerCase()}`;
+  if (m) {
+    const day = m[1];
+    const month = `${m[2][0].toUpperCase()}${m[2].slice(1).toLowerCase()}`;
+    const year = new Date().getFullYear();
+    return `${day} ${month} ${year}`;
+  }
   return "";
+}
+
+function parseNotesFromText(text) {
+  const raw = String(text || "");
+  const explicit = raw.match(/\b(?:note|notes)\s*[:\-]\s*(.+)$/i);
+  if (explicit?.[1]) return explicit[1].trim();
+
+  const withNote = raw.match(/\bwith\s+(?:a\s+)?note\s+(?:that\s+)?(.+)$/i);
+  if (withNote?.[1]) return withNote[1].trim();
+
+  return "";
+}
+
+function cleanAiNote(value, original) {
+  const note = String(value || "").trim();
+  const raw = String(original || "").trim();
+
+  if (!note) return "";
+  if (note === raw) return "";
+  if (raw && note.includes(raw)) return "";
+  if (/^(job|create|add|prepare|move|invoice|quote)\b/i.test(note)) return "";
+
+  return note;
 }
 
 function buildDraft(item) {
@@ -92,7 +121,7 @@ function buildDraft(item) {
     repeat,
     email: p.email || p.customer_email || "",
     phone: p.phone || "",
-    notes: p.notes || original || "",
+    notes: cleanAiNote(p.notes, original) || parseNotesFromText(original),
   };
 }
 
@@ -204,7 +233,15 @@ function FilledForm({ item, draft, setDraft }) {
 
             <label>
               <span>Price</span>
-              <input value={draft.price} onChange={update("price")} placeholder="60" inputMode="decimal" />
+              <div className="freshReviewMoneyInput">
+                <i>$</i>
+                <input
+                  value={draft.price}
+                  onChange={(event) => setDraft((current) => ({ ...current, price: event.target.value.replace(/[^0-9.]/g, "") }))}
+                  placeholder="60"
+                  inputMode="decimal"
+                />
+              </div>
             </label>
 
             <label>
@@ -263,19 +300,17 @@ function ReviewCard({ item, busy, onOpen, onApprove, onIgnore }) {
 }
 
 function ReviewModal({ item, busy, onClose, onSave, onApprove, onIgnore }) {
-  const [note, setNote] = React.useState("");
   const [draft, setDraft] = React.useState(buildDraft(item));
 
   React.useEffect(() => {
-    setNote(item?.owner_note || "");
     setDraft(buildDraft(item));
   }, [item]);
 
-  if (!item) return null;
+  if (!item || typeof document === "undefined") return null;
 
   const payload = draftToPayload(item, draft);
 
-  return (
+  return createPortal(
     <div className="freshReviewShade" role="dialog" aria-modal="true">
       <section className="freshReviewModal">
         <button className="freshReviewClose" type="button" onClick={onClose}>×</button>
@@ -293,20 +328,16 @@ function ReviewModal({ item, busy, onClose, onSave, onApprove, onIgnore }) {
           <p>Nothing creates, sends, syncs, marks paid, or changes live records until you approve this form.</p>
         </section>
 
-        <label className="freshReviewNote">
-          <span>Owner note / edit</span>
-          <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Add a note before saving or approval." />
-        </label>
-
         <div className="freshActions freshReviewModalActions">
-          <button className="freshPrimary" type="button" disabled={busy} onClick={() => onApprove(item, note, payload)}>
+          <button className="freshPrimary" type="button" disabled={busy} onClick={() => onApprove(item, "", payload)}>
             {busy ? "Approving…" : "Approve backend action"}
           </button>
-          <button className="freshGhost" type="button" disabled={busy} onClick={() => onSave(item, note, payload)}>Save form</button>
-          <button className="freshGhost" type="button" disabled={busy} onClick={() => onIgnore(item, note)}>Ignore</button>
+          <button className="freshGhost" type="button" disabled={busy} onClick={() => onSave(item, "Saved edited approval form.", payload)}>Save form</button>
+          <button className="freshGhost" type="button" disabled={busy} onClick={() => onIgnore(item, "Ignored from Review.")}>Ignore</button>
         </div>
       </section>
-    </div>
+    </div>,
+    document.body
   );
 }
 
