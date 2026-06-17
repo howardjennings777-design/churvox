@@ -82,21 +82,70 @@ function workerPhone(worker) {
   return pick(worker, "phone", "mobile", "worker_phone");
 }
 
+function identityTokens(...values) {
+  const out = new Set();
+
+  const add = (value) => {
+    if (value === undefined || value === null) return;
+
+    if (Array.isArray(value)) {
+      value.forEach(add);
+      return;
+    }
+
+    if (typeof value === "object") {
+      [
+        value.id,
+        value._id,
+        value.$oid,
+        value.oid,
+        value.uuid,
+        value.worker_id,
+        value.user_id,
+        value.team_member_id,
+        value.assigned_worker_id,
+        value.assigned_to,
+        value.email,
+        value.worker_email,
+        value.assigned_worker_email,
+        value.name,
+        value.full_name,
+        value.display_name,
+        value.assigned_worker_name,
+        value.worker_name,
+      ].forEach(add);
+      return;
+    }
+
+    const text = lower(value);
+    if (text && text !== "[object object]") out.add(text);
+  };
+
+  values.forEach(add);
+  return [...out].filter(Boolean);
+}
+
 function workerKeys(worker) {
-  return [
+  return identityTokens(
     idOf(worker),
+    worker,
     pick(worker, "worker_id", "user_id", "team_member_id"),
     workerEmail(worker),
-    workerName(worker),
-  ].map((x) => lower(x)).filter(Boolean);
+    workerName(worker)
+  );
 }
 
 function jobKeys(job) {
-  return [
+  return identityTokens(
     pick(job, "assigned_worker_id", "worker_id", "assigned_to", "assignedWorkerId"),
     pick(job, "assigned_worker_email", "worker_email", "assigned_to_email"),
-    pick(job, "assigned_worker_name", "worker_name", "assigned_to_name", "worker"),
-  ].map((x) => lower(x)).filter(Boolean);
+    pick(job, "assigned_worker_name", "worker_name", "assigned_to_name"),
+    job?.assigned_worker,
+    job?.worker,
+    job?.assignedWorker,
+    job?.assigned_to_worker,
+    job?.team_member
+  );
 }
 
 function jobForWorker(job, worker) {
@@ -131,7 +180,40 @@ function isActive(job) {
 }
 
 function jobSeconds(job) {
-  return seconds(job?.total_job_seconds || job?.total_time_seconds || job?.timer_total_seconds || job?.job_seconds);
+  return seconds(
+    job?.total_job_seconds ||
+    job?.total_time_seconds ||
+    job?.timer_total_seconds ||
+    job?.job_seconds ||
+    job?.total_seconds ||
+    job?.total_time_on_site_seconds ||
+    job?.time_seconds ||
+    job?.duration_seconds ||
+    job?.payroll_seconds
+  );
+}
+
+function latestJobActivity(job) {
+  return pick(
+    job,
+    "completed_at",
+    "timer_completed_at",
+    "timer_paused_at",
+    "timer_started_at",
+    "started_at",
+    "acknowledged_at",
+    "worker_acknowledged_at",
+    "updated_at",
+    "modified_at"
+  );
+}
+
+function liveStatusFor(worker, view) {
+  if (view?.currentJob && isActive(view.currentJob)) return "On job now";
+  if (view?.todayJobs?.some((job) => statusOf(job) === "paused")) return "Paused";
+  if (clockStatus(worker) === "Clocked in" || view?.shiftSeconds > 0) return "Clocked in";
+  if (view?.todayJobs?.length) return "Jobs assigned";
+  return "Waiting";
 }
 
 function lastGps(worker) {
@@ -191,6 +273,7 @@ export default function FreshWorkerCommand({ onNavigate }) {
 
   const selected = workers.find((worker) => idOf(worker) === selectedId) || workers[0] || null;
   const view = selected ? buildWorkerView(selected, jobs) : null;
+  const selectedLiveStatus = selected && view ? liveStatusFor(selected, view) : "Waiting";
 
   const load = React.useCallback(async (options = {}) => {
     const silent = Boolean(options?.silent);
@@ -294,7 +377,7 @@ export default function FreshWorkerCommand({ onNavigate }) {
                   <h2>{workerName(selected)}</h2>
                   <p>{workerEmail(selected) || "No email"} · {workerPhone(selected) || "No phone"}</p>
                 </div>
-                <div className="freshWorkerStatusPill">{clockStatus(selected)}</div>
+                <div className="freshWorkerStatusPill">{selectedLiveStatus}</div>
               </section>
 
               <section className="freshWorkerCommandStats">
@@ -312,6 +395,7 @@ export default function FreshWorkerCommand({ onNavigate }) {
                     <div><span>Status</span><b>{clockStatus(selected)}</b></div>
                     <div><span>Last GPS</span><b>{lastGps(selected) || "Not recorded"}</b></div>
                     <div><span>Jobs today</span><b>{view.todayJobs.length}</b></div>
+                    <div><span>Latest update</span><b>{view.currentJob ? latestJobActivity(view.currentJob) || "Just now" : "Waiting"}</b></div>
                   </div>
                   {view.currentJob ? <JobRow job={view.currentJob} /> : <div className="freshItem"><b>No active job</b><span>Worker is not currently on a started job.</span></div>}
                 </article>
