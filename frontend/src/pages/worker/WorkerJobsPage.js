@@ -208,7 +208,7 @@ export default function WorkerJobsPage() {
     } catch {
       // Live status should never block the worker from doing the job.
     }
-  }, [post, sendLivePing, shiftStatus]);
+  }, [post, shiftStatus]);
 
   const fetchShiftStatus = useCallback(async () => {
     const res = await get("/worker/shift/status");
@@ -251,7 +251,7 @@ export default function WorkerJobsPage() {
     } finally {
       setShiftBusy(false);
     }
-  }, [fetchShiftStatus, post, sendLivePing]);
+  }, [fetchShiftStatus, post]);
 
   const clockOut = useCallback(async () => {
     setShiftBusy(true);
@@ -277,7 +277,7 @@ export default function WorkerJobsPage() {
     } finally {
       setShiftBusy(false);
     }
-  }, [fetchShiftStatus, post, sendLivePing]);
+  }, [fetchShiftStatus, post]);
 
   const fetchJobs = useCallback(async () => {
     setLoading(true);
