@@ -217,6 +217,9 @@ function liveStatusFor(worker, view) {
 }
 
 function lastGps(worker) {
+  const label = pick(worker, "last_gps_label", "gps_label", "gps_address", "address_label", "last_location_label");
+  if (label) return label;
+
   const lat = pick(worker, "last_lat", "gps_lat", "latitude", "lat");
   const lng = pick(worker, "last_lng", "gps_lng", "longitude", "lng");
   if (!lat || !lng) return "";

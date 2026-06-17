@@ -18,6 +18,11 @@ from passlib.context import CryptContext
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
 def make_json_safe(value):
+    try:
+        if isinstance(value, Enum):
+            return value.value
+    except NameError:
+        pass
     if isinstance(value, dict):
         return {k: make_json_safe(v) for k, v in value.items()}
     if isinstance(value, list):
@@ -3289,134 +3294,261 @@ def _live_serial(doc):
     return make_json_safe(safe)
 
 
+@api_router.post("/worker/live-ping")
+async def worker_live_ping(payload: dict = Body(default_factory=dict), current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") != "worker":
+        raise HTTPException(status_code=403, detail="Only workers can send live status")
+
+    now = datetime.now(timezone.utc)
+    business_id = str(current_user.get("business_id") or current_user.get("id"))
+    worker_id = str(current_user.get("id"))
+
+    location = payload.get("location") if isinstance(payload.get("location"), dict) else {}
+    lat = location.get("lat") or location.get("latitude")
+    lng = location.get("lng") or location.get("longitude")
+    accuracy = location.get("accuracy")
+
+    gps_label = (
+        location.get("address_label")
+        or location.get("display_name")
+        or location.get("address")
+        or payload.get("gps_label")
+        or payload.get("address_label")
+        or ""
+    )
+
+    live_status = str(payload.get("live_status") or payload.get("status") or "Active").strip()
+    clock_status = str(payload.get("clock_status") or live_status).strip()
+
+    live_doc = {
+        "business_id": business_id,
+        "worker_id": worker_id,
+        "worker_email": current_user.get("email"),
+        "worker_name": current_user.get("name") or current_user.get("full_name") or current_user.get("email"),
+        "live_status": live_status,
+        "clock_status": clock_status,
+        "shift_status": clock_status,
+        "source": payload.get("source") or "worker",
+        "job_id": str(payload.get("job_id") or ""),
+        "job_title": payload.get("job_title") or "",
+        "job_status": payload.get("job_status") or "",
+        "last_lat": lat,
+        "last_lng": lng,
+        "gps_lat": lat,
+        "gps_lng": lng,
+        "latitude": lat,
+        "longitude": lng,
+        "gps_accuracy": accuracy,
+        "last_gps_label": gps_label,
+        "gps_label": gps_label,
+        "last_gps_at": now,
+        "updated_at": now,
+    }
+
+    await db.worker_live_status.update_one(
+        {"business_id": business_id, "worker_id": worker_id},
+        {"$set": live_doc, "$setOnInsert": {"created_at": now}},
+        upsert=True,
+    )
+
+    user_update = {
+        "live_status": live_status,
+        "clock_status": clock_status,
+        "shift_status": clock_status,
+        "last_gps_label": gps_label,
+        "gps_label": gps_label,
+        "last_gps_at": now,
+        "last_live_status_at": now,
+        "updated_at": now,
+    }
+    if lat is not None:
+        user_update["last_lat"] = lat
+        user_update["gps_lat"] = lat
+        user_update["latitude"] = lat
+    if lng is not None:
+        user_update["last_lng"] = lng
+        user_update["gps_lng"] = lng
+        user_update["longitude"] = lng
+
+    try:
+        await db.users.update_one({"_id": ObjectId(worker_id)}, {"$set": user_update})
+    except Exception:
+        pass
+
+    return {"success": True, "live": _live_serial(live_doc)}
+
+
 @api_router.get("/worker/live-status")
 async def worker_live_status(request: Request, current_user: dict = Depends(get_current_user)):
-    user = await require_employer(request)
-    business_id = str(user.get("business_id") or user.get("id"))
-    business_oid = normalize_object_id(business_id)
+    try:
+        user = await require_employer(request)
+        business_id = str(user.get("business_id") or user.get("id"))
+        business_oid = normalize_object_id(business_id)
 
-    business_or = [{"business_id": business_id}]
-    job_or = [{"business_id": business_id}]
+        business_or = [{"business_id": business_id}]
+        job_or = [{"business_id": business_id}]
 
-    if business_oid:
-        business_or.append({"business_id": business_oid})
-        job_or.append({"business_id": business_oid})
-        job_or.append({"contractor_id": business_oid})
-    else:
-        job_or.append({"contractor_id": business_id})
+        if business_oid:
+            business_or.append({"business_id": business_oid})
+            job_or.append({"business_id": business_oid})
+            job_or.append({"contractor_id": business_oid})
+        else:
+            job_or.append({"contractor_id": business_id})
 
-    workers = await db.users.find({
-        "$and": [
-            {"$or": business_or},
-            {"role": "worker"},
+        workers = await db.users.find({
+            "$and": [
+                {"$or": business_or},
+                {"role": "worker"},
+            ]
+        }).to_list(length=500)
+
+        live_docs = await db.worker_live_status.find({"business_id": business_id}).to_list(length=1000)
+        jobs = await db.jobs.find({"$or": job_or}).sort("updated_at", -1).limit(1000).to_list(length=1000)
+
+        live_by_worker = {}
+        live_by_email = {}
+        for live in live_docs:
+            worker_id = str(live.get("worker_id") or "")
+            worker_email = str(live.get("worker_email") or "").lower()
+            if worker_id:
+                live_by_worker[worker_id] = live
+            if worker_email:
+                live_by_email[worker_email] = live
+
+        active_jobs = [
+            job for job in jobs
+            if _live_job_status(job) in ["in_progress", "paused", "started"]
         ]
-    }).to_list(length=500)
 
-    jobs = await db.jobs.find({"$or": job_or}).sort("updated_at", -1).limit(1000).to_list(length=1000)
+        live_workers = []
 
-    live_workers = []
+        for worker in workers:
+            worker_id = str(worker.get("_id") or worker.get("id") or "")
+            worker_email = str(worker.get("email") or "").lower()
+            live = live_by_worker.get(worker_id) or live_by_email.get(worker_email) or {}
 
-    for worker in workers:
-        worker_tokens = _live_tokens(
-            worker,
-            worker.get("_id"),
-            worker.get("id"),
-            worker.get("worker_id"),
-            worker.get("user_id"),
-            worker.get("team_member_id"),
-            worker.get("email"),
-            worker.get("name"),
-            worker.get("full_name"),
-            worker.get("display_name"),
-        )
-
-        assigned_jobs = []
-
-        for job in jobs:
-            assigned_tokens = _live_tokens(
-                job.get("assigned_worker_id"),
-                job.get("worker_id"),
-                job.get("assigned_to"),
-                job.get("assignedWorkerId"),
-                job.get("assigned_worker_email"),
-                job.get("worker_email"),
-                job.get("assigned_to_email"),
-                job.get("assigned_worker_name"),
-                job.get("worker_name"),
-                job.get("assigned_to_name"),
-                job.get("assigned_worker"),
-                job.get("worker"),
-                job.get("assignedWorker"),
-                job.get("team_member"),
+            worker_tokens = _live_tokens(
+                worker,
+                worker.get("_id"),
+                worker.get("id"),
+                worker.get("email"),
+                worker.get("name"),
+                worker.get("full_name"),
             )
 
-            if worker_tokens and assigned_tokens and worker_tokens.intersection(assigned_tokens):
-                assigned_jobs.append(job)
+            assigned_jobs = []
+            for job in jobs:
+                assigned_tokens = _live_tokens(
+                    job.get("assigned_worker_id"),
+                    job.get("worker_id"),
+                    job.get("assigned_to"),
+                    job.get("assignedWorkerId"),
+                    job.get("assigned_worker_email"),
+                    job.get("worker_email"),
+                    job.get("assigned_to_email"),
+                    job.get("assigned_worker_name"),
+                    job.get("worker_name"),
+                    job.get("assigned_to_name"),
+                    job.get("assigned_worker"),
+                    job.get("worker"),
+                    job.get("assignedWorker"),
+                    job.get("team_member"),
+                )
+                if worker_tokens and assigned_tokens and worker_tokens.intersection(assigned_tokens):
+                    assigned_jobs.append(job)
 
-        active_job = None
-        paused_job = None
+            current_job = None
+            live_job_id = str(live.get("job_id") or "")
+            if live_job_id:
+                for job in jobs:
+                    if str(job.get("_id") or job.get("id") or "") == live_job_id:
+                        current_job = job
+                        break
 
-        for job in assigned_jobs:
-            status = _live_job_status(job)
-            if status == "in_progress":
-                active_job = job
-                break
-            if status == "paused":
-                paused_job = job
+            if not current_job:
+                for job in assigned_jobs:
+                    if _live_job_status(job) in ["in_progress", "paused", "started"]:
+                        current_job = job
+                        break
 
-        today_jobs = [
-            job for job in assigned_jobs
-            if _live_is_today(job.get("scheduled_date") or job.get("date") or job.get("start") or job.get("start_time") or job.get("due_date"))
-        ]
+            today_jobs = [
+                job for job in assigned_jobs
+                if _live_is_today(job.get("scheduled_date") or job.get("date") or job.get("start") or job.get("start_time") or job.get("due_date"))
+            ]
 
-        job_time_seconds = sum(_live_job_seconds(job) for job in assigned_jobs)
-        current_job = active_job or paused_job
+            live_status = str(live.get("live_status") or "").strip()
+            clock_status = str(live.get("clock_status") or live.get("shift_status") or "").strip()
 
-        worker_live = dict(worker)
+            if not live_status:
+                if current_job and _live_job_status(current_job) == "in_progress":
+                    live_status = "On job now"
+                elif current_job and _live_job_status(current_job) == "paused":
+                    live_status = "Paused"
+                elif str(worker.get("clock_status") or worker.get("shift_status") or "").lower() in ["clocked_in", "clocked in"]:
+                    live_status = "Clocked in"
+                elif assigned_jobs:
+                    live_status = "Jobs assigned"
+                else:
+                    live_status = "Waiting"
 
-        if active_job:
-            live_status = "On job now"
-            clock_status = "On job"
-        elif paused_job:
-            live_status = "Paused"
-            clock_status = "Paused"
-        elif str(worker.get("shift_status") or worker.get("clock_status") or "").lower() in ["clocked_in", "clocked in"]:
-            live_status = "Clocked in"
-            clock_status = "Clocked in"
-        elif today_jobs:
-            live_status = "Jobs assigned"
-            clock_status = "Not clocked in"
-        else:
-            live_status = "Waiting"
-            clock_status = "Not clocked in"
+            if not clock_status:
+                clock_status = live_status
 
-        worker_live.update({
-            "live_status": live_status,
-            "clock_status": clock_status,
-            "shift_status": clock_status,
-            "today_job_count": len(today_jobs),
-            "assigned_job_count": len(assigned_jobs),
-            "job_time_seconds": job_time_seconds,
-            "total_job_seconds": job_time_seconds,
-            "current_job_id": str(current_job.get("_id")) if current_job else "",
-            "current_job_title": (
-                current_job.get("title")
-                or current_job.get("job_name")
-                or current_job.get("job_title")
+            gps_label = (
+                live.get("last_gps_label")
+                or live.get("gps_label")
+                or worker.get("last_gps_label")
+                or worker.get("gps_label")
                 or ""
-            ) if current_job else "",
-            "current_job_status": _live_job_status(current_job) if current_job else "",
-            "live_updated_at": datetime.now(timezone.utc),
-        })
+            )
 
-        live_workers.append(_live_serial(worker_live))
+            worker_live = dict(worker)
+            worker_live.update({
+                "live_status": live_status,
+                "clock_status": clock_status,
+                "shift_status": clock_status,
+                "today_job_count": len(today_jobs),
+                "assigned_job_count": len(assigned_jobs),
+                "job_time_seconds": sum(_live_job_seconds(job) for job in assigned_jobs),
+                "total_job_seconds": sum(_live_job_seconds(job) for job in assigned_jobs),
+                "current_job_id": str(current_job.get("_id")) if current_job else str(live.get("job_id") or ""),
+                "current_job_title": (
+                    current_job.get("title")
+                    or current_job.get("job_name")
+                    or current_job.get("job_title")
+                    or live.get("job_title")
+                    or ""
+                ) if current_job else str(live.get("job_title") or ""),
+                "current_job_status": _live_job_status(current_job) if current_job else str(live.get("job_status") or ""),
+                "last_gps_label": gps_label,
+                "gps_label": gps_label,
+                "last_lat": live.get("last_lat") or worker.get("last_lat"),
+                "last_lng": live.get("last_lng") or worker.get("last_lng"),
+                "gps_lat": live.get("gps_lat") or worker.get("gps_lat"),
+                "gps_lng": live.get("gps_lng") or worker.get("gps_lng"),
+                "last_gps_at": live.get("last_gps_at") or worker.get("last_gps_at"),
+                "live_updated_at": live.get("updated_at") or worker.get("last_live_status_at") or datetime.now(timezone.utc),
+            })
 
-    return {
-        "success": True,
-        "workers": live_workers,
-        "jobs": [_live_serial(job) for job in jobs],
-        "updated_at": datetime.now(timezone.utc).isoformat(),
-    }
+            live_workers.append(_live_serial(worker_live))
+
+        return {
+            "success": True,
+            "workers": live_workers,
+            "jobs": [_live_serial(job) for job in jobs],
+            "active_jobs": [_live_serial(job) for job in active_jobs],
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+    except Exception as exc:
+        logger.exception("WORKER_LIVE_STATUS_SAFE_ERROR_20260618")
+        return {
+            "success": False,
+            "error": str(exc),
+            "workers": [],
+            "jobs": [],
+            "active_jobs": [],
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
 
 
 # ===================== DASHBOARD STATS =====================

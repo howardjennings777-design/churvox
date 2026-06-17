@@ -53,7 +53,35 @@ function hoursText(totalSeconds) {
   return `${h}h ${m}m`;
 }
 
-function getGpsPosition() {
+async function reverseGeocodeLocation(location) {
+  const lat = location?.lat ?? location?.latitude;
+  const lng = location?.lng ?? location?.longitude;
+  if (!lat || !lng) return "";
+
+  try {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 4500);
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&addressdetails=1&zoom=18`, {
+      signal: controller.signal,
+      headers: { Accept: "application/json" },
+    });
+    window.clearTimeout(timer);
+
+    if (!res.ok) return "";
+    const data = await res.json();
+    const address = data?.address || {};
+    const street = [address.house_number, address.road].filter(Boolean).join(" ");
+    const suburb = address.suburb || address.neighbourhood || address.city_district || address.locality || "";
+    const town = address.city || address.town || address.village || address.state_district || "";
+
+    const parts = [street, suburb, town].filter(Boolean);
+    return [...new Set(parts)].join(", ") || data?.display_name || "";
+  } catch {
+    return "";
+  }
+}
+
+async function getGpsPosition() {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
       reject(new Error("GPS is not available on this device"));
@@ -61,11 +89,21 @@ function getGpsPosition() {
     }
 
     navigator.geolocation.getCurrentPosition(
-      (position) => resolve({
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-        accuracy: position.coords.accuracy,
-      }),
+      async (position) => {
+        const location = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        };
+        const addressLabel = await reverseGeocodeLocation(location);
+        resolve({
+          ...location,
+          address_label: addressLabel,
+          display_name: addressLabel,
+        });
+      },
       (error) => reject(error),
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
     );
@@ -164,6 +202,14 @@ export default function WorkerJobsPage() {
   const [showContactOffice, setShowContactOffice] = useState(false);
 
 
+  const sendLivePing = useCallback(async (payload) => {
+    try {
+      await post("/worker/live-ping", payload);
+    } catch {
+      // Live status should never block the worker from doing the job.
+    }
+  }, [post, sendLivePing, shiftStatus]);
+
   const fetchShiftStatus = useCallback(async () => {
     const res = await get("/worker/shift/status");
     if (res?.success) {
@@ -178,8 +224,9 @@ export default function WorkerJobsPage() {
     try {
       const location = await getGpsPosition();
       const res = await post("/worker/gps-ping", { location, source });
+      await sendLivePing({ source, live_status: "GPS checked", clock_status: shiftStatus, location });
       if (!res?.success && source !== "hourly") toast.error(res?.error || "GPS could not be recorded");
-      if (res?.success && source !== "hourly") toast.success("GPS recorded");
+      if (res?.success && source !== "hourly") toast.success(location.address_label ? `GPS recorded: ${location.address_label}` : "GPS recorded");
     } catch (err) {
       if (source !== "hourly") toast.error(err?.message || "GPS permission is needed while clocked in");
     }
@@ -191,7 +238,8 @@ export default function WorkerJobsPage() {
       const location = await getGpsPosition();
       const res = await post("/worker/clock-in", { location });
       if (res?.success) {
-        toast.success("Clocked in. GPS tracking is on.");
+        await sendLivePing({ source: "clock-in", live_status: "Clocked in", clock_status: "clocked_in", location });
+        toast.success(location.address_label ? `Clocked in: ${location.address_label}` : "Clocked in. GPS tracking is on.");
         setShiftStatus("clocked_in");
         setGpsTracking(true);
         await fetchShiftStatus();
@@ -203,7 +251,7 @@ export default function WorkerJobsPage() {
     } finally {
       setShiftBusy(false);
     }
-  }, [fetchShiftStatus, post]);
+  }, [fetchShiftStatus, post, sendLivePing]);
 
   const clockOut = useCallback(async () => {
     setShiftBusy(true);
@@ -217,7 +265,8 @@ export default function WorkerJobsPage() {
 
       const res = await post("/worker/clock-out", { location });
       if (res?.success) {
-        toast.success("Clocked out. GPS tracking is off.");
+        await sendLivePing({ source: "clock-out", live_status: "Clocked out", clock_status: "clocked_out", location });
+        toast.success(location?.address_label ? `Clocked out: ${location.address_label}` : "Clocked out. GPS tracking is off.");
         setShiftStatus("clocked_out");
         setGpsTracking(false);
         setShiftSeconds(0);
@@ -228,7 +277,7 @@ export default function WorkerJobsPage() {
     } finally {
       setShiftBusy(false);
     }
-  }, [fetchShiftStatus, post]);
+  }, [fetchShiftStatus, post, sendLivePing]);
 
   const fetchJobs = useCallback(async () => {
     setLoading(true);
@@ -311,8 +360,17 @@ export default function WorkerJobsPage() {
       }
       const endpoint = status === "paused" ? `/jobs/${encodeURIComponent(jobId)}/timer/resume` : `/jobs/${encodeURIComponent(jobId)}/timer/start`;
       const res = await post(endpoint, {});
-      if (res?.success) toast.success(status === "paused" ? "Job resumed" : "Job timer started");
-      else toast.error(res?.error || "Could not start job timer");
+      if (res?.success) {
+        await sendLivePing({
+          source: status === "paused" ? "job-resume" : "job-start",
+          live_status: "On job now",
+          clock_status: "on_job",
+          job_id: jobId,
+          job_title: job?.title || "",
+          job_status: "in_progress",
+        });
+        toast.success(status === "paused" ? "Job resumed" : "Job timer started");
+      } else toast.error(res?.error || "Could not start job timer");
       await fetchJobs();
     } finally {
       setStartingId("");

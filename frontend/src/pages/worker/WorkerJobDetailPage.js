@@ -120,14 +120,60 @@ export default function WorkerJobDetailPage() {
 
   useEffect(() => { loadJob(); }, [loadJob]);
 
+  async function reverseGeocodeLocation(location) {
+    const lat = location?.lat ?? location?.latitude;
+    const lng = location?.lng ?? location?.longitude;
+    if (!lat || !lng) return "";
+
+    try {
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => controller.abort(), 4500);
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&addressdetails=1&zoom=18`, {
+        signal: controller.signal,
+        headers: { Accept: "application/json" },
+      });
+      window.clearTimeout(timer);
+
+      if (!res.ok) return "";
+      const data = await res.json();
+      const address = data?.address || {};
+      const street = [address.house_number, address.road].filter(Boolean).join(" ");
+      const suburb = address.suburb || address.neighbourhood || address.city_district || address.locality || "";
+      const town = address.city || address.town || address.village || address.state_district || "";
+
+      const parts = [street, suburb, town].filter(Boolean);
+      return [...new Set(parts)].join(", ") || data?.display_name || "";
+    } catch {
+      return "";
+    }
+  }
+
   const getGeo = () => new Promise((resolve) => {
     if (!navigator?.geolocation) return resolve(null);
     navigator.geolocation.getCurrentPosition(
-      (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude, accuracy: pos.coords.accuracy }),
+      async (pos) => {
+        const location = {
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        };
+        const addressLabel = await reverseGeocodeLocation(location);
+        resolve({ ...location, address_label: addressLabel, display_name: addressLabel });
+      },
       () => resolve(null),
       { enableHighAccuracy: true, timeout: 5000, maximumAge: 120000 },
     );
   });
+
+  async function sendLivePing(payload) {
+    try {
+      await post("/worker/live-ping", payload);
+    } catch {
+      // Live status should not block worker job actions.
+    }
+  }
 
   const checkAnotherActiveJob = async () => {
     const res = await get("/jobs");
@@ -154,6 +200,17 @@ export default function WorkerJobDetailPage() {
       if (geo) payload.location = geo;
       const res = await post(endpoint, payload);
       if (res?.success) {
+        const liveStatus = action === "pause" ? "Paused" : action === "complete" ? "Finished job" : "On job now";
+        const jobStatus = action === "pause" ? "paused" : action === "complete" ? "completed" : "in_progress";
+        await sendLivePing({
+          source: `job-${action}`,
+          live_status: liveStatus,
+          clock_status: liveStatus,
+          job_id: id,
+          job_title: job?.title || "",
+          job_status: jobStatus,
+          location: geo,
+        });
         toast.success(label);
         await loadJob();
       } else {
