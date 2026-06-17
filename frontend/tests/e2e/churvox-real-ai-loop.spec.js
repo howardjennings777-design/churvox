@@ -73,7 +73,7 @@ test.describe('Churvox real AI loop', () => {
     await waitStable(page);
 
     const body = page.locator('body');
-    await expect(body).toContainText(/backend Review|safe backend parser|Backend AI|no fake local preview|Review item/i);
+    await expect(body).toContainText(/prepares it for Review|nothing changes until you approve|backend Review|safe backend parser|Backend AI|Review item/i);
 
     await page.locator('textarea').first().fill('Playwright check: create a job for 16 Taita Drive $60 next Friday');
 
