@@ -2200,3 +2200,28 @@ html body.freshCommandOwnerMode.freshCommandLightMode .freshCommandDeskPage .fre
     grid-template-columns: 1fr !important;
   }
 }
+
+/* CHURVOX_REVIEW_MODAL_CENTER_IN_WORKSPACE_20260617 */
+@media (min-width: 901px) {
+  .freshReviewShade {
+    left: 180px !important;
+    right: 0 !important;
+    width: calc(100vw - 180px) !important;
+    height: 100dvh !important;
+    padding: 18px 28px !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .freshReviewModal {
+    margin: 0 auto !important;
+    transform: none !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .freshReviewShade {
+    left: 0 !important;
+    width: 100vw !important;
+  }
+}
