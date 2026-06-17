@@ -2,11 +2,13 @@ import base64
 import os
 import secrets
 from datetime import datetime, timedelta, timezone
-from urllib.parse import urlencode
+from urllib.parse import urlencode, parse_qs
 
 import httpx
+import stripe
+import jwt
 from bson import ObjectId
-from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 
 try:
@@ -38,6 +40,47 @@ def _install_ai_operator_routes(app, db, get_current_user):
         return
     app.include_router(build_ai_operator_router(db, get_current_user, ObjectId), prefix="/api")
     app.state.churvox_real_ai_operator_routes_installed = True
+
+
+def _checkout_price_line(plan, country):
+    plan = str(plan or "pro").lower().strip()
+    country = str(country or "NZ").upper().strip()
+
+    plan_env_names = {"solo": "START", "team": "CREW", "pro": "OPERATOR", "enterprise": "COMMAND"}
+    legacy_env_names = {"solo": "SOLO", "team": "TEAM", "pro": "PRO", "enterprise": "ENTERPRISE"}
+    plan_labels = {"solo": "Start", "team": "Crew", "pro": "Operator", "enterprise": "Command"}
+    currencies = {"NZ": "nzd", "AU": "aud", "US": "usd", "UK": "gbp"}
+    plan_prices = {
+        "solo": {"NZ": 39, "AU": 39, "US": 29, "UK": 25},
+        "team": {"NZ": 89, "AU": 89, "US": 69, "UK": 59},
+        "pro": {"NZ": 149, "AU": 149, "US": 119, "UK": 99},
+        "enterprise": {"NZ": 299, "AU": 299, "US": 239, "UK": 199},
+    }
+
+    for key in [
+        f"STRIPE_PRICE_{plan_env_names.get(plan, 'OPERATOR')}_{country}",
+        f"STRIPE_PRICE_{legacy_env_names.get(plan, 'PRO')}_{country}",
+        f"STRIPE_PRICE_{plan_env_names.get(plan, 'OPERATOR')}",
+        f"STRIPE_PRICE_{legacy_env_names.get(plan, 'PRO')}",
+    ]:
+        value = os.environ.get(key, "").strip()
+        if value:
+            return {"price": value, "quantity": 1}
+
+    amount = int(round(float(plan_prices.get(plan, plan_prices["pro"]).get(country, plan_prices["pro"]["NZ"])) * 100))
+    return {
+        "price_data": {
+            "currency": currencies.get(country, "nzd"),
+            "unit_amount": amount,
+            "recurring": {"interval": "month"},
+            "product_data": {
+                "name": f"Churvox {plan_labels.get(plan, 'Operator')}",
+                "description": "Churvox monthly subscription plan",
+            },
+        },
+        "quantity": 1,
+    }
+
 
 
 def _bid(user):
@@ -399,6 +442,85 @@ def install(app, db, get_current_user):
         if not job:
             return JSONResponse({"detail": "Job not found"}, status_code=404)
         return await call_next(request)
+
+
+    @router.post("/billing/start-checkout-form")
+    async def billing_start_checkout_form(request: Request):
+        raw = (await request.body()).decode("utf-8", errors="ignore")
+        form = {k: v[0] for k, v in parse_qs(raw).items() if v}
+
+        token = str(form.get("token") or form.get("access_token") or "").strip()
+        if not token:
+            raise HTTPException(status_code=401, detail="Missing checkout token")
+
+        try:
+            payload = jwt.decode(
+                token,
+                os.environ.get("JWT_SECRET", "default_secret_change_me"),
+                algorithms=["HS256"],
+            )
+            if payload.get("type") != "access":
+                raise HTTPException(status_code=401, detail="Invalid checkout token type")
+            user_doc = await db.users.find_one({"_id": ObjectId(payload["sub"])})
+        except HTTPException:
+            raise
+        except Exception:
+            raise HTTPException(status_code=401, detail="Invalid checkout token")
+
+        if not user_doc:
+            raise HTTPException(status_code=401, detail="User not found")
+
+        role = str(user_doc.get("role") or "employer").lower().strip()
+        if role not in {"employer", "owner", "admin", "business_owner", "superadmin", "manager", "office_admin"} and not user_doc.get("is_admin") and not user_doc.get("is_platform_owner"):
+            raise HTTPException(status_code=403, detail="Only business owners and admins can start billing checkout")
+
+        secret = os.environ.get("STRIPE_SECRET_KEY", "").strip()
+        if not secret:
+            raise HTTPException(status_code=500, detail="Stripe secret key not configured in Render")
+
+        stripe.api_key = secret
+
+        aliases = {
+            "start": "solo",
+            "solo": "solo",
+            "crew": "team",
+            "team": "team",
+            "operator": "pro",
+            "pro": "pro",
+            "command": "enterprise",
+            "enterprise": "enterprise",
+        }
+
+        requested_plan = str(form.get("plan") or form.get("ui_plan") or "pro").lower().strip()
+        plan = aliases.get(requested_plan, "pro")
+        country = str(form.get("country") or "NZ").upper().strip()
+        if country not in {"NZ", "AU", "US", "UK"}:
+            country = "NZ"
+
+        business_id = user_doc.get("business_id") or user_doc["_id"]
+        metadata = {
+            "user_id": str(user_doc["_id"]),
+            "business_id": str(business_id),
+            "plan": plan,
+            "country": country,
+            "source": "xero_routes_checkout_form_v1",
+        }
+
+        try:
+            session = stripe.checkout.Session.create(
+                mode="subscription",
+                customer_email=user_doc.get("email"),
+                line_items=[_checkout_price_line(plan, country)],
+                subscription_data={"trial_period_days": 14, "metadata": metadata},
+                metadata=metadata,
+                success_url=f"{FRONTEND_URL}/billing/success?session_id={{CHECKOUT_SESSION_ID}}&plan={plan}&country={country}&first_setup=1",
+                cancel_url=f"{FRONTEND_URL}/plans?checkout=cancelled&plan={plan}&country={country}",
+            )
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=f"Stripe checkout error: {str(exc)}")
+
+        return RedirectResponse(session.url, status_code=303)
+
 
     @router.patch("/worker/jobs/{job_id}/field-update")
     async def worker_field_update(job_id: str, payload: dict = Body(default_factory=dict), current_user: dict = Depends(get_current_user)):
