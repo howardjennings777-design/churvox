@@ -87,18 +87,182 @@ def build_ai_operator_router(db, get_current_user, ObjectId):
         invoices = await db.invoices.find({"contractor_id": business_oid}).sort("created_at", -1).limit(120).to_list(120)
         return {"business_id": business_id, "clients": [doc_out(x) for x in clients], "jobs": [doc_out(x) for x in jobs], "quotes": [doc_out(x) for x in quotes], "invoices": [doc_out(x) for x in invoices]}
     def provider_key(): return os.environ.get("OPENAI" + "_API" + "_KEY", "").strip()
+
+    def extract_email(text):
+        m = re.search(r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", str(text or ""), re.I)
+        return m.group(0) if m else None
+
+    def extract_phone(text):
+        m = re.search(r"(?:\+?64|0)\s?\d[\d\s-]{6,}", str(text or ""))
+        return re.sub(r"\s+", " ", m.group(0)).strip() if m else None
+
+    def extract_address(text):
+        raw = str(text or "")
+        m = re.search(r"\b\d{1,5}\s+[A-Za-z0-9 .'-]+?\s(?:Road|Rd|Street|St|Drive|Dr|Avenue|Ave|Lane|Ln|Place|Pl|Crescent|Cres|Terrace|Tce|Way|Court|Ct)\b", raw, re.I)
+        if m:
+            return m.group(0).strip()
+        m = re.search(r"\bat\s+([^,$]+)", raw, re.I)
+        return m.group(1).strip() if m else ""
+
+    def word_set(text):
+        stop = {"the","a","an","to","for","at","on","in","and","or","of","with","job","client","quote","invoice","create","add","move","complete","change","price"}
+        return {w for w in re.findall(r"[a-z0-9]+", str(text or "").lower()) if w not in stop and len(w) > 2}
+
+    def record_label(record):
+        return str(record.get("title") or record.get("name") or record.get("customer_name") or record.get("client_name") or record.get("address") or record.get("invoice_number") or record.get("quote_number") or record.get("id") or "").strip()
+
+    def best_record(records, text, record_type):
+        words = word_set(text)
+        best = None
+        best_score = 0
+        for record in records or []:
+            haystack = " ".join(str(record.get(k) or "") for k in ("title","name","customer_name","client_name","address","email","phone","invoice_number","quote_number","notes")).lower()
+            score = sum(1 for w in words if w in haystack)
+            if score > best_score:
+                best = record
+                best_score = score
+        if not best or best_score <= 0:
+            return {"record_type": "none", "id": "", "label": "", "reason": "No confident live record match"}
+        return {"record_type": record_type, "id": str(best.get("id") or best.get("_id") or ""), "label": record_label(best), "reason": f"Matched {best_score} words from the instruction"}
+
+    def fallback_ai(text: str, ctx: dict, reason: str = "Backend parser used"):
+        raw = str(text or "").strip()
+        low = raw.lower()
+        email = extract_email(raw)
+        phone = extract_phone(raw)
+        address = extract_address(raw)
+        price = money_number(raw)
+        client_match = best_record(ctx.get("clients", []), raw, "client")
+        job_match = best_record(ctx.get("jobs", []), raw, "job")
+        invoice_matches = []
+        job_matches = []
+
+        title = "Review prepared from Tell Churvox"
+        action = "needs_clarification"
+        payload = {}
+        match = {"record_type": "none", "id": "", "label": "", "reason": reason}
+        matches = []
+
+        if any(w in low for w in ("find", "search", "look up", "show me")):
+            action = "find_records"
+            matches = [m for m in [client_match, job_match] if m.get("id")]
+            title = "Find matching records"
+            payload = {"query": raw}
+
+        elif "chase" in low or "follow up" in low or "reminder" in low:
+            action = "prepare_invoice_followups"
+            invoice_matches = [
+                {"record_type": "invoice", "id": str(inv.get("id") or inv.get("_id") or ""), "label": record_label(inv), "reason": "Open invoice follow-up candidate"}
+                for inv in ctx.get("invoices", [])
+                if str(inv.get("status") or "").lower() in ("sent", "open", "unpaid", "overdue", "part paid", "partial")
+            ][:20]
+            matches = invoice_matches
+            title = "Prepare invoice follow-ups"
+            payload = {"message_intent": raw}
+
+        elif "invoice" in low:
+            completed_jobs = [
+                j for j in ctx.get("jobs", [])
+                if str(j.get("status") or j.get("job_status") or "").lower() in ("completed", "complete", "done", "finished")
+                and not (j.get("invoice_id") or j.get("draft_invoice_id") or j.get("invoice_number"))
+            ][:20]
+            if "completed" in low and completed_jobs:
+                action = "batch_draft_invoices"
+                job_matches = [{"record_type": "job", "id": str(j.get("id") or j.get("_id") or ""), "label": record_label(j), "reason": "Completed job not yet invoiced"} for j in completed_jobs]
+                matches = job_matches
+                payload = {"job_ids": [m["id"] for m in job_matches if m["id"]]}
+                title = "Prepare draft invoices for completed jobs"
+            elif job_match.get("id"):
+                action = "draft_invoice_from_job"
+                match = job_match
+                payload = {"job_id": job_match["id"], "amount": price}
+                title = "Prepare draft invoice from matched job"
+            else:
+                action = "create_invoice"
+                payload = {"customer_name": client_match.get("label") or "Customer", "customer_email": email, "address": address, "description": raw, "subtotal": price, "notes": raw}
+                title = "Prepare draft invoice"
+
+        elif "quote" in low:
+            action = "create_quote"
+            payload = {"customer_name": client_match.get("label") or "Customer", "customer_email": email, "address": address, "job_description": raw, "job_type": job_type(raw), "price": price, "notes": raw}
+            match = client_match if client_match.get("id") else match
+            title = "Prepare quote"
+
+        elif "client" in low or email or phone:
+            action = "create_client"
+            clean_name = re.sub(r"\b(add|create|client|customer|with|email|phone|for|named)\b", " ", raw, flags=re.I)
+            clean_name = re.sub(r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", " ", clean_name, flags=re.I)
+            clean_name = re.sub(r"(?:\+?64|0)\s?\d[\d\s-]{6,}", " ", clean_name).strip(" ,.-")
+            payload = {"name": clean_name[:80] or "New customer", "email": email, "phone": phone, "address": address, "notes": raw}
+            title = "Prepare new client"
+
+        elif "complete" in low or "done" in low or "finished" in low:
+            action = "complete_job"
+            match = job_match
+            payload = {"job_id": job_match.get("id"), "notes": raw}
+            title = "Prepare job completion"
+
+        elif "move" in low or "reschedule" in low or "next week" in low or "tomorrow" in low:
+            action = "reschedule_job"
+            match = job_match
+            payload = {"job_id": job_match.get("id"), "scheduled_date_human": raw, "date": raw}
+            title = "Prepare job reschedule"
+
+        elif "price" in low or "charge" in low or "change" in low:
+            action = "update_job_price"
+            match = job_match
+            payload = {"job_id": job_match.get("id"), "price": price, "amount": price, "notes": raw}
+            title = "Prepare price update"
+
+        elif any(w in low for w in ("job", "mow", "mowing", "lawn", "hedge", "clean", "paint", "pest", "plumb", "electric")) or address or price:
+            action = "create_job"
+            payload = {"title": raw[:90] or "New job", "description": raw, "job_type": job_type(raw), "customer_name": client_match.get("label") or "Customer", "address": address or "Address needed", "scheduled_date_human": raw, "date": raw, "price": price, "amount": price, "notes": raw}
+            match = client_match if client_match.get("id") else match
+            title = "Prepare new job"
+
+        summary = title
+        confidence = 0.62 if action != "needs_clarification" else 0.35
+        if action in {"complete_job", "reschedule_job", "update_job_price", "draft_invoice_from_job"} and not match.get("id"):
+            action = "needs_clarification"
+            payload = {"instruction": raw}
+            summary = "Churvox needs a clearer job match before preparing this safely."
+            title = "Needs clearer job match"
+            confidence = 0.25
+
+        return {
+            "action": action,
+            "confidence": confidence,
+            "title": title,
+            "summary": summary,
+            "details": {
+                "What Churvox found": match.get("label") or f"{reason}. Churvox interpreted the instruction safely.",
+                "What Churvox prepared": summary,
+                "Why it needs approval": "Owner approval is required before Churvox changes real records.",
+            },
+            "payload": payload,
+            "match": match,
+            "matches": matches,
+        }
+
     async def call_ai(text: str, ctx: dict):
         key = provider_key()
-        if not key: raise HTTPException(status_code=503, detail="AI provider is not configured in Render yet.")
+        if not key:
+            return fallback_ai(text, ctx, "AI provider is not configured, so Churvox used the safe backend parser")
+
         client = AsyncOpenAI(api_key=key); model = os.environ.get("CHURVOX_AI_MODEL", "gpt-4o-mini")
         system = "Return JSON only. Use supplied Churvox records only. Do not invent ids. Allowed actions: " + ", ".join(sorted(ALLOWED_ACTIONS)) + ". Prepare draft or approval work only."
         schema = {"action": "create_job", "confidence": 0.0, "title": "", "summary": "", "details": {"What Churvox found": "", "What Churvox prepared": "", "Why it needs approval": ""}, "payload": {}, "match": {"record_type": "none", "id": "", "label": "", "reason": ""}, "matches": []}
-        result = await client.chat.completions.create(model=model, temperature=0.1, response_format={"type": "json_object"}, messages=[{"role": "system", "content": system}, {"role": "user", "content": json.dumps({"instruction": text, "business_context": ctx, "schema": schema}, default=str)[:45000]}])
-        try: data = json.loads(result.choices[0].message.content or "{}")
-        except Exception: raise HTTPException(status_code=502, detail="AI response could not be read. No work was saved.")
-        action = str(data.get("action") or "needs_clarification").strip()
-        if action not in ALLOWED_ACTIONS: raise HTTPException(status_code=400, detail=f"AI returned unsupported action: {action}")
-        return data
+        try:
+            result = await client.chat.completions.create(model=model, temperature=0.1, response_format={"type": "json_object"}, messages=[{"role": "system", "content": system}, {"role": "user", "content": json.dumps({"instruction": text, "business_context": ctx, "schema": schema}, default=str)[:45000]}])
+            data = json.loads(result.choices[0].message.content or "{}")
+            action = str(data.get("action") or "needs_clarification").strip()
+            if action not in ALLOWED_ACTIONS:
+                return fallback_ai(text, ctx, f"AI returned unsupported action: {action}")
+            return data
+        except HTTPException:
+            raise
+        except Exception as exc:
+            return fallback_ai(text, ctx, f"AI provider failed safely: {type(exc).__name__}")
     def normalize_ai_item(ai_data: dict, text: str, user: dict):
         action = str(ai_data.get("action") or "needs_clarification").strip(); details = ai_data.get("details") if isinstance(ai_data.get("details"), dict) else {}; payload = ai_data.get("payload") if isinstance(ai_data.get("payload"), dict) else {}; match = ai_data.get("match") if isinstance(ai_data.get("match"), dict) else {}; matches = ai_data.get("matches") if isinstance(ai_data.get("matches"), list) else []; business_id, _ = business_ids(user); title = str(ai_data.get("title") or "AI prepared admin work").strip(); summary = str(ai_data.get("summary") or title).strip()
         return {"business_id": business_id, "created_by": str(user.get("id")), "source": "Tell Churvox AI", "status": "open", "action": action, "category": category_for(action), "title": title, "summary": summary, "details": {"What Churvox found": details.get("What Churvox found") or match.get("label") or "AI reviewed the live business records.", "What Churvox prepared": details.get("What Churvox prepared") or summary, "Why it needs approval": details.get("Why it needs approval") or "Owner approval is required before Churvox changes real records."}, "payload": payload, "match": match, "matches": matches, "original_text": text, "ai_confidence": float(ai_data.get("confidence") or 0), "created_at": now(), "updated_at": now()}
