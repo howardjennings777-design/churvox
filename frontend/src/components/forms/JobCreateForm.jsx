@@ -189,21 +189,21 @@ export default function JobCreateForm({ onSuccess, onCancel, submitLabel = "Crea
     }
   };
 
-  const section = "rounded-2xl border border-slate-700 bg-slate-950/50 p-4 md:p-5 space-y-4 shadow-[0_8px_28px_rgba(0,0,0,0.18)]";
-  const fieldClass = "w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2.5 text-white";
+  const section = "rounded-[28px] border border-slate-200 bg-white p-4 md:p-5 space-y-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)]";
+  const fieldClass = "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-950 shadow-sm";
 
   return <form onSubmit={handleSubmit} className="min-h-full flex flex-col" data-version="CHURVOX_JOB_CREATE_REQUIRED_FIELDS_20260607">
     <div className="space-y-4 pb-28">
       <section className={section}>
-        <p className="text-sm font-black text-white">Job details</p>
-        {clientFromQuery ? <p className="rounded-2xl border border-lime-300/20 bg-lime-300/10 p-3 text-xs font-bold text-lime-100">Opened from a client record. Customer details will prefill once the client loads.</p> : null}
+        <p className="text-sm font-black text-slate-950">Job details</p>
+        {clientFromQuery ? <p className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-bold text-emerald-800">Opened from a client record. Customer details will prefill once the client loads.</p> : null}
         <div><Label htmlFor="job-title">Job title *</Label><Input id="job-title" required className="w-full rounded-xl" value={form.title} onChange={(e)=>setForm((p)=>({...p,title:e.target.value}))} data-testid="job-title-input" /></div>
         <div><Label htmlFor="job-type">Job type *</Label><select id="job-type" required className={fieldClass} value={form.job_type} onChange={(e)=>setForm((p)=>({...p,job_type:e.target.value}))} data-testid="job-type-select">{JOB_TYPE_OPTIONS.map(([value, label])=><option key={value} value={value}>{label}</option>)}</select></div>
         <div><Label htmlFor="job-notes">Notes / description</Label><Textarea id="job-notes" rows={3} className="w-full rounded-xl" value={form.notes} onChange={(e)=>setForm((p)=>({...p,notes:e.target.value}))} data-testid="job-notes-input" /></div>
       </section>
 
       <section className={section}>
-        <p className="text-sm font-black text-white">Client & location</p>
+        <p className="text-sm font-black text-slate-950">Client & location</p>
         <div><Label htmlFor="job-client">Client</Label><select id="job-client" className={fieldClass} value={form.client_id} onChange={(e)=>pickClient(e.target.value)} data-testid="job-client-select"><option value="">Select client</option>{clients.map((c)=><option key={clientId(c)} value={clientId(c)}>{clientName(c)}</option>)}</select></div>
         <div className="grid gap-3 md:grid-cols-2"><div><Label htmlFor="job-customer-email">Customer email</Label><Input id="job-customer-email" className="w-full rounded-xl" value={form.customer_email} onChange={(e)=>setForm((p)=>({...p,customer_email:e.target.value}))} data-testid="job-customer-email-input" /></div><div><Label htmlFor="job-customer-phone">Customer phone</Label><Input id="job-customer-phone" className="w-full rounded-xl" value={form.customer_phone} onChange={(e)=>setForm((p)=>({...p,customer_phone:e.target.value}))} data-testid="job-customer-phone-input" /></div></div>
         <div><Label htmlFor="job-address">Address *</Label><Input id="job-address" required className="w-full rounded-xl" value={form.address} onChange={(e)=>setForm((p)=>({...p,address:e.target.value}))} data-testid="job-address-input" /></div>
@@ -211,19 +211,19 @@ export default function JobCreateForm({ onSuccess, onCancel, submitLabel = "Crea
       </section>
 
       <section className={section}>
-        <p className="text-sm font-black text-white">Schedule & assignment</p>
+        <p className="text-sm font-black text-slate-950">Schedule & assignment</p>
         <div><Label htmlFor="job-scheduled-date">Scheduled date *</Label><Input id="job-scheduled-date" required type="datetime-local" className="w-full rounded-xl" value={form.scheduled_date} onChange={(e)=>setForm((p)=>({...p,scheduled_date:e.target.value}))} data-testid="job-scheduled-date-input" /></div>
         <div><Label htmlFor="job-assigned-worker">Assigned worker</Label><select id="job-assigned-worker" className={fieldClass} value={form.assigned_worker_id} onChange={(e)=>pickWorker(e.target.value)} data-testid="job-worker-select"><option value="">Select worker</option>{filteredWorkers.map((w)=><option key={workerId(w)} value={workerId(w)}>{workerName(w)}</option>)}</select></div>
-        <div className="rounded-2xl border border-slate-700 bg-slate-900/60 p-4 space-y-3"><label className="flex items-center gap-3 text-sm font-black text-white"><input type="checkbox" checked={form.is_recurring} onChange={(e)=>setForm((p)=>({...p,is_recurring:e.target.checked}))} /> Recurring job</label>{form.is_recurring ? <select className={fieldClass} value={form.recurring_frequency} onChange={(e)=>setForm((p)=>({...p,recurring_frequency:e.target.value}))} data-testid="job-recurring-frequency"><option value="weekly">Weekly</option><option value="fortnightly">Fortnightly</option><option value="monthly">Monthly</option></select> : null}</div>
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3"><label className="flex items-center gap-3 text-sm font-black text-slate-950"><input type="checkbox" checked={form.is_recurring} onChange={(e)=>setForm((p)=>({...p,is_recurring:e.target.checked}))} /> Recurring job</label>{form.is_recurring ? <select className={fieldClass} value={form.recurring_frequency} onChange={(e)=>setForm((p)=>({...p,recurring_frequency:e.target.value}))} data-testid="job-recurring-frequency"><option value="weekly">Weekly</option><option value="fortnightly">Fortnightly</option><option value="monthly">Monthly</option></select> : null}</div>
       </section>
 
       {!isWorker ? <section className={section}>
-        <p className="text-sm font-black text-white">Pricing / invoice source</p>
+        <p className="text-sm font-black text-slate-950">Pricing / invoice source</p>
         <div><Label htmlFor="job-pricing-type">Pricing type</Label><select id="job-pricing-type" className={fieldClass} value={form.pricing_type} onChange={(e)=>setForm((p)=>({...p,pricing_type:e.target.value}))} data-testid="job-pricing-type-select"><option value="fixed">Fixed price</option><option value="hourly">Hourly</option><option value="fixed_extras">Fixed + extras</option><option value="hourly_extras">Hourly + extras</option></select></div>
         {["fixed","fixed_extras"].includes(form.pricing_type)?<div><Label htmlFor="job-fixed-price">Fixed price</Label><Input id="job-fixed-price" type="number" step="0.01" className="w-full rounded-xl" value={form.fixed_price} onChange={(e)=>setForm((p)=>({...p,fixed_price:e.target.value}))} data-testid="job-fixed-price-input" /></div>:<div><Label htmlFor="job-hourly-rate">Hourly rate</Label><Input id="job-hourly-rate" type="number" step="0.01" className="w-full rounded-xl" value={form.hourly_rate} onChange={(e)=>setForm((p)=>({...p,hourly_rate:e.target.value}))} data-testid="job-hourly-rate-input" /></div>}
       </section> : null}
     </div>
-    <div className="sticky bottom-0 mt-auto border-t border-slate-700 bg-slate-950/95 backdrop-blur px-1 py-3 flex items-center justify-between gap-3">
+    <div className="sticky bottom-0 mt-auto border-t border-slate-200 bg-white/95 backdrop-blur px-1 py-3 flex items-center justify-between gap-3">
       <PremiumButton type="button" variant="secondary" onClick={onCancel}>Cancel</PremiumButton>
       <PremiumButton type="submit" disabled={loading || saving}>{saving || loading ? "Saving..." : submitLabel}</PremiumButton>
     </div>
