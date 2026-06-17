@@ -2,16 +2,71 @@ import React from "react";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
 
-function titleOf(item) { return item?.title || item?.summary || "Prepared admin action"; }
-function summaryOf(item) { return item?.summary || "Prepared by Churvox AI and waiting for owner approval."; }
-function categoryOf(item) { return String(item?.category || item?.action || "other").toLowerCase(); }
-function entriesOf(item) {
-  const details = item?.details && typeof item.details === "object" ? item.details : {};
-  const entries = Object.entries(details).filter(([, value]) => value !== undefined && value !== null && String(value).trim());
-  if (entries.length) return entries;
-  return [["What Churvox found", item?.match?.label || "AI checked live Churvox records."], ["What Churvox prepared", summaryOf(item)], ["Why it needs approval", "Owner approval is required before Churvox changes real records."]];
-}
 function itemId(item) { return item?.id || item?._id || ""; }
+function categoryOf(item) { return String(item?.category || item?.action || "other").toLowerCase(); }
+function payloadOf(item) { return item?.payload && typeof item.payload === "object" ? item.payload : {}; }
+function moneyValue(value) {
+  const n = Number(String(value ?? "").replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(n) && n > 0 ? `$${n.toFixed(0)}` : "";
+}
+function dateValue(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleDateString("en-NZ", { day: "2-digit", month: "short", year: "numeric" });
+}
+function genericText(value) {
+  return /^(ai prepared admin work|review prepared from tell churvox|prepared admin action)$/i.test(String(value || "").trim());
+}
+function titleOf(item) {
+  const p = payloadOf(item);
+  const action = String(item?.action || "").toLowerCase();
+  const existing = item?.title || item?.summary;
+  if (existing && !genericText(existing)) return existing;
+  if (action === "create_job") return `New job: ${p.address || p.title || p.customer_name || "job to review"}`;
+  if (action === "create_client") return `New client: ${p.name || p.customer_name || "client to review"}`;
+  if (action === "create_quote") return `New quote: ${p.address || p.customer_name || p.job_description || "quote to review"}`;
+  if (action === "create_invoice" || action === "draft_invoice_from_job" || action === "batch_draft_invoices") return `Draft invoice: ${p.address || p.customer_name || p.description || "invoice to review"}`;
+  if (action === "complete_job") return `Complete job: ${p.job_id || item?.match?.label || "matched job"}`;
+  if (action === "reschedule_job") return `Move job: ${item?.match?.label || p.job_id || "matched job"}`;
+  if (action === "update_job_price") return `Update price: ${item?.match?.label || p.job_id || "matched job"}`;
+  if (action === "prepare_invoice_followups") return "Prepare invoice follow-ups";
+  if (action === "find_records") return "Find matching records";
+  return item?.original_text ? `Review: ${String(item.original_text).slice(0, 70)}` : "Prepared admin action";
+}
+function summaryOf(item) {
+  const p = payloadOf(item);
+  const action = String(item?.action || "").toLowerCase();
+  const existing = item?.summary;
+  if (existing && !genericText(existing)) return existing;
+  const bits = [
+    p.customer_name || p.client_name || p.name,
+    p.address,
+    moneyValue(p.price || p.amount || p.subtotal || p.total),
+    dateValue(p.scheduled_date || p.date),
+  ].filter(Boolean);
+  if (bits.length) return bits.join(" · ");
+  if (item?.original_text) return String(item.original_text).slice(0, 140);
+  return action ? `${action.replaceAll("_", " ")} prepared for owner Review.` : "Prepared by Churvox and waiting for owner approval.";
+}
+function entriesOf(item) {
+  const p = payloadOf(item);
+  const rows = [];
+  if (item?.original_text) rows.push(["Original instruction", item.original_text]);
+  if (p.customer_name || p.client_name || p.name) rows.push(["Customer", p.customer_name || p.client_name || p.name]);
+  if (p.address) rows.push(["Address", p.address]);
+  if (p.price || p.amount || p.subtotal || p.total) rows.push(["Price", moneyValue(p.price || p.amount || p.subtotal || p.total) || String(p.price || p.amount || p.subtotal || p.total)]);
+  if (p.scheduled_date || p.date || p.scheduled_date_human) rows.push(["Date", dateValue(p.scheduled_date || p.date) || p.scheduled_date_human]);
+  if (p.email || p.customer_email) rows.push(["Email", p.email || p.customer_email]);
+  if (p.phone) rows.push(["Phone", p.phone]);
+  const details = item?.details && typeof item.details === "object" ? item.details : {};
+  Object.entries(details).forEach(([key, value]) => {
+    if (rows.length >= 8) return;
+    if (value !== undefined && value !== null && String(value).trim() && !genericText(value)) rows.push([key, value]);
+  });
+  if (!rows.length) rows.push(["What Churvox prepared", summaryOf(item)]);
+  rows.push(["Safe rule", "Nothing changes until you approve."]);
+  return rows.slice(0, 8);
+}
 
 function DetailGrid({ item }) {
   return <div className="freshReviewDetailGrid">{entriesOf(item).slice(0, 8).map(([key, value]) => <section key={key}><b>{key}</b><p>{String(value)}</p></section>)}</div>;
@@ -45,7 +100,21 @@ export default function FreshCommandOwnerDesk({ onNavigate }) {
     setLoading(false);
     if (!res?.success) { setItems([]); setError(res?.error || "Backend Review is not ready. No local fallback was loaded."); return; }
     const list = res?.data?.items || res?.items || [];
-    setItems(Array.isArray(list) ? list : []);
+    const safeList = Array.isArray(list) ? [...list] : [];
+    safeList.sort((a, b) => new Date(b?.created_at || 0) - new Date(a?.created_at || 0));
+    setItems(safeList);
+
+    try {
+      const focusId = window.localStorage.getItem("churvox:last-ai-review-id:v1");
+      if (focusId) {
+        const found = safeList.find((item) => itemId(item) === focusId);
+        if (found) {
+          setFilter("all");
+          setActive(found);
+          window.localStorage.removeItem("churvox:last-ai-review-id:v1");
+        }
+      }
+    } catch {}
   }, [get]);
 
   React.useEffect(() => { loadItems(); }, [loadItems]);
