@@ -300,11 +300,9 @@ function ReviewCard({ item, busy, onOpen, onApprove, onIgnore }) {
 }
 
 function ReviewModal({ item, busy, onClose, onSave, onApprove, onIgnore }) {
-  const [note, setNote] = React.useState("");
   const [draft, setDraft] = React.useState(buildDraft(item));
 
   React.useEffect(() => {
-    setNote(item?.owner_note || "");
     setDraft(buildDraft(item));
   }, [item]);
 
@@ -313,29 +311,38 @@ function ReviewModal({ item, busy, onClose, onSave, onApprove, onIgnore }) {
   const payload = draftToPayload(item, draft);
 
   return createPortal(
-    <div className="freshReviewShade" role="dialog" aria-modal="true">
-      <section className="freshReviewModal">
+    <div
+      className="freshPopupBackdrop freshReviewPopupBackdrop"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+      role="dialog"
+      aria-modal="true"
+    >
+      <section className="freshCard freshReviewPopupCard">
         <button className="freshReviewClose" type="button" onClick={onClose}>×</button>
 
-        <header className="freshReviewModalHead">
+        <header className="freshHero freshReviewPopupHero">
           <span>Backend owner review</span>
-          <h2>{titleOf({ ...item, payload })}</h2>
+          <h1>{titleOf({ ...item, payload })}</h1>
           <p>{summaryOf({ ...item, payload })}</p>
         </header>
 
-        <FilledForm item={item} draft={draft} setDraft={setDraft} />
+        <div className="freshReviewPopupBody">
+          <FilledForm item={item} draft={draft} setDraft={setDraft} />
 
-        <section className="freshReviewSafe">
-          <b>Safe rule</b>
-          <p>Nothing creates, sends, syncs, marks paid, or changes live records until you approve this form.</p>
-        </section>
+          <section className="freshReviewSafe">
+            <b>Safe rule</b>
+            <p>Nothing creates, sends, syncs, marks paid, or changes live records until you approve this form.</p>
+          </section>
 
-        <div className="freshActions freshReviewModalActions">
-          <button className="freshPrimary" type="button" disabled={busy} onClick={() => onApprove(item, note, payload)}>
-            {busy ? "Approving…" : "Approve backend action"}
-          </button>
-          <button className="freshGhost" type="button" disabled={busy} onClick={() => onSave(item, note, payload)}>Save form</button>
-          <button className="freshGhost" type="button" disabled={busy} onClick={() => onIgnore(item, note)}>Ignore</button>
+          <div className="freshActions freshReviewModalActions">
+            <button className="freshPrimary" type="button" disabled={busy} onClick={() => onApprove(item, "", payload)}>
+              {busy ? "Approving…" : "Approve backend action"}
+            </button>
+            <button className="freshGhost" type="button" disabled={busy} onClick={() => onSave(item, "Saved edited approval form.", payload)}>Save form</button>
+            <button className="freshGhost" type="button" disabled={busy} onClick={() => onIgnore(item, "Ignored from Review.")}>Ignore</button>
+          </div>
         </div>
       </section>
     </div>,
