@@ -61,10 +61,11 @@ function workerName(worker) { return worker?.name || worker?.display_name || wor
 function money(value) { const n = Number(value || 0); return Number.isFinite(n) ? n : 0; }
 function queryValue(search, key) { try { return new URLSearchParams(search).get(key) || ""; } catch { return ""; } }
 
-export default function JobCreateForm({ onSuccess, onCancel, submitLabel = "Create job", isWorker = false }) {
+export default function JobCreateForm({ onSuccess, onCancel, submitLabel = "Create job", isWorker = false, modalSearch = null }) {
   const location = useLocation();
-  const clientFromQuery = queryValue(location.search, "client_id");
-  const workerFromQuery = queryValue(location.search, "worker_id") || queryValue(location.search, "workerId");
+  const activeSearch = modalSearch ?? location.search;
+  const clientFromQuery = queryValue(activeSearch, "client_id");
+  const workerFromQuery = queryValue(activeSearch, "worker_id") || queryValue(activeSearch, "workerId");
   const { get, post, loading } = useApi();
   const [clients, setClients] = useState([]);
   const [workers, setWorkers] = useState([]);

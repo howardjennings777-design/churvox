@@ -524,3 +524,34 @@ body,
     padding-right: 14px !important;
   }
 }
+
+
+/* CHURVOX_GLOBAL_JOB_MODAL_ANYWHERE_20260617 */
+.cv-global-job-modal {
+  z-index: 2147483000 !important;
+}
+
+.cv-global-job-modal .cv-route-modal__sheet {
+  animation: cvJobModalIn 160ms ease-out;
+}
+
+@keyframes cvJobModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.cv-global-job-modal .cv-route-modal__body {
+  max-height: calc(86vh - 132px);
+}
+
+@media (max-width: 720px) {
+  .cv-global-job-modal .cv-route-modal__body {
+    max-height: calc(92vh - 120px);
+  }
+}
