@@ -383,3 +383,28 @@
     width: 100%;
   }
 }
+
+/* CHURVOX_WORKER_TIME_HELP_20260618 */
+.freshWorkerTimeHelp {
+  margin-bottom: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+}
+
+.freshWorkerTimeHelp h2 {
+  margin: 0 0 12px;
+}
+
+.freshWorkerTimeHelp .freshMiniGrid div {
+  min-height: 88px;
+}
+
+.freshWorkerTimeHelp .freshMiniGrid b {
+  font-size: 15px;
+}
+
+.freshWorkerTimeHelp .freshMiniGrid small {
+  display: block;
+  color: #64748b;
+  font-weight: 700;
+  line-height: 1.35;
+}

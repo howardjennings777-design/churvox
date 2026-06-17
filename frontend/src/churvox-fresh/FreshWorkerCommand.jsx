@@ -395,7 +395,7 @@ function buildWorkerView(worker, jobs) {
 
   const alerts = [];
   if (clockStatus(worker) === "Not clocked in" && todayJobs.length) alerts.push("Worker has jobs today but is not clocked in.");
-  if (!lastGps(worker)) alerts.push("No GPS location recorded yet.");
+  if (!lastGps(worker)) alerts.push("No Last location location recorded yet.");
   if (todayJobs.some((job) => !isComplete(job) && !pick(job, "acknowledged_at", "worker_acknowledged_at"))) alerts.push("Some jobs may still need acknowledgement.");
   if (todayJobs.some((job) => isComplete(job) && !pick(job, "photos", "photo_urls", "proof_photos"))) alerts.push("Check completion photos for finished jobs.");
 
@@ -535,7 +535,7 @@ export default function FreshWorkerCommand({ onNavigate }) {
       <header className="freshHero freshWorkerCommandHero">
         <span>Worker Command</span>
         <h1>Live worker view</h1>
-        <p>See what workers are doing now: clock status, job timer, GPS status, today’s work and alerts.</p>
+        <p>See what workers are doing now: clock status, job timer, Last location status, today’s work and alerts.</p>
         <div className="freshWorkerLiveStrip">
           <b>{autoRefresh ? "Live updates on" : "Live updates paused"}</b>
           <span>{refreshing ? "Updating now…" : lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString("en-NZ", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}` : "Waiting for first update"}</span>
@@ -577,11 +577,21 @@ export default function FreshWorkerCommand({ onNavigate }) {
                 <div className="freshWorkerStatusPill">{selectedLiveStatus}</div>
               </section>
 
+              <section className="freshCard freshWorkerTimeHelp">
+                <h2>What the times mean</h2>
+                <div className="freshMiniGrid">
+                  <div><span>Paid day time</span><b>Clock-in to now</b><small>Everything while the worker is clocked in.</small></div>
+                  <div><span>Job timer time</span><b>Start to pause/finish</b><small>Only time attached to job timers.</small></div>
+                  <div><span>Paid time not on jobs</span><b>Paid day minus job timers</b><small>Travel, setup, waiting, or forgotten job timer time.</small></div>
+                  <div><span>Last location</span><b>Latest GPS check</b><small>Street/suburb if available, coordinates as fallback.</small></div>
+                </div>
+              </section>
+
               <section className="freshWorkerCommandStats">
-                <aside className="freshCard"><span>Payroll time today</span><b>{hoursText(view.shiftSeconds)}</b><small>Clock in/out total</small></aside>
-                <aside className="freshCard"><span>Job time today</span><b>{hoursText(view.jobTimeSeconds)}</b><small>Job timers only</small></aside>
-                <aside className="freshCard"><span>Unallocated time</span><b>{hoursText(view.unallocatedSeconds)}</b><small>Paid time not on job timers</small></aside>
-                <aside className="freshCard"><span>GPS</span><b>{selectedGpsText ? "Recorded" : "Waiting"}</b><small>{selectedGpsText || "No location yet"}</small></aside>
+                <aside className="freshCard"><span>Paid day time</span><b>{hoursText(view.shiftSeconds)}</b><small>Clock-in to now</small></aside>
+                <aside className="freshCard"><span>Job timer time</span><b>{hoursText(view.jobTimeSeconds)}</b><small>Time saved on jobs</small></aside>
+                <aside className="freshCard"><span>Paid time not on jobs</span><b>{hoursText(view.unallocatedSeconds)}</b><small>Paid time not attached to a job</small></aside>
+                <aside className="freshCard"><span>Last location</span><b>{selectedGpsText ? "Recorded" : "Waiting"}</b><small>{selectedGpsText || "No GPS location yet"}</small></aside>
               </section>
 
               <section className="freshWorkerCommandGrid">
@@ -590,7 +600,7 @@ export default function FreshWorkerCommand({ onNavigate }) {
                   <div className="freshMiniGrid">
                     <div><span>Current job</span><b>{selectedCurrent.title || "No active job"}</b></div>
                     <div><span>Status</span><b>{clockStatus(selected)}</b></div>
-                    <div><span>Last GPS</span><b>{selectedGpsText || "Not recorded"}</b></div>
+                    <div><span>Last Last location</span><b>{selectedGpsText || "Not recorded"}</b></div>
                     <div><span>Jobs today</span><b>{selectedTodayCount}</b></div>
                     <div><span>Latest update</span><b>{selectedLatestUpdate || "Waiting"}</b></div>
                   </div>
