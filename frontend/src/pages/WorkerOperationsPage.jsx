@@ -92,7 +92,7 @@ function WorkerJobCard({ job, onStart, onPause, onResume, onComplete, onIssue, o
 }
 
 export default function WorkerOperationsPage() {
-  const { get, patch } = useApi();
+  const { get, post, patch } = useApi();
   const { user } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -142,25 +142,21 @@ export default function WorkerOperationsPage() {
   }
 
   function start(job) {
-    run("start", () => patch(`/jobs/${encodeURIComponent(idOf(job))}`, { status: "in_progress", started_at: new Date().toISOString() }));
+    run("start", () => post(`/jobs/${encodeURIComponent(idOf(job))}/timer/start`, {}));
   }
 
   function pause(job) {
     const reason = window.prompt("Pause reason?", "Paused by worker");
     if (reason === null) return;
-    run("pause", () => patch(`/jobs/${encodeURIComponent(idOf(job))}`, { status: "paused", pause_reason: reason, paused_at: new Date().toISOString() }));
+    run("pause", () => post(`/jobs/${encodeURIComponent(idOf(job))}/timer/pause`, { pause_reason: reason }));
   }
 
   function resume(job) {
-    run("resume", () => patch(`/jobs/${encodeURIComponent(idOf(job))}`, { status: "in_progress", resumed_at: new Date().toISOString() }));
+    run("resume", () => post(`/jobs/${encodeURIComponent(idOf(job))}/timer/resume`, {}));
   }
 
   function complete(job, note) {
-    const now = new Date().toISOString();
-    run("complete", () => patch(`/jobs/${encodeURIComponent(idOf(job))}`, {
-      status: "completed",
-      completed: true,
-      completed_at: now,
+    run("complete", () => post(`/jobs/${encodeURIComponent(idOf(job))}/complete`, {
       worker_notes: note || job.worker_notes || "",
       worker_completion_notes: note || job.worker_completion_notes || "",
       work_review_status: "ready_for_review",

@@ -46,7 +46,7 @@ const canAcknowledge = (status) => status === "assigned";
 const canStart = (status) => ["assigned", "acknowledged"].includes(status);
 const canPause = (status) => status === "in_progress";
 const canResume = (status) => status === "paused";
-const canComplete = (status, sentBack) => status !== "completed" || sentBack;
+const canComplete = (status, sentBack) => sentBack || ["in_progress", "paused"].includes(status);
 const activeStatuses = new Set(["in_progress", "paused"]);
 
 function arr(value) {
@@ -58,8 +58,16 @@ function arr(value) {
   return [];
 }
 
+function oid(value) {
+  if (!value) return "";
+  if (typeof value === "string" || typeof value === "number") return String(value);
+  if (typeof value === "object") return oid(value.$oid || value.oid || value.id || value._id || value.job_id || "");
+  const text = String(value || "");
+  return text === "[object Object]" ? "" : text;
+}
+
 function jobIdOf(job) {
-  return String(job?.id || job?._id || job?.job_id || "");
+  return oid(job?.id || job?._id || job?.job_id || "");
 }
 
 function WorkerWorkSlipReadiness({ status, photoCount, workerNotes, sentBack }) {
@@ -123,7 +131,7 @@ export default function WorkerJobDetailPage() {
 
   const checkAnotherActiveJob = async () => {
     const res = await get("/jobs");
-    return arr(res?.data).find((item) => statusOf(item) === "in_progress" && jobIdOf(item) !== String(id));
+    return arr(res?.data).find((item) => activeStatuses.has(statusOf(item)) && jobIdOf(item) !== String(id));
   };
 
   async function saveFieldUpdate(payload) {

@@ -10,6 +10,7 @@ import { getDefaultRoute } from "./lib/roles";
 import "./styles/command-slip-theme.css";
 import "./styles/churvox-global-polish.css";
 import "./styles/worker-public-polish.css";
+import "./pages/worker/WorkerCommand.css";
 import "./styles/public-dark-login-theme.css";
 
 import LoginPage from "./pages/auth/LoginPage";
@@ -29,6 +30,7 @@ import InvoiceDetailPage from "./pages/invoices/InvoiceDetailPage";
 import ChurvoxHQPage from "./pages/ChurvoxHQPage";
 import WorkerJobsPage from "./pages/worker/WorkerJobsPage";
 import WorkerJobDetailPage from "./pages/worker/WorkerJobDetailPage";
+import WorkerSafeSettingsPage from "./pages/worker/WorkerSafeSettingsPage";
 import PrivacyPage from "./pages/legal/PrivacyPage";
 import TermsPage from "./pages/legal/TermsPage";
 import AccountDeletionPage from "./pages/legal/AccountDeletionPage";
@@ -50,6 +52,7 @@ import CommandShell from "./components/CommandShell";
 import ConceptCFrame from "./concept-c/ConceptCFrame";
 import CommandDeskOperatorPage from "./pages/CommandDeskOperatorPageV4";
 import WorkerMapCommandPage from "./pages/WorkerMapCommandPage";
+import WorkerOperationsPage from "./pages/WorkerOperationsPage";
 import PayrollCommandPage from "./pages/PayrollCommandPage";
 import OfflineSyncPage from "./pages/OfflineSyncPage";
 import BillingReturnPage from "./pages/BillingReturnPage";
@@ -96,7 +99,11 @@ function App() {
     <Route path="/reports-board" element={<Navigate to="/dashboard#reports" replace />} /><Route path="/reports" element={<Navigate to="/reports-board" replace />} /><Route path="/settings-board" element={<Navigate to="/dashboard#settings" replace />} /><Route path="/settings" element={<Navigate to="/settings-board" replace />} /><Route path="/support-board" element={<Navigate to="/dashboard#support" replace />} /><Route path="/support" element={<Navigate to="/support-board" replace />} />
     <Route path="/plans" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} /><Route path="/billing" element={<BillingReturnBridge />} /><Route path="/billing/success" element={<BillingReturnBridge />} /><Route path="/billing/cancel" element={<BillingReturnBridge cancelled />} />
     <Route path="/team-board" element={<Navigate to="/dashboard#team" replace />} /><Route path="/team" element={<Navigate to="/team-board" replace />} /><Route path="/payroll-board" element={<Navigate to="/dashboard#payroll" replace />} /><Route path="/payroll" element={<Navigate to="/payroll-board" replace />} />
-    <Route path="/worker" element={<Navigate to="/worker/jobs" replace />} /><Route path="/worker/jobs" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobsPage /></ConceptCFrame></WorkerRoute>} /><Route path="/worker/ops" element={<WorkerRoute><WorkerCommandPage /></WorkerRoute>} /><Route path="/worker/jobs/:id" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobDetailPage /></ConceptCFrame></WorkerRoute>} /><Route path="/worker/settings" element={<WorkerRoute><WorkerCommandPage /></WorkerRoute>} />
+    <Route path="/worker" element={<Navigate to="/worker/jobs" replace />} />
+    <Route path="/worker/jobs" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobsPage /></ConceptCFrame></WorkerRoute>} />
+    <Route path="/worker/ops" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerOperationsPage /></ConceptCFrame></WorkerRoute>} />
+    <Route path="/worker/jobs/:id" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerJobDetailPage /></ConceptCFrame></WorkerRoute>} />
+    <Route path="/worker/settings" element={<WorkerRoute><ConceptCFrame area="worker"><WorkerSafeSettingsPage /></ConceptCFrame></WorkerRoute>} />
     <Route path="/privacy" element={<PrivacyPage />} /><Route path="/terms" element={<TermsPage />} /><Route path="/privacy-policy" element={<PrivacyPolicyPage />} /><Route path="/terms-of-service" element={<TermsOfServicePage />} /><Route path="/account-deletion" element={<AccountDeletionPage />} /><Route path="/platform-unlock" element={<PlatformUnlock />} />
     <Route path="/" element={<HomePage />} /><Route path="/pricing" element={<PricingPage />} /><Route path="/features" element={<FeaturesPage />} /><Route path="*" element={<RoleRedirect />} />
     <Route path="/fresh" element={<Navigate to="/dashboard" replace />} />
