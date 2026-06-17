@@ -3291,10 +3291,9 @@ def _live_serial(doc):
 
 @api_router.get("/worker/live-status")
 async def worker_live_status(request: Request, current_user: dict = Depends(get_current_user)):
-    try:
-        user = await require_employer(request)
-        business_id = str(user.get("business_id") or user.get("id"))
-        business_oid = normalize_object_id(business_id)
+    user = await require_employer(request)
+    business_id = str(user.get("business_id") or user.get("id"))
+    business_oid = normalize_object_id(business_id)
 
     business_or = [{"business_id": business_id}]
     job_or = [{"business_id": business_id}]
@@ -3316,6 +3315,7 @@ async def worker_live_status(request: Request, current_user: dict = Depends(get_
     jobs = await db.jobs.find({"$or": job_or}).sort("updated_at", -1).limit(1000).to_list(length=1000)
 
     live_workers = []
+
     for worker in workers:
         worker_tokens = _live_tokens(
             worker,
@@ -3331,6 +3331,7 @@ async def worker_live_status(request: Request, current_user: dict = Depends(get_
         )
 
         assigned_jobs = []
+
         for job in jobs:
             assigned_tokens = _live_tokens(
                 job.get("assigned_worker_id"),
@@ -3348,11 +3349,13 @@ async def worker_live_status(request: Request, current_user: dict = Depends(get_
                 job.get("assignedWorker"),
                 job.get("team_member"),
             )
+
             if worker_tokens and assigned_tokens and worker_tokens.intersection(assigned_tokens):
                 assigned_jobs.append(job)
 
         active_job = None
         paused_job = None
+
         for job in assigned_jobs:
             status = _live_job_status(job)
             if status == "in_progress":
@@ -3370,6 +3373,7 @@ async def worker_live_status(request: Request, current_user: dict = Depends(get_
         current_job = active_job or paused_job
 
         worker_live = dict(worker)
+
         if active_job:
             live_status = "On job now"
             clock_status = "On job"
@@ -3402,21 +3406,12 @@ async def worker_live_status(request: Request, current_user: dict = Depends(get_
 
         live_workers.append(_live_serial(worker_live))
 
-        return {
-            "success": True,
-            "workers": live_workers,
-            "jobs": [_live_serial(job) for job in jobs],
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-        }
-    except Exception as exc:
-        logger.exception("WORKER_LIVE_STATUS_DEBUG_ERROR_20260618")
-        return {
-            "success": False,
-            "error": str(exc),
-            "workers": [],
-            "jobs": [],
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-        }
+    return {
+        "success": True,
+        "workers": live_workers,
+        "jobs": [_live_serial(job) for job in jobs],
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
 
 
 # ===================== DASHBOARD STATS =====================
