@@ -5,7 +5,7 @@ import Layout from "../../components/Layout";
 import { useApi } from "../../hooks/useApi";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
-import { ArrowLeft, Briefcase, Save } from "lucide-react";
+import { ArrowLeft, Briefcase, Save, X } from "lucide-react";
 import { toast } from "sonner";
 import { PremiumPage, PremiumHero, PremiumCard, PremiumButton } from "../../components/premium";
 import JobCreateForm from "../../components/forms/JobCreateForm";
@@ -222,11 +222,46 @@ export default function JobFormPage() {
   }
 
   if (!isEdit) {
-    return <Layout><PremiumPage maxWidth={820}>
-      <PremiumHero eyebrow={firstSetup ? "Step 4 of 4" : "New"} title={firstSetup ? "Create your first job" : "New Job"} subtitle={firstSetup ? "This is the first real work item Churvox will show on Command Board. Client details should already be prefilled." : "Create a real job record with job type, schedule, assignment and invoice source."} icon={<Briefcase className="h-6 w-6" />} />
-      {firstSetup ? <div className="mb-4 rounded-3xl border border-lime-300/20 bg-lime-300/10 p-4 text-sm font-bold text-lime-100">After this job is created, Churvox will take you to Command Board with the first live record connected.</div> : null}
-      <PremiumCard><JobCreateForm onCancel={() => navigate(firstSetup ? "/clients/new?first_setup=1" : "/jobs-board")} onSuccess={finishCreate} submitLabel={firstSetup ? "Create first job and open Command" : "Create Job"} /></PremiumCard>
-    </PremiumPage></Layout>;
+    const closeTo = firstSetup ? "/clients/new?first_setup=1" : "/dashboard#jobs";
+
+    return (
+      <Layout>
+        <div className="cv-route-modal" role="dialog" aria-modal="true" aria-label="Create new job">
+          <button
+            type="button"
+            className="cv-route-modal__backdrop"
+            aria-label="Close new job"
+            onClick={() => navigate(closeTo)}
+          />
+          <section className="cv-route-modal__sheet cv-route-modal__sheet--job">
+            <header className="cv-route-modal__header">
+              <div>
+                <p>{firstSetup ? "Step 4 of 4" : "New"}</p>
+                <h1>{firstSetup ? "Create your first job" : "New Job"}</h1>
+                <span>{firstSetup ? "Create the first real work item for Command." : "Create a job, assign it, and keep it ready for dispatch."}</span>
+              </div>
+              <button type="button" className="cv-route-modal__close" onClick={() => navigate(closeTo)}>
+                <X className="h-5 w-5" />
+              </button>
+            </header>
+
+            {firstSetup ? (
+              <div className="cv-route-modal__notice">
+                After this job is created, Churvox will take you to Command Board with the first live record connected.
+              </div>
+            ) : null}
+
+            <div className="cv-route-modal__body">
+              <JobCreateForm
+                onCancel={() => navigate(closeTo)}
+                onSuccess={finishCreate}
+                submitLabel={firstSetup ? "Create first job and open Command" : "Create Job"}
+              />
+            </div>
+          </section>
+        </div>
+      </Layout>
+    );
   }
 
   if (loading) return <Layout><div className="p-4 md:p-6 max-w-3xl mx-auto flex items-center justify-center min-h-[50vh]"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" /></div></Layout>;
