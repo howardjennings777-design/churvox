@@ -1,2 +1,125 @@
 /* CHURVOX_WORKER_COMMAND_FIELD_APP_20260525 */
 .px-app.pb-28{background:linear-gradient(180deg,#06111a 0,#071827 170px,#eaf1f3 171px,#f8fbfa 100%)!important;color:#071118!important}.px-app.pb-28 .px-mobile-header,.px-app.pb-28>header{background:rgba(13,33,48,.92)!important;border:1px solid rgba(161,215,226,.14)!important;border-radius:0 0 24px 24px!important;box-shadow:0 18px 54px rgba(0,0,0,.22)!important;color:#f6fbfc!important}.px-app.pb-28 .px-mobile-header svg,.px-app.pb-28>header svg{color:#f6fbfc}.px-app.pb-28 .px-hero{border:1px solid rgba(161,215,226,.14)!important;border-radius:28px!important;background:linear-gradient(135deg,rgba(13,33,48,.96),rgba(8,25,39,.94))!important;box-shadow:0 24px 80px rgba(0,0,0,.24)!important;color:#f6fbfc!important}.px-app.pb-28 .px-hero__eyebrow{color:#7fe4ff!important}.px-app.pb-28 .px-hero__title{color:#f6fbfc!important;font-family:Georgia,"Times New Roman",serif!important;letter-spacing:-.055em!important}.px-app.pb-28 .px-hero__sub{color:#9fb4bd!important}.px-app.pb-28 .px-card,.px-app.pb-28 [class*="PremiumCard"],.px-app.pb-28 .rounded-3xl,.px-app.pb-28 .rounded-2xl{border-color:rgba(8,21,31,.11)!important;box-shadow:0 14px 42px rgba(8,21,31,.08)!important}.px-app.pb-28 .px-card__body{background:rgba(255,255,255,.96)!important;color:#071118!important}.px-app.pb-28 [class*="text-[var(--cx-text)]"],.px-app.pb-28 .text-\[var\(--cx-text\)\]{color:#071118!important}.px-app.pb-28 [class*="text-[var(--cx-muted)]"],.px-app.pb-28 .text-\[var\(--cx-muted\)\]{color:#62737d!important}.px-app.pb-28 .px-input,.px-app.pb-28 input,.px-app.pb-28 textarea,.px-app.pb-28 select{background:#fff!important;color:#071118!important;border-color:rgba(8,21,31,.14)!important}.px-app.pb-28 .px-btn,.px-app.pb-28 button,.px-app.pb-28 .px-btn--primary{border-radius:999px!important}.px-app.pb-28 .px-btn--ghost{background:rgba(255,255,255,.08)!important;color:#d6e5ea!important;border:1px solid rgba(161,215,226,.14)!important}.px-app.pb-28 .px-empty{border:1px solid rgba(8,21,31,.11)!important;border-radius:28px!important;background:rgba(255,255,255,.94)!important;box-shadow:0 14px 42px rgba(8,21,31,.08)!important;color:#071118!important}.px-app.pb-28 .px-empty__title{color:#071118!important}.px-app.pb-28 .px-empty__sub{color:#62737d!important}.px-app.pb-28 nav[class*="worker"],.px-app.pb-28 .worker-bottom-nav{background:rgba(255,255,255,.92)!important;border-color:rgba(8,21,31,.12)!important;box-shadow:0 18px 48px rgba(8,21,31,.15)!important}@media(max-width:640px){.px-app.pb-28{background:linear-gradient(180deg,#06111a 0,#071827 210px,#eaf1f3 211px,#f8fbfa 100%)!important}.px-app.pb-28 main{padding-left:12px!important;padding-right:12px!important}.px-app.pb-28 .px-hero{border-radius:24px!important}}
+
+
+/* CHURVOX_WORKER_MOBILE_READABILITY_20260617 */
+.px-app.pb-28 {
+  --cx-text: #071118 !important;
+  --cx-muted: #5f6f78 !important;
+  --cx-muted-2: #7b8a93 !important;
+  --cx-surface: #ffffff !important;
+  --cx-surface-2: #f7faf9 !important;
+  --cx-border: rgba(7, 17, 24, 0.14) !important;
+  --cx-accent: #f97316 !important;
+  --cx-accent-soft: #fff1e7 !important;
+}
+
+.px-app.pb-28 .px-mobile-header {
+  min-height: 72px !important;
+  padding: 12px 14px !important;
+}
+
+.px-app.pb-28 .px-mobile-header .px-btn,
+.px-app.pb-28 .px-mobile-header button,
+.px-app.pb-28 .px-mobile-header a {
+  min-height: 42px !important;
+  min-width: 42px !important;
+}
+
+.px-app.pb-28 main > section:not(.px-hero):not(.worker-flow-panel):not(.worker-readiness-card),
+.px-app.pb-28 main > article,
+.px-app.pb-28 .px-card__body,
+.px-app.pb-28 .cv-worker-card,
+.px-app.pb-28 .cv-worker-details,
+.px-app.pb-28 .cv-worker-material,
+.px-app.pb-28 .cv-worker-empty,
+.px-app.pb-28 .cv-worker-history > *,
+.px-app.pb-28 .cv-worker-metrics article {
+  background: rgba(255, 255, 255, 0.96) !important;
+  color: #071118 !important;
+  border-color: rgba(7, 17, 24, 0.14) !important;
+}
+
+.px-app.pb-28 main > section:not(.px-hero):not(.worker-flow-panel):not(.worker-readiness-card) *,
+.px-app.pb-28 .px-card__body *,
+.px-app.pb-28 .cv-worker-card *,
+.px-app.pb-28 .cv-worker-empty *,
+.px-app.pb-28 .cv-worker-history *,
+.px-app.pb-28 .cv-worker-metrics article * {
+  color: inherit;
+}
+
+.px-app.pb-28 main > section:not(.px-hero):not(.worker-flow-panel):not(.worker-readiness-card) p,
+.px-app.pb-28 main > section:not(.px-hero):not(.worker-flow-panel):not(.worker-readiness-card) span,
+.px-app.pb-28 .px-card__body p,
+.px-app.pb-28 .px-card__body span,
+.px-app.pb-28 .cv-worker-card p,
+.px-app.pb-28 .cv-worker-details p,
+.px-app.pb-28 .cv-worker-empty p {
+  color: #5f6f78 !important;
+}
+
+.px-app.pb-28 main > section:not(.px-hero):not(.worker-flow-panel):not(.worker-readiness-card) h1,
+.px-app.pb-28 main > section:not(.px-hero):not(.worker-flow-panel):not(.worker-readiness-card) h2,
+.px-app.pb-28 main > section:not(.px-hero):not(.worker-flow-panel):not(.worker-readiness-card) h3,
+.px-app.pb-28 main > section:not(.px-hero):not(.worker-flow-panel):not(.worker-readiness-card) b,
+.px-app.pb-28 .px-card__body h1,
+.px-app.pb-28 .px-card__body h2,
+.px-app.pb-28 .px-card__body h3,
+.px-app.pb-28 .px-card__body b,
+.px-app.pb-28 .cv-worker-card h3,
+.px-app.pb-28 .cv-worker-card b,
+.px-app.pb-28 .cv-worker-empty h3 {
+  color: #071118 !important;
+}
+
+.px-app.pb-28 main > section:not(.px-hero):not(.worker-flow-panel):not(.worker-readiness-card) svg,
+.px-app.pb-28 .px-card__body svg,
+.px-app.pb-28 .cv-worker-card svg,
+.px-app.pb-28 .cv-worker-empty svg {
+  color: #071118 !important;
+}
+
+.px-app.pb-28 .worker-flow-panel {
+  margin-top: 18px !important;
+}
+
+.px-app.pb-28 .worker-flow-panel button,
+.px-app.pb-28 .px-empty button,
+.px-app.pb-28 .px-card__body button,
+.px-app.pb-28 .px-card__body a,
+.px-app.pb-28 main > section:not(.px-hero):not(.worker-flow-panel):not(.worker-readiness-card) button,
+.px-app.pb-28 main > section:not(.px-hero):not(.worker-flow-panel):not(.worker-readiness-card) a {
+  min-height: 48px !important;
+  font-weight: 900 !important;
+}
+
+.px-app.pb-28 .px-empty {
+  padding: 22px !important;
+}
+
+@media (max-width: 640px) {
+  .px-app.pb-28 .px-hero {
+    margin-top: 10px !important;
+  }
+
+  .px-app.pb-28 main {
+    padding-bottom: 118px !important;
+  }
+
+  .px-app.pb-28 .grid.grid-cols-2 {
+    gap: 10px !important;
+  }
+
+  .px-app.pb-28 .px-card__body {
+    padding: 16px !important;
+  }
+
+  .px-app.pb-28 .worker-flow-steps {
+    gap: 10px !important;
+  }
+
+  .px-app.pb-28 .worker-flow-steps span {
+    min-height: 112px !important;
+  }
+}

@@ -14,7 +14,11 @@ const HELP_TYPES = [
   "Before I sign up",
 ];
 
-function shouldShow() {
+function shouldShow(pathname = "") {
+  const path = String(pathname || "");
+  // Worker pages already have their own Contact office/help flow.
+  // Keep this global public support bubble off worker mobile screens.
+  if (path.startsWith("/worker")) return false;
   return true;
 }
 
