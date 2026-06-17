@@ -294,3 +294,51 @@
     margin: 0 auto !important;
   }
 }
+
+/* CHURVOX_REVIEW_MODAL_WORKSPACE_RIGHT_SHIFT_20260617 */
+@media (min-width: 901px) {
+  .freshReviewPopupBackdrop {
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 18px !important;
+  }
+
+  .freshReviewPopupCard {
+    transform: translateX(118px) !important;
+    margin: 0 !important;
+  }
+}
+
+/* CHURVOX_REVIEW_FORM_FIELD_BOXES_20260617 */
+.freshReviewPopupBody .freshReviewFormGrid > label {
+  background: #fffaf0 !important;
+  border: 1px solid rgba(15, 23, 42, .10) !important;
+  border-radius: 16px !important;
+  padding: 10px !important;
+}
+
+.freshReviewPopupBody .freshReviewFormGrid > label.wide {
+  grid-column: 1 / -1 !important;
+}
+
+.freshReviewPopupBody .freshReviewFormGrid > label span {
+  margin-bottom: 2px !important;
+}
+
+.freshReviewPopupBody .freshReviewFormGrid input,
+.freshReviewPopupBody .freshReviewFormGrid textarea,
+.freshReviewPopupBody .freshReviewFormGrid select {
+  background: #ffffff !important;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, .05) !important;
+}
+
+.freshReviewPopupBody .freshReviewModalActions {
+  background: #fffaf0 !important;
+}
+
+@media (max-width: 900px) {
+  .freshReviewPopupCard {
+    transform: none !important;
+    margin: 0 auto !important;
+  }
+}
