@@ -309,78 +309,67 @@ export default function FreshSmartHub({ onNavigate }) {
         </div>
       </div>
 
-      <div className="freshTodayBriefGrid">
-        <article className="freshTodayPanel freshTodayPanel--jobs">
-          <header>
-            <span>Jobs</span>
-            <h2>Jobs today</h2>
-            <p>Only work scheduled for today.</p>
-          </header>
+      <div className="freshTodayBriefGrid freshTodayBriefGrid--columns">
+        <div className="freshTodayColumn freshTodayColumn--left">
+          <article className="freshTodayPanel freshTodayPanel--jobs">
+            <header>
+              <span>Jobs</span>
+              <h2>Jobs today</h2>
+              <p>Only work scheduled for today.</p>
+            </header>
 
-          <div className="freshTodayList">
-            {loading && !today.todayJobs.length ? (
-              <div className="freshTodayEmpty">Checking jobs...</div>
-            ) : today.todayJobs.length ? (
-              today.todayJobs.map((job, index) => <TodayJobCard key={pick(job, "id", "_id") || index} job={job} onNavigate={onNavigate} />)
-            ) : (
-              <div className="freshTodayEmpty">No jobs booked for today.</div>
-            )}
-          </div>
-        </article>
+            <div className="freshTodayList">
+              {loading && !today.todayJobs.length ? (
+                <div className="freshTodayEmpty">Checking jobs...</div>
+              ) : today.todayJobs.length ? (
+                today.todayJobs.map((job, index) => <TodayJobCard key={pick(job, "id", "_id") || index} job={job} onNavigate={onNavigate} />)
+              ) : (
+                <div className="freshTodayEmpty">No jobs booked for today.</div>
+              )}
+            </div>
+          </article>
 
-        <article className="freshTodayPanel freshTodayPanel--needs">
-          <header>
-            <span>Needs doing</span>
-            <h2>Needs doing today</h2>
-            <p>Things that could block the day or money.</p>
-          </header>
+          <article className="freshTodayPanel freshTodayPanel--money">
+            <header>
+              <span>Money</span>
+              <h2>Due and overdue</h2>
+              <p>Money that needs checking today.</p>
+            </header>
 
-          <div className="freshTodayList">
-            {today.needsDoing.length ? (
-              today.needsDoing.map((item, index) => <NeedCard key={`${item.type}-${index}`} item={item} onNavigate={onNavigate} />)
-            ) : (
-              <div className="freshTodayEmpty">No urgent blockers showing.</div>
-            )}
-          </div>
-        </article>
+            <div className="freshTodayMoneyRows">
+              <button type="button" onClick={() => onNavigate?.("invoices")}>
+                <b>{money(today.dueTodayMoney)}</b>
+                <span>Due today</span>
+              </button>
+              <button type="button" onClick={() => onNavigate?.("invoices")}>
+                <b>{money(today.overdueMoney)}</b>
+                <span>Overdue</span>
+              </button>
+              <button type="button" onClick={() => onNavigate?.("quotes")}>
+                <b>{today.quotesToChase.length}</b>
+                <span>Quotes still open</span>
+              </button>
+            </div>
+          </article>
+        </div>
 
-        <article className="freshTodayPanel freshTodayPanel--money">
-          <header>
-            <span>Money</span>
-            <h2>Due and overdue</h2>
-            <p>Money that needs checking today.</p>
-          </header>
+        <div className="freshTodayColumn freshTodayColumn--right">
+          <article className="freshTodayPanel freshTodayPanel--needs">
+            <header>
+              <span>Needs doing</span>
+              <h2>Needs doing today</h2>
+              <p>Things that could block the day or money.</p>
+            </header>
 
-          <div className="freshTodayMoneyRows">
-            <button type="button" onClick={() => onNavigate?.("invoices")}>
-              <b>{money(today.dueTodayMoney)}</b>
-              <span>Due today</span>
-            </button>
-            <button type="button" onClick={() => onNavigate?.("invoices")}>
-              <b>{money(today.overdueMoney)}</b>
-              <span>Overdue</span>
-            </button>
-            <button type="button" onClick={() => onNavigate?.("quotes")}>
-              <b>{today.quotesToChase.length}</b>
-              <span>Quotes still open</span>
-            </button>
-          </div>
-        </article>
-
-        <article className="freshTodayPanel freshTodayPanel--talk">
-          <header>
-            <span>Talk to me</span>
-            <h2>Tell Churvox</h2>
-            <p>Tell Churvox what happened, then approve it in Review.</p>
-          </header>
-
-          <div className="freshTodayQuickButtons">
-            <button type="button" onClick={() => onNavigate?.("quickcreateai")}>Tell Churvox</button>
-            <button type="button" onClick={() => onNavigate?.("command")}>Review prepared work</button>
-            <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: { search: "" } }))}>Add job</button>
-            <button type="button" onClick={() => window.dispatchEvent(new Event("churvox:open-client-popup"))}>Add client</button>
-          </div>
-        </article>
+            <div className="freshTodayList">
+              {today.needsDoing.length ? (
+                today.needsDoing.map((item, index) => <NeedCard key={`${item.type}-${index}`} item={item} onNavigate={onNavigate} />)
+              ) : (
+                <div className="freshTodayEmpty">No urgent blockers showing.</div>
+              )}
+            </div>
+          </article>
+        </div>
       </div>
     </section>
   );
