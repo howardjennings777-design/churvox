@@ -44,6 +44,35 @@ function statusOf(job) { return String(job?.status || "assigned").toLowerCase().
 function isActiveJob(job) { return ["in_progress", "paused"].includes(statusOf(job)); }
 function isComplete(job) { return statusOf(job) === "completed"; }
 
+function hoursText(totalSeconds) {
+  const total = Math.max(0, Math.round(Number(totalSeconds || 0)));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  if (!h && !m) return "0m";
+  if (!h) return `${m}m`;
+  return `${h}h ${m}m`;
+}
+
+function getGpsPosition() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error("GPS is not available on this device"));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => resolve({
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+      }),
+      (error) => reject(error),
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+    );
+  });
+}
+
+
 function WorkerDayFlowPanel({ stats, nextJob, onContactOffice, onStartNext }) {
   const hasWork = Number(stats?.total || 0) > 0;
   const nextId = idOf(nextJob);
@@ -73,6 +102,39 @@ function WorkerDayFlowPanel({ stats, nextJob, onContactOffice, onStartNext }) {
   );
 }
 
+
+function WorkerShiftPanel({ shiftStatus, shiftSeconds, gpsTracking, onClockIn, onClockOut, onGpsPing, busy }) {
+  const clockedIn = shiftStatus === "clocked_in";
+
+  return (
+    <section className={`worker-shift-panel ${clockedIn ? "clocked-in" : ""}`}>
+      <div className="worker-shift-panel__top">
+        <div>
+          <p>PAYROLL CLOCK</p>
+          <h2>{clockedIn ? "You are clocked in" : "You are clocked out"}</h2>
+          <span>{clockedIn ? `Payroll time today: ${hoursText(shiftSeconds)}. GPS is on while clocked in.` : "Clock in to start your paid day and turn on GPS tracking."}</span>
+        </div>
+        <strong>{clockedIn ? hoursText(shiftSeconds) : "Off"}</strong>
+      </div>
+
+      <div className="worker-shift-panel__notice">
+        GPS is only used while you are clocked in. Churvox records clock-in, clock-out and hourly location checks for the boss view.
+      </div>
+
+      <div className="worker-shift-panel__actions">
+        {!clockedIn ? (
+          <button type="button" disabled={busy} onClick={onClockIn}>{busy ? "Clocking in..." : "Clock in"}</button>
+        ) : (
+          <>
+            <button type="button" disabled={busy} onClick={onClockOut}>{busy ? "Clocking out..." : "Clock out"}</button>
+            <button type="button" disabled={busy || !gpsTracking} onClick={() => onGpsPing("manual")}>GPS check now</button>
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export default function WorkerJobsPage() {
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -81,8 +143,79 @@ export default function WorkerJobsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [startingId, setStartingId] = useState("");
+  const [shiftStatus, setShiftStatus] = useState("clocked_out");
+  const [shiftSeconds, setShiftSeconds] = useState(0);
+  const [gpsTracking, setGpsTracking] = useState(false);
+  const [shiftBusy, setShiftBusy] = useState(false);
   const [lastSynced, setLastSynced] = useState(null);
   const [showContactOffice, setShowContactOffice] = useState(false);
+
+
+  const fetchShiftStatus = useCallback(async () => {
+    const res = await get("/worker/shift/status");
+    if (res?.success) {
+      const data = res.data?.data || res.data || {};
+      setShiftStatus(data.status || "clocked_out");
+      setShiftSeconds(Number(data.shift_seconds || data.shift?.total_shift_seconds || 0));
+      setGpsTracking(Boolean(data.gps_tracking_enabled));
+    }
+  }, [get]);
+
+  const sendGpsPing = useCallback(async (source = "hourly") => {
+    try {
+      const location = await getGpsPosition();
+      const res = await post("/worker/gps-ping", { location, source });
+      if (!res?.success && source !== "hourly") toast.error(res?.error || "GPS could not be recorded");
+      if (res?.success && source !== "hourly") toast.success("GPS recorded");
+    } catch (err) {
+      if (source !== "hourly") toast.error(err?.message || "GPS permission is needed while clocked in");
+    }
+  }, [post]);
+
+  const clockIn = useCallback(async () => {
+    setShiftBusy(true);
+    try {
+      const location = await getGpsPosition();
+      const res = await post("/worker/clock-in", { location });
+      if (res?.success) {
+        toast.success("Clocked in. GPS tracking is on.");
+        setShiftStatus("clocked_in");
+        setGpsTracking(true);
+        await fetchShiftStatus();
+      } else {
+        toast.error(res?.error || "Could not clock in");
+      }
+    } catch (err) {
+      toast.error(err?.message || "GPS permission is needed to clock in");
+    } finally {
+      setShiftBusy(false);
+    }
+  }, [fetchShiftStatus, post]);
+
+  const clockOut = useCallback(async () => {
+    setShiftBusy(true);
+    try {
+      let location = null;
+      try {
+        location = await getGpsPosition();
+      } catch {
+        location = null;
+      }
+
+      const res = await post("/worker/clock-out", { location });
+      if (res?.success) {
+        toast.success("Clocked out. GPS tracking is off.");
+        setShiftStatus("clocked_out");
+        setGpsTracking(false);
+        setShiftSeconds(0);
+        await fetchShiftStatus();
+      } else {
+        toast.error(res?.error || "Could not clock out");
+      }
+    } finally {
+      setShiftBusy(false);
+    }
+  }, [fetchShiftStatus, post]);
 
   const fetchJobs = useCallback(async () => {
     setLoading(true);
@@ -98,6 +231,19 @@ export default function WorkerJobsPage() {
   }, [get, user]);
 
   useEffect(() => { fetchJobs(); }, [fetchJobs]);
+
+
+  useEffect(() => {
+    if (shiftStatus !== "clocked_in") return undefined;
+    const tick = window.setInterval(() => setShiftSeconds((value) => Number(value || 0) + 60), 60000);
+    return () => window.clearInterval(tick);
+  }, [shiftStatus]); // worker-shift-ticker
+
+  useEffect(() => {
+    if (shiftStatus !== "clocked_in" || !gpsTracking) return undefined;
+    const gpsTimer = window.setInterval(() => sendGpsPing("hourly"), 60 * 60 * 1000);
+    return () => window.clearInterval(gpsTimer);
+  }, [gpsTracking, sendGpsPing, shiftStatus]); // worker-hourly-gps
 
   useEffect(() => {
     if (!location.hash) return;
@@ -173,6 +319,8 @@ export default function WorkerJobsPage() {
           <h1 className="px-hero__title" style={{ fontSize: "24px" }}>Hey {user?.name?.split(" ")[0] || "team"}</h1>
           <p className="px-hero__sub">Only jobs assigned to you appear here. Open a job to add notes/photos and complete the work slip.</p>
         </div>
+
+<WorkerShiftPanel shiftStatus={shiftStatus} shiftSeconds={shiftSeconds} gpsTracking={gpsTracking} onClockIn={clockIn} onClockOut={clockOut} onGpsPing={sendGpsPing} busy={shiftBusy} />
 
         <WorkerDayFlowPanel stats={stats} nextJob={nextJob} onContactOffice={() => setShowContactOffice(true)} onStartNext={() => nextJob ? handleTimerStart(nextJob) : setShowContactOffice(true)} />
 

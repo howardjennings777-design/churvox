@@ -804,3 +804,234 @@ async def command_summary(request: Request):
 @app.post('/api/operator/slips/{slip_id}/approve')
 async def approve_slip(slip_id: str):
     return {'success': True, 'approved': True, 'slip_id': slip_id, 'message': 'Slip approved. Churvox recorded the approval.'}
+
+# CHURVOX_WORKER_SHIFT_GPS_BASE_20260617
+async def _worker_shift_payload(request: Request):
+    try:
+        return await request.json()
+    except Exception:
+        return {}
+
+
+def _geo_from_payload(payload):
+    location = payload.get("location") if isinstance(payload, dict) else {}
+    if not isinstance(location, dict):
+        location = {}
+    lat = location.get("lat", payload.get("lat") if isinstance(payload, dict) else None)
+    lng = location.get("lng", payload.get("lng") if isinstance(payload, dict) else None)
+    accuracy = location.get("accuracy", payload.get("accuracy") if isinstance(payload, dict) else None)
+    try:
+        lat = float(lat) if lat is not None and str(lat).strip() != "" else None
+        lng = float(lng) if lng is not None and str(lng).strip() != "" else None
+        accuracy = float(accuracy) if accuracy is not None and str(accuracy).strip() != "" else None
+    except Exception:
+        lat, lng, accuracy = None, None, None
+    return {"lat": lat, "lng": lng, "accuracy": accuracy}
+
+
+async def _active_shift_for_user(user):
+    user_id = str(user.get("id") or user.get("_id") or "")
+    business_id = str(user.get("business_id") or user.get("contractor_id") or user.get("owner_id") or "")
+    return await legacy.db.worker_shifts.find_one({
+        "worker_id": user_id,
+        "business_id": business_id,
+        "status": "clocked_in",
+    })
+
+
+async def _write_gps_log(user, shift_id, geo, source):
+    if geo.get("lat") is None or geo.get("lng") is None:
+        return None
+
+    now = datetime.now(timezone.utc)
+    user_id = str(user.get("id") or user.get("_id") or "")
+    business_id = str(user.get("business_id") or user.get("contractor_id") or user.get("owner_id") or "")
+
+    doc = {
+        "worker_id": user_id,
+        "business_id": business_id,
+        "shift_id": str(shift_id or ""),
+        "timestamp": now,
+        "lat": geo.get("lat"),
+        "lng": geo.get("lng"),
+        "accuracy": geo.get("accuracy"),
+        "source": source,
+        "created_at": now,
+    }
+
+    await legacy.db.worker_gps_logs.insert_one(doc)
+
+    update = {
+        "clock_status": "clocked_in" if source != "clock_out" else "clocked_out",
+        "last_lat": geo.get("lat"),
+        "last_lng": geo.get("lng"),
+        "last_gps_accuracy": geo.get("accuracy"),
+        "last_gps_at": now,
+        "gps_tracking_enabled": source != "clock_out",
+        "updated_at": now,
+    }
+
+    user_oid = _as_object_id(user_id)
+    if user_oid:
+        await legacy.db.users.update_one({"_id": user_oid}, {"$set": update})
+    await legacy.db.users.update_many({"email": user.get("email")}, {"$set": update})
+
+    return doc
+
+
+@app.get("/api/worker/shift/status")
+async def _worker_shift_status(request: Request):
+    user = await _get_user_or_none(request)
+    if not user:
+        return JSONResponse({"success": False, "detail": "Not authenticated"}, status_code=401)
+
+    shift = await _active_shift_for_user(user)
+    if not shift:
+        return JSONResponse({
+            "success": True,
+            "data": {
+                "status": "clocked_out",
+                "gps_tracking_enabled": False,
+                "shift": None,
+            },
+        })
+
+    now = datetime.now(timezone.utc)
+    started = shift.get("clock_in_time") or shift.get("created_at")
+    try:
+        total = int((now - started).total_seconds()) if started else 0
+    except Exception:
+        total = 0
+
+    return JSONResponse({
+        "success": True,
+        "data": {
+            "status": "clocked_in",
+            "gps_tracking_enabled": True,
+            "shift": _json_safe(shift),
+            "shift_seconds": total,
+        },
+    })
+
+
+@app.post("/api/worker/clock-in")
+async def _worker_clock_in(request: Request):
+    user = await _get_user_or_none(request)
+    if not user:
+        return JSONResponse({"success": False, "detail": "Not authenticated"}, status_code=401)
+
+    payload = await _worker_shift_payload(request)
+    geo = _geo_from_payload(payload)
+    now = datetime.now(timezone.utc)
+    existing = await _active_shift_for_user(user)
+
+    if existing:
+        await _write_gps_log(user, existing.get("_id"), geo, "clock_in_refresh")
+        return JSONResponse({"success": True, "message": "Already clocked in", "data": _json_safe(existing)})
+
+    user_id = str(user.get("id") or user.get("_id") or "")
+    business_id = str(user.get("business_id") or user.get("contractor_id") or user.get("owner_id") or "")
+
+    shift = {
+        "worker_id": user_id,
+        "worker_name": user.get("name") or user.get("full_name") or user.get("email") or "Worker",
+        "worker_email": user.get("email") or "",
+        "business_id": business_id,
+        "status": "clocked_in",
+        "clock_in_time": now,
+        "clock_in_location": geo,
+        "clock_out_time": None,
+        "clock_out_location": None,
+        "total_shift_seconds": 0,
+        "gps_tracking_enabled": True,
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    inserted = await legacy.db.worker_shifts.insert_one(shift)
+    shift["_id"] = inserted.inserted_id
+    await _write_gps_log(user, inserted.inserted_id, geo, "clock_in")
+
+    user_oid = _as_object_id(user_id)
+    update = {
+        "clock_status": "clocked_in",
+        "shift_id": str(inserted.inserted_id),
+        "clock_in_time": now,
+        "gps_tracking_enabled": True,
+        "updated_at": now,
+    }
+    if user_oid:
+        await legacy.db.users.update_one({"_id": user_oid}, {"$set": update})
+    if user.get("email"):
+        await legacy.db.users.update_many({"email": user.get("email")}, {"$set": update})
+
+    return JSONResponse({"success": True, "message": "Clocked in", "data": _json_safe(shift)})
+
+
+@app.post("/api/worker/gps-ping")
+async def _worker_gps_ping(request: Request):
+    user = await _get_user_or_none(request)
+    if not user:
+        return JSONResponse({"success": False, "detail": "Not authenticated"}, status_code=401)
+
+    shift = await _active_shift_for_user(user)
+    if not shift:
+        return JSONResponse({"success": False, "detail": "Worker is not clocked in"}, status_code=400)
+
+    payload = await _worker_shift_payload(request)
+    geo = _geo_from_payload(payload)
+    if geo.get("lat") is None or geo.get("lng") is None:
+        return JSONResponse({"success": False, "detail": "GPS location missing"}, status_code=400)
+
+    log = await _write_gps_log(user, shift.get("_id"), geo, payload.get("source") or "hourly")
+    await legacy.db.worker_shifts.update_one({"_id": shift.get("_id")}, {"$set": {"last_gps_at": datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc)}})
+
+    return JSONResponse({"success": True, "message": "GPS recorded", "data": _json_safe(log)})
+
+
+@app.post("/api/worker/clock-out")
+async def _worker_clock_out(request: Request):
+    user = await _get_user_or_none(request)
+    if not user:
+        return JSONResponse({"success": False, "detail": "Not authenticated"}, status_code=401)
+
+    shift = await _active_shift_for_user(user)
+    if not shift:
+        return JSONResponse({"success": True, "message": "Already clocked out", "data": None})
+
+    payload = await _worker_shift_payload(request)
+    geo = _geo_from_payload(payload)
+    now = datetime.now(timezone.utc)
+    clock_in = shift.get("clock_in_time") or shift.get("created_at")
+    try:
+        total = int((now - clock_in).total_seconds()) if clock_in else 0
+    except Exception:
+        total = 0
+
+    await _write_gps_log(user, shift.get("_id"), geo, "clock_out")
+
+    update = {
+        "status": "clocked_out",
+        "clock_out_time": now,
+        "clock_out_location": geo,
+        "total_shift_seconds": total,
+        "gps_tracking_enabled": False,
+        "updated_at": now,
+    }
+    await legacy.db.worker_shifts.update_one({"_id": shift.get("_id")}, {"$set": update})
+
+    user_id = str(user.get("id") or user.get("_id") or "")
+    user_oid = _as_object_id(user_id)
+    user_update = {
+        "clock_status": "clocked_out",
+        "clock_out_time": now,
+        "today_shift_seconds": total,
+        "gps_tracking_enabled": False,
+        "updated_at": now,
+    }
+    if user_oid:
+        await legacy.db.users.update_one({"_id": user_oid}, {"$set": user_update})
+    if user.get("email"):
+        await legacy.db.users.update_many({"email": user.get("email")}, {"$set": user_update})
+
+    return JSONResponse({"success": True, "message": "Clocked out", "data": {"total_shift_seconds": total}})
