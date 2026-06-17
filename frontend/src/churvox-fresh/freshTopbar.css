@@ -209,3 +209,91 @@
     min-height: 38px;
   }
 }
+
+
+/* CHURVOX_CLEAN_TOP_STRIP_20260617 */
+.freshTopbar--clean {
+  grid-template-columns: minmax(180px, 260px) minmax(280px, 1fr) auto !important;
+  min-height: 62px !important;
+  padding: 8px 10px !important;
+  gap: 12px !important;
+  border-radius: 20px !important;
+  background: rgba(255, 250, 240, 0.96) !important;
+}
+
+.freshTopbar--clean .freshTopbarTitle {
+  min-width: 0 !important;
+}
+
+.freshTopbar--clean .freshTopbarTitle small {
+  max-width: 240px !important;
+  color: #64748b !important;
+  font-weight: 750 !important;
+}
+
+.freshTopbar--clean .freshSearch {
+  min-height: 42px !important;
+  max-width: none !important;
+}
+
+.freshTopActions--clean {
+  max-width: none !important;
+  overflow: visible !important;
+  flex-wrap: nowrap !important;
+}
+
+.freshTopActions--clean button {
+  min-height: 40px !important;
+  padding: 0 14px !important;
+  border-radius: 14px !important;
+}
+
+.freshTopActions--clean button:nth-child(1) {
+  background: #f97316 !important;
+  color: #111827 !important;
+}
+
+.freshTopActions--clean button:nth-child(2),
+.freshTopActions--clean button:nth-child(3) {
+  background: #111827 !important;
+  color: #ffffff !important;
+}
+
+.freshTopActions--clean .freshLogoutTop {
+  background: #fff7ed !important;
+  color: #9a3412 !important;
+  border: 1px solid rgba(249, 115, 22, .24) !important;
+}
+
+@media (max-width: 1200px) {
+  .freshTopbar--clean {
+    grid-template-columns: minmax(160px, 220px) 1fr auto !important;
+  }
+
+  .freshTopbar--clean .freshSearch {
+    grid-column: auto !important;
+  }
+
+  .freshTopActions--clean {
+    grid-column: auto !important;
+    justify-content: flex-end !important;
+  }
+}
+
+@media (max-width: 950px) {
+  .freshTopbar--clean {
+    position: sticky !important;
+    grid-template-columns: 1fr !important;
+    align-items: stretch !important;
+  }
+
+  .freshTopbar--clean .freshTopbarTitle small {
+    max-width: none !important;
+  }
+
+  .freshTopActions--clean {
+    justify-content: flex-start !important;
+    overflow-x: auto !important;
+    padding-bottom: 2px !important;
+  }
+}

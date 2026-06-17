@@ -1,6 +1,5 @@
 import React from "react";
 import FreshSearch from "./FreshSearch";
-import FreshTopStatus from "./FreshTopStatus";
 import { useAuth } from "../context/AuthContext";
 import API_BASE from "../lib/apiBase";
 
@@ -113,8 +112,6 @@ export default function FreshShell({ active, onChange, children }) {
   const safeMobileItems = React.useMemo(() => uniqueItems(mobileItems), []);
   const safeExtraMobile = React.useMemo(() => { const mainKeys = new Set(safeMobileItems.map(([key]) => key)); return uniqueItems(safeGroups.flatMap((group) => group.items)).filter(([key]) => !mainKeys.has(key)); }, [safeMobileItems, safeGroups]);
   const currentPrimary = parentByKey[active] || active;
-  const headerPagePills = React.useMemo(() => uniqueItems(stripHiddenItems(relatedTools[currentPrimary] || [], guideComplete)).slice(0, 4), [currentPrimary, guideComplete]);
-  const headerPillKeys = React.useMemo(() => new Set(headerPagePills.map(([key]) => key)), [headerPagePills]);
   const emailNeedsVerification = auth?.user && auth.user.email_verified === false;
   const currentLabel = labels[active] || labels[currentPrimary] || "Churvox";
   const currentPurpose = purpose[active] || purpose[currentPrimary] || purpose.default;
@@ -142,19 +139,15 @@ export default function FreshShell({ active, onChange, children }) {
         <nav className="freshNav">{safeGroups.map((group) => <section className="freshNavGroup" key={group.title}><p>{group.title}</p>{group.items.map(([key, mark, label]) => <button key={key} type="button" className={currentPrimary === key ? "active" : ""} onClick={() => go(key)}><i>{mark}</i><span>{label}</span></button>)}</section>)}</nav>
       </aside>
       <main className="freshMain">
-        <div className="freshTopbar">
-          <div><span>Current area</span><strong>{currentLabel}</strong><small>{currentPurpose}</small></div>
-          <FreshTopStatus onNavigate={go} />
+        <div className="freshTopbar freshTopbar--clean">
+          <div className="freshTopbarTitle"><span>Current area</span><strong>{currentLabel}</strong><small>{currentPurpose}</small></div>
           <FreshSearch onNavigate={go} />
-          <div className="freshTopActions">
+          <div className="freshTopActions freshTopActions--clean">
             {!guideComplete ? <button type="button" onClick={() => go("setupassistant")}>AI Guide</button> : null}
-            {!headerPillKeys.has("quickcreateai") ? <button type="button" onClick={() => go("quickcreateai")}>Tell Churvox</button> : null}
-            {!headerPillKeys.has("command") ? <button type="button" onClick={() => go("command")}>Review</button> : null}
             <button type="button" onClick={() => openRealCreate("/jobs/new")}>New job</button>
             <button type="button" onClick={openClientPopup}>Add client</button>
             <button className="freshLogoutTop" type="button" onClick={handleLogout}>Log out</button>
           </div>
-          {headerPagePills.length > 0 ? <div className="freshHeaderPills" aria-label={`${labels[currentPrimary] || "Current area"} page shortcuts`}>{headerPagePills.map(([key, mark, label]) => <button key={key} type="button" className={active === key ? "active" : ""} onClick={() => go(key)}><i>{mark}</i><span>{label}</span></button>)}</div> : null}
         </div>
         {emailNeedsVerification && <section className="freshCard freshItem need" style={{ marginBottom: 14 }}><b>Verify your email to keep your Churvox account secure</b><span>We have sent a verification link to {auth.user.email}. You can keep setting up, but please verify before sending customer emails.</span><div className="freshActions" style={{ maxWidth: 280 }}><button className="freshPrimary" type="button" onClick={resendVerification} disabled={verifySending}>{verifySending ? "Sending…" : verifySent ? "Verification sent" : "Resend verification email"}</button></div></section>}
         {children}
