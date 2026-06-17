@@ -1,0 +1,124 @@
+
+/* CHURVOX_JOBS_PAGE_POLISH_20260617 */
+
+.freshCommandPulse {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  margin: 14px 0 !important;
+}
+
+.freshCommandPulse .freshCard {
+  min-height: 92px !important;
+  display: grid !important;
+  align-content: center !important;
+  border-radius: 22px !important;
+  background: rgba(255, 250, 240, .92) !important;
+}
+
+.freshCommandPulse .freshCard h2 {
+  font-size: 34px !important;
+  margin: 0 !important;
+  color: #101827 !important;
+}
+
+.freshCommandPulse .freshCard p {
+  margin: 4px 0 0 !important;
+  font-weight: 900 !important;
+}
+
+.freshCommandFilterBar {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  margin: 10px 0 14px !important;
+}
+
+.freshCommandFilterBar button {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  border: 1px solid rgba(15, 23, 42, .12) !important;
+  border-radius: 999px !important;
+  background: #fffaf0 !important;
+  color: #101827 !important;
+  padding: 9px 12px !important;
+  font-weight: 1000 !important;
+  cursor: pointer !important;
+}
+
+.freshCommandFilterBar button.active {
+  background: #111827 !important;
+  color: #fff !important;
+}
+
+.freshCommandFilterBar button b {
+  min-width: 24px !important;
+  height: 24px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  border-radius: 999px !important;
+  background: rgba(249, 115, 22, .18) !important;
+  color: inherit !important;
+}
+
+.freshGrid .freshCard {
+  border-radius: 24px !important;
+}
+
+.freshGrid .freshCard > h2 {
+  margin-bottom: 12px !important;
+}
+
+.freshGrid .freshItem {
+  width: 100% !important;
+  text-align: left !important;
+  cursor: pointer !important;
+}
+
+.freshGrid button.freshItem {
+  border: 1px solid rgba(15, 23, 42, .13) !important;
+  border-left: 6px solid #16a34a !important;
+}
+
+.freshGrid button.freshItem.active {
+  border-left-color: #f97316 !important;
+  background: #fff7ed !important;
+  box-shadow: 0 10px 24px rgba(249, 115, 22, .12) !important;
+}
+
+.freshMiniGrid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  margin: 12px 0 !important;
+}
+
+.freshMiniGrid div {
+  border: 1px solid rgba(15, 23, 42, .12) !important;
+  border-radius: 18px !important;
+  background: #fffaf0 !important;
+  padding: 12px !important;
+}
+
+.freshMiniGrid span {
+  display: block !important;
+  color: #9a3412 !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase !important;
+  margin-bottom: 5px !important;
+}
+
+.freshMiniGrid b {
+  color: #101827 !important;
+  font-size: 15px !important;
+}
+
+@media (max-width: 900px) {
+  .freshCommandPulse,
+  .freshMiniGrid {
+    grid-template-columns: 1fr !important;
+  }
+}

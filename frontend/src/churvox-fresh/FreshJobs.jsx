@@ -1,6 +1,7 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
 import JobCreateForm from "../components/forms/JobCreateForm";
+import "./freshJobsPolish.css";
 
 const filters = ["All", "Ready", "In progress", "Blocked", "Completed"];
 
@@ -88,7 +89,7 @@ function createdId(payload) {
 }
 
 export default function FreshJobs({ onNavigate }) {
-  const api = useApi();
+  const { get } = useApi();
   const [jobs, setJobs] = React.useState([]);
   const [selectedId, setSelectedId] = React.useState("");
   const [filter, setFilter] = React.useState("All");
@@ -103,7 +104,7 @@ export default function FreshJobs({ onNavigate }) {
     setLoading(true);
     setError("");
 
-    const res = await api.get("/jobs");
+    const res = await get("/jobs", { timeout: 25000 });
 
     if (!res.success) {
       setJobs([]);
@@ -120,7 +121,7 @@ export default function FreshJobs({ onNavigate }) {
     setJobs(nextJobs);
     setSelectedId((current) => nextJobs.some((job) => job.id === current) ? current : nextJobs[0]?.id || "");
     setLoading(false);
-  }, [api]);
+  }, [get]);
 
   React.useEffect(() => {
     loadJobs();
@@ -157,15 +158,15 @@ export default function FreshJobs({ onNavigate }) {
 
       <section className="freshCommandPulse">
         <aside className="freshCard">
-          <h2>{loading && jobs.length === 0 ? "…" : jobs.length}</h2>
+          <h2>{jobs.length}</h2>
           <p>Total jobs</p>
         </aside>
         <aside className="freshCard">
-          <h2>{loading && jobs.length === 0 ? "…" : jobs.filter((job) => job.status === "Ready").length}</h2>
+          <h2>{jobs.filter((job) => job.status === "Ready").length}</h2>
           <p>Ready</p>
         </aside>
         <aside className="freshCard">
-          <h2>{loading && jobs.length === 0 ? "…" : jobs.filter((job) => job.status === "Blocked").length}</h2>
+          <h2>{jobs.filter((job) => job.status === "Blocked").length}</h2>
           <p>Blocked</p>
         </aside>
       </section>
