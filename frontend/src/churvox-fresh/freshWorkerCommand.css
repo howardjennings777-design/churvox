@@ -434,3 +434,67 @@
   font-weight: 800;
   line-height: 1.35;
 }
+
+/* CHURVOX_WORKER_TIME_CARD_READABLE_20260618 */
+.freshWorkerCommandStats {
+  gap: 14px !important;
+}
+
+.freshWorkerTimeCard {
+  min-height: 172px !important;
+  padding: 18px !important;
+  overflow: visible !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+}
+
+.freshWorkerTimeCard > span {
+  color: #0f172a !important;
+  font-size: 15px !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.01em !important;
+  line-height: 1.2 !important;
+}
+
+.freshWorkerTimeCard > b {
+  color: #111827 !important;
+  font-size: 34px !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  margin: 10px 0 12px !important;
+}
+
+.freshWorkerTimeCard > small {
+  color: #1f2937 !important;
+  background: rgba(241, 245, 249, 0.92) !important;
+  border: 1px solid rgba(148, 163, 184, 0.35) !important;
+  border-radius: 14px !important;
+  display: block !important;
+  font-size: 14px !important;
+  font-weight: 850 !important;
+  line-height: 1.35 !important;
+  margin-top: auto !important;
+  padding: 10px 12px !important;
+  white-space: normal !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+@media (max-width: 900px) {
+  .freshWorkerCommandStats {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshWorkerTimeCard {
+    min-height: 154px !important;
+  }
+
+  .freshWorkerTimeCard > b {
+    font-size: 32px !important;
+  }
+
+  .freshWorkerTimeCard > small {
+    font-size: 15px !important;
+  }
+}
