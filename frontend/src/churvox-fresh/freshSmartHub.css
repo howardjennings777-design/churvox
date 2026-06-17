@@ -246,3 +246,262 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+/* CHURVOX_TODAY_DAILY_BRIEF_20260617 */
+.freshTodayPage {
+  display: grid !important;
+  gap: 14px !important;
+}
+
+.freshTodayHero {
+  min-height: 250px !important;
+  border-radius: 30px !important;
+  border-left: 7px solid #f97316 !important;
+  background:
+    radial-gradient(circle at 92% -18%, rgba(249, 115, 22, .62), transparent 34%),
+    linear-gradient(135deg, #0b111a 0%, #111827 58%, #070b12 100%) !important;
+  color: #fff !important;
+  padding: 24px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr) !important;
+  gap: 18px !important;
+  align-items: stretch !important;
+  box-shadow: 0 18px 45px rgba(2,6,23,.14) !important;
+}
+
+.freshTodayHero span {
+  display: inline-flex !important;
+  border-radius: 999px !important;
+  padding: 7px 11px !important;
+  background: rgba(255,255,255,.08) !important;
+  border: 1px solid rgba(255,255,255,.14) !important;
+  color: #fed7aa !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .14em !important;
+  text-transform: uppercase !important;
+}
+
+.freshTodayHero h1 {
+  margin: 16px 0 10px !important;
+  font-size: clamp(62px, 8vw, 108px) !important;
+  line-height: .82 !important;
+  letter-spacing: -.085em !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+.freshTodayHero p {
+  margin: 0 !important;
+  color: #f8fafc !important;
+  -webkit-text-fill-color: #f8fafc !important;
+  font-size: 18px !important;
+  font-weight: 900 !important;
+  line-height: 1.35 !important;
+  max-width: 680px !important;
+}
+
+.freshTodayHeroStats {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.freshTodayHeroStats button {
+  border: 1px solid rgba(255,255,255,.12) !important;
+  border-radius: 22px !important;
+  background: rgba(255,255,255,.08) !important;
+  color: #fff !important;
+  padding: 18px !important;
+  text-align: left !important;
+  cursor: pointer !important;
+}
+
+.freshTodayHeroStats b {
+  display: block !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  font-size: 36px !important;
+  font-weight: 1000 !important;
+  line-height: 1 !important;
+}
+
+.freshTodayHeroStats small {
+  display: block !important;
+  margin-top: 8px !important;
+  color: #fed7aa !important;
+  -webkit-text-fill-color: #fed7aa !important;
+  font-weight: 1000 !important;
+}
+
+.freshTodayBriefGrid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr) !important;
+  gap: 14px !important;
+  align-items: start !important;
+}
+
+.freshTodayPanel {
+  border: 1px solid rgba(15,23,42,.13) !important;
+  border-radius: 28px !important;
+  background: rgba(255,250,240,.94) !important;
+  box-shadow: 0 18px 45px rgba(2,6,23,.08) !important;
+  padding: 18px !important;
+}
+
+.freshTodayPanel header {
+  margin-bottom: 12px !important;
+}
+
+.freshTodayPanel header span {
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .13em !important;
+  text-transform: uppercase !important;
+}
+
+.freshTodayPanel h2 {
+  margin: 4px 0 !important;
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  font-size: clamp(28px, 3vw, 42px) !important;
+  line-height: 1 !important;
+  letter-spacing: -.055em !important;
+}
+
+.freshTodayPanel p {
+  margin: 0 !important;
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  font-weight: 850 !important;
+}
+
+.freshTodayList {
+  display: grid !important;
+  gap: 10px !important;
+}
+
+.freshTodayJobCard,
+.freshTodayNeedCard,
+.freshTodayMoneyRows button,
+.freshTodayQuickButtons button {
+  width: 100% !important;
+  text-align: left !important;
+  border: 1px solid rgba(15,23,42,.12) !important;
+  border-left: 6px solid #16a34a !important;
+  border-radius: 20px !important;
+  background: #fff !important;
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  padding: 14px !important;
+  display: grid !important;
+  gap: 5px !important;
+  cursor: pointer !important;
+  box-shadow: 0 8px 22px rgba(2,6,23,.045) !important;
+}
+
+.freshTodayJobCard b {
+  color: #f97316 !important;
+  -webkit-text-fill-color: #f97316 !important;
+  font-size: 16px !important;
+  font-weight: 1000 !important;
+}
+
+.freshTodayJobCard strong,
+.freshTodayNeedCard b {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  font-size: 18px !important;
+  font-weight: 1000 !important;
+}
+
+.freshTodayJobCard span,
+.freshTodayNeedCard small,
+.freshTodayJobCard small {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  font-weight: 850 !important;
+}
+
+.freshTodayNeedCard span {
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase !important;
+}
+
+.freshTodayNeedCard.warn,
+.freshTodayMoneyRows button:first-child {
+  border-left-color: #f59e0b !important;
+}
+
+.freshTodayNeedCard.danger,
+.freshTodayMoneyRows button:nth-child(2) {
+  border-left-color: #dc2626 !important;
+}
+
+.freshTodayNeedCard.info {
+  border-left-color: #f97316 !important;
+}
+
+.freshTodayEmpty {
+  border: 1px dashed rgba(15,23,42,.18) !important;
+  border-radius: 20px !important;
+  padding: 18px !important;
+  background: rgba(255,255,255,.62) !important;
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  font-weight: 900 !important;
+}
+
+.freshTodayMoneyRows,
+.freshTodayQuickButtons {
+  display: grid !important;
+  gap: 10px !important;
+}
+
+.freshTodayMoneyRows b {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  font-size: 26px !important;
+  font-weight: 1000 !important;
+}
+
+.freshTodayMoneyRows span,
+.freshTodayQuickButtons button {
+  font-weight: 1000 !important;
+}
+
+.freshTodayQuickButtons button {
+  justify-content: center !important;
+  text-align: center !important;
+  border-left-color: #111827 !important;
+}
+
+.freshTodayQuickButtons button:first-child {
+  background: #f97316 !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  border-left-color: #f97316 !important;
+}
+
+@media (max-width: 900px) {
+  .freshTodayHero,
+  .freshTodayBriefGrid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshTodayHeroStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .freshTodayHeroStats {
+    grid-template-columns: 1fr !important;
+  }
+}
