@@ -1,5 +1,7 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
+import InvoiceQuickCreateForm from "../components/forms/InvoiceQuickCreateForm";
+import "./freshRoutePopups.css";
 
 const filters = ["All", "Draft", "Sent", "Overdue", "Paid"];
 
@@ -64,12 +66,13 @@ function normalizeInvoice(invoice, index) {
 }
 
 export default function FreshInvoices({ onNavigate }) {
-  const api = useApi();
+  const { get } = useApi();
   const [invoices, setInvoices] = React.useState([]);
   const [selectedId, setSelectedId] = React.useState("");
   const [filter, setFilter] = React.useState("All");
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
+  const [invoicePopupOpen, setInvoicePopupOpen] = React.useState(false);
 
   const visibleInvoices = filter === "All" ? invoices : invoices.filter((invoice) => invoice.status === filter);
   const selected = invoices.find((invoice) => invoice.id === selectedId) || visibleInvoices[0] || invoices[0];
@@ -80,7 +83,7 @@ export default function FreshInvoices({ onNavigate }) {
     setLoading(true);
     setError("");
 
-    const res = await api.get("/invoices");
+    const res = await get("/invoices", { timeout: 25000 });
 
     if (!res.success) {
       setInvoices([]);
@@ -97,7 +100,7 @@ export default function FreshInvoices({ onNavigate }) {
     setInvoices(nextInvoices);
     setSelectedId((current) => nextInvoices.some((invoice) => invoice.id === current) ? current : nextInvoices[0]?.id || "");
     setLoading(false);
-  }, [api]);
+  }, [get]);
 
   React.useEffect(() => {
     loadInvoices();
@@ -109,8 +112,8 @@ export default function FreshInvoices({ onNavigate }) {
     return () => window.removeEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
   }, [loadInvoices]);
 
-  function go(path) {
-    window.location.href = path;
+  function openInvoicePopup() {
+    setInvoicePopupOpen(true);
   }
 
   return (
@@ -235,12 +238,33 @@ export default function FreshInvoices({ onNavigate }) {
         <aside className="freshCard">
           <h2>Owner actions</h2>
           <div className="freshActions">
-            <button className="freshPrimary" type="button" onClick={() => go("/invoices/new")}>New invoice</button>
+            <button className="freshPrimary" type="button" onClick={openInvoicePopup}>New invoice</button>
             <button className="freshPrimary" type="button" onClick={loadInvoices}>Refresh invoices</button>
             <button className="freshGhost" type="button" onClick={() => onNavigate?.("command")}>Send issue to Command</button>
           </div>
         </aside>
       </section>
+      {invoicePopupOpen ? (
+        <div className="freshRoutePopupBackdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setInvoicePopupOpen(false); }}>
+          <section className="freshCard freshRoutePopupCard">
+            <button className="freshRoutePopupClose" type="button" onClick={() => setInvoicePopupOpen(false)}>×</button>
+            <header className="freshHero freshRoutePopupHero">
+              <span>New invoice</span>
+              <h1>Create draft invoice</h1>
+              <p>Add the real invoice here without leaving the Invoices area.</p>
+            </header>
+            <InvoiceQuickCreateForm
+              onCancel={() => setInvoicePopupOpen(false)}
+              onSuccess={() => {
+                setInvoicePopupOpen(false);
+                loadInvoices();
+                try { window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "invoice-created" } })); } catch {}
+              }}
+            />
+          </section>
+        </div>
+      ) : null}
+
     </section>
   );
 }

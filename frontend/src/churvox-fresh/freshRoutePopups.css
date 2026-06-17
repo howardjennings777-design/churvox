@@ -1,0 +1,170 @@
+/* CHURVOX_QUOTE_INVOICE_ROUTE_POPUPS_20260617 */
+
+.freshRoutePopupBackdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483000 !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 18px !important;
+  background: rgba(2, 6, 23, .68) !important;
+  backdrop-filter: blur(7px) !important;
+  box-sizing: border-box !important;
+}
+
+.freshRoutePopupCard {
+  width: min(920px, calc(100vw - 42px)) !important;
+  max-height: 90dvh !important;
+  overflow: auto !important;
+  border-radius: 28px !important;
+  padding: 18px !important;
+  background: #fffaf0 !important;
+  position: relative !important;
+  box-shadow: 0 34px 100px rgba(0, 0, 0, .42) !important;
+}
+
+.freshRoutePopupHero {
+  min-height: 132px !important;
+  margin-bottom: 14px !important;
+  padding: 22px 26px !important;
+  border-radius: 24px !important;
+}
+
+.freshRoutePopupHero h1 {
+  font-size: clamp(42px, 5vw, 64px) !important;
+  line-height: .88 !important;
+  margin: 12px 56px 8px 0 !important;
+}
+
+.freshRoutePopupClose {
+  position: absolute !important;
+  right: 16px !important;
+  top: 16px !important;
+  z-index: 20 !important;
+  width: 44px !important;
+  height: 44px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: #111827 !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  font-size: 25px !important;
+  font-weight: 1000 !important;
+  cursor: pointer !important;
+}
+
+.freshRoutePopupForm {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, .14) !important;
+  border-radius: 22px !important;
+  padding: 18px !important;
+}
+
+.freshRoutePopupForm label {
+  display: grid !important;
+  gap: 7px !important;
+}
+
+.freshRoutePopupForm label.wide {
+  grid-column: 1 / -1 !important;
+}
+
+.freshRoutePopupForm label span {
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .13em !important;
+  text-transform: uppercase !important;
+}
+
+.freshRoutePopupForm input,
+.freshRoutePopupForm textarea,
+.freshRoutePopupForm select,
+.freshRoutePopupCard input,
+.freshRoutePopupCard textarea,
+.freshRoutePopupCard select {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  min-height: 48px !important;
+  border: 1.5px solid rgba(15, 23, 42, .17) !important;
+  border-radius: 16px !important;
+  background: #fffdf7 !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  padding: 12px 13px !important;
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  line-height: 1.25 !important;
+  outline: none !important;
+}
+
+.freshRoutePopupForm textarea,
+.freshRoutePopupCard textarea {
+  min-height: 92px !important;
+  resize: vertical !important;
+}
+
+.freshRoutePopupActions {
+  grid-column: 1 / -1 !important;
+  position: sticky !important;
+  bottom: -18px !important;
+  z-index: 12 !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  margin: 0 -18px -18px !important;
+  padding: 14px 18px !important;
+  background: rgba(255, 255, 255, .97) !important;
+  border-top: 1px solid rgba(15, 23, 42, .12) !important;
+  border-radius: 0 0 24px 24px !important;
+}
+
+/* Tame older dark create forms inside these popups */
+.freshRoutePopupCard form {
+  color: #0f172a !important;
+}
+
+.freshRoutePopupCard form [class*="bg-slate"],
+.freshRoutePopupCard form [class*="border-slate"] {
+  background: #ffffff !important;
+  border-color: rgba(15, 23, 42, .14) !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+.freshRoutePopupCard form [class*="text-white"],
+.freshRoutePopupCard form [class*="text-slate"] {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+.freshRoutePopupCard form .sticky {
+  background: rgba(255, 255, 255, .97) !important;
+  border-top: 1px solid rgba(15, 23, 42, .12) !important;
+}
+
+@media (max-width: 760px) {
+  .freshRoutePopupBackdrop {
+    align-items: end !important;
+    padding: 10px !important;
+  }
+
+  .freshRoutePopupCard {
+    width: 100% !important;
+    max-height: 92dvh !important;
+    border-radius: 24px 24px 18px 18px !important;
+    padding: 14px !important;
+  }
+
+  .freshRoutePopupForm {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshRoutePopupActions {
+    flex-direction: column !important;
+  }
+}

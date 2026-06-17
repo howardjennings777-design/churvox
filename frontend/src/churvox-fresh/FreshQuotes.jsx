@@ -1,5 +1,7 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
+import QuoteCreateForm from "../components/forms/QuoteCreateForm";
+import "./freshRoutePopups.css";
 
 const filters = ["All", "Draft", "Sent", "Accepted", "Declined"];
 
@@ -62,12 +64,13 @@ function normalizeQuote(quote, index) {
 }
 
 export default function FreshQuotes({ onNavigate }) {
-  const api = useApi();
+  const { get } = useApi();
   const [quotes, setQuotes] = React.useState([]);
   const [selectedId, setSelectedId] = React.useState("");
   const [filter, setFilter] = React.useState("All");
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
+  const [quotePopupOpen, setQuotePopupOpen] = React.useState(false);
 
   const visibleQuotes = filter === "All" ? quotes : quotes.filter((quote) => quote.status === filter);
   const selected = quotes.find((quote) => quote.id === selectedId) || visibleQuotes[0] || quotes[0];
@@ -77,7 +80,7 @@ export default function FreshQuotes({ onNavigate }) {
   const loadQuotes = React.useCallback(async () => {
     setLoading(true);
     setError("");
-    const res = await api.get("/quotes");
+    const res = await get("/quotes", { timeout: 25000 });
 
     if (!res.success) {
       setQuotes([]);
@@ -94,7 +97,7 @@ export default function FreshQuotes({ onNavigate }) {
     setQuotes(nextQuotes);
     setSelectedId((current) => nextQuotes.some((quote) => quote.id === current) ? current : nextQuotes[0]?.id || "");
     setLoading(false);
-  }, [api]);
+  }, [get]);
 
   React.useEffect(() => {
     loadQuotes();
@@ -106,8 +109,8 @@ export default function FreshQuotes({ onNavigate }) {
     return () => window.removeEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
   }, [loadQuotes]);
 
-  function go(path) {
-    window.location.href = path;
+  function openQuotePopup() {
+    setQuotePopupOpen(true);
   }
 
   return (
@@ -232,12 +235,34 @@ export default function FreshQuotes({ onNavigate }) {
         <aside className="freshCard">
           <h2>Owner actions</h2>
           <div className="freshActions">
-            <button className="freshPrimary" type="button" onClick={() => go("/quotes/new")}>New quote</button>
+            <button className="freshPrimary" type="button" onClick={openQuotePopup}>New quote</button>
             <button className="freshPrimary" type="button" onClick={loadQuotes}>Refresh quotes</button>
             <button className="freshGhost" type="button" onClick={() => onNavigate?.("command")}>Send follow-up to Command</button>
           </div>
         </aside>
       </section>
+      {quotePopupOpen ? (
+        <div className="freshRoutePopupBackdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setQuotePopupOpen(false); }}>
+          <section className="freshCard freshRoutePopupCard">
+            <button className="freshRoutePopupClose" type="button" onClick={() => setQuotePopupOpen(false)}>×</button>
+            <header className="freshHero freshRoutePopupHero">
+              <span>New quote</span>
+              <h1>Create quote</h1>
+              <p>Add the real quote here without leaving the Quotes area.</p>
+            </header>
+            <QuoteCreateForm
+              submitLabel="Create quote"
+              onCancel={() => setQuotePopupOpen(false)}
+              onSuccess={() => {
+                setQuotePopupOpen(false);
+                loadQuotes();
+                try { window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "quote-created" } })); } catch {}
+              }}
+            />
+          </section>
+        </div>
+      ) : null}
+
     </section>
   );
 }
