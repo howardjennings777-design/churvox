@@ -1,0 +1,209 @@
+/* CHURVOX_WORKER_COMMAND_PC_VIEW_20260617 */
+
+.freshWorkerCommandPage {
+  display: grid;
+  gap: 14px;
+}
+
+.freshWorkerCommandHero {
+  min-height: 190px !important;
+}
+
+.freshWorkerCommandLayout {
+  display: grid;
+  grid-template-columns: minmax(230px, .7fr) minmax(0, 2fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.freshWorkerCommandList {
+  position: sticky;
+  top: 92px;
+  display: grid;
+  gap: 10px;
+  max-height: calc(100dvh - 118px);
+  overflow: auto;
+}
+
+.freshWorkerCommandWorker {
+  width: 100%;
+  text-align: left;
+  display: grid;
+  gap: 4px;
+  border: 1px solid rgba(15,23,42,.13);
+  border-left: 6px solid #111827;
+  border-radius: 18px;
+  background: #fff;
+  padding: 13px;
+  cursor: pointer;
+}
+
+.freshWorkerCommandWorker.active {
+  border-left-color: #f97316;
+  background: #fff7ed;
+  box-shadow: 0 12px 28px rgba(249,115,22,.12);
+}
+
+.freshWorkerCommandWorker b {
+  color: #101827;
+  font-size: 15px;
+}
+
+.freshWorkerCommandWorker span,
+.freshWorkerCommandWorker small {
+  color: #475569;
+  font-weight: 850;
+}
+
+.freshWorkerCommandMain {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.freshWorkerProfileTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-left: 7px solid #f97316 !important;
+}
+
+.freshWorkerProfileTop span,
+.freshWorkerCommandStats span {
+  color: #9a3412;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.freshWorkerProfileTop h2 {
+  margin: 6px 0 4px;
+  color: #101827;
+  font-size: clamp(34px, 4vw, 58px);
+  line-height: .92;
+  letter-spacing: -.065em;
+}
+
+.freshWorkerProfileTop p {
+  margin: 0;
+  color: #475569;
+  font-weight: 850;
+}
+
+.freshWorkerStatusPill {
+  border-radius: 999px;
+  background: #111827;
+  color: #fff;
+  padding: 12px 16px;
+  font-weight: 1000;
+  white-space: nowrap;
+}
+
+.freshWorkerCommandStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.freshWorkerCommandStats .freshCard {
+  min-height: 112px;
+  display: grid;
+  align-content: center;
+  gap: 6px;
+}
+
+.freshWorkerCommandStats b {
+  color: #101827;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.freshWorkerCommandStats small {
+  color: #475569;
+  font-weight: 850;
+}
+
+.freshWorkerCommandGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: stretch;
+}
+
+.freshWorkerTimeline {
+  display: grid;
+  gap: 10px;
+}
+
+.freshWorkerTimeline div {
+  border-left: 5px solid #f97316;
+  border-radius: 16px;
+  background: #fff;
+  padding: 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.freshWorkerTimeline b {
+  color: #101827;
+}
+
+.freshWorkerTimeline span {
+  color: #475569;
+  font-weight: 850;
+}
+
+.freshWorkerCommandJobs {
+  display: grid;
+  gap: 10px;
+}
+
+.freshWorkerCommandJob {
+  border: 1px solid rgba(15,23,42,.12);
+  border-left: 6px solid #16a34a;
+  border-radius: 18px;
+  background: #fff;
+  padding: 13px;
+  display: grid;
+  gap: 5px;
+}
+
+.freshWorkerCommandJob b {
+  color: #101827;
+  font-size: 16px;
+}
+
+.freshWorkerCommandJob span,
+.freshWorkerCommandJob small {
+  color: #475569;
+  font-weight: 850;
+}
+
+@media (max-width: 1100px) {
+  .freshWorkerCommandLayout,
+  .freshWorkerCommandGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .freshWorkerCommandList {
+    position: static;
+    max-height: none;
+  }
+
+  .freshWorkerCommandStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .freshWorkerCommandStats {
+    grid-template-columns: 1fr;
+  }
+
+  .freshWorkerProfileTop {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

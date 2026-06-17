@@ -168,6 +168,7 @@ import FreshTimeLogs from "./FreshTimeLogs";
 import FreshVariations from "./FreshVariations";
 import FreshWarranties from "./FreshWarranties";
 import FreshWorker from "./FreshWorker";
+import FreshWorkerCommand from "./FreshWorkerCommand";
 import FreshWorkerBrief from "./FreshWorkerBrief";
 import FreshWorkerPerformance from "./FreshWorkerPerformance";
 import FreshMaterialsReminder from "./FreshMaterialsReminder";
@@ -204,7 +205,7 @@ function requiredPlanName(page) { const required = FEATURE_PLAN[page] || "start"
 function guideComplete() { try { return window.localStorage.getItem(GUIDE_COMPLETE_KEY) === "true"; } catch { return false; } }
 
 const pages = new Set([
-  "smart", "morningbrief", "messagetriage", "schedulerai", "askchurvox", "globalactions", "aioperator", "invoicecheck", "quickcreateai", "followupwriter", "planday", "command", "jobs", "recurring", "recurringsaver", "leads", "dispatch", "routes", "areas", "clients", "quotes", "quoteai", "invoices", "payments", "creditnotes", "customerportal", "approvals", "alerts", "audit", "setup", "launch", "launchpack", "launchcontrol", "demo", "onboarding", "firstrun", "setupassistant", "qa", "flags", "feedback", "roadmap", "imports", "exports", "security", "trustcenter", "roles", "billing", "aiusage", "templates", "gps", "xero", "nz", "team", "subcontractors", "availability", "payroll", "time", "reports", "profit", "profitguard", "pricelearner", "expenses", "assets", "inventory", "materialsai", "services", "industries", "settings", "plans", "support", "helpdesk", "integrations", "messages", "followups", "reviews", "reviewbooster", "quality", "reworkresolver", "extras", "variations", "warranties", "cancellations", "photos", "photoproof", "documents", "contracts", "safety", "automation", "portal", "worker", "workerbrief", "workerperformance", "missinginfo", "customermemory", "upsellfinder", "businesshealth", "cashflowai", "paymentpromise"
+  "smart", "morningbrief", "messagetriage", "schedulerai", "askchurvox", "globalactions", "aioperator", "invoicecheck", "quickcreateai", "followupwriter", "planday", "command", "jobs", "recurring", "recurringsaver", "leads", "dispatch", "routes", "areas", "clients", "quotes", "quoteai", "invoices", "payments", "creditnotes", "customerportal", "approvals", "alerts", "audit", "setup", "launch", "launchpack", "launchcontrol", "demo", "onboarding", "firstrun", "setupassistant", "qa", "flags", "feedback", "roadmap", "imports", "exports", "security", "trustcenter", "roles", "billing", "aiusage", "templates", "gps", "xero", "nz", "team", "subcontractors", "availability", "payroll", "time", "reports", "profit", "profitguard", "pricelearner", "expenses", "assets", "inventory", "materialsai", "services", "industries", "settings", "plans", "support", "helpdesk", "integrations", "messages", "followups", "reviews", "reviewbooster", "quality", "reworkresolver", "extras", "variations", "warranties", "cancellations", "photos", "photoproof", "documents", "contracts", "safety", "automation", "portal", "worker", "workercommand", "workerbrief", "workerperformance", "missinginfo", "customermemory", "upsellfinder", "businesshealth", "cashflowai", "paymentpromise"
 ]);
 
 function FreshUpgradeGate({ page, plan, onNavigate }) {
@@ -344,6 +345,7 @@ export default function FreshApp() {
     if (page === "automation") content = <FreshAutomation onNavigate={goToPage} />;
     if (page === "portal") content = <FreshClientPortal onNavigate={goToPage} />;
     if (page === "worker") content = <FreshWorker onNavigate={goToPage} />;
+    if (page === "workercommand") content = <FreshWorkerCommand onNavigate={goToPage} />;
     if (page === "workerbrief") content = <FreshWorkerBrief onNavigate={goToPage} />;
     if (page === "workerperformance") content = <FreshWorkerPerformance onNavigate={goToPage} />;
     if (page === "missinginfo") content = <FreshMissingInfo onNavigate={goToPage} />;

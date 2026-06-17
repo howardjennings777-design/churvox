@@ -11,7 +11,7 @@ const groups = [
   { title: "Daily", items: [["smart", "TD", "Today"], ["quickcreateai", "AI", "Tell Churvox"], ["command", "RV", "Review"]] },
   { title: "Work", items: [["jobs", "JB", "Jobs"], ["dispatch", "SC", "Schedule"], ["clients", "CL", "Clients"]] },
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["xero", "XE", "Xero"]] },
-  { title: "People", items: [["team", "TM", "Team"], ["time", "TL", "Time"], ["payroll", "PR", "Payroll"]] },
+  { title: "People", items: [["team", "TM", "Team"], ["workercommand", "WC", "Worker View"], ["time", "TL", "Time"], ["payroll", "PR", "Payroll"]] },
   { title: "More", items: [["reports", "RP", "Reports"], ["automation", "AT", "Automation"], ["settings", "SG", "Settings"], ["plans", "PL", "Plans"], ["support", "SP", "Support"]] },
 ];
 
@@ -51,6 +51,7 @@ const purpose = {
   invoices: "Draft, send, track and follow up money owed.",
   xero: "Owner-approved draft invoice sync only.",
   team: "People, invites, roles and worker app access.",
+  workercommand: "Worker command: live status, time, GPS, jobs and alerts.",
   time: "Worker hours and job time logs.",
   payroll: "Pay period workspace from approved time, no tax filing or bank files.",
   reports: "Business reporting, cashflow and performance.",
@@ -72,7 +73,7 @@ function guideIsComplete() { try { return window.localStorage.getItem(GUIDE_COMP
 function uniqueItems(items) { const seen = new Set(); return items.filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }); }
 function stripHiddenItems(items, guideComplete) { return items.filter(([key]) => !(guideComplete && key === "setupassistant")); }
 function cleanGroups(sourceGroups, guideComplete = false) { const seen = new Set(); return sourceGroups.map((group) => ({ ...group, items: stripHiddenItems(group.items, guideComplete).filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }) })).filter((group) => group.items.length); }
-function buildLabels() { const entries = [...groups.flatMap((group) => group.items), ...Object.values(relatedTools).flat()]; const nextLabels = Object.fromEntries(entries.map(([key, , label]) => [key, label])); nextLabels.quickcreateai = "Tell Churvox"; nextLabels.command = "Review"; nextLabels.smart = "Today"; nextLabels.dispatch = "Schedule"; nextLabels.payments = "Payments"; nextLabels.photos = "Photos"; nextLabels.documents = "Documents"; nextLabels.setupassistant = "AI Guide"; nextLabels.security = "Security"; return nextLabels; }
+function buildLabels() { const entries = [...groups.flatMap((group) => group.items), ...Object.values(relatedTools).flat()]; const nextLabels = Object.fromEntries(entries.map(([key, , label]) => [key, label])); nextLabels.quickcreateai = "Tell Churvox"; nextLabels.command = "Review"; nextLabels.smart = "Today"; nextLabels.dispatch = "Schedule"; nextLabels.workercommand = "Worker View"; nextLabels.payments = "Payments"; nextLabels.photos = "Photos"; nextLabels.documents = "Documents"; nextLabels.setupassistant = "AI Guide"; nextLabels.security = "Security"; return nextLabels; }
 function buildParentMap() { const map = {}; Object.entries(relatedTools).forEach(([parent, items]) => { items.forEach(([key]) => { if (!map[key]) map[key] = parent; }); }); groups.forEach((group) => group.items.forEach(([key]) => { map[key] = key; })); map.routes = "dispatch"; map.areas = "dispatch"; map.schedulerai = "dispatch"; map.gps = "time"; map.portal = "clients"; map.followupwriter = "clients"; map.reviewbooster = "clients"; return map; }
 function resetFreshScrollTop() {
   const top = () => {
