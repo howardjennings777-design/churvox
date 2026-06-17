@@ -40,18 +40,56 @@ function parseNameFromText(text) {
   return "";
 }
 
+function titleCaseName(value) {
+  return String(value || "")
+    .trim()
+    .split(/\s+/)
+    .map((part) => part ? part[0].toUpperCase() + part.slice(1).toLowerCase() : "")
+    .join(" ");
+}
+
+function parseRepeatFromText(text) {
+  const raw = String(text || "").toLowerCase();
+  if (/fortnight|every\s*2\s*weeks/.test(raw)) return "fortnightly";
+  if (/weekly|every\s*week/.test(raw)) return "weekly";
+  if (/monthly|every\s*month/.test(raw)) return "monthly";
+  return "";
+}
+
+function parseWorkFromText(text) {
+  const raw = String(text || "").toLowerCase();
+  if (/lawn\s*mowing|lawnmowing|\bmow\b|mowing/.test(raw)) return "Lawn mowing";
+  if (/hedge/.test(raw)) return "Hedge trimming";
+  if (/clean|cleaning/.test(raw)) return "Cleaning";
+  if (/paint|painting/.test(raw)) return "Painting";
+  if (/pest/.test(raw)) return "Pest control";
+  return "";
+}
+
+function parseCleanDateFromText(text) {
+  const raw = String(text || "");
+  const m = raw.match(/\b(\d{1,2})(?:st|nd|rd|th)?\s+(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/i);
+  if (m) return `${m[1]} ${m[2][0].toUpperCase()}${m[2].slice(1).toLowerCase()}`;
+  return "";
+}
+
 function buildDraft(item) {
   const p = payloadOf(item);
   const original = item?.original_text || "";
-  const customer = p.customer_name || p.client_name || p.name || parseNameFromText(original) || "";
+
+  const customer = titleCaseName(p.customer_name || p.client_name || p.name || parseNameFromText(original) || "");
+  const work = parseWorkFromText(original) || p.job_description || p.description || p.title || original || "";
+  const cleanDate = parseCleanDateFromText(original) || p.scheduled_date_human || dateValue(p.scheduled_date || p.date) || "";
+  const repeat = p.repeat || p.recurrence || parseRepeatFromText(original);
+
   return {
     customer_name: customer,
     address: p.address || "",
-    title: p.title || p.description || p.job_description || original || "",
+    title: work,
     job_type: p.job_type || "lawn_mowing",
     price: moneyValue(p.price || p.amount || p.subtotal || p.total),
-    scheduled_date_human: p.scheduled_date_human || dateValue(p.scheduled_date || p.date) || "",
-    repeat: p.repeat || p.recurrence || "",
+    scheduled_date_human: cleanDate,
+    repeat,
     email: p.email || p.customer_email || "",
     phone: p.phone || "",
     notes: p.notes || original || "",
@@ -62,7 +100,7 @@ function titleOf(item) {
   const p = payloadOf(item);
   const action = actionOf(item);
   const existing = item?.title || item?.summary;
-  const customer = p.customer_name || p.client_name || p.name || parseNameFromText(item?.original_text);
+  const customer = titleCaseName(p.customer_name || p.client_name || p.name || parseNameFromText(item?.original_text));
 
   if (existing && !genericText(existing)) return existing;
   if (action === "create_job") return `New job${customer ? ` for ${customer}` : ""}`;
@@ -74,7 +112,7 @@ function titleOf(item) {
 
 function summaryOf(item) {
   const p = payloadOf(item);
-  const customer = p.customer_name || p.client_name || p.name || parseNameFromText(item?.original_text);
+  const customer = titleCaseName(p.customer_name || p.client_name || p.name || parseNameFromText(item?.original_text));
   const bits = [
     customer,
     p.address,
@@ -154,7 +192,7 @@ function FilledForm({ item, draft, setDraft }) {
 
         <label>
           <span>Address / site</span>
-          <input value={draft.address} onChange={update("address")} placeholder="Job address" />
+          <input value={draft.address} onChange={update("address")} placeholder="Address missing — add before approval" />
         </label>
 
         {action !== "create_client" ? (
@@ -177,7 +215,7 @@ function FilledForm({ item, draft, setDraft }) {
             <label>
               <span>Repeat</span>
               <select value={draft.repeat} onChange={update("repeat")}>
-                <option value="">One-off</option>
+                <option value="">One-off / not set</option>
                 <option value="weekly">Weekly</option>
                 <option value="fortnightly">Fortnightly</option>
                 <option value="monthly">Monthly</option>
