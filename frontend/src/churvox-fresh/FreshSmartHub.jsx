@@ -118,24 +118,64 @@ export default function FreshSmartHub({ onNavigate }) {
 
   return (
     <section className="freshSmartPage">
-      <div className="freshSmartHero">
+      <div className="freshSmartHero freshSmartHero--today">
         <div>
-          <span>Business Pulse</span>
-          <h1>Your business pulse.</h1>
-          <p>Business Pulse is the dashboard: today’s jobs, cash waiting, crew gaps, setup health and quick actions. Command is separate for approvals.</p>
-          <div className="freshSmartSync"><b>{loading ? "Syncing live data..." : "Live business data connected"}</b>{lastSynced ? <small>Last synced {lastSynced}</small> : null}<button type="button" onClick={loadLiveData} disabled={loading}>{loading ? "Refreshing..." : "Refresh"}</button></div>
+          <span>Today</span>
+          <h1>What needs doing?</h1>
+          <p>A clean daily view of jobs, money, crew gaps and admin waiting for you.</p>
+          <div className="freshSmartSync"><b>{loading ? "Refreshing live data..." : "Live data connected"}</b>{lastSynced ? <small>Synced {lastSynced}</small> : null}<button type="button" onClick={loadLiveData} disabled={loading}>{loading ? "Refreshing..." : "Refresh"}</button></div>
           {syncError ? <p className="freshSmartError">{syncError}</p> : null}
         </div>
-        <div className="freshSmartStats"><div><b>{overview.todayJobs.length}</b><small>jobs today</small></div><div><b>{money(overview.owingAmount)}</b><small>money waiting</small></div><div><b>{overview.unassignedJobs.length}</b><small>worker gaps</small></div><div><b>{overview.commandCount}</b><small>Command queue</small></div></div>
+        <div className="freshSmartStats freshSmartStats--today">
+          <button type="button" onClick={() => onNavigate?.("jobs")}><b>{overview.todayJobs.length}</b><small>Jobs today</small></button>
+          <button type="button" onClick={() => onNavigate?.("invoices")}><b>{money(overview.owingAmount)}</b><small>Money waiting</small></button>
+          <button type="button" onClick={() => onNavigate?.("jobs")}><b>{overview.unassignedJobs.length}</b><small>Need worker</small></button>
+          <button type="button" onClick={() => onNavigate?.("command")}><b>{overview.commandCount}</b><small>Need review</small></button>
+        </div>
       </div>
 
       <FreshNewUserGuide onNavigate={onNavigate} mode="compact" />
 
-      <div className="freshSmartGrid">
-        <article className="freshSmartPanel freshSmartWide"><header><span>Today / this week</span><h2>Business pulse</h2><p>Open the area you need. Business Pulse does not approve or send anything.</p></header><div className="freshSmartFlow"><MetricButton value={overview.todayJobs.length} label="jobs today" page="jobs" onNavigate={onNavigate} /><MetricButton value={overview.weekJobs.length} label="jobs this week" page="jobs" onNavigate={onNavigate} /><MetricButton value={overview.activeJobs.length} label="active jobs" page="dispatch" onNavigate={onNavigate} /><MetricButton value={overview.liveCrew.length} label="crew active" page="team" onNavigate={onNavigate} /><MetricButton value={overview.unassignedJobs.length} label="need workers" page="jobs" onNavigate={onNavigate} /><MetricButton value={overview.acceptedQuotes.length} label="accepted quotes" page="quotes" onNavigate={onNavigate} /></div></article>
-        <article className="freshSmartPanel"><header><span>Money</span><h2>Cash waiting</h2><p>Money view only. Use Command to approve invoice/reminder actions.</p></header><div className="freshSmartLaunchButtons"><button type="button" onClick={() => onNavigate?.("invoices")}>{money(overview.owingAmount)} owing</button><button type="button" onClick={() => onNavigate?.("invoices")}>{money(overview.overdueAmount)} overdue</button><button type="button" onClick={() => onNavigate?.("invoices")}>{money(overview.readyToInvoiceAmount)} ready to invoice</button><button type="button" onClick={() => onNavigate?.("jobs")}>{overview.completedReadyToInvoice.length} completed jobs need invoice</button></div></article>
-        <article className="freshSmartPanel"><header><span>Setup health</span><h2>Things that block admin</h2><p>Fix these so quotes, invoices, messages and Command actions are cleaner.</p></header><div className="freshSmartLaunchButtons"><button type="button" onClick={() => onNavigate?.("clients")}>{overview.clientsMissingDetails.length} clients missing contact details</button><button type="button" onClick={() => onNavigate?.("quotes")}>{overview.quotesToChase.length} quotes still open</button><button type="button" onClick={() => onNavigate?.("team")}>{overview.workers.length} workers on file</button><button type="button" onClick={() => onNavigate?.("settings")}>Open business setup</button></div></article>
-        <article className="freshSmartPanel"><header><span>Command queue</span><h2>{overview.commandCount} items may need approval</h2><p>Command is the decision desk. Business Pulse only tells you whether something is waiting.</p></header><div className="freshSmartLaunchButtons"><button type="button" onClick={() => onNavigate?.("command")}>Open Command approval desk</button><button type="button" onClick={() => onNavigate?.("alerts")}>Open alerts</button></div></article>
+      <div className="freshSmartTodayGrid">
+        <article className="freshSmartPanel freshSmartPanel--main">
+          <header><span>Work</span><h2>Today and this week</h2><p>Open jobs, schedule or crew from here.</p></header>
+          <div className="freshSmartActionGrid">
+            <button type="button" onClick={() => onNavigate?.("jobs")}><b>{overview.todayJobs.length}</b><span>Jobs today</span><small>Open job board</small></button>
+            <button type="button" onClick={() => onNavigate?.("jobs")}><b>{overview.weekJobs.length}</b><span>This week</span><small>See upcoming work</small></button>
+            <button type="button" onClick={() => onNavigate?.("dispatch")}><b>{overview.activeJobs.length}</b><span>Active jobs</span><small>Open schedule</small></button>
+            <button type="button" onClick={() => onNavigate?.("team")}><b>{overview.liveCrew.length}</b><span>Crew active</span><small>Check team</small></button>
+          </div>
+        </article>
+
+        <article className="freshSmartPanel freshSmartPanel--quick">
+          <header><span>Quick create</span><h2>Add work fast</h2><p>Pop-up forms stay on this screen.</p></header>
+          <div className="freshSmartLaunchButtons">
+            <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: { search: "" } }))}>Add job</button>
+            <button type="button" onClick={() => window.dispatchEvent(new Event("churvox:open-client-popup"))}>Add client</button>
+            <button type="button" onClick={() => onNavigate?.("quickcreateai")}>Tell Churvox</button>
+            <button type="button" onClick={() => onNavigate?.("command")}>Review prepared work</button>
+          </div>
+        </article>
+
+        <article className="freshSmartPanel">
+          <header><span>Money</span><h2>Cash waiting</h2><p>Invoices and completed jobs that may need attention.</p></header>
+          <div className="freshSmartLaunchButtons">
+            <button type="button" onClick={() => onNavigate?.("invoices")}>{money(overview.owingAmount)} owing</button>
+            <button type="button" onClick={() => onNavigate?.("invoices")}>{money(overview.overdueAmount)} overdue</button>
+            <button type="button" onClick={() => onNavigate?.("invoices")}>{money(overview.readyToInvoiceAmount)} ready to invoice</button>
+            <button type="button" onClick={() => onNavigate?.("jobs")}>{overview.completedReadyToInvoice.length} completed jobs need invoice</button>
+          </div>
+        </article>
+
+        <article className="freshSmartPanel">
+          <header><span>Needs action</span><h2>Admin blockers</h2><p>Fix these so Churvox can prepare cleaner admin.</p></header>
+          <div className="freshSmartLaunchButtons">
+            <button type="button" onClick={() => onNavigate?.("clients")}>{overview.clientsMissingDetails.length} clients missing contact details</button>
+            <button type="button" onClick={() => onNavigate?.("quotes")}>{overview.quotesToChase.length} quotes still open</button>
+            <button type="button" onClick={() => onNavigate?.("team")}>{overview.workers.length} workers on file</button>
+            <button type="button" onClick={() => onNavigate?.("settings")}>Open business setup</button>
+          </div>
+        </article>
       </div>
     </section>
   );
