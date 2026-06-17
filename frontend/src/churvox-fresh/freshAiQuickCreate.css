@@ -185,3 +185,16 @@
     min-height: 180px !important;
   }
 }
+
+
+/* CHURVOX_TELL_CHURVOX_ACTION_CHIPS_20260617 */
+.freshQuickAiPage--clean > div[aria-label="Tell Churvox examples"] > section:first-child {
+  border-color: rgba(249,115,22,.28) !important;
+  background: rgba(255,247,237,.95) !important;
+}
+
+.freshQuickAiPage--clean > div[aria-label="Tell Churvox examples"] > section:first-child button {
+  background: #f97316 !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}

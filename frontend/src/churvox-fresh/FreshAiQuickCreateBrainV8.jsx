@@ -17,7 +17,7 @@ function ActionGroups({ onPick }) {
         <span style={{ color: "#9a3412", WebkitTextFillColor: "#9a3412", fontWeight: 1000, fontSize: 10, textTransform: "uppercase", letterSpacing: ".12em" }}>{group.hint}</span>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-        {group.actions.map(([key, label, value]) => <button key={key} type="button" style={pillButton} onClick={() => onPick(value)}>{label}</button>)}
+        {group.actions.map(([key, label, value]) => <button key={key} type="button" style={pillButton} onClick={() => onPick(key, value, label)}>{label}</button>)}
       </div>
     </section>)}
   </div>;
@@ -44,6 +44,32 @@ export default function FreshAiQuickCreateBrainV8({ onNavigate }) {
     setStatus(null);
   }
 
+  function handleQuickAction(key, value) {
+    if (key === "add-job") {
+      window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: { search: "" } }));
+      return;
+    }
+
+    if (key === "add-client") {
+      try { window.localStorage.setItem("churvox:fresh-open-client-modal:v1", "true"); } catch {}
+      onNavigate?.("clients");
+      window.setTimeout(() => window.dispatchEvent(new CustomEvent("churvox:open-client-popup")), 80);
+      return;
+    }
+
+    if (key === "add-quote") {
+      onNavigate?.("quotes");
+      return;
+    }
+
+    if (key === "add-invoice") {
+      onNavigate?.("invoices");
+      return;
+    }
+
+    setExample(value);
+  }
+
   async function prepareWithRealAi() {
     const instruction = text.trim();
     if (!instruction) {
@@ -61,6 +87,7 @@ export default function FreshAiQuickCreateBrainV8({ onNavigate }) {
     }
     const nextItem = res?.data?.item || res?.item || res?.data;
     setItem(nextItem);
+    setText("");
     setStatus({ tone: "ok", title: "Saved to Review", text: "Churvox AI prepared real backend Review work. Nothing changes until you approve it." });
     window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "backend-ai-review" } }));
   }
@@ -107,6 +134,6 @@ export default function FreshAiQuickCreateBrainV8({ onNavigate }) {
       </aside>
     </div>
 
-    <ActionGroups onPick={setExample} />
+    <ActionGroups onPick={handleQuickAction} />
   </section>;
 }
