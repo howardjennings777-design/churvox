@@ -1,336 +1,94 @@
 import React from "react";
+import { useApi } from "../hooks/useApi";
 
-const EXPORTS_KEY = "churvox:fresh-exports:v1";
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
 
-const defaults = [
-  {
-    id: "ex-1",
-    name: "Client list export",
-    dataType: "Clients",
-    format: "CSV",
-    rows: 186,
-    status: "Ready",
-    ownerApproval: "Required",
-    destination: "Owner download",
-    risk: "Low",
-    note: "Export customers for backup, review, or accounting prep.",
-    nextAction: "Owner approves download before customer data leaves Churvox.",
-  },
-  {
-    id: "ex-2",
-    name: "Payroll hours export",
-    dataType: "Payroll",
-    format: "CSV",
-    rows: 42,
-    status: "Needs review",
-    ownerApproval: "Required",
-    destination: "Payroll workspace",
-    risk: "High",
-    note: "Payroll export must stay owner-approved. No government submission. No bank payout file.",
-    nextAction: "Review manual time edits before export.",
-  },
-  {
-    id: "ex-3",
-    name: "Invoice report export",
-    dataType: "Invoices",
-    format: "CSV",
-    rows: 94,
-    status: "Draft",
-    ownerApproval: "Optional",
-    destination: "Reports",
-    risk: "Medium",
-    note: "Useful for paid, unpaid, overdue and GST review.",
-    nextAction: "Filter by date range before download.",
-  },
-];
+const DATASETS = {
+  Clients: { endpoint: "/clients", page: "clients", aliases: ["clients", "items", "results", "data"] },
+  Team: { endpoint: "/team/workers", page: "team", aliases: ["workers", "team", "items", "results", "data"] },
+  Jobs: { endpoint: "/jobs", page: "jobs", aliases: ["jobs", "items", "results", "data"] },
+  Quotes: { endpoint: "/quotes", page: "quotes", aliases: ["quotes", "items", "results", "data"] },
+  Invoices: { endpoint: "/invoices", page: "invoices", aliases: ["invoices", "items", "results", "data"] },
+};
 
-function readExports() {
+function unwrap(result) { return result?.data ?? result; }
+function asArray(payload, aliases = []) { const data = unwrap(payload); if (Array.isArray(data)) return data; for (const key of aliases) if (Array.isArray(data?.[key])) return data[key]; return []; }
+function text(value) { if (value === null || value === undefined) return ""; if (typeof value === "object") return JSON.stringify(value); return String(value); }
+function labelOf(record) { return record?.name || record?.client_name || record?.customer_name || record?.title || record?.job_title || record?.invoice_number || record?.email || record?.id || record?._id || "Record"; }
+function safeFileName(value) { return String(value || "churvox-export").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); }
+function collectColumns(rows) { const keys = new Set(); rows.forEach((row) => Object.keys(row || {}).forEach((key) => { if (!String(key).startsWith("__")) keys.add(key); })); return Array.from(keys); }
+function csvEscape(value) { return `"${text(value).replace(/"/g, '""')}"`; }
+function makeCsv(rows) { const columns = collectColumns(rows); const body = [columns, ...rows.map((row) => columns.map((key) => row?.[key]))]; return body.map((row) => row.map(csvEscape).join(",")).join("\n"); }
+function downloadCsv(dataset, rows) { const csv = makeCsv(rows); const blob = new Blob([csv], { type: "text/csv;charset=utf-8" }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `${safeFileName(dataset)}-${new Date().toISOString().slice(0, 10)}.csv`; link.click(); URL.revokeObjectURL(url); }
+function riskFor(dataset) { if (dataset === "Invoices") return "Medium"; if (dataset === "Team") return "High"; return "Low"; }
+function approvalFor(dataset) { return dataset === "Team" || dataset === "Invoices" ? "Required" : "Recommended"; }
+function readCommandInbox() { try { const raw = window.localStorage.getItem(COMMAND_INBOX_KEY); const parsed = raw ? JSON.parse(raw) : []; return Array.isArray(parsed) ? parsed : []; } catch { return []; } }
+function sendExportToCommand({ dataset, rows, status, message }) {
   try {
-    if (typeof window === "undefined") return defaults;
-    const saved = window.localStorage.getItem(EXPORTS_KEY);
-    if (!saved) return defaults;
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed : defaults;
-  } catch {
-    return defaults;
-  }
-}
-
-function saveExports(items) {
-  try {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(EXPORTS_KEY, JSON.stringify(items));
-      window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "exports" } }));
-    }
-  } catch {
-    // Fresh preview keeps working without local storage.
-  }
-}
-
-function sendExportToCommand(item) {
-  try {
-    const saved = window.localStorage.getItem(COMMAND_INBOX_KEY);
-    const current = saved ? JSON.parse(saved) : [];
-    const safeCurrent = Array.isArray(current) ? current : [];
-
-    const slip = {
-      id: `export-${item.id}-${Date.now()}`,
-      group: "Exports",
-      title: "Data export needs owner review",
-      info: `${item.name} · ${item.rows} rows · ${item.status}`,
-      urgency: item.risk,
-      found: `${item.dataType} export is prepared as ${item.format}.`,
-      prepared: `Churvox prepared export action: ${item.nextAction}`,
-      why: item.note,
-      owner: "Approve export, review rows, open related area, or keep draft.",
-      area: "Data Exports",
-      page: "exports",
-      fromInbox: true,
-      createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    };
-
-    window.localStorage.setItem(COMMAND_INBOX_KEY, JSON.stringify([slip, ...safeCurrent].slice(0, 20)));
+    const slip = { id: `export-${dataset}-${Date.now()}`, group: "Exports", area: "Data Exports", page: "exports", title: `${dataset} export review`, info: `${rows.length} ${dataset.toLowerCase()} row${rows.length === 1 ? "" : "s"} · ${status}`, urgency: riskFor(dataset), found: `Churvox found ${rows.length} live ${dataset.toLowerCase()} record${rows.length === 1 ? "" : "s"}.`, prepared: "Churvox prepared a CSV owner export review.", why: message || "Owners should be able to review and download their business records.", owner: "Review the data, download the CSV if correct, or open the source area first.", payload: { dataset, rows: rows.length, status, approval: approvalFor(dataset), sample: rows.slice(0, 3).map(labelOf) }, createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), fromInbox: true };
+    window.localStorage.setItem(COMMAND_INBOX_KEY, JSON.stringify([slip, ...readCommandInbox()].slice(0, 30)));
     window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "export-command" } }));
-  } catch {
-    // Fresh preview keeps working without local storage.
-  }
+  } catch {}
 }
 
 export default function FreshExports({ onNavigate }) {
-  const [items, setItems] = React.useState(readExports);
-  const [selectedId, setSelectedId] = React.useState(() => readExports()[0]?.id || "");
-  const selected = items.find((item) => item.id === selectedId) || items[0];
+  const { get } = useApi();
+  const [dataset, setDataset] = React.useState("Clients");
+  const [records, setRecords] = React.useState({ Clients: [], Team: [], Jobs: [], Quotes: [], Invoices: [] });
+  const [loading, setLoading] = React.useState(false);
+  const [message, setMessage] = React.useState("");
+  const currentRows = records[dataset] || [];
+  const totalRows = Object.values(records).reduce((sum, rows) => sum + rows.length, 0);
+  const readySets = Object.values(records).filter((rows) => rows.length > 0).length;
+  const datasetConfig = DATASETS[dataset];
 
-  const totalRows = items.reduce((sum, item) => sum + Number(item.rows || 0), 0);
-  const ready = items.filter((item) => item.status === "Ready").length;
-  const review = items.filter((item) => item.status === "Needs review").length;
-  const approvals = items.filter((item) => item.ownerApproval === "Required").length;
-
-  function updateItem(id, patch) {
-    setItems((current) => {
-      const next = current.map((item) => (item.id === id ? { ...item, ...patch } : item));
-      saveExports(next);
-      return next;
-    });
+  async function loadDataset(name = dataset) {
+    const config = DATASETS[name];
+    setLoading(true); setMessage("");
+    try {
+      const result = await get(config.endpoint, { timeout: 25000 });
+      if (!result?.success) throw new Error(result?.error || `Could not load ${name}.`);
+      const rows = asArray(result.data, config.aliases);
+      setRecords((current) => ({ ...current, [name]: rows }));
+      setMessage(`${name} loaded: ${rows.length} row${rows.length === 1 ? "" : "s"}.`);
+    } catch (err) {
+      setRecords((current) => ({ ...current, [name]: [] }));
+      setMessage(err?.message || `Could not load ${name}.`);
+    } finally { setLoading(false); }
   }
 
-  function addExport() {
-    const next = {
-      id: `ex-${Date.now()}`,
-      name: "New export",
-      dataType: "Clients",
-      format: "CSV",
-      rows: 0,
-      status: "Draft",
-      ownerApproval: "Required",
-      destination: "Owner download",
-      risk: "Medium",
-      note: "Owner decides before data leaves Churvox.",
-      nextAction: "Review filters and export fields.",
-    };
-
-    const updated = [next, ...items];
-    setItems(updated);
-    setSelectedId(next.id);
-    saveExports(updated);
+  async function loadAll() {
+    setLoading(true); setMessage("Loading live records...");
+    const next = {};
+    await Promise.all(Object.entries(DATASETS).map(async ([name, config]) => {
+      try { const result = await get(config.endpoint, { timeout: 25000 }); next[name] = result?.success ? asArray(result.data, config.aliases) : []; }
+      catch { next[name] = []; }
+    }));
+    setRecords(next); setLoading(false); setMessage("Live export data refreshed.");
   }
 
-  function resetExports() {
-    setItems(defaults);
-    setSelectedId(defaults[0]?.id || "");
-    saveExports(defaults);
+  React.useEffect(() => { loadAll(); }, []);
+
+  function exportCurrent() {
+    if (!currentRows.length) { setMessage(`No ${dataset} rows to export yet.`); return; }
+    downloadCsv(dataset, currentRows);
+    sendExportToCommand({ dataset, rows: currentRows, status: "Exported", message: `${dataset} CSV downloaded by owner.` });
+    setMessage(`${dataset} CSV downloaded and copied to Command.`);
   }
 
   function sendToCommand() {
-    if (!selected) return;
-    sendExportToCommand(selected);
+    sendExportToCommand({ dataset, rows: currentRows, status: currentRows.length ? "Ready" : "No data", message: `${dataset} export sent for owner review.` });
     onNavigate?.("command");
   }
 
-  function openDataArea(type) {
-    const map = {
-      Clients: "clients",
-      Team: "team",
-      Jobs: "jobs",
-      Invoices: "invoices",
-      Quotes: "quotes",
-      Payroll: "payroll",
-      Reports: "reports",
-    };
-    onNavigate?.(map[type] || "reports");
-  }
-
-  return (
-    <section className="freshExportsPage">
-      <div className="freshExportsHero">
-        <div>
-          <span>Data exports / CSV</span>
-          <h1>Let owners export the business data they need safely</h1>
-          <p>Prepare client lists, payroll hours, invoices, jobs and reports as owner-approved exports without sending anything to government or banks.</p>
-        </div>
-
-        <div className="freshExportsStats">
-          <div><b>{totalRows}</b><small>rows ready</small></div>
-          <div><b>{ready}</b><small>ready</small></div>
-          <div><b>{review}</b><small>review</small></div>
-          <div><b>{approvals}</b><small>approval</small></div>
-        </div>
-      </div>
-
-      <div className="freshExportsLayout">
-        <aside className="freshExportsList">
-          <header>
-            <div>
-              <b>Export desk</b>
-              <span>{approvals} owner-controlled</span>
-            </div>
-            <button type="button" onClick={addExport}>Add</button>
-          </header>
-
-          {items.map((item) => (
-            <button
-              type="button"
-              key={item.id}
-              className={selected?.id === item.id ? "active" : ""}
-              onClick={() => setSelectedId(item.id)}
-            >
-              <b>{item.name}</b>
-              <span>{item.dataType} · {item.format}</span>
-              <small>{item.rows} rows · {item.status}</small>
-            </button>
-          ))}
-
-          <button type="button" className="freshExportsReset" onClick={resetExports}>
-            Reset exports
-          </button>
-        </aside>
-
-        {selected && (
-          <article className="freshExportsDetail">
-            <div className="freshExportsHead">
-              <div>
-                <span>{selected.status}</span>
-                <h2>{selected.name}</h2>
-                <p>{selected.dataType} · {selected.rows} rows · {selected.destination}</p>
-              </div>
-
-              <div className="freshExportsHeadActions">
-                <button type="button" onClick={sendToCommand}>Send to Command</button>
-                <button type="button" onClick={() => openDataArea(selected.dataType)}>Open Area</button>
-                <button type="button" onClick={() => onNavigate?.("reports")}>Open Reports</button>
-              </div>
-            </div>
-
-            <div className="freshExportsCards">
-              <section>
-                <span>Export format</span>
-                <b>{selected.format}</b>
-                <p>Simple CSV export for owner download, review or migration.</p>
-              </section>
-
-              <section>
-                <span>Owner approval</span>
-                <b>{selected.ownerApproval}</b>
-                <p>Keep sensitive customer, invoice and payroll exports controlled.</p>
-              </section>
-
-              <section>
-                <span>Risk</span>
-                <b>{selected.risk}</b>
-                <p>{selected.note}</p>
-              </section>
-            </div>
-
-            <div className="freshExportsForm">
-              <label>
-                <span>Name</span>
-                <input value={selected.name} onChange={(event) => updateItem(selected.id, { name: event.target.value })} />
-              </label>
-
-              <label>
-                <span>Data type</span>
-                <select value={selected.dataType} onChange={(event) => updateItem(selected.id, { dataType: event.target.value })}>
-                  <option>Clients</option>
-                  <option>Team</option>
-                  <option>Jobs</option>
-                  <option>Invoices</option>
-                  <option>Quotes</option>
-                  <option>Payroll</option>
-                  <option>Reports</option>
-                </select>
-              </label>
-
-              <label>
-                <span>Format</span>
-                <select value={selected.format} onChange={(event) => updateItem(selected.id, { format: event.target.value })}>
-                  <option>CSV</option>
-                  <option>PDF summary</option>
-                  <option>Spreadsheet</option>
-                  <option>Backup bundle</option>
-                </select>
-              </label>
-
-              <label>
-                <span>Rows</span>
-                <input type="number" value={selected.rows} onChange={(event) => updateItem(selected.id, { rows: Number(event.target.value || 0) })} />
-              </label>
-
-              <label>
-                <span>Status</span>
-                <select value={selected.status} onChange={(event) => updateItem(selected.id, { status: event.target.value })}>
-                  <option>Draft</option>
-                  <option>Needs review</option>
-                  <option>Ready</option>
-                  <option>Exported</option>
-                  <option>Blocked</option>
-                </select>
-              </label>
-
-              <label>
-                <span>Owner approval</span>
-                <select value={selected.ownerApproval} onChange={(event) => updateItem(selected.id, { ownerApproval: event.target.value })}>
-                  <option>Required</option>
-                  <option>Optional</option>
-                  <option>Not required</option>
-                </select>
-              </label>
-
-              <label>
-                <span>Destination</span>
-                <input value={selected.destination} onChange={(event) => updateItem(selected.id, { destination: event.target.value })} />
-              </label>
-
-              <label>
-                <span>Risk</span>
-                <select value={selected.risk} onChange={(event) => updateItem(selected.id, { risk: event.target.value })}>
-                  <option>High</option>
-                  <option>Medium</option>
-                  <option>Low</option>
-                </select>
-              </label>
-
-              <label className="wide">
-                <span>Note</span>
-                <textarea value={selected.note} onChange={(event) => updateItem(selected.id, { note: event.target.value })} />
-              </label>
-
-              <label className="wide">
-                <span>Next action</span>
-                <textarea value={selected.nextAction} onChange={(event) => updateItem(selected.id, { nextAction: event.target.value })} />
-              </label>
-            </div>
-
-            <div className="freshExportsActions">
-              <button type="button" onClick={() => updateItem(selected.id, { status: "Ready" })}>Mark ready</button>
-              <button type="button" onClick={() => updateItem(selected.id, { status: "Exported" })}>Mark exported</button>
-              <button type="button" onClick={() => updateItem(selected.id, { status: "Blocked" })}>Blocked</button>
-              <button type="button" onClick={() => onNavigate?.("billing")}>Open Billing</button>
-              <button type="button" onClick={() => onNavigate?.("imports")}>Open Imports</button>
-            </div>
-          </article>
-        )}
-      </div>
-    </section>
-  );
+  return <section className="freshExportsPage">
+    <div className="freshExportsHero"><div><span>Data exports / CSV</span><h1>Owner data control</h1><p>Load live business records and download simple CSV exports. Nothing leaves Churvox until the owner chooses to export.</p></div><div className="freshExportsStats"><div><b>{totalRows}</b><small>live rows</small></div><div><b>{readySets}</b><small>data sets</small></div><div><b>{currentRows.length}</b><small>selected rows</small></div><div><b>{approvalFor(dataset)}</b><small>approval</small></div></div></div>
+    {message ? <section className={`freshCard freshNotice ${message.includes("Could not") || message.includes("No ") ? "need" : ""}`}><b>Export status</b><span>{message}</span></section> : null}
+    <div className="freshExportsLayout"><aside className="freshExportsList"><header><div><b>Live export desk</b><span>{readySets} data sets loaded</span></div><button type="button" onClick={loadAll} disabled={loading}>{loading ? "Loading..." : "Refresh all"}</button></header>{Object.keys(DATASETS).map((name) => <button type="button" key={name} className={dataset === name ? "active" : ""} onClick={() => { setDataset(name); if (!records[name]?.length) loadDataset(name); }}><b>{name}</b><span>{DATASETS[name].endpoint}</span><small>{records[name]?.length || 0} rows · {riskFor(name)} risk</small></button>)}<button type="button" className="freshExportsReset" onClick={() => onNavigate?.("imports")}>Open Imports</button></aside>
+      <article className="freshExportsDetail"><div className="freshExportsHead"><div><span>{currentRows.length ? "Ready" : "No data"}</span><h2>{dataset} export</h2><p>{currentRows.length} rows · CSV · Owner download</p></div><div className="freshExportsHeadActions"><button type="button" onClick={exportCurrent} disabled={!currentRows.length}>Download CSV</button><button type="button" onClick={sendToCommand}>Send to Command</button><button type="button" onClick={() => onNavigate?.(datasetConfig.page)}>Open Area</button></div></div>
+        <div className="freshExportsCards"><section><span>Live source</span><b>{datasetConfig.endpoint}</b><p>Exports use the current records returned by the app backend.</p></section><section><span>Owner approval</span><b>{approvalFor(dataset)}</b><p>Customer, team and invoice exports should stay owner-controlled.</p></section><section><span>Risk</span><b>{riskFor(dataset)}</b><p>{dataset === "Team" ? "Worker/payroll data should be checked before export." : "Review rows before sharing outside Churvox."}</p></section></div>
+        <div className="freshExportsForm"><label><span>Selected data</span><input readOnly value={dataset} /></label><label><span>Rows</span><input readOnly value={currentRows.length} /></label><label><span>Format</span><input readOnly value="CSV" /></label><label><span>Destination</span><input readOnly value="Owner download" /></label><label className="wide"><span>Owner control note</span><textarea readOnly value="Exports are for owner review, backup or migration. Review the rows before sharing outside Churvox." /></label><label className="wide"><span>Preview</span><textarea readOnly value={currentRows.slice(0, 8).map((row, index) => `${index + 1}. ${labelOf(row)}`).join("\n") || "No rows loaded yet."} /></label></div>
+        <div className="freshExportsActions"><button type="button" onClick={() => loadDataset(dataset)} disabled={loading}>Reload {dataset}</button><button type="button" onClick={exportCurrent} disabled={!currentRows.length}>Download CSV</button><button type="button" onClick={sendToCommand}>Send review to Command</button><button type="button" onClick={() => onNavigate?.("support")}>Open Support</button></div>
+      </article></div>
+  </section>;
 }
