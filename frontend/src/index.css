@@ -51,9 +51,7 @@
 }
 
 @import "./concept-c/ChurvoxLaunchFinish.css";
-
 @import "./concept-c/ChurvoxTopTierFinalPolish.css";
-
 @import "./launch-mobile-polish.css";
 
 /* CHURVOX_COMMAND_DOCK_VISIBILITY_20260601 */
@@ -192,12 +190,6 @@
 .worker-job-flow div {
   color: #0f172a !important;
   -webkit-text-fill-color: #0f172a !important;
-}
-
-.worker-job-flow .text-\[var\(--cx-muted\)],
-.worker-job-flow .text-\[var\(--cx-muted-2\)] {
-  color: #334155 !important;
-  -webkit-text-fill-color: #334155 !important;
 }
 
 .worker-job-title-card {
