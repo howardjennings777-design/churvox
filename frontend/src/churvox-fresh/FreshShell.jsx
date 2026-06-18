@@ -13,7 +13,7 @@ const groups = [
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["payments", "PY", "Payments"], ["xero", "XE", "Xero"]] },
   { title: "Team", items: [["team", "TM", "Team"], ["workercommand", "WC", "Worker View"], ["time", "TS", "Time Sheets"], ["payroll", "PR", "Payroll"]] },
   { title: "Command", items: [["automation", "AT", "Automation"], ["reports", "RP", "Reports"]] },
-  { title: "Setup", items: [["settings", "SG", "Settings"], ["plans", "PL", "Plans"], ["support", "SP", "Support"]] },
+  { title: "Setup", items: [["settings", "SG", "Settings"], ["imports", "IM", "Imports"], ["plans", "PL", "Plans"], ["support", "SP", "Support"]] },
 ];
 
 const relatedTools = {
@@ -33,12 +33,13 @@ const relatedTools = {
   payroll: [["time", "TS", "Time Sheets"], ["team", "TM", "Team"], ["reports", "RP", "Reports"], ["settings", "SG", "Settings"]],
   reports: [["invoices", "IV", "Invoices"], ["jobs", "JB", "Jobs"], ["payroll", "PR", "Payroll"], ["xero", "XE", "Xero"]],
   automation: [["quickcreateai", "AI", "Tell Churvox"], ["command", "RV", "Review"], ["invoices", "IV", "Invoices"], ["settings", "SG", "Settings"]],
-  settings: [["plans", "PL", "Plans"], ["support", "SP", "Support"], ["xero", "XE", "Xero"]],
+  settings: [["imports", "IM", "Imports"], ["plans", "PL", "Plans"], ["support", "SP", "Support"], ["xero", "XE", "Xero"]],
+  imports: [["clients", "CL", "Clients"], ["team", "TM", "Team"], ["jobs", "JB", "Jobs"], ["command", "RV", "Review"]],
   plans: [["settings", "SG", "Settings"], ["xero", "XE", "Xero"], ["support", "SP", "Support"]],
   support: [["settings", "SG", "Settings"], ["plans", "PL", "Plans"]],
   photos: [["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"]],
   documents: [["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"]],
-  setupassistant: [["settings", "SG", "Settings"], ["quickcreateai", "AI", "Tell Churvox"]],
+  setupassistant: [["settings", "SG", "Settings"], ["imports", "IM", "Imports"], ["quickcreateai", "AI", "Tell Churvox"]],
   security: [["settings", "SG", "Settings"], ["support", "SP", "Support"]],
 };
 
@@ -60,6 +61,7 @@ const purpose = {
   reports: "Business reporting from jobs, invoices, time, and payroll review data.",
   automation: "Rules that prepare actions for owner approval, not uncontrolled changes.",
   settings: "Business details, branding, billing country, integrations, and setup.",
+  imports: "Bring clients, workers, jobs, quotes and invoices into Churvox safely from CSV.",
   plans: "Plan, trial, usage, add-ons, and accounting sync access.",
   support: "Contact Churvox support and get setup help.",
   payments: "Payment status and payment follow-up tools.",
@@ -76,7 +78,7 @@ function guideIsComplete() { try { return window.localStorage.getItem(GUIDE_COMP
 function uniqueItems(items) { const seen = new Set(); return items.filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }); }
 function stripHiddenItems(items, guideComplete) { return items.filter(([key]) => !(guideComplete && key === "setupassistant")); }
 function cleanGroups(sourceGroups, guideComplete = false) { const seen = new Set(); return sourceGroups.map((group) => ({ ...group, items: stripHiddenItems(group.items, guideComplete).filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }) })).filter((group) => group.items.length); }
-function buildLabels() { const entries = [...groups.flatMap((group) => group.items), ...Object.values(relatedTools).flat()]; const nextLabels = Object.fromEntries(entries.map(([key, , label]) => [key, label])); nextLabels.quickcreateai = "Tell Churvox"; nextLabels.command = "Review"; nextLabels.smart = "Today"; nextLabels.dispatch = "Schedule"; nextLabels.workercommand = "Worker View"; nextLabels.time = "Time Sheets"; nextLabels.payments = "Payments"; nextLabels.photos = "Photos"; nextLabels.documents = "Documents"; nextLabels.setupassistant = "AI Guide"; nextLabels.security = "Security"; return nextLabels; }
+function buildLabels() { const entries = [...groups.flatMap((group) => group.items), ...Object.values(relatedTools).flat()]; const nextLabels = Object.fromEntries(entries.map(([key, , label]) => [key, label])); nextLabels.quickcreateai = "Tell Churvox"; nextLabels.command = "Review"; nextLabels.smart = "Today"; nextLabels.dispatch = "Schedule"; nextLabels.workercommand = "Worker View"; nextLabels.time = "Time Sheets"; nextLabels.payments = "Payments"; nextLabels.imports = "Imports"; nextLabels.photos = "Photos"; nextLabels.documents = "Documents"; nextLabels.setupassistant = "AI Guide"; nextLabels.security = "Security"; return nextLabels; }
 function buildParentMap() { const map = {}; Object.entries(relatedTools).forEach(([parent, items]) => { items.forEach(([key]) => { if (!map[key]) map[key] = parent; }); }); groups.forEach((group) => group.items.forEach(([key]) => { map[key] = key; })); map.routes = "dispatch"; map.areas = "dispatch"; map.schedulerai = "dispatch"; map.gps = "time"; map.portal = "clients"; map.followupwriter = "clients"; map.reviewbooster = "clients"; return map; }
 function resetFreshScrollTop() {
   const top = () => {
