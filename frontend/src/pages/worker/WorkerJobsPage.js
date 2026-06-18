@@ -309,7 +309,7 @@ export default function WorkerJobsPage() {
     if (shiftStatus !== "clocked_in" || !gpsTracking) return undefined;
     const gpsTimer = window.setInterval(() => sendGpsPing("hourly"), 60 * 60 * 1000);
     return () => window.clearInterval(gpsTimer);
-  }, [gpsTracking, sendGpsPing, shiftStatus]); // worker-hourly-gps
+  }, [gpsTracking, shiftStatus]); // worker-hourly-gps
 
   useEffect(() => {
     if (!location.hash) return;
