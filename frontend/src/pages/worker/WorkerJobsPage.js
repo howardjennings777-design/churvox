@@ -202,15 +202,15 @@ export default function WorkerJobsPage() {
   const [showContactOffice, setShowContactOffice] = useState(false);
 
 
-  const sendLivePing = useCallback(async (payload) => {
+  async function sendLivePing(payload = {}) {
     try {
       await post("/worker/live-ping", payload);
     } catch {
       // Live status should never block the worker from doing the job.
     }
-  }, [post, shiftStatus]);
+  }
 
-  const fetchShiftStatus = useCallback(async () => {
+  async function fetchShiftStatus() {
     const res = await get("/worker/shift/status");
     if (res?.success) {
       const data = res.data?.data || res.data || {};
@@ -218,30 +218,45 @@ export default function WorkerJobsPage() {
       setShiftSeconds(Number(data.shift_seconds || data.shift?.total_shift_seconds || 0));
       setGpsTracking(Boolean(data.gps_tracking_enabled));
     }
-  }, [get]);
+  }
 
-  const sendGpsPing = useCallback(async (source = "hourly") => {
+  async function sendGpsPing(source = "hourly") {
     try {
       const location = await getGpsPosition();
       const res = await post("/worker/gps-ping", { location, source });
-      await sendLivePing({ source, live_status: "GPS checked", clock_status: shiftStatus, location });
+
+      await sendLivePing({
+        source,
+        live_status: source === "hourly" ? "GPS checked" : "GPS checked now",
+        clock_status: shiftStatus || "clocked_in",
+        location,
+      });
+
       if (!res?.success && source !== "hourly") toast.error(res?.error || "GPS could not be recorded");
       if (res?.success && source !== "hourly") toast.success(location.address_label ? `GPS recorded: ${location.address_label}` : "GPS recorded");
     } catch (err) {
       if (source !== "hourly") toast.error(err?.message || "GPS permission is needed while clocked in");
     }
-  }, [post]);
+  }
 
-  const clockIn = useCallback(async () => {
+  async function clockIn() {
     setShiftBusy(true);
     try {
       const location = await getGpsPosition();
       const res = await post("/worker/clock-in", { location });
+
       if (res?.success) {
-        await sendLivePing({ source: "clock-in", live_status: "Clocked in", clock_status: "clocked_in", location });
-        toast.success(location.address_label ? `Clocked in: ${location.address_label}` : "Clocked in. GPS tracking is on.");
         setShiftStatus("clocked_in");
         setGpsTracking(true);
+
+        await sendLivePing({
+          source: "clock-in",
+          live_status: "Clocked in",
+          clock_status: "clocked_in",
+          location,
+        });
+
+        toast.success(location.address_label ? `Clocked in: ${location.address_label}` : "Clocked in. GPS tracking is on.");
         await fetchShiftStatus();
       } else {
         toast.error(res?.error || "Could not clock in");
@@ -251,9 +266,9 @@ export default function WorkerJobsPage() {
     } finally {
       setShiftBusy(false);
     }
-  }, [fetchShiftStatus, post]);
+  }
 
-  const clockOut = useCallback(async () => {
+  async function clockOut() {
     setShiftBusy(true);
     try {
       let location = null;
@@ -264,12 +279,20 @@ export default function WorkerJobsPage() {
       }
 
       const res = await post("/worker/clock-out", { location });
+
       if (res?.success) {
-        await sendLivePing({ source: "clock-out", live_status: "Clocked out", clock_status: "clocked_out", location });
-        toast.success(location?.address_label ? `Clocked out: ${location.address_label}` : "Clocked out. GPS tracking is off.");
         setShiftStatus("clocked_out");
         setGpsTracking(false);
         setShiftSeconds(0);
+
+        await sendLivePing({
+          source: "clock-out",
+          live_status: "Clocked out",
+          clock_status: "clocked_out",
+          location,
+        });
+
+        toast.success(location?.address_label ? `Clocked out: ${location.address_label}` : "Clocked out. GPS tracking is off.");
         await fetchShiftStatus();
       } else {
         toast.error(res?.error || "Could not clock out");
@@ -277,39 +300,42 @@ export default function WorkerJobsPage() {
     } finally {
       setShiftBusy(false);
     }
-  }, [fetchShiftStatus, post]);
+  }
 
-  const fetchJobs = useCallback(async () => {
+  async function fetchJobs() {
     setLoading(true);
     setError("");
+
     const res = await get("/jobs");
+
     if (res.success) {
       setJobs(scopeJobsForWorker(arr(res.data), user));
       setLastSynced(new Date());
     } else {
       setError("Could not load your jobs. Please refresh.");
     }
-    setLoading(false);
-  }, [get, user]);
 
-  useEffect(() => { fetchJobs(); }, [fetchJobs]);
+    setLoading(false);
+  }
 
   useEffect(() => {
+    fetchJobs();
     fetchShiftStatus();
-  }, [fetchShiftStatus]); // worker-shift-status-on-refresh
-
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (shiftStatus !== "clocked_in") return undefined;
     const tick = window.setInterval(() => setShiftSeconds((value) => Number(value || 0) + 60), 60000);
     return () => window.clearInterval(tick);
-  }, [shiftStatus]); // worker-shift-ticker
+  }, [shiftStatus]);
 
   useEffect(() => {
     if (shiftStatus !== "clocked_in" || !gpsTracking) return undefined;
     const gpsTimer = window.setInterval(() => sendGpsPing("hourly"), 60 * 60 * 1000);
     return () => window.clearInterval(gpsTimer);
-  }, [gpsTracking, shiftStatus]); // worker-hourly-gps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gpsTracking, shiftStatus]);
 
   useEffect(() => {
     if (!location.hash) return;
@@ -359,7 +385,16 @@ export default function WorkerJobsPage() {
         return;
       }
       const endpoint = status === "paused" ? `/jobs/${encodeURIComponent(jobId)}/timer/resume` : `/jobs/${encodeURIComponent(jobId)}/timer/start`;
-      const res = await post(endpoint, {});
+
+      let location = null;
+      try {
+        location = await getGpsPosition();
+      } catch {
+        location = null;
+      }
+
+      const res = await post(endpoint, location ? { location } : {});
+
       if (res?.success) {
         await sendLivePing({
           source: status === "paused" ? "job-resume" : "job-start",
@@ -368,7 +403,9 @@ export default function WorkerJobsPage() {
           job_id: jobId,
           job_title: job?.title || "",
           job_status: "in_progress",
+          location,
         });
+
         toast.success(status === "paused" ? "Job resumed" : "Job timer started");
       } else toast.error(res?.error || "Could not start job timer");
       await fetchJobs();
