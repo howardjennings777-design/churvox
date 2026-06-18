@@ -46,7 +46,13 @@ function safeRows(invoice) {
 }
 function sourceJobId(invoice) { return normalizeId(invoice?.job_id || invoice?.linked_job_id || ""); }
 function sourceQuoteId(invoice) { return normalizeId(invoice?.quote_id || invoice?.linked_quote_id || ""); }
-function amountDue(invoice) { return n(invoice?.amount_due || invoice?.balance_due || invoice?.total || invoice?.amount || invoice?.subtotal); }
+function firstMoneyValue(...values) {
+  for (const value of values) {
+    if (value !== undefined && value !== null && value !== "") return value;
+  }
+  return 0;
+}
+function amountDue(invoice) { return n(firstMoneyValue(invoice?.amount_due, invoice?.balance_due, invoice?.total, invoice?.amount, invoice?.subtotal)); }
 function mailtoUrl(invoice, biz) {
   const to = invoice.customer_email || invoice.client_email || "";
   const subject = `Invoice ${invoice.invoice_number || "from Churvox"}`;
