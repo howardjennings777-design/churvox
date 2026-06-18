@@ -61,7 +61,7 @@ function normalizeClient(client, index) {
 }
 
 export default function FreshClients({ onNavigate }) {
-  const { get, post, patch } = useApi();
+  const { get, post, patch, del } = useApi();
   const [clients, setClients] = React.useState([]);
   const [selectedId, setSelectedId] = React.useState(() => readFreshFocus("clients", ""));
   const [filter, setFilter] = React.useState("All");
@@ -71,6 +71,8 @@ export default function FreshClients({ onNavigate }) {
   const [saving, setSaving] = React.useState(false);
   const [savedAt, setSavedAt] = React.useState("");
   const [addOpen, setAddOpen] = React.useState(false);
+  const [deleteOpen, setDeleteOpen] = React.useState(false);
+  const [deleteName, setDeleteName] = React.useState("");
   const [newClient, setNewClient] = React.useState(emptyClient);
   const [addError, setAddError] = React.useState("");
 
@@ -142,6 +144,29 @@ export default function FreshClients({ onNavigate }) {
     await loadClients({ quiet: true });
   }
 
+  async function deleteSelectedClient() {
+    if (!selected?.id) return;
+    const typed = deleteName.trim();
+    if (typed !== selected.name) {
+      setError("Type the client name exactly before deleting.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    const res = await del(`/clients/${encodeURIComponent(selected.id)}`, { timeout: 25000 });
+    setSaving(false);
+    if (!res.success) {
+      setError(res.error || "Could not delete client. If this client has jobs/invoices, archive support may be needed instead.");
+      return;
+    }
+    setSavedAt(`Deleted ${selected.name}`);
+    setDeleteOpen(false);
+    setDeleteName("");
+    setClients((current) => current.filter((client) => client.id !== selected.id));
+    window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "client-deleted", id: selected.id } }));
+    await loadClients({ quiet: true });
+  }
+
   function openJobPopup(clientId = "") {
     const search = clientId ? `?client_id=${encodeURIComponent(clientId)}` : "";
     try { window.localStorage.setItem(OPEN_JOB_MODAL_KEY, search || "true"); } catch {}
@@ -169,7 +194,7 @@ export default function FreshClients({ onNavigate }) {
       <header className="freshHero"><span>Churvox fresh · Clients</span><h1>Clients</h1><p>Real client records from your business account. Jobs, quotes, invoices and Command should use these clients.</p></header>
 
       <section className="freshCommandPulse"><aside className="freshCard"><h2>{loading && clients.length === 0 ? "…" : clients.length}</h2><p>Total clients</p></aside><aside className="freshCard"><h2>{loading && clients.length === 0 ? "…" : needsSetup}</h2><p>Need setup</p></aside><aside className="freshCard"><h2>{loading && clients.length === 0 ? "…" : clients.filter((client) => client.status === "Active").length}</h2><p>Active clients</p></aside></section>
-      {error ? <section className="freshCard freshItem need"><b>Could not load clients</b><span>{error}</span><button type="button" className="freshPrimary" onClick={() => loadClients()}>Retry</button></section> : null}
+      {error ? <section className="freshCard freshItem need"><b>Clients need attention</b><span>{error}</span><button type="button" className="freshPrimary" onClick={() => loadClients()}>Retry</button></section> : null}
       {savedAt ? <section className="freshCard freshItem"><b>Client save status</b><span>{savedAt}</span></section> : null}
 
       <section className="freshCommandFilterBar">{filters.map((item) => <button type="button" key={item} className={filter === item ? "active" : ""} onClick={() => setFilter(item)}><span>{item}</span><b>{item === "All" ? clients.length : clients.filter((client) => client.status === item).length}</b></button>)}</section>
@@ -177,8 +202,8 @@ export default function FreshClients({ onNavigate }) {
 
       <section className="freshGrid">
         <aside className="freshCard"><h2>Client list</h2>{loading && clients.length === 0 ? <div className="freshItem"><b>Loading real clients…</b><span>Checking your business account.</span></div> : visibleClients.map((client) => <button type="button" className={`freshItem ${selected?.id === client.id ? "active" : ""} ${client.status === "Needs setup" ? "need" : ""}`} key={client.id} onClick={() => setSelectedId(client.id)}><b>{client.name}</b><span>{client.type} · {client.status} · {client.value}</span></button>)}{loading && clients.length > 0 ? <div className="freshItem"><b>Refreshing clients…</b><span>Showing your current saved records while Churvox refreshes.</span></div> : null}{!loading && visibleClients.length === 0 ? <div className="freshItem"><b>No matching clients</b><span>Create a client or clear the search/filter.</span></div> : null}</aside>
-        <section className="freshCard"><h2>{selected?.name || "Select client"}</h2>{selected ? <><div className="freshMiniGrid"><div><span>Status</span><b>{selected.status}</b></div><div><span>Type</span><b>{selected.type}</b></div><div><span>Value</span><b>{selected.value}</b></div><div><span>Risk</span><b>{selected.risk}</b></div></div><label className="freshField"><span>Client name</span><input value={selected.name} onChange={(event) => updateSelectedClient({ name: event.target.value })} /></label><label className="freshField"><span>Invoice/customer email</span><input value={selected.email} onChange={(event) => updateSelectedClient({ email: event.target.value })} /></label><label className="freshField"><span>Phone</span><input value={selected.phone} onChange={(event) => updateSelectedClient({ phone: event.target.value })} /></label><label className="freshField"><span>Service address</span><input value={selected.address} onChange={(event) => updateSelectedClient({ address: event.target.value })} /></label><label className="freshField"><span>Client notes</span><textarea value={selected.notes} onChange={(event) => updateSelectedClient({ notes: event.target.value })} /></label><div className="freshActions"><button className="freshPrimary" type="button" disabled={saving} onClick={saveSelectedClient}>{saving ? "Saving…" : "Save client"}</button></div></> : <div className="freshItem"><b>No client selected</b><span>Add your first client to start the workflow.</span></div>}</section>
-        <aside className="freshCard"><h2>Owner actions</h2><div className="freshActions"><button className="freshPrimary" type="button" onClick={() => setAddOpen(true)}>Add client</button><button className="freshOrange" type="button" disabled={!selected} onClick={() => openJobPopup(selected?.id || "")}>Create job</button><button className="freshDark" type="button" disabled={!selected} onClick={() => window.location.href = selected ? `/quotes/new?client_id=${encodeURIComponent(selected.id)}` : "/quotes/new"}>Create quote</button><button className="freshGhost" type="button" onClick={() => onNavigate?.("command")}>Send issue to Command</button><button className="freshGhost" type="button" onClick={() => loadClients()}>Refresh clients</button></div></aside>
+        <section className="freshCard"><h2>{selected?.name || "Select client"}</h2>{selected ? <><div className="freshMiniGrid"><div><span>Status</span><b>{selected.status}</b></div><div><span>Type</span><b>{selected.type}</b></div><div><span>Value</span><b>{selected.value}</b></div><div><span>Risk</span><b>{selected.risk}</b></div></div><label className="freshField"><span>Client name</span><input value={selected.name} onChange={(event) => updateSelectedClient({ name: event.target.value })} /></label><label className="freshField"><span>Invoice/customer email</span><input value={selected.email} onChange={(event) => updateSelectedClient({ email: event.target.value })} /></label><label className="freshField"><span>Phone</span><input value={selected.phone} onChange={(event) => updateSelectedClient({ phone: event.target.value })} /></label><label className="freshField"><span>Service address</span><input value={selected.address} onChange={(event) => updateSelectedClient({ address: event.target.value })} /></label><label className="freshField"><span>Client notes</span><textarea value={selected.notes} onChange={(event) => updateSelectedClient({ notes: event.target.value })} /></label><div className="freshActions"><button className="freshPrimary" type="button" disabled={saving} onClick={saveSelectedClient}>{saving ? "Saving…" : "Save client"}</button><button className="freshGhost" type="button" disabled={saving} onClick={() => { setDeleteOpen(true); setDeleteName(""); setError(""); }}>Delete client</button></div></> : <div className="freshItem"><b>No client selected</b><span>Add your first client to start the workflow.</span></div>}</section>
+        <aside className="freshCard"><h2>Owner actions</h2><div className="freshActions"><button className="freshPrimary" type="button" onClick={() => setAddOpen(true)}>Add client</button><button className="freshOrange" type="button" disabled={!selected} onClick={() => openJobPopup(selected?.id || "")}>Create job</button><button className="freshDark" type="button" disabled={!selected} onClick={() => window.location.href = selected ? `/quotes/new?client_id=${encodeURIComponent(selected.id)}` : "/quotes/new"}>Create quote</button><button className="freshGhost" type="button" disabled={!selected || saving} onClick={() => { setDeleteOpen(true); setDeleteName(""); setError(""); }}>Delete client</button><button className="freshGhost" type="button" onClick={() => onNavigate?.("command")}>Send issue to Command</button><button className="freshGhost" type="button" onClick={() => loadClients()}>Refresh clients</button></div></aside>
       </section>
 
       {addOpen ? (
@@ -192,6 +217,17 @@ export default function FreshClients({ onNavigate }) {
             <label className="freshField"><span>Service address</span><input value={newClient.address} onChange={(e) => setNewClient((c) => ({ ...c, address: e.target.value }))} placeholder="job/site address" /></label>
             <label className="freshField"><span>Notes</span><textarea value={newClient.notes} onChange={(e) => setNewClient((c) => ({ ...c, notes: e.target.value }))} placeholder="gate code, pets, preferences, anything useful" /></label>
             <div className="freshActions"><button className="freshPrimary" type="button" disabled={saving} onClick={saveNewClient}>{saving ? "Saving…" : "Save client"}</button><button className="freshGhost" type="button" onClick={() => setAddOpen(false)}>Cancel</button></div>
+          </section>
+        </div>
+      ) : null}
+
+      {deleteOpen && selected ? (
+        <div className="freshPopupBackdrop freshClientPopupBackdrop" style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(15,23,42,.66)", display: "grid", placeItems: "center", padding: 16 }} onMouseDown={(event) => { if (event.target === event.currentTarget) setDeleteOpen(false); }}>
+          <section className="freshCard freshClientPopupCard" style={{ width: "min(760px, calc(100vw - 42px))", maxHeight: "90dvh", overflow: "auto", boxShadow: "0 30px 80px rgba(0,0,0,.35)" }}>
+            <header className="freshHero freshClientPopupHero" style={{ marginBottom: 12 }}><span>Delete client</span><h1>Delete {selected.name}</h1><p>This removes the client record from Churvox. Existing jobs, quotes or invoices may still keep their own history.</p></header>
+            <div className="freshItem need"><b>Confirm delete</b><span>Type the client name exactly to unlock delete: {selected.name}</span></div>
+            <label className="freshField"><span>Type client name</span><input autoFocus value={deleteName} onChange={(event) => setDeleteName(event.target.value)} placeholder={selected.name} /></label>
+            <div className="freshActions"><button className="freshOrange" type="button" disabled={saving || deleteName.trim() !== selected.name} onClick={deleteSelectedClient}>{saving ? "Deleting…" : "Delete client"}</button><button className="freshGhost" type="button" onClick={() => { setDeleteOpen(false); setDeleteName(""); }}>Cancel</button></div>
           </section>
         </div>
       ) : null}
