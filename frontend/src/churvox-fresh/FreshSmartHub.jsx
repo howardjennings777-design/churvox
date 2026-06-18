@@ -161,6 +161,57 @@ function quoteNeedsChase(quote) {
   return !["accepted", "approved", "won", "lost", "declined", "rejected", "cancelled"].includes(lower(quote?.status || quote?.quote_status));
 }
 
+function buildSetupSteps(data) {
+  const clients = data.clients || [];
+  const workers = data.workers || [];
+  const jobs = data.jobs || [];
+  const invoices = data.invoices || [];
+  const quotes = data.quotes || [];
+
+  const steps = [
+    {
+      key: "settings",
+      title: "Set business details",
+      detail: "Business name, GST, invoice defaults, branding and contact info.",
+      page: "settings",
+      done: false,
+      primary: true,
+    },
+    {
+      key: "imports",
+      title: clients.length ? "Clients loaded" : "Import or add clients",
+      detail: clients.length ? `${clients.length} client${clients.length === 1 ? "" : "s"} in Churvox.` : "Bring in clients from CSV or add your first customer.",
+      page: clients.length ? "clients" : "imports",
+      done: clients.length > 0,
+    },
+    {
+      key: "team",
+      title: workers.length ? "Team started" : "Add workers",
+      detail: workers.length ? `${workers.length} worker${workers.length === 1 ? "" : "s"} ready or invited.` : "Invite workers or import your team before dispatching work.",
+      page: workers.length ? "team" : "team",
+      done: workers.length > 0,
+    },
+    {
+      key: "jobs",
+      title: jobs.length ? "First job created" : "Create first job",
+      detail: jobs.length ? `${jobs.length} job${jobs.length === 1 ? "" : "s"} in the workflow.` : "Create a job, assign a worker and schedule the work.",
+      page: "jobs",
+      done: jobs.length > 0,
+    },
+    {
+      key: "invoices",
+      title: invoices.length ? "Invoice workflow started" : "Create first invoice",
+      detail: invoices.length ? `${invoices.length} invoice${invoices.length === 1 ? "" : "s"} created.` : quotes.length ? "Convert accepted work or completed jobs into invoices." : "Once work is done, create the invoice and keep money visible.",
+      page: "invoices",
+      done: invoices.length > 0,
+    },
+  ];
+
+  const openSteps = steps.filter((step) => !step.done);
+  const nextStep = openSteps[0] || steps[steps.length - 1];
+  return { steps, nextStep, complete: openSteps.length === 0, completeCount: steps.length - openSteps.length };
+}
+
 function buildToday(data) {
   const jobs = data.jobs || [];
   const clients = data.clients || [];
@@ -184,52 +235,24 @@ function buildToday(data) {
   const activeCrew = workers.filter((worker) => ["on job", "onsite", "on site", "active", "working", "available"].includes(lower(worker?.status || worker?.availability || worker?.current_status)) || worker?.current_job_id);
 
   const needsDoing = [
-    ...unassignedToday.map((job) => ({
-      type: "Worker needed",
-      title: jobTitle(job),
-      detail: `${clientName(job)} · ${timeText(dateValue(job, "scheduled_date", "date", "start", "start_time"))}`,
-      page: "jobs",
-      tone: "warn",
-    })),
-    ...overdueInvoices.map((invoice) => ({
-      type: "Overdue invoice",
-      title: clientName(invoice),
-      detail: `${money(amountOf(invoice))} overdue`,
-      page: "invoices",
-      tone: "danger",
-    })),
-    ...dueTodayInvoices.map((invoice) => ({
-      type: "Due today",
-      title: clientName(invoice),
-      detail: `${money(amountOf(invoice))} due today`,
-      page: "invoices",
-      tone: "warn",
-    })),
-    ...completedNeedInvoice.map((job) => ({
-      type: "Invoice needed",
-      title: jobTitle(job),
-      detail: `${clientName(job)} · completed job`,
-      page: "jobs",
-      tone: "info",
-    })),
-    ...reviewItems.map((item) => ({
-      type: "Review waiting",
-      title: item?.title || item?.summary || "Prepared work",
-      detail: item?.action || "Needs approval",
-      page: "command",
-      tone: "info",
-    })),
+    ...unassignedToday.map((job) => ({ type: "Worker needed", title: jobTitle(job), detail: `${clientName(job)} · ${timeText(dateValue(job, "scheduled_date", "date", "start", "start_time"))}`, page: "jobs", tone: "warn" })),
+    ...overdueInvoices.map((invoice) => ({ type: "Overdue invoice", title: clientName(invoice), detail: `${money(amountOf(invoice))} overdue`, page: "invoices", tone: "danger" })),
+    ...dueTodayInvoices.map((invoice) => ({ type: "Due today", title: clientName(invoice), detail: `${money(amountOf(invoice))} due today`, page: "invoices", tone: "warn" })),
+    ...completedNeedInvoice.map((job) => ({ type: "Invoice needed", title: jobTitle(job), detail: `${clientName(job)} · completed job`, page: "jobs", tone: "info" })),
+    ...reviewItems.map((item) => ({ type: "Review waiting", title: item?.title || item?.summary || "Prepared work", detail: item?.action || "Needs approval", page: "command", tone: "info" })),
   ].slice(0, 8);
 
   const overdueMoney = overdueInvoices.reduce((sum, invoice) => sum + amountOf(invoice), 0);
   const dueTodayMoney = dueTodayInvoices.reduce((sum, invoice) => sum + amountOf(invoice), 0);
+  const setup = buildSetupSteps({ jobs, clients, invoices, quotes, workers });
 
   let message = "Nothing urgent yet. Keep the day moving.";
+  if (setup.completeCount < setup.steps.length) message = `${setup.nextStep.title}: ${setup.nextStep.detail}`;
   if (todayJobs.length && needsDoing.length) message = `You have ${todayJobs.length} job${todayJobs.length === 1 ? "" : "s"} today and ${needsDoing.length} thing${needsDoing.length === 1 ? "" : "s"} needing attention.`;
   else if (todayJobs.length) message = `You have ${todayJobs.length} job${todayJobs.length === 1 ? "" : "s"} today.`;
   else if (needsDoing.length) message = `${needsDoing.length} thing${needsDoing.length === 1 ? "" : "s"} need attention today.`;
 
-  return { jobs, clients, invoices, quotes, workers, reviewItems, todayJobs, needsDoing, overdueInvoices, dueTodayInvoices, overdueMoney, dueTodayMoney, activeCrew, quotesToChase, clientsMissingDetails, message };
+  return { jobs, clients, invoices, quotes, workers, reviewItems, todayJobs, needsDoing, overdueInvoices, dueTodayInvoices, overdueMoney, dueTodayMoney, activeCrew, quotesToChase, clientsMissingDetails, setup, message };
 }
 
 function TodayJobCard({ job, onNavigate }) {
@@ -251,6 +274,16 @@ function NeedCard({ item, onNavigate }) {
       <span>{item.type}</span>
       <b>{item.title}</b>
       <small>{item.detail}</small>
+    </button>
+  );
+}
+
+function SetupStepCard({ step, onNavigate }) {
+  return (
+    <button type="button" className={`freshTodayNeedCard ${step.done ? "info" : step.primary ? "warn" : ""}`} onClick={() => onNavigate?.(step.page)}>
+      <span>{step.done ? "Done" : "Next setup"}</span>
+      <b>{step.title}</b>
+      <small>{step.detail}</small>
     </button>
   );
 }
@@ -283,15 +316,7 @@ export default function FreshSmartHub({ onNavigate }) {
       }
     }));
 
-    setLiveData({
-      jobs: next.jobs || [],
-      clients: next.clients || [],
-      invoices: next.invoices || [],
-      quotes: next.quotes || [],
-      workers: next.workers || [],
-      reviewItems: next.reviewItems || [],
-    });
-
+    setLiveData({ jobs: next.jobs || [], clients: next.clients || [], invoices: next.invoices || [], quotes: next.quotes || [], workers: next.workers || [], reviewItems: next.reviewItems || [] });
     setLastSynced(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
     if (failedCore.length) setSyncError(`Could not load ${failedCore.join(", ")}.`);
     setLoading(false);
@@ -338,21 +363,25 @@ export default function FreshSmartHub({ onNavigate }) {
 
       <div className="freshTodayBriefGrid freshTodayBriefGrid--columns">
         <div className="freshTodayColumn freshTodayColumn--left">
+          <article className="freshTodayPanel freshTodayPanel--setup">
+            <header>
+              <span>Launch path</span>
+              <h2>Set up Churvox properly</h2>
+              <p>{today.setup.complete ? "Your core setup path is complete. Keep running the job-to-paid workflow." : `${today.setup.completeCount}/${today.setup.steps.length} launch steps complete. Next: ${today.setup.nextStep.title}.`}</p>
+            </header>
+            <div className="freshTodayList">
+              {today.setup.steps.map((step) => <SetupStepCard key={step.key} step={step} onNavigate={onNavigate} />)}
+            </div>
+          </article>
+
           <article className="freshTodayPanel freshTodayPanel--jobs">
             <header>
               <span>Jobs</span>
               <h2>Jobs today</h2>
               <p>Only work scheduled for today.</p>
             </header>
-
             <div className="freshTodayList">
-              {loading && !today.todayJobs.length ? (
-                <div className="freshTodayEmpty">Checking jobs...</div>
-              ) : today.todayJobs.length ? (
-                today.todayJobs.map((job, index) => <TodayJobCard key={recordId(job, "id", "_id") || index} job={job} onNavigate={onNavigate} />)
-              ) : (
-                <div className="freshTodayEmpty">No jobs booked for today.</div>
-              )}
+              {loading && !today.todayJobs.length ? <div className="freshTodayEmpty">Checking jobs...</div> : today.todayJobs.length ? today.todayJobs.map((job, index) => <TodayJobCard key={recordId(job, "id", "_id") || index} job={job} onNavigate={onNavigate} />) : <div className="freshTodayEmpty">No jobs booked for today.</div>}
             </div>
           </article>
 
@@ -362,20 +391,10 @@ export default function FreshSmartHub({ onNavigate }) {
               <h2>Money to check</h2>
               <p>Invoices due today, overdue money, and quotes still open.</p>
             </header>
-
             <div className="freshTodayMoneyRows">
-              <button type="button" onClick={() => onNavigate?.("invoices")}>
-                <b>{money(today.dueTodayMoney)}</b>
-                <span>Due today</span>
-              </button>
-              <button type="button" onClick={() => onNavigate?.("invoices")}>
-                <b>{money(today.overdueMoney)}</b>
-                <span>Overdue</span>
-              </button>
-              <button type="button" onClick={() => onNavigate?.("quotes")}>
-                <b>{today.quotesToChase.length}</b>
-                <span>Quotes still open</span>
-              </button>
+              <button type="button" onClick={() => onNavigate?.("invoices")}><b>{money(today.dueTodayMoney)}</b><span>Due today</span></button>
+              <button type="button" onClick={() => onNavigate?.("invoices")}><b>{money(today.overdueMoney)}</b><span>Overdue</span></button>
+              <button type="button" onClick={() => onNavigate?.("quotes")}><b>{today.quotesToChase.length}</b><span>Quotes still open</span></button>
             </div>
           </article>
         </div>
@@ -387,13 +406,8 @@ export default function FreshSmartHub({ onNavigate }) {
               <h2>What needs doing</h2>
               <p>Only the jobs, money, and approvals that still need action.</p>
             </header>
-
             <div className="freshTodayList">
-              {today.needsDoing.length ? (
-                today.needsDoing.map((item, index) => <NeedCard key={`${item.type}-${index}`} item={item} onNavigate={onNavigate} />)
-              ) : (
-                <div className="freshTodayEmpty">No urgent blockers showing.</div>
-              )}
+              {today.needsDoing.length ? today.needsDoing.map((item, index) => <NeedCard key={`${item.type}-${index}`} item={item} onNavigate={onNavigate} />) : <div className="freshTodayEmpty">No urgent blockers showing.</div>}
             </div>
           </article>
         </div>
