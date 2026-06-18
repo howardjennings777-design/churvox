@@ -37,7 +37,24 @@ function pick(record, ...keys) {
   return "";
 }
 
+function idText(value) {
+  if (!value) return "";
+  if (typeof value === "string" || typeof value === "number") return String(value);
+  if (typeof value === "object") return idText(value.$oid || value.oid || value.id || value._id || value.job_id || value.invoice_id || "");
+  const text = String(value || "");
+  return text === "[object Object]" ? "" : text;
+}
+
+function recordId(record, ...keys) {
+  for (const key of keys) {
+    const text = idText(record?.[key]);
+    if (text) return text;
+  }
+  return idText(record?.id || record?._id || record?.job_id || record?.invoice_id || "");
+}
+
 function amountOf(record) {
+  if (isPaidInvoice(record)) return 0;
   const raw = record?.balance_due ?? record?.amount_due ?? record?.balance ?? record?.total ?? record?.amount ?? record?.price ?? record?.job_price ?? record?.fixed_price ?? 0;
   const n = Number(String(raw).replace(/[^0-9.-]/g, ""));
   return Number.isFinite(n) ? n : 0;
@@ -80,13 +97,6 @@ function timeText(date) {
   return date.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit" });
 }
 
-function dueText(date) {
-  if (!date) return "No due date";
-  if (isToday(date)) return "Due today";
-  if (isPast(date)) return "Overdue";
-  return date.toLocaleDateString("en-NZ", { day: "numeric", month: "short" });
-}
-
 function isCompletedJob(job) {
   return ["completed", "complete", "done", "finished"].includes(lower(job?.status || job?.job_status));
 }
@@ -111,8 +121,24 @@ function isDueTodayInvoice(invoice) {
   return isToday(dateValue(invoice, "due_date", "dueAt", "due", "payment_due"));
 }
 
-function jobHasInvoice(job) {
-  return Boolean(job?.invoice_id || job?.invoiceId || job?.draft_invoice_id || job?.draftInvoiceId || job?.invoiced || job?.invoice_number);
+function invoiceJobId(invoice) {
+  return recordId(invoice, "job_id", "linked_job_id", "jobId", "linkedJobId", "source_job_id", "sourceJobId");
+}
+
+function jobHasInvoice(job, invoicedJobIds = new Set()) {
+  const directInvoice = Boolean(
+    job?.invoice_id ||
+    job?.linked_invoice_id ||
+    job?.invoiceId ||
+    job?.linkedInvoiceId ||
+    job?.draft_invoice_id ||
+    job?.draftInvoiceId ||
+    job?.invoiced ||
+    job?.invoice_number ||
+    job?.invoice_status
+  );
+  const id = recordId(job, "id", "_id", "job_id");
+  return directInvoice || Boolean(id && invoicedJobIds.has(id));
 }
 
 function jobTitle(job) {
@@ -142,6 +168,7 @@ function buildToday(data) {
   const quotes = data.quotes || [];
   const workers = data.workers || [];
   const reviewItems = data.reviewItems || [];
+  const invoicedJobIds = new Set(invoices.map(invoiceJobId).filter(Boolean));
 
   const openJobs = jobs.filter((job) => !isCompletedJob(job) && !isCancelledJob(job));
   const todayJobs = openJobs
@@ -149,7 +176,7 @@ function buildToday(data) {
     .sort((a, b) => (dateValue(a, "scheduled_date", "date", "start", "start_time")?.getTime() || 0) - (dateValue(b, "scheduled_date", "date", "start", "start_time")?.getTime() || 0));
 
   const unassignedToday = todayJobs.filter((job) => !jobWorker(job));
-  const completedNeedInvoice = jobs.filter((job) => isCompletedJob(job) && !jobHasInvoice(job));
+  const completedNeedInvoice = jobs.filter((job) => isCompletedJob(job) && !jobHasInvoice(job, invoicedJobIds));
   const overdueInvoices = invoices.filter(isOverdueInvoice);
   const dueTodayInvoices = invoices.filter(isDueTodayInvoice);
   const quotesToChase = quotes.filter(quoteNeedsChase);
@@ -294,8 +321,8 @@ export default function FreshSmartHub({ onNavigate }) {
           <h1>Today</h1>
           <p>{today.message}</p>
           <div className="freshSmartSync">
-            <b>{loading ? "Checking today..." : "Live data connected"}</b>
-            {lastSynced ? <small>Synced {lastSynced}</small> : null}
+            <b>{loading ? "Checking today..." : "Live data updated"}</b>
+            {lastSynced ? <small>Updated {lastSynced}</small> : null}
             <button type="button" onClick={loadLiveData} disabled={loading}>{loading ? "Refreshing..." : "Refresh"}</button>
           </div>
           {syncError ? <p className="freshSmartError">{syncError}</p> : null}
@@ -322,7 +349,7 @@ export default function FreshSmartHub({ onNavigate }) {
               {loading && !today.todayJobs.length ? (
                 <div className="freshTodayEmpty">Checking jobs...</div>
               ) : today.todayJobs.length ? (
-                today.todayJobs.map((job, index) => <TodayJobCard key={pick(job, "id", "_id") || index} job={job} onNavigate={onNavigate} />)
+                today.todayJobs.map((job, index) => <TodayJobCard key={recordId(job, "id", "_id") || index} job={job} onNavigate={onNavigate} />)
               ) : (
                 <div className="freshTodayEmpty">No jobs booked for today.</div>
               )}
@@ -332,8 +359,8 @@ export default function FreshSmartHub({ onNavigate }) {
           <article className="freshTodayPanel freshTodayPanel--money">
             <header>
               <span>Money</span>
-              <h2>Due and overdue</h2>
-              <p>Money that needs checking today.</p>
+              <h2>Money to check</h2>
+              <p>Invoices due today, overdue money, and quotes still open.</p>
             </header>
 
             <div className="freshTodayMoneyRows">
@@ -357,8 +384,8 @@ export default function FreshSmartHub({ onNavigate }) {
           <article className="freshTodayPanel freshTodayPanel--needs">
             <header>
               <span>Needs doing</span>
-              <h2>Needs doing today</h2>
-              <p>Things that could block the day or money.</p>
+              <h2>What needs doing</h2>
+              <p>Only the jobs, money, and approvals that still need action.</p>
             </header>
 
             <div className="freshTodayList">
