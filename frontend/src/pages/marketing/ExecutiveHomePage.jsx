@@ -4,8 +4,8 @@ import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 import "./SimplePublic.css";
 
 const proof = [
-  "14-day Stripe trial",
-  "Card collected up front",
+  "14-day free trial",
+  "No card to start",
   "Owner approval built in",
   "Real quote-to-paid workflow",
 ];
@@ -22,7 +22,7 @@ const trades = [
 
 const steps = [
   ["Quote the work", "Create and send a professional quote from the same customer and job details."],
-  ["Customer accepts", "The public quote link lets the customer accept, then Churvox creates the job for the owner."],
+  ["Customer accepts", "The public quote link lets the customer accept, then Churvox prepares the job for the owner."],
   ["Run the job", "Assign a worker, track time, complete the work and keep the record together."],
   ["Invoice and get paid", "Send the invoice by email, let the customer open the public link, and keep paid status visible."],
 ];
@@ -71,16 +71,16 @@ export function Footer() {
 
 export default function ExecutiveHomePage() {
   return (
-    <main className="simplePublic" data-version="CHURVOX_PUBLIC_ENTERPRISE_COPY_20260615_COMPACT">
+    <main className="simplePublic" data-version="CHURVOX_PUBLIC_LAUNCH_READY_CORE_20260619">
       <Nav />
 
       <section className="simpleHero">
         <div>
-          <span className="simpleKicker">Command-grade job admin for service businesses</span>
-          <h1>Quote jobs. Run crews. Send invoices. Get paid.</h1>
+          <span className="simpleKicker">Job admin for service businesses</span>
+          <h1>Job done. Invoice ready. You approve.</h1>
           <p className="simpleLead">
             Churvox gives service businesses one clean workspace for clients, jobs, quotes, workers,
-            invoices and follow-ups. It prepares the next admin step, then you approve it.
+            time sheets, invoices and owner-approved admin actions.
           </p>
           <div className="simpleActions">
             <Link to="/signup" className="simpleBtn simplePrimary">Start free</Link>
@@ -90,14 +90,14 @@ export default function ExecutiveHomePage() {
         </div>
 
         <aside className="simpleCard">
-          <h2>One flow from customer request to paid invoice.</h2>
-          <p>Quote the work, customer accepts, job gets assigned, worker completes it, invoice gets sent, owner sees paid.</p>
+          <h2>One flow from job to paid invoice.</h2>
+          <p>Quote the work, run the job, approve time, prepare the invoice, send it, mark it paid, then sync accounting where available.</p>
           <ol>
-            <li>1. Create or send the quote</li>
-            <li>2. Customer accepts online</li>
-            <li>3. Job appears for the owner</li>
-            <li>4. Worker completes with time captured</li>
-            <li>5. Invoice goes out and paid status updates</li>
+            <li>1. Add client or quote the work</li>
+            <li>2. Job gets scheduled and assigned</li>
+            <li>3. Worker completes with time captured</li>
+            <li>4. Owner reviews time, payroll and invoice</li>
+            <li>5. Invoice goes out and paid status stays visible</li>
           </ol>
         </aside>
       </section>
@@ -116,7 +116,7 @@ export default function ExecutiveHomePage() {
         <h2>The core workflow is simple.</h2>
         <p className="simpleLead">
           No more jumping between messages, notes, spreadsheets, paper invoices and memory.
-          Churvox keeps the job and the admin in one place.
+          Churvox keeps jobs, time, payroll review and money in one place.
         </p>
         <div className="simpleGrid">
           {steps.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
@@ -126,8 +126,8 @@ export default function ExecutiveHomePage() {
       <section className="simpleBand">
         <h2>Serious enough for real work. Simple enough to start today.</h2>
         <p className="simpleLead">
-          Start with jobs, clients, quotes and invoices. Add workers, payroll workspace, Command approvals,
-          automation and accounting support as your business grows.
+          Start with jobs, clients, quotes and invoices. Add workers, time sheets, payroll review,
+          Command approvals, automation and accounting support as your business grows.
         </p>
         <div className="simpleGrid">
           {trust.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
