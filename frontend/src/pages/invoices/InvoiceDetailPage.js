@@ -52,7 +52,10 @@ function firstMoneyValue(...values) {
   }
   return 0;
 }
-function amountDue(invoice) { return n(firstMoneyValue(invoice?.amount_due, invoice?.balance_due, invoice?.total, invoice?.amount, invoice?.subtotal)); }
+function amountDue(invoice) {
+  if (String(invoice?.status || "").toLowerCase() === "paid") return 0;
+  return n(firstMoneyValue(invoice?.amount_due, invoice?.balance_due, invoice?.total, invoice?.amount, invoice?.subtotal));
+}
 function mailtoUrl(invoice, biz) {
   const to = invoice.customer_email || invoice.client_email || "";
   const subject = `Invoice ${invoice.invoice_number || "from Churvox"}`;
