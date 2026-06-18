@@ -106,16 +106,58 @@ export default function WorkerJobDetailPage() {
 
   const loadJob = useCallback(async () => {
     setLoading(true);
-    const res = await get(`/jobs/${encodeURIComponent(id)}`);
-    if (res.success) {
-      const nextJob = res.data?.job || res.data || {};
+
+    const withTimeout = (promise, label = "request") => {
+      let timer;
+      const timeout = new Promise((_, reject) => {
+        timer = window.setTimeout(() => reject(new Error(`${label} timed out`)), 12000);
+      });
+      return Promise.race([promise, timeout]).finally(() => {
+        if (timer) window.clearTimeout(timer);
+      });
+    };
+
+    const applyJob = (nextJob) => {
       setJob(nextJob);
       setWorkerNotes(nextJob?.worker_notes || "");
       setFinalNote(nextJob?.worker_notes || "");
-    } else {
-      toast.error("Could not load job");
+    };
+
+    try {
+      let nextJob = null;
+
+      try {
+        const res = await withTimeout(get(`/jobs/${encodeURIComponent(id)}`), "job detail load");
+        if (res?.success) {
+          nextJob = res.data?.job || res.data?.data?.job || res.data?.data || res.data || null;
+        }
+      } catch (err) {
+        console.warn("Worker job detail direct load failed:", err);
+      }
+
+      if (!nextJob || !jobIdOf(nextJob)) {
+        try {
+          const listRes = await withTimeout(get("/jobs"), "worker jobs fallback load");
+          const list = arr(listRes?.data);
+          nextJob = list.find((item) => jobIdOf(item) === String(id)) || null;
+        } catch (err) {
+          console.warn("Worker job detail fallback load failed:", err);
+        }
+      }
+
+      if (nextJob && typeof nextJob === "object") {
+        applyJob(nextJob);
+      } else {
+        setJob(null);
+        toast.error("Could not load this job. Go back and refresh your jobs.");
+      }
+    } catch (err) {
+      console.error("Worker job detail load crashed:", err);
+      setJob(null);
+      toast.error("Could not load this job. Go back and refresh your jobs.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [get, id]);
 
   useEffect(() => { loadJob(); }, [loadJob]);
@@ -288,8 +330,21 @@ export default function WorkerJobDetailPage() {
   const safeAiContext = { title: job?.title || "", status, address: job?.address || "", scheduled_date: job?.scheduled_date || "", scheduled_time: job?.scheduled_time || "", notes: job?.notes || "", worker_notes: workerNotes || "", send_back_note: sentBackNote, photo_count: photoCount };
   const resubmitPayload = sentBack ? { worker_action_required: false, work_review_status: "ready_for_review", review_status: "ready_for_review", owner_review_status: "ready_for_review", resubmitted_at: new Date().toISOString() } : {};
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="px-loading__spinner" /></div>;
-  if (!job) return <div className="min-h-screen flex items-center justify-center"><Link to="/worker/jobs">Back to jobs</Link></div>;
+  if (loading) return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-3 text-center px-4">
+      <div className="px-loading__spinner" />
+      <p className="text-sm font-semibold text-[var(--cx-muted)]">Loading this job…</p>
+      <Link to="/worker/jobs" className="px-btn px-btn--secondary px-btn--sm no-underline">Back to jobs</Link>
+    </div>
+  );
+
+  if (!job) return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-3 text-center px-4">
+      <p className="text-lg font-bold text-[var(--cx-text)]">This job could not be loaded.</p>
+      <p className="text-sm text-[var(--cx-muted)]">Go back to your jobs and refresh. The office may have changed or removed this job.</p>
+      <Link to="/worker/jobs" className="px-btn px-btn--primary px-btn--md no-underline">Back to jobs</Link>
+    </div>
+  );
 
   return (
     <div className="px-app min-h-screen pb-28">
