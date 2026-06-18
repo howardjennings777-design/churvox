@@ -1,71 +1,190 @@
 import React from "react";
+import { useApi } from "../hooks/useApi";
 
-const TIME_KEY = "churvox:fresh-time-logs:v1";
+const TIME_MANUAL_KEY = "churvox:fresh-time-manual:v2";
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
 
-const defaults = [
-  {
-    id: "time-1",
-    worker: "Matiu Rangi",
-    job: "Lawn service",
-    client: "Aroha Property Care",
-    date: "Today",
-    start: "10:05 AM",
-    finish: "11:42 AM",
-    breakMins: 10,
-    hours: 1.45,
-    status: "Approved",
-    note: "Normal run. Photos complete.",
-  },
-  {
-    id: "time-2",
-    worker: "Ana Williams",
-    job: "Garden tidy",
-    client: "Lower Hutt Medical Centre",
-    date: "Today",
-    start: "1:26 PM",
-    finish: "4:58 PM",
-    breakMins: 15,
-    hours: 3.28,
-    status: "Needs review",
-    note: "Extra time due to green waste. Check before payroll.",
-  },
-  {
-    id: "time-3",
-    worker: "James Patel",
-    job: "Driveway clean",
-    client: "Birchville Rentals",
-    date: "Tomorrow",
-    start: "Not started",
-    finish: "Not finished",
-    breakMins: 0,
-    hours: 0,
-    status: "Blocked",
-    note: "Access not confirmed.",
-  },
-];
+function unwrap(payload) {
+  return payload?.data ?? payload;
+}
 
-function readTimeLogs() {
+function asArray(payload, key) {
+  const data = unwrap(payload);
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data?.results)) return data.results;
+  if (Array.isArray(data?.records)) return data.records;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.[key])) return data[key];
+  if (Array.isArray(data?.jobs)) return data.jobs;
+  if (Array.isArray(data?.workers)) return data.workers;
+  return [];
+}
+
+function idText(value) {
+  if (!value) return "";
+  if (typeof value === "string" || typeof value === "number") return String(value);
+  if (typeof value === "object") return idText(value.$oid || value.oid || value.id || value._id || value.worker_id || value.job_id || "");
+  const text = String(value || "");
+  return text === "[object Object]" ? "" : text;
+}
+
+function pick(record, ...keys) {
+  for (const key of keys) {
+    const value = record?.[key];
+    if (value !== undefined && value !== null && String(value).trim() !== "") return value;
+  }
+  return "";
+}
+
+function lower(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function numberFrom(...values) {
+  for (const value of values) {
+    if (value === undefined || value === null || value === "") continue;
+    const parsed = Number(String(value).replace(/[^0-9.-]/g, ""));
+    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  }
+  return 0;
+}
+
+function hoursFromSeconds(...values) {
+  const seconds = numberFrom(...values);
+  return seconds > 0 ? Number((seconds / 3600).toFixed(2)) : 0;
+}
+
+function hoursFromMinutes(...values) {
+  const minutes = numberFrom(...values);
+  return minutes > 0 ? Number((minutes / 60).toFixed(2)) : 0;
+}
+
+function dateText(value) {
+  if (!value) return "No date";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleDateString("en-NZ", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function timeText(value) {
+  if (!value) return "Not set";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit" });
+}
+
+function workerName(worker) {
+  return pick(worker, "name", "full_name", "display_name", "worker_name", "email") || "Worker";
+}
+
+function jobTitle(job) {
+  return pick(job, "title", "job_name", "job_title", "service_type", "job_type", "description") || "Untitled job";
+}
+
+function clientName(job) {
+  return pick(job, "client_name", "customer_name", "client", "customer", "name", "business_name") || "No client";
+}
+
+function statusFor(job, hours) {
+  const status = lower(job?.status || job?.job_status);
+  if (status.includes("complete") || status.includes("done") || status.includes("finish")) return hours > 0 ? "Approved" : "Needs review";
+  if (status.includes("progress")) return "Needs review";
+  return hours > 0 ? "Needs review" : "Blocked";
+}
+
+function readManualRows() {
   try {
-    if (typeof window === "undefined") return defaults;
-    const saved = window.localStorage.getItem(TIME_KEY);
-    if (!saved) return defaults;
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed : defaults;
+    const saved = window.localStorage.getItem(TIME_MANUAL_KEY);
+    const parsed = saved ? JSON.parse(saved) : [];
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    return defaults;
+    return [];
   }
 }
 
-function saveTimeLogs(items) {
+function saveManualRows(rows) {
   try {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(TIME_KEY, JSON.stringify(items));
-      window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "time-logs" } }));
-    }
+    window.localStorage.setItem(TIME_MANUAL_KEY, JSON.stringify(rows));
+    window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "time-sheets" } }));
   } catch {
-    // Fresh preview keeps working without local storage.
+    // Keep page usable if local storage is blocked.
   }
+}
+
+function buildWorkerMap(workers) {
+  const map = new Map();
+  workers.forEach((worker, index) => {
+    const ids = [worker?.id, worker?._id, worker?.worker_id, worker?.user_id, worker?.email, `worker-${index}`].map(idText).filter(Boolean);
+    ids.forEach((id) => map.set(id, workerName(worker)));
+  });
+  return map;
+}
+
+function extractJobLogs(job) {
+  const arrays = [job?.time_logs, job?.timeLogs, job?.timer_logs, job?.timerLogs, job?.timers, job?.sessions, job?.work_sessions].filter(Array.isArray);
+  return arrays.flat();
+}
+
+function rowFromJobLog(job, log, index, workerMap) {
+  const workerId = idText(log?.worker_id || log?.workerId || log?.user_id || job?.worker_id || job?.assigned_worker_id || job?.assigned_to);
+  const hours = numberFrom(log?.hours, log?.duration_hours, log?.total_hours) || hoursFromMinutes(log?.minutes, log?.duration_minutes) || hoursFromSeconds(log?.seconds, log?.duration_seconds, log?.total_seconds);
+  if (!hours && !log?.start && !log?.start_time && !log?.clock_in) return null;
+
+  return {
+    id: `job-${idText(job?.id || job?._id || job?.job_id)}-log-${index}`,
+    worker: pick(log, "worker_name", "worker", "name") || workerMap.get(workerId) || pick(job, "worker_name", "assigned_worker_name", "assigned_worker") || "Worker",
+    job: jobTitle(job),
+    client: clientName(job),
+    date: dateText(log?.date || log?.start || log?.start_time || job?.scheduled_date || job?.date || job?.updated_at || job?.created_at),
+    start: timeText(log?.start || log?.start_time || log?.clock_in),
+    finish: timeText(log?.finish || log?.end || log?.end_time || log?.clock_out),
+    breakMins: numberFrom(log?.break_minutes, log?.breakMins, log?.breaks) || 0,
+    hours: Number(hours || 0),
+    status: lower(log?.status).includes("approve") ? "Approved" : statusFor(job, hours),
+    note: pick(log, "note", "notes", "reason") || "Captured from job time data. Review before payroll.",
+    source: "Live job time",
+  };
+}
+
+function rowFromJobSummary(job, workerMap) {
+  const hours = numberFrom(job?.hours_worked, job?.hoursWorked, job?.total_hours, job?.duration_hours, job?.payroll_hours, job?.payrollHours) || hoursFromMinutes(job?.minutes_worked, job?.duration_minutes, job?.total_minutes) || hoursFromSeconds(job?.timer_total_seconds, job?.total_seconds, job?.duration_seconds, job?.elapsed_seconds);
+  if (!hours) return null;
+
+  const workerId = idText(job?.worker_id || job?.assigned_worker_id || job?.assigned_to || job?.worker);
+  return {
+    id: `job-${idText(job?.id || job?._id || job?.job_id)}-summary`,
+    worker: pick(job, "worker_name", "assigned_worker_name", "assigned_worker", "worker") || workerMap.get(workerId) || "Worker",
+    job: jobTitle(job),
+    client: clientName(job),
+    date: dateText(job?.scheduled_date || job?.date || job?.completed_at || job?.updated_at || job?.created_at),
+    start: timeText(job?.start_time || job?.started_at || job?.clock_in),
+    finish: timeText(job?.finish_time || job?.completed_at || job?.ended_at || job?.clock_out),
+    breakMins: numberFrom(job?.break_minutes, job?.breakMins) || 0,
+    hours: Number(hours || 0),
+    status: statusFor(job, hours),
+    note: "Captured from job summary time. Review before payroll.",
+    source: "Live job summary",
+  };
+}
+
+function buildRows(jobs, workers) {
+  const workerMap = buildWorkerMap(workers);
+  const rows = [];
+
+  jobs.forEach((job) => {
+    extractJobLogs(job).forEach((log, index) => {
+      const row = rowFromJobLog(job, log, index, workerMap);
+      if (row) rows.push(row);
+    });
+
+    if (!extractJobLogs(job).length) {
+      const row = rowFromJobSummary(job, workerMap);
+      if (row) rows.push(row);
+    }
+  });
+
+  return rows;
 }
 
 function sendTimeToCommand(item) {
@@ -76,7 +195,7 @@ function sendTimeToCommand(item) {
 
     const slip = {
       id: `time-${item.id}-${Date.now()}`,
-      group: "Time logs",
+      group: "Time sheets",
       title: "Time entry needs owner review",
       info: `${item.worker} · ${item.job} · ${item.hours} hrs`,
       urgency: item.status === "Needs review" ? "Payroll review" : item.status,
@@ -84,7 +203,7 @@ function sendTimeToCommand(item) {
       prepared: "Churvox prepared a time review slip before payroll/export.",
       why: item.note,
       owner: "Approve time, adjust hours, mark blocked, or open Payroll.",
-      area: "Time logs",
+      area: "Time sheets",
       page: "time",
       fromInbox: true,
       createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
@@ -93,53 +212,89 @@ function sendTimeToCommand(item) {
     window.localStorage.setItem(COMMAND_INBOX_KEY, JSON.stringify([slip, ...safeCurrent].slice(0, 20)));
     window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "time-command" } }));
   } catch {
-    // Fresh preview keeps working without local storage.
+    // Keep page usable without local storage.
   }
 }
 
 export default function FreshTimeLogs({ onNavigate }) {
-  const [items, setItems] = React.useState(readTimeLogs);
-  const [selectedId, setSelectedId] = React.useState(() => readTimeLogs()[0]?.id || "");
-  const selected = items.find((item) => item.id === selectedId) || items[0];
+  const { get } = useApi();
+  const [items, setItems] = React.useState([]);
+  const [manualRows, setManualRows] = React.useState(readManualRows);
+  const [selectedId, setSelectedId] = React.useState("");
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState("");
 
-  const totalHours = items.reduce((sum, item) => sum + Number(item.hours || 0), 0).toFixed(2);
-  const needsReview = items.filter((item) => item.status === "Needs review").length;
-  const approved = items.filter((item) => item.status === "Approved").length;
-  const blocked = items.filter((item) => item.status === "Blocked").length;
+  const allItems = React.useMemo(() => [...items, ...manualRows], [items, manualRows]);
+  const selected = allItems.find((item) => item.id === selectedId) || allItems[0];
+  const totalHours = allItems.reduce((sum, item) => sum + Number(item.hours || 0), 0).toFixed(2);
+  const needsReview = allItems.filter((item) => item.status === "Needs review").length;
+  const approved = allItems.filter((item) => item.status === "Approved").length;
+  const blocked = allItems.filter((item) => item.status === "Blocked").length;
 
-  function updateItem(id, patch) {
-    setItems((current) => {
-      const next = current.map((item) => (item.id === id ? { ...item, ...patch } : item));
-      saveTimeLogs(next);
+  const loadTimeSheets = React.useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const [jobsPayload, workersPayload] = await Promise.all([
+        get("/jobs", { timeout: 25000 }),
+        get("/team/workers", { timeout: 25000 }).catch(() => []),
+      ]);
+      const jobs = asArray(jobsPayload, "jobs");
+      const workers = asArray(workersPayload, "workers");
+      const liveRows = buildRows(jobs, workers).sort((a, b) => a.worker.localeCompare(b.worker));
+      setItems(liveRows);
+      setSelectedId((current) => current || liveRows[0]?.id || manualRows[0]?.id || "");
+    } catch (err) {
+      setError(err?.message || "Could not load live job time data.");
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [get, manualRows]);
+
+  React.useEffect(() => {
+    loadTimeSheets();
+  }, [loadTimeSheets]);
+
+  function updateManualItem(id, patch) {
+    setManualRows((current) => {
+      const next = current.map((item) => (item.id === id ? { ...item, ...patch, source: "Manual owner entry" } : item));
+      saveManualRows(next);
       return next;
     });
   }
 
+  function updateItem(id, patch) {
+    if (manualRows.some((item) => item.id === id)) return updateManualItem(id, patch);
+    setItems((current) => current.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+  }
+
   function addLog() {
     const next = {
-      id: `time-${Date.now()}`,
-      worker: "New worker",
-      job: "New job",
-      client: "New client",
+      id: `manual-time-${Date.now()}`,
+      worker: "Worker name",
+      job: "Job name",
+      client: "Client name",
       date: "Today",
-      start: "Not started",
-      finish: "Not finished",
+      start: "Not set",
+      finish: "Not set",
       breakMins: 0,
       hours: 0,
       status: "Needs review",
-      note: "Add time log details.",
+      note: "Manual owner entry. Confirm before payroll.",
+      source: "Manual owner entry",
     };
 
-    const updated = [next, ...items];
-    setItems(updated);
+    const updated = [next, ...manualRows];
+    setManualRows(updated);
     setSelectedId(next.id);
-    saveTimeLogs(updated);
+    saveManualRows(updated);
   }
 
-  function resetLogs() {
-    setItems(defaults);
-    setSelectedId(defaults[0]?.id || "");
-    saveTimeLogs(defaults);
+  function resetManualLogs() {
+    setManualRows([]);
+    saveManualRows([]);
+    setSelectedId(items[0]?.id || "");
   }
 
   function sendToCommand() {
@@ -152,30 +307,34 @@ export default function FreshTimeLogs({ onNavigate }) {
     <section className="freshTimePage">
       <div className="freshTimeHero">
         <div>
-          <span>Time logs</span>
+          <span>Time sheets</span>
           <h1>Approve worker time before payroll</h1>
-          <p>Review hours, breaks, blocked jobs and manual adjustments before payroll or CSV export.</p>
+          <p>Live job time appears here for owner review. Approved time feeds the payroll review workspace; Churvox does not submit tax or bank files.</p>
         </div>
 
         <div className="freshTimeStats">
-          <div><b>{totalHours}</b><small>hours</small></div>
+          <div><b>{loading ? "..." : totalHours}</b><small>hours</small></div>
           <div><b>{approved}</b><small>approved</small></div>
           <div><b>{needsReview}</b><small>review</small></div>
           <div><b>{blocked}</b><small>blocked</small></div>
         </div>
       </div>
 
+      {error && <div className="freshXeroNotice need"><b>Time sheets need attention</b><span>{error}</span></div>}
+
       <div className="freshTimeLayout">
         <aside className="freshTimeList">
           <header>
             <div>
               <b>Time queue</b>
-              <span>Worker logs + owner review</span>
+              <span>Live job time + owner review</span>
             </div>
             <button type="button" onClick={addLog}>Add</button>
           </header>
 
-          {items.map((item) => (
+          {loading && <div className="freshTimeEmpty">Checking live job time...</div>}
+
+          {!loading && allItems.map((item) => (
             <button
               type="button"
               key={item.id}
@@ -188,9 +347,15 @@ export default function FreshTimeLogs({ onNavigate }) {
             </button>
           ))}
 
-          <button type="button" className="freshTimeReset" onClick={resetLogs}>
-            Reset time logs
-          </button>
+          {!loading && !allItems.length && (
+            <div className="freshTimeEmpty">
+              <b>No captured time yet</b>
+              <span>Worker timers or approved job hours will show here. You can add a manual review row if needed.</span>
+            </div>
+          )}
+
+          <button type="button" className="freshTimeReset" onClick={loadTimeSheets}>Reload live time</button>
+          <button type="button" className="freshTimeReset" onClick={resetManualLogs}>Clear manual rows</button>
         </aside>
 
         {selected && (
@@ -205,7 +370,7 @@ export default function FreshTimeLogs({ onNavigate }) {
               <div className="freshTimeHeadActions">
                 <button type="button" onClick={sendToCommand}>Send to Command</button>
                 <button type="button" onClick={() => onNavigate?.("payroll")}>Open Payroll</button>
-                <button type="button" onClick={() => onNavigate?.("worker")}>Open Worker</button>
+                <button type="button" onClick={() => onNavigate?.("workercommand")}>Open Worker View</button>
               </div>
             </div>
 
@@ -223,7 +388,7 @@ export default function FreshTimeLogs({ onNavigate }) {
               </section>
 
               <section>
-                <span>Note</span>
+                <span>{selected.source || "Source"}</span>
                 <b>{selected.status}</b>
                 <p>{selected.note}</p>
               </section>
