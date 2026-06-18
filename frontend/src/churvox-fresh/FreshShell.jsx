@@ -12,14 +12,14 @@ const groups = [
   { title: "Work", items: [["jobs", "JB", "Jobs"], ["dispatch", "SC", "Schedule"], ["clients", "CL", "Clients"]] },
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["payments", "PY", "Payments"], ["xero", "XE", "Xero"]] },
   { title: "Team", items: [["team", "TM", "Team"], ["workercommand", "WC", "Worker View"], ["time", "TS", "Time Sheets"], ["payroll", "PR", "Payroll"]] },
-  { title: "Command", items: [["automation", "AT", "Automation"], ["reports", "RP", "Reports"]] },
+  { title: "Command", items: [["automation", "AT", "Automation"], ["reports", "RP", "Reports"], ["launchcontrol", "LC", "Launch"]] },
   { title: "Setup", items: [["settings", "SG", "Settings"], ["imports", "IM", "Imports"], ["exports", "EX", "Exports"], ["plans", "PL", "Plans"], ["support", "SP", "Support"]] },
 ];
 
 const relatedTools = {
-  smart: [["quickcreateai", "AI", "Tell Churvox"], ["command", "RV", "Review"], ["jobs", "JB", "Jobs"], ["invoices", "IV", "Invoices"]],
+  smart: [["quickcreateai", "AI", "Tell Churvox"], ["command", "RV", "Review"], ["launchcontrol", "LC", "Launch"], ["invoices", "IV", "Invoices"]],
   quickcreateai: [["smart", "TD", "Today"], ["command", "RV", "Review"], ["jobs", "JB", "Jobs"], ["invoices", "IV", "Invoices"]],
-  command: [["quickcreateai", "AI", "Tell Churvox"], ["smart", "TD", "Today"], ["automation", "AT", "Automation"], ["exports", "EX", "Exports"]],
+  command: [["quickcreateai", "AI", "Tell Churvox"], ["smart", "TD", "Today"], ["launchcontrol", "LC", "Launch"], ["exports", "EX", "Exports"]],
   jobs: [["quickcreateai", "AI", "Tell Churvox"], ["dispatch", "SC", "Schedule"], ["clients", "CL", "Clients"], ["invoices", "IV", "Invoices"]],
   dispatch: [["quickcreateai", "AI", "Tell Churvox"], ["jobs", "JB", "Jobs"], ["team", "TM", "Team"], ["smart", "TD", "Today"]],
   clients: [["quickcreateai", "AI", "Tell Churvox"], ["jobs", "JB", "Jobs"], ["quotes", "QT", "Quotes"], ["exports", "EX", "Exports"]],
@@ -31,16 +31,17 @@ const relatedTools = {
   workercommand: [["team", "TM", "Team"], ["jobs", "JB", "Jobs"], ["time", "TS", "Time Sheets"], ["payroll", "PR", "Payroll"]],
   time: [["team", "TM", "Team"], ["workercommand", "WC", "Worker View"], ["payroll", "PR", "Payroll"], ["jobs", "JB", "Jobs"]],
   payroll: [["time", "TS", "Time Sheets"], ["team", "TM", "Team"], ["exports", "EX", "Exports"], ["settings", "SG", "Settings"]],
-  reports: [["invoices", "IV", "Invoices"], ["jobs", "JB", "Jobs"], ["payroll", "PR", "Payroll"], ["exports", "EX", "Exports"]],
-  automation: [["quickcreateai", "AI", "Tell Churvox"], ["command", "RV", "Review"], ["invoices", "IV", "Invoices"], ["settings", "SG", "Settings"]],
+  reports: [["invoices", "IV", "Invoices"], ["jobs", "JB", "Jobs"], ["launchcontrol", "LC", "Launch"], ["exports", "EX", "Exports"]],
+  automation: [["quickcreateai", "AI", "Tell Churvox"], ["command", "RV", "Review"], ["launchcontrol", "LC", "Launch"], ["settings", "SG", "Settings"]],
+  launchcontrol: [["smart", "TD", "Today"], ["command", "RV", "Review"], ["qa", "QA", "QA"], ["support", "SP", "Support"]],
   settings: [["imports", "IM", "Imports"], ["exports", "EX", "Exports"], ["plans", "PL", "Plans"], ["support", "SP", "Support"]],
   imports: [["clients", "CL", "Clients"], ["team", "TM", "Team"], ["exports", "EX", "Exports"], ["command", "RV", "Review"]],
-  exports: [["imports", "IM", "Imports"], ["clients", "CL", "Clients"], ["invoices", "IV", "Invoices"], ["command", "RV", "Review"]],
+  exports: [["imports", "IM", "Imports"], ["clients", "CL", "Clients"], ["launchcontrol", "LC", "Launch"], ["command", "RV", "Review"]],
   plans: [["settings", "SG", "Settings"], ["xero", "XE", "Xero"], ["support", "SP", "Support"]],
-  support: [["settings", "SG", "Settings"], ["exports", "EX", "Exports"], ["plans", "PL", "Plans"]],
+  support: [["settings", "SG", "Settings"], ["exports", "EX", "Exports"], ["launchcontrol", "LC", "Launch"]],
   photos: [["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"]],
   documents: [["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"]],
-  setupassistant: [["settings", "SG", "Settings"], ["imports", "IM", "Imports"], ["exports", "EX", "Exports"], ["quickcreateai", "AI", "Tell Churvox"]],
+  setupassistant: [["settings", "SG", "Settings"], ["imports", "IM", "Imports"], ["exports", "EX", "Exports"], ["launchcontrol", "LC", "Launch"]],
   security: [["settings", "SG", "Settings"], ["support", "SP", "Support"]],
 };
 
@@ -61,6 +62,7 @@ const purpose = {
   payroll: "Payroll review workspace from approved time. No tax filing. No bank files.",
   reports: "Business reporting from jobs, invoices, time, and payroll review data.",
   automation: "Rules that prepare actions for owner approval, not uncontrolled changes.",
+  launchcontrol: "Live launch readiness board for blockers, tests, and controlled beta decisions.",
   settings: "Business details, branding, billing country, integrations, and setup.",
   imports: "Bring clients, workers, jobs, quotes and invoices into Churvox safely from CSV.",
   exports: "Download owner-controlled CSV exports from live Churvox records.",
@@ -80,21 +82,11 @@ function guideIsComplete() { try { return window.localStorage.getItem(GUIDE_COMP
 function uniqueItems(items) { const seen = new Set(); return items.filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }); }
 function stripHiddenItems(items, guideComplete) { return items.filter(([key]) => !(guideComplete && key === "setupassistant")); }
 function cleanGroups(sourceGroups, guideComplete = false) { const seen = new Set(); return sourceGroups.map((group) => ({ ...group, items: stripHiddenItems(group.items, guideComplete).filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }) })).filter((group) => group.items.length); }
-function buildLabels() { const entries = [...groups.flatMap((group) => group.items), ...Object.values(relatedTools).flat()]; const nextLabels = Object.fromEntries(entries.map(([key, , label]) => [key, label])); nextLabels.quickcreateai = "Tell Churvox"; nextLabels.command = "Review"; nextLabels.smart = "Today"; nextLabels.dispatch = "Schedule"; nextLabels.workercommand = "Worker View"; nextLabels.time = "Time Sheets"; nextLabels.payments = "Payments"; nextLabels.imports = "Imports"; nextLabels.exports = "Exports"; nextLabels.photos = "Photos"; nextLabels.documents = "Documents"; nextLabels.setupassistant = "AI Guide"; nextLabels.security = "Security"; return nextLabels; }
+function buildLabels() { const entries = [...groups.flatMap((group) => group.items), ...Object.values(relatedTools).flat()]; const nextLabels = Object.fromEntries(entries.map(([key, , label]) => [key, label])); nextLabels.quickcreateai = "Tell Churvox"; nextLabels.command = "Review"; nextLabels.smart = "Today"; nextLabels.dispatch = "Schedule"; nextLabels.workercommand = "Worker View"; nextLabels.time = "Time Sheets"; nextLabels.payments = "Payments"; nextLabels.imports = "Imports"; nextLabels.exports = "Exports"; nextLabels.launchcontrol = "Launch"; nextLabels.photos = "Photos"; nextLabels.documents = "Documents"; nextLabels.setupassistant = "AI Guide"; nextLabels.security = "Security"; return nextLabels; }
 function buildParentMap() { const map = {}; Object.entries(relatedTools).forEach(([parent, items]) => { items.forEach(([key]) => { if (!map[key]) map[key] = parent; }); }); groups.forEach((group) => group.items.forEach(([key]) => { map[key] = key; })); map.routes = "dispatch"; map.areas = "dispatch"; map.schedulerai = "dispatch"; map.gps = "time"; map.portal = "clients"; map.followupwriter = "clients"; map.reviewbooster = "clients"; return map; }
 function resetFreshScrollTop() {
-  const top = () => {
-    try { window.scrollTo({ top: 0, left: 0, behavior: "auto" }); } catch { try { window.scrollTo(0, 0); } catch {} }
-    try { document.documentElement.scrollTop = 0; } catch {}
-    try { document.body.scrollTop = 0; } catch {}
-    try { document.scrollingElement.scrollTop = 0; } catch {}
-    [".freshMain", ".freshPageMount", ".freshApp", "main"].forEach((selector) => {
-      try { document.querySelectorAll(selector).forEach((el) => { if (el && typeof el.scrollTo === "function") el.scrollTo({ top: 0, left: 0, behavior: "auto" }); if (el) el.scrollTop = 0; }); } catch {}
-    });
-  };
-  top();
-  window.requestAnimationFrame(top);
-  window.setTimeout(top, 80);
+  const top = () => { try { window.scrollTo({ top: 0, left: 0, behavior: "auto" }); } catch { try { window.scrollTo(0, 0); } catch {} } try { document.documentElement.scrollTop = 0; } catch {} try { document.body.scrollTop = 0; } catch {} try { document.scrollingElement.scrollTop = 0; } catch {} [".freshMain", ".freshPageMount", ".freshApp", "main"].forEach((selector) => { try { document.querySelectorAll(selector).forEach((el) => { if (el && typeof el.scrollTo === "function") el.scrollTo({ top: 0, left: 0, behavior: "auto" }); if (el) el.scrollTop = 0; }); } catch {} }); };
+  top(); window.requestAnimationFrame(top); window.setTimeout(top, 80);
 }
 const labels = buildLabels();
 const parentByKey = buildParentMap();
@@ -106,14 +98,7 @@ export default function FreshShell({ active, onChange, children }) {
   const [verifySent, setVerifySent] = React.useState(false);
   const [guideComplete, setGuideComplete] = React.useState(guideIsComplete);
 
-  React.useEffect(() => {
-    const refreshGuide = () => setGuideComplete(guideIsComplete());
-    window.addEventListener("storage", refreshGuide);
-    window.addEventListener("churvox:ai-guide-status", refreshGuide);
-    window.addEventListener("churvox:fresh-data-updated", refreshGuide);
-    return () => { window.removeEventListener("storage", refreshGuide); window.removeEventListener("churvox:ai-guide-status", refreshGuide); window.removeEventListener("churvox:fresh-data-updated", refreshGuide); };
-  }, []);
-
+  React.useEffect(() => { const refreshGuide = () => setGuideComplete(guideIsComplete()); window.addEventListener("storage", refreshGuide); window.addEventListener("churvox:ai-guide-status", refreshGuide); window.addEventListener("churvox:fresh-data-updated", refreshGuide); return () => { window.removeEventListener("storage", refreshGuide); window.removeEventListener("churvox:ai-guide-status", refreshGuide); window.removeEventListener("churvox:fresh-data-updated", refreshGuide); }; }, []);
   React.useEffect(() => { resetFreshScrollTop(); }, [active]);
 
   const safeGroups = React.useMemo(() => cleanGroups(groups, guideComplete), [guideComplete]);
