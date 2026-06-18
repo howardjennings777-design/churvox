@@ -8,32 +8,34 @@ const OPEN_CLIENT_MODAL_KEY = "churvox:fresh-open-client-modal:v1";
 const OPEN_JOB_MODAL_KEY = "churvox:fresh-open-job-modal:v1";
 
 const groups = [
-  { title: "Daily", items: [["smart", "TD", "Today"], ["quickcreateai", "AI", "Tell Churvox"], ["command", "RV", "Review"]] },
+  { title: "Today", items: [["smart", "TD", "Today"], ["quickcreateai", "AI", "Tell Churvox"], ["command", "RV", "Review"]] },
   { title: "Work", items: [["jobs", "JB", "Jobs"], ["dispatch", "SC", "Schedule"], ["clients", "CL", "Clients"]] },
-  { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["xero", "XE", "Xero"]] },
-  { title: "People", items: [["team", "TM", "Team"], ["workercommand", "WC", "Worker View"], ["time", "TL", "Time"], ["payroll", "PR", "Payroll"]] },
-  { title: "More", items: [["reports", "RP", "Reports"], ["automation", "AT", "Automation"], ["settings", "SG", "Settings"], ["plans", "PL", "Plans"], ["support", "SP", "Support"]] },
+  { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["payments", "PY", "Payments"], ["xero", "XE", "Xero"]] },
+  { title: "Team", items: [["team", "TM", "Team"], ["workercommand", "WC", "Worker View"], ["time", "TS", "Time Sheets"], ["payroll", "PR", "Payroll"]] },
+  { title: "Command", items: [["automation", "AT", "Automation"], ["reports", "RP", "Reports"]] },
+  { title: "Setup", items: [["settings", "SG", "Settings"], ["plans", "PL", "Plans"], ["support", "SP", "Support"]] },
 ];
 
 const relatedTools = {
   smart: [["quickcreateai", "AI", "Tell Churvox"], ["command", "RV", "Review"], ["jobs", "JB", "Jobs"], ["invoices", "IV", "Invoices"]],
   quickcreateai: [["smart", "TD", "Today"], ["command", "RV", "Review"], ["jobs", "JB", "Jobs"], ["invoices", "IV", "Invoices"]],
-  command: [["quickcreateai", "AI", "Tell Churvox"], ["smart", "TD", "Today"], ["jobs", "JB", "Jobs"], ["invoices", "IV", "Invoices"]],
+  command: [["quickcreateai", "AI", "Tell Churvox"], ["smart", "TD", "Today"], ["automation", "AT", "Automation"], ["invoices", "IV", "Invoices"]],
   jobs: [["quickcreateai", "AI", "Tell Churvox"], ["dispatch", "SC", "Schedule"], ["clients", "CL", "Clients"], ["invoices", "IV", "Invoices"]],
   dispatch: [["quickcreateai", "AI", "Tell Churvox"], ["jobs", "JB", "Jobs"], ["team", "TM", "Team"], ["smart", "TD", "Today"]],
   clients: [["quickcreateai", "AI", "Tell Churvox"], ["jobs", "JB", "Jobs"], ["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"]],
   quotes: [["quickcreateai", "AI", "Tell Churvox"], ["clients", "CL", "Clients"], ["jobs", "JB", "Jobs"], ["invoices", "IV", "Invoices"]],
-  invoices: [["quickcreateai", "AI", "Tell Churvox"], ["quotes", "QT", "Quotes"], ["xero", "XE", "Xero"], ["reports", "RP", "Reports"]],
-  xero: [["invoices", "IV", "Invoices"], ["quickcreateai", "AI", "Tell Churvox"], ["settings", "SG", "Settings"]],
-  team: [["quickcreateai", "AI", "Tell Churvox"], ["time", "TL", "Time"], ["payroll", "PR", "Payroll"], ["jobs", "JB", "Jobs"]],
-  time: [["team", "TM", "Team"], ["payroll", "PR", "Payroll"], ["jobs", "JB", "Jobs"]],
-  payroll: [["team", "TM", "Team"], ["time", "TL", "Time"], ["reports", "RP", "Reports"]],
-  reports: [["invoices", "IV", "Invoices"], ["jobs", "JB", "Jobs"], ["payroll", "PR", "Payroll"]],
-  automation: [["quickcreateai", "AI", "Tell Churvox"], ["command", "RV", "Review"], ["settings", "SG", "Settings"]],
-  settings: [["quickcreateai", "AI", "Tell Churvox"], ["plans", "PL", "Plans"], ["support", "SP", "Support"]],
-  plans: [["settings", "SG", "Settings"], ["support", "SP", "Support"]],
-  support: [["quickcreateai", "AI", "Tell Churvox"], ["settings", "SG", "Settings"]],
-  payments: [["invoices", "IV", "Invoices"], ["xero", "XE", "Xero"]],
+  invoices: [["quickcreateai", "AI", "Tell Churvox"], ["quotes", "QT", "Quotes"], ["payments", "PY", "Payments"], ["xero", "XE", "Xero"]],
+  payments: [["invoices", "IV", "Invoices"], ["xero", "XE", "Xero"], ["command", "RV", "Review"]],
+  xero: [["invoices", "IV", "Invoices"], ["payments", "PY", "Payments"], ["plans", "PL", "Plans"], ["settings", "SG", "Settings"]],
+  team: [["jobs", "JB", "Jobs"], ["workercommand", "WC", "Worker View"], ["time", "TS", "Time Sheets"], ["payroll", "PR", "Payroll"]],
+  workercommand: [["team", "TM", "Team"], ["jobs", "JB", "Jobs"], ["time", "TS", "Time Sheets"], ["payroll", "PR", "Payroll"]],
+  time: [["team", "TM", "Team"], ["workercommand", "WC", "Worker View"], ["payroll", "PR", "Payroll"], ["jobs", "JB", "Jobs"]],
+  payroll: [["time", "TS", "Time Sheets"], ["team", "TM", "Team"], ["reports", "RP", "Reports"], ["settings", "SG", "Settings"]],
+  reports: [["invoices", "IV", "Invoices"], ["jobs", "JB", "Jobs"], ["payroll", "PR", "Payroll"], ["xero", "XE", "Xero"]],
+  automation: [["quickcreateai", "AI", "Tell Churvox"], ["command", "RV", "Review"], ["invoices", "IV", "Invoices"], ["settings", "SG", "Settings"]],
+  settings: [["plans", "PL", "Plans"], ["support", "SP", "Support"], ["xero", "XE", "Xero"]],
+  plans: [["settings", "SG", "Settings"], ["xero", "XE", "Xero"], ["support", "SP", "Support"]],
+  support: [["settings", "SG", "Settings"], ["plans", "PL", "Plans"]],
   photos: [["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"]],
   documents: [["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"]],
   setupassistant: [["settings", "SG", "Settings"], ["quickcreateai", "AI", "Tell Churvox"]],
@@ -41,24 +43,25 @@ const relatedTools = {
 };
 
 const purpose = {
-  smart: "Today: jobs, money, review tray and the next best action.",
-  quickcreateai: "Tell Churvox what happened or what you want done.",
-  command: "Review tray: approve, decline or edit prepared admin actions.",
-  jobs: "Create, assign and complete work.",
-  dispatch: "Plan the day and move jobs into the right slots.",
-  clients: "Customer records, history, contact details and notes.",
-  quotes: "Price work, send quotes and convert accepted work into jobs.",
-  invoices: "Draft, send, track and follow up money owed.",
-  xero: "Owner-approved draft invoice sync only.",
-  team: "People, invites, roles and worker app access.",
-  workercommand: "Worker command: live status, time, GPS, jobs and alerts.",
-  time: "Worker hours and job time logs.",
-  payroll: "Pay period workspace from approved time, no tax filing or bank files.",
-  reports: "Business reporting, cashflow and performance.",
-  automation: "Rules and alerts that prepare work for approval.",
-  settings: "Business details, branding, billing country and setup.",
-  plans: "Plan, trial, usage and add-ons.",
-  support: "Contact Churvox support.",
+  smart: "Today: real jobs, money, and owner actions still needing attention.",
+  quickcreateai: "Tell Churvox what happened so it can prepare the next admin step.",
+  command: "Owner approval desk: review, edit, approve, or decline prepared admin work.",
+  jobs: "Create, assign, complete, and invoice work from one job record.",
+  dispatch: "Schedule jobs and keep the day organised.",
+  clients: "Customer records, history, contact details, notes, quotes, and jobs.",
+  quotes: "Price work, send quotes, and convert accepted work into jobs.",
+  invoices: "Draft, send, mark paid, and follow up money owed.",
+  payments: "Track paid, due, overdue, and follow-up status before accounting sync.",
+  xero: "Owner-approved accounting sync: Churvox creates Xero draft invoices only.",
+  team: "Workers, invites, roles, and worker app access.",
+  workercommand: "Worker view for jobs, status, time, photos, and field updates.",
+  time: "Review worker time sheets before payroll review.",
+  payroll: "Payroll review workspace from approved time. No tax filing. No bank files.",
+  reports: "Business reporting from jobs, invoices, time, and payroll review data.",
+  automation: "Rules that prepare actions for owner approval, not uncontrolled changes.",
+  settings: "Business details, branding, billing country, integrations, and setup.",
+  plans: "Plan, trial, usage, add-ons, and accounting sync access.",
+  support: "Contact Churvox support and get setup help.",
   payments: "Payment status and payment follow-up tools.",
   photos: "Job photos, proof and completion evidence.",
   documents: "Files, contracts, assets and job paperwork.",
@@ -67,13 +70,13 @@ const purpose = {
   default: "Extra tool connected to the current area.",
 };
 
-const mobileItems = [["smart", "TD", "Today"], ["quickcreateai", "AI", "Tell"], ["command", "RV", "Review"], ["jobs", "JB", "Work"], ["invoices", "IV", "Money"], ["more", "••", "More"]];
+const mobileItems = [["smart", "TD", "Today"], ["jobs", "JB", "Jobs"], ["invoices", "IV", "Money"], ["command", "RV", "Review"], ["time", "TS", "Time"], ["more", "••", "More"]];
 
 function guideIsComplete() { try { return window.localStorage.getItem(GUIDE_COMPLETE_KEY) === "true"; } catch { return false; } }
 function uniqueItems(items) { const seen = new Set(); return items.filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }); }
 function stripHiddenItems(items, guideComplete) { return items.filter(([key]) => !(guideComplete && key === "setupassistant")); }
 function cleanGroups(sourceGroups, guideComplete = false) { const seen = new Set(); return sourceGroups.map((group) => ({ ...group, items: stripHiddenItems(group.items, guideComplete).filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }) })).filter((group) => group.items.length); }
-function buildLabels() { const entries = [...groups.flatMap((group) => group.items), ...Object.values(relatedTools).flat()]; const nextLabels = Object.fromEntries(entries.map(([key, , label]) => [key, label])); nextLabels.quickcreateai = "Tell Churvox"; nextLabels.command = "Review"; nextLabels.smart = "Today"; nextLabels.dispatch = "Schedule"; nextLabels.workercommand = "Worker View"; nextLabels.payments = "Payments"; nextLabels.photos = "Photos"; nextLabels.documents = "Documents"; nextLabels.setupassistant = "AI Guide"; nextLabels.security = "Security"; return nextLabels; }
+function buildLabels() { const entries = [...groups.flatMap((group) => group.items), ...Object.values(relatedTools).flat()]; const nextLabels = Object.fromEntries(entries.map(([key, , label]) => [key, label])); nextLabels.quickcreateai = "Tell Churvox"; nextLabels.command = "Review"; nextLabels.smart = "Today"; nextLabels.dispatch = "Schedule"; nextLabels.workercommand = "Worker View"; nextLabels.time = "Time Sheets"; nextLabels.payments = "Payments"; nextLabels.photos = "Photos"; nextLabels.documents = "Documents"; nextLabels.setupassistant = "AI Guide"; nextLabels.security = "Security"; return nextLabels; }
 function buildParentMap() { const map = {}; Object.entries(relatedTools).forEach(([parent, items]) => { items.forEach(([key]) => { if (!map[key]) map[key] = parent; }); }); groups.forEach((group) => group.items.forEach(([key]) => { map[key] = key; })); map.routes = "dispatch"; map.areas = "dispatch"; map.schedulerai = "dispatch"; map.gps = "time"; map.portal = "clients"; map.followupwriter = "clients"; map.reviewbooster = "clients"; return map; }
 function resetFreshScrollTop() {
   const top = () => {
