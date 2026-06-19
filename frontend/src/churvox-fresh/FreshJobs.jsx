@@ -166,8 +166,38 @@ export default function FreshJobs({ onNavigate }) {
         <aside className="freshCard freshJobsActionsCard"><h2>Owner actions</h2><div className="freshActions"><button className="freshPrimary" type="button" onClick={openBlankJob}>New job</button><button className="freshPrimary" type="button" onClick={loadJobs}>Refresh jobs</button><button className="freshGhost" type="button" onClick={() => onNavigate?.("command")}>Send issue to Command</button></div></aside>
       </section>
       {createOpen ? (
-        <div className="freshPopupBackdrop freshClientPopupBackdrop freshJobPopupBackdrop" role="dialog" aria-modal="true" aria-label="Add job" onMouseDown={(event) => { if (event.target === event.currentTarget) setCreateOpen(false); }}>
-          <section className="freshCard freshClientPopupCard freshJobPopupCard">
+        <div
+          className="freshPopupBackdrop freshClientPopupBackdrop freshJobPopupBackdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Add job"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 99999,
+            width: "100vw",
+            height: "100dvh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 22,
+            background: "rgba(2, 6, 23, 0.72)",
+            backdropFilter: "blur(14px)",
+          }}
+          onMouseDown={(event) => { if (event.target === event.currentTarget) setCreateOpen(false); }}
+        >
+          <section
+            className="freshCard freshClientPopupCard freshJobPopupCard"
+            style={{
+              width: "min(980px, calc(100vw - 44px))",
+              maxHeight: "min(840px, calc(100dvh - 44px))",
+              margin: "auto",
+              overflow: "auto",
+              borderRadius: 30,
+              background: "#fffaf0",
+              boxShadow: "0 34px 100px rgba(0, 0, 0, 0.45)",
+            }}
+          >
             <header className="freshHero freshClientPopupHero freshJobPopupHero"><span>New job</span><h1>Add job</h1><p>{jobInstruction ? `From Ask Churvox: ${jobInstruction}` : "Add the real job here without leaving the Jobs area."}</p></header>
             <div className="freshJobPopupBody"><JobCreateForm initialInstruction={jobInstruction} onCancel={() => setCreateOpen(false)} onSuccess={handleJobCreated} submitLabel="Create job" /></div>
           </section>
