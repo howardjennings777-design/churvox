@@ -1,5 +1,4 @@
 import React from "react";
-import FreshSearch from "./FreshSearch";
 import { useAuth } from "../context/AuthContext";
 import API_BASE from "../lib/apiBase";
 
@@ -129,11 +128,10 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
       </aside>
 
       <main className="freshMain">
-        <div className="freshTopbar freshTopbar--clean">
+        <div className="freshTopbar freshTopbar--clean freshTopbar--askSticky">
           <div className="freshTopbarTitle"><span>Current area</span><strong>{currentLabel}</strong><small>{currentPurpose}</small></div>
-          <FreshSearch onNavigate={go} />
           <div className="freshTopActions freshTopActions--clean">
-            <button className="freshTellTop" type="button" onClick={openTellChurvox}>Tell Churvox</button>
+            <button className="freshTellTop" type="button" onClick={openTellChurvox}>Ask Churvox</button>
             {!guideComplete ? <button type="button" onClick={() => go("setupassistant")}>AI Guide</button> : null}
             <button type="button" onClick={() => openRealCreate("/jobs/new")}>New job</button>
             <button type="button" onClick={openClientPopup}>Add client</button>
