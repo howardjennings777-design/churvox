@@ -556,6 +556,7 @@ export const MARKETING_PLAN_KEYS = PLAN_ORDER;
 export const MARKETING_PLAN_NAMES = PLAN_NAMES;
 
 export const APP_PLANS = CHURVOX_PLANS.map((plan) => {
+  const country = getCountryMeta(DEFAULT_COUNTRY);
   const overrides = COUNTRY_PRICE_OVERRIDES[country.code] || COUNTRY_PRICE_OVERRIDES[DEFAULT_COUNTRY] || {};
   const monthly = Number(overrides[plan.key] ?? plan.monthly ?? plan.price ?? 0);
   const limits = PLAN_LIMITS[plan.key] || {};
