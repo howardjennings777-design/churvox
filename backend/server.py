@@ -1125,6 +1125,8 @@ async def login(user_data: UserLogin, response: Response, request: Request):
     attempt = await db.login_attempts.find_one({"identifier": identifier})
     if attempt and attempt.get("count", 0) >= 5:
         lockout_time = attempt.get("locked_until")
+        if lockout_time and getattr(lockout_time, "tzinfo", None) is None:
+            lockout_time = lockout_time.replace(tzinfo=timezone.utc)
         if lockout_time and datetime.now(timezone.utc) < lockout_time:
             response.status_code = 429
             return {"success": False, "detail": "Too many failed attempts. Try again later."}
