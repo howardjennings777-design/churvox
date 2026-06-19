@@ -3,6 +3,37 @@
 // Public plan names: Start, Crew, Operator, Command.
 
 export const DEFAULT_COUNTRY = "NZ";
+export const COUNTRY_PRICE_OVERRIDES = {
+  NZ: { solo: 39, team: 89, pro: 149, enterprise: 299, accounting_sync: 39, growth_pack: 99 },
+  AU: { solo: 39, team: 89, pro: 149, enterprise: 299, accounting_sync: 39, growth_pack: 99 },
+  US: { solo: 29, team: 69, pro: 119, enterprise: 249, accounting_sync: 29, growth_pack: 79 },
+  UK: { solo: 29, team: 69, pro: 119, enterprise: 249, accounting_sync: 29, growth_pack: 79 },
+};
+
+export function detectCountryCode() {
+  try {
+    const saved = window.localStorage.getItem("churvox:billing-country");
+    if (saved) return normalizeCountry(saved);
+  } catch {}
+
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+    if (/auckland|chatham/i.test(tz)) return "NZ";
+    if (/sydney|melbourne|brisbane|perth|adelaide|hobart|darwin/i.test(tz)) return "AU";
+    if (/london|belfast|guernsey|jersey|isle_of_man/i.test(tz)) return "UK";
+    if (/america\//i.test(tz)) return "US";
+  } catch {}
+
+  try {
+    const locale = String(navigator.language || navigator.userLanguage || "").toUpperCase();
+    if (locale.includes("-NZ")) return "NZ";
+    if (locale.includes("-AU")) return "AU";
+    if (locale.includes("-GB") || locale.includes("-UK")) return "UK";
+    if (locale.includes("-US")) return "US";
+  } catch {}
+
+  return DEFAULT_COUNTRY;
+}
 
 export const PLAN_KEYS = {
   START: "solo",
@@ -26,7 +57,7 @@ export const COUNTRY_OPTIONS = [
   { code: "NZ", label: "New Zealand", currency: "NZD", symbol: "$", taxLabel: "+ GST", taxInclusiveLabel: "incl. GST", taxRate: 0.15 },
   { code: "AU", label: "Australia", currency: "AUD", symbol: "A$", taxLabel: "+ GST", taxInclusiveLabel: "incl. GST", taxRate: 0.10 },
   { code: "US", label: "United States", currency: "USD", symbol: "US$", taxLabel: "", taxInclusiveLabel: "", taxRate: 0 },
-  { code: "UK", label: "United Kingdom", currency: "GBP", symbol: "GBP", taxLabel: "+ VAT", taxInclusiveLabel: "incl. VAT", taxRate: 0.20 }
+  { code: "UK", label: "United Kingdom", currency: "GBP", symbol: "£", taxLabel: "+ VAT", taxInclusiveLabel: "incl. VAT", taxRate: 0.20 }
 ];
 
 export const COUNTRIES = COUNTRY_OPTIONS;
@@ -412,7 +443,8 @@ export function pricePlanForCountry(planOrKey, countryCode) {
     : getPlanConfig(planOrKey);
 
   const country = getCountryMeta(countryCode);
-  const monthly = Number(plan.monthly || plan.price || 0);
+  const overrides = COUNTRY_PRICE_OVERRIDES[country.code] || COUNTRY_PRICE_OVERRIDES[DEFAULT_COUNTRY] || {};
+  const monthly = Number(overrides[plan.key] ?? plan.monthly ?? plan.price ?? 0);
   const tax = country.taxLabel ? " " + country.taxLabel : "";
   const priceLabel = country.symbol + monthly + "/month" + tax;
 
@@ -465,7 +497,9 @@ export function addonPriceForCountry(addonOrKey, countryCode) {
     }
   }
 
-  const monthly = Number(addon.monthly || addon.price || 0);
+  const overrides = COUNTRY_PRICE_OVERRIDES[country.code] || COUNTRY_PRICE_OVERRIDES[DEFAULT_COUNTRY] || {};
+  const addonPriceKey = lower.includes("growth") ? "growth_pack" : "accounting_sync";
+  const monthly = Number(overrides[addonPriceKey] ?? addon.monthly ?? addon.price ?? 0);
   const tax = country.taxLabel ? " " + country.taxLabel : "";
   const priceLabel = country.symbol + monthly + "/month" + tax;
 
@@ -522,7 +556,8 @@ export const MARKETING_PLAN_KEYS = PLAN_ORDER;
 export const MARKETING_PLAN_NAMES = PLAN_NAMES;
 
 export const APP_PLANS = CHURVOX_PLANS.map((plan) => {
-  const monthly = Number(plan.monthly || plan.price || 0);
+  const overrides = COUNTRY_PRICE_OVERRIDES[country.code] || COUNTRY_PRICE_OVERRIDES[DEFAULT_COUNTRY] || {};
+  const monthly = Number(overrides[plan.key] ?? plan.monthly ?? plan.price ?? 0);
   const limits = PLAN_LIMITS[plan.key] || {};
   return {
     ...plan,

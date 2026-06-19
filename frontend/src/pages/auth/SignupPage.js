@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import API_BASE from "../../lib/apiBase";
 import { saveBusinessSettings } from "../../lib/businessSettings";
 import { Nav } from "../marketing/ExecutiveHomePage";
+import { COUNTRY_OPTIONS, detectCountryCode, normalizeCountry } from "../../config/churvoxPlans";
 import "./AuthPublicCommand.css";
 
 const FIRST_SETUP_KEY = "churvox_first_setup_pending";
@@ -42,6 +43,14 @@ export default function SignupPage() {
   const { register } = useAuth();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [country, setCountry] = useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search || "");
+      return normalizeCountry(params.get("country") || detectCountryCode());
+    } catch {
+      return detectCountryCode();
+    }
+  });
 
   const attachInput = (el) => lockInputText(el);
   const handleInput = (e) => lockInputText(e.currentTarget);
@@ -56,6 +65,7 @@ export default function SignupPage() {
     const businessName = String(data.get("business_name") || "").trim();
     const password = String(data.get("password") || "");
     const confirmPassword = String(data.get("confirmPassword") || "");
+    const billingCountry = normalizeCountry(data.get("country") || country);
 
     if (!name) return setError("Enter your full name.");
     if (!email) return setError("Enter your email.");
@@ -64,7 +74,7 @@ export default function SignupPage() {
 
     setLoading(true);
     try {
-      const result = await register({ name, email, password, business_name: businessName || null });
+      const result = await register({ name, email, password, business_name: businessName || null, billing_country: billingCountry, country: billingCountry });
       if (!result?.token) return setError("Registration failed. Please try again.");
 
       try {
@@ -74,11 +84,12 @@ export default function SignupPage() {
         localStorage.removeItem("churvox:fresh-demo-mode:v1");
         localStorage.removeItem("churvox:fresh-command-inbox:v1");
         localStorage.removeItem("churvox:fresh-jobs:v1");
-        saveBusinessSettings({ business_name: businessName || "", email });
+        localStorage.setItem("churvox:billing-country", billingCountry);
+        saveBusinessSettings({ business_name: businessName || "", email, country: billingCountry });
       } catch {}
 
       sendWelcomeEmail(result.token);
-      navigate("/plans?first_setup=1&must_choose_plan=1", { replace: true });
+      navigate(`/plans?first_setup=1&must_choose_plan=1&country=${encodeURIComponent(billingCountry)}`, { replace: true });
     } catch (err) {
       setError(err?.response?.data?.detail || err?.response?.data?.message || err?.message || "Registration failed. Please try again.");
     } finally {
@@ -98,6 +109,7 @@ export default function SignupPage() {
           <label>Full name<input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="name" autoComplete="name" placeholder="Your name" required /></label>
           <label>Email<input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="email" type="email" autoComplete="email" placeholder="hello@churvox.com" required /></label>
           <label>Business name<input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="business_name" autoComplete="organization" placeholder="Business name" /></label>
+          <label>Country / pricing region<select className="cvPublicNativeInput" name="country" value={country} onChange={(event) => setCountry(normalizeCountry(event.target.value))}>{COUNTRY_OPTIONS.map((item) => <option key={item.code} value={item.code}>{item.label} · {item.currency}</option>)}</select></label>
           <label>Password<input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="password" type="password" autoComplete="new-password" placeholder="Password" required /></label>
           <label>Confirm password<input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="confirmPassword" type="password" autoComplete="new-password" placeholder="Confirm password" required /></label>
           <button className="cvPublicAuthSubmit" type="submit" disabled={loading}>{loading ? "Creating account..." : "Create account and choose plan"}</button>

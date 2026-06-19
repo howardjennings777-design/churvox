@@ -1,16 +1,24 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Nav, Footer } from "./ExecutiveHomePage";
-import { MARKETING_PLANS } from "../../config/churvoxPlans";
+import {
+  CHURVOX_PLANS,
+  COUNTRY_OPTIONS,
+  addonPriceForCountry,
+  detectCountryCode,
+  getCountryMeta,
+  pricePlanForCountry,
+  pricingNotesForCountry,
+  normalizeCountry,
+} from "../../config/churvoxPlans";
 import "./SimplePublic.css";
 
 function priceLabel(plan) {
-  if (typeof plan.price === "number") return `$${plan.price}/month + GST`;
-  return plan.price || "";
+  return plan.priceLabel || "";
 }
 
 function taxLabel(plan) {
-  return plan.taxInclusiveLabel || "GST/tax added at checkout";
+  return plan.taxInclusiveLabel || plan.taxInclusiveLabel === "" ? plan.taxInclusiveLabel : "Tax added at checkout";
 }
 
 function featureList(plan) {
@@ -26,8 +34,27 @@ const chooser = [
 ];
 
 export default function ExecutivePricingPage() {
+  const [country, setCountry] = React.useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search || "");
+      return normalizeCountry(params.get("country") || detectCountryCode());
+    } catch {
+      return detectCountryCode();
+    }
+  });
+
+  React.useEffect(() => {
+    try { window.localStorage.setItem("churvox:billing-country", country); } catch {}
+  }, [country]);
+
+  const countryMeta = getCountryMeta(country);
+  const displayPlans = React.useMemo(() => CHURVOX_PLANS.map((plan) => pricePlanForCountry(plan, country)), [country]);
+  const accountingAddon = addonPriceForCountry("accounting_sync", country);
+  const signupTo = `/signup?country=${encodeURIComponent(country)}`;
+  const notes = pricingNotesForCountry(country);
+
   return (
-    <main className="simplePublic" data-version="CHURVOX_PRICING_ACCOUNTING_SYNC_GST_20260614">
+    <main className="simplePublic" data-version="CHURVOX_COUNTRY_PRICING_20260619">
       <Nav />
 
       <section className="simpleHero">
@@ -38,8 +65,22 @@ export default function ExecutivePricingPage() {
             Try Churvox for 14 days with no card. Start with the basics, then move up when you need workers,
             AI Operator Actions, accounting sync, payroll workspace or bigger team control.
           </p>
+
+          <label className="simpleCountrySelect">
+            <span>Pricing region</span>
+            <select value={country} onChange={(event) => setCountry(normalizeCountry(event.target.value))}>
+              {COUNTRY_OPTIONS.map((item) => (
+                <option key={item.code} value={item.code}>{item.label} · {item.currency}</option>
+              ))}
+            </select>
+          </label>
+
+          <p className="simpleLead">
+            Showing {countryMeta.currency} pricing for {countryMeta.label}.
+          </p>
+
           <div className="simpleActions">
-            <Link to="/signup" className="simpleBtn simplePrimary">Start free</Link>
+            <Link to={signupTo} className="simpleBtn simplePrimary">Start free</Link>
             <Link to="/login" className="simpleBtn simpleGhost">Log in</Link>
           </div>
         </div>
@@ -67,20 +108,18 @@ export default function ExecutivePricingPage() {
 
       <section className="simpleBand">
         <h2>Monthly plans</h2>
-        <p className="simpleLead">
-          Prices are monthly and shown before GST. GST is added at checkout, with GST-inclusive totals shown for clarity.
-        </p>
+        <p className="simpleLead">{notes[0]} {notes[1]}</p>
 
         <div className="simpleGrid">
-          {MARKETING_PLANS.map((plan) => (
+          {displayPlans.map((plan) => (
             <article key={plan.name}>
               <b>{plan.name}</b>
               <span>{priceLabel(plan)}</span>
-              <span>{taxLabel(plan)}</span>
+              {taxLabel(plan) ? <span>{taxLabel(plan)}</span> : null}
               <span>{plan.summary}</span>
               {featureList(plan).map((item) => <span key={item}>• {item}</span>)}
               <div className="simpleActions">
-                <Link to="/signup" className="simpleBtn simplePrimary">Start free</Link>
+                <Link to={signupTo} className="simpleBtn simplePrimary">Start free</Link>
               </div>
             </article>
           ))}
@@ -90,7 +129,7 @@ export default function ExecutivePricingPage() {
       <section className="simpleBand">
         <h2>Accounting Sync Add-on</h2>
         <p className="simpleLead">
-          Start, Crew and Operator can add Xero or MYOB sync for $39/month + GST where available.
+          Start, Crew and Operator can add Xero or MYOB sync for {accountingAddon.priceLabel} where available.
           Command includes one accounting sync option: Xero or MYOB.
         </p>
       </section>

@@ -577,6 +577,8 @@ class UserCreate(BaseModel):
     password: str
     name: str
     business_name: Optional[str] = None
+    billing_country: Optional[str] = "NZ"
+    country: Optional[str] = "NZ"
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -1093,6 +1095,8 @@ def _auth_user_response(user_doc: dict, token: str = None) -> dict:
         "business_id": business_id,
         "gst_rate": user_doc.get("gst_rate", DEFAULT_GST_RATE),
         "trade_type": user_doc.get("trade_type", "other"),
+        "billing_country": user_doc.get("billing_country") or user_doc.get("country") or "NZ",
+        "country": user_doc.get("country") or user_doc.get("billing_country") or "NZ",
         "has_app_access": _auth_has_app_access(user_doc),
     }
 
@@ -1133,6 +1137,7 @@ async def register(user_data: UserCreate, response: Response):
         raise HTTPException(status_code=400, detail="Email already registered")
 
     now = datetime.now(timezone.utc)
+    billing_country = normalize_billing_country(user_data.billing_country or user_data.country or "NZ")
     user_doc = {
         "email": email,
         "password_hash": hash_password(user_data.password),
@@ -1147,6 +1152,8 @@ async def register(user_data: UserCreate, response: Response):
         "trial_ends_at": None,
         "gst_rate": DEFAULT_GST_RATE,
         "trade_type": "other",
+        "billing_country": billing_country,
+        "country": billing_country,
         "created_at": now,
         "updated_at": now,
     }

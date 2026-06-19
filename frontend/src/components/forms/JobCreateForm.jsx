@@ -8,10 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { PremiumButton } from "@/components/premium";
 
 const ASK_DRAFT_KEY = "churvox:tell-command-draft:v1";
-const COUNTRY_OPTIONS = ["New Zealand", "Australia"];
+const COUNTRY_OPTIONS = ["New Zealand", "Australia", "United States", "United Kingdom"];
 const REGION_OPTIONS = {
   "New Zealand": ["Northland", "Auckland", "Waikato", "Bay of Plenty", "Gisborne", "Hawke's Bay", "Taranaki", "Manawatu-Whanganui", "Wellington", "Tasman", "Nelson", "Marlborough", "West Coast", "Canterbury", "Otago", "Southland"],
   "Australia": ["New South Wales", "Victoria", "Queensland", "Western Australia", "South Australia", "Tasmania", "Northern Territory", "Australian Capital Territory"],
+  "United States": ["Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Florida", "Georgia", "Illinois", "Indiana", "Michigan", "Nevada", "New Jersey", "New York", "North Carolina", "Ohio", "Oregon", "Pennsylvania", "Tennessee", "Texas", "Virginia", "Washington", "Wisconsin"],
+  "United Kingdom": ["England", "Scotland", "Wales", "Northern Ireland"],
 };
 const JOB_TYPES = [
   ["other", "General service"], ["lawn_mowing", "Lawn mowing"], ["garden_maintenance", "Garden maintenance"], ["landscaping", "Landscaping"],

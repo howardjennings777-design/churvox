@@ -2,10 +2,12 @@ import React from "react";
 import "./freshPlans.css";
 import API_BASE from "../lib/apiBase";
 import { useAuth } from "../context/AuthContext";
+import { COUNTRY_OPTIONS, addonPriceForCountry, detectCountryCode, getCountryMeta, normalizeCountry, pricePlanForCountry } from "../config/churvoxPlans";
 
 const CHECKOUT_TRACE_MARKER = "stable-current-plan-v40";
 const LIVE_BACKEND = API_BASE || "https://grassley-backend.onrender.com";
 const PLAN_CACHE_KEY = "churvox:stable-current-plan:v1";
+const COUNTRY_CACHE_KEY = "churvox:billing-country";
 
 const accountingAddonText = "Accounting Sync Add-on — $39/month + GST (MYOB or Xero, where available)";
 
@@ -20,8 +22,16 @@ plans.forEach((plan) => { plan.features = plan.includes; });
 
 const backendToUiPlan = { solo: "start", team: "crew", pro: "operator", enterprise: "command", start: "start", crew: "crew", operator: "operator", command: "command" };
 
-function money(value) { return `$${Number(value || 0).toFixed(0)}`; }
+function money(value, countryCode = "NZ") { const country = getCountryMeta(countryCode); return `${country.symbol}${Number(value || 0).toFixed(0)}`; }
 function planByUiId(id) { return plans.find((plan) => plan.id === id) || plans[2]; }
+function readCountry() {
+  try {
+    const params = new URLSearchParams(window.location.search || "");
+    return normalizeCountry(params.get("country") || window.localStorage.getItem(COUNTRY_CACHE_KEY) || detectCountryCode());
+  } catch {
+    return detectCountryCode();
+  }
+}
 function uiPlanFromBackend(value) { const raw = String(value || "").toLowerCase().trim(); if (!raw || raw === "none" || raw === "null" || raw === "undefined") return ""; return backendToUiPlan[raw] || ""; }
 function backendUrl(path) { const base = String(LIVE_BACKEND || "").replace(/\/+$/, ""); const cleanPath = String(path || "").replace(/^\/+/, ""); if (/^https?:\/\//i.test(path)) return path; if (!base) return `/${cleanPath}`; return `${base}/api/${cleanPath.replace(/^api\//i, "")}`; }
 function authToken(user) { if (user?.token) return user.token; try { return window.localStorage.getItem("token") || window.localStorage.getItem("authToken") || window.localStorage.getItem("access_token") || ""; } catch { return ""; } }
@@ -57,14 +67,28 @@ export default function FreshPlans({ onNavigate }) {
   const [notice, setNotice] = React.useState(() => readCachedPlan() ? "Showing saved plan while billing checks." : "Checking account plan.");
   const [error, setError] = React.useState("");
   const [debug, setDebug] = React.useState(null);
+  const [country, setCountry] = React.useState(readCountry);
+
+  React.useEffect(() => {
+    try { window.localStorage.setItem(COUNTRY_CACHE_KEY, country); } catch {}
+  }, [country]);
+
+  const countryMeta = getCountryMeta(country);
+  const pricedPlans = React.useMemo(() => plans.map((plan) => {
+    const priced = pricePlanForCountry(plan.backendPlan, country);
+    return { ...plan, price: priced.monthly, monthly: priced.monthly, priceLabel: priced.priceLabel, taxInclusiveLabel: priced.taxInclusiveLabel, currency: priced.currency, taxLabel: priced.taxLabel };
+  }), [country]);
+
+  const pricedAccountingAddon = React.useMemo(() => addonPriceForCountry("accounting_sync", country), [country]);
+  const pricedGrowthPack = React.useMemo(() => addonPriceForCountry("command_growth_pack", country), [country]);
 
   const userPlan = planFromUser(user);
   const displayPlan = currentPlan || userPlan;
-  const selected = planByUiId(selectedPlan);
-  const current = displayPlan ? planByUiId(displayPlan) : null;
+  const selected = pricedPlans.find((plan) => plan.id === selectedPlan) || pricedPlans[2];
+  const current = displayPlan ? pricedPlans.find((plan) => plan.id === displayPlan) || null : null;
   const commandSelected = selected.id === "command";
-  const growthTotal = commandSelected ? growthPacks * 99 : 0;
-  const accountingAddonTotal = !commandSelected && accountingSync ? 39 : 0;
+  const growthTotal = commandSelected ? growthPacks * pricedGrowthPack.monthly : 0;
+  const accountingAddonTotal = !commandSelected && accountingSync ? pricedAccountingAddon.monthly : 0;
   const monthlyTotal = selected.price + growthTotal + accountingAddonTotal;
   const accountingIncluded = commandSelected;
   const accountingSelected = accountingIncluded || accountingSync;
@@ -191,6 +215,7 @@ export default function FreshPlans({ onNavigate }) {
           <h1>Choose how much admin Churvox handles.</h1>
           <p>Start simple, add crew tools when you need them, then move into AI prepared admin when you are ready. You stay in control — Churvox prepares, you approve.</p>
           <div className="freshPricingHeroActions"><button className="freshPrimary" type="button" onClick={() => choosePlan("operator")}>Recommend Operator</button><button className="freshGhost" type="button" onClick={() => onNavigate?.("support")}>Ask which plan fits</button></div>
+          <label className="freshCountrySelect"><span>Pricing country</span><select value={country} onChange={(event) => setCountry(normalizeCountry(event.target.value))}>{COUNTRY_OPTIONS.map((item) => <option key={item.code} value={item.code}>{item.label} · {item.currency}</option>)}</select></label>
         </div>
         <aside className="freshCurrentPlanBox">
           <small>Current plan</small>
@@ -206,21 +231,21 @@ export default function FreshPlans({ onNavigate }) {
       {error && !/not authenticated|401|403/i.test(error) && <section className="freshCard freshNotice need"><b>Plans need attention</b><span>{error}</span></section>}
 
       <section className="freshPricingCards freshPricingCardsV2">
-        {plans.map((plan) => {
+        {pricedPlans.map((plan) => {
           const active = selectedPlan === plan.id;
           const isCurrent = Boolean(displayPlan) && displayPlan === plan.id;
-          return <button type="button" key={plan.id} className={`freshPricingCard freshPricingCardV2 ${active ? "active" : ""} ${plan.id === "operator" ? "best" : ""}`} onClick={() => choosePlan(plan.id)}><span className="freshPlanTag">{plan.tag}</span>{isCurrent && <span className="freshCurrentBadge">Current</span>}<strong>{plan.name}</strong><em>{money(plan.price)}<small>/month + GST</small></em><h3>{plan.headline}</h3><p>{plan.summary}</p><small className="freshPlanLimit">{plan.limit}</small><div className="freshPlanIncludedTitle">Included</div><ul>{plan.includes.slice(0, 6).map((feature) => <li key={feature}>✓ {feature}</li>)}</ul></button>;
+          return <button type="button" key={plan.id} className={`freshPricingCard freshPricingCardV2 ${active ? "active" : ""} ${plan.id === "operator" ? "best" : ""}`} onClick={() => choosePlan(plan.id)}><span className="freshPlanTag">{plan.tag}</span>{isCurrent && <span className="freshCurrentBadge">Current</span>}<strong>{plan.name}</strong><em>{plan.priceLabel}<small>{plan.taxInclusiveLabel ? ` · ${plan.taxInclusiveLabel}` : ""}</small></em><h3>{plan.headline}</h3><p>{plan.summary}</p><small className="freshPlanLimit">{plan.limit}</small><div className="freshPlanIncludedTitle">Included</div><ul>{plan.includes.slice(0, 6).map((feature) => <li key={feature}>✓ {feature}</li>)}</ul></button>;
         })}
       </section>
 
       <section className="freshPricingDetail freshPricingDetailV2">
         <section className="freshCard freshSelectedPlanCard freshSelectedPlanCardV2">
-          <div className="freshSelectedPlanTop"><div><span>Selected plan</span><h2>{selected.name}</h2><p>{selected.summary}</p></div><strong>{money(monthlyTotal)}<small>/month + GST</small></strong></div>
-          <div className="freshPlanBreakdown"><div><b>Base plan</b><span>{selected.name}</span><strong>{money(selected.price)}</strong></div><div><b>Accounting sync</b><span>{accountingIncluded ? "Included with Command" : accountingSync ? "Add-on selected" : "Optional add-on"}</span><strong>{accountingAddonTotal ? money(accountingAddonTotal) : accountingIncluded ? "Included" : "$39"}</strong></div><div><b>Growth packs</b><span>{commandSelected ? `${growthPacks} selected` : "Only for Command"}</span><strong>{growthTotal ? money(growthTotal) : "$0"}</strong></div></div>
+          <div className="freshSelectedPlanTop"><div><span>Selected plan</span><h2>{selected.name}</h2><p>{selected.summary}</p></div><strong>{money(monthlyTotal, country)}<small>/month {countryMeta.taxLabel}</small></strong></div>
+          <div className="freshPlanBreakdown"><div><b>Base plan</b><span>{selected.name}</span><strong>{money(selected.price, country)}</strong></div><div><b>Accounting sync</b><span>{accountingIncluded ? "Included with Command" : accountingSync ? "Add-on selected" : "Optional add-on"}</span><strong>{accountingAddonTotal ? money(accountingAddonTotal, country) : accountingIncluded ? "Included" : money(pricedAccountingAddon.monthly, country)}</strong></div><div><b>Growth packs</b><span>{commandSelected ? `${growthPacks} selected` : "Only for Command"}</span><strong>{growthTotal ? money(growthTotal, country) : money(0, country)}</strong></div></div>
           <section className="freshPlanSection"><h3>What you get on {selected.name}</h3><div className="freshPlanFeatures premium">{selectedIncludes.map((feature) => <div key={feature}><b>✓</b><span>{feature}</span></div>)}</div></section>
-          <section className="freshPlanSection"><h3>Add-ons</h3><div className="freshAddOnGrid"><button type="button" className={`freshAddOnCard ${accountingSelected ? "active" : ""}`} onClick={() => { if (!accountingIncluded) setAccountingSync((value) => !value); }}><b>Accounting Sync Add-on</b><span>{accountingIncluded ? "Included with Command" : "$39/month + GST"}</span><p>MYOB or Xero, where available. Owner-approved draft invoice sync only.</p></button><button type="button" className={`freshAddOnCard ${commandSelected ? "active" : "locked"}`} onClick={() => { if (!commandSelected) choosePlan("command"); }}><b>Command Growth Pack</b><span>$99/month + GST</span><p>Adds 50 active team members plus extra job, AI action, automation and admin capacity.</p></button></div>{commandSelected && <div className="freshGrowthPack premium freshGrowthPackV2"><div><b>Command Growth Pack</b><span>Command includes 50 active team members. Each pack adds 50 more active team members.</span></div><div className="freshGrowthControls"><button type="button" onClick={() => setGrowthPacks((count) => Math.max(0, count - 1))}>−</button><strong>{growthPacks}</strong><button type="button" onClick={() => setGrowthPacks((count) => count + 1)}>+</button></div></div>}</section>
+          <section className="freshPlanSection"><h3>Add-ons</h3><div className="freshAddOnGrid"><button type="button" className={`freshAddOnCard ${accountingSelected ? "active" : ""}`} onClick={() => { if (!accountingIncluded) setAccountingSync((value) => !value); }}><b>Accounting Sync Add-on</b><span>{accountingIncluded ? "Included with Command" : pricedAccountingAddon.priceLabel}</span><p>MYOB or Xero, where available. Owner-approved draft invoice sync only.</p></button><button type="button" className={`freshAddOnCard ${commandSelected ? "active" : "locked"}`} onClick={() => { if (!commandSelected) choosePlan("command"); }}><b>Command Growth Pack</b><span>{pricedGrowthPack.priceLabel}</span><p>Adds 50 active team members plus extra job, AI action, automation and admin capacity.</p></button></div>{commandSelected && <div className="freshGrowthPack premium freshGrowthPackV2"><div><b>Command Growth Pack</b><span>Command includes 50 active team members. Each pack adds 50 more active team members.</span></div><div className="freshGrowthControls"><button type="button" onClick={() => setGrowthPacks((count) => Math.max(0, count - 1))}>−</button><strong>{growthPacks}</strong><button type="button" onClick={() => setGrowthPacks((count) => count + 1)}>+</button></div></div>}</section>
         </section>
-        <aside className="freshCard freshCheckoutCard freshCheckoutCardV2"><span>Buy / update</span><h2>{selected.name}</h2><strong>{money(monthlyTotal)}<small>/month + GST</small></strong><p>Stripe opens securely. Churvox then confirms the session and updates your current plan from billing.</p><div className="freshActions"><button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading || authLoading}>{checkoutLoading ? "Opening Stripe..." : "Buy selected plan"}</button><button className="freshOrange" type="button" onClick={() => choosePlan("operator")}>Recommend Operator</button><button className="freshGhost" type="button" onClick={() => loadPlan({ force: true })} disabled={authLoading || checkingPlan}>{checkingPlan ? "Checking…" : "Reload current plan"}</button></div><div className="freshItem"><b>Selected total</b><span>{selected.name} {accountingSync && !commandSelected ? "+ Accounting Sync" : ""} {growthPacks ? `+ ${growthPacks} Growth Pack${growthPacks === 1 ? "" : "s"}` : ""}</span></div><div className="freshItem"><b>Best default</b><span>Operator is the main plan because AI prepares the admin and the owner approves.</span></div><div className="freshItem need"><b>Command scale</b><span>Command includes up to 50 active team members. Inactive old staff should not count as billable.</span></div></aside>
+        <aside className="freshCard freshCheckoutCard freshCheckoutCardV2"><span>Buy / update</span><h2>{selected.name}</h2><strong>{money(monthlyTotal, country)}<small>/month {countryMeta.taxLabel}</small></strong><p>Stripe opens securely using {countryMeta.label} pricing. Churvox then confirms the session and updates your current plan from billing.</p><div className="freshActions"><button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading || authLoading}>{checkoutLoading ? "Opening Stripe..." : "Buy selected plan"}</button><button className="freshOrange" type="button" onClick={() => choosePlan("operator")}>Recommend Operator</button><button className="freshGhost" type="button" onClick={() => loadPlan({ force: true })} disabled={authLoading || checkingPlan}>{checkingPlan ? "Checking…" : "Reload current plan"}</button></div><div className="freshItem"><b>Selected total</b><span>{selected.name} {accountingSync && !commandSelected ? "+ Accounting Sync" : ""} {growthPacks ? `+ ${growthPacks} Growth Pack${growthPacks === 1 ? "" : "s"}` : ""}</span></div><div className="freshItem"><b>Best default</b><span>Operator is the main plan because AI prepares the admin and the owner approves.</span></div><div className="freshItem need"><b>Command scale</b><span>Command includes up to 50 active team members. Inactive old staff should not count as billable.</span></div></aside>
       </section>
 
       {showDebug && debug && <section className="freshCard freshNotice" style={{ marginTop: 14 }}><b>Checkout diagnostic</b><span style={{ whiteSpace: "pre-wrap", fontFamily: "monospace", fontSize: 12 }}>{JSON.stringify(debug, null, 2).slice(0, 1800)}</span></section>}
