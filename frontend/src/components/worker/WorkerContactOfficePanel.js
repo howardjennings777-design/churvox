@@ -7,17 +7,17 @@ import { sendFreshSlipToCommand } from "@/churvox-fresh/commandBridge";
 import { useAuth } from "@/context/AuthContext";
 import "./WorkerContactOfficePanel.css";
 
-export default function WorkerContactOfficePanel({ open, onClose, defaultMessage = "I need help with my jobs", jobId = "", jobTitle = "" }) {
+export default function WorkerContactOfficePanel({ open, onClose, defaultMessage = "", jobId = "", jobTitle = "" }) {
   const { get, post } = useApi();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [businessName, setBusinessName] = useState("Your Office");
   const [contacts, setContacts] = useState([]);
   const [officeMessage, setOfficeMessage] = useState("");
-  const [message, setMessage] = useState(defaultMessage);
+  const [message, setMessage] = useState(defaultMessage || "");
   const [sending, setSending] = useState(false);
 
-  useEffect(() => { setMessage(defaultMessage || "I need help with my jobs"); }, [defaultMessage]);
+  useEffect(() => { setMessage(defaultMessage || ""); }, [defaultMessage]);
 
   useEffect(() => {
     if (!open) return;
@@ -117,7 +117,7 @@ export default function WorkerContactOfficePanel({ open, onClose, defaultMessage
           {!loading && !hasContacts ? (
             <div className="workerContactOfficeNotice rounded-xl border border-[var(--cx-border)] bg-[var(--cx-surface-2)] p-3">
               <p className="text-sm font-semibold text-[var(--cx-text)]">{officeMessage || "No office contact has been set yet."}</p>
-              <p className="text-sm text-[var(--cx-muted)]">Ask your manager to add office contact details.</p>
+              <p className="text-sm text-[var(--cx-muted)]">You can still send a message. It will go to Command for the boss/office to handle.</p>
             </div>
           ) : null}
 
