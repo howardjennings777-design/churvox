@@ -82,6 +82,18 @@ button.cpd-primary-action:disabled,
   cursor: not-allowed;
 }
 
+.worker-app-clock span,
+.worker-app-stats span {
+  background: #111827 !important;
+  color: #fff7ed !important;
+  border: 1px solid rgba(249, 115, 22, .24) !important;
+}
+
+.worker-app-job__top span {
+  background: #ecfdf5 !important;
+  color: #166534 !important;
+}
+
 @media (max-width: 700px) {
   .workerContactOfficeBackdrop {
     padding-bottom: calc(164px + env(safe-area-inset-bottom)) !important;
