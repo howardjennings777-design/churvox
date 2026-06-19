@@ -34,6 +34,18 @@
 .tellHero,
 .freshAskHero {
   order: 1;
+  margin-bottom: 0 !important;
+}
+
+.freshHero {
+  min-height: 178px !important;
+  padding-bottom: 34px !important;
+  overflow: visible !important;
+}
+
+.freshHero p {
+  max-width: 960px !important;
+  margin-top: 10px !important;
 }
 
 .freshGlobalAsk {
@@ -61,7 +73,7 @@
   position: sticky;
   top: 0;
   z-index: 3150;
-  margin: 14px 0;
+  margin: 14px 0 18px;
   backdrop-filter: blur(16px);
 }
 
