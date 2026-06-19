@@ -15,7 +15,8 @@ const groups = [
   { title: "Setup", items: [["settings", "SG", "Settings"], ["imports", "IM", "Imports"], ["exports", "EX", "Exports"], ["plans", "PL", "Plans"], ["support", "SP", "Support"]] },
 ];
 
-const mobileItems = [["smart", "TD", "Today"], ["askchurvox", "AI", "Tell"], ["jobs", "JB", "Jobs"], ["invoices", "IV", "Money"], ["command", "CM", "Command"], ["more", "••", "More"]];
+const mobileItems = [["smart", "TD", "Today"], ["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"], ["invoices", "IV", "Money"], ["more", "••", "More"]];
+const mobileLabels = { smart: "Today", hub: "Today", dashboard: "Today", jobs: "Jobs", clients: "Clients", quotes: "Quotes", invoices: "Money", payments: "Money", xero: "Xero", team: "Team", workercommand: "Worker View", time: "Time Sheets", payroll: "Payroll", command: "Command", automation: "Automation", reports: "Reports", launchcontrol: "Launch", settings: "Settings", imports: "Imports", exports: "Exports", plans: "Plans", support: "Support", askchurvox: "Tell Churvox" };
 const parentByKey = { routes: "dispatch", areas: "dispatch", schedulerai: "dispatch", gps: "time", portal: "clients", followupwriter: "clients", reviewbooster: "clients" };
 groups.forEach((group) => group.items.forEach(([key]) => { parentByKey[key] = key; }));
 
@@ -36,6 +37,7 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
   const [guideComplete, setGuideComplete] = React.useState(guideIsComplete);
   const [globalAsk, setGlobalAsk] = React.useState("");
   const currentPrimary = parentByKey[active] || active;
+  const mobileTitle = mobileLabels[currentPrimary] || mobileLabels[active] || "Churvox";
 
   React.useEffect(() => { const refresh = () => setGuideComplete(guideIsComplete()); window.addEventListener("storage", refresh); window.addEventListener("churvox:ai-guide-status", refresh); window.addEventListener("churvox:fresh-data-updated", refresh); return () => { window.removeEventListener("storage", refresh); window.removeEventListener("churvox:ai-guide-status", refresh); window.removeEventListener("churvox:fresh-data-updated", refresh); }; }, []);
   React.useEffect(() => { resetScroll(); }, [active]);
@@ -78,6 +80,7 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
         <nav className="freshNav">{safeGroups.map((group) => <section className="freshNavGroup" key={group.title}><p>{group.title}</p>{group.items.map(([key, mark, label]) => <button key={key} type="button" className={currentPrimary === key ? "active" : ""} onClick={() => go(key)}><i>{mark}</i><span>{label}</span></button>)}</section>)}</nav>
       </aside>
       <main className="freshMain">
+        <header className="freshMobileAppTop"><div><b>Churvox</b><span>{mobileTitle} · ready</span></div><button type="button" onClick={() => go("askchurvox")}>Tell</button></header>
         <div className="freshPageScroll">{children}</div>
         <form className="freshGlobalAsk" onSubmit={submitAsk}><label><span>What do you want to do?</span><input value={globalAsk} onChange={(event) => setGlobalAsk(event.target.value)} placeholder="open jobs, add client, show unpaid invoices…" /></label><button type="submit">Ask Churvox</button></form>
       </main>
