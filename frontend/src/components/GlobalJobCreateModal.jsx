@@ -46,14 +46,30 @@ export default function GlobalJobCreateModal() {
   if (!open) return null;
 
   return (
-    <div role="dialog" aria-modal="true" aria-label="Add job" style={{ position: "fixed", inset: 0, zIndex: 12000, display: "grid", placeItems: "center", padding: 16, background: "rgba(2,6,23,.58)", backdropFilter: "blur(10px)", overflow: "hidden" }} onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
-      <section style={{ width: "min(820px, calc(100vw - 32px))", maxHeight: "calc(100dvh - 32px)", display: "flex", flexDirection: "column", overflow: "hidden", borderRadius: 22, background: "#fffaf0", border: "1px solid rgba(15,23,42,.14)", boxShadow: "0 28px 80px rgba(0,0,0,.36)" }}>
-        <header style={{ flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "14px 16px", borderBottom: "1px solid rgba(15,23,42,.10)", background: "#fffaf0" }}>
-          <div><div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".12em", textTransform: "uppercase", color: "#9a3412" }}>New job</div><h1 style={{ margin: "2px 0 0", fontSize: 26, lineHeight: 1, fontWeight: 1000, color: "#111827" }}>Add job</h1></div>
-          <button type="button" onClick={() => setOpen(false)} aria-label="Close job slip" style={{ width: 38, height: 38, borderRadius: 999, border: "1px solid rgba(15,23,42,.14)", background: "#fff", color: "#111827", fontSize: 16, fontWeight: 900, cursor: "pointer" }}>X</button>
+    <div
+      className="freshPopupBackdrop freshJobPopupBackdrop"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) setOpen(false);
+      }}
+    >
+      <section className="freshCard freshJobPopupCard">
+        <header className="freshHero freshJobPopupHero">
+          <span>New job</span>
+          <h1>Add job</h1>
+          <p>Add the real job here without leaving the current area.</p>
         </header>
-        <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", overflowX: "hidden", padding: 14 }}>
-          <JobCreateForm initialInstruction={instruction} onCancel={() => setOpen(false)} onSuccess={() => { setOpen(false); setInstruction(""); window.dispatchEvent(new Event("churvox-records-refresh")); window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "job-created" } })); }} submitLabel="Save job" />
+        <div className="freshJobPopupBody">
+          <JobCreateForm
+            initialInstruction={instruction}
+            onCancel={() => setOpen(false)}
+            onSuccess={() => {
+              setOpen(false);
+              setInstruction("");
+              window.dispatchEvent(new Event("churvox-records-refresh"));
+              window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "job-created" } }));
+            }}
+            submitLabel="Save job"
+          />
         </div>
       </section>
     </div>
