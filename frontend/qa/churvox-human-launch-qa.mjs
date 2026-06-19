@@ -275,14 +275,28 @@ async function login(page, email, password, roleName) {
     'input[placeholder*="password" i]',
   ], password);
 
-  const clicked = await clickFirst(page, [/log in/i, /login/i, /sign in/i, /continue/i], `${roleName} login`);
-  if (!clicked) {
-    add("BLOCKER", `${roleName} login`, "Could not find login button", page.url());
+  const submitButton = page.locator('form button[type="submit"], form .cvPublicAuthSubmit').first();
+  const hasSubmitButton = await submitButton.count().catch(() => 0);
+  if (!hasSubmitButton) {
+    add("BLOCKER", `${roleName} login`, "Could not find login form submit button", page.url());
     await screenshot(page, `${roleName}-login-no-button`);
     return false;
   }
 
-  await settle(page);
+  await Promise.all([
+    page.waitForResponse((res) => res.url().includes("/api/auth/login"), { timeout: 15000 }).catch(() => null),
+    submitButton.click({ timeout: 7000 }),
+  ]);
+
+  await page.waitForFunction(
+    () => !window.location.pathname.includes("/login"),
+    null,
+    { timeout: 15000 }
+  ).catch(() => {});
+
+  await page.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {});
+  await page.waitForTimeout(1000);
+
   const text = await health(page, `${roleName} after login`);
 
   if (page.url().includes("/login") && /password|email|login|sign in/i.test(text)) {
