@@ -306,7 +306,7 @@ html body .jobModalOverlay {
 html body .jobModalOverlay .jobModalCard {
   margin-left: auto !important;
   margin-right: auto !important;
-  transform: translateX(70px) !important;
+  transform: translateX(115px) !important;
 }
 
 @media (max-width: 720px) {
