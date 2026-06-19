@@ -45,11 +45,63 @@ function money(value) { const n = Number(value || 0); return Number.isFinite(n) 
 function queryValue(search, key) { try { return new URLSearchParams(search).get(key) || ""; } catch { return ""; } }
 function titleCase(value) { return String(value || "").trim().replace(/\s+/g, " ").replace(/\b\w/g, (m) => m.toUpperCase()); }
 function inputDateTime(date) { const pad = (n) => String(n).padStart(2, "0"); return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`; }
-function dateFromInstruction(text) { const lower = String(text || "").toLowerCase(); const date = new Date(); if (/tomorrow/.test(lower)) date.setDate(date.getDate() + 1); else if (/next week/.test(lower)) date.setDate(date.getDate() + 7); else if (!/today/.test(lower)) return ""; date.setHours(/afternoon/.test(lower) ? 13 : /evening/.test(lower) ? 17 : 9, 0, 0, 0); return inputDateTime(date); }
-function typeFromInstruction(text) { const lower = String(text || "").toLowerCase(); if (/lawn|mow|mowing/.test(lower)) return "lawn_mowing"; if (/garden|hedge|weed/.test(lower)) return "garden_maintenance"; if (/clean/.test(lower)) return "cleaning"; if (/pressure|wash/.test(lower)) return "pressure_washing"; if (/paint/.test(lower)) return "painting"; if (/plumb/.test(lower)) return "plumbing"; if (/electric/.test(lower)) return "electrical"; if (/pest/.test(lower)) return "pest_control"; if (/roof/.test(lower)) return "roofing"; if (/handyman|repair|fix/.test(lower)) return "handyman"; return "other"; }
-function priceFromInstruction(text) { const match = String(text || "").match(/(?:\$|nzd\s*)\s*(\d+(?:\.\d{1,2})?)|\b(\d+(?:\.\d{1,2})?)\s*(?:dollars|bucks)\b/i); return match ? String(match[1] || match[2] || "") : ""; }
-function clientFromInstruction(text) { const match = String(text || "").match(/\b(?:for|client|customer)\s+([A-Za-z][A-Za-z .'-]{1,40})(?=\s+(?:tomorrow|today|next|lawn|mowing|clean|garden|at|\$|for\s+\$)|$)/i); return match ? titleCase(match[1]) : ""; }
-function titleFromInstruction(text) { const raw = String(text || "").trim(); const lower = raw.toLowerCase(); if (/lawn|mow|mowing/.test(lower)) return "Lawn mowing"; if (/garden|hedge|weed/.test(lower)) return "Garden maintenance"; if (/clean/.test(lower)) return "Cleaning job"; if (/paint/.test(lower)) return "Painting job"; const cleaned = raw.replace(/^(add|new|create|book|make)\s+(a\s+)?(job|work|booking|service)\s*/i, "").replace(/\s+/g, " ").trim(); return titleCase(cleaned || "New job").slice(0, 80); }
+function cleanText(value) { return String(value || "").replace(/\s+/g, " ").trim(); }
+function keyText(value) { return cleanText(value).toLowerCase(); }
+
+function applyTime(date, text) {
+  const lower = keyText(text);
+  let hour = /evening|night/.test(lower) ? 17 : /afternoon/.test(lower) ? 13 : /morning/.test(lower) ? 9 : 9;
+  let minute = 0;
+  const timeMatch = lower.match(/\b(?:at\s*)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/) || lower.match(/\b(?:at\s*)?(\d{1,2}):(\d{2})\b/);
+  if (timeMatch) {
+    hour = Number(timeMatch[1]);
+    minute = Number(timeMatch[2] || 0);
+    const suffix = timeMatch[3] || "";
+    if (suffix === "pm" && hour < 12) hour += 12;
+    if (suffix === "am" && hour === 12) hour = 0;
+  }
+  date.setHours(hour, minute, 0, 0);
+  return inputDateTime(date);
+}
+
+function dateFromInstruction(text) {
+  const lower = keyText(text);
+  const date = new Date();
+  const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  if (/tomorrow/.test(lower)) {
+    date.setDate(date.getDate() + 1);
+    return applyTime(date, lower);
+  }
+  if (/next week/.test(lower)) {
+    date.setDate(date.getDate() + 7);
+    return applyTime(date, lower);
+  }
+  const dayMatch = lower.match(/\b(next\s+)?(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/);
+  if (dayMatch) {
+    const target = days.indexOf(dayMatch[2]);
+    let add = (target - date.getDay() + 7) % 7;
+    if (add === 0 || dayMatch[1]) add += 7;
+    date.setDate(date.getDate() + add);
+    return applyTime(date, lower);
+  }
+  if (/today/.test(lower)) return applyTime(date, lower);
+  return "";
+}
+
+function typeFromInstruction(text) { const lower = keyText(text); if (/lawn|mow|mowing/.test(lower)) return "lawn_mowing"; if (/garden|hedge|weed/.test(lower)) return "garden_maintenance"; if (/landscap/.test(lower)) return "landscaping"; if (/window/.test(lower)) return "window_cleaning"; if (/clean/.test(lower)) return "cleaning"; if (/pressure|wash/.test(lower)) return "pressure_washing"; if (/paint/.test(lower)) return "painting"; if (/plumb/.test(lower)) return "plumbing"; if (/electric/.test(lower)) return "electrical"; if (/pest/.test(lower)) return "pest_control"; if (/pool/.test(lower)) return "pool_maintenance"; if (/roof/.test(lower)) return "roofing"; if (/carpent/.test(lower)) return "carpentry"; if (/hvac|heat pump|air con/.test(lower)) return "hvac"; if (/handyman|repair|fix/.test(lower)) return "handyman"; return "other"; }
+function priceFromInstruction(text) { const match = cleanText(text).match(/(?:\$|nzd\s*)\s*(\d+(?:\.\d{1,2})?)|\b(\d+(?:\.\d{1,2})?)\s*(?:dollars|bucks)\b/i); return match ? String(match[1] || match[2] || "") : ""; }
+function hourlyRateFromInstruction(text) { const match = cleanText(text).match(/(?:\$|nzd\s*)\s*(\d+(?:\.\d{1,2})?)\s*(?:\/\s*hr|per\s+hour|an\s+hour|hourly)|\b(\d+(?:\.\d{1,2})?)\s*(?:\/\s*hr|per\s+hour|an\s+hour|hourly)\b/i); return match ? String(match[1] || match[2] || "") : ""; }
+function clientFromInstruction(text) { const match = cleanText(text).match(/\b(?:for|client|customer)\s+([A-Za-z][A-Za-z .'-]{1,40})(?=\s+(?:tomorrow|today|next|monday|tuesday|wednesday|thursday|friday|saturday|sunday|lawn|mowing|clean|garden|at|address|phone|mobile|email|\$|for\s+\$)|$)/i); return match ? titleCase(match[1]) : ""; }
+function titleFromInstruction(text) { const raw = cleanText(text); const lower = raw.toLowerCase(); if (/lawn|mow|mowing/.test(lower)) return "Lawn mowing"; if (/garden|hedge|weed/.test(lower)) return "Garden maintenance"; if (/window/.test(lower)) return "Window cleaning"; if (/pressure|wash/.test(lower)) return "Pressure washing"; if (/clean/.test(lower)) return "Cleaning job"; if (/paint/.test(lower)) return "Painting job"; if (/plumb/.test(lower)) return "Plumbing job"; if (/electric/.test(lower)) return "Electrical job"; const cleaned = raw.replace(/^(add|new|create|book|make)\s+(a\s+)?(job|work|booking|service)\s*/i, "").replace(/\s+/g, " ").trim(); return titleCase(cleaned || "New job").slice(0, 80); }
+function emailFromInstruction(text) { const match = cleanText(text).match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i); return match ? match[0] : ""; }
+function phoneFromInstruction(text) { const match = cleanText(text).match(/\b(?:phone|mobile|ph|call|number)\s*[:\-]?\s*([+()\d][+\d\s().-]{6,})/i); return match ? match[1].replace(/\s+/g, " ").trim() : ""; }
+function addressFromInstruction(text) { const source = cleanText(text); const match = source.match(/\b(?:at|address|site|location)\s+(.+?)(?=\s+(?:today|tomorrow|next\s+week|next\s+(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)|monday|tuesday|wednesday|thursday|friday|saturday|sunday|at\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)|for\s+\$|\$|fixed|hourly|per\s+hour|weekly|fortnightly|monthly|phone|mobile|email|assign|worker|with\s+worker)\b|$)/i); let value = cleanText(match?.[1] || ""); if (!value || /^\d{1,2}(:\d{2})?\s*(am|pm)?$/i.test(value)) return ""; value = value.replace(/[,.;]+$/, "").trim(); if (!/\d/.test(value) && !/(street|st|road|rd|avenue|ave|drive|dr|lane|ln|way|place|pl|terrace|hutt|wellington|auckland|christchurch|hamilton|dunedin|tauranga)/i.test(value)) return ""; return titleCase(value); }
+function countryFromInstruction(text) { const lower = keyText(text); if (/\b(australia|aussie|nsw|victoria|queensland|sydney|melbourne|brisbane|perth|adelaide)\b/.test(lower)) return "Australia"; return "New Zealand"; }
+function regionFromInstruction(text, country = "New Zealand") { const lower = keyText(text); const regions = REGION_OPTIONS[country] || []; const direct = regions.find((region) => lower.includes(region.toLowerCase())); if (direct) return direct; if (country === "New Zealand" && /(wellington|lower hutt|upper hutt|naenae|wainuiomata|porirua|kapiti)/.test(lower)) return "Wellington"; if (country === "New Zealand" && /auckland/.test(lower)) return "Auckland"; if (country === "Australia" && /(sydney|nsw|new south wales)/.test(lower)) return "New South Wales"; if (country === "Australia" && /(melbourne|victoria)/.test(lower)) return "Victoria"; if (country === "Australia" && /(brisbane|queensland)/.test(lower)) return "Queensland"; return ""; }
+function workerFromInstruction(text) { const match = cleanText(text).match(/\b(?:assign|worker|staff|with)\s+(?:to\s+)?([A-Za-z][A-Za-z .'-]{1,40})(?=\s+(?:tomorrow|today|next|at|for|\$|phone|email|weekly|fortnightly|monthly)|$)/i); return match ? titleCase(match[1]) : ""; }
+function recurringFrequencyFromInstruction(text) { const lower = keyText(text); if (/fortnight|every\s+2\s+weeks|two\s+weekly/.test(lower)) return "fortnightly"; if (/month|monthly/.test(lower)) return "monthly"; if (/week|weekly|recurring|repeat|regular/.test(lower)) return "weekly"; return "weekly"; }
+function isRecurringInstruction(text) { return /\b(recurring|repeat|regular|weekly|fortnightly|monthly|every\s+week|every\s+2\s+weeks|every\s+month)\b/i.test(text || ""); }
+function pricingTypeFromInstruction(text, fixedPrice, hourlyRate) { const lower = keyText(text); const extras = /extra|extras|plus/.test(lower); if (hourlyRate || /hourly|per\s+hour|\/\s*hr/.test(lower)) return extras ? "hourly_extras" : "hourly"; return extras ? "fixed_extras" : "fixed"; }
 function draftFromStorage() { try { return window.localStorage.getItem(ASK_DRAFT_KEY) || ""; } catch { return ""; } }
 
 export default function JobCreateForm({ onSuccess, onCancel, submitLabel = "Create job", isWorker = false, modalSearch = null, initialInstruction = "" }) {
@@ -68,24 +120,51 @@ export default function JobCreateForm({ onSuccess, onCancel, submitLabel = "Crea
   useEffect(() => { let alive = true; async function load() { const [clientsRes, workersRes] = await Promise.all([get("/clients"), get("/team/workers")]); if (!alive) return; setClients(clientsRes?.success ? arr(clientsRes.data) : []); setWorkers(workersRes?.success ? arr(workersRes.data) : []); } load(); return () => { alive = false; }; }, [get]);
 
   useEffect(() => {
-    const source = String(initialInstruction || draftFromStorage() || "").trim();
+    const source = cleanText(initialInstruction || draftFromStorage() || "");
     if (!source || instructionApplied === source) return;
     const guessedClient = clientFromInstruction(source);
     const guessedPrice = priceFromInstruction(source);
+    const guessedHourlyRate = hourlyRateFromInstruction(source);
+    const guessedCountry = countryFromInstruction(source);
+    const guessedRegion = regionFromInstruction(source, guessedCountry);
+    const recurring = isRecurringInstruction(source);
     setForm((p) => ({
       ...p,
       title: p.title || titleFromInstruction(source),
       job_type: p.job_type && p.job_type !== "other" ? p.job_type : typeFromInstruction(source),
       client_name: p.client_name || guessedClient,
+      customer_email: p.customer_email || emailFromInstruction(source),
+      customer_phone: p.customer_phone || phoneFromInstruction(source),
+      address: p.address || addressFromInstruction(source),
       scheduled_date: p.scheduled_date || dateFromInstruction(source),
+      country: p.country || guessedCountry,
+      region: p.region || guessedRegion,
       notes: p.notes || source,
-      pricing_type: guessedPrice ? "fixed" : p.pricing_type,
+      assigned_worker_name: p.assigned_worker_name || workerFromInstruction(source),
+      pricing_type: pricingTypeFromInstruction(source, guessedPrice, guessedHourlyRate || p.hourly_rate),
       fixed_price: p.fixed_price || guessedPrice,
+      hourly_rate: p.hourly_rate || guessedHourlyRate,
+      is_recurring: p.is_recurring || recurring,
+      recurring_frequency: recurring ? recurringFrequencyFromInstruction(source) : p.recurring_frequency,
     }));
     setInstructionApplied(source);
   }, [initialInstruction, instructionApplied]);
 
   useEffect(() => { if (prefilled) return; if (clientFromQuery && clients.length) { const client = clients.find((c) => clientId(c) === String(clientFromQuery)); if (client) pickClient(clientFromQuery); } if (workerFromQuery && workers.length) { const worker = workers.find((w) => workerId(w) === String(workerFromQuery)); if (worker) pickWorker(workerFromQuery); } if ((clientFromQuery && clients.length) || (workerFromQuery && workers.length) || (!clientFromQuery && !workerFromQuery)) setPrefilled(true); }, [clients, workers, clientFromQuery, workerFromQuery, prefilled]);
+
+  useEffect(() => {
+    if (form.client_id || !form.client_name || !clients.length) return;
+    const wanted = keyText(form.client_name);
+    const match = clients.find((client) => keyText(clientName(client)) === wanted || keyText(clientName(client)).includes(wanted) || wanted.includes(keyText(clientName(client))));
+    if (match) pickClient(clientId(match));
+  }, [clients, form.client_id, form.client_name]);
+
+  useEffect(() => {
+    if (form.assigned_worker_id || !form.assigned_worker_name || !workers.length) return;
+    const wanted = keyText(form.assigned_worker_name);
+    const match = workers.find((worker) => keyText(workerName(worker)) === wanted || keyText(workerName(worker)).includes(wanted) || wanted.includes(keyText(workerName(worker))));
+    if (match) pickWorker(workerId(match));
+  }, [workers, form.assigned_worker_id, form.assigned_worker_name]);
 
   const filteredWorkers = useMemo(() => workers.filter((worker) => { if (!form.country || !form.region) return true; return String(worker?.country || "").toLowerCase() === String(form.country || "").toLowerCase() && String(worker?.region || worker?.state || "").toLowerCase() === String(form.region || "").toLowerCase(); }), [workers, form.country, form.region]);
 
