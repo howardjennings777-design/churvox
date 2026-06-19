@@ -7,7 +7,7 @@ const OPEN_CLIENT_MODAL_KEY = "churvox:fresh-open-client-modal:v1";
 const OPEN_JOB_MODAL_KEY = "churvox:fresh-open-job-modal:v1";
 
 const groups = [
-  { title: "Today", items: [["smart", "TD", "Today"], ["askchurvox", "AI", "Tell Churvox"], ["command", "RV", "Review"]] },
+  { title: "Today", items: [["smart", "TD", "Today"], ["askchurvox", "AI", "Tell Churvox"], ["command", "CM", "Command"]] },
   { title: "Work", items: [["jobs", "JB", "Jobs"], ["dispatch", "SC", "Schedule"], ["clients", "CL", "Clients"]] },
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["payments", "PY", "Payments"], ["xero", "XE", "Xero"]] },
   { title: "Team", items: [["team", "TM", "Team"], ["workercommand", "WC", "Worker View"], ["time", "TS", "Time Sheets"], ["payroll", "PR", "Payroll"]] },
@@ -16,29 +16,30 @@ const groups = [
 ];
 
 const tellLink = ["askchurvox", "AI", "Tell Churvox"];
+const commandLink = ["command", "CM", "Command"];
 
 const relatedTools = {
-  smart: [tellLink, ["command", "RV", "Review"], ["launchcontrol", "LC", "Launch"], ["invoices", "IV", "Invoices"]],
-  askchurvox: [["smart", "TD", "Today"], ["quickcreateai", "QC", "Quick Create"], ["command", "RV", "Review"], ["jobs", "JB", "Jobs"]],
-  quickcreateai: [tellLink, ["smart", "TD", "Today"], ["command", "RV", "Review"], ["jobs", "JB", "Jobs"]],
+  smart: [tellLink, commandLink, ["launchcontrol", "LC", "Launch"], ["invoices", "IV", "Invoices"]],
+  askchurvox: [["smart", "TD", "Today"], ["quickcreateai", "QC", "Quick Create"], commandLink, ["jobs", "JB", "Jobs"]],
+  quickcreateai: [tellLink, ["smart", "TD", "Today"], commandLink, ["jobs", "JB", "Jobs"]],
   command: [tellLink, ["smart", "TD", "Today"], ["launchcontrol", "LC", "Launch"], ["exports", "EX", "Exports"]],
   jobs: [tellLink, ["dispatch", "SC", "Schedule"], ["clients", "CL", "Clients"], ["invoices", "IV", "Invoices"]],
   dispatch: [tellLink, ["jobs", "JB", "Jobs"], ["team", "TM", "Team"], ["smart", "TD", "Today"]],
   clients: [tellLink, ["jobs", "JB", "Jobs"], ["quotes", "QT", "Quotes"], ["exports", "EX", "Exports"]],
   quotes: [tellLink, ["clients", "CL", "Clients"], ["jobs", "JB", "Jobs"], ["invoices", "IV", "Invoices"]],
   invoices: [tellLink, ["quotes", "QT", "Quotes"], ["payments", "PY", "Payments"], ["xero", "XE", "Xero"]],
-  payments: [tellLink, ["invoices", "IV", "Invoices"], ["xero", "XE", "Xero"], ["command", "RV", "Review"]],
+  payments: [tellLink, ["invoices", "IV", "Invoices"], ["xero", "XE", "Xero"], commandLink],
   xero: [tellLink, ["invoices", "IV", "Invoices"], ["payments", "PY", "Payments"], ["plans", "PL", "Plans"]],
   team: [tellLink, ["jobs", "JB", "Jobs"], ["workercommand", "WC", "Worker View"], ["time", "TS", "Time Sheets"]],
   workercommand: [tellLink, ["team", "TM", "Team"], ["jobs", "JB", "Jobs"], ["time", "TS", "Time Sheets"]],
   time: [tellLink, ["team", "TM", "Team"], ["payroll", "PR", "Payroll"], ["jobs", "JB", "Jobs"]],
   payroll: [tellLink, ["time", "TS", "Time Sheets"], ["team", "TM", "Team"], ["exports", "EX", "Exports"]],
   reports: [tellLink, ["invoices", "IV", "Invoices"], ["jobs", "JB", "Jobs"], ["launchcontrol", "LC", "Launch"]],
-  automation: [tellLink, ["command", "RV", "Review"], ["launchcontrol", "LC", "Launch"], ["settings", "SG", "Settings"]],
-  launchcontrol: [tellLink, ["smart", "TD", "Today"], ["command", "RV", "Review"], ["support", "SP", "Support"]],
+  automation: [tellLink, commandLink, ["launchcontrol", "LC", "Launch"], ["settings", "SG", "Settings"]],
+  launchcontrol: [tellLink, ["smart", "TD", "Today"], commandLink, ["support", "SP", "Support"]],
   settings: [tellLink, ["imports", "IM", "Imports"], ["exports", "EX", "Exports"], ["plans", "PL", "Plans"]],
   imports: [tellLink, ["clients", "CL", "Clients"], ["team", "TM", "Team"], ["exports", "EX", "Exports"]],
-  exports: [tellLink, ["imports", "IM", "Imports"], ["clients", "CL", "Clients"], ["command", "RV", "Review"]],
+  exports: [tellLink, ["imports", "IM", "Imports"], ["clients", "CL", "Clients"], commandLink],
   plans: [tellLink, ["settings", "SG", "Settings"], ["xero", "XE", "Xero"], ["support", "SP", "Support"]],
   support: [tellLink, ["settings", "SG", "Settings"], ["exports", "EX", "Exports"], ["launchcontrol", "LC", "Launch"]],
   photos: [tellLink, ["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"]],
@@ -78,13 +79,13 @@ const purpose = {
   default: "Extra tool connected to the current area.",
 };
 
-const mobileItems = [["smart", "TD", "Today"], ["askchurvox", "AI", "Tell"], ["jobs", "JB", "Jobs"], ["invoices", "IV", "Money"], ["command", "RV", "Review"], ["more", "••", "More"]];
+const mobileItems = [["smart", "TD", "Today"], ["askchurvox", "AI", "Tell"], ["jobs", "JB", "Jobs"], ["invoices", "IV", "Money"], ["command", "CM", "Command"], ["more", "••", "More"]];
 
 function guideIsComplete() { try { return window.localStorage.getItem(GUIDE_COMPLETE_KEY) === "true"; } catch { return false; } }
 function uniqueItems(items) { const seen = new Set(); return items.filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }); }
 function stripHiddenItems(items, guideComplete) { return items.filter(([key]) => !(guideComplete && key === "setupassistant")); }
 function cleanGroups(sourceGroups, guideComplete = false) { const seen = new Set(); return sourceGroups.map((group) => ({ ...group, items: stripHiddenItems(group.items, guideComplete).filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }) })).filter((group) => group.items.length); }
-function buildLabels() { const entries = [...groups.flatMap((group) => group.items), ...Object.values(relatedTools).flat()]; const nextLabels = Object.fromEntries(entries.map(([key, , label]) => [key, label])); nextLabels.askchurvox = "Tell Churvox"; nextLabels.quickcreateai = "Quick Create"; nextLabels.command = "Review"; nextLabels.smart = "Today"; nextLabels.dispatch = "Schedule"; nextLabels.workercommand = "Worker View"; nextLabels.time = "Time Sheets"; nextLabels.payments = "Payments"; nextLabels.imports = "Imports"; nextLabels.exports = "Exports"; nextLabels.launchcontrol = "Launch"; nextLabels.photos = "Photos"; nextLabels.documents = "Documents"; nextLabels.setupassistant = "AI Guide"; nextLabels.security = "Security"; return nextLabels; }
+function buildLabels() { const entries = [...groups.flatMap((group) => group.items), ...Object.values(relatedTools).flat()]; const nextLabels = Object.fromEntries(entries.map(([key, , label]) => [key, label])); nextLabels.askchurvox = "Tell Churvox"; nextLabels.quickcreateai = "Quick Create"; nextLabels.command = "Command"; nextLabels.smart = "Today"; nextLabels.dispatch = "Schedule"; nextLabels.workercommand = "Worker View"; nextLabels.time = "Time Sheets"; nextLabels.payments = "Payments"; nextLabels.imports = "Imports"; nextLabels.exports = "Exports"; nextLabels.launchcontrol = "Launch"; nextLabels.photos = "Photos"; nextLabels.documents = "Documents"; nextLabels.setupassistant = "AI Guide"; nextLabels.security = "Security"; return nextLabels; }
 function buildParentMap() { const map = {}; Object.entries(relatedTools).forEach(([parent, items]) => { items.forEach(([key]) => { if (!map[key]) map[key] = parent; }); }); groups.forEach((group) => group.items.forEach(([key]) => { map[key] = key; })); map.routes = "dispatch"; map.areas = "dispatch"; map.schedulerai = "dispatch"; map.gps = "time"; map.portal = "clients"; map.followupwriter = "clients"; map.reviewbooster = "clients"; return map; }
 function resetFreshScrollTop() { const top = () => { try { window.scrollTo({ top: 0, left: 0, behavior: "auto" }); } catch { try { window.scrollTo(0, 0); } catch {} } try { document.documentElement.scrollTop = 0; } catch {} try { document.body.scrollTop = 0; } catch {} try { document.scrollingElement.scrollTop = 0; } catch {} [".freshMain", ".freshPageMount", ".freshApp", "main"].forEach((selector) => { try { document.querySelectorAll(selector).forEach((el) => { if (el && typeof el.scrollTo === "function") el.scrollTo({ top: 0, left: 0, behavior: "auto" }); if (el) el.scrollTop = 0; }); } catch {} }); }; top(); window.requestAnimationFrame(top); window.setTimeout(top, 80); }
 
