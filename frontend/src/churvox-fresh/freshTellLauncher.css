@@ -38,10 +38,327 @@
   box-shadow: 0 16px 38px rgba(2, 6, 23, .22);
 }
 
+.tellChurvoxPage {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: clamp(18px, 3vw, 34px);
+  color: #111827;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.tellChurvoxPage * {
+  box-sizing: border-box;
+}
+
+.tellHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr);
+  gap: 18px;
+  align-items: stretch;
+  padding: clamp(20px, 3vw, 30px);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 88% 18%, rgba(249, 115, 22, .32), transparent 34%),
+    linear-gradient(135deg, #111827 0%, #1f2937 55%, #7c2d12 100%);
+  color: #fff;
+  box-shadow: 0 22px 55px rgba(15, 23, 42, .16);
+  overflow: hidden;
+}
+
+.tellHero > div:first-child {
+  min-width: 0;
+}
+
+.tellHero span,
+.freshAskPanel header span {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: rgba(249, 115, 22, .14);
+  color: #fb923c;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.tellHero h1 {
+  margin: 12px 0 10px;
+  max-width: 760px;
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: .96;
+  letter-spacing: -.05em;
+}
+
+.tellHero p {
+  margin: 0;
+  max-width: 760px;
+  color: rgba(255, 255, 255, .82);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.freshAskStats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.freshAskStats div {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .1);
+  backdrop-filter: blur(10px);
+}
+
+.freshAskStats b,
+.freshAskStats small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.freshAskStats b {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.freshAskStats small {
+  margin-top: 5px;
+  color: rgba(255, 255, 255, .68);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+}
+
+.tellCommandBox {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  padding: 16px;
+  border: 1px solid rgba(15, 23, 42, .08);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, .08);
+}
+
+.tellCommandBox label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tellCommandBox label span {
+  color: #475569;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.tellCommandBox input {
+  width: 100%;
+  min-height: 54px;
+  border: 1px solid rgba(15, 23, 42, .12);
+  border-radius: 18px;
+  padding: 0 16px;
+  color: #111827;
+  background: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  outline: none;
+}
+
+.tellCommandBox input:focus {
+  border-color: rgba(249, 115, 22, .7);
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, .12);
+}
+
+.tellCommandBox button,
+.freshAskButtons button,
+.tellQuickButtons button,
+.tellExamples button {
+  border: 0;
+  cursor: pointer;
+  font-weight: 900;
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+
+.tellCommandBox button:hover,
+.freshAskButtons button:hover,
+.tellQuickButtons button:hover,
+.tellExamples button:hover {
+  transform: translateY(-1px);
+}
+
+.tellCommandBox > button {
+  min-height: 54px;
+  padding: 0 22px;
+  border-radius: 18px;
+  color: #111827;
+  background: linear-gradient(135deg, #f97316, #fbbf24);
+  box-shadow: 0 12px 25px rgba(249, 115, 22, .22);
+  white-space: nowrap;
+}
+
+.tellQuickButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tellQuickButtons button,
+.tellExamples button {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid rgba(15, 23, 42, .09);
+  border-radius: 999px;
+  color: #111827;
+  background: #fff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, .05);
+}
+
+.tellGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.freshAskPanel {
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid rgba(15, 23, 42, .08);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, .94);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, .07);
+}
+
+.freshAskPanel header {
+  display: block;
+  margin-bottom: 16px;
+}
+
+.freshAskPanel header h2 {
+  margin: 10px 0 8px;
+  color: #111827;
+  font-size: 24px;
+  letter-spacing: -.035em;
+}
+
+.freshAskPanel header p {
+  margin: 0;
+  color: #64748b;
+  line-height: 1.55;
+}
+
+.freshAskResult {
+  display: grid;
+  gap: 12px;
+}
+
+.freshAskResult section,
+.tellRules div,
+.freshCard.freshItem {
+  display: block;
+  padding: 14px;
+  border: 1px solid rgba(15, 23, 42, .07);
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.freshAskResult b,
+.tellRules b,
+.freshCard.freshItem b {
+  display: block;
+  margin-bottom: 6px;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.freshAskResult p,
+.tellRules span,
+.freshCard.freshItem span {
+  display: block;
+  margin: 0;
+  color: #64748b;
+  line-height: 1.55;
+}
+
+.freshAskButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.freshAskButtons button {
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 999px;
+  color: #111827;
+  background: #f1f5f9;
+}
+
+.freshAskButtons button:first-child,
+.freshAskButtons button:nth-child(2) {
+  background: #111827;
+  color: #fff;
+}
+
+.tellExamples {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.tellExamples button {
+  justify-content: center;
+  border-radius: 16px;
+  white-space: normal;
+  text-align: left;
+}
+
+.tellRules {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
 @media (min-width: 901px) {
   .freshTellFloat { display: none; }
 }
 
+@media (max-width: 900px) {
+  .tellHero,
+  .tellGrid,
+  .tellCommandBox {
+    grid-template-columns: 1fr;
+  }
+
+  .tellCommandBox > button {
+    width: 100%;
+  }
+}
+
 @media (max-width: 720px) {
   .freshTellTop { display: none; }
+  .tellChurvoxPage { padding: 14px; }
+  .freshAskStats { grid-template-columns: 1fr; }
+  .tellQuickButtons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tellQuickButtons button { border-radius: 16px; }
 }
