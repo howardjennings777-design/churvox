@@ -24,9 +24,9 @@ function uniqueItems(items) { const seen = new Set(); return items.filter(([key]
 function cleanGroups(sourceGroups, guideComplete = false) { const seen = new Set(); return sourceGroups.map((group) => ({ ...group, items: group.items.filter(([key]) => !(guideComplete && key === "setupassistant")).filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }) })).filter((group) => group.items.length); }
 function resetScroll() { try { window.scrollTo({ top: 0, left: 0, behavior: "auto" }); } catch {} try { document.querySelectorAll(".freshMain,.freshPageScroll,.freshApp,main").forEach((el) => { el.scrollTop = 0; }); } catch {} }
 function cleanAsk(text) { return String(text || "").toLowerCase().replace(/[^a-z0-9$@.\s-]/g, " ").replace(/\s+/g, " ").trim(); }
-function isJobCommand(text) { const lower = cleanAsk(text); return /(add|new|create|book|make).{0,50}(job|work|booking|service)/.test(lower) || /\bjob\b/.test(lower) || /lawn|mowing|cleaning|garden|handyman|painting|plumbing|electrical/.test(lower); }
+function isJobCommand(text) { const lower = cleanAsk(text); return /(add|new|create|book|make).{0,50}(job|work|booking|service)/.test(lower) || /lawn|mowing|cleaning|garden|handyman|painting|plumbing|electrical/.test(lower); }
 function isClientCommand(text) { const lower = cleanAsk(text); return /(add|new|create|make).{0,40}(client|customer)/.test(lower); }
-function askRoute(text) { const lower = cleanAsk(text); if (isJobCommand(text)) return "jobs"; if (isClientCommand(text)) return "clients"; if (lower.includes("unpaid") || lower.includes("overdue") || lower.includes("payment")) return "payments"; if (lower.includes("xero") || lower.includes("myob")) return "xero"; if (lower.includes("payroll")) return "payroll"; if (lower.includes("import") || lower.includes("csv")) return "imports"; if (lower.includes("command") || lower.includes("review") || lower.includes("approve") || lower.includes("follow up")) return "command"; return "askchurvox"; }
+function askRoute(text) { const lower = cleanAsk(text); if (isJobCommand(text)) return "jobs"; if (isClientCommand(text)) return "clients"; if (lower.includes("unpaid") || lower.includes("overdue") || lower.includes("payment")) return "payments"; if (lower.includes("xero") || lower.includes("myob")) return "xero"; if (lower.includes("payroll")) return "payroll"; if (lower.includes("import") || lower.includes("csv")) return "imports"; if (lower.includes("command") || lower.includes("review") || lower.includes("approve") || lower.includes("follow up")) return "command"; if (lower.includes("job")) return "jobs"; return "askchurvox"; }
 
 export default function FreshShell({ active, onChange, onNavigate, children }) {
   const auth = useAuth();
@@ -53,14 +53,14 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
     try { window.localStorage.setItem(ASK_DRAFT_KEY, text); } catch {}
     if (route === "jobs") {
       try { window.localStorage.setItem(OPEN_JOB_MODAL_KEY, JSON.stringify({ open: true, instruction: text, at: Date.now() })); } catch {}
-      go("jobs");
-      window.setTimeout(() => window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: { text, instruction: text } })), 120);
+      if (currentPrimary === "jobs") window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: { text, instruction: text } }));
+      else go("jobs");
       return;
     }
     if (route === "clients") {
       try { window.localStorage.setItem(OPEN_CLIENT_MODAL_KEY, "true"); } catch {}
-      go("clients");
-      window.setTimeout(() => window.dispatchEvent(new CustomEvent("churvox:open-client-popup", { detail: { text } })), 120);
+      if (currentPrimary === "clients") window.dispatchEvent(new CustomEvent("churvox:open-client-popup", { detail: { text } }));
+      else go("clients");
       return;
     }
     go(route);
