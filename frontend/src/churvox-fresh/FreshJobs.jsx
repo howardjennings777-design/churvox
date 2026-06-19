@@ -167,7 +167,7 @@ export default function FreshJobs({ onNavigate }) {
       </section>
       {createOpen ? (
         <div className="jobModalOverlay" role="dialog" aria-modal="true" aria-label="Add job" style={{ position: "fixed", top: 0, right: 0, bottom: 0, left: "420px", zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", padding: 22, background: "rgba(2, 6, 23, 0.72)", backdropFilter: "blur(14px)" }} onMouseDown={(event) => { if (event.target === event.currentTarget) setCreateOpen(false); }}>
-          <section className="freshCard jobModalCard" style={{ width: "min(980px, calc(100vw - 484px))", maxHeight: "min(840px, calc(100dvh - 44px))", overflow: "auto", borderRadius: 30, background: "#fffaf0", boxShadow: "0 34px 100px rgba(0, 0, 0, 0.45)", transform: "translateX(150px)" }}>
+          <section className="freshCard jobModalCardExact" style={{ width: "min(980px, calc(100vw - 484px))", maxHeight: "min(840px, calc(100dvh - 44px))", overflow: "auto", borderRadius: 30, background: "#fffaf0", boxShadow: "0 34px 100px rgba(0, 0, 0, 0.45)", transform: "translateX(150px)" }}>
             <header className="freshHero freshJobPopupHero"><span>New job</span><h1>Add job</h1><p>{jobInstruction ? `From Ask Churvox: ${jobInstruction}` : "Add the real job here without leaving the Jobs area."}</p></header>
             <div className="freshJobPopupBody"><JobCreateForm initialInstruction={jobInstruction} onCancel={() => setCreateOpen(false)} onSuccess={handleJobCreated} submitLabel="Create job" /></div>
           </section>
