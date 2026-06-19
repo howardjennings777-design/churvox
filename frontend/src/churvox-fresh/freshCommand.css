@@ -1,1 +1,579 @@
-/* Compatibility stylesheet: retained so FreshApp imports stay build-safe. */
+.freshCommandPulse {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0 0 16px;
+}
+
+.freshCommandPulse .freshCard {
+  min-height: 92px;
+  padding: 18px;
+  border: 1px solid rgba(15, 23, 42, .08);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 0 16px 38px rgba(15, 23, 42, .07);
+}
+
+.freshCommandPulse h2 {
+  margin: 0 0 6px;
+  color: #111827;
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: -.04em;
+}
+
+.freshCommandPulse p {
+  margin: 0;
+  color: #64748b;
+  font-weight: 850;
+}
+
+.freshFlowPanel,
+.freshLaunchChecklist {
+  margin: 0 0 16px;
+  padding: 18px;
+  border: 1px solid rgba(15, 23, 42, .08);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, .94);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, .07);
+}
+
+.freshFlowHeader,
+.freshLaunchChecklist > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.freshFlowHeader span,
+.freshLaunchChecklist header span,
+.freshCommandFilterBar span,
+.freshCommandPill {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(249, 115, 22, .12);
+  color: #c2410c;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-style: normal;
+}
+
+.freshFlowHeader h2,
+.freshLaunchChecklist h2 {
+  margin: 9px 0 6px;
+  color: #111827;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: -.035em;
+}
+
+.freshFlowHeader p,
+.freshLaunchChecklist p {
+  margin: 0;
+  max-width: 760px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.freshFlowHeader button,
+.freshLaunchChecklist > header > button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 14px;
+  padding: 0 14px;
+  background: #111827;
+  color: #fff;
+  font-weight: 950;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.freshFlowCards {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.freshFlowCard {
+  display: grid;
+  gap: 7px;
+  min-height: 145px;
+  padding: 14px;
+  border: 1px solid rgba(15, 23, 42, .08);
+  border-radius: 22px;
+  background: #f8fafc;
+  color: #111827;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, .04);
+}
+
+.freshFlowCard i {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 28px;
+  border-radius: 10px;
+  background: #111827;
+  color: #fbbf24;
+  font-size: 10px;
+  font-weight: 950;
+  font-style: normal;
+}
+
+.freshFlowCard strong {
+  color: #111827;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.freshFlowCard b,
+.freshFlowCard span,
+.freshFlowCard em {
+  display: block;
+}
+
+.freshFlowCard b {
+  color: #111827;
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.freshFlowCard span {
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.freshFlowCard em {
+  margin-top: auto;
+  color: #166534;
+  font-size: 12px;
+  font-weight: 950;
+  font-style: normal;
+}
+
+.freshFlowCard.risk {
+  border-color: rgba(249, 115, 22, .32);
+  background: #fff7ed;
+}
+
+.freshFlowCard.risk em {
+  color: #c2410c;
+}
+
+.freshLaunchProgress {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e5e7eb;
+  margin-bottom: 14px;
+}
+
+.freshLaunchProgress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #f97316, #fbbf24);
+}
+
+.freshLaunchGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.freshLaunchGrid article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid rgba(15, 23, 42, .08);
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.freshLaunchGrid article.done {
+  background: #ecfdf5;
+  border-color: rgba(22, 101, 52, .2);
+}
+
+.freshCheckToggle {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(15, 23, 42, .13);
+  border-radius: 12px;
+  background: #fff;
+  color: #166534;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshLaunchGrid b,
+.freshLaunchGrid span {
+  display: block;
+}
+
+.freshLaunchGrid b {
+  color: #111827;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.freshLaunchGrid span {
+  margin-top: 3px;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.freshOpenArea {
+  min-height: 34px;
+  border: 0;
+  border-radius: 12px;
+  padding: 0 12px;
+  background: #111827;
+  color: #fff;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.freshCommandFilterBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 14px;
+}
+
+.freshCommandFilterBar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 42px;
+  border: 1px solid rgba(15, 23, 42, .08);
+  border-radius: 999px;
+  padding: 0 12px;
+  background: #fff;
+  color: #111827;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, .05);
+}
+
+.freshCommandFilterBar button.active {
+  background: #111827;
+  color: #fff;
+}
+
+.freshCommandFilterBar button.active span {
+  background: rgba(255, 255, 255, .1);
+  color: #fff;
+}
+
+.freshCommandFilterBar b {
+  display: grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #f97316;
+  color: #111827;
+}
+
+.freshCommandBoard {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.freshCommandBox {
+  min-height: 150px;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  padding: 16px;
+  border: 1px solid rgba(15, 23, 42, .08);
+  border-left: 5px solid #f97316;
+  border-radius: 24px;
+  background: #fff;
+  color: #111827;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, .07);
+}
+
+.freshCommandBox strong,
+.freshCommandBox em,
+.freshCommandBox small {
+  display: block;
+}
+
+.freshCommandBox strong {
+  color: #111827;
+  font-size: 18px;
+  line-height: 1.15;
+  letter-spacing: -.025em;
+}
+
+.freshCommandBox em {
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.4;
+  font-style: normal;
+}
+
+.freshCommandBox small {
+  width: fit-content;
+  margin-top: auto;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #c2410c;
+  font-weight: 950;
+}
+
+.freshCommandBox.isDone {
+  opacity: .78;
+  border-left-color: #16a34a;
+}
+
+.freshCommandEmpty {
+  grid-column: 1 / -1;
+  padding: 18px;
+  border: 1px dashed rgba(15, 23, 42, .18);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, .75);
+}
+
+.freshCommandEmpty b,
+.freshCommandEmpty span {
+  display: block;
+}
+
+.freshCommandEmpty span {
+  margin-top: 5px;
+  color: #64748b;
+}
+
+.freshSlipOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5200;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(2, 6, 23, .55);
+  backdrop-filter: blur(8px);
+}
+
+.freshSlipModal {
+  width: min(720px, 100%);
+  max-height: min(760px, calc(100vh - 36px));
+  overflow: auto;
+  border-radius: 30px;
+  background: #fffaf0;
+  box-shadow: 0 34px 90px rgba(0, 0, 0, .32);
+}
+
+.freshSlipHead {
+  padding: 22px;
+  border-radius: 30px 30px 0 0;
+  background:
+    radial-gradient(circle at 88% 10%, rgba(249, 115, 22, .35), transparent 34%),
+    linear-gradient(135deg, #111827, #1f2937 60%, #7c2d12);
+  color: #fff;
+}
+
+.freshSlipHead span {
+  display: inline-flex;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(249, 115, 22, .18);
+  color: #fed7aa;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.freshSlipHead h2 {
+  margin: 12px 0 6px;
+  color: #fff;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.freshSlipHead p {
+  margin: 0;
+  color: rgba(255, 255, 255, .78);
+}
+
+.freshSlipBody {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+
+.freshSlipRow,
+.freshField {
+  display: block;
+  padding: 14px;
+  border: 1px solid rgba(15, 23, 42, .08);
+  border-radius: 18px;
+  background: #fff;
+}
+
+.freshSlipRow b,
+.freshField span {
+  display: block;
+  margin-bottom: 6px;
+  color: #111827;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.freshSlipRow p {
+  margin: 0;
+  color: #64748b;
+  line-height: 1.55;
+}
+
+.freshField textarea {
+  width: 100%;
+  min-height: 110px;
+  resize: vertical;
+  border: 1px solid rgba(15, 23, 42, .12);
+  border-radius: 14px;
+  padding: 12px;
+  color: #111827;
+  background: #f8fafc;
+  font: inherit;
+  font-weight: 800;
+  outline: none;
+}
+
+.freshSlipActions,
+.freshActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.freshSlipActions button,
+.freshActions button,
+.freshClose {
+  min-height: 40px;
+  border: 0;
+  border-radius: 14px;
+  padding: 0 14px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.freshPrimary {
+  background: #f97316 !important;
+  color: #111827 !important;
+}
+
+.freshOrange {
+  background: #fbbf24 !important;
+  color: #111827 !important;
+}
+
+.freshDark {
+  background: #111827 !important;
+  color: #fff !important;
+}
+
+.freshGhost {
+  background: #f1f5f9 !important;
+  color: #111827 !important;
+}
+
+.freshClose {
+  width: fit-content;
+  background: #fff7ed;
+  color: #9a3412;
+  border: 1px solid rgba(249, 115, 22, .24);
+}
+
+.freshGrid.two {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, .8fr);
+  gap: 14px;
+}
+
+.freshGrid.two > .freshCard {
+  padding: 18px;
+  border: 1px solid rgba(15, 23, 42, .08);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .94);
+  box-shadow: 0 16px 34px rgba(15, 23, 42, .07);
+}
+
+.freshGrid.two h2 {
+  margin: 0 0 8px;
+  color: #111827;
+  font-size: 22px;
+}
+
+.freshGrid.two p {
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.freshActivityItem,
+.freshItem {
+  padding: 12px;
+  border: 1px solid rgba(15, 23, 42, .08);
+  border-radius: 16px;
+  background: #f8fafc;
+  margin-bottom: 10px;
+}
+
+.freshActivityItem b,
+.freshItem b,
+.freshActivityItem span,
+.freshItem span {
+  display: block;
+}
+
+.freshActivityItem span,
+.freshItem span {
+  margin-top: 5px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+@media (max-width: 1150px) {
+  .freshFlowCards,
+  .freshCommandBoard {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .freshCommandPulse,
+  .freshFlowCards,
+  .freshLaunchGrid,
+  .freshCommandBoard,
+  .freshGrid.two {
+    grid-template-columns: 1fr;
+  }
+
+  .freshFlowHeader,
+  .freshLaunchChecklist > header {
+    flex-direction: column;
+  }
+}
