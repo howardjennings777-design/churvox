@@ -189,6 +189,13 @@ const pages = {
 
 function getInitialPage() {
   try {
+    const hash = String(window.location.hash || "").replace(/^#/, "").trim().toLowerCase();
+    if (hash && pages[hash]) return hash;
+
+    const path = String(window.location.pathname || "").trim().toLowerCase();
+    if (path === "/dashboard" || path === "/fresh") return "smart";
+    if (path === "/plans") return "plans";
+
     return window.localStorage.getItem("churvox:fresh-page") || "smart";
   } catch {
     return "smart";
@@ -198,6 +205,18 @@ function getInitialPage() {
 export default function FreshApp() {
   const [page, setPage] = React.useState(getInitialPage);
   const Page = pages[page] || FreshSimple;
+
+  React.useEffect(() => {
+    const applyHashRoute = () => {
+      const hash = String(window.location.hash || "").replace(/^#/, "").trim().toLowerCase();
+      if (hash && pages[hash]) setPage(hash);
+      else if (window.location.pathname === "/dashboard") setPage("smart");
+    };
+
+    applyHashRoute();
+    window.addEventListener("hashchange", applyHashRoute);
+    return () => window.removeEventListener("hashchange", applyHashRoute);
+  }, []);
 
   function navigate(next) {
     const safeNext = next || "smart";

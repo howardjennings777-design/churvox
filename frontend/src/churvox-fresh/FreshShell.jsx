@@ -8,7 +8,7 @@ const OPEN_JOB_MODAL_KEY = "churvox:fresh-open-job-modal:v1";
 const OPEN_CLIENT_MODAL_KEY = "churvox:fresh-open-client-modal:v1";
 
 const groups = [
-  { title: "Today", items: [["smart", "TD", "Today"], ["askchurvox", "AI", "Tell Churvox"], ["command", "CM", "Command"]] },
+  { title: "Smart Hub", items: [["smart", "SH", "Smart Hub"], ["askchurvox", "AI", "Tell Churvox"], ["command", "CM", "Command"]] },
   { title: "Work", items: [["jobs", "JB", "Jobs"], ["dispatch", "SC", "Schedule"], ["clients", "CL", "Clients"]] },
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["payments", "PY", "Payments"], ["xero", "XE", "Xero"]] },
   { title: "Team", items: [["team", "TM", "Team"], ["workercommand", "WC", "Worker View"], ["time", "TS", "Time Sheets"], ["payroll", "PR", "Payroll"]] },
@@ -16,8 +16,8 @@ const groups = [
   { title: "Setup", items: [["settings", "SG", "Settings"], ["imports", "IM", "Imports"], ["exports", "EX", "Exports"], ["plans", "PL", "Plans"], ["support", "SP", "Support"]] },
 ];
 
-const mobileItems = [["smart", "TD", "Today"], ["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"], ["invoices", "IV", "Money"], ["more", "••", "More"]];
-const mobileLabels = { smart: "Today", hub: "Today", dashboard: "Today", jobs: "Jobs", clients: "Clients", quotes: "Quotes", invoices: "Money", payments: "Money", xero: "Xero", team: "Team", workercommand: "Worker View", time: "Time Sheets", payroll: "Payroll", command: "Command", automation: "Automation", reports: "Reports", launchcontrol: "Launch", settings: "Settings", imports: "Imports", exports: "Exports", plans: "Plans", support: "Support", askchurvox: "Tell Churvox" };
+const mobileItems = [["smart", "SH", "Smart Hub"], ["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"], ["invoices", "IV", "Money"], ["more", "••", "More"]];
+const mobileLabels = { smart: "Smart Hub", hub: "Smart Hub", dashboard: "Smart Hub", jobs: "Jobs", clients: "Clients", quotes: "Quotes", invoices: "Money", payments: "Money", xero: "Xero", team: "Team", workercommand: "Worker View", time: "Time Sheets", payroll: "Payroll", command: "Command", automation: "Automation", reports: "Reports", launchcontrol: "Launch", settings: "Settings", imports: "Imports", exports: "Exports", plans: "Plans", support: "Support", askchurvox: "Tell Churvox" };
 const parentByKey = { routes: "dispatch", areas: "dispatch", schedulerai: "dispatch", gps: "time", portal: "clients", followupwriter: "clients", reviewbooster: "clients" };
 groups.forEach((group) => group.items.forEach(([key]) => { parentByKey[key] = key; }));
 
