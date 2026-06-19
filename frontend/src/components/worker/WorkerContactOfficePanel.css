@@ -1,0 +1,113 @@
+.workerContactOfficeBackdrop {
+  z-index: 2147483600 !important;
+  align-items: flex-end !important;
+  padding: 10px 10px calc(104px + env(safe-area-inset-bottom)) !important;
+}
+
+.workerContactOfficeCard {
+  width: min(100%, 640px) !important;
+  max-height: calc(100dvh - 138px) !important;
+  overflow-y: auto !important;
+  border-radius: 28px !important;
+  background: #ffffff !important;
+  box-shadow: 0 26px 80px rgba(2, 6, 23, .38) !important;
+}
+
+.workerContactOfficeBody {
+  display: grid !important;
+  gap: 14px !important;
+  padding: 18px !important;
+  padding-bottom: 20px !important;
+}
+
+.workerContactOfficeHead {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: rgba(255, 255, 255, .96);
+  padding-bottom: 4px;
+  backdrop-filter: blur(12px);
+}
+
+.workerContactOfficeClose {
+  min-width: 44px !important;
+  min-height: 44px !important;
+  border-radius: 999px !important;
+}
+
+.workerContactOfficeNotice,
+.workerContactOfficeContact,
+.workerContactOfficeHelp {
+  border-radius: 18px !important;
+}
+
+.workerContactOfficeHelp {
+  display: grid !important;
+  gap: 10px !important;
+  padding: 14px !important;
+  margin-bottom: 0 !important;
+}
+
+.workerContactOfficeTextarea {
+  width: 100% !important;
+  min-height: 132px !important;
+  max-height: 220px !important;
+  padding: 14px 16px !important;
+  border-radius: 20px !important;
+  border: 2px solid rgba(15, 23, 42, .86) !important;
+  background: #ffffff !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  font-size: 18px !important;
+  line-height: 1.4 !important;
+  font-weight: 800 !important;
+  resize: vertical !important;
+  overflow-y: auto !important;
+  box-sizing: border-box !important;
+}
+
+.workerContactOfficeTextarea:focus {
+  outline: none !important;
+  border-color: #f97316 !important;
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, .16) !important;
+}
+
+.workerContactOfficeSend {
+  min-height: 52px !important;
+  border-radius: 18px !important;
+  font-weight: 1000 !important;
+}
+
+@media (min-width: 700px) {
+  .workerContactOfficeBackdrop {
+    align-items: center !important;
+    padding: 18px !important;
+  }
+
+  .workerContactOfficeCard {
+    max-height: min(720px, calc(100dvh - 36px)) !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .workerContactOfficeBackdrop {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    padding-bottom: calc(112px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .workerContactOfficeCard {
+    max-height: calc(100dvh - 150px) !important;
+    border-radius: 26px !important;
+  }
+
+  .workerContactOfficeBody {
+    padding: 16px !important;
+  }
+
+  .workerContactOfficeTextarea {
+    min-height: 120px !important;
+    font-size: 17px !important;
+    padding: 14px !important;
+  }
+}
