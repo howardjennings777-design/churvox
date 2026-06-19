@@ -1,0 +1,82 @@
+/* CHURVOX_SMART_CORE_FLOW_BOARD_20260619 */
+.freshTodayPanel--core {
+  border-left: 8px solid #f97316 !important;
+  background:
+    radial-gradient(circle at 96% -18%, rgba(249, 115, 22, .22), transparent 32%),
+    #fffaf0 !important;
+}
+
+.freshTodayPanel--core header {
+  display: grid !important;
+  gap: 6px !important;
+  margin-bottom: 14px !important;
+}
+
+.freshTodayPanel--core .freshTodayList {
+  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+.freshTodayPanel--core .freshTodayNeedCard {
+  min-height: 126px !important;
+  align-content: start !important;
+  border-left-width: 5px !important;
+  padding: 12px !important;
+}
+
+.freshTodayPanel--core .freshTodayNeedCard span {
+  line-height: 1.15 !important;
+}
+
+.freshTodayPanel--core .freshTodayNeedCard b {
+  font-size: 28px !important;
+  line-height: 1 !important;
+}
+
+.freshTodayPanel--core .freshTodayNeedCard small {
+  line-height: 1.25 !important;
+}
+
+.freshTodayPanel--core .freshTodayMoneyRows {
+  margin-top: 12px !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+.freshTodayPanel--core .freshTodayMoneyRows button {
+  min-height: 86px !important;
+  align-content: center !important;
+  background: #111827 !important;
+  border-left-color: #f97316 !important;
+}
+
+.freshTodayPanel--core .freshTodayMoneyRows b,
+.freshTodayPanel--core .freshTodayMoneyRows span {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.freshTodayPanel--core .freshTodayMoneyRows span {
+  color: #fed7aa !important;
+  -webkit-text-fill-color: #fed7aa !important;
+  font-size: 11px !important;
+  letter-spacing: .1em !important;
+  text-transform: uppercase !important;
+}
+
+@media (max-width: 1180px) {
+  .freshTodayPanel--core .freshTodayList {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .freshTodayPanel--core .freshTodayList,
+  .freshTodayPanel--core .freshTodayMoneyRows {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshTodayPanel--core .freshTodayNeedCard,
+  .freshTodayPanel--core .freshTodayMoneyRows button {
+    min-height: 78px !important;
+  }
+}
