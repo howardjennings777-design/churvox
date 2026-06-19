@@ -46,3 +46,9 @@
 .simpleFooter{color:#d1d5db!important}
 .simpleFooter b{color:#fff!important}
 .simpleFooter a{color:#ffedd5!important}
+
+/* Hide the extra Ask Churvox / AI filled summary boxes in the job form. The fields still prefill. */
+[data-version="CHURVOX_CLEAN_JOB_FORM_20260619"] > div > section:first-child > p.rounded-2xl.border-orange-200,
+[data-version="CHURVOX_CLEAN_JOB_FORM_20260619"] > div > section:first-child > div.rounded-2xl.border-orange-200 {
+  display: none !important;
+}
