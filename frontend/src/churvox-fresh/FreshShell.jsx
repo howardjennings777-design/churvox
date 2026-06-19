@@ -1,5 +1,6 @@
 import React from "react";
 import { useAuth } from "../context/AuthContext";
+import "./freshMobileAppShell.css";
 
 const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
 const ASK_DRAFT_KEY = "churvox:tell-command-draft:v1";
