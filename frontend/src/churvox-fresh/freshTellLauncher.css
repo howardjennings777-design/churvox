@@ -1,5 +1,4 @@
 .freshTellSide { display: none !important; }
-
 .freshTellTop { display: none !important; }
 
 .freshTellFloat {
@@ -18,6 +17,33 @@
   box-shadow: 0 16px 38px rgba(2, 6, 23, .22);
 }
 
+.freshMain {
+  display: flex;
+  flex-direction: column;
+}
+
+.freshPageScroll {
+  display: contents;
+}
+
+.freshPageScroll > section {
+  display: contents;
+}
+
+.freshHero,
+.tellHero,
+.freshAskHero {
+  order: 1;
+}
+
+.freshGlobalAsk {
+  order: 2;
+}
+
+.freshPageScroll > section > *:not(.freshHero):not(.tellHero):not(.freshAskHero) {
+  order: 3;
+}
+
 .freshGlobalAsk,
 .tellCommandBox {
   display: grid;
@@ -33,9 +59,9 @@
 
 .freshGlobalAsk {
   position: sticky;
-  top: 62px;
+  top: 0;
   z-index: 3150;
-  margin: 0 0 14px;
+  margin: 14px 0;
   backdrop-filter: blur(16px);
 }
 
@@ -108,9 +134,7 @@
   margin: 0;
   padding: 0;
   color: #111827;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  display: contents;
 }
 
 .tellChurvoxPage * { box-sizing: border-box; }
@@ -301,7 +325,6 @@
   .tellHero,
   .tellGrid,
   .tellCommandBox { grid-template-columns: 1fr; }
-  .freshGlobalAsk { top: 68px; }
   .freshGlobalAsk > button,
   .tellCommandBox > button { width: 100%; }
 }
