@@ -1,0 +1,9 @@
+.jobModalCardExact {
+  transform: translateX(240px) !important;
+}
+
+@media (max-width: 720px) {
+  .jobModalCardExact {
+    transform: none !important;
+  }
+}
