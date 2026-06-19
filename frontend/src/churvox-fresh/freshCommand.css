@@ -577,3 +577,54 @@
     flex-direction: column;
   }
 }
+
+
+/* Command real work form modal */
+.freshWorkModal {
+  width: min(780px, calc(100vw - 28px)) !important;
+}
+
+.freshWorkForm {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+
+.freshWorkForm label {
+  display: grid;
+  gap: 7px;
+}
+
+.freshWorkForm label span {
+  color: #7c2d12;
+  font-size: 11px;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+}
+
+.freshWorkForm input,
+.freshWorkForm textarea,
+.freshWorkForm select {
+  width: 100%;
+  border: 1px solid rgba(15, 23, 42, .14);
+  border-radius: 16px;
+  background: #fff;
+  color: #111827;
+  padding: 13px 14px;
+  font-size: 15px;
+  font-weight: 850;
+  outline: none;
+}
+
+.freshWorkForm textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.freshWorkForm input:focus,
+.freshWorkForm textarea:focus,
+.freshWorkForm select:focus {
+  border-color: rgba(249, 115, 22, .6);
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, .12);
+}

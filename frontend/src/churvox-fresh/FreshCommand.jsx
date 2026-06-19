@@ -500,51 +500,75 @@ export default function FreshCommand({ onNavigate }) {
 
       {selected && (
         <div className="freshSlipOverlay" onClick={() => setSelectedId(null)}>
-          <section className="freshSlipModal" onClick={(event) => event.stopPropagation()}>
+          <section className="freshSlipModal freshWorkModal" onClick={(event) => event.stopPropagation()}>
             <header className="freshSlipHead">
               <span>{selected.group}</span>
-              <h2>{selected.title}</h2>
+              <h2>{selected.page === "invoices" ? "Draft invoice" : selected.page === "jobs" || selected.page === "dispatch" ? "Job detail" : selected.page === "clients" ? "Client details" : selected.page === "quotes" ? "Quote follow-up" : selected.title}</h2>
               <p>{selected.info}</p>
             </header>
 
-            <div className="freshSlipBody">
-              <div className="freshSlipRow">
-                <b>Status</b>
-                <p>{selected.status}</p>
-              </div>
+            <div className="freshWorkForm">
+              {selected.page === "invoices" && (
+                <>
+                  <label><span>Customer</span><input defaultValue="Aroha Property Care" /></label>
+                  <label><span>Invoice amount</span><input defaultValue="$85.00" /></label>
+                  <label><span>Description</span><textarea defaultValue="Completed lawn service. GST ready. Draft only until owner approves." /></label>
+                  <label><span>Status</span><select defaultValue="draft"><option value="draft">Draft — owner review</option><option value="sent">Ready to send</option></select></label>
+                </>
+              )}
 
-              <div className="freshSlipRow">
-                <b>AI found</b>
-                <p>{selected.found}</p>
-              </div>
+              {(selected.page === "jobs" || selected.page === "dispatch") && (
+                <>
+                  <label><span>Job</span><input defaultValue={selected.info} /></label>
+                  <label><span>Access / issue</span><textarea defaultValue={selected.owner} /></label>
+                  <label><span>Status</span><select defaultValue="blocked"><option value="blocked">Blocked</option><option value="assigned">Assigned</option><option value="ready">Ready for worker</option></select></label>
+                  <label><span>Owner note</span><textarea defaultValue="Confirm access before sending worker." /></label>
+                </>
+              )}
 
-              <div className="freshSlipRow">
-                <b>AI prepared</b>
-                <p>{selected.prepared}</p>
-              </div>
+              {selected.page === "clients" && (
+                <>
+                  <label><span>Client</span><input defaultValue="Birchville Rentals" /></label>
+                  <label><span>Billing email</span><input placeholder="Add billing email" /></label>
+                  <label><span>Setup note</span><textarea defaultValue="Billing details missing. Add email before invoice automation continues." /></label>
+                </>
+              )}
 
-              <div className="freshSlipRow">
-                <b>Why it matters</b>
-                <p>{selected.why}</p>
-              </div>
+              {selected.page === "quotes" && (
+                <>
+                  <label><span>Client</span><input defaultValue="Birchville Rentals" /></label>
+                  <label><span>Follow-up message</span><textarea defaultValue="Hi, just checking whether you would like us to go ahead with the quote. Happy to help when you're ready." /></label>
+                  <label><span>Status</span><select defaultValue="waiting"><option value="waiting">Waiting reply</option><option value="send">Ready to send</option></select></label>
+                </>
+              )}
 
-              <label className="freshField">
-                <span>Editable owner instruction</span>
-                <textarea
-                  defaultValue={selected.editedInstruction}
-                  onBlur={(event) => saveInstruction(event.target.value)}
-                />
-              </label>
+              {selected.page === "payroll" && (
+                <>
+                  <label><span>Payroll item</span><input defaultValue={selected.info} /></label>
+                  <label><span>Owner check</span><textarea defaultValue="Review hours and export CSV only. Do not submit tax or create bank files." /></label>
+                </>
+              )}
+
+              {selected.page === "settings" && (
+                <>
+                  <label><span>Setup issue</span><input defaultValue={selected.title} /></label>
+                  <label><span>Fix needed</span><textarea defaultValue={selected.owner} /></label>
+                </>
+              )}
+
+              {!["invoices", "jobs", "dispatch", "clients", "quotes", "payroll", "settings"].includes(selected.page) && (
+                <label><span>Details</span><textarea defaultValue={selected.owner} /></label>
+              )}
 
               <div className="freshSlipActions">
-                <button className="freshPrimary" onClick={() => updateSelected("Approved")}>Approve</button>
-                <button className="freshDark" onClick={() => updateSelected("Edited")}>Save edit</button>
+                <button className="freshPrimary" onClick={() => updateSelected("Approved")}>{selected.page === "invoices" ? "Approve draft" : "Approve"}</button>
+                <button className="freshDark" onClick={() => updateSelected("Edited")}>Save changes</button>
                 <button className="freshGhost" onClick={() => updateSelected("Declined")}>Decline</button>
                 <button className="freshOrange" onClick={openArea}>Open {selected.area}</button>
               </div>
 
               <button type="button" className="freshClose" onClick={() => setSelectedId(null)}>
-                Close slip
+                Close
               </button>
             </div>
           </section>
