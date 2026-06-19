@@ -15,18 +15,22 @@ export default function FreshJobQuickSlip({ instruction = "", onClose, onSuccess
         inset: 0,
         zIndex: 12000,
         display: "flex",
-        alignItems: "center",
+        alignItems: "stretch",
         justifyContent: "center",
-        padding: "24px 28px 24px 300px",
+        padding: "18px 24px 18px 300px",
         background: "rgba(2, 6, 23, 0.68)",
         backdropFilter: "blur(16px)",
+        overflow: "hidden",
       }}
     >
       <section
         style={{
           width: "min(940px, calc(100vw - 360px))",
-          maxHeight: "calc(100dvh - 52px)",
-          overflow: "auto",
+          height: "calc(100dvh - 36px)",
+          minHeight: 0,
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
           borderRadius: 30,
           background: "#fffaf0",
           border: "1px solid rgba(15, 23, 42, 0.12)",
@@ -35,20 +39,29 @@ export default function FreshJobQuickSlip({ instruction = "", onClose, onSuccess
       >
         <header
           style={{
-            margin: 16,
+            flex: "0 0 auto",
+            margin: 14,
+            marginBottom: 10,
             borderRadius: 24,
-            padding: "24px 26px",
+            padding: "18px 22px",
             color: "#fffaf0",
             background: "linear-gradient(135deg, #111827, #1f2937 58%, #f97316)",
           }}
         >
-          <div style={{ fontSize: 12, fontWeight: 1000, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.92 }}>New job slip</div>
-          <h1 style={{ margin: "8px 0 6px", fontSize: "clamp(34px, 5vw, 58px)", lineHeight: 0.94, fontWeight: 1000 }}>Add job</h1>
-          <p style={{ margin: 0, maxWidth: 760, fontSize: 14, lineHeight: 1.4, fontWeight: 800, opacity: 0.92 }}>
+          <div style={{ fontSize: 11, fontWeight: 1000, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.92 }}>New job slip</div>
+          <h1 style={{ margin: "6px 0 4px", fontSize: "clamp(30px, 4vw, 46px)", lineHeight: 0.96, fontWeight: 1000 }}>Add job</h1>
+          <p style={{ margin: 0, maxWidth: 760, fontSize: 13, lineHeight: 1.35, fontWeight: 800, opacity: 0.92 }}>
             {instruction ? `Ask Churvox filled from: ${instruction}` : "Create a real job without leaving the Jobs page."}
           </p>
         </header>
-        <div style={{ padding: "0 16px 16px" }}>
+        <div
+          style={{
+            flex: "1 1 auto",
+            minHeight: 0,
+            overflowY: "auto",
+            padding: "0 14px 14px",
+          }}
+        >
           <JobCreateForm
             key={instruction || "blank-job-slip"}
             initialInstruction={instruction}
