@@ -122,7 +122,7 @@ function buildWorkerView(worker, jobs) {
   return { assignedJobs, todayJobs, currentJob, currentJobSeconds, jobTimeSeconds, shiftSeconds, unallocatedSeconds, completedToday, remainingToday, alerts };
 }
 
-function WorkerJobCard({ job, compact = false }) {
+function WorkerJobCard({ job, compact = false, onOpen }) {
   const when = dateValue(job, "scheduled_date", "date", "start", "start_time", "due_date");
   return <article className={`freshWorkerAppJob ${compact ? "compact" : ""}`}>
     <div className="freshWorkerAppJobTop"><span>{statusOf(job).replaceAll("_", " ")}</span><small>{timeText(when)}</small></div>
@@ -130,7 +130,7 @@ function WorkerJobCard({ job, compact = false }) {
     <p>{clientName(job)}</p>
     <small>{jobAddress(job)}</small>
     <div className="freshWorkerAppJobMeta"><em>{dayText(when)}</em><em>{hoursText(jobSeconds(job))}</em><em>{proofText(job)}</em></div>
-    <button type="button">{actionText(job)}</button>
+    <button type="button" onClick={() => onOpen?.(job)}>{compact ? "View job" : actionText(job)}</button>
   </article>;
 }
 
@@ -144,6 +144,7 @@ export default function FreshWorkerCommand({ onNavigate }) {
   const [autoRefresh, setAutoRefresh] = React.useState(true);
   const [lastUpdated, setLastUpdated] = React.useState(null);
   const [error, setError] = React.useState("");
+  const [panelModal, setPanelModal] = React.useState(null);
 
   const selected = workers.find((worker) => idOf(worker) === selectedId) || workers[0] || null;
   const view = selected ? buildWorkerView(selected, jobs) : null;
@@ -189,16 +190,19 @@ export default function FreshWorkerCommand({ onNavigate }) {
       ? [view.currentJob, ...view.todayJobs.filter((job) => idOf(job) !== idOf(view.currentJob))]
       : view.todayJobs.length
         ? view.todayJobs
-        : view.assignedJobs.filter((job) => !isComplete(job))).slice(0, 3)
+        : view.assignedJobs.filter((job) => !isComplete(job))).slice(0, 4)
     : [];
-  const recentCompleted = view ? view.assignedJobs.filter(isComplete).slice(0, 3) : [];
+  const recentCompleted = view ? view.assignedJobs.filter(isComplete).slice(0, 4) : [];
+
+  const openJobModal = (job) => setPanelModal({ type: "job", job });
+  const openPhotosModal = () => setPanelModal({ type: "photos", photos: photoProofs });
 
   return <section className="freshWorkerCommandPage workerFieldDeck freshWorkerAppView freshWorkerSimpleView">
-    <header className="freshWorkerAppHero">
+    <header className="freshWorkerAppHero freshWorkerSimpleHero">
       <div>
         <span>Owner worker view</span>
         <h1>Workers</h1>
-        <p>{selected ? `${workerName(selected)} · ${selectedLiveStatus}` : "Pick a worker on the left. See the important field info on the right."}</p>
+        <p>{selected ? `${workerName(selected)} · ${selectedLiveStatus}` : "Pick a worker on the left. See only the important field info on the right."}</p>
       </div>
       <div className="freshWorkerAppSummary">
         <div><b>{workers.length}</b><small>workers</small></div>
@@ -241,46 +245,89 @@ export default function FreshWorkerCommand({ onNavigate }) {
               <small>Last location: {lastLocation(selected)}</small>
               <small>Last update: {selectedLatestUpdate ? selectedLatestUpdate : "No update yet"}</small>
             </div>
-            <button type="button" onClick={() => onNavigate?.("jobs")}>{view.currentJob ? actionText(view.currentJob) : "Open jobs"}</button>
+            <button type="button" onClick={() => setPanelModal({ type: "jobs", jobs: view.assignedJobs })}>{view.currentJob ? "View current" : "View jobs"}</button>
           </section>
 
-          <section className="freshWorkerSimpleGrid">
-            <article className="freshWorkerAppPanel">
-              <h2>Important jobs</h2>
-              <div className="freshWorkerAppJobs">
-                {importantJobs.length
-                  ? importantJobs.map((job, index) => <WorkerJobCard key={idOf(job, index)} job={job} compact />)
-                  : <div className="freshItem"><b>No active job</b><span>No urgent job for this worker right now.</span></div>}
-              </div>
-            </article>
+          <section className="freshWorkerSimpleBoard">
+            <div className="freshWorkerSimplePrimary">
+              <article className="freshWorkerAppPanel">
+                <h2>Important jobs</h2>
+                <div className="freshWorkerAppJobs">
+                  {importantJobs.length
+                    ? importantJobs.map((job, index) => <WorkerJobCard key={idOf(job, index)} job={job} compact onOpen={openJobModal} />)
+                    : <div className="freshItem"><b>No active job</b><span>No urgent job for this worker right now.</span></div>}
+                </div>
+              </article>
 
-            <article className="freshWorkerAppPanel">
-              <h2>Uploaded photos</h2>
-              {photoProofs.length ? <div className="freshWorkerPhotoGrid">
-                {photoProofs.map((photo, index) => <a key={`${photo.url}-${index}`} href={photo.url} target="_blank" rel="noreferrer">
-                  <img src={photo.url} alt={`Proof for ${jobTitle(photo.job)}`} />
-                  <span>{jobTitle(photo.job)}</span>
-                </a>)}
-              </div> : <div className="freshItem"><b>No photos uploaded yet</b><span>Completed job photos will show here.</span></div>}
-              <button type="button" onClick={() => onNavigate?.("photos")}>Open photos</button>
-            </article>
+              <article className="freshWorkerAppPanel">
+                <h2>Recently completed</h2>
+                <div className="freshWorkerAppJobs">
+                  {recentCompleted.length
+                    ? recentCompleted.map((job, index) => <WorkerJobCard key={idOf(job, index)} job={job} compact onOpen={openJobModal} />)
+                    : <div className="freshItem"><b>No completed jobs yet</b><span>Completed work will show here.</span></div>}
+                </div>
+              </article>
+            </div>
 
-            <article className="freshWorkerAppPanel">
-              <h2>Needs action</h2>
-              {view.alerts.length ? view.alerts.map((alert) => <div key={alert} className="freshItem need"><b>Check this</b><span>{alert}</span></div>) : <div className="freshItem"><b>No urgent actions</b><span>The worker can carry on with the day.</span></div>}
-            </article>
+            <div className="freshWorkerSimpleSide">
+              <article className="freshWorkerAppPanel">
+                <h2>Uploaded photos</h2>
+                {photoProofs.length ? <div className="freshWorkerPhotoGrid">
+                  {photoProofs.slice(0, 4).map((photo, index) => <button key={`${photo.url}-${index}`} type="button" onClick={() => setPanelModal({ type: "photo", photo })}>
+                    <img src={photo.url} alt={`Proof for ${jobTitle(photo.job)}`} />
+                    <span>{jobTitle(photo.job)}</span>
+                  </button>)}
+                </div> : <div className="freshItem"><b>No photos uploaded yet</b><span>Completed job photos will show here.</span></div>}
+                <button type="button" onClick={openPhotosModal}>{photoProofs.length ? "View photos" : "Open photos"}</button>
+              </article>
 
-            <article className="freshWorkerAppPanel">
-              <h2>Recently completed</h2>
-              <div className="freshWorkerAppJobs">
-                {recentCompleted.length
-                  ? recentCompleted.map((job, index) => <WorkerJobCard key={idOf(job, index)} job={job} compact />)
-                  : <div className="freshItem"><b>No completed jobs yet</b><span>Completed work will show here.</span></div>}
-              </div>
-            </article>
+              <article className="freshWorkerAppPanel">
+                <h2>Needs action</h2>
+                {view.alerts.length ? view.alerts.map((alert) => <div key={alert} className="freshItem need"><b>Check this</b><span>{alert}</span></div>) : <div className="freshItem"><b>No urgent actions</b><span>The worker can carry on with the day.</span></div>}
+              </article>
+            </div>
           </section>
         </> : <section className="freshCard"><h2>Select worker</h2><p className="freshMuted">Pick a worker to see current job, proof photos and urgent actions.</p></section>}
       </main>
     </section>
+
+    {panelModal ? <div className="freshWorkerInlineOverlay" onClick={() => setPanelModal(null)}>
+      <section className="freshWorkerInlineModal" onClick={(event) => event.stopPropagation()}>
+        <header>
+          <div>
+            <span>Worker view</span>
+            <h2>{panelModal.type === "photo" ? "Uploaded photo" : panelModal.type === "photos" ? "Uploaded photos" : panelModal.type === "jobs" ? "Assigned jobs" : "Job detail"}</h2>
+          </div>
+          <button type="button" onClick={() => setPanelModal(null)}>Close</button>
+        </header>
+
+        {panelModal.type === "photo" && <div className="freshWorkerPhotoLarge">
+          <img src={panelModal.photo.url} alt={`Proof for ${jobTitle(panelModal.photo.job)}`} />
+          <b>{jobTitle(panelModal.photo.job)}</b>
+          <span>{clientName(panelModal.photo.job)} · {jobAddress(panelModal.photo.job)}</span>
+        </div>}
+
+        {panelModal.type === "photos" && <div className="freshWorkerModalGrid">
+          {panelModal.photos.length ? panelModal.photos.map((photo, index) => <button key={`${photo.url}-${index}`} type="button" onClick={() => setPanelModal({ type: "photo", photo })}>
+            <img src={photo.url} alt={`Proof for ${jobTitle(photo.job)}`} />
+            <b>{jobTitle(photo.job)}</b>
+            <span>{clientName(photo.job)}</span>
+          </button>) : <div className="freshItem"><b>No photos yet</b><span>Photos uploaded by the worker will show here.</span></div>}
+        </div>}
+
+        {panelModal.type === "jobs" && <div className="freshWorkerAppJobs">
+          {panelModal.jobs.length ? panelModal.jobs.map((job, index) => <WorkerJobCard key={idOf(job, index)} job={job} compact onOpen={openJobModal} />) : <div className="freshItem"><b>No assigned jobs</b><span>No jobs are linked to this worker yet.</span></div>}
+        </div>}
+
+        {panelModal.type === "job" && <div className="freshWorkerJobDetail">
+          <span>{statusOf(panelModal.job).replaceAll("_", " ")}</span>
+          <h3>{jobTitle(panelModal.job)}</h3>
+          <p>{clientName(panelModal.job)}</p>
+          <p>{jobAddress(panelModal.job)}</p>
+          <div className="freshWorkerAppJobMeta"><em>{dayText(dateValue(panelModal.job, "scheduled_date", "date", "start", "start_time", "due_date"))}</em><em>{hoursText(jobSeconds(panelModal.job))}</em><em>{proofText(panelModal.job)}</em></div>
+          {photosForJob(panelModal.job).length ? <div className="freshWorkerPhotoGrid">{photosForJob(panelModal.job).map((url, index) => <button key={`${url}-${index}`} type="button" onClick={() => setPanelModal({ type: "photo", photo: { url, job: panelModal.job } })}><img src={url} alt="Job proof" /><span>Proof photo</span></button>)}</div> : null}
+        </div>}
+      </section>
+    </div> : null}
   </section>;
 }

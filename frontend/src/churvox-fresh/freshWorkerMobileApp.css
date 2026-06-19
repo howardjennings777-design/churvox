@@ -485,3 +485,234 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+
+/* Tight simple owner Worker View */
+.freshWorkerSimpleHero {
+  padding: 22px !important;
+}
+
+.freshWorkerSimpleHero h1 {
+  font-size: clamp(38px, 5vw, 64px) !important;
+}
+
+.freshWorkerSimpleLayout {
+  display: grid;
+  grid-template-columns: minmax(250px, 300px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.freshWorkerSimplePeople {
+  min-height: calc(100dvh - 235px);
+}
+
+.freshWorkerSimpleMain {
+  gap: 14px;
+}
+
+.freshWorkerSimpleNow {
+  padding: 17px !important;
+  border-radius: 26px !important;
+}
+
+.freshWorkerSimpleNow h2 {
+  font-size: clamp(30px, 4vw, 48px) !important;
+}
+
+.freshWorkerSimpleBoard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(300px, .95fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.freshWorkerSimplePrimary,
+.freshWorkerSimpleSide {
+  display: grid;
+  gap: 14px;
+}
+
+.freshWorkerPhotoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.freshWorkerPhotoGrid button {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.freshWorkerPhotoGrid img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 15px;
+  border: 1px solid rgba(15, 23, 42, .12);
+  background: #f8fafc;
+}
+
+.freshWorkerPhotoGrid span {
+  display: block;
+  margin-top: 6px;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.freshWorkerInlineOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(2, 6, 23, .55);
+  backdrop-filter: blur(12px);
+}
+
+.freshWorkerInlineModal {
+  width: min(920px, 100%);
+  max-height: min(82dvh, 760px);
+  overflow: auto;
+  display: grid;
+  gap: 14px;
+  border-radius: 28px;
+  border: 1px solid rgba(15, 23, 42, .14);
+  background: #fffaf0;
+  padding: 18px;
+  box-shadow: 0 28px 90px rgba(2, 6, 23, .34);
+}
+
+.freshWorkerInlineModal header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.freshWorkerInlineModal header span {
+  color: #f97316;
+  font-size: 11px;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+}
+
+.freshWorkerInlineModal header h2 {
+  margin: 4px 0 0;
+  color: #111827;
+  font-size: 34px;
+  line-height: 1;
+  letter-spacing: -.05em;
+}
+
+.freshWorkerInlineModal header button {
+  border: 0;
+  border-radius: 999px;
+  background: #111827;
+  color: #fffaf0;
+  padding: 12px 16px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshWorkerPhotoLarge {
+  display: grid;
+  gap: 9px;
+}
+
+.freshWorkerPhotoLarge img {
+  width: 100%;
+  max-height: 60dvh;
+  object-fit: contain;
+  border-radius: 22px;
+  background: #111827;
+}
+
+.freshWorkerPhotoLarge b,
+.freshWorkerJobDetail h3 {
+  color: #111827;
+  font-size: 26px;
+  line-height: 1.05;
+}
+
+.freshWorkerPhotoLarge span,
+.freshWorkerJobDetail p {
+  color: #475569;
+  font-weight: 850;
+}
+
+.freshWorkerModalGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.freshWorkerModalGrid button {
+  display: grid;
+  gap: 7px;
+  border: 1px solid rgba(15, 23, 42, .10);
+  border-radius: 18px;
+  background: #fff;
+  padding: 10px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.freshWorkerModalGrid img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 14px;
+}
+
+.freshWorkerModalGrid b {
+  color: #111827;
+  font-size: 14px;
+}
+
+.freshWorkerModalGrid span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.freshWorkerJobDetail {
+  display: grid;
+  gap: 10px;
+}
+
+.freshWorkerJobDetail > span {
+  width: fit-content;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #166534;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 1000;
+  text-transform: uppercase;
+}
+
+@media (max-width: 900px) {
+  .freshWorkerSimpleLayout,
+  .freshWorkerSimpleBoard,
+  .freshWorkerModalGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .freshWorkerSimplePeople {
+    min-height: auto;
+    position: relative;
+    top: auto;
+  }
+
+  .freshWorkerInlineModal {
+    max-height: 88dvh;
+  }
+}
