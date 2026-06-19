@@ -236,7 +236,21 @@ export default function JobCreateForm({ onSuccess, onCancel, submitLabel = "Crea
     if (match) pickWorker(idOf(match));
   }, [workers, form.assigned_worker_id, form.assigned_worker_name]);
 
-  const filteredWorkers = useMemo(() => workers.filter((worker) => !form.region || lower(worker?.region || worker?.state) === lower(form.region)), [workers, form.region]);
+  const filteredWorkers = useMemo(() => {
+    const selectedRegion = lower(form.region);
+    if (!selectedRegion) return workers;
+
+    const sameRegion = [];
+    const otherRegion = [];
+
+    workers.forEach((worker) => {
+      const workerRegion = lower(worker?.region || worker?.state || worker?.service_region || worker?.work_region);
+      if (workerRegion && workerRegion === selectedRegion) sameRegion.push(worker);
+      else otherRegion.push(worker);
+    });
+
+    return [...sameRegion, ...otherRegion];
+  }, [workers, form.region]);
   const aiFilled = useMemo(() => [["Client", form.client_name], ["Address", form.address], ["Phone", form.customer_phone], ["Email", form.customer_email], ["Schedule", form.scheduled_date], ["Region", form.region], ["Worker", form.assigned_worker_name], ["Price", form.fixed_price ? `$${form.fixed_price}` : form.hourly_rate ? `$${form.hourly_rate}/hr` : ""], ["Repeat", form.is_recurring ? form.recurring_frequency : ""]].filter(([, value]) => Boolean(value)), [form]);
 
   function pickClient(value) {
