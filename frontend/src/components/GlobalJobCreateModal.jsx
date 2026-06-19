@@ -2,9 +2,7 @@ import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import JobCreateForm from "./forms/JobCreateForm";
 
-const OPEN_EVENT = "churvox:open-job-popup";
 const LEGACY_OPEN_EVENT = "churvox:open-job-modal";
-const OPEN_JOB_MODAL_KEY = "churvox:fresh-open-job-modal:v1";
 const LAST_BACKGROUND_KEY = "churvox_last_non_modal_route";
 
 function isJobsNewUrl(href) {
@@ -26,7 +24,7 @@ function searchFromHref(href) {
 
 export function openJobModal(search = "") {
   if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent(OPEN_EVENT, { detail: { search } }));
+  window.dispatchEvent(new CustomEvent(LEGACY_OPEN_EVENT, { detail: { search } }));
 }
 
 export default function GlobalJobCreateModal() {
@@ -84,20 +82,10 @@ export default function GlobalJobCreateModal() {
       openModal(searchFromHref(href));
     };
 
-    window.addEventListener(OPEN_EVENT, onOpen);
     window.addEventListener(LEGACY_OPEN_EVENT, onOpen);
     document.addEventListener("click", onClick, true);
 
-    try {
-      const stored = window.localStorage.getItem(OPEN_JOB_MODAL_KEY);
-      if (stored) {
-        window.localStorage.removeItem(OPEN_JOB_MODAL_KEY);
-        setTimeout(() => openModal(stored === "true" ? "" : stored), 60);
-      }
-    } catch {}
-
     return () => {
-      window.removeEventListener(OPEN_EVENT, onOpen);
       window.removeEventListener(LEGACY_OPEN_EVENT, onOpen);
       document.removeEventListener("click", onClick, true);
     };
