@@ -95,9 +95,9 @@
 @media (max-width: 950px) {
   .cv-help-fab,
   body:has(.freshMobileNav) .cv-help-fab {
-    left: auto !important;
-    right: max(12px, env(safe-area-inset-right)) !important;
-    top: calc(12px + env(safe-area-inset-top)) !important;
+    left: max(12px, env(safe-area-inset-left)) !important;
+    right: auto !important;
+    top: calc(74px + env(safe-area-inset-top)) !important;
     bottom: auto !important;
     z-index: 3000 !important;
     min-width: 0 !important;

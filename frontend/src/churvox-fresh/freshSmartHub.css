@@ -583,3 +583,7 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+.freshTodayPanel--workerStatus {
+  border-color: rgba(14, 165, 233, 0.24);
+}

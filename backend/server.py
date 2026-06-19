@@ -823,6 +823,74 @@ async def require_employer(request: Request) -> dict:
         raise HTTPException(status_code=403, detail="Only employers can perform this action")
     return user
 
+
+async def _worker_office_contact_payload(user: dict, payload: dict | None = None):
+    payload = payload or {}
+    business_id = str(user.get("business_id") or user.get("id") or "")
+    owner_doc = None
+
+    try:
+        owner_doc = await db.users.find_one({"_id": ObjectId(business_id)})
+    except Exception:
+        owner_doc = None
+
+    if not owner_doc:
+        owner_doc = await db.users.find_one({"business_id": business_id, "role": {"$in": ["employer", "admin", "owner"]}})
+
+    owner_email = (
+        (owner_doc or {}).get("email")
+        or os.environ.get("SUPPORT_EMAIL")
+        or "hello@churvox.com"
+    )
+    owner_name = (
+        (owner_doc or {}).get("business_name")
+        or (owner_doc or {}).get("name")
+        or "Office"
+    )
+    owner_phone = (
+        (owner_doc or {}).get("phone")
+        or (owner_doc or {}).get("mobile")
+        or (owner_doc or {}).get("contact_phone")
+        or ""
+    )
+
+    message = str(payload.get("message") or payload.get("note") or "").strip()
+    if message:
+        await db.support_tickets.insert_one({
+            "business_id": business_id,
+            "user_id": user.get("id"),
+            "worker_email": user.get("email"),
+            "worker_name": user.get("name"),
+            "help_type": "Team or worker app",
+            "type": "worker_office_contact",
+            "message": message,
+            "page": payload.get("page") or "/worker",
+            "created_at": datetime.now(timezone.utc),
+            "source": "worker_office_contact",
+            "status": "new",
+        })
+
+    return {
+        "success": True,
+        "message": "Office contact ready.",
+        "contact": {
+            "name": owner_name,
+            "email": owner_email,
+            "phone": owner_phone,
+            "business_id": business_id,
+        },
+    }
+
+
+@api_router.get("/worker/office-contact")
+async def worker_office_contact_get(current_user: dict = Depends(get_current_user)):
+    return await _worker_office_contact_payload(current_user)
+
+
+@api_router.post("/worker/office-contact")
+async def worker_office_contact_post(payload: dict | None = Body(default=None), current_user: dict = Depends(get_current_user)):
+    return await _worker_office_contact_payload(current_user, payload)
+
 def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
     response.set_cookie(key="access_token", value=access_token, httponly=True, secure=True, samesite="none", max_age=86400, path="/")
     response.set_cookie(key="refresh_token", value=refresh_token, httponly=True, secure=True, samesite="none", max_age=604800, path="/")

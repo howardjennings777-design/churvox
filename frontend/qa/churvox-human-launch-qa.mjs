@@ -128,6 +128,8 @@ function watch(page, area) {
 
   page.on("console", (msg) => {
     const text = msg.text();
+    // Logged-out public pages are expected to probe /api/auth/me and receive 401.
+    if (/server responded with a status of 401/i.test(text)) return;
     if (msg.type() === "error" && !/favicon|ResizeObserver|manifest/i.test(text)) {
       add("WARN", `${area} console`, text, page.url());
     }
@@ -138,6 +140,7 @@ function watch(page, area) {
     const u = res.url();
 
     if (/\.png|\.jpg|\.jpeg|\.svg|\.webp|\.ico|\.css|\.js|fonts\.|google|stripe/i.test(u)) return;
+    if (status === 401 && u.includes("/api/auth/me")) return;
 
     if (status >= 500) {
       add("BLOCKER", `${area} network`, `${status} ${u}`, page.url());
@@ -242,13 +245,37 @@ async function clickFirst(page, names, area = "click") {
 
 async function closeOverlays(page) {
   await page.keyboard.press("Escape").catch(() => {});
-  await page.waitForTimeout(200);
+  await page.waitForTimeout(250);
 
-  for (const name of [/close/i, /done/i, /back/i]) {
+  const overlaySelectors = [
+    ".freshPopupBackdrop",
+    ".freshClientPopupBackdrop",
+    ".cv-help-overlay",
+    "[role='dialog']",
+    ".modal",
+    ".drawer",
+  ];
+
+  for (const selector of overlaySelectors) {
+    const root = page.locator(selector).first();
+    if (!(await root.count().catch(() => 0))) continue;
+    if (!(await visible(root).catch(() => false))) continue;
+
+    for (const name of [/close/i, /cancel/i, /done/i, /dismiss/i]) {
+      const btn = root.getByRole("button", { name }).first();
+      if ((await btn.count().catch(() => 0)) && (await visible(btn))) {
+        await btn.click({ timeout: 2500 }).catch(() => {});
+        await page.waitForTimeout(250);
+        return;
+      }
+    }
+  }
+
+  for (const name of [/close/i, /cancel/i, /done/i]) {
     const btn = page.getByRole("button", { name }).first();
     if ((await btn.count().catch(() => 0)) && (await visible(btn))) {
       await btn.click({ timeout: 2000 }).catch(() => {});
-      await page.waitForTimeout(200);
+      await page.waitForTimeout(250);
       return;
     }
   }
@@ -403,6 +430,7 @@ async function auditSafeButtons(page, route, area, limit = 20) {
   const seen = new Set();
 
   for (let round = 0; round < limit; round++) {
+    await closeOverlays(page);
     await settle(page);
 
     const all = page.locator('button:not([disabled]), a[href], [role="button"]:not([aria-disabled="true"])');
