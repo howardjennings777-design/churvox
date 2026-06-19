@@ -299,14 +299,14 @@ body:has(.freshJobsPage) {
 
 /* CHURVOX_FORCE_JOB_MODAL_RIGHT_20260619 */
 html body .jobModalOverlay {
-  justify-content: flex-end !important;
+  justify-content: center !important;
   padding-right: 32px !important;
 }
 
 html body .jobModalOverlay .jobModalCard {
   margin-left: auto !important;
-  margin-right: 0 !important;
-  transform: translateX(0) !important;
+  margin-right: auto !important;
+  transform: translateX(70px) !important;
 }
 
 @media (max-width: 720px) {
@@ -323,5 +323,9 @@ html body .jobModalOverlay .jobModalCard {
   html body .jobModalOverlay {
     justify-content: center !important;
     padding-right: 12px !important;
+  }
+
+  html body .jobModalOverlay .jobModalCard {
+    transform: none !important;
   }
 }
