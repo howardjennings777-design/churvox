@@ -297,7 +297,7 @@ export default function WorkerJobsPage() {
         <div className="worker-app-sync">Last synced: {lastSynced ? lastSynced.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--"}</div>
       </main>
 
-      <WorkerContactOfficePanel open={showContactOffice} onClose={() => setShowContactOffice(false)} defaultMessage="I need help with my assigned jobs." />
+      <WorkerContactOfficePanel open={showContactOffice} onClose={() => setShowContactOffice(false)} />
       <WorkerBottomNav active="today" />
     </div>
   );
