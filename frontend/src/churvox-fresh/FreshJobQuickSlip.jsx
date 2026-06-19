@@ -37,25 +37,12 @@ export default function FreshJobQuickSlip({ instruction = "", onClose, onSuccess
           boxShadow: "0 40px 110px rgba(0, 0, 0, 0.45)",
         }}
       >
-        <header
-          style={{
-            flex: "0 0 auto",
-            margin: 14,
-            marginBottom: 10,
-            borderRadius: 24,
-            padding: "16px 22px",
-            color: "#fffaf0",
-            background: "linear-gradient(135deg, #111827, #1f2937 58%, #f97316)",
-          }}
-        >
-          <h1 style={{ margin: 0, fontSize: "clamp(30px, 4vw, 46px)", lineHeight: 0.96, fontWeight: 1000 }}>Add job</h1>
-        </header>
         <div
           style={{
             flex: "1 1 auto",
             minHeight: 0,
             overflowY: "auto",
-            padding: "0 14px 14px",
+            padding: "14px",
           }}
         >
           <JobCreateForm
