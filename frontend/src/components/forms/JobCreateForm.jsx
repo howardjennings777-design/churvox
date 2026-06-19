@@ -43,6 +43,7 @@ function money(value) { const n = Number(value || 0); return Number.isFinite(n) 
 function storedAsk() { try { return window.localStorage.getItem(ASK_DRAFT_KEY) || ""; } catch { return ""; } }
 function pad(n) { return String(n).padStart(2, "0"); }
 function toInputDate(date) { return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`; }
+function jobTypeLabel(value) { return JOB_TYPES.find(([key]) => key === value)?.[1] || "New job"; }
 
 function parseTimeInto(date, text) {
   const input = lower(text);
@@ -215,14 +216,14 @@ export default function JobCreateForm({ onSuccess, onCancel, submitLabel = "Crea
   }
   async function handleSubmit(event) {
     event.preventDefault();
-    if (!form.title.trim()) return toast.error("Job title is required");
     if (!form.job_type) return toast.error("Job type is required");
     if (!form.scheduled_date) return toast.error("Scheduled date is required");
     if (!form.address.trim()) return toast.error("Job address is required");
     setSaving(true);
     const fixedPrice = money(form.fixed_price);
     const hourlyRate = money(form.hourly_rate);
-    const payload = { title: form.title.trim(), job_name: form.title.trim(), job_type: form.job_type || "other", client_id: form.client_id || null, client_name: form.client_name, customer_name: form.client_name, customer_email: form.customer_email, customer_phone: form.customer_phone, address: form.address, site_address: form.address, scheduled_date: form.scheduled_date, estimated_duration: 60, country: form.country, region: form.region, notes: form.notes, description: form.notes, assigned_worker_id: form.assigned_worker_id || null, worker_id: form.assigned_worker_id || null, assigned_worker_name: form.assigned_worker_name, worker_name: form.assigned_worker_name, pricing_type: form.pricing_type, fixed_price: fixedPrice, price: ["fixed", "fixed_extras"].includes(form.pricing_type) ? fixedPrice : 0, hourly_rate: ["hourly", "hourly_extras"].includes(form.pricing_type) ? hourlyRate : 0, status: form.status || "assigned", is_recurring: Boolean(form.is_recurring), recurrence_pattern: form.is_recurring ? form.recurring_frequency : null, recurring_frequency: form.is_recurring ? form.recurring_frequency : null };
+    const finalTitle = clean(form.title) || jobTypeLabel(form.job_type) || "New job";
+    const payload = { title: finalTitle, job_name: finalTitle, job_type: form.job_type || "other", client_id: form.client_id || null, client_name: form.client_name, customer_name: form.client_name, customer_email: form.customer_email, customer_phone: form.customer_phone, address: form.address, site_address: form.address, scheduled_date: form.scheduled_date, estimated_duration: 60, country: form.country, region: form.region, notes: form.notes, description: form.notes, assigned_worker_id: form.assigned_worker_id || null, worker_id: form.assigned_worker_id || null, assigned_worker_name: form.assigned_worker_name, worker_name: form.assigned_worker_name, pricing_type: form.pricing_type, fixed_price: fixedPrice, price: ["fixed", "fixed_extras"].includes(form.pricing_type) ? fixedPrice : 0, hourly_rate: ["hourly", "hourly_extras"].includes(form.pricing_type) ? hourlyRate : 0, status: form.status || "assigned", is_recurring: Boolean(form.is_recurring), recurrence_pattern: form.is_recurring ? form.recurring_frequency : null, recurring_frequency: form.is_recurring ? form.recurring_frequency : null };
     const res = await post("/jobs", payload);
     setSaving(false);
     if (res?.success) { toast.success("Job created"); try { window.localStorage.removeItem(ASK_DRAFT_KEY); } catch {} onSuccess?.(res.data || res.job || res.record || res); }
@@ -237,8 +238,7 @@ export default function JobCreateForm({ onSuccess, onCancel, submitLabel = "Crea
         <p className="text-sm font-black text-slate-950">Job details</p>
         {appliedAsk ? <p className="rounded-2xl border border-orange-200 bg-orange-50 p-3 text-xs font-bold text-orange-800">Opened from Ask Churvox. I carried the typed job info into the form.</p> : null}
         {appliedAsk && aiFilled.length ? <div className="rounded-2xl border border-orange-200 bg-orange-50 p-3"><p className="mb-2 text-xs font-black uppercase tracking-[.14em] text-orange-900">AI filled</p><div className="grid gap-2 md:grid-cols-2">{aiFilled.map(([label, value]) => <div key={label} className="rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-950"><span className="block text-[10px] uppercase tracking-[.12em] text-orange-800">{label}</span>{value}</div>)}</div></div> : null}
-        <div><Label htmlFor="job-title">Job title *</Label><Input id="job-title" required className="w-full rounded-xl" value={form.title} onChange={(e)=>setForm((p)=>({...p,title:e.target.value}))} data-testid="job-title-input" /></div>
-        <div><Label htmlFor="job-type">Job type *</Label><select id="job-type" required className={fieldClass} value={form.job_type} onChange={(e)=>setForm((p)=>({...p,job_type:e.target.value}))} data-testid="job-type-select">{JOB_TYPES.map(([value, label])=><option key={value} value={value}>{label}</option>)}</select></div>
+        <div><Label htmlFor="job-type">Job type *</Label><select id="job-type" required className={fieldClass} value={form.job_type} onChange={(e)=>setForm((p)=>({...p,job_type:e.target.value,title:p.title || jobTypeLabel(e.target.value)}))} data-testid="job-type-select">{JOB_TYPES.map(([value, label])=><option key={value} value={value}>{label}</option>)}</select></div>
         <div><Label htmlFor="job-notes">Notes / description</Label><Textarea id="job-notes" rows={3} className="w-full rounded-xl" value={form.notes} onChange={(e)=>setForm((p)=>({...p,notes:e.target.value}))} data-testid="job-notes-input" /></div>
       </section>
       <section className={section}>
