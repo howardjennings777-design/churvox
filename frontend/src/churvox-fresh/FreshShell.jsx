@@ -2,6 +2,7 @@ import React from "react";
 import { useAuth } from "../context/AuthContext";
 
 const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
+const ASK_DRAFT_KEY = "churvox:tell-command-draft:v1";
 
 const groups = [
   { title: "Today", items: [["smart", "TD", "Today"], ["askchurvox", "AI", "Tell Churvox"], ["command", "CM", "Command"]] },
@@ -20,12 +21,14 @@ function guideIsComplete() { try { return window.localStorage.getItem(GUIDE_COMP
 function uniqueItems(items) { const seen = new Set(); return items.filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }); }
 function cleanGroups(sourceGroups, guideComplete = false) { const seen = new Set(); return sourceGroups.map((group) => ({ ...group, items: group.items.filter(([key]) => !(guideComplete && key === "setupassistant")).filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }) })).filter((group) => group.items.length); }
 function resetScroll() { try { window.scrollTo({ top: 0, left: 0, behavior: "auto" }); } catch {} try { document.querySelectorAll(".freshMain,.freshPageScroll,.freshApp,main").forEach((el) => { el.scrollTop = 0; }); } catch {} }
+function askRoute(text) { const lower = String(text || "").toLowerCase(); if (lower.includes("client")) return "clients"; if (lower.includes("job")) return "jobs"; if (lower.includes("unpaid") || lower.includes("overdue") || lower.includes("payment")) return "payments"; if (lower.includes("xero") || lower.includes("myob")) return "xero"; if (lower.includes("payroll")) return "payroll"; if (lower.includes("import") || lower.includes("csv")) return "imports"; if (lower.includes("command") || lower.includes("review") || lower.includes("approve") || lower.includes("follow up")) return "command"; return "askchurvox"; }
 
 export default function FreshShell({ active, onChange, onNavigate, children }) {
   const auth = useAuth();
   const navigate = onChange || onNavigate || (() => {});
   const [moreOpen, setMoreOpen] = React.useState(false);
   const [guideComplete, setGuideComplete] = React.useState(guideIsComplete);
+  const [globalAsk, setGlobalAsk] = React.useState("");
   const currentPrimary = parentByKey[active] || active;
 
   React.useEffect(() => { const refresh = () => setGuideComplete(guideIsComplete()); window.addEventListener("storage", refresh); window.addEventListener("churvox:ai-guide-status", refresh); window.addEventListener("churvox:fresh-data-updated", refresh); return () => { window.removeEventListener("storage", refresh); window.removeEventListener("churvox:ai-guide-status", refresh); window.removeEventListener("churvox:fresh-data-updated", refresh); }; }, []);
@@ -38,6 +41,7 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
   function go(key) { if (key === "more") return; setMoreOpen(false); resetScroll(); navigate(key); }
   async function handleLogout() { try { if (auth?.logout) await auth.logout(); } finally { window.location.href = "/login"; } }
   function handleMobile(key) { if (key === "more") { setMoreOpen((value) => !value); return; } go(key); }
+  function submitAsk(event) { event?.preventDefault?.(); const text = globalAsk.trim(); try { window.localStorage.setItem(ASK_DRAFT_KEY, text); } catch {} go(askRoute(text)); }
 
   return (
     <div className="freshApp">
@@ -46,7 +50,10 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
         <button className="freshLogoutSide" type="button" onClick={handleLogout}>Log out</button>
         <nav className="freshNav">{safeGroups.map((group) => <section className="freshNavGroup" key={group.title}><p>{group.title}</p>{group.items.map(([key, mark, label]) => <button key={key} type="button" className={currentPrimary === key ? "active" : ""} onClick={() => go(key)}><i>{mark}</i><span>{label}</span></button>)}</section>)}</nav>
       </aside>
-      <main className="freshMain"><div className="freshPageScroll">{children}</div></main>
+      <main className="freshMain">
+        <div className="freshPageScroll">{children}</div>
+        <form className="freshGlobalAsk" onSubmit={submitAsk}><label><span>What do you want to do?</span><input value={globalAsk} onChange={(event) => setGlobalAsk(event.target.value)} placeholder="open jobs, add client, show unpaid invoices…" /></label><button type="submit">Ask Churvox</button></form>
+      </main>
       <button className="freshTellFloat" type="button" onClick={() => go("askchurvox")} aria-label="Open Tell Churvox">Tell</button>
       {moreOpen && <div className="freshMobileMore">{safeExtraMobile.map(([key, mark, label]) => <button key={key} type="button" className={currentPrimary === key ? "active" : ""} onClick={() => handleMobile(key)}><i>{mark}</i><span>{label}</span></button>)}</div>}
       <nav className="freshMobileNav" aria-label="Mobile navigation">{safeMobileItems.map(([key, mark, label]) => <button key={key} type="button" className={currentPrimary === key || (key === "more" && moreOpen) ? "active" : ""} onClick={() => handleMobile(key)}><i>{mark}</i><span>{label}</span></button>)}</nav>
