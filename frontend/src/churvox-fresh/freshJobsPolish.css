@@ -245,13 +245,17 @@ div[role="dialog"][aria-label="Create new job"] {
     radial-gradient(circle at 82% 8%, rgba(249, 115, 22, .28), transparent 28%),
     rgba(2, 6, 23, .74) !important;
   backdrop-filter: blur(16px) !important;
-  align-items: start !important;
-  padding: clamp(16px, 4vh, 34px) 18px !important;
+  display: grid !important;
+  place-items: center !important;
+  align-items: center !important;
+  justify-items: center !important;
+  padding: 22px !important;
 }
 
 div[role="dialog"][aria-label="Create new job"] > section.freshCard {
-  width: min(1040px, 100%) !important;
-  max-height: min(860px, calc(100dvh - 40px)) !important;
+  width: min(1040px, calc(100vw - 44px)) !important;
+  max-height: min(820px, calc(100dvh - 44px)) !important;
+  margin: auto !important;
   border: 1px solid rgba(255, 255, 255, .14) !important;
   border-radius: 30px !important;
   background: #f7efe3 !important;
@@ -312,7 +316,7 @@ div[role="dialog"][aria-label="Create new job"] > section.freshCard > header but
 }
 
 div[role="dialog"][aria-label="Create new job"] > section.freshCard > div {
-  max-height: calc(100dvh - 190px) !important;
+  max-height: calc(100dvh - 214px) !important;
   overflow: auto !important;
   padding: 18px !important;
   background: #f7efe3 !important;
@@ -354,6 +358,15 @@ div[role="dialog"][aria-label="Create new job"] .freshPrimary {
 }
 
 @media (max-width: 720px) {
+  div[role="dialog"][aria-label="Create new job"] {
+    padding: 12px !important;
+  }
+
+  div[role="dialog"][aria-label="Create new job"] > section.freshCard {
+    width: calc(100vw - 24px) !important;
+    max-height: calc(100dvh - 24px) !important;
+  }
+
   div[role="dialog"][aria-label="Create new job"] > section.freshCard > header {
     grid-template-columns: 1fr !important;
   }
