@@ -716,3 +716,69 @@
     max-height: 88dvh;
   }
 }
+
+/* Final worker view tightening */
+.freshWorkerSimpleView .freshWorkerSimpleLayout {
+  grid-template-columns: 240px minmax(0, 1fr) !important;
+  gap: 12px !important;
+}
+
+.freshWorkerSimpleView .freshWorkerSimplePeople {
+  min-height: 0 !important;
+  height: auto !important;
+  align-content: start !important;
+  align-self: start !important;
+}
+
+.freshWorkerSimpleView .freshWorkerSimplePeople > button {
+  min-height: 74px !important;
+  align-content: center !important;
+  padding: 12px !important;
+}
+
+.freshWorkerSimpleView .freshWorkerSimpleMain {
+  gap: 10px !important;
+}
+
+.freshWorkerSimpleView .freshWorkerSimpleNow {
+  margin: 0 !important;
+}
+
+.freshWorkerSimpleView .freshWorkerSimpleBoard {
+  grid-template-columns: minmax(0, 1fr) 330px !important;
+  gap: 12px !important;
+}
+
+.freshWorkerSimpleView .freshWorkerAppPanel {
+  padding: 14px !important;
+  border-radius: 22px !important;
+}
+
+.freshWorkerSimpleView .freshWorkerAppJobs {
+  gap: 8px !important;
+}
+
+.freshWorkerSimpleView .freshWorkerAppJob {
+  padding: 12px !important;
+  border-radius: 18px !important;
+}
+
+.freshWorkerSimpleView .freshWorkerAppJob button {
+  min-height: 38px !important;
+}
+
+.freshWorkerSimpleView .freshWorkerPhotoGrid img {
+  max-height: 160px !important;
+}
+
+@media (max-width: 900px) {
+  .freshWorkerSimpleView .freshWorkerSimpleLayout,
+  .freshWorkerSimpleView .freshWorkerSimpleBoard {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshWorkerSimpleView .freshWorkerSimplePeople {
+    position: relative !important;
+    top: auto !important;
+  }
+}
