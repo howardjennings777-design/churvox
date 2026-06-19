@@ -47,8 +47,8 @@ function jobTypeLabel(value) { return JOB_TYPES.find(([key]) => key === value)?.
 
 function parseTimeInto(date, text) {
   const input = lower(text);
-  const match = input.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/) || input.match(/\b(\d{1,2}):(\d{2})\b/);
-  let hour = input.includes("evening") ? 17 : input.includes("afternoon") ? 13 : 9;
+  const match = input.match(/\b(?:at\s*)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/) || input.match(/\b(?:at\s*)?(\d{1,2}):(\d{2})\b/);
+  let hour = input.includes("evening") ? 17 : input.includes("afternoon") ? 13 : input.includes("morning") ? 9 : 9;
   let minute = 0;
   if (match) {
     hour = Number(match[1]);
@@ -61,6 +61,13 @@ function parseTimeInto(date, text) {
 }
 function parseDate(text) {
   const input = lower(text);
+  const today = new Date();
+  const numeric = input.match(/\b(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?\b/);
+  if (numeric) {
+    const year = numeric[3] ? Number(String(numeric[3]).length === 2 ? `20${numeric[3]}` : numeric[3]) : today.getFullYear();
+    const date = new Date(year, Number(numeric[2]) - 1, Number(numeric[1]));
+    return parseTimeInto(date, input);
+  }
   const date = new Date();
   const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
   if (input.includes("tomorrow")) { date.setDate(date.getDate() + 1); return parseTimeInto(date, input); }
@@ -93,46 +100,72 @@ function jobType(text) {
 }
 function jobTitle(text) {
   const type = jobType(text);
-  const found = JOB_TYPES.find(([value]) => value === type);
-  return found && type !== "other" ? found[1] : "New job";
+  return jobTypeLabel(type);
 }
 function stopSlice(value) {
-  const stops = [" tomorrow", " today", " next ", " monday", " tuesday", " wednesday", " thursday", " friday", " saturday", " sunday", " phone ", " mobile ", " email ", " assign ", " worker ", " $", " weekly", " fortnightly", " monthly"];
+  const stops = [" tomorrow", " today", " next ", " monday", " tuesday", " wednesday", " thursday", " friday", " saturday", " sunday", " phone ", " mobile ", " email ", " assign ", " worker ", " staff ", " with ", " price ", " for $", " $", " weekly", " fortnightly", " monthly", " recurring", " repeat"];
   const input = ` ${clean(value)} `;
   const indexes = stops.map((stop) => input.toLowerCase().indexOf(stop)).filter((n) => n > -1);
   const end = indexes.length ? Math.min(...indexes) : input.length;
-  return clean(input.slice(0, end));
+  return clean(input.slice(0, end).replace(/[,.;]+$/g, ""));
+}
+function removeKnownBits(source) {
+  return clean(source)
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/ig, " ")
+    .replace(/(?:phone|mobile|ph|number)\s*[:\-]?\s*[+\d][+\d\s().-]{6,}/ig, " ")
+    .replace(/\b(?:\+?64|0)\d[\d\s().-]{6,}\b/g, " ")
+    .replace(/\$\s*\d+(?:\.\d{1,2})?/g, " ")
+    .replace(/\b\d+(?:\.\d{1,2})?\s*(?:dollars|bucks)\b/ig, " ");
+}
+function parseAddress(source) {
+  const direct = source.match(/\b(?:at|address|site|location)\s+(.+)/i)?.[1] || "";
+  const value = stopSlice(direct);
+  if (value) return titleCase(value);
+  const cleaned = removeKnownBits(source);
+  const street = cleaned.match(/\b\d+\s+[A-Za-z0-9 .'-]+?\s+(?:road|rd|street|st|avenue|ave|drive|dr|lane|ln|place|pl|terrace|way|crescent|cres|court|ct)\b(?:\s+[A-Za-z .'-]{2,30})?/i)?.[0] || "";
+  return titleCase(stopSlice(street));
+}
+function parseClient(source) {
+  const direct = source.match(/\b(?:for|client|customer)\s+(.+?)(?=\s+(?:at|address|site|location|tomorrow|today|next|monday|tuesday|wednesday|thursday|friday|saturday|sunday|phone|mobile|email|\$|price|weekly|fortnightly|monthly|assign|worker|staff)\b|$)/i)?.[1] || "";
+  if (direct) return titleCase(stopSlice(direct));
+  const beforeAddress = source.match(/\b(?:job|booking|service|work)\s+(.+?)\s+(?:at|address|site|location)\b/i)?.[1] || "";
+  return titleCase(stopSlice(beforeAddress.replace(/^(for\s+)?/i, "")));
+}
+function parseWorker(source) {
+  const direct = source.match(/\b(?:assign|worker|staff)\s+(?:to\s+)?(.+?)(?=\s+(?:tomorrow|today|next|at|address|site|for|phone|mobile|email|\$|price|weekly|fortnightly|monthly)\b|$)/i)?.[1] || "";
+  if (direct) return titleCase(stopSlice(direct));
+  const withWorker = source.match(/\bwith\s+([A-Za-z][A-Za-z .'-]{1,40})(?=\s+(?:tomorrow|today|next|at|for|phone|email|\$|weekly|fortnightly|monthly)|$)/i)?.[1] || "";
+  return titleCase(stopSlice(withWorker));
 }
 function parseInstruction(text) {
   const source = clean(text);
   const input = lower(source);
-  const priceMatch = source.match(/\$\s*(\d+(?:\.\d{1,2})?)/) || source.match(/\b(\d+(?:\.\d{1,2})?)\s*(?:dollars|bucks)\b/i);
-  const hourlyMatch = source.match(/\$\s*(\d+(?:\.\d{1,2})?)\s*(?:per hour|hourly|\/hr)/i);
+  const priceMatch = source.match(/\$\s*(\d+(?:\.\d{1,2})?)/) || source.match(/\b(?:price|fixed|charge)\s*[:\-]?\s*(\d+(?:\.\d{1,2})?)\b/i) || source.match(/\b(\d+(?:\.\d{1,2})?)\s*(?:dollars|bucks)\b/i);
+  const hourlyMatch = source.match(/\$\s*(\d+(?:\.\d{1,2})?)\s*(?:per hour|hourly|\/hr)/i) || source.match(/\b(\d+(?:\.\d{1,2})?)\s*(?:per hour|hourly|\/hr)\b/i);
   const emailMatch = source.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
-  const phoneMatch = source.match(/(?:phone|mobile|ph|number)\s*[:\-]?\s*([+\d][+\d\s().-]{6,})/i);
-  const clientRaw = source.match(/\b(?:for|client|customer)\s+(.+?)(?=\s+(?:at|tomorrow|today|next|monday|tuesday|wednesday|thursday|friday|saturday|sunday|phone|mobile|email|\$|weekly|fortnightly|monthly|assign|worker)\b|$)/i)?.[1] || "";
-  const addressRaw = source.match(/\b(?:at|address|site|location)\s+(.+)/i)?.[1] || "";
-  const workerRaw = source.match(/\b(?:assign|worker|staff|with)\s+(?:to\s+)?(.+?)(?=\s+(?:tomorrow|today|next|at|for|phone|email|\$|weekly|fortnightly|monthly)\b|$)/i)?.[1] || "";
+  const labelledPhone = source.match(/(?:phone|mobile|ph|number)\s*[:\-]?\s*([+\d][+\d\s().-]{6,})/i)?.[1] || "";
+  const loosePhone = source.match(/\b(?:\+?64|0)\d[\d\s().-]{6,}\b/)?.[0] || "";
   const country = /australia|sydney|melbourne|brisbane|nsw|victoria|queensland/i.test(source) ? "Australia" : "New Zealand";
   let region = "";
   if (/lower hutt|upper hutt|wellington|naenae|wainuiomata|porirua/i.test(source)) region = "Wellington";
   if (/auckland/i.test(source)) region = "Auckland";
   if (/sydney|nsw|new south wales/i.test(source)) region = "New South Wales";
   if (/melbourne|victoria/i.test(source)) region = "Victoria";
-  const recurring = /fortnightly|weekly|monthly|recurring|repeat|regular/i.test(source);
-  const frequency = /fortnight/i.test(input) ? "fortnightly" : /month/i.test(input) ? "monthly" : "weekly";
+  if (/brisbane|queensland/i.test(source)) region = "Queensland";
+  const recurring = /fortnightly|fortnight|weekly|monthly|recurring|repeat|regular|every\s+week|every\s+2\s+weeks|every\s+month/i.test(source);
+  const frequency = /fortnight|every\s+2\s+weeks/i.test(input) ? "fortnightly" : /month/i.test(input) ? "monthly" : "weekly";
   return {
     title: jobTitle(source),
     job_type: jobType(source),
-    client_name: titleCase(stopSlice(clientRaw)),
+    client_name: parseClient(source),
     customer_email: emailMatch?.[0] || "",
-    customer_phone: clean(phoneMatch?.[1] || ""),
-    address: titleCase(stopSlice(addressRaw)),
+    customer_phone: clean(labelledPhone || loosePhone),
+    address: parseAddress(source),
     scheduled_date: parseDate(source),
     country,
     region,
     notes: source,
-    assigned_worker_name: titleCase(stopSlice(workerRaw)),
+    assigned_worker_name: parseWorker(source),
     pricing_type: hourlyMatch ? "hourly" : "fixed",
     fixed_price: hourlyMatch ? "" : String(priceMatch?.[1] || ""),
     hourly_rate: String(hourlyMatch?.[1] || ""),
