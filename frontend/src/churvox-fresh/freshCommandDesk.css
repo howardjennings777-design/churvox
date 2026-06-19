@@ -1,1 +1,89 @@
-/* Compatibility stylesheet: retained so FreshApp imports stay build-safe. */
+/* Command fit overrides: keeps approval desk compact on laptop screens. */
+.freshFlowCards {
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)) !important;
+  gap: 9px !important;
+}
+
+.freshFlowCard {
+  min-height: 118px !important;
+  padding: 12px !important;
+  gap: 5px !important;
+}
+
+.freshFlowCard i {
+  width: 26px !important;
+  height: 24px !important;
+  border-radius: 9px !important;
+  font-size: 9px !important;
+}
+
+.freshFlowCard strong {
+  font-size: 22px !important;
+}
+
+.freshFlowCard b {
+  font-size: 13px !important;
+}
+
+.freshFlowCard span,
+.freshFlowCard em {
+  font-size: 11px !important;
+}
+
+.freshFlowPanel,
+.freshLaunchChecklist {
+  padding: 14px !important;
+  border-radius: 24px !important;
+}
+
+.freshFlowHeader,
+.freshLaunchChecklist > header {
+  margin-bottom: 10px !important;
+}
+
+.freshFlowHeader h2,
+.freshLaunchChecklist h2 {
+  font-size: 20px !important;
+}
+
+.freshCommandPulse {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.freshCommandPulse .freshCard {
+  min-height: 76px !important;
+  padding: 14px !important;
+  border-radius: 20px !important;
+}
+
+.freshCommandBoard {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+}
+
+.freshLaunchGrid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+}
+
+.freshLaunchGrid article {
+  min-width: 0 !important;
+}
+
+@media (max-width: 1100px) {
+  .freshFlowCards {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .freshCommandPulse {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .freshFlowCards,
+  .freshCommandPulse,
+  .freshLaunchGrid,
+  .freshCommandBoard {
+    grid-template-columns: 1fr !important;
+  }
+}
