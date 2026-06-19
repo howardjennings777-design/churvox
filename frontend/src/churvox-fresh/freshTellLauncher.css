@@ -31,9 +31,9 @@
 
 .tellChurvoxPage {
   width: 100%;
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: clamp(18px, 3vw, 34px);
+  max-width: none;
+  margin: 0;
+  padding: clamp(14px, 2vw, 24px);
   color: #111827;
   display: flex;
   flex-direction: column;
@@ -189,7 +189,6 @@
 
 .tellCommandBox button,
 .freshAskButtons button,
-.tellQuickButtons button,
 .tellExamples button {
   border: 0;
   cursor: pointer;
@@ -199,7 +198,6 @@
 
 .tellCommandBox button:hover,
 .freshAskButtons button:hover,
-.tellQuickButtons button:hover,
 .tellExamples button:hover {
   transform: translateY(-1px);
 }
@@ -212,23 +210,6 @@
   background: linear-gradient(135deg, #f97316, #fbbf24);
   box-shadow: 0 12px 25px rgba(249, 115, 22, .22);
   white-space: nowrap;
-}
-
-.tellQuickButtons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.tellQuickButtons button,
-.tellExamples button {
-  min-height: 42px;
-  padding: 0 14px;
-  border: 1px solid rgba(15, 23, 42, .09);
-  border-radius: 999px;
-  color: #111827;
-  background: #fff;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, .05);
 }
 
 .tellGrid {
@@ -331,6 +312,12 @@
   border-radius: 16px;
   white-space: normal;
   text-align: left;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid rgba(15, 23, 42, .09);
+  color: #111827;
+  background: #fff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, .05);
 }
 
 .tellRules {
@@ -363,6 +350,4 @@
   .freshTellTop { display: none; }
   .tellChurvoxPage { padding: 14px; }
   .freshAskStats { grid-template-columns: 1fr; }
-  .tellQuickButtons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .tellQuickButtons button { border-radius: 16px; }
 }
