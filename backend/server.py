@@ -165,7 +165,7 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, UploadFile, Query, Body
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
@@ -420,28 +420,52 @@ ALLOWED_CORS_ORIGINS = {
     "http://127.0.0.1:5173",
 }
 
-@app.middleware("http")
-async def churvox_force_cors_headers(request: Request, call_next):
-    origin = request.headers.get("origin", "")
-    if request.method == "OPTIONS" and origin in ALLOWED_CORS_ORIGINS:
-        response = Response(status_code=204)
-    else:
-        response = await call_next(request)
-
+def _churvox_origin_allowed(origin: str) -> bool:
+    origin = (origin or "").rstrip("/")
+    if not origin:
+        return False
     if origin in ALLOWED_CORS_ORIGINS:
+        return True
+    if origin.startswith("https://") and origin.endswith(".churvox.com"):
+        return True
+    return False
+
+def _churvox_apply_cors(response: Response, origin: str, request: Request | None = None):
+    origin = (origin or "").rstrip("/")
+    if _churvox_origin_allowed(origin):
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Vary"] = "Origin"
         response.headers["Access-Control-Allow-Credentials"] = "true"
         response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,PATCH,DELETE,OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = request.headers.get(
-            "access-control-request-headers",
-            "Authorization,Content-Type,X-Requested-With",
-        )
+        response.headers["Access-Control-Allow-Headers"] = (
+            request.headers.get("access-control-request-headers")
+            if request
+            else None
+        ) or "Authorization,Content-Type,X-Requested-With"
     return response
+
+@app.middleware("http")
+async def churvox_force_cors_headers(request: Request, call_next):
+    origin = (request.headers.get("origin") or "").rstrip("/")
+
+    if request.method == "OPTIONS" and _churvox_origin_allowed(origin):
+        return _churvox_apply_cors(Response(status_code=204), origin, request)
+
+    try:
+        response = await call_next(request)
+    except Exception:
+        logging.exception("Unhandled backend error")
+        response = JSONResponse(
+            status_code=500,
+            content={"success": False, "detail": "Server error"},
+        )
+
+    return _churvox_apply_cors(response, origin, request)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=list(ALLOWED_CORS_ORIGINS),
+    allow_origin_regex=r"https://.*\.churvox\.com",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
