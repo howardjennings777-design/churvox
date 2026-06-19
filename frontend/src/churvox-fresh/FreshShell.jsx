@@ -121,8 +121,6 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
   async function handleLogout() { try { if (auth?.logout) await auth.logout(); } finally { try { window.localStorage.removeItem("token"); window.localStorage.removeItem("owner_portal_session"); window.localStorage.removeItem("platform_owner_email"); } catch {} window.location.href = "/login"; } }
   function go(key) { if (key === "more") return; if (guideComplete && key === "setupassistant") return; setMoreOpen(false); resetFreshScrollTop(); navigate(key); }
   function openTellChurvox() { go("askchurvox"); }
-  function openRealCreate(path) { if (String(path || "").startsWith("/jobs/new")) { try { window.localStorage.setItem(OPEN_JOB_MODAL_KEY, "true"); } catch {} window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: { search: "" } })); return; } window.location.href = path; }
-  function openClientPopup() { try { window.localStorage.setItem(OPEN_CLIENT_MODAL_KEY, "true"); } catch {} setMoreOpen(false); resetFreshScrollTop(); navigate("clients"); window.dispatchEvent(new CustomEvent("churvox:open-client-popup")); }
   function submitGlobalAsk(event) { event?.preventDefault?.(); const text = globalAsk.trim(); if (!text) return openTellChurvox(); try { window.localStorage.setItem(ASK_DRAFT_KEY, text); } catch {} if (globalAskAction.mode === "command") { saveAskSlip(text); go("command"); return; } if (globalAskAction.mode === "client") { try { window.localStorage.setItem(OPEN_CLIENT_MODAL_KEY, "true"); } catch {} go("clients"); window.setTimeout(() => window.dispatchEvent(new CustomEvent("churvox:open-client-popup", { detail: { text } })), 80); return; } if (globalAskAction.mode === "job") { try { window.localStorage.setItem(OPEN_JOB_MODAL_KEY, JSON.stringify({ open: true, instruction: text, at: Date.now() })); } catch {} go("jobs"); window.setTimeout(() => window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: { text } })), 80); return; } go(globalAskAction.page || "askchurvox"); }
   async function resendVerification() { setVerifySending(true); try { const token = window.localStorage.getItem("token") || ""; await fetch(`${API_BASE}/api/auth/resend-verification`, { method: "POST", credentials: "include", headers: { Accept: "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) } }); setVerifySent(true); } catch { setVerifySent(false); } finally { setVerifySending(false); } }
   function handleMobile(key) { if (key === "more") { setMoreOpen((value) => !value); return; } go(key); }
@@ -139,13 +137,6 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
       <main className="freshMain">
         <div className="freshTopbar freshTopbar--clean freshTopbar--askSticky">
           <div className="freshTopbarTitle"><span>Current area</span><strong>{currentLabel}</strong><small>{currentPurpose}</small></div>
-          <div className="freshTopActions freshTopActions--clean">
-            <button className="freshTellTop" type="button" onClick={openTellChurvox}>Ask Churvox</button>
-            {!guideComplete ? <button type="button" onClick={() => go("setupassistant")}>AI Guide</button> : null}
-            <button type="button" onClick={() => openRealCreate("/jobs/new")}>New job</button>
-            <button type="button" onClick={openClientPopup}>Add client</button>
-            <button className="freshLogoutTop" type="button" onClick={handleLogout}>Log out</button>
-          </div>
         </div>
 
         <form className="freshGlobalAsk" onSubmit={submitGlobalAsk}>
