@@ -1,11 +1,8 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
-import FreshJobQuickSlip from "./FreshJobQuickSlip";
 import "./freshJobsPolish.css";
 
 const filters = ["All", "Ready", "In progress", "Blocked", "Completed"];
-const OPEN_JOB_MODAL_KEY = "churvox:fresh-open-job-modal:v1";
-const ASK_DRAFT_KEY = "churvox:tell-command-draft:v1";
 
 function normalizeId(value) {
   if (!value) return "";
@@ -65,24 +62,6 @@ function normalizeJob(job, index) {
   return { ...job, id: normalizeId(job?.id || job?._id || job?.job_id) || `job-${index}`, title, client, address: job?.address || job?.site_address || job?.service_address || "No address", status, worker, scheduled: scheduleText(job), price: moneyText(job), notes: job?.notes || job?.description || "No notes yet", risk: status === "Blocked" ? "Needs owner review" : worker === "Unassigned" ? "Worker not assigned" : "Ready to dispatch", sortTime: dateScore(job) };
 }
 
-function createdId(payload) {
-  const data = payload?.data ?? payload;
-  const item = data?.job || data?.item || data?.record || data;
-  return normalizeId(data?.id || data?._id || item?.id || item?._id || payload?.id || payload?._id || "");
-}
-
-function readJobInstruction(detail) {
-  if (detail?.instruction || detail?.text) return String(detail.instruction || detail.text || "");
-  try {
-    const saved = window.localStorage.getItem(OPEN_JOB_MODAL_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed?.instruction || parsed?.text) return String(parsed.instruction || parsed.text || "");
-    }
-  } catch {}
-  try { return window.localStorage.getItem(ASK_DRAFT_KEY) || ""; } catch { return ""; }
-}
-
 export default function FreshJobs({ onNavigate }) {
   const { get } = useApi();
   const [jobs, setJobs] = React.useState([]);
@@ -90,9 +69,6 @@ export default function FreshJobs({ onNavigate }) {
   const [filter, setFilter] = React.useState("All");
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
-  const [createOpen, setCreateOpen] = React.useState(false);
-  const [jobInstruction, setJobInstruction] = React.useState("");
-  const openGuardRef = React.useRef(0);
 
   const visibleJobs = filter === "All" ? jobs : jobs.filter((job) => job.status === filter);
   const selected = jobs.find((job) => job.id === selectedId) || visibleJobs[0] || jobs[0];
@@ -117,41 +93,12 @@ export default function FreshJobs({ onNavigate }) {
   }, [loadJobs]);
 
   React.useEffect(() => {
-    let timer = 0;
-    function openJobPopup(event) {
-      const now = Date.now();
-      if (now - openGuardRef.current < 700) return;
-      openGuardRef.current = now;
-      const nextInstruction = readJobInstruction(event?.detail);
-      try { window.localStorage.removeItem(OPEN_JOB_MODAL_KEY); } catch {}
-      setJobInstruction(nextInstruction);
-      setCreateOpen(true);
-    }
-    window.addEventListener("churvox:open-job-popup", openJobPopup);
-    try {
-      const saved = window.localStorage.getItem(OPEN_JOB_MODAL_KEY);
-      if (saved) timer = window.setTimeout(() => openJobPopup({ detail: null }), 80);
-    } catch {}
-    return () => { window.removeEventListener("churvox:open-job-popup", openJobPopup); window.clearTimeout(timer); };
-  }, []);
-
-  React.useEffect(() => {
     if (!visibleJobs.length) return;
     if (!selectedId || !visibleJobs.some((job) => job.id === selectedId)) setSelectedId(visibleJobs[0].id);
   }, [visibleJobs, selectedId]);
 
-  function handleJobCreated(payload) {
-    const nextId = createdId(payload);
-    setCreateOpen(false);
-    setJobInstruction("");
-    if (nextId) setSelectedId(nextId);
-    window.dispatchEvent(new Event("churvox:fresh-data-updated"));
-    loadJobs();
-  }
-
   function openBlankJob() {
-    setJobInstruction("");
-    setCreateOpen(true);
+    window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: { search: "" } }));
   }
 
   return (
@@ -165,7 +112,6 @@ export default function FreshJobs({ onNavigate }) {
         <section className="freshCard freshJobsDetailCard"><h2>{selected?.title || "Select job"}</h2>{selected ? <><div className="freshMiniGrid"><div><span>Client</span><b>{selected.client}</b></div><div><span>Status</span><b>{selected.status}</b></div><div><span>Worker</span><b>{selected.worker}</b></div><div><span>Price</span><b>{selected.price}</b></div></div><label className="freshField"><span>Address</span><input value={selected.address} readOnly /></label><label className="freshField"><span>Scheduled</span><input value={selected.scheduled} readOnly /></label><label className="freshField"><span>Job notes</span><textarea value={selected.notes} readOnly /></label><div className="freshItem need"><b>Command check</b><span>{selected.risk}</span></div></> : <div className="freshItem"><b>No job selected</b><span>Create a job to see the connected detail record.</span></div>}</section>
         <aside className="freshCard freshJobsActionsCard"><h2>Owner actions</h2><div className="freshActions"><button className="freshPrimary" type="button" onClick={openBlankJob}>New job</button><button className="freshPrimary" type="button" onClick={loadJobs}>Refresh jobs</button><button className="freshGhost" type="button" onClick={() => onNavigate?.("command")}>Send issue to Command</button></div></aside>
       </section>
-      {createOpen ? <FreshJobQuickSlip instruction={jobInstruction} onClose={() => setCreateOpen(false)} onSuccess={handleJobCreated} /> : null}
     </section>
   );
 }
