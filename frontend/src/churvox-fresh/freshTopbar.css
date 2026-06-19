@@ -2,17 +2,14 @@
   position: sticky;
   top: 0;
   z-index: 2500;
-  display: grid;
-  grid-template-columns: minmax(150px, 220px) minmax(240px, 320px) minmax(220px, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-  padding: 10px;
-  border: 1px solid rgba(15,23,42,.12);
-  border-radius: 22px;
-  background: rgba(255,250,240,.92);
+  display: block;
+  margin-bottom: 8px;
+  padding: 8px 0 6px;
+  border: 0;
+  border-radius: 0;
+  background: rgba(255, 250, 240, .92);
   backdrop-filter: blur(14px);
-  box-shadow: 0 14px 32px rgba(2,6,23,.10);
+  box-shadow: none;
 }
 
 .freshTopbar > div:first-child span {
@@ -35,190 +32,30 @@
 
 .freshTopbar > div:first-child small {
   display: block;
-  max-width: 220px;
+  max-width: 720px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.freshSearch {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 6px 10px;
-  border-radius: 16px;
-  border: 1px solid rgba(15,23,42,.13);
-  background: white;
-}
-
-.freshSearch span {
   color: #64748b;
-  font-size: 11px;
-  font-weight: 1000;
-  letter-spacing: .12em;
-  text-transform: uppercase;
+  font-weight: 750;
 }
 
-.freshSearch input {
-  width: 100%;
-  border: 0;
-  outline: 0;
-  color: #020617;
-  background: transparent;
-  font-weight: 850;
+.freshSearch,
+.freshTopActions,
+.freshHeaderPills,
+.freshTopActions--clean {
+  display: none !important;
 }
 
-.freshTopActions {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 7px;
-  align-items: center;
-  justify-content: flex-end;
-  max-width: 560px;
-  overflow-x: auto;
-  white-space: nowrap;
-  scrollbar-width: none;
-}
-
-.freshTopActions::-webkit-scrollbar,
-.freshHeaderPills::-webkit-scrollbar {
-  display: none;
-}
-
-.freshTopActions button {
-  flex: 0 0 auto;
-  min-height: 38px;
-  border: 0;
-  border-radius: 14px;
-  padding: 0 12px;
-  background: #111827;
-  color: white;
-  font-size: 12px;
-  font-weight: 1000;
-  cursor: pointer;
-}
-
-.freshTopActions button:first-child {
-  background: #f97316;
-  color: #111827;
-}
-
-.freshHeaderPills {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  overflow-x: auto;
-  padding-top: 2px;
-  scrollbar-width: none;
-}
-
-.freshHeaderPills button {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 34px;
-  border: 1px solid rgba(15,23,42,.10);
-  border-radius: 14px;
-  padding: 0 12px;
-  background: #fff;
-  color: #111827;
-  box-shadow: 0 5px 14px rgba(2,6,23,.06);
-  font-size: 12px;
-  font-weight: 1000;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.freshHeaderPills button i {
-  display: grid;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 7px;
-  background: #020617;
-  color: #fff;
-  font-style: normal;
-  font-size: 9px;
-}
-
-.freshHeaderPills button.active {
-  border-color: rgba(249,115,22,.45);
-  background: #fff7ed;
-  color: #9a3412;
-}
-
-.freshHeaderPills button.active i {
-  background: #f97316;
-  color: #111827;
-}
-
-@media (max-width: 1200px) {
-  .freshTopbar {
-    grid-template-columns: minmax(150px, 220px) minmax(220px, 300px) 1fr;
-  }
-
-  .freshSearch {
-    grid-column: 2 / 4;
-  }
-
-  .freshTopActions {
-    grid-column: 1 / 4;
-    justify-content: flex-start;
-    max-width: none;
-    padding-bottom: 2px;
-  }
-
-  .freshHeaderPills {
-    grid-column: 1 / 4;
-  }
-}
-
-@media (max-width: 950px) {
-  .freshTopbar {
-    position: relative;
-    grid-template-columns: 1fr;
-    gap: 8px;
-    border-radius: 20px;
-  }
-
-  .freshSearch,
-  .freshTopActions,
-  .freshHeaderPills {
-    grid-column: auto;
-  }
-
-  .freshSearch {
-    grid-template-columns: 1fr;
-    gap: 3px;
-  }
-
-  .freshSearch input {
-    font-size: 16px;
-  }
-
-  .freshTopActions {
-    justify-content: flex-start;
-  }
-
-  .freshTopActions button,
-  .freshHeaderPills button {
-    min-height: 38px;
-  }
-}
-
-
-/* CHURVOX_CLEAN_TOP_STRIP_20260617 */
 .freshTopbar--clean {
-  grid-template-columns: minmax(180px, 1fr) auto !important;
-  min-height: 62px !important;
-  padding: 8px 10px !important;
-  gap: 12px !important;
-  border-radius: 20px !important;
-  background: rgba(255, 250, 240, 0.96) !important;
+  display: block !important;
+  min-height: 50px !important;
+  padding: 8px 0 6px !important;
+  margin-bottom: 8px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: rgba(255, 250, 240, .92) !important;
+  box-shadow: none !important;
 }
 
 .freshTopbar--askSticky {
@@ -233,74 +70,19 @@
 }
 
 .freshTopbar--clean .freshTopbarTitle small {
-  max-width: 520px !important;
+  max-width: 720px !important;
   color: #64748b !important;
   font-weight: 750 !important;
 }
 
-.freshTopbar--clean .freshSearch {
-  display: none !important;
-}
-
-.freshTopActions--clean {
-  grid-column: 2 !important;
-  max-width: none !important;
-  overflow: visible !important;
-  flex-wrap: nowrap !important;
-  justify-content: flex-end !important;
-}
-
-.freshTopActions--clean button {
-  min-height: 40px !important;
-  padding: 0 14px !important;
-  border-radius: 14px !important;
-}
-
-.freshTopActions--clean .freshTellTop,
-.freshTopActions--clean button:nth-child(1) {
-  background: #f97316 !important;
-  color: #111827 !important;
-  box-shadow: 0 10px 22px rgba(249, 115, 22, .22) !important;
-}
-
-.freshTopActions--clean button:nth-child(2),
-.freshTopActions--clean button:nth-child(3) {
-  background: #111827 !important;
-  color: #ffffff !important;
-}
-
-.freshTopActions--clean .freshLogoutTop {
-  background: #fff7ed !important;
-  color: #9a3412 !important;
-  border: 1px solid rgba(249, 115, 22, .24) !important;
-}
-
-@media (max-width: 1200px) {
-  .freshTopbar--clean {
-    grid-template-columns: minmax(160px, 1fr) auto !important;
-  }
-
-  .freshTopActions--clean {
-    grid-column: 2 !important;
-    justify-content: flex-end !important;
-  }
-}
-
 @media (max-width: 950px) {
+  .freshTopbar,
   .freshTopbar--clean {
     position: sticky !important;
-    grid-template-columns: 1fr !important;
-    align-items: stretch !important;
+    padding: 8px 0 6px !important;
   }
 
   .freshTopbar--clean .freshTopbarTitle small {
     max-width: none !important;
-  }
-
-  .freshTopActions--clean {
-    grid-column: 1 !important;
-    justify-content: flex-start !important;
-    overflow-x: auto !important;
-    padding-bottom: 2px !important;
   }
 }
