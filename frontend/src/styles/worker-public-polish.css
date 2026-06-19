@@ -81,3 +81,33 @@ button.cpd-primary-action:disabled,
   opacity: 0.55;
   cursor: not-allowed;
 }
+
+@media (max-width: 700px) {
+  .workerContactOfficeBackdrop {
+    padding-bottom: calc(164px + env(safe-area-inset-bottom)) !important;
+    align-items: flex-end !important;
+  }
+
+  .workerContactOfficeCard {
+    max-height: calc(100dvh - 204px) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  .workerContactOfficeTextarea {
+    display: block !important;
+    min-height: 150px !important;
+    padding: 18px !important;
+    line-height: 1.55 !important;
+    box-sizing: border-box !important;
+    overflow-y: auto !important;
+  }
+
+  .workerContactOfficeSend {
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 20 !important;
+    min-height: 54px !important;
+    box-shadow: 0 -14px 22px rgba(255,255,255,.96) !important;
+  }
+}
