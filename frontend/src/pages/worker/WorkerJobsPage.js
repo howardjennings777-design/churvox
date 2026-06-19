@@ -1,13 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { AlertTriangle, Briefcase, CalendarClock, CheckCircle2, ChevronRight, Clock3, Hand, LogOut, MapPin, Play, RefreshCw, RotateCcw, Settings, Timer } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { AlertTriangle, CheckCircle2, Clock3, Hand, LogOut, MapPin, Play, RefreshCw, RotateCcw, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { useApi } from "@/hooks/useApi";
 import { useAuth } from "@/context/AuthContext";
-import { ChurvoxLogo } from "@/components/ChurvoxLogo";
-import { PremiumButton, PremiumCard, PremiumStatusBadge } from "@/components/premium";
 import WorkerBottomNav from "@/components/worker/WorkerBottomNav";
 import WorkerContactOfficePanel from "@/components/worker/WorkerContactOfficePanel";
+import "./WorkerJobsMobile.css";
 
 const canAcknowledge = (status) => String(status || "").toLowerCase() === "assigned";
 const canStart = (status) => ["assigned", "acknowledged"].includes(String(status || "").toLowerCase());
@@ -38,11 +37,17 @@ function lower(value) { return String(value || "").trim().toLowerCase(); }
 function userKeys(user) { return [user?.id, user?._id, user?.uuid, user?.worker_id, user?.team_member_id, user?.email, user?.name, user?.full_name, user?.display_name].map((v) => lower(oid(v))).filter(Boolean); }
 function assignmentKeys(job) { return [job?.assigned_worker_id, job?.worker_id, job?.assigned_to, job?.assignedWorkerId, job?.worker?.id, job?.worker?._id, job?.assigned_worker?.id, job?.assigned_worker?._id, job?.assigned_worker_email, job?.worker_email, job?.assigned_to_email, job?.assigned_worker_name, job?.worker_name, job?.assigned_to_name].map((v) => lower(oid(v))).filter(Boolean); }
 function hasAssignment(job) { return assignmentKeys(job).length > 0; }
-function assignedToMe(job, user) { const mine = userKeys(user); const assigned = assignmentKeys(job); return mine.length && assigned.length && assigned.some((key) => mine.includes(key)); }
+function assignedToMe(job, user) { const mine = userKeys(user); const assigned = assignmentKeys(job); return Boolean(mine.length && assigned.length && assigned.some((key) => mine.includes(key))); }
 function scopeJobsForWorker(rawJobs, user) { const list = arr(rawJobs); const scoped = list.filter((job) => assignedToMe(job, user)); const hasAssignedRecords = list.some(hasAssignment); if (scoped.length) return scoped; if (hasAssignedRecords) return []; return list; }
 function statusOf(job) { return String(job?.status || "assigned").toLowerCase().replaceAll(" ", "_"); }
 function isActiveJob(job) { return ["in_progress", "paused"].includes(statusOf(job)); }
 function isComplete(job) { return statusOf(job) === "completed"; }
+function jobTitle(job) { return job?.title || job?.job_name || job?.job_type || "Untitled job"; }
+function clientName(job) { return job?.client_name || job?.customer_name || job?.client || job?.customer || "No client"; }
+function addressOf(job) { return job?.address || job?.site_address || job?.service_address || job?.job_address || ""; }
+function dateOf(job) { return String(job?.scheduled_date || job?.date || job?.start || job?.due_date || "").slice(0, 10); }
+function timeOf(job) { return job?.scheduled_time || job?.time || ""; }
+function todayKey() { return new Date().toISOString().slice(0, 10); }
 
 function hoursText(totalSeconds) {
   const total = Math.max(0, Math.round(Number(totalSeconds || 0)));
@@ -53,142 +58,70 @@ function hoursText(totalSeconds) {
   return `${h}h ${m}m`;
 }
 
-async function reverseGeocodeLocation(location) {
-  const lat = location?.lat ?? location?.latitude;
-  const lng = location?.lng ?? location?.longitude;
-  if (!lat || !lng) return "";
-
-  try {
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), 4500);
-    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&addressdetails=1&zoom=18`, {
-      signal: controller.signal,
-      headers: { Accept: "application/json" },
-    });
-    window.clearTimeout(timer);
-
-    if (!res.ok) return "";
-    const data = await res.json();
-    const address = data?.address || {};
-    const street = [address.house_number, address.road].filter(Boolean).join(" ");
-    const suburb = address.suburb || address.neighbourhood || address.city_district || address.locality || "";
-    const town = address.city || address.town || address.village || address.state_district || "";
-
-    const parts = [street, suburb, town].filter(Boolean);
-    return [...new Set(parts)].join(", ") || data?.display_name || "";
-  } catch {
-    return "";
-  }
+function jobAction(job) {
+  const status = statusOf(job);
+  if (isSentBackJob(job)) return "Fix job";
+  if (canAcknowledge(status)) return "Acknowledge";
+  if (canResume(status)) return "Resume";
+  if (canStart(status)) return "Start";
+  if (status === "in_progress") return "Open active job";
+  if (isComplete(job)) return "Completed";
+  return "Open job";
 }
 
-async function getGpsPosition() {
+function getGpsPosition() {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
       reject(new Error("GPS is not available on this device"));
       return;
     }
-
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const location = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-        };
-        const addressLabel = await reverseGeocodeLocation(location);
-        resolve({
-          ...location,
-          address_label: addressLabel,
-          display_name: addressLabel,
-        });
-      },
+      (position) => resolve({
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+      }),
       (error) => reject(error),
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
     );
   });
 }
 
-
-function WorkerDayFlowPanel({ stats, nextJob, onContactOffice, onStartNext }) {
-  const hasWork = Number(stats?.total || 0) > 0;
-  const nextId = idOf(nextJob);
-  const nextLabel = nextJob?.title || "No job selected";
-  const disabled = !hasWork || !nextId;
-
-  const openJob = (hash = "") => {
-    if (disabled || typeof window === "undefined") return;
-    window.location.assign(`/worker/jobs/${encodeURIComponent(nextId)}${hash}`);
-  };
+function WorkerJobCard({ job, busy, onAcknowledge, onStart }) {
+  const id = idOf(job);
+  const status = statusOf(job);
+  const sentBack = isSentBackJob(job);
+  const note = sendBackNote(job);
+  const address = addressOf(job);
+  const startAllowed = canStart(status) || canResume(status);
 
   return (
-    <section className="worker-simple-next" id="today">
-      <div className="worker-simple-next__top">
-        <p>Next job</p>
-        <h2>{hasWork ? nextLabel : "No jobs assigned yet"}</h2>
-        <span>{hasWork ? "Open the job, start the timer, add notes/photos, then finish it." : "Refresh or contact the office if you are expecting work today."}</span>
+    <article className={`worker-app-job ${sentBack ? "needs-fix" : ""} ${isActiveJob(job) ? "active" : ""}`}>
+      <Link className="worker-app-job__main" to={`/worker/jobs/${id}`}>
+        <div className="worker-app-job__top"><span>{sentBack ? "Fix needed" : status.replaceAll("_", " ")}</span><small>{timeOf(job) || "No time"}</small></div>
+        <h2>{jobTitle(job)}</h2>
+        <p>{clientName(job)}</p>
+        <small>{address || "No address added"}</small>
+      </Link>
+
+      {sentBack ? <div className="worker-app-warning"><AlertTriangle className="h-4 w-4" /><span>{note || "Owner sent this back. Open the job and fix what was requested."}</span></div> : null}
+
+      <div className="worker-app-job__actions">
+        <Link to={`/worker/jobs/${id}`} className="worker-app-btn dark">Open</Link>
+        {canAcknowledge(status) ? <button type="button" onClick={() => onAcknowledge(id)} disabled={busy === id}><Hand className="h-4 w-4" />{busy === id ? "Saving" : "Acknowledge"}</button> : null}
+        {startAllowed ? <button type="button" onClick={() => onStart(job)} disabled={busy === id}>{status === "paused" ? <RotateCcw className="h-4 w-4" /> : <Play className="h-4 w-4" />}{busy === id ? "Starting" : status === "paused" ? "Resume" : "Start"}</button> : null}
+        {status === "in_progress" ? <Link to={`/worker/jobs/${id}`} className="worker-app-btn go"><Clock3 className="h-4 w-4" /> Active</Link> : null}
+        {isComplete(job) ? <span className="worker-app-done"><CheckCircle2 className="h-4 w-4" /> Done</span> : null}
+        {address ? <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`} target="_blank" rel="noreferrer" className="worker-app-btn map"><MapPin className="h-4 w-4" /> Directions</a> : null}
       </div>
-
-      <div className="worker-simple-actions">
-        <button type="button" disabled={disabled} onClick={() => openJob()}>
-          <b>Open job</b>
-          <small>See address and notes</small>
-        </button>
-        <button type="button" disabled={disabled} onClick={onStartNext}>
-          <b>Start timer</b>
-          <small>Begin work</small>
-        </button>
-        <button type="button" disabled={disabled} onClick={() => openJob("#notes")}>
-          <b>Add proof</b>
-          <small>Notes and photos</small>
-        </button>
-        <button type="button" disabled={disabled} onClick={() => openJob("#complete")}>
-          <b>Finish job</b>
-          <small>Save time</small>
-        </button>
-      </div>
-
-      <button className="worker-simple-help" type="button" onClick={onContactOffice}>Contact office</button>
-    </section>
-  );
-}
-
-function WorkerShiftPanel({ shiftStatus, shiftSeconds, gpsTracking, onClockIn, onClockOut, onGpsPing, busy }) {
-  const clockedIn = shiftStatus === "clocked_in";
-
-  return (
-    <section className={`worker-shift-panel ${clockedIn ? "clocked-in" : ""}`}>
-      <div className="worker-shift-panel__top">
-        <div>
-          <p>PAYROLL CLOCK</p>
-          <h2>{clockedIn ? "You are clocked in" : "You are clocked out"}</h2>
-          <span>{clockedIn ? `Payroll time today: ${hoursText(shiftSeconds)}. GPS is on while clocked in.` : "Clock in to start your paid day and turn on GPS tracking."}</span>
-        </div>
-        <strong>{clockedIn ? hoursText(shiftSeconds) : "Off"}</strong>
-      </div>
-
-      <div className="worker-shift-panel__notice">
-        GPS is only used while you are clocked in. Churvox records clock-in, clock-out and hourly location checks for the boss view.
-      </div>
-
-      <div className="worker-shift-panel__actions">
-        {!clockedIn ? (
-          <button type="button" disabled={busy} onClick={onClockIn}>{busy ? "Clocking in..." : "Clock in"}</button>
-        ) : (
-          <>
-            <button type="button" disabled={busy} onClick={onClockOut}>{busy ? "Clocking out..." : "Clock out"}</button>
-            <button type="button" disabled={busy || !gpsTracking} onClick={() => onGpsPing("manual")}>GPS check now</button>
-          </>
-        )}
-      </div>
-    </section>
+    </article>
   );
 }
 
 export default function WorkerJobsPage() {
   const { user, logout } = useAuth();
-  const location = useLocation();
   const { get, post } = useApi();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -201,13 +134,8 @@ export default function WorkerJobsPage() {
   const [lastSynced, setLastSynced] = useState(null);
   const [showContactOffice, setShowContactOffice] = useState(false);
 
-
   async function sendLivePing(payload = {}) {
-    try {
-      await post("/worker/live-ping", payload);
-    } catch {
-      // Live status should never block the worker from doing the job.
-    }
+    try { await post("/worker/live-ping", payload); } catch { /* keep worker flow unblocked */ }
   }
 
   async function fetchShiftStatus() {
@@ -224,16 +152,9 @@ export default function WorkerJobsPage() {
     try {
       const location = await getGpsPosition();
       const res = await post("/worker/gps-ping", { location, source });
-
-      await sendLivePing({
-        source,
-        live_status: source === "hourly" ? "GPS checked" : "GPS checked now",
-        clock_status: shiftStatus || "clocked_in",
-        location,
-      });
-
+      await sendLivePing({ source, live_status: source === "hourly" ? "GPS checked" : "GPS checked now", clock_status: shiftStatus || "clocked_in", location });
       if (!res?.success && source !== "hourly") toast.error(res?.error || "GPS could not be recorded");
-      if (res?.success && source !== "hourly") toast.success(location.address_label ? `GPS recorded: ${location.address_label}` : "GPS recorded");
+      if (res?.success && source !== "hourly") toast.success("GPS recorded");
     } catch (err) {
       if (source !== "hourly") toast.error(err?.message || "GPS permission is needed while clocked in");
     }
@@ -244,119 +165,55 @@ export default function WorkerJobsPage() {
     try {
       const location = await getGpsPosition();
       const res = await post("/worker/clock-in", { location });
-
       if (res?.success) {
         setShiftStatus("clocked_in");
         setGpsTracking(true);
-
-        await sendLivePing({
-          source: "clock-in",
-          live_status: "Clocked in",
-          clock_status: "clocked_in",
-          location,
-        });
-
-        toast.success(location.address_label ? `Clocked in: ${location.address_label}` : "Clocked in. GPS tracking is on.");
+        await sendLivePing({ source: "clock-in", live_status: "Clocked in", clock_status: "clocked_in", location });
+        toast.success("Clocked in. GPS tracking is on.");
         await fetchShiftStatus();
-      } else {
-        toast.error(res?.error || "Could not clock in");
-      }
+      } else toast.error(res?.error || "Could not clock in");
     } catch (err) {
       toast.error(err?.message || "GPS permission is needed to clock in");
-    } finally {
-      setShiftBusy(false);
-    }
+    } finally { setShiftBusy(false); }
   }
 
   async function clockOut() {
     setShiftBusy(true);
     try {
       let location = null;
-      try {
-        location = await getGpsPosition();
-      } catch {
-        location = null;
-      }
-
+      try { location = await getGpsPosition(); } catch { location = null; }
       const res = await post("/worker/clock-out", { location });
-
       if (res?.success) {
         setShiftStatus("clocked_out");
         setGpsTracking(false);
         setShiftSeconds(0);
-
-        await sendLivePing({
-          source: "clock-out",
-          live_status: "Clocked out",
-          clock_status: "clocked_out",
-          location,
-        });
-
-        toast.success(location?.address_label ? `Clocked out: ${location.address_label}` : "Clocked out. GPS tracking is off.");
+        await sendLivePing({ source: "clock-out", live_status: "Clocked out", clock_status: "clocked_out", location });
+        toast.success("Clocked out. GPS tracking is off.");
         await fetchShiftStatus();
-      } else {
-        toast.error(res?.error || "Could not clock out");
-      }
-    } finally {
-      setShiftBusy(false);
-    }
+      } else toast.error(res?.error || "Could not clock out");
+    } finally { setShiftBusy(false); }
   }
 
   async function fetchJobs() {
     setLoading(true);
     setError("");
-
     const res = await get("/jobs");
-
     if (res.success) {
       setJobs(scopeJobsForWorker(arr(res.data), user));
       setLastSynced(new Date());
-    } else {
-      setError("Could not load your jobs. Please refresh.");
-    }
-
+    } else setError("Could not load your jobs. Please refresh.");
     setLoading(false);
   }
 
-  useEffect(() => {
-    fetchJobs();
-    fetchShiftStatus();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  useEffect(() => { fetchJobs(); fetchShiftStatus(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (shiftStatus !== "clocked_in") return undefined; const tick = window.setInterval(() => setShiftSeconds((value) => Number(value || 0) + 60), 60000); return () => window.clearInterval(tick); }, [shiftStatus]);
+  useEffect(() => { if (shiftStatus !== "clocked_in" || !gpsTracking) return undefined; const gpsTimer = window.setInterval(() => sendGpsPing("hourly"), 60 * 60 * 1000); return () => window.clearInterval(gpsTimer); }, [gpsTracking, shiftStatus]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (shiftStatus !== "clocked_in") return undefined;
-    const tick = window.setInterval(() => setShiftSeconds((value) => Number(value || 0) + 60), 60000);
-    return () => window.clearInterval(tick);
-  }, [shiftStatus]);
-
-  useEffect(() => {
-    if (shiftStatus !== "clocked_in" || !gpsTracking) return undefined;
-    const gpsTimer = window.setInterval(() => sendGpsPing("hourly"), 60 * 60 * 1000);
-    return () => window.clearInterval(gpsTimer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gpsTracking, shiftStatus]);
-
-  useEffect(() => {
-    if (!location.hash) return;
-    setTimeout(() => {
-      const target = document.querySelector(location.hash);
-      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 80);
-  }, [location.hash]);
-
-  const today = new Date().toISOString().slice(0, 10);
-  const stats = useMemo(() => {
-    const total = jobs.length;
-    const dueToday = jobs.filter((j) => String(j?.scheduled_date || j?.date || "").slice(0, 10) === today).length;
-    const inProgress = jobs.filter((j) => statusOf(j) === "in_progress").length;
-    const paused = jobs.filter((j) => statusOf(j) === "paused").length;
-    const completed = jobs.filter(isComplete).length;
-    const needsFixing = jobs.filter(isSentBackJob).length;
-    return { total, dueToday, inProgress, paused, completed, needsFixing };
-  }, [jobs, today]);
-
-  const nextJob = useMemo(() => jobs.find(isSentBackJob) || jobs.find((j) => !isComplete(j)), [jobs]);
+  const today = todayKey();
+  const todayJobs = useMemo(() => jobs.filter((job) => dateOf(job) === today), [jobs, today]);
+  const visibleTodayJobs = todayJobs.length ? todayJobs : jobs.filter((job) => !isComplete(job));
+  const nextJob = useMemo(() => jobs.find(isSentBackJob) || jobs.find(isActiveJob) || visibleTodayJobs.find((j) => !isComplete(j)) || jobs.find((j) => !isComplete(j)), [jobs, visibleTodayJobs]);
+  const stats = useMemo(() => ({ total: jobs.length, today: todayJobs.length, active: jobs.filter(isActiveJob).length, completed: jobs.filter(isComplete).length, needsFixing: jobs.filter(isSentBackJob).length }), [jobs, todayJobs]);
 
   const checkAnotherActiveJob = async (jobId) => {
     const res = await get("/jobs");
@@ -385,86 +242,62 @@ export default function WorkerJobsPage() {
         return;
       }
       const endpoint = status === "paused" ? `/jobs/${encodeURIComponent(jobId)}/timer/resume` : `/jobs/${encodeURIComponent(jobId)}/timer/start`;
-
       let location = null;
-      try {
-        location = await getGpsPosition();
-      } catch {
-        location = null;
-      }
-
+      try { location = await getGpsPosition(); } catch { location = null; }
       const res = await post(endpoint, location ? { location } : {});
-
       if (res?.success) {
-        await sendLivePing({
-          source: status === "paused" ? "job-resume" : "job-start",
-          live_status: "On job now",
-          clock_status: "on_job",
-          job_id: jobId,
-          job_title: job?.title || "",
-          job_status: "in_progress",
-          location,
-        });
-
+        await sendLivePing({ source: status === "paused" ? "job-resume" : "job-start", live_status: "On job now", clock_status: "on_job", job_id: jobId, job_title: job?.title || "", job_status: "in_progress", location });
         toast.success(status === "paused" ? "Job resumed" : "Job timer started");
       } else toast.error(res?.error || "Could not start job timer");
       await fetchJobs();
-    } finally {
-      setStartingId("");
-    }
+    } finally { setStartingId(""); }
   };
 
   return (
-    <div className="px-app min-h-screen pb-28">
-      <header className="px-mobile-header">
-        <ChurvoxLogo size="sm" />
-        <div className="flex items-center gap-2">
-          <button onClick={fetchJobs} className="px-btn px-btn--ghost px-btn--sm" title="Refresh jobs" disabled={loading}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /></button>
-          <Link to="/worker/settings" className="px-btn px-btn--ghost px-btn--sm" title="Settings"><Settings className="h-4 w-4" /></Link>
-          <button onClick={logout} className="px-btn px-btn--ghost px-btn--sm" title="Log out"><LogOut className="h-4 w-4" /></button>
-        </div>
+    <div className="worker-app-screen">
+      <header className="worker-app-top">
+        <div><b>My Day</b><span>{user?.name ? `Hi ${String(user.name).split(" ")[0]}` : "Worker app"} · {shiftStatus === "clocked_in" ? "Clocked in" : "Clocked out"}</span></div>
+        <div><button type="button" onClick={fetchJobs} disabled={loading}><RefreshCw className={loading ? "spin" : ""} /></button><Link to="/worker/settings"><Settings /></Link><button type="button" onClick={logout}><LogOut /></button></div>
       </header>
 
-      <main id="worker-jobs-page" className="max-w-2xl mx-auto px-4 py-5 space-y-4">
-        <div className="px-hero" style={{ padding: "20px" }}>
-          <span className="px-hero__eyebrow"><Briefcase className="h-3 w-3" /> Today&apos;s Work</span>
-          <h1 className="px-hero__title" style={{ fontSize: "24px" }}>Hey {user?.name?.split(" ")[0] || "team"}</h1>
-          <p className="px-hero__sub">Open today’s job, start the timer, add notes/photos, then finish it.</p>
-        </div>
+      <main className="worker-app-main">
+        <section className="worker-app-hero">
+          <span>Next job</span>
+          <h1>{nextJob ? jobTitle(nextJob) : "Waiting for dispatch"}</h1>
+          <p>{nextJob ? `${clientName(nextJob)}${addressOf(nextJob) ? ` · ${addressOf(nextJob)}` : ""}` : "No jobs are assigned yet. Refresh or contact the office if you are expecting work."}</p>
+          <div className="worker-app-hero__actions">
+            {nextJob ? <Link to={`/worker/jobs/${idOf(nextJob)}`}>Open job</Link> : <button type="button" onClick={fetchJobs}>Refresh jobs</button>}
+            {nextJob && (canStart(statusOf(nextJob)) || canResume(statusOf(nextJob))) ? <button type="button" onClick={() => handleTimerStart(nextJob)} disabled={startingId === idOf(nextJob)}>{jobAction(nextJob)}</button> : null}
+            <button type="button" onClick={() => setShowContactOffice(true)}>Contact office</button>
+          </div>
+        </section>
 
-<WorkerShiftPanel shiftStatus={shiftStatus} shiftSeconds={shiftSeconds} gpsTracking={gpsTracking} onClockIn={clockIn} onClockOut={clockOut} onGpsPing={sendGpsPing} busy={shiftBusy} />
+        <section className="worker-app-clock">
+          <div><span>Payroll clock</span><b>{shiftStatus === "clocked_in" ? hoursText(shiftSeconds) : "Off"}</b><small>{gpsTracking ? "GPS on while clocked in" : "Clock in to start paid time"}</small></div>
+          {shiftStatus !== "clocked_in" ? <button type="button" disabled={shiftBusy} onClick={clockIn}>{shiftBusy ? "Clocking in" : "Clock in"}</button> : <><button type="button" disabled={shiftBusy} onClick={clockOut}>{shiftBusy ? "Clocking out" : "Clock out"}</button><button type="button" disabled={shiftBusy || !gpsTracking} onClick={() => sendGpsPing("manual")}>GPS check</button></>}
+        </section>
 
-        <WorkerDayFlowPanel stats={stats} nextJob={nextJob} onContactOffice={() => setShowContactOffice(true)} onStartNext={() => nextJob ? handleTimerStart(nextJob) : setShowContactOffice(true)} />
+        <section className="worker-app-stats">
+          <article><span>Today</span><b>{stats.today || visibleTodayJobs.length}</b></article>
+          <article><span>Active</span><b>{stats.active}</b></article>
+          <article><span>Done</span><b>{stats.completed}</b></article>
+        </section>
 
-        <PremiumCard><div className="px-card__body flex items-center justify-between gap-3 py-3"><div><p className="text-xs font-semibold text-[var(--cx-accent)] uppercase tracking-wide">Today</p><p className="text-xs text-[var(--cx-muted)]">Last synced: {lastSynced ? lastSynced.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--"}</p></div><PremiumButton onClick={fetchJobs} disabled={loading} variant="secondary" iconLeft={<RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />}>Refresh jobs</PremiumButton></div></PremiumCard>
+        {stats.needsFixing > 0 ? <section className="worker-app-alert"><AlertTriangle /><div><b>Work sent back</b><span>{stats.needsFixing} job{stats.needsFixing === 1 ? "" : "s"} need fixing before approval.</span></div></section> : null}
+        {error ? <section className="worker-app-alert danger"><AlertTriangle /><div><b>Could not load jobs</b><span>{error}</span></div></section> : null}
+        {loading ? <section className="worker-app-empty"><RefreshCw className="spin" /><b>Loading your jobs…</b></section> : null}
 
-        {stats.needsFixing > 0 ? <PremiumCard><div className="px-card__body py-3 space-y-2"><div className="flex items-center gap-2 text-orange-700 font-bold"><AlertTriangle className="h-4 w-4" /> Work sent back</div><p className="text-sm text-[var(--cx-muted)]">{stats.needsFixing} job{stats.needsFixing === 1 ? "" : "s"} need fixing before the owner can approve them.</p></div></PremiumCard> : null}
+        {!loading && !error && jobs.length === 0 ? <section className="worker-app-empty"><b>Waiting for dispatch</b><span>No jobs are assigned to you yet.</span><button type="button" onClick={fetchJobs}>Refresh jobs</button><button type="button" onClick={() => setShowContactOffice(true)}>Contact office</button></section> : null}
 
-        <div className="grid grid-cols-2 gap-2">
-          <PremiumCard><div className="px-card__body py-3"><p className="text-xs text-[var(--cx-muted)]">Jobs</p><p className="text-xl font-bold text-[var(--cx-text)]">{stats.total}</p></div></PremiumCard>
-          <PremiumCard><div className="px-card__body py-3"><p className="text-xs text-[var(--cx-muted)]">Today</p><p className="text-xl font-bold text-[var(--cx-text)]">{stats.dueToday}</p></div></PremiumCard>
-          <PremiumCard><div className="px-card__body py-3"><p className="text-xs text-[var(--cx-muted)]">Fix</p><p className="text-xl font-bold text-orange-600">{stats.needsFixing}</p></div></PremiumCard>
-          <PremiumCard><div className="px-card__body py-3"><p className="text-xs text-[var(--cx-muted)]">Active</p><p className="text-xl font-bold text-[var(--cx-text)]">{stats.inProgress}</p></div></PremiumCard>
-        </div>
+        <section className="worker-app-list" id="jobs">
+          <h2>Today’s jobs</h2>
+          {!loading && !error ? visibleTodayJobs.map((job) => <WorkerJobCard key={idOf(job)} job={job} busy={startingId} onAcknowledge={handleAcknowledge} onStart={handleTimerStart} />) : null}
+        </section>
 
-        {nextJob && !loading ? <PremiumCard><div className="px-card__body space-y-2"><p className="text-xs font-semibold text-[var(--cx-accent)] uppercase tracking-wide">{isSentBackJob(nextJob) ? "Fix first" : "Next job"}</p><div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="font-bold text-[var(--cx-text)] truncate">{nextJob.title || "Untitled Job"}</p><PremiumStatusBadge status={nextJob.status} /></div><Link to={`/worker/jobs/${idOf(nextJob)}`}><ChevronRight className="h-5 w-5 text-[var(--cx-muted-2)]" /></Link></div>{isSentBackJob(nextJob) ? <p className="text-xs font-semibold text-orange-700">Owner sent this back from Work Review.</p> : null}{nextJob.address ? <p className="text-xs text-[var(--cx-muted)] flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{nextJob.address}</p> : null}</div></PremiumCard> : null}
-
-        {loading ? <div className="px-loading"><div className="px-loading__spinner" /><p className="text-[13px] text-[var(--cx-muted)]">Loading today&apos;s work…</p></div> : null}
-        {error ? <PremiumCard><div className="px-card__body text-sm text-red-600">{error}</div></PremiumCard> : null}
-
-        {!loading && !error && jobs.length === 0 ? <div className="px-empty"><div className="px-empty__icon"><Briefcase className="h-6 w-6" /></div><h3 className="px-empty__title">Waiting for dispatch</h3><p className="px-empty__sub">No jobs are assigned to you yet. Refresh your jobs page or contact the office if something looks wrong.</p><div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-sm"><PremiumButton onClick={fetchJobs} iconLeft={<RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />}>Refresh jobs</PremiumButton><PremiumButton variant="secondary" onClick={() => setShowContactOffice(true)}>Contact office</PremiumButton></div></div> : null}
-
-        <div id="jobs" className="space-y-4">{!loading && !error ? jobs.map((job) => {
-          const id = idOf(job);
-          const status = statusOf(job);
-          const sentBack = isSentBackJob(job);
-          const note = sendBackNote(job);
-          const startAllowed = canStart(status) || canResume(status);
-          return <PremiumCard key={id} className="block"><div className="px-card__body space-y-3"><div className="flex items-start justify-between gap-2"><div><p className="font-semibold text-[var(--cx-text)]">{job.title || "Untitled Job"}</p><PremiumStatusBadge status={status} /></div><Link to={`/worker/jobs/${id}`}><ChevronRight className="h-5 w-5 text-[var(--cx-muted-2)]" /></Link></div>{sentBack ? <div className="rounded-2xl border border-orange-200 bg-orange-50 p-3 text-sm text-orange-900"><div className="font-bold flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Sent back from Work Review</div>{note ? <p className="mt-1 whitespace-pre-wrap">{note}</p> : <p className="mt-1">Open the job and fix what the owner requested.</p>}</div> : null}{job.address ? <p className="text-xs text-[var(--cx-muted)] flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{job.address}</p> : null}{job.scheduled_date ? <p className="text-xs text-[var(--cx-muted)] flex items-center gap-1"><CalendarClock className="h-3.5 w-3.5" />{String(job.scheduled_date).slice(0, 10)} {job.scheduled_time ? `• ${job.scheduled_time}` : ""}</p> : null}<div className="grid grid-cols-1 sm:grid-cols-3 gap-2"><Link to={`/worker/jobs/${id}`} className={`px-btn px-btn--${sentBack ? "primary" : "secondary"} px-btn--md w-full no-underline`}><Briefcase className="h-4 w-4" />{sentBack ? "Fix" : "Open"}</Link>{canAcknowledge(status) ? <PremiumButton className="w-full" onClick={() => handleAcknowledge(id)} disabled={startingId === id} iconLeft={<Hand className="h-4 w-4" />}>{startingId === id ? "Saving..." : "Acknowledge"}</PremiumButton> : startAllowed ? <PremiumButton className="w-full" onClick={() => handleTimerStart(job)} disabled={startingId === id} iconLeft={status === "paused" ? <RotateCcw className="h-4 w-4" /> : <Play className="h-4 w-4" />}>{startingId === id ? "Starting..." : status === "paused" ? "Resume" : "Start"}</PremiumButton> : <PremiumButton className="w-full" variant="secondary" disabled iconLeft={status === "completed" ? <CheckCircle2 className="h-4 w-4" /> : <Timer className="h-4 w-4" />}>{status === "completed" ? "Completed" : status === "in_progress" ? "Active" : "Not ready"}</PremiumButton>}{job.address ? <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`} target="_blank" rel="noreferrer" className="px-btn px-btn--secondary px-btn--md w-full no-underline"><MapPin className="h-4 w-4" />Directions</a> : <PremiumButton className="w-full" variant="secondary" disabled iconLeft={<Clock3 className="h-4 w-4" />}>No address</PremiumButton>}</div></div></PremiumCard>;
-        }) : null}</div>
+        <div className="worker-app-sync">Last synced: {lastSynced ? lastSynced.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--"}</div>
       </main>
 
-      <WorkerContactOfficePanel open={showContactOffice} onClose={() => setShowContactOffice(false)} defaultMessage="I need help with my assigned jobs. No jobs are showing for me." />
+      <WorkerContactOfficePanel open={showContactOffice} onClose={() => setShowContactOffice(false)} defaultMessage="I need help with my assigned jobs." />
       <WorkerBottomNav active="today" />
     </div>
   );
