@@ -52,6 +52,7 @@ import "./freshServices.css";
 import "./freshSettingsLive.css";
 import "./freshSetup.css";
 import "./freshSmartHub.css";
+import "./freshSmartCoreFlow.css";
 import "./freshOwnerAiNext.css";
 import "./freshCommandOwnerDesk.css";
 import "./freshAiOperatorStudio.css";
@@ -78,18 +79,13 @@ import "./freshGlobalActions.css";
 import "./freshFirstRunWizard.css";
 import "./freshLaunchControl.css";
 import "./freshXero.css";
-import "./freshGlobalReadable.css";
-import "./freshNuclearReadable.css";
-import "./freshNewUserGuide.css";
-import "./freshDropdownLightFix.css";
 
+import { useAuth } from "../context/AuthContext";
+import { installFreshReadableRuntime, forceFreshReadable } from "./readableRuntime";
 import FreshShell from "./FreshShell";
 import FreshSimple from "./FreshSimple";
-import { forceFreshReadable, installFreshReadableRuntime } from "./freshForceReadable";
-import { useAuth } from "../context/AuthContext";
-import FreshAiUsage from "./FreshAiUsage";
-import FreshAlerts from "./FreshAlerts";
 import FreshApprovals from "./FreshApprovals";
+import FreshAlerts from "./FreshAlerts";
 import FreshAreas from "./FreshAreas";
 import FreshAssets from "./FreshAssets";
 import FreshAudit from "./FreshAudit";
@@ -97,17 +93,17 @@ import FreshAutomation from "./FreshAutomation";
 import FreshAvailability from "./FreshAvailability";
 import FreshBilling from "./FreshBilling";
 import FreshCancellations from "./FreshCancellations";
-import FreshClientPortal from "./FreshClientPortal";
 import FreshClients from "./FreshClients";
+import FreshCommand from "./FreshCommand";
 import FreshCommandOwnerDesk from "./FreshCommandOwnerDesk";
 import FreshContracts from "./FreshContracts";
 import FreshCreditNotes from "./FreshCreditNotes";
 import FreshCustomerPortalRequests from "./FreshCustomerPortalRequests";
+import FreshDemoMode from "./FreshDemoMode";
 import FreshDispatch from "./FreshDispatch";
 import FreshDocuments from "./FreshDocuments";
 import FreshExpenses from "./FreshExpenses";
 import FreshExports from "./FreshExports";
-import FreshExtras from "./FreshExtras";
 import FreshFeedback from "./FreshFeedback";
 import FreshFlags from "./FreshFlags";
 import FreshFollowUps from "./FreshFollowUps";
@@ -116,27 +112,28 @@ import FreshImports from "./FreshImports";
 import FreshIndustries from "./FreshIndustries";
 import FreshIntegrations from "./FreshIntegrations";
 import FreshInventory from "./FreshInventory";
-import FreshInvoices from "./FreshInvoices";
 import FreshInvoiceChecker from "./FreshInvoiceChecker";
+import FreshInvoices from "./FreshInvoices";
 import FreshJobs from "./FreshJobs";
 import FreshLaunch from "./FreshLaunch";
 import FreshLaunchPack from "./FreshLaunchPack";
-import FreshDemoMode from "./FreshDemoMode";
 import FreshLeads from "./FreshLeads";
-import FreshMessages from "./FreshMessages";
+import FreshMaterialsAI from "./FreshMaterialsAI";
+import FreshNz from "./FreshNz";
 import FreshOnboarding from "./FreshOnboarding";
+import FreshPaymentPromise from "./FreshPaymentPromise";
 import FreshPayments from "./FreshPayments";
 import FreshPayroll from "./FreshPayroll";
 import FreshPhotos from "./FreshPhotos";
 import FreshPhotoProof from "./FreshPhotoProof";
 import FreshPlans from "./FreshPlans";
+import FreshPortal from "./FreshPortal";
+import FreshPriceLearner from "./FreshPriceLearner";
 import FreshProfit from "./FreshProfit";
 import FreshProfitGuard from "./FreshProfitGuard";
-import FreshPriceLearner from "./FreshPriceLearner";
-import FreshPaymentPromise from "./FreshPaymentPromise";
-import FreshUpsellFinder from "./FreshUpsellFinder";
 import FreshQa from "./FreshQa";
 import FreshQuality from "./FreshQuality";
+import FreshUpsellFinder from "./FreshUpsellFinder";
 import FreshReworkResolver from "./FreshReworkResolver";
 import FreshQuotes from "./FreshQuotes";
 import FreshAiQuoteBuilder from "./FreshAiQuoteBuilder";
@@ -213,30 +210,9 @@ function FreshUpgradeGate({ page, plan, onNavigate }) {
   const current = PLAN_NAME[normalPlan(plan)] || "No plan";
   return <section className="freshHero"><span>Plan locked</span><h1>{required} plan required</h1><p>This area is included with the {required} plan. Your current plan is {current}. Open Plans & Usage to choose or restore your plan.</p><div className="freshActions" style={{ marginTop: 16 }}><button className="freshPrimary" onClick={() => onNavigate?.("plans")}>Open Plans & Usage</button><button className="freshGhost" onClick={() => onNavigate?.("smart")}>Back to Business Pulse</button></div></section>;
 }
-
 function isFirstSetupPending() { try { const params = new URLSearchParams(window.location.search || ""); return params.get("first_setup") === "1" || window.localStorage.getItem("churvox_first_setup_pending") === "true"; } catch { return false; } }
 function clearNewUserDemoStorage() { try { window.localStorage.removeItem("churvox:fresh-demo-mode:v1"); window.localStorage.removeItem("churvox:fresh-command-inbox:v1"); window.localStorage.removeItem("churvox:fresh-jobs:v1"); } catch {} }
-function readPageFromHash() {
-  if (typeof window === "undefined") return "smart";
-  const path = window.location.pathname || "";
-  const raw = window.location.hash.replace("#", "").trim().toLowerCase();
-  const aliases = { ai: "setupassistant", guide: "setupassistant", aiguided: "setupassistant", "ai-guide": "setupassistant", setupguide: "setupassistant", "setup-guide": "setupassistant", cockpit: "smart", home: "smart", dashboard: "smart", pulse: "smart", businesspulse: "smart", "business-pulse": "smart", smarthub: "smart", "smart-hub": "smart" };
-  const hash = aliases[raw] || raw;
-  if ((path === "/guide" || path === "/setup-guide") && hash && pages.has(hash)) {
-    clearNewUserDemoStorage();
-    return hash;
-  }
-  if (path === "/guide" || path === "/setup-guide") {
-    clearNewUserDemoStorage();
-    return guideComplete() ? "smart" : "setupassistant";
-  }
-  if (path === "/plans" && !raw) return "plans";
-  const blockedPublicHashes = new Set(["demo", "qa", "flags", "roadmap", "launch", "launchpack", "launchcontrol", "firstrun", "trustcenter"]);
-  if (blockedPublicHashes.has(raw)) return isFirstSetupPending() ? "setupassistant" : "smart";
-  if (guideComplete() && hash === "setupassistant") return "smart";
-  if (isFirstSetupPending() && (!hash || hash === "smart" || hash === "command" || hash === "firstrun")) { clearNewUserDemoStorage(); return "setupassistant"; }
-  return pages.has(hash) ? hash : "smart";
-}
+function readPageFromHash() { if (typeof window === "undefined") return "smart"; const path = window.location.pathname || ""; const raw = window.location.hash.replace("#", "").trim().toLowerCase(); const aliases = { ai: "setupassistant", guide: "setupassistant", aiguided: "setupassistant", "ai-guide": "setupassistant", setupguide: "setupassistant", "setup-guide": "setupassistant", cockpit: "smart", home: "smart", dashboard: "smart", pulse: "smart", businesspulse: "smart", "business-pulse": "smart", smarthub: "smart", "smart-hub": "smart" }; const hash = aliases[raw] || raw; if ((path === "/guide" || path === "/setup-guide") && hash && pages.has(hash)) { clearNewUserDemoStorage(); return hash; } if (path === "/guide" || path === "/setup-guide") { clearNewUserDemoStorage(); return guideComplete() ? "smart" : "setupassistant"; } if (path === "/plans" && !raw) return "plans"; const blockedPublicHashes = new Set(["demo", "qa", "flags", "roadmap", "launch", "launchpack", "launchcontrol", "firstrun", "trustcenter"]); if (blockedPublicHashes.has(raw)) return isFirstSetupPending() ? "setupassistant" : "smart"; if (guideComplete() && hash === "setupassistant") return "smart"; if (isFirstSetupPending() && (!hash || hash === "smart" || hash === "command" || hash === "firstrun")) { clearNewUserDemoStorage(); return "setupassistant"; } return pages.has(hash) ? hash : "smart"; }
 
 export default function FreshApp() {
   const { user } = useAuth();
@@ -297,34 +273,31 @@ export default function FreshApp() {
     if (page === "exports") content = <FreshExports onNavigate={goToPage} />;
     if (page === "security") content = <FreshSecurity onNavigate={goToPage} />;
     if (page === "trustcenter") content = <FreshTrustCenter onNavigate={goToPage} />;
+    if (page === "helpdesk") content = <FreshHelpDesk onNavigate={goToPage} />;
     if (page === "roles") content = <FreshRoles onNavigate={goToPage} />;
     if (page === "billing") content = <FreshBilling onNavigate={goToPage} />;
-    if (page === "aiusage") content = <FreshAiUsage onNavigate={goToPage} />;
+    if (page === "aiusage") content = <FreshUsageAi onNavigate={goToPage} />;
     if (page === "templates") content = <FreshTemplates onNavigate={goToPage} />;
     if (page === "gps") content = <FreshGps onNavigate={goToPage} />;
-    if (page === "xero") content = <FreshXero onNavigate={goToPage} />;
+    if (page === "nz") content = <FreshNz onNavigate={goToPage} />;
     if (page === "team") content = <FreshTeam onNavigate={goToPage} />;
     if (page === "subcontractors") content = <FreshSubcontractors onNavigate={goToPage} />;
     if (page === "availability") content = <FreshAvailability onNavigate={goToPage} />;
     if (page === "payroll") content = <FreshPayroll onNavigate={goToPage} />;
     if (page === "time") content = <FreshTimeLogs onNavigate={goToPage} />;
     if (page === "reports") content = <FreshReports onNavigate={goToPage} />;
-    if (page === "businesshealth") content = <FreshBusinessHealth onNavigate={goToPage} />;
-    if (page === "cashflowai") content = <FreshCashflowCoach onNavigate={goToPage} />;
-    if (page === "paymentpromise") content = <FreshPaymentPromise onNavigate={goToPage} />;
     if (page === "profit") content = <FreshProfit onNavigate={goToPage} />;
     if (page === "profitguard") content = <FreshProfitGuard onNavigate={goToPage} />;
     if (page === "pricelearner") content = <FreshPriceLearner onNavigate={goToPage} />;
     if (page === "expenses") content = <FreshExpenses onNavigate={goToPage} />;
     if (page === "assets") content = <FreshAssets onNavigate={goToPage} />;
     if (page === "inventory") content = <FreshInventory onNavigate={goToPage} />;
-    if (page === "materialsai") content = <FreshMaterialsReminder onNavigate={goToPage} />;
+    if (page === "materialsai") content = <FreshMaterialsAI onNavigate={goToPage} />;
     if (page === "services") content = <FreshServices onNavigate={goToPage} />;
     if (page === "industries") content = <FreshIndustries onNavigate={goToPage} />;
     if (page === "settings") content = <FreshSettings onNavigate={goToPage} />;
     if (page === "plans") content = <FreshPlans onNavigate={goToPage} />;
     if (page === "support") content = <FreshSupport onNavigate={goToPage} />;
-    if (page === "helpdesk") content = <FreshHelpDesk onNavigate={goToPage} />;
     if (page === "integrations") content = <FreshIntegrations onNavigate={goToPage} />;
     if (page === "messages") content = <FreshMessages onNavigate={goToPage} />;
     if (page === "messagetriage") content = <FreshMessageTriage onNavigate={goToPage} />;
@@ -343,12 +316,20 @@ export default function FreshApp() {
     if (page === "contracts") content = <FreshContracts onNavigate={goToPage} />;
     if (page === "safety") content = <FreshSafety onNavigate={goToPage} />;
     if (page === "automation") content = <FreshAutomation onNavigate={goToPage} />;
-    if (page === "portal") content = <FreshClientPortal onNavigate={goToPage} />;
+    if (page === "portal") content = <FreshPortal onNavigate={goToPage} />;
     if (page === "worker") content = <FreshWorker onNavigate={goToPage} />;
     if (page === "workercommand") content = <FreshWorkerCommand onNavigate={goToPage} />;
     if (page === "workerbrief") content = <FreshWorkerBrief onNavigate={goToPage} />;
     if (page === "workerperformance") content = <FreshWorkerPerformance onNavigate={goToPage} />;
     if (page === "missinginfo") content = <FreshMissingInfo onNavigate={goToPage} />;
+    if (page === "customermemory") content = <FreshCustomerMemory onNavigate={goToPage} />;
+    if (page === "businesshealth") content = <FreshBusinessHealth onNavigate={goToPage} />;
+    if (page === "cashflowai") content = <FreshCashflowCoach onNavigate={goToPage} />;
+    if (page === "paymentpromise") content = <FreshPaymentPromise onNavigate={goToPage} />;
+    if (page === "xero") content = <FreshXero onNavigate={goToPage} />;
   }
-  return <FreshShell active={page} onChange={goToPage}><div key={`${page}-${dataVersion}`} className="freshPageMount">{content}</div></FreshShell>;
+  return <FreshShell active={page} onNavigate={goToPage}>{content}</FreshShell>;
 }
+
+function FreshUsageAi(props) { return <FreshSimple page="aiusage" {...props} />; }
+function FreshMessages(props) { return <FreshSimple page="messages" {...props} />; }
