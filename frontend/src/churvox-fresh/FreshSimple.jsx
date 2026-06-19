@@ -19,7 +19,7 @@ const copy = {
 
 const coreActions = [
   ["smart", "Smart Hub", "See the full Churvox flow"],
-  ["quickcreateai", "Tell Churvox", "Type what you want done"],
+  ["askchurvox", "Tell Churvox", "Type what you want done"],
   ["command", "Command", "Review prepared work"],
   ["jobs", "Jobs", "Open job records"],
   ["invoices", "Money", "Open invoices and payments"],
@@ -80,7 +80,7 @@ export default function FreshSimple({ page, onNavigate }) {
           <h2>Owner action</h2>
           <p>Keep this area on the radar without pretending it is finished.</p>
           <div className="freshActions">
-            <button type="button" className="freshPrimary" onClick={() => onNavigate?.("quickcreateai")}>Tell Churvox</button>
+            <button type="button" className="freshPrimary" onClick={() => onNavigate?.("askchurvox")}>Tell Churvox</button>
             <button type="button" className="freshDark" onClick={sendToCommand}>Send to Command</button>
           </div>
         </aside>
