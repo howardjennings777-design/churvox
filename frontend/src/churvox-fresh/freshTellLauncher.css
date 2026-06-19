@@ -1,15 +1,6 @@
 .freshTellSide { display: none !important; }
 
-.freshTellTop {
-  min-height: 40px;
-  padding: 0 15px;
-  border: 0;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #f97316, #fbbf24);
-  color: #111827;
-  font-weight: 1000;
-  cursor: pointer;
-}
+.freshTellTop { display: none !important; }
 
 .freshTellFloat {
   position: fixed;
@@ -42,7 +33,7 @@
 
 .freshGlobalAsk {
   position: sticky;
-  top: 76px;
+  top: 62px;
   z-index: 3150;
   margin: 0 0 14px;
   backdrop-filter: blur(16px);
@@ -310,12 +301,9 @@
   .tellHero,
   .tellGrid,
   .tellCommandBox { grid-template-columns: 1fr; }
-  .freshGlobalAsk { top: 92px; }
+  .freshGlobalAsk { top: 68px; }
   .freshGlobalAsk > button,
   .tellCommandBox > button { width: 100%; }
 }
 
-@media (max-width: 720px) {
-  .freshTellTop { display: none; }
-  .freshAskStats { grid-template-columns: 1fr; }
-}
+@media (max-width: 720px) { .freshAskStats { grid-template-columns: 1fr; } }
