@@ -27,6 +27,7 @@ function cleanAsk(text) { return String(text || "").toLowerCase().replace(/[^a-z
 function isJobCommand(text) { const lower = cleanAsk(text); return /(add|new|create|book|make).{0,50}(job|work|booking|service)/.test(lower) || /lawn|mowing|cleaning|garden|handyman|painting|plumbing|electrical/.test(lower); }
 function isClientCommand(text) { const lower = cleanAsk(text); return /(add|new|create|make).{0,40}(client|customer)/.test(lower); }
 function askRoute(text) { const lower = cleanAsk(text); if (isJobCommand(text)) return "jobs"; if (isClientCommand(text)) return "clients"; if (lower.includes("unpaid") || lower.includes("overdue") || lower.includes("payment")) return "payments"; if (lower.includes("xero") || lower.includes("myob")) return "xero"; if (lower.includes("payroll")) return "payroll"; if (lower.includes("import") || lower.includes("csv")) return "imports"; if (lower.includes("command") || lower.includes("review") || lower.includes("approve") || lower.includes("follow up")) return "command"; if (lower.includes("job")) return "jobs"; return "askchurvox"; }
+function fireJobAsk(text) { window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: { text, instruction: text, source: "ask-churvox" } })); }
 
 export default function FreshShell({ active, onChange, onNavigate, children }) {
   const auth = useAuth();
@@ -52,9 +53,12 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
     const route = askRoute(text);
     try { window.localStorage.setItem(ASK_DRAFT_KEY, text); } catch {}
     if (route === "jobs") {
-      try { window.localStorage.setItem(OPEN_JOB_MODAL_KEY, JSON.stringify({ open: true, instruction: text, at: Date.now() })); } catch {}
-      if (currentPrimary === "jobs") window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: { text, instruction: text } }));
-      else go("jobs");
+      try { window.localStorage.setItem(OPEN_JOB_MODAL_KEY, JSON.stringify({ open: true, instruction: text, text, at: Date.now() })); } catch {}
+      if (currentPrimary === "jobs") fireJobAsk(text);
+      else {
+        go("jobs");
+        [120, 350, 800].forEach((delay) => window.setTimeout(() => fireJobAsk(text), delay));
+      }
       return;
     }
     if (route === "clients") {
