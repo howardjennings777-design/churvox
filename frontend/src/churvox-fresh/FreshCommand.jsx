@@ -1,6 +1,4 @@
 import React from "react";
-import FreshCommandFlow from "./FreshCommandFlow";
-import FreshLaunchChecklist from "./FreshLaunchChecklist";
 import { readFreshFocus } from "./freshFocus";
 
 const commandFilters = ["Pending", "Approved", "Edited", "Declined", "All"];
@@ -409,13 +407,13 @@ export default function FreshCommand({ onNavigate }) {
       <header className="freshHero">
         <span>Churvox fresh · Command</span>
         <h1>Command</h1>
-        <p>Small boxes show what needs your decision. Open a box, review the slip, then approve, edit or decline.</p>
+        <p>Only the work that needs your decision. Review the slip, approve it, edit it, or open the right area.</p>
       </header>
 
       <section className="freshCommandPulse">
         <aside className="freshCard">
           <h2>{pendingCount}</h2>
-          <p>Pending boxes</p>
+          <p>Needs decision</p>
         </aside>
         <aside className="freshCard">
           <h2>{doneCount}</h2>
@@ -427,10 +425,6 @@ export default function FreshCommand({ onNavigate }) {
         </aside>
       </section>
 
-
-      <FreshCommandFlow onNavigate={onNavigate} />
-
-      <FreshLaunchChecklist onNavigate={onNavigate} />
 
       <section className="freshCommandFilterBar">
         {commandFilters.map((item) => (
@@ -446,7 +440,7 @@ export default function FreshCommand({ onNavigate }) {
         ))}
       </section>
 
-      <section className="freshCommandBoard">
+      <section className="freshCommandBoard" aria-label="Command decisions">
         {visibleBoxes.map((box) => (
           <button
             type="button"
