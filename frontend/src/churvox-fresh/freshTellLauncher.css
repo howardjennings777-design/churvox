@@ -330,13 +330,62 @@
 
 .tellRules { display: grid; gap: 10px; margin-top: 16px; }
 
+.tellGuideBox {
+  margin-top: 0;
+  padding: clamp(18px, 3vw, 26px);
+  border-radius: 28px;
+}
+
+.tellGuideSteps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.tellGuideSteps div,
+.tellGuideExample {
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 23, 42, .07);
+  background: #f8fafc;
+}
+
+.tellGuideSteps b,
+.tellGuideExample b {
+  display: block;
+  margin-bottom: 7px;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.tellGuideSteps span,
+.tellGuideExample span {
+  display: block;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.tellGuideExample {
+  margin-top: 12px;
+  background: #fff7ed;
+  border-color: rgba(249, 115, 22, .18);
+}
+
+.tellGuideExample span {
+  color: #9a3412;
+  font-weight: 800;
+}
+
 @media (min-width: 901px) { .freshTellFloat { display: none; } }
 
 @media (max-width: 900px) {
   .freshGlobalAsk,
   .tellHero,
   .tellGrid,
-  .tellCommandBox { grid-template-columns: 1fr; }
+  .tellCommandBox,
+  .tellGuideSteps { grid-template-columns: 1fr; }
   .freshGlobalAsk > button,
   .tellCommandBox > button { width: 100%; }
 }
