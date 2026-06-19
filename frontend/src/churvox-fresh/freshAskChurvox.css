@@ -12,7 +12,6 @@
 .freshAskPanel header span{background:#fff7ed;color:#9a3412;-webkit-text-fill-color:#9a3412}
 .freshAskPanel h2{margin:11px 0 6px;color:#101827;-webkit-text-fill-color:#101827;font-size:32px;line-height:.95;letter-spacing:-.055em}
 .freshAskPanel p{color:#475569;-webkit-text-fill-color:#475569;font-weight:850;line-height:1.4}
-.freshAskPanel textarea{width:100%;min-height:230px;border:1px solid rgba(15,23,42,.14);border-radius:20px;background:#fff;color:#101827;-webkit-text-fill-color:#101827;padding:15px;font-size:18px;font-weight:900;line-height:1.45;resize:vertical;outline:0}
 .freshAskExamples,.freshAskButtons{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .freshAskExamples button,.freshAskButtons button{border:0;border-radius:15px;min-height:42px;padding:0 13px;font-size:12px;font-weight:1000;cursor:pointer}
 .freshAskExamples button{background:#111827;color:#fff;-webkit-text-fill-color:#fff}
@@ -22,4 +21,16 @@
 .freshAskResult section{border:1px solid rgba(15,23,42,.10);border-radius:20px;background:#fff;padding:14px}
 .freshAskResult b{display:block;color:#101827;-webkit-text-fill-color:#101827}
 .freshAskResult p{margin:5px 0 0}
-@media(max-width:1050px){.freshAskHero,.freshAskGrid{display:grid;grid-template-columns:1fr}.freshAskStats{min-width:0;grid-template-columns:1fr}.freshAskExamples,.freshAskButtons{display:grid}}
+.tellCommandBox{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:10px;border:1px solid rgba(15,23,42,.12);border-radius:28px;background:#ffffff;padding:12px;box-shadow:0 18px 48px rgba(2,6,23,.10)}
+.tellCommandBox label{display:grid;gap:7px}
+.tellCommandBox label span{font-size:11px;font-weight:1000;letter-spacing:.12em;text-transform:uppercase;color:#9a3412;-webkit-text-fill-color:#9a3412}
+.tellCommandBox input{width:100%;min-height:62px;border:1px solid rgba(15,23,42,.14);border-radius:20px;background:#fffaf0;color:#101827;-webkit-text-fill-color:#101827;padding:0 18px;font-size:22px;font-weight:950;outline:0}
+.tellCommandBox button{border:0;border-radius:20px;background:#f97316;color:#111827;-webkit-text-fill-color:#111827;font-size:15px;font-weight:1000;cursor:pointer}
+.tellQuickButtons{display:flex;flex-wrap:wrap;gap:8px}
+.tellQuickButtons button{border:1px solid rgba(15,23,42,.12);border-radius:999px;background:#fff;color:#111827;-webkit-text-fill-color:#111827;min-height:42px;padding:0 14px;font-size:12px;font-weight:1000;cursor:pointer;box-shadow:0 8px 24px rgba(2,6,23,.06)}
+.tellRules{display:grid;gap:10px;margin-top:14px}
+.tellRules div{border:1px solid rgba(15,23,42,.10);border-radius:20px;background:#fff;padding:14px}
+.tellRules b{display:block;color:#101827;-webkit-text-fill-color:#101827}
+.tellRules span{display:block;margin-top:4px;color:#475569;-webkit-text-fill-color:#475569;font-weight:850}
+.tellChurvoxPage *{text-shadow:none!important}
+@media(max-width:1050px){.freshAskHero,.freshAskGrid,.tellCommandBox{display:grid;grid-template-columns:1fr}.freshAskStats{min-width:0;grid-template-columns:1fr}.freshAskExamples,.freshAskButtons,.tellQuickButtons{display:grid}.tellCommandBox button{min-height:56px}.freshAskHero h1{font-size:40px}}
