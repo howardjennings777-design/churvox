@@ -166,10 +166,10 @@ export default function FreshJobs({ onNavigate }) {
         <aside className="freshCard freshJobsActionsCard"><h2>Owner actions</h2><div className="freshActions"><button className="freshPrimary" type="button" onClick={openBlankJob}>New job</button><button className="freshPrimary" type="button" onClick={loadJobs}>Refresh jobs</button><button className="freshGhost" type="button" onClick={() => onNavigate?.("command")}>Send issue to Command</button></div></aside>
       </section>
       {createOpen ? (
-        <div className="freshPopupBackdrop freshClientPopupBackdrop" role="dialog" aria-modal="true" aria-label="Add job" style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(15,23,42,.62)", display: "grid", placeItems: "center", padding: 16 }} onMouseDown={(event) => { if (event.target === event.currentTarget) setCreateOpen(false); }}>
-          <section className="freshCard freshClientPopupCard" style={{ width: "min(1040px, calc(100vw - 56px))", maxHeight: "90dvh", overflow: "auto", boxShadow: "0 30px 80px rgba(0,0,0,.35)" }}>
-            <header className="freshHero freshClientPopupHero" style={{ marginBottom: 12 }}><span>New job</span><h1>Add job</h1><p>{jobInstruction ? `From Ask Churvox: ${jobInstruction}` : "Add the real job here without leaving the Jobs area."}</p></header>
-            <JobCreateForm initialInstruction={jobInstruction} onCancel={() => setCreateOpen(false)} onSuccess={handleJobCreated} submitLabel="Create job" />
+        <div className="freshPopupBackdrop freshClientPopupBackdrop freshJobPopupBackdrop" role="dialog" aria-modal="true" aria-label="Add job" onMouseDown={(event) => { if (event.target === event.currentTarget) setCreateOpen(false); }}>
+          <section className="freshCard freshClientPopupCard freshJobPopupCard">
+            <header className="freshHero freshClientPopupHero freshJobPopupHero"><span>New job</span><h1>Add job</h1><p>{jobInstruction ? `From Ask Churvox: ${jobInstruction}` : "Add the real job here without leaving the Jobs area."}</p></header>
+            <div className="freshJobPopupBody"><JobCreateForm initialInstruction={jobInstruction} onCancel={() => setCreateOpen(false)} onSuccess={handleJobCreated} submitLabel="Create job" /></div>
           </section>
         </div>
       ) : null}
