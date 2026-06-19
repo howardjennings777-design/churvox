@@ -5,6 +5,8 @@ import API_BASE from "../lib/apiBase";
 const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
 const OPEN_CLIENT_MODAL_KEY = "churvox:fresh-open-client-modal:v1";
 const OPEN_JOB_MODAL_KEY = "churvox:fresh-open-job-modal:v1";
+const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
+const ASK_DRAFT_KEY = "churvox:tell-command-draft:v1";
 
 const groups = [
   { title: "Today", items: [["smart", "TD", "Today"], ["askchurvox", "AI", "Tell Churvox"], ["command", "CM", "Command"]] },
@@ -88,6 +90,9 @@ function cleanGroups(sourceGroups, guideComplete = false) { const seen = new Set
 function buildLabels() { const entries = [...groups.flatMap((group) => group.items), ...Object.values(relatedTools).flat()]; const nextLabels = Object.fromEntries(entries.map(([key, , label]) => [key, label])); nextLabels.askchurvox = "Tell Churvox"; nextLabels.quickcreateai = "Quick Create"; nextLabels.command = "Command"; nextLabels.smart = "Today"; nextLabels.dispatch = "Schedule"; nextLabels.workercommand = "Worker View"; nextLabels.time = "Time Sheets"; nextLabels.payments = "Payments"; nextLabels.imports = "Imports"; nextLabels.exports = "Exports"; nextLabels.launchcontrol = "Launch"; nextLabels.photos = "Photos"; nextLabels.documents = "Documents"; nextLabels.setupassistant = "AI Guide"; nextLabels.security = "Security"; return nextLabels; }
 function buildParentMap() { const map = {}; Object.entries(relatedTools).forEach(([parent, items]) => { items.forEach(([key]) => { if (!map[key]) map[key] = parent; }); }); groups.forEach((group) => group.items.forEach(([key]) => { map[key] = key; })); map.routes = "dispatch"; map.areas = "dispatch"; map.schedulerai = "dispatch"; map.gps = "time"; map.portal = "clients"; map.followupwriter = "clients"; map.reviewbooster = "clients"; return map; }
 function resetFreshScrollTop() { const top = () => { try { window.scrollTo({ top: 0, left: 0, behavior: "auto" }); } catch { try { window.scrollTo(0, 0); } catch {} } try { document.documentElement.scrollTop = 0; } catch {} try { document.body.scrollTop = 0; } catch {} try { document.scrollingElement.scrollTop = 0; } catch {} [".freshMain", ".freshPageMount", ".freshApp", "main"].forEach((selector) => { try { document.querySelectorAll(selector).forEach((el) => { if (el && typeof el.scrollTo === "function") el.scrollTo({ top: 0, left: 0, behavior: "auto" }); if (el) el.scrollTop = 0; }); } catch {} }); }; top(); window.requestAnimationFrame(top); window.setTimeout(top, 80); }
+function normaliseAsk(text) { return String(text || "").toLowerCase().replace(/[^a-z0-9$@.\s-]/g, " ").replace(/\s+/g, " ").trim(); }
+function askResult(text) { const lower = normaliseAsk(text); if (!lower) return { button: "Ask Churvox", page: "askchurvox", mode: "idle" }; if (lower.includes("follow up") || lower.includes("remind") || lower.includes("chase")) return { button: "Send to Command", page: "command", mode: "command" }; if (lower.includes("add client") || lower.includes("new client") || lower.includes("create client")) return { button: "Open Add Client", page: "clients", mode: "client" }; if (lower.includes("new job") || lower.includes("add job") || lower.includes("create job")) return { button: "Open New Job", page: "jobs", mode: "job" }; if (lower.includes("unpaid") || lower.includes("overdue") || lower.includes("payment")) return { button: "Open Payments", page: "payments", mode: "navigate" }; if (lower.includes("xero") || lower.includes("myob")) return { button: "Open Xero", page: "xero", mode: "navigate" }; if (lower.includes("payroll")) return { button: "Open Payroll", page: "payroll", mode: "navigate" }; if (lower.includes("import") || lower.includes("csv")) return { button: "Open Imports", page: "imports", mode: "navigate" }; if (lower.includes("command") || lower.includes("review") || lower.includes("approve")) return { button: "Open Command", page: "command", mode: "navigate" }; if (lower.includes("job")) return { button: "Open Jobs", page: "jobs", mode: "navigate" }; return { button: "Open Quick Create", page: "quickcreateai", mode: "navigate" }; }
+function saveAskSlip(text) { try { const saved = window.localStorage.getItem(COMMAND_INBOX_KEY); const current = saved ? JSON.parse(saved) : []; const safeCurrent = Array.isArray(current) ? current : []; const slip = { id: `global-ask-${Date.now()}`, group: "Ask Churvox", title: "Owner review", info: "Needs approval", urgency: "Medium", found: `You asked: ${text}`, prepared: "Churvox prepared this for Command approval.", why: "Important work should be approved before it affects customers, money, records or accounting.", owner: "Approve, edit, open area, or ignore.", area: "Command", page: "command", originalText: text, fromInbox: true, createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }; window.localStorage.setItem(COMMAND_INBOX_KEY, JSON.stringify([slip, ...safeCurrent].slice(0, 70))); window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "global-ask-command" } })); } catch {} }
 
 const labels = buildLabels();
 const parentByKey = buildParentMap();
@@ -99,6 +104,7 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
   const [verifySending, setVerifySending] = React.useState(false);
   const [verifySent, setVerifySent] = React.useState(false);
   const [guideComplete, setGuideComplete] = React.useState(guideIsComplete);
+  const [globalAsk, setGlobalAsk] = React.useState("");
 
   React.useEffect(() => { const refreshGuide = () => setGuideComplete(guideIsComplete()); window.addEventListener("storage", refreshGuide); window.addEventListener("churvox:ai-guide-status", refreshGuide); window.addEventListener("churvox:fresh-data-updated", refreshGuide); return () => { window.removeEventListener("storage", refreshGuide); window.removeEventListener("churvox:ai-guide-status", refreshGuide); window.removeEventListener("churvox:fresh-data-updated", refreshGuide); }; }, []);
   React.useEffect(() => { resetFreshScrollTop(); }, [active]);
@@ -110,12 +116,14 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
   const emailNeedsVerification = auth?.user && auth.user.email_verified === false;
   const currentLabel = labels[active] || labels[currentPrimary] || "Churvox";
   const currentPurpose = purpose[active] || purpose[currentPrimary] || purpose.default;
+  const globalAskAction = askResult(globalAsk);
 
   async function handleLogout() { try { if (auth?.logout) await auth.logout(); } finally { try { window.localStorage.removeItem("token"); window.localStorage.removeItem("owner_portal_session"); window.localStorage.removeItem("platform_owner_email"); } catch {} window.location.href = "/login"; } }
   function go(key) { if (key === "more") return; if (guideComplete && key === "setupassistant") return; setMoreOpen(false); resetFreshScrollTop(); navigate(key); }
   function openTellChurvox() { go("askchurvox"); }
   function openRealCreate(path) { if (String(path || "").startsWith("/jobs/new")) { try { window.localStorage.setItem(OPEN_JOB_MODAL_KEY, "true"); } catch {} window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: { search: "" } })); return; } window.location.href = path; }
   function openClientPopup() { try { window.localStorage.setItem(OPEN_CLIENT_MODAL_KEY, "true"); } catch {} setMoreOpen(false); resetFreshScrollTop(); navigate("clients"); window.dispatchEvent(new CustomEvent("churvox:open-client-popup")); }
+  function submitGlobalAsk(event) { event?.preventDefault?.(); const text = globalAsk.trim(); if (!text) return openTellChurvox(); try { window.localStorage.setItem(ASK_DRAFT_KEY, text); } catch {} if (globalAskAction.mode === "command") { saveAskSlip(text); go("command"); return; } if (globalAskAction.mode === "client") { try { window.localStorage.setItem(OPEN_CLIENT_MODAL_KEY, "true"); } catch {} go("clients"); window.setTimeout(() => window.dispatchEvent(new CustomEvent("churvox:open-client-popup", { detail: { text } })), 80); return; } if (globalAskAction.mode === "job") { try { window.localStorage.setItem(OPEN_JOB_MODAL_KEY, JSON.stringify({ open: true, instruction: text, at: Date.now() })); } catch {} go("jobs"); window.setTimeout(() => window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: { text } })), 80); return; } go(globalAskAction.page || "askchurvox"); }
   async function resendVerification() { setVerifySending(true); try { const token = window.localStorage.getItem("token") || ""; await fetch(`${API_BASE}/api/auth/resend-verification`, { method: "POST", credentials: "include", headers: { Accept: "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) } }); setVerifySent(true); } catch { setVerifySent(false); } finally { setVerifySending(false); } }
   function handleMobile(key) { if (key === "more") { setMoreOpen((value) => !value); return; } go(key); }
 
@@ -139,6 +147,11 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
             <button className="freshLogoutTop" type="button" onClick={handleLogout}>Log out</button>
           </div>
         </div>
+
+        <form className="freshGlobalAsk" onSubmit={submitGlobalAsk}>
+          <label><span>What do you want to do?</span><input value={globalAsk} onChange={(event) => setGlobalAsk(event.target.value)} placeholder="open jobs, add client, show unpaid invoices…" /></label>
+          <button type="submit">{globalAskAction.button}</button>
+        </form>
 
         {emailNeedsVerification && <section className="freshCard freshItem need" style={{ marginBottom: 14 }}><b>Verify your email to keep your Churvox account secure</b><span>We have sent a verification link to {auth.user.email}. You can keep setting up, but please verify before sending customer emails.</span><div className="freshActions" style={{ maxWidth: 280 }}><button className="freshPrimary" type="button" onClick={resendVerification} disabled={verifySending}>{verifySending ? "Sending…" : verifySent ? "Verification sent" : "Resend verification email"}</button></div></section>}
         <div className="freshPageScroll">{children}</div>
