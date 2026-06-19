@@ -92,6 +92,7 @@ export default function FreshJobs({ onNavigate }) {
   const [error, setError] = React.useState("");
   const [createOpen, setCreateOpen] = React.useState(false);
   const [jobInstruction, setJobInstruction] = React.useState("");
+  const openGuardRef = React.useRef(0);
 
   const visibleJobs = filter === "All" ? jobs : jobs.filter((job) => job.status === filter);
   const selected = jobs.find((job) => job.id === selectedId) || visibleJobs[0] || jobs[0];
@@ -116,17 +117,22 @@ export default function FreshJobs({ onNavigate }) {
   }, [loadJobs]);
 
   React.useEffect(() => {
+    let timer = 0;
     function openJobPopup(event) {
-      setJobInstruction(readJobInstruction(event?.detail));
-      setCreateOpen(true);
+      const now = Date.now();
+      if (now - openGuardRef.current < 700) return;
+      openGuardRef.current = now;
+      const nextInstruction = readJobInstruction(event?.detail);
       try { window.localStorage.removeItem(OPEN_JOB_MODAL_KEY); } catch {}
+      setJobInstruction(nextInstruction);
+      setCreateOpen(true);
     }
     window.addEventListener("churvox:open-job-popup", openJobPopup);
     try {
       const saved = window.localStorage.getItem(OPEN_JOB_MODAL_KEY);
-      if (saved) window.setTimeout(() => openJobPopup({ detail: null }), 80);
+      if (saved) timer = window.setTimeout(() => openJobPopup({ detail: null }), 80);
     } catch {}
-    return () => window.removeEventListener("churvox:open-job-popup", openJobPopup);
+    return () => { window.removeEventListener("churvox:open-job-popup", openJobPopup); window.clearTimeout(timer); };
   }, []);
 
   React.useEffect(() => {
