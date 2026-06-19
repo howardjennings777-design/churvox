@@ -1,6 +1,4 @@
-.freshTellSide {
-  display: none !important;
-}
+.freshTellSide { display: none !important; }
 
 .freshTellTop {
   min-height: 40px;
@@ -29,20 +27,102 @@
   box-shadow: 0 16px 38px rgba(2, 6, 23, .22);
 }
 
+.freshGlobalAsk,
+.tellCommandBox {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  padding: 14px;
+  border: 1px solid rgba(15, 23, 42, .08);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, .08);
+}
+
+.freshGlobalAsk {
+  position: sticky;
+  top: 76px;
+  z-index: 3150;
+  margin: 0 0 14px;
+  backdrop-filter: blur(16px);
+}
+
+.freshGlobalAsk label,
+.tellCommandBox label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.freshGlobalAsk label span,
+.tellCommandBox label span {
+  color: #475569;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.freshGlobalAsk input,
+.tellCommandBox input {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid rgba(15, 23, 42, .12);
+  border-radius: 16px;
+  padding: 0 16px;
+  color: #111827;
+  background: #fff;
+  font-size: 15px;
+  font-weight: 850;
+  outline: none;
+}
+
+.freshGlobalAsk input:focus,
+.tellCommandBox input:focus {
+  border-color: rgba(249, 115, 22, .7);
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, .12);
+}
+
+.freshGlobalAsk button,
+.tellCommandBox > button,
+.freshAskButtons button,
+.tellExamples button {
+  border: 0;
+  cursor: pointer;
+  font-weight: 950;
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+
+.freshGlobalAsk button:hover,
+.tellCommandBox button:hover,
+.freshAskButtons button:hover,
+.tellExamples button:hover { transform: translateY(-1px); }
+
+.freshGlobalAsk > button,
+.tellCommandBox > button {
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: 16px;
+  color: #111827;
+  background: linear-gradient(135deg, #f97316, #fbbf24);
+  box-shadow: 0 12px 25px rgba(249, 115, 22, .22);
+  white-space: nowrap;
+}
+
 .tellChurvoxPage {
   width: 100%;
   max-width: none;
   margin: 0;
-  padding: clamp(14px, 2vw, 24px);
+  padding: 0;
   color: #111827;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 14px;
 }
 
-.tellChurvoxPage * {
-  box-sizing: border-box;
-}
+.tellChurvoxPage * { box-sizing: border-box; }
 
 .tellHero {
   display: grid;
@@ -50,7 +130,7 @@
   gap: 18px;
   align-items: stretch;
   padding: clamp(20px, 3vw, 30px);
-  border-radius: 30px;
+  border-radius: 24px;
   background:
     radial-gradient(circle at 88% 18%, rgba(249, 115, 22, .32), transparent 34%),
     linear-gradient(135deg, #111827 0%, #1f2937 55%, #7c2d12 100%);
@@ -59,9 +139,7 @@
   overflow: hidden;
 }
 
-.tellHero > div:first-child {
-  min-width: 0;
-}
+.tellHero > div:first-child { min-width: 0; }
 
 .tellHero span,
 .freshAskPanel header span {
@@ -133,131 +211,49 @@
   letter-spacing: .07em;
 }
 
-.tellCommandBox {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
-  align-items: end;
-  padding: 16px;
-  border: 1px solid rgba(15, 23, 42, .08);
-  border-radius: 24px;
-  background: rgba(255, 255, 255, .92);
-  box-shadow: 0 18px 40px rgba(15, 23, 42, .08);
-}
-
-.tellCommandBoxTop {
-  position: sticky;
-  top: 78px;
-  z-index: 3100;
-  background: rgba(255, 255, 255, .96);
-  backdrop-filter: blur(16px);
-  box-shadow: 0 18px 42px rgba(15, 23, 42, .14);
-}
-
-.tellCommandBox label {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
-.tellCommandBox label span {
-  color: #475569;
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-}
-
-.tellCommandBox input {
-  width: 100%;
-  min-height: 54px;
-  border: 1px solid rgba(15, 23, 42, .12);
-  border-radius: 18px;
-  padding: 0 16px;
-  color: #111827;
-  background: #fff;
-  font-size: 16px;
-  font-weight: 800;
-  outline: none;
-}
-
-.tellCommandBox input:focus {
-  border-color: rgba(249, 115, 22, .7);
-  box-shadow: 0 0 0 4px rgba(249, 115, 22, .12);
-}
-
-.tellCommandBox button,
-.freshAskButtons button,
-.tellExamples button {
-  border: 0;
-  cursor: pointer;
-  font-weight: 900;
-  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
-}
-
-.tellCommandBox button:hover,
-.freshAskButtons button:hover,
-.tellExamples button:hover {
-  transform: translateY(-1px);
-}
-
-.tellCommandBox > button {
-  min-height: 54px;
-  padding: 0 22px;
-  border-radius: 18px;
-  color: #111827;
-  background: linear-gradient(135deg, #f97316, #fbbf24);
-  box-shadow: 0 12px 25px rgba(249, 115, 22, .22);
-  white-space: nowrap;
-}
-
 .tellGrid {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr);
-  gap: 18px;
+  gap: 14px;
   align-items: start;
 }
 
 .freshAskPanel {
   min-width: 0;
-  padding: 22px;
+  padding: 18px;
   border: 1px solid rgba(15, 23, 42, .08);
-  border-radius: 28px;
+  border-radius: 24px;
   background: rgba(255, 255, 255, .94);
   box-shadow: 0 18px 40px rgba(15, 23, 42, .07);
 }
 
-.freshAskPanel header {
-  display: block;
-  margin-bottom: 16px;
-}
+.freshAskPanel header { display: block; margin-bottom: 14px; }
 
 .freshAskPanel header h2 {
   margin: 10px 0 8px;
   color: #111827;
-  font-size: 24px;
+  font-size: 22px;
   letter-spacing: -.035em;
 }
 
-.freshAskPanel header p {
+.freshAskPanel header p,
+.freshAskResult p,
+.tellRules span,
+.freshCard.freshItem span {
   margin: 0;
   color: #64748b;
   line-height: 1.55;
 }
 
-.freshAskResult {
-  display: grid;
-  gap: 12px;
-}
+.freshAskResult { display: grid; gap: 10px; }
 
 .freshAskResult section,
 .tellRules div,
 .freshCard.freshItem {
   display: block;
-  padding: 14px;
+  padding: 12px;
   border: 1px solid rgba(15, 23, 42, .07);
-  border-radius: 18px;
+  border-radius: 16px;
   background: #f8fafc;
 }
 
@@ -271,15 +267,6 @@
   font-weight: 950;
 }
 
-.freshAskResult p,
-.tellRules span,
-.freshCard.freshItem span {
-  display: block;
-  margin: 0;
-  color: #64748b;
-  line-height: 1.55;
-}
-
 .freshAskButtons {
   display: flex;
   flex-wrap: wrap;
@@ -287,19 +274,17 @@
   margin-top: 16px;
 }
 
-.freshAskButtons button {
-  min-height: 42px;
+.freshAskButtons button,
+.tellExamples button {
+  min-height: 40px;
   padding: 0 14px;
-  border-radius: 999px;
+  border-radius: 14px;
   color: #111827;
   background: #f1f5f9;
 }
 
 .freshAskButtons button:first-child,
-.freshAskButtons button:nth-child(2) {
-  background: #111827;
-  color: #fff;
-}
+.freshAskButtons button:nth-child(2) { background: #111827; color: #fff; }
 
 .tellExamples {
   display: grid;
@@ -309,45 +294,28 @@
 
 .tellExamples button {
   justify-content: center;
-  border-radius: 16px;
   white-space: normal;
   text-align: left;
-  min-height: 42px;
-  padding: 0 14px;
   border: 1px solid rgba(15, 23, 42, .09);
-  color: #111827;
   background: #fff;
   box-shadow: 0 8px 18px rgba(15, 23, 42, .05);
 }
 
-.tellRules {
-  display: grid;
-  gap: 10px;
-  margin-top: 16px;
-}
+.tellRules { display: grid; gap: 10px; margin-top: 16px; }
 
-@media (min-width: 901px) {
-  .freshTellFloat { display: none; }
-}
+@media (min-width: 901px) { .freshTellFloat { display: none; } }
 
 @media (max-width: 900px) {
+  .freshGlobalAsk,
   .tellHero,
   .tellGrid,
-  .tellCommandBox {
-    grid-template-columns: 1fr;
-  }
-
-  .tellCommandBoxTop {
-    top: 92px;
-  }
-
-  .tellCommandBox > button {
-    width: 100%;
-  }
+  .tellCommandBox { grid-template-columns: 1fr; }
+  .freshGlobalAsk { top: 92px; }
+  .freshGlobalAsk > button,
+  .tellCommandBox > button { width: 100%; }
 }
 
 @media (max-width: 720px) {
   .freshTellTop { display: none; }
-  .tellChurvoxPage { padding: 14px; }
   .freshAskStats { grid-template-columns: 1fr; }
 }
