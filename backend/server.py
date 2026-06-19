@@ -2302,6 +2302,160 @@ async def start_job(job_id: str, request: Request, current_user: dict = Depends(
         raise HTTPException(status_code=404, detail="Job not found or cannot be started")
     job = await db.jobs.find_one({"business_id": str(business_id), "_id": ObjectId(job_id)})
     return normalize_job_status_for_response(serialize_doc(job))
+
+def _as_object_id(value):
+    if isinstance(value, ObjectId):
+        return value
+    try:
+        return ObjectId(str(value))
+    except Exception:
+        return None
+
+
+def _money_number(value, default=0):
+    try:
+        return float(value or 0)
+    except Exception:
+        return float(default or 0)
+
+
+def _extras_total(items):
+    total = 0.0
+    if not isinstance(items, list):
+        return 0.0
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        total += _money_number(
+            item.get("amount")
+            or item.get("price")
+            or item.get("total")
+            or item.get("cost")
+            or 0
+        )
+    return round(total, 2)
+
+
+async def create_draft_invoice_for_completed_job(job: dict, completed_total_seconds: int = 0):
+    """Create one owner-review draft invoice when a job is completed. Never sends it."""
+    if not job or not job.get("_id"):
+        return None
+
+    job_id = job["_id"]
+
+    existing = await db.invoices.find_one({
+        "job_id": job_id,
+        "status": {"$ne": "void"},
+    })
+    if existing:
+        return existing
+
+    contractor_id = _as_object_id(job.get("contractor_id") or job.get("business_id"))
+    if not contractor_id:
+        return None
+
+    business_id = str(job.get("business_id") or contractor_id)
+
+    client = None
+    client_id = _as_object_id(job.get("client_id"))
+    if client_id:
+        client = await db.clients.find_one({"_id": client_id})
+
+    business_doc = await db.users.find_one({"_id": contractor_id})
+    gst_rate = (business_doc or {}).get("gst_rate", DEFAULT_GST_RATE)
+
+    pricing_type = str(job.get("pricing_type") or "fixed").lower()
+    seconds_worked = int(completed_total_seconds or job.get("total_time_seconds") or 0)
+    hours_worked = seconds_worked / 3600 if seconds_worked else 0
+
+    fixed_price = _money_number(
+        job.get("price")
+        or job.get("fixed_price")
+        or job.get("subtotal")
+        or job.get("total")
+        or 0
+    )
+    hourly_rate = _money_number(job.get("hourly_rate") or 0)
+
+    if "hourly" in pricing_type and hourly_rate > 0:
+        subtotal = round(hours_worked * hourly_rate, 2)
+        if subtotal <= 0 and fixed_price > 0:
+            subtotal = fixed_price
+    else:
+        subtotal = fixed_price
+
+    subtotal = round(subtotal + _extras_total(job.get("extras") or []), 2)
+    gst_amount = round(subtotal * (_money_number(gst_rate) / 100), 2)
+    total = round(subtotal + gst_amount, 2)
+
+    title = (
+        job.get("title")
+        or job.get("job_name")
+        or job.get("job_title")
+        or str(job.get("job_type") or "Completed job").replace("_", " ").title()
+    )
+
+    customer_name = (
+        job.get("customer_name")
+        or job.get("client_name")
+        or (client or {}).get("name")
+        or "Customer"
+    )
+    customer_email = (
+        job.get("customer_email")
+        or (client or {}).get("email")
+        or ""
+    )
+    address = (
+        job.get("address")
+        or job.get("site_address")
+        or (client or {}).get("address")
+        or ""
+    )
+
+    invoice_doc = {
+        "job_id": job_id,
+        "client_id": client_id,
+        "contractor_id": contractor_id,
+        "business_id": business_id,
+        "customer_name": customer_name,
+        "customer_email": customer_email,
+        "address": address,
+        "description": title,
+        "notes": "Auto-created as draft when worker completed the job. Owner must review before sending.",
+        "subtotal": subtotal,
+        "gst_rate": gst_rate,
+        "gst_amount": gst_amount,
+        "total": total,
+        "status": InvoiceStatus.DRAFT,
+        "invoice_number": f"INV-{datetime.now().strftime('%Y%m%d')}-{secrets.token_hex(3).upper()}",
+        "public_token": secrets.token_urlsafe(24),
+        "myob_sync_status": MyobSyncStatus.NOT_SYNCED,
+        "myob_id": None,
+        "myob_last_sync": None,
+        "myob_error": None,
+        "source": "completed_job_auto_draft",
+        "owner_approval_required": True,
+        "created_at": datetime.now(timezone.utc),
+    }
+
+    result = await db.invoices.insert_one(invoice_doc)
+    invoice_doc["_id"] = result.inserted_id
+
+    await db.jobs.update_one(
+        {"_id": job_id},
+        {"$set": {
+            "invoice_id": result.inserted_id,
+            "invoice_status": InvoiceStatus.DRAFT,
+            "invoice_ready": True,
+            "invoice_generated_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+        }}
+    )
+
+    return invoice_doc
+
+
 @api_router.post("/jobs/{job_id}/complete")
 async def complete_job(job_id: str, request: Request, user = Depends(get_current_user)):
     try:
@@ -2340,6 +2494,14 @@ async def complete_job(job_id: str, request: Request, user = Depends(get_current
         updated_job = await db.jobs.find_one({"_id": job["_id"]})
         next_recurring_job = await create_next_recurring_job_if_needed(updated_job)
 
+        invoice = None
+        invoice_error = ""
+        try:
+            invoice = await create_draft_invoice_for_completed_job(updated_job, new_total)
+        except Exception as invoice_exc:
+            invoice_error = str(invoice_exc)
+            logger.warning(f"Auto draft invoice failed for completed job {job_id}: {invoice_error}")
+
         return {
             "success": True,
             "message": "Job completed successfully",
@@ -2349,6 +2511,11 @@ async def complete_job(job_id: str, request: Request, user = Depends(get_current
             "timer_running": False,
             "total_time_seconds": new_total,
             "completed_at": now.isoformat(),
+            "invoice_created": bool(invoice),
+            "invoice_id": str(invoice["_id"]) if invoice and invoice.get("_id") else None,
+            "invoice_number": invoice.get("invoice_number") if invoice else None,
+            "invoice_status": invoice.get("status") if invoice else None,
+            "invoice_error": invoice_error,
             "next_recurring_job_id": str(next_recurring_job["_id"]) if next_recurring_job else None
         }
 
