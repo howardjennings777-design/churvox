@@ -213,7 +213,7 @@
 
 /* CHURVOX_CLEAN_TOP_STRIP_20260617 */
 .freshTopbar--clean {
-  grid-template-columns: minmax(180px, 260px) minmax(280px, 1fr) auto !important;
+  grid-template-columns: minmax(180px, 1fr) auto !important;
   min-height: 62px !important;
   padding: 8px 10px !important;
   gap: 12px !important;
@@ -221,25 +221,33 @@
   background: rgba(255, 250, 240, 0.96) !important;
 }
 
+.freshTopbar--askSticky {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 3200 !important;
+  backdrop-filter: blur(16px) !important;
+}
+
 .freshTopbar--clean .freshTopbarTitle {
   min-width: 0 !important;
 }
 
 .freshTopbar--clean .freshTopbarTitle small {
-  max-width: 240px !important;
+  max-width: 520px !important;
   color: #64748b !important;
   font-weight: 750 !important;
 }
 
 .freshTopbar--clean .freshSearch {
-  min-height: 42px !important;
-  max-width: none !important;
+  display: none !important;
 }
 
 .freshTopActions--clean {
+  grid-column: 2 !important;
   max-width: none !important;
   overflow: visible !important;
   flex-wrap: nowrap !important;
+  justify-content: flex-end !important;
 }
 
 .freshTopActions--clean button {
@@ -248,9 +256,11 @@
   border-radius: 14px !important;
 }
 
+.freshTopActions--clean .freshTellTop,
 .freshTopActions--clean button:nth-child(1) {
   background: #f97316 !important;
   color: #111827 !important;
+  box-shadow: 0 10px 22px rgba(249, 115, 22, .22) !important;
 }
 
 .freshTopActions--clean button:nth-child(2),
@@ -267,15 +277,11 @@
 
 @media (max-width: 1200px) {
   .freshTopbar--clean {
-    grid-template-columns: minmax(160px, 220px) 1fr auto !important;
-  }
-
-  .freshTopbar--clean .freshSearch {
-    grid-column: auto !important;
+    grid-template-columns: minmax(160px, 1fr) auto !important;
   }
 
   .freshTopActions--clean {
-    grid-column: auto !important;
+    grid-column: 2 !important;
     justify-content: flex-end !important;
   }
 }
@@ -292,6 +298,7 @@
   }
 
   .freshTopActions--clean {
+    grid-column: 1 !important;
     justify-content: flex-start !important;
     overflow-x: auto !important;
     padding-bottom: 2px !important;
