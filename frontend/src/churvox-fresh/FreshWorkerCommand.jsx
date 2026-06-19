@@ -44,6 +44,23 @@ function lastLocation(worker) { return gpsLabel(worker) || gpsCoords(worker) || 
 function actionText(job) { const status = statusOf(job); if (!isAcknowledged(job)) return "Acknowledge"; if (["assigned", "scheduled", "acknowledged"].includes(status)) return "Start job"; if (["in_progress", "started"].includes(status)) return "Pause / complete"; if (status === "paused") return "Resume job"; if (isComplete(job)) return "Completed"; return "Open job"; }
 function proofText(job) { const hasPhotos = Boolean(pick(job, "photos", "photo_urls", "proof_photos")); const hasNotes = Boolean(pick(job, "worker_notes", "completion_notes", "notes")); if (isComplete(job) && hasPhotos) return "Photo proof added"; if (isComplete(job)) return "Complete — photo check"; if (hasNotes) return "Notes added"; return "No proof yet"; }
 
+function photosForJob(job) {
+  const raw = job?.photos || job?.photo_urls || job?.proof_photos || job?.completion_photos || job?.images || [];
+  const list = Array.isArray(raw) ? raw : raw ? [raw] : [];
+  return list
+    .map((photo) => {
+      if (typeof photo === "string") return photo;
+      return pick(photo, "url", "src", "secure_url", "download_url", "thumbnail", "thumb");
+    })
+    .filter(Boolean);
+}
+
+function photoProofsFromJobs(jobs) {
+  return (jobs || [])
+    .flatMap((job) => photosForJob(job).map((url) => ({ url, job })))
+    .slice(0, 6);
+}
+
 function identityTokens(...values) {
   const out = new Set();
   const add = (value) => {
@@ -166,46 +183,103 @@ export default function FreshWorkerCommand({ onNavigate }) {
   React.useEffect(() => { const refresh = () => load({ silent: true }); window.addEventListener("churvox:fresh-data-updated", refresh); return () => window.removeEventListener("churvox:fresh-data-updated", refresh); }, [load]);
   React.useEffect(() => { if (!autoRefresh) return undefined; const refreshLiveWorkerView = () => { if (typeof document !== "undefined" && document.visibilityState !== "visible") return; load({ silent: true }); }; const timer = window.setInterval(refreshLiveWorkerView, 8000); window.addEventListener("focus", refreshLiveWorkerView); return () => { window.clearInterval(timer); window.removeEventListener("focus", refreshLiveWorkerView); }; }, [autoRefresh, load]);
 
-  return <section className="freshWorkerCommandPage workerFieldDeck freshWorkerAppView">
-    <header className="freshWorkerAppHero">
-      <div><span>Worker app</span><h1>My Day</h1><p>{selected ? `${workerName(selected)} · ${selectedLiveStatus}` : "Job-first field view for workers."}</p></div>
-      <div className="freshWorkerAppSummary"><div><b>{view?.todayJobs?.length || 0}</b><small>today</small></div><div><b>{view?.remainingToday || 0}</b><small>left</small></div><div><b>{liveCount}</b><small>live</small></div></div>
-    </header>
+  const photoProofs = view ? photoProofsFromJobs(view.assignedJobs) : [];
+  const importantJobs = view
+    ? (view.currentJob
+      ? [view.currentJob, ...view.todayJobs.filter((job) => idOf(job) !== idOf(view.currentJob))]
+      : view.todayJobs.length
+        ? view.todayJobs
+        : view.assignedJobs.filter((job) => !isComplete(job))).slice(0, 3)
+    : [];
+  const recentCompleted = view ? view.assignedJobs.filter(isComplete).slice(0, 3) : [];
 
-    <nav className="freshWorkerAppTabs" aria-label="Worker app sections"><button className="active" type="button">Today</button><button type="button">Jobs</button><button type="button" onClick={() => onNavigate?.("messages")}>Messages</button><button type="button">More</button></nav>
+  return <section className="freshWorkerCommandPage workerFieldDeck freshWorkerAppView freshWorkerSimpleView">
+    <header className="freshWorkerAppHero">
+      <div>
+        <span>Owner worker view</span>
+        <h1>Workers</h1>
+        <p>{selected ? `${workerName(selected)} · ${selectedLiveStatus}` : "Pick a worker on the left. See the important field info on the right."}</p>
+      </div>
+      <div className="freshWorkerAppSummary">
+        <div><b>{workers.length}</b><small>workers</small></div>
+        <div><b>{liveCount}</b><small>live</small></div>
+        <div><b>{todayCount}</b><small>jobs today</small></div>
+      </div>
+    </header>
 
     {error ? <section className="freshCard freshItem need"><b>Worker view needs attention</b><span>{error}</span><button className="freshPrimary" type="button" onClick={load}>Retry</button></section> : null}
 
-    <section className="freshWorkerAppLayout">
-      <aside className="freshWorkerAppPeople">
-        <div className="freshWorkerAppPeopleHead"><b>Workers</b><button type="button" onClick={() => load({ silent: true })}>{refreshing ? "Updating" : "Refresh"}</button></div>
-        {loading && !workers.length ? <div className="freshItem"><b>Loading workers…</b><span>Checking today’s jobs.</span></div> : null}
+    <section className="freshWorkerSimpleLayout">
+      <aside className="freshWorkerAppPeople freshWorkerSimplePeople">
+        <div className="freshWorkerAppPeopleHead">
+          <b>Workers</b>
+          <button type="button" onClick={() => load({ silent: true })}>{refreshing ? "Updating" : "Refresh"}</button>
+        </div>
+
+        {loading && !workers.length ? <div className="freshItem"><b>Loading workers…</b><span>Checking live status.</span></div> : null}
         {!loading && !workers.length ? <div className="freshItem"><b>No workers yet</b><span>Add workers from Team.</span></div> : null}
-        {workers.map((worker) => { const itemView = buildWorkerView(worker, jobs); const active = idOf(worker) === idOf(selected); return <button key={idOf(worker)} type="button" className={active ? "active" : ""} onClick={() => setSelectedId(idOf(worker))}><span>{liveStatusFor(worker, itemView)}</span><b>{workerName(worker)}</b><small>{itemView.remainingToday} left · {itemView.completedToday} done</small></button>; })}
+
+        {workers.map((worker) => {
+          const itemView = buildWorkerView(worker, jobs);
+          const active = idOf(worker) === idOf(selected);
+          const current = directCurrentJob(worker, itemView);
+          return <button key={idOf(worker)} type="button" className={active ? "active" : ""} onClick={() => setSelectedId(idOf(worker))}>
+            <span>{liveStatusFor(worker, itemView)}</span>
+            <b>{workerName(worker)}</b>
+            <small>{current.title ? `On: ${current.title}` : `${itemView.remainingToday} left · ${itemView.completedToday} done`}</small>
+          </button>;
+        })}
       </aside>
 
-      <main className="freshWorkerAppMain">
+      <main className="freshWorkerAppMain freshWorkerSimpleMain">
         {selected && view ? <>
-          <section className="freshWorkerAppNext">
-            <div><span>Next job</span><h2>{view.currentJob ? jobTitle(view.currentJob) : "No active job"}</h2><p>{view.currentJob ? `${clientName(view.currentJob)} · ${jobAddress(view.currentJob)}` : "Nothing is started right now."}</p><small>{lastLocation(selected)}</small></div>
+          <section className="freshWorkerAppNext freshWorkerSimpleNow">
+            <div>
+              <span>{selectedLiveStatus}</span>
+              <h2>{workerName(selected)}</h2>
+              <p>{view.currentJob ? `${jobTitle(view.currentJob)} · ${clientName(view.currentJob)}` : "No active job right now."}</p>
+              <small>Last location: {lastLocation(selected)}</small>
+              <small>Last update: {selectedLatestUpdate ? selectedLatestUpdate : "No update yet"}</small>
+            </div>
             <button type="button" onClick={() => onNavigate?.("jobs")}>{view.currentJob ? actionText(view.currentJob) : "Open jobs"}</button>
           </section>
 
-          <section className="freshWorkerAppStats">
-            <article><span>Shift</span><b>{hoursText(view.shiftSeconds)}</b></article>
-            <article><span>Job time</span><b>{hoursText(view.currentJobSeconds || view.jobTimeSeconds)}</b></article>
-            <article><span>Done</span><b>{view.completedToday}/{view.todayJobs.length}</b></article>
-          </section>
+          <section className="freshWorkerSimpleGrid">
+            <article className="freshWorkerAppPanel">
+              <h2>Important jobs</h2>
+              <div className="freshWorkerAppJobs">
+                {importantJobs.length
+                  ? importantJobs.map((job, index) => <WorkerJobCard key={idOf(job, index)} job={job} compact />)
+                  : <div className="freshItem"><b>No active job</b><span>No urgent job for this worker right now.</span></div>}
+              </div>
+            </article>
 
-          <section className="freshWorkerAppGrid">
-            <article className="freshWorkerAppPanel"><h2>Today’s jobs</h2><div className="freshWorkerAppJobs">{view.todayJobs.length ? view.todayJobs.map((job, index) => <WorkerJobCard key={idOf(job, index)} job={job} compact />) : <div className="freshItem"><b>No jobs today</b><span>Nothing assigned for today.</span></div>}</div></article>
-            <article className="freshWorkerAppPanel"><h2>Needs action</h2>{view.alerts.length ? view.alerts.map((alert) => <div key={alert} className="freshItem need"><b>Check this</b><span>{alert}</span></div>) : <div className="freshItem"><b>No urgent actions</b><span>The worker can carry on with the day.</span></div>}<div className="freshWorkerAppProof"><b>Proof flow</b><span>Photo · note · complete</span></div></article>
-            <article className="freshWorkerAppPanel"><h2>Messages</h2><div className="freshItem"><b>Job notes and updates</b><span>Workers should only see messages linked to their work.</span></div><button type="button" onClick={() => onNavigate?.("messages")}>Open messages</button></article>
-            <article className="freshWorkerAppPanel"><h2>More</h2><div className="freshWorkerAppMore"><button type="button" onClick={() => onNavigate?.("photos")}>Photos</button><button type="button" onClick={() => onNavigate?.("time")}>Time</button><button type="button" onClick={() => onNavigate?.("support")}>Support</button></div></article>
-          </section>
+            <article className="freshWorkerAppPanel">
+              <h2>Uploaded photos</h2>
+              {photoProofs.length ? <div className="freshWorkerPhotoGrid">
+                {photoProofs.map((photo, index) => <a key={`${photo.url}-${index}`} href={photo.url} target="_blank" rel="noreferrer">
+                  <img src={photo.url} alt={`Proof for ${jobTitle(photo.job)}`} />
+                  <span>{jobTitle(photo.job)}</span>
+                </a>)}
+              </div> : <div className="freshItem"><b>No photos uploaded yet</b><span>Completed job photos will show here.</span></div>}
+              <button type="button" onClick={() => onNavigate?.("photos")}>Open photos</button>
+            </article>
 
-          <section className="freshWorkerAppPanel"><h2>All assigned jobs</h2><div className="freshWorkerAppJobs">{view.assignedJobs.length ? view.assignedJobs.map((job, index) => <WorkerJobCard key={idOf(job, index)} job={job} />) : <div className="freshItem"><b>No assigned jobs</b><span>No jobs are linked to this worker yet.</span></div>}</div></section>
-        </> : <section className="freshCard"><h2>Select worker</h2><p className="freshMuted">Pick a worker to open the field app view.</p></section>}
+            <article className="freshWorkerAppPanel">
+              <h2>Needs action</h2>
+              {view.alerts.length ? view.alerts.map((alert) => <div key={alert} className="freshItem need"><b>Check this</b><span>{alert}</span></div>) : <div className="freshItem"><b>No urgent actions</b><span>The worker can carry on with the day.</span></div>}
+            </article>
+
+            <article className="freshWorkerAppPanel">
+              <h2>Recently completed</h2>
+              <div className="freshWorkerAppJobs">
+                {recentCompleted.length
+                  ? recentCompleted.map((job, index) => <WorkerJobCard key={idOf(job, index)} job={job} compact />)
+                  : <div className="freshItem"><b>No completed jobs yet</b><span>Completed work will show here.</span></div>}
+              </div>
+            </article>
+          </section>
+        </> : <section className="freshCard"><h2>Select worker</h2><p className="freshMuted">Pick a worker to see current job, proof photos and urgent actions.</p></section>}
       </main>
     </section>
   </section>;

@@ -420,3 +420,68 @@
     min-height: 50px;
   }
 }
+
+
+/* Simplified owner Worker View */
+.freshWorkerSimpleLayout {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.freshWorkerSimpleMain {
+  min-width: 0;
+}
+
+.freshWorkerSimpleGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.freshWorkerPhotoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.freshWorkerPhotoGrid a {
+  display: grid;
+  gap: 7px;
+  text-decoration: none;
+  color: #111827;
+  font-weight: 900;
+}
+
+.freshWorkerPhotoGrid img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, .12);
+  background: #f8fafc;
+}
+
+.freshWorkerPhotoGrid span {
+  font-size: 11px;
+  color: #475569;
+  line-height: 1.25;
+}
+
+@media (max-width: 900px) {
+  .freshWorkerSimpleLayout,
+  .freshWorkerSimpleGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .freshWorkerSimplePeople {
+    position: relative;
+    top: auto;
+  }
+
+  .freshWorkerPhotoGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
