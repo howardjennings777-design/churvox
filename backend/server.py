@@ -828,29 +828,16 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
     response.set_cookie(key="refresh_token", value=refresh_token, httponly=True, secure=True, samesite="none", max_age=604800, path="/")
 
 def clear_auth_cookies(response: Response):
-    # Clear cross-site auth cookies without relying on delete_cookie kwargs,
-    # because older Starlette/FastAPI builds can crash on those arguments.
-    response.set_cookie(
-        key="access_token",
-        value="",
-        httponly=True,
-        secure=True,
-        samesite="none",
-        max_age=0,
-        expires=0,
-        path="/",
-    )
-    response.set_cookie(
-        key="refresh_token",
-        value="",
-        httponly=True,
-        secure=True,
-        samesite="none",
-        max_age=0,
-        expires=0,
-        path="/",
-    )
-
+    # Clear cookies using raw Set-Cookie headers so login cannot crash
+    # on older Starlette/FastAPI delete_cookie/set_cookie argument handling.
+    response.raw_headers.append((
+        b"set-cookie",
+        b"access_token=; Max-Age=0; Path=/; Secure; HttpOnly; SameSite=None",
+    ))
+    response.raw_headers.append((
+        b"set-cookie",
+        b"refresh_token=; Max-Age=0; Path=/; Secure; HttpOnly; SameSite=None",
+    ))
 
 def serialize_doc(doc: dict) -> dict:
     if doc is None:
