@@ -45,7 +45,7 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
 
   const safeGroups = React.useMemo(() => cleanGroups(groups, guideComplete), [guideComplete]);
   const safeMobileItems = React.useMemo(() => uniqueItems(mobileItems), []);
-  const safeExtraMobile = React.useMemo(() => { const main = new Set(safeMobileItems.map(([key]) => key)); return uniqueItems(safeGroups.flatMap((group) => group.items)).filter(([key]) => !main.has(key)); }, [safeMobileItems, safeGroups]);
+  const safeExtraMobile = React.useMemo(() => { const main = new Set(safeMobileItems.map(([key]) => key)); return uniqueItems(safeGroups.flatMap((group) => group.items)).filter(([key]) => !main.has(key) && key !== "askchurvox"); }, [safeMobileItems, safeGroups]);
 
   function go(key) { if (key === "more") return; setMoreOpen(false); resetScroll(); navigate(key); }
   async function handleLogout() { try { if (auth?.logout) await auth.logout(); } finally { window.location.href = "/login"; } }
@@ -81,11 +81,10 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
         <nav className="freshNav">{safeGroups.map((group) => <section className="freshNavGroup" key={group.title}><p>{group.title}</p>{group.items.map(([key, mark, label]) => <button key={key} type="button" className={currentPrimary === key ? "active" : ""} onClick={() => go(key)}><i>{mark}</i><span>{label}</span></button>)}</section>)}</nav>
       </aside>
       <main className="freshMain">
-        <header className="freshMobileAppTop"><div><b>Churvox</b><span>{mobileTitle} · ready</span></div><button type="button" onClick={() => go("askchurvox")}>Tell</button></header>
+        <header className="freshMobileAppTop"><div><b>Churvox</b><span>{mobileTitle} · ready</span></div><button className="freshMobileLogout" type="button" onClick={handleLogout}>Log out</button></header>
         <div className="freshPageScroll">{children}</div>
         <form className="freshGlobalAsk" onSubmit={submitAsk}><label><span>What do you want to do?</span><input value={globalAsk} onChange={(event) => setGlobalAsk(event.target.value)} placeholder="open jobs, add client, show unpaid invoices…" /></label><button type="submit">Ask Churvox</button></form>
       </main>
-      <button className="freshTellFloat" type="button" onClick={() => go("askchurvox")} aria-label="Open Tell Churvox">Tell</button>
       {moreOpen && <div className="freshMobileMore">{safeExtraMobile.map(([key, mark, label]) => <button key={key} type="button" className={currentPrimary === key ? "active" : ""} onClick={() => handleMobile(key)}><i>{mark}</i><span>{label}</span></button>)}</div>}
       <nav className="freshMobileNav" aria-label="Mobile navigation">{safeMobileItems.map(([key, mark, label]) => <button key={key} type="button" className={currentPrimary === key || (key === "more" && moreOpen) ? "active" : ""} onClick={() => handleMobile(key)}><i>{mark}</i><span>{label}</span></button>)}</nav>
     </div>
