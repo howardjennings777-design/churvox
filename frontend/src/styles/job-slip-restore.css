@@ -9,3 +9,5 @@
 [data-version="CHURVOX_CLEAN_JOB_FORM_20260619"] div:has([data-testid="job-title-input"]) {
   display:none!important;
 }
+
+/* RENDER_DEPLOY_TRIGGER_20260619_01 */
