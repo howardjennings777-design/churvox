@@ -43,16 +43,12 @@ export default function FreshJobQuickSlip({ instruction = "", onClose, onSuccess
             margin: 14,
             marginBottom: 10,
             borderRadius: 24,
-            padding: "18px 22px",
+            padding: "16px 22px",
             color: "#fffaf0",
             background: "linear-gradient(135deg, #111827, #1f2937 58%, #f97316)",
           }}
         >
-          <div style={{ fontSize: 11, fontWeight: 1000, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.92 }}>New job slip</div>
-          <h1 style={{ margin: "6px 0 4px", fontSize: "clamp(30px, 4vw, 46px)", lineHeight: 0.96, fontWeight: 1000 }}>Add job</h1>
-          <p style={{ margin: 0, maxWidth: 760, fontSize: 13, lineHeight: 1.35, fontWeight: 800, opacity: 0.92 }}>
-            {instruction ? `Ask Churvox filled from: ${instruction}` : "Create a real job without leaving the Jobs page."}
-          </p>
+          <h1 style={{ margin: 0, fontSize: "clamp(30px, 4vw, 46px)", lineHeight: 0.96, fontWeight: 1000 }}>Add job</h1>
         </header>
         <div
           style={{
