@@ -12,6 +12,7 @@ import "./styles/churvox-global-polish.css";
 import "./styles/worker-public-polish.css";
 import "./pages/worker/WorkerCommand.css";
 import "./styles/public-dark-login-theme.css";
+import "./styles/job-slip-restore.css";
 
 import LoginPage from "./pages/auth/LoginPage";
 import SignupPage from "./pages/auth/SignupPage";
