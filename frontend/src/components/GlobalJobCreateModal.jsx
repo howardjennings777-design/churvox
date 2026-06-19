@@ -1,20 +1,27 @@
 import React from "react";
-import FreshJobQuickSlip from "../churvox-fresh/FreshJobQuickSlip";
+import { useLocation, useNavigate } from "react-router-dom";
+import JobCreateForm from "./forms/JobCreateForm";
 
 const OPEN_EVENT = "churvox:open-job-popup";
+const LEGACY_OPEN_EVENT = "churvox:open-job-modal";
 const OPEN_JOB_MODAL_KEY = "churvox:fresh-open-job-modal:v1";
-const ASK_DRAFT_KEY = "churvox:tell-command-draft:v1";
+const LAST_BACKGROUND_KEY = "churvox_last_non_modal_route";
 
-function readInstruction(detail) {
-  if (detail?.instruction || detail?.text) return String(detail.instruction || detail.text || "");
+function isJobsNewUrl(href) {
   try {
-    const saved = window.localStorage.getItem(OPEN_JOB_MODAL_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return String(parsed?.instruction || parsed?.text || "");
-    }
-  } catch {}
-  try { return window.localStorage.getItem(ASK_DRAFT_KEY) || ""; } catch { return ""; }
+    const url = new URL(href, window.location.origin);
+    return url.pathname === "/jobs/new";
+  } catch {
+    return false;
+  }
+}
+
+function searchFromHref(href) {
+  try {
+    return new URL(href, window.location.origin).search || "";
+  } catch {
+    return "";
+  }
 }
 
 export function openJobModal(search = "") {
@@ -23,44 +30,108 @@ export function openJobModal(search = "") {
 }
 
 export default function GlobalJobCreateModal() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [open, setOpen] = React.useState(false);
-  const [instruction, setInstruction] = React.useState("");
-  const guardRef = React.useRef(0);
+  const [modalSearch, setModalSearch] = React.useState("");
+
+  const firstSetup = React.useMemo(() => {
+    try {
+      return new URLSearchParams(modalSearch || "").get("first_setup") === "1";
+    } catch {
+      return false;
+    }
+  }, [modalSearch]);
+
+  const openModal = React.useCallback((search = "") => {
+    setModalSearch(search || "");
+    setOpen(true);
+  }, []);
+
+  const closeModal = React.useCallback(() => {
+    setOpen(false);
+    setModalSearch("");
+  }, []);
 
   React.useEffect(() => {
-    let timer = 0;
-    function openSlip(event) {
-      const now = Date.now();
-      if (now - guardRef.current < 500) return;
-      guardRef.current = now;
-      setInstruction(readInstruction(event?.detail));
-      try { window.localStorage.removeItem(OPEN_JOB_MODAL_KEY); } catch {}
-      setOpen(true);
+    const path = `${location.pathname}${location.search}${location.hash}`;
+    if (location.pathname !== "/jobs/new") {
+      try { sessionStorage.setItem(LAST_BACKGROUND_KEY, path || "/dashboard#jobs"); } catch {}
+      return;
     }
 
-    window.addEventListener(OPEN_EVENT, openSlip);
+    const last = (() => {
+      try { return sessionStorage.getItem(LAST_BACKGROUND_KEY) || "/dashboard#jobs"; } catch { return "/dashboard#jobs"; }
+    })();
+
+    openModal(location.search || "");
+    navigate(last || "/dashboard#jobs", { replace: true });
+  }, [location.pathname, location.search, location.hash, navigate, openModal]);
+
+  React.useEffect(() => {
+    const onOpen = (event) => openModal(event?.detail?.search || "");
+
+    const onClick = (event) => {
+      const target = event.target;
+      const link = target?.closest?.("a[href]");
+      if (!link) return;
+
+      const href = link.getAttribute("href") || "";
+      if (!isJobsNewUrl(href)) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      openModal(searchFromHref(href));
+    };
+
+    window.addEventListener(OPEN_EVENT, onOpen);
+    window.addEventListener(LEGACY_OPEN_EVENT, onOpen);
+    document.addEventListener("click", onClick, true);
+
     try {
-      if (window.localStorage.getItem(OPEN_JOB_MODAL_KEY)) timer = window.setTimeout(() => openSlip({ detail: null }), 80);
+      const stored = window.localStorage.getItem(OPEN_JOB_MODAL_KEY);
+      if (stored) {
+        window.localStorage.removeItem(OPEN_JOB_MODAL_KEY);
+        window.setTimeout(() => openModal(stored === "true" ? "" : stored), 60);
+      }
     } catch {}
 
     return () => {
-      window.removeEventListener(OPEN_EVENT, openSlip);
-      window.clearTimeout(timer);
+      window.removeEventListener(OPEN_EVENT, onOpen);
+      window.removeEventListener(LEGACY_OPEN_EVENT, onOpen);
+      document.removeEventListener("click", onClick, true);
     };
-  }, []);
+  }, [openModal]);
 
   if (!open) return null;
 
   return (
-    <FreshJobQuickSlip
-      instruction={instruction}
-      onClose={() => setOpen(false)}
-      onSuccess={() => {
-        setOpen(false);
-        setInstruction("");
-        window.dispatchEvent(new Event("churvox-records-refresh"));
-        window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "job-created" } }));
+    <div
+      className="freshPopupBackdrop freshJobPopupBackdrop"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) closeModal();
       }}
-    />
+    >
+      <section className="freshCard freshJobPopupCard">
+        <header className="freshHero freshJobPopupHero">
+          <span>{firstSetup ? "First job" : "New job"}</span>
+          <h1>{firstSetup ? "Create job" : "Add job"}</h1>
+          <p>Add the real job here without leaving the current area.</p>
+        </header>
+
+        <div className="freshJobPopupBody">
+          <JobCreateForm
+            modalSearch={modalSearch}
+            onCancel={closeModal}
+            onSuccess={() => {
+              closeModal();
+              window.dispatchEvent(new Event("churvox-records-refresh"));
+              window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "job-created" } }));
+            }}
+            submitLabel={firstSetup ? "Create first job" : "Save job"}
+          />
+        </div>
+      </section>
+    </div>
   );
 }
