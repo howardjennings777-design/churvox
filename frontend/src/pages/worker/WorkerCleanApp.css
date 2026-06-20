@@ -608,3 +608,17 @@
     width: 100%;
   }
 }
+
+/* CHURVOX_WORKER_PUSH_OPTIN_20260621 */
+.wc-mini-action {
+  margin-top: 10px;
+  border: 0;
+  border-radius: 999px;
+  min-height: 42px;
+  padding: 0 14px;
+  background: #111827;
+  color: #fffaf0;
+  -webkit-text-fill-color: #fffaf0;
+  font-weight: 1000;
+  cursor: pointer;
+}

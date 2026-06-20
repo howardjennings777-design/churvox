@@ -1,4 +1,5 @@
 import React from "react";
+import FreshNotificationBell from "./FreshNotificationBell";
 import { useAuth } from "../context/AuthContext";
 import "./freshMobileAppShell.css";
 
@@ -56,7 +57,9 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
   const currentPrimary = parentByKey[active] || active;
   const mobileTitle = mobileLabels[currentPrimary] || mobileLabels[active] || "Churvox";
 
-  React.useEffect(() => { const refresh = () => setGuideComplete(guideIsComplete()); window.addEventListener("storage", refresh); window.addEventListener("churvox:ai-guide-status", refresh); window.addEventListener("churvox:fresh-data-updated", refresh); return () => { window.removeEventListener("storage", refresh); window.removeEventListener("churvox:ai-guide-status", refresh); window.removeEventListener("churvox:fresh-data-updated", refresh); }; }, []);
+  React.useEffect(() => { const refresh = () => setGuideComplete(guideIsComplete()); window.addEventListener("storage", refresh); window.addEventListener("churvox:ai-guide-status", refresh); window.addEventListener("churvox:fresh-data-updated", refresh); return (
+    <>
+      <FreshNotificationBell />) => { window.removeEventListener("storage", refresh); window.removeEventListener("churvox:ai-guide-status", refresh); window.removeEventListener("churvox:fresh-data-updated", refresh); }; }, []);
   React.useLayoutEffect(() => { resetScroll(); }, [active]);
   React.useEffect(() => { resetScroll(); }, [active]);
 
@@ -105,5 +108,6 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
       {moreOpen && <div className="freshMobileMore">{safeExtraMobile.map(([key, mark, label]) => <button key={key} type="button" className={currentPrimary === key ? "active" : ""} onClick={() => handleMobile(key)}><i>{mark}</i><span>{label}</span></button>)}</div>}
       <nav className="freshMobileNav" aria-label="Mobile navigation">{safeMobileItems.map(([key, mark, label]) => <button key={key} type="button" className={currentPrimary === key || (key === "more" && moreOpen) ? "active" : ""} onClick={() => handleMobile(key)}><i>{mark}</i><span>{label}</span></button>)}</nav>
     </div>
-  );
+      </>
+);
 }

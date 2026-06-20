@@ -247,6 +247,9 @@ export default function WorkerJobsPage() {
   const [shiftBusy, setShiftBusy] = useState(false);
   const [lastSynced, setLastSynced] = useState(null);
   const [showContactOffice, setShowContactOffice] = useState(false);
+  const [workerPushEnabled, setWorkerPushEnabled] = useState(() => {
+    try { return window.localStorage.getItem("churvox-worker-notifications") === "on"; } catch { return false; }
+  });
 
   async function sendLivePing(payload = {}) {
     try {
@@ -306,6 +309,41 @@ export default function WorkerJobsPage() {
       toast.error(err?.message || "GPS permission is needed to clock in");
     } finally {
       setShiftBusy(false);
+    }
+  }
+
+  async function enableWorkerNotifications() {
+    if (!("Notification" in window)) {
+      toast.error("This device does not support browser notifications.");
+      return;
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        toast.error("Notifications were not turned on.");
+        return;
+      }
+
+      window.localStorage.setItem("churvox-worker-notifications", "on");
+      setWorkerPushEnabled(true);
+
+      try {
+        await post("/worker/notification-opt-in", {
+          enabled: true,
+          permission: "granted",
+          device: navigator.userAgent,
+          created_at: new Date().toISOString(),
+        });
+      } catch {}
+
+      new Notification("Churvox notifications on", {
+        body: "You’ll see job alerts and boss messages here.",
+      });
+
+      toast.success("Worker notifications turned on");
+    } catch {
+      toast.error("Could not turn notifications on.");
     }
   }
 
@@ -412,6 +450,25 @@ export default function WorkerJobsPage() {
             </button>
           )}
         </section>
+
+        {!workerPushEnabled ? (
+          <section className="wc-alert need">
+            <AlertTriangle />
+            <div>
+              <b>Turn job notifications on</b>
+              <span>So you see new jobs, boss messages and sent-back work straight away.</span>
+              <button type="button" className="wc-mini-action" onClick={enableWorkerNotifications}>Turn notifications on</button>
+            </div>
+          </section>
+        ) : (
+          <section className="wc-alert">
+            <CheckCircle2 />
+            <div>
+              <b>Notifications are on</b>
+              <span>You’ll be alerted for new jobs, boss messages and job changes.</span>
+            </div>
+          </section>
+        )}
 
         <section className="wc-quick-actions">
           <button type="button" onClick={() => sendGpsPing("manual")} disabled={shiftStatus !== "clocked_in"}>
