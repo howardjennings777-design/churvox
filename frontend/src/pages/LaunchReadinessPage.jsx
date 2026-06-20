@@ -26,7 +26,7 @@ export default function LaunchReadinessPage() {
     <main className="clr-shell" data-version="CHURVOX_LAUNCH_READINESS_PAGE_20260528">
       <section className="clr-hero">
         <div>
-          <p>LAUNCH CONTROL</p>
+          <p>LAUNCH READINESS</p>
           <h1>Churvox is now shaped around one clean operating model.</h1>
           <span>Crew finishes work. Churvox prepares the admin. Owner opens a Work Slip, checks it, adjusts if needed, then approves.</span>
         </div>

@@ -433,7 +433,7 @@ export default function AIOperatorApprovalsPage() {
           <ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0" />
           <div>
             <p className="font-semibold">Approval-first by default.</p>
-            <p className="mt-0.5 opacity-90">No auto-charge. No MYOB writes. No payroll changes. No deletes. Auto-send is OFF unless explicitly enabled in <Link to="/ai-operator/settings" className="underline">Operator Settings</Link>.</p>
+            <p className="mt-0.5 opacity-90">No auto-charge. No MYOB writes. No payroll changes. No deletes. Approval-only mode is ON in <Link to="/ai-operator/settings" className="underline">Operator Settings</Link>.</p>
           </div>
         </div>
 

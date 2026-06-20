@@ -35,7 +35,7 @@ const MODES = [
   },
   {
     key: "auto_send",
-    label: "Auto-send (advanced)",
+    label: "Approval-only drafts",
     desc: "AI can also auto-send selected customer message categories below. Quiet hours and per-client limits respected. Approval-first remains for new clients and high-risk actions.",
     color: "#d97706",
     safe: false,
@@ -43,12 +43,12 @@ const MODES = [
 ];
 
 const AUTO_SEND_CATEGORIES = [
-  { key: "ai_auto_send_enabled", label: "Master auto-send enabled", desc: "Required ON for any auto-send below to work." },
+  { key: "ai_auto_send_enabled", label: "Approval-only mode enabled", desc: "Required ON for any auto-send below to work." },
   { key: "job_reminder_auto_send", label: "Appointment reminders", desc: "Day-before & day-of job reminders to clients." },
   { key: "on_the_way_auto_send", label: "On-the-way alerts", desc: "Alert client when worker is en route." },
   { key: "job_completed_update_auto_send", label: "Job completion messages", desc: "Send confirmation when job is marked complete." },
-  { key: "quote_followup_auto_send", label: "Quote follow-ups", desc: "Auto-send polite follow-up on stale quotes." },
-  { key: "invoice_reminder_auto_send", label: "Invoice reminders", desc: "Auto-send reminders for overdue invoices." },
+  { key: "quote_followup_auto_send", label: "Quote follow-ups", desc: "Prepare a polite follow-up on stale quotes for owner approval." },
+  { key: "invoice_reminder_auto_send", label: "Invoice reminders", desc: "Prepare overdue invoice reminders for owner approval." },
   { key: "booking_confirmation_auto_send", label: "Booking confirmations", desc: "Confirm bookings created via receptionist." },
   { key: "internal_team_notification_auto_send", label: "Internal team nudges", desc: "Worker reminders & internal-only notifications." },
 ];
@@ -152,7 +152,7 @@ export default function AIOperatorSettingsPage() {
     const res = await patch("/ai-auto-send/settings", autoSend);
     setSaving(false);
     if (res.success) {
-      toast.success("Auto-send settings saved");
+      toast.success("Approval settings saved");
       setAutoSend(res.data?.settings || autoSend);
     } else {
       toast.error(res.error || "Failed to save");
@@ -219,7 +219,7 @@ export default function AIOperatorSettingsPage() {
         <div className="mt-4 inline-flex rounded-lg border border-[#dde6f3] bg-white p-0.5 text-sm">
           {[
             { key: "operator", label: "Operator mode" },
-            { key: "auto_send", label: "Auto-send categories" },
+            { key: "auto_send", label: "Prepared message categories" },
             { key: "setup", label: "Setup status" },
             { key: "audit", label: "Audit log" },
           ].map((t) => (
@@ -317,13 +317,13 @@ export default function AIOperatorSettingsPage() {
                     checked={!!settings?.require_approval_for_first_message}
                     onChange={(v) => updateSetting("require_approval_for_first_message", v)}
                     label="Require approval for first message to a new client"
-                    desc="Even in auto-send mode, the first message to any client must be approved."
+                    desc="Every first client message must be approved before sending."
                   />
                   <Toggle
                     checked={!!settings?.owner_notify_on_action}
                     onChange={(v) => updateSetting("owner_notify_on_action", v)}
                     label="Notify owner when AI acts"
-                    desc="In-app notification each time AI executes an auto-run or auto-send."
+                    desc="In-app notification each time AI prepares or runs an approved action."
                   />
                 </Section>
 
@@ -335,7 +335,7 @@ export default function AIOperatorSettingsPage() {
                     {[
                       "Delete records (jobs, clients, invoices, quotes)",
                       "Charge cards or process payments",
-                      "Submit tax / government filings",
+                      "Tax/government filing — outside Churvox",
                       "Destructive MYOB writes",
                       "Change payroll amounts",
                       "Remove users or change roles",
@@ -353,7 +353,7 @@ export default function AIOperatorSettingsPage() {
 
             {tab === "auto_send" && (
               <Section
-                title="Auto-send categories"
+                title="Prepared message categories"
                 icon={<Sparkles className="h-5 w-5 text-[#d97706]" />}
                 action={
                   <button
@@ -367,8 +367,8 @@ export default function AIOperatorSettingsPage() {
               >
                 {!isAutoSendMode ? (
                   <div className="rounded-xl border border-[#fde68a] bg-[#fffbeb] p-3 text-xs text-[#78350f]">
-                    <p className="font-semibold">Auto-send mode is OFF.</p>
-                    <p className="mt-1">These toggles only take effect when Operator mode is set to <strong>Auto-send (advanced)</strong>. Switch on the <em>Operator mode</em> tab to enable.</p>
+                    <p className="font-semibold">Approval-only mode is ON.</p>
+                    <p className="mt-1">These toggles only take effect when Operator mode is set to <strong>Approval-only drafts</strong>. Switch on the <em>Operator mode</em> tab to enable.</p>
                   </div>
                 ) : null}
                 {!setupStatus?.sms?.ready ? (

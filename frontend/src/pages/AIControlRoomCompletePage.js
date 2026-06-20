@@ -204,7 +204,7 @@ export default function AIControlRoomCompletePage() {
                 <ChurvoxLogo size="lg" dataTestId="ai-control-room-logo" />
               </div>
 
-              <h1 style={s.heroTitle}>AI Control Room</h1>
+              <h1 style={s.heroTitle}>Command</h1>
 
               <p style={s.heroText}>
                 AI prepares the admin, dispatch, follow-ups and approvals.
@@ -232,7 +232,7 @@ export default function AIControlRoomCompletePage() {
 
           <section style={s.safety}>
             <span style={s.shield}>◇</span>
-            <span>Auto-send is OFF. AI prepares drafts for review.</span>
+            <span>Approval-only mode is ON. AI prepares drafts for review.</span>
             <span>•</span>
             <span>No auto-charge</span>
             <span>•</span>
@@ -539,7 +539,7 @@ function ControlRoomPanel({ panel, draft, setDraft, onClose, onSave, updateDraft
     settings: <><p style={s.modalLine}>Workspace: {panel.title}</p><label style={s.modalLabel}>Owner note</label><textarea style={s.modalTextarea} value={draft.ownerNote||""} onChange={(e)=>updateDraft("ownerNote",e.target.value)} /></>,
   };
 
-  return <div style={s.modalBackdrop} onClick={onClose}><div style={s.modalCard} onClick={(e)=>e.stopPropagation()}><div style={s.panelHeader}><div><h3 style={s.modalTitle}>{panel.title || "Control Room Panel"}</h3><p style={s.modalDesc}>{panel.description || "Edit and prepare this workspace without leaving the dashboard."}</p></div><button style={s.modalClose} type="button" onClick={onClose}>×</button></div><div style={s.modalBody}>{content[panelType] || content.settings}</div>{notice ? <p style={s.modalNotice}>{notice}</p> : null}<div style={s.modalActions}><button style={s.modalPrimary} type="button" onClick={onSave}>Save draft</button><button style={s.modalGhost} type="button" onClick={()=>setNotice("AI checked this page and prepared the next action.")}>Prepare action</button>{secondary}<button style={s.modalGhost} type="button" onClick={onClose}>Close</button></div></div></div>;
+  return <div style={s.modalBackdrop} onClick={onClose}><div style={s.modalCard} onClick={(e)=>e.stopPropagation()}><div style={s.panelHeader}><div><h3 style={s.modalTitle}>{panel.title || "Command Panel"}</h3><p style={s.modalDesc}>{panel.description || "Edit and prepare this workspace without leaving the dashboard."}</p></div><button style={s.modalClose} type="button" onClick={onClose}>×</button></div><div style={s.modalBody}>{content[panelType] || content.settings}</div>{notice ? <p style={s.modalNotice}>{notice}</p> : null}<div style={s.modalActions}><button style={s.modalPrimary} type="button" onClick={onSave}>Save draft</button><button style={s.modalGhost} type="button" onClick={()=>setNotice("AI checked this page and prepared the next action.")}>Prepare action</button>{secondary}<button style={s.modalGhost} type="button" onClick={onClose}>Close</button></div></div></div>;
 }
 
 function Th({ children }) {

@@ -40,7 +40,7 @@ function ActionRow({ item, buttons = [] }) {
   return <article className="smart-command-row"><div className="smart-command-badges"><span className="smart-command-badge">{item.priority}</span><span className="smart-command-badge type">{TYPE_LABELS[item.type] || item.type}</span></div><p className="smart-command-row-title">{item.title}</p>{item.subtitle ? <p className="smart-command-row-text">{item.subtitle}</p> : null}<p className="smart-command-row-text">{item.summary}</p><div className="smart-command-actions">{buttons.map((button) => <button key={button.label} type="button" className={`smart-command-btn ${button.variant || "light"}`} onClick={button.onClick}>{button.label}</button>)}</div></article>;
 }
 
-export default function SmartHubBrainPageStable() {
+export default function DashboardPageStable() {
   const { user } = useAuth();
   const [tab, setTab] = useState("queue");
   const [loading, setLoading] = useState(true);

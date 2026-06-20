@@ -11,7 +11,7 @@ import "./TopTierOperatorToolsAuditActions.css";
 
 const hubLinks = [
   ["/dashboard", "Command Floor", "Return to the main owner approval flow."],
-  ["/launch-control", "Launch Control", "See the simple operating model and what each top-tier tool is for."],
+  ["/launch-control", "Launch Readiness", "See the simple operating model and what each top-tier tool is for."],
   ["/message-approvals", "Message approvals", "Review drafted customer emails, SMS notes and follow-ups."],
   ["/dispatch", "Dispatch board", "Plan jobs, assign crew and catch conflicts."],
   ["/trade-presets", "Trade presets", "Shape job types, invoice wording and AI suggestions by trade."],
@@ -183,7 +183,7 @@ export default function TopTierOperatorToolsPage() {
       <section className="tt-hero">
         <div>
           <p>AI OPERATOR TOOLS</p>
-          <h1>Top-tier control room</h1>
+          <h1>Top-tier command</h1>
           <span>Proof packs, audit trail, client memory, dispatch lanes, trade presets and offline worker safety are connected through stable Churvox data instead of missing placeholder routes.</span>
         </div>
         

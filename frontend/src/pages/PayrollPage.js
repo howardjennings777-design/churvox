@@ -23,7 +23,7 @@ import { useApi } from "../hooks/useApi";
 import { formatCurrency } from "../lib/utils";
 import { PremiumAIBox } from "../components/premium";
 
-const DISCLAIMER = "Churvox prepares payroll for review and handoff. Tax filing, government submission, and bank payments are handled outside Churvox.";
+const DISCLAIMER = "Churvox prepares payroll for review and handoff. Tax filing, government submission, and bank payments stay outside Churvox.";
 const FREQUENCY_OPTIONS = ["weekly", "fortnightly", "monthly", "custom"];
 
 function safeFilePart(value) {
@@ -466,7 +466,7 @@ export default function PayrollPage() {
                 <input className="cx-input" type="number" value={settings.default_rate} onChange={(e) => setSettings((s) => ({ ...s, default_rate: Number(e.target.value || 0) }))} placeholder="Default hourly rate" />
                 <select className="cx-input" value={settings.default_pay_frequency || "fortnightly"} onChange={(e) => setSettings((s) => ({ ...s, default_pay_frequency: e.target.value }))}>{FREQUENCY_OPTIONS.map((x) => <option key={x} value={x}>{x}</option>)}</select>
                 <input className="cx-input" disabled value="Overtime rule placeholder (disabled in V1)" />
-                <p className="text-xs text-slate-500">Tax filing is handled outside Churvox in V1.</p>
+                <p className="text-xs text-slate-500">Tax filing stays outside Churvox in V1.</p>
               </div>
               <button className="cx-button-primary mt-4" onClick={saveSettings} disabled={actionLoading["save-settings"]}>{actionLoading["save-settings"] ? "Saving..." : "Save settings"}</button>
             </div>

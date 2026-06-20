@@ -61,7 +61,7 @@ export const CHURVOX_PLANS = [
     features: [
       "Everything in Operator",
       "MYOB sync included (approval-first)",
-      "Auto-send categories (advanced)",
+      "Prepared message categories",
       "Office Admin + Payroll role separation",
       "Priority Churvox support",
       "Audit log + safety rails",

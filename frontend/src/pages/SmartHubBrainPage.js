@@ -69,7 +69,7 @@ function money(value) {
   });
 }
 
-function SmartHubBrainPage() {
+function DashboardPage() {
   const [data, setData] = useState(emptyState);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState("");
@@ -205,7 +205,7 @@ function SmartHubBrainPage() {
     setError("");
 
     try {
-      await apiFetch(path, { method: "POST", body: JSON.stringify({ source: "smart_hub_brain" }) });
+      await apiFetch(path, { method: "POST", body: JSON.stringify({ source: "dashboard" }) });
       setMessage(`${label} completed. Dashboard has refreshed.`);
       await load();
     } catch (actionError) {
@@ -222,7 +222,7 @@ function SmartHubBrainPage() {
           <div style={{ display: "flex", justifyContent: "space-between", gap: 20, flexWrap: "wrap", alignItems: "center" }}>
             <div>
               <p style={{ margin: 0, opacity: 0.85, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase" }}>Churvox AI Operator</p>
-              <h1 style={{ margin: "8px 0", fontSize: "clamp(32px, 5vw, 58px)", lineHeight: 1, fontWeight: 900 }}>Dashboard Brain</h1>
+              <h1 style={{ margin: "8px 0", fontSize: "clamp(32px, 5vw, 58px)", lineHeight: 1, fontWeight: 900 }}>Dashboard</h1>
               <p style={{ margin: 0, maxWidth: 720, fontSize: 17, opacity: 0.92 }}>
                 Daily business command centre for jobs, invoices, quotes, workers, and owner approvals.
               </p>
@@ -297,4 +297,4 @@ function SmartHubBrainPage() {
   );
 }
 
-export default SmartHubBrainPage;
+export default DashboardPage;

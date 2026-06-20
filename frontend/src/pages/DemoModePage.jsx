@@ -55,7 +55,7 @@ export default function DemoModePage() {
   return (
     <PremiumPage maxWidth={1120}>
       <PremiumHero
-        eyebrow="Demo mode"
+        eyebrow="Preview mode"
         title="Create a clean sample business in one tap."
         subtitle="Use demo data for screenshots, sales demos, workflow testing and showing Churvox without touching real customer records."
         icon={<DatabaseZap className="h-6 w-6" />}
