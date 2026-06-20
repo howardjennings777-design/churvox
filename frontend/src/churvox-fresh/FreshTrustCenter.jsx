@@ -39,7 +39,7 @@ const trustItems = [
     id: "payroll",
     title: "Payroll is export only",
     status: "Launch message",
-    detail: "Churvox payroll workspace does not submit to government and does not create bank payout files.",
+    detail: "Churvox payroll workspace keeps government filing and payment files outside Churvox.",
     action: "Keep wording clear in payroll and plans.",
     page: "payroll",
   },

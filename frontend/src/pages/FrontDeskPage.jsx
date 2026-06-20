@@ -764,7 +764,7 @@ export default function FrontDeskPage() {
             lineHeight: 1.5,
           }}
         >
-          Approval-first AI · Nothing auto-sends or syncs without your tap.
+          Approval-first AI · Nothing sends or syncs without your approval.
         </div>
       </section>
 

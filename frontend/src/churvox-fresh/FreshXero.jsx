@@ -81,7 +81,7 @@ function sendXeroToCommand({ status, invoice, syncResult, message }) {
       found: `Xero configured: ${configured ? "yes" : "no"}. Add-on active: ${addonActive ? "yes" : "no"}. Connected: ${connected ? "yes" : "no"}. Latest invoice: ${invoiceText}.`,
       prepared: syncResult?.success ? "Churvox created a Xero draft invoice only. It was not sent to the customer and was not marked paid automatically." : "Churvox prepared an owner accounting sync check before any draft invoice sync.",
       why: message || "Accounting sync should be the final controlled step after invoice/payment review.",
-      owner: "Open Xero, review the draft invoice, then send or reconcile inside Xero if correct. Churvox does not file tax or create bank payment files.",
+      owner: "Open Xero, review the draft invoice, then send or reconcile inside Xero if correct. Churvox does not file tax or create payment files.",
       payload: {
         tenant,
         invoice: invoiceText,
@@ -340,7 +340,7 @@ export default function FreshXero({ onNavigate }) {
             <label><span>Tax type</span><input readOnly value={status?.sales_tax_type || ""} /></label>
             <label><span>Latest invoice</span><input readOnly value={latestInvoiceLabel} /></label>
             <label><span>Latest total</span><input readOnly value={latestInvoiceTotal} /></label>
-            <label className="wide"><span>Safety rule</span><textarea readOnly value="Draft invoice only. Do not auto-send invoices. Do not file tax. Do not create bank payout files. Mark paid only after owner/accounting status check." /></label>
+            <label className="wide"><span>Safety rule</span><textarea readOnly value="Draft invoice only. Owner approval is required before invoices are sent. Tax filing stays outside Churvox. Do not create payment files. Mark paid only after owner/accounting status check." /></label>
             <label className="wide"><span>Required env</span><textarea readOnly value={(status?.required_env || []).join("\n")} /></label>
             {syncResult?.success && (
               <label className="wide">

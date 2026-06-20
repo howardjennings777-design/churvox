@@ -47,7 +47,7 @@ const defaults = [
     action: "Prepare payroll review slip",
     status: "Off",
     lastRun: "Not run yet",
-    risk: "Payroll is CSV only. No tax or bank files.",
+    risk: "Payroll is CSV only. No tax or payment files.",
   },
 ];
 

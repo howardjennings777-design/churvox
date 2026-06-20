@@ -40,7 +40,7 @@ export const boards = {
   quotes: { title: "Quotes", copy: "Draft, send, follow up and convert accepted quotes into jobs.", rows: ["Driveway clean draft", "Garden package sent", "Lawn reset accepted"] },
   invoices: { title: "Invoices", copy: "Review drafts, approve sending, track paid and overdue money.", rows: ["Aroha draft $85", "Medical centre approved $420", "Birchville overdue $190"] },
   team: { title: "Team", copy: "People, roles, invites and access.", rows: ["Owner full access", "Worker jobs only", "Payroll user limited"] },
-  payroll: { title: "Payroll", copy: "Pay period, job hours, adjustments and CSV export. No tax or bank files.", rows: ["24 hours", "3 workers", "1 adjustment"] },
+  payroll: { title: "Payroll", copy: "Pay period, job hours, adjustments and CSV export. No tax or payment files.", rows: ["24 hours", "3 workers", "1 adjustment"] },
   reports: { title: "Reports", copy: "Revenue, completed jobs, overdue invoices and worker activity.", rows: ["$695 this week", "8 jobs done", "1 overdue invoice"] },
   settings: { title: "Settings", copy: "Business profile, GST, branding, integrations and security.", rows: ["Business details", "GST", "Security"] },
   plans: { title: "Plans", copy: "Start, Crew, Operator, Command and growth packs.", rows: ["Start $39", "Crew $89", "Operator $149", "Command $299"] },

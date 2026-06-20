@@ -309,7 +309,7 @@ export default function FreshTimeLogs({ onNavigate }) {
         <div>
           <span>Time sheets</span>
           <h1>Approve worker time before payroll</h1>
-          <p>Live job time appears here for owner review. Approved time feeds the payroll review workspace; Churvox does not submit tax or bank files.</p>
+          <p>Live job time appears here for owner review. Approved time feeds the payroll review workspace; Churvox does not submit tax or payment files.</p>
         </div>
 
         <div className="freshTimeStats">

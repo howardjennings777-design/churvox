@@ -252,7 +252,7 @@ export default function FreshNewUserGuide({ onNavigate, mode = "compact" }) {
         <div className="freshGuideComplete">
           <strong>Nice — the core first-run guide is complete.</strong>
           <span>Next: test a full job → invoice → paid flow.</span>
-          <button type="button" onClick={() => onNavigate?.("launchcontrol")}>Open Launch Control</button>
+          <button type="button" onClick={() => onNavigate?.("launchcontrol")}>Open Launch Readiness</button>
         </div>
       )}
 

@@ -19,10 +19,10 @@ const FRAME = {
   billing: ["BILLING CONTROL", "Billing confidence.", "Check plan, trial, GST, Stripe and support clarity.", "Back to billing", "/billing-confidence"],
   demo: ["DEMO CONTROL", "Demo desk.", "Create sample clients, jobs, invoices, AI actions and notifications for sales demos.", "Back to demo", "/demo-mode"],
   notifications: ["ALERT CONTROL", "Notification desk.", "Review owner alerts, support tickets and AI notifications.", "Back to notifications", "/notifications"],
-  onboarding: ["LAUNCH CONTROL", "Setup desk.", "Finish business setup, first client, first job, worker, invoice and trust steps.", "Back to setup", "/onboarding"],
+  onboarding: ["LAUNCH READINESS", "Setup desk.", "Finish business setup, first client, first job, worker, invoice and trust steps.", "Back to setup", "/onboarding"],
   support: ["TRUST CONTROL", "Support desk.", "Find support, billing, data control, privacy and AI guardrails.", "Back to support", "/contact"],
   worker: ["FIELD APP", "Worker mode.", "Worker jobs, details and settings inside the Churvox identity.", "Worker jobs", "/worker/jobs"],
-  launch: ["LAUNCH CONTROL", "Launch desk.", "Sales polish, integration proof, operating process, recovery and final polish.", "Back to launch control", "/launch-control"],
+  launch: ["LAUNCH READINESS", "Launch desk.", "Sales polish, integration proof, operating process, recovery and final polish.", "Back to launch readiness", "/launch-control"],
   settings: ["SYSTEM CONTROL", "System card.", "Contact, settings and admin screens inside the Churvox Command Floor.", "Back to settings", "/settings"],
   payroll: ["PAYROLL CONTROL", "Payroll.", "Review crew time, pay summaries and payroll handoff records.", "Back to payroll", "/payroll"],
 };

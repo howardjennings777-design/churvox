@@ -144,7 +144,7 @@ export default function FreshHelpDesk({ onNavigate }) {
             <button type="button" onClick={() => sendHelpToCommand(selected, note, onNavigate)}>Send to Command</button>
             <button type="button" onClick={() => onNavigate?.(selected.route)}>Open related page</button>
             <button type="button" onClick={() => onNavigate?.("firstrun")}>Open First Run</button>
-            <button type="button" onClick={() => onNavigate?.("launchcontrol")}>Open Launch Control</button>
+            <button type="button" onClick={() => onNavigate?.("launchcontrol")}>Open Launch Readiness</button>
           </div>
         </article>
       </div>

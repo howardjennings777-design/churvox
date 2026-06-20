@@ -7,7 +7,7 @@ export const TRADIE_ONBOARDING_STEPS = [
   { id: "first_job", title: "Create first job", why: "This proves the real work flow." },
   { id: "invite_worker", title: "Invite worker", why: "Workers need mobile job updates, notes and photos." },
   { id: "complete_job", title: "Complete job from worker app", why: "Owner needs proof before invoicing." },
-  { id: "approve_work", title: "Owner approves work slip", why: "Nothing important should auto-send without owner approval." },
+  { id: "approve_work", title: "Owner approves work slip", why: "Important actions require owner approval before sending." },
   { id: "send_invoice_pdf", title: "Send invoice PDF", why: "Customers expect a proper invoice PDF attached." },
 ];
 

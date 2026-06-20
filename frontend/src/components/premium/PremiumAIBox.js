@@ -6,7 +6,7 @@ export default function PremiumAIBox({
   subtitle = 'AI checked live data and prepares owner-approved actions from your live business data',
   chip = 'Approval-first',
   suggestions = [],
-  notice = 'Approval-first: review every prepared action before anything is sent or changed. Customer messages are logged and controlled by your auto-send settings.',
+  notice = 'Approval-first: review every prepared action before anything is sent or changed. Customer messages are logged and controlled by approval settings.',
   children,
   actions,
   className = '',

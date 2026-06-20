@@ -36,14 +36,14 @@ const MODES = [
   {
     key: "auto_send",
     label: "Approval-only drafts",
-    desc: "AI can also auto-send selected customer message categories below. Quiet hours and per-client limits respected. Approval-first remains for new clients and high-risk actions.",
+    desc: "AI can prepare selected customer message categories below. Quiet hours and per-client limits are respected. Owner approval remains required before sending.",
     color: "#d97706",
     safe: false,
   },
 ];
 
 const AUTO_SEND_CATEGORIES = [
-  { key: "ai_auto_send_enabled", label: "Approval-only mode enabled", desc: "Required ON for any auto-send below to work." },
+  { key: "ai_auto_send_enabled", label: "Approval-only mode enabled", desc: "Required ON for prepared message drafts below to work." },
   { key: "job_reminder_auto_send", label: "Appointment reminders", desc: "Day-before & day-of job reminders to clients." },
   { key: "on_the_way_auto_send", label: "On-the-way alerts", desc: "Alert client when worker is en route." },
   { key: "job_completed_update_auto_send", label: "Job completion messages", desc: "Send confirmation when job is marked complete." },

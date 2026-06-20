@@ -232,7 +232,7 @@ export default function CommandDeskOperatorPageV3() {
         <section className="rvHero">
           <div className="rvTop"><span>Owner Review</span><a href="/dashboard#quickcreateai">Tell Churvox</a></div>
           <h1>Approve what Churvox prepared.</h1>
-          <p>This is the holding tray for AI prepared admin work. Nothing sends, syncs, marks paid, creates bank files, or changes live records from here without your decision.</p>
+          <p>This is the holding tray for AI prepared admin work. Nothing sends, syncs, marks paid, creates payment files, or changes live records from here without your decision.</p>
           <div className="rvStats">
             <Stat label="Open" value={items.length} hint="Saved review items" />
             <Stat label="Money" value={counts.money || 0} hint="Draft invoices / follow-ups" />

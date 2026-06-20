@@ -120,12 +120,12 @@ function attachMeta(action) {
     invoice_follow_up: {
       found: "An invoice needs payment follow-up.",
       prepared: "I drafted a follow-up note with invoice amount, due date and customer context editable inside the slip.",
-      outcome: "Approving saves the follow-up note on the invoice. It does not auto-send SMS or email.",
+      outcome: "Approving saves the follow-up note on the invoice. It keeps SMS and email approval-only.",
     },
     quote_follow_up: {
       found: "A sent quote has not converted yet.",
       prepared: "I drafted a follow-up note and kept quote value, scope and client context editable.",
-      outcome: "Approving saves the follow-up note on the quote. It does not auto-send SMS or email.",
+      outcome: "Approving saves the follow-up note on the quote. It keeps SMS and email approval-only.",
     },
     quote_convert: {
       found: "An accepted quote has not become a job yet.",

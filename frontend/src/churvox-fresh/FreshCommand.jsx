@@ -258,7 +258,7 @@ function buildRiskScanIssues() {
         found: `${person.name} has payroll marked as needs review.`,
         prepared: "Churvox prepared a payroll workspace review slip.",
         why: "Payroll should be checked by the owner before export.",
-        owner: "Review hours, adjustment and gross pay. Do not submit tax or bank files.",
+        owner: "Review hours, adjustment and gross pay. Do not submit tax or payment files.",
         area: "Payroll",
         page: "payroll",
         fromInbox: true,
@@ -580,7 +580,7 @@ export default function FreshCommand({ onNavigate }) {
               {selected.page === "payroll" && (
                 <>
                   <label><span>Payroll item</span><input defaultValue={selected.info} /></label>
-                  <label><span>Owner check</span><textarea defaultValue="Review hours and export CSV only. Do not submit tax or create bank files." /></label>
+                  <label><span>Owner check</span><textarea defaultValue="Review hours and export CSV only. Tax filing and payment files stay outside Churvox." /></label>
                 </>
               )}
 

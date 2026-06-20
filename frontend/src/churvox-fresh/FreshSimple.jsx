@@ -8,7 +8,7 @@ const copy = {
   quotes: ["Quotes", "Draft, follow up and convert accepted quotes into jobs."],
   invoices: ["Invoices", "Review drafts, approve sending, track paid and overdue money."],
   team: ["Team", "People, roles, invites and access."],
-  payroll: ["Payroll", "Pay period, job hours, adjustments and CSV export. No tax or bank files."],
+  payroll: ["Payroll", "Pay period, job hours, adjustments and CSV export. No tax or payment files."],
   reports: ["Reports", "Revenue, completed jobs, overdue invoices and worker activity."],
   settings: ["Settings", "Business profile, GST, branding, integrations and security."],
   plans: ["Plans", "Start, Crew, Operator, Command and growth packs."],

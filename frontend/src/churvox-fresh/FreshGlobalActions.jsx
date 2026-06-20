@@ -18,7 +18,7 @@ const searchItems = [
   ["Missing Info", "Find incomplete work", "missinginfo"],
   ["Customer Memory", "Preferences and warnings", "customermemory"],
   ["Business Health", "Money and work nudges", "businesshealth"],
-  ["Launch Control", "Go-live checklist", "launchcontrol"],
+  ["Launch Readiness", "Go-live checklist", "launchcontrol"],
   ["Launch Pack", "CSV templates and import prep", "launchpack"],
 ];
 

@@ -99,14 +99,14 @@ const PAGE = {
   payroll: {
     kicker: "Churvox V2 preview · Payroll",
     title: "Payroll",
-    intro: "Select a pay period, review hours from jobs, add manual adjustments and export a clean CSV. No tax filing. No bank payout files.",
+    intro: "Select a pay period, review hours from jobs, add manual adjustments and export a clean CSV. Tax filing and payment files stay outside Churvox.",
     listTitle: "Pay run",
     listHelp: "Workers and hours for the selected period.",
     stats: ["Workers", "Hours", "Adjustments"],
     tabs: ["Hours", "Adjustments", "Export"],
     actions: ["Save pay run", "Add adjustment", "Export CSV", "Send issue to Command"],
     noteTitle: "Payroll page purpose",
-    noteText: "Payroll calculates and exports. It does not submit to government or create bank files.",
+    noteText: "Payroll calculates and exports. Government submission and payment files stay outside Churvox.",
     filters: ["All", "Needs", "Ready", "Exported"],
     records: [
       { id: "p1", title: "Mason Clark", sub: "32.5 hours · 1 adjustment", status: "Ready", needs: false, amount: "32.5h", owner: "Payroll", details: ["Jobs time confirmed", "Fuel allowance added", "Ready for CSV"], history: ["Monday 7.5h", "Tuesday 8h", "Adjustment +$25"] },

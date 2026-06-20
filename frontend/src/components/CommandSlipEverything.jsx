@@ -286,7 +286,7 @@ export default function CommandSlipEverything({ record, extra, context = "Work s
           Approval safety
         </div>
         <p className="mt-2 text-sm font-black leading-6 text-amber-950">
-          Churvox can prepare the admin, but the owner approves. Do not auto-send, auto-charge, auto-delete, auto-sync accounting, or change payroll from a slip without explicit owner approval.
+          Churvox can prepare the admin, but the owner approves. Owner approval is required before sending, charging, deleting, syncing accounting, or changing payroll.
         </p>
       </div>
     </section>
