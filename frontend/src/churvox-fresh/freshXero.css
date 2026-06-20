@@ -364,3 +364,58 @@
     display: grid;
   }
 }
+
+/* CHURVOX_XERO_HEADER_VISIBLE_20260620 */
+.freshXeroPage {
+  max-width: 1280px !important;
+  margin: 0 auto !important;
+  padding-top: 22px !important;
+  scroll-margin-top: 40px !important;
+}
+
+.freshXeroHero {
+  margin-top: 0 !important;
+  min-height: 170px !important;
+  border-left: 7px solid #f97316 !important;
+  background:
+    radial-gradient(circle at 92% -18%, rgba(249,115,22,.58), transparent 34%),
+    linear-gradient(135deg, #0b111a 0%, #111827 58%, #070b12 100%) !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.2fr) minmax(340px, .8fr) !important;
+  align-items: center !important;
+}
+
+.freshXeroHero h1 {
+  display: block !important;
+  visibility: visible !important;
+  margin: 12px 0 8px !important;
+  font-size: clamp(38px, 5vw, 62px) !important;
+  line-height: .92 !important;
+  letter-spacing: -.065em !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+.freshXeroHero p,
+.freshXeroHero span {
+  display: block !important;
+  visibility: visible !important;
+}
+
+.freshXeroNotice:first-of-type {
+  margin-top: 0 !important;
+}
+
+@media (max-width: 900px) {
+  .freshXeroPage {
+    padding-top: 78px !important;
+  }
+
+  .freshXeroHero {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshXeroStats {
+    min-width: 0 !important;
+  }
+}

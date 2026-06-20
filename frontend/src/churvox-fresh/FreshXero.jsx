@@ -137,6 +137,13 @@ export default function FreshXero({ onNavigate }) {
   }
 
   React.useEffect(() => {
+    try {
+      window.history.scrollRestoration = "manual";
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      document.querySelectorAll(".freshMain,.freshPageScroll,.freshApp,main").forEach((el) => {
+        if (el) el.scrollTop = 0;
+      });
+    } catch {}
     loadStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
