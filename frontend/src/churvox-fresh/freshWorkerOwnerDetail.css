@@ -1322,3 +1322,138 @@
   padding: 0 12px !important;
   font-size: 11px !important;
 }
+
+/* CHURVOX_WORKER_SELECTOR_COMPACT_FINAL_20260621
+   Left worker list should be a compact selector, not big feature cards. */
+
+.cvWorkerRail {
+  padding: 12px !important;
+  gap: 8px !important;
+  background: rgba(255, 250, 240, .92) !important;
+}
+
+.cvWorkerRailItem,
+.cvWorkerRailItem.active,
+.cvWorkerRailItem:not(.active) {
+  width: 100% !important;
+  min-height: 72px !important;
+  max-height: 92px !important;
+  height: auto !important;
+  aspect-ratio: auto !important;
+  padding: 11px 12px !important;
+  border-radius: 16px !important;
+  border-left-width: 5px !important;
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  grid-template-areas:
+    "name status"
+    "job job" !important;
+  gap: 6px 8px !important;
+  align-items: center !important;
+  overflow: hidden !important;
+  box-shadow: 0 8px 18px rgba(2, 6, 23, .06) !important;
+  transform: none !important;
+}
+
+/* selected card still clear, but not giant */
+.cvWorkerRailItem.active {
+  background: #111827 !important;
+  border-left-color: #f97316 !important;
+}
+
+.cvWorkerRailItem:not(.active) {
+  background: #ffffff !important;
+  border-left-color: #cbd5e1 !important;
+}
+
+/* status pill */
+.cvWorkerRailItem span {
+  grid-area: status !important;
+  justify-self: end !important;
+  align-self: center !important;
+  width: auto !important;
+  max-width: 96px !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 5px 8px !important;
+  border-radius: 999px !important;
+  font-size: 8px !important;
+  line-height: 1 !important;
+  letter-spacing: .08em !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  background: #ecfdf5 !important;
+  color: #166534 !important;
+  -webkit-text-fill-color: #166534 !important;
+}
+
+/* name */
+.cvWorkerRailItem b {
+  grid-area: name !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  font-size: 17px !important;
+  line-height: 1 !important;
+  letter-spacing: -.03em !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* current job */
+.cvWorkerRailItem small {
+  grid-area: job !important;
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  font-size: 12px !important;
+  line-height: 1.25 !important;
+  font-weight: 850 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* hide GPS/address/location from selector */
+.cvWorkerRailItem em {
+  display: none !important;
+}
+
+/* selected text */
+.cvWorkerRailItem.active b,
+.cvWorkerRailItem.active small {
+  color: #fffaf0 !important;
+  -webkit-text-fill-color: #fffaf0 !important;
+}
+
+.cvWorkerRailItem.active span {
+  background: rgba(249, 115, 22, .18) !important;
+  color: #fdba74 !important;
+  -webkit-text-fill-color: #fdba74 !important;
+}
+
+/* remove any old giant pseudo/bubble styling */
+.cvWorkerRailItem::before,
+.cvWorkerRailItem::after,
+.cvWorkerRailItem span::before,
+.cvWorkerRailItem span::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* tighter worker rail title */
+.cvWorkerRailHead {
+  padding: 0 2px 6px !important;
+}
+
+.cvWorkerRailHead b {
+  font-size: 19px !important;
+  line-height: 1 !important;
+}
+
+.cvWorkerRailHead button {
+  min-height: 32px !important;
+  padding: 0 11px !important;
+  font-size: 11px !important;
+}
