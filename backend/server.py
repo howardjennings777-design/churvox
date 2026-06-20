@@ -74,6 +74,7 @@ def normalize_job_status_for_response(job: dict):
 
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -402,6 +403,21 @@ def get_country_addon_price_id(addon: str, country: str | None = "NZ") -> str:
 
 # Create the main app
 app = FastAPI(title="Churvox API")
+
+# Security: only accept expected host headers.
+# Allows Churvox domains, Render service domains, and local dev.
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=[
+        "www.churvox.com",
+        "churvox.com",
+        "*.churvox.com",
+        "*.onrender.com",
+        "localhost",
+        "127.0.0.1",
+    ],
+)
+
 app.include_router(invoice_pdf_router, prefix="/api")
 
 
@@ -443,6 +459,35 @@ def _churvox_apply_cors(response: Response, origin: str, request: Request | None
             else None
         ) or "Authorization,Content-Type,X-Requested-With"
     return response
+
+@app.middleware("http")
+async def churvox_security_headers(request: Request, call_next):
+    response = await call_next(request)
+
+    # Basic browser hardening. These do not change app logic.
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault(
+        "Permissions-Policy",
+        "camera=(), microphone=(), geolocation=(), payment=()"
+    )
+    response.headers.setdefault("Cross-Origin-Opener-Policy", "same-origin")
+
+    # Only add HSTS when request is HTTPS/proxied HTTPS.
+    proto = (request.headers.get("x-forwarded-proto") or request.url.scheme or "").lower()
+    if proto == "https":
+        response.headers.setdefault(
+            "Strict-Transport-Security",
+            "max-age=31536000; includeSubDomains; preload"
+        )
+
+    # Keep API responses private by default.
+    if request.url.path.startswith("/api"):
+        response.headers.setdefault("Cache-Control", "no-store")
+
+    return response
+
 
 @app.middleware("http")
 async def churvox_force_cors_headers(request: Request, call_next):
@@ -5718,6 +5763,8 @@ async def ensure_owner_account():
 # Startup event
 @app.on_event("startup")
 async def startup_event():
+    if not JWT_SECRET or JWT_SECRET == "default_secret_change_me":
+        logger.warning("SECURITY WARNING: JWT_SECRET is missing or using the default fallback. Set a strong JWT_SECRET in Render.")
     await ensure_owner_account()
     await db.users.create_index("email", unique=True)
     await db.password_reset_tokens.create_index("expires_at", expireAfterSeconds=0)
