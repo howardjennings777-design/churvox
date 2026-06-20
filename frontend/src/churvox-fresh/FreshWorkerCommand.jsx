@@ -279,11 +279,56 @@ function actionText(job) {
 
 function proofText(job) {
   const hasPhotos = photosForJob(job).length > 0;
-  const hasNotes = Boolean(pick(job, "worker_notes", "completion_notes", "notes"));
+  const hasNotes = Boolean(workerMessage(job));
+  if (isComplete(job) && hasPhotos && hasNotes) return "Photo + message sent";
   if (isComplete(job) && hasPhotos) return "Photo proof added";
-  if (isComplete(job)) return "Complete — photo check";
-  if (hasNotes) return "Notes added";
+  if (isComplete(job) && hasNotes) return "Worker message sent";
+  if (isComplete(job)) return "Complete — proof check";
+  if (hasPhotos && hasNotes) return "Photo + message ready";
+  if (hasNotes) return "Message added";
+  if (hasPhotos) return "Photo added";
   return "No proof yet";
+}
+
+function workerMessage(job) {
+  return pick(
+    job,
+    "worker_notes",
+    "worker_message",
+    "message_to_boss",
+    "boss_message",
+    "completion_message",
+    "completion_note",
+    "completion_notes",
+    "worker_completion_note",
+    "final_note",
+    "worker_note"
+  );
+}
+
+function ownerReviewStatus(job) {
+  return lower(pick(job, "work_review_status", "review_status", "owner_review_status"));
+}
+
+function isReadyForOwner(job) {
+  const review = ownerReviewStatus(job);
+  return review === "ready_for_review" || review === "ready" || job?.completed_by_worker === true || isComplete(job);
+}
+
+function workerProofLabel(job) {
+  const photos = photosForJob(job).length;
+  const message = workerMessage(job);
+  if (ownerReviewStatus(job) === "sent_back" || job?.worker_action_required === true) return "Sent back to worker";
+  if (isReadyForOwner(job) && photos && message) return "Ready: photo + message";
+  if (isReadyForOwner(job) && photos) return "Ready: photo proof";
+  if (isReadyForOwner(job) && message) return "Ready: message";
+  if (isReadyForOwner(job)) return "Ready for review";
+  if (photos || message) return "Proof started";
+  return "No proof yet";
+}
+
+function hasWorkerProof(job) {
+  return Boolean(workerMessage(job)) || photosForJob(job).length > 0 || isReadyForOwner(job);
 }
 
 function photosForJob(job) {
@@ -486,6 +531,12 @@ export default function FreshWorkerCommand() {
   const liveCount = workers.filter(isLiveActiveWorker).length;
   const todayCount = workers.reduce((sum, worker) => sum + Number(worker?.today_job_count ?? buildWorkerView(worker, jobs).todayJobs.length ?? 0), 0);
   const photoProofs = view ? photoProofsFromJobs(view.assignedJobs) : [];
+  const workerProofItems = view
+    ? view.assignedJobs
+      .filter(hasWorkerProof)
+      .sort((a, b) => String(latestJobActivity(b) || "").localeCompare(String(latestJobActivity(a) || "")))
+      .slice(0, 8)
+    : [];
   const importantJobs = view
     ? (view.currentJob
       ? [view.currentJob, ...view.todayJobs.filter((job) => idOf(job) !== idOf(view.currentJob))]
@@ -775,6 +826,28 @@ export default function FreshWorkerCommand() {
                   <button type="button" onClick={openPhotosModal}>{photoProofs.length ? "View all photos" : "Open photos"}</button>
                 </article>
 
+                <article className="cvWorkerPanel cvWorkerProofPanel">
+                  <h3>Worker messages</h3>
+                  {workerProofItems.length ? (
+                    <div className="cvWorkerProofList">
+                      {workerProofItems.map((job, index) => {
+                        const message = workerMessage(job);
+                        const photoCount = photosForJob(job).length;
+                        return (
+                          <button key={idOf(job, `proof-${index}`)} type="button" className="cvWorkerProofItem" onClick={() => openJobModal(job)}>
+                            <span>{workerProofLabel(job)}</span>
+                            <b>{jobTitle(job)}</b>
+                            <small>{clientName(job)} · {photoCount} photo{photoCount === 1 ? "" : "s"}</small>
+                            {message ? <p>{message}</p> : <p>No worker message yet.</p>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="cvWorkerEmpty"><b>No worker messages yet</b><span>When the worker finishes a job and leaves a note/photo, it will show here.</span></div>
+                  )}
+                </article>
+
                 <article className="cvWorkerPanel">
                   <h3>Today’s jobs</h3>
                   <div className="cvWorkerJobs">
@@ -862,6 +935,12 @@ export default function FreshWorkerCommand() {
                   <em>{hoursText(jobSeconds(panelModal.job))}</em>
                   <em>{proofText(panelModal.job)}</em>
                 </div>
+
+                <section className="cvWorkerBossMessage">
+                  <span>{workerProofLabel(panelModal.job)}</span>
+                  <h4>Worker message</h4>
+                  <p>{workerMessage(panelModal.job) || "No worker message yet."}</p>
+                </section>
                 {photosForJob(panelModal.job).length ? (
                   <div className="cvWorkerPhotos">
                     {photosForJob(panelModal.job).map((url, index) => (
