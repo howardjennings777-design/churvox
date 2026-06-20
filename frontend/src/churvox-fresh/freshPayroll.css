@@ -1,4 +1,4 @@
-/* CHURVOX_PAYROLL_REAL_HEADER_FIX_20260621 */
+/* CHURVOX_PAYROLL_CLEAN_PAGE_20260621 */
 
 .freshPayrollPageClean,
 .freshPayrollPageClean * {
@@ -6,6 +6,7 @@
 }
 
 .freshPayrollPageClean {
+  width: 100%;
   max-width: 1280px;
   margin: 0 auto;
   display: grid;
@@ -13,16 +14,18 @@
   overflow-x: hidden;
 }
 
+/* Header */
 .freshPayrollPageClean .freshPayrollHeroClean {
   min-height: 0 !important;
   height: auto !important;
   padding: 18px 22px !important;
   border-radius: 26px !important;
-  margin-bottom: 0 !important;
-  overflow: visible !important;
+  margin: 0 !important;
+  overflow: hidden !important;
 }
 
 .freshPayrollPageClean .freshPayrollHeroClean span {
+  display: inline-flex !important;
   width: auto !important;
   max-width: max-content !important;
   white-space: nowrap !important;
@@ -35,7 +38,6 @@
   letter-spacing: -.07em !important;
   white-space: normal !important;
   overflow: visible !important;
-  text-overflow: clip !important;
 }
 
 .freshPayrollPageClean .freshPayrollHeroClean p {
@@ -47,31 +49,80 @@
   overflow: visible !important;
 }
 
+/* Safety notice */
 .freshPayrollPageClean .freshPayrollNotice {
-  margin-top: 0 !important;
+  margin: 0 !important;
+  border: 1px solid rgba(22,163,74,.18) !important;
   border-left: 6px solid #16a34a !important;
+  border-radius: 20px !important;
+  background: #f0fdf4 !important;
+  padding: 12px 14px !important;
+  display: grid !important;
+  grid-template-columns: 180px minmax(0, 1fr) !important;
+  gap: 10px !important;
+  align-items: center !important;
 }
 
-.freshPayrollPageClean .freshCommandPulse {
-  margin-top: 0 !important;
+.freshPayrollPageClean .freshPayrollNotice b {
+  color: #166534 !important;
+  -webkit-text-fill-color: #166534 !important;
+  font-size: 11px !important;
+  font-weight: 1000 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .11em !important;
+}
+
+.freshPayrollPageClean .freshPayrollNotice span {
+  color: #334155 !important;
+  -webkit-text-fill-color: #334155 !important;
+  font-weight: 850 !important;
+  line-height: 1.35 !important;
+}
+
+/* Stats grid — does NOT use freshCommandPulse */
+.freshPayrollPageClean .freshPayrollStatsGrid {
+  position: static !important;
+  transform: none !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   gap: 12px !important;
+  align-items: stretch !important;
 }
 
-.freshPayrollPageClean .freshCommandPulse .freshCard {
-  min-height: 116px !important;
+.freshPayrollPageClean .freshPayrollStatsGrid .freshCard {
+  position: static !important;
+  transform: none !important;
+  margin: 0 !important;
+  min-height: 112px !important;
   display: grid !important;
   align-content: center !important;
+  border-radius: 24px !important;
+  background: rgba(255,250,240,.96) !important;
 }
 
-.freshPayrollPageClean .freshCommandPulse .freshCard h2 {
+.freshPayrollPageClean .freshPayrollStatsGrid .freshCard h2 {
   margin: 0 0 8px !important;
-  font-size: clamp(34px, 4vw, 52px) !important;
+  font-size: clamp(32px, 4vw, 50px) !important;
   line-height: .9 !important;
+  letter-spacing: -.055em !important;
 }
 
+.freshPayrollPageClean .freshPayrollStatsGrid .freshCard p {
+  margin: 0 !important;
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+}
+
+/* Pay period */
 .freshPayrollPageClean .freshPayrollPeriod {
+  margin: 0 !important;
   display: flex !important;
   flex-wrap: wrap !important;
   gap: 10px !important;
@@ -89,14 +140,30 @@
   white-space: nowrap !important;
 }
 
+/* Filter bar */
+.freshPayrollPageClean .freshCommandFilterBar {
+  margin: 0 !important;
+  position: static !important;
+  transform: none !important;
+}
+
+/* Main grid */
+.freshPayrollPageClean .freshGrid {
+  margin-top: 0 !important;
+}
+
 @media (max-width: 980px) {
-  .freshPayrollPageClean .freshCommandPulse {
+  .freshPayrollPageClean .freshPayrollStatsGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .freshPayrollPageClean .freshPayrollNotice {
+    grid-template-columns: 1fr !important;
   }
 }
 
 @media (max-width: 640px) {
-  .freshPayrollPageClean .freshCommandPulse {
+  .freshPayrollPageClean .freshPayrollStatsGrid {
     grid-template-columns: 1fr !important;
   }
 
