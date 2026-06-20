@@ -8,17 +8,17 @@ const OPEN_JOB_MODAL_KEY = "churvox:fresh-open-job-modal:v1";
 const OPEN_CLIENT_MODAL_KEY = "churvox:fresh-open-client-modal:v1";
 
 const groups = [
-  { title: "Home", items: [["command", "CM", "Command"], ["askchurvox", "AI", "Tell Churvox"]] },
-  { title: "Work", items: [["jobs", "JB", "Jobs"], ["dispatch", "SC", "Schedule"], ["clients", "CL", "Clients"]] },
+  { title: "Home", items: [["today", "TW", "Today’s Work"], ["command", "CM", "Command"], ["askchurvox", "AI", "Tell Churvox"]] },
+  { title: "Work", items: [["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"]] },
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["payments", "PY", "Payments"], ["xero", "XE", "Xero"]] },
   { title: "Team", items: [["team", "TM", "Team"], ["workercommand", "WC", "Worker View"], ["time", "TS", "Time Sheets"], ["payroll", "PR", "Payroll"]] },
   { title: "Tools", items: [["automation", "AT", "Automation"], ["reports", "RP", "Reports"], ["launchcontrol", "LC", "Launch"]] },
   { title: "Setup", items: [["settings", "SG", "Settings"], ["imports", "IM", "Imports"], ["exports", "EX", "Exports"], ["plans", "PL", "Plans"], ["support", "SP", "Support"]] },
 ];
 
-const mobileItems = [["command", "CM", "Command"], ["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"], ["invoices", "IV", "Money"], ["more", "••", "More"]];
-const mobileLabels = { smart: "Command", hub: "Command", dashboard: "Command", jobs: "Jobs", clients: "Clients", quotes: "Quotes", invoices: "Money", payments: "Money", xero: "Xero", team: "Team", workercommand: "Worker View", time: "Time Sheets", payroll: "Payroll", command: "Command", automation: "Automation", reports: "Reports", launchcontrol: "Launch", settings: "Settings", imports: "Imports", exports: "Exports", plans: "Plans", support: "Support", askchurvox: "Tell Churvox" };
-const parentByKey = { smart: "command", hub: "command", dashboard: "command", routes: "dispatch", areas: "dispatch", schedulerai: "dispatch", gps: "time", portal: "clients", followupwriter: "clients", reviewbooster: "clients" };
+const mobileItems = [["today", "TW", "Today"], ["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"], ["invoices", "IV", "Money"], ["more", "••", "More"]];
+const mobileLabels = { today: "Today’s Work", todayswork: "Today’s Work", worktoday: "Today’s Work", smart: "Today’s Work", hub: "Today’s Work", dashboard: "Today’s Work", dispatch: "Today’s Work", schedule: "Today’s Work", calendar: "Today’s Work", jobs: "Jobs", clients: "Clients", quotes: "Quotes", invoices: "Money", payments: "Money", xero: "Xero", team: "Team", workercommand: "Worker View", time: "Time Sheets", payroll: "Payroll", command: "Command", automation: "Automation", reports: "Reports", launchcontrol: "Launch", settings: "Settings", imports: "Imports", exports: "Exports", plans: "Plans", support: "Support", askchurvox: "Tell Churvox" };
+const parentByKey = { smart: "today", hub: "today", dashboard: "today", dispatch: "today", schedule: "today", calendar: "today", todayswork: "today", worktoday: "today", routes: "today", areas: "today", schedulerai: "today", gps: "time", portal: "clients", followupwriter: "clients", reviewbooster: "clients" };
 groups.forEach((group) => group.items.forEach(([key]) => { parentByKey[key] = key; }));
 
 function guideIsComplete() { try { return window.localStorage.getItem(GUIDE_COMPLETE_KEY) === "true"; } catch { return false; } }

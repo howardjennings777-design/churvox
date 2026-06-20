@@ -66,11 +66,13 @@ import "./freshTemplates.css";
 import "./freshTimeLogs.css";
 import "./freshTopStatus.css";
 import "./freshTopbar.css";
+import "./freshTodaysWork.css";
 import "./freshUltimateContrast.css";
 import "./freshVariations.css";
 import "./freshWarranties.css";
 import FreshShell from "./FreshShell";
 import FreshSimple from "./FreshSimple";
+import FreshTodaysWork from "./FreshTodaysWork";
 import FreshJobs from "./FreshJobs";
 import FreshClients from "./FreshClients";
 import FreshQuotes from "./FreshQuotes";
@@ -129,16 +131,19 @@ import "./freshFinalContrastLock.css";
 import "./freshPillContrastSystem.css";
 
 const pages = {
-  smart: FreshCommand,
-  hub: FreshCommand,
-  dashboard: FreshCommand,
+  today: FreshTodaysWork,
+  todayswork: FreshTodaysWork,
+  worktoday: FreshTodaysWork,
+  smart: FreshTodaysWork,
+  hub: FreshTodaysWork,
+  dashboard: FreshTodaysWork,
   jobs: FreshJobs,
   clients: FreshClients,
   quotes: FreshQuotes,
   invoices: FreshInvoices,
-  calendar: FreshCalendar,
-  schedule: FreshCalendar,
-  dispatch: FreshCalendar,
+  calendar: FreshTodaysWork,
+  schedule: FreshTodaysWork,
+  dispatch: FreshTodaysWork,
   team: FreshTeam,
   settings: FreshSettings,
   plans: FreshPlans,
@@ -193,17 +198,17 @@ const pages = {
 function getInitialPage() {
   try {
     const hash = String(window.location.hash || "").replace(/^#/, "").trim().toLowerCase();
-    if (["smart", "hub", "dashboard"].includes(hash)) return "command";
+    if (["smart", "hub", "dashboard"].includes(hash)) return "today";
     if (hash && pages[hash]) return hash;
 
     const path = String(window.location.pathname || "").trim().toLowerCase();
-    if (path === "/dashboard" || path === "/fresh") return "command";
+    if (path === "/dashboard" || path === "/fresh") return "today";
     if (path === "/plans") return "plans";
 
     const saved = window.localStorage.getItem("churvox:fresh-page") || "command";
     return ["smart", "hub", "dashboard"].includes(saved) ? "command" : saved;
   } catch {
-    return "smart";
+    return "today";
   }
 }
 
@@ -216,9 +221,9 @@ export default function FreshApp() {
   React.useEffect(() => {
     const applyHashRoute = () => {
       const hash = String(window.location.hash || "").replace(/^#/, "").trim().toLowerCase();
-      if (["smart", "hub", "dashboard"].includes(hash)) setPage("command");
+      if (["smart", "hub", "dashboard"].includes(hash)) setPage("today");
       else if (hash && pages[hash]) setPage(hash);
-      else if (window.location.pathname === "/dashboard") setPage("command");
+      else if (window.location.pathname === "/dashboard") setPage("today");
     };
 
     applyHashRoute();
@@ -227,7 +232,7 @@ export default function FreshApp() {
   }, []);
 
   function navigate(next) {
-    const safeNext = ["smart", "hub", "dashboard"].includes(next) ? "command" : (next || "command");
+    const safeNext = ["smart", "hub", "dashboard"].includes(next) ? "today" : (next || "today");
     setPage(safeNext);
     try {
       window.localStorage.setItem("churvox:fresh-page", safeNext);

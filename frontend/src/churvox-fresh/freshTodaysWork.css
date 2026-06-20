@@ -1,0 +1,366 @@
+.freshTodayWorkPage {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  gap: 16px;
+}
+
+.freshTodayWorkHero {
+  border-radius: 30px;
+  border-left: 7px solid #f97316;
+  background:
+    radial-gradient(circle at 92% -18%, rgba(249, 115, 22, .62), transparent 34%),
+    linear-gradient(135deg, #0b111a 0%, #111827 58%, #070b12 100%);
+  color: #fff;
+  padding: 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(330px, .75fr);
+  gap: 18px;
+  align-items: center;
+  box-shadow: 0 18px 45px rgba(2,6,23,.14);
+}
+
+.freshTodayWorkHero span,
+.freshTodayWorkMain header span,
+.freshTodayWorkSide span {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 7px 11px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.14);
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.freshTodayWorkHero h1 {
+  margin: 14px 0 9px;
+  font-size: clamp(50px, 7vw, 92px);
+  line-height: .85;
+  letter-spacing: -.08em;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+}
+
+.freshTodayWorkHero p {
+  margin: 0;
+  max-width: 720px;
+  color: #f8fafc;
+  -webkit-text-fill-color: #f8fafc;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.freshTodayWorkSync {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.freshTodayWorkSync b {
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  font-weight: 1000;
+}
+
+.freshTodayWorkSync small {
+  color: #cbd5e1;
+  -webkit-text-fill-color: #cbd5e1;
+  font-weight: 850;
+}
+
+.freshTodayWorkSync button,
+.freshTodayWorkToolbar button,
+.freshTodayWorkEmpty button {
+  border: 0;
+  border-radius: 999px;
+  min-height: 38px;
+  padding: 0 14px;
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshTodayWorkStats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.freshTodayWorkStats button {
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 22px;
+  background: rgba(255,255,255,.08);
+  color: #fff;
+  padding: 18px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.freshTodayWorkStats b {
+  display: block;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  font-size: 36px;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.freshTodayWorkStats span {
+  display: block;
+  margin-top: 8px;
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+  font-weight: 1000;
+}
+
+.freshTodayWorkToolbar {
+  border: 1px solid rgba(15,23,42,.12);
+  border-radius: 24px;
+  background: #fffaf0;
+  padding: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  align-items: center;
+  box-shadow: 0 12px 30px rgba(2,6,23,.07);
+}
+
+.freshTodayWorkToolbar button {
+  background: #111827;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+}
+
+.freshTodayWorkToolbar button.primary {
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+.freshTodayWorkToolbar input {
+  min-height: 38px;
+  border-radius: 999px;
+  border: 1px solid rgba(15,23,42,.14);
+  background: #fff;
+  padding: 0 14px;
+  font-weight: 900;
+  color: #111827;
+}
+
+.freshTodayWorkBoard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(310px, .75fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.freshTodayWorkMain,
+.freshTodayWorkSide article {
+  border: 1px solid rgba(15,23,42,.13);
+  border-radius: 28px;
+  background: rgba(255,250,240,.95);
+  box-shadow: 0 18px 45px rgba(2,6,23,.08);
+  padding: 18px;
+}
+
+.freshTodayWorkMain header {
+  margin-bottom: 12px;
+}
+
+.freshTodayWorkMain header span,
+.freshTodayWorkSide span {
+  background: #fff7ed;
+  border-color: transparent;
+  color: #9a3412;
+  -webkit-text-fill-color: #9a3412;
+}
+
+.freshTodayWorkMain h2,
+.freshTodayWorkSide h3 {
+  margin: 7px 0 5px;
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: .95;
+  letter-spacing: -.055em;
+}
+
+.freshTodayWorkMain p,
+.freshTodayWorkSide p {
+  margin: 0;
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+  font-weight: 850;
+}
+
+.freshTodayWorkList {
+  display: grid;
+  gap: 10px;
+}
+
+.freshTodayWorkJob {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 115px minmax(0, 1fr) minmax(170px, .35fr);
+  gap: 14px;
+  align-items: center;
+  text-align: left;
+  border: 1px solid rgba(15,23,42,.12);
+  border-left: 7px solid #16a34a;
+  border-radius: 22px;
+  background: #fff;
+  padding: 14px;
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(2,6,23,.045);
+}
+
+.freshTodayWorkJob.needsInvoice {
+  border-left-color: #f97316;
+}
+
+.freshTodayWorkJob.done {
+  border-left-color: #0ea5e9;
+}
+
+.freshTodayWorkTime b {
+  display: block;
+  color: #f97316;
+  -webkit-text-fill-color: #f97316;
+  font-size: 19px;
+  font-weight: 1000;
+}
+
+.freshTodayWorkTime span,
+.freshTodayWorkMeta span,
+.freshTodayWorkBody small {
+  display: block;
+  margin-top: 5px;
+  color: #64748b;
+  -webkit-text-fill-color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.freshTodayWorkBody strong {
+  display: block;
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+  font-size: 20px;
+  font-weight: 1000;
+}
+
+.freshTodayWorkBody span {
+  display: block;
+  margin-top: 4px;
+  color: #334155;
+  -webkit-text-fill-color: #334155;
+  font-weight: 900;
+}
+
+.freshTodayWorkMeta {
+  display: grid;
+  gap: 6px;
+  justify-items: end;
+  text-align: right;
+}
+
+.freshTodayWorkMeta b {
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #9a3412;
+  -webkit-text-fill-color: #9a3412;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+}
+
+.freshTodayWorkMeta b.ok {
+  background: #ecfdf5;
+  color: #166534;
+  -webkit-text-fill-color: #166534;
+}
+
+.freshTodayWorkMeta b.muted {
+  background: #f1f5f9;
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+}
+
+.freshTodayWorkEmpty {
+  border: 1px dashed rgba(15,23,42,.18);
+  border-radius: 22px;
+  background: #fff;
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+  padding: 20px;
+  display: grid;
+  gap: 7px;
+  font-weight: 900;
+}
+
+.freshTodayWorkEmpty b {
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+  font-size: 20px;
+}
+
+.freshTodayWorkEmpty button {
+  margin-top: 7px;
+  justify-self: start;
+}
+
+.freshTodayWorkSide {
+  display: grid;
+  gap: 12px;
+}
+
+.freshTodayWorkSide h3 {
+  font-size: clamp(34px, 4vw, 54px);
+}
+
+.freshTodayWorkError {
+  margin-top: 10px !important;
+  max-width: 720px;
+  border: 1px solid rgba(248, 113, 113, 0.38);
+  border-radius: 14px;
+  background: rgba(127, 29, 29, 0.32);
+  color: #fecaca !important;
+  -webkit-text-fill-color: #fecaca !important;
+  padding: 10px 12px;
+  font-weight: 900;
+}
+
+@media (max-width: 980px) {
+  .freshTodayWorkHero,
+  .freshTodayWorkBoard {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .freshTodayWorkStats {
+    grid-template-columns: 1fr;
+  }
+
+  .freshTodayWorkJob {
+    grid-template-columns: 1fr;
+  }
+
+  .freshTodayWorkMeta {
+    justify-items: start;
+    text-align: left;
+  }
+}
