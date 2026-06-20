@@ -125,3 +125,38 @@
   color: #fed7aa !important;
   -webkit-text-fill-color: #fed7aa !important;
 }
+
+/* Fix selected filter pills: dark selected pill must keep readable text */
+.freshCommandFilterBar button.active,
+.freshCommandFilterBar button[aria-pressed="true"],
+.freshFilters button.active,
+.freshFilters button[aria-pressed="true"],
+.freshTabs button.active,
+.freshTabs button[aria-pressed="true"] {
+  background: #111827 !important;
+  border-color: #111827 !important;
+  color: #ffffff !important;
+}
+
+.freshCommandFilterBar button.active *,
+.freshCommandFilterBar button[aria-pressed="true"] *,
+.freshFilters button.active *,
+.freshFilters button[aria-pressed="true"] *,
+.freshTabs button.active *,
+.freshTabs button[aria-pressed="true"] * {
+  color: #ffffff !important;
+}
+
+.freshCommandFilterBar button.active b,
+.freshCommandFilterBar button[aria-pressed="true"] b,
+.freshFilters button.active b,
+.freshFilters button[aria-pressed="true"] b,
+.freshTabs button.active b,
+.freshTabs button[aria-pressed="true"] b {
+  background: #f97316 !important;
+  color: #111827 !important;
+  border-radius: 999px !important;
+  padding: 0.12rem 0.42rem !important;
+  min-width: 1.45rem !important;
+  text-align: center !important;
+}
