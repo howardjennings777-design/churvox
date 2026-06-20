@@ -36,6 +36,17 @@ export default function FreshCalendar({ onNavigate }) {
         <aside className="freshCard">
           <h2>Open</h2>
           <div className="freshActions">
+            <button
+              className="freshGhost"
+              type="button"
+              onClick={() => {
+                try {
+                  window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "schedule-refresh" } }));
+                } catch {}
+              }}
+            >
+              Refresh
+            </button>
             <button className="freshPrimary" type="button" onClick={() => onNavigate?.("jobs")}>Open jobs</button>
             <button className="freshOrange" type="button" onClick={() => onNavigate?.("planday")}>Plan my day</button>
             <button className="freshDark" type="button" onClick={() => onNavigate?.("command")}>Open Command</button>
