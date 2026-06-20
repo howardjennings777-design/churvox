@@ -1651,3 +1651,14 @@ select,
     padding-bottom: 120px !important;
   }
 }
+
+/* CHURVOX_GLOBAL_OVERFLOW_STOP_20260620 */
+.freshMain,
+.freshPageScroll {
+  overflow-x: hidden !important;
+}
+
+.freshPageScroll > * {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}

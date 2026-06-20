@@ -219,9 +219,9 @@ export default function FreshXero({ onNavigate }) {
       <div className="freshXeroHero">
         <div>
           <span>Xero connection</span>
-          <h1>Accounting handoff after invoice approval</h1>
+          <h1>Xero</h1>
           <p>
-            Xero is the final controlled step: Churvox creates draft invoices only. The owner reviews before anything is sent, marked paid, filed, or reconciled.
+            Connect Xero for draft invoice sync. Churvox prepares drafts only — nothing is sent, filed, reconciled, or marked paid automatically.
           </p>
         </div>
 
@@ -245,7 +245,7 @@ export default function FreshXero({ onNavigate }) {
         <span>
           {connected
             ? `Connected to ${connection?.tenant_name || "a Xero organisation"}. Draft invoice sync is available for controlled owner testing.`
-            : "Connect is blocked until Render env vars are ready and the Accounting Sync add-on is active for this business."}
+            : "Connect Xero once credentials, redirect URI, scopes, and the Accounting Sync add-on are ready."}
         </span>
       </div>
 

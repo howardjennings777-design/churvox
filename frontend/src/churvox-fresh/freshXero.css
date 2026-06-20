@@ -419,3 +419,122 @@
     min-width: 0 !important;
   }
 }
+
+/* CHURVOX_XERO_NO_SIDE_CLIP_20260620 */
+.freshXeroPage,
+.freshXeroPage * {
+  box-sizing: border-box !important;
+}
+
+.freshXeroPage {
+  width: 100% !important;
+  max-width: 1180px !important;
+  margin: 0 auto !important;
+  overflow-x: hidden !important;
+}
+
+.freshXeroHero {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px) !important;
+  align-items: center !important;
+  gap: 14px !important;
+  min-height: 150px !important;
+  padding: 18px !important;
+  border-left: 7px solid #f97316 !important;
+  background:
+    radial-gradient(circle at 92% -18%, rgba(249,115,22,.58), transparent 34%),
+    linear-gradient(135deg, #0b111a 0%, #111827 58%, #070b12 100%) !important;
+}
+
+.freshXeroHero > div,
+.freshXeroStats,
+.freshXeroStats div {
+  min-width: 0 !important;
+}
+
+.freshXeroHero h1 {
+  display: block !important;
+  max-width: 100% !important;
+  margin: 10px 0 8px !important;
+  font-size: clamp(44px, 5.5vw, 70px) !important;
+  line-height: .9 !important;
+  letter-spacing: -.07em !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+.freshXeroHero p {
+  max-width: 640px !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+.freshXeroStats {
+  min-width: 0 !important;
+  width: 100% !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.freshXeroStats div {
+  padding: 12px !important;
+  overflow: hidden !important;
+}
+
+.freshXeroStats b {
+  font-size: clamp(23px, 3vw, 32px) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.freshXeroStats small {
+  font-size: 10px !important;
+  line-height: 1.15 !important;
+  white-space: normal !important;
+}
+
+.freshXeroNotice {
+  display: grid !important;
+  grid-template-columns: minmax(130px, 220px) minmax(0, 1fr) !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+.freshXeroNotice span {
+  min-width: 0 !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+.freshXeroLayout {
+  width: 100% !important;
+  max-width: 100% !important;
+  grid-template-columns: minmax(260px, 330px) minmax(0, 1fr) !important;
+  overflow: hidden !important;
+}
+
+@media (max-width: 950px) {
+  .freshXeroHero,
+  .freshXeroLayout,
+  .freshXeroNotice {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshXeroStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .freshXeroStats {
+    grid-template-columns: 1fr !important;
+  }
+}
