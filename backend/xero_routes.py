@@ -30,9 +30,6 @@ XERO_CONNECTIONS_URL = "https://api.xero.com/connections"
 XERO_INVOICES_URL = "https://api.xero.com/api.xro/2.0/Invoices"
 XERO_SAFE_SCOPES = [
     "offline_access",
-    "openid",
-    "profile",
-    "email",
     "accounting.transactions",
     "accounting.contacts",
     "accounting.settings",
@@ -43,6 +40,7 @@ def _clean_xero_scopes(value: str | None = None) -> str:
     Xero rejects the whole OAuth request if one scope is bad.
     Keep phase-one Churvox scope safe and predictable.
     Render may override order, but unknown scopes are ignored.
+    Keep this accounting-only. Do not request openid/profile/email here.
     """
     raw = str(value or os.environ.get("XERO_SCOPES") or "").replace(",", " ").split()
     cleaned = [scope for scope in raw if scope in XERO_SAFE_SCOPES]
