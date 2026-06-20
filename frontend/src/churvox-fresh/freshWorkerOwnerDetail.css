@@ -1016,3 +1016,136 @@
     z-index: 1 !important;
   }
 }
+
+/* CHURVOX_WORKER_CARD_GRID_TIGHTEN_20260621
+   Clean up employer Worker View: equal card rows, tighter spacing,
+   no awkward gaps, no Ask bar floating over cards. */
+
+.cvWorkerPage .freshGlobalAsk,
+.cvWorkerPage ~ .freshGlobalAsk,
+.freshPageScroll .freshGlobalAsk {
+  position: relative !important;
+  top: auto !important;
+  z-index: 5 !important;
+  margin: 10px auto 12px !important;
+}
+
+/* tighter whole worker detail area */
+.cvWorkerDetail {
+  gap: 10px !important;
+}
+
+.cvWorkerGpsGrid,
+.cvWorkerStats,
+.cvWorkerDetailGrid {
+  gap: 10px !important;
+}
+
+/* make lower cards align like a board, not random blocks */
+.cvWorkerDetailGrid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  grid-auto-rows: minmax(220px, auto) !important;
+  align-items: stretch !important;
+}
+
+/* all panels fill their grid cell */
+.cvWorkerPanel {
+  height: 100% !important;
+  min-height: 220px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  padding: 14px !important;
+}
+
+/* make panel content fill neatly */
+.cvWorkerPanel .cvWorkerJobs,
+.cvWorkerPanel .cvWorkerProofList,
+.cvWorkerPanel .cvWorkerPhotos,
+.cvWorkerPanel .cvWorkerInfoList {
+  flex: 1 1 auto !important;
+}
+
+/* empty cards should still look like real cards, not tiny leftovers */
+.cvWorkerPanel .cvWorkerEmpty {
+  flex: 1 1 auto !important;
+  min-height: 112px !important;
+  display: grid !important;
+  align-content: center !important;
+}
+
+/* headings were too tall and created uneven rows */
+.cvWorkerPanel h3 {
+  margin: 0 0 4px !important;
+  font-size: clamp(26px, 3.2vw, 40px) !important;
+  line-height: .94 !important;
+  letter-spacing: -.06em !important;
+}
+
+/* job cards inside panels should be consistent */
+.cvWorkerJobCard {
+  min-height: 148px !important;
+  align-content: start !important;
+}
+
+.cvWorkerJobCard button {
+  margin-top: auto !important;
+  width: 100% !important;
+}
+
+/* uploaded photo / message cards look too short when empty */
+.cvWorkerProofPanel,
+.cvWorkerPanel:has(.cvWorkerPhotos),
+.cvWorkerPanel:has(.cvWorkerInfoList) {
+  min-height: 220px !important;
+}
+
+/* contact card should not leave giant blank space */
+.cvWorkerInfoList p {
+  padding: 9px 10px !important;
+}
+
+/* reduce big blank vertical space in current work area */
+.cvWorkerCurrentJob {
+  padding: 14px !important;
+  min-height: 150px !important;
+}
+
+.cvWorkerCurrentJob h3 {
+  font-size: clamp(30px, 4vw, 46px) !important;
+}
+
+/* make the help bubble less likely to cover content */
+.freshHelpBubble,
+.needHelpBubble,
+[class*="HelpBubble"] {
+  z-index: 200 !important;
+}
+
+/* desktop board should use space better */
+@media (min-width: 901px) {
+  .cvWorkerLayout {
+    gap: 10px !important;
+  }
+
+  .cvWorkerRail {
+    width: 100% !important;
+  }
+
+  .cvWorkerDetailGrid {
+    grid-auto-flow: row dense !important;
+  }
+}
+
+/* smaller screens stay single column so cards don't squash */
+@media (max-width: 760px) {
+  .cvWorkerDetailGrid {
+    grid-template-columns: 1fr !important;
+    grid-auto-rows: auto !important;
+  }
+
+  .cvWorkerPanel {
+    min-height: auto !important;
+  }
+}
