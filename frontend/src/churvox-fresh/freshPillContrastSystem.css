@@ -146,3 +146,100 @@ html body [aria-disabled="true"],
 html body [aria-disabled="true"] * {
   opacity: 0.72 !important;
 }
+
+/* HARD GLOBAL BUTTON/PILL CONTRAST FIX */
+
+/* Any active tab/filter/pill/button on dark background must be white */
+html body button.active,
+html body button.selected,
+html body button.is-active,
+html body button[aria-pressed="true"],
+html body button[aria-current="true"],
+html body .active[role="button"],
+html body .selected[role="button"] {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html body button.active *,
+html body button.selected *,
+html body button.is-active *,
+html body button[aria-pressed="true"] *,
+html body button[aria-current="true"] *,
+html body .active[role="button"] *,
+html body .selected[role="button"] * {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Dark cards/panels with normal action buttons */
+html body .freshCard button,
+html body article button,
+html body section button {
+  opacity: 1 !important;
+}
+
+html body .freshCard button[class*="freshDark"],
+html body .freshCard button.freshDark,
+html body .freshCard button.freshPrimary,
+html body .freshCard button.freshOrange,
+html body .freshAutomationDetail button,
+html body .freshXeroPage button,
+html body .freshWorkerAppView button,
+html body .freshWorkerCommandPage button {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html body .freshCard button[class*="freshDark"] *,
+html body .freshCard button.freshDark *,
+html body .freshCard button.freshPrimary *,
+html body .freshCard button.freshOrange *,
+html body .freshAutomationDetail button *,
+html body .freshXeroPage button *,
+html body .freshWorkerAppView button *,
+html body .freshWorkerCommandPage button * {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Ghost/light buttons must stay dark */
+html body button.freshGhost,
+html body button.freshGhost *,
+html body .freshCard button.freshGhost,
+html body .freshCard button.freshGhost * {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}
+
+/* Selected filter count bubbles */
+html body .freshCommandFilterBar button.active b,
+html body .freshCommandFilterBar button.active strong,
+html body .freshCommandFilterBar button[aria-pressed="true"] b,
+html body .freshCommandFilterBar button[aria-current="true"] b {
+  background: #f97316 !important;
+  background-color: #f97316 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Pale/orange guide badges on light cards */
+html body .freshCard > span:first-child,
+html body .freshCard header span:first-child,
+html body .freshCard div > span:first-child,
+html body article > span:first-child,
+html body article header span:first-child {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  opacity: 1 !important;
+  font-weight: 900 !important;
+}
+
+/* Dark hero labels */
+html body .freshHero span,
+html body [class*="Hero"] span {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+}

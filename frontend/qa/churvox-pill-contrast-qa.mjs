@@ -87,8 +87,17 @@ async function scanPage(page, pageName, viewportName) {
       return String(value || "").replace(/\s+/g, " ").trim();
     }
 
+    function rgbaParts(color) {
+      const match = String(color || "").match(/rgba?\(([^)]+)\)/i);
+      if (!match) return null;
+      const parts = match[1].split(",").map((x) => Number(String(x).trim()));
+      if (parts.length < 3) return null;
+      return { r: parts[0], g: parts[1], b: parts[2], a: parts.length >= 4 ? parts[3] : 1 };
+    }
+
     function isTransparent(color) {
-      return !color || color === "transparent" || /rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0\s*\)/i.test(color);
+      const rgba = rgbaParts(color);
+      return !rgba || rgba.a <= 0.12;
     }
 
     function effectiveBg(el) {
@@ -96,10 +105,28 @@ async function scanPage(page, pageName, viewportName) {
       while (node && node !== document.documentElement) {
         const style = getComputedStyle(node);
         const bg = style.backgroundColor;
-        if (!isTransparent(bg)) return bg;
+        const rgba = rgbaParts(bg);
+
+        if (rgba && rgba.a > 0.12) {
+          if (rgba.a < 0.96) {
+            // translucent layer: keep looking for the real parent background
+            node = node.parentElement;
+            continue;
+          }
+          return bg;
+        }
+
+        const bgImage = String(style.backgroundImage || "");
+        const cls = String(node.className || "");
+        if (bgImage !== "none" && /hero|command|dark|launcher|operator|workspace|shell|sidebar/i.test(cls)) {
+          return "rgb(17, 24, 39)";
+        }
+
         node = node.parentElement;
       }
-      return getComputedStyle(document.body).backgroundColor || "rgb(255,255,255)";
+
+      const bodyBg = getComputedStyle(document.body).backgroundColor || "rgb(247,243,234)";
+      return bodyBg;
     }
 
     function selectorFor(el) {
