@@ -111,6 +111,10 @@ function importantStyle(el, name, value) {
 function applyReadable(el) {
   if (!el || !looksLikePill(el)) return;
 
+  // Command card category pills are locked by CSS. Do not keep re-writing them,
+  // because that causes flicker/glitching on some browsers.
+  if (el.classList?.contains("freshCommandPill")) return;
+
   const text = clean(el.innerText || el.textContent || "");
   const bg = rgbParts(effectiveBackground(el));
   let color = readableColorFor(el);
@@ -301,8 +305,6 @@ export function installPillContrastRuntime() {
   window.churvoxFixPills = fixPillContrastNow;
 
   let frame = 0;
-  let interval = 0;
-
   const run = () => {
     window.cancelAnimationFrame(frame);
     frame = window.requestAnimationFrame(fixPillContrastNow);
@@ -310,14 +312,12 @@ export function installPillContrastRuntime() {
 
   run();
   [100, 250, 600, 1000, 1800, 3000, 5000].forEach((ms) => window.setTimeout(run, ms));
-  interval = window.setInterval(run, 1500);
-
   const observer = new MutationObserver(run);
   observer.observe(document.body, {
     childList: true,
     subtree: true,
     attributes: true,
-    attributeFilter: ["class", "style", "aria-pressed", "aria-current"],
+    attributeFilter: ["class", "aria-pressed", "aria-current"],
   });
 
   window.addEventListener("hashchange", run);
@@ -327,7 +327,6 @@ export function installPillContrastRuntime() {
 
   return () => {
     window.cancelAnimationFrame(frame);
-    window.clearInterval(interval);
     observer.disconnect();
     window.removeEventListener("hashchange", run);
     window.removeEventListener("churvox:fresh-data-updated", run);

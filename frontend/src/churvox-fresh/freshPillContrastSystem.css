@@ -361,3 +361,26 @@ html body .freshCommandBox small {
   -webkit-text-fill-color: #334155 !important;
   font-weight: 900 !important;
 }
+
+/* Stable Command card category pills — no runtime flicker */
+html body .freshCommandBox .freshCommandPill,
+html body span.freshCommandPill {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: fit-content !important;
+  background: #111827 !important;
+  background-color: #111827 !important;
+  border: 1px solid #111827 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+  font-weight: 950 !important;
+  text-shadow: none !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
