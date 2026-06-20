@@ -73,6 +73,22 @@ export default function FreshPlans({ onNavigate }) {
     try { window.localStorage.setItem(COUNTRY_CACHE_KEY, country); } catch {}
   }, [country]);
 
+  React.useEffect(() => {
+    const applyCurrentPlanPillContrast = () => {
+      document.querySelectorAll(".freshCurrentPlanBox .freshDarkPanelPill").forEach((el) => {
+        el.style.setProperty("color", "#ffffff", "important");
+        el.style.setProperty("-webkit-text-fill-color", "#ffffff", "important");
+        el.style.setProperty("opacity", "1", "important");
+        el.style.setProperty("font-weight", "900", "important");
+      });
+    };
+
+    applyCurrentPlanPillContrast();
+    const timer = window.setTimeout(applyCurrentPlanPillContrast, 500);
+    return () => window.clearTimeout(timer);
+  }, [currentPlan, checkingPlan, authLoading, notice]);
+
+
   const countryMeta = getCountryMeta(country);
   const pricedPlans = React.useMemo(() => plans.map((plan) => {
     const priced = pricePlanForCountry(plan.backendPlan, country);

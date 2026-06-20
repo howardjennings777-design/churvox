@@ -1112,3 +1112,12 @@
     min-height: auto !important;
   }
 }
+
+/* Final exact current-plan pill lock */
+html body .freshPricingPage .freshPricingHero .freshCurrentPlanBox small.freshDarkPanelPill,
+html body .freshPricingPageV2 .freshCurrentPlanBox small.freshDarkPanelPill {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+  font-weight: 900 !important;
+}
