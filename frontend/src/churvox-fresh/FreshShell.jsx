@@ -331,7 +331,9 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
             <button className="freshMobileLogout" type="button" onClick={handleLogout}>Log out</button>
           </header>
 
-          <div ref={askHomeRef} className="freshGlobalAskHome" />\n\n          <form ref={askBarRef} className="freshGlobalAsk" onSubmit={submitAsk}>
+          <div ref={askHomeRef} className="freshGlobalAskHome" />
+
+          <form ref={askBarRef} className="freshGlobalAsk" onSubmit={submitAsk}>
             <label>
               <span>What do you want to do?</span>
               <input
