@@ -4468,6 +4468,8 @@ async def create_checkout_session(payload: CreateCheckoutSessionRequest, request
     country_code = normalize_billing_country(payload.country)
     price_id = get_stripe_price_id(plan_value, country_code)
 
+    trial_end_now = int(datetime.now(timezone.utc).timestamp())
+
     session = stripe.checkout.Session.create(
         mode="subscription",
         line_items=[{"price": price_id, "quantity": 1}],
@@ -4819,7 +4821,7 @@ async def create_addon_checkout_session(payload: dict, request: Request):
         # Add-ons are not free trials. Force Stripe to start the add-on subscription immediately.
         subscription_data={
             "metadata": addon_metadata,
-            "trial_end": "now",
+            "trial_end": trial_end_now,
         },
         success_url=f"{frontend_url}/plans?addon_success=1&addon={addon_key}&quantity={quantity}&growth_packs={quantity}&session_id={{CHECKOUT_SESSION_ID}}&country={country_code}",
         cancel_url=f"{frontend_url}/plans?addon_cancelled=1&addon={addon_key}&country={country_code}",
