@@ -4737,22 +4737,31 @@ async def create_addon_checkout_session(payload: dict, request: Request):
     country_code = normalize_billing_country(payload.get("country") or payload.get("billing_country") or "NZ")
     price_id = get_country_addon_price_id(addon_key, country_code)
 
+    try:
+        quantity = int(payload.get("quantity") or payload.get("growth_packs") or payload.get("packs") or 1)
+    except Exception:
+        quantity = 1
+    quantity = max(1, min(quantity, 20))
+    if addon_key not in ("growth", "growth_pack", "command_growth_pack"):
+        quantity = 1
+
     frontend_url = os.environ.get("FRONTEND_URL", FRONTEND_URL).rstrip("/")
     session = stripe.checkout.Session.create(
         mode="subscription",
-        line_items=[{"price": price_id, "quantity": 1}],
-        success_url=f"{frontend_url}/plans?addon_success=1&addon={addon_key}&session_id={{CHECKOUT_SESSION_ID}}&country={country_code}",
+        line_items=[{"price": price_id, "quantity": quantity}],
+        success_url=f"{frontend_url}/plans?addon_success=1&addon={addon_key}&quantity={quantity}&session_id={{CHECKOUT_SESSION_ID}}&country={country_code}",
         cancel_url=f"{frontend_url}/plans?addon_cancelled=1&addon={addon_key}&country={country_code}",
         customer_email=user["email"],
         metadata={
             "user_id": user["id"],
             "business_id": user["business_id"],
             "addon": addon_key,
+            "quantity": str(quantity),
             "country": country_code,
-            "purchase_type": "addon",
+            "purchase_type": "addon_only",
         },
     )
-    return {"url": session.url, "checkout_url": session.url}
+    return {"success": True, "url": session.url, "checkout_url": session.url, "addon": addon_key, "quantity": quantity}
 
 
 @api_router.post("/billing/confirm-addon-checkout")
@@ -4764,24 +4773,37 @@ async def confirm_addon_checkout(payload: dict, request: Request):
     if not session_id:
         raise HTTPException(status_code=400, detail="Missing session_id")
 
-    # Keep this simple and safe: Stripe webhook can also update later.
-    update = {}
+    try:
+        quantity = int(payload.get("quantity") or payload.get("growth_packs") or 1)
+    except Exception:
+        quantity = 1
+    quantity = max(1, min(quantity, 20))
+
+    now = datetime.now(timezone.utc)
+    set_update = {
+        "last_addon_checkout_session_id": session_id,
+        "updated_at": now,
+    }
+    inc_update = {}
+
     if addon_key in ("xero", "xero_addon"):
-        update["xero_addon_active"] = True
+        set_update["xero_addon_active"] = True
+        quantity = 1
     elif addon_key in ("growth", "growth_pack", "command_growth_pack"):
-        update["extra_user_blocks"] = 1
+        inc_update["extra_user_blocks"] = quantity
     else:
         raise HTTPException(status_code=400, detail="Unknown add-on")
 
-    update["last_addon_checkout_session_id"] = session_id
-    update["updated_at"] = datetime.now(timezone.utc)
+    update_doc = {"$set": set_update}
+    if inc_update:
+        update_doc["$inc"] = inc_update
 
     await db.users.update_one(
         {"_id": ObjectId(user["business_id"])},
-        {"$set": update}
+        update_doc
     )
 
-    return {"success": True, "message": "Add-on activated", "addon": addon_key}
+    return {"success": True, "message": "Add-on activated", "addon": addon_key, "quantity": quantity}
 
 
 @api_router.get("/billing/addons")
