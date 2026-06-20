@@ -40,8 +40,27 @@ function isAcknowledged(job) { return Boolean(pick(job, "acknowledged_at", "work
 function clockStatus(worker) { const direct = String(worker?.live_status || "").trim(); if (direct) return direct; const text = lower(worker?.clock_status || worker?.shift_status || worker?.status); if (text.includes("on job")) return "On job now"; if (text.includes("paused")) return "Paused"; if (text.includes("clocked_in") || text.includes("clocked in")) return "Clocked in"; if (text.includes("clocked_out") || text.includes("clocked out")) return "Clocked out"; return "Not clocked in"; }
 function runningStatusText(value) { const text = lower(value).replaceAll(" ", "_"); return ["on_job", "on_job_now", "clocked_in", "in_progress", "paused", "started"].some((key) => text.includes(key)); }
 function gpsLabel(worker) { return pick(worker, "last_gps_label", "gps_label", "gps_address", "address_label", "last_location_label"); }
-function gpsCoords(worker) { const lat = pick(worker, "last_lat", "gps_lat", "latitude", "lat"); const lng = pick(worker, "last_lng", "gps_lng", "longitude", "lng"); if (!lat || !lng) return null; return `${lat}, ${lng}`; }
+function gpsPoint(worker) {
+  const lat = pick(worker, "last_lat", "gps_lat", "latitude", "lat", "lastLatitude", "last_latitude");
+  const lng = pick(worker, "last_lng", "gps_lng", "longitude", "lng", "lastLongitude", "last_longitude");
+  const latNum = Number(lat);
+  const lngNum = Number(lng);
+  if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) return null;
+  return { lat: latNum, lng: lngNum };
+}
+function gpsCoords(worker) { const point = gpsPoint(worker); if (!point) return null; return `${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}`; }
 function lastLocation(worker) { return gpsLabel(worker) || gpsCoords(worker) || "No location yet"; }
+function gpsUpdatedAt(worker) { return pick(worker, "last_gps_at", "gps_updated_at", "last_location_at", "location_updated_at", "live_updated_at", "last_live_status_at", "updated_at"); }
+function gpsAccuracy(worker) { const raw = pick(worker, "gps_accuracy", "location_accuracy", "accuracy", "last_gps_accuracy"); return raw ? `${raw}m accuracy` : "Accuracy not sent"; }
+function mapsSearchUrl(worker) { const point = gpsPoint(worker); if (!point) return ""; return `https://www.google.com/maps/search/?api=1&query=${point.lat},${point.lng}`; }
+function mapsEmbedUrl(worker) { const point = gpsPoint(worker); if (!point) return ""; return `https://maps.google.com/maps?q=${point.lat},${point.lng}&z=17&output=embed`; }
+function jobSiteMapUrl(job) {
+  const lat = Number(pick(job, "site_lat", "job_lat", "latitude", "lat"));
+  const lng = Number(pick(job, "site_lng", "job_lng", "longitude", "lng"));
+  if (Number.isFinite(lat) && Number.isFinite(lng)) return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+  const address = jobAddress(job);
+  return address && address !== "No address" ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` : "";
+}
 function actionText(job) { const status = statusOf(job); if (!isAcknowledged(job)) return "Acknowledge"; if (["assigned", "scheduled", "acknowledged"].includes(status)) return "Start job"; if (["in_progress", "started"].includes(status)) return "Pause / complete"; if (status === "paused") return "Resume job"; if (isComplete(job)) return "Completed"; return "Open job"; }
 function proofText(job) { const hasPhotos = Boolean(pick(job, "photos", "photo_urls", "proof_photos")); const hasNotes = Boolean(pick(job, "worker_notes", "completion_notes", "notes")); if (isComplete(job) && hasPhotos) return "Photo proof added"; if (isComplete(job)) return "Complete — photo check"; if (hasNotes) return "Notes added"; return "No proof yet"; }
 
@@ -228,7 +247,15 @@ export default function FreshWorkerCommand({ onNavigate }) {
           const itemView = buildWorkerView(worker, jobs);
           const active = idOf(worker) === idOf(selected);
           const current = directCurrentJob(worker, itemView);
-          return <button key={idOf(worker)} type="button" className={active ? "active" : ""} onClick={() => setSelectedId(idOf(worker))}>
+          return <button
+            key={idOf(worker)}
+            type="button"
+            className={active ? "active" : ""}
+            onClick={() => {
+              setSelectedId(idOf(worker));
+              setPanelModal({ type: "worker", worker });
+            }}
+          >
             <span>{liveStatusFor(worker, itemView)}</span>
             <b>{workerName(worker)}</b>
             <small>{current.title ? `On: ${current.title}` : `${itemView.remainingToday} left · ${itemView.completedToday} done`}</small>
@@ -246,7 +273,10 @@ export default function FreshWorkerCommand({ onNavigate }) {
               <small>Last location: {lastLocation(selected)}</small>
               <small>Last update: {selectedLatestUpdate ? selectedLatestUpdate : "No update yet"}</small>
             </div>
-            <button type="button" onClick={() => setPanelModal({ type: "jobs", jobs: view.assignedJobs })}>{view.currentJob ? "View current" : "View jobs"}</button>
+            <div className="freshWorkerDetailActions">
+              <button type="button" onClick={() => setPanelModal({ type: "worker", worker: selected })}>Worker detail</button>
+              <button type="button" onClick={() => setPanelModal({ type: "jobs", jobs: view.assignedJobs })}>{view.currentJob ? "View current" : "View jobs"}</button>
+            </div>
           </section>
 
           <section className="freshWorkerSimpleBoard">
@@ -297,10 +327,83 @@ export default function FreshWorkerCommand({ onNavigate }) {
         <header>
           <div>
             <span>Worker view</span>
-            <h2>{panelModal.type === "photo" ? "Uploaded photo" : panelModal.type === "photos" ? "Uploaded photos" : panelModal.type === "jobs" ? "Assigned jobs" : "Job detail"}</h2>
+            <h2>{panelModal.type === "worker" ? "Worker detail" : panelModal.type === "photo" ? "Uploaded photo" : panelModal.type === "photos" ? "Uploaded photos" : panelModal.type === "jobs" ? "Assigned jobs" : "Job detail"}</h2>
           </div>
           <button type="button" aria-label="Close worker popup" onClick={() => setPanelModal(null)}>Close</button>
         </header>
+
+        {panelModal.type === "worker" && (() => {
+          const modalWorker = workers.find((worker) => idOf(worker) === idOf(panelModal.worker)) || panelModal.worker;
+          const modalView = buildWorkerView(modalWorker, jobs);
+          const modalCurrent = directCurrentJob(modalWorker, modalView);
+          const point = gpsPoint(modalWorker);
+          const mapUrl = mapsSearchUrl(modalWorker);
+          const embedUrl = mapsEmbedUrl(modalWorker);
+          const currentJobMap = modalView.currentJob ? jobSiteMapUrl(modalView.currentJob) : "";
+          return <div className="freshWorkerDetailSheet">
+            <section className="freshWorkerDetailTop">
+              <div>
+                <span>{liveStatusFor(modalWorker, modalView)}</span>
+                <h3>{workerName(modalWorker)}</h3>
+                <p>{workerEmail(modalWorker) || "No email saved"} {workerPhone(modalWorker) ? `· ${workerPhone(modalWorker)}` : ""}</p>
+              </div>
+              <div className="freshWorkerDetailBadges">
+                <b>{modalView.currentJob ? "On job" : "No active job"}</b>
+                <b>{modalView.todayJobs.length} today</b>
+                <b>{modalView.completedToday} done</b>
+              </div>
+            </section>
+
+            <section className="freshWorkerGpsBox">
+              <div className="freshWorkerGpsMap">
+                {embedUrl ? <iframe title={`Map for ${workerName(modalWorker)}`} src={embedUrl} loading="lazy" /> : <div><b>No GPS map yet</b><span>Worker app has not sent coordinates.</span></div>}
+              </div>
+
+              <div className="freshWorkerGpsInfo">
+                <span>Last GPS</span>
+                <h3>{lastLocation(modalWorker)}</h3>
+                <p>{gpsCoords(modalWorker) || "No coordinates recorded."}</p>
+                <small>Updated: {gpsUpdatedAt(modalWorker) || "No GPS update yet"}</small>
+                <small>{gpsAccuracy(modalWorker)}</small>
+                <div className="freshWorkerDetailActions">
+                  {mapUrl ? <a href={mapUrl} target="_blank" rel="noreferrer">Open in Maps</a> : null}
+                  <button type="button" onClick={() => load({ silent: true })}>Refresh live GPS</button>
+                </div>
+              </div>
+            </section>
+
+            <section className="freshWorkerDetailStats">
+              <article><span>Shift time</span><b>{hoursText(modalView.shiftSeconds)}</b></article>
+              <article><span>Job time</span><b>{hoursText(modalView.jobTimeSeconds)}</b></article>
+              <article><span>Gap time</span><b>{hoursText(modalView.unallocatedSeconds)}</b></article>
+              <article><span>Photos</span><b>{photoProofsFromJobs(modalView.assignedJobs).length}</b></article>
+            </section>
+
+            <section className="freshWorkerCurrentJobBox">
+              <span>Current work</span>
+              <h3>{modalView.currentJob ? jobTitle(modalView.currentJob) : modalCurrent.title || "No current job"}</h3>
+              <p>{modalView.currentJob ? `${clientName(modalView.currentJob)} · ${jobAddress(modalView.currentJob)}` : "No active job is linked to this worker right now."}</p>
+              <div className="freshWorkerDetailActions">
+                {modalView.currentJob ? <button type="button" onClick={() => setPanelModal({ type: "job", job: modalView.currentJob })}>Open job detail</button> : null}
+                {currentJobMap ? <a href={currentJobMap} target="_blank" rel="noreferrer">Open job site map</a> : null}
+              </div>
+            </section>
+
+            <section className="freshWorkerDetailColumns">
+              <article>
+                <h3>Today’s jobs</h3>
+                <div className="freshWorkerAppJobs">
+                  {modalView.todayJobs.length ? modalView.todayJobs.map((job, index) => <WorkerJobCard key={idOf(job, index)} job={job} compact onOpen={openJobModal} />) : <div className="freshItem"><b>No jobs today</b><span>This worker has no jobs booked today.</span></div>}
+                </div>
+              </article>
+
+              <article>
+                <h3>Needs action</h3>
+                {modalView.alerts.length ? modalView.alerts.map((alert) => <div key={alert} className="freshItem need"><b>Check this</b><span>{alert}</span></div>) : <div className="freshItem"><b>No urgent actions</b><span>Worker can carry on.</span></div>}
+              </article>
+            </section>
+          </div>;
+        })()}
 
         {panelModal.type === "photo" && <div className="freshWorkerPhotoLarge">
           <img src={panelModal.photo.url} alt={`Proof for ${jobTitle(panelModal.photo.job)}`} />

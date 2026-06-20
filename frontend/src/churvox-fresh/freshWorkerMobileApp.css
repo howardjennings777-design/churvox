@@ -782,3 +782,235 @@
     top: auto !important;
   }
 }
+
+/* CHURVOX_WORKER_DETAIL_GPS_20260621 */
+.freshWorkerDetailActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.freshWorkerDetailActions button,
+.freshWorkerDetailActions a {
+  border: 0;
+  border-radius: 15px;
+  min-height: 44px;
+  padding: 0 14px;
+  background: #111827;
+  color: #fffaf0;
+  -webkit-text-fill-color: #fffaf0;
+  font-size: 12px;
+  font-weight: 1000;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.freshWorkerDetailActions a {
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+.freshWorkerDetailSheet {
+  display: grid;
+  gap: 14px;
+}
+
+.freshWorkerDetailTop {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+  border-radius: 24px;
+  background: #111827;
+  padding: 16px;
+  color: #fffaf0;
+}
+
+.freshWorkerDetailTop span,
+.freshWorkerGpsInfo > span,
+.freshWorkerCurrentJobBox > span,
+.freshWorkerDetailStats span {
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 999px;
+  background: rgba(249, 115, 22, .15);
+  color: #fdba74;
+  -webkit-text-fill-color: #fdba74;
+  padding: 6px 9px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+
+.freshWorkerDetailTop h3 {
+  margin: 9px 0 5px;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: .92;
+  letter-spacing: -.06em;
+}
+
+.freshWorkerDetailTop p {
+  margin: 0;
+  color: #d1d5db;
+  -webkit-text-fill-color: #d1d5db;
+  font-weight: 850;
+}
+
+.freshWorkerDetailBadges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.freshWorkerDetailBadges b {
+  border-radius: 999px;
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.13);
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  padding: 9px 10px;
+  font-size: 11px;
+  font-weight: 1000;
+}
+
+.freshWorkerGpsBox {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.freshWorkerGpsMap,
+.freshWorkerGpsInfo,
+.freshWorkerCurrentJobBox,
+.freshWorkerDetailStats article,
+.freshWorkerDetailColumns article {
+  border: 1px solid rgba(15, 23, 42, .10);
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 14px 34px rgba(2, 6, 23, .07);
+}
+
+.freshWorkerGpsMap {
+  min-height: 320px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: #111827;
+}
+
+.freshWorkerGpsMap iframe {
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+  border: 0;
+}
+
+.freshWorkerGpsMap > div {
+  padding: 18px;
+  text-align: center;
+  color: #fff;
+}
+
+.freshWorkerGpsMap b {
+  display: block;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  font-size: 24px;
+}
+
+.freshWorkerGpsMap span {
+  display: block;
+  margin-top: 6px;
+  color: #d1d5db;
+  -webkit-text-fill-color: #d1d5db;
+  font-weight: 850;
+}
+
+.freshWorkerGpsInfo,
+.freshWorkerCurrentJobBox,
+.freshWorkerDetailColumns article {
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.freshWorkerGpsInfo h3,
+.freshWorkerCurrentJobBox h3,
+.freshWorkerDetailColumns h3 {
+  margin: 0;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: clamp(24px, 3vw, 34px);
+  line-height: .98;
+  letter-spacing: -.045em;
+}
+
+.freshWorkerGpsInfo p,
+.freshWorkerCurrentJobBox p,
+.freshWorkerGpsInfo small {
+  margin: 0;
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.freshWorkerDetailStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.freshWorkerDetailStats article {
+  padding: 15px;
+}
+
+.freshWorkerDetailStats b {
+  display: block;
+  margin-top: 9px;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: -.04em;
+}
+
+.freshWorkerDetailColumns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr);
+  gap: 14px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .freshWorkerDetailTop,
+  .freshWorkerGpsBox,
+  .freshWorkerDetailColumns {
+    grid-template-columns: 1fr;
+  }
+
+  .freshWorkerDetailBadges {
+    justify-content: flex-start;
+  }
+
+  .freshWorkerDetailStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .freshWorkerDetailStats {
+    grid-template-columns: 1fr;
+  }
+}
