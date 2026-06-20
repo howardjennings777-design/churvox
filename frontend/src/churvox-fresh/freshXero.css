@@ -426,3 +426,114 @@
     font-size: 58px;
   }
 }
+
+/* CHURVOX_XERO_COMPACT_HEADER_20260621 */
+.freshXeroHero {
+  display: none !important;
+}
+
+.freshXeroCompactHeader {
+  width: 100%;
+  border: 1px solid rgba(15,23,42,.13);
+  border-left: 7px solid #f97316;
+  border-radius: 24px;
+  background: #111827;
+  color: #fff;
+  padding: 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  box-shadow: 0 14px 34px rgba(2,6,23,.13);
+}
+
+.freshXeroCompactHeader > div:first-child {
+  min-width: 0;
+}
+
+.freshXeroCompactHeader > div:first-child > span {
+  display: inline-flex;
+  width: auto;
+  max-width: max-content;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.08);
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+  padding: 6px 10px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.freshXeroCompactHeader h1 {
+  margin: 9px 0 5px;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  font-size: clamp(38px, 4.5vw, 56px);
+  line-height: .9;
+  letter-spacing: -.07em;
+  font-weight: 1000;
+}
+
+.freshXeroCompactHeader p {
+  margin: 0;
+  max-width: 760px;
+  color: #e5e7eb;
+  -webkit-text-fill-color: #e5e7eb;
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.freshXeroCompactStatus {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  max-width: 420px;
+}
+
+.freshXeroCompactStatus span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.09);
+  border: 1px solid rgba(255,255,255,.13);
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 1000;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.freshXeroCompactStatus span.ok {
+  background: rgba(22,163,74,.18);
+  border-color: rgba(22,163,74,.32);
+  color: #bbf7d0;
+  -webkit-text-fill-color: #bbf7d0;
+}
+
+.freshXeroCompactStatus span.bad {
+  background: rgba(249,115,22,.16);
+  border-color: rgba(249,115,22,.32);
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+}
+
+@media (max-width: 900px) {
+  .freshXeroCompactHeader {
+    grid-template-columns: 1fr;
+  }
+
+  .freshXeroCompactStatus {
+    justify-content: flex-start;
+    max-width: none;
+  }
+}

@@ -216,20 +216,18 @@ export default function FreshXero({ onNavigate }) {
 
   return (
     <section className="freshXeroPage">
-      <div className="freshXeroHero">
+      <div className="freshXeroCompactHeader">
         <div>
           <span>Xero connection</span>
           <h1>Xero</h1>
-          <p>
-            Connect Xero for draft invoice sync. Churvox prepares drafts only — nothing is sent, filed, reconciled, or marked paid automatically.
-          </p>
+          <p>Draft invoice sync only. Churvox prepares drafts — nothing is sent, filed, reconciled, or marked paid automatically.</p>
         </div>
 
-        <div className="freshXeroStats">
-          <div><b>{loading ? "..." : configured ? "Yes" : "No"}</b><small>env ready</small></div>
-          <div><b>{loading ? "..." : addonActive ? "Yes" : "No"}</b><small>add-on active</small></div>
-          <div><b>{loading ? "..." : connected ? "Yes" : "No"}</b><small>connected</small></div>
-          <div><b>{latestInvoice ? latestInvoiceTotal : "—"}</b><small>latest invoice</small></div>
+        <div className="freshXeroCompactStatus">
+          <span className={configured ? "ok" : "bad"}>{loading ? "Checking" : configured ? "Env ready" : "Env missing"}</span>
+          <span className={addonActive ? "ok" : "bad"}>{loading ? "Checking" : addonActive ? "Add-on active" : "Add-on off"}</span>
+          <span className={connected ? "ok" : "bad"}>{loading ? "Checking" : connected ? "Connected" : "Not connected"}</span>
+          <span>{latestInvoice ? latestInvoiceTotal : "No invoice"}</span>
         </div>
       </div>
 
