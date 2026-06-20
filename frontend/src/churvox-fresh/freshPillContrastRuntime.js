@@ -156,6 +156,105 @@ function applyReadable(el) {
   }
 }
 
+
+function installHardPillContrastStyleTag() {
+  if (typeof document === "undefined") return;
+
+  let style = document.getElementById("churvox-hard-pill-contrast");
+  if (!style) {
+    style = document.createElement("style");
+    style.id = "churvox-hard-pill-contrast";
+    document.head.appendChild(style);
+  }
+
+  style.textContent = `
+    html body .freshCommandPill {
+      display: inline-flex !important;
+      align-items: center !important;
+      background: #111827 !important;
+      background-color: #111827 !important;
+      border-color: #111827 !important;
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      opacity: 1 !important;
+      font-weight: 900 !important;
+    }
+
+    html body .freshCommandFilterBar button.active,
+    html body .freshCommandFilterBar button.selected,
+    html body .freshCommandFilterBar button.is-active,
+    html body .freshCommandFilterBar button[aria-pressed="true"],
+    html body .freshCommandFilterBar button[aria-current="true"],
+    html body button.active,
+    html body button.selected,
+    html body button.is-active,
+    html body button[aria-pressed="true"],
+    html body button[aria-current="true"] {
+      background: #111827 !important;
+      background-color: #111827 !important;
+      border-color: #111827 !important;
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      opacity: 1 !important;
+    }
+
+    html body .freshCommandFilterBar button.active span,
+    html body .freshCommandFilterBar button.selected span,
+    html body .freshCommandFilterBar button.is-active span,
+    html body .freshCommandFilterBar button[aria-pressed="true"] span,
+    html body .freshCommandFilterBar button[aria-current="true"] span,
+    html body button.active span,
+    html body button.selected span,
+    html body button.is-active span,
+    html body button[aria-pressed="true"] span,
+    html body button[aria-current="true"] span,
+    html body span.active {
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      opacity: 1 !important;
+    }
+
+    html body .freshCommandFilterBar button.active b,
+    html body .freshCommandFilterBar button.selected b,
+    html body .freshCommandFilterBar button.is-active b,
+    html body .freshCommandFilterBar button[aria-pressed="true"] b,
+    html body .freshCommandFilterBar button[aria-current="true"] b {
+      background: #f97316 !important;
+      background-color: #f97316 !important;
+      color: #111827 !important;
+      -webkit-text-fill-color: #111827 !important;
+      opacity: 1 !important;
+      font-weight: 950 !important;
+      border-radius: 999px !important;
+      min-width: 1.5rem !important;
+      text-align: center !important;
+    }
+
+    html body .freshHero > span,
+    html body .freshHero header > span,
+    html body .freshHero div > span:first-child,
+    html body .freshAskHero span,
+    html body .tellHero span,
+    html body .freshAskStats small,
+    html body .freshAskStats b,
+    html body [class*="Hero"] > span,
+    html body [class*="Hero"] div > span:first-child {
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      opacity: 1 !important;
+      font-weight: 900 !important;
+    }
+
+    html body .freshWorkerAppSummary span,
+    html body .freshWorkerAppSummary small,
+    html body .freshWorkerAppSummary b {
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      opacity: 1 !important;
+    }
+  `;
+}
+
 export function fixPillContrastNow() {
   if (typeof document === "undefined") return;
 
@@ -183,6 +282,8 @@ export function fixPillContrastNow() {
 
 export function installPillContrastRuntime() {
   if (typeof window === "undefined" || typeof document === "undefined") return () => {};
+
+  installHardPillContrastStyleTag();
 
   window.churvoxFixPills = fixPillContrastNow;
 

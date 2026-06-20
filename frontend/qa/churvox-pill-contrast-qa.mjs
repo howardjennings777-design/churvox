@@ -140,7 +140,7 @@ async function scanPage(page, pageName, viewportName) {
       if (!text || text.length > 70) return false;
 
       // Do not count navigation/sidebar/metric counters as pills.
-      if (el.closest(".freshShellSidebar, .freshSidebar, .freshBottomNav, .freshTopbar, .freshTodayHeroStats, .freshWorkerAppSummary, .freshPaymentsStats, .freshAutomationStats, nav, [class*='Sidebar'], [class*='BottomNav'], [class*='Topbar']")) {
+      if (el.closest(".freshShellSidebar, .freshSidebar, .freshBottomNav, .freshTopbar, .freshTodayHeroStats, .freshWorkerAppSummary, .freshPaymentsStats, .freshAutomationStats, .freshAskStats, nav, [class*='Sidebar'], [class*='BottomNav'], [class*='Topbar']")) {
         return false;
       }
 
@@ -155,6 +155,7 @@ async function scanPage(page, pageName, viewportName) {
       const parentClass = String(el.parentElement?.className || "");
       const textUpper = text === text.toUpperCase();
 
+      if (el.closest(".freshCommandFilterBar button") && el.tagName.toLowerCase() !== "button") return false;
       if (el.closest(".freshCommandFilterBar")) return true;
       if (/pill|chip|badge|tag|filter|status|label|tab|seg|guide/i.test(className + " " + parentClass + " " + role)) return true;
       if (textUpper && text.length <= 28 && radius >= 8 && rect.height <= 56 && !el.closest("button:not(.active)")) return true;
